@@ -6,6 +6,10 @@ MCP出来后感觉这个很有搞头，本来想开发一个工具箱，给MCP�
 
 支持MCP协议的Chat，使用OpenAI的协议，兼容 `Claude Desktop` 配置文件。支持 `Client` 热加载，重启。
 
+## Telegram
+
+[HyperChat](https://t.me/dadigua001)
+
 
 ![image.png](./images/29649b422feeef35ac0210c12b93c5ea5e0ba3abef1215b6987572fbf48f47ec.png)
 
