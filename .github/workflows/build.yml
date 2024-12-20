@@ -23,8 +23,12 @@ jobs:
       - name: Install Dependencies
         run: npm install
 
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
       - name: Install Web Dependencies
-        run: cd web && npm install
+        run: cd web && pnpm install
 
       - name: Install Electron Dependencies
         run: cd electron && npm install
