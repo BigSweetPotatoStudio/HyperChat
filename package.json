@@ -5,9 +5,14 @@
   "scripts": {
     "dev": "tsx task.mts --dev",
     "test": "tsx task.mts --test",
-    "prod": "zx -y task.mjs --prod"
+    "prod": "tsx task.mts --prod"
   },
   "author": "",
   "license": "ISC",
-  "description": ""
+  "description": "",
+  "dependencies": {
+    "tsx": "^4.9.3",
+    "zx": "^8.0.1",
+    "cross-spawn": "^7.0.6"
+  }
 }
