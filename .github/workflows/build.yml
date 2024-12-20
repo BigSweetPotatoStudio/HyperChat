@@ -27,6 +27,9 @@ jobs:
         run: cd electron && npm install
 
       - name: Build Electron App
+        run: npm install -g zx
+
+      - name: Build Electron App
         run: npm run prod
 
       - name: upload artifacts
