@@ -18,14 +18,14 @@ jobs:
       - name: Install Node.js
         uses: actions/setup-node@v3.0.0
         with:
-          node-version: "16"
-
-      - name: Install Dependencies
-        run: npm install
+          node-version: "20"
 
       - uses: pnpm/action-setup@v4
         with:
           version: 9
+
+      - name: Install Dependencies
+        run: npm install
 
       - name: Install Web Dependencies
         run: cd web && pnpm install
