@@ -1,0 +1,34 @@
+@layer tailwind-base, antd;
+
+@layer tailwind-base {
+  @tailwind base;
+}
+@tailwind components;
+@tailwind utilities;
+
+.ant-form-item-label {
+  @apply text-gray-900;
+  @apply font-bold;
+}
+
+main {
+  height: calc(100vh - 56px) !important;
+}
+
+::-webkit-scrollbar {
+  width: 8px; /* 滚动条宽度 */
+  height: 8px; /* 滚动条高度 */
+}
+
+::-webkit-scrollbar-track {
+  background: #f1f1f1; /* 滚动条轨道背景 */
+}
+
+::-webkit-scrollbar-thumb {
+  background: #888; /* 滚动条滑块背景 */
+  border-radius: 6px; /* 滑块圆角 */
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #555; /* 滑块悬停时背景 */
+}

@@ -1,0 +1,39 @@
+{
+  "compilerOptions": {
+    "allowJs": true,
+    "checkJs": false,
+    "skipLibCheck": true,
+    "composite": false,
+    "resolveJsonModule": true,
+    "esModuleInterop": true,
+    "experimentalDecorators": true,
+    "jsxFactory": "React.createElement",
+    "jsx": "react",
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "removeComments": false,
+    "sourceMap": true,
+    "strict": false,
+    "strictNullChecks": false,
+    "lib": [
+      "ESNext",
+      "DOM",
+    ],
+    "types": [
+      "node",
+    ],
+    "target": "ESNext",
+    "typeRoots": [
+      "./node_modules/@types",
+    ],
+    "outDir": "./js",
+  },
+  "include": [
+    "ts",
+  ],
+  "exclude": [
+    "node_modules",
+    "tests",
+    "types"
+  ]
+}
