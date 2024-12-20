@@ -1,0 +1,39 @@
+name: Build and Package Electron App
+
+on: [push, pull_request]
+
+jobs:
+  release:
+    name: build and release electron app
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [windows-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+
+    steps:
+      - name: Check out git repository
+        uses: actions/checkout@v3.0.0
+
+      - name: Install Node.js
+        uses: actions/setup-node@v3.0.0
+        with:
+          node-version: "16"
+
+      - name: Install Web Dependencies
+        run: cd web && npm install
+
+      - name: Install Electron Dependencies
+        run: cd electron && npm install
+
+      - name: Build Electron App1
+        run: npx tsc task.mts
+
+      - name: Build Electron App2
+        run: npm run prod
+
+      - name: upload artifacts
+        uses: actions/upload-artifact@v3.0.0
+        with:
+          name: ${{ matrix.os }}
+          path: dist
