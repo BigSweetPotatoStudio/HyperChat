@@ -5,7 +5,8 @@
   "scripts": {
     "dev": "tsx task.mts --dev",
     "test": "tsx task.mts --test",
-    "prod": "tsx task.mts --prod"
+    "prod": "tsx task.mts --prod",
+    "prodlocal": "tsx task.mts --prod --local"
   },
   "author": "",
   "license": "ISC",
