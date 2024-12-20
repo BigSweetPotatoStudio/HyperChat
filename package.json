@@ -5,7 +5,7 @@
   "scripts": {
     "dev": "tsx task.mts --dev",
     "test": "tsx task.mts --test",
-    "prod": "tsx task.mts --prod"
+    "prod": "zx -y task.mjs --prod"
   },
   "author": "",
   "license": "ISC",

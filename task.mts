@@ -1,10 +1,8 @@
 import { $, argv, fs, os, path, usePowerShell, within } from "zx";
 import { fileURLToPath } from "url";
 
-import { createClient } from "webdav";
 import spawn from "cross-spawn";
-import { retry } from "zx";
-import { cwd } from "process";
+
 $.verbose = true;
 
 if (os.platform() === "win32") {
@@ -110,16 +108,54 @@ if (argv.dev) {
 }
 
 if (argv.prod) {
-  await within(() => {
-    return Promise.all([
-      $({
-        cwd: path.resolve(__dirname, "./web/"),
-      })`npx cross-env NODE_ENV=production myEnv=prod webpack -c webpack.config.js`,
-      $({
-        cwd: path.resolve(__dirname, "./electron/"),
-      })`npm run prod`,
-    ]);
-  });
+  // await within(() => {
+  //   return Promise.all([
+  //     $({
+  //       cwd: path.resolve(__dirname, "./web/"),
+  //     })`npx cross-env NODE_ENV=production myEnv=prod webpack -c webpack.config.js`,
+  //     $({
+  //       cwd: path.resolve(__dirname, "./electron/"),
+  //     })`npm run prod`,
+  //   ]);
+  // });
+  let p = path.resolve(__dirname, `./dist`);
+  fs.ensureDirSync(p);
+  let pack = await fs.readJSON(
+    path.resolve(__dirname, "./electron/package.json")
+  );
+
+  if (os.platform() === "win32") {
+    await fs.copy(
+      `./electron/dist/HyperChat Setup ${pack.version}.exe`,
+      p + `/HyperChat-Setup-${pack.version}.exe`,
+      {
+        overwrite: true,
+      }
+    );
+  } else {
+    await fs.copy(
+      `./electron/dist/HyperChat Setup ${pack.version}.exe`,
+      p + `/HyperChat-Setup-${pack.version}.exe`,
+      {
+        overwrite: true,
+      }
+    );
+
+    await fs.copy(
+      `./electron/dist/HyperChat-${pack.version}-arm64.dmg`,
+      p + `/HyperChat-${pack.version}-arm64.dmg`,
+      {
+        overwrite: true,
+      }
+    );
+    await fs.copy(
+      `./electron/dist/HyperChat-${pack.version}.dmg`,
+      p + `/HyperChat-${pack.version}-x64.dmg`,
+      {
+        overwrite: true,
+      }
+    );
+  }
 }
 
 if (argv.test) {
