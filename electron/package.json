@@ -8,7 +8,7 @@
     "push": "npx tsx task.mts --pushUpdateFile"
   },
   "name": "hyper-chat",
-  "version": "0.0.1",
+  "version": "0.0.3",
   "description": "*",
   "main": "js/main.js",
   "author": "Intellivance Team",
@@ -104,7 +104,7 @@
       "deleteAppDataOnUninstall": false,
       "createDesktopShortcut": true,
       "createStartMenuShortcut": true,
-      "shortcutName": "AIToolBox"
+      "shortcutName": "HyperChat"
     },
     "files": [
       "!ts/**",
