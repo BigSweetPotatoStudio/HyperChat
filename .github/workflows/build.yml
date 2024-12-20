@@ -26,10 +26,7 @@ jobs:
       - name: Install Electron Dependencies
         run: cd electron && npm install
 
-      - name: Build Electron App1
-        run: npx tsc task.mts
-
-      - name: Build Electron App2
+      - name: Build Electron App
         run: npm run prod
 
       - name: upload artifacts

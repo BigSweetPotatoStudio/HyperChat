@@ -108,16 +108,16 @@ if (argv.dev) {
 }
 
 if (argv.prod) {
-  // await within(() => {
-  //   return Promise.all([
-  //     $({
-  //       cwd: path.resolve(__dirname, "./web/"),
-  //     })`npx cross-env NODE_ENV=production myEnv=prod webpack -c webpack.config.js`,
-  //     $({
-  //       cwd: path.resolve(__dirname, "./electron/"),
-  //     })`npm run prod`,
-  //   ]);
-  // });
+  await within(() => {
+    return Promise.all([
+      $({
+        cwd: path.resolve(__dirname, "./web/"),
+      })`npx cross-env NODE_ENV=production myEnv=prod webpack -c webpack.config.js`,
+      $({
+        cwd: path.resolve(__dirname, "./electron/"),
+      })`npm run prod`,
+    ]);
+  });
   let p = path.resolve(__dirname, `./dist`);
   fs.ensureDirSync(p);
   let pack = await fs.readJSON(
