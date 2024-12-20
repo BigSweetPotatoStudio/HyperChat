@@ -1,0 +1,40 @@
+{
+  "compilerOptions": {
+    "allowJs": true,
+    "checkJs": false,
+    "composite": false,
+    "esModuleInterop": true,
+    "jsxFactory": "React.createElement",
+    "jsxFragmentFactory": "React.Fragment",
+    "jsx": "react",
+    "module": "esnext",
+    "moduleResolution": "Node",
+    "experimentalDecorators": true,
+    "removeComments": false,
+    "resolveJsonModule": true,
+    "sourceMap": true,
+    "strict": false,
+    "strictNullChecks": false,
+    "lib": [
+      "ESNext",
+      "DOM"
+    ],
+    "types": [
+      "node",
+    ],
+    "target": "ESNext",
+    "typeRoots": [
+      "./node_modules/@types",
+      "./types/"
+    ],
+    "outDir": "./dist"
+  },
+  "include": [
+    "src/**/*",
+    "types/*",
+    "webpack.config.eval.js"
+  ],
+  "exclude": [
+    "node_modules"
+  ]
+}
