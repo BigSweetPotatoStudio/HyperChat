@@ -133,14 +133,15 @@ if (argv.prod) {
       }
     );
   } else {
-    await fs.copy(
-      `./electron/dist/HyperChat Setup ${pack.version}.exe`,
-      p + `/HyperChat-Setup-${pack.version}.exe`,
-      {
-        overwrite: true,
-      }
-    );
-
+    if (fs.existsSync(`./electron/dist/HyperChat Setup ${pack.version}.exe`)) {
+      await fs.copy(
+        `./electron/dist/HyperChat Setup ${pack.version}.exe`,
+        p + `/HyperChat-Setup-${pack.version}.exe`,
+        {
+          overwrite: true,
+        }
+      );
+    }
     await fs.copy(
       `./electron/dist/HyperChat-${pack.version}-arm64.dmg`,
       p + `/HyperChat-${pack.version}-arm64.dmg`,
