@@ -1,6 +1,13 @@
 name: Build and Package Electron App
 
-on: [push, pull_request]
+# on: [push, pull_request]
+on:
+  workflow_dispatch: {}
+  push:
+    branches:
+      - main
+    tags:
+      - "*"
 
 jobs:
   release:
@@ -25,6 +32,9 @@ jobs:
         with:
           version: 9
 
+      - name: Install cross-env
+        run: npm install -g cross-env
+
       - name: Install Dependencies
         run: npm install
 
@@ -43,7 +53,7 @@ jobs:
 
       - name: Build Electron App (widnows)
         if: matrix.os == 'windows-latest'
-        run: MYRUNENV=github npm run prod
+        run: cross-env MYRUNENV=github npm run prod
 
       - name: upload artifacts
         uses: actions/upload-artifact@v3.0.0
