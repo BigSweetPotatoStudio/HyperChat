@@ -3,26 +3,26 @@
 
 ## Background
 
-After the release of [MCP](https://modelcontextprotocol.io/introduction), I felt it had great potential. Initially, I wanted to develop a toolbox for MCP usage, but since `Claude Desktop` frequently gets accounts banned, I had to develop a Chat myself. It has been open-sourced.
+After the release of [MCP](https://modelcontextprotocol.io/introduction), I felt it was quite promising. I originally planned to develop a toolbox for MCP, but since `Claude Desktop` keeps getting banned, I had to develop a Chat myself. It has been open-sourced.
 
 ## Features
 
-A Chat that supports the MCP protocol, using OpenAI's protocol, compatible with `Claude Desktop` configuration files. Supports `Client` hot loading, restart, and disable.
+A Chat that supports the MCP protocol, using the OpenAI protocol and compatible with `Claude Desktop` configuration files. Supports `Client` hot loading, restart, and disable.
 
-### MCP: 
+### MCP:
 
 [![Build](https://github.com/BigSweetPotatoStudio/HyperChat/actions/workflows/build.yml/badge.svg)](https://github.com/BigSweetPotatoStudio/HyperChat/actions/workflows/build.yml)
 
-- [x] 🪟Windows+🍏MacOS
+- [x] 🪟Windows + 🍏MacOS
 - [x] Supports `nvm`, see below
 - [x] Resource support
-- [x] Partial prompt support
-- [x] Tool support
+- [x] Partial support for Prompts
+- [x] Tools support
 - [x] Supports English and Chinese
 
 ## Usage
 
-* 1. You need to configure your OpenAI-style APIKEY
+* 1. You need to configure your OpenAI style APIKEY
 * 2. Ensure that uvx or npx is installed on your system.
 
 ### [uvx](https://github.com/astral-sh/uv)
@@ -46,7 +46,8 @@ npm run dev
 
 ## Note
 
-For MacOS `nvm` users, manually enter PATH `echo $PATH`, the Windows version of `nvm` seems to work directly
+* MacOS may encounter damage or permission issues, `sudo xattr -d com.apple.quarantine /Applications/HyperChat.app`
+* For MacOS `nvm` users, manually input PATH `echo $PATH`, it seems the Windows version of `nvm` can be used directly
 
 ![image.png](./images/image4.png)
 
