@@ -13,7 +13,9 @@ import {
 } from "electron";
 import path from "node:path";
 import os from "node:os";
+log.info("1");
 import { Command } from "./command.mjs";
+log.info("2");
 import { fileURLToPath } from "node:url";
 import { $, usePowerShell, fs, cd, fetch, sleep } from "zx";
 import { spawn, exec, execFile } from "child_process";
@@ -21,7 +23,6 @@ import { isPortUse } from "./common/checkport.mjs";
 import { Server } from "socket.io";
 import { execFallback } from "./common/execFallback.mjs";
 import p from "../package.json";
-import AutoLaunch from "auto-launch";
 import "./websocket.mjs";
 import { electron } from "node:process";
 import log from "electron-log";

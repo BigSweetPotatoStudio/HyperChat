@@ -29,24 +29,16 @@ import AdmZip from "adm-zip";
 import { pipeline } from "stream";
 import { promisify } from "util";
 import puppeteer from "puppeteer-core";
-import { VideoInfo } from "./common/types.mjs";
+log.info("3");
 import log from "electron-log";
 import { v4 as uuidV4 } from "uuid";
 import Screenshots from "electron-screenshots";
-import Koa from "koa";
-import serve from "koa-static";
-import cors from "@koa/cors";
-import http from "http";
 import { getLocalIP } from "./common/util.mjs";
 import { autoLauncher } from "./common/autoLauncher.mjs";
 import { clipboardHistoryData, electronData } from "./common/data.mjs";
-import Bonjour from "bonjour-service";
-import ciao from "@homebridge/ciao";
 import { commandHistory, CommandStatus } from "./command_history.mjs";
 import { appDataDir } from "./const.mjs";
-
-import FfmpegCommand from "fluent-ffmpeg";
-
+log.info("4");
 import {
   closeMcpClients,
   getMcpClients,
