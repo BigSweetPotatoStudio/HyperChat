@@ -22,18 +22,6 @@ fs.writeFileSync(
     )
 );
 
-fs.writeFileSync(
-  "./electron/node_modules/@modelcontextprotocol/sdk/dist/client/stdio.js",
-  fs
-    .readFileSync(
-      "./electron/node_modules/@modelcontextprotocol/sdk/dist/client/stdio.js"
-    )
-    .toString()
-    .replace(
-      `env: (_b = this._serverParams.env) !== null && _b !== void 0 ? _b : getDefaultEnvironment(),`,
-      `env: (_b = this._serverParams.env) !== null && _b !== void 0 ? Object.assign(getDefaultEnvironment(), _b) : getDefaultEnvironment(),`
-    )
-);
 
 
 if (

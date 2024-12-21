@@ -19,7 +19,7 @@ await initMcpServer().catch((e) => {
 const { Client } = await import(
   /* webpackIgnore: true */ "@modelcontextprotocol/sdk/client/index.js"
 );
-const { StdioClientTransport } = await import(
+const { StdioClientTransport, getDefaultEnvironment } = await import(
   /* webpackIgnore: true */ "@modelcontextprotocol/sdk/client/stdio.js"
 );
 const { SSEClientTransport } = await import(
@@ -41,7 +41,7 @@ class MCPClient {
     public name: string,
     public type: "stdio" | "sse" = "stdio",
     public scope: "local" | "outer" = "outer"
-  ) {}
+  ) { }
   async callTool(functionName: string, args: any): Promise<any> {
     log.info("MCP callTool", functionName, args);
     if (this.status == "disconnected") {
@@ -124,8 +124,7 @@ class MCPClient {
     );
     const transport = new SSEClientTransport(
       new URL(
-        `http://localhost:${electronData.get().mcp_server_port}/${
-          this.name
+        `http://localhost:${electronData.get().mcp_server_port}/${this.name
         }/sse`
       )
     );
@@ -147,7 +146,7 @@ class MCPClient {
       const transport = new StdioClientTransport({
         command: config.mcpServers[key].command,
         args: config.mcpServers[key].args,
-        env: config.mcpServers[key].env,
+        env: Object.assign(getDefaultEnvironment(), config.mcpServers[key].env),
       });
 
       const client = new Client(
