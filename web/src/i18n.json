@@ -81,7 +81,7 @@
     },
     "smithery": {
         "en": "smithery",
-        "zh": ""
+        "zh": "smithery"
     },
     "Power on": {
         "en": "Power on",
@@ -155,6 +155,10 @@
         "en": "connected",
         "zh": "连接的"
     },
+    "disconnected": {
+        "en": "disconnected",
+        "zh": "断开连接"
+    },
     "Config": {
         "en": "Config",
         "zh": "配置"
@@ -169,7 +173,7 @@
     },
     "disabled": {
         "en": "disabled",
-        "zh": "残疾"
+        "zh": "禁用的"
     },
     "start": {
         "en": "start",
@@ -257,15 +261,15 @@
     },
     "key": {
         "en": "key",
-        "zh": "钥匙"
+        "zh": "key"
     },
     "baseURL": {
         "en": "baseURL",
-        "zh": "基本网址"
+        "zh": ""
     },
     "Please enter baseURL": {
         "en": "Please enter baseURL",
-        "zh": "请输入基本网址"
+        "zh": "请输入baseURL"
     },
     "apiKey": {
         "en": "apiKey",

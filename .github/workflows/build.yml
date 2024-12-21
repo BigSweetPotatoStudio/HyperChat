@@ -6,6 +6,8 @@ on:
   push:
     branches:
       - main
+      - test
+
     tags:
       - "*"
 
@@ -32,8 +34,8 @@ jobs:
         with:
           version: 9
 
-      - name: Install cross-env
-        run: npm install -g cross-env
+      - name: Install -g
+        run: npm install -g cross-env zx
 
       - name: Install Dependencies
         run: npm install
@@ -43,9 +45,6 @@ jobs:
 
       - name: Install Electron Dependencies
         run: cd electron && npm install
-
-      - name: Build Electron App
-        run: npm install -g zx
 
       - name: Build Electron App (macOS only)
         if: matrix.os == 'macos-latest'
