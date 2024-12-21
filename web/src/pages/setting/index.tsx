@@ -95,7 +95,7 @@ export function Setting() {
               ></Switch>
             </Form.Item>
 
-            <Form.Item label="Github" name="234">
+            <Form.Item label="Github" name="Github">
               <a
                 target="_blank"
                 href="https://github.com/BigSweetPotatoStudio/HyperChat"
@@ -103,12 +103,12 @@ export function Setting() {
                 https://github.com/BigSweetPotatoStudio/HyperChat
               </a>
             </Form.Item>
-            <Form.Item label="Telegram" name="234">
+            <Form.Item label="Telegram" name="Telegram">
               <a target="_blank" href="https://t.me/dadigua001">
                 https://t.me/dadigua001
               </a>
             </Form.Item>
-            <Form.Item label="QQ群" name="3">
+            <Form.Item label="QQ群" name="QQ群">
               <a
                 className="flex items-center text-blue-500"
                 target="_blank"
@@ -133,10 +133,10 @@ export function Setting() {
             }}
             autoComplete="off"
           >
-            <Form.Item label="Email" name="2sd">
+            <Form.Item label="Email" name="Email">
               <a href="mailto:develop@dadigua.men">0laopo0@gmail.com</a>
             </Form.Item>
-            <Form.Item label="小红书" name="23xvzx">
+            <Form.Item label="小红书" name="小红书">
               <a
                 target="_blank"
                 href="https://www.xiaohongshu.com/user/profile/5f0dc4fc0000000001005234"
@@ -144,12 +144,12 @@ export function Setting() {
                 大地瓜的小红书
               </a>
             </Form.Item>
-            <Form.Item label="X(Twitter)" name="23">
+            <Form.Item label="X(Twitter)" name="X(Twitter)">
               <a target="_blank" href="https://x.com/ddg85479319">
                 Twitter
               </a>
             </Form.Item>
-            <Form.Item label="Bilibili" name="23xvzx">
+            <Form.Item label="Bilibili" name="Bilibili">
               <a target="_blank" href="https://space.bilibili.com/96150707">
                 大地瓜的Bilibili
               </a>
