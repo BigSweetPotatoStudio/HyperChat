@@ -21,6 +21,21 @@ fs.writeFileSync(
       `import  spawn  from "cross-spawn";`
     )
 );
+
+fs.writeFileSync(
+  "./electron/node_modules/@modelcontextprotocol/sdk/dist/client/stdio.js",
+  fs
+    .readFileSync(
+      "./electron/node_modules/@modelcontextprotocol/sdk/dist/client/stdio.js"
+    )
+    .toString()
+    .replace(
+      `env: (_b = this._serverParams.env) !== null && _b !== void 0 ? _b : getDefaultEnvironment(),`,
+      `env: (_b = this._serverParams.env) !== null && _b !== void 0 ? Object.assign(getDefaultEnvironment(), _b) : getDefaultEnvironment(),`
+    )
+);
+
+
 if (
   !fs
     .readFileSync(
@@ -43,6 +58,7 @@ import {EventSource} from 'eventsource'`
       )
   );
 }
+
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
