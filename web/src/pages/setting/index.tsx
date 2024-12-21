@@ -78,10 +78,10 @@ export function Setting() {
             }}
             autoComplete="off"
           >
-            <Form.Item label="开机启动" name="isAutoLauncher">
+            <Form.Item label="Power on" name="isAutoLauncher">
               <Switch
-                checkedChildren="开启"
-                unCheckedChildren="关闭"
+                checkedChildren="Start"
+                unCheckedChildren="Close"
                 onChange={async (value) => {
                   AppSetting.get().isAutoLauncher = value;
                   await AppSetting.save();
@@ -95,19 +95,6 @@ export function Setting() {
               ></Switch>
             </Form.Item>
 
-            {/* <Form.Item label="language" name="currLang">
-              <Select
-                style={{ width: "400px" }}
-                onChange={(e) => {
-                  setCurrLang(e);
-                  window.location.reload();
-                }}
-                options={[
-                  { value: "zhCN", label: "中文" },
-                  { value: "enUS", label: "English" },
-                ]}
-              />
-            </Form.Item> */}
             <Form.Item label="Github" name="234">
               <a
                 target="_blank"
@@ -132,7 +119,8 @@ export function Setting() {
             </Form.Item>
           </Form>
           <div className="text-red-500">
-            本软件是免费软件，欢迎大家关注我，我将带来跟多的工具类软件。
+            This software is free and OpenSource. Feel free to follow me, and I
+            will bring more utility software.
           </div>
           <Form
             layout="horizontal"
@@ -145,7 +133,7 @@ export function Setting() {
             }}
             autoComplete="off"
           >
-            <Form.Item label="作者邮箱" name="2sd">
+            <Form.Item label="Email" name="2sd">
               <a href="mailto:develop@dadigua.men">0laopo0@gmail.com</a>
             </Form.Item>
             <Form.Item label="小红书" name="23xvzx">
@@ -158,7 +146,7 @@ export function Setting() {
             </Form.Item>
             <Form.Item label="X(Twitter)" name="23">
               <a target="_blank" href="https://x.com/ddg85479319">
-                大地瓜的Twitter
+                Twitter
               </a>
             </Form.Item>
             <Form.Item label="Bilibili" name="23xvzx">

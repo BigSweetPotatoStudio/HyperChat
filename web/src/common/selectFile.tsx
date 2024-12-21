@@ -101,7 +101,9 @@ export function SelectFile(props: {
         }}
         icon={<UploadOutlined />}
       >
-        {props.type == "openDirectory" ? "选择或拖拽文件夹" : "选择或拖拽文件"}
+        {props.type == "openDirectory"
+          ? "Select or Drop Folder"
+          : "Select or Drop File"}
       </Button>
 
       {value ? (

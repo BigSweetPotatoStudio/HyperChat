@@ -12,7 +12,7 @@ interface Window {
   fetchErrorHandler: any;
   injectedRN: boolean;
   MyWebView: any;
-  tranlate: any;
+  translate: any;
   // clarity: any;
 }
 

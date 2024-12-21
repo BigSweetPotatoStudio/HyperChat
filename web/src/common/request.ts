@@ -39,7 +39,7 @@ export async function request(
         !options.hideMsg &&
           res.message &&
           Modal.error({
-            title: "提示",
+            title: "Tip",
             content: res.message,
           });
         throw new Error(res.message);

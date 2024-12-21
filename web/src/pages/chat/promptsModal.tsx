@@ -57,20 +57,17 @@ const ModalForm: React.FC<CollectionCreateFormProps> = ({
       </Form.Item>
       <Form.Item
         name="label"
-        label={"提示词名称"}
-        rules={[{ required: true, message: `请输入名称` }]}
+        label={"Name"}
+        rules={[{ required: true, message: `Please enter the name` }]}
       >
         <Input />
       </Form.Item>
       <Form.Item
         name="prompt"
-        label="提示词内容"
-        rules={[{ required: true, message: `请输入提示词内容` }]}
+        label="Prompt Content"
+        rules={[{ required: true, message: `Please enter Prompt Content` }]}
       >
-        <Input.TextArea
-          placeholder="弹幕内容必须包含该文本，如果多行匹配，请换行"
-          rows={4}
-        />
+        <Input.TextArea placeholder="Please enter Prompt Content" rows={4} />
       </Form.Item>
     </Form>
   );
@@ -94,7 +91,7 @@ export const PromptsModal: React.FC<CollectionCreateFormModalProps> = ({
     <Modal
       width={800}
       open={open}
-      title={"规则"}
+      title={"Prompt"}
       okButtonProps={{ autoFocus: true }}
       onCancel={onCancel}
       destroyOnClose

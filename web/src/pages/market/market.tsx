@@ -3,7 +3,7 @@ import React, { useCallback, useEffect, useRef, useState } from "react";
 export function Market() {
   return (
     <div>
-      <h1>MCP市场：</h1>
+      <h1>MCP Market</h1>
       <div>
         <a href="https://mcp.so/">mcp.so</a>
       </div>

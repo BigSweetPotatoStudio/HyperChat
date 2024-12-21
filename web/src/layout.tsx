@@ -182,7 +182,7 @@ export function Layout() {
                         }
                       }}
                     >
-                      🧠大模型
+                      🧠LLM
                     </Button>
                     <Select
                       value={currLang}
@@ -214,8 +214,6 @@ export function Layout() {
           headerTitleRender={(logo, title, _) => {
             return <Link to="home">HyperChat</Link>;
           }}
-          // logo={<div></div>}
-          // title={"大地瓜AI工具箱"}
           menuFooterRender={(props) => {
             if (props?.collapsed) return undefined;
             return (
@@ -225,7 +223,7 @@ export function Layout() {
                   paddingBlockStart: 12,
                 }}
               >
-                欢迎使用
+                Welcome to use
               </div>
             );
           }}
@@ -251,7 +249,7 @@ export function Layout() {
           open={isToolsShow}
           onCancel={() => setIsToolsShow(false)}
           maskClosable
-          title="MCP 服务列表"
+          title="MCP Service List"
           onOk={() => setIsToolsShow(false)}
           cancelButtonProps={{ style: { display: "none" } }}
         >
@@ -267,7 +265,7 @@ export function Layout() {
                 key: "name",
               },
               {
-                title: "状态",
+                title: "status",
                 dataIndex: "status",
                 key: "status",
                 render: (text, record, index) => (
@@ -281,7 +279,7 @@ export function Layout() {
                 ),
               },
               {
-                title: "操作",
+                title: "Operation",
                 dataIndex: "status",
                 key: "status",
                 render: (text, record, index) => (
@@ -301,7 +299,7 @@ export function Layout() {
                         setIsAddMCPConfigOpen(true);
                       }}
                     >
-                      配置
+                      Config
                     </Button>
                     <Divider type="vertical"></Divider>
                     <Button
@@ -309,7 +307,7 @@ export function Layout() {
                       type="link"
                       onClick={async () => {
                         if (record.config.disabled) {
-                          message.error("服务已禁用");
+                          message.error("Service Disabled");
                           return;
                         }
                         await call("initMcpClients", [record.name]);
@@ -319,7 +317,7 @@ export function Layout() {
                         });
                       }}
                     >
-                      {record.status == "connected" ? "重启" : "启动"}
+                      {record.status == "connected" ? "reload" : "start"}
                     </Button>
                     <Divider type="vertical"></Divider>
                     <Button
@@ -343,7 +341,7 @@ export function Layout() {
                         });
                       }}
                     >
-                      {record.config.disabled ? "启用" : "禁用"}
+                      {record.config.disabled ? "enable" : "disable"}
                     </Button>
                   </div>
                 ),
@@ -352,7 +350,6 @@ export function Layout() {
             footer={() => {
               return (
                 <div className="text-center">
-             
                   <Button
                     type="link"
                     onClick={() => {
@@ -360,16 +357,16 @@ export function Layout() {
                       setIsAddMCPConfigOpen(true);
                     }}
                   >
-                    添加MCP
+                    Add MCP
                   </Button>
                   <Button
                     type="link"
                     onClick={async () => {
-                      let p = await call("pathJoin",["mcp.json"])
-                      await call("openExplorer",[p])
+                      let p = await call("pathJoin", ["mcp.json"]);
+                      await call("openExplorer", [p]);
                     }}
                   >
-                    打开配置文件
+                    Open the configuration file
                   </Button>
                 </div>
               );
@@ -378,7 +375,7 @@ export function Layout() {
         </Modal>
         <Modal
           width={600}
-          title="配置MCP"
+          title="Configure MCP"
           open={isAddMCPConfigOpen}
           okButtonProps={{ autoFocus: true, htmlType: "submit" }}
           cancelButtonProps={{ style: { display: "none" } }}
@@ -393,7 +390,7 @@ export function Layout() {
               }}
               form={mcpform}
               layout="vertical"
-              name="配置MCP"
+              name="Configure MCP"
               clearOnDestroy
               onFinish={async (values) => {
                 if (values._type == "edit") {
@@ -407,7 +404,7 @@ export function Layout() {
                   try {
                     values.env = JSON.parse(values._envStr);
                   } catch {
-                    message.error("请输入合法的JSON");
+                    message.error("Please enter a valid JSON");
                     return;
                   }
 
@@ -425,7 +422,7 @@ export function Layout() {
                   try {
                     values.env = JSON.parse(values._envStr);
                   } catch {
-                    message.error("请输入合法的JSON");
+                    message.error("Please enter a valid JSON");
                     return;
                   }
 
@@ -435,7 +432,7 @@ export function Layout() {
                     status: "disconnected",
                   });
                   if (MCP_CONFIG.get().mcpServers[values._name] != null) {
-                    message.error("名称已存在");
+                    message.error("Name already exists");
                     return;
                   }
                   MCP_CONFIG.get().mcpServers[values._name] = values;
@@ -455,33 +452,33 @@ export function Layout() {
           </Form.Item>
           <Form.Item
             name="_name"
-            label="名称"
-            rules={[{ required: true, message: "请输入" }]}
+            label="Name"
+            rules={[{ required: true, message: "Please enter" }]}
           >
             <Input
               disabled={mcpform.getFieldValue("_type") == "edit"}
-              placeholder="请输入名称"
+              placeholder="Please enter the name"
             ></Input>
           </Form.Item>
           <Form.Item
             name="command"
             label="command"
-            rules={[{ required: true, message: "请输入" }]}
+            rules={[{ required: true, message: "Please enter" }]}
           >
-            <Input placeholder="请输入command"></Input>
+            <Input placeholder="Please enter command"></Input>
           </Form.Item>
           <Form.Item name="_argsStr" label="args">
-            <Input placeholder="请输入args"></Input>
+            <Input placeholder="Please enter args"></Input>
           </Form.Item>
 
           <Form.Item name="_envStr" label="env">
-            <Input.TextArea placeholder="请输入env"></Input.TextArea>
+            <Input.TextArea placeholder="Please enter env"></Input.TextArea>
           </Form.Item>
         </Modal>
 
         <Modal
           width={800}
-          title="我的大模型"
+          title="My LLM Models"
           open={isModelConfigOpen}
           cancelButtonProps={{ style: { display: "none" } }}
           onOk={() => {
@@ -501,7 +498,7 @@ export function Layout() {
                     setIsAddModelConfigOpen(true);
                   }}
                 >
-                  添加
+                  Add
                 </Button>
               </div>
             )}
@@ -510,19 +507,19 @@ export function Layout() {
             dataSource={GPT_MODELS.get().data}
             columns={[
               {
-                title: "名称",
+                title: "Name",
                 dataIndex: "name",
                 key: "name",
                 width: 200,
               },
               {
-                title: "大模型",
+                title: "LLM",
                 dataIndex: "model",
                 key: "model",
                 width: 200,
               },
               {
-                title: "操作",
+                title: "Operation",
                 dataIndex: "key",
                 key: "key",
                 width: 200,
@@ -535,12 +532,12 @@ export function Layout() {
                         setIsAddModelConfigOpen(true);
                       }}
                     >
-                      修改
+                      Edit
                     </Button>
                     <Divider type="vertical"></Divider>
                     <Popconfirm
-                      title="确认"
-                      description="是否删除?"
+                      title="Confirm"
+                      description="Confirm Delete?"
                       onConfirm={async () => {
                         GPT_MODELS.get().data = GPT_MODELS.get().data.filter(
                           (e) => e.key != record.key,
@@ -550,10 +547,10 @@ export function Layout() {
                         EVENT.fire("refresh");
                       }}
                     >
-                      <Button type="link">删除</Button>
+                      <Button type="link">Delete</Button>
                     </Popconfirm>
                     <Divider type="vertical"></Divider>
-                    <Tooltip title="设置默认">
+                    <Tooltip title="Set default">
                       <Button
                         type="link"
                         onClick={async () => {
@@ -566,7 +563,7 @@ export function Layout() {
                           EVENT.fire("refresh");
                         }}
                       >
-                        置顶
+                        Top
                       </Button>
                     </Tooltip>
                   </div>
@@ -577,7 +574,7 @@ export function Layout() {
         </Modal>
         <Modal
           width={600}
-          title="配置大模型"
+          title="Configure LLM"
           open={isAddModelConfigOpen}
           okButtonProps={{ autoFocus: true, htmlType: "submit" }}
           cancelButtonProps={{ style: { display: "none" } }}
@@ -621,27 +618,27 @@ export function Layout() {
           <Form.Item
             name="baseURL"
             label="baseURL"
-            rules={[{ required: true, message: "请输入" }]}
+            rules={[{ required: true, message: "Please enter" }]}
           >
-            <Input placeholder="请输入baseURL"></Input>
+            <Input placeholder="Please enter baseURL"></Input>
           </Form.Item>
           <Form.Item
             name="apiKey"
             label="apiKey"
-            rules={[{ required: true, message: "请输入" }]}
+            rules={[{ required: true, message: "Please enter" }]}
           >
-            <Input placeholder="请输入apiKey"></Input>
+            <Input placeholder="Please enter apiKey"></Input>
           </Form.Item>
 
           <Form.Item
             name="model"
             label="model"
-            rules={[{ required: true, message: "请输入" }]}
+            rules={[{ required: true, message: "Please enter" }]}
           >
-            <Input placeholder="请输入model"></Input>
+            <Input placeholder="Please enter the model"></Input>
           </Form.Item>
-          <Form.Item name="name" label="别名">
-            <Input placeholder="默认是模型名称"></Input>
+          <Form.Item name="name" label="Alias">
+            <Input placeholder="The default is the model name"></Input>
           </Form.Item>
         </Modal>
       </div>

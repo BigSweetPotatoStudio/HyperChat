@@ -46,7 +46,7 @@ export function MyAttachR(props: {
   return (
     <>
       <Flex gap="middle" className="overflow-x-auto">
-        {props.resourceResList.length > 0 && "资源: "}
+        {props.resourceResList.length > 0 && "Resources: "}
         {props.resourceResList.map((x, index) =>
           x.contents
             .map((content, index) => {
@@ -62,7 +62,7 @@ export function MyAttachR(props: {
                       onClick={() => {
                         Modal.info({
                           width: "80%",
-                          title: "提示",
+                          title: "Tip",
                           content: <div>{content.text as string}</div>,
                         });
                       }}
@@ -90,7 +90,7 @@ export function MyAttachR(props: {
         )}
       </Flex>
       <Flex gap="middle" className="overflow-x-auto">
-        {props.promptResList.length > 0 && "提示: "}
+        {props.promptResList.length > 0 && "Prompts: "}
         {props.promptResList.map((x, index) => {
           let s = JSON.stringify(x.messages);
           return (
@@ -104,7 +104,7 @@ export function MyAttachR(props: {
                   onClick={() => {
                     Modal.info({
                       width: "80%",
-                      title: "提示",
+                      title: "Tip",
                       content: <div>{s}</div>,
                     });
                   }}
