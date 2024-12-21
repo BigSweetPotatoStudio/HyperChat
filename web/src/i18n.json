@@ -1,1 +1,374 @@
-{}
+{
+    "HyperChat": {
+        "en": "HyperChat",
+        "zh": "HyperChat"
+    },
+    "Chat": {
+        "en": "Chat",
+        "zh": "聊天"
+    },
+    "MCP Market": {
+        "en": "MCP Market",
+        "zh": "MCP市场"
+    },
+    "Settings": {
+        "en": "Settings",
+        "zh": "设置"
+    },
+    "💻MCP": {
+        "en": "💻MCP",
+        "zh": "💻MCP"
+    },
+    "🧠LLM": {
+        "en": "🧠LLM",
+        "zh": "🧠LLM"
+    },
+    "English": {
+        "en": "English",
+        "zh": "英语"
+    },
+    "New Chat": {
+        "en": "New Chat",
+        "zh": "新聊天"
+    },
+    "Dialogue Records": {
+        "en": "Dialogue Records",
+        "zh": "对话记录"
+    },
+    "Nothing 🤐": {
+        "en": "Nothing 🤐",
+        "zh": "没有了 🤐"
+    },
+    "Welcome": {
+        "en": "Welcome",
+        "zh": "欢迎"
+    },
+    "Start chatting": {
+        "en": "Start chatting",
+        "zh": "开始聊天"
+    },
+    "Add": {
+        "en": "Add",
+        "zh": "添加"
+    },
+    "Edit": {
+        "en": "Edit",
+        "zh": "编辑"
+    },
+    "Please add a LLM model": {
+        "en": "Please add a LLM model",
+        "zh": "请添加一个LLM模型"
+    },
+    "token: ": {
+        "en": "token: ",
+        "zh": "token: "
+    },
+    "Start inputting": {
+        "en": "Start inputting",
+        "zh": "开始输入"
+    },
+    "mcp.so": {
+        "en": "mcp.so",
+        "zh": "mcp.so"
+    },
+    "pulsemcp": {
+        "en": "pulsemcp",
+        "zh": "pulsemcp"
+    },
+    "glama": {
+        "en": "glama",
+        "zh": "glama"
+    },
+    "smithery": {
+        "en": "smithery",
+        "zh": ""
+    },
+    "Power on": {
+        "en": "Power on",
+        "zh": "开机启动"
+    },
+    "Start": {
+        "en": "Start",
+        "zh": "开始"
+    },
+    "Close": {
+        "en": "Close",
+        "zh": "关闭"
+    },
+    "Github": {
+        "en": "Github",
+        "zh": "Github"
+    },
+    "https://github.com/BigSweetPotatoStudio/HyperChat": {
+        "en": "https://github.com/BigSweetPotatoStudio/HyperChat",
+        "zh": "https://github.com/BigSweetPotatoStudio/HyperChat"
+    },
+    "Telegram": {
+        "en": "Telegram",
+        "zh": "Telegram"
+    },
+    "https://t.me/dadigua001": {
+        "en": "https://t.me/dadigua001",
+        "zh": "https://t.me/dadigua001"
+    },
+    "Email": {
+        "en": "Email",
+        "zh": "电子邮件"
+    },
+    "0laopo0@gmail.com": {
+        "en": "0laopo0@gmail.com",
+        "zh": "0laopo0@gmail.com"
+    },
+    "X(Twitter)": {
+        "en": "X(Twitter)",
+        "zh": "X(推特)"
+    },
+    "Twitter": {
+        "en": "Twitter",
+        "zh": "推特"
+    },
+    "Bilibili": {
+        "en": "Bilibili",
+        "zh": "哔哩哔哩"
+    },
+    "MCP Service List": {
+        "en": "MCP Service List",
+        "zh": "MCP 服务列表"
+    },
+    "client": {
+        "en": "client",
+        "zh": "客户"
+    },
+    "status": {
+        "en": "status",
+        "zh": "状态"
+    },
+    "Operation": {
+        "en": "Operation",
+        "zh": "操作"
+    },
+    "fetch": {
+        "en": "fetch",
+        "zh": "获取"
+    },
+    "connected": {
+        "en": "connected",
+        "zh": "连接的"
+    },
+    "Config": {
+        "en": "Config",
+        "zh": "配置"
+    },
+    "reload": {
+        "en": "reload",
+        "zh": "重载"
+    },
+    "disable": {
+        "en": "disable",
+        "zh": "禁用"
+    },
+    "disabled": {
+        "en": "disabled",
+        "zh": "残疾"
+    },
+    "start": {
+        "en": "start",
+        "zh": "开始"
+    },
+    "enable": {
+        "en": "enable",
+        "zh": "启用"
+    },
+    "Add MCP": {
+        "en": "Add MCP",
+        "zh": "添加 MCP"
+    },
+    "Open the configuration file": {
+        "en": "Open the configuration file",
+        "zh": "打开配置文件"
+    },
+    "Cancel": {
+        "en": "Cancel",
+        "zh": "取消"
+    },
+    "My LLM Models": {
+        "en": "My LLM Models",
+        "zh": "我的LLM模型"
+    },
+    "Name": {
+        "en": "Name",
+        "zh": "名称"
+    },
+    "LLM": {
+        "en": "LLM",
+        "zh": "大型语言模型"
+    },
+    "Delete": {
+        "en": "Delete",
+        "zh": "删除"
+    },
+    "Top": {
+        "en": "Top",
+        "zh": "置顶"
+    },
+    "Configure MCP": {
+        "en": "Configure MCP",
+        "zh": "配置MCP"
+    },
+    "_type": {
+        "en": "_type",
+        "zh": "_type"
+    },
+    "Please enter the name": {
+        "en": "Please enter the name",
+        "zh": "请输入名字"
+    },
+    "command": {
+        "en": "command",
+        "zh": "命令"
+    },
+    "Please enter command": {
+        "en": "Please enter command",
+        "zh": "请输入命令"
+    },
+    "args": {
+        "en": "args",
+        "zh": "参数"
+    },
+    "Please enter args": {
+        "en": "Please enter args",
+        "zh": "请输⼊参数"
+    },
+    "env": {
+        "en": "env",
+        "zh": "环境"
+    },
+    "Please enter env": {
+        "en": "Please enter env",
+        "zh": "请输入env"
+    },
+    "Please enter": {
+        "en": "Please enter",
+        "zh": "请输入"
+    },
+    "Configure LLM": {
+        "en": "Configure LLM",
+        "zh": "配置LLM"
+    },
+    "key": {
+        "en": "key",
+        "zh": "钥匙"
+    },
+    "baseURL": {
+        "en": "baseURL",
+        "zh": "基本网址"
+    },
+    "Please enter baseURL": {
+        "en": "Please enter baseURL",
+        "zh": "请输入基本网址"
+    },
+    "apiKey": {
+        "en": "apiKey",
+        "zh": "apiKey"
+    },
+    "Please enter apiKey": {
+        "en": "Please enter apiKey",
+        "zh": "请输入apiKey"
+    },
+    "model": {
+        "en": "model",
+        "zh": "模型"
+    },
+    "Please enter the model": {
+        "en": "Please enter the model",
+        "zh": "请输入型号"
+    },
+    "Alias": {
+        "en": "Alias",
+        "zh": "别名"
+    },
+    "The default is the model name": {
+        "en": "The default is the model name",
+        "zh": "默认是模型名称"
+    },
+    "Choose a prompt from below, and let's start chatting": {
+        "en": "Choose a prompt from below, and let's start chatting",
+        "zh": "从下面选择一个提示，让我们开始聊天"
+    },
+    "Reset": {
+        "en": "Reset",
+        "zh": "重置"
+    },
+    "Clients and Tools": {
+        "en": "Clients and Tools",
+        "zh": "客户和工具"
+    },
+    "Resources": {
+        "en": "Resources",
+        "zh": "资源"
+    },
+    "Prompts": {
+        "en": "Prompts",
+        "zh": "提示"
+    },
+    "Select LLM": {
+        "en": "Select LLM",
+        "zh": "选择LLM"
+    },
+    "Token Usage": {
+        "en": "Token Usage",
+        "zh": "Token使用"
+    },
+    "Exit Edit": {
+        "en": "Exit Edit",
+        "zh": "退出编辑"
+    },
+    "Markdown": {
+        "en": "Markdown",
+        "zh": "Markdown"
+    },
+    "Text": {
+        "en": "Text",
+        "zh": "文本"
+    },
+    "Tool": {
+        "en": "Tool",
+        "zh": "工具"
+    },
+    "tools": {
+        "en": "tools",
+        "zh": "工具"
+    },
+    "Resources: ": {
+        "en": "Resources: ",
+        "zh": "资源："
+    },
+    "Clear": {
+        "en": "Clear",
+        "zh": "清楚"
+    },
+    "Regenerate": {
+        "en": "Regenerate",
+        "zh": "再生"
+    },
+    "✅Completed": {
+        "en": "✅Completed",
+        "zh": "✅完成"
+    },
+    "Tool Call Result": {
+        "en": "Tool Call Result",
+        "zh": "工具调用结果"
+    },
+    "Tool Call": {
+        "en": "Tool Call",
+        "zh": "工具调用"
+    },
+    "Tool Name: ": {
+        "en": "Tool Name: ",
+        "zh": "工具名称: "
+    },
+    "Tool Arguments: ": {
+        "en": "Tool Arguments: ",
+        "zh": "工具参数: "
+    }
+}

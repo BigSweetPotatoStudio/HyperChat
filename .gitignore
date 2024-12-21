@@ -27,3 +27,4 @@ inputs/
 outputs/
 __pycache__/
 dist/
+.env

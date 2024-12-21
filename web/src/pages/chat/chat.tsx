@@ -208,7 +208,7 @@ export const Chat = () => {
             onClick={() => {
               Modal.info({
                 width: "80%",
-                title: "提示",
+                title: "Tip",
                 content: <div>{x.content as string}</div>,
               });
             }}
@@ -259,7 +259,7 @@ export const Chat = () => {
                       refresh();
                     }}
                   >
-                    清除
+                    Clear
                   </Button>
                   <Button
                     size="small"
@@ -271,7 +271,7 @@ export const Chat = () => {
                       onRequest(x.content as string);
                     }}
                   >
-                    重新生成
+                    Regenerate
                   </Button>
                 </>
               }
@@ -312,7 +312,7 @@ export const Chat = () => {
               onClick={() => {
                 Modal.info({
                   width: "80%",
-                  title: "工具调用结果",
+                  title: "Tool Call Result",
                   content: (
                     <div>
                       <pre
@@ -328,7 +328,7 @@ export const Chat = () => {
                 });
               }}
             >
-              {x.content_status == "error" ? "❌" : "✅已完成"}
+              {x.content_status == "error" ? "❌" : "✅Completed"}
             </span>
           </Tooltip>
         ),
@@ -366,7 +366,7 @@ export const Chat = () => {
                       onClick={() => {
                         Modal.info({
                           width: "80%",
-                          title: "工具调用",
+                          title: "Tool Call",
                           content: (
                             <div>
                               <pre
@@ -375,7 +375,7 @@ export const Chat = () => {
                                   wordWrap: "break-word",
                                 }}
                               >
-                                <span>工具名称: </span>
+                                <span>Tool Name: </span>
                                 {x.tool_calls[0].function.name}
                               </pre>
                               <pre
@@ -384,7 +384,7 @@ export const Chat = () => {
                                   wordWrap: "break-word",
                                 }}
                               >
-                                <span>工具参数: </span>{" "}
+                                <span>Tool Arguments: </span>{" "}
                                 {x.tool_calls[0].function.arguments}
                               </pre>
                             </div>
@@ -431,7 +431,7 @@ export const Chat = () => {
     );
     if (config == null) {
       if (GPT_MODELS.get().data.length == 0) {
-        message.error("请先添加大模型");
+        message.error("Please add LLM first");
       }
       config = GPT_MODELS.get().data[0];
     }
@@ -522,12 +522,12 @@ export const Chat = () => {
                   currentChatReset();
                 }}
               >
-                新建聊天
+                New Chat
               </Button>
               <div>
                 <Space className="mt-2">
                   <CommentOutlined />
-                  <span>对话记录</span>
+                  <span>Dialogue Records</span>
                 </Space>
               </div>
               <div
@@ -547,7 +547,7 @@ export const Chat = () => {
                       <Spin indicator={<RedoOutlined spin />} size="small" />
                     </div>
                   }
-                  endMessage={<Divider plain>没有了 🤐</Divider>}
+                  endMessage={<Divider plain>Nothing 🤐</Divider>}
                   scrollableTarget="scrollableDiv"
                 >
                   <Conversations
@@ -573,12 +573,12 @@ export const Chat = () => {
                         //   icon: <EditOutlined />,
                         // },
                         {
-                          label: "收藏",
+                          label: "Star",
                           key: "star",
                           icon: <StarOutlined />,
                         },
                         {
-                          label: "删除",
+                          label: "Remove",
                           key: "remove",
                           icon: <DeleteOutlined />,
                           danger: true,
@@ -596,7 +596,7 @@ export const Chat = () => {
                             data.filter((x) => x.key !== conversation.key),
                           );
                           refresh();
-                          message.success("删除成功");
+                          message.success("Delete Success");
                         }
                         if (menuInfo.key === "star") {
                           let index = ChatHistory.get().data.findIndex(
@@ -630,12 +630,12 @@ export const Chat = () => {
                 <div>
                   <Welcome
                     icon="👋"
-                    title="欢迎"
+                    title="Welcome"
                     className="mb-4"
                     description={
                       GPTS.get().data.length > 0
-                        ? "选择下面的提示词，开始聊天吧"
-                        : "开始聊天"
+                        ? "Choose a prompt from below, and let's start chatting"
+                        : "Start chatting"
                     }
                   />
                   <div className="flex items-center">
@@ -670,7 +670,7 @@ export const Chat = () => {
                                 <EditOutlined />
                               </Button>
                               <Popconfirm
-                                title="请确定是否删除"
+                                title="Are you sure to delete?"
                                 onConfirm={() => {
                                   let index = GPTS.get().data.findIndex(
                                     (y) => y.key === x.key,
@@ -696,7 +696,7 @@ export const Chat = () => {
                           setIsOpenPromptsModal(true);
                         }}
                       >
-                        添加
+                        Add
                       </Button>
                       {mode == "edit" ? (
                         <Button
@@ -704,7 +704,7 @@ export const Chat = () => {
                             setMode(undefined);
                           }}
                         >
-                          退出编辑
+                          Exit Edit
                         </Button>
                       ) : (
                         <Button
@@ -712,7 +712,7 @@ export const Chat = () => {
                             setMode("edit");
                           }}
                         >
-                          编辑
+                          Edit
                         </Button>
                       )}
                     </Space.Compact>
@@ -724,7 +724,7 @@ export const Chat = () => {
                 items={currentChat.current.messages?.map(format)}
               />
               <div className="">
-                {/* <Tooltip title="取消请求">
+                {/* <Tooltip title="Cancel">
                   <span
                     className="cursor-pointer"
                     onClick={() => {
@@ -739,7 +739,7 @@ export const Chat = () => {
                   </span>
                 </Tooltip>
                 <Divider type="vertical" /> */}
-                <Tooltip title="重新开始">
+                <Tooltip title="Reset">
                   <span
                     className="cursor-pointer"
                     onClick={() => {
@@ -754,7 +754,7 @@ export const Chat = () => {
                   </span>
                 </Tooltip>
                 <Divider type="vertical" />
-                <Tooltip title="客户端和工具">
+                <Tooltip title="Clients and Tools">
                   <span
                     className="cursor-pointer"
                     onClick={() => {
@@ -771,7 +771,7 @@ export const Chat = () => {
                   </span>
                 </Tooltip>
                 <Divider type="vertical" />
-                <Tooltip title="资源" placement="bottom">
+                <Tooltip title="Resources" placement="bottom">
                   <Dropdown
                     placement="topRight"
                     menu={{
@@ -806,7 +806,7 @@ export const Chat = () => {
                   </Dropdown>
                 </Tooltip>
                 <Divider type="vertical" />
-                <Tooltip title="提示词" placement="bottom">
+                <Tooltip title="Prompts" placement="bottom">
                   <Dropdown
                     placement="topRight"
                     menu={{
@@ -846,14 +846,14 @@ export const Chat = () => {
                   </Dropdown>
                 </Tooltip>
                 <Divider type="vertical" />
-                <Tooltip title="选择大模型">
+                <Tooltip title="Select LLM">
                   🧠
                   <Select
                     size="small"
                     placeholder={
                       GPT_MODELS.get().data.length > 0
                         ? GPT_MODELS.get().data[0].name
-                        : "请添加大模型"
+                        : "Please add a LLM model"
                     }
                     className="w-60"
                     allowClear
@@ -871,7 +871,7 @@ export const Chat = () => {
                   ></Select>
                 </Tooltip>
                 <Divider type="vertical" />
-                <Tooltip title="Token使用情况">
+                <Tooltip title="Token Usage">
                   <span className="cursor-pointer">
                     token: {client?.totalTokens || 0}
                   </span>
@@ -883,12 +883,12 @@ export const Chat = () => {
                   setResourceResList(
                     resourceResList.filter((v) => v.uid != x.uid),
                   );
-                  message.success("删除成功");
+                  message.success("Delete Success");
                 }}
                 promptResList={promptResList}
                 promptResListRemove={(x) => {
                   setPromptResList(promptResList.filter((v) => v.uid != x.uid));
-                  message.success("删除成功");
+                  message.success("Delete Success");
                 }}
               ></MyAttachR>
 
@@ -907,7 +907,7 @@ export const Chat = () => {
                   setValue("");
                   onRequest(s);
                 }}
-                placeholder="开始输入"
+                placeholder="Start inputting"
               />
             </Flex>
             {/* <Divider type="vertical" style={{ height: "100%" }} />
@@ -968,7 +968,7 @@ export const Chat = () => {
           open={isToolsShow}
           onCancel={() => setIsToolsShow(false)}
           maskClosable
-          title="工具"
+          title="Tool"
           onOk={() => setIsToolsShow(false)}
           cancelButtonProps={{ style: { display: "none" } }}
         >
@@ -1066,20 +1066,13 @@ export const Chat = () => {
             </Form>
           )}
         >
-          {/* <Form.Item
-            name="baseURL"
-            label="baseURL"
-            rules={[{ required: true, message: "请输入" }]}
-          >
-            <Input placeholder="请输入baseURL"></Input>
-          </Form.Item> */}
           {fillPromptFormItems.map((x) => {
             return (
               <Form.Item
                 key={x.name}
                 name={x.name}
                 label={x.name}
-                rules={[{ required: x.required, message: "请输入" }]}
+                rules={[{ required: x.required, message: "Please enter" }]}
               >
                 <Input placeholder={x.description}></Input>
               </Form.Item>

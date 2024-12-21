@@ -29,26 +29,26 @@ let route: RouteType = {
   routes: [
     {
       path: "/home",
-      name: "首页",
+      name: "Home",
       hideInMenu: true,
       component: <Chat />,
     },
     {
       path: "/Chat",
-      name: "聊天",
+      name: "Chat",
       icon: "💬",
       component: <Chat />,
     },
     {
       path: "/Market",
-      name: "MCP市场",
+      name: "MCP Market",
       icon: "🛒",
       component: <Market />,
     },
 
     {
       path: "/Setting",
-      name: "设置",
+      name: "Settings",
       icon: "⚙️",
       component: <Setting />,
     },
