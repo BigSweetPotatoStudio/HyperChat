@@ -1,3 +1,4 @@
+import log from "electron-log";
 import {
   app,
   BrowserWindow,
@@ -29,8 +30,6 @@ import AdmZip from "adm-zip";
 import { pipeline } from "stream";
 import { promisify } from "util";
 import puppeteer from "puppeteer-core";
-log.info("3");
-import log from "electron-log";
 import { v4 as uuidV4 } from "uuid";
 import Screenshots from "electron-screenshots";
 import { getLocalIP } from "./common/util.mjs";
@@ -38,7 +37,7 @@ import { autoLauncher } from "./common/autoLauncher.mjs";
 import { clipboardHistoryData, electronData } from "./common/data.mjs";
 import { commandHistory, CommandStatus } from "./command_history.mjs";
 import { appDataDir } from "./const.mjs";
-log.info("4");
+
 import {
   closeMcpClients,
   getMcpClients,
