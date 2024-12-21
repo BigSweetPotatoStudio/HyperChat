@@ -1,4 +1,4 @@
-name: Build and Package Electron App
+name: HyperChat
 
 # on: [push, pull_request]
 on:
@@ -56,13 +56,13 @@ jobs:
         run: cross-env MYRUNENV=github npm run prod
 
       - name: upload artifacts
-        uses: actions/upload-artifact@v3.0.0
+        uses: actions/upload-artifact@v4
         with:
           name: ${{ matrix.os }}
           path: dist
 
       - name: Publish Release
-        uses: softprops/action-gh-release@v1
+        uses: softprops/action-gh-release@v2
         if: startsWith(github.ref, 'refs/tags/')
         with:
           files: |

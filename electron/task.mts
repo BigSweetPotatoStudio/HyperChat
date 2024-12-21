@@ -5,7 +5,7 @@ import { promisify } from "util";
 import { createClient } from "webdav";
 import packageJSON from "./package.json";
 import AdmZip from "adm-zip";
-import crypto from "crypto";
+
 $.verbose = true;
 if (os.platform() == "win32") {
   usePowerShell();
