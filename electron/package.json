@@ -11,7 +11,7 @@
   "version": "0.0.4",
   "description": "*",
   "main": "js/main.js",
-  "author": "Intellivance Team",
+  "author": "Dadigua",
   "license": "MIT",
   "devDependencies": {
     "@types/node": "^20.14.10",
