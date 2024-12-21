@@ -352,6 +352,7 @@ export function Layout() {
             footer={() => {
               return (
                 <div className="text-center">
+             
                   <Button
                     type="link"
                     onClick={() => {
@@ -360,6 +361,15 @@ export function Layout() {
                     }}
                   >
                     添加MCP
+                  </Button>
+                  <Button
+                    type="link"
+                    onClick={async () => {
+                      let p = await call("pathJoin",["mcp.json"])
+                      await call("openExplorer",[p])
+                    }}
+                  >
+                    打开配置文件
                   </Button>
                 </div>
               );

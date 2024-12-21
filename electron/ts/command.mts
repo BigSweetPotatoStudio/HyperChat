@@ -262,7 +262,7 @@ export class CommandFactory {
   }
 
   async openExplorer(p) {
-    return shell.showItemInFolder(p.replaceAll("/", "\\"));
+    return shell.showItemInFolder(p);
   }
 }
 
