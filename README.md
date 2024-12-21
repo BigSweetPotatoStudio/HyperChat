@@ -8,6 +8,9 @@ MCP出来后感觉这个很有搞头，本来想开发一个工具箱，给MCP�
 
 ### MCP: 
 
+[![Build](https://github.com/BigSweetPotatoStudio/HyperChat/actions/workflows/build.yml/badge.svg)](https://github.com/BigSweetPotatoStudio/HyperChat/actions/workflows/build.yml)
+
+- [x] 🪟Windows+🍏MacOS
 - [x] Resources 支持
 - [x] Prompts 部分支持
 - [x] Tools 支持
