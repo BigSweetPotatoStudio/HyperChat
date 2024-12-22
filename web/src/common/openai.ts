@@ -4,6 +4,7 @@ import { call } from "./call";
 import * as MCPTypes from "@modelcontextprotocol/sdk/types.js";
 import { X } from "lucide-react";
 import { message as antdmessage } from "antd";
+import { e } from "./service";
 
 export type MyMessage = OpenAI.Chat.Completions.ChatCompletionMessageParam & {
   content_status?: "success" | "error";
@@ -27,7 +28,7 @@ export class OpenAiChannel {
     },
     public messages: MyMessage[],
   ) {
-    options.stream = options.stream || true;
+    options.stream = options.stream || false;
     this.openai = new OpenAI({
       baseURL: options.baseURL,
       apiKey: options.apiKey, // This is the default and can be omitted
@@ -57,12 +58,22 @@ export class OpenAiChannel {
     if (promptResList.length > 0) {
       for (let p of promptResList) {
         for (let m of p.messages) {
-          if (m.content.text) {
+          if (m.content.type == "text") {
             this.messages.push({
               role: m.role,
               content: m.content.text as string,
               content_from: p.call_name as string,
             });
+          } else if (m.content.type == "resource") {
+            if (m.content.resource.text) {
+              this.messages.push({
+                role: m.role,
+                content: m.content.resource.text as string,
+                content_from: p.call_name as string,
+              });
+            } else {
+              antdmessage.warning("resource 类型只支持文本");
+            }
           } else {
             antdmessage.warning("prompt 类型只支持文本");
           }
@@ -74,22 +85,18 @@ export class OpenAiChannel {
   }
   // 取消当前请求
   cancel() {
-    this.level++;
     if (this.abortController) {
       this.abortController.abort();
       this.abortController = null;
     }
   }
-  level = 0;
+  index = 0;
   async completion(
     onUpdate?: (content: string) => void,
     call_tool: boolean = true,
-    level = this.level,
+    step = 0,
   ): Promise<string> {
-    if (level != this.level) {
-      antdmessage.warning("已取消");
-      throw new Error("已取消");
-    }
+    this.index++;
     let tools;
     if (!call_tool) {
       tools = undefined;
@@ -117,6 +124,7 @@ export class OpenAiChannel {
       tool_calls: undefined,
     } as any as OpenAI.ChatCompletionMessage;
 
+    let messages = this.messages.slice();
     this.lastMessage = res;
     this.messages.push(this.lastMessage);
     onUpdate && onUpdate(content);
@@ -124,7 +132,7 @@ export class OpenAiChannel {
     if (this.options.stream) {
       const stream = await this.openai.chat.completions.create(
         {
-          messages: this.messages,
+          messages: messages,
           model: this.options.model,
           stream: true,
           tools: tools,
@@ -177,7 +185,7 @@ export class OpenAiChannel {
     } else {
       const chatCompletion = await this.openai.chat.completions.create(
         {
-          messages: this.messages,
+          messages: messages,
           model: this.options.model,
           tools: tools,
         },
@@ -259,7 +267,11 @@ export class OpenAiChannel {
         onUpdate && onUpdate("");
       }
       console.log("this.messages", this.messages);
-      return await this.completion(onUpdate, true, level);
+      return await this.completion(
+        onUpdate,
+        this.options.call_tool_step > step + 1,
+        step + 1,
+      );
     } else {
       console.log("this.messages", this.messages);
       return content;
