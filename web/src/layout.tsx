@@ -311,11 +311,15 @@ export function Layout() {
                           message.error("Service Disabled");
                           return;
                         }
-                        await call("initMcpClients", [record.name]);
-                        getClients(false).then((x) => {
-                          setClients(x);
-                          EVENT.fire("refresh");
-                        });
+                        try {
+                          await call("initMcpClients", [record.name]);
+                          getClients(false).then((x) => {
+                            setClients(x);
+                            EVENT.fire("refresh");
+                          });
+                        } catch (e) {
+                          message.error(e.message);
+                        }
                       }}
                     >
                       {record.status == "connected" ? "reload" : "start"}
@@ -330,16 +334,20 @@ export function Layout() {
                         record.config.disabled = !record.config.disabled;
 
                         await MCP_CONFIG.save();
-                        if (record.config.disabled) {
-                          await call("closeMcpClients", [record.name]);
-                        } else {
-                          await call("initMcpClients", [record.name]);
-                        }
+                        try {
+                          if (record.config.disabled) {
+                            await call("closeMcpClients", [record.name]);
+                          } else {
+                            await call("initMcpClients", [record.name]);
+                          }
 
-                        getClients(false).then((x) => {
-                          setClients(x);
-                          EVENT.fire("refresh");
-                        });
+                          getClients(false).then((x) => {
+                            setClients(x);
+                            EVENT.fire("refresh");
+                          });
+                        } catch (e) {
+                          message.error(e.message);
+                        }
                       }}
                     >
                       {record.config.disabled ? "enable" : "disable"}
