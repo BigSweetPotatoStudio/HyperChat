@@ -28,7 +28,7 @@ export class OpenAiChannel {
     },
     public messages: MyMessage[],
   ) {
-    options.stream = options.stream || false;
+    options.stream = options.stream || true;
     this.openai = new OpenAI({
       baseURL: options.baseURL,
       apiKey: options.apiKey, // This is the default and can be omitted
