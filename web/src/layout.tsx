@@ -509,6 +509,15 @@ export function Layout() {
                 >
                   Add
                 </Button>
+                <Button
+                  type="link"
+                  onClick={async () => {
+                    let p = await call("pathJoin", ["gpt_models.json"]);
+                    await call("openExplorer", [p]);
+                  }}
+                >
+                  Open the configuration file
+                </Button>
               </div>
             )}
             size="small"
