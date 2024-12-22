@@ -30,6 +30,7 @@ import {
   Form,
   Divider,
   Tooltip,
+  InputNumber,
 } from "antd";
 import enUS from "antd/locale/en_US";
 import zhCN from "antd/locale/zh_CN";
@@ -528,6 +529,7 @@ export function Layout() {
                     <Button
                       type="link"
                       onClick={async () => {
+                        form.resetFields();
                         form.setFieldsValue(record);
                         setIsAddModelConfigOpen(true);
                       }}
@@ -639,6 +641,12 @@ export function Layout() {
           </Form.Item>
           <Form.Item name="name" label="Alias">
             <Input placeholder="The default is the model name"></Input>
+          </Form.Item>
+          <Form.Item name="call_tool_step" label="Call-Tool-Step">
+            <InputNumber
+              style={{ width: "100%" }}
+              placeholder="default, the model is allowed to execute tools for 100 steps."
+            ></InputNumber>
           </Form.Item>
         </Modal>
       </div>
