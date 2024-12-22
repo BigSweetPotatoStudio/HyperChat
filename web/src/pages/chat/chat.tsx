@@ -433,6 +433,7 @@ export const Chat = () => {
       }
       config = GPT_MODELS.get().data[0];
     }
+    currentChat.current.modelKey = config.key;
     client = new OpenAiChannel(config, currentChat.current.messages);
     currentChat.current.messages = client.messages;
     refresh();
