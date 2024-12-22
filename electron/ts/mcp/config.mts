@@ -41,7 +41,7 @@ class MCPClient {
     public name: string,
     public type: "stdio" | "sse" = "stdio",
     public scope: "local" | "outer" = "outer"
-  ) { }
+  ) {}
   async callTool(functionName: string, args: any): Promise<any> {
     log.info("MCP callTool", functionName, args);
     if (this.status == "disconnected") {
@@ -124,7 +124,8 @@ class MCPClient {
     );
     const transport = new SSEClientTransport(
       new URL(
-        `http://localhost:${electronData.get().mcp_server_port}/${this.name
+        `http://localhost:${electronData.get().mcp_server_port}/${
+          this.name
         }/sse`
       )
     );
@@ -168,6 +169,9 @@ class MCPClient {
 let firstRunStatus = 0;
 
 export async function openMcpClients(clientName: string = undefined) {
+  if (clientName != null) {
+    await mcpClients[clientName].open();
+  }
   firstRunStatus == 1;
   // console.log("mcpClients", mcpClients, Object.keys(mcpClients).length);
   while (1) {
@@ -202,18 +206,18 @@ export async function openMcpClients(clientName: string = undefined) {
   });
 
   console.log(config);
-  for (let s of MyServers) {
-    let key = s.name;
-    if (mcpClients[key] == null) {
-      mcpClients[key] = new MCPClient(key, "sse", "local");
-      try {
-        await mcpClients[key].open();
-      } catch (e) {
-        log.error("openMcpClient", e);
-        continue;
-      }
-    }
-  }
+  // for (let s of MyServers) {
+  //   let key = s.name;
+  //   if (mcpClients[key] == null) {
+  //     mcpClients[key] = new MCPClient(key, "sse", "local");
+  //     try {
+  //       await mcpClients[key].open();
+  //     } catch (e) {
+  //       log.error("openMcpClient", e);
+  //       continue;
+  //     }
+  //   }
+  // }
   for (let key in config.mcpServers) {
     if (clientName != null && key != clientName) {
       continue;
