@@ -95,6 +95,16 @@ export function Setting() {
               ></Switch>
             </Form.Item>
 
+            <Form.Item label="openDevTools" name="openDevTools">
+              <Button
+                onClick={() => {
+                  call("openDevTools", []);
+                }}
+              >
+                openDevTools
+              </Button>
+            </Form.Item>
+
             <Form.Item label="Github" name="Github">
               <a
                 target="_blank"

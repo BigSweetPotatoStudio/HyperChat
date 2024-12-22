@@ -154,11 +154,9 @@ export const Chat = () => {
     getClients().then((x) => {
       setClients(x);
       getPrompts().then((x) => {
-        console.log("getPrompts", x);
         setPrompts(x);
       });
       getResourses().then((x) => {
-        console.log("getResourses", x);
         setResources(x);
       });
     });
@@ -744,9 +742,13 @@ export const Chat = () => {
                     className="cursor-pointer"
                     onClick={() => {
                       if (client) {
-                        client.clear();
-                        currentChat.current.messages = client.messages;
-                        refresh();
+                        // client.clear();
+                        // currentChat.current.messages = client.messages;
+                        let p = currentChat.current.messages.find(
+                          (x) => x.role == "system",
+                        )?.content;
+
+                        currentChatReset(p);
                       }
                     }}
                   >

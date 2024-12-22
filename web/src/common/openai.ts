@@ -22,6 +22,7 @@ export class OpenAiChannel {
       baseURL: string;
       model: string;
       apiKey: string;
+      call_tool_step?: number;
       stream?: boolean;
     },
     public messages: MyMessage[],
@@ -35,37 +36,33 @@ export class OpenAiChannel {
   }
   addMessage(
     message: MyMessage,
-    resourceResList = [],
+    resourceResList: Array<MCPTypes.ReadResourceResult> = [],
     promptResList: Array<MCPTypes.GetPromptResult> = [],
   ) {
     if (resourceResList.length > 0) {
       message.content += `
 # Try to avoid using tools and use resources directly.
       resources 1: 
-        ${JSON.stringify(resourceResList)}
-      `;
+`;
+      for (let r of resourceResList) {
+        for (let content of r.contents) {
+          if (content.text) {
+            message.content += content.text + "\n";
+          } else {
+            antdmessage.warning("resource 类型只支持文本");
+          }
+        }
+      }
     }
     if (promptResList.length > 0) {
       for (let p of promptResList) {
         for (let m of p.messages) {
-          // if (typeof message.content === "string") {
-          //   message.content = [
-          //     {
-          //       type: "text",
-          //       text: message.content,
-          //     },
-          //   ];
-          // }
           if (m.content.text) {
             this.messages.push({
               role: m.role,
               content: m.content.text as string,
               content_from: p.call_name as string,
             });
-            // message.content.push({
-            //   type: "text",
-            //   text: m.content.text as string,
-            // });
           } else {
             antdmessage.warning("prompt 类型只支持文本");
           }

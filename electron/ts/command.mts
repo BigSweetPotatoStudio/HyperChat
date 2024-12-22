@@ -255,6 +255,13 @@ export class CommandFactory {
   async openExplorer(p) {
     return shell.showItemInFolder(p);
   }
+
+  async openDevTools() {
+    const win = BrowserWindow.getFocusedWindow();
+    if (win) {
+      win.webContents.openDevTools();
+    }
+  }
 }
 
 export const Command = CommandFactory.prototype;
