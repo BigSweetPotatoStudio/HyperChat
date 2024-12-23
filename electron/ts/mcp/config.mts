@@ -37,6 +37,7 @@ class MCPClient {
   public prompts: Array<typeof MCPTypes.PromptSchema._type> = [];
   public client: MCP.Client = undefined;
   public status: string = "disconnected";
+
   constructor(
     public name: string,
     public type: "stdio" | "sse" = "stdio",
@@ -71,10 +72,10 @@ class MCPClient {
     return out;
   }
   async open() {
-    if (this.type == "stdio") {
-      await this.openStdio();
-    } else {
+    if (this.type == "sse") {
       await this.openSse();
+    } else {
+      await this.openStdio();
     }
 
     let client = this.client;
@@ -102,6 +103,9 @@ class MCPClient {
     };
     client.onerror = (e) => {
       log.error("client error", e);
+      setTimeout(() => {
+        this.open();
+      }, 3000);
     };
 
     this.tools = tools_res.tools;
@@ -119,26 +123,19 @@ class MCPClient {
         capabilities: {},
       }
     );
-    console.log(
-      `http://localhost:${electronData.get().mcp_server_port}/${this.name}/sse`
-    );
-    const transport = new SSEClientTransport(
-      new URL(
-        `http://localhost:${electronData.get().mcp_server_port}/${
-          this.name
-        }/sse`
-      )
-    );
+    // console.log(
+    //   `http://localhost:${electronData.get().mcp_server_port}/${this.name}/sse`
+    // );
+
+    let config = await getConfg();
+    let urlStr = config.mcpServers[this.name].url;
+
+    const transport = new SSEClientTransport(new URL(urlStr));
     await client.connect(transport);
     this.client = client;
   }
   async openStdio() {
-    let mcp_path = path.join(appDataDir, "mcp.json");
-    let config = await fs.readJson(mcp_path, "utf-8").catch((e) => {
-      return {
-        mcpServers: {},
-      };
-    });
+    let config = await getConfg();
     if (config.mcpServers[this.name].disabled) {
       log.error("MCPClient open disabled", this.name);
       return;
@@ -199,31 +196,20 @@ export async function openMcpClients(clientName: string = undefined) {
     fs.copy(p, mcp_path);
   }
 
-  let config = await fs.readJson(mcp_path, "utf-8").catch((e) => {
-    return {
-      mcpServers: {},
-    };
-  });
+  let config = await getConfg();
 
   console.log(config);
-  // for (let s of MyServers) {
-  //   let key = s.name;
-  //   if (mcpClients[key] == null) {
-  //     mcpClients[key] = new MCPClient(key, "sse", "local");
-  //     try {
-  //       await mcpClients[key].open();
-  //     } catch (e) {
-  //       log.error("openMcpClient", e);
-  //       continue;
-  //     }
-  //   }
-  // }
+
   for (let key in config.mcpServers) {
     if (clientName != null && key != clientName) {
       continue;
     }
     if (mcpClients[key] == null) {
-      mcpClients[key] = new MCPClient(key);
+      mcpClients[key] = new MCPClient(
+        key,
+        config.mcpServers[key].type || "stdio",
+        config.mcpServers[key].scope || "outer"
+      );
     }
     if (config.mcpServers[key].disabled) {
       mcpClients[key].status = "disabled";
@@ -290,3 +276,23 @@ async function closeMcpClients(clientName: string = undefined) {
   return mcpClients;
 }
 export { getMcpClients, closeMcpClients, mcpClients };
+
+export async function getConfg() {
+  let mcp_path = path.join(appDataDir, "mcp.json");
+  let config = await fs.readJson(mcp_path, "utf-8").catch((e) => {
+    return {
+      mcpServers: {},
+    };
+  });
+  let obj: any = {};
+  for (let s of MyServers) {
+    let key = s.name;
+    obj[key] = {
+      url: `http://localhost:${electronData.get().mcp_server_port}/${key}/sse`,
+      type: "sse",
+      scope: "local",
+    };
+  }
+  config.mcpServers = Object.assign(obj, config.mcpServers);
+  return config;
+}

@@ -30,9 +30,11 @@
     "outDir": "./dist"
   },
   "include": [
+    "eval/**/*",
     "src/**/*",
     "types/*",
-    "webpack.config.eval.js"
+    "webpack.config.eval.js",
+    "eval"
   ],
   "exclude": [
     "node_modules"

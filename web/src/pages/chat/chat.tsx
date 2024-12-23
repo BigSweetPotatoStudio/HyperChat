@@ -33,6 +33,7 @@ import {
   Space,
   Spin,
   Table,
+  Tag,
   Tooltip,
   Typography,
 } from "antd";
@@ -980,6 +981,7 @@ export const Chat = () => {
             rowKey={(record) => record.name}
             pagination={false}
             dataSource={clients}
+            rowHoverable={false}
             rowSelection={{
               type: "checkbox",
               selectedRowKeys: clients
@@ -1023,10 +1025,9 @@ export const Chat = () => {
                             key={x.function.name}
                             title={x.function.description}
                           >
-                            <span className="cursor-pointer">
+                            <Tag className="cursor-pointer">
                               {x.function.name.replace(x.key + "--", "")}
-                            </span>
-                            {", "}
+                            </Tag>
                           </Tooltip>
                         );
                       })}

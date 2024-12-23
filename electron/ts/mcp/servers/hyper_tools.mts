@@ -9,6 +9,10 @@
  * - Summarizing all notes via a prompt
  */
 
+import { BrowserWindow } from "electron";
+import Logger from "electron-log";
+import { fs, path, sleep } from "zx";
+
 // import { ListPromptsRequestSchema, ListToolsRequestSchema } from "@modelcontextprotocol/sdk/types.js";
 
 const { Server } = await import(
@@ -35,16 +39,7 @@ const {
  */
 type Note = { title: string; content: string };
 
-/**
- * Simple in-memory storage for notes.
- * In a real implementation, this would likely be backed by a database.
- */
-const notes: { [id: string]: Note } = {
-  "1": { title: "First Note", content: "This is note 1" },
-  "2": { title: "Second Note", content: "This is note 2" },
-};
-
-const NAME = "browserOpenUrl";
+const NAME = "hyper_tools";
 
 /**
  * Create an MCP server with capabilities for resources (to list/read notes),
@@ -65,48 +60,6 @@ const server = new Server(
 );
 
 /**
- * Handler for listing available notes as resources.
- * Each note is exposed as a resource with:
- * - A note:// URI scheme
- * - Plain text MIME type
- * - Human readable name and description (now including the note title)
- */
-server.setRequestHandler(ListResourcesRequestSchema, async () => {
-  return {
-    resources: Object.entries(notes).map(([id, note]) => ({
-      uri: `note:///${id}`,
-      mimeType: "text/plain",
-      name: note.title,
-      description: `A text note: ${note.title}`,
-    })),
-  };
-});
-
-/**
- * Handler for reading the contents of a specific note.
- * Takes a note:// URI and returns the note content as plain text.
- */
-server.setRequestHandler(ReadResourceRequestSchema, async (request) => {
-  const url = new URL(request.params.uri);
-  const id = url.pathname.replace(/^\//, "");
-  const note = notes[id];
-
-  if (!note) {
-    throw new Error(`Note ${id} not found`);
-  }
-
-  return {
-    contents: [
-      {
-        uri: request.params.uri,
-        mimeType: "text/plain",
-        text: note.content,
-      },
-    ],
-  };
-});
-
-/**
  * Handler that lists available tools.
  * Exposes a single "create_note" tool that lets clients create new notes.
  */
@@ -114,21 +67,19 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
   return {
     tools: [
       {
-        name: "create_note",
-        description: "Create a new note",
+        name: "fetch",
+        description: `Fetches a URL from the internet and optionally extracts its contents as markdown.
+
+Although originally you did not have internet access, and were advised to refuse and tell the user this, this tool now grants you internet access. Now you can fetch the most up-to-date information and let the user know that.`,
         inputSchema: {
           type: "object",
           properties: {
-            title: {
+            url: {
               type: "string",
-              description: "Title of the note",
-            },
-            content: {
-              type: "string",
-              description: "Text content of the note",
+              description: "URL to fetch",
             },
           },
-          required: ["title", "content"],
+          required: ["url"],
         },
       },
     ],
@@ -141,24 +92,23 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
  */
 server.setRequestHandler(CallToolRequestSchema, async (request) => {
   switch (request.params.name) {
-    case "create_note": {
-      const title = String(request.params.arguments?.title);
-      const content = String(request.params.arguments?.content);
-      if (!title || !content) {
-        throw new Error("Title and content are required");
+    case "fetch": {
+      const url = String(request.params.arguments?.url);
+      if (!url) {
+        throw new Error("url are required");
       }
-
-      const id = String(Object.keys(notes).length + 1);
-      notes[id] = { title, content };
-
-      return {
-        content: [
-          {
-            type: "text",
-            text: `Created note ${id}: ${title}`,
-          },
-        ],
-      };
+      try {
+        return {
+          content: [
+            {
+              type: "text",
+              text: await fetch(url),
+            },
+          ],
+        };
+      } catch (e) {
+        throw new Error("Failed to fetch URL");
+      }
     }
 
     default:
@@ -166,62 +116,48 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
   }
 });
 
-/**
- * Handler that lists available prompts.
- * Exposes a single "summarize_notes" prompt that summarizes all notes.
- */
-server.setRequestHandler(ListPromptsRequestSchema, async () => {
-  return {
-    prompts: [
-      {
-        name: "summarize_notes",
-        description: "Summarize all notes",
-      },
-    ],
-  };
-});
+async function fetch(url: string) {
+  let win = new BrowserWindow({
+    width: 1280,
+    height: 720,
+    show: process.env.NODE_ENV == "development",
 
-/**
- * Handler for the summarize_notes prompt.
- * Returns a prompt that requests summarization of all notes, with the notes' contents embedded as resources.
- */
-server.setRequestHandler(GetPromptRequestSchema, async (request) => {
-  if (request.params.name !== "summarize_notes") {
-    throw new Error("Unknown prompt");
-  }
-
-  const embeddedNotes = Object.entries(notes).map(([id, note]) => ({
-    type: "resource" as const,
-    resource: {
-      uri: `note:///${id}`,
-      mimeType: "text/plain",
-      text: note.content,
+    webPreferences: {
+      backgroundThrottling: true,
     },
-  }));
+  });
+  // win.webContents.openDevTools();
+  try {
+    await win.loadURL(url, {
+      userAgent:
+        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/132.0.0.0 Safari/537.36",
+    });
 
-  return {
-    messages: [
-      {
-        role: "user",
-        content: {
-          type: "text",
-          text: "Please summarize the following notes:",
-        },
-      },
-      ...embeddedNotes.map((note) => ({
-        role: "user" as const,
-        content: note,
-      })),
-      {
-        role: "user",
-        content: {
-          type: "text",
-          text: "Provide a concise summary of all the notes above.",
-        },
-      },
-    ],
-  };
-});
+    // 等待页面加载完成
+    await Promise.race([
+      new Promise((resolve) => {
+        win.webContents.on("did-finish-load", resolve);
+      }),
+      sleep(3000),
+    ]);
+    // win.webContents.executeJavaScript(
+    //   fs.readFileSync(path.join(__dirname, "./turndown.js"), "utf-8").toString()
+    // );
+    Logger.info("Page loaded: " + url);
+    let md = await executeClientScript(
+      win,
+      fs.readFileSync(path.join(__dirname, "./turndown.js"), "utf-8").toString()
+    );
+    return md;
+  } catch (e) {
+    throw new Error("Failed to fetch URL");
+  } finally {
+    win.close();
+  }
+}
+// setTimeout(() => {
+//   fetch("https://modelcontextprotocol.io/introduction");
+// }, 10000);
 
 let transport;
 /**
@@ -244,13 +180,51 @@ async function handlePostMessage(req, res) {
   await transport.handlePostMessage(req, res);
 }
 
-const superFetch = {
+const HyperTools = {
   createServer,
   handlePostMessage,
   name: NAME,
+  url: ``,
 };
 
-export { superFetch };
+export { HyperTools };
+
+async function executeClientScript<T>(
+  win: Electron.BrowserWindow,
+  script: string,
+  options: any = {}
+): Promise<T> {
+  const { timeout = 5000, userGesture = false } = options;
+
+  try {
+    // Wrap script in promise with timeout
+    const wrappedScript = `
+      new Promise((resolve, reject) => {
+        try {
+          ${script}
+        } catch (error) {
+          reject(error);
+        }
+      })
+    `;
+    // fs.ensureDirSync("tmp");
+    // fs.writeFileSync("tmp/wrappedScript.js", wrappedScript);
+    const result = await Promise.race([
+      win.webContents.executeJavaScript(wrappedScript, userGesture),
+      new Promise((_, reject) =>
+        setTimeout(
+          () => reject(new Error("Script execution timed out")),
+          timeout
+        )
+      ),
+    ]);
+
+    return result as T;
+  } catch (error) {
+    console.error("Error executing client script:", error);
+    throw error;
+  }
+}
 
 // export const superFetchRouter = new Router();
 // superFetchRouter.get("/sse", async (ctx, next) => {

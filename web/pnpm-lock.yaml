@@ -32,6 +32,9 @@ importers:
       '@modelcontextprotocol/sdk':
         specifier: ^1.0.4
         version: 1.0.4
+      '@mozilla/readability':
+        specifier: ^0.5.0
+        version: 0.5.0
       '@testing-library/jest-dom':
         specifier: ^5.17.0
         version: 5.17.0
@@ -158,6 +161,12 @@ importers:
       ts-loader:
         specifier: ^9.5.1
         version: 9.5.1(typescript@5.6.2)(webpack@5.94.0(webpack-cli@5.1.4))
+      turndown:
+        specifier: ^7.2.0
+        version: 7.2.0
+      turndown-plugin-gfm:
+        specifier: ^1.0.2
+        version: 1.0.2
       typescript:
         specifier: ^5.4.5
         version: 5.6.2
@@ -1310,8 +1319,15 @@ packages:
   '@microsoft/clarity@1.0.0':
     resolution: {integrity: sha512-2QY6SmXnqRj6dWhNY8NYCN3e53j4zCFebH4wGnNhdGV1mqAsQwql2fT0w8TISxCvwwfVp8idsWLIdrRHOms1PQ==}
 
+  '@mixmark-io/domino@2.2.0':
+    resolution: {integrity: sha512-Y28PR25bHXUg88kCV7nivXrP2Nj2RueZ3/l/jdx6J9f8J4nsEGcgX0Qe6lt7Pa+J79+kPiJU3LguR6O/6zrLOw==}
+
   '@modelcontextprotocol/sdk@1.0.4':
     resolution: {integrity: sha512-C+jw1lF6HSGzs7EZpzHbXfzz9rj9him4BaoumlTciW/IDDgIpweF/qiCWKlP02QKg5PPcgY6xY2WCt5y2tpYow==}
+
+  '@mozilla/readability@0.5.0':
+    resolution: {integrity: sha512-Z+CZ3QaosfFaTqvhQsIktyGrjFjSC0Fa4EMph4mqKnWhmyoGICsV/8QK+8HpXut6zV7zwfWwqDmEjtk1Qf6EgQ==}
+    engines: {node: '>=14.0.0'}
 
   '@nodelib/fs.scandir@2.1.5':
     resolution: {integrity: sha512-vq24Bq3ym5HEQm2NKCr3yXDwjc7vTsEThRDnkp2DK9p1uqLR+DHurm/NOTo0KG7HYHU7eppKZj3MyqYuMBf62g==}
@@ -4663,6 +4679,12 @@ packages:
   tslib@2.7.0:
     resolution: {integrity: sha512-gLXCKdN1/j47AiHiOkJN69hJmcbGTHI0ImLmbYLHykhgeN0jVGola9yVjFgzCUklsZQMW55o+dW7IXv3RCXDzA==}
 
+  turndown-plugin-gfm@1.0.2:
+    resolution: {integrity: sha512-vwz9tfvF7XN/jE0dGoBei3FXWuvll78ohzCZQuOb+ZjWrs3a0XhQVomJEb2Qh4VHTPNRO4GPZh0V7VRbiWwkRg==}
+
+  turndown@7.2.0:
+    resolution: {integrity: sha512-eCZGBN4nNNqM9Owkv9HAtWRYfLA4h909E/WGAWWBpmB275ehNhZyk87/Tpvjbp0jjNl9XwCsbe6bm6CqFsgD+A==}
+
   type-fest@0.16.0:
     resolution: {integrity: sha512-eaBzG6MxNzEn9kiwvtre90cXaNLkmadMWa1zQMs3XORCXNbsH/OewwbxC5ia9dCxIxnTAsSxXJaa/p5y8DlvJg==}
     engines: {node: '>=10'}
@@ -6546,11 +6568,15 @@ snapshots:
 
   '@microsoft/clarity@1.0.0': {}
 
+  '@mixmark-io/domino@2.2.0': {}
+
   '@modelcontextprotocol/sdk@1.0.4':
     dependencies:
       content-type: 1.0.5
       raw-body: 3.0.0
       zod: 3.24.1
+
+  '@mozilla/readability@0.5.0': {}
 
   '@nodelib/fs.scandir@2.1.5':
     dependencies:
@@ -10157,6 +10183,12 @@ snapshots:
   tslib@2.3.0: {}
 
   tslib@2.7.0: {}
+
+  turndown-plugin-gfm@1.0.2: {}
+
+  turndown@7.2.0:
+    dependencies:
+      '@mixmark-io/domino': 2.2.0
 
   type-fest@0.16.0: {}
 

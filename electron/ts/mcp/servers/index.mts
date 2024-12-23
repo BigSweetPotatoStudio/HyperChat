@@ -1,6 +1,4 @@
 export * from "./express.mjs";
-import { superFetch } from "./superfetch.mjs";
+import { HyperTools } from "./hyper_tools.mjs";
 
-export const MyServers = [
-  // superFetch,
-];
+export const MyServers = [HyperTools];
