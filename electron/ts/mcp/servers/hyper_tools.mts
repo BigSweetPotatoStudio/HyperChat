@@ -82,6 +82,20 @@ Although originally you did not have internet access, and were advised to refuse
           required: ["url"],
         },
       },
+      {
+        name: "search",
+        description: `Searches the internet for a given keyword and returns the search results.`,
+        inputSchema: {
+          type: "object",
+          properties: {
+            words: {
+              type: "string",
+              description: "words to serach",
+            },
+          },
+          required: ["words"],
+        },
+      },
     ],
   };
 });
@@ -110,7 +124,24 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
         throw new Error("Failed to fetch URL");
       }
     }
-
+    case "search": {
+      const words = String(request.params.arguments?.words);
+      if (!words) {
+        throw new Error("words are required");
+      }
+      try {
+        return {
+          content: [
+            {
+              type: "text",
+              text: await search(words),
+            },
+          ],
+        };
+      } catch (e) {
+        throw new Error("Failed to fetch URL");
+      }
+    }
     default:
       throw new Error("Unknown tool");
   }
@@ -120,8 +151,7 @@ async function fetch(url: string) {
   let win = new BrowserWindow({
     width: 1280,
     height: 720,
-    show: process.env.NODE_ENV == "development",
-
+    show: true,
     webPreferences: {
       backgroundThrottling: true,
     },
@@ -149,6 +179,78 @@ async function fetch(url: string) {
       fs.readFileSync(path.join(__dirname, "./turndown.js"), "utf-8").toString()
     );
     return md;
+  } catch (e) {
+    throw new Error("Failed to fetch URL");
+  } finally {
+    win.close();
+  }
+}
+
+async function search(words: string) {
+  let win = new BrowserWindow({
+    width: 1280,
+    height: 720,
+    show: true,
+    webPreferences: {
+      backgroundThrottling: true,
+    },
+  });
+  // win.webContents.openDevTools();
+  try {
+    await win.loadURL(
+      `https://www.google.com/search?q=` + encodeURIComponent(words),
+      {
+        userAgent:
+          "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/132.0.0.0 Safari/537.36",
+      }
+    );
+
+    // 等待页面加载完成
+    await Promise.race([
+      new Promise((resolve) => {
+        win.webContents.on("did-finish-load", resolve);
+      }),
+      sleep(3000),
+    ]);
+    // win.webContents.executeJavaScript(
+    //   fs.readFileSync(path.join(__dirname, "./turndown.js"), "utf-8").toString()
+    // );
+    Logger.info("Page loaded");
+    let res = await executeClientScript(
+      win,
+      `
+      let resArr = [];
+
+let arr = document.querySelector("#search").querySelectorAll("span>a");
+for (let a of arr) {
+  if (a.querySelector("h3")) {
+    try {
+      let p =
+        a.parentElement.parentElement.parentElement.parentElement.parentElement;
+      let res = {
+        title: a.querySelector("h3").innerText,
+        url: a.href,
+        description: p.children[p.children.length - 1].innerText,
+      };
+      resArr.push(res);
+    } catch (error) {
+      let res = {
+        title: a.querySelector("h3").innerText,
+        url: a.href,
+      };
+      resArr.push(res);
+    }
+  }
+}
+  resolve(resArr);
+      `
+    );
+    Logger.info(
+      "Searching: ",
+      `https://www.google.com/search?q=` + encodeURIComponent(words),
+      res
+    );
+    return JSON.stringify(res);
   } catch (e) {
     throw new Error("Failed to fetch URL");
   } finally {

@@ -12,6 +12,7 @@
 - [x] Prompts 部分支持
 - [x] Tools 支持
 - [x] 支持英文和中文
+- [x] 添加了内置的MCP客户端`hypertools`, `fetch`+`search`
 
 ### LLM
 
@@ -68,3 +69,7 @@ npm run dev
 ![image.png](./images/image12.png)
 
 ![image.png](./images/image14.png)
+
+![image.png](./images/image20.png)
+
+![image.png](./images/image21.png)
