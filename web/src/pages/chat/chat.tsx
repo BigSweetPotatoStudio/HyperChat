@@ -152,15 +152,7 @@ export const Chat = () => {
     GPT_MODELS.init().then(() => {
       refresh();
     });
-    getClients().then((x) => {
-      setClients(x);
-      getPrompts().then((x) => {
-        setPrompts(x);
-      });
-      getResourses().then((x) => {
-        setResources(x);
-      });
-    });
+
     currentChatReset();
   }, []);
   useEffect(() => {
@@ -187,7 +179,47 @@ export const Chat = () => {
     gptsKey: undefined,
     sended: false,
     icon: "",
+    allowMCPs: [],
   });
+  const currentChatReset = (prompt?: string, allowMCPs = []) => {
+    currentChat.current = {
+      label: "",
+      key: "",
+      messages: prompt
+        ? [
+            {
+              role: "system",
+              content: prompt,
+            },
+          ]
+        : [],
+      modelKey: undefined,
+      gptsKey: undefined,
+      sended: false,
+      icon: "",
+      allowMCPs: allowMCPs,
+    };
+    refresh();
+    setResourceResList([]);
+    setPromptResList([]);
+    getClients().then((clients) => {
+      for (let c of clients) {
+        if (currentChat.current.allowMCPs.includes(c.name)) {
+          c.enable = true;
+        } else {
+          c.enable = false;
+        }
+      }
+      setClients(clients);
+      getPrompts().then((x) => {
+        setPrompts(x);
+      });
+      getResourses().then((x) => {
+        setResources(x);
+      });
+    });
+  };
+
   function format(x: MyMessage, i, arr): any {
     if (x.content_from) {
       return {
@@ -403,27 +435,6 @@ export const Chat = () => {
     }
   }
 
-  const currentChatReset = (prompt?: string) => {
-    currentChat.current = {
-      label: "",
-      key: "",
-      messages: prompt
-        ? [
-            {
-              role: "system",
-              content: prompt,
-            },
-          ]
-        : [],
-      modelKey: undefined,
-      gptsKey: undefined,
-      sended: false,
-      icon: "",
-    };
-    refresh();
-    setResourceResList([]);
-    setPromptResList([]);
-  };
   const createChat = () => {
     let config = GPT_MODELS.get().data.find(
       (x) => x.key == currentChat.current.modelKey,
@@ -645,11 +656,10 @@ export const Chat = () => {
                         if (mode == "edit") {
                           return;
                         }
-
-                        currentChatReset(
-                          GPTS.get().data.find((y) => y.key === item.data.key)
-                            .prompt,
+                        let find = GPTS.get().data.find(
+                          (y) => y.key === item.data.key,
                         );
+                        currentChatReset(find.prompt, find.allowMCPs);
                       }}
                       items={GPTS.get().data.map((x) => {
                         return {
@@ -771,7 +781,6 @@ export const Chat = () => {
                         (v) => v.enable == null || v.enable == true,
                       ).length
                     }
-                    {/* 🛠️{tools.length} */}
                   </span>
                 </Tooltip>
                 <Divider type="vertical" />
@@ -945,6 +954,7 @@ export const Chat = () => {
         <PromptsModal
           open={isOpenPromptsModal}
           onCreate={(value) => {
+            console.log("onCreate", value);
             if (value.key) {
               const index = GPTS.get().data.findIndex(
                 (y) => y.key == value.key,
@@ -956,6 +966,7 @@ export const Chat = () => {
               GPTS.get().data.push({
                 ...value,
                 key: v4(),
+                allowMCPs: value.allowMCPs || [],
               });
             }
             GPTS.save();

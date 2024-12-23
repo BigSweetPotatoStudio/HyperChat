@@ -13,6 +13,7 @@
 - [x] Tools 支持
 - [x] 支持英文和中文
 - [x] 添加了内置的MCP客户端`hypertools`, `fetch`+`search`
+- [x] gpts-支持选择允许使用的MCP客户端和工具
 
 ### LLM
 
@@ -70,6 +71,6 @@ npm run dev
 
 ![image.png](./images/image14.png)
 
-![image.png](./images/image20.png)
+![image.png](./images/image22.png)
 
 ![image.png](./images/image21.png)
