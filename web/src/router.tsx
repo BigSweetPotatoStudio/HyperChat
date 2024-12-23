@@ -12,6 +12,7 @@ import { Layout } from "./layout";
 import { Setting } from "./pages/setting";
 import { Chat } from "./pages/chat";
 import { Market } from "./pages/market/market";
+import { HpyerTools } from "./pages/hypertools/hypertools";
 
 type RouteType = {
   path: string;
@@ -45,7 +46,12 @@ let route: RouteType = {
       icon: "🛒",
       component: <Market />,
     },
-
+    {
+      path: "/HpyerTools",
+      name: "HpyerTools",
+      icon: "🔧",
+      component: <HpyerTools />,
+    },
     {
       path: "/Setting",
       name: "Settings",

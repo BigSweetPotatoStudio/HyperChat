@@ -1,10 +1,6 @@
-## 背景
-
-[MCP](https://modelcontextprotocol.io/introduction)出来后感觉这个很有搞头，本来想开发一个工具箱，给MCP使用的，但是`Claude Desktop`一老封号，只能自己开发一个Chat了。已经开源。
-
 ## 功能
 
-支持MCP协议的Chat，使用OpenAI的协议，兼容 `Claude Desktop` 配置文件。支持 `Client` 热加载，重启，禁用。
+支持 [MCP](https://modelcontextprotocol.io/introduction) 协议的Chat，使用类OpenAI的协议，兼容 `Claude Desktop` 配置文件。支持 `Client` 热加载，重启，禁用。
 
 ### MCP: 
 
@@ -16,6 +12,17 @@
 - [x] Prompts 部分支持
 - [x] Tools 支持
 - [x] 支持英文和中文
+- [x] 添加了内置的MCP客户端`hypertools`, `fetch`+`search`
+- [x] gpts-支持选择允许使用的MCP客户端和工具
+
+### LLM
+
+| LLM      | 好用度    | 备注                         |
+| -------- | ------ | -------------------------- |
+| claude   | ⭐⭐⭐⭐⭐  | 不解释                    |
+| openai   | ⭐⭐⭐⭐🌙 | 也可以完美支持多步function call(gpt-4o-mini也可以) |
+| 豆包       | ⭐⭐⭐    | 使用起来感觉还行                   |
+| deepseek | ⭐⭐      | 多步function call会出问题       |
 
 ## 使用
 
@@ -38,6 +45,7 @@ brew install node
 ```
 cd electron && npm install
 cd web && npm install
+npm install
 npm run dev
 ```
 
@@ -62,3 +70,7 @@ npm run dev
 ![image.png](./images/image12.png)
 
 ![image.png](./images/image14.png)
+
+![image.png](./images/image22.png)
+
+![image.png](./images/image21.png)

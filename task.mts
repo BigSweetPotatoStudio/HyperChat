@@ -22,8 +22,6 @@ fs.writeFileSync(
     )
 );
 
-
-
 if (
   !fs
     .readFileSync(
@@ -46,7 +44,6 @@ import {EventSource} from 'eventsource'`
       )
   );
 }
-
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -96,6 +93,22 @@ if (argv.dev) {
       cwd: path.resolve(__dirname, "./web/"),
     }
   );
+  spawnWithOutput(
+    "npx",
+    [
+      "cross-env",
+      "NODE_ENV=development",
+      "myEnv=dev",
+      "webpack",
+      "-w",
+      "-c",
+      "webpack.eval.js",
+    ],
+    {
+      cwd: path.resolve(__dirname, "./web/"),
+    }
+  );
+
   spawnWithOutput("npm", ["run", "dev"], {
     cwd: path.resolve(__dirname, "./electron/"),
   });

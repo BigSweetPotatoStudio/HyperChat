@@ -1,6 +1,7 @@
 import {
   Button,
   Carousel,
+  Checkbox,
   Form,
   FormInstance,
   FormProps,
@@ -21,12 +22,14 @@ import React, { useContext, useEffect, useRef, useState } from "react";
 import { v4 as uuid } from "uuid";
 
 import { CloseOutlined, FormOutlined } from "@ant-design/icons";
+import { getClients, InitedClient } from "../../common/mcp";
 
 interface Values {
   label: string;
   prompt: string;
 
   key?: string;
+  allowMCPs: string[];
 }
 
 interface CollectionCreateFormProps {
@@ -44,10 +47,14 @@ const ModalForm: React.FC<CollectionCreateFormProps> = ({
   };
 
   const [form] = Form.useForm();
-
+  const [clients, setClients] = React.useState<InitedClient[]>([]);
   useEffect(() => {
     onFormInstanceReady(form);
-    (async () => {})();
+    (async () => {
+      getClients().then((x) => {
+        setClients(x);
+      });
+    })();
   }, []);
 
   return (
@@ -69,6 +76,22 @@ const ModalForm: React.FC<CollectionCreateFormProps> = ({
       >
         <Input.TextArea placeholder="Please enter Prompt Content" rows={4} />
       </Form.Item>
+      <Form.Item
+        name="allowMCPs"
+        label="MCP"
+        rules={[
+          { required: false, message: `Please select the allowed MCP client.` },
+        ]}
+      >
+        <Checkbox.Group
+          options={clients.map((x) => {
+            return {
+              label: x.name,
+              value: x.name,
+            };
+          })}
+        />
+      </Form.Item>
     </Form>
   );
 };
@@ -87,6 +110,7 @@ export const PromptsModal: React.FC<CollectionCreateFormModalProps> = ({
   initialValues,
 }) => {
   const [formInstance, setFormInstance] = useState<FormInstance>();
+  initialValues.allowMCPs = initialValues.allowMCPs || [];
   return (
     <Modal
       width={800}

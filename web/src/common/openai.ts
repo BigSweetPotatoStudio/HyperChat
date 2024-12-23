@@ -28,7 +28,7 @@ export class OpenAiChannel {
     },
     public messages: MyMessage[],
   ) {
-    options.stream = options.stream || false;
+    options.stream = options.stream || true;
     this.openai = new OpenAI({
       baseURL: options.baseURL,
       apiKey: options.apiKey, // This is the default and can be omitted
@@ -41,9 +41,9 @@ export class OpenAiChannel {
     promptResList: Array<MCPTypes.GetPromptResult> = [],
   ) {
     if (resourceResList.length > 0) {
+      message.content += `# Try to avoid using tools and use resources directly. \n`;
       message.content += `
-# Try to avoid using tools and use resources directly.
-      resources 1: 
+## resources 1: 
 `;
       for (let r of resourceResList) {
         for (let content of r.contents) {
@@ -269,7 +269,7 @@ export class OpenAiChannel {
       console.log("this.messages", this.messages);
       return await this.completion(
         onUpdate,
-        this.options.call_tool_step > step + 1,
+        (this.options.call_tool_step || 100) > step + 1,
         step + 1,
       );
     } else {
