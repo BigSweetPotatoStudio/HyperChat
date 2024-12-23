@@ -31,6 +31,7 @@ import {
   Divider,
   Tooltip,
   InputNumber,
+  Tag,
 } from "antd";
 import enUS from "antd/locale/en_US";
 import zhCN from "antd/locale/zh_CN";
@@ -283,77 +284,83 @@ export function Layout() {
                 title: "Operation",
                 dataIndex: "status",
                 key: "status",
-                render: (text, record, index) => (
-                  <div>
-                    <Button
-                      type="link"
-                      onClick={() => {
-                        record.config._name = record.name;
-                        record.config._type = "edit";
-                        record.config._argsStr = (
-                          record.config.args || []
-                        ).join("   ");
-                        record.config._envStr = JSON.stringify(
-                          record.config.env || {},
-                        );
-                        mcpform.setFieldsValue(record.config);
-                        setIsAddMCPConfigOpen(true);
-                      }}
-                    >
-                      Config
-                    </Button>
-                    <Divider type="vertical"></Divider>
-                    <Button
-                      disabled={record.config.disabled}
-                      type="link"
-                      onClick={async () => {
-                        if (record.config.disabled) {
-                          message.error("Service Disabled");
-                          return;
-                        }
-                        try {
-                          await call("initMcpClients", [record.name]);
-                          getClients(false).then((x) => {
-                            setClients(x);
-                            EVENT.fire("refresh");
-                          });
-                        } catch (e) {
-                          message.error(e.message);
-                        }
-                      }}
-                    >
-                      {record.status == "connected" ? "reload" : "start"}
-                    </Button>
-                    <Divider type="vertical"></Divider>
-                    <Button
-                      type="link"
-                      style={{
-                        color: !record.config.disabled ? "red" : undefined,
-                      }}
-                      onClick={async () => {
-                        record.config.disabled = !record.config.disabled;
-
-                        await MCP_CONFIG.save();
-                        try {
+                render: (text, record, index) => {
+                  if (record.scope == "local") {
+                    return <Tag color="blue">built-in</Tag>;
+                  }
+                  return (
+                    <div>
+                      <Button
+                        type="link"
+                        onClick={() => {
+                          record.config._name = record.name;
+                          record.config._type = "edit";
+                          record.config._argsStr = (
+                            record.config.args || []
+                          ).join("   ");
+                          record.config._envStr = JSON.stringify(
+                            record.config.env || {},
+                          );
+                          mcpform.resetFields();
+                          mcpform.setFieldsValue(record.config);
+                          setIsAddMCPConfigOpen(true);
+                        }}
+                      >
+                        config
+                      </Button>
+                      <Divider type="vertical"></Divider>
+                      <Button
+                        disabled={record.config.disabled}
+                        type="link"
+                        onClick={async () => {
                           if (record.config.disabled) {
-                            await call("closeMcpClients", [record.name]);
-                          } else {
-                            await call("initMcpClients", [record.name]);
+                            message.error("Service Disabled");
+                            return;
                           }
+                          try {
+                            await call("initMcpClients", [record.name]);
+                            getClients(false).then((x) => {
+                              setClients(x);
+                              EVENT.fire("refresh");
+                            });
+                          } catch (e) {
+                            message.error(e.message);
+                          }
+                        }}
+                      >
+                        {record.status == "connected" ? "reload" : "start"}
+                      </Button>
+                      <Divider type="vertical"></Divider>
+                      <Button
+                        type="link"
+                        style={{
+                          color: !record.config.disabled ? "red" : undefined,
+                        }}
+                        onClick={async () => {
+                          record.config.disabled = !record.config.disabled;
 
-                          getClients(false).then((x) => {
-                            setClients(x);
-                            EVENT.fire("refresh");
-                          });
-                        } catch (e) {
-                          message.error(e.message);
-                        }
-                      }}
-                    >
-                      {record.config.disabled ? "enable" : "disable"}
-                    </Button>
-                  </div>
-                ),
+                          await MCP_CONFIG.save();
+                          try {
+                            if (record.config.disabled) {
+                              await call("closeMcpClients", [record.name]);
+                            } else {
+                              await call("initMcpClients", [record.name]);
+                            }
+
+                            getClients(false).then((x) => {
+                              setClients(x);
+                              EVENT.fire("refresh");
+                            });
+                          } catch (e) {
+                            message.error(e.message);
+                          }
+                        }}
+                      >
+                        {record.config.disabled ? "enable" : "disable"}
+                      </Button>
+                    </div>
+                  );
+                },
               },
             ]}
             footer={() => {
