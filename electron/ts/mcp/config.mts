@@ -103,9 +103,9 @@ class MCPClient {
     };
     client.onerror = (e) => {
       log.error("client error", e);
-      setTimeout(() => {
-        this.open();
-      }, 3000);
+      // setTimeout(() => {
+      //   this.open();
+      // }, 3000);
     };
 
     this.tools = tools_res.tools;
