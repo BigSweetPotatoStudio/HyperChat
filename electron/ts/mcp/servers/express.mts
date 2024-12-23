@@ -1,5 +1,5 @@
 import App from "express";
-import { superFetch } from "./superfetch.mjs";
+import { HyperTools } from "./hyper_tools.mjs";
 import { electronData, MCPServerPORT } from "../../common/data.mjs";
 import { execFallback } from "../../common/execFallback.mjs";
 import log from "electron-log";
@@ -10,7 +10,7 @@ export async function initMcpServer() {
     log.info("initMcpServer");
     const app = App();
 
-    function register(serve: typeof superFetch) {
+    function register(serve: typeof HyperTools) {
       app.get(`/${serve.name}/sse`, async (req, res) => {
         await serve.createServer(`/${serve.name}/message`, res);
       });

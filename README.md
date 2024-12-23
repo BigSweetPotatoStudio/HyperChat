@@ -1,29 +1,36 @@
 [中文](README.zh.md) | [English](README.md)
 
 
-## Background
-
-After the release of [MCP](https://modelcontextprotocol.io/introduction), I felt it was quite promising. I originally planned to develop a toolbox for MCP, but since `Claude Desktop` keeps getting banned, I had to develop a Chat myself. It has been open-sourced.
-
 ## Features
 
-A Chat that supports the MCP protocol, using the OpenAI protocol and compatible with `Claude Desktop` configuration files. Supports `Client` hot loading, restart, and disable.
+Supports Chat with the [MCP](https://modelcontextprotocol.io/introduction) protocol, using a similar protocol to OpenAI, compatible with `Claude Desktop` configuration. Supports `Client` hot reloading, restarting, and disabling.
 
 ### MCP:
 
 [![Build](https://github.com/BigSweetPotatoStudio/HyperChat/actions/workflows/build.yml/badge.svg)](https://github.com/BigSweetPotatoStudio/HyperChat/actions/workflows/build.yml)
 
-- [x] 🪟Windows + 🍏MacOS
+- [x] 🪟Windows+🍏MacOS
 - [x] Supports `nvm`, see below
 - [x] Resource support
 - [x] Partial support for Prompts
-- [x] Tools support
+- [x] Tool support
 - [x] Supports English and Chinese
+- [x] Added built-in MCP client `hypertools`, `fetch` + `search`
+- [x] gpts- supports selection of allowed MCP clients and tools
+
+### LLM
+
+| LLM      | Usability | Remarks                           |
+| -------- | --------- | --------------------------------- |
+| claude   | ⭐⭐⭐⭐⭐    | No explanation                     |
+| openai   | ⭐⭐⭐⭐🌙    | Can also perfectly support multi-step function calls (gpt-4o-mini can too) |
+| 豆包       | ⭐⭐⭐      | Feels okay to use                 |
+| deepseek | ⭐⭐       | Multi-step function calls may have issues |
 
 ## Usage
 
-* 1. You need to configure your OpenAI style APIKEY
-* 2. Ensure that uvx or npx is installed on your system.
+* 1. You need to configure your OpenAI-style APIKEY
+* 2. Make sure you have uvx or npx installed on your system.
 
 ### [uvx](https://github.com/astral-sh/uv)
 
@@ -41,19 +48,20 @@ brew install node
 ```
 cd electron && npm install
 cd web && npm install
+npm install
 npm run dev
 ```
 
 ## Note
 
-* MacOS may encounter damage or permission issues, `sudo xattr -d com.apple.quarantine /Applications/HyperChat.app`
-* For MacOS `nvm` users, manually input PATH `echo $PATH`, it seems the Windows version of `nvm` can be used directly
+* MacOS encountered damage or permission issues, `sudo xattr -d com.apple.quarantine /Applications/HyperChat.app`
+* MacOS `nvm` users manually input PATH `echo $PATH`, Windows version `nvm` seems to work directly
 
 ![image.png](./images/image4.png)
 
 ## Telegram
 
-[HyperChat User Communication](https://t.me/dadigua001)
+[HyperChat user communication](https://t.me/dadigua001)
 
 ![image.png](./images/image11.png)
 
@@ -62,3 +70,7 @@ npm run dev
 ![image.png](./images/image12.png)
 
 ![image.png](./images/image14.png)
+
+![image.png](./images/image22.png)
+
+![image.png](./images/image21.png)

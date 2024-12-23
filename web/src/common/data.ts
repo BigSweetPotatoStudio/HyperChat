@@ -62,6 +62,7 @@ export const ChatHistory = new Data("chat_history.json", {
     gptsKey: string;
     sended: boolean;
     icon: string;
+    allowMCPs: string[];
   }>,
 });
 
@@ -71,6 +72,7 @@ export const GPTS = new Data("gpts_list.json", {
     label: string;
     prompt: string;
     description?: string;
+    allowMCPs: string[];
   }>,
 });
 

@@ -262,6 +262,20 @@ export class CommandFactory {
       win.webContents.openDevTools();
     }
   }
+  async openBrowser(url: string): Promise<void> {
+    let win = new BrowserWindow({
+      width: 1280,
+      height: 720,
+      webPreferences: {
+        webSecurity: false,
+      },
+    });
+
+    await win.loadURL(url, {
+      userAgent:
+        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/132.0.0.0 Safari/537.36",
+    });
+  }
 }
 
 export const Command = CommandFactory.prototype;
