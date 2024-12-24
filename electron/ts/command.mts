@@ -20,7 +20,7 @@ import { fs, os, sleep, retry, path, $ } from "zx";
 import { request } from "./common/request.mjs";
 import { fileURLToPath } from "url";
 import { dirname } from "path";
-import { exec, spawn, execFile } from "child_process";
+import { exec, execFile } from "child_process";
 import { Server as SocketIO } from "socket.io";
 import { createServer } from "http";
 import { isPortUse } from "./common/checkport.mjs";
@@ -37,11 +37,13 @@ import { autoLauncher } from "./common/autoLauncher.mjs";
 import { clipboardHistoryData, electronData } from "./common/data.mjs";
 import { commandHistory, CommandStatus } from "./command_history.mjs";
 import { appDataDir } from "./const.mjs";
+import spawn from "cross-spawn";
 
 import {
   closeMcpClients,
   getMcpClients,
-  openMcpClients,
+  initMcpClients,
+  openMcpClient,
 } from "./mcp/config.mjs";
 
 const userDataPath = app.getPath("userData");
@@ -76,8 +78,16 @@ export class CommandFactory {
   async getHistory() {
     return commandHistory.get();
   }
-  async initMcpClients(clientName: string = undefined) {
-    let res = await openMcpClients(clientName);
+  async initMcpClients() {
+    let res = await initMcpClients();
+    let obj = {};
+    for (let key in res) {
+      obj[key] = res[key].toJSON();
+    }
+    return obj;
+  }
+  async openMcpClient(clientName: string, clientConfig?: any) {
+    let res = await openMcpClient(clientName, clientConfig);
     let obj = {};
     for (let key in res) {
       obj[key] = res[key].toJSON();
@@ -276,6 +286,52 @@ export class CommandFactory {
         "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/132.0.0.0 Safari/537.36",
     });
   }
+  async checkNpx(): Promise<string> {
+    let p = await spawnWithOutput("npx", ["--version"], {});
+    return p.stdout;
+  }
+  async checkUV(): Promise<string> {
+    let p = await spawnWithOutput("uvx", ["--version"], {});
+    console.log(p);
+    return p.stdout;
+  }
 }
 
 export const Command = CommandFactory.prototype;
+
+const spawnWithOutput = (command: string, args: string[], options): any => {
+  return new Promise((resolve, reject) => {
+    const proc = spawn(command, args, options);
+    let stdout = "";
+    let stderr = "";
+
+    proc.stdout.pipe(process.stdout);
+    proc.stderr.pipe(process.stderr);
+
+    proc.stdout.on("data", (data) => {
+      stdout += data.toString();
+      // console.log(data.toString()); // 实时输出
+    });
+
+    proc.stderr.on("data", (data) => {
+      stderr += data.toString();
+      // console.error(data.toString()); // 实时输出错误
+    });
+
+    proc.on("close", (code) => {
+      if (code !== 0) {
+        reject(new Error(`Command failed with code ${code}\n${stderr}`));
+      } else {
+        resolve({
+          stdout,
+          stderr,
+          code,
+        });
+      }
+    });
+
+    proc.on("error", (err) => {
+      reject(err);
+    });
+  });
+};

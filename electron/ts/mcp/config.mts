@@ -35,6 +35,16 @@ const {
   /* webpackIgnore: true */ "@modelcontextprotocol/sdk/types.js"
 );
 
+type ClientConfig = {
+  command?: string;
+  args?: string[];
+  env?: { [s: string]: string };
+  type?: "stdio" | "sse";
+  url?: string;
+  disabled?: boolean;
+  scope?: "local" | "outer";
+};
+
 let mcpClients = {} as {
   [s: string]: MCPClient;
 };
@@ -101,11 +111,11 @@ class MCPClient {
     let { client, ...out } = this;
     return out;
   }
-  async open() {
+  async open(config?: ClientConfig) {
     if (this.type == "sse") {
-      await this.openSse();
+      await this.openSse(config);
     } else {
-      await this.openStdio();
+      await this.openStdio(config);
     }
 
     let client = this.client;
@@ -143,7 +153,7 @@ class MCPClient {
     this.prompts = listPrompts_res.prompts;
     this.status = "connected";
   }
-  async openSse() {
+  async openSse(c?: ClientConfig) {
     const client = new Client(
       {
         name: this.name,
@@ -153,28 +163,25 @@ class MCPClient {
         capabilities: {},
       }
     );
-    // console.log(
-    //   `http://localhost:${electronData.get().mcp_server_port}/${this.name}/sse`
-    // );
 
-    let config = await getConfg();
-    let urlStr = config.mcpServers[this.name].url;
+    let config = c || (await getConfg().then((r) => r.mcpServers[this.name]));
+    let urlStr = config.url;
 
     const transport = new SSEClientTransport(new URL(urlStr));
     await client.connect(transport);
     this.client = client;
   }
-  async openStdio() {
-    let config = await getConfg();
-    if (config.mcpServers[this.name].disabled) {
+  async openStdio(c?: ClientConfig) {
+    let config = c || (await getConfg().then((r) => r.mcpServers[this.name]));
+    if (config.disabled) {
       log.error("MCPClient open disabled", this.name);
-      return;
+      throw new Error("MCPClient open disabled");
     } else {
       let key = this.name;
       const transport = new StdioClientTransport({
-        command: config.mcpServers[key].command,
-        args: config.mcpServers[key].args,
-        env: Object.assign(getDefaultEnvironment(), config.mcpServers[key].env),
+        command: config.command,
+        args: config.args,
+        env: Object.assign(getDefaultEnvironment(), config.env),
       });
 
       const client = new Client(
@@ -195,10 +202,7 @@ class MCPClient {
 
 let firstRunStatus = 0;
 
-export async function openMcpClients(clientName: string = undefined) {
-  if (clientName != null) {
-    await mcpClients[clientName].open();
-  }
+export async function initMcpClients() {
   firstRunStatus == 1;
   // console.log("mcpClients", mcpClients, Object.keys(mcpClients).length);
   while (1) {
@@ -210,7 +214,7 @@ export async function openMcpClients(clientName: string = undefined) {
     }
   }
 
-  if (firstRunStatus == 2 && clientName == null) {
+  if (firstRunStatus == 2) {
     log.info("getMcpClients cached mcpClients", Object.keys(mcpClients).length);
     return mcpClients;
   }
@@ -231,9 +235,6 @@ export async function openMcpClients(clientName: string = undefined) {
   console.log(config);
 
   for (let key in config.mcpServers) {
-    if (clientName != null && key != clientName) {
-      continue;
-    }
     if (mcpClients[key] == null) {
       mcpClients[key] = new MCPClient(
         key,
@@ -270,6 +271,40 @@ export async function openMcpClients(clientName: string = undefined) {
   return mcpClients;
 }
 
+export async function openMcpClient(
+  clientName: string = undefined,
+  clientConfig?: ClientConfig
+) {
+  if (mcpClients[clientName] != null) {
+    await mcpClients[clientName].open(clientConfig);
+  }
+
+  let config = await getConfg();
+  if (clientConfig == null) {
+    clientConfig = config.mcpServers[clientName];
+  }
+  let key = clientName;
+
+  if (mcpClients[key] == null) {
+    mcpClients[key] = new MCPClient(
+      key,
+      config.mcpServers[key].type || "stdio",
+      config.mcpServers[key].scope || "outer"
+    );
+  }
+  if (config.mcpServers[key].disabled) {
+    mcpClients[key].status = "disabled";
+  } else {
+    try {
+      await mcpClients[key].open(clientConfig);
+    } catch (e) {
+      log.error("openMcpClient", e);
+    }
+  }
+
+  return mcpClients;
+}
+
 async function getMcpClients() {
   while (1) {
     if (firstRunStatus == 1 || firstRunStatus == 0) {
@@ -282,32 +317,34 @@ async function getMcpClients() {
   return mcpClients;
 }
 
-async function closeMcpClients(clientName: string = undefined) {
-  let p = path.join(
-    os.homedir(),
-    "AppData",
-    "Roaming",
-    "Claude",
-    "claude_desktop_config.json"
-  );
-  for (let key in mcpClients) {
-    if (clientName == null || key == clientName) {
-      let client = mcpClients[key].client;
-      if (client) {
-        await client.close();
-      }
+async function closeMcpClients(clientName: string) {
+  let client = mcpClients[clientName];
+  await client.client.close();
+  client.client = undefined;
+  client.tools = [];
+  client.prompts = [];
+  client.resources = [];
 
-      mcpClients[key].client = undefined;
-      mcpClients[key].tools = [];
-      mcpClients[key].prompts = [];
-      mcpClients[key].resources = [];
-    }
-  }
+  // for (let key in mcpClients) {
+  //   if (clientName == null || key == clientName) {
+  //     let client = mcpClients[key].client;
+  //     if (client) {
+  //       await client.close();
+  //     }
+
+  //     mcpClients[key].client = undefined;
+  //     mcpClients[key].tools = [];
+  //     mcpClients[key].prompts = [];
+  //     mcpClients[key].resources = [];
+  //   }
+  // }
   return mcpClients;
 }
 export { getMcpClients, closeMcpClients, mcpClients };
 
-export async function getConfg() {
+export async function getConfg(): Promise<{
+  mcpServers: { [s: string]: ClientConfig };
+}> {
   let mcp_path = path.join(appDataDir, "mcp.json");
   let config = await fs.readJson(mcp_path, "utf-8").catch((e) => {
     return {

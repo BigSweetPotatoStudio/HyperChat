@@ -110,7 +110,8 @@ export const MCP_CONFIG = new MCP_CONFIG_DATA("mcp.json", {
     [s: string]: {
       command: string;
       args: string[];
-      env: string[];
+      env: { [s: string]: string };
+      disabled: boolean;
     };
   },
 });

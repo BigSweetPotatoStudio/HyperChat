@@ -4,7 +4,6 @@ import { call } from "./call";
 import * as MCPTypes from "@modelcontextprotocol/sdk/types.js";
 import { X } from "lucide-react";
 import { message as antdmessage } from "antd";
-import { e } from "./service";
 
 export type MyMessage = OpenAI.Chat.Completions.ChatCompletionMessageParam & {
   content_status?: "success" | "error";

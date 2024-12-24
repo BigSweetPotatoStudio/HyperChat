@@ -66,7 +66,7 @@ import { route as routerRoute } from "./router";
 import { currLang, setCurrLang } from "./i18n";
 import { call } from "./common/call";
 import { GPT_MODELS, MCP_CONFIG } from "./common/data";
-import { getClients, initMcpClients } from "./common/mcp";
+import { getClients } from "./common/mcp";
 import { EVENT } from "./common/event";
 
 const Providers = [
@@ -160,6 +160,7 @@ export function Layout() {
   const [isToolsShow, setIsToolsShow] = useState(false);
   const [clients, setClients] = React.useState([]);
   const [isAddMCPConfigOpen, setIsAddMCPConfigOpen] = useState(false);
+  const [loadingOpenMCP, setLoadingOpenMCP] = useState(false);
 
   return (
     <ConfigProvider locale={locale}>
@@ -346,7 +347,7 @@ export function Layout() {
                             return;
                           }
                           try {
-                            await call("initMcpClients", [record.name]);
+                            await call("openMcpClient", [record.name]);
                             getClients(false).then((x) => {
                               setClients(x);
                               EVENT.fire("refresh");
@@ -372,7 +373,7 @@ export function Layout() {
                             if (record.config.disabled) {
                               await call("closeMcpClients", [record.name]);
                             } else {
-                              await call("initMcpClients", [record.name]);
+                              await call("openMcpClient", [record.name]);
                             }
 
                             getClients(false).then((x) => {
@@ -421,7 +422,11 @@ export function Layout() {
           width={600}
           title="Configure MCP"
           open={isAddMCPConfigOpen}
-          okButtonProps={{ autoFocus: true, htmlType: "submit" }}
+          okButtonProps={{
+            autoFocus: true,
+            htmlType: "submit",
+            loading: loadingOpenMCP,
+          }}
           cancelButtonProps={{ style: { display: "none" } }}
           onCancel={() => {
             setIsAddMCPConfigOpen(false);
@@ -437,11 +442,8 @@ export function Layout() {
               name="Configure MCP"
               clearOnDestroy
               onFinish={async (values) => {
-                if (values._type == "edit") {
-                  let index = clients.findIndex((e) => e.name == values._name);
-                  if (index == -1) {
-                    return;
-                  }
+                try {
+                  setLoadingOpenMCP(true);
                   values.args = values._argsStr
                     .split(" ")
                     .filter((x) => x.trim() != "");
@@ -451,40 +453,54 @@ export function Layout() {
                     message.error("Please enter a valid JSON");
                     return;
                   }
-
-                  clients[index].config = {
-                    ...clients[index].config,
-                    ...values,
-                  };
-
-                  MCP_CONFIG.get().mcpServers[values._name] =
-                    clients[index].config;
-                } else {
-                  values.args = values._argsStr
-                    .split(" ")
-                    .filter((x) => x.trim() != "");
-                  try {
-                    values.env = JSON.parse(values._envStr);
-                  } catch {
-                    message.error("Please enter a valid JSON");
+                  if (
+                    values._type == "edit" &&
+                    MCP_CONFIG.get().mcpServers[values._name].disabled
+                  ) {
+                    message.error("MCP Service Disabled");
                     return;
                   }
+                  await call("openMcpClient", [values._name, values]);
+                  if (values._type == "edit") {
+                    let index = clients.findIndex(
+                      (e) => e.name == values._name,
+                    );
 
-                  clients.push({
-                    name: values._name,
-                    config: values,
-                    status: "disconnected",
+                    if (index == -1) {
+                      return;
+                    }
+
+                    clients[index].config = {
+                      ...clients[index].config,
+                      ...values,
+                    };
+
+                    MCP_CONFIG.get().mcpServers[values._name] =
+                      clients[index].config;
+                  } else {
+                    clients.push({
+                      name: values._name,
+                      config: values,
+                      status: "disconnected",
+                    });
+                    if (MCP_CONFIG.get().mcpServers[values._name] != null) {
+                      message.error("Name already exists");
+                      return;
+                    }
+                    MCP_CONFIG.get().mcpServers[values._name] = values;
+                  }
+
+                  await MCP_CONFIG.save();
+                  setIsAddMCPConfigOpen(false);
+                  getClients(false).then((x) => {
+                    setClients(x);
+                    EVENT.fire("refresh");
                   });
-                  if (MCP_CONFIG.get().mcpServers[values._name] != null) {
-                    message.error("Name already exists");
-                    return;
-                  }
-                  MCP_CONFIG.get().mcpServers[values._name] = values;
+                } catch (e) {
+                  message.error(e.message);
+                } finally {
+                  setLoadingOpenMCP(false);
                 }
-                refresh();
-                setIsAddMCPConfigOpen(false);
-                await MCP_CONFIG.save();
-                EVENT.fire("refresh");
               }}
             >
               {dom}
