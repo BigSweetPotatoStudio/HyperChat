@@ -3,29 +3,35 @@
 
 ## Features
 
-Supports Chat with the [MCP](https://modelcontextprotocol.io/introduction) protocol, using a similar protocol to OpenAI, compatible with `Claude Desktop` configuration. Supports `Client` hot reloading, restarting, and disabling.
+Supports Chat with the [MCP](https://modelcontextprotocol.io/introduction) protocol, uses an OpenAI-like protocol, and is compatible with the `Claude Desktop` configuration file. Supports `Client` hot loading, restart, and disabling.
 
-### MCP:
+### MCP: 
 
 [![Build](https://github.com/BigSweetPotatoStudio/HyperChat/actions/workflows/build.yml/badge.svg)](https://github.com/BigSweetPotatoStudio/HyperChat/actions/workflows/build.yml)
 
 - [x] 🪟Windows+🍏MacOS
 - [x] Supports `nvm`, see below
-- [x] Resource support
+- [x] Resources support
 - [x] Partial support for Prompts
-- [x] Tool support
+- [x] Tools support
 - [x] Supports English and Chinese
 - [x] Added built-in MCP client `hypertools`, `fetch` + `search`
-- [x] gpts- supports selection of allowed MCP clients and tools
+- [x] gpts- supports selecting allowed MCP clients and tools
+
+### TODO:
+
+- [ ] Easier to use
+- [ ] Permission pop-up, allow or not
+- [ ] Support scheduled tasks
 
 ### LLM
 
-| LLM      | Usability | Remarks                           |
-| -------- | --------- | --------------------------------- |
-| claude   | ⭐⭐⭐⭐⭐    | No explanation                     |
-| openai   | ⭐⭐⭐⭐🌙    | Can also perfectly support multi-step function calls (gpt-4o-mini can too) |
-| 豆包       | ⭐⭐⭐      | Feels okay to use                 |
-| deepseek | ⭐⭐       | Multi-step function calls may have issues |
+| LLM      | Usability    | Notes                         |
+| -------- | ------ | -------------------------- |
+| claude   | ⭐⭐⭐⭐⭐  | No explanation                    |
+| openai   | ⭐⭐⭐⭐🌙 | Also perfectly supports multi-step function calls (gpt-4o-mini can too) |
+| 豆包       | ⭐⭐⭐    | Feels okay to use                   |
+| deepseek | ⭐⭐      | Multi-step function calls will have issues       |
 
 ## Usage
 
@@ -52,16 +58,19 @@ npm install
 npm run dev
 ```
 
+
 ## Note
 
-* MacOS encountered damage or permission issues, `sudo xattr -d com.apple.quarantine /Applications/HyperChat.app`
-* MacOS `nvm` users manually input PATH `echo $PATH`, Windows version `nvm` seems to work directly
+* MacOS encounters damaged or permission issues, `sudo xattr -d com.apple.quarantine /Applications/HyperChat.app`
+* MacOS `nvm` users need to manually enter PATH `echo $PATH`, Windows version `nvm` seems to work directly
 
 ![image.png](./images/image4.png)
 
+
+
 ## Telegram
 
-[HyperChat user communication](https://t.me/dadigua001)
+[HyperChat User Communication](https://t.me/dadigua001)
 
 ![image.png](./images/image11.png)
 
