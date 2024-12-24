@@ -11,6 +11,7 @@ import { initMcpServer } from "./servers/express.mjs";
 import { MyServers } from "./servers/index.mjs";
 import { electron } from "process";
 import { electronData } from "../common/data.mjs";
+import { request } from "http";
 
 await initMcpServer().catch((e) => {
   console.error("initMcpServer", e);
@@ -25,8 +26,14 @@ const { StdioClientTransport, getDefaultEnvironment } = await import(
 const { SSEClientTransport } = await import(
   /* webpackIgnore: true */ "@modelcontextprotocol/sdk/client/sse.js"
 );
-const { ListToolsResultSchema, CallToolRequestSchema, CallToolResultSchema } =
-  await import(/* webpackIgnore: true */ "@modelcontextprotocol/sdk/types.js");
+const {
+  ListToolsResultSchema,
+  CallToolRequestSchema,
+  CallToolResultSchema,
+  CompatibilityCallToolResultSchema,
+} = await import(
+  /* webpackIgnore: true */ "@modelcontextprotocol/sdk/types.js"
+);
 
 let mcpClients = {} as {
   [s: string]: MCPClient;
@@ -49,7 +56,30 @@ class MCPClient {
       log.error("MCP callTool disconnected, restarting");
       await this.open();
     }
-    return await this.client.callTool({ name: functionName, arguments: args });
+
+    return await this.client
+      .callTool({ name: functionName, arguments: args })
+      .catch((e) => {
+        return this.client
+          .request(
+            {
+              method: "tools/call",
+              params: {
+                name: functionName,
+                arguments: args,
+              },
+            },
+            CompatibilityCallToolResultSchema
+          )
+          .then((res) => {
+            console.log("CompatibilityCallToolResultSchema: ", res);
+            if (res.toolResult) {
+              return res.toolResult;
+            } else {
+              return res;
+            }
+          });
+      });
   }
   async callResource(uri: string): Promise<any> {
     log.info("MCP callTool", uri);
