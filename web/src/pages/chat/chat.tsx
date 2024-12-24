@@ -152,8 +152,13 @@ export const Chat = () => {
     GPT_MODELS.init().then(() => {
       refresh();
     });
-
-    currentChatReset();
+    (async () => {
+      let clients = await getClients().catch(() => []);
+      currentChatReset(
+        "",
+        clients.map((v) => v.name),
+      );
+    })();
   }, []);
   useEffect(() => {
     init();
@@ -204,7 +209,7 @@ export const Chat = () => {
     setPromptResList([]);
     getClients().then((clients) => {
       for (let c of clients) {
-        if (currentChat.current.allowMCPs.includes(c.name)) {
+        if ((currentChat.current.allowMCPs || []).includes(c.name)) {
           c.enable = true;
         } else {
           c.enable = false;
@@ -240,6 +245,7 @@ export const Chat = () => {
               Modal.info({
                 width: "80%",
                 title: "Tip",
+                maskClosable: true,
                 content: <div>{x.content as string}</div>,
               });
             }}
@@ -344,6 +350,7 @@ export const Chat = () => {
                 Modal.info({
                   width: "80%",
                   title: "Tool Call Result",
+                  maskClosable: true,
                   content: (
                     <div>
                       <pre
@@ -398,6 +405,7 @@ export const Chat = () => {
                         Modal.info({
                           width: "80%",
                           title: "Tool Call",
+                          maskClosable: true,
                           content: (
                             <div>
                               <pre
@@ -530,7 +538,10 @@ export const Chat = () => {
                 type="primary"
                 className="w-full"
                 onClick={() => {
-                  currentChatReset();
+                  currentChatReset(
+                    "",
+                    clients.map((v) => v.name),
+                  );
                 }}
               >
                 New Chat
@@ -760,7 +771,7 @@ export const Chat = () => {
                           (x) => x.role == "system",
                         )?.content;
 
-                        currentChatReset(p);
+                        currentChatReset(p, currentChat.current.allowMCPs);
                       }
                     }}
                   >

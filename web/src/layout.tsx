@@ -69,6 +69,34 @@ import { GPT_MODELS, MCP_CONFIG } from "./common/data";
 import { getClients, initMcpClients } from "./common/mcp";
 import { EVENT } from "./common/event";
 
+const Providers = [
+  {
+    label: "OpenAI",
+    url: "https://api.openai.com/v1",
+    value: "openai",
+  },
+  {
+    label: "OpenRouter",
+    url: "https://openrouter.ai/api/v1",
+    value: "openrouter",
+  },
+  {
+    label: "DeepSeek",
+    url: "https://api.deepseek.com",
+    value: "deepseek",
+  },
+  {
+    label: "DoubBao",
+    url: "https://ark.cn-beijing.volces.com/api/v3",
+    value: "doubao",
+  },
+  {
+    label: "Other",
+    url: "",
+    value: "other",
+  },
+];
+
 export function Layout() {
   const [num, setNum] = useState(0);
   function refresh() {
@@ -554,6 +582,9 @@ export function Layout() {
                       type="link"
                       onClick={async () => {
                         form.resetFields();
+                        if (record.provider == null) {
+                          record.provider = "other";
+                        }
                         form.setFieldsValue(record);
                         setIsAddModelConfigOpen(true);
                       }}
@@ -612,6 +643,9 @@ export function Layout() {
               form={form}
               layout="vertical"
               name="AddModelConfig"
+              initialValues={{
+                provider: Providers[0].value,
+              }}
               clearOnDestroy
               onFinish={async (values) => {
                 if (values.key) {
@@ -642,6 +676,31 @@ export function Layout() {
             <Input></Input>
           </Form.Item>
           <Form.Item
+            name="provider"
+            label="Provider"
+            rules={[{ required: true, message: "Please enter" }]}
+          >
+            <Select
+              options={Providers}
+              onChange={(e) => {
+                let find = Providers.find((x) => x.value == e);
+                if (find == null) {
+                  return;
+                }
+                console.log(find);
+                form.setFieldsValue({ baseURL: find.url });
+                refresh();
+                // setTimeout(() => {
+                //    refresh();
+                // }, 0);
+              }}
+            ></Select>
+          </Form.Item>
+          <Form.Item
+            style={{
+              display:
+                form.getFieldValue("provider") != "other" ? "none" : "block",
+            }}
             name="baseURL"
             label="baseURL"
             rules={[{ required: true, message: "Please enter" }]}

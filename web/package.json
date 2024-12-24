@@ -7,6 +7,7 @@
     "@ant-design/icons": "^5.3.6",
     "@ant-design/pro-components": "^2.8.2",
     "@ant-design/x": "^1.0.2",
+    "@azure/identity": "^4.5.0",
     "@babel/plugin-proposal-private-property-in-object": "^7.21.11",
     "@effortlessmotion/html-webpack-inline-source-plugin": "^1.0.3",
     "@microsoft/clarity": "^1.0.0",

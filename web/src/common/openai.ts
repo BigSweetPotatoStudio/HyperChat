@@ -253,13 +253,18 @@ export class OpenAiChannel {
           };
         });
         console.log("call_res", call_res);
+        let content = "";
+        if (call_res.content == null) {
+          content = JSON.stringify(call_res);
+        } else if (typeof call_res.content == "string") {
+          content = call_res.content;
+        } else {
+          content = JSON.stringify(call_res.content);
+        }
         let message = {
           role: "tool" as const,
           tool_call_id: tool.id,
-          content:
-            typeof call_res.content === "string"
-              ? call_res.content
-              : JSON.stringify(call_res.content),
+          content: content,
           content_status: status as any,
         };
 

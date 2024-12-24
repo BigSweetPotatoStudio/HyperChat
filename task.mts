@@ -155,10 +155,14 @@ if (argv.prod) {
       }
     );
   } else {
+    let name = pack.version;
+    if(process.env.MYRUNENV!="github"){
+      name = `${pack.version}-sign`;
+    }
     if (fs.existsSync(`./electron/dist/HyperChat Setup ${pack.version}.exe`)) {
       await fs.copy(
         `./electron/dist/HyperChat Setup ${pack.version}.exe`,
-        p + `/HyperChat-Setup-${pack.version}.exe`,
+        p + `/HyperChat-Setup-${name}.exe`,
         {
           overwrite: true,
         }
@@ -166,14 +170,14 @@ if (argv.prod) {
     }
     await fs.copy(
       `./electron/dist/HyperChat-${pack.version}-arm64.dmg`,
-      p + `/HyperChat-${pack.version}-arm64.dmg`,
+      p + `/HyperChat-${name}-arm64.dmg`,
       {
         overwrite: true,
       }
     );
     await fs.copy(
       `./electron/dist/HyperChat-${pack.version}.dmg`,
-      p + `/HyperChat-${pack.version}-x64.dmg`,
+      p + `/HyperChat-${name}-x64.dmg`,
       {
         overwrite: true,
       }
