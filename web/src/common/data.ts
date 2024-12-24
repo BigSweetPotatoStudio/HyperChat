@@ -83,6 +83,7 @@ export const GPT_MODELS = new Data("gpt_models.json", {
     model: string;
     apiKey: string;
     baseURL: string;
+    provider: string;
   }>,
 });
 
