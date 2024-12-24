@@ -18,8 +18,8 @@ export type InitedClient = {
 };
 
 let initedClientArray: Array<InitedClient> = [];
-export async function initMcpClients(clientName: string = undefined) {
-  McpClients = await call("initMcpClients", [clientName]);
+export async function initMcpClients() {
+  McpClients = await call("initMcpClients", []);
   console.log("initMcpClients", McpClients);
   initedClientArray = mcpClientsToArray(McpClients);
   return initedClientArray;
