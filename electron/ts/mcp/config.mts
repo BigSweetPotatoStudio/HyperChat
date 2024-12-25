@@ -10,7 +10,7 @@ import type { StdioServerParameters } from "@modelcontextprotocol/sdk/client/std
 import { initMcpServer } from "./servers/express.mjs";
 import { MyServers } from "./servers/index.mjs";
 import { electron } from "process";
-import { electronData } from "../common/data.mjs";
+import { electronData, ENV_CONFIG } from "../common/data.mjs";
 import { request } from "http";
 
 await initMcpServer().catch((e) => {
@@ -181,7 +181,7 @@ class MCPClient {
       const transport = new StdioClientTransport({
         command: config.command,
         args: config.args,
-        env: Object.assign(getDefaultEnvironment(), config.env),
+        env: Object.assign(getMyDefaultEnvironment(), config.env),
       });
 
       const client = new Client(
@@ -325,19 +325,6 @@ async function closeMcpClients(clientName: string) {
   client.prompts = [];
   client.resources = [];
 
-  // for (let key in mcpClients) {
-  //   if (clientName == null || key == clientName) {
-  //     let client = mcpClients[key].client;
-  //     if (client) {
-  //       await client.close();
-  //     }
-
-  //     mcpClients[key].client = undefined;
-  //     mcpClients[key].tools = [];
-  //     mcpClients[key].prompts = [];
-  //     mcpClients[key].resources = [];
-  //   }
-  // }
   return mcpClients;
 }
 export { getMcpClients, closeMcpClients, mcpClients };
@@ -362,4 +349,12 @@ export async function getConfg(): Promise<{
   }
   config.mcpServers = Object.assign(obj, config.mcpServers);
   return config;
+}
+
+export function getMyDefaultEnvironment() {
+  let env = getDefaultEnvironment();
+  if (ENV_CONFIG.get().PATH) {
+    env.PATH = ENV_CONFIG.get().PATH;
+  }
+  return env;
 }

@@ -34,7 +34,11 @@ import { v4 as uuidV4 } from "uuid";
 import Screenshots from "electron-screenshots";
 import { getLocalIP } from "./common/util.mjs";
 import { autoLauncher } from "./common/autoLauncher.mjs";
-import { clipboardHistoryData, electronData } from "./common/data.mjs";
+import {
+  clipboardHistoryData,
+  electronData,
+  ENV_CONFIG,
+} from "./common/data.mjs";
 import { commandHistory, CommandStatus } from "./command_history.mjs";
 import { appDataDir } from "./const.mjs";
 import spawn from "cross-spawn";
@@ -42,6 +46,7 @@ import spawn from "cross-spawn";
 import {
   closeMcpClients,
   getMcpClients,
+  getMyDefaultEnvironment,
   initMcpClients,
   openMcpClient,
 } from "./mcp/config.mjs";
@@ -287,12 +292,17 @@ export class CommandFactory {
     });
   }
   async checkNpx(): Promise<string> {
-    let p = await spawnWithOutput("npx", ["--version"], {});
+    let env = getMyDefaultEnvironment();
+    let p = await spawnWithOutput("npx", ["--version"], {
+      env,
+    });
     return p.stdout;
   }
   async checkUV(): Promise<string> {
-    let p = await spawnWithOutput("uvx", ["--version"], {});
-    console.log(p);
+    let env = getMyDefaultEnvironment();
+    let p = await spawnWithOutput("uvx", ["--version"], {
+      env,
+    });
     return p.stdout;
   }
 }

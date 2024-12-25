@@ -53,3 +53,7 @@ export const clipboardHistoryData = new ClipboardHistoryData(
   "clipboardHistory.json"
 );
 await clipboardHistoryData.init();
+
+export const ENV_CONFIG = new Data("env.json", {
+  PATH: "",
+});

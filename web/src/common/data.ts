@@ -115,3 +115,7 @@ export const MCP_CONFIG = new MCP_CONFIG_DATA("mcp.json", {
     };
   },
 });
+
+export const ENV_CONFIG = new Data("env.json", {
+  PATH: "",
+});
