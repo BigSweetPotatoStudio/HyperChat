@@ -358,6 +358,7 @@ export class OpenAiChannel {
         response = await this.openai.chat.completions.create({
           model: this.options.model,
           messages: messages,
+          tools,
         });
         console.log(response.choices[0].message.content);
         result.suppentTool = true;
