@@ -64,7 +64,7 @@ import {
 import type { ConfigProviderProps, GetProp } from "antd";
 import { MyMessage, OpenAiChannel } from "../../common/openai";
 import { ChatHistory, GPT_MODELS, GPTS } from "../../common/data";
-import "github-markdown-css";
+import "github-markdown-css/github-markdown-light.css";
 import { PromptsModal } from "./promptsModal";
 import {
   getClients,
