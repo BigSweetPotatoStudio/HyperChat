@@ -1,10 +1,15 @@
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import { call } from "../../common/call";
-import { Button, Form } from "antd";
+import { Button, Form, Input, Modal, Space } from "antd";
+import { ENV_CONFIG } from "../../common/data";
 
 export function Market() {
-  const [npx, setNpxVer] = useState("未安装");
-  const [uvVer, setUvVer] = useState("未安装");
+  const [num, setNum] = React.useState(0);
+  const refresh = () => {
+    setNum((n) => n + 1);
+  };
+  const [npx, setNpxVer] = useState("");
+  const [uv, setUvVer] = useState("");
   useEffect(() => {
     (async () => {
       let x = await call("checkNpx", []);
@@ -14,25 +19,41 @@ export function Market() {
       let y = await call("checkUV", []);
       setUvVer(y);
     })();
+    (async () => {
+      await ENV_CONFIG.init();
+      refresh();
+    })();
   }, []);
+  const [form] = Form.useForm();
+  const [isPathOpen, setIsPathOpen] = useState(false);
+
   return (
     <div className="flex">
       <div className="w-4/5">
         <h1 className=" ">💻MCP</h1>
 
         <div>
-          <div>
+          <Space>
             <span className="font-bold">npx: </span>
-            {npx}
-          </div>
-
-          <div>
-            <span className="font-bold">uvx:</span> {uvVer}
-          </div>
+            {npx || "Not Installed"}
+            {!npx && <a href="https://nodejs.org/">goto nodejs</a>}
+          </Space>
+          <br />
+          <Space>
+            <span className="font-bold">uvx:</span> {uv || "Not Installed"}
+            {!uv && <a href="https://github.com/astral-sh/uv">goto uv</a>}
+          </Space>
         </div>
-        <Button danger onClick={() => {}}>
-          Repair environment
-        </Button>
+        {(!npx || !uv) && (
+          <Button
+            danger
+            onClick={() => {
+              setIsPathOpen(true);
+            }}
+          >
+            Repair environment
+          </Button>
+        )}
       </div>
       <div className="w-1/5">
         <h1>More MCP Market</h1>
@@ -49,6 +70,38 @@ export function Market() {
           <a href="https://smithery.ai/">smithery</a>
         </div>
       </div>
+      <Modal
+        width={600}
+        title="Configure PATH"
+        open={isPathOpen}
+        okButtonProps={{ autoFocus: true, htmlType: "submit" }}
+        cancelButtonProps={{ style: { display: "none" } }}
+        onCancel={() => {
+          setIsPathOpen(false);
+        }}
+        modalRender={(dom) => (
+          <Form
+            form={form}
+            layout="vertical"
+            name="ConfigurePATH"
+            initialValues={{
+              PATH: ENV_CONFIG.get().PATH,
+            }}
+            clearOnDestroy
+            onFinish={async (values) => {
+              ENV_CONFIG.get().PATH = values.PATH;
+              await ENV_CONFIG.save();
+              location.reload();
+            }}
+          >
+            {dom}
+          </Form>
+        )}
+      >
+        <Form.Item name="PATH" label="PATH" rules={[{ required: true }]}>
+          <Input placeholder="Please enter the content of echo $PATH "></Input>
+        </Form.Item>
+      </Modal>
     </div>
   );
 }

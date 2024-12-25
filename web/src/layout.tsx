@@ -48,6 +48,8 @@ import {
   InfoCircleFilled,
   LoadingOutlined,
   LogoutOutlined,
+  MinusCircleOutlined,
+  PlusOutlined,
   QuestionCircleFilled,
   RocketOutlined,
   SmileFilled,
@@ -327,9 +329,14 @@ export function Layout() {
                           record.config._argsStr = (
                             record.config.args || []
                           ).join("   ");
-                          record.config._envStr = JSON.stringify(
-                            record.config.env || {},
-                          );
+
+                          record.config._envList = [];
+                          for (let key in record.config.env) {
+                            record.config._envList.push({
+                              name: key,
+                              value: record.config.env[key],
+                            });
+                          }
                           mcpform.resetFields();
                           mcpform.setFieldsValue(record.config);
                           setIsAddMCPConfigOpen(true);
@@ -448,7 +455,10 @@ export function Layout() {
                     .split(" ")
                     .filter((x) => x.trim() != "");
                   try {
-                    values.env = JSON.parse(values._envStr);
+                    values.env = {};
+                    for (let x of values._envList) {
+                      values.env[x.name] = x.value;
+                    }
                   } catch {
                     message.error("Please enter a valid JSON");
                     return;
@@ -531,8 +541,51 @@ export function Layout() {
             <Input placeholder="Please enter args"></Input>
           </Form.Item>
 
-          <Form.Item name="_envStr" label="env">
-            <Input.TextArea placeholder="Please enter env"></Input.TextArea>
+          <Form.Item label="env">
+            <Form.List name="_envList">
+              {(fields, { add, remove }) => (
+                <>
+                  {fields.map(({ key, name, ...restField }) => (
+                    <div
+                      key={key}
+                      style={{
+                        display: "flex",
+                        justifyContent: "space-between",
+                      }}
+                    >
+                      <Form.Item
+                        {...restField}
+                        name={[name, "name"]}
+                        rules={[{ required: true, message: "Missing name" }]}
+                      >
+                        <Input placeholder="Var Name" />
+                      </Form.Item>
+                      <Form.Item
+                        {...restField}
+                        className="flex-1"
+                        name={[name, "value"]}
+                        rules={[{ required: true, message: "Missing Value" }]}
+                      >
+                        <Input placeholder="Var Value" />
+                      </Form.Item>
+                      <Form.Item>
+                        <MinusCircleOutlined onClick={() => remove(name)} />
+                      </Form.Item>
+                    </div>
+                  ))}
+                  <Form.Item>
+                    <Button
+                      type="dashed"
+                      onClick={() => add()}
+                      block
+                      icon={<PlusOutlined />}
+                    >
+                      Add Environment Variables
+                    </Button>
+                  </Form.Item>
+                </>
+              )}
+            </Form.List>
           </Form.Item>
         </Modal>
 

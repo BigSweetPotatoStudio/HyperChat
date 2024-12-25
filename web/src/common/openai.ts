@@ -40,7 +40,8 @@ export class OpenAiChannel {
     promptResList: Array<MCPTypes.GetPromptResult> = [],
   ) {
     if (resourceResList.length > 0) {
-      message.content += `# Try to avoid using tools and use resources directly. \n`;
+      message.content += `
+# Try to avoid using tools and use resources directly. \n`;
       message.content += `
 ## resources 1: 
 `;
