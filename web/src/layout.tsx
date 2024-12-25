@@ -70,6 +70,7 @@ import { call } from "./common/call";
 import { GPT_MODELS, MCP_CONFIG } from "./common/data";
 import { getClients } from "./common/mcp";
 import { EVENT } from "./common/event";
+import { OpenAiChannel } from "./common/openai";
 
 const Providers = [
   {
@@ -163,6 +164,7 @@ export function Layout() {
   const [clients, setClients] = React.useState([]);
   const [isAddMCPConfigOpen, setIsAddMCPConfigOpen] = useState(false);
   const [loadingOpenMCP, setLoadingOpenMCP] = useState(false);
+  const [loadingCheckLLM, setLoadingCheckLLM] = useState(false);
 
   return (
     <ConfigProvider locale={locale}>
@@ -434,6 +436,7 @@ export function Layout() {
             htmlType: "submit",
             loading: loadingOpenMCP,
           }}
+          maskClosable={false}
           cancelButtonProps={{ style: { display: "none" } }}
           onCancel={() => {
             setIsAddMCPConfigOpen(false);
@@ -702,7 +705,12 @@ export function Layout() {
           width={600}
           title="Configure LLM"
           open={isAddModelConfigOpen}
-          okButtonProps={{ autoFocus: true, htmlType: "submit" }}
+          maskClosable={false}
+          okButtonProps={{
+            autoFocus: true,
+            htmlType: "submit",
+            loading: loadingCheckLLM,
+          }}
           cancelButtonProps={{ style: { display: "none" } }}
           onCancel={() => {
             setIsAddModelConfigOpen(false);
@@ -717,6 +725,24 @@ export function Layout() {
               }}
               clearOnDestroy
               onFinish={async (values) => {
+                setLoadingCheckLLM(true);
+                message.info("Testing the configuration, please wait...");
+                let o = new OpenAiChannel(values, []);
+
+                let res = await o.test();
+                if (res.code == 0) {
+                  message.error(
+                    "Please check if the configuration is incorrect or if the network is available.",
+                  );
+                  setLoadingCheckLLM(false);
+                  return;
+                } else {
+                  if (!res.suppentTool) {
+                    message.warning(
+                      "Your LLM is available, but does not support tool calls.",
+                    );
+                  }
+                }
                 if (values.key) {
                   let index = GPT_MODELS.get().data.findIndex(
                     (e) => e.key == values.key,
@@ -735,6 +761,8 @@ export function Layout() {
                 refresh();
                 setIsAddModelConfigOpen(false);
                 EVENT.fire("refresh");
+                setLoadingCheckLLM(false);
+                message.success("save success!");
               }}
             >
               {dom}
