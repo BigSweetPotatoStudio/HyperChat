@@ -44,16 +44,14 @@ export function Market() {
             {!uv && <a href="https://github.com/astral-sh/uv">goto uv</a>}
           </Space>
         </div>
-        {(!npx || !uv) && (
-          <Button
-            danger
-            onClick={() => {
-              setIsPathOpen(true);
-            }}
-          >
-            Repair environment
-          </Button>
-        )}
+
+        <Button
+          onClick={() => {
+            setIsPathOpen(true);
+          }}
+        >
+          Try Repair environment
+        </Button>
       </div>
       <div className="w-1/5">
         <h1>More MCP Market</h1>
