@@ -72,7 +72,7 @@ export const createWindow = () => {
   }
   // 处理新窗口打开
   win.webContents.setWindowOpenHandler(({ url }) => {
-    console.log(url);
+    // console.log(url);
     // 根据需要可以添加URL过滤
     if (url.startsWith("mailto")) {
       return { action: "allow" };
@@ -83,7 +83,7 @@ export const createWindow = () => {
   });
   // 处理页面内链接点击
   win.webContents.on("will-navigate", (event, url) => {
-    console.log(event, url);
+    // console.log(event, url);
     if (url.startsWith("http:") || url.startsWith("https:")) {
       if (url.includes("localhost")) {
         return;

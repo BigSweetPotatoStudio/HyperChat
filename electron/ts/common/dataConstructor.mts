@@ -2,16 +2,36 @@ import { fs, path } from "zx";
 import { Command } from "../command.mjs";
 import { app } from "electron";
 import { appDataDir } from "../const.mjs";
+import Logger from "electron-log";
 
 export class Data<T> {
   private localStorage = null;
-  async init() {
-    this.localStorage = await this.inget();
-    this.data = Object.assign(
-      {},
-      this.data,
-      this.localStorage ? JSON.parse(this.localStorage) : {}
-    );
+  async init(isCatch = true) {
+    let localData = {};
+    try {
+      this.localStorage = await this.inget();
+      if (this.localStorage) {
+        localData = JSON.parse(this.localStorage);
+      }
+    } catch (e) {
+      Logger.error(e);
+      localData = {};
+    }
+    this.data = Object.assign({}, this.data, localData);
+    return this.data;
+  }
+  initSync(isCatch = true) {
+    let localData = {};
+    try {
+      this.localStorage = this.ingetSync();
+      if (this.localStorage) {
+        localData = JSON.parse(this.localStorage);
+      }
+    } catch (e) {
+      Logger.error(e);
+      localData = {};
+    }
+    this.data = Object.assign({}, this.data, localData);
     return this.data;
   }
   constructor(private KEY: string, private data: T) {}
@@ -23,8 +43,15 @@ export class Data<T> {
     this.insave();
   }
   private async inget() {
+    if (await fs.exists(path.join(appDataDir, this.KEY))) {
+      return await fs.readFile(path.join(appDataDir, this.KEY));
+    } else {
+      return "";
+    }
+  }
+  private ingetSync() {
     if (fs.existsSync(path.join(appDataDir, this.KEY))) {
-      return fs.readFile(path.join(appDataDir, this.KEY));
+      return fs.readFileSync(path.join(appDataDir, this.KEY));
     } else {
       return "";
     }

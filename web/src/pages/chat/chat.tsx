@@ -37,6 +37,7 @@ import {
   Tooltip,
   Typography,
 } from "antd";
+const antdMessage = message;
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import OpenAI from "openai";
 import { v4 } from "uuid";
@@ -485,14 +486,21 @@ export const Chat = () => {
     setResourceResList([]);
     setPromptResList([]);
     refresh();
-    await client.completion(() => {
+    try {
+      await client.completion(() => {
+        currentChat.current.messages = client.messages;
+        refresh();
+      });
       currentChat.current.messages = client.messages;
       refresh();
-    });
-    currentChat.current.messages = client.messages;
-    refresh();
-    await ChatHistory.save();
-    setLoading(false);
+      await ChatHistory.save();
+    } catch (e) {
+      antdMessage.error(
+        e.message || "An error occurred, please try again later",
+      );
+    } finally {
+      setLoading(false);
+    }
   };
   // const [chatHistorys, setChatHistorys] = useState([]);
 
