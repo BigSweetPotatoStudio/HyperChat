@@ -3,9 +3,9 @@
 
 ## Features
 
-Supports Chat with the [MCP](https://modelcontextprotocol.io/introduction) protocol, uses an OpenAI-like protocol, and is compatible with the `Claude Desktop` configuration file. Supports `Client` hot loading, restart, and disabling.
+Supports Chat with the [MCP](https://modelcontextprotocol.io/introduction) protocol, using a protocol similar to OpenAI, compatible with the `Claude Desktop` configuration. Supports `Client` hot reloading, restarting, and disabling.
 
-### MCP: 
+### MCP:
 
 [![Build](https://github.com/BigSweetPotatoStudio/HyperChat/actions/workflows/build.yml/badge.svg)](https://github.com/BigSweetPotatoStudio/HyperChat/actions/workflows/build.yml)
 
@@ -16,27 +16,27 @@ Supports Chat with the [MCP](https://modelcontextprotocol.io/introduction) proto
 - [x] Tools support
 - [x] Supports English and Chinese
 - [x] Added built-in MCP client `hypertools`, `fetch` + `search`
-- [x] gpts- supports selecting allowed MCP clients and tools
+- [x] gpts- supports selection of allowed MCP clients and tools
 
 ### TODO:
 
 - [ ] Easier to use
-- [ ] Permission pop-up, allow or not
-- [ ] Support scheduled tasks
+- [ ] Permission pop-up, whether to allow
+- [ ] Support for scheduled tasks
 
 ### LLM
 
-| LLM      | Usability    | Notes                         |
-| -------- | ------ | -------------------------- |
-| claude   | ⭐⭐⭐⭐⭐  | No explanation                    |
-| openai   | ⭐⭐⭐⭐🌙 | Also perfectly supports multi-step function calls (gpt-4o-mini can too) |
-| 豆包       | ⭐⭐⭐    | Feels okay to use                   |
-| deepseek | ⭐⭐      | Multi-step function calls will have issues       |
+| LLM      | Usability | Remarks                     |
+| -------- | --------- | --------------------------- |
+| claude   | ⭐⭐⭐⭐⭐    | No explanation              |
+| openai   | ⭐⭐⭐⭐🌙   | Also perfectly supports multi-step function calls (gpt-4o-mini does too) |
+| doubao   | ⭐⭐⭐      | Feels okay to use           |
+| deepseek | ⭐⭐       | Multi-step function calls have issues |
 
 ## Usage
 
 * 1. You need to configure your OpenAI-style APIKEY
-* 2. Make sure you have uvx or npx installed on your system.
+* 2. Ensure that uvx or npx is installed on your system.
 
 ### [uvx](https://github.com/astral-sh/uv)
 
@@ -58,15 +58,12 @@ npm install
 npm run dev
 ```
 
-
 ## Note
 
-* MacOS encounters damaged or permission issues, `sudo xattr -d com.apple.quarantine /Applications/HyperChat.app`
-* MacOS `nvm` users need to manually enter PATH `echo $PATH`, Windows version `nvm` seems to work directly
+* MacOS encountered damaged or permission issues, `sudo xattr -d com.apple.quarantine /Applications/HyperChat.app`
+* MacOS `nvm` users manually input PATH `echo $PATH`, it seems that Windows version `nvm` can be used directly
 
 ![image.png](./images/image4.png)
-
-
 
 ## Telegram
 
