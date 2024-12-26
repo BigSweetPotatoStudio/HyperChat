@@ -77,6 +77,7 @@ import { EVENT } from "../../common/event";
 import InfiniteScroll from "react-infinite-scroll-component";
 import { call } from "../../common/call";
 import { MyAttachR } from "./attachR";
+import { UserContent } from "./component";
 
 const md = markdownit({ html: true, breaks: true });
 const renderMarkdown: BubbleProps["messageRender"] = (content) => (
@@ -285,44 +286,60 @@ export const Chat = () => {
               {x.content as string}
             </pre>
           ) : (
-            <Tooltip
-              title={
-                <>
-                  <Button
-                    type="link"
-                    size="small"
-                    onClick={() => {
-                      client.messages.splice(i);
-                      currentChat.current.messages = client.messages;
-                      refresh();
-                    }}
-                  >
-                    Clear
-                  </Button>
-                  <Button
-                    size="small"
-                    type="link"
-                    onClick={() => {
-                      client.messages.splice(i);
-                      currentChat.current.messages = client.messages;
-                      refresh();
-                      onRequest(x.content as string);
-                    }}
-                  >
-                    Regenerate
-                  </Button>
-                </>
-              }
-            >
-              <pre
-                style={{
-                  whiteSpace: "pre-wrap",
-                  wordWrap: "break-word",
-                }}
-              >
-                {x.content as string}
-              </pre>
-            </Tooltip>
+            <UserContent
+              x={x}
+              regenerate={() => {
+                client.messages.splice(i);
+                currentChat.current.messages = client.messages;
+                refresh();
+                onRequest(x.content as string);
+              }}
+              submit={(content) => {
+                client.messages.splice(i);
+                currentChat.current.messages = client.messages;
+                refresh();
+                onRequest(content as string);
+              }}
+            />
+            // <Tooltip
+            //   title={
+            //     <>
+            //       <Button
+            //         type="link"
+            //         size="small"
+            //         onClick={() => {
+            //           client.messages.splice(i);
+            //           currentChat.current.messages = client.messages;
+            //           // refresh();
+            //           setValue(x.content as string);
+            //         }}
+            //       >
+            //         Edit
+            //       </Button>
+            //       <Button
+            //         size="small"
+            //         type="link"
+            //         onClick={() => {
+            //           client.messages.splice(i);
+            //           currentChat.current.messages = client.messages;
+            //           refresh();
+            //           onRequest(x.content as string);
+            //         }}
+            //       >
+            //         Regenerate
+            //       </Button>
+            //     </>
+            //   }
+            // >
+            //   <pre
+            //     style={{
+            //       whiteSpace: "pre-wrap",
+            //       wordWrap: "break-word",
+            //     }}
+            //   >
+            //     {x.content as string}
+            //   </pre>
+            // </Tooltip>
           ),
       };
     } else if (x.role == "tool") {
@@ -391,52 +408,55 @@ export const Chat = () => {
             </Spin>
           ) : (
             <div>
-              {x.tool_calls && (
-                <Tooltip
-                  title={
-                    <div className="h-40 overflow-auto text-ellipsis">
-                      {x.tool_calls[0].function.arguments}
-                    </div>
-                  }
-                >
-                  <Spin spinning={i + 1 == arr.length}>
-                    <a
-                      className="cursor-pointer"
-                      onClick={() => {
-                        Modal.info({
-                          width: "80%",
-                          title: "Tool Call",
-                          maskClosable: true,
-                          content: (
-                            <div>
-                              <pre
-                                style={{
-                                  whiteSpace: "pre-wrap",
-                                  wordWrap: "break-word",
-                                }}
-                              >
-                                <span>Tool Name: </span>
-                                {x.tool_calls[0].function.name}
-                              </pre>
-                              <pre
-                                style={{
-                                  whiteSpace: "pre-wrap",
-                                  wordWrap: "break-word",
-                                }}
-                              >
-                                <span>Tool Arguments: </span>{" "}
-                                {x.tool_calls[0].function.arguments}
-                              </pre>
-                            </div>
-                          ),
-                        });
-                      }}
+              {x.tool_calls &&
+                x.tool_calls.map((tool) => {
+                  return (
+                    <Tooltip
+                      title={
+                        <div className="h-40 overflow-auto text-ellipsis">
+                          {tool.function.arguments}
+                        </div>
+                      }
                     >
-                      {x.tool_calls[0].function.name}
-                    </a>
-                  </Spin>
-                </Tooltip>
-              )}
+                      <Spin spinning={i + 1 == arr.length}>
+                        <a
+                          className="cursor-pointer"
+                          onClick={() => {
+                            Modal.info({
+                              width: "80%",
+                              title: "Tool Call",
+                              maskClosable: true,
+                              content: (
+                                <div>
+                                  <pre
+                                    style={{
+                                      whiteSpace: "pre-wrap",
+                                      wordWrap: "break-word",
+                                    }}
+                                  >
+                                    <span>Tool Name: </span>
+                                    {tool.function.name}
+                                  </pre>
+                                  <pre
+                                    style={{
+                                      whiteSpace: "pre-wrap",
+                                      wordWrap: "break-word",
+                                    }}
+                                  >
+                                    <span>Tool Arguments: </span>{" "}
+                                    {tool.function.arguments}
+                                  </pre>
+                                </div>
+                              ),
+                            });
+                          }}
+                        >
+                          {tool.function.name}
+                        </a>
+                      </Spin>
+                    </Tooltip>
+                  );
+                })}
               {x.content && <MarkDown markdown={x.content}></MarkDown>}
             </div>
           ),
