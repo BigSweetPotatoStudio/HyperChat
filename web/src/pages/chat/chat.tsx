@@ -933,7 +933,7 @@ export const Chat = () => {
                 onCancel={() => {
                   setLoading(false);
                   client.cancel();
-                  message.success("Cancel sending!");
+                  // message.success("Cancel sending!");
                 }}
                 onSubmit={(s) => {
                   setValue("");

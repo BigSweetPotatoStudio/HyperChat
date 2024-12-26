@@ -89,14 +89,25 @@ export class OpenAiChannel {
       this.abortController.abort();
       this.abortController = null;
     }
+    this.status = "stop";
   }
-  index = 0;
+  status: "runing" | "stop" = "stop";
   async completion(
     onUpdate?: (content: string) => void,
     call_tool: boolean = true,
     step = 0,
   ): Promise<string> {
-    this.index++;
+    this.status = "runing";
+    return this._completion(onUpdate, call_tool, step);
+  }
+  async _completion(
+    onUpdate?: (content: string) => void,
+    call_tool: boolean = true,
+    step = 0,
+  ): Promise<string> {
+    if (this.status == "stop") {
+      throw new Error("Cancel Requesting");
+    }
     let tools;
     if (!call_tool) {
       tools = undefined;
@@ -272,7 +283,7 @@ export class OpenAiChannel {
         onUpdate && onUpdate("");
       }
       console.log("this.messages", this.messages);
-      return await this.completion(
+      return await this._completion(
         onUpdate,
         (this.options.call_tool_step || 100) > step + 1,
         step + 1,
