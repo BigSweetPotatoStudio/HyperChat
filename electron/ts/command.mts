@@ -34,11 +34,7 @@ import { v4 as uuidV4 } from "uuid";
 import Screenshots from "electron-screenshots";
 import { getLocalIP } from "./common/util.mjs";
 import { autoLauncher } from "./common/autoLauncher.mjs";
-import {
-  clipboardHistoryData,
-  electronData,
-  ENV_CONFIG,
-} from "./common/data.mjs";
+import { electronData, ENV_CONFIG } from "./common/data.mjs";
 import { commandHistory, CommandStatus } from "./command_history.mjs";
 import { appDataDir } from "./const.mjs";
 import spawn from "cross-spawn";
@@ -150,11 +146,6 @@ export class CommandFactory {
     }
     return await client.callPrompt(functionName, args);
   }
-
-  async getClipboardHistory() {
-    return clipboardHistoryData.get();
-  }
-
   async processedFilePath(filePath: string): Promise<string> {
     // 获取文件目录和文件名
     const dirName = path.dirname(filePath);
