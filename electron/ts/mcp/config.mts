@@ -351,13 +351,9 @@ export async function getConfg(): Promise<{
   return config;
 }
 
-await ENV_CONFIG.init().catch((e) => {
-  return {
-    PATH: ""
-  }
-});
 export function getMyDefaultEnvironment() {
   let env = getDefaultEnvironment();
+  ENV_CONFIG.initSync();
   if (ENV_CONFIG.get().PATH) {
     env.PATH = ENV_CONFIG.get().PATH;
   }
