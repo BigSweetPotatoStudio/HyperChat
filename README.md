@@ -76,10 +76,12 @@ npm run dev
 
 ![image.png](./images/image13.png)
 
-![image.png](./images/image12.png)
+![image.png](./images/image32.png)
 
-![image.png](./images/image14.png)
+![image.png](./images/image31.png)
 
 ![image.png](./images/image22.png)
 
 ![image.png](./images/image21.png)
+
+![image.png](./images/image30.png)
