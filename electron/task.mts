@@ -24,17 +24,17 @@ if (argv.testprod) {
 if (argv.prod) {
   await $`npx cross-env NODE_ENV=production myEnv=prod webpack`;
   if (process.env.MYRUNENV === "github") {
-    if(process.env.GH_TOKEN) {
-      await $`npx cross-env NODE_ENV=production myEnv=prod electron-builder -p always`;
+    if (process.env.GH_TOKEN) {
+      await $`npx cross-env NODE_ENV=production myEnv=prod electron-builder --publish always`;
     } else {
-      await $`npx cross-env NODE_ENV=production myEnv=prod electron-builder`;
+      await $`npx cross-env NODE_ENV=production myEnv=prod electron-builder --publish never`;
     }
   } else {
     if (os.platform() === "win32") {
       await $`npx cross-env NODE_ENV=production myEnv=prod electron-builder`;
-    } else {
-      if(process.env.GH_TOKEN) {
-        await $`npx cross-env NODE_ENV=production myEnv=prod electron-builder --win --mac -p always`;
+    } else if (os.platform() === "darwin") {
+      if (process.env.GH_TOKEN) {
+        await $`npx cross-env NODE_ENV=production myEnv=prod electron-builder --win --mac --publish always`;
       } else {
         await $`npx cross-env NODE_ENV=production myEnv=prod electron-builder --win --mac`;
       }
