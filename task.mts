@@ -11,20 +11,23 @@ let pack = await fs.readJSON(path.resolve(__dirname, "./package.json"));
 let webpackage = await fs.readJSON(
   path.resolve(__dirname, "./web/package.json")
 );
-webpackage.version = pack.version;
-await fs.writeFile(
-  path.resolve(__dirname, "./web/package.json"),
-  JSON.stringify(webpackage, null, 2)
-);
-
+if (webpackage.version != pack.version) {
+  webpackage.version = pack.version;
+  await fs.writeFile(
+    path.resolve(__dirname, "./web/package.json"),
+    JSON.stringify(webpackage, null, 2)
+  );
+}
 let electronpackage = await fs.readJSON(
   path.resolve(__dirname, "./electron/package.json")
 );
-electronpackage.version = pack.version;
-await fs.writeFile(
-  path.resolve(__dirname, "./electron/package.json"),
-  JSON.stringify(electronpackage, null, 2)
-);
+if (electronpackage.version != pack.version) {
+  electronpackage.version = pack.version;
+  await fs.writeFile(
+    path.resolve(__dirname, "./electron/package.json"),
+    JSON.stringify(electronpackage, null, 2)
+  );
+}
 
 $.verbose = true;
 
