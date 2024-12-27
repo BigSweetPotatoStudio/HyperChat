@@ -12,6 +12,7 @@ import e from "express";
 import { get } from "http";
 import path from "path";
 import { os } from "zx";
+import CheckUpdate from "./upload.mjs";
 
 let title = `${app.name}-${app.getVersion()} by Dadigua`;
 Logger.info("title: ", title);
@@ -62,6 +63,9 @@ export const createWindow = () => {
   });
   messageService = new MessageService(win);
   messageService.init();
+
+  let c = new CheckUpdate();
+  c.checkUpdate();
   // win.maximize()
   win.show();
   if (process.env.NODE_ENV == "development") {
