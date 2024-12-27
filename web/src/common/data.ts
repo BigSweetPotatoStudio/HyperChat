@@ -119,3 +119,11 @@ export const MCP_CONFIG = new MCP_CONFIG_DATA("mcp.json", {
 export const ENV_CONFIG = new Data("env.json", {
   PATH: "",
 });
+
+export const electronData = new Data("electronData.json", {
+  port: 0,
+  mcp_server_port: 0,
+  version: "",
+});
+
+await electronData.init();

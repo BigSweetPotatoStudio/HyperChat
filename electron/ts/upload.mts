@@ -6,27 +6,45 @@ import { BrowserWindow } from "electron";
 
 import path from "path";
 import { getMessageService } from "./mianWindow.mjs";
+import { fs } from "zx";
+const log = require("electron-log");
+
+autoUpdater.logger = log;
 
 class CheckUpdate {
   constructor() {
     //* 设置检查更新的url 可以不设置 忽略
-    // autoUpdater.setFeedURL("http://127.0.0.1:5500/");
+    autoUpdater.autoDownload = false;
+    autoUpdater.forceDevUpdateConfig = true;
+    autoUpdater.setFeedURL({
+      provider: "github",
+      owner: "BigSweetPotatoStudio",
+      repo: "HyperChat",
+    });
+
     //* 修改配置地址 dev使用 开发环境需要注释 根据自己路径来，需要获取app-update.yml
-    autoUpdater.updateConfigPath = path.join(
-      __dirname,
-      "../dist/win-unpacked/resources/app-update.yml"
-    );
+    // log.info(
+    //   "check update",
+    //   fs.existsSync(path.join(__dirname, "../dist/latest-mac.yml"))
+    // );
+    // autoUpdater.updateConfigPath = path.join(
+    //   __dirname,
+    //   "../dist/latest-mac.yml"
+    // );
     this.updaterEvent();
   }
   checkUpdate() {
     //* 开始检查更新
-    autoUpdater.checkForUpdates().catch((err) => {
-      console.log("网络连接问题", err);
+    return autoUpdater.checkForUpdatesAndNotify().catch((err) => {
+      log.info("网络连接问题", err);
     });
   }
   // 退出并安装
   quitAndInstall() {
     autoUpdater.quitAndInstall();
+  }
+  download() {
+    autoUpdater.downloadUpdate();
   }
   updaterEvent() {
     //* 监听updater的事件
@@ -35,36 +53,36 @@ class CheckUpdate {
      **/
     // 当开始检查更新的时候触发
     autoUpdater.on("checking-for-update", () => {
-      console.log("开始检查更新");
-      sendToRender("UpdateMsg", 0);
+      log.info("开始检查更新");
+      sendToRender("UpdateMsg", { status: 0 });
     });
 
     // 发现可更新数据时
     autoUpdater.on("update-available", (info) => {
-      console.log("有更新", info);
-      sendToRender("UpdateMsg", 1);
+      log.info("有更新", info);
+      sendToRender("UpdateMsg", { status: 1, info: info });
     });
 
     // 没有可更新数据时
     autoUpdater.on("update-not-available", (info) => {
-      console.log("没有更新", info);
-      sendToRender("UpdateMsg", 2);
+      log.info("没有更新", info);
+      sendToRender("UpdateMsg", { status: 2, info: info });
     });
 
     // 下载监听
     autoUpdater.on("download-progress", (progressObj) => {
-      console.log(progressObj, "下载监听");
-      sendToRender(3, progressObj);
+      log.info("下载监听", progressObj);
+      sendToRender("download-progress", progressObj);
     });
 
     // 下载完成
     autoUpdater.on("update-downloaded", () => {
-      console.log("下载完成");
-      sendToRender("UpdateMsg", 4);
+      log.info("下载完成");
+      sendToRender("UpdateMsg", { status: 4 });
     });
     // 当更新发生错误的时候触发。
     autoUpdater.on("error", (err) => {
-      console.log("更新出现错误", err.message);
+      log.info("更新出现错误", err.message);
       if (err.message.includes("sha512 checksum mismatch")) {
         sendToRender(-1, "sha512校验失败");
       } else {
@@ -75,9 +93,11 @@ class CheckUpdate {
 }
 
 export default CheckUpdate;
-function sendToRender(arg1, arg2) {
+function sendToRender(type, data) {
   getMessageService().sendToRenderer({
-    arg1,
-    arg2,
+    type: type,
+    data: data,
   });
 }
+
+export let checkUpdate = new CheckUpdate();
