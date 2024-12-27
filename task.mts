@@ -3,6 +3,29 @@ import { fileURLToPath } from "url";
 
 import spawn from "cross-spawn";
 
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+let pack = await fs.readJSON(path.resolve(__dirname, "./package.json"));
+
+let webpackage = await fs.readJSON(
+  path.resolve(__dirname, "./web/package.json")
+);
+webpackage.version = pack.version;
+await fs.writeFile(
+  path.resolve(__dirname, "./web/package.json"),
+  JSON.stringify(webpackage, null, 2)
+);
+
+let electronpackage = await fs.readJSON(
+  path.resolve(__dirname, "./electron/package.json")
+);
+electronpackage.version = pack.version;
+await fs.writeFile(
+  path.resolve(__dirname, "./electron/package.json"),
+  JSON.stringify(electronpackage, null, 2)
+);
+
 $.verbose = true;
 
 if (os.platform() === "win32") {
@@ -44,9 +67,6 @@ import {EventSource} from 'eventsource'`
       )
   );
 }
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
 
 const spawnWithOutput = (command: string, args: string[], options) => {
   return new Promise((resolve, reject) => {
@@ -156,7 +176,7 @@ if (argv.prod) {
     );
   } else {
     let name = pack.version;
-    if(process.env.MYRUNENV!="github"){
+    if (process.env.MYRUNENV != "github") {
       name = `${pack.version}-sign`;
     }
     if (fs.existsSync(`./electron/dist/HyperChat Setup ${pack.version}.exe`)) {

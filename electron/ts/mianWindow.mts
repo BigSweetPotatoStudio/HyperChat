@@ -7,13 +7,15 @@ import {
   shell,
   Tray,
 } from "electron";
+import Logger from "electron-log";
 import e from "express";
 import { get } from "http";
 import path from "path";
 import { os } from "zx";
+import CheckUpdate, { checkUpdate } from "./upload.mjs";
 
 let title = `${app.name}-${app.getVersion()} by Dadigua`;
-
+Logger.info("title: ", title);
 class MessageService {
   private mainWindow: BrowserWindow;
 
@@ -61,12 +63,14 @@ export const createWindow = () => {
   });
   messageService = new MessageService(win);
   messageService.init();
+
   // win.maximize()
   win.show();
   if (process.env.NODE_ENV == "development") {
     win.loadURL("http://localhost:8080/#/");
   } else {
-    win.loadFile("./web-build/index.html", {
+    let indexFile = path.join(__dirname, "../web-build/index.html");
+    win.loadFile(indexFile, {
       hash: "#/",
     });
   }
@@ -95,65 +99,65 @@ export const createWindow = () => {
   });
   // 触发关闭时触发
   win.on("close", (event) => {
-    if (process.env.myEnv == "dev") {
-      app.quit();
-      tray.destroy();
-    } else {
-      // 截获 close 默认行为
-      event.preventDefault();
-      // 点击关闭时触发close事件，我们按照之前的思路在关闭时，隐藏窗口，隐藏任务栏窗口
-      win.hide();
+    app.quit();
+    // if (process.env.myEnv == "dev") {
+    //   app.quit();
+    // } else {
+    //   // 截获 close 默认行为
+    //   event.preventDefault();
+    //   // 点击关闭时触发close事件，我们按照之前的思路在关闭时，隐藏窗口，隐藏任务栏窗口
+    //   win.hide();
 
-      if (process.platform === "darwin") {
-        app.dock.hide();
-      } else {
-        win.setSkipTaskbar(true);
-      }
-    }
+    //   if (process.platform === "darwin") {
+    //     app.dock.hide();
+    //   } else {
+    //     win.setSkipTaskbar(true);
+    //   }
+    // }
   });
   // 创建原始图标
-  const icon = nativeImage.createFromPath(
-    path.join(__dirname, "../web-build/assets/favicon.png")
-  );
+  // const icon = nativeImage.createFromPath(
+  //   path.join(__dirname, "../web-build/assets/favicon.png")
+  // );
 
   // 调整图标大小
-  let trayIcon = icon.resize({
-    width: 20,
-    height: 20, // 根据平台调整图标大小,
-  });
+  // let trayIcon = icon.resize({
+  //   width: 20,
+  //   height: 20, // 根据平台调整图标大小,
+  // });
 
   // 新建托盘
-  let tray = new Tray(trayIcon);
+  // let tray = new Tray(trayIcon);
   // 托盘名称
-  tray.setToolTip(title);
+  // tray.setToolTip(title);
   // 托盘菜单
-  const contextMenu = Menu.buildFromTemplate([
-    {
-      label: "显示",
-      click: () => {
-        win.show();
-      },
-    },
-    {
-      label: "退出",
-      click: () => {
-        win.destroy();
-        app.quit();
-      },
-    },
-  ]);
-  // 载入托盘菜单
-  tray.setContextMenu(contextMenu);
-  // 单击触发
-  tray.on("double-click", () => {
-    // 双击通知区图标实现应用的显示或隐藏
-    win.isVisible() ? win.hide() : win.show();
-    if (process.platform === "darwin") {
-      win.isVisible() ? app.dock.show() : app.dock.hide();
-    } else {
-      win.isVisible() ? win.setSkipTaskbar(false) : win.setSkipTaskbar(true);
-    }
-  });
+  // const contextMenu = Menu.buildFromTemplate([
+  //   {
+  //     label: "显示",
+  //     click: () => {
+  //       win.show();
+  //     },
+  //   },
+  //   {
+  //     label: "退出",
+  //     click: () => {
+  //       win.destroy();
+  //       app.quit();
+  //     },
+  //   },
+  // ]);
+  // // 载入托盘菜单
+  // tray.setContextMenu(contextMenu);
+  // // 单击触发
+  // tray.on("double-click", () => {
+  //   // 双击通知区图标实现应用的显示或隐藏
+  //   win.isVisible() ? win.hide() : win.show();
+  //   if (process.platform === "darwin") {
+  //     win.isVisible() ? app.dock.show() : app.dock.hide();
+  //   } else {
+  //     win.isVisible() ? win.setSkipTaskbar(false) : win.setSkipTaskbar(true);
+  //   }
+  // });
 
   app.on("window-all-closed", () => {
     if (process.platform !== "darwin") app.quit();
