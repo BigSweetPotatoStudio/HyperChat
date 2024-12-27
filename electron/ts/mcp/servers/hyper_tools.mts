@@ -192,9 +192,7 @@ async function fetch(url: string) {
       }),
       sleep(3000),
     ]);
-    // win.webContents.executeJavaScript(
-    //   fs.readFileSync(path.join(__dirname, "./turndown.js"), "utf-8").toString()
-    // );
+
     Logger.info("Page loaded: " + url);
     let md = await executeClientScript(
       win,
@@ -234,9 +232,7 @@ async function search(words: string) {
       }),
       sleep(3000),
     ]);
-    // win.webContents.executeJavaScript(
-    //   fs.readFileSync(path.join(__dirname, "./turndown.js"), "utf-8").toString()
-    // );
+
     Logger.info("Page loaded");
     let res = await executeClientScript(
       win,

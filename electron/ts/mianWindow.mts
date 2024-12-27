@@ -7,13 +7,14 @@ import {
   shell,
   Tray,
 } from "electron";
+import Logger from "electron-log";
 import e from "express";
 import { get } from "http";
 import path from "path";
 import { os } from "zx";
 
 let title = `${app.name}-${app.getVersion()} by Dadigua`;
-
+Logger.info("title: ", title);
 class MessageService {
   private mainWindow: BrowserWindow;
 
@@ -66,7 +67,8 @@ export const createWindow = () => {
   if (process.env.NODE_ENV == "development") {
     win.loadURL("http://localhost:8080/#/");
   } else {
-    win.loadFile("./web-build/index.html", {
+    let indexFile = path.join(__dirname, "../web-build/index.html");
+    win.loadFile(indexFile, {
       hash: "#/",
     });
   }
