@@ -14,6 +14,7 @@
 - [x] 支持英文和中文
 - [x] 添加了内置的MCP客户端`hypertools`, `fetch`+`search`
 - [x] gpts-支持选择允许使用的MCP客户端和工具
+- [x] 支持Artifacts, HTML,SVG 渲染
 
 ### TODO:
 
@@ -27,7 +28,8 @@
 | -------- | ------ | -------------------------- |
 | claude   | ⭐⭐⭐⭐⭐  | 不解释                    |
 | openai   | ⭐⭐⭐⭐🌙 | 也可以完美支持多步function call(gpt-4o-mini也可以) |
-| 豆包       | ⭐⭐⭐    | 使用起来感觉还行                   |
+| qwen       | ⭐⭐⭐⭐🌙    | 很好用，感觉比openai更好                 |
+| doubao       | ⭐⭐⭐    | 使用起来感觉还行                   |
 | deepseek | ⭐⭐      | 多步function call会出问题       |
 
 ## 使用
@@ -69,7 +71,8 @@ npm run dev
 
 [HyperChat用户交流](https://t.me/dadigua001)
 
-![image.png](./images/image11.png)
+![image.png](./images/image33.png)
+
 
 ![image.png](./images/image13.png)
 

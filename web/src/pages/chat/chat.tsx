@@ -41,7 +41,6 @@ const antdMessage = message;
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import OpenAI from "openai";
 import { v4 } from "uuid";
-import markdownit from "markdown-it";
 
 import {
   AlipayCircleOutlined,
@@ -77,56 +76,7 @@ import { EVENT } from "../../common/event";
 import InfiniteScroll from "react-infinite-scroll-component";
 import { call } from "../../common/call";
 import { MyAttachR } from "./attachR";
-import { UserContent } from "./component";
-
-const md = markdownit({ html: true, breaks: true });
-const renderMarkdown: BubbleProps["messageRender"] = (content) => (
-  <div
-    className="markdown-body"
-    dangerouslySetInnerHTML={{ __html: md.render(content) }}
-  />
-);
-const MarkDown = ({ markdown }) => {
-  const [render, setRender] = React.useState("markdown");
-  return (
-    <div
-      className="relative bg-white p-4"
-      style={{ width: "100%", overflowX: "auto" }}
-    >
-      <Segmented
-        size="small"
-        onChange={(value) => {
-          setRender(value);
-        }}
-        options={[
-          {
-            label: "Markdown",
-            value: "markdown",
-            icon: <FileMarkdownOutlined />,
-          },
-          {
-            label: "Text",
-            value: "text",
-            icon: <FileTextOutlined />,
-          },
-        ]}
-      />
-      <br></br>
-      {render == "markdown" ? (
-        renderMarkdown(markdown)
-      ) : (
-        <pre
-          style={{
-            whiteSpace: "pre-wrap",
-            wordWrap: "break-word",
-          }}
-        >
-          {markdown}
-        </pre>
-      )}
-    </div>
-  );
-};
+import { MarkDown, UserContent } from "./component";
 
 let client: OpenAiChannel;
 
