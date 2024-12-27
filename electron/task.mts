@@ -24,12 +24,12 @@ if (argv.testprod) {
 if (argv.prod) {
   await $`npx cross-env NODE_ENV=production myEnv=prod webpack`;
   if (process.env.MYRUNENV === "github") {
-    await $`npx cross-env NODE_ENV=production myEnv=prod electron-builder`;
+    await $`npx cross-env NODE_ENV=production myEnv=prod electron-builder -p always`;
   } else {
     if (os.platform() === "win32") {
-      await $`npx cross-env NODE_ENV=production myEnv=prod electron-builder`;
+      await $`npx cross-env NODE_ENV=production myEnv=prod electron-builder -p always`;
     } else {
-      await $`npx cross-env NODE_ENV=production myEnv=prod electron-builder --win --mac`;
+      await $`npx cross-env NODE_ENV=production myEnv=prod electron-builder --win --mac -p always`;
     }
   }
 }
