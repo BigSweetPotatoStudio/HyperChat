@@ -88,6 +88,7 @@ async function initWebsocket() {
     server.listen(port);
   });
   electronData.get().port = PORT;
+  Logger.info("http server listen on: ", PORT);
   await electronData.save();
 
   fs.ensureDirSync(path.join(appDataDir, "downloadVideos"));
