@@ -8,7 +8,7 @@ import {
   useLocation,
 } from "react-router-dom";
 import { v4 } from "uuid";
-
+import Clarity from "@microsoft/clarity";
 import {
   Button,
   Table,
@@ -67,7 +67,7 @@ import {
 import { route as routerRoute } from "./router";
 import { currLang, setCurrLang } from "./i18n";
 import { call } from "./common/call";
-import { GPT_MODELS, MCP_CONFIG } from "./common/data";
+import { electronData, GPT_MODELS, MCP_CONFIG } from "./common/data";
 import { getClients } from "./common/mcp";
 import { EVENT } from "./common/event";
 import { OpenAiChannel } from "./common/openai";
@@ -166,6 +166,78 @@ export function Layout() {
   const [loadingOpenMCP, setLoadingOpenMCP] = useState(false);
   const [loadingCheckLLM, setLoadingCheckLLM] = useState(false);
 
+  useEffect(() => {
+    window.ext.receive("message-from-main", (res: any) => {
+      // console.log("UpdateMsg! ", res);
+
+      if (res.type == "UpdateMsg" && res.data.status == 1) {
+        Modal.confirm({
+          title: "A new version is available",
+          content: (
+            <div>
+              <div>current version: {electronData.get().version}</div>
+              <div>latest version: {res.data.info.version}</div>
+              {res.data.info.releaseName != res.data.info.version && (
+                <div>title: {res.data.info.releaseName}</div>
+              )}
+              <div>
+                changelog:{" "}
+                {typeof res.data.info.releaseNotes == "string" ? (
+                  <div
+                    style={{ color: "gray" }}
+                    dangerouslySetInnerHTML={{
+                      __html: res.data.info.releaseNotes,
+                    }}
+                  ></div>
+                ) : (
+                  res.data.info.releaseNotes.map((x) => {
+                    return (
+                      <div dangerouslySetInnerHTML={{ __html: x.note }}></div>
+                    );
+                  })
+                )}
+              </div>
+            </div>
+          ),
+          okText: "Download And Update",
+          onOk: async () => {
+            call("checkUpdateDownload", []);
+          },
+        });
+      }
+
+      if (res.type == "UpdateMsg" && res.data.status == 4) {
+        Modal.confirm({
+          title: "Update",
+          content:
+            "The new version has been downloaded, do you want to restart and update?",
+          icon: <ExclamationCircleFilled />,
+          okText: "Restart And Update",
+          onOk() {
+            call("quitAndInstall", []);
+          },
+        });
+      }
+    });
+    (async () => {
+      await electronData.init();
+      Clarity.init("p731bym3zs");
+      Clarity.consent();
+      Clarity.event("openApp");
+      Clarity.setTag("env", process.env.NODE_ENV);
+      Clarity.event(
+        `openApp-${process.env.NODE_ENV}-${electronData.get().version}`,
+      );
+      Clarity.setTag("version", electronData.get().version);
+
+      refresh();
+      let res = await call("checkUpdate", []);
+      if (res) {
+        console.log("checkUpdate: ", res);
+      }
+    })();
+  }, []);
+
   return (
     <ConfigProvider locale={locale}>
       <div style={{ width: "100%", margin: "0px auto" }}>
@@ -247,7 +319,9 @@ export function Layout() {
             },
           }}
           headerTitleRender={(logo, title, _) => {
-            return <Link to="home">HyperChat</Link>;
+            return (
+              <Link to="home">HyperChat({electronData.get().version})</Link>
+            );
           }}
           menuFooterRender={(props) => {
             if (props?.collapsed) return undefined;

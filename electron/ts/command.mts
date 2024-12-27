@@ -46,6 +46,8 @@ import {
   initMcpClients,
   openMcpClient,
 } from "./mcp/config.mjs";
+import { checkUpdate } from "./upload.mjs";
+import { version } from "os";
 
 const userDataPath = app.getPath("userData");
 let videoDownloadWin: BrowserWindow;
@@ -76,6 +78,11 @@ function logCommand(
 }
 
 export class CommandFactory {
+  async getConfig() {
+    return {
+      version: app.getVersion(),
+    };
+  }
   async getHistory() {
     return commandHistory.get();
   }
@@ -295,6 +302,16 @@ export class CommandFactory {
       env,
     });
     return p.stdout;
+  }
+  async checkUpdate() {
+    return checkUpdate.checkUpdate();
+  }
+  async checkUpdateDownload() {
+    checkUpdate.download();
+  }
+
+  async quitAndInstall() {
+    checkUpdate.quitAndInstall();
   }
 }
 
