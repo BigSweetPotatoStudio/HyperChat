@@ -1,4 +1,9 @@
 import {
+  FileMarkdownOutlined,
+  FileTextOutlined,
+  FundViewOutlined,
+} from "@ant-design/icons";
+import {
   Avatar,
   Button,
   Card,
@@ -22,8 +27,24 @@ import {
   Tooltip,
   Typography,
 } from "antd";
+import {
+  Attachments,
+  Bubble,
+  BubbleProps,
+  Conversations,
+  ConversationsProps,
+  Prompts,
+  Sender,
+  Suggestion,
+  ThoughtChain,
+  Welcome,
+  XProvider,
+  useXAgent,
+  useXChat,
+} from "@ant-design/x";
 const antdMessage = message;
 import React, { useCallback, useEffect, useRef, useState } from "react";
+import markdownit from "markdown-it";
 
 export function UserContent({ x, regenerate, submit }) {
   const [isEdit, setIsEdit] = useState(false);
@@ -98,3 +119,125 @@ export function UserContent({ x, regenerate, submit }) {
     </div>
   );
 }
+
+const md = markdownit({ html: true, breaks: true });
+const renderMarkdown: BubbleProps["messageRender"] = (content) => (
+  <div
+    className="markdown-body"
+    dangerouslySetInnerHTML={{ __html: md.render(content) }}
+  />
+);
+function extractHTMLContent(str) {
+  // 定义一个正则表达式来匹配 ```html 和 ``` 之间的所有内容
+  const regex = /```html(.*?)```/gs;
+  // 执行匹配并检查是否有结果
+  let match = regex.exec(str);
+  if (match && match[1]) {
+    // 如果有匹配项，返回捕获组中的内容，并去除多余的空白字符
+    return match[1].trim();
+  }
+  // 如果没有找到匹配的内容，则返回空字符串或 null
+  return "";
+}
+function extractSvgContent(str) {
+  // 定义一个正则表达式来匹配 ```svg 和 ``` 之间的所有内容
+  let regex = /```xml(\n?<svg.*?)```/gs;
+  // 执行匹配并检查是否有结果
+  let match = regex.exec(str);
+  if (match && match[1]) {
+    // 如果有匹配项，返回捕获组中的内容，并去除多余的空白字符
+    return match[1].trim();
+  }
+  // 定义一个正则表达式来匹配 ```svg 和 ``` 之间的所有内容
+  regex = /```svg(\n?<svg.*?)```/gs;
+  // 执行匹配并检查是否有结果
+  match = regex.exec(str);
+  if (match && match[1]) {
+    // 如果有匹配项，返回捕获组中的内容，并去除多余的空白字符
+    return match[1].trim();
+  }
+  return "";
+}
+function textToBase64Unicode(text) {
+  // 创建一个Uint8Array从TextEncoder输出的字节流
+  let encoder = new TextEncoder();
+  let uint8Array = encoder.encode(text);
+
+  // 将Uint8Array转化为字符串，因为btoa接受字符串作为参数
+  let binaryString = Array.from(uint8Array, (byte) =>
+    String.fromCharCode(byte),
+  ).join("");
+
+  // 使用btoa进行Base64编码
+  return btoa(binaryString);
+}
+
+export const MarkDown = ({ markdown }) => {
+  let [artifacts, setArtifacts] = React.useState("");
+  useEffect(() => {
+    if (markdown) {
+      // console.log(extractHTMLContent(markdown));
+      let html = extractHTMLContent(markdown);
+      if (html) {
+        setArtifacts(html);
+      } else {
+        let svg = extractSvgContent(markdown);
+        setArtifacts(svg);
+      }
+    }
+  }, [markdown]);
+  // console.log(artifacts);
+  const [render, setRender] = React.useState("markdown");
+  return (
+    <div
+      className="relative bg-white p-4"
+      style={{ width: "100%", overflowX: "auto" }}
+    >
+      <Segmented
+        size="small"
+        onChange={(value) => {
+          setRender(value);
+        }}
+        options={[
+          {
+            label: "Markdown",
+            value: "markdown",
+            icon: <FileMarkdownOutlined />,
+          },
+          {
+            label: "Text",
+            value: "text",
+            icon: <FileTextOutlined />,
+          },
+          {
+            label: "Artifacts",
+            value: "artifacts",
+            icon: <FundViewOutlined />,
+          },
+        ]}
+      />
+      <br></br>
+      {render == "markdown" ? (
+        renderMarkdown(markdown)
+      ) : render == "artifacts" ? (
+        <iframe
+          src={"data:text/html;base64," + textToBase64Unicode(artifacts)}
+          // className="w-3/5"
+          style={{
+            height: "calc(60vh)",
+            width: "calc(60vw)",
+          }}
+        ></iframe>
+      ) : (
+        <pre
+          style={{
+            whiteSpace: "pre-wrap",
+            wordWrap: "break-word",
+          }}
+        >
+          {markdown}
+        </pre>
+      )}
+    </div>
+  );
+};

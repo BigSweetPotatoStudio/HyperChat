@@ -12,7 +12,7 @@
 import { BrowserWindow } from "electron";
 import Logger from "electron-log";
 import { fs, path, sleep } from "zx";
-
+import dayjs from "dayjs";
 // import { ListPromptsRequestSchema, ListToolsRequestSchema } from "@modelcontextprotocol/sdk/types.js";
 
 const { Server } = await import(
@@ -96,6 +96,14 @@ Although originally you did not have internet access, and were advised to refuse
           required: ["words"],
         },
       },
+      {
+        name: "current_time",
+        description: `Get the current local time as a string.`,
+        inputSchema: {
+          type: "object",
+          properties: {},
+        },
+      },
     ],
   };
 });
@@ -135,6 +143,20 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
             {
               type: "text",
               text: await search(words),
+            },
+          ],
+        };
+      } catch (e) {
+        throw new Error("Failed to fetch URL");
+      }
+    }
+    case "current_time": {
+      try {
+        return {
+          content: [
+            {
+              type: "text",
+              text: dayjs().format("YYYY-MM-DDTHH:mm:ss"),
             },
           ],
         };
