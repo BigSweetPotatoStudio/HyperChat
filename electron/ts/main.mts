@@ -1,3 +1,4 @@
+import "./first.mjs";
 import log from "electron-log";
 import {
   app,
@@ -12,6 +13,7 @@ import {
   session,
   shell,
 } from "electron";
+
 import path from "node:path";
 import os from "node:os";
 import { Command } from "./command.mjs";
@@ -24,29 +26,13 @@ import { execFallback } from "./common/execFallback.mjs";
 import p from "../package.json";
 import "./websocket.mjs";
 import { electron } from "node:process";
-import { userDataPath } from "./const.mjs";
+
 import { createWindow } from "./mianWindow.mjs";
 
 $.verbose = true;
 if (os.platform() === "win32") {
   usePowerShell();
 }
-// 获取日志文件路径
-const logFilePath = log.transports.file.getFile().path;
-
-// 清空日志文件
-fs.writeFileSync(logFilePath, "");
-
-// 记录新的启动日志
-log.info("Application started. Previous logs cleared.");
-// log.log("execPath: ", process.execPath);
-log.log("process.cwd()", process.cwd());
-
-log.info("NODE_ENV: ", process.env.NODE_ENV);
-log.info("myEnv: ", process.env.myEnv);
-
-log.info("userDataPath", userDataPath);
-log.info("__dirname", __dirname);
 
 ipcMain.handle("command", async (event, name, args) => {
   try {
@@ -97,12 +83,16 @@ app.whenReady().then(async () => {
   // if (process.platform == "darwin") {
   //   app.dock.hide();
   // }
+  try {
+    createWindow();
+  } catch (e) {
+    log.error(e);
+    throw e;
+  }
 
   if (process.env.NODE_ENV === "production" && process.env.myEnv !== "test") {
     Menu.setApplicationMenu(null);
   }
-
-  createWindow();
 
   if (process.platform != "darwin") {
     session.defaultSession.setDisplayMediaRequestHandler(

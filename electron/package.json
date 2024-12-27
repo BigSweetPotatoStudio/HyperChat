@@ -64,7 +64,7 @@
   },
   "build": {
     "productName": "HyperChat",
-    "asar": false,
+    "asar": true,
     "appId": "men.dadigua.hpyerchat",
     "icon": "./web-build/assets/favicon.png",
     "win": {
