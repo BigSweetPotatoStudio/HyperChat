@@ -3,7 +3,9 @@
 
 ## Features
 
-Supports the [MCP](https://modelcontextprotocol.io/introduction) protocol for Chat, using an OpenAI-like protocol, compatible with `Claude Desktop` configuration. Supports `Client` hot reloading, restarting, and disabling.
+HyperChat is a Chat client that strives for openness, utilizing APIs from various LLMs to achieve the best Chat experience, as well as implementing productivity tools through the MCP protocol.
+
+Supports Chat with the [MCP](https://modelcontextprotocol.io/introduction) protocol, using a protocol similar to OpenAI, compatible with `Claude Desktop` configuration. Supports `Client` hot loading, restart, and disable.
 
 ### MCP:
 
@@ -16,29 +18,33 @@ Supports the [MCP](https://modelcontextprotocol.io/introduction) protocol for Ch
 - [x] Tools support
 - [x] Supports English and Chinese
 - [x] Added built-in MCP client `hypertools`, `fetch` + `search`
-- [x] gpts-supports selection of allowed MCP clients and tools
+- [x] Bot support for selecting allowed MCP clients and tools
 - [x] Supports Artifacts, HTML, SVG rendering
+- [x] Bot display optimization, supports search, drag-and-drop sorting
 
 ### TODO:
 
-- [ ] More user-friendly
 - [ ] Permission pop-up, whether to allow
 - [ ] Support for scheduled tasks
+- [ ] Support for Projects + RAG
+- [ ] WebDAV synchronization
+- [ ] Implement LLM writing Tools for itself
+- [ ] Local shell + js runtime environment
 
 ### LLM
 
-| LLM      | Usability  | Remarks                       |
-| -------- | ------ | ---------------------------- |
-| claude   | ⭐⭐⭐⭐⭐  | No explanation               |
-| openai   | ⭐⭐⭐⭐🌙 | Also perfectly supports multi-step function calls (gpt-4o-mini can also) |
-| qwen     | ⭐⭐⭐⭐🌙 | Very useful, feels better than openai |
-| doubao   | ⭐⭐⭐    | Feels okay to use           |
-| deepseek | ⭐⭐      | Multi-step function calls can have issues |
+| LLM      | Usability    | Remarks                         |
+| -------- | ------ | -------------------------- |
+| claude   | ⭐⭐⭐⭐⭐  | No explanation                    |
+| openai   | ⭐⭐⭐⭐🌙 | Can also perfectly support multi-step function call (gpt-4o-mini can too) |
+| qwen       | ⭐⭐⭐⭐🌙    | Very good, feels better than openai                 |
+| doubao       | ⭐⭐⭐    | Feels okay to use                   |
+| deepseek | ⭐⭐      | Multi-step function call may have issues       |
 
 ## Usage
 
 * 1. You need to configure your OpenAI-style APIKEY
-* 2. Ensure that `uvx` or `npx` is installed on your system.
+* 2. Make sure you have installed uvx or npx in your system.
 
 ### [uvx](https://github.com/astral-sh/uv)
 
@@ -60,22 +66,20 @@ npm install
 npm run dev
 ```
 
-
 ## Notes
 
-* MacOS encountering corrupted or permission issues, `sudo xattr -d com.apple.quarantine /Applications/HyperChat.app`
-* MacOS `nvm` users manually input PATH `echo $PATH`, the Windows version of `nvm` seems to be usable directly
+* MacOS encounters damaged or permission issues, `sudo xattr -d com.apple.quarantine /Applications/HyperChat.app`
+* MacOS `nvm` users manually input PATH `echo $PATH`, the Windows version of `nvm` seems to work directly
 
 ![image.png](./images/image4.png)
 
-
-
 ## Telegram
 
-[HyperChat user group](https://t.me/dadigua001)
+[HyperChat User Communication](https://t.me/dadigua001)
 
 ![image.png](./images/image33.png)
 
+![image.png](./images/image34.png)
 
 ![image.png](./images/image13.png)
 

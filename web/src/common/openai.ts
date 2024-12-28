@@ -152,10 +152,10 @@ export class OpenAiChannel {
           signal: this.abortController.signal,
         },
       );
-
+      let totalTokens;
       for await (const chunk of stream) {
         if (chunk.usage) {
-          this.totalTokens = chunk.usage.total_tokens;
+          totalTokens = chunk.usage.total_tokens;
         }
 
         if (chunk.choices[0].delta.tool_calls) {
@@ -193,6 +193,7 @@ export class OpenAiChannel {
         this.lastMessage.content = content;
         onUpdate && onUpdate(content);
       }
+      this.totalTokens = totalTokens;
     } else {
       const chatCompletion = await this.openai.chat.completions.create(
         {
@@ -205,7 +206,7 @@ export class OpenAiChannel {
         },
       );
 
-      this.totalTokens = chatCompletion.usage.total_tokens;
+      this.totalTokens = chatCompletion?.usage?.total_tokens;
       res = chatCompletion.choices[chatCompletion.choices.length - 1].message;
 
       let i = 0;
