@@ -67,7 +67,7 @@ export function UserContent({ x, regenerate, submit }) {
                 setIsEdit(false);
               }}
             >
-              取消
+              Cancel
             </Button>
             <Button
               size="small"
@@ -76,7 +76,7 @@ export function UserContent({ x, regenerate, submit }) {
                 submit(value);
               }}
             >
-              提交
+              Submit
             </Button>
           </Space.Compact>
         </div>

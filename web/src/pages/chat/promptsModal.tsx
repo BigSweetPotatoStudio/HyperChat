@@ -23,6 +23,7 @@ import { v4 as uuid } from "uuid";
 
 import { CloseOutlined, FormOutlined } from "@ant-design/icons";
 import { getClients, InitedClient } from "../../common/mcp";
+import { GPT_MODELS } from "../../common/data";
 
 interface Values {
   label: string;
@@ -30,6 +31,7 @@ interface Values {
 
   key?: string;
   allowMCPs: string[];
+  modelKey: string;
 }
 
 interface CollectionCreateFormProps {
@@ -54,6 +56,9 @@ const ModalForm: React.FC<CollectionCreateFormProps> = ({
       getClients().then((x) => {
         setClients(x);
       });
+      GPT_MODELS.init().then(() => {
+        refresh();
+      });
     })();
   }, []);
 
@@ -75,6 +80,18 @@ const ModalForm: React.FC<CollectionCreateFormProps> = ({
         rules={[{ required: true, message: `Please enter Prompt Content` }]}
       >
         <Input.TextArea placeholder="Please enter Prompt Content" rows={4} />
+      </Form.Item>
+      <Form.Item name="modelKey" label="LLM">
+        <Select
+          placeholder="Please select default LLM"
+          allowClear
+          options={GPT_MODELS.get().data.map((x) => {
+            return {
+              label: x.name,
+              value: x.key,
+            };
+          })}
+        />
       </Form.Item>
       <Form.Item
         name="allowMCPs"
