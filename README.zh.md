@@ -13,14 +13,15 @@
 - [x] Tools 支持
 - [x] 支持英文和中文
 - [x] 添加了内置的MCP客户端`hypertools`, `fetch`+`search`
-- [x] gpts-支持选择允许使用的MCP客户端和工具
+- [x] Bot支持选择允许使用的MCP客户端和工具
 - [x] 支持Artifacts, HTML,SVG 渲染
+- [x] Bot显示优化，支持查找，拖拽排序
 
 ### TODO:
 
-- [ ] 更加简单使用
 - [ ] 权限弹窗，是否允许
 - [ ] 支持定时任务
+- [ ] 支持Projects + RAG
 
 ### LLM
 
@@ -73,6 +74,7 @@ npm run dev
 
 ![image.png](./images/image33.png)
 
+![image.png](./images/image34.png)
 
 ![image.png](./images/image13.png)
 
