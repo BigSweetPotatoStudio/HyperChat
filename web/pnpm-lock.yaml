@@ -26,6 +26,15 @@ importers:
       '@babel/plugin-proposal-private-property-in-object':
         specifier: ^7.21.11
         version: 7.21.11(@babel/core@7.25.2)
+      '@dnd-kit/core':
+        specifier: ^6.3.1
+        version: 6.3.1(react-dom@https://codeload.github.com/BigSweetPotatoStudio/react-dom/tar.gz/1832838a0b3e2775c7b6f19afd245dba29262dda(react@18.2.0))(react@18.2.0)
+      '@dnd-kit/sortable':
+        specifier: ^10.0.0
+        version: 10.0.0(@dnd-kit/core@6.3.1(react-dom@https://codeload.github.com/BigSweetPotatoStudio/react-dom/tar.gz/1832838a0b3e2775c7b6f19afd245dba29262dda(react@18.2.0))(react@18.2.0))(react@18.2.0)
+      '@dnd-kit/utilities':
+        specifier: ^3.2.2
+        version: 3.2.2(react@18.2.0)
       '@effortlessmotion/html-webpack-inline-source-plugin':
         specifier: ^1.0.3
         version: 1.0.3(html-webpack-plugin@5.6.0(webpack@5.94.0(webpack-cli@5.1.4)))(webpack@5.94.0(webpack-cli@5.1.4))
@@ -1003,9 +1012,9 @@ packages:
     peerDependencies:
       react: '>=16.8.0'
 
-  '@dnd-kit/core@6.2.0':
-    resolution: {integrity: sha512-KVK/CJmaYGTxTPU6P0+Oy4itgffTUa80B8317sXzfOr1qUzSL29jE7Th11llXiu2haB7B9Glpzo2CDElin+geQ==}
-    version: 6.2.0
+  '@dnd-kit/core@6.3.1':
+    resolution: {integrity: sha512-xkGBRQQab4RLwgXxoqETICr6S5JlogafbhNsidmrkVv2YRs5MLwpjoF2qpiGjQt8S9AoxtIV603s0GIUpY5eYQ==}
+    version: 6.3.1
     peerDependencies:
       react: '>=16.8.0'
       react-dom: '>=16.8.0'
@@ -1015,6 +1024,13 @@ packages:
     version: 6.0.1
     peerDependencies:
       '@dnd-kit/core': ^6.0.6
+      react: '>=16.8.0'
+
+  '@dnd-kit/sortable@10.0.0':
+    resolution: {integrity: sha512-+xqhmIIzvAYMGfBYYnbKuNicfSsk4RksY2XdmJhT+HAC01nix6fHCztU68jooFiMUB01Ky3F0FyOvhG/BZrWkg==}
+    version: 10.0.0
+    peerDependencies:
+      '@dnd-kit/core': ^6.3.0
       react: '>=16.8.0'
 
   '@dnd-kit/sortable@7.0.2':
@@ -5394,9 +5410,9 @@ snapshots:
       '@ant-design/pro-provider': 2.15.2(antd@5.20.6(react-dom@https://codeload.github.com/BigSweetPotatoStudio/react-dom/tar.gz/1832838a0b3e2775c7b6f19afd245dba29262dda(react@18.2.0))(react@18.2.0))(react-dom@https://codeload.github.com/BigSweetPotatoStudio/react-dom/tar.gz/1832838a0b3e2775c7b6f19afd245dba29262dda(react@18.2.0))(react@18.2.0)
       '@ant-design/pro-utils': 2.16.2(antd@5.20.6(react-dom@https://codeload.github.com/BigSweetPotatoStudio/react-dom/tar.gz/1832838a0b3e2775c7b6f19afd245dba29262dda(react@18.2.0))(react@18.2.0))(react-dom@https://codeload.github.com/BigSweetPotatoStudio/react-dom/tar.gz/1832838a0b3e2775c7b6f19afd245dba29262dda(react@18.2.0))(react@18.2.0)
       '@babel/runtime': 7.25.6
-      '@dnd-kit/core': 6.2.0(react-dom@https://codeload.github.com/BigSweetPotatoStudio/react-dom/tar.gz/1832838a0b3e2775c7b6f19afd245dba29262dda(react@18.2.0))(react@18.2.0)
-      '@dnd-kit/modifiers': 6.0.1(@dnd-kit/core@6.2.0(react-dom@https://codeload.github.com/BigSweetPotatoStudio/react-dom/tar.gz/1832838a0b3e2775c7b6f19afd245dba29262dda(react@18.2.0))(react@18.2.0))(react@18.2.0)
-      '@dnd-kit/sortable': 7.0.2(@dnd-kit/core@6.2.0(react-dom@https://codeload.github.com/BigSweetPotatoStudio/react-dom/tar.gz/1832838a0b3e2775c7b6f19afd245dba29262dda(react@18.2.0))(react@18.2.0))(react@18.2.0)
+      '@dnd-kit/core': 6.3.1(react-dom@https://codeload.github.com/BigSweetPotatoStudio/react-dom/tar.gz/1832838a0b3e2775c7b6f19afd245dba29262dda(react@18.2.0))(react@18.2.0)
+      '@dnd-kit/modifiers': 6.0.1(@dnd-kit/core@6.3.1(react-dom@https://codeload.github.com/BigSweetPotatoStudio/react-dom/tar.gz/1832838a0b3e2775c7b6f19afd245dba29262dda(react@18.2.0))(react@18.2.0))(react@18.2.0)
+      '@dnd-kit/sortable': 7.0.2(@dnd-kit/core@6.3.1(react-dom@https://codeload.github.com/BigSweetPotatoStudio/react-dom/tar.gz/1832838a0b3e2775c7b6f19afd245dba29262dda(react@18.2.0))(react@18.2.0))(react@18.2.0)
       '@dnd-kit/utilities': 3.2.2(react@18.2.0)
       antd: 5.20.6(react-dom@https://codeload.github.com/BigSweetPotatoStudio/react-dom/tar.gz/1832838a0b3e2775c7b6f19afd245dba29262dda(react@18.2.0))(react@18.2.0)
       classnames: 2.5.1
@@ -6326,7 +6342,7 @@ snapshots:
       react: 18.2.0
       tslib: 2.7.0
 
-  '@dnd-kit/core@6.2.0(react-dom@https://codeload.github.com/BigSweetPotatoStudio/react-dom/tar.gz/1832838a0b3e2775c7b6f19afd245dba29262dda(react@18.2.0))(react@18.2.0)':
+  '@dnd-kit/core@6.3.1(react-dom@https://codeload.github.com/BigSweetPotatoStudio/react-dom/tar.gz/1832838a0b3e2775c7b6f19afd245dba29262dda(react@18.2.0))(react@18.2.0)':
     dependencies:
       '@dnd-kit/accessibility': 3.1.1(react@18.2.0)
       '@dnd-kit/utilities': 3.2.2(react@18.2.0)
@@ -6334,16 +6350,23 @@ snapshots:
       react-dom: https://codeload.github.com/BigSweetPotatoStudio/react-dom/tar.gz/1832838a0b3e2775c7b6f19afd245dba29262dda(react@18.2.0)
       tslib: 2.7.0
 
-  '@dnd-kit/modifiers@6.0.1(@dnd-kit/core@6.2.0(react-dom@https://codeload.github.com/BigSweetPotatoStudio/react-dom/tar.gz/1832838a0b3e2775c7b6f19afd245dba29262dda(react@18.2.0))(react@18.2.0))(react@18.2.0)':
+  '@dnd-kit/modifiers@6.0.1(@dnd-kit/core@6.3.1(react-dom@https://codeload.github.com/BigSweetPotatoStudio/react-dom/tar.gz/1832838a0b3e2775c7b6f19afd245dba29262dda(react@18.2.0))(react@18.2.0))(react@18.2.0)':
     dependencies:
-      '@dnd-kit/core': 6.2.0(react-dom@https://codeload.github.com/BigSweetPotatoStudio/react-dom/tar.gz/1832838a0b3e2775c7b6f19afd245dba29262dda(react@18.2.0))(react@18.2.0)
+      '@dnd-kit/core': 6.3.1(react-dom@https://codeload.github.com/BigSweetPotatoStudio/react-dom/tar.gz/1832838a0b3e2775c7b6f19afd245dba29262dda(react@18.2.0))(react@18.2.0)
       '@dnd-kit/utilities': 3.2.2(react@18.2.0)
       react: 18.2.0
       tslib: 2.7.0
 
-  '@dnd-kit/sortable@7.0.2(@dnd-kit/core@6.2.0(react-dom@https://codeload.github.com/BigSweetPotatoStudio/react-dom/tar.gz/1832838a0b3e2775c7b6f19afd245dba29262dda(react@18.2.0))(react@18.2.0))(react@18.2.0)':
+  '@dnd-kit/sortable@10.0.0(@dnd-kit/core@6.3.1(react-dom@https://codeload.github.com/BigSweetPotatoStudio/react-dom/tar.gz/1832838a0b3e2775c7b6f19afd245dba29262dda(react@18.2.0))(react@18.2.0))(react@18.2.0)':
     dependencies:
-      '@dnd-kit/core': 6.2.0(react-dom@https://codeload.github.com/BigSweetPotatoStudio/react-dom/tar.gz/1832838a0b3e2775c7b6f19afd245dba29262dda(react@18.2.0))(react@18.2.0)
+      '@dnd-kit/core': 6.3.1(react-dom@https://codeload.github.com/BigSweetPotatoStudio/react-dom/tar.gz/1832838a0b3e2775c7b6f19afd245dba29262dda(react@18.2.0))(react@18.2.0)
+      '@dnd-kit/utilities': 3.2.2(react@18.2.0)
+      react: 18.2.0
+      tslib: 2.7.0
+
+  '@dnd-kit/sortable@7.0.2(@dnd-kit/core@6.3.1(react-dom@https://codeload.github.com/BigSweetPotatoStudio/react-dom/tar.gz/1832838a0b3e2775c7b6f19afd245dba29262dda(react@18.2.0))(react@18.2.0))(react@18.2.0)':
+    dependencies:
+      '@dnd-kit/core': 6.3.1(react-dom@https://codeload.github.com/BigSweetPotatoStudio/react-dom/tar.gz/1832838a0b3e2775c7b6f19afd245dba29262dda(react@18.2.0))(react@18.2.0)
       '@dnd-kit/utilities': 3.2.2(react@18.2.0)
       react: 18.2.0
       tslib: 2.7.0

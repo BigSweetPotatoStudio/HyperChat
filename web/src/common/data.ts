@@ -73,6 +73,7 @@ export const GPTS = new Data("gpts_list.json", {
     prompt: string;
     description?: string;
     allowMCPs: string[];
+    modelKey?: string;
   }>,
 });
 
