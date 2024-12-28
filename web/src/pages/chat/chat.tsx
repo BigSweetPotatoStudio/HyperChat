@@ -967,7 +967,13 @@ export const Chat = () => {
                 <Divider type="vertical" />
                 <Tooltip title="Token Usage">
                   <span className="cursor-pointer">
-                    token: {client?.totalTokens || 0}
+                    token:{" "}
+                    {client == null
+                      ? 0
+                      : typeof client.totalTokens == "number" &&
+                          !Number.isNaN(client.totalTokens)
+                        ? client.totalTokens
+                        : "not support statistics"}
                   </span>
                 </Tooltip>
               </div>

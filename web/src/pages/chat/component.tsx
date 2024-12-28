@@ -209,12 +209,12 @@ export const MarkDown = ({ markdown }) => {
             value: "text",
             icon: <FileTextOutlined />,
           },
-          {
+          artifacts && {
             label: "Artifacts",
             value: "artifacts",
             icon: <FundViewOutlined />,
           },
-        ]}
+        ].filter((x) => x)}
       />
       <br></br>
       {render == "markdown" ? (
