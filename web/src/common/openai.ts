@@ -15,6 +15,13 @@ export class OpenAiChannel {
   openai: OpenAI;
   lastMessage: MyMessage;
   totalTokens = 0;
+  get estimateTotalTokens() {
+    let total = 0;
+    for (let m of this.messages) {
+      total += m.content.length;
+    }
+    return total;
+  }
   private abortController: AbortController | null = null;
 
   constructor(

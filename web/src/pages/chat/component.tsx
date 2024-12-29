@@ -54,6 +54,7 @@ export function UserContent({ x, regenerate, submit }) {
       {isEdit ? (
         <div>
           <Input.TextArea
+            style={{ minWidth: 600 }}
             value={value}
             onChange={(e) => {
               setValue(e.target.value);
@@ -190,11 +191,12 @@ export const MarkDown = ({ markdown }) => {
   const [render, setRender] = React.useState("markdown");
   return (
     <div
-      className="relative bg-white p-4"
+      className="relative bg-white p-2"
       style={{ width: "100%", overflowX: "auto" }}
     >
       <Segmented
         size="small"
+        value={render}
         onChange={(value) => {
           setRender(value);
         }}
