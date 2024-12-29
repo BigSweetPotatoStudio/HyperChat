@@ -137,7 +137,7 @@ export function RemoveBox(props: {
   const [hover, setHover] = useState(false);
   return (
     <div
-      className="relative h-full w-full"
+      className="relative"
       onMouseEnter={() => {
         setHover(true);
       }}
