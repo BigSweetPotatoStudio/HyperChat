@@ -60,6 +60,7 @@ import {
   FileTextOutlined,
   RedoOutlined,
   StarOutlined,
+  SearchOutlined,
 } from "@ant-design/icons";
 import type { ConfigProviderProps, GetProp } from "antd";
 import { MyMessage, OpenAiChannel } from "../../common/openai";
@@ -87,7 +88,6 @@ import { SortableItem } from "./sortableItem";
 
 let client: OpenAiChannel;
 
-let localChatHistory = [];
 export const Chat = () => {
   const [num, setNum] = React.useState(0);
   const refresh = () => {
@@ -101,8 +101,7 @@ export const Chat = () => {
   let init = useCallback(() => {
     console.log("init");
     ChatHistory.init().then(() => {
-      localChatHistory = ChatHistory.get().data;
-      loadMoreData();
+      setHistoryFilterSign(1);
     });
 
     GPTS.init().then(() => {
@@ -373,7 +372,9 @@ export const Chat = () => {
                             });
                           }}
                         >
-                          {tool.function.name}
+                          <div className="line-clamp-1">
+                            {tool.function.name} : {tool.function.arguments}
+                          </div>
                         </a>
                       </Spin>
                     </Tooltip>
@@ -453,15 +454,34 @@ export const Chat = () => {
 
   let loadIndex = useRef(0);
 
-  const loadMoreData = () => {
+  const loadMoreData = (loadMore = true) => {
+    // console.log(historyFilterType, historyFilterSearchValue, loadIndex.current);
     // console.log("loadMoreData: ", ChatHistory.get().data);
-    loadIndex.current += 50;
+    if (loadMore) {
+      loadIndex.current += 25;
+    } else {
+      loadIndex.current = 25;
+    }
+
     if (loadMoreing) {
       return;
     }
     setLoadMoreing(true);
 
-    const formmatedData = localChatHistory.slice(0, loadIndex.current);
+    const formmatedData = ChatHistory.get()
+      .data.filter((x) => {
+        if (historyFilterType == "all") {
+          return true;
+        } else if (historyFilterType == "star") {
+          return x.icon == "⭐";
+        } else {
+          return (
+            historyFilterSearchValue == "" ||
+            x.label.toLowerCase().includes(historyFilterSearchValue)
+          );
+        }
+      })
+      .slice(0, loadIndex.current);
     setData(formmatedData);
 
     setLoadMoreing(false);
@@ -480,8 +500,16 @@ export const Chat = () => {
       distance: 5,
     },
   });
-  const [searchValue, setSearchValue] = useState("");
+  const [botSearchValue, setBotSearchValue] = useState("");
 
+  const [historyFilterSign, setHistoryFilterSign] = useState<0 | 1>(0);
+  const [historyFilterType, setHistoryFilterType] = useState<
+    "all" | "star" | "search"
+  >("all");
+  const [historyFilterSearchValue, setHistoryFilterSearchValue] = useState("");
+  useEffect(() => {
+    loadMoreData(historyFilterSign == 0);
+  }, [historyFilterType, historyFilterSearchValue, historyFilterSign]);
   return (
     <div className="chat h-full">
       <div className="h-full rounded-lg bg-white p-4">
@@ -503,11 +531,45 @@ export const Chat = () => {
               >
                 New Chat
               </Button>
-              <div>
-                <Space className="mt-2">
-                  <CommentOutlined />
+              <div className="mt-2 flex items-center justify-between">
+                <Space>
+                  {/* <CommentOutlined /> */}
                   <span>Dialogue Records</span>
                 </Space>
+                <Segmented
+                  size="small"
+                  value={historyFilterType}
+                  onChange={(value) => {
+                    setHistoryFilterType(value as any);
+                  }}
+                  options={[
+                    {
+                      value: "all",
+                      icon: <CommentOutlined />,
+                    },
+                    {
+                      value: "star",
+                      icon: <StarOutlined />,
+                    },
+                    {
+                      value: "search",
+                      icon: <SearchOutlined />,
+                    },
+                  ]}
+                />
+              </div>
+              <div>
+                {historyFilterType == "search" && (
+                  <Input
+                    size="small"
+                    placeholder="search"
+                    value={historyFilterSearchValue}
+                    onChange={(e) => {
+                      setHistoryFilterSearchValue(e.target.value);
+                    }}
+                    allowClear
+                  ></Input>
+                )}
               </div>
               <div
                 id="scrollableDiv"
@@ -520,7 +582,23 @@ export const Chat = () => {
                 <InfiniteScroll
                   dataLength={data.length}
                   next={loadMoreData}
-                  hasMore={data.length < ChatHistory.get().data.length}
+                  hasMore={
+                    data.length <
+                    ChatHistory.get().data.filter((x) => {
+                      if (historyFilterType == "all") {
+                        return true;
+                      } else if (historyFilterType == "star") {
+                        return x.icon == "⭐";
+                      } else {
+                        return (
+                          historyFilterSearchValue == "" ||
+                          x.label
+                            .toLowerCase()
+                            .includes(historyFilterSearchValue)
+                        );
+                      }
+                    }).length
+                  }
                   loader={
                     <div style={{ textAlign: "center" }}>
                       <Spin indicator={<RedoOutlined spin />} size="small" />
@@ -530,13 +608,18 @@ export const Chat = () => {
                   scrollableTarget="scrollableDiv"
                 >
                   <Conversations
-                    items={data}
+                    items={data.map((x) => {
+                      return {
+                        ...x,
+                        icon: x.icon == "⭐" ? <StarOutlined /> : undefined,
+                      };
+                    })}
                     activeKey={currentChat.current.key}
                     onActiveChange={(key) => {
                       let item = ChatHistory.get().data.find(
                         (x) => x.key == key,
                       );
-                      console.log("onActiveChange", item);
+                      // console.log("onActiveChange", item);
                       if (item) {
                         currentChatReset();
                         currentChat.current = item;
@@ -620,9 +703,9 @@ export const Chat = () => {
                   <Space>
                     <Input
                       placeholder="search"
-                      value={searchValue}
+                      value={botSearchValue}
                       onChange={(e) => {
-                        setSearchValue(e.target.value);
+                        setBotSearchValue(e.target.value);
                       }}
                       allowClear
                     ></Input>
@@ -639,7 +722,7 @@ export const Chat = () => {
                   <div className="flex items-center">
                     <div className="flex flex-wrap">
                       <DndContext
-                        sensors={searchValue != "" ? [] : [sensors]}
+                        sensors={botSearchValue != "" ? [] : [sensors]}
                         onDragEnd={(e) => {
                           try {
                             let data = GPTS.get().data;
@@ -671,16 +754,16 @@ export const Chat = () => {
                           items={GPTS.get()
                             .data.filter(
                               (x) =>
-                                searchValue == "" ||
-                                x.label.includes(searchValue),
+                                botSearchValue == "" ||
+                                x.label.toLowerCase().includes(botSearchValue),
                             )
                             .map((x) => x.key)}
                         >
                           {GPTS.get()
                             .data.filter(
                               (x) =>
-                                searchValue == "" ||
-                                x.label.includes(searchValue),
+                                botSearchValue == "" ||
+                                x.label.toLowerCase().includes(botSearchValue),
                             )
                             .map((item) => (
                               <SortableItem
@@ -811,7 +894,7 @@ export const Chat = () => {
               )}
 
               <Bubble.List
-                style={{ flex: 1 }}
+                style={{ flex: 1, paddingRight: 4 }}
                 items={currentChat.current.messages?.map(format)}
               />
               <div className="">
@@ -968,12 +1051,14 @@ export const Chat = () => {
                 <Tooltip title="Token Usage">
                   <span className="cursor-pointer">
                     token:{" "}
-                    {client == null
-                      ? 0
-                      : typeof client.totalTokens == "number" &&
-                          !Number.isNaN(client.totalTokens)
-                        ? client.totalTokens
-                        : "not support statistics"}
+                    {client == null ? (
+                      0
+                    ) : typeof client.totalTokens == "number" &&
+                      !Number.isNaN(client.totalTokens) ? (
+                      client.totalTokens
+                    ) : (
+                      <span>{"estimate " + client.estimateTotalTokens}</span>
+                    )}
                   </span>
                 </Tooltip>
               </div>
