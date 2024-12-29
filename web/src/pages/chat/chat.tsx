@@ -85,6 +85,7 @@ import {
   verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
 import { SortableItem } from "./sortableItem";
+import { QuickPath, SelectFile } from "../../common/selectFile";
 
 let client: OpenAiChannel;
 
@@ -1077,23 +1078,31 @@ export const Chat = () => {
                 }}
               ></MyAttachR>
 
-              <Sender
-                loading={loading}
-                value={value}
-                onChange={(nextVal) => {
-                  setValue(nextVal);
+              <QuickPath
+                onChange={(path) => {
+                  setValue((value) => {
+                    return value + " " + path;
+                  });
                 }}
-                onCancel={() => {
-                  setLoading(false);
-                  client.cancel();
-                  // message.success("Cancel sending!");
-                }}
-                onSubmit={(s) => {
-                  setValue("");
-                  onRequest(s);
-                }}
-                placeholder="Start inputting"
-              />
+              >
+                <Sender
+                  loading={loading}
+                  value={value}
+                  onChange={(nextVal) => {
+                    setValue(nextVal);
+                  }}
+                  onCancel={() => {
+                    setLoading(false);
+                    client.cancel();
+                    // message.success("Cancel sending!");
+                  }}
+                  onSubmit={(s) => {
+                    setValue("");
+                    onRequest(s);
+                  }}
+                  placeholder="Start inputting"
+                />
+              </QuickPath>
             </Flex>
           </Flex>
         </XProvider>

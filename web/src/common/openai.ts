@@ -49,12 +49,13 @@ export class OpenAiChannel {
     if (resourceResList.length > 0) {
       message.content += `
 # Try to avoid using tools and use resources directly. \n`;
-      message.content += `
-## resources 1: 
-`;
+
       for (let r of resourceResList) {
         for (let content of r.contents) {
           if (content.text) {
+            message.content += `
+## resources 1: 
+`;
             message.content += content.text + "\n";
           } else {
             antdmessage.warning("resource 类型只支持文本");
