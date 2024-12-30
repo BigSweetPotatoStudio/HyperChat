@@ -54,6 +54,7 @@ export function UserContent({ x, regenerate, submit }) {
       {isEdit ? (
         <div>
           <Input.TextArea
+            style={{ minWidth: 600 }}
             value={value}
             onChange={(e) => {
               setValue(e.target.value);
@@ -67,7 +68,7 @@ export function UserContent({ x, regenerate, submit }) {
                 setIsEdit(false);
               }}
             >
-              取消
+              Cancel
             </Button>
             <Button
               size="small"
@@ -76,7 +77,7 @@ export function UserContent({ x, regenerate, submit }) {
                 submit(value);
               }}
             >
-              提交
+              Submit
             </Button>
           </Space.Compact>
         </div>
@@ -190,11 +191,12 @@ export const MarkDown = ({ markdown }) => {
   const [render, setRender] = React.useState("markdown");
   return (
     <div
-      className="relative bg-white p-4"
+      className="relative bg-white p-2"
       style={{ width: "100%", overflowX: "auto" }}
     >
       <Segmented
         size="small"
+        value={render}
         onChange={(value) => {
           setRender(value);
         }}
@@ -209,12 +211,12 @@ export const MarkDown = ({ markdown }) => {
             value: "text",
             icon: <FileTextOutlined />,
           },
-          {
+          artifacts && {
             label: "Artifacts",
             value: "artifacts",
             icon: <FundViewOutlined />,
           },
-        ]}
+        ].filter((x) => x)}
       />
       <br></br>
       {render == "markdown" ? (

@@ -122,3 +122,53 @@ export function SelectFile(props: {
     </div>
   );
 }
+
+export function QuickPath(props: {
+  onChange?: (v: string) => void;
+  children?: any;
+}) {
+  const [isDragActive, setIsDragActive] = useState(false);
+  const dropRef = useRef(null);
+  useEffect(() => {
+    const dropzone = dropRef.current;
+
+    const handleDragEnter = (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      setIsDragActive(true);
+    };
+
+    const handleDragLeave = (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      setIsDragActive(false);
+    };
+
+    const handleDragOver = (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+    };
+
+    const handleDrop = (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      setIsDragActive(false);
+
+      props.onChange(e.dataTransfer.files[0].path);
+    };
+
+    dropzone.addEventListener("dragenter", handleDragEnter);
+    dropzone.addEventListener("dragleave", handleDragLeave);
+    dropzone.addEventListener("dragover", handleDragOver);
+    dropzone.addEventListener("drop", handleDrop);
+
+    return () => {
+      dropzone.removeEventListener("dragenter", handleDragEnter);
+      dropzone.removeEventListener("dragleave", handleDragLeave);
+      dropzone.removeEventListener("dragover", handleDragOver);
+      dropzone.removeEventListener("drop", handleDrop);
+    };
+  }, []);
+
+  return <div ref={dropRef}>{props.children}</div>;
+}

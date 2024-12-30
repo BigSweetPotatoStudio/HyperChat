@@ -60,6 +60,7 @@ import {
   FileTextOutlined,
   RedoOutlined,
   StarOutlined,
+  SearchOutlined,
 } from "@ant-design/icons";
 import type { ConfigProviderProps, GetProp } from "antd";
 import { MyMessage, OpenAiChannel } from "../../common/openai";
@@ -77,10 +78,17 @@ import InfiniteScroll from "react-infinite-scroll-component";
 import { call } from "../../common/call";
 import { MyAttachR } from "./attachR";
 import { MarkDown, UserContent } from "./component";
+import { DndContext, PointerSensor, useSensor } from "@dnd-kit/core";
+import {
+  horizontalListSortingStrategy,
+  SortableContext,
+  verticalListSortingStrategy,
+} from "@dnd-kit/sortable";
+import { SortableItem } from "./sortableItem";
+import { QuickPath, SelectFile } from "../../common/selectFile";
 
 let client: OpenAiChannel;
 
-let localChatHistory = [];
 export const Chat = () => {
   const [num, setNum] = React.useState(0);
   const refresh = () => {
@@ -94,8 +102,7 @@ export const Chat = () => {
   let init = useCallback(() => {
     console.log("init");
     ChatHistory.init().then(() => {
-      localChatHistory = ChatHistory.get().data;
-      loadMoreData();
+      setHistoryFilterSign(1);
     });
 
     GPTS.init().then(() => {
@@ -138,7 +145,11 @@ export const Chat = () => {
     icon: "",
     allowMCPs: [],
   });
-  const currentChatReset = (prompt?: string, allowMCPs = []) => {
+  const currentChatReset = (
+    prompt?: string,
+    allowMCPs = [],
+    modelKey?: string,
+  ) => {
     currentChat.current = {
       label: "",
       key: "",
@@ -150,7 +161,7 @@ export const Chat = () => {
             },
           ]
         : [],
-      modelKey: undefined,
+      modelKey: modelKey,
       gptsKey: undefined,
       sended: false,
       icon: "",
@@ -251,45 +262,6 @@ export const Chat = () => {
                 onRequest(content as string);
               }}
             />
-            // <Tooltip
-            //   title={
-            //     <>
-            //       <Button
-            //         type="link"
-            //         size="small"
-            //         onClick={() => {
-            //           client.messages.splice(i);
-            //           currentChat.current.messages = client.messages;
-            //           // refresh();
-            //           setValue(x.content as string);
-            //         }}
-            //       >
-            //         Edit
-            //       </Button>
-            //       <Button
-            //         size="small"
-            //         type="link"
-            //         onClick={() => {
-            //           client.messages.splice(i);
-            //           currentChat.current.messages = client.messages;
-            //           refresh();
-            //           onRequest(x.content as string);
-            //         }}
-            //       >
-            //         Regenerate
-            //       </Button>
-            //     </>
-            //   }
-            // >
-            //   <pre
-            //     style={{
-            //       whiteSpace: "pre-wrap",
-            //       wordWrap: "break-word",
-            //     }}
-            //   >
-            //     {x.content as string}
-            //   </pre>
-            // </Tooltip>
           ),
       };
     } else if (x.role == "tool") {
@@ -401,7 +373,9 @@ export const Chat = () => {
                             });
                           }}
                         >
-                          {tool.function.name}
+                          <div className="line-clamp-1">
+                            {tool.function.name} : {tool.function.arguments}
+                          </div>
                         </a>
                       </Spin>
                     </Tooltip>
@@ -444,9 +418,21 @@ export const Chat = () => {
         sended: true,
         icon: "",
         gptsKey: currentChat.current.gptsKey,
+        allowMCPs: clients
+          .filter((record) => (record.enable == null ? true : record.enable))
+          .map((v) => v.name),
       };
       setData([currentChat.current, ...data]);
       ChatHistory.get().data.unshift(currentChat.current);
+    } else {
+      let find = ChatHistory.get().data.find(
+        (x) => x.key == currentChat.current.key,
+      );
+      if (find) {
+        currentChat.current.allowMCPs = clients
+          .filter((record) => (record.enable == null ? true : record.enable))
+          .map((v) => v.name);
+      }
     }
     client.addMessage(
       { role: "user", content: message },
@@ -481,15 +467,34 @@ export const Chat = () => {
 
   let loadIndex = useRef(0);
 
-  const loadMoreData = () => {
+  const loadMoreData = (loadMore = true) => {
+    // console.log(historyFilterType, historyFilterSearchValue, loadIndex.current);
     // console.log("loadMoreData: ", ChatHistory.get().data);
-    loadIndex.current += 50;
+    if (loadMore) {
+      loadIndex.current += 25;
+    } else {
+      loadIndex.current = 25;
+    }
+
     if (loadMoreing) {
       return;
     }
     setLoadMoreing(true);
 
-    const formmatedData = localChatHistory.slice(0, loadIndex.current);
+    const formmatedData = ChatHistory.get()
+      .data.filter((x) => {
+        if (historyFilterType == "all") {
+          return true;
+        } else if (historyFilterType == "star") {
+          return x.icon == "⭐";
+        } else {
+          return (
+            historyFilterSearchValue == "" ||
+            x.label.toLowerCase().includes(historyFilterSearchValue)
+          );
+        }
+      })
+      .slice(0, loadIndex.current);
     setData(formmatedData);
 
     setLoadMoreing(false);
@@ -503,6 +508,21 @@ export const Chat = () => {
   const [fillPromptFormItems, setFillPromptFormItems] = React.useState([]);
   const mcpCallPromptCurr = useRef({} as any);
 
+  const sensors = useSensor(PointerSensor, {
+    activationConstraint: {
+      distance: 5,
+    },
+  });
+  const [botSearchValue, setBotSearchValue] = useState("");
+
+  const [historyFilterSign, setHistoryFilterSign] = useState<0 | 1>(0);
+  const [historyFilterType, setHistoryFilterType] = useState<
+    "all" | "star" | "search"
+  >("all");
+  const [historyFilterSearchValue, setHistoryFilterSearchValue] = useState("");
+  useEffect(() => {
+    loadMoreData(historyFilterSign == 0);
+  }, [historyFilterType, historyFilterSearchValue, historyFilterSign]);
   return (
     <div className="chat h-full">
       <div className="h-full rounded-lg bg-white p-4">
@@ -524,11 +544,45 @@ export const Chat = () => {
               >
                 New Chat
               </Button>
-              <div>
-                <Space className="mt-2">
-                  <CommentOutlined />
+              <div className="mt-2 flex items-center justify-between">
+                <Space>
+                  {/* <CommentOutlined /> */}
                   <span>Dialogue Records</span>
                 </Space>
+                <Segmented
+                  size="small"
+                  value={historyFilterType}
+                  onChange={(value) => {
+                    setHistoryFilterType(value as any);
+                  }}
+                  options={[
+                    {
+                      value: "all",
+                      icon: <CommentOutlined />,
+                    },
+                    {
+                      value: "star",
+                      icon: <StarOutlined />,
+                    },
+                    {
+                      value: "search",
+                      icon: <SearchOutlined />,
+                    },
+                  ]}
+                />
+              </div>
+              <div>
+                {historyFilterType == "search" && (
+                  <Input
+                    size="small"
+                    placeholder="search"
+                    value={historyFilterSearchValue}
+                    onChange={(e) => {
+                      setHistoryFilterSearchValue(e.target.value);
+                    }}
+                    allowClear
+                  ></Input>
+                )}
               </div>
               <div
                 id="scrollableDiv"
@@ -541,7 +595,23 @@ export const Chat = () => {
                 <InfiniteScroll
                   dataLength={data.length}
                   next={loadMoreData}
-                  hasMore={data.length < ChatHistory.get().data.length}
+                  hasMore={
+                    data.length <
+                    ChatHistory.get().data.filter((x) => {
+                      if (historyFilterType == "all") {
+                        return true;
+                      } else if (historyFilterType == "star") {
+                        return x.icon == "⭐";
+                      } else {
+                        return (
+                          historyFilterSearchValue == "" ||
+                          x.label
+                            .toLowerCase()
+                            .includes(historyFilterSearchValue)
+                        );
+                      }
+                    }).length
+                  }
                   loader={
                     <div style={{ textAlign: "center" }}>
                       <Spin indicator={<RedoOutlined spin />} size="small" />
@@ -551,13 +621,18 @@ export const Chat = () => {
                   scrollableTarget="scrollableDiv"
                 >
                   <Conversations
-                    items={data}
+                    items={data.map((x) => {
+                      return {
+                        ...x,
+                        icon: x.icon == "⭐" ? <StarOutlined /> : undefined,
+                      };
+                    })}
                     activeKey={currentChat.current.key}
                     onActiveChange={(key) => {
                       let item = ChatHistory.get().data.find(
                         (x) => x.key == key,
                       );
-                      console.log("onActiveChange", item);
+                      // console.log("onActiveChange", item);
                       if (item) {
                         currentChatReset();
                         currentChat.current = item;
@@ -638,8 +713,120 @@ export const Chat = () => {
                         : "Start chatting"
                     }
                   />
+                  <Space>
+                    <Input
+                      placeholder="search"
+                      value={botSearchValue}
+                      onChange={(e) => {
+                        setBotSearchValue(e.target.value);
+                      }}
+                      allowClear
+                    ></Input>
+                    <Button
+                      onClick={() => {
+                        setPromptsModalValue({} as any);
+                        setIsOpenPromptsModal(true);
+                      }}
+                    >
+                      Add Bot
+                    </Button>
+                  </Space>
+
                   <div className="flex items-center">
-                    <Prompts
+                    <div className="flex flex-wrap">
+                      <DndContext
+                        sensors={botSearchValue != "" ? [] : [sensors]}
+                        onDragEnd={(e) => {
+                          try {
+                            let data = GPTS.get().data;
+                            let oldIndex = data.findIndex(
+                              (x) => x.key == e.active.id,
+                            );
+
+                            let newIndex = data.findIndex(
+                              (x) => x.key == e.over.id,
+                            );
+                            // console.log(
+                            //   "onDragEnd",
+                            //   e,
+                            //   data[oldIndex].label,
+                            //   data[newIndex].label,
+                            // );
+                            let item = data[oldIndex];
+
+                            data.splice(oldIndex, 1);
+
+                            data.splice(newIndex, 0, item);
+
+                            GPTS.save();
+                            refresh();
+                          } catch {}
+                        }}
+                      >
+                        <SortableContext
+                          items={GPTS.get()
+                            .data.filter(
+                              (x) =>
+                                botSearchValue == "" ||
+                                x.label.toLowerCase().includes(botSearchValue),
+                            )
+                            .map((x) => x.key)}
+                        >
+                          {GPTS.get()
+                            .data.filter(
+                              (x) =>
+                                botSearchValue == "" ||
+                                x.label.toLowerCase().includes(botSearchValue),
+                            )
+                            .map((item) => (
+                              <SortableItem
+                                key={item.key}
+                                id={item.key}
+                                item={item}
+                                onClick={(item) => {
+                                  console.log("onGPTSClick", item);
+                                  if (mode == "edit") {
+                                    return;
+                                  }
+                                  let find = GPTS.get().data.find(
+                                    (y) => y.key === item.key,
+                                  );
+                                  currentChatReset(
+                                    find.prompt,
+                                    find.allowMCPs,
+                                    find.modelKey,
+                                  );
+                                }}
+                                onEdit={() => {
+                                  let value = GPTS.get().data.find(
+                                    (y) => y.key === item.key,
+                                  );
+                                  setPromptsModalValue(value);
+                                  setIsOpenPromptsModal(true);
+                                }}
+                                onRemove={() => {
+                                  Modal.confirm({
+                                    title: "Tip",
+                                    maskClosable: true,
+                                    content: "Are you sure to delete?",
+                                    onOk: () => {
+                                      let index = GPTS.get().data.findIndex(
+                                        (y) => y.key === item.key,
+                                      );
+                                      GPTS.get().data.splice(index, 1);
+                                      GPTS.save();
+                                      refresh();
+                                    },
+                                    onCancel(...args) {},
+                                  });
+                                }}
+                              />
+                            ))}
+                        </SortableContext>
+                      </DndContext>
+                    </div>
+
+                    {/* <Prompts
                       onItemClick={(item) => {
                         console.log("onItemClick", item);
                         if (mode == "edit") {
@@ -714,12 +901,13 @@ export const Chat = () => {
                           Edit
                         </Button>
                       )}
-                    </Space.Compact>
+                    </Space.Compact> */}
                   </div>
                 </div>
               )}
+
               <Bubble.List
-                style={{ flex: 1 }}
+                style={{ flex: 1, paddingRight: 4 }}
                 items={currentChat.current.messages?.map(format)}
               />
               <div className="">
@@ -875,7 +1063,15 @@ export const Chat = () => {
                 <Divider type="vertical" />
                 <Tooltip title="Token Usage">
                   <span className="cursor-pointer">
-                    token: {client?.totalTokens || 0}
+                    token:{" "}
+                    {client == null ? (
+                      0
+                    ) : typeof client.totalTokens == "number" &&
+                      !Number.isNaN(client.totalTokens) ? (
+                      client.totalTokens
+                    ) : (
+                      <span>{"estimate " + client.estimateTotalTokens}</span>
+                    )}
                   </span>
                 </Tooltip>
               </div>
@@ -894,50 +1090,32 @@ export const Chat = () => {
                 }}
               ></MyAttachR>
 
-              <Sender
-                loading={loading}
-                value={value}
-                onChange={(nextVal) => {
-                  setValue(nextVal);
+              <QuickPath
+                onChange={(path) => {
+                  setValue((value) => {
+                    return value + " " + path;
+                  });
                 }}
-                onCancel={() => {
-                  setLoading(false);
-                  client.cancel();
-                  // message.success("Cancel sending!");
-                }}
-                onSubmit={(s) => {
-                  setValue("");
-                  onRequest(s);
-                }}
-                placeholder="Start inputting"
-              />
+              >
+                <Sender
+                  loading={loading}
+                  value={value}
+                  onChange={(nextVal) => {
+                    setValue(nextVal);
+                  }}
+                  onCancel={() => {
+                    setLoading(false);
+                    client.cancel();
+                    // message.success("Cancel sending!");
+                  }}
+                  onSubmit={(s) => {
+                    setValue("");
+                    onRequest(s);
+                  }}
+                  placeholder="Start inputting"
+                />
+              </QuickPath>
             </Flex>
-            {/* <Divider type="vertical" style={{ height: "100%" }} />
-            <ThoughtChain
-              style={{ width: 200 }}
-              items={[
-                {
-                  title: "Hello Ant Design X!",
-                  status: "success",
-                  description: "status: success",
-                  icon: <CheckCircleOutlined />,
-                  content:
-                    "Ant Design X help you build AI chat/platform app as ready-to-use 📦.",
-                },
-                {
-                  title: "Hello World!",
-                  status: "success",
-                  description: "status: success",
-                  icon: <CheckCircleOutlined />,
-                },
-                {
-                  title: "Pending...",
-                  status: "pending",
-                  description: "status: pending",
-                  icon: <LoadingOutlined />,
-                },
-              ]}
-            /> */}
           </Flex>
         </XProvider>
         <PromptsModal

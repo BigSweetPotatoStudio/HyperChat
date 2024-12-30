@@ -15,6 +15,13 @@ export class OpenAiChannel {
   openai: OpenAI;
   lastMessage: MyMessage;
   totalTokens = 0;
+  get estimateTotalTokens() {
+    let total = 0;
+    for (let m of this.messages) {
+      total += m.content.length;
+    }
+    return total;
+  }
   private abortController: AbortController | null = null;
 
   constructor(
@@ -42,12 +49,13 @@ export class OpenAiChannel {
     if (resourceResList.length > 0) {
       message.content += `
 # Try to avoid using tools and use resources directly. \n`;
-      message.content += `
-## resources 1: 
-`;
+
       for (let r of resourceResList) {
         for (let content of r.contents) {
           if (content.text) {
+            message.content += `
+## resources 1: 
+`;
             message.content += content.text + "\n";
           } else {
             antdmessage.warning("resource 类型只支持文本");
@@ -152,10 +160,10 @@ export class OpenAiChannel {
           signal: this.abortController.signal,
         },
       );
-
+      let totalTokens;
       for await (const chunk of stream) {
         if (chunk.usage) {
-          this.totalTokens = chunk.usage.total_tokens;
+          totalTokens = chunk.usage.total_tokens;
         }
 
         if (chunk.choices[0].delta.tool_calls) {
@@ -193,6 +201,7 @@ export class OpenAiChannel {
         this.lastMessage.content = content;
         onUpdate && onUpdate(content);
       }
+      this.totalTokens = totalTokens;
     } else {
       const chatCompletion = await this.openai.chat.completions.create(
         {
@@ -205,7 +214,7 @@ export class OpenAiChannel {
         },
       );
 
-      this.totalTokens = chatCompletion.usage.total_tokens;
+      this.totalTokens = chatCompletion?.usage?.total_tokens;
       res = chatCompletion.choices[chatCompletion.choices.length - 1].message;
 
       let i = 0;

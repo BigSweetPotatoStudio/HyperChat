@@ -26,9 +26,21 @@ importers:
       '@babel/plugin-proposal-private-property-in-object':
         specifier: ^7.21.11
         version: 7.21.11(@babel/core@7.25.2)
+      '@dnd-kit/core':
+        specifier: ^6.3.1
+        version: 6.3.1(react-dom@https://codeload.github.com/BigSweetPotatoStudio/react-dom/tar.gz/1832838a0b3e2775c7b6f19afd245dba29262dda(react@18.2.0))(react@18.2.0)
+      '@dnd-kit/modifiers':
+        specifier: ^9.0.0
+        version: 9.0.0(@dnd-kit/core@6.3.1(react-dom@https://codeload.github.com/BigSweetPotatoStudio/react-dom/tar.gz/1832838a0b3e2775c7b6f19afd245dba29262dda(react@18.2.0))(react@18.2.0))(react@18.2.0)
+      '@dnd-kit/sortable':
+        specifier: ^10.0.0
+        version: 10.0.0(@dnd-kit/core@6.3.1(react-dom@https://codeload.github.com/BigSweetPotatoStudio/react-dom/tar.gz/1832838a0b3e2775c7b6f19afd245dba29262dda(react@18.2.0))(react@18.2.0))(react@18.2.0)
+      '@dnd-kit/utilities':
+        specifier: ^3.2.2
+        version: 3.2.2(react@18.2.0)
       '@effortlessmotion/html-webpack-inline-source-plugin':
         specifier: ^1.0.3
-        version: 1.0.3(html-webpack-plugin@5.6.0(webpack@5.94.0(webpack-cli@5.1.4)))(webpack@5.94.0(webpack-cli@5.1.4))
+        version: 1.0.3(html-webpack-plugin@5.6.0(webpack@5.94.0))(webpack@5.94.0)
       '@microsoft/clarity':
         specifier: ^1.0.0
         version: 1.0.0
@@ -70,22 +82,22 @@ importers:
         version: 2.0.1
       clean-webpack-plugin:
         specifier: ^4.0.0
-        version: 4.0.0(webpack@5.94.0(webpack-cli@5.1.4))
+        version: 4.0.0(webpack@5.94.0)
       copy-webpack-plugin:
         specifier: ^12.0.2
-        version: 12.0.2(webpack@5.94.0(webpack-cli@5.1.4))
+        version: 12.0.2(webpack@5.94.0)
       cross-env:
         specifier: ^7.0.3
         version: 7.0.3
       css-loader:
         specifier: ^7.1.1
-        version: 7.1.2(webpack@5.94.0(webpack-cli@5.1.4))
+        version: 7.1.2(webpack@5.94.0)
       dayjs:
         specifier: ^1.11.13
         version: 1.11.13
       dotenv-webpack:
         specifier: ^8.1.0
-        version: 8.1.0(webpack@5.94.0(webpack-cli@5.1.4))
+        version: 8.1.0(webpack@5.94.0)
       echarts:
         specifier: ^5.5.1
         version: 5.5.1
@@ -94,16 +106,16 @@ importers:
         version: 7.2.0
       favicons-webpack-plugin:
         specifier: ^6.0.1
-        version: 6.0.1(favicons@7.2.0)(webpack@5.94.0(webpack-cli@5.1.4))
+        version: 6.0.1(favicons@7.2.0)(webpack@5.94.0)
       file-loader:
         specifier: ^6.2.0
-        version: 6.2.0(webpack@5.94.0(webpack-cli@5.1.4))
+        version: 6.2.0(webpack@5.94.0)
       github-markdown-css:
         specifier: ^5.8.1
         version: 5.8.1
       html-webpack-plugin:
         specifier: ^5.6.0
-        version: 5.6.0(webpack@5.94.0(webpack-cli@5.1.4))
+        version: 5.6.0(webpack@5.94.0)
       lucide-react:
         specifier: ^0.435.0
         version: 0.435.0(react@18.2.0)
@@ -112,13 +124,13 @@ importers:
         version: 14.1.0
       mini-css-extract-plugin:
         specifier: ^2.9.0
-        version: 2.9.1(webpack@5.94.0(webpack-cli@5.1.4))
+        version: 2.9.1(webpack@5.94.0)
       openai:
         specifier: ^4.52.0
         version: 4.58.2(zod@3.24.1)
       postcss-loader:
         specifier: ^8.1.1
-        version: 8.1.1(postcss@8.4.45)(typescript@5.6.2)(webpack@5.94.0(webpack-cli@5.1.4))
+        version: 8.1.1(postcss@8.4.45)(typescript@5.6.2)(webpack@5.94.0)
       prettier:
         specifier: ^3.3.3
         version: 3.3.3
@@ -157,13 +169,13 @@ importers:
         version: 4.7.5
       style-loader:
         specifier: ^4.0.0
-        version: 4.0.0(webpack@5.94.0(webpack-cli@5.1.4))
+        version: 4.0.0(webpack@5.94.0)
       tailwindcss:
         specifier: ^3.4.10
         version: 3.4.10
       ts-loader:
         specifier: ^9.5.1
-        version: 9.5.1(typescript@5.6.2)(webpack@5.94.0(webpack-cli@5.1.4))
+        version: 9.5.1(typescript@5.6.2)(webpack@5.94.0)
       turndown:
         specifier: ^7.2.0
         version: 7.2.0
@@ -196,7 +208,7 @@ importers:
         version: 4.3.0
       workbox-webpack-plugin:
         specifier: ^7.0.0
-        version: 7.1.0(webpack@5.94.0(webpack-cli@5.1.4))
+        version: 7.1.0(webpack@5.94.0)
       zx:
         specifier: ^8.0.1
         version: 8.1.5
@@ -1003,9 +1015,9 @@ packages:
     peerDependencies:
       react: '>=16.8.0'
 
-  '@dnd-kit/core@6.2.0':
-    resolution: {integrity: sha512-KVK/CJmaYGTxTPU6P0+Oy4itgffTUa80B8317sXzfOr1qUzSL29jE7Th11llXiu2haB7B9Glpzo2CDElin+geQ==}
-    version: 6.2.0
+  '@dnd-kit/core@6.3.1':
+    resolution: {integrity: sha512-xkGBRQQab4RLwgXxoqETICr6S5JlogafbhNsidmrkVv2YRs5MLwpjoF2qpiGjQt8S9AoxtIV603s0GIUpY5eYQ==}
+    version: 6.3.1
     peerDependencies:
       react: '>=16.8.0'
       react-dom: '>=16.8.0'
@@ -1015,6 +1027,20 @@ packages:
     version: 6.0.1
     peerDependencies:
       '@dnd-kit/core': ^6.0.6
+      react: '>=16.8.0'
+
+  '@dnd-kit/modifiers@9.0.0':
+    resolution: {integrity: sha512-ybiLc66qRGuZoC20wdSSG6pDXFikui/dCNGthxv4Ndy8ylErY0N3KVxY2bgo7AWwIbxDmXDg3ylAFmnrjcbVvw==}
+    version: 9.0.0
+    peerDependencies:
+      '@dnd-kit/core': ^6.3.0
+      react: '>=16.8.0'
+
+  '@dnd-kit/sortable@10.0.0':
+    resolution: {integrity: sha512-+xqhmIIzvAYMGfBYYnbKuNicfSsk4RksY2XdmJhT+HAC01nix6fHCztU68jooFiMUB01Ky3F0FyOvhG/BZrWkg==}
+    version: 10.0.0
+    peerDependencies:
+      '@dnd-kit/core': ^6.3.0
       react: '>=16.8.0'
 
   '@dnd-kit/sortable@7.0.2':
@@ -5394,9 +5420,9 @@ snapshots:
       '@ant-design/pro-provider': 2.15.2(antd@5.20.6(react-dom@https://codeload.github.com/BigSweetPotatoStudio/react-dom/tar.gz/1832838a0b3e2775c7b6f19afd245dba29262dda(react@18.2.0))(react@18.2.0))(react-dom@https://codeload.github.com/BigSweetPotatoStudio/react-dom/tar.gz/1832838a0b3e2775c7b6f19afd245dba29262dda(react@18.2.0))(react@18.2.0)
       '@ant-design/pro-utils': 2.16.2(antd@5.20.6(react-dom@https://codeload.github.com/BigSweetPotatoStudio/react-dom/tar.gz/1832838a0b3e2775c7b6f19afd245dba29262dda(react@18.2.0))(react@18.2.0))(react-dom@https://codeload.github.com/BigSweetPotatoStudio/react-dom/tar.gz/1832838a0b3e2775c7b6f19afd245dba29262dda(react@18.2.0))(react@18.2.0)
       '@babel/runtime': 7.25.6
-      '@dnd-kit/core': 6.2.0(react-dom@https://codeload.github.com/BigSweetPotatoStudio/react-dom/tar.gz/1832838a0b3e2775c7b6f19afd245dba29262dda(react@18.2.0))(react@18.2.0)
-      '@dnd-kit/modifiers': 6.0.1(@dnd-kit/core@6.2.0(react-dom@https://codeload.github.com/BigSweetPotatoStudio/react-dom/tar.gz/1832838a0b3e2775c7b6f19afd245dba29262dda(react@18.2.0))(react@18.2.0))(react@18.2.0)
-      '@dnd-kit/sortable': 7.0.2(@dnd-kit/core@6.2.0(react-dom@https://codeload.github.com/BigSweetPotatoStudio/react-dom/tar.gz/1832838a0b3e2775c7b6f19afd245dba29262dda(react@18.2.0))(react@18.2.0))(react@18.2.0)
+      '@dnd-kit/core': 6.3.1(react-dom@https://codeload.github.com/BigSweetPotatoStudio/react-dom/tar.gz/1832838a0b3e2775c7b6f19afd245dba29262dda(react@18.2.0))(react@18.2.0)
+      '@dnd-kit/modifiers': 6.0.1(@dnd-kit/core@6.3.1(react-dom@https://codeload.github.com/BigSweetPotatoStudio/react-dom/tar.gz/1832838a0b3e2775c7b6f19afd245dba29262dda(react@18.2.0))(react@18.2.0))(react@18.2.0)
+      '@dnd-kit/sortable': 7.0.2(@dnd-kit/core@6.3.1(react-dom@https://codeload.github.com/BigSweetPotatoStudio/react-dom/tar.gz/1832838a0b3e2775c7b6f19afd245dba29262dda(react@18.2.0))(react@18.2.0))(react@18.2.0)
       '@dnd-kit/utilities': 3.2.2(react@18.2.0)
       antd: 5.20.6(react-dom@https://codeload.github.com/BigSweetPotatoStudio/react-dom/tar.gz/1832838a0b3e2775c7b6f19afd245dba29262dda(react@18.2.0))(react@18.2.0)
       classnames: 2.5.1
@@ -6326,7 +6352,7 @@ snapshots:
       react: 18.2.0
       tslib: 2.7.0
 
-  '@dnd-kit/core@6.2.0(react-dom@https://codeload.github.com/BigSweetPotatoStudio/react-dom/tar.gz/1832838a0b3e2775c7b6f19afd245dba29262dda(react@18.2.0))(react@18.2.0)':
+  '@dnd-kit/core@6.3.1(react-dom@https://codeload.github.com/BigSweetPotatoStudio/react-dom/tar.gz/1832838a0b3e2775c7b6f19afd245dba29262dda(react@18.2.0))(react@18.2.0)':
     dependencies:
       '@dnd-kit/accessibility': 3.1.1(react@18.2.0)
       '@dnd-kit/utilities': 3.2.2(react@18.2.0)
@@ -6334,16 +6360,30 @@ snapshots:
       react-dom: https://codeload.github.com/BigSweetPotatoStudio/react-dom/tar.gz/1832838a0b3e2775c7b6f19afd245dba29262dda(react@18.2.0)
       tslib: 2.7.0
 
-  '@dnd-kit/modifiers@6.0.1(@dnd-kit/core@6.2.0(react-dom@https://codeload.github.com/BigSweetPotatoStudio/react-dom/tar.gz/1832838a0b3e2775c7b6f19afd245dba29262dda(react@18.2.0))(react@18.2.0))(react@18.2.0)':
+  '@dnd-kit/modifiers@6.0.1(@dnd-kit/core@6.3.1(react-dom@https://codeload.github.com/BigSweetPotatoStudio/react-dom/tar.gz/1832838a0b3e2775c7b6f19afd245dba29262dda(react@18.2.0))(react@18.2.0))(react@18.2.0)':
     dependencies:
-      '@dnd-kit/core': 6.2.0(react-dom@https://codeload.github.com/BigSweetPotatoStudio/react-dom/tar.gz/1832838a0b3e2775c7b6f19afd245dba29262dda(react@18.2.0))(react@18.2.0)
+      '@dnd-kit/core': 6.3.1(react-dom@https://codeload.github.com/BigSweetPotatoStudio/react-dom/tar.gz/1832838a0b3e2775c7b6f19afd245dba29262dda(react@18.2.0))(react@18.2.0)
       '@dnd-kit/utilities': 3.2.2(react@18.2.0)
       react: 18.2.0
       tslib: 2.7.0
 
-  '@dnd-kit/sortable@7.0.2(@dnd-kit/core@6.2.0(react-dom@https://codeload.github.com/BigSweetPotatoStudio/react-dom/tar.gz/1832838a0b3e2775c7b6f19afd245dba29262dda(react@18.2.0))(react@18.2.0))(react@18.2.0)':
+  '@dnd-kit/modifiers@9.0.0(@dnd-kit/core@6.3.1(react-dom@https://codeload.github.com/BigSweetPotatoStudio/react-dom/tar.gz/1832838a0b3e2775c7b6f19afd245dba29262dda(react@18.2.0))(react@18.2.0))(react@18.2.0)':
     dependencies:
-      '@dnd-kit/core': 6.2.0(react-dom@https://codeload.github.com/BigSweetPotatoStudio/react-dom/tar.gz/1832838a0b3e2775c7b6f19afd245dba29262dda(react@18.2.0))(react@18.2.0)
+      '@dnd-kit/core': 6.3.1(react-dom@https://codeload.github.com/BigSweetPotatoStudio/react-dom/tar.gz/1832838a0b3e2775c7b6f19afd245dba29262dda(react@18.2.0))(react@18.2.0)
+      '@dnd-kit/utilities': 3.2.2(react@18.2.0)
+      react: 18.2.0
+      tslib: 2.7.0
+
+  '@dnd-kit/sortable@10.0.0(@dnd-kit/core@6.3.1(react-dom@https://codeload.github.com/BigSweetPotatoStudio/react-dom/tar.gz/1832838a0b3e2775c7b6f19afd245dba29262dda(react@18.2.0))(react@18.2.0))(react@18.2.0)':
+    dependencies:
+      '@dnd-kit/core': 6.3.1(react-dom@https://codeload.github.com/BigSweetPotatoStudio/react-dom/tar.gz/1832838a0b3e2775c7b6f19afd245dba29262dda(react@18.2.0))(react@18.2.0)
+      '@dnd-kit/utilities': 3.2.2(react@18.2.0)
+      react: 18.2.0
+      tslib: 2.7.0
+
+  '@dnd-kit/sortable@7.0.2(@dnd-kit/core@6.3.1(react-dom@https://codeload.github.com/BigSweetPotatoStudio/react-dom/tar.gz/1832838a0b3e2775c7b6f19afd245dba29262dda(react@18.2.0))(react@18.2.0))(react@18.2.0)':
+    dependencies:
+      '@dnd-kit/core': 6.3.1(react-dom@https://codeload.github.com/BigSweetPotatoStudio/react-dom/tar.gz/1832838a0b3e2775c7b6f19afd245dba29262dda(react@18.2.0))(react@18.2.0)
       '@dnd-kit/utilities': 3.2.2(react@18.2.0)
       react: 18.2.0
       tslib: 2.7.0
@@ -6353,10 +6393,10 @@ snapshots:
       react: 18.2.0
       tslib: 2.7.0
 
-  '@effortlessmotion/html-webpack-inline-source-plugin@1.0.3(html-webpack-plugin@5.6.0(webpack@5.94.0(webpack-cli@5.1.4)))(webpack@5.94.0(webpack-cli@5.1.4))':
+  '@effortlessmotion/html-webpack-inline-source-plugin@1.0.3(html-webpack-plugin@5.6.0(webpack@5.94.0))(webpack@5.94.0)':
     dependencies:
       escape-string-regexp: 4.0.0
-      html-webpack-plugin: 5.6.0(webpack@5.94.0(webpack-cli@5.1.4))
+      html-webpack-plugin: 5.6.0(webpack@5.94.0)
       slash: 3.0.0
       source-map-url: 0.4.1
       webpack: 5.94.0(webpack-cli@5.1.4)
@@ -7189,17 +7229,17 @@ snapshots:
       '@webassemblyjs/ast': 1.12.1
       '@xtuc/long': 4.2.2
 
-  '@webpack-cli/configtest@2.1.1(webpack-cli@5.1.4(webpack-dev-server@4.15.2)(webpack@5.94.0))(webpack@5.94.0(webpack-cli@5.1.4))':
+  '@webpack-cli/configtest@2.1.1(webpack-cli@5.1.4)(webpack@5.94.0)':
     dependencies:
       webpack: 5.94.0(webpack-cli@5.1.4)
       webpack-cli: 5.1.4(webpack-dev-server@4.15.2)(webpack@5.94.0)
 
-  '@webpack-cli/info@2.0.2(webpack-cli@5.1.4(webpack-dev-server@4.15.2)(webpack@5.94.0))(webpack@5.94.0(webpack-cli@5.1.4))':
+  '@webpack-cli/info@2.0.2(webpack-cli@5.1.4)(webpack@5.94.0)':
     dependencies:
       webpack: 5.94.0(webpack-cli@5.1.4)
       webpack-cli: 5.1.4(webpack-dev-server@4.15.2)(webpack@5.94.0)
 
-  '@webpack-cli/serve@2.0.5(webpack-cli@5.1.4(webpack-dev-server@4.15.2)(webpack@5.94.0))(webpack-dev-server@4.15.2(webpack-cli@5.1.4)(webpack@5.94.0))(webpack@5.94.0(webpack-cli@5.1.4))':
+  '@webpack-cli/serve@2.0.5(webpack-cli@5.1.4)(webpack-dev-server@4.15.2)(webpack@5.94.0)':
     dependencies:
       webpack: 5.94.0(webpack-cli@5.1.4)
       webpack-cli: 5.1.4(webpack-dev-server@4.15.2)(webpack@5.94.0)
@@ -7583,7 +7623,7 @@ snapshots:
     dependencies:
       source-map: 0.6.1
 
-  clean-webpack-plugin@4.0.0(webpack@5.94.0(webpack-cli@5.1.4)):
+  clean-webpack-plugin@4.0.0(webpack@5.94.0):
     dependencies:
       del: 4.1.1
       webpack: 5.94.0(webpack-cli@5.1.4)
@@ -7676,7 +7716,7 @@ snapshots:
     dependencies:
       toggle-selection: 1.0.6
 
-  copy-webpack-plugin@12.0.2(webpack@5.94.0(webpack-cli@5.1.4)):
+  copy-webpack-plugin@12.0.2(webpack@5.94.0):
     dependencies:
       fast-glob: 3.3.2
       glob-parent: 6.0.2
@@ -7719,7 +7759,7 @@ snapshots:
 
   css-color-names@1.0.1: {}
 
-  css-loader@7.1.2(webpack@5.94.0(webpack-cli@5.1.4)):
+  css-loader@7.1.2(webpack@5.94.0):
     dependencies:
       icss-utils: 5.1.0(postcss@8.4.45)
       postcss: 8.4.45
@@ -7893,7 +7933,7 @@ snapshots:
     dependencies:
       dotenv: 8.6.0
 
-  dotenv-webpack@8.1.0(webpack@5.94.0(webpack-cli@5.1.4)):
+  dotenv-webpack@8.1.0(webpack@5.94.0):
     dependencies:
       dotenv-defaults: 2.0.2
       webpack: 5.94.0(webpack-cli@5.1.4)
@@ -8168,7 +8208,7 @@ snapshots:
     dependencies:
       reusify: 1.0.4
 
-  favicons-webpack-plugin@6.0.1(favicons@7.2.0)(webpack@5.94.0(webpack-cli@5.1.4)):
+  favicons-webpack-plugin@6.0.1(favicons@7.2.0)(webpack@5.94.0):
     dependencies:
       favicons: 7.2.0
       find-root: 1.1.0
@@ -8176,7 +8216,7 @@ snapshots:
       parse5: 7.1.2
       webpack: 5.94.0(webpack-cli@5.1.4)
     optionalDependencies:
-      html-webpack-plugin: 5.6.0(webpack@5.94.0(webpack-cli@5.1.4))
+      html-webpack-plugin: 5.6.0(webpack@5.94.0)
     transitivePeerDependencies:
       - '@rspack/core'
 
@@ -8195,7 +8235,7 @@ snapshots:
       node-domexception: 1.0.0
       web-streams-polyfill: 3.3.3
 
-  file-loader@6.2.0(webpack@5.94.0(webpack-cli@5.1.4)):
+  file-loader@6.2.0(webpack@5.94.0):
     dependencies:
       loader-utils: 2.0.4
       schema-utils: 3.3.0
@@ -8434,7 +8474,7 @@ snapshots:
       relateurl: 0.2.7
       terser: 5.32.0
 
-  html-webpack-plugin@5.6.0(webpack@5.94.0(webpack-cli@5.1.4)):
+  html-webpack-plugin@5.6.0(webpack@5.94.0):
     dependencies:
       '@types/html-minifier-terser': 6.1.0
       html-minifier-terser: 6.1.0
@@ -8989,7 +9029,7 @@ snapshots:
 
   min-indent@1.0.1: {}
 
-  mini-css-extract-plugin@2.9.1(webpack@5.94.0(webpack-cli@5.1.4)):
+  mini-css-extract-plugin@2.9.1(webpack@5.94.0):
     dependencies:
       schema-utils: 4.2.0
       tapable: 2.2.1
@@ -9280,7 +9320,7 @@ snapshots:
     optionalDependencies:
       postcss: 8.4.45
 
-  postcss-loader@8.1.1(postcss@8.4.45)(typescript@5.6.2)(webpack@5.94.0(webpack-cli@5.1.4)):
+  postcss-loader@8.1.1(postcss@8.4.45)(typescript@5.6.2)(webpack@5.94.0):
     dependencies:
       cosmiconfig: 9.0.0(typescript@5.6.2)
       jiti: 1.21.6
@@ -10297,7 +10337,7 @@ snapshots:
       '@tokenizer/token': 0.3.0
       peek-readable: 4.1.0
 
-  style-loader@4.0.0(webpack@5.94.0(webpack-cli@5.1.4)):
+  style-loader@4.0.0(webpack@5.94.0):
     dependencies:
       webpack: 5.94.0(webpack-cli@5.1.4)
 
@@ -10371,7 +10411,7 @@ snapshots:
       type-fest: 0.16.0
       unique-string: 2.0.0
 
-  terser-webpack-plugin@5.3.10(webpack@5.94.0(webpack-cli@5.1.4)):
+  terser-webpack-plugin@5.3.10(webpack@5.94.0):
     dependencies:
       '@jridgewell/trace-mapping': 0.3.25
       jest-worker: 27.5.1
@@ -10428,7 +10468,7 @@ snapshots:
 
   ts-interface-checker@0.1.13: {}
 
-  ts-loader@9.5.1(typescript@5.6.2)(webpack@5.94.0(webpack-cli@5.1.4)):
+  ts-loader@9.5.1(typescript@5.6.2)(webpack@5.94.0):
     dependencies:
       chalk: 4.1.2
       enhanced-resolve: 5.17.1
@@ -10610,9 +10650,9 @@ snapshots:
   webpack-cli@5.1.4(webpack-dev-server@4.15.2)(webpack@5.94.0):
     dependencies:
       '@discoveryjs/json-ext': 0.5.7
-      '@webpack-cli/configtest': 2.1.1(webpack-cli@5.1.4(webpack-dev-server@4.15.2)(webpack@5.94.0))(webpack@5.94.0(webpack-cli@5.1.4))
-      '@webpack-cli/info': 2.0.2(webpack-cli@5.1.4(webpack-dev-server@4.15.2)(webpack@5.94.0))(webpack@5.94.0(webpack-cli@5.1.4))
-      '@webpack-cli/serve': 2.0.5(webpack-cli@5.1.4(webpack-dev-server@4.15.2)(webpack@5.94.0))(webpack-dev-server@4.15.2(webpack-cli@5.1.4)(webpack@5.94.0))(webpack@5.94.0(webpack-cli@5.1.4))
+      '@webpack-cli/configtest': 2.1.1(webpack-cli@5.1.4)(webpack@5.94.0)
+      '@webpack-cli/info': 2.0.2(webpack-cli@5.1.4)(webpack@5.94.0)
+      '@webpack-cli/serve': 2.0.5(webpack-cli@5.1.4)(webpack-dev-server@4.15.2)(webpack@5.94.0)
       colorette: 2.0.20
       commander: 10.0.1
       cross-spawn: 7.0.3
@@ -10626,7 +10666,7 @@ snapshots:
     optionalDependencies:
       webpack-dev-server: 4.15.2(webpack-cli@5.1.4)(webpack@5.94.0)
 
-  webpack-dev-middleware@5.3.4(webpack@5.94.0(webpack-cli@5.1.4)):
+  webpack-dev-middleware@5.3.4(webpack@5.94.0):
     dependencies:
       colorette: 2.0.20
       memfs: 3.5.3
@@ -10665,7 +10705,7 @@ snapshots:
       serve-index: 1.9.1
       sockjs: 0.3.24
       spdy: 4.0.2
-      webpack-dev-middleware: 5.3.4(webpack@5.94.0(webpack-cli@5.1.4))
+      webpack-dev-middleware: 5.3.4(webpack@5.94.0)
       ws: 8.18.0
     optionalDependencies:
       webpack: 5.94.0(webpack-cli@5.1.4)
@@ -10719,7 +10759,7 @@ snapshots:
       neo-async: 2.6.2
       schema-utils: 3.3.0
       tapable: 2.2.1
-      terser-webpack-plugin: 5.3.10(webpack@5.94.0(webpack-cli@5.1.4))
+      terser-webpack-plugin: 5.3.10(webpack@5.94.0)
       watchpack: 2.4.2
       webpack-sources: 3.2.3
     optionalDependencies:
@@ -10885,7 +10925,7 @@ snapshots:
 
   workbox-sw@7.1.0: {}
 
-  workbox-webpack-plugin@7.1.0(webpack@5.94.0(webpack-cli@5.1.4)):
+  workbox-webpack-plugin@7.1.0(webpack@5.94.0):
     dependencies:
       fast-json-stable-stringify: 2.1.0
       pretty-bytes: 5.6.0

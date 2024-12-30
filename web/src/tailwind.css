@@ -32,3 +32,13 @@ main {
 ::-webkit-scrollbar-thumb:hover {
   background: #555; /* 滑块悬停时背景 */
 }
+
+.markdown-body > pre > code {
+  white-space: pre-wrap;
+  overflow-wrap: break-word;
+}
+
+.my-prefix-layout .my-prefix-layout-content {
+  padding-block: 1rem;
+  padding-inline: 1rem;
+}

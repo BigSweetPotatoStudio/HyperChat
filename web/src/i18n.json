@@ -205,7 +205,7 @@
     },
     "LLM": {
         "en": "LLM",
-        "zh": "大型语言模型"
+        "zh": "LLM"
     },
     "Delete": {
         "en": "Delete",
@@ -225,7 +225,7 @@
     },
     "Please enter the name": {
         "en": "Please enter the name",
-        "zh": "请输入名字"
+        "zh": "请输入名称"
     },
     "command": {
         "en": "command",
@@ -349,7 +349,7 @@
     },
     "Regenerate": {
         "en": "Regenerate",
-        "zh": "再生"
+        "zh": "再次生成"
     },
     "✅Completed": {
         "en": "✅Completed",
@@ -370,5 +370,85 @@
     "Tool Arguments: ": {
         "en": "Tool Arguments: ",
         "zh": "工具参数: "
+    },
+    "HyperChat(": {
+        "en": "HyperChat(",
+        "zh": ""
+    },
+    "HpyerTools": {
+        "en": "HpyerTools",
+        "zh": "Hpyer工具"
+    },
+    "search": {
+        "en": "search",
+        "zh": ""
+    },
+    "Add Bot": {
+        "en": "Add Bot",
+        "zh": "添加机器人"
+    },
+    "emoji": {
+        "en": "emoji",
+        "zh": ""
+    },
+    "M": {
+        "en": "M",
+        "zh": ""
+    },
+    "https://github": {
+        "en": "https://github",
+        "zh": "https://github"
+    },
+    "https://github.com": {
+        "en": "https://github.com",
+        "zh": "https://github.com"
+    },
+    "Prompt": {
+        "en": "Prompt",
+        "zh": "提示"
+    },
+    "Prompt Content": {
+        "en": "Prompt Content",
+        "zh": "提示内容"
+    },
+    "Please enter Prompt Content": {
+        "en": "Please enter Prompt Content",
+        "zh": "请输入提示内容"
+    },
+    "Please select default LLM": {
+        "en": "Please select default LLM",
+        "zh": "请选定默认 LLM"
+    },
+    "MCP": {
+        "en": "MCP",
+        "zh": "MCP"
+    },
+    "npx: ": {
+        "en": "npx: ",
+        "zh": "npx: "
+    },
+    "Not Installed": {
+        "en": "Not Installed",
+        "zh": "未安装"
+    },
+    "goto nodejs": {
+        "en": "goto nodejs",
+        "zh": "goto nodejs"
+    },
+    "uvx:": {
+        "en": "uvx:",
+        "zh": "uvx:"
+    },
+    "goto uv": {
+        "en": "goto uv",
+        "zh": "goto uv"
+    },
+    "Try Repair environment": {
+        "en": "Try Repair environment",
+        "zh": "修复环境"
+    },
+    "More MCP Market": {
+        "en": "More MCP Market",
+        "zh": "更多MCP市场"
     }
 }

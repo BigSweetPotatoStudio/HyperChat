@@ -134,9 +134,24 @@ export function RemoveBox(props: {
   onRemove: () => void;
   children: React.ReactNode;
 }) {
+  const [hover, setHover] = useState(false);
   return (
-    <div className="relative">
-      <div className="absolute right-0 top-0 z-10" onClick={props.onRemove}>
+    <div
+      className="relative"
+      onMouseEnter={() => {
+        setHover(true);
+      }}
+      onMouseLeave={() => {
+        setHover(false);
+      }}
+    >
+      <div
+        style={{
+          display: hover ? "block" : "none",
+        }}
+        className="absolute right-0 top-0 z-10"
+        onClick={props.onRemove}
+      >
         <DeleteOutlined className="cursor-pointer text-red-600" />
       </div>
       {props.children}
