@@ -93,7 +93,7 @@ const Providers: ProviderType[] = [
   },
   {
     label: "Qwen",
-    baseURL: "https://open.bigmodel.cn/api/paas/v4",
+    baseURL: "https://dashscope.aliyuncs.com/compatible-mode/v1",
     value: "qwen",
   },
   {
@@ -106,6 +106,11 @@ const Providers: ProviderType[] = [
     label: "DoubBao",
     baseURL: "https://ark.cn-beijing.volces.com/api/v3",
     value: "doubao",
+  },
+  {
+    label: "GLM",
+    baseURL: "https://open.bigmodel.cn/api/paas/v4",
+    value: "glm",
   },
   {
     label: "DeepSeek",
@@ -899,10 +904,13 @@ export function Layout() {
                   return;
                 }
                 console.log(find);
-                form.setFieldsValue({
+                let value: any = {
                   baseURL: find.baseURL,
-                  apiKey: find.apiKey,
-                });
+                };
+                if (find.apiKey) {
+                  value.apiKey = find.apiKey;
+                }
+                form.setFieldsValue(value);
                 refresh();
                 // setTimeout(() => {
                 //    refresh();
