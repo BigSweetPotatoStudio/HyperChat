@@ -71,31 +71,50 @@ import { electronData, GPT_MODELS, MCP_CONFIG } from "./common/data";
 import { getClients } from "./common/mcp";
 import { EVENT } from "./common/event";
 import { OpenAiChannel } from "./common/openai";
+import { DndTable } from "./common/dndTable";
 
-const Providers = [
+type ProviderType = {
+  label: string;
+  baseURL: string;
+  apiKey?: string;
+  value: string;
+};
+
+const Providers: ProviderType[] = [
   {
     label: "OpenAI",
-    url: "https://api.openai.com/v1",
+    baseURL: "https://api.openai.com/v1",
     value: "openai",
   },
   {
     label: "OpenRouter",
-    url: "https://openrouter.ai/api/v1",
+    baseURL: "https://openrouter.ai/api/v1",
     value: "openrouter",
   },
   {
-    label: "DeepSeek",
-    url: "https://api.deepseek.com",
-    value: "deepseek",
+    label: "Qwen",
+    baseURL: "https://open.bigmodel.cn/api/paas/v4",
+    value: "qwen",
+  },
+  {
+    label: "Ollama",
+    baseURL: "http://127.0.0.1:11434/v1",
+    apiKey: "ollama",
+    value: "ollama",
   },
   {
     label: "DoubBao",
-    url: "https://ark.cn-beijing.volces.com/api/v3",
+    baseURL: "https://ark.cn-beijing.volces.com/api/v3",
     value: "doubao",
   },
   {
+    label: "DeepSeek",
+    baseURL: "https://api.deepseek.com",
+    value: "deepseek",
+  },
+  {
     label: "Other",
-    url: "",
+    baseURL: "",
     value: "other",
   },
 ];
@@ -678,7 +697,7 @@ export function Layout() {
             setIsModelConfigOpen(false);
           }}
         >
-          <Table
+          <DndTable
             footer={() => (
               <div className="text-center">
                 <Button
@@ -704,6 +723,12 @@ export function Layout() {
             size="small"
             pagination={false}
             dataSource={GPT_MODELS.get().data}
+            onMove={(data) => {
+              GPT_MODELS.get().data = data;
+              GPT_MODELS.save();
+              refresh();
+              EVENT.fire("refresh");
+            }}
             columns={[
               {
                 title: "Name",
@@ -810,6 +835,7 @@ export function Layout() {
               name="AddModelConfig"
               initialValues={{
                 provider: Providers[0].value,
+                baseURL: Providers[0].baseURL,
               }}
               clearOnDestroy
               onFinish={async (values) => {
@@ -873,7 +899,10 @@ export function Layout() {
                   return;
                 }
                 console.log(find);
-                form.setFieldsValue({ baseURL: find.url });
+                form.setFieldsValue({
+                  baseURL: find.baseURL,
+                  apiKey: find.apiKey,
+                });
                 refresh();
                 // setTimeout(() => {
                 //    refresh();
@@ -882,15 +911,16 @@ export function Layout() {
             ></Select>
           </Form.Item>
           <Form.Item
-            style={{
-              display:
-                form.getFieldValue("provider") != "other" ? "none" : "block",
-            }}
             name="baseURL"
             label="baseURL"
             rules={[{ required: true, message: "Please enter" }]}
           >
-            <Input placeholder="Please enter baseURL"></Input>
+            <Input
+              disabled={
+                !["other", "ollama"].includes(form.getFieldValue("provider"))
+              }
+              placeholder="Please enter baseURL"
+            ></Input>
           </Form.Item>
           <Form.Item
             name="apiKey"

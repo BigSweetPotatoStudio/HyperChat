@@ -6,6 +6,8 @@
 * 对话记录支持过滤+搜索
 * 对于不支持统计大模型的消耗token的API，如千问，支持用字数模糊统计
 * 输入框支持 拖拽文件快速输入文件路径
+* My LLM Models列表支持拖拽排序
+* 支持快速配置Ollama, Qwen的API模型
 
 ## HyperTools
 
