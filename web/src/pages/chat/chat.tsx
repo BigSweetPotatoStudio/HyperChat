@@ -418,9 +418,21 @@ export const Chat = () => {
         sended: true,
         icon: "",
         gptsKey: currentChat.current.gptsKey,
+        allowMCPs: clients
+          .filter((record) => (record.enable == null ? true : record.enable))
+          .map((v) => v.name),
       };
       setData([currentChat.current, ...data]);
       ChatHistory.get().data.unshift(currentChat.current);
+    } else {
+      let find = ChatHistory.get().data.find(
+        (x) => x.key == currentChat.current.key,
+      );
+      if (find) {
+        currentChat.current.allowMCPs = clients
+          .filter((record) => (record.enable == null ? true : record.enable))
+          .map((v) => v.name);
+      }
     }
     client.addMessage(
       { role: "user", content: message },

@@ -2,7 +2,12 @@ import React, { useState } from "react";
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { RemoveBox } from "./attachR";
-import { DeleteOutlined, EditOutlined } from "@ant-design/icons";
+import {
+  BorderInnerOutlined,
+  DeleteOutlined,
+  EditOutlined,
+  SwapOutlined,
+} from "@ant-design/icons";
 
 export function SortableItem(props) {
   const { attributes, listeners, setNodeRef, transform, transition } =
@@ -45,12 +50,14 @@ export function SortableItem(props) {
           }}
           className="absolute right-0 top-0 z-10"
         >
+          <SwapOutlined className="cursor-move" />
+
           <DeleteOutlined
             onClick={(e) => {
               e.stopPropagation();
               props.onRemove && props.onRemove(props.item);
             }}
-            className="cursor-pointer text-red-600"
+            className="ml-2 cursor-pointer text-red-400 hover:text-red-800"
           />
           <span
             onClick={(e) => {
@@ -58,7 +65,7 @@ export function SortableItem(props) {
               props.onEdit && props.onEdit(props.item);
             }}
           >
-            <EditOutlined className="ml-2 cursor-pointer text-blue-500" />
+            <EditOutlined className="ml-2 cursor-pointer text-blue-400 hover:text-blue-800" />
           </span>
         </div>
 
