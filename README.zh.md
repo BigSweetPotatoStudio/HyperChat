@@ -1,5 +1,7 @@
 ## 功能
 
+HyperChat 是一个追求开放的Chat客户端，可以使用各家LLM的API，实现最好的Chat体验，以及实现生产力工具通过MCP协议。
+
 支持 [MCP](https://modelcontextprotocol.io/introduction) 协议的Chat，使用类OpenAI的协议，兼容 `Claude Desktop` 配置文件。支持 `Client` 热加载，重启，禁用。
 
 ### MCP: 
@@ -13,14 +15,18 @@
 - [x] Tools 支持
 - [x] 支持英文和中文
 - [x] 添加了内置的MCP客户端`hypertools`, `fetch`+`search`
-- [x] gpts-支持选择允许使用的MCP客户端和工具
+- [x] Bot支持选择允许使用的MCP客户端和工具
 - [x] 支持Artifacts, HTML,SVG 渲染
+- [x] Bot显示优化，支持查找，拖拽排序
 
 ### TODO:
 
-- [ ] 更加简单使用
 - [ ] 权限弹窗，是否允许
 - [ ] 支持定时任务
+- [ ] 支持Projects + RAG
+- [ ] WebDAV 同步
+- [ ] 实现利用LLM自己给自己写Tools
+- [ ] 本地的shell+js运行环境
 
 ### LLM
 
@@ -73,6 +79,7 @@ npm run dev
 
 ![image.png](./images/image33.png)
 
+![image.png](./images/image34.png)
 
 ![image.png](./images/image13.png)
 
@@ -85,3 +92,7 @@ npm run dev
 ![image.png](./images/image21.png)
 
 ![image.png](./images/image30.png)
+
+![image.png](./images/image35.png)
+
+![image.png](./images/image36.png)
