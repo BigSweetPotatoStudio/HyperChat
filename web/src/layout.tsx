@@ -354,7 +354,7 @@ export function Layout() {
         </ProLayout>
 
         <Modal
-          width={800}
+          width={1000}
           open={isToolsShow}
           onCancel={() => setIsToolsShow(false)}
           maskClosable
@@ -667,7 +667,7 @@ export function Layout() {
         </Modal>
 
         <Modal
-          width={800}
+          width={1000}
           title="My LLM Models"
           open={isModelConfigOpen}
           cancelButtonProps={{ style: { display: "none" } }}
@@ -721,7 +721,7 @@ export function Layout() {
                 title: "Operation",
                 dataIndex: "key",
                 key: "key",
-                width: 200,
+                width: 300,
                 render: (text, record, index) => (
                   <div>
                     <Button
@@ -736,6 +736,20 @@ export function Layout() {
                       }}
                     >
                       Edit
+                    </Button>
+                    <Divider type="vertical"></Divider>
+                    <Button
+                      type="link"
+                      onClick={async () => {
+                        let clone = { ...record };
+                        clone.key = v4();
+                        GPT_MODELS.get().data.push(clone);
+                        await GPT_MODELS.save();
+                        refresh();
+                        EVENT.fire("refresh");
+                      }}
+                    >
+                      Clone
                     </Button>
                     <Divider type="vertical"></Divider>
                     <Popconfirm

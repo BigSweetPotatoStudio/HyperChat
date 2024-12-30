@@ -460,7 +460,8 @@ let md = htmlToMarkdown(
   document.querySelector("main") ||
     document.querySelector("#main") ||
     document.querySelector(".main") ||
-    document.cloneNode(true),
+    document.body,
 );
 console.log(md);
+debugger;
 resolve(md);
