@@ -59,10 +59,6 @@
         "en": "Please add a LLM model",
         "zh": "请添加一个LLM模型"
     },
-    "token: ": {
-        "en": "token: ",
-        "zh": "token: "
-    },
     "Start inputting": {
         "en": "Start inputting",
         "zh": "开始输入"
@@ -153,11 +149,11 @@
     },
     "connected": {
         "en": "connected",
-        "zh": "连接的"
+        "zh": ""
     },
     "disconnected": {
         "en": "disconnected",
-        "zh": "断开连接"
+        "zh": ""
     },
     "Config": {
         "en": "Config",
@@ -173,11 +169,11 @@
     },
     "disabled": {
         "en": "disabled",
-        "zh": "禁用的"
+        "zh": ""
     },
     "start": {
         "en": "start",
-        "zh": "开始"
+        "zh": "启动"
     },
     "enable": {
         "en": "enable",
@@ -450,5 +446,33 @@
     "More MCP Market": {
         "en": "More MCP Market",
         "zh": "更多MCP市场"
+    },
+    "token:": {
+        "en": "token:",
+        "zh": ""
+    },
+    "built-in": {
+        "en": "built-in",
+        "zh": "内置"
+    },
+    "config": {
+        "en": "config",
+        "zh": "配置"
+    },
+    "delete": {
+        "en": "delete",
+        "zh": "删除"
+    },
+    "note": {
+        "en": "note",
+        "zh": "笔记"
+    },
+    "Confirm": {
+        "en": "Confirm",
+        "zh": "确认"
+    },
+    "Confirm Delete?": {
+        "en": "Confirm Delete?",
+        "zh": "确认删除？"
     }
 }

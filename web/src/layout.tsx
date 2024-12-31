@@ -494,6 +494,28 @@ export function Layout() {
                       >
                         {record.config.disabled ? "enable" : "disable"}
                       </Button>
+                      <Divider type="vertical"></Divider>
+                      <Popconfirm
+                        title="Confirm"
+                        description="Confirm Delete?"
+                        onConfirm={async () => {
+                          try {
+                            await call("closeMcpClients", [record.name, true]);
+
+                            getClients(false).then((x) => {
+                              setClients(x);
+                              EVENT.fire("refresh");
+                            });
+                            record.config.disabled = true;
+                            delete MCP_CONFIG.get().mcpServers[record.name];
+                            await MCP_CONFIG.save();
+                          } catch (e) {
+                            message.error(e.message);
+                          }
+                        }}
+                      >
+                        <Button type="link">delete</Button>
+                      </Popconfirm>
                     </div>
                   );
                 },

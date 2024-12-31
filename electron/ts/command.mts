@@ -111,8 +111,11 @@ export class CommandFactory {
     return obj;
   }
 
-  async closeMcpClients(clientName: string = undefined) {
-    let res = await closeMcpClients(clientName);
+  async closeMcpClients(
+    clientName: string = undefined,
+    isdelete: boolean = false
+  ) {
+    let res = await closeMcpClients(clientName, isdelete);
     let obj = {};
     for (let key in res) {
       obj[key] = res[key].toJSON();
