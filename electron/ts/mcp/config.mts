@@ -281,24 +281,25 @@ export async function openMcpClient(
 
   let config = await getConfg();
   if (clientConfig == null) {
-    clientConfig = config.mcpServers[clientName];
+    clientConfig = config.mcpServers[clientName] || {};
   }
   let key = clientName;
 
   if (mcpClients[key] == null) {
     mcpClients[key] = new MCPClient(
       key,
-      config.mcpServers[key]?.type || "stdio",
-      config.mcpServers[key]?.scope || "outer"
+      clientConfig?.type || "stdio",
+      clientConfig?.scope || "outer"
     );
   }
-  if (config.mcpServers[key]?.disabled) {
+  if (clientConfig?.disabled) {
     mcpClients[key].status = "disabled";
   } else {
     try {
       await mcpClients[key].open(clientConfig);
     } catch (e) {
       log.error("openMcpClient", e);
+      throw e;
     }
   }
 
