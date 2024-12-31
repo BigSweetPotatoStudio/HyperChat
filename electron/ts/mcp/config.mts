@@ -288,11 +288,11 @@ export async function openMcpClient(
   if (mcpClients[key] == null) {
     mcpClients[key] = new MCPClient(
       key,
-      config.mcpServers[key].type || "stdio",
-      config.mcpServers[key].scope || "outer"
+      config.mcpServers[key]?.type || "stdio",
+      config.mcpServers[key]?.scope || "outer"
     );
   }
-  if (config.mcpServers[key].disabled) {
+  if (config.mcpServers[key]?.disabled) {
     mcpClients[key].status = "disabled";
   } else {
     try {
