@@ -45,7 +45,7 @@ type ClientConfig = {
   scope?: "local" | "outer";
 };
 
-let mcpClients = {} as {
+export const mcpClients = {} as {
   [s: string]: MCPClient;
 };
 class MCPClient {
@@ -142,7 +142,12 @@ class MCPClient {
       this.prompts = [];
     };
     client.onerror = (e) => {
-      log.error("client error", e);
+      if (this.type == "sse") {
+        //
+      } else {
+        log.error("client error", e);
+      }
+
       // setTimeout(() => {
       //   this.open();
       // }, 3000);
@@ -306,7 +311,7 @@ export async function openMcpClient(
   return mcpClients;
 }
 
-async function getMcpClients() {
+export async function getMcpClients() {
   while (1) {
     if (firstRunStatus == 1 || firstRunStatus == 0) {
       await sleep(100);
@@ -318,17 +323,21 @@ async function getMcpClients() {
   return mcpClients;
 }
 
-async function closeMcpClients(clientName: string) {
+export async function closeMcpClients(clientName: string, isdelete: boolean) {
   let client = mcpClients[clientName];
-  await client.client.close();
+
+  if (client.client != null) {
+    await client.client.close();
+  }
   client.client = undefined;
   client.tools = [];
   client.prompts = [];
   client.resources = [];
-
+  if (isdelete) {
+    delete mcpClients[clientName];
+  }
   return mcpClients;
 }
-export { getMcpClients, closeMcpClients, mcpClients };
 
 export async function getConfg(): Promise<{
   mcpServers: { [s: string]: ClientConfig };
