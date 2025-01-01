@@ -1,3 +1,15 @@
+# 0.013
+
+## HyperChat
+
+* 优化了，MCP Server的启动速度。
+
+## HyperTools
+
+* 优化了，打开网页的Tool
+
+
+
 # 0.011
 
 ## HyperChat

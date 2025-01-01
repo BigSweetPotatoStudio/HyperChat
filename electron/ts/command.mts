@@ -34,10 +34,12 @@ import { v4 as uuidV4 } from "uuid";
 import Screenshots from "electron-screenshots";
 import { getLocalIP, spawnWithOutput } from "./common/util.mjs";
 import { autoLauncher } from "./common/autoLauncher.mjs";
-import { electronData, ENV_CONFIG } from "./common/data.mjs";
+import { AppSetting, electronData, ENV_CONFIG } from "./common/data.mjs";
 import { commandHistory, CommandStatus } from "./command_history.mjs";
 import { appDataDir } from "./const.mjs";
 import spawn from "cross-spawn";
+
+const { createClient } = await import(/* webpackIgnore: true */ "webdav");
 
 import {
   closeMcpClients,
@@ -48,6 +50,7 @@ import {
 } from "./mcp/config.mjs";
 import { checkUpdate } from "./upload.mjs";
 import { version } from "os";
+import { webdavClient } from "./common/webdav.mjs";
 
 const userDataPath = app.getPath("userData");
 let videoDownloadWin: BrowserWindow;
@@ -230,7 +233,9 @@ export class CommandFactory {
   }
   async writeFile(p, text, root = appDataDir) {
     p = path.join(root, p);
-    return fs.writeFileSync(p, text);
+    let res = fs.writeFileSync(p, text);
+    webdavClient.sync();
+    return res;
   }
   async readFile(p, root = appDataDir) {
     p = path.join(root, p);
@@ -315,6 +320,19 @@ export class CommandFactory {
 
   async quitAndInstall() {
     checkUpdate.quitAndInstall();
+  }
+  async testWebDav(values) {
+    let client = createClient(values.url, {
+      username: values.username,
+      password: values.password,
+    });
+    return await client.getDirectoryContents("/");
+  }
+  async webDaveInit() {
+    return webdavClient.init();
+  }
+  async webDavSync() {
+    return await webdavClient.sync();
   }
 }
 

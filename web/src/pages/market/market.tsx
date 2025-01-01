@@ -52,6 +52,7 @@ export function Market() {
         >
           Try Repair environment
         </Button>
+        <div className="mt-4 bg-white p-4">coming soon</div>
       </div>
       <div className="w-2/5">
         <h1>More MCP Market</h1>

@@ -98,6 +98,7 @@ export class OpenAiChannel {
     }
     this.status = "stop";
   }
+  index = 0;
   status: "runing" | "stop" = "stop";
   async completion(
     onUpdate?: (content: string) => void,
@@ -105,13 +106,20 @@ export class OpenAiChannel {
     step = 0,
   ): Promise<string> {
     this.status = "runing";
-    return this._completion(onUpdate, call_tool, step);
+    this.index++;
+    return await this._completion(onUpdate, call_tool, step, {
+      index: this.index,
+    });
   }
   async _completion(
     onUpdate?: (content: string) => void,
     call_tool: boolean = true,
     step = 0,
+    context: { index: number } = { index: 0 },
   ): Promise<string> {
+    if (context.index < this.index) {
+      throw new Error("Cancel Requesting");
+    }
     if (this.status == "stop") {
       throw new Error("Cancel Requesting");
     }
@@ -293,8 +301,9 @@ export class OpenAiChannel {
       console.log("this.messages", this.messages);
       return await this._completion(
         onUpdate,
-        (this.options.call_tool_step || 100) > step + 1,
+        (this.options.call_tool_step || 10) > step + 1,
         step + 1,
+        context,
       );
     } else {
       console.log("this.messages", this.messages);
