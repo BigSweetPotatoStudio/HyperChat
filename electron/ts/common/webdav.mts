@@ -9,6 +9,7 @@ import { getMessageService } from "../mianWindow.mjs";
 import { sleep } from "zx";
 import Logger from "electron-log";
 import { log } from "console";
+import { DataList } from "../../../common/data";
 
 interface FileInfo {
   path: string;
@@ -106,19 +107,39 @@ class WebDAVSync {
         const fullPath = path.join(localPath, localFile.path);
         const stat = await fs.stat(fullPath);
         if (stat.isDirectory()) continue;
-
-        const remoteFile = remoteFiles.find((r) => r.path === localFile.path);
-        if (!remoteFile || localFile.modifiedTime > remoteFile.modifiedTime) {
-          const content = await fs.readFile(
-            path.join(localPath, localFile.path)
+        if (
+          DataList.filter((item) => item.options.sync)
+            .map((x) => x.KEY)
+            .includes(localFile.path)
+        ) {
+          const remoteFile = remoteFiles.find((r) => r.path === localFile.path);
+          if (!remoteFile || localFile.modifiedTime > remoteFile.modifiedTime) {
+            const content = await fs.readFile(
+              path.join(localPath, localFile.path)
+            );
+            await this.client.putFileContents(
+              path.join(remotePath, localFile.path).replace(/\\/g, "/"),
+              content
+            );
+          }
+        } else {
+          console.log(
+            "delete",
+            path.join(remotePath, localFile.path).replace(/\\/g, "/")
           );
-          await this.client.putFileContents(
-            path.join(remotePath, localFile.path).replace(/\\/g, "/"),
-            content
-          );
+          try {
+            await this.client.deleteFile(
+              path.join(remotePath, localFile.path).replace(/\\/g, "/")
+            );
+          } catch (e) {
+            if (e.status === 404) {
+            } else {
+              throw e;
+            }
+          }
         }
       }
-      Logger.log("Syncing, localFiles", remoteFiles);
+      // Logger.log("Syncing, localFiles", remoteFiles);
       for (const remoteFile of remoteFiles) {
         const localFile = localFiles.find((l) => l.path === remoteFile.path);
         if (!localFile || remoteFile.modifiedTime > localFile.modifiedTime) {

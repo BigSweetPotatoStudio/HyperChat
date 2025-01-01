@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import { call } from "../../common/call";
 import { Button, Form, Input, Modal, Space } from "antd";
-import { AppSetting } from "../../common/data";
+import { electronData } from "../../common/data";
 
 export function Market() {
   const [num, setNum] = React.useState(0);
@@ -20,7 +20,7 @@ export function Market() {
       setUvVer(y);
     })();
     (async () => {
-      await AppSetting.init();
+      await electronData.init();
       refresh();
     })();
   }, []);
@@ -89,12 +89,12 @@ export function Market() {
             layout="vertical"
             name="ConfigurePATH"
             initialValues={{
-              PATH: AppSetting.get().PATH,
+              PATH: electronData.get().PATH,
             }}
             clearOnDestroy
             onFinish={async (values) => {
-              AppSetting.get().PATH = values.PATH;
-              await AppSetting.save();
+              electronData.get().PATH = values.PATH;
+              await electronData.save();
               location.reload();
             }}
           >
