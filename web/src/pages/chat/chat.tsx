@@ -61,6 +61,7 @@ import {
   RedoOutlined,
   StarOutlined,
   SearchOutlined,
+  DownOutlined,
 } from "@ant-design/icons";
 import type { ConfigProviderProps, GetProp } from "antd";
 import { MyMessage, OpenAiChannel } from "../../common/openai";
@@ -142,6 +143,7 @@ export const Chat = () => {
     modelKey: undefined,
     gptsKey: undefined,
     sended: false,
+    requestType: "stream",
     icon: "",
     allowMCPs: [],
   });
@@ -166,6 +168,7 @@ export const Chat = () => {
       sended: false,
       icon: "",
       allowMCPs: allowMCPs,
+      requestType: currentChat.current.requestType,
     };
     refresh();
     setResourceResList([]);
@@ -399,7 +402,11 @@ export const Chat = () => {
       config = GPT_MODELS.get().data[0];
     }
     currentChat.current.modelKey = config.key;
-    client = new OpenAiChannel(config, currentChat.current.messages);
+    client = new OpenAiChannel(
+      config,
+      currentChat.current.messages,
+      currentChat.current.requestType == "stream",
+    );
     currentChat.current.messages = client.messages;
     refresh();
   };
@@ -1059,6 +1066,55 @@ export const Chat = () => {
                       };
                     })}
                   ></Select>
+                </Tooltip>
+                <Divider type="vertical" />
+                <Tooltip title="Select Request Type">
+                  <span>type:</span>
+                  {/* <Select
+                    size="small"
+                    className="w-20"
+                    value={currentChat.current.requestType}
+                    onChange={(value) => {
+                      currentChat.current.requestType = value;
+                      createChat();
+                    }}
+                    options={[
+                      {
+                        label: "stream",
+                        value: "stream",
+                      },
+                      {
+                        label: "completion",
+                        value: "completion",
+                      },
+                    ]}
+                  ></Select> */}
+                  <Dropdown
+                    arrow
+                    menu={{
+                      selectable: true,
+                      defaultSelectedKeys: [currentChat.current.requestType],
+                      items: [
+                        {
+                          label: "stream",
+                          key: "stream",
+                        },
+                        {
+                          label: "complete",
+                          key: "complete",
+                        },
+                      ],
+                      onClick: (e) => {
+                        currentChat.current.requestType = e.key;
+                        createChat();
+                      },
+                    }}
+                  >
+                    <Button size="small" type="link">
+                      {currentChat.current.requestType}
+                      <DownOutlined />
+                    </Button>
+                  </Dropdown>
                 </Tooltip>
                 <Divider type="vertical" />
                 <Tooltip title="Token Usage">

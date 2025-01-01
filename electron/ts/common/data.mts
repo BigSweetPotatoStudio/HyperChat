@@ -52,3 +52,14 @@ export class ClipboardHistoryData extends Data<{
 export const ENV_CONFIG = new Data("env.json", {
   PATH: "",
 });
+
+export const AppSetting = new Data("app_setting.json", {
+  isAutoLauncher: false,
+  firstOpen: true,
+  webdav: {
+    url: "",
+    username: "",
+    password: "",
+    baseDirName: "",
+  },
+});

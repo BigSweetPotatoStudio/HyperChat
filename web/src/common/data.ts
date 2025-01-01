@@ -1,5 +1,6 @@
 import { call } from "./call";
 
+export const Files = [];
 class Data<T> {
   private localStorage = null;
   async init() {
@@ -18,11 +19,15 @@ class Data<T> {
   constructor(
     private KEY: string,
     private data: T,
-  ) {}
+  ) {
+    Files.push(KEY);
+  }
   get(): T {
     return this.data;
   }
-
+  set(data: T) {
+    this.data = data;
+  }
   async save() {
     this.insave();
   }
@@ -40,6 +45,12 @@ class Data<T> {
 export const AppSetting = new Data("app_setting.json", {
   isAutoLauncher: false,
   firstOpen: true,
+  webdav: {
+    url: "",
+    username: "",
+    password: "",
+    baseDirName: "",
+  },
 });
 
 await AppSetting.init();
@@ -63,6 +74,7 @@ export const ChatHistory = new Data("chat_history.json", {
     sended: boolean;
     icon: string;
     allowMCPs: string[];
+    requestType: string;
   }>,
 });
 

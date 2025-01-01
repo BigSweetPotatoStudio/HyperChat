@@ -44,11 +44,14 @@ import {
 } from "lucide-react";
 import { AppSetting } from "../../common/data";
 import { debounce } from "../../common";
-import { CopyOutlined, ExclamationCircleFilled } from "@ant-design/icons";
+import {
+  CloudSyncOutlined,
+  CopyOutlined,
+  ExclamationCircleFilled,
+} from "@ant-design/icons";
 import { sleep } from "../../common/sleep";
 import dayjs from "dayjs";
-
-import { currLang, setCurrLang } from "../../i18n";
+import { useForm } from "antd/es/form/Form";
 
 export function Setting() {
   const [num, setNum] = useState(0);
@@ -59,13 +62,111 @@ export function Setting() {
   useEffect(() => {
     (async () => {
       AppSetting.get().isAutoLauncher = await call("isAutoLauncher"); // 获取是否自动启动
+      webdavForm.resetFields();
+      webdavForm.setFieldsValue(AppSetting.get().webdav);
     })();
   }, []);
+  const [webdavForm] = useForm();
+  const [syncLoading, setSyncLoading] = useState(false);
+  const webDavOnFinish = async (values, type?) => {
+    if (type === "test") {
+      try {
+        await call("testWebDav", [values]);
+        message.success("Test success");
+      } catch (error) {
+        message.error("Test failed");
+      }
+    } else {
+      await call("testWebDav", [values]);
+      AppSetting.get().webdav = values;
+      await AppSetting.save();
+
+      await call("webDaveInit", []);
+      message.success("Save success");
+    }
+  };
 
   return (
     <div>
-      <div className="relative pr-8 pt-2">
-        <div>
+      <div className="relative flex pr-8 pt-2">
+        <div className="w-1/2">
+          <Form
+            name="webdavForm"
+            form={webdavForm}
+            labelCol={{ span: 8 }}
+            wrapperCol={{ span: 16 }}
+            style={{ maxWidth: 600, padding: 24 }}
+            onFinish={webDavOnFinish}
+            initialValues={{
+              baseDirName: "HyperChat",
+            }}
+            autoComplete="off"
+          >
+            <Form.Item
+              label="WebDAV Url"
+              name="url"
+              rules={[{ required: true, message: "Please input Url!" }]}
+              normalize={(value) => value.trim()}
+            >
+              <Input />
+            </Form.Item>
+            <Form.Item
+              label="Username"
+              name="username"
+              rules={[{ required: true, message: "Please input username!" }]}
+              normalize={(value) => value.trim()}
+            >
+              <Input />
+            </Form.Item>
+
+            <Form.Item
+              label="Password"
+              name="password"
+              rules={[{ required: true, message: "Please input password!" }]}
+              normalize={(value) => value.trim()}
+            >
+              <Input.Password />
+            </Form.Item>
+
+            <Form.Item
+              label="baseDirName"
+              name="baseDirName"
+              rules={[{ required: true, message: "Please input!" }]}
+              normalize={(value) => value.trim()}
+            >
+              <Input />
+            </Form.Item>
+            <Form.Item wrapperCol={{ offset: 8, span: 16 }}>
+              <Space>
+                <Button
+                  onClick={() => {
+                    webdavForm.validateFields().then((values) => {
+                      webDavOnFinish(values, "test");
+                    });
+                  }}
+                >
+                  Test
+                </Button>
+                <Button type="primary" htmlType="submit">
+                  Save
+                </Button>
+                <Button
+                  onClick={async () => {
+                    setSyncLoading(true);
+                    await call("webDavSync", []);
+                    message.success("Sync Success!");
+                    setSyncLoading(false);
+                  }}
+                  loading={syncLoading}
+                >
+                  <CloudSyncOutlined />
+                  Sync
+                </Button>
+              </Space>
+            </Form.Item>
+          </Form>
+        </div>
+        <div className="w-1/2">
           <Form
             layout="vertical"
             name="basicSitting"
@@ -74,7 +175,6 @@ export function Setting() {
             initialValues={{
               // port: data.get().port,
               isAutoLauncher: AppSetting.get().isAutoLauncher,
-              currLang: currLang,
             }}
             autoComplete="off"
           >
@@ -128,6 +228,7 @@ export function Setting() {
               </a>
             </Form.Item>
           </Form>
+
           <div className="text-red-500">
             This software is free and OpenSource. Feel free to follow me, and I
             will bring more utility software.
@@ -137,10 +238,6 @@ export function Setting() {
             name="1351561"
             labelCol={{ span: 4 }}
             wrapperCol={{ span: 20 }}
-            initialValues={{
-              // port: data.get().port,
-              isAutoLauncher: AppSetting.get().isAutoLauncher,
-            }}
             autoComplete="off"
           >
             <Form.Item label="Email" name="Email">
