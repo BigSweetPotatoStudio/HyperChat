@@ -9,9 +9,12 @@ import { getMessageService } from "../mianWindow.mjs";
 import type { StdioServerParameters } from "@modelcontextprotocol/sdk/client/stdio.js";
 import { initMcpServer } from "./servers/express.mjs";
 import { MyServers } from "./servers/index.mjs";
-import { electron } from "process";
+import { electron, env } from "process";
 import { electronData, ENV_CONFIG } from "../common/data.mjs";
 import { request } from "http";
+
+import { spawnWithOutput } from "../common/util.mjs";
+import { clientPaths } from "./claude.mjs";
 
 await initMcpServer().catch((e) => {
   console.error("initMcpServer", e);
@@ -182,25 +185,41 @@ class MCPClient {
       log.error("MCPClient open disabled", this.name);
       throw new Error("MCPClient open disabled");
     } else {
-      let key = this.name;
-      const transport = new StdioClientTransport({
-        command: config.command,
-        args: config.args,
-        env: Object.assign(getMyDefaultEnvironment(), config.env),
-      });
+      try {
+        let key = this.name;
+        const transport = new StdioClientTransport({
+          command: config.command,
+          args: config.args,
+          env: Object.assign(getMyDefaultEnvironment(), config.env),
+        });
 
-      const client = new Client(
-        {
-          name: key,
-          version: "1.0.0",
-        },
-        {
-          capabilities: {},
-        }
-      );
+        const client = new Client(
+          {
+            name: key,
+            version: "1.0.0",
+          },
+          {
+            capabilities: {},
+          }
+        );
 
-      await client.connect(transport);
-      this.client = client;
+        await client.connect(transport);
+        this.client = client;
+      } catch (e) {
+        // let res = await spawnWithOutput(config.command, config.args, {
+        //   env: Object.assign(getMyDefaultEnvironment(), config.env),
+        // }).catch((e) => {
+        //   return e;
+        // });
+        // console.log("spawnWithOutput ", res);
+        // if (res.stderr) {
+        //   throw new Error(res.stderr);
+        // }
+        // if (res.stdout) {
+        //   throw new Error(res.stdout);
+        // }
+        throw e;
+      }
     }
   }
 }
@@ -223,13 +242,7 @@ export async function initMcpClients() {
     log.info("getMcpClients cached mcpClients", Object.keys(mcpClients).length);
     return mcpClients;
   }
-  let p = path.join(
-    os.homedir(),
-    "AppData",
-    "Roaming",
-    "Claude",
-    "claude_desktop_config.json"
-  );
+  let p = clientPaths.claude;
   let mcp_path = path.join(appDataDir, "mcp.json");
   if (fs.existsSync(p) && !fs.existsSync(mcp_path)) {
     fs.copy(p, mcp_path);
@@ -238,7 +251,7 @@ export async function initMcpClients() {
   let config = await getConfg();
 
   console.log(config);
-
+  let tasks = [];
   for (let key in config.mcpServers) {
     if (mcpClients[key] == null) {
       mcpClients[key] = new MCPClient(
@@ -251,14 +264,14 @@ export async function initMcpClients() {
       mcpClients[key].status = "disabled";
     } else {
       try {
-        await mcpClients[key].open();
+        tasks.push(mcpClients[key].open());
       } catch (e) {
         log.error("openMcpClient", e);
         continue;
       }
     }
   }
-
+  await Promise.all(tasks);
   // function format(res) {
   //   for (let key in res) {
   //     res[key] = Object.assign({}, res[key]);

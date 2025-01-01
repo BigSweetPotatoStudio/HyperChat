@@ -78,3 +78,45 @@ export function sanitizeFileName(fileName: string): string {
 
   return sanitized;
 }
+
+import spawn from "cross-spawn";
+export const spawnWithOutput = (
+  command: string,
+  args: string[],
+  options
+): any => {
+  return new Promise((resolve, reject) => {
+    const proc = spawn(command, args, options);
+    let stdout = "";
+    let stderr = "";
+
+    proc.stdout.pipe(process.stdout);
+    proc.stderr.pipe(process.stderr);
+
+    proc.stdout.on("data", (data) => {
+      stdout += data.toString();
+      // console.log(data.toString()); // 实时输出
+    });
+
+    proc.stderr.on("data", (data) => {
+      stderr += data.toString();
+      // console.error(data.toString()); // 实时输出错误
+    });
+
+    proc.on("close", (code) => {
+      if (code !== 0) {
+        reject(new Error(`Command failed with code ${code}\n${stderr}`));
+      } else {
+        resolve({
+          stdout,
+          stderr,
+          code,
+        });
+      }
+    });
+
+    proc.on("error", (err) => {
+      reject({ error: err, stderr, stdout });
+    });
+  });
+};
