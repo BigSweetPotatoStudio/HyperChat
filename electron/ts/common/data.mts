@@ -1,30 +1,50 @@
 import { app } from "electron";
-import { Data } from "./dataConstructor.mjs";
+import {
+  electronData,
+  taskHistory,
+  AppSetting,
+  DataList,
+} from "../../../common/data.js";
+import { fs, path } from "zx";
+import { appDataDir } from "../const.mjs";
+
+for (let data of DataList) {
+  data.override({
+    async inget() {
+      if (await fs.exists(path.join(appDataDir, this.KEY))) {
+        return await fs.readFile(path.join(appDataDir, this.KEY));
+      } else {
+        return "";
+      }
+    },
+    ingetSync() {
+      if (fs.existsSync(path.join(appDataDir, this.KEY))) {
+        return fs.readFileSync(path.join(appDataDir, this.KEY));
+      } else {
+        return "";
+      }
+    },
+    async insave() {
+      return fs.writeFile(
+        path.join(appDataDir, this.KEY),
+        JSON.stringify(this.data, null, 4)
+      );
+    },
+  });
+}
+
 export const HTTPPORT = 16100;
 export const MCPServerPORT = 16110;
-export const electronData = new Data("electronData.json", {
-  port: HTTPPORT,
-  mcp_server_port: MCPServerPORT,
-  version: app.getVersion(),
-  appDataDir: "",
-  logFilePath: "",
-});
+
+await electronData.init();
+
+electronData.get().port = HTTPPORT;
+electronData.get().mcp_server_port = MCPServerPORT;
 
 electronData.get().version = app.getVersion();
-await electronData.save();
-export const taskHistory = new Data("taskHistory.json", {
-  history: [],
-});
+
+electronData.save();
+
 await taskHistory.init();
 
-export const AppSetting = new Data("app_setting.json", {
-  isAutoLauncher: false,
-  firstOpen: true,
-  webdav: {
-    url: "",
-    username: "",
-    password: "",
-    baseDirName: "",
-  },
-  PATH: "",
-});
+export { electronData, taskHistory, AppSetting };

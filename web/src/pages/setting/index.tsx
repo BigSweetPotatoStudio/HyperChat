@@ -61,6 +61,7 @@ export function Setting() {
 
   useEffect(() => {
     (async () => {
+      await AppSetting.init();
       AppSetting.get().isAutoLauncher = await call("isAutoLauncher"); // 获取是否自动启动
       webdavForm.resetFields();
       webdavForm.setFieldsValue(

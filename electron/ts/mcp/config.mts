@@ -376,9 +376,9 @@ export async function getConfg(): Promise<{
 
 export function getMyDefaultEnvironment() {
   let env = getDefaultEnvironment();
-  AppSetting.initSync();
-  if (AppSetting.get().PATH) {
-    env.PATH = AppSetting.get().PATH;
+  electronData.initSync();
+  if (electronData.get().PATH) {
+    env.PATH = electronData.get().PATH;
   }
   return env;
 }

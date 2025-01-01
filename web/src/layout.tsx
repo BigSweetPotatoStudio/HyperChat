@@ -341,13 +341,25 @@ export function Layout() {
 
                   <Button
                     type="link"
+                    style={{
+                      color:
+                        syncStatus == 1
+                          ? undefined
+                          : syncStatus == -1
+                            ? "red"
+                            : "gray",
+                    }}
                     onClick={() => {
                       navigate("/setting");
                     }}
                   >
                     <SyncOutlined spin={syncStatus == 1} />
 
-                    {syncStatus == 1 ? "Syncing" : "Sync"}
+                    {syncStatus == 1
+                      ? "Syncing"
+                      : syncStatus == -1
+                        ? "Sync Falled"
+                        : "Sync"}
                   </Button>
                 </>
               );

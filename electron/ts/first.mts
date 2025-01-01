@@ -16,7 +16,6 @@ import { $, usePowerShell, fs, cd, fetch, sleep, path } from "zx";
 import { electronData } from "./common/data.mjs";
 import { appDataDir } from "./const.mjs";
 
-await electronData.init();
 // 获取日志文件路径
 const logFilePath = log.transports.file.getFile().path;
 // 清空日志文件
