@@ -8,6 +8,7 @@ import { appDataDir } from "../const.mjs";
 import { getMessageService } from "../mianWindow.mjs";
 import { sleep } from "zx";
 import Logger from "electron-log";
+import { log } from "console";
 
 interface FileInfo {
   path: string;
@@ -61,7 +62,7 @@ class WebDAVSync {
     localPath: string = appDataDir,
     remotePath: string = this.webdavSetting.baseDirName
   ): Promise<void> {
-    if (this.status === 0) {
+    if (this.status === 0 || this.status === -1) {
       this.status = 1;
       Logger.log("Syncing, start");
     } else if (this.status === 1) {
@@ -70,8 +71,7 @@ class WebDAVSync {
         Logger.log("Syncing, waiting");
         await sleep(1000);
         if (this.status === 0) {
-          this._sync(localPath, remotePath);
-          break;
+          return await this._sync(localPath, remotePath);
         }
       }
       return;
@@ -79,13 +79,17 @@ class WebDAVSync {
       Logger.log("Syncing, skip");
       return;
     }
-
-    let res = await this._sync(localPath, remotePath);
-    this.status = 0;
-    return res;
+    try {
+      let res = await this._sync(localPath, remotePath);
+      this.status = 0;
+      return res;
+    } catch (e) {
+      this.status = -1;
+      throw e;
+    }
   }
   status: number = 0;
-  async _sync(localPath: string, remotePath: string): Promise<void> {
+  private async _sync(localPath: string, remotePath: string): Promise<void> {
     try {
       getMessageService().sendToRenderer({
         type: "sync",
@@ -96,8 +100,13 @@ class WebDAVSync {
 
       const localFiles = await this.getLocalFileInfo(localPath);
       const remoteFiles = await this.getRemoteFileInfo(remotePath);
-
+      Logger.log("Syncing, localFiles", localFiles);
       for (const localFile of localFiles) {
+        // 跳过目录
+        const fullPath = path.join(localPath, localFile.path);
+        const stat = await fs.stat(fullPath);
+        if (stat.isDirectory()) continue;
+
         const remoteFile = remoteFiles.find((r) => r.path === localFile.path);
         if (!remoteFile || localFile.modifiedTime > remoteFile.modifiedTime) {
           const content = await fs.readFile(
@@ -109,7 +118,7 @@ class WebDAVSync {
           );
         }
       }
-
+      Logger.log("Syncing, localFiles", remoteFiles);
       for (const remoteFile of remoteFiles) {
         const localFile = localFiles.find((l) => l.path === remoteFile.path);
         if (!localFile || remoteFile.modifiedTime > localFile.modifiedTime) {

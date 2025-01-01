@@ -1,6 +1,4 @@
 import { fs, path } from "zx";
-import { Command } from "../command.mjs";
-import { app } from "electron";
 import { appDataDir } from "../const.mjs";
 import Logger from "electron-log";
 
