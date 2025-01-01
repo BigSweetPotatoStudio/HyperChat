@@ -8,4 +8,3 @@ export const userDataPath = app.getPath("userData");
 export const dirName = "HyperChat";
 export const appDataDir = path.join(os.homedir(), "Documents", dirName);
 fs.ensureDirSync(appDataDir);
-log.info("appDataDir: ", appDataDir);

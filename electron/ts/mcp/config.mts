@@ -10,7 +10,7 @@ import type { StdioServerParameters } from "@modelcontextprotocol/sdk/client/std
 import { initMcpServer } from "./servers/express.mjs";
 import { MyServers } from "./servers/index.mjs";
 import { electron, env } from "process";
-import { electronData, ENV_CONFIG } from "../common/data.mjs";
+import { electronData, AppSetting } from "../common/data.mjs";
 import { request } from "http";
 
 import { spawnWithOutput } from "../common/util.mjs";
@@ -271,7 +271,7 @@ export async function initMcpClients() {
       }
     }
   }
-  await Promise.all(tasks);
+  await Promise.allSettled(tasks);
   // function format(res) {
   //   for (let key in res) {
   //     res[key] = Object.assign({}, res[key]);
@@ -376,9 +376,9 @@ export async function getConfg(): Promise<{
 
 export function getMyDefaultEnvironment() {
   let env = getDefaultEnvironment();
-  ENV_CONFIG.initSync();
-  if (ENV_CONFIG.get().PATH) {
-    env.PATH = ENV_CONFIG.get().PATH;
+  AppSetting.initSync();
+  if (AppSetting.get().PATH) {
+    env.PATH = AppSetting.get().PATH;
   }
   return env;
 }

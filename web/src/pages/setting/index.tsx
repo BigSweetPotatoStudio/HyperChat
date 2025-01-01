@@ -63,7 +63,9 @@ export function Setting() {
     (async () => {
       AppSetting.get().isAutoLauncher = await call("isAutoLauncher"); // 获取是否自动启动
       webdavForm.resetFields();
-      webdavForm.setFieldsValue(AppSetting.get().webdav);
+      webdavForm.setFieldsValue(
+        Object.assign({ baseDirName: "HyperChat" }, AppSetting.get().webdav),
+      );
     })();
   }, []);
   const [webdavForm] = useForm();
@@ -153,9 +155,14 @@ export function Setting() {
                 <Button
                   onClick={async () => {
                     setSyncLoading(true);
-                    await call("webDavSync", []);
-                    message.success("Sync Success!");
-                    setSyncLoading(false);
+                    try {
+                      await call("webDavSync", []);
+                      message.success("Sync Success!");
+                      setSyncLoading(false);
+                    } catch (error) {
+                      message.error("Sync failed");
+                      setSyncLoading(false);
+                    }
                   }}
                   loading={syncLoading}
                 >

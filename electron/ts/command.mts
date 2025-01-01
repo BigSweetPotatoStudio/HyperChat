@@ -34,7 +34,7 @@ import { v4 as uuidV4 } from "uuid";
 import Screenshots from "electron-screenshots";
 import { getLocalIP, spawnWithOutput } from "./common/util.mjs";
 import { autoLauncher } from "./common/autoLauncher.mjs";
-import { AppSetting, electronData, ENV_CONFIG } from "./common/data.mjs";
+import { AppSetting, electronData } from "./common/data.mjs";
 import { commandHistory, CommandStatus } from "./command_history.mjs";
 import { appDataDir } from "./const.mjs";
 import spawn from "cross-spawn";
@@ -84,6 +84,8 @@ export class CommandFactory {
   async getConfig() {
     return {
       version: app.getVersion(),
+      appDataDir: appDataDir,
+      logPath: log.transports.file.getFile().path,
     };
   }
   async getHistory() {
