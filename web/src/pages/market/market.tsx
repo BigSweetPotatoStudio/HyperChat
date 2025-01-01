@@ -29,7 +29,7 @@ export function Market() {
 
   return (
     <div className="flex">
-      <div className="w-4/5">
+      <div className="w-3/5">
         <h1 className=" ">💻MCP</h1>
 
         <div>
@@ -53,19 +53,24 @@ export function Market() {
           Try Repair environment
         </Button>
       </div>
-      <div className="w-1/5">
+      <div className="w-2/5">
         <h1>More MCP Market</h1>
+        <div>
+          <a href="https://modelcontextprotocol.io/examples">
+            modelcontextprotocol.io/examples
+          </a>
+        </div>
         <div>
           <a href="https://mcp.so/">mcp.so</a>
         </div>
         <div>
-          <a href="https://www.pulsemcp.com/">pulsemcp</a>
+          <a href="https://www.pulsemcp.com/">pulsemcp.com</a>
         </div>
         <div>
-          <a href="https://glama.ai/mcp/servers?attributes=">glama</a>
+          <a href="https://glama.ai/mcp/servers?attributes=">glama.ai</a>
         </div>
         <div>
-          <a href="https://smithery.ai/">smithery</a>
+          <a href="https://smithery.ai/">smithery.ai</a>
         </div>
       </div>
       <Modal

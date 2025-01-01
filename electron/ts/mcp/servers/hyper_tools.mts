@@ -176,23 +176,42 @@ async function fetch(url: string) {
     show: true,
     webPreferences: {
       backgroundThrottling: true,
+      nodeIntegration: false,
+      contextIsolation: true,
+      sandbox: true,
     },
   });
   // win.webContents.openDevTools();
   try {
+    win.webContents.session.webRequest.onHeadersReceived(
+      (details, callback) => {
+        // log.log(
+        //   details.url,
+        //   details.responseHeaders["content-security-policy"]
+        // );
+        const cspIndex = Object.keys(details.responseHeaders).find(
+          (key) => key.toLowerCase() === "content-security-policy"
+        );
+        if (cspIndex) {
+          delete details.responseHeaders[cspIndex]; // 删除CSP头
+        }
+
+        callback({ cancel: false, responseHeaders: details.responseHeaders });
+      }
+    );
+    Logger.info("Page loadeding: " + url);
     await win.loadURL(url, {
       userAgent:
         "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/132.0.0.0 Safari/537.36",
     });
 
     // 等待页面加载完成
-    await Promise.race([
-      new Promise((resolve) => {
-        win.webContents.on("did-finish-load", resolve);
-      }),
-      sleep(3000),
-    ]);
-
+    // await Promise.race([
+    //   new Promise((resolve) => {
+    //     win.webContents.on("did-finish-load", resolve);
+    //   }),
+    //   sleep(3000),
+    // ]);
     Logger.info("Page loaded: " + url);
     let md = await executeClientScript(
       win,
@@ -314,21 +333,25 @@ async function executeClientScript<T>(
   script: string,
   options: any = {}
 ): Promise<T> {
-  const { timeout = 5000, userGesture = false } = options;
+  const { timeout = 5000, userGesture = true } = options;
 
   try {
     // Wrap script in promise with timeout
+
     const wrappedScript = `
       new Promise((resolve, reject) => {
-        try {
           ${script}
-        } catch (error) {
-          reject(error);
-        }
       })
     `;
-    // fs.ensureDirSync("tmp");
-    // fs.writeFileSync("tmp/wrappedScript.js", wrappedScript);
+    //   const wrappedScript = `
+    //   new Promise((resolve, reject) => {
+    //     resolve("error openUrl");
+    //   })
+    //  `;
+    if (process.env.NODE_ENV === "development") {
+      fs.ensureDirSync("tmp");
+      fs.writeFileSync("tmp/wrappedScript.js", wrappedScript);
+    }
     const result = await Promise.race([
       win.webContents.executeJavaScript(wrappedScript, userGesture),
       new Promise((_, reject) =>
@@ -338,10 +361,10 @@ async function executeClientScript<T>(
         )
       ),
     ]);
-
+    console.log("error openUrl", result);
     return result as T;
   } catch (error) {
-    console.error("Error executing client script:", error);
+    Logger.error("Error executing client script:", error);
     throw error;
   }
 }

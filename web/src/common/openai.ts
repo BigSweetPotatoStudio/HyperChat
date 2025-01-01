@@ -30,11 +30,10 @@ export class OpenAiChannel {
       model: string;
       apiKey: string;
       call_tool_step?: number;
-      stream?: boolean;
     },
     public messages: MyMessage[],
+    public stream = true,
   ) {
-    options.stream = options.stream || true;
     this.openai = new OpenAI({
       baseURL: options.baseURL,
       apiKey: options.apiKey, // This is the default and can be omitted
@@ -148,7 +147,7 @@ export class OpenAiChannel {
     this.messages.push(this.lastMessage);
     onUpdate && onUpdate(content);
 
-    if (this.options.stream) {
+    if (this.stream) {
       const stream = await this.openai.chat.completions.create(
         {
           messages: messages,
@@ -313,7 +312,7 @@ export class OpenAiChannel {
       suppentTool: false,
     };
     try {
-      this.options.stream = false;
+      this.stream = false;
       let messages: Array<any> = [{ role: "user", content: "你是谁?" }];
       let response = await this.openai.chat.completions.create({
         model: this.options.model,
