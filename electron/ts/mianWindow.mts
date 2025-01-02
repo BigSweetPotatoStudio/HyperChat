@@ -13,6 +13,7 @@ import { get } from "http";
 import path from "path";
 import { os } from "zx";
 import CheckUpdate, { checkUpdate } from "./upload.mjs";
+import { electronData } from "./common/data.mjs";
 
 let title = `${app.name}-${app.getVersion()} by Dadigua`;
 Logger.info("title: ", title);
@@ -69,9 +70,11 @@ export const createWindow = () => {
   if (process.env.NODE_ENV == "development") {
     win.loadURL("http://localhost:8080/#/");
   } else {
-    let indexFile = path.join(__dirname, "../web-build/index.html");
-    win.loadFile(indexFile, {
-      hash: "#/",
+    win.loadURL(`http://localhost:${electronData.get().port}/#/`).catch((e) => {
+      let indexFile = path.join(__dirname, "../web-build/index.html");
+      win.loadFile(indexFile, {
+        hash: "#/",
+      });
     });
   }
   // 处理新窗口打开

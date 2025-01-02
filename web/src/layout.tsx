@@ -54,6 +54,7 @@ import {
   RocketOutlined,
   SmileFilled,
   SmileOutlined,
+  SyncOutlined,
   TabletFilled,
 } from "@ant-design/icons";
 
@@ -189,7 +190,7 @@ export function Layout() {
   const [isAddMCPConfigOpen, setIsAddMCPConfigOpen] = useState(false);
   const [loadingOpenMCP, setLoadingOpenMCP] = useState(false);
   const [loadingCheckLLM, setLoadingCheckLLM] = useState(false);
-
+  const [syncStatus, setSyncStatus] = useState(0);
   useEffect(() => {
     window.ext.receive("message-from-main", (res: any) => {
       // console.log("UpdateMsg! ", res);
@@ -242,6 +243,10 @@ export function Layout() {
           },
         });
       }
+
+      if (res.type == "sync") {
+        setSyncStatus(res.data.status);
+      }
     });
     (async () => {
       await electronData.init();
@@ -285,6 +290,43 @@ export function Layout() {
           menu={{
             collapsedShowGroupTitle: true,
           }}
+          actionsRender={(props) => {
+            return (
+              <Space>
+                <Button
+                  onClick={() => {
+                    setIsToolsShow(true);
+                  }}
+                >
+                  💻MCP
+                </Button>
+                <Button
+                  onClick={() => {
+                    setIsModelConfigOpen(true);
+                    if (GPT_MODELS.get().data.length == 0) {
+                      form.resetFields();
+                      setIsAddModelConfigOpen(true);
+                    }
+                  }}
+                >
+                  🧠LLM
+                </Button>
+                <Select
+                  value={currLang}
+                  style={{ width: 120 }}
+                  onChange={(e) => {
+                    setCurrLang(e);
+                    setLocal(e == "zhCN" ? zhCN : enUS);
+                    window.location.reload();
+                  }}
+                  options={[
+                    { value: "zhCN", label: "中文" },
+                    { value: "enUS", label: "English" },
+                  ]}
+                />
+              </Space>
+            );
+          }}
           avatarProps={{
             // src: user.icon,
             // size: "small",
@@ -293,51 +335,32 @@ export function Layout() {
               return (
                 <>
                   {/* <Button>
-                    <AndroidOutlined spin={runing} />
+                 
                     任务
                   </Button> */}
-                  <Space>
-                    <Button
-                      onClick={() => {
-                        setIsToolsShow(true);
-                      }}
-                    >
-                      💻MCP
-                    </Button>
-                    <Button
-                      onClick={() => {
-                        setIsModelConfigOpen(true);
-                        if (GPT_MODELS.get().data.length == 0) {
-                          form.resetFields();
-                          setIsAddModelConfigOpen(true);
-                        }
-                      }}
-                    >
-                      🧠LLM
-                    </Button>
-                    <Select
-                      value={currLang}
-                      style={{ width: 120 }}
-                      onChange={(e) => {
-                        setCurrLang(e);
-                        setLocal(e == "zhCN" ? zhCN : enUS);
-                        window.location.reload();
-                      }}
-                      options={[
-                        { value: "zhCN", label: "中文" },
-                        { value: "enUS", label: "English" },
-                      ]}
-                    />
 
-                    {/* <Button
-                      type="link"
-                      onClick={() => {
-                        gotoLogin();
-                      }}
-                    >
-                      去登录
-                    </Button> */}
-                  </Space>
+                  <Button
+                    type="link"
+                    style={{
+                      color:
+                        syncStatus == 1
+                          ? undefined
+                          : syncStatus == -1
+                            ? "red"
+                            : "gray",
+                    }}
+                    onClick={() => {
+                      navigate("/setting");
+                    }}
+                  >
+                    <SyncOutlined spin={syncStatus == 1} />
+
+                    {syncStatus == 1
+                      ? "Syncing"
+                      : syncStatus == -1
+                        ? "Sync Falled"
+                        : "Sync"}
+                  </Button>
                 </>
               );
             },
@@ -494,6 +517,28 @@ export function Layout() {
                       >
                         {record.config.disabled ? "enable" : "disable"}
                       </Button>
+                      <Divider type="vertical"></Divider>
+                      <Popconfirm
+                        title="Confirm"
+                        description="Confirm Delete?"
+                        onConfirm={async () => {
+                          try {
+                            await call("closeMcpClients", [record.name, true]);
+
+                            getClients(false).then((x) => {
+                              setClients(x);
+                              EVENT.fire("refresh");
+                            });
+                            record.config.disabled = true;
+                            delete MCP_CONFIG.get().mcpServers[record.name];
+                            await MCP_CONFIG.save();
+                          } catch (e) {
+                            message.error(e.message);
+                          }
+                        }}
+                      >
+                        <Button type="link">delete</Button>
+                      </Popconfirm>
                     </div>
                   );
                 },
@@ -557,6 +602,7 @@ export function Layout() {
                     .filter((x) => x.trim() != "");
                   try {
                     values.env = {};
+                    values._envList = [];
                     for (let x of values._envList) {
                       values.env[x.name] = x.value;
                     }
@@ -951,7 +997,7 @@ export function Layout() {
           <Form.Item name="call_tool_step" label="Call-Tool-Step">
             <InputNumber
               style={{ width: "100%" }}
-              placeholder="default, the model is allowed to execute tools for 100 steps."
+              placeholder="default, the model is allowed to execute tools for 10 steps."
             ></InputNumber>
           </Form.Item>
         </Modal>

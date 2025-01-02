@@ -30,11 +30,10 @@ export class OpenAiChannel {
       model: string;
       apiKey: string;
       call_tool_step?: number;
-      stream?: boolean;
     },
     public messages: MyMessage[],
+    public stream = true,
   ) {
-    options.stream = options.stream || true;
     this.openai = new OpenAI({
       baseURL: options.baseURL,
       apiKey: options.apiKey, // This is the default and can be omitted
@@ -99,6 +98,7 @@ export class OpenAiChannel {
     }
     this.status = "stop";
   }
+  index = 0;
   status: "runing" | "stop" = "stop";
   async completion(
     onUpdate?: (content: string) => void,
@@ -106,13 +106,20 @@ export class OpenAiChannel {
     step = 0,
   ): Promise<string> {
     this.status = "runing";
-    return this._completion(onUpdate, call_tool, step);
+    this.index++;
+    return await this._completion(onUpdate, call_tool, step, {
+      index: this.index,
+    });
   }
   async _completion(
     onUpdate?: (content: string) => void,
     call_tool: boolean = true,
     step = 0,
+    context: { index: number } = { index: 0 },
   ): Promise<string> {
+    if (context.index < this.index) {
+      throw new Error("Cancel Requesting");
+    }
     if (this.status == "stop") {
       throw new Error("Cancel Requesting");
     }
@@ -148,7 +155,7 @@ export class OpenAiChannel {
     this.messages.push(this.lastMessage);
     onUpdate && onUpdate(content);
 
-    if (this.options.stream) {
+    if (this.stream) {
       const stream = await this.openai.chat.completions.create(
         {
           messages: messages,
@@ -294,8 +301,9 @@ export class OpenAiChannel {
       console.log("this.messages", this.messages);
       return await this._completion(
         onUpdate,
-        (this.options.call_tool_step || 100) > step + 1,
+        (this.options.call_tool_step || 10) > step + 1,
         step + 1,
+        context,
       );
     } else {
       console.log("this.messages", this.messages);
@@ -313,7 +321,7 @@ export class OpenAiChannel {
       suppentTool: false,
     };
     try {
-      this.options.stream = false;
+      this.stream = false;
       let messages: Array<any> = [{ role: "user", content: "你是谁?" }];
       let response = await this.openai.chat.completions.create({
         model: this.options.model,

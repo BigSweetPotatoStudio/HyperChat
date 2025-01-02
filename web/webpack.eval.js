@@ -42,9 +42,8 @@ module.exports = (env, argv) => {
       filename: "[name].js", // 使用 contenthash 作为文件名的一部分
       chunkFilename: "[name].js", // 对于动态导入的模块
       path: path.resolve(__dirname, "../electron/js"),
-      libraryTarget: "umd", // 输出格式
     },
     mode: isDev ? "development" : "production",
-    devtool: isDev ? "inline-source-map" : false,
+    devtool: false,
   };
 };

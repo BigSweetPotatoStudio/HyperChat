@@ -8,7 +8,7 @@
     "push": "npx tsx task.mts --pushUpdateFile"
   },
   "name": "hyper-chat",
-  "version": "0.0.11",
+  "version": "0.0.13",
   "description": "*",
   "main": "js/main.js",
   "author": "Dadigua",

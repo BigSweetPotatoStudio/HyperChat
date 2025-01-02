@@ -53,6 +53,16 @@ if (argv.test) {
 \n
 ${s}`
   );
+
+  fs.writeFileSync(p, JSON.stringify(json, null, 4));
+
+  let c = await translateEN(fs.readFileSync("./ChangeLog.zh.md").toString());
+  fs.writeFileSync(
+    "./ChangeLog.md",
+    `[中文](ChangeLog.zh.md) | [English](ChangeLog.md)
+\n
+${c}`
+  );
 }
 
 export async function translateZh(content) {
