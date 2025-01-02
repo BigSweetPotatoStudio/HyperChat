@@ -15,17 +15,17 @@ HyperChat 是一个追求开放的Chat客户端，可以使用各家LLM的API，
 - [x] Tools 支持
 - [x] 支持英文和中文
 - [x] 添加了内置的MCP客户端`hypertools`, `fetch`+`search`
-- [x] Bot支持选择允许使用的MCP客户端和工具
-- [x] 支持Artifacts, HTML,SVG 渲染
+- [x] 支持 `Bot`，可以预设提示词，允许的MCP服务
+- [x] 支持 `Artifacts`, `HTML`,`SVG` 渲染
 - [x] Bot显示优化，支持查找，拖拽排序
-- [x] 支持KaTeX，显示数学公式
+- [x] 支持 `KaTeX`，显示数学公式
+- [x] `WebDAV` 同步
 
 ### TODO:
 
 - [ ] 权限弹窗，是否允许
 - [ ] 支持定时任务
 - [ ] 支持Projects + RAG
-- [ ] WebDAV 同步
 - [ ] 实现利用LLM自己给自己写Tools
 - [ ] 本地的shell+js运行环境
 
