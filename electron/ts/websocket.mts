@@ -91,44 +91,6 @@ async function initWebsocket() {
   Logger.info("http server listen on: ", PORT);
   await electronData.save();
 
-  fs.ensureDirSync(path.join(appDataDir, "downloadVideos"));
-  let fileClient = io.of("/fileClient");
-  // let fileResolve = io.of("/fileResolve");
-
-  fileClient.on("connection", (socket) => {
-    console.log("fileClient已连接");
-    let u = new URL(
-      "http://localhost:" + electronData.get().port + socket.request.url
-    );
-
-    // 接收文件数据
-
-    let filename = u.searchParams.get("uuid") + ".mp4";
-    console.log("文件名: ", filename);
-    // 创建一个可写流，将数据写入 output.mp4 文件
-    let p = path.join(appDataDir, "downloadVideos", filename);
-    let fileStream = fs.createWriteStream(p, { flags: "a" });
-
-    // 当接收到消息时触发
-    socket.on("message", (data) => {
-      // console.log("接收到数据");
-      // 将数据写入文件
-      fileStream.write(data);
-    });
-
-    socket.on("downloaded", async () => {
-      console.log("downloaded");
-
-      socket.emit("downloaded");
-      // 结束文件写入流
-    });
-    // 当连接关闭时触发
-    socket.on("disconnect", async () => {
-      console.log("连接已关闭");
-      fileStream.end();
-    });
-  });
-
   io.on("error", (e) => {
     console.log("error: ", e);
   });

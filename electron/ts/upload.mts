@@ -15,7 +15,7 @@ class CheckUpdate {
   constructor() {
     //* 设置检查更新的url 可以不设置 忽略
     autoUpdater.autoDownload = false;
-    autoUpdater.forceDevUpdateConfig = true;
+    // autoUpdater.forceDevUpdateConfig = true; // 强制使用dev配置
     autoUpdater.setFeedURL({
       provider: "github",
       owner: "BigSweetPotatoStudio",

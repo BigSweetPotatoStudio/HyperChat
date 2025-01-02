@@ -32,12 +32,14 @@ import { promisify } from "util";
 import puppeteer from "puppeteer-core";
 import { v4 as uuidV4 } from "uuid";
 import Screenshots from "electron-screenshots";
-import { getLocalIP } from "./common/util.mjs";
+import { getLocalIP, spawnWithOutput } from "./common/util.mjs";
 import { autoLauncher } from "./common/autoLauncher.mjs";
-import { electronData, ENV_CONFIG } from "./common/data.mjs";
+import { AppSetting, electronData } from "./common/data.mjs";
 import { commandHistory, CommandStatus } from "./command_history.mjs";
 import { appDataDir } from "./const.mjs";
 import spawn from "cross-spawn";
+
+const { createClient } = await import(/* webpackIgnore: true */ "webdav");
 
 import {
   closeMcpClients,
@@ -48,6 +50,7 @@ import {
 } from "./mcp/config.mjs";
 import { checkUpdate } from "./upload.mjs";
 import { version } from "os";
+import { webdavClient } from "./common/webdav.mjs";
 
 const userDataPath = app.getPath("userData");
 let videoDownloadWin: BrowserWindow;
@@ -81,6 +84,8 @@ export class CommandFactory {
   async getConfig() {
     return {
       version: app.getVersion(),
+      appDataDir: appDataDir,
+      logPath: log.transports.file.getFile().path,
     };
   }
   async getHistory() {
@@ -111,8 +116,11 @@ export class CommandFactory {
     return obj;
   }
 
-  async closeMcpClients(clientName: string = undefined) {
-    let res = await closeMcpClients(clientName);
+  async closeMcpClients(
+    clientName: string = undefined,
+    isdelete: boolean = false
+  ) {
+    let res = await closeMcpClients(clientName, isdelete);
     let obj = {};
     for (let key in res) {
       obj[key] = res[key].toJSON();
@@ -226,8 +234,14 @@ export class CommandFactory {
     return fs.removeSync(p);
   }
   async writeFile(p, text, root = appDataDir) {
-    p = path.join(root, p);
-    return fs.writeFileSync(p, text);
+    let localPath = path.join(root, p);
+    let res = fs.writeFileSync(localPath, text);
+
+    if (AppSetting.initSync().webdav.autoSync) {
+      webdavClient.sync(p);
+    }
+
+    return res;
   }
   async readFile(p, root = appDataDir) {
     p = path.join(root, p);
@@ -313,43 +327,19 @@ export class CommandFactory {
   async quitAndInstall() {
     checkUpdate.quitAndInstall();
   }
+  async testWebDav(values) {
+    let client = createClient(values.url, {
+      username: values.username,
+      password: values.password,
+    });
+    return await client.getDirectoryContents("/");
+  }
+  async webDaveInit() {
+    return webdavClient.init();
+  }
+  async webDavSync() {
+    return await webdavClient.sync();
+  }
 }
 
 export const Command = CommandFactory.prototype;
-
-const spawnWithOutput = (command: string, args: string[], options): any => {
-  return new Promise((resolve, reject) => {
-    const proc = spawn(command, args, options);
-    let stdout = "";
-    let stderr = "";
-
-    proc.stdout.pipe(process.stdout);
-    proc.stderr.pipe(process.stderr);
-
-    proc.stdout.on("data", (data) => {
-      stdout += data.toString();
-      // console.log(data.toString()); // 实时输出
-    });
-
-    proc.stderr.on("data", (data) => {
-      stderr += data.toString();
-      // console.error(data.toString()); // 实时输出错误
-    });
-
-    proc.on("close", (code) => {
-      if (code !== 0) {
-        reject(new Error(`Command failed with code ${code}\n${stderr}`));
-      } else {
-        resolve({
-          stdout,
-          stderr,
-          code,
-        });
-      }
-    });
-
-    proc.on("error", (err) => {
-      reject(err);
-    });
-  });
-};

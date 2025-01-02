@@ -13,6 +13,9 @@ import {
   shell,
 } from "electron";
 import { $, usePowerShell, fs, cd, fetch, sleep, path } from "zx";
+import { electronData } from "./common/data.mjs";
+import { appDataDir } from "./const.mjs";
+
 // 获取日志文件路径
 const logFilePath = log.transports.file.getFile().path;
 // 清空日志文件
@@ -30,3 +33,9 @@ log.info(
   path.join(__dirname, "../web-build/assets/favicon.png"),
   fs.existsSync(path.join(__dirname, "../web-build/assets/favicon.png"))
 );
+
+log.info("appDataDir: ", appDataDir);
+
+electronData.get().appDataDir = appDataDir;
+electronData.get().logFilePath = logFilePath;
+electronData.save();

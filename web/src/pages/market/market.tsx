@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import { call } from "../../common/call";
 import { Button, Form, Input, Modal, Space } from "antd";
-import { ENV_CONFIG } from "../../common/data";
+import { electronData } from "../../common/data";
 
 export function Market() {
   const [num, setNum] = React.useState(0);
@@ -10,7 +10,7 @@ export function Market() {
   };
   const [npx, setNpxVer] = useState("");
   const [uv, setUvVer] = useState("");
-  useEffect(() => {
+  let init = async () => {
     (async () => {
       let x = await call("checkNpx", []);
       setNpxVer(x);
@@ -19,8 +19,11 @@ export function Market() {
       let y = await call("checkUV", []);
       setUvVer(y);
     })();
+  };
+  useEffect(() => {
+    init();
     (async () => {
-      await ENV_CONFIG.init();
+      await electronData.init();
       refresh();
     })();
   }, []);
@@ -29,7 +32,7 @@ export function Market() {
 
   return (
     <div className="flex">
-      <div className="w-4/5">
+      <div className="w-3/5">
         <h1 className=" ">💻MCP</h1>
 
         <div>
@@ -52,20 +55,26 @@ export function Market() {
         >
           Try Repair environment
         </Button>
+        <div className="mt-4 bg-white p-4">coming soon</div>
       </div>
-      <div className="w-1/5">
+      <div className="w-2/5">
         <h1>More MCP Market</h1>
+        <div>
+          <a href="https://modelcontextprotocol.io/examples">
+            modelcontextprotocol.io/examples
+          </a>
+        </div>
         <div>
           <a href="https://mcp.so/">mcp.so</a>
         </div>
         <div>
-          <a href="https://www.pulsemcp.com/">pulsemcp</a>
+          <a href="https://www.pulsemcp.com/">pulsemcp.com</a>
         </div>
         <div>
-          <a href="https://glama.ai/mcp/servers?attributes=">glama</a>
+          <a href="https://glama.ai/mcp/servers?attributes=">glama.ai</a>
         </div>
         <div>
-          <a href="https://smithery.ai/">smithery</a>
+          <a href="https://smithery.ai/">smithery.ai</a>
         </div>
       </div>
       <Modal
@@ -83,13 +92,14 @@ export function Market() {
             layout="vertical"
             name="ConfigurePATH"
             initialValues={{
-              PATH: ENV_CONFIG.get().PATH,
+              PATH: electronData.get().PATH,
             }}
             clearOnDestroy
             onFinish={async (values) => {
-              ENV_CONFIG.get().PATH = values.PATH;
-              await ENV_CONFIG.save();
-              location.reload();
+              electronData.get().PATH = values.PATH;
+              await electronData.save();
+              init();
+              setIsPathOpen(false);
             }}
           >
             {dom}

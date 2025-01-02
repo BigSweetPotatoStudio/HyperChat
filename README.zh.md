@@ -18,6 +18,7 @@ HyperChat 是一个追求开放的Chat客户端，可以使用各家LLM的API，
 - [x] Bot支持选择允许使用的MCP客户端和工具
 - [x] 支持Artifacts, HTML,SVG 渲染
 - [x] Bot显示优化，支持查找，拖拽排序
+- [x] 支持KaTeX，显示数学公式
 
 ### TODO:
 
