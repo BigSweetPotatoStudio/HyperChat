@@ -5,6 +5,7 @@
 * 优化了，MCP Server的启动速度。
 * WebDav 同步, 暂时不支持MCP配置同步，操作系统不一致，可能会出现问题。
 * 支持设置请求方式，Stream | Complete
+* 支持KaTeX，显示数学公式
 
 ## HyperTools
 

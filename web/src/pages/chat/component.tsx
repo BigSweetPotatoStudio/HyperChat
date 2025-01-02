@@ -44,7 +44,11 @@ import {
 } from "@ant-design/x";
 const antdMessage = message;
 import React, { useCallback, useEffect, useRef, useState } from "react";
+import "github-markdown-css/github-markdown-light.css";
+import "../../../public/katex/katex.min.css";
+
 import markdownit from "markdown-it";
+import mk from "@vscode/markdown-it-katex";
 
 export function UserContent({ x, regenerate, submit }) {
   const [isEdit, setIsEdit] = useState(false);
@@ -122,10 +126,18 @@ export function UserContent({ x, regenerate, submit }) {
 }
 
 const md = markdownit({ html: true, breaks: true });
+md.use(mk);
+
+function render(content) {
+  content = content.replace(/\\\[(.+?)\\\]/gs, "$$" + "$1" + "$$");
+  content = content.replace(/\\\((.+?)\\\)/g, "$$" + "$1" + "$$");
+  return md.render(content);
+}
+
 const renderMarkdown: BubbleProps["messageRender"] = (content) => (
   <div
     className="markdown-body"
-    dangerouslySetInnerHTML={{ __html: md.render(content) }}
+    dangerouslySetInnerHTML={{ __html: render(content) }}
   />
 );
 function extractHTMLContent(str) {
