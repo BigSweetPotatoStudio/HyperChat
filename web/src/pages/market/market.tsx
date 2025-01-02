@@ -99,6 +99,7 @@ export function Market() {
               electronData.get().PATH = values.PATH;
               await electronData.save();
               init();
+              setIsPathOpen(false);
             }}
           >
             {dom}
