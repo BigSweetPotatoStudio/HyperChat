@@ -52,6 +52,7 @@ import {
 import { sleep } from "../../common/sleep";
 import dayjs from "dayjs";
 import { useForm } from "antd/es/form/Form";
+import { e } from "../../common/service";
 
 export function Setting() {
   const [num, setNum] = useState(0);
@@ -83,8 +84,12 @@ export function Setting() {
       await call("testWebDav", [values]);
       AppSetting.get().webdav = values;
       await AppSetting.save();
+      if (values.autoSync) {
+        window.location.reload();
+      } else {
+        await call("webDaveInit", []);
+      }
 
-      await call("webDaveInit", []);
       message.success("Save success");
     }
   };
@@ -139,6 +144,12 @@ export function Setting() {
             >
               <Input />
             </Form.Item>
+            <Form.Item label="autoSync" name="autoSync">
+              <Switch
+                checkedChildren="AutoSync"
+                unCheckedChildren="Close"
+              ></Switch>
+            </Form.Item>
             <Form.Item wrapperCol={{ offset: 8, span: 16 }}>
               <Space>
                 <Button
@@ -186,9 +197,9 @@ export function Setting() {
             }}
             autoComplete="off"
           >
-            <Form.Item label="Power on" name="isAutoLauncher">
+            <Form.Item label="LaunchStartup" name="isAutoLauncher">
               <Switch
-                checkedChildren="Start"
+                checkedChildren="Startup"
                 unCheckedChildren="Close"
                 onChange={async (value) => {
                   AppSetting.get().isAutoLauncher = value;

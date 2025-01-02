@@ -10,7 +10,7 @@ export function Market() {
   };
   const [npx, setNpxVer] = useState("");
   const [uv, setUvVer] = useState("");
-  useEffect(() => {
+  let init = async () => {
     (async () => {
       let x = await call("checkNpx", []);
       setNpxVer(x);
@@ -19,6 +19,9 @@ export function Market() {
       let y = await call("checkUV", []);
       setUvVer(y);
     })();
+  };
+  useEffect(() => {
+    init();
     (async () => {
       await electronData.init();
       refresh();
@@ -95,7 +98,7 @@ export function Market() {
             onFinish={async (values) => {
               electronData.get().PATH = values.PATH;
               await electronData.save();
-              location.reload();
+              init();
             }}
           >
             {dom}

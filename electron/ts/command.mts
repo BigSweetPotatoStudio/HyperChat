@@ -234,9 +234,13 @@ export class CommandFactory {
     return fs.removeSync(p);
   }
   async writeFile(p, text, root = appDataDir) {
-    p = path.join(root, p);
-    let res = fs.writeFileSync(p, text);
-    webdavClient.sync();
+    let localPath = path.join(root, p);
+    let res = fs.writeFileSync(localPath, text);
+
+    if (AppSetting.initSync().webdav.autoSync) {
+      webdavClient.sync(p);
+    }
+
     return res;
   }
   async readFile(p, root = appDataDir) {

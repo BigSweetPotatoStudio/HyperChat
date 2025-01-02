@@ -18,7 +18,7 @@ interface FileInfo {
 
 class WebDAVSync {
   private client: WebDAVClient;
-  private webdavSetting = AppSetting["webdav"];
+  public webdavSetting = AppSetting["webdav"];
   init() {
     let setting = AppSetting.initSync();
     this.webdavSetting = setting.webdav;
@@ -30,7 +30,7 @@ class WebDAVSync {
 
   constructor() {}
 
-  private async getLocalFileInfo(localPath: string): Promise<FileInfo[]> {
+  private async getLocalFilesInfo(localPath: string): Promise<FileInfo[]> {
     const files = await fs.readdir(localPath);
     const fileInfos: FileInfo[] = [];
 
@@ -45,7 +45,7 @@ class WebDAVSync {
     return fileInfos;
   }
 
-  private async getRemoteFileInfo(remotePath: string): Promise<FileInfo[]> {
+  private async getRemoteFilesInfo(remotePath: string): Promise<FileInfo[]> {
     const contents: any = await this.client
       .getDirectoryContents(remotePath)
       .catch(async (e) => {
@@ -59,98 +59,21 @@ class WebDAVSync {
       modifiedTime: new Date(item.lastmod),
     }));
   }
-  async sync(
-    localPath: string = appDataDir,
-    remotePath: string = this.webdavSetting.baseDirName
-  ): Promise<void> {
-    if (this.status === 0 || this.status === -1) {
-      this.status = 1;
-      Logger.log("Syncing, start");
-    } else if (this.status === 1) {
-      this.status = 2;
-      while (1) {
-        Logger.log("Syncing, waiting");
-        await sleep(1000);
-        if (this.status === 0) {
-          return await this._sync(localPath, remotePath);
-        }
-      }
-      return;
-    } else {
-      Logger.log("Syncing, skip");
-      return;
-    }
+  sync = otherDebounce(async (fileName?: string) => {
+    let localPath: string = appDataDir;
+    let remotePath: string = this.webdavSetting.baseDirName;
+    getMessageService().sendToRenderer({
+      type: "sync",
+      data: {
+        status: 1,
+      },
+    });
+    console.log("sync", fileName);
     try {
-      let res = await this._sync(localPath, remotePath);
-      this.status = 0;
-      return res;
-    } catch (e) {
-      this.status = -1;
-      throw e;
-    }
-  }
-  status: number = 0;
-  private async _sync(localPath: string, remotePath: string): Promise<void> {
-    try {
-      getMessageService().sendToRenderer({
-        type: "sync",
-        data: {
-          status: 1,
-        },
-      });
-
-      const localFiles = await this.getLocalFileInfo(localPath);
-      const remoteFiles = await this.getRemoteFileInfo(remotePath);
-      Logger.log("Syncing, localFiles", localFiles);
-      for (const localFile of localFiles) {
-        // 跳过目录
-        const fullPath = path.join(localPath, localFile.path);
-        const stat = await fs.stat(fullPath);
-        if (stat.isDirectory()) continue;
-        if (
-          DataList.filter((item) => item.options.sync)
-            .map((x) => x.KEY)
-            .includes(localFile.path)
-        ) {
-          const remoteFile = remoteFiles.find((r) => r.path === localFile.path);
-          if (!remoteFile || localFile.modifiedTime > remoteFile.modifiedTime) {
-            const content = await fs.readFile(
-              path.join(localPath, localFile.path)
-            );
-            await this.client.putFileContents(
-              path.join(remotePath, localFile.path).replace(/\\/g, "/"),
-              content
-            );
-          }
-        } else {
-          console.log(
-            "delete",
-            path.join(remotePath, localFile.path).replace(/\\/g, "/")
-          );
-          try {
-            await this.client.deleteFile(
-              path.join(remotePath, localFile.path).replace(/\\/g, "/")
-            );
-          } catch (e) {
-            if (e.status === 404) {
-            } else {
-              throw e;
-            }
-          }
-        }
-      }
-      // Logger.log("Syncing, localFiles", remoteFiles);
-      for (const remoteFile of remoteFiles) {
-        const localFile = localFiles.find((l) => l.path === remoteFile.path);
-        if (!localFile || remoteFile.modifiedTime > localFile.modifiedTime) {
-          const content = await this.client.getFileContents(
-            path.join(remotePath, remoteFile.path).replace(/\\/g, "/")
-          );
-          await fs.writeFile(
-            path.join(localPath, remoteFile.path),
-            content as any
-          );
-        }
+      if (fileName) {
+        await this._syncFile(fileName, localPath, remotePath);
+      } else {
+        await this._sync(localPath, remotePath);
       }
       getMessageService().sendToRenderer({
         type: "sync",
@@ -167,8 +90,128 @@ class WebDAVSync {
       });
       throw new Error(`Sync failed: ${error.message}`);
     }
+  });
+  async _syncFile(
+    fileName: string,
+    localPath: string = appDataDir,
+    remotePath: string = this.webdavSetting.baseDirName
+  ) {
+    const content = await fs.readFile(path.join(localPath, fileName));
+    console.log(
+      "upload file",
+      path.join(remotePath, fileName).replace(/\\/g, "/")
+    );
+    await this.client.putFileContents(
+      path.join(remotePath, fileName).replace(/\\/g, "/"),
+      content
+    );
+    getMessageService().sendToRenderer({
+      type: "sync",
+      data: {
+        status: 0,
+      },
+    });
+  }
+  status: number = 0;
+  private async _sync(localPath: string, remotePath: string): Promise<void> {
+    const localFiles = await this.getLocalFilesInfo(localPath);
+    const remoteFiles = await this.getRemoteFilesInfo(remotePath);
+    // Logger.log("Syncing, localFiles", localFiles);
+    for (const localFile of localFiles) {
+      // 跳过目录
+      const fullPath = path.join(localPath, localFile.path);
+      const stat = await fs.stat(fullPath);
+      if (stat.isDirectory()) continue;
+      if (
+        DataList.filter((item) => item.options.sync)
+          .map((x) => x.KEY)
+          .includes(localFile.path)
+      ) {
+        const remoteFile = remoteFiles.find((r) => r.path === localFile.path);
+        if (!remoteFile || localFile.modifiedTime > remoteFile.modifiedTime) {
+          console.log(
+            "upload file",
+            path.join(remotePath, localFile.path).replace(/\\/g, "/")
+          );
+          const content = await fs.readFile(
+            path.join(localPath, localFile.path)
+          );
+          await this.client.putFileContents(
+            path.join(remotePath, localFile.path).replace(/\\/g, "/"),
+            content
+          );
+        }
+      } else {
+        try {
+          await this.client.deleteFile(
+            path.join(remotePath, localFile.path).replace(/\\/g, "/")
+          );
+          console.log(
+            "delete remotefile",
+            path.join(remotePath, localFile.path).replace(/\\/g, "/")
+          );
+        } catch (e) {
+          if (e.status === 404) {
+          } else {
+            throw e;
+          }
+        }
+      }
+    }
+    // Logger.log("Syncing, localFiles", remoteFiles);
+    for (const remoteFile of remoteFiles) {
+      const localFile = localFiles.find((l) => l.path === remoteFile.path);
+      if (!localFile || remoteFile.modifiedTime > localFile.modifiedTime) {
+        console.log(
+          "download file",
+          path.join(remotePath, remoteFile.path).replace(/\\/g, "/")
+        );
+        const content = await this.client.getFileContents(
+          path.join(remotePath, remoteFile.path).replace(/\\/g, "/")
+        );
+        await fs.writeFile(
+          path.join(localPath, remoteFile.path),
+          content as any
+        );
+      }
+    }
   }
 }
 
 export const webdavClient = new WebDAVSync();
 webdavClient.init();
+
+function otherDebounce<T>(callback: (...args) => Promise<void>) {
+  let map = {};
+  return async function (...args) {
+    let key = JSON.stringify(args);
+    if (map[key] == null) {
+      map[key] = 0;
+    }
+
+    if (map[key] === 0 || map[key] === -1) {
+      map[key] = 1;
+      Logger.log("Syncing, start");
+    } else if (map[key] === 1) {
+      map[key] = 2;
+      while (1) {
+        Logger.log("Syncing, waiting");
+        await sleep(1000);
+        if (map[key] === 0) {
+          await callback(...args);
+        }
+      }
+      return;
+    } else {
+      Logger.log("Syncing, skip");
+      return;
+    }
+    try {
+      await callback(...args);
+      map[key] = 0;
+    } catch (e) {
+      map[key] = -1;
+      throw e;
+    }
+  };
+}
