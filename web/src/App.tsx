@@ -42,13 +42,34 @@ import {
 import { HeaderContext } from "./common/context";
 import { PageContainer, ProCard, ProLayout } from "@ant-design/pro-components";
 import { getRoute, route } from "./router";
+import { AppSetting } from "./common/data";
+import { call } from "./common/call";
 
 export default function App() {
+  const [loading, setLoading] = useState(false);
+  useEffect(() => {
+    (async () => {
+      let st = await AppSetting.init();
+      if (st.webdav.autoSync) {
+        setLoading(true);
+        try {
+          await call("webDavSync", []);
+          setLoading(false);
+        } catch (e) {
+          setLoading(false);
+          console.error(e);
+        }
+      }
+    })();
+  }, []);
+
   return (
     <div>
-      <AntdApp>
-        <Routes>{getRoute(route)}</Routes>
-      </AntdApp>
+      <Spin spinning={loading} tip="Syncing...">
+        <AntdApp>
+          <Routes>{getRoute(route)}</Routes>
+        </AntdApp>
+      </Spin>
     </div>
   );
 }

@@ -24,7 +24,7 @@ export function HpyerTools() {
   const [url, setUrl] = useState("");
   return (
     <Form>
-      <Form.Item label="fetch">
+      <Form.Item label="Fetch">
         <Form.Item label="openUrl">
           <Space.Compact className="w-full">
             <Input

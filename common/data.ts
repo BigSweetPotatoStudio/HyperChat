@@ -83,6 +83,7 @@ export const AppSetting = new Data("app_setting.json", {
     username: "",
     password: "",
     baseDirName: "",
+    autoSync: false,
   },
 });
 
