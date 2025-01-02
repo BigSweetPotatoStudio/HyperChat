@@ -41,6 +41,8 @@ await electronData.init();
 
 if (ENV_CONFIG.initSync().PATH != "") {
   electronData.get().PATH = ENV_CONFIG.get().PATH;
+  ENV_CONFIG.get().PATH = "";
+  ENV_CONFIG.save();
 }
 
 electronData.get().port = HTTPPORT;

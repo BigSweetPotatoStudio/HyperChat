@@ -171,6 +171,12 @@ export const taskHistory = new Data("taskHistory.json", {
   history: [],
 });
 
-export const ENV_CONFIG = new Data("env.json", {
-  PATH: "",
-});
+export const ENV_CONFIG = new Data(
+  "env.json",
+  {
+    PATH: "",
+  },
+  {
+    sync: false,
+  }
+);
