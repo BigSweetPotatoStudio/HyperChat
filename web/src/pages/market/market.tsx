@@ -107,7 +107,7 @@ export function Market() {
         )}
       >
         <Form.Item name="PATH" label="PATH" rules={[{ required: true }]}>
-          <Input placeholder="Please enter the content of echo $PATH "></Input>
+          <Input placeholder="Here, you would input the result of the command echo $PATH."></Input>
         </Form.Item>
       </Modal>
     </div>
