@@ -27,7 +27,7 @@ HyperChat 是一个追求开放的Chat客户端，可以使用各家LLM的API，
 - [ ] 支持定时任务
 - [ ] 支持Projects + RAG
 - [ ] 实现利用LLM自己给自己写Tools
-- [ ] 本地的shell+js运行环境
+- [ ] 本地的`shell`+`nodejs`+`js on web`运行环境
 
 ### LLM
 
@@ -41,17 +41,19 @@ HyperChat 是一个追求开放的Chat客户端，可以使用各家LLM的API，
 
 ## 使用
 
-* 1.需要配置你的OpenAI风格的APIKEY
-* 2.确保您的系统中已安装 uvx 或 npx。
+* 1.配置APIKEY，确保你的LLM服务兼容OpenAI风格。
+* 2.确保您的系统中已安装 `uv + nodejs`。
 
 ### [uvx](https://github.com/astral-sh/uv)
 
 ```
+# MacOS
 brew install uv
 ```
 ### [npx & nodejs](https://nodejs.org/en)
 
 ```
+# MacOS
 brew install node 
 ```
 
@@ -70,7 +72,7 @@ npm run dev
 * MacOS 遇到了已损坏或者权限问题， `sudo xattr -d com.apple.quarantine /Applications/HyperChat.app`
 * MacOS `nvm` 用户 手动输入PATH `echo $PATH`, windows版本 `nvm` 好像可以直接使用
 
-![image.png](./images/image4.png)
+![image.png](./images/image40.png)
 
 
 
@@ -92,8 +94,8 @@ npm run dev
 
 ![image.png](./images/image21.png)
 
-![image.png](./images/image30.png)
-
 ![image.png](./images/image35.png)
 
 ![image.png](./images/image36.png)
+
+![image.png](./images/image42.png)

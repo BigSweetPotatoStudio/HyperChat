@@ -3,58 +3,60 @@
 
 ## Features
 
-HyperChat is an open Chat client that utilizes various LLM APIs to achieve the best chat experience and implements productivity tools through the MCP protocol.
+HyperChat is an open Chat client that can use APIs from various LLMs to provide the best Chat experience and implement productivity tools through the MCP protocol.
 
-Supports Chat based on the [MCP](https://modelcontextprotocol.io/introduction) protocol, using a protocol similar to OpenAI's and compatible with the `Claude Desktop` configuration. Supports `Client` hot reloading, restart, and disabling.
+It supports Chat that complies with the [MCP](https://modelcontextprotocol.io/introduction) protocol, using a protocol similar to OpenAI, and is compatible with the `Claude Desktop` configuration file. It supports `Client` hot loading, restarting, and disabling.
 
 ### MCP:
 
 [![Build](https://github.com/BigSweetPotatoStudio/HyperChat/actions/workflows/build.yml/badge.svg)](https://github.com/BigSweetPotatoStudio/HyperChat/actions/workflows/build.yml)
 
-- [x] 🪟Windows + 🍏MacOS
+- [x] 🪟Windows+🍏MacOS
 - [x] Supports `nvm`, see below
 - [x] Resources support
 - [x] Partial support for Prompts
 - [x] Tools support
 - [x] Supports English and Chinese
 - [x] Added built-in MCP client `hypertools`, `fetch` + `search`
-- [x] Supports `Bot`, can preset prompts and allowed MCP services
+- [x] Supports `Bot`, allows preset prompts, permitted MCP services
 - [x] Supports `Artifacts`, `HTML`, `SVG` rendering
-- [x] Bot display optimization, supports search and drag-and-drop sorting
+- [x] Bot display optimization, supports search, drag-and-drop sorting
 - [x] Supports `KaTeX`, displays mathematical formulas
 - [x] `WebDAV` synchronization
 
 ### TODO:
 
-- [ ] Permission pop-up, whether to allow
-- [ ] Support for scheduled tasks
-- [ ] Support for Projects + RAG
-- [ ] Implement LLM writing tools for itself
-- [ ] Local shell + js runtime environment
+- [ ] Permission pop-up, allow or not
+- [ ] Support scheduled tasks
+- [ ] Support Projects + RAG
+- [ ] Implement using LLM to write Tools for itself
+- [ ] Local `shell` + `nodejs` + `js on web` runtime environment
 
 ### LLM
 
-| LLM      | Usability   | Notes                        |
-| -------- | ----------- | ---------------------------- |
-| claude   | ⭐⭐⭐⭐⭐      | Not explained                |
-| openai   | ⭐⭐⭐⭐🌙    | Can also perfectly support multi-step function call (gpt-4o-mini can too) |
-| qwen     | ⭐⭐⭐⭐🌙    | Very usable, feels better than openai |
-| doubao   | ⭐⭐⭐       | Feels okay to use            |
-| deepseek | ⭐⭐        | Multi-step function call has issues |
+| LLM      | Usability    | Remarks                         |
+| -------- | ------ | -------------------------- |
+| claude   | ⭐⭐⭐⭐⭐  | No explanation needed                    |
+| openai   | ⭐⭐⭐⭐🌙 | Also perfectly supports multi-step function calls (gpt-4o-mini can also) |
+| qwen     | ⭐⭐⭐⭐🌙 | Very user-friendly, feels better than OpenAI                 |
+| doubao   | ⭐⭐⭐    | Feels okay to use                   |
+| deepseek | ⭐⭐      | Multi-step function calls will have issues       |
 
 ## Usage
 
-* 1. You need to configure your OpenAI-style APIKEY
-* 2. Ensure that UVX or NPX is installed in your system.
+* 1. Configure APIKEY, ensure your LLM service is compatible with OpenAI style.
+* 2. Ensure `uv + nodejs` is installed on your system.
 
 ### [uvx](https://github.com/astral-sh/uv)
 
 ```
+# MacOS
 brew install uv
 ```
 ### [npx & nodejs](https://nodejs.org/en)
 
 ```
+# MacOS
 brew install node 
 ```
 
@@ -69,14 +71,14 @@ npm run dev
 
 ## Note
 
-* On MacOS, if you encounter a damaged or permission issue, `sudo xattr -d com.apple.quarantine /Applications/HyperChat.app`
-* MacOS `nvm` users need to manually enter PATH `echo $PATH`, the Windows version of `nvm` seems to work directly
+* On MacOS, if you encounter issues with damage or permissions, use `sudo xattr -d com.apple.quarantine /Applications/HyperChat.app`
+* For MacOS `nvm` users, manually enter PATH `echo $PATH`, Windows version `nvm` seems to be directly usable
 
-![image.png](./images/image4.png)
+![image.png](./images/image40.png)
 
 ## Telegram
 
-[HyperChat User Communication](https://t.me/dadigua001)
+[HyperChat User Community](https://t.me/dadigua001)
 
 ![image.png](./images/image33.png)
 
@@ -92,8 +94,8 @@ npm run dev
 
 ![image.png](./images/image21.png)
 
-![image.png](./images/image30.png)
-
 ![image.png](./images/image35.png)
 
 ![image.png](./images/image36.png)
+
+![image.png](./images/image42.png)
