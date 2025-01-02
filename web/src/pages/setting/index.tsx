@@ -42,7 +42,7 @@ import {
   VolumeX,
   Volume2,
 } from "lucide-react";
-import { AppSetting } from "../../common/data";
+import { AppSetting, electronData } from "../../common/data";
 import { debounce } from "../../common";
 import {
   CloudSyncOutlined,
@@ -63,11 +63,13 @@ export function Setting() {
   useEffect(() => {
     (async () => {
       await AppSetting.init();
+      await electronData.init();
       AppSetting.get().isAutoLauncher = await call("isAutoLauncher"); // 获取是否自动启动
       webdavForm.resetFields();
       webdavForm.setFieldsValue(
         Object.assign({ baseDirName: "HyperChat" }, AppSetting.get().webdav),
       );
+      refresh();
     })();
   }, []);
   const [webdavForm] = useForm();
@@ -215,13 +217,29 @@ export function Setting() {
             </Form.Item>
 
             <Form.Item label="openDevTools" name="openDevTools">
-              <Button
-                onClick={() => {
-                  call("openDevTools", []);
-                }}
-              >
-                openDevTools
-              </Button>
+              <Space>
+                <Button
+                  onClick={() => {
+                    call("openDevTools", []);
+                  }}
+                >
+                  openDevTools
+                </Button>
+                <Button
+                  onClick={() =>
+                    call("openExplorer", [electronData.get().logFilePath])
+                  }
+                >
+                  logFile
+                </Button>
+                <Button
+                  onClick={() =>
+                    call("openExplorer", [electronData.get().appDataDir])
+                  }
+                >
+                  appDataDir
+                </Button>
+              </Space>
             </Form.Item>
 
             <Form.Item label="Github" name="Github">

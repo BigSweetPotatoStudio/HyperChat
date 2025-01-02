@@ -21,13 +21,13 @@ Supports Chat with the [MCP](https://modelcontextprotocol.io/introduction) proto
 - [x] Bot supports selecting permitted MCP clients and tools
 - [x] Supports Artifacts, HTML, SVG rendering
 - [x] Bot display optimization, supports search and drag-and-drop sorting
+- [x] WebDAV synchronization
 
 ### TODO:
 
 - [ ] Permission pop-up, whether to allow
 - [ ] Scheduled task support
 - [ ] Supports Projects + RAG
-- [ ] WebDAV synchronization
 - [ ] Implement tools to allow LLMs to write tools for themselves
 - [ ] Local shell + js runtime environment
 
