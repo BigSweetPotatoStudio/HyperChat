@@ -3,9 +3,9 @@
 
 ## Features
 
-HyperChat is an open Chat client that seeks to provide the best Chat experience by utilizing APIs from various LLMs and implementing productivity tools through the MCP protocol.
+HyperChat is an open Chat client that utilizes various LLM APIs to provide the best chat experience, and also realize productivity tools through the MCP protocol.
 
-Supports Chat with the [MCP](https://modelcontextprotocol.io/introduction) protocol, using a protocol similar to OpenAI, compatible with the `Claude Desktop` configuration file. Supports `Client` hot reloading, restarting, and disabling.
+Supports Chat using the [MCP](https://modelcontextprotocol.io/introduction) protocol, employing OpenAI-like protocols, compatible with the `Claude Desktop` configuration. Supports `Client` hot reload, restart, and disable.
 
 ### MCP:
 
@@ -17,34 +17,35 @@ Supports Chat with the [MCP](https://modelcontextprotocol.io/introduction) proto
 - [x] Partial support for Prompts
 - [x] Tools support
 - [x] Supports English and Chinese
-- [x] Added built-in MCP client `hypertools`, `fetch`+`search`
-- [x] Bot supports selecting permitted MCP clients and tools
+- [x] Added built-in MCP client `hypertools`, `fetch` + `search`
+- [x] Bot supports selecting allowed MCP clients and tools
 - [x] Supports Artifacts, HTML, SVG rendering
-- [x] Bot display optimization, supports search and drag-and-drop sorting
-- [x] WebDAV synchronization
+- [x] Optimized bot display, supports search, drag and drop sorting
+- [x] Supports KaTeX, displays mathematical formulas
 
 ### TODO:
 
-- [ ] Permission pop-up, whether to allow
-- [ ] Scheduled task support
-- [ ] Supports Projects + RAG
-- [ ] Implement tools to allow LLMs to write tools for themselves
-- [ ] Local shell + js runtime environment
+- [ ] Permission pop-up, allow or not
+- [ ] Support cron jobs
+- [ ] Support Projects + RAG
+- [ ] WebDAV sync
+- [ ] Implement LLM writing Tools for itself
+- [ ] Local shell + js running environment
 
 ### LLM
 
-| LLM      | Usability  | Remarks                         |
+| LLM      | Usability    | Notes                         |
 | -------- | ------ | -------------------------- |
 | claude   | ⭐⭐⭐⭐⭐  | No explanation                    |
-| openai   | ⭐⭐⭐⭐🌙 | Also perfectly supports multi-step function calls (gpt-4o-mini can also) |
-| qwen       | ⭐⭐⭐⭐🌙    | Very usable, feels better than openai                 |
-| doubao       | ⭐⭐⭐    | Feels okay to use                   |
-| deepseek | ⭐⭐      | Multi-step function calls have issues       |
+| openai   | ⭐⭐⭐⭐🌙 | Can also perfectly support multi-step function calls (gpt-4o-mini can too) |
+| qwen     | ⭐⭐⭐⭐🌙    | Very usable, feels better than openai                 |
+| doubao   | ⭐⭐⭐    | Feels okay to use                   |
+| deepseek | ⭐⭐      | Multi-step function calls may have issues       |
 
 ## Usage
 
 * 1. You need to configure your OpenAI-style APIKEY
-* 2. Make sure you have uvx or npx installed on your system.
+* 2. Ensure you have uvx or npx installed on your system.
 
 ### [uvx](https://github.com/astral-sh/uv)
 
@@ -66,10 +67,10 @@ npm install
 npm run dev
 ```
 
-## Notes
+## Note
 
-* MacOS encounters damaged or permission issues, `sudo xattr -d com.apple.quarantine /Applications/HyperChat.app`
-* MacOS `nvm` users manually input PATH `echo $PATH`, it seems Windows version `nvm` can be used directly
+* For MacOS, if you encounter damage or permission issues, run `sudo xattr -d com.apple.quarantine /Applications/HyperChat.app`
+* For MacOS `nvm` users, manually enter PATH `echo $PATH`, Windows version of `nvm` seems to work directly
 
 ![image.png](./images/image4.png)
 
