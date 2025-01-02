@@ -170,3 +170,7 @@ export const MCP_CONFIG = new MCP_CONFIG_DATA(
 export const taskHistory = new Data("taskHistory.json", {
   history: [],
 });
+
+export const ENV_CONFIG = new Data("env.json", {
+  PATH: "",
+});
