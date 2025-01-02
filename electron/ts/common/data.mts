@@ -39,7 +39,9 @@ export const MCPServerPORT = 16110;
 
 await electronData.init();
 
-electronData.get().PATH = ENV_CONFIG.initSync().PATH;
+if (ENV_CONFIG.initSync().PATH != "") {
+  electronData.get().PATH = ENV_CONFIG.get().PATH;
+}
 
 electronData.get().port = HTTPPORT;
 electronData.get().mcp_server_port = MCPServerPORT;
