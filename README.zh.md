@@ -44,17 +44,24 @@ HyperChat 是一个追求开放的Chat客户端，可以使用各家LLM的API，
 * 1.配置APIKEY，确保你的LLM服务兼容OpenAI风格。
 * 2.确保您的系统中已安装 `uv + nodejs`。
 
-### [uvx](https://github.com/astral-sh/uv)
+### [uvx & uv](https://github.com/astral-sh/uv)
+
+去看官方Github教程 [uv](https://github.com/astral-sh/uv)，或者使用命令行安装
 
 ```
 # MacOS
 brew install uv
+# windows
+winget install --id=astral-sh.uv  -e
 ```
 ### [npx & nodejs](https://nodejs.org/en)
 
+去官网下载安装，官网 [nodejs](https://nodejs.org/en)，或者使用命令行安装
 ```
 # MacOS
-brew install node 
+brew install node
+# windows
+winget install OpenJS.NodeJS.LTS
 ```
 
 ## 开发

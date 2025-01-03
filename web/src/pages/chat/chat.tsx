@@ -642,7 +642,8 @@ export const Chat = () => {
                       // console.log("onActiveChange", item);
                       if (item) {
                         currentChatReset();
-                        currentChat.current = item;
+                        Object.assign(currentChat.current, item);
+                        // currentChat.current = item;
 
                         createChat();
                       }
