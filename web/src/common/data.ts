@@ -29,7 +29,9 @@ for (let data of DataList) {
 // 初始化配置
 await electronData.init();
 if (electronData.get().firstOpen) {
+  await MCP_CONFIG.init();
   MCP_CONFIG.save();
+  await GPT_MODELS.init();
   GPT_MODELS.save();
   electronData.get().firstOpen = false;
   electronData.save();
