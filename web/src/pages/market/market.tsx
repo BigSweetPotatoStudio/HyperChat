@@ -13,14 +13,14 @@ export function Market() {
   const [npx, setNpxVer] = useState("");
   const [uv, setUvVer] = useState("");
   let init = async () => {
-    // (async () => {
-    //   let x = await call("checkNpx", []);
-    //   setNpxVer(x);
-    // })();
-    // (async () => {
-    //   let y = await call("checkUV", []);
-    //   setUvVer(y);
-    // })();
+    (async () => {
+      let x = await call("checkNpx", []);
+      setNpxVer(x);
+    })();
+    (async () => {
+      let y = await call("checkUV", []);
+      setUvVer(y);
+    })();
   };
   useEffect(() => {
     init();
