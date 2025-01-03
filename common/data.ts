@@ -70,6 +70,7 @@ export const electronData = new Data(
     appDataDir: "",
     logFilePath: "",
     PATH: "",
+    platform: "",
   },
   {
     sync: false,

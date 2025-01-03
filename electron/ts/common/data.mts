@@ -39,6 +39,8 @@ export const MCPServerPORT = 16110;
 
 await electronData.init();
 
+electronData.get().platform = process.platform;
+
 if (ENV_CONFIG.initSync().PATH != "") {
   electronData.get().PATH = ENV_CONFIG.get().PATH;
   ENV_CONFIG.get().PATH = "";
