@@ -144,6 +144,9 @@ export function Layout() {
         navigate("/Chat");
       }
     });
+    EVENT.on("setIsToolsShowTrue", () => {
+      setIsToolsShow(true);
+    });
   }, []);
   useEffect(() => {
     getClients(false).then((x) => {

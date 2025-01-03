@@ -2,6 +2,7 @@ import React, { useCallback, useEffect, useRef, useState } from "react";
 import { call } from "../../common/call";
 import { Button, Form, Input, Modal, Space } from "antd";
 import { electronData } from "../../common/data";
+import { EVENT } from "../../common/event";
 
 export function Market() {
   const [num, setNum] = React.useState(0);
@@ -37,24 +38,35 @@ export function Market() {
 
         <div>
           <Space>
-            <span className="font-bold">npx: </span>
+            <span className="font-bold">npx & nodejs: </span>
             {npx || "Not Installed"}
             {!npx && <a href="https://nodejs.org/">goto nodejs</a>}
           </Space>
           <br />
           <Space>
-            <span className="font-bold">uvx:</span> {uv || "Not Installed"}
+            <span className="font-bold">uvx & python:</span>{" "}
+            {uv || "Not Installed"}
             {!uv && <a href="https://github.com/astral-sh/uv">goto uv</a>}
           </Space>
         </div>
+        <Space>
+          <Button
+            onClick={() => {
+              setIsPathOpen(true);
+            }}
+          >
+            Try Repair environment
+          </Button>
 
-        <Button
-          onClick={() => {
-            setIsPathOpen(true);
-          }}
-        >
-          Try Repair environment
-        </Button>
+          <Button
+            onClick={() => {
+              EVENT.fire("setIsToolsShowTrue");
+            }}
+          >
+            MCP Service List{" "}
+          </Button>
+        </Space>
+
         <div className="mt-4 bg-white p-4">coming soon</div>
       </div>
       <div className="w-2/5">
@@ -106,7 +118,7 @@ export function Market() {
           </Form>
         )}
       >
-        <Form.Item name="PATH" label="PATH" rules={[{ required: true }]}>
+        <Form.Item name="PATH" label="PATH">
           <Input placeholder="Here, you would input the result of the command echo $PATH."></Input>
         </Form.Item>
       </Modal>
