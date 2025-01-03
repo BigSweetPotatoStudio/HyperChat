@@ -46,7 +46,7 @@ HyperChat 是一个追求开放的Chat客户端，可以使用各家LLM的API，
 
 ### [uvx & uv](https://github.com/astral-sh/uv)
 
-去看官方Github教程 [uv](https://github.com/astral-sh/uv)，或者使用命令行安装
+使用命令行安装，或者去看官方Github教程 [uv](https://github.com/astral-sh/uv)
 
 ```
 # MacOS
@@ -56,7 +56,7 @@ winget install --id=astral-sh.uv  -e
 ```
 ### [npx & nodejs](https://nodejs.org/en)
 
-去官网下载安装，官网 [nodejs](https://nodejs.org/en)，或者使用命令行安装
+使用命令行安装，或者去官网下载安装，官网 [nodejs](https://nodejs.org/en)
 ```
 # MacOS
 brew install node

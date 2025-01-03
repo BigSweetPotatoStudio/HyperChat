@@ -415,10 +415,6 @@
         "en": "MCP",
         "zh": "MCP"
     },
-    "npx: ": {
-        "en": "npx: ",
-        "zh": "npx: "
-    },
     "Not Installed": {
         "en": "Not Installed",
         "zh": "未安装"
@@ -426,10 +422,6 @@
     "goto nodejs": {
         "en": "goto nodejs",
         "zh": "goto nodejs"
-    },
-    "uvx:": {
-        "en": "uvx:",
-        "zh": "uvx:"
     },
     "goto uv": {
         "en": "goto uv",
