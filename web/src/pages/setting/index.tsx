@@ -170,9 +170,14 @@ export function Setting() {
                   onClick={async () => {
                     setSyncLoading(true);
                     try {
-                      await call("webDavSync", []);
-                      message.success("Sync Success!");
-                      setSyncLoading(false);
+                      if (AppSetting.get().webdav.autoSync) {
+                        window.location.reload();
+                      } else {
+                        await call("webDavSync", []);
+                        message.success("Sync Success!");
+                        setSyncLoading(false);
+                        window.location.reload();
+                      }
                     } catch (error) {
                       message.error("Sync failed");
                       setSyncLoading(false);

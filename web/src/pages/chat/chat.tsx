@@ -397,7 +397,8 @@ export const Chat = () => {
     );
     if (config == null) {
       if (GPT_MODELS.get().data.length == 0) {
-        message.error("Please add LLM first");
+        EVENT.fire("setIsModelConfigOpenTrue");
+        throw new Error("Please add LLM first");
       }
       config = GPT_MODELS.get().data[0];
     }
@@ -413,43 +414,44 @@ export const Chat = () => {
   const [loading, setLoading] = useState(false);
   const onRequest = async (message: string) => {
     console.log("onRequest", message);
-    setLoading(true);
-    if (currentChat.current.sended == false) {
-      createChat();
-      currentChat.current = {
-        ...currentChat.current,
-        label: message,
-        key: v4(),
-        messages: client.messages,
-        modelKey: currentChat.current.modelKey,
-        sended: true,
-        icon: "",
-        gptsKey: currentChat.current.gptsKey,
-        allowMCPs: clients
-          .filter((record) => (record.enable == null ? true : record.enable))
-          .map((v) => v.name),
-      };
-      setData([currentChat.current, ...data]);
-      ChatHistory.get().data.unshift(currentChat.current);
-    } else {
-      let find = ChatHistory.get().data.find(
-        (x) => x.key == currentChat.current.key,
-      );
-      if (find) {
-        currentChat.current.allowMCPs = clients
-          .filter((record) => (record.enable == null ? true : record.enable))
-          .map((v) => v.name);
-      }
-    }
-    client.addMessage(
-      { role: "user", content: message },
-      resourceResList,
-      promptResList,
-    );
-    setResourceResList([]);
-    setPromptResList([]);
-    refresh();
     try {
+      setLoading(true);
+      if (currentChat.current.sended == false) {
+        createChat();
+        currentChat.current = {
+          ...currentChat.current,
+          label: message,
+          key: v4(),
+          messages: client.messages,
+          modelKey: currentChat.current.modelKey,
+          sended: true,
+          icon: "",
+          gptsKey: currentChat.current.gptsKey,
+          allowMCPs: clients
+            .filter((record) => (record.enable == null ? true : record.enable))
+            .map((v) => v.name),
+        };
+        setData([currentChat.current, ...data]);
+        ChatHistory.get().data.unshift(currentChat.current);
+      } else {
+        let find = ChatHistory.get().data.find(
+          (x) => x.key == currentChat.current.key,
+        );
+        if (find) {
+          currentChat.current.allowMCPs = clients
+            .filter((record) => (record.enable == null ? true : record.enable))
+            .map((v) => v.name);
+        }
+      }
+      client.addMessage(
+        { role: "user", content: message },
+        resourceResList,
+        promptResList,
+      );
+      setResourceResList([]);
+      setPromptResList([]);
+      refresh();
+
       await client.completion(() => {
         currentChat.current.messages = client.messages;
         refresh();

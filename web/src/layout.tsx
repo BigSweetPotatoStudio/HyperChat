@@ -147,6 +147,9 @@ export function Layout() {
     EVENT.on("setIsToolsShowTrue", () => {
       setIsToolsShow(true);
     });
+    EVENT.on("setIsModelConfigOpenTrue", () => {
+      setIsModelConfigOpen(true);
+    });
   }, []);
   useEffect(() => {
     getClients(false).then((x) => {
