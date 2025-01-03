@@ -52,14 +52,14 @@ HyperChat 是一个追求开放的Chat客户端，可以使用各家LLM的API，
 # MacOS
 brew install uv
 # windows
-powershell -ExecutionPolicy ByPass -c "irm https://astral.sh/uv/install.ps1 | iex"
+winget install --id=astral-sh.uv  -e
 ```
 ### [npx & nodejs](https://nodejs.org/en)
 
 去官网下载安装，官网 [nodejs](https://nodejs.org/en)，或者使用命令行安装
 ```
 # MacOS
-brew install node 
+brew install node
 # windows
 winget install OpenJS.NodeJS.LTS
 ```
