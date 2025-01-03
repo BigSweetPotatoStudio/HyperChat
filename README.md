@@ -3,61 +3,68 @@
 
 ## Features
 
-HyperChat is an open Chat client that can use APIs from various LLMs to provide the best Chat experience and implement productivity tools through the MCP protocol.
+HyperChat is an open Chat client that can use various LLM APIs to achieve the best Chat experience and implement productivity tools through the MCP protocol.
 
-It supports Chat that complies with the [MCP](https://modelcontextprotocol.io/introduction) protocol, using a protocol similar to OpenAI, and is compatible with the `Claude Desktop` configuration file. It supports `Client` hot loading, restarting, and disabling.
+Supports Chat with the [MCP](https://modelcontextprotocol.io/introduction) protocol, using a protocol similar to OpenAI, compatible with `Claude Desktop` configuration files. Supports `Client` hot reload, restart, and disable.
 
 ### MCP:
 
 [![Build](https://github.com/BigSweetPotatoStudio/HyperChat/actions/workflows/build.yml/badge.svg)](https://github.com/BigSweetPotatoStudio/HyperChat/actions/workflows/build.yml)
 
-- [x] 🪟Windows+🍏MacOS
+- [x] 🪟Windows + 🍏MacOS
 - [x] Supports `nvm`, see below
 - [x] Resources support
 - [x] Partial support for Prompts
 - [x] Tools support
 - [x] Supports English and Chinese
 - [x] Added built-in MCP client `hypertools`, `fetch` + `search`
-- [x] Supports `Bot`, allows preset prompts, permitted MCP services
+- [x] Supports `Bot`, allows preset prompts and permitted MCP services
 - [x] Supports `Artifacts`, `HTML`, `SVG` rendering
-- [x] Bot display optimization, supports search, drag-and-drop sorting
+- [x] Bot display optimization, supports search and drag-and-drop sorting
 - [x] Supports `KaTeX`, displays mathematical formulas
-- [x] `WebDAV` synchronization
+- [x] `WebDAV` sync
 
 ### TODO:
 
-- [ ] Permission pop-up, allow or not
-- [ ] Support scheduled tasks
-- [ ] Support Projects + RAG
-- [ ] Implement using LLM to write Tools for itself
+- [ ] Permissions pop-up, whether to allow
+- [ ] Supports scheduled tasks
+- [ ] Supports Projects + RAG
+- [ ] Implement self-writing Tools using LLM
 - [ ] Local `shell` + `nodejs` + `js on web` runtime environment
 
 ### LLM
 
-| LLM      | Usability    | Remarks                         |
-| -------- | ------ | -------------------------- |
-| claude   | ⭐⭐⭐⭐⭐  | No explanation needed                    |
-| openai   | ⭐⭐⭐⭐🌙 | Also perfectly supports multi-step function calls (gpt-4o-mini can also) |
-| qwen     | ⭐⭐⭐⭐🌙 | Very user-friendly, feels better than OpenAI                 |
-| doubao   | ⭐⭐⭐    | Feels okay to use                   |
-| deepseek | ⭐⭐      | Multi-step function calls will have issues       |
+| LLM      | Usability   | Notes                        |
+| -------- | ------ | ---------------------------- |
+| claude   | ⭐⭐⭐⭐⭐  | No explanation               |
+| openai   | ⭐⭐⭐⭐🌙 | Can also perfectly support multi-step function calls (gpt-4o-mini can also) |
+| qwen     | ⭐⭐⭐⭐🌙 | Very easy to use, feels better than OpenAI |
+| doubao   | ⭐⭐⭐    | Feels okay to use           |
+| deepseek | ⭐⭐      | Multi-step function calls may have issues |
 
 ## Usage
 
 * 1. Configure APIKEY, ensure your LLM service is compatible with OpenAI style.
-* 2. Ensure `uv + nodejs` is installed on your system.
+* 2. Ensure that `uv + nodejs` are installed on your system.
 
-### [uvx](https://github.com/astral-sh/uv)
+### [uvx & uv](https://github.com/astral-sh/uv)
+
+Install using the command line or check the official GitHub tutorial [uv](https://github.com/astral-sh/uv)
 
 ```
 # MacOS
 brew install uv
+# windows
+winget install --id=astral-sh.uv  -e
 ```
 ### [npx & nodejs](https://nodejs.org/en)
 
+Install using the command line or download from the official website [nodejs](https://nodejs.org/en)
 ```
 # MacOS
-brew install node 
+brew install node
+# windows
+winget install OpenJS.NodeJS.LTS
 ```
 
 ## Development
@@ -69,16 +76,16 @@ npm install
 npm run dev
 ```
 
-## Note
+## Notes
 
-* On MacOS, if you encounter issues with damage or permissions, use `sudo xattr -d com.apple.quarantine /Applications/HyperChat.app`
-* For MacOS `nvm` users, manually enter PATH `echo $PATH`, Windows version `nvm` seems to be directly usable
+* MacOS may encounter issues with being damaged or permissions; use `sudo xattr -d com.apple.quarantine /Applications/HyperChat.app`
+* MacOS `nvm` users manually input PATH `echo $PATH`; the Windows version of `nvm` seems to be usable directly
 
 ![image.png](./images/image40.png)
 
 ## Telegram
 
-[HyperChat User Community](https://t.me/dadigua001)
+[HyperChat User Discussion](https://t.me/dadigua001)
 
 ![image.png](./images/image33.png)
 
