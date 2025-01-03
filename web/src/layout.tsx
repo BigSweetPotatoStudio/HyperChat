@@ -144,6 +144,9 @@ export function Layout() {
         navigate("/Chat");
       }
     });
+    EVENT.on("setIsToolsShowTrue", () => {
+      setIsToolsShow(true);
+    });
   }, []);
   useEffect(() => {
     getClients(false).then((x) => {
@@ -602,7 +605,7 @@ export function Layout() {
                     .filter((x) => x.trim() != "");
                   try {
                     values.env = {};
-                    values._envList = [];
+                    values._envList = values._envList || [];
                     for (let x of values._envList) {
                       values.env[x.name] = x.value;
                     }

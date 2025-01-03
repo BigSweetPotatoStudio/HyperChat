@@ -1,7 +1,9 @@
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import { call } from "../../common/call";
-import { Button, Form, Input, Modal, Space } from "antd";
+import { Button, Form, Input, Modal, Space, Tooltip } from "antd";
 import { electronData } from "../../common/data";
+import { EVENT } from "../../common/event";
+import { Code } from "../../common/code";
 
 export function Market() {
   const [num, setNum] = React.useState(0);
@@ -11,19 +13,20 @@ export function Market() {
   const [npx, setNpxVer] = useState("");
   const [uv, setUvVer] = useState("");
   let init = async () => {
-    (async () => {
-      let x = await call("checkNpx", []);
-      setNpxVer(x);
-    })();
-    (async () => {
-      let y = await call("checkUV", []);
-      setUvVer(y);
-    })();
+    // (async () => {
+    //   let x = await call("checkNpx", []);
+    //   setNpxVer(x);
+    // })();
+    // (async () => {
+    //   let y = await call("checkUV", []);
+    //   setUvVer(y);
+    // })();
   };
   useEffect(() => {
     init();
     (async () => {
       await electronData.init();
+      // console.log(electronData.get());
       refresh();
     })();
   }, []);
@@ -36,25 +39,66 @@ export function Market() {
         <h1 className=" ">💻MCP</h1>
 
         <div>
+          <div>
+            <Space>
+              <span className="font-bold">npx & nodejs: </span>
+              {npx || "Not Installed"}
+            </Space>
+          </div>
+          {!npx && (
+            <Space>
+              <span>Please run the command.</span>
+              {electronData.get().platform == "win32" ? (
+                <Code>winget install OpenJS.NodeJS.LTS</Code>
+              ) : (
+                <Code>brew install node</Code>
+              )}
+              <a href="https://nodejs.org/">goto nodejs</a>
+            </Space>
+          )}
+        </div>
+        <div>
+          <div>
+            <Space>
+              <span className="font-bold">uvx & python:</span>{" "}
+              {uv || "Not Installed"}
+            </Space>
+          </div>
           <Space>
-            <span className="font-bold">npx: </span>
-            {npx || "Not Installed"}
-            {!npx && <a href="https://nodejs.org/">goto nodejs</a>}
-          </Space>
-          <br />
-          <Space>
-            <span className="font-bold">uvx:</span> {uv || "Not Installed"}
-            {!uv && <a href="https://github.com/astral-sh/uv">goto uv</a>}
+            {!uv && (
+              <Space>
+                <span>Please run the command.</span>
+                {electronData.get().platform == "win32" ? (
+                  <Code>winget install --id=astral-sh.uv -e</Code>
+                ) : (
+                  <Code>brew install uv</Code>
+                )}
+                <a href="https://github.com/astral-sh/uv">goto uv</a>
+              </Space>
+            )}
           </Space>
         </div>
+        <Space>
+          <Tooltip title="If you are using NVM, you might need to customize the PATH environment var.">
+            <Button
+              onClick={() => {
+                setIsPathOpen(true);
+              }}
+              danger
+            >
+              Try Repair environment
+            </Button>
+          </Tooltip>
 
-        <Button
-          onClick={() => {
-            setIsPathOpen(true);
-          }}
-        >
-          Try Repair environment
-        </Button>
+          <Button
+            onClick={() => {
+              EVENT.fire("setIsToolsShowTrue");
+            }}
+          >
+            MCP Service List{" "}
+          </Button>
+        </Space>
+
         <div className="mt-4 bg-white p-4">coming soon</div>
       </div>
       <div className="w-2/5">
@@ -106,7 +150,7 @@ export function Market() {
           </Form>
         )}
       >
-        <Form.Item name="PATH" label="PATH" rules={[{ required: true }]}>
+        <Form.Item name="PATH" label="PATH">
           <Input placeholder="Here, you would input the result of the command echo $PATH."></Input>
         </Form.Item>
       </Modal>
