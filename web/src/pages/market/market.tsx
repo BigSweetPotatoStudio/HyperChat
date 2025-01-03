@@ -46,15 +46,17 @@ export function Market() {
             </Space>
           </div>
           {!npx && (
-            <Space>
-              <span>Please run the command.</span>
-              {electronData.get().platform == "win32" ? (
-                <Code>winget install OpenJS.NodeJS.LTS</Code>
-              ) : (
-                <Code>brew install node</Code>
-              )}
-              <a href="https://nodejs.org/">goto nodejs</a>
-            </Space>
+            <div>
+              <Space>
+                <span>Please run the command.</span>
+                {electronData.get().platform == "win32" ? (
+                  <Code>winget install OpenJS.NodeJS.LTS</Code>
+                ) : (
+                  <Code>brew install node</Code>
+                )}
+                <a href="https://nodejs.org/">goto nodejs</a>
+              </Space>{" "}
+            </div>
           )}
         </div>
         <div>
@@ -64,8 +66,9 @@ export function Market() {
               {uv || "Not Installed"}
             </Space>
           </div>
-          <Space>
-            {!uv && (
+
+          {!uv && (
+            <div>
               <Space>
                 <span>Please run the command.</span>
                 {electronData.get().platform == "win32" ? (
@@ -75,10 +78,10 @@ export function Market() {
                 )}
                 <a href="https://github.com/astral-sh/uv">goto uv</a>
               </Space>
-            )}
-          </Space>
+            </div>
+          )}
         </div>
-        <Space>
+        <Space className="mt-1">
           <Tooltip title="If you are using NVM, you might need to customize the PATH environment var.">
             <Button
               onClick={() => {
