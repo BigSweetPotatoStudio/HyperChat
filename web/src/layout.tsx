@@ -600,6 +600,7 @@ export function Layout() {
               onFinish={async (values) => {
                 try {
                   setLoadingOpenMCP(true);
+                  values._argsStr = values._argsStr || "";
                   values.args = values._argsStr
                     .split(" ")
                     .filter((x) => x.trim() != "");
