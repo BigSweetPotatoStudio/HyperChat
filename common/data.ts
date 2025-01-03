@@ -71,6 +71,7 @@ export const electronData = new Data(
     logFilePath: "",
     PATH: "",
     platform: "",
+    firstOpen: true,
   },
   {
     sync: false,

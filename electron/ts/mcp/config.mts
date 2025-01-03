@@ -10,7 +10,7 @@ import type { StdioServerParameters } from "@modelcontextprotocol/sdk/client/std
 import { initMcpServer } from "./servers/express.mjs";
 import { MyServers } from "./servers/index.mjs";
 import { electron, env } from "process";
-import { electronData, AppSetting } from "../common/data.mjs";
+import { electronData, AppSetting, MCP_CONFIG } from "../common/data.mjs";
 import { request } from "http";
 
 import { spawnWithOutput } from "../common/util.mjs";
@@ -355,12 +355,8 @@ export async function closeMcpClients(clientName: string, isdelete: boolean) {
 export async function getConfg(): Promise<{
   mcpServers: { [s: string]: ClientConfig };
 }> {
-  let mcp_path = path.join(appDataDir, "mcp.json");
-  let config = await fs.readJson(mcp_path, "utf-8").catch((e) => {
-    return {
-      mcpServers: {},
-    };
-  });
+  let config = await MCP_CONFIG.init();
+
   let obj: any = {};
   for (let s of MyServers) {
     let key = s.name;

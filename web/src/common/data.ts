@@ -26,4 +26,13 @@ for (let data of DataList) {
   });
 }
 
+// 初始化配置
+await electronData.init();
+if (electronData.get().firstOpen) {
+  MCP_CONFIG.save();
+  GPT_MODELS.save();
+  electronData.get().firstOpen = false;
+  electronData.save();
+}
+
 export { AppSetting, ChatHistory, GPTS, GPT_MODELS, MCP_CONFIG, electronData };
