@@ -71,6 +71,8 @@
     "webpack-dev-server": "^4.15.2",
     "webpack-pwa-manifest": "^4.3.0",
     "workbox-webpack-plugin": "^7.0.0",
+    "zod": "^3.24.1",
+    "zod-to-json-schema": "^3.24.1",
     "zx": "^8.0.1"
   },
   "scripts": {
