@@ -93,7 +93,7 @@ const p: Package = {
   type: "npx",
   name: "@modelcontextprotocol/server-filesystem",
   github: "https://github.com/modelcontextprotocol/servers.git",
-  description: "Server filesystem",
+  description: "Server 1 filesystem",
   keywords: ["server", "filesystem"],
   resolve: (config: Config) => {
     return {

@@ -221,7 +221,7 @@
     },
     "command": {
         "en": "command",
-        "zh": "命令"
+        "zh": ""
     },
     "Please enter command": {
         "en": "Please enter command",
@@ -229,7 +229,7 @@
     },
     "args": {
         "en": "args",
-        "zh": "参数"
+        "zh": ""
     },
     "Please enter args": {
         "en": "Please enter args",
@@ -237,7 +237,7 @@
     },
     "env": {
         "en": "env",
-        "zh": "环境"
+        "zh": ""
     },
     "Please enter": {
         "en": "Please enter",
@@ -311,10 +311,6 @@
         "en": "Token Usage",
         "zh": "Token使用"
     },
-    "Exit Edit": {
-        "en": "Exit Edit",
-        "zh": "退出编辑"
-    },
     "Markdown": {
         "en": "Markdown",
         "zh": "Markdown"
@@ -362,10 +358,6 @@
     "Tool Arguments: ": {
         "en": "Tool Arguments: ",
         "zh": "工具参数: "
-    },
-    "HyperChat(": {
-        "en": "HyperChat(",
-        "zh": ""
     },
     "HpyerTools": {
         "en": "HpyerTools",
@@ -421,11 +413,11 @@
     },
     "goto nodejs": {
         "en": "goto nodejs",
-        "zh": "goto nodejs"
+        "zh": ""
     },
     "goto uv": {
         "en": "goto uv",
-        "zh": "goto uv"
+        "zh": ""
     },
     "Try Repair environment": {
         "en": "Try Repair environment",
@@ -462,5 +454,213 @@
     "Confirm Delete?": {
         "en": "Confirm Delete?",
         "zh": "确认删除？"
+    },
+    "MCP Extensions": {
+        "en": "MCP Extensions",
+        "zh": "MCP扩展"
+    },
+    " Github": {
+        "en": " Github",
+        "zh": " Github"
+    },
+    "Sync": {
+        "en": "Sync",
+        "zh": "同步"
+    },
+    "npx & nodejs: ": {
+        "en": "npx & nodejs: ",
+        "zh": ""
+    },
+    "Please run the command.": {
+        "en": "Please run the command.",
+        "zh": "请运行命令。"
+    },
+    "winget install OpenJS.NodeJS.LTS": {
+        "en": "winget install OpenJS.NodeJS.LTS",
+        "zh": ""
+    },
+    "uvx & python:": {
+        "en": "uvx & python:",
+        "zh": ""
+    },
+    "winget install --id=astral-sh.uv -e": {
+        "en": "winget install --id=astral-sh.uv -e",
+        "zh": ""
+    },
+    "Officially Maintained List": {
+        "en": "Officially Maintained List",
+        "zh": "官方维护列表"
+    },
+    "third party": {
+        "en": "third party",
+        "zh": "第三方"
+    },
+    "modelcontextprotocol.io/examples": {
+        "en": "modelcontextprotocol.io/examples",
+        "zh": "modelcontextprotocol.io/examples"
+    },
+    "pulsemcp.com": {
+        "en": "pulsemcp.com",
+        "zh": "pulsemcp.com"
+    },
+    "glama.ai": {
+        "en": "glama.ai",
+        "zh": "glama.ai"
+    },
+    "smithery.ai": {
+        "en": "smithery.ai",
+        "zh": "smithery.ai"
+    },
+    "MCP Configuration": {
+        "en": "MCP Configuration",
+        "zh": "MCP配置"
+    },
+    "No need config": {
+        "en": "No need config",
+        "zh": "无需配置"
+    },
+    "Install And Run": {
+        "en": "Install And Run",
+        "zh": "安装和运行"
+    },
+    "hyper_tools": {
+        "en": "hyper_tools",
+        "zh": ""
+    },
+    "@modelcontextprotocol/server-filesystem": {
+        "en": "@modelcontextprotocol/server-filesystem",
+        "zh": ""
+    },
+    "github": {
+        "en": "github",
+        "zh": ""
+    },
+    "setting": {
+        "en": "setting",
+        "zh": "设置"
+    },
+    "path": {
+        "en": "path",
+        "zh": ""
+    },
+    "Add Environment Variables": {
+        "en": "Add Environment Variables",
+        "zh": "添加环境变量"
+    },
+    "zhCN": {
+        "en": "zhCN",
+        "zh": ""
+    },
+    "enUS": {
+        "en": "enUS",
+        "zh": ""
+    },
+    "type:": {
+        "en": "type:",
+        "zh": ""
+    },
+    "stream": {
+        "en": "stream",
+        "zh": ""
+    },
+    "GitHub": {
+        "en": "GitHub",
+        "zh": ""
+    },
+    "Clone": {
+        "en": "Clone",
+        "zh": "克隆"
+    },
+    "WebDAV Url": {
+        "en": "WebDAV Url",
+        "zh": "WebDAV网址"
+    },
+    "Username": {
+        "en": "Username",
+        "zh": "用户名"
+    },
+    "Password": {
+        "en": "Password",
+        "zh": "密码"
+    },
+    "baseDirName": {
+        "en": "baseDirName",
+        "zh": "基础目录名称"
+    },
+    "autoSync": {
+        "en": "autoSync",
+        "zh": "自动同步"
+    },
+    "AutoSync": {
+        "en": "AutoSync",
+        "zh": "自动同步"
+    },
+    "Test": {
+        "en": "Test",
+        "zh": "测试"
+    },
+    "Save": {
+        "en": "Save",
+        "zh": "保存"
+    },
+    "LaunchStartup": {
+        "en": "LaunchStartup",
+        "zh": "开机启动"
+    },
+    "Startup": {
+        "en": "Startup",
+        "zh": "开机启动"
+    },
+    "openDevTools": {
+        "en": "openDevTools",
+        "zh": "打开开发者工具"
+    },
+    "logFile": {
+        "en": "logFile",
+        "zh": "日志文件"
+    },
+    "appDataDir": {
+        "en": "appDataDir",
+        "zh": "应用数据目录"
+    },
+    "QQ群": {
+        "en": "QQ群",
+        "zh": "QQ群"
+    },
+    "大地瓜的Bilibili": {
+        "en": "大地瓜的Bilibili",
+        "zh": "大地瓜的Bilibili"
+    },
+    "Fetch": {
+        "en": "Fetch",
+        "zh": ""
+    },
+    "openUrl": {
+        "en": "openUrl",
+        "zh": "打开网址"
+    },
+    "Some websites require you to log in to view content. Please log in from here.": {
+        "en": "Some websites require you to log in to view content. Please log in from here.",
+        "zh": "某些网站要求您登录才能查看内容。请从这里登录。"
+    },
+    "open": {
+        "en": "open",
+        "zh": "打开"
+    },
+    "If you are using NVM, you might need to customize the PATH environment var.": {
+        "en": "If you are using NVM, you might need to customize the PATH environment var.",
+        "zh": "如果您正在使用 NVM，您可能需要自定义 PATH 环境变量。"
+    },
+    "Configure PATH": {
+        "en": "Configure PATH",
+        "zh": "配置路径"
+    },
+    "PATH": {
+        "en": "PATH",
+        "zh": "路径"
+    },
+    "Here, you would input the result of the command echo $PATH.": {
+        "en": "Here, you would input the result of the command echo $PATH.",
+        "zh": "在这里，你将输入命令 echo $PATH 的结果。"
     }
 }

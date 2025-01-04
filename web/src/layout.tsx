@@ -299,13 +299,9 @@ export function Layout() {
           actionsRender={(props) => {
             return (
               <Space>
-                {/* <Button
-                  onClick={() => {
-                    setIsToolsShow(true);
-                  }}
-                >
-                  💻MCP
-                </Button> */}
+                <a href="https://github.com/BigSweetPotatoStudio/HyperChat">
+                  <GithubFilled></GithubFilled> Github
+                </a>
                 <Button
                   onClick={() => {
                     setIsModelConfigOpen(true);
@@ -373,7 +369,9 @@ export function Layout() {
           }}
           headerTitleRender={(logo, title, _) => {
             return (
-              <Link to="home">HyperChat({electronData.get().version})</Link>
+              <Link to="home">
+                HyperChat<span>({electronData.get().version})</span>
+              </Link>
             );
           }}
           menuFooterRender={(props) => {
