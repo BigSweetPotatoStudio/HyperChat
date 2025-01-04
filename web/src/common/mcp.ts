@@ -3,10 +3,13 @@ import OpenAI from "openai";
 import type { ChatCompletionTool } from "openai/src/resources/chat/completions";
 import * as MCPTypes from "@modelcontextprotocol/sdk/types.js";
 import { sleep } from "./sleep";
-import { MCP_CONFIG } from "./data";
+import { MCP_CONFIG, MCP_CONFIG_TYPE } from "./data";
+import type { MCPClient } from "../../../electron/ts/mcp/config.mjs";
 
 let init = false;
-let McpClients;
+let McpClients: {
+  [s: string]: MCPClient;
+};
 
 export type InitedClient = {
   tools: Array<ChatCompletionTool & { key: string }>;
@@ -15,6 +18,7 @@ export type InitedClient = {
   name: string;
   status: string;
   enable: boolean;
+  config: MCP_CONFIG_TYPE;
 };
 
 let initedClientArray: Array<InitedClient> = [];
@@ -103,7 +107,9 @@ export async function getClients(filter = true): Promise<InitedClient[]> {
   }
 }
 
-function mcpClientsToArray(mcpClients): InitedClient[] {
+function mcpClientsToArray(mcpClients: {
+  [s: string]: MCPClient;
+}): InitedClient[] {
   let array = [];
   for (let key in mcpClients) {
     let client = mcpClients[key];
@@ -150,18 +156,16 @@ function mcpClientsToArray(mcpClients): InitedClient[] {
       name: key,
       status: client.status,
       get config() {
-        if (McpClients[key].type == "sse") {
-          return {} as any;
+        let config = MCP_CONFIG.get().mcpServers[key];
+        if (config.hyperchat == null) {
+          config.hyperchat = {} as any;
         }
-        return MCP_CONFIG.get().mcpServers[key] || {};
+        return config;
       },
-      set config(value) {
-        if (McpClients[key].type == "sse") {
-          return;
-        }
+      set config(value: any) {
         MCP_CONFIG.get().mcpServers[key] = value;
       },
-      enable: McpClients[key].enable,
+      enable: !McpClients[key].config.disabled,
     });
   }
   return array;

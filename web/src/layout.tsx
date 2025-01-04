@@ -445,7 +445,7 @@ export function Layout() {
                 dataIndex: "status",
                 key: "status",
                 render: (text, record, index) => {
-                  if (record.scope == "local") {
+                  if (record.config.hyperchat.scope == "built-in") {
                     return <Tag color="blue">built-in</Tag>;
                   }
                   return (

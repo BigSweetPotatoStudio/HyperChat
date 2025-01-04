@@ -7,6 +7,7 @@ import {
   MCP_CONFIG,
   electronData,
   DataList,
+  MCP_CONFIG_TYPE,
 } from "../../../common/data.js";
 
 for (let data of DataList) {
@@ -37,4 +38,12 @@ if (electronData.get().firstOpen) {
   electronData.save();
 }
 
-export { AppSetting, ChatHistory, GPTS, GPT_MODELS, MCP_CONFIG, electronData };
+export {
+  AppSetting,
+  ChatHistory,
+  GPTS,
+  GPT_MODELS,
+  MCP_CONFIG,
+  electronData,
+  MCP_CONFIG_TYPE,
+};
