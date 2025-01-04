@@ -337,22 +337,22 @@ export async function getConfg(): Promise<{
 
   // let obj: any = {};
   for (let s of MyServers) {
+    let key = s.name;
+    config.mcpServers[key] = {
+      command: "",
+      args: [],
+      env: {},
+      hyperchat: {
+        url: `http://localhost:${
+          electronData.get().mcp_server_port
+        }/${key}/sse`,
+        type: "sse",
+        scope: "built-in",
+        config: {},
+      },
+      disabled: false,
+    };
     if (config.mcpServers[s.name] == null) {
-      let key = s.name;
-      config.mcpServers[key] = {
-        command: "",
-        args: [],
-        env: {},
-        hyperchat: {
-          url: `http://localhost:${
-            electronData.get().mcp_server_port
-          }/${key}/sse`,
-          type: "sse",
-          scope: "built-in",
-          config: {},
-        },
-        disabled: false,
-      };
       MCP_CONFIG.save();
     }
   }
