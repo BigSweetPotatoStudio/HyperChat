@@ -334,9 +334,10 @@ export const Chat = () => {
           ) : (
             <div>
               {x.tool_calls &&
-                x.tool_calls.map((tool) => {
+                x.tool_calls.map((tool, index) => {
                   return (
                     <Tooltip
+                      key={index}
                       title={
                         <div className="h-40 overflow-auto text-ellipsis">
                           {tool.function.arguments}
@@ -360,7 +361,7 @@ export const Chat = () => {
                                     }}
                                   >
                                     <span>Tool Name: </span>
-                                    {tool.function.name}
+                                    {tool.restore_name || tool.function.name}
                                   </pre>
                                   <pre
                                     style={{
@@ -377,7 +378,7 @@ export const Chat = () => {
                           }}
                         >
                           <div className="line-clamp-1">
-                            {tool.function.restore_name || tool.function.name} :{" "}
+                            {tool.restore_name || tool.function.name} :{" "}
                             {tool.function.arguments}
                           </div>
                         </a>
@@ -1260,11 +1261,12 @@ export const Chat = () => {
                       {record.tools.map((x) => {
                         return (
                           <Tooltip
-                            key={x.function.name}
+                            key={x.origin_name || x.function.name}
                             title={x.function.description}
                           >
                             <Tag className="cursor-pointer">
-                              {x.function.name.replace(x.key + "--", "")}
+                              {x.origin_name ||
+                                x.function.name.replace(x.key + "--", "")}
                             </Tag>
                           </Tooltip>
                         );
