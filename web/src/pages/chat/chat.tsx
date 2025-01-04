@@ -452,6 +452,7 @@ export const Chat = () => {
           currentChat.current.allowMCPs = clients
             .filter((record) => (record.enable == null ? true : record.enable))
             .map((v) => v.name);
+          Object.assign(find, currentChat.current);
         }
       }
       client.addMessage(
@@ -657,7 +658,6 @@ export const Chat = () => {
                         currentChatReset();
                         Object.assign(currentChat.current, item);
                         // currentChat.current = item;
-
                         createChat();
                       }
                     }}
@@ -767,12 +767,7 @@ export const Chat = () => {
                             let newIndex = data.findIndex(
                               (x) => x.key == e.over.id,
                             );
-                            // console.log(
-                            //   "onDragEnd",
-                            //   e,
-                            //   data[oldIndex].label,
-                            //   data[newIndex].label,
-                            // );
+
                             let item = data[oldIndex];
 
                             data.splice(oldIndex, 1);
@@ -805,7 +800,7 @@ export const Chat = () => {
                                 id={item.key}
                                 item={item}
                                 onClick={(item) => {
-                                  console.log("onGPTSClick", item);
+                                  // console.log("onGPTSClick", item);
                                   if (mode == "edit") {
                                     return;
                                   }
