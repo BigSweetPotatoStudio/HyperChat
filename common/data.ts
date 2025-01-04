@@ -152,17 +152,23 @@ class MCP_CONFIG_DATA<T> extends Data<T> {
   }
 }
 
+export type MCP_CONFIG_TYPE = {
+  command: string;
+  args: string[];
+  env: { [s: string]: string };
+  hyperchat: {
+    config: any;
+    url: string;
+    type: "stdio" | "sse";
+    scope: "built-in" | "outer";
+  };
+  disabled: boolean;
+};
+
 export const MCP_CONFIG = new MCP_CONFIG_DATA(
   "mcp.json",
   {
-    mcpServers: {} as {
-      [s: string]: {
-        command: string;
-        args: string[];
-        env: { [s: string]: string };
-        disabled: boolean;
-      };
-    },
+    mcpServers: {} as { [s: string]: MCP_CONFIG_TYPE },
   },
   {
     sync: false,

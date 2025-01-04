@@ -10,7 +10,12 @@ import type { StdioServerParameters } from "@modelcontextprotocol/sdk/client/std
 import { initMcpServer } from "./servers/express.mjs";
 import { MyServers } from "./servers/index.mjs";
 import { electron, env } from "process";
-import { electronData, AppSetting, MCP_CONFIG } from "../common/data.mjs";
+import {
+  electronData,
+  AppSetting,
+  MCP_CONFIG,
+  MCP_CONFIG_TYPE,
+} from "../common/data.mjs";
 import { request } from "http";
 
 import { spawnWithOutput } from "../common/util.mjs";
@@ -38,31 +43,27 @@ const {
   /* webpackIgnore: true */ "@modelcontextprotocol/sdk/types.js"
 );
 
-type ClientConfig = {
-  command?: string;
-  args?: string[];
-  env?: { [s: string]: string };
-  type?: "stdio" | "sse";
-  url?: string;
-  disabled?: boolean;
-  scope?: "local" | "outer";
-};
+// type ClientConfig = {
+//   command?: string;
+//   args?: string[];
+//   env?: { [s: string]: string };
+//   type?: "stdio" | "sse";
+//   url?: string;
+//   disabled?: boolean;
+//   scope?:"built-in" | "outer";
+// };
 
 export const mcpClients = {} as {
   [s: string]: MCPClient;
 };
-class MCPClient {
+export class MCPClient {
   public tools: Array<typeof MCPTypes.ToolSchema._type> = [];
   public resources: Array<typeof MCPTypes.ResourceSchema._type> = [];
   public prompts: Array<typeof MCPTypes.PromptSchema._type> = [];
   public client: MCP.Client = undefined;
   public status: string = "disconnected";
 
-  constructor(
-    public name: string,
-    public type: "stdio" | "sse" = "stdio",
-    public scope: "local" | "outer" = "outer"
-  ) {}
+  constructor(public name: string, public config: MCP_CONFIG_TYPE) {}
   async callTool(functionName: string, args: any): Promise<any> {
     log.info("MCP callTool", functionName, args);
     if (this.status == "disconnected") {
@@ -114,8 +115,8 @@ class MCPClient {
     let { client, ...out } = this;
     return out;
   }
-  async open(config?: ClientConfig) {
-    if (this.type == "sse") {
+  async open(config?: MCP_CONFIG_TYPE) {
+    if (this.config.hyperchat.type == "sse") {
       await this.openSse(config);
     } else {
       await this.openStdio(config);
@@ -145,7 +146,7 @@ class MCPClient {
       this.prompts = [];
     };
     client.onerror = (e) => {
-      if (this.type == "sse") {
+      if (this.config.hyperchat.type == "sse") {
         //
       } else {
         log.error("client error", e);
@@ -161,7 +162,7 @@ class MCPClient {
     this.prompts = listPrompts_res.prompts;
     this.status = "connected";
   }
-  async openSse(c?: ClientConfig) {
+  async openSse(c?: MCP_CONFIG_TYPE) {
     const client = new Client(
       {
         name: this.name,
@@ -173,13 +174,13 @@ class MCPClient {
     );
 
     let config = c || (await getConfg().then((r) => r.mcpServers[this.name]));
-    let urlStr = config.url;
+    let urlStr = config.hyperchat.url;
 
     const transport = new SSEClientTransport(new URL(urlStr));
     await client.connect(transport);
     this.client = client;
   }
-  async openStdio(c?: ClientConfig) {
+  async openStdio(c?: MCP_CONFIG_TYPE) {
     let config = c || (await getConfg().then((r) => r.mcpServers[this.name]));
     if (config.disabled) {
       log.error("MCPClient open disabled", this.name);
@@ -254,14 +255,10 @@ export async function initMcpClients() {
   let tasks = [];
   for (let key in config.mcpServers) {
     if (mcpClients[key] == null) {
-      mcpClients[key] = new MCPClient(
-        key,
-        config.mcpServers[key].type || "stdio",
-        config.mcpServers[key].scope || "outer"
-      );
+      mcpClients[key] = new MCPClient(key, config.mcpServers[key]);
     }
     if (config.mcpServers[key].disabled) {
-      mcpClients[key].status = "disabled";
+      mcpClients[key].status = "disconnect";
     } else {
       try {
         tasks.push(mcpClients[key].open());
@@ -272,26 +269,14 @@ export async function initMcpClients() {
     }
   }
   await Promise.allSettled(tasks);
-  // function format(res) {
-  //   for (let key in res) {
-  //     res[key] = Object.assign({}, res[key]);
-  //     delete res[key].client;
-  //     delete res[key].call;
-  //   }
-  //   return res;
-  // }
 
-  // getMessageService().sendToRenderer({
-  //   type: "getMcpClients",
-  //   data: format(mcpClients),
-  // });
   firstRunStatus = 2;
   return mcpClients;
 }
 
 export async function openMcpClient(
   clientName: string = undefined,
-  clientConfig?: ClientConfig
+  clientConfig?: MCP_CONFIG_TYPE
 ) {
   if (mcpClients[clientName] != null) {
     await mcpClients[clientName].open(clientConfig);
@@ -299,16 +284,13 @@ export async function openMcpClient(
 
   let config = await getConfg();
   if (clientConfig == null) {
-    clientConfig = config.mcpServers[clientName] || {};
+    clientConfig =
+      config.mcpServers[clientName] || ({ hyperchat: {} } as MCP_CONFIG_TYPE);
   }
   let key = clientName;
 
   if (mcpClients[key] == null) {
-    mcpClients[key] = new MCPClient(
-      key,
-      clientConfig?.type || "stdio",
-      clientConfig?.scope || "outer"
-    );
+    mcpClients[key] = new MCPClient(key, clientConfig);
   }
   if (clientConfig?.disabled) {
     mcpClients[key].status = "disabled";
@@ -353,20 +335,37 @@ export async function closeMcpClients(clientName: string, isdelete: boolean) {
 }
 
 export async function getConfg(): Promise<{
-  mcpServers: { [s: string]: ClientConfig };
+  mcpServers: { [s: string]: MCP_CONFIG_TYPE };
 }> {
   let config = await MCP_CONFIG.init();
 
-  let obj: any = {};
+  // let obj: any = {};
   for (let s of MyServers) {
-    let key = s.name;
-    obj[key] = {
-      url: `http://localhost:${electronData.get().mcp_server_port}/${key}/sse`,
-      type: "sse",
-      scope: "local",
-    };
+    if (config.mcpServers[s.name] == null) {
+      let key = s.name;
+      config.mcpServers[key] = {
+        command: "",
+        args: [],
+        env: {},
+        hyperchat: {
+          url: `http://localhost:${
+            electronData.get().mcp_server_port
+          }/${key}/sse`,
+          type: "sse",
+          scope: "built-in",
+          config: {},
+        },
+        disabled: false,
+      };
+      MCP_CONFIG.save();
+    }
   }
-  config.mcpServers = Object.assign(obj, config.mcpServers);
+  // config.mcpServers = Object.assign(obj, config.mcpServers);
+  for (let key in config.mcpServers) {
+    if (config.mcpServers[key].hyperchat == null) {
+      config.mcpServers[key].hyperchat = {} as any;
+    }
+  }
   return config;
 }
 
