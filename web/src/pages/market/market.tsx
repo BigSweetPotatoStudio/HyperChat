@@ -13,25 +13,30 @@ import {
   Tag,
   Tooltip,
 } from "antd";
-import { electronData, MCP_CONFIG } from "../../common/data";
+import { electronData, MCP_CONFIG, MCP_CONFIG_TYPE } from "../../common/data";
 import { EVENT } from "../../common/event";
 import { Code } from "../../common/code";
-import * as DATA from "../../../public/mcp_data.js";
-DATA.MCP.data = [
-  {
-    name: "hyper_tools",
-    description: "hyper_tools",
-  },
-  ...DATA.MCP.data,
-];
+// import * as DATA from "../../../public/mcp_data.js";
+import { getMCPExtensionData } from "../../common/mcp";
+
+// DATA.MCP.data = [
+//   {
+//     name: "hyper_tools",
+//     description: "hyper_tools",
+//   },
+//   ...DATA.MCP.data,
+// ];
 import {
   BranchesOutlined,
+  CaretRightOutlined,
   CheckOutlined,
   CloudDownloadOutlined,
   DeleteOutlined,
   DisconnectOutlined,
   GithubOutlined,
+  MinusCircleOutlined,
   PauseCircleOutlined,
+  PlusOutlined,
   SettingOutlined,
   StopOutlined,
 } from "@ant-design/icons";
@@ -44,7 +49,7 @@ import {
 import { z } from "zod";
 import { zodToJsonSchema } from "zod-to-json-schema";
 import path from "path";
-import { getClients } from "../../common/mcp";
+import { getClients, getMcpClients, InitedClient } from "../../common/mcp";
 
 export type Package = {
   type: "npx" | "uvx" | "other";
@@ -185,8 +190,21 @@ export function Market() {
   };
   const [npx, setNpxVer] = useState("");
   const [uv, setUvVer] = useState("");
+  const [threePartys, setThreePartys] = useState<
+    Array<MCP_CONFIG_TYPE & { name: string }>
+  >([]);
+  let refreshThreePartys = async (mcp) => {
+    let arr = [];
+    for (let x in mcp.mcpServers) {
+      if (mcp.mcpServers[x]?.hyperchat?.config == undefined) {
+        arr.push({ ...mcp.mcpServers[x], name: x });
+      }
+    }
+    setThreePartys(arr);
+    refresh();
+  };
+  const [mcpExtensionData, setMcpExtensionData] = useState<any>([]);
   let init = async () => {
-    console.log(DATA.MCP);
     (async () => {
       let x = await call("checkNpx", []);
       setNpxVer(x);
@@ -197,8 +215,10 @@ export function Market() {
     })();
 
     (async () => {
-      await MCP_CONFIG.init();
-      refresh();
+      let mcp = await MCP_CONFIG.init();
+      refreshThreePartys(mcp);
+      let r = await getMCPExtensionData();
+      setMcpExtensionData(r);
     })();
   };
   useEffect(() => {
@@ -214,6 +234,11 @@ export function Market() {
   const [isPathOpen, setIsPathOpen] = useState(false);
   const [currRow, setCurrRow] = useState({} as any);
   const [mcpconfigOpen, setMcpconfigOpen] = useState(false);
+  const [clients, setClients] = React.useState<InitedClient[]>([]);
+
+  const [isAddMCPConfigOpen, setIsAddMCPConfigOpen] = useState(false);
+  const [loadingOpenMCP, setLoadingOpenMCP] = useState(false);
+  const [mcpform] = Form.useForm();
 
   useEffect(() => {}, []);
 
@@ -277,35 +302,47 @@ export function Market() {
             </Button>
           </Tooltip>
 
-          <Button
+          {/* <Button
             onClick={() => {
               EVENT.fire("setIsToolsShowTrue");
             }}
           >
             MCP Service List{" "}
+          </Button> */}
+
+          <Button
+            onClick={async () => {
+              let p = await call("pathJoin", ["mcp.json"]);
+              await call("openExplorer", [p]);
+            }}
+          >
+            Open the configuration file
           </Button>
         </Space>
         <Tabs
-          className="mt-4"
+          className="mt-4 rounded-lg bg-white"
           type="card"
           items={[
             {
-              label: `official`,
+              label: `Officially Maintained List`,
               key: "official",
               children: (
                 <div className="bg-white p-0">
+                  <div className="flex justify-center p-1">
+                    <a href="https://github.com/BigSweetPotatoStudio/HyperChatMCP">
+                      <GithubOutlined />
+                      Github
+                    </a>
+                  </div>
                   <List
                     itemLayout="horizontal"
-                    dataSource={DATA.MCP.data}
+                    dataSource={mcpExtensionData}
                     renderItem={(item: any, index) => (
                       <List.Item
                         // style={{
                         //   background: currRow.name == item.name ? "#f0f0f0" : "",
                         // }}
                         className="hover:cursor-pointer hover:bg-slate-300"
-                        // onClick={() => {
-                        //   setCurrRow(item);
-                        // }}
                         actions={[
                           MCP_CONFIG.get().mcpServers[item.name]?.hyperchat
                             .scope != "built-in" && (
@@ -330,6 +367,7 @@ export function Market() {
                                         item.name
                                       ];
                                       await MCP_CONFIG.save();
+                                      await getClients(false);
                                       refresh();
                                     } catch (e) {
                                       message.error(e.message);
@@ -340,7 +378,7 @@ export function Market() {
                                 </Popconfirm>
                               ) : (
                                 <CloudDownloadOutlined
-                                  onClick={(e) => {
+                                  onClick={async (e) => {
                                     e.stopPropagation();
                                     mcpconfigform.current.resetFields();
                                     mcpconfigform.current.setFieldsValue(
@@ -348,7 +386,9 @@ export function Market() {
                                         ?.hyperchat.config || {},
                                     );
                                     setCurrRow(item);
+
                                     setMcpconfigOpen(true);
+                                    await getClients(false);
                                     refresh();
                                   }}
                                 />
@@ -374,8 +414,8 @@ export function Market() {
                                   } else {
                                     await call("openMcpClient", [item.name]);
                                   }
+                                  await getClients(false);
                                   refresh();
-                                  getClients(false);
                                 } catch (e) {
                                   message.error(e.message);
                                 }
@@ -383,7 +423,7 @@ export function Market() {
                             >
                               {MCP_CONFIG.get().mcpServers[item.name]
                                 ?.disabled ? (
-                                <CheckOutlined />
+                                <CaretRightOutlined />
                               ) : (
                                 <StopOutlined />
                               )}
@@ -391,11 +431,11 @@ export function Market() {
                           ) : undefined,
                           MCP_CONFIG.get().mcpServers[item.name] &&
                           MCP_CONFIG.get().mcpServers[item.name]?.hyperchat
-                            .scope != "built-in" &&
+                            ?.scope != "built-in" &&
                           !MCP_CONFIG.get().mcpServers[item.name].disabled ? (
                             <a className="text-lg hover:text-cyan-400">
                               <SettingOutlined
-                                onClick={(e) => {
+                                onClick={async (e) => {
                                   e.stopPropagation();
                                   mcpconfigform.current.resetFields();
                                   mcpconfigform.current.setFieldsValue(
@@ -403,6 +443,7 @@ export function Market() {
                                       ?.hyperchat.config || {},
                                   );
                                   setCurrRow(item);
+                                  await getClients(false);
                                   setMcpconfigOpen(true);
                                   refresh();
                                 }}
@@ -424,12 +465,15 @@ export function Market() {
                           title={
                             <span>
                               {item.name}&nbsp;
-                              {MCP_CONFIG.get().mcpServers[item.name]
-                                ?.disabled ? (
-                                <DisconnectOutlined className="text-red-400" />
+                              {getMcpClients()[item.name] == null ? (
+                                ""
+                              ) : getMcpClients()[item.name].status ==
+                                "connected" ? (
+                                <BranchesOutlined className="text-green-400" />
                               ) : (
-                                <BranchesOutlined className="text-blue-400" />
+                                <DisconnectOutlined className="text-red-400" />
                               )}
+                              &nbsp;
                               {MCP_CONFIG.get().mcpServers[item.name]?.hyperchat
                                 .scope == "built-in" && (
                                 <Tag color="blue">built-in</Tag>
@@ -447,12 +491,151 @@ export function Market() {
             {
               label: `third party`,
               key: "thirdparty",
-              children: <div>third party</div>,
+              children: (
+                <div className="bg-white p-0">
+                  <div className="flex justify-center p-1">
+                    <Button
+                      onClick={() => {
+                        mcpform.resetFields();
+                        setIsAddMCPConfigOpen(true);
+                      }}
+                    >
+                      Add MCP
+                    </Button>
+                  </div>
+
+                  <List
+                    itemLayout="horizontal"
+                    dataSource={threePartys}
+                    renderItem={(item: any, index) => (
+                      <List.Item
+                        className="hover:cursor-pointer hover:bg-slate-300"
+                        actions={[
+                          <a
+                            key="list-loadmore-down"
+                            className="text-lg hover:text-cyan-400"
+                          >
+                            <Popconfirm
+                              title="Sure to delete?"
+                              onConfirm={async () => {
+                                try {
+                                  await call("closeMcpClients", [
+                                    item.name,
+                                    true,
+                                  ]);
+
+                                  MCP_CONFIG.get().mcpServers[
+                                    item.name
+                                  ].disabled = true;
+                                  delete MCP_CONFIG.get().mcpServers[item.name];
+                                  await MCP_CONFIG.save();
+                                  refreshThreePartys(MCP_CONFIG.get());
+                                  refresh();
+                                } catch (e) {
+                                  message.error(e.message);
+                                }
+                              }}
+                            >
+                              <DeleteOutlined className="text-lg hover:text-cyan-400" />
+                            </Popconfirm>
+                          </a>,
+
+                          MCP_CONFIG.get().mcpServers[item.name] ? (
+                            <a
+                              className="text-lg hover:text-cyan-400"
+                              onClick={async (e) => {
+                                try {
+                                  const config =
+                                    MCP_CONFIG.get().mcpServers[item.name];
+                                  if (config) {
+                                    config.disabled = !config.disabled;
+                                  }
+
+                                  await MCP_CONFIG.save();
+
+                                  if (config.disabled) {
+                                    await call("closeMcpClients", [item.name]);
+                                  } else {
+                                    await call("openMcpClient", [item.name]);
+                                  }
+
+                                  await getClients(false);
+                                  refresh();
+                                } catch (e) {
+                                  message.error(e.message);
+                                }
+                              }}
+                            >
+                              {MCP_CONFIG.get().mcpServers[item.name]
+                                ?.disabled ? (
+                                <CaretRightOutlined />
+                              ) : (
+                                <StopOutlined />
+                              )}
+                            </a>
+                          ) : undefined,
+                          MCP_CONFIG.get().mcpServers[item.name] &&
+                          !MCP_CONFIG.get().mcpServers[item.name].disabled ? (
+                            <a className="text-lg hover:text-cyan-400">
+                              <SettingOutlined
+                                onClick={(e) => {
+                                  let formValues = { ...item } as any;
+                                  formValues._name = item.name;
+                                  formValues._type = "edit";
+                                  formValues._argsStr = (item.args || []).join(
+                                    "   ",
+                                  );
+
+                                  formValues._envList = [];
+                                  for (let key in item.env) {
+                                    formValues._envList.push({
+                                      name: key,
+                                      value: item.env[key],
+                                    });
+                                  }
+                                  mcpform.resetFields();
+                                  mcpform.setFieldsValue(formValues);
+                                  setIsAddMCPConfigOpen(true);
+                                }}
+                              />
+                            </a>
+                          ) : undefined,
+                          item.github ? (
+                            <a
+                              className="text-lg hover:text-cyan-400"
+                              href={item.github}
+                            >
+                              <GithubOutlined />
+                            </a>
+                          ) : undefined,
+                        ].filter((x) => x != null)}
+                      >
+                        <List.Item.Meta
+                          className="px-2"
+                          title={
+                            <span>
+                              {item.name}&nbsp;
+                              {getMcpClients()[item.name]?.status ==
+                              "connected" ? (
+                                <BranchesOutlined className="text-green-400" />
+                              ) : (
+                                <DisconnectOutlined className="text-red-400" />
+                              )}
+                              &nbsp;
+                            </span>
+                          }
+                          description={item.description}
+                        />
+                      </List.Item>
+                    )}
+                  />
+                </div>
+              ),
             },
           ]}
         />
       </div>
-      <div className="w-3/5">
+      <div className="w-3/5 p-4">
         <div>
           <h1>More MCP Market</h1>
           <div>
@@ -508,7 +691,7 @@ export function Market() {
         </Form.Item>
       </Modal>
       <Modal
-        title="MCP配置"
+        title="MCP Configuration"
         open={mcpconfigOpen}
         footer={[]}
         onCancel={() => setMcpconfigOpen(false)}
@@ -519,35 +702,12 @@ export function Market() {
           : "No need config"}
         <BetaSchemaForm<any>
           layoutType="Form"
-          // layout="horizontal"
-          // steps={[
-          //   {
-          //     title: "ProComponent",
-          //   },
-          // ]}
-          // rowProps={{
-          //   gutter: [16, 16],
-          // }}
-          // colProps={{
-          //   span: 12,
-          // }}
           formRef={mcpconfigform}
-          // params={{ num }}
-          // request={async (p) => {
-          //   console.log(
-          //     currRow.name,
-          //     MCP_CONFIG.get().mcpServers[currRow.name]?.hyperchat.config || {},
-          //     p,
-          //   );
-          //   return (
-          //     MCP_CONFIG.get().mcpServers[currRow.name]?.hyperchat.config || {}
-          //   );
-          // }}
           grid={false}
           onFinish={async (values) => {
             try {
               let config = currRow.resolve(values);
-              console.log(values, config);
+              // console.log(values, config);
               await call("openMcpClient", [currRow.name, config]);
 
               Object.assign(config, {
@@ -558,10 +718,8 @@ export function Market() {
               MCP_CONFIG.get().mcpServers[currRow.name] = config;
               await MCP_CONFIG.save();
 
-              getClients(false);
-              // .then((x) => {
-              //   EVENT.fire("refresh");
-              // });
+              await getClients(false);
+
               setMcpconfigOpen(false);
             } catch (e) {
               message.error(e.message);
@@ -573,6 +731,10 @@ export function Market() {
               : []
           }
           submitter={{
+            searchConfig: {
+              submitText: "Install And Run",
+            },
+            submitButtonProps: {},
             // Configure the properties of the button
             resetButtonProps: {
               style: {
@@ -582,6 +744,155 @@ export function Market() {
             },
           }}
         />
+      </Modal>
+
+      <Modal
+        width={600}
+        title="Configure MCP"
+        open={isAddMCPConfigOpen}
+        okButtonProps={{
+          autoFocus: true,
+          htmlType: "submit",
+          loading: loadingOpenMCP,
+        }}
+        okText="Install And Run"
+        maskClosable={false}
+        cancelButtonProps={{ style: { display: "none" } }}
+        onCancel={() => {
+          setIsAddMCPConfigOpen(false);
+        }}
+        modalRender={(dom) => (
+          <Form
+            initialValues={{
+              envStr: "",
+              argsStr: "",
+            }}
+            form={mcpform}
+            layout="vertical"
+            name="Configure MCP"
+            clearOnDestroy
+            onFinish={async (values) => {
+              try {
+                setLoadingOpenMCP(true);
+                values._argsStr = values._argsStr || "";
+                values.args = values._argsStr
+                  .split(" ")
+                  .filter((x) => x.trim() != "");
+                try {
+                  values.env = {};
+                  values._envList = values._envList || [];
+                  for (let x of values._envList) {
+                    values.env[x.name] = x.value;
+                  }
+                } catch {
+                  message.error("Please enter a valid JSON");
+                  return;
+                }
+                if (
+                  values._type == "edit" &&
+                  MCP_CONFIG.get().mcpServers[values._name].disabled
+                ) {
+                  message.error("MCP Service Disabled");
+                  return;
+                }
+                await call("openMcpClient", [values._name, values]);
+                if (values._type == "edit") {
+                  MCP_CONFIG.get().mcpServers[values._name] = values;
+                } else {
+                  if (MCP_CONFIG.get().mcpServers[values._name] != null) {
+                    message.error("Name already exists");
+                    return;
+                  }
+                  MCP_CONFIG.get().mcpServers[values._name] = values;
+                }
+
+                await MCP_CONFIG.save();
+                await getClients(false);
+                refreshThreePartys(MCP_CONFIG.get());
+
+                refresh();
+                setIsAddMCPConfigOpen(false);
+              } catch (e) {
+                message.error(e.message);
+              } finally {
+                setLoadingOpenMCP(false);
+              }
+            }}
+          >
+            {dom}
+          </Form>
+        )}
+      >
+        <Form.Item className="hidden" name="_type" label="_type">
+          <Input></Input>
+        </Form.Item>
+        <Form.Item
+          name="_name"
+          label="Name"
+          rules={[{ required: true, message: "Please enter" }]}
+        >
+          <Input
+            disabled={mcpform.getFieldValue("_type") == "edit"}
+            placeholder="Please enter the name"
+          ></Input>
+        </Form.Item>
+        <Form.Item
+          name="command"
+          label="command"
+          rules={[{ required: true, message: "Please enter" }]}
+        >
+          <Input placeholder="Please enter command"></Input>
+        </Form.Item>
+        <Form.Item name="_argsStr" label="args">
+          <Input placeholder="Please enter args"></Input>
+        </Form.Item>
+
+        <Form.Item label="env">
+          <Form.List name="_envList">
+            {(fields, { add, remove }) => (
+              <>
+                {fields.map(({ key, name, ...restField }) => (
+                  <div
+                    key={key}
+                    style={{
+                      display: "flex",
+                      justifyContent: "space-between",
+                    }}
+                  >
+                    <Form.Item
+                      {...restField}
+                      name={[name, "name"]}
+                      rules={[{ required: true, message: "Missing name" }]}
+                    >
+                      <Input placeholder="Var Name" />
+                    </Form.Item>
+                    <Form.Item
+                      {...restField}
+                      className="flex-1"
+                      name={[name, "value"]}
+                      rules={[{ required: true, message: "Missing Value" }]}
+                    >
+                      <Input placeholder="Var Value" />
+                    </Form.Item>
+                    <Form.Item>
+                      <MinusCircleOutlined onClick={() => remove(name)} />
+                    </Form.Item>
+                  </div>
+                ))}
+                <Form.Item>
+                  <Button
+                    type="dashed"
+                    onClick={() => add()}
+                    block
+                    icon={<PlusOutlined />}
+                  >
+                    Add Environment Variables
+                  </Button>
+                </Form.Item>
+              </>
+            )}
+          </Form.List>
+        </Form.Item>
       </Modal>
     </div>
   );

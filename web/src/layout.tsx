@@ -299,13 +299,13 @@ export function Layout() {
           actionsRender={(props) => {
             return (
               <Space>
-                <Button
+                {/* <Button
                   onClick={() => {
                     setIsToolsShow(true);
                   }}
                 >
                   💻MCP
-                </Button>
+                </Button> */}
                 <Button
                   onClick={() => {
                     setIsModelConfigOpen(true);
@@ -406,7 +406,7 @@ export function Layout() {
           </HeaderContext.Provider>
         </ProLayout>
 
-        <Modal
+        {/* <Modal
           width={1000}
           open={isToolsShow}
           onCancel={() => setIsToolsShow(false)}
@@ -741,7 +741,7 @@ export function Layout() {
               )}
             </Form.List>
           </Form.Item>
-        </Modal>
+        </Modal> */}
 
         <Modal
           width={1000}

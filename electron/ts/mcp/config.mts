@@ -116,7 +116,7 @@ export class MCPClient {
     return out;
   }
   async open(config?: MCP_CONFIG_TYPE) {
-    if (this.config.hyperchat.type == "sse") {
+    if (this.config?.hyperchat?.type == "sse") {
       await this.openSse(config);
     } else {
       await this.openStdio(config);

@@ -42,8 +42,8 @@ let route: RouteType = {
     },
     {
       path: "/Market",
-      name: "MCP Market",
-      icon: "🛒",
+      name: "MCP Extensions",
+      icon: "💻",
       component: <Market />,
     },
     {
