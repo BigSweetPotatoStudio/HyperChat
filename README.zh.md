@@ -2,7 +2,9 @@
 
 HyperChat 是一个追求开放的Chat客户端，可以使用各家LLM的API，实现最好的Chat体验，以及实现生产力工具通过MCP协议。
 
-支持 [MCP](https://modelcontextprotocol.io/introduction) 协议的Chat，使用类OpenAI的协议，兼容 `Claude Desktop` 配置文件。支持 `Client` 热加载，重启，禁用。
+* 支持 OpenAI风格的LLM，`OpenAI` , `Claude(OpenRouter)`, `Qwen`, `Deepseek`, `GLM`, `Ollama` 。
+* 内置MCP插件市场，人性化的MCP的安装填写配置，一键安装，欢迎提交[HyperChatMCP](https://github.com/BigSweetPotatoStudio/HyperChatMCP)。
+* 也支持第三方MCP手动安装，填写 `command` , `args` , `env` 即可。
 
 ### MCP: 
 
@@ -20,6 +22,7 @@ HyperChat 是一个追求开放的Chat客户端，可以使用各家LLM的API，
 - [x] Bot显示优化，支持查找，拖拽排序
 - [x] 支持 `KaTeX`，显示数学公式
 - [x] `WebDAV` 同步
+- [x] `MCP`插件市场
 
 ### TODO:
 
@@ -79,7 +82,7 @@ npm run dev
 * MacOS 遇到了已损坏或者权限问题， `sudo xattr -d com.apple.quarantine /Applications/HyperChat.app`
 * MacOS `nvm` 用户 手动输入PATH `echo $PATH`, windows版本 `nvm` 好像可以直接使用
 
-![image.png](./images/image40.png)
+![image.png](./images/image47.png)
 
 
 
@@ -87,15 +90,16 @@ npm run dev
 
 [HyperChat用户交流](https://t.me/dadigua001)
 
-![image.png](./images/image33.png)
-
-![image.png](./images/image34.png)
 
 ![image.png](./images/image13.png)
 
-![image.png](./images/image32.png)
+![image.png](./images/image43.png)
 
-![image.png](./images/image31.png)
+![image.png](./images/image45.png)
+
+![image.png](./images/image44.png)
+
+![image.png](./images/image46.png)
 
 ![image.png](./images/image22.png)
 
@@ -106,3 +110,7 @@ npm run dev
 ![image.png](./images/image36.png)
 
 ![image.png](./images/image42.png)
+
+![image.png](./images/image33.png)
+
+![image.png](./images/image34.png)
