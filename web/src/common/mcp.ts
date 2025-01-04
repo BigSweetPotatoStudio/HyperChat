@@ -178,10 +178,15 @@ function mcpClientsToArray(mcpClients: {
 }
 
 export async function getMCPExtensionData() {
-  let latest = await fetch(
-    "https://api.github.com/repos/BigSweetPotatoStudio/HyperChatMCP/releases/latest",
-  ).then((res) => res.json());
-  let js = await latest.assets[0].browser_download_url;
+  // Because of GitHub's rate limiting、
+
+  // let latest = await fetch(
+  //   "https://api.github.com/repos/BigSweetPotatoStudio/HyperChatMCP/releases/latest",
+  // ).then((res) => res.json());
+  // let js = await latest.assets[0].browser_download_url;
+
+  let js = "https://hyperchatmcp.pages.dev/main.js";
+
   let script = document.createElement("script");
   script.src = js;
   return new Promise(async (resolve, reject) => {

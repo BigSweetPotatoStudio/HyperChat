@@ -39,6 +39,7 @@ import {
   PlusOutlined,
   SettingOutlined,
   StopOutlined,
+  SyncOutlined,
 } from "@ant-design/icons";
 import {
   BetaSchemaForm,
@@ -193,6 +194,9 @@ export function Market() {
   const [threePartys, setThreePartys] = useState<
     Array<MCP_CONFIG_TYPE & { name: string }>
   >([]);
+  const [mcpLoadingObj, setMcpLoadingObj] = useState(
+    {} as any as { [s: string]: boolean },
+  );
   let refreshThreePartys = async (mcp) => {
     let arr = [];
     for (let x in mcp.mcpServers) {
@@ -241,6 +245,77 @@ export function Market() {
   const [mcpform] = Form.useForm();
 
   useEffect(() => {}, []);
+
+  const enableAndDisable = (item) => {
+    return (
+      <a
+        className="text-lg hover:text-cyan-400"
+        onClick={async (e) => {
+          try {
+            mcpLoadingObj[item.name] = true;
+            setMcpLoadingObj({ ...mcpLoadingObj });
+            const config = MCP_CONFIG.get().mcpServers[item.name];
+            if (config) {
+              config.disabled = !config.disabled;
+            }
+
+            await MCP_CONFIG.save();
+
+            if (config.disabled) {
+              await call("closeMcpClients", [item.name]);
+            } else {
+              await call("openMcpClient", [item.name]);
+            }
+
+            await getClients(false);
+            refresh();
+          } catch (e) {
+            message.error(e.message);
+          } finally {
+            mcpLoadingObj[item.name] = false;
+            setMcpLoadingObj({ ...mcpLoadingObj });
+          }
+        }}
+      >
+        <Tooltip
+          title={
+            MCP_CONFIG.get().mcpServers[item.name]?.disabled
+              ? "enable"
+              : "disable"
+          }
+        >
+          {MCP_CONFIG.get().mcpServers[item.name]?.disabled ? (
+            <CaretRightOutlined />
+          ) : (
+            <StopOutlined />
+          )}
+        </Tooltip>
+      </a>
+    );
+  };
+  const ListItemMeta = (item) => {
+    return (
+      <List.Item.Meta
+        className="px-2"
+        title={
+          <span>
+            {item.name}&nbsp;
+            {MCP_CONFIG.get().mcpServers[item.name]?.hyperchat?.scope ==
+              "built-in" && <Tag color="blue">built-in</Tag>}
+            {mcpLoadingObj[item.name] ? (
+              <SyncOutlined spin className="text-blue-400" />
+            ) : getMcpClients()[item.name]?.status == "connected" ? (
+              <BranchesOutlined className="text-green-400" />
+            ) : (
+              <DisconnectOutlined className="text-red-400" />
+            )}
+            &nbsp;
+          </span>
+        }
+        description={item.description}
+      />
+    );
+  };
 
   return (
     <div className="flex">
@@ -301,14 +376,6 @@ export function Market() {
               Try Repair environment
             </Button>
           </Tooltip>
-
-          {/* <Button
-            onClick={() => {
-              EVENT.fire("setIsToolsShowTrue");
-            }}
-          >
-            MCP Service List{" "}
-          </Button> */}
 
           <Button
             onClick={async () => {
@@ -374,7 +441,9 @@ export function Market() {
                                     }
                                   }}
                                 >
-                                  <DeleteOutlined className="text-lg hover:text-cyan-400" />
+                                  <Tooltip title="delete" placement="bottom">
+                                    <DeleteOutlined className="text-lg hover:text-cyan-400" />
+                                  </Tooltip>
                                 </Popconfirm>
                               ) : (
                                 <CloudDownloadOutlined
@@ -396,58 +465,30 @@ export function Market() {
                             </a>
                           ),
 
-                          MCP_CONFIG.get().mcpServers[item.name] ? (
-                            <a
-                              className="text-lg hover:text-cyan-400"
-                              onClick={async (e) => {
-                                try {
-                                  const config =
-                                    MCP_CONFIG.get().mcpServers[item.name];
-                                  if (config) {
-                                    config.disabled = !config.disabled;
-                                  }
-
-                                  await MCP_CONFIG.save();
-
-                                  if (config.disabled) {
-                                    await call("closeMcpClients", [item.name]);
-                                  } else {
-                                    await call("openMcpClient", [item.name]);
-                                  }
-                                  await getClients(false);
-                                  refresh();
-                                } catch (e) {
-                                  message.error(e.message);
-                                }
-                              }}
-                            >
-                              {MCP_CONFIG.get().mcpServers[item.name]
-                                ?.disabled ? (
-                                <CaretRightOutlined />
-                              ) : (
-                                <StopOutlined />
-                              )}
-                            </a>
-                          ) : undefined,
+                          MCP_CONFIG.get().mcpServers[item.name]
+                            ? enableAndDisable(item)
+                            : undefined,
                           MCP_CONFIG.get().mcpServers[item.name] &&
                           MCP_CONFIG.get().mcpServers[item.name]?.hyperchat
                             ?.scope != "built-in" &&
                           !MCP_CONFIG.get().mcpServers[item.name].disabled ? (
                             <a className="text-lg hover:text-cyan-400">
-                              <SettingOutlined
-                                onClick={async (e) => {
-                                  e.stopPropagation();
-                                  mcpconfigform.current.resetFields();
-                                  mcpconfigform.current.setFieldsValue(
-                                    MCP_CONFIG.get().mcpServers[item.name]
-                                      ?.hyperchat.config || {},
-                                  );
-                                  setCurrRow(item);
-                                  await getClients(false);
-                                  setMcpconfigOpen(true);
-                                  refresh();
-                                }}
-                              />
+                              <Tooltip title="setting">
+                                <SettingOutlined
+                                  onClick={async (e) => {
+                                    e.stopPropagation();
+                                    mcpconfigform.current.resetFields();
+                                    mcpconfigform.current.setFieldsValue(
+                                      MCP_CONFIG.get().mcpServers[item.name]
+                                        ?.hyperchat.config || {},
+                                    );
+                                    setCurrRow(item);
+                                    await getClients(false);
+                                    setMcpconfigOpen(true);
+                                    refresh();
+                                  }}
+                                />
+                              </Tooltip>
                             </a>
                           ) : undefined,
                           item.github ? (
@@ -460,28 +501,7 @@ export function Market() {
                           ) : undefined,
                         ].filter((x) => x != null)}
                       >
-                        <List.Item.Meta
-                          className="px-2"
-                          title={
-                            <span>
-                              {item.name}&nbsp;
-                              {getMcpClients()[item.name] == null ? (
-                                ""
-                              ) : getMcpClients()[item.name].status ==
-                                "connected" ? (
-                                <BranchesOutlined className="text-green-400" />
-                              ) : (
-                                <DisconnectOutlined className="text-red-400" />
-                              )}
-                              &nbsp;
-                              {MCP_CONFIG.get().mcpServers[item.name]?.hyperchat
-                                .scope == "built-in" && (
-                                <Tag color="blue">built-in</Tag>
-                              )}
-                            </span>
-                          }
-                          description={item.description}
-                        />
+                        {ListItemMeta(item)}
                       </List.Item>
                     )}
                   />
@@ -536,96 +556,46 @@ export function Market() {
                                 }
                               }}
                             >
-                              <DeleteOutlined className="text-lg hover:text-cyan-400" />
+                              <Tooltip title="delete" placement="bottom">
+                                <DeleteOutlined className="text-lg hover:text-cyan-400" />
+                              </Tooltip>
                             </Popconfirm>
                           </a>,
 
-                          MCP_CONFIG.get().mcpServers[item.name] ? (
-                            <a
-                              className="text-lg hover:text-cyan-400"
-                              onClick={async (e) => {
-                                try {
-                                  const config =
-                                    MCP_CONFIG.get().mcpServers[item.name];
-                                  if (config) {
-                                    config.disabled = !config.disabled;
-                                  }
-
-                                  await MCP_CONFIG.save();
-
-                                  if (config.disabled) {
-                                    await call("closeMcpClients", [item.name]);
-                                  } else {
-                                    await call("openMcpClient", [item.name]);
-                                  }
-
-                                  await getClients(false);
-                                  refresh();
-                                } catch (e) {
-                                  message.error(e.message);
-                                }
-                              }}
-                            >
-                              {MCP_CONFIG.get().mcpServers[item.name]
-                                ?.disabled ? (
-                                <CaretRightOutlined />
-                              ) : (
-                                <StopOutlined />
-                              )}
-                            </a>
-                          ) : undefined,
+                          MCP_CONFIG.get().mcpServers[item.name]
+                            ? enableAndDisable(item)
+                            : undefined,
                           MCP_CONFIG.get().mcpServers[item.name] &&
                           !MCP_CONFIG.get().mcpServers[item.name].disabled ? (
                             <a className="text-lg hover:text-cyan-400">
-                              <SettingOutlined
-                                onClick={(e) => {
-                                  let formValues = { ...item } as any;
-                                  formValues._name = item.name;
-                                  formValues._type = "edit";
-                                  formValues._argsStr = (item.args || []).join(
-                                    "   ",
-                                  );
+                              <Tooltip title="setting">
+                                <SettingOutlined
+                                  onClick={(e) => {
+                                    let formValues = { ...item } as any;
+                                    formValues._name = item.name;
+                                    formValues._type = "edit";
+                                    formValues._argsStr = (
+                                      item.args || []
+                                    ).join("   ");
 
-                                  formValues._envList = [];
-                                  for (let key in item.env) {
-                                    formValues._envList.push({
-                                      name: key,
-                                      value: item.env[key],
-                                    });
-                                  }
-                                  mcpform.resetFields();
-                                  mcpform.setFieldsValue(formValues);
-                                  setIsAddMCPConfigOpen(true);
-                                }}
-                              />
-                            </a>
-                          ) : undefined,
-                          item.github ? (
-                            <a
-                              className="text-lg hover:text-cyan-400"
-                              href={item.github}
-                            >
-                              <GithubOutlined />
+                                    formValues._envList = [];
+                                    for (let key in item.env) {
+                                      formValues._envList.push({
+                                        name: key,
+                                        value: item.env[key],
+                                      });
+                                    }
+                                    mcpform.resetFields();
+                                    mcpform.setFieldsValue(formValues);
+                                    setIsAddMCPConfigOpen(true);
+                                  }}
+                                />
+                              </Tooltip>
                             </a>
                           ) : undefined,
                         ].filter((x) => x != null)}
                       >
-                        <List.Item.Meta
-                          className="px-2"
-                          title={
-                            <span>
-                              {item.name}&nbsp;
-                              {getMcpClients()[item.name]?.status ==
-                              "connected" ? (
-                                <BranchesOutlined className="text-green-400" />
-                              ) : (
-                                <DisconnectOutlined className="text-red-400" />
-                              )}
-                              &nbsp;
-                            </span>
-                          }
-                          description={item.description}
-                        />
+                        {ListItemMeta(item)}
                       </List.Item>
                     )}
                   />
