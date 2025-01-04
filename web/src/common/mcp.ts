@@ -5,11 +5,16 @@ import * as MCPTypes from "@modelcontextprotocol/sdk/types.js";
 import { sleep } from "./sleep";
 import { MCP_CONFIG, MCP_CONFIG_TYPE } from "./data";
 import type { MCPClient } from "../../../electron/ts/mcp/config.mjs";
+import { get } from "http";
 
 let init = false;
 let McpClients: {
   [s: string]: MCPClient;
 };
+
+export function getMcpClients() {
+  return McpClients || {};
+}
 
 export type InitedClient = {
   tools: Array<ChatCompletionTool & { key: string }>;
@@ -98,6 +103,7 @@ export async function getClients(filter = true): Promise<InitedClient[]> {
     await sleep(500);
   }
   McpClients = await call("getMcpClients", []);
+  // console.log("getMcpClients", McpClients);
   let res = mcpClientsToArray(McpClients);
   initedClientArray = res.filter((x) => x.status == "connected");
   if (filter) {
@@ -169,4 +175,23 @@ function mcpClientsToArray(mcpClients: {
     });
   }
   return array;
+}
+
+export async function getMCPExtensionData() {
+  let latest = await fetch(
+    "https://api.github.com/repos/BigSweetPotatoStudio/HyperChatMCP/releases/latest",
+  ).then((res) => res.json());
+  let js = await latest.assets[0].browser_download_url;
+  let script = document.createElement("script");
+  script.src = js;
+  return new Promise(async (resolve, reject) => {
+    window["jsonp"] = function (res) {
+      res.data.unshift({
+        name: "hyper_tools",
+        description: "hyper_tools",
+      });
+      resolve(res.data);
+    };
+    document.body.appendChild(script);
+  });
 }
