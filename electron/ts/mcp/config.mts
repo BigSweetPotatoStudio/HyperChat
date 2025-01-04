@@ -182,45 +182,41 @@ export class MCPClient {
   }
   async openStdio(c?: MCP_CONFIG_TYPE) {
     let config = c || (await getConfg().then((r) => r.mcpServers[this.name]));
-    if (config.disabled) {
-      log.error("MCPClient open disabled", this.name);
-      throw new Error("MCPClient open disabled");
-    } else {
-      try {
-        let key = this.name;
-        const transport = new StdioClientTransport({
-          command: config.command,
-          args: config.args,
-          env: Object.assign(getMyDefaultEnvironment(), config.env),
-        });
 
-        const client = new Client(
-          {
-            name: key,
-            version: "1.0.0",
-          },
-          {
-            capabilities: {},
-          }
-        );
+    try {
+      let key = this.name;
+      const transport = new StdioClientTransport({
+        command: config.command,
+        args: config.args,
+        env: Object.assign(getMyDefaultEnvironment(), config.env),
+      });
 
-        await client.connect(transport);
-        this.client = client;
-      } catch (e) {
-        // let res = await spawnWithOutput(config.command, config.args, {
-        //   env: Object.assign(getMyDefaultEnvironment(), config.env),
-        // }).catch((e) => {
-        //   return e;
-        // });
-        // console.log("spawnWithOutput ", res);
-        // if (res.stderr) {
-        //   throw new Error(res.stderr);
-        // }
-        // if (res.stdout) {
-        //   throw new Error(res.stdout);
-        // }
-        throw e;
-      }
+      const client = new Client(
+        {
+          name: key,
+          version: "1.0.0",
+        },
+        {
+          capabilities: {},
+        }
+      );
+
+      await client.connect(transport);
+      this.client = client;
+    } catch (e) {
+      // let res = await spawnWithOutput(config.command, config.args, {
+      //   env: Object.assign(getMyDefaultEnvironment(), config.env),
+      // }).catch((e) => {
+      //   return e;
+      // });
+      // console.log("spawnWithOutput ", res);
+      // if (res.stderr) {
+      //   throw new Error(res.stderr);
+      // }
+      // if (res.stdout) {
+      //   throw new Error(res.stdout);
+      // }
+      throw e;
     }
   }
 }
