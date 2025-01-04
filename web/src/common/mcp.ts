@@ -6,6 +6,7 @@ import { sleep } from "./sleep";
 import { MCP_CONFIG, MCP_CONFIG_TYPE } from "./data";
 import type { MCPClient } from "../../../electron/ts/mcp/config.mjs";
 import { get } from "http";
+import { clientName2Index } from "./openai";
 
 let init = false;
 let McpClients: {
@@ -124,7 +125,8 @@ function mcpClientsToArray(mcpClients: {
       let newTool = {
         type: "function" as const,
         function: {
-          name: key + "--" + tool.name,
+          name: clientName2Index.getIndex(key) + "--" + tool.name,
+          origin_name: tool.name,
           client: key,
           description: tool.description,
           parameters: {
