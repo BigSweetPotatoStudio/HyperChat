@@ -181,7 +181,7 @@ function mcpClientsToArray(mcpClients: {
       set config(value: any) {
         MCP_CONFIG.get().mcpServers[key] = value;
       },
-      enable: !MCP_CONFIG.get().mcpServers[key].disabled,
+      enable: !MCP_CONFIG.get().mcpServers[key]?.disabled,
     });
   }
   return array;
