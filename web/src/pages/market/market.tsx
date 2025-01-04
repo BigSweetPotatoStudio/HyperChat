@@ -29,6 +29,7 @@ import { getMCPExtensionData } from "../../common/mcp";
 import {
   BranchesOutlined,
   CaretRightOutlined,
+  CheckCircleTwoTone,
   CheckOutlined,
   CloudDownloadOutlined,
   DeleteOutlined,
@@ -315,7 +316,7 @@ export function Market() {
             ) : getMcpClients()[item.name] == null ? null : getMcpClients()[
                 item.name
               ]?.status == "connected" ? (
-              <BranchesOutlined className="text-green-400" />
+              <CheckCircleTwoTone twoToneColor="#52c41a" />
             ) : (
               <DisconnectOutlined className="text-red-400" />
             )}

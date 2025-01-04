@@ -1,14 +1,27 @@
 import OpenAI from "openai";
-import { getTools } from "./mcp";
+import { getTools, HyperChatCompletionTool } from "./mcp";
 import { call } from "./call";
 import * as MCPTypes from "@modelcontextprotocol/sdk/types.js";
 import { X } from "lucide-react";
 import { message as antdmessage } from "antd";
+import type { ChatCompletionTool } from "openai/src/resources/chat/completions";
 
+type Tool_Call = {
+  index: number;
+  id: string;
+  type: "function";
+  origin_name: string;
+  restore_name?: string;
+  function: {
+    name: string;
+    arguments: string;
+    argumentsJSON: any;
+  };
+};
 export type MyMessage = OpenAI.Chat.Completions.ChatCompletionMessageParam & {
   content_status?: "success" | "error";
   content_from?: string;
-  tool_calls?: any;
+  tool_calls?: Tool_Call[];
 };
 
 class ClientName2Index {
@@ -144,7 +157,7 @@ export class OpenAiChannel {
     if (this.status == "stop") {
       throw new Error("Cancel Requesting");
     }
-    let tools;
+    let tools: HyperChatCompletionTool[];
     if (!call_tool) {
       tools = undefined;
     } else {
@@ -153,29 +166,19 @@ export class OpenAiChannel {
         tools = undefined;
       }
     }
-    let tool_calls = [] as Array<{
-      index: number;
-      id: "";
-      type: "function";
-      function: {
-        name: "";
-        restore_name: string;
-        arguments: "";
-        argumentsJSON: {};
-      };
-    }>;
-    let content: string = "";
+    let tool_calls = [] as Array<Tool_Call>;
+    // let content: string = "";
     this.abortController = new AbortController();
     let res = {
       role: "assistant",
-      content: content,
+      content: "",
       tool_calls: undefined,
     } as any as OpenAI.ChatCompletionMessage;
 
     let messages = this.messages.slice();
-    this.lastMessage = res;
+    this.lastMessage = res as any;
     this.messages.push(this.lastMessage);
-    onUpdate && onUpdate(content);
+    onUpdate && onUpdate(res.content);
 
     if (this.stream) {
       const stream = await this.openai.chat.completions.create(
@@ -210,9 +213,11 @@ export class OpenAiChannel {
               index: chunk.choices[0].delta.tool_calls[0].index,
               id: "",
               type: "function",
+              restore_name: "",
+              origin_name: "",
               function: {
                 name: "",
-                restore_name: "",
+
                 arguments: "",
                 argumentsJSON: {},
               },
@@ -227,9 +232,8 @@ export class OpenAiChannel {
           // tool.index = chunk.choices[0].delta.tool_calls[0].index;
           // tool.type = chunk.choices[0].delta.tool_calls[0].type;
         }
-        content += chunk.choices[0]?.delta?.content || "";
-        this.lastMessage.content = content;
-        onUpdate && onUpdate(content);
+        res.content += chunk.choices[0]?.delta?.content || "";
+        onUpdate && onUpdate(res.content);
       }
       this.totalTokens = totalTokens;
     } else {
@@ -256,9 +260,11 @@ export class OpenAiChannel {
             id: "",
             type: "function",
 
+            restore_name: "",
+            origin_name: "",
             function: {
               name: "",
-              restore_name: "",
+
               arguments: "",
               argumentsJSON: {},
             },
@@ -272,17 +278,20 @@ export class OpenAiChannel {
         i++;
       }
 
-      this.lastMessage = res;
-      content = res.content;
-      this.messages.pop();
-      this.messages.push(this.lastMessage);
-      onUpdate && onUpdate(content);
+      // this.lastMessage = res as any;
+      // content = res.content;
+      // this.messages.pop();
+      // this.messages.push(this.lastMessage);
+      // onUpdate && onUpdate(content);
     }
+    this.lastMessage = res as any;
+    onUpdate && onUpdate(res.content);
+
     tool_calls.forEach((tool) => {
       let localtool = tools.find((t) => t.function.name === tool.function.name);
       if (localtool) {
-        tool.function["restore_name"] =
-          localtool.function.client + "--" + localtool.function.origin_name;
+        tool.restore_name = localtool.restore_name;
+        tool.origin_name = localtool.origin_name;
       }
     });
 
@@ -307,7 +316,7 @@ export class OpenAiChannel {
 
         let call_res = await call("mcpCallTool", [
           clientName,
-          localtool.function.origin_name,
+          localtool.origin_name,
           tool.function.argumentsJSON,
         ]).catch((e) => {
           status = "error";
@@ -343,7 +352,7 @@ export class OpenAiChannel {
       );
     } else {
       console.log("this.messages", this.messages);
-      return content;
+      return res.content;
     }
   }
   clear() {

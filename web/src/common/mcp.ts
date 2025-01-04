@@ -17,8 +17,15 @@ export function getMcpClients() {
   return McpClients || {};
 }
 
+export type HyperChatCompletionTool = ChatCompletionTool & {
+  key?: string;
+  origin_name?: string;
+  restore_name?: string;
+  client?: string;
+};
+
 export type InitedClient = {
-  tools: Array<ChatCompletionTool & { key: string }>;
+  tools: Array<HyperChatCompletionTool>;
   prompts: Array<typeof MCPTypes.PromptSchema._type & { key: string }>;
   resources: Array<typeof MCPTypes.ResourceSchema._type & { key: string }>;
   name: string;
@@ -120,13 +127,13 @@ function mcpClientsToArray(mcpClients: {
   let array = [];
   for (let key in mcpClients) {
     let client = mcpClients[key];
-    let tools: Array<ChatCompletionTool & { key: string }> = [];
+    let tools: Array<HyperChatCompletionTool> = [];
     for (let tool of client.tools) {
+      let name = clientName2Index.getIndex(key) + "--" + tool.name;
       let newTool = {
         type: "function" as const,
         function: {
-          name: clientName2Index.getIndex(key) + "--" + tool.name,
-          origin_name: tool.name,
+          name: name,
           client: key,
           description: tool.description,
           parameters: {
@@ -135,8 +142,9 @@ function mcpClientsToArray(mcpClients: {
             required: tool.inputSchema.required,
             additionalProperties: false,
           },
-          //   returns: { type: "string", description: "The weather in the location" },
         },
+        origin_name: tool.name,
+        restore_name: key + tool.name,
         key: key,
         clientName: key,
       };
@@ -173,7 +181,7 @@ function mcpClientsToArray(mcpClients: {
       set config(value: any) {
         MCP_CONFIG.get().mcpServers[key] = value;
       },
-      enable: !McpClients[key].config.disabled,
+      enable: !MCP_CONFIG.get().mcpServers[key].disabled,
     });
   }
   return array;
