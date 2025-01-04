@@ -88,6 +88,7 @@ import {
 } from "@dnd-kit/sortable";
 import { SortableItem } from "./sortableItem";
 import { QuickPath, SelectFile } from "../../common/selectFile";
+import Clarity from "@microsoft/clarity";
 
 let client: OpenAiChannel;
 
@@ -424,6 +425,7 @@ export const Chat = () => {
   };
   const [loading, setLoading] = useState(false);
   const onRequest = async (message: string) => {
+    Clarity.event(`sender-${process.env.NODE_ENV}`);
     console.log("onRequest", message);
     try {
       setLoading(true);
