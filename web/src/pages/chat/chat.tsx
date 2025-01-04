@@ -62,6 +62,7 @@ import {
   StarOutlined,
   SearchOutlined,
   DownOutlined,
+  SyncOutlined,
 } from "@ant-design/icons";
 import type { ConfigProviderProps, GetProp } from "antd";
 import { MyMessage, OpenAiChannel } from "../../common/openai";
@@ -309,7 +310,13 @@ export const Chat = () => {
                 });
               }}
             >
-              {x.content_status == "error" ? "❌" : "✅Completed"}
+              {x.content_status == "loading" ? (
+                <SyncOutlined spin />
+              ) : x.content_status == "error" ? (
+                "❌"
+              ) : (
+                "✅Completed"
+              )}
             </span>
           </Tooltip>
         ),
@@ -327,10 +334,12 @@ export const Chat = () => {
         },
         key: i.toString(),
         content:
-          !x.content && x.tool_calls == null ? (
-            <Spin spinning={i + 1 == arr.length}>
-              <span>🤖</span>
-            </Spin>
+          x.content_status == "loading" ? (
+            <SyncOutlined spin />
+          ) : x.content_status == "error" ? (
+            <span className="text-red-400">
+              Please check if the network is connected.
+            </span>
           ) : (
             <div>
               {x.tool_calls &&
@@ -339,7 +348,7 @@ export const Chat = () => {
                     <Tooltip
                       key={index}
                       title={
-                        <div className="h-40 overflow-auto text-ellipsis">
+                        <div className="max-h-40 overflow-auto text-ellipsis">
                           {tool.function.arguments}
                         </div>
                       }
@@ -837,83 +846,6 @@ export const Chat = () => {
                         </SortableContext>
                       </DndContext>
                     </div>
-
-                    {/* <Prompts
-                      onItemClick={(item) => {
-                        console.log("onItemClick", item);
-                        if (mode == "edit") {
-                          return;
-                        }
-                        let find = GPTS.get().data.find(
-                          (y) => y.key === item.data.key,
-                        );
-                        currentChatReset(find.prompt, find.allowMCPs);
-                      }}
-                      items={GPTS.get().data.map((x) => {
-                        return {
-                          ...x,
-                          description: mode == "edit" && (
-                            <span>
-                              <Button
-                                size="small"
-                                onClick={() => {
-                                  let value = GPTS.get().data.find(
-                                    (y) => y.key === x.key,
-                                  );
-
-                                  setPromptsModalValue(value);
-                                  setIsOpenPromptsModal(true);
-                                }}
-                              >
-                                <EditOutlined />
-                              </Button>
-                              <Popconfirm
-                                title="Are you sure to delete?"
-                                onConfirm={() => {
-                                  let index = GPTS.get().data.findIndex(
-                                    (y) => y.key === x.key,
-                                  );
-                                  GPTS.get().data.splice(index, 1);
-                                  GPTS.save();
-                                  refresh();
-                                }}
-                              >
-                                <Button size="small">
-                                  <DeleteOutlined />
-                                </Button>
-                              </Popconfirm>
-                            </span>
-                          ),
-                        };
-                      })}
-                    />
-                    <Space.Compact className="ml-2">
-                      <Button
-                        onClick={() => {
-                          setPromptsModalValue({} as any);
-                          setIsOpenPromptsModal(true);
-                        }}
-                      >
-                        Add
-                      </Button>
-                      {mode == "edit" ? (
-                        <Button
-                          onClick={() => {
-                            setMode(undefined);
-                          }}
-                        >
-                          Exit Edit
-                        </Button>
-                      ) : (
-                        <Button
-                          onClick={() => {
-                            setMode("edit");
-                          }}
-                        >
-                          Edit
-                        </Button>
-                      )}
-                    </Space.Compact> */}
                   </div>
                 </div>
               )}
@@ -1075,25 +1007,6 @@ export const Chat = () => {
                 <Divider type="vertical" />
                 <Tooltip title="Select Request Type">
                   <span>type:</span>
-                  {/* <Select
-                    size="small"
-                    className="w-20"
-                    value={currentChat.current.requestType}
-                    onChange={(value) => {
-                      currentChat.current.requestType = value;
-                      createChat();
-                    }}
-                    options={[
-                      {
-                        label: "stream",
-                        value: "stream",
-                      },
-                      {
-                        label: "completion",
-                        value: "completion",
-                      },
-                    ]}
-                  ></Select> */}
                   <Dropdown
                     arrow
                     menu={{

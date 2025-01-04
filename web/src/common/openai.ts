@@ -5,6 +5,7 @@ import * as MCPTypes from "@modelcontextprotocol/sdk/types.js";
 import { X } from "lucide-react";
 import { message as antdmessage } from "antd";
 import type { ChatCompletionTool } from "openai/src/resources/chat/completions";
+import { ChatCompletionContentPartText } from "openai/resources";
 
 type Tool_Call = {
   index: number;
@@ -19,7 +20,7 @@ type Tool_Call = {
   };
 };
 export type MyMessage = OpenAI.Chat.Completions.ChatCompletionMessageParam & {
-  content_status?: "success" | "error";
+  content_status?: "loading" | "success" | "error";
   content_from?: string;
   tool_calls?: Tool_Call[];
 };
@@ -47,7 +48,9 @@ export const clientName2Index = new ClientName2Index();
 
 export class OpenAiChannel {
   openai: OpenAI;
-  lastMessage: MyMessage;
+  get lastMessage(): MyMessage {
+    return this.messages[this.messages.length - 1];
+  }
   totalTokens = 0;
   get estimateTotalTokens() {
     let total = 0;
@@ -169,50 +172,94 @@ export class OpenAiChannel {
     let tool_calls = [] as Array<Tool_Call>;
     // let content: string = "";
     this.abortController = new AbortController();
-    let res = {
+    let res: MyMessage = {
       role: "assistant",
-      content: "",
-      tool_calls: undefined,
-    } as any as OpenAI.ChatCompletionMessage;
+      content: "" as any,
+      tool_calls: undefined as any,
+      content_status: "loading",
+    } as any;
 
     let messages = this.messages.slice();
-    this.lastMessage = res as any;
-    this.messages.push(this.lastMessage);
-    onUpdate && onUpdate(res.content);
-
-    if (this.stream) {
-      const stream = await this.openai.chat.completions.create(
-        {
-          messages: messages,
-          model: this.options.model,
-          stream: true,
-          tools: tools,
-        },
-        {
-          signal: this.abortController.signal,
-        },
-      );
-      let totalTokens;
-      for await (const chunk of stream) {
-        if (chunk.usage) {
-          totalTokens = chunk.usage.total_tokens;
-        }
-
-        if (chunk.choices[0].delta.tool_calls) {
-          if (chunk.choices[0].delta.tool_calls.length > 1) {
-            console.error("大错误，期待");
-            debugger;
+    this.messages.push(res as any);
+    onUpdate && onUpdate(this.lastMessage.content as string);
+    try {
+      if (this.stream) {
+        const stream = await this.openai.chat.completions.create(
+          {
+            messages: messages,
+            model: this.options.model,
+            stream: true,
+            tools: tools,
+          },
+          {
+            signal: this.abortController.signal,
+          },
+        );
+        this.lastMessage.content_status = "success";
+        onUpdate && onUpdate(this.lastMessage.content as string);
+        let totalTokens;
+        for await (const chunk of stream) {
+          if (chunk.usage) {
+            totalTokens = chunk.usage.total_tokens;
           }
-          // console.log(
-          //   "chunk.choices[0].delta.tool_calls",
-          //   chunk.choices[0].delta.tool_calls[0],
-          // );
-          let tool = tool_calls[chunk.choices[0].delta.tool_calls[0].index];
+
+          if (chunk.choices[0].delta.tool_calls) {
+            if (chunk.choices[0].delta.tool_calls.length > 1) {
+              console.error("大错误，期待");
+              debugger;
+            }
+            let tool = tool_calls[chunk.choices[0].delta.tool_calls[0].index];
+            if (!tool) {
+              tool = {
+                index: chunk.choices[0].delta.tool_calls[0].index,
+                id: "",
+                type: "function",
+                restore_name: "",
+                origin_name: "",
+                function: {
+                  name: "",
+
+                  arguments: "",
+                  argumentsJSON: {},
+                },
+              };
+              tool_calls[chunk.choices[0].delta.tool_calls[0].index] = tool;
+            }
+            tool.function.name +=
+              chunk.choices[0].delta.tool_calls[0].function.name || "";
+            tool.function.arguments +=
+              chunk.choices[0].delta.tool_calls[0].function.arguments || "";
+            tool.id += chunk.choices[0].delta.tool_calls[0].id || "";
+          }
+          res.content += chunk.choices[0]?.delta?.content || "";
+          onUpdate && onUpdate(res.content as string);
+        }
+        this.totalTokens = totalTokens;
+      } else {
+        const chatCompletion = await this.openai.chat.completions.create(
+          {
+            messages: messages,
+            model: this.options.model,
+            tools: tools,
+          },
+          {
+            signal: this.abortController.signal,
+          },
+        );
+        this.lastMessage.content_status = "success";
+        this.totalTokens = chatCompletion?.usage?.total_tokens;
+        let openaires =
+          chatCompletion.choices[chatCompletion.choices.length - 1].message;
+
+        let i = 0;
+        for (let restool of openaires.tool_calls || []) {
+          let tool = tool_calls[i];
           if (!tool) {
             tool = {
-              index: chunk.choices[0].delta.tool_calls[0].index,
+              index: i,
               id: "",
               type: "function",
+
               restore_name: "",
               origin_name: "",
               function: {
@@ -222,70 +269,23 @@ export class OpenAiChannel {
                 argumentsJSON: {},
               },
             };
-            tool_calls[chunk.choices[0].delta.tool_calls[0].index] = tool;
+            tool_calls[i] = tool;
           }
-          tool.function.name +=
-            chunk.choices[0].delta.tool_calls[0].function.name || "";
-          tool.function.arguments +=
-            chunk.choices[0].delta.tool_calls[0].function.arguments || "";
-          tool.id += chunk.choices[0].delta.tool_calls[0].id || "";
-          // tool.index = chunk.choices[0].delta.tool_calls[0].index;
-          // tool.type = chunk.choices[0].delta.tool_calls[0].type;
+          tool_calls[i].index = i;
+          tool.function.name += restool.function.name || "";
+          tool.function.arguments += restool.function.arguments || "";
+          tool.id += restool.id || "";
+          i++;
         }
-        res.content += chunk.choices[0]?.delta?.content || "";
-        onUpdate && onUpdate(res.content);
+        this.lastMessage.tool_calls = tool_calls;
+        this.lastMessage.content = openaires.content;
       }
-      this.totalTokens = totalTokens;
-    } else {
-      const chatCompletion = await this.openai.chat.completions.create(
-        {
-          messages: messages,
-          model: this.options.model,
-          tools: tools,
-        },
-        {
-          signal: this.abortController.signal,
-        },
-      );
-
-      this.totalTokens = chatCompletion?.usage?.total_tokens;
-      res = chatCompletion.choices[chatCompletion.choices.length - 1].message;
-
-      let i = 0;
-      for (let restool of res.tool_calls || []) {
-        let tool = tool_calls[i];
-        if (!tool) {
-          tool = {
-            index: i,
-            id: "",
-            type: "function",
-
-            restore_name: "",
-            origin_name: "",
-            function: {
-              name: "",
-
-              arguments: "",
-              argumentsJSON: {},
-            },
-          };
-          tool_calls[i] = tool;
-        }
-        tool_calls[i].index = i;
-        tool.function.name += restool.function.name || "";
-        tool.function.arguments += restool.function.arguments || "";
-        tool.id += restool.id || "";
-        i++;
-      }
-
-      // this.lastMessage = res as any;
-      // content = res.content;
-      // this.messages.pop();
-      // this.messages.push(this.lastMessage);
-      // onUpdate && onUpdate(content);
+    } catch (e) {
+      this.lastMessage.content_status = "error";
+      onUpdate && onUpdate(this.lastMessage.content as string);
+      throw e;
     }
-    this.lastMessage = res as any;
-    onUpdate && onUpdate(res.content);
+    onUpdate && onUpdate(this.lastMessage.content as string);
 
     tool_calls.forEach((tool) => {
       let localtool = tools.find((t) => t.function.name === tool.function.name);
@@ -294,6 +294,7 @@ export class OpenAiChannel {
         tool.origin_name = localtool.origin_name;
       }
     });
+    onUpdate && onUpdate(this.lastMessage.content as string);
 
     if (tool_calls.length > 0 && call_tool) {
       this.lastMessage.tool_calls = tool_calls;
@@ -312,36 +313,43 @@ export class OpenAiChannel {
           console.error("client not found", tool);
           throw new Error("client not found");
         }
-        let status = "success";
+
+        let message = {
+          role: "tool" as const,
+          tool_call_id: tool.id,
+          content: "",
+          content_status: "loading",
+        };
+        this.messages.push(message as any);
+        onUpdate && onUpdate(this.lastMessage.content as string);
 
         let call_res = await call("mcpCallTool", [
           clientName,
           localtool.origin_name,
           tool.function.argumentsJSON,
-        ]).catch((e) => {
-          status = "error";
-          return {
-            content: { error: e.message },
-          };
-        });
+        ])
+          .then((res) => {
+            this.lastMessage.content_status = "success";
+            onUpdate && onUpdate(this.lastMessage.content as string);
+            return res;
+          })
+          .catch((e) => {
+            this.lastMessage.content_status = "error";
+            onUpdate && onUpdate(this.lastMessage.content as string);
+            return {
+              content: { error: e.message },
+            };
+          });
         console.log("call_res", call_res);
-        let content = "";
-        if (call_res.content == null) {
-          content = JSON.stringify(call_res);
-        } else if (typeof call_res.content == "string") {
-          content = call_res.content;
-        } else {
-          content = JSON.stringify(call_res.content);
-        }
-        let message = {
-          role: "tool" as const,
-          tool_call_id: tool.id,
-          content: content,
-          content_status: status as any,
-        };
 
-        this.messages.push(message);
-        onUpdate && onUpdate("");
+        if (call_res.content == null) {
+          this.lastMessage.content = JSON.stringify(call_res);
+        } else if (typeof call_res.content == "string") {
+          this.lastMessage.content = call_res.content;
+        } else {
+          this.lastMessage.content = JSON.stringify(call_res.content);
+        }
+        onUpdate && onUpdate(this.lastMessage.content as string);
       }
       console.log("this.messages", this.messages);
       return await this._completion(
@@ -352,12 +360,11 @@ export class OpenAiChannel {
       );
     } else {
       console.log("this.messages", this.messages);
-      return res.content;
+      return res.content as string;
     }
   }
   clear() {
     this.messages = this.messages.filter((m) => m.role === "system");
-    this.lastMessage = null;
     this.totalTokens = 0;
   }
   async test() {
