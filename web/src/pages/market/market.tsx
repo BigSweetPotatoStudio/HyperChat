@@ -182,6 +182,7 @@ function JsonSchema2ProFormColumnsType(schema: any): ProFormColumnsType[] {
 }
 
 // const c = JsonSchema2ProFormColumnsType(p.configSchema);
+let mcpExtensionDataObj = {};
 
 // console.log("JsonSchema2ProFormColumnsType", p.configSchema, c);
 export function Market() {
@@ -200,8 +201,12 @@ export function Market() {
   let refreshThreePartys = async (mcp) => {
     let arr = [];
     for (let x in mcp.mcpServers) {
-      if (mcp.mcpServers[x]?.hyperchat?.config == undefined) {
+      if (mcpExtensionDataObj[x] == undefined) {
         arr.push({ ...mcp.mcpServers[x], name: x });
+      } else {
+        if (mcp.mcpServers[x]?.hyperchat?.config == undefined) {
+          arr.push({ ...mcp.mcpServers[x], name: x });
+        }
       }
     }
     setThreePartys(arr);
@@ -220,8 +225,11 @@ export function Market() {
 
     (async () => {
       let mcp = await MCP_CONFIG.init();
+      let r = (await getMCPExtensionData()) as any[];
+      for (let x of r) {
+        mcpExtensionDataObj[x.name] = x;
+      }
       refreshThreePartys(mcp);
-      let r = await getMCPExtensionData();
       setMcpExtensionData(r);
     })();
   };
@@ -304,7 +312,9 @@ export function Market() {
               "built-in" && <Tag color="blue">built-in</Tag>}
             {mcpLoadingObj[item.name] ? (
               <SyncOutlined spin className="text-blue-400" />
-            ) : getMcpClients()[item.name]?.status == "connected" ? (
+            ) : getMcpClients()[item.name] == null ? null : getMcpClients()[
+                item.name
+              ]?.status == "connected" ? (
               <BranchesOutlined className="text-green-400" />
             ) : (
               <DisconnectOutlined className="text-red-400" />

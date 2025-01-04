@@ -11,6 +11,27 @@ export type MyMessage = OpenAI.Chat.Completions.ChatCompletionMessageParam & {
   tool_calls?: any;
 };
 
+class ClientName2Index {
+  obj: { [s: string]: number } = {};
+  index = 0;
+  getIndex(name: string) {
+    if (!this.obj[name]) {
+      this.obj[name] = this.index;
+      this.index++;
+    }
+    return this.obj[name];
+  }
+  getName(index: number) {
+    for (let key in this.obj) {
+      if (this.obj[key] == index) {
+        return key;
+      }
+    }
+  }
+}
+
+export const clientName2Index = new ClientName2Index();
+
 export class OpenAiChannel {
   openai: OpenAI;
   lastMessage: MyMessage;
@@ -138,6 +159,7 @@ export class OpenAiChannel {
       type: "function";
       function: {
         name: "";
+        restore_name: string;
         arguments: "";
         argumentsJSON: {};
       };
@@ -190,6 +212,7 @@ export class OpenAiChannel {
               type: "function",
               function: {
                 name: "",
+                restore_name: "",
                 arguments: "",
                 argumentsJSON: {},
               },
@@ -232,8 +255,10 @@ export class OpenAiChannel {
             index: i,
             id: "",
             type: "function",
+
             function: {
               name: "",
+              restore_name: "",
               arguments: "",
               argumentsJSON: {},
             },
@@ -246,12 +271,21 @@ export class OpenAiChannel {
         tool.id += restool.id || "";
         i++;
       }
+
       this.lastMessage = res;
       content = res.content;
       this.messages.pop();
       this.messages.push(this.lastMessage);
       onUpdate && onUpdate(content);
     }
+    tool_calls.forEach((tool) => {
+      let localtool = tools.find((t) => t.function.name === tool.function.name);
+      if (localtool) {
+        tool.function["restore_name"] =
+          localtool.function.client + "--" + localtool.function.origin_name;
+      }
+    });
+
     if (tool_calls.length > 0 && call_tool) {
       this.lastMessage.tool_calls = tool_calls;
       for (let tool of tool_calls) {
@@ -261,17 +295,19 @@ export class OpenAiChannel {
           tool.function.argumentsJSON = {} as any;
         }
         console.log("tool_calls", tool_calls);
-        let client = tools.find(
+        let localtool = tools.find(
           (t) => t.function.name === tool.function.name,
-        )?.key;
-        if (!client) {
+        );
+        let clientName = localtool?.key;
+        if (!clientName) {
           console.error("client not found", tool);
           throw new Error("client not found");
         }
         let status = "success";
+
         let call_res = await call("mcpCallTool", [
-          client,
-          tool.function.name.replace(client + "--", ""),
+          clientName,
+          localtool.function.origin_name,
           tool.function.argumentsJSON,
         ]).catch((e) => {
           status = "error";

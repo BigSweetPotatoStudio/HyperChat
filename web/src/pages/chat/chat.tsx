@@ -377,7 +377,8 @@ export const Chat = () => {
                           }}
                         >
                           <div className="line-clamp-1">
-                            {tool.function.name} : {tool.function.arguments}
+                            {tool.function.restore_name || tool.function.name} :{" "}
+                            {tool.function.arguments}
                           </div>
                         </a>
                       </Spin>
