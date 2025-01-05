@@ -32,6 +32,7 @@ import {
   Tooltip,
   InputNumber,
   Tag,
+  Timeline,
 } from "antd";
 import enUS from "antd/locale/en_US";
 import zhCN from "antd/locale/zh_CN";
@@ -73,6 +74,7 @@ import { getClients } from "./common/mcp";
 import { EVENT } from "./common/event";
 import { OpenAiChannel } from "./common/openai";
 import { DndTable } from "./common/dndTable";
+import { sleep } from "./common/sleep";
 
 type ProviderType = {
   label: string;
@@ -272,6 +274,10 @@ export function Layout() {
       }
     })();
   }, []);
+
+  const [timelineData, setTimelineData] = useState([]);
+  const [isOpenTestLLM, setIsOpenTestLLM] = useState(false);
+  const [pending, setPending] = useState(false);
 
   return (
     <ConfigProvider locale={locale}>
@@ -895,44 +901,124 @@ export function Layout() {
               }}
               clearOnDestroy
               onFinish={async (values) => {
-                setLoadingCheckLLM(true);
-                message.info("Testing the configuration, please wait...");
-                let o = new OpenAiChannel(values, []);
-
-                let res = await o.test();
-                if (res.code == 0) {
-                  message.error(
-                    "Please check if the configuration is incorrect or if the network is available.",
-                  );
-                  setLoadingCheckLLM(false);
-                  return;
-                } else {
-                  if (!res.suppentTool) {
-                    message.warning(
-                      "Your LLM is available, but does not support tool calls.",
-                    );
+                try {
+                  setLoadingCheckLLM(true);
+                  // message.info("Testing the configuration, please wait...");
+                  setPending(true);
+                  setIsOpenTestLLM(true);
+                  setTimelineData([
+                    {
+                      color: "blue",
+                      children: "Testing the configuration, please wait...",
+                    },
+                  ]);
+                  let o = new OpenAiChannel(values, []);
+                  let testBaseRes = await o.testBase();
+                  if (testBaseRes) {
+                    setTimelineData((x) => {
+                      x.push({
+                        color: "green",
+                        children: "Support Text Chat Test Success",
+                      });
+                      return x.slice();
+                    });
+                  } else {
+                    setTimelineData((x) => {
+                      x.push({
+                        color: "red",
+                        children: "Support Text Chat Test Failed",
+                      });
+                      return x.slice();
+                    });
                   }
-                }
-                if (values.key) {
-                  let index = GPT_MODELS.get().data.findIndex(
-                    (e) => e.key == values.key,
-                  );
-                  if (index == -1) {
+                  if (!testBaseRes) {
+                    message.error(
+                      "Please check if the configuration is incorrect or if the network is available.",
+                    );
                     return;
                   }
-                  GPT_MODELS.get().data[index] = values;
-                  await GPT_MODELS.save();
-                } else {
-                  values.name = values.name || values.model;
-                  values.key = v4();
-                  GPT_MODELS.get().data.push(values);
-                  await GPT_MODELS.save();
+                  let testImageRes = await o.testImage();
+                  if (testImageRes) {
+                    setTimelineData((x) => {
+                      x.push({
+                        color: "green",
+                        children: "Support Image Upload Test Success",
+                      });
+                      return x.slice();
+                    });
+                  } else {
+                    setTimelineData((x) => {
+                      x.push({
+                        color: "red",
+                        children: "Support Image Upload Test Failed",
+                      });
+                      return x.slice();
+                    });
+                  }
+                  let testToolRes = await o.testTool();
+                  if (testToolRes) {
+                    setTimelineData((x) => {
+                      x.push({
+                        color: "green",
+                        children: "Support Tool Call Test Success",
+                      });
+                      return x.slice();
+                    });
+                  } else {
+                    setTimelineData((x) => {
+                      x.push({
+                        color: "red",
+                        children: "Support Tool Call Test Failed",
+                      });
+                      return x.slice();
+                    });
+                  }
+                  setPending(false);
+                  // if (testImageRes && testToolRes) {
+                  //   await sleep(2000);
+                  //   setIsOpenTestLLM(false);
+                  // } else {
+                  //   return;
+                  // }
+
+                  // let res = await o.test();
+                  // if (res.code == 0) {
+                  //   message.error(
+                  //     "Please check if the configuration is incorrect or if the network is available.",
+                  //   );
+                  //   setLoadingCheckLLM(false);
+                  //   return;
+                  // } else {
+                  //   if (!res.suppentTool) {
+                  //     message.warning(
+                  //       "Your LLM is available, but does not support tool calls.",
+                  //     );
+                  //   }
+                  // }
+                  if (values.key) {
+                    let index = GPT_MODELS.get().data.findIndex(
+                      (e) => e.key == values.key,
+                    );
+                    if (index == -1) {
+                      return;
+                    }
+                    GPT_MODELS.get().data[index] = values;
+                    await GPT_MODELS.save();
+                  } else {
+                    values.name = values.name || values.model;
+                    values.key = v4();
+                    GPT_MODELS.get().data.push(values);
+                    await GPT_MODELS.save();
+                  }
+                  refresh();
+                  setIsAddModelConfigOpen(false);
+                  EVENT.fire("refresh");
+                  setLoadingCheckLLM(false);
+                  message.success("save success!");
+                } catch {
+                  setLoadingCheckLLM(false);
+                  message.error("save failed!");
                 }
-                refresh();
-                setIsAddModelConfigOpen(false);
-                EVENT.fire("refresh");
-                setLoadingCheckLLM(false);
-                message.success("save success!");
               }}
             >
               {dom}
@@ -1005,6 +1091,22 @@ export function Layout() {
               placeholder="default, the model is allowed to execute tools for 10 steps."
             ></InputNumber>
           </Form.Item>
+        </Modal>
+        <Modal
+          title="Test LLM"
+          open={isOpenTestLLM}
+          onOk={() => {
+            setIsOpenTestLLM(false);
+          }}
+          cancelButtonProps={{ style: { display: "none" } }}
+          onCancel={() => {
+            setIsOpenTestLLM(false);
+          }}
+        >
+          <Timeline
+            pending={pending ? "Testing..." : ""}
+            items={timelineData}
+          />
         </Modal>
       </div>
     </ConfigProvider>
