@@ -49,6 +49,7 @@ import "../../../public/katex/katex.min.css";
 
 import markdownit from "markdown-it";
 import mk from "@vscode/markdown-it-katex";
+import { e } from "../../common/service";
 
 export function UserContent({ x, regenerate, submit }) {
   const [isEdit, setIsEdit] = useState(false);
@@ -68,7 +69,12 @@ export function UserContent({ x, regenerate, submit }) {
             <Button
               size="small"
               onClick={() => {
-                setValue(x.content);
+                // setValue(x.content);
+                if (Array.isArray(x.content)) {
+                  setValue(x.content[0].text);
+                } else {
+                  setValue(x.content.toString());
+                }
                 setIsEdit(false);
               }}
             >
@@ -93,7 +99,13 @@ export function UserContent({ x, regenerate, submit }) {
                 type="link"
                 size="small"
                 onClick={() => {
-                  setValue(x.content);
+                  if (Array.isArray(x.content)) {
+                    setValue(x.content[0].text);
+                  } else {
+                    setValue(x.content.toString());
+                  }
+
+                  // setValue(x.content);
                   setIsEdit(true);
                 }}
               >
@@ -111,14 +123,37 @@ export function UserContent({ x, regenerate, submit }) {
             </>
           }
         >
-          <pre
-            style={{
-              whiteSpace: "pre-wrap",
-              wordWrap: "break-word",
-            }}
-          >
-            {x.content as string}
-          </pre>
+          {/* {x.content.toString() as string} */}
+          {Array.isArray(x.content) ? (
+            x.content.map((c, i) => {
+              if (c.type == "text") {
+                return (
+                  <pre
+                    key={i}
+                    style={{
+                      whiteSpace: "pre-wrap",
+                      wordWrap: "break-word",
+                    }}
+                  >
+                    {c.text}
+                  </pre>
+                );
+              } else if (c.type == "image_url") {
+                return <img key={i} src={c.image_url} className="h-48 w-48" />;
+              } else {
+                return <span key={i}>unknown</span>;
+              }
+            })
+          ) : (
+            <pre
+              style={{
+                whiteSpace: "pre-wrap",
+                wordWrap: "break-word",
+              }}
+            >
+              {x.content.toString()}
+            </pre>
+          )}
         </Tooltip>
       )}
     </div>

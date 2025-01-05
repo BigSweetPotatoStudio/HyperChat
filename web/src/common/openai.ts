@@ -19,9 +19,17 @@ type Tool_Call = {
     argumentsJSON: any;
   };
 };
+
+type ContentImage = {
+  data: string;
+  mimeType: string;
+  type: string;
+};
+
 export type MyMessage = OpenAI.Chat.Completions.ChatCompletionMessageParam & {
   content_status?: "loading" | "success" | "error";
   content_from?: string;
+  content_attachment: ContentImage[];
   tool_calls?: Tool_Call[];
 };
 
@@ -83,18 +91,27 @@ export class OpenAiChannel {
     promptResList: Array<MCPTypes.GetPromptResult> = [],
   ) {
     if (resourceResList.length > 0) {
-      message.content += `
-# Try to avoid using tools and use resources directly. \n`;
+      message.content = [
+        {
+          type: "text",
+          text: message.content as string,
+        },
+      ];
 
       for (let r of resourceResList) {
         for (let content of r.contents) {
           if (content.text) {
-            message.content += `
-## resources 1: 
-`;
-            message.content += content.text + "\n";
+            message.content.push({
+              type: "text",
+              text: content.text as string,
+            });
+          } else if (content.type == "image") {
+            message.content.push({
+              type: "image_url",
+              image_url: content.blob as string,
+            } as any);
           } else {
-            antdmessage.warning("resource 类型只支持文本");
+            antdmessage.warning("resource only supports text + images.");
           }
         }
       }
@@ -107,6 +124,7 @@ export class OpenAiChannel {
               role: m.role,
               content: m.content.text as string,
               content_from: p.call_name as string,
+              content_attachment: [],
             });
           } else if (m.content.type == "resource") {
             if (m.content.resource.text) {
@@ -114,12 +132,34 @@ export class OpenAiChannel {
                 role: m.role,
                 content: m.content.resource.text as string,
                 content_from: p.call_name as string,
+                content_attachment: [],
               });
+            } else if (
+              m.content.resource.blob &&
+              m.content.resource?.mimeType.startsWith("image")
+            ) {
+              if (m.role == "user") {
+                this.messages.push({
+                  role: m.role as "user",
+                  content: [
+                    {
+                      type: "image_url",
+                      image_url: m.content.resource.blob as any,
+                    },
+                  ],
+                  content_from: p.call_name as string,
+                  content_attachment: [],
+                });
+              } else {
+                antdmessage.warning(
+                  "openai only user role support submit image.",
+                );
+              }
             } else {
-              antdmessage.warning("resource 类型只支持文本");
+              antdmessage.warning("resource only supports text + images.");
             }
           } else {
-            antdmessage.warning("prompt 类型只支持文本");
+            antdmessage.warning("prompt only supports text + resource.");
           }
         }
       }
@@ -314,11 +354,12 @@ export class OpenAiChannel {
           throw new Error("client not found");
         }
 
-        let message = {
+        let message: MyMessage = {
           role: "tool" as const,
           tool_call_id: tool.id,
           content: "",
           content_status: "loading",
+          content_attachment: [],
         };
         this.messages.push(message as any);
         onUpdate && onUpdate(this.lastMessage.content as string);
@@ -346,6 +387,19 @@ export class OpenAiChannel {
           this.lastMessage.content = JSON.stringify(call_res);
         } else if (typeof call_res.content == "string") {
           this.lastMessage.content = call_res.content;
+        } else if (Array.isArray(call_res.content)) {
+          for (let c of call_res.content) {
+            if (c.type == "text") {
+            } else if (c.type == "image") {
+              this.lastMessage.content_attachment.push(c);
+            } else {
+              antdmessage.warning("tool 返回类型只支持 text image");
+            }
+          }
+          this.lastMessage.content = call_res.content
+            .filter((x) => x.type == "text")
+            .map((x) => x.text)
+            .join("\n");
         } else {
           this.lastMessage.content = JSON.stringify(call_res.content);
         }

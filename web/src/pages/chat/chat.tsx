@@ -42,6 +42,41 @@ import React, { useCallback, useEffect, useRef, useState } from "react";
 import OpenAI from "openai";
 import { v4 } from "uuid";
 
+function urlToBase64(url: string) {
+  return new Promise<string>((resolve, reject) => {
+    // 创建图片对象
+    const img = new Image();
+
+    // 跨域支持
+    img.crossOrigin = "Anonymous";
+
+    img.onload = function () {
+      // 创建画布
+      const canvas = document.createElement("canvas");
+      const ctx = canvas.getContext("2d");
+
+      // 设置画布大小
+      canvas.width = (this as any).width;
+      canvas.height = (this as any).height;
+
+      // 绘制图片
+      ctx.drawImage(this as any, 0, 0);
+
+      // 转换为 Base64
+      const base64 = canvas.toDataURL("image/png");
+      // console.log(base64);
+      resolve(base64);
+    };
+
+    img.onerror = function () {
+      reject(new Error("图片加载失败"));
+    };
+
+    // 设置图片源
+    img.src = url;
+  });
+}
+
 import {
   AlipayCircleOutlined,
   AppstoreOutlined,
@@ -63,6 +98,7 @@ import {
   SearchOutlined,
   DownOutlined,
   SyncOutlined,
+  LinkOutlined,
 } from "@ant-design/icons";
 import type { ConfigProviderProps, GetProp } from "antd";
 import { MyMessage, OpenAiChannel } from "../../common/openai";
@@ -284,7 +320,7 @@ export const Chat = () => {
         content: (
           <Tooltip
             title={
-              <div className="h-40 overflow-auto text-ellipsis">
+              <div className="max-h-40 overflow-auto text-ellipsis">
                 {x.content as string}
               </div>
             }
@@ -314,15 +350,25 @@ export const Chat = () => {
               {x.content_status == "loading" ? (
                 <SyncOutlined spin />
               ) : x.content_status == "error" ? (
-                "❌"
+                "❌Error"
               ) : (
                 "✅Completed"
               )}
+              <div className="line-clamp-1">{x.content as string}</div>
             </span>
+            {x.content_attachment &&
+              x.content_attachment.length > 0 &&
+              x.content_attachment.map((x, i) => {
+                if (x.type == "image") {
+                  return (
+                    <img key={i} src={`data:${x.mimeType};base64,${x.data}`} />
+                  );
+                }
+              })}
           </Tooltip>
         ),
       };
-    } else {
+    } else if (x.role == "assistant") {
       return {
         ...x,
         placement: "start",
@@ -344,7 +390,7 @@ export const Chat = () => {
           ) : (
             <div>
               {x.tool_calls &&
-                x.tool_calls.map((tool, index) => {
+                x.tool_calls.map((tool: any, index) => {
                   return (
                     <Tooltip
                       key={index}
@@ -354,7 +400,7 @@ export const Chat = () => {
                         </div>
                       }
                     >
-                      <Spin spinning={i + 1 == arr.length}>
+                      <Spin spinning={x.content_status == "loading"}>
                         <a
                           className="cursor-pointer"
                           onClick={() => {
@@ -400,6 +446,8 @@ export const Chat = () => {
             </div>
           ),
       };
+    } else {
+      antdMessage.error("Unknown role");
     }
   }
 
@@ -458,7 +506,7 @@ export const Chat = () => {
         }
       }
       client.addMessage(
-        { role: "user", content: message },
+        { role: "user", content: message, content_attachment: [] },
         resourceResList,
         promptResList,
       );
@@ -523,7 +571,13 @@ export const Chat = () => {
     setLoadMoreing(false);
   };
 
-  const [resourceResList, setResourceResList] = React.useState([]);
+  const [resourceResList, setResourceResList] = React.useState<
+    Array<{
+      call_name: string;
+      uid: string;
+      contents: any[];
+    }>
+  >([]);
   const [promptResList, setPromptResList] = React.useState([]);
 
   const [isFillPromptModalOpen, setIsFillPromptModalOpen] =
@@ -1069,6 +1123,33 @@ export const Chat = () => {
                 }}
               >
                 <Sender
+                  prefix={
+                    <SelectFile
+                      uploadType="image"
+                      onChange={async (path) => {
+                        // console.log(path);
+                        if (path == "") return;
+                        resourceResList.push({
+                          call_name: "UserUpload",
+                          contents: [
+                            {
+                              path: path,
+                              blob: await urlToBase64(path),
+                              type: "image",
+                            },
+                          ],
+                          uid: v4(),
+                        });
+                        setResourceResList(resourceResList.slice());
+                      }}
+                    >
+                      <Button
+                        type="text"
+                        icon={<LinkOutlined />}
+                        onClick={() => {}}
+                      />
+                    </SelectFile>
+                  }
                   loading={loading}
                   value={value}
                   onChange={(nextVal) => {

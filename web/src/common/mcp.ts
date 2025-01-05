@@ -144,7 +144,7 @@ function mcpClientsToArray(mcpClients: {
           },
         },
         origin_name: tool.name,
-        restore_name: key + tool.name,
+        restore_name: key + " > " + tool.name,
         key: key,
         clientName: key,
       };
