@@ -128,15 +128,20 @@ export function UserContent({ x, regenerate, submit }) {
             x.content.map((c, i) => {
               if (c.type == "text") {
                 return (
-                  <pre
-                    key={i}
-                    style={{
-                      whiteSpace: "pre-wrap",
-                      wordWrap: "break-word",
-                    }}
-                  >
-                    {c.text}
-                  </pre>
+                  <>
+                    <pre
+                      key={i}
+                      style={{
+                        whiteSpace: "pre-wrap",
+                        wordWrap: "break-word",
+                      }}
+                    >
+                      {c.text}
+                    </pre>
+                    {x.content.length > 1 && i == 0 && (
+                      <Divider plain>resources</Divider>
+                    )}
+                  </>
                 );
               } else if (c.type == "image_url") {
                 return <img key={i} src={c.image_url} className="h-48 w-48" />;

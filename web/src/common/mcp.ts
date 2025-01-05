@@ -7,6 +7,8 @@ import { MCP_CONFIG, MCP_CONFIG_TYPE } from "./data";
 import type { MCPClient } from "../../../electron/ts/mcp/config.mjs";
 import { get } from "http";
 import { clientName2Index } from "./openai";
+import { TEMP_FILE } from "../../../common/data";
+import { e } from "./service";
 
 let init = false;
 let McpClients: {
@@ -195,18 +197,36 @@ export async function getMCPExtensionData() {
   // ).then((res) => res.json());
   // let js = await latest.assets[0].browser_download_url;
 
-  let js = "https://hyperchatmcp.pages.dev/main.js";
+  try {
+    let js = "https://hyperchatmcp.pages.dev/main.js";
+    let jscode = await fetch(js).then((res) => res.text());
+    TEMP_FILE.get().mcpExtensionDataJS = jscode;
+    TEMP_FILE.save();
 
-  let script = document.createElement("script");
-  script.src = js;
-  return new Promise(async (resolve, reject) => {
-    window["jsonp"] = function (res) {
-      res.data.unshift({
-        name: "hyper_tools",
-        description: "hyper_tools",
+    return new Promise(async (resolve, reject) => {
+      window["jsonp"] = function (res) {
+        res.data.unshift({
+          name: "hyper_tools",
+          description: "hyper_tools",
+        });
+        resolve(res.data);
+      };
+      eval(jscode);
+    });
+  } catch (e) {
+    if (TEMP_FILE.get().mcpExtensionDataJS != "") {
+      return new Promise(async (resolve, reject) => {
+        window["jsonp"] = function (res) {
+          res.data.unshift({
+            name: "hyper_tools",
+            description: "hyper_tools",
+          });
+          resolve(res.data);
+        };
+        eval(TEMP_FILE.get().mcpExtensionDataJS);
       });
-      resolve(res.data);
-    };
-    document.body.appendChild(script);
-  });
+    } else {
+      throw new Error("The network is not connected and there is no cache.");
+    }
+  }
 }

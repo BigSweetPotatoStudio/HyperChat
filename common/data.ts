@@ -188,3 +188,13 @@ export const ENV_CONFIG = new Data(
     sync: false,
   }
 );
+
+export const TEMP_FILE = new Data(
+  "temp_file.json",
+  {
+    mcpExtensionDataJS: "",
+  },
+  {
+    sync: false,
+  }
+);
