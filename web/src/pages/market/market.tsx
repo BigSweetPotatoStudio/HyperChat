@@ -227,6 +227,7 @@ export function Market() {
     (async () => {
       let mcp = await MCP_CONFIG.init();
       let r = (await getMCPExtensionData()) as any[];
+      // r = [];
       for (let x of r) {
         mcpExtensionDataObj[x.name] = x;
       }
@@ -417,9 +418,6 @@ export function Market() {
                     dataSource={mcpExtensionData}
                     renderItem={(item: any, index) => (
                       <List.Item
-                        // style={{
-                        //   background: currRow.name == item.name ? "#f0f0f0" : "",
-                        // }}
                         className="hover:cursor-pointer hover:bg-slate-300"
                         actions={[
                           MCP_CONFIG.get().mcpServers[item.name]?.hyperchat
@@ -542,41 +540,48 @@ export function Market() {
                       <List.Item
                         className="hover:cursor-pointer hover:bg-slate-300"
                         actions={[
-                          <a
-                            key="list-loadmore-down"
-                            className="text-lg hover:text-cyan-400"
-                          >
-                            <Popconfirm
-                              title="Sure to delete?"
-                              onConfirm={async () => {
-                                try {
-                                  await call("closeMcpClients", [
-                                    item.name,
-                                    true,
-                                  ]);
-
-                                  MCP_CONFIG.get().mcpServers[
-                                    item.name
-                                  ].disabled = true;
-                                  delete MCP_CONFIG.get().mcpServers[item.name];
-                                  await MCP_CONFIG.save();
-                                  refreshThreePartys(MCP_CONFIG.get());
-                                  refresh();
-                                } catch (e) {
-                                  message.error(e.message);
-                                }
-                              }}
+                          MCP_CONFIG.get().mcpServers[item.name]?.hyperchat
+                            ?.scope != "built-in" && (
+                            <a
+                              key="list-loadmore-down"
+                              className="text-lg hover:text-cyan-400"
                             >
-                              <Tooltip title="delete" placement="bottom">
-                                <DeleteOutlined className="text-lg hover:text-cyan-400" />
-                              </Tooltip>
-                            </Popconfirm>
-                          </a>,
+                              <Popconfirm
+                                title="Sure to delete?"
+                                onConfirm={async () => {
+                                  try {
+                                    await call("closeMcpClients", [
+                                      item.name,
+                                      true,
+                                    ]);
+
+                                    MCP_CONFIG.get().mcpServers[
+                                      item.name
+                                    ].disabled = true;
+                                    delete MCP_CONFIG.get().mcpServers[
+                                      item.name
+                                    ];
+                                    await MCP_CONFIG.save();
+                                    refreshThreePartys(MCP_CONFIG.get());
+                                    refresh();
+                                  } catch (e) {
+                                    message.error(e.message);
+                                  }
+                                }}
+                              >
+                                <Tooltip title="delete" placement="bottom">
+                                  <DeleteOutlined className="text-lg hover:text-cyan-400" />
+                                </Tooltip>
+                              </Popconfirm>
+                            </a>
+                          ),
 
                           MCP_CONFIG.get().mcpServers[item.name]
                             ? enableAndDisable(item)
                             : undefined,
                           MCP_CONFIG.get().mcpServers[item.name] &&
+                          MCP_CONFIG.get().mcpServers[item.name]?.hyperchat
+                            ?.scope != "built-in" &&
                           !MCP_CONFIG.get().mcpServers[item.name].disabled ? (
                             <a className="text-lg hover:text-cyan-400">
                               <Tooltip title="setting">
