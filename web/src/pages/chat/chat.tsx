@@ -115,7 +115,7 @@ import { EVENT } from "../../common/event";
 import InfiniteScroll from "react-infinite-scroll-component";
 import { call } from "../../common/call";
 import { MyAttachR } from "./attachR";
-import { MarkDown, UserContent } from "./component";
+import { DownImage, MarkDown, UserContent } from "./component";
 import { DndContext, PointerSensor, useSensor } from "@dnd-kit/core";
 import {
   horizontalListSortingStrategy,
@@ -294,13 +294,13 @@ export const Chat = () => {
                 client.messages.splice(i);
                 currentChat.current.messages = client.messages;
                 refresh();
-                onRequest(x.content as string);
+                onRequest(x.content as any);
               }}
               submit={(content) => {
                 client.messages.splice(i);
                 currentChat.current.messages = client.messages;
                 refresh();
-                onRequest(content as string);
+                onRequest(content);
               }}
             />
           ),
@@ -361,7 +361,10 @@ export const Chat = () => {
               x.content_attachment.map((x, i) => {
                 if (x.type == "image") {
                   return (
-                    <img key={i} src={`data:${x.mimeType};base64,${x.data}`} />
+                    <DownImage
+                      key={i}
+                      src={`data:${x.mimeType};base64,${x.data}`}
+                    />
                   );
                 }
               })}
