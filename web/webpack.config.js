@@ -80,6 +80,10 @@ module.exports = (env, argv) => {
             },
           ],
         },
+        {
+          test: /\.txt$/i,
+          use: "raw-loader",
+        },
       ],
     },
     resolve: {

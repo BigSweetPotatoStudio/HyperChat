@@ -388,7 +388,7 @@ export const Chat = () => {
             <SyncOutlined spin />
           ) : x.content_status == "error" ? (
             <span className="text-red-400">
-              Please check if the network is connected.
+              Please check if the network is connected or Invalid input.
             </span>
           ) : (
             <div>
