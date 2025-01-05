@@ -1,4 +1,5 @@
 import {
+  DownloadOutlined,
   FileMarkdownOutlined,
   FileTextOutlined,
   FundViewOutlined,
@@ -84,7 +85,12 @@ export function UserContent({ x, regenerate, submit }) {
               size="small"
               onClick={() => {
                 setIsEdit(false);
-                submit(value);
+                if (Array.isArray(x.content)) {
+                  x.content[0].text = value;
+                  submit(x.content);
+                } else {
+                  submit(value);
+                }
               }}
             >
               Submit
@@ -144,7 +150,9 @@ export function UserContent({ x, regenerate, submit }) {
                   </>
                 );
               } else if (c.type == "image_url") {
-                return <img key={i} src={c.image_url} className="h-48 w-48" />;
+                return (
+                  <DownImage key={i} src={c.image_url} className="h-48 w-48" />
+                );
               } else {
                 return <span key={i}>unknown</span>;
               }
@@ -292,6 +300,25 @@ export const MarkDown = ({ markdown }) => {
           {markdown}
         </pre>
       )}
+    </div>
+  );
+};
+
+export const DownImage = ({ src, ...p }) => {
+  return (
+    <div className="relative">
+      <img src={src} {...p} />
+      <DownloadOutlined
+        onClick={() => {
+          const link = document.createElement("a");
+          link.href = src;
+          link.download = "image.png";
+          document.body.appendChild(link);
+          link.click();
+          document.body.removeChild(link);
+        }}
+        className="absolute bottom-2 right-2 cursor-pointer text-lg hover:text-blue-500"
+      />
     </div>
   );
 };
