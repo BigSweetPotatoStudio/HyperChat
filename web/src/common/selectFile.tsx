@@ -27,6 +27,8 @@ export function SelectFile(props: {
   onChange?: (v: string) => void;
   filters?: any[];
   type?: "openFile" | "openDirectory";
+  uploadType?: "image" | "video" | "any";
+  children?: React.ReactNode;
 }) {
   const [value, setValue] = useState(props.value || "");
   const [isDragActive, setIsDragActive] = useState(false);
@@ -76,48 +78,83 @@ export function SelectFile(props: {
       dropzone.removeEventListener("drop", handleDrop);
     };
   }, []);
-
+  let obj =
+    props.type != "openDirectory"
+      ? {
+          type: "openFile" as const,
+          filters:
+            props.uploadType == ("image" as const)
+              ? [
+                  {
+                    name: "Image Files",
+                    extensions: ["jpg", "jpeg", "png", "gif"],
+                  },
+                ]
+              : props.uploadType == ("video" as const)
+                ? [
+                    {
+                      name: "Image Files",
+                      extensions: ["jpg", "jpeg", "png", "gif"],
+                    },
+                  ]
+                : props.filters,
+        }
+      : { type: "openDirectory" as const };
   return (
-    <div>
-      <Button
-        ref={dropRef}
-        onClick={async () => {
-          let path = await call("selectFile", [
-            {
-              type: props.type || "openFile",
-              filters: props.filters,
-            },
-            // {
-            //   filters: [
-            //     {
-            //       name: "Video Files",
-            //       extensions: ["mp4", "mov", "avi", "mkv"],
-            //     },
-            //   ],
-            // },
-          ]);
-          setValue(path);
-          props.onChange(path);
-        }}
-        icon={<UploadOutlined />}
-      >
-        {props.type == "openDirectory"
-          ? "Select or Drop Folder"
-          : "Select or Drop File"}
-      </Button>
-
-      {value ? (
-        <Tag
-          closeIcon
-          onClose={() => {
-            setValue("");
-            props.onChange("");
-          }}
-        >
-          {value}
-        </Tag>
+    <div
+      ref={dropRef}
+      onClick={async () => {
+        let path = await call("selectFile", [
+          obj,
+          // {
+          //   type: props.type || "openFile",
+          //   filters: props.filters,
+          // },
+          // {
+          //   filters: [
+          //     {
+          //       name: "Video Files",
+          //       extensions: ["mp4", "mov", "avi", "mkv"],
+          //     },
+          //   ],
+          // },
+          // props.type == "openFile" {
+          //   type: props.type || "openFile",
+          //   filters: [
+          //     {
+          //       name: "Image Files",
+          //       extensions: ["jpg", "jpeg", "png", "gif"],
+          //     },
+          //   ],
+          // },
+        ]);
+        setValue(path);
+        props.onChange(path);
+      }}
+    >
+      {props.children ? (
+        props.children
       ) : (
-        ""
+        <div>
+          <Button icon={<UploadOutlined />}>
+            {props.type == "openDirectory"
+              ? "Select or Drop Folder"
+              : "Select or Drop File"}
+          </Button>
+          {value ? (
+            <Tag
+              closeIcon
+              onClose={() => {
+                setValue("");
+                props.onChange("");
+              }}
+            >
+              {value}
+            </Tag>
+          ) : (
+            ""
+          )}
+        </div>
       )}
     </div>
   );
