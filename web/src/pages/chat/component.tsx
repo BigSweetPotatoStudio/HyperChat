@@ -151,7 +151,11 @@ export function UserContent({ x, regenerate, submit }) {
                 );
               } else if (c.type == "image_url") {
                 return (
-                  <DownImage key={i} src={c.image_url} className="h-48 w-48" />
+                  <DownImage
+                    key={i}
+                    src={c.image_url.url}
+                    className="h-48 w-48"
+                  />
                 );
               } else {
                 return <span key={i}>unknown</span>;

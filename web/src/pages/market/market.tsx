@@ -450,26 +450,28 @@ export function Market() {
                                     }
                                   }}
                                 >
-                                  <Tooltip title="delete" placement="bottom">
+                                  <Tooltip title="uninstall" placement="bottom">
                                     <DeleteOutlined className="text-lg hover:text-cyan-400" />
                                   </Tooltip>
                                 </Popconfirm>
                               ) : (
-                                <CloudDownloadOutlined
-                                  onClick={async (e) => {
-                                    e.stopPropagation();
-                                    mcpconfigform.current.resetFields();
-                                    mcpconfigform.current.setFieldsValue(
-                                      MCP_CONFIG.get().mcpServers[item.name]
-                                        ?.hyperchat.config || {},
-                                    );
-                                    setCurrRow(item);
+                                <Tooltip title="install" placement="bottom">
+                                  <CloudDownloadOutlined
+                                    onClick={async (e) => {
+                                      e.stopPropagation();
+                                      mcpconfigform.current.resetFields();
+                                      mcpconfigform.current.setFieldsValue(
+                                        MCP_CONFIG.get().mcpServers[item.name]
+                                          ?.hyperchat.config || {},
+                                      );
+                                      setCurrRow(item);
 
-                                    setMcpconfigOpen(true);
-                                    await getClients(false);
-                                    refresh();
-                                  }}
-                                />
+                                      setMcpconfigOpen(true);
+                                      await getClients(false);
+                                      refresh();
+                                    }}
+                                  />
+                                </Tooltip>
                               )}
                             </a>
                           ),
