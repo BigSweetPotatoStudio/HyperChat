@@ -87,7 +87,7 @@ export function Setting() {
       AppSetting.get().webdav = values;
       await AppSetting.save();
       if (values.autoSync) {
-        window.location.reload();
+        // window.location.reload();
       } else {
         await call("webDaveInit", []);
       }
@@ -146,7 +146,11 @@ export function Setting() {
             >
               <Input />
             </Form.Item>
-            <Form.Item label="autoSync" name="autoSync">
+            <Form.Item
+              label="autoSync"
+              name="autoSync"
+              tooltip="This is an experimental feature, 5min sync once"
+            >
               <Switch
                 checkedChildren="AutoSync"
                 unCheckedChildren="Close"
@@ -170,9 +174,14 @@ export function Setting() {
                   onClick={async () => {
                     setSyncLoading(true);
                     try {
-                      await call("webDavSync", []);
-                      message.success("Sync Success!");
-                      setSyncLoading(false);
+                      if (AppSetting.get().webdav.autoSync) {
+                        window.location.reload();
+                      } else {
+                        await call("webDavSync", []);
+                        message.success("Sync Success!");
+                        setSyncLoading(false);
+                        window.location.reload();
+                      }
                     } catch (error) {
                       message.error("Sync failed");
                       setSyncLoading(false);

@@ -7,6 +7,7 @@ import {
   MCP_CONFIG,
   electronData,
   DataList,
+  MCP_CONFIG_TYPE,
 } from "../../../common/data.js";
 
 for (let data of DataList) {
@@ -26,4 +27,23 @@ for (let data of DataList) {
   });
 }
 
-export { AppSetting, ChatHistory, GPTS, GPT_MODELS, MCP_CONFIG, electronData };
+// 初始化配置
+await electronData.init();
+if (electronData.get().firstOpen) {
+  await MCP_CONFIG.init();
+  MCP_CONFIG.save();
+  await GPT_MODELS.init();
+  GPT_MODELS.save();
+  electronData.get().firstOpen = false;
+  electronData.save();
+}
+
+export {
+  AppSetting,
+  ChatHistory,
+  GPTS,
+  GPT_MODELS,
+  MCP_CONFIG,
+  electronData,
+  MCP_CONFIG_TYPE,
+};

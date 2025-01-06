@@ -71,6 +71,7 @@ export const electronData = new Data(
     logFilePath: "",
     PATH: "",
     platform: "",
+    firstOpen: true,
   },
   {
     sync: false,
@@ -88,14 +89,14 @@ export const AppSetting = new Data("app_setting.json", {
   },
 });
 
-export const DownloadVideo = new Data("download_video.json", {
-  data: [] as Array<{
-    title: string;
-    filename: string;
-    state: string;
-    uuid: string;
-  }>,
-});
+// export const DownloadVideo = new Data("download_video.json", {
+//   data: [] as Array<{
+//     title: string;
+//     filename: string;
+//     state: string;
+//     uuid: string;
+//   }>,
+// });
 
 export const ChatHistory = new Data("chat_history.json", {
   data: [] as Array<{
@@ -130,6 +131,8 @@ export const GPT_MODELS = new Data("gpt_models.json", {
     apiKey: string;
     baseURL: string;
     provider: string;
+    supportImage: boolean;
+    supportTool: boolean;
   }>,
 });
 
@@ -151,17 +154,23 @@ class MCP_CONFIG_DATA<T> extends Data<T> {
   }
 }
 
+export type MCP_CONFIG_TYPE = {
+  command: string;
+  args: string[];
+  env: { [s: string]: string };
+  hyperchat: {
+    config: any;
+    url: string;
+    type: "stdio" | "sse";
+    scope: "built-in" | "outer";
+  };
+  disabled: boolean;
+};
+
 export const MCP_CONFIG = new MCP_CONFIG_DATA(
   "mcp.json",
   {
-    mcpServers: {} as {
-      [s: string]: {
-        command: string;
-        args: string[];
-        env: { [s: string]: string };
-        disabled: boolean;
-      };
-    },
+    mcpServers: {} as { [s: string]: MCP_CONFIG_TYPE },
   },
   {
     sync: false,
@@ -176,6 +185,16 @@ export const ENV_CONFIG = new Data(
   "env.json",
   {
     PATH: "",
+  },
+  {
+    sync: false,
+  }
+);
+
+export const TEMP_FILE = new Data(
+  "temp_file.json",
+  {
+    mcpExtensionDataJS: "",
   },
   {
     sync: false,

@@ -42,6 +42,41 @@ import React, { useCallback, useEffect, useRef, useState } from "react";
 import OpenAI from "openai";
 import { v4 } from "uuid";
 
+function urlToBase64(url: string) {
+  return new Promise<string>((resolve, reject) => {
+    // 创建图片对象
+    const img = new Image();
+
+    // 跨域支持
+    img.crossOrigin = "Anonymous";
+
+    img.onload = function () {
+      // 创建画布
+      const canvas = document.createElement("canvas");
+      const ctx = canvas.getContext("2d");
+
+      // 设置画布大小
+      canvas.width = (this as any).width;
+      canvas.height = (this as any).height;
+
+      // 绘制图片
+      ctx.drawImage(this as any, 0, 0);
+
+      // 转换为 Base64
+      const base64 = canvas.toDataURL("image/png");
+      // console.log(base64);
+      resolve(base64);
+    };
+
+    img.onerror = function () {
+      reject(new Error("图片加载失败"));
+    };
+
+    // 设置图片源
+    img.src = url;
+  });
+}
+
 import {
   AlipayCircleOutlined,
   AppstoreOutlined,
@@ -62,6 +97,10 @@ import {
   StarOutlined,
   SearchOutlined,
   DownOutlined,
+  SyncOutlined,
+  LinkOutlined,
+  FileImageOutlined,
+  ToolOutlined,
 } from "@ant-design/icons";
 import type { ConfigProviderProps, GetProp } from "antd";
 import { MyMessage, OpenAiChannel } from "../../common/openai";
@@ -78,7 +117,7 @@ import { EVENT } from "../../common/event";
 import InfiniteScroll from "react-infinite-scroll-component";
 import { call } from "../../common/call";
 import { MyAttachR } from "./attachR";
-import { MarkDown, UserContent } from "./component";
+import { DownImage, MarkDown, UserContent } from "./component";
 import { DndContext, PointerSensor, useSensor } from "@dnd-kit/core";
 import {
   horizontalListSortingStrategy,
@@ -87,7 +126,8 @@ import {
 } from "@dnd-kit/sortable";
 import { SortableItem } from "./sortableItem";
 import { QuickPath, SelectFile } from "../../common/selectFile";
-
+import Clarity from "@microsoft/clarity";
+let t: any;
 let client: OpenAiChannel;
 
 export const Chat = () => {
@@ -256,13 +296,13 @@ export const Chat = () => {
                 client.messages.splice(i);
                 currentChat.current.messages = client.messages;
                 refresh();
-                onRequest(x.content as string);
+                onRequest(x.content as any);
               }}
               submit={(content) => {
                 client.messages.splice(i);
                 currentChat.current.messages = client.messages;
                 refresh();
-                onRequest(content as string);
+                onRequest(content);
               }}
             />
           ),
@@ -282,7 +322,7 @@ export const Chat = () => {
         content: (
           <Tooltip
             title={
-              <div className="h-40 overflow-auto text-ellipsis">
+              <div className="max-h-40 overflow-auto text-ellipsis">
                 {x.content as string}
               </div>
             }
@@ -309,12 +349,31 @@ export const Chat = () => {
                 });
               }}
             >
-              {x.content_status == "error" ? "❌" : "✅Completed"}
+              {x.content_status == "loading" ? (
+                <SyncOutlined spin />
+              ) : x.content_status == "error" ? (
+                "❌Error"
+              ) : (
+                "✅Completed"
+              )}
+              <div className="line-clamp-1">{x.content as string}</div>
             </span>
+            {x.content_attachment &&
+              x.content_attachment.length > 0 &&
+              x.content_attachment.map((x, i) => {
+                if (x.type == "image") {
+                  return (
+                    <DownImage
+                      key={i}
+                      src={`data:${x.mimeType};base64,${x.data}`}
+                    />
+                  );
+                }
+              })}
           </Tooltip>
         ),
       };
-    } else {
+    } else if (x.role == "assistant") {
       return {
         ...x,
         placement: "start",
@@ -327,23 +386,27 @@ export const Chat = () => {
         },
         key: i.toString(),
         content:
-          !x.content && x.tool_calls == null ? (
-            <Spin spinning={i + 1 == arr.length}>
-              <span>🤖</span>
-            </Spin>
+          x.content_status == "loading" ? (
+            <SyncOutlined spin />
+          ) : x.content_status == "error" ? (
+            <span className="text-red-400">
+              Please check if the network is connected or LLM not support or
+              Invalid Input Content.
+            </span>
           ) : (
             <div>
               {x.tool_calls &&
-                x.tool_calls.map((tool) => {
+                x.tool_calls.map((tool: any, index) => {
                   return (
                     <Tooltip
+                      key={index}
                       title={
-                        <div className="h-40 overflow-auto text-ellipsis">
+                        <div className="max-h-40 overflow-auto text-ellipsis">
                           {tool.function.arguments}
                         </div>
                       }
                     >
-                      <Spin spinning={i + 1 == arr.length}>
+                      <Spin spinning={x.content_status == "loading"}>
                         <a
                           className="cursor-pointer"
                           onClick={() => {
@@ -360,7 +423,7 @@ export const Chat = () => {
                                     }}
                                   >
                                     <span>Tool Name: </span>
-                                    {tool.function.name}
+                                    {tool.restore_name || tool.function.name}
                                   </pre>
                                   <pre
                                     style={{
@@ -377,7 +440,8 @@ export const Chat = () => {
                           }}
                         >
                           <div className="line-clamp-1">
-                            {tool.function.name} : {tool.function.arguments}
+                            {tool.restore_name || tool.function.name} :{" "}
+                            {tool.function.arguments}
                           </div>
                         </a>
                       </Spin>
@@ -388,6 +452,8 @@ export const Chat = () => {
             </div>
           ),
       };
+    } else {
+      antdMessage.error("Unknown role");
     }
   }
 
@@ -397,7 +463,8 @@ export const Chat = () => {
     );
     if (config == null) {
       if (GPT_MODELS.get().data.length == 0) {
-        message.error("Please add LLM first");
+        EVENT.fire("setIsModelConfigOpenTrue");
+        throw new Error("Please add LLM first");
       }
       config = GPT_MODELS.get().data[0];
     }
@@ -412,44 +479,47 @@ export const Chat = () => {
   };
   const [loading, setLoading] = useState(false);
   const onRequest = async (message: string) => {
+    Clarity.event(`sender-${process.env.NODE_ENV}`);
     console.log("onRequest", message);
-    setLoading(true);
-    if (currentChat.current.sended == false) {
-      createChat();
-      currentChat.current = {
-        ...currentChat.current,
-        label: message,
-        key: v4(),
-        messages: client.messages,
-        modelKey: currentChat.current.modelKey,
-        sended: true,
-        icon: "",
-        gptsKey: currentChat.current.gptsKey,
-        allowMCPs: clients
-          .filter((record) => (record.enable == null ? true : record.enable))
-          .map((v) => v.name),
-      };
-      setData([currentChat.current, ...data]);
-      ChatHistory.get().data.unshift(currentChat.current);
-    } else {
-      let find = ChatHistory.get().data.find(
-        (x) => x.key == currentChat.current.key,
-      );
-      if (find) {
-        currentChat.current.allowMCPs = clients
-          .filter((record) => (record.enable == null ? true : record.enable))
-          .map((v) => v.name);
-      }
-    }
-    client.addMessage(
-      { role: "user", content: message },
-      resourceResList,
-      promptResList,
-    );
-    setResourceResList([]);
-    setPromptResList([]);
-    refresh();
     try {
+      setLoading(true);
+      if (currentChat.current.sended == false) {
+        createChat();
+        currentChat.current = {
+          ...currentChat.current,
+          label: message,
+          key: v4(),
+          messages: client.messages,
+          modelKey: currentChat.current.modelKey,
+          sended: true,
+          icon: "",
+          gptsKey: currentChat.current.gptsKey,
+          allowMCPs: clients
+            .filter((record) => (record.enable == null ? true : record.enable))
+            .map((v) => v.name),
+        };
+        setData([currentChat.current, ...data]);
+        ChatHistory.get().data.unshift(currentChat.current);
+      } else {
+        let find = ChatHistory.get().data.find(
+          (x) => x.key == currentChat.current.key,
+        );
+        if (find) {
+          currentChat.current.allowMCPs = clients
+            .filter((record) => (record.enable == null ? true : record.enable))
+            .map((v) => v.name);
+          Object.assign(find, currentChat.current);
+        }
+      }
+      client.addMessage(
+        { role: "user", content: message, content_attachment: [] },
+        resourceResList,
+        promptResList,
+      );
+      setResourceResList([]);
+      setPromptResList([]);
+      refresh();
+
       await client.completion(() => {
         currentChat.current.messages = client.messages;
         refresh();
@@ -507,7 +577,13 @@ export const Chat = () => {
     setLoadMoreing(false);
   };
 
-  const [resourceResList, setResourceResList] = React.useState([]);
+  const [resourceResList, setResourceResList] = React.useState<
+    Array<{
+      call_name: string;
+      uid: string;
+      contents: any[];
+    }>
+  >([]);
   const [promptResList, setPromptResList] = React.useState([]);
 
   const [isFillPromptModalOpen, setIsFillPromptModalOpen] =
@@ -530,6 +606,16 @@ export const Chat = () => {
   useEffect(() => {
     loadMoreData(historyFilterSign == 0);
   }, [historyFilterType, historyFilterSearchValue, historyFilterSign]);
+
+  let supportImage = (
+    GPT_MODELS.get().data.find((x) => x.key == currentChat.current.modelKey) ||
+    GPT_MODELS.get().data[0]
+  )?.supportImage;
+
+  let supportTool = (
+    GPT_MODELS.get().data.find((x) => x.key == currentChat.current.modelKey) ||
+    GPT_MODELS.get().data[0]
+  )?.supportTool;
   return (
     <div className="chat h-full">
       <div className="h-full rounded-lg bg-white p-4">
@@ -644,7 +730,6 @@ export const Chat = () => {
                         currentChatReset();
                         Object.assign(currentChat.current, item);
                         // currentChat.current = item;
-
                         createChat();
                       }
                     }}
@@ -754,12 +839,7 @@ export const Chat = () => {
                             let newIndex = data.findIndex(
                               (x) => x.key == e.over.id,
                             );
-                            // console.log(
-                            //   "onDragEnd",
-                            //   e,
-                            //   data[oldIndex].label,
-                            //   data[newIndex].label,
-                            // );
+
                             let item = data[oldIndex];
 
                             data.splice(oldIndex, 1);
@@ -792,7 +872,7 @@ export const Chat = () => {
                                 id={item.key}
                                 item={item}
                                 onClick={(item) => {
-                                  console.log("onGPTSClick", item);
+                                  // console.log("onGPTSClick", item);
                                   if (mode == "edit") {
                                     return;
                                   }
@@ -833,83 +913,6 @@ export const Chat = () => {
                         </SortableContext>
                       </DndContext>
                     </div>
-
-                    {/* <Prompts
-                      onItemClick={(item) => {
-                        console.log("onItemClick", item);
-                        if (mode == "edit") {
-                          return;
-                        }
-                        let find = GPTS.get().data.find(
-                          (y) => y.key === item.data.key,
-                        );
-                        currentChatReset(find.prompt, find.allowMCPs);
-                      }}
-                      items={GPTS.get().data.map((x) => {
-                        return {
-                          ...x,
-                          description: mode == "edit" && (
-                            <span>
-                              <Button
-                                size="small"
-                                onClick={() => {
-                                  let value = GPTS.get().data.find(
-                                    (y) => y.key === x.key,
-                                  );
-
-                                  setPromptsModalValue(value);
-                                  setIsOpenPromptsModal(true);
-                                }}
-                              >
-                                <EditOutlined />
-                              </Button>
-                              <Popconfirm
-                                title="Are you sure to delete?"
-                                onConfirm={() => {
-                                  let index = GPTS.get().data.findIndex(
-                                    (y) => y.key === x.key,
-                                  );
-                                  GPTS.get().data.splice(index, 1);
-                                  GPTS.save();
-                                  refresh();
-                                }}
-                              >
-                                <Button size="small">
-                                  <DeleteOutlined />
-                                </Button>
-                              </Popconfirm>
-                            </span>
-                          ),
-                        };
-                      })}
-                    />
-                    <Space.Compact className="ml-2">
-                      <Button
-                        onClick={() => {
-                          setPromptsModalValue({} as any);
-                          setIsOpenPromptsModal(true);
-                        }}
-                      >
-                        Add
-                      </Button>
-                      {mode == "edit" ? (
-                        <Button
-                          onClick={() => {
-                            setMode(undefined);
-                          }}
-                        >
-                          Exit Edit
-                        </Button>
-                      ) : (
-                        <Button
-                          onClick={() => {
-                            setMode("edit");
-                          }}
-                        >
-                          Edit
-                        </Button>
-                      )}
-                    </Space.Compact> */}
                   </div>
                 </div>
               )}
@@ -960,12 +963,18 @@ export const Chat = () => {
                       setIsToolsShow(true);
                     }}
                   >
-                    💻
-                    {
-                      clients.filter(
-                        (v) => v.enable == null || v.enable == true,
-                      ).length
-                    }
+                    {supportTool == null || supportTool == true ? (
+                      <>
+                        💻
+                        {
+                          clients.filter(
+                            (v) => v.enable == null || v.enable == true,
+                          ).length
+                        }
+                      </>
+                    ) : (
+                      <>💻 LLM not support</>
+                    )}
                   </span>
                 </Tooltip>
                 <Divider type="vertical" />
@@ -1067,29 +1076,42 @@ export const Chat = () => {
                       };
                     })}
                   ></Select>
+                  {/* <Space>
+                    {
+                      ((t =
+                        GPT_MODELS.get().data.find(
+                          (x) => x.key == currentChat.current.modelKey,
+                        ) || GPT_MODELS.get().data[0]),
+                      t == null ||
+                      t.supportImage == null ? null : t.supportImage ? (
+                        <FileImageOutlined
+                          className="ml-2"
+                          style={{ color: "#52c41a" }}
+                        />
+                      ) : (
+                        <FileTextOutlined
+                          className="ml-2"
+                          style={{ color: "#d5d9d2" }}
+                        />
+                      ))
+                    }
+                    {
+                      ((t =
+                        GPT_MODELS.get().data.find(
+                          (x) => x.key == currentChat.current.modelKey,
+                        ) || GPT_MODELS.get().data[0]),
+                      t == null ||
+                      t.supportTool == null ? null : t.supportTool ? (
+                        <ToolOutlined style={{ color: "#52c41a" }} />
+                      ) : (
+                        <ToolOutlined style={{ color: "#d5d9d2" }} />
+                      ))
+                    }
+                  </Space> */}
                 </Tooltip>
                 <Divider type="vertical" />
                 <Tooltip title="Select Request Type">
                   <span>type:</span>
-                  {/* <Select
-                    size="small"
-                    className="w-20"
-                    value={currentChat.current.requestType}
-                    onChange={(value) => {
-                      currentChat.current.requestType = value;
-                      createChat();
-                    }}
-                    options={[
-                      {
-                        label: "stream",
-                        value: "stream",
-                      },
-                      {
-                        label: "completion",
-                        value: "completion",
-                      },
-                    ]}
-                  ></Select> */}
                   <Dropdown
                     arrow
                     menu={{
@@ -1155,6 +1177,35 @@ export const Chat = () => {
                 }}
               >
                 <Sender
+                  prefix={
+                    supportImage && (
+                      <SelectFile
+                        uploadType="image"
+                        onChange={async (path) => {
+                          // console.log(path);
+                          if (path == "") return;
+                          resourceResList.push({
+                            call_name: "UserUpload",
+                            contents: [
+                              {
+                                path: path,
+                                blob: await urlToBase64(path),
+                                type: "image",
+                              },
+                            ],
+                            uid: v4(),
+                          });
+                          setResourceResList(resourceResList.slice());
+                        }}
+                      >
+                        <Button
+                          type="text"
+                          icon={<LinkOutlined />}
+                          onClick={() => {}}
+                        />
+                      </SelectFile>
+                    )
+                  }
                   loading={loading}
                   value={value}
                   onChange={(nextVal) => {
@@ -1257,11 +1308,12 @@ export const Chat = () => {
                       {record.tools.map((x) => {
                         return (
                           <Tooltip
-                            key={x.function.name}
+                            key={x.origin_name || x.function.name}
                             title={x.function.description}
                           >
                             <Tag className="cursor-pointer">
-                              {x.function.name.replace(x.key + "--", "")}
+                              {x.origin_name ||
+                                x.function.name.replace(x.key + "--", "")}
                             </Tag>
                           </Tooltip>
                         );

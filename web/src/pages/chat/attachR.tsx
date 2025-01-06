@@ -83,6 +83,38 @@ export function MyAttachR(props: {
                     </div>
                   </RemoveBox>
                 );
+              } else if (content.type == "image") {
+                return (
+                  <RemoveBox
+                    key={index}
+                    onRemove={() => {
+                      props.resourceResListRemove(x);
+                    }}
+                  >
+                    <div
+                      onClick={() => {
+                        Modal.info({
+                          width: "80%",
+                          title: "Tip",
+                          maskClosable: true,
+                          content: <div>{content.path as string}</div>,
+                        });
+                      }}
+                    >
+                      <Attachments.FileCard
+                        className="cursor-pointer"
+                        key={index}
+                        item={{
+                          name: content.path as string,
+                          uid: content.uid as string,
+                          // thumbUrl: content.path as string,
+                          // size: (content.text as string).length,
+                          url: content.path as string,
+                        }}
+                      />
+                    </div>
+                  </RemoveBox>
+                );
               } else {
                 return <span>Not supported.</span>;
               }
