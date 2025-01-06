@@ -80,6 +80,7 @@ type ProviderType = {
   label: string;
   baseURL: string;
   apiKey?: string;
+  call_tool_step?: number;
   value: string;
 };
 
@@ -119,6 +120,7 @@ const Providers: ProviderType[] = [
     label: "DeepSeek",
     baseURL: "https://api.deepseek.com",
     value: "deepseek",
+    call_tool_step: 1,
   },
   {
     label: "Other",
@@ -797,6 +799,15 @@ export function Layout() {
                 dataIndex: "name",
                 key: "name",
                 width: 200,
+                render: (text, record, index) => {
+                  return (
+                    <div>
+                      <div>{text}</div>
+                      {record.supportImage && <Tag color="blue">image</Tag>}
+                      {record.supportTool && <Tag color="blue">tool</Tag>}
+                    </div>
+                  );
+                },
               },
               {
                 title: "LLM",
@@ -918,7 +929,7 @@ export function Layout() {
                     setTimelineData((x) => {
                       x.push({
                         color: "green",
-                        children: "Support Text Chat Test Success",
+                        children: "Text Chat Test Success",
                       });
                       return x.slice();
                     });
@@ -926,7 +937,7 @@ export function Layout() {
                     setTimelineData((x) => {
                       x.push({
                         color: "red",
-                        children: "Support Text Chat Test Failed",
+                        children: "Text Chat Test Failed",
                       });
                       return x.slice();
                     });
@@ -935,6 +946,8 @@ export function Layout() {
                     message.error(
                       "Please check if the configuration is incorrect or if the network is available.",
                     );
+                    setLoadingCheckLLM(false);
+                    setPending(false);
                     return;
                   }
                   let testImageRes = await o.testImage();
@@ -942,25 +955,27 @@ export function Layout() {
                     setTimelineData((x) => {
                       x.push({
                         color: "green",
-                        children: "Support Image Upload Test Success",
+                        children: "Image Support Test Success",
                       });
                       return x.slice();
                     });
+                    values.supportImage = true;
                   } else {
                     setTimelineData((x) => {
                       x.push({
                         color: "red",
-                        children: "Support Image Upload Test Failed",
+                        children: "Image Support Test Failed",
                       });
                       return x.slice();
                     });
                   }
+                  values.supportImage = testImageRes;
                   let testToolRes = await o.testTool();
                   if (testToolRes) {
                     setTimelineData((x) => {
                       x.push({
                         color: "green",
-                        children: "Support Tool Call Test Success",
+                        children: "Tool Call Test Success",
                       });
                       return x.slice();
                     });
@@ -968,11 +983,12 @@ export function Layout() {
                     setTimelineData((x) => {
                       x.push({
                         color: "red",
-                        children: "Support Tool Call Test Failed",
+                        children: "Tool Call Test Failed",
                       });
                       return x.slice();
                     });
                   }
+                  values.supportTool = testToolRes;
                   setPending(false);
                   // if (testImageRes && testToolRes) {
                   //   await sleep(2000);
@@ -1046,6 +1062,9 @@ export function Layout() {
                 };
                 if (find.apiKey) {
                   value.apiKey = find.apiKey;
+                }
+                if (find.call_tool_step) {
+                  value.call_tool_step = find.call_tool_step;
                 }
                 form.setFieldsValue(value);
                 refresh();

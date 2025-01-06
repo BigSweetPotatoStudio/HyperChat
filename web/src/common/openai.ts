@@ -76,6 +76,8 @@ export class OpenAiChannel {
       model: string;
       apiKey: string;
       call_tool_step?: number;
+      supportTool?: boolean;
+      supportImage?: boolean;
     },
     public messages: MyMessage[],
     public stream = true,
@@ -109,7 +111,7 @@ export class OpenAiChannel {
           } else if (content.type == "image") {
             message.content.push({
               type: "image_url",
-              image_url: content.blob as string,
+              image_url: { url: content.blob },
             } as any);
           } else {
             antdmessage.warning("resource only supports text + images.");
@@ -145,7 +147,7 @@ export class OpenAiChannel {
                   content: [
                     {
                       type: "image_url",
-                      image_url: m.content.resource.blob as any,
+                      image_url: { url: m.content.resource.blob } as any,
                     },
                   ],
                   content_from: p.call_name as string,
@@ -202,7 +204,7 @@ export class OpenAiChannel {
       throw new Error("Cancel Requesting");
     }
     let tools: HyperChatCompletionTool[];
-    if (!call_tool) {
+    if (!call_tool || this.options.supportTool === false) {
       tools = undefined;
     } else {
       tools = await getTools();
@@ -443,7 +445,7 @@ export class OpenAiChannel {
           content: [
             {
               type: "image_url",
-              image_url: imageBase64,
+              image_url: { url: imageBase64 },
             },
             {
               type: "text",
