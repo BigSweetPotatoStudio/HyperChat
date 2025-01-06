@@ -87,7 +87,7 @@ export function Setting() {
       AppSetting.get().webdav = values;
       await AppSetting.save();
       if (values.autoSync) {
-        window.location.reload();
+        // window.location.reload();
       } else {
         await call("webDaveInit", []);
       }
