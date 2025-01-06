@@ -29,6 +29,12 @@ class WebDAVSync {
       username: setting.webdav.username,
       password: setting.webdav.password,
     });
+    if (setting.webdav.autoSync) {
+      setTimeout(() => {
+        Logger.info("autoSync 5min");
+        this.sync();
+      }, 1000 * 5 * 60);
+    }
   }
 
   constructor() {}
@@ -69,7 +75,7 @@ class WebDAVSync {
     }));
   }
   _isSnyc = false;
-  sync = debounce(async () => {
+  sync = async () => {
     if (this._isSnyc) {
       return;
     }
@@ -105,7 +111,7 @@ class WebDAVSync {
       this._isSnyc = false;
       console.log("---syncEnd");
     }
-  }, 3 * 1000);
+  };
   // async _syncFile(
   //   fileName: string,
   //   localPath: string = appDataDir,
@@ -368,6 +374,7 @@ function debounce(func, delay) {
       console.log("定时器还未运行，直接取消");
       // 清除之前的定时器
       clearTimeout(timeoutId);
+      timeoutId = null;
     } else if (status == 1) {
       console.log("定时器已经运行，函数还没有完成，等待");
       while (true) {
@@ -381,6 +388,7 @@ function debounce(func, delay) {
 
       c.apply(context, args);
     } else if (status == 2) {
+      console.log("函数已经完成", timeoutId);
       status = 0;
     }
     // 设置新的定时器

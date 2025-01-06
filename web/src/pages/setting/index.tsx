@@ -149,7 +149,7 @@ export function Setting() {
             <Form.Item
               label="autoSync"
               name="autoSync"
-              tooltip="This is an experimental feature"
+              tooltip="This is an experimental feature, 5min sync once"
             >
               <Switch
                 checkedChildren="AutoSync"

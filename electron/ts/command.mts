@@ -236,10 +236,10 @@ export class CommandFactory {
   async writeFile(p, text, root = appDataDir) {
     let localPath = path.join(root, p);
     let res = fs.writeFileSync(localPath, text);
-    console.log(p);
-    if (AppSetting.initSync().webdav.autoSync) {
-      webdavClient.sync();
-    }
+
+    // if (AppSetting.initSync().webdav.autoSync) {
+    //   webdavClient.sync();
+    // }
 
     return res;
   }
