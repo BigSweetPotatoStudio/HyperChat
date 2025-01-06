@@ -237,9 +237,9 @@ export class CommandFactory {
     let localPath = path.join(root, p);
     let res = fs.writeFileSync(localPath, text);
 
-    if (AppSetting.initSync().webdav.autoSync) {
-      webdavClient.sync(p);
-    }
+    // if (AppSetting.initSync().webdav.autoSync) {
+    //   webdavClient.sync();
+    // }
 
     return res;
   }

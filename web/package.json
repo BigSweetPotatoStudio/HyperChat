@@ -1,6 +1,6 @@
 {
   "name": "web",
-  "version": "0.0.14",
+  "version": "0.1.0",
   "private": true,
   "dependencies": {
     "@ant-design/cssinjs": "^1.21.1",
@@ -49,6 +49,7 @@
     "prettier-plugin-tailwindcss": "^0.6.6",
     "process": "^0.11.10",
     "querystring-es3": "^0.2.1",
+    "raw-loader": "^4.0.2",
     "react": "18.2.0",
     "react-dom": "github:BigSweetPotatoStudio/react-dom",
     "react-h5-audio-player": "^3.9.0",
@@ -71,6 +72,8 @@
     "webpack-dev-server": "^4.15.2",
     "webpack-pwa-manifest": "^4.3.0",
     "workbox-webpack-plugin": "^7.0.0",
+    "zod": "^3.24.1",
+    "zod-to-json-schema": "^3.24.1",
     "zx": "^8.0.1"
   },
   "scripts": {

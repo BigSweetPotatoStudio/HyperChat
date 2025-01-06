@@ -32,6 +32,7 @@ import {
   Tooltip,
   InputNumber,
   Tag,
+  Timeline,
 } from "antd";
 import enUS from "antd/locale/en_US";
 import zhCN from "antd/locale/zh_CN";
@@ -73,11 +74,13 @@ import { getClients } from "./common/mcp";
 import { EVENT } from "./common/event";
 import { OpenAiChannel } from "./common/openai";
 import { DndTable } from "./common/dndTable";
+import { sleep } from "./common/sleep";
 
 type ProviderType = {
   label: string;
   baseURL: string;
   apiKey?: string;
+  call_tool_step?: number;
   value: string;
 };
 
@@ -117,6 +120,7 @@ const Providers: ProviderType[] = [
     label: "DeepSeek",
     baseURL: "https://api.deepseek.com",
     value: "deepseek",
+    call_tool_step: 1,
   },
   {
     label: "Other",
@@ -146,6 +150,9 @@ export function Layout() {
     });
     EVENT.on("setIsToolsShowTrue", () => {
       setIsToolsShow(true);
+    });
+    EVENT.on("setIsModelConfigOpenTrue", () => {
+      setIsModelConfigOpen(true);
     });
   }, []);
   useEffect(() => {
@@ -270,6 +277,10 @@ export function Layout() {
     })();
   }, []);
 
+  const [timelineData, setTimelineData] = useState([]);
+  const [isOpenTestLLM, setIsOpenTestLLM] = useState(false);
+  const [pending, setPending] = useState(false);
+
   return (
     <ConfigProvider locale={locale}>
       <div style={{ width: "100%", margin: "0px auto" }}>
@@ -296,13 +307,9 @@ export function Layout() {
           actionsRender={(props) => {
             return (
               <Space>
-                <Button
-                  onClick={() => {
-                    setIsToolsShow(true);
-                  }}
-                >
-                  💻MCP
-                </Button>
+                <a href="https://github.com/BigSweetPotatoStudio/HyperChat">
+                  <GithubFilled></GithubFilled> Github
+                </a>
                 <Button
                   onClick={() => {
                     setIsModelConfigOpen(true);
@@ -370,7 +377,9 @@ export function Layout() {
           }}
           headerTitleRender={(logo, title, _) => {
             return (
-              <Link to="home">HyperChat({electronData.get().version})</Link>
+              <Link to="home">
+                HyperChat<span>({electronData.get().version})</span>
+              </Link>
             );
           }}
           menuFooterRender={(props) => {
@@ -403,7 +412,7 @@ export function Layout() {
           </HeaderContext.Provider>
         </ProLayout>
 
-        <Modal
+        {/* <Modal
           width={1000}
           open={isToolsShow}
           onCancel={() => setIsToolsShow(false)}
@@ -442,7 +451,7 @@ export function Layout() {
                 dataIndex: "status",
                 key: "status",
                 render: (text, record, index) => {
-                  if (record.scope == "local") {
+                  if (record.config.hyperchat.scope == "built-in") {
                     return <Tag color="blue">built-in</Tag>;
                   }
                   return (
@@ -600,6 +609,7 @@ export function Layout() {
               onFinish={async (values) => {
                 try {
                   setLoadingOpenMCP(true);
+                  values._argsStr = values._argsStr || "";
                   values.args = values._argsStr
                     .split(" ")
                     .filter((x) => x.trim() != "");
@@ -737,7 +747,7 @@ export function Layout() {
               )}
             </Form.List>
           </Form.Item>
-        </Modal>
+        </Modal> */}
 
         <Modal
           width={1000}
@@ -789,6 +799,15 @@ export function Layout() {
                 dataIndex: "name",
                 key: "name",
                 width: 200,
+                render: (text, record, index) => {
+                  return (
+                    <div>
+                      <div>{text}</div>
+                      {record.supportImage && <Tag color="blue">image</Tag>}
+                      {record.supportTool && <Tag color="blue">tool</Tag>}
+                    </div>
+                  );
+                },
               },
               {
                 title: "LLM",
@@ -893,44 +912,129 @@ export function Layout() {
               }}
               clearOnDestroy
               onFinish={async (values) => {
-                setLoadingCheckLLM(true);
-                message.info("Testing the configuration, please wait...");
-                let o = new OpenAiChannel(values, []);
-
-                let res = await o.test();
-                if (res.code == 0) {
-                  message.error(
-                    "Please check if the configuration is incorrect or if the network is available.",
-                  );
-                  setLoadingCheckLLM(false);
-                  return;
-                } else {
-                  if (!res.suppentTool) {
-                    message.warning(
-                      "Your LLM is available, but does not support tool calls.",
-                    );
+                try {
+                  setLoadingCheckLLM(true);
+                  // message.info("Testing the configuration, please wait...");
+                  setPending(true);
+                  setIsOpenTestLLM(true);
+                  setTimelineData([
+                    {
+                      color: "blue",
+                      children: "Testing the configuration, please wait...",
+                    },
+                  ]);
+                  let o = new OpenAiChannel(values, []);
+                  let testBaseRes = await o.testBase();
+                  if (testBaseRes) {
+                    setTimelineData((x) => {
+                      x.push({
+                        color: "green",
+                        children: "Text Chat Test Success",
+                      });
+                      return x.slice();
+                    });
+                  } else {
+                    setTimelineData((x) => {
+                      x.push({
+                        color: "red",
+                        children: "Text Chat Test Failed",
+                      });
+                      return x.slice();
+                    });
                   }
-                }
-                if (values.key) {
-                  let index = GPT_MODELS.get().data.findIndex(
-                    (e) => e.key == values.key,
-                  );
-                  if (index == -1) {
+                  if (!testBaseRes) {
+                    message.error(
+                      "Please check if the configuration is incorrect or if the network is available.",
+                    );
+                    setLoadingCheckLLM(false);
+                    setPending(false);
                     return;
                   }
-                  GPT_MODELS.get().data[index] = values;
-                  await GPT_MODELS.save();
-                } else {
-                  values.name = values.name || values.model;
-                  values.key = v4();
-                  GPT_MODELS.get().data.push(values);
-                  await GPT_MODELS.save();
+                  let testImageRes = await o.testImage();
+                  if (testImageRes) {
+                    setTimelineData((x) => {
+                      x.push({
+                        color: "green",
+                        children: "Image Support Test Success",
+                      });
+                      return x.slice();
+                    });
+                    values.supportImage = true;
+                  } else {
+                    setTimelineData((x) => {
+                      x.push({
+                        color: "red",
+                        children: "Image Support Test Failed",
+                      });
+                      return x.slice();
+                    });
+                  }
+                  values.supportImage = testImageRes;
+                  let testToolRes = await o.testTool();
+                  if (testToolRes) {
+                    setTimelineData((x) => {
+                      x.push({
+                        color: "green",
+                        children: "Tool Call Test Success",
+                      });
+                      return x.slice();
+                    });
+                  } else {
+                    setTimelineData((x) => {
+                      x.push({
+                        color: "red",
+                        children: "Tool Call Test Failed",
+                      });
+                      return x.slice();
+                    });
+                  }
+                  values.supportTool = testToolRes;
+                  setPending(false);
+                  // if (testImageRes && testToolRes) {
+                  //   await sleep(2000);
+                  //   setIsOpenTestLLM(false);
+                  // } else {
+                  //   return;
+                  // }
+
+                  // let res = await o.test();
+                  // if (res.code == 0) {
+                  //   message.error(
+                  //     "Please check if the configuration is incorrect or if the network is available.",
+                  //   );
+                  //   setLoadingCheckLLM(false);
+                  //   return;
+                  // } else {
+                  //   if (!res.suppentTool) {
+                  //     message.warning(
+                  //       "Your LLM is available, but does not support tool calls.",
+                  //     );
+                  //   }
+                  // }
+                  if (values.key) {
+                    let index = GPT_MODELS.get().data.findIndex(
+                      (e) => e.key == values.key,
+                    );
+                    if (index == -1) {
+                      return;
+                    }
+                    GPT_MODELS.get().data[index] = values;
+                    await GPT_MODELS.save();
+                  } else {
+                    values.name = values.name || values.model;
+                    values.key = v4();
+                    GPT_MODELS.get().data.push(values);
+                    await GPT_MODELS.save();
+                  }
+                  refresh();
+                  setIsAddModelConfigOpen(false);
+                  EVENT.fire("refresh");
+                  setLoadingCheckLLM(false);
+                  message.success("save success!");
+                } catch {
+                  setLoadingCheckLLM(false);
+                  message.error("save failed!");
                 }
-                refresh();
-                setIsAddModelConfigOpen(false);
-                EVENT.fire("refresh");
-                setLoadingCheckLLM(false);
-                message.success("save success!");
               }}
             >
               {dom}
@@ -958,6 +1062,9 @@ export function Layout() {
                 };
                 if (find.apiKey) {
                   value.apiKey = find.apiKey;
+                }
+                if (find.call_tool_step) {
+                  value.call_tool_step = find.call_tool_step;
                 }
                 form.setFieldsValue(value);
                 refresh();
@@ -1003,6 +1110,22 @@ export function Layout() {
               placeholder="default, the model is allowed to execute tools for 10 steps."
             ></InputNumber>
           </Form.Item>
+        </Modal>
+        <Modal
+          title="Test LLM"
+          open={isOpenTestLLM}
+          onOk={() => {
+            setIsOpenTestLLM(false);
+          }}
+          cancelButtonProps={{ style: { display: "none" } }}
+          onCancel={() => {
+            setIsOpenTestLLM(false);
+          }}
+        >
+          <Timeline
+            pending={pending ? "Testing..." : ""}
+            items={timelineData}
+          />
         </Modal>
       </div>
     </ConfigProvider>

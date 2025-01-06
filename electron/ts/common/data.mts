@@ -5,6 +5,8 @@ import {
   AppSetting,
   DataList,
   ENV_CONFIG,
+  MCP_CONFIG,
+  MCP_CONFIG_TYPE,
 } from "../../../common/data.js";
 import { fs, path } from "zx";
 import { appDataDir } from "../const.mjs";
@@ -56,4 +58,4 @@ electronData.save();
 
 await taskHistory.init();
 
-export { electronData, taskHistory, AppSetting };
+export { electronData, taskHistory, AppSetting, MCP_CONFIG, MCP_CONFIG_TYPE };
