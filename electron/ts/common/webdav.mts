@@ -183,7 +183,7 @@ class WebDAVSync {
             localFile?.modifiedTime > remoteFile.modifiedTime
           ) {
             // 对比hash，远程和本地
-            if (!(remoteFile.filename === hashFileName)) {
+            if (!(remoteFile?.filename === hashFileName)) {
               console.log("upload file", remotePath + "/" + hashFileName);
               await this.client.putFileContents(
                 remotePath + "/" + hashFileName,
@@ -228,14 +228,16 @@ class WebDAVSync {
           );
 
           if (localSyncFile?.filename === remoteFile.filename) {
-            console.log("restore file", remoteFile.filepath);
-            const content = await fs.readFile(
-              path.join(localSyncPath, remoteFile.filename)
-            );
-            await fs.writeFile(
-              path.join(localPath, name + ext),
-              JSON.stringify(JSON.parse(content.toString()), null, 4)
-            );
+            if (!fs.existsSync(path.join(localPath, name + ext))) {
+              console.log("restore file", remoteFile.filepath);
+              const content = await fs.readFile(
+                path.join(localSyncPath, remoteFile.filename)
+              );
+              await fs.writeFile(
+                path.join(localPath, name + ext),
+                JSON.stringify(JSON.parse(content.toString()), null, 4)
+              );
+            }
           } else {
             console.log("download file", remoteFile.filepath);
             // 把上一个hash文件备份
