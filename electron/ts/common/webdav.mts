@@ -128,8 +128,9 @@ class WebDAVSync {
     const remoteFiles = await this.getRemoteFilesInfo(remotePath);
 
     const localSyncPath = path.join(localPath, "_sync");
-    const localSyncFiles = await this.getLocalFilesInfo(localSyncPath, "_sync");
     await fs.ensureDir(localSyncPath);
+    const localSyncFiles = await this.getLocalFilesInfo(localSyncPath, "_sync");
+
     const localBackupPath = path.join(localPath, "_backup"); // 备份文件夹
     await fs.ensureDir(localBackupPath);
     const localBackupFiles = await this.getLocalFilesInfo(
@@ -151,10 +152,14 @@ class WebDAVSync {
         // console.log("fullPath", fullPath);
         let content = JSON.stringify(json);
         let md5 = crypto.createHash("md5").update(content).digest("hex");
-        let p = path.parse(fullPath);
-        let localSyncFileName = p.name + "___" + md5 + p.ext;
+        let p = path.parse(filename);
+        // console.log(p);
+        let hashFileName = p.name + "___" + md5 + p.ext;
+        let localSyncFilePATH = path.join(localSyncPath, hashFileName);
+        // let localSyncFileName = path.join(localPath, hashFileName);
         try {
-          if (!fs.existsSync(path.join(localSyncPath, localSyncFileName))) {
+          if (!fs.existsSync(path.join(localSyncPath, localSyncFilePATH))) {
+            //////////
             let localSyncFile = localSyncFiles.find((x) =>
               x.filename.startsWith(p.name)
             );
@@ -175,7 +180,7 @@ class WebDAVSync {
             );
 
             const remoteFile = remoteFiles.find(
-              (r) => r.filename === localSyncFileName
+              (r) => r.filename === hashFileName
             );
             let localFile = localFiles.find((l) => l.filename === filename);
 
@@ -188,26 +193,35 @@ class WebDAVSync {
               localFile?.modifiedTime > remoteFile.modifiedTime
             ) {
               if (
-                !(await remoteFiles.find(
-                  (r) => r.filename === localSyncFileName
-                ))
+                !(await remoteFiles.find((r) => r.filename === hashFileName))
               ) {
-                console.log("upload file", localSyncFileName);
+                console.log("upload file", remotePath + "/" + hashFileName);
                 await this.client.putFileContents(
-                  remotePath + "/" + localSyncFileName,
+                  remotePath + "/" + hashFileName,
                   content
                 );
                 // console.log("safdafasdf", remoteFiles, p.name);
                 try {
-                  await this.client.deleteFile(
-                    remoteFiles.find((r) => r.filename.includes(p.name))
-                      .filepath
-                  );
+                  let rf = remoteFiles.find((r) => r.filename.includes(p.name));
+                  if (rf) {
+                    await this.client.deleteFile(rf.filepath);
+                  } else {
+                    console.log("deleteed not found", p.name);
+                  }
                 } catch (e) {
                   console.log("delete error: ", e);
                 }
               }
             }
+          }
+          let remoteFile = remoteFiles.find((x) => x.filename == hashFileName);
+          if (!remoteFile) {
+            // console.log("upload file", remotePath, "HyperChat");
+            console.log("upload file", remotePath + "/" + hashFileName);
+            await this.client.putFileContents(
+              remotePath + "/" + hashFileName,
+              content
+            );
           }
         } catch (e) {
           console.trace("upload error: ", e);
