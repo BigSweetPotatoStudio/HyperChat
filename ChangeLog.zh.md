@@ -1,4 +1,18 @@
-# 0.013
+# 0.1.0
+
+## HyperChat
+
+* 支持插件市场+MCP原生安装两种，插件市场快速安装和配置，欢迎提交插件，[Github](https://github.com/BigSweetPotatoStudio/HyperChatMCP)
+* WebDav 同步逻辑优化，本地会先备份再同步，5min同步一次
+* LLM 添加测试功能，测试是否支持图片输入 + 工具调用（消耗一点点token）
+* Chat支持输入图片
+* Chat支持显示Tool Call 返回的图片MCP资源
+* fix bugs
+
+
+
+
+# 0.0.13
 
 ## HyperChat
 
@@ -13,7 +27,7 @@
 
 
 
-# 0.011
+# 0.0.11
 
 ## HyperChat
 
