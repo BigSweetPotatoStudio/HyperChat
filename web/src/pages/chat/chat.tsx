@@ -99,6 +99,8 @@ import {
   DownOutlined,
   SyncOutlined,
   LinkOutlined,
+  FileImageOutlined,
+  ToolOutlined,
 } from "@ant-design/icons";
 import type { ConfigProviderProps, GetProp } from "antd";
 import { MyMessage, OpenAiChannel } from "../../common/openai";
@@ -125,7 +127,7 @@ import {
 import { SortableItem } from "./sortableItem";
 import { QuickPath, SelectFile } from "../../common/selectFile";
 import Clarity from "@microsoft/clarity";
-
+let t: any;
 let client: OpenAiChannel;
 
 export const Chat = () => {
@@ -388,7 +390,8 @@ export const Chat = () => {
             <SyncOutlined spin />
           ) : x.content_status == "error" ? (
             <span className="text-red-400">
-              Please check if the network is connected or Invalid input.
+              Please check if the network is connected or LLM not support or
+              Invalid Input Content.
             </span>
           ) : (
             <div>
@@ -603,6 +606,16 @@ export const Chat = () => {
   useEffect(() => {
     loadMoreData(historyFilterSign == 0);
   }, [historyFilterType, historyFilterSearchValue, historyFilterSign]);
+
+  let supportImage = (
+    GPT_MODELS.get().data.find((x) => x.key == currentChat.current.modelKey) ||
+    GPT_MODELS.get().data[0]
+  )?.supportImage;
+
+  let supportTool = (
+    GPT_MODELS.get().data.find((x) => x.key == currentChat.current.modelKey) ||
+    GPT_MODELS.get().data[0]
+  )?.supportTool;
   return (
     <div className="chat h-full">
       <div className="h-full rounded-lg bg-white p-4">
@@ -950,12 +963,18 @@ export const Chat = () => {
                       setIsToolsShow(true);
                     }}
                   >
-                    💻
-                    {
-                      clients.filter(
-                        (v) => v.enable == null || v.enable == true,
-                      ).length
-                    }
+                    {supportTool == null || supportTool == true ? (
+                      <>
+                        💻
+                        {
+                          clients.filter(
+                            (v) => v.enable == null || v.enable == true,
+                          ).length
+                        }
+                      </>
+                    ) : (
+                      <>💻 LLM not support</>
+                    )}
                   </span>
                 </Tooltip>
                 <Divider type="vertical" />
@@ -1057,6 +1076,38 @@ export const Chat = () => {
                       };
                     })}
                   ></Select>
+                  {/* <Space>
+                    {
+                      ((t =
+                        GPT_MODELS.get().data.find(
+                          (x) => x.key == currentChat.current.modelKey,
+                        ) || GPT_MODELS.get().data[0]),
+                      t == null ||
+                      t.supportImage == null ? null : t.supportImage ? (
+                        <FileImageOutlined
+                          className="ml-2"
+                          style={{ color: "#52c41a" }}
+                        />
+                      ) : (
+                        <FileTextOutlined
+                          className="ml-2"
+                          style={{ color: "#d5d9d2" }}
+                        />
+                      ))
+                    }
+                    {
+                      ((t =
+                        GPT_MODELS.get().data.find(
+                          (x) => x.key == currentChat.current.modelKey,
+                        ) || GPT_MODELS.get().data[0]),
+                      t == null ||
+                      t.supportTool == null ? null : t.supportTool ? (
+                        <ToolOutlined style={{ color: "#52c41a" }} />
+                      ) : (
+                        <ToolOutlined style={{ color: "#d5d9d2" }} />
+                      ))
+                    }
+                  </Space> */}
                 </Tooltip>
                 <Divider type="vertical" />
                 <Tooltip title="Select Request Type">
@@ -1127,31 +1178,33 @@ export const Chat = () => {
               >
                 <Sender
                   prefix={
-                    <SelectFile
-                      uploadType="image"
-                      onChange={async (path) => {
-                        // console.log(path);
-                        if (path == "") return;
-                        resourceResList.push({
-                          call_name: "UserUpload",
-                          contents: [
-                            {
-                              path: path,
-                              blob: await urlToBase64(path),
-                              type: "image",
-                            },
-                          ],
-                          uid: v4(),
-                        });
-                        setResourceResList(resourceResList.slice());
-                      }}
-                    >
-                      <Button
-                        type="text"
-                        icon={<LinkOutlined />}
-                        onClick={() => {}}
-                      />
-                    </SelectFile>
+                    supportImage && (
+                      <SelectFile
+                        uploadType="image"
+                        onChange={async (path) => {
+                          // console.log(path);
+                          if (path == "") return;
+                          resourceResList.push({
+                            call_name: "UserUpload",
+                            contents: [
+                              {
+                                path: path,
+                                blob: await urlToBase64(path),
+                                type: "image",
+                              },
+                            ],
+                            uid: v4(),
+                          });
+                          setResourceResList(resourceResList.slice());
+                        }}
+                      >
+                        <Button
+                          type="text"
+                          icon={<LinkOutlined />}
+                          onClick={() => {}}
+                        />
+                      </SelectFile>
+                    )
                   }
                   loading={loading}
                   value={value}

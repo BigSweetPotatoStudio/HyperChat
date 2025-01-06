@@ -146,7 +146,11 @@ export function Setting() {
             >
               <Input />
             </Form.Item>
-            <Form.Item label="autoSync" name="autoSync">
+            <Form.Item
+              label="autoSync"
+              name="autoSync"
+              tooltip="This is an experimental feature"
+            >
               <Switch
                 checkedChildren="AutoSync"
                 unCheckedChildren="Close"

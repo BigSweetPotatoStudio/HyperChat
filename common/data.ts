@@ -89,14 +89,14 @@ export const AppSetting = new Data("app_setting.json", {
   },
 });
 
-export const DownloadVideo = new Data("download_video.json", {
-  data: [] as Array<{
-    title: string;
-    filename: string;
-    state: string;
-    uuid: string;
-  }>,
-});
+// export const DownloadVideo = new Data("download_video.json", {
+//   data: [] as Array<{
+//     title: string;
+//     filename: string;
+//     state: string;
+//     uuid: string;
+//   }>,
+// });
 
 export const ChatHistory = new Data("chat_history.json", {
   data: [] as Array<{
@@ -131,6 +131,8 @@ export const GPT_MODELS = new Data("gpt_models.json", {
     apiKey: string;
     baseURL: string;
     provider: string;
+    supportImage: boolean;
+    supportTool: boolean;
   }>,
 });
 

@@ -1,8 +1,8 @@
 import type { FileStat, WebDAVClient } from "webdav";
 
 const { createClient } = await import(/* webpackIgnore: true */ "webdav");
-import { promises as fs } from "fs";
-import path from "path";
+import { promises } from "fs";
+import path, { join } from "path";
 import { AppSetting } from "./data.mjs";
 import { appDataDir } from "../const.mjs";
 import { getMessageService } from "../mianWindow.mjs";
@@ -10,10 +10,13 @@ import { sleep } from "zx";
 import Logger from "electron-log";
 import { log } from "console";
 import { DataList } from "../../../common/data";
+import { fs } from "zx";
+import crypto from "crypto";
 
 interface FileInfo {
-  path: string;
+  filepath: string;
   modifiedTime: Date;
+  filename: string;
 }
 
 class WebDAVSync {
@@ -30,7 +33,10 @@ class WebDAVSync {
 
   constructor() {}
 
-  private async getLocalFilesInfo(localPath: string): Promise<FileInfo[]> {
+  private async getLocalFilesInfo(
+    localPath: string,
+    p = ""
+  ): Promise<FileInfo[]> {
     const files = await fs.readdir(localPath);
     const fileInfos: FileInfo[] = [];
 
@@ -38,7 +44,8 @@ class WebDAVSync {
       const fullPath = path.join(localPath, file);
       const stats = await fs.stat(fullPath);
       fileInfos.push({
-        path: file,
+        filename: file,
+        filepath: (p ? p + "/" : "") + file,
         modifiedTime: stats.mtime,
       });
     }
@@ -54,8 +61,10 @@ class WebDAVSync {
           return [];
         }
       });
+    // console.log(contents);
     return contents.map((item) => ({
-      path: item.basename,
+      filename: item.basename,
+      filepath: item.filename,
       modifiedTime: new Date(item.lastmod),
     }));
   }
@@ -68,13 +77,14 @@ class WebDAVSync {
         status: 1,
       },
     });
-    console.log("sync", fileName);
+
     try {
       if (fileName) {
         await this._syncFile(fileName, localPath, remotePath);
       } else {
         await this._sync(localPath, remotePath);
       }
+      console.log("sync", fileName);
       getMessageService().sendToRenderer({
         type: "sync",
         data: {
@@ -116,66 +126,186 @@ class WebDAVSync {
   private async _sync(localPath: string, remotePath: string): Promise<void> {
     const localFiles = await this.getLocalFilesInfo(localPath);
     const remoteFiles = await this.getRemoteFilesInfo(remotePath);
-    // Logger.log("Syncing, localFiles", localFiles);
-    for (const localFile of localFiles) {
-      // 跳过目录
-      const fullPath = path.join(localPath, localFile.path);
-      const stat = await fs.stat(fullPath);
-      if (stat.isDirectory()) continue;
-      if (
-        DataList.filter((item) => item.options.sync)
-          .map((x) => x.KEY)
-          .includes(localFile.path)
-      ) {
-        const remoteFile = remoteFiles.find((r) => r.path === localFile.path);
-        if (!remoteFile || localFile.modifiedTime > remoteFile.modifiedTime) {
-          console.log(
-            "upload file",
-            path.join(remotePath, localFile.path).replace(/\\/g, "/")
-          );
-          const content = await fs.readFile(
-            path.join(localPath, localFile.path)
-          );
-          await this.client.putFileContents(
-            path.join(remotePath, localFile.path).replace(/\\/g, "/"),
-            content
-          );
+
+    const localSyncPath = path.join(localPath, "_sync");
+    const localSyncFiles = await this.getLocalFilesInfo(localSyncPath, "_sync");
+    await fs.ensureDir(localSyncPath);
+    const localBackupPath = path.join(localPath, "_backup"); // 备份文件夹
+    await fs.ensureDir(localBackupPath);
+    const localBackupFiles = await this.getLocalFilesInfo(
+      localBackupPath,
+      "_backup"
+    );
+
+    console.log("sync", localPath, remotePath, localSyncPath, localBackupPath);
+
+    for (let data of DataList) {
+      let filename = data.KEY;
+      let json = await data.init();
+      if (data.options.sync) {
+        // console.log("sync data", path.join(localPath + "/_sync", data.KEY));
+        let fullPath = path.join(localPath, filename);
+        if (!fs.existsSync(fullPath)) {
+          continue;
         }
-      } else {
+        // console.log("fullPath", fullPath);
+        let content = JSON.stringify(json);
+        let md5 = crypto.createHash("md5").update(content).digest("hex");
+        let p = path.parse(fullPath);
+        let localSyncFileName = p.name + "___" + md5 + p.ext;
         try {
-          await this.client.deleteFile(
-            path.join(remotePath, localFile.path).replace(/\\/g, "/")
-          );
-          console.log(
-            "delete remotefile",
-            path.join(remotePath, localFile.path).replace(/\\/g, "/")
-          );
+          if (!fs.existsSync(path.join(localSyncPath, localSyncFileName))) {
+            let localSyncFile = localSyncFiles.find((x) =>
+              x.filename.startsWith(p.name)
+            );
+            // console.log("test", localSyncFile, p.name);
+            if (localSyncFile) {
+              // BACKUP
+              await fs.move(
+                path.join(localSyncPath, localSyncFile.filename),
+                path.join(localBackupPath, localSyncFile.filename),
+                {
+                  overwrite: true,
+                }
+              );
+            }
+            await fs.writeFile(
+              path.join(localSyncPath, p.name + "___" + md5 + p.ext),
+              content
+            );
+
+            const remoteFile = remoteFiles.find(
+              (r) => r.filename === localSyncFileName
+            );
+            let localFile = localFiles.find((l) => l.filename === filename);
+
+            // let localModifiedTime = minDate(
+            //   localFile?.modifiedTime,
+            //   localSyncFile?.modifiedTime
+            // );
+            if (
+              !remoteFile ||
+              localFile?.modifiedTime > remoteFile.modifiedTime
+            ) {
+              if (
+                !(await remoteFiles.find(
+                  (r) => r.filename === localSyncFileName
+                ))
+              ) {
+                console.log("upload file", localSyncFileName);
+                await this.client.putFileContents(
+                  remotePath + "/" + localSyncFileName,
+                  content
+                );
+                // console.log("safdafasdf", remoteFiles, p.name);
+                try {
+                  await this.client.deleteFile(
+                    remoteFiles.find((r) => r.filename.includes(p.name))
+                      .filepath
+                  );
+                } catch (e) {
+                  console.log("delete error: ", e);
+                }
+              }
+            }
+          }
         } catch (e) {
-          if (e.status === 404) {
-          } else {
-            throw e;
+          console.trace("upload error: ", e);
+          throw e;
+        }
+      }
+    }
+    try {
+      for (const remoteFile of remoteFiles) {
+        if (!remoteFile.filename.includes("___")) {
+          continue;
+        }
+
+        let ext = path.extname(remoteFile.filename);
+        let [name, md5] = remoteFile.filename.split("___");
+
+        const localFile = localFiles.find((l) => l.filename === name + ext);
+
+        if (!localFile) {
+          console.log("download file", remoteFile.filepath);
+          const content = await this.client.getFileContents(
+            remoteFile.filepath
+          );
+          await fs.writeFile(
+            path.join(localSyncPath, remoteFile.filename),
+            content as any
+          );
+          await fs.writeFile(
+            path.join(localPath, name + ext),
+            JSON.stringify(JSON.parse(content.toString()), null, 4)
+          );
+        } else {
+          // let localModifiedTime = minDate(
+          //   localFile?.modifiedTime,
+          //   localSyncFile?.modifiedTime
+          // );
+
+          if (remoteFile.modifiedTime > localFile.modifiedTime) {
+            const localSyncFile = localSyncFiles.find((x) =>
+              x.filename.includes(name)
+            );
+
+            if (localSyncFile) {
+              if (localSyncFile.filename == remoteFile.filename) {
+                continue;
+              } else {
+                console.log("download file", remoteFile.filepath);
+                await fs.move(
+                  path.join(localSyncPath, localSyncFile.filename),
+                  path.join(localBackupPath, localSyncFile.filename),
+                  { overwrite: true }
+                );
+                let content = await this.client.getFileContents(
+                  remoteFile.filepath
+                );
+                content = content.toString();
+                await fs.writeFile(
+                  path.join(localSyncPath, remoteFile.filename),
+                  content
+                );
+                await fs.writeFile(
+                  path.join(localPath, name + ext),
+                  JSON.stringify(JSON.parse(content.toString()), null, 4)
+                );
+              }
+            } else {
+              console.log("test download file", remoteFile.filepath);
+              let content = await this.client.getFileContents(
+                remoteFile.filepath
+              );
+              content = content.toString();
+              await fs.writeFile(
+                path.join(localSyncPath, remoteFile.filename),
+                content
+              );
+              await fs.writeFile(
+                path.join(localPath, name + ext),
+                JSON.stringify(JSON.parse(content.toString()), null, 4)
+              );
+            }
           }
         }
       }
-    }
-    // Logger.log("Syncing, localFiles", remoteFiles);
-    for (const remoteFile of remoteFiles) {
-      const localFile = localFiles.find((l) => l.path === remoteFile.path);
-      if (!localFile || remoteFile.modifiedTime > localFile.modifiedTime) {
-        console.log(
-          "download file",
-          path.join(remotePath, remoteFile.path).replace(/\\/g, "/")
-        );
-        const content = await this.client.getFileContents(
-          path.join(remotePath, remoteFile.path).replace(/\\/g, "/")
-        );
-        await fs.writeFile(
-          path.join(localPath, remoteFile.path),
-          content as any
-        );
-      }
+    } catch (e) {
+      console.trace("download error: ", e);
+      throw e;
     }
   }
+}
+
+function minDate(a?: Date, b?: Date) {
+  if (!a) {
+    return b;
+  }
+  if (!b) {
+    return a;
+  }
+  return a.getTime() < b.getTime() ? a : b;
 }
 
 export const webdavClient = new WebDAVSync();
