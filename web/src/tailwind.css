@@ -42,3 +42,11 @@ main {
   padding-block: 1rem;
   padding-inline: 1rem;
 }
+
+.markdown-body ol,
+ul,
+menu {
+  list-style: revert;
+  /* color: red;
+  font-size: 1.5em; */
+}
