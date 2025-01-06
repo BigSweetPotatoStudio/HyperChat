@@ -68,7 +68,13 @@ class WebDAVSync {
       modifiedTime: new Date(item.lastmod),
     }));
   }
-  sync = otherDebounce(async (fileName?: string) => {
+  _isSnyc = false;
+  sync = debounce(async () => {
+    if (this._isSnyc) {
+      return;
+    }
+    this._isSnyc = true;
+    console.log("---syncStart");
     let localPath: string = appDataDir;
     let remotePath: string = this.webdavSetting.baseDirName;
     getMessageService().sendToRenderer({
@@ -79,12 +85,8 @@ class WebDAVSync {
     });
 
     try {
-      if (fileName) {
-        await this._syncFile(fileName, localPath, remotePath);
-      } else {
-        await this._sync(localPath, remotePath);
-      }
-      console.log("sync", fileName);
+      await this._sync(localPath, remotePath);
+
       getMessageService().sendToRenderer({
         type: "sync",
         data: {
@@ -99,29 +101,32 @@ class WebDAVSync {
         },
       });
       throw new Error(`Sync failed: ${error.message}`);
+    } finally {
+      this._isSnyc = false;
+      console.log("---syncEnd");
     }
-  });
-  async _syncFile(
-    fileName: string,
-    localPath: string = appDataDir,
-    remotePath: string = this.webdavSetting.baseDirName
-  ) {
-    const content = await fs.readFile(path.join(localPath, fileName));
-    console.log(
-      "upload file",
-      path.join(remotePath, fileName).replace(/\\/g, "/")
-    );
-    await this.client.putFileContents(
-      path.join(remotePath, fileName).replace(/\\/g, "/"),
-      content
-    );
-    getMessageService().sendToRenderer({
-      type: "sync",
-      data: {
-        status: 0,
-      },
-    });
-  }
+  }, 3 * 1000);
+  // async _syncFile(
+  //   fileName: string,
+  //   localPath: string = appDataDir,
+  //   remotePath: string = this.webdavSetting.baseDirName
+  // ) {
+  //   const content = await fs.readFile(path.join(localPath, fileName));
+  //   console.log(
+  //     "upload file",
+  //     path.join(remotePath, fileName).replace(/\\/g, "/")
+  //   );
+  //   await this.client.putFileContents(
+  //     path.join(remotePath, fileName).replace(/\\/g, "/"),
+  //     content
+  //   );
+  //   getMessageService().sendToRenderer({
+  //     type: "sync",
+  //     data: {
+  //       status: 0,
+  //     },
+  //   });
+  // }
   status: number = 0;
   private async _sync(localPath: string, remotePath: string): Promise<void> {
     const localFiles = await this.getLocalFilesInfo(localPath);
@@ -129,64 +134,82 @@ class WebDAVSync {
 
     const localSyncPath = path.join(localPath, "_sync");
     await fs.ensureDir(localSyncPath);
-    let localSyncFiles = await this.getLocalFilesInfo(localSyncPath, "_sync");
 
     const localBackupPath = path.join(localPath, "_backup"); // 备份文件夹
     await fs.ensureDir(localBackupPath);
-    const localBackupFiles = await this.getLocalFilesInfo(
-      localBackupPath,
-      "_backup"
-    );
 
-    console.log("sync", localPath, remotePath, localSyncPath, localBackupPath);
+    let localSyncFiles = await this.getLocalFilesInfo(localSyncPath, "_sync");
+    // console.log("sync", localPath, remotePath, localSyncPath, localBackupPath);
+    // 生成hash
+    for (let data of DataList) {
+      let filename = data.KEY;
+      let json = data.initSync();
+      if (data.options.sync) {
+        // console.log("sync data", path.join(localPath + "/_sync", data.KEY));
+        let fullPath = path.join(localPath, filename);
+        if (!fs.existsSync(fullPath)) {
+          continue;
+        }
+        let content = JSON.stringify(json);
+        let md5 = crypto.createHash("md5").update(content).digest("hex");
+        let p = path.parse(filename);
+        // console.log(p);
+        let hashFileName = p.name + "___" + md5 + p.ext;
+        let localSyncFilePATH = path.join(localSyncPath, hashFileName);
+        let localSyncFile = localSyncFiles.find((x) =>
+          x.filename.startsWith(p.name)
+        );
+        // 生成hash文件
+        if (localSyncFile?.filename == hashFileName) {
+        } else {
+          if (localSyncFile) {
+            fs.moveSync(
+              path.join(localSyncPath, localSyncFile.filename),
+              path.join(localBackupPath, localSyncFile.filename),
+              {
+                overwrite: true,
+              }
+            );
+          }
+          fs.writeFileSync(localSyncFilePATH, content);
+        }
+      }
+    }
+
+    localSyncFiles = await this.getLocalFilesInfo(localSyncPath, "_sync");
+
     try {
       for (let data of DataList) {
         let filename = data.KEY;
         let json = await data.init();
         if (data.options.sync) {
           // console.log("sync data", path.join(localPath + "/_sync", data.KEY));
-          let fullPath = path.join(localPath, filename);
-          if (!fs.existsSync(fullPath)) {
-            continue;
-          }
-          let content = JSON.stringify(json);
-          let md5 = crypto.createHash("md5").update(content).digest("hex");
           let p = path.parse(filename);
-          // console.log(p);
-          let hashFileName = p.name + "___" + md5 + p.ext;
-          let localSyncFilePATH = path.join(localSyncPath, hashFileName);
-          let localSyncFile = localSyncFiles.find((x) =>
-            x.filename.startsWith(p.name)
-          );
-          // 生成hash文件
-          if (localSyncFile?.filename == hashFileName) {
-          } else {
-            if (localSyncFile) {
-              await fs.move(
-                path.join(localSyncPath, localSyncFile.filename),
-                path.join(localBackupPath, localSyncFile.filename),
-                {
-                  overwrite: true,
-                }
-              );
-            }
-            await fs.writeFile(localSyncFilePATH, content);
-          }
           // 查找远程对应的文件
           let remoteFile = remoteFiles.find((x) =>
             x.filename.startsWith(p.name)
           );
 
           let localFile = localFiles.find((l) => l.filename === filename);
+          let localSyncFile = localSyncFiles.find((x) =>
+            x.filename.startsWith(p.name)
+          );
+
           if (
             !remoteFile ||
             localFile?.modifiedTime > remoteFile.modifiedTime
           ) {
             // 对比hash，远程和本地
-            if (!(remoteFile?.filename === hashFileName)) {
-              console.log("upload file", remotePath + "/" + hashFileName);
+            if (!(remoteFile?.filename === localSyncFile.filename)) {
+              console.log(
+                "upload file",
+                remotePath + "/" + localSyncFile.filename
+              );
+              let content = await fs.readFile(
+                path.join(localSyncPath, localSyncFile.filename)
+              );
               await this.client.putFileContents(
-                remotePath + "/" + hashFileName,
+                remotePath + "/" + localSyncFile.filename,
                 content
               );
               // console.log("safdafasdf", remoteFiles, p.name);
@@ -222,6 +245,12 @@ class WebDAVSync {
         const localFile = localFiles.find((l) => l.filename === name + ext);
         // 本地文件不存在，或者已删除
         if (!localFile || remoteFile.modifiedTime > localFile.modifiedTime) {
+          // if (!localFile) {
+          //   Logger.info("localFile 不存在");
+          // }
+          // if (remoteFile.modifiedTime > localFile.modifiedTime) {
+          //   Logger.info("remoteFile 时间更加新");
+          // }
           // 查找本地文件hash
           const localSyncFile = localSyncFiles.find((x) =>
             x.filename.startsWith(name)
@@ -239,6 +268,13 @@ class WebDAVSync {
               );
             }
           } else {
+            // if (localSyncFile?.filename !== remoteFile.filename) {
+            //   Logger.info(
+            //     "localSyncFile 不存在",
+            //     localSyncFile.filename,
+            //     remoteFile.filename
+            //   );
+            // }
             console.log("download file", remoteFile.filepath);
             // 把上一个hash文件备份
             if (localSyncFile) {
@@ -267,6 +303,11 @@ class WebDAVSync {
       console.trace("download error: ", e);
       throw e;
     }
+
+    // const localBackupFiles = await this.getLocalFilesInfo(
+    //   localBackupPath,
+    //   "_backup"
+    // );
   }
 }
 
@@ -283,37 +324,112 @@ function minDate(a?: Date, b?: Date) {
 export const webdavClient = new WebDAVSync();
 webdavClient.init();
 
-function otherDebounce<T>(callback: (...args) => Promise<void>) {
-  let map = {};
-  return async function (...args) {
-    let key = JSON.stringify(args);
-    if (map[key] == null) {
-      map[key] = 0;
-    }
+// function otherDebounce<T>(callback: (...args) => Promise<void>) {
+//   let map = {};
+//   return async function (...args) {
+//     let key = JSON.stringify(args);
+//     if (map[key] == null) {
+//       map[key] = 0;
+//     }
 
-    if (map[key] === 0 || map[key] === -1) {
-      map[key] = 1;
-      Logger.log("Syncing, start");
-    } else if (map[key] === 1) {
-      map[key] = 2;
-      while (1) {
-        Logger.log("Syncing, waiting");
-        await sleep(1000);
-        if (map[key] === 0) {
-          await callback(...args);
+//     if (map[key] === 0 || map[key] === -1) {
+//       map[key] = 1;
+//       Logger.log("Syncing, start");
+//     } else if (map[key] === 1) {
+//       map[key] = 2;
+//       while (1) {
+//         Logger.log("Syncing, waiting");
+//         await sleep(1000);
+//         if (map[key] === 0) {
+//           await callback(...args);
+//         }
+//       }
+//       return;
+//     } else {
+//       Logger.log("Syncing, skip");
+//       return;
+//     }
+//     try {
+//       await callback(...args);
+//       map[key] = 0;
+//     } catch (e) {
+//       map[key] = -1;
+//       throw e;
+//     }
+//   };
+// }
+function debounce(func, delay) {
+  let timeoutId;
+  let status: number = 0;
+  return async function c(...args) {
+    console.log("debounce", status);
+    const context = this;
+    if (status == 0) {
+      console.log("定时器还未运行，直接取消");
+      // 清除之前的定时器
+      clearTimeout(timeoutId);
+    } else if (status == 1) {
+      console.log("定时器已经运行，函数还没有完成，等待");
+      while (true) {
+        if (status == 1) {
+          await sleep(300);
+        } else if (status == 2) {
+          status = 0;
+          break;
         }
       }
-      return;
-    } else {
-      Logger.log("Syncing, skip");
-      return;
+
+      c.apply(context, args);
+    } else if (status == 2) {
+      status = 0;
     }
-    try {
-      await callback(...args);
-      map[key] = 0;
-    } catch (e) {
-      map[key] = -1;
-      throw e;
-    }
+    // 设置新的定时器
+    timeoutId = setTimeout(async () => {
+      status = 1;
+      await func.apply(context, args);
+      status = 2;
+    }, delay);
   };
 }
+
+// function asyncDebounce(func, delay) {
+//   let timeoutId = null;
+//   let currentPromise = null;
+
+//   return function (...args) {
+//     const context = this;
+
+//     // 清除上一个定时器
+//     if (timeoutId) {
+//       clearTimeout(timeoutId);
+//     }
+
+//     // 创建新的 Promise
+//     const newPromise = new Promise(async (resolve, reject) => {
+//       // 如果有正在执行的 Promise，等待其完成
+//       if (currentPromise) {
+//         try {
+//           await currentPromise;
+//         } catch {}
+//       }
+
+//       // 设置新的定时器
+//       timeoutId = setTimeout(async () => {
+//         try {
+//           const result = await func.apply(context, args);
+//           resolve(result);
+//         } catch (error) {
+//           reject(error);
+//         } finally {
+//           timeoutId = null;
+//           currentPromise = null;
+//         }
+//       }, delay);
+//     });
+
+//     // 保存当前 Promise
+//     currentPromise = newPromise;
+
+//     return newPromise;
+//   };
+// }
