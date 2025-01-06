@@ -158,7 +158,7 @@ class WebDAVSync {
         let localSyncFilePATH = path.join(localSyncPath, hashFileName);
         // let localSyncFileName = path.join(localPath, hashFileName);
         try {
-          if (!fs.existsSync(path.join(localSyncPath, localSyncFilePATH))) {
+          if (!fs.existsSync(localSyncFilePATH)) {
             //////////
             let localSyncFile = localSyncFiles.find((x) =>
               x.filename.startsWith(p.name)
@@ -174,10 +174,7 @@ class WebDAVSync {
                 }
               );
             }
-            await fs.writeFile(
-              path.join(localSyncPath, p.name + "___" + md5 + p.ext),
-              content
-            );
+            await fs.writeFile(localSyncFilePATH, content);
 
             const remoteFile = remoteFiles.find(
               (r) => r.filename === hashFileName
