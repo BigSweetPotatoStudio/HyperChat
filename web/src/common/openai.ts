@@ -244,6 +244,7 @@ export class OpenAiChannel {
           },
         );
         this.lastMessage.content_status = "success";
+        this.lastMessage.content_status = "dataLoading";
         onUpdate && onUpdate(res.content as string);
         let totalTokens;
         for await (const chunk of stream) {
@@ -279,7 +280,7 @@ export class OpenAiChannel {
               chunk.choices[0].delta.tool_calls[0].function.arguments || "";
             tool.id += chunk.choices[0].delta.tool_calls[0].id || "";
           }
-          this.lastMessage.content_status = "dataLoading";
+
           res.content += chunk.choices[0]?.delta?.content || "";
           onUpdate && onUpdate(res.content as string);
         }
