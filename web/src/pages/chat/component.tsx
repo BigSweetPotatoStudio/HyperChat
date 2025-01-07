@@ -1,4 +1,5 @@
 import {
+  CopyOutlined,
   DownloadOutlined,
   FileMarkdownOutlined,
   FileTextOutlined,
@@ -136,7 +137,7 @@ export function UserContent({ x, regenerate = undefined, submit }) {
             x.content.map((c, i) => {
               if (c.type == "text") {
                 return (
-                  <>
+                  <div key={i}>
                     <pre
                       key={i}
                       style={{
@@ -149,7 +150,7 @@ export function UserContent({ x, regenerate = undefined, submit }) {
                     {x.content.length > 1 && i == 0 && (
                       <Divider plain>resources</Divider>
                     )}
-                  </>
+                  </div>
                 );
               } else if (c.type == "image_url") {
                 return (
@@ -180,8 +181,59 @@ export function UserContent({ x, regenerate = undefined, submit }) {
 }
 
 // let webviewErrorValue = "";
+import { call } from "../../common/call";
+import hljs from "highlight.js"; // https://highlightjs.org
+import "highlight.js/styles/default.css";
+import { v4 } from "uuid";
+// import "highlight.js/lib/languages/all";
 
-const md = markdownit({ html: true, breaks: true });
+// import javascript from "highlight.js/lib/languages/javascript.js";
+// hljs.registerLanguage("javascript", javascript);
+
+// import xml from "highlight.js/lib/languages/xml.js";
+// hljs.registerLanguage("xml", xml);
+
+// import go from "highlight.js/lib/languages/go.js";
+// hljs.registerLanguage("go", go);
+
+// import rust from "highlight.js/lib/languages/rust.js";
+// hljs.registerLanguage("rust", rust);
+
+// import css from "highlight.js/lib/languages/css.js";
+// hljs.registerLanguage("css", css);
+
+// window["copy"] = async (text) => {
+//   await call("setClipboardText", [text]);
+//   message.success("Copied to clipboard");
+// };
+
+const md = markdownit({
+  html: true,
+  breaks: true,
+
+  highlight: function (str, lang) {
+    let fnName = "copy" + v4().replaceAll("-", "");
+    window[fnName] = async () => {
+      await call("setClipboardText", [str]);
+      message.success("Copied to clipboard");
+    };
+    if (lang && hljs.getLanguage(lang)) {
+      try {
+        return (
+          `<pre style="position:relative;padding:0px;" ><span onclick="${fnName}()" style="position:absolute;bottom:0px;left:0px;" role="img" aria-label="copy" tabindex="-1" class="anticon anticon-copy cursor-pointer"><svg viewBox="64 64 896 896" focusable="false" data-icon="copy" width="1em" height="1em" fill="currentColor" aria-hidden="true"><path d="M832 64H296c-4.4 0-8 3.6-8 8v56c0 4.4 3.6 8 8 8h496v688c0 4.4 3.6 8 8 8h56c4.4 0 8-3.6 8-8V96c0-17.7-14.3-32-32-32zM704 192H192c-17.7 0-32 14.3-32 32v530.7c0 8.5 3.4 16.6 9.4 22.6l173.3 173.3c2.2 2.2 4.7 4 7.4 5.5v1.9h4.2c3.5 1.3 7.2 2 11 2H704c17.7 0 32-14.3 32-32V224c0-17.7-14.3-32-32-32zM350 856.2L263.9 770H350v86.2zM664 888H414V746c0-22.1-17.9-40-40-40H232V264h432v624z"></path></svg></span><code class="hljs">` +
+          hljs.highlight(str, { language: lang, ignoreIllegals: true }).value +
+          "</code></pre>"
+        );
+      } catch (__) {}
+    }
+
+    return (
+      `<pre style="position:relative;padding:0px;" ><span onclick="${fnName}()" style="position:absolute;bottom:0px;left:0px;" role="img" aria-label="copy" tabindex="-1" class="anticon anticon-copy cursor-pointer"><svg viewBox="64 64 896 896" focusable="false" data-icon="copy" width="1em" height="1em" fill="currentColor" aria-hidden="true"><path d="M832 64H296c-4.4 0-8 3.6-8 8v56c0 4.4 3.6 8 8 8h496v688c0 4.4 3.6 8 8 8h56c4.4 0 8-3.6 8-8V96c0-17.7-14.3-32-32-32zM704 192H192c-17.7 0-32 14.3-32 32v530.7c0 8.5 3.4 16.6 9.4 22.6l173.3 173.3c2.2 2.2 4.7 4 7.4 5.5v1.9h4.2c3.5 1.3 7.2 2 11 2H704c17.7 0 32-14.3 32-32V224c0-17.7-14.3-32-32-32zM350 856.2L263.9 770H350v86.2zM664 888H414V746c0-22.1-17.9-40-40-40H232V264h432v624z"></path></svg></span><code class="hljs" >` +
+      md.utils.escapeHtml(str) +
+      "</code></pre>"
+    );
+  },
+});
 md.use(mk);
 
 function render(content) {
@@ -281,6 +333,14 @@ export const MarkDown = ({ markdown, onCallback }) => {
       className="relative bg-white p-2"
       style={{ width: "100%", overflowX: "auto" }}
     >
+      {/* <CopyOutlined
+        className="cursor-pointer"
+        onClick={async () => {
+          // await call("setClipboardText", [props.children]);
+          // message.success("Copied to clipboard");
+        }}
+      /> */}
+
       <Segmented
         size="small"
         value={render}
