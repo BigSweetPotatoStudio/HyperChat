@@ -73,7 +73,7 @@ function urlToBase64(url: string) {
     };
 
     // 设置图片源
-    img.src = url;
+    img.src = "file://" + url;
   });
 }
 
@@ -101,6 +101,7 @@ import {
   LinkOutlined,
   FileImageOutlined,
   ToolOutlined,
+  CopyOutlined,
 } from "@ant-design/icons";
 import type { ConfigProviderProps, GetProp } from "antd";
 import { MyMessage, OpenAiChannel } from "../../common/openai";
@@ -127,6 +128,7 @@ import {
 import { SortableItem } from "./sortableItem";
 import { QuickPath, SelectFile } from "../../common/selectFile";
 import Clarity from "@microsoft/clarity";
+import { Copy } from "lucide-react";
 let t: any;
 let client: OpenAiChannel;
 
@@ -396,6 +398,33 @@ export const Chat = () => {
           },
         },
         key: i.toString(),
+        footer: x.content && (
+          <Space>
+            <CopyOutlined
+              key="copy"
+              onClick={() => {
+                call("setClipboardText", [x.content.toString()]);
+                message.success("Copied to clipboard");
+              }}
+            />
+            <SyncOutlined
+              key="sync"
+              onClick={() => {
+                // onRequest(x.content as any);
+                while (i--) {
+                  if (client.messages[i].role === "user") {
+                    let content = client.messages[i].content;
+                    client.messages.splice(i);
+                    currentChat.current.messages = client.messages;
+                    refresh();
+                    onRequest(content as any);
+                    break;
+                  }
+                }
+              }}
+            />
+          </Space>
+        ),
         // loading:
         //   x.content_status == "loading" || x.content_status == "dataLoading",
         content:
