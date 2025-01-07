@@ -73,7 +73,7 @@ function urlToBase64(url: string) {
     };
 
     // 设置图片源
-    img.src = "file://" + url;
+    img.src = url;
   });
 }
 
@@ -1236,6 +1236,7 @@ export const Chat = () => {
                         onChange={async (path) => {
                           // console.log(path);
                           if (path == "") return;
+                          path = "file://" + path;
                           resourceResList.push({
                             call_name: "UserUpload",
                             contents: [
