@@ -183,7 +183,7 @@ export function UserContent({ x, regenerate = undefined, submit }) {
 // let webviewErrorValue = "";
 import { call } from "../../common/call";
 import hljs from "highlight.js"; // https://highlightjs.org
-import "highlight.js/styles/default.css";
+import "highlight.js/styles/github.css";
 import { v4 } from "uuid";
 // import "highlight.js/lib/languages/all";
 
@@ -201,11 +201,6 @@ import { v4 } from "uuid";
 
 // import css from "highlight.js/lib/languages/css.js";
 // hljs.registerLanguage("css", css);
-
-// window["copy"] = async (text) => {
-//   await call("setClipboardText", [text]);
-//   message.success("Copied to clipboard");
-// };
 
 const md = markdownit({
   html: true,
