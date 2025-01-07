@@ -281,14 +281,25 @@ export const Chat = () => {
         },
         content:
           x.role == "system" ? (
-            <pre
-              style={{
-                whiteSpace: "pre-wrap",
-                wordWrap: "break-word",
+            <UserContent
+              x={x}
+              submit={(content) => {
+                client.messages.find((x) => x.role == "system").content =
+                  content;
+
+                currentChat.current.messages = client.messages;
+
+                let userIndex = client.messages.findLastIndex(
+                  (x) => x.role == "user",
+                );
+                if (userIndex > -1) {
+                  let content = client.messages[userIndex].content;
+                  client.messages.splice(userIndex);
+                  refresh();
+                  onRequest(content as any);
+                }
               }}
-            >
-              {x.content as string}
-            </pre>
+            />
           ) : (
             <UserContent
               x={x}
@@ -385,6 +396,8 @@ export const Chat = () => {
           },
         },
         key: i.toString(),
+        // loading:
+        //   x.content_status == "loading" || x.content_status == "dataLoading",
         content:
           x.content_status == "loading" ? (
             <SyncOutlined spin />
@@ -448,7 +461,15 @@ export const Chat = () => {
                     </Tooltip>
                   );
                 })}
-              {x.content && <MarkDown markdown={x.content}></MarkDown>}
+              {x.content && (
+                <MarkDown
+                  markdown={x.content}
+                  onCallback={(e) => {
+                    setValue(e);
+                  }}
+                ></MarkDown>
+              )}
+              {x.content_status == "dataLoading" && <LoadingOutlined />}
             </div>
           ),
       };
@@ -722,16 +743,18 @@ export const Chat = () => {
                     })}
                     activeKey={currentChat.current.key}
                     onActiveChange={(key) => {
-                      let item = ChatHistory.get().data.find(
-                        (x) => x.key == key,
-                      );
-                      // console.log("onActiveChange", item);
-                      if (item) {
-                        currentChatReset();
-                        Object.assign(currentChat.current, item);
-                        // currentChat.current = item;
-                        createChat();
-                      }
+                      currentChatReset();
+                      setTimeout(() => {
+                        let item = ChatHistory.get().data.find(
+                          (x) => x.key == key,
+                        );
+                        // console.log("onActiveChange", item);
+                        if (item) {
+                          Object.assign(currentChat.current, item);
+                          // currentChat.current = item;
+                          createChat();
+                        }
+                      });
                     }}
                     menu={(conversation) => ({
                       items: [
