@@ -398,7 +398,7 @@ export const Chat = () => {
           },
         },
         key: i.toString(),
-        footer: x.content && (
+        footer: (x.content_status == "error" || x.content) && (
           <Space>
             <CopyOutlined
               key="copy"

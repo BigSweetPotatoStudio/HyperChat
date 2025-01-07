@@ -1,3 +1,13 @@
+# 0.1.1
+
+* fix MacOS 图片上传
+* 添加快速复制的按钮，支持复制消息和代码的按钮
+* WebDav同步功能优化，本地只保存10个版本
+* markdown 代码Code渲染增加高亮
+* HTML Artifacts 增加错误捕获，支持打开Chrome的控制台
+
+
+
 # 0.1.0
 
 ## HyperChat
