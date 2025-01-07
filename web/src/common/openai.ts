@@ -28,7 +28,12 @@ type ContentImage = {
 };
 
 export type MyMessage = OpenAI.Chat.Completions.ChatCompletionMessageParam & {
-  content_status?: "loading" | "success" | "error";
+  content_status?:
+    | "loading"
+    | "success"
+    | "error"
+    | "dataLoading"
+    | "dataLoadComplete";
   content_from?: string;
   content_attachment: ContentImage[];
   tool_calls?: Tool_Call[];
@@ -239,7 +244,7 @@ export class OpenAiChannel {
           },
         );
         this.lastMessage.content_status = "success";
-        onUpdate && onUpdate(this.lastMessage.content as string);
+        onUpdate && onUpdate(res.content as string);
         let totalTokens;
         for await (const chunk of stream) {
           if (chunk.usage) {
@@ -274,6 +279,7 @@ export class OpenAiChannel {
               chunk.choices[0].delta.tool_calls[0].function.arguments || "";
             tool.id += chunk.choices[0].delta.tool_calls[0].id || "";
           }
+          this.lastMessage.content_status = "dataLoading";
           res.content += chunk.choices[0]?.delta?.content || "";
           onUpdate && onUpdate(res.content as string);
         }
@@ -328,6 +334,7 @@ export class OpenAiChannel {
       onUpdate && onUpdate(this.lastMessage.content as string);
       throw e;
     }
+    this.lastMessage.content_status = "dataLoadComplete";
     onUpdate && onUpdate(this.lastMessage.content as string);
 
     tool_calls.forEach((tool) => {
