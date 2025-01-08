@@ -6,6 +6,7 @@ import {
   FormInstance,
   FormProps,
   Input,
+  InputNumber,
   List,
   Modal,
   Radio,
@@ -32,6 +33,7 @@ interface Values {
   key?: string;
   allowMCPs: string[];
   modelKey: string;
+  attachedDialogueCount?: number;
 }
 
 interface CollectionCreateFormProps {
@@ -109,6 +111,17 @@ const ModalForm: React.FC<CollectionCreateFormProps> = ({
           })}
         />
       </Form.Item>
+      <Form.Item
+        name="attachedDialogueCount"
+        label="attachedDialogueCount"
+        tooltip="Number of sent Dialogue attached per request"
+      >
+        <InputNumber
+          placeholder="blank means is all."
+          min={0}
+          style={{ width: "100%" }}
+        />
+      </Form.Item>
     </Form>
   );
 };
@@ -128,6 +141,7 @@ export const PromptsModal: React.FC<CollectionCreateFormModalProps> = ({
 }) => {
   const [formInstance, setFormInstance] = useState<FormInstance>();
   initialValues.allowMCPs = initialValues.allowMCPs || [];
+
   return (
     <Modal
       width={800}

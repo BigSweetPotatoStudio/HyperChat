@@ -144,7 +144,7 @@ export function Setting() {
               rules={[{ required: true, message: "Please input!" }]}
               normalize={(value) => value.trim()}
             >
-              <Input />
+              <Input disabled />
             </Form.Item>
             <Form.Item
               label="autoSync"

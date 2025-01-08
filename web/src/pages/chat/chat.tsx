@@ -23,6 +23,7 @@ import {
   Flex,
   Form,
   Input,
+  InputNumber,
   message,
   Modal,
   Popconfirm,
@@ -102,6 +103,7 @@ import {
   FileImageOutlined,
   ToolOutlined,
   CopyOutlined,
+  SettingOutlined,
 } from "@ant-design/icons";
 import type { ConfigProviderProps, GetProp } from "antd";
 import { MyMessage, OpenAiChannel } from "../../common/openai";
@@ -129,6 +131,8 @@ import { SortableItem } from "./sortableItem";
 import { QuickPath, SelectFile } from "../../common/selectFile";
 import Clarity from "@microsoft/clarity";
 import { Copy } from "lucide-react";
+import { ChatHistoryItem } from "../../../../common/data";
+import { useForm } from "antd/es/form/Form";
 let t: any;
 let client: OpenAiChannel;
 
@@ -137,11 +141,15 @@ export const Chat = () => {
   const refresh = () => {
     setNum((n) => n + 1);
   };
-  const [clients, setClients] = React.useState<InitedClient[]>([]);
-  const [prompts, setPrompts] = React.useState<InitedClient["prompts"]>([]);
-  const [resources, setResources] = React.useState<InitedClient["resources"]>(
-    [],
-  );
+  // const [clients, setClients] = React.useState<InitedClient[]>([]);
+  // const [prompts, setPrompts] = React.useState<InitedClient["prompts"]>([]);
+  // const [resources, setResources] = React.useState<InitedClient["resources"]>(
+  //   [],
+  // );
+  const clientsRef = useRef<InitedClient[]>([]);
+  const promptsRef = useRef<InitedClient["prompts"]>([]);
+  const resourcesRef = useRef<InitedClient["resources"]>([]);
+
   let init = useCallback(() => {
     console.log("init");
     ChatHistory.init().then(() => {
@@ -156,10 +164,10 @@ export const Chat = () => {
     });
     (async () => {
       let clients = await getClients().catch(() => []);
-      currentChatReset(
-        "",
-        clients.map((v) => v.name),
-      );
+      clientsRef.current = clients;
+      currentChatReset({
+        allowMCPs: clients.map((v) => v.name),
+      });
     })();
   }, []);
   useEffect(() => {
@@ -178,7 +186,7 @@ export const Chat = () => {
   const [direction, setDirection] =
     React.useState<GetProp<ConfigProviderProps, "direction">>("ltr");
 
-  const currentChat = React.useRef({
+  const currentChat = React.useRef<ChatHistoryItem>({
     label: "",
     key: "",
     messages: [],
@@ -188,52 +196,75 @@ export const Chat = () => {
     requestType: "stream",
     icon: "",
     allowMCPs: [],
+    attachedDialogueCount: undefined,
   });
-  const currentChatReset = (
-    prompt?: string,
-    allowMCPs = [],
-    modelKey?: string,
+  const currentChatReset = async (
+    config: Partial<ChatHistoryItem>,
+    prompt = "",
   ) => {
+    if (prompt) {
+      config.messages = [
+        {
+          role: "system",
+          content: prompt,
+        },
+      ];
+    }
     currentChat.current = {
       label: "",
       key: "",
-      messages: prompt
-        ? [
-            {
-              role: "system",
-              content: prompt,
-            },
-          ]
-        : [],
-      modelKey: modelKey,
+      messages: [],
+      modelKey: undefined,
       gptsKey: undefined,
       sended: false,
+      requestType: "stream",
       icon: "",
-      allowMCPs: allowMCPs,
-      requestType: currentChat.current.requestType,
+      allowMCPs: [],
+      attachedDialogueCount: undefined,
+      ...config,
     };
-    refresh();
+
     setResourceResList([]);
     setPromptResList([]);
-    getClients().then((clients) => {
-      for (let c of clients) {
-        if ((currentChat.current.allowMCPs || []).includes(c.name)) {
-          c.enable = true;
-        } else {
-          c.enable = false;
-        }
+    for (let c of clientsRef.current) {
+      if ((currentChat.current.allowMCPs || []).includes(c.name)) {
+        c.enable = true;
+      } else {
+        c.enable = false;
       }
-      setClients(clients);
-      getPrompts().then((x) => {
-        setPrompts(x);
-      });
-      getResourses().then((x) => {
-        setResources(x);
-      });
-    });
+    }
+
+    let p = getPrompts();
+    promptsRef.current = p;
+    let r = getResourses();
+    resourcesRef.current = r;
+
+    refresh();
+    // getClients().then((clients) => {
+    //   for (let c of clients) {
+    //     if ((currentChat.current.allowMCPs || []).includes(c.name)) {
+    //       c.enable = true;
+    //     } else {
+    //       c.enable = false;
+    //     }
+    //   }
+    //   setClients(clients);
+    //   getPrompts().then((x) => {
+    //     setPrompts(x);
+    //   });
+    //   getResourses().then((x) => {
+    //     setResources(x);
+    //   });
+    // });
   };
 
   function format(x: MyMessage, i, arr): any {
+    x["className"] = {
+      "no-attached": !(
+        x.content_attached == null || x.content_attached == true
+      ),
+    };
+
     if (x.content_from) {
       return {
         ...x,
@@ -270,6 +301,9 @@ export const Chat = () => {
       };
     }
     if (x.role == "user" || x.role == "system") {
+      if (x.content_context == null) {
+        x.content_context = {};
+      }
       return {
         ...x,
         key: i.toString(),
@@ -281,11 +315,48 @@ export const Chat = () => {
             backgroundColor: "#fde3cf",
           },
         },
-        content:
-          x.role == "system" ? (
-            <UserContent
-              x={x}
-              submit={(content) => {
+        footer: (
+          <Space>
+            <CopyOutlined
+              className="hover:text-cyan-400"
+              key="copy"
+              onClick={() => {
+                call("setClipboardText", [
+                  Array.isArray(x.content)
+                    ? (x.content[0] as any).text
+                    : x.content.toString(),
+                ]);
+                message.success("Copied to clipboard");
+              }}
+            />
+
+            <EditOutlined
+              className="hover:text-cyan-400"
+              onClick={() => {
+                x.content_context.edit = !x.content_context.edit;
+                refresh();
+              }}
+            />
+
+            {x.role == "user" && (
+              <SyncOutlined
+                className="hover:text-cyan-400"
+                key="sync"
+                onClick={() => {
+                  client.messages.splice(i);
+                  currentChat.current.messages = client.messages;
+                  refresh();
+                  onRequest(x.content as any);
+                }}
+              />
+            )}
+          </Space>
+        ),
+        content: (
+          <UserContent
+            x={x}
+            submit={(content) => {
+              if (x.role == "system") {
                 client.messages.find((x) => x.role == "system").content =
                   content;
 
@@ -300,25 +371,15 @@ export const Chat = () => {
                   refresh();
                   onRequest(content as any);
                 }
-              }}
-            />
-          ) : (
-            <UserContent
-              x={x}
-              regenerate={() => {
-                client.messages.splice(i);
-                currentChat.current.messages = client.messages;
-                refresh();
-                onRequest(x.content as any);
-              }}
-              submit={(content) => {
+              } else {
                 client.messages.splice(i);
                 currentChat.current.messages = client.messages;
                 refresh();
                 onRequest(content);
-              }}
-            />
-          ),
+              }
+            }}
+          />
+        ),
       };
     } else if (x.role == "tool") {
       return {
@@ -401,6 +462,7 @@ export const Chat = () => {
         footer: (x.content_status == "error" || x.content) && (
           <Space>
             <CopyOutlined
+              className="hover:text-cyan-400"
               key="copy"
               onClick={() => {
                 call("setClipboardText", [x.content.toString()]);
@@ -409,6 +471,7 @@ export const Chat = () => {
             />
             <SyncOutlined
               key="sync"
+              className="hover:text-cyan-400"
               onClick={() => {
                 // onRequest(x.content as any);
                 while (i--) {
@@ -535,19 +598,19 @@ export const Chat = () => {
       setLoading(true);
       if (currentChat.current.sended == false) {
         createChat();
-        currentChat.current = {
+
+        currentChatReset({
           ...currentChat.current,
-          label: message,
           key: v4(),
+          label: message,
           messages: client.messages,
           modelKey: currentChat.current.modelKey,
           sended: true,
-          icon: "",
           gptsKey: currentChat.current.gptsKey,
-          allowMCPs: clients
+          allowMCPs: clientsRef.current
             .filter((record) => (record.enable == null ? true : record.enable))
             .map((v) => v.name),
-        };
+        });
         setData([currentChat.current, ...data]);
         ChatHistory.get().data.unshift(currentChat.current);
       } else {
@@ -555,7 +618,7 @@ export const Chat = () => {
           (x) => x.key == currentChat.current.key,
         );
         if (find) {
-          currentChat.current.allowMCPs = clients
+          currentChat.current.allowMCPs = clientsRef.current
             .filter((record) => (record.enable == null ? true : record.enable))
             .map((v) => v.name);
           Object.assign(find, currentChat.current);
@@ -566,16 +629,21 @@ export const Chat = () => {
         resourceResList,
         promptResList,
       );
-      setResourceResList([]);
-      setPromptResList([]);
+
       refresh();
 
       await client.completion(() => {
         currentChat.current.messages = client.messages;
         refresh();
       });
+      calcAttachDialogue(
+        client.messages,
+        currentChat.current.attachedDialogueCount,
+      );
+      console.log("onRequest", client.messages);
       currentChat.current.messages = client.messages;
       refresh();
+
       await ChatHistory.save();
     } catch (e) {
       antdMessage.error(
@@ -638,6 +706,10 @@ export const Chat = () => {
 
   const [isFillPromptModalOpen, setIsFillPromptModalOpen] =
     React.useState(false);
+  const [isOpenMoreSetting, setIsOpenMoreSetting] = React.useState(false);
+
+  const [formMoreSetting] = useForm();
+
   const [fillPromptFormItems, setFillPromptFormItems] = React.useState([]);
   const mcpCallPromptCurr = useRef({} as any);
 
@@ -679,10 +751,11 @@ export const Chat = () => {
                 type="primary"
                 className="w-full"
                 onClick={() => {
-                  currentChatReset(
-                    "",
-                    clients.map((v) => v.name),
-                  );
+                  currentChatReset({
+                    messages: [],
+                    allowMCPs: clientsRef.current.map((v) => v.name),
+                    sended: false,
+                  });
                 }}
               >
                 New Chat
@@ -772,18 +845,21 @@ export const Chat = () => {
                     })}
                     activeKey={currentChat.current.key}
                     onActiveChange={(key) => {
-                      currentChatReset();
-                      setTimeout(() => {
-                        let item = ChatHistory.get().data.find(
-                          (x) => x.key == key,
-                        );
-                        // console.log("onActiveChange", item);
-                        if (item) {
-                          Object.assign(currentChat.current, item);
-                          // currentChat.current = item;
+                      let item = ChatHistory.get().data.find(
+                        (x) => x.key == key,
+                      );
+                      if (item) {
+                        console.log("onActiveChange", item);
+                        currentChatReset({
+                          ...item,
+                          messages: [],
+                        });
+
+                        setTimeout(() => {
+                          currentChatReset(item);
                           createChat();
-                        }
-                      });
+                        });
+                      }
                     }}
                     menu={(conversation) => ({
                       items: [
@@ -932,9 +1008,14 @@ export const Chat = () => {
                                     (y) => y.key === item.key,
                                   );
                                   currentChatReset(
+                                    {
+                                      allowMCPs: find.allowMCPs,
+                                      gptsKey: find.key,
+                                      modelKey: find.modelKey,
+                                      attachedDialogueCount:
+                                        find.attachedDialogueCount,
+                                    },
                                     find.prompt,
-                                    find.allowMCPs,
-                                    find.modelKey,
                                   );
                                 }}
                                 onEdit={() => {
@@ -1000,7 +1081,7 @@ export const Chat = () => {
                           (x) => x.role == "system",
                         )?.content;
 
-                        currentChatReset(p, currentChat.current.allowMCPs);
+                        currentChatReset({}, p);
                       }
                     }}
                   >
@@ -1019,7 +1100,7 @@ export const Chat = () => {
                       <>
                         💻
                         {
-                          clients.filter(
+                          clientsRef.current.filter(
                             (v) => v.enable == null || v.enable == true,
                           ).length
                         }
@@ -1034,14 +1115,14 @@ export const Chat = () => {
                   <Dropdown
                     placement="topRight"
                     menu={{
-                      items: resources.map((x, i) => {
+                      items: resourcesRef.current.map((x, i) => {
                         return {
                           key: x.key,
                           label: `${x.key}--${x.description}`,
                         };
                       }),
                       onClick: async (item) => {
-                        let resource = resources.find(
+                        let resource = resourcesRef.current.find(
                           (x) => x.key === item.key,
                         );
                         if (resource) {
@@ -1060,7 +1141,7 @@ export const Chat = () => {
                   >
                     <span className="cursor-pointer">
                       📦
-                      {resources.length}
+                      {resourcesRef.current.length}
                     </span>
                   </Dropdown>
                 </Tooltip>
@@ -1069,14 +1150,16 @@ export const Chat = () => {
                   <Dropdown
                     placement="topRight"
                     menu={{
-                      items: prompts.map((x, i) => {
+                      items: promptsRef.current.map((x, i) => {
                         return {
                           key: x.key,
                           label: `${x.key} (${x.description})`,
                         };
                       }),
                       onClick: async (item) => {
-                        let prompt = prompts.find((x) => x.key === item.key);
+                        let prompt = promptsRef.current.find(
+                          (x) => x.key === item.key,
+                        );
                         if (prompt) {
                           if (prompt.arguments && prompt.arguments.length > 0) {
                             setIsFillPromptModalOpen(true);
@@ -1100,7 +1183,7 @@ export const Chat = () => {
                   >
                     <span className="cursor-pointer">
                       📜
-                      {prompts.length}
+                      {promptsRef.current.length}
                     </span>
                   </Dropdown>
                 </Tooltip>
@@ -1128,38 +1211,6 @@ export const Chat = () => {
                       };
                     })}
                   ></Select>
-                  {/* <Space>
-                    {
-                      ((t =
-                        GPT_MODELS.get().data.find(
-                          (x) => x.key == currentChat.current.modelKey,
-                        ) || GPT_MODELS.get().data[0]),
-                      t == null ||
-                      t.supportImage == null ? null : t.supportImage ? (
-                        <FileImageOutlined
-                          className="ml-2"
-                          style={{ color: "#52c41a" }}
-                        />
-                      ) : (
-                        <FileTextOutlined
-                          className="ml-2"
-                          style={{ color: "#d5d9d2" }}
-                        />
-                      ))
-                    }
-                    {
-                      ((t =
-                        GPT_MODELS.get().data.find(
-                          (x) => x.key == currentChat.current.modelKey,
-                        ) || GPT_MODELS.get().data[0]),
-                      t == null ||
-                      t.supportTool == null ? null : t.supportTool ? (
-                        <ToolOutlined style={{ color: "#52c41a" }} />
-                      ) : (
-                        <ToolOutlined style={{ color: "#d5d9d2" }} />
-                      ))
-                    }
-                  </Space> */}
                 </Tooltip>
                 <Divider type="vertical" />
                 <Tooltip title="Select Request Type">
@@ -1192,6 +1243,7 @@ export const Chat = () => {
                   </Dropdown>
                 </Tooltip>
                 <Divider type="vertical" />
+
                 <Tooltip title="Token Usage">
                   <span className="cursor-pointer">
                     token:{" "}
@@ -1205,6 +1257,15 @@ export const Chat = () => {
                     )}
                   </span>
                 </Tooltip>
+                <Divider type="vertical" />
+                <SettingOutlined
+                  className="cursor-pointer hover:text-cyan-400"
+                  onClick={() => {
+                    setIsOpenMoreSetting(true);
+                    formMoreSetting.resetFields();
+                    formMoreSetting.setFieldsValue(currentChat.current);
+                  }}
+                />
               </div>
               <MyAttachR
                 resourceResList={resourceResList}
@@ -1319,30 +1380,29 @@ export const Chat = () => {
             size="small"
             rowKey={(record) => record.name}
             pagination={false}
-            dataSource={clients}
+            dataSource={clientsRef.current}
             rowHoverable={false}
             rowSelection={{
               type: "checkbox",
-              selectedRowKeys: clients
+              selectedRowKeys: clientsRef.current
                 .filter((record) =>
                   record.enable == null ? true : record.enable,
                 )
                 .map((v) => v.name),
-              onChange: (selectedRowKeys, selectedRows) => {
-                for (let c of clients) {
+              onChange: async (selectedRowKeys, selectedRows) => {
+                for (let c of clientsRef.current) {
                   c.enable = false;
                 }
                 for (let row of selectedRowKeys) {
-                  let client = clients.find((v) => v.name == row);
+                  let client = clientsRef.current.find((v) => v.name == row);
                   client.enable = true;
                 }
+
+                let p = getPrompts();
+                promptsRef.current = p;
+                let r = getResourses();
+                resourcesRef.current = r;
                 refresh();
-                getPrompts().then((x) => {
-                  setPrompts(x);
-                });
-                getResourses().then((x) => {
-                  setResources(x);
-                });
               },
             }}
             columns={[
@@ -1423,7 +1483,67 @@ export const Chat = () => {
             );
           })}
         </Modal>
+        <Modal
+          width={800}
+          title="More  Setting"
+          open={isOpenMoreSetting}
+          okButtonProps={{ autoFocus: true, htmlType: "submit" }}
+          cancelButtonProps={{ style: { display: "none" } }}
+          onCancel={() => {
+            setIsOpenMoreSetting(false);
+          }}
+          modalRender={(dom) => (
+            <Form
+              name="MoreSetting"
+              form={formMoreSetting}
+              clearOnDestroy
+              onFinish={async (values) => {
+                currentChat.current.attachedDialogueCount =
+                  values.attachedDialogueCount;
+
+                calcAttachDialogue(
+                  client.messages,
+                  currentChat.current.attachedDialogueCount,
+                );
+
+                refresh();
+                setIsOpenMoreSetting(false);
+              }}
+            >
+              {dom}
+            </Form>
+          )}
+        >
+          <Form.Item
+            name="attachedDialogueCount"
+            label="attachedDialogueCount"
+            tooltip="Number of sent Dialogue attached per request"
+          >
+            <InputNumber
+              placeholder="blank means is all."
+              min={0}
+              style={{ width: "100%" }}
+            />
+          </Form.Item>
+        </Modal>
       </div>
     </div>
   );
+};
+
+const calcAttachDialogue = (messages, attachedDialogueCount) => {
+  if (attachedDialogueCount == null) return;
+  let c = 0;
+  for (let i = messages.length - 1; i >= 0; i--) {
+    let m = messages[i];
+    if (m.role == "system") {
+      m.content_attached = true;
+      continue;
+    }
+    if (m.role == "user") {
+      c++;
+    }
+
+    m.content_attached = c < attachedDialogueCount;
+  }
 };
