@@ -310,10 +310,37 @@ class WebDAVSync {
       throw e;
     }
 
-    // const localBackupFiles = await this.getLocalFilesInfo(
-    //   localBackupPath,
-    //   "_backup"
-    // );
+    try {
+      let localBackupFiles = await this.getLocalFilesInfo(
+        localBackupPath,
+        "_backup"
+      );
+      // 从大到小
+      localBackupFiles = localBackupFiles.sort(
+        (a, b) => b.modifiedTime.getTime() - a.modifiedTime.getTime()
+      );
+      for (let data of DataList) {
+        let filename = data.KEY;
+        if (data.options.sync) {
+          // console.log("sync data", path.join(localPath + "/_sync", data.KEY));
+          let fullPath = path.join(localPath, filename);
+          if (!fs.existsSync(fullPath)) {
+            continue;
+          }
+          let p = path.parse(filename);
+          let curr = localBackupFiles.filter((x) =>
+            x.filename.startsWith(p.name)
+          );
+          if (curr.length <= 10) {
+            continue;
+          }
+          let delArr = curr.splice(10);
+          for (let x of delArr) {
+            fs.rmSync(path.join(localBackupPath, x.filename));
+          }
+        }
+      }
+    } catch (e) {}
   }
 }
 

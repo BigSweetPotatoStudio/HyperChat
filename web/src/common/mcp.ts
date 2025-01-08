@@ -44,7 +44,7 @@ export async function initMcpClients() {
   return initedClientArray;
 }
 
-await initMcpClients()
+initMcpClients()
   .then(() => {
     init = true;
   })

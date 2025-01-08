@@ -163,11 +163,7 @@ export const Chat = () => {
       refresh();
     });
     (async () => {
-      let clients = await getClients().catch(() => []);
-      clientsRef.current = clients;
-      currentChatReset({
-        allowMCPs: clients.map((v) => v.name),
-      });
+      currentChatReset({}, "", true);
     })();
   }, []);
   useEffect(() => {
@@ -201,6 +197,7 @@ export const Chat = () => {
   const currentChatReset = async (
     config: Partial<ChatHistoryItem>,
     prompt = "",
+    allMCPs = false,
   ) => {
     if (prompt) {
       config.messages = [
@@ -226,14 +223,17 @@ export const Chat = () => {
 
     setResourceResList([]);
     setPromptResList([]);
+    let clients = await getClients().catch(() => []);
+    clientsRef.current = clients;
+
     for (let c of clientsRef.current) {
-      if ((currentChat.current.allowMCPs || []).includes(c.name)) {
+      if (allMCPs || (currentChat.current.allowMCPs || []).includes(c.name)) {
         c.enable = true;
       } else {
         c.enable = false;
       }
     }
-
+    clientsRef.current;
     let p = getPrompts();
     promptsRef.current = p;
     let r = getResourses();
@@ -855,7 +855,7 @@ export const Chat = () => {
                         (x) => x.key == key,
                       );
                       if (item) {
-                        console.log("onActiveChange", item);
+                        // console.log("onActiveChange", item);
 
                         currentChatReset({
                           ...item,
@@ -1327,6 +1327,23 @@ export const Chat = () => {
                       </SelectFile>
                     )
                   }
+                  onPasteFile={async (file) => {
+                    // console.log("onPasteFile", file);
+
+                    let path = "file://" + file.path;
+                    resourceResList.push({
+                      call_name: "UserUpload",
+                      contents: [
+                        {
+                          path: path,
+                          blob: await urlToBase64(path),
+                          type: "image",
+                        },
+                      ],
+                      uid: v4(),
+                    });
+                    setResourceResList(resourceResList.slice());
+                  }}
                   loading={loading}
                   value={value}
                   onChange={(nextVal) => {
@@ -1397,19 +1414,23 @@ export const Chat = () => {
                 )
                 .map((v) => v.name),
               onChange: async (selectedRowKeys, selectedRows) => {
-                for (let c of clientsRef.current) {
-                  c.enable = false;
-                }
-                for (let row of selectedRowKeys) {
-                  let client = clientsRef.current.find((v) => v.name == row);
-                  client.enable = true;
-                }
+                // for (let c of clientsRef.current) {
+                //   c.enable = false;
+                // }
+                // for (let row of selectedRowKeys) {
+                //   let client = clientsRef.current.find((v) => v.name == row);
+                //   client.enable = true;
+                // }
 
-                let p = getPrompts();
-                promptsRef.current = p;
-                let r = getResourses();
-                resourcesRef.current = r;
-                refresh();
+                // let p = getPrompts();
+                // promptsRef.current = p;
+                // let r = getResourses();
+                // resourcesRef.current = r;
+                // refresh();
+                currentChatReset({
+                  ...currentChat.current,
+                  allowMCPs: selectedRowKeys as string[],
+                });
               },
             }}
             columns={[
@@ -1539,7 +1560,9 @@ export const Chat = () => {
 };
 
 const calcAttachDialogue = (messages, attachedDialogueCount) => {
-  if (attachedDialogueCount == null) return;
+  if (attachedDialogueCount == null) {
+    attachedDialogueCount = Infinity;
+  }
   let c = 0;
   for (let i = messages.length - 1; i >= 0; i--) {
     let m = messages[i];
