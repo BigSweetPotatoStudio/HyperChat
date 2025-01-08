@@ -98,18 +98,20 @@ export const AppSetting = new Data("app_setting.json", {
 //   }>,
 // });
 
+export type ChatHistoryItem = {
+  label: string;
+  key: string;
+  messages: Array<any>;
+  modelKey: string;
+  gptsKey: string;
+  sended: boolean;
+  icon: string;
+  allowMCPs: string[];
+  requestType: string;
+  attachedDialogueCount?: number;
+};
 export const ChatHistory = new Data("chat_history.json", {
-  data: [] as Array<{
-    label: string;
-    key: string;
-    messages: Array<{ role: string; content: string }>;
-    modelKey: string;
-    gptsKey: string;
-    sended: boolean;
-    icon: string;
-    allowMCPs: string[];
-    requestType: string;
-  }>,
+  data: [] as Array<ChatHistoryItem>,
 });
 
 export const GPTS = new Data("gpts_list.json", {
@@ -120,6 +122,7 @@ export const GPTS = new Data("gpts_list.json", {
     description?: string;
     allowMCPs: string[];
     modelKey?: string;
+    attachedDialogueCount?: number;
   }>,
 });
 

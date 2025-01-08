@@ -44,7 +44,7 @@ export async function initMcpClients() {
   return initedClientArray;
 }
 
-initMcpClients()
+await initMcpClients()
   .then(() => {
     init = true;
   })
@@ -52,14 +52,7 @@ initMcpClients()
     init = true;
   });
 
-export async function getTools() {
-  while (1) {
-    if (init) {
-      break;
-    }
-    await sleep(500);
-  }
-
+export function getTools() {
   let tools: InitedClient["tools"] = [];
 
   initedClientArray
@@ -69,14 +62,7 @@ export async function getTools() {
     });
   return tools;
 }
-export async function getPrompts() {
-  while (1) {
-    if (init) {
-      break;
-    }
-    await sleep(500);
-  }
-
+export function getPrompts() {
   let prompts: InitedClient["prompts"] = [];
 
   initedClientArray
@@ -87,14 +73,7 @@ export async function getPrompts() {
   return prompts;
 }
 
-export async function getResourses() {
-  while (1) {
-    if (init) {
-      break;
-    }
-    await sleep(500);
-  }
-
+export function getResourses() {
   let resources: InitedClient["resources"] = [];
 
   initedClientArray
@@ -159,14 +138,14 @@ function mcpClientsToArray(mcpClients: {
       prompts: client.prompts.map((x) => {
         return {
           ...x,
-          key: key + "--" + x.name,
+          key: key + " > " + x.name,
           clientName: key,
         };
       }),
       resources: client.resources.map((x) => {
         return {
           ...x,
-          key: key + "--" + x.name,
+          key: key + " > " + x.name,
           clientName: key,
         };
       }),

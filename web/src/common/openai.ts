@@ -37,6 +37,8 @@ export type MyMessage = OpenAI.Chat.Completions.ChatCompletionMessageParam & {
   content_from?: string;
   content_attachment: ContentImage[];
   tool_calls?: Tool_Call[];
+  content_context?: any;
+  content_attached?: boolean;
 };
 
 class ClientName2Index {
@@ -212,7 +214,7 @@ export class OpenAiChannel {
     if (!call_tool || this.options.supportTool === false) {
       tools = undefined;
     } else {
-      tools = await getTools();
+      tools = getTools();
       if (tools.length == 0) {
         tools = undefined;
       }
@@ -227,7 +229,9 @@ export class OpenAiChannel {
       content_status: "loading",
     } as any;
 
-    let messages = this.messages.slice();
+    let messages = this.messages.filter(
+      (m) => m.content_attached == null || m.content_attached == true,
+    );
     this.messages.push(res as any);
     onUpdate && onUpdate(this.lastMessage.content as string);
     try {

@@ -56,6 +56,18 @@ import mk from "@vscode/markdown-it-katex";
 export function UserContent({ x, regenerate = undefined, submit }) {
   const [isEdit, setIsEdit] = useState(false);
   const [value, setValue] = useState("");
+  useEffect(() => {
+    if (x.content_context.edit) {
+      if (Array.isArray(x.content)) {
+        setValue(x.content[0].text);
+      } else {
+        setValue(x.content.toString());
+      }
+      setIsEdit(true);
+    } else {
+      setIsEdit(false);
+    }
+  }, [x.content_context.edit]);
   return (
     <div>
       {isEdit ? (
@@ -71,12 +83,7 @@ export function UserContent({ x, regenerate = undefined, submit }) {
             <Button
               size="small"
               onClick={() => {
-                // setValue(x.content);
-                if (Array.isArray(x.content)) {
-                  setValue(x.content[0].text);
-                } else {
-                  setValue(x.content.toString());
-                }
+                x.content_context.edit = false;
                 setIsEdit(false);
               }}
             >
@@ -85,6 +92,7 @@ export function UserContent({ x, regenerate = undefined, submit }) {
             <Button
               size="small"
               onClick={() => {
+                x.content_context.edit = false;
                 setIsEdit(false);
                 if (Array.isArray(x.content)) {
                   x.content[0].text = value;
@@ -98,83 +106,42 @@ export function UserContent({ x, regenerate = undefined, submit }) {
             </Button>
           </Space.Compact>
         </div>
-      ) : (
-        <Tooltip
-          title={
-            <>
-              <Button
-                type="link"
-                size="small"
-                onClick={() => {
-                  if (Array.isArray(x.content)) {
-                    setValue(x.content[0].text);
-                  } else {
-                    setValue(x.content.toString());
-                  }
-
-                  // setValue(x.content);
-                  setIsEdit(true);
-                }}
-              >
-                Edit
-              </Button>
-              {regenerate && (
-                <Button
-                  size="small"
-                  type="link"
-                  onClick={() => {
-                    regenerate();
+      ) : Array.isArray(x.content) ? (
+        x.content.map((c, i) => {
+          if (c.type == "text") {
+            return (
+              <div key={i}>
+                <pre
+                  key={i}
+                  style={{
+                    whiteSpace: "pre-wrap",
+                    wordWrap: "break-word",
                   }}
                 >
-                  Regenerate
-                </Button>
-              )}
-            </>
+                  {c.text}
+                </pre>
+                {x.content.length > 1 && i == 0 && (
+                  <Divider plain>resources</Divider>
+                )}
+              </div>
+            );
+          } else if (c.type == "image_url") {
+            return (
+              <DownImage key={i} src={c.image_url.url} className="h-48 w-48" />
+            );
+          } else {
+            return <span key={i}>unknown</span>;
           }
+        })
+      ) : (
+        <pre
+          style={{
+            whiteSpace: "pre-wrap",
+            wordWrap: "break-word",
+          }}
         >
-          {/* {x.content.toString() as string} */}
-          {Array.isArray(x.content) ? (
-            x.content.map((c, i) => {
-              if (c.type == "text") {
-                return (
-                  <div key={i}>
-                    <pre
-                      key={i}
-                      style={{
-                        whiteSpace: "pre-wrap",
-                        wordWrap: "break-word",
-                      }}
-                    >
-                      {c.text}
-                    </pre>
-                    {x.content.length > 1 && i == 0 && (
-                      <Divider plain>resources</Divider>
-                    )}
-                  </div>
-                );
-              } else if (c.type == "image_url") {
-                return (
-                  <DownImage
-                    key={i}
-                    src={c.image_url.url}
-                    className="h-48 w-48"
-                  />
-                );
-              } else {
-                return <span key={i}>unknown</span>;
-              }
-            })
-          ) : (
-            <pre
-              style={{
-                whiteSpace: "pre-wrap",
-                wordWrap: "break-word",
-              }}
-            >
-              {x.content.toString()}
-            </pre>
-          )}
-        </Tooltip>
+          {x.content.toString()}
+        </pre>
       )}
     </div>
   );

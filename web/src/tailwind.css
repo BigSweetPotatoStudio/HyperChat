@@ -50,3 +50,15 @@ menu {
   /* color: red;
   font-size: 1.5em; */
 }
+
+div[role="user"] .ant-bubble-content-wrapper {
+  align-items: flex-end;
+}
+
+div[role="system"] .ant-bubble-content-wrapper {
+  align-items: flex-end;
+}
+
+.no-attached {
+  opacity: 0.5;
+}
