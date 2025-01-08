@@ -259,15 +259,18 @@ export const Chat = () => {
   };
 
   function format(x: MyMessage, i, arr): any {
-    x["className"] = {
-      "no-attached": !(
-        x.content_attached == null || x.content_attached == true
-      ),
+    let common = {
+      className: {
+        "no-attached": !(
+          x.content_attached == null || x.content_attached == true
+        ),
+      },
+      role: x.role,
     };
 
     if (x.content_from) {
       return {
-        ...x,
+        ...common,
         key: i.toString(),
         placement: x.role == "user" || x.role == "system" ? "end" : "start",
         avatar: {
@@ -305,7 +308,7 @@ export const Chat = () => {
         x.content_context = {};
       }
       return {
-        ...x,
+        ...common,
         key: i.toString(),
         placement: "end",
         avatar: {
@@ -383,7 +386,7 @@ export const Chat = () => {
       };
     } else if (x.role == "tool") {
       return {
-        ...x,
+        ...common,
         placement: "start",
         avatar: {
           icon: "🤖",
@@ -449,7 +452,7 @@ export const Chat = () => {
       };
     } else if (x.role == "assistant") {
       return {
-        ...x,
+        ...common,
         placement: "start",
         avatar: {
           icon: "🤖",
@@ -640,7 +643,7 @@ export const Chat = () => {
         client.messages,
         currentChat.current.attachedDialogueCount,
       );
-      console.log("onRequest", client.messages);
+
       currentChat.current.messages = client.messages;
       refresh();
 
@@ -845,11 +848,15 @@ export const Chat = () => {
                     })}
                     activeKey={currentChat.current.key}
                     onActiveChange={(key) => {
+                      if (currentChat.current.key == key) {
+                        return;
+                      }
                       let item = ChatHistory.get().data.find(
                         (x) => x.key == key,
                       );
                       if (item) {
                         console.log("onActiveChange", item);
+
                         currentChatReset({
                           ...item,
                           messages: [],
