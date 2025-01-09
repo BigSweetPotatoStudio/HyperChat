@@ -72,6 +72,7 @@ export const electronData = new Data(
     PATH: "",
     platform: "",
     firstOpen: true,
+    downloadedModel_BgeM3: false,
   },
   {
     sync: false,

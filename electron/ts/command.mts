@@ -51,6 +51,8 @@ import {
 import { checkUpdate } from "./upload.mjs";
 import { version } from "os";
 import { webdavClient } from "./common/webdav.mjs";
+import { BgeM3 } from "./common/model.mjs";
+import { progressList } from "./common/progress.mjs";
 
 const userDataPath = app.getPath("userData");
 let videoDownloadWin: BrowserWindow;
@@ -339,6 +341,12 @@ export class CommandFactory {
   }
   async webDavSync() {
     return await webdavClient.sync();
+  }
+  async initEmbeddings() {
+    await BgeM3.getInstance();
+  }
+  async getProgressList() {
+    return progressList.getData();
   }
 }
 

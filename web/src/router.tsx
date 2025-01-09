@@ -13,6 +13,7 @@ import { Setting } from "./pages/setting";
 import { Chat } from "./pages/chat";
 import { Market } from "./pages/market/market";
 import { HpyerTools } from "./pages/hypertools/hypertools";
+import { KnowledgeBase } from "./pages/knowledgeBase/knowledgeBase";
 
 type RouteType = {
   path: string;
@@ -45,6 +46,12 @@ let route: RouteType = {
       name: "MCP Extensions",
       icon: "💻",
       component: <Market />,
+    },
+    {
+      path: "/KnowledgeBase",
+      name: "Knowledge Base",
+      icon: "📚",
+      component: <KnowledgeBase />,
     },
     {
       path: "/HpyerTools",
