@@ -462,6 +462,7 @@ export const Chat = () => {
           },
         },
         key: i.toString(),
+        // typing: x.content_status == "dataLoading",
         footer: (x.content_status == "error" || x.content) && (
           <Space>
             <CopyOutlined
