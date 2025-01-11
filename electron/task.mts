@@ -31,12 +31,12 @@ if (argv.prod) {
     }
   } else {
     if (os.platform() === "win32") {
-      await $`npx cross-env NODE_ENV=production myEnv=prod electron-builder`;
+      await $`npx cross-env NODE_ENV=production myEnv=prod electron-builder --publish never`;
     } else if (os.platform() === "darwin") {
       if (process.env.GH_TOKEN) {
-        await $`npx cross-env NODE_ENV=production myEnv=prod electron-builder --win --mac --publish always`;
+        await $`npx cross-env NODE_ENV=production myEnv=prod electron-builder --mac --publish always`;
       } else {
-        await $`npx cross-env NODE_ENV=production myEnv=prod electron-builder --win --mac`;
+        await $`npx cross-env NODE_ENV=production myEnv=prod electron-builder --mac --publish never`;
       }
     }
   }
