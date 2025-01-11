@@ -58,7 +58,6 @@ import {
   KNOWLEDGE_Resource,
   KNOWLEDGE_Store,
 } from "../../common/data";
-import { store } from "./langchain/vectorStore.mjs";
 
 const userDataPath = app.getPath("userData");
 let videoDownloadWin: BrowserWindow;
@@ -351,19 +350,20 @@ export class CommandFactory {
   async initEmbeddings(model: string) {
     await FeatureExtraction.getInstance(model);
   }
-  // async vectorStoreCreate(store_name: string, r: KNOWLEDGE_Resource) {
-  //   return await store.create(store_name, r);
-  // }
   async vectorStoreAdd(s: KNOWLEDGE_Store, r: KNOWLEDGE_Resource) {
+    let { store } = await import("./langchain/vectorStore.mjs");
     return await store.addResource(s, r);
   }
   async vectorStoreDelete(s: KNOWLEDGE_Store) {
+    let { store } = await import("./langchain/vectorStore.mjs");
     return await store.delete(s);
   }
   async vectorStoreRemoveResource(s: KNOWLEDGE_Store, r: KNOWLEDGE_Resource) {
+    let { store } = await import("./langchain/vectorStore.mjs");
     return await store.removeResource(s, r);
   }
   async vectorStoreSearch(s: KNOWLEDGE_Store, q: string, k: number) {
+    let { store } = await import("./langchain/vectorStore.mjs");
     return await store.search(s, q, k);
   }
   async getProgressList() {

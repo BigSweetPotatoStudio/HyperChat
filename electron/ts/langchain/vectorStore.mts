@@ -3,7 +3,6 @@ import { Embeddings } from "@langchain/core/embeddings";
 import path from "path";
 import { appDataDir } from "../const.mjs";
 import { fs } from "zx";
-import "dotenv/config";
 import { FeatureExtraction } from "../common/model.mjs";
 import { toolTextSplitter } from "./textsplitters.mjs";
 import {
