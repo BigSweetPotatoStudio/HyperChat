@@ -49,7 +49,7 @@ let route: RouteType = {
     },
     {
       path: "/KnowledgeBase",
-      name: "Knowledge Base",
+      name: "Knowledge Base(Experimental)",
       icon: "📚",
       component: <KnowledgeBase />,
     },
