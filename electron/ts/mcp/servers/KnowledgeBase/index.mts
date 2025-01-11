@@ -14,8 +14,7 @@ import Logger from "electron-log";
 import { fs, path, sleep } from "zx";
 import dayjs from "dayjs";
 import { KNOWLEDGE_BASE } from "../../../../../common/data";
-import { store } from "../../../langchain/vectorStore.mjs";
-import { any } from "zod";
+
 // import { ListPromptsRequestSchema, ListToolsRequestSchema } from "@modelcontextprotocol/sdk/types.js";
 
 const { Server } = await import(
@@ -191,6 +190,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
         throw new Error("content are required");
       }
       try {
+        let { store } = await import("../../../langchain/vectorStore.mjs");
         await store.addResourceByName(knowledge_base, {
           markdown: content,
           type: "markdown",
@@ -213,6 +213,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
 });
 
 async function search(knowledge_base: string, words: string) {
+  let { store } = await import("../../../langchain/vectorStore.mjs");
   let results = await store.searchByName(knowledge_base, words, 5);
   return `
 ### score: The lower the score, the better. the less advisable it is to use if it exceeds 0.4.
