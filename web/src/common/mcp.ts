@@ -152,6 +152,7 @@ function mcpClientsToArray(mcpClients: {
       tools: tools,
       name: key,
       status: client.status,
+      order: client.config.hyperchat.scope == "built-in" ? 0 : 1,
       get config() {
         let config = MCP_CONFIG.get().mcpServers[key];
         if (config.hyperchat == null) {
@@ -165,6 +166,9 @@ function mcpClientsToArray(mcpClients: {
       enable: !MCP_CONFIG.get().mcpServers[key]?.disabled,
     });
   }
+  array.sort((a, b) => {
+    return a.order - b.order;
+  });
   return array;
 }
 
@@ -184,10 +188,6 @@ export async function getMCPExtensionData() {
 
     return new Promise(async (resolve, reject) => {
       window["jsonp"] = function (res) {
-        res.data.unshift({
-          name: "hyper_tools",
-          description: "hyper_tools",
-        });
         resolve(res.data);
       };
       eval(jscode);

@@ -12,9 +12,14 @@
   "license": "ISC",
   "description": "",
   "dependencies": {
-    "tsx": "^4.9.3",
-    "zx": "^8.0.1",
+    "@langchain/community": "^0.3.23",
+    "@langchain/core": "^0.3.27",
+    "@langchain/openai": "^0.3.16",
+    "@langchain/textsplitters": "^0.1.0",
     "cross-spawn": "^7.0.6",
-    "dotenv": "16.4.7"
+    "dotenv": "16.4.7",
+    "hnswlib-node": "^3.0.0",
+    "tsx": "^4.9.3",
+    "zx": "^8.0.1"
   }
 }

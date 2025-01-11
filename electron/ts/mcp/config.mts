@@ -20,6 +20,7 @@ import { request } from "http";
 
 import { spawnWithOutput } from "../common/util.mjs";
 import { clientPaths } from "./claude.mjs";
+import Logger from "electron-log";
 
 await initMcpServer().catch((e) => {
   console.error("initMcpServer", e);
@@ -330,32 +331,30 @@ export async function closeMcpClients(clientName: string, isdelete: boolean) {
   return mcpClients;
 }
 
+let config = await MCP_CONFIG.init();
+for (let s of MyServers) {
+  let key = s.name;
+  config.mcpServers[key] = {
+    command: "",
+    args: [],
+    env: {},
+    hyperchat: {
+      url: `http://localhost:${electronData.get().mcp_server_port}/${key}/sse`,
+      type: "sse",
+      scope: "built-in",
+      config: {},
+    },
+    disabled: false,
+  };
+}
+await MCP_CONFIG.save();
 export async function getConfg(): Promise<{
   mcpServers: { [s: string]: MCP_CONFIG_TYPE };
 }> {
   let config = await MCP_CONFIG.init();
 
   // let obj: any = {};
-  for (let s of MyServers) {
-    let key = s.name;
-    config.mcpServers[key] = {
-      command: "",
-      args: [],
-      env: {},
-      hyperchat: {
-        url: `http://localhost:${
-          electronData.get().mcp_server_port
-        }/${key}/sse`,
-        type: "sse",
-        scope: "built-in",
-        config: {},
-      },
-      disabled: false,
-    };
-    if (config.mcpServers[s.name] == null) {
-      MCP_CONFIG.save();
-    }
-  }
+
   // config.mcpServers = Object.assign(obj, config.mcpServers);
   for (let key in config.mcpServers) {
     if (config.mcpServers[key].hyperchat == null) {
