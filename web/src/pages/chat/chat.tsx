@@ -1571,10 +1571,9 @@ const calcAttachDialogue = (messages, attachedDialogueCount) => {
       m.content_attached = true;
       continue;
     }
+    m.content_attached = c < attachedDialogueCount;
     if (m.role == "user") {
       c++;
     }
-
-    m.content_attached = c < attachedDialogueCount;
   }
 };

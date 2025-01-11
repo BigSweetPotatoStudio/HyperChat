@@ -22,7 +22,6 @@ class ProgressList {
     this.data = [];
   }
   setProgress(name: string, loaded: number, total: number) {
-    electronData.get().downloadedModel_BgeM3 = true;
     let progress = this.data.find((x) => x.name == name);
     if (!progress) {
       progress = new Progress(name, loaded, total);

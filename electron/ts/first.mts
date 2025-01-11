@@ -39,3 +39,5 @@ log.info("appDataDir: ", appDataDir);
 electronData.get().appDataDir = appDataDir;
 electronData.get().logFilePath = logFilePath;
 electronData.save();
+
+import "./langchain/index.mjs";

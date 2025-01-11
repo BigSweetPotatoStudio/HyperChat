@@ -51,8 +51,14 @@ import {
 import { checkUpdate } from "./upload.mjs";
 import { version } from "os";
 import { webdavClient } from "./common/webdav.mjs";
-import { BgeM3 } from "./common/model.mjs";
+import { FeatureExtraction } from "./common/model.mjs";
 import { progressList } from "./common/progress.mjs";
+import {
+  KNOWLEDGE_BASE,
+  KNOWLEDGE_Resource,
+  KNOWLEDGE_Store,
+} from "../../common/data";
+import { store } from "./langchain/vectorStore.mjs";
 
 const userDataPath = app.getPath("userData");
 let videoDownloadWin: BrowserWindow;
@@ -342,8 +348,23 @@ export class CommandFactory {
   async webDavSync() {
     return await webdavClient.sync();
   }
-  async initEmbeddings() {
-    await BgeM3.getInstance();
+  async initEmbeddings(model: string) {
+    await FeatureExtraction.getInstance(model);
+  }
+  // async vectorStoreCreate(store_name: string, r: KNOWLEDGE_Resource) {
+  //   return await store.create(store_name, r);
+  // }
+  async vectorStoreAdd(s: KNOWLEDGE_Store, r: KNOWLEDGE_Resource) {
+    return await store.addResource(s, r);
+  }
+  async vectorStoreDelete(s: KNOWLEDGE_Store) {
+    return await store.delete(s);
+  }
+  async vectorStoreRemoveResource(s: KNOWLEDGE_Store, r: KNOWLEDGE_Resource) {
+    return await store.removeResource(s, r);
+  }
+  async vectorStoreSearch(s: KNOWLEDGE_Store, q: string, k: number) {
+    return await store.search(s, q, k);
   }
   async getProgressList() {
     return progressList.getData();
