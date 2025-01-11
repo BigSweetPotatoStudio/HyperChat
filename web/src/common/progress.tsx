@@ -1,5 +1,4 @@
 import React, { useEffect, useState } from "react";
-import { pipeline } from "@xenova/transformers";
 import { call } from "./call";
 import { Button, Progress } from "antd";
 
