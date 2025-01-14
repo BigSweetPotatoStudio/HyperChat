@@ -12,6 +12,7 @@ import {
   Radio,
   Segmented,
   Select,
+  Slider,
   Space,
   Tree,
   TreeDataNode,
@@ -114,13 +115,14 @@ const ModalForm: React.FC<CollectionCreateFormProps> = ({
       <Form.Item
         name="attachedDialogueCount"
         label="attachedDialogueCount"
-        tooltip="Number of sent Dialogue attached per request"
+        tooltip="Number of sent Dialogue Message attached per request"
       >
-        <InputNumber
+        {/* <InputNumber
           placeholder="blank means is all."
           min={0}
           style={{ width: "100%" }}
-        />
+        /> */}
+        <Slider defaultValue={20} max={40} />
       </Form.Item>
     </Form>
   );

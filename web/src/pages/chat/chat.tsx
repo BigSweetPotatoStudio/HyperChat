@@ -31,6 +31,7 @@ import {
   Result,
   Segmented,
   Select,
+  Slider,
   Space,
   Spin,
   Table,
@@ -105,6 +106,7 @@ import {
   CopyOutlined,
   SettingOutlined,
   LeftOutlined,
+  MinusCircleOutlined,
 } from "@ant-design/icons";
 import type { ConfigProviderProps, GetProp } from "antd";
 import { MyMessage, OpenAiChannel } from "../../common/openai";
@@ -196,14 +198,15 @@ export const Chat = ({ onTitleChange = undefined }) => {
     icon: "",
     allowMCPs: [],
     attachedDialogueCount: undefined,
+    dateTime: Date.now(),
   });
   const currentChatReset = async (
-    config: Partial<ChatHistoryItem>,
+    newConfig: Partial<ChatHistoryItem>,
     prompt = "",
     allMCPs = false,
   ) => {
     if (prompt) {
-      config.messages = [
+      newConfig.messages = [
         {
           role: "system",
           content: prompt,
@@ -221,7 +224,8 @@ export const Chat = ({ onTitleChange = undefined }) => {
       icon: "",
       allowMCPs: [],
       attachedDialogueCount: undefined,
-      ...config,
+      dateTime: Date.now(),
+      ...newConfig,
     };
 
     setResourceResList([]);
@@ -369,6 +373,11 @@ export const Chat = ({ onTitleChange = undefined }) => {
                 }}
               />
             )}
+            {x.role == "user" && !x.content_attached && (
+              <Tooltip title="Cleared">
+                <MinusCircleOutlined className="cursor-not-allowed" />
+              </Tooltip>
+            )}
           </Space>
         ),
         content: (
@@ -509,6 +518,11 @@ export const Chat = ({ onTitleChange = undefined }) => {
                 }
               }}
             />
+            {!x.content_attached && (
+              <Tooltip title="Cleared">
+                <MinusCircleOutlined className="cursor-not-allowed" />
+              </Tooltip>
+            )}
           </Space>
         ),
         // loading:
@@ -631,18 +645,20 @@ export const Chat = ({ onTitleChange = undefined }) => {
           sended: true,
           gptsKey: currentChat.current.gptsKey,
           allowMCPs: currentChat.current.allowMCPs,
+          dateTime: Date.now(),
         });
         setData([currentChat.current, ...data]);
         ChatHistory.get().data.unshift(currentChat.current);
       } else {
-        let find = ChatHistory.get().data.find(
+        let findIndex = ChatHistory.get().data.findIndex(
           (x) => x.key == currentChat.current.key,
         );
-        if (find) {
-          // currentChat.current.allowMCPs = clientsRef.current
-          //   .filter((record) => (record.enable == null ? true : record.enable))
-          //   .map((v) => v.name);
+
+        if (findIndex > -1) {
+          let find = ChatHistory.get().data.splice(findIndex, 1)[0];
+          currentChat.current.dateTime = Date.now();
           Object.assign(find, currentChat.current);
+          ChatHistory.get().data.unshift(find);
         }
       }
       openaiClient.current.options.allowMCPs = currentChat.current.allowMCPs;
@@ -661,6 +677,7 @@ export const Chat = ({ onTitleChange = undefined }) => {
       calcAttachDialogue(
         openaiClient.current.messages,
         currentChat.current.attachedDialogueCount,
+        false,
       );
 
       currentChat.current.messages = openaiClient.current.messages;
@@ -838,7 +855,6 @@ export const Chat = ({ onTitleChange = undefined }) => {
               )}
               <div className="mt-2 flex items-center justify-between">
                 <Space>
-                  {/* <CommentOutlined /> */}
                   <span>Dialogue Records</span>
                 </Space>
                 <Segmented
@@ -1138,7 +1154,8 @@ export const Chat = ({ onTitleChange = undefined }) => {
                   </span>
                 </Tooltip>
                 <Divider type="vertical" /> */}
-                <Tooltip title="Reset">
+
+                {/* <Tooltip title="Reset">
                   <span
                     className="cursor-pointer"
                     onClick={() => {
@@ -1157,6 +1174,23 @@ export const Chat = ({ onTitleChange = undefined }) => {
                     }}
                   >
                     🔄
+                  </span>
+                </Tooltip> */}
+                <Tooltip title="Clear Context">
+                  <span
+                    className="cursor-pointer"
+                    onClick={() => {
+                      if (openaiClient.current) {
+                        calcAttachDialogue(
+                          currentChat.current.messages,
+                          0,
+                          true,
+                        );
+                        refresh();
+                      }
+                    }}
+                  >
+                    🗑️
                   </span>
                 </Tooltip>
                 <Divider type="vertical" />
@@ -1611,13 +1645,14 @@ export const Chat = ({ onTitleChange = undefined }) => {
           <Form.Item
             name="attachedDialogueCount"
             label="attachedDialogueCount"
-            tooltip="Number of sent Dialogue attached per request"
+            tooltip="Number of sent Dialogue Message attached per request"
           >
-            <InputNumber
+            {/* <InputNumber
               placeholder="blank means is all."
               min={0}
               style={{ width: "100%" }}
-            />
+            /> */}
+            <Slider defaultValue={20} max={40} />
           </Form.Item>
         </Modal>
       </div>
@@ -1625,9 +1660,13 @@ export const Chat = ({ onTitleChange = undefined }) => {
   );
 };
 
-const calcAttachDialogue = (messages, attachedDialogueCount) => {
+const calcAttachDialogue = (
+  messages,
+  attachedDialogueCount,
+  overwrite = true,
+) => {
   if (attachedDialogueCount == null) {
-    attachedDialogueCount = Infinity;
+    attachedDialogueCount = 20;
   }
   let c = 0;
   for (let i = messages.length - 1; i >= 0; i--) {
@@ -1636,7 +1675,16 @@ const calcAttachDialogue = (messages, attachedDialogueCount) => {
       m.content_attached = true;
       continue;
     }
-    m.content_attached = c < attachedDialogueCount;
+
+    if (overwrite) {
+      m.content_attached = c < attachedDialogueCount;
+    } else {
+      if (m.content_attached == false && c < attachedDialogueCount) {
+      } else {
+        m.content_attached = c < attachedDialogueCount;
+      }
+    }
+
     if (m.role == "user") {
       c++;
     }

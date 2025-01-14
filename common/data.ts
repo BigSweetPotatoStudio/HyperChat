@@ -103,6 +103,7 @@ export type ChatHistoryItem = {
   allowMCPs: string[];
   requestType: string;
   attachedDialogueCount?: number;
+  dateTime: number;
 };
 export const ChatHistory = new Data("chat_history.json", {
   data: [] as Array<ChatHistoryItem>,
