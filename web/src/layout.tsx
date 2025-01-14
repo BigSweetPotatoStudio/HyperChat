@@ -123,7 +123,7 @@ const Providers: ProviderType[] = [
     call_tool_step: 1,
   },
   {
-    label: "Other",
+    label: "OpenAI Compatibility",
     baseURL: "",
     value: "other",
   },

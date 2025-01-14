@@ -62,3 +62,15 @@ div[role="system"] .ant-bubble-content-wrapper {
 .no-attached {
   opacity: 0.5;
 }
+
+.myworkspace .ant-tabs-content {
+  height: 100%;
+}
+
+.myworkspace .ant-tabs-content .ant-tabs-tabpane {
+  height: 100%;
+}
+
+.myworkspace .ant-tabs-nav {
+  margin-top: 0;
+}

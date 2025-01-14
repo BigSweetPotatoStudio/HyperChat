@@ -296,7 +296,7 @@ export class CommandFactory {
       win.webContents.openDevTools();
     }
   }
-  async openBrowser(url: string): Promise<void> {
+  async openBrowser(url: string, userAgent?): Promise<void> {
     let win = new BrowserWindow({
       width: 1280,
       height: 720,
@@ -307,7 +307,8 @@ export class CommandFactory {
 
     await win.loadURL(url, {
       userAgent:
-        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/132.0.0.0 Safari/537.36",
+        userAgent ||
+        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36",
     });
   }
   async checkNpx(): Promise<string> {
