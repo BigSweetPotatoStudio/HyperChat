@@ -85,6 +85,7 @@ export class OpenAiChannel {
       call_tool_step?: number;
       supportTool?: boolean;
       supportImage?: boolean;
+      allowMCPs?: string[];
     },
     public messages: MyMessage[],
     public stream = true,
@@ -218,7 +219,11 @@ export class OpenAiChannel {
     if (!call_tool || this.options.supportTool === false) {
       tools = undefined;
     } else {
-      tools = getTools();
+      tools = getTools(
+        (x) =>
+          this.options.allowMCPs == null ||
+          this.options.allowMCPs.includes(x.name),
+      );
       if (tools.length == 0) {
         tools = undefined;
       }

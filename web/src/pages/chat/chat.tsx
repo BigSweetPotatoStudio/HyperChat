@@ -228,18 +228,20 @@ export const Chat = ({ onTitleChange = undefined }) => {
     setPromptResList([]);
     let clients = await getClients().catch(() => []);
     clientsRef.current = clients;
-
-    for (let c of clientsRef.current) {
-      if (allMCPs || (currentChat.current.allowMCPs || []).includes(c.name)) {
-        c.enable = true;
-      } else {
-        c.enable = false;
-      }
+    if (allMCPs) {
+      currentChat.current.allowMCPs = clients.map((v) => v.name);
     }
+    // for (let c of clientsRef.current) {
+    //   if (allMCPs || (currentChat.current.allowMCPs || []).includes(c.name)) {
+    //     c.enable = true;
+    //   } else {
+    //     c.enable = false;
+    //   }
+    // }
     clientsRef.current;
-    let p = getPrompts();
+    let p = getPrompts((x) => currentChat.current.allowMCPs.includes(x.name));
     promptsRef.current = p;
-    let r = getResourses();
+    let r = getResourses((x) => currentChat.current.allowMCPs.includes(x.name));
     resourcesRef.current = r;
 
     refresh();
@@ -604,7 +606,7 @@ export const Chat = ({ onTitleChange = undefined }) => {
     }
     currentChat.current.modelKey = config.key;
     openaiClient.current = new OpenAiChannel(
-      config,
+      { ...config, allowMCPs: currentChat.current.allowMCPs },
       currentChat.current.messages,
       currentChat.current.requestType == "stream",
     );
@@ -628,9 +630,7 @@ export const Chat = ({ onTitleChange = undefined }) => {
           modelKey: currentChat.current.modelKey,
           sended: true,
           gptsKey: currentChat.current.gptsKey,
-          allowMCPs: clientsRef.current
-            .filter((record) => (record.enable == null ? true : record.enable))
-            .map((v) => v.name),
+          allowMCPs: currentChat.current.allowMCPs,
         });
         setData([currentChat.current, ...data]);
         ChatHistory.get().data.unshift(currentChat.current);
@@ -639,12 +639,13 @@ export const Chat = ({ onTitleChange = undefined }) => {
           (x) => x.key == currentChat.current.key,
         );
         if (find) {
-          currentChat.current.allowMCPs = clientsRef.current
-            .filter((record) => (record.enable == null ? true : record.enable))
-            .map((v) => v.name);
+          // currentChat.current.allowMCPs = clientsRef.current
+          //   .filter((record) => (record.enable == null ? true : record.enable))
+          //   .map((v) => v.name);
           Object.assign(find, currentChat.current);
         }
       }
+      openaiClient.current.options.allowMCPs = currentChat.current.allowMCPs;
       openaiClient.current.addMessage(
         { role: "user", content: message, content_attachment: [] },
         resourceResList,
@@ -1172,8 +1173,8 @@ export const Chat = ({ onTitleChange = undefined }) => {
                       <>
                         💻
                         {
-                          clientsRef.current.filter(
-                            (v) => v.enable == null || v.enable == true,
+                          clientsRef.current.filter((v) =>
+                            currentChat.current.allowMCPs.includes(v.name),
                           ).length
                         }
                       </>
@@ -1477,7 +1478,7 @@ export const Chat = ({ onTitleChange = undefined }) => {
               type: "checkbox",
               selectedRowKeys: clientsRef.current
                 .filter((record) =>
-                  record.enable == null ? true : record.enable,
+                  currentChat.current.allowMCPs.includes(record.name),
                 )
                 .map((v) => v.name),
               onChange: async (selectedRowKeys, selectedRows) => {

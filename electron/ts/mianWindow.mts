@@ -79,7 +79,7 @@ export const createWindow = () => {
   }
   // 处理新窗口打开
   win.webContents.setWindowOpenHandler(({ url }) => {
-    // console.log(url);
+    // console.log("setWindowOpenHandler", url);
     // 根据需要可以添加URL过滤
     if (url.startsWith("mailto")) {
       return { action: "allow" };
@@ -90,7 +90,7 @@ export const createWindow = () => {
   });
   // 处理页面内链接点击
   win.webContents.on("will-navigate", (event, url) => {
-    // console.log(event, url);
+    // console.log("will-navigate", event, url);
     if (url.startsWith("http:") || url.startsWith("https:")) {
       if (url.includes("localhost")) {
         return;
@@ -98,6 +98,16 @@ export const createWindow = () => {
       event.preventDefault();
       shell.openExternal(url);
     } else {
+      if (
+        url.startsWith("/") ||
+        /^[a-zA-Z]:[\\\/]/.test(url) ||
+        url.startsWith("file://")
+      ) {
+        event.preventDefault();
+        const localPath = fileUrlToPath(url);
+        // console.log("localPath", localPath);
+        shell.showItemInFolder(localPath);
+      }
     }
   });
   // 触发关闭时触发
@@ -166,3 +176,31 @@ export const createWindow = () => {
     if (process.platform !== "darwin") app.quit();
   });
 };
+
+function fileUrlToPath(fileUrl: string): string {
+  // 解码 URL 编码的字符
+  const decodedUrl = decodeURIComponent(fileUrl);
+
+  // 移除 file:/// 前缀
+  let localPath = decodedUrl.replace(/^file:\/\/\/?/, "");
+
+  // 处理混合斜杠的情况
+  localPath = localPath
+    // 先统一换成正斜杠
+    .replace(/\\/g, "/")
+    // 处理重复的斜杠
+    .replace(/\/+/g, "/")
+    // 最后统一换成反斜杠
+    .replace(/\//g, "\\");
+
+  // Windows盘符处理
+  if (localPath.match(/^[A-Za-z]:\\?/)) {
+    // 确保盘符后有一个反斜杠
+    return localPath.replace(/^([A-Za-z]:)\\?/, "$1\\");
+  } else if (localPath.startsWith("\\")) {
+    // 去掉开头多余的反斜杠
+    return localPath.substring(1);
+  }
+
+  return localPath;
+}
