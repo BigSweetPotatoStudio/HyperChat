@@ -163,7 +163,7 @@ function mcpClientsToArray(mcpClients: {
   });
   array.forEach((client, i) => {
     client.tools.forEach((tool) => {
-      tool.function.name = "m" + i + "--" + tool.function.name;
+      tool.function.name = "m" + i + "_" + tool.function.name;
     });
   });
   return array;

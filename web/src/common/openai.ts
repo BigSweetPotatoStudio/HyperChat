@@ -264,12 +264,11 @@ export class OpenAiChannel {
         onUpdate && onUpdate(res.content as string);
         let totalTokens;
         for await (const chunk of stream) {
-          // console.log(chunk.choices);
-          try {
-            console.log(
-              chunk.choices[0]?.delta?.tool_calls[0]?.function?.arguments,
-            );
-          } catch (e) {}
+          // try {
+          //   console.log(
+          //     chunk.choices[0]?.delta?.tool_calls[0]?.function?.arguments,
+          //   );
+          // } catch (e) {}
 
           if (chunk.usage) {
             totalTokens = chunk.usage.total_tokens;
@@ -498,52 +497,6 @@ export class OpenAiChannel {
   }
   async testTool() {
     try {
-      const openai = new OpenAI({
-        apiKey: "AIzaSyAuFE2L27Fxk99H9WBNXLgTgbDCciHW2E8",
-        baseURL: "https://generativelanguage.googleapis.com/v1beta/openai/",
-        dangerouslyAllowBrowser: true,
-      });
-
-      async function main() {
-        const messages = [
-          {
-            role: "user",
-            content: "What's the weather like in Chicago today?",
-          },
-        ];
-        const tools = [
-          {
-            type: "function",
-            function: {
-              name: "get_weather",
-              description: "Get the weather in a given location",
-              parameters: {
-                type: "object",
-                properties: {
-                  location: {
-                    type: "string",
-                    description: "The city and state, e.g. Chicago, IL",
-                  },
-                  unit: { type: "string", enum: ["celsius", "fahrenheit"] },
-                },
-                required: ["location"],
-              },
-            },
-          },
-        ];
-
-        const response = await openai.chat.completions.create({
-          model: "gemini-2.0-flash-exp",
-          messages: messages,
-          tools: tools,
-          tool_choice: "auto",
-        } as any);
-
-        console.log(response);
-      }
-
-      // await main();
-
       const tools = [
         // {
         //   type: "function" as const,
