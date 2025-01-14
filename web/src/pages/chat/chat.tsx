@@ -262,7 +262,7 @@ export const Chat = ({ onTitleChange = undefined }) => {
     //   });
     // });
   };
-
+  const selectGptsKey = useRef<string | undefined>(undefined);
   useEffect(() => {
     if (currentChat.current.gptsKey == null) {
       onTitleChange && onTitleChange();
@@ -700,24 +700,15 @@ export const Chat = ({ onTitleChange = undefined }) => {
     }
     setLoadMoreing(true);
 
-    // let data = ChatHistory.get().data.filter(
-    //   (x) =>
-    //     currentChat.current.gptsKey == null ||
-    //     x.gptsKey == currentChat.current.gptsKey,
-    // );
-    // loadDataTatal.current = data.length;
-    // console.log("loadDataTatal", loadDataTatal.current);
-
     let formmatedData = ChatHistory.get()
       .data.filter(
         (x) =>
-          currentChat.current.gptsKey == null ||
-          x.gptsKey == currentChat.current.gptsKey,
+          selectGptsKey.current == null || x.gptsKey == selectGptsKey.current,
       )
       .filter((x) => {
-        if (historyFilterType == "all") {
+        if (historyFilterType.current == "all") {
           return true;
-        } else if (historyFilterType == "star") {
+        } else if (historyFilterType.current == "star") {
           return x.icon == "⭐";
         } else {
           return (
@@ -759,13 +750,15 @@ export const Chat = ({ onTitleChange = undefined }) => {
   const [botSearchValue, setBotSearchValue] = useState("");
 
   const [historyFilterSign, setHistoryFilterSign] = useState<0 | 1>(0);
-  const [historyFilterType, setHistoryFilterType] = useState<
-    "all" | "star" | "search"
-  >("all");
+  // const [historyFilterType, setHistoryFilterType] = useState<
+  //   "all" | "star" | "search"
+  // >("all");
+  const historyFilterType = useRef<"all" | "star" | "search">("all");
+
   const [historyFilterSearchValue, setHistoryFilterSearchValue] = useState("");
   useEffect(() => {
     loadMoreData(historyFilterSign == 0);
-  }, [historyFilterType, historyFilterSearchValue, historyFilterSign]);
+  }, [historyFilterType.current, historyFilterSearchValue, historyFilterSign]);
 
   let supportImage = (
     GPT_MODELS.get().data.find((x) => x.key == currentChat.current.modelKey) ||
@@ -788,7 +781,7 @@ export const Chat = ({ onTitleChange = undefined }) => {
               className="h-full flex-none overflow-hidden pr-2"
               style={{ width: "240px" }}
             >
-              {currentChat.current.gptsKey ? (
+              {selectGptsKey.current ? (
                 <div className="flex">
                   <Button
                     onClick={() => {
@@ -798,6 +791,7 @@ export const Chat = ({ onTitleChange = undefined }) => {
                         sended: false,
                         gptsKey: undefined,
                       });
+                      selectGptsKey.current = undefined;
                       loadMoreData(false);
                     }}
                   >
@@ -835,6 +829,7 @@ export const Chat = ({ onTitleChange = undefined }) => {
                       sended: false,
                       gptsKey: undefined,
                     });
+                    selectGptsKey.current = undefined;
                     loadMoreData(false);
                   }}
                 >
@@ -848,9 +843,10 @@ export const Chat = ({ onTitleChange = undefined }) => {
                 </Space>
                 <Segmented
                   size="small"
-                  value={historyFilterType}
+                  value={historyFilterType.current}
                   onChange={(value) => {
-                    setHistoryFilterType(value as any);
+                    historyFilterType.current = value as any;
+                    refresh();
                   }}
                   options={[
                     {
@@ -869,7 +865,7 @@ export const Chat = ({ onTitleChange = undefined }) => {
                 />
               </div>
               <div>
-                {historyFilterType == "search" && (
+                {historyFilterType.current == "search" && (
                   <Input
                     size="small"
                     placeholder="search"
@@ -1086,6 +1082,8 @@ export const Chat = ({ onTitleChange = undefined }) => {
                                     },
                                     find.prompt,
                                   );
+                                  selectGptsKey.current = find.key;
+                                  historyFilterType.current = "all";
                                   loadMoreData(false);
                                 }}
                                 onEdit={() => {
