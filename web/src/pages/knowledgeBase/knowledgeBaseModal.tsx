@@ -25,16 +25,19 @@ import { v4 as uuid } from "uuid";
 import { CloseOutlined, FormOutlined } from "@ant-design/icons";
 import { getClients, InitedClient } from "../../common/mcp";
 import { GPT_MODELS } from "../../common/data";
+import { KNOWLEDGE_Store } from "../../../../common/data";
 
-interface Values {
-  label: string;
-  prompt: string;
-
-  key?: string;
-  allowMCPs: string[];
-  modelKey: string;
-  attachedDialogueCount?: number;
-}
+const models = [
+  {
+    label: "bge-m3(default)",
+    value: "bge-m3",
+  },
+  {
+    label: "all-MiniLM-L6-v2(mini)",
+    value: "all-MiniLM-L6-v2",
+  },
+];
+type Values = KNOWLEDGE_Store;
 
 interface CollectionCreateFormProps {
   initialValues: Values;
@@ -45,82 +48,45 @@ const ModalForm: React.FC<CollectionCreateFormProps> = ({
   initialValues,
   onFormInstanceReady,
 }) => {
+  const [form] = Form.useForm();
+  useEffect(() => {
+    onFormInstanceReady(form);
+  }, []);
+
   const [num, setNum] = useState(0);
   const refresh = () => {
     setNum((x) => x + 1);
   };
-
-  const [form] = Form.useForm();
-  const [clients, setClients] = React.useState<InitedClient[]>([]);
-  useEffect(() => {
-    onFormInstanceReady(form);
-    (async () => {
-      getClients().then((x) => {
-        setClients(x);
-      });
-      GPT_MODELS.init().then(() => {
-        refresh();
-      });
-    })();
-  }, []);
 
   return (
     <Form form={form} name="form_in_modal" initialValues={initialValues}>
       <Form.Item className="hidden" name="key" label={"key"}>
         <Input />
       </Form.Item>
-      <Form.Item
-        name="label"
-        label={"Name"}
+      <Form.Item<Values>
+        name="name"
+        label="name"
         rules={[{ required: true, message: `Please enter the name` }]}
       >
         <Input />
       </Form.Item>
-      <Form.Item
-        name="prompt"
-        label="Prompt Content"
-        rules={[{ required: true, message: `Please enter Prompt Content` }]}
+      <Form.Item<Values>
+        name="model"
+        label="model"
+        rules={[{ required: true, message: `Please enter the model` }]}
       >
-        <Input.TextArea placeholder="Please enter Prompt Content" rows={4} />
-      </Form.Item>
-      <Form.Item name="modelKey" label="LLM">
         <Select
-          placeholder="Please select default LLM"
-          allowClear
-          options={GPT_MODELS.get().data.map((x) => {
-            return {
-              label: x.name,
-              value: x.key,
-            };
-          })}
+          placeholder="Please select model"
+          options={models}
+          disabled={form.getFieldValue("key")}
         />
       </Form.Item>
-      <Form.Item
-        name="allowMCPs"
-        label="MCP"
-        rules={[
-          { required: false, message: `Please select the allowed MCP client.` },
-        ]}
+      <Form.Item<Values>
+        name="description"
+        label="description"
+        rules={[{ required: true, message: `Please enter description` }]}
       >
-        <Checkbox.Group
-          options={clients.map((x) => {
-            return {
-              label: x.name,
-              value: x.name,
-            };
-          })}
-        />
-      </Form.Item>
-      <Form.Item
-        name="attachedDialogueCount"
-        label="attachedDialogueCount"
-        tooltip="Number of sent Dialogue attached per request"
-      >
-        <InputNumber
-          placeholder="blank means is all."
-          min={0}
-          style={{ width: "100%" }}
-        />
+        <Input.TextArea placeholder="Please enter description" rows={4} />
       </Form.Item>
     </Form>
   );
@@ -133,20 +99,19 @@ interface CollectionCreateFormModalProps {
   initialValues: Values;
 }
 
-export const PromptsModal: React.FC<CollectionCreateFormModalProps> = ({
+export const KnowledgeBaseModal: React.FC<CollectionCreateFormModalProps> = ({
   open,
   onCreate,
   onCancel,
   initialValues,
 }) => {
   const [formInstance, setFormInstance] = useState<FormInstance>();
-  initialValues.allowMCPs = initialValues.allowMCPs || [];
 
   return (
     <Modal
       width={800}
       open={open}
-      title={"Prompt"}
+      title={"KnowledgeBase"}
       okButtonProps={{ autoFocus: true }}
       onCancel={onCancel}
       destroyOnClose

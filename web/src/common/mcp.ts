@@ -32,7 +32,8 @@ export type InitedClient = {
   resources: Array<typeof MCPTypes.ResourceSchema._type & { key: string }>;
   name: string;
   status: string;
-  enable: boolean;
+  order: number;
+  // enable: boolean;
   config: MCP_CONFIG_TYPE;
 };
 
@@ -52,56 +53,29 @@ initMcpClients()
     init = true;
   });
 
-export async function getTools() {
-  while (1) {
-    if (init) {
-      break;
-    }
-    await sleep(500);
-  }
-
+export function getTools(filter = (x: InitedClient) => true) {
   let tools: InitedClient["tools"] = [];
 
-  initedClientArray
-    .filter((v) => v.enable == null || v.enable == true)
-    .forEach((v) => {
-      tools = tools.concat(v.tools);
-    });
+  initedClientArray.filter(filter).forEach((v) => {
+    tools = tools.concat(v.tools);
+  });
   return tools;
 }
-export async function getPrompts() {
-  while (1) {
-    if (init) {
-      break;
-    }
-    await sleep(500);
-  }
-
+export function getPrompts(filter = (x: InitedClient) => true) {
   let prompts: InitedClient["prompts"] = [];
 
-  initedClientArray
-    .filter((v) => v.enable == null || v.enable == true)
-    .forEach((v) => {
-      prompts = prompts.concat(v.prompts);
-    });
+  initedClientArray.filter(filter).forEach((v) => {
+    prompts = prompts.concat(v.prompts);
+  });
   return prompts;
 }
 
-export async function getResourses() {
-  while (1) {
-    if (init) {
-      break;
-    }
-    await sleep(500);
-  }
-
+export function getResourses(filter = (x: InitedClient) => true) {
   let resources: InitedClient["resources"] = [];
 
-  initedClientArray
-    .filter((v) => v.enable == null || v.enable == true)
-    .forEach((v) => {
-      resources = resources.concat(v.resources);
-    });
+  initedClientArray.filter(filter).forEach((v) => {
+    resources = resources.concat(v.resources);
+  });
   return resources;
 }
 
@@ -126,53 +100,51 @@ export async function getClients(filter = true): Promise<InitedClient[]> {
 function mcpClientsToArray(mcpClients: {
   [s: string]: MCPClient;
 }): InitedClient[] {
-  let array = [];
+  let array: InitedClient[] = [];
+
   for (let key in mcpClients) {
     let client = mcpClients[key];
-    let tools: Array<HyperChatCompletionTool> = [];
-    for (let tool of client.tools) {
-      let name = clientName2Index.getIndex(key) + "--" + tool.name;
-      let newTool = {
-        type: "function" as const,
-        function: {
-          name: name,
-          client: key,
-          description: tool.description,
-          parameters: {
-            type: tool.inputSchema.type,
-            properties: tool.inputSchema.properties,
-            required: tool.inputSchema.required,
-            additionalProperties: false,
-          },
-        },
-        origin_name: tool.name,
-        restore_name: key + " > " + tool.name,
-        key: key,
-        clientName: key,
-      };
-
-      tools.push(newTool);
-    }
 
     array.push({
       ...client,
       prompts: client.prompts.map((x) => {
         return {
           ...x,
-          key: key + "--" + x.name,
+          key: key + " > " + x.name,
           clientName: key,
         };
       }),
       resources: client.resources.map((x) => {
         return {
           ...x,
-          key: key + "--" + x.name,
+          key: key + " > " + x.name,
           clientName: key,
         };
       }),
-      tools: tools,
+      tools: client.tools.map((tool) => {
+        // let name = clientName2Index.getIndex(key) + "--" + tool.name;
+        return {
+          type: "function" as const,
+          function: {
+            name: tool.name,
+            client: key,
+            description: tool.description,
+            parameters: {
+              type: tool.inputSchema.type,
+              properties: tool.inputSchema.properties,
+              required: tool.inputSchema.required,
+              // additionalProperties: false,
+            },
+          },
+          origin_name: tool.name,
+          restore_name: key + " > " + tool.name,
+          key: key,
+          clientName: key,
+        };
+      }),
       name: key,
       status: client.status,
+      order: client.config.hyperchat.scope == "built-in" ? 0 : 1,
       get config() {
         let config = MCP_CONFIG.get().mcpServers[key];
         if (config.hyperchat == null) {
@@ -183,9 +155,17 @@ function mcpClientsToArray(mcpClients: {
       set config(value: any) {
         MCP_CONFIG.get().mcpServers[key] = value;
       },
-      enable: !MCP_CONFIG.get().mcpServers[key]?.disabled,
+      // enable: !MCP_CONFIG.get().mcpServers[key]?.disabled,
     });
   }
+  array.sort((a, b) => {
+    return a.order - b.order;
+  });
+  array.forEach((client, i) => {
+    client.tools.forEach((tool) => {
+      tool.function.name = "m" + i + "_" + tool.function.name;
+    });
+  });
   return array;
 }
 
@@ -205,10 +185,6 @@ export async function getMCPExtensionData() {
 
     return new Promise(async (resolve, reject) => {
       window["jsonp"] = function (res) {
-        res.data.unshift({
-          name: "hyper_tools",
-          description: "hyper_tools",
-        });
         resolve(res.data);
       };
       eval(jscode);
