@@ -32,6 +32,7 @@ export type InitedClient = {
   resources: Array<typeof MCPTypes.ResourceSchema._type & { key: string }>;
   name: string;
   status: string;
+  order: number;
   enable: boolean;
   config: MCP_CONFIG_TYPE;
 };
@@ -105,33 +106,10 @@ export async function getClients(filter = true): Promise<InitedClient[]> {
 function mcpClientsToArray(mcpClients: {
   [s: string]: MCPClient;
 }): InitedClient[] {
-  let array = [];
+  let array: InitedClient[] = [];
+
   for (let key in mcpClients) {
     let client = mcpClients[key];
-    let tools: Array<HyperChatCompletionTool> = [];
-    for (let tool of client.tools) {
-      let name = clientName2Index.getIndex(key) + "--" + tool.name;
-      let newTool = {
-        type: "function" as const,
-        function: {
-          name: name,
-          client: key,
-          description: tool.description,
-          parameters: {
-            type: tool.inputSchema.type,
-            properties: tool.inputSchema.properties,
-            required: tool.inputSchema.required,
-            additionalProperties: false,
-          },
-        },
-        origin_name: tool.name,
-        restore_name: key + " > " + tool.name,
-        key: key,
-        clientName: key,
-      };
-
-      tools.push(newTool);
-    }
 
     array.push({
       ...client,
@@ -149,7 +127,27 @@ function mcpClientsToArray(mcpClients: {
           clientName: key,
         };
       }),
-      tools: tools,
+      tools: client.tools.map((tool) => {
+        // let name = clientName2Index.getIndex(key) + "--" + tool.name;
+        return {
+          type: "function" as const,
+          function: {
+            name: tool.name,
+            client: key,
+            description: tool.description,
+            parameters: {
+              type: tool.inputSchema.type,
+              properties: tool.inputSchema.properties,
+              required: tool.inputSchema.required,
+              // additionalProperties: false,
+            },
+          },
+          origin_name: tool.name,
+          restore_name: key + " > " + tool.name,
+          key: key,
+          clientName: key,
+        };
+      }),
       name: key,
       status: client.status,
       order: client.config.hyperchat.scope == "built-in" ? 0 : 1,
@@ -168,6 +166,11 @@ function mcpClientsToArray(mcpClients: {
   }
   array.sort((a, b) => {
     return a.order - b.order;
+  });
+  array.forEach((client, i) => {
+    client.tools.forEach((tool) => {
+      tool.function.name = "m" + i + "--" + tool.function.name;
+    });
   });
   return array;
 }

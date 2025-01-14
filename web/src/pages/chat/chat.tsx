@@ -104,6 +104,7 @@ import {
   ToolOutlined,
   CopyOutlined,
   SettingOutlined,
+  LeftOutlined,
 } from "@ant-design/icons";
 import type { ConfigProviderProps, GetProp } from "antd";
 import { MyMessage, OpenAiChannel } from "../../common/openai";
@@ -133,19 +134,21 @@ import Clarity from "@microsoft/clarity";
 import { Copy } from "lucide-react";
 import { ChatHistoryItem } from "../../../../common/data";
 import { useForm } from "antd/es/form/Form";
-let t: any;
-let client: OpenAiChannel;
 
-export const Chat = () => {
+// let openaiClient: OpenAiChannel;
+export const Chat = ({ onTitleChange = undefined }) => {
   const [num, setNum] = React.useState(0);
   const refresh = () => {
     setNum((n) => n + 1);
   };
+
   // const [clients, setClients] = React.useState<InitedClient[]>([]);
   // const [prompts, setPrompts] = React.useState<InitedClient["prompts"]>([]);
   // const [resources, setResources] = React.useState<InitedClient["resources"]>(
   //   [],
   // );
+  const openaiClient = useRef<OpenAiChannel>();
+
   const clientsRef = useRef<InitedClient[]>([]);
   const promptsRef = useRef<InitedClient["prompts"]>([]);
   const resourcesRef = useRef<InitedClient["resources"]>([]);
@@ -258,6 +261,17 @@ export const Chat = () => {
     // });
   };
 
+  useEffect(() => {
+    if (currentChat.current.gptsKey == null) {
+      onTitleChange && onTitleChange();
+    } else {
+      let find = GPTS.get().data.find(
+        (x) => x.key == currentChat.current.gptsKey,
+      );
+      onTitleChange && onTitleChange(find.label);
+    }
+  }, [currentChat.current.gptsKey]);
+
   function format(x: MyMessage, i, arr): any {
     let common = {
       className: {
@@ -346,8 +360,8 @@ export const Chat = () => {
                 className="hover:text-cyan-400"
                 key="sync"
                 onClick={() => {
-                  client.messages.splice(i);
-                  currentChat.current.messages = client.messages;
+                  openaiClient.current.messages.splice(i);
+                  currentChat.current.messages = openaiClient.current.messages;
                   refresh();
                   onRequest(x.content as any);
                 }}
@@ -360,23 +374,25 @@ export const Chat = () => {
             x={x}
             submit={(content) => {
               if (x.role == "system") {
-                client.messages.find((x) => x.role == "system").content =
-                  content;
+                openaiClient.current.messages.find(
+                  (x) => x.role == "system",
+                ).content = content;
 
-                currentChat.current.messages = client.messages;
+                currentChat.current.messages = openaiClient.current.messages;
 
-                let userIndex = client.messages.findLastIndex(
+                let userIndex = openaiClient.current.messages.findLastIndex(
                   (x) => x.role == "user",
                 );
                 if (userIndex > -1) {
-                  let content = client.messages[userIndex].content;
-                  client.messages.splice(userIndex);
+                  let content =
+                    openaiClient.current.messages[userIndex].content;
+                  openaiClient.current.messages.splice(userIndex);
                   refresh();
                   onRequest(content as any);
                 }
               } else {
-                client.messages.splice(i);
-                currentChat.current.messages = client.messages;
+                openaiClient.current.messages.splice(i);
+                currentChat.current.messages = openaiClient.current.messages;
                 refresh();
                 onRequest(content);
               }
@@ -479,10 +495,11 @@ export const Chat = () => {
               onClick={() => {
                 // onRequest(x.content as any);
                 while (i--) {
-                  if (client.messages[i].role === "user") {
-                    let content = client.messages[i].content;
-                    client.messages.splice(i);
-                    currentChat.current.messages = client.messages;
+                  if (openaiClient.current.messages[i].role === "user") {
+                    let content = openaiClient.current.messages[i].content;
+                    openaiClient.current.messages.splice(i);
+                    currentChat.current.messages =
+                      openaiClient.current.messages;
                     refresh();
                     onRequest(content as any);
                     break;
@@ -586,12 +603,12 @@ export const Chat = () => {
       config = GPT_MODELS.get().data[0];
     }
     currentChat.current.modelKey = config.key;
-    client = new OpenAiChannel(
+    openaiClient.current = new OpenAiChannel(
       config,
       currentChat.current.messages,
       currentChat.current.requestType == "stream",
     );
-    currentChat.current.messages = client.messages;
+    currentChat.current.messages = openaiClient.current.messages;
     refresh();
   };
   const [loading, setLoading] = useState(false);
@@ -607,7 +624,7 @@ export const Chat = () => {
           ...currentChat.current,
           key: v4(),
           label: message,
-          messages: client.messages,
+          messages: openaiClient.current.messages,
           modelKey: currentChat.current.modelKey,
           sended: true,
           gptsKey: currentChat.current.gptsKey,
@@ -628,7 +645,7 @@ export const Chat = () => {
           Object.assign(find, currentChat.current);
         }
       }
-      client.addMessage(
+      openaiClient.current.addMessage(
         { role: "user", content: message, content_attachment: [] },
         resourceResList,
         promptResList,
@@ -636,16 +653,16 @@ export const Chat = () => {
 
       refresh();
 
-      await client.completion(() => {
-        currentChat.current.messages = client.messages;
+      await openaiClient.current.completion(() => {
+        currentChat.current.messages = openaiClient.current.messages;
         refresh();
       });
       calcAttachDialogue(
-        client.messages,
+        openaiClient.current.messages,
         currentChat.current.attachedDialogueCount,
       );
 
-      currentChat.current.messages = client.messages;
+      currentChat.current.messages = openaiClient.current.messages;
       refresh();
 
       await ChatHistory.save();
@@ -666,6 +683,8 @@ export const Chat = () => {
 
   let loadIndex = useRef(0);
 
+  const loadDataTatal = useRef(0);
+
   const loadMoreData = (loadMore = true) => {
     // console.log(historyFilterType, historyFilterSearchValue, loadIndex.current);
     // console.log("loadMoreData: ", ChatHistory.get().data);
@@ -680,8 +699,21 @@ export const Chat = () => {
     }
     setLoadMoreing(true);
 
-    const formmatedData = ChatHistory.get()
-      .data.filter((x) => {
+    // let data = ChatHistory.get().data.filter(
+    //   (x) =>
+    //     currentChat.current.gptsKey == null ||
+    //     x.gptsKey == currentChat.current.gptsKey,
+    // );
+    // loadDataTatal.current = data.length;
+    // console.log("loadDataTatal", loadDataTatal.current);
+
+    let formmatedData = ChatHistory.get()
+      .data.filter(
+        (x) =>
+          currentChat.current.gptsKey == null ||
+          x.gptsKey == currentChat.current.gptsKey,
+      )
+      .filter((x) => {
         if (historyFilterType == "all") {
           return true;
         } else if (historyFilterType == "star") {
@@ -692,10 +724,11 @@ export const Chat = () => {
             x.label.toLowerCase().includes(historyFilterSearchValue)
           );
         }
-      })
-      .slice(0, loadIndex.current);
+      });
+    loadDataTatal.current = formmatedData.length;
+    formmatedData = formmatedData.slice(0, loadIndex.current);
     setData(formmatedData);
-
+    console.log("loadMoreData", loadIndex.current, loadDataTatal.current);
     setLoadMoreing(false);
   };
 
@@ -742,6 +775,9 @@ export const Chat = () => {
     GPT_MODELS.get().data.find((x) => x.key == currentChat.current.modelKey) ||
     GPT_MODELS.get().data[0]
   )?.supportTool;
+
+  const scrollableDivID = "scrollableDiv" + v4();
+
   return (
     <div className="chat h-full">
       <div className="h-full rounded-lg bg-white p-4">
@@ -751,19 +787,59 @@ export const Chat = () => {
               className="h-full flex-none overflow-hidden pr-2"
               style={{ width: "240px" }}
             >
-              <Button
-                type="primary"
-                className="w-full"
-                onClick={() => {
-                  currentChatReset({
-                    messages: [],
-                    allowMCPs: clientsRef.current.map((v) => v.name),
-                    sended: false,
-                  });
-                }}
-              >
-                New Chat
-              </Button>
+              {currentChat.current.gptsKey ? (
+                <div className="flex">
+                  <Button
+                    onClick={() => {
+                      currentChatReset({
+                        messages: [],
+                        allowMCPs: clientsRef.current.map((v) => v.name),
+                        sended: false,
+                        gptsKey: undefined,
+                      });
+                      loadMoreData(false);
+                    }}
+                  >
+                    <LeftOutlined />
+                  </Button>
+                  <Button
+                    type="primary"
+                    className="ml-1 w-full"
+                    onClick={() => {
+                      if (openaiClient.current) {
+                        let p = currentChat.current.messages.find(
+                          (x) => x.role == "system",
+                        )?.content;
+
+                        currentChatReset(
+                          {
+                            gptsKey: currentChat.current.gptsKey,
+                          },
+                          p,
+                        );
+                      }
+                    }}
+                  >
+                    New Chat
+                  </Button>
+                </div>
+              ) : (
+                <Button
+                  type="primary"
+                  className="ml-1 w-full"
+                  onClick={() => {
+                    currentChatReset({
+                      messages: [],
+                      allowMCPs: clientsRef.current.map((v) => v.name),
+                      sended: false,
+                      gptsKey: undefined,
+                    });
+                    loadMoreData(false);
+                  }}
+                >
+                  New Chat
+                </Button>
+              )}
               <div className="mt-2 flex items-center justify-between">
                 <Space>
                   {/* <CommentOutlined /> */}
@@ -805,7 +881,7 @@ export const Chat = () => {
                 )}
               </div>
               <div
-                id="scrollableDiv"
+                id={scrollableDivID}
                 className="overflow-y-auto overflow-x-hidden"
                 style={{
                   width: 240,
@@ -815,30 +891,14 @@ export const Chat = () => {
                 <InfiniteScroll
                   dataLength={data.length}
                   next={loadMoreData}
-                  hasMore={
-                    data.length <
-                    ChatHistory.get().data.filter((x) => {
-                      if (historyFilterType == "all") {
-                        return true;
-                      } else if (historyFilterType == "star") {
-                        return x.icon == "⭐";
-                      } else {
-                        return (
-                          historyFilterSearchValue == "" ||
-                          x.label
-                            .toLowerCase()
-                            .includes(historyFilterSearchValue)
-                        );
-                      }
-                    }).length
-                  }
+                  hasMore={data.length < loadDataTatal.current}
                   loader={
                     <div style={{ textAlign: "center" }}>
                       <Spin indicator={<RedoOutlined spin />} size="small" />
                     </div>
                   }
                   endMessage={<Divider plain>Nothing 🤐</Divider>}
-                  scrollableTarget="scrollableDiv"
+                  scrollableTarget={scrollableDivID}
                 >
                   <Conversations
                     items={data.map((x) => {
@@ -1025,6 +1085,7 @@ export const Chat = () => {
                                     },
                                     find.prompt,
                                   );
+                                  loadMoreData(false);
                                 }}
                                 onEdit={() => {
                                   let value = GPTS.get().data.find(
@@ -1082,14 +1143,17 @@ export const Chat = () => {
                   <span
                     className="cursor-pointer"
                     onClick={() => {
-                      if (client) {
-                        // client.clear();
-                        // currentChat.current.messages = client.messages;
+                      if (openaiClient.current) {
                         let p = currentChat.current.messages.find(
                           (x) => x.role == "system",
                         )?.content;
 
-                        currentChatReset({}, p);
+                        currentChatReset(
+                          {
+                            gptsKey: currentChat.current.gptsKey,
+                          },
+                          p,
+                        );
                       }
                     }}
                   >
@@ -1255,13 +1319,15 @@ export const Chat = () => {
                 <Tooltip title="Token Usage">
                   <span className="cursor-pointer">
                     token:{" "}
-                    {client == null ? (
+                    {openaiClient.current == null ? (
                       0
-                    ) : typeof client.totalTokens == "number" &&
-                      !Number.isNaN(client.totalTokens) ? (
-                      client.totalTokens
+                    ) : typeof openaiClient.current.totalTokens == "number" &&
+                      !Number.isNaN(openaiClient.current.totalTokens) ? (
+                      openaiClient.current.totalTokens
                     ) : (
-                      <span>{"estimate " + client.estimateTotalTokens}</span>
+                      <span>
+                        {"estimate " + openaiClient.current.estimateTotalTokens}
+                      </span>
                     )}
                   </span>
                 </Tooltip>
@@ -1352,7 +1418,7 @@ export const Chat = () => {
                   }}
                   onCancel={() => {
                     setLoading(false);
-                    client.cancel();
+                    openaiClient.current.cancel();
                     // message.success("Cancel sending!");
                   }}
                   onSubmit={(s) => {
@@ -1531,7 +1597,7 @@ export const Chat = () => {
                   values.attachedDialogueCount;
 
                 calcAttachDialogue(
-                  client.messages,
+                  openaiClient.current.messages,
                   currentChat.current.attachedDialogueCount,
                 );
 

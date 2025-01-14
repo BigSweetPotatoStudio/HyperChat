@@ -93,6 +93,10 @@ export class OpenAiChannel {
       baseURL: options.baseURL,
       apiKey: options.apiKey, // This is the default and can be omitted
       dangerouslyAllowBrowser: true,
+      defaultHeaders: {
+        "HTTP-Referer": "https://www.dadigua.men", // Optional. Site URL for rankings on openrouter.ai.
+        "X-Title": "HyperChat", // Optional. Site title for rankings on openrouter.ai.
+      },
     });
   }
   addMessage(
@@ -241,6 +245,9 @@ export class OpenAiChannel {
             messages: messages,
             model: this.options.model,
             stream: true,
+            stream_options: {
+              include_usage: this.options.model == "qwen-plus" ? false : true, // qwen bug stream not support include_usage
+            },
             tools: tools,
           },
           {
@@ -252,11 +259,18 @@ export class OpenAiChannel {
         onUpdate && onUpdate(res.content as string);
         let totalTokens;
         for await (const chunk of stream) {
+          // console.log(chunk.choices);
+          try {
+            console.log(
+              chunk.choices[0]?.delta?.tool_calls[0]?.function?.arguments,
+            );
+          } catch (e) {}
+
           if (chunk.usage) {
             totalTokens = chunk.usage.total_tokens;
           }
 
-          if (chunk.choices[0].delta.tool_calls) {
+          if (chunk.choices[0]?.delta?.tool_calls) {
             if (chunk.choices[0].delta.tool_calls.length > 1) {
               console.error("大错误，期待");
               debugger;
@@ -271,7 +285,6 @@ export class OpenAiChannel {
                 origin_name: "",
                 function: {
                   name: "",
-
                   arguments: "",
                   argumentsJSON: {},
                 },
@@ -280,6 +293,7 @@ export class OpenAiChannel {
             }
             tool.function.name +=
               chunk.choices[0].delta.tool_calls[0].function.name || "";
+
             tool.function.arguments +=
               chunk.choices[0].delta.tool_calls[0].function.arguments || "";
             tool.id += chunk.choices[0].delta.tool_calls[0].id || "";
@@ -335,6 +349,7 @@ export class OpenAiChannel {
         this.lastMessage.content = openaires.content;
       }
     } catch (e) {
+      console.error(e);
       this.lastMessage.content_status = "error";
       onUpdate && onUpdate(this.lastMessage.content as string);
       throw e;
@@ -478,35 +493,102 @@ export class OpenAiChannel {
   }
   async testTool() {
     try {
+      const openai = new OpenAI({
+        apiKey: "AIzaSyAuFE2L27Fxk99H9WBNXLgTgbDCciHW2E8",
+        baseURL: "https://generativelanguage.googleapis.com/v1beta/openai/",
+        dangerouslyAllowBrowser: true,
+      });
+
+      async function main() {
+        const messages = [
+          {
+            role: "user",
+            content: "What's the weather like in Chicago today?",
+          },
+        ];
+        const tools = [
+          {
+            type: "function",
+            function: {
+              name: "get_weather",
+              description: "Get the weather in a given location",
+              parameters: {
+                type: "object",
+                properties: {
+                  location: {
+                    type: "string",
+                    description: "The city and state, e.g. Chicago, IL",
+                  },
+                  unit: { type: "string", enum: ["celsius", "fahrenheit"] },
+                },
+                required: ["location"],
+              },
+            },
+          },
+        ];
+
+        const response = await openai.chat.completions.create({
+          model: "gemini-2.0-flash-exp",
+          messages: messages,
+          tools: tools,
+          tool_choice: "auto",
+        } as any);
+
+        console.log(response);
+      }
+
+      // await main();
+
       const tools = [
+        // {
+        //   type: "function" as const,
+        //   function: {
+        //     name: "get_weather",
+        //     parameters: {
+        //       type: "object",
+        //       properties: {
+        //         location: { type: "string" },
+        //       },
+        //       required: ["location"],
+        //       additionalProperties: false,
+        //     },
+        //     // returns: {
+        //     //   type: "string",
+        //     //   description: "The weather in the location",
+        //     // },
+        //   },
+        // },
         {
           type: "function" as const,
           function: {
             name: "get_weather",
+            description: "Get the weather in a given location",
             parameters: {
               type: "object",
               properties: {
-                location: { type: "string" },
-                unit: { type: "string", enum: ["c", "f"] },
+                location: {
+                  type: "string",
+                  description: "The city and state, e.g. Chicago, IL",
+                },
+                unit: { type: "string", enum: ["celsius", "fahrenheit"] },
               },
-              required: ["location", "unit"],
-              additionalProperties: false,
-            },
-            returns: {
-              type: "string",
-              description: "The weather in the location",
+              required: ["location"],
             },
           },
         },
       ];
       let messages: Array<any> = [
-        { role: "user", content: "深圳天气今天怎么样?" },
+        {
+          role: "user",
+          content: "hello, What's the weather like in Chicago today?",
+        },
       ];
 
       let response = await this.openai.chat.completions.create({
         model: this.options.model,
         messages: messages,
         tools,
+        tool_choice: "auto",
       });
       messages.push(response.choices[0].message);
 
@@ -518,7 +600,7 @@ export class OpenAiChannel {
       let runs = {} as any;
 
       runs.get_weather = ({ location, unit }) => {
-        return "25度, 晴天";
+        return "25°C, sunny day.";
       };
 
       console.log(function_name, function_args);
@@ -531,6 +613,7 @@ export class OpenAiChannel {
         tool_call_id: response.choices[0].message.tool_calls![0]["id"],
         content: res,
       });
+
       response = await this.openai.chat.completions.create({
         model: this.options.model,
         messages: messages,
