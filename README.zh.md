@@ -117,3 +117,7 @@ npm run dev
 ![image.png](./images/image34.png)
 
 ![image.png](./images/image48.png)
+
+## 免责声明
+
+* 本项目仅供学习交流使用，如果您使用本项目进行任何操作，如爬虫行为等，与本项目开发者无关。
