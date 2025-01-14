@@ -28,10 +28,17 @@ type ContentImage = {
 };
 
 export type MyMessage = OpenAI.Chat.Completions.ChatCompletionMessageParam & {
-  content_status?: "loading" | "success" | "error";
+  content_status?:
+    | "loading"
+    | "success"
+    | "error"
+    | "dataLoading"
+    | "dataLoadComplete";
   content_from?: string;
   content_attachment: ContentImage[];
   tool_calls?: Tool_Call[];
+  content_context?: any;
+  content_attached?: boolean;
 };
 
 class ClientName2Index {
@@ -78,6 +85,7 @@ export class OpenAiChannel {
       call_tool_step?: number;
       supportTool?: boolean;
       supportImage?: boolean;
+      allowMCPs?: string[];
     },
     public messages: MyMessage[],
     public stream = true,
@@ -86,6 +94,10 @@ export class OpenAiChannel {
       baseURL: options.baseURL,
       apiKey: options.apiKey, // This is the default and can be omitted
       dangerouslyAllowBrowser: true,
+      defaultHeaders: {
+        "HTTP-Referer": "https://www.dadigua.men", // Optional. Site URL for rankings on openrouter.ai.
+        "X-Title": "HyperChat", // Optional. Site title for rankings on openrouter.ai.
+      },
     });
   }
   addMessage(
@@ -207,7 +219,11 @@ export class OpenAiChannel {
     if (!call_tool || this.options.supportTool === false) {
       tools = undefined;
     } else {
-      tools = await getTools();
+      tools = getTools(
+        (x) =>
+          this.options.allowMCPs == null ||
+          this.options.allowMCPs.includes(x.name),
+      );
       if (tools.length == 0) {
         tools = undefined;
       }
@@ -222,7 +238,9 @@ export class OpenAiChannel {
       content_status: "loading",
     } as any;
 
-    let messages = this.messages.slice();
+    let messages = this.messages.filter(
+      (m) => m.content_attached == null || m.content_attached == true,
+    );
     this.messages.push(res as any);
     onUpdate && onUpdate(this.lastMessage.content as string);
     try {
@@ -232,6 +250,9 @@ export class OpenAiChannel {
             messages: messages,
             model: this.options.model,
             stream: true,
+            stream_options: {
+              include_usage: this.options.model == "qwen-plus" ? false : true, // qwen bug stream not support include_usage
+            },
             tools: tools,
           },
           {
@@ -239,14 +260,21 @@ export class OpenAiChannel {
           },
         );
         this.lastMessage.content_status = "success";
-        onUpdate && onUpdate(this.lastMessage.content as string);
+        this.lastMessage.content_status = "dataLoading";
+        onUpdate && onUpdate(res.content as string);
         let totalTokens;
         for await (const chunk of stream) {
+          // try {
+          //   console.log(
+          //     chunk.choices[0]?.delta?.tool_calls[0]?.function?.arguments,
+          //   );
+          // } catch (e) {}
+
           if (chunk.usage) {
             totalTokens = chunk.usage.total_tokens;
           }
 
-          if (chunk.choices[0].delta.tool_calls) {
+          if (chunk.choices[0]?.delta?.tool_calls) {
             if (chunk.choices[0].delta.tool_calls.length > 1) {
               console.error("大错误，期待");
               debugger;
@@ -261,7 +289,6 @@ export class OpenAiChannel {
                 origin_name: "",
                 function: {
                   name: "",
-
                   arguments: "",
                   argumentsJSON: {},
                 },
@@ -270,10 +297,12 @@ export class OpenAiChannel {
             }
             tool.function.name +=
               chunk.choices[0].delta.tool_calls[0].function.name || "";
+
             tool.function.arguments +=
               chunk.choices[0].delta.tool_calls[0].function.arguments || "";
             tool.id += chunk.choices[0].delta.tool_calls[0].id || "";
           }
+
           res.content += chunk.choices[0]?.delta?.content || "";
           onUpdate && onUpdate(res.content as string);
         }
@@ -324,10 +353,12 @@ export class OpenAiChannel {
         this.lastMessage.content = openaires.content;
       }
     } catch (e) {
+      console.error(e);
       this.lastMessage.content_status = "error";
       onUpdate && onUpdate(this.lastMessage.content as string);
       throw e;
     }
+    this.lastMessage.content_status = "dataLoadComplete";
     onUpdate && onUpdate(this.lastMessage.content as string);
 
     tool_calls.forEach((tool) => {
@@ -467,34 +498,55 @@ export class OpenAiChannel {
   async testTool() {
     try {
       const tools = [
+        // {
+        //   type: "function" as const,
+        //   function: {
+        //     name: "get_weather",
+        //     parameters: {
+        //       type: "object",
+        //       properties: {
+        //         location: { type: "string" },
+        //       },
+        //       required: ["location"],
+        //       additionalProperties: false,
+        //     },
+        //     // returns: {
+        //     //   type: "string",
+        //     //   description: "The weather in the location",
+        //     // },
+        //   },
+        // },
         {
           type: "function" as const,
           function: {
             name: "get_weather",
+            description: "Get the weather in a given location",
             parameters: {
               type: "object",
               properties: {
-                location: { type: "string" },
-                unit: { type: "string", enum: ["c", "f"] },
+                location: {
+                  type: "string",
+                  description: "The city and state, e.g. Chicago, IL",
+                },
+                unit: { type: "string", enum: ["celsius", "fahrenheit"] },
               },
-              required: ["location", "unit"],
-              additionalProperties: false,
-            },
-            returns: {
-              type: "string",
-              description: "The weather in the location",
+              required: ["location"],
             },
           },
         },
       ];
       let messages: Array<any> = [
-        { role: "user", content: "深圳天气今天怎么样?" },
+        {
+          role: "user",
+          content: "hello, What's the weather like in Chicago today?",
+        },
       ];
 
       let response = await this.openai.chat.completions.create({
         model: this.options.model,
         messages: messages,
         tools,
+        tool_choice: "auto",
       });
       messages.push(response.choices[0].message);
 
@@ -506,7 +558,7 @@ export class OpenAiChannel {
       let runs = {} as any;
 
       runs.get_weather = ({ location, unit }) => {
-        return "25度, 晴天";
+        return "25°C, sunny day.";
       };
 
       console.log(function_name, function_args);
@@ -519,6 +571,7 @@ export class OpenAiChannel {
         tool_call_id: response.choices[0].message.tool_calls![0]["id"],
         content: res,
       });
+
       response = await this.openai.chat.completions.create({
         model: this.options.model,
         messages: messages,

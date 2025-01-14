@@ -72,6 +72,9 @@ export const electronData = new Data(
     PATH: "",
     platform: "",
     firstOpen: true,
+    downloaded: {} as {
+      [s: string]: boolean;
+    },
   },
   {
     sync: false,
@@ -89,27 +92,20 @@ export const AppSetting = new Data("app_setting.json", {
   },
 });
 
-// export const DownloadVideo = new Data("download_video.json", {
-//   data: [] as Array<{
-//     title: string;
-//     filename: string;
-//     state: string;
-//     uuid: string;
-//   }>,
-// });
-
+export type ChatHistoryItem = {
+  label: string;
+  key: string;
+  messages: Array<any>;
+  modelKey: string;
+  gptsKey: string;
+  sended: boolean;
+  icon: string;
+  allowMCPs: string[];
+  requestType: string;
+  attachedDialogueCount?: number;
+};
 export const ChatHistory = new Data("chat_history.json", {
-  data: [] as Array<{
-    label: string;
-    key: string;
-    messages: Array<{ role: string; content: string }>;
-    modelKey: string;
-    gptsKey: string;
-    sended: boolean;
-    icon: string;
-    allowMCPs: string[];
-    requestType: string;
-  }>,
+  data: [] as Array<ChatHistoryItem>,
 });
 
 export const GPTS = new Data("gpts_list.json", {
@@ -120,6 +116,7 @@ export const GPTS = new Data("gpts_list.json", {
     description?: string;
     allowMCPs: string[];
     modelKey?: string;
+    attachedDialogueCount?: number;
   }>,
 });
 
@@ -195,6 +192,41 @@ export const TEMP_FILE = new Data(
   "temp_file.json",
   {
     mcpExtensionDataJS: "",
+  },
+  {
+    sync: false,
+  }
+);
+
+export type KNOWLEDGE_Store = {
+  localPath: string;
+  key: string;
+  resources: KNOWLEDGE_Resource[];
+  name: string;
+  model: string;
+  description: string;
+};
+
+export type KNOWLEDGE_Resource = {
+  key: string;
+  name: string;
+  type: "file" | "markdown";
+  fragments?: KNOWLEDGE_Resource_Fragment[];
+  filepath?: string;
+  markdown?: string;
+};
+
+export type KNOWLEDGE_Resource_Fragment = {
+  resourceKey: string;
+  date: number;
+  text: string;
+  vector: number[];
+};
+
+export const KNOWLEDGE_BASE = new Data(
+  "knowledge_base.json",
+  {
+    dbList: [] as Array<KNOWLEDGE_Store>,
   },
   {
     sync: false,

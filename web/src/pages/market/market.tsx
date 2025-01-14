@@ -227,6 +227,14 @@ export function Market() {
     (async () => {
       let mcp = await MCP_CONFIG.init();
       let r = (await getMCPExtensionData()) as any[];
+      let clients = await getClients(false);
+      r = clients
+        .filter((x) => x.config.hyperchat.scope == "built-in")
+        .concat(r);
+      // res.data.unshift({
+      //   name: "hyper_tools",
+      //   description: "hyper_tools",
+      // });
       // r = [];
       for (let x of r) {
         mcpExtensionDataObj[x.name] = x;

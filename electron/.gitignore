@@ -40,3 +40,4 @@ __pycache__/
 *.spec
 *.log
 tests/
+.env

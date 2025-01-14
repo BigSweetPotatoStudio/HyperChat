@@ -13,6 +13,8 @@ import { Setting } from "./pages/setting";
 import { Chat } from "./pages/chat";
 import { Market } from "./pages/market/market";
 import { HpyerTools } from "./pages/hypertools/hypertools";
+import { KnowledgeBase } from "./pages/knowledgeBase/knowledgeBase";
+import { WorkSpace } from "./pages/workspace";
 
 type RouteType = {
   path: string;
@@ -38,13 +40,25 @@ let route: RouteType = {
       path: "/Chat",
       name: "Chat",
       icon: "💬",
-      component: <Chat />,
+      component: <WorkSpace />,
     },
+    // {
+    //   path: "/WorkSpace",
+    //   name: "WorkSpace",
+    //   icon: "💬",
+    //   component: <WorkSpace />,
+    // },
     {
       path: "/Market",
       name: "MCP Extensions",
       icon: "💻",
       component: <Market />,
+    },
+    {
+      path: "/KnowledgeBase",
+      name: "Knowledge Base(Experimental)",
+      icon: "📚",
+      component: <KnowledgeBase />,
     },
     {
       path: "/HpyerTools",

@@ -123,7 +123,7 @@ const Providers: ProviderType[] = [
     call_tool_step: 1,
   },
   {
-    label: "Other",
+    label: "OpenAI Compatibility",
     baseURL: "",
     value: "other",
   },
@@ -155,11 +155,7 @@ export function Layout() {
       setIsModelConfigOpen(true);
     });
   }, []);
-  useEffect(() => {
-    getClients(false).then((x) => {
-      setClients(x);
-    });
-  }, []);
+  useEffect(() => {}, []);
   useEffect(() => {
     (async () => {
       await GPT_MODELS.init();
@@ -196,7 +192,7 @@ export function Layout() {
   const [form] = Form.useForm();
   const [mcpform] = Form.useForm();
   const [isToolsShow, setIsToolsShow] = useState(false);
-  const [clients, setClients] = React.useState([]);
+
   const [isAddMCPConfigOpen, setIsAddMCPConfigOpen] = useState(false);
   const [loadingOpenMCP, setLoadingOpenMCP] = useState(false);
   const [loadingCheckLLM, setLoadingCheckLLM] = useState(false);
@@ -368,7 +364,7 @@ export function Layout() {
                     {syncStatus == 1
                       ? "Syncing"
                       : syncStatus == -1
-                        ? "Sync Falled"
+                        ? "Sync Failed"
                         : "Sync"}
                   </Button>
                 </>

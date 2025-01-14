@@ -42,3 +42,35 @@ main {
   padding-block: 1rem;
   padding-inline: 1rem;
 }
+
+.markdown-body ol,
+ul,
+menu {
+  list-style: revert;
+  /* color: red;
+  font-size: 1.5em; */
+}
+
+div[role="user"] .ant-bubble-content-wrapper {
+  align-items: flex-end;
+}
+
+div[role="system"] .ant-bubble-content-wrapper {
+  align-items: flex-end;
+}
+
+.no-attached {
+  opacity: 0.5;
+}
+
+.myworkspace .ant-tabs-content {
+  height: 100%;
+}
+
+.myworkspace .ant-tabs-content .ant-tabs-tabpane {
+  height: 100%;
+}
+
+.myworkspace .ant-tabs-nav {
+  margin-top: 0;
+}

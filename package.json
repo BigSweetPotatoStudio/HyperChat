@@ -1,6 +1,6 @@
 {
   "name": "dadigua-hyperchat",
-  "version": "0.1.0",
+  "version": "0.3.0",
   "main": "index.js",
   "scripts": {
     "dev": "tsx task.mts --dev",
@@ -12,9 +12,9 @@
   "license": "ISC",
   "description": "",
   "dependencies": {
-    "tsx": "^4.9.3",
-    "zx": "^8.0.1",
     "cross-spawn": "^7.0.6",
-    "dotenv": "16.4.7"
+    "dotenv": "16.4.7",
+    "tsx": "^4.9.3",
+    "zx": "^8.0.1"
   }
 }
