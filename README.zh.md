@@ -23,6 +23,7 @@ HyperChat 是一个追求开放的Chat客户端，可以使用各家LLM的API，
 - [x] 支持 `KaTeX`，显示数学公式，代码Code渲染增加高亮和快速复制
 - [x] `WebDAV` 同步
 - [x] `MCP`扩展市场+第三方MCP支持
+- [x] 添加知识库
 
 ### TODO:
 
