@@ -33,7 +33,7 @@ export type InitedClient = {
   name: string;
   status: string;
   order: number;
-  enable: boolean;
+  // enable: boolean;
   config: MCP_CONFIG_TYPE;
 };
 
@@ -53,35 +53,29 @@ initMcpClients()
     init = true;
   });
 
-export function getTools() {
+export function getTools(filter = (x: InitedClient) => true) {
   let tools: InitedClient["tools"] = [];
 
-  initedClientArray
-    .filter((v) => v.enable == null || v.enable == true)
-    .forEach((v) => {
-      tools = tools.concat(v.tools);
-    });
+  initedClientArray.filter(filter).forEach((v) => {
+    tools = tools.concat(v.tools);
+  });
   return tools;
 }
-export function getPrompts() {
+export function getPrompts(filter = (x: InitedClient) => true) {
   let prompts: InitedClient["prompts"] = [];
 
-  initedClientArray
-    .filter((v) => v.enable == null || v.enable == true)
-    .forEach((v) => {
-      prompts = prompts.concat(v.prompts);
-    });
+  initedClientArray.filter(filter).forEach((v) => {
+    prompts = prompts.concat(v.prompts);
+  });
   return prompts;
 }
 
-export function getResourses() {
+export function getResourses(filter = (x: InitedClient) => true) {
   let resources: InitedClient["resources"] = [];
 
-  initedClientArray
-    .filter((v) => v.enable == null || v.enable == true)
-    .forEach((v) => {
-      resources = resources.concat(v.resources);
-    });
+  initedClientArray.filter(filter).forEach((v) => {
+    resources = resources.concat(v.resources);
+  });
   return resources;
 }
 
@@ -161,7 +155,7 @@ function mcpClientsToArray(mcpClients: {
       set config(value: any) {
         MCP_CONFIG.get().mcpServers[key] = value;
       },
-      enable: !MCP_CONFIG.get().mcpServers[key]?.disabled,
+      // enable: !MCP_CONFIG.get().mcpServers[key]?.disabled,
     });
   }
   array.sort((a, b) => {
