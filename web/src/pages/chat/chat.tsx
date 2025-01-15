@@ -139,6 +139,7 @@ import Clarity from "@microsoft/clarity";
 import { Copy } from "lucide-react";
 import { ChatHistoryItem } from "../../../../common/data";
 import { useForm } from "antd/es/form/Form";
+import { t } from "../../i18n";
 
 // let openaiClient: OpenAiChannel;
 export const Chat = ({ onTitleChange = undefined }) => {
@@ -352,7 +353,7 @@ export const Chat = ({ onTitleChange = undefined }) => {
                     ? (x.content[0] as any).text
                     : x.content.toString(),
                 ]);
-                message.success("Copied to clipboard");
+                message.success(t`Copied to clipboard`);
               }}
             />
 
@@ -1605,7 +1606,7 @@ export const Chat = ({ onTitleChange = undefined }) => {
 
         <Modal
           width={800}
-          title="Fill Prompt Arguments"
+          title={t`Fill Prompt Arguments`}
           open={isFillPromptModalOpen}
           okButtonProps={{ autoFocus: true, htmlType: "submit" }}
           cancelButtonProps={{ style: { display: "none" } }}
