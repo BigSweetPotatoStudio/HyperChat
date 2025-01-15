@@ -60,7 +60,14 @@ div[role="system"] .ant-bubble-content-wrapper {
 }
 
 .no-attached {
-  opacity: 0.5;
+  /* opacity: 0.8; */
+  background: repeating-linear-gradient(
+    135deg,
+    #d3d3d3,
+    /* 灰色 */ #d3d3d3 10px,
+    #ffffff 10px,
+    #ffffff 20px
+  );
 }
 
 .myworkspace .ant-tabs-content {
@@ -73,4 +80,12 @@ div[role="system"] .ant-bubble-content-wrapper {
 
 .myworkspace .ant-tabs-nav {
   margin-top: 0;
+}
+
+.chat .ant-bubble-content-wrapper {
+  flex-grow: 0;
+}
+
+.chat .ant-bubble-content-wrapper .ant-bubble-footer {
+  width: 100%;
 }

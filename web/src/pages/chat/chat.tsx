@@ -31,6 +31,7 @@ import {
   Result,
   Segmented,
   Select,
+  Slider,
   Space,
   Spin,
   Table,
@@ -105,6 +106,10 @@ import {
   CopyOutlined,
   SettingOutlined,
   LeftOutlined,
+  MinusCircleOutlined,
+  DownloadOutlined,
+  UploadOutlined,
+  StockOutlined,
 } from "@ant-design/icons";
 import type { ConfigProviderProps, GetProp } from "antd";
 import { MyMessage, OpenAiChannel } from "../../common/openai";
@@ -134,6 +139,7 @@ import Clarity from "@microsoft/clarity";
 import { Copy } from "lucide-react";
 import { ChatHistoryItem } from "../../../../common/data";
 import { useForm } from "antd/es/form/Form";
+import { t } from "../../i18n";
 
 // let openaiClient: OpenAiChannel;
 export const Chat = ({ onTitleChange = undefined }) => {
@@ -196,14 +202,15 @@ export const Chat = ({ onTitleChange = undefined }) => {
     icon: "",
     allowMCPs: [],
     attachedDialogueCount: undefined,
+    dateTime: Date.now(),
   });
   const currentChatReset = async (
-    config: Partial<ChatHistoryItem>,
+    newConfig: Partial<ChatHistoryItem>,
     prompt = "",
     allMCPs = false,
   ) => {
     if (prompt) {
-      config.messages = [
+      newConfig.messages = [
         {
           role: "system",
           content: prompt,
@@ -221,7 +228,8 @@ export const Chat = ({ onTitleChange = undefined }) => {
       icon: "",
       allowMCPs: [],
       attachedDialogueCount: undefined,
-      ...config,
+      dateTime: Date.now(),
+      ...newConfig,
     };
 
     setResourceResList([]);
@@ -345,7 +353,7 @@ export const Chat = ({ onTitleChange = undefined }) => {
                     ? (x.content[0] as any).text
                     : x.content.toString(),
                 ]);
-                message.success("Copied to clipboard");
+                message.success(t`Copied to clipboard`);
               }}
             />
 
@@ -368,6 +376,11 @@ export const Chat = ({ onTitleChange = undefined }) => {
                   onRequest(x.content as any);
                 }}
               />
+            )}
+            {x.role == "user" && x.content_attached == false && (
+              <Tooltip title="Cleared">
+                <MinusCircleOutlined className="cursor-not-allowed" />
+              </Tooltip>
             )}
           </Space>
         ),
@@ -407,7 +420,7 @@ export const Chat = ({ onTitleChange = undefined }) => {
         ...common,
         placement: "start",
         avatar: {
-          icon: "🤖",
+          icon: "🔧",
           style: {
             color: "#fff",
             backgroundColor: "#87d068",
@@ -481,35 +494,71 @@ export const Chat = ({ onTitleChange = undefined }) => {
         },
         key: i.toString(),
         // typing: x.content_status == "dataLoading",
-        footer: (x.content_status == "error" || x.content) && (
-          <Space>
-            <CopyOutlined
-              className="hover:text-cyan-400"
-              key="copy"
-              onClick={() => {
-                call("setClipboardText", [x.content.toString()]);
-                message.success("Copied to clipboard");
-              }}
-            />
-            <SyncOutlined
-              key="sync"
-              className="hover:text-cyan-400"
-              onClick={() => {
-                // onRequest(x.content as any);
-                while (i--) {
-                  if (openaiClient.current.messages[i].role === "user") {
-                    let content = openaiClient.current.messages[i].content;
-                    openaiClient.current.messages.splice(i);
-                    currentChat.current.messages =
-                      openaiClient.current.messages;
-                    refresh();
-                    onRequest(content as any);
-                    break;
-                  }
-                }
-              }}
-            />
-          </Space>
+        footer: x.content_status != "error" && (
+          <div className="flex justify-between">
+            <Space>
+              <CopyOutlined
+                className="hover:text-cyan-400"
+                key="copy"
+                onClick={() => {
+                  call("setClipboardText", [x.content.toString()]);
+                  message.success("Copied to clipboard");
+                }}
+              />
+              <SyncOutlined
+                key="sync"
+                className="hover:text-cyan-400"
+                onClick={() => {
+                  // onRequest(x.content as any);
+                  let content = openaiClient.current.messages[i].content;
+                  openaiClient.current.messages.splice(i);
+                  currentChat.current.messages = openaiClient.current.messages;
+                  refresh();
+                  onRequest();
+                  // while (i--) {
+                  //   if (openaiClient.current.messages[i].role === "user") {
+                  //     let content = openaiClient.current.messages[i].content;
+                  //     openaiClient.current.messages.splice(i);
+                  //     currentChat.current.messages =
+                  //       openaiClient.current.messages;
+                  //     refresh();
+                  //     onRequest(content as any);
+                  //     break;
+                  //   }
+                  // }
+                }}
+              />
+            </Space>
+            <Space>
+              {x.content_attached == false && (
+                <Tooltip title="Cleared">
+                  <MinusCircleOutlined className="cursor-not-allowed bg-red-200" />
+                </Tooltip>
+              )}
+              {x.content_usage && (
+                <>
+                  {x?.content_usage?.prompt_tokens ? (
+                    <Tooltip title="prompt_tokens">
+                      <UploadOutlined />
+                      {x?.content_usage?.prompt_tokens}
+                    </Tooltip>
+                  ) : null}
+                  {x?.content_usage?.completion_tokens ? (
+                    <Tooltip title="completion_tokens">
+                      <DownloadOutlined />
+                      {x?.content_usage?.completion_tokens}
+                    </Tooltip>
+                  ) : null}
+                  {x?.content_usage?.total_tokens ? (
+                    <Tooltip title="total_tokens">
+                      <StockOutlined />
+                      {x?.content_usage?.total_tokens}
+                    </Tooltip>
+                  ) : null}
+                </>
+              )}
+            </Space>
+          </div>
         ),
         // loading:
         //   x.content_status == "loading" || x.content_status == "dataLoading",
@@ -614,7 +663,7 @@ export const Chat = ({ onTitleChange = undefined }) => {
     refresh();
   };
   const [loading, setLoading] = useState(false);
-  const onRequest = async (message: string) => {
+  const onRequest = async (message?: string) => {
     Clarity.event(`sender-${process.env.NODE_ENV}`);
     console.log("onRequest", message);
     try {
@@ -631,26 +680,30 @@ export const Chat = ({ onTitleChange = undefined }) => {
           sended: true,
           gptsKey: currentChat.current.gptsKey,
           allowMCPs: currentChat.current.allowMCPs,
+          dateTime: Date.now(),
         });
         setData([currentChat.current, ...data]);
         ChatHistory.get().data.unshift(currentChat.current);
       } else {
-        let find = ChatHistory.get().data.find(
+        let findIndex = ChatHistory.get().data.findIndex(
           (x) => x.key == currentChat.current.key,
         );
-        if (find) {
-          // currentChat.current.allowMCPs = clientsRef.current
-          //   .filter((record) => (record.enable == null ? true : record.enable))
-          //   .map((v) => v.name);
+
+        if (findIndex > -1) {
+          let find = ChatHistory.get().data.splice(findIndex, 1)[0];
+          currentChat.current.dateTime = Date.now();
           Object.assign(find, currentChat.current);
+          ChatHistory.get().data.unshift(find);
         }
       }
       openaiClient.current.options.allowMCPs = currentChat.current.allowMCPs;
-      openaiClient.current.addMessage(
-        { role: "user", content: message, content_attachment: [] },
-        resourceResList,
-        promptResList,
-      );
+      if (message) {
+        openaiClient.current.addMessage(
+          { role: "user", content: message, content_attachment: [] },
+          resourceResList,
+          promptResList,
+        );
+      }
 
       refresh();
 
@@ -661,6 +714,7 @@ export const Chat = ({ onTitleChange = undefined }) => {
       calcAttachDialogue(
         openaiClient.current.messages,
         currentChat.current.attachedDialogueCount,
+        false,
       );
 
       currentChat.current.messages = openaiClient.current.messages;
@@ -838,7 +892,6 @@ export const Chat = ({ onTitleChange = undefined }) => {
               )}
               <div className="mt-2 flex items-center justify-between">
                 <Space>
-                  {/* <CommentOutlined /> */}
                   <span>Dialogue Records</span>
                 </Space>
                 <Segmented
@@ -1138,7 +1191,8 @@ export const Chat = ({ onTitleChange = undefined }) => {
                   </span>
                 </Tooltip>
                 <Divider type="vertical" /> */}
-                <Tooltip title="Reset">
+
+                {/* <Tooltip title="Reset">
                   <span
                     className="cursor-pointer"
                     onClick={() => {
@@ -1157,6 +1211,23 @@ export const Chat = ({ onTitleChange = undefined }) => {
                     }}
                   >
                     🔄
+                  </span>
+                </Tooltip> */}
+                <Tooltip title="Clear Context">
+                  <span
+                    className="cursor-pointer"
+                    onClick={() => {
+                      if (openaiClient.current) {
+                        calcAttachDialogue(
+                          currentChat.current.messages,
+                          0,
+                          true,
+                        );
+                        refresh();
+                      }
+                    }}
+                  >
+                    🗑️
                   </span>
                 </Tooltip>
                 <Divider type="vertical" />
@@ -1535,7 +1606,7 @@ export const Chat = ({ onTitleChange = undefined }) => {
 
         <Modal
           width={800}
-          title="Fill Prompt Arguments"
+          title={t`Fill Prompt Arguments`}
           open={isFillPromptModalOpen}
           okButtonProps={{ autoFocus: true, htmlType: "submit" }}
           cancelButtonProps={{ style: { display: "none" } }}
@@ -1611,13 +1682,14 @@ export const Chat = ({ onTitleChange = undefined }) => {
           <Form.Item
             name="attachedDialogueCount"
             label="attachedDialogueCount"
-            tooltip="Number of sent Dialogue attached per request"
+            tooltip="Number of sent Dialogue Message attached per request"
           >
-            <InputNumber
+            {/* <InputNumber
               placeholder="blank means is all."
               min={0}
               style={{ width: "100%" }}
-            />
+            /> */}
+            <Slider defaultValue={20} max={40} />
           </Form.Item>
         </Modal>
       </div>
@@ -1625,9 +1697,13 @@ export const Chat = ({ onTitleChange = undefined }) => {
   );
 };
 
-const calcAttachDialogue = (messages, attachedDialogueCount) => {
+const calcAttachDialogue = (
+  messages,
+  attachedDialogueCount,
+  overwrite = true,
+) => {
   if (attachedDialogueCount == null) {
-    attachedDialogueCount = Infinity;
+    attachedDialogueCount = 20;
   }
   let c = 0;
   for (let i = messages.length - 1; i >= 0; i--) {
@@ -1636,7 +1712,16 @@ const calcAttachDialogue = (messages, attachedDialogueCount) => {
       m.content_attached = true;
       continue;
     }
-    m.content_attached = c < attachedDialogueCount;
+
+    if (overwrite) {
+      m.content_attached = c < attachedDialogueCount;
+    } else {
+      if (m.content_attached == false && c < attachedDialogueCount) {
+      } else {
+        m.content_attached = c < attachedDialogueCount;
+      }
+    }
+
     if (m.role == "user") {
       c++;
     }
