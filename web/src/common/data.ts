@@ -35,8 +35,28 @@ if (electronData.get().firstOpen) {
   await GPT_MODELS.init();
   GPT_MODELS.save();
   electronData.get().firstOpen = false;
-  electronData.save();
+  await electronData.save();
 }
+
+// try {
+//   if (
+//     !electronData.get().updated[electronData.get().version] &&
+//     electronData.get().version == "0.3.0"
+//   ) {
+//     // 更新配置
+//     let h = await ChatHistory.init();
+//     for (let d of h.data) {
+//       d.dateTime = d.dateTime || Date.now();
+//       for (let m of d.messages) {
+//         m.content_tool_calls = m.tool_calls;
+//       }
+//     }
+//     await ChatHistory.save();
+//     //
+//     electronData.get().updated[electronData.get().version] = true;
+//     await electronData.save();
+//   }
+// } catch (e) {}
 
 export {
   AppSetting,

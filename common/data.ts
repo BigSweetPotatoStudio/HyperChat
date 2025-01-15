@@ -75,6 +75,9 @@ export const electronData = new Data(
     downloaded: {} as {
       [s: string]: boolean;
     },
+    updated: {} as {
+      [s: string]: boolean;
+    },
   },
   {
     sync: false,
@@ -105,6 +108,7 @@ export type ChatHistoryItem = {
   attachedDialogueCount?: number;
   dateTime: number;
 };
+
 export const ChatHistory = new Data("chat_history.json", {
   data: [] as Array<ChatHistoryItem>,
 });

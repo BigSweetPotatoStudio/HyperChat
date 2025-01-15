@@ -107,6 +107,9 @@ import {
   SettingOutlined,
   LeftOutlined,
   MinusCircleOutlined,
+  DownloadOutlined,
+  UploadOutlined,
+  StockOutlined,
 } from "@ant-design/icons";
 import type { ConfigProviderProps, GetProp } from "antd";
 import { MyMessage, OpenAiChannel } from "../../common/openai";
@@ -373,7 +376,7 @@ export const Chat = ({ onTitleChange = undefined }) => {
                 }}
               />
             )}
-            {x.role == "user" && !x.content_attached && (
+            {x.role == "user" && x.content_attached == false && (
               <Tooltip title="Cleared">
                 <MinusCircleOutlined className="cursor-not-allowed" />
               </Tooltip>
@@ -416,7 +419,7 @@ export const Chat = ({ onTitleChange = undefined }) => {
         ...common,
         placement: "start",
         avatar: {
-          icon: "🤖",
+          icon: "🔧",
           style: {
             color: "#fff",
             backgroundColor: "#87d068",
@@ -490,40 +493,71 @@ export const Chat = ({ onTitleChange = undefined }) => {
         },
         key: i.toString(),
         // typing: x.content_status == "dataLoading",
-        footer: (x.content_status == "error" || x.content) && (
-          <Space>
-            <CopyOutlined
-              className="hover:text-cyan-400"
-              key="copy"
-              onClick={() => {
-                call("setClipboardText", [x.content.toString()]);
-                message.success("Copied to clipboard");
-              }}
-            />
-            <SyncOutlined
-              key="sync"
-              className="hover:text-cyan-400"
-              onClick={() => {
-                // onRequest(x.content as any);
-                while (i--) {
-                  if (openaiClient.current.messages[i].role === "user") {
-                    let content = openaiClient.current.messages[i].content;
-                    openaiClient.current.messages.splice(i);
-                    currentChat.current.messages =
-                      openaiClient.current.messages;
-                    refresh();
-                    onRequest(content as any);
-                    break;
-                  }
-                }
-              }}
-            />
-            {!x.content_attached && (
-              <Tooltip title="Cleared">
-                <MinusCircleOutlined className="cursor-not-allowed" />
-              </Tooltip>
-            )}
-          </Space>
+        footer: x.content_status != "error" && (
+          <div className="flex justify-between">
+            <Space>
+              <CopyOutlined
+                className="hover:text-cyan-400"
+                key="copy"
+                onClick={() => {
+                  call("setClipboardText", [x.content.toString()]);
+                  message.success("Copied to clipboard");
+                }}
+              />
+              <SyncOutlined
+                key="sync"
+                className="hover:text-cyan-400"
+                onClick={() => {
+                  // onRequest(x.content as any);
+                  let content = openaiClient.current.messages[i].content;
+                  openaiClient.current.messages.splice(i);
+                  currentChat.current.messages = openaiClient.current.messages;
+                  refresh();
+                  onRequest();
+                  // while (i--) {
+                  //   if (openaiClient.current.messages[i].role === "user") {
+                  //     let content = openaiClient.current.messages[i].content;
+                  //     openaiClient.current.messages.splice(i);
+                  //     currentChat.current.messages =
+                  //       openaiClient.current.messages;
+                  //     refresh();
+                  //     onRequest(content as any);
+                  //     break;
+                  //   }
+                  // }
+                }}
+              />
+            </Space>
+            <Space>
+              {x.content_attached == false && (
+                <Tooltip title="Cleared">
+                  <MinusCircleOutlined className="cursor-not-allowed bg-red-200" />
+                </Tooltip>
+              )}
+              {x.content_usage && (
+                <>
+                  {x?.content_usage?.prompt_tokens ? (
+                    <Tooltip title="prompt_tokens">
+                      <UploadOutlined />
+                      {x?.content_usage?.prompt_tokens}
+                    </Tooltip>
+                  ) : null}
+                  {x?.content_usage?.completion_tokens ? (
+                    <Tooltip title="completion_tokens">
+                      <DownloadOutlined />
+                      {x?.content_usage?.completion_tokens}
+                    </Tooltip>
+                  ) : null}
+                  {x?.content_usage?.total_tokens ? (
+                    <Tooltip title="total_tokens">
+                      <StockOutlined />
+                      {x?.content_usage?.total_tokens}
+                    </Tooltip>
+                  ) : null}
+                </>
+              )}
+            </Space>
+          </div>
         ),
         // loading:
         //   x.content_status == "loading" || x.content_status == "dataLoading",
@@ -628,7 +662,7 @@ export const Chat = ({ onTitleChange = undefined }) => {
     refresh();
   };
   const [loading, setLoading] = useState(false);
-  const onRequest = async (message: string) => {
+  const onRequest = async (message?: string) => {
     Clarity.event(`sender-${process.env.NODE_ENV}`);
     console.log("onRequest", message);
     try {
@@ -662,11 +696,13 @@ export const Chat = ({ onTitleChange = undefined }) => {
         }
       }
       openaiClient.current.options.allowMCPs = currentChat.current.allowMCPs;
-      openaiClient.current.addMessage(
-        { role: "user", content: message, content_attachment: [] },
-        resourceResList,
-        promptResList,
-      );
+      if (message) {
+        openaiClient.current.addMessage(
+          { role: "user", content: message, content_attachment: [] },
+          resourceResList,
+          promptResList,
+        );
+      }
 
       refresh();
 

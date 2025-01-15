@@ -81,3 +81,11 @@ div[role="system"] .ant-bubble-content-wrapper {
 .myworkspace .ant-tabs-nav {
   margin-top: 0;
 }
+
+.chat .ant-bubble-content-wrapper {
+  flex-grow: 0;
+}
+
+.chat .ant-bubble-content-wrapper .ant-bubble-footer {
+  width: 100%;
+}

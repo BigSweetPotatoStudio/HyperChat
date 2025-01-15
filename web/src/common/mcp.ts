@@ -131,7 +131,9 @@ function mcpClientsToArray(mcpClients: {
             description: tool.description,
             parameters: {
               type: tool.inputSchema.type,
-              properties: tool.inputSchema.properties,
+              properties: removeAdditionalProperties(
+                tool.inputSchema.properties,
+              ),
               required: tool.inputSchema.required,
               // additionalProperties: false,
             },
@@ -205,4 +207,24 @@ export async function getMCPExtensionData() {
       throw new Error("The network is not connected and there is no cache.");
     }
   }
+}
+
+function removeAdditionalProperties(obj: any) {
+  if (obj == null) {
+    return obj;
+  }
+  try {
+    for (let key in obj) {
+      if (obj[key].type == "object") {
+        removeAdditionalProperties(obj[key].properties);
+      } else if (obj[key].type == "array") {
+        removeAdditionalProperties(obj[key].items);
+      }
+    }
+    delete obj.additionalProperties;
+  } catch (e) {
+    console.error(e);
+  }
+  // console.log(obj);
+  return obj;
 }
