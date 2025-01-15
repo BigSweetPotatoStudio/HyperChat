@@ -67,7 +67,7 @@ import {
   ProLayout,
 } from "@ant-design/pro-components";
 import { route as routerRoute } from "./router";
-import { currLang, setCurrLang } from "./i18n";
+import { currLang, setCurrLang, t } from "./i18n";
 import { call } from "./common/call";
 import { electronData, GPT_MODELS, MCP_CONFIG } from "./common/data";
 import { getClients } from "./common/mcp";
@@ -747,7 +747,7 @@ export function Layout() {
 
         <Modal
           width={1000}
-          title="My LLM Models"
+          title={t`My LLM Models`}
           open={isModelConfigOpen}
           cancelButtonProps={{ style: { display: "none" } }}
           onOk={() => {
@@ -885,7 +885,7 @@ export function Layout() {
         </Modal>
         <Modal
           width={600}
-          title="Configure LLM"
+          title={t`Configure LLM`}
           open={isAddModelConfigOpen}
           maskClosable={false}
           okButtonProps={{
@@ -1079,7 +1079,7 @@ export function Layout() {
               disabled={
                 !["other", "ollama"].includes(form.getFieldValue("provider"))
               }
-              placeholder="Please enter baseURL"
+              placeholder={t`Please enter baseURL`}
             ></Input>
           </Form.Item>
           <Form.Item
@@ -1087,7 +1087,7 @@ export function Layout() {
             label="apiKey"
             rules={[{ required: true, message: "Please enter" }]}
           >
-            <Input placeholder="Please enter apiKey"></Input>
+            <Input placeholder={t`Please enter apiKey`}></Input>
           </Form.Item>
 
           <Form.Item
@@ -1095,7 +1095,7 @@ export function Layout() {
             label="model"
             rules={[{ required: true, message: "Please enter" }]}
           >
-            <Input placeholder="Please enter the model"></Input>
+            <Input placeholder={t`Please enter the model`}></Input>
           </Form.Item>
           <Form.Item name="name" label="Alias">
             <Input placeholder="The default is the model name"></Input>

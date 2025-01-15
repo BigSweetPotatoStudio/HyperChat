@@ -658,5 +658,45 @@
     "Here, you would input the result of the command echo $PATH.": {
         "en": "Here, you would input the result of the command echo $PATH.",
         "zh": "在这里，你将输入命令 echo $PATH 的结果。"
+    },
+    "Knowledge Base(Experimental)": {
+        "en": "Knowledge Base(Experimental)",
+        "zh": "知识库（实验）"
+    },
+    "HyperTools": {
+        "en": "HyperTools",
+        "zh": "HyperTools"
+    },
+    "Syncing": {
+        "en": "Syncing",
+        "zh": "同步"
+    },
+    "Create": {
+        "en": "Create",
+        "zh": "创建"
+    },
+    "operation": {
+        "en": "operation",
+        "zh": "操作"
+    },
+    "Select": {
+        "en": "Select",
+        "zh": "选择"
+    },
+    "test search top 5": {
+        "en": "test search top 5",
+        "zh": "测试搜索前五名"
+    },
+    "Search": {
+        "en": "Search",
+        "zh": "搜索"
+    },
+    "Check Progress": {
+        "en": "Check Progress",
+        "zh": "检查进度"
+    },
+    "remove": {
+        "en": "remove",
+        "zh": "移除"
     }
 }

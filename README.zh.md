@@ -23,13 +23,13 @@ HyperChat 是一个追求开放的Chat客户端，可以使用各家LLM的API，
 - [x] 支持 `KaTeX`，显示数学公式，代码Code渲染增加高亮和快速复制
 - [x] `WebDAV` 同步
 - [x] `MCP`扩展市场+第三方MCP支持
-- [x] 添加知识库
+- [x] 添加`RAG`，基于mcp知识库
+- [x] 添加ChatSpace概念，支持多对话同时聊天
 
 ### TODO:
 
 - [ ] 权限弹窗，是否允许
-- [ ] 支持定时任务
-- [ ] 支持Projects + RAG
+- [ ] 添加task概念。Agent Administrator，通过Administrator管理Task.
 - [ ] 实现利用LLM自己给自己写Tools
 - [ ] 本地的`shell`+`nodejs`+`js on web`运行环境
 
@@ -92,6 +92,8 @@ npm run dev
 [HyperChat用户交流](https://t.me/dadigua001)
 
 
+![image.png](./images/image51.png)
+
 ![image.png](./images/image13.png)
 
 ![image.png](./images/image43.png)
@@ -117,6 +119,8 @@ npm run dev
 ![image.png](./images/image34.png)
 
 ![image.png](./images/image48.png)
+
+![image.png](./images/image50.png)
 
 ## 免责声明
 
