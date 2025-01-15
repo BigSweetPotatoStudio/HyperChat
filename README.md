@@ -3,11 +3,11 @@
 
 ## Features
 
-HyperChat is an open-minded Chat client that can use various LLM APIs to provide the best chat experience, as well as implement productivity tools through the MCP protocol.
+HyperChat is an open Chat client that utilizes various LLM APIs to provide the best Chat experience and enables productivity tools through the MCP protocol.
 
-* Supports OpenAI-style LLMs, `OpenAI`, `Claude(OpenRouter)`, `Qwen`, `Deepseek`, `GLM`, `Ollama`.
-* Built-in MCP plugin marketplace, user-friendly installation and configuration of MCP, one-click installation, and welcome to submit [HyperChatMCP](https://github.com/BigSweetPotatoStudio/HyperChatMCP).
-* Also supports manual installation of third-party MCP, just fill out `command`, `args`, `env`.
+* Supports OpenAI-style LLMs: `OpenAI`, `Claude(OpenRouter)`, `Qwen`, `Deepseek`, `GLM`, `Ollama`.
+* Built-in MCP plugin marketplace with user-friendly MCP installation configuration, one-click installation, and welcome submissions of [HyperChatMCP](https://github.com/BigSweetPotatoStudio/HyperChatMCP).
+* Also supports third-party MCP manual installation by filling in `command`, `args`, and `env`.
 
 ### MCP:
 
@@ -15,59 +15,61 @@ HyperChat is an open-minded Chat client that can use various LLM APIs to provide
 
 - [x] 🪟Windows + 🍏MacOS
 - [x] Supports `nvm`, see below
-- [x] Supports Resources
-- [x] Partial support for Prompts
-- [x] Supports Tools
+- [x] Resources support
+- [x] Partial Prompts support
+- [x] Tools support
 - [x] Supports English and Chinese
 - [x] Added built-in MCP client `hypertools`, `fetch` + `search`
-- [x] Supports `Bot`, can preset prompt words, allowed MCP services
+- [x] Supports `Bot`, allows preset prompts and permitted MCP services
 - [x] Supports `Artifacts`, `SVG`, `HTML` rendering, JavaScript error capture, supports opening Chrome console
-- [x] Bot display optimization, supports searching, dragging to sort
-- [x] Supports `KaTeX`, displays mathematical formulas, code rendering enhances highlighting and quick copy
+- [x] Bot display optimization, supports search and drag-and-drop sorting
+- [x] Supports `KaTeX`, displays math formulas, code rendering includes highlighting and quick copy
 - [x] `WebDAV` synchronization
 - [x] `MCP` extension marketplace + third-party MCP support
-- [x] Added knowledge base
+- [x] Added `RAG`, based on MCP knowledge base
+- [x] Introduced ChatSpace concept, supports multiple conversations simultaneously
 
 ### TODO:
 
-- [ ] Permission pop-up, allow or not
-- [ ] Support scheduled tasks
-- [ ] Support Projects + RAG
-- [ ] Implement tools that use LLM to write for itself
+- [ ] Permission prompt, whether to allow
+- [ ] Add task concept. Agent Administrator, manage Task through Administrator.
+- [ ] Implement LLM writing tools for itself
 - [ ] Local `shell` + `nodejs` + `js on web` runtime environment
 
 ### LLM
 
-| LLM      | Ease of Use | Notes                       |
-| -------- | ----------- | --------------------------- |
-| claude   | ⭐⭐⭐⭐⭐      | No explanation               |
-| openai   | ⭐⭐⭐⭐🌙    | Can also perfectly support multi-step function calls (gpt-4o-mini can too) |
-| qwen     | ⭐⭐⭐⭐🌙    | Very usable, feels better than OpenAI |
-| doubao   | ⭐⭐⭐        | Feels okay to use            |
-| deepseek | ⭐⭐         | Multi-step function calls may have issues |
+| LLM      | Usability   | Remarks                         |
+| -------- | ------ | -------------------------- |
+| claude   | ⭐⭐⭐⭐⭐  | No explanation               |
+| openai   | ⭐⭐⭐⭐🌙 | Also can perfectly support multi-step function calls (gpt-4o-mini can too) |
+| qwen     | ⭐⭐⭐⭐🌙 | Very usable, feels better than OpenAI |
+| doubao   | ⭐⭐⭐    | Okay to use                   |
+| deepseek | ⭐⭐      | Multi-step function calls may have issues |
 
 ## Usage
 
 * 1. Configure APIKEY, ensure your LLM service is compatible with OpenAI style.
-* 2. Ensure you have `uv + nodejs` installed on your system.
+* 2. Ensure `uv + nodejs` is installed on your system.
 
 ### [uvx & uv](https://github.com/astral-sh/uv)
 
-Install using the command line or check the official Github tutorial [uv](https://github.com/astral-sh/uv)
+Install using command line, or refer to the official GitHub tutorial [uv](https://github.com/astral-sh/uv)
 
 ```
 # MacOS
 brew install uv
-# Windows
+# windows
 winget install --id=astral-sh.uv -e
 ```
+
 ### [npx & nodejs](https://nodejs.org/en)
 
-Install using the command line or download from the official website, official [nodejs](https://nodejs.org/en)
+Install using command line, or go to the official website to download, official site [nodejs](https://nodejs.org/en)
+
 ```
 # MacOS
 brew install node
-# Windows
+# windows
 winget install OpenJS.NodeJS.LTS
 ```
 
@@ -80,16 +82,18 @@ npm install
 npm run dev
 ```
 
-## Notes
+## Note
 
-* On MacOS, if you encounter a damaged or permission issue, use `sudo xattr -d com.apple.quarantine /Applications/HyperChat.app`
-* For MacOS `nvm` users, manually input the PATH `echo $PATH`, Windows version of `nvm` seems to work directly
+* On MacOS, if you encounter issues with corrupt files or permissions, use `sudo xattr -d com.apple.quarantine /Applications/HyperChat.app`
+* For MacOS `nvm` users, manually input PATH `echo $PATH`, the Windows version of `nvm` seems to work directly
 
 ![image.png](./images/image47.png)
 
 ## Telegram
 
-[HyperChat User Community](https://t.me/dadigua001)
+[HyperChat User Communication](https://t.me/dadigua001)
+
+![image.png](./images/image51.png)
 
 ![image.png](./images/image13.png)
 
@@ -116,3 +120,9 @@ npm run dev
 ![image.png](./images/image34.png)
 
 ![image.png](./images/image48.png)
+
+![image.png](./images/image50.png)
+
+## Disclaimer
+
+* This project is for educational and communication purposes only. If you use this project for any actions, such as web scraping, it is unrelated to the developers of this project.

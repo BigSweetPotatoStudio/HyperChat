@@ -61,8 +61,8 @@ let route: RouteType = {
       component: <KnowledgeBase />,
     },
     {
-      path: "/HpyerTools",
-      name: "HpyerTools",
+      path: "/HyperTools",
+      name: "HyperTools",
       icon: "🔧",
       component: <HpyerTools />,
     },
