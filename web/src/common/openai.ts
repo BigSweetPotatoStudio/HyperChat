@@ -28,6 +28,7 @@ type ContentImage = {
 };
 
 export type MyMessage = OpenAI.Chat.Completions.ChatCompletionMessageParam & {
+  tool_calls?: Tool_Call[]; // openai tool call
   content_status?:
     | "loading"
     | "success"
@@ -36,9 +37,13 @@ export type MyMessage = OpenAI.Chat.Completions.ChatCompletionMessageParam & {
     | "dataLoadComplete";
   content_from?: string;
   content_attachment: ContentImage[];
-  tool_calls?: Tool_Call[];
   content_context?: any;
   content_attached?: boolean;
+  content_usage?: {
+    prompt_tokens: number;
+    completion_tokens: number;
+    total_tokens: number;
+  };
 };
 
 class ClientName2Index {
@@ -234,9 +239,15 @@ export class OpenAiChannel {
     let res: MyMessage = {
       role: "assistant",
       content: "" as any,
-      tool_calls: undefined as any,
+      tool_calls: undefined,
       content_status: "loading",
-    } as any;
+      content_attachment: [],
+      content_usage: {
+        prompt_tokens: 0,
+        completion_tokens: 0,
+        total_tokens: 0,
+      },
+    };
 
     let messages = this.messages.filter(
       (m) => m.content_attached == null || m.content_attached == true,
@@ -272,6 +283,9 @@ export class OpenAiChannel {
 
           if (chunk.usage) {
             totalTokens = chunk.usage.total_tokens;
+            res.content_usage.completion_tokens = chunk.usage.completion_tokens;
+            res.content_usage.prompt_tokens = chunk.usage.prompt_tokens;
+            res.content_usage.total_tokens = chunk.usage.total_tokens;
           }
 
           if (chunk.choices[0]?.delta?.tool_calls) {
