@@ -83,6 +83,8 @@
         "provider": "github"
       }
     ],
+    "afterSign": "./build/notarize.js",
+    "artifactName": "${productName}-${version}-${arch}.${ext}",
     "productName": "HyperChat",
     "copyright": "Copyright © 2024 ${author}",
     "asar": true,
