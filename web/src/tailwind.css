@@ -89,3 +89,14 @@ div[role="system"] .ant-bubble-content-wrapper {
 .chat .ant-bubble-content-wrapper .ant-bubble-footer {
   width: 100%;
 }
+
+.chat .infinite-scroll-component {
+  overflow: hidden !important;
+}
+
+.chat .ant-conversations-item .ant-typography-ellipsis {
+  display: block;
+  overflow: hidden;
+  /* text-overflow: ellipsis; */
+  white-space: nowrap;
+}
