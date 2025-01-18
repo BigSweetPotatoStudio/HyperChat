@@ -83,9 +83,8 @@
         "provider": "github"
       }
     ],
-    "afterSign": "./build/notarize.js",
     "productName": "HyperChat",
-    "copyright": "Copyright © 2019 ${author}",
+    "copyright": "Copyright © 2024 ${author}",
     "asar": true,
     "appId": "men.dadigua.hpyerchat",
     "icon": "./web-build/assets/favicon.png",
