@@ -108,6 +108,10 @@ const ModalForm: React.FC<CollectionCreateFormProps> = ({
             return {
               label: x.name,
               value: x.name,
+              disabled:
+                form.getFieldValue("callable") && x.name == "hyper_task"
+                  ? true
+                  : false,
             };
           })}
         />
@@ -120,7 +124,19 @@ const ModalForm: React.FC<CollectionCreateFormProps> = ({
         <Slider defaultValue={20} max={40} />
       </Form.Item>
       <Form.Item name="callable" label="Callable" valuePropName="checked">
-        <Checkbox>Allowed to be called by 'hyper_task'</Checkbox>
+        <Checkbox
+          onChange={() => {
+            form.setFieldValue(
+              "allowMCPs",
+              (form.getFieldValue("allowMCPs") || []).filter(
+                (x) => x != "hyper_task",
+              ),
+            );
+            refresh();
+          }}
+        >
+          Allowed to be called by 'hyper_task'
+        </Checkbox>
       </Form.Item>
       <Form.Item name="description" label="description">
         <Input.TextArea

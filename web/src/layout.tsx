@@ -91,7 +91,14 @@ const Providers: ProviderType[] = [
     label: "OpenAI",
     baseURL: "https://api.openai.com/v1",
     value: "openai",
-    models: ["gpt-4o-mini", "gpt-4o"],
+    models: [
+      "gpt-4o-mini",
+      "gpt-4o",
+      "o1-mini",
+      "o1",
+      "o1-preview",
+      "chatgpt-4o-latest",
+    ],
   },
   {
     label: "OpenRouter",
