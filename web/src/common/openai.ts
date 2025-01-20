@@ -2,7 +2,7 @@ import OpenAI from "openai";
 import { getTools, HyperChatCompletionTool } from "./mcp";
 import { call } from "./call";
 import * as MCPTypes from "@modelcontextprotocol/sdk/types.js";
-import { X } from "lucide-react";
+
 import { message as antdmessage } from "antd";
 import type { ChatCompletionTool } from "openai/src/resources/chat/completions";
 import { ChatCompletionContentPartText } from "openai/resources";
@@ -12,7 +12,7 @@ type Tool_Call = {
   index: number;
   id: string;
   type: "function";
-  origin_name: string;
+  origin_name?: string;
   restore_name?: string;
   function: {
     name: string;
@@ -36,7 +36,7 @@ export type MyMessage = OpenAI.Chat.Completions.ChatCompletionMessageParam & {
     | "dataLoading"
     | "dataLoadComplete";
   content_from?: string;
-  content_attachment: ContentImage[];
+  content_attachment?: ContentImage[];
   content_context?: any;
   content_attached?: boolean;
   content_usage?: {
@@ -258,13 +258,13 @@ export class OpenAiChannel {
       if (this.stream) {
         const stream = await this.openai.chat.completions.create(
           {
-            messages: messages,
+            messages: this.messages_format(messages),
             model: this.options.model,
             stream: true,
             stream_options: {
               include_usage: this.options.model == "qwen-plus" ? false : true, // qwen bug stream not support include_usage
             },
-            tools: tools,
+            tools: tools && this.tools_format(tools),
           },
           {
             signal: this.abortController.signal,
@@ -273,7 +273,7 @@ export class OpenAiChannel {
         this.lastMessage.content_status = "success";
         this.lastMessage.content_status = "dataLoading";
         onUpdate && onUpdate(res.content as string);
-        let totalTokens;
+
         for await (const chunk of stream) {
           // try {
           //   console.log(
@@ -282,7 +282,7 @@ export class OpenAiChannel {
           // } catch (e) {}
 
           if (chunk.usage) {
-            totalTokens = chunk.usage.total_tokens;
+            this.totalTokens = chunk.usage.total_tokens;
             res.content_usage.completion_tokens = chunk.usage.completion_tokens;
             res.content_usage.prompt_tokens = chunk.usage.prompt_tokens;
             res.content_usage.total_tokens = chunk.usage.total_tokens;
@@ -290,13 +290,17 @@ export class OpenAiChannel {
 
           if (chunk.choices[0]?.delta?.tool_calls) {
             if (chunk.choices[0].delta.tool_calls.length > 1) {
-              console.error("大错误，期待");
+              console.error("error");
               debugger;
             }
-            let tool = tool_calls[chunk.choices[0].delta.tool_calls[0].index];
+            let index = chunk.choices[0].delta.tool_calls[0].index;
+            if (typeof index !== "number") {
+              index = 0;
+            }
+            let tool = tool_calls[index];
             if (!tool) {
               tool = {
-                index: chunk.choices[0].delta.tool_calls[0].index,
+                index: index,
                 id: "",
                 type: "function",
                 restore_name: "",
@@ -307,7 +311,7 @@ export class OpenAiChannel {
                   argumentsJSON: {},
                 },
               };
-              tool_calls[chunk.choices[0].delta.tool_calls[0].index] = tool;
+              tool_calls[index] = tool;
             }
             tool.function.name +=
               chunk.choices[0].delta.tool_calls[0].function.name || "";
@@ -320,13 +324,15 @@ export class OpenAiChannel {
           res.content += chunk.choices[0]?.delta?.content || "";
           onUpdate && onUpdate(res.content as string);
         }
-        this.totalTokens = totalTokens;
+        if (res.content == "") {
+          res.content = undefined;
+        }
       } else {
         const chatCompletion = await this.openai.chat.completions.create(
           {
-            messages: messages,
+            messages: this.messages_format(messages),
             model: this.options.model,
-            tools: tools,
+            tools: tools && this.tools_format(tools),
           },
           {
             signal: this.abortController.signal,
@@ -334,6 +340,11 @@ export class OpenAiChannel {
         );
         this.lastMessage.content_status = "success";
         this.totalTokens = chatCompletion?.usage?.total_tokens;
+        res.content_usage.completion_tokens =
+          chatCompletion?.usage?.completion_tokens;
+        res.content_usage.prompt_tokens = chatCompletion?.usage?.prompt_tokens;
+        res.content_usage.total_tokens = chatCompletion?.usage?.total_tokens;
+
         let openaires =
           chatCompletion.choices[chatCompletion.choices.length - 1].message;
 
@@ -373,6 +384,7 @@ export class OpenAiChannel {
       throw e;
     }
     this.lastMessage.content_status = "dataLoadComplete";
+
     onUpdate && onUpdate(this.lastMessage.content as string);
 
     tool_calls.forEach((tool) => {
@@ -383,7 +395,7 @@ export class OpenAiChannel {
       }
     });
     onUpdate && onUpdate(this.lastMessage.content as string);
-
+    // console.log("tool_calls", tool_calls, call_tool);
     if (tool_calls.length > 0 && call_tool) {
       this.lastMessage.tool_calls = tool_calls;
       for (let tool of tool_calls) {
@@ -597,87 +609,33 @@ export class OpenAiChannel {
       return false;
     }
   }
-  // async test() {
-  //   let result = {
-  //     code: 0,
-  //     suppentTool: false,
-  //   };
-  //   try {
-  //     this.stream = false;
-  //     let messages: Array<any> = [{ role: "user", content: "你是谁?" }];
-  //     let response = await this.openai.chat.completions.create({
-  //       model: this.options.model,
-  //       messages: messages,
-  //     });
-  //     console.log(response.choices[0].message.content);
-  //     result.code = 1;
-  //     try {
-  //       const tools = [
-  //         {
-  //           type: "function" as const,
-  //           function: {
-  //             name: "get_weather",
-  //             parameters: {
-  //               type: "object",
-  //               properties: {
-  //                 location: { type: "string" },
-  //                 unit: { type: "string", enum: ["c", "f"] },
-  //               },
-  //               required: ["location", "unit"],
-  //               additionalProperties: false,
-  //             },
-  //             returns: {
-  //               type: "string",
-  //               description: "The weather in the location",
-  //             },
-  //           },
-  //         },
-  //       ];
-  //       let messages: Array<any> = [
-  //         { role: "user", content: "深圳天气今天怎么样?" },
-  //       ];
+  messages_format(messages: MyMessage[]) {
+    return messages.map((m) => {
+      let {
+        content_attachment,
+        content_attached,
+        content_context,
+        content_from,
+        content_status,
+        content_usage,
+        ...rest
+      } = m;
+      if (rest.role == "assistant") {
+        rest.tool_calls = rest.tool_calls?.map((x: Tool_Call) => {
+          let { origin_name, restore_name, ...rest } = x;
+          let { argumentsJSON, ...functionRest } = rest.function;
+          rest.function = functionRest as any;
+          return rest;
+        }) as any;
+      }
+      return rest;
+    });
+  }
+  tools_format(tools) {
+    return tools?.map((x) => {
+      let { origin_name, restore_name, key, client, clientName, ...rest } = x;
 
-  //       let response = await this.openai.chat.completions.create({
-  //         model: this.options.model,
-  //         messages: messages,
-  //         tools,
-  //       });
-  //       messages.push(response.choices[0].message);
-
-  //       let function_name =
-  //         response.choices[0].message.tool_calls![0]["function"]["name"];
-  //       let function_args =
-  //         response.choices[0].message.tool_calls![0]["function"]["arguments"];
-
-  //       let runs = {} as any;
-
-  //       runs.get_weather = ({ location, unit }) => {
-  //         return "25度, 晴天";
-  //       };
-
-  //       console.log(function_name, function_args);
-
-  //       let res = runs[function_name](function_args);
-  //       // console.log(res);
-
-  //       messages.push({
-  //         role: "tool",
-  //         tool_call_id: response.choices[0].message.tool_calls![0]["id"],
-  //         content: res,
-  //       });
-  //       response = await this.openai.chat.completions.create({
-  //         model: this.options.model,
-  //         messages: messages,
-  //         tools,
-  //       });
-  //       console.log(response.choices[0].message.content);
-  //       result.suppentTool = true;
-  //     } catch (e) {
-  //       result.suppentTool = false;
-  //     }
-  //   } catch {
-  //     result.code = 0;
-  //   }
-  //   return result;
-  // }
+      return rest;
+    });
+  }
 }

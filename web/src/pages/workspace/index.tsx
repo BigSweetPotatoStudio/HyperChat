@@ -11,6 +11,8 @@ import { Chat } from "../chat";
 import { it } from "node:test";
 import { v4 } from "uuid";
 import { call } from "../../common/call";
+import { GPT_MODELS, GPTS } from "../../common/data";
+import { OpenAiChannel } from "../../common/openai";
 
 //   src="https://chat.deepseek.com/"     src="https://claude.ai/new"     src="https://chatgpt.com/"
 
@@ -126,10 +128,42 @@ export function WorkSpace() {
   function refresh() {
     setNum((num) => num + 1);
   }
-  const onChange = (key: string) => {
-    console.log(key);
-  };
 
+  useEffect(() => {
+    window.ext.receive(
+      "message-from-main",
+      async (msg: { type: string; data: any }) => {
+        if (msg.type == "call_agent") {
+          let { agent_name, message, uid } = msg.data;
+          let agents = await GPTS.init();
+          let agent = agents.data.find((x) => x.label == agent_name);
+          let models = await GPT_MODELS.init();
+          let model =
+            models.data.find((x) => x.key == agent.modelKey) || models.data[0];
+          console.log("model", model);
+          let openaiClient = new OpenAiChannel(
+            { ...model, allowMCPs: agent.allowMCPs },
+            [
+              {
+                role: "system" as const,
+                content: agent.prompt,
+              },
+            ],
+            false,
+          );
+
+          openaiClient.addMessage({
+            role: "user" as const,
+            content: message,
+          });
+          let res = await openaiClient.completion();
+
+          console.log(res);
+          await call("call_agent_res", [uid, res]);
+        }
+      },
+    );
+  }, []);
   const [items, setItems] = useState([
     {
       key: "1",

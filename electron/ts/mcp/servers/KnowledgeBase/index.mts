@@ -36,11 +36,6 @@ const {
   /* webpackIgnore: true */ "@modelcontextprotocol/sdk/types.js"
 );
 
-/**
- * Type alias for a note object.
- */
-type Note = { title: string; content: string };
-
 const NAME = "hyper_knowledge_base";
 
 /**

@@ -23,6 +23,7 @@ export type HyperChatCompletionTool = ChatCompletionTool & {
   key?: string;
   origin_name?: string;
   restore_name?: string;
+  clientName?: string;
   client?: string;
 };
 
@@ -127,7 +128,6 @@ function mcpClientsToArray(mcpClients: {
           type: "function" as const,
           function: {
             name: tool.name,
-            client: key,
             description: tool.description,
             parameters: {
               type: tool.inputSchema.type,

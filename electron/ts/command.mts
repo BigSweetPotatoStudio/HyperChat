@@ -58,6 +58,7 @@ import {
   KNOWLEDGE_Resource,
   KNOWLEDGE_Store,
 } from "../../common/data";
+import { EVENT } from "./common/event";
 
 const userDataPath = app.getPath("userData");
 let videoDownloadWin: BrowserWindow;
@@ -369,6 +370,9 @@ export class CommandFactory {
   }
   async getProgressList() {
     return progressList.getData();
+  }
+  async call_agent_res(uid, data) {
+    EVENT.fire("call_agent_res", { uid, data });
   }
 }
 

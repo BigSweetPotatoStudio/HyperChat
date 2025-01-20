@@ -50,7 +50,7 @@ export function MyAttachR(props: {
         {props.resourceResList.map((x, index) =>
           x.contents
             .map((content, index) => {
-              if (content.text) {
+              if (content.text != null) {
                 return (
                   <RemoveBox
                     key={index}
@@ -116,7 +116,16 @@ export function MyAttachR(props: {
                   </RemoveBox>
                 );
               } else {
-                return <span>Not supported.</span>;
+                return (
+                  <RemoveBox
+                    key={index}
+                    onRemove={() => {
+                      props.resourceResListRemove(x);
+                    }}
+                  >
+                    <span>Not supported.</span>
+                  </RemoveBox>
+                );
               }
             })
             .flat(),
