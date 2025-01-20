@@ -699,7 +699,7 @@ export const Chat = ({ onTitleChange = undefined }) => {
       openaiClient.current.options.allowMCPs = currentChat.current.allowMCPs;
       if (message) {
         openaiClient.current.addMessage(
-          { role: "user", content: message, content_attachment: [] },
+          { role: "user", content: message },
           resourceResList,
           promptResList,
         );

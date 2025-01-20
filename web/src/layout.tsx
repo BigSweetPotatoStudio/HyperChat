@@ -75,6 +75,7 @@ import { EVENT } from "./common/event";
 import { OpenAiChannel } from "./common/openai";
 import { DndTable } from "./common/dndTable";
 import { sleep } from "./common/sleep";
+import { InputPlus } from "./common/input_plus";
 
 type ProviderType = {
   label: string;
@@ -82,6 +83,7 @@ type ProviderType = {
   apiKey?: string;
   call_tool_step?: number;
   value: string;
+  models?: string[];
 };
 
 const Providers: ProviderType[] = [
@@ -89,16 +91,25 @@ const Providers: ProviderType[] = [
     label: "OpenAI",
     baseURL: "https://api.openai.com/v1",
     value: "openai",
+    models: ["gpt-4o-mini", "gpt-4o"],
   },
   {
     label: "OpenRouter",
     baseURL: "https://openrouter.ai/api/v1",
     value: "openrouter",
+    models: ["openai/gpt-4o-mini", "anthropic/claude-3.5-haiku-20241022:beta"],
+  },
+  {
+    label: "Gemini",
+    baseURL: "https://generativelanguage.googleapis.com/v1beta/openai/",
+    value: "gemini",
+    models: ["gemini-2.0-flash-exp"],
   },
   {
     label: "Qwen",
     baseURL: "https://dashscope.aliyuncs.com/compatible-mode/v1",
     value: "qwen",
+    models: ["qwen-plus", "qwen-turbo", "qwen-max"],
   },
   {
     label: "Ollama",
@@ -115,12 +126,14 @@ const Providers: ProviderType[] = [
     label: "GLM",
     baseURL: "https://open.bigmodel.cn/api/paas/v4",
     value: "glm",
+    models: ["glm-4-air"],
   },
   {
     label: "DeepSeek",
     baseURL: "https://api.deepseek.com",
     value: "deepseek",
     call_tool_step: 1,
+    models: ["deepseek-chat"],
   },
   {
     label: "OpenAI Compatibility",
@@ -408,343 +421,6 @@ export function Layout() {
           </HeaderContext.Provider>
         </ProLayout>
 
-        {/* <Modal
-          width={1000}
-          open={isToolsShow}
-          onCancel={() => setIsToolsShow(false)}
-          maskClosable
-          title="MCP Service List"
-          onOk={() => setIsToolsShow(false)}
-          cancelButtonProps={{ style: { display: "none" } }}
-        >
-          <Table
-            size="small"
-            rowKey={(record) => record.name}
-            pagination={false}
-            dataSource={clients}
-            columns={[
-              {
-                title: "client",
-                dataIndex: "name",
-                key: "name",
-              },
-              {
-                title: "status",
-                dataIndex: "status",
-                key: "status",
-                render: (text, record, index) => (
-                  <span
-                    style={{
-                      color: text == "connected" ? "green" : "red",
-                    }}
-                  >
-                    {text}
-                  </span>
-                ),
-              },
-              {
-                title: "Operation",
-                dataIndex: "status",
-                key: "status",
-                render: (text, record, index) => {
-                  if (record.config.hyperchat.scope == "built-in") {
-                    return <Tag color="blue">built-in</Tag>;
-                  }
-                  return (
-                    <div>
-                      <Button
-                        type="link"
-                        onClick={() => {
-                          record.config._name = record.name;
-                          record.config._type = "edit";
-                          record.config._argsStr = (
-                            record.config.args || []
-                          ).join("   ");
-
-                          record.config._envList = [];
-                          for (let key in record.config.env) {
-                            record.config._envList.push({
-                              name: key,
-                              value: record.config.env[key],
-                            });
-                          }
-                          mcpform.resetFields();
-                          mcpform.setFieldsValue(record.config);
-                          setIsAddMCPConfigOpen(true);
-                        }}
-                      >
-                        config
-                      </Button>
-                      <Divider type="vertical"></Divider>
-                      <Button
-                        disabled={record.config.disabled}
-                        type="link"
-                        onClick={async () => {
-                          if (record.config.disabled) {
-                            message.error("Service Disabled");
-                            return;
-                          }
-                          try {
-                            await call("openMcpClient", [record.name]);
-                            getClients(false).then((x) => {
-                              setClients(x);
-                              EVENT.fire("refresh");
-                            });
-                          } catch (e) {
-                            message.error(e.message);
-                          }
-                        }}
-                      >
-                        {record.status == "connected" ? "reload" : "start"}
-                      </Button>
-                      <Divider type="vertical"></Divider>
-                      <Button
-                        type="link"
-                        style={{
-                          color: !record.config.disabled ? "red" : undefined,
-                        }}
-                        onClick={async () => {
-                          record.config.disabled = !record.config.disabled;
-
-                          await MCP_CONFIG.save();
-                          try {
-                            if (record.config.disabled) {
-                              await call("closeMcpClients", [record.name]);
-                            } else {
-                              await call("openMcpClient", [record.name]);
-                            }
-
-                            getClients(false).then((x) => {
-                              setClients(x);
-                              EVENT.fire("refresh");
-                            });
-                          } catch (e) {
-                            message.error(e.message);
-                          }
-                        }}
-                      >
-                        {record.config.disabled ? "enable" : "disable"}
-                      </Button>
-                      <Divider type="vertical"></Divider>
-                      <Popconfirm
-                        title="Confirm"
-                        description="Confirm Delete?"
-                        onConfirm={async () => {
-                          try {
-                            await call("closeMcpClients", [record.name, true]);
-
-                            getClients(false).then((x) => {
-                              setClients(x);
-                              EVENT.fire("refresh");
-                            });
-                            record.config.disabled = true;
-                            delete MCP_CONFIG.get().mcpServers[record.name];
-                            await MCP_CONFIG.save();
-                          } catch (e) {
-                            message.error(e.message);
-                          }
-                        }}
-                      >
-                        <Button type="link">delete</Button>
-                      </Popconfirm>
-                    </div>
-                  );
-                },
-              },
-            ]}
-            footer={() => {
-              return (
-                <div className="text-center">
-                  <Button
-                    type="link"
-                    onClick={() => {
-                      mcpform.resetFields();
-                      setIsAddMCPConfigOpen(true);
-                    }}
-                  >
-                    Add MCP
-                  </Button>
-                  <Button
-                    type="link"
-                    onClick={async () => {
-                      let p = await call("pathJoin", ["mcp.json"]);
-                      await call("openExplorer", [p]);
-                    }}
-                  >
-                    Open the configuration file
-                  </Button>
-                </div>
-              );
-            }}
-          ></Table>
-        </Modal>
-        <Modal
-          width={600}
-          title="Configure MCP"
-          open={isAddMCPConfigOpen}
-          okButtonProps={{
-            autoFocus: true,
-            htmlType: "submit",
-            loading: loadingOpenMCP,
-          }}
-          maskClosable={false}
-          cancelButtonProps={{ style: { display: "none" } }}
-          onCancel={() => {
-            setIsAddMCPConfigOpen(false);
-          }}
-          modalRender={(dom) => (
-            <Form
-              initialValues={{
-                envStr: "",
-                argsStr: "",
-              }}
-              form={mcpform}
-              layout="vertical"
-              name="Configure MCP"
-              clearOnDestroy
-              onFinish={async (values) => {
-                try {
-                  setLoadingOpenMCP(true);
-                  values._argsStr = values._argsStr || "";
-                  values.args = values._argsStr
-                    .split(" ")
-                    .filter((x) => x.trim() != "");
-                  try {
-                    values.env = {};
-                    values._envList = values._envList || [];
-                    for (let x of values._envList) {
-                      values.env[x.name] = x.value;
-                    }
-                  } catch {
-                    message.error("Please enter a valid JSON");
-                    return;
-                  }
-                  if (
-                    values._type == "edit" &&
-                    MCP_CONFIG.get().mcpServers[values._name].disabled
-                  ) {
-                    message.error("MCP Service Disabled");
-                    return;
-                  }
-                  await call("openMcpClient", [values._name, values]);
-                  if (values._type == "edit") {
-                    let index = clients.findIndex(
-                      (e) => e.name == values._name,
-                    );
-
-                    if (index == -1) {
-                      return;
-                    }
-
-                    clients[index].config = {
-                      ...clients[index].config,
-                      ...values,
-                    };
-
-                    MCP_CONFIG.get().mcpServers[values._name] =
-                      clients[index].config;
-                  } else {
-                    clients.push({
-                      name: values._name,
-                      config: values,
-                      status: "disconnected",
-                    });
-                    if (MCP_CONFIG.get().mcpServers[values._name] != null) {
-                      message.error("Name already exists");
-                      return;
-                    }
-                    MCP_CONFIG.get().mcpServers[values._name] = values;
-                  }
-
-                  await MCP_CONFIG.save();
-                  setIsAddMCPConfigOpen(false);
-                  getClients(false).then((x) => {
-                    setClients(x);
-                    EVENT.fire("refresh");
-                  });
-                } catch (e) {
-                  message.error(e.message);
-                } finally {
-                  setLoadingOpenMCP(false);
-                }
-              }}
-            >
-              {dom}
-            </Form>
-          )}
-        >
-          <Form.Item className="hidden" name="_type" label="_type">
-            <Input></Input>
-          </Form.Item>
-          <Form.Item
-            name="_name"
-            label="Name"
-            rules={[{ required: true, message: "Please enter" }]}
-          >
-            <Input
-              disabled={mcpform.getFieldValue("_type") == "edit"}
-              placeholder="Please enter the name"
-            ></Input>
-          </Form.Item>
-          <Form.Item
-            name="command"
-            label="command"
-            rules={[{ required: true, message: "Please enter" }]}
-          >
-            <Input placeholder="Please enter command"></Input>
-          </Form.Item>
-          <Form.Item name="_argsStr" label="args">
-            <Input placeholder="Please enter args"></Input>
-          </Form.Item>
-
-          <Form.Item label="env">
-            <Form.List name="_envList">
-              {(fields, { add, remove }) => (
-                <>
-                  {fields.map(({ key, name, ...restField }) => (
-                    <div
-                      key={key}
-                      style={{
-                        display: "flex",
-                        justifyContent: "space-between",
-                      }}
-                    >
-                      <Form.Item
-                        {...restField}
-                        name={[name, "name"]}
-                        rules={[{ required: true, message: "Missing name" }]}
-                      >
-                        <Input placeholder="Var Name" />
-                      </Form.Item>
-                      <Form.Item
-                        {...restField}
-                        className="flex-1"
-                        name={[name, "value"]}
-                        rules={[{ required: true, message: "Missing Value" }]}
-                      >
-                        <Input placeholder="Var Value" />
-                      </Form.Item>
-                      <Form.Item>
-                        <MinusCircleOutlined onClick={() => remove(name)} />
-                      </Form.Item>
-                    </div>
-                  ))}
-                  <Form.Item>
-                    <Button
-                      type="dashed"
-                      onClick={() => add()}
-                      block
-                      icon={<PlusOutlined />}
-                    >
-                      Add Environment Variables
-                    </Button>
-                  </Form.Item>
-                </>
-              )}
-            </Form.List>
-          </Form.Item>
-        </Modal> */}
-
         <Modal
           width={1000}
           title={t`My LLM Models`}
@@ -986,27 +662,6 @@ export function Layout() {
                   }
                   values.supportTool = testToolRes;
                   setPending(false);
-                  // if (testImageRes && testToolRes) {
-                  //   await sleep(2000);
-                  //   setIsOpenTestLLM(false);
-                  // } else {
-                  //   return;
-                  // }
-
-                  // let res = await o.test();
-                  // if (res.code == 0) {
-                  //   message.error(
-                  //     "Please check if the configuration is incorrect or if the network is available.",
-                  //   );
-                  //   setLoadingCheckLLM(false);
-                  //   return;
-                  // } else {
-                  //   if (!res.suppentTool) {
-                  //     message.warning(
-                  //       "Your LLM is available, but does not support tool calls.",
-                  //     );
-                  //   }
-                  // }
                   if (values.key) {
                     let index = GPT_MODELS.get().data.findIndex(
                       (e) => e.key == values.key,
@@ -1095,7 +750,16 @@ export function Layout() {
             label="model"
             rules={[{ required: true, message: "Please enter" }]}
           >
-            <Input placeholder={t`Please enter the model`}></Input>
+            <InputPlus
+              placeholder={t`Please enter or select the model`}
+              options={Providers.find(
+                (x) =>
+                  x.value ==
+                  (form.getFieldValue("provider") || Providers[0].value),
+              )?.models?.map((x) => {
+                return { value: x, label: x };
+              })}
+            />
           </Form.Item>
           <Form.Item name="name" label="Alias">
             <Input placeholder="The default is the model name"></Input>
