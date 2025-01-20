@@ -119,6 +119,7 @@ export const GPTS = new Data("gpts_list.json", {
     label: string;
     prompt: string;
     description?: string;
+    callable: boolean;
     allowMCPs: string[];
     modelKey?: string;
     attachedDialogueCount?: number;
