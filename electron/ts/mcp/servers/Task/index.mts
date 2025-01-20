@@ -59,8 +59,9 @@ const server = new Server(
 server.setRequestHandler(ListToolsRequestSchema, async () => {
   let agents = GPTS.initSync();
   let d = agents.data
+    .filter((x) => x.callable)
     .map((x) => {
-      return `${x.label}`;
+      return `${x.label} - ${x.description}`;
     })
     .join("\n");
   if (agents.data.length == 0) {
@@ -78,9 +79,11 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
           properties: {
             agent_name: {
               type: "string",
-              enum: agents.data.map((x) => {
-                return x.label;
-              }),
+              enum: agents.data
+                .filter((x) => x.callable)
+                .map((x) => {
+                  return x.label;
+                }),
               description: d,
             },
             message: {

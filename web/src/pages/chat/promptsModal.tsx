@@ -30,7 +30,7 @@ import { GPT_MODELS } from "../../common/data";
 interface Values {
   label: string;
   prompt: string;
-
+  callable: boolean;
   key?: string;
   allowMCPs: string[];
   modelKey: string;
@@ -117,12 +117,16 @@ const ModalForm: React.FC<CollectionCreateFormProps> = ({
         label="attachedDialogueCount"
         tooltip="Number of sent Dialogue Message attached per request"
       >
-        {/* <InputNumber
-          placeholder="blank means is all."
-          min={0}
-          style={{ width: "100%" }}
-        /> */}
         <Slider defaultValue={20} max={40} />
+      </Form.Item>
+      <Form.Item name="callable" label="Callable" valuePropName="checked">
+        <Checkbox>Allowed to be called by 'hyper_task'</Checkbox>
+      </Form.Item>
+      <Form.Item name="description" label="description">
+        <Input.TextArea
+          placeholder="Please provide a description for more accurate call."
+          rows={2}
+        />
       </Form.Item>
     </Form>
   );

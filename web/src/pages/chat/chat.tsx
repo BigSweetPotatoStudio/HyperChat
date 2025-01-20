@@ -856,15 +856,17 @@ export const Chat = ({ onTitleChange = undefined }) => {
                     className="ml-1 w-full"
                     onClick={() => {
                       if (openaiClient.current) {
-                        let p = currentChat.current.messages.find(
-                          (x) => x.role == "system",
-                        )?.content;
-
+                        let find = GPTS.get().data.find(
+                          (y) => y.key === currentChat.current.gptsKey,
+                        );
                         currentChatReset(
                           {
-                            gptsKey: currentChat.current.gptsKey,
+                            allowMCPs: find.allowMCPs,
+                            gptsKey: find.key,
+                            modelKey: find.modelKey,
+                            attachedDialogueCount: find.attachedDialogueCount,
                           },
-                          p,
+                          find.prompt,
                         );
                       }
                     }}
@@ -1067,7 +1069,7 @@ export const Chat = ({ onTitleChange = undefined }) => {
                         setIsOpenPromptsModal(true);
                       }}
                     >
-                      Add Bot
+                      Add Agent
                     </Button>
                   </Space>
 
@@ -1504,7 +1506,6 @@ export const Chat = ({ onTitleChange = undefined }) => {
         <PromptsModal
           open={isOpenPromptsModal}
           onCreate={(value) => {
-            console.log("onCreate", value);
             if (value.key) {
               const index = GPTS.get().data.findIndex(
                 (y) => y.key == value.key,
