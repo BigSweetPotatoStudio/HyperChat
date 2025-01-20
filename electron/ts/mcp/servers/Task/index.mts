@@ -61,7 +61,7 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
   let d = agents.data
     .filter((x) => x.callable)
     .map((x) => {
-      return `${x.label} - ${x.description}`;
+      return `${x.label} - ${x.description || ""}`;
     })
     .join("\n");
   if (agents.data.length == 0) {
@@ -92,6 +92,15 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
             },
           },
           required: ["agent_name", "message"],
+        },
+      },
+      {
+        name: "list_allowed_agents",
+        description: `list all allow Agent(Bot)`,
+        inputSchema: {
+          type: "object",
+          properties: {},
+          required: [],
         },
       },
     ],
@@ -128,7 +137,22 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
         throw new Error("Failed");
       }
     }
-
+    case "list_allowed_agents": {
+      const agents = GPTS.initSync();
+      return {
+        content: [
+          {
+            type: "text",
+            text: agents.data
+              .filter((x) => x.callable)
+              .map((x) => {
+                return `${x.label} - ${x.description || ""}`;
+              })
+              .join("\n"),
+          },
+        ],
+      };
+    }
     default:
       throw new Error("Unknown tool");
   }
