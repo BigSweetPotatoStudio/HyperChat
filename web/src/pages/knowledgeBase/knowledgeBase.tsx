@@ -97,7 +97,7 @@ export function KnowledgeBase() {
               setCurrRowKnowledgeBase(record);
             }}
           >
-            Select
+            Open
           </Button>
           <Popconfirm
             title="Sure to delete?"
@@ -106,7 +106,8 @@ export function KnowledgeBase() {
               KNOWLEDGE_BASE.get().dbList = KNOWLEDGE_BASE.get().dbList.filter(
                 (x) => x.key !== record.key,
               );
-              KNOWLEDGE_BASE.save();
+              await KNOWLEDGE_BASE.save();
+              call("openMcpClient", ["hyper_knowledge_base"]);
               refresh();
             }}
           >
@@ -256,6 +257,7 @@ export function KnowledgeBase() {
                             });
                           KNOWLEDGE_BASE.save();
                           message.success("remove success");
+
                           refresh();
                         }}
                       >
@@ -281,7 +283,7 @@ export function KnowledgeBase() {
       <KnowledgeBaseModal
         open={isOpenKnowledgeBase}
         initialValues={currRowKnowledgeBase}
-        onCreate={(v) => {
+        onCreate={async (v) => {
           if (
             KNOWLEDGE_BASE.get().dbList.find(
               (x) => x.name === v.name && x.key !== v.key,
@@ -301,7 +303,8 @@ export function KnowledgeBase() {
             v.resources = [];
             KNOWLEDGE_BASE.get().dbList.push(v);
           }
-          KNOWLEDGE_BASE.save();
+          await KNOWLEDGE_BASE.save();
+          call("openMcpClient", ["hyper_knowledge_base"]);
           setIsOpenKnowledgeBase(false);
         }}
         onCancel={() => {

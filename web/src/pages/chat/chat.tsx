@@ -1153,12 +1153,13 @@ export const Chat = ({ onTitleChange = undefined }) => {
                                     title: "Tip",
                                     maskClosable: true,
                                     content: "Are you sure to delete?",
-                                    onOk: () => {
+                                    onOk: async () => {
                                       let index = GPTS.get().data.findIndex(
                                         (y) => y.key === item.key,
                                       );
                                       GPTS.get().data.splice(index, 1);
-                                      GPTS.save();
+                                      await GPTS.save();
+                                      call("openMcpClient", ["hyper_task"]);
                                       refresh();
                                     },
                                     onCancel(...args) {},
@@ -1505,7 +1506,7 @@ export const Chat = ({ onTitleChange = undefined }) => {
         </XProvider>
         <PromptsModal
           open={isOpenPromptsModal}
-          onCreate={(value) => {
+          onCreate={async (value) => {
             if (value.key) {
               const index = GPTS.get().data.findIndex(
                 (y) => y.key == value.key,
@@ -1520,7 +1521,8 @@ export const Chat = ({ onTitleChange = undefined }) => {
                 allowMCPs: value.allowMCPs || [],
               });
             }
-            GPTS.save();
+            await GPTS.save();
+            call("openMcpClient", ["hyper_task"]);
             refresh();
             setIsOpenPromptsModal(false);
           }}
