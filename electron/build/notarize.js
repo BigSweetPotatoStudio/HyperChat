@@ -1,3 +1,4 @@
+require("dotenv").config();
 const { notarize } = require("@electron/notarize");
 const path = require("path");
 
@@ -13,24 +14,13 @@ exports.default = async function notarizing(context) {
   const appPath = path.normalize(
     path.join(context.appOutDir, `${appName}.app`)
   );
-  const appleId = process.env.APPLE_ID;
-  const appleIdPassword = process.env.APPLE_APP_SPECIFIC_PASSWORD;
-  const APPLE_TEAM_ID = process.env.APPLE_TEAM_ID;
-  if (!appleId) {
-    console.warn("Not notarizing: Missing APPLE_ID environment variable");
-    return;
-  }
-  if (!appleIdPassword) {
-    console.warn(
-      "Not notarizing: Missing APPLE_ID_PASSWORD environment variable"
-    );
-    return;
-  }
-  return notarize({
-    // appBundleId: "men.dadigua.hpyerchat",
+
+  await notarize({
+    appBundleId: "men.dadigua.hpyerchat",
     appPath,
-    appleId,
-    appleIdPassword,
-    teamId: APPLE_TEAM_ID,
+    appleId: process.env.APPLE_ID,
+    appleIdPassword: process.env.APPLE_APP_SPECIFIC_PASSWORD,
+    teamId: process.env.APPLE_TEAM_ID,
   });
+  console.log("Notarized app:", appPath);
 };
