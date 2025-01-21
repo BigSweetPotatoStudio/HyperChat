@@ -8,13 +8,14 @@ exports.default = async function notarizing(context) {
   }
   console.log("Notarizing...");
 
-  const appBundleId = context.packager.appInfo.info._configuration.appId;
+  // const appBundleId = context.packager.appInfo.info._configuration.appId;
   const appName = context.packager.appInfo.productFilename;
   const appPath = path.normalize(
     path.join(context.appOutDir, `${appName}.app`)
   );
   const appleId = process.env.APPLE_ID;
   const appleIdPassword = process.env.APPLE_APP_SPECIFIC_PASSWORD;
+  const APPLE_TEAM_ID = process.env.APPLE_TEAM_ID;
   if (!appleId) {
     console.warn("Not notarizing: Missing APPLE_ID environment variable");
     return;
@@ -26,9 +27,10 @@ exports.default = async function notarizing(context) {
     return;
   }
   return notarize({
-    appBundleId,
+    appBundleId: "men.dadigua.hpyerchat",
     appPath,
     appleId,
     appleIdPassword,
+    teamId: APPLE_TEAM_ID,
   });
 };
