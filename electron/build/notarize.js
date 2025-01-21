@@ -27,7 +27,7 @@ exports.default = async function notarizing(context) {
     return;
   }
   return notarize({
-    appBundleId: "men.dadigua.hpyerchat",
+    // appBundleId: "men.dadigua.hpyerchat",
     appPath,
     appleId,
     appleIdPassword,
