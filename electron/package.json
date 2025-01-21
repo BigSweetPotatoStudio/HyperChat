@@ -107,6 +107,7 @@
       ]
     },
     "mac": {
+      "notarize": false,
       "target": [
         {
           "target": "dmg",
