@@ -171,8 +171,8 @@ if (argv.prod) {
 
   if (os.platform() === "win32") {
     await fs.copy(
-      `./electron/dist/HyperChat Setup ${pack.version}.exe`,
-      p + `/HyperChat-Setup-${pack.version}.exe`,
+      `./electron/dist/HyperChat-${pack.version}-x64.exe`,
+      p + `/HyperChat-${pack.version}-x64.exe`,
       {
         overwrite: true,
       }
@@ -185,7 +185,7 @@ if (argv.prod) {
     if (fs.existsSync(`./electron/dist/HyperChat-${pack.version}-x64.exe`)) {
       await fs.copy(
         `./electron/dist/HyperChat-${pack.version}-x64.exe`,
-        p + `/HyperChat-Setup-${name}.exe`,
+        p + `/HyperChat-${name}-x64.exe`,
         {
           overwrite: true,
         }
