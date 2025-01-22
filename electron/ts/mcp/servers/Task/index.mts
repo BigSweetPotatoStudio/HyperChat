@@ -164,12 +164,11 @@ async function call_agent(agent_name: string, message: string) {
     throw new Error(`Agent ${agent_name} not found`);
   }
   let uid = v4();
-
   return new Promise((resolve, reject) => {
-    EVENT.clear("call_agent_res");
     EVENT.on("call_agent_res", (m) => {
-      if (m.uid) {
-        console.log(m.data);
+      console.log("============================");
+      console.log("call_agent", m.uid, m.data);
+      if (m.uid == uid) {
         resolve(m.data);
       }
     });

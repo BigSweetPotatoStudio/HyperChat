@@ -102,7 +102,7 @@ export type ChatHistoryItem = {
   modelKey: string;
   gptsKey: string;
   sended: boolean;
-  icon: string;
+  icon?: string;
   allowMCPs: string[];
   requestType: string;
   attachedDialogueCount?: number;
