@@ -140,7 +140,7 @@ const Providers: ProviderType[] = [
     baseURL: "https://api.deepseek.com",
     value: "deepseek",
     call_tool_step: 1,
-    models: ["deepseek-chat"],
+    models: ["deepseek-chat", "deepseek-reasoner"],
   },
   {
     label: "OpenAI Compatibility",
