@@ -164,20 +164,22 @@ async function call_agent(agent_name: string, message: string) {
     throw new Error(`Agent ${agent_name} not found`);
   }
   let uid = v4();
-  getMessageService().sendToRenderer({
-    type: "call_agent",
-    data: {
-      agent_name: agent_name,
-      message: message,
-      uid,
-    },
-  });
+
   return new Promise((resolve, reject) => {
+    EVENT.clear("call_agent_res");
     EVENT.on("call_agent_res", (m) => {
       if (m.uid) {
         console.log(m.data);
         resolve(m.data);
       }
+    });
+    getMessageService().sendToRenderer({
+      type: "call_agent",
+      data: {
+        agent_name: agent_name,
+        message: message,
+        uid,
+      },
     });
   });
 }

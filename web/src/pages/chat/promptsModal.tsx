@@ -123,7 +123,7 @@ const ModalForm: React.FC<CollectionCreateFormProps> = ({
       >
         <Slider defaultValue={20} max={40} />
       </Form.Item>
-      {/* <Form.Item name="callable" label="Callable" valuePropName="checked">
+      <Form.Item name="callable" label="Callable" valuePropName="checked">
         <Checkbox
           onChange={() => {
             form.setFieldValue(
@@ -143,7 +143,7 @@ const ModalForm: React.FC<CollectionCreateFormProps> = ({
           placeholder="Please provide a description for more accurate call."
           rows={2}
         />
-      </Form.Item> */}
+      </Form.Item>
     </Form>
   );
 };
