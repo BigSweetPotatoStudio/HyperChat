@@ -199,7 +199,7 @@ export const Chat = ({ onTitleChange = undefined }) => {
     gptsKey: undefined,
     sended: false,
     requestType: "stream",
-    icon: "",
+    icon: undefined,
     allowMCPs: [],
     attachedDialogueCount: undefined,
     dateTime: Date.now(),
@@ -225,7 +225,7 @@ export const Chat = ({ onTitleChange = undefined }) => {
       gptsKey: undefined,
       sended: false,
       requestType: "stream",
-      icon: "",
+      icon: undefined,
       allowMCPs: [],
       attachedDialogueCount: undefined,
       dateTime: Date.now(),
@@ -239,13 +239,7 @@ export const Chat = ({ onTitleChange = undefined }) => {
     if (allMCPs) {
       currentChat.current.allowMCPs = clients.map((v) => v.name);
     }
-    // for (let c of clientsRef.current) {
-    //   if (allMCPs || (currentChat.current.allowMCPs || []).includes(c.name)) {
-    //     c.enable = true;
-    //   } else {
-    //     c.enable = false;
-    //   }
-    // }
+
     clientsRef.current;
     let p = getPrompts((x) => currentChat.current.allowMCPs.includes(x.name));
     promptsRef.current = p;
@@ -253,22 +247,6 @@ export const Chat = ({ onTitleChange = undefined }) => {
     resourcesRef.current = r;
 
     refresh();
-    // getClients().then((clients) => {
-    //   for (let c of clients) {
-    //     if ((currentChat.current.allowMCPs || []).includes(c.name)) {
-    //       c.enable = true;
-    //     } else {
-    //       c.enable = false;
-    //     }
-    //   }
-    //   setClients(clients);
-    //   getPrompts().then((x) => {
-    //     setPrompts(x);
-    //   });
-    //   getResourses().then((x) => {
-    //     setResources(x);
-    //   });
-    // });
   };
   const selectGptsKey = useRef<string | undefined>(undefined);
   useEffect(() => {
@@ -663,6 +641,7 @@ export const Chat = ({ onTitleChange = undefined }) => {
     refresh();
   };
   const [loading, setLoading] = useState(false);
+
   const onRequest = async (message?: string) => {
     Clarity.event(`sender-${process.env.NODE_ENV}`);
     console.log("onRequest", message);
@@ -691,9 +670,13 @@ export const Chat = ({ onTitleChange = undefined }) => {
 
         if (findIndex > -1) {
           let find = ChatHistory.get().data.splice(findIndex, 1)[0];
+
           currentChat.current.dateTime = Date.now();
-          Object.assign(find, currentChat.current);
+          find.dateTime = currentChat.current.dateTime;
+
           ChatHistory.get().data.unshift(find);
+
+          loadMoreData(false);
         }
       }
       openaiClient.current.options.allowMCPs = currentChat.current.allowMCPs;
@@ -1018,10 +1001,10 @@ export const Chat = ({ onTitleChange = undefined }) => {
                           let index = ChatHistory.get().data.findIndex(
                             (x) => x.key === conversation.key,
                           );
-                          if (ChatHistory.get().data[index].icon.length == 0) {
-                            ChatHistory.get().data[index].icon = "⭐";
+                          if (ChatHistory.get().data[index].icon == "⭐") {
+                            ChatHistory.get().data[index].icon = undefined;
                           } else {
-                            ChatHistory.get().data[index].icon = "";
+                            ChatHistory.get().data[index].icon = "⭐";
                           }
 
                           ChatHistory.save();
