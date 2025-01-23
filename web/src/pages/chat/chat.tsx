@@ -18,6 +18,7 @@ import {
   Button,
   Card,
   Checkbox,
+  Collapse,
   Divider,
   Dropdown,
   Flex,
@@ -199,7 +200,6 @@ export const Chat = ({ onTitleChange = undefined }) => {
     gptsKey: undefined,
     sended: false,
     requestType: "stream",
-    icon: undefined,
     allowMCPs: [],
     attachedDialogueCount: undefined,
     dateTime: Date.now(),
@@ -225,7 +225,6 @@ export const Chat = ({ onTitleChange = undefined }) => {
       gptsKey: undefined,
       sended: false,
       requestType: "stream",
-      icon: undefined,
       allowMCPs: [],
       attachedDialogueCount: undefined,
       dateTime: Date.now(),
@@ -454,6 +453,8 @@ export const Chat = ({ onTitleChange = undefined }) => {
                       src={`data:${x.mimeType};base64,${x.data}`}
                     />
                   );
+                } else if (x.type == "text") {
+                  return <pre>{x.text}</pre>;
                 }
               })}
           </Tooltip>
@@ -487,23 +488,10 @@ export const Chat = ({ onTitleChange = undefined }) => {
                 key="sync"
                 className="hover:text-cyan-400"
                 onClick={() => {
-                  // onRequest(x.content as any);
-                  let content = openaiClient.current.messages[i].content;
                   openaiClient.current.messages.splice(i);
                   currentChat.current.messages = openaiClient.current.messages;
                   refresh();
                   onRequest();
-                  // while (i--) {
-                  //   if (openaiClient.current.messages[i].role === "user") {
-                  //     let content = openaiClient.current.messages[i].content;
-                  //     openaiClient.current.messages.splice(i);
-                  //     currentChat.current.messages =
-                  //       openaiClient.current.messages;
-                  //     refresh();
-                  //     onRequest(content as any);
-                  //     break;
-                  //   }
-                  // }
                 }}
               />
             </Space>
@@ -603,6 +591,31 @@ export const Chat = ({ onTitleChange = undefined }) => {
                     </Tooltip>
                   );
                 })}
+              {x.reasoning_content && (
+                <Collapse
+                  items={[
+                    {
+                      key: "reasoning_content",
+                      label: (
+                        <div className="line-clamp-1">
+                          thinking: {x.reasoning_content}
+                        </div>
+                      ),
+                      children: (
+                        <pre
+                          key="1"
+                          style={{
+                            whiteSpace: "pre-wrap",
+                            wordWrap: "break-word",
+                          }}
+                        >
+                          {x.reasoning_content}
+                        </pre>
+                      ),
+                    },
+                  ]}
+                />
+              )}
               {x.content && (
                 <MarkDown
                   markdown={x.content}
@@ -612,6 +625,29 @@ export const Chat = ({ onTitleChange = undefined }) => {
                 ></MarkDown>
               )}
               {x.content_status == "dataLoading" && <LoadingOutlined />}
+              {x.content_attachment &&
+                x.content_attachment.length > 0 &&
+                x.content_attachment.map((x, i) => {
+                  if (x.type == "image") {
+                    return (
+                      <DownImage
+                        key={i}
+                        src={`data:${x.mimeType};base64,${x.data}`}
+                      />
+                    );
+                  } else if (x.type == "text") {
+                    return (
+                      <pre
+                        style={{
+                          whiteSpace: "pre-wrap",
+                          wordWrap: "break-word",
+                        }}
+                      >
+                        {x.text}
+                      </pre>
+                    );
+                  }
+                })}
             </div>
           ),
       };
@@ -672,8 +708,8 @@ export const Chat = ({ onTitleChange = undefined }) => {
           let find = ChatHistory.get().data.splice(findIndex, 1)[0];
 
           currentChat.current.dateTime = Date.now();
-          find.dateTime = currentChat.current.dateTime;
 
+          Object.assign(find, currentChat.current);
           ChatHistory.get().data.unshift(find);
 
           loadMoreData(false);
