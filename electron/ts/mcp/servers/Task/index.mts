@@ -57,7 +57,7 @@ const server = new Server(
  * Exposes a single "create_note" tool that lets clients create new notes.
  */
 server.setRequestHandler(ListToolsRequestSchema, async () => {
-  let agents = GPTS.initSync();
+  let agents = GPTS.initSync({ force: true });
   let d = agents.data
     .filter((x) => x.callable)
     .map((x) => {
@@ -138,7 +138,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
       }
     }
     case "list_allowed_agents": {
-      const agents = GPTS.initSync();
+      const agents = GPTS.initSync({ force: true });
       return {
         content: [
           {
@@ -159,15 +159,19 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
 });
 
 async function call_agent(agent_name: string, message: string) {
-  let agents = GPTS.initSync();
+  let agents = GPTS.initSync({ force: true });
   if (agents.data.find((x) => x.label == agent_name) == null) {
     throw new Error(`Agent ${agent_name} not found`);
   }
   let uid = v4();
   return new Promise((resolve, reject) => {
-    let callback = (m) => {
+    let callback = (m, error) => {
       // console.log("============================");
       // console.log("call_agent", m.uid, m.data);
+      if (error) {
+        reject(error);
+        EVENT.off("call_agent_res", callback);
+      }
       if (m.uid == uid) {
         resolve(m.data);
         EVENT.off("call_agent_res", callback);

@@ -39,11 +39,11 @@ for (let data of DataList) {
 export const HTTPPORT = 16100;
 export const MCPServerPORT = 16110;
 
-await electronData.init();
+electronData.initSync({ force: true });
 
 electronData.get().platform = process.platform;
 
-if (ENV_CONFIG.initSync().PATH != "") {
+if (ENV_CONFIG.initSync({ force: true }).PATH != "") {
   electronData.get().PATH = ENV_CONFIG.get().PATH;
   ENV_CONFIG.get().PATH = "";
   ENV_CONFIG.save();
@@ -56,6 +56,6 @@ electronData.get().version = app.getVersion();
 
 electronData.save();
 
-await taskHistory.init();
+taskHistory.initSync({ force: true });
 
 export { electronData, taskHistory, AppSetting, MCP_CONFIG, MCP_CONFIG_TYPE };

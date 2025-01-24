@@ -108,7 +108,7 @@ module.exports = (env, argv) => {
       path: path.resolve(__dirname, "../electron/web-build"),
     },
     mode: isDev ? "development" : "production",
-    devtool: isDev ? "inline-source-map" : false,
+    devtool: isDev ? "source-map" : false,
     cache: {
       type: "filesystem", // 使用文件系统级别的缓存
     },

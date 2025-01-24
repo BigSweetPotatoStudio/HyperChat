@@ -145,7 +145,12 @@ import { t } from "../../i18n";
 // let openaiClient: OpenAiChannel;
 export const Chat = ({
   onTitleChange = undefined,
-  data = { agent_name: "", message: "", onComplete: (text) => {} }, //
+  data = {
+    agent_name: "",
+    message: "",
+    onComplete: (text) => {},
+    onError: (e) => {},
+  }, //
 }) => {
   const [num, setNum] = React.useState(0);
   const refresh = () => {
@@ -194,13 +199,17 @@ export const Chat = ({
 
     (async () => {
       if (data.agent_name) {
-        let agents = await GPTS.init();
-        let agent = agents.data.find((x) => x.label == data.agent_name);
-        await onGPTSClick(agent.key);
+        try {
+          let agents = await GPTS.init();
+          let agent = agents.data.find((x) => x.label == data.agent_name);
+          await onGPTSClick(agent.key);
 
-        data.message && (await onRequest(data.message));
+          data.message && (await onRequest(data.message));
 
-        data.onComplete(openaiClient.current.lastMessage.content);
+          data.onComplete(openaiClient.current.lastMessage.content);
+        } catch (e) {
+          data.onError(e);
+        }
       } else {
         currentChatReset({}, "", true);
       }
@@ -726,7 +735,7 @@ export const Chat = ({
           allowMCPs: currentChat.current.allowMCPs,
           dateTime: Date.now(),
         });
-        setConversations([currentChat.current, ...conversations]);
+
         ChatHistory.get().data.unshift(currentChat.current);
       } else {
         let findIndex = ChatHistory.get().data.findIndex(
@@ -740,8 +749,6 @@ export const Chat = ({
 
           Object.assign(find, currentChat.current);
           ChatHistory.get().data.unshift(find);
-
-          loadMoreData(false);
         }
       }
       openaiClient.current.options.allowMCPs = currentChat.current.allowMCPs;
@@ -768,9 +775,9 @@ export const Chat = ({
 
       currentChat.current.messages = openaiClient.current.messages;
       refresh();
-
+      loadMoreData(false);
       await ChatHistory.save();
-      console.log("ChatHistory.get().data", ChatHistory.get().data.slice(0, 5));
+      // console.log("ChatHistory.d.data", ChatHistory.get().data.slice(0, 5));
     } catch (e) {
       antdMessage.error(
         e.message || "An error occurred, please try again later",

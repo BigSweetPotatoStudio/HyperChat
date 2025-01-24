@@ -247,7 +247,6 @@ export function Market() {
     init();
     (async () => {
       await electronData.init();
-      // console.log(electronData.get());
       refresh();
     })();
   }, []);
