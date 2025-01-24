@@ -143,10 +143,29 @@ import { useForm } from "antd/es/form/Form";
 import { t } from "../../i18n";
 
 // let openaiClient: OpenAiChannel;
-export const Chat = ({ onTitleChange = undefined }) => {
+export const Chat = ({
+  onTitleChange = undefined,
+  data = { agent_name: "", message: "", onComplete: (text) => {} }, //
+}) => {
   const [num, setNum] = React.useState(0);
   const refresh = () => {
     setNum((n) => n + 1);
+  };
+
+  const onGPTSClick = async (key: string) => {
+    let find = GPTS.get().data.find((y) => y.key === key);
+    await currentChatReset(
+      {
+        allowMCPs: find.allowMCPs,
+        gptsKey: find.key,
+        modelKey: find.modelKey,
+        attachedDialogueCount: find.attachedDialogueCount,
+      },
+      find.prompt,
+    );
+    selectGptsKey.current = find.key;
+    historyFilterType.current = "all";
+    loadMoreData(false);
   };
 
   // const [clients, setClients] = React.useState<InitedClient[]>([]);
@@ -172,8 +191,19 @@ export const Chat = ({ onTitleChange = undefined }) => {
     GPT_MODELS.init().then(() => {
       refresh();
     });
+
     (async () => {
-      currentChatReset({}, "", true);
+      if (data.agent_name) {
+        let agents = await GPTS.init();
+        let agent = agents.data.find((x) => x.label == data.agent_name);
+        await onGPTSClick(agent.key);
+
+        data.message && (await onRequest(data.message));
+
+        data.onComplete(openaiClient.current.lastMessage.content);
+      } else {
+        currentChatReset({}, "", true);
+      }
     })();
   }, []);
   useEffect(() => {
@@ -186,7 +216,6 @@ export const Chat = ({ onTitleChange = undefined }) => {
 
   const [isOpenPromptsModal, setIsOpenPromptsModal] = useState(false);
   const [promptsModalValue, setPromptsModalValue] = useState({} as any);
-  const [mode, setMode] = React.useState<"edit" | undefined>(undefined);
 
   const [value, setValue] = React.useState("");
   const [direction, setDirection] =
@@ -697,7 +726,7 @@ export const Chat = ({ onTitleChange = undefined }) => {
           allowMCPs: currentChat.current.allowMCPs,
           dateTime: Date.now(),
         });
-        setData([currentChat.current, ...data]);
+        setConversations([currentChat.current, ...conversations]);
         ChatHistory.get().data.unshift(currentChat.current);
       } else {
         let findIndex = ChatHistory.get().data.findIndex(
@@ -716,6 +745,7 @@ export const Chat = ({ onTitleChange = undefined }) => {
         }
       }
       openaiClient.current.options.allowMCPs = currentChat.current.allowMCPs;
+
       if (message) {
         openaiClient.current.addMessage(
           { role: "user", content: message },
@@ -740,6 +770,7 @@ export const Chat = ({ onTitleChange = undefined }) => {
       refresh();
 
       await ChatHistory.save();
+      console.log("ChatHistory.get().data", ChatHistory.get().data.slice(0, 5));
     } catch (e) {
       antdMessage.error(
         e.message || "An error occurred, please try again later",
@@ -748,12 +779,13 @@ export const Chat = ({ onTitleChange = undefined }) => {
       setLoading(false);
     }
   };
-  // const [chatHistorys, setChatHistorys] = useState([]);
 
   const [isToolsShow, setIsToolsShow] = useState(false);
 
   const [loadMoreing, setLoadMoreing] = useState(false);
-  const [data, setData] = useState<GetProp<ConversationsProps, "items">>([]);
+  const [conversations, setConversations] = useState<
+    GetProp<ConversationsProps, "items">
+  >([]);
 
   let loadIndex = useRef(0);
 
@@ -792,7 +824,7 @@ export const Chat = ({ onTitleChange = undefined }) => {
       });
     loadDataTatal.current = formmatedData.length;
     formmatedData = formmatedData.slice(0, loadIndex.current);
-    setData(formmatedData);
+    setConversations(formmatedData);
     console.log("loadMoreData", loadIndex.current, loadDataTatal.current);
     setLoadMoreing(false);
   };
@@ -960,9 +992,9 @@ export const Chat = ({ onTitleChange = undefined }) => {
                 }}
               >
                 <InfiniteScroll
-                  dataLength={data.length}
+                  dataLength={conversations.length}
                   next={loadMoreData}
-                  hasMore={data.length < loadDataTatal.current}
+                  hasMore={conversations.length < loadDataTatal.current}
                   loader={
                     <div style={{ textAlign: "center" }}>
                       <Spin indicator={<RedoOutlined spin />} size="small" />
@@ -972,7 +1004,7 @@ export const Chat = ({ onTitleChange = undefined }) => {
                   scrollableTarget={scrollableDivID}
                 >
                   <Conversations
-                    items={data.map((x) => {
+                    items={conversations.map((x) => {
                       return {
                         ...x,
                         icon: x.icon == "⭐" ? <StarOutlined /> : undefined,
@@ -1027,8 +1059,10 @@ export const Chat = ({ onTitleChange = undefined }) => {
                           );
                           ChatHistory.get().data.splice(index, 1);
                           ChatHistory.save();
-                          setData(
-                            data.filter((x) => x.key !== conversation.key),
+                          setConversations(
+                            conversations.filter(
+                              (x) => x.key !== conversation.key,
+                            ),
                           );
                           refresh();
                           message.success("Delete Success");
@@ -1140,25 +1174,23 @@ export const Chat = ({ onTitleChange = undefined }) => {
                                 item={item}
                                 onClick={(item) => {
                                   // console.log("onGPTSClick", item);
-                                  if (mode == "edit") {
-                                    return;
-                                  }
-                                  let find = GPTS.get().data.find(
-                                    (y) => y.key === item.key,
-                                  );
-                                  currentChatReset(
-                                    {
-                                      allowMCPs: find.allowMCPs,
-                                      gptsKey: find.key,
-                                      modelKey: find.modelKey,
-                                      attachedDialogueCount:
-                                        find.attachedDialogueCount,
-                                    },
-                                    find.prompt,
-                                  );
-                                  selectGptsKey.current = find.key;
-                                  historyFilterType.current = "all";
-                                  loadMoreData(false);
+                                  onGPTSClick(item.key);
+                                  // let find = GPTS.get().data.find(
+                                  //   (y) => y.key === item.key,
+                                  // );
+                                  // currentChatReset(
+                                  //   {
+                                  //     allowMCPs: find.allowMCPs,
+                                  //     gptsKey: find.key,
+                                  //     modelKey: find.modelKey,
+                                  //     attachedDialogueCount:
+                                  //       find.attachedDialogueCount,
+                                  //   },
+                                  //   find.prompt,
+                                  // );
+                                  // selectGptsKey.current = find.key;
+                                  // historyFilterType.current = "all";
+                                  // loadMoreData(false);
                                 }}
                                 onEdit={() => {
                                   let value = GPTS.get().data.find(

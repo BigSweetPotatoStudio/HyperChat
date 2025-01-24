@@ -165,13 +165,15 @@ async function call_agent(agent_name: string, message: string) {
   }
   let uid = v4();
   return new Promise((resolve, reject) => {
-    EVENT.on("call_agent_res", (m) => {
-      console.log("============================");
-      console.log("call_agent", m.uid, m.data);
+    let callback = (m) => {
+      // console.log("============================");
+      // console.log("call_agent", m.uid, m.data);
       if (m.uid == uid) {
         resolve(m.data);
+        EVENT.off("call_agent_res", callback);
       }
-    });
+    };
+    EVENT.on("call_agent_res", callback);
     getMessageService().sendToRenderer({
       type: "call_agent",
       data: {
