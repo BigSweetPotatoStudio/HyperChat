@@ -1217,7 +1217,7 @@ export const Chat = ({
                                       );
                                       GPTS.get().data.splice(index, 1);
                                       await GPTS.save();
-                                      call("openMcpClient", ["hyper_task"]);
+                                      call("openMcpClient", ["hyper_agent"]);
                                       refresh();
                                     },
                                     onCancel(...args) {},
@@ -1580,7 +1580,7 @@ export const Chat = ({
               });
             }
             await GPTS.save();
-            call("openMcpClient", ["hyper_task"]);
+            call("openMcpClient", ["hyper_agent"]);
             refresh();
             setIsOpenPromptsModal(false);
           }}

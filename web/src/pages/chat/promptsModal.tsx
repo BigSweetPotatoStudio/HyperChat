@@ -109,7 +109,7 @@ const ModalForm: React.FC<CollectionCreateFormProps> = ({
               label: x.name,
               value: x.name,
               disabled:
-                form.getFieldValue("callable") && x.name == "hyper_task"
+                form.getFieldValue("callable") && x.name == "hyper_agent"
                   ? true
                   : false,
             };
@@ -129,13 +129,13 @@ const ModalForm: React.FC<CollectionCreateFormProps> = ({
             form.setFieldValue(
               "allowMCPs",
               (form.getFieldValue("allowMCPs") || []).filter(
-                (x) => x != "hyper_task",
+                (x) => x != "hyper_agent",
               ),
             );
             refresh();
           }}
         >
-          Allowed to be called by 'hyper_task'
+          Allowed to be called by 'hyper_agent'
         </Checkbox>
       </Form.Item>
       <Form.Item name="description" label="description">

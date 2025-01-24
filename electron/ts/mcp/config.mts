@@ -347,6 +347,14 @@ for (let s of MyServers) {
     disabled: false,
   };
 }
+for (let key in config.mcpServers) {
+  if (
+    config.mcpServers[key].hyperchat?.scope == "built-in" &&
+    !MyServers.find((x) => x.name == key)
+  ) {
+    delete config.mcpServers[key];
+  }
+}
 await MCP_CONFIG.save();
 export async function getConfg(): Promise<{
   mcpServers: { [s: string]: MCP_CONFIG_TYPE };
