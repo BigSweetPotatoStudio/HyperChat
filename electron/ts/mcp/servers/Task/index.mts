@@ -32,7 +32,7 @@ const {
  * Type alias for a note object.
  */
 
-const NAME = "hyper_task";
+const NAME = "hyper_agent";
 
 /**
  * Create an MCP server with capabilities for resources (to list/read notes),

@@ -46,7 +46,9 @@ export function SortableItem(props) {
           <div className="text-xl">{getFirstCharacter(props.item.label)}</div>
         </div>
         <div className="absolute left-0 top-0 z-10">
-          {props.item.callable && <FunctionOutlined />}
+          {props.item.callable && (
+            <FunctionOutlined className="text-blue-400" />
+          )}
         </div>
         <div
           style={{
