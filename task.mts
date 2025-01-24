@@ -169,42 +169,17 @@ if (argv.prod) {
     path.resolve(__dirname, "./electron/package.json")
   );
 
-  if (os.platform() === "win32") {
-    await fs.copy(
-      `./electron/dist/HyperChat-${pack.version}-x64.exe`,
-      p + `/HyperChat-${pack.version}-x64.exe`,
-      {
-        overwrite: true,
-      }
-    );
-  } else {
-    let name = pack.version;
-    if (process.env.MYRUNENV != "github") {
-      name = `${pack.version}-sign`;
-    }
+  let arr = [
+    `HyperChat-${pack.version}-win-x64.exe`,
+    `HyperChat-${pack.version}-mac-x64.exe`,
+    `HyperChat-${pack.version}-mac-arm64.exe`,
+  ];
+  for (let name of arr) {
     if (fs.existsSync(`./electron/dist/HyperChat-${pack.version}-x64.exe`)) {
-      await fs.copy(
-        `./electron/dist/HyperChat-${pack.version}-x64.exe`,
-        p + `/HyperChat-${name}-x64.exe`,
-        {
-          overwrite: true,
-        }
-      );
+      await fs.copy(`./electron/dist/` + name, p + `/` + name, {
+        overwrite: true,
+      });
     }
-    await fs.copy(
-      `./electron/dist/HyperChat-${pack.version}-arm64.dmg`,
-      p + `/HyperChat-${name}-arm64.dmg`,
-      {
-        overwrite: true,
-      }
-    );
-    await fs.copy(
-      `./electron/dist/HyperChat-${pack.version}-x64.dmg`,
-      p + `/HyperChat-${name}-x64.dmg`,
-      {
-        overwrite: true,
-      }
-    );
   }
 }
 
