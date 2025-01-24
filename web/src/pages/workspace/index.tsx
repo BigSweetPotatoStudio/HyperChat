@@ -25,6 +25,7 @@ function Page({
     agent_name: "",
     message: "",
     onComplete: (text: string) => undefined,
+    onError: (e) => {},
   },
 }) {
   const [curr, setCurr] = useState({
@@ -149,7 +150,7 @@ export function WorkSpace() {
           let n = {
             key: v4(),
             label: "New Tab",
-            closeable: false,
+            closeIcon: false,
             children: (
               <Page
                 type="hyperchat"
@@ -163,10 +164,13 @@ export function WorkSpace() {
                   uid,
                   onComplete: (text) => {
                     setActiveKey(activeKey);
-                    call("call_agent_res", [uid, text]);
+                    call("call_agent_res", [uid, text, undefined]);
                     setItems((items) =>
                       items.filter((item) => item.key !== n.key),
                     );
+                  },
+                  onError: (e) => {
+                    call("call_agent_res", [uid, "", e]);
                   },
                 }}
               />
