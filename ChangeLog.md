@@ -8,19 +8,19 @@
 # 0.1.1
 
 * Fixed MacOS image upload
-* Added quick copy button, supporting copying messages and code
-* Optimized WebDav synchronization, only keeping 10 versions locally
+* Added a quick copy button to support copying messages and code
+* Optimized WebDav synchronization, local storage retains only 10 versions
 * Added syntax highlighting for markdown code rendering
-* Added error capture for HTML artifacts, supporting opening the Chrome console
+* HTML Artifacts improved error catching, supports opening Chrome's console
 
 # 0.1.0
 
 ## HyperChat
 
-* Supports two installation methods: plugin marketplace + MCP native installation, quick installation and configuration from the plugin marketplace, contributions are welcome, [Github](https://github.com/BigSweetPotatoStudio/HyperChatMCP)
-* Optimized WebDav synchronization logic, backing up locally before syncing, synchronizing every 5 minutes
-* Added testing feature for LLM, testing support for image input + tool calls (consumes a little bit of token)
-* Chat supports inputting images
+* Supports two methods: plugin marketplace + native MCP installation, quick installation and configuration from the plugin marketplace, welcome to submit plugins, [Github](https://github.com/BigSweetPotatoStudio/HyperChatMCP)
+* Optimized WebDav synchronization logic, backing up locally before synchronizing, syncs every 5 minutes
+* Added testing functionality for LLM, testing support for image input + tool invocation (consumes a bit of token)
+* Chat supports image input
 * Chat supports displaying images returned from Tool Call as MCP resources
 * Fixed bugs
 
@@ -29,25 +29,25 @@
 ## HyperChat
 
 * Optimized the startup speed of the MCP Server.
-* WebDav synchronization, currently does not support syncing MCP configurations; issues may arise due to inconsistent operating systems.
+* WebDav synchronization, currently does not support MCP configuration synchronization; issues may arise due to inconsistent operating systems.
 * Supports setting request methods, Stream | Complete
-* Supports KaTeX to display mathematical formulas
+* Supports KaTeX for displaying mathematical formulas
 
 ## HyperTools
 
-* Optimized the web-opening tool
+* Optimized the Tool for opening web pages
 
 # 0.0.11
 
 ## HyperChat
 
 * Optimized bot display, supports search and drag-and-drop sorting
-* Conversation history supports filtering + search
-* For APIs that do not support statistical consumption tokens for large models, such as Qianwen, support fuzzy counting by word count
-* Input box supports drag-and-drop files for quick input of file paths
+* Conversation history supports filtering + searching
+* For APIs that do not support token consumption statistics of large models, such as Qianwen, supports fuzzy counting based on word count
+* Input box supports drag-and-drop for quickly inputting file paths
 * My LLM Models list supports drag-and-drop sorting
-* Supports quick configuration for Ollama and Qwen's API models
+* Supports quick configuration for Ollama, Qwen API models
 
 ## HyperTools
 
-* Optimized the web-opening tool, more comprehensive information extraction. For example, answering this question `https://store.epicgames.com/zh-CN/   Which game is free for a limited time?`
+* Optimized the Tool for opening web pages, providing more complete information extraction. For example, answer this question `https://store.epicgames.com/zh-CN/   Which game is temporarily free?`

@@ -17,19 +17,20 @@ HyperChat 是一个追求开放的Chat客户端，可以使用各家LLM的API，
 - [x] Tools 支持
 - [x] 支持英文和中文
 - [x] 添加了内置的MCP客户端`hypertools`, `fetch`+`search`
-- [x] 支持 `Bot`，可以预设提示词，允许的MCP服务
+- [x] 支持 `Agent`，可以预设提示词，允许的MCP服务
 - [x] 支持 `Artifacts`, `SVG`,`HTML` 渲染, js错误捕获，支持打开Chrome的控制台
-- [x] Bot显示优化，支持查找，拖拽排序
+- [x] Agent显示优化，支持查找，拖拽排序
 - [x] 支持 `KaTeX`，显示数学公式，代码Code渲染增加高亮和快速复制
 - [x] `WebDAV` 同步
 - [x] `MCP`扩展市场+第三方MCP支持
 - [x] 添加`RAG`，基于mcp知识库
 - [x] 添加ChatSpace概念，支持多对话同时聊天
+- [x] 支持 Agent Call Agent，通过HyperAgent的MCP
 
 ### TODO:
 
 - [ ] 权限弹窗，是否允许
-- [ ] 添加task概念。Agent Administrator，通过Administrator管理Task.
+- [ ] 添加task，HyperAgent概念，支持定时任务。通过HyperAgent管理Task.
 - [ ] 实现利用LLM自己给自己写Tools
 - [ ] 本地的`shell`+`nodejs`+`js on web`运行环境
 

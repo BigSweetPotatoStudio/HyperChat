@@ -123,10 +123,6 @@
         "en": "Bilibili",
         "zh": "哔哩哔哩"
     },
-    "MCP Service List": {
-        "en": "MCP Service List",
-        "zh": "MCP 服务列表"
-    },
     "client": {
         "en": "client",
         "zh": "客户"
@@ -145,10 +141,6 @@
     },
     "connected": {
         "en": "connected",
-        "zh": ""
-    },
-    "disconnected": {
-        "en": "disconnected",
         "zh": ""
     },
     "Config": {
@@ -362,10 +354,6 @@
     "search": {
         "en": "search",
         "zh": ""
-    },
-    "Add Bot": {
-        "en": "Add Bot",
-        "zh": "添加机器人"
     },
     "emoji": {
         "en": "emoji",
