@@ -51,6 +51,14 @@ import {
 import { checkUpdate } from "./upload.mjs";
 import { version } from "os";
 import { webdavClient } from "./common/webdav.mjs";
+import { FeatureExtraction } from "./common/model.mjs";
+import { progressList } from "./common/progress.mjs";
+import {
+  KNOWLEDGE_BASE,
+  KNOWLEDGE_Resource,
+  KNOWLEDGE_Store,
+} from "../../common/data";
+import { EVENT } from "./common/event";
 
 const userDataPath = app.getPath("userData");
 let videoDownloadWin: BrowserWindow;
@@ -237,9 +245,9 @@ export class CommandFactory {
     let localPath = path.join(root, p);
     let res = fs.writeFileSync(localPath, text);
 
-    if (AppSetting.initSync().webdav.autoSync) {
-      webdavClient.sync(p);
-    }
+    // if (AppSetting.initSync().webdav.autoSync) {
+    //   webdavClient.sync();
+    // }
 
     return res;
   }
@@ -289,7 +297,7 @@ export class CommandFactory {
       win.webContents.openDevTools();
     }
   }
-  async openBrowser(url: string): Promise<void> {
+  async openBrowser(url: string, userAgent?): Promise<void> {
     let win = new BrowserWindow({
       width: 1280,
       height: 720,
@@ -300,7 +308,8 @@ export class CommandFactory {
 
     await win.loadURL(url, {
       userAgent:
-        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/132.0.0.0 Safari/537.36",
+        userAgent ||
+        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36",
     });
   }
   async checkNpx(): Promise<string> {
@@ -339,6 +348,31 @@ export class CommandFactory {
   }
   async webDavSync() {
     return await webdavClient.sync();
+  }
+  async initEmbeddings(model: string) {
+    await FeatureExtraction.getInstance(model);
+  }
+  async vectorStoreAdd(s: KNOWLEDGE_Store, r: KNOWLEDGE_Resource) {
+    let { store } = await import("./langchain/vectorStore.mjs");
+    return await store.addResource(s, r);
+  }
+  async vectorStoreDelete(s: KNOWLEDGE_Store) {
+    let { store } = await import("./langchain/vectorStore.mjs");
+    return await store.delete(s);
+  }
+  async vectorStoreRemoveResource(s: KNOWLEDGE_Store, r: KNOWLEDGE_Resource) {
+    let { store } = await import("./langchain/vectorStore.mjs");
+    return await store.removeResource(s, r);
+  }
+  async vectorStoreSearch(s: KNOWLEDGE_Store, q: string, k: number) {
+    let { store } = await import("./langchain/vectorStore.mjs");
+    return await store.search(s, q, k);
+  }
+  async getProgressList() {
+    return progressList.getData();
+  }
+  async call_agent_res(uid, data) {
+    EVENT.fire("call_agent_res", { uid, data });
   }
 }
 

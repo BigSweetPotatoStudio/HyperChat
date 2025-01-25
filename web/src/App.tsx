@@ -65,7 +65,7 @@ export default function App() {
 
   return (
     <div>
-      <Spin spinning={loading} tip="Syncing...">
+      <Spin spinning={false} tip="Syncing...">
         <AntdApp>
           <Routes>{getRoute(route)}</Routes>
         </AntdApp>

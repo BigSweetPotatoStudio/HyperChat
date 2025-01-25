@@ -2,10 +2,7 @@ const { notarize } = require("@electron/notarize");
 const path = require("path");
 
 exports.default = async function notarizing(context) {
-  if (
-    context.electronPlatformName !== "darwin" ||
-    process.env.CSC_IDENTITY_AUTO_DISCOVERY === "false"
-  ) {
+  if (context.electronPlatformName !== "darwin") {
     console.log("Skipping notarization");
     return;
   }

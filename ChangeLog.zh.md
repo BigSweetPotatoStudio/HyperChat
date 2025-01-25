@@ -1,4 +1,33 @@
-# 0.013
+# 0.2.0
+
+* 添加知识库
+
+
+# 0.1.1
+
+* fix MacOS 图片上传
+* 添加快速复制的按钮，支持复制消息和代码的按钮
+* WebDav同步功能优化，本地只保存10个版本
+* markdown 代码Code渲染增加高亮
+* HTML Artifacts 增加错误捕获，支持打开Chrome的控制台
+
+
+
+# 0.1.0
+
+## HyperChat
+
+* 支持插件市场+MCP原生安装两种，插件市场快速安装和配置，欢迎提交插件，[Github](https://github.com/BigSweetPotatoStudio/HyperChatMCP)
+* WebDav 同步逻辑优化，本地会先备份再同步，5min同步一次
+* LLM 添加测试功能，测试是否支持图片输入 + 工具调用（消耗一点点token）
+* Chat支持输入图片
+* Chat支持显示Tool Call 返回的图片MCP资源
+* fix bugs
+
+
+
+
+# 0.0.13
 
 ## HyperChat
 
@@ -13,7 +42,7 @@
 
 
 
-# 0.011
+# 0.0.11
 
 ## HyperChat
 
