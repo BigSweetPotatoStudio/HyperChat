@@ -170,14 +170,15 @@ async function call_agent(agent_name: string, message: string) {
       // console.log("call_agent", m.uid, m.data);
       if (error) {
         reject(error);
-        EVENT.off("call_agent_res", callback);
+        EVENT.clear("call_agent_res_" + uid);
+        return;
       }
       if (m.uid == uid) {
         resolve(m.data);
-        EVENT.off("call_agent_res", callback);
       }
+      EVENT.clear("call_agent_res_" + uid);
     };
-    EVENT.on("call_agent_res", callback);
+    EVENT.on("call_agent_res_" + uid, callback);
     getMessageService().sendToRenderer({
       type: "call_agent",
       data: {
@@ -210,7 +211,7 @@ async function handlePostMessage(req, res) {
   await transport.handlePostMessage(req, res);
 }
 
-export const HyperTask = {
+export const HyperAgent = {
   createServer,
   handlePostMessage,
   name: NAME,
