@@ -3,73 +3,72 @@
 
 ## Features
 
-HyperChat is an open Chat client that utilizes various LLM APIs to provide the best Chat experience and enables productivity tools through the MCP protocol.
+HyperChat is an open Chat client that utilizes the APIs of various LLMs to provide the best Chat experience and to implement productivity tools via the MCP protocol.
 
-* Supports OpenAI-style LLMs: `OpenAI`, `Claude(OpenRouter)`, `Qwen`, `Deepseek`, `GLM`, `Ollama`.
-* Built-in MCP plugin marketplace with user-friendly MCP installation configuration, one-click installation, and welcome submissions of [HyperChatMCP](https://github.com/BigSweetPotatoStudio/HyperChatMCP).
-* Also supports third-party MCP manual installation by filling in `command`, `args`, and `env`.
+* Supports OpenAI-style LLMs, `OpenAI`, `Claude(OpenRouter)`, `Qwen`, `Deepseek`, `GLM`, `Ollama`.
+* Built-in MCP plugin market with user-friendly MCP installation and configuration, one-click installation, welcome to submit [HyperChatMCP](https://github.com/BigSweetPotatoStudio/HyperChatMCP).
+* Also supports manual installation of third-party MCPs by filling in `command`, `args`, `env`.
 
-### MCP:
+### MCP: 
 
 [![Build](https://github.com/BigSweetPotatoStudio/HyperChat/actions/workflows/build.yml/badge.svg)](https://github.com/BigSweetPotatoStudio/HyperChat/actions/workflows/build.yml)
 
-- [x] 🪟Windows + 🍏MacOS
+- [x] 🪟Windows+🍏MacOS
 - [x] Supports `nvm`, see below
 - [x] Resources support
-- [x] Partial Prompts support
+- [x] Partial support for Prompts
 - [x] Tools support
 - [x] Supports English and Chinese
 - [x] Added built-in MCP client `hypertools`, `fetch` + `search`
-- [x] Supports `Bot`, allows preset prompts and permitted MCP services
-- [x] Supports `Artifacts`, `SVG`, `HTML` rendering, JavaScript error capture, supports opening Chrome console
-- [x] Bot display optimization, supports search and drag-and-drop sorting
-- [x] Supports `KaTeX`, displays math formulas, code rendering includes highlighting and quick copy
+- [x] Supports `Agent`, allows preset prompts, permissible MCP services
+- [x] Supports `Artifacts`, `SVG`, `HTML` rendering, JS error capturing, supports opening Chrome's console
+- [x] Agent display optimization, supports searching, drag-and-drop sorting
+- [x] Supports `KaTeX`, displays mathematical formulas, code rendering with added highlighting and quick copy
 - [x] `WebDAV` synchronization
-- [x] `MCP` extension marketplace + third-party MCP support
+- [x] `MCP` extension market + third-party MCP support
 - [x] Added `RAG`, based on MCP knowledge base
 - [x] Introduced ChatSpace concept, supports multiple conversations simultaneously
+- [x] Supports Agent Call Agent through HyperAgent’s MCP
 
 ### TODO:
 
-- [ ] Permission prompt, whether to allow
-- [ ] Add task concept. Agent Administrator, manage Task through Administrator.
-- [ ] Implement LLM writing tools for itself
+- [ ] Permission pop-up, whether to allow
+- [ ] Add task, HyperAgent concept, support for scheduled tasks. Manage Task through HyperAgent.
+- [ ] Implement using LLM to write Tools for itself
 - [ ] Local `shell` + `nodejs` + `js on web` runtime environment
 
 ### LLM
 
-| LLM      | Usability   | Remarks                         |
-| -------- | ------ | -------------------------- |
-| claude   | ⭐⭐⭐⭐⭐  | No explanation               |
-| openai   | ⭐⭐⭐⭐🌙 | Also can perfectly support multi-step function calls (gpt-4o-mini can too) |
-| qwen     | ⭐⭐⭐⭐🌙 | Very usable, feels better than OpenAI |
-| doubao   | ⭐⭐⭐    | Okay to use                   |
-| deepseek | ⭐⭐      | Multi-step function calls may have issues |
+| LLM      | Usability    | Remarks                         |
+| -------- | ------ | ---------------------------- |
+| claude   | ⭐⭐⭐⭐⭐  | No explanation                    |
+| openai   | ⭐⭐⭐⭐🌙 | Also perfectly supports multi-step function calls (gpt-4o-mini can too) |
+| qwen     | ⭐⭐⭐⭐🌙 | Very user-friendly, feels better than OpenAI  |
+| doubao   | ⭐⭐⭐    | Feels okay to use                   |
+| deepseek | ⭐⭐      | Multi-step function calls may have issues       |
 
 ## Usage
 
 * 1. Configure APIKEY, ensure your LLM service is compatible with OpenAI style.
-* 2. Ensure `uv + nodejs` is installed on your system.
+* 2. Ensure you have `uv + nodejs` installed in your system.
 
 ### [uvx & uv](https://github.com/astral-sh/uv)
 
-Install using command line, or refer to the official GitHub tutorial [uv](https://github.com/astral-sh/uv)
+Install using the command line, or check the official GitHub tutorial [uv](https://github.com/astral-sh/uv)
 
 ```
 # MacOS
 brew install uv
-# windows
-winget install --id=astral-sh.uv -e
+# Windows
+winget install --id=astral-sh.uv  -e
 ```
-
 ### [npx & nodejs](https://nodejs.org/en)
 
-Install using command line, or go to the official website to download, official site [nodejs](https://nodejs.org/en)
-
+Install using the command line, or download from the official website, [nodejs](https://nodejs.org/en)
 ```
 # MacOS
 brew install node
-# windows
+# Windows
 winget install OpenJS.NodeJS.LTS
 ```
 
@@ -82,16 +81,16 @@ npm install
 npm run dev
 ```
 
-## Note
+## Notes
 
-* On MacOS, if you encounter issues with corrupt files or permissions, use `sudo xattr -d com.apple.quarantine /Applications/HyperChat.app`
-* For MacOS `nvm` users, manually input PATH `echo $PATH`, the Windows version of `nvm` seems to work directly
+* MacOS encountering damage or permission issues, `sudo xattr -d com.apple.quarantine /Applications/HyperChat.app`
+* MacOS `nvm` users manually input PATH `echo $PATH`, Windows version `nvm` seems to be available directly
 
 ![image.png](./images/image47.png)
 
 ## Telegram
 
-[HyperChat User Communication](https://t.me/dadigua001)
+[HyperChat User Group](https://t.me/dadigua001)
 
 ![image.png](./images/image51.png)
 
@@ -125,4 +124,4 @@ npm run dev
 
 ## Disclaimer
 
-* This project is for educational and communication purposes only. If you use this project for any actions, such as web scraping, it is unrelated to the developers of this project.
+* This project is for learning and communication purposes only. If you use this project for any operations, such as web scraping, it has no relation to the developers of this project.
