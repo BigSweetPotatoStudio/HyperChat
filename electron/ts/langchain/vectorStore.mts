@@ -118,7 +118,9 @@ class Store {
     let storeKey = store.key;
     const storeDirectory = path.join(basedirectory, storeKey);
     fs.removeSync(storeDirectory);
-    let find = KNOWLEDGE_BASE.initSync().dbList.find((x) => (x.key = storeKey));
+    let find = KNOWLEDGE_BASE.initSync({ force: true }).dbList.find(
+      (x) => (x.key = storeKey)
+    );
     if (find) {
       for (let r of find.resources) {
         try {
@@ -160,7 +162,9 @@ class Store {
     return res;
   }
   async searchByName(store_name: string, query: string, k: number = 5) {
-    let db = KNOWLEDGE_BASE.initSync().dbList.find((x) => x.name == store_name);
+    let db = KNOWLEDGE_BASE.initSync({ force: true }).dbList.find(
+      (x) => x.name == store_name
+    );
     if (!db) {
       throw new Error("Knowledge base not found");
     }
@@ -174,7 +178,9 @@ class Store {
       markdown: string;
     }
   ) {
-    let db = KNOWLEDGE_BASE.initSync().dbList.find((x) => x.name == store_name);
+    let db = KNOWLEDGE_BASE.initSync({ force: true }).dbList.find(
+      (x) => x.name == store_name
+    );
     if (!db) {
       throw new Error("Knowledge base not found");
     }

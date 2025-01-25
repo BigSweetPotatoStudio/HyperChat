@@ -371,8 +371,8 @@ export class CommandFactory {
   async getProgressList() {
     return progressList.getData();
   }
-  async call_agent_res(uid, data) {
-    EVENT.fire("call_agent_res", { uid, data });
+  async call_agent_res(uid, data, error) {
+    EVENT.fire("call_agent_res_" + uid, { uid, data, error });
   }
 }
 
