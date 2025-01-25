@@ -372,7 +372,7 @@ export class CommandFactory {
     return progressList.getData();
   }
   async call_agent_res(uid, data, error) {
-    EVENT.fire("call_agent_res", { uid, data, error });
+    EVENT.fire("call_agent_res_" + uid, { uid, data, error });
   }
 }
 
