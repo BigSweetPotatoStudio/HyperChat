@@ -13,10 +13,21 @@ import { v4 } from "uuid";
 import { call } from "../../common/call";
 import { GPT_MODELS, GPTS } from "../../common/data";
 import { OpenAiChannel } from "../../common/openai";
+import { text } from "stream/consumers";
 
 //   src="https://chat.deepseek.com/"     src="https://claude.ai/new"     src="https://chatgpt.com/"
 
-function Page({ type = undefined, onChange = undefined }) {
+function Page({
+  type = undefined,
+  onChange = undefined,
+  hyperChatData = {
+    uid: "",
+    agent_name: "",
+    message: "",
+    onComplete: (text: string) => undefined,
+    onError: (e) => {},
+  },
+}) {
   const [curr, setCurr] = useState({
     title: "",
     type: type,
@@ -103,6 +114,7 @@ function Page({ type = undefined, onChange = undefined }) {
         </div>
       ) : curr.type == "hyperchat" ? (
         <Chat
+          data={hyperChatData}
           onTitleChange={(t) => {
             onChange &&
               onChange({
@@ -135,31 +147,63 @@ export function WorkSpace() {
       async (msg: { type: string; data: any }) => {
         if (msg.type == "call_agent") {
           let { agent_name, message, uid } = msg.data;
-          let agents = await GPTS.init();
-          let agent = agents.data.find((x) => x.label == agent_name);
-          let models = await GPT_MODELS.init();
-          let model =
-            models.data.find((x) => x.key == agent.modelKey) || models.data[0];
-          console.log("model", model);
-          let openaiClient = new OpenAiChannel(
-            { ...model, allowMCPs: agent.allowMCPs },
-            [
-              {
-                role: "system" as const,
-                content: agent.prompt,
-              },
-            ],
-            false,
-          );
+          let n = {
+            key: v4(),
+            label: "New Tab",
+            closeIcon: false,
+            children: (
+              <Page
+                type="hyperchat"
+                onChange={(item) => {
+                  n.label = item.title;
+                  refresh();
+                }}
+                hyperChatData={{
+                  agent_name,
+                  message,
+                  uid,
+                  onComplete: (text) => {
+                    setActiveKey(activeKey);
+                    call("call_agent_res", [uid, text, undefined]);
+                    setItems((items) =>
+                      items.filter((item) => item.key !== n.key),
+                    );
+                  },
+                  onError: (e) => {
+                    call("call_agent_res", [uid, "", e]);
+                  },
+                }}
+              />
+            ),
+          };
+          setItems([...items, n]);
+          setActiveKey(n.key);
 
-          openaiClient.addMessage({
-            role: "user" as const,
-            content: message,
-          });
-          let res = await openaiClient.completion();
+          // let agents = await GPTS.init();
+          // let agent = agents.data.find((x) => x.label == agent_name);
+          // let models = await GPT_MODELS.init();
+          // let model =
+          //   models.data.find((x) => x.key == agent.modelKey) || models.data[0];
+          // console.log("model", model);
+          // let openaiClient = new OpenAiChannel(
+          //   { ...model, allowMCPs: agent.allowMCPs },
+          //   [
+          //     {
+          //       role: "system" as const,
+          //       content: agent.prompt,
+          //     },
+          //   ],
+          //   false,
+          // );
 
-          console.log(res);
-          await call("call_agent_res", [uid, res]);
+          // openaiClient.addMessage({
+          //   role: "user" as const,
+          //   content: message,
+          // });
+          // let res = await openaiClient.completion();
+
+          // console.log(res);
+          // await call("call_agent_res", [uid, res]);
         }
       },
     );

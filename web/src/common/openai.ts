@@ -36,7 +36,13 @@ export type MyMessage = OpenAI.Chat.Completions.ChatCompletionMessageParam & {
     | "dataLoading"
     | "dataLoadComplete";
   content_from?: string;
-  content_attachment?: ContentImage[];
+  content_attachment?: Array<{
+    type: string;
+    text?: string;
+    mimeType?: string;
+    data?: string;
+  }>;
+  reasoning_content?: string;
   content_context?: any;
   content_attached?: boolean;
   content_usage?: {
@@ -239,6 +245,7 @@ export class OpenAiChannel {
     let res: MyMessage = {
       role: "assistant",
       content: "" as any,
+      reasoning_content: "",
       tool_calls: undefined,
       content_status: "loading",
       content_attachment: [],
@@ -322,6 +329,8 @@ export class OpenAiChannel {
           }
 
           res.content += chunk.choices[0]?.delta?.content || "";
+          res.reasoning_content +=
+            (chunk.choices[0]?.delta as any)?.reasoning_content || "";
           onUpdate && onUpdate(res.content as string);
         }
         if (res.content == "") {
@@ -376,6 +385,9 @@ export class OpenAiChannel {
         }
 
         this.lastMessage.content = openaires.content;
+        this.lastMessage.reasoning_content = (
+          openaires as any
+        ).reasoning_content;
       }
     } catch (e) {
       console.error(e);
@@ -384,7 +396,12 @@ export class OpenAiChannel {
       throw e;
     }
     this.lastMessage.content_status = "dataLoadComplete";
-
+    // if (this.lastMessage.reasoning_content) {
+    //   this.lastMessage.content_attachment.push({
+    //     type: "text",
+    //     text: this.lastMessage.reasoning_content,
+    //   });
+    // }
     onUpdate && onUpdate(this.lastMessage.content as string);
 
     tool_calls.forEach((tool) => {

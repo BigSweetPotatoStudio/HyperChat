@@ -331,7 +331,7 @@ export async function closeMcpClients(clientName: string, isdelete: boolean) {
   return mcpClients;
 }
 
-let config = await MCP_CONFIG.init();
+let config = MCP_CONFIG.initSync({ force: true });
 for (let s of MyServers) {
   let key = s.name;
   config.mcpServers[key] = {
@@ -347,11 +347,19 @@ for (let s of MyServers) {
     disabled: false,
   };
 }
+for (let key in config.mcpServers) {
+  if (
+    config.mcpServers[key].hyperchat?.scope == "built-in" &&
+    !MyServers.find((x) => x.name == key)
+  ) {
+    delete config.mcpServers[key];
+  }
+}
 await MCP_CONFIG.save();
 export async function getConfg(): Promise<{
   mcpServers: { [s: string]: MCP_CONFIG_TYPE };
 }> {
-  let config = await MCP_CONFIG.init();
+  let config = MCP_CONFIG.initSync({ force: true });
 
   // let obj: any = {};
 
@@ -366,7 +374,7 @@ export async function getConfg(): Promise<{
 
 export function getMyDefaultEnvironment() {
   let env = getDefaultEnvironment();
-  electronData.initSync();
+  electronData.initSync({ force: true });
   if (electronData.get().PATH) {
     env.PATH = electronData.get().PATH;
   }

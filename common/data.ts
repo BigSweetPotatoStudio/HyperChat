@@ -2,7 +2,10 @@ export const DataList: Data<any>[] = [];
 
 export class Data<T> {
   private localStorage: any = null;
-  async init(isCatch = true) {
+  private _inited = false;
+  async init({ force } = { force: false }) {
+    if (!force && this._inited) return this.data;
+    this._inited = true;
     let localData = {};
     try {
       this.localStorage = await this.inget();
@@ -15,7 +18,8 @@ export class Data<T> {
     this.data = Object.assign({}, this.data, localData);
     return this.data;
   }
-  initSync(isCatch = true) {
+  initSync({ force } = { force: false }) {
+    if (!force && this._inited) return this.data;
     let localData = {};
     try {
       this.localStorage = this.ingetSync();
@@ -41,6 +45,9 @@ export class Data<T> {
   get(): T {
     return this.data;
   }
+  // get d(): T {
+  //   return this.data;
+  // }
 
   async save() {
     this.insave();
@@ -102,7 +109,7 @@ export type ChatHistoryItem = {
   modelKey: string;
   gptsKey: string;
   sended: boolean;
-  icon: string;
+  icon?: string;
   allowMCPs: string[];
   requestType: string;
   attachedDialogueCount?: number;

@@ -109,7 +109,7 @@ const ModalForm: React.FC<CollectionCreateFormProps> = ({
               label: x.name,
               value: x.name,
               disabled:
-                form.getFieldValue("callable") && x.name == "hyper_task"
+                form.getFieldValue("callable") && x.name == "hyper_agent"
                   ? true
                   : false,
             };
@@ -123,19 +123,19 @@ const ModalForm: React.FC<CollectionCreateFormProps> = ({
       >
         <Slider defaultValue={20} max={40} />
       </Form.Item>
-      {/* <Form.Item name="callable" label="Callable" valuePropName="checked">
+      <Form.Item name="callable" label="Callable" valuePropName="checked">
         <Checkbox
           onChange={() => {
             form.setFieldValue(
               "allowMCPs",
               (form.getFieldValue("allowMCPs") || []).filter(
-                (x) => x != "hyper_task",
+                (x) => x != "hyper_agent",
               ),
             );
             refresh();
           }}
         >
-          Allowed to be called by 'hyper_task'
+          Allowed to be called by 'hyper_agent'
         </Checkbox>
       </Form.Item>
       <Form.Item name="description" label="description">
@@ -143,7 +143,7 @@ const ModalForm: React.FC<CollectionCreateFormProps> = ({
           placeholder="Please provide a description for more accurate call."
           rows={2}
         />
-      </Form.Item> */}
+      </Form.Item>
     </Form>
   );
 };

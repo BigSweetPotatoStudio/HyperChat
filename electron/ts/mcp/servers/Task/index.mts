@@ -32,7 +32,7 @@ const {
  * Type alias for a note object.
  */
 
-const NAME = "hyper_task";
+const NAME = "hyper_agent";
 
 /**
  * Create an MCP server with capabilities for resources (to list/read notes),
@@ -57,7 +57,7 @@ const server = new Server(
  * Exposes a single "create_note" tool that lets clients create new notes.
  */
 server.setRequestHandler(ListToolsRequestSchema, async () => {
-  let agents = GPTS.initSync();
+  let agents = GPTS.initSync({ force: true });
   let d = agents.data
     .filter((x) => x.callable)
     .map((x) => {
@@ -138,7 +138,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
       }
     }
     case "list_allowed_agents": {
-      const agents = GPTS.initSync();
+      const agents = GPTS.initSync({ force: true });
       return {
         content: [
           {
@@ -159,25 +159,33 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
 });
 
 async function call_agent(agent_name: string, message: string) {
-  let agents = GPTS.initSync();
+  let agents = GPTS.initSync({ force: true });
   if (agents.data.find((x) => x.label == agent_name) == null) {
     throw new Error(`Agent ${agent_name} not found`);
   }
   let uid = v4();
-  getMessageService().sendToRenderer({
-    type: "call_agent",
-    data: {
-      agent_name: agent_name,
-      message: message,
-      uid,
-    },
-  });
   return new Promise((resolve, reject) => {
-    EVENT.on("call_agent_res", (m) => {
-      if (m.uid) {
-        console.log(m.data);
+    let callback = (m, error) => {
+      // console.log("============================");
+      // console.log("call_agent", m.uid, m.data);
+      if (error) {
+        reject(error);
+        EVENT.clear("call_agent_res_" + uid);
+        return;
+      }
+      if (m.uid == uid) {
         resolve(m.data);
       }
+      EVENT.clear("call_agent_res_" + uid);
+    };
+    EVENT.on("call_agent_res_" + uid, callback);
+    getMessageService().sendToRenderer({
+      type: "call_agent",
+      data: {
+        agent_name: agent_name,
+        message: message,
+        uid,
+      },
     });
   });
 }
@@ -203,7 +211,7 @@ async function handlePostMessage(req, res) {
   await transport.handlePostMessage(req, res);
 }
 
-export const HyperTask = {
+export const HyperAgent = {
   createServer,
   handlePostMessage,
   name: NAME,

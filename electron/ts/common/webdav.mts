@@ -23,7 +23,7 @@ class WebDAVSync {
   private client: WebDAVClient;
   public webdavSetting = AppSetting["webdav"];
   init() {
-    let setting = AppSetting.initSync();
+    let setting = AppSetting.initSync({ force: true });
     this.webdavSetting = setting.webdav;
     this.client = createClient(setting.webdav.url, {
       username: setting.webdav.username,
@@ -149,7 +149,7 @@ class WebDAVSync {
     // 生成hash
     for (let data of DataList) {
       let filename = data.KEY;
-      let json = data.initSync();
+      let json = data.initSync({ force: true });
       if (data.options.sync) {
         // console.log("sync data", path.join(localPath + "/_sync", data.KEY));
         let fullPath = path.join(localPath, filename);
@@ -187,7 +187,7 @@ class WebDAVSync {
     try {
       for (let data of DataList) {
         let filename = data.KEY;
-        let json = await data.init();
+        // let json =  data.initSync({ force: true });
         if (data.options.sync) {
           // console.log("sync data", path.join(localPath + "/_sync", data.KEY));
           let p = path.parse(filename);
