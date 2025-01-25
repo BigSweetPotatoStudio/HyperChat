@@ -7,6 +7,7 @@ import {
   MCP_CONFIG,
   electronData,
   DataList,
+  MCP_CONFIG_TYPE,
 } from "../../../common/data.js";
 
 for (let data of DataList) {
@@ -26,4 +27,43 @@ for (let data of DataList) {
   });
 }
 
-export { AppSetting, ChatHistory, GPTS, GPT_MODELS, MCP_CONFIG, electronData };
+// 初始化配置
+await electronData.init();
+if (electronData.get().firstOpen) {
+  await MCP_CONFIG.init();
+  MCP_CONFIG.save();
+  await GPT_MODELS.init();
+  GPT_MODELS.save();
+  electronData.get().firstOpen = false;
+  await electronData.save();
+}
+
+// try {
+//   if (
+//     !electronData.get().updated[electronData.get().version] &&
+//     electronData.get().version == "0.3.0"
+//   ) {
+//     // 更新配置
+//     let h = await ChatHistory.init();
+//     for (let d of h.data) {
+//       d.dateTime = d.dateTime || Date.now();
+//       for (let m of d.messages) {
+//         m.content_tool_calls = m.tool_calls;
+//       }
+//     }
+//     await ChatHistory.save();
+//     //
+//     electronData.get().updated[electronData.get().version] = true;
+//     await electronData.save();
+//   }
+// } catch (e) {}
+
+export {
+  AppSetting,
+  ChatHistory,
+  GPTS,
+  GPT_MODELS,
+  MCP_CONFIG,
+  electronData,
+  MCP_CONFIG_TYPE,
+};

@@ -2,7 +2,9 @@
 
 HyperChat 是一个追求开放的Chat客户端，可以使用各家LLM的API，实现最好的Chat体验，以及实现生产力工具通过MCP协议。
 
-支持 [MCP](https://modelcontextprotocol.io/introduction) 协议的Chat，使用类OpenAI的协议，兼容 `Claude Desktop` 配置文件。支持 `Client` 热加载，重启，禁用。
+* 支持 OpenAI风格的LLM，`OpenAI` , `Claude(OpenRouter)`, `Qwen`, `Deepseek`, `GLM`, `Ollama` 。
+* 内置MCP插件市场，人性化的MCP的安装填写配置，一键安装，欢迎提交[HyperChatMCP](https://github.com/BigSweetPotatoStudio/HyperChatMCP)。
+* 也支持第三方MCP手动安装，填写 `command` , `args` , `env` 即可。
 
 ### MCP: 
 
@@ -16,16 +18,18 @@ HyperChat 是一个追求开放的Chat客户端，可以使用各家LLM的API，
 - [x] 支持英文和中文
 - [x] 添加了内置的MCP客户端`hypertools`, `fetch`+`search`
 - [x] 支持 `Bot`，可以预设提示词，允许的MCP服务
-- [x] 支持 `Artifacts`, `HTML`,`SVG` 渲染
+- [x] 支持 `Artifacts`, `SVG`,`HTML` 渲染, js错误捕获，支持打开Chrome的控制台
 - [x] Bot显示优化，支持查找，拖拽排序
-- [x] 支持 `KaTeX`，显示数学公式
+- [x] 支持 `KaTeX`，显示数学公式，代码Code渲染增加高亮和快速复制
 - [x] `WebDAV` 同步
+- [x] `MCP`扩展市场+第三方MCP支持
+- [x] 添加`RAG`，基于mcp知识库
+- [x] 添加ChatSpace概念，支持多对话同时聊天
 
 ### TODO:
 
 - [ ] 权限弹窗，是否允许
-- [ ] 支持定时任务
-- [ ] 支持Projects + RAG
+- [ ] 添加task概念。Agent Administrator，通过Administrator管理Task.
 - [ ] 实现利用LLM自己给自己写Tools
 - [ ] 本地的`shell`+`nodejs`+`js on web`运行环境
 
@@ -44,17 +48,24 @@ HyperChat 是一个追求开放的Chat客户端，可以使用各家LLM的API，
 * 1.配置APIKEY，确保你的LLM服务兼容OpenAI风格。
 * 2.确保您的系统中已安装 `uv + nodejs`。
 
-### [uvx](https://github.com/astral-sh/uv)
+### [uvx & uv](https://github.com/astral-sh/uv)
+
+使用命令行安装，或者去看官方Github教程 [uv](https://github.com/astral-sh/uv)
 
 ```
 # MacOS
 brew install uv
+# windows
+winget install --id=astral-sh.uv  -e
 ```
 ### [npx & nodejs](https://nodejs.org/en)
 
+使用命令行安装，或者去官网下载安装，官网 [nodejs](https://nodejs.org/en)
 ```
 # MacOS
-brew install node 
+brew install node
+# windows
+winget install OpenJS.NodeJS.LTS
 ```
 
 ## 开发
@@ -72,7 +83,7 @@ npm run dev
 * MacOS 遇到了已损坏或者权限问题， `sudo xattr -d com.apple.quarantine /Applications/HyperChat.app`
 * MacOS `nvm` 用户 手动输入PATH `echo $PATH`, windows版本 `nvm` 好像可以直接使用
 
-![image.png](./images/image40.png)
+![image.png](./images/image47.png)
 
 
 
@@ -80,15 +91,18 @@ npm run dev
 
 [HyperChat用户交流](https://t.me/dadigua001)
 
-![image.png](./images/image33.png)
 
-![image.png](./images/image34.png)
+![image.png](./images/image51.png)
 
 ![image.png](./images/image13.png)
 
-![image.png](./images/image32.png)
+![image.png](./images/image43.png)
 
-![image.png](./images/image31.png)
+![image.png](./images/image45.png)
+
+![image.png](./images/image44.png)
+
+![image.png](./images/image46.png)
 
 ![image.png](./images/image22.png)
 
@@ -99,3 +113,15 @@ npm run dev
 ![image.png](./images/image36.png)
 
 ![image.png](./images/image42.png)
+
+![image.png](./images/image33.png)
+
+![image.png](./images/image34.png)
+
+![image.png](./images/image48.png)
+
+![image.png](./images/image50.png)
+
+## 免责声明
+
+* 本项目仅供学习交流使用，如果您使用本项目进行任何操作，如爬虫行为等，与本项目开发者无关。

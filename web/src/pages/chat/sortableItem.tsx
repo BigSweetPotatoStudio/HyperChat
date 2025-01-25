@@ -6,6 +6,7 @@ import {
   BorderInnerOutlined,
   DeleteOutlined,
   EditOutlined,
+  FunctionOutlined,
   SwapOutlined,
 } from "@ant-design/icons";
 
@@ -43,6 +44,9 @@ export function SortableItem(props) {
       >
         <div className="flex h-4/5 w-full items-center justify-center">
           <div className="text-xl">{getFirstCharacter(props.item.label)}</div>
+        </div>
+        <div className="absolute left-0 top-0 z-10">
+          {props.item.callable && <FunctionOutlined />}
         </div>
         <div
           style={{

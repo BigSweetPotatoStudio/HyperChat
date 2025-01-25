@@ -32,6 +32,7 @@ import {
   Tooltip,
   InputNumber,
   Tag,
+  Timeline,
 } from "antd";
 import enUS from "antd/locale/en_US";
 import zhCN from "antd/locale/zh_CN";
@@ -66,19 +67,23 @@ import {
   ProLayout,
 } from "@ant-design/pro-components";
 import { route as routerRoute } from "./router";
-import { currLang, setCurrLang } from "./i18n";
+import { currLang, setCurrLang, t } from "./i18n";
 import { call } from "./common/call";
 import { electronData, GPT_MODELS, MCP_CONFIG } from "./common/data";
 import { getClients } from "./common/mcp";
 import { EVENT } from "./common/event";
 import { OpenAiChannel } from "./common/openai";
 import { DndTable } from "./common/dndTable";
+import { sleep } from "./common/sleep";
+import { InputPlus } from "./common/input_plus";
 
 type ProviderType = {
   label: string;
   baseURL: string;
   apiKey?: string;
+  call_tool_step?: number;
   value: string;
+  models?: string[];
 };
 
 const Providers: ProviderType[] = [
@@ -86,16 +91,32 @@ const Providers: ProviderType[] = [
     label: "OpenAI",
     baseURL: "https://api.openai.com/v1",
     value: "openai",
+    models: [
+      "gpt-4o-mini",
+      "gpt-4o",
+      "o1-mini",
+      "o1",
+      "o1-preview",
+      "chatgpt-4o-latest",
+    ],
   },
   {
     label: "OpenRouter",
     baseURL: "https://openrouter.ai/api/v1",
     value: "openrouter",
+    models: ["openai/gpt-4o-mini", "anthropic/claude-3.5-haiku-20241022:beta"],
+  },
+  {
+    label: "Gemini",
+    baseURL: "https://generativelanguage.googleapis.com/v1beta/openai/",
+    value: "gemini",
+    models: ["gemini-2.0-flash-exp"],
   },
   {
     label: "Qwen",
     baseURL: "https://dashscope.aliyuncs.com/compatible-mode/v1",
     value: "qwen",
+    models: ["qwen-plus", "qwen-turbo", "qwen-max"],
   },
   {
     label: "Ollama",
@@ -112,14 +133,17 @@ const Providers: ProviderType[] = [
     label: "GLM",
     baseURL: "https://open.bigmodel.cn/api/paas/v4",
     value: "glm",
+    models: ["glm-4-air"],
   },
   {
     label: "DeepSeek",
     baseURL: "https://api.deepseek.com",
     value: "deepseek",
+    call_tool_step: 1,
+    models: ["deepseek-chat"],
   },
   {
-    label: "Other",
+    label: "OpenAI Compatibility",
     baseURL: "",
     value: "other",
   },
@@ -144,12 +168,14 @@ export function Layout() {
         navigate("/Chat");
       }
     });
-  }, []);
-  useEffect(() => {
-    getClients(false).then((x) => {
-      setClients(x);
+    EVENT.on("setIsToolsShowTrue", () => {
+      setIsToolsShow(true);
+    });
+    EVENT.on("setIsModelConfigOpenTrue", () => {
+      setIsModelConfigOpen(true);
     });
   }, []);
+  useEffect(() => {}, []);
   useEffect(() => {
     (async () => {
       await GPT_MODELS.init();
@@ -186,7 +212,7 @@ export function Layout() {
   const [form] = Form.useForm();
   const [mcpform] = Form.useForm();
   const [isToolsShow, setIsToolsShow] = useState(false);
-  const [clients, setClients] = React.useState([]);
+
   const [isAddMCPConfigOpen, setIsAddMCPConfigOpen] = useState(false);
   const [loadingOpenMCP, setLoadingOpenMCP] = useState(false);
   const [loadingCheckLLM, setLoadingCheckLLM] = useState(false);
@@ -267,6 +293,10 @@ export function Layout() {
     })();
   }, []);
 
+  const [timelineData, setTimelineData] = useState([]);
+  const [isOpenTestLLM, setIsOpenTestLLM] = useState(false);
+  const [pending, setPending] = useState(false);
+
   return (
     <ConfigProvider locale={locale}>
       <div style={{ width: "100%", margin: "0px auto" }}>
@@ -293,13 +323,9 @@ export function Layout() {
           actionsRender={(props) => {
             return (
               <Space>
-                <Button
-                  onClick={() => {
-                    setIsToolsShow(true);
-                  }}
-                >
-                  💻MCP
-                </Button>
+                <a href="https://github.com/BigSweetPotatoStudio/HyperChat">
+                  <GithubFilled></GithubFilled> Github
+                </a>
                 <Button
                   onClick={() => {
                     setIsModelConfigOpen(true);
@@ -358,7 +384,7 @@ export function Layout() {
                     {syncStatus == 1
                       ? "Syncing"
                       : syncStatus == -1
-                        ? "Sync Falled"
+                        ? "Sync Failed"
                         : "Sync"}
                   </Button>
                 </>
@@ -367,7 +393,9 @@ export function Layout() {
           }}
           headerTitleRender={(logo, title, _) => {
             return (
-              <Link to="home">HyperChat({electronData.get().version})</Link>
+              <Link to="home">
+                HyperChat<span>({electronData.get().version})</span>
+              </Link>
             );
           }}
           menuFooterRender={(props) => {
@@ -402,343 +430,7 @@ export function Layout() {
 
         <Modal
           width={1000}
-          open={isToolsShow}
-          onCancel={() => setIsToolsShow(false)}
-          maskClosable
-          title="MCP Service List"
-          onOk={() => setIsToolsShow(false)}
-          cancelButtonProps={{ style: { display: "none" } }}
-        >
-          <Table
-            size="small"
-            rowKey={(record) => record.name}
-            pagination={false}
-            dataSource={clients}
-            columns={[
-              {
-                title: "client",
-                dataIndex: "name",
-                key: "name",
-              },
-              {
-                title: "status",
-                dataIndex: "status",
-                key: "status",
-                render: (text, record, index) => (
-                  <span
-                    style={{
-                      color: text == "connected" ? "green" : "red",
-                    }}
-                  >
-                    {text}
-                  </span>
-                ),
-              },
-              {
-                title: "Operation",
-                dataIndex: "status",
-                key: "status",
-                render: (text, record, index) => {
-                  if (record.scope == "local") {
-                    return <Tag color="blue">built-in</Tag>;
-                  }
-                  return (
-                    <div>
-                      <Button
-                        type="link"
-                        onClick={() => {
-                          record.config._name = record.name;
-                          record.config._type = "edit";
-                          record.config._argsStr = (
-                            record.config.args || []
-                          ).join("   ");
-
-                          record.config._envList = [];
-                          for (let key in record.config.env) {
-                            record.config._envList.push({
-                              name: key,
-                              value: record.config.env[key],
-                            });
-                          }
-                          mcpform.resetFields();
-                          mcpform.setFieldsValue(record.config);
-                          setIsAddMCPConfigOpen(true);
-                        }}
-                      >
-                        config
-                      </Button>
-                      <Divider type="vertical"></Divider>
-                      <Button
-                        disabled={record.config.disabled}
-                        type="link"
-                        onClick={async () => {
-                          if (record.config.disabled) {
-                            message.error("Service Disabled");
-                            return;
-                          }
-                          try {
-                            await call("openMcpClient", [record.name]);
-                            getClients(false).then((x) => {
-                              setClients(x);
-                              EVENT.fire("refresh");
-                            });
-                          } catch (e) {
-                            message.error(e.message);
-                          }
-                        }}
-                      >
-                        {record.status == "connected" ? "reload" : "start"}
-                      </Button>
-                      <Divider type="vertical"></Divider>
-                      <Button
-                        type="link"
-                        style={{
-                          color: !record.config.disabled ? "red" : undefined,
-                        }}
-                        onClick={async () => {
-                          record.config.disabled = !record.config.disabled;
-
-                          await MCP_CONFIG.save();
-                          try {
-                            if (record.config.disabled) {
-                              await call("closeMcpClients", [record.name]);
-                            } else {
-                              await call("openMcpClient", [record.name]);
-                            }
-
-                            getClients(false).then((x) => {
-                              setClients(x);
-                              EVENT.fire("refresh");
-                            });
-                          } catch (e) {
-                            message.error(e.message);
-                          }
-                        }}
-                      >
-                        {record.config.disabled ? "enable" : "disable"}
-                      </Button>
-                      <Divider type="vertical"></Divider>
-                      <Popconfirm
-                        title="Confirm"
-                        description="Confirm Delete?"
-                        onConfirm={async () => {
-                          try {
-                            await call("closeMcpClients", [record.name, true]);
-
-                            getClients(false).then((x) => {
-                              setClients(x);
-                              EVENT.fire("refresh");
-                            });
-                            record.config.disabled = true;
-                            delete MCP_CONFIG.get().mcpServers[record.name];
-                            await MCP_CONFIG.save();
-                          } catch (e) {
-                            message.error(e.message);
-                          }
-                        }}
-                      >
-                        <Button type="link">delete</Button>
-                      </Popconfirm>
-                    </div>
-                  );
-                },
-              },
-            ]}
-            footer={() => {
-              return (
-                <div className="text-center">
-                  <Button
-                    type="link"
-                    onClick={() => {
-                      mcpform.resetFields();
-                      setIsAddMCPConfigOpen(true);
-                    }}
-                  >
-                    Add MCP
-                  </Button>
-                  <Button
-                    type="link"
-                    onClick={async () => {
-                      let p = await call("pathJoin", ["mcp.json"]);
-                      await call("openExplorer", [p]);
-                    }}
-                  >
-                    Open the configuration file
-                  </Button>
-                </div>
-              );
-            }}
-          ></Table>
-        </Modal>
-        <Modal
-          width={600}
-          title="Configure MCP"
-          open={isAddMCPConfigOpen}
-          okButtonProps={{
-            autoFocus: true,
-            htmlType: "submit",
-            loading: loadingOpenMCP,
-          }}
-          maskClosable={false}
-          cancelButtonProps={{ style: { display: "none" } }}
-          onCancel={() => {
-            setIsAddMCPConfigOpen(false);
-          }}
-          modalRender={(dom) => (
-            <Form
-              initialValues={{
-                envStr: "",
-                argsStr: "",
-              }}
-              form={mcpform}
-              layout="vertical"
-              name="Configure MCP"
-              clearOnDestroy
-              onFinish={async (values) => {
-                try {
-                  setLoadingOpenMCP(true);
-                  values.args = values._argsStr
-                    .split(" ")
-                    .filter((x) => x.trim() != "");
-                  try {
-                    values.env = {};
-                    values._envList = [];
-                    for (let x of values._envList) {
-                      values.env[x.name] = x.value;
-                    }
-                  } catch {
-                    message.error("Please enter a valid JSON");
-                    return;
-                  }
-                  if (
-                    values._type == "edit" &&
-                    MCP_CONFIG.get().mcpServers[values._name].disabled
-                  ) {
-                    message.error("MCP Service Disabled");
-                    return;
-                  }
-                  await call("openMcpClient", [values._name, values]);
-                  if (values._type == "edit") {
-                    let index = clients.findIndex(
-                      (e) => e.name == values._name,
-                    );
-
-                    if (index == -1) {
-                      return;
-                    }
-
-                    clients[index].config = {
-                      ...clients[index].config,
-                      ...values,
-                    };
-
-                    MCP_CONFIG.get().mcpServers[values._name] =
-                      clients[index].config;
-                  } else {
-                    clients.push({
-                      name: values._name,
-                      config: values,
-                      status: "disconnected",
-                    });
-                    if (MCP_CONFIG.get().mcpServers[values._name] != null) {
-                      message.error("Name already exists");
-                      return;
-                    }
-                    MCP_CONFIG.get().mcpServers[values._name] = values;
-                  }
-
-                  await MCP_CONFIG.save();
-                  setIsAddMCPConfigOpen(false);
-                  getClients(false).then((x) => {
-                    setClients(x);
-                    EVENT.fire("refresh");
-                  });
-                } catch (e) {
-                  message.error(e.message);
-                } finally {
-                  setLoadingOpenMCP(false);
-                }
-              }}
-            >
-              {dom}
-            </Form>
-          )}
-        >
-          <Form.Item className="hidden" name="_type" label="_type">
-            <Input></Input>
-          </Form.Item>
-          <Form.Item
-            name="_name"
-            label="Name"
-            rules={[{ required: true, message: "Please enter" }]}
-          >
-            <Input
-              disabled={mcpform.getFieldValue("_type") == "edit"}
-              placeholder="Please enter the name"
-            ></Input>
-          </Form.Item>
-          <Form.Item
-            name="command"
-            label="command"
-            rules={[{ required: true, message: "Please enter" }]}
-          >
-            <Input placeholder="Please enter command"></Input>
-          </Form.Item>
-          <Form.Item name="_argsStr" label="args">
-            <Input placeholder="Please enter args"></Input>
-          </Form.Item>
-
-          <Form.Item label="env">
-            <Form.List name="_envList">
-              {(fields, { add, remove }) => (
-                <>
-                  {fields.map(({ key, name, ...restField }) => (
-                    <div
-                      key={key}
-                      style={{
-                        display: "flex",
-                        justifyContent: "space-between",
-                      }}
-                    >
-                      <Form.Item
-                        {...restField}
-                        name={[name, "name"]}
-                        rules={[{ required: true, message: "Missing name" }]}
-                      >
-                        <Input placeholder="Var Name" />
-                      </Form.Item>
-                      <Form.Item
-                        {...restField}
-                        className="flex-1"
-                        name={[name, "value"]}
-                        rules={[{ required: true, message: "Missing Value" }]}
-                      >
-                        <Input placeholder="Var Value" />
-                      </Form.Item>
-                      <Form.Item>
-                        <MinusCircleOutlined onClick={() => remove(name)} />
-                      </Form.Item>
-                    </div>
-                  ))}
-                  <Form.Item>
-                    <Button
-                      type="dashed"
-                      onClick={() => add()}
-                      block
-                      icon={<PlusOutlined />}
-                    >
-                      Add Environment Variables
-                    </Button>
-                  </Form.Item>
-                </>
-              )}
-            </Form.List>
-          </Form.Item>
-        </Modal>
-
-        <Modal
-          width={1000}
-          title="My LLM Models"
+          title={t`My LLM Models`}
           open={isModelConfigOpen}
           cancelButtonProps={{ style: { display: "none" } }}
           onOk={() => {
@@ -786,6 +478,15 @@ export function Layout() {
                 dataIndex: "name",
                 key: "name",
                 width: 200,
+                render: (text, record, index) => {
+                  return (
+                    <div>
+                      <div>{text}</div>
+                      {record.supportImage && <Tag color="blue">image</Tag>}
+                      {record.supportTool && <Tag color="blue">tool</Tag>}
+                    </div>
+                  );
+                },
               },
               {
                 title: "LLM",
@@ -867,7 +568,7 @@ export function Layout() {
         </Modal>
         <Modal
           width={600}
-          title="Configure LLM"
+          title={t`Configure LLM`}
           open={isAddModelConfigOpen}
           maskClosable={false}
           okButtonProps={{
@@ -890,44 +591,108 @@ export function Layout() {
               }}
               clearOnDestroy
               onFinish={async (values) => {
-                setLoadingCheckLLM(true);
-                message.info("Testing the configuration, please wait...");
-                let o = new OpenAiChannel(values, []);
-
-                let res = await o.test();
-                if (res.code == 0) {
-                  message.error(
-                    "Please check if the configuration is incorrect or if the network is available.",
-                  );
-                  setLoadingCheckLLM(false);
-                  return;
-                } else {
-                  if (!res.suppentTool) {
-                    message.warning(
-                      "Your LLM is available, but does not support tool calls.",
-                    );
+                try {
+                  setLoadingCheckLLM(true);
+                  // message.info("Testing the configuration, please wait...");
+                  setPending(true);
+                  setIsOpenTestLLM(true);
+                  setTimelineData([
+                    {
+                      color: "blue",
+                      children: "Testing the configuration, please wait...",
+                    },
+                  ]);
+                  let o = new OpenAiChannel(values, []);
+                  let testBaseRes = await o.testBase();
+                  if (testBaseRes) {
+                    setTimelineData((x) => {
+                      x.push({
+                        color: "green",
+                        children: "Text Chat Test Success",
+                      });
+                      return x.slice();
+                    });
+                  } else {
+                    setTimelineData((x) => {
+                      x.push({
+                        color: "red",
+                        children: "Text Chat Test Failed",
+                      });
+                      return x.slice();
+                    });
                   }
-                }
-                if (values.key) {
-                  let index = GPT_MODELS.get().data.findIndex(
-                    (e) => e.key == values.key,
-                  );
-                  if (index == -1) {
+                  if (!testBaseRes) {
+                    message.error(
+                      "Please check if the configuration is incorrect or if the network is available.",
+                    );
+                    setLoadingCheckLLM(false);
+                    setPending(false);
                     return;
                   }
-                  GPT_MODELS.get().data[index] = values;
-                  await GPT_MODELS.save();
-                } else {
-                  values.name = values.name || values.model;
-                  values.key = v4();
-                  GPT_MODELS.get().data.push(values);
-                  await GPT_MODELS.save();
+                  let testImageRes = await o.testImage();
+                  if (testImageRes) {
+                    setTimelineData((x) => {
+                      x.push({
+                        color: "green",
+                        children: "Image Support Test Success",
+                      });
+                      return x.slice();
+                    });
+                    values.supportImage = true;
+                  } else {
+                    setTimelineData((x) => {
+                      x.push({
+                        color: "red",
+                        children: "Image Support Test Failed",
+                      });
+                      return x.slice();
+                    });
+                  }
+                  values.supportImage = testImageRes;
+                  let testToolRes = await o.testTool();
+                  if (testToolRes) {
+                    setTimelineData((x) => {
+                      x.push({
+                        color: "green",
+                        children: "Tool Call Test Success",
+                      });
+                      return x.slice();
+                    });
+                  } else {
+                    setTimelineData((x) => {
+                      x.push({
+                        color: "red",
+                        children: "Tool Call Test Failed",
+                      });
+                      return x.slice();
+                    });
+                  }
+                  values.supportTool = testToolRes;
+                  setPending(false);
+                  if (values.key) {
+                    let index = GPT_MODELS.get().data.findIndex(
+                      (e) => e.key == values.key,
+                    );
+                    if (index == -1) {
+                      return;
+                    }
+                    GPT_MODELS.get().data[index] = values;
+                    await GPT_MODELS.save();
+                  } else {
+                    values.name = values.name || values.model;
+                    values.key = v4();
+                    GPT_MODELS.get().data.push(values);
+                    await GPT_MODELS.save();
+                  }
+                  refresh();
+                  setIsAddModelConfigOpen(false);
+                  EVENT.fire("refresh");
+                  setLoadingCheckLLM(false);
+                  message.success("save success!");
+                } catch {
+                  setLoadingCheckLLM(false);
+                  message.error("save failed!");
                 }
-                refresh();
-                setIsAddModelConfigOpen(false);
-                EVENT.fire("refresh");
-                setLoadingCheckLLM(false);
-                message.success("save success!");
               }}
             >
               {dom}
@@ -956,6 +721,9 @@ export function Layout() {
                 if (find.apiKey) {
                   value.apiKey = find.apiKey;
                 }
+                if (find.call_tool_step) {
+                  value.call_tool_step = find.call_tool_step;
+                }
                 form.setFieldsValue(value);
                 refresh();
                 // setTimeout(() => {
@@ -973,7 +741,7 @@ export function Layout() {
               disabled={
                 !["other", "ollama"].includes(form.getFieldValue("provider"))
               }
-              placeholder="Please enter baseURL"
+              placeholder={t`Please enter baseURL`}
             ></Input>
           </Form.Item>
           <Form.Item
@@ -981,7 +749,7 @@ export function Layout() {
             label="apiKey"
             rules={[{ required: true, message: "Please enter" }]}
           >
-            <Input placeholder="Please enter apiKey"></Input>
+            <Input placeholder={t`Please enter apiKey`}></Input>
           </Form.Item>
 
           <Form.Item
@@ -989,7 +757,16 @@ export function Layout() {
             label="model"
             rules={[{ required: true, message: "Please enter" }]}
           >
-            <Input placeholder="Please enter the model"></Input>
+            <InputPlus
+              placeholder={t`Please enter or select the model`}
+              options={Providers.find(
+                (x) =>
+                  x.value ==
+                  (form.getFieldValue("provider") || Providers[0].value),
+              )?.models?.map((x) => {
+                return { value: x, label: x };
+              })}
+            />
           </Form.Item>
           <Form.Item name="name" label="Alias">
             <Input placeholder="The default is the model name"></Input>
@@ -1000,6 +777,22 @@ export function Layout() {
               placeholder="default, the model is allowed to execute tools for 10 steps."
             ></InputNumber>
           </Form.Item>
+        </Modal>
+        <Modal
+          title="Test LLM"
+          open={isOpenTestLLM}
+          onOk={() => {
+            setIsOpenTestLLM(false);
+          }}
+          cancelButtonProps={{ style: { display: "none" } }}
+          onCancel={() => {
+            setIsOpenTestLLM(false);
+          }}
+        >
+          <Timeline
+            pending={pending ? "Testing..." : ""}
+            items={timelineData}
+          />
         </Modal>
       </div>
     </ConfigProvider>

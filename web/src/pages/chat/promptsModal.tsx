@@ -6,11 +6,13 @@ import {
   FormInstance,
   FormProps,
   Input,
+  InputNumber,
   List,
   Modal,
   Radio,
   Segmented,
   Select,
+  Slider,
   Space,
   Tree,
   TreeDataNode,
@@ -28,10 +30,11 @@ import { GPT_MODELS } from "../../common/data";
 interface Values {
   label: string;
   prompt: string;
-
+  callable: boolean;
   key?: string;
   allowMCPs: string[];
   modelKey: string;
+  attachedDialogueCount?: number;
 }
 
 interface CollectionCreateFormProps {
@@ -105,10 +108,42 @@ const ModalForm: React.FC<CollectionCreateFormProps> = ({
             return {
               label: x.name,
               value: x.name,
+              disabled:
+                form.getFieldValue("callable") && x.name == "hyper_task"
+                  ? true
+                  : false,
             };
           })}
         />
       </Form.Item>
+      <Form.Item
+        name="attachedDialogueCount"
+        label="attachedDialogueCount"
+        tooltip="Number of sent Dialogue Message attached per request"
+      >
+        <Slider defaultValue={20} max={40} />
+      </Form.Item>
+      {/* <Form.Item name="callable" label="Callable" valuePropName="checked">
+        <Checkbox
+          onChange={() => {
+            form.setFieldValue(
+              "allowMCPs",
+              (form.getFieldValue("allowMCPs") || []).filter(
+                (x) => x != "hyper_task",
+              ),
+            );
+            refresh();
+          }}
+        >
+          Allowed to be called by 'hyper_task'
+        </Checkbox>
+      </Form.Item>
+      <Form.Item name="description" label="description">
+        <Input.TextArea
+          placeholder="Please provide a description for more accurate call."
+          rows={2}
+        />
+      </Form.Item> */}
     </Form>
   );
 };
@@ -128,6 +163,7 @@ export const PromptsModal: React.FC<CollectionCreateFormModalProps> = ({
 }) => {
   const [formInstance, setFormInstance] = useState<FormInstance>();
   initialValues.allowMCPs = initialValues.allowMCPs || [];
+
   return (
     <Modal
       width={800}

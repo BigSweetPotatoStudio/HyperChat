@@ -13,6 +13,35 @@ if (process.env.NODE_ENV == "development") {
   window.localStorage.setItem("i18nText", JSON.stringify(i18nText, null, 4));
 }
 
+export function t(strings, ...values) {
+  // strings: 模板字符串的静态部分
+  // values: 插值的动态部分
+  let str = strings.reduce(
+    (result, str, i) => result + str + (values[i] || ""),
+    "",
+  );
+  // console.log("str: ", i18nText, str);
+  if (i18nText[str] == null) {
+    if (process.env.NODE_ENV == "development" && hasEnglish(str)) {
+      i18nText[str] = {
+        en: str,
+        zh: null,
+      };
+      window.localStorage.setItem(
+        "i18nText",
+        JSON.stringify(i18nText, null, 4),
+      );
+    }
+    return str;
+  } else {
+    if (currLang == "zhCN") {
+      return i18nText[str].zh || str;
+    } else {
+      return str;
+    }
+  }
+}
+
 // currLang = "enUS";
 console.log("currLang: ", currLang);
 const setCurrLang = (lang) => {

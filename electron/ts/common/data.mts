@@ -5,6 +5,8 @@ import {
   AppSetting,
   DataList,
   ENV_CONFIG,
+  MCP_CONFIG,
+  MCP_CONFIG_TYPE,
 } from "../../../common/data.js";
 import { fs, path } from "zx";
 import { appDataDir } from "../const.mjs";
@@ -39,6 +41,8 @@ export const MCPServerPORT = 16110;
 
 await electronData.init();
 
+electronData.get().platform = process.platform;
+
 if (ENV_CONFIG.initSync().PATH != "") {
   electronData.get().PATH = ENV_CONFIG.get().PATH;
   ENV_CONFIG.get().PATH = "";
@@ -54,4 +58,4 @@ electronData.save();
 
 await taskHistory.init();
 
-export { electronData, taskHistory, AppSetting };
+export { electronData, taskHistory, AppSetting, MCP_CONFIG, MCP_CONFIG_TYPE };

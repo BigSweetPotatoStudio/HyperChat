@@ -23,6 +23,7 @@ import {
   Flex,
   Form,
   Input,
+  InputNumber,
   message,
   Modal,
   Popconfirm,
@@ -30,6 +31,7 @@ import {
   Result,
   Segmented,
   Select,
+  Slider,
   Space,
   Spin,
   Table,
@@ -41,6 +43,41 @@ const antdMessage = message;
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import OpenAI from "openai";
 import { v4 } from "uuid";
+
+function urlToBase64(url: string) {
+  return new Promise<string>((resolve, reject) => {
+    // 创建图片对象
+    const img = new Image();
+
+    // 跨域支持
+    img.crossOrigin = "Anonymous";
+
+    img.onload = function () {
+      // 创建画布
+      const canvas = document.createElement("canvas");
+      const ctx = canvas.getContext("2d");
+
+      // 设置画布大小
+      canvas.width = (this as any).width;
+      canvas.height = (this as any).height;
+
+      // 绘制图片
+      ctx.drawImage(this as any, 0, 0);
+
+      // 转换为 Base64
+      const base64 = canvas.toDataURL("image/png");
+      // console.log(base64);
+      resolve(base64);
+    };
+
+    img.onerror = function () {
+      reject(new Error("图片加载失败"));
+    };
+
+    // 设置图片源
+    img.src = url;
+  });
+}
 
 import {
   AlipayCircleOutlined,
@@ -62,6 +99,17 @@ import {
   StarOutlined,
   SearchOutlined,
   DownOutlined,
+  SyncOutlined,
+  LinkOutlined,
+  FileImageOutlined,
+  ToolOutlined,
+  CopyOutlined,
+  SettingOutlined,
+  LeftOutlined,
+  MinusCircleOutlined,
+  DownloadOutlined,
+  UploadOutlined,
+  StockOutlined,
 } from "@ant-design/icons";
 import type { ConfigProviderProps, GetProp } from "antd";
 import { MyMessage, OpenAiChannel } from "../../common/openai";
@@ -78,7 +126,7 @@ import { EVENT } from "../../common/event";
 import InfiniteScroll from "react-infinite-scroll-component";
 import { call } from "../../common/call";
 import { MyAttachR } from "./attachR";
-import { MarkDown, UserContent } from "./component";
+import { DownImage, MarkDown, UserContent } from "./component";
 import { DndContext, PointerSensor, useSensor } from "@dnd-kit/core";
 import {
   horizontalListSortingStrategy,
@@ -87,19 +135,30 @@ import {
 } from "@dnd-kit/sortable";
 import { SortableItem } from "./sortableItem";
 import { QuickPath, SelectFile } from "../../common/selectFile";
+import Clarity from "@microsoft/clarity";
+import { Copy } from "lucide-react";
+import { ChatHistoryItem } from "../../../../common/data";
+import { useForm } from "antd/es/form/Form";
+import { t } from "../../i18n";
 
-let client: OpenAiChannel;
-
-export const Chat = () => {
+// let openaiClient: OpenAiChannel;
+export const Chat = ({ onTitleChange = undefined }) => {
   const [num, setNum] = React.useState(0);
   const refresh = () => {
     setNum((n) => n + 1);
   };
-  const [clients, setClients] = React.useState<InitedClient[]>([]);
-  const [prompts, setPrompts] = React.useState<InitedClient["prompts"]>([]);
-  const [resources, setResources] = React.useState<InitedClient["resources"]>(
-    [],
-  );
+
+  // const [clients, setClients] = React.useState<InitedClient[]>([]);
+  // const [prompts, setPrompts] = React.useState<InitedClient["prompts"]>([]);
+  // const [resources, setResources] = React.useState<InitedClient["resources"]>(
+  //   [],
+  // );
+  const openaiClient = useRef<OpenAiChannel>();
+
+  const clientsRef = useRef<InitedClient[]>([]);
+  const promptsRef = useRef<InitedClient["prompts"]>([]);
+  const resourcesRef = useRef<InitedClient["resources"]>([]);
+
   let init = useCallback(() => {
     console.log("init");
     ChatHistory.init().then(() => {
@@ -113,11 +172,7 @@ export const Chat = () => {
       refresh();
     });
     (async () => {
-      let clients = await getClients().catch(() => []);
-      currentChatReset(
-        "",
-        clients.map((v) => v.name),
-      );
+      currentChatReset({}, "", true);
     })();
   }, []);
   useEffect(() => {
@@ -136,7 +191,7 @@ export const Chat = () => {
   const [direction, setDirection] =
     React.useState<GetProp<ConfigProviderProps, "direction">>("ltr");
 
-  const currentChat = React.useRef({
+  const currentChat = React.useRef<ChatHistoryItem>({
     label: "",
     key: "",
     messages: [],
@@ -146,55 +201,100 @@ export const Chat = () => {
     requestType: "stream",
     icon: "",
     allowMCPs: [],
+    attachedDialogueCount: undefined,
+    dateTime: Date.now(),
   });
-  const currentChatReset = (
-    prompt?: string,
-    allowMCPs = [],
-    modelKey?: string,
+  const currentChatReset = async (
+    newConfig: Partial<ChatHistoryItem>,
+    prompt = "",
+    allMCPs = false,
   ) => {
+    if (prompt) {
+      newConfig.messages = [
+        {
+          role: "system",
+          content: prompt,
+        },
+      ];
+    }
     currentChat.current = {
       label: "",
       key: "",
-      messages: prompt
-        ? [
-            {
-              role: "system",
-              content: prompt,
-            },
-          ]
-        : [],
-      modelKey: modelKey,
+      messages: [],
+      modelKey: undefined,
       gptsKey: undefined,
       sended: false,
+      requestType: "stream",
       icon: "",
-      allowMCPs: allowMCPs,
-      requestType: currentChat.current.requestType,
+      allowMCPs: [],
+      attachedDialogueCount: undefined,
+      dateTime: Date.now(),
+      ...newConfig,
     };
-    refresh();
+
     setResourceResList([]);
     setPromptResList([]);
-    getClients().then((clients) => {
-      for (let c of clients) {
-        if ((currentChat.current.allowMCPs || []).includes(c.name)) {
-          c.enable = true;
-        } else {
-          c.enable = false;
-        }
-      }
-      setClients(clients);
-      getPrompts().then((x) => {
-        setPrompts(x);
-      });
-      getResourses().then((x) => {
-        setResources(x);
-      });
-    });
+    let clients = await getClients().catch(() => []);
+    clientsRef.current = clients;
+    if (allMCPs) {
+      currentChat.current.allowMCPs = clients.map((v) => v.name);
+    }
+    // for (let c of clientsRef.current) {
+    //   if (allMCPs || (currentChat.current.allowMCPs || []).includes(c.name)) {
+    //     c.enable = true;
+    //   } else {
+    //     c.enable = false;
+    //   }
+    // }
+    clientsRef.current;
+    let p = getPrompts((x) => currentChat.current.allowMCPs.includes(x.name));
+    promptsRef.current = p;
+    let r = getResourses((x) => currentChat.current.allowMCPs.includes(x.name));
+    resourcesRef.current = r;
+
+    refresh();
+    // getClients().then((clients) => {
+    //   for (let c of clients) {
+    //     if ((currentChat.current.allowMCPs || []).includes(c.name)) {
+    //       c.enable = true;
+    //     } else {
+    //       c.enable = false;
+    //     }
+    //   }
+    //   setClients(clients);
+    //   getPrompts().then((x) => {
+    //     setPrompts(x);
+    //   });
+    //   getResourses().then((x) => {
+    //     setResources(x);
+    //   });
+    // });
   };
+  const selectGptsKey = useRef<string | undefined>(undefined);
+  useEffect(() => {
+    if (currentChat.current.gptsKey == null) {
+      onTitleChange && onTitleChange();
+    } else {
+      let find = GPTS.get().data.find(
+        (x) => x.key == currentChat.current.gptsKey,
+      );
+      onTitleChange && onTitleChange(find.label);
+    }
+  }, [currentChat.current.gptsKey]);
 
   function format(x: MyMessage, i, arr): any {
+    let common = {
+      className: {
+        "no-attached": !(
+          x.content_attached == null || x.content_attached == true
+        ),
+      },
+      role: x.role,
+    };
+
     if (x.content_from) {
       return {
-        ...x,
+        ...common,
         key: i.toString(),
         placement: x.role == "user" || x.role == "system" ? "end" : "start",
         avatar: {
@@ -228,8 +328,11 @@ export const Chat = () => {
       };
     }
     if (x.role == "user" || x.role == "system") {
+      if (x.content_context == null) {
+        x.content_context = {};
+      }
       return {
-        ...x,
+        ...common,
         key: i.toString(),
         placement: "end",
         avatar: {
@@ -239,40 +342,85 @@ export const Chat = () => {
             backgroundColor: "#fde3cf",
           },
         },
-        content:
-          x.role == "system" ? (
-            <pre
-              style={{
-                whiteSpace: "pre-wrap",
-                wordWrap: "break-word",
-              }}
-            >
-              {x.content as string}
-            </pre>
-          ) : (
-            <UserContent
-              x={x}
-              regenerate={() => {
-                client.messages.splice(i);
-                currentChat.current.messages = client.messages;
-                refresh();
-                onRequest(x.content as string);
-              }}
-              submit={(content) => {
-                client.messages.splice(i);
-                currentChat.current.messages = client.messages;
-                refresh();
-                onRequest(content as string);
+        footer: (
+          <Space>
+            <CopyOutlined
+              className="hover:text-cyan-400"
+              key="copy"
+              onClick={() => {
+                call("setClipboardText", [
+                  Array.isArray(x.content)
+                    ? (x.content[0] as any).text
+                    : x.content.toString(),
+                ]);
+                message.success(t`Copied to clipboard`);
               }}
             />
-          ),
+
+            <EditOutlined
+              className="hover:text-cyan-400"
+              onClick={() => {
+                x.content_context.edit = !x.content_context.edit;
+                refresh();
+              }}
+            />
+
+            {x.role == "user" && (
+              <SyncOutlined
+                className="hover:text-cyan-400"
+                key="sync"
+                onClick={() => {
+                  openaiClient.current.messages.splice(i);
+                  currentChat.current.messages = openaiClient.current.messages;
+                  refresh();
+                  onRequest(x.content as any);
+                }}
+              />
+            )}
+            {x.role == "user" && x.content_attached == false && (
+              <Tooltip title="Cleared">
+                <MinusCircleOutlined className="cursor-not-allowed" />
+              </Tooltip>
+            )}
+          </Space>
+        ),
+        content: (
+          <UserContent
+            x={x}
+            submit={(content) => {
+              if (x.role == "system") {
+                openaiClient.current.messages.find(
+                  (x) => x.role == "system",
+                ).content = content;
+
+                currentChat.current.messages = openaiClient.current.messages;
+
+                let userIndex = openaiClient.current.messages.findLastIndex(
+                  (x) => x.role == "user",
+                );
+                if (userIndex > -1) {
+                  let content =
+                    openaiClient.current.messages[userIndex].content;
+                  openaiClient.current.messages.splice(userIndex);
+                  refresh();
+                  onRequest(content as any);
+                }
+              } else {
+                openaiClient.current.messages.splice(i);
+                currentChat.current.messages = openaiClient.current.messages;
+                refresh();
+                onRequest(content);
+              }
+            }}
+          />
+        ),
       };
     } else if (x.role == "tool") {
       return {
-        ...x,
+        ...common,
         placement: "start",
         avatar: {
-          icon: "🤖",
+          icon: "🔧",
           style: {
             color: "#fff",
             backgroundColor: "#87d068",
@@ -282,7 +430,7 @@ export const Chat = () => {
         content: (
           <Tooltip
             title={
-              <div className="h-40 overflow-auto text-ellipsis">
+              <div className="max-h-40 overflow-auto text-ellipsis">
                 {x.content as string}
               </div>
             }
@@ -309,14 +457,33 @@ export const Chat = () => {
                 });
               }}
             >
-              {x.content_status == "error" ? "❌" : "✅Completed"}
+              {x.content_status == "loading" ? (
+                <SyncOutlined spin />
+              ) : x.content_status == "error" ? (
+                "❌Error"
+              ) : (
+                "✅Completed"
+              )}
+              <div className="line-clamp-1">{x.content as string}</div>
             </span>
+            {x.content_attachment &&
+              x.content_attachment.length > 0 &&
+              x.content_attachment.map((x, i) => {
+                if (x.type == "image") {
+                  return (
+                    <DownImage
+                      key={i}
+                      src={`data:${x.mimeType};base64,${x.data}`}
+                    />
+                  );
+                }
+              })}
           </Tooltip>
         ),
       };
-    } else {
+    } else if (x.role == "assistant") {
       return {
-        ...x,
+        ...common,
         placement: "start",
         avatar: {
           icon: "🤖",
@@ -326,24 +493,97 @@ export const Chat = () => {
           },
         },
         key: i.toString(),
+        // typing: x.content_status == "dataLoading",
+        footer: x.content_status != "error" && (
+          <div className="flex justify-between">
+            <Space>
+              <CopyOutlined
+                className="hover:text-cyan-400"
+                key="copy"
+                onClick={() => {
+                  call("setClipboardText", [x.content.toString()]);
+                  message.success("Copied to clipboard");
+                }}
+              />
+              <SyncOutlined
+                key="sync"
+                className="hover:text-cyan-400"
+                onClick={() => {
+                  // onRequest(x.content as any);
+                  let content = openaiClient.current.messages[i].content;
+                  openaiClient.current.messages.splice(i);
+                  currentChat.current.messages = openaiClient.current.messages;
+                  refresh();
+                  onRequest();
+                  // while (i--) {
+                  //   if (openaiClient.current.messages[i].role === "user") {
+                  //     let content = openaiClient.current.messages[i].content;
+                  //     openaiClient.current.messages.splice(i);
+                  //     currentChat.current.messages =
+                  //       openaiClient.current.messages;
+                  //     refresh();
+                  //     onRequest(content as any);
+                  //     break;
+                  //   }
+                  // }
+                }}
+              />
+            </Space>
+            <Space>
+              {x.content_attached == false && (
+                <Tooltip title="Cleared">
+                  <MinusCircleOutlined className="cursor-not-allowed bg-red-200" />
+                </Tooltip>
+              )}
+              {x.content_usage && (
+                <>
+                  {x?.content_usage?.prompt_tokens ? (
+                    <Tooltip title="prompt_tokens">
+                      <UploadOutlined />
+                      {x?.content_usage?.prompt_tokens}
+                    </Tooltip>
+                  ) : null}
+                  {x?.content_usage?.completion_tokens ? (
+                    <Tooltip title="completion_tokens">
+                      <DownloadOutlined />
+                      {x?.content_usage?.completion_tokens}
+                    </Tooltip>
+                  ) : null}
+                  {x?.content_usage?.total_tokens ? (
+                    <Tooltip title="total_tokens">
+                      <StockOutlined />
+                      {x?.content_usage?.total_tokens}
+                    </Tooltip>
+                  ) : null}
+                </>
+              )}
+            </Space>
+          </div>
+        ),
+        // loading:
+        //   x.content_status == "loading" || x.content_status == "dataLoading",
         content:
-          !x.content && x.tool_calls == null ? (
-            <Spin spinning={i + 1 == arr.length}>
-              <span>🤖</span>
-            </Spin>
+          x.content_status == "loading" ? (
+            <SyncOutlined spin />
+          ) : x.content_status == "error" ? (
+            <span className="text-red-400">
+              Please check if the network is connected or LLM not support or
+              Invalid Input Content.
+            </span>
           ) : (
             <div>
               {x.tool_calls &&
-                x.tool_calls.map((tool) => {
+                x.tool_calls.map((tool: any, index) => {
                   return (
                     <Tooltip
+                      key={index}
                       title={
-                        <div className="h-40 overflow-auto text-ellipsis">
+                        <div className="max-h-40 overflow-auto text-ellipsis">
                           {tool.function.arguments}
                         </div>
                       }
                     >
-                      <Spin spinning={i + 1 == arr.length}>
+                      <Spin spinning={x.content_status == "loading"}>
                         <a
                           className="cursor-pointer"
                           onClick={() => {
@@ -360,7 +600,7 @@ export const Chat = () => {
                                     }}
                                   >
                                     <span>Tool Name: </span>
-                                    {tool.function.name}
+                                    {tool.restore_name || tool.function.name}
                                   </pre>
                                   <pre
                                     style={{
@@ -377,17 +617,28 @@ export const Chat = () => {
                           }}
                         >
                           <div className="line-clamp-1">
-                            {tool.function.name} : {tool.function.arguments}
+                            {tool.restore_name || tool.function.name} :{" "}
+                            {tool.function.arguments}
                           </div>
                         </a>
                       </Spin>
                     </Tooltip>
                   );
                 })}
-              {x.content && <MarkDown markdown={x.content}></MarkDown>}
+              {x.content && (
+                <MarkDown
+                  markdown={x.content}
+                  onCallback={(e) => {
+                    setValue(e);
+                  }}
+                ></MarkDown>
+              )}
+              {x.content_status == "dataLoading" && <LoadingOutlined />}
             </div>
           ),
       };
+    } else {
+      antdMessage.error("Unknown role");
     }
   }
 
@@ -397,65 +648,78 @@ export const Chat = () => {
     );
     if (config == null) {
       if (GPT_MODELS.get().data.length == 0) {
-        message.error("Please add LLM first");
+        EVENT.fire("setIsModelConfigOpenTrue");
+        throw new Error("Please add LLM first");
       }
       config = GPT_MODELS.get().data[0];
     }
     currentChat.current.modelKey = config.key;
-    client = new OpenAiChannel(
-      config,
+    openaiClient.current = new OpenAiChannel(
+      { ...config, allowMCPs: currentChat.current.allowMCPs },
       currentChat.current.messages,
       currentChat.current.requestType == "stream",
     );
-    currentChat.current.messages = client.messages;
+    currentChat.current.messages = openaiClient.current.messages;
     refresh();
   };
   const [loading, setLoading] = useState(false);
-  const onRequest = async (message: string) => {
+  const onRequest = async (message?: string) => {
+    Clarity.event(`sender-${process.env.NODE_ENV}`);
     console.log("onRequest", message);
-    setLoading(true);
-    if (currentChat.current.sended == false) {
-      createChat();
-      currentChat.current = {
-        ...currentChat.current,
-        label: message,
-        key: v4(),
-        messages: client.messages,
-        modelKey: currentChat.current.modelKey,
-        sended: true,
-        icon: "",
-        gptsKey: currentChat.current.gptsKey,
-        allowMCPs: clients
-          .filter((record) => (record.enable == null ? true : record.enable))
-          .map((v) => v.name),
-      };
-      setData([currentChat.current, ...data]);
-      ChatHistory.get().data.unshift(currentChat.current);
-    } else {
-      let find = ChatHistory.get().data.find(
-        (x) => x.key == currentChat.current.key,
-      );
-      if (find) {
-        currentChat.current.allowMCPs = clients
-          .filter((record) => (record.enable == null ? true : record.enable))
-          .map((v) => v.name);
-      }
-    }
-    client.addMessage(
-      { role: "user", content: message },
-      resourceResList,
-      promptResList,
-    );
-    setResourceResList([]);
-    setPromptResList([]);
-    refresh();
     try {
-      await client.completion(() => {
-        currentChat.current.messages = client.messages;
+      setLoading(true);
+      if (currentChat.current.sended == false) {
+        createChat();
+
+        currentChatReset({
+          ...currentChat.current,
+          key: v4(),
+          label: message,
+          messages: openaiClient.current.messages,
+          modelKey: currentChat.current.modelKey,
+          sended: true,
+          gptsKey: currentChat.current.gptsKey,
+          allowMCPs: currentChat.current.allowMCPs,
+          dateTime: Date.now(),
+        });
+        setData([currentChat.current, ...data]);
+        ChatHistory.get().data.unshift(currentChat.current);
+      } else {
+        let findIndex = ChatHistory.get().data.findIndex(
+          (x) => x.key == currentChat.current.key,
+        );
+
+        if (findIndex > -1) {
+          let find = ChatHistory.get().data.splice(findIndex, 1)[0];
+          currentChat.current.dateTime = Date.now();
+          Object.assign(find, currentChat.current);
+          ChatHistory.get().data.unshift(find);
+        }
+      }
+      openaiClient.current.options.allowMCPs = currentChat.current.allowMCPs;
+      if (message) {
+        openaiClient.current.addMessage(
+          { role: "user", content: message },
+          resourceResList,
+          promptResList,
+        );
+      }
+
+      refresh();
+
+      await openaiClient.current.completion(() => {
+        currentChat.current.messages = openaiClient.current.messages;
         refresh();
       });
-      currentChat.current.messages = client.messages;
+      calcAttachDialogue(
+        openaiClient.current.messages,
+        currentChat.current.attachedDialogueCount,
+        false,
+      );
+
+      currentChat.current.messages = openaiClient.current.messages;
       refresh();
+
       await ChatHistory.save();
     } catch (e) {
       antdMessage.error(
@@ -474,6 +738,8 @@ export const Chat = () => {
 
   let loadIndex = useRef(0);
 
+  const loadDataTatal = useRef(0);
+
   const loadMoreData = (loadMore = true) => {
     // console.log(historyFilterType, historyFilterSearchValue, loadIndex.current);
     // console.log("loadMoreData: ", ChatHistory.get().data);
@@ -488,11 +754,15 @@ export const Chat = () => {
     }
     setLoadMoreing(true);
 
-    const formmatedData = ChatHistory.get()
-      .data.filter((x) => {
-        if (historyFilterType == "all") {
+    let formmatedData = ChatHistory.get()
+      .data.filter(
+        (x) =>
+          selectGptsKey.current == null || x.gptsKey == selectGptsKey.current,
+      )
+      .filter((x) => {
+        if (historyFilterType.current == "all") {
           return true;
-        } else if (historyFilterType == "star") {
+        } else if (historyFilterType.current == "star") {
           return x.icon == "⭐";
         } else {
           return (
@@ -500,18 +770,29 @@ export const Chat = () => {
             x.label.toLowerCase().includes(historyFilterSearchValue)
           );
         }
-      })
-      .slice(0, loadIndex.current);
+      });
+    loadDataTatal.current = formmatedData.length;
+    formmatedData = formmatedData.slice(0, loadIndex.current);
     setData(formmatedData);
-
+    console.log("loadMoreData", loadIndex.current, loadDataTatal.current);
     setLoadMoreing(false);
   };
 
-  const [resourceResList, setResourceResList] = React.useState([]);
+  const [resourceResList, setResourceResList] = React.useState<
+    Array<{
+      call_name: string;
+      uid: string;
+      contents: any[];
+    }>
+  >([]);
   const [promptResList, setPromptResList] = React.useState([]);
 
   const [isFillPromptModalOpen, setIsFillPromptModalOpen] =
     React.useState(false);
+  const [isOpenMoreSetting, setIsOpenMoreSetting] = React.useState(false);
+
+  const [formMoreSetting] = useForm();
+
   const [fillPromptFormItems, setFillPromptFormItems] = React.useState([]);
   const mcpCallPromptCurr = useRef({} as any);
 
@@ -523,13 +804,28 @@ export const Chat = () => {
   const [botSearchValue, setBotSearchValue] = useState("");
 
   const [historyFilterSign, setHistoryFilterSign] = useState<0 | 1>(0);
-  const [historyFilterType, setHistoryFilterType] = useState<
-    "all" | "star" | "search"
-  >("all");
+  // const [historyFilterType, setHistoryFilterType] = useState<
+  //   "all" | "star" | "search"
+  // >("all");
+  const historyFilterType = useRef<"all" | "star" | "search">("all");
+
   const [historyFilterSearchValue, setHistoryFilterSearchValue] = useState("");
   useEffect(() => {
     loadMoreData(historyFilterSign == 0);
-  }, [historyFilterType, historyFilterSearchValue, historyFilterSign]);
+  }, [historyFilterType.current, historyFilterSearchValue, historyFilterSign]);
+
+  let supportImage = (
+    GPT_MODELS.get().data.find((x) => x.key == currentChat.current.modelKey) ||
+    GPT_MODELS.get().data[0]
+  )?.supportImage;
+
+  let supportTool = (
+    GPT_MODELS.get().data.find((x) => x.key == currentChat.current.modelKey) ||
+    GPT_MODELS.get().data[0]
+  )?.supportTool;
+
+  const scrollableDivID = "scrollableDiv" + v4();
+
   return (
     <div className="chat h-full">
       <div className="h-full rounded-lg bg-white p-4">
@@ -539,28 +835,73 @@ export const Chat = () => {
               className="h-full flex-none overflow-hidden pr-2"
               style={{ width: "240px" }}
             >
-              <Button
-                type="primary"
-                className="w-full"
-                onClick={() => {
-                  currentChatReset(
-                    "",
-                    clients.map((v) => v.name),
-                  );
-                }}
-              >
-                New Chat
-              </Button>
+              {selectGptsKey.current ? (
+                <div className="flex">
+                  <Button
+                    onClick={() => {
+                      currentChatReset({
+                        messages: [],
+                        allowMCPs: clientsRef.current.map((v) => v.name),
+                        sended: false,
+                        gptsKey: undefined,
+                      });
+                      selectGptsKey.current = undefined;
+                      loadMoreData(false);
+                    }}
+                  >
+                    <LeftOutlined />
+                  </Button>
+                  <Button
+                    type="primary"
+                    className="ml-1 w-full"
+                    onClick={() => {
+                      if (openaiClient.current) {
+                        let find = GPTS.get().data.find(
+                          (y) => y.key === currentChat.current.gptsKey,
+                        );
+                        currentChatReset(
+                          {
+                            allowMCPs: find.allowMCPs,
+                            gptsKey: find.key,
+                            modelKey: find.modelKey,
+                            attachedDialogueCount: find.attachedDialogueCount,
+                          },
+                          find.prompt,
+                        );
+                      }
+                    }}
+                  >
+                    New Chat
+                  </Button>
+                </div>
+              ) : (
+                <Button
+                  type="primary"
+                  className="ml-1 w-full"
+                  onClick={() => {
+                    currentChatReset({
+                      messages: [],
+                      allowMCPs: clientsRef.current.map((v) => v.name),
+                      sended: false,
+                      gptsKey: undefined,
+                    });
+                    selectGptsKey.current = undefined;
+                    loadMoreData(false);
+                  }}
+                >
+                  New Chat
+                </Button>
+              )}
               <div className="mt-2 flex items-center justify-between">
                 <Space>
-                  {/* <CommentOutlined /> */}
                   <span>Dialogue Records</span>
                 </Space>
                 <Segmented
                   size="small"
-                  value={historyFilterType}
+                  value={historyFilterType.current}
                   onChange={(value) => {
-                    setHistoryFilterType(value as any);
+                    historyFilterType.current = value as any;
+                    refresh();
                   }}
                   options={[
                     {
@@ -579,7 +920,7 @@ export const Chat = () => {
                 />
               </div>
               <div>
-                {historyFilterType == "search" && (
+                {historyFilterType.current == "search" && (
                   <Input
                     size="small"
                     placeholder="search"
@@ -592,7 +933,7 @@ export const Chat = () => {
                 )}
               </div>
               <div
-                id="scrollableDiv"
+                id={scrollableDivID}
                 className="overflow-y-auto overflow-x-hidden"
                 style={{
                   width: 240,
@@ -602,30 +943,14 @@ export const Chat = () => {
                 <InfiniteScroll
                   dataLength={data.length}
                   next={loadMoreData}
-                  hasMore={
-                    data.length <
-                    ChatHistory.get().data.filter((x) => {
-                      if (historyFilterType == "all") {
-                        return true;
-                      } else if (historyFilterType == "star") {
-                        return x.icon == "⭐";
-                      } else {
-                        return (
-                          historyFilterSearchValue == "" ||
-                          x.label
-                            .toLowerCase()
-                            .includes(historyFilterSearchValue)
-                        );
-                      }
-                    }).length
-                  }
+                  hasMore={data.length < loadDataTatal.current}
                   loader={
                     <div style={{ textAlign: "center" }}>
                       <Spin indicator={<RedoOutlined spin />} size="small" />
                     </div>
                   }
                   endMessage={<Divider plain>Nothing 🤐</Divider>}
-                  scrollableTarget="scrollableDiv"
+                  scrollableTarget={scrollableDivID}
                 >
                   <Conversations
                     items={data.map((x) => {
@@ -636,15 +961,24 @@ export const Chat = () => {
                     })}
                     activeKey={currentChat.current.key}
                     onActiveChange={(key) => {
+                      if (currentChat.current.key == key) {
+                        return;
+                      }
                       let item = ChatHistory.get().data.find(
                         (x) => x.key == key,
                       );
-                      // console.log("onActiveChange", item);
                       if (item) {
-                        currentChatReset();
-                        currentChat.current = item;
+                        // console.log("onActiveChange", item);
 
-                        createChat();
+                        currentChatReset({
+                          ...item,
+                          messages: [],
+                        });
+
+                        setTimeout(() => {
+                          currentChatReset(item);
+                          createChat();
+                        });
                       }
                     }}
                     menu={(conversation) => ({
@@ -735,7 +1069,7 @@ export const Chat = () => {
                         setIsOpenPromptsModal(true);
                       }}
                     >
-                      Add Bot
+                      Add Agent
                     </Button>
                   </Space>
 
@@ -753,12 +1087,7 @@ export const Chat = () => {
                             let newIndex = data.findIndex(
                               (x) => x.key == e.over.id,
                             );
-                            // console.log(
-                            //   "onDragEnd",
-                            //   e,
-                            //   data[oldIndex].label,
-                            //   data[newIndex].label,
-                            // );
+
                             let item = data[oldIndex];
 
                             data.splice(oldIndex, 1);
@@ -791,7 +1120,7 @@ export const Chat = () => {
                                 id={item.key}
                                 item={item}
                                 onClick={(item) => {
-                                  console.log("onGPTSClick", item);
+                                  // console.log("onGPTSClick", item);
                                   if (mode == "edit") {
                                     return;
                                   }
@@ -799,10 +1128,18 @@ export const Chat = () => {
                                     (y) => y.key === item.key,
                                   );
                                   currentChatReset(
+                                    {
+                                      allowMCPs: find.allowMCPs,
+                                      gptsKey: find.key,
+                                      modelKey: find.modelKey,
+                                      attachedDialogueCount:
+                                        find.attachedDialogueCount,
+                                    },
                                     find.prompt,
-                                    find.allowMCPs,
-                                    find.modelKey,
                                   );
+                                  selectGptsKey.current = find.key;
+                                  historyFilterType.current = "all";
+                                  loadMoreData(false);
                                 }}
                                 onEdit={() => {
                                   let value = GPTS.get().data.find(
@@ -816,12 +1153,13 @@ export const Chat = () => {
                                     title: "Tip",
                                     maskClosable: true,
                                     content: "Are you sure to delete?",
-                                    onOk: () => {
+                                    onOk: async () => {
                                       let index = GPTS.get().data.findIndex(
                                         (y) => y.key === item.key,
                                       );
                                       GPTS.get().data.splice(index, 1);
-                                      GPTS.save();
+                                      await GPTS.save();
+                                      call("openMcpClient", ["hyper_task"]);
                                       refresh();
                                     },
                                     onCancel(...args) {},
@@ -832,83 +1170,6 @@ export const Chat = () => {
                         </SortableContext>
                       </DndContext>
                     </div>
-
-                    {/* <Prompts
-                      onItemClick={(item) => {
-                        console.log("onItemClick", item);
-                        if (mode == "edit") {
-                          return;
-                        }
-                        let find = GPTS.get().data.find(
-                          (y) => y.key === item.data.key,
-                        );
-                        currentChatReset(find.prompt, find.allowMCPs);
-                      }}
-                      items={GPTS.get().data.map((x) => {
-                        return {
-                          ...x,
-                          description: mode == "edit" && (
-                            <span>
-                              <Button
-                                size="small"
-                                onClick={() => {
-                                  let value = GPTS.get().data.find(
-                                    (y) => y.key === x.key,
-                                  );
-
-                                  setPromptsModalValue(value);
-                                  setIsOpenPromptsModal(true);
-                                }}
-                              >
-                                <EditOutlined />
-                              </Button>
-                              <Popconfirm
-                                title="Are you sure to delete?"
-                                onConfirm={() => {
-                                  let index = GPTS.get().data.findIndex(
-                                    (y) => y.key === x.key,
-                                  );
-                                  GPTS.get().data.splice(index, 1);
-                                  GPTS.save();
-                                  refresh();
-                                }}
-                              >
-                                <Button size="small">
-                                  <DeleteOutlined />
-                                </Button>
-                              </Popconfirm>
-                            </span>
-                          ),
-                        };
-                      })}
-                    />
-                    <Space.Compact className="ml-2">
-                      <Button
-                        onClick={() => {
-                          setPromptsModalValue({} as any);
-                          setIsOpenPromptsModal(true);
-                        }}
-                      >
-                        Add
-                      </Button>
-                      {mode == "edit" ? (
-                        <Button
-                          onClick={() => {
-                            setMode(undefined);
-                          }}
-                        >
-                          Exit Edit
-                        </Button>
-                      ) : (
-                        <Button
-                          onClick={() => {
-                            setMode("edit");
-                          }}
-                        >
-                          Edit
-                        </Button>
-                      )}
-                    </Space.Compact> */}
                   </div>
                 </div>
               )}
@@ -933,22 +1194,43 @@ export const Chat = () => {
                   </span>
                 </Tooltip>
                 <Divider type="vertical" /> */}
-                <Tooltip title="Reset">
+
+                {/* <Tooltip title="Reset">
                   <span
                     className="cursor-pointer"
                     onClick={() => {
-                      if (client) {
-                        // client.clear();
-                        // currentChat.current.messages = client.messages;
+                      if (openaiClient.current) {
                         let p = currentChat.current.messages.find(
                           (x) => x.role == "system",
                         )?.content;
 
-                        currentChatReset(p, currentChat.current.allowMCPs);
+                        currentChatReset(
+                          {
+                            gptsKey: currentChat.current.gptsKey,
+                          },
+                          p,
+                        );
                       }
                     }}
                   >
                     🔄
+                  </span>
+                </Tooltip> */}
+                <Tooltip title="Clear Context">
+                  <span
+                    className="cursor-pointer"
+                    onClick={() => {
+                      if (openaiClient.current) {
+                        calcAttachDialogue(
+                          currentChat.current.messages,
+                          0,
+                          true,
+                        );
+                        refresh();
+                      }
+                    }}
+                  >
+                    🗑️
                   </span>
                 </Tooltip>
                 <Divider type="vertical" />
@@ -959,12 +1241,18 @@ export const Chat = () => {
                       setIsToolsShow(true);
                     }}
                   >
-                    💻
-                    {
-                      clients.filter(
-                        (v) => v.enable == null || v.enable == true,
-                      ).length
-                    }
+                    {supportTool == null || supportTool == true ? (
+                      <>
+                        💻
+                        {
+                          clientsRef.current.filter((v) =>
+                            currentChat.current.allowMCPs.includes(v.name),
+                          ).length
+                        }
+                      </>
+                    ) : (
+                      <>💻 LLM not support</>
+                    )}
                   </span>
                 </Tooltip>
                 <Divider type="vertical" />
@@ -972,14 +1260,14 @@ export const Chat = () => {
                   <Dropdown
                     placement="topRight"
                     menu={{
-                      items: resources.map((x, i) => {
+                      items: resourcesRef.current.map((x, i) => {
                         return {
                           key: x.key,
                           label: `${x.key}--${x.description}`,
                         };
                       }),
                       onClick: async (item) => {
-                        let resource = resources.find(
+                        let resource = resourcesRef.current.find(
                           (x) => x.key === item.key,
                         );
                         if (resource) {
@@ -998,7 +1286,7 @@ export const Chat = () => {
                   >
                     <span className="cursor-pointer">
                       📦
-                      {resources.length}
+                      {resourcesRef.current.length}
                     </span>
                   </Dropdown>
                 </Tooltip>
@@ -1007,14 +1295,16 @@ export const Chat = () => {
                   <Dropdown
                     placement="topRight"
                     menu={{
-                      items: prompts.map((x, i) => {
+                      items: promptsRef.current.map((x, i) => {
                         return {
                           key: x.key,
                           label: `${x.key} (${x.description})`,
                         };
                       }),
                       onClick: async (item) => {
-                        let prompt = prompts.find((x) => x.key === item.key);
+                        let prompt = promptsRef.current.find(
+                          (x) => x.key === item.key,
+                        );
                         if (prompt) {
                           if (prompt.arguments && prompt.arguments.length > 0) {
                             setIsFillPromptModalOpen(true);
@@ -1038,7 +1328,7 @@ export const Chat = () => {
                   >
                     <span className="cursor-pointer">
                       📜
-                      {prompts.length}
+                      {promptsRef.current.length}
                     </span>
                   </Dropdown>
                 </Tooltip>
@@ -1070,25 +1360,6 @@ export const Chat = () => {
                 <Divider type="vertical" />
                 <Tooltip title="Select Request Type">
                   <span>type:</span>
-                  {/* <Select
-                    size="small"
-                    className="w-20"
-                    value={currentChat.current.requestType}
-                    onChange={(value) => {
-                      currentChat.current.requestType = value;
-                      createChat();
-                    }}
-                    options={[
-                      {
-                        label: "stream",
-                        value: "stream",
-                      },
-                      {
-                        label: "completion",
-                        value: "completion",
-                      },
-                    ]}
-                  ></Select> */}
                   <Dropdown
                     arrow
                     menu={{
@@ -1117,19 +1388,31 @@ export const Chat = () => {
                   </Dropdown>
                 </Tooltip>
                 <Divider type="vertical" />
+
                 <Tooltip title="Token Usage">
                   <span className="cursor-pointer">
                     token:{" "}
-                    {client == null ? (
+                    {openaiClient.current == null ? (
                       0
-                    ) : typeof client.totalTokens == "number" &&
-                      !Number.isNaN(client.totalTokens) ? (
-                      client.totalTokens
+                    ) : typeof openaiClient.current.totalTokens == "number" &&
+                      !Number.isNaN(openaiClient.current.totalTokens) ? (
+                      openaiClient.current.totalTokens
                     ) : (
-                      <span>{"estimate " + client.estimateTotalTokens}</span>
+                      <span>
+                        {"estimate " + openaiClient.current.estimateTotalTokens}
+                      </span>
                     )}
                   </span>
                 </Tooltip>
+                <Divider type="vertical" />
+                <SettingOutlined
+                  className="cursor-pointer hover:text-cyan-400"
+                  onClick={() => {
+                    setIsOpenMoreSetting(true);
+                    formMoreSetting.resetFields();
+                    formMoreSetting.setFieldsValue(currentChat.current);
+                  }}
+                />
               </div>
               <MyAttachR
                 resourceResList={resourceResList}
@@ -1154,6 +1437,53 @@ export const Chat = () => {
                 }}
               >
                 <Sender
+                  prefix={
+                    supportImage && (
+                      <SelectFile
+                        uploadType="image"
+                        onChange={async (path) => {
+                          // console.log(path);
+                          if (path == "") return;
+                          path = "file://" + path;
+                          resourceResList.push({
+                            call_name: "UserUpload",
+                            contents: [
+                              {
+                                path: path,
+                                blob: await urlToBase64(path),
+                                type: "image",
+                              },
+                            ],
+                            uid: v4(),
+                          });
+                          setResourceResList(resourceResList.slice());
+                        }}
+                      >
+                        <Button
+                          type="text"
+                          icon={<LinkOutlined />}
+                          onClick={() => {}}
+                        />
+                      </SelectFile>
+                    )
+                  }
+                  onPasteFile={async (file) => {
+                    // console.log("onPasteFile", file);
+
+                    let path = "file://" + file.path;
+                    resourceResList.push({
+                      call_name: "UserUpload",
+                      contents: [
+                        {
+                          path: path,
+                          blob: await urlToBase64(path),
+                          type: "image",
+                        },
+                      ],
+                      uid: v4(),
+                    });
+                    setResourceResList(resourceResList.slice());
+                  }}
                   loading={loading}
                   value={value}
                   onChange={(nextVal) => {
@@ -1161,7 +1491,7 @@ export const Chat = () => {
                   }}
                   onCancel={() => {
                     setLoading(false);
-                    client.cancel();
+                    openaiClient.current.cancel();
                     // message.success("Cancel sending!");
                   }}
                   onSubmit={(s) => {
@@ -1176,8 +1506,7 @@ export const Chat = () => {
         </XProvider>
         <PromptsModal
           open={isOpenPromptsModal}
-          onCreate={(value) => {
-            console.log("onCreate", value);
+          onCreate={async (value) => {
             if (value.key) {
               const index = GPTS.get().data.findIndex(
                 (y) => y.key == value.key,
@@ -1192,7 +1521,8 @@ export const Chat = () => {
                 allowMCPs: value.allowMCPs || [],
               });
             }
-            GPTS.save();
+            await GPTS.save();
+            call("openMcpClient", ["hyper_task"]);
             refresh();
             setIsOpenPromptsModal(false);
           }}
@@ -1214,29 +1544,32 @@ export const Chat = () => {
             size="small"
             rowKey={(record) => record.name}
             pagination={false}
-            dataSource={clients}
+            dataSource={clientsRef.current}
             rowHoverable={false}
             rowSelection={{
               type: "checkbox",
-              selectedRowKeys: clients
+              selectedRowKeys: clientsRef.current
                 .filter((record) =>
-                  record.enable == null ? true : record.enable,
+                  currentChat.current.allowMCPs.includes(record.name),
                 )
                 .map((v) => v.name),
-              onChange: (selectedRowKeys, selectedRows) => {
-                for (let c of clients) {
-                  c.enable = false;
-                }
-                for (let row of selectedRowKeys) {
-                  let client = clients.find((v) => v.name == row);
-                  client.enable = true;
-                }
-                refresh();
-                getPrompts().then((x) => {
-                  setPrompts(x);
-                });
-                getResourses().then((x) => {
-                  setResources(x);
+              onChange: async (selectedRowKeys, selectedRows) => {
+                // for (let c of clientsRef.current) {
+                //   c.enable = false;
+                // }
+                // for (let row of selectedRowKeys) {
+                //   let client = clientsRef.current.find((v) => v.name == row);
+                //   client.enable = true;
+                // }
+
+                // let p = getPrompts();
+                // promptsRef.current = p;
+                // let r = getResourses();
+                // resourcesRef.current = r;
+                // refresh();
+                currentChatReset({
+                  ...currentChat.current,
+                  allowMCPs: selectedRowKeys as string[],
                 });
               },
             }}
@@ -1256,11 +1589,12 @@ export const Chat = () => {
                       {record.tools.map((x) => {
                         return (
                           <Tooltip
-                            key={x.function.name}
+                            key={x.origin_name || x.function.name}
                             title={x.function.description}
                           >
                             <Tag className="cursor-pointer">
-                              {x.function.name.replace(x.key + "--", "")}
+                              {x.origin_name ||
+                                x.function.name.replace(x.key + "--", "")}
                             </Tag>
                           </Tooltip>
                         );
@@ -1275,7 +1609,7 @@ export const Chat = () => {
 
         <Modal
           width={800}
-          title="Fill Prompt Arguments"
+          title={t`Fill Prompt Arguments`}
           open={isFillPromptModalOpen}
           okButtonProps={{ autoFocus: true, htmlType: "submit" }}
           cancelButtonProps={{ style: { display: "none" } }}
@@ -1317,7 +1651,82 @@ export const Chat = () => {
             );
           })}
         </Modal>
+        <Modal
+          width={800}
+          title="More  Setting"
+          open={isOpenMoreSetting}
+          okButtonProps={{ autoFocus: true, htmlType: "submit" }}
+          cancelButtonProps={{ style: { display: "none" } }}
+          onCancel={() => {
+            setIsOpenMoreSetting(false);
+          }}
+          modalRender={(dom) => (
+            <Form
+              name="MoreSetting"
+              form={formMoreSetting}
+              clearOnDestroy
+              onFinish={async (values) => {
+                currentChat.current.attachedDialogueCount =
+                  values.attachedDialogueCount;
+
+                calcAttachDialogue(
+                  openaiClient.current.messages,
+                  currentChat.current.attachedDialogueCount,
+                );
+
+                refresh();
+                setIsOpenMoreSetting(false);
+              }}
+            >
+              {dom}
+            </Form>
+          )}
+        >
+          <Form.Item
+            name="attachedDialogueCount"
+            label="attachedDialogueCount"
+            tooltip="Number of sent Dialogue Message attached per request"
+          >
+            {/* <InputNumber
+              placeholder="blank means is all."
+              min={0}
+              style={{ width: "100%" }}
+            /> */}
+            <Slider defaultValue={20} max={40} />
+          </Form.Item>
+        </Modal>
       </div>
     </div>
   );
+};
+
+const calcAttachDialogue = (
+  messages,
+  attachedDialogueCount,
+  overwrite = true,
+) => {
+  if (attachedDialogueCount == null) {
+    attachedDialogueCount = 20;
+  }
+  let c = 0;
+  for (let i = messages.length - 1; i >= 0; i--) {
+    let m = messages[i];
+    if (m.role == "system") {
+      m.content_attached = true;
+      continue;
+    }
+
+    if (overwrite) {
+      m.content_attached = c < attachedDialogueCount;
+    } else {
+      if (m.content_attached == false && c < attachedDialogueCount) {
+      } else {
+        m.content_attached = c < attachedDialogueCount;
+      }
+    }
+
+    if (m.role == "user") {
+      c++;
+    }
+  }
 };
