@@ -39,7 +39,9 @@ import zhCN from "antd/locale/zh_CN";
 
 import {
   AndroidOutlined,
+  CheckOutlined,
   ChromeFilled,
+  CloseOutlined,
   CloudOutlined,
   CrownFilled,
   DownOutlined,
@@ -69,13 +71,19 @@ import {
 import { route as routerRoute } from "./router";
 import { currLang, setCurrLang, t } from "./i18n";
 import { call } from "./common/call";
-import { electronData, GPT_MODELS, MCP_CONFIG } from "./common/data";
+import {
+  AppSetting,
+  electronData,
+  GPT_MODELS,
+  MCP_CONFIG,
+} from "./common/data";
 import { getClients } from "./common/mcp";
 import { EVENT } from "./common/event";
 import { OpenAiChannel } from "./common/openai";
 import { DndTable } from "./common/dndTable";
 import { sleep } from "./common/sleep";
 import { InputPlus } from "./common/input_plus";
+import { e } from "./common/service";
 
 type ProviderType = {
   label: string;
@@ -297,6 +305,13 @@ export function Layout() {
   const [isOpenTestLLM, setIsOpenTestLLM] = useState(false);
   const [pending, setPending] = useState(false);
 
+  useEffect(() => {
+    (async () => {
+      await AppSetting.init();
+      refresh();
+    })();
+  }, []);
+
   return (
     <ConfigProvider locale={locale}>
       <div style={{ width: "100%", margin: "0px auto" }}>
@@ -324,7 +339,7 @@ export function Layout() {
             return (
               <Space>
                 <a href="https://github.com/BigSweetPotatoStudio/HyperChat">
-                  <GithubFilled></GithubFilled> Github
+                  <GithubFilled></GithubFilled>
                 </a>
                 <Button
                   onClick={() => {
@@ -349,6 +364,26 @@ export function Layout() {
                     { value: "zhCN", label: "中文" },
                     { value: "enUS", label: "English" },
                   ]}
+                />
+
+                <Switch
+                  checkedChildren={"🌙"}
+                  unCheckedChildren={"☀️"}
+                  checked={AppSetting.get().darkTheme}
+                  onChange={async (checked) => {
+                    AppSetting.get().darkTheme = checked;
+                    await AppSetting.save();
+                    refresh();
+                    if (checked) {
+                      window["DarkReader"].enable({
+                        brightness: 100,
+                        contrast: 90,
+                        sepia: 10,
+                      });
+                    } else {
+                      window["DarkReader"].disable();
+                    }
+                  }}
                 />
               </Space>
             );

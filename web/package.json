@@ -1,6 +1,6 @@
 {
   "name": "web",
-  "version": "0.3.4",
+  "version": "0.3.5",
   "private": true,
   "dependencies": {
     "@ant-design/cssinjs": "^1.21.1",
@@ -32,6 +32,7 @@
     "copy-webpack-plugin": "^12.0.2",
     "cross-env": "^7.0.3",
     "css-loader": "^7.1.1",
+    "darkreader": "^4.9.101",
     "dayjs": "^1.11.13",
     "dotenv-webpack": "^8.1.0",
     "echarts": "^5.5.1",
