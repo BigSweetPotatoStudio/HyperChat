@@ -100,6 +100,7 @@ export const AppSetting = new Data("app_setting.json", {
     baseDirName: "",
     autoSync: false,
   },
+  darkTheme: false,
 });
 
 export type ChatHistoryItem = {
