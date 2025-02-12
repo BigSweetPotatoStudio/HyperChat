@@ -112,13 +112,25 @@ const Providers: ProviderType[] = [
     label: "OpenRouter",
     baseURL: "https://openrouter.ai/api/v1",
     value: "openrouter",
-    models: ["openai/gpt-4o-mini", "anthropic/claude-3.5-haiku-20241022:beta"],
+    models: [
+      "openai/gpt-4o-mini",
+      "anthropic/claude-3.5-haiku-20241022:beta",
+      "google/gemini-2.0-flash-001",
+    ],
   },
   {
     label: "Gemini",
     baseURL: "https://generativelanguage.googleapis.com/v1beta/openai/",
     value: "gemini",
-    models: ["gemini-2.0-flash-exp"],
+    models: [
+      "gemini-2.0-flash-exp",
+      "gemini-2.0-flash-thinking-exp",
+      "gemini-2.0-flash",
+      "gemini-2.0-flash-001",
+      "gemini-2.0-flash-lite-preview-02-05",
+      "gemini-2.0-pro-exp-02-05",
+      "gemini-2.0-flash-thinking-exp-01-21",
+    ],
   },
   {
     label: "Qwen",

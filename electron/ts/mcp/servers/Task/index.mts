@@ -165,11 +165,11 @@ async function call_agent(agent_name: string, message: string) {
   }
   let uid = v4();
   return new Promise((resolve, reject) => {
-    let callback = (m, error) => {
+    let callback = (m) => {
       // console.log("============================");
       // console.log("call_agent", m.uid, m.data);
-      if (error) {
-        reject(error);
+      if (m.error) {
+        reject(m.error);
         EVENT.clear("call_agent_res_" + uid);
         return;
       }
