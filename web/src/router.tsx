@@ -16,6 +16,7 @@ import { HpyerTools } from "./pages/hypertools/hypertools";
 import { KnowledgeBase } from "./pages/knowledgeBase/knowledgeBase";
 import { WorkSpace } from "./pages/workspace";
 import { TaskList } from "./pages/hyperAgent/TaskList";
+import { t } from "./i18n";
 type RouteType = {
   path: string;
   name: React.ReactNode;
@@ -32,13 +33,13 @@ let route: RouteType = {
   routes: [
     {
       path: "/home",
-      name: "Home",
+      name: t`Home`,
       hideInMenu: true,
       component: <Chat />,
     },
     {
       path: "/Chat",
-      name: "Chat",
+      name: t`Chat`,
       icon: "💬",
       component: <WorkSpace />,
     },
@@ -50,31 +51,31 @@ let route: RouteType = {
     // },
     {
       path: "/Market",
-      name: "MCP Extensions",
+      name: t`MCP Extensions`,
       icon: "💻",
       component: <Market />,
     },
     {
       path: "/KnowledgeBase",
-      name: "Knowledge Base(Experimental)",
+      name: t`Knowledge Base(Experimental)`,
       icon: "📚",
       component: <KnowledgeBase />,
     },
     {
       path: "/HyperTools",
-      name: "HyperTools",
+      name: t`HyperTools`,
       icon: "🛠️",
       component: <HpyerTools />,
     },
     {
       path: "/TaskList",
-      name: "TaskList",
+      name: t`TaskList`,
       icon: "🤖",
       component: <TaskList />,
     },
     {
       path: "/Setting",
-      name: "Settings",
+      name: t`Settings`,
       icon: "⚙️",
       component: <Setting />,
     },

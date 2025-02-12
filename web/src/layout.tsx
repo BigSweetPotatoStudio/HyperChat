@@ -484,7 +484,7 @@ export function Layout() {
                     setIsAddModelConfigOpen(true);
                   }}
                 >
-                  Add
+                  {t`Add`}
                 </Button>
                 <Button
                   type="link"
@@ -493,7 +493,7 @@ export function Layout() {
                     await call("openExplorer", [p]);
                   }}
                 >
-                  Open the configuration file
+                  {t`Open the configuration file`}
                 </Button>
               </div>
             )}
@@ -508,7 +508,7 @@ export function Layout() {
             }}
             columns={[
               {
-                title: "Name",
+                title: t`name`,
                 dataIndex: "name",
                 key: "name",
                 width: 200,
@@ -523,13 +523,13 @@ export function Layout() {
                 },
               },
               {
-                title: "LLM",
+                title: t`LLM`,
                 dataIndex: "model",
                 key: "model",
                 width: 200,
               },
               {
-                title: "Operation",
+                title: t`Operation`,
                 dataIndex: "key",
                 key: "key",
                 width: 300,
@@ -546,7 +546,7 @@ export function Layout() {
                         setIsAddModelConfigOpen(true);
                       }}
                     >
-                      Edit
+                      {t`Edit`}
                     </Button>
                     <Divider type="vertical"></Divider>
                     <Button
@@ -560,7 +560,7 @@ export function Layout() {
                         EVENT.fire("refresh");
                       }}
                     >
-                      Clone
+                      {t`Clone`}
                     </Button>
                     <Divider type="vertical"></Divider>
                     <Popconfirm
@@ -575,7 +575,7 @@ export function Layout() {
                         EVENT.fire("refresh");
                       }}
                     >
-                      <Button type="link">Delete</Button>
+                      <Button type="link">{t`Delete`}</Button>
                     </Popconfirm>
                     <Divider type="vertical"></Divider>
                     <Tooltip title="Set default">
@@ -591,7 +591,7 @@ export function Layout() {
                           EVENT.fire("refresh");
                         }}
                       >
-                        Top
+                        {t`Top`}
                       </Button>
                     </Tooltip>
                   </div>

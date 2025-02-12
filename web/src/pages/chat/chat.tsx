@@ -449,7 +449,7 @@ export const Chat = ({
               onClick={() => {
                 Modal.info({
                   width: "80%",
-                  title: "Tool Call Result",
+                  title: t`Tool Call Result`,
                   maskClosable: true,
                   content: (
                     <div>
@@ -505,7 +505,7 @@ export const Chat = ({
         },
         key: i.toString(),
         // typing: x.content_status == "dataLoading",
-        footer: x.content_status != "error" && (
+        footer: (
           <div className="flex justify-between">
             <Space>
               <CopyOutlined
@@ -527,35 +527,37 @@ export const Chat = ({
                 }}
               />
             </Space>
-            <Space>
-              {x.content_attached == false && (
-                <Tooltip title="Cleared">
-                  <MinusCircleOutlined className="cursor-not-allowed bg-red-200" />
-                </Tooltip>
-              )}
-              {x.content_usage && (
-                <>
-                  {x?.content_usage?.prompt_tokens ? (
-                    <Tooltip title="prompt_tokens">
-                      <UploadOutlined />
-                      {x?.content_usage?.prompt_tokens}
-                    </Tooltip>
-                  ) : null}
-                  {x?.content_usage?.completion_tokens ? (
-                    <Tooltip title="completion_tokens">
-                      <DownloadOutlined />
-                      {x?.content_usage?.completion_tokens}
-                    </Tooltip>
-                  ) : null}
-                  {x?.content_usage?.total_tokens ? (
-                    <Tooltip title="total_tokens">
-                      <StockOutlined />
-                      {x?.content_usage?.total_tokens}
-                    </Tooltip>
-                  ) : null}
-                </>
-              )}
-            </Space>
+            {x.content_status != "error" && (
+              <Space>
+                {x.content_attached == false && (
+                  <Tooltip title="Cleared">
+                    <MinusCircleOutlined className="cursor-not-allowed bg-red-200" />
+                  </Tooltip>
+                )}
+                {x.content_usage && (
+                  <>
+                    {x?.content_usage?.prompt_tokens ? (
+                      <Tooltip title="prompt_tokens">
+                        <UploadOutlined />
+                        {x?.content_usage?.prompt_tokens}
+                      </Tooltip>
+                    ) : null}
+                    {x?.content_usage?.completion_tokens ? (
+                      <Tooltip title="completion_tokens">
+                        <DownloadOutlined />
+                        {x?.content_usage?.completion_tokens}
+                      </Tooltip>
+                    ) : null}
+                    {x?.content_usage?.total_tokens ? (
+                      <Tooltip title="total_tokens">
+                        <StockOutlined />
+                        {x?.content_usage?.total_tokens}
+                      </Tooltip>
+                    ) : null}
+                  </>
+                )}
+              </Space>
+            )}
           </div>
         ),
         // loading:
@@ -565,8 +567,7 @@ export const Chat = ({
             <SyncOutlined spin />
           ) : x.content_status == "error" ? (
             <span className="text-red-400">
-              Please check if the network is connected or LLM not support or
-              Invalid Input Content.
+              {t`Please check if the network is connected or LLM not support or Invalid Input Content.`}
             </span>
           ) : (
             <div>
@@ -587,7 +588,7 @@ export const Chat = ({
                           onClick={() => {
                             Modal.info({
                               width: "80%",
-                              title: "Tool Call",
+                              title: t`Tool Call`,
                               maskClosable: true,
                               content: (
                                 <div>
@@ -927,7 +928,7 @@ export const Chat = ({
                       }
                     }}
                   >
-                    New Chat
+                    {t`New Chat`}
                   </Button>
                 </div>
               ) : (
@@ -945,12 +946,12 @@ export const Chat = ({
                     loadMoreData(false);
                   }}
                 >
-                  New Chat
+                  {t`New Chat`}
                 </Button>
               )}
               <div className="mt-2 flex items-center justify-between">
                 <Space>
-                  <span>Dialogue Records</span>
+                  <span>{t`Dialogue Records`}</span>
                 </Space>
                 <Segmented
                   size="small"
@@ -1108,12 +1109,12 @@ export const Chat = ({
                 <div>
                   <Welcome
                     icon="👋"
-                    title="Welcome"
+                    title={t`Welcome`}
                     className="mb-4"
                     description={
                       GPTS.get().data.length > 0
-                        ? "Choose a prompt from below, and let's start chatting"
-                        : "Start chatting"
+                        ? t`Choose a prompt from below, and let's start chatting`
+                        : t`Start chatting`
                     }
                   />
                   <Space>
@@ -1131,7 +1132,7 @@ export const Chat = ({
                         setIsOpenPromptsModal(true);
                       }}
                     >
-                      Add Agent
+                      {t`Add Agent`}
                     </Button>
                   </Space>
 
@@ -1276,7 +1277,7 @@ export const Chat = ({
                     🔄
                   </span>
                 </Tooltip> */}
-                <Tooltip title="Clear Context">
+                <Tooltip title={t`Clear Context`}>
                   <span
                     className="cursor-pointer"
                     onClick={() => {
@@ -1294,7 +1295,7 @@ export const Chat = ({
                   </span>
                 </Tooltip>
                 <Divider type="vertical" />
-                <Tooltip title="Clients and Tools">
+                <Tooltip title={t`Clients and Tools`}>
                   <span
                     className="cursor-pointer"
                     onClick={() => {
@@ -1311,12 +1312,12 @@ export const Chat = ({
                         }
                       </>
                     ) : (
-                      <>💻 LLM not support</>
+                      <>💻 {t`LLM not support`}</>
                     )}
                   </span>
                 </Tooltip>
                 <Divider type="vertical" />
-                <Tooltip title="Resources" placement="bottom">
+                <Tooltip title={t`Resources`} placement="bottom">
                   <Dropdown
                     placement="topRight"
                     menu={{
@@ -1351,7 +1352,7 @@ export const Chat = ({
                   </Dropdown>
                 </Tooltip>
                 <Divider type="vertical" />
-                <Tooltip title="Prompts" placement="bottom">
+                <Tooltip title={t`Prompts`} placement="bottom">
                   <Dropdown
                     placement="topRight"
                     menu={{
@@ -1393,7 +1394,7 @@ export const Chat = ({
                   </Dropdown>
                 </Tooltip>
                 <Divider type="vertical" />
-                <Tooltip title="Select LLM">
+                <Tooltip title={t`Select LLM`}>
                   🧠
                   <Select
                     size="small"
@@ -1418,7 +1419,7 @@ export const Chat = ({
                   ></Select>
                 </Tooltip>
                 <Divider type="vertical" />
-                <Tooltip title="Select Request Type">
+                <Tooltip title={t`Select Request Type`}>
                   <span>type:</span>
                   <Dropdown
                     arrow
@@ -1449,7 +1450,7 @@ export const Chat = ({
                 </Tooltip>
                 <Divider type="vertical" />
 
-                <Tooltip title="Token Usage">
+                <Tooltip title={t`Token Usage`}>
                   <span className="cursor-pointer">
                     token:{" "}
                     {openaiClient.current == null ? (
@@ -1596,7 +1597,7 @@ export const Chat = ({
           open={isToolsShow}
           onCancel={() => setIsToolsShow(false)}
           maskClosable
-          title="Tool"
+          title={t`Tool`}
           onOk={() => setIsToolsShow(false)}
           cancelButtonProps={{ style: { display: "none" } }}
         >
@@ -1700,7 +1701,7 @@ export const Chat = ({
         </Modal>
         <Modal
           width={800}
-          title="More  Setting"
+          title={t`More Setting`}
           open={isOpenMoreSetting}
           okButtonProps={{ autoFocus: true, htmlType: "submit" }}
           cancelButtonProps={{ style: { display: "none" } }}
@@ -1731,8 +1732,8 @@ export const Chat = ({
         >
           <Form.Item
             name="attachedDialogueCount"
-            label="attachedDialogueCount"
-            tooltip="Number of sent Dialogue Message attached per request"
+            label={t`attachedDialogueCount`}
+            tooltip={t`Number of sent Dialogue Message attached per request`}
           >
             {/* <InputNumber
               placeholder="blank means is all."

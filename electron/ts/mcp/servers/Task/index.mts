@@ -94,15 +94,15 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
           required: ["agent_name", "message"],
         },
       },
-      {
-        name: "list_allowed_agents",
-        description: `list all allow Agent(Bot)`,
-        inputSchema: {
-          type: "object",
-          properties: {},
-          required: [],
-        },
-      },
+      // {
+      //   name: "list_allowed_agents",
+      //   description: `list all allow Agent(Bot)`,
+      //   inputSchema: {
+      //     type: "object",
+      //     properties: {},
+      //     required: [],
+      //   },
+      // },
     ],
   };
 });
