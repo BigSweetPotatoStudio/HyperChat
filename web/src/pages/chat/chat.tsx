@@ -150,7 +150,7 @@ export const Chat = ({
     message: "",
     onComplete: (text) => {},
     onError: (e) => {},
-  }, //
+  },
 }) => {
   const [num, setNum] = React.useState(0);
   const refresh = () => {
@@ -230,7 +230,7 @@ export const Chat = ({
   const [direction, setDirection] =
     React.useState<GetProp<ConfigProviderProps, "direction">>("ltr");
 
-  const currentChat = React.useRef<ChatHistoryItem>({
+  const defaultChatValue: ChatHistoryItem = {
     label: "",
     key: "",
     messages: [],
@@ -241,7 +241,10 @@ export const Chat = ({
     allowMCPs: [],
     attachedDialogueCount: undefined,
     dateTime: Date.now(),
-  });
+    isCalled: data.agent_name ? true : false,
+  };
+
+  const currentChat = React.useRef<ChatHistoryItem>(defaultChatValue);
   const currentChatReset = async (
     newConfig: Partial<ChatHistoryItem>,
     prompt = "",
@@ -256,16 +259,7 @@ export const Chat = ({
       ];
     }
     currentChat.current = {
-      label: "",
-      key: "",
-      messages: [],
-      modelKey: undefined,
-      gptsKey: undefined,
-      sended: false,
-      requestType: "stream",
-      allowMCPs: [],
-      attachedDialogueCount: undefined,
-      dateTime: Date.now(),
+      ...defaultChatValue,
       ...newConfig,
     };
 
@@ -813,13 +807,19 @@ export const Chat = ({
     setLoadMoreing(true);
 
     let formmatedData = ChatHistory.get()
-      .data.filter(
-        (x) =>
-          selectGptsKey.current == null || x.gptsKey == selectGptsKey.current,
-      )
+      .data.filter((x) => {
+        if (historyFilterType.current == "agent") {
+          return x.isCalled == true;
+        }
+        return (
+          selectGptsKey.current == null || x.gptsKey == selectGptsKey.current
+        );
+      })
       .filter((x) => {
         if (historyFilterType.current == "all") {
-          return true;
+          return !x.isCalled;
+        } else if (historyFilterType.current == "agent") {
+          return x.isCalled == true;
         } else if (historyFilterType.current == "star") {
           return x.icon == "⭐";
         } else {
@@ -862,10 +862,8 @@ export const Chat = ({
   const [botSearchValue, setBotSearchValue] = useState("");
 
   const [historyFilterSign, setHistoryFilterSign] = useState<0 | 1>(0);
-  // const [historyFilterType, setHistoryFilterType] = useState<
-  //   "all" | "star" | "search"
-  // >("all");
-  const historyFilterType = useRef<"all" | "star" | "search">("all");
+
+  const historyFilterType = useRef<"all" | "star" | "search" | "agent">("all");
 
   const [historyFilterSearchValue, setHistoryFilterSearchValue] = useState("");
   useEffect(() => {
@@ -973,6 +971,10 @@ export const Chat = ({
                     {
                       value: "search",
                       icon: <SearchOutlined />,
+                    },
+                    {
+                      value: "agent",
+                      icon: "🤖",
                     },
                   ]}
                 />
@@ -1612,19 +1614,6 @@ export const Chat = ({
                 )
                 .map((v) => v.name),
               onChange: async (selectedRowKeys, selectedRows) => {
-                // for (let c of clientsRef.current) {
-                //   c.enable = false;
-                // }
-                // for (let row of selectedRowKeys) {
-                //   let client = clientsRef.current.find((v) => v.name == row);
-                //   client.enable = true;
-                // }
-
-                // let p = getPrompts();
-                // promptsRef.current = p;
-                // let r = getResourses();
-                // resourcesRef.current = r;
-                // refresh();
                 currentChatReset({
                   ...currentChat.current,
                   allowMCPs: selectedRowKeys as string[],

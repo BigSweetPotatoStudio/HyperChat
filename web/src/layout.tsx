@@ -319,7 +319,6 @@ export function Layout() {
           prefixCls="my-prefix"
           collapsed={collapsed}
           onCollapse={(collapsed) => {
-            console.log(collapsed);
             setCollapsed(collapsed);
           }}
           route={route}
