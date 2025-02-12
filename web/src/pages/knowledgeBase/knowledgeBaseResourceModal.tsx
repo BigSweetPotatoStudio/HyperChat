@@ -27,6 +27,7 @@ import { getClients, InitedClient } from "../../common/mcp";
 import { GPT_MODELS } from "../../common/data";
 import { KNOWLEDGE_Resource } from "../../../../common/data";
 import { SelectFile } from "../../common/selectFile";
+import { t } from "../../i18n";
 
 type Values = KNOWLEDGE_Resource;
 
@@ -57,7 +58,7 @@ const ModalForm: React.FC<CollectionCreateFormProps> = ({
       <Form.Item<Values>
         name="type"
         label="type"
-        rules={[{ required: true, message: `Please enter` }]}
+        rules={[{ required: true, message: t`Please enter` }]}
       >
         <Segmented
           options={[
@@ -123,7 +124,7 @@ export const KnowledgeBaseResourceModal: React.FC<
     <Modal
       width={800}
       open={open}
-      title={"KnowledgeBaseResource"}
+      title={t`KnowledgeBaseResource`}
       okButtonProps={{ autoFocus: true, loading }}
       onCancel={onCancel}
       destroyOnClose

@@ -53,6 +53,7 @@ import { sleep } from "../../common/sleep";
 import dayjs from "dayjs";
 import { useForm } from "antd/es/form/Form";
 import { e } from "../../common/service";
+import { t } from "../../i18n";
 
 export function Setting() {
   const [num, setNum] = useState(0);
@@ -276,8 +277,8 @@ export function Setting() {
           </Form>
 
           <div className="text-red-500">
-            This software is free and OpenSource. Feel free to follow me, and I
-            will bring more utility software.
+            {t`This software is free and OpenSource. Feel free to follow me, and I
+            will bring more utility software.`}
           </div>
           <Form
             layout="horizontal"

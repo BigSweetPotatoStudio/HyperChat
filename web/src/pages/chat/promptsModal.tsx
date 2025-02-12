@@ -26,6 +26,7 @@ import { v4 as uuid } from "uuid";
 import { CloseOutlined, FormOutlined } from "@ant-design/icons";
 import { getClients, InitedClient } from "../../common/mcp";
 import { GPT_MODELS } from "../../common/data";
+import { t } from "../../i18n";
 
 interface Values {
   label: string;
@@ -72,21 +73,21 @@ const ModalForm: React.FC<CollectionCreateFormProps> = ({
       </Form.Item>
       <Form.Item
         name="label"
-        label={"Name"}
+        label={t`Name`}
         rules={[{ required: true, message: `Please enter the name` }]}
       >
         <Input />
       </Form.Item>
       <Form.Item
         name="prompt"
-        label="Prompt Content"
+        label={t`Prompt Content`}
         rules={[{ required: true, message: `Please enter Prompt Content` }]}
       >
         <Input.TextArea placeholder="Please enter Prompt Content" rows={4} />
       </Form.Item>
-      <Form.Item name="modelKey" label="LLM">
+      <Form.Item name="modelKey" label={t`LLM`}>
         <Select
-          placeholder="Please select default LLM"
+          placeholder={t`Please select default LLM`}
           allowClear
           options={GPT_MODELS.get().data.map((x) => {
             return {
@@ -98,7 +99,7 @@ const ModalForm: React.FC<CollectionCreateFormProps> = ({
       </Form.Item>
       <Form.Item
         name="allowMCPs"
-        label="MCP"
+        label={t`allowMCPs`}
         rules={[
           { required: false, message: `Please select the allowed MCP client.` },
         ]}
@@ -118,12 +119,12 @@ const ModalForm: React.FC<CollectionCreateFormProps> = ({
       </Form.Item>
       <Form.Item
         name="attachedDialogueCount"
-        label="attachedDialogueCount"
-        tooltip="Number of sent Dialogue Message attached per request"
+        label={t`attachedDialogueCount`}
+        tooltip={t`Number of sent Dialogue Message attached per request`}
       >
         <Slider defaultValue={20} max={40} />
       </Form.Item>
-      <Form.Item name="callable" label="Callable" valuePropName="checked">
+      <Form.Item name="callable" label={t`Callable`} valuePropName="checked">
         <Checkbox
           onChange={() => {
             form.setFieldValue(
@@ -135,12 +136,12 @@ const ModalForm: React.FC<CollectionCreateFormProps> = ({
             refresh();
           }}
         >
-          Allowed to be called by 'hyper_agent'
+          {t`Allowed to be called by 'hyper_agent'`}
         </Checkbox>
       </Form.Item>
-      <Form.Item name="description" label="description">
+      <Form.Item name="description" label={t`description`}>
         <Input.TextArea
-          placeholder="Please provide a description for more accurate call."
+          placeholder={t`Please provide a description for more accurate call.`}
           rows={2}
         />
       </Form.Item>

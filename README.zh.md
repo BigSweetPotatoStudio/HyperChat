@@ -11,6 +11,7 @@ HyperChat 是一个追求开放的Chat客户端，可以使用各家LLM的API，
 [![Build](https://github.com/BigSweetPotatoStudio/HyperChat/actions/workflows/build.yml/badge.svg)](https://github.com/BigSweetPotatoStudio/HyperChat/actions/workflows/build.yml)
 
 - [x] 🪟Windows+🍏MacOS
+- [x] 支持暗黑模式🌙
 - [x] 支持 `nvm`, 看下面
 - [x] Resources 支持
 - [x] Prompts 部分支持

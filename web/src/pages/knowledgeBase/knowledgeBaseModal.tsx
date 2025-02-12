@@ -26,6 +26,7 @@ import { CloseOutlined, FormOutlined } from "@ant-design/icons";
 import { getClients, InitedClient } from "../../common/mcp";
 import { GPT_MODELS } from "../../common/data";
 import { KNOWLEDGE_Store } from "../../../../common/data";
+import { t } from "../../i18n";
 
 const models = [
   {
@@ -65,28 +66,28 @@ const ModalForm: React.FC<CollectionCreateFormProps> = ({
       </Form.Item>
       <Form.Item<Values>
         name="name"
-        label="name"
+        label={t`name`}
         rules={[{ required: true, message: `Please enter the name` }]}
       >
-        <Input />
+        <Input placeholder={t`Please enter`} />
       </Form.Item>
       <Form.Item<Values>
         name="model"
-        label="model"
+        label={t`model`}
         rules={[{ required: true, message: `Please enter the model` }]}
       >
         <Select
-          placeholder="Please select model"
+          placeholder={t`Please select`}
           options={models}
           disabled={form.getFieldValue("key")}
         />
       </Form.Item>
       <Form.Item<Values>
         name="description"
-        label="description"
+        label={t`description`}
         rules={[{ required: true, message: `Please enter description` }]}
       >
-        <Input.TextArea placeholder="Please enter description" rows={4} />
+        <Input.TextArea placeholder={t`Please enter`} rows={4} />
       </Form.Item>
     </Form>
   );
@@ -111,7 +112,7 @@ export const KnowledgeBaseModal: React.FC<CollectionCreateFormModalProps> = ({
     <Modal
       width={800}
       open={open}
-      title={"KnowledgeBase"}
+      title={t`KnowledgeBase`}
       okButtonProps={{ autoFocus: true }}
       onCancel={onCancel}
       destroyOnClose
