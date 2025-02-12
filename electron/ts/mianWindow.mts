@@ -8,14 +8,14 @@ import {
   Tray,
 } from "electron";
 import Logger from "electron-log";
-import e from "express";
 import { get } from "http";
 import path from "path";
 import { os } from "zx";
 import CheckUpdate, { checkUpdate } from "./upload.mjs";
 import { electronData } from "./common/data.mjs";
+import p from "../package.json" assert { type: "json" };
 
-let title = `${app.name}-${app.getVersion()} by Dadigua`;
+let title = `${p.productName}-${app.getVersion()} by Dadigua`;
 Logger.info("title: ", title);
 class MessageService {
   private mainWindow: BrowserWindow;

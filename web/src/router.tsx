@@ -15,7 +15,7 @@ import { Market } from "./pages/market/market";
 import { HpyerTools } from "./pages/hypertools/hypertools";
 import { KnowledgeBase } from "./pages/knowledgeBase/knowledgeBase";
 import { WorkSpace } from "./pages/workspace";
-
+import { HyperAgent } from "./pages/hyperAgent";
 type RouteType = {
   path: string;
   name: React.ReactNode;
@@ -63,8 +63,14 @@ let route: RouteType = {
     {
       path: "/HyperTools",
       name: "HyperTools",
-      icon: "🔧",
+      icon: "🛠️",
       component: <HpyerTools />,
+    },
+    {
+      path: "/HyperAgent",
+      name: "HyperAgent",
+      icon: "🤖",
+      component: <HyperAgent />,
     },
     {
       path: "/Setting",
