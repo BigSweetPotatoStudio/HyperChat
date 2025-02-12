@@ -170,7 +170,11 @@ export function WorkSpace() {
                     );
                   },
                   onError: (e) => {
-                    call("call_agent_res", [uid, "", e]);
+                    setActiveKey(activeKey);
+                    call("call_agent_res", [uid, "", e.message]);
+                    setItems((items) =>
+                      items.filter((item) => item.key !== n.key),
+                    );
                   },
                 }}
               />

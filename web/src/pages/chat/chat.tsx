@@ -204,10 +204,13 @@ export const Chat = ({
           let agent = agents.data.find((x) => x.label == data.agent_name);
           await onGPTSClick(agent.key);
 
-          data.message && (await onRequest(data.message));
+          if (data.message) {
+            await onRequest(data.message);
+          }
 
           data.onComplete(openaiClient.current.lastMessage.content);
         } catch (e) {
+          console.error(" hyper_call_agent error: ", e);
           data.onError(e);
         }
       } else {
@@ -775,8 +778,9 @@ export const Chat = ({
       // console.log("ChatHistory.d.data", ChatHistory.get().data.slice(0, 5));
     } catch (e) {
       antdMessage.error(
-        e.message || "An error occurred, please try again later",
+        e.message || t`An error occurred, please try again later`,
       );
+      throw e;
     } finally {
       setLoading(false);
     }
