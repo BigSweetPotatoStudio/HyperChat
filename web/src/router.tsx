@@ -15,7 +15,7 @@ import { Market } from "./pages/market/market";
 import { HpyerTools } from "./pages/hypertools/hypertools";
 import { KnowledgeBase } from "./pages/knowledgeBase/knowledgeBase";
 import { WorkSpace } from "./pages/workspace";
-import { HyperAgent } from "./pages/hyperAgent";
+import { TaskList } from "./pages/hyperAgent/TaskList";
 type RouteType = {
   path: string;
   name: React.ReactNode;
@@ -67,10 +67,10 @@ let route: RouteType = {
       component: <HpyerTools />,
     },
     {
-      path: "/HyperAgent",
-      name: "HyperAgent",
+      path: "/TaskList",
+      name: "TaskList",
       icon: "🤖",
-      component: <HyperAgent />,
+      component: <TaskList />,
     },
     {
       path: "/Setting",
@@ -81,7 +81,7 @@ let route: RouteType = {
   ],
 };
 
-function Container(props: { from: string; default: string }) {
+function Container(props: { from: string; default?: string }) {
   const navigate = useNavigate();
   const location = useLocation();
   // console.log("location.pathname", location.pathname);

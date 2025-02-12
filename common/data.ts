@@ -115,6 +115,7 @@ export type ChatHistoryItem = {
   requestType: string;
   attachedDialogueCount?: number;
   dateTime: number;
+  isCalled: boolean;
 };
 
 export const ChatHistory = new Data("chat_history.json", {
