@@ -82,7 +82,7 @@ export function KnowledgeBase() {
       dataIndex: "operation",
       key: "operation",
       render: (text, record) => (
-        <Space>
+        <div>
           <a
             onClick={() => {
               setCurrRowKnowledgeBase(record);
@@ -91,6 +91,7 @@ export function KnowledgeBase() {
           >
             {t`Edit`}
           </a>
+          <Divider type="vertical"></Divider>
           <a
             onClick={() => {
               setCurrRowKnowledgeBase(record);
@@ -98,6 +99,7 @@ export function KnowledgeBase() {
           >
             {t`Open`}
           </a>
+          <Divider type="vertical"></Divider>
           <Popconfirm
             title={t`Sure to delete?`}
             onConfirm={async () => {
@@ -112,7 +114,7 @@ export function KnowledgeBase() {
           >
             <a>{t`Delete`}</a>
           </Popconfirm>
-        </Space>
+        </div>
       ),
     },
   ];

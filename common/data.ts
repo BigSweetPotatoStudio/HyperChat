@@ -116,6 +116,7 @@ export type ChatHistoryItem = {
   attachedDialogueCount?: number;
   dateTime: number;
   isCalled: boolean;
+  isTask: boolean;
 };
 
 export const ChatHistory = new Data("chat_history.json", {
@@ -245,5 +246,26 @@ export const KNOWLEDGE_BASE = new Data(
   },
   {
     sync: false,
+  }
+);
+
+
+export type Task = {
+  key: string;
+  name: string;
+  message: string;
+  agentKey: string;
+  description: string;
+  cron: string;
+  status: "runing" | "error" | "done";
+};
+
+export const TaskList = new Data(
+  "tasklist.json",
+  {
+    data: [] as Array<Task>,
+  },
+  {
+    sync: true,
   }
 );

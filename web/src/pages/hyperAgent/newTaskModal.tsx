@@ -25,7 +25,7 @@ import { v4 as uuid } from "uuid";
 import { CloseOutlined, FormOutlined } from "@ant-design/icons";
 import { getClients, InitedClient } from "../../common/mcp";
 import { GPT_MODELS } from "../../common/data";
-import { KNOWLEDGE_Store } from "../../../../common/data";
+import { GPTS, KNOWLEDGE_Store, Task } from "../../../../common/data";
 import { t } from "../../i18n";
 
 const models = [
@@ -38,7 +38,7 @@ const models = [
     value: "all-MiniLM-L6-v2",
   },
 ];
-type Values = KNOWLEDGE_Store;
+type Values = Task;
 
 interface CollectionCreateFormProps {
   initialValues: Values;
@@ -58,6 +58,12 @@ const ModalForm: React.FC<CollectionCreateFormProps> = ({
   const refresh = () => {
     setNum((x) => x + 1);
   };
+  useEffect(() => {
+    (async()=>{
+        await GPTS.init();
+        refresh();
+    })()
+  }, []);
 
   return (
     <Form form={form} name="form_in_modal" initialValues={initialValues}>
@@ -72,20 +78,35 @@ const ModalForm: React.FC<CollectionCreateFormProps> = ({
         <Input placeholder={t`Please enter`} />
       </Form.Item>
       <Form.Item<Values>
-        name="model"
-        label={t`model`}
+        name="agentKey"
+        label={t`Agent`}
+        rules={[{ required: true, message: t`Please select` }]}
+      >
+        <Select placeholder={t`Please select`}>
+          {GPTS.get().data.map((x) => (
+            <Select.Option key={x.key} value={x.key}>
+              {x.label}
+            </Select.Option>
+          ))}
+        </Select>
+      </Form.Item>
+      <Form.Item<Values>
+        name="message"
+        label={t`message`}
         rules={[{ required: true, message: t`Please enter` }]}
       >
-        <Select
-          placeholder={t`Please select`}
-          options={models}
-          disabled={form.getFieldValue("key")}
-        />
+        <Input.TextArea placeholder={t`Please enter`} />
+      </Form.Item>
+      <Form.Item<Values>
+        name="cron"
+        label={t`cronExpression`}
+        rules={[{ required: true, message: t`Please enter` }]}
+      >
+        <Input placeholder={t`Please enter, e.g., "0 * * * *"`} />
       </Form.Item>
       <Form.Item<Values>
         name="description"
         label={t`description`}
-        rules={[{ required: true, message: t`Please enter` }]}
       >
         <Input.TextArea placeholder={t`Please enter`} rows={4} />
       </Form.Item>
@@ -100,7 +121,7 @@ interface CollectionCreateFormModalProps {
   initialValues: Values;
 }
 
-export const KnowledgeBaseModal: React.FC<CollectionCreateFormModalProps> = ({
+export const NewTaskModal: React.FC<CollectionCreateFormModalProps> = ({
   open,
   onCreate,
   onCancel,
@@ -112,7 +133,7 @@ export const KnowledgeBaseModal: React.FC<CollectionCreateFormModalProps> = ({
     <Modal
       width={800}
       open={open}
-      title={t`KnowledgeBase`}
+      title={t`Task`}
       okButtonProps={{ autoFocus: true }}
       onCancel={onCancel}
       destroyOnClose
