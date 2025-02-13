@@ -21,6 +21,7 @@ import { request } from "http";
 import { spawnWithOutput } from "../common/util.mjs";
 import { clientPaths } from "./claude.mjs";
 import Logger from "electron-log";
+import { start } from "./task.mjs";
 
 await initMcpServer().catch((e) => {
   console.error("initMcpServer", e);
@@ -225,17 +226,19 @@ export class MCPClient {
 let firstRunStatus = 0;
 
 export async function initMcpClients() {
-  firstRunStatus == 1;
-  // console.log("mcpClients", mcpClients, Object.keys(mcpClients).length);
+  // console.log("initMcpClientsRunning", firstRunStatus);
+
   while (1) {
     if (firstRunStatus == 1) {
-      log.info("getMcpClients runing");
+      console.log("getMcpClients runing");
       await sleep(100);
     } else {
       break;
     }
   }
-
+  if (firstRunStatus == 0) {
+    firstRunStatus = 1;
+  }
   if (firstRunStatus == 2) {
     log.info("getMcpClients cached mcpClients", Object.keys(mcpClients).length);
     return mcpClients;
@@ -270,7 +273,9 @@ export async function initMcpClients() {
   firstRunStatus = 2;
   return mcpClients;
 }
-
+initMcpClients().then(() => {
+  start();
+});
 export async function openMcpClient(
   clientName: string = undefined,
   clientConfig?: MCP_CONFIG_TYPE

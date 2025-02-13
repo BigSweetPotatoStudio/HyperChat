@@ -58,6 +58,7 @@
     "koa-body": "^6.0.1",
     "koa-router": "^13.0.1",
     "koa-static": "^5.0.0",
+    "node-cron": "^3.0.3",
     "onnxruntime-node": "^1.20.1",
     "openai": "^4.55.7",
     "opusscript": "^0.1.1",

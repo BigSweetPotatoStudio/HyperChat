@@ -142,7 +142,6 @@ import { ChatHistoryItem } from "../../../../common/data";
 import { useForm } from "antd/es/form/Form";
 import { t } from "../../i18n";
 
-// let openaiClient: OpenAiChannel;
 export const Chat = ({
   onTitleChange = undefined,
   data = {
@@ -245,6 +244,7 @@ export const Chat = ({
     attachedDialogueCount: undefined,
     dateTime: Date.now(),
     isCalled: data.agent_name ? true : false,
+    isTask: false,
   };
 
   const currentChat = React.useRef<ChatHistoryItem>(defaultChatValue);
@@ -819,9 +819,6 @@ export const Chat = ({
 
     let formmatedData = ChatHistory.get()
       .data.filter((x) => {
-        if (historyFilterType.current == "agent") {
-          return x.isCalled == true;
-        }
         return (
           selectGptsKey.current == null || x.gptsKey == selectGptsKey.current
         );
@@ -831,6 +828,8 @@ export const Chat = ({
           return !x.isCalled;
         } else if (historyFilterType.current == "agent") {
           return x.isCalled == true;
+        } else if (historyFilterType.current == "task") {
+          return x.isTask == true;
         } else if (historyFilterType.current == "star") {
           return x.icon == "⭐";
         } else {
@@ -874,7 +873,9 @@ export const Chat = ({
 
   const [historyFilterSign, setHistoryFilterSign] = useState<0 | 1>(0);
 
-  const historyFilterType = useRef<"all" | "star" | "search" | "agent">("all");
+  const historyFilterType = useRef<
+    "all" | "star" | "search" | "agent" | "task"
+  >("all");
 
   const [historyFilterSearchValue, setHistoryFilterSearchValue] = useState("");
   useEffect(() => {
@@ -983,9 +984,14 @@ export const Chat = ({
                       value: "search",
                       icon: <SearchOutlined />,
                     },
+               
                     {
                       value: "agent",
                       icon: "🤖",
+                    },
+                    {
+                      value: "task",
+                      icon: "📅",
                     },
                   ]}
                 />

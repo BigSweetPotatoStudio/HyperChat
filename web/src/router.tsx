@@ -15,7 +15,7 @@ import { Market } from "./pages/market/market";
 import { HpyerTools } from "./pages/hypertools/hypertools";
 import { KnowledgeBase } from "./pages/knowledgeBase/knowledgeBase";
 import { WorkSpace } from "./pages/workspace";
-import { TaskList } from "./pages/hyperAgent/TaskList";
+import { TaskListPage } from "./pages/hyperAgent/TaskList";
 import { t } from "./i18n";
 type RouteType = {
   path: string;
@@ -70,8 +70,8 @@ let route: RouteType = {
     {
       path: "/TaskList",
       name: t`TaskList`,
-      icon: "🤖",
-      component: <TaskList />,
+      icon: "📅",
+      component: <TaskListPage />,
     },
     {
       path: "/Setting",

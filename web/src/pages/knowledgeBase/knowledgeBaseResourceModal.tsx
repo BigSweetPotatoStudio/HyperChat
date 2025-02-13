@@ -75,7 +75,7 @@ const ModalForm: React.FC<CollectionCreateFormProps> = ({
         <Form.Item<Values>
           name="markdown"
           label="markdown"
-          rules={[{ required: true, message: `Please enter` }]}
+          rules={[{ required: true, message: t`Please enter` }]}
         >
           <Input.TextArea placeholder="Please enter" rows={4} />
         </Form.Item>
@@ -86,7 +86,7 @@ const ModalForm: React.FC<CollectionCreateFormProps> = ({
           <Form.Item<Values>
             name="filepath"
             label="filepath"
-            rules={[{ required: true, message: `Please enter` }]}
+            rules={[{ required: true, message: t`Please select` }]}
           >
             <SelectFile
               filters={[
@@ -98,8 +98,8 @@ const ModalForm: React.FC<CollectionCreateFormProps> = ({
             />
           </Form.Item>
           <Form.Item<Values> label="tips">
-            Currently, only PDF is supported, but in the future, DOC, PPT,
-            audio, and image formats will be supported.
+            {t`Currently, only PDF is supported, but in the future, DOC, PPT,
+            audio, and image formats will be supported.`}
           </Form.Item>
         </>
       )}

@@ -685,11 +685,7 @@
     },
     "Home": {
         "en": "Home",
-        "zh": "家"
-    },
-    "TaskList": {
-        "en": "TaskList",
-        "zh": ""
+        "zh": "主页"
     },
     "Please enter or select the model": {
         "en": "Please enter or select the model",
@@ -786,5 +782,29 @@
     "Please verify your network connection. If the network is working, there might be a small bug in the program. Here are the error messages: ": {
         "en": "Please verify your network connection. If the network is working, there might be a small bug in the program. Here are the error messages: ",
         "zh": "请检查您的网络连接。如果网络正常,程序中可能存在一个小错误。以下是错误消息:"
+    },
+    "Create Task": {
+        "en": "Create Task",
+        "zh": "新建任务"
+    },
+    "Task": {
+        "en": "Task",
+        "zh": "任务"
+    },
+    "Agent": {
+        "en": "Agent",
+        "zh": ""
+    },
+    "message": {
+        "en": "message",
+        "zh": "消息"
+    },
+    "cronExpression": {
+        "en": "cronExpression",
+        "zh": "cron表达式"
+    },
+    "TaskList": {
+        "en": "TaskList",
+        "zh": "任务列表"
     }
 }
