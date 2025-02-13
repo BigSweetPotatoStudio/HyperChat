@@ -35,6 +35,7 @@ export type MyMessage = OpenAI.Chat.Completions.ChatCompletionMessageParam & {
     | "error"
     | "dataLoading"
     | "dataLoadComplete";
+  content_error?: string;
   content_from?: string;
   content_attachment?: Array<{
     type: string;
@@ -664,6 +665,8 @@ export class OpenAiChannel {
         content_from,
         content_status,
         content_usage,
+        reasoning_content,
+        content_error,
         ...rest
       } = m;
       if (rest.role == "assistant") {

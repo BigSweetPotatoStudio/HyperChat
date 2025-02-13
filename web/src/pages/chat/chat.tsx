@@ -569,9 +569,10 @@ export const Chat = ({
           x.content_status == "loading" ? (
             <SyncOutlined spin />
           ) : x.content_status == "error" ? (
-            <span className="text-red-400">
-              {t`Please check if the network is connected or LLM not support or Invalid Input Content.`}
-            </span>
+            <div className="text-red-400">
+              {t`Please verify your network connection. If the network is working, there might be a small bug in the program. Here are the error messages: `}
+              <div className="text-red-700">{x.content_error}</div>
+            </div>
           ) : (
             <div>
               {x.tool_calls &&
@@ -629,6 +630,7 @@ export const Chat = ({
                 })}
               {x.reasoning_content && (
                 <Collapse
+                  defaultActiveKey={["reasoning_content"]}
                   items={[
                     {
                       key: "reasoning_content",
@@ -777,6 +779,10 @@ export const Chat = ({
       await ChatHistory.save();
       // console.log("ChatHistory.d.data", ChatHistory.get().data.slice(0, 5));
     } catch (e) {
+      openaiClient.current.lastMessage.content_error = e.message;
+      currentChat.current.messages = openaiClient.current.messages;
+      refresh();
+      await ChatHistory.save();
       antdMessage.error(
         e.message || t`An error occurred, please try again later`,
       );

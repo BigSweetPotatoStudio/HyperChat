@@ -168,13 +168,13 @@ async function call_agent(agent_name: string, message: string) {
     let callback = (m) => {
       // console.log("============================");
       // console.log("call_agent", m.uid, m.data);
-      if (m.error) {
-        reject(m.error);
-        EVENT.clear("call_agent_res_" + uid);
-        return;
-      }
+
       if (m.uid == uid) {
-        resolve(m.data);
+        if (m.error != undefined) {
+          reject(m.error);
+        } else {
+          resolve(m.data);
+        }
       }
       EVENT.clear("call_agent_res_" + uid);
     };
