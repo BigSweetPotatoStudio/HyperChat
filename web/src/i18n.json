@@ -779,12 +779,12 @@
         "en": "Sure to delete?",
         "zh": "确定要删除吗"
     },
-    "Please check if the network is connected or LLM not support or Invalid Input Content.": {
-        "en": "Please check if the network is connected or LLM not support or Invalid Input Content.",
-        "zh": "请检查网络是否连接或LLM不支持或无效输入内容"
-    },
     "LLM not support": {
         "en": "LLM not support tool",
         "zh": "LLM不支持工具"
+    },
+    "Please verify your network connection. If the network is working, there might be a small bug in the program. Here are the error messages: ": {
+        "en": "Please verify your network connection. If the network is working, there might be a small bug in the program. Here are the error messages: ",
+        "zh": "请检查您的网络连接。如果网络正常,程序中可能存在一个小错误。以下是错误消息:"
     }
 }
