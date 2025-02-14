@@ -117,6 +117,7 @@ export type ChatHistoryItem = {
   dateTime: number;
   isCalled: boolean;
   isTask: boolean;
+  taskKey?: string;
 };
 
 export const ChatHistory = new Data("chat_history.json", {
