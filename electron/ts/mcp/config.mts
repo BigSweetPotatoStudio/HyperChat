@@ -21,7 +21,7 @@ import { request } from "http";
 import { spawnWithOutput } from "../common/util.mjs";
 import { clientPaths } from "./claude.mjs";
 import Logger from "electron-log";
-import { start } from "./task.mjs";
+import { startTask } from "./task.mjs";
 
 await initMcpServer().catch((e) => {
   console.error("initMcpServer", e);
@@ -274,7 +274,7 @@ export async function initMcpClients() {
   return mcpClients;
 }
 initMcpClients().then(() => {
-  start();
+  startTask();
 });
 export async function openMcpClient(
   clientName: string = undefined,

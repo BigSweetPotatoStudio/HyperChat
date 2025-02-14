@@ -142,6 +142,12 @@ import { ChatHistoryItem } from "../../../../common/data";
 import { useForm } from "antd/es/form/Form";
 import { t } from "../../i18n";
 
+window.ext.receive("message-from-main", (msg) => {
+  if (msg.type == "ChatHistoryUpdate") {
+    ChatHistory.init({ force: true });
+  }
+});
+
 export const Chat = ({
   onTitleChange = undefined,
   data = {
@@ -817,8 +823,8 @@ export const Chat = ({
     }
     setLoadMoreing(true);
 
-    let formmatedData = (await ChatHistory.init()).data
-      .filter((x) => {
+    let formmatedData = ChatHistory.get()
+      .data.filter((x) => {
         return (
           selectGptsKey.current == null || x.gptsKey == selectGptsKey.current
         );

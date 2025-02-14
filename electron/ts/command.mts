@@ -59,7 +59,7 @@ import {
   KNOWLEDGE_Store,
 } from "../../common/data";
 import { EVENT } from "./common/event";
-
+import { startTask, stopTask } from "./mcp/task.mjs";
 
 function logCommand(
   target: any,
@@ -371,6 +371,12 @@ export class CommandFactory {
   }
   async call_agent_res(uid, data, error) {
     EVENT.fire("call_agent_res_" + uid, { uid, data, error });
+  }
+  async startTask(taskkey?: string) {
+    return startTask(taskkey);
+  }
+  async stopTask(taskkey?: string) {
+    return stopTask(taskkey);
   }
 }
 
