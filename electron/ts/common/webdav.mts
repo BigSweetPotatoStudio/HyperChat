@@ -3,13 +3,13 @@ import type { FileStat, WebDAVClient } from "webdav";
 const { createClient } = await import(/* webpackIgnore: true */ "webdav");
 import { promises } from "fs";
 import path, { join } from "path";
-import { AppSetting } from "./data.mjs";
+
 import { appDataDir } from "../const.mjs";
 import { getMessageService } from "../mianWindow.mjs";
 import { sleep } from "zx";
 import Logger from "electron-log";
 import { log } from "console";
-import { DataList } from "../../../common/data";
+import { AppSetting, DataList } from "../../../common/data";
 import { fs } from "zx";
 import crypto from "crypto";
 

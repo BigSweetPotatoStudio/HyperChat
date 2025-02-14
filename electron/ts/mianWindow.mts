@@ -12,7 +12,7 @@ import { get } from "http";
 import path from "path";
 import { os } from "zx";
 import CheckUpdate, { checkUpdate } from "./upload.mjs";
-import { electronData } from "./common/data.mjs";
+import { electronData } from "../../common/data";
 import p from "../package.json" assert { type: "json" };
 
 let title = `${p.productName}-${app.getVersion()} by Dadigua`;

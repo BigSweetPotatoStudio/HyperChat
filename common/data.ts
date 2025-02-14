@@ -249,7 +249,6 @@ export const KNOWLEDGE_BASE = new Data(
   }
 );
 
-
 export type Task = {
   key: string;
   name: string;
@@ -257,7 +256,8 @@ export type Task = {
   agentKey: string;
   description: string;
   cron: string;
-  status: "runing" | "error" | "done";
+  state: "enabled" | "disabled";
+  status: "pending" | "runing" | "error" | "done";
 };
 
 export const TaskList = new Data(

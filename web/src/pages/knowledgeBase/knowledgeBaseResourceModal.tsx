@@ -24,8 +24,8 @@ import { v4 as uuid } from "uuid";
 
 import { CloseOutlined, FormOutlined } from "@ant-design/icons";
 import { getClients, InitedClient } from "../../common/mcp";
-import { GPT_MODELS } from "../../common/data";
-import { KNOWLEDGE_Resource } from "../../../../common/data";
+
+import { KNOWLEDGE_Resource, GPT_MODELS } from "../../../../common/data";
 import { SelectFile } from "../../common/selectFile";
 import { t } from "../../i18n";
 

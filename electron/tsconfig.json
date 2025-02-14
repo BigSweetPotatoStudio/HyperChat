@@ -25,15 +25,15 @@
     "target": "ESNext",
     "typeRoots": [
       "./node_modules/@types",
+      "./types/"
     ],
     "outDir": "./js",
   },
   "include": [
     "ts",
+    "types/*"
   ],
   "exclude": [
-    "node_modules",
-    "tests",
-    "types"
+    "node_modules"
   ]
 }

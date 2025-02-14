@@ -11,7 +11,7 @@ import { Chat } from "../chat";
 import { it } from "node:test";
 import { v4 } from "uuid";
 import { call } from "../../common/call";
-import { GPT_MODELS, GPTS } from "../../common/data";
+import { GPT_MODELS, GPTS } from "../../../../common/data";
 import { OpenAiChannel } from "../../common/openai";
 import { text } from "stream/consumers";
 

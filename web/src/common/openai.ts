@@ -1,11 +1,18 @@
 import OpenAI from "openai";
-import { getTools, HyperChatCompletionTool } from "./mcp";
+
+import type { HyperChatCompletionTool } from "./mcp";
 import { call } from "./call";
 import * as MCPTypes from "@modelcontextprotocol/sdk/types.js";
 
-import { message as antdmessage } from "antd";
-import type { ChatCompletionTool } from "openai/src/resources/chat/completions";
-import { ChatCompletionContentPartText } from "openai/resources";
+let antdmessage: { warning: (msg: string) => void };
+if (process.env.runtime === "node") {
+  antdmessage = { warning: console.warn };
+} else {
+  const { message } = await import("antd");
+  antdmessage = { warning: message.warning };
+
+}
+
 import imageBase64 from "../common/openai_image_base64.txt";
 
 type Tool_Call = {
@@ -231,11 +238,17 @@ export class OpenAiChannel {
     if (!call_tool || this.options.supportTool === false) {
       tools = undefined;
     } else {
-      tools = getTools(
-        (x) =>
-          this.options.allowMCPs == null ||
-          this.options.allowMCPs.includes(x.name),
-      );
+      if (process.env.runtime === "node") {
+        tools = global.tools || [];
+      } else {
+        const { getTools } = await import("./mcp");
+        tools = getTools(
+          (x) =>
+            this.options.allowMCPs == null ||
+            this.options.allowMCPs.includes(x.name),
+        );
+      }
+
       if (tools.length == 0) {
         tools = undefined;
       }
@@ -512,7 +525,7 @@ export class OpenAiChannel {
         }
         onUpdate && onUpdate(this.lastMessage.content as string);
       }
-      console.log("this.messages", this.messages);
+      // console.log("this.messages", this.messages);
       return await this._completion(
         onUpdate,
         (this.options.call_tool_step || 10) > step + 1,
@@ -520,7 +533,7 @@ export class OpenAiChannel {
         context,
       );
     } else {
-      console.log("this.messages", this.messages);
+      // console.log("this.messages", this.messages);
       return res.content as string;
     }
   }

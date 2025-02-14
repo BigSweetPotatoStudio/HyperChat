@@ -114,7 +114,7 @@ import {
 } from "@ant-design/icons";
 import type { ConfigProviderProps, GetProp } from "antd";
 import { MyMessage, OpenAiChannel } from "../../common/openai";
-import { ChatHistory, GPT_MODELS, GPTS } from "../../common/data";
+import { ChatHistory, GPT_MODELS, GPTS } from "../../../../common/data";
 
 import { PromptsModal } from "./promptsModal";
 import {
@@ -803,7 +803,7 @@ export const Chat = ({
 
   const loadDataTatal = useRef(0);
 
-  const loadMoreData = (loadMore = true) => {
+  const loadMoreData = async (loadMore = true) => {
     // console.log(historyFilterType, historyFilterSearchValue, loadIndex.current);
     // console.log("loadMoreData: ", ChatHistory.get().data);
     if (loadMore) {
@@ -817,15 +817,15 @@ export const Chat = ({
     }
     setLoadMoreing(true);
 
-    let formmatedData = ChatHistory.get()
-      .data.filter((x) => {
+    let formmatedData = (await ChatHistory.init()).data
+      .filter((x) => {
         return (
           selectGptsKey.current == null || x.gptsKey == selectGptsKey.current
         );
       })
       .filter((x) => {
         if (historyFilterType.current == "all") {
-          return !x.isCalled;
+          return !x.isCalled && !x.isTask;
         } else if (historyFilterType.current == "agent") {
           return x.isCalled == true;
         } else if (historyFilterType.current == "task") {
@@ -984,7 +984,7 @@ export const Chat = ({
                       value: "search",
                       icon: <SearchOutlined />,
                     },
-               
+
                     {
                       value: "agent",
                       icon: "🤖",
