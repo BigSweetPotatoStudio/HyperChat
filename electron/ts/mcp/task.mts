@@ -1,5 +1,12 @@
 import Logger from "electron-log";
-import { ChatHistory, ChatHistoryItem, GPT_MODELS, GPTS, TaskList } from "../../../common/data";
+import {
+  ChatHistory,
+  ChatHistoryItem,
+  GPT_MODELS,
+  GPTS,
+  Task,
+  TaskList,
+} from "../../../common/data";
 import cron from "node-cron";
 import { Command } from "../command.mjs";
 import { mcpClients } from "./config.mjs";
@@ -41,7 +48,7 @@ function trigger() {
   });
 }
 
-export async function runTask(task) {
+export async function runTask(task: Task) {
   Logger.log("Running task", task.name);
   try {
     let agent = GPTS.initSync().data.find((x) => x.key === task.agentKey);
@@ -84,6 +91,7 @@ export async function runTask(task) {
       dateTime: Date.now(),
       isCalled: false,
       isTask: true,
+      taskKey: task.key,
     };
     ChatHistory.initSync().data.unshift(item);
     await ChatHistory.save();
