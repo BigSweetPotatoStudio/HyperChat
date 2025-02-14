@@ -28,6 +28,7 @@ import {
   Descriptions,
   Select,
   Divider,
+  Popconfirm,
 } from "antd";
 import { call } from "../../common/call";
 import client from "socket.io-client";
@@ -108,14 +109,14 @@ export function TaskListPage() {
           <Switch
             value={!row.disabled}
             onChange={async (e) => {
-              if (e) {
+              row.disabled = !e;
+              await TaskList.save();
+              if (!row.disabled) {
                 await call("startTask", [row.key]);
               } else {
                 await call("stopTask", [row.key]);
               }
 
-              row.disabled = !e;
-              TaskList.save();
               refresh();
             }}
           ></Switch>
@@ -136,7 +137,27 @@ export function TaskListPage() {
               }}
             >{t`Edit`}</a>
             <Divider type="vertical" />
-            <a>{t`Delete`}</a>
+            <Popconfirm
+              title={t`Are you sure to delete this task?`}
+              onConfirm={() => {
+                call("stopTask", [row.key]);
+                TaskList.get().data = TaskList.get().data.filter(
+                  (item) => item.key !== row.key,
+                );
+                TaskList.save();
+                refresh();
+              }}
+            >
+              <a>{t`Delete`}</a>
+            </Popconfirm>
+
+            <Divider type="vertical" />
+            <a
+              className="text-red-300"
+              onClick={() => {
+                call("runTask", [row.key]);
+              }}
+            >{t`Test`}</a>
           </div>
         );
       },
@@ -170,6 +191,7 @@ export function TaskListPage() {
         initialValues={currRow}
         onCreate={async (v) => {
           if (v.key) {
+            v = Object.assign(currRow, v);
             let i = TaskList.get().data.findIndex((x) => x.key == v.key);
             TaskList.get().data[i] = v;
             await TaskList.save();

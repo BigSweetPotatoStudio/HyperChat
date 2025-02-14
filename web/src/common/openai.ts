@@ -10,7 +10,6 @@ if (process.env.runtime === "node") {
 } else {
   const { message } = await import("antd");
   antdmessage = { warning: message.warning };
-
 }
 
 import imageBase64 from "../common/openai_image_base64.txt";
@@ -396,7 +395,7 @@ export class OpenAiChannel {
           chatCompletion?.usage?.completion_tokens;
         res.content_usage.prompt_tokens = chatCompletion?.usage?.prompt_tokens;
         res.content_usage.total_tokens = chatCompletion?.usage?.total_tokens;
-
+        // console.log("chatCompletion: ", chatCompletion);
         let openaires =
           chatCompletion.choices[chatCompletion.choices.length - 1].message;
 
