@@ -26,12 +26,98 @@ const { OpenAiChannel } = await import("../../../web/src/common/openai");
 import { getToolsOnNode } from "../../../web/src/common/mcptool";
 import { v4 } from "uuid";
 import dayjs from "dayjs";
-let tArr = [];
+import { getMessageService } from "../mianWindow.mjs";
+let tObj: {
+  [s in string]: {
+    key: string;
+    cronT: any;
+  };
+} = {};
 
-export function start() {
-  console.log(`Starting tasks ${TaskList.initSync().data.length}`);
-  for (let task of TaskList.initSync().data) {
-    let t = cron.schedule(task.cron, async () => {
+function trigger() {
+  getMessageService().sendToRenderer({
+    type: "ChatHistoryUpdate",
+    data: {},
+  });
+}
+
+export function startTask(taskkey?: string) {
+  if (!taskkey) {
+    Logger.info(`Starting tasks ${TaskList.initSync().data.length}`);
+    for (let task of TaskList.initSync().data) {
+      let cronT = cron.schedule(task.cron, async () => {
+        if (task.disabled) {
+          return;
+        }
+        Logger.log("Running task", task.name);
+        try {
+          let agent = GPTS.initSync().data.find((x) => x.key === task.agentKey);
+          let config =
+            GPT_MODELS.initSync().data.find((x) => x.key == agent.modelKey) ||
+            GPT_MODELS.initSync().data[0];
+
+          if (!config) {
+            Logger.error("No model found");
+            return;
+          }
+          global.tools = getToolsOnNode(
+            mcpClients,
+            (x) => agent.allowMCPs == null || agent.allowMCPs.includes(x.name)
+          );
+          // console.log("tools", global.tools);
+          let openai = new OpenAiChannel(
+            { ...config, allowMCPs: agent.allowMCPs },
+            [
+              {
+                role: "system",
+                content: agent.prompt,
+              },
+              { role: "user", content: task.message },
+            ],
+            false
+          );
+          await openai.completion();
+          console.log("openai.completion() done", openai.messages);
+          const item = {
+            label: task.name + " - " + dayjs().format("YYYY-MM-DDTHH:mm:ss"),
+            key: v4(),
+            messages: openai.messages,
+            modelKey: config.key,
+            gptsKey: agent.key,
+            sended: true,
+            requestType: "stream",
+            allowMCPs: agent.allowMCPs,
+            attachedDialogueCount: undefined,
+            dateTime: Date.now(),
+            isCalled: false,
+            isTask: true,
+          };
+          ChatHistory.initSync().data.unshift(item);
+          ChatHistory.save();
+          // await onRequest(task.message);
+        } catch (e) {
+          console.error(" hyper_call_agent error: ", e);
+        } finally {
+          trigger();
+        }
+      });
+      tObj[task.key] = {
+        key: task.key,
+        cronT,
+      };
+    }
+  } else {
+    Logger.info(`Starting task ${taskkey}`);
+    let task = TaskList.initSync().data.find((x) => x.key === taskkey);
+
+    let find = tObj[taskkey];
+    if (find) {
+      find.cronT.stop();
+    }
+    let cronT = cron.schedule(task.cron, async () => {
+      if (task.disabled) {
+        return;
+      }
       Logger.log("Running task", task.name);
       try {
         let agent = GPTS.initSync().data.find((x) => x.key === task.agentKey);
@@ -62,7 +148,7 @@ export function start() {
         await openai.completion();
         console.log("openai.completion() done", openai.messages);
         const item = {
-          label: task.name +' - '+ dayjs().format("YYYY-MM-DDTHH:mm:ss"),
+          label: task.name + " - " + dayjs().format("YYYY-MM-DDTHH:mm:ss"),
           key: v4(),
           messages: openai.messages,
           modelKey: config.key,
@@ -80,15 +166,30 @@ export function start() {
         // await onRequest(task.message);
       } catch (e) {
         console.error(" hyper_call_agent error: ", e);
+      } finally {
+        trigger();
       }
     });
-    tArr.push(t);
+    tObj[task.key] = {
+      key: task.key,
+      cronT,
+    };
   }
 }
 
-export function stop() {
-  console.log(`Stopping tasks ${tArr.length}`);
-  for (let t of tArr) {
-    t.stop();
+export function stopTask(taskkey?: string) {
+  if (!taskkey) {
+    Logger.info(`Stopping tasks ${tObj.length}`);
+    for (let key in tObj) {
+      tObj[key].cronT.stop();
+    }
+    tObj = {};
+  } else {
+    Logger.info(`Stopping task ${taskkey}`);
+    const find = tObj[taskkey];
+    if (find) {
+      find.cronT.stop();
+    }
+    tObj[taskkey] = undefined;
   }
 }

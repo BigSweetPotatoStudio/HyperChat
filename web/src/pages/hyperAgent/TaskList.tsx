@@ -100,6 +100,29 @@ export function TaskListPage() {
       },
     },
     {
+      title: t`enabled`,
+      dataIndex: "enabled",
+      key: "enabled",
+      render: (text, row, index) => {
+        return (
+          <Switch
+            value={!row.disabled}
+            onChange={async (e) => {
+              if (e) {
+                await call("startTask", [row.key]);
+              } else {
+                await call("stopTask", [row.key]);
+              }
+
+              row.disabled = !e;
+              TaskList.save();
+              refresh();
+            }}
+          ></Switch>
+        );
+      },
+    },
+    {
       title: t`operation`,
       dataIndex: "operation",
       key: "operation",
@@ -145,17 +168,21 @@ export function TaskListPage() {
         open={visible}
         onCancel={() => setVisible(false)}
         initialValues={currRow}
-        onCreate={(v) => {
+        onCreate={async (v) => {
           if (v.key) {
             let i = TaskList.get().data.findIndex((x) => x.key == v.key);
             TaskList.get().data[i] = v;
-            TaskList.save();
+            await TaskList.save();
+            if (!v.disabled) {
+              await call("startTask", [v.key]);
+            }
             refresh();
             setVisible(false);
           } else {
             v.key = v4();
             TaskList.get().data.push(v);
-            TaskList.save();
+            await TaskList.save();
+            await call("startTask", [v.key]);
             refresh();
             setVisible(false);
           }

@@ -256,7 +256,7 @@ export type Task = {
   agentKey: string;
   description: string;
   cron: string;
-  state: "enabled" | "disabled";
+  disabled: boolean;
   status: "pending" | "runing" | "error" | "done";
 };
 
