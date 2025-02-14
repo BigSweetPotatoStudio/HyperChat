@@ -10,12 +10,13 @@ import { execFallback } from "./common/execFallback.mjs";
 import { v4 as uuid } from "uuid";
 
 import { koaBody } from "koa-body";
-import { electronData, HTTPPORT } from "./common/data.mjs";
+import { electronData } from "../../common/data";
 import { Command, CommandFactory } from "./command.mjs";
 import { appDataDir, userDataPath } from "./const.mjs";
 
 import Router from "koa-router";
 import Logger from "electron-log";
+import { HTTPPORT } from "./common/data.mjs";
 
 export function genRouter(c, prefix: string) {
   let functions = [];

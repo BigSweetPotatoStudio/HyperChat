@@ -13,7 +13,7 @@ import "./tailwind.css";
 import { ConfigProvider } from "antd";
 import { StyleProvider, px2remTransformer } from "@ant-design/cssinjs";
 import "darkreader";
-import { AppSetting } from "./common/data";
+import { AppSetting } from "../../common/data";
 
 (async () => {
   await AppSetting.init();

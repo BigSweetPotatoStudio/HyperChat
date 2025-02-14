@@ -43,7 +43,6 @@ import {
   VolumeX,
   Volume2,
 } from "lucide-react";
-import { AppSetting, electronData } from "../../common/data";
 import { debounce } from "../../common";
 import {
   CloudSyncOutlined,

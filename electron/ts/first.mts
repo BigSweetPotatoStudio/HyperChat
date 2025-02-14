@@ -13,9 +13,30 @@ import {
   shell,
 } from "electron";
 import { $, usePowerShell, fs, cd, fetch, sleep, path } from "zx";
-import { electronData } from "./common/data.mjs";
+
+import { electronData } from "../../common/data";
+import "./common/data.mjs";
 import { appDataDir } from "./const.mjs";
 
+
+
+// global.ext = {
+//   invert: async (name, args) => {
+//     // try {
+//     //   // const { Command } = await import(/* webpackIgnore: true */ "../command.mjs");
+//     //   let res = await Command[name](...args);
+//     //   return {
+//     //     code: 0,
+//     //     success: true,
+//     //     data: res,
+//     //   };
+//     // } catch (e) {
+//     //   Logger.error(name, args, e);
+//     //   return { success: false, code: 1, message: e.message };
+//     // }
+//   },
+//   receive: () => {},
+// };
 // 获取日志文件路径
 const logFilePath = log.transports.file.getFile().path;
 // 清空日志文件

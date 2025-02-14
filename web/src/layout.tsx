@@ -76,7 +76,7 @@ import {
   electronData,
   GPT_MODELS,
   MCP_CONFIG,
-} from "./common/data";
+} from "../../common/data";
 import { getClients } from "./common/mcp";
 import { EVENT } from "./common/event";
 import { OpenAiChannel } from "./common/openai";

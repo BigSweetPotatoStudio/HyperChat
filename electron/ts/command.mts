@@ -34,7 +34,7 @@ import { v4 as uuidV4 } from "uuid";
 import Screenshots from "electron-screenshots";
 import { getLocalIP, spawnWithOutput } from "./common/util.mjs";
 import { autoLauncher } from "./common/autoLauncher.mjs";
-import { AppSetting, electronData } from "./common/data.mjs";
+import { AppSetting, electronData } from "../../common/data";
 import { commandHistory, CommandStatus } from "./command_history.mjs";
 import { appDataDir } from "./const.mjs";
 import spawn from "cross-spawn";
@@ -60,8 +60,6 @@ import {
 } from "../../common/data";
 import { EVENT } from "./common/event";
 
-const userDataPath = app.getPath("userData");
-let videoDownloadWin: BrowserWindow;
 
 function logCommand(
   target: any,
@@ -216,7 +214,7 @@ export class CommandFactory {
     return clipboard.readText();
   }
   async getData(): Promise<any> {
-    let { electronData: electron_data } = await import("./common/data.mjs");
+    let { electronData: electron_data } = await import("../../common/data");
     return electron_data.get();
   }
   async isAutoLauncher(): Promise<boolean> {

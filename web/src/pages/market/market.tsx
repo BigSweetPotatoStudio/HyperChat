@@ -13,7 +13,7 @@ import {
   Tag,
   Tooltip,
 } from "antd";
-import { electronData, MCP_CONFIG, MCP_CONFIG_TYPE } from "../../common/data";
+import { electronData, MCP_CONFIG, MCP_CONFIG_TYPE } from "../../../../common/data";
 import { EVENT } from "../../common/event";
 import { Code } from "../../common/code";
 // import * as DATA from "../../../public/mcp_data.js";

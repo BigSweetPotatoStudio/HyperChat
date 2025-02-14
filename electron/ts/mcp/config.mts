@@ -15,7 +15,7 @@ import {
   AppSetting,
   MCP_CONFIG,
   MCP_CONFIG_TYPE,
-} from "../common/data.mjs";
+} from "../../../common/data";
 import { request } from "http";
 
 import { spawnWithOutput } from "../common/util.mjs";

@@ -58,12 +58,3 @@ if (electronData.get().firstOpen) {
 //   }
 // } catch (e) {}
 
-export {
-  AppSetting,
-  ChatHistory,
-  GPTS,
-  GPT_MODELS,
-  MCP_CONFIG,
-  electronData,
-  MCP_CONFIG_TYPE,
-};

@@ -3,11 +3,10 @@ import OpenAI from "openai";
 import type { ChatCompletionTool } from "openai/src/resources/chat/completions";
 import * as MCPTypes from "@modelcontextprotocol/sdk/types.js";
 import { sleep } from "./sleep";
-import { MCP_CONFIG, MCP_CONFIG_TYPE } from "./data";
 import type { MCPClient } from "../../../electron/ts/mcp/config.mjs";
 import { get } from "http";
 import { clientName2Index } from "./openai";
-import { TEMP_FILE } from "../../../common/data";
+import { TEMP_FILE, MCP_CONFIG, MCP_CONFIG_TYPE } from "../../../common/data";
 import { e } from "./service";
 
 let init = false;

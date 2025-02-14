@@ -6,7 +6,7 @@ import path from "path";
 import { progressList } from "./progress.mjs";
 import type { FeatureExtractionPipeline } from "@xenova/transformers";
 import { fs } from "zx";
-import { electronData } from "./data.mjs";
+import { electronData } from "../../../common/data";
 
 export class FeatureExtraction {
   // NOTE: Replace this with your own task and model

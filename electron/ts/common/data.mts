@@ -58,4 +58,4 @@ electronData.save();
 
 taskHistory.initSync({ force: true });
 
-export { electronData, taskHistory, AppSetting, MCP_CONFIG, MCP_CONFIG_TYPE };
+

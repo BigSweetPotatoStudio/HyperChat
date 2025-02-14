@@ -13,6 +13,7 @@ interface Window {
   injectedRN: boolean;
   MyWebView: any;
   translate: any;
+  tools: any;
   // clarity: any;
 }
 

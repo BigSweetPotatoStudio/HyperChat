@@ -42,7 +42,7 @@ import {
 import { HeaderContext } from "./common/context";
 import { PageContainer, ProCard, ProLayout } from "@ant-design/pro-components";
 import { getRoute, route } from "./router";
-import { AppSetting } from "./common/data";
+import { AppSetting } from "../../common/data";
 import { call } from "./common/call";
 
 export default function App() {
