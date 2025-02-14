@@ -35,41 +35,41 @@ if (os.platform() === "win32") {
   usePowerShell();
 }
 
-fs.writeFileSync(
-  "./electron/node_modules/@modelcontextprotocol/sdk/dist/client/stdio.js",
-  fs
-    .readFileSync(
-      "./electron/node_modules/@modelcontextprotocol/sdk/dist/client/stdio.js"
-    )
-    .toString()
-    .replace(
-      `import { spawn } from "node:child_process";`,
-      `import  spawn  from "cross-spawn";`
-    )
-);
+// fs.writeFileSync(
+//   "./electron/node_modules/@modelcontextprotocol/sdk/dist/client/stdio.js",
+//   fs
+//     .readFileSync(
+//       "./electron/node_modules/@modelcontextprotocol/sdk/dist/client/stdio.js"
+//     )
+//     .toString()
+//     .replace(
+//       `import { spawn } from "node:child_process";`,
+//       `import  spawn  from "cross-spawn";`
+//     )
+// );
 
-if (
-  !fs
-    .readFileSync(
-      "./electron/node_modules/@modelcontextprotocol/sdk/dist/client/sse.js"
-    )
-    .toString()
-    .includes(`'eventsource'`)
-) {
-  fs.writeFileSync(
-    "./electron/node_modules/@modelcontextprotocol/sdk/dist/client/sse.js",
-    fs
-      .readFileSync(
-        "./electron/node_modules/@modelcontextprotocol/sdk/dist/client/sse.js"
-      )
-      .toString()
-      .replace(
-        `import { JSONRPCMessageSchema } from "../types.js";`,
-        `import { JSONRPCMessageSchema } from "../types.js";
-import {EventSource} from 'eventsource'`
-      )
-  );
-}
+// if (
+//   !fs
+//     .readFileSync(
+//       "./electron/node_modules/@modelcontextprotocol/sdk/dist/client/sse.js"
+//     )
+//     .toString()
+//     .includes(`'eventsource'`)
+// ) {
+//   fs.writeFileSync(
+//     "./electron/node_modules/@modelcontextprotocol/sdk/dist/client/sse.js",
+//     fs
+//       .readFileSync(
+//         "./electron/node_modules/@modelcontextprotocol/sdk/dist/client/sse.js"
+//       )
+//       .toString()
+//       .replace(
+//         `import { JSONRPCMessageSchema } from "../types.js";`,
+//         `import { JSONRPCMessageSchema } from "../types.js";
+// import {EventSource} from 'eventsource'`
+//       )
+//   );
+// }
 
 const spawnWithOutput = (command: string, args: string[], options) => {
   return new Promise((resolve, reject) => {
