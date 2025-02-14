@@ -146,7 +146,7 @@ window.ext.receive("message-from-main", (msg) => {
   if (msg.type == "ChatHistoryUpdate") {
     setTimeout(() => {
       ChatHistory.init({ force: true });
-    }, 100);
+    }, 300);
   }
 });
 
