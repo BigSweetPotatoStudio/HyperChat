@@ -13,7 +13,11 @@ import {
   Tag,
   Tooltip,
 } from "antd";
-import { electronData, MCP_CONFIG, MCP_CONFIG_TYPE } from "../../../../common/data";
+import {
+  electronData,
+  MCP_CONFIG,
+  MCP_CONFIG_TYPE,
+} from "../../../../common/data";
 import { EVENT } from "../../common/event";
 import { Code } from "../../common/code";
 // import * as DATA from "../../../public/mcp_data.js";
@@ -194,9 +198,7 @@ export function Market() {
   };
   const [npx, setNpxVer] = useState("");
   const [uv, setUvVer] = useState("");
-  const [threePartys, setThreePartys] = useState<
-    Array<MCP_CONFIG_TYPE & { name: string }>
-  >([]);
+  const [threePartys, setThreePartys] = useState<Array<{ name: string }>>([]);
   const [mcpLoadingObj, setMcpLoadingObj] = useState(
     {} as any as { [s: string]: boolean },
   );
@@ -204,10 +206,10 @@ export function Market() {
     let arr = [];
     for (let x in mcp.mcpServers) {
       if (mcpExtensionDataObj[x] == undefined) {
-        arr.push({ ...mcp.mcpServers[x], name: x });
+        arr.push({ name: x });
       } else {
         if (mcp.mcpServers[x]?.hyperchat?.config == undefined) {
-          arr.push({ ...mcp.mcpServers[x], name: x });
+          arr.push({ name: x });
         }
       }
     }
@@ -263,7 +265,7 @@ export function Market() {
 
   useEffect(() => {}, []);
 
-  const enableAndDisable = (item) => {
+  const RenderEnableAndDisable = (item: { name: string }) => {
     return (
       <a
         className="text-lg hover:text-cyan-400"
@@ -310,7 +312,7 @@ export function Market() {
       </a>
     );
   };
-  const ListItemMeta = (item) => {
+  const ListItemMeta = (item: { name: string; description?: string }) => {
     return (
       <List.Item.Meta
         className="px-2"
@@ -321,9 +323,10 @@ export function Market() {
               "built-in" && <Tag color="blue">built-in</Tag>}
             {mcpLoadingObj[item.name] ? (
               <SyncOutlined spin className="text-blue-400" />
-            ) : getMcpClients()[item.name] == null ? null : getMcpClients()[
-                item.name
-              ]?.status == "connected" ? (
+            ) : getMcpClients()[item.name] == null ||
+              MCP_CONFIG.get().mcpServers[item.name]
+                .disabled ? null : getMcpClients()[item.name]?.status ==
+              "connected" ? (
               <CheckCircleTwoTone twoToneColor="#52c41a" />
             ) : (
               <DisconnectOutlined className="text-red-400" />
@@ -486,7 +489,7 @@ export function Market() {
                           ),
 
                           MCP_CONFIG.get().mcpServers[item.name]
-                            ? enableAndDisable(item)
+                            ? RenderEnableAndDisable(item)
                             : undefined,
                           MCP_CONFIG.get().mcpServers[item.name] &&
                           MCP_CONFIG.get().mcpServers[item.name]?.hyperchat
@@ -588,7 +591,7 @@ export function Market() {
                           ),
 
                           MCP_CONFIG.get().mcpServers[item.name]
-                            ? enableAndDisable(item)
+                            ? RenderEnableAndDisable(item)
                             : undefined,
                           MCP_CONFIG.get().mcpServers[item.name] &&
                           MCP_CONFIG.get().mcpServers[item.name]?.hyperchat

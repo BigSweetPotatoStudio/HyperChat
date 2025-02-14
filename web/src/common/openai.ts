@@ -389,13 +389,16 @@ export class OpenAiChannel {
             signal: this.abortController.signal,
           },
         );
+        if (!Array.isArray(chatCompletion.choices)) {
+          throw new Error((chatCompletion as any)?.error?.message || "Provider returned error");
+        }
         this.lastMessage.content_status = "success";
         this.totalTokens = chatCompletion?.usage?.total_tokens;
         res.content_usage.completion_tokens =
           chatCompletion?.usage?.completion_tokens;
         res.content_usage.prompt_tokens = chatCompletion?.usage?.prompt_tokens;
         res.content_usage.total_tokens = chatCompletion?.usage?.total_tokens;
-        // console.log("chatCompletion: ", chatCompletion);
+
         let openaires =
           chatCompletion.choices[chatCompletion.choices.length - 1].message;
 
