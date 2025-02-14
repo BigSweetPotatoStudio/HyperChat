@@ -144,7 +144,9 @@ import { t } from "../../i18n";
 
 window.ext.receive("message-from-main", (msg) => {
   if (msg.type == "ChatHistoryUpdate") {
-    ChatHistory.init({ force: true });
+    setTimeout(() => {
+      ChatHistory.init({ force: true });
+    }, 100);
   }
 });
 
@@ -1459,7 +1461,7 @@ export const Chat = ({
                         },
                       ],
                       onClick: (e) => {
-                        currentChat.current.requestType = e.key;
+                        currentChat.current.requestType = e.key as any;
                         createChat();
                       },
                     }}

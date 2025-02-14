@@ -112,7 +112,7 @@ export type ChatHistoryItem = {
   sended: boolean;
   icon?: string;
   allowMCPs: string[];
-  requestType: string;
+  requestType: "complete" | "stream";
   attachedDialogueCount?: number;
   dateTime: number;
   isCalled: boolean;

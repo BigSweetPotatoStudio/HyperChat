@@ -34,7 +34,7 @@ import { v4 as uuidV4 } from "uuid";
 import Screenshots from "electron-screenshots";
 import { getLocalIP, spawnWithOutput } from "./common/util.mjs";
 import { autoLauncher } from "./common/autoLauncher.mjs";
-import { AppSetting, electronData } from "../../common/data";
+import { AppSetting, electronData, TaskList } from "../../common/data";
 import { commandHistory, CommandStatus } from "./command_history.mjs";
 import { appDataDir } from "./const.mjs";
 import spawn from "cross-spawn";
@@ -59,7 +59,7 @@ import {
   KNOWLEDGE_Store,
 } from "../../common/data";
 import { EVENT } from "./common/event";
-import { startTask, stopTask } from "./mcp/task.mjs";
+import { runTask, startTask, stopTask } from "./mcp/task.mjs";
 
 function logCommand(
   target: any,
@@ -377,6 +377,10 @@ export class CommandFactory {
   }
   async stopTask(taskkey?: string) {
     return stopTask(taskkey);
+  }
+  async runTask(taskkey: string) {
+    let task = TaskList.initSync().data.find((x) => x.key === taskkey);
+    return runTask(task);
   }
 }
 
