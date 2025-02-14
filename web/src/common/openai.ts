@@ -111,7 +111,7 @@ export class OpenAiChannel {
     this.openai = new OpenAI({
       baseURL: options.baseURL,
       apiKey: options.apiKey, // This is the default and can be omitted
-      dangerouslyAllowBrowser: true,
+      dangerouslyAllowBrowser: process.env.runtime !== "node",
       defaultHeaders: {
         "HTTP-Referer": "https://www.dadigua.men", // Optional. Site URL for rankings on openrouter.ai.
         "X-Title": "HyperChat", // Optional. Site title for rankings on openrouter.ai.
@@ -282,7 +282,7 @@ export class OpenAiChannel {
             model: this.options.model,
             stream: true,
             stream_options: {
-              include_usage: this.options.model == "qwen-plus" ? false : true, // qwen bug stream not support include_usage
+              include_usage: true, // qwen bug stream not support include_usage
             },
             tools: tools && this.tools_format(tools),
           },
@@ -390,7 +390,10 @@ export class OpenAiChannel {
           },
         );
         if (!Array.isArray(chatCompletion.choices)) {
-          throw new Error((chatCompletion as any)?.error?.message || "Provider returned error");
+          throw new Error(
+            (chatCompletion as any)?.error?.message ||
+              "Provider returned error",
+          );
         }
         this.lastMessage.content_status = "success";
         this.totalTokens = chatCompletion?.usage?.total_tokens;
@@ -503,7 +506,7 @@ export class OpenAiChannel {
               content: { error: e.message },
             };
           });
-        console.log("call_res", call_res);
+        console.log("call_response: ", call_res);
 
         if (call_res.content == null) {
           this.lastMessage.content = JSON.stringify(call_res);
@@ -586,29 +589,12 @@ export class OpenAiChannel {
   async testTool() {
     try {
       const tools = [
-        // {
-        //   type: "function" as const,
-        //   function: {
-        //     name: "get_weather",
-        //     parameters: {
-        //       type: "object",
-        //       properties: {
-        //         location: { type: "string" },
-        //       },
-        //       required: ["location"],
-        //       additionalProperties: false,
-        //     },
-        //     // returns: {
-        //     //   type: "string",
-        //     //   description: "The weather in the location",
-        //     // },
-        //   },
-        // },
         {
           type: "function" as const,
           function: {
             name: "get_weather",
             description: "Get the weather in a given location",
+            // strict: true,
             parameters: {
               type: "object",
               properties: {
@@ -617,6 +603,7 @@ export class OpenAiChannel {
                   description: "The city and state, e.g. Chicago, IL",
                 },
                 unit: { type: "string", enum: ["celsius", "fahrenheit"] },
+                // additionalProperties: false,
               },
               required: ["location"],
             },

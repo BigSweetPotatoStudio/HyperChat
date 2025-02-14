@@ -218,7 +218,7 @@ export async function initMcpClients() {
 
   while (1) {
     if (firstRunStatus == 1) {
-      console.log("getMcpClients runing");
+      console.log("waiting");
       await sleep(100);
     } else {
       break;

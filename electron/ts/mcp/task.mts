@@ -15,7 +15,28 @@ global.ext = {
   invert: async (name, args) => {
     try {
       // const { Command } = await import(/* webpackIgnore: true */ "../command.mjs");
-      let res = await Command[name](...args);
+      let res;
+      const [clientName, functionName, argumentsJSON] = args;
+      if (
+        name === "mcpCallTool" &&
+        clientName == "hyper_agent" &&
+        functionName.includes("call_agent")
+      ) {
+        let agent = GPTS.initSync().data.find(
+          (x) => x.label === argumentsJSON.agent_name
+        );
+        if (agent == null) {
+          throw new Error(`Agent ${argumentsJSON.agent_name} not found`);
+        }
+        res = await callAgent({
+          name: agent.label,
+          agentKey: agent.key,
+          message: argumentsJSON.message,
+        });
+      } else {
+        res = await Command[name](...args);
+      }
+
       return {
         code: 0,
         success: true,
@@ -47,7 +68,67 @@ function trigger() {
     data: {},
   });
 }
+export async function callAgent(obj: {
+  name?: string;
+  agentKey: string;
+  message: string;
+}) {
+  Logger.log("Running callAgent", obj.name, obj.message, obj.agentKey);
+  try {
+    let agent = GPTS.initSync().data.find((x) => x.key === obj.agentKey);
+    let config =
+      GPT_MODELS.initSync().data.find((x) => x.key == agent.modelKey) ||
+      GPT_MODELS.initSync().data[0];
 
+    if (!config) {
+      Logger.error("No model found");
+      return;
+    }
+    global.tools = getToolsOnNode(
+      mcpClients,
+      (x) => agent.allowMCPs == null || agent.allowMCPs.includes(x.name)
+    );
+
+    let openai = new OpenAiChannel(
+      { ...config, allowMCPs: agent.allowMCPs },
+      [
+        {
+          role: "system",
+          content: agent.prompt,
+        },
+        { role: "user", content: obj.message },
+      ],
+      false
+    );
+    await openai.completion();
+    let res = openai.lastMessage.content;
+    // console.log("openai.completion() done", openai.messages);
+    const item: ChatHistoryItem = {
+      label: obj.message,
+      key: v4(),
+      messages: openai.messages,
+      modelKey: config.key,
+      gptsKey: agent.key,
+      sended: true,
+      requestType: "complete",
+      allowMCPs: agent.allowMCPs,
+      attachedDialogueCount: undefined,
+      dateTime: Date.now(),
+      isCalled: true,
+      isTask: false,
+      taskKey: undefined,
+    };
+    ChatHistory.initSync().data.unshift(item);
+    await ChatHistory.save();
+    return res;
+    // await onRequest(task.message);
+  } catch (e) {
+    console.error(" hyper_call_agent error: ", e);
+    throw e;
+  } finally {
+    trigger();
+  }
+}
 export async function runTask(task: Task) {
   Logger.log("Running task", task.name);
   try {
@@ -97,7 +178,7 @@ export async function runTask(task: Task) {
     await ChatHistory.save();
     // await onRequest(task.message);
   } catch (e) {
-    console.error(" hyper_call_agent error: ", e);
+    console.error(" task_call_agent error: ", e);
   } finally {
     trigger();
   }
