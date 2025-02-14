@@ -125,6 +125,8 @@ export class MCPClient {
     }
 
     let client = this.client;
+    // let c = client.getServerCapabilities();
+    // console.log(c);
     let tools_res = await client.listTools().catch((e) => {
       return { tools: [] };
     });
@@ -151,12 +153,8 @@ export class MCPClient {
       if (this.config.hyperchat.type == "sse") {
         //
       } else {
-        log.error("client error", e);
+        log.error("client onerror: ", e);
       }
-
-      // setTimeout(() => {
-      //   this.open();
-      // }, 3000);
     };
 
     this.tools = tools_res.tools;
@@ -165,15 +163,10 @@ export class MCPClient {
     this.status = "connected";
   }
   async openSse(c?: MCP_CONFIG_TYPE) {
-    const client = new Client(
-      {
-        name: this.name,
-        version: "1.0.0",
-      },
-      {
-        capabilities: {},
-      }
-    );
+    const client = new Client({
+      name: this.name,
+      version: "1.0.0",
+    });
 
     let config = c || (await getConfg().then((r) => r.mcpServers[this.name]));
     let urlStr = config.hyperchat.url;
@@ -193,15 +186,10 @@ export class MCPClient {
         env: Object.assign(getMyDefaultEnvironment(), config.env),
       });
 
-      const client = new Client(
-        {
-          name: key,
-          version: "1.0.0",
-        },
-        {
-          capabilities: {},
-        }
-      );
+      const client = new Client({
+        name: key,
+        version: "1.0.0",
+      });
 
       await client.connect(transport);
       this.client = client;

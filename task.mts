@@ -35,18 +35,18 @@ if (os.platform() === "win32") {
   usePowerShell();
 }
 
-// fs.writeFileSync(
-//   "./electron/node_modules/@modelcontextprotocol/sdk/dist/client/stdio.js",
-//   fs
-//     .readFileSync(
-//       "./electron/node_modules/@modelcontextprotocol/sdk/dist/client/stdio.js"
-//     )
-//     .toString()
-//     .replace(
-//       `import { spawn } from "node:child_process";`,
-//       `import  spawn  from "cross-spawn";`
-//     )
-// );
+fs.writeFileSync(
+  "./electron/node_modules/@modelcontextprotocol/sdk/dist/esm/client/stdio.js",
+  fs
+    .readFileSync(
+      "./electron/node_modules/@modelcontextprotocol/sdk/dist/esm/client/stdio.js"
+    )
+    .toString()
+    .replace(
+      `import { spawn } from "node:child_process";`,
+      `import  spawn  from "cross-spawn";`
+    )
+);
 
 // if (
 //   !fs
