@@ -8,6 +8,7 @@ import {
   useLocation,
 } from "react-router-dom";
 import { v4 } from "uuid";
+import OpenAI from "openai";
 import Clarity from "@microsoft/clarity";
 import {
   Button,
@@ -188,9 +189,9 @@ export function Layout() {
         navigate("/Chat");
       }
     });
-    EVENT.on("setIsToolsShowTrue", () => {
-      setIsToolsShow(true);
-    });
+    // EVENT.on("setIsToolsShowTrue", () => {
+    //   setIsToolsShow(true);
+    // });
     EVENT.on("setIsModelConfigOpenTrue", () => {
       setIsModelConfigOpen(true);
     });
@@ -230,11 +231,9 @@ export function Layout() {
   const [isAddModelConfigOpen, setIsAddModelConfigOpen] = useState(false);
   // const [currRow, setCurrRow] = useState({} as any);
   const [form] = Form.useForm();
-  const [mcpform] = Form.useForm();
-  const [isToolsShow, setIsToolsShow] = useState(false);
 
-  const [isAddMCPConfigOpen, setIsAddMCPConfigOpen] = useState(false);
-  const [loadingOpenMCP, setLoadingOpenMCP] = useState(false);
+  // const [isToolsShow, setIsToolsShow] = useState(false);
+
   const [loadingCheckLLM, setLoadingCheckLLM] = useState(false);
   const [syncStatus, setSyncStatus] = useState(0);
   useEffect(() => {
@@ -323,6 +322,9 @@ export function Layout() {
       refresh();
     })();
   }, []);
+
+  const [providerValue, setProviderValue] = useState(Providers[0].value);
+  const [modelOptions, setModelOptions] = useState([]);
 
   return (
     <ConfigProvider locale={locale}>
@@ -493,6 +495,8 @@ export function Layout() {
                   type="link"
                   onClick={() => {
                     form.resetFields();
+                    setProviderValue(Providers[0].value);
+                    setModelOptions([]);
                     setIsAddModelConfigOpen(true);
                   }}
                 >
@@ -554,6 +558,8 @@ export function Layout() {
                         if (record.provider == null) {
                           record.provider = "other";
                         }
+                        setProviderValue(record.provider);
+                        setModelOptions([]);
                         form.setFieldsValue(record);
                         setIsAddModelConfigOpen(true);
                       }}
@@ -756,11 +762,13 @@ export function Layout() {
             <Select
               options={Providers}
               onChange={(e) => {
+                setProviderValue(e);
+                setModelOptions([]);
                 let find = Providers.find((x) => x.value == e);
                 if (find == null) {
                   return;
                 }
-                console.log(find);
+                // console.log(find);
                 let value: any = {
                   baseURL: find.baseURL,
                 };
@@ -784,16 +792,37 @@ export function Layout() {
             rules={[{ required: true, message: "Please enter" }]}
           >
             <Input
-              disabled={
-                !["other", "ollama"].includes(form.getFieldValue("provider"))
-              }
+              // disabled={
+              //   !["other", "ollama"].includes(form.getFieldValue("provider"))
+              // }
               placeholder={t`Please enter baseURL`}
             ></Input>
           </Form.Item>
           <Form.Item
             name="apiKey"
             label="apiKey"
-            rules={[{ required: true, message: "Please enter" }]}
+            rules={[
+              { required: true, message: "Please enter" },
+              ({ getFieldValue }) => ({
+                async validator(_, value) {
+                  if (value) {
+                    const openai = new OpenAI({
+                      baseURL: getFieldValue("baseURL"),
+                      apiKey: value,
+                      dangerouslyAllowBrowser: true,
+                    });
+                    const list = await openai.models.list();
+                    // console.log(list);
+                    return Promise.resolve();
+                  }
+                  // return Promise.reject(
+                  //   new Error(
+                  //     "apikey error",
+                  //   ),
+                  // );
+                },
+              }),
+            ]}
           >
             <Input placeholder={t`Please enter apiKey`}></Input>
           </Form.Item>
@@ -803,15 +832,37 @@ export function Layout() {
             label="model"
             rules={[{ required: true, message: "Please enter" }]}
           >
-            <InputPlus
+            {/* <InputPlus
               placeholder={t`Please enter or select the model`}
               options={Providers.find(
-                (x) =>
-                  x.value ==
-                  (form.getFieldValue("provider") || Providers[0].value),
+                (x) => x.value == providerValue,
               )?.models?.map((x) => {
                 return { value: x, label: x };
               })}
+            /> */}
+            <Select
+              showSearch
+              placeholder={t`Please enter or select the model`}
+              optionFilterProp="label"
+              onFocus={async () => {
+                const openai = new OpenAI({
+                  baseURL: form.getFieldValue("baseURL"),
+                  apiKey: form.getFieldValue("apiKey") || "",
+                  dangerouslyAllowBrowser: true,
+                });
+                try {
+                  const list = await openai.models.list();
+                  setModelOptions(
+                    list.data.map((x) => {
+                      return { value: x.id, label: x.id };
+                    }),
+                  );
+                  // console.log(list);
+                } catch {
+
+                }
+              }}
+              options={modelOptions}
             />
           </Form.Item>
           <Form.Item name="name" label="Alias">
