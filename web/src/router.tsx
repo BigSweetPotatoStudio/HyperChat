@@ -17,6 +17,7 @@ import { KnowledgeBase } from "./pages/knowledgeBase/knowledgeBase";
 import { WorkSpace } from "./pages/workspace";
 import { TaskListPage } from "./pages/hyperAgent/TaskList";
 import { t } from "./i18n";
+import { TaskResultsPage } from "./pages/hyperAgent/TaskResults";
 type RouteType = {
   path: string;
   name: React.ReactNode;
@@ -57,7 +58,7 @@ let route: RouteType = {
     },
     {
       path: "/KnowledgeBase",
-      name: t`Knowledge Base(Experimental)`,
+      name: t`Knowledge Base(Exp)`,
       icon: "📚",
       component: <KnowledgeBase />,
     },
@@ -68,10 +69,25 @@ let route: RouteType = {
       component: <HpyerTools />,
     },
     {
-      path: "/TaskList",
+      path: "/Task",
       name: t`TaskList`,
       icon: "📅",
-      component: <TaskListPage />,
+      component: <Container from="/Task" default="List" />,
+      routes: [
+        {
+          path: "/list",
+          name: t`TaskList`,
+          component: <TaskListPage />,
+          hideInMenu: true,
+
+        },
+        {
+          path: "/Results",
+          name: t`TaskResults`,
+          component: <TaskResultsPage />,
+          hideInMenu: true,
+        },
+      ],
     },
     {
       path: "/Setting",

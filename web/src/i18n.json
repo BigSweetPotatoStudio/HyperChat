@@ -363,13 +363,13 @@
         "en": "Prompt",
         "zh": "提示"
     },
-    "Prompt Content": {
-        "en": "Prompt Content",
-        "zh": "提示内容"
+    "System Prompt": {
+        "en": "System Prompt",
+        "zh": "系统提示词"
     },
-    "Please enter Prompt Content": {
-        "en": "Please enter Prompt Content",
-        "zh": "请输入提示内容"
+    "Please enter System Prompt": {
+        "en": "Please enter System Prompt",
+        "zh": "请输入系统提示词"
     },
     "Please select default LLM": {
         "en": "Please select default LLM",
@@ -639,8 +639,8 @@
         "en": "Here, you would input the result of the command echo $PATH.",
         "zh": "在这里，你将输入命令 echo $PATH 的结果。"
     },
-    "Knowledge Base(Experimental)": {
-        "en": "Knowledge Base(Experimental)",
+    "Knowledge Base(Exp)": {
+        "en": "Knowledge Base(Exp)",
         "zh": "知识库（实验）"
     },
     "HyperTools": {
@@ -806,5 +806,41 @@
     "TaskList": {
         "en": "TaskList",
         "zh": "任务列表"
+    },
+    "TaskResults": {
+        "en": "TaskResults",
+        "zh": "任务结果"
+    },
+    "enabled": {
+        "en": "enabled",
+        "zh": "启用"
+    },
+    "Are you sure to delete this task?": {
+        "en": "Are you sure to delete this task?",
+        "zh": "你确定要删除这个任务吗"
+    },
+    "ViewResults": {
+        "en": "ViewResults",
+        "zh": "查看结果"
+    },
+    "dateTime": {
+        "en": "dateTime",
+        "zh": "日期时间"
+    },
+    "Bcak": {
+        "en": "Bcak",
+        "zh": "返回"
+    },
+    "Are you sure to delete this?": {
+        "en": "Are you sure to delete this?",
+        "zh": "你确定要删除这个吗?"
+    },
+    "result": {
+        "en": "result",
+        "zh": "结果"
+    },
+    "View": {
+        "en": "View",
+        "zh": "查看"
     }
 }

@@ -94,7 +94,7 @@ const ModalForm: React.FC<CollectionCreateFormProps> = ({
         label={t`message`}
         rules={[{ required: true, message: t`Please enter` }]}
       >
-        <Input.TextArea placeholder={t`Please enter`} />
+        <Input.TextArea placeholder={t`Please enter`} rows={4}/>
       </Form.Item>
       <Form.Item<Values>
         name="cron"
@@ -107,7 +107,7 @@ const ModalForm: React.FC<CollectionCreateFormProps> = ({
         name="description"
         label={t`description`}
       >
-        <Input.TextArea placeholder={t`Please enter`} rows={4} />
+        <Input.TextArea placeholder={t`Please enter`} rows={2} />
       </Form.Item>
     </Form>
   );
