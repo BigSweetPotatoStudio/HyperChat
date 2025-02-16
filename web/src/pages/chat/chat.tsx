@@ -142,23 +142,70 @@ import { ChatHistoryItem } from "../../../../common/data";
 import { useForm } from "antd/es/form/Form";
 import { t } from "../../i18n";
 
-window.ext.receive("message-from-main", (msg) => {
-  if (msg.type == "ChatHistoryUpdate") {
-    setTimeout(() => {
-      ChatHistory.init({ force: true });
-    }, 300);
-  }
-});
-
 export const Chat = ({
   onTitleChange = undefined,
   data = {
-    agent_name: "",
+    agentKey: "",
     message: "",
     onComplete: (text) => {},
     onError: (e) => {},
   },
+  onlyView = {
+    histroyKey: "",
+  },
 }) => {
+  let init = useCallback(() => {
+    console.log("init");
+
+    (async () => {
+      await ChatHistory.init();
+      await GPTS.init();
+      await GPT_MODELS.init();
+      refresh();
+      setHistoryFilterSign(1);
+      if (data.agentKey) {
+        try {
+          // let agents = await GPTS.init();
+          // let agent = agents.data.find((x) => x.label == data.agentKey);
+          await onGPTSClick(data.agentKey);
+
+          if (data.message) {
+            await onRequest(data.message);
+            data.onComplete(openaiClient.current.lastMessage.content);
+          }
+        } catch (e) {
+          console.error(" hyper_call_agent error: ", e);
+          data.onError(e);
+        }
+      } else if (onlyView) {
+        if (onlyView.histroyKey) {
+          let item = ChatHistory.get().data.find(
+            (x) => x.key === onlyView.histroyKey,
+          );
+          if (item) {
+            currentChatReset({
+              ...item,
+              messages: [],
+            });
+
+            setTimeout(() => {
+              currentChatReset(item);
+              createChat();
+            });
+          }
+        }
+      } else {
+        currentChatReset({}, "", true);
+      }
+    })();
+  }, []);
+  useEffect(() => {
+    init();
+    EVENT.on("refresh", init);
+    return () => {
+      EVENT.off("refresh", init);
+    };
+  }, []);
   const [num, setNum] = React.useState(0);
   const refresh = () => {
     setNum((n) => n + 1);
@@ -180,58 +227,11 @@ export const Chat = ({
     loadMoreData(false);
   };
 
-  // const [clients, setClients] = React.useState<InitedClient[]>([]);
-  // const [prompts, setPrompts] = React.useState<InitedClient["prompts"]>([]);
-  // const [resources, setResources] = React.useState<InitedClient["resources"]>(
-  //   [],
-  // );
   const openaiClient = useRef<OpenAiChannel>();
 
   const clientsRef = useRef<InitedClient[]>([]);
   const promptsRef = useRef<InitedClient["prompts"]>([]);
   const resourcesRef = useRef<InitedClient["resources"]>([]);
-
-  let init = useCallback(() => {
-    console.log("init");
-    ChatHistory.init().then(() => {
-      setHistoryFilterSign(1);
-    });
-
-    GPTS.init().then(() => {
-      refresh();
-    });
-    GPT_MODELS.init().then(() => {
-      refresh();
-    });
-
-    (async () => {
-      if (data.agent_name) {
-        try {
-          let agents = await GPTS.init();
-          let agent = agents.data.find((x) => x.label == data.agent_name);
-          await onGPTSClick(agent.key);
-
-          if (data.message) {
-            await onRequest(data.message);
-          }
-
-          data.onComplete(openaiClient.current.lastMessage.content);
-        } catch (e) {
-          console.error(" hyper_call_agent error: ", e);
-          data.onError(e);
-        }
-      } else {
-        currentChatReset({}, "", true);
-      }
-    })();
-  }, []);
-  useEffect(() => {
-    init();
-    EVENT.on("refresh", init);
-    return () => {
-      EVENT.off("refresh", init);
-    };
-  }, []);
 
   const [isOpenPromptsModal, setIsOpenPromptsModal] = useState(false);
   const [promptsModalValue, setPromptsModalValue] = useState({} as any);
@@ -251,7 +251,7 @@ export const Chat = ({
     allowMCPs: [],
     attachedDialogueCount: undefined,
     dateTime: Date.now(),
-    isCalled: data.agent_name ? true : false,
+    isCalled: data.agentKey ? true : false,
     isTask: false,
   };
 
@@ -907,13 +907,54 @@ export const Chat = ({
       <div className="h-full rounded-lg bg-white p-4">
         <XProvider direction={direction}>
           <Flex style={{ height: "100%" }} gap={12}>
-            <div
-              className="h-full flex-none overflow-hidden pr-2"
-              style={{ width: "240px" }}
-            >
-              {selectGptsKey.current ? (
-                <div className="flex">
+            {!onlyView.histroyKey && (
+              <div
+                className="h-full flex-none overflow-hidden pr-2"
+                style={{ width: "240px" }}
+              >
+                {selectGptsKey.current ? (
+                  <div className="flex">
+                    <Button
+                      onClick={() => {
+                        currentChatReset({
+                          messages: [],
+                          allowMCPs: clientsRef.current.map((v) => v.name),
+                          sended: false,
+                          gptsKey: undefined,
+                        });
+                        selectGptsKey.current = undefined;
+                        loadMoreData(false);
+                      }}
+                    >
+                      <LeftOutlined />
+                    </Button>
+                    <Button
+                      type="primary"
+                      className="ml-1 w-full"
+                      onClick={() => {
+                        if (openaiClient.current) {
+                          let find = GPTS.get().data.find(
+                            (y) => y.key === currentChat.current.gptsKey,
+                          );
+                          currentChatReset(
+                            {
+                              allowMCPs: find.allowMCPs,
+                              gptsKey: find.key,
+                              modelKey: find.modelKey,
+                              attachedDialogueCount: find.attachedDialogueCount,
+                            },
+                            find.prompt,
+                          );
+                        }
+                      }}
+                    >
+                      {t`New Chat`}
+                    </Button>
+                  </div>
+                ) : (
                   <Button
+                    type="primary"
+                    className="ml-1 w-full"
                     onClick={() => {
                       currentChatReset({
                         messages: [],
@@ -925,201 +966,162 @@ export const Chat = ({
                       loadMoreData(false);
                     }}
                   >
-                    <LeftOutlined />
-                  </Button>
-                  <Button
-                    type="primary"
-                    className="ml-1 w-full"
-                    onClick={() => {
-                      if (openaiClient.current) {
-                        let find = GPTS.get().data.find(
-                          (y) => y.key === currentChat.current.gptsKey,
-                        );
-                        currentChatReset(
-                          {
-                            allowMCPs: find.allowMCPs,
-                            gptsKey: find.key,
-                            modelKey: find.modelKey,
-                            attachedDialogueCount: find.attachedDialogueCount,
-                          },
-                          find.prompt,
-                        );
-                      }
-                    }}
-                  >
                     {t`New Chat`}
                   </Button>
-                </div>
-              ) : (
-                <Button
-                  type="primary"
-                  className="ml-1 w-full"
-                  onClick={() => {
-                    currentChatReset({
-                      messages: [],
-                      allowMCPs: clientsRef.current.map((v) => v.name),
-                      sended: false,
-                      gptsKey: undefined,
-                    });
-                    selectGptsKey.current = undefined;
-                    loadMoreData(false);
-                  }}
-                >
-                  {t`New Chat`}
-                </Button>
-              )}
-              <div className="mt-2 flex items-center justify-between">
-                <Space>
-                  <span>{t`Dialogue Records`}</span>
-                </Space>
-                <Segmented
-                  size="small"
-                  value={historyFilterType.current}
-                  onChange={(value) => {
-                    historyFilterType.current = value as any;
-                    refresh();
-                  }}
-                  options={[
-                    {
-                      value: "all",
-                      icon: <CommentOutlined />,
-                    },
-                    {
-                      value: "star",
-                      icon: <StarOutlined />,
-                    },
-                    {
-                      value: "search",
-                      icon: <SearchOutlined />,
-                    },
-
-                    {
-                      value: "agent",
-                      icon: "🤖",
-                    },
-                    {
-                      value: "task",
-                      icon: "📅",
-                    },
-                  ]}
-                />
-              </div>
-              <div>
-                {historyFilterType.current == "search" && (
-                  <Input
-                    size="small"
-                    placeholder="search"
-                    value={historyFilterSearchValue}
-                    onChange={(e) => {
-                      setHistoryFilterSearchValue(e.target.value);
-                    }}
-                    allowClear
-                  ></Input>
                 )}
-              </div>
-              <div
-                id={scrollableDivID}
-                className="overflow-y-auto overflow-x-hidden"
-                style={{
-                  width: 240,
-                  height: "calc(100% - 70px)",
-                }}
-              >
-                <InfiniteScroll
-                  dataLength={conversations.length}
-                  next={loadMoreData}
-                  hasMore={conversations.length < loadDataTatal.current}
-                  loader={
-                    <div style={{ textAlign: "center" }}>
-                      <Spin indicator={<RedoOutlined spin />} size="small" />
-                    </div>
-                  }
-                  endMessage={<Divider plain>Nothing 🤐</Divider>}
-                  scrollableTarget={scrollableDivID}
-                >
-                  <Conversations
-                    items={conversations.map((x) => {
-                      return {
-                        ...x,
-                        icon: x.icon == "⭐" ? <StarOutlined /> : undefined,
-                      };
-                    })}
-                    activeKey={currentChat.current.key}
-                    onActiveChange={(key) => {
-                      if (currentChat.current.key == key) {
-                        return;
-                      }
-                      let item = ChatHistory.get().data.find(
-                        (x) => x.key == key,
-                      );
-                      if (item) {
-                        // console.log("onActiveChange", item);
-
-                        currentChatReset({
-                          ...item,
-                          messages: [],
-                        });
-
-                        setTimeout(() => {
-                          currentChatReset(item);
-                          createChat();
-                        });
-                      }
+                <div className="mt-2 flex items-center justify-between">
+                  <Space>
+                    <span>{t`Dialogue Records`}</span>
+                  </Space>
+                  <Segmented
+                    size="small"
+                    value={historyFilterType.current}
+                    onChange={(value) => {
+                      historyFilterType.current = value as any;
+                      refresh();
                     }}
-                    menu={(conversation) => ({
-                      items: [
-                        // {
-                        //   label: "Operation 1",
-                        //   key: "operation1",
-                        //   icon: <EditOutlined />,
-                        // },
-                        {
-                          label: "Star",
-                          key: "star",
-                          icon: <StarOutlined />,
-                        },
-                        {
-                          label: "Remove",
-                          key: "remove",
-                          icon: <DeleteOutlined />,
-                          danger: true,
-                        },
-                      ],
-                      onClick: (menuInfo) => {
-                        // message.info(`Click ${conversation.key} - ${menuInfo.key}`);
-                        if (menuInfo.key === "remove") {
-                          let index = ChatHistory.get().data.findIndex(
-                            (x) => x.key === conversation.key,
-                          );
-                          ChatHistory.get().data.splice(index, 1);
-                          ChatHistory.save();
-                          setConversations(
-                            conversations.filter(
-                              (x) => x.key !== conversation.key,
-                            ),
-                          );
-                          refresh();
-                          message.success("Delete Success");
-                        }
-                        if (menuInfo.key === "star") {
-                          let index = ChatHistory.get().data.findIndex(
-                            (x) => x.key === conversation.key,
-                          );
-                          if (ChatHistory.get().data[index].icon == "⭐") {
-                            ChatHistory.get().data[index].icon = undefined;
-                          } else {
-                            ChatHistory.get().data[index].icon = "⭐";
-                          }
-
-                          ChatHistory.save();
-                          refresh();
-                        }
+                    options={[
+                      {
+                        value: "all",
+                        icon: <CommentOutlined />,
                       },
-                    })}
+                      {
+                        value: "star",
+                        icon: <StarOutlined />,
+                      },
+                      {
+                        value: "search",
+                        icon: <SearchOutlined />,
+                      },
+
+                      {
+                        value: "agent",
+                        icon: "🤖",
+                      },
+                      {
+                        value: "task",
+                        icon: "📅",
+                      },
+                    ]}
                   />
-                </InfiniteScroll>
+                </div>
+                <div>
+                  {historyFilterType.current == "search" && (
+                    <Input
+                      size="small"
+                      placeholder="search"
+                      value={historyFilterSearchValue}
+                      onChange={(e) => {
+                        setHistoryFilterSearchValue(e.target.value);
+                      }}
+                      allowClear
+                    ></Input>
+                  )}
+                </div>
+                <div
+                  id={scrollableDivID}
+                  className="overflow-y-auto overflow-x-hidden"
+                  style={{
+                    width: 240,
+                    height: "calc(100% - 70px)",
+                  }}
+                >
+                  <InfiniteScroll
+                    dataLength={conversations.length}
+                    next={loadMoreData}
+                    hasMore={conversations.length < loadDataTatal.current}
+                    loader={
+                      <div style={{ textAlign: "center" }}>
+                        <Spin indicator={<RedoOutlined spin />} size="small" />
+                      </div>
+                    }
+                    endMessage={<Divider plain>Nothing 🤐</Divider>}
+                    scrollableTarget={scrollableDivID}
+                  >
+                    <Conversations
+                      items={conversations.map((x) => {
+                        return {
+                          ...x,
+                          icon: x.icon == "⭐" ? <StarOutlined /> : undefined,
+                        };
+                      })}
+                      activeKey={currentChat.current.key}
+                      onActiveChange={(key) => {
+                        if (currentChat.current.key == key) {
+                          return;
+                        }
+                        let item = ChatHistory.get().data.find(
+                          (x) => x.key == key,
+                        );
+                        if (item) {
+                          // console.log("onActiveChange", item);
+
+                          currentChatReset({
+                            ...item,
+                            messages: [],
+                          });
+
+                          setTimeout(() => {
+                            currentChatReset(item);
+                            createChat();
+                          });
+                        }
+                      }}
+                      menu={(conversation) => ({
+                        items: [
+                          // {
+                          //   label: "Operation 1",
+                          //   key: "operation1",
+                          //   icon: <EditOutlined />,
+                          // },
+                          {
+                            label: "Star",
+                            key: "star",
+                            icon: <StarOutlined />,
+                          },
+                          {
+                            label: "Remove",
+                            key: "remove",
+                            icon: <DeleteOutlined />,
+                            danger: true,
+                          },
+                        ],
+                        onClick: (menuInfo) => {
+                          // message.info(`Click ${conversation.key} - ${menuInfo.key}`);
+                          if (menuInfo.key === "remove") {
+                            let index = ChatHistory.get().data.findIndex(
+                              (x) => x.key === conversation.key,
+                            );
+                            ChatHistory.get().data.splice(index, 1);
+                            ChatHistory.save();
+                            setConversations(
+                              conversations.filter(
+                                (x) => x.key !== conversation.key,
+                              ),
+                            );
+                            refresh();
+                            message.success("Delete Success");
+                          }
+                          if (menuInfo.key === "star") {
+                            let index = ChatHistory.get().data.findIndex(
+                              (x) => x.key === conversation.key,
+                            );
+                            if (ChatHistory.get().data[index].icon == "⭐") {
+                              ChatHistory.get().data[index].icon = undefined;
+                            } else {
+                              ChatHistory.get().data[index].icon = "⭐";
+                            }
+
+                            ChatHistory.save();
+                            refresh();
+                          }
+                        },
+                      })}
+                    />
+                  </InfiniteScroll>
+                </div>
               </div>
-            </div>
+            )}
 
             <Divider type="vertical" style={{ height: "100%" }} />
             <Flex
@@ -1209,22 +1211,6 @@ export const Chat = ({
                                 onClick={(item) => {
                                   // console.log("onGPTSClick", item);
                                   onGPTSClick(item.key);
-                                  // let find = GPTS.get().data.find(
-                                  //   (y) => y.key === item.key,
-                                  // );
-                                  // currentChatReset(
-                                  //   {
-                                  //     allowMCPs: find.allowMCPs,
-                                  //     gptsKey: find.key,
-                                  //     modelKey: find.modelKey,
-                                  //     attachedDialogueCount:
-                                  //       find.attachedDialogueCount,
-                                  //   },
-                                  //   find.prompt,
-                                  // );
-                                  // selectGptsKey.current = find.key;
-                                  // historyFilterType.current = "all";
-                                  // loadMoreData(false);
                                 }}
                                 onEdit={() => {
                                   let value = GPTS.get().data.find(
@@ -1330,9 +1316,11 @@ export const Chat = ({
                       <>
                         💻
                         {
-                          clientsRef.current.filter((v) =>
-                            currentChat.current.allowMCPs.includes(v.name),
-                          ).length
+                          clientsRef.current.filter((v) => {
+                            return currentChat.current.allowMCPs.includes(
+                              v.name,
+                            );
+                          }).length
                         }
                       </>
                     ) : (

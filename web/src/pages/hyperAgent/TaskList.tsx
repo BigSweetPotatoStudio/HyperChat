@@ -58,13 +58,15 @@ import { t } from "../../i18n";
 import { NewTaskModal } from "./newTaskModal";
 import { GPTS, TaskList } from "../../../../common/data";
 import { v4 } from "uuid";
+import { useLocation, useNavigate } from "react-router-dom";
 
 export function TaskListPage() {
   const [num, setNum] = useState(0);
   const refresh = () => {
     setNum((x) => x + 1);
   };
-
+  const navigate = useNavigate();
+  const location = useLocation();
   const columns = [
     {
       title: t`name`,
@@ -77,7 +79,7 @@ export function TaskListPage() {
       key: "cron",
     },
     {
-      title: "agent",
+      title: "Agent",
       dataIndex: "agentKey",
       key: "agentKey",
       render: (text, row, index) => {
@@ -95,7 +97,7 @@ export function TaskListPage() {
       render: (text, row, index) => {
         return (
           <Tooltip title={row.message}>
-            <div className="line-clamp-1 w-96 ">{row.message}</div>
+            <div className="line-clamp-1 w-96">{row.message}</div>
           </Tooltip>
         );
       },
@@ -132,6 +134,12 @@ export function TaskListPage() {
           <div>
             <a
               onClick={() => {
+                navigate(`../Results?taskKey=${row.key}`);
+              }}
+            >{t`ViewResults`}</a>
+            <Divider type="vertical" />
+            <a
+              onClick={() => {
                 setCurrRow(row);
                 setVisible(true);
               }}
@@ -150,8 +158,8 @@ export function TaskListPage() {
             >
               <a>{t`Delete`}</a>
             </Popconfirm>
-
             <Divider type="vertical" />
+
             <a
               className="text-red-300"
               onClick={() => {
@@ -178,7 +186,10 @@ export function TaskListPage() {
     <div>
       <Button
         type="primary"
-        onClick={() => setVisible(true)}
+        onClick={() => {
+          setCurrRow({});
+          setVisible(true);
+        }}
       >{t`Create Task`}</Button>
       <Table
         rowKey={(r) => r.key}

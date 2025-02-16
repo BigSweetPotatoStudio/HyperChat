@@ -62,10 +62,10 @@ let tObj: {
   };
 } = {};
 
-function trigger() {
+function trigger({ task, agent, result }) {
   getMessageService().sendToRenderer({
     type: "ChatHistoryUpdate",
-    data: {},
+    data: { task, agent, result },
   });
 }
 export async function callAgent(obj: {
@@ -126,7 +126,6 @@ export async function callAgent(obj: {
     console.error(" hyper_call_agent error: ", e);
     throw e;
   } finally {
-    trigger();
   }
 }
 export async function runTask(task: Task) {
@@ -176,11 +175,11 @@ export async function runTask(task: Task) {
     };
     ChatHistory.initSync().data.unshift(item);
     await ChatHistory.save();
+    await trigger({ task, agent, result: openai.lastMessage.content });
     // await onRequest(task.message);
   } catch (e) {
     console.error(" task_call_agent error: ", e);
   } finally {
-    trigger();
   }
 }
 export function startTask(taskkey?: string) {

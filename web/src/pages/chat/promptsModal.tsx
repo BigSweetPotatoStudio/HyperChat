@@ -80,10 +80,10 @@ const ModalForm: React.FC<CollectionCreateFormProps> = ({
       </Form.Item>
       <Form.Item
         name="prompt"
-        label={t`Prompt Content`}
-        rules={[{ required: true, message: `Please enter Prompt Content` }]}
+        label={t`System Prompt`}
+        rules={[{ required: true, message: `Please enter System Prompt` }]}
       >
-        <Input.TextArea placeholder="Please enter Prompt Content" rows={4} />
+        <Input.TextArea placeholder="Please enter System Prompt" rows={4} />
       </Form.Item>
       <Form.Item name="modelKey" label={t`LLM`}>
         <Select

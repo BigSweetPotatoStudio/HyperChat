@@ -34,6 +34,7 @@ import {
   InputNumber,
   Tag,
   Timeline,
+  notification,
 } from "antd";
 import enUS from "antd/locale/en_US";
 import zhCN from "antd/locale/zh_CN";
@@ -74,6 +75,7 @@ import { currLang, setCurrLang, t } from "./i18n";
 import { call } from "./common/call";
 import {
   AppSetting,
+  ChatHistory,
   electronData,
   GPT_MODELS,
   MCP_CONFIG,
@@ -169,6 +171,27 @@ const Providers: ProviderType[] = [
     value: "other",
   },
 ];
+
+window.ext.receive("message-from-main", (msg) => {
+  if (msg.type == "ChatHistoryUpdate") {
+    setTimeout(() => {
+      ChatHistory.init({ force: true });
+    }, 300);
+    notification.open({
+      message: (
+        <div>
+          Task Done: <span className="text-red-400">{msg.data.task.name}</span>{" "}
+          by agent: <Tag color="blue">{msg.data.agent.label}</Tag>
+        </div>
+      ),
+      description: msg.data.result,
+      onClick: () => {
+        console.log("Notification Clicked!");
+      },
+      duration: 10 * 1000,
+    });
+  }
+});
 
 export function Layout() {
   const [num, setNum] = useState(0);
@@ -858,9 +881,7 @@ export function Layout() {
                     }),
                   );
                   // console.log(list);
-                } catch {
-
-                }
+                } catch {}
               }}
               options={modelOptions}
             />

@@ -185,7 +185,6 @@ export class MCPClient {
         args: config.args,
         env: Object.assign(getMyDefaultEnvironment(), config.env),
       });
-
       const client = new Client({
         name: key,
         version: "1.0.0",

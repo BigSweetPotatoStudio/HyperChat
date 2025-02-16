@@ -22,7 +22,7 @@ function Page({
   onChange = undefined,
   hyperChatData = {
     uid: "",
-    agent_name: "",
+    agentKey: "",
     message: "",
     onComplete: (text: string) => undefined,
     onError: (e) => {},
@@ -147,6 +147,12 @@ export function WorkSpace() {
       async (msg: { type: string; data: any }) => {
         if (msg.type == "call_agent") {
           let { agent_name, message, uid } = msg.data;
+          let agents = await GPTS.init();
+          let agent = agents.data.find((x) => x.label == agent_name);
+          if (agent == null) {
+            throw new Error(`Agent ${agent_name} not found`);
+          }
+
           let n = {
             key: v4(),
             label: "New Tab",
@@ -159,7 +165,7 @@ export function WorkSpace() {
                   refresh();
                 }}
                 hyperChatData={{
-                  agent_name,
+                  agentKey: agent.key,
                   message,
                   uid,
                   onComplete: (text) => {
