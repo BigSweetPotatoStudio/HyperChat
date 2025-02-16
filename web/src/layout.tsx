@@ -180,13 +180,16 @@ window.ext.receive("message-from-main", (msg) => {
     notification.open({
       message: (
         <div>
-          Task Done: <span className="text-red-400">{msg.data.task.name}</span>{" "}
-          by agent: <Tag color="blue">{msg.data.agent.label}</Tag>
+          <span className="text-red-400">{msg.data.task.name}</span>{" "}
+          Task Done by agent: <Tag color="blue">{msg.data.agent.label}</Tag>
         </div>
       ),
       description: msg.data.result,
       onClick: () => {
-        console.log("Notification Clicked!");
+        // console.log("Notification Clicked!");
+        try {
+          window["w"]["navigate"](`/Task/Results?taskKey=${msg.data.task.key}`)
+        } catch (e) {}
       },
       duration: 10 * 1000,
     });
