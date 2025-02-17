@@ -2,7 +2,7 @@ import { call } from "./call";
 import {
   AppSetting,
   ChatHistory,
-  GPTS,
+  Agents,
   GPT_MODELS,
   MCP_CONFIG,
   electronData,

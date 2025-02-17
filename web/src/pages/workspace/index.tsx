@@ -11,7 +11,7 @@ import { Chat } from "../chat";
 import { it } from "node:test";
 import { v4 } from "uuid";
 import { call } from "../../common/call";
-import { GPT_MODELS, GPTS } from "../../../../common/data";
+import { GPT_MODELS, Agents } from "../../../../common/data";
 import { OpenAiChannel } from "../../common/openai";
 import { text } from "stream/consumers";
 
@@ -147,7 +147,7 @@ export function WorkSpace() {
       async (msg: { type: string; data: any }) => {
         if (msg.type == "call_agent") {
           let { agent_name, message, uid } = msg.data;
-          let agents = await GPTS.init();
+          let agents = await Agents.init();
           let agent = agents.data.find((x) => x.label == agent_name);
           if (agent == null) {
             throw new Error(`Agent ${agent_name} not found`);

@@ -2,7 +2,7 @@ import { BrowserWindow } from "electron";
 import Logger from "electron-log";
 import { fs, path, sleep } from "zx";
 import dayjs from "dayjs";
-import { GPTS, KNOWLEDGE_BASE, TaskList } from "../../../../../common/data";
+import { Agents, KNOWLEDGE_BASE, TaskList } from "../../../../../common/data";
 import { getMessageService } from "../../../mianWindow.mjs";
 import { EVENT } from "../../../common/event";
 import { v4 } from "uuid";
@@ -58,7 +58,7 @@ const server = new Server(
  * Exposes a single "create_note" tool that lets clients create new notes.
  */
 server.setRequestHandler(ListToolsRequestSchema, async () => {
-  let agents = GPTS.initSync({ force: true });
+  let agents = Agents.initSync({ force: true });
   let d = agents.data
     .filter((x) => x.callable)
     .map((x) => {
@@ -180,7 +180,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
       }
     }
     case "list_allowed_agents": {
-      const agents = GPTS.initSync({ force: true });
+      const agents = Agents.initSync({ force: true });
       return {
         content: [
           {
@@ -234,7 +234,7 @@ async function call_agent({
   agent_name: string;
   message: string;
 }) {
-  let agents = GPTS.initSync({ force: true });
+  let agents = Agents.initSync({ force: true });
   if (agents.data.find((x) => x.label == agent_name) == null) {
     throw new Error(`Agent ${agent_name} not found`);
   }
@@ -279,7 +279,7 @@ async function add_task({
   description?: string;
 }) {
   // console.log("add_task", name, cron, agent_name, command, description);
-  const agents = GPTS.initSync({ force: true });
+  const agents = Agents.initSync({ force: true });
   const agent = agents.data.find((x) => x.label == agent_name);
   if (agent == null) {
     throw new Error(`Agent ${agent_name} not found`);
@@ -288,12 +288,11 @@ async function add_task({
   TaskList.initSync().data.push({
     key: key,
     name,
-    message: command,
+    command: command,
     agentKey: agent.key,
     description: description || "",
     cron,
     disabled: false,
-    status: "pending",
   });
   await TaskList.save();
   startTask(key);
