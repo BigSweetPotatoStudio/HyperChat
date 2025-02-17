@@ -92,12 +92,12 @@ export function TaskListPage() {
     },
     {
       title: "message",
-      dataIndex: "message",
-      key: "message",
+      dataIndex: "command",
+      key: "command",
       render: (text, row, index) => {
         return (
-          <Tooltip title={row.message}>
-            <div className="line-clamp-1 w-96">{row.message}</div>
+          <Tooltip title={row.command}>
+            <div className="line-clamp-1 w-96">{row.command}</div>
           </Tooltip>
         );
       },

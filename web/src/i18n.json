@@ -842,5 +842,13 @@
     "View": {
         "en": "View",
         "zh": "查看"
+    },
+    "Please enter command message telling the Agent what to do.": {
+        "en": "Please enter command message telling the Agent what to do.",
+        "zh": "请键入命令消息告诉代理该做什么。"
+    },
+    "Please enter cronExpression, e.g., \"0 * * * *\"": {
+        "en": "Please enter cronExpression, e.g., \"0 * * * *\"",
+        "zh": "请输入cron表达式，例如，“0 * * * *”"
     }
 }

@@ -177,7 +177,7 @@ export const Chat = ({
           console.error(" hyper_call_agent error: ", e);
           data.onError(e);
         }
-      } else if (onlyView) {
+      } else if (onlyView.histroyKey) {
         if (onlyView.histroyKey) {
           let item = ChatHistory.get().data.find(
             (x) => x.key === onlyView.histroyKey,
@@ -230,6 +230,7 @@ export const Chat = ({
   const openaiClient = useRef<OpenAiChannel>();
 
   const clientsRef = useRef<InitedClient[]>([]);
+
   const promptsRef = useRef<InitedClient["prompts"]>([]);
   const resourcesRef = useRef<InitedClient["resources"]>([]);
 
@@ -290,6 +291,7 @@ export const Chat = ({
 
     refresh();
   };
+
   const selectGptsKey = useRef<string | undefined>(undefined);
   useEffect(() => {
     if (currentChat.current.agentKey == null) {
@@ -900,8 +902,8 @@ export const Chat = ({
     GPT_MODELS.get().data[0]
   )?.supportTool;
 
-  const scrollableDivID = "scrollableDiv" + v4();
-
+  const scrollableDivID = useRef("scrollableDiv" + v4());
+  // console.log(currentChat.current.allowMCPs, clientsRef);
   return (
     <div className="chat h-full">
       <div className="h-full rounded-lg bg-white p-4">
@@ -1019,7 +1021,7 @@ export const Chat = ({
                   )}
                 </div>
                 <div
-                  id={scrollableDivID}
+                  id={scrollableDivID.current}
                   className="overflow-y-auto overflow-x-hidden"
                   style={{
                     width: 240,
@@ -1036,7 +1038,7 @@ export const Chat = ({
                       </div>
                     }
                     endMessage={<Divider plain>Nothing 🤐</Divider>}
-                    scrollableTarget={scrollableDivID}
+                    scrollableTarget={scrollableDivID.current}
                   >
                     <Conversations
                       items={conversations.map((x) => {
