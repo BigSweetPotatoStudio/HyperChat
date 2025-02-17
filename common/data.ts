@@ -3,7 +3,7 @@ export const DataList: Data<any>[] = [];
 export class Data<T> {
   private localStorage: any = null;
   private _inited = false;
-  async init({ force } = { force: false }) {
+  async init({ force } = { force: true }) {
     if (!force && this._inited) return this.data;
     this._inited = true;
     let localData = {};
@@ -18,7 +18,7 @@ export class Data<T> {
     this.data = Object.assign({}, this.data, localData);
     return this.data;
   }
-  initSync({ force } = { force: false }) {
+  initSync({ force } = { force: true }) {
     if (!force && this._inited) return this.data;
     let localData = {};
     try {

@@ -38,6 +38,13 @@ if (electronData.get().firstOpen) {
   await electronData.save();
 }
 
+window.ext.receive("message-from-main", (msg) => {
+  if (msg.type == "syncNodeToWeb") {
+    let c = DataList.find((x) => x.KEY == msg.data.key);
+    Object.assign(c.get(), msg.data.data);
+  }
+});
+
 // try {
 //   if (
 //     !electronData.get().updated[electronData.get().version] &&
@@ -57,4 +64,3 @@ if (electronData.get().firstOpen) {
 //     await electronData.save();
 //   }
 // } catch (e) {}
-

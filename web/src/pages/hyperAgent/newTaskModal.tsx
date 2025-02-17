@@ -103,12 +103,13 @@ const ModalForm: React.FC<CollectionCreateFormProps> = ({
       >
         <Input placeholder={t`Please enter, e.g., "0 * * * *"`} />
       </Form.Item>
-      <Form.Item<Values>
+
+      {/* <Form.Item<Values>
         name="description"
         label={t`description`}
       >
         <Input.TextArea placeholder={t`Please enter`} rows={2} />
-      </Form.Item>
+      </Form.Item> */}
     </Form>
   );
 };

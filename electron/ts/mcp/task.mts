@@ -55,6 +55,7 @@ import { getToolsOnNode } from "../../../web/src/common/mcptool";
 import { v4 } from "uuid";
 import dayjs from "dayjs";
 import { getMessageService } from "../mianWindow.mjs";
+import { cat } from "@xenova/transformers";
 let tObj: {
   [s in string]: {
     key: string;
@@ -199,10 +200,14 @@ export function startTask(taskkey?: string) {
     Logger.info(`Starting task ${taskkey}`);
     let task = TaskList.initSync().data.find((x) => x.key === taskkey);
 
-    const find = tObj[taskkey];
-    if (find) {
-      find.cronT.stop();
-      tObj[taskkey] = undefined;
+    try {
+      const find = tObj[taskkey];
+      if (find) {
+        find.cronT.stop();
+        tObj[taskkey] = undefined;
+      }
+    } catch (e) {
+      Logger.info(`Stopping error ${e}`);
     }
 
     let cronT = cron.schedule(task.cron, runTask.bind(this, task));
@@ -222,10 +227,15 @@ export function stopTask(taskkey?: string) {
     tObj = {};
   } else {
     Logger.info(`Stopping task ${taskkey}`);
-    const find = tObj[taskkey];
-    if (find) {
-      find.cronT.stop();
-      tObj[taskkey] = undefined;
+    try {
+      const find = tObj[taskkey];
+      if (find) {
+        find.cronT.stop();
+        tObj[taskkey] = undefined;
+      }
+      Logger.info("stoped task", taskkey);
+    } catch (e) {
+      Logger.info(`Stopping error ${e}`);
     }
   }
 }

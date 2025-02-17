@@ -174,21 +174,21 @@ const Providers: ProviderType[] = [
 
 window.ext.receive("message-from-main", (msg) => {
   if (msg.type == "ChatHistoryUpdate") {
-    setTimeout(() => {
-      ChatHistory.init({ force: true });
-    }, 300);
+    // setTimeout(() => {
+    //   ChatHistory.init({ force: true });
+    // }, 300);
     notification.open({
       message: (
         <div>
-          <span className="text-red-400">{msg.data.task.name}</span>{" "}
-          Task Done by agent: <Tag color="blue">{msg.data.agent.label}</Tag>
+          <span className="text-red-400">{msg.data.task.name}</span> Task Done
+          by agent: <Tag color="blue">{msg.data.agent.label}</Tag>
         </div>
       ),
       description: msg.data.result,
       onClick: () => {
         // console.log("Notification Clicked!");
         try {
-          window["w"]["navigate"](`/Task/Results?taskKey=${msg.data.task.key}`)
+          window["w"]["navigate"](`/Task/Results?taskKey=${msg.data.task.key}`);
         } catch (e) {}
       },
       duration: 10 * 1000,
@@ -231,25 +231,25 @@ export function Layout() {
     })();
   }, []);
 
-  const [runing, setRuning] = useState(false);
-  useEffect(() => {
-    let t = setInterval(async () => {
-      let historys = await call("getHistory", []);
-      if (historys.length > 0) {
-        let last = historys[historys.length - 1];
-        if (last.status == "success" || last.status == "error") {
-          setRuning(false);
-        } else {
-          setRuning(true);
-        }
-      } else {
-        setRuning(false);
-      }
-    }, 1000);
-    return () => {
-      clearInterval(t);
-    };
-  }, []);
+  // const [runing, setRuning] = useState(false);
+  // useEffect(() => {
+  //   let t = setInterval(async () => {
+  //     let historys = await call("getHistory", []);
+  //     if (historys.length > 0) {
+  //       let last = historys[historys.length - 1];
+  //       if (last.status == "success" || last.status == "error") {
+  //         setRuning(false);
+  //       } else {
+  //         setRuning(true);
+  //       }
+  //     } else {
+  //       setRuning(false);
+  //     }
+  //   }, 1000);
+  //   return () => {
+  //     clearInterval(t);
+  //   };
+  // }, []);
 
   const [locale, setLocal] = useState(currLang == "zhCN" ? zhCN : enUS);
   const [collapsed, setCollapsed] = useState(false);

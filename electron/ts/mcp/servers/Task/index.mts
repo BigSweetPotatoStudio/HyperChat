@@ -2,11 +2,12 @@ import { BrowserWindow } from "electron";
 import Logger from "electron-log";
 import { fs, path, sleep } from "zx";
 import dayjs from "dayjs";
-import { GPTS, KNOWLEDGE_BASE } from "../../../../../common/data";
+import { GPTS, KNOWLEDGE_BASE, TaskList } from "../../../../../common/data";
 import { getMessageService } from "../../../mianWindow.mjs";
 import { EVENT } from "../../../common/event";
 import { v4 } from "uuid";
-
+import cron from "node-cron";
+import { startTask } from "../../task.mjs";
 // import { ListPromptsRequestSchema, ListToolsRequestSchema } from "@modelcontextprotocol/sdk/types.js";
 
 const { Server } = await import(
@@ -64,10 +65,20 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
       return `${x.label} - ${x.description || ""}`;
     })
     .join("\n");
-  if (agents.data.length == 0) {
+  if (agents.data.filter((x) => x.callable).length == 0) {
     d = "No agents found";
   } else {
     d = `Select agent:\n${d}`;
+  }
+  let d2 = agents.data
+    .map((x) => {
+      return `${x.label} - ${x.description || ""}`;
+    })
+    .join("\n");
+  if (agents.data.length == 0) {
+    d2 = "No agents found";
+  } else {
+    d2 = `Select agent:\n${d2}`;
   }
   return {
     tools: [
@@ -94,6 +105,40 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
           required: ["agent_name", "message"],
         },
       },
+      {
+        name: "add_task",
+        description: `Schedule a task for the Agent to execute..`,
+        inputSchema: {
+          type: "object",
+          properties: {
+            name: {
+              type: "string",
+              description: "task name",
+            },
+            cron: {
+              type: "string",
+              description: "cron expression",
+            },
+            agent_name: {
+              type: "string",
+              enum: agents.data.map((x) => {
+                return x.label;
+              }),
+              description: d2,
+            },
+            command: {
+              type: "string",
+              description:
+                "This is a detailed command telling the Agent what to do.",
+            },
+            // description: {
+            //   type: "string",
+            //   description: "task description",
+            // },
+          },
+          required: ["name", "cron", "agent_name", "command"],
+        },
+      },
       // {
       //   name: "list_allowed_agents",
       //   description: `list all allow Agent(Bot)`,
@@ -114,22 +159,19 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
 server.setRequestHandler(CallToolRequestSchema, async (request) => {
   switch (request.params.name) {
     case "call_agent": {
-      const agent_name = String(request.params.arguments?.agent_name);
-      if (!agent_name) {
+      if (!request.params.arguments?.agent_name) {
         throw new Error("agent_name are required");
       }
 
-      const message = String(request.params.arguments?.message);
-      if (!message) {
+      if (!request.params.arguments?.message) {
         throw new Error("message are required");
       }
       try {
-        // call_agent(agent_name, message);
         return {
           content: [
             {
               type: "text",
-              text: await call_agent(agent_name, message),
+              text: await call_agent(request.params.arguments as any),
             },
           ],
         };
@@ -153,12 +195,45 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
         ],
       };
     }
+    case "add_task": {
+      if (!request.params.arguments?.name) {
+        throw new Error("name are required");
+      }
+
+      if (!request.params.arguments?.cron) {
+        throw new Error("cron are required");
+      } else if (!cron.validate(request.params.arguments?.cron)) {
+        throw new Error("cron is not valid");
+      }
+
+      if (!request.params.arguments?.agent_name) {
+        throw new Error("agent_name are required");
+      }
+
+      if (!request.params.arguments?.command) {
+        throw new Error("command are required");
+      }
+      return {
+        content: [
+          {
+            type: "text",
+            text: await add_task(request.params.arguments as any),
+          },
+        ],
+      };
+    }
     default:
       throw new Error("Unknown tool");
   }
 });
 
-async function call_agent(agent_name: string, message: string) {
+async function call_agent({
+  agent_name,
+  message,
+}: {
+  agent_name: string;
+  message: string;
+}) {
   let agents = GPTS.initSync({ force: true });
   if (agents.data.find((x) => x.label == agent_name) == null) {
     throw new Error(`Agent ${agent_name} not found`);
@@ -188,6 +263,41 @@ async function call_agent(agent_name: string, message: string) {
       },
     });
   });
+}
+
+async function add_task({
+  name,
+  cron,
+  agent_name,
+  command,
+  description,
+}: {
+  name: string;
+  cron: string;
+  agent_name: string;
+  command: string;
+  description?: string;
+}) {
+  // console.log("add_task", name, cron, agent_name, command, description);
+  const agents = GPTS.initSync({ force: true });
+  const agent = agents.data.find((x) => x.label == agent_name);
+  if (agent == null) {
+    throw new Error(`Agent ${agent_name} not found`);
+  }
+  let key = v4();
+  TaskList.initSync().data.push({
+    key: key,
+    name,
+    message: command,
+    agentKey: agent.key,
+    description: description || "",
+    cron,
+    disabled: false,
+    status: "pending",
+  });
+  await TaskList.save();
+  startTask(key);
+  return "Task added";
 }
 
 let transport;

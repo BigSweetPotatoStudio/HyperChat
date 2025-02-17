@@ -73,6 +73,7 @@ export function UserContent({ x, regenerate = undefined, submit }) {
       {isEdit ? (
         <div>
           <Input.TextArea
+            rows={4}
             style={{ minWidth: 600 }}
             value={value}
             onChange={(e) => {

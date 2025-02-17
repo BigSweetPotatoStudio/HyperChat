@@ -85,7 +85,7 @@ export function TaskListPage() {
       render: (text, row, index) => {
         return (
           <Tag color="blue">
-            {GPTS.get().data.find((x) => x.key == row.agentKey).label}
+            {GPTS.get().data.find((x) => x.key == row.agentKey)?.label}
           </Tag>
         );
       },
@@ -152,6 +152,7 @@ export function TaskListPage() {
                 TaskList.get().data = TaskList.get().data.filter(
                   (item) => item.key !== row.key,
                 );
+                
                 TaskList.save();
                 refresh();
               }}

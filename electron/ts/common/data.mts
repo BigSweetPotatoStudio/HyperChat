@@ -10,6 +10,7 @@ import {
 } from "../../../common/data.js";
 import { fs, path } from "zx";
 import { appDataDir } from "../const.mjs";
+import { getMessageService } from "../mianWindow.mjs";
 
 for (let data of DataList) {
   data.override({
@@ -28,6 +29,14 @@ for (let data of DataList) {
       }
     },
     async insave() {
+
+      try {
+        getMessageService().sendToRenderer({
+          type: "syncNodeToWeb",
+          data: { key: this.KEY, data: this.data },
+        });
+      } catch (e) {}
+
       return fs.writeFile(
         path.join(appDataDir, this.KEY),
         JSON.stringify(this.data, null, 4)
@@ -57,5 +66,3 @@ electronData.get().version = app.getVersion();
 electronData.save();
 
 taskHistory.initSync({ force: true });
-
-
