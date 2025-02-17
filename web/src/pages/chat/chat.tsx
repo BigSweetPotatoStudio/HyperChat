@@ -114,7 +114,7 @@ import {
 } from "@ant-design/icons";
 import type { ConfigProviderProps, GetProp } from "antd";
 import { MyMessage, OpenAiChannel } from "../../common/openai";
-import { ChatHistory, GPT_MODELS, GPTS } from "../../../../common/data";
+import { ChatHistory, GPT_MODELS, Agents } from "../../../../common/data";
 
 import { PromptsModal } from "./promptsModal";
 import {
@@ -159,7 +159,7 @@ export const Chat = ({
 
     (async () => {
       await ChatHistory.init();
-      await GPTS.init();
+      await Agents.init();
       await GPT_MODELS.init();
       refresh();
       setHistoryFilterSign(1);
@@ -212,11 +212,11 @@ export const Chat = ({
   };
 
   const onGPTSClick = async (key: string) => {
-    let find = GPTS.get().data.find((y) => y.key === key);
+    let find = Agents.get().data.find((y) => y.key === key);
     await currentChatReset(
       {
         allowMCPs: find.allowMCPs,
-        gptsKey: find.key,
+        agentKey: find.key,
         modelKey: find.modelKey,
         attachedDialogueCount: find.attachedDialogueCount,
       },
@@ -245,7 +245,7 @@ export const Chat = ({
     key: "",
     messages: [],
     modelKey: undefined,
-    gptsKey: undefined,
+    agentKey: undefined,
     sended: false,
     requestType: "stream",
     allowMCPs: [],
@@ -292,15 +292,15 @@ export const Chat = ({
   };
   const selectGptsKey = useRef<string | undefined>(undefined);
   useEffect(() => {
-    if (currentChat.current.gptsKey == null) {
+    if (currentChat.current.agentKey == null) {
       onTitleChange && onTitleChange();
     } else {
-      let find = GPTS.get().data.find(
-        (x) => x.key == currentChat.current.gptsKey,
+      let find = Agents.get().data.find(
+        (x) => x.key == currentChat.current.agentKey,
       );
       onTitleChange && onTitleChange(find.label);
     }
-  }, [currentChat.current.gptsKey]);
+  }, [currentChat.current.agentKey]);
 
   function format(x: MyMessage, i, arr): any {
     let common = {
@@ -739,7 +739,7 @@ export const Chat = ({
           messages: openaiClient.current.messages,
           modelKey: currentChat.current.modelKey,
           sended: true,
-          gptsKey: currentChat.current.gptsKey,
+          agentKey: currentChat.current.agentKey,
           allowMCPs: currentChat.current.allowMCPs,
           dateTime: Date.now(),
         });
@@ -828,7 +828,7 @@ export const Chat = ({
     let formmatedData = ChatHistory.get()
       .data.filter((x) => {
         return (
-          selectGptsKey.current == null || x.gptsKey == selectGptsKey.current
+          selectGptsKey.current == null || x.agentKey == selectGptsKey.current
         );
       })
       .filter((x) => {
@@ -920,7 +920,7 @@ export const Chat = ({
                           messages: [],
                           allowMCPs: clientsRef.current.map((v) => v.name),
                           sended: false,
-                          gptsKey: undefined,
+                          agentKey: undefined,
                         });
                         selectGptsKey.current = undefined;
                         loadMoreData(false);
@@ -933,13 +933,13 @@ export const Chat = ({
                       className="ml-1 w-full"
                       onClick={() => {
                         if (openaiClient.current) {
-                          let find = GPTS.get().data.find(
-                            (y) => y.key === currentChat.current.gptsKey,
+                          let find = Agents.get().data.find(
+                            (y) => y.key === currentChat.current.agentKey,
                           );
                           currentChatReset(
                             {
                               allowMCPs: find.allowMCPs,
-                              gptsKey: find.key,
+                              agentKey: find.key,
                               modelKey: find.modelKey,
                               attachedDialogueCount: find.attachedDialogueCount,
                             },
@@ -960,7 +960,7 @@ export const Chat = ({
                         messages: [],
                         allowMCPs: clientsRef.current.map((v) => v.name),
                         sended: false,
-                        gptsKey: undefined,
+                        agentKey: undefined,
                       });
                       selectGptsKey.current = undefined;
                       loadMoreData(false);
@@ -1138,7 +1138,7 @@ export const Chat = ({
                     title={t`Welcome`}
                     className="mb-4"
                     description={
-                      GPTS.get().data.length > 0
+                      Agents.get().data.length > 0
                         ? t`Choose a prompt from below, and let's start chatting`
                         : t`Start chatting`
                     }
@@ -1168,7 +1168,7 @@ export const Chat = ({
                         sensors={botSearchValue != "" ? [] : [sensors]}
                         onDragEnd={(e) => {
                           try {
-                            let data = GPTS.get().data;
+                            let data = Agents.get().data;
                             let oldIndex = data.findIndex(
                               (x) => x.key == e.active.id,
                             );
@@ -1183,13 +1183,13 @@ export const Chat = ({
 
                             data.splice(newIndex, 0, item);
 
-                            GPTS.save();
+                            Agents.save();
                             refresh();
                           } catch {}
                         }}
                       >
                         <SortableContext
-                          items={GPTS.get()
+                          items={Agents.get()
                             .data.filter(
                               (x) =>
                                 botSearchValue == "" ||
@@ -1197,7 +1197,7 @@ export const Chat = ({
                             )
                             .map((x) => x.key)}
                         >
-                          {GPTS.get()
+                          {Agents.get()
                             .data.filter(
                               (x) =>
                                 botSearchValue == "" ||
@@ -1213,7 +1213,7 @@ export const Chat = ({
                                   onGPTSClick(item.key);
                                 }}
                                 onEdit={() => {
-                                  let value = GPTS.get().data.find(
+                                  let value = Agents.get().data.find(
                                     (y) => y.key === item.key,
                                   );
                                   setPromptsModalValue(value);
@@ -1225,11 +1225,11 @@ export const Chat = ({
                                     maskClosable: true,
                                     content: "Are you sure to delete?",
                                     onOk: async () => {
-                                      let index = GPTS.get().data.findIndex(
+                                      let index = Agents.get().data.findIndex(
                                         (y) => y.key === item.key,
                                       );
-                                      GPTS.get().data.splice(index, 1);
-                                      await GPTS.save();
+                                      Agents.get().data.splice(index, 1);
+                                      await Agents.save();
                                       call("openMcpClient", ["hyper_agent"]);
                                       refresh();
                                     },
@@ -1581,20 +1581,20 @@ export const Chat = ({
           open={isOpenPromptsModal}
           onCreate={async (value) => {
             if (value.key) {
-              const index = GPTS.get().data.findIndex(
+              const index = Agents.get().data.findIndex(
                 (y) => y.key == value.key,
               );
               if (index !== -1) {
-                GPTS.get().data[index] = value as any;
+                Agents.get().data[index] = value as any;
               }
             } else {
-              GPTS.get().data.push({
+              Agents.get().data.push({
                 ...value,
                 key: v4(),
                 allowMCPs: value.allowMCPs || [],
               });
             }
-            await GPTS.save();
+            await Agents.save();
             call("openMcpClient", ["hyper_agent"]);
             refresh();
             setIsOpenPromptsModal(false);

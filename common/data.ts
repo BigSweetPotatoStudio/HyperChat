@@ -108,7 +108,7 @@ export type ChatHistoryItem = {
   key: string;
   messages: Array<any>;
   modelKey: string;
-  gptsKey: string;
+  agentKey: string;
   sended: boolean;
   icon?: string;
   allowMCPs: string[];
@@ -124,7 +124,7 @@ export const ChatHistory = new Data("chat_history.json", {
   data: [] as Array<ChatHistoryItem>,
 });
 
-export const GPTS = new Data("gpts_list.json", {
+export const Agents = new Data("gpts_list.json", {
   data: [] as Array<{
     key: string;
     label: string;
@@ -253,12 +253,12 @@ export const KNOWLEDGE_BASE = new Data(
 export type Task = {
   key: string;
   name: string;
-  message: string;
+  command: string;
   agentKey: string;
   description: string;
   cron: string;
   disabled: boolean;
-  status: "pending" | "runing" | "error" | "done";
+  // status: "pending" | "runing" | "error" | "done";
 };
 
 export const TaskList = new Data(

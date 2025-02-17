@@ -56,7 +56,7 @@ import { useForm } from "antd/es/form/Form";
 import { e } from "../../common/service";
 import { t } from "../../i18n";
 import { NewTaskModal } from "./newTaskModal";
-import { GPTS, TaskList, ChatHistory } from "../../../../common/data";
+import { Agents, TaskList, ChatHistory } from "../../../../common/data";
 import { v4 } from "uuid";
 import { useLocation, useNavigate } from "react-router-dom";
 import { Chat } from "../chat";
@@ -88,7 +88,7 @@ export function TaskResultsPage() {
       render: (text, row, index) => {
         return (
           <Tag color="blue">
-            {GPTS.get().data.find((x) => x.key == row.gptsKey)?.label}
+            {Agents.get().data.find((x) => x.key == row.gptsKey)?.label}
           </Tag>
         );
       },
@@ -143,7 +143,7 @@ export function TaskResultsPage() {
   useEffect(() => {
     (async () => {
       await TaskList.init();
-      await GPTS.init();
+      await Agents.init();
       refresh();
     })();
   }, []);

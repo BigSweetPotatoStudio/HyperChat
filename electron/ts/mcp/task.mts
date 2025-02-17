@@ -3,7 +3,7 @@ import {
   ChatHistory,
   ChatHistoryItem,
   GPT_MODELS,
-  GPTS,
+  Agents,
   Task,
   TaskList,
 } from "../../../common/data";
@@ -22,7 +22,7 @@ global.ext = {
         clientName == "hyper_agent" &&
         functionName.includes("call_agent")
       ) {
-        let agent = GPTS.initSync().data.find(
+        let agent = Agents.initSync().data.find(
           (x) => x.label === argumentsJSON.agent_name
         );
         if (agent == null) {
@@ -76,7 +76,7 @@ export async function callAgent(obj: {
 }) {
   Logger.log("Running callAgent", obj.name, obj.message, obj.agentKey);
   try {
-    let agent = GPTS.initSync().data.find((x) => x.key === obj.agentKey);
+    let agent = Agents.initSync().data.find((x) => x.key === obj.agentKey);
     let config =
       GPT_MODELS.initSync().data.find((x) => x.key == agent.modelKey) ||
       GPT_MODELS.initSync().data[0];
@@ -109,7 +109,7 @@ export async function callAgent(obj: {
       key: v4(),
       messages: openai.messages,
       modelKey: config.key,
-      gptsKey: agent.key,
+      agentKey: agent.key,
       sended: true,
       requestType: "complete",
       allowMCPs: agent.allowMCPs,
@@ -132,7 +132,7 @@ export async function callAgent(obj: {
 export async function runTask(task: Task) {
   Logger.log("Running task", task.name);
   try {
-    let agent = GPTS.initSync().data.find((x) => x.key === task.agentKey);
+    let agent = Agents.initSync().data.find((x) => x.key === task.agentKey);
     let config =
       GPT_MODELS.initSync().data.find((x) => x.key == agent.modelKey) ||
       GPT_MODELS.initSync().data[0];
@@ -153,7 +153,7 @@ export async function runTask(task: Task) {
           role: "system",
           content: agent.prompt,
         },
-        { role: "user", content: task.message },
+        { role: "user", content: task.command },
       ],
       false
     );
@@ -164,7 +164,7 @@ export async function runTask(task: Task) {
       key: v4(),
       messages: openai.messages,
       modelKey: config.key,
-      gptsKey: agent.key,
+      agentKey: agent.key,
       sended: true,
       requestType: "complete",
       allowMCPs: agent.allowMCPs,

@@ -24,7 +24,7 @@ import { v4 as uuid } from "uuid";
 
 import { CloseOutlined, FormOutlined } from "@ant-design/icons";
 import { getClients, InitedClient } from "../../common/mcp";
-import { GPTS, KNOWLEDGE_Store, Task } from "../../../../common/data";
+import { Agents, KNOWLEDGE_Store, Task } from "../../../../common/data";
 import { t } from "../../i18n";
 
 const models = [
@@ -59,7 +59,7 @@ const ModalForm: React.FC<CollectionCreateFormProps> = ({
   };
   useEffect(() => {
     (async()=>{
-        await GPTS.init();
+        await Agents.init();
         refresh();
     })()
   }, []);
@@ -82,7 +82,7 @@ const ModalForm: React.FC<CollectionCreateFormProps> = ({
         rules={[{ required: true, message: t`Please select` }]}
       >
         <Select placeholder={t`Please select`}>
-          {GPTS.get().data.map((x) => (
+          {Agents.get().data.map((x) => (
             <Select.Option key={x.key} value={x.key}>
               {x.label}
             </Select.Option>
@@ -90,7 +90,7 @@ const ModalForm: React.FC<CollectionCreateFormProps> = ({
         </Select>
       </Form.Item>
       <Form.Item<Values>
-        name="message"
+        name="command"
         label={t`message`}
         rules={[{ required: true, message: t`Please enter` }]}
       >

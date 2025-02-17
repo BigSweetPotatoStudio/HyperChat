@@ -56,7 +56,7 @@ import { useForm } from "antd/es/form/Form";
 import { e } from "../../common/service";
 import { t } from "../../i18n";
 import { NewTaskModal } from "./newTaskModal";
-import { GPTS, TaskList } from "../../../../common/data";
+import { Agents, TaskList } from "../../../../common/data";
 import { v4 } from "uuid";
 import { useLocation, useNavigate } from "react-router-dom";
 
@@ -85,7 +85,7 @@ export function TaskListPage() {
       render: (text, row, index) => {
         return (
           <Tag color="blue">
-            {GPTS.get().data.find((x) => x.key == row.agentKey)?.label}
+            {Agents.get().data.find((x) => x.key == row.agentKey)?.label}
           </Tag>
         );
       },
@@ -178,7 +178,7 @@ export function TaskListPage() {
   useEffect(() => {
     (async () => {
       await TaskList.init();
-      await GPTS.init();
+      await Agents.init();
       refresh();
     })();
   }, []);
