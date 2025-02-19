@@ -24,9 +24,10 @@ import { v4 as uuid } from "uuid";
 
 import { CloseOutlined, FormOutlined } from "@ant-design/icons";
 import { getClients, InitedClient } from "../../common/mcp";
-import { GPT_MODELS } from "../../common/data";
-import { KNOWLEDGE_Resource } from "../../../../common/data";
+
+import { KNOWLEDGE_Resource, GPT_MODELS } from "../../../../common/data";
 import { SelectFile } from "../../common/selectFile";
+import { t } from "../../i18n";
 
 type Values = KNOWLEDGE_Resource;
 
@@ -57,7 +58,7 @@ const ModalForm: React.FC<CollectionCreateFormProps> = ({
       <Form.Item<Values>
         name="type"
         label="type"
-        rules={[{ required: true, message: `Please enter` }]}
+        rules={[{ required: true, message: t`Please enter` }]}
       >
         <Segmented
           options={[
@@ -74,7 +75,7 @@ const ModalForm: React.FC<CollectionCreateFormProps> = ({
         <Form.Item<Values>
           name="markdown"
           label="markdown"
-          rules={[{ required: true, message: `Please enter` }]}
+          rules={[{ required: true, message: t`Please enter` }]}
         >
           <Input.TextArea placeholder="Please enter" rows={4} />
         </Form.Item>
@@ -85,7 +86,7 @@ const ModalForm: React.FC<CollectionCreateFormProps> = ({
           <Form.Item<Values>
             name="filepath"
             label="filepath"
-            rules={[{ required: true, message: `Please enter` }]}
+            rules={[{ required: true, message: t`Please select` }]}
           >
             <SelectFile
               filters={[
@@ -97,8 +98,8 @@ const ModalForm: React.FC<CollectionCreateFormProps> = ({
             />
           </Form.Item>
           <Form.Item<Values> label="tips">
-            Currently, only PDF is supported, but in the future, DOC, PPT,
-            audio, and image formats will be supported.
+            {t`Currently, only PDF is supported, but in the future, DOC, PPT,
+            audio, and image formats will be supported.`}
           </Form.Item>
         </>
       )}
@@ -123,7 +124,7 @@ export const KnowledgeBaseResourceModal: React.FC<
     <Modal
       width={800}
       open={open}
-      title={"KnowledgeBaseResource"}
+      title={t`KnowledgeBaseResource`}
       okButtonProps={{ autoFocus: true, loading }}
       onCancel={onCancel}
       destroyOnClose

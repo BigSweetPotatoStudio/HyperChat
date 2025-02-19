@@ -29,7 +29,7 @@
     },
     "New Chat": {
         "en": "New Chat",
-        "zh": "新聊天"
+        "zh": "新建聊天"
     },
     "Dialogue Records": {
         "en": "Dialogue Records",
@@ -125,7 +125,7 @@
     },
     "client": {
         "en": "client",
-        "zh": "客户"
+        "zh": "客户端"
     },
     "status": {
         "en": "status",
@@ -181,7 +181,7 @@
     },
     "My LLM Models": {
         "en": "My LLM Models",
-        "zh": "我的LLM模型"
+        "zh": "我的大模型(LLM)"
     },
     "Name": {
         "en": "Name",
@@ -189,7 +189,7 @@
     },
     "LLM": {
         "en": "LLM",
-        "zh": "LLM"
+        "zh": "大模型"
     },
     "Delete": {
         "en": "Delete",
@@ -237,7 +237,7 @@
     },
     "Configure LLM": {
         "en": "Configure LLM",
-        "zh": "配置LLM"
+        "zh": "配置大模型(LLM)"
     },
     "key": {
         "en": "key",
@@ -297,7 +297,7 @@
     },
     "Select LLM": {
         "en": "Select LLM",
-        "zh": "选择LLM"
+        "zh": "选择大模型"
     },
     "Token Usage": {
         "en": "Token Usage",
@@ -359,33 +359,21 @@
         "en": "emoji",
         "zh": ""
     },
-    "M": {
-        "en": "M",
-        "zh": ""
-    },
-    "https://github": {
-        "en": "https://github",
-        "zh": "https://github"
-    },
-    "https://github.com": {
-        "en": "https://github.com",
-        "zh": "https://github.com"
-    },
     "Prompt": {
         "en": "Prompt",
         "zh": "提示"
     },
-    "Prompt Content": {
-        "en": "Prompt Content",
-        "zh": "提示内容"
+    "System Prompt": {
+        "en": "System Prompt",
+        "zh": "系统提示词"
     },
-    "Please enter Prompt Content": {
-        "en": "Please enter Prompt Content",
-        "zh": "请输入提示内容"
+    "Please enter System Prompt": {
+        "en": "Please enter System Prompt",
+        "zh": "请输入系统提示词"
     },
     "Please select default LLM": {
         "en": "Please select default LLM",
-        "zh": "请选定默认 LLM"
+        "zh": "请选定默认大模型(LLM)"
     },
     "MCP": {
         "en": "MCP",
@@ -627,6 +615,10 @@
         "en": "Some websites require you to log in to view content. Please log in from here.",
         "zh": "某些网站要求您登录才能查看内容。请从这里登录。"
     },
+    "Open": {
+        "en": "Open",
+        "zh": "打开"
+    },
     "open": {
         "en": "open",
         "zh": "打开"
@@ -647,8 +639,8 @@
         "en": "Here, you would input the result of the command echo $PATH.",
         "zh": "在这里，你将输入命令 echo $PATH 的结果。"
     },
-    "Knowledge Base(Experimental)": {
-        "en": "Knowledge Base(Experimental)",
+    "Knowledge Base(Exp)": {
+        "en": "Knowledge Base(Exp)",
         "zh": "知识库（实验）"
     },
     "HyperTools": {
@@ -686,5 +678,177 @@
     "remove": {
         "en": "remove",
         "zh": "移除"
+    },
+    "Remove": {
+        "en": "Remove",
+        "zh": "移除"
+    },
+    "Home": {
+        "en": "Home",
+        "zh": "主页"
+    },
+    "Please enter or select the model": {
+        "en": "Please enter or select the model",
+        "zh": "请填写或选择模型"
+    },
+    "name": {
+        "en": "name",
+        "zh": "名称"
+    },
+    "Progress": {
+        "en": "Progress",
+        "zh": "进展"
+    },
+    "KnowledgeBase": {
+        "en": "KnowledgeBase",
+        "zh": "知识库"
+    },
+    "KnowledgeBaseResource": {
+        "en": "KnowledgeBaseResource",
+        "zh": "知识库资源"
+    },
+    "Please select": {
+        "en": "Please select",
+        "zh": "请选定"
+    },
+    "description": {
+        "en": "description",
+        "zh": "描述"
+    },
+    "Add Agent": {
+        "en": "Add Agent",
+        "zh": "添加Agent"
+    },
+    "Clear Context": {
+        "en": "Clear Context",
+        "zh": "清除上下文"
+    },
+    "Fill Prompt Arguments": {
+        "en": "Fill Prompt Arguments",
+        "zh": "填充提示参数"
+    },
+    "More Setting": {
+        "en": "More Setting",
+        "zh": "更多设置"
+    },
+    "attachedDialogueCount": {
+        "en": "attachedDialogueCount",
+        "zh": "附加对话计数"
+    },
+    "Number of sent Dialogue Message attached per request": {
+        "en": "Number of sent Dialogue Message attached per request",
+        "zh": "每个请求附加的发送对话消息数量"
+    },
+    "Select Request Type": {
+        "en": "Select Request Type",
+        "zh": "选择请求方式"
+    },
+    "allowMCPs": {
+        "en": "allowMCPs",
+        "zh": "允许MCPs"
+    },
+    "Callable": {
+        "en": "Callable",
+        "zh": "可调用的"
+    },
+    "Allowed to be called by 'hyper_agent'": {
+        "en": "Allowed to be called by 'hyper_agent'",
+        "zh": "允许被'hyper_agent'调用"
+    },
+    "Please provide a description for more accurate call.": {
+        "en": "Please provide a description for more accurate call.",
+        "zh": "请提供更准确的通话描述"
+    },
+    "Please configure the parameters": {
+        "en": "Please configure the parameters",
+        "zh": "请配置参数"
+    },
+    "This software is free and OpenSource. Feel free to follow me, and I\n            will bring more utility software.": {
+        "en": "This software is free and OpenSource. Feel free to follow me, and I\n            will bring more utility software.",
+        "zh": "该软件是免费的开源软件。欢迎关注我，我会带来更多实用软件。"
+    },
+    "FilePath": {
+        "en": "FilePath",
+        "zh": "文件路径"
+    },
+    "Sure to delete?": {
+        "en": "Sure to delete?",
+        "zh": "确定要删除吗"
+    },
+    "LLM not support": {
+        "en": "LLM not support tool",
+        "zh": "LLM不支持工具"
+    },
+    "Please verify your network connection. If the network is working, there might be a small bug in the program. Here are the error messages: ": {
+        "en": "Please verify your network connection. If the network is working, there might be a small bug in the program. Here are the error messages: ",
+        "zh": "请检查您的网络连接。如果网络正常,程序中可能存在一个小错误。以下是错误消息:"
+    },
+    "Create Task": {
+        "en": "Create Task",
+        "zh": "新建任务"
+    },
+    "Task": {
+        "en": "Task",
+        "zh": "任务"
+    },
+    "Agent": {
+        "en": "Agent",
+        "zh": ""
+    },
+    "message": {
+        "en": "message",
+        "zh": "消息"
+    },
+    "cronExpression": {
+        "en": "cronExpression",
+        "zh": "cron表达式"
+    },
+    "TaskList": {
+        "en": "TaskList",
+        "zh": "任务列表"
+    },
+    "TaskResults": {
+        "en": "TaskResults",
+        "zh": "任务结果"
+    },
+    "enabled": {
+        "en": "enabled",
+        "zh": "启用"
+    },
+    "Are you sure to delete this task?": {
+        "en": "Are you sure to delete this task?",
+        "zh": "你确定要删除这个任务吗"
+    },
+    "ViewResults": {
+        "en": "ViewResults",
+        "zh": "查看结果"
+    },
+    "dateTime": {
+        "en": "dateTime",
+        "zh": "日期时间"
+    },
+    "Bcak": {
+        "en": "Bcak",
+        "zh": "返回"
+    },
+    "Are you sure to delete this?": {
+        "en": "Are you sure to delete this?",
+        "zh": "你确定要删除这个吗?"
+    },
+    "result": {
+        "en": "result",
+        "zh": "结果"
+    },
+    "View": {
+        "en": "View",
+        "zh": "查看"
+    },
+    "Please enter command message telling the Agent what to do.": {
+        "en": "Please enter command message telling the Agent what to do.",
+        "zh": "请键入命令消息告诉代理该做什么。"
+    },
+    "Please enter cronExpression, e.g., \"0 * * * *\"": {
+        "en": "Please enter cronExpression, e.g., \"0 * * * *\"",
+        "zh": "请输入cron表达式，例如，“0 * * * *”"
     }
 }

@@ -206,12 +206,13 @@ async function fetch(url: string) {
     });
 
     // 等待页面加载完成
-    // await Promise.race([
-    //   new Promise((resolve) => {
-    //     win.webContents.on("did-finish-load", resolve);
-    //   }),
-    //   sleep(3000),
-    // ]);
+    await sleep(3000);
+    await Promise.race([
+      new Promise((resolve) => {
+        win.webContents.on("did-finish-load", resolve);
+      }),
+      sleep(3000),
+    ]);
     Logger.info("Page loaded: " + url);
     let md = await executeClientScript(
       win,

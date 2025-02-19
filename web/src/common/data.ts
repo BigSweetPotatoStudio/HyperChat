@@ -2,7 +2,7 @@ import { call } from "./call";
 import {
   AppSetting,
   ChatHistory,
-  GPTS,
+  Agents,
   GPT_MODELS,
   MCP_CONFIG,
   electronData,
@@ -38,6 +38,13 @@ if (electronData.get().firstOpen) {
   await electronData.save();
 }
 
+window.ext.receive("message-from-main", (msg) => {
+  if (msg.type == "syncNodeToWeb") {
+    let c = DataList.find((x) => x.KEY == msg.data.key);
+    Object.assign(c.get(), msg.data.data);
+  }
+});
+
 // try {
 //   if (
 //     !electronData.get().updated[electronData.get().version] &&
@@ -57,13 +64,3 @@ if (electronData.get().firstOpen) {
 //     await electronData.save();
 //   }
 // } catch (e) {}
-
-export {
-  AppSetting,
-  ChatHistory,
-  GPTS,
-  GPT_MODELS,
-  MCP_CONFIG,
-  electronData,
-  MCP_CONFIG_TYPE,
-};

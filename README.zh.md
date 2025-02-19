@@ -11,10 +11,9 @@ HyperChat 是一个追求开放的Chat客户端，可以使用各家LLM的API，
 [![Build](https://github.com/BigSweetPotatoStudio/HyperChat/actions/workflows/build.yml/badge.svg)](https://github.com/BigSweetPotatoStudio/HyperChat/actions/workflows/build.yml)
 
 - [x] 🪟Windows+🍏MacOS
+- [x] 支持暗黑模式🌙
 - [x] 支持 `nvm`, 看下面
-- [x] Resources 支持
-- [x] Prompts 部分支持
-- [x] Tools 支持
+- [x] Resources，Prompts，Tools 支持
 - [x] 支持英文和中文
 - [x] 添加了内置的MCP客户端`hypertools`, `fetch`+`search`
 - [x] 支持 `Agent`，可以预设提示词，允许的MCP服务
@@ -26,11 +25,12 @@ HyperChat 是一个追求开放的Chat客户端，可以使用各家LLM的API，
 - [x] 添加`RAG`，基于mcp知识库
 - [x] 添加ChatSpace概念，支持多对话同时聊天
 - [x] 支持 Agent Call Agent，通过HyperAgent的MCP
+- [x] 添加定时任务，指定Agent定时完成任务，以及任务完成情况查看。
+
 
 ### TODO:
 
 - [ ] 权限弹窗，是否允许
-- [ ] 添加task，HyperAgent概念，支持定时任务。通过HyperAgent管理Task.
 - [ ] 实现利用LLM自己给自己写Tools
 - [ ] 本地的`shell`+`nodejs`+`js on web`运行环境
 
@@ -39,8 +39,9 @@ HyperChat 是一个追求开放的Chat客户端，可以使用各家LLM的API，
 | LLM      | 好用度    | 备注                         |
 | -------- | ------ | -------------------------- |
 | claude   | ⭐⭐⭐⭐⭐  | 不解释                    |
-| openai   | ⭐⭐⭐⭐🌙 | 也可以完美支持多步function call(gpt-4o-mini也可以) |
-| qwen       | ⭐⭐⭐⭐🌙    | 很好用，感觉比openai更好                 |
+| openai   | ⭐⭐⭐⭐⭐ | 也可以完美支持多步function call(gpt-4o-mini也可以) |
+| gemini flash 2.0   | ⭐⭐⭐⭐🌙 |  很好用 |
+| qwen       | ⭐⭐⭐⭐🌙    | 很好用                 |
 | doubao       | ⭐⭐⭐    | 使用起来感觉还行                   |
 | deepseek | ⭐⭐      | 多步function call会出问题       |
 
@@ -92,6 +93,9 @@ npm run dev
 
 [HyperChat用户交流](https://t.me/dadigua001)
 
+![image.png](./images/image52.png)
+
+![image.png](./images/image53.png)
 
 ![image.png](./images/image51.png)
 

@@ -1,11 +1,17 @@
 import OpenAI from "openai";
-import { getTools, HyperChatCompletionTool } from "./mcp";
+
+import type { HyperChatCompletionTool } from "./mcp";
 import { call } from "./call";
 import * as MCPTypes from "@modelcontextprotocol/sdk/types.js";
 
-import { message as antdmessage } from "antd";
-import type { ChatCompletionTool } from "openai/src/resources/chat/completions";
-import { ChatCompletionContentPartText } from "openai/resources";
+let antdmessage: { warning: (msg: string) => void };
+if (process.env.runtime === "node") {
+  antdmessage = { warning: console.warn };
+} else {
+  const { message } = await import("antd");
+  antdmessage = { warning: message.warning };
+}
+
 import imageBase64 from "../common/openai_image_base64.txt";
 
 type Tool_Call = {
@@ -35,6 +41,7 @@ export type MyMessage = OpenAI.Chat.Completions.ChatCompletionMessageParam & {
     | "error"
     | "dataLoading"
     | "dataLoadComplete";
+  content_error?: string;
   content_from?: string;
   content_attachment?: Array<{
     type: string;
@@ -104,7 +111,7 @@ export class OpenAiChannel {
     this.openai = new OpenAI({
       baseURL: options.baseURL,
       apiKey: options.apiKey, // This is the default and can be omitted
-      dangerouslyAllowBrowser: true,
+      dangerouslyAllowBrowser: process.env.runtime !== "node",
       defaultHeaders: {
         "HTTP-Referer": "https://www.dadigua.men", // Optional. Site URL for rankings on openrouter.ai.
         "X-Title": "HyperChat", // Optional. Site title for rankings on openrouter.ai.
@@ -230,11 +237,17 @@ export class OpenAiChannel {
     if (!call_tool || this.options.supportTool === false) {
       tools = undefined;
     } else {
-      tools = getTools(
-        (x) =>
-          this.options.allowMCPs == null ||
-          this.options.allowMCPs.includes(x.name),
-      );
+      if (process.env.runtime === "node") {
+        tools = global.tools || [];
+      } else {
+        const { getTools } = await import("./mcp");
+        tools = getTools(
+          (x) =>
+            this.options.allowMCPs == null ||
+            this.options.allowMCPs.includes(x.name),
+        );
+      }
+
       if (tools.length == 0) {
         tools = undefined;
       }
@@ -269,7 +282,7 @@ export class OpenAiChannel {
             model: this.options.model,
             stream: true,
             stream_options: {
-              include_usage: this.options.model == "qwen-plus" ? false : true, // qwen bug stream not support include_usage
+              include_usage: true, // qwen bug stream not support include_usage
             },
             tools: tools && this.tools_format(tools),
           },
@@ -297,35 +310,64 @@ export class OpenAiChannel {
 
           if (chunk.choices[0]?.delta?.tool_calls) {
             if (chunk.choices[0].delta.tool_calls.length > 1) {
-              console.error("error");
-              debugger;
-            }
-            let index = chunk.choices[0].delta.tool_calls[0].index;
-            if (typeof index !== "number") {
-              index = 0;
-            }
-            let tool = tool_calls[index];
-            if (!tool) {
-              tool = {
-                index: index,
-                id: "",
-                type: "function",
-                restore_name: "",
-                origin_name: "",
-                function: {
-                  name: "",
-                  arguments: "",
-                  argumentsJSON: {},
-                },
-              };
-              tool_calls[index] = tool;
-            }
-            tool.function.name +=
-              chunk.choices[0].delta.tool_calls[0].function.name || "";
+              console.warn(
+                "tool_calls length > 1",
+                chunk.choices[0].delta.tool_calls,
+              );
+              // debugger;
+              for (const tool_call of chunk.choices[0].delta.tool_calls) {
+                let index = tool_call.index;
+                if (typeof index !== "number") {
+                  index = 0;
+                }
+                let tool = tool_calls[index];
+                if (!tool) {
+                  tool = {
+                    index: index,
+                    id: "",
+                    type: "function",
+                    restore_name: "",
+                    origin_name: "",
+                    function: {
+                      name: "",
+                      arguments: "",
+                      argumentsJSON: {},
+                    },
+                  };
+                  tool_calls[index] = tool;
+                }
+                tool.function.name += tool_call.function.name || "";
 
-            tool.function.arguments +=
-              chunk.choices[0].delta.tool_calls[0].function.arguments || "";
-            tool.id += chunk.choices[0].delta.tool_calls[0].id || "";
+                tool.function.arguments += tool_call.function.arguments || "";
+                tool.id += tool_call.id || "";
+              }
+            } else {
+              const tool_call = chunk.choices[0].delta.tool_calls[0];
+              let index = tool_call.index;
+              if (typeof index !== "number") {
+                index = 0;
+              }
+              let tool = tool_calls[index];
+              if (!tool) {
+                tool = {
+                  index: index,
+                  id: "",
+                  type: "function",
+                  restore_name: "",
+                  origin_name: "",
+                  function: {
+                    name: "",
+                    arguments: "",
+                    argumentsJSON: {},
+                  },
+                };
+                tool_calls[index] = tool;
+              }
+              tool.function.name += tool_call.function.name || "";
+
+              tool.function.arguments += tool_call.function.arguments || "";
+              tool.id += tool_call.id || "";
+            }
           }
 
           res.content += chunk.choices[0]?.delta?.content || "";
@@ -347,6 +389,12 @@ export class OpenAiChannel {
             signal: this.abortController.signal,
           },
         );
+        if (!Array.isArray(chatCompletion.choices)) {
+          throw new Error(
+            (chatCompletion as any)?.error?.message ||
+              "Provider returned error",
+          );
+        }
         this.lastMessage.content_status = "success";
         this.totalTokens = chatCompletion?.usage?.total_tokens;
         res.content_usage.completion_tokens =
@@ -458,7 +506,7 @@ export class OpenAiChannel {
               content: { error: e.message },
             };
           });
-        console.log("call_res", call_res);
+        console.log("call_response: ", call_res);
 
         if (call_res.content == null) {
           this.lastMessage.content = JSON.stringify(call_res);
@@ -482,7 +530,7 @@ export class OpenAiChannel {
         }
         onUpdate && onUpdate(this.lastMessage.content as string);
       }
-      console.log("this.messages", this.messages);
+      // console.log("this.messages", this.messages);
       return await this._completion(
         onUpdate,
         (this.options.call_tool_step || 10) > step + 1,
@@ -490,7 +538,7 @@ export class OpenAiChannel {
         context,
       );
     } else {
-      console.log("this.messages", this.messages);
+      // console.log("this.messages", this.messages);
       return res.content as string;
     }
   }
@@ -541,29 +589,12 @@ export class OpenAiChannel {
   async testTool() {
     try {
       const tools = [
-        // {
-        //   type: "function" as const,
-        //   function: {
-        //     name: "get_weather",
-        //     parameters: {
-        //       type: "object",
-        //       properties: {
-        //         location: { type: "string" },
-        //       },
-        //       required: ["location"],
-        //       additionalProperties: false,
-        //     },
-        //     // returns: {
-        //     //   type: "string",
-        //     //   description: "The weather in the location",
-        //     // },
-        //   },
-        // },
         {
           type: "function" as const,
           function: {
             name: "get_weather",
             description: "Get the weather in a given location",
+            // strict: true,
             parameters: {
               type: "object",
               properties: {
@@ -572,6 +603,7 @@ export class OpenAiChannel {
                   description: "The city and state, e.g. Chicago, IL",
                 },
                 unit: { type: "string", enum: ["celsius", "fahrenheit"] },
+                // additionalProperties: false,
               },
               required: ["location"],
             },
@@ -635,6 +667,8 @@ export class OpenAiChannel {
         content_from,
         content_status,
         content_usage,
+        reasoning_content,
+        content_error,
         ...rest
       } = m;
       if (rest.role == "assistant") {

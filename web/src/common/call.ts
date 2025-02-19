@@ -1,5 +1,12 @@
 import type { CommandFactory as Command } from "../../../electron/ts/command.mts";
 
+let ext = {} as any;
+if (typeof window == "undefined") {
+  ext = global.ext;
+} else {
+  ext = window.ext;
+}
+
 export async function call<k extends keyof Command>(
   command: k,
   args: Parameters<Command[k]> = [] as any,
@@ -7,8 +14,8 @@ export async function call<k extends keyof Command>(
   try {
     // console.log(`command ${command}`, args);
     let res;
-    if (window.ext) {
-      res = await window.ext.invert(command, args);
+    if (ext) {
+      res = await ext.invert(command, args);
     } else {
       res = await fetch("/api/" + command, {
         method: "POST",
@@ -28,7 +35,10 @@ export async function call<k extends keyof Command>(
     throw e;
   }
 }
-// 在渲染进程中监听消息
-window.ext.receive("message-from-main", (data: any) => {
-  console.log("Received message:", data);
-});
+if (ext) {
+  // 在渲染进程中监听消息
+  ext.receive("message-from-main", (data: any) => {
+    console.log("Received message:", data);
+  });
+} else {
+}

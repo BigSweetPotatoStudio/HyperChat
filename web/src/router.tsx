@@ -15,7 +15,9 @@ import { Market } from "./pages/market/market";
 import { HpyerTools } from "./pages/hypertools/hypertools";
 import { KnowledgeBase } from "./pages/knowledgeBase/knowledgeBase";
 import { WorkSpace } from "./pages/workspace";
-
+import { TaskListPage } from "./pages/hyperAgent/TaskList";
+import { t } from "./i18n";
+import { TaskResultsPage } from "./pages/hyperAgent/TaskResults";
 type RouteType = {
   path: string;
   name: React.ReactNode;
@@ -32,13 +34,13 @@ let route: RouteType = {
   routes: [
     {
       path: "/home",
-      name: "Home",
+      name: t`Home`,
       hideInMenu: true,
       component: <Chat />,
     },
     {
       path: "/Chat",
-      name: "Chat",
+      name: t`Chat`,
       icon: "💬",
       component: <WorkSpace />,
     },
@@ -50,32 +52,53 @@ let route: RouteType = {
     // },
     {
       path: "/Market",
-      name: "MCP Extensions",
+      name: t`MCP Extensions`,
       icon: "💻",
       component: <Market />,
     },
     {
       path: "/KnowledgeBase",
-      name: "Knowledge Base(Experimental)",
+      name: t`Knowledge Base(Exp)`,
       icon: "📚",
       component: <KnowledgeBase />,
     },
     {
       path: "/HyperTools",
-      name: "HyperTools",
-      icon: "🔧",
+      name: t`HyperTools`,
+      icon: "🛠️",
       component: <HpyerTools />,
     },
     {
+      path: "/Task",
+      name: t`TaskList`,
+      icon: "📅",
+      component: <Container from="/Task" default="List" />,
+      routes: [
+        {
+          path: "/list",
+          name: t`TaskList`,
+          component: <TaskListPage />,
+          hideInMenu: true,
+
+        },
+        {
+          path: "/Results",
+          name: t`TaskResults`,
+          component: <TaskResultsPage />,
+          hideInMenu: true,
+        },
+      ],
+    },
+    {
       path: "/Setting",
-      name: "Settings",
+      name: t`Settings`,
       icon: "⚙️",
       component: <Setting />,
     },
   ],
 };
 
-function Container(props: { from: string; default: string }) {
+function Container(props: { from: string; default?: string }) {
   const navigate = useNavigate();
   const location = useLocation();
   // console.log("location.pathname", location.pathname);

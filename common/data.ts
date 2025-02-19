@@ -3,7 +3,7 @@ export const DataList: Data<any>[] = [];
 export class Data<T> {
   private localStorage: any = null;
   private _inited = false;
-  async init({ force } = { force: false }) {
+  async init({ force } = { force: true }) {
     if (!force && this._inited) return this.data;
     this._inited = true;
     let localData = {};
@@ -18,7 +18,7 @@ export class Data<T> {
     this.data = Object.assign({}, this.data, localData);
     return this.data;
   }
-  initSync({ force } = { force: false }) {
+  initSync({ force } = { force: true }) {
     if (!force && this._inited) return this.data;
     let localData = {};
     try {
@@ -100,6 +100,7 @@ export const AppSetting = new Data("app_setting.json", {
     baseDirName: "",
     autoSync: false,
   },
+  darkTheme: false,
 });
 
 export type ChatHistoryItem = {
@@ -107,20 +108,23 @@ export type ChatHistoryItem = {
   key: string;
   messages: Array<any>;
   modelKey: string;
-  gptsKey: string;
+  agentKey: string;
   sended: boolean;
   icon?: string;
   allowMCPs: string[];
-  requestType: string;
+  requestType: "complete" | "stream";
   attachedDialogueCount?: number;
   dateTime: number;
+  isCalled: boolean;
+  isTask: boolean;
+  taskKey?: string;
 };
 
 export const ChatHistory = new Data("chat_history.json", {
   data: [] as Array<ChatHistoryItem>,
 });
 
-export const GPTS = new Data("gpts_list.json", {
+export const Agents = new Data("gpts_list.json", {
   data: [] as Array<{
     key: string;
     label: string;
@@ -243,5 +247,26 @@ export const KNOWLEDGE_BASE = new Data(
   },
   {
     sync: false,
+  }
+);
+
+export type Task = {
+  key: string;
+  name: string;
+  command: string;
+  agentKey: string;
+  description: string;
+  cron: string;
+  disabled: boolean;
+  // status: "pending" | "runing" | "error" | "done";
+};
+
+export const TaskList = new Data(
+  "tasklist.json",
+  {
+    data: [] as Array<Task>,
+  },
+  {
+    sync: true,
   }
 );

@@ -36,14 +36,27 @@ module.exports = (env, argv) => {
       new webpack.EnvironmentPlugin({
         NODE_ENV: process.env.NODE_ENV || "development",
         myEnv: process.env.myEnv || "prod",
+        runtime: "node",
       }),
     ],
     module: {
       rules: [
         {
           test: /\.[cm]?(ts|js)x?$/,
-          use: "ts-loader",
+          use: {
+            loader: "ts-loader",
+            options: {
+              transpileOnly: true, // 确保放在这里
+            },
+          },
           exclude: /node_modules/,
+          resolve: {
+            fullySpecified: false,
+          },
+        },
+        {
+          test: /\.txt$/i,
+          use: "raw-loader",
         },
       ],
     },

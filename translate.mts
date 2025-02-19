@@ -1,10 +1,22 @@
-import { YAML, fs, argv, path } from "zx";
+import {
+  YAML,
+  fs,
+  argv,
+  path,
+  $,
+  quotePowerShell,
+  usePowerShell,
+  os,
+} from "zx";
 import OpenAI from "openai";
 import { fileURLToPath } from "url";
 import "dotenv/config";
 // load using import
 import { glob, globSync, globStream, globStreamSync, Glob } from "glob";
 
+if (os.platform() === "win32") {
+  usePowerShell();
+}
 // the main glob() and globSync() resolve/return array of filenames
 
 // all js files, but don't look in node_modules
@@ -36,33 +48,34 @@ if (argv.test) {
     //   delete json[key];
     //   continue;
     // }
-    if (!find(key)) {
-      delete json[key];
-      continue;
-    }
+    // if (!find(key)) {
+    //   delete json[key];
+    //   continue;
+    // }
     if (json[key].zh == null) {
       json[key].zh = await translateZh(key);
     }
   }
   fs.writeFileSync(p, JSON.stringify(json, null, 4));
 
-  let s = await translateEN(fs.readFileSync("./README.zh.md").toString());
-  fs.writeFileSync(
-    "./README.md",
-    `[中文](README.zh.md) | [English](README.md)
+  if ((await $`git diff README.zh.md`).toString().length > 0) {
+    let s = await translateEN(fs.readFileSync("./README.zh.md").toString());
+    fs.writeFileSync(
+      "./README.md",
+      `[中文](README.zh.md) | [English](README.md)
 \n
 ${s}`
-  );
-
-  fs.writeFileSync(p, JSON.stringify(json, null, 4));
-
-  let c = await translateEN(fs.readFileSync("./ChangeLog.zh.md").toString());
-  fs.writeFileSync(
-    "./ChangeLog.md",
-    `[中文](ChangeLog.zh.md) | [English](ChangeLog.md)
+    );
+  }
+  if ((await $`git diff ChangeLog.zh.md`).toString().length > 0) {
+    let c = await translateEN(fs.readFileSync("./ChangeLog.zh.md").toString());
+    fs.writeFileSync(
+      "./ChangeLog.md",
+      `[中文](ChangeLog.zh.md) | [English](ChangeLog.md)
 \n
 ${c}`
-  );
+    );
+  }
 }
 
 export async function translateZh(content) {

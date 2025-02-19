@@ -1,4 +1,4 @@
-import { taskHistory } from "./common/data.mjs";
+import { taskHistory } from "../../common/data";
 
 export enum CommandStatus {
   SUCCESS = "success",
