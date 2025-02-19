@@ -204,14 +204,15 @@ export function Market() {
   );
   let refreshThreePartys = async (mcp) => {
     let arr = [];
-    for (let x in mcp.mcpServers) {
-      if (mcpExtensionDataObj[x] == undefined) {
-        arr.push({ name: x });
-      } else {
-        if (mcp.mcpServers[x]?.hyperchat?.config == undefined) {
-          arr.push({ name: x });
-        }
+    for (let key in mcp.mcpServers) {
+      if (mcpExtensionDataObj[key] == undefined) {
+        arr.push({ name: key });
       }
+      //  else {
+      //   if (mcp.mcpServers[key]?.hyperchat?.config == undefined) {
+      //     arr.push({ name: key });
+      //   }
+      // }
     }
     setThreePartys(arr);
     refresh();
@@ -232,7 +233,7 @@ export function Market() {
       let r = (await getMCPExtensionData()) as any[];
       let clients = await getClients(false);
       r = clients
-        .filter((x) => x.config.hyperchat.scope == "built-in")
+        .filter((x) => x.config.hyperchat?.scope == "built-in")
         .concat(r);
       // res.data.unshift({
       //   name: "hyper_tools",
@@ -433,7 +434,7 @@ export function Market() {
                         className="hover:cursor-pointer hover:bg-slate-300"
                         actions={[
                           MCP_CONFIG.get().mcpServers[item.name]?.hyperchat
-                            .scope != "built-in" && (
+                            ?.scope != "built-in" && (
                             <a
                               key="list-loadmore-down"
                               className="text-lg hover:text-cyan-400"
@@ -601,20 +602,27 @@ export function Market() {
                               <Tooltip title="setting">
                                 <SettingOutlined
                                   onClick={(e) => {
-                                    let formValues = { ...item } as any;
-                                    formValues._name = item.name;
+                                    const config =
+                                      MCP_CONFIG.get().mcpServers[item.name];
+
+                                    let formValues = {
+                                      ...config,
+                                      name: item.name,
+                                    } as any;
+                                    formValues._name = formValues.name;
                                     formValues._type = "edit";
                                     formValues._argsStr = (
-                                      item.args || []
+                                      formValues.args || []
                                     ).join("   ");
 
                                     formValues._envList = [];
-                                    for (let key in item.env) {
+                                    for (let key in formValues.env) {
                                       formValues._envList.push({
                                         name: key,
-                                        value: item.env[key],
+                                        value: formValues.env[key],
                                       });
                                     }
+
                                     mcpform.resetFields();
                                     mcpform.setFieldsValue(formValues);
                                     setIsAddMCPConfigOpen(true);

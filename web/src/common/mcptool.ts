@@ -58,7 +58,7 @@ function mcpClientsToArray(mcpClients: {
       }),
       name: key,
       status: client.status,
-      order: client.config.hyperchat.scope == "built-in" ? 0 : 1,
+      order: client.config.hyperchat?.scope == "built-in" ? 0 : 1,
     });
   }
   array.sort((a, b) => {

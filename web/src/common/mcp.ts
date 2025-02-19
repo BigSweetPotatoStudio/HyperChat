@@ -7,7 +7,6 @@ import type { MCPClient } from "../../../electron/ts/mcp/config.mjs";
 import { get } from "http";
 import { clientName2Index } from "./openai";
 import { TEMP_FILE, MCP_CONFIG, MCP_CONFIG_TYPE } from "../../../common/data";
-import { e } from "./service";
 
 let init = false;
 let McpClients: {
@@ -145,7 +144,7 @@ function mcpClientsToArray(mcpClients: {
       }),
       name: key,
       status: client.status,
-      order: client.config.hyperchat.scope == "built-in" ? 0 : 1,
+      order: client.config.hyperchat?.scope == "built-in" ? 0 : 1,
       get config() {
         let config = MCP_CONFIG.get().mcpServers[key];
         if (config.hyperchat == null) {
