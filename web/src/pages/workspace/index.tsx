@@ -11,7 +11,7 @@ import { Chat } from "../chat";
 import { it } from "node:test";
 import { v4 } from "uuid";
 import { call } from "../../common/call";
-import { GPT_MODELS, GPTS } from "../../common/data";
+import { GPT_MODELS, Agents } from "../../../../common/data";
 import { OpenAiChannel } from "../../common/openai";
 import { text } from "stream/consumers";
 
@@ -22,7 +22,7 @@ function Page({
   onChange = undefined,
   hyperChatData = {
     uid: "",
-    agent_name: "",
+    agentKey: "",
     message: "",
     onComplete: (text: string) => undefined,
     onError: (e) => {},
@@ -147,6 +147,12 @@ export function WorkSpace() {
       async (msg: { type: string; data: any }) => {
         if (msg.type == "call_agent") {
           let { agent_name, message, uid } = msg.data;
+          let agents = await Agents.init();
+          let agent = agents.data.find((x) => x.label == agent_name);
+          if (agent == null) {
+            throw new Error(`Agent ${agent_name} not found`);
+          }
+
           let n = {
             key: v4(),
             label: "New Tab",
@@ -159,7 +165,7 @@ export function WorkSpace() {
                   refresh();
                 }}
                 hyperChatData={{
-                  agent_name,
+                  agentKey: agent.key,
                   message,
                   uid,
                   onComplete: (text) => {
@@ -170,7 +176,11 @@ export function WorkSpace() {
                     );
                   },
                   onError: (e) => {
-                    call("call_agent_res", [uid, "", e]);
+                    setActiveKey(activeKey);
+                    call("call_agent_res", [uid, "", e.message]);
+                    setItems((items) =>
+                      items.filter((item) => item.key !== n.key),
+                    );
                   },
                 }}
               />

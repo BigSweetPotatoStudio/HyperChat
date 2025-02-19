@@ -164,9 +164,11 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
           content: [
             {
               type: "text",
-              text: `knowledge base: ${JSON.stringify(
-                KNOWLEDGE_BASE.initSync({ force: true }).dbList
-              )}`,
+              text: `knowledge base\n${
+                KNOWLEDGE_BASE.initSync({ force: true })
+                  .dbList.map((x) => x.name + " - " + x.description)
+                  .join("\n")
+              }`,
             },
           ],
         };

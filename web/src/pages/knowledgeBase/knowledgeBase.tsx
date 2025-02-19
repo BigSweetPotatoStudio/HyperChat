@@ -46,6 +46,7 @@ import { KnowledgeBaseModal } from "./knowledgeBaseModal";
 import { v4 } from "uuid";
 import { KnowledgeBaseResourceModal } from "./knowledgeBaseResourceModal";
 import { Divide } from "lucide-react";
+import { t } from "../../i18n";
 
 const { Search } = Input;
 
@@ -67,7 +68,7 @@ export function KnowledgeBase() {
 
   const columns = [
     {
-      title: "name",
+      title: t`name`,
       dataIndex: "name",
       key: "name",
       render: (text, record) => (
@@ -77,30 +78,30 @@ export function KnowledgeBase() {
       ),
     },
     {
-      title: "operation",
+      title: t`operation`,
       dataIndex: "operation",
       key: "operation",
       render: (text, record) => (
-        <Space>
-          <Button
-            type="link"
+        <div>
+          <a
             onClick={() => {
               setCurrRowKnowledgeBase(record);
               setIsOpenKnowledgeBase(true);
             }}
           >
-            Edit
-          </Button>
-          <Button
-            type="link"
+            {t`Edit`}
+          </a>
+          <Divider type="vertical"></Divider>
+          <a
             onClick={() => {
               setCurrRowKnowledgeBase(record);
             }}
           >
-            Open
-          </Button>
+            {t`Open`}
+          </a>
+          <Divider type="vertical"></Divider>
           <Popconfirm
-            title="Sure to delete?"
+            title={t`Sure to delete?`}
             onConfirm={async () => {
               await call("vectorStoreDelete", [record]);
               KNOWLEDGE_BASE.get().dbList = KNOWLEDGE_BASE.get().dbList.filter(
@@ -111,9 +112,9 @@ export function KnowledgeBase() {
               refresh();
             }}
           >
-            <Button type="link">Delete</Button>
+            <a>{t`Delete`}</a>
           </Popconfirm>
-        </Space>
+        </div>
       ),
     },
   ];
@@ -134,7 +135,7 @@ export function KnowledgeBase() {
               }}
               type="primary"
             >
-              Create
+              {t`Create`}
             </Button>
           </Space>
           <Table
@@ -153,7 +154,7 @@ export function KnowledgeBase() {
                     setIsOpenResource(true);
                   }}
                 >
-                  Add
+                  {t`Add`}
                 </Button>
                 <Search
                   onSearch={async (e) => {
@@ -191,8 +192,8 @@ export function KnowledgeBase() {
 
                     setLoadingSearch(false);
                   }}
-                  placeholder="test search top 5"
-                  enterButton="Search"
+                  placeholder={t`test search top 5`}
+                  enterButton={t`Search`}
                   loading={loadingSearch}
                 />
               </Space>
@@ -203,7 +204,7 @@ export function KnowledgeBase() {
                       call("initEmbeddings", [currRowKnowledgeBase.model]);
                     }}
                   >
-                    Download Model
+                    {t`Download Model`}
                   </Button>
                 )}
                 <Button
@@ -211,7 +212,7 @@ export function KnowledgeBase() {
                     setIsOpenProgress(true);
                   }}
                 >
-                  Check Progress
+                  {t`Check Progress`}
                 </Button>
               </Space>
             </div>
@@ -221,12 +222,12 @@ export function KnowledgeBase() {
               dataSource={currRowKnowledgeBase.resources}
               columns={[
                 {
-                  title: "name",
+                  title: t`Name`,
                   dataIndex: "name",
                   key: "name",
                 },
                 {
-                  title: "path",
+                  title: t`FilePath`,
                   dataIndex: "filepath",
                   key: "filepath",
                   render: (text, record) => (
@@ -242,11 +243,12 @@ export function KnowledgeBase() {
                           }
                         }}
                       >
-                        open
+                        {t`Open`}
                       </a>
                       <Divider type="vertical" />
-                      <a
-                        onClick={async () => {
+                      <Popconfirm
+                        title={t`Sure to delete?`}
+                        onConfirm={async () => {
                           let f = await call("vectorStoreRemoveResource", [
                             currRowKnowledgeBase,
                             record,
@@ -261,8 +263,8 @@ export function KnowledgeBase() {
                           refresh();
                         }}
                       >
-                        remove
-                      </a>
+                        <a>{t`Remove`}</a>
+                      </Popconfirm>
                     </>
                   ),
                 },
@@ -272,7 +274,7 @@ export function KnowledgeBase() {
         )}
       </div>
       <Modal
-        title="Progress"
+        title={t`Progress`}
         destroyOnClose={true}
         open={isOpenProgress}
         onOk={() => setIsOpenProgress(false)}

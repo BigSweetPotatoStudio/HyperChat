@@ -15,12 +15,13 @@ import {
   AppSetting,
   MCP_CONFIG,
   MCP_CONFIG_TYPE,
-} from "../common/data.mjs";
+} from "../../../common/data";
 import { request } from "http";
 
 import { spawnWithOutput } from "../common/util.mjs";
 import { clientPaths } from "./claude.mjs";
 import Logger from "electron-log";
+import { startTask } from "./task.mjs";
 
 await initMcpServer().catch((e) => {
   console.error("initMcpServer", e);
@@ -124,6 +125,8 @@ export class MCPClient {
     }
 
     let client = this.client;
+    // let c = client.getServerCapabilities();
+    // console.log(c);
     let tools_res = await client.listTools().catch((e) => {
       return { tools: [] };
     });
@@ -150,12 +153,8 @@ export class MCPClient {
       if (this.config.hyperchat.type == "sse") {
         //
       } else {
-        log.error("client error", e);
+        log.error("client onerror: ", e);
       }
-
-      // setTimeout(() => {
-      //   this.open();
-      // }, 3000);
     };
 
     this.tools = tools_res.tools;
@@ -164,15 +163,10 @@ export class MCPClient {
     this.status = "connected";
   }
   async openSse(c?: MCP_CONFIG_TYPE) {
-    const client = new Client(
-      {
-        name: this.name,
-        version: "1.0.0",
-      },
-      {
-        capabilities: {},
-      }
-    );
+    const client = new Client({
+      name: this.name,
+      version: "1.0.0",
+    });
 
     let config = c || (await getConfg().then((r) => r.mcpServers[this.name]));
     let urlStr = config.hyperchat.url;
@@ -191,16 +185,10 @@ export class MCPClient {
         args: config.args,
         env: Object.assign(getMyDefaultEnvironment(), config.env),
       });
-
-      const client = new Client(
-        {
-          name: key,
-          version: "1.0.0",
-        },
-        {
-          capabilities: {},
-        }
-      );
+      const client = new Client({
+        name: key,
+        version: "1.0.0",
+      });
 
       await client.connect(transport);
       this.client = client;
@@ -225,17 +213,19 @@ export class MCPClient {
 let firstRunStatus = 0;
 
 export async function initMcpClients() {
-  firstRunStatus == 1;
-  // console.log("mcpClients", mcpClients, Object.keys(mcpClients).length);
+  // console.log("initMcpClientsRunning", firstRunStatus);
+
   while (1) {
     if (firstRunStatus == 1) {
-      log.info("getMcpClients runing");
+      console.log("waiting");
       await sleep(100);
     } else {
       break;
     }
   }
-
+  if (firstRunStatus == 0) {
+    firstRunStatus = 1;
+  }
   if (firstRunStatus == 2) {
     log.info("getMcpClients cached mcpClients", Object.keys(mcpClients).length);
     return mcpClients;
@@ -270,7 +260,9 @@ export async function initMcpClients() {
   firstRunStatus = 2;
   return mcpClients;
 }
-
+initMcpClients().then(() => {
+  startTask();
+});
 export async function openMcpClient(
   clientName: string = undefined,
   clientConfig?: MCP_CONFIG_TYPE

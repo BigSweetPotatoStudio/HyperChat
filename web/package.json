@@ -1,6 +1,6 @@
 {
   "name": "web",
-  "version": "0.3.4",
+  "version": "1.0.0",
   "private": true,
   "dependencies": {
     "@ant-design/cssinjs": "^1.21.1",
@@ -15,7 +15,7 @@
     "@dnd-kit/utilities": "^3.2.2",
     "@effortlessmotion/html-webpack-inline-source-plugin": "^1.0.3",
     "@microsoft/clarity": "^1.0.0",
-    "@modelcontextprotocol/sdk": "^1.0.4",
+    "@modelcontextprotocol/sdk": "^1.5.0",
     "@mozilla/readability": "^0.5.0",
     "@testing-library/jest-dom": "^5.17.0",
     "@testing-library/react": "^13.4.0",
@@ -32,6 +32,7 @@
     "copy-webpack-plugin": "^12.0.2",
     "cross-env": "^7.0.3",
     "css-loader": "^7.1.1",
+    "darkreader": "^4.9.101",
     "dayjs": "^1.11.13",
     "dotenv-webpack": "^8.1.0",
     "echarts": "^5.5.1",

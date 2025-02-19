@@ -12,6 +12,19 @@ import { config } from "./common/config";
 import "./tailwind.css";
 import { ConfigProvider } from "antd";
 import { StyleProvider, px2remTransformer } from "@ant-design/cssinjs";
+import "darkreader";
+import { AppSetting } from "../../common/data";
+
+(async () => {
+  await AppSetting.init();
+  if (AppSetting.get().darkTheme) {
+    window["DarkReader"].enable({
+      brightness: 100,
+      contrast: 90,
+      sepia: 10,
+    });
+  }
+})(); // 获取是否自动启动
 
 console.log("start");
 const px2rem = px2remTransformer({

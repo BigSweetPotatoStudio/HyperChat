@@ -8,6 +8,7 @@ import {
   useLocation,
 } from "react-router-dom";
 import { v4 } from "uuid";
+import OpenAI from "openai";
 import Clarity from "@microsoft/clarity";
 import {
   Button,
@@ -33,13 +34,16 @@ import {
   InputNumber,
   Tag,
   Timeline,
+  notification,
 } from "antd";
 import enUS from "antd/locale/en_US";
 import zhCN from "antd/locale/zh_CN";
 
 import {
   AndroidOutlined,
+  CheckOutlined,
   ChromeFilled,
+  CloseOutlined,
   CloudOutlined,
   CrownFilled,
   DownOutlined,
@@ -69,13 +73,20 @@ import {
 import { route as routerRoute } from "./router";
 import { currLang, setCurrLang, t } from "./i18n";
 import { call } from "./common/call";
-import { electronData, GPT_MODELS, MCP_CONFIG } from "./common/data";
+import {
+  AppSetting,
+  ChatHistory,
+  electronData,
+  GPT_MODELS,
+  MCP_CONFIG,
+} from "../../common/data";
 import { getClients } from "./common/mcp";
 import { EVENT } from "./common/event";
 import { OpenAiChannel } from "./common/openai";
 import { DndTable } from "./common/dndTable";
 import { sleep } from "./common/sleep";
 import { InputPlus } from "./common/input_plus";
+import { e } from "./common/service";
 
 type ProviderType = {
   label: string;
@@ -104,13 +115,25 @@ const Providers: ProviderType[] = [
     label: "OpenRouter",
     baseURL: "https://openrouter.ai/api/v1",
     value: "openrouter",
-    models: ["openai/gpt-4o-mini", "anthropic/claude-3.5-haiku-20241022:beta"],
+    models: [
+      "openai/gpt-4o-mini",
+      "anthropic/claude-3.5-haiku-20241022:beta",
+      "google/gemini-2.0-flash-001",
+    ],
   },
   {
     label: "Gemini",
     baseURL: "https://generativelanguage.googleapis.com/v1beta/openai/",
     value: "gemini",
-    models: ["gemini-2.0-flash-exp"],
+    models: [
+      "gemini-2.0-flash-exp",
+      "gemini-2.0-flash-thinking-exp",
+      "gemini-2.0-flash",
+      "gemini-2.0-flash-001",
+      "gemini-2.0-flash-lite-preview-02-05",
+      "gemini-2.0-pro-exp-02-05",
+      "gemini-2.0-flash-thinking-exp-01-21",
+    ],
   },
   {
     label: "Qwen",
@@ -149,6 +172,30 @@ const Providers: ProviderType[] = [
   },
 ];
 
+window.ext.receive("message-from-main", (msg) => {
+  if (msg.type == "ChatHistoryUpdate") {
+    // setTimeout(() => {
+    //   ChatHistory.init({ force: true });
+    // }, 300);
+    notification.open({
+      message: (
+        <div>
+          <span className="text-red-400">{msg.data.task.name}</span> Task Done
+          by agent: <Tag color="blue">{msg.data.agent.label}</Tag>
+        </div>
+      ),
+      description: msg.data.result,
+      onClick: () => {
+        // console.log("Notification Clicked!");
+        try {
+          window["w"]["navigate"](`/Task/Results?taskKey=${msg.data.task.key}`);
+        } catch (e) {}
+      },
+      duration: 10 * 1000,
+    });
+  }
+});
+
 export function Layout() {
   const [num, setNum] = useState(0);
   function refresh() {
@@ -168,9 +215,9 @@ export function Layout() {
         navigate("/Chat");
       }
     });
-    EVENT.on("setIsToolsShowTrue", () => {
-      setIsToolsShow(true);
-    });
+    // EVENT.on("setIsToolsShowTrue", () => {
+    //   setIsToolsShow(true);
+    // });
     EVENT.on("setIsModelConfigOpenTrue", () => {
       setIsModelConfigOpen(true);
     });
@@ -184,25 +231,25 @@ export function Layout() {
     })();
   }, []);
 
-  const [runing, setRuning] = useState(false);
-  useEffect(() => {
-    let t = setInterval(async () => {
-      let historys = await call("getHistory", []);
-      if (historys.length > 0) {
-        let last = historys[historys.length - 1];
-        if (last.status == "success" || last.status == "error") {
-          setRuning(false);
-        } else {
-          setRuning(true);
-        }
-      } else {
-        setRuning(false);
-      }
-    }, 1000);
-    return () => {
-      clearInterval(t);
-    };
-  }, []);
+  // const [runing, setRuning] = useState(false);
+  // useEffect(() => {
+  //   let t = setInterval(async () => {
+  //     let historys = await call("getHistory", []);
+  //     if (historys.length > 0) {
+  //       let last = historys[historys.length - 1];
+  //       if (last.status == "success" || last.status == "error") {
+  //         setRuning(false);
+  //       } else {
+  //         setRuning(true);
+  //       }
+  //     } else {
+  //       setRuning(false);
+  //     }
+  //   }, 1000);
+  //   return () => {
+  //     clearInterval(t);
+  //   };
+  // }, []);
 
   const [locale, setLocal] = useState(currLang == "zhCN" ? zhCN : enUS);
   const [collapsed, setCollapsed] = useState(false);
@@ -210,11 +257,9 @@ export function Layout() {
   const [isAddModelConfigOpen, setIsAddModelConfigOpen] = useState(false);
   // const [currRow, setCurrRow] = useState({} as any);
   const [form] = Form.useForm();
-  const [mcpform] = Form.useForm();
-  const [isToolsShow, setIsToolsShow] = useState(false);
 
-  const [isAddMCPConfigOpen, setIsAddMCPConfigOpen] = useState(false);
-  const [loadingOpenMCP, setLoadingOpenMCP] = useState(false);
+  // const [isToolsShow, setIsToolsShow] = useState(false);
+
   const [loadingCheckLLM, setLoadingCheckLLM] = useState(false);
   const [syncStatus, setSyncStatus] = useState(0);
   useEffect(() => {
@@ -297,6 +342,16 @@ export function Layout() {
   const [isOpenTestLLM, setIsOpenTestLLM] = useState(false);
   const [pending, setPending] = useState(false);
 
+  useEffect(() => {
+    (async () => {
+      await AppSetting.init();
+      refresh();
+    })();
+  }, []);
+
+  const [providerValue, setProviderValue] = useState(Providers[0].value);
+  const [modelOptions, setModelOptions] = useState([]);
+
   return (
     <ConfigProvider locale={locale}>
       <div style={{ width: "100%", margin: "0px auto" }}>
@@ -304,7 +359,6 @@ export function Layout() {
           prefixCls="my-prefix"
           collapsed={collapsed}
           onCollapse={(collapsed) => {
-            console.log(collapsed);
             setCollapsed(collapsed);
           }}
           route={route}
@@ -324,7 +378,7 @@ export function Layout() {
             return (
               <Space>
                 <a href="https://github.com/BigSweetPotatoStudio/HyperChat">
-                  <GithubFilled></GithubFilled> Github
+                  <GithubFilled></GithubFilled>
                 </a>
                 <Button
                   onClick={() => {
@@ -349,6 +403,26 @@ export function Layout() {
                     { value: "zhCN", label: "中文" },
                     { value: "enUS", label: "English" },
                   ]}
+                />
+
+                <Switch
+                  checkedChildren={"🌙"}
+                  unCheckedChildren={"☀️"}
+                  checked={AppSetting.get().darkTheme}
+                  onChange={async (checked) => {
+                    AppSetting.get().darkTheme = checked;
+                    await AppSetting.save();
+                    refresh();
+                    if (checked) {
+                      window["DarkReader"].enable({
+                        brightness: 100,
+                        contrast: 90,
+                        sepia: 10,
+                      });
+                    } else {
+                      window["DarkReader"].disable();
+                    }
+                  }}
                 />
               </Space>
             );
@@ -447,10 +521,12 @@ export function Layout() {
                   type="link"
                   onClick={() => {
                     form.resetFields();
+                    setProviderValue(Providers[0].value);
+                    setModelOptions([]);
                     setIsAddModelConfigOpen(true);
                   }}
                 >
-                  Add
+                  {t`Add`}
                 </Button>
                 <Button
                   type="link"
@@ -459,7 +535,7 @@ export function Layout() {
                     await call("openExplorer", [p]);
                   }}
                 >
-                  Open the configuration file
+                  {t`Open the configuration file`}
                 </Button>
               </div>
             )}
@@ -474,7 +550,7 @@ export function Layout() {
             }}
             columns={[
               {
-                title: "Name",
+                title: t`name`,
                 dataIndex: "name",
                 key: "name",
                 width: 200,
@@ -489,13 +565,13 @@ export function Layout() {
                 },
               },
               {
-                title: "LLM",
+                title: t`LLM`,
                 dataIndex: "model",
                 key: "model",
                 width: 200,
               },
               {
-                title: "Operation",
+                title: t`Operation`,
                 dataIndex: "key",
                 key: "key",
                 width: 300,
@@ -508,11 +584,13 @@ export function Layout() {
                         if (record.provider == null) {
                           record.provider = "other";
                         }
+                        setProviderValue(record.provider);
+                        setModelOptions([]);
                         form.setFieldsValue(record);
                         setIsAddModelConfigOpen(true);
                       }}
                     >
-                      Edit
+                      {t`Edit`}
                     </Button>
                     <Divider type="vertical"></Divider>
                     <Button
@@ -526,7 +604,7 @@ export function Layout() {
                         EVENT.fire("refresh");
                       }}
                     >
-                      Clone
+                      {t`Clone`}
                     </Button>
                     <Divider type="vertical"></Divider>
                     <Popconfirm
@@ -541,7 +619,7 @@ export function Layout() {
                         EVENT.fire("refresh");
                       }}
                     >
-                      <Button type="link">Delete</Button>
+                      <Button type="link">{t`Delete`}</Button>
                     </Popconfirm>
                     <Divider type="vertical"></Divider>
                     <Tooltip title="Set default">
@@ -557,7 +635,7 @@ export function Layout() {
                           EVENT.fire("refresh");
                         }}
                       >
-                        Top
+                        {t`Top`}
                       </Button>
                     </Tooltip>
                   </div>
@@ -710,11 +788,13 @@ export function Layout() {
             <Select
               options={Providers}
               onChange={(e) => {
+                setProviderValue(e);
+                setModelOptions([]);
                 let find = Providers.find((x) => x.value == e);
                 if (find == null) {
                   return;
                 }
-                console.log(find);
+                // console.log(find);
                 let value: any = {
                   baseURL: find.baseURL,
                 };
@@ -738,16 +818,37 @@ export function Layout() {
             rules={[{ required: true, message: "Please enter" }]}
           >
             <Input
-              disabled={
-                !["other", "ollama"].includes(form.getFieldValue("provider"))
-              }
+              // disabled={
+              //   !["other", "ollama"].includes(form.getFieldValue("provider"))
+              // }
               placeholder={t`Please enter baseURL`}
             ></Input>
           </Form.Item>
           <Form.Item
             name="apiKey"
             label="apiKey"
-            rules={[{ required: true, message: "Please enter" }]}
+            rules={[
+              { required: true, message: "Please enter" },
+              ({ getFieldValue }) => ({
+                async validator(_, value) {
+                  if (value) {
+                    const openai = new OpenAI({
+                      baseURL: getFieldValue("baseURL"),
+                      apiKey: value,
+                      dangerouslyAllowBrowser: true,
+                    });
+                    const list = await openai.models.list();
+                    // console.log(list);
+                    return Promise.resolve();
+                  }
+                  // return Promise.reject(
+                  //   new Error(
+                  //     "apikey error",
+                  //   ),
+                  // );
+                },
+              }),
+            ]}
           >
             <Input placeholder={t`Please enter apiKey`}></Input>
           </Form.Item>
@@ -757,15 +858,35 @@ export function Layout() {
             label="model"
             rules={[{ required: true, message: "Please enter" }]}
           >
-            <InputPlus
+            {/* <InputPlus
               placeholder={t`Please enter or select the model`}
               options={Providers.find(
-                (x) =>
-                  x.value ==
-                  (form.getFieldValue("provider") || Providers[0].value),
+                (x) => x.value == providerValue,
               )?.models?.map((x) => {
                 return { value: x, label: x };
               })}
+            /> */}
+            <Select
+              showSearch
+              placeholder={t`Please enter or select the model`}
+              optionFilterProp="label"
+              onFocus={async () => {
+                const openai = new OpenAI({
+                  baseURL: form.getFieldValue("baseURL"),
+                  apiKey: form.getFieldValue("apiKey") || "",
+                  dangerouslyAllowBrowser: true,
+                });
+                try {
+                  const list = await openai.models.list();
+                  setModelOptions(
+                    list.data.map((x) => {
+                      return { value: x.id, label: x.id };
+                    }),
+                  );
+                  // console.log(list);
+                } catch {}
+              }}
+              options={modelOptions}
             />
           </Form.Item>
           <Form.Item name="name" label="Alias">

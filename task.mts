@@ -36,10 +36,10 @@ if (os.platform() === "win32") {
 }
 
 fs.writeFileSync(
-  "./electron/node_modules/@modelcontextprotocol/sdk/dist/client/stdio.js",
+  "./electron/node_modules/@modelcontextprotocol/sdk/dist/esm/client/stdio.js",
   fs
     .readFileSync(
-      "./electron/node_modules/@modelcontextprotocol/sdk/dist/client/stdio.js"
+      "./electron/node_modules/@modelcontextprotocol/sdk/dist/esm/client/stdio.js"
     )
     .toString()
     .replace(
@@ -48,28 +48,28 @@ fs.writeFileSync(
     )
 );
 
-if (
-  !fs
-    .readFileSync(
-      "./electron/node_modules/@modelcontextprotocol/sdk/dist/client/sse.js"
-    )
-    .toString()
-    .includes(`'eventsource'`)
-) {
-  fs.writeFileSync(
-    "./electron/node_modules/@modelcontextprotocol/sdk/dist/client/sse.js",
-    fs
-      .readFileSync(
-        "./electron/node_modules/@modelcontextprotocol/sdk/dist/client/sse.js"
-      )
-      .toString()
-      .replace(
-        `import { JSONRPCMessageSchema } from "../types.js";`,
-        `import { JSONRPCMessageSchema } from "../types.js";
-import {EventSource} from 'eventsource'`
-      )
-  );
-}
+// if (
+//   !fs
+//     .readFileSync(
+//       "./electron/node_modules/@modelcontextprotocol/sdk/dist/client/sse.js"
+//     )
+//     .toString()
+//     .includes(`'eventsource'`)
+// ) {
+//   fs.writeFileSync(
+//     "./electron/node_modules/@modelcontextprotocol/sdk/dist/client/sse.js",
+//     fs
+//       .readFileSync(
+//         "./electron/node_modules/@modelcontextprotocol/sdk/dist/client/sse.js"
+//       )
+//       .toString()
+//       .replace(
+//         `import { JSONRPCMessageSchema } from "../types.js";`,
+//         `import { JSONRPCMessageSchema } from "../types.js";
+// import {EventSource} from 'eventsource'`
+//       )
+//   );
+// }
 
 const spawnWithOutput = (command: string, args: string[], options) => {
   return new Promise((resolve, reject) => {

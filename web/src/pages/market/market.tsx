@@ -13,7 +13,11 @@ import {
   Tag,
   Tooltip,
 } from "antd";
-import { electronData, MCP_CONFIG, MCP_CONFIG_TYPE } from "../../common/data";
+import {
+  electronData,
+  MCP_CONFIG,
+  MCP_CONFIG_TYPE,
+} from "../../../../common/data";
 import { EVENT } from "../../common/event";
 import { Code } from "../../common/code";
 // import * as DATA from "../../../public/mcp_data.js";
@@ -52,6 +56,7 @@ import { z } from "zod";
 import { zodToJsonSchema } from "zod-to-json-schema";
 
 import { getClients, getMcpClients, InitedClient } from "../../common/mcp";
+import { t } from "../../i18n";
 
 export type Package = {
   type: "npx" | "uvx" | "other";
@@ -193,22 +198,21 @@ export function Market() {
   };
   const [npx, setNpxVer] = useState("");
   const [uv, setUvVer] = useState("");
-  const [threePartys, setThreePartys] = useState<
-    Array<MCP_CONFIG_TYPE & { name: string }>
-  >([]);
+  const [threePartys, setThreePartys] = useState<Array<{ name: string }>>([]);
   const [mcpLoadingObj, setMcpLoadingObj] = useState(
     {} as any as { [s: string]: boolean },
   );
   let refreshThreePartys = async (mcp) => {
     let arr = [];
-    for (let x in mcp.mcpServers) {
-      if (mcpExtensionDataObj[x] == undefined) {
-        arr.push({ ...mcp.mcpServers[x], name: x });
-      } else {
-        if (mcp.mcpServers[x]?.hyperchat?.config == undefined) {
-          arr.push({ ...mcp.mcpServers[x], name: x });
-        }
+    for (let key in mcp.mcpServers) {
+      if (mcpExtensionDataObj[key] == undefined) {
+        arr.push({ name: key });
       }
+      //  else {
+      //   if (mcp.mcpServers[key]?.hyperchat?.config == undefined) {
+      //     arr.push({ name: key });
+      //   }
+      // }
     }
     setThreePartys(arr);
     refresh();
@@ -229,7 +233,7 @@ export function Market() {
       let r = (await getMCPExtensionData()) as any[];
       let clients = await getClients(false);
       r = clients
-        .filter((x) => x.config.hyperchat.scope == "built-in")
+        .filter((x) => x.config.hyperchat?.scope == "built-in")
         .concat(r);
       // res.data.unshift({
       //   name: "hyper_tools",
@@ -255,7 +259,6 @@ export function Market() {
   const [isPathOpen, setIsPathOpen] = useState(false);
   const [currRow, setCurrRow] = useState({} as any);
   const [mcpconfigOpen, setMcpconfigOpen] = useState(false);
-  const [clients, setClients] = React.useState<InitedClient[]>([]);
 
   const [isAddMCPConfigOpen, setIsAddMCPConfigOpen] = useState(false);
   const [loadingOpenMCP, setLoadingOpenMCP] = useState(false);
@@ -263,7 +266,7 @@ export function Market() {
 
   useEffect(() => {}, []);
 
-  const enableAndDisable = (item) => {
+  const RenderEnableAndDisable = (item: { name: string }) => {
     return (
       <a
         className="text-lg hover:text-cyan-400"
@@ -310,7 +313,7 @@ export function Market() {
       </a>
     );
   };
-  const ListItemMeta = (item) => {
+  const ListItemMeta = (item: { name: string; description?: string }) => {
     return (
       <List.Item.Meta
         className="px-2"
@@ -321,9 +324,10 @@ export function Market() {
               "built-in" && <Tag color="blue">built-in</Tag>}
             {mcpLoadingObj[item.name] ? (
               <SyncOutlined spin className="text-blue-400" />
-            ) : getMcpClients()[item.name] == null ? null : getMcpClients()[
-                item.name
-              ]?.status == "connected" ? (
+            ) : getMcpClients()[item.name] == null ||
+              MCP_CONFIG.get().mcpServers[item.name]
+                .disabled ? null : getMcpClients()[item.name]?.status ==
+              "connected" ? (
               <CheckCircleTwoTone twoToneColor="#52c41a" />
             ) : (
               <DisconnectOutlined className="text-red-400" />
@@ -345,13 +349,13 @@ export function Market() {
           <div>
             <Space>
               <span className="font-bold">npx & nodejs: </span>
-              {npx || "Not Installed"}
+              {npx || t`Not Installed`}
             </Space>
           </div>
           {!npx && (
             <div>
               <Space>
-                <span>Please run the command.</span>
+                <span>{t`Please run the command.`}</span>
                 {electronData.get().platform == "win32" ? (
                   <Code>winget install OpenJS.NodeJS.LTS</Code>
                 ) : (
@@ -366,14 +370,14 @@ export function Market() {
           <div>
             <Space>
               <span className="font-bold">uvx & python:</span>{" "}
-              {uv || "Not Installed"}
+              {uv || t`Not Installed`}
             </Space>
           </div>
 
           {!uv && (
             <div>
               <Space>
-                <span>Please run the command.</span>
+                <span>{t`Please run the command.`}</span>
                 {electronData.get().platform == "win32" ? (
                   <Code>winget install --id=astral-sh.uv -e</Code>
                 ) : (
@@ -385,14 +389,16 @@ export function Market() {
           )}
         </div>
         <Space className="mt-1">
-          <Tooltip title="If you are using NVM, you might need to customize the PATH environment var.">
+          <Tooltip
+            title={t`If you are using NVM, you might need to customize the PATH environment var.`}
+          >
             <Button
               onClick={() => {
                 setIsPathOpen(true);
               }}
               danger
             >
-              Try Repair environment
+              {t`Try Repair environment`}
             </Button>
           </Tooltip>
 
@@ -402,7 +408,7 @@ export function Market() {
               await call("openExplorer", [p]);
             }}
           >
-            Open the configuration file
+            {t`Open the configuration file`}
           </Button>
         </Space>
         <Tabs
@@ -410,7 +416,7 @@ export function Market() {
           type="card"
           items={[
             {
-              label: `Officially Maintained List`,
+              label: t`Officially Maintained List`,
               key: "official",
               children: (
                 <div className="bg-white p-0">
@@ -428,7 +434,7 @@ export function Market() {
                         className="hover:cursor-pointer hover:bg-slate-300"
                         actions={[
                           MCP_CONFIG.get().mcpServers[item.name]?.hyperchat
-                            .scope != "built-in" && (
+                            ?.scope != "built-in" && (
                             <a
                               key="list-loadmore-down"
                               className="text-lg hover:text-cyan-400"
@@ -484,7 +490,7 @@ export function Market() {
                           ),
 
                           MCP_CONFIG.get().mcpServers[item.name]
-                            ? enableAndDisable(item)
+                            ? RenderEnableAndDisable(item)
                             : undefined,
                           MCP_CONFIG.get().mcpServers[item.name] &&
                           MCP_CONFIG.get().mcpServers[item.name]?.hyperchat
@@ -527,7 +533,7 @@ export function Market() {
               ),
             },
             {
-              label: `third party`,
+              label: t`third party`,
               key: "thirdparty",
               children: (
                 <div className="bg-white p-0">
@@ -538,7 +544,7 @@ export function Market() {
                         setIsAddMCPConfigOpen(true);
                       }}
                     >
-                      Add MCP
+                      {t`Add MCP`}
                     </Button>
                   </div>
 
@@ -586,7 +592,7 @@ export function Market() {
                           ),
 
                           MCP_CONFIG.get().mcpServers[item.name]
-                            ? enableAndDisable(item)
+                            ? RenderEnableAndDisable(item)
                             : undefined,
                           MCP_CONFIG.get().mcpServers[item.name] &&
                           MCP_CONFIG.get().mcpServers[item.name]?.hyperchat
@@ -596,20 +602,27 @@ export function Market() {
                               <Tooltip title="setting">
                                 <SettingOutlined
                                   onClick={(e) => {
-                                    let formValues = { ...item } as any;
-                                    formValues._name = item.name;
+                                    const config =
+                                      MCP_CONFIG.get().mcpServers[item.name];
+
+                                    let formValues = {
+                                      ...config,
+                                      name: item.name,
+                                    } as any;
+                                    formValues._name = formValues.name;
                                     formValues._type = "edit";
                                     formValues._argsStr = (
-                                      item.args || []
+                                      formValues.args || []
                                     ).join("   ");
 
                                     formValues._envList = [];
-                                    for (let key in item.env) {
+                                    for (let key in formValues.env) {
                                       formValues._envList.push({
                                         name: key,
-                                        value: item.env[key],
+                                        value: formValues.env[key],
                                       });
                                     }
+
                                     mcpform.resetFields();
                                     mcpform.setFieldsValue(formValues);
                                     setIsAddMCPConfigOpen(true);
@@ -632,7 +645,7 @@ export function Market() {
       </div>
       <div className="w-3/5 p-4">
         <div>
-          <h1>More MCP Market</h1>
+          <h1>{t`More MCP Market`}</h1>
           <div>
             <a href="https://modelcontextprotocol.io/examples">
               modelcontextprotocol.io/examples
@@ -654,7 +667,7 @@ export function Market() {
       </div>
       <Modal
         width={600}
-        title="Configure PATH"
+        title={t`Configure PATH`}
         open={isPathOpen}
         okButtonProps={{ autoFocus: true, htmlType: "submit" }}
         cancelButtonProps={{ style: { display: "none" } }}
@@ -686,15 +699,15 @@ export function Market() {
         </Form.Item>
       </Modal>
       <Modal
-        title="MCP Configuration"
+        title={t`MCP Configuration`}
         open={mcpconfigOpen}
         footer={[]}
         onCancel={() => setMcpconfigOpen(false)}
         forceRender={true}
       >
         {JsonSchema2ProFormColumnsType(currRow?.configSchema).length > 0
-          ? "Please configure the parameters"
-          : "No need config"}
+          ? t`Please configure the parameters`
+          : t`No need config`}
         <BetaSchemaForm<any>
           layoutType="Form"
           formRef={mcpconfigform}
@@ -743,14 +756,14 @@ export function Market() {
 
       <Modal
         width={600}
-        title="Configure MCP"
+        title={t`Configure MCP`}
         open={isAddMCPConfigOpen}
         okButtonProps={{
           autoFocus: true,
           htmlType: "submit",
           loading: loadingOpenMCP,
         }}
-        okText="Install And Run"
+        okText={t`Install And Run`}
         maskClosable={false}
         cancelButtonProps={{ style: { display: "none" } }}
         onCancel={() => {
@@ -823,12 +836,12 @@ export function Market() {
         </Form.Item>
         <Form.Item
           name="_name"
-          label="Name"
-          rules={[{ required: true, message: "Please enter" }]}
+          label={t`Name`}
+          rules={[{ required: true, message: t`Please enter` }]}
         >
           <Input
             disabled={mcpform.getFieldValue("_type") == "edit"}
-            placeholder="Please enter the name"
+            placeholder="Please enter"
           ></Input>
         </Form.Item>
         <Form.Item
