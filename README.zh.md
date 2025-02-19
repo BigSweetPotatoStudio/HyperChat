@@ -27,6 +27,7 @@ HyperChat 是一个追求开放的Chat客户端，可以使用各家LLM的API，
 - [x] 支持 Agent Call Agent，通过HyperAgent的MCP
 - [x] 添加定时任务，指定Agent定时完成任务，以及任务完成情况查看。
 
+
 ### TODO:
 
 - [ ] 权限弹窗，是否允许
