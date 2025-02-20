@@ -61,10 +61,10 @@ export function MyAttachR(props: {
                     <div
                       onClick={() => {
                         Modal.info({
-                          width: "80%",
+                          width: "50%",
                           title: "Tip",
                           maskClosable: true,
-                          content: <div>{content.text as string}</div>,
+                          content: <div>{content.text as string || "No Content"}</div>,
                         });
                       }}
                     >
@@ -94,7 +94,7 @@ export function MyAttachR(props: {
                     <div
                       onClick={() => {
                         Modal.info({
-                          width: "80%",
+                          width: "50%",
                           title: "Tip",
                           maskClosable: true,
                           content: (

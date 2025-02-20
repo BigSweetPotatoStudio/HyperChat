@@ -128,7 +128,26 @@ export function UserContent({ x, regenerate = undefined, submit }) {
             );
           } else if (c.type == "image_url") {
             return (
-              <DownImage key={i} src={c.image_url.url} className="h-48 w-48" />
+              <DownImage
+                onClick={() => {
+                  Modal.info({
+                    width: "50%",
+                    title: "Tip",
+                    maskClosable: true,
+                    content: (
+                      <div>
+                        <img
+                          className="bg-cover"
+                          src={c.image_url.url as string}
+                        />
+                      </div>
+                    ),
+                  });
+                }}
+                key={i}
+                src={c.image_url.url}
+                className="h-48 w-48"
+              />
             );
           } else {
             return <span key={i}>unknown</span>;
