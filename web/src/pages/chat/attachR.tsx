@@ -97,11 +97,18 @@ export function MyAttachR(props: {
                           width: "80%",
                           title: "Tip",
                           maskClosable: true,
-                          content: <div>{content.path as string}</div>,
+                          content: (
+                            <div>
+                              <img
+                                className="bg-cover"
+                                src={content.blob as string}
+                              />
+                            </div>
+                          ),
                         });
                       }}
                     >
-                      <Attachments.FileCard
+                      {/* <Attachments.FileCard
                         className="cursor-pointer"
                         key={index}
                         item={{
@@ -109,8 +116,13 @@ export function MyAttachR(props: {
                           uid: content.uid as string,
                           // thumbUrl: content.path as string,
                           // size: (content.text as string).length,
-                          url: content.path as string,
+                          url: content.blob as string,
                         }}
+                      /> */}
+                      <img
+                        style={{ width: 68, height: 68 }}
+                        className="bg-cover"
+                        src={content.blob as string}
                       />
                     </div>
                   </RemoveBox>
