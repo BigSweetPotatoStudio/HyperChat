@@ -80,6 +80,26 @@ function urlToBase64(url: string) {
   });
 }
 
+function blobToBase64(blob) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+
+    reader.onload = () => {
+      resolve(reader.result); // reader.result 包含 Base64 字符串
+    };
+
+    reader.onerror = (error) => {
+      reject(error);
+    };
+
+    reader.onabort = () => {
+      reject(new Error("读取中断"));
+    };
+
+    reader.readAsDataURL(blob);
+  });
+}
+
 import {
   AlipayCircleOutlined,
   AppstoreOutlined,
@@ -1338,7 +1358,9 @@ export const Chat = ({
                       items: resourcesRef.current.map((x, i) => {
                         return {
                           key: x.key,
-                          label: `${x.key}--${x.description}`,
+                          label: !x.description
+                            ? x.key
+                            : `${x.key}--${x.description}`,
                         };
                       }),
                       onClick: async (item) => {
@@ -1544,20 +1566,42 @@ export const Chat = ({
                   }
                   onPasteFile={async (file) => {
                     // console.log("onPasteFile", file);
+                    if (file.path != "") {
+                      let path = "file://" + file.path;
+                      let p = await urlToBase64(path);
+                      resourceResList.push({
+                        call_name: "UserUpload",
+                        contents: [
+                          {
+                            path: p,
+                            blob: p,
+                            type: "image",
+                          },
+                        ],
+                        uid: v4(),
+                      });
 
-                    let path = "file://" + file.path;
-                    resourceResList.push({
-                      call_name: "UserUpload",
-                      contents: [
-                        {
-                          path: path,
-                          blob: await urlToBase64(path),
-                          type: "image",
-                        },
-                      ],
-                      uid: v4(),
-                    });
-                    setResourceResList(resourceResList.slice());
+                      setResourceResList(resourceResList.slice());
+                    } else {
+                      if (file.size > 0) {
+                        let blob = new Blob([await file.arrayBuffer()], {
+                          type: file.type,
+                        });
+                        let p = await blobToBase64(blob);
+                        resourceResList.push({
+                          call_name: "UserUpload",
+                          contents: [
+                            {
+                              path: p,
+                              blob: p,
+                              type: "image",
+                            },
+                          ],
+                          uid: v4(),
+                        });
+                        setResourceResList(resourceResList.slice());
+                      }
+                    }
                   }}
                   loading={loading}
                   value={value}
