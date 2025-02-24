@@ -111,13 +111,14 @@ export type ChatHistoryItem = {
   agentKey: string;
   sended: boolean;
   icon?: string;
-  allowMCPs: string[];
   requestType: "complete" | "stream";
-  attachedDialogueCount?: number;
   dateTime: number;
   isCalled: boolean;
   isTask: boolean;
   taskKey?: string;
+  allowMCPs: string[];
+  attachedDialogueCount?: number;
+  temperature?: number;
 };
 
 export const ChatHistory = new Data("chat_history.json", {
@@ -134,6 +135,7 @@ export const Agents = new Data("gpts_list.json", {
     allowMCPs: string[];
     modelKey?: string;
     attachedDialogueCount?: number;
+    temperature?: number;
   }>,
 });
 
@@ -147,6 +149,7 @@ export const GPT_MODELS = new Data("gpt_models.json", {
     provider: string;
     supportImage: boolean;
     supportTool: boolean;
+    call_tool_step?: number;
   }>,
 });
 
