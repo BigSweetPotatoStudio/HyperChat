@@ -1140,7 +1140,7 @@ export const Chat = ({
                             );
                             loadMoreData(false, false);
                             refresh();
-                            message.success("Delete Success");
+                            message.success(t`Delete Success`);
                           }
                           if (menuInfo.key === "star") {
                             let index = ChatHistory.get().data.findIndex(
@@ -1535,12 +1535,12 @@ export const Chat = ({
                   setResourceResList(
                     resourceResList.filter((v) => v.uid != x.uid),
                   );
-                  message.success("Delete Success");
+                  message.success(t`Delete Success`);
                 }}
                 promptResList={promptResList}
                 promptResListRemove={(x) => {
                   setPromptResList(promptResList.filter((v) => v.uid != x.uid));
-                  message.success("Delete Success");
+                  message.success(t`Delete Success`);
                 }}
               ></MyAttachR>
 
