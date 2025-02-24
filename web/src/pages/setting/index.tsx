@@ -179,7 +179,7 @@ export function Setting() {
                         window.location.reload();
                       } else {
                         await call("webDavSync", []);
-                        message.success("Sync Success!");
+                        message.success(t`Sync Success`);
                         setSyncLoading(false);
                         window.location.reload();
                       }
