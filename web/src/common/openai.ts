@@ -104,6 +104,7 @@ export class OpenAiChannel {
       supportTool?: boolean;
       supportImage?: boolean;
       allowMCPs?: string[];
+      temperature?: number;
     },
     public messages: MyMessage[],
     public stream = true,
@@ -117,6 +118,10 @@ export class OpenAiChannel {
         "X-Title": "HyperChat", // Optional. Site title for rankings on openrouter.ai.
       },
     });
+    this.options.temperature =
+      typeof this.options.temperature === "number"
+        ? this.options.temperature
+        : undefined;
   }
   addMessage(
     message: MyMessage,
@@ -285,6 +290,7 @@ export class OpenAiChannel {
               include_usage: true, // qwen bug stream not support include_usage
             },
             tools: tools && this.tools_format(tools),
+            temperature: this.options.temperature,
           },
           {
             signal: this.abortController.signal,
@@ -384,6 +390,7 @@ export class OpenAiChannel {
             messages: this.messages_format(messages),
             model: this.options.model,
             tools: tools && this.tools_format(tools),
+            temperature: this.options.temperature,
           },
           {
             signal: this.abortController.signal,
