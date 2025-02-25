@@ -27,6 +27,7 @@ import { CloseOutlined, FormOutlined } from "@ant-design/icons";
 import { getClients, InitedClient } from "../../common/mcp";
 import { GPT_MODELS } from "../../../../common/data";
 import { t } from "../../i18n";
+import { NumberStep } from "../../common/numberStep";
 
 interface Values {
   label: string;
@@ -118,11 +119,18 @@ const ModalForm: React.FC<CollectionCreateFormProps> = ({
         />
       </Form.Item>
       <Form.Item
+        name="temperature"
+        label={t`temperature`}
+        tooltip={t`What sampling temperature to use, between 0 and 2. Higher values like 0.8 will make the output more random, while lower values like 0.2 will make it more focused and deterministic.`}
+      >
+        <NumberStep min={0} max={2} step={0.1} />
+      </Form.Item>
+      <Form.Item
         name="attachedDialogueCount"
         label={t`attachedDialogueCount`}
         tooltip={t`Number of sent Dialogue Message attached per request`}
       >
-        <Slider defaultValue={20} max={40} />
+        <NumberStep defaultValue={20} max={40} />
       </Form.Item>
       <Form.Item name="callable" label={t`Callable`} valuePropName="checked">
         <Checkbox
@@ -169,7 +177,7 @@ export const PromptsModal: React.FC<CollectionCreateFormModalProps> = ({
     <Modal
       width={800}
       open={open}
-      title={"Prompt"}
+      title={`Agent`}
       okButtonProps={{ autoFocus: true }}
       onCancel={onCancel}
       destroyOnClose

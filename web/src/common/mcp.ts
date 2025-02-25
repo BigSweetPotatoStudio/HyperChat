@@ -147,6 +147,9 @@ function mcpClientsToArray(mcpClients: {
       order: client.config.hyperchat?.scope == "built-in" ? 0 : 1,
       get config() {
         let config = MCP_CONFIG.get().mcpServers[key];
+        if (config == null) {
+          return { hyperchat: {} } as any;
+        }
         if (config.hyperchat == null) {
           config.hyperchat = {} as any;
         }

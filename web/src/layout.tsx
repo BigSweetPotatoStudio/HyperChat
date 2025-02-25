@@ -598,7 +598,9 @@ export function Layout() {
                       onClick={async () => {
                         let clone = { ...record };
                         clone.key = v4();
-                        GPT_MODELS.get().data.push(clone);
+                        GPT_MODELS.get()
+                          .data.splice(index + 1, 0, clone)
+                
                         await GPT_MODELS.save();
                         refresh();
                         EVENT.fire("refresh");
