@@ -29,6 +29,7 @@ import {
   Select,
   Divider,
   Popconfirm,
+  TableColumnsType,
 } from "antd";
 import { call } from "../../common/call";
 import client from "socket.io-client";
@@ -56,7 +57,12 @@ import { useForm } from "antd/es/form/Form";
 import { e } from "../../common/service";
 import { t } from "../../i18n";
 import { NewTaskModal } from "./newTaskModal";
-import { Agents, TaskList, ChatHistory } from "../../../../common/data";
+import {
+  Agents,
+  TaskList,
+  ChatHistory,
+  ChatHistoryItem,
+} from "../../../../common/data";
 import { v4 } from "uuid";
 import { useLocation, useNavigate } from "react-router-dom";
 import { Chat } from "../chat";
@@ -73,7 +79,7 @@ export function TaskResultsPage() {
     })();
   }, []);
 
-  const columns = [
+  const columns: TableColumnsType<ChatHistoryItem> = [
     {
       title: t`dateTime`,
       dataIndex: "dateTime",
@@ -83,12 +89,16 @@ export function TaskResultsPage() {
 
     {
       title: "Agent",
-      dataIndex: "gptsKey",
-      key: "gptsKey",
+      dataIndex: "agentKey",
+      key: "agentKey",
       render: (text, row, index) => {
         return (
           <Tag color="blue">
-            {Agents.get().data.find((x) => x.key == row.gptsKey)?.label}
+            {
+              Agents.get().data.find(
+                (x) => x.key == row.agentKey || x.key == row["gptsKey"],
+              )?.label
+            }
           </Tag>
         );
       },

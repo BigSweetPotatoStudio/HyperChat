@@ -80,6 +80,26 @@ function urlToBase64(url: string) {
   });
 }
 
+function blobToBase64(blob) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+
+    reader.onload = () => {
+      resolve(reader.result); // reader.result 包含 Base64 字符串
+    };
+
+    reader.onerror = (error) => {
+      reject(error);
+    };
+
+    reader.onabort = () => {
+      reject(new Error("读取中断"));
+    };
+
+    reader.readAsDataURL(blob);
+  });
+}
+
 import {
   AlipayCircleOutlined,
   AppstoreOutlined,
@@ -141,6 +161,7 @@ import { Copy } from "lucide-react";
 import { ChatHistoryItem } from "../../../../common/data";
 import { useForm } from "antd/es/form/Form";
 import { t } from "../../i18n";
+import { NumberStep } from "../../common/numberStep";
 
 export const Chat = ({
   onTitleChange = undefined,
@@ -219,6 +240,7 @@ export const Chat = ({
         agentKey: find.key,
         modelKey: find.modelKey,
         attachedDialogueCount: find.attachedDialogueCount,
+        temperature: find.temperature,
       },
       find.prompt,
     );
@@ -250,6 +272,7 @@ export const Chat = ({
     sended: false,
     requestType: "stream",
     allowMCPs: [],
+    temperature: undefined,
     attachedDialogueCount: undefined,
     dateTime: Date.now(),
     isCalled: data.agentKey ? true : false,
@@ -717,7 +740,18 @@ export const Chat = ({
     }
     currentChat.current.modelKey = config.key;
     openaiClient.current = new OpenAiChannel(
-      { ...config, allowMCPs: currentChat.current.allowMCPs },
+      {
+        // ...config,
+        baseURL: config.baseURL,
+        model: config.model,
+        apiKey: config.apiKey,
+        call_tool_step: config.call_tool_step,
+        supportTool: config.supportTool,
+        supportImage: config.supportImage,
+
+        allowMCPs: currentChat.current.allowMCPs,
+        temperature: currentChat.current.temperature,
+      },
       currentChat.current.messages,
       currentChat.current.requestType == "stream",
     );
@@ -733,19 +767,18 @@ export const Chat = ({
       setLoading(true);
       if (currentChat.current.sended == false) {
         createChat();
-
         currentChatReset({
           ...currentChat.current,
+          // agentKey: currentChat.current.agentKey,
+          // allowMCPs: currentChat.current.allowMCPs,
+          // modelKey: currentChat.current.modelKey,
+
           key: v4(),
           label: message,
           messages: openaiClient.current.messages,
-          modelKey: currentChat.current.modelKey,
           sended: true,
-          agentKey: currentChat.current.agentKey,
-          allowMCPs: currentChat.current.allowMCPs,
           dateTime: Date.now(),
         });
-
         ChatHistory.get().data.unshift(currentChat.current);
       } else {
         let findIndex = ChatHistory.get().data.findIndex(
@@ -813,15 +846,16 @@ export const Chat = ({
 
   const loadDataTatal = useRef(0);
 
-  const loadMoreData = async (loadMore = true) => {
+  const loadMoreData = async (loadMore = true, loadIndexChange = true) => {
     // console.log(historyFilterType, historyFilterSearchValue, loadIndex.current);
     // console.log("loadMoreData: ", ChatHistory.get().data);
-    if (loadMore) {
-      loadIndex.current += 25;
-    } else {
-      loadIndex.current = 25;
+    if (loadIndexChange) {
+      if (loadMore) {
+        loadIndex.current += 25;
+      } else {
+        loadIndex.current = 25;
+      }
     }
-
     if (loadMoreing) {
       return;
     }
@@ -830,7 +864,9 @@ export const Chat = ({
     let formmatedData = ChatHistory.get()
       .data.filter((x) => {
         return (
-          selectGptsKey.current == null || x.agentKey == selectGptsKey.current
+          selectGptsKey.current == null ||
+          x.agentKey == selectGptsKey.current ||
+          x["gptsKey"] == selectGptsKey.current
         );
       })
       .filter((x) => {
@@ -944,6 +980,7 @@ export const Chat = ({
                               agentKey: find.key,
                               modelKey: find.modelKey,
                               attachedDialogueCount: find.attachedDialogueCount,
+                              temperature: find.temperature,
                             },
                             find.prompt,
                           );
@@ -1077,12 +1114,12 @@ export const Chat = ({
                           //   icon: <EditOutlined />,
                           // },
                           {
-                            label: "Star",
+                            label: t`Star`,
                             key: "star",
                             icon: <StarOutlined />,
                           },
                           {
-                            label: "Remove",
+                            label: t`Remove`,
                             key: "remove",
                             icon: <DeleteOutlined />,
                             danger: true,
@@ -1101,8 +1138,9 @@ export const Chat = ({
                                 (x) => x.key !== conversation.key,
                               ),
                             );
+                            loadMoreData(false, false);
                             refresh();
-                            message.success("Delete Success");
+                            message.success(t`Delete Success`);
                           }
                           if (menuInfo.key === "star") {
                             let index = ChatHistory.get().data.findIndex(
@@ -1338,7 +1376,9 @@ export const Chat = ({
                       items: resourcesRef.current.map((x, i) => {
                         return {
                           key: x.key,
-                          label: `${x.key}--${x.description}`,
+                          label: !x.description
+                            ? x.key
+                            : `${x.key}--${x.description}`,
                         };
                       }),
                       onClick: async (item) => {
@@ -1495,12 +1535,12 @@ export const Chat = ({
                   setResourceResList(
                     resourceResList.filter((v) => v.uid != x.uid),
                   );
-                  message.success("Delete Success");
+                  message.success(t`Delete Success`);
                 }}
                 promptResList={promptResList}
                 promptResListRemove={(x) => {
                   setPromptResList(promptResList.filter((v) => v.uid != x.uid));
-                  message.success("Delete Success");
+                  message.success(t`Delete Success`);
                 }}
               ></MyAttachR>
 
@@ -1544,20 +1584,42 @@ export const Chat = ({
                   }
                   onPasteFile={async (file) => {
                     // console.log("onPasteFile", file);
+                    if (file.path != "") {
+                      let path = "file://" + file.path;
+                      let p = await urlToBase64(path);
+                      resourceResList.push({
+                        call_name: "UserUpload",
+                        contents: [
+                          {
+                            path: p,
+                            blob: p,
+                            type: "image",
+                          },
+                        ],
+                        uid: v4(),
+                      });
 
-                    let path = "file://" + file.path;
-                    resourceResList.push({
-                      call_name: "UserUpload",
-                      contents: [
-                        {
-                          path: path,
-                          blob: await urlToBase64(path),
-                          type: "image",
-                        },
-                      ],
-                      uid: v4(),
-                    });
-                    setResourceResList(resourceResList.slice());
+                      setResourceResList(resourceResList.slice());
+                    } else {
+                      if (file.size > 0) {
+                        let blob = new Blob([await file.arrayBuffer()], {
+                          type: file.type,
+                        });
+                        let p = await blobToBase64(blob);
+                        resourceResList.push({
+                          call_name: "UserUpload",
+                          contents: [
+                            {
+                              path: p,
+                              blob: p,
+                              type: "image",
+                            },
+                          ],
+                          uid: v4(),
+                        });
+                        setResourceResList(resourceResList.slice());
+                      }
+                    }
                   }}
                   loading={loading}
                   value={value}
@@ -1730,11 +1792,16 @@ export const Chat = ({
               onFinish={async (values) => {
                 currentChat.current.attachedDialogueCount =
                   values.attachedDialogueCount;
+                currentChat.current.temperature = values.temperature;
+                if (openaiClient.current) {
+                  calcAttachDialogue(
+                    openaiClient.current.messages,
+                    currentChat.current.attachedDialogueCount,
+                  );
+                  openaiClient.current.options.temperature = values.temperature;
+                }
 
-                calcAttachDialogue(
-                  openaiClient.current.messages,
-                  currentChat.current.attachedDialogueCount,
-                );
+ 
 
                 refresh();
                 setIsOpenMoreSetting(false);
@@ -1745,16 +1812,18 @@ export const Chat = ({
           )}
         >
           <Form.Item
+            name="temperature"
+            label={t`temperature`}
+            tooltip={t`What sampling temperature to use, between 0 and 2. Higher values like 0.8 will make the output more random, while lower values like 0.2 will make it more focused and deterministic.`}
+          >
+            <NumberStep min={0} max={2} step={0.1} />
+          </Form.Item>
+          <Form.Item
             name="attachedDialogueCount"
             label={t`attachedDialogueCount`}
             tooltip={t`Number of sent Dialogue Message attached per request`}
           >
-            {/* <InputNumber
-              placeholder="blank means is all."
-              min={0}
-              style={{ width: "100%" }}
-            /> */}
-            <Slider defaultValue={20} max={40} />
+            <NumberStep defaultValue={20} max={40} />
           </Form.Item>
         </Modal>
       </div>
