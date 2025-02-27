@@ -68,7 +68,7 @@ export function Setting() {
       AppSetting.get().isAutoLauncher = await call("isAutoLauncher"); // 获取是否自动启动
       webdavForm.resetFields();
       webdavForm.setFieldsValue(
-        Object.assign({ baseDirName: "HyperChat" }, AppSetting.get().webdav),
+        Object.assign(AppSetting.get().webdav, { baseDirName: "HyperChat" }),
       );
       refresh();
     })();
@@ -145,7 +145,7 @@ export function Setting() {
               rules={[{ required: true, message: "Please input!" }]}
               normalize={(value) => value.trim()}
             >
-              <Input disabled defaultValue="HyperChat"/>
+              <Input disabled defaultValue="HyperChat" />
             </Form.Item>
             <Form.Item
               label="autoSync"
