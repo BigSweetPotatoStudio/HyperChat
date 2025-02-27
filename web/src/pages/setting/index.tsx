@@ -145,7 +145,7 @@ export function Setting() {
               rules={[{ required: true, message: "Please input!" }]}
               normalize={(value) => value.trim()}
             >
-              <Input disabled />
+              <Input disabled defaultValue="HyperChat"/>
             </Form.Item>
             <Form.Item
               label="autoSync"
