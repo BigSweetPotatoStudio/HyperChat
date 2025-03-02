@@ -972,7 +972,7 @@ export const Chat = ({
                       onClick={() => {
                         if (openaiClient.current) {
                           let find = Agents.get().data.find(
-                            (y) => y.key === currentChat.current.agentKey,
+                            (y) => y.key === currentChat.current.agentKey || y.key === currentChat.current["gptsKey"],
                           );
                           currentChatReset(
                             {
