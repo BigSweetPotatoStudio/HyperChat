@@ -86,7 +86,6 @@ import { OpenAiChannel } from "./common/openai";
 import { DndTable } from "./common/dndTable";
 import { sleep } from "./common/sleep";
 import { InputPlus } from "./common/input_plus";
-import { e } from "./common/service";
 
 type ProviderType = {
   label: string;
