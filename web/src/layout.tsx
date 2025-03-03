@@ -76,6 +76,7 @@ import { call } from "./common/call";
 import {
   AppSetting,
   ChatHistory,
+  DataList,
   electronData,
   GPT_MODELS,
   MCP_CONFIG,
@@ -262,7 +263,7 @@ export function Layout() {
   const [loadingCheckLLM, setLoadingCheckLLM] = useState(false);
   const [syncStatus, setSyncStatus] = useState(0);
   useEffect(() => {
-    window.ext.receive("message-from-main", (res: any) => {
+    window.ext.receive("message-from-main", async (res: any) => {
       // console.log("UpdateMsg! ", res);
 
       if (res.type == "UpdateMsg" && res.data.status == 1) {
@@ -316,6 +317,14 @@ export function Layout() {
 
       if (res.type == "sync") {
         setSyncStatus(res.data.status);
+        if (res.data.status == 0) {
+          for (let data of DataList) {
+            if (data.options.sync) {
+              await data.init();
+            }
+          }
+          EVENT.fire("refresh");
+        }
       }
     });
     (async () => {
@@ -597,9 +606,8 @@ export function Layout() {
                       onClick={async () => {
                         let clone = { ...record };
                         clone.key = v4();
-                        GPT_MODELS.get()
-                          .data.splice(index + 1, 0, clone)
-                
+                        GPT_MODELS.get().data.splice(index + 1, 0, clone);
+
                         await GPT_MODELS.save();
                         refresh();
                         EVENT.fire("refresh");
