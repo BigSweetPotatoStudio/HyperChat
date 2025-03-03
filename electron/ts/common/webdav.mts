@@ -19,6 +19,7 @@ interface FileInfo {
   filename: string;
 }
 
+let timer = undefined;
 class WebDAVSync {
   private client: WebDAVClient;
   public webdavSetting = AppSetting["webdav"];
@@ -30,7 +31,10 @@ class WebDAVSync {
       password: setting.webdav.password,
     });
     if (setting.webdav.autoSync) {
-      setTimeout(() => {
+      if (timer) {
+        clearInterval(timer);
+      }
+      timer = setInterval(() => {
         Logger.info("autoSync 5min");
         this.sync();
       }, 1000 * 5 * 60);
@@ -391,41 +395,42 @@ webdavClient.init();
 //     }
 //   };
 // }
-function debounce(func, delay) {
-  let timeoutId;
-  let status: number = 0;
-  return async function c(...args) {
-    console.log("debounce", status);
-    const context = this;
-    if (status == 0) {
-      console.log("定时器还未运行，直接取消");
-      // 清除之前的定时器
-      clearTimeout(timeoutId);
-      timeoutId = null;
-    } else if (status == 1) {
-      console.log("定时器已经运行，函数还没有完成，等待");
-      while (true) {
-        if (status == 1) {
-          await sleep(300);
-        } else if (status == 2) {
-          status = 0;
-          break;
-        }
-      }
 
-      c.apply(context, args);
-    } else if (status == 2) {
-      console.log("函数已经完成", timeoutId);
-      status = 0;
-    }
-    // 设置新的定时器
-    timeoutId = setTimeout(async () => {
-      status = 1;
-      await func.apply(context, args);
-      status = 2;
-    }, delay);
-  };
-}
+// function debounce(func, delay) {
+//   let timeoutId;
+//   let status: number = 0;
+//   return async function c(...args) {
+//     console.log("debounce", status);
+//     const context = this;
+//     if (status == 0) {
+//       console.log("定时器还未运行，直接取消");
+//       // 清除之前的定时器
+//       clearTimeout(timeoutId);
+//       timeoutId = null;
+//     } else if (status == 1) {
+//       console.log("定时器已经运行，函数还没有完成，等待");
+//       while (true) {
+//         if (status == 1) {
+//           await sleep(300);
+//         } else if (status == 2) {
+//           status = 0;
+//           break;
+//         }
+//       }
+
+//       c.apply(context, args);
+//     } else if (status == 2) {
+//       console.log("函数已经完成", timeoutId);
+//       status = 0;
+//     }
+//     // 设置新的定时器
+//     timeoutId = setTimeout(async () => {
+//       status = 1;
+//       await func.apply(context, args);
+//       status = 2;
+//     }, delay);
+//   };
+// }
 
 // function asyncDebounce(func, delay) {
 //   let timeoutId = null;
