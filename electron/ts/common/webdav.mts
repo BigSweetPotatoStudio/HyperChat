@@ -6,12 +6,13 @@ import path, { join } from "path";
 
 import { appDataDir } from "../const.mjs";
 import { getMessageService } from "../mianWindow.mjs";
-import { sleep } from "zx";
 import Logger from "electron-log";
 import { log } from "console";
 import { AppSetting, DataList } from "../../../common/data";
-import { fs } from "zx";
+
 import crypto from "crypto";
+import { zx } from "../es6.mjs";
+const { fs } = zx;
 
 interface FileInfo {
   filepath: string;

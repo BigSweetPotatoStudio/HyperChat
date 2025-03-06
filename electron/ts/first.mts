@@ -12,13 +12,11 @@ import {
   session,
   shell,
 } from "electron";
-import { $, usePowerShell, fs, cd, fetch, sleep, path } from "zx";
-
+import { zx } from "./es6.mjs";
+const { $, fs, cd, fetch, sleep, path } = zx;
 import { electronData } from "../../common/data";
 import "./common/data.mjs";
 import { appDataDir } from "./const.mjs";
-
-
 
 // global.ext = {
 //   invert: async (name, args) => {
