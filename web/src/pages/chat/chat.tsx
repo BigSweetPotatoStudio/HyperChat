@@ -305,7 +305,7 @@ export const Chat = ({
     setPromptResList([]);
     let clients = await getClients().catch(() => []);
     clientsRef.current = clients;
-    if (allMCPs) {
+    if (currentChat.current.agentKey == undefined && allMCPs) {
       currentChat.current.allowMCPs = clients.map((v) => v.name);
     }
 
