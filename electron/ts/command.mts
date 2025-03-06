@@ -16,7 +16,8 @@ import {
   systemPreferences,
 } from "electron";
 import pack from "../package.json";
-import { fs, os, sleep, retry, path, $ } from "zx";
+import { zx } from "./es6.mjs";
+const { fs, os, sleep, retry, path, $ } = zx;
 import { request } from "./common/request.mjs";
 import { fileURLToPath } from "url";
 import { dirname } from "path";
@@ -60,6 +61,7 @@ import {
 } from "../../common/data";
 import { EVENT } from "./common/event";
 import { runTask, startTask, stopTask } from "./mcp/task.mjs";
+
 
 function logCommand(
   target: any,

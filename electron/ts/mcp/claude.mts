@@ -1,5 +1,6 @@
 import path from "path";
-import { os } from "zx";
+import { zx } from "../es6.mjs";
+const { os } = zx;
 
 const homeDir = os.homedir();
 const platformPaths = {

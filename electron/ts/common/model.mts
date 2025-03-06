@@ -5,7 +5,7 @@ import { appDataDir } from "../const.mjs";
 import path from "path";
 import { progressList } from "./progress.mjs";
 import type { FeatureExtractionPipeline } from "@xenova/transformers";
-import { fs } from "zx";
+
 import { electronData } from "../../../common/data";
 
 export class FeatureExtraction {

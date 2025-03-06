@@ -8,10 +8,11 @@ import {
   MCP_CONFIG,
   MCP_CONFIG_TYPE,
 } from "../../../common/data.js";
-import { fs, path } from "zx";
+
 import { appDataDir } from "../const.mjs";
 import { getMessageService } from "../mianWindow.mjs";
-
+import { zx } from "../es6.mjs";
+const { fs, path } = zx;
 for (let data of DataList) {
   data.override({
     async inget() {
@@ -29,7 +30,6 @@ for (let data of DataList) {
       }
     },
     async insave() {
-
       try {
         getMessageService().sendToRenderer({
           type: "syncNodeToWeb",

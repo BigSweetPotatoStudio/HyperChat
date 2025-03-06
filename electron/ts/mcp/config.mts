@@ -1,5 +1,6 @@
 import path from "path";
-import { fs, os, sleep } from "zx";
+import { zx } from "../es6.mjs";
+const { fs, os, sleep } = zx;
 import * as MCP from "@modelcontextprotocol/sdk/client/index.js";
 // import { StdioClientTransport } from "@modelcontextprotocol/sdk/client/stdio.js";
 import * as MCPTypes from "@modelcontextprotocol/sdk/types.js";
@@ -22,6 +23,7 @@ import { spawnWithOutput } from "../common/util.mjs";
 import { clientPaths } from "./claude.mjs";
 import Logger from "electron-log";
 import { startTask } from "./task.mjs";
+
 
 await initMcpServer().catch((e) => {
   console.error("initMcpServer", e);

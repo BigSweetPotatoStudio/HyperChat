@@ -2,7 +2,7 @@ import { HNSWLib } from "./myhnswlib.mjs";
 import { Embeddings } from "@langchain/core/embeddings";
 import path from "path";
 import { appDataDir } from "../const.mjs";
-import { fs } from "zx";
+
 import { FeatureExtraction } from "../common/model.mjs";
 import { toolTextSplitter } from "./textsplitters.mjs";
 import {
@@ -12,7 +12,8 @@ import {
 } from "../../../common/data";
 import { v4 } from "uuid";
 import { PDFLoader } from "@langchain/community/document_loaders/fs/pdf";
-
+import { zx } from "../es6.mjs";
+const { fs } = zx;
 // Save the vector store to a directory
 
 // const embeddings = new OpenAIEmbeddings({
