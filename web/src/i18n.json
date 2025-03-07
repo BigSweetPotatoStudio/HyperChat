@@ -557,7 +557,7 @@
     },
     "baseDirName": {
         "en": "baseDirName",
-        "zh": "基础目录名称"
+        "zh": "文件夹名称"
     },
     "autoSync": {
         "en": "autoSync",
@@ -866,5 +866,21 @@
     "Delete Success": {
         "en": "Delete Success",
         "zh": "删除成功"
+    },
+    "Please input": {
+        "en": "Please input",
+        "zh": "请输入"
+    },
+    "Please input!": {
+        "en": "Please input!",
+        "zh": "请输入！"
+    },
+    "This is an experimental feature, 5min sync once": {
+        "en": "This is an experimental feature, 5min sync once",
+        "zh": "这是一个实验性功能，每5分钟同步一次"
+    },
+    "DevTools": {
+        "en": "DevTools",
+        "zh": "开发者工具"
     }
 }

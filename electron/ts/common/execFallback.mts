@@ -1,4 +1,4 @@
-import { sleep } from "zx";
+
 import { isPortUse } from "./checkport.mjs";
 
 export async function execFallback(port, callback) {

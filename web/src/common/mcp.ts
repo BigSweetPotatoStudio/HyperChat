@@ -120,28 +120,31 @@ function mcpClientsToArray(mcpClients: {
           clientName: key,
         };
       }),
-      tools: client.tools.map((tool) => {
-        // let name = clientName2Index.getIndex(key) + "--" + tool.name;
-        return {
-          type: "function" as const,
-          function: {
-            name: tool.name,
-            description: tool.description,
-            parameters: {
-              type: tool.inputSchema.type,
-              properties: removeAdditionalProperties(
-                tool.inputSchema.properties,
-              ),
-              required: tool.inputSchema.required,
-              // additionalProperties: false,
+      tools: client.tools
+        .map((tool) => {
+          // let name = clientName2Index.getIndex(key) + "--" + tool.name;
+          // if (tool.name.includes("worker_put")) {
+          //   return;
+          // }
+          return {
+            type: "function" as const,
+            function: {
+              name: tool.name,
+              description: tool.description,
+              parameters: {
+                type: tool.inputSchema.type,
+                properties: formatProperties(tool.inputSchema.properties),
+                required: tool.inputSchema.required,
+                // additionalProperties: false,
+              },
             },
-          },
-          origin_name: tool.name,
-          restore_name: key + " > " + tool.name,
-          key: key,
-          clientName: key,
-        };
-      }),
+            origin_name: tool.name,
+            restore_name: key + " > " + tool.name,
+            key: key,
+            clientName: key,
+          };
+        })
+        .filter((x) => x != null),
       name: key,
       status: client.status,
       order: client.config.hyperchat?.scope == "built-in" ? 0 : 1,
@@ -210,19 +213,28 @@ export async function getMCPExtensionData() {
   }
 }
 
-function removeAdditionalProperties(obj: any) {
+function formatProperties(obj: any) {
   if (obj == null) {
-    return obj;
+    return {
+      compatible: {
+        type: "string",
+        description: "ignore, no enter", // compatible gemini-openai
+      },
+    };
   }
+
   try {
     for (let key in obj) {
       if (obj[key].type == "object") {
-        removeAdditionalProperties(obj[key].properties);
+        obj[key].properties = formatProperties(obj[key].properties);
+        delete obj[key].items;
       } else if (obj[key].type == "array") {
-        removeAdditionalProperties(obj[key].items);
+        obj[key].items = formatProperties(obj[key].items);
+        delete obj[key].properties;
       }
     }
     delete obj.additionalProperties;
+
   } catch (e) {
     console.error(e);
   }

@@ -1,7 +1,7 @@
-import { fs, path } from "zx";
 import { appDataDir } from "../const.mjs";
 import Logger from "electron-log";
-
+import { zx } from "../es6.mjs";
+const { fs, path } = zx;
 export class Data<T> {
   private localStorage = null;
   async init(isCatch = true) {

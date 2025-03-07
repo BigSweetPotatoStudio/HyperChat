@@ -5,7 +5,7 @@ import http from "http";
 import path from "path";
 import { Server as SocketIO } from "socket.io";
 import log from "electron-log";
-import { fs, os } from "zx";
+
 import { execFallback } from "./common/execFallback.mjs";
 import { v4 as uuid } from "uuid";
 

@@ -10,7 +10,7 @@ import {
 import Logger from "electron-log";
 import { get } from "http";
 import path from "path";
-import { os } from "zx";
+
 import CheckUpdate, { checkUpdate } from "./upload.mjs";
 import { electronData } from "../../common/data";
 import p from "../package.json" assert { type: "json" };

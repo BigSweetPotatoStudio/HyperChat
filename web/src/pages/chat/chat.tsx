@@ -183,7 +183,11 @@ export const Chat = ({
       await Agents.init();
       await GPT_MODELS.init();
       refresh();
-      setHistoryFilterSign(1);
+      setHistoryFilterSign((e) => e + 1);
+    })();
+  }, []);
+  useEffect(() => {
+    (async () => {
       if (data.agentKey) {
         try {
           // let agents = await GPTS.init();
@@ -219,8 +223,7 @@ export const Chat = ({
         currentChatReset({}, "", true);
       }
     })();
-  }, []);
-  useEffect(() => {
+
     init();
     EVENT.on("refresh", init);
     return () => {
@@ -302,7 +305,7 @@ export const Chat = ({
     setPromptResList([]);
     let clients = await getClients().catch(() => []);
     clientsRef.current = clients;
-    if (allMCPs) {
+    if (currentChat.current.agentKey == undefined && allMCPs) {
       currentChat.current.allowMCPs = clients.map((v) => v.name);
     }
 
@@ -849,6 +852,10 @@ export const Chat = ({
   const loadMoreData = async (loadMore = true, loadIndexChange = true) => {
     // console.log(historyFilterType, historyFilterSearchValue, loadIndex.current);
     // console.log("loadMoreData: ", ChatHistory.get().data);
+    if (ChatHistory.get().data.length == 0) {
+      console.log("waiting ChatHistory init");
+      return;
+    }
     if (loadIndexChange) {
       if (loadMore) {
         loadIndex.current += 25;
@@ -917,7 +924,7 @@ export const Chat = ({
   });
   const [botSearchValue, setBotSearchValue] = useState("");
 
-  const [historyFilterSign, setHistoryFilterSign] = useState<0 | 1>(0);
+  const [historyFilterSign, setHistoryFilterSign] = useState<number>(0);
 
   const historyFilterType = useRef<
     "all" | "star" | "search" | "agent" | "task"
@@ -925,7 +932,7 @@ export const Chat = ({
 
   const [historyFilterSearchValue, setHistoryFilterSearchValue] = useState("");
   useEffect(() => {
-    loadMoreData(historyFilterSign == 0);
+    loadMoreData(false);
   }, [historyFilterType.current, historyFilterSearchValue, historyFilterSign]);
 
   let supportImage = (
@@ -972,7 +979,9 @@ export const Chat = ({
                       onClick={() => {
                         if (openaiClient.current) {
                           let find = Agents.get().data.find(
-                            (y) => y.key === currentChat.current.agentKey,
+                            (y) =>
+                              y.key === currentChat.current.agentKey ||
+                              y.key === currentChat.current["gptsKey"],
                           );
                           currentChatReset(
                             {
@@ -1504,7 +1513,7 @@ export const Chat = ({
                 </Tooltip>
                 <Divider type="vertical" />
 
-                <Tooltip title={t`Token Usage`}>
+                {/* <Tooltip title={t`Token Usage`}>
                   <span className="cursor-pointer">
                     token:{" "}
                     {openaiClient.current == null ? (
@@ -1518,8 +1527,8 @@ export const Chat = ({
                       </span>
                     )}
                   </span>
-                </Tooltip>
-                <Divider type="vertical" />
+                </Tooltip> */}
+                {/* <Divider type="vertical" /> */}
                 <SettingOutlined
                   className="cursor-pointer hover:text-cyan-400"
                   onClick={() => {
@@ -1800,8 +1809,6 @@ export const Chat = ({
                   );
                   openaiClient.current.options.temperature = values.temperature;
                 }
-
- 
 
                 refresh();
                 setIsOpenMoreSetting(false);
