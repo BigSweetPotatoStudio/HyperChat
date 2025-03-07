@@ -1823,7 +1823,7 @@ export const Chat = ({
             label={t`temperature`}
             tooltip={t`What sampling temperature to use, between 0 and 2. Higher values like 0.8 will make the output more random, while lower values like 0.2 will make it more focused and deterministic.`}
           >
-            <NumberStep min={0} max={2} step={0.1} />
+            <NumberStep defaultValue={1} min={0} max={2} step={0.1} />
           </Form.Item>
           <Form.Item
             name="attachedDialogueCount"
