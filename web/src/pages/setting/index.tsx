@@ -68,7 +68,7 @@ export function Setting() {
       AppSetting.get().isAutoLauncher = await call("isAutoLauncher"); // 获取是否自动启动
       webdavForm.resetFields();
       webdavForm.setFieldsValue(
-        Object.assign({ baseDirName: "HyperChat" }, AppSetting.get().webdav),
+        Object.assign(AppSetting.get().webdav, { baseDirName: "HyperChat" }),
       );
       refresh();
     })();
@@ -114,43 +114,43 @@ export function Setting() {
             autoComplete="off"
           >
             <Form.Item
-              label="WebDAV Url"
+              label={t`WebDAV Url`}
               name="url"
-              rules={[{ required: true, message: "Please input Url!" }]}
+              rules={[{ required: true, message: t`Please input` }]}
               normalize={(value) => value.trim()}
             >
               <Input />
             </Form.Item>
             <Form.Item
-              label="Username"
+              label={t`Username`}
               name="username"
-              rules={[{ required: true, message: "Please input username!" }]}
+              rules={[{ required: true, message: t`Please input!` }]}
               normalize={(value) => value.trim()}
             >
               <Input />
             </Form.Item>
 
             <Form.Item
-              label="Password"
+              label={t`Password`}
               name="password"
-              rules={[{ required: true, message: "Please input password!" }]}
+              rules={[{ required: true, message: t`Please input!` }]}
               normalize={(value) => value.trim()}
             >
               <Input.Password />
             </Form.Item>
 
             <Form.Item
-              label="baseDirName"
+              label={t`baseDirName`}
               name="baseDirName"
               rules={[{ required: true, message: "Please input!" }]}
               normalize={(value) => value.trim()}
             >
-              <Input disabled />
+              <Input disabled defaultValue="HyperChat" />
             </Form.Item>
             <Form.Item
-              label="autoSync"
+              label={t`autoSync`}
               name="autoSync"
-              tooltip="This is an experimental feature, 5min sync once"
+              tooltip={t`This is an experimental feature, 5min sync once`}
             >
               <Switch
                 checkedChildren="AutoSync"
@@ -166,10 +166,10 @@ export function Setting() {
                     });
                   }}
                 >
-                  Test
+                  {t`Test`}
                 </Button>
                 <Button type="primary" htmlType="submit">
-                  Save
+                  {t`Save`}
                 </Button>
                 <Button
                   onClick={async () => {
@@ -191,7 +191,7 @@ export function Setting() {
                   loading={syncLoading}
                 >
                   <CloudSyncOutlined />
-                  Sync
+                  {t`Sync`}
                 </Button>
               </Space>
             </Form.Item>
@@ -209,7 +209,7 @@ export function Setting() {
             }}
             autoComplete="off"
           >
-            <Form.Item label="LaunchStartup" name="isAutoLauncher">
+            <Form.Item label={t`LaunchStartup`} name="isAutoLauncher">
               <Switch
                 checkedChildren="Startup"
                 unCheckedChildren="Close"
@@ -226,7 +226,7 @@ export function Setting() {
               ></Switch>
             </Form.Item>
 
-            <Form.Item label="openDevTools" name="openDevTools">
+            <Form.Item label={t`DevTools`} name="openDevTools">
               <Space>
                 <Button
                   onClick={() => {

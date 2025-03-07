@@ -18,7 +18,7 @@ import path from "node:path";
 import os from "node:os";
 import { Command } from "./command.mjs";
 import { fileURLToPath } from "node:url";
-import { $, usePowerShell, fs, cd, fetch, sleep } from "zx";
+
 import { spawn, exec, execFile } from "child_process";
 import { isPortUse } from "./common/checkport.mjs";
 import { Server } from "socket.io";
@@ -28,6 +28,8 @@ import "./websocket.mjs";
 import { electron } from "node:process";
 
 import { createWindow } from "./mianWindow.mjs";
+import { zx } from "./es6.mjs";
+const { $, usePowerShell, fs, cd, fetch, sleep } = zx;
 
 $.verbose = true;
 if (os.platform() === "win32") {

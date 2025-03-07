@@ -1,6 +1,6 @@
 {
   "name": "web",
-  "version": "1.0.2",
+  "version": "1.0.6",
   "private": true,
   "dependencies": {
     "@ant-design/cssinjs": "^1.21.1",
@@ -76,7 +76,7 @@
     "workbox-webpack-plugin": "^7.0.0",
     "zod": "^3.24.1",
     "zod-to-json-schema": "^3.24.1",
-    "zx": "^8.0.1"
+    "zx": "8.0.1"
   },
   "scripts": {
     "start": "npx cross-env myEnv=dev webpack serve --config webpack.config.js",

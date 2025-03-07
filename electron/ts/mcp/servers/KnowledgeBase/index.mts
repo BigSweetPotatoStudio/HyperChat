@@ -11,10 +11,11 @@
 
 import { BrowserWindow } from "electron";
 import Logger from "electron-log";
-import { fs, path, sleep } from "zx";
+
 import dayjs from "dayjs";
 import { KNOWLEDGE_BASE } from "../../../../../common/data";
-
+import { zx } from "../../../es6.mjs";
+const { fs, path, sleep } = zx;
 // import { ListPromptsRequestSchema, ListToolsRequestSchema } from "@modelcontextprotocol/sdk/types.js";
 
 const { Server } = await import(
@@ -164,11 +165,9 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
           content: [
             {
               type: "text",
-              text: `knowledge base\n${
-                KNOWLEDGE_BASE.initSync({ force: true })
-                  .dbList.map((x) => x.name + " - " + x.description)
-                  .join("\n")
-              }`,
+              text: `knowledge base\n${KNOWLEDGE_BASE.initSync({ force: true })
+                .dbList.map((x) => x.name + " - " + x.description)
+                .join("\n")}`,
             },
           ],
         };

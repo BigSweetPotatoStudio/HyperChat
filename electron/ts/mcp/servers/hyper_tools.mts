@@ -11,7 +11,8 @@
 
 import { BrowserWindow } from "electron";
 import Logger from "electron-log";
-import { fs, path, sleep } from "zx";
+import { zx } from "../../es6.mjs";
+const { fs, path, sleep } = zx;
 import dayjs from "dayjs";
 // import { ListPromptsRequestSchema, ListToolsRequestSchema } from "@modelcontextprotocol/sdk/types.js";
 

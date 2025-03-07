@@ -228,8 +228,8 @@ importers:
         specifier: ^3.24.1
         version: 3.24.1(zod@3.24.2)
       zx:
-        specifier: ^8.0.1
-        version: 8.3.2
+        specifier: 8.0.1
+        version: 8.0.1
 
 packages:
 
@@ -5226,9 +5226,9 @@ packages:
   zrender@5.6.1:
     resolution: {integrity: sha512-OFXkDJKcrlx5su2XbzJvj/34Q3m6PvyCZkVPHGYpcCJ52ek4U/ymZyfuV1nKE23AyBJ51E/6Yr0mhZ7xGTO4ag==}
 
-  zx@8.3.2:
-    resolution: {integrity: sha512-qjTunv1NClO05jDaUjrNZfpqC9yvNCchge/bzOcQevsh1aM5qE3TG6MY24kuQKlOWx+7vNuhqO2wa9nQCIGvZA==}
-    engines: {node: '>= 12.17.0'}
+  zx@8.0.1:
+    resolution: {integrity: sha512-Y+ITW1GQjADk7qgrbhnukMgoNsJmlyx53cUQ6/6NXU+BMBdCbTc6flTOHUctmzKvPjTmdwaddzJY/dbLie9sQg==}
+    engines: {node: '>= 16.0.0'}
     hasBin: true
 
 snapshots:
@@ -11051,7 +11051,7 @@ snapshots:
     dependencies:
       tslib: 2.3.0
 
-  zx@8.3.2:
+  zx@8.0.1:
     optionalDependencies:
       '@types/fs-extra': 11.0.4
       '@types/node': 22.13.4

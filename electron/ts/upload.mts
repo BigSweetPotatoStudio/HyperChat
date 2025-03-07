@@ -6,7 +6,7 @@ import { BrowserWindow } from "electron";
 
 import path from "path";
 import { getMessageService } from "./mianWindow.mjs";
-import { fs } from "zx";
+
 const log = require("electron-log");
 
 autoUpdater.logger = log;
