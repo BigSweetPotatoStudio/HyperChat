@@ -72,7 +72,7 @@ export class MCPClient {
       log.error("MCP callTool disconnected, restarting");
       await this.open();
     }
-    let mcpToolTimeout = (await AppSetting.init()).mcpToolTimeout;
+    let mcpCallToolTimeout = (await AppSetting.init()).mcpCallToolTimeout;
     return await this.client
       .callTool(
         {
@@ -80,7 +80,7 @@ export class MCPClient {
           arguments: args,
         },
         CompatibilityCallToolResultSchema,
-        { timeout: mcpToolTimeout * 1000 }
+        { timeout: mcpCallToolTimeout * 1000 }
       )
       .catch((e) => {
         return this.client
@@ -93,7 +93,7 @@ export class MCPClient {
               },
             },
             CompatibilityCallToolResultSchema,
-            { timeout: mcpToolTimeout * 1000 }
+            { timeout: mcpCallToolTimeout * 1000 }
           )
           .then((res) => {
             console.log("CompatibilityCallToolResultSchema: ", res);

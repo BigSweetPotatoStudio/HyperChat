@@ -201,11 +201,11 @@ export function Setting() {
           <Form
             layout="vertical"
             name="basicSitting"
-            labelCol={{ span: 4 }}
-            wrapperCol={{ span: 20 }}
+            labelCol={{ span: 8 }}
+            wrapperCol={{ span: 16 }}
             initialValues={{
               isAutoLauncher: AppSetting.get().isAutoLauncher,
-              mcpToolTimeOut: AppSetting.get().mcpToolTimeout,
+              mcpCallToolTimeout: AppSetting.get().mcpCallToolTimeout,
             }}
             autoComplete="off"
           >
@@ -225,10 +225,10 @@ export function Setting() {
                 }}
               ></Switch>
             </Form.Item>
-            <Form.Item label={t`mcpToolTimeOut`} name="mcpToolTimeOut">
+            <Form.Item label={t`mcpCallToolTimeout`} name="mcpCallToolTimeout">
               <InputNumber
                 onChange={async (value) => {
-                  AppSetting.get().mcpToolTimeout = parseInt(value as any) || 60 * 1000;
+                  AppSetting.get().mcpCallToolTimeout = parseInt(value as any) || 60;
                   await AppSetting.save();
                   refresh();
                 }}
