@@ -179,7 +179,9 @@ export const Chat = ({
     console.log("init");
 
     (async () => {
-      await ChatHistory.init();
+      if (!data.agentKey) { // 非Agent调用
+        await ChatHistory.init();
+      }
       await Agents.init();
       await GPT_MODELS.init();
       refresh();

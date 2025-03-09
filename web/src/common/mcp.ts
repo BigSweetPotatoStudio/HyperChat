@@ -5,7 +5,7 @@ import * as MCPTypes from "@modelcontextprotocol/sdk/types.js";
 import { sleep } from "./sleep";
 import type { MCPClient } from "../../../electron/ts/mcp/config.mjs";
 import { get } from "http";
-import { clientName2Index } from "./openai";
+
 import { TEMP_FILE, MCP_CONFIG, MCP_CONFIG_TYPE } from "../../../common/data";
 
 let init = false;
