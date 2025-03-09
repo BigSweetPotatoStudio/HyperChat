@@ -32,11 +32,28 @@ export function genRouter(c, prefix: string) {
 
   for (let name of functions) {
     router.post(`/${name}`, async (ctx) => {
-      console.log(name, ctx.request.body);
+      let args = ctx.request.body;
+      // console.log(name, args);
       try {
-        // console.log(ctx.body);
-        let res = await Command[name](...ctx.request.body);
-
+        if (name == "getHistory") {
+          // log.info(name, args);
+        } else {
+          if (name == "writeFile") {
+            log.info(
+              name,
+              args[0],
+              "writeFile Data length: " + args[1].length
+              // res
+            );
+          } else {
+            log.info(
+              name,
+              args
+              // res
+            );
+          }
+        }
+        let res = await Command[name](...args);
         ctx.body = {
           code: 0,
           success: true,
@@ -53,6 +70,17 @@ export function genRouter(c, prefix: string) {
 
 export const model_route = genRouter(new CommandFactory(), "/api");
 
+let mainMsg = undefined;
+
+export function genMainMsg() {
+  if (mainMsg) {
+    return mainMsg;
+  } else {
+    throw new Error("mainMsg not init");
+  }
+}
+export const userSocketMap = new Map();
+export let activeUser = undefined;
 async function initWebsocket() {
   const app = new Koa() as any;
   app.use(cors() as any);
@@ -63,6 +91,7 @@ async function initWebsocket() {
         uploadDir: "./uploads", // 设置上传文件的目录
         keepExtensions: true, // 保留文件的扩展名
       },
+      jsonLimit: "1000mb",
     })
   );
   app.use(model_route.routes());
@@ -94,6 +123,25 @@ async function initWebsocket() {
 
   io.on("error", (e) => {
     console.log("error: ", e);
+  });
+  let main = io.of("/main-message");
+  mainMsg = main;
+  main.on("connection", (socket) => {
+    Logger.info("用户已连接，socket ID:", socket.id);
+
+    // 用户登录时记录关系
+    socket.on("active", (userId) => {
+      userSocketMap.set(userId, socket.id);
+      activeUser = userId;
+    });
+    socket.on("disconnect", () => {
+      // 遍历删除断开连接的socket
+      for (const [userId, socketId] of userSocketMap.entries()) {
+        if (socketId === socket.id) {
+          userSocketMap.delete(userId);
+        }
+      }
+    });
   });
 }
 

@@ -6,7 +6,6 @@ import * as MCP from "@modelcontextprotocol/sdk/client/index.js";
 import * as MCPTypes from "@modelcontextprotocol/sdk/types.js";
 import log from "electron-log";
 import { appDataDir } from "../const.mjs";
-import { getMessageService } from "../mianWindow.mjs";
 import type { StdioServerParameters } from "@modelcontextprotocol/sdk/client/stdio.js";
 import { initMcpServer } from "./servers/express.mjs";
 import { MyServers } from "./servers/index.mjs";

@@ -5,7 +5,8 @@ import { BrowserWindow } from "electron";
 //* 引入工具类
 
 import path from "path";
-import { getMessageService } from "./mianWindow.mjs";
+import { getMessageService } from "./message_service.mjs";
+
 
 const log = require("electron-log");
 
@@ -94,7 +95,7 @@ class CheckUpdate {
 
 export default CheckUpdate;
 function sendToRender(type, data) {
-  getMessageService().sendToRenderer({
+  getMessageService().sendAllToRenderer({
     type: type,
     data: data,
   });

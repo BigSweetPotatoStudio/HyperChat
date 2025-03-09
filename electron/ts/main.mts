@@ -25,7 +25,6 @@ import { Server } from "socket.io";
 import { execFallback } from "./common/execFallback.mjs";
 import p from "../package.json";
 import "./websocket.mjs";
-import { electron } from "node:process";
 
 import { createWindow } from "./mianWindow.mjs";
 import { zx } from "./es6.mjs";
@@ -68,7 +67,6 @@ ipcMain.handle("command", async (event, name, args) => {
     return { success: false, code: 1, message: e.message };
   }
 });
-// let title = `${app.name}-${app.getVersion()} by Dadigua`;
 
 // app.commandLine.appendSwitch("remote-debugging-port", "8315");
 // app.commandLine.appendSwitch("enable-usermedia-screen-capturing");

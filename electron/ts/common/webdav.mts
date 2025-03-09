@@ -5,13 +5,13 @@ import { promises } from "fs";
 import path, { join } from "path";
 
 import { appDataDir } from "../const.mjs";
-import { getMessageService } from "../mianWindow.mjs";
 import Logger from "electron-log";
 import { log } from "console";
 import { AppSetting, DataList } from "../../../common/data";
 
 import crypto from "crypto";
 import { zx } from "../es6.mjs";
+import { getMessageService } from "../message_service.mjs";
 const { fs } = zx;
 
 interface FileInfo {
@@ -88,7 +88,7 @@ class WebDAVSync {
     console.log("---syncStart");
     let localPath: string = appDataDir;
     let remotePath: string = this.webdavSetting.baseDirName;
-    getMessageService().sendToRenderer({
+    getMessageService().sendAllToRenderer({
       type: "sync",
       data: {
         status: 1,
@@ -98,14 +98,14 @@ class WebDAVSync {
     try {
       await this._sync(localPath, remotePath);
 
-      getMessageService().sendToRenderer({
+      getMessageService().sendAllToRenderer({
         type: "sync",
         data: {
           status: 0,
         },
       });
     } catch (error) {
-      getMessageService().sendToRenderer({
+      getMessageService().sendAllToRenderer({
         type: "sync",
         data: {
           status: -1,
