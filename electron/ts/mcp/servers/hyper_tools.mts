@@ -214,7 +214,7 @@ async function fetch(url: string) {
       }),
       sleep(3000),
     ]);
-    Logger.info("Page loaded: " + url);
+    Logger.info("Page loaded: " + url, __dirname);
     let md = await executeClientScript(
       win,
       fs.readFileSync(path.join(__dirname, "./turndown.js"), "utf-8").toString()
