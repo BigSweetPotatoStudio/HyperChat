@@ -9,9 +9,9 @@ export class MessageService {
 
   // 发送消息到渲染进程
   async sendToRenderer(data: any, channel: string = "message-from-main") {
-    // if (!this.mainWindow.isDestroyed()) {
-    //   this.mainWindow.webContents.send(channel, data);
-    // }
+    if (!this.mainWindow) {
+      return;
+    }
     const { activeUser, userSocketMap } = await import("./websocket.mjs");
     const socketId = userSocketMap.get(activeUser);
     if (socketId) {
@@ -21,6 +21,9 @@ export class MessageService {
     }
   }
   async sendAllToRenderer(data: any, channel: string = "message-from-main") {
+    if (!this.mainWindow) {
+      return;
+    }
     this.mainWindow.emit(channel, data);
   }
   // 初始化IPC监听器

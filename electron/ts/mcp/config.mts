@@ -23,7 +23,6 @@ import { clientPaths } from "./claude.mjs";
 import Logger from "electron-log";
 import { startTask } from "./task.mjs";
 
-
 await initMcpServer().catch((e) => {
   console.error("initMcpServer", e);
 });
@@ -73,9 +72,16 @@ export class MCPClient {
       log.error("MCP callTool disconnected, restarting");
       await this.open();
     }
-
+    let mcpToolTimeout = (await AppSetting.init()).mcpToolTimeout;
     return await this.client
-      .callTool({ name: functionName, arguments: args })
+      .callTool(
+        {
+          name: functionName,
+          arguments: args,
+        },
+        CompatibilityCallToolResultSchema,
+        { timeout: mcpToolTimeout * 1000 }
+      )
       .catch((e) => {
         return this.client
           .request(
@@ -86,7 +92,8 @@ export class MCPClient {
                 arguments: args,
               },
             },
-            CompatibilityCallToolResultSchema
+            CompatibilityCallToolResultSchema,
+            { timeout: mcpToolTimeout * 1000 }
           )
           .then((res) => {
             console.log("CompatibilityCallToolResultSchema: ", res);

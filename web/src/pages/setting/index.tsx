@@ -204,8 +204,8 @@ export function Setting() {
             labelCol={{ span: 4 }}
             wrapperCol={{ span: 20 }}
             initialValues={{
-              // port: data.get().port,
               isAutoLauncher: AppSetting.get().isAutoLauncher,
+              mcpToolTimeOut: AppSetting.get().mcpToolTimeout,
             }}
             autoComplete="off"
           >
@@ -225,7 +225,15 @@ export function Setting() {
                 }}
               ></Switch>
             </Form.Item>
-
+            <Form.Item label={t`mcpToolTimeOut`} name="mcpToolTimeOut">
+              <InputNumber
+                onChange={async (value) => {
+                  AppSetting.get().mcpToolTimeout = parseInt(value as any) || 60 * 1000;
+                  await AppSetting.save();
+                  refresh();
+                }}
+              ></InputNumber>
+            </Form.Item>
             <Form.Item label={t`DevTools`} name="openDevTools">
               <Space>
                 <Button
