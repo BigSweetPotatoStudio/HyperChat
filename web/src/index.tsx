@@ -1,3 +1,4 @@
+console.log("HyperChat");
 console.log("process.env.myEnv", process.env.myEnv);
 
 import "./i18n";
