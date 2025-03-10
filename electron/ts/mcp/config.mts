@@ -158,7 +158,8 @@ export class MCPClient {
       this.prompts = [];
     };
     client.onerror = (e) => {
-      if (this.config.hyperchat.type == "sse") {
+      // console.log("client onerror: ", this.config);
+      if (this.config?.hyperchat?.type == "sse") {
         //
       } else {
         log.error("client onerror: ", e);
