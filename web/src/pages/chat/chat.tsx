@@ -179,7 +179,8 @@ export const Chat = ({
     console.log("init");
 
     (async () => {
-      if (!data.agentKey) { // 非Agent调用
+      if (!data.agentKey) {
+        // 非Agent调用
         await ChatHistory.init();
       }
       await Agents.init();
@@ -770,8 +771,10 @@ export const Chat = ({
     console.log("onRequest", message);
     try {
       setLoading(true);
+
       if (currentChat.current.sended == false) {
         createChat();
+
         currentChatReset({
           ...currentChat.current,
           // agentKey: currentChat.current.agentKey,
@@ -784,8 +787,26 @@ export const Chat = ({
           sended: true,
           dateTime: Date.now(),
         });
+        if (message) {
+          openaiClient.current.addMessage(
+            { role: "user", content: message },
+            resourceResList,
+            promptResList,
+          );
+        }
         ChatHistory.get().data.unshift(currentChat.current);
       } else {
+        if (message) {
+          openaiClient.current.addMessage(
+            { role: "user", content: message },
+            resourceResList,
+            promptResList,
+          );
+        }
+        currentChat.current.label =
+          currentChat.current.messages.find((x) => x.role == "user")?.content ||
+          currentChat.current.label;
+
         let findIndex = ChatHistory.get().data.findIndex(
           (x) => x.key == currentChat.current.key,
         );
@@ -800,14 +821,6 @@ export const Chat = ({
         }
       }
       openaiClient.current.options.allowMCPs = currentChat.current.allowMCPs;
-
-      if (message) {
-        openaiClient.current.addMessage(
-          { role: "user", content: message },
-          resourceResList,
-          promptResList,
-        );
-      }
 
       refresh();
 
