@@ -111,7 +111,6 @@ class WebDAVSync {
           status: -1,
         },
       });
-      Logger.error("Sync failed: ", error);
       throw new Error(`Sync failed: ${error.message}`);
     } finally {
       this._isSnyc = false;
