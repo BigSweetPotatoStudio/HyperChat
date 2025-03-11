@@ -29,9 +29,9 @@ global.ext = {
           throw new Error(`Agent ${argumentsJSON.agent_name} not found`);
         }
         res = await callAgent({
-          name: agent.label,
           agentKey: agent.key,
           message: argumentsJSON.message,
+          type: "isCalled",
         });
       } else {
         res = await Command[name](...args);
@@ -71,13 +71,17 @@ function trigger({ task, agent, result }) {
   });
 }
 export async function callAgent(obj: {
-  name?: string;
+  // name?: string;
   agentKey: string;
   message: string;
+  type: "task" | "isCalled" | "call";
 }) {
-  Logger.log("Running callAgent", obj.name, obj.message, obj.agentKey);
   try {
     let agent = Agents.initSync().data.find((x) => x.key === obj.agentKey);
+    if (agent == null) {
+      throw new Error(`Agent ${obj.agentKey} not found`);
+    }
+    Logger.log("Running callAgent", agent.label, obj.message, obj.agentKey);
     let config =
       GPT_MODELS.initSync().data.find((x) => x.key == agent.modelKey) ||
       GPT_MODELS.initSync().data[0];
@@ -116,8 +120,8 @@ export async function callAgent(obj: {
       allowMCPs: agent.allowMCPs,
       attachedDialogueCount: undefined,
       dateTime: Date.now(),
-      isCalled: true,
-      isTask: false,
+      isCalled: obj.type === "isCalled",
+      isTask: obj.type === "task",
       taskKey: undefined,
     };
     ChatHistory.initSync().data.unshift(item);
@@ -133,51 +137,56 @@ export async function callAgent(obj: {
 export async function runTask(task: Task) {
   Logger.log("Running task", task.name);
   try {
+    let lastMessage = await callAgent({
+      agentKey: task.agentKey,
+      message: task.command,
+      type: "task",
+    });
     let agent = Agents.initSync().data.find((x) => x.key === task.agentKey);
-    let config =
-      GPT_MODELS.initSync().data.find((x) => x.key == agent.modelKey) ||
-      GPT_MODELS.initSync().data[0];
+    // let config =
+    //   GPT_MODELS.initSync().data.find((x) => x.key == agent.modelKey) ||
+    //   GPT_MODELS.initSync().data[0];
 
-    if (!config) {
-      Logger.error("No model found");
-      return;
-    }
-    global.tools = getToolsOnNode(
-      mcpClients,
-      (x) => agent.allowMCPs == null || agent.allowMCPs.includes(x.name)
-    );
-    // console.log("tools", global.tools);
-    let openai = new OpenAiChannel(
-      { ...config, allowMCPs: agent.allowMCPs },
-      [
-        {
-          role: "system",
-          content: agent.prompt,
-        },
-        { role: "user", content: task.command },
-      ],
-      false
-    );
-    await openai.completion();
-    // console.log("openai.completion() done", openai.messages);
-    const item: ChatHistoryItem = {
-      label: task.name + " - " + dayjs().format("YYYY-MM-DDTHH:mm:ss"),
-      key: v4(),
-      messages: openai.messages,
-      modelKey: config.key,
-      agentKey: agent.key,
-      sended: true,
-      requestType: "complete",
-      allowMCPs: agent.allowMCPs,
-      attachedDialogueCount: undefined,
-      dateTime: Date.now(),
-      isCalled: false,
-      isTask: true,
-      taskKey: task.key,
-    };
-    ChatHistory.initSync().data.unshift(item);
-    await ChatHistory.save();
-    await trigger({ task, agent, result: openai.lastMessage.content });
+    // if (!config) {
+    //   Logger.error("No model found");
+    //   return;
+    // }
+    // global.tools = getToolsOnNode(
+    //   mcpClients,
+    //   (x) => agent.allowMCPs == null || agent.allowMCPs.includes(x.name)
+    // );
+    // // console.log("tools", global.tools);
+    // let openai = new OpenAiChannel(
+    //   { ...config, allowMCPs: agent.allowMCPs },
+    //   [
+    //     {
+    //       role: "system",
+    //       content: agent.prompt,
+    //     },
+    //     { role: "user", content: task.command },
+    //   ],
+    //   false
+    // );
+    // await openai.completion();
+    // // console.log("openai.completion() done", openai.messages);
+    // const item: ChatHistoryItem = {
+    //   label: task.name + " - " + dayjs().format("YYYY-MM-DDTHH:mm:ss"),
+    //   key: v4(),
+    //   messages: openai.messages,
+    //   modelKey: config.key,
+    //   agentKey: agent.key,
+    //   sended: true,
+    //   requestType: "complete",
+    //   allowMCPs: agent.allowMCPs,
+    //   attachedDialogueCount: undefined,
+    //   dateTime: Date.now(),
+    //   isCalled: false,
+    //   isTask: true,
+    //   taskKey: task.key,
+    // };
+    // ChatHistory.initSync().data.unshift(item);
+    // await ChatHistory.save();
+    await trigger({ task, agent, result: lastMessage });
     // await onRequest(task.message);
   } catch (e) {
     console.error(" task_call_agent error: ", e);
