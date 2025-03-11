@@ -136,6 +136,24 @@
       "entitlements": "build/mac/entitlements.mac.plist",
       "entitlementsInherit": "build/mac/entitlements.mac.plist"
     },
+    "linux": {
+      "target": [
+        {
+          "target": "AppImage",
+          "arch": [
+            "x64",
+            "arm64"
+          ]
+        },
+        {
+          "target": "tar.gz",
+          "arch": [
+            "x64",
+            "arm64"
+          ]
+        }
+      ]
+    },
     "nsis": {
       "oneClick": false,
       "perMachine": true,
