@@ -59,7 +59,7 @@ jobs:
           USE_HARD_LINKS: false
           MYRUNENV: github
 
-      - name: Build Electron App (widnows)
+      - name: Build Electron App (widnows+linux)
         if: matrix.os != 'macos-latest'
         run: npm run prod
         env:
