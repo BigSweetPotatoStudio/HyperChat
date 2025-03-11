@@ -111,6 +111,7 @@ class WebDAVSync {
           status: -1,
         },
       });
+      Logger.error("Sync failed: ", error);
       throw new Error(`Sync failed: ${error.message}`);
     } finally {
       this._isSnyc = false;
@@ -155,7 +156,7 @@ class WebDAVSync {
     for (let data of DataList) {
       let filename = data.KEY;
       let json = data.initSync({ force: true });
-      if (data.options.sync) {
+      if (data.options.sync && fs.existsSync(path.join(localPath, filename))) {
         // console.log("sync data", path.join(localPath + "/_sync", data.KEY));
         let fullPath = path.join(localPath, filename);
         if (!fs.existsSync(fullPath)) {
