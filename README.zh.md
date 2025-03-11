@@ -1,6 +1,6 @@
 ## 功能
 
-HyperChat 是一个追求开放的Chat客户端，可以使用各家LLM的API，实现最好的Chat体验，以及实现生产力工具通过MCP协议。
+HyperChat 是一个追求开放的Chat客户端，可以使用各家LLM的API，完全支持MCP，实现最好的Chat体验。以及基于本机Agent实现生产力MAX工具。
 
 * 支持 OpenAI风格的LLM，`OpenAI` , `Claude(OpenRouter)`, `Qwen`, `Deepseek`, `GLM`, `Ollama` 。
 * 内置MCP插件市场，人性化的MCP的安装填写配置，一键安装，欢迎提交[HyperChatMCP](https://github.com/BigSweetPotatoStudio/HyperChatMCP)。
@@ -10,18 +10,17 @@ HyperChat 是一个追求开放的Chat客户端，可以使用各家LLM的API，
 
 [![Build](https://github.com/BigSweetPotatoStudio/HyperChat/actions/workflows/build.yml/badge.svg)](https://github.com/BigSweetPotatoStudio/HyperChat/actions/workflows/build.yml)
 
+
+- [x] `MCP`扩展市场+第三方MCP支持
+- [x] 支持自由创建`Agent`，可以预设提示词，选择MCP功能
 - [x] 🪟Windows+🍏MacOS
 - [x] 支持暗黑模式🌙
-- [x] 支持 `nvm`, 看下面
 - [x] Resources，Prompts，Tools 支持
 - [x] 支持英文和中文
-- [x] 添加了内置的MCP客户端`hypertools`, `fetch`+`search`
-- [x] 支持 `Agent`，可以预设提示词，允许的MCP服务
 - [x] 支持 `Artifacts`, `SVG`,`HTML` 渲染, js错误捕获，支持打开Chrome的控制台
 - [x] Agent显示优化，支持查找，拖拽排序
 - [x] 支持 `KaTeX`，显示数学公式，代码Code渲染增加高亮和快速复制
 - [x] `WebDAV` 同步
-- [x] `MCP`扩展市场+第三方MCP支持
 - [x] 添加`RAG`，基于mcp知识库
 - [x] 添加ChatSpace概念，支持多对话同时聊天
 - [x] 支持 Agent Call Agent，通过HyperAgent的MCP
@@ -30,9 +29,9 @@ HyperChat 是一个追求开放的Chat客户端，可以使用各家LLM的API，
 
 ### TODO:
 
+- [ ] 后续会加入docker版本，内置linux桌面，内置chomre配置romote端口，统一了环境，更好搞。然后web界面控制。在任何设备都可以使用，包括手机🤣
 - [ ] 权限弹窗，是否允许
-- [ ] 实现利用LLM自己给自己写Tools
-- [ ] 本地的`shell`+`nodejs`+`js on web`运行环境
+- [ ] 实现利用LLM自己给自己写MCP
 
 ### LLM
 
@@ -42,8 +41,8 @@ HyperChat 是一个追求开放的Chat客户端，可以使用各家LLM的API，
 | openai   | ⭐⭐⭐⭐⭐ | 也可以完美支持多步function call(gpt-4o-mini也可以) |
 | gemini flash 2.0   | ⭐⭐⭐⭐🌙 |  很好用 |
 | qwen       | ⭐⭐⭐⭐🌙    | 很好用                 |
-| doubao       | ⭐⭐⭐    | 使用起来感觉还行                   |
-| deepseek | ⭐⭐      | 多步function call会出问题       |
+| doubao       | ⭐⭐⭐🌙🌙    | 使用起来感觉还行                   |
+| deepseek | ⭐⭐⭐🌙🌙      | 多步function call会出问题       |
 
 ## 使用
 
@@ -93,38 +92,56 @@ npm run dev
 
 [HyperChat用户交流](https://t.me/dadigua001)
 
-![image.png](./images/image52.png)
+#### 调用shell mcp
+![image.png](./images/image55.png)
 
-![image.png](./images/image53.png)
+#### 一键写网页，并发布到（cloudflare）
+![image.png](./images/image60.png)
 
-![image.png](./images/image51.png)
-
-![image.png](./images/image13.png)
-
-![image.png](./images/image43.png)
-
-![image.png](./images/image45.png)
-
-![image.png](./images/image44.png)
-
-![image.png](./images/image46.png)
-
+#### 调用谷歌搜索，问他TGA年度游戏是什么
 ![image.png](./images/image22.png)
 
-![image.png](./images/image21.png)
-
-![image.png](./images/image35.png)
-
+#### 整理知乎热搜
 ![image.png](./images/image36.png)
 
-![image.png](./images/image42.png)
+#### 帮你打开网页，分析结果，并写入文件
+![image.png](./images/image13.png)
 
+#### 打开百度并截图
+![image.png](./images/image61.png)
+
+
+#### 定时任务列表
+![image.png](./images/image52.png)
+
+#### mcp市场（实验）
+![image.png](./images/image43.png)
+
+#### 从市场中安装mcp界面（实验）
+![image.png](./images/image45.png)
+
+#### 从第三方安装mcp（支持任意mcp）
+![image.png](./images/image44.png)
+
+#### 从第三方安装mcp界面
+![image.png](./images/image46.png)
+
+#### mcp列表（可以动态选择）
+![image.png](./images/image21.png)
+
+#### 渲染HTML，支持 `Artifacts`, `SVG`,`HTML` 渲染,
 ![image.png](./images/image33.png)
 
+#### 界面1
+![image.png](./images/image51.png)
+
+#### 界面2
 ![image.png](./images/image34.png)
 
+#### 界面3，测试模型能力
 ![image.png](./images/image48.png)
 
+#### 知识库
 ![image.png](./images/image50.png)
 
 ## 免责声明
