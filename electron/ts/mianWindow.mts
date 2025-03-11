@@ -11,40 +11,14 @@ import Logger from "electron-log";
 import { get } from "http";
 import path from "path";
 
-import CheckUpdate, { checkUpdate } from "./upload.mjs";
+// import CheckUpdate, { checkUpdate } from "./upload.mjs";
 import { electronData } from "../../common/data";
 import p from "../package.json" assert { type: "json" };
 
+
 let title = `${p.productName}-${app.getVersion()} by Dadigua`;
 Logger.info("title: ", title);
-class MessageService {
-  private mainWindow: BrowserWindow;
 
-  constructor(window: BrowserWindow) {
-    this.mainWindow = window;
-  }
-
-  // 发送消息到渲染进程
-  sendToRenderer(data: any, channel: string = "message-from-main") {
-    if (!this.mainWindow.isDestroyed()) {
-      this.mainWindow.webContents.send(channel, data);
-    }
-  }
-
-  // 初始化IPC监听器
-  init() {
-    // 处理渲染进程的响应
-    ipcMain.on("renderer-response", (event, data) => {
-      console.log("Received from renderer:", data);
-    });
-  }
-}
-
-let messageService: MessageService;
-
-export const getMessageService = () => {
-  return messageService;
-};
 
 export const createWindow = () => {
   const win = new BrowserWindow({
@@ -62,8 +36,7 @@ export const createWindow = () => {
     },
     icon: path.join(__dirname, "../web-build/assets/favicon.png"),
   });
-  messageService = new MessageService(win);
-  messageService.init();
+
 
   // win.maximize()
   win.show();
@@ -204,3 +177,5 @@ function fileUrlToPath(fileUrl: string): string {
 
   return localPath;
 }
+
+

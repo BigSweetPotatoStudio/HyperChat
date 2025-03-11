@@ -101,6 +101,7 @@ export const AppSetting = new Data("app_setting.json", {
     autoSync: false,
   },
   darkTheme: false,
+  mcpCallToolTimeout: 60,
 });
 
 export type ChatHistoryItem = {

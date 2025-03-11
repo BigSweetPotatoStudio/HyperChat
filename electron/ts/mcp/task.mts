@@ -54,8 +54,9 @@ const { OpenAiChannel } = await import("../../../web/src/common/openai");
 import { getToolsOnNode } from "../../../web/src/common/mcptool";
 import { v4 } from "uuid";
 import dayjs from "dayjs";
-import { getMessageService } from "../mianWindow.mjs";
+
 import { cat } from "@xenova/transformers";
+import { getMessageService } from "../message_service.mjs";
 let tObj: {
   [s in string]: {
     key: string;
@@ -64,7 +65,7 @@ let tObj: {
 } = {};
 
 function trigger({ task, agent, result }) {
-  getMessageService().sendToRenderer({
+  getMessageService().sendAllToRenderer({
     type: "ChatHistoryUpdate",
     data: { task, agent, result },
   });

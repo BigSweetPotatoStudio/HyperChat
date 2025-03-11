@@ -6,7 +6,6 @@ import * as MCP from "@modelcontextprotocol/sdk/client/index.js";
 import * as MCPTypes from "@modelcontextprotocol/sdk/types.js";
 import log from "electron-log";
 import { appDataDir } from "../const.mjs";
-import { getMessageService } from "../mianWindow.mjs";
 import type { StdioServerParameters } from "@modelcontextprotocol/sdk/client/stdio.js";
 import { initMcpServer } from "./servers/express.mjs";
 import { MyServers } from "./servers/index.mjs";
@@ -23,7 +22,6 @@ import { spawnWithOutput } from "../common/util.mjs";
 import { clientPaths } from "./claude.mjs";
 import Logger from "electron-log";
 import { startTask } from "./task.mjs";
-
 
 await initMcpServer().catch((e) => {
   console.error("initMcpServer", e);
@@ -74,9 +72,16 @@ export class MCPClient {
       log.error("MCP callTool disconnected, restarting");
       await this.open();
     }
-
+    let mcpCallToolTimeout = (await AppSetting.init()).mcpCallToolTimeout;
     return await this.client
-      .callTool({ name: functionName, arguments: args })
+      .callTool(
+        {
+          name: functionName,
+          arguments: args,
+        },
+        CompatibilityCallToolResultSchema,
+        { timeout: mcpCallToolTimeout * 1000 }
+      )
       .catch((e) => {
         return this.client
           .request(
@@ -87,7 +92,8 @@ export class MCPClient {
                 arguments: args,
               },
             },
-            CompatibilityCallToolResultSchema
+            CompatibilityCallToolResultSchema,
+            { timeout: mcpCallToolTimeout * 1000 }
           )
           .then((res) => {
             console.log("CompatibilityCallToolResultSchema: ", res);
@@ -152,7 +158,8 @@ export class MCPClient {
       this.prompts = [];
     };
     client.onerror = (e) => {
-      if (this.config.hyperchat.type == "sse") {
+      // console.log("client onerror: ", this.config);
+      if (this.config?.hyperchat?.type == "sse") {
         //
       } else {
         log.error("client onerror: ", e);

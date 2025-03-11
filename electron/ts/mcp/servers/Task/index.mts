@@ -4,11 +4,12 @@ import { zx } from "../../../es6.mjs";
 const { fs, path, sleep } = zx;
 import dayjs from "dayjs";
 import { Agents, KNOWLEDGE_BASE, TaskList } from "../../../../../common/data";
-import { getMessageService } from "../../../mianWindow.mjs";
+
 import { EVENT } from "../../../common/event";
 import { v4 } from "uuid";
 import cron from "node-cron";
 import { startTask } from "../../task.mjs";
+import { getMessageService } from "../../../message_service.mjs";
 
 // import { ListPromptsRequestSchema, ListToolsRequestSchema } from "@modelcontextprotocol/sdk/types.js";
 

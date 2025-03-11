@@ -72,7 +72,7 @@ import {
 } from "@ant-design/pro-components";
 import { route as routerRoute } from "./router";
 import { currLang, setCurrLang, t } from "./i18n";
-import { call } from "./common/call";
+import { call, msg_receive } from "./common/call";
 import {
   AppSetting,
   ChatHistory,
@@ -172,7 +172,7 @@ const Providers: ProviderType[] = [
   },
 ];
 
-window.ext.receive("message-from-main", (msg) => {
+msg_receive("message-from-main", (msg) => {
   if (msg.type == "ChatHistoryUpdate") {
     // setTimeout(() => {
     //   ChatHistory.init({ force: true });
@@ -263,7 +263,7 @@ export function Layout() {
   const [loadingCheckLLM, setLoadingCheckLLM] = useState(false);
   const [syncStatus, setSyncStatus] = useState(0);
   useEffect(() => {
-    window.ext.receive("message-from-main", async (res: any) => {
+    msg_receive("message-from-main", async (res: any) => {
       // console.log("UpdateMsg! ", res);
 
       if (res.type == "UpdateMsg" && res.data.status == 1) {

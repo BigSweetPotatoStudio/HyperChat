@@ -1,7 +1,7 @@
 import OpenAI from "openai";
 
 import type { HyperChatCompletionTool } from "./mcp";
-import { call } from "./call";
+import { call, getWebSocket } from "./call";
 import * as MCPTypes from "@modelcontextprotocol/sdk/types.js";
 
 let antdmessage: { warning: (msg: string) => void };
@@ -13,6 +13,7 @@ if (process.env.runtime === "node") {
 }
 
 import imageBase64 from "../common/openai_image_base64.txt";
+import { v4 } from "uuid";
 
 type Tool_Call = {
   index: number;
@@ -59,27 +60,28 @@ export type MyMessage = OpenAI.Chat.Completions.ChatCompletionMessageParam & {
   };
 };
 
-class ClientName2Index {
-  obj: { [s: string]: number } = {};
-  index = 0;
-  getIndex(name: string) {
-    if (!this.obj[name]) {
-      this.obj[name] = this.index;
-      this.index++;
-    }
-    return this.obj[name];
-  }
-  getName(index: number) {
-    for (let key in this.obj) {
-      if (this.obj[key] == index) {
-        return key;
-      }
-    }
-  }
-}
+// class ClientName2Index {
+//   obj: { [s: string]: number } = {};
+//   index = 0;
+//   getIndex(name: string) {
+//     if (!this.obj[name]) {
+//       this.obj[name] = this.index;
+//       this.index++;
+//     }
+//     return this.obj[name];
+//   }
+//   getName(index: number) {
+//     for (let key in this.obj) {
+//       if (this.obj[key] == index) {
+//         return key;
+//       }
+//     }
+//   }
+// }
 
-export const clientName2Index = new ClientName2Index();
+// export const clientName2Index = new ClientName2Index();
 
+const deviceId = v4();
 export class OpenAiChannel {
   openai: OpenAI;
   get lastMessage(): MyMessage {
@@ -495,7 +497,14 @@ export class OpenAiChannel {
         };
         this.messages.push(message as any);
         onUpdate && onUpdate(this.lastMessage.content as string);
-
+        if (process.env.runtime !== "node") {
+          if (
+            clientName === "hyper_agent" &&
+            localtool.origin_name == "call_agent"
+          ) {
+            (await getWebSocket()).emit("active", deviceId);
+          }
+        }
         let call_res = await call("mcpCallTool", [
           clientName,
           localtool.origin_name,
