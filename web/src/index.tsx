@@ -1,6 +1,8 @@
+console.log("HyperChat");
 console.log("process.env.myEnv", process.env.myEnv);
 
 import "./i18n";
+import "./common/call";
 import "./common/data";
 import React from "react";
 import ReactDOM from "react-dom/client";

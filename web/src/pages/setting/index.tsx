@@ -65,7 +65,9 @@ export function Setting() {
     (async () => {
       await AppSetting.init();
       await electronData.init();
-      AppSetting.get().isAutoLauncher = await call("isAutoLauncher"); // 获取是否自动启动
+      AppSetting.get().isAutoLauncher = await call("isAutoLauncher").catch(
+        (x) => AppSetting.get().isAutoLauncher,
+      ); // 获取是否自动启动
       webdavForm.resetFields();
       webdavForm.setFieldsValue(
         Object.assign(AppSetting.get().webdav, { baseDirName: "HyperChat" }),
@@ -201,16 +203,17 @@ export function Setting() {
           <Form
             layout="vertical"
             name="basicSitting"
-            labelCol={{ span: 4 }}
-            wrapperCol={{ span: 20 }}
-            initialValues={{
-              // port: data.get().port,
-              isAutoLauncher: AppSetting.get().isAutoLauncher,
-            }}
+            labelCol={{ span: 8 }}
+            wrapperCol={{ span: 16 }}
+            // initialValues={{
+            //   isAutoLauncher: AppSetting.get().isAutoLauncher,
+            //   mcpCallToolTimeout: AppSetting.get().mcpCallToolTimeout,
+            // }}
             autoComplete="off"
           >
-            <Form.Item label={t`LaunchStartup`} name="isAutoLauncher">
+            <Form.Item label={t`LaunchStartup`}>
               <Switch
+                value={AppSetting.get().isAutoLauncher}
                 checkedChildren="Startup"
                 unCheckedChildren="Close"
                 onChange={async (value) => {
@@ -225,7 +228,17 @@ export function Setting() {
                 }}
               ></Switch>
             </Form.Item>
-
+            <Form.Item label={t`mcpCallToolTimeout`}>
+              <InputNumber
+                value={AppSetting.get().mcpCallToolTimeout}
+                onChange={async (value) => {
+                  AppSetting.get().mcpCallToolTimeout =
+                    parseInt(value as any) || 60;
+                  await AppSetting.save();
+                  refresh();
+                }}
+              ></InputNumber>
+            </Form.Item>
             <Form.Item label={t`DevTools`} name="openDevTools">
               <Space>
                 <Button

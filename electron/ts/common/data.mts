@@ -10,8 +10,9 @@ import {
 } from "../../../common/data.js";
 
 import { appDataDir } from "../const.mjs";
-import { getMessageService } from "../mianWindow.mjs";
+
 import { zx } from "../es6.mjs";
+import { getMessageService } from "../message_service.mjs";
 const { fs, path } = zx;
 for (let data of DataList) {
   data.override({
@@ -31,7 +32,7 @@ for (let data of DataList) {
     },
     async insave() {
       try {
-        getMessageService().sendToRenderer({
+        getMessageService().sendAllToRenderer({
           type: "syncNodeToWeb",
           data: { key: this.KEY, data: this.data },
         });

@@ -1,4 +1,4 @@
-import { call } from "./call";
+import { call, msg_receive } from "./call";
 import {
   AppSetting,
   ChatHistory,
@@ -38,7 +38,7 @@ if (electronData.get().firstOpen) {
   await electronData.save();
 }
 
-window.ext.receive("message-from-main", (msg) => {
+msg_receive("message-from-main", (msg) => {
   if (msg.type == "syncNodeToWeb") {
     let c = DataList.find((x) => x.KEY == msg.data.key);
     Object.assign(c.get(), msg.data.data);

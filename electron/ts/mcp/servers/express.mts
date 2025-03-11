@@ -8,7 +8,7 @@ import { MCPServerPORT } from "../../common/data.mjs";
 
 export async function initMcpServer() {
   let PORT = await new Promise<number>(async (resolve, reject) => {
-    log.info("initMcpServer");
+    log.info("initMcpServer", MCPServerPORT);
     const app = App();
 
     function register(serve: typeof HyperTools) {
