@@ -156,7 +156,7 @@ class WebDAVSync {
     for (let data of DataList) {
       let filename = data.KEY;
       let json = data.initSync({ force: true });
-      if (data.options.sync && fs.existsSync(path.join(localPath, filename))) {
+      if (data.options.sync) {
         // console.log("sync data", path.join(localPath + "/_sync", data.KEY));
         let fullPath = path.join(localPath, filename);
         if (!fs.existsSync(fullPath)) {
@@ -212,7 +212,10 @@ class WebDAVSync {
             localFile?.modifiedTime > remoteFile.modifiedTime
           ) {
             // 对比hash，远程和本地
-            if (!(remoteFile?.filename === localSyncFile.filename)) {
+            if (
+              localSyncFile != null &&
+              remoteFile?.filename != localSyncFile.filename
+            ) {
               console.log(
                 "upload file",
                 remotePath + "/" + localSyncFile.filename
