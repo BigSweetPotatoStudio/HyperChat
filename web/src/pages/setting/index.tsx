@@ -239,6 +239,7 @@ export function Setting() {
                 }}
               ></InputNumber>
             </Form.Item>
+
             <Form.Item label={t`DevTools`} name="openDevTools">
               <Space>
                 <Button
@@ -261,6 +262,11 @@ export function Setting() {
                   }
                 >
                   appDataDir
+                </Button>
+                <Button
+                  onClick={() => window.open(`http://localhost:${electronData.get().port}/#/Chat`)}
+                >
+                  OpenWeb(http://localhost:{electronData.get().port}/#/Chat)
                 </Button>
               </Space>
             </Form.Item>

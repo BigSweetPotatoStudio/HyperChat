@@ -75,6 +75,7 @@ export async function callAgent(obj: {
   agentKey: string;
   message: string;
   type: "task" | "isCalled" | "call";
+  taskKey?: string;
 }) {
   try {
     let agent = Agents.initSync().data.find((x) => x.key === obj.agentKey);
@@ -118,11 +119,11 @@ export async function callAgent(obj: {
       sended: true,
       requestType: "complete",
       allowMCPs: agent.allowMCPs,
-      attachedDialogueCount: undefined,
+      attachedDialogueCount: agent.attachedDialogueCount,
       dateTime: Date.now(),
       isCalled: obj.type === "isCalled",
       isTask: obj.type === "task",
-      taskKey: undefined,
+      taskKey: obj.taskKey,
     };
     ChatHistory.initSync().data.unshift(item);
     await ChatHistory.save();
@@ -141,6 +142,7 @@ export async function runTask(task: Task) {
       agentKey: task.agentKey,
       message: task.command,
       type: "task",
+      taskKey: task.key,
     });
     let agent = Agents.initSync().data.find((x) => x.key === task.agentKey);
     // let config =
