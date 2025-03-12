@@ -5,6 +5,5 @@ services:
     image: hyperchat
     ports:
       - "6080:80"
-    volumes:
-      - /dev/shm:/dev/shm
+
     restart: unless-stopped
