@@ -79,6 +79,16 @@ export function UserContent({ x, regenerate = undefined, submit }) {
             onChange={(e) => {
               setValue(e.target.value);
             }}
+            onPressEnter={() => {
+              x.content_context.edit = false;
+              setIsEdit(false);
+              if (Array.isArray(x.content)) {
+                x.content[0].text = value;
+                submit(x.content);
+              } else {
+                submit(value);
+              }
+            }}
           />
           <Space.Compact>
             <Button
