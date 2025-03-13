@@ -1138,6 +1138,11 @@ export const Chat = ({
                           //   icon: <EditOutlined />,
                           // },
                           {
+                            label: t`Clone`,
+                            key: "clone",
+                            icon: <CopyOutlined />,
+                          },
+                          {
                             label: t`Star`,
                             key: "star",
                             icon: <StarOutlined />,
@@ -1177,6 +1182,23 @@ export const Chat = ({
                             }
 
                             ChatHistory.save();
+                            refresh();
+                          }
+                          if(menuInfo.key === "clone") {
+                            let index = ChatHistory.get().data.findIndex(
+                              (x) => x.key === conversation.key,
+                            );
+                            let item = ChatHistory.get().data[index];
+        
+                            let clone = JSON.parse(JSON.stringify(item));
+                            ChatHistory.get().data.unshift({
+                              ...clone,
+                              key: v4(),
+                              label: `${item.label} - Clone`,
+                              dateTime: Date.now(),
+                            });
+                            ChatHistory.save();
+                            loadMoreData(false, false);
                             refresh();
                           }
                         },

@@ -886,5 +886,13 @@
     "mcpCallToolTimeout": {
         "en": "mcpCallToolTimeout",
         "zh": "mcp调用工具超时时间(s)"
+    },
+    "HyperChat Recommend List": {
+        "en": "HyperChat Recommend List",
+        "zh": "HyperChat 推荐列表"
+    },
+    "MCP Community": {
+        "en": "MCP Community",
+        "zh": "MCP社区"
     }
 }
