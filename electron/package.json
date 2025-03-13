@@ -9,7 +9,7 @@
   },
   "name": "hyper-chat",
   "productName": "HyperChat",
-  "version": "1.1.0",
+  "version": "1.1.1",
   "description": "*",
   "main": "js/main.js",
   "author": "Dadigua",
@@ -135,6 +135,24 @@
       },
       "entitlements": "build/mac/entitlements.mac.plist",
       "entitlementsInherit": "build/mac/entitlements.mac.plist"
+    },
+    "linux": {
+      "target": [
+        {
+          "target": "AppImage",
+          "arch": [
+            "x64",
+            "arm64"
+          ]
+        },
+        {
+          "target": "tar.gz",
+          "arch": [
+            "x64",
+            "arm64"
+          ]
+        }
+      ]
     },
     "nsis": {
       "oneClick": false,
