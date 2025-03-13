@@ -35,7 +35,7 @@ import { v4 as uuidV4 } from "uuid";
 import Screenshots from "electron-screenshots";
 import { getLocalIP, spawnWithOutput } from "./common/util.mjs";
 import { autoLauncher } from "./common/autoLauncher.mjs";
-import { AppSetting, electronData, TaskList } from "../../common/data";
+import { Agents, AppSetting, electronData, TaskList } from "../../common/data";
 import { commandHistory, CommandStatus } from "./command_history.mjs";
 import { appDataDir } from "./const.mjs";
 import spawn from "cross-spawn";
@@ -60,8 +60,7 @@ import {
   KNOWLEDGE_Store,
 } from "../../common/data";
 import { EVENT } from "./common/event";
-import { runTask, startTask, stopTask } from "./mcp/task.mjs";
-
+import { callAgent, runTask, startTask, stopTask } from "./mcp/task.mjs";
 
 function logCommand(
   target: any,
@@ -383,6 +382,14 @@ export class CommandFactory {
   async runTask(taskkey: string) {
     let task = TaskList.initSync().data.find((x) => x.key === taskkey);
     return runTask(task);
+  }
+  async callAgent(task: { command: string; agentName: string }) {
+    let agent = Agents.initSync().data.find((x) => x.label === task.agentName);
+    return callAgent({
+      agentKey: agent.key,
+      message: task.command,
+      type: "call",
+    });
   }
 }
 

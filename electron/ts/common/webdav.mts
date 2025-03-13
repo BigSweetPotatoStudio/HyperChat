@@ -211,7 +211,10 @@ class WebDAVSync {
             localFile?.modifiedTime > remoteFile.modifiedTime
           ) {
             // 对比hash，远程和本地
-            if (!(remoteFile?.filename === localSyncFile.filename)) {
+            if (
+              localSyncFile != null &&
+              remoteFile?.filename != localSyncFile.filename
+            ) {
               console.log(
                 "upload file",
                 remotePath + "/" + localSyncFile.filename

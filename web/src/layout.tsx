@@ -841,12 +841,12 @@ export function Layout() {
               ({ getFieldValue }) => ({
                 async validator(_, value) {
                   if (value) {
-                    const openai = new OpenAI({
-                      baseURL: getFieldValue("baseURL"),
-                      apiKey: value,
-                      dangerouslyAllowBrowser: true,
-                    });
-                    const list = await openai.models.list();
+                    // const openai = new OpenAI({
+                    //   baseURL: getFieldValue("baseURL"),
+                    //   apiKey: value,
+                    //   dangerouslyAllowBrowser: true,
+                    // });
+                    // const list = await openai.models.list();
                     // console.log(list);
                     return Promise.resolve();
                   }

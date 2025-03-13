@@ -60,7 +60,7 @@ export function genRouter(c, prefix: string) {
           data: res,
         };
       } catch (e) {
-        console.error(e);
+        log.error(e);
         ctx.body = { success: false, code: 1, message: e.message };
       }
     });
