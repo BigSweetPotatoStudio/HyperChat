@@ -125,13 +125,12 @@ export class MCPClient {
     let { client, ...out } = this;
     return out;
   }
-  async open(config?: MCP_CONFIG_TYPE) {
+  async open() {
     if (this.config?.hyperchat?.type == "sse") {
-      await this.openSse(config);
+      await this.openSse(this.config);
     } else {
-      await this.openStdio(config);
+      await this.openStdio(this.config);
     }
-
     let client = this.client;
     // let c = client.getServerCapabilities();
     // console.log(c);
@@ -171,31 +170,25 @@ export class MCPClient {
     this.prompts = listPrompts_res.prompts;
     this.status = "connected";
   }
-  async openSse(c?: MCP_CONFIG_TYPE) {
+  async openSse(config: MCP_CONFIG_TYPE) {
     const client = new Client({
       name: this.name,
       version: "1.0.0",
     });
 
-    let config = c || (await getConfg().then((r) => r.mcpServers[this.name]));
-    let urlStr = config.hyperchat.url;
-
-    const transport = new SSEClientTransport(new URL(urlStr));
+    const transport = new SSEClientTransport(new URL(config?.hyperchat?.url));
     await client.connect(transport);
     this.client = client;
   }
-  async openStdio(c?: MCP_CONFIG_TYPE) {
-    let config = c || (await getConfg().then((r) => r.mcpServers[this.name]));
-
+  async openStdio(config: MCP_CONFIG_TYPE) {
     try {
-      let key = this.name;
       const transport = new StdioClientTransport({
         command: config.command,
         args: config.args,
         env: Object.assign(getMyDefaultEnvironment(), config.env),
       });
       const client = new Client({
-        name: key,
+        name: this.name,
         version: "1.0.0",
       });
 
@@ -250,6 +243,7 @@ export async function initMcpClients() {
   console.log(config);
   let tasks = [];
   for (let key in config.mcpServers) {
+    // tasks.push(openMcpClient(key, config.mcpServers[key]));
     if (mcpClients[key] == null) {
       mcpClients[key] = new MCPClient(key, config.mcpServers[key]);
     }
@@ -276,31 +270,39 @@ export async function openMcpClient(
   clientName: string = undefined,
   clientConfig?: MCP_CONFIG_TYPE
 ) {
-  if (mcpClients[clientName] != null) {
-    await mcpClients[clientName].open(clientConfig);
-  }
+  // if (mcpClients[clientName] != null) {
+  //   await mcpClients[clientName].open(clientConfig);
+  // }
 
-  let config = await getConfg();
   if (clientConfig == null) {
-    clientConfig =
-      config.mcpServers[clientName] || ({ hyperchat: {} } as MCP_CONFIG_TYPE);
+    let config = await getConfg();
+    if (config.mcpServers[clientName] == null) {
+      throw new Error("MCP Config is null");
+    }
+    clientConfig = config.mcpServers[clientName] as MCP_CONFIG_TYPE;
   }
-  let key = clientName;
 
-  if (mcpClients[key] == null) {
-    mcpClients[key] = new MCPClient(key, clientConfig);
-  }
   if (clientConfig?.disabled) {
-    mcpClients[key].status = "disabled";
-  } else {
-    try {
-      await mcpClients[key].open(clientConfig);
-    } catch (e) {
-      log.error("openMcpClient", e);
-      throw e;
+    if (mcpClients[clientName] != null) {
+      mcpClients[clientName].client.close();
+    }
+    mcpClients[clientName].status = "disabled";
+    return mcpClients;
+  }
+  let newMCP = new MCPClient(clientName, clientConfig);
+  try {
+    await newMCP.open();
+  } catch (e) {
+    log.error("openMcpClient", e);
+    throw e;
+  }
+  // clean old client
+  if (mcpClients[clientName] != null) {
+    if (mcpClients[clientName].client != null) {
+      mcpClients[clientName].client.close();
     }
   }
-
+  mcpClients[clientName] = newMCP;
   return mcpClients;
 }
 
@@ -363,11 +365,13 @@ export async function getConfg(): Promise<{
   let config = MCP_CONFIG.initSync({ force: true });
 
   // let obj: any = {};
-
   // config.mcpServers = Object.assign(obj, config.mcpServers);
+
   for (let key in config.mcpServers) {
     if (config.mcpServers[key].hyperchat == null) {
-      config.mcpServers[key].hyperchat = {} as any;
+      config.mcpServers[key].hyperchat = {
+        config: {},
+      } as any;
     }
   }
   return config;
