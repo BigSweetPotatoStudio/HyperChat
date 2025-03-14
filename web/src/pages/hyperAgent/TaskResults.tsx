@@ -66,12 +66,14 @@ import {
 import { v4 } from "uuid";
 import { useLocation, useNavigate } from "react-router-dom";
 import { Chat } from "../chat";
+import { HeaderContext } from "../../common/context";
 
 export function TaskResultsPage() {
   const [num, setNum] = useState(0);
   const refresh = () => {
     setNum((x) => x + 1);
   };
+  const { globalState, updateGlobalState } = useContext(HeaderContext);
   useEffect(() => {
     (async () => {
       await ChatHistory.init();

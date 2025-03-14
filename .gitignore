@@ -28,3 +28,4 @@ outputs/
 __pycache__/
 dist/
 .env
+*.log

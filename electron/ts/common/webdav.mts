@@ -31,15 +31,13 @@ class WebDAVSync {
       username: setting.webdav.username,
       password: setting.webdav.password,
     });
-    if (setting.webdav.autoSync) {
-      if (timer) {
-        clearInterval(timer);
-      }
-      timer = setInterval(() => {
+
+    timer = setInterval(() => {
+      if (AppSetting.initSync({ force: true }).webdav.autoSync) {
         Logger.info("autoSync 5min");
         this.sync();
-      }, 1000 * 5 * 60);
-    }
+      }
+    }, 1000 * 5 * 60);
   }
 
   constructor() {}

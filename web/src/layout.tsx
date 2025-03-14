@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { createContext, useEffect, useState } from "react";
 import {
   Routes,
   Route,
@@ -323,7 +323,8 @@ export function Layout() {
               await data.init();
             }
           }
-          EVENT.fire("refresh");
+          
+          refresh();
         }
       }
     });
@@ -505,7 +506,9 @@ export function Layout() {
           layout="mix"
           splitMenus={true}
         >
-          <HeaderContext.Provider value={{ refresh }}>
+          <HeaderContext.Provider
+            value={{ globalState: num, updateGlobalState: refresh }}
+          >
             <Outlet />
           </HeaderContext.Provider>
         </ProLayout>
@@ -554,7 +557,7 @@ export function Layout() {
               GPT_MODELS.get().data = data;
               GPT_MODELS.save();
               refresh();
-              EVENT.fire("refresh");
+              
             }}
             columns={[
               {
@@ -610,7 +613,7 @@ export function Layout() {
 
                         await GPT_MODELS.save();
                         refresh();
-                        EVENT.fire("refresh");
+                        
                       }}
                     >
                       {t`Clone`}
@@ -625,7 +628,7 @@ export function Layout() {
                         );
                         await GPT_MODELS.save();
                         refresh();
-                        EVENT.fire("refresh");
+                        
                       }}
                     >
                       <Button type="link">{t`Delete`}</Button>
@@ -641,7 +644,7 @@ export function Layout() {
                           GPT_MODELS.get().data.unshift(record);
                           await GPT_MODELS.save();
                           refresh();
-                          EVENT.fire("refresh");
+                          
                         }}
                       >
                         {t`Top`}
@@ -763,6 +766,7 @@ export function Layout() {
                     if (index == -1) {
                       return;
                     }
+                    values.name = values.name || values.model;
                     GPT_MODELS.get().data[index] = values;
                     await GPT_MODELS.save();
                   } else {
@@ -773,7 +777,7 @@ export function Layout() {
                   }
                   refresh();
                   setIsAddModelConfigOpen(false);
-                  EVENT.fire("refresh");
+                  
                   setLoadingCheckLLM(false);
                   message.success("save success!");
                 } catch {
@@ -804,6 +808,7 @@ export function Layout() {
                   return;
                 }
                 // console.log(find);
+
                 let value: any = {
                   baseURL: find.baseURL,
                 };
