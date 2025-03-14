@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useRef, useState } from "react";
+import React, { useCallback, useContext, useEffect, useRef, useState } from "react";
 import { call } from "../../common/call";
 import {
   Button,
@@ -58,6 +58,7 @@ import { zodToJsonSchema } from "zod-to-json-schema";
 
 import { getClients, getMcpClients, InitedClient } from "../../common/mcp";
 import { t } from "../../i18n";
+import { HeaderContext } from "../../common/context";
 
 export type Package = {
   type: "npx" | "uvx" | "other";
@@ -197,6 +198,7 @@ export function Market() {
   const refresh = () => {
     setNum((n) => n + 1);
   };
+  const { globalState, updateGlobalState } = useContext(HeaderContext);
   const [npx, setNpxVer] = useState("");
   const [uv, setUvVer] = useState("");
   const [threePartys, setThreePartys] = useState<Array<{ name: string }>>([]);

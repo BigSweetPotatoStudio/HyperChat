@@ -59,12 +59,14 @@ import { NewTaskModal } from "./newTaskModal";
 import { Agents, TaskList } from "../../../../common/data";
 import { v4 } from "uuid";
 import { useLocation, useNavigate } from "react-router-dom";
+import { HeaderContext } from "../../common/context";
 
 export function TaskListPage() {
   const [num, setNum] = useState(0);
   const refresh = () => {
     setNum((x) => x + 1);
   };
+  const { globalState, updateGlobalState } = useContext(HeaderContext);
   const navigate = useNavigate();
   const location = useLocation();
   const columns = [
@@ -152,7 +154,7 @@ export function TaskListPage() {
                 TaskList.get().data = TaskList.get().data.filter(
                   (item) => item.key !== row.key,
                 );
-                
+
                 TaskList.save();
                 refresh();
               }}

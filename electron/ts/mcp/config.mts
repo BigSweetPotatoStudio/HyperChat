@@ -45,15 +45,7 @@ const {
   /* webpackIgnore: true */ "@modelcontextprotocol/sdk/types.js"
 );
 
-// type ClientConfig = {
-//   command?: string;
-//   args?: string[];
-//   env?: { [s: string]: string };
-//   type?: "stdio" | "sse";
-//   url?: string;
-//   disabled?: boolean;
-//   scope?:"built-in" | "outer";
-// };
+
 
 export const mcpClients = {} as {
   [s: string]: MCPClient;
@@ -185,7 +177,7 @@ export class MCPClient {
       const transport = new StdioClientTransport({
         command: config.command,
         args: config.args,
-        env: Object.assign(getMyDefaultEnvironment(), config.env),
+        env: Object.assign(getMyDefaultEnvironment(), process.env as any, config.env),
       });
       const client = new Client({
         name: this.name,
