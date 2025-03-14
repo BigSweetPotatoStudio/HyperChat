@@ -41,7 +41,13 @@ import {
   Typography,
 } from "antd";
 const antdMessage = message;
-import React, { useCallback, useEffect, useRef, useState } from "react";
+import React, {
+  useCallback,
+  useContext,
+  useEffect,
+  useRef,
+  useState,
+} from "react";
 import OpenAI from "openai";
 import { v4 } from "uuid";
 
@@ -162,6 +168,7 @@ import { ChatHistoryItem } from "../../../../common/data";
 import { useForm } from "antd/es/form/Form";
 import { t } from "../../i18n";
 import { NumberStep } from "../../common/numberStep";
+import { HeaderContext } from "../../common/context";
 
 export const Chat = ({
   onTitleChange = undefined,
@@ -175,22 +182,21 @@ export const Chat = ({
     histroyKey: "",
   },
 }) => {
-  let init = useCallback(() => {
-    console.log("init");
-
+  const [num, setNum] = React.useState(0);
+  const refresh = () => {
+    setNum((n) => n + 1);
+  };
+  const { globalState, updateGlobalState } = useContext(HeaderContext);
+  useEffect(() => {
+    loadMoreData(false);
+  }, [globalState]);
+  useEffect(() => {
     (async () => {
-      if (!data.agentKey) {
-        // 非Agent调用
-        await ChatHistory.init();
-      }
+      await ChatHistory.init();
       await Agents.init();
       await GPT_MODELS.init();
       refresh();
-      setHistoryFilterSign((e) => e + 1);
-    })();
-  }, []);
-  useEffect(() => {
-    (async () => {
+      loadMoreData(false);
       if (data.agentKey) {
         try {
           // let agents = await GPTS.init();
@@ -227,16 +233,11 @@ export const Chat = ({
       }
     })();
 
-    init();
-    EVENT.on("refresh", init);
-    return () => {
-      EVENT.off("refresh", init);
-    };
+    // EVENT.on("refresh", init);
+    // return () => {
+    //   EVENT.off("refresh", init);
+    // };
   }, []);
-  const [num, setNum] = React.useState(0);
-  const refresh = () => {
-    setNum((n) => n + 1);
-  };
 
   const onGPTSClick = async (key: string) => {
     let find = Agents.get().data.find((y) => y.key === key);
@@ -939,7 +940,7 @@ export const Chat = ({
   });
   const [botSearchValue, setBotSearchValue] = useState("");
 
-  const [historyFilterSign, setHistoryFilterSign] = useState<number>(0);
+  // const [historyFilterSign, setHistoryFilterSign] = useState<number>(0);
 
   const historyFilterType = useRef<
     "all" | "star" | "search" | "agent" | "task"
@@ -948,7 +949,7 @@ export const Chat = ({
   const [historyFilterSearchValue, setHistoryFilterSearchValue] = useState("");
   useEffect(() => {
     loadMoreData(false);
-  }, [historyFilterType.current, historyFilterSearchValue, historyFilterSign]);
+  }, [historyFilterType.current, historyFilterSearchValue]);
 
   let supportImage = (
     GPT_MODELS.get().data.find((x) => x.key == currentChat.current.modelKey) ||
@@ -1184,12 +1185,12 @@ export const Chat = ({
                             ChatHistory.save();
                             refresh();
                           }
-                          if(menuInfo.key === "clone") {
+                          if (menuInfo.key === "clone") {
                             let index = ChatHistory.get().data.findIndex(
                               (x) => x.key === conversation.key,
                             );
                             let item = ChatHistory.get().data[index];
-        
+
                             let clone = JSON.parse(JSON.stringify(item));
                             ChatHistory.get().data.unshift({
                               ...clone,
