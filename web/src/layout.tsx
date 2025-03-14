@@ -323,7 +323,7 @@ export function Layout() {
               await data.init();
             }
           }
-          EVENT.fire("refresh");
+          
           refresh();
         }
       }
@@ -557,7 +557,7 @@ export function Layout() {
               GPT_MODELS.get().data = data;
               GPT_MODELS.save();
               refresh();
-              EVENT.fire("refresh");
+              
             }}
             columns={[
               {
@@ -613,7 +613,7 @@ export function Layout() {
 
                         await GPT_MODELS.save();
                         refresh();
-                        EVENT.fire("refresh");
+                        
                       }}
                     >
                       {t`Clone`}
@@ -628,7 +628,7 @@ export function Layout() {
                         );
                         await GPT_MODELS.save();
                         refresh();
-                        EVENT.fire("refresh");
+                        
                       }}
                     >
                       <Button type="link">{t`Delete`}</Button>
@@ -644,7 +644,7 @@ export function Layout() {
                           GPT_MODELS.get().data.unshift(record);
                           await GPT_MODELS.save();
                           refresh();
-                          EVENT.fire("refresh");
+                          
                         }}
                       >
                         {t`Top`}
@@ -777,7 +777,7 @@ export function Layout() {
                   }
                   refresh();
                   setIsAddModelConfigOpen(false);
-                  EVENT.fire("refresh");
+                  
                   setLoadingCheckLLM(false);
                   message.success("save success!");
                 } catch {
