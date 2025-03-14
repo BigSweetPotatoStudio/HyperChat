@@ -41,7 +41,7 @@ import {
   Typography,
 } from "antd";
 const antdMessage = message;
-import React, { useCallback, useEffect, useRef, useState } from "react";
+import React, { useCallback, useContext, useEffect, useRef, useState } from "react";
 import OpenAI from "openai";
 import { v4 } from "uuid";
 
@@ -162,6 +162,7 @@ import { ChatHistoryItem } from "../../../../common/data";
 import { useForm } from "antd/es/form/Form";
 import { t } from "../../i18n";
 import { NumberStep } from "../../common/numberStep";
+import { HeaderContext } from "../../common/context";
 
 export const Chat = ({
   onTitleChange = undefined,
@@ -237,7 +238,7 @@ export const Chat = ({
   const refresh = () => {
     setNum((n) => n + 1);
   };
-
+  const { globalState, updateGlobalState } = useContext(HeaderContext);
   const onGPTSClick = async (key: string) => {
     let find = Agents.get().data.find((y) => y.key === key);
     await currentChatReset(

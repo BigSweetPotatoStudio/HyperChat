@@ -54,13 +54,14 @@ import dayjs from "dayjs";
 import { useForm } from "antd/es/form/Form";
 import { e } from "../../common/service";
 import { t } from "../../i18n";
+import { HeaderContext } from "../../common/context";
 
 export function Setting() {
   const [num, setNum] = useState(0);
   function refresh() {
     setNum((num) => num + 1);
   }
-
+  const { globalState, updateGlobalState } = useContext(HeaderContext);
   useEffect(() => {
     (async () => {
       await AppSetting.init();
@@ -89,11 +90,11 @@ export function Setting() {
       await call("testWebDav", [values]);
       AppSetting.get().webdav = values;
       await AppSetting.save();
-      if (values.autoSync) {
-        // window.location.reload();
-      } else {
-        await call("webDaveInit", []);
-      }
+      // if (values.autoSync) {
+      //   // window.location.reload();
+      // } else {
+      //   await call("webDaveInit", []);
+      // }
 
       message.success("Save success");
     }
@@ -177,14 +178,10 @@ export function Setting() {
                   onClick={async () => {
                     setSyncLoading(true);
                     try {
-                      if (AppSetting.get().webdav.autoSync) {
-                        window.location.reload();
-                      } else {
-                        await call("webDavSync", []);
-                        message.success(t`Sync Success`);
-                        setSyncLoading(false);
-                        window.location.reload();
-                      }
+                      await call("webDavSync", []);
+                      message.success(t`Sync Success`);
+                      setSyncLoading(false);
+                      refresh();
                     } catch (error) {
                       message.error("Sync failed");
                       setSyncLoading(false);
@@ -264,7 +261,11 @@ export function Setting() {
                   appDataDir
                 </Button>
                 <Button
-                  onClick={() => window.open(`http://localhost:${electronData.get().port}/#/Chat`)}
+                  onClick={() =>
+                    window.open(
+                      `http://localhost:${electronData.get().port}/#/Chat`,
+                    )
+                  }
                 >
                   OpenWeb(http://localhost:{electronData.get().port}/#/Chat)
                 </Button>

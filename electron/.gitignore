@@ -41,3 +41,4 @@ __pycache__/
 *.log
 tests/
 .env
+*.log

@@ -13,7 +13,7 @@ HyperChat 是一个追求开放的Chat客户端，可以使用各家LLM的API，
 
 - [x] `MCP`扩展市场+第三方MCP支持
 - [x] 支持自由创建`Agent`，可以预设提示词，选择MCP功能
-- [x] 🪟Windows+🍏MacOS
+- [x] 🪟Windows+🍏MacOS+Linux+Docker(coming soon)
 - [x] 支持暗黑模式🌙
 - [x] Resources，Prompts，Tools 支持
 - [x] 支持英文和中文
