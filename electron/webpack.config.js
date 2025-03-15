@@ -77,6 +77,9 @@ module.exports = (env, argv) => {
     },
     mode: isDev ? "development" : "production",
     devtool: isDev ? "inline-source-map" : false,
+    optimization: {
+      minimize: false, // This disables minification even in production mode
+    },
     devServer: {
       static: "./build", // 告诉服务器从哪里提供内容，通常是webpack的输出目录
       port: 3000, // 设置端口号，默认是8080
