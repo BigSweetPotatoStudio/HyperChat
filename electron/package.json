@@ -5,7 +5,7 @@
     "prod": "npx tsx task.mts --prod",
     "testprod": "npx tsx task.mts --testprod",
     "dev:f": "npx tsx task.mts --test",
-    "push": "npx tsx task.mts --pushUpdateFile"
+    "build": "npx tsx task.mts --build"
   },
   "name": "hyper-chat",
   "productName": "HyperChat",

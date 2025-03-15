@@ -45,8 +45,6 @@ const {
   /* webpackIgnore: true */ "@modelcontextprotocol/sdk/types.js"
 );
 
-
-
 export const mcpClients = {} as {
   [s: string]: MCPClient;
 };
@@ -173,12 +171,17 @@ export class MCPClient {
     this.client = client;
   }
   async openStdio(config: MCP_CONFIG_TYPE) {
+    let params = {
+      command: config.command,
+      args: config.args,
+      env: Object.assign(
+        getMyDefaultEnvironment(),
+        process.env as any,
+        config.env
+      ),
+    };
     try {
-      const transport = new StdioClientTransport({
-        command: config.command,
-        args: config.args,
-        env: Object.assign(getMyDefaultEnvironment(), process.env as any, config.env),
-      });
+      const transport = new StdioClientTransport(params);
       const client = new Client({
         name: this.name,
         version: "1.0.0",
@@ -187,6 +190,7 @@ export class MCPClient {
       await client.connect(transport);
       this.client = client;
     } catch (e) {
+      log.error(params, e);
       // let res = await spawnWithOutput(config.command, config.args, {
       //   env: Object.assign(getMyDefaultEnvironment(), config.env),
       // }).catch((e) => {
@@ -326,7 +330,14 @@ export async function closeMcpClients(clientName: string, isdelete: boolean) {
   return mcpClients;
 }
 
-let config = MCP_CONFIG.initSync({ force: true });
+let config = MCP_CONFIG.initSync();
+for (let key in config.mcpServers) {
+  if (
+    config.mcpServers[key].hyperchat?.scope == "built-in"
+  ) {
+    delete config.mcpServers[key];
+  }
+}
 for (let s of MyServers) {
   let key = s.name;
   config.mcpServers[key] = {
@@ -342,19 +353,11 @@ for (let s of MyServers) {
     disabled: false,
   };
 }
-for (let key in config.mcpServers) {
-  if (
-    config.mcpServers[key].hyperchat?.scope == "built-in" &&
-    !MyServers.find((x) => x.name == key)
-  ) {
-    delete config.mcpServers[key];
-  }
-}
 await MCP_CONFIG.save();
 export async function getConfg(): Promise<{
   mcpServers: { [s: string]: MCP_CONFIG_TYPE };
 }> {
-  let config = MCP_CONFIG.initSync({ force: true });
+  let config = MCP_CONFIG.initSync();
 
   // let obj: any = {};
   // config.mcpServers = Object.assign(obj, config.mcpServers);
@@ -371,7 +374,7 @@ export async function getConfg(): Promise<{
 
 export function getMyDefaultEnvironment() {
   let env = getDefaultEnvironment();
-  electronData.initSync({ force: true });
+  electronData.initSync();
   if (electronData.get().PATH) {
     env.PATH = electronData.get().PATH;
   }

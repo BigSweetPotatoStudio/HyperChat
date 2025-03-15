@@ -187,6 +187,28 @@ if (argv.prod) {
   }
 }
 
+
+if (argv.build) {
+  await $({
+    cwd: path.resolve(__dirname, "./web/"),
+  })`npx cross-env NODE_ENV=production myEnv=prod webpack -c webpack.config.js`;
+  await $({
+    cwd: path.resolve(__dirname, "./web/"),
+  })`npx cross-env NODE_ENV=development myEnv=dev webpack -c webpack.eval.js`;
+
+  await fs.copy(
+    `./web/public/logo.png`,
+    `./electron/web-build/assets/favicon.png`,
+    {
+      overwrite: true,
+    }
+  );
+
+  await $({
+    cwd: path.resolve(__dirname, "./electron/"),
+  })`npm run build`;
+}
+
 if (argv.test) {
   await within(() => {
     return Promise.all([
