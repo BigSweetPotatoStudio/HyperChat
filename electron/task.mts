@@ -42,6 +42,11 @@ if (argv.prod) {
   }
 }
 
+if(argv.build) {
+  await $`npx cross-env NODE_ENV=development myEnv=prod webpack`;
+  await $`npx cross-env NODE_ENV=production myEnv=prod electron-builder --publish never`;
+}
+
 // 压缩文件夹
 function zipFolder(folderPath, outputPath) {
   const zip = new AdmZip();

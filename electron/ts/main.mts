@@ -90,7 +90,7 @@ app.whenReady().then(async () => {
     throw e;
   }
 
-  if (process.env.NODE_ENV === "production" && process.env.myEnv !== "test") {
+  if (process.env.myEnv == "prod") {
     Menu.setApplicationMenu(null);
   }
 

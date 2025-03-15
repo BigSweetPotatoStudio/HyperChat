@@ -19,7 +19,6 @@ export class Data<T> {
     return this.data;
   }
   initSync({ force } = { force: true }) {
-    if (!force && this._inited) return this.data;
     let localData = {};
     try {
       this.localStorage = this.ingetSync();
