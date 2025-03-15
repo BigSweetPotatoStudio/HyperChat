@@ -39,7 +39,7 @@ if (argv.prod) {
 }
 
 if (argv.build) {
-  await $`npx cross-env NODE_ENV=development myEnv=prod webpack`;
+  await $`npx cross-env NODE_ENV=production myEnv=prod webpack`;
   await $`npx cross-env NODE_ENV=production myEnv=prod electron-builder --publish never`;
 }
 
