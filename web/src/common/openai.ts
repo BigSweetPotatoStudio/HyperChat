@@ -134,7 +134,7 @@ export class OpenAiChannel {
       message.content = [
         {
           type: "text",
-          text: message.content as string,
+          text: message.content.toString() as string,
         },
       ];
 
@@ -143,7 +143,7 @@ export class OpenAiChannel {
           if (content.text) {
             message.content.push({
               type: "text",
-              text: content.text as string,
+              text: content.text.toString() as string,
             });
           } else if (content.type == "image") {
             message.content.push({
