@@ -35,7 +35,7 @@ import { v4 as uuidV4 } from "uuid";
 import Screenshots from "electron-screenshots";
 import { getLocalIP, spawnWithOutput } from "./common/util.mjs";
 import { autoLauncher } from "./common/autoLauncher.mjs";
-import { Agents, AppSetting, electronData, TaskList } from "../../common/data";
+import { Agents, AppSetting, electronData, MCP_CONFIG_TYPE, TaskList } from "../../common/data";
 import { commandHistory, CommandStatus } from "./command_history.mjs";
 import { appDataDir } from "./const.mjs";
 import spawn from "cross-spawn";
@@ -106,7 +106,7 @@ export class CommandFactory {
     }
     return obj;
   }
-  async openMcpClient(clientName: string, clientConfig?: any) {
+  async openMcpClient(clientName: string, clientConfig?: MCP_CONFIG_TYPE) {
     let res = await openMcpClient(clientName, clientConfig);
     let obj = {};
     for (let key in res) {

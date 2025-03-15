@@ -1,4 +1,10 @@
-import React, { useCallback, useEffect, useRef, useState } from "react";
+import React, {
+  useCallback,
+  useContext,
+  useEffect,
+  useRef,
+  useState,
+} from "react";
 import { call } from "../../common/call";
 import {
   Button,
@@ -8,6 +14,7 @@ import {
   message,
   Modal,
   Popconfirm,
+  Radio,
   Space,
   Tabs,
   Tag,
@@ -57,6 +64,7 @@ import { zodToJsonSchema } from "zod-to-json-schema";
 
 import { getClients, getMcpClients, InitedClient } from "../../common/mcp";
 import { t } from "../../i18n";
+import { HeaderContext } from "../../common/context";
 
 export type Package = {
   type: "npx" | "uvx" | "other";
@@ -120,18 +128,29 @@ function JsonSchema2ProFormColumnsType(schema: any): ProFormColumnsType[] {
 
     for (const key in item.properties) {
       const prop = item.properties[key];
+
+      let type = prop.type;
+      let required = true;
+      if (Array.isArray(prop.type)) {
+        type = prop.type[0];
+        required = prop.type[1] == null;
+      }
       let formItemProps = {
-        required: item.required?.includes(key),
+        required: required,
         rules: [
           {
-            required: item.required?.includes(key),
+            required: required,
           },
         ],
       };
       let fieldProps = {
         placeholder: prop.description,
+        style: {
+          width: "100%",
+        },
       };
-      if (prop.type === "array") {
+
+      if (type === "array") {
         const column: ProFormColumnsType = {
           title: key,
           dataIndex: key,
@@ -142,7 +161,7 @@ function JsonSchema2ProFormColumnsType(schema: any): ProFormColumnsType[] {
         };
         columns.push(column);
         continue;
-      } else if (prop.type === "string") {
+      } else if (type === "string") {
         const column: ProFormColumnsType = {
           title: key,
           dataIndex: key,
@@ -153,7 +172,7 @@ function JsonSchema2ProFormColumnsType(schema: any): ProFormColumnsType[] {
         };
         columns.push(column);
         continue;
-      } else if (prop.type === "number") {
+      } else if (type === "number") {
         const column: ProFormColumnsType = {
           title: key,
           dataIndex: key,
@@ -163,7 +182,7 @@ function JsonSchema2ProFormColumnsType(schema: any): ProFormColumnsType[] {
         };
         columns.push(column);
         continue;
-      } else if (prop.type === "boolean") {
+      } else if (type === "boolean") {
         const column: ProFormColumnsType = {
           title: key,
           dataIndex: key,
@@ -174,7 +193,7 @@ function JsonSchema2ProFormColumnsType(schema: any): ProFormColumnsType[] {
         columns.push(column);
         continue;
       } else {
-        throw new Error("not support type");
+        console.log(prop.type, new Error("not support type"));
       }
     }
     return columns;
@@ -196,6 +215,7 @@ export function Market() {
   const refresh = () => {
     setNum((n) => n + 1);
   };
+  const { globalState, updateGlobalState } = useContext(HeaderContext);
   const [npx, setNpxVer] = useState("");
   const [uv, setUvVer] = useState("");
   const [threePartys, setThreePartys] = useState<Array<{ name: string }>>([]);
@@ -208,11 +228,6 @@ export function Market() {
       if (mcpExtensionDataObj[key] == undefined) {
         arr.push({ name: key });
       }
-      //  else {
-      //   if (mcp.mcpServers[key]?.hyperchat?.config == undefined) {
-      //     arr.push({ name: key });
-      //   }
-      // }
     }
     setThreePartys(arr);
     refresh();
@@ -230,21 +245,19 @@ export function Market() {
 
     (async () => {
       let mcp = await MCP_CONFIG.init();
-      let r = (await getMCPExtensionData()) as any[];
+      let mcpExtensionData = (await getMCPExtensionData().catch(
+        (e) => [],
+      )) as any[];
       let clients = await getClients(false);
-      r = clients
+      mcpExtensionData = clients
         .filter((x) => x.config.hyperchat?.scope == "built-in")
-        .concat(r);
-      // res.data.unshift({
-      //   name: "hyper_tools",
-      //   description: "hyper_tools",
-      // });
-      // r = [];
-      for (let x of r) {
+        .concat(mcpExtensionData);
+
+      for (let x of mcpExtensionData) {
         mcpExtensionDataObj[x.name] = x;
       }
       refreshThreePartys(mcp);
-      setMcpExtensionData(r);
+      setMcpExtensionData(mcpExtensionData);
     })();
   };
   useEffect(() => {
@@ -318,28 +331,38 @@ export function Market() {
       <List.Item.Meta
         className="px-2"
         title={
-          <span>
-            {item.name}&nbsp;
-            {MCP_CONFIG.get().mcpServers[item.name]?.hyperchat?.scope ==
-              "built-in" && <Tag color="blue">built-in</Tag>}
-            {mcpLoadingObj[item.name] ? (
-              <SyncOutlined spin className="text-blue-400" />
-            ) : getMcpClients()[item.name] == null ||
-              MCP_CONFIG.get().mcpServers[item.name]
-                .disabled ? null : getMcpClients()[item.name]?.status ==
-              "connected" ? (
-              <CheckCircleTwoTone twoToneColor="#52c41a" />
-            ) : (
-              <DisconnectOutlined className="text-red-400" />
-            )}
-            &nbsp;
-          </span>
+          <>
+            <span>
+              {item.name}&nbsp;
+              {MCP_CONFIG.get().mcpServers[item.name]?.hyperchat?.scope ==
+                "built-in" && <Tag color="blue">built-in</Tag>}
+              &nbsp;
+              {MCP_CONFIG.get().mcpServers[item.name]?.hyperchat?.scope !=
+                "built-in" &&
+              MCP_CONFIG.get().mcpServers[item.name]?.hyperchat?.type ==
+                "sse" ? (
+                <Tag>sse</Tag>
+              ) : (
+                ""
+              )}
+              &nbsp;
+              {mcpLoadingObj[item.name] ? (
+                <SyncOutlined spin className="text-blue-400" />
+              ) : getMcpClients()[item.name] == null ||
+                MCP_CONFIG.get().mcpServers[item.name]
+                  ?.disabled ? null : getMcpClients()[item.name]?.status ==
+                "connected" ? (
+                <CheckCircleTwoTone twoToneColor="#52c41a" />
+              ) : (
+                <DisconnectOutlined className="text-red-400" />
+              )}
+            </span>
+          </>
         }
         description={item.description}
       />
     );
   };
-
   return (
     <div className="flex">
       <div className="w-2/5">
@@ -416,7 +439,7 @@ export function Market() {
           type="card"
           items={[
             {
-              label: t`Officially Maintained List`,
+              label: t`HyperChat Recommend List`,
               key: "official",
               children: (
                 <div className="bg-white p-0">
@@ -495,7 +518,7 @@ export function Market() {
                           MCP_CONFIG.get().mcpServers[item.name] &&
                           MCP_CONFIG.get().mcpServers[item.name]?.hyperchat
                             ?.scope != "built-in" &&
-                          !MCP_CONFIG.get().mcpServers[item.name].disabled ? (
+                          !MCP_CONFIG.get().mcpServers[item.name]?.disabled ? (
                             <a className="text-lg hover:text-cyan-400">
                               <Tooltip title="setting">
                                 <SettingOutlined
@@ -533,7 +556,7 @@ export function Market() {
               ),
             },
             {
-              label: t`third party`,
+              label: t`MCP Community`,
               key: "thirdparty",
               children: (
                 <div className="bg-white p-0">
@@ -594,43 +617,49 @@ export function Market() {
                           MCP_CONFIG.get().mcpServers[item.name]
                             ? RenderEnableAndDisable(item)
                             : undefined,
-                          MCP_CONFIG.get().mcpServers[item.name] &&
-                          MCP_CONFIG.get().mcpServers[item.name]?.hyperchat
-                            ?.scope != "built-in" &&
-                          !MCP_CONFIG.get().mcpServers[item.name].disabled ? (
-                            <a className="text-lg hover:text-cyan-400">
-                              <Tooltip title="setting">
-                                <SettingOutlined
-                                  onClick={(e) => {
-                                    const config =
-                                      MCP_CONFIG.get().mcpServers[item.name];
+                          // MCP_CONFIG.get().mcpServers[item.name] &&
+                          // MCP_CONFIG.get().mcpServers[item.name]?.hyperchat
+                          //   ?.scope != "built-in" &&
+                          // !MCP_CONFIG.get().mcpServers[item.name]?.disabled ? (
+                          <a className="text-lg hover:text-cyan-400">
+                            <Tooltip title="setting">
+                              <SettingOutlined
+                                onClick={(e) => {
+                                  const config =
+                                    MCP_CONFIG.get().mcpServers[item.name];
 
-                                    let formValues = {
-                                      ...config,
-                                      name: item.name,
-                                    } as any;
-                                    formValues._name = formValues.name;
-                                    formValues._type = "edit";
-                                    formValues._argsStr = (
-                                      formValues.args || []
-                                    ).join("   ");
-
-                                    formValues._envList = [];
-                                    for (let key in formValues.env) {
-                                      formValues._envList.push({
-                                        name: key,
-                                        value: formValues.env[key],
-                                      });
-                                    }
-
-                                    mcpform.resetFields();
-                                    mcpform.setFieldsValue(formValues);
-                                    setIsAddMCPConfigOpen(true);
-                                  }}
-                                />
-                              </Tooltip>
-                            </a>
-                          ) : undefined,
+                                  let formValues = {
+                                    ...config,
+                                    name: item.name,
+                                  } as any;
+                                  formValues._name = formValues.name;
+                                  formValues._type = "edit";
+                                  // formValues._argsStr = (
+                                  //   formValues.args || []
+                                  // ).join("   ");
+                                  formValues.command = [
+                                    formValues.command || "",
+                                    ...formValues.args,
+                                  ].join("   ");
+                                  formValues._envList = [];
+                                  for (let key in formValues.env) {
+                                    formValues._envList.push({
+                                      name: key,
+                                      value: formValues.env[key],
+                                    });
+                                  }
+                                  formValues.type =
+                                    formValues?.hyperchat?.type || "stdio";
+                                  formValues.url =
+                                    formValues?.hyperchat?.url || "";
+                                  mcpform.resetFields();
+                                  mcpform.setFieldsValue(formValues);
+                                  setIsAddMCPConfigOpen(true);
+                                }}
+                              />
+                            </Tooltip>
+                          </a>,
+                          // ) : undefined,
                         ].filter((x) => x != null)}
                       >
                         {ListItemMeta(item)}
@@ -715,14 +744,14 @@ export function Market() {
           onFinish={async (values) => {
             try {
               let config = currRow.resolve(values);
-              // console.log(values, config);
+              config.hyperchat = {
+                url: "",
+                type: "stdio",
+                scope: "outer",
+                config: {},
+              };
               await call("openMcpClient", [currRow.name, config]);
 
-              Object.assign(config, {
-                hyperchat: {
-                  config: values,
-                },
-              });
               MCP_CONFIG.get().mcpServers[currRow.name] = config;
               await MCP_CONFIG.save();
 
@@ -772,8 +801,7 @@ export function Market() {
         modalRender={(dom) => (
           <Form
             initialValues={{
-              envStr: "",
-              argsStr: "",
+              type: "stdio",
             }}
             form={mcpform}
             layout="vertical"
@@ -782,20 +810,6 @@ export function Market() {
             onFinish={async (values) => {
               try {
                 setLoadingOpenMCP(true);
-                values._argsStr = values._argsStr || "";
-                values.args = values._argsStr
-                  .split(" ")
-                  .filter((x) => x.trim() != "");
-                try {
-                  values.env = {};
-                  values._envList = values._envList || [];
-                  for (let x of values._envList) {
-                    values.env[x.name] = x.value;
-                  }
-                } catch {
-                  message.error("Please enter a valid JSON");
-                  return;
-                }
                 if (
                   values._type == "edit" &&
                   MCP_CONFIG.get().mcpServers[values._name].disabled
@@ -803,6 +817,45 @@ export function Market() {
                   message.error("MCP Service Disabled");
                   return;
                 }
+                if (values.type == "sse") {
+                  values = {
+                    ...values,
+                    command: "",
+                    args: [],
+                    env: {},
+                    hyperchat: {
+                      url: values.url,
+                      type: values.type,
+                      scope: "outer",
+                      config: {},
+                    },
+                  };
+                } else {
+                  let commands = values.command
+                    .split(" ")
+                    .filter((x) => x.trim() != "");
+
+                  let [command, ...args] = commands;
+                  values.command = command;
+                  values.args = args;
+                  values.env = {};
+                  try {
+                    values._envList = values._envList || [];
+                    for (let x of values._envList) {
+                      values.env[x.name] = x.value;
+                    }
+                  } catch {
+                    message.error("Please enter a valid JSON");
+                    return;
+                  }
+                  values.hyperchat = {
+                    url: values.url || "",
+                    type: values.type,
+                    scope: "outer",
+                    config: {},
+                  };
+                }
+
                 await call("openMcpClient", [values._name, values]);
                 if (values._type == "edit") {
                   MCP_CONFIG.get().mcpServers[values._name] = values;
@@ -845,62 +898,88 @@ export function Market() {
           ></Input>
         </Form.Item>
         <Form.Item
-          name="command"
-          label="command"
-          rules={[{ required: true, message: "Please enter" }]}
+          name="type"
+          label="type"
+          rules={[{ required: true, message: t`Please enter` }]}
         >
-          <Input placeholder="Please enter command"></Input>
+          <Radio.Group
+            onChange={(e) => {
+              refresh();
+            }}
+          >
+            <Radio value="stdio">stdio</Radio>
+            <Radio value="sse">sse</Radio>
+          </Radio.Group>
         </Form.Item>
-        <Form.Item name="_argsStr" label="args">
-          <Input placeholder="Please enter args"></Input>
-        </Form.Item>
+        {mcpform.getFieldValue("type") == "sse" ? (
+          <div>
+            {" "}
+            <Form.Item
+              name="url"
+              label="url"
+              rules={[{ required: true, message: "Please enter" }]}
+            >
+              <Input placeholder="Please enter url"></Input>
+            </Form.Item>
+          </div>
+        ) : (
+          <div>
+            <Form.Item
+              name="command"
+              label="command"
+              rules={[{ required: true, message: "Please enter" }]}
+            >
+              <Input placeholder="Please enter command"></Input>
+            </Form.Item>
 
-        <Form.Item label="env">
-          <Form.List name="_envList">
-            {(fields, { add, remove }) => (
-              <>
-                {fields.map(({ key, name, ...restField }) => (
-                  <div
-                    key={key}
-                    style={{
-                      display: "flex",
-                      justifyContent: "space-between",
-                    }}
-                  >
-                    <Form.Item
-                      {...restField}
-                      name={[name, "name"]}
-                      rules={[{ required: true, message: "Missing name" }]}
-                    >
-                      <Input placeholder="Var Name" />
-                    </Form.Item>
-                    <Form.Item
-                      {...restField}
-                      className="flex-1"
-                      name={[name, "value"]}
-                      rules={[{ required: true, message: "Missing Value" }]}
-                    >
-                      <Input placeholder="Var Value" />
-                    </Form.Item>
+            <Form.Item label="env">
+              <Form.List name="_envList">
+                {(fields, { add, remove }) => (
+                  <>
+                    {fields.map(({ key, name, ...restField }) => (
+                      <div
+                        key={key}
+                        style={{
+                          display: "flex",
+                          justifyContent: "space-between",
+                        }}
+                      >
+                        <Form.Item
+                          {...restField}
+                          name={[name, "name"]}
+                          rules={[{ required: true, message: "Missing name" }]}
+                        >
+                          <Input placeholder="Var Name" />
+                        </Form.Item>
+                        <Form.Item
+                          {...restField}
+                          className="flex-1"
+                          name={[name, "value"]}
+                          rules={[{ required: true, message: "Missing Value" }]}
+                        >
+                          <Input placeholder="Var Value" />
+                        </Form.Item>
+                        <Form.Item>
+                          <MinusCircleOutlined onClick={() => remove(name)} />
+                        </Form.Item>
+                      </div>
+                    ))}
                     <Form.Item>
-                      <MinusCircleOutlined onClick={() => remove(name)} />
+                      <Button
+                        type="dashed"
+                        onClick={() => add()}
+                        block
+                        icon={<PlusOutlined />}
+                      >
+                        Add Environment Variables
+                      </Button>
                     </Form.Item>
-                  </div>
-                ))}
-                <Form.Item>
-                  <Button
-                    type="dashed"
-                    onClick={() => add()}
-                    block
-                    icon={<PlusOutlined />}
-                  >
-                    Add Environment Variables
-                  </Button>
-                </Form.Item>
-              </>
-            )}
-          </Form.List>
-        </Form.Item>
+                  </>
+                )}
+              </Form.List>
+            </Form.Item>
+          </div>
+        )}
       </Modal>
     </div>
   );
