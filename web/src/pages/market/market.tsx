@@ -1,4 +1,10 @@
-import React, { useCallback, useContext, useEffect, useRef, useState } from "react";
+import React, {
+  useCallback,
+  useContext,
+  useEffect,
+  useRef,
+  useState,
+} from "react";
 import { call } from "../../common/call";
 import {
   Button,
@@ -122,18 +128,29 @@ function JsonSchema2ProFormColumnsType(schema: any): ProFormColumnsType[] {
 
     for (const key in item.properties) {
       const prop = item.properties[key];
+
+      let type = prop.type;
+      let required = true;
+      if (Array.isArray(prop.type)) {
+        type = prop.type[0];
+        required = prop.type[1] == null;
+      }
       let formItemProps = {
-        required: item.required?.includes(key),
+        required: required,
         rules: [
           {
-            required: item.required?.includes(key),
+            required: required,
           },
         ],
       };
       let fieldProps = {
         placeholder: prop.description,
+        style: {
+          width: "100%",
+        },
       };
-      if (prop.type === "array") {
+
+      if (type === "array") {
         const column: ProFormColumnsType = {
           title: key,
           dataIndex: key,
@@ -144,7 +161,7 @@ function JsonSchema2ProFormColumnsType(schema: any): ProFormColumnsType[] {
         };
         columns.push(column);
         continue;
-      } else if (prop.type === "string") {
+      } else if (type === "string") {
         const column: ProFormColumnsType = {
           title: key,
           dataIndex: key,
@@ -155,7 +172,7 @@ function JsonSchema2ProFormColumnsType(schema: any): ProFormColumnsType[] {
         };
         columns.push(column);
         continue;
-      } else if (prop.type === "number") {
+      } else if (type === "number") {
         const column: ProFormColumnsType = {
           title: key,
           dataIndex: key,
@@ -165,7 +182,7 @@ function JsonSchema2ProFormColumnsType(schema: any): ProFormColumnsType[] {
         };
         columns.push(column);
         continue;
-      } else if (prop.type === "boolean") {
+      } else if (type === "boolean") {
         const column: ProFormColumnsType = {
           title: key,
           dataIndex: key,
@@ -176,7 +193,7 @@ function JsonSchema2ProFormColumnsType(schema: any): ProFormColumnsType[] {
         columns.push(column);
         continue;
       } else {
-        throw new Error("not support type");
+        console.log(prop.type, new Error("not support type"));
       }
     }
     return columns;
