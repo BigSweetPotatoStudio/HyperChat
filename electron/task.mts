@@ -33,16 +33,12 @@ if (argv.prod) {
     if (os.platform() === "win32") {
       await $`npx cross-env NODE_ENV=production myEnv=prod electron-builder --publish never`;
     } else if (os.platform() === "darwin") {
-      if (process.env.GH_TOKEN) {
-        await $`npx cross-env NODE_ENV=production myEnv=prod electron-builder --mac --publish always`;
-      } else {
-        await $`npx cross-env NODE_ENV=production myEnv=prod electron-builder --mac --publish never`;
-      }
+      await $`npx cross-env NODE_ENV=production myEnv=prod electron-builder --mac --publish never`;
     }
   }
 }
 
-if(argv.build) {
+if (argv.build) {
   await $`npx cross-env NODE_ENV=development myEnv=prod webpack`;
   await $`npx cross-env NODE_ENV=production myEnv=prod electron-builder --publish never`;
 }
