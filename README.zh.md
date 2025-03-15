@@ -95,6 +95,9 @@ npm run dev
 #### 调用shell mcp
 ![image.png](./images/image55.png)
 
+#### 调用terminal mcp, ssh + 还可以执行命令
+![image.png](./images/image62.png)
+
 #### 一键写网页，并发布到（cloudflare）
 ![image.png](./images/image60.png)
 
