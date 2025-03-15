@@ -23,6 +23,12 @@ import { clientPaths } from "./claude.mjs";
 import Logger from "electron-log";
 import { startTask } from "./task.mjs";
 
+import { spawn } from "node:child_process";
+
+// import cross_spawn from "cross-spawn";
+
+// const spawn = os.type() === "Windows_NT" ? cross_spawn : node_spawn;
+
 await initMcpServer().catch((e) => {
   console.error("initMcpServer", e);
 });
@@ -171,7 +177,7 @@ export class MCPClient {
     this.client = client;
   }
   async openStdio(config: MCP_CONFIG_TYPE) {
-    if(electronData.initSync().PATH){
+    if (electronData.initSync().PATH) {
       process.env.PATH = electronData.get().PATH;
     }
     let params = {
@@ -183,6 +189,7 @@ export class MCPClient {
         config.env
       ),
     };
+
     try {
       const transport = new StdioClientTransport(params);
       const client = new Client({
@@ -194,21 +201,37 @@ export class MCPClient {
       this.client = client;
     } catch (e) {
       log.error(params, e);
-      // let res = await spawnWithOutput(config.command, config.args, {
-      //   env: Object.assign(getMyDefaultEnvironment(), config.env),
-      // }).catch((e) => {
-      //   return e;
-      // });
-      // console.log("spawnWithOutput ", res);
-      // if (res.stderr) {
-      //   throw new Error(res.stderr);
-      // }
-      // if (res.stdout) {
-      //   throw new Error(res.stdout);
-      // }
+      if (
+        os.type() == "Windows_NT" &&
+        e.message.includes("Connection closed")
+      ) {
+        // log.error("Connection closed, testing");
+        e = await checkError(params)
+          .then((_) => e)
+          .catch((e) => e);
+      }
       throw e;
     }
   }
+}
+
+async function checkError(params: any) {
+  return await new Promise((resolve, reject) => {
+    let proc = spawn(params.command, params.args, {
+      env: params.env,
+      // shell: true,
+    });
+    // proc.on("data", (data) => {
+    //   console.log(data.toString());
+    // });
+    setTimeout(() => {
+      proc.kill();
+      resolve({ error: 0 });
+    }, 1000);
+    proc.on("error", (err) => {
+      reject(err);
+    });
+  });
 }
 
 let firstRunStatus = 0;
@@ -335,9 +358,7 @@ export async function closeMcpClients(clientName: string, isdelete: boolean) {
 
 let config = MCP_CONFIG.initSync();
 for (let key in config.mcpServers) {
-  if (
-    config.mcpServers[key].hyperchat?.scope == "built-in"
-  ) {
+  if (config.mcpServers[key].hyperchat?.scope == "built-in") {
     delete config.mcpServers[key];
   }
 }
