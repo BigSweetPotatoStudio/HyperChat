@@ -182,34 +182,42 @@ export async function getMCPExtensionData() {
   //   "https://api.github.com/repos/BigSweetPotatoStudio/HyperChatMCP/releases/latest",
   // ).then((res) => res.json());
   // let js = await latest.assets[0].browser_download_url;
-
+  let jscode;
   try {
     let js = "https://hyperchatmcp.pages.dev/main.js";
-    let jscode = await fetch(js).then((res) => res.text());
-    TEMP_FILE.get().mcpExtensionDataJS = jscode;
-    TEMP_FILE.save();
+    jscode = await fetch(js).then((res) => res.text());
+    await TEMP_FILE.init();
 
-    return new Promise(async (resolve, reject) => {
+    let res = await new Promise(async (resolve, reject) => {
       window["jsonp"] = function (res) {
         resolve(res.data);
       };
       eval(jscode);
+
+      setTimeout(() => {
+        reject(new Error("The network is not connected"));
+      }, 5000);
     });
+    return res;
   } catch (e) {
     if (TEMP_FILE.get().mcpExtensionDataJS != "") {
+      jscode = TEMP_FILE.get().mcpExtensionDataJS;
       return new Promise(async (resolve, reject) => {
         window["jsonp"] = function (res) {
-          res.data.unshift({
-            name: "hyper_tools",
-            description: "hyper_tools",
-          });
+          // res.data.unshift({
+          //   name: "hyper_tools",
+          //   description: "hyper_tools",
+          // });
           resolve(res.data);
         };
-        eval(TEMP_FILE.get().mcpExtensionDataJS);
+        eval(jscode);
       });
     } else {
       throw new Error("The network is not connected and there is no cache.");
     }
+  } finally {
+    TEMP_FILE.get().mcpExtensionDataJS = jscode;
+    TEMP_FILE.save();
   }
 }
 
@@ -234,7 +242,6 @@ function formatProperties(obj: any) {
       }
     }
     delete obj.additionalProperties;
-
   } catch (e) {
     console.error(e);
   }
