@@ -129,7 +129,7 @@ export function UserContent({ x, regenerate = undefined, submit }) {
                     wordWrap: "break-word",
                   }}
                 >
-                  {c.text}
+                  {c.text.toString()}
                 </pre>
                 {x.content.length > 1 && i == 0 && (
                   <Divider plain>resources</Divider>

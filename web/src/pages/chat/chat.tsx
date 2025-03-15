@@ -783,7 +783,7 @@ export const Chat = ({
           // modelKey: currentChat.current.modelKey,
 
           key: v4(),
-          label: message,
+          label: message.toString(),
           messages: openaiClient.current.messages,
           sended: true,
           dateTime: Date.now(),
@@ -804,9 +804,20 @@ export const Chat = ({
             promptResList,
           );
         }
-        currentChat.current.label =
-          currentChat.current.messages.find((x) => x.role == "user")?.content ||
-          currentChat.current.label;
+        let label = currentChat.current.label.toString();
+        let firstUserContent = currentChat.current.messages.find(
+          (x) => x.role == "user",
+        )?.content;
+
+        if (typeof firstUserContent == "string") {
+          label = firstUserContent;
+        } else if (Array.isArray(firstUserContent)) {
+          label = firstUserContent.find((x) => x.type == "text")?.text || "";
+        } else {
+          label = firstUserContent.toString();
+        }
+
+        currentChat.current.label = label;
 
         let findIndex = ChatHistory.get().data.findIndex(
           (x) => x.key == currentChat.current.key,
@@ -1106,6 +1117,7 @@ export const Chat = ({
                       items={conversations.map((x) => {
                         return {
                           ...x,
+                          label: x.label.toString(),
                           icon: x.icon == "⭐" ? <StarOutlined /> : undefined,
                         };
                       })}
