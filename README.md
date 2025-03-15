@@ -3,56 +3,56 @@
 
 ## Features
 
-HyperChat is an open-minded Chat client that can use various LLM APIs, fully supports MCP, and provides the best chat experience. It also implements the MAX productivity tools based on native agents.
+HyperChat is an open Chat client that can use APIs from various LLMs, fully supports MCP, and provides the best Chat experience. It also implements a productivity MAX tool based on native Agents.
 
 * Supports OpenAI-style LLMs, `OpenAI`, `Claude(OpenRouter)`, `Qwen`, `Deepseek`, `GLM`, `Ollama`.
-* Built-in MCP plugin market with user-friendly MCP installation and configuration, one-click installation, welcome to submit [HyperChatMCP](https://github.com/BigSweetPotatoStudio/HyperChatMCP).
+* Built-in MCP plugin market, user-friendly MCP installation and configuration, one-click installation, contributions to [HyperChatMCP](https://github.com/BigSweetPotatoStudio/HyperChatMCP) are welcome.
 * Also supports manual installation of third-party MCPs, simply fill in `command`, `args`, and `env`.
 
-### MCP: 
+### MCP:
 
 [![Build](https://github.com/BigSweetPotatoStudio/HyperChat/actions/workflows/build.yml/badge.svg)](https://github.com/BigSweetPotatoStudio/HyperChat/actions/workflows/build.yml)
 
 - [x] `MCP` extension market + third-party MCP support
-- [x] Supports freely creating `Agent`, can preset prompts and select MCP functions
-- [x] 🪟Windows + 🍏MacOS
+- [x] Supports creating `Agent` freely, presetting prompts, selecting MCP functionalities
+- [x] 🪟 Windows + 🍏 MacOS + Linux + Docker (coming soon)
 - [x] Supports dark mode 🌙
-- [x] Resources, Prompts, and Tools support
+- [x] Resources, Prompts, Tools support
 - [x] Supports English and Chinese
-- [x] Supports `Artifacts`, `SVG`, `HTML` rendering, JavaScript error catching, supports opening Chrome's console
+- [x] Supports `Artifacts`, `SVG`, `HTML` rendering, JS error capturing, and opening Chrome console
 - [x] Agent display optimization, supports search and drag-and-drop sorting
-- [x] Supports `KaTeX`, displays mathematical formulas, code rendering with highlighting and quick copy
+- [x] Supports `KaTeX`, displays mathematical formulas, code rendering with syntax highlighting and quick copy
 - [x] `WebDAV` synchronization
-- [x] Adds `RAG`, based on the MCP knowledge base
-- [x] Introduces the concept of ChatSpace, supports simultaneous chatting in multiple conversations
-- [x] Supports Agent Call Agent through HyperAgent's MCP
-- [x] Adds scheduled tasks to specify Agents to complete tasks on time, and view task completion status.
+- [x] Add `RAG`, based on MCP knowledge base
+- [x] Add ChatSpace concept, supports multiple conversations at the same time
+- [x] Supports Agent calling Agent through HyperAgent's MCP
+- [x] Add scheduled tasks, specify Agent to complete tasks at specified times, and view task completion status.
 
 ### TODO:
 
-- [ ] Will later add a docker version, built-in Linux desktop, built-in Chrome configuration to remote port, unified environment for easier handling. Then control via web interface. Can be used on any device, including mobile phones 🤣
-- [ ] Permission pop-up, whether to allow or not
-- [ ] Implement the ability for LLM to create its own MCP
+- [ ] A Docker version will be added later, with a built-in Linux desktop and built-in Chrome configure remote ports, unified environment for better usability. Then control via web interface. Usable on any device, including mobile phones 🤣
+- [ ] Permission pop-up, whether to allow
+- [ ] Implement LLM writing MCP for itself
 
 ### LLM
 
-| LLM      | Usability    | Notes                         |
-| -------- | ------ | -------------------------- |
-| claude   | ⭐⭐⭐⭐⭐  | No explanation                    |
-| openai   | ⭐⭐⭐⭐⭐ | Perfectly supports multi-step function calls (gpt-4o-mini also works) |
-| gemini flash 2.0   | ⭐⭐⭐⭐🌙 | Very user-friendly |
-| qwen       | ⭐⭐⭐⭐🌙    | Very user-friendly                 |
-| doubao       | ⭐⭐⭐🌙🌙    | Feels okay to use                   |
-| deepseek | ⭐⭐⭐🌙🌙      | Multi-step function calls may have issues       |
+| LLM              | Usability | Remarks                          |
+| ---------------- | --------- | -------------------------------- |
+| claude           | ⭐⭐⭐⭐⭐    | No explanation                   |
+| openai           | ⭐⭐⭐⭐⭐    | Can also perfectly support multi-step function calls (gpt-4o-mini can also) |
+| gemini flash 2.0 | ⭐⭐⭐⭐🌙   | Very useful                      |
+| qwen             | ⭐⭐⭐⭐🌙   | Very useful                      |
+| doubao           | ⭐⭐⭐🌙🌙   | Feels okay to use                |
+| deepseek         | ⭐⭐⭐🌙🌙   | Multi-step function calls have issues |
 
 ## Usage
 
-* 1. Configure the APIKEY, ensure your LLM service is compatible with OpenAI style.
-* 2. Make sure `uv + nodejs` is installed on your system.
+* 1. Configure APIKEY, ensure your LLM service is compatible with OpenAI style.
+* 2. Ensure that `uv + nodejs` are installed on your system.
 
 ### [uvx & uv](https://github.com/astral-sh/uv)
 
-Install using command line, or check the official Github tutorial [uv](https://github.com/astral-sh/uv)
+Install using the command line, or check the official GitHub tutorial [uv](https://github.com/astral-sh/uv)
 
 ```
 # MacOS
@@ -60,9 +60,11 @@ brew install uv
 # Windows
 winget install --id=astral-sh.uv  -e
 ```
+
 ### [npx & nodejs](https://nodejs.org/en)
 
-Install using command line, or go to the official site to download and install, official site [nodejs](https://nodejs.org/en)
+Install using the command line, or download and install from the official website, [nodejs](https://nodejs.org/en)
+
 ```
 # MacOS
 brew install node
@@ -81,54 +83,55 @@ npm run dev
 
 ## Notes
 
-* On MacOS, if you encounter damage or permission issues, run `sudo xattr -d com.apple.quarantine /Applications/HyperChat.app`
-* MacOS `nvm` users should manually input PATH `echo $PATH`, the Windows version of `nvm` seems to work directly.
+* If you encounter a damaged or permission issue on MacOS, run `sudo xattr -d com.apple.quarantine /Applications/HyperChat.app`
+* MacOS `nvm` users should manually set PATH with `echo $PATH`, Windows version of `nvm` seems to work directly
 
 ![image.png](./images/image47.png)
 
 ## Telegram
 
-[HyperChat user discussion](https://t.me/dadigua001)
+[HyperChat User Communication](https://t.me/dadigua001)
 
-#### Calling shell mcp
+#### Calling shell MCP
 ![image.png](./images/image55.png)
 
-#### One-click webpage creation and publish to (cloudflare)
+#### Calling terminal MCP, ssh + can execute commands
+![image.png](./images/image62.png)
+
+#### One-click web page writing and publishing to (cloudflare)
 ![image.png](./images/image60.png)
 
-#### Calling Google Search, asking what TGA Game of the Year is
+#### Calling Google search, asking what TGA Game of the Year is
 ![image.png](./images/image22.png)
 
 #### Organizing Zhihu hot searches
 ![image.png](./images/image36.png)
 
-#### Helping you open a webpage, analyze the results, and write to a file
+#### Helping you open web pages, analyze results, and write to files
 ![image.png](./images/image13.png)
 
-#### Opening Baidu and taking a screenshot
+#### Open Baidu and take a screenshot
 ![image.png](./images/image61.png)
-
 
 #### Scheduled task list
 ![image.png](./images/image52.png)
 
-
-#### MCP market (experimental)
+#### MCP Market (experimental)
 ![image.png](./images/image43.png)
 
 #### Installing MCP interface from the market (experimental)
 ![image.png](./images/image45.png)
 
-#### Installing third-party MCP (supports any MCP)
+#### Installing MCP from third parties (supports any MCP)
 ![image.png](./images/image44.png)
 
-#### Installing third-party MCP interface
+#### Installing MCP interface from third parties
 ![image.png](./images/image46.png)
 
 #### MCP list (can be dynamically selected)
 ![image.png](./images/image21.png)
 
-#### Rendering HTML, supports `Artifacts`, `SVG`, `HTML` rendering,
+#### Rendering HTML, supports `Artifacts`, `SVG`, `HTML` rendering
 ![image.png](./images/image33.png)
 
 #### Interface 1
@@ -137,12 +140,12 @@ npm run dev
 #### Interface 2
 ![image.png](./images/image34.png)
 
-#### Interface 3, testing model capability
+#### Interface 3, testing model capabilities
 ![image.png](./images/image48.png)
 
-#### Knowledge base
+#### Knowledge Base
 ![image.png](./images/image50.png)
 
 ## Disclaimer
 
-* This project is for educational and communication purposes only. If you use this project for any actions, such as web scraping, it has nothing to do with the developers of this project.
+* This project is for learning and communication purposes only. If you use this project for any operations, such as web crawling behavior, it is not related to the developers of this project.
