@@ -171,6 +171,9 @@ export class MCPClient {
     this.client = client;
   }
   async openStdio(config: MCP_CONFIG_TYPE) {
+    if(electronData.initSync().PATH){
+      process.env.PATH = electronData.get().PATH;
+    }
     let params = {
       command: config.command,
       args: config.args,
