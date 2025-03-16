@@ -71,7 +71,7 @@ class WebDAVSync {
         }
       });
     // console.log(contents);
-    return contents.map((item) => ({
+    return (contents || []).map((item) => ({
       filename: item.basename,
       filepath: item.filename,
       modifiedTime: new Date(item.lastmod),
