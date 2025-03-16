@@ -960,7 +960,7 @@ export const Chat = ({
   const [historyFilterSearchValue, setHistoryFilterSearchValue] = useState("");
   useEffect(() => {
     loadMoreData(false);
-  }, [historyFilterType.current, historyFilterSearchValue]);
+  }, [historyFilterType.current, historyFilterSearchValue, currentChat.current.agentKey]);
 
   let supportImage = (
     GPT_MODELS.get().data.find((x) => x.key == currentChat.current.modelKey) ||
