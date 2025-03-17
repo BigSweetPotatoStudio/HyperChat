@@ -1,6 +1,5 @@
 import { call } from "./call";
 import OpenAI from "openai";
-import type { ChatCompletionTool } from "openai/src/resources/chat/completions";
 import * as MCPTypes from "@modelcontextprotocol/sdk/types.js";
 import { sleep } from "./sleep";
 import type { MCPClient } from "../../../electron/ts/mcp/config.mjs";
@@ -17,7 +16,7 @@ export function getMcpClients() {
   return McpClients || {};
 }
 
-export type HyperChatCompletionTool = ChatCompletionTool & {
+export type HyperChatCompletionTool = OpenAI.ChatCompletionTool & {
   key?: string;
   origin_name?: string;
   restore_name?: string;

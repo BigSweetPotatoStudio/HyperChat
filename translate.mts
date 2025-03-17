@@ -17,14 +17,6 @@ import { glob, globSync, globStream, globStreamSync, Glob } from "glob";
 if (os.platform() === "win32") {
   usePowerShell();
 }
-// the main glob() and globSync() resolve/return array of filenames
-
-// all js files, but don't look in node_modules
-const tsfiles = await glob("web/src/**/*.ts*", { ignore: "node_modules/**" });
-const tsfilesText = tsfiles.map((x) => {
-  return fs.readFileSync(x).toString();
-});
-// console.log(tsfiles);
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -131,13 +123,3 @@ function hasChinese(str) {
   return /[\u4e00-\u9fa5]/.test(str);
 }
 
-function find(text: string) {
-  let find = false;
-  for (let s of tsfilesText) {
-    if (s.includes(text)) {
-      find = true;
-      return find;
-    }
-  }
-  return find;
-}

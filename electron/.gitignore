@@ -42,3 +42,4 @@ __pycache__/
 tests/
 .env
 *.log
+js/

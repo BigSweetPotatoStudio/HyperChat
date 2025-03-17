@@ -210,7 +210,9 @@ async function fetch(url: string) {
     await sleep(3000);
     await Promise.race([
       new Promise((resolve) => {
-        win.webContents.on("did-finish-load", resolve);
+        win.webContents.on("did-finish-load", () => {
+          resolve(0);
+        });
       }),
       sleep(3000),
     ]);
@@ -249,7 +251,9 @@ async function search(words: string) {
     // 等待页面加载完成
     await Promise.race([
       new Promise((resolve) => {
-        win.webContents.on("did-finish-load", resolve);
+        win.webContents.on("did-finish-load", () => {
+          resolve(0);
+        });
       }),
       sleep(3000),
     ]);
