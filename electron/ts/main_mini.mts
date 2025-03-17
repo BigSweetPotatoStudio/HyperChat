@@ -1,1 +1,2 @@
-import "./websocket.mjs"
+import "./first.mjs";
+import "./websocket.mjs";

@@ -7,7 +7,7 @@ import {
   shell,
   Tray,
 } from "electron";
-import Logger from "electron-log";
+import { Logger } from "ts/polyfills/index.mjs";
 import { get } from "http";
 import path from "path";
 

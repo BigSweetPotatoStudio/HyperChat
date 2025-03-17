@@ -1,5 +1,5 @@
 import "./first.mjs";
-import log from "electron-log";
+import { Logger } from "ts/polyfills/index.mjs";
 import {
   app,
   BrowserWindow,
@@ -42,14 +42,14 @@ ipcMain.handle("command", async (event, name, args) => {
       // log.info(name, args);
     } else {
       if (name == "writeFile") {
-        log.info(
+        Logger.info(
           name,
           args[0],
           "writeFile Data length: " + args[1].length
           // res
         );
       } else {
-        log.info(
+        Logger.info(
           name,
           args
           // res
@@ -63,7 +63,7 @@ ipcMain.handle("command", async (event, name, args) => {
       data: res,
     };
   } catch (e) {
-    log.error(name, args, e);
+    Logger.error(name, args, e);
     return { success: false, code: 1, message: e.message };
   }
 });
@@ -86,7 +86,7 @@ app.whenReady().then(async () => {
   try {
     createWindow();
   } catch (e) {
-    log.error(e);
+    Logger.error(e);
     throw e;
   }
 

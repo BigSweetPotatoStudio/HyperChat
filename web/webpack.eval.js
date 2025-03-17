@@ -14,6 +14,7 @@ module.exports = (env, argv) => {
       new webpack.EnvironmentPlugin({
         NODE_ENV: process.env.NODE_ENV || "development",
         myEnv: process.env.myEnv || "production",
+        no_electron: "1",
       }),
     ].filter((x) => x != null),
     module: {

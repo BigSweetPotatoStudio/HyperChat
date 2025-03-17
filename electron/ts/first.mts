@@ -1,17 +1,4 @@
-import log from "electron-log";
-import {
-  app,
-  BrowserWindow,
-  nativeImage,
-  Tray,
-  ipcMain,
-  protocol,
-  net,
-  Menu,
-  desktopCapturer,
-  session,
-  shell,
-} from "electron";
+import { Logger } from "ts/polyfills/index.mjs";
 import { zx } from "./es6.mjs";
 const { $, fs, cd, fetch, sleep, path } = zx;
 import { electronData } from "../../common/data";
@@ -36,24 +23,24 @@ import { appDataDir } from "./const.mjs";
 //   receive: () => {},
 // };
 // 获取日志文件路径
-const logFilePath = log.transports.file.getFile().path;
+const logFilePath = Logger.path;
 // 清空日志文件
 fs.writeFileSync(logFilePath, "");
 
 // 记录新的启动日志
-log.info("Application started. Previous logs cleared.");
-log.info("__dirname", __dirname);
-log.log("process.cwd()", process.cwd());
-log.log("execPath: ", process.execPath);
-log.info("NODE_ENV: ", process.env.NODE_ENV);
-log.info("myEnv: ", process.env.myEnv);
+Logger.info("Application started. Previous logs cleared.");
+Logger.info("__dirname", __dirname);
+Logger.info("process.cwd()", process.cwd());
+Logger.info("execPath: ", process.execPath);
+Logger.info("NODE_ENV: ", process.env.NODE_ENV);
+Logger.info("myEnv: ", process.env.myEnv);
 
-log.info(
+Logger.info(
   path.join(__dirname, "../web-build/assets/favicon.png"),
   fs.existsSync(path.join(__dirname, "../web-build/assets/favicon.png"))
 );
 
-log.info("appDataDir: ", appDataDir);
+Logger.info("appDataDir: ", appDataDir);
 
 electronData.get().appDataDir = appDataDir;
 electronData.get().logFilePath = logFilePath;

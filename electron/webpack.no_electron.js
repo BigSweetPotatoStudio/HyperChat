@@ -20,22 +20,15 @@ module.exports = (env, argv) => {
     entry: {
       main: "./ts/main_mini",
     },
-    // publicPath: '/',
-    // experiments: {
-    //   outputModule: true,
-    // },
-    // externalsType: "module", // in order to ignore built-in modules like path, fs, etc.
     externalsPresets: { node: true }, // in order to ignore built-in modules like path, fs, etc.
     externals: [nodeExternals()],
-    // externals: {
-    //   "electron-screenshots": 'require("electron-screenshots")',
-    // },
     plugins: [
       // new Dotenv(),
       new webpack.EnvironmentPlugin({
         NODE_ENV: process.env.NODE_ENV || "development",
         myEnv: process.env.myEnv || "prod",
         runtime: "node",
+        no_electron: "1",
       }),
     ],
     module: {
