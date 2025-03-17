@@ -12,7 +12,8 @@
   "version": "1.2.2",
   "description": "*",
   "main": "js/main.js",
-  "author": "Dadigua",
+  "author": "Dadigua <0laopo0@gmail.com>",
+  "email": "0laopo0@gmail.com",
   "license": "MIT",
   "devDependencies": {
     "@electron/notarize": "^2.5.0",
