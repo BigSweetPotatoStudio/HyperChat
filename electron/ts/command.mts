@@ -1,4 +1,4 @@
-import log from "electron-log";
+import { Logger } from "ts/polyfills/index.mjs";
 import {
   app,
   BrowserWindow,
@@ -99,7 +99,7 @@ export class CommandFactory {
     return {
       version: app.getVersion(),
       appDataDir: appDataDir,
-      logPath: log.transports.file.getFile().path,
+      logPath: Logger.path,
     };
   }
   async getHistory() {
@@ -202,7 +202,7 @@ export class CommandFactory {
 
       if (!result.canceled) {
         const filePath = result.filePaths[0];
-        log.info("Selected file:", filePath);
+        Logger.info("Selected file:", filePath);
         return filePath;
       } else {
         console.error("No file selected");

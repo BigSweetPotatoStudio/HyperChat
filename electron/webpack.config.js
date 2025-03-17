@@ -9,6 +9,7 @@
 const path = require("path");
 const webpack = require("webpack");
 const nodeExternals = require("webpack-node-externals");
+const TsconfigPathsPlugin = require("tsconfig-paths-webpack-plugin");
 
 module.exports = (env, argv) => {
   console.log("ENV:", process.env.NODE_ENV); // 打印出传入的环境变量
@@ -37,6 +38,10 @@ module.exports = (env, argv) => {
         NODE_ENV: process.env.NODE_ENV || "development",
         myEnv: process.env.myEnv || "prod",
         runtime: "node",
+        // no_electron: "0",
+      }),
+      new TsconfigPathsPlugin({
+        configFile: path.resolve(__dirname, "./tsconfig.json"),
       }),
     ],
     module: {
@@ -46,6 +51,7 @@ module.exports = (env, argv) => {
           use: {
             loader: "ts-loader",
             options: {
+              configFile: "tsconfig.json",
               transpileOnly: true, // 确保放在这里
             },
           },
@@ -67,6 +73,9 @@ module.exports = (env, argv) => {
         ".js": [".js", ".ts"],
         ".cjs": [".cjs", ".cts"],
         ".mjs": [".mjs", ".mts"],
+      },
+      alias: {
+        ts: path.resolve(__dirname, "./ts"),
       },
     },
     output: {

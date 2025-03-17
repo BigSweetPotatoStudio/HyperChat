@@ -10,7 +10,7 @@
  */
 
 import { BrowserWindow } from "electron";
-import Logger from "electron-log";
+import { Logger } from "ts/polyfills/index.mjs";
 import { zx } from "../../es6.mjs";
 const { fs, path, sleep } = zx;
 import dayjs from "dayjs";

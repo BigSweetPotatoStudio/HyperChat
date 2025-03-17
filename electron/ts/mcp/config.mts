@@ -4,7 +4,7 @@ const { fs, os, sleep } = zx;
 import * as MCP from "@modelcontextprotocol/sdk/client/index.js";
 // import { StdioClientTransport } from "@modelcontextprotocol/sdk/client/stdio.js";
 import * as MCPTypes from "@modelcontextprotocol/sdk/types.js";
-import log from "electron-log";
+import { Logger } from "ts/polyfills/index.mjs";
 import { appDataDir } from "../const.mjs";
 import type { StdioServerParameters } from "@modelcontextprotocol/sdk/client/stdio.js";
 import { initMcpServer } from "./servers/express.mjs";
@@ -20,7 +20,7 @@ import { request } from "http";
 
 import { spawnWithOutput } from "../common/util.mjs";
 import { clientPaths } from "./claude.mjs";
-import Logger from "electron-log";
+
 import { startTask } from "./task.mjs";
 
 import { spawn } from "node:child_process";
@@ -63,9 +63,9 @@ export class MCPClient {
 
   constructor(public name: string, public config: MCP_CONFIG_TYPE) {}
   async callTool(functionName: string, args: any): Promise<any> {
-    log.info("MCP callTool", functionName, args);
+    Logger.info("MCP callTool", functionName, args);
     if (this.status == "disconnected") {
-      log.error("MCP callTool disconnected, restarting");
+      Logger.error("MCP callTool disconnected, restarting");
       await this.open();
     }
     let mcpCallToolTimeout = (await AppSetting.init()).mcpCallToolTimeout;
@@ -102,17 +102,17 @@ export class MCPClient {
       });
   }
   async callResource(uri: string): Promise<any> {
-    log.info("MCP callTool", uri);
+    Logger.info("MCP callTool", uri);
     if (this.status == "disconnected") {
-      log.error("MCP callTool disconnected, restarting");
+      Logger.error("MCP callTool disconnected, restarting");
       await this.open();
     }
     return await this.client.readResource({ uri: uri });
   }
   async callPrompt(functionName: string, args: any): Promise<any> {
-    log.info("MCP callPrompt", functionName, args);
+    Logger.info("MCP callPrompt", functionName, args);
     if (this.status == "disconnected") {
-      log.error("MCP callTool disconnected, restarting");
+      Logger.error("MCP callTool disconnected, restarting");
       await this.open();
     }
     return await this.client.getPrompt({ name: functionName, arguments: args });
@@ -146,7 +146,7 @@ export class MCPClient {
     //   });
 
     client.onclose = () => {
-      log.info("client close");
+      Logger.info("client close");
       this.status = "disconnected";
       this.tools = [];
       this.resources = [];
@@ -157,7 +157,7 @@ export class MCPClient {
       if (this.config?.hyperchat?.type == "sse") {
         //
       } else {
-        log.error("client onerror: ", e);
+        Logger.error("client onerror: ", e);
       }
     };
 
@@ -204,7 +204,7 @@ export class MCPClient {
       await client.connect(transport);
       this.client = client;
     } catch (e) {
-      log.error(params, e);
+      Logger.error(params, e);
       if (
         os.platform() == "win32" &&
         e.message.includes("Connection closed")
@@ -255,7 +255,7 @@ export async function initMcpClients() {
     firstRunStatus = 1;
   }
   if (firstRunStatus == 2) {
-    log.info("getMcpClients cached mcpClients", Object.keys(mcpClients).length);
+    Logger.info("getMcpClients cached mcpClients", Object.keys(mcpClients).length);
     return mcpClients;
   }
   let p = clientPaths.claude;
@@ -279,7 +279,7 @@ export async function initMcpClients() {
       try {
         tasks.push(mcpClients[key].open());
       } catch (e) {
-        log.error("openMcpClient", e);
+        Logger.error("openMcpClient", e);
         continue;
       }
     }
@@ -319,7 +319,7 @@ export async function openMcpClient(
   try {
     await newMCP.open();
   } catch (e) {
-    log.error("openMcpClient", e);
+    Logger.error("openMcpClient", e);
     throw e;
   }
   // clean old client
