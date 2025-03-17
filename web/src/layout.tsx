@@ -323,7 +323,7 @@ export function Layout() {
               await data.init();
             }
           }
-          
+
           refresh();
         }
       }
@@ -557,7 +557,6 @@ export function Layout() {
               GPT_MODELS.get().data = data;
               GPT_MODELS.save();
               refresh();
-              
             }}
             columns={[
               {
@@ -613,7 +612,6 @@ export function Layout() {
 
                         await GPT_MODELS.save();
                         refresh();
-                        
                       }}
                     >
                       {t`Clone`}
@@ -628,7 +626,6 @@ export function Layout() {
                         );
                         await GPT_MODELS.save();
                         refresh();
-                        
                       }}
                     >
                       <Button type="link">{t`Delete`}</Button>
@@ -644,7 +641,6 @@ export function Layout() {
                           GPT_MODELS.get().data.unshift(record);
                           await GPT_MODELS.save();
                           refresh();
-                          
                         }}
                       >
                         {t`Top`}
@@ -777,7 +773,7 @@ export function Layout() {
                   }
                   refresh();
                   setIsAddModelConfigOpen(false);
-                  
+
                   setLoadingCheckLLM(false);
                   message.success("save success!");
                 } catch {
@@ -841,68 +837,71 @@ export function Layout() {
           <Form.Item
             name="apiKey"
             label="apiKey"
-            rules={[
-              { required: true, message: "Please enter" },
-              ({ getFieldValue }) => ({
-                async validator(_, value) {
-                  if (value) {
-                    // const openai = new OpenAI({
-                    //   baseURL: getFieldValue("baseURL"),
-                    //   apiKey: value,
-                    //   dangerouslyAllowBrowser: true,
-                    // });
-                    // const list = await openai.models.list();
-                    // console.log(list);
-                    return Promise.resolve();
-                  }
-                  // return Promise.reject(
-                  //   new Error(
-                  //     "apikey error",
-                  //   ),
-                  // );
-                },
-              }),
-            ]}
+            rules={[{ required: true, message: "Please enter" }]}
           >
             <Input placeholder={t`Please enter apiKey`}></Input>
           </Form.Item>
 
-          <Form.Item
-            name="model"
-            label="model"
-            rules={[{ required: true, message: "Please enter" }]}
-          >
-            {/* <InputPlus
-              placeholder={t`Please enter or select the model`}
-              options={Providers.find(
-                (x) => x.value == providerValue,
-              )?.models?.map((x) => {
-                return { value: x, label: x };
-              })}
-            /> */}
-            <Select
-              showSearch
-              placeholder={t`Please enter or select the model`}
-              optionFilterProp="label"
-              onFocus={async () => {
-                const openai = new OpenAI({
-                  baseURL: form.getFieldValue("baseURL"),
-                  apiKey: form.getFieldValue("apiKey") || "",
-                  dangerouslyAllowBrowser: true,
-                });
-                try {
-                  const list = await openai.models.list();
-                  setModelOptions(
-                    list.data.map((x) => {
-                      return { value: x.id, label: x.id };
-                    }),
-                  );
-                  // console.log(list);
-                } catch {}
-              }}
-              options={modelOptions}
-            />
-          </Form.Item>
+          {modelOptions.length ? (
+            <Form.Item
+              name="model"
+              label="model"
+              rules={[{ required: true, message: "Please enter" }]}
+            >
+              <Select
+                showSearch
+                placeholder={t`Please enter or select the model`}
+                optionFilterProp="label"
+                onFocus={async () => {
+                  const openai = new OpenAI({
+                    baseURL: form.getFieldValue("baseURL"),
+                    apiKey: form.getFieldValue("apiKey") || "",
+                    dangerouslyAllowBrowser: true,
+                  });
+                  try {
+                    const list = await openai.models.list();
+                    setModelOptions(
+                      list.data.map((x) => {
+                        return { value: x.id, label: x.id };
+                      }),
+                    );
+                    // console.log(list);
+                  } catch {
+                    setModelOptions([]);
+                  }
+                }}
+                options={modelOptions}
+              />
+            </Form.Item>
+          ) : (
+            <Form.Item
+              name="model"
+              label="model"
+              rules={[{ required: true, message: "Please enter" }]}
+            >
+              <Input
+                placeholder={t`Please enter or select the model`}
+                onFocus={async () => {
+                  const openai = new OpenAI({
+                    baseURL: form.getFieldValue("baseURL"),
+                    apiKey: form.getFieldValue("apiKey") || "",
+                    dangerouslyAllowBrowser: true,
+                  });
+                  try {
+                    const list = await openai.models.list();
+                    setModelOptions(
+                      list.data.map((x) => {
+                        return { value: x.id, label: x.id };
+                      }),
+                    );
+                    // console.log(list);
+                  } catch {
+                    setModelOptions([]);
+                  }
+                }}
+              ></Input>
+            </Form.Item>
+          )}
           <Form.Item name="name" label="Alias">
             <Input placeholder="The default is the model name"></Input>
           </Form.Item>
