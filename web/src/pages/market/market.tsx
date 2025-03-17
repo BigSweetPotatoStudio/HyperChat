@@ -216,7 +216,7 @@ export function Market() {
     setNum((n) => n + 1);
   };
   const { globalState, updateGlobalState } = useContext(HeaderContext);
-  const [npx, setNpxVer] = useState("");
+  const [nodeV, setNodeV] = useState("");
   const [uv, setUvVer] = useState("");
   const [threePartys, setThreePartys] = useState<Array<{ name: string }>>([]);
   const [mcpLoadingObj, setMcpLoadingObj] = useState(
@@ -235,11 +235,11 @@ export function Market() {
   const [mcpExtensionData, setMcpExtensionData] = useState<any>([]);
   let init = async () => {
     (async () => {
-      let x = await call("checkNpx", []);
-      setNpxVer(x);
+      let x = await call("exec", ["node -v"]);
+      setNodeV(x);
     })();
     (async () => {
-      let y = await call("checkUV", []);
+      let y = await call("exec", ["uv -V"]);
       setUvVer(y);
     })();
 
@@ -368,49 +368,6 @@ export function Market() {
       <div className="w-2/5">
         <h1 className=" ">💻MCP</h1>
 
-        <div>
-          <div>
-            <Space>
-              <span className="font-bold">npx & nodejs: </span>
-              {npx || t`Not Installed`}
-            </Space>
-          </div>
-          {!npx && (
-            <div>
-              <Space>
-                <span>{t`Please run the command.`}</span>
-                {electronData.get().platform == "win32" ? (
-                  <Code>winget install OpenJS.NodeJS.LTS</Code>
-                ) : (
-                  <Code>brew install node</Code>
-                )}
-                <a href="https://nodejs.org/">goto nodejs</a>
-              </Space>{" "}
-            </div>
-          )}
-        </div>
-        <div>
-          <div>
-            <Space>
-              <span className="font-bold">uvx & python:</span>{" "}
-              {uv || t`Not Installed`}
-            </Space>
-          </div>
-
-          {!uv && (
-            <div>
-              <Space>
-                <span>{t`Please run the command.`}</span>
-                {electronData.get().platform == "win32" ? (
-                  <Code>winget install --id=astral-sh.uv -e</Code>
-                ) : (
-                  <Code>brew install uv</Code>
-                )}
-                <a href="https://github.com/astral-sh/uv">goto uv</a>
-              </Space>
-            </div>
-          )}
-        </div>
         <Space className="mt-1">
           <Tooltip
             title={t`If you are using NVM, you might need to customize the PATH environment var.`}
@@ -691,6 +648,52 @@ export function Market() {
           </div>
           <div>
             <a href="https://smithery.ai/">smithery.ai</a>
+          </div>
+          <div>Help: </div>
+          <div className="help">
+            <div>
+              <div>
+                <Space>
+                  <span className="font-bold">nodejs: </span>
+                  {nodeV || t`Not Installed`}
+                </Space>
+              </div>
+              {!nodeV && (
+                <div>
+                  <Space>
+                    <span>{t`Please run the command.`}</span>
+                    {electronData.get().platform == "win32" ? (
+                      <Code>winget install OpenJS.NodeJS.LTS</Code>
+                    ) : (
+                      <Code>brew install node</Code>
+                    )}
+                    <a href="https://nodejs.org/">goto nodejs</a>
+                  </Space>{" "}
+                </div>
+              )}
+            </div>
+            <div>
+              <div>
+                <Space>
+                  <span className="font-bold">uv:</span>{" "}
+                  {uv || t`Not Installed`}
+                </Space>
+              </div>
+
+              {!uv && (
+                <div>
+                  <Space>
+                    <span>{t`Please run the command.`}</span>
+                    {electronData.get().platform == "win32" ? (
+                      <Code>winget install --id=astral-sh.uv -e</Code>
+                    ) : (
+                      <Code>brew install uv</Code>
+                    )}
+                    <a href="https://github.com/astral-sh/uv">goto uv</a>
+                  </Space>
+                </div>
+              )}
+            </div>
           </div>
         </div>
       </div>

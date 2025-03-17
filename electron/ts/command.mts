@@ -16,7 +16,7 @@ import {
   systemPreferences,
 } from "electron";
 import pack from "../package.json";
-import { zx } from "./es6.mjs";
+import { createClient, zx } from "./es6.mjs";
 const { fs, os, sleep, retry, path, $ } = zx;
 import { request } from "./common/request.mjs";
 import { fileURLToPath } from "url";
@@ -35,12 +35,18 @@ import { v4 as uuidV4 } from "uuid";
 import Screenshots from "electron-screenshots";
 import { getLocalIP, spawnWithOutput } from "./common/util.mjs";
 import { autoLauncher } from "./common/autoLauncher.mjs";
-import { Agents, AppSetting, electronData, MCP_CONFIG_TYPE, TaskList } from "../../common/data";
+import {
+  Agents,
+  AppSetting,
+  electronData,
+  MCP_CONFIG_TYPE,
+  TaskList,
+} from "../../common/data";
 import { commandHistory, CommandStatus } from "./command_history.mjs";
 import { appDataDir } from "./const.mjs";
 import spawn from "cross-spawn";
 
-const { createClient } = await import(/* webpackIgnore: true */ "webdav");
+
 
 import {
   closeMcpClients,
@@ -61,6 +67,7 @@ import {
 } from "../../common/data";
 import { EVENT } from "./common/event";
 import { callAgent, runTask, startTask, stopTask } from "./mcp/task.mjs";
+
 
 function logCommand(
   target: any,
@@ -311,16 +318,9 @@ export class CommandFactory {
         "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36",
     });
   }
-  async checkNpx(): Promise<string> {
+  async exec(command): Promise<string> {
     let env = getMyDefaultEnvironment();
-    let p = await spawnWithOutput("npx", ["--version"], {
-      env,
-    });
-    return p.stdout;
-  }
-  async checkUV(): Promise<string> {
-    let env = getMyDefaultEnvironment();
-    let p = await spawnWithOutput("uvx", ["--version"], {
+    let p = await spawnWithOutput(command, {
       env,
     });
     return p.stdout;
