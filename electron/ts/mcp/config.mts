@@ -1,5 +1,5 @@
 import path from "path";
-import { zx } from "../es6.mjs";
+import { shellPathSync, zx } from "../es6.mjs";
 const { fs, os, sleep } = zx;
 import * as MCP from "@modelcontextprotocol/sdk/client/index.js";
 // import { StdioClientTransport } from "@modelcontextprotocol/sdk/client/stdio.js";
@@ -179,6 +179,10 @@ export class MCPClient {
   async openStdio(config: MCP_CONFIG_TYPE) {
     if (electronData.initSync().PATH) {
       process.env.PATH = electronData.get().PATH;
+    } else {
+      if(os.platform() != 'win32'){
+        process.env.PATH = shellPathSync();
+      }
     }
     let params = {
       command: config.command,
@@ -202,7 +206,7 @@ export class MCPClient {
     } catch (e) {
       log.error(params, e);
       if (
-        os.type() == "Windows_NT" &&
+        os.platform() == "win32" &&
         e.message.includes("Connection closed")
       ) {
         // log.error("Connection closed, testing");
@@ -401,6 +405,10 @@ export function getMyDefaultEnvironment() {
   electronData.initSync();
   if (electronData.get().PATH) {
     env.PATH = electronData.get().PATH;
+  } else {
+    if (os.platform() != "win32") {
+      env.PATH = shellPathSync();
+    }
   }
   return env;
 }

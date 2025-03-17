@@ -1,6 +1,6 @@
 import type { FileStat, WebDAVClient } from "webdav";
 
-const { createClient } = await import(/* webpackIgnore: true */ "webdav");
+
 import { promises } from "fs";
 import path, { join } from "path";
 
@@ -10,7 +10,7 @@ import { log } from "console";
 import { AppSetting, DataList } from "../../../common/data";
 
 import crypto from "crypto";
-import { zx } from "../es6.mjs";
+import { createClient, zx } from "../es6.mjs";
 import { getMessageService } from "../message_service.mjs";
 const { fs } = zx;
 
