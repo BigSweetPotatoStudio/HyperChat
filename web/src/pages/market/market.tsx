@@ -235,11 +235,11 @@ export function Market() {
   const [mcpExtensionData, setMcpExtensionData] = useState<any>([]);
   let init = async () => {
     (async () => {
-      let x = await call("exec", ["node -v"]);
+      let x = await call("exec", ["node", ["-v"]]);
       setNodeV(x);
     })();
     (async () => {
-      let y = await call("exec", ["uv -V"]);
+      let y = await call("exec", ["uv", ["-V"]]);
       setUvVer(y);
     })();
 
