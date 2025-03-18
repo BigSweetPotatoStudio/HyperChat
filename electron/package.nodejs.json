@@ -1,4 +1,5 @@
 {
+    "name": "@dadigua/hyper-chat",
     "bin": {
         "hyper-chat": "cli.js"
     },
