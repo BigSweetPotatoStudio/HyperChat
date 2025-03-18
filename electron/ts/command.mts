@@ -16,7 +16,7 @@ import {
   systemPreferences,
 } from "electron";
 import pack from "../package.json";
-import { createClient, zx } from "./es6.mjs";
+import { createClient, shellPathSync, zx } from "./es6.mjs";
 const { fs, os, sleep, retry, path, $ } = zx;
 import { request } from "./common/request.mjs";
 import { fileURLToPath } from "url";
@@ -312,10 +312,19 @@ export class CommandFactory {
         "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36",
     });
   }
-  async exec(command): Promise<string> {
-    let env = getMyDefaultEnvironment();
-    let p = await spawnWithOutput(command, {
-      env,
+  async exec(command: string, args?: Array<string>): Promise<string> {
+    if (electronData.initSync().PATH) {
+      process.env.PATH = electronData.get().PATH;
+    } else {
+      if (os.platform() != "win32") {
+        process.env.PATH = shellPathSync();
+      }
+    }
+    let p = await spawnWithOutput(command, args, {
+      env: Object.assign(
+        getMyDefaultEnvironment(),
+        process.env as any
+      ),
     });
     return p.stdout;
   }
