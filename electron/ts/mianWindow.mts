@@ -11,7 +11,6 @@ import { Logger } from "ts/polyfills/index.mjs";
 import { get } from "http";
 import path from "path";
 
-// import CheckUpdate, { checkUpdate } from "./upload.mjs";
 import { electronData } from "../../common/data";
 import p from "../package.json" assert { type: "json" };
 

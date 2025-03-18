@@ -17,6 +17,7 @@ import {
 
 import path from "node:path";
 import os from "node:os";
+import "ts/polyfills/electron_autoupdate.mjs"
 import { Command } from "./command.mjs";
 import { fileURLToPath } from "node:url";
 
