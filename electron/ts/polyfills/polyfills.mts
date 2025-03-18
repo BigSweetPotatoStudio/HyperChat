@@ -55,7 +55,8 @@ export const autoLauncher = Context.autoLauncher as AutoLauncher;
 
 export class CheckUpdate {
   constructor() {}
-  checkUpdate() {}
+  checkUpdate() {
+  }
   // 退出并安装
   quitAndInstall() {}
   download() {}

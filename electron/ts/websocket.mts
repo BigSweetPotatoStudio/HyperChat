@@ -8,7 +8,7 @@ import { Logger } from "ts/polyfills/index.mjs";
 
 import { execFallback } from "./common/execFallback.mjs";
 import { v4 as uuid } from "uuid";
-
+import mount from "koa-mount";
 import { koaBody } from "koa-body";
 import { electronData } from "../../common/data";
 import { Command, CommandFactory } from "./command.mjs";
@@ -97,7 +97,12 @@ async function initWebsocket() {
   app.use(model_route.routes());
 
   Logger.info("serve: ", path.join(__dirname, "../web-build"));
-  app.use(serve(path.join(__dirname, "../web-build")) as any);
+  app.use(
+    mount(
+      "/" + electronData.initSync().password,
+      serve(path.join(__dirname, "../web-build")) as any
+    )
+  );
 
   // 错误处理
   app.on("error", (err, ctx) => {
@@ -115,9 +120,9 @@ async function initWebsocket() {
   });
   let PORT = HTTPPORT;
   PORT = await execFallback(PORT, (port) => {
-    server.listen(port, ()=>{
+    server.listen(port, () => {
       Logger.info("http server listen on: ", port);
-    })
+    });
   });
   electronData.get().port = PORT;
   Logger.info("http server listen on: ", PORT);

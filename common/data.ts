@@ -71,6 +71,7 @@ export const electronData = new Data(
   "electronData.json",
   {
     port: 0,
+    password: "123456",
     mcp_server_port: 0,
     version: "",
     appDataDir: "",
@@ -166,6 +167,9 @@ class MCP_CONFIG_DATA<T> extends Data<T> {
           delete server[key];
         }
       }
+    }
+    if (process.env.NODE_ENV == "development") {
+      console.log("save", this.KEY, this.get());
     }
     return super.save();
   }

@@ -6,6 +6,7 @@ import {
   Logger,
   LoggerPolyfill,
   AutoLauncher as IAutoLauncher,
+  CheckUpdate as ICheckUpdate
 } from "./polyfills.mjs";
 import path from "path";
 import p from "../../package.json";
@@ -54,7 +55,16 @@ class LoggerC extends LoggerPolyfill {
 Object.assign(Context.Logger, new LoggerC());
 Object.setPrototypeOf(Context.Logger, new LoggerC());
 
-export class AutoLauncher extends IAutoLauncher {}
+export class AutoLauncher extends IAutoLauncher {
+
+}
 
 Object.assign(Context.autoLauncher, new AutoLauncher());
 Object.setPrototypeOf(Context.autoLauncher, new AutoLauncher());
+
+export class CheckUpdate extends ICheckUpdate {
+
+}
+
+Object.assign(Context.checkUpdate, new CheckUpdate());
+Object.setPrototypeOf(Context.checkUpdate, new CheckUpdate());
