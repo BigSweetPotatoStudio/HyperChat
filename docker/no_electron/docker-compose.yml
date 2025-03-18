@@ -1,7 +1,7 @@
 version: '3'
 
 services:
-  ubuntu-desktop:
+  hyper-chat-mini:
     image: hyper-chat-mini
     ports:
       - "16100:16100"
