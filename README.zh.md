@@ -11,10 +11,13 @@ HyperChat 是一个追求开放的Chat客户端，可以使用各家LLM的API，
 [![Build](https://github.com/BigSweetPotatoStudio/HyperChat/actions/workflows/build.yml/badge.svg)](https://github.com/BigSweetPotatoStudio/HyperChat/actions/workflows/build.yml)
 
 
+- [x] **🪟Windows** + **🍏MacOS** + **Linux**
+- [x] 命令行运行，`npx -y @dadigua/hyper-chat`，默认端口 16100, 密码 123456, Web访问 http://localhost:16100/123456/
+- [x] Docker 
+    * 命令行的版本 `docker pull dadigua/hyper-chat-mini`
+    * Ubuntu桌面 + Chrome + BrowserUse 版本(**coming soon**)
 - [x] `MCP`扩展市场+第三方MCP支持
-- [x] 支持自由创建`Agent`，可以预设提示词，选择MCP功能
-- [x] 🪟Windows + 🍏MacOS + Linux + Docker(coming soon)
-- [x] 命令行运行，npx -y @dadigua/hyper-chat，默认端口 16100, 密码 123456, Web访问 http://localhost:16100/123456/
+- [x] 支持自由创建，设计`Agent`，可以预设提示词，选择MCP功能
 - [x] 支持暗黑模式🌙
 - [x] Resources，Prompts，Tools 支持
 - [x] 支持英文和中文
