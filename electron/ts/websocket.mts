@@ -115,7 +115,9 @@ async function initWebsocket() {
   });
   let PORT = HTTPPORT;
   PORT = await execFallback(PORT, (port) => {
-    server.listen(port);
+    server.listen(port, ()=>{
+      Logger.info("http server listen on: ", port);
+    })
   });
   electronData.get().port = PORT;
   Logger.info("http server listen on: ", PORT);

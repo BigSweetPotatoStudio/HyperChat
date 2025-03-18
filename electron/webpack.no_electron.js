@@ -37,10 +37,7 @@ module.exports = (env, argv) => {
         NODE_ENV: process.env.NODE_ENV || "development",
         myEnv: process.env.myEnv || "prod",
         runtime: "node",
-        // no_electron: "0",
-      }),
-      new TsconfigPathsPlugin({
-        configFile: path.resolve(__dirname, "./tsconfig.json"),
+        no_electron: "1",
       }),
     ],
     module: {
@@ -76,6 +73,11 @@ module.exports = (env, argv) => {
       alias: {
         ts: path.resolve(__dirname, "./ts"),
       },
+      plugins: [
+        new TsconfigPathsPlugin({
+          configFile: path.resolve(__dirname, "./tsconfig.json"),
+        }),
+      ],
     },
     output: {
       filename: "[name].js", // 使用 contenthash 作为文件名的一部分
@@ -84,7 +86,7 @@ module.exports = (env, argv) => {
       libraryTarget: "umd", // 输出格式
     },
     mode: isDev ? "development" : "production",
-    devtool: isDev ? "inline-source-map" : false,
+    devtool: false,
     optimization: {
       minimize: false, // This disables minification even in production mode
     },

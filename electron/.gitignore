@@ -43,3 +43,4 @@ tests/
 .env
 *.log
 js/
+data/

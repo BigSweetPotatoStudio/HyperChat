@@ -42,7 +42,7 @@ import {
   MCP_CONFIG_TYPE,
   TaskList,
 } from "../../common/data";
-import { commandHistory, CommandStatus } from "./command_history.mjs";
+// import { commandHistory, CommandStatus } from "./command_history.mjs";
 import { appDataDir } from "ts/polyfills/index.mjs";
 import spawn from "cross-spawn";
 
@@ -53,7 +53,7 @@ import {
   initMcpClients,
   openMcpClient,
 } from "./mcp/config.mjs";
-import { checkUpdate } from "./upload.mjs";
+import { checkUpdate } from "ts/polyfills/index.mjs";
 import { version } from "os";
 import { webdavClient } from "./common/webdav.mjs";
 import { FeatureExtraction } from "./common/model.mjs";
@@ -66,30 +66,30 @@ import {
 import { EVENT } from "./common/event";
 import { callAgent, runTask, startTask, stopTask } from "./mcp/task.mjs";
 
-function logCommand(
-  target: any,
-  propertyKey: string,
-  descriptor: PropertyDescriptor
-) {
-  const originalMethod = descriptor.value;
-  descriptor.value = async function (...args: any[]) {
-    try {
-      commandHistory.add(propertyKey, args);
-      commandHistory.save();
+// function logCommand(
+//   target: any,
+//   propertyKey: string,
+//   descriptor: PropertyDescriptor
+// ) {
+//   const originalMethod = descriptor.value;
+//   descriptor.value = async function (...args: any[]) {
+//     try {
+//       commandHistory.add(propertyKey, args);
+//       commandHistory.save();
 
-      let res = await originalMethod.apply(this, args);
-      commandHistory.last().status = CommandStatus.SUCCESS;
-      commandHistory.save();
-      return res;
-    } catch (e) {
-      commandHistory.last().status = CommandStatus.ERROR;
-      commandHistory.last().error = e.message;
-      commandHistory.save();
-      throw e;
-    }
-  };
-  return descriptor;
-}
+//       let res = await originalMethod.apply(this, args);
+//       commandHistory.last().status = CommandStatus.SUCCESS;
+//       commandHistory.save();
+//       return res;
+//     } catch (e) {
+//       commandHistory.last().status = CommandStatus.ERROR;
+//       commandHistory.last().error = e.message;
+//       commandHistory.save();
+//       throw e;
+//     }
+//   };
+//   return descriptor;
+// }
 
 export class CommandFactory {
   async getConfig() {
@@ -98,9 +98,6 @@ export class CommandFactory {
       appDataDir: appDataDir,
       logPath: Logger.path,
     };
-  }
-  async getHistory() {
-    return commandHistory.get();
   }
   async initMcpClients() {
     let res = await initMcpClients();

@@ -9,6 +9,7 @@ export const Context = {
   Logger: {} as any,
   CONST: {} as any,
   autoLauncher: {} as any,
+  checkUpdate: {} as any,
 };
 export const Logger = Context.Logger as LoggerPolyfill;
 
@@ -49,4 +50,15 @@ export class AutoLauncher {
 }
 
 export const autoLauncher = Context.autoLauncher as AutoLauncher;
-// export const autoLauncher = new AutoLauncher();
+
+////////////////////////////////////////
+
+export class CheckUpdate {
+  constructor() {}
+  checkUpdate() {}
+  // 退出并安装
+  quitAndInstall() {}
+  download() {}
+  updaterEvent() {}
+}
+export let checkUpdate = Context.checkUpdate as CheckUpdate;
