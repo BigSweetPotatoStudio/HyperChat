@@ -16,6 +16,12 @@ if (argv.dev) {
   await $`npm run start`;
 }
 
+if (argv.devnode) {
+  await $`npx cross-env NODE_ENV=development myEnv=dev webpack -c webpack.no_electron.js`;
+  await $`node js/main_no_electron.js`;
+}
+
+
 if (argv.testprod) {
   await $`npx cross-env NODE_ENV=production myEnv=test webpack`;
   await $`npx cross-env NODE_ENV=production myEnv=test electron-builder`;
