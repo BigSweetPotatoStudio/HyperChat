@@ -14,7 +14,7 @@ HyperChat 是一个追求开放的Chat客户端，可以使用各家LLM的API，
 - [x] **🪟Windows** + **🍏MacOS** + **Linux**
 - [x] 命令行运行，`npx -y @dadigua/hyper-chat`，默认端口 16100, 密码 123456, Web访问 http://localhost:16100/123456/
 - [x] Docker 
-    * 命令行的版本 `docker pull dadigua/hyper-chat-mini`
+    * 命令行的版本 `docker pull dadigua/hyper-chat-mini:1.2.8`
     * Ubuntu桌面 + Chrome + BrowserUse 版本(**coming soon**)
 - [x] `MCP`扩展市场+第三方MCP支持
 - [x] 支持自由创建，设计`Agent`，可以预设提示词，选择MCP功能
