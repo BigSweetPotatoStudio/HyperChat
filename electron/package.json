@@ -2,9 +2,9 @@
   "scripts": {
     "start": "electron .",
     "dev": "nodemon -w ts --exec npx tsx task.mts --dev",
+    "dev:node": "nodemon -w ts --exec npx tsx task.mts --devnode",
     "prod": "npx tsx task.mts --prod",
     "testprod": "npx tsx task.mts --testprod",
-    "dev:f": "npx tsx task.mts --test",
     "build": "npx tsx task.mts --build"
   },
   "name": "hyper-chat",
