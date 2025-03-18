@@ -168,9 +168,9 @@ class MCP_CONFIG_DATA<T> extends Data<T> {
         }
       }
     }
-    if (process.env.NODE_ENV == "development") {
-      console.log("save", this.KEY, this.get());
-    }
+    // if (process.env.NODE_ENV == "development") {
+    //   console.log("save", this.KEY, this.get());
+    // }
     return super.save();
   }
 }

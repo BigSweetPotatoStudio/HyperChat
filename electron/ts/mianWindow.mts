@@ -43,7 +43,7 @@ export const createWindow = () => {
   if (process.env.NODE_ENV == "development") {
     win.loadURL("http://localhost:8080/#/");
   } else {
-    win.loadURL(`http://localhost:${electronData.get().port}/#/`).catch((e) => {
+    win.loadURL(`http://localhost:${electronData.get().port}/${electronData.get().password}/#/`).catch((e) => {
       let indexFile = path.join(__dirname, "../web-build/index.html");
       win.loadFile(indexFile, {
         hash: "#/",
