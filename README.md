@@ -9,6 +9,10 @@ HyperChat is an open Chat client that can use APIs from various LLMs, fully supp
 * Built-in MCP plugin marketplace, user-friendly MCP installation and configuration, one-click installation, contributions to [HyperChatMCP](https://github.com/BigSweetPotatoStudio/HyperChatMCP) are welcome.
 * Also supports manual installation of third-party MCPs, fill in `command`, `args`, `env`.
 
+## DEMO
+
+* [HyperChat](https://hyperchat.dadigua.men/123456/) on Docker
+
 ### MCP:
 
 [![Build](https://github.com/BigSweetPotatoStudio/HyperChat/actions/workflows/build.yml/badge.svg)](https://github.com/BigSweetPotatoStudio/HyperChat/actions/workflows/build.yml)
