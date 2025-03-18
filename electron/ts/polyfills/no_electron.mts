@@ -14,14 +14,13 @@ import { zx } from "ts/es6.mjs";
 const { fs } = zx;
 
 Context.CONST.userDataPath = path.join(process.cwd(), "data");
-Context.CONST.appDataDir = path.join(process.cwd(), "data");
 Context.CONST.getVersion = p.version;
 
 /////////////////
 
-fs.ensureDirSync(Context.CONST.appDataDir);
+fs.ensureDirSync(Context.CONST.userDataPath);
 let logpath = path.join(
-  Context.CONST.appDataDir,
+  Context.CONST.userDataPath,
   `${dayjs().format("YYYY-MM-DD")}.log`
 );
 Logger.path = logpath;
