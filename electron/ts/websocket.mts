@@ -97,9 +97,10 @@ async function initWebsocket() {
   app.use(model_route.routes());
 
   Logger.info("serve: ", path.join(__dirname, "../web-build"));
+  Logger.info("password: ", electronData.initSync().password);
   app.use(
     mount(
-      "/" + electronData.initSync().password,
+      "/" + electronData.get().password,
       serve(path.join(__dirname, "../web-build")) as any
     )
   );
