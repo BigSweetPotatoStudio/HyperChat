@@ -10,14 +10,15 @@
   },
   "name": "hyper-chat",
   "productName": "HyperChat",
-  "version": "1.2.5",
+  "version": "1.2.6",
   "description": "*",
   "main": "js/main.js",
   "author": "Dadigua <0laopo0@gmail.com>",
   "email": "0laopo0@gmail.com",
   "license": "MIT",
   "files": [
-    "web-build"
+    "web-build",
+    "js"
   ],
   "devDependencies": {
     "@electron/notarize": "^2.5.0",
