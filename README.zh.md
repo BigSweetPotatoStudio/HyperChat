@@ -6,6 +6,10 @@ HyperChat 是一个追求开放的Chat客户端，可以使用各家LLM的API，
 * 内置MCP插件市场，人性化的MCP的安装填写配置，一键安装，欢迎提交[HyperChatMCP](https://github.com/BigSweetPotatoStudio/HyperChatMCP)。
 * 也支持第三方MCP手动安装，填写 `command` , `args` , `env` 即可。
 
+## DEMO
+
+* [HyperChat](https://hyperchat.dadigua.men/123456/) on Docker
+
 ### MCP: 
 
 [![Build](https://github.com/BigSweetPotatoStudio/HyperChat/actions/workflows/build.yml/badge.svg)](https://github.com/BigSweetPotatoStudio/HyperChat/actions/workflows/build.yml)
