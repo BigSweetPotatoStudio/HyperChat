@@ -1,4 +1,4 @@
-
+#!/usr/bin/env node
 import { appDataDir } from "ts/polyfills/index.mjs";
 import "./first.mjs";
 // import "./websocket.mjs";
