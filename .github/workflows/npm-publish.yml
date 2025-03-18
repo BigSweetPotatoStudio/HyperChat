@@ -8,8 +8,6 @@ on:
   push:
     branches:
       - no_electron
-  release:
-    types: [created]
 
 jobs:
   build:

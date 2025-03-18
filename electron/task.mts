@@ -53,7 +53,7 @@ if (argv.buildnode) {
   let packageJSON = await fs.readJSON("./package.json");
   let nodePackageJSON = await fs.readJSON("./package.nodejs.json");
   Object.assign(packageJSON, nodePackageJSON);
-  await fs.writeJSON("./package.json", packageJSON, { spaces: 4 });
+  await fs.writeJSON("./package.json", packageJSON, { spaces: 2 });
 }
 
 // 压缩文件夹
