@@ -5,7 +5,8 @@
     "dev:node": "nodemon -w ts --exec npx tsx task.mts --devnode",
     "prod": "npx tsx task.mts --prod",
     "testprod": "npx tsx task.mts --testprod",
-    "build": "npx tsx task.mts --build"
+    "build": "npx tsx task.mts --build",
+    "build:node": "npx tsx task.mts --buildnode"
   },
   "name": "hyper-chat",
   "productName": "HyperChat",
