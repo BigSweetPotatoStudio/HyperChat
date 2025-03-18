@@ -36,7 +36,7 @@ Context.CONST = {
   dirName: dirName,
 };
 
-export const CONST = Context.CONST;
+export const CONST = Context.CONST as typeof Context.CONST;
 
 export class AutoLauncher {
   public autoLauncher;

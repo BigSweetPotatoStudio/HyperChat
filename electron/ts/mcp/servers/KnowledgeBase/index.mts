@@ -9,7 +9,6 @@
  * - Summarizing all notes via a prompt
  */
 
-import { BrowserWindow } from "electron";
 import { Logger } from "ts/polyfills/index.mjs";
 
 import dayjs from "dayjs";
