@@ -54,6 +54,7 @@ if (argv.buildnode) {
   let nodePackageJSON = await fs.readJSON("./package.nodejs.json");
   Object.assign(packageJSON, nodePackageJSON);
   await fs.writeJSON("./package.json", packageJSON, { spaces: 2 });
+  await fs.copy("../README.md", "README.md");
 }
 
 // 压缩文件夹

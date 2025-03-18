@@ -3,5 +3,6 @@
     "bin": {
         "hyper-chat": "cli.js"
     },
-    "main": "js/main_no_electron.js"
+    "main": "js/main_no_electron.js",
+    "devDependencies": {}
 }
