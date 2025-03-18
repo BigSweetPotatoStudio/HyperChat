@@ -21,7 +21,6 @@ if (argv.devnode) {
   await $`node js/main_no_electron.js`;
 }
 
-
 if (argv.testprod) {
   await $`npx cross-env NODE_ENV=production myEnv=test webpack`;
   await $`npx cross-env NODE_ENV=production myEnv=test electron-builder`;
@@ -47,6 +46,14 @@ if (argv.prod) {
 if (argv.build) {
   await $`npx cross-env NODE_ENV=production myEnv=prod webpack`;
   await $`npx cross-env NODE_ENV=production myEnv=prod electron-builder --publish never`;
+}
+
+if (argv.buildnode) {
+  await $`npx cross-env NODE_ENV=development myEnv=dev webpack -c webpack.no_electron.js`;
+  let packageJSON = await fs.readJSON("./package.json");
+  let nodePackageJSON = await fs.readJSON("./package.nodejs.json");
+  Object.assign(packageJSON, nodePackageJSON);
+  await fs.writeJSON("./package.json", packageJSON, { spaces: 2 });
 }
 
 // 压缩文件夹
