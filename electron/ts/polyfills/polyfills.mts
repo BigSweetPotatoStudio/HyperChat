@@ -11,6 +11,12 @@ export const Context = {
   autoLauncher: {} as any,
   checkUpdate: {} as any,
 };
+
+
+export function Clone(a, b) {
+  Object.assign(a, b);
+  Object.setPrototypeOf(a, b);
+}
 export const Logger = Context.Logger as LoggerPolyfill;
 
 import path from "path";
