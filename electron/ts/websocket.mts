@@ -12,8 +12,9 @@ import { v4 as uuid } from "uuid";
 import { koaBody } from "koa-body";
 import { electronData } from "../../common/data";
 import { Command, CommandFactory } from "./command.mjs";
-import { appDataDir, userDataPath } from "./const.mjs";
+import { appDataDir, CONST } from "ts/polyfills/index.mjs";
 
+let { userDataPath } = CONST;
 import Router from "koa-router";
 import { HTTPPORT } from "./common/data.mjs";
 

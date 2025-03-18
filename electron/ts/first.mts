@@ -3,7 +3,7 @@ import { zx } from "./es6.mjs";
 const { $, fs, cd, fetch, sleep, path } = zx;
 import { electronData } from "../../common/data";
 import "./common/data.mjs";
-import { appDataDir } from "./const.mjs";
+import { appDataDir } from "ts/polyfills/index.mjs";
 
 // global.ext = {
 //   invert: async (name, args) => {

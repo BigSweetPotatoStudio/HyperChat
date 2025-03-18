@@ -5,7 +5,7 @@ import * as MCP from "@modelcontextprotocol/sdk/client/index.js";
 // import { StdioClientTransport } from "@modelcontextprotocol/sdk/client/stdio.js";
 import * as MCPTypes from "@modelcontextprotocol/sdk/types.js";
 import { Logger } from "ts/polyfills/index.mjs";
-import { appDataDir } from "../const.mjs";
+import { appDataDir } from "ts/polyfills/index.mjs";
 import type { StdioServerParameters } from "@modelcontextprotocol/sdk/client/stdio.js";
 import { initMcpServer } from "./servers/express.mjs";
 import { MyServers } from "./servers/index.mjs";
@@ -16,8 +16,6 @@ import {
   MCP_CONFIG,
   MCP_CONFIG_TYPE,
 } from "../../../common/data";
-import { request } from "http";
-
 import { spawnWithOutput } from "../common/util.mjs";
 import { clientPaths } from "./claude.mjs";
 
@@ -28,6 +26,29 @@ import { spawn } from "node:child_process";
 // import cross_spawn from "cross-spawn";
 
 // const spawn = os.type() === "Windows_NT" ? cross_spawn : node_spawn;
+
+let config = MCP_CONFIG.initSync();
+for (let key in config.mcpServers) {
+  if (config.mcpServers[key].hyperchat?.scope == "built-in") {
+    delete config.mcpServers[key];
+  }
+}
+for (let s of MyServers) {
+  let key = s.name;
+  config.mcpServers[key] = {
+    command: "",
+    args: [],
+    env: {},
+    hyperchat: {
+      url: `http://localhost:${electronData.get().mcp_server_port}/${key}/sse`,
+      type: "sse",
+      scope: "built-in",
+      config: {},
+    },
+    disabled: false,
+  };
+}
+await MCP_CONFIG.save();
 
 await initMcpServer().catch((e) => {
   console.error("initMcpServer", e);
@@ -266,7 +287,7 @@ export async function initMcpClients() {
 
   let config = await getConfg();
 
-  console.log(config);
+  // console.log(config);
   let tasks = [];
   for (let key in config.mcpServers) {
     // tasks.push(openMcpClient(key, config.mcpServers[key]));
@@ -360,28 +381,6 @@ export async function closeMcpClients(clientName: string, isdelete: boolean) {
   return mcpClients;
 }
 
-let config = MCP_CONFIG.initSync();
-for (let key in config.mcpServers) {
-  if (config.mcpServers[key].hyperchat?.scope == "built-in") {
-    delete config.mcpServers[key];
-  }
-}
-for (let s of MyServers) {
-  let key = s.name;
-  config.mcpServers[key] = {
-    command: "",
-    args: [],
-    env: {},
-    hyperchat: {
-      url: `http://localhost:${electronData.get().mcp_server_port}/${key}/sse`,
-      type: "sse",
-      scope: "built-in",
-      config: {},
-    },
-    disabled: false,
-  };
-}
-await MCP_CONFIG.save();
 export async function getConfg(): Promise<{
   mcpServers: { [s: string]: MCP_CONFIG_TYPE };
 }> {

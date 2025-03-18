@@ -1,3 +1,4 @@
+import "ts/polyfills/index.mjs";
 import "./first.mjs";
 import { Logger } from "ts/polyfills/index.mjs";
 import {
