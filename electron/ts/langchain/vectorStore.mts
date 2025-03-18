@@ -1,7 +1,7 @@
 import { HNSWLib } from "./myhnswlib.mjs";
 import { Embeddings } from "@langchain/core/embeddings";
 import path from "path";
-import { appDataDir } from "../const.mjs";
+import { appDataDir } from "ts/polyfills/index.mjs";
 
 import { FeatureExtraction } from "../common/model.mjs";
 import { toolTextSplitter } from "./textsplitters.mjs";

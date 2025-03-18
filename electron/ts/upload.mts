@@ -1,6 +1,5 @@
 //* 检查更新工具类
 import { autoUpdater } from "electron-updater";
-import { BrowserWindow } from "electron";
 
 //* 引入工具类
 
@@ -8,9 +7,9 @@ import path from "path";
 import { getMessageService } from "./message_service.mjs";
 
 
-const log = require("electron-log");
+import { Logger } from "ts/polyfills/index.mjs";
 
-autoUpdater.logger = log;
+// autoUpdater.logger = Logger;
 
 class CheckUpdate {
   constructor() {
@@ -37,7 +36,7 @@ class CheckUpdate {
   checkUpdate() {
     //* 开始检查更新
     return autoUpdater.checkForUpdatesAndNotify().catch((err) => {
-      log.info("网络连接问题", err);
+      Logger.info("网络连接问题，检测更新失败", err);
     });
   }
   // 退出并安装
@@ -54,36 +53,36 @@ class CheckUpdate {
      **/
     // 当开始检查更新的时候触发
     autoUpdater.on("checking-for-update", () => {
-      log.info("开始检查更新");
+      Logger.info("开始检查更新");
       sendToRender("UpdateMsg", { status: 0 });
     });
 
     // 发现可更新数据时
     autoUpdater.on("update-available", (info) => {
-      log.info("有更新", info);
+      Logger.info("有更新", info);
       sendToRender("UpdateMsg", { status: 1, info: info });
     });
 
     // 没有可更新数据时
     autoUpdater.on("update-not-available", (info) => {
-      log.info("没有更新", info);
+      Logger.info("没有更新", info);
       sendToRender("UpdateMsg", { status: 2, info: info });
     });
 
     // 下载监听
     autoUpdater.on("download-progress", (progressObj) => {
-      log.info("下载监听", progressObj);
+      Logger.info("下载监听", progressObj);
       sendToRender("download-progress", progressObj);
     });
 
     // 下载完成
     autoUpdater.on("update-downloaded", () => {
-      log.info("下载完成");
+      Logger.info("下载完成");
       sendToRender("UpdateMsg", { status: 4 });
     });
     // 当更新发生错误的时候触发。
     autoUpdater.on("error", (err) => {
-      log.info("更新出现错误", err.message);
+      Logger.info("更新出现错误", err.message);
       if (err.message.includes("sha512 checksum mismatch")) {
         sendToRender(-1, "sha512校验失败");
       } else {

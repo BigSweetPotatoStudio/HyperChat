@@ -34,7 +34,7 @@ import puppeteer from "puppeteer-core";
 import { v4 as uuidV4 } from "uuid";
 import Screenshots from "electron-screenshots";
 import { getLocalIP, spawnWithOutput } from "./common/util.mjs";
-import { autoLauncher } from "./common/autoLauncher.mjs";
+import { autoLauncher } from "ts/polyfills/index.mjs";
 import {
   Agents,
   AppSetting,
@@ -43,10 +43,8 @@ import {
   TaskList,
 } from "../../common/data";
 import { commandHistory, CommandStatus } from "./command_history.mjs";
-import { appDataDir } from "./const.mjs";
+import { appDataDir } from "ts/polyfills/index.mjs";
 import spawn from "cross-spawn";
-
-
 
 import {
   closeMcpClients,
@@ -67,7 +65,6 @@ import {
 } from "../../common/data";
 import { EVENT } from "./common/event";
 import { callAgent, runTask, startTask, stopTask } from "./mcp/task.mjs";
-
 
 function logCommand(
   target: any,

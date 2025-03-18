@@ -1,4 +1,4 @@
-import { app } from "electron";
+
 import {
   electronData,
   taskHistory,
@@ -9,7 +9,7 @@ import {
   MCP_CONFIG_TYPE,
 } from "../../../common/data.js";
 
-import { appDataDir } from "../const.mjs";
+import { appDataDir, CONST } from "ts/polyfills/index.mjs";
 
 import { zx } from "../es6.mjs";
 import { getMessageService } from "../message_service.mjs";
@@ -62,7 +62,7 @@ if (ENV_CONFIG.initSync({ force: true }).PATH != "") {
 electronData.get().port = HTTPPORT;
 electronData.get().mcp_server_port = MCPServerPORT;
 
-electronData.get().version = app.getVersion();
+electronData.get().version = CONST.getVersion;
 
 electronData.save();
 

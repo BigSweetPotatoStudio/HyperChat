@@ -1,9 +1,10 @@
 import log4js from "log4js";
 import dayjs from "dayjs";
-import { Logger, LoggerPolyfill } from "./index.mjs";
+import { CONST, Context, Logger, LoggerPolyfill, AutoLauncher as IAutoLauncher } from "./polyfills.mjs";
 import path from "path";
+import p from "../../package.json";
 
-Logger.path = path.join(
+let logpath = path.join(
   process.cwd(),
   `data/${dayjs().format("YYYY-MM-DD")}.log`
 );
@@ -18,17 +19,22 @@ log4js.configure({
 });
 const logger = log4js.getLogger();
 
-Logger.info = function (...args) {
-  let [m, ...a] = args;
-  logger.info(m, a);
-};
-Logger.warn = function (...args) {
-  let [m, ...a] = args;
-  logger.warn(m, a);
-};
-Logger.error = function (...args) {
-  let [m, ...a] = args;
-  logger.error(m, a);
-};
+class LoggerC extends LoggerPolyfill {
+  info = logger.info;
+  warn = logger.warn;
+  error = logger.error;
+  path = logpath;
+}
 
-// CONST.userDataPath = path.join(process.cwd(), "data/userData.json");
+Object.assign(Context.Logger, new LoggerC());
+Object.setPrototypeOf(Context.Logger, new LoggerC());
+
+Context.CONST.userDataPath = path.join(process.cwd(), "data/userData.json");
+Context.CONST.getVersion = p.version;
+
+
+export class AutoLauncher extends IAutoLauncher {
+}
+
+Object.assign(Context.autoLauncher, new AutoLauncher());
+Object.setPrototypeOf(Context.autoLauncher, new AutoLauncher());

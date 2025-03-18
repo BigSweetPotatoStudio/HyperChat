@@ -4,7 +4,7 @@ import type { FileStat, WebDAVClient } from "webdav";
 import { promises } from "fs";
 import path, { join } from "path";
 
-import { appDataDir } from "../const.mjs";
+import { appDataDir } from "ts/polyfills/index.mjs";
 import { Logger } from "ts/polyfills/index.mjs";
 import { log } from "console";
 import { AppSetting, DataList } from "../../../common/data";
