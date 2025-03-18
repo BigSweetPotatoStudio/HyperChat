@@ -76,7 +76,7 @@ winget install OpenJS.NodeJS.LTS
 
 ```
 cd electron && npm install
-cd web && npm install
+cd web && pnpm install
 npm install
 npm run dev
 ```
