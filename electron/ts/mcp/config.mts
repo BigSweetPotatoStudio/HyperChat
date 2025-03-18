@@ -9,7 +9,7 @@ import { appDataDir } from "ts/polyfills/index.mjs";
 import type { StdioServerParameters } from "@modelcontextprotocol/sdk/client/stdio.js";
 import { initMcpServer } from "./servers/express.mjs";
 import { MyServers } from "./servers/index.mjs";
-import { electron, env } from "process";
+
 import {
   electronData,
   AppSetting,

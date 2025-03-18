@@ -1,20 +1,5 @@
-import { Logger } from "ts/polyfills/index.mjs";
-import {
-  app,
-  BrowserWindow,
-  nativeImage,
-  dialog,
-  Tray,
-  ipcMain,
-  protocol,
-  net,
-  Menu,
-  shell,
-  clipboard,
-  globalShortcut,
-  desktopCapturer,
-  systemPreferences,
-} from "electron";
+import { CONST, Logger } from "ts/polyfills/index.mjs";
+
 import pack from "../package.json";
 import { createClient, shellPathSync, zx } from "./es6.mjs";
 const { fs, os, sleep, retry, path, $ } = zx;
@@ -32,7 +17,6 @@ import { pipeline } from "stream";
 import { promisify } from "util";
 import puppeteer from "puppeteer-core";
 import { v4 as uuidV4 } from "uuid";
-import Screenshots from "electron-screenshots";
 import { getLocalIP, spawnWithOutput } from "./common/util.mjs";
 import { autoLauncher } from "ts/polyfills/index.mjs";
 import {
@@ -94,7 +78,7 @@ import { callAgent, runTask, startTask, stopTask } from "./mcp/task.mjs";
 export class CommandFactory {
   async getConfig() {
     return {
-      version: app.getVersion(),
+      version: CONST.getVersion,
       appDataDir: appDataDir,
       logPath: Logger.path,
     };
@@ -188,6 +172,9 @@ export class CommandFactory {
     } = { type: "openFile" }
   ) {
     opts.type = opts.type || "openFile";
+    const { BrowserWindow, dialog, shell, clipboard } = await import(
+      "electron"
+    );
     try {
       const result = await dialog.showOpenDialog({
         properties: [opts.type],
@@ -209,10 +196,16 @@ export class CommandFactory {
   }
   // 示例：设置剪切板内容
   async setClipboardText(text: string) {
+    const { BrowserWindow, dialog, shell, clipboard } = await import(
+      "electron"
+    );
     clipboard.writeText(text);
   }
   // 示例：获取剪切板内容
   async getClipboardText(): Promise<string> {
+    const { BrowserWindow, dialog, shell, clipboard } = await import(
+      "electron"
+    );
     return clipboard.readText();
   }
   async getData(): Promise<any> {
@@ -288,16 +281,25 @@ export class CommandFactory {
   }
 
   async openExplorer(p) {
+    const { BrowserWindow, dialog, shell, clipboard } = await import(
+      "electron"
+    );
     return shell.showItemInFolder(p);
   }
 
   async openDevTools() {
+    const { BrowserWindow, dialog, shell, clipboard } = await import(
+      "electron"
+    );
     const win = BrowserWindow.getFocusedWindow();
     if (win) {
       win.webContents.openDevTools();
     }
   }
   async openBrowser(url: string, userAgent?): Promise<void> {
+    const { BrowserWindow, dialog, shell, clipboard } = await import(
+      "electron"
+    );
     let win = new BrowserWindow({
       width: 1280,
       height: 720,
@@ -321,10 +323,7 @@ export class CommandFactory {
       }
     }
     let p = await spawnWithOutput(command, args, {
-      env: Object.assign(
-        getMyDefaultEnvironment(),
-        process.env as any
-      ),
+      env: Object.assign(getMyDefaultEnvironment(), process.env as any),
     });
     return p.stdout;
   }
