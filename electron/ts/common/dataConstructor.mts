@@ -1,5 +1,4 @@
-import { appDataDir } from "../const.mjs";
-import { Logger } from "ts/polyfills/index.mjs";
+import { Logger, appDataDir } from "ts/polyfills/index.mjs";
 import { zx } from "../es6.mjs";
 const { fs, path } = zx;
 export class Data<T> {

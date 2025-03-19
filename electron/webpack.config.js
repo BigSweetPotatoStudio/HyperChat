@@ -49,7 +49,7 @@ module.exports = (env, argv) => {
             loader: "ts-loader",
             options: {
               configFile: "tsconfig.json",
-              transpileOnly: true, // 确保放在这里
+              // transpileOnly: true, // 确保放在这里
             },
           },
           exclude: /node_modules/,
