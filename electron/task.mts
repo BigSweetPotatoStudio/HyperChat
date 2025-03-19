@@ -55,6 +55,11 @@ if (argv.buildnode) {
   let nodePackageJSON = await fs.readJSON("./package.nodejs.json");
   Object.assign(packageJSON, nodePackageJSON);
   packageJSON.version = rootPackageJSON.version;
+  for(let key of packageJSON.dependencies) {
+    if(key.startsWith("electron")) {
+      delete packageJSON.dependencies[key];
+    }
+  }
   await fs.writeJSON("./package.json", packageJSON, { spaces: 2 });
   await fs.copy("../README.md", "README.md");
 }

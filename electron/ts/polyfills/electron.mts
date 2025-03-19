@@ -1,4 +1,5 @@
 import ELogger from "electron-log";
+import AutoLaunch from "auto-launch";
 import {
   Context,
   LoggerPolyfill,
@@ -32,8 +33,6 @@ Context.CONST.getVersion = app.getVersion();
 
 ///////////////////////////
 
-// src/AutoLauncher.ts
-import AutoLaunch from "auto-launch";
 
 export class AutoLauncher extends IAutoLaunch {
   declare autoLauncher: AutoLaunch;
