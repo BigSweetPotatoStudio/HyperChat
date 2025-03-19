@@ -894,5 +894,17 @@
     "MCP Community": {
         "en": "MCP Community",
         "zh": "MCP社区"
+    },
+    "DeleteChatHistory(exclude Star)": {
+        "en": "DeleteChatHistory(exclude Star)",
+        "zh": "删除聊天历史（排除星标）"
+    },
+    "Keep the chat history for the last 30 days": {
+        "en": "Keep the chat history for the last 30 days",
+        "zh": "保留过去30天的聊天记录"
+    },
+    "Keep the chat history for the last 15 days": {
+        "en": "Keep the chat history for the last 15 days",
+        "zh": "保存过去15天的聊天记录"
     }
 }
