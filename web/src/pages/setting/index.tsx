@@ -263,11 +263,11 @@ export function Setting() {
                 <Button
                   onClick={() =>
                     window.open(
-                      `http://localhost:${electronData.get().port}/#/Chat`,
+                     `http://localhost:${electronData.get().port}/${electronData.get().password}/`
                     )
                   }
                 >
-                  OpenWeb(http://localhost:{electronData.get().port}/#/Chat)
+                  OpenWeb(http://localhost:{electronData.get().port}/{electronData.get().password}/)
                 </Button>
               </Space>
             </Form.Item>
