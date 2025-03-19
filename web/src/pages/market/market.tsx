@@ -66,66 +66,65 @@ import { getClients, getMcpClients, InitedClient } from "../../common/mcp";
 import { t } from "../../i18n";
 import { HeaderContext } from "../../common/context";
 
-export type Package = {
-  type: "npx" | "uvx" | "other";
-  name: string;
-  github?: string;
-  description: string;
-  keywords: string[];
-  resolve: (config: any) => {
-    command: string;
-    args: string[];
-    env: Record<string, string>;
-  };
-  configSchema: any;
-};
+// export type Package = {
+//   type: "npx" | "uvx" | "other";
+//   name: string;
+//   github?: string;
+//   description: string;
+//   keywords: string[];
+//   resolve: (config: any) => {
+//     command: string;
+//     args: string[];
+//     env: Record<string, string>;
+//   };
+//   configSchema: any;
+// };
 
-const config = z.object({
-  paths: z.array(
-    z.object({
-      path: z.string({
-        description: "filesystem path",
-        required_error: "path is required",
-      }),
-    }),
-  ),
-  path: z.string({
-    description: "filesystem path",
-  }),
-  port: z.number({
-    description: "port",
-  }),
-  host: z.boolean({
-    description: "host",
-  }),
-});
+// const config = z.object({
+//   paths: z.array(
+//     z.object({
+//       path: z.string({
+//         description: "filesystem path",
+//         required_error: "path is required",
+//       }),
+//     }),
+//   ),
+//   path: z.string({
+//     description: "filesystem path",
+//   }),
+//   port: z.number({
+//     description: "port",
+//   }),
+//   host: z.boolean({
+//     description: "host",
+//   }),
+// });
 
-type Config = z.infer<typeof config>;
+// type Config = z.infer<typeof config>;
 
-const p: Package = {
-  type: "npx",
-  name: "@modelcontextprotocol/server-filesystem",
-  github: "https://github.com/modelcontextprotocol/servers.git",
-  description: "Server 1 filesystem",
-  keywords: ["server", "filesystem"],
-  resolve: (config: Config) => {
-    return {
-      command: "npx",
-      args: [
-        "-y",
-        "@modelcontextprotocol/server-filesystem",
-        ...config.paths.map((x) => x.path),
-      ],
-      env: {},
-    };
-  },
-  configSchema: zodToJsonSchema(config),
-};
+// const p: Package = {
+//   type: "npx",
+//   name: "@modelcontextprotocol/server-filesystem",
+//   github: "https://github.com/modelcontextprotocol/servers.git",
+//   description: "Server 1 filesystem",
+//   keywords: ["server", "filesystem"],
+//   resolve: (config: Config) => {
+//     return {
+//       command: "npx",
+//       args: [
+//         "-y",
+//         "@modelcontextprotocol/server-filesystem",
+//         ...config.paths.map((x) => x.path),
+//       ],
+//       env: {},
+//     };
+//   },
+//   configSchema: zodToJsonSchema(config),
+// };
 
 function JsonSchema2ProFormColumnsType(schema: any): ProFormColumnsType[] {
   function run(item) {
     const columns: ProFormColumnsType[] = [];
-
     for (const key in item.properties) {
       const prop = item.properties[key];
 
@@ -133,7 +132,6 @@ function JsonSchema2ProFormColumnsType(schema: any): ProFormColumnsType[] {
       let required = true;
       if (Array.isArray(prop.type)) {
         type = prop.type[0];
-        required = prop.type[1] == null;
       }
       let formItemProps = {
         required: required,
@@ -142,12 +140,15 @@ function JsonSchema2ProFormColumnsType(schema: any): ProFormColumnsType[] {
             required: required,
           },
         ],
+        tooltip: prop.description,
       };
       let fieldProps = {
         placeholder: prop.description,
         style: {
           width: "100%",
         },
+        // defaultValue: prop.default,
+        allowClear: false,
       };
 
       if (type === "array") {
@@ -161,39 +162,67 @@ function JsonSchema2ProFormColumnsType(schema: any): ProFormColumnsType[] {
         };
         columns.push(column);
         continue;
-      } else if (type === "string") {
-        const column: ProFormColumnsType = {
-          title: key,
-          dataIndex: key,
-          valueType: "text",
-
-          fieldProps,
-          formItemProps,
-        };
-        columns.push(column);
-        continue;
-      } else if (type === "number") {
-        const column: ProFormColumnsType = {
-          title: key,
-          dataIndex: key,
-          valueType: "digit",
-          fieldProps,
-          formItemProps,
-        };
-        columns.push(column);
-        continue;
-      } else if (type === "boolean") {
-        const column: ProFormColumnsType = {
-          title: key,
-          dataIndex: key,
-          valueType: "switch",
-          fieldProps,
-          formItemProps,
-        };
-        columns.push(column);
-        continue;
       } else {
-        console.log(prop.type, new Error("not support type"));
+        if (type === "string") {
+          if (prop.enum) {
+            fieldProps["options"] = prop.enum.map((x) => ({
+              label: x,
+              value: x,
+            }));
+            const column: ProFormColumnsType = {
+              title: key,
+              dataIndex: key,
+              valueType: "select",
+              fieldProps,
+              formItemProps,
+            };
+            columns.push(column);
+            continue;
+          } else {
+            const column: ProFormColumnsType = {
+              title: key,
+              dataIndex: key,
+              valueType: "text",
+
+              fieldProps,
+              formItemProps,
+            };
+            columns.push(column);
+            continue;
+          }
+        } else if (type === "number") {
+          const column: ProFormColumnsType = {
+            title: key,
+            dataIndex: key,
+            valueType: "digit",
+            fieldProps,
+            formItemProps,
+          };
+          columns.push(column);
+          continue;
+        } else if (type === "boolean") {
+          const column: ProFormColumnsType = {
+            title: key,
+            dataIndex: key,
+            valueType: "switch",
+            fieldProps,
+            formItemProps,
+          };
+          columns.push(column);
+          continue;
+        } else {
+          // console.log("type", prop.type);
+          const column: ProFormColumnsType = {
+            title: key,
+            dataIndex: key,
+            valueType: "text",
+
+            fieldProps,
+            formItemProps,
+          };
+          columns.push(column);
+          continue;
+        }
       }
     }
     return columns;
@@ -204,6 +233,32 @@ function JsonSchema2ProFormColumnsType(schema: any): ProFormColumnsType[] {
   } else {
     return [];
   }
+}
+
+function JsonSchema2DefaultValue(schema: any) {
+  let obj = {};
+  function run(item) {
+    for (const key in item.properties) {
+      const prop = item.properties[key];
+
+      let type = prop.type;
+      let required = true;
+      if (Array.isArray(prop.type)) {
+        type = prop.type[0];
+      }
+      if (type === "array") {
+        obj[key] = [];
+        continue;
+      } else {
+        obj[key] = prop.default;
+      }
+    }
+  }
+
+  if (schema && schema.type === "object") {
+    run(schema);
+  }
+  return obj;
 }
 
 // const c = JsonSchema2ProFormColumnsType(p.configSchema);
@@ -458,6 +513,12 @@ export function Market() {
                                           ?.hyperchat.config || {},
                                       );
                                       setCurrRow(item);
+
+                                      mcpconfigform.current?.setFieldsValue(
+                                        JsonSchema2DefaultValue(
+                                          item.configSchema,
+                                        ),
+                                      );
 
                                       setMcpconfigOpen(true);
                                       await getClients(false);
@@ -742,6 +803,7 @@ export function Market() {
           : t`No need config`}
         <BetaSchemaForm<any>
           layoutType="Form"
+          name="mcpconfigform"
           formRef={mcpconfigform}
           grid={false}
           onFinish={async (values) => {
@@ -751,7 +813,7 @@ export function Market() {
                 url: "",
                 type: "stdio",
                 scope: "outer",
-                config: {},
+                config: values,
               };
               await call("openMcpClient", [currRow.name, config]);
 
@@ -771,10 +833,16 @@ export function Market() {
               : []
           }
           submitter={{
-            searchConfig: {
-              submitText: "Install And Run",
+            // searchConfig: {
+            //   submitText: "Install And Run",
+            // },
+            submitButtonProps: {
+              type: "primary",
+              children: "Install And Run",
+              onClick: () => {
+                mcpconfigform.current.submit();
+              },
             },
-            submitButtonProps: {},
             // Configure the properties of the button
             resetButtonProps: {
               style: {
