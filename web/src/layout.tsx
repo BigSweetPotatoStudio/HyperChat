@@ -70,7 +70,7 @@ import {
   ProCard,
   ProLayout,
 } from "@ant-design/pro-components";
-import { route as routerRoute } from "./router";
+import { getLayoutRoute } from "./router";
 import { currLang, setCurrLang, t } from "./i18n";
 import { call, msg_receive } from "./common/call";
 import {
@@ -94,7 +94,6 @@ type ProviderType = {
   apiKey?: string;
   call_tool_step?: number;
   value: string;
-  models?: string[];
 };
 
 const Providers: ProviderType[] = [
@@ -102,44 +101,21 @@ const Providers: ProviderType[] = [
     label: "OpenAI",
     baseURL: "https://api.openai.com/v1",
     value: "openai",
-    models: [
-      "gpt-4o-mini",
-      "gpt-4o",
-      "o1-mini",
-      "o1",
-      "o1-preview",
-      "chatgpt-4o-latest",
-    ],
   },
   {
     label: "OpenRouter",
     baseURL: "https://openrouter.ai/api/v1",
     value: "openrouter",
-    models: [
-      "openai/gpt-4o-mini",
-      "anthropic/claude-3.5-haiku-20241022:beta",
-      "google/gemini-2.0-flash-001",
-    ],
   },
   {
     label: "Gemini",
     baseURL: "https://generativelanguage.googleapis.com/v1beta/openai/",
     value: "gemini",
-    models: [
-      "gemini-2.0-flash-exp",
-      "gemini-2.0-flash-thinking-exp",
-      "gemini-2.0-flash",
-      "gemini-2.0-flash-001",
-      "gemini-2.0-flash-lite-preview-02-05",
-      "gemini-2.0-pro-exp-02-05",
-      "gemini-2.0-flash-thinking-exp-01-21",
-    ],
   },
   {
     label: "Qwen",
     baseURL: "https://dashscope.aliyuncs.com/compatible-mode/v1",
     value: "qwen",
-    models: ["qwen-plus", "qwen-turbo", "qwen-max"],
   },
   {
     label: "Ollama",
@@ -156,14 +132,12 @@ const Providers: ProviderType[] = [
     label: "GLM",
     baseURL: "https://open.bigmodel.cn/api/paas/v4",
     value: "glm",
-    models: ["glm-4-air"],
   },
   {
     label: "DeepSeek",
     baseURL: "https://api.deepseek.com",
     value: "deepseek",
     call_tool_step: 1,
-    models: ["deepseek-chat", "deepseek-reasoner"],
   },
   {
     label: "OpenAI Compatibility",
@@ -207,7 +181,6 @@ export function Layout() {
   window["w"] = {};
   window["w"]["navigate"] = navigate;
   window["w"]["location"] = location;
-  const [route, setRoute] = useState({ ...routerRoute });
 
   useEffect(() => {
     setTimeout(() => {
@@ -230,26 +203,6 @@ export function Layout() {
       refresh();
     })();
   }, []);
-
-  // const [runing, setRuning] = useState(false);
-  // useEffect(() => {
-  //   let t = setInterval(async () => {
-  //     let historys = await call("getHistory", []);
-  //     if (historys.length > 0) {
-  //       let last = historys[historys.length - 1];
-  //       if (last.status == "success" || last.status == "error") {
-  //         setRuning(false);
-  //       } else {
-  //         setRuning(true);
-  //       }
-  //     } else {
-  //       setRuning(false);
-  //     }
-  //   }, 1000);
-  //   return () => {
-  //     clearInterval(t);
-  //   };
-  // }, []);
 
   const [locale, setLocal] = useState(currLang == "zhCN" ? zhCN : enUS);
   const [collapsed, setCollapsed] = useState(false);
@@ -370,7 +323,7 @@ export function Layout() {
           onCollapse={(collapsed) => {
             setCollapsed(collapsed);
           }}
-          route={route}
+          route={getLayoutRoute()}
           location={{
             pathname: location.pathname,
           }}
@@ -406,7 +359,7 @@ export function Layout() {
                   onChange={(e) => {
                     setCurrLang(e);
                     setLocal(e == "zhCN" ? zhCN : enUS);
-                    window.location.reload();
+                    refresh();
                   }}
                   options={[
                     { value: "zhCN", label: "中文" },

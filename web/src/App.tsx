@@ -41,7 +41,7 @@ import {
 
 import { HeaderContext } from "./common/context";
 import { PageContainer, ProCard, ProLayout } from "@ant-design/pro-components";
-import { getRoute, route } from "./router";
+import { getRoute, getLayoutRoute } from "./router";
 import { AppSetting, DataList } from "../../common/data";
 import { call } from "./common/call";
 import { EVENT } from "./common/event";
@@ -72,7 +72,7 @@ export default function App() {
         tip="Syncing..."
       >
         <AntdApp>
-          <Routes>{getRoute(route)}</Routes>
+          <Routes>{getRoute(getLayoutRoute())}</Routes>
         </AntdApp>
       </Spin>
     </div>

@@ -120,6 +120,7 @@ export type ChatHistoryItem = {
   allowMCPs: string[];
   attachedDialogueCount?: number;
   temperature?: number;
+  deleted?: boolean;
 };
 
 export const ChatHistory = new Data("chat_history.json", {
