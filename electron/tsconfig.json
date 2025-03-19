@@ -19,9 +19,6 @@
       "ESNext",
       "DOM",
     ],
-    "types": [
-      "node",
-    ],
     "baseUrl": ".",
     "paths": {
       "ts": [
