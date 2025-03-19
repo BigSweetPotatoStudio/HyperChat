@@ -50,9 +50,11 @@ if (argv.build) {
 
 if (argv.buildnode) {
   await $`npx cross-env NODE_ENV=development myEnv=dev webpack -c webpack.no_electron.js`;
+  let rootPackageJSON = await fs.readJSON("../package.json");
   let packageJSON = await fs.readJSON("./package.json");
   let nodePackageJSON = await fs.readJSON("./package.nodejs.json");
   Object.assign(packageJSON, nodePackageJSON);
+  packageJSON.version = rootPackageJSON.version;
   await fs.writeJSON("./package.json", packageJSON, { spaces: 2 });
   await fs.copy("../README.md", "README.md");
 }
