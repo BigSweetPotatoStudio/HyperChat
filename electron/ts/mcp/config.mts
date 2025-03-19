@@ -28,11 +28,7 @@ import { spawn } from "node:child_process";
 // const spawn = os.type() === "Windows_NT" ? cross_spawn : node_spawn;
 
 let config = MCP_CONFIG.initSync();
-for (let key in config.mcpServers) {
-  if (config.mcpServers[key].hyperchat?.scope == "built-in") {
-    delete config.mcpServers[key];
-  }
-}
+
 for (let s of MyServers) {
   let key = s.name;
   config.mcpServers[key] = {
@@ -45,8 +41,13 @@ for (let s of MyServers) {
       scope: "built-in",
       config: {},
     },
-    disabled: false,
+    disabled: config.mcpServers[key]?.disabled,
   };
+}
+for (let key in config.mcpServers) {
+  if (config.mcpServers[key].hyperchat?.scope == "built-in" && !MyServers.find((s) => s.name == key)) {
+    delete config.mcpServers[key];
+  }
 }
 await MCP_CONFIG.save();
 

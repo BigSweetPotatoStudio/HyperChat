@@ -183,7 +183,10 @@ export async function getMCPExtensionData() {
   // let js = await latest.assets[0].browser_download_url;
   let jscode;
   try {
-    let js = "https://hyperchatmcp.pages.dev/main.js";
+    let js =
+      process.env.myEnv == "dev"
+        ? "https://dev.hyperchatmcp.pages.dev/main.js"
+        : "https://hyperchatmcp.pages.dev/main.js";
     jscode = await fetch(js).then((res) => res.text());
     await TEMP_FILE.init();
 
