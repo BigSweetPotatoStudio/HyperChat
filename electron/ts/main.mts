@@ -9,34 +9,35 @@ import {
   protocol,
   net,
   Menu,
-  desktopCapturer,
+  // desktopCapturer,
   session,
   shell,
 } from "electron";
 
 import path from "node:path";
-import os from "node:os";
+// import os from "node:os";
 import "ts/polyfills/electron_autoupdate.mjs"
 import { Command } from "./command.mjs";
-import { fileURLToPath } from "node:url";
+// import { fileURLToPath } from "node:url";
 
-import { spawn, exec, execFile } from "child_process";
-import { isPortUse } from "./common/checkport.mjs";
-import { Server } from "socket.io";
-import { execFallback } from "./common/execFallback.mjs";
-import p from "../package.json";
+// import { spawn, exec, execFile } from "child_process";
+// import { isPortUse } from "./common/checkport.mjs";
+// import { Server } from "socket.io";
+// import { execFallback } from "./common/execFallback.mjs";
+// import p from "../package.json";
 import "./websocket.mjs";
 
 import { createWindow } from "./mianWindow.mjs";
-import { zx } from "./es6.mjs";
-const { $, usePowerShell, fs, cd, fetch, sleep } = zx;
+Logger.info("start main");
 
+// const createWindow = () => {
+//   const win = new BrowserWindow({
+//     width: 800,
+//     height: 600
+//   })
 
-
-$.verbose = true;
-if (os.platform() === "win32") {
-  usePowerShell();
-}
+//   win.loadURL('https://www.baidu.com')
+// }
 
 ipcMain.handle("command", async (event, name, args) => {
   try {
@@ -97,16 +98,16 @@ app.whenReady().then(async () => {
     Menu.setApplicationMenu(null);
   }
 
-  if (process.platform != "darwin") {
-    session.defaultSession.setDisplayMediaRequestHandler(
-      (request, callback) => {
-        desktopCapturer.getSources({ types: ["screen"] }).then((sources) => {
-          // Grant access to the first screen found.
-          callback({ video: sources[0], audio: "loopback" });
-        });
-      }
-    );
-  }
+  // if (process.platform != "darwin") {
+  //   session.defaultSession.setDisplayMediaRequestHandler(
+  //     (request, callback) => {
+  //       desktopCapturer.getSources({ types: ["screen"] }).then((sources) => {
+  //         // Grant access to the first screen found.
+  //         callback({ video: sources[0], audio: "loopback" });
+  //       });
+  //     }
+  //   );
+  // }
 
   protocol.handle("fs", (request) => {
     let p = request.url.replace("fs://", "");

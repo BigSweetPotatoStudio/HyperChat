@@ -16,7 +16,7 @@ import p from "../package.json" assert { type: "json" };
 
 
 let title = `${p.productName}-${app.getVersion()} by Dadigua`;
-Logger.info("title: ", title);
+Logger.info("title   : ", title);
 
 export const createWindow = () => {
   const win = new BrowserWindow({
