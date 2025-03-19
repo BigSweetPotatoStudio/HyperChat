@@ -32,6 +32,9 @@ import { createWindow } from "./mianWindow.mjs";
 import { zx } from "./es6.mjs";
 const { $, usePowerShell, fs, cd, fetch, sleep } = zx;
 
+import ELogger from "electron-log";
+ELogger.info("starting");
+
 $.verbose = true;
 if (os.platform() === "win32") {
   usePowerShell();
@@ -88,7 +91,7 @@ app.whenReady().then(async () => {
   try {
     createWindow();
   } catch (e) {
-    Logger.error(e);
+    ELogger.error(e);
     throw e;
   }
 

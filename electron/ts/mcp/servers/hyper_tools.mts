@@ -354,10 +354,7 @@ async function executeClientScript<T>(
     //     resolve("error openUrl");
     //   })
     //  `;
-    if (process.env.NODE_ENV === "development") {
-      fs.ensureDirSync("tmp");
-      fs.writeFileSync("tmp/wrappedScript.js", wrappedScript);
-    }
+
     const result = await Promise.race([
       win.webContents.executeJavaScript(wrappedScript, userGesture),
       new Promise((_, reject) =>

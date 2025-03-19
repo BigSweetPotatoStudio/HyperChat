@@ -86,7 +86,7 @@ module.exports = (env, argv) => {
       path: path.resolve(__dirname, "js"),
       libraryTarget: "umd", // 输出格式
     },
-    mode: isDev ? "development" : "production",
+    mode: "development",
     devtool: false,
     optimization: {
       minimize: false, // This disables minification even in production mode
