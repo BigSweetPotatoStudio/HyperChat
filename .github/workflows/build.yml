@@ -42,6 +42,10 @@ jobs:
 
       - name: Install Web Dependencies
         run: cd web && pnpm install
+        
+      - name: Install python-setuptools
+        if: matrix.os == 'macos-latest'
+        run: brew install python-setuptools
 
       - name: Install Electron Dependencies
         run: cd electron && npm install
