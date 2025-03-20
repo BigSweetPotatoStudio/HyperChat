@@ -55,9 +55,12 @@ if (argv.buildnode) {
   let nodePackageJSON = await fs.readJSON("./package.nodejs.json");
   Object.assign(packageJSON, nodePackageJSON);
   packageJSON.version = rootPackageJSON.version;
-  for(let key of packageJSON.dependencies) {
-    if(key.startsWith("electron")) {
-      delete packageJSON.dependencies[key];
+  // console.log(packageJSON.dependencies);
+  if (packageJSON.dependencies) {
+    for (let key in packageJSON.dependencies) {
+      if (key.startsWith("electron")) {
+        delete packageJSON.dependencies[key];
+      }
     }
   }
   await fs.writeJSON("./package.json", packageJSON, { spaces: 2 });
