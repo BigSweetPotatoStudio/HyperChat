@@ -271,12 +271,14 @@ export function Layout() {
       if (res.type == "sync") {
         setSyncStatus(res.data.status);
         if (res.data.status == 0) {
-          for (let data of DataList) {
-            if (data.options.sync) {
-              await data.init();
-            }
-          }
-
+          // for (let data of DataList) {
+          //   if (data.options.sync) {
+          //     await data.init();
+          //   }
+          // }
+          setTimeout(() => {
+            refresh();
+          }, 500);
           refresh();
         }
       }

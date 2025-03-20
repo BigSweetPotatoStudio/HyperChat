@@ -1,6 +1,5 @@
 import type { FileStat, WebDAVClient } from "webdav";
 
-
 import { promises } from "fs";
 import path, { join } from "path";
 
@@ -304,10 +303,16 @@ class WebDAVSync {
               path.join(localSyncPath, remoteFile.filename),
               content
             );
+
+            let obj = JSON.parse(content);
             await fs.writeFile(
               path.join(localPath, name + ext),
-              JSON.stringify(JSON.parse(content.toString()), null, 4)
+              JSON.stringify(obj, null, 4)
             );
+            getMessageService().sendAllToRenderer({
+              type: "syncNodeToWeb",
+              data: { key: name + ext, data: obj },
+            });
           }
         }
       }
