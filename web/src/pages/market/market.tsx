@@ -722,11 +722,18 @@ export function Market() {
               {!nodeV && (
                 <div>
                   <Space>
-                    <span>{t`Please run the command.`}</span>
                     {electronData.get().platform == "win32" ? (
-                      <Code>winget install OpenJS.NodeJS.LTS</Code>
+                      <div>
+                        <span>{t`Please run the command.`}</span>
+                        <Code>winget install OpenJS.NodeJS.LTS</Code>
+                      </div>
+                    ) : electronData.get().platform == "darwin" ? (
+                      <div>
+                        <span>{t`Please run the command.`}</span>
+                        <Code>brew install node</Code>
+                      </div>
                     ) : (
-                      <Code>brew install node</Code>
+                      ""
                     )}
                     <a href="https://nodejs.org/">goto nodejs</a>
                   </Space>{" "}
@@ -744,11 +751,18 @@ export function Market() {
               {!uv && (
                 <div>
                   <Space>
-                    <span>{t`Please run the command.`}</span>
                     {electronData.get().platform == "win32" ? (
-                      <Code>winget install --id=astral-sh.uv -e</Code>
+                      <div>
+                        <span>{t`Please run the command.`}</span>
+                        <Code>winget install --id=astral-sh.uv -e</Code>
+                      </div>
+                    ) : electronData.get().platform == "darwin" ? (
+                      <div>
+                        <span>{t`Please run the command.`}</span>
+                        <Code>brew install uv</Code>
+                      </div>
                     ) : (
-                      <Code>brew install uv</Code>
+                      ""
                     )}
                     <a href="https://github.com/astral-sh/uv">goto uv</a>
                   </Space>
