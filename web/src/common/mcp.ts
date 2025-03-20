@@ -1,6 +1,5 @@
 import { call } from "./call";
 import OpenAI from "openai";
-import type { ChatCompletionTool } from "openai/src/resources/chat/completions";
 import * as MCPTypes from "@modelcontextprotocol/sdk/types.js";
 import { sleep } from "./sleep";
 import type { MCPClient } from "../../../electron/ts/mcp/config.mjs";
@@ -17,7 +16,7 @@ export function getMcpClients() {
   return McpClients || {};
 }
 
-export type HyperChatCompletionTool = ChatCompletionTool & {
+export type HyperChatCompletionTool = OpenAI.ChatCompletionTool & {
   key?: string;
   origin_name?: string;
   restore_name?: string;
@@ -184,7 +183,10 @@ export async function getMCPExtensionData() {
   // let js = await latest.assets[0].browser_download_url;
   let jscode;
   try {
-    let js = "https://hyperchatmcp.pages.dev/main.js";
+    let js =
+      process.env.myEnv == "dev"
+        ? "https://dev.hyperchatmcp.pages.dev/main.js"
+        : "https://hyperchatmcp.pages.dev/main.js";
     jscode = await fetch(js).then((res) => res.text());
     await TEMP_FILE.init();
 

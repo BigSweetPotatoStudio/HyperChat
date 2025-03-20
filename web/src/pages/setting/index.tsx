@@ -42,7 +42,7 @@ import {
   VolumeX,
   Volume2,
 } from "lucide-react";
-import { AppSetting, electronData } from "../../../../common/data";
+import { AppSetting, ChatHistory, electronData } from "../../../../common/data";
 import { debounce } from "../../common";
 import {
   CloudSyncOutlined,
@@ -200,8 +200,6 @@ export function Setting() {
           <Form
             layout="vertical"
             name="basicSitting"
-            labelCol={{ span: 8 }}
-            wrapperCol={{ span: 16 }}
             // initialValues={{
             //   isAutoLauncher: AppSetting.get().isAutoLauncher,
             //   mcpCallToolTimeout: AppSetting.get().mcpCallToolTimeout,
@@ -236,7 +234,56 @@ export function Setting() {
                 }}
               ></InputNumber>
             </Form.Item>
-
+            <Form.Item
+              label={t`DeleteChatHistory(exclude Star)`}
+              name="deleteChatRecord"
+            >
+              <Space>
+                <Button
+                  onClick={async () => {
+                    await ChatHistory.init();
+                    let f = ChatHistory.get().data.filter((x) => !x.icon);
+                    let time = dayjs().subtract(30, "day").valueOf();
+                    for (let x of f) {
+                      // console.log(x.dateTime, time);
+                      if (
+                        x.dateTime == null ||
+                        x.dateTime < time
+                      ) {
+                        x.deleted = true;
+                      }
+                    }
+                    ChatHistory.get().data = ChatHistory.get().data.filter(
+                      (x) => !x.deleted,
+                    );
+                    await ChatHistory.save();
+                  }}
+                >
+                  {t`Keep the chat history for the last 30 days`}
+                </Button>
+                <Button
+                  onClick={async () => {
+                    await ChatHistory.init();
+                    let time = dayjs().subtract(15, "day").valueOf();
+                    let f = ChatHistory.get().data.filter((x) => !x.icon);
+                    for (let x of f) {
+                      if (
+                        x.dateTime == null ||
+                        x.dateTime < time
+                      ) {
+                        x.deleted = true;
+                      }
+                    }
+                    ChatHistory.get().data = ChatHistory.get().data.filter(
+                      (x) => !x.deleted,
+                    );
+                    await ChatHistory.save();
+                  }}
+                >
+                  {t`Keep the chat history for the last 15 days`}
+                </Button>
+              </Space>
+            </Form.Item>
             <Form.Item label={t`DevTools`} name="openDevTools">
               <Space>
                 <Button
@@ -263,11 +310,12 @@ export function Setting() {
                 <Button
                   onClick={() =>
                     window.open(
-                      `http://localhost:${electronData.get().port}/#/Chat`,
+                      `http://localhost:${electronData.get().port}/${electronData.get().password}/`,
                     )
                   }
                 >
-                  OpenWeb(http://localhost:{electronData.get().port}/#/Chat)
+                  OpenWeb(http://localhost:{electronData.get().port}/
+                  {electronData.get().password}/)
                 </Button>
               </Space>
             </Form.Item>

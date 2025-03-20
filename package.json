@@ -1,12 +1,12 @@
 {
   "name": "dadigua-hyperchat",
-  "version": "1.2.0",
+  "version": "1.2.10",
   "main": "index.js",
   "scripts": {
     "dev": "tsx task.mts --dev",
     "test": "tsx task.mts --test",
     "prod": "tsx task.mts --prod",
-    "prodlocal": "tsx task.mts --prod --local"
+    "build": "tsx task.mts --build"
   },
   "author": "",
   "license": "ISC",

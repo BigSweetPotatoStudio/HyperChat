@@ -81,12 +81,10 @@ export function sanitizeFileName(fileName: string): string {
 
 import spawn from "cross-spawn";
 export const spawnWithOutput = (
-  command: string,
-  args: string[],
-  options
+  ...args: Parameters<typeof spawn>
 ): any => {
   return new Promise((resolve, reject) => {
-    const proc = spawn(command, args, options);
+    const proc = spawn(...args);
     let stdout = "";
     let stderr = "";
 

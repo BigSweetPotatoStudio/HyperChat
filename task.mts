@@ -167,24 +167,46 @@ if (argv.prod) {
     cwd: path.resolve(__dirname, "./electron/"),
   })`npm run prod`;
 
-  let p = path.resolve(__dirname, `./dist`);
-  fs.ensureDirSync(p);
-  let pack = await fs.readJSON(
-    path.resolve(__dirname, "./electron/package.json")
+  // let p = path.resolve(__dirname, `./dist`);
+  // fs.ensureDirSync(p);
+  // let pack = await fs.readJSON(
+  //   path.resolve(__dirname, "./electron/package.json")
+  // );
+
+  // let arr = [
+  //   `HyperChat-${pack.version}-win-x64.exe`,
+  //   `HyperChat-${pack.version}-mac-x64.exe`,
+  //   `HyperChat-${pack.version}-mac-arm64.exe`,
+  // ];
+  // for (let name of arr) {
+  //   if (fs.existsSync(`./electron/dist/HyperChat-${pack.version}-x64.exe`)) {
+  //     await fs.copy(`./electron/dist/` + name, p + `/` + name, {
+  //       overwrite: true,
+  //     });
+  //   }
+  // }
+}
+
+
+if (argv.build) {
+  await $({
+    cwd: path.resolve(__dirname, "./web/"),
+  })`npx cross-env NODE_ENV=production myEnv=prod webpack -c webpack.config.js`;
+  await $({
+    cwd: path.resolve(__dirname, "./web/"),
+  })`npx cross-env NODE_ENV=development myEnv=dev webpack -c webpack.eval.js`;
+
+  await fs.copy(
+    `./web/public/logo.png`,
+    `./electron/web-build/assets/favicon.png`,
+    {
+      overwrite: true,
+    }
   );
 
-  let arr = [
-    `HyperChat-${pack.version}-win-x64.exe`,
-    `HyperChat-${pack.version}-mac-x64.exe`,
-    `HyperChat-${pack.version}-mac-arm64.exe`,
-  ];
-  for (let name of arr) {
-    if (fs.existsSync(`./electron/dist/HyperChat-${pack.version}-x64.exe`)) {
-      await fs.copy(`./electron/dist/` + name, p + `/` + name, {
-        overwrite: true,
-      });
-    }
-  }
+  await $({
+    cwd: path.resolve(__dirname, "./electron/"),
+  })`npm run build`;
 }
 
 if (argv.test) {

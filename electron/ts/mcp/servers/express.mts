@@ -2,13 +2,13 @@ import App from "express";
 import { HyperTools } from "./hyper_tools.mjs";
 import { electronData } from "../../../../common/data";
 import { execFallback } from "../../common/execFallback.mjs";
-import log from "electron-log";
+import { Logger } from "ts/polyfills/index.mjs";
 import { MyServers } from "./index.mjs";
 import { MCPServerPORT } from "../../common/data.mjs";
 
 export async function initMcpServer() {
   let PORT = await new Promise<number>(async (resolve, reject) => {
-    log.info("initMcpServer", MCPServerPORT);
+    Logger.info("initMcpServer", MCPServerPORT);
     const app = App();
 
     function register(serve: typeof HyperTools) {

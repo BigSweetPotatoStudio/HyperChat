@@ -19,8 +19,7 @@ module.exports = (env, argv) => {
   return {
     target: "node",
     entry: {
-      main: "./ts/main",
-      preload: "./ts/preload",
+      main_no_electron: "./ts/main_no_electron",
     },
     // publicPath: '/',
     // experiments: {
@@ -38,7 +37,7 @@ module.exports = (env, argv) => {
         NODE_ENV: process.env.NODE_ENV || "development",
         myEnv: process.env.myEnv || "prod",
         runtime: "node",
-        // no_electron: "0",
+        no_electron: "1",
       }),
     ],
     module: {
@@ -49,7 +48,7 @@ module.exports = (env, argv) => {
             loader: "ts-loader",
             options: {
               configFile: "tsconfig.json",
-              // transpileOnly: true, // 确保放在这里
+              transpileOnly: true, // 确保放在这里
             },
           },
           exclude: /node_modules/,
@@ -86,7 +85,7 @@ module.exports = (env, argv) => {
       path: path.resolve(__dirname, "js"),
       libraryTarget: "umd", // 输出格式
     },
-    mode: "development",
+    mode: isDev ? "development" : "production",
     devtool: false,
     optimization: {
       minimize: false, // This disables minification even in production mode

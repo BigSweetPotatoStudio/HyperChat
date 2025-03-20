@@ -19,7 +19,6 @@ export class Data<T> {
     return this.data;
   }
   initSync({ force } = { force: true }) {
-    if (!force && this._inited) return this.data;
     let localData = {};
     try {
       this.localStorage = this.ingetSync();
@@ -72,6 +71,7 @@ export const electronData = new Data(
   "electronData.json",
   {
     port: 0,
+    password: "123456",
     mcp_server_port: 0,
     version: "",
     appDataDir: "",
@@ -120,6 +120,7 @@ export type ChatHistoryItem = {
   allowMCPs: string[];
   attachedDialogueCount?: number;
   temperature?: number;
+  deleted?: boolean;
 };
 
 export const ChatHistory = new Data("chat_history.json", {
@@ -168,6 +169,9 @@ class MCP_CONFIG_DATA<T> extends Data<T> {
         }
       }
     }
+    // if (process.env.NODE_ENV == "development") {
+    //   console.log("save", this.KEY, this.get());
+    // }
     return super.save();
   }
 }

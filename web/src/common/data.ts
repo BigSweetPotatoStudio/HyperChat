@@ -9,6 +9,7 @@ import {
   DataList,
   MCP_CONFIG_TYPE,
 } from "../../../common/data.js";
+import { e } from "./service";
 
 for (let data of DataList) {
   data.override({
@@ -28,20 +29,24 @@ for (let data of DataList) {
 }
 
 // 初始化配置
-await electronData.init();
-if (electronData.get().firstOpen) {
-  await MCP_CONFIG.init();
-  MCP_CONFIG.save();
-  await GPT_MODELS.init();
-  GPT_MODELS.save();
-  electronData.get().firstOpen = false;
-  await electronData.save();
-}
+// await electronData.init();
+// if (electronData.get().firstOpen) {
+// await MCP_CONFIG.init();
+// MCP_CONFIG.save();
+// await GPT_MODELS.init();
+// GPT_MODELS.save();
+//   electronData.get().firstOpen = false;
+//   await electronData.save();
+// }
 
 msg_receive("message-from-main", (msg) => {
   if (msg.type == "syncNodeToWeb") {
     let c = DataList.find((x) => x.KEY == msg.data.key);
-    Object.assign(c.get(), msg.data.data);
+    if(c){
+      Object.assign(c.get(), msg.data.data);
+    } else {
+      console.error("syncNodeToWeb", msg.data.key, "not found");
+    }
   }
 });
 

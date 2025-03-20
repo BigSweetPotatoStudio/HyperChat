@@ -1,0 +1,48 @@
+# This workflow will run tests using node and then publish a package to GitHub Packages when a release is created
+# For more information see: https://docs.github.com/en/actions/publishing-packages/publishing-nodejs-packages
+
+name: Node.js Package
+
+on:
+  workflow_dispatch: {}
+  push:
+    branches:
+      - test
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out git repository
+        uses: actions/checkout@v3.0.0
+
+      - name: Install Node.js
+        uses: actions/setup-node@v3.0.0
+        with:
+          node-version: "20"
+          registry-url: https://registry.npmjs.org/
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - name: Install -g
+        run: npm install -g cross-env zx
+
+      - name: Install Dependencies
+        run: npm install
+
+      - name: Install Web Dependencies
+        run: cd web && pnpm install
+
+      - name: Install Electron Dependencies
+        run: cd electron && npm install
+
+      - run: cd web && npm run build
+
+      - run: cd electron && npm run build:node
+
+      - run: cd electron && npm publish --access=public
+        env:
+          NODE_AUTH_TOKEN: ${{secrets.npm_token}}
+

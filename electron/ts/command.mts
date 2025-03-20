@@ -1,22 +1,7 @@
-import log from "electron-log";
-import {
-  app,
-  BrowserWindow,
-  nativeImage,
-  dialog,
-  Tray,
-  ipcMain,
-  protocol,
-  net,
-  Menu,
-  shell,
-  clipboard,
-  globalShortcut,
-  desktopCapturer,
-  systemPreferences,
-} from "electron";
+import { CONST, Logger } from "ts/polyfills/index.mjs";
+
 import pack from "../package.json";
-import { zx } from "./es6.mjs";
+import { createClient, shellPathSync, zx } from "./es6.mjs";
 const { fs, os, sleep, retry, path, $ } = zx;
 import { request } from "./common/request.mjs";
 import { fileURLToPath } from "url";
@@ -32,15 +17,18 @@ import { pipeline } from "stream";
 import { promisify } from "util";
 import puppeteer from "puppeteer-core";
 import { v4 as uuidV4 } from "uuid";
-import Screenshots from "electron-screenshots";
 import { getLocalIP, spawnWithOutput } from "./common/util.mjs";
-import { autoLauncher } from "./common/autoLauncher.mjs";
-import { Agents, AppSetting, electronData, MCP_CONFIG_TYPE, TaskList } from "../../common/data";
-import { commandHistory, CommandStatus } from "./command_history.mjs";
-import { appDataDir } from "./const.mjs";
+import { autoLauncher } from "ts/polyfills/index.mjs";
+import {
+  Agents,
+  AppSetting,
+  electronData,
+  MCP_CONFIG_TYPE,
+  TaskList,
+} from "../../common/data";
+// import { commandHistory, CommandStatus } from "./command_history.mjs";
+import { appDataDir } from "ts/polyfills/index.mjs";
 import spawn from "cross-spawn";
-
-const { createClient } = await import(/* webpackIgnore: true */ "webdav");
 
 import {
   closeMcpClients,
@@ -49,7 +37,7 @@ import {
   initMcpClients,
   openMcpClient,
 } from "./mcp/config.mjs";
-import { checkUpdate } from "./upload.mjs";
+import { checkUpdate } from "ts/polyfills/index.mjs";
 import { version } from "os";
 import { webdavClient } from "./common/webdav.mjs";
 import { FeatureExtraction } from "./common/model.mjs";
@@ -62,41 +50,38 @@ import {
 import { EVENT } from "./common/event";
 import { callAgent, runTask, startTask, stopTask } from "./mcp/task.mjs";
 
-function logCommand(
-  target: any,
-  propertyKey: string,
-  descriptor: PropertyDescriptor
-) {
-  const originalMethod = descriptor.value;
-  descriptor.value = async function (...args: any[]) {
-    try {
-      commandHistory.add(propertyKey, args);
-      commandHistory.save();
+// function logCommand(
+//   target: any,
+//   propertyKey: string,
+//   descriptor: PropertyDescriptor
+// ) {
+//   const originalMethod = descriptor.value;
+//   descriptor.value = async function (...args: any[]) {
+//     try {
+//       commandHistory.add(propertyKey, args);
+//       commandHistory.save();
 
-      let res = await originalMethod.apply(this, args);
-      commandHistory.last().status = CommandStatus.SUCCESS;
-      commandHistory.save();
-      return res;
-    } catch (e) {
-      commandHistory.last().status = CommandStatus.ERROR;
-      commandHistory.last().error = e.message;
-      commandHistory.save();
-      throw e;
-    }
-  };
-  return descriptor;
-}
+//       let res = await originalMethod.apply(this, args);
+//       commandHistory.last().status = CommandStatus.SUCCESS;
+//       commandHistory.save();
+//       return res;
+//     } catch (e) {
+//       commandHistory.last().status = CommandStatus.ERROR;
+//       commandHistory.last().error = e.message;
+//       commandHistory.save();
+//       throw e;
+//     }
+//   };
+//   return descriptor;
+// }
 
 export class CommandFactory {
   async getConfig() {
     return {
-      version: app.getVersion(),
+      version: CONST.getVersion,
       appDataDir: appDataDir,
-      logPath: log.transports.file.getFile().path,
+      logPath: Logger.path,
     };
-  }
-  async getHistory() {
-    return commandHistory.get();
   }
   async initMcpClients() {
     let res = await initMcpClients();
@@ -187,6 +172,9 @@ export class CommandFactory {
     } = { type: "openFile" }
   ) {
     opts.type = opts.type || "openFile";
+    const { BrowserWindow, dialog, shell, clipboard } = await import(
+      "electron"
+    );
     try {
       const result = await dialog.showOpenDialog({
         properties: [opts.type],
@@ -195,7 +183,7 @@ export class CommandFactory {
 
       if (!result.canceled) {
         const filePath = result.filePaths[0];
-        log.info("Selected file:", filePath);
+        Logger.info("Selected file:", filePath);
         return filePath;
       } else {
         console.error("No file selected");
@@ -208,10 +196,16 @@ export class CommandFactory {
   }
   // 示例：设置剪切板内容
   async setClipboardText(text: string) {
+    const { BrowserWindow, dialog, shell, clipboard } = await import(
+      "electron"
+    );
     clipboard.writeText(text);
   }
   // 示例：获取剪切板内容
   async getClipboardText(): Promise<string> {
+    const { BrowserWindow, dialog, shell, clipboard } = await import(
+      "electron"
+    );
     return clipboard.readText();
   }
   async getData(): Promise<any> {
@@ -287,16 +281,25 @@ export class CommandFactory {
   }
 
   async openExplorer(p) {
+    const { BrowserWindow, dialog, shell, clipboard } = await import(
+      "electron"
+    );
     return shell.showItemInFolder(p);
   }
 
   async openDevTools() {
+    const { BrowserWindow, dialog, shell, clipboard } = await import(
+      "electron"
+    );
     const win = BrowserWindow.getFocusedWindow();
     if (win) {
       win.webContents.openDevTools();
     }
   }
   async openBrowser(url: string, userAgent?): Promise<void> {
+    const { BrowserWindow, dialog, shell, clipboard } = await import(
+      "electron"
+    );
     let win = new BrowserWindow({
       width: 1280,
       height: 720,
@@ -311,17 +314,16 @@ export class CommandFactory {
         "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36",
     });
   }
-  async checkNpx(): Promise<string> {
-    let env = getMyDefaultEnvironment();
-    let p = await spawnWithOutput("npx", ["--version"], {
-      env,
-    });
-    return p.stdout;
-  }
-  async checkUV(): Promise<string> {
-    let env = getMyDefaultEnvironment();
-    let p = await spawnWithOutput("uvx", ["--version"], {
-      env,
+  async exec(command: string, args?: Array<string>): Promise<string> {
+    if (electronData.initSync().PATH) {
+      process.env.PATH = electronData.get().PATH;
+    } else {
+      if (os.platform() != "win32") {
+        process.env.PATH = shellPathSync();
+      }
+    }
+    let p = await spawnWithOutput(command, args, {
+      env: Object.assign(getMyDefaultEnvironment(), process.env as any),
     });
     return p.stdout;
   }

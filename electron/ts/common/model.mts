@@ -1,7 +1,7 @@
 // This file (model.js) contains all the logic for loading the model and running predictions.
 
 // import { pipeline, env } from "@xenova/transformers";
-import { appDataDir } from "../const.mjs";
+import { appDataDir } from "ts/polyfills/index.mjs";
 import path from "path";
 import { progressList } from "./progress.mjs";
 import type { FeatureExtractionPipeline } from "@xenova/transformers";

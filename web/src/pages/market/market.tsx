@@ -66,66 +66,65 @@ import { getClients, getMcpClients, InitedClient } from "../../common/mcp";
 import { t } from "../../i18n";
 import { HeaderContext } from "../../common/context";
 
-export type Package = {
-  type: "npx" | "uvx" | "other";
-  name: string;
-  github?: string;
-  description: string;
-  keywords: string[];
-  resolve: (config: any) => {
-    command: string;
-    args: string[];
-    env: Record<string, string>;
-  };
-  configSchema: any;
-};
+// export type Package = {
+//   type: "npx" | "uvx" | "other";
+//   name: string;
+//   github?: string;
+//   description: string;
+//   keywords: string[];
+//   resolve: (config: any) => {
+//     command: string;
+//     args: string[];
+//     env: Record<string, string>;
+//   };
+//   configSchema: any;
+// };
 
-const config = z.object({
-  paths: z.array(
-    z.object({
-      path: z.string({
-        description: "filesystem path",
-        required_error: "path is required",
-      }),
-    }),
-  ),
-  path: z.string({
-    description: "filesystem path",
-  }),
-  port: z.number({
-    description: "port",
-  }),
-  host: z.boolean({
-    description: "host",
-  }),
-});
+// const config = z.object({
+//   paths: z.array(
+//     z.object({
+//       path: z.string({
+//         description: "filesystem path",
+//         required_error: "path is required",
+//       }),
+//     }),
+//   ),
+//   path: z.string({
+//     description: "filesystem path",
+//   }),
+//   port: z.number({
+//     description: "port",
+//   }),
+//   host: z.boolean({
+//     description: "host",
+//   }),
+// });
 
-type Config = z.infer<typeof config>;
+// type Config = z.infer<typeof config>;
 
-const p: Package = {
-  type: "npx",
-  name: "@modelcontextprotocol/server-filesystem",
-  github: "https://github.com/modelcontextprotocol/servers.git",
-  description: "Server 1 filesystem",
-  keywords: ["server", "filesystem"],
-  resolve: (config: Config) => {
-    return {
-      command: "npx",
-      args: [
-        "-y",
-        "@modelcontextprotocol/server-filesystem",
-        ...config.paths.map((x) => x.path),
-      ],
-      env: {},
-    };
-  },
-  configSchema: zodToJsonSchema(config),
-};
+// const p: Package = {
+//   type: "npx",
+//   name: "@modelcontextprotocol/server-filesystem",
+//   github: "https://github.com/modelcontextprotocol/servers.git",
+//   description: "Server 1 filesystem",
+//   keywords: ["server", "filesystem"],
+//   resolve: (config: Config) => {
+//     return {
+//       command: "npx",
+//       args: [
+//         "-y",
+//         "@modelcontextprotocol/server-filesystem",
+//         ...config.paths.map((x) => x.path),
+//       ],
+//       env: {},
+//     };
+//   },
+//   configSchema: zodToJsonSchema(config),
+// };
 
 function JsonSchema2ProFormColumnsType(schema: any): ProFormColumnsType[] {
   function run(item) {
     const columns: ProFormColumnsType[] = [];
-
     for (const key in item.properties) {
       const prop = item.properties[key];
 
@@ -133,7 +132,6 @@ function JsonSchema2ProFormColumnsType(schema: any): ProFormColumnsType[] {
       let required = true;
       if (Array.isArray(prop.type)) {
         type = prop.type[0];
-        required = prop.type[1] == null;
       }
       let formItemProps = {
         required: required,
@@ -142,12 +140,15 @@ function JsonSchema2ProFormColumnsType(schema: any): ProFormColumnsType[] {
             required: required,
           },
         ],
+        tooltip: prop.description,
       };
       let fieldProps = {
         placeholder: prop.description,
         style: {
           width: "100%",
         },
+        // defaultValue: prop.default,
+        allowClear: false,
       };
 
       if (type === "array") {
@@ -161,39 +162,67 @@ function JsonSchema2ProFormColumnsType(schema: any): ProFormColumnsType[] {
         };
         columns.push(column);
         continue;
-      } else if (type === "string") {
-        const column: ProFormColumnsType = {
-          title: key,
-          dataIndex: key,
-          valueType: "text",
-
-          fieldProps,
-          formItemProps,
-        };
-        columns.push(column);
-        continue;
-      } else if (type === "number") {
-        const column: ProFormColumnsType = {
-          title: key,
-          dataIndex: key,
-          valueType: "digit",
-          fieldProps,
-          formItemProps,
-        };
-        columns.push(column);
-        continue;
-      } else if (type === "boolean") {
-        const column: ProFormColumnsType = {
-          title: key,
-          dataIndex: key,
-          valueType: "switch",
-          fieldProps,
-          formItemProps,
-        };
-        columns.push(column);
-        continue;
       } else {
-        console.log(prop.type, new Error("not support type"));
+        if (type === "string") {
+          if (prop.enum) {
+            fieldProps["options"] = prop.enum.map((x) => ({
+              label: x,
+              value: x,
+            }));
+            const column: ProFormColumnsType = {
+              title: key,
+              dataIndex: key,
+              valueType: "select",
+              fieldProps,
+              formItemProps,
+            };
+            columns.push(column);
+            continue;
+          } else {
+            const column: ProFormColumnsType = {
+              title: key,
+              dataIndex: key,
+              valueType: "text",
+
+              fieldProps,
+              formItemProps,
+            };
+            columns.push(column);
+            continue;
+          }
+        } else if (type === "number") {
+          const column: ProFormColumnsType = {
+            title: key,
+            dataIndex: key,
+            valueType: "digit",
+            fieldProps,
+            formItemProps,
+          };
+          columns.push(column);
+          continue;
+        } else if (type === "boolean") {
+          const column: ProFormColumnsType = {
+            title: key,
+            dataIndex: key,
+            valueType: "switch",
+            fieldProps,
+            formItemProps,
+          };
+          columns.push(column);
+          continue;
+        } else {
+          // console.log("type", prop.type);
+          const column: ProFormColumnsType = {
+            title: key,
+            dataIndex: key,
+            valueType: "text",
+
+            fieldProps,
+            formItemProps,
+          };
+          columns.push(column);
+          continue;
+        }
       }
     }
     return columns;
@@ -206,6 +235,32 @@ function JsonSchema2ProFormColumnsType(schema: any): ProFormColumnsType[] {
   }
 }
 
+function JsonSchema2DefaultValue(schema: any) {
+  let obj = {};
+  function run(item) {
+    for (const key in item.properties) {
+      const prop = item.properties[key];
+
+      let type = prop.type;
+      let required = true;
+      if (Array.isArray(prop.type)) {
+        type = prop.type[0];
+      }
+      if (type === "array") {
+        obj[key] = [];
+        continue;
+      } else {
+        obj[key] = prop.default;
+      }
+    }
+  }
+
+  if (schema && schema.type === "object") {
+    run(schema);
+  }
+  return obj;
+}
+
 // const c = JsonSchema2ProFormColumnsType(p.configSchema);
 let mcpExtensionDataObj = {};
 
@@ -216,7 +271,7 @@ export function Market() {
     setNum((n) => n + 1);
   };
   const { globalState, updateGlobalState } = useContext(HeaderContext);
-  const [npx, setNpxVer] = useState("");
+  const [nodeV, setNodeV] = useState("");
   const [uv, setUvVer] = useState("");
   const [threePartys, setThreePartys] = useState<Array<{ name: string }>>([]);
   const [mcpLoadingObj, setMcpLoadingObj] = useState(
@@ -235,11 +290,11 @@ export function Market() {
   const [mcpExtensionData, setMcpExtensionData] = useState<any>([]);
   let init = async () => {
     (async () => {
-      let x = await call("checkNpx", []);
-      setNpxVer(x);
+      let x = await call("exec", ["node", ["-v"]]);
+      setNodeV(x);
     })();
     (async () => {
-      let y = await call("checkUV", []);
+      let y = await call("exec", ["uv", ["-V"]]);
       setUvVer(y);
     })();
 
@@ -368,49 +423,6 @@ export function Market() {
       <div className="w-2/5">
         <h1 className=" ">💻MCP</h1>
 
-        <div>
-          <div>
-            <Space>
-              <span className="font-bold">npx & nodejs: </span>
-              {npx || t`Not Installed`}
-            </Space>
-          </div>
-          {!npx && (
-            <div>
-              <Space>
-                <span>{t`Please run the command.`}</span>
-                {electronData.get().platform == "win32" ? (
-                  <Code>winget install OpenJS.NodeJS.LTS</Code>
-                ) : (
-                  <Code>brew install node</Code>
-                )}
-                <a href="https://nodejs.org/">goto nodejs</a>
-              </Space>{" "}
-            </div>
-          )}
-        </div>
-        <div>
-          <div>
-            <Space>
-              <span className="font-bold">uvx & python:</span>{" "}
-              {uv || t`Not Installed`}
-            </Space>
-          </div>
-
-          {!uv && (
-            <div>
-              <Space>
-                <span>{t`Please run the command.`}</span>
-                {electronData.get().platform == "win32" ? (
-                  <Code>winget install --id=astral-sh.uv -e</Code>
-                ) : (
-                  <Code>brew install uv</Code>
-                )}
-                <a href="https://github.com/astral-sh/uv">goto uv</a>
-              </Space>
-            </div>
-          )}
-        </div>
         <Space className="mt-1">
           <Tooltip
             title={t`If you are using NVM, you might need to customize the PATH environment var.`}
@@ -501,6 +513,12 @@ export function Market() {
                                           ?.hyperchat.config || {},
                                       );
                                       setCurrRow(item);
+
+                                      mcpconfigform.current?.setFieldsValue(
+                                        JsonSchema2DefaultValue(
+                                          item.configSchema,
+                                        ),
+                                      );
 
                                       setMcpconfigOpen(true);
                                       await getClients(false);
@@ -692,6 +710,66 @@ export function Market() {
           <div>
             <a href="https://smithery.ai/">smithery.ai</a>
           </div>
+          <div>Help: </div>
+          <div className="help">
+            <div>
+              <div>
+                <Space>
+                  <span className="font-bold">nodejs: </span>
+                  {nodeV || t`Not Installed`}
+                </Space>
+              </div>
+              {!nodeV && (
+                <div>
+                  <Space>
+                    {electronData.get().platform == "win32" ? (
+                      <div>
+                        <span>{t`Please run the command.`}</span>
+                        <Code>winget install OpenJS.NodeJS.LTS</Code>
+                      </div>
+                    ) : electronData.get().platform == "darwin" ? (
+                      <div>
+                        <span>{t`Please run the command.`}</span>
+                        <Code>brew install node</Code>
+                      </div>
+                    ) : (
+                      ""
+                    )}
+                    <a href="https://nodejs.org/">goto nodejs</a>
+                  </Space>{" "}
+                </div>
+              )}
+            </div>
+            <div>
+              <div>
+                <Space>
+                  <span className="font-bold">uv:</span>{" "}
+                  {uv || t`Not Installed`}
+                </Space>
+              </div>
+
+              {!uv && (
+                <div>
+                  <Space>
+                    {electronData.get().platform == "win32" ? (
+                      <div>
+                        <span>{t`Please run the command.`}</span>
+                        <Code>winget install --id=astral-sh.uv -e</Code>
+                      </div>
+                    ) : electronData.get().platform == "darwin" ? (
+                      <div>
+                        <span>{t`Please run the command.`}</span>
+                        <Code>brew install uv</Code>
+                      </div>
+                    ) : (
+                      ""
+                    )}
+                    <a href="https://github.com/astral-sh/uv">goto uv</a>
+                  </Space>
+                </div>
+              )}
+            </div>
+          </div>
         </div>
       </div>
       <Modal
@@ -739,6 +817,7 @@ export function Market() {
           : t`No need config`}
         <BetaSchemaForm<any>
           layoutType="Form"
+          name="mcpconfigform"
           formRef={mcpconfigform}
           grid={false}
           onFinish={async (values) => {
@@ -748,7 +827,7 @@ export function Market() {
                 url: "",
                 type: "stdio",
                 scope: "outer",
-                config: {},
+                config: values,
               };
               await call("openMcpClient", [currRow.name, config]);
 
@@ -768,10 +847,16 @@ export function Market() {
               : []
           }
           submitter={{
-            searchConfig: {
-              submitText: "Install And Run",
+            // searchConfig: {
+            //   submitText: "Install And Run",
+            // },
+            submitButtonProps: {
+              type: "primary",
+              children: "Install And Run",
+              onClick: () => {
+                mcpconfigform.current.submit();
+              },
             },
-            submitButtonProps: {},
             // Configure the properties of the button
             resetButtonProps: {
               style: {

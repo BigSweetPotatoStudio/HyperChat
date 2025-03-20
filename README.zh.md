@@ -1,6 +1,11 @@
-## 功能
+## 简介
 
 HyperChat 是一个追求开放的Chat客户端，可以使用各家LLM的API，完全支持MCP，实现最好的Chat体验。以及基于本机Agent实现生产力MAX工具。
+
+[![Build](https://github.com/BigSweetPotatoStudio/HyperChat/actions/workflows/build.yml/badge.svg)](https://github.com/BigSweetPotatoStudio/HyperChat/actions/workflows/build.yml)
+
+[![npm downloads](https://img.shields.io/npm/dm/@dadigua/hyper-chat)](https://npm-stat.com/charts.html?package=@dadigua/hyper-chat)
+
 
 * 支持 OpenAI风格的LLM，`OpenAI` , `Claude(OpenRouter)`, `Qwen`, `Deepseek`, `GLM`, `Ollama` 。
 * 内置MCP插件市场，人性化的MCP的安装填写配置，一键安装，欢迎提交[HyperChatMCP](https://github.com/BigSweetPotatoStudio/HyperChatMCP)。
@@ -10,10 +15,7 @@ HyperChat 是一个追求开放的Chat客户端，可以使用各家LLM的API，
 
 * [HyperChat](https://hyperchat.dadigua.men/123456/) on Docker
 
-### MCP: 
-
-[![Build](https://github.com/BigSweetPotatoStudio/HyperChat/actions/workflows/build.yml/badge.svg)](https://github.com/BigSweetPotatoStudio/HyperChat/actions/workflows/build.yml)
-
+## 功能: 
 
 - [x] **🪟Windows** + **🍏MacOS** + **Linux**
 - [x] 命令行运行，`npx -y @dadigua/hyper-chat`，默认端口 16100, 密码 123456, Web访问 http://localhost:16100/123456/

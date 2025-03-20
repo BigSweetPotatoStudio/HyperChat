@@ -9,8 +9,7 @@
  * - Summarizing all notes via a prompt
  */
 
-import { BrowserWindow } from "electron";
-import Logger from "electron-log";
+import { Logger } from "ts/polyfills/index.mjs";
 
 import dayjs from "dayjs";
 import { KNOWLEDGE_BASE } from "../../../../../common/data";

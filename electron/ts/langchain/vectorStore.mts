@@ -1,7 +1,7 @@
 import { HNSWLib } from "./myhnswlib.mjs";
 import { Embeddings } from "@langchain/core/embeddings";
 import path from "path";
-import { appDataDir } from "../const.mjs";
+import { appDataDir } from "ts/polyfills/index.mjs";
 
 import { FeatureExtraction } from "../common/model.mjs";
 import { toolTextSplitter } from "./textsplitters.mjs";
@@ -16,10 +16,6 @@ import { zx } from "../es6.mjs";
 const { fs } = zx;
 // Save the vector store to a directory
 
-// const embeddings = new OpenAIEmbeddings({
-//   apiKey: process.env.apiKey,
-//   model: "text-embedding-3-small",
-// });
 
 class MyEmbeddings extends Embeddings {
   constructor() {
