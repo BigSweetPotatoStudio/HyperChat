@@ -7,7 +7,7 @@ on:
   workflow_dispatch: {}
   push:
     branches:
-      - no_electron
+      - test
 
 jobs:
   build:
