@@ -9,6 +9,7 @@ import {
   DataList,
   MCP_CONFIG_TYPE,
 } from "../../../common/data.js";
+import { e } from "./service";
 
 for (let data of DataList) {
   data.override({
@@ -41,7 +42,11 @@ for (let data of DataList) {
 msg_receive("message-from-main", (msg) => {
   if (msg.type == "syncNodeToWeb") {
     let c = DataList.find((x) => x.KEY == msg.data.key);
-    Object.assign(c.get(), msg.data.data);
+    if(c){
+      Object.assign(c.get(), msg.data.data);
+    } else {
+      console.error("syncNodeToWeb", msg.data.key, "not found");
+    }
   }
 });
 
