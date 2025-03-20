@@ -1,16 +1,15 @@
 import type { FileStat, WebDAVClient } from "webdav";
 
-const { createClient } = await import(/* webpackIgnore: true */ "webdav");
 import { promises } from "fs";
 import path, { join } from "path";
 
-import { appDataDir } from "../const.mjs";
-import Logger from "electron-log";
-import { log } from "console";
+import { appDataDir } from "ts/polyfills/index.mjs";
+import { Logger } from "ts/polyfills/index.mjs";
+
 import { AppSetting, DataList } from "../../../common/data";
 
 import crypto from "crypto";
-import { zx } from "../es6.mjs";
+import { createClient, zx } from "../es6.mjs";
 import { getMessageService } from "../message_service.mjs";
 const { fs } = zx;
 
@@ -71,7 +70,7 @@ class WebDAVSync {
         }
       });
     // console.log(contents);
-    return contents.map((item) => ({
+    return (contents || []).map((item) => ({
       filename: item.basename,
       filepath: item.filename,
       modifiedTime: new Date(item.lastmod),
@@ -304,10 +303,16 @@ class WebDAVSync {
               path.join(localSyncPath, remoteFile.filename),
               content
             );
+
+            let obj = JSON.parse(content);
             await fs.writeFile(
               path.join(localPath, name + ext),
-              JSON.stringify(JSON.parse(content.toString()), null, 4)
+              JSON.stringify(obj, null, 4)
             );
+            getMessageService().sendAllToRenderer({
+              type: "syncNodeToWeb",
+              data: { key: name + ext, data: obj },
+            });
           }
         }
       }

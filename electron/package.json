@@ -1,30 +1,111 @@
 {
-  "scripts": {
-    "start": "electron .",
-    "dev": "nodemon -w ts --exec npx tsx task.mts --dev",
-    "prod": "npx tsx task.mts --prod",
-    "testprod": "npx tsx task.mts --testprod",
-    "dev:f": "npx tsx task.mts --test",
-    "push": "npx tsx task.mts --pushUpdateFile"
-  },
-  "name": "hyper-chat",
-  "productName": "HyperChat",
-  "version": "1.2.0",
-  "description": "*",
-  "main": "js/main.js",
-  "author": "Dadigua",
-  "license": "MIT",
-  "devDependencies": {
-    "@electron/notarize": "^2.5.0",
-    "@types/node": "^20.14.10",
-    "electron": "30.5.1",
-    "electron-builder": "24.13.3",
-    "nodemon": "^3.1.4",
-    "ts-loader": "^9.5.1",
-    "typescript": "^5.5.2",
-    "webpack": "^5.92.1",
-    "webpack-cli": "^5.1.4",
-    "webpack-node-externals": "^3.0.0"
+  "author": "Dadigua <0laopo0@gmail.com>",
+  "build": {
+    "afterSign": "./build/notarize.js",
+    "appId": "men.dadigua.hpyerchat",
+    "artifactName": "${productName}-${version}-${os}-${arch}.${ext}",
+    "asar": true,
+    "copyright": "Copyright © 2024 ${author}",
+    "extraFiles": [],
+    "extraResources": [],
+    "files": [
+      "!ts/**",
+      "!*.mts",
+      "!python/**",
+      "!tmp/**",
+      "!tests/**",
+      "!web/**",
+      "!lib/**",
+      "!README.md",
+      "!ldh.todo",
+      "!depend",
+      "!tsconfig.json",
+      "!webpack.config.js"
+    ],
+    "icon": "./web-build/assets/favicon.png",
+    "linux": {
+      "target": [
+        {
+          "arch": [
+            "x64",
+            "arm64"
+          ],
+          "target": "AppImage"
+        },
+        {
+          "arch": [
+            "x64",
+            "arm64"
+          ],
+          "target": "deb"
+        },
+        {
+          "arch": [
+            "x64",
+            "arm64"
+          ],
+          "target": "tar.gz"
+        }
+      ]
+    },
+    "mac": {
+      "entitlements": "build/mac/entitlements.mac.plist",
+      "entitlementsInherit": "build/mac/entitlements.mac.plist",
+      "extendInfo": {
+        "NSCameraUsageDescription": "Please give us access to your camera",
+        "NSMicrophoneUsageDescription": "Please give us access to your microphone",
+        "com.apple.security.device.audio-input": true,
+        "com.apple.security.device.camera": true
+      },
+      "notarize": false,
+      "target": [
+        {
+          "arch": [
+            "x64",
+            "arm64"
+          ],
+          "target": "dmg"
+        },
+        {
+          "arch": [
+            "x64",
+            "arm64"
+          ],
+          "target": "zip"
+        }
+      ]
+    },
+    "nsis": {
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "deleteAppDataOnUninstall": false,
+      "oneClick": false,
+      "perMachine": true,
+      "shortcutName": "HyperChat"
+    },
+    "productName": "HyperChat",
+    "publish": [
+      {
+        "provider": "github"
+      }
+    ],
+    "win": {
+      "target": [
+        {
+          "arch": [
+            "x64"
+          ],
+          "target": "nsis"
+        },
+        {
+          "arch": [
+            "x64"
+          ],
+          "target": "zip"
+        }
+      ]
+    }
   },
   "dependencies": {
     "@homebridge/ciao": "^1.3.1",
@@ -56,10 +137,11 @@
     "image-js": "^0.35.6",
     "koa": "^2.15.3",
     "koa-body": "^6.0.1",
+    "koa-mount": "^4.0.0",
     "koa-router": "^13.0.1",
     "koa-static": "^5.0.0",
+    "log4js": "^6.9.1",
     "node-cron": "^3.0.3",
-    "onnxruntime-node": "^1.20.1",
     "openai": "^4.84.1",
     "opusscript": "^0.1.1",
     "pdf-parse": "^1.1.1",
@@ -67,8 +149,9 @@
     "puppeteer-core": "^22.15.0",
     "raw-loader": "^4.0.2",
     "react-markdown": "^9.0.1",
-    "sherpa-onnx-node": "^1.10.22",
+    "shell-path": "^3.0.0",
     "socket.io": "^4.7.5",
+    "tsconfig-paths-webpack-plugin": "^4.2.0",
     "tsx": "^4.9.3",
     "uuid": "^9.0.1",
     "wav": "^1.0.2",
@@ -76,108 +159,42 @@
     "webdav": "^5.6.0",
     "zx": "8.0.1"
   },
+  "description": "*",
+  "devDependencies": {
+    "@electron/notarize": "^2.5.0",
+    "@types/node": "^20.14.10",
+    "@types/uuid": "^10.0.0",
+    "electron": "30.5.1",
+    "electron-builder": "24.13.3",
+    "nodemon": "^3.1.4",
+    "ts-loader": "^9.5.1",
+    "typescript": "^5.5.2",
+    "webpack": "^5.92.1",
+    "webpack-cli": "^5.1.4",
+    "webpack-node-externals": "^3.0.0"
+  },
+  "email": "0laopo0@gmail.com",
+  "files": [
+    "web-build",
+    "js",
+    "README.md"
+  ],
+  "license": "MIT",
+  "main": "js/main.js",
+  "name": "hyper-chat",
+  "productName": "HyperChat",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/BigSweetPotatoStudio/HyperChat.git"
   },
-  "build": {
-    "publish": [
-      {
-        "provider": "github"
-      }
-    ],
-    "afterSign": "./build/notarize.js",
-    "artifactName": "${productName}-${version}-${os}-${arch}.${ext}",
-    "productName": "HyperChat",
-    "copyright": "Copyright © 2024 ${author}",
-    "asar": true,
-    "appId": "men.dadigua.hpyerchat",
-    "icon": "./web-build/assets/favicon.png",
-    "win": {
-      "target": [
-        {
-          "target": "nsis",
-          "arch": [
-            "x64"
-          ]
-        },
-        {
-          "target": "zip",
-          "arch": [
-            "x64"
-          ]
-        }
-      ]
-    },
-    "mac": {
-      "notarize": false,
-      "target": [
-        {
-          "target": "dmg",
-          "arch": [
-            "x64",
-            "arm64"
-          ]
-        },
-        {
-          "target": "zip",
-          "arch": [
-            "x64",
-            "arm64"
-          ]
-        }
-      ],
-      "extendInfo": {
-        "NSMicrophoneUsageDescription": "Please give us access to your microphone",
-        "NSCameraUsageDescription": "Please give us access to your camera",
-        "com.apple.security.device.audio-input": true,
-        "com.apple.security.device.camera": true
-      },
-      "entitlements": "build/mac/entitlements.mac.plist",
-      "entitlementsInherit": "build/mac/entitlements.mac.plist"
-    },
-    "linux": {
-      "target": [
-        {
-          "target": "AppImage",
-          "arch": [
-            "x64",
-            "arm64"
-          ]
-        },
-        {
-          "target": "tar.gz",
-          "arch": [
-            "x64",
-            "arm64"
-          ]
-        }
-      ]
-    },
-    "nsis": {
-      "oneClick": false,
-      "perMachine": true,
-      "allowToChangeInstallationDirectory": true,
-      "deleteAppDataOnUninstall": false,
-      "createDesktopShortcut": true,
-      "createStartMenuShortcut": true,
-      "shortcutName": "HyperChat"
-    },
-    "files": [
-      "!ts/**",
-      "!*.mts",
-      "!python/**",
-      "!tmp/**",
-      "!tests/**",
-      "!web/**",
-      "!lib/**",
-      "!README.md",
-      "!ldh.todo",
-      "!depend",
-      "!tsconfig.json",
-      "!webpack.config.js"
-    ],
-    "extraResources": [],
-    "extraFiles": []
-  }
+  "scripts": {
+    "build": "npx tsx task.mts --build",
+    "build:node": "npx tsx task.mts --buildnode",
+    "dev": "nodemon -w ts --exec npx tsx task.mts --dev",
+    "dev:node": "nodemon -w ts --exec npx tsx task.mts --devnode",
+    "prod": "npx tsx task.mts --prod",
+    "start": "electron .",
+    "testprod": "npx tsx task.mts --testprod"
+  },
+  "version": "1.2.9"
 }

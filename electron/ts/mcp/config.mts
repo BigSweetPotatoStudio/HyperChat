@@ -1,27 +1,55 @@
 import path from "path";
-import { zx } from "../es6.mjs";
+import { shellPathSync, zx } from "../es6.mjs";
 const { fs, os, sleep } = zx;
 import * as MCP from "@modelcontextprotocol/sdk/client/index.js";
 // import { StdioClientTransport } from "@modelcontextprotocol/sdk/client/stdio.js";
 import * as MCPTypes from "@modelcontextprotocol/sdk/types.js";
-import log from "electron-log";
-import { appDataDir } from "../const.mjs";
+import { Logger } from "ts/polyfills/index.mjs";
+import { appDataDir } from "ts/polyfills/index.mjs";
 import type { StdioServerParameters } from "@modelcontextprotocol/sdk/client/stdio.js";
 import { initMcpServer } from "./servers/express.mjs";
 import { MyServers } from "./servers/index.mjs";
-import { electron, env } from "process";
+
 import {
   electronData,
   AppSetting,
   MCP_CONFIG,
   MCP_CONFIG_TYPE,
 } from "../../../common/data";
-import { request } from "http";
-
 import { spawnWithOutput } from "../common/util.mjs";
 import { clientPaths } from "./claude.mjs";
-import Logger from "electron-log";
+
 import { startTask } from "./task.mjs";
+
+import { spawn } from "node:child_process";
+
+// import cross_spawn from "cross-spawn";
+
+// const spawn = os.type() === "Windows_NT" ? cross_spawn : node_spawn;
+
+let config = MCP_CONFIG.initSync();
+
+for (let s of MyServers) {
+  let key = s.name;
+  config.mcpServers[key] = {
+    command: "",
+    args: [],
+    env: {},
+    hyperchat: {
+      url: `http://localhost:${electronData.get().mcp_server_port}/${key}/sse`,
+      type: "sse",
+      scope: "built-in",
+      config: {},
+    },
+    disabled: config.mcpServers[key]?.disabled,
+  };
+}
+for (let key in config.mcpServers) {
+  if (config.mcpServers[key].hyperchat?.scope == "built-in" && !MyServers.find((s) => s.name == key)) {
+    delete config.mcpServers[key];
+  }
+}
+await MCP_CONFIG.save();
 
 await initMcpServer().catch((e) => {
   console.error("initMcpServer", e);
@@ -45,8 +73,6 @@ const {
   /* webpackIgnore: true */ "@modelcontextprotocol/sdk/types.js"
 );
 
-
-
 export const mcpClients = {} as {
   [s: string]: MCPClient;
 };
@@ -59,9 +85,9 @@ export class MCPClient {
 
   constructor(public name: string, public config: MCP_CONFIG_TYPE) {}
   async callTool(functionName: string, args: any): Promise<any> {
-    log.info("MCP callTool", functionName, args);
+    Logger.info("MCP callTool", functionName, args);
     if (this.status == "disconnected") {
-      log.error("MCP callTool disconnected, restarting");
+      Logger.error("MCP callTool disconnected, restarting");
       await this.open();
     }
     let mcpCallToolTimeout = (await AppSetting.init()).mcpCallToolTimeout;
@@ -98,17 +124,17 @@ export class MCPClient {
       });
   }
   async callResource(uri: string): Promise<any> {
-    log.info("MCP callTool", uri);
+    Logger.info("MCP callTool", uri);
     if (this.status == "disconnected") {
-      log.error("MCP callTool disconnected, restarting");
+      Logger.error("MCP callTool disconnected, restarting");
       await this.open();
     }
     return await this.client.readResource({ uri: uri });
   }
   async callPrompt(functionName: string, args: any): Promise<any> {
-    log.info("MCP callPrompt", functionName, args);
+    Logger.info("MCP callPrompt", functionName, args);
     if (this.status == "disconnected") {
-      log.error("MCP callTool disconnected, restarting");
+      Logger.error("MCP callTool disconnected, restarting");
       await this.open();
     }
     return await this.client.getPrompt({ name: functionName, arguments: args });
@@ -142,7 +168,7 @@ export class MCPClient {
     //   });
 
     client.onclose = () => {
-      log.info("client close");
+      Logger.info("client close");
       this.status = "disconnected";
       this.tools = [];
       this.resources = [];
@@ -153,7 +179,7 @@ export class MCPClient {
       if (this.config?.hyperchat?.type == "sse") {
         //
       } else {
-        log.error("client onerror: ", e);
+        Logger.error("client onerror: ", e);
       }
     };
 
@@ -173,12 +199,25 @@ export class MCPClient {
     this.client = client;
   }
   async openStdio(config: MCP_CONFIG_TYPE) {
+    if (electronData.initSync().PATH) {
+      process.env.PATH = electronData.get().PATH;
+    } else {
+      if(os.platform() != 'win32'){
+        process.env.PATH = shellPathSync();
+      }
+    }
+    let params = {
+      command: config.command,
+      args: config.args,
+      env: Object.assign(
+        getMyDefaultEnvironment(),
+        process.env as any,
+        config.env
+      ),
+    };
+
     try {
-      const transport = new StdioClientTransport({
-        command: config.command,
-        args: config.args,
-        env: Object.assign(getMyDefaultEnvironment(), process.env as any, config.env),
-      });
+      const transport = new StdioClientTransport(params);
       const client = new Client({
         name: this.name,
         version: "1.0.0",
@@ -187,21 +226,38 @@ export class MCPClient {
       await client.connect(transport);
       this.client = client;
     } catch (e) {
-      // let res = await spawnWithOutput(config.command, config.args, {
-      //   env: Object.assign(getMyDefaultEnvironment(), config.env),
-      // }).catch((e) => {
-      //   return e;
-      // });
-      // console.log("spawnWithOutput ", res);
-      // if (res.stderr) {
-      //   throw new Error(res.stderr);
-      // }
-      // if (res.stdout) {
-      //   throw new Error(res.stdout);
-      // }
+      Logger.error(params, e);
+      if (
+        os.platform() == "win32" &&
+        e.message.includes("Connection closed")
+      ) {
+        // log.error("Connection closed, testing");
+        e = await checkError(params)
+          .then((_) => e)
+          .catch((e) => e);
+      }
       throw e;
     }
   }
+}
+
+async function checkError(params: any) {
+  return await new Promise((resolve, reject) => {
+    let proc = spawn(params.command, params.args, {
+      env: params.env,
+      // shell: true,
+    });
+    // proc.on("data", (data) => {
+    //   console.log(data.toString());
+    // });
+    setTimeout(() => {
+      proc.kill();
+      resolve({ error: 0 });
+    }, 1000);
+    proc.on("error", (err) => {
+      reject(err);
+    });
+  });
 }
 
 let firstRunStatus = 0;
@@ -221,7 +277,7 @@ export async function initMcpClients() {
     firstRunStatus = 1;
   }
   if (firstRunStatus == 2) {
-    log.info("getMcpClients cached mcpClients", Object.keys(mcpClients).length);
+    Logger.info("getMcpClients cached mcpClients", Object.keys(mcpClients).length);
     return mcpClients;
   }
   let p = clientPaths.claude;
@@ -232,7 +288,7 @@ export async function initMcpClients() {
 
   let config = await getConfg();
 
-  console.log(config);
+  // console.log(config);
   let tasks = [];
   for (let key in config.mcpServers) {
     // tasks.push(openMcpClient(key, config.mcpServers[key]));
@@ -245,7 +301,7 @@ export async function initMcpClients() {
       try {
         tasks.push(mcpClients[key].open());
       } catch (e) {
-        log.error("openMcpClient", e);
+        Logger.error("openMcpClient", e);
         continue;
       }
     }
@@ -285,7 +341,7 @@ export async function openMcpClient(
   try {
     await newMCP.open();
   } catch (e) {
-    log.error("openMcpClient", e);
+    Logger.error("openMcpClient", e);
     throw e;
   }
   // clean old client
@@ -326,35 +382,10 @@ export async function closeMcpClients(clientName: string, isdelete: boolean) {
   return mcpClients;
 }
 
-let config = MCP_CONFIG.initSync({ force: true });
-for (let s of MyServers) {
-  let key = s.name;
-  config.mcpServers[key] = {
-    command: "",
-    args: [],
-    env: {},
-    hyperchat: {
-      url: `http://localhost:${electronData.get().mcp_server_port}/${key}/sse`,
-      type: "sse",
-      scope: "built-in",
-      config: {},
-    },
-    disabled: false,
-  };
-}
-for (let key in config.mcpServers) {
-  if (
-    config.mcpServers[key].hyperchat?.scope == "built-in" &&
-    !MyServers.find((x) => x.name == key)
-  ) {
-    delete config.mcpServers[key];
-  }
-}
-await MCP_CONFIG.save();
 export async function getConfg(): Promise<{
   mcpServers: { [s: string]: MCP_CONFIG_TYPE };
 }> {
-  let config = MCP_CONFIG.initSync({ force: true });
+  let config = MCP_CONFIG.initSync();
 
   // let obj: any = {};
   // config.mcpServers = Object.assign(obj, config.mcpServers);
@@ -371,9 +402,13 @@ export async function getConfg(): Promise<{
 
 export function getMyDefaultEnvironment() {
   let env = getDefaultEnvironment();
-  electronData.initSync({ force: true });
+  electronData.initSync();
   if (electronData.get().PATH) {
     env.PATH = electronData.get().PATH;
+  } else {
+    if (os.platform() != "win32") {
+      env.PATH = shellPathSync();
+    }
   }
   return env;
 }

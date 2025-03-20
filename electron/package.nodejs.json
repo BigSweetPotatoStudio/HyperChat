@@ -1,0 +1,8 @@
+{
+    "name": "@dadigua/hyper-chat",
+    "bin": {
+        "hyper-chat": "cli.js"
+    },
+    "main": "js/main_no_electron.js",
+    "devDependencies": {}
+}

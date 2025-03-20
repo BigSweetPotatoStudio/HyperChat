@@ -4,18 +4,18 @@ import cors from "@koa/cors";
 import http from "http";
 import path from "path";
 import { Server as SocketIO } from "socket.io";
-import log from "electron-log";
+import { Logger } from "ts/polyfills/index.mjs";
 
 import { execFallback } from "./common/execFallback.mjs";
 import { v4 as uuid } from "uuid";
-
+import mount from "koa-mount";
 import { koaBody } from "koa-body";
 import { electronData } from "../../common/data";
 import { Command, CommandFactory } from "./command.mjs";
-import { appDataDir, userDataPath } from "./const.mjs";
+import { appDataDir, CONST } from "ts/polyfills/index.mjs";
 
+let { userDataPath } = CONST;
 import Router from "koa-router";
-import Logger from "electron-log";
 import { HTTPPORT } from "./common/data.mjs";
 
 export function genRouter(c, prefix: string) {
@@ -39,14 +39,14 @@ export function genRouter(c, prefix: string) {
           // log.info(name, args);
         } else {
           if (name == "writeFile") {
-            log.info(
+            Logger.info(
               name,
               args[0],
               "writeFile Data length: " + args[1].length
               // res
             );
           } else {
-            log.info(
+            Logger.info(
               name,
               args
               // res
@@ -60,7 +60,7 @@ export function genRouter(c, prefix: string) {
           data: res,
         };
       } catch (e) {
-        log.error(e);
+        Logger.error(e);
         ctx.body = { success: false, code: 1, message: e.message };
       }
     });
@@ -97,7 +97,13 @@ async function initWebsocket() {
   app.use(model_route.routes());
 
   Logger.info("serve: ", path.join(__dirname, "../web-build"));
-  app.use(serve(path.join(__dirname, "../web-build")) as any);
+  Logger.info("password: ", electronData.initSync().password);
+  app.use(
+    mount(
+      "/" + electronData.get().password,
+      serve(path.join(__dirname, "../web-build")) as any
+    )
+  );
 
   // 错误处理
   app.on("error", (err, ctx) => {
@@ -115,7 +121,9 @@ async function initWebsocket() {
   });
   let PORT = HTTPPORT;
   PORT = await execFallback(PORT, (port) => {
-    server.listen(port);
+    server.listen(port, () => {
+      Logger.info("http server listen on: ", port);
+    });
   });
   electronData.get().port = PORT;
   Logger.info("http server listen on: ", PORT);

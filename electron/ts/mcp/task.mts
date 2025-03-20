@@ -1,4 +1,4 @@
-import Logger from "electron-log";
+import { Logger } from "ts/polyfills/index.mjs";
 import {
   ChatHistory,
   ChatHistoryItem,
@@ -82,7 +82,7 @@ export async function callAgent(obj: {
     if (agent == null) {
       throw new Error(`Agent ${obj.agentKey} not found`);
     }
-    Logger.log("Running callAgent", agent.label, obj.message, obj.agentKey);
+    Logger.info("Running callAgent", agent.label, obj.message, obj.agentKey);
     let config =
       GPT_MODELS.initSync().data.find((x) => x.key == agent.modelKey) ||
       GPT_MODELS.initSync().data[0];
@@ -136,7 +136,7 @@ export async function callAgent(obj: {
   }
 }
 export async function runTask(task: Task) {
-  Logger.log("Running task", task.name);
+  Logger.info("Running task", task.name);
   try {
     let lastMessage = await callAgent({
       agentKey: task.agentKey,

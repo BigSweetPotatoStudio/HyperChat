@@ -1,5 +1,5 @@
+import { Logger } from "ts/polyfills/index.mjs";
 import "./first.mjs";
-import log from "electron-log";
 import {
   app,
   BrowserWindow,
@@ -9,31 +9,35 @@ import {
   protocol,
   net,
   Menu,
-  desktopCapturer,
+  // desktopCapturer,
   session,
   shell,
 } from "electron";
 
 import path from "node:path";
-import os from "node:os";
+// import os from "node:os";
+import "ts/polyfills/electron_autoupdate.mjs"
 import { Command } from "./command.mjs";
-import { fileURLToPath } from "node:url";
+// import { fileURLToPath } from "node:url";
 
-import { spawn, exec, execFile } from "child_process";
-import { isPortUse } from "./common/checkport.mjs";
-import { Server } from "socket.io";
-import { execFallback } from "./common/execFallback.mjs";
-import p from "../package.json";
+// import { spawn, exec, execFile } from "child_process";
+// import { isPortUse } from "./common/checkport.mjs";
+// import { Server } from "socket.io";
+// import { execFallback } from "./common/execFallback.mjs";
+// import p from "../package.json";
 import "./websocket.mjs";
 
 import { createWindow } from "./mianWindow.mjs";
-import { zx } from "./es6.mjs";
-const { $, usePowerShell, fs, cd, fetch, sleep } = zx;
+Logger.info("start main");
 
-$.verbose = true;
-if (os.platform() === "win32") {
-  usePowerShell();
-}
+// const createWindow = () => {
+//   const win = new BrowserWindow({
+//     width: 800,
+//     height: 600
+//   })
+
+//   win.loadURL('https://www.baidu.com')
+// }
 
 ipcMain.handle("command", async (event, name, args) => {
   try {
@@ -42,14 +46,14 @@ ipcMain.handle("command", async (event, name, args) => {
       // log.info(name, args);
     } else {
       if (name == "writeFile") {
-        log.info(
+        Logger.info(
           name,
           args[0],
           "writeFile Data length: " + args[1].length
           // res
         );
       } else {
-        log.info(
+        Logger.info(
           name,
           args
           // res
@@ -63,7 +67,7 @@ ipcMain.handle("command", async (event, name, args) => {
       data: res,
     };
   } catch (e) {
-    log.error(name, args, e);
+    Logger.error(name, args, e);
     return { success: false, code: 1, message: e.message };
   }
 });
@@ -86,24 +90,24 @@ app.whenReady().then(async () => {
   try {
     createWindow();
   } catch (e) {
-    log.error(e);
+    Logger.error(e);
     throw e;
   }
 
-  if (process.env.NODE_ENV === "production" && process.env.myEnv !== "test") {
+  if (process.env.myEnv == "prod") {
     Menu.setApplicationMenu(null);
   }
 
-  if (process.platform != "darwin") {
-    session.defaultSession.setDisplayMediaRequestHandler(
-      (request, callback) => {
-        desktopCapturer.getSources({ types: ["screen"] }).then((sources) => {
-          // Grant access to the first screen found.
-          callback({ video: sources[0], audio: "loopback" });
-        });
-      }
-    );
-  }
+  // if (process.platform != "darwin") {
+  //   session.defaultSession.setDisplayMediaRequestHandler(
+  //     (request, callback) => {
+  //       desktopCapturer.getSources({ types: ["screen"] }).then((sources) => {
+  //         // Grant access to the first screen found.
+  //         callback({ video: sources[0], audio: "loopback" });
+  //       });
+  //     }
+  //   );
+  // }
 
   protocol.handle("fs", (request) => {
     let p = request.url.replace("fs://", "");

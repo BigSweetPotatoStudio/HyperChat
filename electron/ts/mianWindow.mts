@@ -7,18 +7,16 @@ import {
   shell,
   Tray,
 } from "electron";
-import Logger from "electron-log";
+import { Logger } from "ts/polyfills/index.mjs";
 import { get } from "http";
 import path from "path";
 
-// import CheckUpdate, { checkUpdate } from "./upload.mjs";
 import { electronData } from "../../common/data";
 import p from "../package.json" assert { type: "json" };
 
 
 let title = `${p.productName}-${app.getVersion()} by Dadigua`;
-Logger.info("title: ", title);
-
+Logger.info("title   : ", title);
 
 export const createWindow = () => {
   const win = new BrowserWindow({
@@ -40,10 +38,10 @@ export const createWindow = () => {
 
   // win.maximize()
   win.show();
-  if (process.env.NODE_ENV == "development") {
+  if (process.env.myEnv == "dev") {
     win.loadURL("http://localhost:8080/#/");
   } else {
-    win.loadURL(`http://localhost:${electronData.get().port}/#/`).catch((e) => {
+    win.loadURL(`http://localhost:${electronData.get().port}/${electronData.get().password}/#/`).catch((e) => {
       let indexFile = path.join(__dirname, "../web-build/index.html");
       win.loadFile(indexFile, {
         hash: "#/",

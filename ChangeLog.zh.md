@@ -1,3 +1,11 @@
+# 1.2.2
+
+* mac ,linux 自动获取PATH，不用输入PATH了。
+* 添加 linux deb包
+* fix WebDav 第一次同步报错
+* fixbug
+
+
 # 1.0.2
 
 * 增加设定temperature

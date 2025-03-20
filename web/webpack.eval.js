@@ -14,6 +14,7 @@ module.exports = (env, argv) => {
       new webpack.EnvironmentPlugin({
         NODE_ENV: process.env.NODE_ENV || "development",
         myEnv: process.env.myEnv || "production",
+        no_electron: "1",
       }),
     ].filter((x) => x != null),
     module: {
@@ -24,8 +25,17 @@ module.exports = (env, argv) => {
         },
         {
           test: /\.[cm]?(ts|js)x?$/,
-          use: "ts-loader",
+          use: {
+            loader: "ts-loader",
+            options: {
+              configFile: "tsconfig.json",
+              transpileOnly: true, // 确保放在这里
+            },
+          },
           exclude: /node_modules/,
+          resolve: {
+            fullySpecified: false,
+          },
         },
       ],
     },

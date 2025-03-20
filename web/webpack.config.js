@@ -62,7 +62,13 @@ module.exports = (env, argv) => {
       rules: [
         {
           test: /\.[cm]?(ts|js)x?$/,
-          use: "ts-loader",
+          use: {
+            loader: "ts-loader",
+            options: {
+              configFile: "tsconfig.json",
+              transpileOnly: true, // 确保放在这里
+            },
+          },
           exclude: /node_modules/,
           resolve: {
             fullySpecified: false,

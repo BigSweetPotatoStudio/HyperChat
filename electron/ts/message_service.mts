@@ -1,7 +1,7 @@
 // import { activeUser, userSocketMap } from "./websocket.mjs";
 
 export class MessageService {
-  private mainWindow;
+  // private mainWindow;
 
   constructor() {
     // this.mainWindow = genMainMsg();
@@ -9,37 +9,34 @@ export class MessageService {
 
   // 发送消息到渲染进程
   async sendToRenderer(data: any, channel: string = "message-from-main") {
-    if (!this.mainWindow) {
+    const { genMainMsg, activeUser, userSocketMap } = await import(
+      "./websocket.mjs"
+    );
+    if (!genMainMsg()) {
       return;
     }
-    const { activeUser, userSocketMap } = await import("./websocket.mjs");
     const socketId = userSocketMap.get(activeUser);
     if (socketId) {
-      this.mainWindow.to(socketId).emit(channel, data);
+      genMainMsg().to(socketId).emit(channel, data);
     } else {
-      this.mainWindow.emit(channel, data);
+      genMainMsg().emit(channel, data);
     }
   }
   async sendAllToRenderer(data: any, channel: string = "message-from-main") {
-    if (!this.mainWindow) {
+    const { genMainMsg } = await import("./websocket.mjs");
+    if (!genMainMsg()) {
       return;
     }
-    this.mainWindow.emit(channel, data);
+    genMainMsg().emit(channel, data);
   }
   // 初始化IPC监听器
-  async init() {
-    const { genMainMsg } = await import("./websocket.mjs");
-    this.mainWindow = genMainMsg();
-    // 处理渲染进程的响应
-    // ipcMain.on("renderer-response", (event, data) => {
-    //   console.log("Received from renderer:", data);
-    // });
-  }
+  // async init() {
+  //   const { genMainMsg } = await import("./websocket.mjs");
+  //   this.mainWindow = genMainMsg();
+  // }
 }
 
 let messageService: MessageService = new MessageService();
-
-messageService.init();
 
 export const getMessageService = () => {
   return messageService;

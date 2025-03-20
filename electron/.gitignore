@@ -22,7 +22,7 @@ npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 .env.production
-package-lock.json
+# package-lock.json
 *.js.map
 *.mjs.map
 metahuman/
@@ -42,3 +42,5 @@ __pycache__/
 tests/
 .env
 *.log
+js/
+data/

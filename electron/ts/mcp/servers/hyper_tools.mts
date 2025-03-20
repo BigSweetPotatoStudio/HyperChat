@@ -10,7 +10,7 @@
  */
 
 import { BrowserWindow } from "electron";
-import Logger from "electron-log";
+import { Logger } from "ts/polyfills/index.mjs";
 import { zx } from "../../es6.mjs";
 const { fs, path, sleep } = zx;
 import dayjs from "dayjs";
@@ -210,7 +210,9 @@ async function fetch(url: string) {
     await sleep(3000);
     await Promise.race([
       new Promise((resolve) => {
-        win.webContents.on("did-finish-load", resolve);
+        win.webContents.on("did-finish-load", () => {
+          resolve(0);
+        });
       }),
       sleep(3000),
     ]);
@@ -249,7 +251,9 @@ async function search(words: string) {
     // 等待页面加载完成
     await Promise.race([
       new Promise((resolve) => {
-        win.webContents.on("did-finish-load", resolve);
+        win.webContents.on("did-finish-load", () => {
+          resolve(0);
+        });
       }),
       sleep(3000),
     ]);
@@ -350,10 +354,7 @@ async function executeClientScript<T>(
     //     resolve("error openUrl");
     //   })
     //  `;
-    if (process.env.NODE_ENV === "development") {
-      fs.ensureDirSync("tmp");
-      fs.writeFileSync("tmp/wrappedScript.js", wrappedScript);
-    }
+
     const result = await Promise.race([
       win.webContents.executeJavaScript(wrappedScript, userGesture),
       new Promise((_, reject) =>

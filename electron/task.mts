@@ -16,6 +16,11 @@ if (argv.dev) {
   await $`npm run start`;
 }
 
+if (argv.devnode) {
+  await $`npx cross-env NODE_ENV=development myEnv=dev webpack -c webpack.no_electron.js`;
+  await $`node js/main_no_electron.js`;
+}
+
 if (argv.testprod) {
   await $`npx cross-env NODE_ENV=production myEnv=test webpack`;
   await $`npx cross-env NODE_ENV=production myEnv=test electron-builder`;
@@ -33,13 +38,33 @@ if (argv.prod) {
     if (os.platform() === "win32") {
       await $`npx cross-env NODE_ENV=production myEnv=prod electron-builder --publish never`;
     } else if (os.platform() === "darwin") {
-      if (process.env.GH_TOKEN) {
-        await $`npx cross-env NODE_ENV=production myEnv=prod electron-builder --mac --publish always`;
-      } else {
-        await $`npx cross-env NODE_ENV=production myEnv=prod electron-builder --mac --publish never`;
+      await $`npx cross-env NODE_ENV=production myEnv=prod electron-builder --mac --publish never`;
+    }
+  }
+}
+
+if (argv.build) {
+  await $`npx cross-env NODE_ENV=production myEnv=prod webpack`;
+  await $`npx cross-env NODE_ENV=production myEnv=prod electron-builder --publish never`;
+}
+
+if (argv.buildnode) {
+  await $`npx cross-env NODE_ENV=development myEnv=dev webpack -c webpack.no_electron.js`;
+  let rootPackageJSON = await fs.readJSON("../package.json");
+  let packageJSON = await fs.readJSON("./package.json");
+  let nodePackageJSON = await fs.readJSON("./package.nodejs.json");
+  Object.assign(packageJSON, nodePackageJSON);
+  packageJSON.version = rootPackageJSON.version;
+  // console.log(packageJSON.dependencies);
+  if (packageJSON.dependencies) {
+    for (let key in packageJSON.dependencies) {
+      if (key.startsWith("electron")) {
+        delete packageJSON.dependencies[key];
       }
     }
   }
+  await fs.writeJSON("./package.json", packageJSON, { spaces: 2 });
+  await fs.copy("../README.md", "README.md");
 }
 
 // 压缩文件夹
