@@ -14,6 +14,7 @@ import {
   Select,
   Slider,
   Space,
+  Switch,
   Tree,
   TreeDataNode,
   TreeProps,
@@ -37,6 +38,7 @@ interface Values {
   allowMCPs: string[];
   modelKey: string;
   attachedDialogueCount?: number;
+  confirm_call_tool: boolean;
 }
 
 interface CollectionCreateFormProps {
@@ -132,6 +134,16 @@ const ModalForm: React.FC<CollectionCreateFormProps> = ({
       >
         <NumberStep defaultValue={20} max={40} />
       </Form.Item>
+      <Form.Item
+        name="confirm_call_tool"
+        label={t`callToolType`}
+        tooltip={t`Do you want to confirm calling the tool?`}
+      >
+        <Radio.Group>
+          <Radio value={true}>{t`Need Confirm`}</Radio>
+          <Radio value={false}>{t`Direct Call`}</Radio>
+        </Radio.Group>
+      </Form.Item>
       <Form.Item name="callable" label={t`Callable`} valuePropName="checked">
         <Checkbox
           onChange={() => {
@@ -172,6 +184,7 @@ export const PromptsModal: React.FC<CollectionCreateFormModalProps> = ({
 }) => {
   const [formInstance, setFormInstance] = useState<FormInstance>();
   initialValues.allowMCPs = initialValues.allowMCPs || [];
+  initialValues.confirm_call_tool = initialValues.confirm_call_tool == undefined ? false : initialValues.confirm_call_tool;
 
   return (
     <Modal

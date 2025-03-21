@@ -906,5 +906,21 @@
     "Keep the chat history for the last 15 days": {
         "en": "Keep the chat history for the last 15 days",
         "zh": "保存过去15天的聊天记录"
+    },
+    "callToolType": {
+        "en": "callToolType",
+        "zh": "调用工具方式"
+    },
+    "Do you want to confirm calling the tool?": {
+        "en": "Do you want to confirm calling the tool?",
+        "zh": "您想确认调用该工具吗？"
+    },
+    "Need Confirm": {
+        "en": "Need Confirm",
+        "zh": "需要确认"
+    },
+    "Direct Call": {
+        "en": "Direct Call",
+        "zh": "直接调用"
     }
 }

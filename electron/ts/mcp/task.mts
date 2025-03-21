@@ -49,7 +49,7 @@ global.ext = {
   },
   receive: () => {},
 };
-// import { OpenAiChannel } from "../../../web/src/common/openai";
+
 const { OpenAiChannel } = await import("../../../web/src/common/openai");
 import { getToolsOnNode } from "../../../web/src/common/mcptool";
 import { v4 } from "uuid";
@@ -97,7 +97,7 @@ export async function callAgent(obj: {
     );
 
     let openai = new OpenAiChannel(
-      { ...config, allowMCPs: agent.allowMCPs },
+      { ...config, ...agent, allowMCPs: agent.allowMCPs },
       [
         {
           role: "system",
@@ -105,7 +105,6 @@ export async function callAgent(obj: {
         },
         { role: "user", content: obj.message },
       ],
-      false
     );
     await openai.completion();
     let res = openai.lastMessage.content;
@@ -124,6 +123,7 @@ export async function callAgent(obj: {
       isCalled: obj.type === "isCalled",
       isTask: obj.type === "task",
       taskKey: obj.taskKey,
+      confirm_call_tool: false,
     };
     ChatHistory.initSync().data.unshift(item);
     await ChatHistory.save();

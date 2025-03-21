@@ -102,14 +102,16 @@ export class OpenAiChannel {
       baseURL: string;
       model: string;
       apiKey: string;
+      requestType?: "complete" | "stream";
       call_tool_step?: number;
       supportTool?: boolean;
       supportImage?: boolean;
       allowMCPs?: string[];
       temperature?: number;
+      confirm_call_tool?: boolean;
     },
     public messages: MyMessage[],
-    public stream = true,
+    // public stream = true,
   ) {
     this.openai = new OpenAI({
       baseURL: options.baseURL,
@@ -282,7 +284,7 @@ export class OpenAiChannel {
     this.messages.push(res as any);
     onUpdate && onUpdate(this.lastMessage.content as string);
     try {
-      if (this.stream) {
+      if (this.options.requestType === "stream") {
         const stream = await this.openai.chat.completions.create(
           {
             messages: this.messages_format(messages),
@@ -473,6 +475,12 @@ export class OpenAiChannel {
     if (tool_calls.length > 0 && call_tool) {
       this.lastMessage.tool_calls = tool_calls;
       for (let tool of tool_calls) {
+        if (process.env.runtime !== "node") {
+          if (this.options.confirm_call_tool) {
+            const { callToolConfirm } = await import("./call_tool_confirm");
+            await callToolConfirm(tool);
+          }
+        }
         try {
           tool.function.argumentsJSON = JSON.parse(tool.function.arguments);
         } catch {
@@ -505,6 +513,7 @@ export class OpenAiChannel {
             (await getWebSocket()).emit("active", deviceId);
           }
         }
+
         let call_res = await call("mcpCallTool", [
           clientName,
           localtool.origin_name,
