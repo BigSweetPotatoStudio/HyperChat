@@ -18,7 +18,7 @@ export async function isPortUse(port: number): Promise<boolean> {
 
     server.once("listening", () => {
       // 端口未被使用
-      console.log(`Port ${port} is available.`);
+      // console.log(`Port ${port} is available.`);
       server.close();
       resolve(false);
     });

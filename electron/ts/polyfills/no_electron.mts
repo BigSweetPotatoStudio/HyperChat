@@ -41,14 +41,17 @@ class LoggerC extends LoggerPolyfill {
   info(...args) {
     let [msg, ...rest] = args;
     logger.info(msg, ...rest);
+    console.log(...args);
   }
   warn(...args) {
     let [msg, ...rest] = args;
     logger.warn(msg, ...rest);
+    console.log(...args);
   }
   error(...args) {
     let [msg, ...rest] = args;
     logger.error(msg, ...rest);
+    console.log(...args);
   }
   path = logpath;
 }

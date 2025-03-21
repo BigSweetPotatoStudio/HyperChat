@@ -123,7 +123,7 @@ export class MCPClient {
           });
       });
   }
-  async callResource(uri: string): Promise<any> {
+  async callResource(uri: string): Promise<MCPTypes.ReadResourceResult> {
     Logger.info("MCP callTool", uri);
     if (this.status == "disconnected") {
       Logger.error("MCP callTool disconnected, restarting");
