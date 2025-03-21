@@ -130,8 +130,17 @@ function JsonSchema2ProFormColumnsType(schema: any): ProFormColumnsType[] {
 
       let type = prop.type;
       let required = true;
+      let description = prop.description;
+      let defaultValue = prop.default;
       if (Array.isArray(prop.type)) {
         type = prop.type[0];
+        required = !prop.type.include("null");
+      }
+      if (Array.isArray(prop.anyOf)) {
+        type = prop.anyOf[0].type;
+        description = prop.anyOf[0].description;
+        defaultValue = prop.anyOf[0].default;
+        required = !prop.anyOf.find((x) => x.type == "null");
       }
       let formItemProps = {
         required: required,
@@ -140,10 +149,10 @@ function JsonSchema2ProFormColumnsType(schema: any): ProFormColumnsType[] {
             required: required,
           },
         ],
-        tooltip: prop.description,
+        tooltip: description,
       };
       let fieldProps = {
-        placeholder: prop.description,
+        placeholder: description,
         style: {
           width: "100%",
         },

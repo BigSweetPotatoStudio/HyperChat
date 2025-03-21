@@ -8,7 +8,7 @@ import { MCPServerPORT } from "../../common/data.mjs";
 
 export async function initMcpServer() {
   let PORT = await new Promise<number>(async (resolve, reject) => {
-    Logger.info("initMcpServer", MCPServerPORT);
+    // Logger.info("initMcpServer", MCPServerPORT);
     const app = App();
 
     function register(serve: typeof HyperTools) {
@@ -23,17 +23,15 @@ export async function initMcpServer() {
       register(serve);
     }
     let PORT = MCPServerPORT;
-    //   app.listen(PORT, () => {
-    //     console.log(`McpServer is running on port ${PORT}`);
-    //   });
 
     PORT = await execFallback(PORT, (port: number) => {
       app.listen(port, () => {
-        console.log(`McpServer is running on port ${port}`);
+        // console.log(`McpServer is running on port ${port}`);
         resolve(port);
       });
     });
   });
+  electronData.initSync();
   electronData.get().mcp_server_port = PORT;
   await electronData.save();
 }

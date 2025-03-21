@@ -50,6 +50,7 @@ import React, {
 } from "react";
 import OpenAI from "openai";
 import { v4 } from "uuid";
+import * as MCPTypes from "@modelcontextprotocol/sdk/types.js";
 
 function urlToBase64(url: string) {
   return new Promise<string>((resolve, reject) => {
@@ -137,6 +138,7 @@ import {
   DownloadOutlined,
   UploadOutlined,
   StockOutlined,
+  WechatWorkOutlined,
 } from "@ant-design/icons";
 import type { ConfigProviderProps, GetProp } from "antd";
 import { MyMessage, OpenAiChannel } from "../../common/openai";
@@ -432,6 +434,76 @@ export const Chat = ({
             {x.role == "user" && x.content_attached == false && (
               <Tooltip title="Cleared">
                 <MinusCircleOutlined className="cursor-not-allowed" />
+              </Tooltip>
+            )}
+            {x.role == "user" && (
+              <Tooltip title="New Chat">
+                <WechatWorkOutlined
+                  onClick={async () => {
+                    let find = Agents.get().data.find(
+                      (y) => y.key === currentChat.current.agentKey,
+                    );
+                    await currentChatReset(
+                      {
+                        allowMCPs: find.allowMCPs,
+                        agentKey: find.key,
+                        modelKey: find.modelKey,
+                        attachedDialogueCount: find.attachedDialogueCount,
+                        temperature: find.temperature,
+                      },
+                      find.prompt,
+                    );
+                    if (Array.isArray(x.content)) {
+                      console.log("x.content", x);
+
+                      setResourceResList(
+                        x.content.slice(1).map((x) => {
+                          if (x.type == "text") {
+                            return {
+                              call_name: "new-chat",
+                              contents: [
+                                {
+                                  text: x.text,
+                                  type: "text",
+                                },
+                              ],
+                              uid: v4(),
+                            };
+                          } else if (x.type == "image_url") {
+                            return {
+                              call_name: "new-chat",
+                              contents: [
+                                {
+                                  path: undefined,
+                                  blob: x.image_url.url,
+                                  type: "image",
+                                },
+                              ],
+                              uid: v4(),
+                            };
+                          } else {
+                            console.log("unknown type", x);
+                          }
+                        }),
+                      );
+                      setTimeout(() => {
+                        if (
+                          (x.content[0] as OpenAI.ChatCompletionContentPartText)
+                            .type == "text"
+                        ) {
+                          onRequest(
+                            (
+                              x
+                                .content[0] as OpenAI.ChatCompletionContentPartText
+                            ).text,
+                          );
+                        }
+                      }, 500);
+                    } else {
+                      onRequest(x.content as any);
+                    }
+                  }}
+                />
               </Tooltip>
             )}
           </Space>
@@ -927,11 +999,12 @@ export const Chat = ({
   };
 
   const [resourceResList, setResourceResList] = React.useState<
-    Array<{
-      call_name: string;
-      uid: string;
-      contents: any[];
-    }>
+    Array<
+      MCPTypes.ReadResourceResult & {
+        call_name: string;
+        uid: string;
+      }
+    >
   >([]);
   const [promptResList, setPromptResList] = React.useState([]);
 
@@ -1155,14 +1228,14 @@ export const Chat = ({
                           //   icon: <EditOutlined />,
                           // },
                           {
-                            label: t`Clone`,
-                            key: "clone",
-                            icon: <CopyOutlined />,
-                          },
-                          {
                             label: t`Star`,
                             key: "star",
                             icon: <StarOutlined />,
+                          },
+                          {
+                            label: t`Clone`,
+                            key: "clone",
+                            icon: <CopyOutlined />,
                           },
                           {
                             label: t`Remove`,
@@ -1453,10 +1526,13 @@ export const Chat = ({
                             resource.clientName as string,
                             resource.uri,
                           ]);
-                          console.log("mcpCallResource", res);
-                          res.call_name = resource.key + "--" + resource.uri;
-                          res.uid = v4();
-                          setResourceResList([...resourceResList, res]);
+                          let t = {
+                            ...res,
+                            call_name: resource.key + "--" + resource.uri,
+                            uid: v4(),
+                          };
+                          console.log("mcpCallResource", t);
+                          setResourceResList([...resourceResList, t]);
                         }
                       },
                     }}
