@@ -121,6 +121,7 @@ export type ChatHistoryItem = {
   attachedDialogueCount?: number;
   temperature?: number;
   deleted?: boolean;
+  confirm_call_tool: boolean;
 };
 
 export const ChatHistory = new Data("chat_history.json", {
@@ -138,6 +139,7 @@ export const Agents = new Data("gpts_list.json", {
     modelKey?: string;
     attachedDialogueCount?: number;
     temperature?: number;
+    confirm_call_tool: boolean;
   }>,
 });
 

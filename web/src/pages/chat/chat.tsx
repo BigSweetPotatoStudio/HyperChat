@@ -241,7 +241,7 @@ export const Chat = ({
     // };
   }, []);
 
-  const onGPTSClick = async (key: string) => {
+  const onGPTSClick = async (key: string, { loadHistory = true } = {}) => {
     let find = Agents.get().data.find((y) => y.key === key);
     await currentChatReset(
       {
@@ -250,12 +250,15 @@ export const Chat = ({
         modelKey: find.modelKey,
         attachedDialogueCount: find.attachedDialogueCount,
         temperature: find.temperature,
+        confirm_call_tool: find.confirm_call_tool,
       },
       find.prompt,
     );
-    selectGptsKey.current = find.key;
-    historyFilterType.current = "all";
-    loadMoreData(false);
+    if (loadHistory) {
+      selectGptsKey.current = find.key;
+      historyFilterType.current = "all";
+      loadMoreData(false);
+    }
   };
 
   const openaiClient = useRef<OpenAiChannel>();
@@ -286,6 +289,7 @@ export const Chat = ({
     dateTime: Date.now(),
     isCalled: data.agentKey ? true : false,
     isTask: false,
+    confirm_call_tool: false,
   };
 
   const currentChat = React.useRef<ChatHistoryItem>(defaultChatValue);
@@ -307,7 +311,7 @@ export const Chat = ({
       ...newConfig,
     };
 
-    setResourceResList([]);
+    resourceResListRef.current = [];
     setPromptResList([]);
     let clients = await getClients().catch(() => []);
     clientsRef.current = clients;
@@ -398,6 +402,63 @@ export const Chat = ({
         },
         footer: (
           <Space>
+            {x.role == "user" && (
+              <Tooltip title="New Chat">
+                <WechatWorkOutlined
+                  onClick={async () => {
+                    await onGPTSClick(currentChat.current.agentKey, {
+                      loadHistory: false,
+                    });
+                    if (Array.isArray(x.content)) {
+                      console.log("x.content", x);
+
+                      resourceResListRef.current = x.content
+                        .slice(1)
+                        .map((x) => {
+                          if (x.type == "text") {
+                            return {
+                              call_name: "new-chat",
+                              contents: [
+                                {
+                                  text: x.text,
+                                  type: "text",
+                                },
+                              ],
+                              uid: v4(),
+                            };
+                          } else if (x.type == "image_url") {
+                            return {
+                              call_name: "new-chat",
+                              contents: [
+                                {
+                                  path: undefined,
+                                  blob: x.image_url.url,
+                                  type: "image",
+                                },
+                              ],
+                              uid: v4(),
+                            };
+                          } else {
+                            console.log("unknown type", x);
+                          }
+                        });
+
+                      if (
+                        (x.content[0] as OpenAI.ChatCompletionContentPartText)
+                          .type == "text"
+                      ) {
+                        onRequest(
+                          (x.content[0] as OpenAI.ChatCompletionContentPartText)
+                            .text,
+                        );
+                      }
+                    } else {
+                      onRequest(x.content as any);
+                    }
+                  }}
+                />
+              </Tooltip>
+            )}
             <CopyOutlined
               className="hover:text-cyan-400"
               key="copy"
@@ -434,76 +495,6 @@ export const Chat = ({
             {x.role == "user" && x.content_attached == false && (
               <Tooltip title="Cleared">
                 <MinusCircleOutlined className="cursor-not-allowed" />
-              </Tooltip>
-            )}
-            {x.role == "user" && (
-              <Tooltip title="New Chat">
-                <WechatWorkOutlined
-                  onClick={async () => {
-                    let find = Agents.get().data.find(
-                      (y) => y.key === currentChat.current.agentKey,
-                    );
-                    await currentChatReset(
-                      {
-                        allowMCPs: find.allowMCPs,
-                        agentKey: find.key,
-                        modelKey: find.modelKey,
-                        attachedDialogueCount: find.attachedDialogueCount,
-                        temperature: find.temperature,
-                      },
-                      find.prompt,
-                    );
-                    if (Array.isArray(x.content)) {
-                      console.log("x.content", x);
-
-                      setResourceResList(
-                        x.content.slice(1).map((x) => {
-                          if (x.type == "text") {
-                            return {
-                              call_name: "new-chat",
-                              contents: [
-                                {
-                                  text: x.text,
-                                  type: "text",
-                                },
-                              ],
-                              uid: v4(),
-                            };
-                          } else if (x.type == "image_url") {
-                            return {
-                              call_name: "new-chat",
-                              contents: [
-                                {
-                                  path: undefined,
-                                  blob: x.image_url.url,
-                                  type: "image",
-                                },
-                              ],
-                              uid: v4(),
-                            };
-                          } else {
-                            console.log("unknown type", x);
-                          }
-                        }),
-                      );
-                      setTimeout(() => {
-                        if (
-                          (x.content[0] as OpenAI.ChatCompletionContentPartText)
-                            .type == "text"
-                        ) {
-                          onRequest(
-                            (
-                              x
-                                .content[0] as OpenAI.ChatCompletionContentPartText
-                            ).text,
-                          );
-                        }
-                      }, 500);
-                    } else {
-                      onRequest(x.content as any);
-                    }
-                  }}
-                />
               </Tooltip>
             )}
           </Space>
@@ -715,15 +706,19 @@ export const Chat = ({
                                     }}
                                   >
                                     <span>Tool Name: </span>
-                                    {tool.restore_name || tool.function.name}
+                                    <span className="text-red-400">
+                                      {tool.restore_name || tool.function.name}
+                                    </span>
                                   </pre>
+                                  <div>
+                                    <span>Tool Arguments: </span>
+                                  </div>
                                   <pre
                                     style={{
                                       whiteSpace: "pre-wrap",
                                       wordWrap: "break-word",
                                     }}
                                   >
-                                    <span>Tool Arguments: </span>{" "}
                                     {tool.function.arguments}
                                   </pre>
                                 </div>
@@ -824,15 +819,16 @@ export const Chat = ({
         baseURL: config.baseURL,
         model: config.model,
         apiKey: config.apiKey,
+        requestType: "stream",
         call_tool_step: config.call_tool_step,
         supportTool: config.supportTool,
         supportImage: config.supportImage,
 
         allowMCPs: currentChat.current.allowMCPs,
         temperature: currentChat.current.temperature,
+        confirm_call_tool: currentChat.current.confirm_call_tool,
       },
       currentChat.current.messages,
-      currentChat.current.requestType == "stream",
     );
     currentChat.current.messages = openaiClient.current.messages;
     refresh();
@@ -847,7 +843,13 @@ export const Chat = ({
 
       if (currentChat.current.sended == false) {
         createChat();
-
+        if (message) {
+          openaiClient.current.addMessage(
+            { role: "user", content: message },
+            resourceResListRef.current,
+            promptResList,
+          );
+        }
         currentChatReset({
           ...currentChat.current,
           // agentKey: currentChat.current.agentKey,
@@ -860,19 +862,12 @@ export const Chat = ({
           sended: true,
           dateTime: Date.now(),
         });
-        if (message) {
-          openaiClient.current.addMessage(
-            { role: "user", content: message },
-            resourceResList,
-            promptResList,
-          );
-        }
         ChatHistory.get().data.unshift(currentChat.current);
       } else {
         if (message) {
           openaiClient.current.addMessage(
             { role: "user", content: message },
-            resourceResList,
+            resourceResListRef.current,
             promptResList,
           );
         }
@@ -994,11 +989,19 @@ export const Chat = ({
     loadDataTatal.current = formmatedData.length;
     formmatedData = formmatedData.slice(0, loadIndex.current);
     setConversations(formmatedData);
-    console.log("loadMoreData", loadIndex.current, loadDataTatal.current);
+    // console.log("loadMoreData", loadIndex.current, loadDataTatal.current);
     setLoadMoreing(false);
   };
 
-  const [resourceResList, setResourceResList] = React.useState<
+  // const [resourceResList, setResourceResList] = React.useState<
+  //   Array<
+  //     MCPTypes.ReadResourceResult & {
+  //       call_name: string;
+  //       uid: string;
+  //     }
+  //   >
+  // >([]);
+  const resourceResListRef = useRef<
     Array<
       MCPTypes.ReadResourceResult & {
         call_name: string;
@@ -1006,6 +1009,7 @@ export const Chat = ({
       }
     >
   >([]);
+
   const [promptResList, setPromptResList] = React.useState([]);
 
   const [isFillPromptModalOpen, setIsFillPromptModalOpen] =
@@ -1082,21 +1086,10 @@ export const Chat = ({
                       className="ml-1 w-full"
                       onClick={() => {
                         if (openaiClient.current) {
-                          let find = Agents.get().data.find(
-                            (y) =>
-                              y.key === currentChat.current.agentKey ||
-                              y.key === currentChat.current["gptsKey"],
-                          );
-                          currentChatReset(
-                            {
-                              allowMCPs: find.allowMCPs,
-                              agentKey: find.key,
-                              modelKey: find.modelKey,
-                              attachedDialogueCount: find.attachedDialogueCount,
-                              temperature: find.temperature,
-                            },
-                            find.prompt,
-                          );
+                          let key =
+                            currentChat.current.agentKey ||
+                            currentChat.current["gptsKey"];
+                          onGPTSClick(key, { loadHistory: false });
                         }
                       }}
                     >
@@ -1330,7 +1323,9 @@ export const Chat = ({
                     ></Input>
                     <Button
                       onClick={() => {
-                        setPromptsModalValue({} as any);
+                        setPromptsModalValue({
+                          confirm_call_tool: false,
+                        } as any);
                         setIsOpenPromptsModal(true);
                       }}
                     >
@@ -1532,7 +1527,8 @@ export const Chat = ({
                             uid: v4(),
                           };
                           console.log("mcpCallResource", t);
-                          setResourceResList([...resourceResList, t]);
+                          resourceResListRef.current.push(t);
+                          refresh();
                         }
                       },
                     }}
@@ -1631,7 +1627,8 @@ export const Chat = ({
                       ],
                       onClick: (e) => {
                         currentChat.current.requestType = e.key as any;
-                        createChat();
+                        openaiClient.current.options.requestType = e.key as any;
+                        refresh();
                       },
                     }}
                   >
@@ -1664,16 +1661,17 @@ export const Chat = ({
                   onClick={() => {
                     setIsOpenMoreSetting(true);
                     formMoreSetting.resetFields();
+                    console.log(currentChat.current);
                     formMoreSetting.setFieldsValue(currentChat.current);
                   }}
                 />
               </div>
               <MyAttachR
-                resourceResList={resourceResList}
+                resourceResList={resourceResListRef.current}
                 resourceResListRemove={(x) => {
-                  setResourceResList(
-                    resourceResList.filter((v) => v.uid != x.uid),
-                  );
+                  resourceResListRef.current =
+                    resourceResListRef.current.filter((v) => v.uid != x.uid);
+                  refresh();
                   message.success(t`Delete Success`);
                 }}
                 promptResList={promptResList}
@@ -1699,7 +1697,7 @@ export const Chat = ({
                           // console.log(path);
                           if (path == "") return;
                           path = "file://" + path;
-                          resourceResList.push({
+                          resourceResListRef.current.push({
                             call_name: "UserUpload",
                             contents: [
                               {
@@ -1710,7 +1708,7 @@ export const Chat = ({
                             ],
                             uid: v4(),
                           });
-                          setResourceResList(resourceResList.slice());
+                          refresh();
                         }}
                       >
                         <Button
@@ -1726,7 +1724,7 @@ export const Chat = ({
                     if (file.path != "") {
                       let path = "file://" + file.path;
                       let p = await urlToBase64(path);
-                      resourceResList.push({
+                      resourceResListRef.current.push({
                         call_name: "UserUpload",
                         contents: [
                           {
@@ -1737,15 +1735,14 @@ export const Chat = ({
                         ],
                         uid: v4(),
                       });
-
-                      setResourceResList(resourceResList.slice());
+                      refresh();
                     } else {
                       if (file.size > 0) {
                         let blob = new Blob([await file.arrayBuffer()], {
                           type: file.type,
                         });
                         let p = await blobToBase64(blob);
-                        resourceResList.push({
+                        resourceResListRef.current.push({
                           call_name: "UserUpload",
                           contents: [
                             {
@@ -1756,7 +1753,7 @@ export const Chat = ({
                           ],
                           uid: v4(),
                         });
-                        setResourceResList(resourceResList.slice());
+                        refresh();
                       }
                     }
                   }}
@@ -1939,7 +1936,12 @@ export const Chat = ({
                   );
                   openaiClient.current.options.temperature = values.temperature;
                 }
-
+                currentChat.current.confirm_call_tool =
+                  values.confirm_call_tool;
+                if (openaiClient.current) {
+                  openaiClient.current.options.confirm_call_tool =
+                    values.confirm_call_tool;
+                }
                 refresh();
                 setIsOpenMoreSetting(false);
               }}
@@ -1961,6 +1963,16 @@ export const Chat = ({
             tooltip={t`Number of sent Dialogue Message attached per request`}
           >
             <NumberStep defaultValue={20} max={40} />
+          </Form.Item>
+          <Form.Item
+            name="confirm_call_tool"
+            label={t`callToolType`}
+            tooltip={t`Do you want to confirm calling the tool?`}
+          >
+            <Radio.Group>
+              <Radio value={true}>{t`Need Confirm`}</Radio>
+              <Radio value={false}>{t`Direct Call`}</Radio>
+            </Radio.Group>
           </Form.Item>
         </Modal>
       </div>
