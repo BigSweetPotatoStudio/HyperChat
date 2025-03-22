@@ -27,3 +27,19 @@ export const { getDefaultEnvironment } = await import(
 export const ChromeLauncher = await import(
   /* webpackIgnore: true */ "chrome-launcher"
 );
+
+export const { Client } = await import(
+  /* webpackIgnore: true */ "@modelcontextprotocol/sdk/client/index.js"
+);
+
+export const { SSEClientTransport } = await import(
+  /* webpackIgnore: true */ "@modelcontextprotocol/sdk/client/sse.js"
+);
+export const {
+  ListToolsResultSchema,
+  CallToolRequestSchema,
+  CallToolResultSchema,
+  CompatibilityCallToolResultSchema,
+} = await import(
+  /* webpackIgnore: true */ "@modelcontextprotocol/sdk/types.js"
+);

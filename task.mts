@@ -48,6 +48,23 @@ fs.writeFileSync(
     )
 );
 
+fs.writeFileSync(
+  "./electron/node_modules/@modelcontextprotocol/sdk/dist/cjs/client/stdio.js",
+  fs
+    .readFileSync(
+      "./electron/node_modules/@modelcontextprotocol/sdk/dist/cjs/client/stdio.js"
+    )
+    .toString()
+    .replace(
+      `const node_child_process_1 = require("node:child_process");`,
+      `const spawn = require("cross-spawn");`
+    )
+    .replace(
+      `node_child_process_1.spawn`,
+      `spawn`
+    )
+);
+
 // if (
 //   !fs
 //     .readFileSync(

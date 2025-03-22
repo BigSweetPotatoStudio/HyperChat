@@ -1,4 +1,4 @@
-import { configType, server } from "./lib.mjs";
+import { configSchema, server } from "./lib.mjs";
 import { z } from "zod";
 import { getConfg } from "ts/mcp/utils.mjs";
 import * as web1 from "./web1.mjs";
@@ -15,7 +15,7 @@ server.tool(
   async ({ url }) => {
     let mcpconfig = await getConfg();
     let config = mcpconfig.mcpServers["hyper_tools"].hyperchat
-      .config as z.infer<typeof configType>;
+      .config as z.infer<typeof configSchema>;
     let md = "";
     if (config.Web_Tools_Platform == "chrome") {
       md = await web2.fetch(url);
@@ -39,7 +39,7 @@ server.tool(
   async ({ words }) => {
     let mcpconfig = await getConfg();
     let config = mcpconfig.mcpServers["hyper_tools"].hyperchat
-      .config as z.infer<typeof configType>;
+      .config as z.infer<typeof configSchema>;
     let res = [];
     if (config.Web_Tools_Platform == "chrome") {
       res = await web2.search(words);

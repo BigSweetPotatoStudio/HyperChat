@@ -33,7 +33,6 @@
     "src",
     "types",
     "eval",
-    "../common"
   ],
   "exclude": [
     "node_modules"

@@ -20,14 +20,7 @@ async function handlePostMessage(req, res) {
   await transport.handlePostMessage(req, res);
 }
 
-export const HyperTools = {
-  createServer,
-  handlePostMessage,
-  name: NAME,
-  url: ``,
-};
-
-export const configType = z.object({
+export const configSchema = z.object({
   Web_Tools_Platform: z
     .enum(["electron", "chrome"], {
       description: "Platform using web tools",
@@ -53,10 +46,19 @@ export const configType = z.object({
       description: "starting Page Url",
     })
     .default("https://github.com/BigSweetPotatoStudio/HyperChat"),
-  chromePath: z
-    .string({
-      description: "Chrome Path",
-      required_error: "Chrome Path is required",
-    })
-    .default(""),
+  chromePath: z.nullable(
+    z
+      .string({
+        description: "Chrome Path",
+      })
+      .default("")
+  ),
 });
+
+export const HyperTools = {
+  createServer,
+  handlePostMessage,
+  name: NAME,
+  url: ``,
+  configSchema: configSchema,
+};
