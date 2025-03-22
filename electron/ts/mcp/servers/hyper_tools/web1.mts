@@ -3,6 +3,7 @@ import { Logger } from "ts/polyfills/index.mjs";
 import path from "path";
 import { sleep } from "ts/common/util.mjs";
 import { zx } from "ts/es6.mjs";
+import { getConfig } from "./lib.mjs";
 const { fs } = zx;
 
 export async function fetch(url: string) {
@@ -58,6 +59,7 @@ export async function fetch(url: string) {
     );
     return md as string;
   } catch (e) {
+    Logger.error(e);
     throw new Error("Failed to fetch URL");
   } finally {
     win.close();
@@ -74,29 +76,70 @@ export async function search(words: string) {
     },
   });
   // win.webContents.openDevTools();
+
   try {
-    await win.loadURL(
-      `https://www.google.com/search?q=` + encodeURIComponent(words),
-      {
-        userAgent:
-          "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/132.0.0.0 Safari/537.36",
-      }
-    );
+    if (getConfig().SEARCH_ENGINE == "bing") {
+      await win.loadURL(
+        `https://www.bing.com/search?q=` + encodeURIComponent(words),
+        {
+          userAgent:
+            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/132.0.0.0 Safari/537.36",
+        }
+      );
 
-    // 等待页面加载完成
-    await Promise.race([
-      new Promise((resolve) => {
-        win.webContents.on("did-finish-load", () => {
-          resolve(0);
+      // 等待页面加载完成
+      await Promise.race([
+        new Promise((resolve) => {
+          win.webContents.on("did-finish-load", () => {
+            resolve(0);
+          });
+        }),
+        sleep(3000),
+      ]);
+
+      Logger.info("Page loaded");
+      let res = await executeClientScript(
+        win,
+        `
+        let resArr = [];
+  
+  let arr = document.querySelectorAll("#b_results .b_algo");
+  
+  for (let x of arr) {
+        resArr.push({
+          title: x.querySelector("h2").innerText,
+          url: x.querySelector("h2 a").href,
+          description: x.querySelector("p").innerText,
         });
-      }),
-      sleep(3000),
-    ]);
+  }
+    resolve(resArr);
+        `
+      );
 
-    Logger.info("Page loaded");
-    let res = await executeClientScript(
-      win,
-      `
+      return res as any[];
+    } else {
+      await win.loadURL(
+        `https://www.google.com/search?q=` + encodeURIComponent(words),
+        {
+          userAgent:
+            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/132.0.0.0 Safari/537.36",
+        }
+      );
+
+      // 等待页面加载完成
+      await Promise.race([
+        new Promise((resolve) => {
+          win.webContents.on("did-finish-load", () => {
+            resolve(0);
+          });
+        }),
+        sleep(3000),
+      ]);
+
+      Logger.info("Page loaded");
+      let res = await executeClientScript(
+        win,
+        `
       let resArr = [];
 
 let arr = document.querySelector("#search").querySelectorAll("span>a");
@@ -122,14 +165,12 @@ for (let a of arr) {
 }
   resolve(resArr);
       `
-    );
-    Logger.info(
-      "Searching: ",
-      `https://www.google.com/search?q=` + encodeURIComponent(words),
-      res
-    );
-    return res as any[];
+      );
+
+      return res as any[];
+    }
   } catch (e) {
+    Logger.error(e);
     throw new Error("Search failed");
   } finally {
     win.close();

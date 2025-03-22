@@ -5,6 +5,7 @@ import { ChromeLauncher, zx } from "ts/es6.mjs";
 
 import { configSchema, getConfig, NAME } from "./lib.mjs";
 import { z } from "zod";
+import { Logger } from "ts/polyfills/polyfills.mjs";
 const { fs } = zx;
 
 // let mcpconfig = await getMCPConfg();
@@ -111,23 +112,27 @@ export const fetch = async (url: string) => {
     )) as string;
     await page.close();
     return md;
+  } catch (e) {
+    Logger.error(e);
+    throw e;
   } finally {
   }
 };
 
 export const search = async (words: string) => {
-  let browser = await createBrowser();
+  try {
+    let browser = await createBrowser();
 
-  let res = [];
-  let page = await browser.newPage();
-  if (getConfig().SEARCH_ENGINE == "bing") {
-    await page.goto(
-      `https://www.bing.com/search?q=` + encodeURIComponent(words)
-    );
-    await Promise.race([page.waitForNetworkIdle(), sleep(3000)]);
-    res = await executeClientScript(
-      page,
-      `
+    let res = [];
+    let page = await browser.newPage();
+    if (getConfig().SEARCH_ENGINE == "bing") {
+      await page.goto(
+        `https://www.bing.com/search?q=` + encodeURIComponent(words)
+      );
+      await Promise.race([page.waitForNetworkIdle(), sleep(3000)]);
+      res = await executeClientScript(
+        page,
+        `
         let resArr = [];
   
   let arr = document.querySelectorAll("#b_results .b_algo");
@@ -141,16 +146,16 @@ export const search = async (words: string) => {
   }
     resolve(resArr);
         `
-    );
-    await page.close();
-  } else {
-    await page.goto(
-      `https://www.google.com/search?q=` + encodeURIComponent(words)
-    );
-    await Promise.race([page.waitForNetworkIdle(), sleep(3000)]);
-    res = await executeClientScript(
-      page,
-      `
+      );
+      await page.close();
+    } else {
+      await page.goto(
+        `https://www.google.com/search?q=` + encodeURIComponent(words)
+      );
+      await Promise.race([page.waitForNetworkIdle(), sleep(3000)]);
+      res = await executeClientScript(
+        page,
+        `
         let resArr = [];
   
   let arr = document.querySelector("#search").querySelectorAll("span>a");
@@ -176,10 +181,15 @@ export const search = async (words: string) => {
   }
     resolve(resArr);
         `
-    );
-    await page.close();
+      );
+      await page.close();
+    }
+    return res;
+  } catch (e) {
+    Logger.error(e);
+    throw e;
+  } finally {
   }
-  return res;
 };
 
 async function executeClientScript<T>(page: Page, script: string): Promise<T> {
