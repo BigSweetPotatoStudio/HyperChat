@@ -3,9 +3,10 @@ import OpenAI from "openai";
 import * as MCPTypes from "@modelcontextprotocol/sdk/types.js";
 import { sleep } from "./sleep";
 import type { MCPClient } from "../../../electron/ts/mcp/config.mjs";
-import { get } from "http";
+
 
 import { TEMP_FILE, MCP_CONFIG, MCP_CONFIG_TYPE } from "../../../common/data";
+
 
 let init = false;
 let McpClients: {
@@ -31,8 +32,8 @@ export type InitedClient = {
   name: string;
   status: string;
   order: number;
-  // enable: boolean;
   config: MCP_CONFIG_TYPE;
+  ext: any;
 };
 
 let initedClientArray: Array<InitedClient> = [];
@@ -160,7 +161,7 @@ function mcpClientsToArray(mcpClients: {
       set config(value: any) {
         MCP_CONFIG.get().mcpServers[key] = value;
       },
-      // enable: !MCP_CONFIG.get().mcpServers[key]?.disabled,
+      ext: client.ext,
     });
   }
   array.sort((a, b) => {

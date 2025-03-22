@@ -50,7 +50,7 @@ export async function createBrowser(log = false) {
         chromeFlags: newFlags,
         // handleSIGINT: true,
         logLevel: "silent",
-        chromePath: getConfig().chromePath,
+        chromePath: getConfig().chromePath || undefined,
         // chromePath: "C:\\Users\\0laop\\AppData\\Local\\Google\\Chrome SxS\\Application\\chrome.exe",
       });
       // console.log("Chrome debugging port: " + launcher.port);
