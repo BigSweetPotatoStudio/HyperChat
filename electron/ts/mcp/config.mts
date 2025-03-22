@@ -47,9 +47,6 @@ for (let s of MyServers) {
       type: "sse",
       scope: "built-in",
       config: config.mcpServers[key]?.hyperchat?.config || {},
-      configSchema: s.configSchema
-        ? zodToJsonSchema(s.configSchema)
-        : undefined,
     },
     disabled: config.mcpServers[key]?.disabled,
   };
@@ -88,7 +85,18 @@ export class MCPClient {
   public client: MCP.Client = undefined;
   public status: string = "disconnected";
 
-  constructor(public name: string, public config: MCP_CONFIG_TYPE) {}
+  public ext: {
+    configSchema?: { [s in string]: any };
+  } = {};
+
+  constructor(public name: string, public config: MCP_CONFIG_TYPE) {
+    let s = MyServers.find((s) => s.name == name);
+    if (s) {
+      this.ext.configSchema = s.configSchema
+        ? zodToJsonSchema(s.configSchema)
+        : undefined;
+    }
+  }
   async callTool(functionName: string, args: any): Promise<any> {
     Logger.info("MCP callTool", functionName, args);
     if (this.status == "disconnected") {

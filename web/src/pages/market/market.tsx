@@ -318,7 +318,7 @@ export function Market() {
         .map((x) => {
           return {
             ...x,
-            configSchema: x.config?.hyperchat?.configSchema,
+            configSchema: x.ext.configSchema,
           };
         })
         .concat(mcpExtensionData);
@@ -436,8 +436,7 @@ export function Market() {
   return (
     <div className="flex">
       <div className="w-2/5">
-        <h1 className=" ">💻MCP</h1>
-
+        {/* <h1 className=" ">💻MCP</h1> */}
         <Space className="mt-1">
           <Tooltip
             title={t`If you are using NVM, you might need to customize the PATH environment var.`}
@@ -861,7 +860,7 @@ export function Market() {
                 MCP_CONFIG.get().mcpServers[currRow.name].hyperchat.config =
                   values;
                 await MCP_CONFIG.save();
-                
+
                 await getClients(false);
                 setMcpconfigOpen(false);
               } else {

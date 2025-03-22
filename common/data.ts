@@ -174,7 +174,6 @@ export type MCP_CONFIG_TYPE = {
   env: { [s: string]: string };
   hyperchat: {
     config: { [s in string]: any };
-    configSchema?: { [s in string]: any };
     url: string;
     type: "stdio" | "sse";
     scope: "built-in" | "outer";

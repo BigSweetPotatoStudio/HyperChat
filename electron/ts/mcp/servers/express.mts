@@ -1,17 +1,25 @@
 import App from "express";
-import { HyperTools } from "./hyper_tools.mjs";
+
 import { electronData } from "../../../../common/data";
 import { execFallback } from "../../common/execFallback.mjs";
 import { Logger } from "ts/polyfills/index.mjs";
 import { MyServers } from "./index.mjs";
 import { MCPServerPORT } from "../../common/data.mjs";
 
+
+type HyperMcp = {
+  createServer,
+  handlePostMessage,
+  name: string,
+  url: string,
+};
+
 export async function initMcpServer() {
   let PORT = await new Promise<number>(async (resolve, reject) => {
     // Logger.info("initMcpServer", MCPServerPORT);
     const app = App();
 
-    function register(serve: typeof HyperTools) {
+    function register(serve: HyperMcp) {
       app.get(`/${serve.name}/sse`, async (req, res) => {
         await serve.createServer(`/${serve.name}/message`, res);
       });
