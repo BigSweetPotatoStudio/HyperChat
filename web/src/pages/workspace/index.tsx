@@ -124,9 +124,11 @@ function Page({
         />
       ) : curr.url ? (
         <webview
-          className="h-full w-full"
-          useragent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36"
+          className="webview h-full w-full"
+          // useragent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36"
           src={curr.url}
+          allowpopups={"true" as any}
+          partition="persist:webview"
         ></webview>
       ) : (
         "not support"
@@ -188,7 +190,6 @@ export function WorkSpace() {
           };
           setItems([...items, n]);
           setActiveKey(n.key);
-
         }
       },
     );
