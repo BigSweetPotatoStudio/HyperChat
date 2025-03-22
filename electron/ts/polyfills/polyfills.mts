@@ -7,11 +7,15 @@ export class LoggerPolyfill {
 
 export const Context = {
   Logger: {} as any,
-  CONST: {} as any,
+  CONST: {} as {
+    userDataPath: string;
+    getVersion: string;
+    appDataDir: string;
+    dirName: string;
+  },
   autoLauncher: {} as any,
   checkUpdate: {} as any,
 };
-
 
 export function Clone(a, b) {
   Object.assign(a, b);
@@ -61,8 +65,7 @@ export const autoLauncher = Context.autoLauncher as AutoLauncher;
 
 export class CheckUpdate {
   constructor() {}
-  checkUpdate() {
-  }
+  checkUpdate() {}
   // 退出并安装
   quitAndInstall() {}
   download() {}

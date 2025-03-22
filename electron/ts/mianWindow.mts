@@ -14,7 +14,6 @@ import path from "path";
 import { electronData } from "../../common/data";
 import p from "../package.json" assert { type: "json" };
 
-
 let title = `${p.productName}-${app.getVersion()} by Dadigua`;
 Logger.info("title   : ", title);
 
@@ -23,6 +22,13 @@ export const createWindow = () => {
     width: 1440,
     height: 900,
     title: title,
+    autoHideMenuBar: process.env.myEnv == "prod",
+    // titleBarOverlay: {
+    //   height: 40,
+    //   color: "rgba(255,255,255,0.1)",
+    //   symbolColor: "#000000",
+    // },
+    // titleBarStyle: process.platform === 'linux' ? 'default' : 'hidden',
     // fullscreen: true,
     // show: false,
     webPreferences: {
@@ -31,22 +37,29 @@ export const createWindow = () => {
       webviewTag: true, // 启用 webview 标签
       webSecurity: false,
       preload: path.join(__dirname, "./preload.js"), // 设置预加载的脚本
+      sandbox: false,
+      allowRunningInsecureContent: true
     },
     icon: path.join(__dirname, "../web-build/assets/favicon.png"),
   });
-
 
   // win.maximize()
   win.show();
   if (process.env.myEnv == "dev") {
     win.loadURL("http://localhost:8080/#/");
   } else {
-    win.loadURL(`http://localhost:${electronData.get().port}/${electronData.get().password}/#/`).catch((e) => {
-      let indexFile = path.join(__dirname, "../web-build/index.html");
-      win.loadFile(indexFile, {
-        hash: "#/",
+    win
+      .loadURL(
+        `http://localhost:${electronData.get().port}/${
+          electronData.get().password
+        }/#/`
+      )
+      .catch((e) => {
+        let indexFile = path.join(__dirname, "../web-build/index.html");
+        win.loadFile(indexFile, {
+          hash: "#/",
+        });
       });
-    });
   }
   // 处理新窗口打开
   win.webContents.setWindowOpenHandler(({ url }) => {
@@ -175,5 +188,3 @@ function fileUrlToPath(fileUrl: string): string {
 
   return localPath;
 }
-
-

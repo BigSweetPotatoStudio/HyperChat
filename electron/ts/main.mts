@@ -94,9 +94,9 @@ app.whenReady().then(async () => {
     throw e;
   }
 
-  if (process.env.myEnv == "prod") {
-    Menu.setApplicationMenu(null);
-  }
+  // if (process.env.myEnv == "prod") {
+  //   Menu.setApplicationMenu(null);
+  // }
 
   // if (process.platform != "darwin") {
   //   session.defaultSession.setDisplayMediaRequestHandler(

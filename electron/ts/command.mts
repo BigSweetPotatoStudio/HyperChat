@@ -33,7 +33,6 @@ import spawn from "cross-spawn";
 import {
   closeMcpClients,
   getMcpClients,
-  getMyDefaultEnvironment,
   initMcpClients,
   openMcpClient,
 } from "./mcp/config.mjs";
@@ -49,6 +48,7 @@ import {
 } from "../../common/data";
 import { EVENT } from "./common/event";
 import { callAgent, runTask, startTask, stopTask } from "./mcp/task.mjs";
+import { getMyDefaultEnvironment } from "./mcp/utils.mjs";
 
 // function logCommand(
 //   target: any,

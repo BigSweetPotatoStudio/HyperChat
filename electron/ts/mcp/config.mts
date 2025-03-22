@@ -8,7 +8,6 @@ import { Logger } from "ts/polyfills/index.mjs";
 import { appDataDir } from "ts/polyfills/index.mjs";
 import type { StdioServerParameters } from "@modelcontextprotocol/sdk/client/stdio.js";
 import { initMcpServer } from "./servers/express.mjs";
-import { MyServers } from "./servers/index.mjs";
 
 import {
   electronData,
@@ -22,10 +21,13 @@ import { clientPaths } from "./claude.mjs";
 import { startTask } from "./task.mjs";
 
 import { spawn } from "node:child_process";
+import { getConfg, getMyDefaultEnvironment } from "./utils.mjs";
 
 // import cross_spawn from "cross-spawn";
 
 // const spawn = os.type() === "Windows_NT" ? cross_spawn : node_spawn;
+
+const { MyServers } = await import("./servers/index.mjs");
 
 let config = MCP_CONFIG.initSync();
 
@@ -39,13 +41,16 @@ for (let s of MyServers) {
       url: `http://localhost:${electronData.get().mcp_server_port}/${key}/sse`,
       type: "sse",
       scope: "built-in",
-      config: {},
+      config: config.mcpServers[key]?.hyperchat?.config || {},
     },
     disabled: config.mcpServers[key]?.disabled,
   };
 }
 for (let key in config.mcpServers) {
-  if (config.mcpServers[key].hyperchat?.scope == "built-in" && !MyServers.find((s) => s.name == key)) {
+  if (
+    config.mcpServers[key].hyperchat?.scope == "built-in" &&
+    !MyServers.find((s) => s.name == key)
+  ) {
     delete config.mcpServers[key];
   }
 }
@@ -202,7 +207,7 @@ export class MCPClient {
     if (electronData.initSync().PATH) {
       process.env.PATH = electronData.get().PATH;
     } else {
-      if(os.platform() != 'win32'){
+      if (os.platform() != "win32") {
         process.env.PATH = shellPathSync();
       }
     }
@@ -227,10 +232,7 @@ export class MCPClient {
       this.client = client;
     } catch (e) {
       Logger.error(params, e);
-      if (
-        os.platform() == "win32" &&
-        e.message.includes("Connection closed")
-      ) {
+      if (os.platform() == "win32" && e.message.includes("Connection closed")) {
         // log.error("Connection closed, testing");
         e = await checkError(params)
           .then((_) => e)
@@ -277,7 +279,10 @@ export async function initMcpClients() {
     firstRunStatus = 1;
   }
   if (firstRunStatus == 2) {
-    Logger.info("getMcpClients cached mcpClients", Object.keys(mcpClients).length);
+    Logger.info(
+      "getMcpClients cached mcpClients",
+      Object.keys(mcpClients).length
+    );
     return mcpClients;
   }
   let p = clientPaths.claude;
@@ -382,33 +387,3 @@ export async function closeMcpClients(clientName: string, isdelete: boolean) {
   return mcpClients;
 }
 
-export async function getConfg(): Promise<{
-  mcpServers: { [s: string]: MCP_CONFIG_TYPE };
-}> {
-  let config = MCP_CONFIG.initSync();
-
-  // let obj: any = {};
-  // config.mcpServers = Object.assign(obj, config.mcpServers);
-
-  for (let key in config.mcpServers) {
-    if (config.mcpServers[key].hyperchat == null) {
-      config.mcpServers[key].hyperchat = {
-        config: {},
-      } as any;
-    }
-  }
-  return config;
-}
-
-export function getMyDefaultEnvironment() {
-  let env = getDefaultEnvironment();
-  electronData.initSync();
-  if (electronData.get().PATH) {
-    env.PATH = electronData.get().PATH;
-  } else {
-    if (os.platform() != "win32") {
-      env.PATH = shellPathSync();
-    }
-  }
-  return env;
-}
