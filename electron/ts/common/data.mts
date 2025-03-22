@@ -16,21 +16,15 @@ import { getMessageService } from "../message_service.mjs";
 const { fs, path } = zx;
 for (let data of DataList) {
   data.override({
-    async inget() {
-      if (await fs.exists(path.join(appDataDir, this.KEY))) {
-        return await fs.readFile(path.join(appDataDir, this.KEY));
-      } else {
-        return "";
-      }
-    },
-    ingetSync() {
+
+    inget() {
       if (fs.existsSync(path.join(appDataDir, this.KEY))) {
         return fs.readFileSync(path.join(appDataDir, this.KEY));
       } else {
         return "";
       }
     },
-    async insave() {
+    insave() {
       try {
         getMessageService().sendAllToRenderer({
           type: "syncNodeToWeb",
@@ -38,7 +32,7 @@ for (let data of DataList) {
         });
       } catch (e) {}
 
-      return fs.writeFile(
+      return fs.writeFileSync(
         path.join(appDataDir, this.KEY),
         JSON.stringify(this.data, null, 4)
       );

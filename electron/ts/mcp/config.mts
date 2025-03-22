@@ -16,7 +16,7 @@ import {
   StdioClientTransport,
   type StdioServerParameters,
 } from "@modelcontextprotocol/sdk/client/stdio.js";
-import { initMcpServer } from "./servers/express.mjs";
+import { initMcpServer, MyServers } from "./servers/index.mjs";
 
 import {
   electronData,
@@ -30,11 +30,9 @@ import { clientPaths } from "./claude.mjs";
 import { startTask } from "./task.mjs";
 
 import { spawn } from "node:child_process";
-import { getConfg, getMyDefaultEnvironment } from "./utils.mjs";
+import { getMyDefaultEnvironment } from "./utils.mjs";
 import { zodToJsonSchema } from "zod-to-json-schema";
 // import cross_spawn from "cross-spawn";
-
-const { MyServers } = await import("./servers/index.mjs");
 
 let config = MCP_CONFIG.initSync();
 
@@ -62,6 +60,16 @@ for (let key in config.mcpServers) {
     !MyServers.find((s) => s.name == key)
   ) {
     delete config.mcpServers[key];
+  }
+
+  if (config.mcpServers[key].hyperchat == null) {
+    config.mcpServers[key].hyperchat = {
+      config: {},
+    } as any;
+  } else {
+    if (config.mcpServers[key].hyperchat.config == null) {
+      config.mcpServers[key].hyperchat.config = {};
+    }
   }
 }
 await MCP_CONFIG.save();
@@ -274,7 +282,7 @@ export async function initMcpClients() {
     fs.copy(p, mcp_path);
   }
 
-  let config = await getConfg();
+  let config = await MCP_CONFIG.initSync();
 
   // console.log(config);
   let tasks = [];
@@ -311,7 +319,7 @@ export async function openMcpClient(
   // }
 
   if (clientConfig == null) {
-    let config = await getConfg();
+    let config = await MCP_CONFIG.initSync();
     if (config.mcpServers[clientName] == null) {
       throw new Error("MCP Config is null");
     }

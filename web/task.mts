@@ -11,40 +11,10 @@ if (os.platform() === "win32") {
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-const webdavClient = createClient(
-  "http://alist.dadigua.men/dav/ubuntu/downloads/static/downloads/AudioBridge",
-  {
-    username: "dadigua",
-    password: "qweQWE1!@#",
-  },
-);
-await webdavClient.getDirectoryContents("/");
 
-const uploadDirectory = async (sourceDir: string, targetDir: string) => {
-  const files = await fs.readdir(sourceDir);
-  for (const file of files) {
-    console.log("file : ", file);
-    if (file.endsWith(".ipa") || file.endsWith(".aab")) {
-      continue;
-    }
-    const sourcePath = `${sourceDir}/${file}`;
-    const targetPath = `${targetDir}/${file}`;
-    const stat = await fs.stat(sourcePath);
-    if (stat.isDirectory()) {
-      let isExist = await webdavClient.exists(targetPath);
-      if (!isExist) {
-        await webdavClient.createDirectory(targetPath);
-      }
-      await uploadDirectory(sourcePath, targetPath);
-    } else {
-      const fileContent = await fs.readFile(sourcePath);
-      await retry(3, () =>
-        webdavClient.putFileContents(targetPath, fileContent, {}),
-      );
-      // await webdavClient.putFileContents(targetPath, fileContent, {});
-    }
-  }
-};
+
+
+
 
 if (argv.dev) {
   await within(() => {
@@ -179,58 +149,7 @@ if (argv.pre) {
   );
 }
 
-if (argv.prod) {
-  // await uploadDirectory("../dist", "");
-  if (argv.new) {
-    await $`npm version patch`;
-  }
 
-  let pack = await import("./package.json");
-
-  let p = path.resolve(__dirname, `../dist/${pack.version}`);
-  await fs.emptyDir("../dist");
-  await fs.ensureDir(p);
-
-  await $`tsx task.mts --pre`;
-
-  await fs.remove("../electron/dist");
-  // electron
-  await $`tsx task.mts --electronprod`;
-  if (os.platform() === "win32") {
-    await fs.copy(
-      `../electron/dist/AudioBridge Setup ${pack.version}.exe`,
-      p + `/AudioBridge-Setup-${pack.version}.exe`,
-      {
-        overwrite: true,
-      },
-    );
-  } else {
-    await fs.copy(
-      `../electron/dist/AudioBridge Setup ${pack.version}.exe`,
-      p + `/AudioBridge-Setup-${pack.version}.exe`,
-      {
-        overwrite: true,
-      },
-    );
-
-    await fs.copy(
-      `../electron/dist/AudioBridge-${pack.version}-arm64.dmg`,
-      p + `/AudioBridge-${pack.version}-arm64.dmg`,
-      {
-        overwrite: true,
-      },
-    );
-    await fs.copy(
-      `../electron/dist/AudioBridge-${pack.version}.dmg`,
-      p + `/AudioBridge-${pack.version}-x64.dmg`,
-      {
-        overwrite: true,
-      },
-    );
-  }
-
-  await uploadDirectory("../dist", "");
-}
 
 if (argv.test) {
   let pack = await import("./package.json");

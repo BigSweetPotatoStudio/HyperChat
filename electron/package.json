@@ -141,6 +141,7 @@
     "koa-mount": "^4.0.0",
     "koa-router": "^13.0.1",
     "koa-static": "^5.0.0",
+    "lodash": "^4.17.21",
     "log4js": "^6.9.1",
     "node-cron": "^3.0.3",
     "openai": "^4.84.1",

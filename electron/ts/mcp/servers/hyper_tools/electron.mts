@@ -1,8 +1,9 @@
 import { configSchema, server } from "./lib.mjs";
 import { z } from "zod";
-import { getConfg } from "ts/mcp/utils.mjs";
+
 import * as web1 from "./web1.mjs";
 import * as web2 from "./web2.mjs";
+import { MCP_CONFIG } from "../../../../../common/data";
 
 server.tool(
   "fetch",
@@ -13,7 +14,7 @@ server.tool(
     }),
   },
   async ({ url }) => {
-    let mcpconfig = await getConfg();
+    let mcpconfig = await MCP_CONFIG.initSync();
     let config = mcpconfig.mcpServers["hyper_tools"].hyperchat
       .config as z.infer<typeof configSchema>;
     let md = "";
@@ -37,7 +38,7 @@ server.tool(
     }),
   },
   async ({ words }) => {
-    let mcpconfig = await getConfg();
+    let mcpconfig = await MCP_CONFIG.initSync();
     let config = mcpconfig.mcpServers["hyper_tools"].hyperchat
       .config as z.infer<typeof configSchema>;
     let res = [];

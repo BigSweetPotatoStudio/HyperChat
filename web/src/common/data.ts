@@ -16,9 +16,6 @@ for (let data of DataList) {
     async inget() {
       return await call("readFile", [this.KEY]).catch((e) => "");
     },
-    ingetSync() {
-      throw new Error("Method not implemented.");
-    },
     async insave() {
       return await call("writeFile", [
         this.KEY,

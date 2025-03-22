@@ -5,23 +5,23 @@ import {
   MCP_CONFIG_TYPE,
 } from "../../../common/data";
 
-export async function getConfg(): Promise<{
-  mcpServers: { [s: string]: MCP_CONFIG_TYPE };
-}> {
-  let config = MCP_CONFIG.initSync();
+// export async function getMCPConfg(): Promise<{
+//   mcpServers: { [s: string]: MCP_CONFIG_TYPE };
+// }> {
+//   let config = MCP_CONFIG.initSync();
 
-  // let obj: any = {};
-  // config.mcpServers = Object.assign(obj, config.mcpServers);
+//   // let obj: any = {};
+//   // config.mcpServers = Object.assign(obj, config.mcpServers);
 
-  for (let key in config.mcpServers) {
-    if (config.mcpServers[key].hyperchat == null) {
-      config.mcpServers[key].hyperchat = {
-        config: {},
-      } as any;
-    }
-  }
-  return config;
-}
+//   for (let key in config.mcpServers) {
+//     if (config.mcpServers[key].hyperchat == null) {
+//       config.mcpServers[key].hyperchat = {
+//         config: {},
+//       } as any;
+//     }
+//   }
+//   return config;
+// }
 
 export function getMyDefaultEnvironment() {
   let env = Object.assign(getDefaultEnvironment(), process.env);

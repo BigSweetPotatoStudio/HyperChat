@@ -1,6 +1,8 @@
 import { McpServer, SSEServerTransport } from "ts/es6.mjs";
+
 import { CONST } from "ts/polyfills/polyfills.mjs";
 import { z } from "zod";
+import { MCP_CONFIG } from "../../../../../common/data";
 
 export const NAME = "hyper_tools";
 export const server = new McpServer({
@@ -62,3 +64,12 @@ export const HyperTools = {
   url: ``,
   configSchema: configSchema,
 };
+
+export function getConfig() {
+  let mcpconfig = MCP_CONFIG.initSync();
+
+  let config = mcpconfig.mcpServers[NAME].hyperchat.config as z.infer<
+    typeof configSchema
+  >;
+  return config;
+}

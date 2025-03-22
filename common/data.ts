@@ -1,4 +1,5 @@
 export const DataList: Data<any>[] = [];
+import lodash from "lodash";
 
 export class Data<T> {
   private localStorage: any = null;
@@ -21,7 +22,7 @@ export class Data<T> {
   initSync({ force } = { force: true }) {
     let localData = {};
     try {
-      this.localStorage = this.ingetSync();
+      this.localStorage = this.inget();
       if (this.localStorage) {
         localData = JSON.parse(this.localStorage);
       }
@@ -54,16 +55,20 @@ export class Data<T> {
   private inget(): Promise<T> {
     throw new Error("Method not implemented.");
   }
-  private ingetSync(): Promise<T> {
-    throw new Error("Method not implemented.");
-  }
+
   private insave(): Promise<void> {
     throw new Error("Method not implemented.");
   }
-  public override({ inget, ingetSync, insave }) {
-    this.inget = inget;
-    this.ingetSync = ingetSync;
-    this.insave = insave;
+
+  public override({
+    inget,
+    insave,
+  }) {
+    inget && (this.inget = inget);
+
+
+    insave && (this.insave = insave);
+
   }
 }
 
@@ -160,22 +165,6 @@ export const GPT_MODELS = new Data("gpt_models.json", {
 class MCP_CONFIG_DATA<T> extends Data<T> {
   constructor(key: string, data: T, options) {
     super(key, data, options);
-  }
-  save() {
-    let mcpServers = (this.get() as any).mcpServers;
-    for (const x in mcpServers) {
-      for (const key in mcpServers[x]) {
-        let server = mcpServers[x];
-        if (key.startsWith("_")) {
-          delete server[key];
-        }
-        delete server.hyperchat?.configSchema;
-      }
-    }
-    // if (process.env.NODE_ENV == "development") {
-    //   console.log("save", this.KEY, this.get());
-    // }
-    return super.save();
   }
 }
 
