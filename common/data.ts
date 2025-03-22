@@ -169,6 +169,7 @@ class MCP_CONFIG_DATA<T> extends Data<T> {
         if (key.startsWith("_")) {
           delete server[key];
         }
+        delete server.hyperchat?.configSchema;
       }
     }
     // if (process.env.NODE_ENV == "development") {
@@ -184,6 +185,7 @@ export type MCP_CONFIG_TYPE = {
   env: { [s: string]: string };
   hyperchat: {
     config: { [s in string]: any };
+    configSchema?: { [s in string]: any };
     url: string;
     type: "stdio" | "sse";
     scope: "built-in" | "outer";

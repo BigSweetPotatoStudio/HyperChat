@@ -315,6 +315,12 @@ export function Market() {
       let clients = await getClients(false);
       mcpExtensionData = clients
         .filter((x) => x.config.hyperchat?.scope == "built-in")
+        .map((x) => {
+          return {
+            ...x,
+            configSchema: x.config?.hyperchat?.configSchema,
+          };
+        })
         .concat(mcpExtensionData);
 
       for (let x of mcpExtensionData) {
@@ -517,10 +523,7 @@ export function Market() {
                                     onClick={async (e) => {
                                       e.stopPropagation();
                                       mcpconfigform.current.resetFields();
-                                      mcpconfigform.current.setFieldsValue(
-                                        MCP_CONFIG.get().mcpServers[item.name]
-                                          ?.hyperchat.config || {},
-                                      );
+
                                       setCurrRow(item);
 
                                       mcpconfigform.current?.setFieldsValue(
@@ -528,7 +531,17 @@ export function Market() {
                                           item.configSchema,
                                         ),
                                       );
-
+                                      if (
+                                        Object.keys(
+                                          MCP_CONFIG.get().mcpServers[item.name]
+                                            ?.hyperchat.config || {},
+                                        ).length > 0
+                                      ) {
+                                        mcpconfigform.current.setFieldsValue(
+                                          MCP_CONFIG.get().mcpServers[item.name]
+                                            ?.hyperchat.config || {},
+                                        );
+                                      }
                                       setMcpconfigOpen(true);
                                       await getClients(false);
                                       refresh();
@@ -543,8 +556,6 @@ export function Market() {
                             ? RenderEnableAndDisable(item)
                             : undefined,
                           MCP_CONFIG.get().mcpServers[item.name] &&
-                          MCP_CONFIG.get().mcpServers[item.name]?.hyperchat
-                            ?.scope != "built-in" &&
                           !MCP_CONFIG.get().mcpServers[item.name]?.disabled ? (
                             <a className="text-lg hover:text-cyan-400">
                               <Tooltip title="setting">
@@ -552,10 +563,22 @@ export function Market() {
                                   onClick={async (e) => {
                                     e.stopPropagation();
                                     mcpconfigform.current.resetFields();
-                                    mcpconfigform.current.setFieldsValue(
-                                      MCP_CONFIG.get().mcpServers[item.name]
-                                        ?.hyperchat.config || {},
+                                    mcpconfigform.current?.setFieldsValue(
+                                      JsonSchema2DefaultValue(
+                                        item.configSchema,
+                                      ),
                                     );
+                                    if (
+                                      Object.keys(
+                                        MCP_CONFIG.get().mcpServers[item.name]
+                                          ?.hyperchat.config || {},
+                                      ).length > 0
+                                    ) {
+                                      mcpconfigform.current.setFieldsValue(
+                                        MCP_CONFIG.get().mcpServers[item.name]
+                                          ?.hyperchat.config || {},
+                                      );
+                                    }
                                     setCurrRow(item);
                                     await getClients(false);
                                     setMcpconfigOpen(true);
@@ -831,21 +854,32 @@ export function Market() {
           grid={false}
           onFinish={async (values) => {
             try {
-              let config = currRow.resolve(values);
-              config.hyperchat = {
-                url: "",
-                type: "stdio",
-                scope: "outer",
-                config: values,
-              };
-              await call("openMcpClient", [currRow.name, config]);
+              if (
+                MCP_CONFIG.get().mcpServers[currRow.name]?.hyperchat?.scope ==
+                "built-in"
+              ) {
+                MCP_CONFIG.get().mcpServers[currRow.name].hyperchat.config =
+                  values;
+                await MCP_CONFIG.save();
+                
+                await getClients(false);
+                setMcpconfigOpen(false);
+              } else {
+                let config = currRow.resolve(values);
+                config.hyperchat = {
+                  url: "",
+                  type: "stdio",
+                  scope: "outer",
+                  config: values,
+                };
+                await call("openMcpClient", [currRow.name, config]);
 
-              MCP_CONFIG.get().mcpServers[currRow.name] = config;
-              await MCP_CONFIG.save();
+                MCP_CONFIG.get().mcpServers[currRow.name] = config;
+                await MCP_CONFIG.save();
 
-              await getClients(false);
-
-              setMcpconfigOpen(false);
+                await getClients(false);
+                setMcpconfigOpen(false);
+              }
             } catch (e) {
               message.error(e.message);
             }

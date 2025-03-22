@@ -1,12 +1,21 @@
 import path from "path";
-import { shellPathSync, zx } from "../es6.mjs";
+import {
+  Client,
+  CompatibilityCallToolResultSchema,
+  shellPathSync,
+  SSEClientTransport,
+  zx,
+} from "ts/es6.mjs";
 const { fs, os, sleep } = zx;
 import * as MCP from "@modelcontextprotocol/sdk/client/index.js";
 // import { StdioClientTransport } from "@modelcontextprotocol/sdk/client/stdio.js";
 import * as MCPTypes from "@modelcontextprotocol/sdk/types.js";
 import { Logger } from "ts/polyfills/index.mjs";
 import { appDataDir } from "ts/polyfills/index.mjs";
-import type { StdioServerParameters } from "@modelcontextprotocol/sdk/client/stdio.js";
+import {
+  StdioClientTransport,
+  type StdioServerParameters,
+} from "@modelcontextprotocol/sdk/client/stdio.js";
 import { initMcpServer } from "./servers/express.mjs";
 
 import {
@@ -15,17 +24,15 @@ import {
   MCP_CONFIG,
   MCP_CONFIG_TYPE,
 } from "../../../common/data";
-import { spawnWithOutput } from "../common/util.mjs";
+
 import { clientPaths } from "./claude.mjs";
 
 import { startTask } from "./task.mjs";
 
 import { spawn } from "node:child_process";
 import { getConfg, getMyDefaultEnvironment } from "./utils.mjs";
-
+import { zodToJsonSchema } from "zod-to-json-schema";
 // import cross_spawn from "cross-spawn";
-
-// const spawn = os.type() === "Windows_NT" ? cross_spawn : node_spawn;
 
 const { MyServers } = await import("./servers/index.mjs");
 
@@ -42,6 +49,9 @@ for (let s of MyServers) {
       type: "sse",
       scope: "built-in",
       config: config.mcpServers[key]?.hyperchat?.config || {},
+      configSchema: s.configSchema
+        ? zodToJsonSchema(s.configSchema)
+        : undefined,
     },
     disabled: config.mcpServers[key]?.disabled,
   };
@@ -59,24 +69,6 @@ await MCP_CONFIG.save();
 await initMcpServer().catch((e) => {
   console.error("initMcpServer", e);
 });
-
-const { Client } = await import(
-  /* webpackIgnore: true */ "@modelcontextprotocol/sdk/client/index.js"
-);
-const { StdioClientTransport, getDefaultEnvironment } = await import(
-  /* webpackIgnore: true */ "@modelcontextprotocol/sdk/client/stdio.js"
-);
-const { SSEClientTransport } = await import(
-  /* webpackIgnore: true */ "@modelcontextprotocol/sdk/client/sse.js"
-);
-const {
-  ListToolsResultSchema,
-  CallToolRequestSchema,
-  CallToolResultSchema,
-  CompatibilityCallToolResultSchema,
-} = await import(
-  /* webpackIgnore: true */ "@modelcontextprotocol/sdk/types.js"
-);
 
 export const mcpClients = {} as {
   [s: string]: MCPClient;
@@ -204,21 +196,12 @@ export class MCPClient {
     this.client = client;
   }
   async openStdio(config: MCP_CONFIG_TYPE) {
-    if (electronData.initSync().PATH) {
-      process.env.PATH = electronData.get().PATH;
-    } else {
-      if (os.platform() != "win32") {
-        process.env.PATH = shellPathSync();
-      }
-    }
+    let env = Object.assign(getMyDefaultEnvironment(), config.env);
+    // console.log("openStdio", config.command, config.args, env);
     let params = {
       command: config.command,
       args: config.args,
-      env: Object.assign(
-        getMyDefaultEnvironment(),
-        process.env as any,
-        config.env
-      ),
+      env: env,
     };
 
     try {
@@ -232,12 +215,12 @@ export class MCPClient {
       this.client = client;
     } catch (e) {
       Logger.error(params, e);
-      if (os.platform() == "win32" && e.message.includes("Connection closed")) {
-        // log.error("Connection closed, testing");
-        e = await checkError(params)
-          .then((_) => e)
-          .catch((e) => e);
-      }
+      // if (os.platform() == "win32" && e.message.includes("Connection closed")) {
+      //   // log.error("Connection closed, testing");
+      //   e = await checkError(params)
+      //     .then((_) => e)
+      //     .catch((e) => e);
+      // }
       throw e;
     }
   }
@@ -386,4 +369,3 @@ export async function closeMcpClients(clientName: string, isdelete: boolean) {
   }
   return mcpClients;
 }
-
