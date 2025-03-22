@@ -8,7 +8,7 @@ module.exports = (env, argv) => {
   return {
     target: "web",
     entry: {
-      turndown: "./eval/turndown",
+      markdown: "./eval/markdown",
     },
     plugins: [
       new webpack.EnvironmentPlugin({

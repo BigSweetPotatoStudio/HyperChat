@@ -2,24 +2,32 @@ import puppeteer, { Page } from "puppeteer-core";
 // import * as ChromeLauncher from "chrome-launcher";
 import path from "path";
 import { ChromeLauncher, zx } from "ts/es6.mjs";
+
+import { configSchema, getConfig, NAME } from "./lib.mjs";
+import { z } from "zod";
 const { fs } = zx;
-// 连接浏览器的远程调试端口
-let Hyper_browserURL = process.env.Hyper_browserURL || "http://localhost:9222";
-// 是否使用本地浏览器，如果为false则使用设置的端口调试浏览器
-let isAutoLauncher = process.env.Hyper_isAutoLauncher != "false" || true;
-// 搜索引擎
-let searchEngine = process.env.Hyper_SEARCH_ENGINE || "google";
-// 起始页
-let startingUrl =
-  process.env.Hyper_startingUrl ||
-  "https://github.com/BigSweetPotatoStudio/HyperChat";
-// （可选）浏览器默认路径
-// (optional) Explicit path of intended Chrome binary
-// * If this `chromePath` option is defined, it will be used.
-// * Otherwise, the `CHROME_PATH` env variable will be used if set. (`LIGHTHOUSE_CHROMIUM_PATH` is deprecated)
-// * Otherwise, a detected Chrome Canary will be used if found
-// * Otherwise, a detected Chrome (stable) will be used
-let CHROME_PATH = process.env.CHROME_PATH || undefined;
+
+// let mcpconfig = await getMCPConfg();
+
+// let config = mcpconfig.mcpServers[NAME].hyperchat.config as z.infer<
+//   typeof configSchema
+// >;
+// // 连接浏览器的远程调试端口
+// let Hyper_browserURL = config.browserURL || "http://localhost:9222";
+// // 是否使用本地浏览器，如果为false则使用设置的端口调试浏览器
+// let isAutoLauncher = config.browserURL != "false" || true;
+// // 搜索引擎
+// let searchEngine = config.SEARCH_ENGINE || "google";
+// // 起始页
+// let startingUrl =
+//   config.startingUrl || "https://github.com/BigSweetPotatoStudio/HyperChat";
+// // （可选）浏览器默认路径
+// // (optional) Explicit path of intended Chrome binary
+// // * If this `chromePath` option is defined, it will be used.
+// // * Otherwise, the `CHROME_PATH` env variable will be used if set. (`LIGHTHOUSE_CHROMIUM_PATH` is deprecated)
+// // * Otherwise, a detected Chrome Canary will be used if found
+// // * Otherwise, a detected Chrome (stable) will be used
+// let CHROME_PATH = config.chromePath || undefined;
 
 let browser;
 let launcher;
@@ -32,17 +40,17 @@ export async function createBrowser(log = false) {
     return browser;
   }
   let browserURL;
-  if (isAutoLauncher) {
+  if (getConfig().isAutoLauncher) {
     try {
       launcher = await ChromeLauncher.launch({
-        startingUrl: startingUrl,
+        startingUrl: getConfig().startingUrl,
         userDataDir: false,
         port: 9222,
         ignoreDefaultFlags: true,
         chromeFlags: newFlags,
         // handleSIGINT: true,
         logLevel: "silent",
-        chromePath: CHROME_PATH,
+        chromePath: getConfig().chromePath,
         // chromePath: "C:\\Users\\0laop\\AppData\\Local\\Google\\Chrome SxS\\Application\\chrome.exe",
       });
       // console.log("Chrome debugging port: " + launcher.port);
@@ -51,7 +59,7 @@ export async function createBrowser(log = false) {
       console.error(e);
     }
   } else {
-    browserURL = Hyper_browserURL;
+    browserURL = getConfig().browserURL;
   }
 
   log && console.log("browserURL", browserURL);
@@ -112,7 +120,7 @@ export const search = async (words: string) => {
 
   let res = [];
   let page = await browser.newPage();
-  if (searchEngine == "bing") {
+  if (getConfig().SEARCH_ENGINE == "bing") {
     await page.goto(
       `https://www.bing.com/search?q=` + encodeURIComponent(words)
     );
