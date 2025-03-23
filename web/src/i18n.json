@@ -906,5 +906,9 @@
     "Keep the chat history for the last 15 days": {
         "en": "Keep the chat history for the last 15 days",
         "zh": "保存过去15天的聊天记录"
+    },
+    "All": {
+        "en": "All",
+        "zh": "全部"
     }
 }
