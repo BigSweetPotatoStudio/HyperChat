@@ -5,7 +5,7 @@ on:
   workflow_dispatch: {}
   push:
     branches:
-      - alpha
+      - translate
 
 
 
@@ -16,6 +16,22 @@ jobs:
     steps:
       - name: Check out git repository
         uses: actions/checkout@v3.0.0
+
+      - name: Check if commit message is "action-generated"
+        id: check_commit_message
+        run: |
+            COMMIT_MESSAGE=$(git log -1 --pretty=format:%s)
+            echo "Commit message: $COMMIT_MESSAGE"
+            if [[ "$COMMIT_MESSAGE" == "action-generated" ]]; then
+            echo "Skipping workflow for action-generated commit"
+            echo "is_generated=true" >> $GITHUB_OUTPUT
+            else
+            echo "is_generated=false" >> $GITHUB_OUTPUT
+            fi
+
+      - name: Exit workflow if action-generated commit
+        if: steps.check_commit_message.outputs.is_generated == 'true'
+        run: exit 78
 
       - name: Install Node.js
         uses: actions/setup-node@v3.0.0
@@ -44,7 +60,7 @@ jobs:
           git config user.name laopo001
           git config user.email 0laopo0@gmail.com
           git add .
-          git commit -m "generated"
+          git commit -m "action-generated"
           git push
         env:
           GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
