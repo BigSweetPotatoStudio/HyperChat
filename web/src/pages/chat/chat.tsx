@@ -195,7 +195,6 @@ export const Chat = ({
   }, [globalState]);
   useEffect(() => {
     (async () => {
-      await ChatHistory.init();
       await Agents.init();
       await GPT_MODELS.init();
       refresh();
@@ -1003,7 +1002,7 @@ export const Chat = ({
     loadDataTatal.current = formmatedData.length;
     formmatedData = formmatedData.slice(0, loadIndex.current);
     setConversations(formmatedData);
-    // console.log("loadMoreData", loadIndex.current, loadDataTatal.current);
+    console.log("loadMoreData", loadIndex.current, loadDataTatal.current);
     setLoadMoreing(false);
   };
 
