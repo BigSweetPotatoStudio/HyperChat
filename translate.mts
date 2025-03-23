@@ -45,6 +45,7 @@ ${s}`
 \n
 ${c}`
   );
+  console.log("end");
 } else {
   let json = JSON.parse(fs.readFileSync(p).toString());
   for (let key in json) {
