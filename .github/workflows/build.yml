@@ -5,10 +5,8 @@ on:
   workflow_dispatch: {}
   push:
     branches:
-      - test
+      - alpha
 
-    tags:
-      - "*"
 
 jobs:
   release:
