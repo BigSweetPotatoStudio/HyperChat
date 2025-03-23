@@ -168,6 +168,7 @@ export class MCPClient {
     let tools_res = await client.listTools().catch((e) => {
       return { tools: [] };
     });
+    // console.log("listTools", tools_res);
     let resources_res = await client.listResources().catch((e) => {
       return { resources: [] };
     });
@@ -263,13 +264,17 @@ async function checkError(params: any) {
 
 let firstRunStatus = 0;
 
+export const loadObj = {
+  all: 0,
+  loaded: 0,
+}
 export async function initMcpClients() {
   // console.log("initMcpClientsRunning", firstRunStatus);
 
   while (1) {
     if (firstRunStatus == 1) {
       console.log("waiting");
-      await sleep(100);
+      await sleep(500);
     } else {
       break;
     }
@@ -294,6 +299,7 @@ export async function initMcpClients() {
 
   // console.log(config);
   let tasks = [];
+
   for (let key in config.mcpServers) {
     // tasks.push(openMcpClient(key, config.mcpServers[key]));
     if (mcpClients[key] == null) {
@@ -303,7 +309,10 @@ export async function initMcpClients() {
       mcpClients[key].status = "disconnect";
     } else {
       try {
-        tasks.push(mcpClients[key].open());
+        loadObj.all += 1;
+        tasks.push(mcpClients[key].open().then(() => {
+          loadObj.loaded += 1;
+        }));
       } catch (e) {
         Logger.error("openMcpClient", e);
         continue;

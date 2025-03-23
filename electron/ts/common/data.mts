@@ -1,7 +1,6 @@
 
 import {
   electronData,
-  taskHistory,
   AppSetting,
   DataList,
   ENV_CONFIG,
@@ -60,4 +59,3 @@ electronData.get().version = CONST.getVersion;
 
 electronData.save();
 
-taskHistory.initSync({ force: true });

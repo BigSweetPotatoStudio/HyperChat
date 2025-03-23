@@ -4,9 +4,7 @@ import * as MCPTypes from "@modelcontextprotocol/sdk/types.js";
 import { sleep } from "./sleep";
 import type { MCPClient } from "../../../electron/ts/mcp/config.mjs";
 
-
 import { TEMP_FILE, MCP_CONFIG, MCP_CONFIG_TYPE } from "../../../common/data";
-
 
 let init = false;
 let McpClients: {
@@ -38,11 +36,17 @@ export type InitedClient = {
 
 let initedClientArray: Array<InitedClient> = [];
 export async function initMcpClients() {
-  McpClients = await call("initMcpClients", []);
+  let res = await call("initMcpClients", []);
+  McpClients = res;
   console.log("initMcpClients", McpClients);
   initedClientArray = mcpClientsToArray(McpClients);
   return initedClientArray;
 }
+
+// setInterval(async () => {
+//   let res = await call("getMcpClientsLoad", []);
+//   console.log("getMcpClientsLoad", res);
+// }, 100);
 
 initMcpClients()
   .then(() => {

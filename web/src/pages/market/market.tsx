@@ -859,8 +859,12 @@ export function Market() {
               ) {
                 MCP_CONFIG.get().mcpServers[currRow.name].hyperchat.config =
                   values;
+     
                 await MCP_CONFIG.save();
-
+                await call("openMcpClient", [
+                  currRow.name,
+                  MCP_CONFIG.get().mcpServers[currRow.name],
+                ]);
                 await getClients(false);
                 setMcpconfigOpen(false);
               } else {

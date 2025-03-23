@@ -55,7 +55,6 @@ import { getToolsOnNode } from "../../../web/src/common/mcptool";
 import { v4 } from "uuid";
 import dayjs from "dayjs";
 
-import { cat } from "@xenova/transformers";
 import { getMessageService } from "../message_service.mjs";
 let tObj: {
   [s in string]: {
@@ -66,7 +65,7 @@ let tObj: {
 
 function trigger({ task, agent, result }) {
   getMessageService().sendAllToRenderer({
-    type: "ChatHistoryUpdate",
+    type: "TaskResult",
     data: { task, agent, result },
   });
 }
