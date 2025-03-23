@@ -31,8 +31,20 @@ const openai = new OpenAI({
 // let o = YAML.parse(fs.readFileSync('./src/pages2/text.yaml').toString());
 // fs.writeFileSync('./src/pages2/text.json', JSON.stringify(o, null, 2))
 if (argv.test) {
-  let s = await translateZh("");
-  console.log(s);
+  let s = await translateEN(fs.readFileSync("./README.zh.md").toString());
+  fs.writeFileSync(
+    "./README.md",
+    `[中文](README.zh.md) | [English](README.md)
+\n
+${s}`
+  );
+  let c = await translateEN(fs.readFileSync("./ChangeLog.zh.md").toString());
+  fs.writeFileSync(
+    "./ChangeLog.md",
+    `[中文](ChangeLog.zh.md) | [English](ChangeLog.md)
+\n
+${c}`
+  );
 } else {
   let json = JSON.parse(fs.readFileSync(p).toString());
   for (let key in json) {
@@ -122,4 +134,3 @@ export async function translateEN(content) {
 function hasChinese(str) {
   return /[\u4e00-\u9fa5]/.test(str);
 }
-

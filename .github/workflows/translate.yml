@@ -1,4 +1,4 @@
-name: test build
+name: translate
 
 # on: [push, pull_request]
 on:
@@ -50,7 +50,7 @@ jobs:
         run: npm install
 
 
-      - run: npx tsx ./translate.mts
+      - run: npx tsx ./translate.mts --test
         env:
           apiKey: ${{secrets.apiKey}}
           baseURL: ${{secrets.baseURL}}
