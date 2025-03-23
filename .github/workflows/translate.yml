@@ -55,7 +55,6 @@ jobs:
           apiKey: ${{secrets.apiKey}}
           baseURL: ${{secrets.baseURL}}
         
-      - uses: actions/checkout@v3
       - run: |
           git config user.name laopo001
           git config user.email 0laopo0@gmail.com
