@@ -241,7 +241,6 @@ export function Setting() {
               <Space>
                 <Button
                   onClick={async () => {
-                    await ChatHistory.init();
                     let f = ChatHistory.get().data.filter((x) => !x.icon);
                     let time = dayjs().subtract(30, "day").valueOf();
                     for (let x of f) {
@@ -263,7 +262,6 @@ export function Setting() {
                 </Button>
                 <Button
                   onClick={async () => {
-                    await ChatHistory.init();
                     let time = dayjs().subtract(15, "day").valueOf();
                     let f = ChatHistory.get().data.filter((x) => !x.icon);
                     for (let x of f) {

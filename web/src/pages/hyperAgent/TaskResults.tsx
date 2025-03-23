@@ -74,12 +74,12 @@ export function TaskResultsPage() {
     setNum((x) => x + 1);
   };
   const { globalState, updateGlobalState } = useContext(HeaderContext);
-  useEffect(() => {
-    (async () => {
-      await ChatHistory.init();
-      refresh();
-    })();
-  }, []);
+  // useEffect(() => {
+  //   (async () => {
+  //     await ChatHistory.init();
+  //     refresh();
+  //   })();
+  // }, []);
 
   const columns: TableColumnsType<ChatHistoryItem> = [
     {
