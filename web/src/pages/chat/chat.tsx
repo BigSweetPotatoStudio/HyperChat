@@ -171,6 +171,7 @@ import { useForm } from "antd/es/form/Form";
 import { t } from "../../i18n";
 import { NumberStep } from "../../common/numberStep";
 import { HeaderContext } from "../../common/context";
+import dayjs from "dayjs";
 
 export const Chat = ({
   onTitleChange = undefined,
@@ -481,16 +482,24 @@ export const Chat = ({
             />
 
             {x.role == "user" && (
-              <SyncOutlined
-                className="hover:text-cyan-400"
-                key="sync"
-                onClick={() => {
-                  openaiClient.current.messages.splice(i);
-                  currentChat.current.messages = openaiClient.current.messages;
-                  refresh();
-                  onRequest(x.content as any);
-                }}
-              />
+              <>
+                {x.date && (
+                  <span style={{ marginLeft: 16 }}>
+                    {dayjs(x.date).format("YYYY-MM-DD HH:mm:ss")}
+                  </span>
+                )}
+                <SyncOutlined
+                  className="hover:text-cyan-400"
+                  key="sync"
+                  onClick={() => {
+                    openaiClient.current.messages.splice(i);
+                    currentChat.current.messages =
+                      openaiClient.current.messages;
+                    refresh();
+                    onRequest(x.content as any);
+                  }}
+                />
+              </>
             )}
             {x.role == "user" && x.content_attached == false && (
               <Tooltip title="Cleared">
@@ -639,6 +648,11 @@ export const Chat = ({
                   <Tooltip title="Cleared">
                     <MinusCircleOutlined className="cursor-not-allowed bg-red-200" />
                   </Tooltip>
+                )}
+                {x.date && (
+                  <span style={{ marginLeft: 16 }}>
+                    {dayjs(x.date).format("YYYY-MM-DD HH:mm:ss")}
+                  </span>
                 )}
                 {x.content_usage && (
                   <>
@@ -845,7 +859,7 @@ export const Chat = ({
         createChat();
         if (message) {
           openaiClient.current.addMessage(
-            { role: "user", content: message },
+            { role: "user", content: message, date: new Date().getTime() },
             resourceResListRef.current,
             promptResList,
           );
@@ -866,7 +880,7 @@ export const Chat = ({
       } else {
         if (message) {
           openaiClient.current.addMessage(
-            { role: "user", content: message },
+            { role: "user", content: message, date: new Date().getTime() },
             resourceResListRef.current,
             promptResList,
           );
