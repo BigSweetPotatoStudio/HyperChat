@@ -101,9 +101,10 @@ export async function callAgent(obj: {
         {
           role: "system",
           content: agent.prompt,
+          date: Date.now(),
         },
-        { role: "user", content: obj.message },
-      ],
+        { role: "user", content: obj.message, date: Date.now() },
+      ]
     );
     await openai.completion();
     let res = openai.lastMessage.content;
