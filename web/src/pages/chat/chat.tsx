@@ -1061,23 +1061,27 @@ export const Chat = ({
                     }}
                     options={[
                       {
+                        title: t`All`,
                         value: "all",
                         icon: <CommentOutlined />,
                       },
                       {
+                        title: t`Star`,
                         value: "star",
                         icon: <StarOutlined />,
                       },
                       {
+                        title: t`Search`,
                         value: "search",
                         icon: <SearchOutlined />,
                       },
-
                       {
+                        title: t`Agent`,
                         value: "agent",
                         icon: "🤖",
                       },
                       {
+                        title: t`Task`,
                         value: "task",
                         icon: "📅",
                       },
