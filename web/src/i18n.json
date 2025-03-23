@@ -922,5 +922,9 @@
     "Direct Call": {
         "en": "Direct Call",
         "zh": "直接调用"
+    },
+    "All": {
+        "en": "All",
+        "zh": "全部"
     }
 }
