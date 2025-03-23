@@ -1,0 +1,50 @@
+name: test build
+
+# on: [push, pull_request]
+on:
+  workflow_dispatch: {}
+  push:
+    branches:
+      - alpha
+
+
+
+
+jobs:
+  translate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out git repository
+        uses: actions/checkout@v3.0.0
+
+      - name: Install Node.js
+        uses: actions/setup-node@v3.0.0
+        with:
+          node-version: "20"
+          registry-url: https://registry.npmjs.org/
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - name: Install -g
+        run: npm install -g cross-env zx
+
+      - name: Install Dependencies
+        run: npm install
+
+
+      - run: npx tsx ./translate.mts
+        env:
+          apiKey: ${{secrets.apiKey}}
+          baseURL: ${{secrets.baseURL}}
+        
+      - uses: actions/checkout@v3
+      - run: |
+          git config user.name laopo001
+          git config user.email 0laopo0@gmail.com
+          git add .
+          git commit -m "generated"
+          git push
+        env:
+          GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
