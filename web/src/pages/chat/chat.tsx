@@ -482,9 +482,9 @@ export const Chat = ({
 
             {x.role == "user" && (
               <>
-                {x.date && (
+                {x.content_date && (
                   <span style={{ marginLeft: 16 }}>
-                    {dayjs(x.date).format("YYYY-MM-DD HH:mm:ss")}
+                    {dayjs(x.content_date).format("YYYY-MM-DD HH:mm:ss")}
                   </span>
                 )}
                 <SyncOutlined
@@ -648,9 +648,9 @@ export const Chat = ({
                     <MinusCircleOutlined className="cursor-not-allowed bg-red-200" />
                   </Tooltip>
                 )}
-                {x.date && (
+                {x.content_date && (
                   <span style={{ marginLeft: 16 }}>
-                    {dayjs(x.date).format("YYYY-MM-DD HH:mm:ss")}
+                    {dayjs(x.content_date).format("YYYY-MM-DD HH:mm:ss")}
                   </span>
                 )}
                 {x.content_usage && (
@@ -858,7 +858,7 @@ export const Chat = ({
         createChat();
         if (message) {
           openaiClient.current.addMessage(
-            { role: "user", content: message, date: new Date().getTime() },
+            { role: "user", content: message, content_date: new Date().getTime() },
             resourceResListRef.current,
             promptResList,
           );
@@ -879,7 +879,7 @@ export const Chat = ({
       } else {
         if (message) {
           openaiClient.current.addMessage(
-            { role: "user", content: message, date: new Date().getTime() },
+            { role: "user", content: message, content_date: new Date().getTime() },
             resourceResListRef.current,
             promptResList,
           );
