@@ -53,6 +53,7 @@ export type MyMessage = OpenAI.Chat.Completions.ChatCompletionMessageParam & {
   reasoning_content?: string;
   content_context?: any;
   content_attached?: boolean;
+  date: number;
   content_usage?: {
     prompt_tokens: number;
     completion_tokens: number;
@@ -167,6 +168,7 @@ export class OpenAiChannel {
               content: m.content.text as string,
               content_from: p.call_name as string,
               content_attachment: [],
+              date: new Date().getTime(),
             });
           } else if (m.content.type == "resource") {
             if (m.content.resource.text) {
@@ -175,6 +177,7 @@ export class OpenAiChannel {
                 content: m.content.resource.text as string,
                 content_from: p.call_name as string,
                 content_attachment: [],
+                date: new Date().getTime(),
               });
             } else if (
               m.content.resource.blob &&
@@ -191,6 +194,7 @@ export class OpenAiChannel {
                   ],
                   content_from: p.call_name as string,
                   content_attachment: [],
+                  date: new Date().getTime(),
                 });
               } else {
                 antdmessage.warning(
@@ -276,6 +280,7 @@ export class OpenAiChannel {
         completion_tokens: 0,
         total_tokens: 0,
       },
+      date: new Date().getTime(),
     };
 
     let messages = this.messages.filter(
@@ -502,6 +507,7 @@ export class OpenAiChannel {
           content: "",
           content_status: "loading",
           content_attachment: [],
+          date: new Date().getTime(),
         };
         this.messages.push(message as any);
         onUpdate && onUpdate(this.lastMessage.content as string);
