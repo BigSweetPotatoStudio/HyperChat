@@ -144,6 +144,7 @@
     "lodash": "^4.17.21",
     "log4js": "^6.9.1",
     "node-cron": "^3.0.3",
+    "node-pty": "^1.0.0",
     "openai": "^4.84.1",
     "opusscript": "^0.1.1",
     "pdf-parse": "^1.1.1",

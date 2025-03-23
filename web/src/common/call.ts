@@ -19,19 +19,24 @@ if (ext) {
   window.ext = ext;
 }
 
-let URL_PRE = "";
 let websocket = undefined;
 
 if (process.env.runtime !== "node") {
+  let URL_PRE = location.origin + location.pathname;
   // web环境
   if (ext.invert) {
     let res = await ext.invert("readFile", ["electronData.json"]);
-    console.log("=================", res);
+    // console.log("=================", res);
     let electronData = JSON.parse(res.data || "{}");
-    URL_PRE = "http://localhost:" + electronData.port;
+    URL_PRE =
+      "http://localhost:" +
+      electronData.port +
+      "/" +
+      electronData.password +
+      "/";
   }
   ext.invert = async (command: string, args: any) => {
-    let res = await fetch(URL_PRE + "/api/" + command, {
+    let res = await fetch(URL_PRE + "api/" + command, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -49,9 +54,9 @@ if (process.env.runtime !== "node") {
     }
   };
 
-  const socket = io(URL_PRE + "/main-message");
+  const socket = io(URL_PRE + "main-message");
   socket.on("connect", () => {
-    console.log("connect");
+    console.log("connected");
     websocket = socket;
   });
   socket.on("message-from-main", (data: any) => {

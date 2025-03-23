@@ -6,26 +6,11 @@ import { MCP_CONFIG } from "../../../../../common/data";
 import zodToJsonSchema, { zodPatterns } from "zod-to-json-schema";
 
 export const NAME = "hyper_tools";
-export const server = new McpServer({
-  name: NAME,
-  version: CONST.getVersion,
-});
 
-let transport;
-async function createServer(endpoint: string, response) {
-  //   console.log("Received connection");
-  transport = new SSEServerTransport(endpoint, response);
-  await server.connect(transport);
-}
-
-async function handlePostMessage(req, res) {
-  //   console.log("Received message");
-  await transport.handlePostMessage(req, res);
-}
 
 export const configSchema = z.object({
   Web_Tools_Platform: z
-    .enum(["electron", "chrome"], {
+    .enum(["electron", "chrome", "none"], {
       description: "Platform using web tools",
     })
     .default("electron"),
@@ -58,14 +43,6 @@ export const configSchema = z.object({
   ),
 });
 
-export const HyperTools = {
-  createServer,
-  handlePostMessage,
-  name: NAME,
-  url: ``,
-  configSchema: configSchema,
-};
-
 function JsonSchema2DefaultValue(schema: any) {
   let obj = {};
   function run(item) {
@@ -81,7 +58,7 @@ function JsonSchema2DefaultValue(schema: any) {
   return obj;
 }
 
-console.log("safeParse : ", configSchema.safeParse({}));
+// console.log("safeParse : ", configSchema.safeParse({}));
 export function getConfig() {
   let mcpconfig = MCP_CONFIG.initSync();
 

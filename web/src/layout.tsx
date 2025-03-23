@@ -147,7 +147,7 @@ const Providers: ProviderType[] = [
 ];
 
 msg_receive("message-from-main", (msg) => {
-  if (msg.type == "ChatHistoryUpdate") {
+  if (msg.type == "TaskResult") {
     // setTimeout(() => {
     //   ChatHistory.init({ force: true });
     // }, 300);

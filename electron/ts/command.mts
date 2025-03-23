@@ -34,6 +34,8 @@ import {
   closeMcpClients,
   getMcpClients,
   initMcpClients,
+  loadObj,
+  MCPClient,
   openMcpClient,
 } from "./mcp/config.mjs";
 import { checkUpdate } from "ts/polyfills/index.mjs";
@@ -83,29 +85,41 @@ export class CommandFactory {
       logPath: Logger.path,
     };
   }
-  async initMcpClients() {
+  async initMcpClients(): Promise<{
+    [s: string]: MCPClient;
+  }> {
     let res = await initMcpClients();
     let obj = {};
     for (let key in res) {
       obj[key] = res[key].toJSON();
     }
-    return obj;
+    return obj as any;
   }
-  async openMcpClient(clientName: string, clientConfig?: MCP_CONFIG_TYPE) {
+  async openMcpClient(
+    clientName: string,
+    clientConfig?: MCP_CONFIG_TYPE
+  ): Promise<{
+    [s: string]: MCPClient;
+  }> {
     let res = await openMcpClient(clientName, clientConfig);
     let obj = {};
     for (let key in res) {
       obj[key] = res[key].toJSON();
     }
-    return obj;
+    return obj as any;
   }
-  async getMcpClients() {
+  async getMcpClientsLoad() {
+    return loadObj;
+  }
+  async getMcpClients(): Promise<{
+    [s: string]: MCPClient;
+  }> {
     let res = await getMcpClients();
     let obj = {};
     for (let key in res) {
       obj[key] = res[key].toJSON();
     }
-    return obj;
+    return obj as any;
   }
 
   async closeMcpClients(

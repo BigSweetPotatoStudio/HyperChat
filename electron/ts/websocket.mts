@@ -7,14 +7,12 @@ import { Server as SocketIO } from "socket.io";
 import { Logger } from "ts/polyfills/index.mjs";
 
 import { execFallback } from "./common/execFallback.mjs";
-import { v4 as uuid } from "uuid";
+
 import mount from "koa-mount";
 import { koaBody } from "koa-body";
 import { electronData } from "../../common/data";
 import { Command, CommandFactory } from "./command.mjs";
-import { appDataDir, CONST } from "ts/polyfills/index.mjs";
 
-let { userDataPath } = CONST;
 import Router from "koa-router";
 import { HTTPPORT } from "./common/data.mjs";
 
@@ -68,7 +66,10 @@ export function genRouter(c, prefix: string) {
   return router;
 }
 
-export const model_route = genRouter(new CommandFactory(), "/api");
+export const model_route = genRouter(
+  new CommandFactory(),
+  "/" + electronData.get().password + "/api"
+);
 
 let mainMsg = undefined;
 
@@ -130,7 +131,7 @@ async function initWebsocket() {
   io.on("error", (e) => {
     console.log("error: ", e);
   });
-  let main = io.of("/main-message");
+  let main = io.of("/" + electronData.get().password + "/main-message");
   mainMsg = main;
   main.on("connection", (socket) => {
     Logger.info("用户已连接，socket ID:", socket.id);
