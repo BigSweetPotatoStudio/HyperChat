@@ -1,3 +1,12 @@
+# 1.2.12
+
+* 支持调用工具时询问![image](https://github.com/user-attachments/assets/11c03c92-399e-457e-8000-ff00c3c1e059)
+* 聊天支持显示时间![image](https://github.com/user-attachments/assets/dba7bf09-99a1-46bd-9c94-052d18469b96)
+* hypetool优化，设置![image](https://github.com/user-attachments/assets/cfc2c8e5-f7e7-4078-aaff-240b567f47c5)
+* Add historyFilterType hover tip by @xtyuns in https://github.com/BigSweetPotatoStudio/HyperChat/pull/52
+
+
+
 # 1.2.2
 
 * mac ,linux 自动获取PATH，不用输入PATH了。
