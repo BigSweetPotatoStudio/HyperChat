@@ -24,7 +24,7 @@ let websocket = undefined;
 if (process.env.runtime !== "node") {
   let URL_PRE = location.origin + location.pathname;
   // web环境
-  if (ext.invert) {
+  if (ext.invert && process.env.myEnv != "prod") {
     let res = await ext.invert("readFile", ["electronData.json"]);
     // console.log("=================", res);
     let electronData = JSON.parse(res.data || "{}");

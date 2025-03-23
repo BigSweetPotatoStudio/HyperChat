@@ -101,9 +101,9 @@ export async function callAgent(obj: {
         {
           role: "system",
           content: agent.prompt,
-          date: Date.now(),
+          content_date: Date.now(),
         },
-        { role: "user", content: obj.message, date: Date.now() },
+        { role: "user", content: obj.message, content_date: Date.now() },
       ]
     );
     await openai.completion();
@@ -145,49 +145,7 @@ export async function runTask(task: Task) {
       taskKey: task.key,
     });
     let agent = Agents.initSync().data.find((x) => x.key === task.agentKey);
-    // let config =
-    //   GPT_MODELS.initSync().data.find((x) => x.key == agent.modelKey) ||
-    //   GPT_MODELS.initSync().data[0];
 
-    // if (!config) {
-    //   Logger.error("No model found");
-    //   return;
-    // }
-    // global.tools = getToolsOnNode(
-    //   mcpClients,
-    //   (x) => agent.allowMCPs == null || agent.allowMCPs.includes(x.name)
-    // );
-    // // console.log("tools", global.tools);
-    // let openai = new OpenAiChannel(
-    //   { ...config, allowMCPs: agent.allowMCPs },
-    //   [
-    //     {
-    //       role: "system",
-    //       content: agent.prompt,
-    //     },
-    //     { role: "user", content: task.command },
-    //   ],
-    //   false
-    // );
-    // await openai.completion();
-    // // console.log("openai.completion() done", openai.messages);
-    // const item: ChatHistoryItem = {
-    //   label: task.name + " - " + dayjs().format("YYYY-MM-DDTHH:mm:ss"),
-    //   key: v4(),
-    //   messages: openai.messages,
-    //   modelKey: config.key,
-    //   agentKey: agent.key,
-    //   sended: true,
-    //   requestType: "complete",
-    //   allowMCPs: agent.allowMCPs,
-    //   attachedDialogueCount: undefined,
-    //   dateTime: Date.now(),
-    //   isCalled: false,
-    //   isTask: true,
-    //   taskKey: task.key,
-    // };
-    // ChatHistory.initSync().data.unshift(item);
-    // await ChatHistory.save();
     await trigger({ task, agent, result: lastMessage });
     // await onRequest(task.message);
   } catch (e) {
