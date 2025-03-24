@@ -226,12 +226,13 @@ export const Chat = ({
 
             setTimeout(() => {
               currentChatReset(item);
-              createChat();
+              createChat(false);
             });
           }
         }
       } else {
         currentChatReset({}, "", true);
+        createChat(false);
       }
     })();
 
@@ -814,13 +815,15 @@ export const Chat = ({
     }
   }
 
-  const createChat = () => {
+  const createChat = (showTip = true) => {
     let config = GPT_MODELS.get().data.find(
       (x) => x.key == currentChat.current.modelKey,
     );
     if (config == null) {
       if (GPT_MODELS.get().data.length == 0) {
-        EVENT.fire("setIsModelConfigOpenTrue");
+        if (showTip) {
+          EVENT.fire("setIsModelConfigOpenTrue");
+        }
         throw new Error("Please add LLM first");
       }
       config = GPT_MODELS.get().data[0];
@@ -832,7 +835,7 @@ export const Chat = ({
         baseURL: config.baseURL,
         model: config.model,
         apiKey: config.apiKey,
-        requestType: "stream",
+        requestType: currentChat.current.requestType,
         call_tool_step: config.call_tool_step,
         supportTool: config.supportTool,
         supportImage: config.supportImage,
@@ -843,7 +846,7 @@ export const Chat = ({
       },
       currentChat.current.messages,
     );
-    currentChat.current.messages = openaiClient.current.messages;
+    // currentChat.current.messages = openaiClient.current.messages;
     refresh();
   };
   const [loading, setLoading] = useState(false);
@@ -853,12 +856,15 @@ export const Chat = ({
     console.log("onRequest", message);
     try {
       setLoading(true);
-
       if (currentChat.current.sended == false) {
         createChat();
         if (message) {
           openaiClient.current.addMessage(
-            { role: "user", content: message, content_date: new Date().getTime() },
+            {
+              role: "user",
+              content: message,
+              content_date: new Date().getTime(),
+            },
             resourceResListRef.current,
             promptResList,
           );
@@ -879,7 +885,11 @@ export const Chat = ({
       } else {
         if (message) {
           openaiClient.current.addMessage(
-            { role: "user", content: message, content_date: new Date().getTime() },
+            {
+              role: "user",
+              content: message,
+              content_date: new Date().getTime(),
+            },
             resourceResListRef.current,
             promptResList,
           );
@@ -1002,7 +1012,7 @@ export const Chat = ({
     loadDataTatal.current = formmatedData.length;
     formmatedData = formmatedData.slice(0, loadIndex.current);
     setConversations(formmatedData);
-    console.log("loadMoreData", loadIndex.current, loadDataTatal.current);
+    // console.log("loadMoreData", loadIndex.current, loadDataTatal.current);
     setLoadMoreing(false);
   };
 
@@ -1631,7 +1641,7 @@ export const Chat = ({
                     arrow
                     menu={{
                       selectable: true,
-                      defaultSelectedKeys: [currentChat.current.requestType],
+                      selectedKeys: [currentChat.current.requestType],
                       items: [
                         {
                           label: "stream",
