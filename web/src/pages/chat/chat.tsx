@@ -147,6 +147,7 @@ import { ChatHistory, GPT_MODELS, Agents } from "../../../../common/data";
 import { PromptsModal } from "./promptsModal";
 import {
   getClients,
+  getMcpInited,
   getPrompts,
   getResourses,
   InitedClient,
@@ -172,6 +173,7 @@ import { t } from "../../i18n";
 import { NumberStep } from "../../common/numberStep";
 import { HeaderContext } from "../../common/context";
 import dayjs from "dayjs";
+import { sleep } from "../../common/sleep";
 
 export const Chat = ({
   onTitleChange = undefined,
@@ -199,6 +201,7 @@ export const Chat = ({
       await GPT_MODELS.init();
       refresh();
       loadMoreData(false);
+
       if (data.agentKey) {
         try {
           // let agents = await GPTS.init();
@@ -226,19 +229,31 @@ export const Chat = ({
 
             setTimeout(() => {
               currentChatReset(item);
-              createChat();
+              createChat(false);
             });
           }
         }
       } else {
         currentChatReset({}, "", true);
+        createChat(false);
+      }
+
+      while (1) {
+        if (getMcpInited() == true) {
+          let clients = await getClients().catch(() => []);
+          clientsRef.current = clients;
+          DATA.current.mcpLoading = false;
+          refresh();
+          break;
+        } else {
+          let clients = await getClients().catch(() => []);
+          clientsRef.current = clients;
+          DATA.current.mcpLoading = true;
+          refresh();
+          await sleep(500);
+        }
       }
     })();
-
-    // EVENT.on("refresh", init);
-    // return () => {
-    //   EVENT.off("refresh", init);
-    // };
   }, []);
 
   const onGPTSClick = async (key: string, { loadHistory = true } = {}) => {
@@ -291,6 +306,9 @@ export const Chat = ({
     isTask: false,
     confirm_call_tool: false,
   };
+  const DATA = useRef({
+    mcpLoading: false,
+  });
 
   const currentChat = React.useRef<ChatHistoryItem>(defaultChatValue);
   const currentChatReset = async (
@@ -814,13 +832,15 @@ export const Chat = ({
     }
   }
 
-  const createChat = () => {
+  const createChat = (showTip = true) => {
     let config = GPT_MODELS.get().data.find(
       (x) => x.key == currentChat.current.modelKey,
     );
     if (config == null) {
       if (GPT_MODELS.get().data.length == 0) {
-        EVENT.fire("setIsModelConfigOpenTrue");
+        if (showTip) {
+          EVENT.fire("setIsModelConfigOpenTrue");
+        }
         throw new Error("Please add LLM first");
       }
       config = GPT_MODELS.get().data[0];
@@ -832,7 +852,7 @@ export const Chat = ({
         baseURL: config.baseURL,
         model: config.model,
         apiKey: config.apiKey,
-        requestType: "stream",
+        requestType: currentChat.current.requestType,
         call_tool_step: config.call_tool_step,
         supportTool: config.supportTool,
         supportImage: config.supportImage,
@@ -843,7 +863,7 @@ export const Chat = ({
       },
       currentChat.current.messages,
     );
-    currentChat.current.messages = openaiClient.current.messages;
+    // currentChat.current.messages = openaiClient.current.messages;
     refresh();
   };
   const [loading, setLoading] = useState(false);
@@ -853,12 +873,15 @@ export const Chat = ({
     console.log("onRequest", message);
     try {
       setLoading(true);
-
       if (currentChat.current.sended == false) {
         createChat();
         if (message) {
           openaiClient.current.addMessage(
-            { role: "user", content: message, content_date: new Date().getTime() },
+            {
+              role: "user",
+              content: message,
+              content_date: new Date().getTime(),
+            },
             resourceResListRef.current,
             promptResList,
           );
@@ -879,7 +902,11 @@ export const Chat = ({
       } else {
         if (message) {
           openaiClient.current.addMessage(
-            { role: "user", content: message, content_date: new Date().getTime() },
+            {
+              role: "user",
+              content: message,
+              content_date: new Date().getTime(),
+            },
             resourceResListRef.current,
             promptResList,
           );
@@ -1002,7 +1029,7 @@ export const Chat = ({
     loadDataTatal.current = formmatedData.length;
     formmatedData = formmatedData.slice(0, loadIndex.current);
     setConversations(formmatedData);
-    console.log("loadMoreData", loadIndex.current, loadDataTatal.current);
+    // console.log("loadMoreData", loadIndex.current, loadDataTatal.current);
     setLoadMoreing(false);
   };
 
@@ -1067,7 +1094,9 @@ export const Chat = ({
   )?.supportTool;
 
   const scrollableDivID = useRef("scrollableDiv" + v4());
-  // console.log(currentChat.current.allowMCPs, clientsRef);
+  let missMCP = currentChat.current.allowMCPs.filter(
+    (x) => !clientsRef.current.find((c) => c.name == x),
+  );
   return (
     <div className="chat h-full">
       <div className="h-full rounded-lg bg-white p-4">
@@ -1503,13 +1532,24 @@ export const Chat = ({
                     {supportTool == null || supportTool == true ? (
                       <>
                         💻
-                        {
-                          clientsRef.current.filter((v) => {
-                            return currentChat.current.allowMCPs.includes(
-                              v.name,
-                            );
-                          }).length
-                        }
+                        <span className="px-1">
+                          {DATA.current.mcpLoading && <SyncOutlined spin />}
+                          {(() => {
+                            let load = clientsRef.current
+                              .filter((v) => v.status == "connected")
+                              .filter((v) => {
+                                return currentChat.current.allowMCPs.includes(
+                                  v.name,
+                                );
+                              }).length;
+                            let all = clientsRef.current.filter((v) => {
+                              return currentChat.current.allowMCPs.includes(
+                                v.name,
+                              );
+                            }).length;
+                            return load == all ? all : `(${load}/${all})`;
+                          })()}
+                        </span>
                       </>
                     ) : (
                       <>💻 {t`LLM not support`}</>
@@ -1631,7 +1671,7 @@ export const Chat = ({
                     arrow
                     menu={{
                       selectable: true,
-                      defaultSelectedKeys: [currentChat.current.requestType],
+                      selectedKeys: [currentChat.current.requestType],
                       items: [
                         {
                           label: "stream",
@@ -1826,7 +1866,7 @@ export const Chat = ({
           open={isToolsShow}
           onCancel={() => setIsToolsShow(false)}
           maskClosable
-          title={t`Tool`}
+          title={t`MCP Tool`}
           onOk={() => setIsToolsShow(false)}
           cancelButtonProps={{ style: { display: "none" } }}
         >
@@ -1836,6 +1876,7 @@ export const Chat = ({
             pagination={false}
             dataSource={clientsRef.current}
             rowHoverable={false}
+            bordered
             rowSelection={{
               type: "checkbox",
               selectedRowKeys: clientsRef.current
@@ -1850,9 +1891,27 @@ export const Chat = ({
                 });
               },
             }}
+            footer={
+              missMCP.length > 0
+                ? () => {
+                    if (missMCP.length > 0) {
+                      return (
+                        <div>
+                          <span className="text-red-500">
+                            {t`Unloaded MCP`}:{" "}
+                          </span>
+                          {missMCP.join(" , ")}
+                        </div>
+                      );
+                    } else {
+                      return false;
+                    }
+                  }
+                : undefined
+            }
             columns={[
               {
-                title: "client",
+                title: "server",
                 dataIndex: "name",
                 key: "name",
               },
@@ -1863,19 +1922,25 @@ export const Chat = ({
                 render: (text, record) => {
                   return (
                     <div>
-                      {record.tools.map((x) => {
-                        return (
-                          <Tooltip
-                            key={x.origin_name || x.function.name}
-                            title={x.function.description}
-                          >
-                            <Tag className="cursor-pointer">
-                              {x.origin_name ||
-                                x.function.name.replace(x.key + "--", "")}
-                            </Tag>
-                          </Tooltip>
-                        );
-                      })}
+                      {record.tools.length > 0 ? (
+                        <Space wrap>
+                          {record.tools.map((x) => {
+                            return (
+                              <Tooltip
+                                key={x.origin_name || x.function.name}
+                                title={x.function.description}
+                              >
+                                <Button size="small">
+                                  {x.origin_name ||
+                                    x.function.name.replace(x.key + "--", "")}
+                                </Button>
+                              </Tooltip>
+                            );
+                          })}
+                        </Space>
+                      ) : (
+                        <span className="text-red-500">{t`disconnected`}</span>
+                      )}
                     </div>
                   );
                 },

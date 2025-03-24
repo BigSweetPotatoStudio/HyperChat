@@ -157,6 +157,8 @@ export class MCPClient {
     return out;
   }
   async open() {
+    // await sleep(Math.random() * 10000);
+
     if (this.config?.hyperchat?.type == "sse") {
       await this.openSse(this.config);
     } else {
@@ -265,9 +267,10 @@ async function checkError(params: any) {
 let firstRunStatus = 0;
 
 export const loadObj = {
+  status: {} as { [s: string]: number },
   all: 0,
   loaded: 0,
-}
+};
 export async function initMcpClients() {
   // console.log("initMcpClientsRunning", firstRunStatus);
 
@@ -302,19 +305,24 @@ export async function initMcpClients() {
 
   for (let key in config.mcpServers) {
     // tasks.push(openMcpClient(key, config.mcpServers[key]));
-    if (mcpClients[key] == null) {
-      mcpClients[key] = new MCPClient(key, config.mcpServers[key]);
-    }
+
     if (config.mcpServers[key].disabled) {
-      mcpClients[key].status = "disconnect";
+      // mcpClients[key].status = "disconnect";
     } else {
+      if (mcpClients[key] == null) {
+        mcpClients[key] = new MCPClient(key, config.mcpServers[key]);
+      }
       try {
         loadObj.all += 1;
-        tasks.push(mcpClients[key].open().then(() => {
-          loadObj.loaded += 1;
-        }));
+        loadObj.status[key] = 0;
+        tasks.push(
+          mcpClients[key].open().then(() => {
+            loadObj.loaded += 1;
+            loadObj.status[key] = 1;
+          })
+        );
       } catch (e) {
-        Logger.error("openMcpClient", e);
+        Logger.error("initMcpClient", e);
         continue;
       }
     }
@@ -343,10 +351,8 @@ export async function openMcpClient(
     clientConfig = config.mcpServers[clientName] as MCP_CONFIG_TYPE;
   }
 
-  if (clientConfig?.disabled) {
-    if (mcpClients[clientName] != null) {
-      mcpClients[clientName].client.close();
-    }
+  if (mcpClients[clientName] && clientConfig?.disabled) {
+    mcpClients[clientName].client?.close();
     mcpClients[clientName].status = "disabled";
     return mcpClients;
   }
@@ -368,20 +374,21 @@ export async function openMcpClient(
 }
 
 export async function getMcpClients() {
-  while (1) {
-    if (firstRunStatus == 1 || firstRunStatus == 0) {
-      await sleep(100);
-    } else {
-      break;
-    }
-  }
-
+  // while (1) {
+  //   if (firstRunStatus == 1 || firstRunStatus == 0) {
+  //     await sleep(100);
+  //   } else {
+  //     break;
+  //   }
+  // }
   return mcpClients;
 }
 
 export async function closeMcpClients(clientName: string, isdelete: boolean) {
   let client = mcpClients[clientName];
-
+  if (client == null) {
+    return;
+  }
   if (client.client != null) {
     await client.client.close();
   }
