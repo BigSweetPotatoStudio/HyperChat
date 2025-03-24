@@ -147,6 +147,7 @@ import { ChatHistory, GPT_MODELS, Agents } from "../../../../common/data";
 import { PromptsModal } from "./promptsModal";
 import {
   getClients,
+  getMcpInited,
   getPrompts,
   getResourses,
   InitedClient,
@@ -172,6 +173,7 @@ import { t } from "../../i18n";
 import { NumberStep } from "../../common/numberStep";
 import { HeaderContext } from "../../common/context";
 import dayjs from "dayjs";
+import { sleep } from "../../common/sleep";
 
 export const Chat = ({
   onTitleChange = undefined,
@@ -199,6 +201,7 @@ export const Chat = ({
       await GPT_MODELS.init();
       refresh();
       loadMoreData(false);
+
       if (data.agentKey) {
         try {
           // let agents = await GPTS.init();
@@ -234,12 +237,23 @@ export const Chat = ({
         currentChatReset({}, "", true);
         createChat(false);
       }
-    })();
 
-    // EVENT.on("refresh", init);
-    // return () => {
-    //   EVENT.off("refresh", init);
-    // };
+      while (1) {
+        if (getMcpInited() == true) {
+          let clients = await getClients().catch(() => []);
+          clientsRef.current = clients;
+          DATA.current.mcpLoading = false;
+          refresh();
+          break;
+        } else {
+          let clients = await getClients().catch(() => []);
+          clientsRef.current = clients;
+          DATA.current.mcpLoading = true;
+          refresh();
+          await sleep(500);
+        }
+      }
+    })();
   }, []);
 
   const onGPTSClick = async (key: string, { loadHistory = true } = {}) => {
@@ -292,6 +306,9 @@ export const Chat = ({
     isTask: false,
     confirm_call_tool: false,
   };
+  const DATA = useRef({
+    mcpLoading: false,
+  });
 
   const currentChat = React.useRef<ChatHistoryItem>(defaultChatValue);
   const currentChatReset = async (
@@ -1077,7 +1094,9 @@ export const Chat = ({
   )?.supportTool;
 
   const scrollableDivID = useRef("scrollableDiv" + v4());
-  // console.log(currentChat.current.allowMCPs, clientsRef);
+  let missMCP = currentChat.current.allowMCPs.filter(
+    (x) => !clientsRef.current.find((c) => c.name == x),
+  );
   return (
     <div className="chat h-full">
       <div className="h-full rounded-lg bg-white p-4">
@@ -1513,13 +1532,27 @@ export const Chat = ({
                     {supportTool == null || supportTool == true ? (
                       <>
                         💻
-                        {
-                          clientsRef.current.filter((v) => {
-                            return currentChat.current.allowMCPs.includes(
-                              v.name,
-                            );
-                          }).length
-                        }
+                        <span className="px-1">
+                          {DATA.current.mcpLoading && <SyncOutlined spin />}(
+                          {
+                            clientsRef.current
+                              .filter((v) => v.status == "connected")
+                              .filter((v) => {
+                                return currentChat.current.allowMCPs.includes(
+                                  v.name,
+                                );
+                              }).length
+                          }
+                          /
+                          {
+                            clientsRef.current.filter((v) => {
+                              return currentChat.current.allowMCPs.includes(
+                                v.name,
+                              );
+                            }).length
+                          }
+                          )
+                        </span>
                       </>
                     ) : (
                       <>💻 {t`LLM not support`}</>
@@ -1836,7 +1869,7 @@ export const Chat = ({
           open={isToolsShow}
           onCancel={() => setIsToolsShow(false)}
           maskClosable
-          title={t`Tool`}
+          title={t`MCP Tool`}
           onOk={() => setIsToolsShow(false)}
           cancelButtonProps={{ style: { display: "none" } }}
         >
@@ -1846,6 +1879,7 @@ export const Chat = ({
             pagination={false}
             dataSource={clientsRef.current}
             rowHoverable={false}
+            bordered
             rowSelection={{
               type: "checkbox",
               selectedRowKeys: clientsRef.current
@@ -1860,9 +1894,25 @@ export const Chat = ({
                 });
               },
             }}
+            footer={
+              missMCP.length > 0
+                ? () => {
+                    if (missMCP.length > 0) {
+                      return (
+                        <div>
+                          <span className="text-red-500">{t`Unloaded MCP`}: </span>
+                          {missMCP.join(" , ")}
+                        </div>
+                      );
+                    } else {
+                      return false;
+                    }
+                  }
+                : undefined
+            }
             columns={[
               {
-                title: "client",
+                title: "server",
                 dataIndex: "name",
                 key: "name",
               },
@@ -1873,19 +1923,25 @@ export const Chat = ({
                 render: (text, record) => {
                   return (
                     <div>
-                      {record.tools.map((x) => {
-                        return (
-                          <Tooltip
-                            key={x.origin_name || x.function.name}
-                            title={x.function.description}
-                          >
-                            <Tag className="cursor-pointer">
-                              {x.origin_name ||
-                                x.function.name.replace(x.key + "--", "")}
-                            </Tag>
-                          </Tooltip>
-                        );
-                      })}
+                      {record.tools.length > 0 ? (
+                        <Space wrap>
+                          {record.tools.map((x) => {
+                            return (
+                              <Tooltip
+                                key={x.origin_name || x.function.name}
+                                title={x.function.description}
+                              >
+                                <Button size="small">
+                                  {x.origin_name ||
+                                    x.function.name.replace(x.key + "--", "")}
+                                </Button>
+                              </Tooltip>
+                            );
+                          })}
+                        </Space>
+                      ) : (
+                        <span className="text-red-500">{t`disconnected`}</span>
+                      )}
                     </div>
                   );
                 },

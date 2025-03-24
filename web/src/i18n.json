@@ -926,5 +926,13 @@
     "All": {
         "en": "All",
         "zh": "全部"
+    },
+    "MCP Tool": {
+        "en": "MCP Tool",
+        "zh": "MCP 工具"
+    },
+    "Unloaded MCP": {
+        "en": "Unloaded MCP",
+        "zh": "未加载的MCP"
     }
 }
