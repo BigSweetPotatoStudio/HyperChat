@@ -357,18 +357,19 @@ export function Market() {
           try {
             mcpLoadingObj[item.name] = true;
             setMcpLoadingObj({ ...mcpLoadingObj });
+
             const config = MCP_CONFIG.get().mcpServers[item.name];
             if (config) {
               config.disabled = !config.disabled;
             }
-
             await MCP_CONFIG.save();
-
+            
             if (config.disabled) {
-              await call("closeMcpClients", [item.name]);
+              await call("closeMcpClients", [item.name, true]);
             } else {
               await call("openMcpClient", [item.name]);
             }
+
 
             await getClients(false);
             refresh();
@@ -859,7 +860,7 @@ export function Market() {
               ) {
                 MCP_CONFIG.get().mcpServers[currRow.name].hyperchat.config =
                   values;
-     
+
                 await MCP_CONFIG.save();
                 await call("openMcpClient", [
                   currRow.name,
@@ -941,13 +942,13 @@ export function Market() {
             onFinish={async (values) => {
               try {
                 setLoadingOpenMCP(true);
-                if (
-                  values._type == "edit" &&
-                  MCP_CONFIG.get().mcpServers[values._name].disabled
-                ) {
-                  message.error("MCP Service Disabled");
-                  return;
-                }
+                // if (
+                //   values._type == "edit" &&
+                //   MCP_CONFIG.get().mcpServers[values._name].disabled
+                // ) {
+                //   message.error("MCP Service Disabled");
+                //   return;
+                // }
                 if (values.type == "sse") {
                   values = {
                     ...values,
