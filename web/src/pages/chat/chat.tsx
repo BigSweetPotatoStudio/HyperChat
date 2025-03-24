@@ -1533,25 +1533,22 @@ export const Chat = ({
                       <>
                         💻
                         <span className="px-1">
-                          {DATA.current.mcpLoading && <SyncOutlined spin />}(
-                          {
-                            clientsRef.current
+                          {DATA.current.mcpLoading && <SyncOutlined spin />}
+                          {(() => {
+                            let load = clientsRef.current
                               .filter((v) => v.status == "connected")
                               .filter((v) => {
                                 return currentChat.current.allowMCPs.includes(
                                   v.name,
                                 );
-                              }).length
-                          }
-                          /
-                          {
-                            clientsRef.current.filter((v) => {
+                              }).length;
+                            let all = clientsRef.current.filter((v) => {
                               return currentChat.current.allowMCPs.includes(
                                 v.name,
                               );
-                            }).length
-                          }
-                          )
+                            }).length;
+                            return load == all ? all : `(${load}/${all})`;
+                          })()}
                         </span>
                       </>
                     ) : (
@@ -1900,7 +1897,9 @@ export const Chat = ({
                     if (missMCP.length > 0) {
                       return (
                         <div>
-                          <span className="text-red-500">{t`Unloaded MCP`}: </span>
+                          <span className="text-red-500">
+                            {t`Unloaded MCP`}:{" "}
+                          </span>
                           {missMCP.join(" , ")}
                         </div>
                       );
