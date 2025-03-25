@@ -1,18 +1,18 @@
-name: translate
+name: doc-translate
 
 # on: [push, pull_request]
 on:
   workflow_dispatch: {}
   push:
     branches:
-      - translate
+      - doc
 
 
 permissions:
   contents: write
 
 jobs:
-  translate:
+  doc-translate:
     runs-on: ubuntu-latest
     steps:
       - name: Check out git repository
