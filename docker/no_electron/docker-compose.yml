@@ -1,8 +1,8 @@
 version: '3'
 
 services:
-  hyper-chat-mini:
-    image: hyper-chat-mini
+  hyperchat-mini:
+    image: hyperchat-mini
     ports:
       - "16100:16100"
     volumes:
