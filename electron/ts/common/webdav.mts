@@ -6,7 +6,7 @@ import path, { join } from "path";
 import { appDataDir } from "ts/polyfills/index.mjs";
 import { Logger } from "ts/polyfills/index.mjs";
 
-import { AppSetting, DataList } from "../../../common/data";
+import { AppSetting, DataList, electronData } from "../../../common/data";
 
 import crypto from "crypto";
 import { createClient, zx } from "../es6.mjs";
@@ -32,7 +32,7 @@ class WebDAVSync {
     });
 
     timer = setInterval(() => {
-      if (AppSetting.initSync({ force: true }).webdav.autoSync) {
+      if (electronData.initSync().autoSync) {
         Logger.info("autoSync 5min");
         this.sync();
       }

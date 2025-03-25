@@ -515,6 +515,7 @@ export function Layout() {
               </div>
             )}
             size="small"
+            scroll={{ x: true }}
             pagination={false}
             dataSource={GPT_MODELS.get().data}
             onMove={(data) => {
@@ -566,7 +567,7 @@ export function Layout() {
                     >
                       {t`Edit`}
                     </Button>
-              
+
                     <Button
                       type="link"
                       onClick={async () => {
@@ -580,7 +581,7 @@ export function Layout() {
                     >
                       {t`Clone`}
                     </Button>
-              
+
                     <Popconfirm
                       title="Confirm"
                       description="Confirm Delete?"
@@ -594,7 +595,7 @@ export function Layout() {
                     >
                       <Button type="link">{t`Delete`}</Button>
                     </Popconfirm>
-                 
+
                     <Tooltip title="Set default">
                       <Button
                         type="link"

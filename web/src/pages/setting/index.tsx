@@ -90,11 +90,6 @@ export function Setting() {
       await call("testWebDav", [values]);
       AppSetting.get().webdav = values;
       await AppSetting.save();
-      // if (values.autoSync) {
-      //   // window.location.reload();
-      // } else {
-      //   await call("webDaveInit", []);
-      // }
 
       message.success("Save success");
     }
@@ -103,7 +98,6 @@ export function Setting() {
   return (
     <div>
       <div className="relative flex flex-wrap">
-    
         <div className="w-full lg:w-1/2 lg:p-4">
           <Form
             layout="vertical"
@@ -144,6 +138,22 @@ export function Setting() {
                 }}
               ></Switch>
             </Form.Item>
+            <Form.Item
+              label={t`autoSync`}
+              tooltip={t`This is an experimental feature, 5min sync once`}
+            >
+              <Switch
+                checkedChildren="AutoSync"
+                unCheckedChildren="Close"
+                value={electronData.get().autoSync}
+                onChange={async (e) => {
+                  electronData.get().autoSync = e;
+                  await electronData.save();
+                  refresh();
+                }}
+              ></Switch>
+            </Form.Item>
+
             <Form.Item label={t`mcpCallToolTimeout`}>
               <InputNumber
                 className="w-full"

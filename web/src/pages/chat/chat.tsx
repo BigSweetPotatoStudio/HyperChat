@@ -1579,7 +1579,7 @@ export const Chat = ({
                     </Tooltip>
                     <Divider type="vertical" />
                     <span className="inline-block">
-                      <Tooltip title={t`Clients and Tools`}>
+                      <Tooltip title={t`MCP and Tools`}>
                         <span
                           className="cursor-pointer"
                           onClick={() => {
