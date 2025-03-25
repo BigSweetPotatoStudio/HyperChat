@@ -641,7 +641,7 @@ export const Chat = ({
         key: i.toString(),
         // typing: x.content_status == "dataLoading",
         footer: (
-          <div className="flex justify-between">
+          <div className="flex flex-wrap justify-between text-xs">
             <Space>
               <CopyOutlined
                 className="hover:text-cyan-400"
@@ -2018,7 +2018,7 @@ export const Chat = ({
                     );
                   },
                 },
-              ]}
+              ].filter((c) => !mobile.current.is || c.key != "tools")}
             ></Table>
           </Modal>
 

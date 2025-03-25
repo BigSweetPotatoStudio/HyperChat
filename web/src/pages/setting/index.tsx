@@ -53,7 +53,7 @@ import { sleep } from "../../common/sleep";
 import dayjs from "dayjs";
 import { useForm } from "antd/es/form/Form";
 import { e } from "../../common/service";
-import { t } from "../../i18n";
+import { currLang, t } from "../../i18n";
 import { HeaderContext } from "../../common/context";
 
 export function Setting() {
@@ -61,7 +61,7 @@ export function Setting() {
   function refresh() {
     setNum((num) => num + 1);
   }
-  const { globalState, updateGlobalState } = useContext(HeaderContext);
+  const { globalState, updateGlobalState, setLang } = useContext(HeaderContext);
   useEffect(() => {
     (async () => {
       await AppSetting.init();
@@ -102,14 +102,14 @@ export function Setting() {
 
   return (
     <div>
-      <div className="relative flex pr-8 pt-2">
-        <div className="w-1/2">
+      <div className="relative flex flex-wrap">
+        <div className="w-full lg:w-1/2">
           <Form
             name="webdavForm"
             form={webdavForm}
             labelCol={{ span: 8 }}
             wrapperCol={{ span: 16 }}
-            style={{ maxWidth: 600, padding: 24 }}
+            style={{ maxWidth: 600 }}
             onFinish={webDavOnFinish}
             initialValues={{
               baseDirName: "HyperChat",
@@ -196,7 +196,7 @@ export function Setting() {
             </Form.Item>
           </Form>
         </div>
-        <div className="w-1/2">
+        <div className="w-full lg:w-1/2">
           <Form
             layout="vertical"
             name="basicSitting"
@@ -206,6 +206,19 @@ export function Setting() {
             // }}
             autoComplete="off"
           >
+            <Form.Item label={t`Language`} className="lg:hidden">
+              <Select
+                value={currLang}
+                className="w-full"
+                onChange={(e) => {
+                  setLang(e);
+                }}
+                options={[
+                  { value: "zhCN", label: "中文" },
+                  { value: "enUS", label: "English" },
+                ]}
+              />
+            </Form.Item>
             <Form.Item label={t`LaunchStartup`}>
               <Switch
                 value={AppSetting.get().isAutoLauncher}
@@ -225,6 +238,7 @@ export function Setting() {
             </Form.Item>
             <Form.Item label={t`mcpCallToolTimeout`}>
               <InputNumber
+                className="w-full"
                 value={AppSetting.get().mcpCallToolTimeout}
                 onChange={async (value) => {
                   AppSetting.get().mcpCallToolTimeout =
@@ -238,17 +252,14 @@ export function Setting() {
               label={t`DeleteChatHistory(exclude Star)`}
               name="deleteChatRecord"
             >
-              <Space>
+              <Space wrap>
                 <Button
                   onClick={async () => {
                     let f = ChatHistory.get().data.filter((x) => !x.icon);
                     let time = dayjs().subtract(30, "day").valueOf();
                     for (let x of f) {
                       // console.log(x.dateTime, time);
-                      if (
-                        x.dateTime == null ||
-                        x.dateTime < time
-                      ) {
+                      if (x.dateTime == null || x.dateTime < time) {
                         x.deleted = true;
                       }
                     }
@@ -265,10 +276,7 @@ export function Setting() {
                     let time = dayjs().subtract(15, "day").valueOf();
                     let f = ChatHistory.get().data.filter((x) => !x.icon);
                     for (let x of f) {
-                      if (
-                        x.dateTime == null ||
-                        x.dateTime < time
-                      ) {
+                      if (x.dateTime == null || x.dateTime < time) {
                         x.deleted = true;
                       }
                     }
@@ -283,7 +291,7 @@ export function Setting() {
               </Space>
             </Form.Item>
             <Form.Item label={t`DevTools`} name="openDevTools">
-              <Space>
+              <Space wrap>
                 <Button
                   onClick={() => {
                     call("openDevTools", []);
