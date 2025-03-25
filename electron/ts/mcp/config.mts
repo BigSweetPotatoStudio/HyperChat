@@ -193,9 +193,12 @@ export class MCPClient {
     client.onerror = (e) => {
       // console.log("client onerror: ", this.config);
       if (this.config?.hyperchat?.type == "sse") {
-        //
+        Logger.error("client see onerror: ", e);
       } else {
-        Logger.error("client onerror: ", e);
+        if (e.message.includes("not valid JSON")) {
+        } else {
+          Logger.error("client stdio onerror: ", e);
+        }
       }
     };
 
