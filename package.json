@@ -1,5 +1,5 @@
 {
-  "name": "dadigua-hyperchat",
+  "name": "@dadigua/hyper-chat",
   "version": "1.2.14",
   "main": "index.js",
   "scripts": {
