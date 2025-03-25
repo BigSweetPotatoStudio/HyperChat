@@ -1304,6 +1304,7 @@ export const Chat = ({
                   footer={null}
                   title={t`Chat Logs`}
                   open={mobile.current.showHistory}
+                  getContainer={false}
                 >
                   {historyShowNode}
                 </Drawer>
