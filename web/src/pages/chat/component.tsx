@@ -236,7 +236,7 @@ function render(content) {
 
 const renderMarkdown: BubbleProps["messageRender"] = (content) => (
   <div
-    className="markdown-body"
+    className="markdown-body text-sm lg:text-base"
     dangerouslySetInnerHTML={{ __html: render(content) }}
   />
 );
