@@ -46,6 +46,12 @@ jobs:
         with:
           images: dadigua/hyperchat-mini
 
+      - name: 获取npm上的最新版本
+        id: npm-version
+        run: |
+          NPM_VERSION=$(npm view @dadigua/hyper-chat version 2>/dev/null || echo "")
+          echo $NPM_VERSION
+
       - name: Build and push Docker image
         id: push
         uses: docker/build-push-action@3b5e8027fcad23fda98b2e3ac259d8d67585f671

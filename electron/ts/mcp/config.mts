@@ -193,7 +193,10 @@ export class MCPClient {
     client.onerror = (e) => {
       // console.log("client onerror: ", this.config);
       if (this.config?.hyperchat?.type == "sse") {
-        Logger.error("client see onerror: ", e);
+        if (e.message.includes("Body Timeout Error")) {
+        } else {
+          Logger.error("client see onerror: ", e);
+        }
       } else {
         if (e.message.includes("not valid JSON")) {
         } else {
