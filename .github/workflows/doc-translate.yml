@@ -1,4 +1,4 @@
-name: translate
+name: doc-translate
 
 # on: [push, pull_request]
 on:
