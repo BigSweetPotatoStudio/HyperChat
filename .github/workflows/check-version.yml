@@ -38,7 +38,7 @@ jobs:
         run: |
           # Get all releases and filter for alpha releases, then take the most recent one
           LATEST_ALPHA=$(curl -s "https://api.github.com/repos/${{ github.repository }}/releases" | \
-                         jq -r '[.[] | select(.tag_name | contains("alpha"))] | sort_by(.created_at) | reverse | .[0].tag_name | sed "s/^v//"')
+                         jq -r '.[].tag_name | select(contains("alpha"))' | sort -V -r | head -n 1 | sed 's/^v//')
           
           # If no alpha releases found, LATEST_ALPHA will be empty or "null"
           echo "latest_alpha_release=${LATEST_ALPHA:-''}" >> $GITHUB_OUTPUT
