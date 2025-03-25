@@ -16,7 +16,7 @@ RUN apt-get install -y python3 python3-pip
 # With pip.
 RUN pip install uv
 
-RUN npm i -g @dadigua/hyper-chat
+RUN npm i -g @dadigua/hyper-chat@latest
 
 
 CMD ["hyper-chat"]

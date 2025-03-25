@@ -10,7 +10,14 @@ on:
       - alpha
 
 jobs:
+  check:
+    uses: ./.github/workflows/check-version.yml
+
+
   build:
+    needs: check
+    if: ${{ needs.check.outputs.should_release == 'true' }}
+
     runs-on: ubuntu-latest
     steps:
       - name: Check out git repository
