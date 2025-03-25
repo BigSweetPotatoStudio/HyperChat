@@ -7,7 +7,7 @@ import {
   LoggerPolyfill,
   AutoLauncher as IAutoLauncher,
   CheckUpdate as ICheckUpdate,
-  Clone
+  Clone,
 } from "./polyfills.mjs";
 import path from "path";
 import p from "../../package.json";
@@ -15,16 +15,13 @@ import { zx } from "ts/es6.mjs";
 
 const { fs } = zx;
 
-Context.CONST.userDataPath = path.join(process.cwd(), "data");
+const logDir = path.join(Context.CONST.appDataDir, "log");
 Context.CONST.getVersion = p.version;
 
 /////////////////
 
-fs.ensureDirSync(Context.CONST.userDataPath);
-let logpath = path.join(
-  Context.CONST.userDataPath,
-  `${dayjs().format("YYYY-MM-DD")}.log`
-);
+fs.ensureDirSync(logDir);
+let logpath = path.join(logDir, `${dayjs().format("YYYY-MM-DD")}.log`);
 Logger.path = logpath;
 log4js.configure({
   appenders: {
@@ -58,17 +55,10 @@ class LoggerC extends LoggerPolyfill {
 
 Clone(Context.Logger, new LoggerC());
 
-
-export class AutoLauncher extends IAutoLauncher {
-
-}
+export class AutoLauncher extends IAutoLauncher {}
 
 Clone(Context.autoLauncher, new AutoLauncher());
 
-
-export class CheckUpdate extends ICheckUpdate {
-
-}
+export class CheckUpdate extends ICheckUpdate {}
 
 Clone(Context.checkUpdate, new CheckUpdate());
-
