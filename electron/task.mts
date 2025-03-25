@@ -17,9 +17,7 @@ if (argv.dev) {
 }
 if (argv.watch) {
   await $`npx cross-env NODE_ENV=development myEnv=dev webpack`;
-
 }
-
 
 if (argv.devnode) {
   await $`npx cross-env NODE_ENV=development myEnv=dev webpack -c webpack.no_electron.js`;
@@ -32,6 +30,9 @@ if (argv.testprod) {
 }
 
 if (argv.prod) {
+  await fs.copy("../web/public/logo.png", "./web-build/assets/favicon.png", {
+    overwrite: true,
+  });
   await $`npx cross-env NODE_ENV=production myEnv=prod webpack`;
   if (process.env.MYRUNENV === "github") {
     if (process.env.GH_TOKEN) {
@@ -49,11 +50,17 @@ if (argv.prod) {
 }
 
 if (argv.build) {
+  await fs.copy("../web/public/logo.png", "./web-build/assets/favicon.png", {
+    overwrite: true,
+  });
   await $`npx cross-env NODE_ENV=production myEnv=prod webpack`;
   await $`npx cross-env NODE_ENV=production myEnv=prod electron-builder --publish never`;
 }
 
 if (argv.buildnode) {
+  await fs.copy("../web/public/logo.png", "./web-build/assets/favicon.png", {
+    overwrite: true,
+  });
   await $`npx cross-env NODE_ENV=development myEnv=dev webpack -c webpack.no_electron.js`;
   let rootPackageJSON = await fs.readJSON("../package.json");
   let packageJSON = await fs.readJSON("./package.json");
