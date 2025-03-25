@@ -28,6 +28,17 @@ import { AppSetting } from "../../common/data";
   }
 })(); // 获取是否自动启动
 
+
+function setVhCssVar() {
+	const vh = window.innerHeight * 0.01;
+	// 创建全局变量 --vh
+	document.documentElement.style.setProperty('--vh', `${vh}px`);
+}
+
+setVhCssVar();
+window.addEventListener('resize', setVhCssVar);
+
+
 console.log("start");
 const px2rem = px2remTransformer({
   rootValue: 16, // 32px = 1rem; @default 16
