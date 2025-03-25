@@ -126,14 +126,14 @@ export function TaskResultsPage() {
       key: "operation",
       render: (text, row, index) => {
         return (
-          <div>
+          <div className="flex flex-wrap gap-2">
             <a
+              className="inline-block"
               onClick={() => {
                 setHistroyKey(row.key); // 设置当前行的key（用于查看历史记录）
                 setIsOpenResult(true);
               }}
             >{t`View`}</a>
-            <Divider type="vertical" />
             <Popconfirm
               title={t`Are you sure to delete this?`}
               onConfirm={() => {
@@ -144,7 +144,7 @@ export function TaskResultsPage() {
                 refresh();
               }}
             >
-              <a>{t`Delete`}</a>
+              <a className="inline-block">{t`Delete`}</a>
             </Popconfirm>
           </div>
         );
@@ -168,6 +168,7 @@ export function TaskResultsPage() {
     <div>
       <Button type="primary" onClick={() => history.back()}>{t`Bcak`}</Button>
       <Table
+        scroll={{ x: true }}
         rowKey={(r) => r.key}
         dataSource={ChatHistory.get().data.filter(
           (x) => x.taskKey == query.get("taskKey"),

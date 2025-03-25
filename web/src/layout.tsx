@@ -316,6 +316,12 @@ export function Layout() {
   const [providerValue, setProviderValue] = useState(Providers[0].value);
   const [modelOptions, setModelOptions] = useState([]);
 
+  const setLang = (e) => {
+    setCurrLang(e);
+    setLocal(e == "zhCN" ? zhCN : enUS);
+    refresh();
+  };
+
   return (
     <ConfigProvider locale={locale}>
       <div style={{ width: "100%", margin: "0px auto" }}>
@@ -356,12 +362,14 @@ export function Layout() {
                   🧠LLM
                 </Button>
                 <Select
+                  className="hidden lg:inline-block"
                   value={currLang}
                   style={{ width: 120 }}
                   onChange={(e) => {
-                    setCurrLang(e);
-                    setLocal(e == "zhCN" ? zhCN : enUS);
-                    refresh();
+                    // setCurrLang(e);
+                    // setLocal(e == "zhCN" ? zhCN : enUS);
+                    // refresh();
+                    setLang(e);
                   }}
                   options={[
                     { value: "zhCN", label: "中文" },
@@ -414,7 +422,7 @@ export function Layout() {
                             : "gray",
                     }}
                     onClick={() => {
-                      navigate("/setting");
+                      navigate("./Setting/WebdavSetting");
                     }}
                   >
                     <SyncOutlined spin={syncStatus == 1} />
@@ -422,17 +430,18 @@ export function Layout() {
                     {syncStatus == 1
                       ? "Syncing"
                       : syncStatus == -1
-                        ? "Sync Failed"
+                        ? "Failed"
                         : "Sync"}
                   </Button>
                 </>
               );
             },
           }}
+          logo={"./assets/favicon.png"}
           headerTitleRender={(logo, title, _) => {
             return (
               <Link to="home">
-                HyperChat<span>({electronData.get().version})</span>
+                {logo}HyperChat<span>({electronData.get().version})</span>
               </Link>
             );
           }}
@@ -462,7 +471,7 @@ export function Layout() {
           splitMenus={true}
         >
           <HeaderContext.Provider
-            value={{ globalState: num, updateGlobalState: refresh }}
+            value={{ globalState: num, updateGlobalState: refresh, setLang }}
           >
             <Outlet />
           </HeaderContext.Provider>
@@ -506,6 +515,7 @@ export function Layout() {
               </div>
             )}
             size="small"
+            scroll={{ x: true }}
             pagination={false}
             dataSource={GPT_MODELS.get().data}
             onMove={(data) => {
@@ -557,7 +567,7 @@ export function Layout() {
                     >
                       {t`Edit`}
                     </Button>
-                    <Divider type="vertical"></Divider>
+
                     <Button
                       type="link"
                       onClick={async () => {
@@ -571,7 +581,7 @@ export function Layout() {
                     >
                       {t`Clone`}
                     </Button>
-                    <Divider type="vertical"></Divider>
+
                     <Popconfirm
                       title="Confirm"
                       description="Confirm Delete?"
@@ -585,7 +595,7 @@ export function Layout() {
                     >
                       <Button type="link">{t`Delete`}</Button>
                     </Popconfirm>
-                    <Divider type="vertical"></Divider>
+
                     <Tooltip title="Set default">
                       <Button
                         type="link"

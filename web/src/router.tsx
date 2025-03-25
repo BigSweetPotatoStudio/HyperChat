@@ -18,6 +18,7 @@ import { WorkSpace } from "./pages/workspace";
 import { TaskListPage } from "./pages/hyperAgent/TaskList";
 import { t } from "./i18n";
 import { TaskResultsPage } from "./pages/hyperAgent/TaskResults";
+import { WebdavSetting } from "./pages/setting/sync";
 type RouteType = {
   path: string;
   name: React.ReactNode;
@@ -28,7 +29,6 @@ type RouteType = {
 };
 
 export function getLayoutRoute() {
-
   let route: RouteType = {
     path: "/",
     name: "",
@@ -64,12 +64,12 @@ export function getLayoutRoute() {
         icon: "📚",
         component: <KnowledgeBase />,
       },
-      {
-        path: "/HyperTools",
-        name: t`HyperTools`,
-        icon: "🛠️",
-        component: <HpyerTools />,
-      },
+      // {
+      //   path: "/HyperTools",
+      //   name: t`HyperTools`,
+      //   icon: "🛠️",
+      //   component: <HpyerTools />,
+      // },
       {
         path: "/Task",
         name: t`TaskList`,
@@ -81,7 +81,6 @@ export function getLayoutRoute() {
             name: t`TaskList`,
             component: <TaskListPage />,
             hideInMenu: true,
-  
           },
           {
             path: "/Results",
@@ -95,11 +94,32 @@ export function getLayoutRoute() {
         path: "/Setting",
         name: t`Settings`,
         icon: "⚙️",
-        component: <Setting />,
+        component: <Container from="/Setting" default="Setting" />,
+        routes: [
+          {
+            path: "/Setting",
+            name: t`Settings`,
+            icon: "📦",
+            component: <Setting />,
+          },
+          {
+            path: "/WebdavSetting",
+            name: t`WebdavSetting`,
+            icon: "☁️",
+            component: <WebdavSetting />,
+          },
+          {
+            path: "/HyperTools",
+            name: t`HyperTools`,
+            icon: "🛠️",
+            component: <HpyerTools />,
+          },
+        ],
+        // component: <Setting />,
       },
     ],
   };
-  
+
   function Container(props: { from: string; default?: string }) {
     const navigate = useNavigate();
     const location = useLocation();
@@ -117,7 +137,7 @@ export function getLayoutRoute() {
       </div>
     );
   }
-  
+
   function run(route, prefix) {
     if (Array.isArray(route.routes)) {
       for (let r of route.routes) {
@@ -135,9 +155,7 @@ export function getLayoutRoute() {
   return route;
 }
 
-
 export function getRoute(route: RouteType) {
-  
   function run(route) {
     return (
       <Route key={route.path} path={route.path} element={route.component}>

@@ -363,13 +363,12 @@ export function Market() {
               config.disabled = !config.disabled;
             }
             await MCP_CONFIG.save();
-            
+
             if (config.disabled) {
               await call("closeMcpClients", [item.name, true]);
             } else {
               await call("openMcpClient", [item.name]);
             }
-
 
             await getClients(false);
             refresh();
@@ -435,8 +434,8 @@ export function Market() {
     );
   };
   return (
-    <div className="flex">
-      <div className="w-2/5">
+    <div className="flex flex-wrap">
+      <div className="w-full lg:w-2/5">
         {/* <h1 className=" ">💻MCP</h1> */}
         <Space className="mt-1">
           <Tooltip
@@ -722,7 +721,7 @@ export function Market() {
           ]}
         />
       </div>
-      <div className="w-3/5 p-4">
+      <div className="w-full p-4 lg:w-3/5">
         <div>
           <h1>{t`More MCP Market`}</h1>
           <div>
