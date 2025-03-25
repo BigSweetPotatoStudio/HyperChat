@@ -104,7 +104,7 @@ export const AppSetting = new Data("app_setting.json", {
     username: "",
     password: "",
     baseDirName: "",
-    autoSync: false, // 废弃⚠️ => electronData
+    // autoSync: false, // 废弃⚠️ => electronData
   },
   darkTheme: false,
   mcpCallToolTimeout: 60,

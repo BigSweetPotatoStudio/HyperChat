@@ -90,11 +90,6 @@ export function WebdavSetting() {
       await call("testWebDav", [values]);
       AppSetting.get().webdav = values;
       await AppSetting.save();
-      // if (values.autoSync) {
-      //   // window.location.reload();
-      // } else {
-      //   await call("webDaveInit", []);
-      // }
 
       message.success("Save success");
     }
@@ -150,16 +145,7 @@ export function WebdavSetting() {
             >
               <Input disabled defaultValue="HyperChat" />
             </Form.Item>
-            <Form.Item
-              label={t`autoSync`}
-              name="autoSync"
-              tooltip={t`This is an experimental feature, 5min sync once`}
-            >
-              <Switch
-                checkedChildren="AutoSync"
-                unCheckedChildren="Close"
-              ></Switch>
-            </Form.Item>
+
             <Form.Item wrapperCol={{ offset: 8, span: 16 }}>
               <Space>
                 <Button
