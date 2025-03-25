@@ -422,7 +422,7 @@ export function Layout() {
                             : "gray",
                     }}
                     onClick={() => {
-                      navigate("/setting");
+                      navigate("./Setting/WebdavSetting");
                     }}
                   >
                     <SyncOutlined spin={syncStatus == 1} />
@@ -430,7 +430,7 @@ export function Layout() {
                     {syncStatus == 1
                       ? "Syncing"
                       : syncStatus == -1
-                        ? "Sync Failed"
+                        ? "Failed"
                         : "Sync"}
                   </Button>
                 </>
