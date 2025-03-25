@@ -9,7 +9,12 @@ on:
 
 
 jobs:
+  check:
+    uses: ./.github/workflows/check-version.yml
+
   release:
+    needs: check
+    if: ${{ needs.check.outputs.should_release == 'true' }}
     name: build and release electron app
     strategy:
       fail-fast: false

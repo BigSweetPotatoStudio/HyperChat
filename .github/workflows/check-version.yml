@@ -1,0 +1,45 @@
+name: 检查版本
+
+on:
+  workflow_call:
+    outputs:
+      should_release:
+        description: "是否需要发布新版本"
+        value: ${{ jobs.check.outputs.should_release }}
+      package_version:
+        description: "package.json 的版本"
+        value: ${{ jobs.check.outputs.package_version }}
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    outputs:
+      should_release: ${{ steps.compare-versions.outputs.should_release }}
+      package_version: ${{ steps.package-version.outputs.package_version }}
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: 获取package.json版本
+        id: package-version
+        run: |
+          PACKAGE_VERSION=$(node -p "require('./package.json').version")
+          echo "package_version=$PACKAGE_VERSION" >> $GITHUB_OUTPUT
+
+      - name: 获取最新release版本
+        id: latest-release
+        run: |
+          LATEST_RELEASE=$(curl -s https://api.github.com/repos/${{ github.repository }}/releases/latest | jq -r '.tag_name' | sed 's/^v//')
+          echo "latest_release=${LATEST_RELEASE:-''}" >> $GITHUB_OUTPUT
+        continue-on-error: true
+
+      - name: 比较版本
+        id: compare-versions
+        run: |
+          PACKAGE_VERSION="${{ steps.package-version.outputs.package_version }}"
+          LATEST_RELEASE="${{ steps.latest-release.outputs.latest_release }}"
+
+          if [ -z "$LATEST_RELEASE" ] || [ "$LATEST_RELEASE" = "null" ] || [ "$PACKAGE_VERSION" != "$LATEST_RELEASE" ]; then
+            echo "should_release=true" >> $GITHUB_OUTPUT
+          else
+            echo "should_release=false" >> $GITHUB_OUTPUT
+          fi
