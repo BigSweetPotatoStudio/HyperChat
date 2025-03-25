@@ -356,6 +356,7 @@ export function Layout() {
                   🧠LLM
                 </Button>
                 <Select
+                  className="hidden lg:inline-block"
                   value={currLang}
                   style={{ width: 120 }}
                   onChange={(e) => {
@@ -429,10 +430,11 @@ export function Layout() {
               );
             },
           }}
+          logo={"./assets/favicon.png"}
           headerTitleRender={(logo, title, _) => {
             return (
               <Link to="home">
-                HyperChat<span>({electronData.get().version})</span>
+               {logo}HyperChat<span>({electronData.get().version})</span>
               </Link>
             );
           }}
