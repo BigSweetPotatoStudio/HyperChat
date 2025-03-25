@@ -18,8 +18,8 @@ importers:
         specifier: ^2.8.2
         version: 2.8.5(antd@5.24.0(react-dom@https://codeload.github.com/BigSweetPotatoStudio/react-dom/tar.gz/1832838a0b3e2775c7b6f19afd245dba29262dda(react@18.2.0))(react@18.2.0))(rc-field-form@2.7.0(react-dom@https://codeload.github.com/BigSweetPotatoStudio/react-dom/tar.gz/1832838a0b3e2775c7b6f19afd245dba29262dda(react@18.2.0))(react@18.2.0))(react-dom@https://codeload.github.com/BigSweetPotatoStudio/react-dom/tar.gz/1832838a0b3e2775c7b6f19afd245dba29262dda(react@18.2.0))(react@18.2.0)
       '@ant-design/x':
-        specifier: ^1.0.2
-        version: 1.0.5(antd@5.24.0(react-dom@https://codeload.github.com/BigSweetPotatoStudio/react-dom/tar.gz/1832838a0b3e2775c7b6f19afd245dba29262dda(react@18.2.0))(react@18.2.0))(react-dom@https://codeload.github.com/BigSweetPotatoStudio/react-dom/tar.gz/1832838a0b3e2775c7b6f19afd245dba29262dda(react@18.2.0))(react@18.2.0)
+        specifier: ^1.0.6
+        version: 1.0.6(antd@5.24.0(react-dom@https://codeload.github.com/BigSweetPotatoStudio/react-dom/tar.gz/1832838a0b3e2775c7b6f19afd245dba29262dda(react@18.2.0))(react@18.2.0))(react-dom@https://codeload.github.com/BigSweetPotatoStudio/react-dom/tar.gz/1832838a0b3e2775c7b6f19afd245dba29262dda(react@18.2.0))(react@18.2.0)
       '@azure/identity':
         specifier: ^4.5.0
         version: 4.6.0
@@ -368,9 +368,9 @@ packages:
     peerDependencies:
       react: '>=16.9.0'
 
-  '@ant-design/x@1.0.5':
-    resolution: {integrity: sha512-St+JqVa6VNDTDjsn79O+GN6hG2rxZ1Skksjbfzn9JFkHNXXBQ+7SK+Vh2lDaZi48IzLPhaiBzFu+D8/4mgw2Ww==}
-    version: 1.0.5
+  '@ant-design/x@1.0.6':
+    resolution: {integrity: sha512-pPeVbniA3JLDcskysiV0L/M/XBgv75P4asXvP2P8gkl45S6FljaWp2QJNUpKeBTfcPIrdli4Nj1xnNr2vCXdvw==}
+    version: 1.0.6
     peerDependencies:
       antd: '>=5.0.0'
       react: '>=18.0.0'
@@ -5576,7 +5576,7 @@ snapshots:
       resize-observer-polyfill: 1.5.1
       throttle-debounce: 5.0.2
 
-  '@ant-design/x@1.0.5(antd@5.24.0(react-dom@https://codeload.github.com/BigSweetPotatoStudio/react-dom/tar.gz/1832838a0b3e2775c7b6f19afd245dba29262dda(react@18.2.0))(react@18.2.0))(react-dom@https://codeload.github.com/BigSweetPotatoStudio/react-dom/tar.gz/1832838a0b3e2775c7b6f19afd245dba29262dda(react@18.2.0))(react@18.2.0)':
+  '@ant-design/x@1.0.6(antd@5.24.0(react-dom@https://codeload.github.com/BigSweetPotatoStudio/react-dom/tar.gz/1832838a0b3e2775c7b6f19afd245dba29262dda(react@18.2.0))(react@18.2.0))(react-dom@https://codeload.github.com/BigSweetPotatoStudio/react-dom/tar.gz/1832838a0b3e2775c7b6f19afd245dba29262dda(react@18.2.0))(react@18.2.0)':
     dependencies:
       '@ant-design/colors': 7.2.0
       '@ant-design/cssinjs': 1.23.0(react-dom@https://codeload.github.com/BigSweetPotatoStudio/react-dom/tar.gz/1832838a0b3e2775c7b6f19afd245dba29262dda(react@18.2.0))(react@18.2.0)

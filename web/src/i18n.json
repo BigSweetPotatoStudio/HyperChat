@@ -31,8 +31,8 @@
         "en": "New Chat",
         "zh": "新建聊天"
     },
-    "Dialogue Records": {
-        "en": "Dialogue Records",
+    "Chat Logs": {
+        "en": "Chat Logs",
         "zh": "对话记录"
     },
     "Nothing 🤐": {
@@ -283,9 +283,9 @@
         "en": "Reset",
         "zh": "重置"
     },
-    "Clients and Tools": {
-        "en": "Clients and Tools",
-        "zh": "客户和工具"
+    "MCP and Tools": {
+        "en": "MCP and Tools",
+        "zh": "MCP和工具"
     },
     "Resources": {
         "en": "Resources",
@@ -934,5 +934,17 @@
     "Unloaded MCP": {
         "en": "Unloaded MCP",
         "zh": "未加载的MCP"
+    },
+    "WebdavSetting": {
+        "en": "WebdavSetting",
+        "zh": "Webdav设置"
+    },
+    "Language": {
+        "en": "Language",
+        "zh": "语言"
+    },
+    "Sync Success": {
+        "en": "Sync Success",
+        "zh": "同步成功"
     }
 }

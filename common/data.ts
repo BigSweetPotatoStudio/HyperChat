@@ -90,6 +90,7 @@ export const electronData = new Data(
     updated: {} as {
       [s: string]: boolean;
     },
+    autoSync: false, 
   },
   {
     sync: false,
@@ -103,7 +104,7 @@ export const AppSetting = new Data("app_setting.json", {
     username: "",
     password: "",
     baseDirName: "",
-    autoSync: false,
+    // autoSync: false, // 废弃⚠️ => electronData
   },
   darkTheme: false,
   mcpCallToolTimeout: 60,
