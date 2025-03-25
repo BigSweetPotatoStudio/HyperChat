@@ -25,11 +25,23 @@ jobs:
           PACKAGE_VERSION=$(node -p "require('./package.json').version")
           echo "package_version=$PACKAGE_VERSION" >> $GITHUB_OUTPUT
 
+
       - name: 获取最新release版本
         id: latest-release
         run: |
           LATEST_RELEASE=$(curl -s https://api.github.com/repos/${{ github.repository }}/releases/latest | jq -r '.tag_name' | sed 's/^v//')
           echo "latest_release=${LATEST_RELEASE:-''}" >> $GITHUB_OUTPUT
+        continue-on-error: true
+        
+      - name: 获取最新alpha release版本
+        id: latest-alpha-release
+        run: |
+          # Get all releases and filter for alpha releases, then take the most recent one
+          LATEST_ALPHA=$(curl -s "https://api.github.com/repos/${{ github.repository }}/releases" | \
+                         jq -r '[.[] | select(.tag_name | contains("alpha"))] | sort_by(.created_at) | reverse | .[0].tag_name | sed "s/^v//"')
+          
+          # If no alpha releases found, LATEST_ALPHA will be empty or "null"
+          echo "latest_alpha_release=${LATEST_ALPHA:-''}" >> $GITHUB_OUTPUT
         continue-on-error: true
 
       - name: 比较版本
@@ -37,9 +49,29 @@ jobs:
         run: |
           PACKAGE_VERSION="${{ steps.package-version.outputs.package_version }}"
           LATEST_RELEASE="${{ steps.latest-release.outputs.latest_release }}"
+          LATEST_ALPHA_RELEASE="${{ steps.latest-alpha-release.outputs.latest_alpha_release }}"
 
-          if [ -z "$LATEST_RELEASE" ] || [ "$LATEST_RELEASE" = "null" ] || [ "$PACKAGE_VERSION" != "$LATEST_RELEASE" ]; then
+          echo "Package version: $PACKAGE_VERSION"
+          echo "Latest stable release: $LATEST_RELEASE"
+          echo "Latest alpha release: $LATEST_ALPHA_RELEASE"
+          
+          # Check if stable release exists and matches package version
+          STABLE_MATCH=false
+          if [ -n "$LATEST_RELEASE" ] && [ "$LATEST_RELEASE" != "null" ] && [ "$PACKAGE_VERSION" = "$LATEST_RELEASE" ]; then
+            STABLE_MATCH=true
+          fi
+          
+          # Check if alpha release exists and matches package version
+          ALPHA_MATCH=false
+          if [ -n "$LATEST_ALPHA_RELEASE" ] && [ "$LATEST_ALPHA_RELEASE" != "null" ] && [ "$PACKAGE_VERSION" = "$LATEST_ALPHA_RELEASE" ]; then
+            ALPHA_MATCH=true
+          fi
+          
+          # Only release if package version doesn't match any existing release
+          if [ "$STABLE_MATCH" = "false" ] && [ "$ALPHA_MATCH" = "false" ]; then
+            echo "Package version is new, should release"
             echo "should_release=true" >> $GITHUB_OUTPUT
           else
+            echo "Package version already exists as a release, skipping"
             echo "should_release=false" >> $GITHUB_OUTPUT
           fi
