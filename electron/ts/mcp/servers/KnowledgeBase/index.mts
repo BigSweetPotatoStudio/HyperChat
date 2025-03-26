@@ -185,10 +185,10 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
         throw new Error("content are required");
       }
       try {
-        let { store } = await import("../../../langchain/vectorStore.mjs");
+        let { store } = await import("../../../rag/vectorStore.mjs");
         await store.addResourceByName(knowledge_base, {
-          markdown: content,
-          type: "markdown",
+          text: content,
+          type: "text",
         });
         return {
           content: [
@@ -208,11 +208,12 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
 });
 
 async function search(knowledge_base: string, words: string) {
-  let { store } = await import("../../../langchain/vectorStore.mjs");
+  let { store } = await import("../../../rag/vectorStore.mjs");
   let results = await store.searchByName(knowledge_base, words, 5);
   return `
-### score: The lower the score, the better. the less advisable it is to use if it exceeds 0.4.
-result:${JSON.stringify(results)}`;
+### score: The high the score, the better.
+result:
+${JSON.stringify(results)}`;
 }
 
 let transport;

@@ -652,8 +652,8 @@ export class OpenAiChannel {
         model: this.options.model,
         messages: messages,
         tools,
-        tool_choice: "auto",
       });
+
       messages.push(response.choices[0].message);
 
       let function_name =

@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useContext, useEffect, useState } from "react";
 // import { pipeline, env } from "@xenova/transformers";
 //     //   let localModelPath = await call("pathJoin", ["cache"]);
 //   env.localModelPath = localModelPath;
@@ -47,6 +47,7 @@ import { v4 } from "uuid";
 import { KnowledgeBaseResourceModal } from "./knowledgeBaseResourceModal";
 import { Divide } from "lucide-react";
 import { t } from "../../i18n";
+import { HeaderContext } from "../../common/context";
 
 const { Search } = Input;
 
@@ -55,6 +56,8 @@ export function KnowledgeBase() {
   const refresh = () => {
     setNum((n) => n + 1);
   };
+  const { globalState, updateGlobalState } = useContext(HeaderContext);
+
   useEffect(() => {
     (async () => {
       await KNOWLEDGE_BASE.init();
@@ -82,7 +85,7 @@ export function KnowledgeBase() {
       dataIndex: "operation",
       key: "operation",
       render: (text, record) => (
-        <div>
+        <div className="flex flex-wrap gap-2">
           <a
             onClick={() => {
               setCurrRowKnowledgeBase(record);
@@ -91,7 +94,7 @@ export function KnowledgeBase() {
           >
             {t`Edit`}
           </a>
-          <Divider type="vertical"></Divider>
+
           <a
             onClick={() => {
               setCurrRowKnowledgeBase(record);
@@ -99,7 +102,7 @@ export function KnowledgeBase() {
           >
             {t`Open`}
           </a>
-          <Divider type="vertical"></Divider>
+
           <Popconfirm
             title={t`Sure to delete?`}
             onConfirm={async () => {
@@ -130,7 +133,8 @@ export function KnowledgeBase() {
           <Space>
             <Button
               onClick={() => {
-                setCurrRowKnowledgeBase({} as any as KNOWLEDGE_Store);
+                setCurrRowKnowledgeBase({
+                } as any as KNOWLEDGE_Store);
                 setIsOpenKnowledgeBase(true);
               }}
               type="primary"
@@ -192,28 +196,10 @@ export function KnowledgeBase() {
 
                     setLoadingSearch(false);
                   }}
-                  placeholder={t`test search top 5`}
+                  placeholder={t`test search`}
                   enterButton={t`Search`}
                   loading={loadingSearch}
                 />
-              </Space>
-              <Space>
-                {!electronData.get().downloaded[currRowKnowledgeBase.model] && (
-                  <Button
-                    onClick={() => {
-                      call("initEmbeddings", [currRowKnowledgeBase.model]);
-                    }}
-                  >
-                    {t`Download Model`}
-                  </Button>
-                )}
-                <Button
-                  onClick={() => {
-                    setIsOpenProgress(true);
-                  }}
-                >
-                  {t`Check Progress`}
-                </Button>
               </Space>
             </div>
 
@@ -231,13 +217,14 @@ export function KnowledgeBase() {
                   dataIndex: "filepath",
                   key: "filepath",
                   render: (text, record) => (
-                    <>
+                    <div className="flex flex-wrap gap-2">
                       <a
                         onClick={async () => {
                           // let f = await call("pathJoin", [record.filepath]);
-                          let e = await call("exists", [record.filepath, ""]);
+                          let e = await call("exists", [record.filepath]);
                           if (e) {
-                            await call("openExplorer", [record.filepath]);
+                            let p = await call("pathJoin", [record.filepath]);
+                            await call("openExplorer", [p]);
                           } else {
                             message.error("file not exists");
                           }
@@ -245,7 +232,7 @@ export function KnowledgeBase() {
                       >
                         {t`Open`}
                       </a>
-                      <Divider type="vertical" />
+
                       <Popconfirm
                         title={t`Sure to delete?`}
                         onConfirm={async () => {
@@ -265,7 +252,7 @@ export function KnowledgeBase() {
                       >
                         <a>{t`Remove`}</a>
                       </Popconfirm>
-                    </>
+                    </div>
                   ),
                 },
               ]}
@@ -318,12 +305,7 @@ export function KnowledgeBase() {
         open={isOpenResource}
         initialValues={{} as any}
         onCreate={async (v) => {
-          console.log(v);
-          if (!electronData.get().downloaded[currRowKnowledgeBase.model]) {
-            setIsOpenProgress(true);
-          }
           v.key = v4();
-          await call("initEmbeddings", [currRowKnowledgeBase.model]);
           let r = await call("vectorStoreAdd", [currRowKnowledgeBase, v]);
           if (!Array.isArray(currRowKnowledgeBase.resources)) {
             currRowKnowledgeBase.resources = [];

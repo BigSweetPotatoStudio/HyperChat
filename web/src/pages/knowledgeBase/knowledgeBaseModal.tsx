@@ -28,16 +28,6 @@ import { GPT_MODELS, KNOWLEDGE_Store } from "../../../../common/data";
 
 import { t } from "../../i18n";
 
-const models = [
-  {
-    label: "bge-m3(default)",
-    value: "bge-m3",
-  },
-  {
-    label: "all-MiniLM-L6-v2(mini)",
-    value: "all-MiniLM-L6-v2",
-  },
-];
 type Values = KNOWLEDGE_Store;
 
 interface CollectionCreateFormProps {
@@ -71,6 +61,7 @@ const ModalForm: React.FC<CollectionCreateFormProps> = ({
       >
         <Input placeholder={t`Please enter`} />
       </Form.Item>
+
       <Form.Item<Values>
         name="model"
         label={t`model`}
@@ -78,7 +69,14 @@ const ModalForm: React.FC<CollectionCreateFormProps> = ({
       >
         <Select
           placeholder={t`Please select`}
-          options={models}
+          options={GPT_MODELS.get()
+            .data.filter((x) => x.type == "embedding")
+            .map((x) => {
+              return {
+                label: x.name,
+                value: x.key,
+              };
+            })}
           disabled={form.getFieldValue("key")}
         />
       </Form.Item>
