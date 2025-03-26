@@ -1,3 +1,13 @@
+# 1.2.15
+
+* mcp加载进度显示，添加快捷按钮
+* 优化手机h5显示
+* fixbug
+![image](https://github.com/user-attachments/assets/1c60e98f-f57b-4a38-9464-c7548c09cc3c)
+![image](https://github.com/user-attachments/assets/d8ba028d-d091-40f3-82bb-40e6f6ba10de)
+![image](https://github.com/user-attachments/assets/f53652cd-07f4-4f98-89d5-865213dc3fb5)
+
+
 # 1.2.12
 
 * 支持调用工具时询问![image](https://github.com/user-attachments/assets/11c03c92-399e-457e-8000-ff00c3c1e059)
