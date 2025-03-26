@@ -168,6 +168,7 @@ export function TaskResultsPage() {
     <div>
       <Button type="primary" onClick={() => history.back()}>{t`Bcak`}</Button>
       <Table
+        pagination={false}
         scroll={{ x: true }}
         rowKey={(r) => r.key}
         dataSource={ChatHistory.get().data.filter(

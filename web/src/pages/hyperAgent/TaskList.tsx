@@ -195,6 +195,7 @@ export function TaskListPage() {
       >{t`Create Task`}</Button>
 
       <Table
+        pagination={false}
         scroll={{
           x: true,
         }}

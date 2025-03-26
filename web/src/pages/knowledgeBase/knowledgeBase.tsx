@@ -133,8 +133,7 @@ export function KnowledgeBase() {
           <Space>
             <Button
               onClick={() => {
-                setCurrRowKnowledgeBase({
-                } as any as KNOWLEDGE_Store);
+                setCurrRowKnowledgeBase({} as any as KNOWLEDGE_Store);
                 setIsOpenKnowledgeBase(true);
               }}
               type="primary"
@@ -143,11 +142,13 @@ export function KnowledgeBase() {
             </Button>
           </Space>
           <Table
+            pagination={false}
             rowKey="key"
             dataSource={KNOWLEDGE_BASE.get().dbList}
             columns={columns}
           />
         </div>
+
         {currRowKnowledgeBase.key && (
           <div className="w-full lg:w-2/3">
             <div className="flex flex-wrap justify-between">
@@ -205,6 +206,7 @@ export function KnowledgeBase() {
 
             <Table
               rowKey="key"
+              pagination={false}
               dataSource={currRowKnowledgeBase.resources}
               columns={[
                 {

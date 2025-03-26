@@ -15,6 +15,8 @@ import { Command, CommandFactory } from "./command.mjs";
 
 import Router from "koa-router";
 import { HTTPPORT } from "./common/data.mjs";
+import { fs } from "./es6.mjs";
+import crypto from "crypto";
 
 export function genRouter(c, prefix: string) {
   let functions = [];
@@ -29,7 +31,7 @@ export function genRouter(c, prefix: string) {
   });
 
   for (let name of functions) {
-    router.post(`/${name}`, async (ctx) => {
+    router.post(`/${name}`, async (ctx: Koa.Context) => {
       let args = ctx.request.body;
       // console.log(name, args);
       try {
@@ -52,6 +54,7 @@ export function genRouter(c, prefix: string) {
           }
         }
         let res = await Command[name](...args);
+
         ctx.body = {
           code: 0,
           success: true,
@@ -63,6 +66,49 @@ export function genRouter(c, prefix: string) {
       }
     });
   }
+  const uploadDir = "./uploads";
+
+  fs.ensureDirSync(path.join(process.cwd(), uploadDir));
+  // console.log(prefix + "/uploads");
+  router.post("/uploads", async (ctx) => {
+    // console.log("uploads");
+    // 如果只上传一个文件，files.file就是文件对象
+    const files = ctx.request.files;
+    if (files && files.file) {
+      const file = files.file;
+      // 读取文件内容
+      const fileContent = await fs.readFile(file.filepath);
+
+      // 计算文件的SHA256哈希值
+      const hash = crypto
+        .createHash("sha256")
+        .update(fileContent as any)
+        .digest("hex");
+
+      // 获取文件扩展名
+      const ext = path.extname(file.originalFilename);
+
+      // 新的文件名 = 哈希值 + 原始扩展名
+      const newFilename = `${hash}${ext}`;
+      const newPath = path.join(uploadDir, newFilename);
+      let filepath = path.join(process.cwd(), newPath);
+      // 重命名文件
+      await fs.rename(file.filepath, newPath);
+
+  
+      ctx.status = 200;
+      ctx.body = {
+        data: {
+          filename: newFilename,
+          filepath: filepath,
+          // url: url + "/" + newFilename,
+          mimetype: file.mimetype,
+        },
+      };
+    } else {
+      throw new Error("No file uploaded");
+    }
+  });
   return router;
 }
 

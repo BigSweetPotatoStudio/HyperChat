@@ -22,6 +22,8 @@ import {
 } from "antd";
 import React, { useContext, useEffect, useRef, useState } from "react";
 import { call } from "./call";
+
+const isWeb = !window.ext;
 export function SelectFile(props: {
   value?: string;
   onChange?: (v: string) => void;
@@ -35,7 +37,9 @@ export function SelectFile(props: {
   const dropRef = useRef(null);
   useEffect(() => {
     const dropzone = dropRef.current;
-
+    if (dropzone == null) {
+      return;
+    }
     const handleDragEnter = (e) => {
       e.preventDefault();
       e.stopPropagation();
@@ -100,36 +104,73 @@ export function SelectFile(props: {
                 : props.filters,
         }
       : { type: "openDirectory" as const };
+
+  const inputRef = useRef(null);
+
+  if (isWeb) {
+    return (
+      <div>
+        <Upload
+          fileList={[]}
+          beforeUpload={async (file) => {
+            if (file) {
+              //   const reader = new FileReader();
+              //   reader.onload = (e) => {};
+              //   reader.readAsDataURL(file);
+              let form = new FormData();
+              form.append("file", file);
+              let res = await fetch("./api/uploads", {
+                method: "POST",
+                // No need to set Content-Type header when sending FormData
+                // Browser will automatically set the correct multipart/form-data with boundary
+                body: form,
+              }).then((r) => r.json());
+              setValue(res.data.filepath);
+              props.onChange(res.data.filepath);
+            }
+            return false;
+          }}
+        >
+          {props.children ? (
+            props.children
+          ) : (
+            <div>
+              <Button icon={<UploadOutlined />}>
+                {props.type == "openDirectory"
+                  ? "Select or Drop Folder"
+                  : "Select or Drop File"}
+              </Button>
+              {value ? (
+                <Tag
+                  closeIcon
+                  onClose={() => {
+                    setValue("");
+                    props.onChange("");
+                  }}
+                >
+                  {value}
+                </Tag>
+              ) : (
+                ""
+              )}
+            </div>
+          )}
+        </Upload>
+      </div>
+    );
+  }
+
   return (
     <div
       ref={dropRef}
       onClick={async () => {
-        let path = await call("selectFile", [
-          obj,
-          // {
-          //   type: props.type || "openFile",
-          //   filters: props.filters,
-          // },
-          // {
-          //   filters: [
-          //     {
-          //       name: "Video Files",
-          //       extensions: ["mp4", "mov", "avi", "mkv"],
-          //     },
-          //   ],
-          // },
-          // props.type == "openFile" {
-          //   type: props.type || "openFile",
-          //   filters: [
-          //     {
-          //       name: "Image Files",
-          //       extensions: ["jpg", "jpeg", "png", "gif"],
-          //     },
-          //   ],
-          // },
-        ]);
-        setValue(path);
-        props.onChange(path);
+        if (isWeb) {
+          inputRef.current.click();
+        } else {
+          let path = await call("selectFile", [obj]);
+          setValue(path);
+          props.onChange(path);
+        }
       }}
     >
       {props.children ? (
@@ -161,7 +202,7 @@ export function SelectFile(props: {
 }
 
 export function QuickPath(props: {
-  onChange?: (v: string) => void;
+  onChange?: (v: File) => void;
   children?: any;
 }) {
   const [isDragActive, setIsDragActive] = useState(false);
@@ -191,7 +232,7 @@ export function QuickPath(props: {
       e.stopPropagation();
       setIsDragActive(false);
 
-      props.onChange(e.dataTransfer.files[0].path);
+      props.onChange(e.dataTransfer.files[0]);
     };
 
     dropzone.addEventListener("dragenter", handleDragEnter);

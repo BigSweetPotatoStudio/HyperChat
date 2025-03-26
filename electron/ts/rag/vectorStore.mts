@@ -105,7 +105,7 @@ class Store {
     const storePath = path.join(basedirectory, storeKey + ".db");
     let ragapp = new MyRag();
     await ragapp.init(storePath, store);
-    return await ragapp.search(query);
+    return await ragapp.search(query, k);
   }
   async searchByName(store_name: string, query: string, k: number = 5) {
     let db = KNOWLEDGE_BASE.initSync().dbList.find((x) => x.name == store_name);

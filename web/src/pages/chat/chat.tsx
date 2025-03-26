@@ -40,6 +40,7 @@ import {
   Tag,
   Tooltip,
   Typography,
+  Upload,
 } from "antd";
 const antdMessage = message;
 import React, {
@@ -89,11 +90,11 @@ function urlToBase64(url: string) {
 }
 
 function blobToBase64(blob) {
-  return new Promise((resolve, reject) => {
+  return new Promise<string>((resolve, reject) => {
     const reader = new FileReader();
 
     reader.onload = () => {
-      resolve(reader.result); // reader.result 包含 Base64 字符串
+      resolve(reader.result as string); // reader.result 包含 Base64 字符串
     };
 
     reader.onerror = (error) => {
@@ -1816,33 +1817,57 @@ export const Chat = ({
                   ></MyAttachR>
 
                   <QuickPath
-                    onChange={(path) => {
-                      setValue((value) => {
-                        return value + " " + path;
-                      });
+                    onChange={async (file) => {
+                      if (file.path) {
+                        setValue((value) => {
+                          return value + " " + file.path;
+                        });
+                      } else {
+                        if (file.type.includes("image")) {
+                          let path = await blobToBase64(file);
+                          resourceResListRef.current.push({
+                            call_name: "UserUpload",
+                            contents: [
+                              {
+                                path: path,
+                                blob: path,
+                                type: "image",
+                              },
+                            ],
+                            uid: v4(),
+                          });
+                          refresh();
+                        } else {
+                          message.warning(t`please uplaod image`);
+                        }
+                      }
                     }}
                   >
                     <Sender
                       prefix={
                         supportImage && (
-                          <SelectFile
-                            uploadType="image"
-                            onChange={async (path) => {
-                              // console.log(path);
-                              if (path == "") return;
-                              path = "file://" + path;
-                              resourceResListRef.current.push({
-                                call_name: "UserUpload",
-                                contents: [
-                                  {
-                                    path: path,
-                                    blob: await urlToBase64(path),
-                                    type: "image",
-                                  },
-                                ],
-                                uid: v4(),
-                              });
-                              refresh();
+                          <Upload
+                            accept="image/*"
+                            fileList={[]}
+                            beforeUpload={async (file) => {
+                              if (file.type.includes("image")) {
+                                let path = await blobToBase64(file);
+                                resourceResListRef.current.push({
+                                  call_name: "UserUpload",
+                                  contents: [
+                                    {
+                                      path: path,
+                                      blob: await urlToBase64(path),
+                                      type: "image",
+                                    },
+                                  ],
+                                  uid: v4(),
+                                });
+                                refresh();
+                              } else {
+                                message.warning(t`please uplaod image`);
+                              }
+                              return false;
                             }}
                           >
                             <Button
@@ -1850,14 +1875,14 @@ export const Chat = ({
                               icon={<LinkOutlined />}
                               onClick={() => {}}
                             />
-                          </SelectFile>
+                          </Upload>
                         )
                       }
                       onPasteFile={async (file) => {
                         // console.log("onPasteFile", file);
-                        if (file.path != "") {
-                          let path = "file://" + file.path;
-                          let p = await urlToBase64(path);
+
+                        if (file.type.includes("image")) {
+                          let p = await blobToBase64(file);
                           resourceResListRef.current.push({
                             call_name: "UserUpload",
                             contents: [
@@ -1871,24 +1896,7 @@ export const Chat = ({
                           });
                           refresh();
                         } else {
-                          if (file.size > 0) {
-                            let blob = new Blob([await file.arrayBuffer()], {
-                              type: file.type,
-                            });
-                            let p = await blobToBase64(blob);
-                            resourceResListRef.current.push({
-                              call_name: "UserUpload",
-                              contents: [
-                                {
-                                  path: p,
-                                  blob: p,
-                                  type: "image",
-                                },
-                              ],
-                              uid: v4(),
-                            });
-                            refresh();
-                          }
+                          message.warning(t`please uplaod image`);
                         }
                       }}
                       loading={loading}
