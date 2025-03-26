@@ -3,7 +3,7 @@
 HyperChat 是一个追求开放的Chat客户端，可以使用各家LLM的API，完全支持MCP，实现最好的Chat体验。以及基于本机Agent实现生产力MAX工具。
 
 [![Build](https://github.com/BigSweetPotatoStudio/HyperChat/actions/workflows/build.yml/badge.svg)](https://github.com/BigSweetPotatoStudio/HyperChat/actions/workflows/build.yml)
-
+[![@dadigua/hyper-chat](https://img.shields.io/npm/v/%40dadigua%2Fhyper-chat)](https://www.npmjs.com/package/@dadigua/hyper-chat)
 [![npm downloads](https://img.shields.io/npm/dm/@dadigua/hyper-chat)](https://npm-stat.com/charts.html?package=@dadigua/hyper-chat)
 
 
