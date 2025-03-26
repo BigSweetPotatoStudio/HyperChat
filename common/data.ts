@@ -1,5 +1,5 @@
 export const DataList: Data<any>[] = [];
-import lodash from "lodash";
+
 
 export class Data<T> {
   private localStorage: any = null;
