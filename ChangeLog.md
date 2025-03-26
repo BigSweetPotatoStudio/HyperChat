@@ -1,10 +1,20 @@
 [中文](ChangeLog.zh.md) | [English](ChangeLog.md)
 
 
+# 1.2.15
+
+* mcp loading progress display, added shortcut buttons
+* optimized mobile H5 display
+* fixbug
+![image](https://github.com/user-attachments/assets/1c60e98f-f57b-4a38-9464-c7548c09cc3c)
+![image](https://github.com/user-attachments/assets/d8ba028d-d091-40f3-82bb-40e6f6ba10de)
+![image](https://github.com/user-attachments/assets/f53652cd-07f4-4f98-89d5-865213dc3fb5)
+
+
 # 1.2.12
 
-* Support asking when calling the tool ![image](https://github.com/user-attachments/assets/11c03c92-399e-457e-8000-ff00c3c1e059)
-* Chat supports displaying time ![image](https://github.com/user-attachments/assets/dba7bf09-99a1-46bd-9c94-052d18469b96)
+* support asking when calling tools ![image](https://github.com/user-attachments/assets/11c03c92-399e-457e-8000-ff00c3c1e059)
+* chat supports displaying time ![image](https://github.com/user-attachments/assets/dba7bf09-99a1-46bd-9c94-052d18469b96)
 * hypetool optimization, settings ![image](https://github.com/user-attachments/assets/cfc2c8e5-f7e7-4078-aaff-240b567f47c5)
 * Add historyFilterType hover tip by @xtyuns in https://github.com/BigSweetPotatoStudio/HyperChat/pull/52
 
@@ -12,30 +22,30 @@
 
 # 1.2.2
 
-* Automatically get PATH for mac and linux, no need to input PATH anymore.
-* Added linux deb package
+* mac, linux automatically get PATH, no need to input PATH.
+* add linux deb package
 * fix WebDav first synchronization error
-* fix bug
+* fixbug
 
 
 # 1.0.2
 
-* Increase temperature setting
-* Fix bugs
-* Support paste in input box, upload images
+* add temperature setting
+* fix bug
+* support pasting in input box, upload images
 
 # 0.2.0
 
-* Add knowledge base
+* add knowledge base
 
 
 # 0.1.1
 
 * fix MacOS image upload
-* Add a quick copy button, support buttons for copying messages and code
-* WebDav synchronization function optimized, only save 10 local versions
-* markdown code rendering added highlighting
-* HTML Artifacts added error capturing, support opening Chrome's console
+* add quick copy button, support copying messages and code
+* WebDav sync function optimization, only save 10 versions locally
+* markdown code rendering adds highlighting
+* HTML Artifacts increases error capture, supports opening Chrome's console
 
 
 
@@ -43,11 +53,11 @@
 
 ## HyperChat
 
-* Support two installation methods: plugin market and native MCP installation, quick installation and configuration in the plugin market, welcome to submit plugins, [Github](https://github.com/BigSweetPotatoStudio/HyperChatMCP)
-* WebDav synchronization logic optimized, backup locally before synchronizing, synchronizing every 5 minutes
-* LLM added testing function, testing for image input support + tool calls (consume a little token)
+* supports plugin market + MCP native installation, quick installation and configuration from the plugin market, welcome to submit plugins, [Github](https://github.com/BigSweetPotatoStudio/HyperChatMCP)
+* WebDav sync logic optimized, will back up locally before syncing, sync every 5 minutes
+* LLM adds testing feature, tests whether image input + tool call is supported (consumes a little token)
 * Chat supports inputting images
-* Chat supports displaying images returned from Tool Call as MCP resources
+* Chat supports displaying images returned by Tool Call MCP resources
 * fix bugs
 
 
@@ -57,14 +67,14 @@
 
 ## HyperChat
 
-* Optimized the startup speed of the MCP Server.
-* WebDav synchronization, currently does not support MCP configuration synchronization, operating system inconsistencies may cause problems.
-* Support setting request methods, Stream | Complete
-* Support KaTeX, display mathematical formulas
+* optimized the startup speed of MCP Server.
+* WebDav sync, temporarily does not support MCP configuration sync, operating system inconsistency may cause issues.
+* supports setting request methods, Stream | Complete
+* supports KaTeX, displays mathematical formulas
 
 ## HyperTools
 
-* Optimized the Tool for opening web pages
+* optimized the tool for opening webpages
 
 
 
@@ -72,13 +82,13 @@
 
 ## HyperChat
 
-* Bot display optimization, support search and drag sorting
-* Conversation history supports filtering + searching
-* For APIs that do not support calculating token consumption for large models, such as Qianwen, support vague counting by word count
-* Input box supports dragging files for quick input of file paths
-* My LLM Models list supports drag sorting
-* Support quick configuration of Ollama, Qwen's API models
+* Bot display optimization, supports search, drag and sort
+* conversation logs support filtering + searching
+* for APIs that do not support counting tokens of large models, such as Q&A, support fuzzy counting by word count
+* input box supports dragging files for quick input of file paths
+* My LLM Models list supports drag and sort
+* supports quick configuration of Ollama, Qwen API models
 
 ## HyperTools
 
-* Optimized the Tool for opening web pages, more complete information extraction. For example, answering this question `https://store.epicgames.com/zh-CN/   Which game is temporarily free?`
+* optimized the tool for opening webpages, more complete information extraction. For example, answering this question `https://store.epicgames.com/zh-CN/   Which game is temporarily free?`
