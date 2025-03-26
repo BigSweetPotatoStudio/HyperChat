@@ -42,7 +42,7 @@ import {
 import { HeaderContext } from "./common/context";
 import { PageContainer, ProCard, ProLayout } from "@ant-design/pro-components";
 import { getRoute, getLayoutRoute } from "./router";
-import { AppSetting, DataList } from "../../common/data";
+import { electronData, DataList } from "../../common/data";
 import { call } from "./common/call";
 import { EVENT } from "./common/event";
 
@@ -50,8 +50,8 @@ export default function App() {
   const [loading, setLoading] = useState(false);
   useEffect(() => {
     (async () => {
-      let st = await AppSetting.init();
-      if (st.webdav.autoSync) {
+      let st = await electronData.init();
+      if (st.autoSync) {
         setLoading(true);
         try {
           await call("webDavSync", []);

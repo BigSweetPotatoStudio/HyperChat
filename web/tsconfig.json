@@ -32,7 +32,7 @@
   "include": [
     "src",
     "types",
-    "eval",
+    "eval"
   ],
   "exclude": [
     "node_modules"

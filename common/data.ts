@@ -1,6 +1,5 @@
 export const DataList: Data<any>[] = [];
 
-
 export class Data<T> {
   private localStorage: any = null;
   private _inited = false;
@@ -60,15 +59,10 @@ export class Data<T> {
     throw new Error("Method not implemented.");
   }
 
-  public override({
-    inget,
-    insave,
-  }) {
+  public override({ inget, insave }) {
     inget && (this.inget = inget);
 
-
     insave && (this.insave = insave);
-
   }
 }
 
@@ -90,7 +84,7 @@ export const electronData = new Data(
     updated: {} as {
       [s: string]: boolean;
     },
-    autoSync: false, 
+    autoSync: false,
   },
   {
     sync: false,
@@ -160,6 +154,7 @@ export const GPT_MODELS = new Data("gpt_models.json", {
     supportImage: boolean;
     supportTool: boolean;
     call_tool_step?: number;
+    type?: "llm" | "embedding";
   }>,
 });
 
@@ -191,8 +186,6 @@ export const MCP_CONFIG = new MCP_CONFIG_DATA(
     sync: false,
   }
 );
-
-
 
 export const ENV_CONFIG = new Data(
   "env.json",
@@ -226,10 +219,13 @@ export type KNOWLEDGE_Store = {
 export type KNOWLEDGE_Resource = {
   key: string;
   name: string;
-  type: "file" | "markdown";
+  type: "file" | "text";
   fragments?: KNOWLEDGE_Resource_Fragment[];
   filepath?: string;
-  markdown?: string;
+  text?: string;
+  uniqueId: string;
+  entriesAdded: number;
+  loaderType: string;
 };
 
 export type KNOWLEDGE_Resource_Fragment = {

@@ -208,24 +208,30 @@ export function TaskListPage() {
         onCancel={() => setVisible(false)}
         initialValues={currRow}
         onCreate={async (v) => {
-          if (v.key) {
-            v = Object.assign(currRow, v);
-            let i = TaskList.get().data.findIndex((x) => x.key == v.key);
-            TaskList.get().data[i] = v;
-            await TaskList.save();
-            if (!v.disabled) {
+          try {
+            if (v.key) {
+              v = Object.assign(currRow, v);
+              let i = TaskList.get().data.findIndex((x) => x.key == v.key);
+              TaskList.get().data[i] = v;
+              await TaskList.save();
+              if (!v.disabled) {
+                await call("startTask", [v.key]);
+              }
+              refresh();
+              setVisible(false);
+            } else {
+              v.key = v4();
+              await call("checkTask", [v]).catch((e) => {
+                message.error(t`cron format error!`);
+                throw e;
+              });
+              TaskList.get().data.push(v);
+              await TaskList.save();
               await call("startTask", [v.key]);
+              refresh();
+              setVisible(false);
             }
-            refresh();
-            setVisible(false);
-          } else {
-            v.key = v4();
-            TaskList.get().data.push(v);
-            await TaskList.save();
-            await call("startTask", [v.key]);
-            refresh();
-            setVisible(false);
-          }
+          } catch {}
         }}
       />
     </div>

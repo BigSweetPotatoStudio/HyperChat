@@ -663,9 +663,9 @@
         "en": "Select",
         "zh": "选择"
     },
-    "test search top 5": {
-        "en": "test search top 5",
-        "zh": "测试搜索前五名"
+    "test search": {
+        "en": "test search",
+        "zh": "测试搜索"
     },
     "Search": {
         "en": "Search",
@@ -946,5 +946,25 @@
     "Sync Success": {
         "en": "Sync Success",
         "zh": "同步成功"
+    },
+    "cron format error!": {
+        "en": "cron format error!",
+        "zh": "cron格式错误！"
+    },
+    "type": {
+        "en": "type",
+        "zh": "类型"
+    },
+    "Embedding": {
+        "en": "Embedding",
+        "zh": "嵌入"
+    },
+    "Call-Tool-Step": {
+        "en": "Call-Tool-Step",
+        "zh": "调用工具步数"
+    },
+    "Currently, only PDF is supported, but in the future, DOC, PPT,\n            audio, and image formats will be supported.": {
+        "en": "Currently, only PDF is supported, but in the future, DOC, PPT,\n            audio, and image formats will be supported.",
+        "zh": "当前仅支持PDF，但未来将支持DOC、PPT、  \n            音频和图像格式。"
     }
 }

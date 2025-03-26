@@ -43,3 +43,19 @@ export const {
 } = await import(
   /* webpackIgnore: true */ "@modelcontextprotocol/sdk/types.js"
 );
+
+export const { RAGApplicationBuilder, TextLoader } = await import(
+  /* webpackIgnore: true */ "@llm-tools/embedjs"
+);
+
+export const { OpenAiEmbeddings } = await import(
+  /* webpackIgnore: true */ "@llm-tools/embedjs-openai"
+);
+
+export const { LibSqlDb } = await import(
+  /* webpackIgnore: true */ "@llm-tools/embedjs-libsql"
+);
+
+export const { PdfLoader } = await import(
+  /* webpackIgnore: true */ "@llm-tools/embedjs-loader-pdf"
+);

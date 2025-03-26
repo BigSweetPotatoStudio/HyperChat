@@ -22,7 +22,7 @@ export function NumberStep(props: any) {
 
   return (
     <Row className="w-full">
-      <Col span={18}>
+      <Col span={16}>
         <Slider
           defaultValue={props.defaultValue}
           min={props.min}
@@ -32,7 +32,7 @@ export function NumberStep(props: any) {
           step={props.step}
         />
       </Col>
-      <Col span={6}>
+      <Col span={8}>
         <InputNumber
           defaultValue={props.defaultValue}
           min={props.min}

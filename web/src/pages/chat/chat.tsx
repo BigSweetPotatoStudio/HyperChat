@@ -357,7 +357,7 @@ export const Chat = ({
       let find = Agents.get().data.find(
         (x) => x.key == currentChat.current.agentKey,
       );
-      onTitleChange && onTitleChange(find?.label || "");
+      onTitleChange && onTitleChange(find.label);
     }
   }, [currentChat.current.agentKey]);
 
@@ -1721,12 +1721,16 @@ export const Chat = ({
                             currentChat.current.modelKey = value;
                             createChat();
                           }}
-                          options={GPT_MODELS.get().data.map((x) => {
-                            return {
-                              label: x.name,
-                              value: x.key,
-                            };
-                          })}
+                          options={GPT_MODELS.get()
+                            .data.filter(
+                              (x) => x.type == "llm" || x.type == null,
+                            )
+                            .map((x) => {
+                              return {
+                                label: x.name,
+                                value: x.key,
+                              };
+                            })}
                         ></Select>
                       </span>
                     </Tooltip>
