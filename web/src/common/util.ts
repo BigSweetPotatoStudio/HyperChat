@@ -13,9 +13,10 @@ export function debounce<T>(func: T, wait): T {
   } as any;
 }
 
-
 export function useQuery() {
   const { search } = useLocation();
 
   return React.useMemo(() => new URLSearchParams(search), [search]);
 }
+
+export const isWeb = !window.ext;

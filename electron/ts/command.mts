@@ -364,9 +364,13 @@ export class CommandFactory {
   async initEmbeddings(model: string) {
     await FeatureExtraction.getInstance(model);
   }
-  async vectorStoreAdd(s: KNOWLEDGE_Store, r: KNOWLEDGE_Resource) {
+  async vectorStoreAdd(
+    s: KNOWLEDGE_Store,
+    r: KNOWLEDGE_Resource,
+    move = false
+  ) {
     let { store } = await import("./rag/vectorStore.mjs");
-    return await store.addResource(s, r);
+    return await store.addResource(s, r, move);
   }
   async vectorStoreDelete(s: KNOWLEDGE_Store) {
     let { store } = await import("./rag/vectorStore.mjs");

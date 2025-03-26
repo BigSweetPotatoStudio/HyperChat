@@ -34,7 +34,11 @@ fs.ensureDirSync(basedirectory);
 const fileirectory = path.join(appDataDir, "files");
 fs.ensureDirSync(fileirectory);
 class Store {
-  async addResource(store: KNOWLEDGE_Store, r: KNOWLEDGE_Resource) {
+  async addResource(
+    store: KNOWLEDGE_Store,
+    r: KNOWLEDGE_Resource,
+    move = false
+  ) {
     let storeKey = store.key;
     const storePath = path.join(basedirectory, storeKey + ".db");
     let ragapp = new MyRag();
@@ -45,7 +49,12 @@ class Store {
       if (x.ext === ".pdf") {
         r.name = x.name + x.ext;
         let filepath = path.join(fileirectory, r.key + ".pdf");
-        await fs.copy(r.filepath, filepath);
+        if (move) {
+          await fs.move(r.filepath, filepath);
+        } else {
+          await fs.copy(r.filepath, filepath);
+        }
+
         r.filepath = path.relative(appDataDir, filepath);
         res = await ragapp.addPdf(filepath);
         console.log("addPdf", res);

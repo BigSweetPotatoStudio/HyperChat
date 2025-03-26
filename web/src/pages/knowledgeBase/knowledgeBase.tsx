@@ -48,6 +48,7 @@ import { KnowledgeBaseResourceModal } from "./knowledgeBaseResourceModal";
 import { Divide } from "lucide-react";
 import { t } from "../../i18n";
 import { HeaderContext } from "../../common/context";
+import { isWeb } from "../../common/util";
 
 const { Search } = Input;
 
@@ -308,7 +309,7 @@ export function KnowledgeBase() {
         initialValues={{} as any}
         onCreate={async (v) => {
           v.key = v4();
-          let r = await call("vectorStoreAdd", [currRowKnowledgeBase, v]);
+          let r = await call("vectorStoreAdd", [currRowKnowledgeBase, v, isWeb]);
           if (!Array.isArray(currRowKnowledgeBase.resources)) {
             currRowKnowledgeBase.resources = [];
           }

@@ -22,8 +22,9 @@ import {
 } from "antd";
 import React, { useContext, useEffect, useRef, useState } from "react";
 import { call } from "./call";
+import { isWeb } from "./util";
 
-const isWeb = !window.ext;
+
 export function SelectFile(props: {
   value?: string;
   onChange?: (v: string) => void;
