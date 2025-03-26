@@ -357,7 +357,7 @@ export const Chat = ({
       let find = Agents.get().data.find(
         (x) => x.key == currentChat.current.agentKey,
       );
-      onTitleChange && onTitleChange(find.label);
+      onTitleChange && onTitleChange(find?.label || "");
     }
   }, [currentChat.current.agentKey]);
 
