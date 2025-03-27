@@ -23,7 +23,7 @@ export class MyRag {
     return this.app.addLoader(new PdfLoader({ filePathOrUrl: filepath }));
   }
   async init(storePath: string, store: KNOWLEDGE_Store) {
-    let gpt_m = GPT_MODELS.get().data.find((x) => x.key == store.model);
+    let gpt_m = GPT_MODELS.initSync().data.find((x) => x.key == store.model);
     if (gpt_m == null) {
       throw new Error("Model not found");
     }

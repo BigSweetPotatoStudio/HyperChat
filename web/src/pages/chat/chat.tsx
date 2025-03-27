@@ -54,6 +54,8 @@ import OpenAI from "openai";
 import { v4 } from "uuid";
 import * as MCPTypes from "@modelcontextprotocol/sdk/types.js";
 
+import { z } from "zod";
+
 function urlToBase64(url: string) {
   return new Promise<string>((resolve, reject) => {
     // 创建图片对象
@@ -179,7 +181,11 @@ import { NumberStep } from "../../common/numberStep";
 import { HeaderContext } from "../../common/context";
 import dayjs from "dayjs";
 import { sleep } from "../../common/sleep";
-import { DrawerForm } from "@ant-design/pro-components";
+import { BetaSchemaForm, DrawerForm } from "@ant-design/pro-components";
+import {
+  JsonSchema2FormItem,
+  JsonSchema2ProFormColumnsType,
+} from "../../common/util";
 
 export const Chat = ({
   onTitleChange = undefined,
@@ -1289,6 +1295,9 @@ export const Chat = ({
     </>
   );
 
+  const [callToolOpen, setCallToolOpen] = useState(false);
+  const [callToolForm] = Form.useForm();
+  const [currTool, setCurrTool] = useState({} as any);
   return (
     <>
       <div className="chat relative h-full">
@@ -2016,7 +2025,14 @@ export const Chat = ({
                                   key={x.origin_name || x.function.name}
                                   title={x.function.description}
                                 >
-                                  <Button size="small">
+                                  <Button
+                                    size="small"
+                                    onClick={() => {
+                                      setCurrTool(x);
+                                      console.log(x);
+                                      setCallToolOpen(true);
+                                    }}
+                                  >
                                     {x.origin_name ||
                                       x.function.name.replace(x.key + "--", "")}
                                   </Button>
@@ -2033,6 +2049,94 @@ export const Chat = ({
                 },
               ].filter((c) => !mobile.current.is || c.key != "tools")}
             ></Table>
+          </Modal>
+
+          <Modal
+            title={t`Call Tool`}
+            open={callToolOpen}
+            footer={[]}
+            onCancel={() => setCallToolOpen(false)}
+            forceRender={true}
+            zIndex={2000}
+          >
+            <Form
+              // layout="vertical"
+              labelCol={{ span: 6 }}
+              wrapperCol={{ span: 18 }}
+              onFinish={async (values) => {
+                console.log("onFinish", values);
+                // try {
+                //   let call_res = await call("mcpCallTool", [
+                //     currTool.clientName,
+                //     currTool.origin_name,
+                //     values,
+                //   ]);
+                //   console.log(call_res);
+                // } catch (e) {
+                //   message.error(e.message);
+                // }
+              }}
+            >
+              {currTool.key
+                ? JsonSchema2FormItem(
+                    currTool.function.parameters,
+                    // zodToJsonSchema(
+                    //   z.object({
+                    //     paths: z.array(
+                    //       z.object({
+                    //         alert: z.string({
+                    //           description: "filesystem path",
+                    //         }),
+                    //         b: z.string({
+                    //           description: "filesystem path",
+                    //         }),
+                    //       }),
+                    //     ),
+                    //     path: z.string({
+                    //       description: "filesystem path",
+                    //     }),
+                    //     port: z.number({
+                    //       description: "port",
+                    //     }),
+                    //     host: z
+                    //       .boolean({
+                    //         description: "host",
+                    //       })
+                    //       .optional(),
+                    //   }),
+                    // ),
+                  )
+                : []}
+              <Form.Item className="flex justify-end">
+                <Button htmlType="submit">Submit</Button>
+              </Form.Item>
+            </Form>
+            {/* <BetaSchemaForm<any>
+              layoutType="Form"
+              name="mcpconfigform"
+              form={callToolForm}
+              grid={false}
+              onFinish={async (values) => {
+                try {
+                  let call_res = await call("mcpCallTool", [
+                    currTool.clientName,
+                    currTool.origin_name,
+                    values,
+                  ]);
+                  console.log(call_res);
+                } catch (e) {
+                  message.error(e.message);
+                }
+              }}
+              columns={
+                currTool.key
+                  ? JsonSchema2ProFormColumnsType(currTool.function.parameters)
+                  : []
+              }
+
+            />
+            <div>Result:</div>
+            <div></div> */}
           </Modal>
 
           <Modal

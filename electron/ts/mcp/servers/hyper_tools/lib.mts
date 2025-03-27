@@ -7,7 +7,6 @@ import zodToJsonSchema, { zodPatterns } from "zod-to-json-schema";
 
 export const NAME = "hyper_tools";
 
-
 export const configSchema = z.object({
   Web_Tools_Platform: z
     .enum(["electron", "chrome", "none"], {
@@ -34,13 +33,11 @@ export const configSchema = z.object({
       description: "starting Page Url",
     })
     .default("https://github.com/BigSweetPotatoStudio/HyperChat"),
-  chromePath: z.nullable(
-    z
-      .string({
-        description: "Chrome Path",
-      })
-      .default("")
-  ),
+  chromePath: z
+    .string({
+      description: "Chrome Path",
+    })
+    .default(""),
 });
 
 function JsonSchema2DefaultValue(schema: any) {
@@ -65,6 +62,6 @@ export function getConfig() {
   let config = mcpconfig.mcpServers[NAME].hyperchat.config as z.infer<
     typeof configSchema
   >;
-
+  
   return configSchema.safeParse(config).data;
 }
