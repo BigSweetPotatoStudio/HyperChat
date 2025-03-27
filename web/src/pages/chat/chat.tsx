@@ -320,7 +320,7 @@ export const Chat = ({
     dateTime: Date.now(),
     isCalled: data.agentKey ? true : false,
     isTask: false,
-    confirm_call_tool: false,
+    confirm_call_tool: true,
   };
   const DATA = useRef({
     mcpLoading: false,
@@ -868,11 +868,12 @@ export const Chat = ({
         baseURL: config.baseURL,
         model: config.model,
         apiKey: config.apiKey,
-        requestType: currentChat.current.requestType,
+
         call_tool_step: config.call_tool_step,
         supportTool: config.supportTool,
         supportImage: config.supportImage,
 
+        requestType: currentChat.current.requestType,
         allowMCPs: currentChat.current.allowMCPs,
         temperature: currentChat.current.temperature,
         confirm_call_tool: currentChat.current.confirm_call_tool,
@@ -883,12 +884,6 @@ export const Chat = ({
               title: "是否执行工具",
               width: "80%",
               footer: [],
-              // onOk: () => {
-              //   resolve(1);
-              // },
-              // onCancel: () => {
-              //   reject(new Error("用户取消"));
-              // },
               content: (
                 <div>
                   <Form
@@ -899,7 +894,6 @@ export const Chat = ({
                       resolve(e);
                       m.destroy();
                     }}
-                    style={{ maxWidth: 600 }}
                   >
                     {JsonSchema2FormItemOrNull(
                       getTools().find(
@@ -907,16 +901,31 @@ export const Chat = ({
                       ).function.parameters,
                     ) || t`No parameters`}
                     <Form.Item>
-                      <Space>
-                        <Button type="primary" htmlType="submit">
-                          {t`Submit`}
-                        </Button>
+                      <div className="flex flex-wrap justify-between">
                         <Button
                           onClick={() => {
+                            m.destroy();
                             reject(new Error("用户取消"));
                           }}
                         >{t`Cancel`}</Button>
-                      </Space>
+                        <Space>
+                          <Button
+                            type="primary"
+                            ghost
+                            htmlType="submit"
+                            onClick={() => {
+                              currentChat.current.confirm_call_tool = false;
+                              openaiClient.current.options.confirm_call_tool =
+                                false;
+                            }}
+                          >
+                            {t`Allow this Chat`}
+                          </Button>
+                          <Button type="primary" htmlType="submit">
+                            {t`Allow Once`}
+                          </Button>
+                        </Space>
+                      </div>
                     </Form.Item>
                   </Form>
                 </div>
@@ -1030,7 +1039,7 @@ export const Chat = ({
       antdMessage.error(
         e.message || t`An error occurred, please try again later`,
       );
-      throw e;
+      // throw e;
     } finally {
       setLoading(false);
     }
