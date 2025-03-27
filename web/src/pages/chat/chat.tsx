@@ -750,6 +750,8 @@ export const Chat = ({
                                     style={{
                                       whiteSpace: "pre-wrap",
                                       wordWrap: "break-word",
+                                      padding: "8px 0",
+                                      textAlign: "center",
                                     }}
                                   >
                                     <span>Tool Name: </span>
@@ -881,7 +883,7 @@ export const Chat = ({
           return new Promise((resolve, reject) => {
             console.log("tool", tool);
             let m = modal.confirm({
-              title: "是否执行工具",
+              title: t`Comfirm Call Tool`,
               width: "80%",
               footer: [],
               content: (
@@ -895,6 +897,19 @@ export const Chat = ({
                       m.destroy();
                     }}
                   >
+                    <pre
+                      style={{
+                        whiteSpace: "pre-wrap",
+                        wordWrap: "break-word",
+                        padding: "8px 0",
+                        textAlign: "center",
+                      }}
+                    >
+                      <span>Tool Name: </span>
+                      <span className="text-red-400">
+                        {tool.restore_name || tool.function.name}
+                      </span>
+                    </pre>
                     {JsonSchema2FormItemOrNull(
                       getTools().find(
                         (x) => x.restore_name == tool.restore_name,
@@ -905,7 +920,7 @@ export const Chat = ({
                         <Button
                           onClick={() => {
                             m.destroy();
-                            reject(new Error("用户取消"));
+                            reject(new Error(t`User Cancel`));
                           }}
                         >{t`Cancel`}</Button>
                         <Space>
@@ -2128,13 +2143,14 @@ export const Chat = ({
             footer={[]}
             onCancel={() => setCallToolOpen(false)}
             forceRender={true}
+            width={"80%"}
             zIndex={2000}
           >
             <Form
               // layout="vertical"
               form={callToolForm}
-              labelCol={{ span: 6 }}
-              wrapperCol={{ span: 18 }}
+              // labelCol={{ span: 6 }}
+              // wrapperCol={{ span: 18 }}
               onFinish={async (values) => {
                 console.log("onFinish", values);
                 try {
@@ -2157,6 +2173,19 @@ export const Chat = ({
                 }
               }}
             >
+              <pre
+                style={{
+                  whiteSpace: "pre-wrap",
+                  wordWrap: "break-word",
+                  padding: "8px 0",
+                  textAlign: "center",
+                }}
+              >
+                <span>Tool Name: </span>
+                <span className="text-red-400">
+                  {currTool.restore_name || currTool?.function?.name}
+                </span>
+              </pre>
               {currTool.key
                 ? JsonSchema2FormItemOrNull(
                     currTool.function.parameters,
