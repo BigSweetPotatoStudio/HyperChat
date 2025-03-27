@@ -449,7 +449,11 @@ export function JsonSchema2FormItem(schema: any, keys: any[] = []) {
     return Object.entries(schema.properties).map(
       ([key, prop]: [string, any]) => {
         if (Array.isArray(schema.required)) {
-          prop.required = schema.required.includes(key);
+          if (!Object.getOwnPropertyDescriptor(prop, "required")) {
+            Object.defineProperty(prop, "required", {
+              get: () => schema.required.includes(key),
+            });
+          }
         }
         return formatColumns(prop as any, [...keys, key]);
       },

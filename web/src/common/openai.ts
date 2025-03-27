@@ -110,6 +110,7 @@ export class OpenAiChannel {
       allowMCPs?: string[];
       temperature?: number;
       confirm_call_tool?: boolean;
+      confirm_call_tool_cb?: (tool: Tool_Call) => void;
     },
     public messages: MyMessage[],
     // public stream = true,
@@ -480,16 +481,23 @@ export class OpenAiChannel {
     if (tool_calls.length > 0 && call_tool) {
       this.lastMessage.tool_calls = tool_calls;
       for (let tool of tool_calls) {
-        if (process.env.runtime !== "node") {
-          if (this.options.confirm_call_tool) {
-            const { callToolConfirm } = await import("./call_tool_confirm");
-            await callToolConfirm(tool);
-          }
-        }
         try {
           tool.function.argumentsJSON = JSON.parse(tool.function.arguments);
         } catch {
           tool.function.argumentsJSON = {} as any;
+        }
+        if (process.env.runtime !== "node") {
+          if (
+            this.options.confirm_call_tool &&
+            this.options.confirm_call_tool_cb
+          ) {
+            // const { callToolConfirm } = await import("./call_tool_confirm");
+            tool.function.argumentsJSON =
+              await this.options.confirm_call_tool_cb(tool);
+            tool.function.arguments = JSON.stringify(
+              tool.function.argumentsJSON,
+            );
+          }
         }
         // console.log("tool_calls", tool_calls);
         let localtool = tools.find(

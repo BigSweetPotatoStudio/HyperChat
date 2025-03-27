@@ -157,6 +157,7 @@ import {
   getMcpInited,
   getPrompts,
   getResourses,
+  getTools,
   InitedClient,
 } from "../../common/mcp";
 import { EVENT } from "../../common/event";
@@ -210,6 +211,8 @@ export const Chat = ({
   useEffect(() => {
     loadMoreData(false);
   }, [globalState]);
+
+  const [modal, contextHolder] = Modal.useModal();
   useEffect(() => {
     (async () => {
       await Agents.init();
@@ -441,7 +444,7 @@ export const Chat = ({
                       loadHistory: false,
                     });
                     if (Array.isArray(x.content)) {
-                      console.log("x.content", x);
+                      // console.log("x.content", x);
 
                       resourceResListRef.current = x.content
                         .slice(1)
@@ -873,6 +876,54 @@ export const Chat = ({
         allowMCPs: currentChat.current.allowMCPs,
         temperature: currentChat.current.temperature,
         confirm_call_tool: currentChat.current.confirm_call_tool,
+        confirm_call_tool_cb: (tool) => {
+          return new Promise((resolve, reject) => {
+            console.log("tool", tool);
+            let m = modal.confirm({
+              title: "是否执行工具",
+              width: "80%",
+              footer: [],
+              // onOk: () => {
+              //   resolve(1);
+              // },
+              // onCancel: () => {
+              //   reject(new Error("用户取消"));
+              // },
+              content: (
+                <div>
+                  <Form
+                    initialValues={tool.function.argumentsJSON}
+                    name="control-hooks"
+                    onFinish={(e) => {
+                      // console.log(e);
+                      resolve(e);
+                      m.destroy();
+                    }}
+                    style={{ maxWidth: 600 }}
+                  >
+                    {JsonSchema2FormItemOrNull(
+                      getTools().find(
+                        (x) => x.restore_name == tool.restore_name,
+                      ).function.parameters,
+                    ) || t`No parameters`}
+                    <Form.Item>
+                      <Space>
+                        <Button type="primary" htmlType="submit">
+                          {t`Submit`}
+                        </Button>
+                        <Button
+                          onClick={() => {
+                            reject(new Error("用户取消"));
+                          }}
+                        >{t`Cancel`}</Button>
+                      </Space>
+                    </Form.Item>
+                  </Form>
+                </div>
+              ),
+            });
+          });
+        },
       },
       currentChat.current.messages,
     );
@@ -2098,7 +2149,7 @@ export const Chat = ({
               }}
             >
               {currTool.key
-                ? (JsonSchema2FormItemOrNull(
+                ? JsonSchema2FormItemOrNull(
                     currTool.function.parameters,
                     // zodToJsonSchema(
                     // z.object({
@@ -2130,7 +2181,7 @@ export const Chat = ({
                     //   }),
                     // }),
                     // ),
-                  ) || t`No parameters`)
+                  ) || t`No parameters`
                 : []}
               <Form.Item className="flex justify-end">
                 <Button htmlType="submit">Submit</Button>
@@ -2259,6 +2310,7 @@ export const Chat = ({
               </Radio.Group>
             </Form.Item>
           </Modal>
+          {contextHolder}
         </div>
       </div>
     </>
