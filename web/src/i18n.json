@@ -978,5 +978,13 @@
     "Allow Once": {
         "en": "Allow Once",
         "zh": "允许一次"
+    },
+    "Comfirm Call Tool": {
+        "en": "Comfirm Call Tool",
+        "zh": "确认调用工具"
+    },
+    "User Cancel": {
+        "en": "User Cancel",
+        "zh": "用户取消"
     }
 }

@@ -401,7 +401,8 @@ export const Chat = ({
             className="cursor-pointer"
             onClick={() => {
               Modal.info({
-                width: "80%",
+                width: "90%",
+                style: { maxWidth: 1024 },
                 title: "Tip",
                 maskClosable: true,
                 content: <div>{x.content as string}</div>,
@@ -596,7 +597,8 @@ export const Chat = ({
               className="cursor-pointer"
               onClick={() => {
                 Modal.info({
-                  width: "80%",
+                  width: "90%",
+                  style: { maxWidth: 1024 },
                   title: t`Tool Call Result`,
                   maskClosable: true,
                   content: (
@@ -741,7 +743,8 @@ export const Chat = ({
                           className="cursor-pointer"
                           onClick={() => {
                             Modal.info({
-                              width: "80%",
+                              width: "90%",
+                              style: { maxWidth: 1024 },
                               title: t`Tool Call`,
                               maskClosable: true,
                               content: (
@@ -884,7 +887,8 @@ export const Chat = ({
             console.log("tool", tool);
             let m = modal.confirm({
               title: t`Comfirm Call Tool`,
-              width: "80%",
+              width: "90%",
+              style: { maxWidth: 1024 },
               footer: [],
               content: (
                 <div>
