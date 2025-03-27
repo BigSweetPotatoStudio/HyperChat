@@ -966,5 +966,17 @@
     "Currently, only PDF is supported, but in the future, DOC, PPT,\n            audio, and image formats will be supported.": {
         "en": "Currently, only PDF is supported, but in the future, DOC, PPT,\n            audio, and image formats will be supported.",
         "zh": "当前仅支持PDF，但未来将支持DOC、PPT、  \n            音频和图像格式。"
+    },
+    "Call Tool": {
+        "en": "Call Tool",
+        "zh": "调用工具"
+    },
+    "Allow this Chat": {
+        "en": "Allow this Chat",
+        "zh": "允许此聊天"
+    },
+    "Allow Once": {
+        "en": "Allow Once",
+        "zh": "允许一次"
     }
 }
