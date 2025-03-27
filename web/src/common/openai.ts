@@ -491,7 +491,7 @@ export class OpenAiChannel {
         } catch {
           tool.function.argumentsJSON = {} as any;
         }
-        console.log("tool_calls", tool_calls);
+        // console.log("tool_calls", tool_calls);
         let localtool = tools.find(
           (t) => t.function.name === tool.function.name,
         );
@@ -537,7 +537,7 @@ export class OpenAiChannel {
               content: { error: e.message },
             };
           });
-        console.log("call_response: ", call_res);
+        // console.log("call_response: ", call_res);
 
         if (call_res.content == null) {
           this.lastMessage.content = JSON.stringify(call_res);

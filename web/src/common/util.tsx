@@ -217,7 +217,7 @@ const formItemLayout = {
 // };
 
 export function JsonSchema2FormItem(schema: any, keys: any[] = []) {
-  console.log("schema", schema);
+  // console.log("schema", schema);
   function formatColumns(
     prop: {
       type: string;
@@ -226,6 +226,7 @@ export function JsonSchema2FormItem(schema: any, keys: any[] = []) {
       anyOf: any[];
       enum: string[];
       properties: any;
+      items: any;
     },
     keys: any[],
   ) {
@@ -248,8 +249,52 @@ export function JsonSchema2FormItem(schema: any, keys: any[] = []) {
     let formItem;
     let label =
       typeof keys[keys.length - 1] === "string" ? keys[keys.length - 1] : "";
-    if (type == "object") {
-      throw new Error("object not error");
+    // console.log(label);
+    // typeof keys[keys.length - 1] === "string" ? keys[keys.length - 1] : "";
+    if (type == "array") {
+      return (
+        <Form.List name={keys} key={keys.toString()}>
+          {(fields, { add, remove }) => (
+            <>
+              <Form.Item
+                key={keys.toString()}
+                label={label}
+                required={prop.required}
+              >
+                {fields.map((field, index) => {
+                  return (
+                    <div key={field.key} className="flex w-full">
+                      {prop.items.type === "object"
+                        ? JsonSchema2FormItem(prop.items as any, [field.name])
+                        : formatColumns(prop.items as any, [field.name])}
+                      <MinusCircleOutlined
+                        className="h-8 flex-shrink-0"
+                        onClick={() => remove(field.name)}
+                      />
+                    </div>
+                  );
+                })}
+                <Form.Item>
+                  <Button
+                    type="dashed"
+                    onClick={() => add()}
+                    block
+                    icon={<PlusOutlined />}
+                  >
+                    Add field
+                  </Button>
+                </Form.Item>
+              </Form.Item>
+            </>
+          )}
+        </Form.List>
+      );
+    } else if (type == "object") {
+      formItem = (
+        <Form.Item className="w-full" key={keys.toString()} label={label}>
+          {JsonSchema2FormItem(prop, [...keys])}
+        </Form.Item>
+      );
     } else if (type === "string") {
       if (prop.enum) {
         formItem = (
@@ -364,11 +409,7 @@ export function JsonSchema2FormItem(schema: any, keys: any[] = []) {
             },
           ]}
         >
-          <Switch
-          // style={{
-          //   width: "100%",
-          // }}
-          ></Switch>
+          <Switch></Switch>
         </Form.Item>
       );
     } else {
@@ -410,110 +451,19 @@ export function JsonSchema2FormItem(schema: any, keys: any[] = []) {
         if (Array.isArray(schema.required)) {
           prop.required = schema.required.includes(key);
         }
-
-        if (prop.type === "array") {
-          if (prop.items.type === "object") {
-            return (
-              <Form.List name={key} key={key}>
-                {(fields, { add, remove }) => (
-                  <>
-                    <Form.Item
-                      // formItemLayout={formItemLayout}
-                      name={key}
-                      label={key}
-                      required={prop.required}
-                    >
-                      {fields.map((field, index) => {
-                        return (
-                          <div key={field.key} className="flex w-full">
-                            {/* <Form.Item
-                          // key={field.key}
-                          className="w-full"
-                          name={[field.name]}
-                          rules={[{ required: prop.required }]}
-                        >
-                          <Input placeholder={prop.description} />
-                        </Form.Item> */}
-                            {JsonSchema2FormItem(prop.items, [
-                              ...keys,
-                              field.name,
-                            ])}
-                            <MinusCircleOutlined
-                              className="h-8 flex-shrink-0"
-                              onClick={() => remove(field.name)}
-                            />
-                          </div>
-                        );
-                      })}
-                      <Form.Item>
-                        <Button
-                          type="dashed"
-                          onClick={() => add()}
-                          block
-                          icon={<PlusOutlined />}
-                        >
-                          Add field
-                        </Button>
-                      </Form.Item>
-                    </Form.Item>
-                  </>
-                )}
-              </Form.List>
-            );
-          } else {
-            return (
-              <Form.List name={key} key={key}>
-                {(fields, { add, remove }) => (
-                  <>
-                    <Form.Item
-                      // formItemLayout={formItemLayout}
-                      label={key}
-                      required={prop.required}
-                    >
-                      {fields.map((field, index) => {
-                        return (
-                          <div key={field.key} className="flex w-full">
-                            {/* <Form.Item
-                          // key={field.key}
-                          className="w-full"
-                          name={[field.name]}
-                          rules={[{ required: prop.required }]}
-                        >
-                          <Input placeholder={prop.description} />
-                        </Form.Item> */}
-                            {formatColumns(prop.items as any, [
-                              ...keys,
-                              field.name,
-                            ])}
-                            <MinusCircleOutlined
-                              className="h-8 flex-shrink-0"
-                              onClick={() => remove(field.name)}
-                            />
-                          </div>
-                        );
-                      })}
-                      <Form.Item>
-                        <Button
-                          type="dashed"
-                          onClick={() => add()}
-                          block
-                          icon={<PlusOutlined />}
-                        >
-                          Add field
-                        </Button>
-                      </Form.Item>
-                    </Form.Item>
-                  </>
-                )}
-              </Form.List>
-            );
-          }
-        } else {
-          return formatColumns(prop as any, [...keys, key]);
-        }
+        return formatColumns(prop as any, [...keys, key]);
       },
     );
   } else {
     return [];
+  }
+}
+
+export function JsonSchema2FormItemOrNull(p) {
+  let res = JsonSchema2FormItem(p);
+  if (res.length == 0) {
+    return null;
+  } else {
+    return res;
   }
 }

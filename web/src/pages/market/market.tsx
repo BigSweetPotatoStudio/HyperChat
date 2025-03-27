@@ -68,6 +68,7 @@ import { t } from "../../i18n";
 import { HeaderContext } from "../../common/context";
 import {
   JsonSchema2FormItem,
+  JsonSchema2FormItemOrNull,
   JsonSchema2ProFormColumnsType,
 } from "../../common";
 
@@ -731,10 +732,6 @@ export function Market() {
         onCancel={() => setMcpconfigOpen(false)}
         forceRender={true}
       >
-        {(currRow?.configSchema && Object.keys(currRow?.configSchema).length) >
-        0
-          ? t`Please configure the parameters`
-          : t`No need config`}
         {/* <BetaSchemaForm<any>
           layoutType="Form"
           name="mcpconfigform"
@@ -849,7 +846,8 @@ export function Market() {
           }}
         >
           {currRow.configSchema
-            ? JsonSchema2FormItem(currRow.configSchema)
+            ? JsonSchema2FormItemOrNull(currRow.configSchema) ||
+              t`No parameters`
             : []}
           <Form.Item className="flex justify-end">
             <Button htmlType="submit">Submit</Button>

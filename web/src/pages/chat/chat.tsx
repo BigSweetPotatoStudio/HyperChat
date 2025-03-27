@@ -184,8 +184,11 @@ import { sleep } from "../../common/sleep";
 import { BetaSchemaForm, DrawerForm } from "@ant-design/pro-components";
 import {
   JsonSchema2FormItem,
+  JsonSchema2FormItemOrNull,
   JsonSchema2ProFormColumnsType,
 } from "../../common/util";
+import zodToJsonSchema from "zod-to-json-schema";
+import { error } from "console";
 
 export const Chat = ({
   onTitleChange = undefined,
@@ -1298,6 +1301,10 @@ export const Chat = ({
   const [callToolOpen, setCallToolOpen] = useState(false);
   const [callToolForm] = Form.useForm();
   const [currTool, setCurrTool] = useState({} as any);
+  const [currToolResult, setCurrToolResult] = useState({
+    data: null as any,
+    error: null as any,
+  });
   return (
     <>
       <div className="chat relative h-full">
@@ -2029,7 +2036,11 @@ export const Chat = ({
                                     size="small"
                                     onClick={() => {
                                       setCurrTool(x);
-                                      console.log(x);
+                                      setCurrToolResult({
+                                        data: null,
+                                        error: null,
+                                      });
+                                      callToolForm.resetFields();
                                       setCallToolOpen(true);
                                     }}
                                   >
@@ -2061,82 +2072,82 @@ export const Chat = ({
           >
             <Form
               // layout="vertical"
+              form={callToolForm}
               labelCol={{ span: 6 }}
               wrapperCol={{ span: 18 }}
               onFinish={async (values) => {
                 console.log("onFinish", values);
-                // try {
-                //   let call_res = await call("mcpCallTool", [
-                //     currTool.clientName,
-                //     currTool.origin_name,
-                //     values,
-                //   ]);
-                //   console.log(call_res);
-                // } catch (e) {
-                //   message.error(e.message);
-                // }
-              }}
-            >
-              {currTool.key
-                ? JsonSchema2FormItem(
-                    currTool.function.parameters,
-                    // zodToJsonSchema(
-                    //   z.object({
-                    //     paths: z.array(
-                    //       z.object({
-                    //         alert: z.string({
-                    //           description: "filesystem path",
-                    //         }),
-                    //         b: z.string({
-                    //           description: "filesystem path",
-                    //         }),
-                    //       }),
-                    //     ),
-                    //     path: z.string({
-                    //       description: "filesystem path",
-                    //     }),
-                    //     port: z.number({
-                    //       description: "port",
-                    //     }),
-                    //     host: z
-                    //       .boolean({
-                    //         description: "host",
-                    //       })
-                    //       .optional(),
-                    //   }),
-                    // ),
-                  )
-                : []}
-              <Form.Item className="flex justify-end">
-                <Button htmlType="submit">Submit</Button>
-              </Form.Item>
-            </Form>
-            {/* <BetaSchemaForm<any>
-              layoutType="Form"
-              name="mcpconfigform"
-              form={callToolForm}
-              grid={false}
-              onFinish={async (values) => {
                 try {
                   let call_res = await call("mcpCallTool", [
                     currTool.clientName,
                     currTool.origin_name,
                     values,
                   ]);
-                  console.log(call_res);
+                  setCurrToolResult({
+                    data: call_res,
+                    error: null,
+                  });
+
+                  // console.log(call_res);
                 } catch (e) {
-                  message.error(e.message);
+                  setCurrToolResult({
+                    data: null,
+                    error: e,
+                  });
                 }
               }}
-              columns={
-                currTool.key
-                  ? JsonSchema2ProFormColumnsType(currTool.function.parameters)
-                  : []
-              }
+            >
+              {currTool.key
+                ? (JsonSchema2FormItemOrNull(
+                    currTool.function.parameters,
+                    // zodToJsonSchema(
+                    // z.object({
+                    //   // paths: z.array(
+                    //   //   z.object({
+                    //   //     first: z.array(
+                    //   //       z.object({
+                    //   //         arr: z.array(
+                    //   //           z.string({
+                    //   //             description: "filesystem path",
+                    //   //           }),
+                    //   //         ),
+                    //   //       }),
+                    //   //     ),
+                    //   //     // s: z.string()
+                    //   //   }),
+                    //   // ),
 
-            />
-            <div>Result:</div>
-            <div></div> */}
+                    //   a: z.object({
+                    //     b: z.object({
+                    //       c: z.object({
+                    //         d: z.array(
+                    //           z.string({
+                    //             description: "filesystem path",
+                    //           }),
+                    //         ),
+                    //       }),
+                    //     }),
+                    //   }),
+                    // }),
+                    // ),
+                  ) || t`No parameters`)
+                : []}
+              <Form.Item className="flex justify-end">
+                <Button htmlType="submit">Submit</Button>
+              </Form.Item>
+            </Form>
+            {currToolResult.data && (
+              <div>
+                <div>Result:</div>
+                <div>{JSON.stringify(currToolResult.data)}</div>
+              </div>
+            )}
+            {currToolResult.error && (
+              <div>
+                <div>Result:</div>
+                <div>{currToolResult.error.toString()}</div>
+              </div>
+            )}
           </Modal>
 
           <Modal
