@@ -15,6 +15,7 @@ import {
 } from "@ant-design/x";
 import {
   Avatar,
+  Badge,
   Button,
   Card,
   Checkbox,
@@ -189,7 +190,79 @@ import {
   JsonSchema2ProFormColumnsType,
 } from "../../common/util";
 import zodToJsonSchema from "zod-to-json-schema";
-import { error } from "console";
+
+function formatToolMessage(x: MyMessage, common, i) {
+  return {
+    ...common,
+    placement: "start",
+    avatar: {
+      icon: "🔧",
+      style: {
+        color: "#fff",
+        backgroundColor: "#87d068",
+      },
+    },
+    key: i.toString(),
+    content: (
+      <Tooltip
+        title={
+          <div className="max-h-40 overflow-auto text-ellipsis">
+            {x.content as string}
+          </div>
+        }
+      >
+        <span
+          className="cursor-pointer"
+          onClick={() => {
+            Modal.info({
+              width: "90%",
+              style: { maxWidth: 1024 },
+              title: t`Tool Call Result`,
+              maskClosable: true,
+              content: (
+                <div>
+                  <pre
+                    style={{
+                      whiteSpace: "pre-wrap",
+                      wordWrap: "break-word",
+                    }}
+                  >
+                    {x.content as string}
+                  </pre>
+                </div>
+              ),
+            });
+          }}
+        >
+          {x.content_status == "loading" ? (
+            <SyncOutlined spin />
+          ) : x.content_status == "error" ? (
+            "❌Error"
+          ) : (
+            "✅Completed"
+          )}
+          <div className="line-clamp-1">{x.content as string}</div>
+        </span>
+        {x.content_attachment &&
+          x.content_attachment.length > 0 &&
+          x.content_attachment.map((x, i) => {
+            if (x.type == "image") {
+              return (
+                <DownImage
+                  key={i}
+                  src={`data:${x.mimeType};base64,${x.data}`}
+                />
+              );
+            } else if (x.type == "text") {
+              return <pre>{x.text}</pre>;
+            }
+          })}
+      </Tooltip>
+    ),
+  };
+}
+
+const isFold = true;
 
 export const Chat = ({
   onTitleChange = undefined,
@@ -383,44 +456,105 @@ export const Chat = ({
       },
       role: x.role,
     };
-
-    if (x.content_from) {
-      return {
-        ...common,
-        key: i.toString(),
-        placement: x.role == "user" || x.role == "system" ? "end" : "start",
-        avatar: {
-          icon: x.role == "system" ? "⚙️" : <UserOutlined />,
-          style: {
-            color: "#f56a00",
-            backgroundColor: "#fde3cf",
-          },
-        },
-        content: (
-          <div
-            className="cursor-pointer"
+    let assistantFooter = (
+      <div className="flex flex-wrap justify-between text-xs">
+        <Space>
+          <CopyOutlined
+            className="hover:text-cyan-400"
+            key="copy"
             onClick={() => {
-              Modal.info({
-                width: "90%",
-                style: { maxWidth: 1024 },
-                title: "Tip",
-                maskClosable: true,
-                content: <div>{x.content as string}</div>,
-              });
+              call("setClipboardText", [x.content.toString()]);
+              message.success("Copied to clipboard");
             }}
-          >
-            <Attachments.FileCard
-              item={{
-                name: x.content_from as string,
-                uid: x.content_from as string,
-                size: x.content.length,
-              }}
-            ></Attachments.FileCard>
-          </div>
-        ),
-      };
-    }
+          />
+          <SyncOutlined
+            key="sync"
+            className="hover:text-cyan-400"
+            onClick={() => {
+              openaiClient.current.messages.splice(i);
+              currentChat.current.messages = openaiClient.current.messages;
+              refresh();
+              onRequest();
+            }}
+          />
+        </Space>
+        {x.content_status != "error" && (
+          <Space>
+            {x.content_attached == false && (
+              <Tooltip title="Cleared">
+                <MinusCircleOutlined className="cursor-not-allowed bg-red-200" />
+              </Tooltip>
+            )}
+            {x.content_date && (
+              <span style={{ marginLeft: 16 }}>
+                {dayjs(x.content_date).format("YYYY-MM-DD HH:mm:ss")}
+              </span>
+            )}
+            {x.content_usage && (
+              <>
+                {x?.content_usage?.prompt_tokens ? (
+                  <Tooltip title="prompt_tokens">
+                    <UploadOutlined />
+                    {x?.content_usage?.prompt_tokens}
+                  </Tooltip>
+                ) : null}
+                {x?.content_usage?.completion_tokens ? (
+                  <Tooltip title="completion_tokens">
+                    <DownloadOutlined />
+                    {x?.content_usage?.completion_tokens}
+                  </Tooltip>
+                ) : null}
+                {x?.content_usage?.total_tokens ? (
+                  <Tooltip title="total_tokens">
+                    <StockOutlined />
+                    {x?.content_usage?.total_tokens}
+                  </Tooltip>
+                ) : null}
+              </>
+            )}
+          </Space>
+        )}
+      </div>
+    );
+
     if (x.role == "user" || x.role == "system") {
+      // mcp prompt
+      if (x.content_from) {
+        return {
+          ...common,
+          key: i.toString(),
+          placement: x.role == "user" || x.role == "system" ? "end" : "start",
+          avatar: {
+            icon: x.role == "system" ? "⚙️" : <UserOutlined />,
+            style: {
+              color: "#f56a00",
+              backgroundColor: "#fde3cf",
+            },
+          },
+          content: (
+            <div
+              className="cursor-pointer"
+              onClick={() => {
+                Modal.info({
+                  width: "90%",
+                  style: { maxWidth: 1024 },
+                  title: "Tip",
+                  maskClosable: true,
+                  content: <div>{x.content as string}</div>,
+                });
+              }}
+            >
+              <Attachments.FileCard
+                item={{
+                  name: x.content_from as string,
+                  uid: x.content_from as string,
+                  size: x.content.length,
+                }}
+              ></Attachments.FileCard>
+            </div>
+          ),
+        };
+      }
       if (x.content_context == null) {
         x.content_context = {};
       }
@@ -573,179 +707,58 @@ export const Chat = ({
           />
         ),
       };
-    } else if (x.role == "tool") {
-      return {
-        ...common,
-        placement: "start",
-        avatar: {
-          icon: "🔧",
-          style: {
-            color: "#fff",
-            backgroundColor: "#87d068",
+    } else {
+      if (isFold) {
+        if (i + 1 != arr.length && arr[i + 1] && arr[i + 1].role != "user") {
+          return;
+        }
+        // if (arr[i + 1] && arr[i + 1].role != "user") {
+        //   return;
+        // }
+        let rocessProgress = [];
+        let index = i - 1;
+        while (index >= 0) {
+          if (arr[index].role == "user") {
+            break;
+          }
+          rocessProgress.push(arr[index]);
+          index--;
+        }
+        rocessProgress = rocessProgress.reverse();
+        return {
+          ...common,
+          placement: "start",
+          avatar: {
+            icon: "🤖",
+            style: {
+              color: "#fff",
+              backgroundColor: "#87d068",
+            },
           },
-        },
-        key: i.toString(),
-        content: (
-          <Tooltip
-            title={
-              <div className="max-h-40 overflow-auto text-ellipsis">
-                {x.content as string}
-              </div>
-            }
-          >
-            <span
-              className="cursor-pointer"
-              onClick={() => {
-                Modal.info({
-                  width: "90%",
-                  style: { maxWidth: 1024 },
-                  title: t`Tool Call Result`,
-                  maskClosable: true,
-                  content: (
-                    <div>
-                      <pre
-                        style={{
-                          whiteSpace: "pre-wrap",
-                          wordWrap: "break-word",
-                        }}
-                      >
-                        {x.content as string}
-                      </pre>
-                    </div>
-                  ),
-                });
-              }}
-            >
-              {x.content_status == "loading" ? (
-                <SyncOutlined spin />
-              ) : x.content_status == "error" ? (
-                "❌Error"
-              ) : (
-                "✅Completed"
-              )}
-              <div className="line-clamp-1">{x.content as string}</div>
-            </span>
-            {x.content_attachment &&
-              x.content_attachment.length > 0 &&
-              x.content_attachment.map((x, i) => {
-                if (x.type == "image") {
-                  return (
-                    <DownImage
-                      key={i}
-                      src={`data:${x.mimeType};base64,${x.data}`}
-                    />
-                  );
-                } else if (x.type == "text") {
-                  return <pre>{x.text}</pre>;
-                }
-              })}
-          </Tooltip>
-        ),
-      };
-    } else if (x.role == "assistant") {
-      return {
-        ...common,
-        placement: "start",
-        avatar: {
-          icon: "🤖",
-          style: {
-            color: "#fff",
-            backgroundColor: "#87d068",
-          },
-        },
-        key: i.toString(),
-        // typing: x.content_status == "dataLoading",
-        footer: (
-          <div className="flex flex-wrap justify-between text-xs">
-            <Space>
-              <CopyOutlined
-                className="hover:text-cyan-400"
-                key="copy"
-                onClick={() => {
-                  call("setClipboardText", [x.content.toString()]);
-                  message.success("Copied to clipboard");
-                }}
-              />
-              <SyncOutlined
-                key="sync"
-                className="hover:text-cyan-400"
-                onClick={() => {
-                  openaiClient.current.messages.splice(i);
-                  currentChat.current.messages = openaiClient.current.messages;
-                  refresh();
-                  onRequest();
-                }}
-              />
-            </Space>
-            {x.content_status != "error" && (
-              <Space>
-                {x.content_attached == false && (
-                  <Tooltip title="Cleared">
-                    <MinusCircleOutlined className="cursor-not-allowed bg-red-200" />
-                  </Tooltip>
-                )}
-                {x.content_date && (
-                  <span style={{ marginLeft: 16 }}>
-                    {dayjs(x.content_date).format("YYYY-MM-DD HH:mm:ss")}
-                  </span>
-                )}
-                {x.content_usage && (
-                  <>
-                    {x?.content_usage?.prompt_tokens ? (
-                      <Tooltip title="prompt_tokens">
-                        <UploadOutlined />
-                        {x?.content_usage?.prompt_tokens}
-                      </Tooltip>
-                    ) : null}
-                    {x?.content_usage?.completion_tokens ? (
-                      <Tooltip title="completion_tokens">
-                        <DownloadOutlined />
-                        {x?.content_usage?.completion_tokens}
-                      </Tooltip>
-                    ) : null}
-                    {x?.content_usage?.total_tokens ? (
-                      <Tooltip title="total_tokens">
-                        <StockOutlined />
-                        {x?.content_usage?.total_tokens}
-                      </Tooltip>
-                    ) : null}
-                  </>
-                )}
-              </Space>
-            )}
-          </div>
-        ),
-        // loading:
-        //   x.content_status == "loading" || x.content_status == "dataLoading",
-        content:
-          x.content_status == "loading" ? (
-            <SyncOutlined spin />
-          ) : x.content_status == "error" ? (
-            <div className="text-red-400">
-              {t`Please verify your network connection. If the network is working, there might be a small bug in the program. Here are the error messages: `}
-              <div className="text-red-700">{x.content_error}</div>
-            </div>
-          ) : (
+          key: (i - rocessProgress.length).toString(),
+          footer: assistantFooter,
+          content: (
             <div>
-              {x.tool_calls &&
-                x.tool_calls.map((tool: any, index) => {
-                  return (
-                    <Tooltip
-                      key={index}
-                      title={
-                        <div className="max-h-40 overflow-auto text-ellipsis">
-                          {tool.function.arguments}
-                        </div>
-                      }
-                    >
-                      <Spin spinning={x.content_status == "loading"}>
-                        <a
+              <div>
+                {rocessProgress.map((x, i) => {
+                  if (x.role == "tool") {
+                    return (
+                      <Tooltip
+                        key={i}
+                        title={
+                          <div className="max-h-40 overflow-auto text-ellipsis">
+                            {x.content as string}
+                          </div>
+                        }
+                      >
+                        <span
+                          key={i}
                           className="cursor-pointer"
                           onClick={() => {
                             Modal.info({
                               width: "90%",
                               style: { maxWidth: 1024 },
-                              title: t`Tool Call`,
+                              title: t`Tool Call Result`,
                               maskClosable: true,
                               content: (
                                 <div>
@@ -753,40 +766,115 @@ export const Chat = ({
                                     style={{
                                       whiteSpace: "pre-wrap",
                                       wordWrap: "break-word",
-                                      padding: "8px 0",
-                                      textAlign: "center",
                                     }}
                                   >
-                                    <span>Tool Name: </span>
-                                    <span className="text-red-400">
-                                      {tool.restore_name || tool.function.name}
-                                    </span>
-                                  </pre>
-                                  <div>
-                                    <span>Tool Arguments: </span>
-                                  </div>
-                                  <pre
-                                    style={{
-                                      whiteSpace: "pre-wrap",
-                                      wordWrap: "break-word",
-                                    }}
-                                  >
-                                    {tool.function.arguments}
+                                    {x.content as string}
                                   </pre>
                                 </div>
                               ),
                             });
                           }}
                         >
-                          <div className="line-clamp-1">
-                            {tool.restore_name || tool.function.name} :{" "}
-                            {tool.function.arguments}
-                          </div>
-                        </a>
-                      </Spin>
-                    </Tooltip>
-                  );
+                          {x.content_status == "loading" ? (
+                            <SyncOutlined spin />
+                          ) : x.content_status == "error" ? (
+                            "❌Error"
+                          ) : (
+                            "✅Completed"
+                          )}
+                        </span>
+                        {x.content_attachment &&
+                          x.content_attachment.length > 0 &&
+                          x.content_attachment.map((x, i) => {
+                            if (x.type == "image") {
+                              return (
+                                <DownImage
+                                  key={i}
+                                  src={`data:${x.mimeType};base64,${x.data}`}
+                                />
+                              );
+                            } else if (x.type == "text") {
+                              return <pre>{x.text}</pre>;
+                            }
+                          })}
+                      </Tooltip>
+                    );
+                  } else {
+                    return (
+                      <div className="bg-gray-200" key={i}>
+                        {x.tool_calls.map((tool: any, index) => {
+                          return (
+                            <Tooltip
+                              key={index}
+                              title={
+                                <div className="max-h-40 overflow-auto text-ellipsis">
+                                  {tool.function.arguments}
+                                </div>
+                              }
+                            >
+                              <Spin spinning={x.content_status == "loading"}>
+                                <a
+                                  className="cursor-pointer"
+                                  onClick={() => {
+                                    Modal.info({
+                                      width: "90%",
+                                      style: { maxWidth: 1024 },
+                                      title: t`Tool Call`,
+                                      maskClosable: true,
+                                      content: (
+                                        <div>
+                                          <pre
+                                            style={{
+                                              whiteSpace: "pre-wrap",
+                                              wordWrap: "break-word",
+                                              padding: "8px 0",
+                                              textAlign: "center",
+                                            }}
+                                          >
+                                            <span>Tool Name: </span>
+                                            <span className="text-red-400">
+                                              {tool.restore_name ||
+                                                tool.function.name}
+                                            </span>
+                                          </pre>
+                                          {x?.content?.toString()}
+                                          <div>
+                                            <span>Tool Arguments: </span>
+                                          </div>
+                                          <pre
+                                            style={{
+                                              whiteSpace: "pre-wrap",
+                                              wordWrap: "break-word",
+                                            }}
+                                          >
+                                            {tool.function.arguments}
+                                          </pre>
+                                        </div>
+                                      ),
+                                    });
+                                  }}
+                                >
+                                  <div className="line-clamp-1">
+                                    🔧
+                                    <span className="text-red-400">
+                                      {tool.restore_name || tool.function.name}
+                                    </span>{" "}
+                                    <span className="text-gray-500">
+                                      {" "}
+                                      {x?.content?.toString()}
+                                    </span>{" "}
+                                    {tool.function.arguments}
+                                  </div>
+                                </a>
+                              </Spin>
+                            </Tooltip>
+                          );
+                        })}
+                      </div>
+                    );
+                  }
                 })}
+              </div>
               {x.reasoning_content && (
                 <Collapse
                   defaultActiveKey={["reasoning_content"]}
@@ -821,6 +909,14 @@ export const Chat = ({
                   }}
                 ></MarkDown>
               )}
+              {x.content_status == "loading" ? (
+                <SyncOutlined spin />
+              ) : x.content_status == "error" ? (
+                <div className="text-red-400">
+                  {t`Please verify your network connection. If the network is working, there might be a small bug in the program. Here are the error messages: `}
+                  <div className="text-red-700">{x.content_error}</div>
+                </div>
+              ) : null}
               {x.content_status == "dataLoading" && <LoadingOutlined />}
               {x.content_attachment &&
                 x.content_attachment.length > 0 &&
@@ -847,9 +943,161 @@ export const Chat = ({
                 })}
             </div>
           ),
-      };
-    } else {
-      antdMessage.error("Unknown role");
+        };
+      } else {
+        if (x.role == "tool") {
+          return formatToolMessage(x, common, i);
+        } else if (x.role == "assistant") {
+          return {
+            ...common,
+            placement: "start",
+            avatar: {
+              icon: "🤖",
+              style: {
+                color: "#fff",
+                backgroundColor: "#87d068",
+              },
+            },
+            key: i.toString(),
+            // typing: x.content_status == "dataLoading",
+            footer: assistantFooter,
+            // loading:
+            //   x.content_status == "loading" || x.content_status == "dataLoading",
+            content:
+              x.content_status == "loading" ? (
+                <SyncOutlined spin />
+              ) : x.content_status == "error" ? (
+                <div className="text-red-400">
+                  {t`Please verify your network connection. If the network is working, there might be a small bug in the program. Here are the error messages: `}
+                  <div className="text-red-700">{x.content_error}</div>
+                </div>
+              ) : (
+                <div>
+                  {x.tool_calls &&
+                    x.tool_calls.map((tool: any, index) => {
+                      return (
+                        <Tooltip
+                          key={index}
+                          title={
+                            <div className="max-h-40 overflow-auto text-ellipsis">
+                              {tool.function.arguments}
+                            </div>
+                          }
+                        >
+                          <Spin spinning={x.content_status == "loading"}>
+                            <a
+                              className="cursor-pointer"
+                              onClick={() => {
+                                Modal.info({
+                                  width: "90%",
+                                  style: { maxWidth: 1024 },
+                                  title: t`Tool Call`,
+                                  maskClosable: true,
+                                  content: (
+                                    <div>
+                                      <pre
+                                        style={{
+                                          whiteSpace: "pre-wrap",
+                                          wordWrap: "break-word",
+                                          padding: "8px 0",
+                                          textAlign: "center",
+                                        }}
+                                      >
+                                        <span>Tool Name: </span>
+                                        <span className="text-red-400">
+                                          {tool.restore_name ||
+                                            tool.function.name}
+                                        </span>
+                                      </pre>
+                                      <div>
+                                        <span>Tool Arguments: </span>
+                                      </div>
+                                      <pre
+                                        style={{
+                                          whiteSpace: "pre-wrap",
+                                          wordWrap: "break-word",
+                                        }}
+                                      >
+                                        {tool.function.arguments}
+                                      </pre>
+                                    </div>
+                                  ),
+                                });
+                              }}
+                            >
+                              <div className="line-clamp-1">
+                                {tool.restore_name || tool.function.name} :{" "}
+                                {tool.function.arguments}
+                              </div>
+                            </a>
+                          </Spin>
+                        </Tooltip>
+                      );
+                    })}
+
+                  {x.reasoning_content && (
+                    <Collapse
+                      defaultActiveKey={["reasoning_content"]}
+                      items={[
+                        {
+                          key: "reasoning_content",
+                          label: (
+                            <div className="line-clamp-1">
+                              thinking: {x.reasoning_content}
+                            </div>
+                          ),
+                          children: (
+                            <pre
+                              key="1"
+                              style={{
+                                whiteSpace: "pre-wrap",
+                                wordWrap: "break-word",
+                              }}
+                            >
+                              {x.reasoning_content}
+                            </pre>
+                          ),
+                        },
+                      ]}
+                    />
+                  )}
+                  {x.content && (
+                    <MarkDown
+                      markdown={x.content}
+                      onCallback={(e) => {
+                        setValue(e);
+                      }}
+                    ></MarkDown>
+                  )}
+                  {x.content_status == "dataLoading" && <LoadingOutlined />}
+                  {x.content_attachment &&
+                    x.content_attachment.length > 0 &&
+                    x.content_attachment.map((x, i) => {
+                      if (x.type == "image") {
+                        return (
+                          <DownImage
+                            key={i}
+                            src={`data:${x.mimeType};base64,${x.data}`}
+                          />
+                        );
+                      } else if (x.type == "text") {
+                        return (
+                          <pre
+                            style={{
+                              whiteSpace: "pre-wrap",
+                              wordWrap: "break-word",
+                            }}
+                          >
+                            {x.text}
+                          </pre>
+                        );
+                      }
+                    })}
+                </div>
+              ),
+          };
+        }
+      }
     }
   }
 
@@ -1593,7 +1841,9 @@ export const Chat = ({
                   )}
                   <Bubble.List
                     style={{ flex: 1, paddingRight: 4 }}
-                    items={currentChat.current.messages?.map(format)}
+                    items={currentChat.current.messages
+                      ?.map(format)
+                      ?.filter((x) => x != null)}
                   />
                 </div>
 
@@ -1715,7 +1965,7 @@ export const Chat = ({
                       <Divider type="vertical" />
                       <Tooltip title={t`Resources`} placement="bottom">
                         <Dropdown
-                          placement="topRight"
+                          placement="top"
                           menu={{
                             items: resourcesRef.current.map((x, i) => {
                               return {
@@ -1756,7 +2006,7 @@ export const Chat = ({
                       <Divider type="vertical" />
                       <Tooltip title={t`Prompts`} placement="bottom">
                         <Dropdown
-                          placement="topRight"
+                          placement="top"
                           menu={{
                             items: promptsRef.current.map((x, i) => {
                               return {
