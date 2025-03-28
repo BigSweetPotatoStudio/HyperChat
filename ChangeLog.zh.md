@@ -1,3 +1,12 @@
+# 1.3.3
+
+* 可以在调用工具的时候，是否确认，并且修改大模型调用的参数
+* 可以点击工具，调用工具做测试。
+* 知识库打算重新开发，目前不建议使用，可以使用openai的embedding模型，不搞本地embedding模型了
+![886a04f531ca15ef1f6e93ea8403c0b7](https://github.com/user-attachments/assets/7c6eb1d4-7ba1-430b-8fca-18023f7dadd3)
+![image](https://github.com/user-attachments/assets/fc87b507-8427-4157-a0f9-78d141299151)
+
+
 # 1.2.15
 
 * mcp加载进度显示，添加快捷按钮
