@@ -3,15 +3,16 @@
 
 ## Introduction
 
-HyperChat is an open Chat client that can utilize APIs from various LLMs, fully supporting MCP for the best Chat experience. It also implements productivity MAX tools based on native Agents.
+HyperChat is an open Chat client that can use APIs from various LLMs, fully supports MCP, and provides the best Chat experience. It also implements productivity MAX tools based on native Agents.
 
 [![Build](https://github.com/BigSweetPotatoStudio/HyperChat/actions/workflows/build.yml/badge.svg)](https://github.com/BigSweetPotatoStudio/HyperChat/actions/workflows/build.yml)
-
+[![@dadigua/hyper-chat](https://img.shields.io/npm/v/%40dadigua%2Fhyper-chat)](https://www.npmjs.com/package/@dadigua/hyper-chat)
 [![npm downloads](https://img.shields.io/npm/dm/@dadigua/hyper-chat)](https://npm-stat.com/charts.html?package=@dadigua/hyper-chat)
 
-* Supports OpenAI-style LLMs, `OpenAI`, `Claude(OpenRouter)`, `Qwen`, `Deepseek`, `GLM`, `Ollama`.
-* Built-in MCP plugin market with user-friendly MCP installation and configuration, one-click installation, and welcome submissions for [HyperChatMCP](https://github.com/BigSweetPotatoStudio/HyperChatMCP).
-* Also supports manual installation of third-party MCPs, just fill in `command`, `args`, and `env`.
+
+* Supports OpenAI style LLMs: `OpenAI`, `Claude(OpenRouter)`, `Qwen`, `Deepseek`, `GLM`, `Ollama`.
+* Built-in MCP plugin marketplace, user-friendly MCP installation and configuration, one-click installation, and welcome submissions to [HyperChatMCP](https://github.com/BigSweetPotatoStudio/HyperChatMCP).
+* Supports manual installation of third-party MCPs by filling in `command`, `args`, and `env`.
 
 ## DEMO
 
@@ -20,49 +21,50 @@ HyperChat is an open Chat client that can utilize APIs from various LLMs, fully 
 ## Features:
 
 - [x] **🪟Windows** + **🍏MacOS** + **Linux**
-- [x] Run from the command line, `npx -y @dadigua/hyper-chat`, default port 16100, password 123456, web access http://localhost:16100/123456/
+- [x] Command line execution, `npx -y @dadigua/hyper-chat`, default port 16100, password 123456, web access http://localhost:16100/123456/
 - [x] Docker 
     * Command line version `docker pull dadigua/hyperchat-mini:latest`
     * Ubuntu desktop + Chrome + BrowserUse version (**coming soon**)
-- [x] `MCP` extension market + third-party MCP support
-- [x] Supports free creation and design of `Agent`, with preset prompts and selection of MCP features
-- [x] Supports dark mode🌙
-- [x] Supports Resources, Prompts, and Tools
+- [x] `MCP` extension marketplace + third-party MCP support
+- [x] Supports freely creating and designing `Agents`, can pre-set prompts and select MCP functions
+- [x] Supports dark mode 🌙
+- [x] Supports Resources, Prompts, Tools
 - [x] Supports English and Chinese
-- [x] Supports `Artifacts`, `SVG`, `HTML` rendering, JavaScript error capturing, and opening Chrome's console
-- [x] Agent display optimization, supports searching and drag-and-drop sorting
-- [x] Supports `KaTeX`, displaying mathematical formulas, code rendering with highlighting and quick copy
-- [x] `WebDAV` synchronization
-- [x] Added `RAG`, based on MCP knowledge base
-- [x] Introduced ChatSpace concept, supports multiple conversations simultaneously
-- [x] Supports Agent Call Agent through HyperAgent's MCP
-- [x] Added scheduled tasks, specify Agent to complete tasks at specified times and view task completion status.
+- [x] Supports `Artifacts`, `SVG`, `HTML` rendering, JavaScript error capture, and can open the Chrome console
+- [x] Agent display optimization, supports searching, drag-and-drop sorting
+- [x] Supports `KaTeX`, displays mathematical formulas, code rendering adds highlights and quick copy
+- [x] `WebDAV` syncing
+- [x] Adds `RAG`, based on MCP knowledge base
+- [x] Introduces ChatSpace concept, supports multiple conversations at the same time
+- [x] Supports Agent calling Agent through HyperAgent's MCP
+- [x] Adds scheduled tasks, specifies Agents to complete tasks at specified times, and view task completion status.
+
 
 ### TODO:
 
-- [ ] A Docker version will be added later, with a built-in Linux desktop, built-in Chrome configured remote port, unified environment for better usability. Then a web interface control. Usable on any device, including mobile🤣
+- [ ] Future versions will include Docker version, built-in Linux desktop, built-in Chrome configuration to remote port, unified environment for better usability. Then web interface control will be available on any device, including phones 🤣
 - [ ] Permission pop-up, whether to allow
-- [ ] Implement LLM writing MCP for itself
+- [ ] Implement LLM to write MCP for itself
 
 ### LLM
 
-| LLM      | Usability  | Remarks                    |
-| -------- | ---------- | -------------------------- |
-| claude   | ⭐⭐⭐⭐⭐     | No explanation needed      |
-| openai   | ⭐⭐⭐⭐⭐     | Also perfectly supports multi-step function calls (gpt-4o-mini can do it too) |
-| gemini flash 2.0   | ⭐⭐⭐⭐🌙    | Very usable                |
-| qwen     | ⭐⭐⭐⭐🌙    | Very usable                |
-| doubao   | ⭐⭐⭐🌙🌙    | Feels okay to use          |
-| deepseek | ⭐⭐⭐🌙🌙    | Multi-step function calls may have issues |
+| LLM      | Usability   | Remarks                     |
+| -------- | -------- | ---------------------------- |
+| claude   | ⭐⭐⭐⭐⭐  | No explanation               |
+| openai   | ⭐⭐⭐⭐⭐ | Can also perfectly support multi-step function calls (gpt-4o-mini can also) |
+| gemini flash 2.0   | ⭐⭐⭐⭐🌙 | Very usable                |
+| qwen       | ⭐⭐⭐⭐🌙    | Very usable                 |
+| doubao       | ⭐⭐⭐🌙🌙    | Feels okay to use          |
+| deepseek | ⭐⭐⭐🌙🌙      | Multi-step function calls may have issues       |
 
 ## Usage
 
 * 1. Configure APIKEY, ensure your LLM service is compatible with OpenAI style.
-* 2. Ensure `uv + nodejs` is installed in your system.
+* 2. Make sure you have `uv + nodejs` installed on your system.
 
 ### [uvx & uv](https://github.com/astral-sh/uv)
 
-Install via command line or check the official GitHub tutorial [uv](https://github.com/astral-sh/uv)
+Install via command line, or check the official GitHub tutorial [uv](https://github.com/astral-sh/uv)
 
 ```
 # MacOS
@@ -72,7 +74,7 @@ winget install --id=astral-sh.uv  -e
 ```
 ### [npx & nodejs](https://nodejs.org/en)
 
-Install via command line or download from the official site, [nodejs](https://nodejs.org/en)
+Install via command line, or download it from the official website, [nodejs](https://nodejs.org/en)
 ```
 # MacOS
 brew install node
@@ -89,57 +91,61 @@ npm install
 npm run dev
 ```
 
+
 ## Note
 
-* On MacOS, if you encounter issues with it being damaged or permissions, run `sudo xattr -d com.apple.quarantine /Applications/HyperChat.app`
-* MacOS `nvm` users manually input PATH `echo $PATH`, Windows version `nvm` seems to work directly
+* MacOS has encountered damage or permission issues, `sudo xattr -d com.apple.quarantine /Applications/HyperChat.app`
+* For MacOS `nvm` users, manually enter PATH `echo $PATH`, the Windows version of `nvm` can be used directly
 
 ![image.png](./images/image47.png)
 
+
+
 ## Telegram
 
-[HyperChat User Community](https://t.me/dadigua001)
+[HyperChat User Communication](https://t.me/dadigua001)
 
-#### Invoke shell mcp
+#### Calling shell mcp
 ![image.png](./images/image55.png)
 
-#### Invoke terminal mcp, ssh + executes commands
+#### Calling terminal mcp, ssh + can execute commands
 ![image.png](./images/image62.png)
 
-#### One-click webpage writing, and publish to (cloudflare)
+#### One-click webpage creation and publish to (cloudflare)
 ![image.png](./images/image60.png)
 
-#### Call Google search, ask what TGA Game of the Year is
+#### Calling Google search, asking what the TGA game of the year is
 ![image.png](./images/image22.png)
 
-#### Organize Zhihu hot searches
+#### Organizing Zhihu hot searches
 ![image.png](./images/image36.png)
 
-#### Help you open a webpage, analyze results, and write to a file
+#### Helping you open a webpage, analyze results, and write to a file
 ![image.png](./images/image13.png)
 
 #### Open Baidu and take a screenshot
 ![image.png](./images/image61.png)
 
+
 #### Scheduled task list
 ![image.png](./images/image52.png)
 
-#### MCP market (experimental)
+#### MCP marketplace (experimental)
 ![image.png](./images/image43.png)
 
-#### Install mcp interface from the market (experimental)
+#### Installing the mcp interface from the marketplace (experimental)
 ![image.png](./images/image45.png)
 
-#### Install third-party mcp (supports any mcp)
+#### Installing third-party mcp (supports any mcp)
 ![image.png](./images/image44.png)
 
-#### Install third-party mcp interface
+#### Installing third-party mcp interface
 ![image.png](./images/image46.png)
 
 #### MCP list (can be dynamically selected)
 ![image.png](./images/image21.png)
 
-#### Render HTML, supports `Artifacts`, `SVG`,`HTML` rendering,
+#### Rendering HTML, supports `Artifacts`, `SVG`, `HTML` rendering,
 ![image.png](./images/image33.png)
 
 #### Interface 1
@@ -148,7 +154,7 @@ npm run dev
 #### Interface 2
 ![image.png](./images/image34.png)
 
-#### Interface 3, model capability testing
+#### Interface 3, testing model capabilities
 ![image.png](./images/image48.png)
 
 #### Knowledge base
@@ -156,4 +162,4 @@ npm run dev
 
 ## Disclaimer
 
-* This project is for educational and communication purposes only. If you use this project for any operation, such as web scraping, it has no connection with the developers of this project.
+* This project is for learning and communication purposes only. If you use this project for any actions, such as web scraping, it has no relation to the developers of this project.
