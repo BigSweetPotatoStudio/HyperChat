@@ -13,31 +13,26 @@ import {
   session,
   shell,
 } from "electron";
-
+import "ts/polyfills/electron_autoupdate.mjs";
 import path from "node:path";
-// import os from "node:os";
-import "ts/polyfills/electron_autoupdate.mjs"
+import "./common/data.mjs";
 import { Command } from "./command.mjs";
-// import { fileURLToPath } from "node:url";
 
-// import { spawn, exec, execFile } from "child_process";
-// import { isPortUse } from "./common/checkport.mjs";
-// import { Server } from "socket.io";
-// import { execFallback } from "./common/execFallback.mjs";
-// import p from "../package.json";
-import "./websocket.mjs";
+import { initHttp } from "./websocket.mjs";
 
 import { createWindow } from "./mianWindow.mjs";
+
 Logger.info("start main");
+
 
 // const createWindow = () => {
 //   const win = new BrowserWindow({
 //     width: 800,
-//     height: 600
-//   })
+//     height: 600,
+//   });
 
-//   win.loadURL('https://www.baidu.com')
-// }
+//   win.loadURL("https://www.baidu.com");
+// };
 
 ipcMain.handle("command", async (event, name, args) => {
   try {
@@ -87,6 +82,9 @@ app.whenReady().then(async () => {
   // if (process.platform == "darwin") {
   //   app.dock.hide();
   // }
+  await initHttp().catch((e) => {
+    Logger.info("initHttp error: ", e);
+  });
   try {
     createWindow();
   } catch (e) {

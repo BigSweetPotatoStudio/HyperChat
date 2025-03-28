@@ -1,6 +1,10 @@
 #!/usr/bin/env node
-import { appDataDir } from "ts/polyfills/index.mjs";
+import { Logger } from "ts/polyfills/index.mjs";
 import "./first.mjs";
-import "./websocket.mjs";
+import { initHttp } from "./websocket.mjs";
 
-console.log("appDataDir", appDataDir);
+// import { createWindow } from "./mianWindow.mjs";
+
+await initHttp().catch((e) => {
+  Logger.info("initHttp error: ", e);
+});

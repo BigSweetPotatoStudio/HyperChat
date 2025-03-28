@@ -1,17 +1,16 @@
-// import { activeUser, userSocketMap } from "./websocket.mjs";
+// import { activeUser, userSocketMap, genMainMsg } from "./websocket.mjs";
 
 export class MessageService {
-  // private mainWindow;
-
-  constructor() {
-    // this.mainWindow = genMainMsg();
-  }
+  activeUser;
+  userSocketMap;
+  MainMsg;
+  genMainMsg = () => {
+    return this.MainMsg as any;
+  };
 
   // 发送消息到渲染进程
   async sendToRenderer(data: any, channel: string = "message-from-main") {
-    const { genMainMsg, activeUser, userSocketMap } = await import(
-      "./websocket.mjs"
-    );
+    const { genMainMsg, activeUser, userSocketMap } = this;
     if (!genMainMsg()) {
       return;
     }
@@ -23,17 +22,17 @@ export class MessageService {
     }
   }
   async sendAllToRenderer(data: any, channel: string = "message-from-main") {
-    const { genMainMsg } = await import("./websocket.mjs");
+    const { genMainMsg } = this;
     if (!genMainMsg()) {
       return;
     }
     genMainMsg().emit(channel, data);
   }
-  // 初始化IPC监听器
-  // async init() {
-  //   const { genMainMsg } = await import("./websocket.mjs");
-  //   this.mainWindow = genMainMsg();
-  // }
+  init(MainMsg, activeUser, userSocketMap) {
+    this.MainMsg = MainMsg;
+    this.activeUser = activeUser;
+    this.userSocketMap = userSocketMap;
+  }
 }
 
 let messageService: MessageService = new MessageService();
