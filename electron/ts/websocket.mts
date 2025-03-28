@@ -4,7 +4,7 @@ import cors from "@koa/cors";
 import http from "http";
 import path from "path";
 import { Server as SocketIO } from "socket.io";
-import { Logger } from "ts/polyfills/index.mjs";
+import { appDataDir, Logger } from "ts/polyfills/index.mjs";
 
 import { execFallback } from "./common/execFallback.mjs";
 
@@ -17,6 +17,7 @@ import Router from "koa-router";
 import { HTTPPORT } from "./common/data.mjs";
 import { fs } from "./es6.mjs";
 import crypto from "crypto";
+import { getMessageService } from "./message_service.mjs";
 
 export function genRouter(c, prefix: string) {
   let functions = [];
@@ -68,7 +69,7 @@ export function genRouter(c, prefix: string) {
   }
   const uploadDir = "./uploads";
 
-  fs.ensureDirSync(path.join(process.cwd(), uploadDir));
+  fs.ensureDirSync(path.join(appDataDir, uploadDir));
   // console.log(prefix + "/uploads");
   router.post("/uploads", async (ctx) => {
     // console.log("uploads");
@@ -95,7 +96,6 @@ export function genRouter(c, prefix: string) {
       // 重命名文件
       await fs.rename(file.filepath, newPath);
 
-  
       ctx.status = 200;
       ctx.body = {
         data: {
@@ -112,23 +112,11 @@ export function genRouter(c, prefix: string) {
   return router;
 }
 
-export const model_route = genRouter(
-  new CommandFactory(),
-  "/" + electronData.get().password + "/api"
-);
 
-let mainMsg = undefined;
 
-export function genMainMsg() {
-  if (mainMsg) {
-    return mainMsg;
-  } else {
-    throw new Error("mainMsg not init");
-  }
-}
-export const userSocketMap = new Map();
-export let activeUser = undefined;
-async function initWebsocket() {
+const userSocketMap = new Map();
+let activeUser = undefined;
+export async function initHttp() {
   const app = new Koa() as any;
   app.use(cors() as any);
   app.use(
@@ -140,6 +128,10 @@ async function initWebsocket() {
       },
       jsonLimit: "1000mb",
     })
+  );
+  const model_route = genRouter(
+    new CommandFactory(),
+    "/" + electronData.get().password + "/api"
   );
   app.use(model_route.routes());
 
@@ -178,7 +170,6 @@ async function initWebsocket() {
     console.log("error: ", e);
   });
   let main = io.of("/" + electronData.get().password + "/main-message");
-  mainMsg = main;
   main.on("connection", (socket) => {
     Logger.info("用户已连接，socket ID:", socket.id);
 
@@ -186,6 +177,7 @@ async function initWebsocket() {
     socket.on("active", (userId) => {
       userSocketMap.set(userId, socket.id);
       activeUser = userId;
+      getMessageService().init(main, activeUser, userSocketMap);
     });
     socket.on("disconnect", () => {
       // 遍历删除断开连接的socket
@@ -196,8 +188,5 @@ async function initWebsocket() {
       }
     });
   });
+  getMessageService().init(main, activeUser, userSocketMap);
 }
-
-await initWebsocket().catch((e) => {
-  Logger.info("initWebsocket error: ", e);
-});

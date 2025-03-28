@@ -1,22 +1,7 @@
 import { CONST, Logger } from "ts/polyfills/index.mjs";
-
-import pack from "../package.json";
 import { createClient, shellPathSync, zx } from "./es6.mjs";
 const { fs, os, sleep, retry, path, $ } = zx;
-import { request } from "./common/request.mjs";
-import { fileURLToPath } from "url";
-import { dirname } from "path";
-import { exec, execFile } from "child_process";
-import { Server as SocketIO } from "socket.io";
-import { createServer } from "http";
 import { isPortUse } from "./common/checkport.mjs";
-import { closePort } from "./common/closeport.mjs";
-import { execFallback } from "./common/execFallback.mjs";
-import AdmZip from "adm-zip";
-import { pipeline } from "stream";
-import { promisify } from "util";
-import puppeteer from "puppeteer-core";
-import { v4 as uuidV4 } from "uuid";
 import { getLocalIP, spawnWithOutput } from "./common/util.mjs";
 import { autoLauncher } from "ts/polyfills/index.mjs";
 import {
@@ -27,7 +12,6 @@ import {
   Task,
   TaskList,
 } from "../../common/data";
-// import { commandHistory, CommandStatus } from "./command_history.mjs";
 import { appDataDir } from "ts/polyfills/index.mjs";
 import spawn from "cross-spawn";
 
@@ -281,7 +265,7 @@ export class CommandFactory {
     if (root) {
       p = path.join(root, p);
     }
-    fs.ensureDirSync(dirname(p));
+    fs.ensureDirSync(path.dirname(p));
     return p;
   }
   async getLocalIP(): Promise<string[]> {
