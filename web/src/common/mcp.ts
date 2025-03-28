@@ -56,6 +56,10 @@ initMcpClients()
     init = true;
   });
 
+export function getMcpInited() {
+  return init;
+}
+
 export function getTools(filter = (x: InitedClient) => true) {
   let tools: InitedClient["tools"] = [];
 
@@ -83,16 +87,16 @@ export function getResourses(filter = (x: InitedClient) => true) {
 }
 
 export async function getClients(filter = true): Promise<InitedClient[]> {
-  while (1) {
-    if (init) {
-      break;
-    }
-    await sleep(500);
-  }
+  // while (1) {
+  //   if (init) {
+  //     break;
+  //   }
+  //   await sleep(500);
+  // }
   McpClients = await call("getMcpClients", []);
   // console.log("getMcpClients", McpClients);
   let res = mcpClientsToArray(McpClients);
-  initedClientArray = res.filter((x) => x.status == "connected");
+  initedClientArray = res;
   if (filter) {
     return initedClientArray;
   } else {

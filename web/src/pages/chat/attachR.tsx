@@ -157,7 +157,8 @@ export function MyAttachR(props: {
                 <div
                   onClick={() => {
                     Modal.info({
-                      width: "80%",
+                      width: "90%",
+                      style: { maxWidth: 1024 },
                       title: "Tip",
                       maskClosable: true,
                       content: <div>{s}</div>,

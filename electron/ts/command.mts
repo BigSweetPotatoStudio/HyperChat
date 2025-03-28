@@ -1,22 +1,7 @@
 import { CONST, Logger } from "ts/polyfills/index.mjs";
-
-import pack from "../package.json";
 import { createClient, shellPathSync, zx } from "./es6.mjs";
 const { fs, os, sleep, retry, path, $ } = zx;
-import { request } from "./common/request.mjs";
-import { fileURLToPath } from "url";
-import { dirname } from "path";
-import { exec, execFile } from "child_process";
-import { Server as SocketIO } from "socket.io";
-import { createServer } from "http";
 import { isPortUse } from "./common/checkport.mjs";
-import { closePort } from "./common/closeport.mjs";
-import { execFallback } from "./common/execFallback.mjs";
-import AdmZip from "adm-zip";
-import { pipeline } from "stream";
-import { promisify } from "util";
-import puppeteer from "puppeteer-core";
-import { v4 as uuidV4 } from "uuid";
 import { getLocalIP, spawnWithOutput } from "./common/util.mjs";
 import { autoLauncher } from "ts/polyfills/index.mjs";
 import {
@@ -24,9 +9,9 @@ import {
   AppSetting,
   electronData,
   MCP_CONFIG_TYPE,
+  Task,
   TaskList,
 } from "../../common/data";
-// import { commandHistory, CommandStatus } from "./command_history.mjs";
 import { appDataDir } from "ts/polyfills/index.mjs";
 import spawn from "cross-spawn";
 
@@ -51,7 +36,7 @@ import {
 import { EVENT } from "./common/event";
 import { callAgent, runTask, startTask, stopTask } from "./mcp/task.mjs";
 import { getMyDefaultEnvironment } from "./mcp/utils.mjs";
-
+import cron from "node-cron";
 // function logCommand(
 //   target: any,
 //   propertyKey: string,
@@ -252,10 +237,6 @@ export class CommandFactory {
     let localPath = path.join(root, p);
     let res = fs.writeFileSync(localPath, text);
 
-    // if (AppSetting.initSync().webdav.autoSync) {
-    //   webdavClient.sync();
-    // }
-
     return res;
   }
   async readFile(p, root = appDataDir) {
@@ -284,7 +265,7 @@ export class CommandFactory {
     if (root) {
       p = path.join(root, p);
     }
-    fs.ensureDirSync(dirname(p));
+    fs.ensureDirSync(path.dirname(p));
     return p;
   }
   async getLocalIP(): Promise<string[]> {
@@ -367,20 +348,24 @@ export class CommandFactory {
   async initEmbeddings(model: string) {
     await FeatureExtraction.getInstance(model);
   }
-  async vectorStoreAdd(s: KNOWLEDGE_Store, r: KNOWLEDGE_Resource) {
-    let { store } = await import("./langchain/vectorStore.mjs");
-    return await store.addResource(s, r);
+  async vectorStoreAdd(
+    s: KNOWLEDGE_Store,
+    r: KNOWLEDGE_Resource,
+    move = false
+  ) {
+    let { store } = await import("./rag/vectorStore.mjs");
+    return await store.addResource(s, r, move);
   }
   async vectorStoreDelete(s: KNOWLEDGE_Store) {
-    let { store } = await import("./langchain/vectorStore.mjs");
+    let { store } = await import("./rag/vectorStore.mjs");
     return await store.delete(s);
   }
   async vectorStoreRemoveResource(s: KNOWLEDGE_Store, r: KNOWLEDGE_Resource) {
-    let { store } = await import("./langchain/vectorStore.mjs");
+    let { store } = await import("./rag/vectorStore.mjs");
     return await store.removeResource(s, r);
   }
   async vectorStoreSearch(s: KNOWLEDGE_Store, q: string, k: number) {
-    let { store } = await import("./langchain/vectorStore.mjs");
+    let { store } = await import("./rag/vectorStore.mjs");
     return await store.search(s, q, k);
   }
   async getProgressList() {
@@ -388,6 +373,12 @@ export class CommandFactory {
   }
   async call_agent_res(uid, data, error) {
     EVENT.fire("call_agent_res_" + uid, { uid, data, error });
+  }
+  async checkTask(task?: Task) {
+    if (cron.validate(task.cron)) {
+    } else {
+      throw new Error("cron Error");
+    }
   }
   async startTask(taskkey?: string) {
     return startTask(taskkey);

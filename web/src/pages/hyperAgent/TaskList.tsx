@@ -99,7 +99,7 @@ export function TaskListPage() {
       render: (text, row, index) => {
         return (
           <Tooltip title={row.command}>
-            <div className="line-clamp-1 w-96">{row.command}</div>
+            <div className="line-clamp-1 w-60">{row.command}</div>
           </Tooltip>
         );
       },
@@ -133,20 +133,20 @@ export function TaskListPage() {
       key: "operation",
       render: (text, row, index) => {
         return (
-          <div>
+          <div className="flex gap-2">
             <a
               onClick={() => {
                 navigate(`../Results?taskKey=${row.key}`);
               }}
             >{t`ViewResults`}</a>
-            <Divider type="vertical" />
+
             <a
               onClick={() => {
                 setCurrRow(row);
                 setVisible(true);
               }}
             >{t`Edit`}</a>
-            <Divider type="vertical" />
+
             <Popconfirm
               title={t`Are you sure to delete this task?`}
               onConfirm={() => {
@@ -161,7 +161,6 @@ export function TaskListPage() {
             >
               <a>{t`Delete`}</a>
             </Popconfirm>
-            <Divider type="vertical" />
 
             <a
               className="text-red-300"
@@ -194,34 +193,46 @@ export function TaskListPage() {
           setVisible(true);
         }}
       >{t`Create Task`}</Button>
+
       <Table
+        pagination={false}
+        scroll={{
+          x: true,
+        }}
         rowKey={(r) => r.key}
         dataSource={TaskList.get().data}
         columns={columns}
       />
+
       <NewTaskModal
         open={visible}
         onCancel={() => setVisible(false)}
         initialValues={currRow}
         onCreate={async (v) => {
-          if (v.key) {
-            v = Object.assign(currRow, v);
-            let i = TaskList.get().data.findIndex((x) => x.key == v.key);
-            TaskList.get().data[i] = v;
-            await TaskList.save();
-            if (!v.disabled) {
+          try {
+            if (v.key) {
+              v = Object.assign(currRow, v);
+              let i = TaskList.get().data.findIndex((x) => x.key == v.key);
+              TaskList.get().data[i] = v;
+              await TaskList.save();
+              if (!v.disabled) {
+                await call("startTask", [v.key]);
+              }
+              refresh();
+              setVisible(false);
+            } else {
+              v.key = v4();
+              await call("checkTask", [v]).catch((e) => {
+                message.error(t`cron format error!`);
+                throw e;
+              });
+              TaskList.get().data.push(v);
+              await TaskList.save();
               await call("startTask", [v.key]);
+              refresh();
+              setVisible(false);
             }
-            refresh();
-            setVisible(false);
-          } else {
-            v.key = v4();
-            TaskList.get().data.push(v);
-            await TaskList.save();
-            await call("startTask", [v.key]);
-            refresh();
-            setVisible(false);
-          }
+          } catch {}
         }}
       />
     </div>

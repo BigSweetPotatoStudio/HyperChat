@@ -17,11 +17,16 @@ if (argv.dev) {
 }
 if (argv.watch) {
   await $`npx cross-env NODE_ENV=development myEnv=dev webpack`;
-
 }
 
-
 if (argv.devnode) {
+  let rootPackageJSON = await fs.readJSON("../package.json");
+  let packageJSON = await fs.readJSON("./package.json");
+  packageJSON.version = rootPackageJSON.version;
+  // console.log(packageJSON.dependencies);
+  fs.writeJSON("./package.json", packageJSON, {
+    spaces: 2,
+  });
   await $`npx cross-env NODE_ENV=development myEnv=dev webpack -c webpack.no_electron.js`;
   await $`node js/main_no_electron.js`;
 }
@@ -32,6 +37,9 @@ if (argv.testprod) {
 }
 
 if (argv.prod) {
+  await fs.copy("../web/public/logo.png", "./web-build/assets/favicon.png", {
+    overwrite: true,
+  });
   await $`npx cross-env NODE_ENV=production myEnv=prod webpack`;
   if (process.env.MYRUNENV === "github") {
     if (process.env.GH_TOKEN) {
@@ -49,12 +57,17 @@ if (argv.prod) {
 }
 
 if (argv.build) {
+  await fs.copy("../web/public/logo.png", "./web-build/assets/favicon.png", {
+    overwrite: true,
+  });
   await $`npx cross-env NODE_ENV=production myEnv=prod webpack`;
   await $`npx cross-env NODE_ENV=production myEnv=prod electron-builder --publish never`;
 }
 
 if (argv.buildnode) {
-  await $`npx cross-env NODE_ENV=development myEnv=dev webpack -c webpack.no_electron.js`;
+  await fs.copy("../web/public/logo.png", "./web-build/assets/favicon.png", {
+    overwrite: true,
+  });
   let rootPackageJSON = await fs.readJSON("../package.json");
   let packageJSON = await fs.readJSON("./package.json");
   let nodePackageJSON = await fs.readJSON("./package.nodejs.json");
@@ -70,6 +83,7 @@ if (argv.buildnode) {
   }
   await fs.writeJSON("./package.json", packageJSON, { spaces: 2 });
   await fs.copy("../README.md", "README.md");
+  await $`npx cross-env NODE_ENV=development myEnv=dev webpack -c webpack.no_electron.js`;
 }
 
 // 压缩文件夹

@@ -62,8 +62,8 @@ const ModalForm: React.FC<CollectionCreateFormProps> = ({
       >
         <Segmented
           options={[
-            { value: "markdown", label: "markdown" },
             { value: "file", label: "file" },
+            { value: "text", label: "text" },
           ]}
           onChange={() => {
             refresh();
@@ -71,10 +71,10 @@ const ModalForm: React.FC<CollectionCreateFormProps> = ({
         />
       </Form.Item>
 
-      {form.getFieldValue("type") == "markdown" && (
+      {form.getFieldValue("type") == "text" && (
         <Form.Item<Values>
-          name="markdown"
-          label="markdown"
+          name="text"
+          label="text"
           rules={[{ required: true, message: t`Please enter` }]}
         >
           <Input.TextArea placeholder="Please enter" rows={4} />
@@ -118,7 +118,7 @@ export const KnowledgeBaseResourceModal: React.FC<
   CollectionCreateFormModalProps
 > = ({ open, onCreate, onCancel, initialValues }) => {
   const [formInstance, setFormInstance] = useState<FormInstance>();
-  initialValues.type = initialValues.type || "markdown";
+  initialValues.type = initialValues.type || "file";
   const [loading, setLoading] = useState(false);
   return (
     <Modal

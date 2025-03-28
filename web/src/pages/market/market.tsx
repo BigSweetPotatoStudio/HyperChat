@@ -29,7 +29,9 @@ import { EVENT } from "../../common/event";
 import { Code } from "../../common/code";
 // import * as DATA from "../../../public/mcp_data.js";
 import { getMCPExtensionData } from "../../common/mcp";
+import { zodToJsonSchema } from "zod-to-json-schema";
 
+import { z } from "zod";
 // DATA.MCP.data = [
 //   {
 //     name: "hyper_tools",
@@ -58,13 +60,17 @@ import {
   ProFormColumnsType,
   ProFormInstance,
 } from "@ant-design/pro-components";
+window["z"] = z;
 
-import { z } from "zod";
-import { zodToJsonSchema } from "zod-to-json-schema";
-
+import { jsonSchemaToZod } from "json-schema-to-zod";
 import { getClients, getMcpClients, InitedClient } from "../../common/mcp";
 import { t } from "../../i18n";
 import { HeaderContext } from "../../common/context";
+import {
+  JsonSchema2FormItem,
+  JsonSchema2FormItemOrNull,
+  JsonSchema2ProFormColumnsType,
+} from "../../common";
 
 // export type Package = {
 //   type: "npx" | "uvx" | "other";
@@ -122,128 +128,6 @@ import { HeaderContext } from "../../common/context";
 //   configSchema: zodToJsonSchema(config),
 // };
 
-function JsonSchema2ProFormColumnsType(schema: any): ProFormColumnsType[] {
-  function run(item) {
-    const columns: ProFormColumnsType[] = [];
-    for (const key in item.properties) {
-      const prop = item.properties[key];
-
-      let type = prop.type;
-      let required = true;
-      let description = prop.description;
-      let defaultValue = prop.default;
-      if (Array.isArray(prop.type)) {
-        type = prop.type[0];
-        required = !prop.type.include("null");
-      }
-      if (Array.isArray(prop.anyOf)) {
-        type = prop.anyOf[0].type;
-        description = prop.anyOf[0].description;
-        defaultValue = prop.anyOf[0].default;
-        required = !prop.anyOf.find((x) => x.type == "null");
-      }
-      let formItemProps = {
-        required: required,
-        rules: [
-          {
-            required: required,
-          },
-        ],
-        tooltip: description,
-      };
-      let fieldProps = {
-        placeholder: description,
-        style: {
-          width: "100%",
-        },
-        // defaultValue: prop.default,
-        allowClear: false,
-      };
-
-      if (type === "array") {
-        const column: ProFormColumnsType = {
-          title: key,
-          dataIndex: key,
-          valueType: "formList",
-          fieldProps,
-          formItemProps,
-          columns: JsonSchema2ProFormColumnsType(item.properties[key].items),
-        };
-        columns.push(column);
-        continue;
-      } else {
-        if (type === "string") {
-          if (prop.enum) {
-            fieldProps["options"] = prop.enum.map((x) => ({
-              label: x,
-              value: x,
-            }));
-            const column: ProFormColumnsType = {
-              title: key,
-              dataIndex: key,
-              valueType: "select",
-              fieldProps,
-              formItemProps,
-            };
-            columns.push(column);
-            continue;
-          } else {
-            const column: ProFormColumnsType = {
-              title: key,
-              dataIndex: key,
-              valueType: "text",
-
-              fieldProps,
-              formItemProps,
-            };
-            columns.push(column);
-            continue;
-          }
-        } else if (type === "number") {
-          const column: ProFormColumnsType = {
-            title: key,
-            dataIndex: key,
-            valueType: "digit",
-            fieldProps,
-            formItemProps,
-          };
-          columns.push(column);
-          continue;
-        } else if (type === "boolean") {
-          const column: ProFormColumnsType = {
-            title: key,
-            dataIndex: key,
-            valueType: "switch",
-            fieldProps,
-            formItemProps,
-          };
-          columns.push(column);
-          continue;
-        } else {
-          // console.log("type", prop.type);
-          const column: ProFormColumnsType = {
-            title: key,
-            dataIndex: key,
-            valueType: "text",
-
-            fieldProps,
-            formItemProps,
-          };
-          columns.push(column);
-          continue;
-        }
-      }
-    }
-    return columns;
-  }
-
-  if (schema && schema.type === "object") {
-    return run(schema);
-  } else {
-    return [];
-  }
-}
-
 function JsonSchema2DefaultValue(schema: any) {
   let obj = {};
   function run(item) {
@@ -270,10 +154,8 @@ function JsonSchema2DefaultValue(schema: any) {
   return obj;
 }
 
-// const c = JsonSchema2ProFormColumnsType(p.configSchema);
 let mcpExtensionDataObj = {};
 
-// console.log("JsonSchema2ProFormColumnsType", p.configSchema, c);
 export function Market() {
   const [num, setNum] = React.useState(0);
   const refresh = () => {
@@ -338,7 +220,7 @@ export function Market() {
     })();
   }, []);
   const [form] = Form.useForm();
-  const mcpconfigform = useRef<ProFormInstance>();
+  const [mcpconfigform] = Form.useForm();
   const [isPathOpen, setIsPathOpen] = useState(false);
   const [currRow, setCurrRow] = useState({} as any);
   const [mcpconfigOpen, setMcpconfigOpen] = useState(false);
@@ -357,15 +239,15 @@ export function Market() {
           try {
             mcpLoadingObj[item.name] = true;
             setMcpLoadingObj({ ...mcpLoadingObj });
+
             const config = MCP_CONFIG.get().mcpServers[item.name];
             if (config) {
               config.disabled = !config.disabled;
             }
-
             await MCP_CONFIG.save();
 
             if (config.disabled) {
-              await call("closeMcpClients", [item.name]);
+              await call("closeMcpClients", [item.name, true]);
             } else {
               await call("openMcpClient", [item.name]);
             }
@@ -434,8 +316,8 @@ export function Market() {
     );
   };
   return (
-    <div className="flex">
-      <div className="w-2/5">
+    <div className="flex flex-wrap">
+      <div className="w-full lg:w-2/5">
         {/* <h1 className=" ">💻MCP</h1> */}
         <Space className="mt-1">
           <Tooltip
@@ -521,14 +403,14 @@ export function Market() {
                                   <CloudDownloadOutlined
                                     onClick={async (e) => {
                                       e.stopPropagation();
-                                      mcpconfigform.current.resetFields();
+                                      mcpconfigform.resetFields();
 
                                       setCurrRow(item);
-
-                                      mcpconfigform.current?.setFieldsValue(
-                                        JsonSchema2DefaultValue(
-                                          item.configSchema,
-                                        ),
+                                      let zo = eval(
+                                        jsonSchemaToZod(item.configSchema),
+                                      );
+                                      mcpconfigform?.setFieldsValue(
+                                        zo.safeParse({}).data,
                                       );
                                       if (
                                         Object.keys(
@@ -536,7 +418,7 @@ export function Market() {
                                             ?.hyperchat.config || {},
                                         ).length > 0
                                       ) {
-                                        mcpconfigform.current.setFieldsValue(
+                                        mcpconfigform.setFieldsValue(
                                           MCP_CONFIG.get().mcpServers[item.name]
                                             ?.hyperchat.config || {},
                                         );
@@ -561,19 +443,26 @@ export function Market() {
                                 <SettingOutlined
                                   onClick={async (e) => {
                                     e.stopPropagation();
-                                    mcpconfigform.current.resetFields();
-                                    mcpconfigform.current?.setFieldsValue(
-                                      JsonSchema2DefaultValue(
-                                        item.configSchema,
-                                      ),
+                                    mcpconfigform.resetFields();
+                                    let zo = eval(
+                                      jsonSchemaToZod(item.configSchema),
                                     );
+                                    mcpconfigform?.setFieldsValue(
+                                      zo.safeParse({}).data,
+                                    );
+
+                                    // mcpconfigform?.setFieldsValue(
+                                    //   JsonSchema2DefaultValue(
+                                    //     item.configSchema,
+                                    //   ),
+                                    // );
                                     if (
                                       Object.keys(
                                         MCP_CONFIG.get().mcpServers[item.name]
                                           ?.hyperchat.config || {},
                                       ).length > 0
                                     ) {
-                                      mcpconfigform.current.setFieldsValue(
+                                      mcpconfigform.setFieldsValue(
                                         MCP_CONFIG.get().mcpServers[item.name]
                                           ?.hyperchat.config || {},
                                       );
@@ -721,7 +610,7 @@ export function Market() {
           ]}
         />
       </div>
-      <div className="w-3/5 p-4">
+      <div className="w-full p-4 lg:w-3/5">
         <div>
           <h1>{t`More MCP Market`}</h1>
           <div>
@@ -843,10 +732,7 @@ export function Market() {
         onCancel={() => setMcpconfigOpen(false)}
         forceRender={true}
       >
-        {JsonSchema2ProFormColumnsType(currRow?.configSchema).length > 0
-          ? t`Please configure the parameters`
-          : t`No need config`}
-        <BetaSchemaForm<any>
+        {/* <BetaSchemaForm<any>
           layoutType="Form"
           name="mcpconfigform"
           formRef={mcpconfigform}
@@ -859,7 +745,7 @@ export function Market() {
               ) {
                 MCP_CONFIG.get().mcpServers[currRow.name].hyperchat.config =
                   values;
-     
+
                 await MCP_CONFIG.save();
                 await call("openMcpClient", [
                   currRow.name,
@@ -911,7 +797,62 @@ export function Market() {
               },
             },
           }}
-        />
+        /> */}
+
+        <Form
+          name="mcpconfigform"
+          form={mcpconfigform}
+          onFinish={async (values) => {
+            // console.log("onFinish", values);
+            let zo = eval(jsonSchemaToZod(currRow.configSchema));
+
+            values = zo.safeParse(values).data;
+            // console.log("onFinish", values);
+
+            try {
+              if (
+                MCP_CONFIG.get().mcpServers[currRow.name]?.hyperchat?.scope ==
+                "built-in"
+              ) {
+                MCP_CONFIG.get().mcpServers[currRow.name].hyperchat.config =
+                  values;
+
+                await MCP_CONFIG.save();
+                await call("openMcpClient", [
+                  currRow.name,
+                  MCP_CONFIG.get().mcpServers[currRow.name],
+                ]);
+                await getClients(false);
+                setMcpconfigOpen(false);
+              } else {
+                let config = currRow.resolve(values);
+                config.hyperchat = {
+                  url: "",
+                  type: "stdio",
+                  scope: "outer",
+                  config: values,
+                };
+                await call("openMcpClient", [currRow.name, config]);
+
+                MCP_CONFIG.get().mcpServers[currRow.name] = config;
+                await MCP_CONFIG.save();
+
+                await getClients(false);
+                setMcpconfigOpen(false);
+              }
+            } catch (e) {
+              message.error(e.message);
+            }
+          }}
+        >
+          {currRow.configSchema
+            ? JsonSchema2FormItemOrNull(currRow.configSchema) ||
+              t`No parameters`
+            : []}
+          <Form.Item className="flex justify-end">
+            <Button htmlType="submit">Submit</Button>
+          </Form.Item>
+        </Form>
       </Modal>
 
       <Modal
@@ -941,13 +882,13 @@ export function Market() {
             onFinish={async (values) => {
               try {
                 setLoadingOpenMCP(true);
-                if (
-                  values._type == "edit" &&
-                  MCP_CONFIG.get().mcpServers[values._name].disabled
-                ) {
-                  message.error("MCP Service Disabled");
-                  return;
-                }
+                // if (
+                //   values._type == "edit" &&
+                //   MCP_CONFIG.get().mcpServers[values._name].disabled
+                // ) {
+                //   message.error("MCP Service Disabled");
+                //   return;
+                // }
                 if (values.type == "sse") {
                   values = {
                     ...values,

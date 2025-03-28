@@ -79,6 +79,7 @@ import {
   DataList,
   electronData,
   GPT_MODELS,
+  KNOWLEDGE_BASE,
   MCP_CONFIG,
 } from "../../common/data";
 import { getClients } from "./common/mcp";
@@ -87,6 +88,7 @@ import { OpenAiChannel } from "./common/openai";
 import { DndTable } from "./common/dndTable";
 import { sleep } from "./common/sleep";
 import { InputPlus } from "./common/input_plus";
+import { rejects } from "assert";
 
 type ProviderType = {
   label: string;
@@ -200,6 +202,7 @@ export function Layout() {
     (async () => {
       await GPT_MODELS.init();
       await MCP_CONFIG.init();
+      await KNOWLEDGE_BASE.init();
       refresh();
     })();
   }, []);
@@ -313,8 +316,13 @@ export function Layout() {
     })();
   }, []);
 
-  const [providerValue, setProviderValue] = useState(Providers[0].value);
   const [modelOptions, setModelOptions] = useState([]);
+
+  const setLang = (e) => {
+    setCurrLang(e);
+    setLocal(e == "zhCN" ? zhCN : enUS);
+    refresh();
+  };
 
   return (
     <ConfigProvider locale={locale}>
@@ -356,12 +364,14 @@ export function Layout() {
                   🧠LLM
                 </Button>
                 <Select
+                  className="hidden lg:inline-block"
                   value={currLang}
                   style={{ width: 120 }}
                   onChange={(e) => {
-                    setCurrLang(e);
-                    setLocal(e == "zhCN" ? zhCN : enUS);
-                    refresh();
+                    // setCurrLang(e);
+                    // setLocal(e == "zhCN" ? zhCN : enUS);
+                    // refresh();
+                    setLang(e);
                   }}
                   options={[
                     { value: "zhCN", label: "中文" },
@@ -414,7 +424,7 @@ export function Layout() {
                             : "gray",
                     }}
                     onClick={() => {
-                      navigate("/setting");
+                      navigate("./Setting/WebdavSetting");
                     }}
                   >
                     <SyncOutlined spin={syncStatus == 1} />
@@ -422,17 +432,18 @@ export function Layout() {
                     {syncStatus == 1
                       ? "Syncing"
                       : syncStatus == -1
-                        ? "Sync Failed"
+                        ? "Failed"
                         : "Sync"}
                   </Button>
                 </>
               );
             },
           }}
+          logo={"./assets/favicon.png"}
           headerTitleRender={(logo, title, _) => {
             return (
               <Link to="home">
-                HyperChat<span>({electronData.get().version})</span>
+                {logo}HyperChat<span>({electronData.get().version})</span>
               </Link>
             );
           }}
@@ -462,7 +473,7 @@ export function Layout() {
           splitMenus={true}
         >
           <HeaderContext.Provider
-            value={{ globalState: num, updateGlobalState: refresh }}
+            value={{ globalState: num, updateGlobalState: refresh, setLang }}
           >
             <Outlet />
           </HeaderContext.Provider>
@@ -487,7 +498,7 @@ export function Layout() {
                   type="link"
                   onClick={() => {
                     form.resetFields();
-                    setProviderValue(Providers[0].value);
+
                     setModelOptions([]);
                     setIsAddModelConfigOpen(true);
                   }}
@@ -506,6 +517,7 @@ export function Layout() {
               </div>
             )}
             size="small"
+            scroll={{ x: true }}
             pagination={false}
             dataSource={GPT_MODELS.get().data}
             onMove={(data) => {
@@ -523,6 +535,7 @@ export function Layout() {
                   return (
                     <div>
                       <div>{text}</div>
+                      {record.type && <Tag color="red">{record.type}</Tag>}
                       {record.supportImage && <Tag color="blue">image</Tag>}
                       {record.supportTool && <Tag color="blue">tool</Tag>}
                     </div>
@@ -541,24 +554,24 @@ export function Layout() {
                 key: "key",
                 width: 300,
                 render: (text, record, index) => (
-                  <div>
-                    <Button
+                  <div className="flex flex-wrap gap-2">
+                    <a
                       type="link"
                       onClick={async () => {
                         form.resetFields();
                         if (record.provider == null) {
                           record.provider = "other";
                         }
-                        setProviderValue(record.provider);
+
                         setModelOptions([]);
                         form.setFieldsValue(record);
                         setIsAddModelConfigOpen(true);
                       }}
                     >
                       {t`Edit`}
-                    </Button>
-                    <Divider type="vertical"></Divider>
-                    <Button
+                    </a>
+
+                    <a
                       type="link"
                       onClick={async () => {
                         let clone = { ...record };
@@ -570,8 +583,8 @@ export function Layout() {
                       }}
                     >
                       {t`Clone`}
-                    </Button>
-                    <Divider type="vertical"></Divider>
+                    </a>
+
                     <Popconfirm
                       title="Confirm"
                       description="Confirm Delete?"
@@ -583,11 +596,11 @@ export function Layout() {
                         refresh();
                       }}
                     >
-                      <Button type="link">{t`Delete`}</Button>
+                      <a type="link">{t`Delete`}</a>
                     </Popconfirm>
-                    <Divider type="vertical"></Divider>
+
                     <Tooltip title="Set default">
-                      <Button
+                      <a
                         type="link"
                         onClick={async () => {
                           GPT_MODELS.get().data = GPT_MODELS.get().data.filter(
@@ -599,7 +612,7 @@ export function Layout() {
                         }}
                       >
                         {t`Top`}
-                      </Button>
+                      </a>
                     </Tooltip>
                   </div>
                 ),
@@ -629,87 +642,127 @@ export function Layout() {
               initialValues={{
                 provider: Providers[0].value,
                 baseURL: Providers[0].baseURL,
+                type: "llm",
               }}
               clearOnDestroy
               onFinish={async (values) => {
                 try {
                   setLoadingCheckLLM(true);
                   // message.info("Testing the configuration, please wait...");
-                  setPending(true);
-                  setIsOpenTestLLM(true);
-                  setTimelineData([
-                    {
-                      color: "blue",
-                      children: "Testing the configuration, please wait...",
-                    },
-                  ]);
-                  let o = new OpenAiChannel(values, []);
-                  let testBaseRes = await o.testBase();
-                  if (testBaseRes) {
-                    setTimelineData((x) => {
-                      x.push({
-                        color: "green",
-                        children: "Text Chat Test Success",
-                      });
-                      return x.slice();
-                    });
-                  } else {
-                    setTimelineData((x) => {
-                      x.push({
-                        color: "red",
-                        children: "Text Chat Test Failed",
-                      });
-                      return x.slice();
-                    });
-                  }
-                  if (!testBaseRes) {
-                    message.error(
-                      "Please check if the configuration is incorrect or if the network is available.",
+
+                  if (values.type == "embedding") {
+                    let list = KNOWLEDGE_BASE.get().dbList.filter(
+                      (x) => x.model == values.key,
                     );
-                    setLoadingCheckLLM(false);
+                    if (list.length > 0) {
+                      await new Promise((resolve, reject) => {
+                        Modal.confirm({
+                          title: t`Warning`,
+                          content: (
+                            <pre
+                              style={{
+                                whiteSpace: "pre-wrap",
+                                wordWrap: "break-word",
+                              }}
+                            >
+                              {t`The model is already in knowledge_base use, do you want to continue?` +
+                                "\n"}
+                              {list.map((x) => (
+                                <div>
+                                  <Tag>{x.name}</Tag>
+                                </div>
+                              ))}
+                            </pre>
+                          ),
+                          onOk: () => {
+                            resolve(1);
+                          },
+                          onCancel: () => {
+                            reject(0);
+                          },
+                        });
+                      });
+                    }
+                  } else {
+                    setPending(true);
+                    setIsOpenTestLLM(true);
+                    setTimelineData([
+                      {
+                        color: "blue",
+                        children: "Testing the configuration, please wait...",
+                      },
+                    ]);
+
+                    let o = new OpenAiChannel(values, []);
+                    let testBaseRes = await o.testBase();
+                    if (testBaseRes) {
+                      setTimelineData((x) => {
+                        x.push({
+                          color: "green",
+                          children: "Text Chat Test Success",
+                        });
+                        return x.slice();
+                      });
+                    } else {
+                      setTimelineData((x) => {
+                        x.push({
+                          color: "red",
+                          children: "Text Chat Test Failed",
+                        });
+                        return x.slice();
+                      });
+                    }
+                    if (!testBaseRes) {
+                      message.error(
+                        "Please check if the configuration is incorrect or if the network is available.",
+                      );
+                      setLoadingCheckLLM(false);
+                      setPending(false);
+                      return;
+                    }
+                    let testImageRes = await o.testImage();
+                    if (testImageRes) {
+                      setTimelineData((x) => {
+                        x.push({
+                          color: "green",
+                          children: "Image Support Test Success",
+                        });
+                        return x.slice();
+                      });
+                      values.supportImage = true;
+                    } else {
+                      setTimelineData((x) => {
+                        x.push({
+                          color: "red",
+                          children: "Image Support Test Failed",
+                        });
+                        return x.slice();
+                      });
+                    }
+                    values.supportImage = testImageRes;
+                    let testToolRes = await o.testTool().catch((e) => {
+                      return o.testTool();
+                    });
+                    if (testToolRes) {
+                      setTimelineData((x) => {
+                        x.push({
+                          color: "green",
+                          children: "Tool Call Test Success",
+                        });
+                        return x.slice();
+                      });
+                    } else {
+                      setTimelineData((x) => {
+                        x.push({
+                          color: "red",
+                          children: "Tool Call Test Failed",
+                        });
+                        return x.slice();
+                      });
+                    }
+                    values.supportTool = testToolRes;
                     setPending(false);
-                    return;
                   }
-                  let testImageRes = await o.testImage();
-                  if (testImageRes) {
-                    setTimelineData((x) => {
-                      x.push({
-                        color: "green",
-                        children: "Image Support Test Success",
-                      });
-                      return x.slice();
-                    });
-                    values.supportImage = true;
-                  } else {
-                    setTimelineData((x) => {
-                      x.push({
-                        color: "red",
-                        children: "Image Support Test Failed",
-                      });
-                      return x.slice();
-                    });
-                  }
-                  values.supportImage = testImageRes;
-                  let testToolRes = await o.testTool();
-                  if (testToolRes) {
-                    setTimelineData((x) => {
-                      x.push({
-                        color: "green",
-                        children: "Tool Call Test Success",
-                      });
-                      return x.slice();
-                    });
-                  } else {
-                    setTimelineData((x) => {
-                      x.push({
-                        color: "red",
-                        children: "Tool Call Test Failed",
-                      });
-                      return x.slice();
-                    });
-                  }
-                  values.supportTool = testToolRes;
-                  setPending(false);
                   if (values.key) {
                     let index = GPT_MODELS.get().data.findIndex(
                       (e) => e.key == values.key,
@@ -752,13 +805,11 @@ export function Layout() {
             <Select
               options={Providers}
               onChange={(e) => {
-                setProviderValue(e);
                 setModelOptions([]);
                 let find = Providers.find((x) => x.value == e);
                 if (find == null) {
                   return;
                 }
-                // console.log(find);
 
                 let value: any = {
                   baseURL: find.baseURL,
@@ -771,9 +822,6 @@ export function Layout() {
                 }
                 form.setFieldsValue(value);
                 refresh();
-                // setTimeout(() => {
-                //    refresh();
-                // }, 0);
               }}
             ></Select>
           </Form.Item>
@@ -782,12 +830,7 @@ export function Layout() {
             label="baseURL"
             rules={[{ required: true, message: "Please enter" }]}
           >
-            <Input
-              // disabled={
-              //   !["other", "ollama"].includes(form.getFieldValue("provider"))
-              // }
-              placeholder={t`Please enter baseURL`}
-            ></Input>
+            <Input placeholder={t`Please enter baseURL`}></Input>
           </Form.Item>
           <Form.Item
             name="apiKey"
@@ -860,12 +903,44 @@ export function Layout() {
           <Form.Item name="name" label="Alias">
             <Input placeholder="The default is the model name"></Input>
           </Form.Item>
-          <Form.Item name="call_tool_step" label="Call-Tool-Step">
-            <InputNumber
-              style={{ width: "100%" }}
-              placeholder="default, the model is allowed to execute tools for 10 steps."
-            ></InputNumber>
+
+          <Form.Item
+            name="type"
+            label={t`type`}
+            style={{
+              display:
+                form.getFieldValue("provider") == "openai" ||
+                form.getFieldValue("provider") == null
+                  ? "block"
+                  : "none",
+            }}
+          >
+            <Select
+              options={[
+                {
+                  label: t`LLM`,
+                  value: "llm",
+                },
+                {
+                  label: t`Embedding`,
+                  value: "embedding",
+                },
+              ]}
+              onChange={() => {
+                refresh();
+              }}
+            ></Select>
           </Form.Item>
+
+          {(form.getFieldValue("type") == "llm" ||
+            form.getFieldValue("type") == null) && (
+            <Form.Item name="call_tool_step" label={t`Call-Tool-Step`}>
+              <InputNumber
+                style={{ width: "100%" }}
+                placeholder="default, the model is allowed to execute tools for 10 steps."
+              ></InputNumber>
+            </Form.Item>
+          )}
         </Modal>
         <Modal
           title="Test LLM"

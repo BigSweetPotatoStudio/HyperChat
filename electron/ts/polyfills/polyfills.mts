@@ -34,7 +34,7 @@ export const appDataDir = path.join(os.homedir(), "Documents", dirName);
 fs.ensureDirSync(appDataDir);
 
 Context.CONST = {
-  userDataPath: "",
+  userDataPath: appDataDir,
   getVersion: "",
   appDataDir: appDataDir,
   dirName: dirName,

@@ -31,8 +31,8 @@
         "en": "New Chat",
         "zh": "新建聊天"
     },
-    "Dialogue Records": {
-        "en": "Dialogue Records",
+    "Chat Logs": {
+        "en": "Chat Logs",
         "zh": "对话记录"
     },
     "Nothing 🤐": {
@@ -283,9 +283,9 @@
         "en": "Reset",
         "zh": "重置"
     },
-    "Clients and Tools": {
-        "en": "Clients and Tools",
-        "zh": "客户和工具"
+    "MCP and Tools": {
+        "en": "MCP and Tools",
+        "zh": "MCP和工具"
     },
     "Resources": {
         "en": "Resources",
@@ -663,9 +663,9 @@
         "en": "Select",
         "zh": "选择"
     },
-    "test search top 5": {
-        "en": "test search top 5",
-        "zh": "测试搜索前五名"
+    "test search": {
+        "en": "test search",
+        "zh": "测试搜索"
     },
     "Search": {
         "en": "Search",
@@ -926,5 +926,65 @@
     "All": {
         "en": "All",
         "zh": "全部"
+    },
+    "MCP Tool": {
+        "en": "MCP Tool",
+        "zh": "MCP 工具"
+    },
+    "Unloaded MCP": {
+        "en": "Unloaded MCP",
+        "zh": "未加载的MCP"
+    },
+    "WebdavSetting": {
+        "en": "WebdavSetting",
+        "zh": "Webdav设置"
+    },
+    "Language": {
+        "en": "Language",
+        "zh": "语言"
+    },
+    "Sync Success": {
+        "en": "Sync Success",
+        "zh": "同步成功"
+    },
+    "cron format error!": {
+        "en": "cron format error!",
+        "zh": "cron格式错误！"
+    },
+    "type": {
+        "en": "type",
+        "zh": "类型"
+    },
+    "Embedding": {
+        "en": "Embedding",
+        "zh": "嵌入"
+    },
+    "Call-Tool-Step": {
+        "en": "Call-Tool-Step",
+        "zh": "调用工具步数"
+    },
+    "Currently, only PDF is supported, but in the future, DOC, PPT,\n            audio, and image formats will be supported.": {
+        "en": "Currently, only PDF is supported, but in the future, DOC, PPT,\n            audio, and image formats will be supported.",
+        "zh": "当前仅支持PDF，但未来将支持DOC、PPT、  \n            音频和图像格式。"
+    },
+    "Call Tool": {
+        "en": "Call Tool",
+        "zh": "调用工具"
+    },
+    "Allow this Chat": {
+        "en": "Allow this Chat",
+        "zh": "允许此聊天"
+    },
+    "Allow Once": {
+        "en": "Allow Once",
+        "zh": "允许一次"
+    },
+    "Comfirm Call Tool": {
+        "en": "Comfirm Call Tool",
+        "zh": "确认调用工具"
+    },
+    "User Cancel": {
+        "en": "User Cancel",
+        "zh": "用户取消"
     }
 }

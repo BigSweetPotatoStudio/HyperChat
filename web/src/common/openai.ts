@@ -110,6 +110,7 @@ export class OpenAiChannel {
       allowMCPs?: string[];
       temperature?: number;
       confirm_call_tool?: boolean;
+      confirm_call_tool_cb?: (tool: Tool_Call) => void;
     },
     public messages: MyMessage[],
     // public stream = true,
@@ -480,18 +481,25 @@ export class OpenAiChannel {
     if (tool_calls.length > 0 && call_tool) {
       this.lastMessage.tool_calls = tool_calls;
       for (let tool of tool_calls) {
-        if (process.env.runtime !== "node") {
-          if (this.options.confirm_call_tool) {
-            const { callToolConfirm } = await import("./call_tool_confirm");
-            await callToolConfirm(tool);
-          }
-        }
         try {
           tool.function.argumentsJSON = JSON.parse(tool.function.arguments);
         } catch {
           tool.function.argumentsJSON = {} as any;
         }
-        console.log("tool_calls", tool_calls);
+        if (process.env.runtime !== "node") {
+          if (
+            this.options.confirm_call_tool &&
+            this.options.confirm_call_tool_cb
+          ) {
+            // const { callToolConfirm } = await import("./call_tool_confirm");
+            tool.function.argumentsJSON =
+              await this.options.confirm_call_tool_cb(tool);
+            tool.function.arguments = JSON.stringify(
+              tool.function.argumentsJSON,
+            );
+          }
+        }
+        // console.log("tool_calls", tool_calls);
         let localtool = tools.find(
           (t) => t.function.name === tool.function.name,
         );
@@ -537,7 +545,7 @@ export class OpenAiChannel {
               content: { error: e.message },
             };
           });
-        console.log("call_response: ", call_res);
+        // console.log("call_response: ", call_res);
 
         if (call_res.content == null) {
           this.lastMessage.content = JSON.stringify(call_res);
@@ -652,8 +660,8 @@ export class OpenAiChannel {
         model: this.options.model,
         messages: messages,
         tools,
-        tool_choice: "auto",
       });
+
       messages.push(response.choices[0].message);
 
       let function_name =
