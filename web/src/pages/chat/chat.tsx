@@ -15,6 +15,7 @@ import {
 } from "@ant-design/x";
 import {
   Avatar,
+  Badge,
   Button,
   Card,
   Checkbox,
@@ -455,6 +456,66 @@ export const Chat = ({
       },
       role: x.role,
     };
+    let assistantFooter = (
+      <div className="flex flex-wrap justify-between text-xs">
+        <Space>
+          <CopyOutlined
+            className="hover:text-cyan-400"
+            key="copy"
+            onClick={() => {
+              call("setClipboardText", [x.content.toString()]);
+              message.success("Copied to clipboard");
+            }}
+          />
+          <SyncOutlined
+            key="sync"
+            className="hover:text-cyan-400"
+            onClick={() => {
+              openaiClient.current.messages.splice(i);
+              currentChat.current.messages = openaiClient.current.messages;
+              refresh();
+              onRequest();
+            }}
+          />
+        </Space>
+        {x.content_status != "error" && (
+          <Space>
+            {x.content_attached == false && (
+              <Tooltip title="Cleared">
+                <MinusCircleOutlined className="cursor-not-allowed bg-red-200" />
+              </Tooltip>
+            )}
+            {x.content_date && (
+              <span style={{ marginLeft: 16 }}>
+                {dayjs(x.content_date).format("YYYY-MM-DD HH:mm:ss")}
+              </span>
+            )}
+            {x.content_usage && (
+              <>
+                {x?.content_usage?.prompt_tokens ? (
+                  <Tooltip title="prompt_tokens">
+                    <UploadOutlined />
+                    {x?.content_usage?.prompt_tokens}
+                  </Tooltip>
+                ) : null}
+                {x?.content_usage?.completion_tokens ? (
+                  <Tooltip title="completion_tokens">
+                    <DownloadOutlined />
+                    {x?.content_usage?.completion_tokens}
+                  </Tooltip>
+                ) : null}
+                {x?.content_usage?.total_tokens ? (
+                  <Tooltip title="total_tokens">
+                    <StockOutlined />
+                    {x?.content_usage?.total_tokens}
+                  </Tooltip>
+                ) : null}
+              </>
+            )}
+          </Space>
+        )}
+      </div>
+    );
 
     if (x.role == "user" || x.role == "system") {
       // mcp prompt
@@ -646,180 +707,40 @@ export const Chat = ({
           />
         ),
       };
-    } else if (x.role == "tool") {
+    } else {
       if (isFold) {
-        if (i != arr.length - 1) {
+        if (i + 1 != arr.length && arr[i + 1] && arr[i + 1].role != "user") {
           return;
         }
-      }
-
-      return formatToolMessage(x, common, i);
-    } else if (x.role == "assistant") {
-      if (isFold) {
-        if (i == arr.length - 1) {
-        } else {
-          if (x.tool_calls != null) {
-            return;
+        // if (arr[i + 1] && arr[i + 1].role != "user") {
+        //   return;
+        // }
+        let rocessProgress = [];
+        let index = i - 1;
+        while (index >= 0) {
+          if (arr[index].role == "user") {
+            break;
           }
+          rocessProgress.push(arr[index]);
+          index--;
         }
-      }
-      let rocessProgress = [];
-      let index = i - 1;
-      while (index >= 0) {
-        if (arr[index].role == "user") {
-          break;
-        }
-        rocessProgress.push(arr[index]);
-        index--;
-      }
-      rocessProgress = rocessProgress.reverse();
-      return {
-        ...common,
-        placement: "start",
-        avatar: {
-          icon: "🤖",
-          style: {
-            color: "#fff",
-            backgroundColor: "#87d068",
+        rocessProgress = rocessProgress.reverse();
+        return {
+          ...common,
+          placement: "start",
+          avatar: {
+            icon: "🤖",
+            style: {
+              color: "#fff",
+              backgroundColor: "#87d068",
+            },
           },
-        },
-        key: i.toString(),
-        // typing: x.content_status == "dataLoading",
-        footer: (
-          <div className="flex flex-wrap justify-between text-xs">
-            <Space>
-              <CopyOutlined
-                className="hover:text-cyan-400"
-                key="copy"
-                onClick={() => {
-                  call("setClipboardText", [x.content.toString()]);
-                  message.success("Copied to clipboard");
-                }}
-              />
-              <SyncOutlined
-                key="sync"
-                className="hover:text-cyan-400"
-                onClick={() => {
-                  openaiClient.current.messages.splice(i);
-                  currentChat.current.messages = openaiClient.current.messages;
-                  refresh();
-                  onRequest();
-                }}
-              />
-            </Space>
-            {x.content_status != "error" && (
-              <Space>
-                {x.content_attached == false && (
-                  <Tooltip title="Cleared">
-                    <MinusCircleOutlined className="cursor-not-allowed bg-red-200" />
-                  </Tooltip>
-                )}
-                {x.content_date && (
-                  <span style={{ marginLeft: 16 }}>
-                    {dayjs(x.content_date).format("YYYY-MM-DD HH:mm:ss")}
-                  </span>
-                )}
-                {x.content_usage && (
-                  <>
-                    {x?.content_usage?.prompt_tokens ? (
-                      <Tooltip title="prompt_tokens">
-                        <UploadOutlined />
-                        {x?.content_usage?.prompt_tokens}
-                      </Tooltip>
-                    ) : null}
-                    {x?.content_usage?.completion_tokens ? (
-                      <Tooltip title="completion_tokens">
-                        <DownloadOutlined />
-                        {x?.content_usage?.completion_tokens}
-                      </Tooltip>
-                    ) : null}
-                    {x?.content_usage?.total_tokens ? (
-                      <Tooltip title="total_tokens">
-                        <StockOutlined />
-                        {x?.content_usage?.total_tokens}
-                      </Tooltip>
-                    ) : null}
-                  </>
-                )}
-              </Space>
-            )}
-          </div>
-        ),
-        // loading:
-        //   x.content_status == "loading" || x.content_status == "dataLoading",
-        content:
-          x.content_status == "loading" ? (
-            <SyncOutlined spin />
-          ) : x.content_status == "error" ? (
-            <div className="text-red-400">
-              {t`Please verify your network connection. If the network is working, there might be a small bug in the program. Here are the error messages: `}
-              <div className="text-red-700">{x.content_error}</div>
-            </div>
-          ) : (
+          key: (i - rocessProgress.length).toString(),
+          footer: assistantFooter,
+          content: (
             <div>
-              {x.tool_calls &&
-                x.tool_calls.map((tool: any, index) => {
-                  return (
-                    <Tooltip
-                      key={index}
-                      title={
-                        <div className="max-h-40 overflow-auto text-ellipsis">
-                          {tool.function.arguments}
-                        </div>
-                      }
-                    >
-                      <Spin spinning={x.content_status == "loading"}>
-                        <a
-                          className="cursor-pointer"
-                          onClick={() => {
-                            Modal.info({
-                              width: "90%",
-                              style: { maxWidth: 1024 },
-                              title: t`Tool Call`,
-                              maskClosable: true,
-                              content: (
-                                <div>
-                                  <pre
-                                    style={{
-                                      whiteSpace: "pre-wrap",
-                                      wordWrap: "break-word",
-                                      padding: "8px 0",
-                                      textAlign: "center",
-                                    }}
-                                  >
-                                    <span>Tool Name: </span>
-                                    <span className="text-red-400">
-                                      {tool.restore_name || tool.function.name}
-                                    </span>
-                                  </pre>
-                                  <div>
-                                    <span>Tool Arguments: </span>
-                                  </div>
-                                  <pre
-                                    style={{
-                                      whiteSpace: "pre-wrap",
-                                      wordWrap: "break-word",
-                                    }}
-                                  >
-                                    {tool.function.arguments}
-                                  </pre>
-                                </div>
-                              ),
-                            });
-                          }}
-                        >
-                          <div className="line-clamp-1">
-                            {tool.restore_name || tool.function.name} :{" "}
-                            {tool.function.arguments}
-                          </div>
-                        </a>
-                      </Spin>
-                    </Tooltip>
-                  );
-                })}
-              {isFold &&
-                !x.tool_calls &&
-                rocessProgress.map((x, i) => {
+              <div>
+                {rocessProgress.map((x, i) => {
                   if (x.role == "tool") {
                     return (
                       <Tooltip
@@ -880,7 +801,7 @@ export const Chat = ({
                     );
                   } else {
                     return (
-                      <div>
+                      <div className="bg-gray-200" key={i}>
                         {x.tool_calls.map((tool: any, index) => {
                           return (
                             <Tooltip
@@ -934,8 +855,15 @@ export const Chat = ({
                                   }}
                                 >
                                   <div className="line-clamp-1">
-                                    {tool.restore_name || tool.function.name} :
-                                    {x?.content?.toString()}
+                                    🔧
+                                    <span className="text-red-400">
+                                      {tool.restore_name || tool.function.name}
+                                    </span>{" "}
+                                    <span className="text-gray-500">
+                                      {" "}
+                                      {x?.content?.toString()}
+                                    </span>{" "}
+                                    {tool.function.arguments}
                                   </div>
                                 </a>
                               </Spin>
@@ -946,6 +874,7 @@ export const Chat = ({
                     );
                   }
                 })}
+              </div>
               {x.reasoning_content && (
                 <Collapse
                   defaultActiveKey={["reasoning_content"]}
@@ -980,6 +909,14 @@ export const Chat = ({
                   }}
                 ></MarkDown>
               )}
+              {x.content_status == "loading" ? (
+                <SyncOutlined spin />
+              ) : x.content_status == "error" ? (
+                <div className="text-red-400">
+                  {t`Please verify your network connection. If the network is working, there might be a small bug in the program. Here are the error messages: `}
+                  <div className="text-red-700">{x.content_error}</div>
+                </div>
+              ) : null}
               {x.content_status == "dataLoading" && <LoadingOutlined />}
               {x.content_attachment &&
                 x.content_attachment.length > 0 &&
@@ -1006,9 +943,161 @@ export const Chat = ({
                 })}
             </div>
           ),
-      };
-    } else {
-      antdMessage.error("Unknown role");
+        };
+      } else {
+        if (x.role == "tool") {
+          return formatToolMessage(x, common, i);
+        } else if (x.role == "assistant") {
+          return {
+            ...common,
+            placement: "start",
+            avatar: {
+              icon: "🤖",
+              style: {
+                color: "#fff",
+                backgroundColor: "#87d068",
+              },
+            },
+            key: i.toString(),
+            // typing: x.content_status == "dataLoading",
+            footer: assistantFooter,
+            // loading:
+            //   x.content_status == "loading" || x.content_status == "dataLoading",
+            content:
+              x.content_status == "loading" ? (
+                <SyncOutlined spin />
+              ) : x.content_status == "error" ? (
+                <div className="text-red-400">
+                  {t`Please verify your network connection. If the network is working, there might be a small bug in the program. Here are the error messages: `}
+                  <div className="text-red-700">{x.content_error}</div>
+                </div>
+              ) : (
+                <div>
+                  {x.tool_calls &&
+                    x.tool_calls.map((tool: any, index) => {
+                      return (
+                        <Tooltip
+                          key={index}
+                          title={
+                            <div className="max-h-40 overflow-auto text-ellipsis">
+                              {tool.function.arguments}
+                            </div>
+                          }
+                        >
+                          <Spin spinning={x.content_status == "loading"}>
+                            <a
+                              className="cursor-pointer"
+                              onClick={() => {
+                                Modal.info({
+                                  width: "90%",
+                                  style: { maxWidth: 1024 },
+                                  title: t`Tool Call`,
+                                  maskClosable: true,
+                                  content: (
+                                    <div>
+                                      <pre
+                                        style={{
+                                          whiteSpace: "pre-wrap",
+                                          wordWrap: "break-word",
+                                          padding: "8px 0",
+                                          textAlign: "center",
+                                        }}
+                                      >
+                                        <span>Tool Name: </span>
+                                        <span className="text-red-400">
+                                          {tool.restore_name ||
+                                            tool.function.name}
+                                        </span>
+                                      </pre>
+                                      <div>
+                                        <span>Tool Arguments: </span>
+                                      </div>
+                                      <pre
+                                        style={{
+                                          whiteSpace: "pre-wrap",
+                                          wordWrap: "break-word",
+                                        }}
+                                      >
+                                        {tool.function.arguments}
+                                      </pre>
+                                    </div>
+                                  ),
+                                });
+                              }}
+                            >
+                              <div className="line-clamp-1">
+                                {tool.restore_name || tool.function.name} :{" "}
+                                {tool.function.arguments}
+                              </div>
+                            </a>
+                          </Spin>
+                        </Tooltip>
+                      );
+                    })}
+
+                  {x.reasoning_content && (
+                    <Collapse
+                      defaultActiveKey={["reasoning_content"]}
+                      items={[
+                        {
+                          key: "reasoning_content",
+                          label: (
+                            <div className="line-clamp-1">
+                              thinking: {x.reasoning_content}
+                            </div>
+                          ),
+                          children: (
+                            <pre
+                              key="1"
+                              style={{
+                                whiteSpace: "pre-wrap",
+                                wordWrap: "break-word",
+                              }}
+                            >
+                              {x.reasoning_content}
+                            </pre>
+                          ),
+                        },
+                      ]}
+                    />
+                  )}
+                  {x.content && (
+                    <MarkDown
+                      markdown={x.content}
+                      onCallback={(e) => {
+                        setValue(e);
+                      }}
+                    ></MarkDown>
+                  )}
+                  {x.content_status == "dataLoading" && <LoadingOutlined />}
+                  {x.content_attachment &&
+                    x.content_attachment.length > 0 &&
+                    x.content_attachment.map((x, i) => {
+                      if (x.type == "image") {
+                        return (
+                          <DownImage
+                            key={i}
+                            src={`data:${x.mimeType};base64,${x.data}`}
+                          />
+                        );
+                      } else if (x.type == "text") {
+                        return (
+                          <pre
+                            style={{
+                              whiteSpace: "pre-wrap",
+                              wordWrap: "break-word",
+                            }}
+                          >
+                            {x.text}
+                          </pre>
+                        );
+                      }
+                    })}
+                </div>
+              ),
+          };
+        }
+      }
     }
   }
 
