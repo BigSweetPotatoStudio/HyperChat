@@ -189,7 +189,79 @@ import {
   JsonSchema2ProFormColumnsType,
 } from "../../common/util";
 import zodToJsonSchema from "zod-to-json-schema";
-import { error } from "console";
+
+function formatToolMessage(x: MyMessage, common, i) {
+  return {
+    ...common,
+    placement: "start",
+    avatar: {
+      icon: "🔧",
+      style: {
+        color: "#fff",
+        backgroundColor: "#87d068",
+      },
+    },
+    key: i.toString(),
+    content: (
+      <Tooltip
+        title={
+          <div className="max-h-40 overflow-auto text-ellipsis">
+            {x.content as string}
+          </div>
+        }
+      >
+        <span
+          className="cursor-pointer"
+          onClick={() => {
+            Modal.info({
+              width: "90%",
+              style: { maxWidth: 1024 },
+              title: t`Tool Call Result`,
+              maskClosable: true,
+              content: (
+                <div>
+                  <pre
+                    style={{
+                      whiteSpace: "pre-wrap",
+                      wordWrap: "break-word",
+                    }}
+                  >
+                    {x.content as string}
+                  </pre>
+                </div>
+              ),
+            });
+          }}
+        >
+          {x.content_status == "loading" ? (
+            <SyncOutlined spin />
+          ) : x.content_status == "error" ? (
+            "❌Error"
+          ) : (
+            "✅Completed"
+          )}
+          <div className="line-clamp-1">{x.content as string}</div>
+        </span>
+        {x.content_attachment &&
+          x.content_attachment.length > 0 &&
+          x.content_attachment.map((x, i) => {
+            if (x.type == "image") {
+              return (
+                <DownImage
+                  key={i}
+                  src={`data:${x.mimeType};base64,${x.data}`}
+                />
+              );
+            } else if (x.type == "text") {
+              return <pre>{x.text}</pre>;
+            }
+          })}
+      </Tooltip>
+    ),
+  };
+}
+
+const isFold = true;
 
 export const Chat = ({
   onTitleChange = undefined,
@@ -384,43 +456,44 @@ export const Chat = ({
       role: x.role,
     };
 
-    if (x.content_from) {
-      return {
-        ...common,
-        key: i.toString(),
-        placement: x.role == "user" || x.role == "system" ? "end" : "start",
-        avatar: {
-          icon: x.role == "system" ? "⚙️" : <UserOutlined />,
-          style: {
-            color: "#f56a00",
-            backgroundColor: "#fde3cf",
-          },
-        },
-        content: (
-          <div
-            className="cursor-pointer"
-            onClick={() => {
-              Modal.info({
-                width: "90%",
-                style: { maxWidth: 1024 },
-                title: "Tip",
-                maskClosable: true,
-                content: <div>{x.content as string}</div>,
-              });
-            }}
-          >
-            <Attachments.FileCard
-              item={{
-                name: x.content_from as string,
-                uid: x.content_from as string,
-                size: x.content.length,
-              }}
-            ></Attachments.FileCard>
-          </div>
-        ),
-      };
-    }
     if (x.role == "user" || x.role == "system") {
+      // mcp prompt
+      if (x.content_from) {
+        return {
+          ...common,
+          key: i.toString(),
+          placement: x.role == "user" || x.role == "system" ? "end" : "start",
+          avatar: {
+            icon: x.role == "system" ? "⚙️" : <UserOutlined />,
+            style: {
+              color: "#f56a00",
+              backgroundColor: "#fde3cf",
+            },
+          },
+          content: (
+            <div
+              className="cursor-pointer"
+              onClick={() => {
+                Modal.info({
+                  width: "90%",
+                  style: { maxWidth: 1024 },
+                  title: "Tip",
+                  maskClosable: true,
+                  content: <div>{x.content as string}</div>,
+                });
+              }}
+            >
+              <Attachments.FileCard
+                item={{
+                  name: x.content_from as string,
+                  uid: x.content_from as string,
+                  size: x.content.length,
+                }}
+              ></Attachments.FileCard>
+            </div>
+          ),
+        };
+      }
       if (x.content_context == null) {
         x.content_context = {};
       }
@@ -574,75 +647,32 @@ export const Chat = ({
         ),
       };
     } else if (x.role == "tool") {
-      return {
-        ...common,
-        placement: "start",
-        avatar: {
-          icon: "🔧",
-          style: {
-            color: "#fff",
-            backgroundColor: "#87d068",
-          },
-        },
-        key: i.toString(),
-        content: (
-          <Tooltip
-            title={
-              <div className="max-h-40 overflow-auto text-ellipsis">
-                {x.content as string}
-              </div>
-            }
-          >
-            <span
-              className="cursor-pointer"
-              onClick={() => {
-                Modal.info({
-                  width: "90%",
-                  style: { maxWidth: 1024 },
-                  title: t`Tool Call Result`,
-                  maskClosable: true,
-                  content: (
-                    <div>
-                      <pre
-                        style={{
-                          whiteSpace: "pre-wrap",
-                          wordWrap: "break-word",
-                        }}
-                      >
-                        {x.content as string}
-                      </pre>
-                    </div>
-                  ),
-                });
-              }}
-            >
-              {x.content_status == "loading" ? (
-                <SyncOutlined spin />
-              ) : x.content_status == "error" ? (
-                "❌Error"
-              ) : (
-                "✅Completed"
-              )}
-              <div className="line-clamp-1">{x.content as string}</div>
-            </span>
-            {x.content_attachment &&
-              x.content_attachment.length > 0 &&
-              x.content_attachment.map((x, i) => {
-                if (x.type == "image") {
-                  return (
-                    <DownImage
-                      key={i}
-                      src={`data:${x.mimeType};base64,${x.data}`}
-                    />
-                  );
-                } else if (x.type == "text") {
-                  return <pre>{x.text}</pre>;
-                }
-              })}
-          </Tooltip>
-        ),
-      };
+      if (isFold) {
+        if (i != arr.length - 1) {
+          return;
+        }
+      }
+
+      return formatToolMessage(x, common, i);
     } else if (x.role == "assistant") {
+      if (isFold) {
+        if (i == arr.length - 1) {
+        } else {
+          if (x.tool_calls != null) {
+            return;
+          }
+        }
+      }
+      let rocessProgress = [];
+      let index = i - 1;
+      while (index >= 0) {
+        if (arr[index].role == "user") {
+          break;
+        }
+        rocessProgress.push(arr[index]);
+        index--;
+      }
+      rocessProgress = rocessProgress.reverse();
       return {
         ...common,
         placement: "start",
@@ -786,6 +816,135 @@ export const Chat = ({
                       </Spin>
                     </Tooltip>
                   );
+                })}
+              {isFold &&
+                !x.tool_calls &&
+                rocessProgress.map((x, i) => {
+                  if (x.role == "tool") {
+                    return (
+                      <Tooltip
+                        key={i}
+                        title={
+                          <div className="max-h-40 overflow-auto text-ellipsis">
+                            {x.content as string}
+                          </div>
+                        }
+                      >
+                        <span
+                          key={i}
+                          className="cursor-pointer"
+                          onClick={() => {
+                            Modal.info({
+                              width: "90%",
+                              style: { maxWidth: 1024 },
+                              title: t`Tool Call Result`,
+                              maskClosable: true,
+                              content: (
+                                <div>
+                                  <pre
+                                    style={{
+                                      whiteSpace: "pre-wrap",
+                                      wordWrap: "break-word",
+                                    }}
+                                  >
+                                    {x.content as string}
+                                  </pre>
+                                </div>
+                              ),
+                            });
+                          }}
+                        >
+                          {x.content_status == "loading" ? (
+                            <SyncOutlined spin />
+                          ) : x.content_status == "error" ? (
+                            "❌Error"
+                          ) : (
+                            "✅Completed"
+                          )}
+                        </span>
+                        {x.content_attachment &&
+                          x.content_attachment.length > 0 &&
+                          x.content_attachment.map((x, i) => {
+                            if (x.type == "image") {
+                              return (
+                                <DownImage
+                                  key={i}
+                                  src={`data:${x.mimeType};base64,${x.data}`}
+                                />
+                              );
+                            } else if (x.type == "text") {
+                              return <pre>{x.text}</pre>;
+                            }
+                          })}
+                      </Tooltip>
+                    );
+                  } else {
+                    return (
+                      <div>
+                        {x.tool_calls.map((tool: any, index) => {
+                          return (
+                            <Tooltip
+                              key={index}
+                              title={
+                                <div className="max-h-40 overflow-auto text-ellipsis">
+                                  {tool.function.arguments}
+                                </div>
+                              }
+                            >
+                              <Spin spinning={x.content_status == "loading"}>
+                                <a
+                                  className="cursor-pointer"
+                                  onClick={() => {
+                                    Modal.info({
+                                      width: "90%",
+                                      style: { maxWidth: 1024 },
+                                      title: t`Tool Call`,
+                                      maskClosable: true,
+                                      content: (
+                                        <div>
+                                          <pre
+                                            style={{
+                                              whiteSpace: "pre-wrap",
+                                              wordWrap: "break-word",
+                                              padding: "8px 0",
+                                              textAlign: "center",
+                                            }}
+                                          >
+                                            <span>Tool Name: </span>
+                                            <span className="text-red-400">
+                                              {tool.restore_name ||
+                                                tool.function.name}
+                                            </span>
+                                          </pre>
+                                          {x?.content?.toString()}
+                                          <div>
+                                            <span>Tool Arguments: </span>
+                                          </div>
+                                          <pre
+                                            style={{
+                                              whiteSpace: "pre-wrap",
+                                              wordWrap: "break-word",
+                                            }}
+                                          >
+                                            {tool.function.arguments}
+                                          </pre>
+                                        </div>
+                                      ),
+                                    });
+                                  }}
+                                >
+                                  <div className="line-clamp-1">
+                                    {tool.restore_name || tool.function.name} :
+                                    {x?.content?.toString()}
+                                  </div>
+                                </a>
+                              </Spin>
+                            </Tooltip>
+                          );
+                        })}
+                      </div>
+                    );
+                  }
                 })}
               {x.reasoning_content && (
                 <Collapse
@@ -1593,7 +1752,9 @@ export const Chat = ({
                   )}
                   <Bubble.List
                     style={{ flex: 1, paddingRight: 4 }}
-                    items={currentChat.current.messages?.map(format)}
+                    items={currentChat.current.messages
+                      ?.map(format)
+                      ?.filter((x) => x != null)}
                   />
                 </div>
 
@@ -1715,7 +1876,7 @@ export const Chat = ({
                       <Divider type="vertical" />
                       <Tooltip title={t`Resources`} placement="bottom">
                         <Dropdown
-                          placement="topRight"
+                          placement="top"
                           menu={{
                             items: resourcesRef.current.map((x, i) => {
                               return {
@@ -1756,7 +1917,7 @@ export const Chat = ({
                       <Divider type="vertical" />
                       <Tooltip title={t`Prompts`} placement="bottom">
                         <Dropdown
-                          placement="topRight"
+                          placement="top"
                           menu={{
                             items: promptsRef.current.map((x, i) => {
                               return {

@@ -14,6 +14,7 @@ if (process.env.runtime === "node") {
 
 import imageBase64 from "../common/openai_image_base64.txt";
 import { v4 } from "uuid";
+import dayjs from "dayjs";
 
 type Tool_Call = {
   index: number;
@@ -160,6 +161,7 @@ export class OpenAiChannel {
         }
       }
     }
+    this.messages.push(message);
     if (promptResList.length > 0) {
       for (let p of promptResList) {
         for (let m of p.messages) {
@@ -211,7 +213,7 @@ export class OpenAiChannel {
         }
       }
     }
-    this.messages.push(message);
+
     return this;
   }
   // 取消当前请求
@@ -628,23 +630,34 @@ export class OpenAiChannel {
   async testTool() {
     try {
       const tools = [
+        // {
+        //   type: "function" as const,
+        //   function: {
+        //     name: "get_weather",
+        //     description: "Get the weather in a given location",
+        //     // strict: true,
+        //     parameters: {
+        //       type: "object",
+        //       properties: {
+        //         location: {
+        //           type: "string",
+        //           description: "The city and state, e.g. Chicago, IL",
+        //         },
+        //         unit: { type: "string", enum: ["celsius", "fahrenheit"] },
+        //         // additionalProperties: false,
+        //       },
+        //       required: ["location"],
+        //     },
+        //   },
+        // },
         {
           type: "function" as const,
           function: {
-            name: "get_weather",
-            description: "Get the weather in a given location",
-            // strict: true,
+            name: "current_time",
+            description: "Get the current local time as a string.",
             parameters: {
               type: "object",
-              properties: {
-                location: {
-                  type: "string",
-                  description: "The city and state, e.g. Chicago, IL",
-                },
-                unit: { type: "string", enum: ["celsius", "fahrenheit"] },
-                // additionalProperties: false,
-              },
-              required: ["location"],
+              properties: {},
             },
           },
         },
@@ -652,7 +665,7 @@ export class OpenAiChannel {
       let messages: Array<any> = [
         {
           role: "user",
-          content: "hello, What's the weather like in Chicago today?",
+          content: "hello, What's the time?",
         },
       ];
 
@@ -671,8 +684,8 @@ export class OpenAiChannel {
 
       let runs = {} as any;
 
-      runs.get_weather = ({ location, unit }) => {
-        return "25°C, sunny day.";
+      runs[function_name] = () => {
+        return dayjs().format("YYYY-MM-DD HH:mm:ss");
       };
 
       console.log(function_name, function_args);
