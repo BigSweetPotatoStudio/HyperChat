@@ -45,7 +45,7 @@ export async function createBrowser(log = false) {
     try {
       launcher = await ChromeLauncher.launch({
         startingUrl: getConfig().startingUrl,
-        userDataDir: false,
+        userDataDir: getConfig().userData || false,
         port: 9222,
         ignoreDefaultFlags: true,
         chromeFlags: newFlags,

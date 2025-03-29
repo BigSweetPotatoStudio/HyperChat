@@ -778,9 +778,19 @@ export const Chat = ({
                           {x.content_status == "loading" ? (
                             <SyncOutlined spin />
                           ) : x.content_status == "error" ? (
-                            "❌Error"
+                            <div className="line-clamp-1 text-red-500">
+                              ❌Error{" "}
+                              <span className="text-red-300">
+                                {x?.content?.toString()}
+                              </span>
+                            </div>
                           ) : (
-                            "✅Completed"
+                            <div className="line-clamp-1 text-green-400">
+                              ✅Completed{" "}
+                              <span className="text-gray-400">
+                                {x?.content?.toString()}
+                              </span>
+                            </div>
                           )}
                         </span>
                         {x.content_attachment &&
@@ -832,7 +842,7 @@ export const Chat = ({
                                             }}
                                           >
                                             <span>Tool Name: </span>
-                                            <span className="text-red-400">
+                                            <span className="text-purple-500">
                                               {tool.restore_name ||
                                                 tool.function.name}
                                             </span>
@@ -856,7 +866,7 @@ export const Chat = ({
                                 >
                                   <div className="line-clamp-1">
                                     🔧
-                                    <span className="text-red-400">
+                                    <span className="text-purple-500">
                                       {tool.restore_name || tool.function.name}
                                     </span>{" "}
                                     <span className="text-gray-500">
@@ -912,7 +922,7 @@ export const Chat = ({
               {x.content_status == "loading" ? (
                 <SyncOutlined spin />
               ) : x.content_status == "error" ? (
-                <div className="text-red-400">
+                <div className="text-red-500">
                   {t`Please verify your network connection. If the network is working, there might be a small bug in the program. Here are the error messages: `}
                   <div className="text-red-700">{x.content_error}</div>
                 </div>
@@ -967,7 +977,7 @@ export const Chat = ({
               x.content_status == "loading" ? (
                 <SyncOutlined spin />
               ) : x.content_status == "error" ? (
-                <div className="text-red-400">
+                <div className="text-purple-500">
                   {t`Please verify your network connection. If the network is working, there might be a small bug in the program. Here are the error messages: `}
                   <div className="text-red-700">{x.content_error}</div>
                 </div>
@@ -1004,7 +1014,7 @@ export const Chat = ({
                                         }}
                                       >
                                         <span>Tool Name: </span>
-                                        <span className="text-red-400">
+                                        <span className="text-purple-500">
                                           {tool.restore_name ||
                                             tool.function.name}
                                         </span>
@@ -1158,7 +1168,7 @@ export const Chat = ({
                       }}
                     >
                       <span>Tool Name: </span>
-                      <span className="text-red-400">
+                      <span className="text-purple-500">
                         {tool.restore_name || tool.function.name}
                       </span>
                     </pre>
@@ -2436,7 +2446,7 @@ export const Chat = ({
                 }}
               >
                 <span>Tool Name: </span>
-                <span className="text-red-400">
+                <span className="text-purple-500">
                   {currTool.restore_name || currTool?.function?.name}
                 </span>
               </pre>

@@ -38,8 +38,12 @@ export const configSchema = z.object({
       description: "Chrome Path",
     })
     .default(""),
+  userData: z
+    .string({
+      description: "Chrome userData Path",
+    })
+    .optional(),
 });
-
 
 // console.log("safeParse : ", configSchema.safeParse({}));
 export function getConfig() {
@@ -48,6 +52,6 @@ export function getConfig() {
   let config = mcpconfig.mcpServers[NAME].hyperchat.config as z.infer<
     typeof configSchema
   >;
-  
+
   return configSchema.safeParse(config).data;
 }

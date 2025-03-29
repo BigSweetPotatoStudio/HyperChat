@@ -117,17 +117,25 @@ export function registerTool(server: McpServer) {
 
       c.commamdOutput = "";
       c.terminal.write(`${command}\r`);
+
       c.timer && clearTimeout(c.timer);
       c.timer = setTimeout(() => {
         c.terminal.kill();
         terminalMap.delete(c.terminal.pid);
       }, timeout);
-
+      let a = false;
       while (1) {
-        await new Promise((resolve) => setTimeout(resolve, 100));
-
-        if (checkEnd(c.commamdOutput)) {
-          break;
+        if (a) {
+          await new Promise((resolve) => setTimeout(resolve, 500));
+          if (c.commamdOutput.includes(`done-${terminalID}`)) {
+            break;
+          }
+        } else {
+          await new Promise((resolve) => setTimeout(resolve, 100));
+          if (checkEnd(c.commamdOutput)) {
+            c.terminal.write(`         echo done-${terminalID}\r`);
+            a = true;
+          }
         }
       }
       c.lastIndex = c.stdout.length;

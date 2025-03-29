@@ -182,6 +182,7 @@ import { call } from "../../common/call";
 import hljs from "highlight.js"; // https://highlightjs.org
 import "highlight.js/styles/github.css";
 import { v4 } from "uuid";
+import { sleep } from "../../common/sleep";
 // import "highlight.js/lib/languages/all";
 
 // import javascript from "highlight.js/lib/languages/javascript.js";
@@ -301,7 +302,10 @@ export const MarkDown = ({ markdown, onCallback }) => {
         setArtifactsType("html");
       } else {
         let svg = extractSvgContent(markdown);
-        setArtifacts(svg);
+        if (svg) {
+          setArtifacts(`<html><body style="display: flex;justify-content: center;">${svg}</body></html>`);
+        }
+
         setArtifactsType("svg");
       }
     }
@@ -316,8 +320,8 @@ export const MarkDown = ({ markdown, onCallback }) => {
     }
   }, [render]);
   const [webviewXY, setWebviewXY] = React.useState({
-    x: "calc(60vw)",
-    y: "calc(60vh)",
+    x: "800px",
+    y: "480px",
   });
 
   return (
@@ -421,6 +425,7 @@ export const MarkDown = ({ markdown, onCallback }) => {
                 });
                 w.addEventListener("did-finish-load", async () => {
                   try {
+                    await sleep(1000);
                     let res = await (w as any).executeJavaScript(
                       `var r;
 var res
@@ -443,7 +448,7 @@ res ={ width: r.width, height: r.height };`,
               }
             }}
             src={
-              `data:${artifactsType === "svg" ? "image/svg+xml" : "text/html"};base64,` +
+              `data:${"text/html"};charset=utf-8;base64,` +
               textToBase64Unicode(artifacts)
             }
             useragent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/132.0.0.0 Safari/537.36"
