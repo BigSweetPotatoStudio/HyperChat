@@ -26,7 +26,7 @@ export function registerElectronTool(server: McpServer) {
         md = await web1.fetch(url);
       }
       return {
-        content: [{ type: "text", text: md }],
+        content: [{ code: 0, type: "text", text: md }],
       };
     }
   );

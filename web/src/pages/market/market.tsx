@@ -320,19 +320,6 @@ export function Market() {
       <div className="w-full lg:w-2/5">
         {/* <h1 className=" ">💻MCP</h1> */}
         <Space className="mt-1">
-          <Tooltip
-            title={t`If you are using NVM, you might need to customize the PATH environment var.`}
-          >
-            <Button
-              onClick={() => {
-                setIsPathOpen(true);
-              }}
-              danger
-            >
-              {t`Try Repair environment`}
-            </Button>
-          </Tooltip>
-
           <Button
             onClick={async () => {
               let p = await call("pathJoin", ["mcp.json"]);
@@ -632,6 +619,7 @@ export function Market() {
           </div>
           <div>Help: </div>
           <div className="help">
+
             <div>
               <div>
                 <Space>
@@ -689,6 +677,20 @@ export function Market() {
                 </div>
               )}
             </div>
+
+            <Tooltip
+              title={t`you might need to customize the PATH environment var.`}
+            >
+              <Button
+                onClick={() => {
+                  setIsPathOpen(true);
+                }}
+                danger
+              >
+                {t`Try Repair environment`}
+              </Button>
+            </Tooltip>
+
           </div>
         </div>
       </div>
