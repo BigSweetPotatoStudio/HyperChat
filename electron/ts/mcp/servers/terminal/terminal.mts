@@ -6,6 +6,7 @@ import strip from "strip-ansi";
 import * as pty from "node-pty";
 import { z } from "zod";
 import { shellPathSync } from "ts/es6.mjs";
+import { getConfig } from "./lib.mjs";
 const shell = os.platform() === "win32" ? "powershell.exe" : "bash";
 
 type Context = {
@@ -20,12 +21,12 @@ export function registerTool(server: McpServer) {
   const terminalMap = new Map<number, Context>();
 
   let lastTerminalID = 0;
-
+  const config = getConfig();
   // const promptPattern = /\$\s*$|\>\s*$|#\s*$/m;
-  const checkCount = parseInt(process.env.Terminal_End_CheckCount) || 15;
-  const maxToken = parseInt(process.env.Terminal_Output_MaxToken) || 10000;
-  const timeout = parseInt(process.env.Terminal_Timeout) || 5 * 60 * 1000;
-
+  const checkCount = config.Terminal_End_CheckCount || 15;
+  const maxToken = config.Terminal_Output_MaxToken || 10000;
+  const timeout = config.Terminal_Timeout || 5 * 60 * 1000;
+  // console.log("checkCount: ", checkCount);
   let arr = new Array<string>();
 
   function checkEnd(str: string) {

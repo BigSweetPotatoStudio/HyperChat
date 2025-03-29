@@ -183,6 +183,7 @@ import hljs from "highlight.js"; // https://highlightjs.org
 import "highlight.js/styles/github.css";
 import { v4 } from "uuid";
 import { sleep } from "../../common/sleep";
+import { isWeb } from "../../common/util";
 // import "highlight.js/lib/languages/all";
 
 // import javascript from "highlight.js/lib/languages/javascript.js";
@@ -303,7 +304,9 @@ export const MarkDown = ({ markdown, onCallback }) => {
       } else {
         let svg = extractSvgContent(markdown);
         if (svg) {
-          setArtifacts(`<html><body style="display: flex;justify-content: center;">${svg}</body></html>`);
+          setArtifacts(
+            `<html><body style="display: flex;justify-content: center;">${svg}</body></html>`,
+          );
         }
 
         setArtifactsType("svg");
@@ -381,8 +384,11 @@ export const MarkDown = ({ markdown, onCallback }) => {
               <code>{webviewError.current}</code>
             </Space>
           )}
-          <Space.Compact className="absolute right-0 top-0">
-            {/* <Button
+
+          {!isWeb ? (
+            <>
+              <Space.Compact className="absolute right-0 top-0">
+                {/* <Button
               size="small"
               onClick={async () => {
                 let nativeImage = await webviewRef.current?.capturePage();
@@ -399,35 +405,34 @@ export const MarkDown = ({ markdown, onCallback }) => {
             >
               capturePage
             </Button> */}
-            <Button
-              size="small"
-              onClick={() => {
-                webviewRef.current?.openDevTools();
-              }}
-            >
-              openDevTools
-            </Button>
-          </Space.Compact>
+                <Button
+                  size="small"
+                  onClick={() => {
+                    webviewRef.current?.openDevTools();
+                  }}
+                >
+                  openDevTools
+                </Button>
+              </Space.Compact>
+              <webview
+                ref={(w) => {
+                  if (w) {
+                    webviewRef.current = w;
+                    w.addEventListener("console-message", (e: any) => {
+                      // console.log("Guest page logged a message:", e.message);
+                      if (e.level === 3) {
+                        // error
+                        webviewError.current =
+                          webviewError.current + e.message + "\n";
 
-          <webview
-            ref={(w) => {
-              if (w) {
-                webviewRef.current = w;
-                w.addEventListener("console-message", (e: any) => {
-                  // console.log("Guest page logged a message:", e.message);
-                  if (e.level === 3) {
-                    // error
-                    webviewError.current =
-                      webviewError.current + e.message + "\n";
-
-                    refresh();
-                  }
-                });
-                w.addEventListener("did-finish-load", async () => {
-                  try {
-                    await sleep(1000);
-                    let res = await (w as any).executeJavaScript(
-                      `var r;
+                        refresh();
+                      }
+                    });
+                    w.addEventListener("did-finish-load", async () => {
+                      try {
+                        await sleep(1000);
+                        let res = await (w as any).executeJavaScript(
+                          `var r;
 var res
 if(document.body){
     r = document.body.getBoundingClientRect();
@@ -435,38 +440,41 @@ if(document.body){
     r = document.firstChild.getBoundingClientRect();
 }
 res ={ width: r.width, height: r.height };`,
-                    );
-                    // console.log(res);
-                    setWebviewXY({
-                      x: res.width + "px",
-                      y: res.height + "px",
+                        );
+                        // console.log(res);
+                        setWebviewXY({
+                          x: res.width + "px",
+                          y: res.height + "px",
+                        });
+                      } catch (e) {
+                        console.error("webview executeJavaScript fail: ", e);
+                      }
                     });
-                  } catch (e) {
-                    console.error("webview executeJavaScript fail: ", e);
                   }
-                });
-              }
-            }}
-            src={
-              `data:${"text/html"};charset=utf-8;base64,` +
-              textToBase64Unicode(artifacts)
-            }
-            useragent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/132.0.0.0 Safari/537.36"
-            // src="https://www.baidu.com"
-            // className="w-3/5"
-            style={{
-              height: webviewXY.y,
-              width: webviewXY.x,
-            }}
-          ></webview>
-          {/* <iframe  image/svg+xml
-            src={"data:text/html;base64," + textToBase64Unicode(artifacts)}
-            // className="w-3/5"
-            style={{
-              height: "calc(60vh)",
-              width: "calc(60vw)",
-            }}
-          ></iframe> */}
+                }}
+                src={
+                  `data:${"text/html"};charset=utf-8;base64,` +
+                  textToBase64Unicode(artifacts)
+                }
+                useragent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/132.0.0.0 Safari/537.36"
+                // src="https://www.baidu.com"
+                // className="w-3/5"
+                style={{
+                  height: webviewXY.y,
+                  width: webviewXY.x,
+                }}
+              ></webview>
+            </>
+          ) : (
+            <iframe
+              src={"data:text/html;charset=utf-8;base64," + textToBase64Unicode(artifacts)}
+              // className="w-3/5"
+              style={{
+                height: webviewXY.y,
+                width: webviewXY.x,
+              }}
+            ></iframe>
+          )}
         </div>
       ) : null}
 
