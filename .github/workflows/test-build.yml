@@ -26,17 +26,7 @@ jobs:
         uses: actions/setup-node@v3.0.0
         with:
           node-version: "20"
-          cache: "npm"
-      # 专门缓存 Electron 二进制文件
-      - name: Cache Electron
-        uses: actions/cache@v3
-        with:
-          path: |
-            ~/.cache/electron
-            ~/.cache/electron-builder
-          key: ${{ runner.os }}-electron-${{ hashFiles('electron/package-lock.json') }}
-          restore-keys: |
-            ${{ runner.os }}-electron-
+
 
       - name: Install -g
         run: npm install -g cross-env zx
