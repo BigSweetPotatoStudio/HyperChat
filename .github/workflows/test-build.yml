@@ -38,16 +38,14 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-electron-
 
-
       - name: Install -g
         run: npm install -g cross-env zx
-
 
       - name: Install python-setuptools
         if: matrix.os == 'macos-latest'
         run: brew install python-setuptools
 
-       # 根目录的依赖缓存
+        # 根目录的依赖缓存
       - name: Cache root dependencies
         uses: actions/cache@v3
         id: cache-root
@@ -61,7 +59,7 @@ jobs:
       - name: Install root dependencies
         if: steps.cache-root.outputs.cache-hit != 'true'
         run: npm install
-        
+
       # web 目录的依赖缓存
       - name: Cache web dependencies
         uses: actions/cache@v3
@@ -77,7 +75,7 @@ jobs:
         if: steps.cache-web.outputs.cache-hit != 'true'
         run: npm install
         working-directory: ./web
-        
+
       # electron 目录的依赖缓存
       - name: Cache electron dependencies
         uses: actions/cache@v3
@@ -114,6 +112,12 @@ jobs:
           # GH_TOKEN: ${{ secrets.GH_TOKEN }}
           MYRUNENV: github
 
+      - name: upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.os }}
+          path: electron/dist
+
       - name: Test executable
         if: runner.os == 'Windows'
         run: |
@@ -123,14 +127,6 @@ jobs:
           # 等待几秒然后检查是否运行
           Start-Sleep -s 5
           Get-Process -Name "HyperChat" -ErrorAction SilentlyContinue
-
-      - name: upload artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: ${{ matrix.os }}
-          path: electron/dist
-
-
       # - name: Publish Release
       #   uses: softprops/action-gh-release@v2
       #   if: startsWith(github.ref, 'refs/tags/')
