@@ -9,8 +9,6 @@ import { shellPathSync } from "ts/es6.mjs";
 import { getConfig } from "./lib.mjs";
 import { getMessageService } from "ts/message_service.mjs";
 
-
-
 const shell = os.platform() === "win32" ? "powershell.exe" : "bash";
 
 type Context = {
@@ -67,6 +65,7 @@ export function registerTool(server: McpServer) {
         rows: 30,
         cwd: process.env.HOME,
         env: process.env,
+        useConpty: os.platform() == "win32",
       });
 
       let c = {
@@ -79,6 +78,11 @@ export function registerTool(server: McpServer) {
           terminalMap.delete(c.terminal.pid);
         }, timeout),
       };
+      terminal.onExit((code) => {
+        getMessageService().terminalMsg.emit("onClose-terminal", {
+          terminalID: terminal.pid,
+        });
+      });
       getMessageService().terminalMsg.emit("open-terminal", {
         terminalID: terminal.pid,
         terminals: Array.from(terminalMap).map((x) => x[0]),

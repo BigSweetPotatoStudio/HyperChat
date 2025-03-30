@@ -20,6 +20,7 @@ import type { DraggableData, DraggableEvent } from "react-draggable";
 import Draggable from "react-draggable";
 import { sleep } from "../../common/sleep";
 import { LaptopOutlined } from "@ant-design/icons";
+import { t } from "../../i18n";
 
 export function Sessions({ setSessionCount = undefined }) {
   //   const [activeKey, setActiveKey] = useState("1");
@@ -36,7 +37,7 @@ export function Sessions({ setSessionCount = undefined }) {
       console.log("erminal-message-connected");
     });
     socket.on("open-terminal", async (m: any) => {
-      console.log("Received message:", m);
+      //   console.log("Received message:", m);
       let uid = v4();
       let sssion = {
         type: "terminal" as const,
@@ -45,7 +46,7 @@ export function Sessions({ setSessionCount = undefined }) {
         context: {} as any,
       };
       data.current.sessions.push(sssion);
-      setSessionCount(data.current.sessions.length)
+      setSessionCount(data.current.sessions.length);
       data.current.activeKey = uid;
       refresh();
       await sleep(500);
@@ -86,6 +87,17 @@ export function Sessions({ setSessionCount = undefined }) {
       sssion.context.xterm.write(xtermdata + m.data);
       xtermdata = "";
     });
+    socket.on("onClose-terminal", async (m) => {
+      //   console.log("Received terminal-send message:", m);
+      let sssion = data.current.sessions.find((x) => x.id == m.terminalID);
+      if (sssion) {
+        data.current.sessions = data.current.sessions.filter(
+          (x) => x.id != m.terminalID,
+        );
+        setSessionCount(data.current.sessions.length);
+        refresh();
+      }
+    });
     ///
   }, []);
   const data = useRef({
@@ -99,11 +111,15 @@ export function Sessions({ setSessionCount = undefined }) {
   });
 
   return (
-    <div>
+    <div style={{ height: "500px" }}>
       <Tabs
-        style={{ height: "500px" }}
         type="editable-card"
+        hideAdd
         activeKey={data.current.activeKey}
+        onChange={(key) => {
+          data.current.activeKey = key;
+          refresh();
+        }}
         // onEdit={(targetKey, action: "add" | "remove") => {
         //   if (action === "add") {
         //     add();
@@ -114,12 +130,13 @@ export function Sessions({ setSessionCount = undefined }) {
         items={data.current.sessions.map((x) => {
           if (x.type == "terminal") {
             return {
-              label: "Terminal" + x.id,
+              label: t`Terminal` + "-" + x.id,
               key: x.uid,
+              closable: false,
               children: (
                 <div
                   id={"terminal-" + x.id}
-                  style={{ width: "100%", height: "100%" }}
+                  //   style={{ height: "500px", width: "1000px"  }}
                 ></div>
               ),
             };

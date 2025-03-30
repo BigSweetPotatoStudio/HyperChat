@@ -986,5 +986,17 @@
     "User Cancel": {
         "en": "User Cancel",
         "zh": "用户取消"
+    },
+    "Terminal": {
+        "en": "Terminal",
+        "zh": "终端"
+    },
+    "Session Management": {
+        "en": "Session Management",
+        "zh": "会话管理"
+    },
+    "Hidden": {
+        "en": "Hidden",
+        "zh": "隐藏"
     }
 }

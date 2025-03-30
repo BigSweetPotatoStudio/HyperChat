@@ -257,7 +257,11 @@ export function WorkSpace() {
     });
   };
   const [sessionCount, setSessionCount] = useState(0);
-
+  useEffect(() => {
+    if (sessionCount == 0) {
+      setOpen(false);
+    }
+  }, [sessionCount]);
   return (
     <div className="myworkspace flex h-full flex-col">
       <Tabs
@@ -308,9 +312,105 @@ export function WorkSpace() {
           <LaptopOutlined />
         </Badge>
       </div>
-      <div className="my-modal">
+      <div
+        className="my-modal"
+        // style={{ visibility: open ? "visible" : "hidden" }}
+      >
+        {/* <div className="ant-modal-root">
+          <div className="ant-modal-wrap">
+            <div
+              role="dialog"
+              aria-labelledby=":r1a:"
+              aria-modal="true"
+              className="ant-modal"
+            >
+              <Draggable
+                disabled={disabled}
+                bounds={bounds}
+                nodeRef={draggleRef}
+                onStart={(event, uiData) => onStart(event, uiData)}
+              >
+                <div ref={draggleRef}>
+                  <div className="ant-modal-content">
+                    <div className="ant-modal-header">
+                      <div className="ant-modal-title" id=":r1a:">
+                        <div className="width: 100%; cursor: move;">
+                          Session Management
+                        </div>
+                      </div>
+                    </div>
+                    <div className="ant-modal-body">
+                      <div className="p-0">
+                        <div className="height: 500px; max-width: 1024px; width: 90%;">
+                          <div className="ant-tabs ant-tabs-top ant-tabs-editable ant-tabs-card ant-tabs-editable-card css-dev-only-do-not-override-1yacf91">
+                            <div
+                              role="tablist"
+                              aria-orientation="horizontal"
+                              className="ant-tabs-nav"
+                            >
+                              <div className="ant-tabs-nav-wrap">
+                                <div className="ant-tabs-nav-list">
+                                  <div className="ant-tabs-ink-bar ant-tabs-ink-bar-animated"></div>
+                                </div>
+                              </div>
+                              <div className="ant-tabs-nav-operations ant-tabs-nav-operations-hidden">
+                                <button
+                                  type="button"
+                                  className="ant-tabs-nav-more"
+                                  aria-haspopup="listbox"
+                                  aria-controls="rc-tabs-1-more-popup"
+                                  id="rc-tabs-1-more"
+                                  aria-expanded="false"
+                                >
+                                  <span
+                                    role="img"
+                                    aria-label="ellipsis"
+                                    className="anticon anticon-ellipsis"
+                                  >
+                                    <svg
+                                      viewBox="64 64 896 896"
+                                      focusable="false"
+                                      data-icon="ellipsis"
+                                      width="1em"
+                                      height="1em"
+                                      fill="currentColor"
+                                      aria-hidden="true"
+                                    >
+                                      <path d="M176 511a56 56 0 10112 0 56 56 0 10-112 0zm280 0a56 56 0 10112 0 56 56 0 10-112 0zm280 0a56 56 0 10112 0 56 56 0 10-112 0z"></path>
+                                    </svg>
+                                  </span>
+                                </button>
+                              </div>
+                            </div>
+                            <div className="ant-tabs-content-holder">
+                              <div className="ant-tabs-content ant-tabs-content-top"></div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                    <div className="ant-modal-footer">
+                      <button
+                        type="button"
+                        className="ant-btn css-dev-only-do-not-override-1yacf91 ant-btn-default ant-btn-color-default ant-btn-variant-outlined"
+                      >
+                        <span>Hidden</span>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </Draggable>
+            </div>
+          </div>
+        </div> */}
+
         <Modal
-          open={open}
+          open={true}
+          width={"70%"}
+          style={{
+            visibility: open ? "visible" : "hidden",
+            maxWidth: 1024,
+          }}
           title={
             <div
               style={{ width: "100%", cursor: "move" }}
@@ -331,10 +431,6 @@ export function WorkSpace() {
               {t`Session Management`}
             </div>
           }
-          width={"90%"}
-          style={{
-            maxWidth: 1024,
-          }}
           closable={false}
           getContainer={false}
           forceRender
