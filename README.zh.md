@@ -88,59 +88,54 @@ npm install
 npm run dev
 ```
 
-
-## 注意
-
-* MacOS 遇到了已损坏或者权限问题， `sudo xattr -d com.apple.quarantine /Applications/HyperChat.app`
-* MacOS `nvm` 用户 手动输入PATH `echo $PATH`, windows版本 `nvm` 好像可以直接使用
-
-![image.png](./images/image47.png)
-
-
-
 ## Telegram
 
 [HyperChat用户交流](https://t.me/dadigua001)
 
-#### 调用shell mcp
-![image.png](./images/image55.png)
+#### 支持点击tool名称，直接调用调试
+![image](https://github.com/user-attachments/assets/4af1b769-de19-4cab-8a90-7f701b9a8d70)
 
-#### 调用terminal mcp, ssh + 还可以执行命令
-![image.png](./images/image62.png)
+
+#### mcp允许提示+动态修改LLM调用Tool的参数
+![image](https://github.com/user-attachments/assets/080320e3-37d2-4f5a-ae3d-3517b3d692ad)
+
+#### 调用terminal mcp  自动帮我分析asar文件 + 帮我解压
+![image](https://github.com/user-attachments/assets/16c0dba7-ae62-4261-a068-1217b5e9bd3c)
+
+#### 调用terminal 查看界面
+![image](https://github.com/user-attachments/assets/009317f2-d49b-432a-bb46-a15133d12f9f)
+
+#### 高德地图MCP
+![image](https://github.com/user-attachments/assets/549e8fee-085d-4e8a-86a8-184ebe1053e6)
 
 #### 一键写网页，并发布到（cloudflare）
-![image.png](./images/image60.png)
+![image](https://github.com/user-attachments/assets/e869b8ab-a430-4f22-a2db-d4ef8e6f36a4)
 
 #### 调用谷歌搜索，问他TGA年度游戏是什么
-![image.png](./images/image22.png)
+![image](https://github.com/user-attachments/assets/f8f36547-dfcb-423a-8d83-f53234b0d94a)
 
-#### 整理知乎热搜
-![image.png](./images/image36.png)
+#### 有什么限时免费游戏，请访问网址，调用工具
+![image](https://github.com/user-attachments/assets/6d4c4144-2749-4d03-9824-9ead5c37bc51)
 
 #### 帮你打开网页，分析结果，并写入文件
-![image.png](./images/image13.png)
+![image](https://github.com/user-attachments/assets/302bda76-dcbf-4a4d-bfb4-39f3a911434b)
 
-#### 打开百度并截图
-![image.png](./images/image61.png)
-
+#### 通过网页工具+命令行工具，打开Github README学习 + GIT克隆 + 搭建开发黄金
+![image](https://github.com/user-attachments/assets/6affd3dd-aa8e-4429-9c70-d456e5376786)
 
 #### 定时任务列表
 ![image.png](./images/image52.png)
-
-#### mcp市场（实验）
-![image.png](./images/image43.png)
-
-#### 从市场中安装mcp界面（实验）
-![image.png](./images/image45.png)
 
 #### 从第三方安装mcp（支持任意mcp）
 ![image.png](./images/image44.png)
 
 #### 从第三方安装mcp界面
-![image.png](./images/image46.png)
+![image](https://github.com/user-attachments/assets/06b1b2d4-e368-45f2-ac81-b9080838f9f5)
+
 
 #### mcp列表（可以动态选择）
-![image.png](./images/image21.png)
+![image](https://github.com/user-attachments/assets/ce98f964-dfd4-4c48-bfab-286db035ca23)
+
 
 #### 渲染HTML，支持 `Artifacts`, `SVG`,`HTML` 渲染,
 ![image.png](./images/image33.png)
