@@ -1,6 +1,6 @@
 ## 简介
 
-HyperChat 是一个追求开放的Chat客户端，可以使用各家LLM的API，完全支持MCP，实现最好的Chat体验。以及基于本机Agent实现生产力MAX工具。
+HyperChat 是一个开源的Chat客户端，支持MCP，可以使用各家LLM的API，实现最好的Chat体验。以及实现生产力工具。
 
 [![Build](https://github.com/BigSweetPotatoStudio/HyperChat/actions/workflows/build.yml/badge.svg)](https://github.com/BigSweetPotatoStudio/HyperChat/actions/workflows/build.yml)
 [![@dadigua/hyper-chat](https://img.shields.io/npm/v/%40dadigua%2Fhyper-chat)](https://www.npmjs.com/package/@dadigua/hyper-chat)
@@ -22,6 +22,7 @@ HyperChat 是一个追求开放的Chat客户端，可以使用各家LLM的API，
 - [x] Docker 
     * 命令行的版本 `docker pull dadigua/hyperchat-mini:latest`
     * Ubuntu桌面 + Chrome + BrowserUse 版本(**coming soon**)
+- [x] `WebDAV` 同步
 - [x] `MCP`扩展市场+第三方MCP支持
 - [x] 支持自由创建，设计`Agent`，可以预设提示词，选择MCP功能
 - [x] 支持暗黑模式🌙
@@ -30,7 +31,6 @@ HyperChat 是一个追求开放的Chat客户端，可以使用各家LLM的API，
 - [x] 支持 `Artifacts`, `SVG`,`HTML` 渲染, js错误捕获，支持打开Chrome的控制台
 - [x] Agent显示优化，支持查找，拖拽排序
 - [x] 支持 `KaTeX`，显示数学公式，代码Code渲染增加高亮和快速复制
-- [x] `WebDAV` 同步
 - [x] 添加`RAG`，基于mcp知识库
 - [x] 添加ChatSpace概念，支持多对话同时聊天
 - [x] 支持 Agent Call Agent，通过HyperAgent的MCP
@@ -39,20 +39,18 @@ HyperChat 是一个追求开放的Chat客户端，可以使用各家LLM的API，
 
 ### TODO:
 
-- [ ] 后续会加入docker版本，内置linux桌面，内置chomre配置romote端口，统一了环境，更好搞。然后web界面控制。在任何设备都可以使用，包括手机🤣
-- [ ] 权限弹窗，是否允许
-- [ ] 实现利用LLM自己给自己写MCP
+- 支持官方Claude协议
 
 ### LLM
 
 | LLM      | 好用度    | 备注                         |
 | -------- | ------ | -------------------------- |
 | claude   | ⭐⭐⭐⭐⭐  | 不解释                    |
-| openai   | ⭐⭐⭐⭐⭐ | 也可以完美支持多步function call(gpt-4o-mini也可以) |
-| gemini flash 2.0   | ⭐⭐⭐⭐🌙 |  很好用 |
-| qwen       | ⭐⭐⭐⭐🌙    | 很好用                 |
-| doubao       | ⭐⭐⭐🌙🌙    | 使用起来感觉还行                   |
-| deepseek | ⭐⭐⭐🌙🌙      | 多步function call会出问题       |
+| openai   | ⭐⭐⭐⭐ | 也可以完美支持多步function call(gpt-4o-mini也可以) |
+| gemini flash 2.0   | ⭐⭐⭐⭐ |  很好用 |
+| qwen       | ⭐⭐⭐⭐    | 很好用                 |
+| doubao       | ⭐⭐⭐    | 使用起来感觉还行                   |
+| deepseek | ⭐⭐⭐      | 多步function call会出问题       |
 
 ## 使用
 
@@ -123,11 +121,15 @@ npm run dev
 #### 通过网页工具+命令行工具，打开Github README学习 + GIT克隆 + 搭建开发黄金
 ![image](https://github.com/user-attachments/assets/6affd3dd-aa8e-4429-9c70-d456e5376786)
 
-#### 定时任务列表
-![image.png](./images/image52.png)
+#### 多聊天Workspace + 夜间模式
+![image](https://github.com/user-attachments/assets/ca9d77d7-d023-431f-8359-6023ab3e338a)
 
-#### 从第三方安装mcp（支持任意mcp）
-![image.png](./images/image44.png)
+#### 定时任务列表  + 夜间模式
+![image](https://github.com/user-attachments/assets/302a767c-bd00-48e4-ac41-5443d98a4708)
+
+#### 从第三方安装mcp（支持任意mcp） 
+![image](https://github.com/user-attachments/assets/173484f1-58b3-4e55-821c-ec6ef6cd0572)
+
 
 #### 从第三方安装mcp界面
 ![image](https://github.com/user-attachments/assets/06b1b2d4-e368-45f2-ac81-b9080838f9f5)
@@ -140,13 +142,14 @@ npm run dev
 #### 渲染HTML，支持 `Artifacts`, `SVG`,`HTML` 渲染,
 ![image.png](./images/image33.png)
 
-#### 界面1
-![image.png](./images/image51.png)
+#### h5界面
+![image](https://github.com/user-attachments/assets/e8349fb5-c98e-4fef-a93d-778079a27237)
+![image](https://github.com/user-attachments/assets/8a381114-6b26-4af2-90f2-270c0e85e819)
+![image](https://github.com/user-attachments/assets/b1487b6b-2cbc-46d8-ab1e-a335417c23ce)
+![image](https://github.com/user-attachments/assets/3a51dab9-375b-479b-8c6b-74a1be0dd037)
 
-#### 界面2
-![image.png](./images/image34.png)
 
-#### 界面3，测试模型能力
+#### 测试模型能力
 ![image.png](./images/image48.png)
 
 #### 知识库
