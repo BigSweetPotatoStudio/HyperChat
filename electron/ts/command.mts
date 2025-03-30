@@ -26,7 +26,6 @@ import {
 import { checkUpdate } from "ts/polyfills/index.mjs";
 import { version } from "os";
 import { webdavClient } from "./common/webdav.mjs";
-import { FeatureExtraction } from "./common/model.mjs";
 import { progressList } from "./common/progress.mjs";
 import {
   KNOWLEDGE_BASE,
@@ -37,6 +36,7 @@ import { EVENT } from "./common/event";
 import { callAgent, runTask, startTask, stopTask } from "./mcp/task.mjs";
 import { getMyDefaultEnvironment } from "./mcp/utils.mjs";
 import cron from "node-cron";
+import { store } from "./rag/vectorStore.mjs";
 // function logCommand(
 //   target: any,
 //   propertyKey: string,
@@ -207,10 +207,6 @@ export class CommandFactory {
     );
     return clipboard.readText();
   }
-  async getData(): Promise<any> {
-    let { electronData: electron_data } = await import("../../common/data");
-    return electron_data.get();
-  }
   async isAutoLauncher(): Promise<boolean> {
     return autoLauncher.isEnabled();
   }
@@ -345,27 +341,23 @@ export class CommandFactory {
   async webDavSync() {
     return await webdavClient.sync();
   }
-  async initEmbeddings(model: string) {
-    await FeatureExtraction.getInstance(model);
-  }
   async vectorStoreAdd(
     s: KNOWLEDGE_Store,
     r: KNOWLEDGE_Resource,
     move = false
   ) {
-    let { store } = await import("./rag/vectorStore.mjs");
     return await store.addResource(s, r, move);
   }
   async vectorStoreDelete(s: KNOWLEDGE_Store) {
-    let { store } = await import("./rag/vectorStore.mjs");
+
     return await store.delete(s);
   }
   async vectorStoreRemoveResource(s: KNOWLEDGE_Store, r: KNOWLEDGE_Resource) {
-    let { store } = await import("./rag/vectorStore.mjs");
+
     return await store.removeResource(s, r);
   }
   async vectorStoreSearch(s: KNOWLEDGE_Store, q: string, k: number) {
-    let { store } = await import("./rag/vectorStore.mjs");
+
     return await store.search(s, q, k);
   }
   async getProgressList() {

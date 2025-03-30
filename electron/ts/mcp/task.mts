@@ -50,7 +50,8 @@ global.ext = {
   receive: () => {},
 };
 
-const { OpenAiChannel } = await import("../../../web/src/common/openai");
+import { OpenAiChannel } from "../../../web/src/common/openai";
+// const { OpenAiChannel } = await import("../../../web/src/common/openai");
 import { getToolsOnNode } from "../../../web/src/common/mcptool";
 import { v4 } from "uuid";
 import dayjs from "dayjs";

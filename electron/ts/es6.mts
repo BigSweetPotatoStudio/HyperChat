@@ -9,13 +9,6 @@ export const { createClient } = await import(
   /* webpackIgnore: true */ "webdav"
 );
 
-export const { Server } = await import(
-  /* webpackIgnore: true */ "@modelcontextprotocol/sdk/server/index.js"
-);
-export const { SSEServerTransport } = await import(
-  /* webpackIgnore: true */ "@modelcontextprotocol/sdk/server/sse.js"
-);
-
 export const { McpServer } = await import(
   /* webpackIgnore: true */ "@modelcontextprotocol/sdk/server/mcp.js"
 );
@@ -35,11 +28,24 @@ export const { Client } = await import(
 export const { SSEClientTransport } = await import(
   /* webpackIgnore: true */ "@modelcontextprotocol/sdk/client/sse.js"
 );
+export const { Server } = await import(
+  /* webpackIgnore: true */ "@modelcontextprotocol/sdk/server/index.js"
+);
+export const { SSEServerTransport } = await import(
+  /* webpackIgnore: true */ "@modelcontextprotocol/sdk/server/sse.js"
+);
+
 export const {
   ListToolsResultSchema,
   CallToolRequestSchema,
   CallToolResultSchema,
   CompatibilityCallToolResultSchema,
+
+  ListResourcesRequestSchema,
+  ReadResourceRequestSchema,
+  GetPromptRequestSchema,
+  ListToolsRequestSchema,
+  ListPromptsRequestSchema,
 } = await import(
   /* webpackIgnore: true */ "@modelcontextprotocol/sdk/types.js"
 );

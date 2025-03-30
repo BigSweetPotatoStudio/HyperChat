@@ -9,32 +9,18 @@
  * - Summarizing all notes via a prompt
  */
 
-import { Logger } from "ts/polyfills/index.mjs";
-
+import { store } from "../../../rag/vectorStore.mjs";
 import dayjs from "dayjs";
 import { KNOWLEDGE_BASE } from "../../../../../common/data";
-import { zx } from "../../../es6.mjs";
+import {
+  Server,
+  SSEServerTransport,
+  zx,
+  ListToolsRequestSchema,
+  CallToolRequestSchema,
+} from "ts/es6.mjs";
 const { fs, path, sleep } = zx;
 // import { ListPromptsRequestSchema, ListToolsRequestSchema } from "@modelcontextprotocol/sdk/types.js";
-
-const { Server } = await import(
-  /* webpackIgnore: true */ "@modelcontextprotocol/sdk/server/index.js"
-);
-const { SSEServerTransport } = await import(
-  /* webpackIgnore: true */ "@modelcontextprotocol/sdk/server/sse.js"
-);
-const {
-  ListToolsResultSchema,
-  CallToolRequestSchema,
-  CallToolResultSchema,
-  ListResourcesRequestSchema,
-  ReadResourceRequestSchema,
-  GetPromptRequestSchema,
-  ListToolsRequestSchema,
-  ListPromptsRequestSchema,
-} = await import(
-  /* webpackIgnore: true */ "@modelcontextprotocol/sdk/types.js"
-);
 
 const NAME = "hyper_knowledge_base";
 
@@ -185,7 +171,6 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
         throw new Error("content are required");
       }
       try {
-        let { store } = await import("../../../rag/vectorStore.mjs");
         await store.addResourceByName(knowledge_base, {
           text: content,
           type: "text",
@@ -208,7 +193,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
 });
 
 async function search(knowledge_base: string, words: string) {
-  let { store } = await import("../../../rag/vectorStore.mjs");
+
   let results = await store.searchByName(knowledge_base, words, 5);
   return `
 ### score: The high the score, the better.

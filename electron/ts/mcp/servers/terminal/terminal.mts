@@ -94,7 +94,7 @@ export function registerTool(server: McpServer) {
         });
         c.stdout += data;
         c.commamdOutput += data;
-        fs.writeFileSync("terminal.log", c.stdout);
+        // fs.writeFileSync("terminal.log", c.stdout);
       });
       // terminal.write(`ssh ldh@ubuntu\r`);
       while (1) {

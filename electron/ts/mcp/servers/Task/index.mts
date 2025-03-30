@@ -13,24 +13,12 @@ import { getMessageService } from "../../../message_service.mjs";
 
 // import { ListPromptsRequestSchema, ListToolsRequestSchema } from "@modelcontextprotocol/sdk/types.js";
 
-const { Server } = await import(
-  /* webpackIgnore: true */ "@modelcontextprotocol/sdk/server/index.js"
-);
-const { SSEServerTransport } = await import(
-  /* webpackIgnore: true */ "@modelcontextprotocol/sdk/server/sse.js"
-);
-const {
-  ListToolsResultSchema,
-  CallToolRequestSchema,
-  CallToolResultSchema,
-  ListResourcesRequestSchema,
-  ReadResourceRequestSchema,
-  GetPromptRequestSchema,
+import {
+  Server,
+  SSEServerTransport,
   ListToolsRequestSchema,
-  ListPromptsRequestSchema,
-} = await import(
-  /* webpackIgnore: true */ "@modelcontextprotocol/sdk/types.js"
-);
+  CallToolRequestSchema,
+} from "ts/es6.mjs";
 
 /**
  * Type alias for a note object.

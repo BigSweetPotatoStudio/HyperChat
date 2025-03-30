@@ -493,7 +493,7 @@ export class OpenAiChannel {
             this.options.confirm_call_tool &&
             this.options.confirm_call_tool_cb
           ) {
-            // const { callToolConfirm } = await import("./call_tool_confirm");
+
             tool.function.argumentsJSON =
               await this.options.confirm_call_tool_cb(tool);
             tool.function.arguments = JSON.stringify(
