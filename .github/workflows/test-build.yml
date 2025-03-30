@@ -38,9 +38,6 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-electron-
 
-      - uses: pnpm/action-setup@v4
-        with:
-          version: 9
 
       - name: Install -g
         run: npm install -g cross-env zx
@@ -49,7 +46,7 @@ jobs:
         run: npm install
 
       - name: Install Web Dependencies
-        run: cd web && pnpm install
+        run: cd web && npm install
 
       - name: Install python-setuptools
         if: matrix.os == 'macos-latest'
@@ -83,7 +80,7 @@ jobs:
         run: |
           dir dist
           # 尝试启动应用检查错误信息
-          Start-Process -FilePath ".\dist\win-unpacked\HyperChat.exe" -NoNewWindow
+          Start-Process -FilePath ".\electron\dist\win-unpacked\HyperChat.exe" -NoNewWindow
           # 等待几秒然后检查是否运行
           Start-Sleep -s 5
           Get-Process -Name "HyperChat" -ErrorAction SilentlyContinue
