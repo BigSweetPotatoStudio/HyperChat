@@ -45,3 +45,15 @@ Logger.info("appDataDir: ", appDataDir);
 electronData.get().appDataDir = appDataDir;
 electronData.get().logFilePath = logFilePath;
 electronData.save();
+
+// 捕获未处理的异常
+process.on('uncaughtException', (error) => {  
+  Logger.error('Uncaught Exception:', error);  
+  process.exit(1);  
+});
+
+// 捕获未处理的Promise拒绝
+process.on('unhandledRejection', (reason, promise) => {
+  Logger.error('Unhandled Rejection at:', promise, 'reason:', reason);
+  // 对于Promise错误，可以选择不终止应用
+});
