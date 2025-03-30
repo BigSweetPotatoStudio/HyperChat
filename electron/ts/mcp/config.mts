@@ -1,5 +1,6 @@
 import path from "path";
 import {
+  CallToolResultSchema,
   Client,
   CompatibilityCallToolResultSchema,
   shellPathSync,
@@ -104,17 +105,17 @@ export class MCPClient {
       await this.open();
     }
     let mcpCallToolTimeout = (await AppSetting.init()).mcpCallToolTimeout;
-    return await this.client
+    let res = await this.client
       .callTool(
         {
           name: functionName,
           arguments: args,
         },
-        CompatibilityCallToolResultSchema,
+        CallToolResultSchema,
         { timeout: mcpCallToolTimeout * 1000 }
       )
-      .catch((e) => {
-        return this.client
+      .catch(async (e) => {
+        return await this.client
           .request(
             {
               method: "tools/call",
@@ -135,6 +136,7 @@ export class MCPClient {
             }
           });
       });
+    return res;
   }
   async callResource(uri: string): Promise<MCPTypes.ReadResourceResult> {
     Logger.info("MCP callTool", uri);

@@ -536,9 +536,15 @@ export class OpenAiChannel {
           tool.function.argumentsJSON,
         ])
           .then((res) => {
-            this.lastMessage.content_status = "success";
-            onUpdate && onUpdate(this.lastMessage.content as string);
-            return res;
+            if (res["isError"]) {
+              this.lastMessage.content_status = "error";
+              onUpdate && onUpdate(this.lastMessage.content as string);
+              return res;
+            } else {
+              this.lastMessage.content_status = "success";
+              onUpdate && onUpdate(this.lastMessage.content as string);
+              return res;
+            }
           })
           .catch((e) => {
             this.lastMessage.content_status = "error";

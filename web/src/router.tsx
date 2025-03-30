@@ -19,6 +19,7 @@ import { TaskListPage } from "./pages/hyperAgent/TaskList";
 import { t } from "./i18n";
 import { TaskResultsPage } from "./pages/hyperAgent/TaskResults";
 import { WebdavSetting } from "./pages/setting/sync";
+import { TerminalPage } from "./pages/setting/terminal";
 type RouteType = {
   path: string;
   name: React.ReactNode;
@@ -114,6 +115,12 @@ export function getLayoutRoute() {
             icon: "🛠️",
             component: <HpyerTools />,
           },
+          {
+            path: "/Terminal",
+            name: t`Terminal`,
+            icon: "⌨️",
+            component: <TerminalPage />,
+          }
         ],
         // component: <Setting />,
       },

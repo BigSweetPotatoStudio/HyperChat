@@ -1,4 +1,4 @@
-import { Button, List, Tabs } from "antd";
+import { Avatar, Badge, Button, List, Modal, Segmented, Tabs } from "antd";
 import React, {
   useState,
   useEffect,
@@ -10,14 +10,19 @@ import React, {
 import { Chat } from "../chat";
 import { it } from "node:test";
 import { v4 } from "uuid";
-import { call, msg_receive } from "../../common/call";
+import { io } from "socket.io-client";
+import { call, getURL_PRE, msg_receive } from "../../common/call";
 import { GPT_MODELS, Agents } from "../../../../common/data";
-
-import { text } from "stream/consumers";
-
-//   src="https://chat.deepseek.com/"     src="https://claude.ai/new"     src="https://chatgpt.com/"
-
+import { Terminal } from "@xterm/xterm";
+import { FitAddon } from "@xterm/addon-fit";
+import { WebLinksAddon } from "@xterm/addon-web-links";
+import type { DraggableData, DraggableEvent } from "react-draggable";
+import Draggable from "react-draggable";
+import { Sessions } from "./sessions";
+import { LaptopOutlined } from "@ant-design/icons";
+import { t } from "../../i18n";
 function Page({
+  sessionID = "",
   type = undefined,
   onChange = undefined,
   hyperChatData = {
@@ -66,6 +71,7 @@ function Page({
       url: "https://tongyi.aliyun.com/qianwen/",
     },
   ];
+
   return (
     <div className="h-full">
       {curr.type == undefined ? (
@@ -166,6 +172,7 @@ export function WorkSpace() {
                   n.label = item.title;
                   refresh();
                 }}
+                sessionID={uid}
                 hyperChatData={{
                   agentKey: agent.key,
                   message,
@@ -212,18 +219,51 @@ export function WorkSpace() {
   ] as any[]);
   const [activeKey, setActiveKey] = useState("1");
 
+  const [open, setOpen] = useState(false);
+  const [disabled, setDisabled] = useState(true);
+  const [bounds, setBounds] = useState({
+    left: 0,
+    top: 0,
+    bottom: 0,
+    right: 0,
+  });
+  const draggleRef = useRef<HTMLDivElement>(null!);
+
+  const showModal = () => {
+    setOpen(true);
+  };
+
+  const handleOk = (e: React.MouseEvent<HTMLElement>) => {
+    console.log(e);
+    setOpen(false);
+  };
+
+  const handleCancel = (e: React.MouseEvent<HTMLElement>) => {
+    console.log(e);
+    setOpen(false);
+  };
+
+  const onStart = (_event: DraggableEvent, uiData: DraggableData) => {
+    const { clientWidth, clientHeight } = window.document.documentElement;
+    const targetRect = draggleRef.current?.getBoundingClientRect();
+    if (!targetRect) {
+      return;
+    }
+    setBounds({
+      left: -targetRect.left + uiData.x,
+      right: clientWidth - (targetRect.right - uiData.x),
+      top: -targetRect.top + uiData.y,
+      bottom: clientHeight - (targetRect.bottom - uiData.y),
+    });
+  };
+  const [sessionCount, setSessionCount] = useState(0);
+  useEffect(() => {
+    if (sessionCount == 0) {
+      setOpen(false);
+    }
+  }, [sessionCount]);
   return (
     <div className="myworkspace flex h-full flex-col">
-      {/* <webview
-        className="w-full"
-        useragent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/132.0.0.0 Safari/537.36"
-        src="https://tongyi.aliyun.com/qianwen/"   
-      ></webview> */}
-      {/* <webview
-          className="h-full w-full"
-          useragent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/132.0.0.0 Safari/537.36"
-          src="https://gemini.google.com/app"
-        ></webview> */}
       <Tabs
         className="h-full"
         tabPosition="bottom"
@@ -261,6 +301,165 @@ export function WorkSpace() {
           }
         }}
       />
+      <div style={{ position: "fixed", bottom: 0, right: 0, margin: 15 }}>
+        <Badge
+          count={sessionCount}
+          className="cursor-pointer"
+          onClick={() => {
+            setOpen((e) => !e);
+          }}
+        >
+          <LaptopOutlined />
+        </Badge>
+      </div>
+      <div
+        className="my-modal"
+        // style={{ visibility: open ? "visible" : "hidden" }}
+      >
+        {/* <div className="ant-modal-root">
+          <div className="ant-modal-wrap">
+            <div
+              role="dialog"
+              aria-labelledby=":r1a:"
+              aria-modal="true"
+              className="ant-modal"
+            >
+              <Draggable
+                disabled={disabled}
+                bounds={bounds}
+                nodeRef={draggleRef}
+                onStart={(event, uiData) => onStart(event, uiData)}
+              >
+                <div ref={draggleRef}>
+                  <div className="ant-modal-content">
+                    <div className="ant-modal-header">
+                      <div className="ant-modal-title" id=":r1a:">
+                        <div className="width: 100%; cursor: move;">
+                          Session Management
+                        </div>
+                      </div>
+                    </div>
+                    <div className="ant-modal-body">
+                      <div className="p-0">
+                        <div className="height: 500px; max-width: 1024px; width: 90%;">
+                          <div className="ant-tabs ant-tabs-top ant-tabs-editable ant-tabs-card ant-tabs-editable-card css-dev-only-do-not-override-1yacf91">
+                            <div
+                              role="tablist"
+                              aria-orientation="horizontal"
+                              className="ant-tabs-nav"
+                            >
+                              <div className="ant-tabs-nav-wrap">
+                                <div className="ant-tabs-nav-list">
+                                  <div className="ant-tabs-ink-bar ant-tabs-ink-bar-animated"></div>
+                                </div>
+                              </div>
+                              <div className="ant-tabs-nav-operations ant-tabs-nav-operations-hidden">
+                                <button
+                                  type="button"
+                                  className="ant-tabs-nav-more"
+                                  aria-haspopup="listbox"
+                                  aria-controls="rc-tabs-1-more-popup"
+                                  id="rc-tabs-1-more"
+                                  aria-expanded="false"
+                                >
+                                  <span
+                                    role="img"
+                                    aria-label="ellipsis"
+                                    className="anticon anticon-ellipsis"
+                                  >
+                                    <svg
+                                      viewBox="64 64 896 896"
+                                      focusable="false"
+                                      data-icon="ellipsis"
+                                      width="1em"
+                                      height="1em"
+                                      fill="currentColor"
+                                      aria-hidden="true"
+                                    >
+                                      <path d="M176 511a56 56 0 10112 0 56 56 0 10-112 0zm280 0a56 56 0 10112 0 56 56 0 10-112 0zm280 0a56 56 0 10112 0 56 56 0 10-112 0z"></path>
+                                    </svg>
+                                  </span>
+                                </button>
+                              </div>
+                            </div>
+                            <div className="ant-tabs-content-holder">
+                              <div className="ant-tabs-content ant-tabs-content-top"></div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                    <div className="ant-modal-footer">
+                      <button
+                        type="button"
+                        className="ant-btn css-dev-only-do-not-override-1yacf91 ant-btn-default ant-btn-color-default ant-btn-variant-outlined"
+                      >
+                        <span>Hidden</span>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </Draggable>
+            </div>
+          </div>
+        </div> */}
+
+        <Modal
+          open={true}
+          width={"70%"}
+          style={{
+            visibility: open ? "visible" : "hidden",
+            maxWidth: 1024,
+          }}
+          title={
+            <div
+              style={{ width: "100%", cursor: "move" }}
+              onMouseOver={() => {
+                if (disabled) {
+                  setDisabled(false);
+                }
+              }}
+              onMouseOut={() => {
+                setDisabled(true);
+              }}
+              // fix eslintjsx-a11y/mouse-events-have-key-events
+              // https://github.com/jsx-eslint/eslint-plugin-jsx-a11y/blob/master/docs/rules/mouse-events-have-key-events.md
+              onFocus={() => {}}
+              onBlur={() => {}}
+              // end
+            >
+              {t`Session Management`}
+            </div>
+          }
+          closable={false}
+          getContainer={false}
+          forceRender
+          mask={false}
+          modalRender={(modal) => (
+            <Draggable
+              disabled={disabled}
+              bounds={bounds}
+              nodeRef={draggleRef}
+              onStart={(event, uiData) => onStart(event, uiData)}
+            >
+              <div ref={draggleRef}>{modal}</div>
+            </Draggable>
+          )}
+          footer={
+            <>
+              <Button
+                onClick={() => {
+                  setOpen(false);
+                }}
+              >{t`Hidden`}</Button>
+            </>
+          }
+        >
+          <div className="p-0">
+            <Sessions setSessionCount={setSessionCount} />
+          </div>
+        </Modal>
+      </div>
     </div>
   );
 }

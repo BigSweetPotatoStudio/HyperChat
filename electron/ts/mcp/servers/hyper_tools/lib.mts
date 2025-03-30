@@ -38,22 +38,12 @@ export const configSchema = z.object({
       description: "Chrome Path",
     })
     .default(""),
+  userData: z
+    .string({
+      description: "Chrome userData Path",
+    })
+    .optional(),
 });
-
-function JsonSchema2DefaultValue(schema: any) {
-  let obj = {};
-  function run(item) {
-    for (const key in item.properties) {
-      const prop = item.properties[key];
-      obj[key] = prop.default;
-    }
-  }
-
-  if (schema && schema.type === "object") {
-    run(schema);
-  }
-  return obj;
-}
 
 // console.log("safeParse : ", configSchema.safeParse({}));
 export function getConfig() {
@@ -62,6 +52,6 @@ export function getConfig() {
   let config = mcpconfig.mcpServers[NAME].hyperchat.config as z.infer<
     typeof configSchema
   >;
-  
+
   return configSchema.safeParse(config).data;
 }
