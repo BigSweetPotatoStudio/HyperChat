@@ -118,15 +118,6 @@ jobs:
           name: ${{ matrix.os }}
           path: electron/dist
 
-      - name: Test executable
-        if: runner.os == 'Windows'
-        run: |
-          dir dist
-          # 尝试启动应用检查错误信息
-          Start-Process -FilePath ".\electron\dist\win-unpacked\HyperChat.exe" -NoNewWindow
-          # 等待几秒然后检查是否运行
-          Start-Sleep -s 5
-          Get-Process -Name "HyperChat" -ErrorAction SilentlyContinue
       # - name: Publish Release
       #   uses: softprops/action-gh-release@v2
       #   if: startsWith(github.ref, 'refs/tags/')
