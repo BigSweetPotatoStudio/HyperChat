@@ -7,6 +7,10 @@ import * as pty from "node-pty";
 import { z } from "zod";
 import { shellPathSync } from "ts/es6.mjs";
 import { getConfig } from "./lib.mjs";
+import { getMessageService } from "ts/message_service.mjs";
+
+
+
 const shell = os.platform() === "win32" ? "powershell.exe" : "bash";
 
 type Context = {
@@ -19,6 +23,9 @@ type Context = {
 
 export function registerTool(server: McpServer) {
   const terminalMap = new Map<number, Context>();
+  getMessageService().terminalMsg.emit("clear-terminal", {
+    terminals: Array.from(terminalMap).map((x) => x[0]),
+  });
 
   let lastTerminalID = 0;
   const config = getConfig();
@@ -72,7 +79,15 @@ export function registerTool(server: McpServer) {
           terminalMap.delete(c.terminal.pid);
         }, timeout),
       };
+      getMessageService().terminalMsg.emit("open-terminal", {
+        terminalID: terminal.pid,
+        terminals: Array.from(terminalMap).map((x) => x[0]),
+      });
       terminal.onData((data) => {
+        getMessageService().terminalMsg.emit("terminal-send", {
+          terminalID: terminal.pid,
+          data: data,
+        });
         c.stdout += data;
         c.commamdOutput += data;
         fs.writeFileSync("terminal.log", c.stdout);
@@ -88,6 +103,7 @@ export function registerTool(server: McpServer) {
       terminalMap.set(terminal.pid, c);
       lastTerminalID = terminal.pid;
       c.lastIndex = c.stdout.length;
+
       return {
         content: [
           {

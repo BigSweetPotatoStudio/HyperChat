@@ -1,4 +1,3 @@
-import { json } from "stream/consumers";
 import type { CommandFactory as Command } from "../../../electron/ts/command.mts";
 import { io } from "socket.io-client";
 import { sleep } from "./sleep";
@@ -20,9 +19,14 @@ if (ext) {
 }
 
 let websocket = undefined;
+let URL_PRE;
+
+export function getURL_PRE() {
+  return URL_PRE;
+}
 
 if (process.env.runtime !== "node") {
-  let URL_PRE = location.origin + location.pathname;
+  URL_PRE = location.origin + location.pathname;
   // web环境
   if (ext.invert && process.env.myEnv != "prod") {
     let res = await ext.invert("readFile", ["electronData.json"]);

@@ -33,7 +33,7 @@ export function TerminalPage() {
   }, []);
 
   return (
-    <div className="p-4">
+    <div className="p-0">
       <div id="terminal" style={{ height: "100%" }}></div>
     </div>
   );

@@ -68,11 +68,11 @@ export function genRouter(c, prefix: string) {
     });
   }
   const uploadDir = "./uploads";
-
-  fs.ensureDirSync(path.join(appDataDir, uploadDir));
+  const uploadDirPath = path.join(appDataDir, uploadDir);
+  fs.ensureDirSync(uploadDirPath);
+  fs.emptyDirSync(uploadDirPath);
   // console.log(prefix + "/uploads");
   router.post("/uploads", async (ctx) => {
-    // console.log("uploads");
     // 如果只上传一个文件，files.file就是文件对象
     const files = ctx.request.files;
     if (files && files.file) {
@@ -112,10 +112,6 @@ export function genRouter(c, prefix: string) {
   return router;
 }
 
-
-
-const userSocketMap = new Map();
-let activeUser = undefined;
 export async function initHttp() {
   const app = new Koa() as any;
   app.use(cors() as any);
@@ -170,23 +166,8 @@ export async function initHttp() {
     console.log("error: ", e);
   });
   let main = io.of("/" + electronData.get().password + "/main-message");
-  main.on("connection", (socket) => {
-    Logger.info("用户已连接，socket ID:", socket.id);
-
-    // 用户登录时记录关系
-    socket.on("active", (userId) => {
-      userSocketMap.set(userId, socket.id);
-      activeUser = userId;
-      getMessageService().init(main, activeUser, userSocketMap);
-    });
-    socket.on("disconnect", () => {
-      // 遍历删除断开连接的socket
-      for (const [userId, socketId] of userSocketMap.entries()) {
-        if (socketId === socket.id) {
-          userSocketMap.delete(userId);
-        }
-      }
-    });
-  });
-  getMessageService().init(main, activeUser, userSocketMap);
+  let terminalMsg = io.of(
+    "/" + electronData.get().password + "/terminal-message"
+  );
+  getMessageService().init(main, terminalMsg);
 }

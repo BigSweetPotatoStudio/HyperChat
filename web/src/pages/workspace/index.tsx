@@ -1,4 +1,4 @@
-import { Button, List, Tabs } from "antd";
+import { Button, List, Segmented, Tabs } from "antd";
 import React, {
   useState,
   useEffect,
@@ -10,10 +10,10 @@ import React, {
 import { Chat } from "../chat";
 import { it } from "node:test";
 import { v4 } from "uuid";
-import { call, msg_receive } from "../../common/call";
+import { io } from "socket.io-client";
+import { call, getURL_PRE, msg_receive } from "../../common/call";
 import { GPT_MODELS, Agents } from "../../../../common/data";
 
-import { text } from "stream/consumers";
 
 //   src="https://chat.deepseek.com/"     src="https://claude.ai/new"     src="https://chatgpt.com/"
 
@@ -66,6 +66,7 @@ function Page({
       url: "https://tongyi.aliyun.com/qianwen/",
     },
   ];
+
   return (
     <div className="h-full">
       {curr.type == undefined ? (
@@ -214,17 +215,19 @@ export function WorkSpace() {
 
   return (
     <div className="myworkspace flex h-full flex-col">
-      {/* <webview
-        className="w-full"
-        useragent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/132.0.0.0 Safari/537.36"
-        src="https://tongyi.aliyun.com/qianwen/"   
-      ></webview> */}
-      {/* <webview
-          className="h-full w-full"
-          useragent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/132.0.0.0 Safari/537.36"
-          src="https://gemini.google.com/app"
-        ></webview> */}
       <Tabs
+        // tabBarExtraContent={{
+        //   right: (
+        //     <div>
+        //       <Segmented<string>
+        //         options={["Daily", "Weekly", "Monthly", "Quarterly", "Yearly"]}
+        //         onChange={(value) => {
+        //           console.log(value); // string
+        //         }}
+        //       />
+        //     </div>
+        //   ),
+        // }}
         className="h-full"
         tabPosition="bottom"
         type="editable-card"
