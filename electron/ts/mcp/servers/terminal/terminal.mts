@@ -2,10 +2,10 @@ import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import os from "os";
 import fs from "fs";
 // import uuid from "uuid";
-import strip from "strip-ansi";
+
 import * as pty from "node-pty";
 import { z } from "zod";
-import { shellPathSync } from "ts/es6.mjs";
+import { shellPathSync, strip } from "ts/es6.mjs";
 import { getConfig } from "./lib.mjs";
 import { getMessageService } from "ts/message_service.mjs";
 

@@ -65,3 +65,7 @@ export const { LibSqlDb } = await import(
 export const { PdfLoader } = await import(
   /* webpackIgnore: true */ "@llm-tools/embedjs-loader-pdf"
 );
+
+const stripModule = await import(/* webpackIgnore: true */ "strip-ansi");
+
+export const strip = stripModule.default;
