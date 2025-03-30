@@ -29,21 +29,55 @@ jobs:
           node-version: "20"
           registry-url: https://registry.npmjs.org/
 
-      - uses: pnpm/action-setup@v4
-        with:
-          version: 9
-
       - name: Install -g
         run: npm install -g cross-env zx
 
-      - name: Install Dependencies
+          # 根目录的依赖缓存
+      - name: Cache root dependencies
+        uses: actions/cache@v3
+        id: cache-root
+        with:
+          path: node_modules
+          key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-node-
+
+      # 安装根目录依赖（如果缓存未命中）
+      - name: Install root dependencies
+        if: steps.cache-root.outputs.cache-hit != 'true'
         run: npm install
 
-      - name: Install Web Dependencies
-        run: cd web && pnpm install
+      # web 目录的依赖缓存
+      - name: Cache web dependencies
+        uses: actions/cache@v3
+        id: cache-web
+        with:
+          path: web/node_modules
+          key: ${{ runner.os }}-node-web-${{ hashFiles('web/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-node-web-
 
-      - name: Install Electron Dependencies
-        run: cd electron && npm install
+      # 安装 web 目录依赖（如果缓存未命中）
+      - name: Install web dependencies
+        if: steps.cache-web.outputs.cache-hit != 'true'
+        run: npm install
+        working-directory: ./web
+
+      # electron 目录的依赖缓存
+      - name: Cache electron dependencies
+        uses: actions/cache@v3
+        id: cache-electron
+        with:
+          path: electron/node_modules
+          key: ${{ runner.os }}-node-electron-${{ hashFiles('electron/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-node-electron-
+
+      # 安装 electron 目录依赖（如果缓存未命中）
+      - name: Install electron dependencies
+        if: steps.cache-electron.outputs.cache-hit != 'true'
+        run: npm install
+        working-directory: ./electron
 
       - run: cd web && npm run build
 
