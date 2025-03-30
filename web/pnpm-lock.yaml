@@ -170,6 +170,9 @@ importers:
       react-dom:
         specifier: github:BigSweetPotatoStudio/react-dom
         version: https://codeload.github.com/BigSweetPotatoStudio/react-dom/tar.gz/1832838a0b3e2775c7b6f19afd245dba29262dda(react@18.2.0)
+      react-draggable:
+        specifier: ^4.4.6
+        version: 4.4.6(react-dom@https://codeload.github.com/BigSweetPotatoStudio/react-dom/tar.gz/1832838a0b3e2775c7b6f19afd245dba29262dda(react@18.2.0))(react@18.2.0)
       react-h5-audio-player:
         specifier: ^3.9.0
         version: 3.9.3(react-dom@https://codeload.github.com/BigSweetPotatoStudio/react-dom/tar.gz/1832838a0b3e2775c7b6f19afd245dba29262dda(react@18.2.0))(react@18.2.0)
@@ -4241,6 +4244,13 @@ packages:
     version: 18.2.0
     peerDependencies:
       react: ^18.2.0
+
+  react-draggable@4.4.6:
+    resolution: {integrity: sha512-LtY5Xw1zTPqHkVmtM3X8MUOxNDOUhv/khTgBgrUvwaS064bwVvxT+q5El0uUFNx5IEPKXuRejr7UqLwBIg5pdw==}
+    version: 4.4.6
+    peerDependencies:
+      react: '>= 16.3.0'
+      react-dom: '>= 16.3.0'
 
   react-h5-audio-player@3.9.3:
     resolution: {integrity: sha512-D92SbCk6AJAsXYQ2qJqxeAvEjRXBQHY2q6dIZLaLL74eZi7VfynC0/EspHHbFDqBXDq7o2xNFH1Vas+HyXeE/w==}
@@ -9778,6 +9788,13 @@ snapshots:
       loose-envify: 1.4.0
       react: 18.2.0
       scheduler: 0.23.2
+
+  react-draggable@4.4.6(react-dom@https://codeload.github.com/BigSweetPotatoStudio/react-dom/tar.gz/1832838a0b3e2775c7b6f19afd245dba29262dda(react@18.2.0))(react@18.2.0):
+    dependencies:
+      clsx: 1.2.1
+      prop-types: 15.8.1
+      react: 18.2.0
+      react-dom: https://codeload.github.com/BigSweetPotatoStudio/react-dom/tar.gz/1832838a0b3e2775c7b6f19afd245dba29262dda(react@18.2.0)
 
   react-h5-audio-player@3.9.3(react-dom@https://codeload.github.com/BigSweetPotatoStudio/react-dom/tar.gz/1832838a0b3e2775c7b6f19afd245dba29262dda(react@18.2.0))(react@18.2.0):
     dependencies:

@@ -273,7 +273,9 @@ const isFold = true;
 
 export const Chat = ({
   onTitleChange = undefined,
+  sessionID = "",
   data = {
+    uid: "",
     agentKey: "",
     message: "",
     onComplete: (text) => {},
@@ -1649,36 +1651,7 @@ export const Chat = ({
     data: null as any,
     error: null as any,
   });
-  useEffect(() => {
-    const terminalRef = document.getElementById("terminal") as HTMLDivElement;
-    const xterm = new Terminal({
-      cursorBlink: true,
-      fontSize: 14,
-      theme: {
-        background: "#000000",
-        foreground: "#ffffff",
-      },
-      //   cols: 80,
-      //   rows: 30,
-    });
-    const fitAddon = new FitAddon();
-    xterm.loadAddon(fitAddon);
-    xterm.loadAddon(new WebLinksAddon());
-    xterm.open(terminalRef);
-    fitAddon.fit();
-  }, []);
 
-  useEffect(() => {
-    let URL_PRE = getURL_PRE();
-
-    const socket = io(URL_PRE + "terminal-message");
-    socket.on("connect", () => {
-      console.log("connected");
-    });
-    socket.on("open-terminal", (data: any) => {
-      console.log("Received message:", data);
-    });
-  }, []);
 
   return (
     <>
@@ -2329,11 +2302,7 @@ export const Chat = ({
                   </div>
                 </div>
               </Splitter.Panel>
-              <Splitter.Panel>
-                <div className="p-4">
-                  <div id="terminal" style={{ height: "100%" }}></div>
-                </div>
-              </Splitter.Panel>
+
             </Splitter>
           </XProvider>
           <PromptsModal

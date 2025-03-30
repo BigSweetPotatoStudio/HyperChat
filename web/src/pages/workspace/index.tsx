@@ -1,4 +1,4 @@
-import { Button, List, Segmented, Tabs } from "antd";
+import { Avatar, Badge, Button, List, Modal, Segmented, Tabs } from "antd";
 import React, {
   useState,
   useEffect,
@@ -13,11 +13,16 @@ import { v4 } from "uuid";
 import { io } from "socket.io-client";
 import { call, getURL_PRE, msg_receive } from "../../common/call";
 import { GPT_MODELS, Agents } from "../../../../common/data";
-
-
-//   src="https://chat.deepseek.com/"     src="https://claude.ai/new"     src="https://chatgpt.com/"
-
+import { Terminal } from "@xterm/xterm";
+import { FitAddon } from "@xterm/addon-fit";
+import { WebLinksAddon } from "@xterm/addon-web-links";
+import type { DraggableData, DraggableEvent } from "react-draggable";
+import Draggable from "react-draggable";
+import { Sessions } from "./sessions";
+import { LaptopOutlined } from "@ant-design/icons";
+import { t } from "../../i18n";
 function Page({
+  sessionID = "",
   type = undefined,
   onChange = undefined,
   hyperChatData = {
@@ -167,6 +172,7 @@ export function WorkSpace() {
                   n.label = item.title;
                   refresh();
                 }}
+                sessionID={uid}
                 hyperChatData={{
                   agentKey: agent.key,
                   message,
@@ -213,21 +219,48 @@ export function WorkSpace() {
   ] as any[]);
   const [activeKey, setActiveKey] = useState("1");
 
+  const [open, setOpen] = useState(false);
+  const [disabled, setDisabled] = useState(true);
+  const [bounds, setBounds] = useState({
+    left: 0,
+    top: 0,
+    bottom: 0,
+    right: 0,
+  });
+  const draggleRef = useRef<HTMLDivElement>(null!);
+
+  const showModal = () => {
+    setOpen(true);
+  };
+
+  const handleOk = (e: React.MouseEvent<HTMLElement>) => {
+    console.log(e);
+    setOpen(false);
+  };
+
+  const handleCancel = (e: React.MouseEvent<HTMLElement>) => {
+    console.log(e);
+    setOpen(false);
+  };
+
+  const onStart = (_event: DraggableEvent, uiData: DraggableData) => {
+    const { clientWidth, clientHeight } = window.document.documentElement;
+    const targetRect = draggleRef.current?.getBoundingClientRect();
+    if (!targetRect) {
+      return;
+    }
+    setBounds({
+      left: -targetRect.left + uiData.x,
+      right: clientWidth - (targetRect.right - uiData.x),
+      top: -targetRect.top + uiData.y,
+      bottom: clientHeight - (targetRect.bottom - uiData.y),
+    });
+  };
+  const [sessionCount, setSessionCount] = useState(0);
+
   return (
     <div className="myworkspace flex h-full flex-col">
       <Tabs
-        // tabBarExtraContent={{
-        //   right: (
-        //     <div>
-        //       <Segmented<string>
-        //         options={["Daily", "Weekly", "Monthly", "Quarterly", "Yearly"]}
-        //         onChange={(value) => {
-        //           console.log(value); // string
-        //         }}
-        //       />
-        //     </div>
-        //   ),
-        // }}
         className="h-full"
         tabPosition="bottom"
         type="editable-card"
@@ -264,6 +297,73 @@ export function WorkSpace() {
           }
         }}
       />
+      <div style={{ position: "fixed", bottom: 0, right: 0, margin: 15 }}>
+        <Badge
+          count={sessionCount}
+          className="cursor-pointer"
+          onClick={() => {
+            setOpen((e) => !e);
+          }}
+        >
+          <LaptopOutlined />
+        </Badge>
+      </div>
+      <div className="my-modal">
+        <Modal
+          open={open}
+          title={
+            <div
+              style={{ width: "100%", cursor: "move" }}
+              onMouseOver={() => {
+                if (disabled) {
+                  setDisabled(false);
+                }
+              }}
+              onMouseOut={() => {
+                setDisabled(true);
+              }}
+              // fix eslintjsx-a11y/mouse-events-have-key-events
+              // https://github.com/jsx-eslint/eslint-plugin-jsx-a11y/blob/master/docs/rules/mouse-events-have-key-events.md
+              onFocus={() => {}}
+              onBlur={() => {}}
+              // end
+            >
+              {t`Session Management`}
+            </div>
+          }
+          width={"90%"}
+          style={{
+            maxWidth: 1024,
+          }}
+          closable={false}
+          getContainer={false}
+          forceRender
+          mask={false}
+          modalRender={(modal) => (
+            <Draggable
+              disabled={disabled}
+              bounds={bounds}
+              nodeRef={draggleRef}
+              onStart={(event, uiData) => onStart(event, uiData)}
+            >
+              <div ref={draggleRef}>{modal}</div>
+            </Draggable>
+          )}
+          footer={
+            <>
+              <Button
+                onClick={() => {
+                  setOpen(false);
+                }}
+              >{t`Hidden`}</Button>
+            </>
+          }
+        >
+          <div className="p-0">
+            <Sessions setSessionCount={setSessionCount} />
+          </div>
+        </Modal>
+      </div>
     </div>
   );
 }

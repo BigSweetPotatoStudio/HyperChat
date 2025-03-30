@@ -102,3 +102,15 @@ div[role="system"] .ant-bubble-content-wrapper {
   /* text-overflow: ellipsis; */
   white-space: nowrap;
 }
+
+.my-modal .ant-modal-wrap {
+  height: 0% !important;
+}
+
+.my-modal .ant-modal{
+  position: fixed !important;
+  /* left: 50%;
+  transform: translateX(-50%); */
+  right: 0;
+  top: 0;
+}

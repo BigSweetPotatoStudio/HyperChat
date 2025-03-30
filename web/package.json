@@ -57,6 +57,7 @@
     "raw-loader": "^4.0.2",
     "react": "18.2.0",
     "react-dom": "github:BigSweetPotatoStudio/react-dom",
+    "react-draggable": "^4.4.6",
     "react-h5-audio-player": "^3.9.0",
     "react-infinite-scroll-component": "^6.1.0",
     "react-router-dom": "^6.22.2",
