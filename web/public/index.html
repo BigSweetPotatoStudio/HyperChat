@@ -52,6 +52,11 @@
         }
       }
     </style>
+    <script>
+      if (!window.location.pathname.endsWith("/")) {
+        window.location.pathname = window.location.pathname + "/";
+      }
+    </script>
   </head>
   <body
     spellcheck="false"

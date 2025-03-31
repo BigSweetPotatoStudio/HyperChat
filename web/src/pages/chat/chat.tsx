@@ -169,6 +169,8 @@ import {
   PlusCircleOutlined,
   CloseCircleOutlined,
   ClearOutlined,
+  MenuFoldOutlined,
+  MenuUnfoldOutlined,
 } from "@ant-design/icons";
 import type { ConfigProviderProps, GetProp } from "antd";
 import { MyMessage, OpenAiChannel } from "../../common/openai";
@@ -278,7 +280,7 @@ const isFold = true;
 export const Chat = ({
   onTitleChange = undefined,
   sessionID = "",
-  data = {
+  data: agentData = {
     uid: "",
     agentKey: "",
     message: "",
@@ -306,19 +308,19 @@ export const Chat = ({
       refresh();
       loadMoreData(false);
 
-      if (data.agentKey) {
+      if (agentData.agentKey) {
         try {
           // let agents = await GPTS.init();
           // let agent = agents.data.find((x) => x.label == data.agentKey);
-          await onGPTSClick(data.agentKey);
+          await onGPTSClick(agentData.agentKey);
 
-          if (data.message) {
-            await onRequest(data.message);
-            data.onComplete(openaiClient.current.lastMessage.content);
+          if (agentData.message) {
+            await onRequest(agentData.message);
+            agentData.onComplete(openaiClient.current.lastMessage.content);
           }
         } catch (e) {
           console.error(" hyper_call_agent error: ", e);
-          data.onError(e);
+          agentData.onError(e);
         }
       } else if (onlyView.histroyKey) {
         if (onlyView.histroyKey) {
@@ -326,15 +328,15 @@ export const Chat = ({
             (x) => x.key === onlyView.histroyKey,
           );
           if (item) {
-            currentChatReset({
-              ...item,
-              messages: [],
-            });
+            // currentChatReset({
+            //   ...item,
+            //   messages: [],
+            // });
 
-            setTimeout(() => {
-              currentChatReset(item);
-              createChat(false);
-            });
+            // setTimeout(() => {
+            currentChatReset(item);
+            createChat(false);
+            // });
           }
         }
       } else {
@@ -346,13 +348,13 @@ export const Chat = ({
         if (getMcpInited() == true) {
           let clients = await getClients().catch(() => []);
           clientsRef.current = clients;
-          DATA.current.mcpLoading = false;
+          data.current.mcpLoading = false;
           refresh();
           break;
         } else {
           let clients = await getClients().catch(() => []);
           clientsRef.current = clients;
-          DATA.current.mcpLoading = true;
+          data.current.mcpLoading = true;
           refresh();
           await sleep(500);
         }
@@ -404,12 +406,18 @@ export const Chat = ({
     temperature: undefined,
     attachedDialogueCount: undefined,
     dateTime: Date.now(),
-    isCalled: data.agentKey ? true : false,
+    isCalled: agentData.agentKey ? true : false,
     isTask: false,
     confirm_call_tool: true,
   };
-  const DATA = useRef({
+
+  const mobile = useRef({
+    is: window.innerWidth < 1024,
+  });
+
+  const data = useRef({
     mcpLoading: false,
+    showHistory: mobile.current.is ? false : true,
   });
 
   const currentChat = React.useRef<ChatHistoryItem>(defaultChatValue);
@@ -460,7 +468,7 @@ export const Chat = ({
     }
   }, [currentChat.current.agentKey]);
 
-  function format(x: MyMessage, i, arr): any {
+  const format = useCallback((x: MyMessage, i, arr) => {
     let common = {
       className: {
         "no-attached": !(
@@ -685,7 +693,7 @@ export const Chat = ({
           index--;
         }
         rocessProgress = rocessProgress.reverse();
-        x.content_usage = last_content_usage || {};
+        last_content_usage = last_content_usage || {};
         return {
           ...common,
           placement: "start",
@@ -732,24 +740,24 @@ export const Chat = ({
                       {dayjs(x.content_date).format("YYYY-MM-DD HH:mm:ss")}
                     </span>
                   )}
-                  {x.content_usage && (
+                  {last_content_usage && (
                     <>
-                      {x?.content_usage?.prompt_tokens ? (
+                      {last_content_usage?.prompt_tokens ? (
                         <Tooltip title="prompt_tokens">
                           <UploadOutlined />
-                          {x?.content_usage?.prompt_tokens}
+                          {last_content_usage?.prompt_tokens}
                         </Tooltip>
                       ) : null}
-                      {x?.content_usage?.completion_tokens ? (
+                      {last_content_usage?.completion_tokens ? (
                         <Tooltip title="completion_tokens">
                           <DownloadOutlined />
-                          {x?.content_usage?.completion_tokens}
+                          {last_content_usage?.completion_tokens}
                         </Tooltip>
                       ) : null}
-                      {x?.content_usage?.total_tokens ? (
+                      {last_content_usage?.total_tokens ? (
                         <Tooltip title="total_tokens">
                           <StockOutlined />
-                          {x?.content_usage?.total_tokens}
+                          {last_content_usage?.total_tokens}
                         </Tooltip>
                       ) : null}
                     </>
@@ -807,7 +815,7 @@ export const Chat = ({
                                 />
                               );
                             } else if (x.type == "text") {
-                              return <pre>{x.text}</pre>;
+                              return <Pre key={i}>{x.text}</Pre>;
                             }
                           })}
                       </div>
@@ -817,56 +825,57 @@ export const Chat = ({
                       <div className="bg-gray-200" key={i}>
                         {x.tool_calls.map((tool: any, index) => {
                           return (
-                            <>
-                              <Spin spinning={x.content_status == "loading"}>
-                                <a
-                                  className="cursor-pointer"
-                                  onClick={() => {
-                                    Modal.info({
-                                      width: "90%",
-                                      style: { maxWidth: 1024 },
-                                      title: t`Tool Call`,
-                                      maskClosable: true,
-                                      content: (
+                            <Spin
+                              key={index}
+                              spinning={x.content_status == "loading"}
+                            >
+                              <a
+                                className="cursor-pointer"
+                                onClick={() => {
+                                  Modal.info({
+                                    width: "90%",
+                                    style: { maxWidth: 1024 },
+                                    title: t`Tool Call`,
+                                    maskClosable: true,
+                                    content: (
+                                      <div>
+                                        <pre
+                                          style={{
+                                            whiteSpace: "pre-wrap",
+                                            wordWrap: "break-word",
+                                            padding: "8px 0",
+                                            textAlign: "center",
+                                          }}
+                                        >
+                                          <span>Tool Name: </span>
+                                          <span className="text-purple-500">
+                                            {tool.restore_name ||
+                                              tool.function.name}
+                                          </span>
+                                        </pre>
+                                        {x?.content?.toString()}
                                         <div>
-                                          <pre
-                                            style={{
-                                              whiteSpace: "pre-wrap",
-                                              wordWrap: "break-word",
-                                              padding: "8px 0",
-                                              textAlign: "center",
-                                            }}
-                                          >
-                                            <span>Tool Name: </span>
-                                            <span className="text-purple-500">
-                                              {tool.restore_name ||
-                                                tool.function.name}
-                                            </span>
-                                          </pre>
-                                          {x?.content?.toString()}
-                                          <div>
-                                            <span>Tool Arguments: </span>
-                                          </div>
-                                          <Pre>{tool.function.arguments}</Pre>
+                                          <span>Tool Arguments: </span>
                                         </div>
-                                      ),
-                                    });
-                                  }}
-                                >
-                                  <div className="line-clamp-1">
-                                    🔧
-                                    <span className="text-purple-500">
-                                      {tool.restore_name || tool.function.name}
-                                    </span>{" "}
-                                    <span className="text-gray-500">
-                                      {" "}
-                                      {x?.content?.toString()}
-                                    </span>{" "}
-                                    {tool.function.arguments}
-                                  </div>
-                                </a>
-                              </Spin>
-                            </>
+                                        <Pre>{tool.function.arguments}</Pre>
+                                      </div>
+                                    ),
+                                  });
+                                }}
+                              >
+                                <div className="line-clamp-1">
+                                  🔧
+                                  <span className="text-purple-500">
+                                    {tool.restore_name || tool.function.name}
+                                  </span>{" "}
+                                  <span className="text-gray-500">
+                                    {" "}
+                                    {x?.content?.toString()}
+                                  </span>{" "}
+                                  {tool.function.arguments}
+                                </div>
+                              </a>
+                            </Spin>
                           );
                         })}
                       </div>
@@ -1118,9 +1127,9 @@ export const Chat = ({
         }
       }
     }
-  }
+  }, []);
 
-  const createChat = (showTip = true) => {
+  const createChat = useCallback((showTip = true) => {
     let config = GPT_MODELS.get().data.find(
       (x) => x.key == currentChat.current.modelKey,
     );
@@ -1224,10 +1233,10 @@ export const Chat = ({
     );
     // currentChat.current.messages = openaiClient.current.messages;
     refresh();
-  };
+  }, []);
   const [loading, setLoading] = useState(false);
 
-  const onRequest = async (message?: string) => {
+  const onRequest = useCallback(async (message?: string) => {
     Clarity.event(`sender-${process.env.NODE_ENV}`);
     console.log("onRequest", message);
     try {
@@ -1329,7 +1338,7 @@ export const Chat = ({
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
   const [isToolsShow, setIsToolsShow] = useState(false);
 
@@ -1342,55 +1351,61 @@ export const Chat = ({
 
   const loadDataTatal = useRef(0);
 
-  const loadMoreData = async (loadMore = true, loadIndexChange = true) => {
-    // console.log(historyFilterType, historyFilterSearchValue, loadIndex.current);
-    // console.log("loadMoreData: ", ChatHistory.get().data);
-    if (ChatHistory.get().data.length == 0) {
-      console.log("waiting ChatHistory init");
-      return;
-    }
-    if (loadIndexChange) {
-      if (loadMore) {
-        loadIndex.current += 35;
-      } else {
-        loadIndex.current = 35;
+  const loadMoreData = useCallback(
+    async (loadMore = true, loadIndexChange = true) => {
+      // console.log(historyFilterType, historyFilterSearchValue, loadIndex.current);
+      // console.log("loadMoreData: ", ChatHistory.get().data);
+      if (ChatHistory.get().data.length == 0) {
+        console.log("waiting ChatHistory init");
+        return;
       }
-    }
-    if (loadMoreing) {
-      return;
-    }
-    setLoadMoreing(true);
-
-    let formmatedData = ChatHistory.get()
-      .data.filter((x) => {
-        return (
-          selectGptsKey.current == null ||
-          x.agentKey == selectGptsKey.current ||
-          x["gptsKey"] == selectGptsKey.current
-        );
-      })
-      .filter((x) => {
-        if (historyFilterType.current == "all") {
-          return !x.isCalled && !x.isTask;
-        } else if (historyFilterType.current == "agent") {
-          return x.isCalled == true;
-        } else if (historyFilterType.current == "task") {
-          return x.isTask == true;
-        } else if (historyFilterType.current == "star") {
-          return x.icon == "⭐";
+      if (loadIndexChange) {
+        if (loadMore) {
+          loadIndex.current += 35;
         } else {
-          return (
-            historyFilterSearchValue == "" ||
-            x.label.toString().toLowerCase().includes(historyFilterSearchValue)
-          );
+          loadIndex.current = 35;
         }
-      });
-    loadDataTatal.current = formmatedData.length;
-    formmatedData = formmatedData.slice(0, loadIndex.current);
-    setConversations(formmatedData);
-    // console.log("loadMoreData", loadIndex.current, loadDataTatal.current);
-    setLoadMoreing(false);
-  };
+      }
+      if (loadMoreing) {
+        return;
+      }
+      setLoadMoreing(true);
+
+      let formmatedData = ChatHistory.get()
+        .data.filter((x) => {
+          return (
+            selectGptsKey.current == null ||
+            x.agentKey == selectGptsKey.current ||
+            x["gptsKey"] == selectGptsKey.current
+          );
+        })
+        .filter((x) => {
+          if (historyFilterType.current == "all") {
+            return !x.isCalled && !x.isTask;
+          } else if (historyFilterType.current == "agent") {
+            return x.isCalled == true;
+          } else if (historyFilterType.current == "task") {
+            return x.isTask == true;
+          } else if (historyFilterType.current == "star") {
+            return x.icon == "⭐";
+          } else {
+            return (
+              historyFilterSearchValue == "" ||
+              x.label
+                .toString()
+                .toLowerCase()
+                .includes(historyFilterSearchValue)
+            );
+          }
+        });
+      loadDataTatal.current = formmatedData.length;
+      formmatedData = formmatedData.slice(0, loadIndex.current);
+      setConversations(formmatedData);
+      // console.log("loadMoreData", loadIndex.current, loadDataTatal.current);
+      setLoadMoreing(false);
+    },
+    [],
+  );
 
   // const [resourceResList, setResourceResList] = React.useState<
   //   Array<
@@ -1456,14 +1471,6 @@ export const Chat = ({
   let missMCP = currentChat.current.allowMCPs.filter(
     (x) => !clientsRef.current.find((c) => c.name == x),
   );
-
-  const mobile = useRef({
-    is: window.innerWidth < 1024,
-    showHistory: false,
-  });
-  if (window.innerWidth >= 1024) {
-    // mobile.current.showHistory = true;
-  }
 
   let historyShowNode = (
     <>
@@ -1555,16 +1562,14 @@ export const Chat = ({
               let item = ChatHistory.get().data.find((x) => x.key == key);
               if (item) {
                 // console.log("onActiveChange", item);
-                mobile.current.showHistory = false;
-                currentChatReset({
-                  ...item,
-                  messages: [],
-                });
+                if (mobile.current.is) {
+                  data.current.showHistory = false;
+                }
+                // currentChat.current.messages=[]
+                // refresh();
 
-                setTimeout(() => {
-                  currentChatReset(item);
-                  createChat();
-                });
+                currentChatReset(item);
+                createChat();
               }
             }}
             menu={(conversation) => ({
@@ -1661,14 +1666,15 @@ export const Chat = ({
               {mobile.current.is && (
                 <>
                   <Drawer
+                    placement="left"
                     className="chat"
                     onClose={(e) => {
-                      mobile.current.showHistory = false;
+                      data.current.showHistory = false;
                       refresh();
                     }}
                     footer={null}
                     title={t`Chat Logs`}
-                    open={mobile.current.showHistory}
+                    open={data.current.showHistory}
                     getContainer={false}
                   >
                     {historyShowNode}
@@ -1677,62 +1683,18 @@ export const Chat = ({
               )}
 
               <div className="flex h-full">
-                {!onlyView.histroyKey && !mobile.current.is && (
-                  <div className="hidden h-full w-0 flex-none overflow-hidden pr-2 lg:block lg:w-60">
-                    {selectGptsKey.current ? (
-                      <div className="flex">
-                        <Button
-                          onClick={() => {
-                            currentChatReset({
-                              messages: [],
-                              allowMCPs: clientsRef.current.map((v) => v.name),
-                              sended: false,
-                              agentKey: undefined,
-                            });
-                            selectGptsKey.current = undefined;
-                            loadMoreData(false);
-                          }}
-                        >
-                          <LeftOutlined />
-                        </Button>
-                        <Button
-                          type="primary"
-                          className="ml-1 w-full"
-                          onClick={() => {
-                            if (openaiClient.current) {
-                              let key =
-                                currentChat.current.agentKey ||
-                                currentChat.current["gptsKey"];
-                              onGPTSClick(key, { loadHistory: false });
-                            }
-                          }}
-                        >
-                          {t`New Chat`}
-                        </Button>
-                      </div>
-                    ) : (
-                      <Button
-                        type="primary"
-                        className="ml-1 w-full"
-                        onClick={() => {
-                          currentChatReset({
-                            messages: [],
-                            allowMCPs: clientsRef.current.map((v) => v.name),
-                            sended: false,
-                            agentKey: undefined,
-                          });
-                          selectGptsKey.current = undefined;
-                          loadMoreData(false);
-                        }}
-                      >
-                        {t`New Chat`}
-                      </Button>
-                    )}
-                    {historyShowNode}
-                  </div>
+                {!onlyView.histroyKey && data.current.showHistory && (
+                  <>
+                    <div className="hidden h-full w-0 flex-none overflow-hidden pr-2 lg:block lg:w-60">
+                      {historyShowNode}
+                    </div>
+                    <Divider
+                      type="vertical"
+                      className="hidden h-full lg:block"
+                    />
+                  </>
                 )}
 
-                <Divider type="vertical" className="hidden h-full lg:block" />
                 <div
                   className="flex-grow-2 flex w-full flex-col justify-between"
                   style={{ alignSelf: "stretch" }}
@@ -1876,8 +1838,35 @@ export const Chat = ({
 
                   <div className="my-footer flex-grow-0 pt-1">
                     <div className="my-op">
-                      <span className="lg:hidden">
+                      <span>
                         <>
+                          <span>
+                            {/* <Button
+                              size="small"
+                              onClick={() => {
+                                data.current.showHistory = true;
+                                refresh();
+                              }}
+                            >
+                              <CommentOutlined className="cursor-pointer text-blue-500 hover:text-cyan-400" />
+                            </Button> */}
+                            <Button
+                              size="small"
+                              onClick={() => {
+                                data.current.showHistory =
+                                  !data.current.showHistory;
+                                refresh();
+                              }}
+                            >
+                              {data.current.showHistory ? (
+                                <MenuFoldOutlined />
+                              ) : (
+                                <MenuUnfoldOutlined />
+                              )}
+                            </Button>
+
+                            <Divider type="vertical" />
+                          </span>
                           {currentChat.current.agentKey && (
                             <>
                               <Button
@@ -1900,17 +1889,6 @@ export const Chat = ({
                               <Divider type="vertical" />
                             </>
                           )}
-                          <Button
-                            size="small"
-                            onClick={() => {
-                              mobile.current.showHistory = true;
-                              refresh();
-                            }}
-                          >
-                            <CommentOutlined className="cursor-pointer text-blue-500 hover:text-cyan-400" />
-                          </Button>
-
-                          <Divider type="vertical" />
                         </>
                       </span>
                       <Tooltip title={t`New Chat`}>
@@ -1966,7 +1944,7 @@ export const Chat = ({
                               <>
                                 💻
                                 <span className="px-1">
-                                  {DATA.current.mcpLoading && (
+                                  {data.current.mcpLoading && (
                                     <SyncOutlined spin />
                                   )}
                                   {(() => {

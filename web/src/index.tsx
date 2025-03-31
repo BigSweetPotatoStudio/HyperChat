@@ -14,13 +14,16 @@ import { config } from "./common/config";
 import "./tailwind.css";
 import { ConfigProvider } from "antd";
 import { StyleProvider, px2remTransformer } from "@ant-design/cssinjs";
+
+
+
 import {
   enable as enableDarkMode,
   disable as disableDarkMode,
   auto as followSystemColorScheme,
   exportGeneratedCSS as collectCSS,
-  isEnabled as isDarkReaderEnabled
-} from 'darkreader';
+  isEnabled as isDarkReaderEnabled,
+} from "darkreader";
 import { AppSetting } from "../../common/data";
 
 (async () => {
@@ -34,16 +37,14 @@ import { AppSetting } from "../../common/data";
   }
 })(); // 获取是否自动启动
 
-
 function setVhCssVar() {
-	const vh = window.innerHeight * 0.01;
-	// 创建全局变量 --vh
-	document.documentElement.style.setProperty('--vh', `${vh}px`);
+  const vh = window.innerHeight * 0.01;
+  // 创建全局变量 --vh
+  document.documentElement.style.setProperty("--vh", `${vh}px`);
 }
 
 setVhCssVar();
-window.addEventListener('resize', setVhCssVar);
-
+window.addEventListener("resize", setVhCssVar);
 
 console.log("start");
 const px2rem = px2remTransformer({

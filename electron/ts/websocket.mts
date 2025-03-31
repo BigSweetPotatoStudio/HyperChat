@@ -19,6 +19,11 @@ import { fs } from "./es6.mjs";
 import crypto from "crypto";
 import { getMessageService } from "./message_service.mjs";
 
+const uploadDir = "./uploads";
+const uploadDirPath = path.join(appDataDir, uploadDir);
+fs.ensureDirSync(uploadDirPath);
+fs.emptyDirSync(uploadDirPath);
+
 export function genRouter(c, prefix: string) {
   let functions = [];
   Object.getOwnPropertyNames(Object.getPrototypeOf(c))
@@ -67,10 +72,7 @@ export function genRouter(c, prefix: string) {
       }
     });
   }
-  const uploadDir = "./uploads";
-  const uploadDirPath = path.join(appDataDir, uploadDir);
-  fs.ensureDirSync(uploadDirPath);
-  fs.emptyDirSync(uploadDirPath);
+
   // console.log(prefix + "/uploads");
   router.post("/uploads", async (ctx) => {
     // 如果只上传一个文件，files.file就是文件对象
@@ -94,7 +96,9 @@ export function genRouter(c, prefix: string) {
       const newPath = path.join(uploadDir, newFilename);
       let filepath = path.join(process.cwd(), newPath);
       // 重命名文件
-      await fs.rename(file.filepath, newPath);
+      await fs.move(file.filepath, newPath, {
+        overwrite: true,
+      });
 
       ctx.status = 200;
       ctx.body = {
@@ -119,7 +123,7 @@ export async function initHttp() {
     koaBody({
       multipart: true, // 允许多部分（文件）上传
       formidable: {
-        uploadDir: "./uploads", // 设置上传文件的目录
+        uploadDir: uploadDirPath, // 设置上传文件的目录
         keepExtensions: true, // 保留文件的扩展名
       },
       jsonLimit: "1000mb",
