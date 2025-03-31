@@ -89,6 +89,13 @@ import { DndTable } from "./common/dndTable";
 import { sleep } from "./common/sleep";
 import { InputPlus } from "./common/input_plus";
 import { rejects } from "assert";
+import {
+  enable as enableDarkMode,
+  disable as disableDarkMode,
+  auto as followSystemColorScheme,
+  exportGeneratedCSS as collectCSS,
+  isEnabled as isDarkReaderEnabled
+} from 'darkreader';
 
 type ProviderType = {
   label: string;
@@ -388,13 +395,13 @@ export function Layout() {
                     await AppSetting.save();
                     refresh();
                     if (checked) {
-                      window["DarkReader"].enable({
+                      enableDarkMode({
                         brightness: 100,
                         contrast: 90,
                         sepia: 10,
                       });
                     } else {
-                      window["DarkReader"].disable();
+                      disableDarkMode();
                     }
                   }}
                 />

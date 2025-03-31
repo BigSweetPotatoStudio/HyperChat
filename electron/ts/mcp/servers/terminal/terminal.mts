@@ -74,11 +74,17 @@ export function registerTool(server: McpServer) {
         stdout: "",
         lastIndex: 0,
         timer: setTimeout(() => {
-          terminal.kill();
+          try {
+            terminal.kill();
+          } catch (error) {
+            console.error("Error killing terminal:", error);
+          }
           terminalMap.delete(c.terminal.pid);
         }, timeout),
       };
       terminal.onExit((code) => {
+        clearTimeout(c.timer);
+        terminalMap.delete(terminal.pid);
         getMessageService().terminalMsg.emit("onClose-terminal", {
           terminalID: terminal.pid,
         });
@@ -145,7 +151,11 @@ export function registerTool(server: McpServer) {
 
       c.timer && clearTimeout(c.timer);
       c.timer = setTimeout(() => {
-        c.terminal.kill();
+        try {
+          c.terminal.kill();
+        } catch (error) {
+          console.error("Error killing terminal:", error);
+        }
         terminalMap.delete(c.terminal.pid);
       }, timeout);
       let a = false;

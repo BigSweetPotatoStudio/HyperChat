@@ -49,7 +49,7 @@ electronData.save();
 // 捕获未处理的异常
 process.on('uncaughtException', (error) => {  
   Logger.error('Uncaught Exception:', error);  
-  process.exit(1);  
+  // process.exit(1);  
 });
 
 // 捕获未处理的Promise拒绝

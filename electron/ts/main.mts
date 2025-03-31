@@ -92,20 +92,6 @@ app.whenReady().then(async () => {
     throw e;
   }
 
-  // if (process.env.myEnv == "prod") {
-  //   Menu.setApplicationMenu(null);
-  // }
-
-  // if (process.platform != "darwin") {
-  //   session.defaultSession.setDisplayMediaRequestHandler(
-  //     (request, callback) => {
-  //       desktopCapturer.getSources({ types: ["screen"] }).then((sources) => {
-  //         // Grant access to the first screen found.
-  //         callback({ video: sources[0], audio: "loopback" });
-  //       });
-  //     }
-  //   );
-  // }
 
   protocol.handle("fs", (request) => {
     let p = request.url.replace("fs://", "");

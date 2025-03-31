@@ -22,7 +22,7 @@ export const createWindow = () => {
     width: 1440,
     height: 900,
     title: title,
-    autoHideMenuBar: process.env.myEnv == "prod",
+    autoHideMenuBar: true,
     // titleBarOverlay: {
     //   height: 40,
     //   color: "rgba(255,255,255,0.1)",
