@@ -39,13 +39,15 @@ if (process.env.runtime !== "node") {
       electronData.password +
       "/";
   }
-  ext.invert = async (command: string, args: any) => {
+  ext.invert = async (command: string, args: any, options: any = {}) => {
+    const { signal } = options;
     let res = await fetch(URL_PRE + "api/" + command, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
       },
       body: JSON.stringify(args),
+      signal: signal,
     }).then((res) => res.json());
     return res;
   };
@@ -75,10 +77,11 @@ if (process.env.runtime !== "node") {
 export async function call<k extends keyof Command>(
   command: k,
   args: Parameters<Command[k]> = [] as any,
+  options: { signal?: AbortSignal } = {},
 ): Promise<ReturnType<Command[k]>> {
   try {
     // console.log(`command ${command}`, args);
-    let res = await ext.invert(command, args);
+    let res = await ext.invert(command, args, options);
     if (res.success) {
       return res.data;
     } else {

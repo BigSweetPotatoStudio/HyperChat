@@ -64,6 +64,21 @@ import { FitAddon } from "@xterm/addon-fit";
 import { WebLinksAddon } from "@xterm/addon-web-links";
 import { z } from "zod";
 
+function Pre(p) {
+  return (
+    <div>
+      <pre
+        style={{
+          whiteSpace: "pre-wrap",
+          wordWrap: "break-word",
+        }}
+      >
+        {p.children as string}
+      </pre>
+    </div>
+  );
+}
+
 function urlToBase64(url: string) {
   return new Promise<string>((resolve, reject) => {
     // 创建图片对象
@@ -226,18 +241,7 @@ function formatToolMessage(x: MyMessage, common, i) {
               style: { maxWidth: 1024 },
               title: t`Tool Call Result`,
               maskClosable: true,
-              content: (
-                <div>
-                  <pre
-                    style={{
-                      whiteSpace: "pre-wrap",
-                      wordWrap: "break-word",
-                    }}
-                  >
-                    {x.content as string}
-                  </pre>
-                </div>
-              ),
+              content: <Pre>{x.content as string}</Pre>,
             });
           }}
         >
@@ -465,66 +469,6 @@ export const Chat = ({
       },
       role: x.role,
     };
-    let assistantFooter = (
-      <div className="flex flex-wrap justify-between text-xs">
-        <Space>
-          <CopyOutlined
-            className="hover:text-cyan-400"
-            key="copy"
-            onClick={() => {
-              call("setClipboardText", [x.content.toString()]);
-              message.success("Copied to clipboard");
-            }}
-          />
-          <SyncOutlined
-            key="sync"
-            className="hover:text-cyan-400"
-            onClick={() => {
-              openaiClient.current.messages.splice(i);
-              currentChat.current.messages = openaiClient.current.messages;
-              refresh();
-              onRequest();
-            }}
-          />
-        </Space>
-        {x.content_status != "error" && (
-          <Space>
-            {x.content_attached == false && (
-              <Tooltip title="Cleared">
-                <MinusCircleOutlined className="cursor-not-allowed bg-red-200" />
-              </Tooltip>
-            )}
-            {x.content_date && (
-              <span style={{ marginLeft: 16 }}>
-                {dayjs(x.content_date).format("YYYY-MM-DD HH:mm:ss")}
-              </span>
-            )}
-            {x.content_usage && (
-              <>
-                {x?.content_usage?.prompt_tokens ? (
-                  <Tooltip title="prompt_tokens">
-                    <UploadOutlined />
-                    {x?.content_usage?.prompt_tokens}
-                  </Tooltip>
-                ) : null}
-                {x?.content_usage?.completion_tokens ? (
-                  <Tooltip title="completion_tokens">
-                    <DownloadOutlined />
-                    {x?.content_usage?.completion_tokens}
-                  </Tooltip>
-                ) : null}
-                {x?.content_usage?.total_tokens ? (
-                  <Tooltip title="total_tokens">
-                    <StockOutlined />
-                    {x?.content_usage?.total_tokens}
-                  </Tooltip>
-                ) : null}
-              </>
-            )}
-          </Space>
-        )}
-      </div>
-    );
 
     if (x.role == "user" || x.role == "system") {
       // mcp prompt
@@ -725,8 +669,15 @@ export const Chat = ({
         //   return;
         // }
         let rocessProgress = [];
-        let index = i - 1;
+        let index = arr[i].role == "tool" ? i : i - 1;
+        let last_content_usage =
+          arr[i].role == "tool" ? null : arr[i].content_usage;
         while (index >= 0) {
+          if (last_content_usage == null) {
+            if (arr[index].role == "assistant") {
+              last_content_usage = arr[index].content_usage;
+            }
+          }
           if (arr[index].role == "user") {
             break;
           }
@@ -734,6 +685,7 @@ export const Chat = ({
           index--;
         }
         rocessProgress = rocessProgress.reverse();
+        x.content_usage = last_content_usage || {};
         return {
           ...common,
           placement: "start",
@@ -744,22 +696,75 @@ export const Chat = ({
               backgroundColor: "#87d068",
             },
           },
-          key: (i - rocessProgress.length).toString(),
-          footer: assistantFooter,
+          key: i,
+          footer: (
+            <div className="flex flex-wrap justify-between text-xs">
+              <Space>
+                <CopyOutlined
+                  className="hover:text-cyan-400"
+                  key="copy"
+                  onClick={() => {
+                    call("setClipboardText", [x.content.toString()]);
+                    message.success("Copied to clipboard");
+                  }}
+                />
+                <SyncOutlined
+                  key="sync"
+                  className="hover:text-cyan-400"
+                  onClick={() => {
+                    openaiClient.current.messages.splice(i);
+                    currentChat.current.messages =
+                      openaiClient.current.messages;
+                    refresh();
+                    onRequest();
+                  }}
+                />
+              </Space>
+              {x.content_status != "error" && (
+                <Space>
+                  {x.content_attached == false && (
+                    <Tooltip title="Cleared">
+                      <MinusCircleOutlined className="cursor-not-allowed bg-red-200" />
+                    </Tooltip>
+                  )}
+                  {x.content_date && (
+                    <span style={{ marginLeft: 16 }}>
+                      {dayjs(x.content_date).format("YYYY-MM-DD HH:mm:ss")}
+                    </span>
+                  )}
+                  {x.content_usage && (
+                    <>
+                      {x?.content_usage?.prompt_tokens ? (
+                        <Tooltip title="prompt_tokens">
+                          <UploadOutlined />
+                          {x?.content_usage?.prompt_tokens}
+                        </Tooltip>
+                      ) : null}
+                      {x?.content_usage?.completion_tokens ? (
+                        <Tooltip title="completion_tokens">
+                          <DownloadOutlined />
+                          {x?.content_usage?.completion_tokens}
+                        </Tooltip>
+                      ) : null}
+                      {x?.content_usage?.total_tokens ? (
+                        <Tooltip title="total_tokens">
+                          <StockOutlined />
+                          {x?.content_usage?.total_tokens}
+                        </Tooltip>
+                      ) : null}
+                    </>
+                  )}
+                </Space>
+              )}
+            </div>
+          ),
           content: (
             <div>
               <div>
                 {rocessProgress.map((x, i) => {
                   if (x.role == "tool") {
                     return (
-                      <Tooltip
-                        key={i}
-                        title={
-                          <div className="max-h-40 overflow-auto text-ellipsis">
-                            {x.content as string}
-                          </div>
-                        }
-                      >
+                      <div key={i}>
                         <span
                           key={i}
                           className="cursor-pointer"
@@ -769,18 +774,7 @@ export const Chat = ({
                               style: { maxWidth: 1024 },
                               title: t`Tool Call Result`,
                               maskClosable: true,
-                              content: (
-                                <div>
-                                  <pre
-                                    style={{
-                                      whiteSpace: "pre-wrap",
-                                      wordWrap: "break-word",
-                                    }}
-                                  >
-                                    {x.content as string}
-                                  </pre>
-                                </div>
-                              ),
+                              content: <Pre>{x.content as string}</Pre>,
                             });
                           }}
                         >
@@ -816,21 +810,14 @@ export const Chat = ({
                               return <pre>{x.text}</pre>;
                             }
                           })}
-                      </Tooltip>
+                      </div>
                     );
                   } else {
                     return (
                       <div className="bg-gray-200" key={i}>
                         {x.tool_calls.map((tool: any, index) => {
                           return (
-                            <Tooltip
-                              key={index}
-                              title={
-                                <div className="max-h-40 overflow-auto text-ellipsis">
-                                  {tool.function.arguments}
-                                </div>
-                              }
-                            >
+                            <>
                               <Spin spinning={x.content_status == "loading"}>
                                 <a
                                   className="cursor-pointer"
@@ -860,14 +847,7 @@ export const Chat = ({
                                           <div>
                                             <span>Tool Arguments: </span>
                                           </div>
-                                          <pre
-                                            style={{
-                                              whiteSpace: "pre-wrap",
-                                              wordWrap: "break-word",
-                                            }}
-                                          >
-                                            {tool.function.arguments}
-                                          </pre>
+                                          <Pre>{tool.function.arguments}</Pre>
                                         </div>
                                       ),
                                     });
@@ -886,7 +866,7 @@ export const Chat = ({
                                   </div>
                                 </a>
                               </Spin>
-                            </Tooltip>
+                            </>
                           );
                         })}
                       </div>
@@ -905,61 +885,47 @@ export const Chat = ({
                           thinking: {x.reasoning_content}
                         </div>
                       ),
-                      children: (
-                        <pre
-                          key="1"
-                          style={{
-                            whiteSpace: "pre-wrap",
-                            wordWrap: "break-word",
-                          }}
-                        >
-                          {x.reasoning_content}
-                        </pre>
-                      ),
+                      children: <Pre>{x.reasoning_content}</Pre>,
                     },
                   ]}
                 />
               )}
-              {x.content && (
-                <MarkDown
-                  markdown={x.content}
-                  onCallback={(e) => {
-                    setValue(e);
-                  }}
-                ></MarkDown>
+
+              {x.role == "assistant" && (
+                <>
+                  {x.content && (
+                    <MarkDown
+                      markdown={x.content}
+                      onCallback={(e) => {
+                        setValue(e);
+                      }}
+                    ></MarkDown>
+                  )}
+                  {x.content_status == "loading" ? (
+                    <SyncOutlined spin />
+                  ) : x.content_status == "error" ? (
+                    <div className="text-red-500">
+                      {t`Please verify your network connection. If the network is working, there might be a small bug in the program. Here are the error messages: `}
+                      <div className="text-red-700">{x.content_error}</div>
+                    </div>
+                  ) : null}
+                  {x.content_status == "dataLoading" && <LoadingOutlined />}
+                  {x.content_attachment &&
+                    x.content_attachment.length > 0 &&
+                    x.content_attachment.map((x, i) => {
+                      if (x.type == "image") {
+                        return (
+                          <DownImage
+                            key={i}
+                            src={`data:${x.mimeType};base64,${x.data}`}
+                          />
+                        );
+                      } else if (x.type == "text") {
+                        return <Pre>{x.text}</Pre>;
+                      }
+                    })}
+                </>
               )}
-              {x.content_status == "loading" ? (
-                <SyncOutlined spin />
-              ) : x.content_status == "error" ? (
-                <div className="text-red-500">
-                  {t`Please verify your network connection. If the network is working, there might be a small bug in the program. Here are the error messages: `}
-                  <div className="text-red-700">{x.content_error}</div>
-                </div>
-              ) : null}
-              {x.content_status == "dataLoading" && <LoadingOutlined />}
-              {x.content_attachment &&
-                x.content_attachment.length > 0 &&
-                x.content_attachment.map((x, i) => {
-                  if (x.type == "image") {
-                    return (
-                      <DownImage
-                        key={i}
-                        src={`data:${x.mimeType};base64,${x.data}`}
-                      />
-                    );
-                  } else if (x.type == "text") {
-                    return (
-                      <pre
-                        style={{
-                          whiteSpace: "pre-wrap",
-                          wordWrap: "break-word",
-                        }}
-                      >
-                        {x.text}
-                      </pre>
-                    );
-                  }
-                })}
             </div>
           ),
         };
@@ -979,7 +945,67 @@ export const Chat = ({
             },
             key: i.toString(),
             // typing: x.content_status == "dataLoading",
-            footer: assistantFooter,
+            footer: (
+              <div className="flex flex-wrap justify-between text-xs">
+                <Space>
+                  <CopyOutlined
+                    className="hover:text-cyan-400"
+                    key="copy"
+                    onClick={() => {
+                      call("setClipboardText", [x.content.toString()]);
+                      message.success("Copied to clipboard");
+                    }}
+                  />
+                  <SyncOutlined
+                    key="sync"
+                    className="hover:text-cyan-400"
+                    onClick={() => {
+                      openaiClient.current.messages.splice(i);
+                      currentChat.current.messages =
+                        openaiClient.current.messages;
+                      refresh();
+                      onRequest();
+                    }}
+                  />
+                </Space>
+                {x.content_status != "error" && (
+                  <Space>
+                    {x.content_attached == false && (
+                      <Tooltip title="Cleared">
+                        <MinusCircleOutlined className="cursor-not-allowed bg-red-200" />
+                      </Tooltip>
+                    )}
+                    {x.content_date && (
+                      <span style={{ marginLeft: 16 }}>
+                        {dayjs(x.content_date).format("YYYY-MM-DD HH:mm:ss")}
+                      </span>
+                    )}
+                    {x.content_usage && (
+                      <>
+                        {x?.content_usage?.prompt_tokens ? (
+                          <Tooltip title="prompt_tokens">
+                            <UploadOutlined />
+                            {x?.content_usage?.prompt_tokens}
+                          </Tooltip>
+                        ) : null}
+                        {x?.content_usage?.completion_tokens ? (
+                          <Tooltip title="completion_tokens">
+                            <DownloadOutlined />
+                            {x?.content_usage?.completion_tokens}
+                          </Tooltip>
+                        ) : null}
+                        {x?.content_usage?.total_tokens ? (
+                          <Tooltip title="total_tokens">
+                            <StockOutlined />
+                            {x?.content_usage?.total_tokens}
+                          </Tooltip>
+                        ) : null}
+                      </>
+                    )}
+                  </Space>
+                )}
+              </div>
+            ),
             // loading:
             //   x.content_status == "loading" || x.content_status == "dataLoading",
             content:
@@ -1031,14 +1057,7 @@ export const Chat = ({
                                       <div>
                                         <span>Tool Arguments: </span>
                                       </div>
-                                      <pre
-                                        style={{
-                                          whiteSpace: "pre-wrap",
-                                          wordWrap: "break-word",
-                                        }}
-                                      >
-                                        {tool.function.arguments}
-                                      </pre>
+                                      <Pre>{tool.function.arguments}</Pre>
                                     </div>
                                   ),
                                 });
@@ -1065,17 +1084,7 @@ export const Chat = ({
                               thinking: {x.reasoning_content}
                             </div>
                           ),
-                          children: (
-                            <pre
-                              key="1"
-                              style={{
-                                whiteSpace: "pre-wrap",
-                                wordWrap: "break-word",
-                              }}
-                            >
-                              {x.reasoning_content}
-                            </pre>
-                          ),
+                          children: <Pre>{x.reasoning_content}</Pre>,
                         },
                       ]}
                     />
@@ -1100,16 +1109,7 @@ export const Chat = ({
                           />
                         );
                       } else if (x.type == "text") {
-                        return (
-                          <pre
-                            style={{
-                              whiteSpace: "pre-wrap",
-                              wordWrap: "break-word",
-                            }}
-                          >
-                            {x.text}
-                          </pre>
-                        );
+                        return <Pre>{x.text}</Pre>;
                       }
                     })}
                 </div>
@@ -1652,72 +1652,36 @@ export const Chat = ({
     error: null as any,
   });
 
-
   return (
-    <>
-      <div className="chat relative h-full">
-        <div className="h-full rounded-lg bg-white">
-          <XProvider>
-            <Splitter className="h-full">
-              <Splitter.Panel defaultSize="70%" min="40%" max="100%">
-                {mobile.current.is && (
-                  <>
-                    <Drawer
-                      className="chat"
-                      onClose={(e) => {
-                        mobile.current.showHistory = false;
-                        refresh();
-                      }}
-                      footer={null}
-                      title={t`Chat Logs`}
-                      open={mobile.current.showHistory}
-                      getContainer={false}
-                    >
-                      {historyShowNode}
-                    </Drawer>
-                  </>
-                )}
+    <div key={sessionID} className="chat relative h-full">
+      <div className="h-full rounded-lg bg-white">
+        <XProvider>
+          <Splitter className="h-full">
+            <Splitter.Panel defaultSize="70%" min="40%" max="100%">
+              {mobile.current.is && (
+                <>
+                  <Drawer
+                    className="chat"
+                    onClose={(e) => {
+                      mobile.current.showHistory = false;
+                      refresh();
+                    }}
+                    footer={null}
+                    title={t`Chat Logs`}
+                    open={mobile.current.showHistory}
+                    getContainer={false}
+                  >
+                    {historyShowNode}
+                  </Drawer>
+                </>
+              )}
 
-                <div className="flex h-full">
-                  {!onlyView.histroyKey && !mobile.current.is && (
-                    <div className="hidden h-full w-0 flex-none overflow-hidden pr-2 lg:block lg:w-60">
-                      {selectGptsKey.current ? (
-                        <div className="flex">
-                          <Button
-                            onClick={() => {
-                              currentChatReset({
-                                messages: [],
-                                allowMCPs: clientsRef.current.map(
-                                  (v) => v.name,
-                                ),
-                                sended: false,
-                                agentKey: undefined,
-                              });
-                              selectGptsKey.current = undefined;
-                              loadMoreData(false);
-                            }}
-                          >
-                            <LeftOutlined />
-                          </Button>
-                          <Button
-                            type="primary"
-                            className="ml-1 w-full"
-                            onClick={() => {
-                              if (openaiClient.current) {
-                                let key =
-                                  currentChat.current.agentKey ||
-                                  currentChat.current["gptsKey"];
-                                onGPTSClick(key, { loadHistory: false });
-                              }
-                            }}
-                          >
-                            {t`New Chat`}
-                          </Button>
-                        </div>
-                      ) : (
+              <div className="flex h-full">
+                {!onlyView.histroyKey && !mobile.current.is && (
+                  <div className="hidden h-full w-0 flex-none overflow-hidden pr-2 lg:block lg:w-60">
+                    {selectGptsKey.current ? (
+                      <div className="flex">
                         <Button
-                          type="primary"
-                          className="ml-1 w-full"
                           onClick={() => {
                             currentChatReset({
                               messages: [],
@@ -1729,431 +1693,462 @@ export const Chat = ({
                             loadMoreData(false);
                           }}
                         >
+                          <LeftOutlined />
+                        </Button>
+                        <Button
+                          type="primary"
+                          className="ml-1 w-full"
+                          onClick={() => {
+                            if (openaiClient.current) {
+                              let key =
+                                currentChat.current.agentKey ||
+                                currentChat.current["gptsKey"];
+                              onGPTSClick(key, { loadHistory: false });
+                            }
+                          }}
+                        >
                           {t`New Chat`}
                         </Button>
-                      )}
-                      {historyShowNode}
-                    </div>
-                  )}
+                      </div>
+                    ) : (
+                      <Button
+                        type="primary"
+                        className="ml-1 w-full"
+                        onClick={() => {
+                          currentChatReset({
+                            messages: [],
+                            allowMCPs: clientsRef.current.map((v) => v.name),
+                            sended: false,
+                            agentKey: undefined,
+                          });
+                          selectGptsKey.current = undefined;
+                          loadMoreData(false);
+                        }}
+                      >
+                        {t`New Chat`}
+                      </Button>
+                    )}
+                    {historyShowNode}
+                  </div>
+                )}
 
-                  <Divider type="vertical" className="hidden h-full lg:block" />
-                  <div
-                    className="flex-grow-2 flex w-full flex-col justify-between"
-                    style={{ alignSelf: "stretch" }}
-                  >
-                    <div className="flex-grow-2 overflow-auto">
-                      {(currentChat.current.messages == null ||
-                        currentChat.current.messages?.length == 0) && (
-                        <>
-                          <Welcome
-                            icon="👋"
-                            title={t`Welcome`}
-                            className="mb-4"
-                            description={
-                              Agents.get().data.length > 0
-                                ? t`Choose a prompt from below, and let's start chatting`
-                                : t`Start chatting`
-                            }
-                          />
-                          <Space>
-                            <Input
-                              placeholder="search"
-                              value={botSearchValue}
-                              onChange={(e) => {
-                                setBotSearchValue(e.target.value);
-                              }}
-                              allowClear
-                            ></Input>
-                            <Button
-                              onClick={() => {
-                                setPromptsModalValue({
-                                  confirm_call_tool: false,
-                                } as any);
-                                setIsOpenPromptsModal(true);
+                <Divider type="vertical" className="hidden h-full lg:block" />
+                <div
+                  className="flex-grow-2 flex w-full flex-col justify-between"
+                  style={{ alignSelf: "stretch" }}
+                >
+                  <div className="flex-grow-2 overflow-auto">
+                    {(currentChat.current.messages == null ||
+                      currentChat.current.messages?.length == 0) && (
+                      <>
+                        <Welcome
+                          icon="👋"
+                          title={t`Welcome`}
+                          className="mb-4"
+                          description={
+                            Agents.get().data.length > 0
+                              ? t`Choose a prompt from below, and let's start chatting`
+                              : t`Start chatting`
+                          }
+                        />
+                        <Space>
+                          <Input
+                            placeholder="search"
+                            value={botSearchValue}
+                            onChange={(e) => {
+                              setBotSearchValue(e.target.value);
+                            }}
+                            allowClear
+                          ></Input>
+                          <Button
+                            onClick={() => {
+                              setPromptsModalValue({
+                                confirm_call_tool: false,
+                              } as any);
+                              setIsOpenPromptsModal(true);
+                            }}
+                          >
+                            {t`Add Agent`}
+                          </Button>
+                        </Space>
+
+                        <div className="flex items-center">
+                          <div className="flex flex-wrap">
+                            <DndContext
+                              sensors={botSearchValue != "" ? [] : [sensors]}
+                              onDragEnd={(e) => {
+                                try {
+                                  let data = Agents.get().data;
+                                  let oldIndex = data.findIndex(
+                                    (x) => x.key == e.active.id,
+                                  );
+
+                                  let newIndex = data.findIndex(
+                                    (x) => x.key == e.over.id,
+                                  );
+
+                                  let item = data[oldIndex];
+
+                                  data.splice(oldIndex, 1);
+
+                                  data.splice(newIndex, 0, item);
+
+                                  Agents.save();
+                                  refresh();
+                                } catch {}
                               }}
                             >
-                              {t`Add Agent`}
-                            </Button>
-                          </Space>
+                              <SortableContext
+                                items={Agents.get()
+                                  .data.filter(
+                                    (x) =>
+                                      botSearchValue == "" ||
+                                      x.label
+                                        .toLowerCase()
+                                        .includes(botSearchValue),
+                                  )
+                                  .map((x) => x.key)}
+                              >
+                                {Agents.get()
+                                  .data.filter(
+                                    (x) =>
+                                      botSearchValue == "" ||
+                                      x.label
+                                        .toLowerCase()
+                                        .includes(botSearchValue),
+                                  )
+                                  .map((item) => (
+                                    <SortableItem
+                                      key={item.key}
+                                      id={item.key}
+                                      item={item}
+                                      onClick={(item) => {
+                                        // console.log("onGPTSClick", item);
+                                        onGPTSClick(item.key);
+                                      }}
+                                      onEdit={() => {
+                                        let value = Agents.get().data.find(
+                                          (y) => y.key === item.key,
+                                        );
+                                        setPromptsModalValue(value);
+                                        setIsOpenPromptsModal(true);
+                                      }}
+                                      onRemove={() => {
+                                        Modal.confirm({
+                                          title: "Tip",
+                                          maskClosable: true,
+                                          content: "Are you sure to delete?",
+                                          onOk: async () => {
+                                            let index =
+                                              Agents.get().data.findIndex(
+                                                (y) => y.key === item.key,
+                                              );
+                                            Agents.get().data.splice(index, 1);
+                                            await Agents.save();
+                                            call("openMcpClient", [
+                                              "hyper_agent",
+                                            ]);
+                                            refresh();
+                                          },
+                                          onCancel(...args) {},
+                                        });
+                                      }}
+                                    />
+                                  ))}
+                              </SortableContext>
+                            </DndContext>
+                          </div>
+                        </div>
+                      </>
+                    )}
+                    <Bubble.List
+                      autoScroll={true}
+                      style={{
+                        paddingRight: 4,
+                        height:
+                          currentChat.current.messages?.length > 0 ? "100%" : 0,
+                      }}
+                      items={currentChat.current.messages
+                        ?.map(format)
+                        ?.filter((x) => x != null)}
+                    />
+                  </div>
 
-                          <div className="flex items-center">
-                            <div className="flex flex-wrap">
-                              <DndContext
-                                sensors={botSearchValue != "" ? [] : [sensors]}
-                                onDragEnd={(e) => {
-                                  try {
-                                    let data = Agents.get().data;
-                                    let oldIndex = data.findIndex(
-                                      (x) => x.key == e.active.id,
-                                    );
-
-                                    let newIndex = data.findIndex(
-                                      (x) => x.key == e.over.id,
-                                    );
-
-                                    let item = data[oldIndex];
-
-                                    data.splice(oldIndex, 1);
-
-                                    data.splice(newIndex, 0, item);
-
-                                    Agents.save();
-                                    refresh();
-                                  } catch {}
+                  <div className="my-footer flex-grow-0 pt-1">
+                    <div className="my-op">
+                      <span className="lg:hidden">
+                        <>
+                          {currentChat.current.agentKey && (
+                            <>
+                              <Button
+                                size="small"
+                                onClick={() => {
+                                  currentChatReset({
+                                    messages: [],
+                                    allowMCPs: clientsRef.current.map(
+                                      (v) => v.name,
+                                    ),
+                                    sended: false,
+                                    agentKey: undefined,
+                                  });
+                                  selectGptsKey.current = undefined;
+                                  loadMoreData(false);
                                 }}
                               >
-                                <SortableContext
-                                  items={Agents.get()
-                                    .data.filter(
-                                      (x) =>
-                                        botSearchValue == "" ||
-                                        x.label
-                                          .toLowerCase()
-                                          .includes(botSearchValue),
-                                    )
-                                    .map((x) => x.key)}
-                                >
-                                  {Agents.get()
-                                    .data.filter(
-                                      (x) =>
-                                        botSearchValue == "" ||
-                                        x.label
-                                          .toLowerCase()
-                                          .includes(botSearchValue),
-                                    )
-                                    .map((item) => (
-                                      <SortableItem
-                                        key={item.key}
-                                        id={item.key}
-                                        item={item}
-                                        onClick={(item) => {
-                                          // console.log("onGPTSClick", item);
-                                          onGPTSClick(item.key);
-                                        }}
-                                        onEdit={() => {
-                                          let value = Agents.get().data.find(
-                                            (y) => y.key === item.key,
-                                          );
-                                          setPromptsModalValue(value);
-                                          setIsOpenPromptsModal(true);
-                                        }}
-                                        onRemove={() => {
-                                          Modal.confirm({
-                                            title: "Tip",
-                                            maskClosable: true,
-                                            content: "Are you sure to delete?",
-                                            onOk: async () => {
-                                              let index =
-                                                Agents.get().data.findIndex(
-                                                  (y) => y.key === item.key,
-                                                );
-                                              Agents.get().data.splice(
-                                                index,
-                                                1,
-                                              );
-                                              await Agents.save();
-                                              call("openMcpClient", [
-                                                "hyper_agent",
-                                              ]);
-                                              refresh();
-                                            },
-                                            onCancel(...args) {},
-                                          });
-                                        }}
-                                      />
-                                    ))}
-                                </SortableContext>
-                              </DndContext>
-                            </div>
-                          </div>
-                        </>
-                      )}
-                      <Bubble.List
-                        style={{ flex: 1, paddingRight: 4 }}
-                        items={currentChat.current.messages
-                          ?.map(format)
-                          ?.filter((x) => x != null)}
-                      />
-                    </div>
-
-                    <div className="my-footer flex-grow-0 pt-1">
-                      <div className="my-op">
-                        <span className="lg:hidden">
-                          <>
-                            {currentChat.current.agentKey && (
-                              <>
-                                <Button
-                                  size="small"
-                                  onClick={() => {
-                                    currentChatReset({
-                                      messages: [],
-                                      allowMCPs: clientsRef.current.map(
-                                        (v) => v.name,
-                                      ),
-                                      sended: false,
-                                      agentKey: undefined,
-                                    });
-                                    selectGptsKey.current = undefined;
-                                    loadMoreData(false);
-                                  }}
-                                >
-                                  <LeftOutlined />
-                                </Button>
-                                <Divider type="vertical" />
-                              </>
-                            )}
-                            <Button
-                              size="small"
-                              onClick={() => {
-                                mobile.current.showHistory = true;
-                                refresh();
-                              }}
-                            >
-                              <CommentOutlined className="cursor-pointer text-blue-500 hover:text-cyan-400" />
-                            </Button>
-
-                            <Divider type="vertical" />
-                          </>
-                        </span>
-                        <Tooltip title={t`New Chat`}>
-                          <PlusCircleOutlined
-                            className="cursor-pointer hover:text-cyan-400"
-                            onClick={() => {
-                              if (currentChat.current.agentKey) {
-                                let key =
-                                  currentChat.current.agentKey ||
-                                  currentChat.current["gptsKey"];
-                                onGPTSClick(key, { loadHistory: false });
-                              } else {
-                                currentChatReset({
-                                  messages: [],
-                                  allowMCPs: clientsRef.current.map(
-                                    (v) => v.name,
-                                  ),
-                                  sended: false,
-                                  agentKey: undefined,
-                                });
-                                selectGptsKey.current = undefined;
-                                loadMoreData(false);
-                              }
-                            }}
-                          />
-                        </Tooltip>
-                        <Divider type="vertical" />
-                        <Tooltip title={t`Clear Context`}>
-                          <ClearOutlined
-                            className="cursor-pointer hover:text-cyan-400"
-                            onClick={() => {
-                              if (openaiClient.current) {
-                                calcAttachDialogue(
-                                  currentChat.current.messages,
-                                  0,
-                                  true,
-                                );
-                                refresh();
-                              }
-                            }}
-                          />
-                        </Tooltip>
-                        <Divider type="vertical" />
-                        <span className="inline-block">
-                          <Tooltip title={t`MCP and Tools`}>
-                            <span
-                              className="cursor-pointer"
-                              onClick={() => {
-                                setIsToolsShow(true);
-                              }}
-                            >
-                              {supportTool == null || supportTool == true ? (
-                                <>
-                                  💻
-                                  <span className="px-1">
-                                    {DATA.current.mcpLoading && (
-                                      <SyncOutlined spin />
-                                    )}
-                                    {(() => {
-                                      let load = clientsRef.current
-                                        .filter((v) => v.status == "connected")
-                                        .filter((v) => {
-                                          return currentChat.current.allowMCPs.includes(
-                                            v.name,
-                                          );
-                                        }).length;
-                                      let all = clientsRef.current.filter(
-                                        (v) => {
-                                          return currentChat.current.allowMCPs.includes(
-                                            v.name,
-                                          );
-                                        },
-                                      ).length;
-                                      return load == all
-                                        ? all
-                                        : `(${load}/${all})`;
-                                    })()}
-                                  </span>
-                                </>
-                              ) : (
-                                <>💻 {t`LLM not support`}</>
-                              )}
-                            </span>
-                          </Tooltip>
-                          <Divider type="vertical" />
-                          <Tooltip title={t`Resources`} placement="bottom">
-                            <Dropdown
-                              placement="top"
-                              menu={{
-                                items: resourcesRef.current.map((x, i) => {
-                                  return {
-                                    key: x.key,
-                                    label: !x.description
-                                      ? x.key
-                                      : `${x.key}--${x.description}`,
-                                  };
-                                }),
-                                onClick: async (item) => {
-                                  let resource = resourcesRef.current.find(
-                                    (x) => x.key === item.key,
-                                  );
-                                  if (resource) {
-                                    let res = await call("mcpCallResource", [
-                                      resource.clientName as string,
-                                      resource.uri,
-                                    ]);
-                                    let t = {
-                                      ...res,
-                                      call_name:
-                                        resource.key + "--" + resource.uri,
-                                      uid: v4(),
-                                    };
-                                    console.log("mcpCallResource", t);
-                                    resourceResListRef.current.push(t);
-                                    refresh();
-                                  }
-                                },
-                              }}
-                              arrow
-                            >
-                              <span className="cursor-pointer">
-                                📦
-                                {resourcesRef.current.length}
-                              </span>
-                            </Dropdown>
-                          </Tooltip>
-                          <Divider type="vertical" />
-                          <Tooltip title={t`Prompts`} placement="bottom">
-                            <Dropdown
-                              placement="top"
-                              menu={{
-                                items: promptsRef.current.map((x, i) => {
-                                  return {
-                                    key: x.key,
-                                    label: `${x.key} (${x.description})`,
-                                  };
-                                }),
-                                onClick: async (item) => {
-                                  let prompt = promptsRef.current.find(
-                                    (x) => x.key === item.key,
-                                  );
-                                  if (prompt) {
-                                    if (
-                                      prompt.arguments &&
-                                      prompt.arguments.length > 0
-                                    ) {
-                                      setIsFillPromptModalOpen(true);
-                                      setFillPromptFormItems(prompt.arguments);
-                                      mcpCallPromptCurr.current = prompt;
-                                    } else {
-                                      let res = await call("mcpCallPrompt", [
-                                        prompt.clientName as string,
-                                        prompt.name,
-                                        {},
-                                      ]);
-                                      console.log("mcpCallPrompt", res);
-                                      res.call_name = prompt.key;
-                                      res.uid = v4();
-                                      setPromptResList([...promptResList, res]);
-                                    }
-                                  }
-                                },
-                              }}
-                              arrow
-                            >
-                              <span className="cursor-pointer">
-                                📜
-                                {promptsRef.current.length}
-                              </span>
-                            </Dropdown>
-                          </Tooltip>
-                        </span>
-                        <Divider type="vertical" />
-                        <Tooltip title={t`Select LLM`}>
-                          <span className="inline-block">
-                            🧠
-                            <Select
-                              size="small"
-                              placeholder={
-                                GPT_MODELS.get().data.length > 0
-                                  ? GPT_MODELS.get().data[0].name
-                                  : "Please add a LLM model"
-                              }
-                              className="w-60"
-                              allowClear
-                              value={currentChat.current.modelKey}
-                              onChange={(value) => {
-                                currentChat.current.modelKey = value;
-                                createChat();
-                              }}
-                              options={GPT_MODELS.get()
-                                .data.filter(
-                                  (x) => x.type == "llm" || x.type == null,
-                                )
-                                .map((x) => {
-                                  return {
-                                    label: x.name,
-                                    value: x.key,
-                                  };
-                                })}
-                            ></Select>
-                          </span>
-                        </Tooltip>
-                        <Divider type="vertical" />
-                        <Tooltip title={t`Select Request Type`}>
-                          <span className="inline-block">
-                            <span>type:</span>
-                            <Dropdown
-                              arrow
-                              menu={{
-                                selectable: true,
-                                selectedKeys: [currentChat.current.requestType],
-                                items: [
-                                  {
-                                    label: "stream",
-                                    key: "stream",
-                                  },
-                                  {
-                                    label: "complete",
-                                    key: "complete",
-                                  },
-                                ],
-                                onClick: (e) => {
-                                  currentChat.current.requestType =
-                                    e.key as any;
-                                  openaiClient.current.options.requestType =
-                                    e.key as any;
-                                  refresh();
-                                },
-                              }}
-                            >
-                              <Button size="small" type="link">
-                                {currentChat.current.requestType}
-                                <DownOutlined />
+                                <LeftOutlined />
                               </Button>
-                            </Dropdown>
+                              <Divider type="vertical" />
+                            </>
+                          )}
+                          <Button
+                            size="small"
+                            onClick={() => {
+                              mobile.current.showHistory = true;
+                              refresh();
+                            }}
+                          >
+                            <CommentOutlined className="cursor-pointer text-blue-500 hover:text-cyan-400" />
+                          </Button>
+
+                          <Divider type="vertical" />
+                        </>
+                      </span>
+                      <Tooltip title={t`New Chat`}>
+                        <PlusCircleOutlined
+                          className="cursor-pointer hover:text-cyan-400"
+                          onClick={() => {
+                            if (currentChat.current.agentKey) {
+                              let key =
+                                currentChat.current.agentKey ||
+                                currentChat.current["gptsKey"];
+                              onGPTSClick(key, { loadHistory: false });
+                            } else {
+                              currentChatReset({
+                                messages: [],
+                                allowMCPs: clientsRef.current.map(
+                                  (v) => v.name,
+                                ),
+                                sended: false,
+                                agentKey: undefined,
+                              });
+                              selectGptsKey.current = undefined;
+                              loadMoreData(false);
+                            }
+                          }}
+                        />
+                      </Tooltip>
+                      <Divider type="vertical" />
+                      <Tooltip title={t`Clear Context`}>
+                        <ClearOutlined
+                          className="cursor-pointer hover:text-cyan-400"
+                          onClick={() => {
+                            if (openaiClient.current) {
+                              calcAttachDialogue(
+                                currentChat.current.messages,
+                                0,
+                                true,
+                              );
+                              refresh();
+                            }
+                          }}
+                        />
+                      </Tooltip>
+                      <Divider type="vertical" />
+                      <span className="inline-block">
+                        <Tooltip title={t`MCP and Tools`}>
+                          <span
+                            className="cursor-pointer"
+                            onClick={() => {
+                              setIsToolsShow(true);
+                            }}
+                          >
+                            {supportTool == null || supportTool == true ? (
+                              <>
+                                💻
+                                <span className="px-1">
+                                  {DATA.current.mcpLoading && (
+                                    <SyncOutlined spin />
+                                  )}
+                                  {(() => {
+                                    let load = clientsRef.current
+                                      .filter((v) => v.status == "connected")
+                                      .filter((v) => {
+                                        return currentChat.current.allowMCPs.includes(
+                                          v.name,
+                                        );
+                                      }).length;
+                                    let all = clientsRef.current.filter((v) => {
+                                      return currentChat.current.allowMCPs.includes(
+                                        v.name,
+                                      );
+                                    }).length;
+                                    return load == all
+                                      ? all
+                                      : `(${load}/${all})`;
+                                  })()}
+                                </span>
+                              </>
+                            ) : (
+                              <>💻 {t`LLM not support`}</>
+                            )}
                           </span>
                         </Tooltip>
                         <Divider type="vertical" />
+                        <Tooltip title={t`Resources`} placement="bottom">
+                          <Dropdown
+                            placement="top"
+                            menu={{
+                              items: resourcesRef.current.map((x, i) => {
+                                return {
+                                  key: x.key,
+                                  label: !x.description
+                                    ? x.key
+                                    : `${x.key}--${x.description}`,
+                                };
+                              }),
+                              onClick: async (item) => {
+                                let resource = resourcesRef.current.find(
+                                  (x) => x.key === item.key,
+                                );
+                                if (resource) {
+                                  let res = await call("mcpCallResource", [
+                                    resource.clientName as string,
+                                    resource.uri,
+                                  ]);
+                                  let t = {
+                                    ...res,
+                                    call_name:
+                                      resource.key + "--" + resource.uri,
+                                    uid: v4(),
+                                  };
+                                  console.log("mcpCallResource", t);
+                                  resourceResListRef.current.push(t);
+                                  refresh();
+                                }
+                              },
+                            }}
+                            arrow
+                          >
+                            <span className="cursor-pointer">
+                              📦
+                              {resourcesRef.current.length}
+                            </span>
+                          </Dropdown>
+                        </Tooltip>
+                        <Divider type="vertical" />
+                        <Tooltip title={t`Prompts`} placement="bottom">
+                          <Dropdown
+                            placement="top"
+                            menu={{
+                              items: promptsRef.current.map((x, i) => {
+                                return {
+                                  key: x.key,
+                                  label: `${x.key} (${x.description})`,
+                                };
+                              }),
+                              onClick: async (item) => {
+                                let prompt = promptsRef.current.find(
+                                  (x) => x.key === item.key,
+                                );
+                                if (prompt) {
+                                  if (
+                                    prompt.arguments &&
+                                    prompt.arguments.length > 0
+                                  ) {
+                                    setIsFillPromptModalOpen(true);
+                                    setFillPromptFormItems(prompt.arguments);
+                                    mcpCallPromptCurr.current = prompt;
+                                  } else {
+                                    let res = await call("mcpCallPrompt", [
+                                      prompt.clientName as string,
+                                      prompt.name,
+                                      {},
+                                    ]);
+                                    console.log("mcpCallPrompt", res);
+                                    res.call_name = prompt.key;
+                                    res.uid = v4();
+                                    setPromptResList([...promptResList, res]);
+                                  }
+                                }
+                              },
+                            }}
+                            arrow
+                          >
+                            <span className="cursor-pointer">
+                              📜
+                              {promptsRef.current.length}
+                            </span>
+                          </Dropdown>
+                        </Tooltip>
+                      </span>
+                      <Divider type="vertical" />
+                      <Tooltip title={t`Select LLM`}>
+                        <span className="inline-block">
+                          🧠
+                          <Select
+                            size="small"
+                            placeholder={
+                              GPT_MODELS.get().data.length > 0
+                                ? GPT_MODELS.get().data[0].name
+                                : "Please add a LLM model"
+                            }
+                            className="w-60"
+                            allowClear
+                            value={currentChat.current.modelKey}
+                            onChange={(value) => {
+                              currentChat.current.modelKey = value;
+                              createChat();
+                            }}
+                            options={GPT_MODELS.get()
+                              .data.filter(
+                                (x) => x.type == "llm" || x.type == null,
+                              )
+                              .map((x) => {
+                                return {
+                                  label: x.name,
+                                  value: x.key,
+                                };
+                              })}
+                          ></Select>
+                        </span>
+                      </Tooltip>
+                      <Divider type="vertical" />
+                      <Tooltip title={t`Select Request Type`}>
+                        <span className="inline-block">
+                          <span>type:</span>
+                          <Dropdown
+                            arrow
+                            menu={{
+                              selectable: true,
+                              selectedKeys: [currentChat.current.requestType],
+                              items: [
+                                {
+                                  label: "stream",
+                                  key: "stream",
+                                },
+                                {
+                                  label: "complete",
+                                  key: "complete",
+                                },
+                              ],
+                              onClick: (e) => {
+                                currentChat.current.requestType = e.key as any;
+                                openaiClient.current.options.requestType =
+                                  e.key as any;
+                                refresh();
+                              },
+                            }}
+                          >
+                            <Button size="small" type="link">
+                              {currentChat.current.requestType}
+                              <DownOutlined />
+                            </Button>
+                          </Dropdown>
+                        </span>
+                      </Tooltip>
+                      <Divider type="vertical" />
 
-                        {/* <Tooltip title={t`Token Usage`}>
+                      {/* <Tooltip title={t`Token Usage`}>
                   <span className="cursor-pointer">
                     token:{" "}
                     {openaiClient.current == null ? (
@@ -2168,484 +2163,481 @@ export const Chat = ({
                     )}
                   </span>
                 </Tooltip> */}
-                        {/* <Divider type="vertical" /> */}
-                        <SettingOutlined
-                          className="cursor-pointer hover:text-cyan-400"
-                          onClick={() => {
-                            setIsOpenMoreSetting(true);
-                            formMoreSetting.resetFields();
-                            console.log(currentChat.current);
-                            formMoreSetting.setFieldsValue(currentChat.current);
-                          }}
-                        />
-                      </div>
-                      <MyAttachR
-                        resourceResList={resourceResListRef.current}
-                        resourceResListRemove={(x) => {
-                          resourceResListRef.current =
-                            resourceResListRef.current.filter(
-                              (v) => v.uid != x.uid,
-                            );
-                          refresh();
-                          message.success(t`Delete Success`);
+                      {/* <Divider type="vertical" /> */}
+                      <SettingOutlined
+                        className="cursor-pointer hover:text-cyan-400"
+                        onClick={() => {
+                          setIsOpenMoreSetting(true);
+                          formMoreSetting.resetFields();
+                          console.log(currentChat.current);
+                          formMoreSetting.setFieldsValue(currentChat.current);
                         }}
-                        promptResList={promptResList}
-                        promptResListRemove={(x) => {
-                          setPromptResList(
-                            promptResList.filter((v) => v.uid != x.uid),
-                          );
-                          message.success(t`Delete Success`);
-                        }}
-                      ></MyAttachR>
-
-                      <QuickPath
-                        onChange={async (file) => {
-                          if (file.path) {
-                            setValue((value) => {
-                              return value + " " + file.path;
-                            });
-                          } else {
-                            if (file.type.includes("image")) {
-                              let path = await blobToBase64(file);
-                              resourceResListRef.current.push({
-                                call_name: "UserUpload",
-                                contents: [
-                                  {
-                                    path: path,
-                                    blob: path,
-                                    type: "image",
-                                  },
-                                ],
-                                uid: v4(),
-                              });
-                              refresh();
-                            } else {
-                              message.warning(t`please uplaod image`);
-                            }
-                          }
-                        }}
-                      >
-                        <Sender
-                          prefix={
-                            supportImage && (
-                              <Upload
-                                accept="image/*"
-                                fileList={[]}
-                                beforeUpload={async (file) => {
-                                  if (file.type.includes("image")) {
-                                    let path = await blobToBase64(file);
-                                    resourceResListRef.current.push({
-                                      call_name: "UserUpload",
-                                      contents: [
-                                        {
-                                          path: path,
-                                          blob: await urlToBase64(path),
-                                          type: "image",
-                                        },
-                                      ],
-                                      uid: v4(),
-                                    });
-                                    refresh();
-                                  } else {
-                                    message.warning(t`please uplaod image`);
-                                  }
-                                  return false;
-                                }}
-                              >
-                                <Button
-                                  type="text"
-                                  icon={<LinkOutlined />}
-                                  onClick={() => {}}
-                                />
-                              </Upload>
-                            )
-                          }
-                          onPasteFile={async (file) => {
-                            // console.log("onPasteFile", file);
-
-                            if (file.type.includes("image")) {
-                              let p = await blobToBase64(file);
-                              resourceResListRef.current.push({
-                                call_name: "UserUpload",
-                                contents: [
-                                  {
-                                    path: p,
-                                    blob: p,
-                                    type: "image",
-                                  },
-                                ],
-                                uid: v4(),
-                              });
-                              refresh();
-                            } else {
-                              message.warning(t`please uplaod image`);
-                            }
-                          }}
-                          loading={loading}
-                          value={value}
-                          onChange={(nextVal) => {
-                            setValue(nextVal);
-                          }}
-                          onCancel={() => {
-                            setLoading(false);
-                            openaiClient.current.cancel();
-                            // message.success("Cancel sending!");
-                          }}
-                          onSubmit={(s) => {
-                            setValue("");
-                            onRequest(s);
-                          }}
-                          placeholder="Start inputting"
-                        />
-                      </QuickPath>
+                      />
                     </div>
+                    <MyAttachR
+                      resourceResList={resourceResListRef.current}
+                      resourceResListRemove={(x) => {
+                        resourceResListRef.current =
+                          resourceResListRef.current.filter(
+                            (v) => v.uid != x.uid,
+                          );
+                        refresh();
+                        message.success(t`Delete Success`);
+                      }}
+                      promptResList={promptResList}
+                      promptResListRemove={(x) => {
+                        setPromptResList(
+                          promptResList.filter((v) => v.uid != x.uid),
+                        );
+                        message.success(t`Delete Success`);
+                      }}
+                    ></MyAttachR>
+
+                    <QuickPath
+                      onChange={async (file) => {
+                        if (file.path) {
+                          setValue((value) => {
+                            return value + " " + file.path;
+                          });
+                        } else {
+                          if (file.type.includes("image")) {
+                            let path = await blobToBase64(file);
+                            resourceResListRef.current.push({
+                              call_name: "UserUpload",
+                              contents: [
+                                {
+                                  path: path,
+                                  blob: path,
+                                  type: "image",
+                                },
+                              ],
+                              uid: v4(),
+                            });
+                            refresh();
+                          } else {
+                            message.warning(t`please uplaod image`);
+                          }
+                        }
+                      }}
+                    >
+                      <Sender
+                        prefix={
+                          supportImage && (
+                            <Upload
+                              accept="image/*"
+                              fileList={[]}
+                              beforeUpload={async (file) => {
+                                if (file.type.includes("image")) {
+                                  let path = await blobToBase64(file);
+                                  resourceResListRef.current.push({
+                                    call_name: "UserUpload",
+                                    contents: [
+                                      {
+                                        path: path,
+                                        blob: await urlToBase64(path),
+                                        type: "image",
+                                      },
+                                    ],
+                                    uid: v4(),
+                                  });
+                                  refresh();
+                                } else {
+                                  message.warning(t`please uplaod image`);
+                                }
+                                return false;
+                              }}
+                            >
+                              <Button
+                                type="text"
+                                icon={<LinkOutlined />}
+                                onClick={() => {}}
+                              />
+                            </Upload>
+                          )
+                        }
+                        onPasteFile={async (file) => {
+                          // console.log("onPasteFile", file);
+
+                          if (file.type.includes("image")) {
+                            let p = await blobToBase64(file);
+                            resourceResListRef.current.push({
+                              call_name: "UserUpload",
+                              contents: [
+                                {
+                                  path: p,
+                                  blob: p,
+                                  type: "image",
+                                },
+                              ],
+                              uid: v4(),
+                            });
+                            refresh();
+                          } else {
+                            message.warning(t`please uplaod image`);
+                          }
+                        }}
+                        loading={loading}
+                        value={value}
+                        onChange={(nextVal) => {
+                          setValue(nextVal);
+                        }}
+                        onCancel={() => {
+                          setLoading(false);
+                          openaiClient.current.cancel();
+                          // message.success("Cancel sending!");
+                        }}
+                        onSubmit={(s) => {
+                          setValue("");
+                          onRequest(s);
+                        }}
+                        placeholder="Start inputting"
+                      />
+                    </QuickPath>
                   </div>
                 </div>
-              </Splitter.Panel>
+              </div>
+            </Splitter.Panel>
+          </Splitter>
+        </XProvider>
+        <PromptsModal
+          open={isOpenPromptsModal}
+          onCreate={async (value) => {
+            if (value.key) {
+              const index = Agents.get().data.findIndex(
+                (y) => y.key == value.key,
+              );
+              if (index !== -1) {
+                Agents.get().data[index] = value as any;
+              }
+            } else {
+              Agents.get().data.push({
+                ...value,
+                key: v4(),
+                allowMCPs: value.allowMCPs || [],
+              });
+            }
+            await Agents.save();
+            call("openMcpClient", ["hyper_agent"]);
+            refresh();
+            setIsOpenPromptsModal(false);
+          }}
+          initialValues={promptsModalValue}
+          onCancel={() => {
+            setIsOpenPromptsModal(false);
+          }}
+        ></PromptsModal>
+        <Modal
+          width={1000}
+          open={isToolsShow}
+          onCancel={() => setIsToolsShow(false)}
+          maskClosable
+          title={t`MCP Tool`}
+          onOk={() => setIsToolsShow(false)}
+          cancelButtonProps={{ style: { display: "none" } }}
+        >
+          <Table
+            size="small"
+            rowKey={(record) => record.name}
+            pagination={false}
+            dataSource={clientsRef.current}
+            rowHoverable={false}
+            bordered
+            rowSelection={{
+              type: "checkbox",
+              selectedRowKeys: clientsRef.current
+                .filter((record) =>
+                  currentChat.current.allowMCPs.includes(record.name),
+                )
+                .map((v) => v.name),
+              onChange: async (selectedRowKeys, selectedRows) => {
+                currentChatReset({
+                  ...currentChat.current,
+                  allowMCPs: selectedRowKeys as string[],
+                });
+              },
+            }}
+            footer={
+              missMCP.length > 0
+                ? () => {
+                    if (missMCP.length > 0) {
+                      return (
+                        <div>
+                          <span className="text-red-500">
+                            {t`Unloaded MCP`}:{" "}
+                          </span>
+                          {missMCP.join(" , ")}
+                        </div>
+                      );
+                    } else {
+                      return false;
+                    }
+                  }
+                : undefined
+            }
+            columns={[
+              {
+                title: "server",
+                dataIndex: "name",
+                key: "name",
+              },
+              {
+                title: "tools",
+                dataIndex: "tools",
+                key: "tools",
+                render: (text, record) => {
+                  return (
+                    <div>
+                      {record.tools.length > 0 ? (
+                        <Space wrap>
+                          {record.tools.map((x) => {
+                            return (
+                              <Tooltip
+                                key={x.origin_name || x.function.name}
+                                title={x.function.description}
+                              >
+                                <Button
+                                  size="small"
+                                  onClick={() => {
+                                    setCurrTool(x);
+                                    setCurrToolResult({
+                                      data: null,
+                                      error: null,
+                                    });
+                                    callToolForm.resetFields();
+                                    setCallToolOpen(true);
+                                  }}
+                                >
+                                  {x.origin_name ||
+                                    x.function.name.replace(x.key + "--", "")}
+                                </Button>
+                              </Tooltip>
+                            );
+                          })}
+                        </Space>
+                      ) : (
+                        <span className="text-red-500">{t`disconnected`}</span>
+                      )}
+                    </div>
+                  );
+                },
+              },
+            ].filter((c) => !mobile.current.is || c.key != "tools")}
+          ></Table>
+        </Modal>
 
-            </Splitter>
-          </XProvider>
-          <PromptsModal
-            open={isOpenPromptsModal}
-            onCreate={async (value) => {
-              if (value.key) {
-                const index = Agents.get().data.findIndex(
-                  (y) => y.key == value.key,
-                );
-                if (index !== -1) {
-                  Agents.get().data[index] = value as any;
-                }
-              } else {
-                Agents.get().data.push({
-                  ...value,
-                  key: v4(),
-                  allowMCPs: value.allowMCPs || [],
+        <Modal
+          title={t`Call Tool`}
+          open={callToolOpen}
+          footer={[]}
+          onCancel={() => setCallToolOpen(false)}
+          forceRender={true}
+          width={"80%"}
+          zIndex={2000}
+        >
+          <Form
+            // layout="vertical"
+            form={callToolForm}
+            // labelCol={{ span: 6 }}
+            // wrapperCol={{ span: 18 }}
+            onFinish={async (values) => {
+              console.log("onFinish", values);
+              try {
+                let call_res = await call("mcpCallTool", [
+                  currTool.clientName,
+                  currTool.origin_name,
+                  values,
+                ]);
+                setCurrToolResult({
+                  data: call_res,
+                  error: null,
+                });
+
+                // console.log(call_res);
+              } catch (e) {
+                setCurrToolResult({
+                  data: null,
+                  error: e,
                 });
               }
-              await Agents.save();
-              call("openMcpClient", ["hyper_agent"]);
-              refresh();
-              setIsOpenPromptsModal(false);
             }}
-            initialValues={promptsModalValue}
-            onCancel={() => {
-              setIsOpenPromptsModal(false);
-            }}
-          ></PromptsModal>
-          <Modal
-            width={1000}
-            open={isToolsShow}
-            onCancel={() => setIsToolsShow(false)}
-            maskClosable
-            title={t`MCP Tool`}
-            onOk={() => setIsToolsShow(false)}
-            cancelButtonProps={{ style: { display: "none" } }}
           >
-            <Table
-              size="small"
-              rowKey={(record) => record.name}
-              pagination={false}
-              dataSource={clientsRef.current}
-              rowHoverable={false}
-              bordered
-              rowSelection={{
-                type: "checkbox",
-                selectedRowKeys: clientsRef.current
-                  .filter((record) =>
-                    currentChat.current.allowMCPs.includes(record.name),
-                  )
-                  .map((v) => v.name),
-                onChange: async (selectedRowKeys, selectedRows) => {
-                  currentChatReset({
-                    ...currentChat.current,
-                    allowMCPs: selectedRowKeys as string[],
-                  });
-                },
+            <pre
+              style={{
+                whiteSpace: "pre-wrap",
+                wordWrap: "break-word",
+                padding: "8px 0",
+                textAlign: "center",
               }}
-              footer={
-                missMCP.length > 0
-                  ? () => {
-                      if (missMCP.length > 0) {
-                        return (
-                          <div>
-                            <span className="text-red-500">
-                              {t`Unloaded MCP`}:{" "}
-                            </span>
-                            {missMCP.join(" , ")}
-                          </div>
-                        );
-                      } else {
-                        return false;
-                      }
-                    }
-                  : undefined
-              }
-              columns={[
-                {
-                  title: "server",
-                  dataIndex: "name",
-                  key: "name",
-                },
-                {
-                  title: "tools",
-                  dataIndex: "tools",
-                  key: "tools",
-                  render: (text, record) => {
-                    return (
-                      <div>
-                        {record.tools.length > 0 ? (
-                          <Space wrap>
-                            {record.tools.map((x) => {
-                              return (
-                                <Tooltip
-                                  key={x.origin_name || x.function.name}
-                                  title={x.function.description}
-                                >
-                                  <Button
-                                    size="small"
-                                    onClick={() => {
-                                      setCurrTool(x);
-                                      setCurrToolResult({
-                                        data: null,
-                                        error: null,
-                                      });
-                                      callToolForm.resetFields();
-                                      setCallToolOpen(true);
-                                    }}
-                                  >
-                                    {x.origin_name ||
-                                      x.function.name.replace(x.key + "--", "")}
-                                  </Button>
-                                </Tooltip>
-                              );
-                            })}
-                          </Space>
-                        ) : (
-                          <span className="text-red-500">{t`disconnected`}</span>
-                        )}
-                      </div>
-                    );
-                  },
-                },
-              ].filter((c) => !mobile.current.is || c.key != "tools")}
-            ></Table>
-          </Modal>
+            >
+              <span>Tool Name: </span>
+              <span className="text-purple-500">
+                {currTool.restore_name || currTool?.function?.name}
+              </span>
+            </pre>
+            {currTool.key
+              ? JsonSchema2FormItemOrNull(
+                  currTool.function.parameters,
+                  // zodToJsonSchema(
+                  // z.object({
+                  //   // paths: z.array(
+                  //   //   z.object({
+                  //   //     first: z.array(
+                  //   //       z.object({
+                  //   //         arr: z.array(
+                  //   //           z.string({
+                  //   //             description: "filesystem path",
+                  //   //           }),
+                  //   //         ),
+                  //   //       }),
+                  //   //     ),
+                  //   //     // s: z.string()
+                  //   //   }),
+                  //   // ),
 
-          <Modal
-            title={t`Call Tool`}
-            open={callToolOpen}
-            footer={[]}
-            onCancel={() => setCallToolOpen(false)}
-            forceRender={true}
-            width={"80%"}
-            zIndex={2000}
-          >
+                  //   a: z.object({
+                  //     b: z.object({
+                  //       c: z.object({
+                  //         d: z.array(
+                  //           z.string({
+                  //             description: "filesystem path",
+                  //           }),
+                  //         ),
+                  //       }),
+                  //     }),
+                  //   }),
+                  // }),
+                  // ),
+                ) || t`No parameters`
+              : []}
+            <Form.Item className="flex justify-end">
+              <Button htmlType="submit">Submit</Button>
+            </Form.Item>
+          </Form>
+          {currToolResult.data && (
+            <div>
+              <div>Result:</div>
+              <div>{JSON.stringify(currToolResult.data)}</div>
+            </div>
+          )}
+          {currToolResult.error && (
+            <div>
+              <div>Result:</div>
+              <div>{currToolResult.error.toString()}</div>
+            </div>
+          )}
+        </Modal>
+
+        <Modal
+          width={800}
+          title={t`Fill Prompt Arguments`}
+          open={isFillPromptModalOpen}
+          okButtonProps={{ autoFocus: true, htmlType: "submit" }}
+          cancelButtonProps={{ style: { display: "none" } }}
+          onCancel={() => {
+            setIsFillPromptModalOpen(false);
+          }}
+          modalRender={(dom) => (
             <Form
-              // layout="vertical"
-              form={callToolForm}
-              // labelCol={{ span: 6 }}
-              // wrapperCol={{ span: 18 }}
+              name="FillPrompt"
+              clearOnDestroy
               onFinish={async (values) => {
-                console.log("onFinish", values);
-                try {
-                  let call_res = await call("mcpCallTool", [
-                    currTool.clientName,
-                    currTool.origin_name,
-                    values,
-                  ]);
-                  setCurrToolResult({
-                    data: call_res,
-                    error: null,
-                  });
-
-                  // console.log(call_res);
-                } catch (e) {
-                  setCurrToolResult({
-                    data: null,
-                    error: e,
-                  });
-                }
+                let prompt = mcpCallPromptCurr.current;
+                let res = await call("mcpCallPrompt", [
+                  prompt.clientName as string,
+                  prompt.name,
+                  values,
+                ]);
+                console.log("mcpCallPrompt", res);
+                res.call_name = prompt.key;
+                res.uid = v4();
+                setPromptResList([...promptResList, res]);
+                setIsFillPromptModalOpen(false);
               }}
             >
-              <pre
-                style={{
-                  whiteSpace: "pre-wrap",
-                  wordWrap: "break-word",
-                  padding: "8px 0",
-                  textAlign: "center",
-                }}
-              >
-                <span>Tool Name: </span>
-                <span className="text-purple-500">
-                  {currTool.restore_name || currTool?.function?.name}
-                </span>
-              </pre>
-              {currTool.key
-                ? JsonSchema2FormItemOrNull(
-                    currTool.function.parameters,
-                    // zodToJsonSchema(
-                    // z.object({
-                    //   // paths: z.array(
-                    //   //   z.object({
-                    //   //     first: z.array(
-                    //   //       z.object({
-                    //   //         arr: z.array(
-                    //   //           z.string({
-                    //   //             description: "filesystem path",
-                    //   //           }),
-                    //   //         ),
-                    //   //       }),
-                    //   //     ),
-                    //   //     // s: z.string()
-                    //   //   }),
-                    //   // ),
-
-                    //   a: z.object({
-                    //     b: z.object({
-                    //       c: z.object({
-                    //         d: z.array(
-                    //           z.string({
-                    //             description: "filesystem path",
-                    //           }),
-                    //         ),
-                    //       }),
-                    //     }),
-                    //   }),
-                    // }),
-                    // ),
-                  ) || t`No parameters`
-                : []}
-              <Form.Item className="flex justify-end">
-                <Button htmlType="submit">Submit</Button>
-              </Form.Item>
+              {dom}
             </Form>
-            {currToolResult.data && (
-              <div>
-                <div>Result:</div>
-                <div>{JSON.stringify(currToolResult.data)}</div>
-              </div>
-            )}
-            {currToolResult.error && (
-              <div>
-                <div>Result:</div>
-                <div>{currToolResult.error.toString()}</div>
-              </div>
-            )}
-          </Modal>
-
-          <Modal
-            width={800}
-            title={t`Fill Prompt Arguments`}
-            open={isFillPromptModalOpen}
-            okButtonProps={{ autoFocus: true, htmlType: "submit" }}
-            cancelButtonProps={{ style: { display: "none" } }}
-            onCancel={() => {
-              setIsFillPromptModalOpen(false);
-            }}
-            modalRender={(dom) => (
-              <Form
-                name="FillPrompt"
-                clearOnDestroy
-                onFinish={async (values) => {
-                  let prompt = mcpCallPromptCurr.current;
-                  let res = await call("mcpCallPrompt", [
-                    prompt.clientName as string,
-                    prompt.name,
-                    values,
-                  ]);
-                  console.log("mcpCallPrompt", res);
-                  res.call_name = prompt.key;
-                  res.uid = v4();
-                  setPromptResList([...promptResList, res]);
-                  setIsFillPromptModalOpen(false);
-                }}
+          )}
+        >
+          {fillPromptFormItems.map((x) => {
+            return (
+              <Form.Item
+                key={x.name}
+                name={x.name}
+                label={x.name}
+                rules={[{ required: x.required, message: "Please enter" }]}
               >
-                {dom}
-              </Form>
-            )}
-          >
-            {fillPromptFormItems.map((x) => {
-              return (
-                <Form.Item
-                  key={x.name}
-                  name={x.name}
-                  label={x.name}
-                  rules={[{ required: x.required, message: "Please enter" }]}
-                >
-                  <Input placeholder={x.description}></Input>
-                </Form.Item>
-              );
-            })}
-          </Modal>
-          <Modal
-            width={800}
-            title={t`More Setting`}
-            open={isOpenMoreSetting}
-            okButtonProps={{ autoFocus: true, htmlType: "submit" }}
-            cancelButtonProps={{ style: { display: "none" } }}
-            onCancel={() => {
-              setIsOpenMoreSetting(false);
-            }}
-            modalRender={(dom) => (
-              <Form
-                name="MoreSetting"
-                form={formMoreSetting}
-                clearOnDestroy
-                onFinish={async (values) => {
-                  currentChat.current.attachedDialogueCount =
-                    values.attachedDialogueCount;
-                  currentChat.current.temperature = values.temperature;
-                  if (openaiClient.current) {
-                    calcAttachDialogue(
-                      openaiClient.current.messages,
-                      currentChat.current.attachedDialogueCount,
-                    );
-                    openaiClient.current.options.temperature =
-                      values.temperature;
-                  }
-                  currentChat.current.confirm_call_tool =
+                <Input placeholder={x.description}></Input>
+              </Form.Item>
+            );
+          })}
+        </Modal>
+        <Modal
+          width={800}
+          title={t`More Setting`}
+          open={isOpenMoreSetting}
+          okButtonProps={{ autoFocus: true, htmlType: "submit" }}
+          cancelButtonProps={{ style: { display: "none" } }}
+          onCancel={() => {
+            setIsOpenMoreSetting(false);
+          }}
+          modalRender={(dom) => (
+            <Form
+              name="MoreSetting"
+              form={formMoreSetting}
+              clearOnDestroy
+              onFinish={async (values) => {
+                currentChat.current.attachedDialogueCount =
+                  values.attachedDialogueCount;
+                currentChat.current.temperature = values.temperature;
+                if (openaiClient.current) {
+                  calcAttachDialogue(
+                    openaiClient.current.messages,
+                    currentChat.current.attachedDialogueCount,
+                  );
+                  openaiClient.current.options.temperature = values.temperature;
+                }
+                currentChat.current.confirm_call_tool =
+                  values.confirm_call_tool;
+                if (openaiClient.current) {
+                  openaiClient.current.options.confirm_call_tool =
                     values.confirm_call_tool;
-                  if (openaiClient.current) {
-                    openaiClient.current.options.confirm_call_tool =
-                      values.confirm_call_tool;
-                  }
-                  refresh();
-                  setIsOpenMoreSetting(false);
-                }}
-              >
-                {dom}
-              </Form>
-            )}
+                }
+                refresh();
+                setIsOpenMoreSetting(false);
+              }}
+            >
+              {dom}
+            </Form>
+          )}
+        >
+          <Form.Item
+            name="temperature"
+            label={t`temperature`}
+            tooltip={t`What sampling temperature to use, between 0 and 2. Higher values like 0.8 will make the output more random, while lower values like 0.2 will make it more focused and deterministic.`}
           >
-            <Form.Item
-              name="temperature"
-              label={t`temperature`}
-              tooltip={t`What sampling temperature to use, between 0 and 2. Higher values like 0.8 will make the output more random, while lower values like 0.2 will make it more focused and deterministic.`}
-            >
-              <NumberStep defaultValue={1} min={0} max={2} step={0.1} />
-            </Form.Item>
-            <Form.Item
-              name="attachedDialogueCount"
-              label={t`attachedDialogueCount`}
-              tooltip={t`Number of sent Dialogue Message attached per request`}
-            >
-              <NumberStep defaultValue={20} max={40} />
-            </Form.Item>
-            <Form.Item
-              name="confirm_call_tool"
-              label={t`callToolType`}
-              tooltip={t`Do you want to confirm calling the tool?`}
-            >
-              <Radio.Group>
-                <Radio value={true}>{t`Need Confirm`}</Radio>
-                <Radio value={false}>{t`Direct Call`}</Radio>
-              </Radio.Group>
-            </Form.Item>
-          </Modal>
-          {contextHolder}
-        </div>
+            <NumberStep defaultValue={1} min={0} max={2} step={0.1} />
+          </Form.Item>
+          <Form.Item
+            name="attachedDialogueCount"
+            label={t`attachedDialogueCount`}
+            tooltip={t`Number of sent Dialogue Message attached per request`}
+          >
+            <NumberStep defaultValue={20} max={40} />
+          </Form.Item>
+          <Form.Item
+            name="confirm_call_tool"
+            label={t`callToolType`}
+            tooltip={t`Do you want to confirm calling the tool?`}
+          >
+            <Radio.Group>
+              <Radio value={true}>{t`Need Confirm`}</Radio>
+              <Radio value={false}>{t`Direct Call`}</Radio>
+            </Radio.Group>
+          </Form.Item>
+        </Modal>
+        {contextHolder}
       </div>
-    </>
+    </div>
   );
 };
 

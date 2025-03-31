@@ -73,7 +73,7 @@ function Page({
   ];
 
   return (
-    <div className="h-full">
+    <div className="h-full" key={sessionID}>
       {curr.type == undefined ? (
         <div className="flex h-full w-full flex-col items-center justify-center">
           <List
@@ -120,6 +120,7 @@ function Page({
         </div>
       ) : curr.type == "hyperchat" ? (
         <Chat
+          sessionID={sessionID}
           data={hyperChatData}
           onTitleChange={(t) => {
             onChange &&
@@ -130,6 +131,7 @@ function Page({
         />
       ) : curr.url ? (
         <webview
+
           className="webview h-full w-full"
           // useragent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36"
           src={curr.url}

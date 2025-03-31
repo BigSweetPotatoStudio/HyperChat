@@ -204,5 +204,5 @@
     "start": "electron .",
     "testprod": "npx tsx task.mts --testprod"
   },
-  "version": "1.3.6"
+  "version": "1.3.7"
 }

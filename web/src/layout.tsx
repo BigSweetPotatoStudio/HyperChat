@@ -747,8 +747,9 @@ export function Layout() {
                       });
                     }
                     values.supportImage = testImageRes;
-                    let testToolRes = await o.testTool().catch((e) => {
-                      return o.testTool();
+                    let testToolRes = await o.testTool().catch(async (e) => {
+                      await sleep(1000);
+                      return await o.testTool();
                     });
                     if (testToolRes) {
                       setTimelineData((x) => {

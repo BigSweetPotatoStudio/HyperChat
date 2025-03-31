@@ -14,7 +14,7 @@
 main {
   /* height: calc(100vh - 56px) !important; */
 
-  height: calc(var(--vh, 1vh) * 100 - 56px) !important;;
+  height: calc(var(--vh, 1vh) * 100 - 56px) !important;
 }
 
 ::-webkit-scrollbar {
@@ -62,14 +62,25 @@ div[role="system"] .ant-bubble-content-wrapper {
 }
 
 .no-attached {
-  /* opacity: 0.8; */
   background: repeating-linear-gradient(
     135deg,
-    #d3d3d3,
-    /* 灰色 */ #d3d3d3 10px,
+    #eeeeee,
+    /* 灰色 */ #eeeeee 10px,
     #ffffff 10px,
     #ffffff 20px
   );
+}
+
+.ant-bubble {
+  flex-wrap: wrap;
+}
+
+/* 选中最后一个 .no-attached（即使标签不同） */
+.no-attached:not(:has(~ .no-attached))::after {
+  content: "---Context Cleared---";
+  /* color: #ccc; */
+  width: 100%;
+  text-align: center;
 }
 
 .myworkspace .ant-tabs-content {
@@ -107,7 +118,7 @@ div[role="system"] .ant-bubble-content-wrapper {
   height: 0% !important;
 }
 
-.my-modal .ant-modal{
+.my-modal .ant-modal {
   position: fixed !important;
   /* left: 50%;
   transform: translateX(-50%); */

@@ -98,6 +98,7 @@ export class OpenAiChannel {
     return total;
   }
   private abortController: AbortController | null = null;
+  private mcpAbortController: AbortController | null = null;
 
   constructor(
     public options: {
@@ -222,6 +223,10 @@ export class OpenAiChannel {
       this.abortController.abort();
       this.abortController = null;
     }
+    if (this.mcpAbortController) {
+      this.mcpAbortController.abort();
+      this.mcpAbortController = null;
+    }
     this.status = "stop";
   }
   index = 0;
@@ -244,10 +249,10 @@ export class OpenAiChannel {
     context: { index: number } = { index: 0 },
   ): Promise<string> {
     if (context.index < this.index) {
-      throw new Error("Cancel Requesting");
+      throw new Error("User Cancel Requesting");
     }
     if (this.status == "stop") {
-      throw new Error("Cancel Requesting");
+      throw new Error("User Cancel Requesting");
     }
     let tools: HyperChatCompletionTool[];
     if (!call_tool || this.options.supportTool === false) {
@@ -493,7 +498,6 @@ export class OpenAiChannel {
             this.options.confirm_call_tool &&
             this.options.confirm_call_tool_cb
           ) {
-
             tool.function.argumentsJSON =
               await this.options.confirm_call_tool_cb(tool);
             tool.function.arguments = JSON.stringify(
@@ -530,11 +534,13 @@ export class OpenAiChannel {
           }
         }
 
-        let call_res = await call("mcpCallTool", [
-          clientName,
-          localtool.origin_name,
-          tool.function.argumentsJSON,
-        ])
+        let call_res = await call(
+          "mcpCallTool",
+          [clientName, localtool.origin_name, tool.function.argumentsJSON],
+          {
+            signal: this.mcpAbortController?.signal,
+          },
+        )
           .then((res) => {
             if (res["isError"]) {
               this.lastMessage.content_status = "error";

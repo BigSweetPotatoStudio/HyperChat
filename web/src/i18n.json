@@ -998,5 +998,9 @@
     "Hidden": {
         "en": "Hidden",
         "zh": "隐藏"
+    },
+    "Copied to clipboard": {
+        "en": "Copied to clipboard",
+        "zh": "复制到剪贴板"
     }
 }
