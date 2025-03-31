@@ -48,11 +48,7 @@ if (argv.prod) {
       await $`npx cross-env NODE_ENV=production myEnv=prod electron-builder --publish never`;
     }
   } else {
-    if (os.platform() === "win32") {
-      await $`npx cross-env NODE_ENV=production myEnv=prod electron-builder --publish never`;
-    } else if (os.platform() === "darwin") {
-      await $`npx cross-env NODE_ENV=production myEnv=prod electron-builder --mac --publish never`;
-    }
+    await $`npx cross-env NODE_ENV=production myEnv=prod electron-builder --publish never`;
   }
 }
 
