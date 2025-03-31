@@ -115,12 +115,12 @@ export function getLayoutRoute() {
             icon: "🛠️",
             component: <HpyerTools />,
           },
-          {
-            path: "/Terminal",
-            name: t`Terminal`,
-            icon: "⌨️",
-            component: <TerminalPage />,
-          }
+          // {
+          //   path: "/Terminal",
+          //   name: t`Terminal`,
+          //   icon: "⌨️",
+          //   component: <TerminalPage />,
+          // }
         ],
         // component: <Setting />,
       },
