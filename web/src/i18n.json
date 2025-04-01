@@ -1002,5 +1002,21 @@
     "Copied to clipboard": {
         "en": "Copied to clipboard",
         "zh": "复制到剪贴板"
+    },
+    "web asscess password": {
+        "en": "web asscess password",
+        "zh": "网络访问密码"
+    },
+    "Update": {
+        "en": "Update",
+        "zh": "更新"
+    },
+    "Password must contain only letters and numbers": {
+        "en": "Password must contain only letters and numbers",
+        "zh": "密码必须只包含大小字母和数字"
+    },
+    "Update Success, please restart": {
+        "en": "Update Success, please restart",
+        "zh": "更新成功，请重启"
     }
 }

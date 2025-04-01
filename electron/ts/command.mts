@@ -37,6 +37,7 @@ import { callAgent, runTask, startTask, stopTask } from "./mcp/task.mjs";
 import { getMyDefaultEnvironment } from "./mcp/utils.mjs";
 import cron from "node-cron";
 import { store } from "./rag/vectorStore.mjs";
+import { Config } from "./const.mjs";
 // function logCommand(
 //   target: any,
 //   propertyKey: string,
@@ -68,6 +69,8 @@ export class CommandFactory {
       version: CONST.getVersion,
       appDataDir: appDataDir,
       logPath: Logger.path,
+      password: electronData.initSync().password,
+      ...Config
     };
   }
   async initMcpClients(): Promise<{

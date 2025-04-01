@@ -25,18 +25,43 @@ export function getURL_PRE() {
   return URL_PRE;
 }
 
+const replaceCommand: Partial<Command> = {
+  setClipboardText: async (text: string) => {
+    const copy = (text: string) => {
+      if (navigator.clipboard && window.isSecureContext) {
+        // Use the modern Clipboard API when available and in secure context
+        navigator.clipboard.writeText(text).catch((err) => {
+          console.error("Failed to copy text using Clipboard API:", err);
+          fallbackCopy(text);
+        });
+      } else {
+        fallbackCopy(text);
+      }
+    };
+
+    const fallbackCopy = (text: string) => {
+      const textarea = document.createElement("textarea");
+      textarea.value = text;
+      textarea.style.position = "absolute";
+      textarea.style.opacity = "0";
+      document.body.appendChild(textarea);
+      textarea.select();
+      document.execCommand("copy");
+      document.body.removeChild(textarea);
+    };
+    copy(text);
+  },
+};
 if (process.env.runtime !== "node") {
   URL_PRE = location.origin + location.pathname;
   // web环境
   if (ext.invert && process.env.myEnv != "prod") {
-    let res = await ext.invert("readFile", ["electronData.json"]);
-    // console.log("=================", res);
-    let electronData = JSON.parse(res.data || "{}");
+    let config = await ext.invert("getConfig", []);
     URL_PRE =
       "http://localhost:" +
-      electronData.port +
+      config.data.port +
       "/" +
-      electronData.password +
+      config.data.password +
       "/";
   }
   ext.invert = async (command: string, args: any, options: any = {}) => {
@@ -81,6 +106,9 @@ export async function call<k extends keyof Command>(
 ): Promise<ReturnType<Command[k]>> {
   try {
     // console.log(`command ${command}`, args);
+    if (replaceCommand[command]) {
+      return await replaceCommand[command].apply(null, args);
+    }
     let res = await ext.invert(command, args, options);
     if (res.success) {
       return res.data;

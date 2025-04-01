@@ -62,10 +62,12 @@ export function Setting() {
     setNum((num) => num + 1);
   }
   const { globalState, updateGlobalState, setLang } = useContext(HeaderContext);
+  let port = useRef(0);
   useEffect(() => {
     (async () => {
       await AppSetting.init();
       await electronData.init();
+      setPassword(electronData.get().password);
       AppSetting.get().isAutoLauncher = await call("isAutoLauncher").catch(
         (x) => AppSetting.get().isAutoLauncher,
       ); // 获取是否自动启动
@@ -73,6 +75,8 @@ export function Setting() {
       webdavForm.setFieldsValue(
         Object.assign(AppSetting.get().webdav, { baseDirName: "HyperChat" }),
       );
+      const c = await call("getConfig");
+      port.current = c.port;
       refresh();
     })();
   }, []);
@@ -94,7 +98,7 @@ export function Setting() {
       message.success("Save success");
     }
   };
-
+  const [password, setPassword] = useState("");
   return (
     <div>
       <div className="relative flex flex-wrap">
@@ -166,6 +170,29 @@ export function Setting() {
                 }}
               ></InputNumber>
             </Form.Item>
+            <Form.Item label={t`web asscess password`}>
+              <Input
+                className="w-full"
+                value={password}
+                onChange={async (e) => {
+                  setPassword(e.target.value || "123456");
+                }}
+              ></Input>
+              <Button
+                onClick={async () => {
+                  // Validate password: must contain alphanumeric characters
+                  if (!/^[a-zA-Z0-9]+$/.test(password)) {
+                    message.error(t`Password must contain only letters and numbers`);
+                    return;
+                  }
+                  electronData.get().password = password;
+                  await electronData.save();
+                  message.success(t`Update Success, please restart`);
+                }}
+              >
+                {t`Update`}
+              </Button>
+            </Form.Item>
             <Form.Item
               label={t`DeleteChatHistory(exclude Star)`}
               name="deleteChatRecord"
@@ -234,11 +261,11 @@ export function Setting() {
                 <Button
                   onClick={() =>
                     window.open(
-                      `http://localhost:${electronData.get().port}/${electronData.get().password}/`,
+                      `http://localhost:${port.current}/${electronData.get().password}/`,
                     )
                   }
                 >
-                  OpenWeb(http://localhost:{electronData.get().port}/
+                  OpenWeb(http://localhost:{port.current}/
                   {electronData.get().password}/)
                 </Button>
               </Space>

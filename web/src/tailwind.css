@@ -13,7 +13,7 @@
 
 main {
   /* height: calc(100vh - 56px) !important; */
-
+  overflow-y: hidden !important;
   height: calc(var(--vh, 1vh) * 100 - 56px) !important;
 }
 
@@ -124,4 +124,8 @@ div[role="system"] .ant-bubble-content-wrapper {
   transform: translateX(-50%); */
   right: 0;
   top: 0;
+}
+
+.markdown-body pre {
+  padding: 0;
 }

@@ -39,8 +39,8 @@ for (let data of DataList) {
   });
 }
 
-export const HTTPPORT = 16100;
-export const MCPServerPORT = 16110;
+
+// export const MCPServerPORT = 16110;
 
 electronData.initSync({ force: true });
 
@@ -52,8 +52,8 @@ if (ENV_CONFIG.initSync({ force: true }).PATH != "") {
   ENV_CONFIG.save();
 }
 
-electronData.get().port = HTTPPORT;
-electronData.get().mcp_server_port = MCPServerPORT;
+
+// electronData.get().mcp_server_port = MCPServerPORT;
 
 electronData.get().version = CONST.getVersion;
 

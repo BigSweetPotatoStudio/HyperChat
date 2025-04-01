@@ -19,7 +19,7 @@ import { WebLinksAddon } from "@xterm/addon-web-links";
 import type { DraggableData, DraggableEvent } from "react-draggable";
 import Draggable from "react-draggable";
 import { Sessions } from "./sessions";
-import { LaptopOutlined } from "@ant-design/icons";
+import { LaptopOutlined, MinusOutlined } from "@ant-design/icons";
 import { t } from "../../i18n";
 function Page({
   sessionID = "",
@@ -131,7 +131,6 @@ function Page({
         />
       ) : curr.url ? (
         <webview
-
           className="webview h-full w-full"
           // useragent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36"
           src={curr.url}
@@ -415,6 +414,7 @@ export function WorkSpace() {
           }}
           title={
             <div
+              className="flex items-center justify-between"
               style={{ width: "100%", cursor: "move" }}
               onMouseOver={() => {
                 if (disabled) {
@@ -430,7 +430,14 @@ export function WorkSpace() {
               onBlur={() => {}}
               // end
             >
-              {t`Session Management`}
+              <div>{t`Session Management`}</div>
+              <div>
+                <Button
+                  onClick={() => {
+                    setOpen(false);
+                  }}
+                ><MinusOutlined /></Button>
+              </div>
             </div>
           }
           closable={false}
@@ -447,15 +454,7 @@ export function WorkSpace() {
               <div ref={draggleRef}>{modal}</div>
             </Draggable>
           )}
-          footer={
-            <>
-              <Button
-                onClick={() => {
-                  setOpen(false);
-                }}
-              >{t`Hidden`}</Button>
-            </>
-          }
+          footer={<></>}
         >
           <div className="p-0">
             <Sessions setSessionCount={setSessionCount} />

@@ -4,14 +4,14 @@ import { electronData } from "../../../../common/data";
 import { execFallback } from "../../common/execFallback.mjs";
 import { Logger } from "ts/polyfills/index.mjs";
 import { MyServers } from "./index.mjs";
-import { MCPServerPORT } from "../../common/data.mjs";
 
+import { Config } from "ts/const.mjs";
 
 type HyperMcp = {
-  createServer,
-  handlePostMessage,
-  name: string,
-  url: string,
+  createServer;
+  handlePostMessage;
+  name: string;
+  url: string;
 };
 
 export async function initMcpServer() {
@@ -30,7 +30,7 @@ export async function initMcpServer() {
     for (let serve of MyServers) {
       register(serve);
     }
-    let PORT = MCPServerPORT;
+    let PORT = Config.mcp_server_port;
 
     PORT = await execFallback(PORT, (port: number) => {
       app.listen(port, () => {
@@ -39,7 +39,6 @@ export async function initMcpServer() {
       });
     });
   });
-  electronData.initSync();
-  electronData.get().mcp_server_port = PORT;
-  await electronData.save();
+
+  Config.mcp_server_port = PORT;
 }

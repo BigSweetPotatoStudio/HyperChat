@@ -69,9 +69,9 @@ export class Data<T> {
 export const electronData = new Data(
   "electronData.json",
   {
-    port: 0,
+    // port: 0,
     password: "123456",
-    mcp_server_port: 0,
+    // mcp_server_port: 0,
     version: "",
     appDataDir: "",
     logFilePath: "",

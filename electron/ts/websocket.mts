@@ -14,10 +14,14 @@ import { electronData } from "../../common/data";
 import { Command, CommandFactory } from "./command.mjs";
 
 import Router from "koa-router";
-import { HTTPPORT } from "./common/data.mjs";
+
 import { fs } from "./es6.mjs";
 import crypto from "crypto";
 import { getMessageService } from "./message_service.mjs";
+import { Config } from "./const.mjs";
+import { threadId } from "worker_threads";
+import { PassThrough } from "stream";
+import { sleep } from "./common/util.mjs";
 
 const uploadDir = "./uploads";
 const uploadDirPath = path.join(appDataDir, uploadDir);
@@ -93,10 +97,10 @@ export function genRouter(c, prefix: string) {
 
       // 新的文件名 = 哈希值 + 原始扩展名
       const newFilename = `${hash}${ext}`;
-      const newPath = path.join(uploadDir, newFilename);
-      let filepath = path.join(process.cwd(), newPath);
+      // const newPath = path.join(uploadDir, newFilename);
+      let filepath = path.join(uploadDirPath, newFilename);
       // 重命名文件
-      await fs.move(file.filepath, newPath, {
+      await fs.move(file.filepath, filepath, {
         overwrite: true,
       });
 
@@ -113,9 +117,97 @@ export function genRouter(c, prefix: string) {
       throw new Error("No file uploaded");
     }
   });
+
   return router;
 }
 
+let prefix = "/" + encodeURI(electronData.get().password) + "/api";
+
+async function proxy(ctx: Context, next: () => Promise<any>) {
+  if (ctx.path.startsWith(prefix + "/proxy")) {
+    // console.log("proxy", ctx.path, ctx.request.headers);
+    try {
+      const requestBody = ctx.request.body;
+      let baseURL = decodeURIComponent(
+        ctx.request.headers["baseurl"] as string
+      );
+      if (!baseURL) {
+        ctx.status = 400;
+        ctx.body = { success: false, message: "baseURL is required" };
+        return;
+      }
+
+      let headers = {
+        "Content-Type": "application/json",
+        // ...(ctx.request.headers as any),
+        authorization: ctx.request.headers["authorization"],
+      };
+      if (baseURL.endsWith("/")) {
+        baseURL = baseURL.slice(0, -1);
+      }
+      baseURL = (baseURL as string) + ctx.path.replace(prefix + "/proxy", "");
+      // console.log("proxy", baseURL, headers, requestBody);
+      // 发起请求，但不立即解析响应体
+      const response = await fetch(baseURL, {
+        method: ctx.method,
+        headers: headers,
+        body: JSON.stringify(requestBody),
+      });
+      // console.log("proxy response", response.status, response.headers);
+      // 检查内容类型，确定是否为SSE
+      const contentType = response.headers.get("Content-Type");
+      const isSSE = contentType && contentType.includes("text/event-stream");
+
+      // 设置响应状态码和头部
+      ctx.status = response.status;
+      ctx.set("Content-Type", contentType || "application/json");
+      console.log("proxy", isSSE, contentType);
+      if (isSSE) {
+        // 处理SSE流
+        ctx.set("Content-Type", "text/event-stream");
+        ctx.set("Cache-Control", "no-cache");
+        ctx.set("Connection", "keep-alive");
+
+        // 获取响应体的可读流
+        const reader = response.body.getReader();
+
+        const stream = new PassThrough();
+
+        ctx.status = 200;
+        ctx.body = stream;
+
+        await next();
+        (async () => {
+          try {
+            while (true) {
+              const { done, value } = await reader.read();
+              if (done) {
+                stream.end();
+                break;
+              }
+              stream.write(value);
+            }
+          } catch (err) {
+            Logger.error("SSE streaming error:", err);
+            stream.end();
+          }
+        })();
+      } else {
+        // 非SSE请求按原方式处理
+        const data = await response.text();
+        ctx.body = data;
+      }
+    } catch (error) {
+      Logger.error("Proxy error:", error);
+      ctx.status = 500;
+      ctx.body = { success: false, message: error.message };
+    }
+  } else {
+    next();
+  }
+}
+
+electronData.initSync();
 export async function initHttp() {
   const app = new Koa() as any;
   app.use(cors() as any);
@@ -129,21 +221,19 @@ export async function initHttp() {
       jsonLimit: "1000mb",
     })
   );
-  const model_route = genRouter(
-    new CommandFactory(),
-    "/" + electronData.get().password + "/api"
-  );
+
+  const model_route = genRouter(new CommandFactory(), prefix);
   app.use(model_route.routes());
 
   Logger.info("serve: ", path.join(__dirname, "../web-build"));
-  Logger.info("password: ", electronData.initSync().password);
+  Logger.info("password: ", electronData.get().password);
   app.use(
     mount(
       "/" + electronData.get().password,
       serve(path.join(__dirname, "../web-build")) as any
     )
   );
-
+  app.use(proxy);
   // 错误处理
   app.on("error", (err, ctx) => {
     console.error("Server error", err);
@@ -158,11 +248,11 @@ export async function initHttp() {
     // pingInterval: 10 * 60 * 1000,
     maxHttpBufferSize: 1e10,
   });
-  let PORT = HTTPPORT;
+  let PORT = Config.port;
   PORT = await execFallback(PORT, (port) => {
     server.listen(port, () => {});
   });
-  electronData.get().port = PORT;
+  Config.port = PORT;
   Logger.info("http server listen on: ", PORT);
   await electronData.save();
 

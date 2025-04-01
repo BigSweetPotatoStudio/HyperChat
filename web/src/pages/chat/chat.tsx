@@ -1661,8 +1661,7 @@ export const Chat = ({
     <div key={sessionID} className="chat relative h-full">
       <div className="h-full rounded-lg bg-white">
         <XProvider>
-          <Splitter className="h-full">
-            <Splitter.Panel defaultSize="70%" min="40%" max="100%">
+
               {mobile.current.is && (
                 <>
                   <Drawer
@@ -1699,7 +1698,7 @@ export const Chat = ({
                   className="flex-grow-2 flex w-full flex-col justify-between"
                   style={{ alignSelf: "stretch" }}
                 >
-                  <div className="flex-grow-2 overflow-auto">
+                  <div className="overflow-auto">
                     {(currentChat.current.messages == null ||
                       currentChat.current.messages?.length == 0) && (
                       <>
@@ -2274,8 +2273,7 @@ export const Chat = ({
                   </div>
                 </div>
               </div>
-            </Splitter.Panel>
-          </Splitter>
+      
         </XProvider>
         <PromptsModal
           open={isOpenPromptsModal}

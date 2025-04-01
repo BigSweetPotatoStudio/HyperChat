@@ -33,6 +33,7 @@ import { startTask } from "./task.mjs";
 import { spawn } from "node:child_process";
 import { getMyDefaultEnvironment } from "./utils.mjs";
 import { zodToJsonSchema } from "zod-to-json-schema";
+import { Config } from "ts/const.mjs";
 // import cross_spawn from "cross-spawn";
 
 let config = MCP_CONFIG.initSync();
@@ -44,7 +45,7 @@ for (let s of MyServers) {
     args: [],
     env: {},
     hyperchat: {
-      url: `http://localhost:${electronData.get().mcp_server_port}/${key}/sse`,
+      url: `http://localhost:${Config.mcp_server_port}/${key}/sse`,
       type: "sse",
       scope: "built-in",
       config: config.mcpServers[key]?.hyperchat?.config || {},

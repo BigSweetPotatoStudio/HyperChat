@@ -13,6 +13,7 @@ import path from "path";
 
 import { electronData } from "../../common/data";
 import p from "../package.json" assert { type: "json" };
+import { Config } from "./const.mjs";
 
 let title = `${p.productName}-${app.getVersion()} by Dadigua`;
 Logger.info("title   : ", title);
@@ -50,7 +51,7 @@ export const createWindow = () => {
   } else {
     win
       .loadURL(
-        `http://localhost:${electronData.get().port}/${
+        `http://localhost:${Config.port}/${
           electronData.get().password
         }/#/`
       )

@@ -1,7 +1,7 @@
 import OpenAI from "openai";
 
 import type { HyperChatCompletionTool } from "./mcp";
-import { call, getWebSocket } from "./call";
+import { call, getURL_PRE, getWebSocket } from "./call";
 import * as MCPTypes from "@modelcontextprotocol/sdk/types.js";
 
 let antdmessage: { warning: (msg: string) => void };
@@ -15,6 +15,7 @@ if (process.env.runtime === "node") {
 import imageBase64 from "../common/openai_image_base64.txt";
 import { v4 } from "uuid";
 import dayjs from "dayjs";
+import { isWeb } from "./const";
 
 type Tool_Call = {
   index: number;
@@ -118,12 +119,14 @@ export class OpenAiChannel {
     // public stream = true,
   ) {
     this.openai = new OpenAI({
-      baseURL: options.baseURL,
+      baseURL: isWeb ? getURL_PRE() + "api/proxy" : options.baseURL,
+
       apiKey: options.apiKey, // This is the default and can be omitted
       dangerouslyAllowBrowser: process.env.runtime !== "node",
       defaultHeaders: {
-        "HTTP-Referer": "https://www.dadigua.men", // Optional. Site URL for rankings on openrouter.ai.
+        "HTTP-Referer": "https://hyperchat.dadigua.men", // Optional. Site URL for rankings on openrouter.ai.
         "X-Title": "HyperChat", // Optional. Site title for rankings on openrouter.ai.
+        baseURL: encodeURIComponent(options.baseURL),
       },
     });
     this.options.temperature =

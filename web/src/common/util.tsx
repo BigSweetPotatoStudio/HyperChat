@@ -22,7 +22,7 @@ export function useQuery() {
   return React.useMemo(() => new URLSearchParams(search), [search]);
 }
 
-export const isWeb = !window.ext;
+export * from "./const";
 
 export function JsonSchema2ProFormColumnsType(
   schema: any,
