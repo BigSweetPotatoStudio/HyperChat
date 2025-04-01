@@ -121,6 +121,10 @@ npm run dev
 #### 通过网页工具+命令行工具，打开Github README学习 + GIT克隆 + 搭建开发黄金
 ![image](https://github.com/user-attachments/assets/6affd3dd-aa8e-4429-9c70-d456e5376786)
 
+#### 你可以通过Web在任何地方+任何设备访问，并且可以设置密码
+![image](https://github.com/user-attachments/assets/a9825e5b-da6d-4e0a-852f-177a3f6df992)
+
+
 #### 多聊天Workspace + 夜间模式
 ![image](https://github.com/user-attachments/assets/ca9d77d7-d023-431f-8359-6023ab3e338a)
 
