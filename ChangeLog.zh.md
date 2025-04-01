@@ -1,3 +1,12 @@
+# 1.4.0
+
+* 添加内置mcp工具 命令行
+* 支持修改网络访问密码
+* 工具调用折叠显示
+  
+![8af53675c625ca34cfc4753a106e9462](https://github.com/user-attachments/assets/ef030a65-ba9e-4cd5-9ca8-669677b483be)
+![image](https://github.com/user-attachments/assets/af1598b6-d912-4f04-8919-a3d3e1ed93bc)
+
 # 1.3.3
 
 * 可以在调用工具的时候，是否确认，并且修改大模型调用的参数
