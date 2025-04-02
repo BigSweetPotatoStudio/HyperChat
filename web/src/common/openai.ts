@@ -335,44 +335,17 @@ export class OpenAiChannel {
           }
 
           if (chunk.choices[0]?.delta?.tool_calls) {
-            if (chunk.choices[0].delta.tool_calls.length > 1) {
-              console.warn(
-                "tool_calls length > 1",
-                chunk.choices[0].delta.tool_calls,
-              );
-              // debugger;
-              for (const tool_call of chunk.choices[0].delta.tool_calls) {
-                let index = tool_call.index;
-                if (typeof index !== "number") {
-                  index = 0;
-                }
-                let tool = tool_calls[index];
-                if (!tool) {
-                  tool = {
-                    index: index,
-                    id: "",
-                    type: "function",
-                    restore_name: "",
-                    origin_name: "",
-                    function: {
-                      name: "",
-                      arguments: "",
-                      argumentsJSON: {},
-                    },
-                  };
-                  tool_calls[index] = tool;
-                }
-                tool.function.name += tool_call.function.name || "";
+            // console.warn(
+            //   "tool_calls length > 1",
+            //   chunk.choices[0].delta.tool_calls,
+            // );
+            // debugger;
+            for (const [
+              i,
+              tool_call,
+            ] of chunk.choices[0].delta.tool_calls.entries()) {
+              let index = tool_call.index || i;
 
-                tool.function.arguments += tool_call.function.arguments || "";
-                tool.id += tool_call.id || "";
-              }
-            } else {
-              const tool_call = chunk.choices[0].delta.tool_calls[0];
-              let index = tool_call.index;
-              if (typeof index !== "number") {
-                index = 0;
-              }
               let tool = tool_calls[index];
               if (!tool) {
                 tool = {

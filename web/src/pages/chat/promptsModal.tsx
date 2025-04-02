@@ -112,10 +112,10 @@ const ModalForm: React.FC<CollectionCreateFormProps> = ({
             return {
               label: x.name,
               value: x.name,
-              disabled:
-                form.getFieldValue("callable") && x.name == "hyper_agent"
-                  ? true
-                  : false,
+              // disabled:
+              //   form.getFieldValue("callable") && x.name == "hyper_agent"
+              //     ? true
+              //     : false,
             };
           })}
         />
@@ -146,15 +146,15 @@ const ModalForm: React.FC<CollectionCreateFormProps> = ({
       </Form.Item>
       <Form.Item name="callable" label={t`Callable`} valuePropName="checked">
         <Checkbox
-          onChange={() => {
-            form.setFieldValue(
-              "allowMCPs",
-              (form.getFieldValue("allowMCPs") || []).filter(
-                (x) => x != "hyper_agent",
-              ),
-            );
-            refresh();
-          }}
+        // onChange={() => {
+        //   form.setFieldValue(
+        //     "allowMCPs",
+        //     (form.getFieldValue("allowMCPs") || []).filter(
+        //       (x) => x != "hyper_agent",
+        //     ),
+        //   );
+        //   refresh();
+        // }}
         >
           {t`Allowed to be called by 'hyper_agent'`}
         </Checkbox>
@@ -184,8 +184,12 @@ export const PromptsModal: React.FC<CollectionCreateFormModalProps> = ({
 }) => {
   const [formInstance, setFormInstance] = useState<FormInstance>();
   initialValues.allowMCPs = initialValues.allowMCPs || [];
-  initialValues.confirm_call_tool = initialValues.confirm_call_tool == undefined ? false : initialValues.confirm_call_tool;
-
+  initialValues.confirm_call_tool =
+    initialValues.confirm_call_tool == undefined
+      ? false
+      : initialValues.confirm_call_tool;
+  initialValues.callable =
+    initialValues.callable == undefined ? true : initialValues.callable;
   return (
     <Modal
       width={800}

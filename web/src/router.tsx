@@ -39,7 +39,7 @@ export function getLayoutRoute() {
         path: "/home",
         name: t`Home`,
         hideInMenu: true,
-        component: <Chat />,
+        component: <WorkSpace />,
       },
       {
         path: "/Chat",

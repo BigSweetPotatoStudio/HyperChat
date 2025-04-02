@@ -316,11 +316,12 @@ export const MarkDown = ({ markdown, onCallback }) => {
         let svg = extractSvgContent(markdown);
         if (svg) {
           setArtifacts(
-            `<html><body style="display: flex;justify-content: center;">${svg}</body></html>`,
+            `<html><body style="display: flex;justify-content: center;padding:0;margin:0;">${svg}</body></html>`,
           );
+          setArtifactsType("svg");
+        } else {
+          setArtifacts("");
         }
-
-        setArtifactsType("svg");
       }
     }
   }, [markdown]);
@@ -445,10 +446,38 @@ export const MarkDown = ({ markdown, onCallback }) => {
                       try {
                         await sleep(1000);
                         let res = await (w as any).executeJavaScript(
-                          `var r;
+                          `
+function calculateBodyChildrenDimensions() {
+  // 获取body的所有子元素
+  const children = [...document.body.children];
+  
+  // 使用reduce计算总宽度和高度
+  const dimensions = children.reduce((acc, child) => {
+    const rect = child.getBoundingClientRect();
+    return {
+      width: acc.width + rect.width,
+      height: acc.height + rect.height,
+      children: [
+        ...acc.children, 
+        {
+          element: child,
+          width: rect.width,
+          height: rect.height
+        }
+      ]
+    };
+  }, { 
+    width: 0, 
+    height: 0, 
+    children: [] 
+  });
+
+  return dimensions;
+} 
+var r;
 var res
 if(document.body){
-    r = document.body.getBoundingClientRect();
+    r = calculateBodyChildrenDimensions();
 } else {
     r = document.firstChild.getBoundingClientRect();
 }
@@ -456,7 +485,8 @@ res ={ width: r.width, height: r.height };`,
                         );
                         // console.log(res);
                         setWebviewXY({
-                          x: res.width + "px",
+                          // x: res.width + "px",
+                          x: webviewXY.x,
                           y: res.height + "px",
                         });
                       } catch (e) {

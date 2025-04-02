@@ -129,3 +129,7 @@ div[role="system"] .ant-bubble-content-wrapper {
 .markdown-body pre {
   padding: 0;
 }
+
+.modal-tools .ant-btn {
+  font-size: 0.8rem;
+}

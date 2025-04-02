@@ -418,6 +418,7 @@ export const Chat = ({
   const data = useRef({
     mcpLoading: false,
     showHistory: mobile.current.is ? false : true,
+    suggestionShow: false,
   });
 
   const currentChat = React.useRef<ChatHistoryItem>(defaultChatValue);
@@ -464,7 +465,11 @@ export const Chat = ({
       let find = Agents.get().data.find(
         (x) => x.key == currentChat.current.agentKey,
       );
-      onTitleChange && onTitleChange(find.label);
+      if (find) {
+        onTitleChange && onTitleChange(find.label);
+      } else {
+        onTitleChange && onTitleChange("");
+      }
     }
   }, [currentChat.current.agentKey]);
 
@@ -855,7 +860,7 @@ export const Chat = ({
                   } else {
                     return (
                       <div className="bg-gray-200" key={i}>
-                        {x.tool_calls.map((tool: any, index) => {
+                        {x.tool_calls?.map((tool: any, index) => {
                           return (
                             <Spin
                               key={index}
@@ -1175,6 +1180,7 @@ export const Chat = ({
       config = GPT_MODELS.get().data[0];
     }
     currentChat.current.modelKey = config.key;
+    data.current.suggestionShow = false;
     openaiClient.current = new OpenAiChannel(
       {
         // ...config,
@@ -1359,6 +1365,7 @@ export const Chat = ({
       await ChatHistory.save();
       // console.log("ChatHistory.d.data", ChatHistory.get().data.slice(0, 5));
     } catch (e) {
+      console.error(e);
       openaiClient.current.lastMessage.content_error = e.message;
       currentChat.current.messages = openaiClient.current.messages;
       refresh();
@@ -2211,21 +2218,105 @@ export const Chat = ({
                     }
                   }}
                 >
-                  <Sender
-                    prefix={
-                      supportImage && (
-                        <Upload
-                          accept="image/*"
-                          fileList={[]}
-                          beforeUpload={async (file) => {
+                  <Suggestion
+                    items={[
+                      {
+                        label: "Agents",
+                        value: "Agents",
+                        children: Agents.get()
+                          .data.filter((x) => x.callable)
+                          .map((x) => {
+                            return {
+                              label: x.label,
+                              value: x.key,
+                            };
+                          }),
+                      },
+                    ]}
+                    onSelect={(itemVal) => {
+                      let agent = Agents.get().data.find(
+                        (x) => x.key == itemVal,
+                      );
+                      if (agent) {
+                        data.current.suggestionShow = false;
+                        let textarea = document.querySelector(
+                          ".my-sender .ant-sender-input",
+                        ) as HTMLTextAreaElement;
+                        let position = textarea.selectionStart;
+
+                        setValue((value) => {
+                          return `${value.slice(0, position)}${agent.label} ${value.slice(position)}`;
+                        });
+                      }
+                    }}
+                    onOpenChange={(open) => {
+                      data.current.suggestionShow = open;
+                    }}
+                  >
+                    {({ onTrigger, onKeyDown }) => {
+                      return (
+                        <Sender
+                          className="my-sender"
+                          prefix={
+                            supportImage && (
+                              <Upload
+                                accept="image/*"
+                                fileList={[]}
+                                beforeUpload={async (file) => {
+                                  if (file.type.includes("image")) {
+                                    let path = await blobToBase64(file);
+                                    resourceResListRef.current.push({
+                                      call_name: "UserUpload",
+                                      contents: [
+                                        {
+                                          path: path,
+                                          blob: await urlToBase64(path),
+                                          type: "image",
+                                        },
+                                      ],
+                                      uid: v4(),
+                                    });
+                                    refresh();
+                                  } else {
+                                    message.warning(t`please uplaod image`);
+                                  }
+                                  return false;
+                                }}
+                              >
+                                <Button
+                                  type="text"
+                                  icon={<LinkOutlined />}
+                                  onClick={() => {}}
+                                />
+                              </Upload>
+                            )
+                          }
+                          onKeyDown={(e) => {
+                            if (data.current.suggestionShow) {
+                              if (e.key == "Enter" || e.key == "ArrowDown" || e.key == "ArrowUp" || e.key == "Escape" || e.key == "ArrowLeft" || e.key == "ArrowRight") {
+                                onKeyDown(e);
+                              } else {
+                                onTrigger(false);
+                                data.current.suggestionShow = false;
+                              }
+                            } else {
+                              if (e.key == "@") {
+                                onTrigger(true);
+                                data.current.suggestionShow = true;
+                              }
+                            }
+                          }}
+                          onPasteFile={async (file) => {
+                            // console.log("onPasteFile", file);
+
                             if (file.type.includes("image")) {
-                              let path = await blobToBase64(file);
+                              let p = await blobToBase64(file);
                               resourceResListRef.current.push({
                                 call_name: "UserUpload",
                                 contents: [
                                   {
-                                    path: path,
-                                    blob: await urlToBase64(path),
+                                    path: p,
+                                    blob: p,
                                     type: "image",
                                   },
                                 ],
@@ -2235,54 +2326,34 @@ export const Chat = ({
                             } else {
                               message.warning(t`please uplaod image`);
                             }
-                            return false;
                           }}
-                        >
-                          <Button
-                            type="text"
-                            icon={<LinkOutlined />}
-                            onClick={() => {}}
-                          />
-                        </Upload>
-                      )
-                    }
-                    onPasteFile={async (file) => {
-                      // console.log("onPasteFile", file);
-
-                      if (file.type.includes("image")) {
-                        let p = await blobToBase64(file);
-                        resourceResListRef.current.push({
-                          call_name: "UserUpload",
-                          contents: [
-                            {
-                              path: p,
-                              blob: p,
-                              type: "image",
-                            },
-                          ],
-                          uid: v4(),
-                        });
-                        refresh();
-                      } else {
-                        message.warning(t`please uplaod image`);
-                      }
+                          loading={loading}
+                          value={value}
+                          onChange={(nextVal) => {
+                            // if (nextVal === "/") {
+                            //   onTrigger();
+                            // } else if (!nextVal) {
+                            //   onTrigger(false);
+                            // }
+                            setValue(nextVal);
+                          }}
+                          onCancel={() => {
+                            setLoading(false);
+                            openaiClient.current.cancel();
+                            // message.success("Cancel sending!");
+                          }}
+                          onSubmit={(s) => {
+                            if (data.current.suggestionShow) {
+                              return;
+                            }
+                            setValue("");
+                            onRequest(s);
+                          }}
+                          placeholder={t`Start inputting, You can use @ to call other agents, or quickly enter`}
+                        />
+                      );
                     }}
-                    loading={loading}
-                    value={value}
-                    onChange={(nextVal) => {
-                      setValue(nextVal);
-                    }}
-                    onCancel={() => {
-                      setLoading(false);
-                      openaiClient.current.cancel();
-                      // message.success("Cancel sending!");
-                    }}
-                    onSubmit={(s) => {
-                      setValue("");
-                      onRequest(s);
-                    }}
-                    placeholder="Start inputting"
-                  />
+                  </Suggestion>
                 </QuickPath>
               </div>
             </div>
@@ -2377,7 +2448,7 @@ export const Chat = ({
                   return (
                     <div>
                       {record.tools.length > 0 ? (
-                        <Space wrap>
+                        <div className="modal-tools flex flex-wrap gap-0.5">
                           {record.tools.map((x) => {
                             return (
                               <Tooltip
@@ -2402,7 +2473,7 @@ export const Chat = ({
                               </Tooltip>
                             );
                           })}
-                        </Space>
+                        </div>
                       ) : (
                         <span className="text-red-500">{t`disconnected`}</span>
                       )}

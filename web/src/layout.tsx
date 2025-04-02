@@ -94,8 +94,8 @@ import {
   disable as disableDarkMode,
   auto as followSystemColorScheme,
   exportGeneratedCSS as collectCSS,
-  isEnabled as isDarkReaderEnabled
-} from 'darkreader';
+  isEnabled as isDarkReaderEnabled,
+} from "darkreader";
 
 type ProviderType = {
   label: string;
@@ -446,11 +446,18 @@ export function Layout() {
               );
             },
           }}
-          logo={"./assets/favicon.png"}
+          logo={
+            <img
+              onClick={() => {
+                window.location.hash = "#/Home";
+              }}
+              src="./assets/favicon.png"
+            ></img>
+          }
           headerTitleRender={(logo, title, _) => {
             return (
-              <Link to="home">
-                {logo}HyperChat<span>({electronData.get().version})</span>
+              <Link to="Home">
+                HyperChat<span>({electronData.get().version})</span>
               </Link>
             );
           }}

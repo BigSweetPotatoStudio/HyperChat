@@ -230,19 +230,21 @@ async function call_agent({
     throw new Error(`Agent ${agent_name} not found`);
   }
   let uid = v4();
+  if (process.env.myEnv == "dev") {
+    Logger.info(Object.keys(EVENT.callbacks), uid);
+  }
   return new Promise((resolve, reject) => {
     let callback = (m) => {
       // console.log("============================");
       // console.log("call_agent", m.uid, m.data);
 
-      if (m.uid == uid) {
-        if (m.error != undefined) {
-          reject(m.error);
-        } else {
-          resolve(m.data);
-        }
+      if (m.error != undefined) {
+        reject(m.error);
+      } else {
+        resolve(m.data);
       }
-      EVENT.clear("call_agent_res_" + uid);
+
+      // EVENT.clear("call_agent_res_" + uid);
     };
     EVENT.on("call_agent_res_" + uid, callback);
     getMessageService().sendToRenderer({
