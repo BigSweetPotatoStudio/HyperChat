@@ -1707,6 +1707,10 @@ export const Chat = ({
     error: null as any,
   });
 
+  const [isUpdateQuicks, setIsUpdateQuicks] = useState(false);
+  const [newLabel, setNewLabel] = useState("");
+  const [newValue, setNewValue] = useState("");
+
   return (
     <div key={sessionID} className="chat relative h-full">
       <div className="h-full rounded-lg bg-white">
@@ -2253,6 +2257,15 @@ export const Chat = ({
                             };
                           }),
                       },
+                      {
+                        label: "Quicks",
+                        value: "Quicks",
+                        children: AppSetting.get().quicks,
+                      },
+                      {
+                        label: "UpdateQuicks",
+                        value: "Update---Quicks",
+                      },
                     ]}
                     onSelect={(itemVal) => {
                       let agent = Agents.get().data.find(
@@ -2268,6 +2281,21 @@ export const Chat = ({
                         setValue((value) => {
                           return `${value.slice(0, position)}${agent.label} ${value.slice(position)}`;
                         });
+                      } else {
+                        if (itemVal == "Update---Quicks") {
+                          setIsUpdateQuicks(true);
+                          return;
+                        } else {
+                          data.current.suggestionShow = false;
+                          let textarea = document.querySelector(
+                            ".my-sender .ant-sender-input",
+                          ) as HTMLTextAreaElement;
+                          let position = textarea.selectionStart;
+
+                          setValue((value) => {
+                            return `${value.slice(0, position - 1)}${itemVal} ${value.slice(position)}`;
+                          });
+                        }
                       }
                     }}
                     onOpenChange={(open) => {
@@ -2801,6 +2829,85 @@ export const Chat = ({
               <Radio value={false}>{t`Direct Call`}</Radio>
             </Radio.Group>
           </Form.Item>
+        </Modal>
+        <Modal
+          open={isUpdateQuicks}
+          title={t`Edit Quicks Words`}
+          width={800}
+          cancelButtonProps={{ style: { display: "none" } }}
+          onCancel={() => setIsUpdateQuicks(false)}
+          onOk={() => setIsUpdateQuicks(false)}
+        >
+          <div>
+            <ul className="mb-4">
+              {AppSetting.get().quicks?.map((phrase, index) => (
+                <li key={index} className="mb-2 rounded bg-gray-100 p-2">
+                  <Space.Compact style={{ width: "100%" }}>
+                    <Input
+                      size="small"
+                      value={phrase.label}
+                      onChange={async (e) => {
+                        AppSetting.get().quicks[index].label = e.target.value;
+                        await AppSetting.save();
+                        refresh();
+                      }}
+                      placeholder="Label"
+                    />
+                    <Button
+                      size="small"
+                      danger
+                      onClick={async () => {
+                        AppSetting.get().quicks.splice(index, 1);
+                        await AppSetting.save();
+                        refresh();
+                      }}
+                    >
+                      Delete
+                    </Button>
+                  </Space.Compact>
+
+                  <Input.TextArea
+                    size="small"
+                    value={phrase.value}
+                    onChange={async (e) => {
+                      AppSetting.get().quicks[index].value = e.target.value;
+                      await AppSetting.save();
+                      refresh();
+                    }}
+                    placeholder="Value"
+                  />
+                </li>
+              ))}
+            </ul>
+            <h3 className="mb-2 font-bold">Add Words</h3>
+            <Input
+              size="small"
+              value={newLabel}
+              onChange={(e) => setNewLabel(e.target.value)}
+              placeholder="New Words label"
+            />
+            <Input.TextArea
+              size="small"
+              value={newValue}
+              onChange={(e) => setNewValue(e.target.value)}
+              placeholder="New Words value"
+            />
+            <button
+              className="w-full rounded bg-green-500 px-2 py-1 text-white hover:bg-green-600"
+              onClick={async () => {
+                AppSetting.get().quicks.push({
+                  label: newLabel,
+                  value: newValue,
+                });
+                await AppSetting.save();
+                refresh();
+                setNewLabel("");
+                setNewValue("");
+              }}
+            >
+              Add Words
+            </button>
+          </div>
         </Modal>
         {contextHolder}
       </div>

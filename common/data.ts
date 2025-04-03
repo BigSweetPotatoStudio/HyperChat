@@ -103,6 +103,13 @@ export const AppSetting = new Data("app_setting.json", {
   darkTheme: false,
   mcpCallToolTimeout: 60,
   defaultAllowMCPs: undefined as string[] | undefined,
+  quicks: [{
+    label: "Hello",
+    value: "Hello",
+  }] as Array<{
+    value: string;
+    label: string;
+  }>,
 });
 
 export type ChatHistoryItem = {
