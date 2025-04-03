@@ -93,9 +93,11 @@ npm run dev
 #### 支持点击tool名称，直接调用调试
 ![image](https://github.com/user-attachments/assets/4af1b769-de19-4cab-8a90-7f701b9a8d70)
 
-
 #### mcp允许提示+动态修改LLM调用Tool的参数
 ![image](https://github.com/user-attachments/assets/080320e3-37d2-4f5a-ae3d-3517b3d692ad)
+
+#### 支持 @ 快速输入 + 调用Agent
+![17790cb3c686690e255462c7638b61f6](https://github.com/user-attachments/assets/12fd824c-cad7-4dd7-8df3-699c1da8d1cf)
 
 #### 调用terminal mcp  自动帮我分析asar文件 + 帮我解压
 ![image](https://github.com/user-attachments/assets/16c0dba7-ae62-4261-a068-1217b5e9bd3c)
