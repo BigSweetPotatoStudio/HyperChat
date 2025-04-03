@@ -4,6 +4,8 @@
 * 支持选择MCP的部分Tool，更加省Token
 * 支持 @ 快速输入 + 调用Agent
 * fixbug
+![image](https://github.com/user-attachments/assets/63ae6853-5df4-4b29-8bc9-c33d99239833)
+![image](https://github.com/user-attachments/assets/6010494f-1218-4714-bbfe-8e61969a6826)
 
 
 # 1.4.0
