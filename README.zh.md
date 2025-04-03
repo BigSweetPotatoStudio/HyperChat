@@ -93,7 +93,7 @@ npm run dev
 #### 支持点击tool名称，直接调用调试
 ![image](https://github.com/user-attachments/assets/4af1b769-de19-4cab-8a90-7f701b9a8d70)
 
-#### mcp允许提示+动态修改LLM调用Tool的参数
+#### mcp调用Tool提示 + 动态修改LLM调用Tool的参数
 ![image](https://github.com/user-attachments/assets/080320e3-37d2-4f5a-ae3d-3517b3d692ad)
 
 #### 支持 @ 快速输入 + 调用Agent
