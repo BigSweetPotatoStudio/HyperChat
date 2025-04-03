@@ -85,7 +85,8 @@ export class MCPClient {
   public resources: Array<typeof MCPTypes.ResourceSchema._type> = [];
   public prompts: Array<typeof MCPTypes.PromptSchema._type> = [];
   public client: MCP.Client = undefined;
-  public status: string = "disconnected";
+  public status: "disconnected" | "connected" | "connecting" | "disabled" =
+    "disconnected";
 
   public ext: {
     configSchema?: { [s in string]: any };
@@ -160,58 +161,67 @@ export class MCPClient {
     return out;
   }
   async open() {
-    // await sleep(Math.random() * 10000);
 
-    if (this.config?.hyperchat?.type == "sse") {
-      await this.openSse(this.config);
-    } else {
-      await this.openStdio(this.config);
-    }
-    let client = this.client;
-    // let c = client.getServerCapabilities();
-    // console.log(c);
-    let tools_res = await client.listTools().catch((e) => {
-      return { tools: [] };
-    });
-    // console.log("listTools", tools_res);
-    let resources_res = await client.listResources().catch((e) => {
-      return { resources: [] };
-    });
-    let listPrompts_res = await client.listPrompts().catch((e) => {
-      return { prompts: [] };
-    });
-    // let listResourceTemplates_res = await client
-    //   .listResourceTemplates()
-    //   .catch((e) => {
-    //     return { resourceTemplates: [] };
-    //   });
-
-    client.onclose = () => {
-      Logger.info("client close");
-      this.status = "disconnected";
-      this.tools = [];
-      this.resources = [];
-      this.prompts = [];
-    };
-    client.onerror = (e) => {
-      // console.log("client onerror: ", this.config);
+    try {
+      this.status = "connecting";
+      // await sleep(Math.random() * 10000);
+      // if(Math.random() > 0.5) {
+      //   throw new Error("test error");
+      // }
       if (this.config?.hyperchat?.type == "sse") {
-        if (e.message.includes("Body Timeout Error")) {
-        } else {
-          Logger.error("client see onerror: ", e);
-        }
+        await this.openSse(this.config);
       } else {
-        if (e.message.includes("not valid JSON")) {
-        } else {
-          Logger.error("client stdio onerror: ", e);
-        }
+        await this.openStdio(this.config);
       }
-    };
+      let client = this.client;
+      // let c = client.getServerCapabilities();
+      // console.log(c);
+      let tools_res = await client.listTools().catch((e) => {
+        return { tools: [] };
+      });
+      // console.log("listTools", tools_res);
+      let resources_res = await client.listResources().catch((e) => {
+        return { resources: [] };
+      });
+      let listPrompts_res = await client.listPrompts().catch((e) => {
+        return { prompts: [] };
+      });
+      // let listResourceTemplates_res = await client
+      //   .listResourceTemplates()
+      //   .catch((e) => {
+      //     return { resourceTemplates: [] };
+      //   });
 
-    this.tools = tools_res.tools;
-    this.resources = resources_res.resources;
-    this.prompts = listPrompts_res.prompts;
-    this.status = "connected";
+      client.onclose = () => {
+        Logger.info("client close");
+        this.status = "disconnected";
+        this.tools = [];
+        this.resources = [];
+        this.prompts = [];
+      };
+      client.onerror = (e) => {
+        // console.log("client onerror: ", this.config);
+        if (this.config?.hyperchat?.type == "sse") {
+          if (e.message.includes("Body Timeout Error")) {
+          } else {
+            Logger.error("client see onerror: ", e);
+          }
+        } else {
+          if (e.message.includes("not valid JSON")) {
+          } else {
+            Logger.error("client stdio onerror: ", e);
+          }
+        }
+      };
+
+      this.tools = tools_res.tools;
+      this.resources = resources_res.resources;
+      this.prompts = listPrompts_res.prompts;
+      this.status = "connected";
+    } catch (e) {
+      this.status = "disconnected";
+      throw e;
+    }
   }
   async openSse(config: MCP_CONFIG_TYPE) {
     const client = new Client({

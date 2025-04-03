@@ -1,11 +1,19 @@
 import type { MCPClient } from "../../../electron/ts/mcp/config.mjs";
 import type { InitedClient } from "./mcp";
 
-export function getToolsOnNode(mcpClients, filter = (x: InitedClient) => true) {
+export function getToolsOnNode(
+  mcpClients,
+  allowMCPs: string[] | undefined | false = undefined,
+) {
   let tools: InitedClient["tools"] = [];
   let initedClientArray = mcpClientsToArray(mcpClients);
-  initedClientArray.filter(filter).forEach((v) => {
-    tools = tools.concat(v.tools);
+  initedClientArray.forEach((v) => {
+    tools = tools.concat(
+      v.tools.filter((t) => {
+        if (!allowMCPs) return true;
+        return allowMCPs.includes(t.clientName) || allowMCPs.includes(t.origin_name);
+      }),
+    );
   });
   return tools;
 }

@@ -1,15 +1,22 @@
 import OpenAI from "openai";
 
 import type { HyperChatCompletionTool } from "./mcp";
-import { call, getURL_PRE, getWebSocket } from "./call";
+// import { call, getURL_PRE, getWebSocket } from "./call";
 import * as MCPTypes from "@modelcontextprotocol/sdk/types.js";
 
 let antdmessage: { warning: (msg: string) => void };
+let callModule = {
+  getURL_PRE: () => "",
+  getWebSocket: () => null,
+};
 if (process.env.runtime === "node") {
   antdmessage = { warning: console.warn };
 } else {
   const { message } = await import("antd");
   antdmessage = { warning: message.warning };
+  let call = await import("./call");
+  callModule.getURL_PRE = call.getURL_PRE;
+  callModule.getWebSocket = call.getWebSocket;
 }
 
 import imageBase64 from "../common/openai_image_base64.txt";
@@ -119,7 +126,12 @@ export class OpenAiChannel {
     // public stream = true,
   ) {
     this.openai = new OpenAI({
-      baseURL: isWeb ? getURL_PRE() + "api/proxy" : options.baseURL,
+      baseURL:
+        process.env.runtime === "node"
+          ? options.baseURL
+          : isWeb
+            ? callModule.getURL_PRE() + "api/proxy"
+            : options.baseURL,
 
       apiKey: options.apiKey, // This is the default and can be omitted
       dangerouslyAllowBrowser: process.env.runtime !== "node",
@@ -265,11 +277,7 @@ export class OpenAiChannel {
         tools = global.tools || [];
       } else {
         const { getTools } = await import("./mcp");
-        tools = getTools(
-          (x) =>
-            this.options.allowMCPs == null ||
-            this.options.allowMCPs.includes(x.name),
-        );
+        tools = getTools(this.options.allowMCPs);
       }
 
       if (tools.length == 0) {
@@ -485,7 +493,7 @@ export class OpenAiChannel {
         let localtool = tools.find(
           (t) => t.function.name === tool.function.name,
         );
-        let clientName = localtool?.key;
+        let clientName = localtool?.clientName;
         if (!clientName) {
           console.error("client not found", tool);
           throw new Error("client not found");
@@ -506,11 +514,11 @@ export class OpenAiChannel {
             clientName === "hyper_agent" &&
             localtool.origin_name == "call_agent"
           ) {
-            (await getWebSocket()).emit("active", deviceId);
+            (await callModule.getWebSocket()).emit("active", deviceId);
           }
         }
 
-        let call_res = await call(
+        let call_res = await globalThis.ext2.call(
           "mcpCallTool",
           [clientName, localtool.origin_name, tool.function.argumentsJSON],
           {

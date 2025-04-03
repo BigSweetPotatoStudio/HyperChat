@@ -300,14 +300,12 @@ export function Market() {
               &nbsp;
               {mcpLoadingObj[item.name] ? (
                 <SyncOutlined spin className="text-blue-400" />
-              ) : getMcpClients()[item.name] == null ||
-                MCP_CONFIG.get().mcpServers[item.name]
-                  ?.disabled ? null : getMcpClients()[item.name]?.status ==
-                "connected" ? (
+              ) : getMcpClients()[item.name]?.status == "connected" ? (
                 <CheckCircleTwoTone twoToneColor="#52c41a" />
-              ) : (
+              ) : getMcpClients()[item.name]?.status == "disabled" ? (
                 <DisconnectOutlined className="text-red-400" />
-              )}
+              ) : getMcpClients()[item.name]?.status ==
+                "disabled" ? null : null}
             </span>
           </>
         }
@@ -619,7 +617,6 @@ export function Market() {
           </div>
           <div>Help: </div>
           <div className="help">
-
             <div>
               <div>
                 <Space>
@@ -690,7 +687,6 @@ export function Market() {
                 {t`Try Repair environment`}
               </Button>
             </Tooltip>
-
           </div>
         </div>
       </div>

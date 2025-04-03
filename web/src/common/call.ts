@@ -8,15 +8,7 @@ if (typeof window == "undefined") {
   ext = { ...window.ext };
 }
 
-if (ext) {
-  // 在渲染进程中监听消息
-  // ext.receive("message-from-main", (data: any) => {
-  //   console.log("Received message:", data);
-  // });
-} else {
-  ext = {};
-  window.ext = ext;
-}
+globalThis.ext2 = ext;
 
 let websocket = undefined;
 let URL_PRE;
@@ -58,11 +50,7 @@ if (process.env.runtime !== "node") {
   if (ext.invert && process.env.myEnv != "prod") {
     let config = await ext.invert("getConfig", []);
     URL_PRE =
-      "http://localhost:" +
-      config.data.port +
-      "/" +
-      config.data.password +
-      "/";
+      "http://localhost:" + config.data.port + "/" + config.data.password + "/";
   }
   ext.invert = async (command: string, args: any, options: any = {}) => {
     const { signal } = options;
@@ -99,6 +87,7 @@ if (process.env.runtime !== "node") {
     }
   });
 }
+globalThis.ext2.call = call;
 export async function call<k extends keyof Command>(
   command: k,
   args: Parameters<Command[k]> = [] as any,

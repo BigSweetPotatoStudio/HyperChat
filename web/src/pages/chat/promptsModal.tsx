@@ -15,9 +15,11 @@ import {
   Slider,
   Space,
   Switch,
+  Tooltip,
   Tree,
   TreeDataNode,
   TreeProps,
+  TreeSelect,
   Typography,
   message,
 } from "antd";
@@ -104,10 +106,10 @@ const ModalForm: React.FC<CollectionCreateFormProps> = ({
         name="allowMCPs"
         label={t`allowMCPs`}
         rules={[
-          { required: false, message: `Please select the allowed MCP client.` },
+          { required: false, message: t`Please select allowed MCP` },
         ]}
       >
-        <Checkbox.Group
+        {/* <Checkbox.Group
           options={clients.map((x) => {
             return {
               label: x.name,
@@ -116,6 +118,30 @@ const ModalForm: React.FC<CollectionCreateFormProps> = ({
               //   form.getFieldValue("callable") && x.name == "hyper_agent"
               //     ? true
               //     : false,
+            };
+          })}
+        /> */}
+        <TreeSelect
+          multiple
+          treeCheckable
+          placeholder={t`Please select allowed MCP`}
+          showCheckedStrategy={TreeSelect.SHOW_PARENT}
+          treeData={clients.map((x) => {
+            return {
+              title: x.name,
+              key: x.name,
+              value: x.name,
+              children: x.tools.map((t) => {
+                return {
+                  title: (
+                    <Tooltip title={t.function.description}>
+                      <span>{t.origin_name || t.function.name}</span>
+                    </Tooltip>
+                  ),
+                  key: t.restore_name,
+                  value: t.restore_name,
+                };
+              }),
             };
           })}
         />

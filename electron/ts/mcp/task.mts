@@ -11,7 +11,7 @@ import cron from "node-cron";
 import { Command } from "../command.mjs";
 import { mcpClients } from "./config.mjs";
 // global["window"] = {} as any;
-global.ext = {
+global.ext2 = {
   invert: async (name, args) => {
     try {
       // const { Command } = await import(/* webpackIgnore: true */ "../command.mjs");
@@ -45,6 +45,21 @@ global.ext = {
     } catch (e) {
       Logger.error(name, args, e);
       return { success: false, code: 1, message: e.message };
+    }
+  },
+  async call(command, args, options) {
+    try {
+      // console.log(`command ${command}`, args);
+      let res = await global.ext2.invert(command, args, options);
+      if (res.success) {
+        return res.data;
+      } else {
+        throw new Error(res.message);
+      }
+    } catch (e) {
+      console.error(command, args, e);
+
+      throw e;
     }
   },
   receive: () => {},
@@ -91,10 +106,7 @@ export async function callAgent(obj: {
       Logger.error("No model found");
       return;
     }
-    global.tools = getToolsOnNode(
-      mcpClients,
-      (x) => agent.allowMCPs == null || agent.allowMCPs.includes(x.name)
-    );
+    global.tools = getToolsOnNode(mcpClients, agent.allowMCPs);
 
     let openai = new OpenAiChannel(
       { ...config, ...agent, allowMCPs: agent.allowMCPs },

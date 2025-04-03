@@ -41,6 +41,7 @@ import {
   Table,
   Tag,
   Tooltip,
+  Tree,
   Typography,
   Upload,
 } from "antd";
@@ -174,7 +175,12 @@ import {
 } from "@ant-design/icons";
 import type { ConfigProviderProps, GetProp } from "antd";
 import { MyMessage, OpenAiChannel } from "../../common/openai";
-import { ChatHistory, GPT_MODELS, Agents } from "../../../../common/data";
+import {
+  ChatHistory,
+  GPT_MODELS,
+  Agents,
+  AppSetting,
+} from "../../../../common/data";
 
 import { PromptsModal } from "./promptsModal";
 import {
@@ -305,6 +311,7 @@ export const Chat = ({
     (async () => {
       await Agents.init();
       await GPT_MODELS.init();
+      await AppSetting.init();
       refresh();
       loadMoreData(false);
 
@@ -340,7 +347,7 @@ export const Chat = ({
           }
         }
       } else {
-        currentChatReset({}, "", true);
+        currentChatReset({}, "", AppSetting.get().defaultAllowMCPs);
         createChat(false);
       }
 
@@ -425,7 +432,7 @@ export const Chat = ({
   const currentChatReset = async (
     newConfig: Partial<ChatHistoryItem>,
     prompt = "",
-    allMCPs = false,
+    defaultAllowMCPs = undefined,
   ) => {
     if (prompt) {
       newConfig.messages = [
@@ -444,14 +451,18 @@ export const Chat = ({
     setPromptResList([]);
     let clients = await getClients().catch(() => []);
     clientsRef.current = clients;
-    if (currentChat.current.agentKey == undefined && allMCPs) {
-      currentChat.current.allowMCPs = clients.map((v) => v.name);
+    if (currentChat.current.agentKey == undefined) {
+      if (AppSetting.get().defaultAllowMCPs == null) {
+        currentChat.current.allowMCPs = clients.map((v) => v.name);
+      } else {
+        currentChat.current.allowMCPs = AppSetting.get().defaultAllowMCPs;
+      }
     }
 
     clientsRef.current;
-    let p = getPrompts((x) => currentChat.current.allowMCPs.includes(x.name));
+    let p = getPrompts(currentChat.current.allowMCPs);
     promptsRef.current = p;
-    let r = getResourses((x) => currentChat.current.allowMCPs.includes(x.name));
+    let r = getResourses(currentChat.current.allowMCPs);
     resourcesRef.current = r;
 
     refresh();
@@ -1973,21 +1984,31 @@ export const Chat = ({
                           <>
                             💻
                             <span className="px-1">
-                              {data.current.mcpLoading && <SyncOutlined spin />}
                               {(() => {
-                                let load = clientsRef.current
-                                  .filter((v) => v.status == "connected")
-                                  .filter((v) => {
-                                    return currentChat.current.allowMCPs.includes(
-                                      v.name,
-                                    );
-                                  }).length;
-                                let all = clientsRef.current.filter((v) => {
-                                  return currentChat.current.allowMCPs.includes(
-                                    v.name,
-                                  );
+                                let set = new Set();
+                                for (let tool_name of currentChat.current
+                                  .allowMCPs) {
+                                  let [name, _] = tool_name.split(" > ");
+                                  set.add(name);
+                                }
+
+                                let load = clientsRef.current.filter(
+                                  (v) => v.status == "connected",
+                                ).length;
+                                let all = clientsRef.current.length;
+                                let curr = clientsRef.current.filter((v) => {
+                                  return set.has(v.name);
                                 }).length;
-                                return load == all ? all : `(${load}/${all})`;
+
+                                return data.current.mcpLoading ? (
+                                  <>
+                                    {`${curr} `}
+                                    <SyncOutlined spin />
+                                    {`(${load}/${all})`}
+                                  </>
+                                ) : (
+                                  curr
+                                );
                               })()}
                             </span>
                           </>
@@ -2293,7 +2314,14 @@ export const Chat = ({
                           }
                           onKeyDown={(e) => {
                             if (data.current.suggestionShow) {
-                              if (e.key == "Enter" || e.key == "ArrowDown" || e.key == "ArrowUp" || e.key == "Escape" || e.key == "ArrowLeft" || e.key == "ArrowRight") {
+                              if (
+                                e.key == "Enter" ||
+                                e.key == "ArrowDown" ||
+                                e.key == "ArrowUp" ||
+                                e.key == "Escape" ||
+                                e.key == "ArrowLeft" ||
+                                e.key == "ArrowRight"
+                              ) {
                                 onKeyDown(e);
                               } else {
                                 onTrigger(false);
@@ -2392,10 +2420,89 @@ export const Chat = ({
           onCancel={() => setIsToolsShow(false)}
           maskClosable
           title={t`MCP Tool`}
-          onOk={() => setIsToolsShow(false)}
-          cancelButtonProps={{ style: { display: "none" } }}
+          // onOk={() => setIsToolsShow(false)}
+          footer={[
+            <Button
+              key="2"
+              onClick={async () => {
+                AppSetting.get().defaultAllowMCPs =
+                  currentChat.current.allowMCPs;
+                await AppSetting.save();
+                setIsToolsShow(false);
+              }}
+            >{t`Set Default`}</Button>,
+            <Button
+              key="1"
+              type="primary"
+              onClick={() => {
+                setIsToolsShow(false);
+              }}
+            >
+              {t`OK`}
+            </Button>,
+          ]}
+          // cancelButtonProps={{ style: { display: "none" } }}
         >
-          <Table
+          <Tree
+            checkable
+            onCheck={(checkedKeys) => {
+              // console.log("onCheck", checkedKeys);
+              currentChat.current.allowMCPs = checkedKeys as string[];
+              refresh();
+            }}
+            checkedKeys={currentChat.current.allowMCPs}
+            treeData={clientsRef.current.map((x) => {
+              return {
+                title: (
+                  <span>
+                    {x.name}
+                    {x.status == "connected" ? null : x.status ==
+                      "connecting" ? (
+                      <SyncOutlined spin className="m-1 text-blue-400" />
+                    ) : (
+                      <Button
+                        className="m-1"
+                        size="small"
+                        onClick={async () => {
+                          x.status = "connecting";
+                          refresh();
+                          await call("openMcpClient", [x.name]);
+                          clientsRef.current = await getClients();
+                          refresh();
+                        }}
+                      >{t`Reload`}</Button>
+                    )}
+                  </span>
+                ),
+                key: x.name,
+                children: x.tools.map((t) => {
+                  return {
+                    title: (
+                      <Tooltip title={t.function.description}>
+                        <span
+                          onClick={() => {
+                            setCurrTool(t);
+                            setCurrToolResult({
+                              data: null,
+                              error: null,
+                            });
+                            callToolForm.resetFields();
+                            setCallToolOpen(true);
+                          }}
+                        >
+                          {t.origin_name || t.function.name}
+                        </span>
+                      </Tooltip>
+                    ),
+                    key: t.restore_name,
+                    isLeaf: true,
+                  };
+                }),
+              };
+            })}
+          />
+
+          {/* <Table
             size="small"
             rowKey={(record) => record.name}
             pagination={false}
@@ -2482,7 +2589,7 @@ export const Chat = ({
                 },
               },
             ].filter((c) => !mobile.current.is || c.key != "tools")}
-          ></Table>
+          ></Table> */}
         </Modal>
 
         <Modal

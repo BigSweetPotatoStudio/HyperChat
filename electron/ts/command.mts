@@ -396,3 +396,4 @@ export class CommandFactory {
 }
 
 export const Command = CommandFactory.prototype;
+

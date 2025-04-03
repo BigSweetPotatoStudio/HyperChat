@@ -1018,5 +1018,21 @@
     "Update Success, please restart": {
         "en": "Update Success, please restart",
         "zh": "更新成功，请重启"
+    },
+    "Set Default": {
+        "en": "Set Default",
+        "zh": "设置为默认"
+    },
+    "OK": {
+        "en": "OK",
+        "zh": "好的"
+    },
+    "Start inputting, You can use @ to call other agents, or quickly enter": {
+        "en": "Start inputting, You can use @ to call other agents, or quickly enter",
+        "zh": "开始输入 您可以使用 @ 调用其他代理 或快速输入"
+    },
+    "Please select allowed MCP": {
+        "en": "Please select allowed MCP",
+        "zh": "请选择允许的MCP"
     }
 }

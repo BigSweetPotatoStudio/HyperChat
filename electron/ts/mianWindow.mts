@@ -39,7 +39,7 @@ export const createWindow = () => {
       webSecurity: false,
       preload: path.join(__dirname, "./preload.js"), // 设置预加载的脚本
       sandbox: false,
-      allowRunningInsecureContent: true
+      allowRunningInsecureContent: true,
     },
     icon: path.join(__dirname, "../web-build/assets/favicon.png"),
   });
@@ -51,9 +51,7 @@ export const createWindow = () => {
   } else {
     win
       .loadURL(
-        `http://localhost:${Config.port}/${
-          electronData.get().password
-        }/#/`
+        `http://localhost:${Config.port}/${electronData.get().password}/#/`
       )
       .catch((e) => {
         let indexFile = path.join(__dirname, "../web-build/index.html");

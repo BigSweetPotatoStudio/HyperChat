@@ -16,7 +16,7 @@ export function getMcpClients() {
 }
 
 export type HyperChatCompletionTool = OpenAI.ChatCompletionTool & {
-  key?: string;
+  // key?: string;
   origin_name?: string;
   restore_name?: string;
   clientName?: string;
@@ -28,7 +28,7 @@ export type InitedClient = {
   prompts: Array<typeof MCPTypes.PromptSchema._type & { key: string }>;
   resources: Array<typeof MCPTypes.ResourceSchema._type & { key: string }>;
   name: string;
-  status: string;
+  status: "disconnected" | "connected" | "connecting" | "disabled";
   order: number;
   config: MCP_CONFIG_TYPE;
   ext: any;
@@ -60,29 +60,50 @@ export function getMcpInited() {
   return init;
 }
 
-export function getTools(filter = (x: InitedClient) => true) {
+export function getTools(allowMCPs: string[] | undefined | false = undefined) {
   let tools: InitedClient["tools"] = [];
 
-  initedClientArray.filter(filter).forEach((v) => {
-    tools = tools.concat(v.tools);
+  initedClientArray.forEach((v) => {
+    tools = tools.concat(
+      v.tools.filter((t) => {
+        if (!allowMCPs) return true;
+        return allowMCPs.includes(t.clientName) || allowMCPs.includes(t.restore_name);
+      }),
+    );
   });
   return tools;
 }
-export function getPrompts(filter = (x: InitedClient) => true) {
+export function getPrompts(mcp: string[]) {
+  let set = new Set();
+  for (let tool_name of mcp) {
+    let [name, _] = tool_name.split(" > ");
+    set.add(name);
+  }
+
   let prompts: InitedClient["prompts"] = [];
 
-  initedClientArray.filter(filter).forEach((v) => {
-    prompts = prompts.concat(v.prompts);
-  });
+  initedClientArray
+    .filter((m) => set.has(m.name))
+    .forEach((v) => {
+      prompts = prompts.concat(v.prompts);
+    });
   return prompts;
 }
 
-export function getResourses(filter = (x: InitedClient) => true) {
+export function getResourses(mcp: string[]) {
+  let set = new Set();
+  for (let tool_name of mcp) {
+    let [name, _] = tool_name.split(" > ");
+    set.add(name);
+  }
+
   let resources: InitedClient["resources"] = [];
 
-  initedClientArray.filter(filter).forEach((v) => {
-    resources = resources.concat(v.resources);
-  });
+  initedClientArray
+    .filter((m) => set.has(m.name))
+    .forEach((v) => {
+      resources = resources.concat(v.resources);
+    });
   return resources;
 }
 
@@ -150,6 +171,7 @@ function mcpClientsToArray(mcpClients: {
             restore_name: key + " > " + tool.name,
             key: key,
             clientName: key,
+            client: key,
           };
         })
         .filter((x) => x != null),
