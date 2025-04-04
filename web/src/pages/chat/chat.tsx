@@ -2848,17 +2848,27 @@ export const Chat = ({
                       value={phrase.label}
                       onChange={async (e) => {
                         AppSetting.get().quicks[index].label = e.target.value;
-                        await AppSetting.save();
                         refresh();
                       }}
                       placeholder="Label"
                     />
                     <Button
                       size="small"
+                      type="primary"
+                      onClick={async () => {
+                        AppSetting.save();
+                        message.success(t`Save Success`);
+                        refresh();
+                      }}
+                    >
+                      Update
+                    </Button>
+                    <Button
+                      size="small"
                       danger
                       onClick={async () => {
                         AppSetting.get().quicks.splice(index, 1);
-                        await AppSetting.save();
+                        AppSetting.save();
                         refresh();
                       }}
                     >
@@ -2871,7 +2881,6 @@ export const Chat = ({
                     value={phrase.value}
                     onChange={async (e) => {
                       AppSetting.get().quicks[index].value = e.target.value;
-                      await AppSetting.save();
                       refresh();
                     }}
                     placeholder="Value"

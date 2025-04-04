@@ -100,7 +100,7 @@ export function Setting() {
   };
   const [password, setPassword] = useState("");
   return (
-    <div>
+    <div className="overflow-auto h-full">
       <div className="relative flex flex-wrap">
         <div className="w-full lg:w-1/2 lg:p-4">
           <Form
