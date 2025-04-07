@@ -156,13 +156,9 @@ export class OpenAiChannel {
       return cache.get(cacheKey);
     }
     let openai = new OpenAiChannel({
-      baseURL:
-        process.env.runtime === "node"
-          ? options.baseURL
-          : isOnBrowser
-            ? callModule.getURL_PRE() + "api/proxy"
-            : options.baseURL,
+      baseURL: options.baseURL,
       apiKey: options.apiKey,
+
     }, []);
     cache.set(cacheKey, openai);
     return openai;

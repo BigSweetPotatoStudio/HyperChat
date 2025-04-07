@@ -131,6 +131,7 @@ async function proxy(ctx: Context, next: () => Promise<any>) {
       let baseURL = decodeURIComponent(
         ctx.request.headers["baseurl"] as string
       );
+      console.log("baseURL: ", baseURL);
       if (!baseURL) {
         ctx.status = 400;
         ctx.body = { success: false, message: "baseURL is required" };
@@ -138,9 +139,11 @@ async function proxy(ctx: Context, next: () => Promise<any>) {
       }
 
       let headers = {
+        "HTTP-Referer": "https://hyperchat.dadigua.men", // Optional. Site URL for rankings on openrouter.ai.
+        "X-Title": "HyperChat",
         "Content-Type": "application/json",
-        // ...(ctx.request.headers as any),
-        authorization: ctx.request.headers["authorization"],
+        // ...(ctx.request.headers as any),·
+        Authorization: ctx.request.headers["authorization"],
       };
       if (baseURL.endsWith("/")) {
         baseURL = baseURL.slice(0, -1);

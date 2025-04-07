@@ -10,7 +10,7 @@ import dayjs from "dayjs";
 import { DownImage, MarkDown, UserContent } from "../pages/chat/component";
 import { Pre } from "./pre";
 
-export const Messages = ({ messages, onSumbit }: { messages: MyMessage[]; onSumbit: (messages: MyMessage[]) => void }) => {
+export const Messages = ({ messages, onSumbit, readOnly }: { messages: MyMessage[]; onSumbit: (messages: MyMessage[]) => void; readOnly?: boolean }) => {
     const [num, setNum] = React.useState(0);
     const refresh = () => {
         setNum((n) => n + 1);
@@ -79,63 +79,6 @@ export const Messages = ({ messages, onSumbit }: { messages: MyMessage[]; onSumb
                 },
                 footer: (
                     <Space>
-                        {/* {x.role == "user" && (
-              <Tooltip title="New Chat">
-                <WechatWorkOutlined
-                  onClick={async () => {
-                    await onGPTSClick(currentChat.current.agentKey, {
-                      loadHistory: false,
-                    });
-                    if (Array.isArray(x.content)) {
-                      // console.log("x.content", x);
-
-                      resourceResListRef.current = x.content
-                        .slice(1)
-                        .map((x) => {
-                          if (x.type == "text") {
-                            return {
-                              call_name: "new-chat",
-                              contents: [
-                                {
-                                  text: x.text,
-                                  type: "text",
-                                },
-                              ],
-                              uid: v4(),
-                            };
-                          } else if (x.type == "image_url") {
-                            return {
-                              call_name: "new-chat",
-                              contents: [
-                                {
-                                  path: undefined,
-                                  blob: x.image_url.url,
-                                  type: "image",
-                                },
-                              ],
-                              uid: v4(),
-                            };
-                          } else {
-                            console.log("unknown type", x);
-                          }
-                        });
-
-                      if (
-                        (x.content[0] as OpenAI.ChatCompletionContentPartText)
-                          .type == "text"
-                      ) {
-                        onRequest(
-                          (x.content[0] as OpenAI.ChatCompletionContentPartText)
-                            .text,
-                        );
-                      }
-                    } else {
-                      onRequest(x.content as any);
-                    }
-                  }}
-                />
-              </Tooltip>
-            )} */}
                         <CopyOutlined
                             className="hover:text-cyan-400"
                             key="copy"
@@ -149,13 +92,13 @@ export const Messages = ({ messages, onSumbit }: { messages: MyMessage[]; onSumb
                             }}
                         />
 
-                        <EditOutlined
+                        {!readOnly && <EditOutlined
                             className="hover:text-cyan-400"
                             onClick={() => {
                                 x.content_context.edit = !x.content_context.edit;
                                 refresh();
                             }}
-                        />
+                        />}
 
                         {x.role == "user" && (
                             <>
@@ -164,13 +107,13 @@ export const Messages = ({ messages, onSumbit }: { messages: MyMessage[]; onSumb
                                         {dayjs(x.content_date).format("YYYY-MM-DD HH:mm:ss")}
                                     </span>
                                 )}
-                                <SyncOutlined
+                                {!readOnly && <SyncOutlined
                                     className="hover:text-cyan-400"
                                     key="sync"
                                     onClick={() => {
                                         onSumbit(messages.filter((x, index) => index <= i));
                                     }}
-                                />
+                                />}
                             </>
                         )}
                         {x.role == "user" && x.content_attached == false && (
@@ -291,14 +234,14 @@ export const Messages = ({ messages, onSumbit }: { messages: MyMessage[]; onSumb
                                         message.success("Copied to clipboard");
                                     }}
                                 />
-                                <SyncOutlined
+                                {!readOnly && <SyncOutlined
                                     key="sync"
                                     className="hover:text-cyan-400"
                                     onClick={() => {
                                         // 请求以前的消息，不包括这条
                                         onSumbit(messages.filter((x, index) => index < i));
                                     }}
-                                />
+                                />}
                             </Space>
                             {
                                 <Space>

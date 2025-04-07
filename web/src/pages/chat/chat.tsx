@@ -413,6 +413,10 @@ export const Chat = ({
       ...defaultChatValue,
       ...newConfig,
     };
+    for(let d of DATA.current.diffs){
+      d.messages = currentChat.current.messages.slice();
+    }
+   
 
     resourceResListRef.current = [];
     setPromptResList([]);
@@ -1142,7 +1146,7 @@ export const Chat = ({
               style={{ alignSelf: "stretch" }}
             >
 
-              <Splitter className="overflow-auto">
+              <Splitter layout={window.innerHeight > window.innerWidth ? "vertical" : "horizontal"} className="overflow-auto">
                 <Splitter.Panel defaultSize="50%" min="30%" max="70%">
                   <div className="h-full">
                     {(currentChat.current.messages == null ||
@@ -1286,9 +1290,14 @@ export const Chat = ({
 
                 {
                   DATA.current.diffs.map((x, i) => {
-                    return <Splitter.Panel key={i} className="h-full"><Watermark className="h-full" content={x.label}><Messages messages={x.messages} onSumbit={(messages) => {
+                    return <Splitter.Panel key={i} className="h-full"><Watermark className="h-full  relative " content={x.label}>
+                      <div className=" absolute top-0 right-0 cursor-pointer z-10 text-red-400" onClick={() => {
+                        DATA.current.diffs = DATA.current.diffs.filter((_, j) => j != i);
+                        refresh();
+                      }}><CloseCircleOutlined /></div>
+                      <Messages readOnly messages={x.messages} onSumbit={(messages) => {
 
-                    }}></Messages></Watermark></Splitter.Panel>;
+                      }}></Messages></Watermark></Splitter.Panel>;
                   })}
               </Splitter>
 
@@ -1815,7 +1824,10 @@ export const Chat = ({
                           }}
                           onCancel={() => {
                             setLoading(false);
-                            openaiClient.current.cancel();
+                            openaiClient.current?.cancel();
+                            for (let d of DATA.current.diffs) {
+                              d.openaiClient?.cancel();
+                            }
                             // message.success("Cancel sending!");
                           }}
                           onSubmit={(s) => {
