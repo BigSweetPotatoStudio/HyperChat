@@ -1,6 +1,6 @@
 console.log("HyperChat");
 console.log("process.env.myEnv", process.env.myEnv);
-
+import "../public/iconfont.js"
 import "./i18n";
 import "./common/call";
 import "./common/data";

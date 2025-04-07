@@ -6,6 +6,15 @@
 @tailwind components;
 @tailwind utilities;
 
+.icon {
+  width: 1em;
+  height: 1em;
+  vertical-align: -0.15em;
+  fill: currentColor;
+  overflow: hidden;
+}
+
+
 .ant-form-item-label {
   @apply text-gray-900;
   @apply font-bold;

@@ -46,11 +46,11 @@ type ContentImage = {
 export type MyMessage = OpenAI.Chat.Completions.ChatCompletionMessageParam & {
   tool_calls?: Tool_Call[]; // openai tool call
   content_status?:
-    | "loading"
-    | "success"
-    | "error"
-    | "dataLoading"
-    | "dataLoadComplete";
+  | "loading"
+  | "success"
+  | "error"
+  | "dataLoading"
+  | "dataLoadComplete";
   content_error?: string;
   content_from?: string;
   content_attachment?: Array<{
@@ -90,6 +90,7 @@ export type MyMessage = OpenAI.Chat.Completions.ChatCompletionMessageParam & {
 // }
 
 // export const clientName2Index = new ClientName2Index();
+const cache = new Map<string, any>();
 
 const deviceId = v4();
 export class OpenAiChannel {
@@ -111,8 +112,8 @@ export class OpenAiChannel {
   constructor(
     public options: {
       baseURL: string;
-      model: string;
       apiKey: string;
+      model?: string;
       requestType?: "complete" | "stream";
       call_tool_step?: number;
       supportTool?: boolean;
@@ -145,6 +146,25 @@ export class OpenAiChannel {
       typeof this.options.temperature === "number"
         ? this.options.temperature
         : undefined;
+  }
+  static create(options: {
+    baseURL: string;
+    apiKey: string;
+  }) {
+    if (cache.has(JSON.stringify(options))) {
+      return cache.get(JSON.stringify(options));
+    }
+    let openai = new OpenAiChannel({
+      baseURL:
+        process.env.runtime === "node"
+          ? options.baseURL
+          : isWeb
+            ? callModule.getURL_PRE() + "api/proxy"
+            : options.baseURL,
+      apiKey: options.apiKey,
+    }, []);
+    cache.set(JSON.stringify(options), openai);
+    return openai;
   }
   addMessage(
     message: MyMessage,
@@ -400,7 +420,7 @@ export class OpenAiChannel {
         if (!Array.isArray(chatCompletion.choices)) {
           throw new Error(
             (chatCompletion as any)?.error?.message ||
-              "Provider returned error",
+            "Provider returned error",
           );
         }
         this.lastMessage.content_status = "success";

@@ -194,7 +194,7 @@ export function Market() {
       let mcpExtensionData = (await getMCPExtensionData().catch(
         (e) => [],
       )) as any[];
-      let clients = await getClients(false);
+      let clients = await getClients();
       mcpExtensionData = clients
         .filter((x) => x.config.hyperchat?.scope == "built-in")
         .map((x) => {
@@ -252,7 +252,7 @@ export function Market() {
               await call("openMcpClient", [item.name]);
             }
 
-            await getClients(false);
+            await getClients();
             refresh();
           } catch (e) {
             message.error(e.message);
@@ -373,7 +373,7 @@ export function Market() {
                                           item.name
                                         ];
                                         await MCP_CONFIG.save();
-                                        await getClients(false);
+                                        await getClients();
                                         refresh();
                                       } catch (e) {
                                         message.error(e.message);
@@ -415,7 +415,7 @@ export function Market() {
                                           );
                                         }
                                         setMcpconfigOpen(true);
-                                        await getClients(false);
+                                        await getClients();
                                         refresh();
                                       }}
                                     />
@@ -460,7 +460,7 @@ export function Market() {
                                         );
                                       }
                                       setCurrRow(item);
-                                      await getClients(false);
+                                      await getClients();
                                       setMcpconfigOpen(true);
                                       refresh();
                                     }}
@@ -827,7 +827,7 @@ export function Market() {
                     currRow.name,
                     MCP_CONFIG.get().mcpServers[currRow.name],
                   ]);
-                  await getClients(false);
+                  await getClients();
                   setMcpconfigOpen(false);
                 } else {
                   let config = currRow.resolve(values);
@@ -842,7 +842,7 @@ export function Market() {
                   MCP_CONFIG.get().mcpServers[currRow.name] = config;
                   await MCP_CONFIG.save();
 
-                  await getClients(false);
+                  await getClients();
                   setMcpconfigOpen(false);
                 }
               } catch (e) {
@@ -945,7 +945,7 @@ export function Market() {
                   }
 
                   await MCP_CONFIG.save();
-                  await getClients(false);
+                  await getClients();
                   refreshThreePartys(MCP_CONFIG.get());
 
                   refresh();

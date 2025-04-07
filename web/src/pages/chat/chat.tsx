@@ -220,68 +220,9 @@ import {
   JsonSchema2ProFormColumnsType,
 } from "../../common/util";
 import zodToJsonSchema from "zod-to-json-schema";
+import { Icon } from "../../components/icon";
+import { Messages } from "../../components/messages";
 
-function formatToolMessage(x: MyMessage, common, i) {
-  return {
-    ...common,
-    placement: "start",
-    avatar: {
-      icon: "🔧",
-      style: {
-        color: "#fff",
-        backgroundColor: "#87d068",
-      },
-    },
-    key: i.toString(),
-    content: (
-      <Tooltip
-        title={
-          <div className="max-h-40 overflow-auto text-ellipsis">
-            {x.content as string}
-          </div>
-        }
-      >
-        <span
-          className="cursor-pointer"
-          onClick={() => {
-            Modal.info({
-              width: "90%",
-              style: { maxWidth: 1024 },
-              title: t`Tool Call Result`,
-              maskClosable: true,
-              content: <Pre>{x.content as string}</Pre>,
-            });
-          }}
-        >
-          {x.content_status == "loading" ? (
-            <SyncOutlined spin />
-          ) : x.content_status == "error" ? (
-            "❌Error"
-          ) : (
-            "✅Completed"
-          )}
-          <div className="line-clamp-1">{x.content as string}</div>
-        </span>
-        {x.content_attachment &&
-          x.content_attachment.length > 0 &&
-          x.content_attachment.map((x, i) => {
-            if (x.type == "image") {
-              return (
-                <DownImage
-                  key={i}
-                  src={`data:${x.mimeType};base64,${x.data}`}
-                />
-              );
-            } else if (x.type == "text") {
-              return <pre>{x.text}</pre>;
-            }
-          })}
-      </Tooltip>
-    ),
-  };
-}
-
-const isFold = true;
 
 export const Chat = ({
   onTitleChange = undefined,
@@ -290,8 +231,8 @@ export const Chat = ({
     uid: "",
     agentKey: "",
     message: "",
-    onComplete: (text) => {},
-    onError: (e) => {},
+    onComplete: (text) => { },
+    onError: (e) => { },
   },
   onlyView = {
     histroyKey: "",
@@ -342,7 +283,7 @@ export const Chat = ({
 
             // setTimeout(() => {
             currentChatReset(item);
-            createChat(false);
+
             // });
           }
         }
@@ -358,9 +299,6 @@ export const Chat = ({
           },
           "",
         );
-        if (GPT_MODELS.get().data.length > 0) {
-          createChat(false);
-        }
       }
 
       while (1) {
@@ -372,7 +310,7 @@ export const Chat = ({
           let r = getResourses(currentChat.current.allowMCPs);
           resourcesRef.current = r;
 
-          data.current.mcpLoading = false;
+          DATA.current.mcpLoading = false;
           refresh();
           break;
         } else {
@@ -382,7 +320,7 @@ export const Chat = ({
           promptsRef.current = p;
           let r = getResourses(currentChat.current.allowMCPs);
           resourcesRef.current = r;
-          data.current.mcpLoading = false;
+          DATA.current.mcpLoading = false;
           refresh();
           break;
         }
@@ -443,10 +381,14 @@ export const Chat = ({
     is: window.innerWidth < 1024,
   });
 
-  const data = useRef({
+  const DATA = useRef({
     mcpLoading: false,
     showHistory: mobile.current.is ? false : true,
     suggestionShow: false,
+    diffs: [] as Array<{
+      messages: ChatHistoryItem["messages"];
+      modelKey: string;
+    }>,
   });
 
   const currentChat = React.useRef<ChatHistoryItem>(defaultChatValue);
@@ -498,721 +440,143 @@ export const Chat = ({
     }
   }, [currentChat.current.agentKey]);
 
-  const format = useCallback((x: MyMessage, i, arr) => {
-    let common = {
-      className: {
-        "no-attached": !(
-          x.content_attached == null || x.content_attached == true
-        ),
-      },
-      role: x.role,
-    };
 
-    if (x.role == "user" || x.role == "system") {
-      // mcp prompt
-      if (x.content_from) {
-        return {
-          ...common,
-          key: i.toString(),
-          placement: x.role == "user" || x.role == "system" ? "end" : "start",
-          avatar: {
-            icon: x.role == "system" ? "⚙️" : <UserOutlined />,
-            style: {
-              color: "#f56a00",
-              backgroundColor: "#fde3cf",
-            },
-          },
-          content: (
-            <div
-              className="cursor-pointer"
-              onClick={() => {
-                Modal.info({
-                  width: "90%",
-                  style: { maxWidth: 1024 },
-                  title: "Tip",
-                  maskClosable: true,
-                  content: <div>{x.content as string}</div>,
-                });
-              }}
-            >
-              <Attachments.FileCard
-                item={{
-                  name: x.content_from as string,
-                  uid: x.content_from as string,
-                  size: x.content.length,
-                }}
-              ></Attachments.FileCard>
-            </div>
-          ),
-        };
-      }
-      if (x.content_context == null) {
-        x.content_context = {};
-      }
-      return {
-        ...common,
-        key: i.toString(),
-        placement: "end",
-        avatar: {
-          icon: x.role == "system" ? "⚙️" : <UserOutlined />,
-          style: {
-            color: "#f56a00",
-            backgroundColor: "#fde3cf",
-          },
-        },
-        footer: (
-          <Space>
-            {x.role == "user" && (
-              <Tooltip title="New Chat">
-                <WechatWorkOutlined
-                  onClick={async () => {
-                    await onGPTSClick(currentChat.current.agentKey, {
-                      loadHistory: false,
-                    });
-                    if (Array.isArray(x.content)) {
-                      // console.log("x.content", x);
+  // const createChat = useCallback((showTip = true) => {
+  //   let config = GPT_MODELS.get().data.find(
+  //     (x) => x.key == currentChat.current.modelKey,
+  //   );
+  //   if (config == null) {
+  //     if (GPT_MODELS.get().data.length == 0) {
+  //       if (showTip) {
+  //         EVENT.fire("setIsModelConfigOpenTrue");
+  //       }
+  //       throw new Error("Please add LLM first");
+  //     }
+  //     config = GPT_MODELS.get().data[0];
+  //   }
+  //   // currentChat.current.modelKey = config.key;
+  //   // DATA.current.suggestionShow = false;
+  //   openaiClient.current = OpenAiChannel.create(
+  //     {
+  //       // ...config,
+  //       baseURL: config.baseURL,
+  //       apiKey: config.apiKey,
 
-                      resourceResListRef.current = x.content
-                        .slice(1)
-                        .map((x) => {
-                          if (x.type == "text") {
-                            return {
-                              call_name: "new-chat",
-                              contents: [
-                                {
-                                  text: x.text,
-                                  type: "text",
-                                },
-                              ],
-                              uid: v4(),
-                            };
-                          } else if (x.type == "image_url") {
-                            return {
-                              call_name: "new-chat",
-                              contents: [
-                                {
-                                  path: undefined,
-                                  blob: x.image_url.url,
-                                  type: "image",
-                                },
-                              ],
-                              uid: v4(),
-                            };
-                          } else {
-                            console.log("unknown type", x);
-                          }
-                        });
+  //     },
+  //   );
+  //   openaiClient.current.options = {
+  //     ...openaiClient.current.options,
+  //     model: config.model,
+  //     call_tool_step: config.call_tool_step,
+  //     supportTool: config.supportTool,
+  //     supportImage: config.supportImage,
 
-                      if (
-                        (x.content[0] as OpenAI.ChatCompletionContentPartText)
-                          .type == "text"
-                      ) {
-                        onRequest(
-                          (x.content[0] as OpenAI.ChatCompletionContentPartText)
-                            .text,
-                        );
-                      }
-                    } else {
-                      onRequest(x.content as any);
-                    }
-                  }}
-                />
-              </Tooltip>
-            )}
-            <CopyOutlined
-              className="hover:text-cyan-400"
-              key="copy"
-              onClick={() => {
-                call("setClipboardText", [
-                  Array.isArray(x.content)
-                    ? (x.content[0] as any).text
-                    : x.content.toString(),
-                ]);
-                message.success(t`Copied to clipboard`);
-              }}
-            />
+  //     requestType: currentChat.current.requestType,
+  //     allowMCPs: currentChat.current.allowMCPs,
+  //     temperature: currentChat.current.temperature,
+  //     confirm_call_tool: currentChat.current.confirm_call_tool,
+  //     confirm_call_tool_cb: (tool) => {
+  //       return new Promise((resolve, reject) => {
+  //         console.log("tool", tool);
+  //         let m = modal.confirm({
+  //           title: t`Comfirm Call Tool`,
+  //           width: "90%",
+  //           style: { maxWidth: 1024 },
+  //           footer: [],
+  //           content: (
+  //             <div>
+  //               <Form
+  //                 initialValues={tool.function.argumentsJSON}
+  //                 name="control-hooks"
+  //                 onFinish={(e) => {
+  //                   // console.log(e);
+  //                   resolve(e);
+  //                   m.destroy();
+  //                 }}
+  //               >
+  //                 <pre
+  //                   style={{
+  //                     whiteSpace: "pre-wrap",
+  //                     wordWrap: "break-word",
+  //                     padding: "8px 0",
+  //                     textAlign: "center",
+  //                   }}
+  //                 >
+  //                   <span>Tool Name: </span>
+  //                   <span className="text-purple-500">
+  //                     {tool.restore_name || tool.function.name}
+  //                   </span>
+  //                 </pre>
+  //                 {JsonSchema2FormItemOrNull(
+  //                   getTools().find(
+  //                     (x) => x.restore_name == tool.restore_name,
+  //                   ).function.parameters,
+  //                 ) || t`No parameters`}
+  //                 <Form.Item>
+  //                   <div className="flex flex-wrap justify-between">
+  //                     <Button
+  //                       onClick={() => {
+  //                         m.destroy();
+  //                         reject(new Error(t`User Cancel`));
+  //                       }}
+  //                     >{t`Cancel`}</Button>
+  //                     <Space>
+  //                       <Button
+  //                         type="primary"
+  //                         ghost
+  //                         htmlType="submit"
+  //                         onClick={() => {
+  //                           currentChat.current.confirm_call_tool = false;
+  //                           openaiClient.current.options.confirm_call_tool =
+  //                             false;
+  //                         }}
+  //                       >
+  //                         {t`Allow this Chat`}
+  //                       </Button>
+  //                       <Button type="primary" htmlType="submit">
+  //                         {t`Allow Once`}
+  //                       </Button>
+  //                     </Space>
+  //                   </div>
+  //                 </Form.Item>
+  //               </Form>
+  //             </div>
+  //           ),
+  //         });
+  //       });
+  //     },
+  //   }
+  //   openaiClient.current.messages = currentChat.current.messages;
 
-            <EditOutlined
-              className="hover:text-cyan-400"
-              onClick={() => {
-                x.content_context.edit = !x.content_context.edit;
-                refresh();
-              }}
-            />
+  //   // currentChat.current.messages = openaiClient.current.messages;
+  //   refresh();
+  // }, []);
+  const [loading, setLoading] = useState(false);
 
-            {x.role == "user" && (
-              <>
-                {x.content_date && (
-                  <span style={{ marginLeft: 16 }}>
-                    {dayjs(x.content_date).format("YYYY-MM-DD HH:mm:ss")}
-                  </span>
-                )}
-                <SyncOutlined
-                  className="hover:text-cyan-400"
-                  key="sync"
-                  onClick={() => {
-                    openaiClient.current.messages.splice(i);
-                    currentChat.current.messages =
-                      openaiClient.current.messages;
-                    refresh();
-                    onRequest(x.content as any);
-                  }}
-                />
-              </>
-            )}
-            {x.role == "user" && x.content_attached == false && (
-              <Tooltip title="Cleared">
-                <MinusCircleOutlined className="cursor-not-allowed" />
-              </Tooltip>
-            )}
-          </Space>
-        ),
-        content: (
-          <UserContent
-            x={x}
-            submit={(content) => {
-              if (x.role == "system") {
-                currentChat.current.messages.find(
-                  (x) => x.role == "system",
-                ).content = content;
-
-                openaiClient.current.messages = currentChat.current.messages;
-
-                let userIndex = openaiClient.current.messages.findLastIndex(
-                  (x) => x.role == "user",
-                );
-                if (userIndex > -1) {
-                  let content =
-                    openaiClient.current.messages[userIndex].content;
-                  openaiClient.current.messages.splice(userIndex);
-                  refresh();
-                  onRequest(content as any);
-                }
-              } else {
-                openaiClient.current.messages.splice(i);
-                currentChat.current.messages = openaiClient.current.messages;
-                refresh();
-                onRequest(content);
-              }
-            }}
-          />
-        ),
-      };
-    } else {
-      if (isFold) {
-        if (i + 1 != arr.length && arr[i + 1] && arr[i + 1].role != "user") {
-          return;
-        }
-        // if (arr[i + 1] && arr[i + 1].role != "user") {
-        //   return;
-        // }
-        let rocessProgress = [];
-        let index = arr[i].role == "assistant" ? i - 1 : i;
-        // let last_content_usage =
-        //   arr[i].role == "tool" ? null : arr[i].content_usage;
-        while (index >= 0) {
-          // if (last_content_usage == null) {
-          //   if (arr[index].role == "assistant") {
-          //     last_content_usage = arr[index].content_usage;
-          //   }
-          // }
-          if (arr[index].role == "user") {
-            break;
-          }
-          rocessProgress.push(arr[index]);
-          index--;
-        }
-        rocessProgress = rocessProgress.reverse();
-        let last_content_usage = {} as {
-          prompt_tokens: number;
-          completion_tokens: number;
-          total_tokens: number;
-        };
-        for (let x of rocessProgress) {
-          if (x.content_usage) {
-            if (x.content_usage.prompt_tokens != 0) {
-              last_content_usage.prompt_tokens = x.content_usage.prompt_tokens;
-            }
-            if (x.content_usage.completion_tokens != 0) {
-              last_content_usage.completion_tokens =
-                x.content_usage.completion_tokens;
-            }
-            if (x.content_usage.total_tokens != 0) {
-              last_content_usage.total_tokens = x.content_usage.total_tokens;
-            }
-          }
-        }
-        if (arr[i].role == "assistant") {
-          if (x.content_usage) {
-            if (x.content_usage.prompt_tokens != 0) {
-              last_content_usage.prompt_tokens = x.content_usage.prompt_tokens;
-            }
-            if (x.content_usage.completion_tokens != 0) {
-              last_content_usage.completion_tokens =
-                x.content_usage.completion_tokens;
-            }
-            if (x.content_usage.total_tokens != 0) {
-              last_content_usage.total_tokens = x.content_usage.total_tokens;
-            }
-          }
-        }
-        return {
-          ...common,
-          placement: "start",
-          avatar: {
-            icon: "🤖",
-            style: {
-              color: "#fff",
-              backgroundColor: "#87d068",
-            },
-          },
-          key: i,
-          footer: (
-            <div className="flex flex-wrap justify-between text-xs">
-              <Space>
-                <CopyOutlined
-                  className="hover:text-cyan-400"
-                  key="copy"
-                  onClick={() => {
-                    call("setClipboardText", [x.content.toString()]);
-                    message.success("Copied to clipboard");
-                  }}
-                />
-                <SyncOutlined
-                  key="sync"
-                  className="hover:text-cyan-400"
-                  onClick={() => {
-                    openaiClient.current.messages.splice(i);
-                    currentChat.current.messages =
-                      openaiClient.current.messages;
-                    refresh();
-                    onRequest();
-                  }}
-                />
-              </Space>
-              {
-                <Space>
-                  {x.content_attached == false && (
-                    <Tooltip title="Cleared">
-                      <MinusCircleOutlined className="cursor-not-allowed bg-red-200" />
-                    </Tooltip>
-                  )}
-                  {x.content_date && (
-                    <span style={{ marginLeft: 16 }}>
-                      {dayjs(x.content_date).format("YYYY-MM-DD HH:mm:ss")}
-                    </span>
-                  )}
-                  {last_content_usage && (
-                    <>
-                      {last_content_usage?.prompt_tokens ? (
-                        <Tooltip title="prompt_tokens">
-                          <UploadOutlined />
-                          {last_content_usage?.prompt_tokens}
-                        </Tooltip>
-                      ) : null}
-                      {last_content_usage?.completion_tokens ? (
-                        <Tooltip title="completion_tokens">
-                          <DownloadOutlined />
-                          {last_content_usage?.completion_tokens}
-                        </Tooltip>
-                      ) : null}
-                      {last_content_usage?.total_tokens ? (
-                        <Tooltip title="total_tokens">
-                          <StockOutlined />
-                          {last_content_usage?.total_tokens}
-                        </Tooltip>
-                      ) : null}
-                    </>
-                  )}
-                </Space>
-              }
-            </div>
-          ),
-          content: (
-            <div>
-              <div>
-                {rocessProgress.map((x, i) => {
-                  if (x.role == "tool") {
-                    return (
-                      <div key={i}>
-                        <span
-                          key={i}
-                          className="cursor-pointer"
-                          onClick={() => {
-                            Modal.info({
-                              width: "90%",
-                              style: { maxWidth: 1024 },
-                              title: t`Tool Call Result`,
-                              maskClosable: true,
-                              content: <Pre>{x.content as string}</Pre>,
-                            });
-                          }}
-                        >
-                          {x.content_status == "loading" ? (
-                            <SyncOutlined spin />
-                          ) : x.content_status == "error" ? (
-                            <div className="line-clamp-1 text-red-500">
-                              ❌Error{" "}
-                              <span className="text-red-300">
-                                {x?.content?.toString()}
-                              </span>
-                            </div>
-                          ) : (
-                            <div className="line-clamp-1 text-green-400">
-                              ✅Completed{" "}
-                              <span className="text-gray-400">
-                                {x?.content?.toString()}
-                              </span>
-                            </div>
-                          )}
-                        </span>
-                        {x.content_attachment &&
-                          x.content_attachment.length > 0 &&
-                          x.content_attachment.map((x, i) => {
-                            if (x.type == "image") {
-                              return (
-                                <DownImage
-                                  key={i}
-                                  src={`data:${x.mimeType};base64,${x.data}`}
-                                />
-                              );
-                            } else if (x.type == "text") {
-                              return <Pre key={i}>{x.text}</Pre>;
-                            }
-                          })}
-                      </div>
-                    );
-                  } else {
-                    return (
-                      <div className="bg-gray-200" key={i}>
-                        {x.tool_calls?.map((tool: any, index) => {
-                          return (
-                            <Spin
-                              key={index}
-                              spinning={x.content_status == "loading"}
-                            >
-                              <a
-                                className="cursor-pointer"
-                                onClick={() => {
-                                  Modal.info({
-                                    width: "90%",
-                                    style: { maxWidth: 1024 },
-                                    title: t`Tool Call`,
-                                    maskClosable: true,
-                                    content: (
-                                      <div>
-                                        <pre
-                                          style={{
-                                            whiteSpace: "pre-wrap",
-                                            wordWrap: "break-word",
-                                            padding: "8px 0",
-                                            textAlign: "center",
-                                          }}
-                                        >
-                                          <span>Tool Name: </span>
-                                          <span className="text-purple-500">
-                                            {tool.restore_name ||
-                                              tool.function.name}
-                                          </span>
-                                        </pre>
-                                        {x?.content?.toString()}
-                                        <div>
-                                          <span>Tool Arguments: </span>
-                                        </div>
-                                        <Pre>{tool.function.arguments}</Pre>
-                                      </div>
-                                    ),
-                                  });
-                                }}
-                              >
-                                <div className="line-clamp-1">
-                                  🔧
-                                  <span className="text-purple-500">
-                                    {tool.restore_name || tool.function.name}
-                                  </span>{" "}
-                                  <span className="text-gray-500">
-                                    {" "}
-                                    {x?.content?.toString()}
-                                  </span>{" "}
-                                  {tool.function.arguments}
-                                </div>
-                              </a>
-                            </Spin>
-                          );
-                        })}
-                      </div>
-                    );
-                  }
-                })}
-              </div>
-              {x.reasoning_content && (
-                <Collapse
-                  defaultActiveKey={["reasoning_content"]}
-                  items={[
-                    {
-                      key: "reasoning_content",
-                      label: (
-                        <div className="line-clamp-1">
-                          thinking: {x.reasoning_content}
-                        </div>
-                      ),
-                      children: <Pre>{x.reasoning_content}</Pre>,
-                    },
-                  ]}
-                />
-              )}
-
-              {x.role == "assistant" && (
-                <>
-                  {x.content && (
-                    <MarkDown
-                      markdown={x.content}
-                      onCallback={(e) => {
-                        setValue(e);
-                      }}
-                    ></MarkDown>
-                  )}
-                  {x.content_status == "loading" ? (
-                    <SyncOutlined spin />
-                  ) : x.content_status == "error" ? (
-                    <div className="text-red-500">
-                      {t`Please verify your network connection. If the network is working, there might be a small bug in the program. Here are the error messages: `}
-                      <div className="text-red-700">{x.content_error}</div>
-                    </div>
-                  ) : null}
-                  {x.content_status == "dataLoading" && <LoadingOutlined />}
-                  {x.content_attachment &&
-                    x.content_attachment.length > 0 &&
-                    x.content_attachment.map((x, i) => {
-                      if (x.type == "image") {
-                        return (
-                          <DownImage
-                            key={i}
-                            src={`data:${x.mimeType};base64,${x.data}`}
-                          />
-                        );
-                      } else if (x.type == "text") {
-                        return <Pre>{x.text}</Pre>;
-                      }
-                    })}
-                </>
-              )}
-            </div>
-          ),
-        };
-      } else {
-        if (x.role == "tool") {
-          return formatToolMessage(x, common, i);
-        } else if (x.role == "assistant") {
-          return {
-            ...common,
-            placement: "start",
-            avatar: {
-              icon: "🤖",
-              style: {
-                color: "#fff",
-                backgroundColor: "#87d068",
-              },
-            },
-            key: i.toString(),
-            // typing: x.content_status == "dataLoading",
-            footer: (
-              <div className="flex flex-wrap justify-between text-xs">
-                <Space>
-                  <CopyOutlined
-                    className="hover:text-cyan-400"
-                    key="copy"
-                    onClick={() => {
-                      call("setClipboardText", [x.content.toString()]);
-                      message.success("Copied to clipboard");
-                    }}
-                  />
-                  <SyncOutlined
-                    key="sync"
-                    className="hover:text-cyan-400"
-                    onClick={() => {
-                      openaiClient.current.messages.splice(i);
-                      currentChat.current.messages =
-                        openaiClient.current.messages;
-                      refresh();
-                      onRequest();
-                    }}
-                  />
-                </Space>
-                {x.content_status != "error" && (
-                  <Space>
-                    {x.content_attached == false && (
-                      <Tooltip title="Cleared">
-                        <MinusCircleOutlined className="cursor-not-allowed bg-red-200" />
-                      </Tooltip>
-                    )}
-                    {x.content_date && (
-                      <span style={{ marginLeft: 16 }}>
-                        {dayjs(x.content_date).format("YYYY-MM-DD HH:mm:ss")}
-                      </span>
-                    )}
-                    {x.content_usage && (
-                      <>
-                        {x?.content_usage?.prompt_tokens ? (
-                          <Tooltip title="prompt_tokens">
-                            <UploadOutlined />
-                            {x?.content_usage?.prompt_tokens}
-                          </Tooltip>
-                        ) : null}
-                        {x?.content_usage?.completion_tokens ? (
-                          <Tooltip title="completion_tokens">
-                            <DownloadOutlined />
-                            {x?.content_usage?.completion_tokens}
-                          </Tooltip>
-                        ) : null}
-                        {x?.content_usage?.total_tokens ? (
-                          <Tooltip title="total_tokens">
-                            <StockOutlined />
-                            {x?.content_usage?.total_tokens}
-                          </Tooltip>
-                        ) : null}
-                      </>
-                    )}
-                  </Space>
-                )}
-              </div>
-            ),
-            // loading:
-            //   x.content_status == "loading" || x.content_status == "dataLoading",
-            content:
-              x.content_status == "loading" ? (
-                <SyncOutlined spin />
-              ) : x.content_status == "error" ? (
-                <div className="text-purple-500">
-                  {t`Please verify your network connection. If the network is working, there might be a small bug in the program. Here are the error messages: `}
-                  <div className="text-red-700">{x.content_error}</div>
-                </div>
-              ) : (
-                <div>
-                  {x.tool_calls &&
-                    x.tool_calls.map((tool: any, index) => {
-                      return (
-                        <Tooltip
-                          key={index}
-                          title={
-                            <div className="max-h-40 overflow-auto text-ellipsis">
-                              {tool.function.arguments}
-                            </div>
-                          }
-                        >
-                          <Spin spinning={x.content_status == "loading"}>
-                            <a
-                              className="cursor-pointer"
-                              onClick={() => {
-                                Modal.info({
-                                  width: "90%",
-                                  style: { maxWidth: 1024 },
-                                  title: t`Tool Call`,
-                                  maskClosable: true,
-                                  content: (
-                                    <div>
-                                      <pre
-                                        style={{
-                                          whiteSpace: "pre-wrap",
-                                          wordWrap: "break-word",
-                                          padding: "8px 0",
-                                          textAlign: "center",
-                                        }}
-                                      >
-                                        <span>Tool Name: </span>
-                                        <span className="text-purple-500">
-                                          {tool.restore_name ||
-                                            tool.function.name}
-                                        </span>
-                                      </pre>
-                                      <div>
-                                        <span>Tool Arguments: </span>
-                                      </div>
-                                      <Pre>{tool.function.arguments}</Pre>
-                                    </div>
-                                  ),
-                                });
-                              }}
-                            >
-                              <div className="line-clamp-1">
-                                {tool.restore_name || tool.function.name} :{" "}
-                                {tool.function.arguments}
-                              </div>
-                            </a>
-                          </Spin>
-                        </Tooltip>
-                      );
-                    })}
-
-                  {x.reasoning_content && (
-                    <Collapse
-                      defaultActiveKey={["reasoning_content"]}
-                      items={[
-                        {
-                          key: "reasoning_content",
-                          label: (
-                            <div className="line-clamp-1">
-                              thinking: {x.reasoning_content}
-                            </div>
-                          ),
-                          children: <Pre>{x.reasoning_content}</Pre>,
-                        },
-                      ]}
-                    />
-                  )}
-                  {x.content && (
-                    <MarkDown
-                      markdown={x.content}
-                      onCallback={(e) => {
-                        setValue(e);
-                      }}
-                    ></MarkDown>
-                  )}
-                  {x.content_status == "dataLoading" && <LoadingOutlined />}
-                  {x.content_attachment &&
-                    x.content_attachment.length > 0 &&
-                    x.content_attachment.map((x, i) => {
-                      if (x.type == "image") {
-                        return (
-                          <DownImage
-                            key={i}
-                            src={`data:${x.mimeType};base64,${x.data}`}
-                          />
-                        );
-                      } else if (x.type == "text") {
-                        return <Pre>{x.text}</Pre>;
-                      }
-                    })}
-                </div>
-              ),
-          };
-        }
-      }
-    }
-  }, []);
-
-  const createChat = useCallback((showTip = true) => {
-    let config = GPT_MODELS.get().data.find(
-      (x) => x.key == currentChat.current.modelKey,
-    );
-    if (config == null) {
-      if (GPT_MODELS.get().data.length == 0) {
-        if (showTip) {
+  const onRequest = useCallback(async (message?: string) => {
+    Clarity.event(`sender-${process.env.NODE_ENV}`);
+    console.log("onRequest", message);
+    try {
+      setLoading(true);
+      let config = GPT_MODELS.get().data.find(
+        (x) => x.key == currentChat.current.modelKey,
+      );
+      if (config == null) {
+        if (GPT_MODELS.get().data.length == 0) {
           EVENT.fire("setIsModelConfigOpenTrue");
+          throw new Error("Please add LLM first");
         }
-        throw new Error("Please add LLM first");
+        config = GPT_MODELS.get().data[0];
       }
-      config = GPT_MODELS.get().data[0];
-    }
-    currentChat.current.modelKey = config.key;
-    data.current.suggestionShow = false;
-    openaiClient.current = new OpenAiChannel(
-      {
-        // ...config,
-        baseURL: config.baseURL,
+      openaiClient.current = OpenAiChannel.create(
+        {
+          baseURL: config.baseURL,
+          apiKey: config.apiKey,
+        },
+      );
+      openaiClient.current.options = {
+        ...openaiClient.current.options,
         model: config.model,
-        apiKey: config.apiKey,
-
         call_tool_step: config.call_tool_step,
         supportTool: config.supportTool,
         supportImage: config.supportImage,
@@ -1273,8 +637,6 @@ export const Chat = ({
                             htmlType="submit"
                             onClick={() => {
                               currentChat.current.confirm_call_tool = false;
-                              openaiClient.current.options.confirm_call_tool =
-                                false;
                             }}
                           >
                             {t`Allow this Chat`}
@@ -1291,21 +653,11 @@ export const Chat = ({
             });
           });
         },
-      },
-      currentChat.current.messages,
-    );
-    // currentChat.current.messages = openaiClient.current.messages;
-    refresh();
-  }, []);
-  const [loading, setLoading] = useState(false);
+      }
+      openaiClient.current.messages = currentChat.current.messages;
 
-  const onRequest = useCallback(async (message?: string) => {
-    Clarity.event(`sender-${process.env.NODE_ENV}`);
-    console.log("onRequest", message);
-    try {
-      setLoading(true);
+
       if (currentChat.current.sended == false) {
-        createChat();
         if (message) {
           openaiClient.current.addMessage(
             {
@@ -1376,6 +728,7 @@ export const Chat = ({
 
       refresh();
 
+      openaiClient.current.messages = currentChat.current.messages;
       await openaiClient.current.completion(() => {
         currentChat.current.messages = openaiClient.current.messages;
         refresh();
@@ -1628,13 +981,12 @@ export const Chat = ({
               if (item) {
                 // console.log("onActiveChange", item);
                 if (mobile.current.is) {
-                  data.current.showHistory = false;
+                  DATA.current.showHistory = false;
                 }
                 // currentChat.current.messages=[]
                 // refresh();
 
                 currentChatReset(item);
-                createChat();
               }
             }}
             menu={(conversation) => ({
@@ -1736,12 +1088,12 @@ export const Chat = ({
                 placement="left"
                 className="chat"
                 onClose={(e) => {
-                  data.current.showHistory = false;
+                  DATA.current.showHistory = false;
                   refresh();
                 }}
                 footer={null}
                 title={t`Chat Logs`}
-                open={data.current.showHistory}
+                open={DATA.current.showHistory}
                 getContainer={false}
               >
                 {historyShowNode}
@@ -1750,7 +1102,7 @@ export const Chat = ({
           )}
 
           <div className="flex h-full">
-            {!onlyView.histroyKey && data.current.showHistory && (
+            {!onlyView.histroyKey && DATA.current.showHistory && (
               <>
                 <div className="hidden h-full w-0 flex-none overflow-hidden pr-2 lg:block lg:w-60">
                   {historyShowNode}
@@ -1763,455 +1115,478 @@ export const Chat = ({
               className="flex-grow-2 flex w-full flex-col justify-between"
               style={{ alignSelf: "stretch" }}
             >
-              <div className="overflow-auto">
-                {(currentChat.current.messages == null ||
-                  currentChat.current.messages?.length == 0) && (
-                  <>
-                    <Welcome
-                      icon="👋"
-                      title={t`Welcome`}
-                      className="mb-4"
-                      description={
-                        Agents.get().data.length > 0
-                          ? t`Choose a prompt from below, and let's start chatting`
-                          : t`Start chatting`
-                      }
-                    />
-                    <Space>
-                      <Input
-                        placeholder="search"
-                        value={botSearchValue}
-                        onChange={(e) => {
-                          setBotSearchValue(e.target.value);
-                        }}
-                        allowClear
-                      ></Input>
-                      <Button
-                        onClick={() => {
-                          setPromptsModalValue({
-                            confirm_call_tool: false,
-                          } as any);
-                          setIsOpenPromptsModal(true);
-                        }}
-                      >
-                        {t`Add Agent`}
-                      </Button>
-                    </Space>
 
-                    <div className="flex items-center">
-                      <div className="flex flex-wrap">
-                        <DndContext
-                          sensors={botSearchValue != "" ? [] : [sensors]}
-                          onDragEnd={(e) => {
-                            try {
-                              let data = Agents.get().data;
-                              let oldIndex = data.findIndex(
-                                (x) => x.key == e.active.id,
-                              );
-
-                              let newIndex = data.findIndex(
-                                (x) => x.key == e.over.id,
-                              );
-
-                              let item = data[oldIndex];
-
-                              data.splice(oldIndex, 1);
-
-                              data.splice(newIndex, 0, item);
-
-                              Agents.save();
-                              refresh();
-                            } catch {}
-                          }}
-                        >
-                          <SortableContext
-                            items={Agents.get()
-                              .data.filter(
-                                (x) =>
-                                  botSearchValue == "" ||
-                                  x.label
-                                    .toLowerCase()
-                                    .includes(botSearchValue),
-                              )
-                              .map((x) => x.key)}
-                          >
-                            {Agents.get()
-                              .data.filter(
-                                (x) =>
-                                  botSearchValue == "" ||
-                                  x.label
-                                    .toLowerCase()
-                                    .includes(botSearchValue),
-                              )
-                              .map((item) => (
-                                <SortableItem
-                                  key={item.key}
-                                  id={item.key}
-                                  item={item}
-                                  onClick={(item) => {
-                                    // console.log("onGPTSClick", item);
-                                    onGPTSClick(item.key);
-                                  }}
-                                  onEdit={() => {
-                                    let value = Agents.get().data.find(
-                                      (y) => y.key === item.key,
-                                    );
-                                    setPromptsModalValue(value);
-                                    setIsOpenPromptsModal(true);
-                                  }}
-                                  onRemove={() => {
-                                    Modal.confirm({
-                                      title: "Tip",
-                                      maskClosable: true,
-                                      content: "Are you sure to delete?",
-                                      onOk: async () => {
-                                        let index = Agents.get().data.findIndex(
-                                          (y) => y.key === item.key,
-                                        );
-                                        Agents.get().data.splice(index, 1);
-                                        await Agents.save();
-                                        call("openMcpClient", ["hyper_agent"]);
-                                        refresh();
-                                      },
-                                      onCancel(...args) {},
-                                    });
-                                  }}
-                                />
-                              ))}
-                          </SortableContext>
-                        </DndContext>
-                      </div>
-                    </div>
-                  </>
-                )}
-                <Bubble.List
-                  autoScroll={true}
-                  style={{
-                    paddingRight: 4,
-                    height:
-                      currentChat.current.messages?.length > 0 ? "100%" : 0,
-                  }}
-                  items={currentChat.current.messages
-                    ?.map(format)
-                    ?.filter((x) => x != null)}
-                />
-              </div>
-
-              <div className="my-footer flex-grow-0 pt-1">
-                <div className="my-op">
-                  <span>
-                    <>
-                      <span>
-                        {/* <Button
-                              size="small"
+              <Splitter className="overflow-auto">
+                <Splitter.Panel defaultSize="50%" min="30%" max="70%">
+                  <div className="h-full">
+                    {(currentChat.current.messages == null ||
+                      currentChat.current.messages?.length == 0) && (
+                        <>
+                          <Welcome
+                            icon="👋"
+                            title={t`Welcome`}
+                            className="mb-4"
+                            description={
+                              Agents.get().data.length > 0
+                                ? t`Choose a prompt from below, and let's start chatting`
+                                : t`Start chatting`
+                            }
+                          />
+                          <Space>
+                            <Input
+                              placeholder="search"
+                              value={botSearchValue}
+                              onChange={(e) => {
+                                setBotSearchValue(e.target.value);
+                              }}
+                              allowClear
+                            ></Input>
+                            <Button
                               onClick={() => {
-                                data.current.showHistory = true;
-                                refresh();
+                                setPromptsModalValue({
+                                  confirm_call_tool: false,
+                                } as any);
+                                setIsOpenPromptsModal(true);
                               }}
                             >
-                              <CommentOutlined className="cursor-pointer text-blue-500 hover:text-cyan-400" />
-                            </Button> */}
-                        <Button
-                          size="small"
-                          onClick={() => {
-                            data.current.showHistory =
-                              !data.current.showHistory;
-                            refresh();
-                          }}
-                        >
-                          {data.current.showHistory ? (
-                            <MenuFoldOutlined />
-                          ) : (
-                            <MenuUnfoldOutlined />
-                          )}
-                        </Button>
+                              {t`Add Agent`}
+                            </Button>
+                          </Space>
 
-                        <Divider type="vertical" />
-                      </span>
-                      {currentChat.current.agentKey && (
-                        <>
+                          <div className="flex items-center">
+                            <div className="flex flex-wrap">
+                              <DndContext
+                                sensors={botSearchValue != "" ? [] : [sensors]}
+                                onDragEnd={(e) => {
+                                  try {
+                                    let data = Agents.get().data;
+                                    let oldIndex = data.findIndex(
+                                      (x) => x.key == e.active.id,
+                                    );
+
+                                    let newIndex = data.findIndex(
+                                      (x) => x.key == e.over.id,
+                                    );
+
+                                    let item = data[oldIndex];
+
+                                    data.splice(oldIndex, 1);
+
+                                    data.splice(newIndex, 0, item);
+
+                                    Agents.save();
+                                    refresh();
+                                  } catch { }
+                                }}
+                              >
+                                <SortableContext
+                                  items={Agents.get()
+                                    .data.filter(
+                                      (x) =>
+                                        botSearchValue == "" ||
+                                        x.label
+                                          .toLowerCase()
+                                          .includes(botSearchValue),
+                                    )
+                                    .map((x) => x.key)}
+                                >
+                                  {Agents.get()
+                                    .data.filter(
+                                      (x) =>
+                                        botSearchValue == "" ||
+                                        x.label
+                                          .toLowerCase()
+                                          .includes(botSearchValue),
+                                    )
+                                    .map((item) => (
+                                      <SortableItem
+                                        key={item.key}
+                                        id={item.key}
+                                        item={item}
+                                        onClick={(item) => {
+                                          // console.log("onGPTSClick", item);
+                                          onGPTSClick(item.key);
+                                        }}
+                                        onEdit={() => {
+                                          let value = Agents.get().data.find(
+                                            (y) => y.key === item.key,
+                                          );
+                                          setPromptsModalValue(value);
+                                          setIsOpenPromptsModal(true);
+                                        }}
+                                        onRemove={() => {
+                                          Modal.confirm({
+                                            title: "Tip",
+                                            maskClosable: true,
+                                            content: "Are you sure to delete?",
+                                            onOk: async () => {
+                                              let index = Agents.get().data.findIndex(
+                                                (y) => y.key === item.key,
+                                              );
+                                              Agents.get().data.splice(index, 1);
+                                              await Agents.save();
+                                              call("openMcpClient", ["hyper_agent"]);
+                                              refresh();
+                                            },
+                                            onCancel(...args) { },
+                                          });
+                                        }}
+                                      />
+                                    ))}
+                                </SortableContext>
+                              </DndContext>
+                            </div>
+                          </div>
+                        </>
+                      )}
+                    {/* <Bubble.List
+                      autoScroll={true}
+                      style={{
+                        paddingRight: 4,
+                        height:
+                          currentChat.current.messages?.length > 0 ? "100%" : 0,
+                      }}
+                      items={currentChat.current.messages
+                        ?.map(format)
+                        ?.filter((x) => x != null)}
+                    /> */}
+                    <Messages messages={currentChat.current.messages} onSumbit={(messages) => {
+                      currentChat.current.messages = messages;
+                      refresh();
+                      onRequest();
+                    }}></Messages>
+                  </div>
+                </Splitter.Panel>
+
+                {
+                  DATA.current.diffs.map((x, i) => {
+                    return <Splitter.Panel key={i} ><Messages messages={x.messages} onSumbit={(messages) => {
+
+                    }}></Messages></Splitter.Panel>;
+                  })}
+              </Splitter>
+
+
+              <div className="my-footer flex-grow-0 pt-1">
+                <div className="my-op flex justify-between">
+                  <div className="op-left">
+                    <span>
+                      <>
+                        <span>
                           <Button
                             size="small"
                             onClick={() => {
-                              currentChatReset({
-                                messages: [],
-                                // 返回
-                                allowMCPs: AppSetting.get().defaultAllowMCPs,
-                                sended: false,
-                                agentKey: undefined,
-                              });
-                              selectGptsKey.current = undefined;
-                              loadMoreData(false);
+                              DATA.current.showHistory =
+                                !DATA.current.showHistory;
+                              refresh();
                             }}
                           >
-                            <LeftOutlined />
+                            {DATA.current.showHistory ? (
+                              <MenuFoldOutlined />
+                            ) : (
+                              <MenuUnfoldOutlined />
+                            )}
                           </Button>
+
                           <Divider type="vertical" />
-                        </>
-                      )}
-                    </>
-                  </span>
-                  <Tooltip title={t`New Chat`}>
-                    <PlusCircleOutlined
-                      className="cursor-pointer hover:text-cyan-400"
-                      onClick={() => {
-                        if (currentChat.current.agentKey) {
-                          let key =
-                            currentChat.current.agentKey ||
-                            currentChat.current["gptsKey"];
-                          onGPTSClick(key, { loadHistory: false });
-                        } else {
-                          currentChatReset({
-                            messages: [],
-                            allowMCPs: AppSetting.get().defaultAllowMCPs,
-                            sended: false,
-                            agentKey: undefined,
-                          });
-                          selectGptsKey.current = undefined;
-                          loadMoreData(false);
-                        }
-                      }}
-                    />
-                  </Tooltip>
-                  <Divider type="vertical" />
-                  <Tooltip title={t`Clear Context`}>
-                    <ClearOutlined
-                      className="cursor-pointer hover:text-cyan-400"
-                      onClick={() => {
-                        if (openaiClient.current) {
+                        </span>
+                        {currentChat.current.agentKey && (
+                          <>
+                            <Button
+                              size="small"
+                              onClick={() => {
+                                currentChatReset({
+                                  messages: [],
+                                  // 返回
+                                  allowMCPs: AppSetting.get().defaultAllowMCPs,
+                                  sended: false,
+                                  agentKey: undefined,
+                                });
+                                selectGptsKey.current = undefined;
+                                loadMoreData(false);
+                              }}
+                            >
+                              <LeftOutlined />
+                            </Button>
+                            <Divider type="vertical" />
+                          </>
+                        )}
+                      </>
+                    </span>
+                    <Tooltip title={t`New Chat`}>
+                      <PlusCircleOutlined
+                        className="cursor-pointer hover:text-cyan-400"
+                        onClick={() => {
+                          if (currentChat.current.agentKey) {
+                            let key =
+                              currentChat.current.agentKey ||
+                              currentChat.current["gptsKey"];
+                            onGPTSClick(key, { loadHistory: false });
+                          } else {
+                            currentChatReset({
+                              messages: [],
+                              allowMCPs: AppSetting.get().defaultAllowMCPs,
+                              sended: false,
+                              agentKey: undefined,
+                            });
+                            selectGptsKey.current = undefined;
+                            loadMoreData(false);
+                          }
+                        }}
+                      />
+                    </Tooltip>
+                    <Divider type="vertical" />
+                    <Tooltip title={t`Clear Context`}>
+                      <ClearOutlined
+                        className="cursor-pointer hover:text-cyan-400"
+                        onClick={() => {
+
                           calcAttachDialogue(
                             currentChat.current.messages,
                             0,
                             true,
                           );
                           refresh();
-                        }
-                      }}
-                    />
-                  </Tooltip>
-                  <Divider type="vertical" />
-                  <span className="inline-block">
-                    <Tooltip title={t`MCP and Tools`}>
-                      <span
-                        className="cursor-pointer"
-                        onClick={() => {
-                          setIsToolsShow(true);
+
                         }}
-                      >
-                        {supportTool == null || supportTool == true ? (
-                          <>
-                            💻
-                            <span className="px-1">
-                              {(() => {
-                                let set = new Set();
-                                for (let tool_name of currentChat.current
-                                  .allowMCPs) {
-                                  let [name, _] = tool_name.split(" > ");
-                                  set.add(name);
+                      />
+                    </Tooltip>
+                    <Divider type="vertical" />
+                    <span className="inline-block">
+                      <Tooltip title={t`MCP and Tools`}>
+                        <span
+                          className="cursor-pointer"
+                          onClick={() => {
+                            setIsToolsShow(true);
+                          }}
+                        >
+                          {supportTool == null || supportTool == true ? (
+                            <>
+                              💻
+                              <span className="px-1">
+                                {(() => {
+                                  let set = new Set();
+                                  for (let tool_name of currentChat.current
+                                    .allowMCPs) {
+                                    let [name, _] = tool_name.split(" > ");
+                                    set.add(name);
+                                  }
+
+                                  let load = clientsRef.current.filter(
+                                    (v) => v.status == "connected",
+                                  ).length;
+                                  let all = clientsRef.current.length;
+                                  let curr = clientsRef.current.filter((v) => {
+                                    return set.has(v.name);
+                                  }).length;
+
+                                  return DATA.current.mcpLoading ? (
+                                    <>
+                                      {`${curr} `}
+                                      <SyncOutlined spin />
+                                      {`(${load}/${all})`}
+                                    </>
+                                  ) : (
+                                    curr
+                                  );
+                                })()}
+                              </span>
+                            </>
+                          ) : (
+                            <>💻 {t`LLM not support`}</>
+                          )}
+                        </span>
+                      </Tooltip>
+                      <Divider type="vertical" />
+                      <Tooltip title={t`Resources`} placement="bottom">
+                        <Dropdown
+                          placement="top"
+                          menu={{
+                            items: resourcesRef.current.map((x, i) => {
+                              return {
+                                key: x.key,
+                                label: !x.description
+                                  ? x.key
+                                  : `${x.key}--${x.description}`,
+                              };
+                            }),
+                            onClick: async (item) => {
+                              let resource = resourcesRef.current.find(
+                                (x) => x.key === item.key,
+                              );
+                              if (resource) {
+                                let res = await call("mcpCallResource", [
+                                  resource.clientName as string,
+                                  resource.uri,
+                                ]);
+                                let t = {
+                                  ...res,
+                                  call_name: resource.key + "--" + resource.uri,
+                                  uid: v4(),
+                                };
+                                console.log("mcpCallResource", t);
+                                resourceResListRef.current.push(t);
+                                refresh();
+                              }
+                            },
+                          }}
+                          arrow
+                        >
+                          <span className="cursor-pointer">
+                            📦
+                            {resourcesRef.current.length}
+                          </span>
+                        </Dropdown>
+                      </Tooltip>
+                      <Divider type="vertical" />
+                      <Tooltip title={t`Prompts`} placement="bottom">
+                        <Dropdown
+                          placement="top"
+                          menu={{
+                            items: promptsRef.current.map((x, i) => {
+                              return {
+                                key: x.key,
+                                label: `${x.key} (${x.description})`,
+                              };
+                            }),
+                            onClick: async (item) => {
+                              let prompt = promptsRef.current.find(
+                                (x) => x.key === item.key,
+                              );
+                              if (prompt) {
+                                if (
+                                  prompt.arguments &&
+                                  prompt.arguments.length > 0
+                                ) {
+                                  setIsFillPromptModalOpen(true);
+                                  setFillPromptFormItems(prompt.arguments);
+                                  mcpCallPromptCurr.current = prompt;
+                                } else {
+                                  let res = await call("mcpCallPrompt", [
+                                    prompt.clientName as string,
+                                    prompt.name,
+                                    {},
+                                  ]);
+                                  console.log("mcpCallPrompt", res);
+                                  res.call_name = prompt.key;
+                                  res.uid = v4();
+                                  setPromptResList([...promptResList, res]);
                                 }
-
-                                let load = clientsRef.current.filter(
-                                  (v) => v.status == "connected",
-                                ).length;
-                                let all = clientsRef.current.length;
-                                let curr = clientsRef.current.filter((v) => {
-                                  return set.has(v.name);
-                                }).length;
-
-                                return data.current.mcpLoading ? (
-                                  <>
-                                    {`${curr} `}
-                                    <SyncOutlined spin />
-                                    {`(${load}/${all})`}
-                                  </>
-                                ) : (
-                                  curr
-                                );
-                              })()}
-                            </span>
-                          </>
-                        ) : (
-                          <>💻 {t`LLM not support`}</>
-                        )}
+                              }
+                            },
+                          }}
+                          arrow
+                        >
+                          <span className="cursor-pointer">
+                            📜
+                            {promptsRef.current.length}
+                          </span>
+                        </Dropdown>
+                      </Tooltip>
+                    </span>
+                    <Divider type="vertical" />
+                    <Tooltip title={t`Select LLM`}>
+                      <span className="inline-block">
+                        🧠
+                        <Select
+                          size="small"
+                          placeholder={
+                            GPT_MODELS.get().data.length > 0
+                              ? GPT_MODELS.get().data[0].name
+                              : "Please add a LLM model"
+                          }
+                          className="w-60"
+                          allowClear
+                          value={currentChat.current.modelKey}
+                          onChange={(value) => {
+                            currentChat.current.modelKey = value;
+                          }}
+                          options={GPT_MODELS.get()
+                            .data.filter(
+                              (x) => x.type == "llm" || x.type == null,
+                            )
+                            .map((x) => {
+                              return {
+                                label: x.name,
+                                value: x.key,
+                              };
+                            })}
+                        ></Select>
                       </span>
                     </Tooltip>
                     <Divider type="vertical" />
-                    <Tooltip title={t`Resources`} placement="bottom">
-                      <Dropdown
-                        placement="top"
-                        menu={{
-                          items: resourcesRef.current.map((x, i) => {
-                            return {
-                              key: x.key,
-                              label: !x.description
-                                ? x.key
-                                : `${x.key}--${x.description}`,
-                            };
-                          }),
-                          onClick: async (item) => {
-                            let resource = resourcesRef.current.find(
-                              (x) => x.key === item.key,
-                            );
-                            if (resource) {
-                              let res = await call("mcpCallResource", [
-                                resource.clientName as string,
-                                resource.uri,
-                              ]);
-                              let t = {
-                                ...res,
-                                call_name: resource.key + "--" + resource.uri,
-                                uid: v4(),
-                              };
-                              console.log("mcpCallResource", t);
-                              resourceResListRef.current.push(t);
+                    <Tooltip title={t`Select Request Type`}>
+                      <span className="inline-block">
+                        <span>type:</span>
+                        <Dropdown
+                          trigger={['click']}
+                          arrow
+                          menu={{
+                            selectable: true,
+                            selectedKeys: [currentChat.current.requestType],
+                            items: [
+                              {
+                                label: "stream",
+                                key: "stream",
+                              },
+                              {
+                                label: "complete",
+                                key: "complete",
+                              },
+                            ],
+                            onClick: (e) => {
+                              currentChat.current.requestType = e.key as any;
                               refresh();
-                            }
-                          },
-                        }}
-                        arrow
-                      >
-                        <span className="cursor-pointer">
-                          📦
-                          {resourcesRef.current.length}
-                        </span>
-                      </Dropdown>
+                            },
+                          }}
+                        >
+                          <Button size="small" type="link">
+                            {currentChat.current.requestType}
+                            <DownOutlined />
+                          </Button>
+                        </Dropdown>
+                      </span>
                     </Tooltip>
                     <Divider type="vertical" />
-                    <Tooltip title={t`Prompts`} placement="bottom">
-                      <Dropdown
-                        placement="top"
-                        menu={{
-                          items: promptsRef.current.map((x, i) => {
-                            return {
-                              key: x.key,
-                              label: `${x.key} (${x.description})`,
-                            };
-                          }),
-                          onClick: async (item) => {
-                            let prompt = promptsRef.current.find(
-                              (x) => x.key === item.key,
-                            );
-                            if (prompt) {
-                              if (
-                                prompt.arguments &&
-                                prompt.arguments.length > 0
-                              ) {
-                                setIsFillPromptModalOpen(true);
-                                setFillPromptFormItems(prompt.arguments);
-                                mcpCallPromptCurr.current = prompt;
-                              } else {
-                                let res = await call("mcpCallPrompt", [
-                                  prompt.clientName as string,
-                                  prompt.name,
-                                  {},
-                                ]);
-                                console.log("mcpCallPrompt", res);
-                                res.call_name = prompt.key;
-                                res.uid = v4();
-                                setPromptResList([...promptResList, res]);
-                              }
-                            }
-                          },
-                        }}
-                        arrow
-                      >
-                        <span className="cursor-pointer">
-                          📜
-                          {promptsRef.current.length}
-                        </span>
-                      </Dropdown>
-                    </Tooltip>
-                  </span>
-                  <Divider type="vertical" />
-                  <Tooltip title={t`Select LLM`}>
-                    <span className="inline-block">
-                      🧠
-                      <Select
-                        size="small"
-                        placeholder={
-                          GPT_MODELS.get().data.length > 0
-                            ? GPT_MODELS.get().data[0].name
-                            : "Please add a LLM model"
-                        }
-                        className="w-60"
-                        allowClear
-                        value={currentChat.current.modelKey}
-                        onChange={(value) => {
-                          currentChat.current.modelKey = value;
-                          createChat();
-                        }}
-                        options={GPT_MODELS.get()
-                          .data.filter((x) => x.type == "llm" || x.type == null)
+                    <SettingOutlined
+                      className="cursor-pointer hover:text-cyan-400"
+                      onClick={() => {
+                        setIsOpenMoreSetting(true);
+                        formMoreSetting.resetFields();
+                        console.log(currentChat.current);
+                        formMoreSetting.setFieldsValue(currentChat.current);
+                      }}
+                    />
+                  </div>
+                  <div>
+                    <Dropdown
+                      trigger={['click']}
+                      arrow
+                      menu={{
+                        selectable: true,
+                        items: GPT_MODELS.get()
+                          .data.filter(
+                            (x) => x.type == "llm" || x.type == null,
+                          )
                           .map((x) => {
                             return {
                               label: x.name,
                               value: x.key,
+                              key: x.key,
                             };
-                          })}
-                      ></Select>
-                    </span>
-                  </Tooltip>
-                  <Divider type="vertical" />
-                  <Tooltip title={t`Select Request Type`}>
-                    <span className="inline-block">
-                      <span>type:</span>
-                      <Dropdown
-                        arrow
-                        menu={{
-                          selectable: true,
-                          selectedKeys: [currentChat.current.requestType],
-                          items: [
-                            {
-                              label: "stream",
-                              key: "stream",
-                            },
-                            {
-                              label: "complete",
-                              key: "complete",
-                            },
-                          ],
-                          onClick: (e) => {
-                            currentChat.current.requestType = e.key as any;
-                            openaiClient.current.options.requestType =
-                              e.key as any;
-                            refresh();
-                          },
-                        }}
-                      >
-                        <Button size="small" type="link">
-                          {currentChat.current.requestType}
-                          <DownOutlined />
-                        </Button>
-                      </Dropdown>
-                    </span>
-                  </Tooltip>
-                  <Divider type="vertical" />
+                          }),
+                        onClick: (e) => {
 
-                  {/* <Tooltip title={t`Token Usage`}>
-                  <span className="cursor-pointer">
-                    token:{" "}
-                    {openaiClient.current == null ? (
-                      0
-                    ) : typeof openaiClient.current.totalTokens == "number" &&
-                      !Number.isNaN(openaiClient.current.totalTokens) ? (
-                      openaiClient.current.totalTokens
-                    ) : (
-                      <span>
-                        {"estimate " + openaiClient.current.estimateTotalTokens}
-                      </span>
-                    )}
-                  </span>
-                </Tooltip> */}
-                  {/* <Divider type="vertical" /> */}
-                  <SettingOutlined
-                    className="cursor-pointer hover:text-cyan-400"
-                    onClick={() => {
-                      setIsOpenMoreSetting(true);
-                      formMoreSetting.resetFields();
-                      console.log(currentChat.current);
-                      formMoreSetting.setFieldsValue(currentChat.current);
-                    }}
-                  />
+                          DATA.current.diffs.push({ modelKey: e.key, messages: currentChat.current.messages });
+                          refresh();
+                        },
+                      }}
+                    >
+                      <Button size="small">
+                        <Icon name="duibi"></Icon>
+                      </Button>
+                    </Dropdown>
+                  </div>
                 </div>
                 <MyAttachR
                   resourceResList={resourceResListRef.current}
@@ -2286,7 +1661,7 @@ export const Chat = ({
                         (x) => x.key == itemVal,
                       );
                       if (agent) {
-                        data.current.suggestionShow = false;
+                        DATA.current.suggestionShow = false;
                         let textarea = document.querySelector(
                           ".my-sender .ant-sender-input",
                         ) as HTMLTextAreaElement;
@@ -2300,7 +1675,7 @@ export const Chat = ({
                           setIsUpdateQuicks(true);
                           return;
                         } else {
-                          data.current.suggestionShow = false;
+                          DATA.current.suggestionShow = false;
                           let textarea = document.querySelector(
                             ".my-sender .ant-sender-input",
                           ) as HTMLTextAreaElement;
@@ -2313,7 +1688,7 @@ export const Chat = ({
                       }
                     }}
                     onOpenChange={(open) => {
-                      data.current.suggestionShow = open;
+                      DATA.current.suggestionShow = open;
                     }}
                   >
                     {({ onTrigger, onKeyDown }) => {
@@ -2349,13 +1724,13 @@ export const Chat = ({
                                 <Button
                                   type="text"
                                   icon={<LinkOutlined />}
-                                  onClick={() => {}}
+                                  onClick={() => { }}
                                 />
                               </Upload>
                             )
                           }
                           onKeyDown={(e) => {
-                            if (data.current.suggestionShow) {
+                            if (DATA.current.suggestionShow) {
                               if (
                                 e.key == "Enter" ||
                                 e.key == "ArrowDown" ||
@@ -2367,12 +1742,12 @@ export const Chat = ({
                                 onKeyDown(e);
                               } else {
                                 onTrigger(false);
-                                data.current.suggestionShow = false;
+                                DATA.current.suggestionShow = false;
                               }
                             } else {
                               if (e.key == "@") {
                                 onTrigger(true);
-                                data.current.suggestionShow = true;
+                                DATA.current.suggestionShow = true;
                               }
                             }
                           }}
@@ -2413,7 +1788,7 @@ export const Chat = ({
                             // message.success("Cancel sending!");
                           }}
                           onSubmit={(s) => {
-                            if (data.current.suggestionShow) {
+                            if (DATA.current.suggestionShow) {
                               return;
                             }
                             setValue("");
@@ -2483,7 +1858,7 @@ export const Chat = ({
               {t`OK`}
             </Button>,
           ]}
-          // cancelButtonProps={{ style: { display: "none" } }}
+        // cancelButtonProps={{ style: { display: "none" } }}
         >
           <Tree
             checkable
@@ -2689,38 +2064,38 @@ export const Chat = ({
             </pre>
             {currTool.key
               ? JsonSchema2FormItemOrNull(
-                  currTool.function.parameters,
-                  // zodToJsonSchema(
-                  // z.object({
-                  //   // paths: z.array(
-                  //   //   z.object({
-                  //   //     first: z.array(
-                  //   //       z.object({
-                  //   //         arr: z.array(
-                  //   //           z.string({
-                  //   //             description: "filesystem path",
-                  //   //           }),
-                  //   //         ),
-                  //   //       }),
-                  //   //     ),
-                  //   //     // s: z.string()
-                  //   //   }),
-                  //   // ),
+                currTool.function.parameters,
+                // zodToJsonSchema(
+                // z.object({
+                //   // paths: z.array(
+                //   //   z.object({
+                //   //     first: z.array(
+                //   //       z.object({
+                //   //         arr: z.array(
+                //   //           z.string({
+                //   //             description: "filesystem path",
+                //   //           }),
+                //   //         ),
+                //   //       }),
+                //   //     ),
+                //   //     // s: z.string()
+                //   //   }),
+                //   // ),
 
-                  //   a: z.object({
-                  //     b: z.object({
-                  //       c: z.object({
-                  //         d: z.array(
-                  //           z.string({
-                  //             description: "filesystem path",
-                  //           }),
-                  //         ),
-                  //       }),
-                  //     }),
-                  //   }),
-                  // }),
-                  // ),
-                ) || t`No parameters`
+                //   a: z.object({
+                //     b: z.object({
+                //       c: z.object({
+                //         d: z.array(
+                //           z.string({
+                //             description: "filesystem path",
+                //           }),
+                //         ),
+                //       }),
+                //     }),
+                //   }),
+                // }),
+                // ),
+              ) || t`No parameters`
               : []}
             <Form.Item className="flex justify-end">
               <Button htmlType="submit">Submit</Button>
@@ -2802,19 +2177,16 @@ export const Chat = ({
                 currentChat.current.attachedDialogueCount =
                   values.attachedDialogueCount;
                 currentChat.current.temperature = values.temperature;
-                if (openaiClient.current) {
-                  calcAttachDialogue(
-                    openaiClient.current.messages,
-                    currentChat.current.attachedDialogueCount,
-                  );
-                  openaiClient.current.options.temperature = values.temperature;
-                }
+
+                calcAttachDialogue(
+                  currentChat.current.messages,
+                  currentChat.current.attachedDialogueCount,
+                );
+
                 currentChat.current.confirm_call_tool =
                   values.confirm_call_tool;
-                if (openaiClient.current) {
-                  openaiClient.current.options.confirm_call_tool =
-                    values.confirm_call_tool;
-                }
+
+
                 refresh();
                 setIsOpenMoreSetting(false);
               }}
