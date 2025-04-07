@@ -358,7 +358,9 @@ export const Chat = ({
           },
           "",
         );
-        createChat(false);
+        if (GPT_MODELS.get().data.length > 0) {
+          createChat(false);
+        }
       }
 
       while (1) {
@@ -1391,8 +1393,10 @@ export const Chat = ({
       // console.log("ChatHistory.d.data", ChatHistory.get().data.slice(0, 5));
     } catch (e) {
       console.error(e);
-      openaiClient.current.lastMessage.content_error = e.message;
-      currentChat.current.messages = openaiClient.current.messages;
+      if (openaiClient.current) {
+        openaiClient.current.lastMessage.content_error = e.message;
+        currentChat.current.messages = openaiClient.current.messages;
+      }
       refresh();
       await ChatHistory.save();
       antdMessage.error(
