@@ -183,7 +183,7 @@ import hljs from "highlight.js"; // https://highlightjs.org
 import "highlight.js/styles/github.css";
 import { v4 } from "uuid";
 import { sleep } from "../../common/sleep";
-import { isWeb } from "../../common/util";
+import { isOnBrowser } from "../../common/util";
 import { t } from "../../i18n";
 // import "highlight.js/lib/languages/all";
 
@@ -399,7 +399,7 @@ export const MarkDown = ({ markdown, onCallback }) => {
             </Space>
           )}
 
-          {!isWeb ? (
+          {!isOnBrowser ? (
             <>
               <Space.Compact className="absolute right-0 top-0">
                 {/* <Button

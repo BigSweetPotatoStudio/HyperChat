@@ -1,1 +1,1 @@
-export const isWeb = typeof window != "undefined" ? !window.ext : false;
+export const isOnBrowser = typeof window != "undefined" ? !window.ext : false;

@@ -22,7 +22,7 @@ if (process.env.runtime === "node") {
 import imageBase64 from "../common/openai_image_base64.txt";
 import { v4 } from "uuid";
 import dayjs from "dayjs";
-import { isWeb } from "./const";
+import { isOnBrowser } from "./const";
 
 type Tool_Call = {
   index: number;
@@ -130,7 +130,7 @@ export class OpenAiChannel {
       baseURL:
         process.env.runtime === "node"
           ? options.baseURL
-          : isWeb
+          : isOnBrowser
             ? callModule.getURL_PRE() + "api/proxy"
             : options.baseURL,
 
@@ -150,20 +150,21 @@ export class OpenAiChannel {
   static create(options: {
     baseURL: string;
     apiKey: string;
-  }) {
-    if (cache.has(JSON.stringify(options))) {
-      return cache.get(JSON.stringify(options));
+  }, cacheKey: string = ""): OpenAiChannel {
+    cacheKey = cacheKey + options.baseURL + options.apiKey;
+    if (cache.has(cacheKey)) {
+      return cache.get(cacheKey);
     }
     let openai = new OpenAiChannel({
       baseURL:
         process.env.runtime === "node"
           ? options.baseURL
-          : isWeb
+          : isOnBrowser
             ? callModule.getURL_PRE() + "api/proxy"
             : options.baseURL,
       apiKey: options.apiKey,
     }, []);
-    cache.set(JSON.stringify(options), openai);
+    cache.set(cacheKey, openai);
     return openai;
   }
   addMessage(

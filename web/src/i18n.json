@@ -1034,5 +1034,13 @@
     "Please select allowed MCP": {
         "en": "Please select allowed MCP",
         "zh": "请选择允许的MCP"
+    },
+    "Edit Quicks Words": {
+        "en": "Edit Quicks Words",
+        "zh": "编辑快速词汇"
+    },
+    "Add Quick": {
+        "en": "Add Quick",
+        "zh": "添加快速词汇"
     }
 }

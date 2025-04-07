@@ -22,7 +22,7 @@ import {
 } from "antd";
 import React, { useContext, useEffect, useRef, useState } from "react";
 import { call } from "./call";
-import { isWeb } from "./util";
+import { isOnBrowser } from "./util";
 
 
 export function SelectFile(props: {
@@ -108,7 +108,7 @@ export function SelectFile(props: {
 
   const inputRef = useRef(null);
 
-  if (isWeb) {
+  if (isOnBrowser) {
     return (
       <div>
         <Upload
@@ -165,7 +165,7 @@ export function SelectFile(props: {
     <div
       ref={dropRef}
       onClick={async () => {
-        if (isWeb) {
+        if (isOnBrowser) {
           inputRef.current.click();
         } else {
           let path = await call("selectFile", [obj]);
