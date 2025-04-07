@@ -93,9 +93,17 @@ npm run dev
 #### 支持点击tool名称，直接调用调试
 ![image](https://github.com/user-attachments/assets/4af1b769-de19-4cab-8a90-7f701b9a8d70)
 
-
-#### mcp允许提示+动态修改LLM调用Tool的参数
+#### mcp调用Tool提示 + 动态修改LLM调用Tool的参数
 ![image](https://github.com/user-attachments/assets/080320e3-37d2-4f5a-ae3d-3517b3d692ad)
+
+#### 支持 @ 快速输入 + 调用Agent
+![17790cb3c686690e255462c7638b61f6](https://github.com/user-attachments/assets/12fd824c-cad7-4dd7-8df3-699c1da8d1cf)
+
+#### 支持选择MCP + 选择部分Tool
+![image](https://github.com/user-attachments/assets/9a297608-90be-4960-a4f1-ae627965486b)
+
+#### 你可以通过Web在任何地方+任何设备访问，并且可以设置密码
+![image](https://github.com/user-attachments/assets/a9825e5b-da6d-4e0a-852f-177a3f6df992)
 
 #### 调用terminal mcp  自动帮我分析asar文件 + 帮我解压
 ![image](https://github.com/user-attachments/assets/16c0dba7-ae62-4261-a068-1217b5e9bd3c)
@@ -121,10 +129,6 @@ npm run dev
 #### 通过网页工具+命令行工具，打开Github README学习 + GIT克隆 + 搭建开发黄金
 ![image](https://github.com/user-attachments/assets/6affd3dd-aa8e-4429-9c70-d456e5376786)
 
-#### 你可以通过Web在任何地方+任何设备访问，并且可以设置密码
-![image](https://github.com/user-attachments/assets/a9825e5b-da6d-4e0a-852f-177a3f6df992)
-
-
 #### 多聊天Workspace + 夜间模式
 ![image](https://github.com/user-attachments/assets/ca9d77d7-d023-431f-8359-6023ab3e338a)
 
@@ -137,10 +141,6 @@ npm run dev
 
 #### 从第三方安装mcp界面
 ![image](https://github.com/user-attachments/assets/06b1b2d4-e368-45f2-ac81-b9080838f9f5)
-
-
-#### mcp列表（可以动态选择）
-![image](https://github.com/user-attachments/assets/ce98f964-dfd4-4c48-bfab-286db035ca23)
 
 
 #### 渲染HTML，支持 `Artifacts`, `SVG`,`HTML` 渲染,
