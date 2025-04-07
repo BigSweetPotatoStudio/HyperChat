@@ -166,7 +166,9 @@ async function proxy(ctx: Context, next: () => Promise<any>) {
       // 设置响应状态码和头部
       ctx.status = response.status;
       ctx.set("Content-Type", contentType || "application/json");
-      console.log("proxy", isSSE, contentType);
+      if (process.env.NODE_ENV !== "production") {
+        console.log("proxy", isSSE, contentType);
+      }
       if (isSSE) {
         // 处理SSE流
         ctx.set("Content-Type", "text/event-stream");
