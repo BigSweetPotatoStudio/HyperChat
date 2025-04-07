@@ -131,7 +131,9 @@ async function proxy(ctx: Context, next: () => Promise<any>) {
       let baseURL = decodeURIComponent(
         ctx.request.headers["baseurl"] as string
       );
-      console.log("baseURL: ", baseURL);
+      if (process.env.NODE_ENV !== "production") {
+        console.log("baseURL: ", baseURL);
+      }
       if (!baseURL) {
         ctx.status = 400;
         ctx.body = { success: false, message: "baseURL is required" };
