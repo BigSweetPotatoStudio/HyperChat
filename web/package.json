@@ -1,6 +1,6 @@
 {
   "name": "web",
-  "version": "1.4.2",
+  "version": "1.4.4",
   "private": true,
   "dependencies": {
     "@ant-design/cssinjs": "^1.21.1",
