@@ -67,7 +67,9 @@ export function getTools(allowMCPs: string[] | undefined | false = undefined) {
     tools = tools.concat(
       v.tools.filter((t) => {
         if (!allowMCPs) return true;
-        return allowMCPs.includes(t.clientName) || allowMCPs.includes(t.restore_name);
+        return (
+          allowMCPs.includes(t.clientName) || allowMCPs.includes(t.restore_name)
+        );
       }),
     );
   });
@@ -107,22 +109,12 @@ export function getResourses(mcp: string[]) {
   return resources;
 }
 
-export async function getClients(filter = true): Promise<InitedClient[]> {
-  // while (1) {
-  //   if (init) {
-  //     break;
-  //   }
-  //   await sleep(500);
-  // }
+export async function getClients(): Promise<InitedClient[]> {
   McpClients = await call("getMcpClients", []);
   // console.log("getMcpClients", McpClients);
   let res = mcpClientsToArray(McpClients);
   initedClientArray = res;
-  if (filter) {
-    return initedClientArray;
-  } else {
-    return res;
-  }
+  return initedClientArray;
 }
 
 function mcpClientsToArray(mcpClients: {

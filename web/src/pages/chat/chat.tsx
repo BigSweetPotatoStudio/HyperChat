@@ -347,7 +347,17 @@ export const Chat = ({
           }
         }
       } else {
-        currentChatReset({}, "", AppSetting.get().defaultAllowMCPs);
+        if (AppSetting.get().defaultAllowMCPs == undefined) {
+          let clients = await getClients().catch(() => []);
+          AppSetting.get().defaultAllowMCPs = clients.map((v) => v.name);
+        }
+
+        currentChatReset(
+          {
+            allowMCPs: AppSetting.get().defaultAllowMCPs,
+          },
+          "",
+        );
         createChat(false);
       }
 
@@ -355,15 +365,24 @@ export const Chat = ({
         if (getMcpInited() == true) {
           let clients = await getClients().catch(() => []);
           clientsRef.current = clients;
+          let p = getPrompts(currentChat.current.allowMCPs);
+          promptsRef.current = p;
+          let r = getResourses(currentChat.current.allowMCPs);
+          resourcesRef.current = r;
+
           data.current.mcpLoading = false;
           refresh();
           break;
         } else {
           let clients = await getClients().catch(() => []);
           clientsRef.current = clients;
-          data.current.mcpLoading = true;
+          let p = getPrompts(currentChat.current.allowMCPs);
+          promptsRef.current = p;
+          let r = getResourses(currentChat.current.allowMCPs);
+          resourcesRef.current = r;
+          data.current.mcpLoading = false;
           refresh();
-          await sleep(500);
+          break;
         }
       }
     })();
@@ -432,7 +451,7 @@ export const Chat = ({
   const currentChatReset = async (
     newConfig: Partial<ChatHistoryItem>,
     prompt = "",
-    defaultAllowMCPs = undefined,
+    // loadDefaultAllowMCPs = undefined,
   ) => {
     if (prompt) {
       newConfig.messages = [
@@ -451,15 +470,8 @@ export const Chat = ({
     setPromptResList([]);
     let clients = await getClients().catch(() => []);
     clientsRef.current = clients;
-    if (currentChat.current.agentKey == undefined) {
-      if (AppSetting.get().defaultAllowMCPs == null) {
-        currentChat.current.allowMCPs = clients.map((v) => v.name);
-      } else {
-        currentChat.current.allowMCPs = AppSetting.get().defaultAllowMCPs;
-      }
-    }
 
-    clientsRef.current;
+    // clientsRef.current;
     let p = getPrompts(currentChat.current.allowMCPs);
     promptsRef.current = p;
     let r = getResourses(currentChat.current.allowMCPs);
@@ -658,11 +670,11 @@ export const Chat = ({
             x={x}
             submit={(content) => {
               if (x.role == "system") {
-                openaiClient.current.messages.find(
+                currentChat.current.messages.find(
                   (x) => x.role == "system",
                 ).content = content;
 
-                currentChat.current.messages = openaiClient.current.messages;
+                openaiClient.current.messages = currentChat.current.messages;
 
                 let userIndex = openaiClient.current.messages.findLastIndex(
                   (x) => x.role == "user",
@@ -1303,7 +1315,7 @@ export const Chat = ({
             promptResList,
           );
         }
-        currentChatReset({
+        currentChat.current = {
           ...currentChat.current,
           // agentKey: currentChat.current.agentKey,
           // allowMCPs: currentChat.current.allowMCPs,
@@ -1314,7 +1326,9 @@ export const Chat = ({
           messages: openaiClient.current.messages,
           sended: true,
           dateTime: Date.now(),
-        });
+        };
+        resourceResListRef.current = [];
+        setPromptResList([]);
         ChatHistory.get().data.unshift(currentChat.current);
       } else {
         if (message) {
@@ -1518,9 +1532,6 @@ export const Chat = ({
   )?.supportTool;
 
   const scrollableDivID = useRef("scrollableDiv" + v4());
-  let missMCP = currentChat.current.allowMCPs.filter(
-    (x) => !clientsRef.current.find((c) => c.name == x),
-  );
 
   let historyShowNode = (
     <>
@@ -1920,9 +1931,8 @@ export const Chat = ({
                             onClick={() => {
                               currentChatReset({
                                 messages: [],
-                                allowMCPs: clientsRef.current.map(
-                                  (v) => v.name,
-                                ),
+                                // 返回
+                                allowMCPs: AppSetting.get().defaultAllowMCPs,
                                 sended: false,
                                 agentKey: undefined,
                               });
@@ -1949,7 +1959,7 @@ export const Chat = ({
                         } else {
                           currentChatReset({
                             messages: [],
-                            allowMCPs: clientsRef.current.map((v) => v.name),
+                            allowMCPs: AppSetting.get().defaultAllowMCPs,
                             sended: false,
                             agentKey: undefined,
                           });
@@ -2476,6 +2486,10 @@ export const Chat = ({
             onCheck={(checkedKeys) => {
               // console.log("onCheck", checkedKeys);
               currentChat.current.allowMCPs = checkedKeys as string[];
+              let p = getPrompts(currentChat.current.allowMCPs);
+              promptsRef.current = p;
+              let r = getResourses(currentChat.current.allowMCPs);
+              resourcesRef.current = r;
               refresh();
             }}
             checkedKeys={currentChat.current.allowMCPs}
