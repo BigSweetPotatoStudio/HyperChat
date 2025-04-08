@@ -9,6 +9,7 @@ import {
   FunctionOutlined,
   SwapOutlined,
 } from "@ant-design/icons";
+import { getFirstCharacter } from "../../common";
 
 export function SortableItem(props) {
   const { attributes, listeners, setNodeRef, transform, transition } =
@@ -83,8 +84,3 @@ export function SortableItem(props) {
   );
 }
 
-function getFirstCharacter(str) {
-  // 使用正则表达式匹配第一个emoji或者普通的字符
-  const match = str.match(/\p{Extended_Pictographic}|\S/u);
-  return match ? match[0] : null;
-}

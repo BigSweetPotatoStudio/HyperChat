@@ -5,6 +5,7 @@ import { sleep } from "./sleep";
 import type { MCPClient } from "../../../electron/ts/mcp/config.mjs";
 
 import { TEMP_FILE, MCP_CONFIG, MCP_CONFIG_TYPE } from "../../../common/data";
+import { mcpClientsToArray } from "./mcptool";
 
 let init = false;
 let McpClients: {
@@ -117,85 +118,6 @@ export async function getClients(): Promise<InitedClient[]> {
   return initedClientArray;
 }
 
-function mcpClientsToArray(mcpClients: {
-  [s: string]: MCPClient;
-}): InitedClient[] {
-  let array: InitedClient[] = [];
-
-  for (let key in mcpClients) {
-    let client = mcpClients[key];
-
-    array.push({
-      ...client,
-      prompts: client.prompts.map((x) => {
-        return {
-          ...x,
-          key: key + " > " + x.name,
-          clientName: key,
-        };
-      }),
-      resources: client.resources.map((x) => {
-        return {
-          ...x,
-          key: key + " > " + x.name,
-          clientName: key,
-        };
-      }),
-      tools: client.tools
-        .map((tool) => {
-          // let name = clientName2Index.getIndex(key) + "--" + tool.name;
-          // if (tool.name.includes("worker_put")) {
-          //   return;
-          // }
-          return {
-            type: "function" as const,
-            function: {
-              name: tool.name,
-              description: tool.description,
-              parameters: {
-                type: tool.inputSchema.type,
-                properties: formatProperties(tool.inputSchema.properties),
-                required: tool.inputSchema.required,
-                // additionalProperties: false,
-              },
-            },
-            origin_name: tool.name,
-            restore_name: key + " > " + tool.name,
-            key: key,
-            clientName: key,
-            client: key,
-          };
-        })
-        .filter((x) => x != null),
-      name: key,
-      status: client.status,
-      order: client.config.hyperchat?.scope == "built-in" ? 0 : 1,
-      get config() {
-        let config = MCP_CONFIG.get().mcpServers[key];
-        if (config == null) {
-          return { hyperchat: {} } as any;
-        }
-        if (config.hyperchat == null) {
-          config.hyperchat = {} as any;
-        }
-        return config;
-      },
-      set config(value: any) {
-        MCP_CONFIG.get().mcpServers[key] = value;
-      },
-      ext: client.ext,
-    });
-  }
-  array.sort((a, b) => {
-    return a.order - b.order;
-  });
-  array.forEach((client, i) => {
-    client.tools.forEach((tool) => {
-      tool.function.name = "m" + i + "_" + tool.function.name;
-    });
-  });
-  return array;
-}
 
 export async function getMCPExtensionData() {
   // Because of GitHub's rate limiting、
@@ -246,30 +168,3 @@ export async function getMCPExtensionData() {
   }
 }
 
-function formatProperties(obj: any) {
-  if (obj == null) {
-    return {
-      compatible: {
-        type: "string",
-        description: "ignore, no enter", // compatible gemini-openai
-      },
-    };
-  }
-
-  try {
-    for (let key in obj) {
-      if (obj[key].type == "object") {
-        obj[key].properties = formatProperties(obj[key].properties);
-        delete obj[key].items;
-      } else if (obj[key].type == "array") {
-        obj[key].items = formatProperties(obj[key].items);
-        delete obj[key].properties;
-      }
-    }
-    delete obj.additionalProperties;
-  } catch (e) {
-    console.error(e);
-  }
-  // console.log(obj);
-  return obj;
-}

@@ -224,6 +224,7 @@ import {
 import zodToJsonSchema from "zod-to-json-schema";
 import { Icon } from "../../components/icon";
 import { Messages } from "../../components/messages";
+import { getFirstCharacter } from "../../common";
 
 
 export const Chat = ({
@@ -404,8 +405,9 @@ export const Chat = ({
     if (prompt) {
       newConfig.messages = [
         {
-          role: "system",
+          role: "system" as const,
           content: prompt,
+          content_date: Date.now(), // Corrected to use Date.now() for current timestamp
         },
       ];
     }
@@ -413,10 +415,10 @@ export const Chat = ({
       ...defaultChatValue,
       ...newConfig,
     };
-    for(let d of DATA.current.diffs){
+    for (let d of DATA.current.diffs) {
       d.messages = currentChat.current.messages.slice();
     }
-   
+
 
     resourceResListRef.current = [];
     setPromptResList([]);
@@ -633,7 +635,7 @@ export const Chat = ({
       });
     }
 
-    let iOnRequest = async (current: boolean, modelKey, messages, setOpenaiClient: (openaiClient) => void) => {
+    let iOnRequest = async (current: boolean, modelKey, messages: MyMessage[], setOpenaiClient: (openaiClient) => void) => {
       let config = GPT_MODELS.get().data.find(
         (x) => x.key == modelKey,
       );
@@ -699,16 +701,16 @@ export const Chat = ({
 
 
             let label = currentChat.current.label.toString();
-            let firstUserContent = messages.find(
-              (x) => x.role == "user",
-            )?.content;
-
+            let firstUser = messages.find(
+              (x) => x.content_attached != false && x.role == "user",
+            );
+            let firstUserContent = (firstUser as OpenAI.ChatCompletionUserMessageParam)?.content;
             if (typeof firstUserContent == "string") {
               label = firstUserContent;
             } else if (Array.isArray(firstUserContent)) {
               label = firstUserContent.find((x) => x.type == "text")?.text || "";
             } else {
-              label = firstUserContent.toString();
+              label = (firstUserContent as any).toString();
             }
 
             currentChat.current.label = label;
@@ -755,8 +757,6 @@ export const Chat = ({
 
 
       } catch (e) {
-
-
         console.error(e);
         if (openaiClient) {
           openaiClient.lastMessage.content_error = e.message;
@@ -821,9 +821,15 @@ export const Chat = ({
         return;
       }
       setLoadMoreing(true);
+      let getAgentNameObj = {
 
+      }
+      Agents.get().data.forEach((x) => {
+        getAgentNameObj[x.key] = x.label;
+      });
       let formmatedData = ChatHistory.get()
         .data.filter((x) => {
+          x["agentName"] = getAgentNameObj[x.agentKey];
           return (
             selectGptsKey.current == null ||
             x.agentKey == selectGptsKey.current ||
@@ -908,16 +914,17 @@ export const Chat = ({
     currentChat.current.agentKey,
   ]);
 
-  let supportImage = (
+  let currModel = (
     GPT_MODELS.get().data.find((x) => x.key == currentChat.current.modelKey) ||
     GPT_MODELS.get().data[0]
-  )?.supportImage;
+  );
 
-  let supportTool = (
-    GPT_MODELS.get().data.find((x) => x.key == currentChat.current.modelKey) ||
-    GPT_MODELS.get().data[0]
-  )?.supportTool;
+  let supportImage = currModel?.supportImage;
 
+  let supportTool = currModel?.supportTool;
+
+  let modelName = currModel?.name;
+  // console.log("modelName", modelName);
   const scrollableDivID = useRef("scrollableDiv" + v4());
 
   let historyShowNode = (
@@ -998,7 +1005,7 @@ export const Chat = ({
             items={conversations.map((x) => {
               return {
                 ...x,
-                label: x.label.toString(),
+                label: x.label.toString() + ` - ${dayjs(x.dateTime).format("YYYY-MM-DD HH:mm:ss")}` + (x["agentName"] ? ` - ${x["agentName"]}` : ""),
                 icon: x.icon == "⭐" ? <StarOutlined /> : undefined,
               };
             })}
@@ -1148,128 +1155,129 @@ export const Chat = ({
 
               <Splitter layout={window.innerHeight > window.innerWidth ? "vertical" : "horizontal"} className="overflow-auto">
                 <Splitter.Panel defaultSize="50%" min="30%" max="70%">
-                  <div className="h-full">
-                    {(currentChat.current.messages == null ||
-                      currentChat.current.messages?.length == 0) && (
-                        <>
-                          <Welcome
-                            icon="👋"
-                            title={t`Welcome`}
-                            className="mb-4"
-                            description={
-                              Agents.get().data.length > 0
-                                ? t`Choose a prompt from below, and let's start chatting`
-                                : t`Start chatting`
-                            }
-                          />
-                          <Space>
-                            <Input
-                              placeholder="search"
-                              value={botSearchValue}
-                              onChange={(e) => {
-                                setBotSearchValue(e.target.value);
-                              }}
-                              allowClear
-                            ></Input>
-                            <Button
-                              onClick={() => {
-                                setPromptsModalValue({
-                                  confirm_call_tool: false,
-                                } as any);
-                                setIsOpenPromptsModal(true);
-                              }}
-                            >
-                              {t`Add Agent`}
-                            </Button>
-                          </Space>
-
-                          <div className="flex items-center">
-                            <div className="flex flex-wrap">
-                              <DndContext
-                                sensors={botSearchValue != "" ? [] : [sensors]}
-                                onDragEnd={(e) => {
-                                  try {
-                                    let data = Agents.get().data;
-                                    let oldIndex = data.findIndex(
-                                      (x) => x.key == e.active.id,
-                                    );
-
-                                    let newIndex = data.findIndex(
-                                      (x) => x.key == e.over.id,
-                                    );
-
-                                    let item = data[oldIndex];
-
-                                    data.splice(oldIndex, 1);
-
-                                    data.splice(newIndex, 0, item);
-
-                                    Agents.save();
-                                    refresh();
-                                  } catch { }
+                  <Watermark className="h-full  relative" content={DATA.current.diffs.length > 0 ? modelName : ""}>
+                    <div className="h-full">
+                      {(currentChat.current.messages == null ||
+                        currentChat.current.messages?.length == 0) && (
+                          <>
+                            <Welcome
+                              icon="👋"
+                              title={t`Welcome`}
+                              className="mb-4"
+                              description={
+                                Agents.get().data.length > 0
+                                  ? t`Choose a prompt from below, and let's start chatting`
+                                  : t`Start chatting`
+                              }
+                            />
+                            <Space>
+                              <Input
+                                placeholder="search"
+                                value={botSearchValue}
+                                onChange={(e) => {
+                                  setBotSearchValue(e.target.value);
+                                }}
+                                allowClear
+                              ></Input>
+                              <Button
+                                onClick={() => {
+                                  setPromptsModalValue({
+                                    confirm_call_tool: false,
+                                  } as any);
+                                  setIsOpenPromptsModal(true);
                                 }}
                               >
-                                <SortableContext
-                                  items={Agents.get()
-                                    .data.filter(
-                                      (x) =>
-                                        botSearchValue == "" ||
-                                        x.label
-                                          .toLowerCase()
-                                          .includes(botSearchValue),
-                                    )
-                                    .map((x) => x.key)}
+                                {t`Add Agent`}
+                              </Button>
+                            </Space>
+
+                            <div className="flex items-center">
+                              <div className="flex flex-wrap">
+                                <DndContext
+                                  sensors={botSearchValue != "" ? [] : [sensors]}
+                                  onDragEnd={(e) => {
+                                    try {
+                                      let data = Agents.get().data;
+                                      let oldIndex = data.findIndex(
+                                        (x) => x.key == e.active.id,
+                                      );
+
+                                      let newIndex = data.findIndex(
+                                        (x) => x.key == e.over.id,
+                                      );
+
+                                      let item = data[oldIndex];
+
+                                      data.splice(oldIndex, 1);
+
+                                      data.splice(newIndex, 0, item);
+
+                                      Agents.save();
+                                      refresh();
+                                    } catch { }
+                                  }}
                                 >
-                                  {Agents.get()
-                                    .data.filter(
-                                      (x) =>
-                                        botSearchValue == "" ||
-                                        x.label
-                                          .toLowerCase()
-                                          .includes(botSearchValue),
-                                    )
-                                    .map((item) => (
-                                      <SortableItem
-                                        key={item.key}
-                                        id={item.key}
-                                        item={item}
-                                        onClick={(item) => {
-                                          // console.log("onGPTSClick", item);
-                                          onGPTSClick(item.key);
-                                        }}
-                                        onEdit={() => {
-                                          let value = Agents.get().data.find(
-                                            (y) => y.key === item.key,
-                                          );
-                                          setPromptsModalValue(value);
-                                          setIsOpenPromptsModal(true);
-                                        }}
-                                        onRemove={() => {
-                                          Modal.confirm({
-                                            title: "Tip",
-                                            maskClosable: true,
-                                            content: "Are you sure to delete?",
-                                            onOk: async () => {
-                                              let index = Agents.get().data.findIndex(
-                                                (y) => y.key === item.key,
-                                              );
-                                              Agents.get().data.splice(index, 1);
-                                              await Agents.save();
-                                              call("openMcpClient", ["hyper_agent"]);
-                                              refresh();
-                                            },
-                                            onCancel(...args) { },
-                                          });
-                                        }}
-                                      />
-                                    ))}
-                                </SortableContext>
-                              </DndContext>
+                                  <SortableContext
+                                    items={Agents.get()
+                                      .data.filter(
+                                        (x) =>
+                                          botSearchValue == "" ||
+                                          x.label
+                                            .toLowerCase()
+                                            .includes(botSearchValue),
+                                      )
+                                      .map((x) => x.key)}
+                                  >
+                                    {Agents.get()
+                                      .data.filter(
+                                        (x) =>
+                                          botSearchValue == "" ||
+                                          x.label
+                                            .toLowerCase()
+                                            .includes(botSearchValue),
+                                      )
+                                      .map((item) => (
+                                        <SortableItem
+                                          key={item.key}
+                                          id={item.key}
+                                          item={item}
+                                          onClick={(item) => {
+                                            // console.log("onGPTSClick", item);
+                                            onGPTSClick(item.key);
+                                          }}
+                                          onEdit={() => {
+                                            let value = Agents.get().data.find(
+                                              (y) => y.key === item.key,
+                                            );
+                                            setPromptsModalValue(value);
+                                            setIsOpenPromptsModal(true);
+                                          }}
+                                          onRemove={() => {
+                                            Modal.confirm({
+                                              title: "Tip",
+                                              maskClosable: true,
+                                              content: "Are you sure to delete?",
+                                              onOk: async () => {
+                                                let index = Agents.get().data.findIndex(
+                                                  (y) => y.key === item.key,
+                                                );
+                                                Agents.get().data.splice(index, 1);
+                                                await Agents.save();
+                                                call("openMcpClient", ["hyper_agent"]);
+                                                refresh();
+                                              },
+                                              onCancel(...args) { },
+                                            });
+                                          }}
+                                        />
+                                      ))}
+                                  </SortableContext>
+                                </DndContext>
+                              </div>
                             </div>
-                          </div>
-                        </>
-                      )}
-                    {/* <Bubble.List
+                          </>
+                        )}
+                      {/* <Bubble.List
                       autoScroll={true}
                       style={{
                         paddingRight: 4,
@@ -1280,17 +1288,18 @@ export const Chat = ({
                         ?.map(format)
                         ?.filter((x) => x != null)}
                     /> */}
-                    <Messages messages={currentChat.current.messages} onSumbit={(messages) => {
-                      currentChat.current.messages = messages;
-                      refresh();
-                      onRequest();
-                    }}></Messages>
-                  </div>
+                      <Messages messages={currentChat.current.messages} onSumbit={(messages) => {
+                        currentChat.current.messages = messages;
+                        refresh();
+                        onRequest();
+                      }}></Messages>
+                    </div>
+                  </Watermark>
                 </Splitter.Panel>
 
                 {
                   DATA.current.diffs.map((x, i) => {
-                    return <Splitter.Panel key={i} className="h-full"><Watermark className="h-full  relative " content={x.label}>
+                    return <Splitter.Panel key={i} className="h-full"><Watermark className="h-full  relative" content={x.label}>
                       <div className=" absolute top-0 right-0 cursor-pointer z-10 text-red-400" onClick={() => {
                         DATA.current.diffs = DATA.current.diffs.filter((_, j) => j != i);
                         refresh();
@@ -1535,6 +1544,7 @@ export const Chat = ({
                           value={currentChat.current.modelKey}
                           onChange={(value) => {
                             currentChat.current.modelKey = value;
+                            refresh();
                           }}
                           options={GPT_MODELS.get()
                             .data.filter(

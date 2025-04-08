@@ -18,12 +18,13 @@ export function getToolsOnNode(
   return tools;
 }
 
-function mcpClientsToArray(mcpClients: {
+export function mcpClientsToArray(mcpClients: {
   [s: string]: MCPClient;
 }): InitedClient[] {
   let array: InitedClient[] = [];
 
   for (let key in mcpClients) {
+
     let client = mcpClients[key];
 
     array.push({
@@ -42,31 +43,45 @@ function mcpClientsToArray(mcpClients: {
           clientName: key,
         };
       }),
-      tools: client.tools.map((tool) => {
-        // let name = clientName2Index.getIndex(key) + "--" + tool.name;
-        return {
-          type: "function" as const,
-          function: {
-            name: tool.name,
-            description: tool.description,
-            parameters: {
-              type: tool.inputSchema.type,
-              properties: removeAdditionalProperties(
-                tool.inputSchema.properties,
-              ),
-              required: tool.inputSchema.required,
-              // additionalProperties: false,
+      tools: client.tools
+        .map((tool) => {
+          // let name = "m" + i + "_" + tool.name;
+          return {
+            type: "function" as const,
+            function: {
+              name: tool.name,
+              description: tool.description,
+              parameters: {
+                type: tool.inputSchema.type,
+                properties: formatProperties(tool.inputSchema.properties, tool.name),
+                required: tool.inputSchema.required,
+              },
             },
-          },
-          origin_name: tool.name,
-          restore_name: key + " > " + tool.name,
-          key: key,
-          clientName: key,
-        };
-      }),
+            origin_name: tool.name,
+            restore_name: key + " > " + tool.name,
+            key: key,
+            clientName: key,
+            client: key,
+          };
+        })
+        .filter((x) => x != null),
       name: key,
       status: client.status,
       order: client.config.hyperchat?.scope == "built-in" ? 0 : 1,
+      // get config() {
+      //   let config = MCP_CONFIG.get().mcpServers[key];
+      //   if (config == null) {
+      //     return { hyperchat: {} } as any;
+      //   }
+      //   if (config.hyperchat == null) {
+      //     config.hyperchat = {} as any;
+      //   }
+      //   return config;
+      // },
+      // set config(value: any) {
+      //   MCP_CONFIG.get().mcpServers[key] = value;
+      // },
+      ext: client.ext,
     });
   }
   array.sort((a, b) => {
@@ -74,24 +89,37 @@ function mcpClientsToArray(mcpClients: {
   });
   array.forEach((client, i) => {
     client.tools.forEach((tool) => {
-      tool.function.name = "m" + i + "_" + tool.function.name;
+      tool.function.name = "m" + (i + 1) + "_" + tool.function.name;
     });
   });
   return array;
 }
-function removeAdditionalProperties(obj: any) {
+
+export function formatProperties(obj: any, toolName: string = "") {
   if (obj == null) {
-    return obj;
+    return {
+      compatible: {
+        type: "string",
+        description: "ignore, no enter", // compatible gemini-openai
+      },
+    };
   }
+  // if (toolName == "NOTION_INSERT_ROW_DATABASE") {
+  //   debugger;
+  // }
   try {
     for (let key in obj) {
       if (obj[key].type == "object") {
-        removeAdditionalProperties(obj[key].properties);
+        obj[key].properties = formatProperties(obj[key].properties, toolName);
+        delete obj[key].additionalProperties; // Corrected to delete obj[key].additionalProperties
+        delete obj[key].items;
       } else if (obj[key].type == "array") {
-        removeAdditionalProperties(obj[key].items);
+        obj[key].items = formatProperties(obj[key].items, toolName);
+        delete obj[key].items.additionalProperties; // Corrected to delete obj[key].additionalProperties
+        delete obj[key].properties;
       }
     }
-    delete obj.additionalProperties;
+
   } catch (e) {
     console.error(e);
   }

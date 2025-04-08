@@ -1,3 +1,5 @@
+import type OpenAI from "openai";
+
 export const DataList: Data<any>[] = [];
 
 export class Data<T> {
@@ -112,10 +114,52 @@ export const AppSetting = new Data("app_setting.json", {
   }>,
 });
 
+export type Tool_Call = {
+  index: number;
+  id: string;
+  type: "function";
+  origin_name?: string;
+  restore_name?: string;
+  function: {
+    name: string;
+    arguments: string;
+    argumentsJSON: any;
+  };
+};
+
+
+export type MyMessage = OpenAI.Chat.Completions.ChatCompletionMessageParam & {
+  tool_calls?: Tool_Call[]; // openai tool call
+  content_status?:
+  | "loading"
+  | "success"
+  | "error"
+  | "dataLoading"
+  | "dataLoadComplete";
+  content_error?: string;
+  content_from?: string;
+  content_attachment?: Array<{
+    type: string;
+    text?: string;
+    mimeType?: string;
+    data?: string;
+  }>;
+  reasoning_content?: string;
+  content_context?: any;
+  content_attached?: boolean;
+  content_date: number;
+  content_usage?: {
+    prompt_tokens: number;
+    completion_tokens: number;
+    total_tokens: number;
+  };
+};
+
+
 export type ChatHistoryItem = {
   label: string;
   key: string;
-  messages: Array<any>;
+  messages: Array<MyMessage>;
   modelKey: string;
   agentKey: string;
   sended: boolean;

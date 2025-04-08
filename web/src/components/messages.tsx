@@ -111,6 +111,7 @@ export const Messages = ({ messages, onSumbit, readOnly }: { messages: MyMessage
                                     className="hover:text-cyan-400"
                                     key="sync"
                                     onClick={() => {
+                                        x.content_date = Date.now();
                                         onSumbit(messages.filter((x, index) => index <= i));
                                     }}
                                 />}
@@ -128,10 +129,8 @@ export const Messages = ({ messages, onSumbit, readOnly }: { messages: MyMessage
                         x={x}
                         submit={(content) => {
                             if (x.role == "system") {
-                                messages.find(
-                                    (y) => y.role == "system",
-                                ).content = content;
-
+                                x.content = content;
+                                x.content_date = Date.now();
 
 
                                 let userIndex = messages.findLastIndex(
@@ -147,6 +146,7 @@ export const Messages = ({ messages, onSumbit, readOnly }: { messages: MyMessage
                                 }
                             } else {
                                 x.content = content;
+                                x.content_date = Date.now();
                                 onSumbit(messages.filter((x, index) => index <= i));
                                 // onRequest(content);
                             }
@@ -238,7 +238,7 @@ export const Messages = ({ messages, onSumbit, readOnly }: { messages: MyMessage
                                     key="sync"
                                     className="hover:text-cyan-400"
                                     onClick={() => {
-                                        // 请求以前的消息，不包括这条
+                                        // role == "assistant" 请求以前的消息，不包括这条
                                         onSumbit(messages.filter((x, index) => index < i));
                                     }}
                                 />}

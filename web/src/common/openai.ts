@@ -23,52 +23,40 @@ import imageBase64 from "../common/openai_image_base64.txt";
 import { v4 } from "uuid";
 import dayjs from "dayjs";
 import { isOnBrowser } from "./const";
+import type { MyMessage, Tool_Call } from "../../../common/data";
 
-type Tool_Call = {
-  index: number;
-  id: string;
-  type: "function";
-  origin_name?: string;
-  restore_name?: string;
-  function: {
-    name: string;
-    arguments: string;
-    argumentsJSON: any;
-  };
-};
 
-type ContentImage = {
-  data: string;
-  mimeType: string;
-  type: string;
-};
 
-export type MyMessage = OpenAI.Chat.Completions.ChatCompletionMessageParam & {
-  tool_calls?: Tool_Call[]; // openai tool call
-  content_status?:
-  | "loading"
-  | "success"
-  | "error"
-  | "dataLoading"
-  | "dataLoadComplete";
-  content_error?: string;
-  content_from?: string;
-  content_attachment?: Array<{
-    type: string;
-    text?: string;
-    mimeType?: string;
-    data?: string;
-  }>;
-  reasoning_content?: string;
-  content_context?: any;
-  content_attached?: boolean;
-  content_date: number;
-  content_usage?: {
-    prompt_tokens: number;
-    completion_tokens: number;
-    total_tokens: number;
-  };
-};
+export {
+  MyMessage,
+  Tool_Call,
+}
+// export type MyMessage = OpenAI.Chat.Completions.ChatCompletionMessageParam & {
+//   tool_calls?: Tool_Call[]; // openai tool call
+//   content_status?:
+//   | "loading"
+//   | "success"
+//   | "error"
+//   | "dataLoading"
+//   | "dataLoadComplete";
+//   content_error?: string;
+//   content_from?: string;
+//   content_attachment?: Array<{
+//     type: string;
+//     text?: string;
+//     mimeType?: string;
+//     data?: string;
+//   }>;
+//   reasoning_content?: string;
+//   content_context?: any;
+//   content_attached?: boolean;
+//   content_date: number;
+//   content_usage?: {
+//     prompt_tokens: number;
+//     completion_tokens: number;
+//     total_tokens: number;
+//   };
+// };
 
 // class ClientName2Index {
 //   obj: { [s: string]: number } = {};
@@ -141,6 +129,29 @@ export class OpenAiChannel {
         "X-Title": "HyperChat", // Optional. Site title for rankings on openrouter.ai.
         baseURL: encodeURIComponent(options.baseURL),
       },
+      fetch: async (url: RequestInfo, init?: RequestInit): Promise<Response> => {
+        // console.log('About to make a request', url, init);
+        const response = await fetch(url, init);
+        // console.log('Got response', response);
+        // 兼容Gemini OpenAI 提示词错误
+        if (response.status === 400) {
+          let json = await response.json();
+          if (Array.isArray(json)) {
+            let res = {
+              error: {
+                message: "",
+              }
+            }
+            for (let r of json) {
+              res.error.message += r.error.message + "\n";
+            }
+            return new Response(JSON.stringify(res), {
+              status: 400,
+            });
+          }
+        }
+        return response;
+      },
     });
     this.options.temperature =
       typeof this.options.temperature === "number"
@@ -204,7 +215,7 @@ export class OpenAiChannel {
               content: m.content.text as string,
               content_from: p.call_name as string,
               content_attachment: [],
-              content_date: new Date().getTime(),
+              content_date: Date.now(),
             });
           } else if (m.content.type == "resource") {
             if (m.content.resource.text) {
@@ -213,7 +224,7 @@ export class OpenAiChannel {
                 content: m.content.resource.text as string,
                 content_from: p.call_name as string,
                 content_attachment: [],
-                content_date: new Date().getTime(),
+                content_date: Date.now(),
               });
             } else if (
               m.content.resource.blob &&
@@ -230,7 +241,7 @@ export class OpenAiChannel {
                   ],
                   content_from: p.call_name as string,
                   content_attachment: [],
-                  content_date: new Date().getTime(),
+                  content_date: Date.now(),
                 });
               } else {
                 antdmessage.warning(
@@ -316,7 +327,7 @@ export class OpenAiChannel {
         completion_tokens: 0,
         total_tokens: 0,
       },
-      content_date: new Date().getTime(),
+      content_date: Date.now(),
     };
 
     let messages = this.messages.filter(
@@ -346,11 +357,6 @@ export class OpenAiChannel {
         onUpdate && onUpdate(res.content as string);
 
         for await (const chunk of stream) {
-          // try {
-          //   console.log(
-          //     chunk.choices[0]?.delta?.tool_calls[0]?.function?.arguments,
-          //   );
-          // } catch (e) {}
 
           if (chunk.usage) {
             this.totalTokens = chunk.usage.total_tokens;
@@ -360,11 +366,7 @@ export class OpenAiChannel {
           }
 
           if (chunk.choices[0]?.delta?.tool_calls) {
-            // console.warn(
-            //   "tool_calls length > 1",
-            //   chunk.choices[0].delta.tool_calls,
-            // );
-            // debugger;
+
             for (const [
               i,
               tool_call,
@@ -397,11 +399,13 @@ export class OpenAiChannel {
           res.content += chunk.choices[0]?.delta?.content || "";
           res.reasoning_content +=
             (chunk.choices[0]?.delta as any)?.reasoning_content || "";
+          res.content_date = Date.now();
           onUpdate && onUpdate(res.content as string);
         }
-        if (res.content == "") {
-          res.content = undefined;
-        }
+        // if (res.content == "") {
+        //   res.content = undefined;
+        // }
+        onUpdate && onUpdate(res.content as string);
       } else {
         const chatCompletion = await this.openai.chat.completions.create(
           {
@@ -414,6 +418,7 @@ export class OpenAiChannel {
             signal: this.abortController.signal,
           },
         );
+
         if (!Array.isArray(chatCompletion.choices)) {
           throw new Error(
             (chatCompletion as any)?.error?.message ||
@@ -427,11 +432,11 @@ export class OpenAiChannel {
         res.content_usage.prompt_tokens = chatCompletion?.usage?.prompt_tokens;
         res.content_usage.total_tokens = chatCompletion?.usage?.total_tokens;
 
-        let openaires =
+        let lastMessage =
           chatCompletion.choices[chatCompletion.choices.length - 1].message;
 
         let i = 0;
-        for (let restool of openaires.tool_calls || []) {
+        for (let restool of lastMessage.tool_calls || []) {
           let tool = tool_calls[i];
           if (!tool) {
             tool = {
@@ -457,18 +462,18 @@ export class OpenAiChannel {
           i++;
         }
 
-        this.lastMessage.content = openaires.content;
+        this.lastMessage.content = lastMessage.content;
         this.lastMessage.reasoning_content = (
-          openaires as any
+          lastMessage as any
         ).reasoning_content;
       }
     } catch (e) {
-      console.error(e);
       this.lastMessage.content_status = "error";
       onUpdate && onUpdate(this.lastMessage.content as string);
       throw e;
     }
     this.lastMessage.content_status = "dataLoadComplete";
+    this.lastMessage.content_date = Date.now();
     // if (this.lastMessage.reasoning_content) {
     //   this.lastMessage.content_attachment.push({
     //     type: "text",
@@ -522,7 +527,7 @@ export class OpenAiChannel {
           content: "",
           content_status: "loading",
           content_attachment: [],
-          content_date: new Date().getTime(),
+          content_date: Date.now(),
         };
         this.messages.push(message as any);
         onUpdate && onUpdate(this.lastMessage.content as string);
@@ -643,26 +648,6 @@ export class OpenAiChannel {
   async testTool() {
     try {
       const tools = [
-        // {
-        //   type: "function" as const,
-        //   function: {
-        //     name: "get_weather",
-        //     description: "Get the weather in a given location",
-        //     // strict: true,
-        //     parameters: {
-        //       type: "object",
-        //       properties: {
-        //         location: {
-        //           type: "string",
-        //           description: "The city and state, e.g. Chicago, IL",
-        //         },
-        //         unit: { type: "string", enum: ["celsius", "fahrenheit"] },
-        //         // additionalProperties: false,
-        //       },
-        //       required: ["location"],
-        //     },
-        //   },
-        // },
         {
           type: "function" as const,
           function: {
