@@ -9,6 +9,7 @@ import { t } from "../i18n";
 import dayjs from "dayjs";
 import { DownImage, MarkDown, UserContent } from "../pages/chat/component";
 import { Pre } from "./pre";
+import { AssistantToolContent } from "./assistant_tool_content";
 
 export const Messages = ({ messages, onSumbit, readOnly }: { messages: MyMessage[]; onSumbit: (messages: MyMessage[]) => void; readOnly?: boolean }) => {
     const [num, setNum] = React.useState(0);
@@ -155,36 +156,28 @@ export const Messages = ({ messages, onSumbit, readOnly }: { messages: MyMessage
                 ),
             };
         } else {
+            // role == "assistant" || role == "tool"
             if (true) {
                 if (i + 1 != arr.length && arr[i + 1] && arr[i + 1].role != "user") {
                     return;
                 }
-                // if (arr[i + 1] && arr[i + 1].role != "user") {
-                //   return;
-                // }
-                let rocessProgress = [];
-                let index = arr[i].role == "assistant" ? i - 1 : i;
-                // let last_content_usage =
-                //   arr[i].role == "tool" ? null : arr[i].content_usage;
+
+                let contents = [];
+                let index = i;
                 while (index >= 0) {
-                    // if (last_content_usage == null) {
-                    //   if (arr[index].role == "assistant") {
-                    //     last_content_usage = arr[index].content_usage;
-                    //   }
-                    // }
                     if (arr[index].role == "user") {
                         break;
                     }
-                    rocessProgress.push(arr[index]);
+                    contents.push(arr[index]);
                     index--;
                 }
-                rocessProgress = rocessProgress.reverse();
+                contents = contents.reverse();
                 let last_content_usage = {} as {
                     prompt_tokens: number;
                     completion_tokens: number;
                     total_tokens: number;
                 };
-                for (let x of rocessProgress) {
+                for (let x of contents) {
                     if (x.content_usage) {
                         if (x.content_usage.prompt_tokens != 0) {
                             last_content_usage.prompt_tokens = x.content_usage.prompt_tokens;
@@ -283,121 +276,7 @@ export const Messages = ({ messages, onSumbit, readOnly }: { messages: MyMessage
                     ),
                     content: (
                         <div>
-                            <div>
-                                {rocessProgress.map((x, i) => {
-                                    if (x.role == "tool") {
-                                        return (
-                                            <div key={i}>
-                                                <span
-                                                    key={i}
-                                                    className="cursor-pointer"
-                                                    onClick={() => {
-                                                        Modal.info({
-                                                            width: "90%",
-                                                            style: { maxWidth: 1024 },
-                                                            title: t`Tool Call Result`,
-                                                            maskClosable: true,
-                                                            content: <Pre>{x.content as string}</Pre>,
-                                                        });
-                                                    }}
-                                                >
-                                                    {x.content_status == "loading" ? (
-                                                        <SyncOutlined spin />
-                                                    ) : x.content_status == "error" ? (
-                                                        <div className="line-clamp-1 text-red-500">
-                                                            ❌Error{" "}
-                                                            <span className="text-red-300">
-                                                                {x?.content?.toString()}
-                                                            </span>
-                                                        </div>
-                                                    ) : (
-                                                        <div className="line-clamp-1 text-green-400">
-                                                            ✅Completed{" "}
-                                                            <span className="text-gray-400">
-                                                                {x?.content?.toString()}
-                                                            </span>
-                                                        </div>
-                                                    )}
-                                                </span>
-                                                {x.content_attachment &&
-                                                    x.content_attachment.length > 0 &&
-                                                    x.content_attachment.map((x, i) => {
-                                                        if (x.type == "image") {
-                                                            return (
-                                                                <DownImage
-                                                                    key={i}
-                                                                    src={`data:${x.mimeType};base64,${x.data}`}
-                                                                />
-                                                            );
-                                                        } else if (x.type == "text") {
-                                                            return <Pre key={i}>{x.text}</Pre>;
-                                                        }
-                                                    })}
-                                            </div>
-                                        );
-                                    } else {
-                                        return (
-                                            <div className="bg-gray-200" key={i}>
-                                                {x.tool_calls?.map((tool: any, index) => {
-                                                    return (
-                                                        <Spin
-                                                            key={index}
-                                                            spinning={x.content_status == "loading"}
-                                                        >
-                                                            <a
-                                                                className="cursor-pointer"
-                                                                onClick={() => {
-                                                                    Modal.info({
-                                                                        width: "90%",
-                                                                        style: { maxWidth: 1024 },
-                                                                        title: t`Tool Call`,
-                                                                        maskClosable: true,
-                                                                        content: (
-                                                                            <div>
-                                                                                <pre
-                                                                                    style={{
-                                                                                        whiteSpace: "pre-wrap",
-                                                                                        wordWrap: "break-word",
-                                                                                        padding: "8px 0",
-                                                                                        textAlign: "center",
-                                                                                    }}
-                                                                                >
-                                                                                    <span>Tool Name: </span>
-                                                                                    <span className="text-purple-500">
-                                                                                        {tool.restore_name ||
-                                                                                            tool.function.name}
-                                                                                    </span>
-                                                                                </pre>
-                                                                                {x?.content?.toString()}
-                                                                                <div>
-                                                                                    <span>Tool Arguments: </span>
-                                                                                </div>
-                                                                                <Pre>{tool.function.arguments}</Pre>
-                                                                            </div>
-                                                                        ),
-                                                                    });
-                                                                }}
-                                                            >
-                                                                <div className="line-clamp-1">
-                                                                    🔧
-                                                                    <span className="text-purple-500">
-                                                                        {tool.restore_name || tool.function.name}
-                                                                    </span>{" "}
-                                                                    <span className="text-gray-500">
-                                                                        {" "}
-                                                                        {x?.content?.toString()}
-                                                                    </span>{" "}
-                                                                    {tool.function.arguments}
-                                                                </div>
-                                                            </a>
-                                                        </Spin>
-                                                    );
-                                                })}
-                                            </div>
-                                        );
-                                    }
-                                })}
-                            </div>
+
                             {x.reasoning_content && (
                                 <Collapse
                                     defaultActiveKey={["reasoning_content"]}
@@ -415,41 +294,35 @@ export const Messages = ({ messages, onSumbit, readOnly }: { messages: MyMessage
                                 />
                             )}
 
-                            {x.role == "assistant" && (
-                                <>
-                                    {x.content && (
-                                        <MarkDown
-                                            markdown={x.content}
-                                            onCallback={(e) => {
-                                                // setValue(e);
-                                            }}
-                                        ></MarkDown>
-                                    )}
-                                    {x.content_status == "loading" ? (
-                                        <SyncOutlined spin />
-                                    ) : x.content_status == "error" ? (
-                                        <div className="text-red-500">
-                                            {t`Please verify your network connection. If the network is working, there might be a small bug in the program. Here are the error messages: `}
-                                            <div className="text-red-700">{x.content_error}</div>
-                                        </div>
-                                    ) : null}
-                                    {x.content_status == "dataLoading" && <LoadingOutlined />}
-                                    {x.content_attachment &&
-                                        x.content_attachment.length > 0 &&
-                                        x.content_attachment.map((x, i) => {
-                                            if (x.type == "image") {
-                                                return (
-                                                    <DownImage
-                                                        key={i}
-                                                        src={`data:${x.mimeType};base64,${x.data}`}
-                                                    />
-                                                );
-                                            } else if (x.type == "text") {
-                                                return <Pre>{x.text}</Pre>;
-                                            }
-                                        })}
-                                </>
-                            )}
+                            <AssistantToolContent
+                                contents={contents}
+                            />
+
+                            {x.content_status == "loading" ? (
+                                <SyncOutlined spin />
+                            ) : x.content_status == "error" ? (
+                                <div className="text-red-500">
+                                    {t`Please verify your network connection. If the network is working, there might be a small bug in the program. Here are the error messages: `}
+                                    <div className="text-red-700">{x.content_error}</div>
+                                </div>
+                            ) : null}
+                            {x.content_status == "dataLoading" && <LoadingOutlined />}
+                            {x.content_attachment &&
+                                x.content_attachment.length > 0 &&
+                                x.content_attachment.map((x, i) => {
+                                    if (x.type == "image") {
+                                        return (
+                                            <DownImage
+                                                key={i}
+                                                src={`data:${x.mimeType};base64,${x.data}`}
+                                            />
+                                        );
+                                    } else if (x.type == "text") {
+                                        return <Pre>{x.text}</Pre>;
+                                    }
+                                })}
+
+
                         </div>
                     ),
                 };

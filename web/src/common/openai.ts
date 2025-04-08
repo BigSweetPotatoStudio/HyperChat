@@ -488,6 +488,9 @@ export class OpenAiChannel {
         tool.restore_name = localtool.restore_name;
         tool.origin_name = localtool.origin_name;
       }
+      if (tool.id == "") {
+        tool.id = v4();
+      }
     });
     onUpdate && onUpdate(this.lastMessage.content as string);
     // console.log("tool_calls", tool_calls, call_tool);
@@ -574,19 +577,21 @@ export class OpenAiChannel {
         } else if (Array.isArray(call_res.content)) {
           for (let c of call_res.content) {
             if (c.type == "text") {
+              this.lastMessage.content = this.lastMessage.content + "\n" + c.text;
             } else if (c.type == "image") {
               this.lastMessage.content_attachment.push(c);
             } else {
               antdmessage.warning("tool 返回类型只支持 text image");
             }
           }
-          this.lastMessage.content = call_res.content
-            .filter((x) => x.type == "text")
-            .map((x) => x.text)
-            .join("\n");
+          // this.lastMessage.content = call_res.content
+          //   .filter((x) => x.type == "text")
+          //   .map((x) => x.text)
+          //   .join("\n");
         } else {
           this.lastMessage.content = JSON.stringify(call_res.content);
         }
+
         onUpdate && onUpdate(this.lastMessage.content as string);
       }
       // console.log("this.messages", this.messages);

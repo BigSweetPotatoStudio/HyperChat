@@ -153,6 +153,7 @@ export type MyMessage = OpenAI.Chat.Completions.ChatCompletionMessageParam & {
     completion_tokens: number;
     total_tokens: number;
   };
+  tool_call_id?: string;
 };
 
 

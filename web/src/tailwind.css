@@ -81,7 +81,7 @@ div[role="system"] .ant-bubble-content-wrapper {
 }
 
 .ant-bubble {
-  flex-wrap: wrap;
+  /* flex-wrap: wrap; */
 }
 
 /* 选中最后一个 .no-attached（即使标签不同） */
@@ -141,4 +141,13 @@ div[role="system"] .ant-bubble-content-wrapper {
 
 .modal-tools .ant-btn {
   font-size: 0.8rem;
+}
+
+.my-collapse .ant-collapse-header {
+  padding-top: 0.2rem !important;
+  padding-bottom: 0.2rem !important;
+}
+
+.ant-bubble-content{
+  padding: 0.5rem !important;
 }

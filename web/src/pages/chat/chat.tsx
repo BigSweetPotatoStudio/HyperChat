@@ -781,8 +781,8 @@ export const Chat = ({
         });
         alls.push(promise);
       }
-      let promise = iOnRequest(true, currentChat.current.modelKey, currentChat.current.messages, (openaiClient) => {
-        openaiClient.current = openaiClient;
+      let promise = iOnRequest(true, currentChat.current.modelKey, currentChat.current.messages, (c) => {
+        openaiClient.current = c;
       });
       alls.push(promise);
       await Promise.allSettled(alls);
@@ -801,6 +801,20 @@ export const Chat = ({
   let loadIndex = useRef(0);
 
   const loadDataTatal = useRef(0);
+
+  const [historyFilterSearchValue, setHistoryFilterSearchValue] = useState("");
+
+  const historyFilterType = useRef<
+    "all" | "star" | "search" | "agent" | "task"
+  >("all");
+  useEffect(() => {
+    loadMoreData(false);
+  }, [
+    historyFilterType.current,
+    historyFilterSearchValue,
+    currentChat.current.agentKey,
+  ]);
+
 
   const loadMoreData = useCallback(
     async (loadMore = true, loadIndexChange = true) => {
@@ -861,7 +875,7 @@ export const Chat = ({
       // console.log("loadMoreData", loadIndex.current, loadDataTatal.current);
       setLoadMoreing(false);
     },
-    [],
+    [historyFilterSearchValue],
   );
 
   // const [resourceResList, setResourceResList] = React.useState<
@@ -901,18 +915,7 @@ export const Chat = ({
 
   // const [historyFilterSign, setHistoryFilterSign] = useState<number>(0);
 
-  const historyFilterType = useRef<
-    "all" | "star" | "search" | "agent" | "task"
-  >("all");
 
-  const [historyFilterSearchValue, setHistoryFilterSearchValue] = useState("");
-  useEffect(() => {
-    loadMoreData(false);
-  }, [
-    historyFilterType.current,
-    historyFilterSearchValue,
-    currentChat.current.agentKey,
-  ]);
 
   let currModel = (
     GPT_MODELS.get().data.find((x) => x.key == currentChat.current.modelKey) ||
