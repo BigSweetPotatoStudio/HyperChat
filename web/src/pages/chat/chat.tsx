@@ -650,7 +650,7 @@ export const Chat = ({
           baseURL: config.baseURL,
           apiKey: config.apiKey,
         },
-        modelKey,
+        current ? (modelKey + sessionID) : (modelKey + "-diff" + sessionID),
       );
       try {
         openaiClient.options = {

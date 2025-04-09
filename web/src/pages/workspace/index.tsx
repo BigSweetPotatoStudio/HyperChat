@@ -209,6 +209,7 @@ export function WorkSpace() {
       closable: false,
       children: (
         <Page
+          sessionID={v4()}
           type="hyperchat"
           onChange={(item) => {
             items[0].label = item.title;
