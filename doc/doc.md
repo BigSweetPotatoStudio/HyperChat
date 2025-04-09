@@ -1,13 +1,13 @@
 
-这个项目在3个月前就开始开发了，去年`Claude`才出MCP协议的时候，我就觉这个很厉害，就搞了这个开源项目（当时`Claude`账号也被封了），目标是最佳的Chat体验+实现AI生产力。
+这个项目在3个月前就开始开发了，去年`Claude`才出MCP协议的时候，我就觉这个很厉害，然后，当时`Claude`账号立马也被封了，就搞了这个开源项目，目标是最佳的Chat体验+实现AI生产力。
 
-介绍一个下个这个Chat项目的核心吧：在实现这个Chat调用MCP工具这个方面，我这个项目应该是最早的，我理解的 `Agent =智能(大模型)+Tool+记忆`。所以这样才能帮人完成任务 `Task` 来实现生产力，这个软件也是贯彻这思想。
+介绍一下这个Chat项目的核心吧：我理解的 `Agent =智能(大模型)+Tool+记忆`。所以这样才能帮人完成任务`Task`来实现生产力，这个软件也是贯彻这思想。
 
 1. HyperChat添加Agent时候，支持选择MCP Tool，通过系统提示词，定义Agent![image](https://github.com/user-attachments/assets/3fa6ec84-7e29-4df1-a149-3f672332629d)
 2. 支持添加Task，定时通过发送消息的方式，调用Agent完成任务，同时支持Web Api方式调用 ![image](https://github.com/user-attachments/assets/de5328f9-3b7c-483d-956f-c76aebd564cd)
 3. 支持Agent Call Agent，把Agent看做一个智能体，同时通过内置的MCP，通过发消息的方式，调用另一个Agent(比如，这个4o-mini，本来答不对9.8和9.11的，但是，我要他call `Gemini Think` Agent回答，他就会了。) ![image](https://github.com/user-attachments/assets/4201af2d-8fe2-427a-8ca4-a25595fc2aa8)
 
-这就是这个软件是核心了，虽然他是一个Chat软件，但是核心是Agent，创建Agent和它聊天+调用工具，甚至他们可以相互Call。ps:我上面说的`Agent =智能(大模型)+Tool+记忆`，还有记忆没有很好的解决，目前没啥好用的办法，RAG的知识库实在是不咋地，以后会关注技术进步。
+这就是这个软件是核心了，虽然他是一个Chat软件，但是核心是Agent，创建Agent和它聊天+调用工具。ps:我上面说的`Agent =智能(大模型)+Tool+记忆`，还有记忆没有很好的解决，目前没啥好用的办法，RAG的知识库实在是不咋地，以后会关注技术进步。
 
 
 HyperChat特点
