@@ -1,3 +1,14 @@
+# latest
+
+* 重写markdown渲染，优化`Artifacts`，支持从浏览器打开，下载，增加对`Mermaid`预发的支持，
+* 修改调用工具的显示
+
+![image](https://github.com/user-attachments/assets/b4b88d6c-da7f-4822-8ca7-a79c3d02b6a5)
+![image](https://github.com/user-attachments/assets/d1b54fb3-e0d6-4999-9c89-879c8c095ab6)
+
+
+
+
 # 1.4.4
 
 * 修复上个版本，默认对话，设置mcp失效的问题。
