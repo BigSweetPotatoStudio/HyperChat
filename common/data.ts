@@ -108,9 +108,11 @@ export const AppSetting = new Data("app_setting.json", {
   quicks: [{
     label: "Hello",
     value: "Hello",
+    quick: "Hello"
   }] as Array<{
     value: string;
     label: string;
+    quick: string;
   }>,
 });
 

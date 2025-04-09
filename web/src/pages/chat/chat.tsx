@@ -207,7 +207,6 @@ import {
 import { SortableItem } from "./sortableItem";
 import { QuickPath, SelectFile } from "../../common/selectFile";
 import Clarity from "@microsoft/clarity";
-import { Copy } from "lucide-react";
 import { ChatHistoryItem } from "../../../../common/data";
 import { useForm } from "antd/es/form/Form";
 import { t } from "../../i18n";
@@ -256,6 +255,18 @@ export const Chat = ({
       await Agents.init();
       await GPT_MODELS.init();
       await AppSetting.init();
+      AppSetting.get().quicks = AppSetting.get().quicks.map((x: any) => {
+
+        if (x.quick == null) {
+          let quick = x.value;
+          x.value = v4();
+          return { label: x.label, value: x.value, quick: quick }
+        } else {
+          return x;
+        }
+
+      });
+      // console.log("AppSetting", AppSetting.get().quicks);
       refresh();
       loadMoreData(false);
 
@@ -1731,10 +1742,9 @@ export const Chat = ({
                             ".my-sender .ant-sender-input",
                           ) as HTMLTextAreaElement;
                           let position = textarea.selectionStart;
-
-                          setValue((value) => {
-                            return `${value.slice(0, position - 1)}${itemVal} ${value.slice(position)}`;
-                          });
+                          let quick = AppSetting.get().quicks.find(x => x.value == itemVal)?.quick;
+                          setValue(`${value.slice(0, position - 1)}` + quick + ` ${value.slice(position)}`);
+                          return;
                         }
                       }
                     }}
@@ -2236,12 +2246,12 @@ export const Chat = ({
 
                   <Input.TextArea
                     size="small"
-                    value={phrase.value}
+                    value={phrase.quick}
                     onChange={async (e) => {
-                      AppSetting.get().quicks[index].value = e.target.value;
+                      AppSetting.get().quicks[index].quick = e.target.value;
                       refresh();
                     }}
-                    placeholder="Value"
+                    placeholder="quick words"
                   />
                 </li>
               ))}
@@ -2264,7 +2274,8 @@ export const Chat = ({
               onClick={async () => {
                 AppSetting.get().quicks.push({
                   label: newLabel,
-                  value: newValue,
+                  value: v4(),
+                  quick: newValue,
                 });
                 await AppSetting.save();
                 refresh();
