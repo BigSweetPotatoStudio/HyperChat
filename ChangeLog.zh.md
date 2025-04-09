@@ -1,3 +1,17 @@
+# latest
+
+* 重写markdown渲染，优化`Artifacts`，支持从浏览器打开，下载，增加对`Mermaid`预发的支持，
+* 修改调用工具的显示
+* 支持聊天选择多个模型对比
+
+![image](https://github.com/user-attachments/assets/b4b88d6c-da7f-4822-8ca7-a79c3d02b6a5)
+![image](https://github.com/user-attachments/assets/d1b54fb3-e0d6-4999-9c89-879c8c095ab6)
+![71afe79bd956c2b9f83d73e7c038be70](https://github.com/user-attachments/assets/13e81223-d00f-4100-8128-19adc262ce83)
+![a1520e5ed245419b28c68a58184e1a56](https://github.com/user-attachments/assets/940a971e-cdb1-4824-8391-292217e9c1af)
+
+
+
+
 # 1.4.4
 
 * 修复上个版本，默认对话，设置mcp失效的问题。
