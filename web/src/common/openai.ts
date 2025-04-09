@@ -135,7 +135,7 @@ export class OpenAiChannel {
         // console.log('Got response', response);
         // 兼容Gemini OpenAI 提示词错误
         if (response.status === 400) {
-          let json = await response.json();
+          let json = await response.clone().json();
           if (Array.isArray(json)) {
             let res = {
               error: {
