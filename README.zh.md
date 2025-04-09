@@ -113,7 +113,7 @@ npm run dev
 ![image](https://github.com/user-attachments/assets/a9825e5b-da6d-4e0a-852f-177a3f6df992)
 
 #### 调用terminal mcp  自动帮我分析asar文件 + 帮我解压
-![image](https://github.com/user-attachments/assets/16c0dba7-ae62-4261-a068-1217b5e9bd3c)
+![image](https://github.com/user-attachments/assets/f9cc12cd-0c7e-4f2d-9649-4bb31240f4a6)
 
 #### 调用terminal 查看界面
 ![image](https://github.com/user-attachments/assets/009317f2-d49b-432a-bb46-a15133d12f9f)
@@ -122,19 +122,22 @@ npm run dev
 ![image](https://github.com/user-attachments/assets/549e8fee-085d-4e8a-86a8-184ebe1053e6)
 
 #### 一键写网页，并发布到（cloudflare）
-![image](https://github.com/user-attachments/assets/e869b8ab-a430-4f22-a2db-d4ef8e6f36a4)
+![image](https://github.com/user-attachments/assets/b558cf5c-8b07-4621-a95b-fa1c33181414)
+
 
 #### 调用谷歌搜索，问他TGA年度游戏是什么
-![image](https://github.com/user-attachments/assets/f8f36547-dfcb-423a-8d83-f53234b0d94a)
+![image](https://github.com/user-attachments/assets/36500a06-2260-4727-bfd2-5fedc72e6d58)
 
 #### 有什么限时免费游戏，请访问网址，调用工具
-![image](https://github.com/user-attachments/assets/6d4c4144-2749-4d03-9824-9ead5c37bc51)
+![image](https://github.com/user-attachments/assets/8961ef09-1498-4730-b25d-75b1dedbc7e5)
 
 #### 帮你打开网页，分析结果，并写入文件
-![image](https://github.com/user-attachments/assets/302bda76-dcbf-4a4d-bfb4-39f3a911434b)
+![image](https://github.com/user-attachments/assets/a036dcf8-ffb4-4070-ac4f-a3b0533f66c2)
+
 
 #### 通过网页工具+命令行工具，打开Github README学习 + GIT克隆 + 搭建开发黄金
-![image](https://github.com/user-attachments/assets/6affd3dd-aa8e-4429-9c70-d456e5376786)
+![image](https://github.com/user-attachments/assets/fd0d737e-0eaa-4410-85e0-27fd45f0e5a5)
+
 
 #### 多聊天Workspace + 夜间模式
 ![image](https://github.com/user-attachments/assets/ca9d77d7-d023-431f-8359-6023ab3e338a)
