@@ -92,6 +92,7 @@ npm run dev
 
 #### 聊天支持选择模型对比
 ![image_2025-04-07_21-26-19](https://github.com/user-attachments/assets/e8691cd7-0518-4da8-90f2-7dfd8b864a09)
+![image](https://github.com/user-attachments/assets/c9cd15c8-9bce-4df9-b2b2-5fc4e9224ea6)
 
 #### 支持点击tool名称，直接调用调试
 ![image](https://github.com/user-attachments/assets/4af1b769-de19-4cab-8a90-7f701b9a8d70)
