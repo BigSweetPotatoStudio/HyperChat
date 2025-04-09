@@ -65,6 +65,7 @@
     "react-infinite-scroll-component": "^6.1.0",
     "react-router-dom": "^6.22.2",
     "react-virtualized": "^9.22.5",
+    "rehype-rewrite": "^4.0.2",
     "simple-peer": "^9.11.1",
     "socket.io-client": "^4.7.5",
     "style-loader": "^4.0.0",
