@@ -102,6 +102,10 @@ npm run dev
 #### 支持 @ 快速输入 + 调用Agent
 ![17790cb3c686690e255462c7638b61f6](https://github.com/user-attachments/assets/12fd824c-cad7-4dd7-8df3-699c1da8d1cf)
 
+#### 支持 `Artifacts`, `SVG`,`HTML`,`Mermaid` 渲染,
+![image](https://github.com/user-attachments/assets/d823c671-e989-4f40-aadb-0bc0f3b35175)
+![image](https://github.com/user-attachments/assets/869b03fe-f025-4d6d-945c-8dac13d37ee0)
+
 #### 支持选择MCP + 选择部分Tool
 ![image](https://github.com/user-attachments/assets/9a297608-90be-4960-a4f1-ae627965486b)
 
@@ -146,8 +150,6 @@ npm run dev
 ![image](https://github.com/user-attachments/assets/06b1b2d4-e368-45f2-ac81-b9080838f9f5)
 
 
-#### 渲染HTML，支持 `Artifacts`, `SVG`,`HTML` 渲染,
-![image.png](./images/image33.png)
 
 #### h5界面
 ![image](https://github.com/user-attachments/assets/e8349fb5-c98e-4fef-a93d-778079a27237)
