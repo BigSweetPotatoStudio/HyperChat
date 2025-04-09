@@ -47,11 +47,43 @@ main {
 .markdown-body > pre > code {
   white-space: pre-wrap;
   overflow-wrap: break-word;
+  padding: 0.5rem;
 }
 
 .my-prefix-layout .my-prefix-layout-content {
   padding-block: 0.5rem;
   padding-inline: 0.5rem;
+}
+
+.markdown-body hr:not(code hr) {
+  margin: 0.5rem 0 !important;
+}
+.markdown-body p:not(code p) {
+  margin: 0.5rem 0 !important;
+}
+.markdown-body ol:not(code ol) {
+  margin: 0.5rem 0 !important;
+}
+.markdown-body ul:not(code ul) {
+  margin: 0.5rem 0 !important;
+}
+.markdown-body h1:not(code h1) {
+  margin: 0.5rem 0 !important;
+}
+.markdown-body h2:not(code h2) {
+  margin: 0.5rem 0 !important;
+}
+.markdown-body h3:not(code h3) {
+  margin: 0.5rem 0 !important;
+}
+.markdown-body h4:not(code h4) {
+  margin: 0.5rem 0 !important;
+}
+.markdown-body h5:not(code h5) {
+  margin: 0.5rem 0 !important;
+}
+.markdown-body h6:not(code h6) {
+  margin: 0.5rem 0 !important;
 }
 
 .markdown-body ol,

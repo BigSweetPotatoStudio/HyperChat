@@ -240,6 +240,13 @@ export async function initHttp() {
       serve(path.join(__dirname, "../web-build")) as any
     )
   );
+  app.use(
+    mount(
+      "/" + electronData.get().password + "/temp",
+      serve(path.join(appDataDir, "temp")) as any
+    )
+  );
+
   app.use(proxy);
   // 错误处理
   app.on("error", (err, ctx) => {
@@ -257,7 +264,7 @@ export async function initHttp() {
   });
   let PORT = Config.port;
   PORT = await execFallback(PORT, (port) => {
-    server.listen(port, () => {});
+    server.listen(port, () => { });
   });
   Config.port = PORT;
   Logger.info("http server listen on: ", PORT);

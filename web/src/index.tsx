@@ -1,5 +1,6 @@
 console.log("HyperChat");
 console.log("process.env.myEnv", process.env.myEnv);
+document.documentElement.setAttribute('data-color-mode', 'light');
 import "../public/iconfont.js"
 import "./i18n";
 import "./common/call";

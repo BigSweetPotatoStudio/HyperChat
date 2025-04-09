@@ -14,7 +14,7 @@ import {
 } from "../../common/data";
 import { appDataDir } from "ts/polyfills/index.mjs";
 import spawn from "cross-spawn";
-
+import crypto from "crypto";
 import {
   closeMcpClients,
   getMcpClients,
@@ -392,6 +392,20 @@ export class CommandFactory {
       message: task.command,
       type: "call",
     });
+  }
+  async saveTempFile({ txt, ext }) {
+    // let filePath = path.join(os.tmpdir(), "temp.txt");
+    // md5(txt) + ext;
+    const hash = crypto
+      .createHash("sha256")
+      .update(txt as any)
+      .digest("hex");
+    let filename = hash + "." + ext;
+
+    let filePath = path.join(appDataDir, "temp", filename);
+    fs.ensureDirSync(path.dirname(filePath));
+    fs.writeFileSync(filePath, txt);
+    return filename;
   }
 }
 

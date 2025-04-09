@@ -347,7 +347,6 @@ export const Chat = ({
     if (loadHistory) {
       selectGptsKey.current = find.key;
       historyFilterType.current = "all";
-      loadMoreData(false);
     }
   };
 
@@ -812,7 +811,7 @@ export const Chat = ({
   }, [
     historyFilterType.current,
     historyFilterSearchValue,
-    currentChat.current.agentKey,
+    selectGptsKey.current,
   ]);
 
 
@@ -1377,7 +1376,6 @@ export const Chat = ({
                               agentKey: undefined,
                             });
                             selectGptsKey.current = undefined;
-                            loadMoreData(false);
                           }
                         }}
                       />
