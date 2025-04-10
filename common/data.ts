@@ -1,5 +1,6 @@
 import type OpenAI from "openai";
 import * as MCPTypes from "@modelcontextprotocol/sdk/types.js";
+import { v4 } from "uuid";
 export const DataList: Data<any>[] = [];
 
 export class Data<T> {
@@ -87,6 +88,7 @@ export const electronData = new Data(
       [s: string]: boolean;
     },
     autoSync: false,
+    uuid: v4(),
   },
   {
     sync: false,
@@ -248,9 +250,10 @@ export type IMCPClient = {
   status: "disconnected" | "connected" | "connecting" | "disabled";
   order: number;
   config: MCP_CONFIG_TYPE;
-  ext: any;
+  ext: {
+    configSchema?: { [s in string]: any };
+  };
   source: "hyperchat" | "claude" | "builtin"
-  // uid: string;
 };
 export const MCP_CONFIG = new MCP_CONFIG_DATA(
   "mcp.json",

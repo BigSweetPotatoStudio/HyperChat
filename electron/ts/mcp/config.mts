@@ -90,8 +90,6 @@ export class MCPClient implements IMCPClient {
   public resources = [];
   public prompts = [];
   public client: MCP.Client = undefined;
-
-  // public uid = "";
   public status: "disconnected" | "connected" | "connecting" | "disabled" =
     "disconnected";
 
@@ -106,10 +104,9 @@ export class MCPClient implements IMCPClient {
         ? zodToJsonSchema(s.configSchema)
         : undefined;
     }
-    // this.uid = this.name + "_" + this.source + "_" + v4();
   }
   async callTool(functionName: string, args: any): Promise<any> {
-    Logger.info("MCP callTool", functionName, args);
+
     if (this.status == "disconnected") {
       Logger.error("MCP callTool disconnected, restarting");
       await this.open();
@@ -125,6 +122,7 @@ export class MCPClient implements IMCPClient {
         { timeout: mcpCallToolTimeout * 1000 }
       )
       .catch(async (e) => {
+        Logger.info("MCP CallTool Error: ", functionName, args, e);
         return await this.client
           .request(
             {
@@ -144,9 +142,13 @@ export class MCPClient implements IMCPClient {
             } else {
               return res;
             }
+          }).catch((e) => {
+            Logger.info("MCP CallTool Compatibility Error: ", functionName, args, e);
+            throw e;
           });
       });
     return res;
+
   }
   async callResource(uri: string): Promise<MCPTypes.ReadResourceResult> {
     Logger.info("MCP callTool", uri);
@@ -269,10 +271,7 @@ export class MCPClient implements IMCPClient {
         type: "changeMcpClient",
         data: mcpClients,
       })
-      if (this.source == "hyperchat") {
-        MCP_CONFIG.initSync().mcpServers[this.name] = this.config;
-        await MCP_CONFIG.save()
-      }
+      this.saveConfig();
     } catch (e) {
       this.status = "disconnected";
       getMessageService().sendAllToRenderer({
@@ -321,6 +320,29 @@ export class MCPClient implements IMCPClient {
       throw e;
     }
   }
+  loadConfig() {
+    if (this.source == "hyperchat") {
+      this.config = MCP_CONFIG.initSync().mcpServers[this.name] as MCP_CONFIG_TYPE;
+    }
+    if (this.source == "builtin") {
+      buildinMcpJSON = fs.readJsonSync(buildinMcpJSONPath);
+      this.config = buildinMcpJSON.mcpServers[this.name] as MCP_CONFIG_TYPE;
+    }
+  }
+  saveConfig({ isdelete }: { isdelete?: boolean } = {}) {
+    if (this.source == "hyperchat") {
+      if (isdelete) {
+        delete MCP_CONFIG.initSync().mcpServers[this.name];
+        return;
+      }
+      MCP_CONFIG.initSync().mcpServers[this.name] = this.config;
+      MCP_CONFIG.save()
+    } else if (this.source == "builtin") {
+      buildinMcpJSON = fs.readJsonSync(buildinMcpJSONPath);
+      buildinMcpJSON.mcpServers[this.name] = this.config;
+      fs.writeFileSync(buildinMcpJSONPath, JSON.stringify(buildinMcpJSON, null, 2));
+    }
+  }
 }
 
 
@@ -363,7 +385,7 @@ export async function initMcpClients() {
         order++;
         const c = config.mcpServers[key];
         if (mcpOBj[key] != null) {
-          key = key + "_" + v4().slice(0, 8);
+          key = key + "_" + electronData.initSync().uuid.slice(0, 8);
         }
         const mcpClient = new MCPClient(key, c, "builtin", order);
         mcpClients.push(mcpClient);
@@ -398,7 +420,7 @@ export async function initMcpClients() {
 
     const c = config.mcpServers[key];
     if (mcpOBj[key] != null) {
-      key = key + "_hyperchat";
+      key = key + "_" + electronData.initSync().uuid.slice(0, 8);
     }
     const mcpClient = new MCPClient(key, c, "hyperchat", order);
     mcpClients.push(mcpClient);
@@ -432,7 +454,7 @@ export async function initMcpClients() {
 
         const c = config.mcpServers[key];
         if (mcpOBj[key] != null) {
-          key = key + "_claude";
+          key = key + "_" + electronData.initSync().uuid.slice(0, 8);
         }
         const mcpClient = new MCPClient(key, c, "claude", order);
         mcpClients.push(mcpClient);
@@ -478,19 +500,12 @@ export async function openMcpClient(
 
   let mcpClient = mcpClients.find((c) => c.name == name);
   if (clientConfig == null) {
-    let config = await MCP_CONFIG.initSync();
-    if (config.mcpServers[mcpClient.name] == null) {
-      throw new Error("MCP Config is null");
-    }
-    clientConfig = config.mcpServers[mcpClient.name] as MCP_CONFIG_TYPE;
+    mcpClient.loadConfig();
+  } else {
+    mcpClient.config = clientConfig;
   }
 
-  mcpClient.config = clientConfig;
-  if (mcpClient && clientConfig?.disabled) {
-    mcpClient.client?.close();
-    mcpClient.status = "disabled";
-    return mcpClients;
-  }
+  mcpClient.config.disabled = false;
 
   try {
     await mcpClient.open();
@@ -498,12 +513,6 @@ export async function openMcpClient(
     Logger.error("openMcpClient", e);
     throw e;
   }
-  // clean old client
-  // if (mcpClients[clientName] != null) {
-  //   if (mcpClients[clientName].client != null) {
-  //     mcpClients[clientName].client.close();
-  //   }
-  // }
 
   return mcpClients;
 }
@@ -533,12 +542,11 @@ export async function closeMcpClients(name: string, {
   mcpClient.resources = [];
   if (isdisable) {
     mcpClient.status = "disabled";
+    mcpClient.config.disabled = true;
+    mcpClient.saveConfig();
   }
   if (isdelete) {
-    if (mcpClient.source == "hyperchat") {
-      delete MCP_CONFIG.initSync().mcpServers[mcpClient.name];
-      await MCP_CONFIG.save()
-    }
+    mcpClient.saveConfig({ isdelete: isdelete });
   }
   getMessageService().sendAllToRenderer({
     type: "changeMcpClient",

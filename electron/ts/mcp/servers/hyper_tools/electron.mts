@@ -1,4 +1,4 @@
-import { configSchema } from "./lib.mjs";
+import { configSchema, getConfig } from "./lib.mjs";
 import { z } from "zod";
 
 import * as web1 from "./web1.mjs";
@@ -16,9 +16,8 @@ export function registerElectronTool(server: McpServer) {
       }),
     },
     async ({ url }) => {
-      let mcpconfig = await MCP_CONFIG.initSync();
-      let config = mcpconfig.mcpServers["hyper_tools"].hyperchat
-        .config as z.infer<typeof configSchema>;
+
+      let config = getConfig() as z.infer<typeof configSchema>;
       let md = "";
       if (config.Web_Tools_Platform == "chrome") {
         md = await web2.fetch(url);
@@ -40,9 +39,7 @@ export function registerElectronTool(server: McpServer) {
       }),
     },
     async ({ words }) => {
-      let mcpconfig = await MCP_CONFIG.initSync();
-      let config = mcpconfig.mcpServers["hyper_tools"].hyperchat
-        .config as z.infer<typeof configSchema>;
+      let config = getConfig() as z.infer<typeof configSchema>;
       let res = [];
       if (config.Web_Tools_Platform == "chrome") {
         res = await web2.search(words);

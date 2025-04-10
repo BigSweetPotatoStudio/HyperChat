@@ -21,9 +21,6 @@ import {
 } from "antd";
 import React, { useContext, useEffect, useRef, useState } from "react";
 import { v4 as uuid } from "uuid";
-
-import { CloseOutlined, FormOutlined } from "@ant-design/icons";
-import { getClients, InitedClient } from "../../common/mcp";
 import { GPT_MODELS, KNOWLEDGE_Store } from "../../../../common/data";
 
 import { t } from "../../i18n";

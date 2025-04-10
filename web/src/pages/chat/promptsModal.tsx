@@ -109,18 +109,6 @@ const ModalForm: React.FC<CollectionCreateFormProps> = ({
           { required: false, message: t`Please select allowed MCP` },
         ]}
       >
-        {/* <Checkbox.Group
-          options={clients.map((x) => {
-            return {
-              label: x.name,
-              value: x.name,
-              // disabled:
-              //   form.getFieldValue("callable") && x.name == "hyper_agent"
-              //     ? true
-              //     : false,
-            };
-          })}
-        /> */}
         <TreeSelect
           multiple
           treeCheckable

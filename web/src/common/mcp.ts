@@ -6,7 +6,7 @@ import { sleep } from "./sleep";
 
 import { TEMP_FILE, MCP_CONFIG, MCP_CONFIG_TYPE } from "../../../common/data";
 import type { HyperChatCompletionTool, IMCPClient } from "../../../common/data";
-import { mcpClientsToArray } from "./mcptool";
+
 
 let init = false;
 let McpClients: Array<IMCPClient>;
@@ -114,16 +114,8 @@ export function getResourses(mcp: string[]) {
   return resources;
 }
 
-export async function getClients(active = true): Promise<IMCPClient[]> {
-  let res = (await call("getMcpClients", []) as any);
-  McpClients = res;
-  return McpClients.filter(client => {
-    if (active) {
-      return client.status == "connected" || client.status == "connecting" || client.status == "disconnected"
-    } else {
-      return true;
-    }
-  });
+export async function getClients() {
+  return await call("getMcpClients", []);
 }
 export async function setClients(res) {
   McpClients = res;

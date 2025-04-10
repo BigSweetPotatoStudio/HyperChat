@@ -6,6 +6,7 @@ import {
   Agents,
   Task,
   TaskList,
+  IMCPClient,
 } from "../../../common/data";
 import cron from "node-cron";
 import { Command } from "../command.mjs";
@@ -62,12 +63,11 @@ global.ext2 = {
       throw e;
     }
   },
-  receive: () => {},
+  receive: () => { },
 };
 
 import { OpenAiChannel } from "../../../web/src/common/openai";
-// const { OpenAiChannel } = await import("../../../web/src/common/openai");
-import { getToolsOnNode } from "../../../web/src/common/mcptool";
+
 import { v4 } from "uuid";
 import dayjs from "dayjs";
 
@@ -106,8 +106,21 @@ export async function callAgent(obj: {
       Logger.error("No model found");
       return;
     }
-    global.tools = getToolsOnNode(mcpClients, agent.allowMCPs);
+    global.getTools = (allowMCPs) => {
+      let tools: IMCPClient["tools"] = [];
 
+      mcpClients.forEach((v) => {
+        tools = tools.concat(
+          v.tools.filter((t) => {
+            if (!allowMCPs) return true;
+            return (
+              allowMCPs.includes(t.clientName) || allowMCPs.includes(t.restore_name)
+            );
+          }),
+        );
+      });
+      return tools;
+    }
     let openai = new OpenAiChannel(
       { ...config, ...agent, allowMCPs: agent.allowMCPs },
       [

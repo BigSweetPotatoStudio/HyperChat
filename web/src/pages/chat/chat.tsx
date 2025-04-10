@@ -303,8 +303,8 @@ export const Chat = ({
         }
       } else {
         if (AppSetting.get().defaultAllowMCPs == undefined) {
-          let clients = await getClients().catch(() => []);
-          AppSetting.get().defaultAllowMCPs = clients.map((v) => v.name);
+          let clients = await getClients().catch(() => [] as InitedClient[]);
+          AppSetting.get().defaultAllowMCPs = clients.filter(x => x.status != "disabled").map((v) => v.name);
         }
 
         currentChatReset(
@@ -314,7 +314,6 @@ export const Chat = ({
           "",
         );
       }
-      await getClients()
       // while (1) {
       //   if (getMcpInited() == true) {
       //     let clients = await getClients().catch(() => []);

@@ -63,7 +63,7 @@ import {
 window["z"] = z;
 
 import { jsonSchemaToZod } from "json-schema-to-zod";
-import { getClients, getMcpClients, InitedClient } from "../../common/mcp";
+import { getMcpClients, InitedClient } from "../../common/mcp";
 import { t } from "../../i18n";
 import { HeaderContext } from "../../common/context";
 import {
@@ -220,8 +220,7 @@ export function Market() {
           <>
             <span>
               {item.name}&nbsp;
-              {item.config?.hyperchat?.scope ==
-                "built-in" && <Tag color="blue">built-in</Tag>}
+              {item.source == "builtin" && <Tag color="blue">built-in</Tag>}
               &nbsp;
               {item.config?.type ==
                 "sse" ? (
@@ -372,7 +371,7 @@ export function Market() {
                 ),
               },
               {
-                label: t`HyperChat Build-in`,
+                label: t`Build-in`,
                 key: "official",
                 children: (
                   <div className="bg-white p-0">
@@ -468,9 +467,9 @@ export function Market() {
 
 
                                       mcpconfigform.setFieldsValue(
-                                        item.config
+                                        item.config?.hyperchat?.config || {},
                                       );
-           
+
                                       setCurrRow(item);
                                       setMcpconfigOpen(true);
                                       refresh();

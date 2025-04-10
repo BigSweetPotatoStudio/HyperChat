@@ -79,6 +79,7 @@ import {
   DataList,
   electronData,
   GPT_MODELS,
+  IMCPClient,
   KNOWLEDGE_BASE,
   MCP_CONFIG,
 } from "../../common/data";
@@ -211,6 +212,7 @@ export function Layout() {
       await MCP_CONFIG.init();
       await KNOWLEDGE_BASE.init();
       refresh();
+      await getClients();
     })();
   }, []);
 
@@ -295,6 +297,21 @@ export function Layout() {
       if (res.type === "changeMcpClient") {
         setMcpClients(res.data);
         setClients(res.data);
+        window.getTools = (allowMCPs) => {
+          let tools: IMCPClient["tools"] = [];
+
+          res.data.forEach((v) => {
+            tools = tools.concat(
+              v.tools.filter((t) => {
+                if (!allowMCPs) return true;
+                return (
+                  allowMCPs.includes(t.clientName) || allowMCPs.includes(t.restore_name)
+                );
+              }),
+            );
+          });
+          return tools;
+        }
       }
     });
     (async () => {

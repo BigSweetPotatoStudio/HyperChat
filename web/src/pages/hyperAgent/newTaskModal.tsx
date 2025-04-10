@@ -23,7 +23,7 @@ import React, { useContext, useEffect, useRef, useState } from "react";
 import { v4 as uuid } from "uuid";
 
 import { CloseOutlined, FormOutlined } from "@ant-design/icons";
-import { getClients, InitedClient } from "../../common/mcp";
+
 import { Agents, KNOWLEDGE_Store, Task } from "../../../../common/data";
 import { t } from "../../i18n";
 

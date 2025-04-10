@@ -7,8 +7,7 @@ export function getToolsOnNode(
   allowMCPs: string[] | undefined | false = undefined,
 ) {
   let tools: InitedClient["tools"] = [];
-  let initedClientArray = mcpClientsToArray(mcpClients);
-  initedClientArray.forEach((v) => {
+  mcpClients.forEach((v) => {
     tools = tools.concat(
       v.tools.filter((t) => {
         if (!allowMCPs) return true;
