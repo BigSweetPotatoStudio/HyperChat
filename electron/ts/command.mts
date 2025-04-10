@@ -38,6 +38,7 @@ import { getMyDefaultEnvironment } from "./mcp/utils.mjs";
 import cron from "node-cron";
 import { store } from "./rag/vectorStore.mjs";
 import { Config } from "./const.mjs";
+import { clientPaths } from "./mcp/claude.mjs";
 // function logCommand(
 //   target: any,
 //   propertyKey: string,
@@ -70,6 +71,7 @@ export class CommandFactory {
       appDataDir: appDataDir,
       logPath: Logger.path,
       password: electronData.initSync().password,
+      claudeConfigPath: clientPaths.claude,
       ...Config
     };
   }

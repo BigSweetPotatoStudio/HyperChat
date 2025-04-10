@@ -34,7 +34,8 @@ import { spawn } from "node:child_process";
 import { getMyDefaultEnvironment } from "./utils.mjs";
 import { zodToJsonSchema } from "zod-to-json-schema";
 import { Config } from "ts/const.mjs";
-// import cross_spawn from "cross-spawn";
+import { v4 } from "uuid";
+import type { HyperChatCompletionTool, IMCPClient } from "../../../common/data";
 
 let config = MCP_CONFIG.initSync();
 
@@ -44,12 +45,12 @@ for (let s of MyServers) {
     command: "",
     args: [],
     env: {},
+    type: "sse",
+    url: `http://localhost:${Config.mcp_server_port}/${key}/sse`,
     hyperchat: {
-      url: `http://localhost:${Config.mcp_server_port}/${key}/sse`,
-      type: "sse",
       scope: "built-in",
       config: config.mcpServers[key]?.hyperchat?.config || {},
-    },
+    } as any,
     disabled: config.mcpServers[key]?.disabled,
   };
 }
@@ -61,14 +62,9 @@ for (let key in config.mcpServers) {
     delete config.mcpServers[key];
   }
 
-  if (config.mcpServers[key].hyperchat == null) {
-    config.mcpServers[key].hyperchat = {
-      config: {},
-    } as any;
-  } else {
-    if (config.mcpServers[key].hyperchat.config == null) {
-      config.mcpServers[key].hyperchat.config = {};
-    }
+  if (config.mcpServers[key]?.hyperchat?.type == "sse") {
+    config.mcpServers[key].type = "sse";
+    config.mcpServers[key].url = config.mcpServers[key].hyperchat.url;
   }
 }
 await MCP_CONFIG.save();
@@ -80,11 +76,13 @@ await initMcpServer().catch((e) => {
 export const mcpClients = {} as {
   [s: string]: MCPClient;
 };
-export class MCPClient {
-  public tools: Array<typeof MCPTypes.ToolSchema._type> = [];
-  public resources: Array<typeof MCPTypes.ResourceSchema._type> = [];
-  public prompts: Array<typeof MCPTypes.PromptSchema._type> = [];
+export class MCPClient implements IMCPClient {
+  public tools = [];
+  public resources = [];
+  public prompts = [];
   public client: MCP.Client = undefined;
+
+  public uid = v4();
   public status: "disconnected" | "connected" | "connecting" | "disabled" =
     "disconnected";
 
@@ -92,7 +90,7 @@ export class MCPClient {
     configSchema?: { [s in string]: any };
   } = {};
 
-  constructor(public name: string, public config: MCP_CONFIG_TYPE) {
+  constructor(public name: string, public config: MCP_CONFIG_TYPE, public source: "hyperchat" | "claude" = "hyperchat", public order: number = 0) {
     let s = MyServers.find((s) => s.name == name);
     if (s) {
       this.ext.configSchema = s.configSchema
@@ -161,14 +159,17 @@ export class MCPClient {
     return out;
   }
   async open() {
-
+    if (this.config.disabled) {
+      this.status = "disabled";
+      return;
+    }
     try {
       this.status = "connecting";
       // await sleep(Math.random() * 10000);
       // if(Math.random() > 0.5) {
       //   throw new Error("test error");
       // }
-      if (this.config?.hyperchat?.type == "sse") {
+      if (this.config?.type == "sse" || this.config?.hyperchat?.type == "sse") {
         await this.openSse(this.config);
       } else {
         await this.openStdio(this.config);
@@ -201,7 +202,7 @@ export class MCPClient {
       };
       client.onerror = (e) => {
         // console.log("client onerror: ", this.config);
-        if (this.config?.hyperchat?.type == "sse") {
+        if (this.config?.type == "sse" || this.config?.hyperchat?.type == "sse") {
           if (e.message.includes("Body Timeout Error")) {
           } else {
             Logger.error("client see onerror: ", e);
@@ -229,7 +230,7 @@ export class MCPClient {
       version: "1.0.0",
     });
 
-    const transport = new SSEClientTransport(new URL(config?.hyperchat?.url));
+    const transport = new SSEClientTransport(new URL(config?.url || config?.hyperchat?.url));
     await client.connect(transport);
     this.client = client;
   }
@@ -264,24 +265,6 @@ export class MCPClient {
   }
 }
 
-async function checkError(params: any) {
-  return await new Promise((resolve, reject) => {
-    let proc = spawn(params.command, params.args, {
-      env: params.env,
-      // shell: true,
-    });
-    // proc.on("data", (data) => {
-    //   console.log(data.toString());
-    // });
-    setTimeout(() => {
-      proc.kill();
-      resolve({ error: 0 });
-    }, 1000);
-    proc.on("error", (err) => {
-      reject(err);
-    });
-  });
-}
 
 let firstRunStatus = 0;
 
@@ -311,41 +294,67 @@ export async function initMcpClients() {
     );
     return mcpClients;
   }
-  let p = clientPaths.claude;
-  let mcp_path = path.join(appDataDir, "mcp.json");
-  if (fs.existsSync(p) && !fs.existsSync(mcp_path)) {
-    fs.copy(p, mcp_path);
-  }
 
   let config = await MCP_CONFIG.initSync();
 
   // console.log(config);
   let tasks = [];
-
+  let order = 0;
   for (let key in config.mcpServers) {
-    // tasks.push(openMcpClient(key, config.mcpServers[key]));
+    order++;
 
-    if (config.mcpServers[key].disabled) {
-      // mcpClients[key].status = "disconnect";
-    } else {
-      if (mcpClients[key] == null) {
-        mcpClients[key] = new MCPClient(key, config.mcpServers[key]);
-      }
-      try {
-        loadObj.all += 1;
-        loadObj.status[key] = 0;
-        tasks.push(
-          mcpClients[key].open().then(() => {
-            loadObj.loaded += 1;
-            loadObj.status[key] = 1;
-          })
-        );
-      } catch (e) {
-        Logger.error("initMcpClient", e);
-        continue;
-      }
+    if (mcpClients[key] == null) {
+      mcpClients[key] = new MCPClient(key, config.mcpServers[key], "hyperchat", order);
+    }
+    try {
+      loadObj.all += 1;
+      loadObj.status[key] = 0;
+      tasks.push(
+        mcpClients[key].open().then(() => {
+          loadObj.loaded += 1;
+          loadObj.status[key] = 1;
+        })
+      );
+    } catch (e) {
+      Logger.error("initMcpClient", e);
+      continue;
     }
   }
+  try {
+    let p = clientPaths.claude;
+    if (fs.existsSync(p)) {
+      Logger.info("initClaudeConfig", "found", p);
+      let config = fs.readJsonSync(p, { throws: false });
+      for (let key in config.mcpServers) {
+
+
+        if (mcpClients[key] == null) {
+          mcpClients[key] = new MCPClient(key, config.mcpServers[key], "claude");
+        } else {
+          let oldKey = key;
+          key = `${key}-${v4().slice(0, 8)}`;
+          mcpClients[key] = new MCPClient(key, config.mcpServers[oldKey], "claude");
+        }
+        try {
+          loadObj.all += 1;
+          loadObj.status[key] = 0;
+          tasks.push(
+            mcpClients[key].open().then(() => {
+              loadObj.loaded += 1;
+              loadObj.status[key] = 1;
+            })
+          );
+        } catch (e) {
+          Logger.error("initMcpClient", e);
+          continue;
+        }
+
+      }
+    }
+  } catch (e) {
+    Logger.error("initClaudeConfig", "error", e);
+  }
+
   await Promise.allSettled(tasks);
 
   firstRunStatus = 2;

@@ -13,7 +13,7 @@ type HyperMcp = {
   name: string;
   url: string;
 };
-
+const KEEP_ALIVE_INTERVAL_MS = 25000; // Send keep-alive every 25 seconds
 export async function initMcpServer() {
   let PORT = await new Promise<number>(async (resolve, reject) => {
     // Logger.info("initMcpServer", MCPServerPORT);
@@ -21,6 +21,15 @@ export async function initMcpServer() {
 
     function register(serve: HyperMcp) {
       app.get(`/${serve.name}/sse`, async (req, res) => {
+        // Start keep-alive ping
+        const intervalId = setInterval(() => {
+          if (!res.writableEnded) {
+            res.write(': keepalive\n\n');
+          } else {
+            // Should not happen if close handler is working, but clear just in case
+            clearInterval(intervalId);
+          }
+        }, KEEP_ALIVE_INTERVAL_MS);
         await serve.createServer(`/${serve.name}/message`, res);
       });
       app.post(`/${serve.name}/message`, async (req, res) => {

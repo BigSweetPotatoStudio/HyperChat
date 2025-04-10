@@ -183,3 +183,7 @@ div[role="system"] .ant-bubble-content-wrapper {
 .ant-bubble-content{
   padding: 0.5rem !important;
 }
+
+.market .ant-tabs-nav {
+  margin-bottom: 0 !important;
+}

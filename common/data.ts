@@ -1,5 +1,5 @@
 import type OpenAI from "openai";
-
+import * as MCPTypes from "@modelcontextprotocol/sdk/types.js";
 export const DataList: Data<any>[] = [];
 
 export class Data<T> {
@@ -223,6 +223,8 @@ export type MCP_CONFIG_TYPE = {
   command: string;
   args: string[];
   env: { [s: string]: string };
+  url: string;
+  type: "stdio" | "sse";
   hyperchat: {
     config: { [s in string]: any };
     url: string;
@@ -232,6 +234,23 @@ export type MCP_CONFIG_TYPE = {
   disabled: boolean;
 };
 
+export type HyperChatCompletionTool = OpenAI.ChatCompletionTool & {
+  origin_name?: string;
+  restore_name?: string;
+  clientName?: string;
+  client?: string;
+};
+export type IMCPClient = {
+  tools: Array<typeof MCPTypes.ToolSchema._type & HyperChatCompletionTool>;
+  prompts: Array<typeof MCPTypes.PromptSchema._type & { key: string }>;
+  resources: Array<typeof MCPTypes.ResourceSchema._type & { key: string }>;
+  name: string;
+  status: "disconnected" | "connected" | "connecting" | "disabled";
+  order: number;
+  config: MCP_CONFIG_TYPE;
+  ext: any;
+  source: "hyperchat" | "claude"
+};
 export const MCP_CONFIG = new MCP_CONFIG_DATA(
   "mcp.json",
   {

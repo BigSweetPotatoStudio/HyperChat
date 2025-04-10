@@ -29,11 +29,13 @@
     ],
     "outDir": "./dist"
   },
+  "files": [
+    "../common/data.ts"
+  ],
   "include": [
     "src",
     "types",
-    "eval",
-    "../common"
+    "eval"
   ],
   "exclude": [
     "node_modules"

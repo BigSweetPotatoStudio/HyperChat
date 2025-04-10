@@ -1,4 +1,5 @@
-import type { MCPClient } from "../../../electron/ts/mcp/config.mjs";
+
+import { IMCPClient } from "../../../common/data";
 import type { InitedClient } from "./mcp";
 
 export function getToolsOnNode(
@@ -19,7 +20,7 @@ export function getToolsOnNode(
 }
 
 export function mcpClientsToArray(mcpClients: {
-  [s: string]: MCPClient;
+  [s: string]: IMCPClient;
 }): InitedClient[] {
   let array: InitedClient[] = [];
 
@@ -67,7 +68,7 @@ export function mcpClientsToArray(mcpClients: {
         .filter((x) => x != null),
       name: key,
       status: client.status,
-      order: client.config.hyperchat?.scope == "built-in" ? 0 : 1,
+      order: client.config.hyperchat?.scope == "built-in" ? client.order : 10000,
       // get config() {
       //   let config = MCP_CONFIG.get().mcpServers[key];
       //   if (config == null) {
@@ -81,6 +82,7 @@ export function mcpClientsToArray(mcpClients: {
       // set config(value: any) {
       //   MCP_CONFIG.get().mcpServers[key] = value;
       // },
+      source: client.source,
       ext: client.ext,
     });
   }

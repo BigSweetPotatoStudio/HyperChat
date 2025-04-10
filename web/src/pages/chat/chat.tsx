@@ -174,6 +174,7 @@ import {
   MenuFoldOutlined,
   MenuUnfoldOutlined,
   CheckOutlined,
+  DisconnectOutlined,
 } from "@ant-design/icons";
 import type { ConfigProviderProps, GetProp } from "antd";
 import { MyMessage, OpenAiChannel } from "../../common/openai";
@@ -1941,12 +1942,12 @@ export const Chat = ({
               return {
                 title: (
                   <span>
-                    {x.name}
+                    {x.name}{x.source == "claude" && <span className="text-blue-400"> (Claude)</span>}
                     {x.status == "connected" ? null : x.status ==
                       "connecting" ? (
                       <SyncOutlined spin className="m-1 text-blue-400" />
                     ) : (
-                      <Button
+                      x.source == "hyperchat" ? <Button
                         className="m-1"
                         size="small"
                         onClick={async () => {
@@ -1956,7 +1957,7 @@ export const Chat = ({
                           clientsRef.current = await getClients();
                           refresh();
                         }}
-                      >{t`Reload`}</Button>
+                      >{t`Reload`}</Button> : <DisconnectOutlined className="text-red-400" />
                     )}
                   </span>
                 ),

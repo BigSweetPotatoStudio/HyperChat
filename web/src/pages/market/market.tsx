@@ -128,33 +128,6 @@ import {
 //   configSchema: zodToJsonSchema(config),
 // };
 
-function JsonSchema2DefaultValue(schema: any) {
-  let obj = {};
-  function run(item) {
-    for (const key in item.properties) {
-      const prop = item.properties[key];
-
-      let type = prop.type;
-      let required = true;
-      if (Array.isArray(prop.type)) {
-        type = prop.type[0];
-      }
-      if (type === "array") {
-        obj[key] = [];
-        continue;
-      } else {
-        obj[key] = prop.default;
-      }
-    }
-  }
-
-  if (schema && schema.type === "object") {
-    run(schema);
-  }
-  return obj;
-}
-
-let mcpExtensionDataObj = {};
 
 export function Market() {
   const [num, setNum] = React.useState(0);
@@ -164,21 +137,21 @@ export function Market() {
   const { globalState, updateGlobalState } = useContext(HeaderContext);
   const [nodeV, setNodeV] = useState("");
   const [uv, setUvVer] = useState("");
-  const [threePartys, setThreePartys] = useState<Array<{ name: string }>>([]);
+  const [threePartys, setThreePartys] = useState<Array<InitedClient>>([]);
   const [mcpLoadingObj, setMcpLoadingObj] = useState(
     {} as any as { [s: string]: boolean },
   );
-  let refreshThreePartys = async (mcp) => {
-    let arr = [];
-    for (let key in mcp.mcpServers) {
-      if (mcpExtensionDataObj[key] == undefined) {
-        arr.push({ name: key });
-      }
-    }
-    setThreePartys(arr);
+  let refreshThreePartys = async (mcp: InitedClient[]) => {
+
+    setThreePartys(mcp);
     refresh();
   };
-  const [mcpExtensionData, setMcpExtensionData] = useState<any>([]);
+  // const [mcpExtensionData, setMcpExtensionData] = useState<any>([]);
+  let loadClients = async () => {
+    let clients = await getClients(false);
+    refreshThreePartys(clients);
+  }
+
   let init = async () => {
     (async () => {
       let x = await call("exec", ["node", ["-v"]]);
@@ -190,26 +163,7 @@ export function Market() {
     })();
 
     (async () => {
-      let mcp = await MCP_CONFIG.init();
-      let mcpExtensionData = (await getMCPExtensionData().catch(
-        (e) => [],
-      )) as any[];
-      let clients = await getClients();
-      mcpExtensionData = clients
-        .filter((x) => x.config.hyperchat?.scope == "built-in")
-        .map((x) => {
-          return {
-            ...x,
-            configSchema: x.ext.configSchema,
-          };
-        })
-        .concat(mcpExtensionData);
-
-      for (let x of mcpExtensionData) {
-        mcpExtensionDataObj[x.name] = x;
-      }
-      refreshThreePartys(mcp);
-      setMcpExtensionData(mcpExtensionData);
+      loadClients();
     })();
   };
   useEffect(() => {
@@ -229,7 +183,7 @@ export function Market() {
   const [loadingOpenMCP, setLoadingOpenMCP] = useState(false);
   const [mcpform] = Form.useForm();
 
-  useEffect(() => {}, []);
+  useEffect(() => { }, []);
 
   const RenderEnableAndDisable = (item: { name: string }) => {
     return (
@@ -291,7 +245,7 @@ export function Market() {
               &nbsp;
               {MCP_CONFIG.get().mcpServers[item.name]?.hyperchat?.scope !=
                 "built-in" &&
-              MCP_CONFIG.get().mcpServers[item.name]?.hyperchat?.type ==
+                MCP_CONFIG.get().mcpServers[item.name]?.type ==
                 "sse" ? (
                 <Tag>sse</Tag>
               ) : (
@@ -302,7 +256,7 @@ export function Market() {
                 <SyncOutlined spin className="text-blue-400" />
               ) : getMcpClients()[item.name]?.status == "connected" ? (
                 <CheckCircleTwoTone twoToneColor="#52c41a" />
-              ) : getMcpClients()[item.name]?.status == "disabled" ? (
+              ) : getMcpClients()[item.name]?.status == "disconnected" ? (
                 <DisconnectOutlined className="text-red-400" />
               ) : getMcpClients()[item.name]?.status ==
                 "disabled" ? null : null}
@@ -313,39 +267,149 @@ export function Market() {
       />
     );
   };
+
+  const [searchValue, setSearchValue] = useState("");
+
   return (
-    <div className="overflow-auto">
+    <div className="market overflow-auto">
       <div className="flex flex-wrap">
         <div className="w-full lg:w-2/5">
-          {/* <h1 className=" ">💻MCP</h1> */}
-          <Space className="mt-1">
-            <Button
-              onClick={async () => {
-                let p = await call("pathJoin", ["mcp.json"]);
-                await call("openExplorer", [p]);
-              }}
-            >
-              {t`Open the configuration file`}
-            </Button>
-          </Space>
           <Tabs
-            className="mt-4 rounded-lg bg-white"
+            className="rounded-lg bg-white"
             type="card"
             items={[
+
               {
-                label: t`HyperChat Recommend List`,
-                key: "official",
+                label: t`MCP Community`,
+                key: "thirdparty",
                 children: (
                   <div className="bg-white p-0">
                     <div className="flex justify-center p-1">
-                      <a href="https://github.com/BigSweetPotatoStudio/HyperChatMCP">
-                        <GithubOutlined />
-                        Github
-                      </a>
+                      <Space.Compact>
+                        <Input placeholder="Search" onChange={e => {
+                          setSearchValue(e.target.value);
+                        }} />
+                        <Button
+                          onClick={() => {
+                            mcpform.resetFields();
+                            setIsAddMCPConfigOpen(true);
+                          }}
+                        >
+                          {t`Add MCP`}
+                        </Button>
+                        <Button
+                          title={t`Open Configuration File`}
+                          icon={<SettingOutlined />}
+                          onClick={async () => {
+                            let p = await call("pathJoin", ["mcp.json"]);
+                            await call("openExplorer", [p]);
+                          }}
+                        >
+                        </Button>
+                      </Space.Compact>
                     </div>
+                    <div style={{ maxHeight: "calc(100vh - 152px)", overflowY: "auto" }}>
+                      <List
+                        itemLayout="horizontal"
+                        dataSource={threePartys.filter(x => x.source == "hyperchat" && x.config?.hyperchat?.scope != "built-in" && x.name && x.name.includes(searchValue))}
+                        renderItem={(item: any, index) => (
+                          <List.Item
+                            className="hover:cursor-pointer hover:bg-slate-300"
+                            actions={[
+                              MCP_CONFIG.get().mcpServers[item.name]?.hyperchat
+                                ?.scope != "built-in" && (
+                                <a
+                                  key="list-loadmore-down"
+                                  className="text-lg hover:text-cyan-400"
+                                >
+                                  <Popconfirm
+                                    title="Sure to delete?"
+                                    onConfirm={async () => {
+                                      try {
+                                        await call("closeMcpClients", [
+                                          item.name,
+                                          true,
+                                        ]);
+
+                                        MCP_CONFIG.get().mcpServers[
+                                          item.name
+                                        ].disabled = true;
+                                        delete MCP_CONFIG.get().mcpServers[
+                                          item.name
+                                        ];
+                                        await MCP_CONFIG.save();
+                                        await loadClients();
+                                        refresh();
+                                      } catch (e) {
+                                        message.error(e.message);
+                                      }
+                                    }}
+                                  >
+                                    <Tooltip title="delete" placement="bottom">
+                                      <DeleteOutlined className="text-lg hover:text-cyan-400" />
+                                    </Tooltip>
+                                  </Popconfirm>
+                                </a>
+                              ),
+
+                              MCP_CONFIG.get().mcpServers[item.name]
+                                ? RenderEnableAndDisable(item)
+                                : undefined,
+
+                              <a className="text-lg hover:text-cyan-400">
+                                <Tooltip title="setting">
+                                  <SettingOutlined
+                                    onClick={(e) => {
+                                      const config =
+                                        MCP_CONFIG.get().mcpServers[item.name];
+
+                                      let formValues = {
+                                        ...config,
+                                        name: item.name,
+                                      } as any;
+                                      formValues._name = formValues.name;
+                                      formValues._type = "edit";
+                                      formValues.command = [
+                                        formValues.command || "",
+                                        ...formValues.args || [],
+                                      ].join("   ");
+                                      formValues._envList = [];
+                                      for (let key in (formValues.env || {})) {
+                                        formValues._envList.push({
+                                          name: key,
+                                          value: formValues.env[key],
+                                        });
+                                      }
+                                      formValues.type =
+                                        formValues?.type || formValues?.hyperchat?.type || "stdio";
+                                      formValues.url =
+                                        formValues?.url || formValues?.hyperchat?.url || "";
+                                      mcpform.resetFields();
+                                      mcpform.setFieldsValue(formValues);
+                                      setIsAddMCPConfigOpen(true);
+                                    }}
+                                  />
+                                </Tooltip>
+                              </a>,
+                              // ) : undefined,
+                            ].filter((x) => x != null)}
+                          >
+                            {ListItemMeta(item)}
+                          </List.Item>
+                        )}
+                      />
+                    </div>
+                  </div>
+                ),
+              },
+              {
+                label: t`HyperChat Build-in`,
+                key: "official",
+                children: (
+                  <div className="bg-white p-0">
                     <List
                       itemLayout="horizontal"
-                      dataSource={mcpExtensionData}
+                      dataSource={threePartys.filter(x => x.source == "hyperchat" && x.config?.hyperchat?.scope == "built-in")}
                       renderItem={(item: any, index) => (
                         <List.Item
                           className="hover:cursor-pointer hover:bg-slate-300"
@@ -428,8 +492,8 @@ export function Market() {
                               ? RenderEnableAndDisable(item)
                               : undefined,
                             MCP_CONFIG.get().mcpServers[item.name] &&
-                            !MCP_CONFIG.get().mcpServers[item.name]
-                              ?.disabled ? (
+                              !MCP_CONFIG.get().mcpServers[item.name]
+                                ?.disabled ? (
                               <a className="text-lg hover:text-cyan-400">
                                 <Tooltip title="setting">
                                   <SettingOutlined
@@ -486,116 +550,39 @@ export function Market() {
                 ),
               },
               {
-                label: t`MCP Community`,
-                key: "thirdparty",
+                label: t`Claude Desktop`,
+                key: "claude",
                 children: (
                   <div className="bg-white p-0">
                     <div className="flex justify-center p-1">
-                      <Button
-                        onClick={() => {
-                          mcpform.resetFields();
-                          setIsAddMCPConfigOpen(true);
-                        }}
-                      >
-                        {t`Add MCP`}
-                      </Button>
-                    </div>
+                      <Space.Compact>
+                        <Button
+                          title={t`Open Configuration File`}
+                          icon={<SettingOutlined />}
+                          onClick={async () => {
 
-                    <List
-                      itemLayout="horizontal"
-                      dataSource={threePartys}
-                      renderItem={(item: any, index) => (
-                        <List.Item
-                          className="hover:cursor-pointer hover:bg-slate-300"
-                          actions={[
-                            MCP_CONFIG.get().mcpServers[item.name]?.hyperchat
-                              ?.scope != "built-in" && (
-                              <a
-                                key="list-loadmore-down"
-                                className="text-lg hover:text-cyan-400"
-                              >
-                                <Popconfirm
-                                  title="Sure to delete?"
-                                  onConfirm={async () => {
-                                    try {
-                                      await call("closeMcpClients", [
-                                        item.name,
-                                        true,
-                                      ]);
-
-                                      MCP_CONFIG.get().mcpServers[
-                                        item.name
-                                      ].disabled = true;
-                                      delete MCP_CONFIG.get().mcpServers[
-                                        item.name
-                                      ];
-                                      await MCP_CONFIG.save();
-                                      refreshThreePartys(MCP_CONFIG.get());
-                                      refresh();
-                                    } catch (e) {
-                                      message.error(e.message);
-                                    }
-                                  }}
-                                >
-                                  <Tooltip title="delete" placement="bottom">
-                                    <DeleteOutlined className="text-lg hover:text-cyan-400" />
-                                  </Tooltip>
-                                </Popconfirm>
-                              </a>
-                            ),
-
-                            MCP_CONFIG.get().mcpServers[item.name]
-                              ? RenderEnableAndDisable(item)
-                              : undefined,
-                            // MCP_CONFIG.get().mcpServers[item.name] &&
-                            // MCP_CONFIG.get().mcpServers[item.name]?.hyperchat
-                            //   ?.scope != "built-in" &&
-                            // !MCP_CONFIG.get().mcpServers[item.name]?.disabled ? (
-                            <a className="text-lg hover:text-cyan-400">
-                              <Tooltip title="setting">
-                                <SettingOutlined
-                                  onClick={(e) => {
-                                    const config =
-                                      MCP_CONFIG.get().mcpServers[item.name];
-
-                                    let formValues = {
-                                      ...config,
-                                      name: item.name,
-                                    } as any;
-                                    formValues._name = formValues.name;
-                                    formValues._type = "edit";
-                                    // formValues._argsStr = (
-                                    //   formValues.args || []
-                                    // ).join("   ");
-                                    formValues.command = [
-                                      formValues.command || "",
-                                      ...formValues.args,
-                                    ].join("   ");
-                                    formValues._envList = [];
-                                    for (let key in formValues.env) {
-                                      formValues._envList.push({
-                                        name: key,
-                                        value: formValues.env[key],
-                                      });
-                                    }
-                                    formValues.type =
-                                      formValues?.hyperchat?.type || "stdio";
-                                    formValues.url =
-                                      formValues?.hyperchat?.url || "";
-                                    mcpform.resetFields();
-                                    mcpform.setFieldsValue(formValues);
-                                    setIsAddMCPConfigOpen(true);
-                                  }}
-                                />
-                              </Tooltip>
-                            </a>,
-                            // ) : undefined,
-                          ].filter((x) => x != null)}
+                            let c = await call("getConfig", []);
+                            await call("openExplorer", [c.claudeConfigPath]);
+                          }}
                         >
-                          {ListItemMeta(item)}
-                        </List.Item>
-                      )}
-                    />
+                          Claude Desktop Config
+                        </Button>
+                      </Space.Compact>
+                    </div>
+                    <div style={{ maxHeight: "calc(100vh - 152px)", overflowY: "auto" }}>
+                      <List
+                        itemLayout="horizontal"
+                        dataSource={threePartys.filter(x => x.source == "claude" && x.name && x.name.includes(searchValue))}
+                        renderItem={(item: any, index) => (
+                          <List.Item
+                            className="hover:cursor-pointer hover:bg-slate-300"
+
+                          >
+                            {ListItemMeta(item)}
+                          </List.Item>
+                        )}
+                      />
+                    </div>
                   </div>
                 ),
               },
@@ -731,81 +718,14 @@ export function Market() {
           </Form.Item>
         </Modal>
         <Modal
-          title={t`MCP Configuration`}
+          title={t`BuildIn MCP Configuration`}
           open={mcpconfigOpen}
           footer={[]}
           onCancel={() => setMcpconfigOpen(false)}
           forceRender={true}
         >
-          {/* <BetaSchemaForm<any>
-          layoutType="Form"
-          name="mcpconfigform"
-          formRef={mcpconfigform}
-          grid={false}
-          onFinish={async (values) => {
-            try {
-              if (
-                MCP_CONFIG.get().mcpServers[currRow.name]?.hyperchat?.scope ==
-                "built-in"
-              ) {
-                MCP_CONFIG.get().mcpServers[currRow.name].hyperchat.config =
-                  values;
-
-                await MCP_CONFIG.save();
-                await call("openMcpClient", [
-                  currRow.name,
-                  MCP_CONFIG.get().mcpServers[currRow.name],
-                ]);
-                await getClients(false);
-                setMcpconfigOpen(false);
-              } else {
-                let config = currRow.resolve(values);
-                config.hyperchat = {
-                  url: "",
-                  type: "stdio",
-                  scope: "outer",
-                  config: values,
-                };
-                await call("openMcpClient", [currRow.name, config]);
-
-                MCP_CONFIG.get().mcpServers[currRow.name] = config;
-                await MCP_CONFIG.save();
-
-                await getClients(false);
-                setMcpconfigOpen(false);
-              }
-            } catch (e) {
-              message.error(e.message);
-            }
-          }}
-          columns={
-            currRow.configSchema
-              ? JsonSchema2ProFormColumnsType(currRow.configSchema)
-              : []
-          }
-          submitter={{
-            // searchConfig: {
-            //   submitText: "Install And Run",
-            // },
-            submitButtonProps: {
-              type: "primary",
-              children: "Install And Run",
-              onClick: () => {
-                mcpconfigform.current.submit();
-              },
-            },
-            // Configure the properties of the button
-            resetButtonProps: {
-              style: {
-                // Hide the reset button
-                display: "none",
-              },
-            },
-          }}
-        /> */}
-
           <Form
-            name="mcpconfigform"
+            name="buildinMcpConfigform"
             form={mcpconfigform}
             onFinish={async (values) => {
               // console.log("onFinish", values);
@@ -830,6 +750,7 @@ export function Market() {
                   await getClients();
                   setMcpconfigOpen(false);
                 } else {
+                  // ! 不会生效了
                   let config = currRow.resolve(values);
                   config.hyperchat = {
                     url: "",
@@ -852,7 +773,7 @@ export function Market() {
           >
             {currRow.configSchema
               ? JsonSchema2FormItemOrNull(currRow.configSchema) ||
-                t`No parameters`
+              t`No parameters`
               : []}
             <Form.Item className="flex justify-end">
               <Button htmlType="submit">Submit</Button>
@@ -894,18 +815,11 @@ export function Market() {
                   //   message.error("MCP Service Disabled");
                   //   return;
                   // }
+                  let mcpServerConfig = {} as any;
                   if (values.type == "sse") {
-                    values = {
-                      ...values,
-                      command: "",
-                      args: [],
-                      env: {},
-                      hyperchat: {
-                        url: values.url,
-                        type: values.type,
-                        scope: "outer",
-                        config: {},
-                      },
+                    mcpServerConfig = {
+                      url: values.url,
+                      type: values.type,
                     };
                   } else {
                     let commands = values.command
@@ -925,29 +839,28 @@ export function Market() {
                       message.error("Please enter a valid JSON");
                       return;
                     }
-                    values.hyperchat = {
-                      url: values.url || "",
-                      type: values.type,
-                      scope: "outer",
-                      config: {},
-                    };
+                    mcpServerConfig = {
+                      command: values.command,
+                      args: values.args,
+                      env: values.env,
+                    }
                   }
 
-                  await call("openMcpClient", [values._name, values]);
+                  await call("openMcpClient", [values._name, mcpServerConfig]);
                   if (values._type == "edit") {
-                    MCP_CONFIG.get().mcpServers[values._name] = values;
+                    MCP_CONFIG.get().mcpServers[values._name] = mcpServerConfig;
                   } else {
                     if (MCP_CONFIG.get().mcpServers[values._name] != null) {
                       message.error("Name already exists");
                       return;
                     }
-                    MCP_CONFIG.get().mcpServers[values._name] = values;
+                    MCP_CONFIG.get().mcpServers[values._name] = mcpServerConfig;
                   }
 
                   await MCP_CONFIG.save();
-                  await getClients();
-                  refreshThreePartys(MCP_CONFIG.get());
 
+                  await loadClients();
+                  
                   refresh();
                   setIsAddMCPConfigOpen(false);
                 } catch (e) {
