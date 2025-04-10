@@ -761,6 +761,12 @@ export function Market() {
                   //   message.error("MCP Service Disabled");
                   //   return;
                   // }
+                  if (values._type != "edit") {
+                    if (mcpClients.find(x => x.name === values._name)) {
+                      message.error(t`MCP Service Name already exists`);
+                      return;
+                    }
+                  }
                   let mcpServerConfig = {} as any;
                   if (values.type == "sse") {
                     mcpServerConfig = {

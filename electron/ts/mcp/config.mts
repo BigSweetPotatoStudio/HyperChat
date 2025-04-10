@@ -333,10 +333,13 @@ export class MCPClient implements IMCPClient {
     if (this.source == "hyperchat") {
       if (isdelete) {
         delete MCP_CONFIG.initSync().mcpServers[this.name];
+        MCP_CONFIG.save()
         return;
+      } else {
+        MCP_CONFIG.initSync().mcpServers[this.name] = this.config;
+        MCP_CONFIG.save()
       }
-      MCP_CONFIG.initSync().mcpServers[this.name] = this.config;
-      MCP_CONFIG.save()
+
     } else if (this.source == "builtin") {
       buildinMcpJSON = fs.readJsonSync(buildinMcpJSONPath);
       buildinMcpJSON.mcpServers[this.name] = this.config;
@@ -348,7 +351,7 @@ export class MCPClient implements IMCPClient {
 
 let firstRunStatus = 0;
 
-
+let order = 0;
 export async function initMcpClients() {
   // console.log("initMcpClientsRunning", firstRunStatus);
 
@@ -375,7 +378,7 @@ export async function initMcpClients() {
 
   // console.log(config);
   let tasks = [];
-  let order = 0;
+
   try {
     let p = buildinMcpJSONPath;
     if (fs.existsSync(p)) {
@@ -499,13 +502,19 @@ export async function openMcpClient(
 ) {
 
   let mcpClient = mcpClients.find((c) => c.name == name);
-  if (clientConfig == null) {
-    mcpClient.loadConfig();
+  if (mcpClient != null) {
+    if (clientConfig == null) {
+      mcpClient.loadConfig();
+    } else {
+      mcpClient.config = clientConfig;
+    }
+    delete mcpClient.config.disabled;
   } else {
-    mcpClient.config = clientConfig;
+    mcpClient = new MCPClient(name, clientConfig, "hyperchat", order);
+    mcpClients.push(mcpClient);
+    mcpOBj[name] = mcpClient;
   }
 
-  mcpClient.config.disabled = false;
 
   try {
     await mcpClient.open();
@@ -547,6 +556,7 @@ export async function closeMcpClients(name: string, {
   }
   if (isdelete) {
     mcpClient.saveConfig({ isdelete: isdelete });
+    mcpClients = mcpClients.filter((c) => c.name != name);
   }
   getMessageService().sendAllToRenderer({
     type: "changeMcpClient",
