@@ -9,9 +9,7 @@ import type { HyperChatCompletionTool, IMCPClient } from "../../../common/data";
 import { mcpClientsToArray } from "./mcptool";
 
 let init = false;
-let McpClients: {
-  [s: string]: IMCPClient;
-};
+let McpClients: Array<IMCPClient>;
 
 export function getMcpClients() {
   return McpClients || {};
@@ -42,13 +40,12 @@ export {
   IMCPClient as InitedClient
 }
 
-let initedClientArray: Array<IMCPClient> = [];
+
 export async function initMcpClients() {
-  let res = await call("initMcpClients", []);
+  let res: any = await call("initMcpClients", []);
   McpClients = res;
   console.log("initMcpClients", McpClients);
-  initedClientArray = mcpClientsToArray(McpClients);
-  return initedClientArray;
+
 }
 
 // setInterval(async () => {
@@ -71,7 +68,7 @@ export function getMcpInited() {
 export function getTools(allowMCPs: string[] | undefined | false = undefined) {
   let tools: IMCPClient["tools"] = [];
 
-  initedClientArray.forEach((v) => {
+  McpClients.forEach((v) => {
     tools = tools.concat(
       v.tools.filter((t) => {
         if (!allowMCPs) return true;
@@ -92,7 +89,7 @@ export function getPrompts(mcp: string[]) {
 
   let prompts: IMCPClient["prompts"] = [];
 
-  initedClientArray
+  McpClients
     .filter((m) => set.has(m.name))
     .forEach((v) => {
       prompts = prompts.concat(v.prompts);
@@ -109,7 +106,7 @@ export function getResourses(mcp: string[]) {
 
   let resources: IMCPClient["resources"] = [];
 
-  initedClientArray
+  McpClients
     .filter((m) => set.has(m.name))
     .forEach((v) => {
       resources = resources.concat(v.resources);
@@ -118,17 +115,18 @@ export function getResourses(mcp: string[]) {
 }
 
 export async function getClients(active = true): Promise<IMCPClient[]> {
-  McpClients = await call("getMcpClients", []);
-  // console.log("getMcpClients", McpClients);
-  let res = mcpClientsToArray(McpClients);
-  initedClientArray = res;
-  return initedClientArray.filter(client => {
+  let res = (await call("getMcpClients", []) as any);
+  McpClients = res;
+  return McpClients.filter(client => {
     if (active) {
       return client.status == "connected" || client.status == "connecting" || client.status == "disconnected"
     } else {
       return true;
     }
   });
+}
+export async function setClients(res) {
+  McpClients = res;
 }
 
 

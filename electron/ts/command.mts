@@ -19,7 +19,6 @@ import {
   closeMcpClients,
   getMcpClients,
   initMcpClients,
-  loadObj,
   MCPClient,
   openMcpClient,
 } from "./mcp/config.mjs";
@@ -39,30 +38,7 @@ import cron from "node-cron";
 import { store } from "./rag/vectorStore.mjs";
 import { Config } from "./const.mjs";
 import { clientPaths } from "./mcp/claude.mjs";
-// function logCommand(
-//   target: any,
-//   propertyKey: string,
-//   descriptor: PropertyDescriptor
-// ) {
-//   const originalMethod = descriptor.value;
-//   descriptor.value = async function (...args: any[]) {
-//     try {
-//       commandHistory.add(propertyKey, args);
-//       commandHistory.save();
 
-//       let res = await originalMethod.apply(this, args);
-//       commandHistory.last().status = CommandStatus.SUCCESS;
-//       commandHistory.save();
-//       return res;
-//     } catch (e) {
-//       commandHistory.last().status = CommandStatus.ERROR;
-//       commandHistory.last().error = e.message;
-//       commandHistory.save();
-//       throw e;
-//     }
-//   };
-//   return descriptor;
-// }
 
 export class CommandFactory {
   async getConfig() {
@@ -75,83 +51,54 @@ export class CommandFactory {
       ...Config
     };
   }
-  async initMcpClients(): Promise<{
-    [s: string]: MCPClient;
-  }> {
+  async initMcpClients() {
     let res = await initMcpClients();
-    let obj = {};
-    for (let key in res) {
-      obj[key] = res[key].toJSON();
-    }
-    return obj as any;
+    return res.map((x) => x.toJSON());
   }
   async openMcpClient(
     clientName: string,
     clientConfig?: MCP_CONFIG_TYPE
-  ): Promise<{
-    [s: string]: MCPClient;
-  }> {
+  ) {
     let res = await openMcpClient(clientName, clientConfig);
-    let obj = {};
-    for (let key in res) {
-      obj[key] = res[key].toJSON();
-    }
-    return obj as any;
+    return res.map((x) => x.toJSON());
   }
-  async getMcpClientsLoad() {
-    return loadObj;
-  }
-  async getMcpClients(): Promise<{
-    [s: string]: MCPClient;
-  }> {
+  async getMcpClients() {
     let res = await getMcpClients();
-    let obj = {};
-    for (let key in res) {
-      obj[key] = res[key].toJSON();
-    }
-    return obj as any;
+    return res.map((x) => x.toJSON());
   }
 
   async closeMcpClients(
     clientName: string = undefined,
-    isdelete: boolean = false
-  ) {
-    let res = await closeMcpClients(clientName, isdelete);
-    let obj = {};
-    for (let key in res) {
-      obj[key] = res[key].toJSON();
+    {
+      isdelete,
+      isdisable
     }
-    return obj;
+  ) {
+    let res = await closeMcpClients(clientName,   {
+      isdelete,
+      isdisable
+    });
+    return res.map((x) => x.toJSON());
   }
-  async mcpCallTool(clientName: string, functionName: string, args: any) {
+  async mcpCallTool(name: string, functionName: string, args: any) {
     let mcpClients = await getMcpClients();
-    let client = mcpClients[clientName];
+    let client = mcpClients.find((x) => x.name === name);
     if (!client) {
       throw new Error("client not found");
     }
-    // console.log("mcpCallTool", client, functionName, args);
-    // if (client.status == "disconnected") {
-    //   await openMcpClients(clientName);
-    //   let mcpClients = await getMcpClients();
-    //   client = await mcpClients[clientName];
-    // }
-    // let tool = client.tools.find((tool) => tool.name == functionName);
-    // if (!tool) {
-    //   throw new Error("tool not found");
-    // }
     return await client.callTool(functionName, args);
   }
-  async mcpCallResource(clientName: string, uri: string) {
+  async mcpCallResource(name: string, uri: string) {
     let mcpClients = await getMcpClients();
-    let client = mcpClients[clientName];
+    let client = mcpClients.find((x) => x.name === name);
     if (!client) {
       throw new Error("client not found");
     }
     return await client.callResource(uri);
   }
-  async mcpCallPrompt(clientName: string, functionName: string, args: any) {
+  async mcpCallPrompt(name: string, functionName: string, args: any) {
     let mcpClients = await getMcpClients();
-    let client = mcpClients[clientName];
+    let client = mcpClients.find((x) => x.name === name);
     if (!client) {
       throw new Error("client not found");
     }

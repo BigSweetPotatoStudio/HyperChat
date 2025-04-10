@@ -1,9 +1,10 @@
-import { McpServer, SSEServerTransport } from "ts/es6.mjs";
+import { fs, McpServer, SSEServerTransport } from "ts/es6.mjs";
 
-import { CONST } from "ts/polyfills/polyfills.mjs";
+import { appDataDir, CONST } from "ts/polyfills/polyfills.mjs";
 import { z } from "zod";
 import { MCP_CONFIG } from "../../../../../common/data";
 import zodToJsonSchema, { zodPatterns } from "zod-to-json-schema";
+import path from "path";
 
 export const NAME = "hyper_tools";
 
@@ -47,7 +48,8 @@ export const configSchema = z.object({
 
 // console.log("safeParse : ", configSchema.safeParse({}));
 export function getConfig() {
-  let mcpconfig = MCP_CONFIG.initSync();
+  let buildinMcpJSONPath = path.join(appDataDir, "buildInMcp.json");
+  let mcpconfig = fs.readJSONSync(buildinMcpJSONPath);
 
   let config = mcpconfig.mcpServers[NAME].hyperchat.config as z.infer<
     typeof configSchema

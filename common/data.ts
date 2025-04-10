@@ -249,7 +249,8 @@ export type IMCPClient = {
   order: number;
   config: MCP_CONFIG_TYPE;
   ext: any;
-  source: "hyperchat" | "claude"
+  source: "hyperchat" | "claude" | "builtin"
+  // uid: string;
 };
 export const MCP_CONFIG = new MCP_CONFIG_DATA(
   "mcp.json",

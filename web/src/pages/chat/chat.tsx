@@ -183,14 +183,12 @@ import {
   GPT_MODELS,
   Agents,
   AppSetting,
+  IMCPClient,
 } from "../../../../common/data";
 
 import { PromptsModal } from "./promptsModal";
 import {
   getClients,
-  getMcpInited,
-  getPrompts,
-  getResourses,
   getTools,
   InitedClient,
 } from "../../common/mcp";
@@ -225,6 +223,7 @@ import zodToJsonSchema from "zod-to-json-schema";
 import { Icon } from "../../components/icon";
 import { Messages } from "../../components/messages";
 import { getFirstCharacter } from "../../common";
+import { X } from "lucide-react";
 
 
 export const Chat = ({
@@ -245,7 +244,7 @@ export const Chat = ({
   const refresh = () => {
     setNum((n) => n + 1);
   };
-  const { globalState, updateGlobalState } = useContext(HeaderContext);
+  const { globalState, updateGlobalState, mcpClients } = useContext(HeaderContext);
   useEffect(() => {
     loadMoreData(false);
   }, [globalState]);
@@ -315,31 +314,31 @@ export const Chat = ({
           "",
         );
       }
+      await getClients()
+      // while (1) {
+      //   if (getMcpInited() == true) {
+      //     let clients = await getClients().catch(() => []);
+      //     clientsRef.current = clients;
+      //     let p = getPrompts(currentChat.current.allowMCPs);
+      //     promptsRef.current = p;
+      //     let r = getResourses(currentChat.current.allowMCPs);
+      //     resourcesRef.current = r;
 
-      while (1) {
-        if (getMcpInited() == true) {
-          let clients = await getClients().catch(() => []);
-          clientsRef.current = clients;
-          let p = getPrompts(currentChat.current.allowMCPs);
-          promptsRef.current = p;
-          let r = getResourses(currentChat.current.allowMCPs);
-          resourcesRef.current = r;
-
-          DATA.current.mcpLoading = false;
-          refresh();
-          break;
-        } else {
-          let clients = await getClients().catch(() => []);
-          clientsRef.current = clients;
-          let p = getPrompts(currentChat.current.allowMCPs);
-          promptsRef.current = p;
-          let r = getResourses(currentChat.current.allowMCPs);
-          resourcesRef.current = r;
-          DATA.current.mcpLoading = false;
-          refresh();
-          break;
-        }
-      }
+      //     DATA.current.mcpLoading = false;
+      //     refresh();
+      //     break;
+      //   } else {
+      //     let clients = await getClients().catch(() => []);
+      //     clientsRef.current = clients;
+      //     let p = getPrompts(currentChat.current.allowMCPs);
+      //     promptsRef.current = p;
+      //     let r = getResourses(currentChat.current.allowMCPs);
+      //     resourcesRef.current = r;
+      //     DATA.current.mcpLoading = false;
+      //     refresh();
+      //     break;
+      //   }
+      // }
     })();
   }, []);
 
@@ -364,7 +363,7 @@ export const Chat = ({
 
   const openaiClient = useRef<OpenAiChannel>();
 
-  const clientsRef = useRef<InitedClient[]>([]);
+  // const clientsRef = useRef<InitedClient[]>([]);
 
   const promptsRef = useRef<InitedClient["prompts"]>([]);
   const resourcesRef = useRef<InitedClient["resources"]>([]);
@@ -433,17 +432,44 @@ export const Chat = ({
 
     resourceResListRef.current = [];
     setPromptResList([]);
-    let clients = await getClients().catch(() => []);
-    clientsRef.current = clients;
+    // let clients = await getClients().catch(() => []);
+    // clientsRef.current = clients;
 
     // clientsRef.current;
-    let p = getPrompts(currentChat.current.allowMCPs);
-    promptsRef.current = p;
-    let r = getResourses(currentChat.current.allowMCPs);
-    resourcesRef.current = r;
+    // let p = getPrompts(currentChat.current.allowMCPs);
+    // promptsRef.current = p;
+    // let r = getResourses(currentChat.current.allowMCPs);
+    // resourcesRef.current = r;
 
     refresh();
   };
+
+  useEffect(() => {
+    let set = new Set();
+    for (let tool_name of currentChat.current.allowMCPs) {
+      let [name, _] = tool_name.split(" > ");
+      set.add(name);
+    }
+
+    let prompts: IMCPClient["prompts"] = [];
+
+    mcpClients
+      .filter((m) => set.has(m.name))
+      .forEach((v) => {
+        prompts = prompts.concat(v.prompts);
+      });
+    promptsRef.current = prompts;
+
+    let resources: IMCPClient["resources"] = [];
+
+    mcpClients
+      .filter((m) => set.has(m.name))
+      .forEach((v) => {
+        resources = resources.concat(v.resources);
+      });
+    resourcesRef.current = resources;
+
+  }, [mcpClients, currentChat.current.allowMCPs]);
 
   const selectGptsKey = useRef<string | undefined>(undefined);
   useEffect(() => {
@@ -462,116 +488,6 @@ export const Chat = ({
   }, [currentChat.current.agentKey]);
 
 
-  // const createChat = useCallback((showTip = true) => {
-  //   let config = GPT_MODELS.get().data.find(
-  //     (x) => x.key == currentChat.current.modelKey,
-  //   );
-  //   if (config == null) {
-  //     if (GPT_MODELS.get().data.length == 0) {
-  //       if (showTip) {
-  //         EVENT.fire("setIsModelConfigOpenTrue");
-  //       }
-  //       throw new Error("Please add LLM first");
-  //     }
-  //     config = GPT_MODELS.get().data[0];
-  //   }
-  //   // currentChat.current.modelKey = config.key;
-  //   // DATA.current.suggestionShow = false;
-  //   openaiClient.current = OpenAiChannel.create(
-  //     {
-  //       // ...config,
-  //       baseURL: config.baseURL,
-  //       apiKey: config.apiKey,
-
-  //     },
-  //   );
-  //   openaiClient.current.options = {
-  //     ...openaiClient.current.options,
-  //     model: config.model,
-  //     call_tool_step: config.call_tool_step,
-  //     supportTool: config.supportTool,
-  //     supportImage: config.supportImage,
-
-  //     requestType: currentChat.current.requestType,
-  //     allowMCPs: currentChat.current.allowMCPs,
-  //     temperature: currentChat.current.temperature,
-  //     confirm_call_tool: currentChat.current.confirm_call_tool,
-  //     confirm_call_tool_cb: (tool) => {
-  //       return new Promise((resolve, reject) => {
-  //         console.log("tool", tool);
-  //         let m = modal.confirm({
-  //           title: t`Comfirm Call Tool`,
-  //           width: "90%",
-  //           style: { maxWidth: 1024 },
-  //           footer: [],
-  //           content: (
-  //             <div>
-  //               <Form
-  //                 initialValues={tool.function.argumentsJSON}
-  //                 name="control-hooks"
-  //                 onFinish={(e) => {
-  //                   // console.log(e);
-  //                   resolve(e);
-  //                   m.destroy();
-  //                 }}
-  //               >
-  //                 <pre
-  //                   style={{
-  //                     whiteSpace: "pre-wrap",
-  //                     wordWrap: "break-word",
-  //                     padding: "8px 0",
-  //                     textAlign: "center",
-  //                   }}
-  //                 >
-  //                   <span>Tool Name: </span>
-  //                   <span className="text-purple-500">
-  //                     {tool.restore_name || tool.function.name}
-  //                   </span>
-  //                 </pre>
-  //                 {JsonSchema2FormItemOrNull(
-  //                   getTools().find(
-  //                     (x) => x.restore_name == tool.restore_name,
-  //                   ).function.parameters,
-  //                 ) || t`No parameters`}
-  //                 <Form.Item>
-  //                   <div className="flex flex-wrap justify-between">
-  //                     <Button
-  //                       onClick={() => {
-  //                         m.destroy();
-  //                         reject(new Error(t`User Cancel`));
-  //                       }}
-  //                     >{t`Cancel`}</Button>
-  //                     <Space>
-  //                       <Button
-  //                         type="primary"
-  //                         ghost
-  //                         htmlType="submit"
-  //                         onClick={() => {
-  //                           currentChat.current.confirm_call_tool = false;
-  //                           openaiClient.current.options.confirm_call_tool =
-  //                             false;
-  //                         }}
-  //                       >
-  //                         {t`Allow this Chat`}
-  //                       </Button>
-  //                       <Button type="primary" htmlType="submit">
-  //                         {t`Allow Once`}
-  //                       </Button>
-  //                     </Space>
-  //                   </div>
-  //                 </Form.Item>
-  //               </Form>
-  //             </div>
-  //           ),
-  //         });
-  //       });
-  //     },
-  //   }
-  //   openaiClient.current.messages = currentChat.current.messages;
-
-  //   // currentChat.current.messages = openaiClient.current.messages;
-  //   refresh();
-  // }, []);
   const [loading, setLoading] = useState(false);
 
   const onRequest = useCallback(async (message?: string) => {
@@ -1429,12 +1345,12 @@ export const Chat = ({
                                     set.add(name);
                                   }
 
-                                  let load = clientsRef.current.filter(
+                                  let load = mcpClients.filter(
                                     (v) => v.status == "connected",
                                   ).length;
-                                  let all = clientsRef.current.length;
-                                  let curr = clientsRef.current.filter((v) => {
-                                    return set.has(v.name);
+                                  let all = mcpClients.filter(x => x.status !== "disabled").length;
+                                  let curr = mcpClients.filter((v) => {
+                                    return v.status !== "disabled" && set.has(v.name);
                                   }).length;
 
                                   return DATA.current.mcpLoading ? (
@@ -1931,18 +1847,14 @@ export const Chat = ({
             onCheck={(checkedKeys) => {
               // console.log("onCheck", checkedKeys);
               currentChat.current.allowMCPs = checkedKeys as string[];
-              let p = getPrompts(currentChat.current.allowMCPs);
-              promptsRef.current = p;
-              let r = getResourses(currentChat.current.allowMCPs);
-              resourcesRef.current = r;
               refresh();
             }}
             checkedKeys={currentChat.current.allowMCPs}
-            treeData={clientsRef.current.map((x) => {
+            treeData={mcpClients.filter(x => x.status != "disabled").map((x) => {
               return {
                 title: (
                   <span>
-                    {x.name}{x.source == "claude" && <span className="text-blue-400"> (Claude)</span>}
+                    {x.name}{x.source == "claude" ? <span className="text-blue-400"> (Claude)</span> : x.source == "builtin" ? <span className="text-blue-400"> (BuiltIn)</span> : null}
                     {x.status == "connected" ? null : x.status ==
                       "connecting" ? (
                       <SyncOutlined spin className="m-1 text-blue-400" />
@@ -1954,8 +1866,6 @@ export const Chat = ({
                           x.status = "connecting";
                           refresh();
                           await call("openMcpClient", [x.name]);
-                          clientsRef.current = await getClients();
-                          refresh();
                         }}
                       >{t`Reload`}</Button> : <DisconnectOutlined className="text-red-400" />
                     )}

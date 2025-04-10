@@ -82,7 +82,7 @@ import {
   KNOWLEDGE_BASE,
   MCP_CONFIG,
 } from "../../common/data";
-import { getClients } from "./common/mcp";
+import { getClients, InitedClient, setClients } from "./common/mcp";
 import { EVENT } from "./common/event";
 import { OpenAiChannel } from "./common/openai";
 import { DndTable } from "./common/dndTable";
@@ -172,7 +172,7 @@ msg_receive("message-from-main", (msg) => {
         // console.log("Notification Clicked!");
         try {
           window["w"]["navigate"](`/Task/Results?taskKey=${msg.data.task.key}`);
-        } catch (e) {}
+        } catch (e) { }
       },
       duration: 10 * 1000,
     });
@@ -204,7 +204,7 @@ export function Layout() {
       setIsModelConfigOpen(true);
     });
   }, []);
-  useEffect(() => {}, []);
+  useEffect(() => { }, []);
   useEffect(() => {
     (async () => {
       await GPT_MODELS.init();
@@ -221,7 +221,7 @@ export function Layout() {
   // const [currRow, setCurrRow] = useState({} as any);
   const [form] = Form.useForm();
 
-  // const [isToolsShow, setIsToolsShow] = useState(false);
+  const [mcpClients, setMcpClients] = useState<InitedClient[]>([]);
 
   const [loadingCheckLLM, setLoadingCheckLLM] = useState(false);
   const [syncStatus, setSyncStatus] = useState(0);
@@ -291,6 +291,10 @@ export function Layout() {
           }, 500);
           refresh();
         }
+      }
+      if (res.type === "changeMcpClient") {
+        setMcpClients(res.data);
+        setClients(res.data);
       }
     });
     (async () => {
@@ -487,7 +491,11 @@ export function Layout() {
           splitMenus={true}
         >
           <HeaderContext.Provider
-            value={{ globalState: num, updateGlobalState: refresh, setLang }}
+            value={{
+              globalState: num, updateGlobalState: refresh, setLang,
+              mcpClients,
+
+            }}
           >
             <Outlet />
           </HeaderContext.Provider>
@@ -925,7 +933,7 @@ export function Layout() {
             style={{
               display:
                 form.getFieldValue("provider") == "openai" ||
-                form.getFieldValue("provider") == null
+                  form.getFieldValue("provider") == null
                   ? "block"
                   : "none",
             }}
@@ -949,13 +957,13 @@ export function Layout() {
 
           {(form.getFieldValue("type") == "llm" ||
             form.getFieldValue("type") == null) && (
-            <Form.Item name="call_tool_step" label={t`Call-Tool-Step`}>
-              <InputNumber
-                style={{ width: "100%" }}
-                placeholder="default, the model is allowed to execute tools for 10 steps."
-              ></InputNumber>
-            </Form.Item>
-          )}
+              <Form.Item name="call_tool_step" label={t`Call-Tool-Step`}>
+                <InputNumber
+                  style={{ width: "100%" }}
+                  placeholder="default, the model is allowed to execute tools for 10 steps."
+                ></InputNumber>
+              </Form.Item>
+            )}
         </Modal>
         <Modal
           title="Test LLM"
