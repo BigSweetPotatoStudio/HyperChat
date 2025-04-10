@@ -39,7 +39,7 @@ import type { HyperChatCompletionTool, IMCPClient } from "../../../common/data";
 import { getMessageService } from "ts/message_service.mjs";
 
 let config = MCP_CONFIG.initSync();
-let buildinMcpJSONPath = path.join(appDataDir, "buildInMcp.json");
+let buildinMcpJSONPath = path.join(appDataDir, "mcpBuiltIn.json");
 let buildinMcpJSON = {
   mcpServers: {} as { [s: string]: MCP_CONFIG_TYPE },
 }

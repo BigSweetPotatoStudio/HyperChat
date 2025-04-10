@@ -201,8 +201,8 @@ export function Market() {
         }
       }} type="link" title={
         item.status == "disabled"
-          ? "enable"
-          : "disable"
+          ? t`Enable`
+          : t`Disable`
       } icon={
         item.status == "disabled" ? (
           <CaretRightOutlined />
@@ -220,7 +220,7 @@ export function Market() {
           <>
             <span>
               {item.name}&nbsp;
-              {item.source == "builtin" && <Tag color="blue">built-in</Tag>}
+              {item.source == "builtin" && <Tag color="blue">{t`built-in`}</Tag>}
               &nbsp;
               {item.config?.type ==
                 "sse" ? (
@@ -315,9 +315,9 @@ export function Market() {
                                       }
                                     }}
                                   >
-                                    <Tooltip title="delete" placement="bottom">
+                                    <Button title={t`delete`} type="link">
                                       <DeleteOutlined className="text-lg hover:text-cyan-400" />
-                                    </Tooltip>
+                                    </Button>
                                   </Popconfirm>
                                 </a>
                               ),
@@ -325,39 +325,37 @@ export function Market() {
                               RenderEnableAndDisable(item),
 
                               <a className="text-lg hover:text-cyan-400">
-                                <Tooltip title="setting">
-                                  <SettingOutlined
-                                    onClick={(e) => {
-                                      const config =
-                                        MCP_CONFIG.get().mcpServers[item.name];
+                                <Button type="link" onClick={(e) => {
+                                  const config =
+                                    MCP_CONFIG.get().mcpServers[item.name];
 
-                                      let formValues = {
-                                        ...config,
-                                        name: item.name,
-                                      } as any;
-                                      formValues._name = item.name;
-                                      formValues._type = "edit";
-                                      formValues.command = [
-                                        formValues.command || "",
-                                        ...formValues.args || [],
-                                      ].join("   ");
-                                      formValues._envList = [];
-                                      for (let key in (formValues.env || {})) {
-                                        formValues._envList.push({
-                                          name: key,
-                                          value: formValues.env[key],
-                                        });
-                                      }
-                                      formValues.type =
-                                        formValues?.type || formValues?.hyperchat?.type || "stdio";
-                                      formValues.url =
-                                        formValues?.url || formValues?.hyperchat?.url || "";
-                                      mcpform.resetFields();
-                                      mcpform.setFieldsValue(formValues);
-                                      setIsAddMCPConfigOpen(true);
-                                    }}
-                                  />
-                                </Tooltip>
+                                  let formValues = {
+                                    ...config,
+                                    name: item.name,
+                                  } as any;
+                                  formValues._name = item.name;
+                                  formValues._type = "edit";
+                                  formValues.command = [
+                                    formValues.command || "",
+                                    ...formValues.args || [],
+                                  ].join("   ");
+                                  formValues._envList = [];
+                                  for (let key in (formValues.env || {})) {
+                                    formValues._envList.push({
+                                      name: key,
+                                      value: formValues.env[key],
+                                    });
+                                  }
+                                  formValues.type =
+                                    formValues?.type || formValues?.hyperchat?.type || "stdio";
+                                  formValues.url =
+                                    formValues?.url || formValues?.hyperchat?.url || "";
+                                  mcpform.resetFields();
+                                  mcpform.setFieldsValue(formValues);
+                                  setIsAddMCPConfigOpen(true);
+                                }} title={t`Setting`}>
+                                  <SettingOutlined />
+                                </Button>
                               </a>,
                               // ) : undefined,
                             ].filter((x) => x != null)}
@@ -453,29 +451,29 @@ export function Market() {
 
                             item.status != "disabled" ? (
                               <a className="text-lg hover:text-cyan-400">
-                                <Tooltip title="setting">
+                                <Button type="link" title={t`Setting`} onClick={async (e) => {
+                                  e.stopPropagation();
+                                  mcpconfigform.resetFields();
+                                  let zo = eval(
+                                    jsonSchemaToZod(item.ext.configSchema),
+                                  );
+                                  mcpconfigform?.setFieldsValue(
+                                    zo.safeParse({}).data,
+                                  );
+
+
+                                  mcpconfigform.setFieldsValue(
+                                    item.config?.hyperchat?.config || {},
+                                  );
+
+                                  setCurrRow(item);
+                                  setMcpconfigOpen(true);
+                                  refresh();
+                                }}>
                                   <SettingOutlined
-                                    onClick={async (e) => {
-                                      e.stopPropagation();
-                                      mcpconfigform.resetFields();
-                                      let zo = eval(
-                                        jsonSchemaToZod(item.ext.configSchema),
-                                      );
-                                      mcpconfigform?.setFieldsValue(
-                                        zo.safeParse({}).data,
-                                      );
 
-
-                                      mcpconfigform.setFieldsValue(
-                                        item.config?.hyperchat?.config || {},
-                                      );
-
-                                      setCurrRow(item);
-                                      setMcpconfigOpen(true);
-                                      refresh();
-                                    }}
                                   />
-                                </Tooltip>
+                                </Button>
                               </a>
                             ) : undefined,
                             // item.github ? (

@@ -1043,7 +1043,7 @@ export const Chat = ({
   const [isUpdateQuicks, setIsUpdateQuicks] = useState(false);
   const [newLabel, setNewLabel] = useState("");
   const [newValue, setNewValue] = useState("");
-
+  // console.log((1 / (1 + DATA.current.diffs.length) * 100) + "%")
   return (
     <div key={sessionID} className="chat relative h-full">
       <div className="h-full rounded-lg bg-white">
@@ -1083,7 +1083,7 @@ export const Chat = ({
             >
 
               <Splitter layout={window.innerHeight > window.innerWidth ? "vertical" : "horizontal"} className="overflow-auto">
-                <Splitter.Panel defaultSize="50%" min="30%" max="70%">
+                <Splitter.Panel >
                   <Watermark className="h-full  relative" content={DATA.current.diffs.length > 0 ? modelName : ""}>
                     <div className="h-full">
                       {(currentChat.current.messages == null ||
@@ -1228,7 +1228,7 @@ export const Chat = ({
 
                 {
                   DATA.current.diffs.map((x, i) => {
-                    return <Splitter.Panel key={i} className="h-full"><Watermark className="h-full  relative" content={x.label}>
+                    return <Splitter.Panel key={i} className="h-full"  ><Watermark className="h-full  relative" content={x.label}>
                       <div className=" absolute top-0 right-0 cursor-pointer z-10 text-red-400" onClick={() => {
                         DATA.current.diffs = DATA.current.diffs.filter((_, j) => j != i);
                         refresh();
@@ -1853,7 +1853,7 @@ export const Chat = ({
               return {
                 title: (
                   <span>
-                    {x.name}{x.source == "claude" ? <span className="text-blue-400"> (Claude)</span> : x.source == "builtin" ? <span className="text-blue-400"> (BuiltIn)</span> : null}
+                    {x.name}{" "}{x.source == "claude" ? <Tag color="blue">{t`claude`}</Tag> : x.source == "builtin" ? <Tag color="blue">{t`built-in`}</Tag> : null}
                     {x.status == "connected" ? null : x.status ==
                       "connecting" ? (
                       <SyncOutlined spin className="m-1 text-blue-400" />
@@ -1948,6 +1948,8 @@ export const Chat = ({
               <span className="text-purple-500">
                 {currTool.restore_name || currTool?.function?.name}
               </span>
+              <div><span>Tool description: </span>
+                <span className="text-gray-400">{currTool?.function?.description}</span></div>
             </pre>
             {currTool.key
               ? JsonSchema2FormItemOrNull(
