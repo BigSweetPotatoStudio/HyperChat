@@ -33,7 +33,7 @@ for (let data of DataList) {
 
       return fs.writeFileSync(
         path.join(appDataDir, this.KEY),
-        JSON.stringify(this.data, null, 4)
+        JSON.stringify(this.format(this.data), null, 4)
       );
     },
   });

@@ -255,6 +255,7 @@ export const Chat = ({
       await Agents.init();
       await GPT_MODELS.init();
       await AppSetting.init();
+      await ChatHistory.init();
       AppSetting.get().quicks = AppSetting.get().quicks.map((x: any) => {
 
         if (x.quick == null) {
@@ -385,6 +386,7 @@ export const Chat = ({
     isCalled: agentData.agentKey ? true : false,
     isTask: false,
     confirm_call_tool: true,
+    icon: ""
   };
 
   const mobile = useRef({
@@ -618,7 +620,7 @@ export const Chat = ({
               sended: true,
               dateTime: Date.now(),
             };
-            ChatHistory.get().data.unshift(currentChat.current);
+            // ChatHistory.get().data.unshift(currentChat.current);
 
 
           } else {
@@ -638,19 +640,19 @@ export const Chat = ({
             }
 
             currentChat.current.label = label;
+            currentChat.current.dateTime = Date.now();
+            // let findIndex = ChatHistory.get().data.findIndex(
+            //   (x) => x.key == currentChat.current.key,
+            // );
 
-            let findIndex = ChatHistory.get().data.findIndex(
-              (x) => x.key == currentChat.current.key,
-            );
+            // if (findIndex > -1) {
+            //   // let find = ChatHistory.get().data.splice(findIndex, 1)[0];
 
-            if (findIndex > -1) {
-              let find = ChatHistory.get().data.splice(findIndex, 1)[0];
+            //   currentChat.current.dateTime = Date.now();
 
-              currentChat.current.dateTime = Date.now();
-
-              Object.assign(find, currentChat.current);
-              ChatHistory.get().data.unshift(find);
-            }
+            //   // Object.assign(find, currentChat.current);
+            //   // ChatHistory.get().data.unshift(find);
+            // }
 
 
           }
@@ -672,22 +674,18 @@ export const Chat = ({
         );
 
         Object.assign(messages, openaiClient.messages)
+        currentChat.current.messages = messages;
         refresh();
-
         if (current) {
+          await call("addChatHistory", [currentChat.current])
+          let findIndex = ChatHistory.get().data.findIndex(
+            (x) => x.key == currentChat.current.key,
+          );
+          if (findIndex > -1) {
+            ChatHistory.get().data.splice(findIndex, 1)
+          }
+          ChatHistory.get().data.unshift(currentChat.current);
           loadMoreData(false);
-          await call("writeFile", [`messages/${currentChat.current.key}.json`, JSON.stringify(messages, null, 2)]);
-          await ChatHistory.save((r) => {
-            r.data = r.data.map((x) => {
-              if (x.key == currentChat.current.key) {
-                x.messages = [];
-                return x;
-              } else {
-                return x;
-              }
-            })
-            return r;
-          });
         }
 
 
@@ -699,8 +697,18 @@ export const Chat = ({
         }
         refresh();
         if (current) {
-          await ChatHistory.save();
+          // await ChatHistory.save();
+          await call("addChatHistory", [currentChat.current])
+          let findIndex = ChatHistory.get().data.findIndex(
+            (x) => x.key == currentChat.current.key,
+          );
+          if (findIndex > -1) {
+            ChatHistory.get().data.splice(findIndex, 1)
+          }
+          ChatHistory.get().data.unshift(currentChat.current);
+          loadMoreData(false);
         }
+        refresh();
         antdMessage.error(
           e.message || t`An error occurred, please try again later`,
         );
@@ -991,18 +999,19 @@ export const Chat = ({
                   danger: true,
                 },
               ],
-              onClick: (menuInfo) => {
+              onClick: async (menuInfo) => {
                 // message.info(`Click ${conversation.key} - ${menuInfo.key}`);
                 if (menuInfo.key === "remove") {
-                  let index = ChatHistory.get().data.findIndex(
-                    (x) => x.key === conversation.key,
-                  );
-                  ChatHistory.get().data.splice(index, 1);
-                  ChatHistory.save();
+                  // let index = ChatHistory.get().data.findIndex(
+                  //   (x) => x.key === conversation.key,
+                  // );
+                  // ChatHistory.get().data.splice(index, 1);
+                  // ChatHistory.save();
+                  await call("removeChatHistory", [{ key: conversation.key }]);
                   setConversations(
                     conversations.filter((x) => x.key !== conversation.key),
                   );
-                  loadMoreData(false, false);
+                  // loadMoreData(false, false);
                   refresh();
                   message.success(t`Delete Success`);
                 }
@@ -1011,13 +1020,15 @@ export const Chat = ({
                     (x) => x.key === conversation.key,
                   );
                   if (ChatHistory.get().data[index].icon == "⭐") {
-                    ChatHistory.get().data[index].icon = undefined;
+                    ChatHistory.get().data[index].icon = "";
                   } else {
                     ChatHistory.get().data[index].icon = "⭐";
                   }
-
-                  ChatHistory.save();
+                  loadMoreData(false, false);
                   refresh();
+                  // ChatHistory.save();
+                  await call("changeChatHistory", [ChatHistory.get().data[index]])
+
                 }
                 if (menuInfo.key === "clone") {
                   let index = ChatHistory.get().data.findIndex(
@@ -1026,13 +1037,19 @@ export const Chat = ({
                   let item = ChatHistory.get().data[index];
 
                   let clone = JSON.parse(JSON.stringify(item));
-                  ChatHistory.get().data.unshift({
+                  // ChatHistory.get().data.unshift({
+                  //   ...clone,
+                  //   key: v4(),
+                  //   label: `${item.label} - Clone`,
+                  //   dateTime: Date.now(),
+                  // });
+                  // ChatHistory.save();
+                  await call("changeChatHistory", [{
                     ...clone,
                     key: v4(),
                     label: `${item.label} - Clone`,
                     dateTime: Date.now(),
-                  });
-                  ChatHistory.save();
+                  }])
                   loadMoreData(false, false);
                   refresh();
                 }

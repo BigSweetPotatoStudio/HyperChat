@@ -151,8 +151,9 @@ export async function callAgent(obj: {
       taskKey: obj.taskKey,
       confirm_call_tool: false,
     };
-    ChatHistory.initSync().data.unshift(item);
-    await ChatHistory.save();
+    Command.addChatHistory(item);
+    // ChatHistory.initSync().data.unshift(item);
+    // await ChatHistory.save();
     return res;
     // await onRequest(task.message);
   } catch (e) {

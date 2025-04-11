@@ -14,6 +14,8 @@ import { getMessageService } from "../message_service.mjs";
 import { Chat } from "openai/resources/index.mjs";
 const { fs } = zx;
 
+const isDev = false;
+
 interface FileInfo {
   filepath: string;
   modifiedTime: Date;
@@ -226,23 +228,23 @@ class WebDAVSync {
                 remotePath + "/" + localSyncFile.filename,
                 content
               );
-              if (data.KEY == ChatHistory.KEY) {
-                let history = ChatHistory.initSync({ force: true });
-                for (let item of history.data) {
-                  if (item.messages.length == 0 && fs.existsSync(path.join(appDataDir, "messages", item.key + ".json"))) {
-                    let content = fs.readFileSync(path.join(appDataDir, "messages", item.key + ".json"), "utf-8")
-                    let hash = crypto.createHash("md5").update(content.replace(/\r\n|\r|\n/g, '')).digest("hex");
-                    if (item.massagesHash != hash) {
-                      await this.client.putFileContents(
-                        remotePath + "/" + "messages/" + item.key + ".json",
-                        content
-                      );
-                      item.massagesHash = hash;
-                    }
-                  }
-                }
-                await ChatHistory.save();
-              }
+              // if (data.KEY == ChatHistory.KEY) {
+              //   let history = ChatHistory.initSync({ force: true });
+              //   for (let item of history.data) {
+              //     if (item.messages.length == 0 && fs.existsSync(path.join(appDataDir, "messages", item.key + ".json"))) {
+              //       let content = fs.readFileSync(path.join(appDataDir, "messages", item.key + ".json"), "utf-8")
+              //       let hash = crypto.createHash("md5").update(content.replace(/\r\n|\r|\n/g, '')).digest("hex");
+              //       if (item.massagesHash != hash) {
+              //         await this.client.putFileContents(
+              //           remotePath + "/" + "messages/" + item.key + ".json",
+              //           content
+              //         );
+              //         item.massagesHash = hash;
+              //       }
+              //     }
+              //   }
+              //   await ChatHistory.save();
+              // }
 
               try {
                 let rf = remoteFiles.find((r) => r.filename.startsWith(p.name));
@@ -333,22 +335,22 @@ class WebDAVSync {
               JSON.stringify(obj, null, 4)
             );
 
-            if (name + ext == ChatHistory.KEY) {
-              let history = ChatHistory.initSync({ force: true });
-              for (let item of history.data) {
-                if (item.messages.length == 0) {
-                  let content = await fs.readFile(path.join(appDataDir, "messages", item.key + ".json"), "utf-8").catch(e => "")
-                  let hash = crypto.createHash("md5").update(content.replace(/\r\n|\r|\n/g, '')).digest("hex");
-                  if (item.massagesHash != hash) {
-                    let content = await this.client.getFileContents(
-                      remotePath + "/" + "messages/" + item.key + ".json",
-                    );
-                    fs.writeFileSync(path.join(appDataDir, "messages", item.key + ".json"), content.toString(),);
-                  }
-                }
-              }
-              await ChatHistory.save();
-            }
+            // if (name + ext == ChatHistory.KEY) {
+            //   let history = ChatHistory.initSync({ force: true });
+            //   for (let item of history.data) {
+            //     if (item.messages.length == 0) {
+            //       let content = await fs.readFile(path.join(appDataDir, "messages", item.key + ".json"), "utf-8").catch(e => "")
+            //       let hash = crypto.createHash("md5").update(content.replace(/\r\n|\r|\n/g, '')).digest("hex");
+            //       if (item.massagesHash != hash) {
+            //         let content = await this.client.getFileContents(
+            //           remotePath + "/" + "messages/" + item.key + ".json",
+            //         );
+            //         fs.writeFileSync(path.join(appDataDir, "messages", item.key + ".json"), content.toString(),);
+            //       }
+            //     }
+            //   }
+            //   await ChatHistory.save();
+            // }
 
             getMessageService().sendAllToRenderer({
               type: "syncNodeToWeb",
@@ -447,7 +449,7 @@ class WebDAVSync {
           let fileParse = path.parse(remoteFile.filename);
           let [name, hash] = fileParse.name.split("___");
           if (hash == localFile.hash) {
-            Logger.info("skip upload file(hash match)", path.join(remotePath, remoteFileName));
+            isDev && Logger.info("skip upload file(hash match)", path.join(remotePath, remoteFileName));
           } else {
             if (localFile.modifiedTime > remoteFile.modifiedTime) {
               Logger.info("upload file(hash no match)", path.join(remotePath, remoteFileName));
@@ -462,7 +464,7 @@ class WebDAVSync {
                 console.log("delete error: ", e);
               }
             } else {
-              Logger.info("skip upload file(time no match)", path.join(remotePath, remoteFileName));
+              isDev && Logger.info("skip upload file(time no match)", path.join(remotePath, remoteFileName));
             }
           }
         } else {
@@ -489,8 +491,8 @@ class WebDAVSync {
         Logger.info("download file(not found)", remoteFile.filepath);
         let content = await this.client.getFileContents(remoteFile.filepath);
         await fs.writeFile(path.join(localPath, localFileName), content.toString());
-      } else if (localFile.hash == hash) { // hash不一致
-        Logger.info("skip download file", remoteFile.filepath);
+      } else if (localFile.hash == hash) { // hash
+        isDev && Logger.info("skip download file(hash match)", remoteFile.filepath);
       } else {
         // hash不一致
         if (localFile.modifiedTime < remoteFile.modifiedTime) {
@@ -498,7 +500,7 @@ class WebDAVSync {
           let content = await this.client.getFileContents(remoteFile.filepath);
           await fs.writeFile(path.join(localPath, localFileName), content.toString());
         } else {
-          Logger.info("skip download file(time no match)", remoteFile.filepath);
+          isDev && Logger.info("skip download file(time no match)", remoteFile.filepath);
         }
       }
     }

@@ -168,7 +168,6 @@ export type ChatHistoryItem = {
   label: string;
   key: string;
   messages: Array<MyMessage>;
-  massagesHash?: string;
   modelKey: string;
   agentKey: string;
   sended: boolean;

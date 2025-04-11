@@ -200,6 +200,7 @@ export function Setting() {
               <Space wrap>
                 <Button
                   onClick={async () => {
+                    await ChatHistory.init()
                     let f = ChatHistory.get().data.filter((x) => !x.icon);
                     let time = dayjs().subtract(30, "day").valueOf();
                     for (let x of f) {
@@ -219,6 +220,7 @@ export function Setting() {
                 <Button
                   onClick={async () => {
                     let time = dayjs().subtract(15, "day").valueOf();
+                    await ChatHistory.init()
                     let f = ChatHistory.get().data.filter((x) => !x.icon);
                     for (let x of f) {
                       if (x.dateTime == null || x.dateTime < time) {

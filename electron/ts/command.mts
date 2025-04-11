@@ -7,6 +7,8 @@ import { autoLauncher } from "ts/polyfills/index.mjs";
 import {
   Agents,
   AppSetting,
+  ChatHistory,
+  ChatHistoryItem,
   electronData,
   MCP_CONFIG_TYPE,
   Task,
@@ -74,7 +76,7 @@ export class CommandFactory {
       isdisable
     }
   ) {
-    let res = await closeMcpClients(clientName,   {
+    let res = await closeMcpClients(clientName, {
       isdelete,
       isdisable
     });
@@ -201,7 +203,7 @@ export class CommandFactory {
       let str = fs.readFileSync(p, "utf-8");
       return JSON.parse(str);
     } catch (e) {
-      return null;
+      throw e;
     }
   }
   async exists(p, root = appDataDir) {
@@ -355,6 +357,63 @@ export class CommandFactory {
     fs.ensureDirSync(path.dirname(filePath));
     fs.writeFileSync(filePath, txt);
     return filename;
+  }
+
+  async addChatHistory(item: ChatHistoryItem) {
+    let chatHistory = ChatHistory.initSync().data;
+    fs.writeFileSync(path.join(appDataDir, `messages/${item.key}.json`), JSON.stringify(item.messages, null, 2));
+    let index = chatHistory.findIndex(x => x.key === item.key);
+    if (index === -1) {
+      chatHistory.unshift(item);
+    } else {
+      chatHistory.splice(index, 1);
+      chatHistory.unshift(item);
+    }
+
+    await ChatHistory.save((r) => {
+      r.data = r.data.map((x) => {
+        if (x.key == item.key) {
+          let clone = Object.assign({}, x, { messages: [] });
+          return clone;
+        } else {
+          return x;
+        }
+      })
+      return r;
+    })
+  }
+  async changeChatHistory(item: ChatHistoryItem) {
+
+    let chatHistory = ChatHistory.initSync().data;
+    let find = chatHistory.find(x => x.key === item.key);
+    if (find) {
+      Object.assign(find, item);
+    }
+
+    fs.writeFileSync(path.join(appDataDir, `messages/${item.key}.json`), JSON.stringify(item.messages, null, 2));
+    await ChatHistory.save((r) => {
+      r.data = r.data.map((x) => {
+        if (x.key == item.key) {
+          let clone = Object.assign({}, x, { messages: [] });
+          return clone;
+        } else {
+          return x;
+        }
+      })
+      return r;
+    })
+  }
+  async removeChatHistory(item: { key: string }) {
+    let chatHistory = ChatHistory.initSync().data;
+    let findIndex = chatHistory.findIndex(x => x.key === item.key);
+    if (findIndex !== -1) {
+      chatHistory.splice(findIndex, 1);
+      if (fs.existsSync(path.join(appDataDir, `messages/${item.key}.json`))) {
+        fs.removeSync(path.join(appDataDir, `messages/${item.key}.json`));
+      }
+    }
+    await ChatHistory.save()
+    return;
   }
 }
 
