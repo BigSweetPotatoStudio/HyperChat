@@ -11,15 +11,15 @@ import {
 } from "../../../common/data.js";
 import { e } from "./service";
 
-for (let data of DataList) {
-  data.override({
+for (let item of DataList) {
+  item.override({
     async inget() {
       return await call("readFile", [this.KEY]).catch((e) => "");
     },
     async insave() {
       return await call("writeFile", [
         this.KEY,
-        JSON.stringify(this.data, null, 4),
+        JSON.stringify(this.format(this.data), null, 4),
       ]);
     },
   });

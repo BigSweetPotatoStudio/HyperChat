@@ -343,6 +343,8 @@ export const Chat = ({
 
   const onGPTSClick = async (key: string, { loadHistory = true } = {}) => {
     let find = Agents.get().data.find((y) => y.key === key);
+    selectGptsKey.current = find.key;
+    historyFilterType.current = "all";
     await currentChatReset(
       {
         allowMCPs: find.allowMCPs,
@@ -354,10 +356,6 @@ export const Chat = ({
       },
       find.prompt,
     );
-    if (loadHistory) {
-      selectGptsKey.current = find.key;
-      historyFilterType.current = "all";
-    }
   };
 
   const openaiClient = useRef<OpenAiChannel>();
@@ -678,7 +676,18 @@ export const Chat = ({
 
         if (current) {
           loadMoreData(false);
-          await ChatHistory.save();
+          await call("writeFile", [`messages/${currentChat.current.key}.json`, JSON.stringify(messages, null, 2)]);
+          await ChatHistory.save((r) => {
+            r.data = r.data.map((x) => {
+              if (x.key == currentChat.current.key) {
+                x.messages = [];
+                return x;
+              } else {
+                return x;
+              }
+            })
+            return r;
+          });
         }
 
 
@@ -939,7 +948,7 @@ export const Chat = ({
               };
             })}
             activeKey={currentChat.current.key}
-            onActiveChange={(key) => {
+            onActiveChange={async (key) => {
               if (currentChat.current.key == key) {
                 return;
               }
@@ -951,7 +960,10 @@ export const Chat = ({
                 }
                 // currentChat.current.messages=[]
                 // refresh();
-
+                if (item.messages == null || item.messages.length == 0) {
+                  let messages = await call("readJSON", [`messages/${item.key}.json`]).catch(() => []);
+                  item.messages = messages || [];
+                }
                 currentChatReset(item);
               }
             }}
@@ -1079,7 +1091,7 @@ export const Chat = ({
 
             <div
               className="flex-grow-2 flex w-full flex-col justify-between"
-              style={{ alignSelf: "stretch" }}
+              style={{ alignSelf: "stretch", width: mobile.current.is ? "100%" : DATA.current.showHistory ? "calc(100vw - 265px)" : "100%" }}
             >
 
               <Splitter layout={window.innerHeight > window.innerWidth ? "vertical" : "horizontal"} className="overflow-auto">
@@ -1294,7 +1306,7 @@ export const Chat = ({
                             let key =
                               currentChat.current.agentKey ||
                               currentChat.current["gptsKey"];
-                            onGPTSClick(key, { loadHistory: false });
+                            onGPTSClick(key);
                           } else {
                             currentChatReset({
                               messages: [],

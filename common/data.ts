@@ -50,8 +50,11 @@ export class Data<T> {
   // get d(): T {
   //   return this.data;
   // }
-
-  async save() {
+  format(x) {
+    return x;
+  };
+  async save(format = (x: T) => x) {
+    this.format = format;
     this.insave();
   }
   private inget(): Promise<T> {
@@ -165,6 +168,7 @@ export type ChatHistoryItem = {
   label: string;
   key: string;
   messages: Array<MyMessage>;
+  massagesHash?: string;
   modelKey: string;
   agentKey: string;
   sended: boolean;

@@ -6,11 +6,12 @@ import path, { join } from "path";
 import { appDataDir } from "ts/polyfills/index.mjs";
 import { Logger } from "ts/polyfills/index.mjs";
 
-import { AppSetting, DataList, electronData } from "../../../common/data";
+import { AppSetting, ChatHistory, DataList, electronData } from "../../../common/data";
 
 import crypto from "crypto";
 import { createClient, zx } from "../es6.mjs";
 import { getMessageService } from "../message_service.mjs";
+import { Chat } from "openai/resources/index.mjs";
 const { fs } = zx;
 
 interface FileInfo {
@@ -39,7 +40,7 @@ class WebDAVSync {
     }, 1000 * 5 * 60);
   }
 
-  constructor() {}
+  constructor() { }
 
   private async getLocalFilesInfo(
     localPath: string,
@@ -108,7 +109,7 @@ class WebDAVSync {
           status: -1,
         },
       });
-      throw new Error(`Sync failed: ${error.message}`);
+      throw error;
     } finally {
       this._isSnyc = false;
       console.log("---syncEnd");
@@ -159,6 +160,7 @@ class WebDAVSync {
           continue;
         }
         let content = JSON.stringify(json);
+
         let md5 = crypto.createHash("md5").update(content).digest("hex");
         let p = path.parse(filename);
         // console.log(p);
@@ -223,7 +225,10 @@ class WebDAVSync {
                 remotePath + "/" + localSyncFile.filename,
                 content
               );
-              // console.log("safdafasdf", remoteFiles, p.name);
+              // if(data.KEY == ChatHistory.KEY){
+                
+              // }
+
               try {
                 let rf = remoteFiles.find((r) => r.filename.startsWith(p.name));
                 if (rf) {
@@ -242,6 +247,22 @@ class WebDAVSync {
       console.trace("upload error: ", e);
       throw e;
     }
+    let history = ChatHistory.initSync({ force: true });
+    for (let item of history.data) {
+      if (item.messages.length == 0 && fs.existsSync(path.join(appDataDir, "messages", item.key + ".json"))) {
+        let content = fs.readFileSync(path.join(appDataDir, "messages", item.key + ".json"), "utf-8")
+        let hash = crypto.createHash("md5").update(content.replace(/\r\n|\r|\n/g, '')).digest("hex");
+        if (item.massagesHash != hash) {
+          await this.client.putFileContents(
+            remotePath + "/" + "messages/" + item.key + ".json",
+            content
+          );
+          item.massagesHash = hash;
+        }
+      }
+    }
+    await ChatHistory.save();
+
     localSyncFiles = await this.getLocalFilesInfo(localSyncPath, "_sync");
     remoteFiles = await this.getRemoteFilesInfo(remotePath);
     try {
@@ -320,6 +341,20 @@ class WebDAVSync {
       console.trace("download error: ", e);
       throw e;
     }
+    history = ChatHistory.initSync({ force: true });
+    for (let item of history.data) {
+      if (item.messages.length == 0) {
+        let content = await fs.readFile(path.join(appDataDir, "messages", item.key + ".json"), "utf-8").catch(e => "")
+        let hash = crypto.createHash("md5").update(content.replace(/\r\n|\r|\n/g, '')).digest("hex");
+        if (item.massagesHash != hash) {
+          let content = await this.client.getFileContents(
+            remotePath + "/" + "messages/" + item.key + ".json",
+          );
+          fs.writeFileSync(path.join(appDataDir, "messages", item.key + ".json"), content.toString(),);
+        }
+      }
+    }
+    await ChatHistory.save();
 
     try {
       let localBackupFiles = await this.getLocalFilesInfo(
@@ -351,8 +386,24 @@ class WebDAVSync {
           }
         }
       }
-    } catch (e) {}
+    } catch (e) { }
   }
+  // private async _sync2() {
+  //   let files: string[] = []
+  //   files.concat(fs.readdirSync(path.join(appDataDir, "messages")));
+  //   let compare = {
+
+  //   }
+  //   for(let file of files) {
+  //     let content = fs.readFileSync(path.join(appDataDir, "messages", file), "utf-8");
+  //     let normalizedContent = content.replace(/\r\n|\r|\n/g, '');
+  //     let md5 = crypto.createHash("md5").update(normalizedContent).digest("hex");
+  //     let stat = fs.statSync(path.join(appDataDir, "messages", file));
+  //     compare[file] = { md5, mtime: stat.mtimeMs };
+  //   }
+
+
+  // }
 }
 
 function minDate(a?: Date, b?: Date) {

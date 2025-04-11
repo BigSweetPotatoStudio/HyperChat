@@ -493,7 +493,7 @@ export function Market() {
                   </div>
                 ),
               },
-              {
+              mcpClients.filter(x => x.source == "claude") && {
                 label: t`Claude Desktop`,
                 key: "claude",
                 children: (
@@ -530,7 +530,7 @@ export function Market() {
                   </div>
                 ),
               },
-            ]}
+            ].filter(x => x != null)}
           />
         </div>
         <div className="w-full p-4 lg:w-3/5">
