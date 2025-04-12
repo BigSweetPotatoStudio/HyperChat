@@ -194,7 +194,7 @@ export class CommandFactory {
     try {
       return fs.readFileSync(p, "utf-8");
     } catch (e) {
-      return "";
+      throw e;
     }
   }
   async readJSON(p, root = appDataDir) {
