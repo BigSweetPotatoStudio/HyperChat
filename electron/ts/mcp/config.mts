@@ -3,6 +3,10 @@ import {
   CallToolResultSchema,
   Client,
   CompatibilityCallToolResultSchema,
+  LoggingMessageNotificationSchema,
+  NotificationSchema,
+  ProgressNotificationSchema,
+  ResourceListChangedNotificationSchema,
   shellPathSync,
   SSEClientTransport,
   zx,
@@ -11,6 +15,7 @@ const { fs, os, sleep } = zx;
 import * as MCP from "@modelcontextprotocol/sdk/client/index.js";
 // import { StdioClientTransport } from "@modelcontextprotocol/sdk/client/stdio.js";
 import * as MCPTypes from "@modelcontextprotocol/sdk/types.js";
+
 import { Logger } from "ts/polyfills/index.mjs";
 import { appDataDir } from "ts/polyfills/index.mjs";
 import {
@@ -30,45 +35,54 @@ import { clientPaths } from "./claude.mjs";
 
 import { startTask } from "./task.mjs";
 
-import { spawn } from "node:child_process";
+import spawn from "cross-spawn";
 import { getMyDefaultEnvironment } from "./utils.mjs";
 import { zodToJsonSchema } from "zod-to-json-schema";
 import { Config } from "ts/const.mjs";
-// import cross_spawn from "cross-spawn";
+import { v4 } from "uuid";
+import type { HyperChatCompletionTool, IMCPClient } from "../../../common/data";
+import { getMessageService } from "ts/message_service.mjs";
+import { shell } from "electron";
+import { Stream } from "node:stream";
 
 let config = MCP_CONFIG.initSync();
+let buildinMcpJSONPath = path.join(appDataDir, "mcpBuiltIn.json");
+let buildinMcpJSON = {
+  mcpServers: {} as { [s: string]: MCP_CONFIG_TYPE },
+}
+let mcpOBj = {} as { [s: string]: MCPClient };
+if (fs.existsSync(buildinMcpJSONPath)) {
+  try {
+    buildinMcpJSON = fs.readJsonSync(buildinMcpJSONPath);
+  } catch (e) {
+    Logger.error("Failed to read buildInMcp.json", e);
+  }
 
+}
 for (let s of MyServers) {
   let key = s.name;
-  config.mcpServers[key] = {
-    command: "",
-    args: [],
-    env: {},
+  buildinMcpJSON.mcpServers[key] = {
+    type: "sse",
+    url: `http://localhost:${Config.mcp_server_port}/${key}/sse`,
     hyperchat: {
-      url: `http://localhost:${Config.mcp_server_port}/${key}/sse`,
-      type: "sse",
       scope: "built-in",
-      config: config.mcpServers[key]?.hyperchat?.config || {},
-    },
-    disabled: config.mcpServers[key]?.disabled,
-  };
+      config: buildinMcpJSON.mcpServers[key]?.hyperchat?.config || {},
+    } as any,
+    disabled: buildinMcpJSON.mcpServers[key]?.disabled,
+  } as MCP_CONFIG_TYPE;
 }
+fs.writeFileSync(buildinMcpJSONPath, JSON.stringify(buildinMcpJSON, null, 2));
+
 for (let key in config.mcpServers) {
   if (
-    config.mcpServers[key].hyperchat?.scope == "built-in" &&
-    !MyServers.find((s) => s.name == key)
+    config.mcpServers[key].hyperchat?.scope == "built-in"
   ) {
     delete config.mcpServers[key];
   }
 
-  if (config.mcpServers[key].hyperchat == null) {
-    config.mcpServers[key].hyperchat = {
-      config: {},
-    } as any;
-  } else {
-    if (config.mcpServers[key].hyperchat.config == null) {
-      config.mcpServers[key].hyperchat.config = {};
-    }
+  if (config.mcpServers[key]?.hyperchat?.type == "sse") {
+    config.mcpServers[key].type = "sse";
+    config.mcpServers[key].url = config.mcpServers[key].hyperchat.url;
   }
 }
 await MCP_CONFIG.save();
@@ -77,31 +91,31 @@ await initMcpServer().catch((e) => {
   console.error("initMcpServer", e);
 });
 
-export const mcpClients = {} as {
-  [s: string]: MCPClient;
-};
-export class MCPClient {
-  public tools: Array<typeof MCPTypes.ToolSchema._type> = [];
-  public resources: Array<typeof MCPTypes.ResourceSchema._type> = [];
-  public prompts: Array<typeof MCPTypes.PromptSchema._type> = [];
+export let mcpClients: Array<MCPClient> = [];
+export class MCPClient implements IMCPClient {
+  public tools = [];
+  public resources = [];
+  public prompts = [];
   public client: MCP.Client = undefined;
   public status: "disconnected" | "connected" | "connecting" | "disabled" =
     "disconnected";
-
+  public version = "";
+  public servername = "";
   public ext: {
     configSchema?: { [s in string]: any };
   } = {};
 
-  constructor(public name: string, public config: MCP_CONFIG_TYPE) {
+  constructor(public name: string, public config: MCP_CONFIG_TYPE, public source: "hyperchat" | "claude" | "builtin" = "hyperchat", public order: number = 0) {
     let s = MyServers.find((s) => s.name == name);
     if (s) {
       this.ext.configSchema = s.configSchema
         ? zodToJsonSchema(s.configSchema)
         : undefined;
     }
+
   }
   async callTool(functionName: string, args: any): Promise<any> {
-    Logger.info("MCP callTool", functionName, args);
+
     if (this.status == "disconnected") {
       Logger.error("MCP callTool disconnected, restarting");
       await this.open();
@@ -117,6 +131,7 @@ export class MCPClient {
         { timeout: mcpCallToolTimeout * 1000 }
       )
       .catch(async (e) => {
+        Logger.info("MCP CallTool Error: ", functionName, args, e);
         return await this.client
           .request(
             {
@@ -136,9 +151,13 @@ export class MCPClient {
             } else {
               return res;
             }
+          }).catch((e) => {
+            Logger.info("MCP CallTool Compatibility Error: ", functionName, args, e);
+            throw e;
           });
       });
     return res;
+
   }
   async callResource(uri: string): Promise<MCPTypes.ReadResourceResult> {
     Logger.info("MCP callTool", uri);
@@ -162,17 +181,27 @@ export class MCPClient {
   }
   async open() {
 
+
+    if (this.config.disabled) {
+      this.status = "disabled";
+      return;
+    }
     try {
       this.status = "connecting";
+      getMessageService().sendAllToRenderer({
+        type: "changeMcpClient",
+        data: mcpClients,
+      })
       // await sleep(Math.random() * 10000);
       // if(Math.random() > 0.5) {
       //   throw new Error("test error");
       // }
-      if (this.config?.hyperchat?.type == "sse") {
+      if (this.config?.type == "sse" || this.config?.hyperchat?.type == "sse") {
         await this.openSse(this.config);
       } else {
         await this.openStdio(this.config);
       }
+
       let client = this.client;
       // let c = client.getServerCapabilities();
       // console.log(c);
@@ -201,7 +230,7 @@ export class MCPClient {
       };
       client.onerror = (e) => {
         // console.log("client onerror: ", this.config);
-        if (this.config?.hyperchat?.type == "sse") {
+        if (this.config?.type == "sse" || this.config?.hyperchat?.type == "sse") {
           if (e.message.includes("Body Timeout Error")) {
           } else {
             Logger.error("client see onerror: ", e);
@@ -213,13 +242,68 @@ export class MCPClient {
           }
         }
       };
+      let res = await this.client.getServerVersion();
+      this.version = res.version;
+      this.servername = res.name;
 
-      this.tools = tools_res.tools;
-      this.resources = resources_res.resources;
-      this.prompts = listPrompts_res.prompts;
+      this.tools = tools_res.tools.map((tool) => {
+        // let name = "m" + i + "_" + tool.name;
+        return {
+          type: "function" as const,
+          function: {
+            name: tool.name,
+            description: tool.description,
+            parameters: {
+              type: tool.inputSchema.type,
+              properties: formatProperties(tool.inputSchema.properties, tool.name),
+              required: tool.inputSchema.required,
+            },
+          },
+          origin_name: tool.name,
+          restore_name: this.name + " > " + tool.name,
+          key: this.name,
+          clientName: this.name,
+          client: this.name,
+        };
+      });
+      this.resources = resources_res.resources.map((x) => {
+        return {
+          ...x,
+          key: this.name + " > " + x.name,
+          clientName: this.name,
+        };
+      });
+      this.prompts = listPrompts_res.prompts.map((x) => {
+        return {
+          ...x,
+          key: this.name + " > " + x.name,
+          clientName: this.name,
+        };
+      });
+      // this.client.subscribeResource({
+      //   uri: "resource://modelcontextprotocol/metadata",
+      // });
+      // this.client.setLoggingLevel("debug");
+      this.client.setNotificationHandler(LoggingMessageNotificationSchema, (notification) => {
+        Logger.info("Received notification LoggingMessageNotificationSchema:", notification);
+      });
+
+      this.client.setNotificationHandler(ResourceListChangedNotificationSchema, (notification) => {
+        Logger.info("Received notification ResourceListChangedNotificationSchema:", notification);
+      });
+
       this.status = "connected";
+      getMessageService().sendAllToRenderer({
+        type: "changeMcpClient",
+        data: mcpClients,
+      })
+      this.saveConfig();
     } catch (e) {
       this.status = "disconnected";
+      getMessageService().sendAllToRenderer({
+        type: "changeMcpClient",
+        data: mcpClients,
+      })
       throw e;
     }
   }
@@ -227,19 +311,26 @@ export class MCPClient {
     const client = new Client({
       name: this.name,
       version: "1.0.0",
+      capabilities: {
+      }
     });
 
-    const transport = new SSEClientTransport(new URL(config?.hyperchat?.url));
+    const transport = new SSEClientTransport(new URL(config?.url || config?.hyperchat?.url));
     await client.connect(transport);
     this.client = client;
   }
   async openStdio(config: MCP_CONFIG_TYPE) {
     let env = Object.assign(getMyDefaultEnvironment(), config.env);
     // console.log("openStdio", config.command, config.args, env);
+    let stream = new Stream();
+    stream.on('data', (data) => {
+      console.log(`stderr: ${data}`);
+    });
     let params = {
       command: config.command,
       args: config.args,
       env: env,
+      // stderr: stream,
     };
 
     try {
@@ -247,49 +338,100 @@ export class MCPClient {
       const client = new Client({
         name: this.name,
         version: "1.0.0",
+        capabilities: {
+
+        }
       });
 
       await client.connect(transport);
       this.client = client;
     } catch (e) {
       Logger.error(params, e);
-      // if (os.platform() == "win32" && e.message.includes("Connection closed")) {
-      //   // log.error("Connection closed, testing");
-      //   e = await checkError(params)
-      //     .then((_) => e)
-      //     .catch((e) => e);
-      // }
+      if (e.message.includes("MCP error -32000: Connection closed")) {
+        await SpawnError(config.command, config.args, env);
+      }
+      // console.log("eeeeeeeeeeeeeeeeeeeeeeeee");
       throw e;
+    }
+  }
+  loadConfig() {
+    if (this.source == "hyperchat") {
+      this.config = MCP_CONFIG.initSync().mcpServers[this.name] as MCP_CONFIG_TYPE;
+    }
+    if (this.source == "builtin") {
+      buildinMcpJSON = fs.readJsonSync(buildinMcpJSONPath);
+      this.config = buildinMcpJSON.mcpServers[this.name] as MCP_CONFIG_TYPE;
+    }
+  }
+  saveConfig({ isdelete }: { isdelete?: boolean } = {}) {
+    if (this.source == "hyperchat") {
+      if (isdelete) {
+        delete MCP_CONFIG.initSync().mcpServers[this.name];
+        MCP_CONFIG.save()
+        return;
+      } else {
+        MCP_CONFIG.initSync().mcpServers[this.name] = this.config;
+        MCP_CONFIG.save()
+      }
+
+    } else if (this.source == "builtin") {
+      buildinMcpJSON = fs.readJsonSync(buildinMcpJSONPath);
+      buildinMcpJSON.mcpServers[this.name] = this.config;
+      fs.writeFileSync(buildinMcpJSONPath, JSON.stringify(buildinMcpJSON, null, 2));
     }
   }
 }
 
-async function checkError(params: any) {
-  return await new Promise((resolve, reject) => {
-    let proc = spawn(params.command, params.args, {
-      env: params.env,
-      // shell: true,
-    });
-    // proc.on("data", (data) => {
-    //   console.log(data.toString());
-    // });
-    setTimeout(() => {
-      proc.kill();
-      resolve({ error: 0 });
-    }, 1000);
-    proc.on("error", (err) => {
-      reject(err);
-    });
+function SpawnError(command: string, args: string[], env) {
+  return new Promise((resolve, reject) => {
+    try {
+      // reject(new Error("test error"));
+      let child = spawn(command, args, {
+        // stdio: ['pipe', 'pipe', 'pipe', 'pipe'],  // 使用管道
+        stdio: 'pipe',
+
+        // 其他选项
+        cwd: os.homedir(),
+        // signal: abortCtrl.signal,
+        env: env,
+        shell: false,
+      });
+      let output = "";
+      // 添加事件处理器
+      child.stdout.on('data', (data) => {
+        output += data + "\n";
+        // console.log(`stdout: ${data}`);
+      });
+      
+      child.stderr.on('data', (data) => {
+        output += data + "\n";
+        // console.error(`stderr: ${data}`);
+      });
+
+      child.on('error', (err) => {
+        console.error(`Failed to start the child process: ${err}`);
+        reject(err); // 正确地拒绝 Promise
+      });
+
+      child.on('close', (code) => {
+        console.log(`The child process exited, exit code: ${code}`);
+        if (code !== 0) {
+          reject(new Error(`The child process exited, exit code: ${code}\n${output}`)); // 正确地拒绝 Promise
+        } else {
+          resolve(code); // 正确地完成 Promise
+        }
+      });
+    } catch (e) {
+      console.error(`Error creating child process: ${e}`);
+      reject(e); // 捕获并拒绝 Promise
+    }
   });
+
 }
 
 let firstRunStatus = 0;
 
-export const loadObj = {
-  status: {} as { [s: string]: number },
-  all: 0,
-  loaded: 0,
-};
+let order = 0;
 export async function initMcpClients() {
   // console.log("initMcpClientsRunning", firstRunStatus);
 
@@ -307,14 +449,9 @@ export async function initMcpClients() {
   if (firstRunStatus == 2) {
     Logger.info(
       "getMcpClients cached mcpClients",
-      Object.keys(mcpClients).length
+      mcpClients.length
     );
     return mcpClients;
-  }
-  let p = clientPaths.claude;
-  let mcp_path = path.join(appDataDir, "mcp.json");
-  if (fs.existsSync(p) && !fs.existsSync(mcp_path)) {
-    fs.copy(p, mcp_path);
   }
 
   let config = await MCP_CONFIG.initSync();
@@ -322,30 +459,115 @@ export async function initMcpClients() {
   // console.log(config);
   let tasks = [];
 
-  for (let key in config.mcpServers) {
-    // tasks.push(openMcpClient(key, config.mcpServers[key]));
+  try {
+    let p = buildinMcpJSONPath;
+    if (fs.existsSync(p)) {
+      Logger.info("initBuildInMcpConfig", "found", p);
+      let config = fs.readJsonSync(p);
+      for (let key in config.mcpServers) {
+        order++;
+        const c = config.mcpServers[key];
+        if (mcpOBj[key] != null) {
+          key = key + "_" + electronData.initSync().uuid.slice(0, 8);
+        }
+        const mcpClient = new MCPClient(key, c, "builtin", order);
+        mcpClients.push(mcpClient);
+        mcpOBj[key] = mcpClient;
+        try {
+          tasks.push(
+            mcpClient.open().then(() => {
+              getMessageService().sendAllToRenderer({
+                type: "changeMcpClient",
+                data: mcpClients,
+              })
+            }).catch((e) => {
+              getMessageService().sendAllToRenderer({
+                type: "changeMcpClient",
+                data: mcpClients,
+              })
+            })
+          );
+        } catch (e) {
+          Logger.error("initMcpClient", e);
+          continue;
+        }
 
-    if (config.mcpServers[key].disabled) {
-      // mcpClients[key].status = "disconnect";
-    } else {
-      if (mcpClients[key] == null) {
-        mcpClients[key] = new MCPClient(key, config.mcpServers[key]);
-      }
-      try {
-        loadObj.all += 1;
-        loadObj.status[key] = 0;
-        tasks.push(
-          mcpClients[key].open().then(() => {
-            loadObj.loaded += 1;
-            loadObj.status[key] = 1;
-          })
-        );
-      } catch (e) {
-        Logger.error("initMcpClient", e);
-        continue;
       }
     }
+  } catch (e) {
+    Logger.error("initClaudeConfig", "error", e);
   }
+
+  for (let key in config.mcpServers) {
+    order++;
+
+    const c = config.mcpServers[key];
+    if (mcpOBj[key] != null) {
+      key = key + "_" + electronData.initSync().uuid.slice(0, 8);
+    }
+    const mcpClient = new MCPClient(key, c, "hyperchat", order);
+    mcpClients.push(mcpClient);
+    mcpOBj[key] = mcpClient;
+    try {
+      tasks.push(
+        mcpClient.open().then(() => {
+          getMessageService().sendAllToRenderer({
+            type: "changeMcpClient",
+            data: mcpClients,
+          })
+        }).catch((e) => {
+          getMessageService().sendAllToRenderer({
+            type: "changeMcpClient",
+            data: mcpClients,
+          })
+        })
+      );
+    } catch (e) {
+      Logger.error("initMcpClient", e);
+      continue;
+    }
+  }
+  try {
+    let p = clientPaths.claude;
+    if (fs.existsSync(p)) {
+      Logger.info("initClaudeConfig", "found", p);
+      let config = fs.readJsonSync(p);
+      for (let key in config.mcpServers) {
+        order++;
+
+        const c = config.mcpServers[key];
+        if (mcpOBj[key] != null) {
+          key = key + "_" + electronData.initSync().uuid.slice(0, 8);
+        }
+        const mcpClient = new MCPClient(key, c, "claude", order);
+        mcpClients.push(mcpClient);
+        mcpOBj[key] = mcpClient;
+
+        try {
+          tasks.push(
+            mcpClient.open().then(() => {
+              getMessageService().sendAllToRenderer({
+                type: "changeMcpClient",
+                data: mcpClients,
+              })
+            }).catch((e) => {
+              getMessageService().sendAllToRenderer({
+                type: "changeMcpClient",
+                data: mcpClients,
+              })
+            })
+          );
+        } catch (e) {
+          Logger.error("initMcpClient", e);
+          continue;
+        }
+
+      }
+    }
+  } catch (e) {
+    Logger.error("initClaudeConfig", "error", e);
+  }
+
   await Promise.allSettled(tasks);
 
   firstRunStatus = 2;
@@ -355,68 +577,103 @@ initMcpClients().then(() => {
   startTask();
 });
 export async function openMcpClient(
-  clientName: string = undefined,
+  name: string = undefined,
   clientConfig?: MCP_CONFIG_TYPE
 ) {
-  // if (mcpClients[clientName] != null) {
-  //   await mcpClients[clientName].open(clientConfig);
-  // }
 
-  if (clientConfig == null) {
-    let config = await MCP_CONFIG.initSync();
-    if (config.mcpServers[clientName] == null) {
-      throw new Error("MCP Config is null");
+  let mcpClient = mcpClients.find((c) => c.name == name);
+  if (mcpClient != null) {
+    if (clientConfig == null) {
+      mcpClient.loadConfig();
+    } else {
+      mcpClient.config = clientConfig;
     }
-    clientConfig = config.mcpServers[clientName] as MCP_CONFIG_TYPE;
+    delete mcpClient.config.disabled;
+  } else {
+    mcpClient = new MCPClient(name, clientConfig, "hyperchat", order);
+    mcpClients.push(mcpClient);
+    mcpOBj[name] = mcpClient;
   }
 
-  if (mcpClients[clientName] && clientConfig?.disabled) {
-    mcpClients[clientName].client?.close();
-    mcpClients[clientName].status = "disabled";
-    return mcpClients;
-  }
-  let newMCP = new MCPClient(clientName, clientConfig);
+
   try {
-    await newMCP.open();
+    await mcpClient.open();
   } catch (e) {
     Logger.error("openMcpClient", e);
     throw e;
   }
-  // clean old client
-  if (mcpClients[clientName] != null) {
-    if (mcpClients[clientName].client != null) {
-      mcpClients[clientName].client.close();
-    }
-  }
-  mcpClients[clientName] = newMCP;
+
   return mcpClients;
 }
 
 export async function getMcpClients() {
-  // while (1) {
-  //   if (firstRunStatus == 1 || firstRunStatus == 0) {
-  //     await sleep(100);
-  //   } else {
-  //     break;
-  //   }
-  // }
+  getMessageService().sendAllToRenderer({
+    type: "changeMcpClient",
+    data: mcpClients,
+  })
   return mcpClients;
 }
 
-export async function closeMcpClients(clientName: string, isdelete: boolean) {
-  let client = mcpClients[clientName];
-  if (client == null) {
+export async function closeMcpClients(name: string, {
+  isdelete,
+  isdisable
+}) {
+  let mcpClient = mcpClients.find((c) => c.name == name);
+  if (mcpClient == null) {
     return;
   }
-  if (client.client != null) {
-    await client.client.close();
+  if (mcpClient.client != null) {
+    await mcpClient.client.close();
   }
-  client.client = undefined;
-  client.tools = [];
-  client.prompts = [];
-  client.resources = [];
+  mcpClient.client = undefined;
+  mcpClient.tools = [];
+  mcpClient.prompts = [];
+  mcpClient.resources = [];
+  if (isdisable) {
+    mcpClient.status = "disabled";
+    mcpClient.config.disabled = true;
+    mcpClient.saveConfig();
+  }
   if (isdelete) {
-    delete mcpClients[clientName];
+    mcpClient.saveConfig({ isdelete: isdelete });
+    mcpClients = mcpClients.filter((c) => c.name != name);
   }
+  getMessageService().sendAllToRenderer({
+    type: "changeMcpClient",
+    data: mcpClients,
+  })
   return mcpClients;
+}
+
+
+export function formatProperties(obj: any, toolName: string = "") {
+  if (obj == null) {
+    return {
+      compatible: {
+        type: "string",
+        description: "ignore, no enter", // compatible gemini-openai
+      },
+    };
+  }
+  // if (toolName == "NOTION_INSERT_ROW_DATABASE") {
+  //   debugger;
+  // }
+  try {
+    for (let key in obj) {
+      if (obj[key].type == "object") {
+        obj[key].properties = formatProperties(obj[key].properties, toolName);
+        delete obj[key].additionalProperties; // Corrected to delete obj[key].additionalProperties
+        delete obj[key].items;
+      } else if (obj[key].type == "array") {
+        obj[key].items = formatProperties(obj[key].items, toolName);
+        delete obj[key].items.additionalProperties; // Corrected to delete obj[key].additionalProperties
+        delete obj[key].properties;
+      }
+    }
+
+  } catch (e) {
+    console.error(e);
+  }
+  // console.log(obj);
+  return obj;
 }

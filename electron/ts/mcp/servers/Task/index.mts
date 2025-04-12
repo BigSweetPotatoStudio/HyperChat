@@ -73,9 +73,9 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
   }
   return {
     tools: [
-      {
+      agents.data.length > 0 && {
         name: "call_agent",
-        description: `Call the Agent(Bot) by sending a message and return the result.`,
+        description: `Call the Agent by sending a message and return the result.`,
         inputSchema: {
           type: "object",
           properties: {
@@ -96,7 +96,7 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
           required: ["agent_name", "message"],
         },
       },
-      {
+      agents.data.length > 0 && {
         name: "add_task",
         description: `Schedule a task for the Agent to execute..`,
         inputSchema: {
@@ -132,14 +132,14 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
       },
       // {
       //   name: "list_allowed_agents",
-      //   description: `list all allow Agent(Bot)`,
+      //   description: `list all allow Agents`,
       //   inputSchema: {
       //     type: "object",
       //     properties: {},
       //     required: [],
       //   },
       // },
-    ],
+    ].filter((x) => x),
   };
 });
 

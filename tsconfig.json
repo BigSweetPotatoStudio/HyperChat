@@ -29,13 +29,8 @@
     ],
     "outDir": "./dist"
   },
-  "files": [
-    "../common/data.ts"
-  ],
   "include": [
-    "src",
-    "types",
-    "eval"
+    "common"
   ],
   "exclude": [
     "node_modules"

@@ -1,5 +1,6 @@
 import type OpenAI from "openai";
-
+import * as MCPTypes from "@modelcontextprotocol/sdk/types.js";
+import { v4 } from "uuid";
 export const DataList: Data<any>[] = [];
 
 export class Data<T> {
@@ -49,8 +50,11 @@ export class Data<T> {
   // get d(): T {
   //   return this.data;
   // }
-
-  async save() {
+  format(x) {
+    return x;
+  };
+  async save(format = (x: T) => x) {
+    this.format = format;
     this.insave();
   }
   private inget(): Promise<T> {
@@ -67,6 +71,31 @@ export class Data<T> {
     insave && (this.insave = insave);
   }
 }
+
+
+
+export const AppSetting = new Data("app_setting.json", {
+  isAutoLauncher: false,
+  webdav: { // 废弃⚠️ => electronData
+    url: "",
+    username: "",
+    password: "",
+    baseDirName: "",
+    // autoSync: false, // 废弃⚠️ => electronData
+  },
+  darkTheme: false,
+  mcpCallToolTimeout: 60,
+  defaultAllowMCPs: undefined as string[] | undefined,
+  quicks: [{
+    label: "Hello",
+    value: "Hello",
+    quick: "Hello"
+  }] as Array<{
+    value: string;
+    label: string;
+    quick: string;
+  }>,
+});
 
 export const electronData = new Data(
   "electronData.json",
@@ -87,34 +116,18 @@ export const electronData = new Data(
       [s: string]: boolean;
     },
     autoSync: false,
+    webdav: {
+      url: "",
+      username: "",
+      password: "",
+      baseDirName: "",
+    },
+    uuid: v4(),
   },
   {
     sync: false,
   }
 );
-
-export const AppSetting = new Data("app_setting.json", {
-  isAutoLauncher: false,
-  webdav: {
-    url: "",
-    username: "",
-    password: "",
-    baseDirName: "",
-    // autoSync: false, // 废弃⚠️ => electronData
-  },
-  darkTheme: false,
-  mcpCallToolTimeout: 60,
-  defaultAllowMCPs: undefined as string[] | undefined,
-  quicks: [{
-    label: "Hello",
-    value: "Hello",
-    quick: "Hello"
-  }] as Array<{
-    value: string;
-    label: string;
-    quick: string;
-  }>,
-});
 
 export type Tool_Call = {
   index: number;
@@ -223,6 +236,8 @@ export type MCP_CONFIG_TYPE = {
   command: string;
   args: string[];
   env: { [s: string]: string };
+  url: string;
+  type: "stdio" | "sse";
   hyperchat: {
     config: { [s in string]: any };
     url: string;
@@ -232,6 +247,27 @@ export type MCP_CONFIG_TYPE = {
   disabled: boolean;
 };
 
+export type HyperChatCompletionTool = OpenAI.ChatCompletionTool & {
+  origin_name?: string;
+  restore_name?: string;
+  clientName?: string;
+  client?: string;
+};
+export type IMCPClient = {
+  tools: Array<typeof MCPTypes.ToolSchema._type & HyperChatCompletionTool>;
+  prompts: Array<typeof MCPTypes.PromptSchema._type & { key: string }>;
+  resources: Array<typeof MCPTypes.ResourceSchema._type & { key: string }>;
+  name: string;
+  status: "disconnected" | "connected" | "connecting" | "disabled";
+  order: number;
+  config: MCP_CONFIG_TYPE;
+  ext: {
+    configSchema?: { [s in string]: any };
+  };
+  source: "hyperchat" | "claude" | "builtin";
+  version: string;
+  servername: string;
+};
 export const MCP_CONFIG = new MCP_CONFIG_DATA(
   "mcp.json",
   {

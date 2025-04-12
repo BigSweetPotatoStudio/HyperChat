@@ -2,46 +2,50 @@ import { call } from "./call";
 import OpenAI from "openai";
 import * as MCPTypes from "@modelcontextprotocol/sdk/types.js";
 import { sleep } from "./sleep";
-import type { MCPClient } from "../../../electron/ts/mcp/config.mjs";
+
 
 import { TEMP_FILE, MCP_CONFIG, MCP_CONFIG_TYPE } from "../../../common/data";
-import { mcpClientsToArray } from "./mcptool";
+import type { HyperChatCompletionTool, IMCPClient } from "../../../common/data";
+
 
 let init = false;
-let McpClients: {
-  [s: string]: MCPClient;
-};
+let McpClients: Array<IMCPClient>;
 
 export function getMcpClients() {
   return McpClients || {};
 }
 
-export type HyperChatCompletionTool = OpenAI.ChatCompletionTool & {
-  // key?: string;
-  origin_name?: string;
-  restore_name?: string;
-  clientName?: string;
-  client?: string;
-};
+// export type HyperChatCompletionTool = OpenAI.ChatCompletionTool & {
+//   // key?: string;
+//   origin_name?: string;
+//   restore_name?: string;
+//   clientName?: string;
+//   client?: string;
+// };
 
-export type InitedClient = {
-  tools: Array<HyperChatCompletionTool>;
-  prompts: Array<typeof MCPTypes.PromptSchema._type & { key: string }>;
-  resources: Array<typeof MCPTypes.ResourceSchema._type & { key: string }>;
-  name: string;
-  status: "disconnected" | "connected" | "connecting" | "disabled";
-  order: number;
-  config: MCP_CONFIG_TYPE;
-  ext: any;
-};
+// export type InitedClient = {
+//   tools: Array<HyperChatCompletionTool>;
+//   prompts: Array<typeof MCPTypes.PromptSchema._type & { key: string }>;
+//   resources: Array<typeof MCPTypes.ResourceSchema._type & { key: string }>;
+//   name: string;
+//   status: "disconnected" | "connected" | "connecting" | "disabled";
+//   order: number;
+//   config: MCP_CONFIG_TYPE;
+//   ext: any;
+//   source: "hyperchat" | "claude"
+// };
 
-let initedClientArray: Array<InitedClient> = [];
+export {
+  HyperChatCompletionTool,
+  IMCPClient as InitedClient
+}
+
+
 export async function initMcpClients() {
-  let res = await call("initMcpClients", []);
+  let res: any = await call("initMcpClients", []);
   McpClients = res;
   console.log("initMcpClients", McpClients);
-  initedClientArray = mcpClientsToArray(McpClients);
-  return initedClientArray;
+
 }
 
 // setInterval(async () => {
@@ -62,9 +66,9 @@ export function getMcpInited() {
 }
 
 export function getTools(allowMCPs: string[] | undefined | false = undefined) {
-  let tools: InitedClient["tools"] = [];
+  let tools: IMCPClient["tools"] = [];
 
-  initedClientArray.forEach((v) => {
+  McpClients.forEach((v) => {
     tools = tools.concat(
       v.tools.filter((t) => {
         if (!allowMCPs) return true;
@@ -83,9 +87,9 @@ export function getPrompts(mcp: string[]) {
     set.add(name);
   }
 
-  let prompts: InitedClient["prompts"] = [];
+  let prompts: IMCPClient["prompts"] = [];
 
-  initedClientArray
+  McpClients
     .filter((m) => set.has(m.name))
     .forEach((v) => {
       prompts = prompts.concat(v.prompts);
@@ -100,9 +104,9 @@ export function getResourses(mcp: string[]) {
     set.add(name);
   }
 
-  let resources: InitedClient["resources"] = [];
+  let resources: IMCPClient["resources"] = [];
 
-  initedClientArray
+  McpClients
     .filter((m) => set.has(m.name))
     .forEach((v) => {
       resources = resources.concat(v.resources);
@@ -110,12 +114,11 @@ export function getResourses(mcp: string[]) {
   return resources;
 }
 
-export async function getClients(): Promise<InitedClient[]> {
-  McpClients = await call("getMcpClients", []);
-  // console.log("getMcpClients", McpClients);
-  let res = mcpClientsToArray(McpClients);
-  initedClientArray = res;
-  return initedClientArray;
+export async function getClients() {
+  return await call("getMcpClients", []);
+}
+export async function setClients(res) {
+  McpClients = res;
 }
 
 

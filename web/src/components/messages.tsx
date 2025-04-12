@@ -108,7 +108,7 @@ export const Messages = ({ messages, onSumbit, readOnly }: { messages: MyMessage
                                         {dayjs(x.content_date).format("YYYY-MM-DD HH:mm:ss")}
                                     </span>
                                 )}
-                                {!readOnly && <SyncOutlined
+                                {x.content_attached && !readOnly && <SyncOutlined
                                     className="hover:text-cyan-400"
                                     key="sync"
                                     onClick={() => {
@@ -227,7 +227,7 @@ export const Messages = ({ messages, onSumbit, readOnly }: { messages: MyMessage
                                         message.success("Copied to clipboard");
                                     }}
                                 />
-                                {!readOnly && <SyncOutlined
+                                {x.content_attached  && !readOnly && <SyncOutlined
                                     key="sync"
                                     className="hover:text-cyan-400"
                                     onClick={() => {
@@ -240,7 +240,7 @@ export const Messages = ({ messages, onSumbit, readOnly }: { messages: MyMessage
                                 <Space>
                                     {x.content_attached == false && (
                                         <Tooltip title="Cleared">
-                                            <MinusCircleOutlined className="cursor-not-allowed bg-red-200" />
+                                            <MinusCircleOutlined className="cursor-not-allowed" />
                                         </Tooltip>
                                     )}
                                     {x.content_date && (
@@ -306,7 +306,8 @@ export const Messages = ({ messages, onSumbit, readOnly }: { messages: MyMessage
                                     <div className="text-red-700">{x.content_error}</div>
                                 </div>
                             ) : null}
-                            {x.content_status == "dataLoading" && <LoadingOutlined />}
+
+                            {x.content_status == "dataLoading" && <LoadingOutlined className=" text-blue-400" />}
                             {x.content_attachment &&
                                 x.content_attachment.length > 0 &&
                                 x.content_attachment.map((x, i) => {

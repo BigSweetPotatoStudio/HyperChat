@@ -10,7 +10,7 @@ if (localStorage.getItem("currLang")) {
   currLang = localStorage.getItem("currLang");
 }
 if (process.env.NODE_ENV == "development") {
-  window.localStorage.setItem("i18nText", JSON.stringify(i18nText, null, 4));
+  window.localStorage.setItem("i18nText", JSON.stringify(i18nText, null, 2));
 }
 
 export function t(strings, ...values) {
@@ -29,7 +29,7 @@ export function t(strings, ...values) {
       };
       window.localStorage.setItem(
         "i18nText",
-        JSON.stringify(i18nText, null, 4),
+        JSON.stringify(i18nText, null, 2),
       );
     }
     return str;
@@ -57,7 +57,7 @@ const setCurrLang = (lang) => {
 //       };
 //       window.localStorage.setItem(
 //         "i18nText",
-//         JSON.stringify(i18nText, null, 4),
+//         JSON.stringify(i18nText, null, 2),
 //       );
 //     }
 //     return child;

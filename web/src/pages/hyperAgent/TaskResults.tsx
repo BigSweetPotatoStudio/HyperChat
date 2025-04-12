@@ -74,12 +74,12 @@ export function TaskResultsPage() {
     setNum((x) => x + 1);
   };
   const { globalState, updateGlobalState } = useContext(HeaderContext);
-  // useEffect(() => {
-  //   (async () => {
-  //     await ChatHistory.init();
-  //     refresh();
-  //   })();
-  // }, []);
+  useEffect(() => {
+    (async () => {
+      await ChatHistory.init();
+      refresh();
+    })();
+  }, []);
 
   const columns: TableColumnsType<ChatHistoryItem> = [
     {
@@ -111,9 +111,9 @@ export function TaskResultsPage() {
       key: "result",
       render: (text, row, index) => {
         return (
-          <Tooltip title={row.messages[row.messages.length - 1].content}>
+          <Tooltip title={row.messages[row.messages.length - 1].content.toString()}>
             <div className="line-clamp-1 w-96">
-              {row.messages[row.messages.length - 1].content}
+              {row.messages[row.messages.length - 1].content.toString()}
             </div>
           </Tooltip>
         );
@@ -136,11 +136,14 @@ export function TaskResultsPage() {
             >{t`View`}</a>
             <Popconfirm
               title={t`Are you sure to delete this?`}
-              onConfirm={() => {
-                ChatHistory.get().data = ChatHistory.get().data.filter(
-                  (item) => item.key !== row.key,
-                );
-                ChatHistory.save();
+              onConfirm={async () => {
+                // ChatHistory.get().data = ChatHistory.get().data.filter(
+                //   (item) => item.key !== row.key,
+                // );
+                // ChatHistory.save();
+                await call("removeChatHistory", [{
+                  key: row.key,
+                }])
                 refresh();
               }}
             >

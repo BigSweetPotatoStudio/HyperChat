@@ -1042,5 +1042,37 @@
     "Add Quick": {
         "en": "Add Quick",
         "zh": "添加快速词汇"
+    },
+    "Open Configuration File": {
+        "en": "Open Configuration File",
+        "zh": "打开配置文件"
+    },
+    "Build-in": {
+        "en": "Build-in",
+        "zh": "内置"
+    },
+    "Claude Desktop": {
+        "en": "Claude Desktop",
+        "zh": "Claude 桌面"
+    },
+    "you might need to customize the PATH environment var.": {
+        "en": "you might need to customize the PATH environment var.",
+        "zh": "你可能需要自定义 PATH 环境变量。"
+    },
+    "BuildIn MCP Configuration": {
+        "en": "BuildIn MCP Configuration",
+        "zh": "内置MCP配置"
+    },
+    "Enable": {
+        "en": "Enable",
+        "zh": "启用"
+    },
+    "Setting": {
+        "en": "Setting",
+        "zh": "设置"
+    },
+    "Disable": {
+        "en": "Disable",
+        "zh": "禁用"
     }
 }

@@ -58,9 +58,11 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
   } else {
     d = `Select knowledge base:\n${d}`;
   }
+
+
   return {
     tools: [
-      {
+      db.dbList.length > 0 && {
         name: "search_knowledge_base",
         description: `Search local knowledge base given keywords embedding and returns the RAG results.`,
         inputSchema: {
@@ -81,7 +83,7 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
           required: ["knowledge_base", "words"],
         },
       },
-      {
+      db.dbList.length > 0 && {
         name: "knowledge_base_add",
         description: `Add content to the knowledge base.`,
         inputSchema: {
@@ -111,7 +113,7 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
           properties: {},
         },
       },
-    ],
+    ].filter(x => x),
   };
 });
 
@@ -145,12 +147,24 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
       }
     }
     case "list_knowledge_base": {
+      KNOWLEDGE_BASE.initSync({ force: true })
+      if (KNOWLEDGE_BASE.get()
+        .dbList.length == 0) {
+        return {
+          content: [
+            {
+              type: "text",
+              text: `No knowledge base found`,
+            },
+          ],
+        };
+      }
       try {
         return {
           content: [
             {
               type: "text",
-              text: `knowledge base\n${KNOWLEDGE_BASE.initSync({ force: true })
+              text: `knowledge base\n${KNOWLEDGE_BASE.get()
                 .dbList.map((x) => x.name + " - " + x.description)
                 .join("\n")}`,
             },

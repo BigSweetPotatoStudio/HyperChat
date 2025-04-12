@@ -301,11 +301,14 @@ export class OpenAiChannel {
     if (!call_tool || this.options.supportTool === false) {
       tools = undefined;
     } else {
-      if (process.env.runtime === "node") {
-        tools = global.tools || [];
-      } else {
-        const { getTools } = await import("./mcp");
-        tools = getTools(this.options.allowMCPs);
+      try {
+        if (process.env.runtime === "node") {
+          tools = global.getTools(this.options.allowMCPs);
+        } else {
+          tools = window.getTools(this.options.allowMCPs);
+        }
+      } catch (e) {
+        tools = []
       }
 
       if (tools.length == 0) {

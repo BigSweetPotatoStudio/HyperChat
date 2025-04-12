@@ -118,7 +118,7 @@
     "@llm-tools/embedjs-libsql": "^0.1.28",
     "@llm-tools/embedjs-loader-pdf": "^0.1.28",
     "@llm-tools/embedjs-openai": "^0.1.28",
-    "@modelcontextprotocol/sdk": "^1.7.0",
+    "@modelcontextprotocol/sdk": "^1.9.0",
     "@types/adm-zip": "^0.5.5",
     "@types/fluent-ffmpeg": "^2.1.27",
     "@types/pdfjs-dist": "^2.10.378",
@@ -197,7 +197,7 @@
   "scripts": {
     "build": "npx tsx task.mts --build",
     "build:node": "npx tsx task.mts --buildnode",
-    "watch": "nodemon -w ts --exec npx tsx task.mts --watch",
+    "watch": "nodemon -w ts --exec npx tsx task.mts --build",
     "dev": "nodemon -w ts --exec npx tsx task.mts --dev",
     "dev:node": "nodemon -w ts --exec npx tsx task.mts --devnode",
     "prod": "npx tsx task.mts --prod",

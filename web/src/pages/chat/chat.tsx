@@ -174,6 +174,7 @@ import {
   MenuFoldOutlined,
   MenuUnfoldOutlined,
   CheckOutlined,
+  DisconnectOutlined,
 } from "@ant-design/icons";
 import type { ConfigProviderProps, GetProp } from "antd";
 import { MyMessage, OpenAiChannel } from "../../common/openai";
@@ -182,14 +183,12 @@ import {
   GPT_MODELS,
   Agents,
   AppSetting,
+  IMCPClient,
 } from "../../../../common/data";
 
 import { PromptsModal } from "./promptsModal";
 import {
   getClients,
-  getMcpInited,
-  getPrompts,
-  getResourses,
   getTools,
   InitedClient,
 } from "../../common/mcp";
@@ -224,6 +223,7 @@ import zodToJsonSchema from "zod-to-json-schema";
 import { Icon } from "../../components/icon";
 import { Messages } from "../../components/messages";
 import { getFirstCharacter } from "../../common";
+import { X } from "lucide-react";
 
 
 export const Chat = ({
@@ -244,7 +244,7 @@ export const Chat = ({
   const refresh = () => {
     setNum((n) => n + 1);
   };
-  const { globalState, updateGlobalState } = useContext(HeaderContext);
+  const { globalState, updateGlobalState, mcpClients } = useContext(HeaderContext);
   useEffect(() => {
     loadMoreData(false);
   }, [globalState]);
@@ -255,6 +255,7 @@ export const Chat = ({
       await Agents.init();
       await GPT_MODELS.init();
       await AppSetting.init();
+      await ChatHistory.init();
       AppSetting.get().quicks = AppSetting.get().quicks.map((x: any) => {
 
         if (x.quick == null) {
@@ -303,8 +304,8 @@ export const Chat = ({
         }
       } else {
         if (AppSetting.get().defaultAllowMCPs == undefined) {
-          let clients = await getClients().catch(() => []);
-          AppSetting.get().defaultAllowMCPs = clients.map((v) => v.name);
+          let clients = await getClients().catch(() => [] as InitedClient[]);
+          AppSetting.get().defaultAllowMCPs = clients.filter(x => x.status != "disabled").map((v) => v.name);
         }
 
         currentChatReset(
@@ -314,36 +315,37 @@ export const Chat = ({
           "",
         );
       }
+      // while (1) {
+      //   if (getMcpInited() == true) {
+      //     let clients = await getClients().catch(() => []);
+      //     clientsRef.current = clients;
+      //     let p = getPrompts(currentChat.current.allowMCPs);
+      //     promptsRef.current = p;
+      //     let r = getResourses(currentChat.current.allowMCPs);
+      //     resourcesRef.current = r;
 
-      while (1) {
-        if (getMcpInited() == true) {
-          let clients = await getClients().catch(() => []);
-          clientsRef.current = clients;
-          let p = getPrompts(currentChat.current.allowMCPs);
-          promptsRef.current = p;
-          let r = getResourses(currentChat.current.allowMCPs);
-          resourcesRef.current = r;
-
-          DATA.current.mcpLoading = false;
-          refresh();
-          break;
-        } else {
-          let clients = await getClients().catch(() => []);
-          clientsRef.current = clients;
-          let p = getPrompts(currentChat.current.allowMCPs);
-          promptsRef.current = p;
-          let r = getResourses(currentChat.current.allowMCPs);
-          resourcesRef.current = r;
-          DATA.current.mcpLoading = false;
-          refresh();
-          break;
-        }
-      }
+      //     DATA.current.mcpLoading = false;
+      //     refresh();
+      //     break;
+      //   } else {
+      //     let clients = await getClients().catch(() => []);
+      //     clientsRef.current = clients;
+      //     let p = getPrompts(currentChat.current.allowMCPs);
+      //     promptsRef.current = p;
+      //     let r = getResourses(currentChat.current.allowMCPs);
+      //     resourcesRef.current = r;
+      //     DATA.current.mcpLoading = false;
+      //     refresh();
+      //     break;
+      //   }
+      // }
     })();
   }, []);
 
   const onGPTSClick = async (key: string, { loadHistory = true } = {}) => {
     let find = Agents.get().data.find((y) => y.key === key);
+    selectGptsKey.current = find.key;
+    historyFilterType.current = "all";
     await currentChatReset(
       {
         allowMCPs: find.allowMCPs,
@@ -355,15 +357,11 @@ export const Chat = ({
       },
       find.prompt,
     );
-    if (loadHistory) {
-      selectGptsKey.current = find.key;
-      historyFilterType.current = "all";
-    }
   };
 
   const openaiClient = useRef<OpenAiChannel>();
 
-  const clientsRef = useRef<InitedClient[]>([]);
+  // const clientsRef = useRef<InitedClient[]>([]);
 
   const promptsRef = useRef<InitedClient["prompts"]>([]);
   const resourcesRef = useRef<InitedClient["resources"]>([]);
@@ -388,6 +386,7 @@ export const Chat = ({
     isCalled: agentData.agentKey ? true : false,
     isTask: false,
     confirm_call_tool: true,
+    icon: ""
   };
 
   const mobile = useRef({
@@ -432,17 +431,44 @@ export const Chat = ({
 
     resourceResListRef.current = [];
     setPromptResList([]);
-    let clients = await getClients().catch(() => []);
-    clientsRef.current = clients;
+    // let clients = await getClients().catch(() => []);
+    // clientsRef.current = clients;
 
     // clientsRef.current;
-    let p = getPrompts(currentChat.current.allowMCPs);
-    promptsRef.current = p;
-    let r = getResourses(currentChat.current.allowMCPs);
-    resourcesRef.current = r;
+    // let p = getPrompts(currentChat.current.allowMCPs);
+    // promptsRef.current = p;
+    // let r = getResourses(currentChat.current.allowMCPs);
+    // resourcesRef.current = r;
 
     refresh();
   };
+
+  useEffect(() => {
+    let set = new Set();
+    for (let tool_name of currentChat.current.allowMCPs) {
+      let [name, _] = tool_name.split(" > ");
+      set.add(name);
+    }
+
+    let prompts: IMCPClient["prompts"] = [];
+
+    mcpClients
+      .filter((m) => set.has(m.name))
+      .forEach((v) => {
+        prompts = prompts.concat(v.prompts);
+      });
+    promptsRef.current = prompts;
+
+    let resources: IMCPClient["resources"] = [];
+
+    mcpClients
+      .filter((m) => set.has(m.name))
+      .forEach((v) => {
+        resources = resources.concat(v.resources);
+      });
+    resourcesRef.current = resources;
+
+  }, [mcpClients, currentChat.current.allowMCPs]);
 
   const selectGptsKey = useRef<string | undefined>(undefined);
   useEffect(() => {
@@ -461,116 +487,6 @@ export const Chat = ({
   }, [currentChat.current.agentKey]);
 
 
-  // const createChat = useCallback((showTip = true) => {
-  //   let config = GPT_MODELS.get().data.find(
-  //     (x) => x.key == currentChat.current.modelKey,
-  //   );
-  //   if (config == null) {
-  //     if (GPT_MODELS.get().data.length == 0) {
-  //       if (showTip) {
-  //         EVENT.fire("setIsModelConfigOpenTrue");
-  //       }
-  //       throw new Error("Please add LLM first");
-  //     }
-  //     config = GPT_MODELS.get().data[0];
-  //   }
-  //   // currentChat.current.modelKey = config.key;
-  //   // DATA.current.suggestionShow = false;
-  //   openaiClient.current = OpenAiChannel.create(
-  //     {
-  //       // ...config,
-  //       baseURL: config.baseURL,
-  //       apiKey: config.apiKey,
-
-  //     },
-  //   );
-  //   openaiClient.current.options = {
-  //     ...openaiClient.current.options,
-  //     model: config.model,
-  //     call_tool_step: config.call_tool_step,
-  //     supportTool: config.supportTool,
-  //     supportImage: config.supportImage,
-
-  //     requestType: currentChat.current.requestType,
-  //     allowMCPs: currentChat.current.allowMCPs,
-  //     temperature: currentChat.current.temperature,
-  //     confirm_call_tool: currentChat.current.confirm_call_tool,
-  //     confirm_call_tool_cb: (tool) => {
-  //       return new Promise((resolve, reject) => {
-  //         console.log("tool", tool);
-  //         let m = modal.confirm({
-  //           title: t`Comfirm Call Tool`,
-  //           width: "90%",
-  //           style: { maxWidth: 1024 },
-  //           footer: [],
-  //           content: (
-  //             <div>
-  //               <Form
-  //                 initialValues={tool.function.argumentsJSON}
-  //                 name="control-hooks"
-  //                 onFinish={(e) => {
-  //                   // console.log(e);
-  //                   resolve(e);
-  //                   m.destroy();
-  //                 }}
-  //               >
-  //                 <pre
-  //                   style={{
-  //                     whiteSpace: "pre-wrap",
-  //                     wordWrap: "break-word",
-  //                     padding: "8px 0",
-  //                     textAlign: "center",
-  //                   }}
-  //                 >
-  //                   <span>Tool Name: </span>
-  //                   <span className="text-purple-500">
-  //                     {tool.restore_name || tool.function.name}
-  //                   </span>
-  //                 </pre>
-  //                 {JsonSchema2FormItemOrNull(
-  //                   getTools().find(
-  //                     (x) => x.restore_name == tool.restore_name,
-  //                   ).function.parameters,
-  //                 ) || t`No parameters`}
-  //                 <Form.Item>
-  //                   <div className="flex flex-wrap justify-between">
-  //                     <Button
-  //                       onClick={() => {
-  //                         m.destroy();
-  //                         reject(new Error(t`User Cancel`));
-  //                       }}
-  //                     >{t`Cancel`}</Button>
-  //                     <Space>
-  //                       <Button
-  //                         type="primary"
-  //                         ghost
-  //                         htmlType="submit"
-  //                         onClick={() => {
-  //                           currentChat.current.confirm_call_tool = false;
-  //                           openaiClient.current.options.confirm_call_tool =
-  //                             false;
-  //                         }}
-  //                       >
-  //                         {t`Allow this Chat`}
-  //                       </Button>
-  //                       <Button type="primary" htmlType="submit">
-  //                         {t`Allow Once`}
-  //                       </Button>
-  //                     </Space>
-  //                   </div>
-  //                 </Form.Item>
-  //               </Form>
-  //             </div>
-  //           ),
-  //         });
-  //       });
-  //     },
-  //   }
-  //   openaiClient.current.messages = currentChat.current.messages;
-
-  //   // currentChat.current.messages = openaiClient.current.messages;
-  //   refresh();
-  // }, []);
   const [loading, setLoading] = useState(false);
 
   const onRequest = useCallback(async (message?: string) => {
@@ -704,7 +620,7 @@ export const Chat = ({
               sended: true,
               dateTime: Date.now(),
             };
-            ChatHistory.get().data.unshift(currentChat.current);
+            // ChatHistory.get().data.unshift(currentChat.current);
 
 
           } else {
@@ -724,19 +640,19 @@ export const Chat = ({
             }
 
             currentChat.current.label = label;
+            currentChat.current.dateTime = Date.now();
+            // let findIndex = ChatHistory.get().data.findIndex(
+            //   (x) => x.key == currentChat.current.key,
+            // );
 
-            let findIndex = ChatHistory.get().data.findIndex(
-              (x) => x.key == currentChat.current.key,
-            );
+            // if (findIndex > -1) {
+            //   // let find = ChatHistory.get().data.splice(findIndex, 1)[0];
 
-            if (findIndex > -1) {
-              let find = ChatHistory.get().data.splice(findIndex, 1)[0];
+            //   currentChat.current.dateTime = Date.now();
 
-              currentChat.current.dateTime = Date.now();
-
-              Object.assign(find, currentChat.current);
-              ChatHistory.get().data.unshift(find);
-            }
+            //   // Object.assign(find, currentChat.current);
+            //   // ChatHistory.get().data.unshift(find);
+            // }
 
 
           }
@@ -758,11 +674,18 @@ export const Chat = ({
         );
 
         Object.assign(messages, openaiClient.messages)
+        currentChat.current.messages = messages;
         refresh();
-
         if (current) {
+          await call("addChatHistory", [currentChat.current])
+          let findIndex = ChatHistory.get().data.findIndex(
+            (x) => x.key == currentChat.current.key,
+          );
+          if (findIndex > -1) {
+            ChatHistory.get().data.splice(findIndex, 1)
+          }
+          ChatHistory.get().data.unshift(currentChat.current);
           loadMoreData(false);
-          await ChatHistory.save();
         }
 
 
@@ -774,8 +697,18 @@ export const Chat = ({
         }
         refresh();
         if (current) {
-          await ChatHistory.save();
+          // await ChatHistory.save();
+          await call("addChatHistory", [currentChat.current])
+          let findIndex = ChatHistory.get().data.findIndex(
+            (x) => x.key == currentChat.current.key,
+          );
+          if (findIndex > -1) {
+            ChatHistory.get().data.splice(findIndex, 1)
+          }
+          ChatHistory.get().data.unshift(currentChat.current);
+          loadMoreData(false);
         }
+        refresh();
         antdMessage.error(
           e.message || t`An error occurred, please try again later`,
         );
@@ -1023,7 +956,7 @@ export const Chat = ({
               };
             })}
             activeKey={currentChat.current.key}
-            onActiveChange={(key) => {
+            onActiveChange={async (key) => {
               if (currentChat.current.key == key) {
                 return;
               }
@@ -1035,7 +968,10 @@ export const Chat = ({
                 }
                 // currentChat.current.messages=[]
                 // refresh();
-
+                if (item.messages == null || item.messages.length == 0) {
+                  let messages = await call("readJSON", [`messages/${item.key}.json`]).catch(() => []);
+                  item.messages = messages || [];
+                }
                 currentChatReset(item);
               }
             }}
@@ -1063,18 +999,19 @@ export const Chat = ({
                   danger: true,
                 },
               ],
-              onClick: (menuInfo) => {
+              onClick: async (menuInfo) => {
                 // message.info(`Click ${conversation.key} - ${menuInfo.key}`);
                 if (menuInfo.key === "remove") {
-                  let index = ChatHistory.get().data.findIndex(
-                    (x) => x.key === conversation.key,
-                  );
-                  ChatHistory.get().data.splice(index, 1);
-                  ChatHistory.save();
+                  // let index = ChatHistory.get().data.findIndex(
+                  //   (x) => x.key === conversation.key,
+                  // );
+                  // ChatHistory.get().data.splice(index, 1);
+                  // ChatHistory.save();
+                  await call("removeChatHistory", [{ key: conversation.key }]);
                   setConversations(
                     conversations.filter((x) => x.key !== conversation.key),
                   );
-                  loadMoreData(false, false);
+                  // loadMoreData(false, false);
                   refresh();
                   message.success(t`Delete Success`);
                 }
@@ -1083,13 +1020,15 @@ export const Chat = ({
                     (x) => x.key === conversation.key,
                   );
                   if (ChatHistory.get().data[index].icon == "⭐") {
-                    ChatHistory.get().data[index].icon = undefined;
+                    ChatHistory.get().data[index].icon = "";
                   } else {
                     ChatHistory.get().data[index].icon = "⭐";
                   }
-
-                  ChatHistory.save();
+                  loadMoreData(false, false);
                   refresh();
+                  // ChatHistory.save();
+                  await call("changeChatHistory", [ChatHistory.get().data[index]])
+
                 }
                 if (menuInfo.key === "clone") {
                   let index = ChatHistory.get().data.findIndex(
@@ -1098,13 +1037,19 @@ export const Chat = ({
                   let item = ChatHistory.get().data[index];
 
                   let clone = JSON.parse(JSON.stringify(item));
-                  ChatHistory.get().data.unshift({
+                  // ChatHistory.get().data.unshift({
+                  //   ...clone,
+                  //   key: v4(),
+                  //   label: `${item.label} - Clone`,
+                  //   dateTime: Date.now(),
+                  // });
+                  // ChatHistory.save();
+                  await call("changeChatHistory", [{
                     ...clone,
                     key: v4(),
                     label: `${item.label} - Clone`,
                     dateTime: Date.now(),
-                  });
-                  ChatHistory.save();
+                  }])
                   loadMoreData(false, false);
                   refresh();
                 }
@@ -1127,7 +1072,7 @@ export const Chat = ({
   const [isUpdateQuicks, setIsUpdateQuicks] = useState(false);
   const [newLabel, setNewLabel] = useState("");
   const [newValue, setNewValue] = useState("");
-
+  // console.log((1 / (1 + DATA.current.diffs.length) * 100) + "%")
   return (
     <div key={sessionID} className="chat relative h-full">
       <div className="h-full rounded-lg bg-white">
@@ -1163,11 +1108,11 @@ export const Chat = ({
 
             <div
               className="flex-grow-2 flex w-full flex-col justify-between"
-              style={{ alignSelf: "stretch" }}
+              style={{ alignSelf: "stretch", width: mobile.current.is ? "100%" : DATA.current.showHistory ? "calc(100vw - 265px)" : "100%" }}
             >
 
               <Splitter layout={window.innerHeight > window.innerWidth ? "vertical" : "horizontal"} className="overflow-auto">
-                <Splitter.Panel defaultSize="50%" min="30%" max="70%">
+                <Splitter.Panel >
                   <Watermark className="h-full  relative" content={DATA.current.diffs.length > 0 ? modelName : ""}>
                     <div className="h-full">
                       {(currentChat.current.messages == null ||
@@ -1312,7 +1257,7 @@ export const Chat = ({
 
                 {
                   DATA.current.diffs.map((x, i) => {
-                    return <Splitter.Panel key={i} className="h-full"><Watermark className="h-full  relative" content={x.label}>
+                    return <Splitter.Panel key={i} className="h-full"  ><Watermark className="h-full  relative" content={x.label}>
                       <div className=" absolute top-0 right-0 cursor-pointer z-10 text-red-400" onClick={() => {
                         DATA.current.diffs = DATA.current.diffs.filter((_, j) => j != i);
                         refresh();
@@ -1378,7 +1323,7 @@ export const Chat = ({
                             let key =
                               currentChat.current.agentKey ||
                               currentChat.current["gptsKey"];
-                            onGPTSClick(key, { loadHistory: false });
+                            onGPTSClick(key);
                           } else {
                             currentChatReset({
                               messages: [],
@@ -1428,12 +1373,12 @@ export const Chat = ({
                                     set.add(name);
                                   }
 
-                                  let load = clientsRef.current.filter(
+                                  let load = mcpClients.filter(
                                     (v) => v.status == "connected",
                                   ).length;
-                                  let all = clientsRef.current.length;
-                                  let curr = clientsRef.current.filter((v) => {
-                                    return set.has(v.name);
+                                  let all = mcpClients.filter(x => x.status !== "disabled").length;
+                                  let curr = mcpClients.filter((v) => {
+                                    return v.status !== "disabled" && set.has(v.name);
                                   }).length;
 
                                   return DATA.current.mcpLoading ? (
@@ -1930,33 +1875,27 @@ export const Chat = ({
             onCheck={(checkedKeys) => {
               // console.log("onCheck", checkedKeys);
               currentChat.current.allowMCPs = checkedKeys as string[];
-              let p = getPrompts(currentChat.current.allowMCPs);
-              promptsRef.current = p;
-              let r = getResourses(currentChat.current.allowMCPs);
-              resourcesRef.current = r;
               refresh();
             }}
             checkedKeys={currentChat.current.allowMCPs}
-            treeData={clientsRef.current.map((x) => {
+            treeData={mcpClients.filter(x => x.status != "disabled").map((x) => {
               return {
                 title: (
                   <span>
-                    {x.name}
+                    {x.name}{" "}{x.source == "claude" ? <Tag color="blue">{t`claude`}</Tag> : x.source == "builtin" ? <Tag color="blue">{t`built-in`}</Tag> : null}
                     {x.status == "connected" ? null : x.status ==
                       "connecting" ? (
                       <SyncOutlined spin className="m-1 text-blue-400" />
                     ) : (
-                      <Button
+                      x.source == "hyperchat" ? <Button
                         className="m-1"
                         size="small"
                         onClick={async () => {
                           x.status = "connecting";
                           refresh();
                           await call("openMcpClient", [x.name]);
-                          clientsRef.current = await getClients();
-                          refresh();
                         }}
-                      >{t`Reload`}</Button>
+                      >{t`Reload`}</Button> : <DisconnectOutlined className="text-red-400" />
                     )}
                   </span>
                 ),
@@ -2038,6 +1977,8 @@ export const Chat = ({
               <span className="text-purple-500">
                 {currTool.restore_name || currTool?.function?.name}
               </span>
+              <div><span>Tool description: </span>
+                <span className="text-gray-400">{currTool?.function?.description}</span></div>
             </pre>
             {currTool.key
               ? JsonSchema2FormItemOrNull(

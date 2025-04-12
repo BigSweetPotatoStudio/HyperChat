@@ -114,6 +114,7 @@ div[role="system"] .ant-bubble-content-wrapper {
 
 .ant-bubble {
   /* flex-wrap: wrap; */
+  position: relative;
 }
 
 /* 选中最后一个 .no-attached（即使标签不同） */
@@ -122,6 +123,9 @@ div[role="system"] .ant-bubble-content-wrapper {
   /* color: #ccc; */
   width: 100%;
   text-align: center;
+  bottom: -1rem;
+  position: absolute;
+  color: red;
 }
 
 .myworkspace .ant-tabs-content {
@@ -183,3 +187,17 @@ div[role="system"] .ant-bubble-content-wrapper {
 .ant-bubble-content{
   padding: 0.5rem !important;
 }
+
+.market .ant-tabs-nav {
+  margin-bottom: 0 !important;
+}
+
+@keyframes textColorCycle {
+  0% { color: #9ca3af; }
+  50% { color: #22c55e; }
+  100% { color: #9ca3af; }
+}
+.animate-text-color {
+  animation: textColorCycle 1s infinite;
+}
+
