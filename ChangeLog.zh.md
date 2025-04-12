@@ -1,5 +1,22 @@
 # latest
 
+* 支持显示MCP Server版本号和名称。
+* 添加模型报错时，显示详细错误。
+* 添加MCP报错时，显示详细错误。
+* 优化聊天记录存储，把对话消息分开存储，减少加载和同步时间。
+* 修改WebDav同步。
+* 支持Claude Desktop 配置里的MCP。
+* 支持Web端直接查看配置文件
+* 支持快捷键MACOS`Alt+Cmd+I`   Windows`Ctrl+Shift+I`打开 开发者工具
+* 修复bug
+
+![image](https://github.com/user-attachments/assets/e00bb252-83a6-40ca-928a-3162859b0c27)
+![image](https://github.com/user-attachments/assets/5378bba1-91f5-4d77-accf-544d9a09e909)
+![image](https://github.com/user-attachments/assets/2b236af6-a0bc-453a-b08e-8f3627a5d392)
+![image](https://github.com/user-attachments/assets/ca3cc911-bc6a-4560-aede-f34969190e91)
+
+
+# 1.4.3
 * 重写markdown渲染，优化`Artifacts`，支持从浏览器打开，下载，增加对`Mermaid`预发的支持，
 * 修改调用工具的显示
 * 支持聊天选择多个模型对比
