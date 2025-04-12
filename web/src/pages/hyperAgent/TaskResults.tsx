@@ -111,13 +111,17 @@ export function TaskResultsPage() {
       key: "result",
       render: (text, row, index) => {
         let lastMessage = row.messages[row.messages.length - 1];
-        if(!lastMessage){
+        if (!lastMessage) {
           lastMessage = row.lastMessage;
         }
+        let content = lastMessage?.content.toString() || "";
+        if (lastMessage?.content_status == "error") {
+          content = lastMessage?.content_error || "Error";
+        }
         return (
-          <Tooltip title={lastMessage?.content.toString()}>
-            <div className="line-clamp-1 w-96">
-              {lastMessage?.content.toString()}
+          <Tooltip title={content}>
+            <div className="line-clamp-1 w-96" style={{ color: lastMessage?.content_status == "error" ? "red" : "black" }}>
+              {content}
             </div>
           </Tooltip>
         );

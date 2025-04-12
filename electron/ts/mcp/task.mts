@@ -92,20 +92,32 @@ export async function callAgent(obj: {
   type: "task" | "isCalled" | "call";
   taskKey?: string;
 }) {
-  try {
-    let agent = Agents.initSync().data.find((x) => x.key === obj.agentKey);
-    if (agent == null) {
-      throw new Error(`Agent ${obj.agentKey} not found`);
-    }
-    Logger.info("Running callAgent", agent.label, obj.message, obj.agentKey);
-    let config =
-      GPT_MODELS.initSync().data.find((x) => x.key == agent.modelKey) ||
-      GPT_MODELS.initSync().data[0];
+  let agent = Agents.initSync().data.find((x) => x.key === obj.agentKey);
+  if (agent == null) {
+    throw new Error(`Agent ${obj.agentKey} not found`);
+  }
+  Logger.info("Running callAgent", agent.label, obj.message, obj.agentKey);
+  let config =
+    GPT_MODELS.initSync().data.find((x) => x.key == agent.modelKey) ||
+    GPT_MODELS.initSync().data[0];
 
-    if (!config) {
-      Logger.error("No model found");
-      return;
-    }
+  if (!config) {
+    Logger.error("No model found");
+    throw new Error("No model found");
+  }
+  let openai = new OpenAiChannel(
+    { ...config, ...agent, allowMCPs: agent.allowMCPs },
+    [
+      {
+        role: "system",
+        content: agent.prompt,
+        content_date: Date.now(),
+      },
+      { role: "user", content: obj.message, content_date: Date.now() },
+    ]
+  );
+  try {
+
     global.getTools = (allowMCPs) => {
       let tools: IMCPClient["tools"] = [];
 
@@ -121,17 +133,7 @@ export async function callAgent(obj: {
       });
       return tools;
     }
-    let openai = new OpenAiChannel(
-      { ...config, ...agent, allowMCPs: agent.allowMCPs },
-      [
-        {
-          role: "system",
-          content: agent.prompt,
-          content_date: Date.now(),
-        },
-        { role: "user", content: obj.message, content_date: Date.now() },
-      ]
-    );
+
     await openai.completion();
     let res = openai.lastMessage.content;
     // console.log("openai.completion() done", openai.messages);
@@ -159,6 +161,26 @@ export async function callAgent(obj: {
     // await onRequest(task.message);
   } catch (e) {
     console.error(" hyper_call_agent error: ", e);
+    openai.lastMessage.content_error = e.message;
+    openai.lastMessage.content_status = "error";
+    const item: ChatHistoryItem = {
+      label: obj.message,
+      key: v4(),
+      messages: openai.messages,
+      modelKey: config.key,
+      agentKey: agent.key,
+      sended: true,
+      requestType: "complete",
+      allowMCPs: agent.allowMCPs,
+      attachedDialogueCount: agent.attachedDialogueCount,
+      dateTime: Date.now(),
+      isCalled: obj.type === "isCalled",
+      isTask: obj.type === "task",
+      taskKey: obj.taskKey,
+      confirm_call_tool: false,
+      lastMessage: openai.lastMessage,
+    };
+    Command.addChatHistory(item);
     throw e;
   } finally {
   }
@@ -168,7 +190,7 @@ export async function runTask(taskKey: string) {
   if (task == null) {
     throw new Error(`Task ${taskKey} not found`);
   }
-  if(task.disabled) {
+  if (task.disabled) {
     return;
   }
   Logger.info("Running task", task.name);
