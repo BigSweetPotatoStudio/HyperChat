@@ -27,7 +27,6 @@ interface FileInfo {
 let timer = undefined;
 class WebDAVSync {
   private client: WebDAVClient;
-  public webdavSetting = AppSetting["webdav"];
   init() {
 
 
@@ -84,8 +83,7 @@ class WebDAVSync {
     this._isSnyc = true;
 
     console.log("---syncStart");
-    let localPath: string = appDataDir;
-    let remotePath: string = this.webdavSetting.baseDirName;
+
     getMessageService().sendAllToRenderer({
       type: "sync",
       data: {
@@ -95,7 +93,10 @@ class WebDAVSync {
 
     try {
       let setting = electronData.initSync({ force: true });
-      this.webdavSetting = setting.webdav;
+
+      let localPath: string = appDataDir;
+      let remotePath: string = setting.webdav.baseDirName;
+
       if (setting.webdav.url == "" || setting.webdav.username == "" || setting.webdav.password == "") {
         throw new Error("please save your setting!");
       }
