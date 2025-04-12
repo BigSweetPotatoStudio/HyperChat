@@ -157,7 +157,7 @@ export async function callAgent(obj: {
     Command.addChatHistory(item);
     // ChatHistory.initSync().data.unshift(item);
     // await ChatHistory.save();
-    return res;
+    return openai.lastMessage;
     // await onRequest(task.message);
   } catch (e) {
     console.error(" hyper_call_agent error: ", e);
@@ -181,19 +181,27 @@ export async function callAgent(obj: {
       lastMessage: openai.lastMessage,
     };
     Command.addChatHistory(item);
-    throw e;
-  } finally {
+    throw new Error(e.message);
   }
 }
-export async function runTask(taskKey: string) {
+export async function runTask(taskKey: string, { force = false }) {
   let task = TaskList.initSync().data.find((x) => x.key === taskKey);
   if (task == null) {
     throw new Error(`Task ${taskKey} not found`);
   }
-  if (task.disabled) {
-    return;
+  if (force) {
+
+  } else {
+    if (task.disabled) {
+      return;
+    }
   }
+
   Logger.info("Running task", task.name);
+  let agent = Agents.initSync().data.find((x) => x.key === task.agentKey);
+  if (agent == null) {
+    throw new Error(`Agent ${task.agentKey} not found`);
+  }
   try {
     let lastMessage = await callAgent({
       agentKey: task.agentKey,
@@ -201,12 +209,12 @@ export async function runTask(taskKey: string) {
       type: "task",
       taskKey: task.key,
     });
-    let agent = Agents.initSync().data.find((x) => x.key === task.agentKey);
-
-    await trigger({ task, agent, result: lastMessage });
+    // throw new Error("test error");
+    await trigger({ task, agent, result: lastMessage.content.toString() });
     // await onRequest(task.message);
   } catch (e) {
-    console.error(" task_call_agent error: ", e);
+    Logger.error(" task_call_agent error: ", e);
+    await trigger({ task, agent, result: e.message });
   } finally {
   }
 }
@@ -218,7 +226,7 @@ export function startTask(taskkey?: string) {
         continue;
       }
       let cronT = cron.schedule(task.cron, () => {
-        runTask(task.key).then((res) => {
+        runTask(task.key, { force: false }).then((res) => {
           Logger.info("task result", res);
         });
       });
@@ -243,7 +251,7 @@ export function startTask(taskkey?: string) {
     // console.log("task", task);
     let cronT = cron.schedule(task.cron, () => {
       // console.log("test", task);
-      runTask(task.key).then((res) => {
+      runTask(task.key, { force: false }).then((res) => {
         Logger.info("task result", res);
       });
     });

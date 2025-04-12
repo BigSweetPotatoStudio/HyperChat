@@ -957,7 +957,7 @@ export const Chat = ({
               return {
                 ...x,
                 label: x.label.toString() + ` - ${dayjs(x.dateTime).format("YYYY-MM-DD HH:mm:ss")}` + (x["agentName"] ? ` - ${x["agentName"]}` : ""),
-                icon: <>{first && <span className=" bg-slate-300 inline-block text-center" style={{ width: 22, height: 22 }}>{first}</span>}{x.icon == "⭐" ? <StarOutlined /> : undefined}</>,
+                icon: <>{first && <span className="rounded bg-slate-300 inline-block text-center" style={{ width: 22, height: 22 }}>{first}</span>}{x.icon == "⭐" ? <StarOutlined /> : undefined}</>,
               };
             })}
             activeKey={currentChat.current.key}
