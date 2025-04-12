@@ -190,6 +190,8 @@ export type ChatHistoryItem = {
   temperature?: number;
   deleted?: boolean;
   confirm_call_tool: boolean;
+  lastMessage?: MyMessage;
+  version?: string;
 };
 
 export const ChatHistory = new Data("chat_history.json", {

@@ -55,7 +55,7 @@ export async function fetch(url: string) {
     Logger.info("Page loaded: " + url, __dirname);
     let md = await executeClientScript(
       win,
-      fs.readFileSync(path.join(__dirname, "./turndown.js"), "utf-8").toString()
+      fs.readFileSync(path.join(__dirname, "./markdown.js"), "utf-8").toString()
     );
     return md as string;
   } catch (e) {

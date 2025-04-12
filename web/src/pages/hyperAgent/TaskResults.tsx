@@ -110,10 +110,14 @@ export function TaskResultsPage() {
       dataIndex: "result",
       key: "result",
       render: (text, row, index) => {
+        let lastMessage = row.messages[row.messages.length - 1];
+        if(!lastMessage){
+          lastMessage = row.lastMessage;
+        }
         return (
-          <Tooltip title={row.messages[row.messages.length - 1].content.toString()}>
+          <Tooltip title={lastMessage?.content.toString()}>
             <div className="line-clamp-1 w-96">
-              {row.messages[row.messages.length - 1].content.toString()}
+              {lastMessage?.content.toString()}
             </div>
           </Tooltip>
         );
@@ -168,7 +172,7 @@ export function TaskResultsPage() {
   const [histroyKey, setHistroyKey] = useState<string>("");
 
   return (
-    <div>
+    <div className="overflow-auto h-full">
       <Button type="primary" onClick={() => history.back()}>{t`Bcak`}</Button>
       <Table
         pagination={false}

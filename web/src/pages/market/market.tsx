@@ -506,7 +506,7 @@ export function Market() {
                   </div>
                 ),
               },
-              mcpClients.filter(x => x.source == "claude") && {
+              mcpClients.filter(x => x.source == "claude").length > 0 && {
                 label: t`Claude Desktop`,
                 key: "claude",
                 children: (

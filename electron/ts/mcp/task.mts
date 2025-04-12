@@ -150,6 +150,7 @@ export async function callAgent(obj: {
       isTask: obj.type === "task",
       taskKey: obj.taskKey,
       confirm_call_tool: false,
+      lastMessage: openai.lastMessage,
     };
     Command.addChatHistory(item);
     // ChatHistory.initSync().data.unshift(item);

@@ -296,7 +296,11 @@ export const Chat = ({
             //   messages: [],
             // });
 
-            // setTimeout(() => {
+            if (item.messages == null || item.messages.length == 0) {
+              let messages = await call("readJSON", [`messages/${item.key}.json`]).catch(() => []);
+              item.messages = messages || [];
+            }// setTimeout(() => {
+
             currentChatReset(item);
 
             // });
