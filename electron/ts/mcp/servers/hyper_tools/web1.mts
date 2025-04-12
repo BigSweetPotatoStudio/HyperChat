@@ -78,7 +78,7 @@ export async function search(words: string) {
   // win.webContents.openDevTools();
 
   try {
-    if (getConfig().SEARCH_ENGINE == "bing") {
+    if (getConfig().SearchEngine == "bing") {
       await win.loadURL(
         `https://www.bing.com/search?q=` + encodeURIComponent(words),
         {

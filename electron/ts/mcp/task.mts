@@ -163,7 +163,14 @@ export async function callAgent(obj: {
   } finally {
   }
 }
-export async function runTask(task: Task) {
+export async function runTask(taskKey: string) {
+  let task = TaskList.initSync().data.find((x) => x.key === taskKey);
+  if (task == null) {
+    throw new Error(`Task ${taskKey} not found`);
+  }
+  if(task.disabled) {
+    return;
+  }
   Logger.info("Running task", task.name);
   try {
     let lastMessage = await callAgent({
@@ -183,19 +190,23 @@ export async function runTask(task: Task) {
 }
 export function startTask(taskkey?: string) {
   if (!taskkey) {
-    Logger.info(`Starting tasks ${TaskList.initSync().data.length}`);
+    Logger.info(`enable tasks ${TaskList.initSync().data.length}`);
     for (let task of TaskList.initSync().data) {
       if (task.disabled) {
-        return;
+        continue;
       }
-      let cronT = cron.schedule(task.cron, runTask.bind(this, task));
+      let cronT = cron.schedule(task.cron, () => {
+        runTask(task.key).then((res) => {
+          Logger.info("task result", res);
+        });
+      });
       tObj[task.key] = {
         key: task.key,
         cronT,
       };
     }
   } else {
-    Logger.info(`Starting task ${taskkey}`);
+    Logger.info(`enable task ${taskkey}`);
     let task = TaskList.initSync().data.find((x) => x.key === taskkey);
 
     try {
@@ -207,8 +218,14 @@ export function startTask(taskkey?: string) {
     } catch (e) {
       Logger.info(`Stopping error ${e}`);
     }
+    // console.log("task", task);
+    let cronT = cron.schedule(task.cron, () => {
+      // console.log("test", task);
+      runTask(task.key).then((res) => {
+        Logger.info("task result", res);
+      });
+    });
 
-    let cronT = cron.schedule(task.cron, runTask.bind(this, task));
     tObj[task.key] = {
       key: task.key,
       cronT,

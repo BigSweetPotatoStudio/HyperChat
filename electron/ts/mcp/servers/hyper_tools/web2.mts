@@ -41,17 +41,17 @@ export async function createBrowser(log = false) {
     return browser;
   }
   let browserURL;
-  if (getConfig().isAutoLauncher) {
+  if (getConfig().ChromeIsUseLocal) {
     try {
       launcher = await ChromeLauncher.launch({
-        startingUrl: getConfig().startingUrl,
-        userDataDir: getConfig().userData || false,
+        startingUrl: getConfig().ChromeStartingUrl,
+        userDataDir: getConfig().ChromeUserData || false,
         port: 9222,
         ignoreDefaultFlags: true,
         chromeFlags: newFlags,
         // handleSIGINT: true,
         logLevel: "silent",
-        chromePath: getConfig().chromePath || undefined,
+        chromePath: getConfig().ChromePath || undefined,
         // chromePath: "C:\\Users\\0laop\\AppData\\Local\\Google\\Chrome SxS\\Application\\chrome.exe",
       });
       // console.log("Chrome debugging port: " + launcher.port);
@@ -60,7 +60,7 @@ export async function createBrowser(log = false) {
       console.error(e);
     }
   } else {
-    browserURL = getConfig().browserURL;
+    browserURL = getConfig().ChromeBrowserURL;
   }
 
   log && console.log("browserURL", browserURL);
@@ -125,7 +125,7 @@ export const search = async (words: string) => {
 
     let res = [];
     let page = await browser.newPage();
-    if (getConfig().SEARCH_ENGINE == "bing") {
+    if (getConfig().SearchEngine == "bing") {
       await page.goto(
         `https://www.bing.com/search?q=` + encodeURIComponent(words)
       );

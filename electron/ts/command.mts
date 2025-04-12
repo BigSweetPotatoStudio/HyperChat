@@ -333,8 +333,7 @@ export class CommandFactory {
     return stopTask(taskkey);
   }
   async runTask(taskkey: string) {
-    let task = TaskList.initSync().data.find((x) => x.key === taskkey);
-    return runTask(task);
+    return runTask(taskkey);
   }
   async callAgent(task: { command: string; agentName: string }) {
     let agent = Agents.initSync().data.find((x) => x.label === task.agentName);

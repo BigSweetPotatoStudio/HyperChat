@@ -14,32 +14,32 @@ export const configSchema = z.object({
       description: "Platform using web tools",
     })
     .default("electron"),
-  SEARCH_ENGINE: z
+  SearchEngine: z
     .enum(["google", "bing"], {
       description: "search engine",
     })
     .default("google"),
-  isAutoLauncher: z
+  ChromeIsUseLocal: z
     .enum(["true", "false"], {
-      description: "Whether to automatically launcher the browser",
+      description: "Whether to launcher the local browser",
     })
     .default("true"),
-  browserURL: z
+  ChromeBrowserURL: z
     .string({
       description: "Connect to the browser's remote debugging port",
     })
     .default("http://localhost:9222"),
-  startingUrl: z
+  ChromeStartingUrl: z
     .string({
-      description: "starting Page Url",
+      description: "Chrome starting Page Url",
     })
     .default("https://github.com/BigSweetPotatoStudio/HyperChat"),
-  chromePath: z
+  ChromePath: z
     .string({
       description: "Chrome Path",
     })
     .default(""),
-  userData: z
+  ChromeUserData: z
     .string({
       description: "Chrome userData Path",
     })
