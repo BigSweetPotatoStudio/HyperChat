@@ -1,6 +1,6 @@
 {
   "name": "@dadigua/hyper-chat",
-  "version": "1.4.8",
+  "version": "1.4.9",
   "main": "index.js",
   "scripts": {
     "dev": "tsx task.mts --dev",
