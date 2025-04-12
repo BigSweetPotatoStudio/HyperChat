@@ -8,8 +8,7 @@ HyperChat 是一个开源的Chat客户端，支持MCP，可以使用各家LLM的
 
 
 * 支持 OpenAI风格的LLM，`OpenAI` , `Claude(OpenRouter)`, `Qwen`, `Deepseek`, `GLM`, `Ollama` 。
-* 内置MCP插件市场，人性化的MCP的安装填写配置，一键安装，欢迎提交[HyperChatMCP](https://github.com/BigSweetPotatoStudio/HyperChatMCP)。
-* 也支持第三方MCP手动安装，填写 `command` , `args` , `env` 即可。
+* 完全支持MCP。
 
 ## DEMO
 
@@ -23,19 +22,17 @@ HyperChat 是一个开源的Chat客户端，支持MCP，可以使用各家LLM的
     * 命令行的版本 `docker pull dadigua/hyperchat-mini:latest`
     * Ubuntu桌面 + Chrome + BrowserUse 版本(**coming soon**)
 - [x] `WebDAV` 同步
-- [x] `MCP`扩展市场+第三方MCP支持
-- [x] 支持自由创建，设计`Agent`，可以预设提示词，选择MCP功能
+- [x] `MCP`扩展
 - [x] 支持暗黑模式🌙
 - [x] Resources，Prompts，Tools 支持
 - [x] 支持英文和中文
-- [x] 支持 `Artifacts`, `SVG`,`HTML` 渲染, js错误捕获，支持打开Chrome的控制台
-- [x] Agent显示优化，支持查找，拖拽排序
+- [x] 支持 `Artifacts`, `SVG`,`HTML`,`Mermaid`渲染
+- [x] 支持定义Agent，可以预设提示词，选择允许的MCP
+- [x] 支持定时任务，指定Agent定时完成任务，以及查看任务完成情况。
 - [x] 支持 `KaTeX`，显示数学公式，代码Code渲染增加高亮和快速复制
 - [x] 添加`RAG`，基于mcp知识库
 - [x] 添加ChatSpace概念，支持多对话同时聊天
-- [x] 支持 Agent Call Agent，通过HyperAgent的MCP
-- [x] 添加定时任务，指定Agent定时完成任务，以及任务完成情况查看。
-
+- [x] 支持聊天支持选择模型对比
 
 ### TODO:
 
@@ -55,7 +52,7 @@ HyperChat 是一个开源的Chat客户端，支持MCP，可以使用各家LLM的
 ## 使用
 
 * 1.配置APIKEY，确保你的LLM服务兼容OpenAI风格。
-* 2.确保您的系统中已安装 `uv + nodejs`。
+* 2.确保您的系统中已安装 `uv + nodejs` 等。
 
 ### [uvx & uv](https://github.com/astral-sh/uv)
 
