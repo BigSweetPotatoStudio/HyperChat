@@ -95,7 +95,7 @@ npm run dev
 ![image](https://github.com/user-attachments/assets/c9cd15c8-9bce-4df9-b2b2-5fc4e9224ea6)
 
 #### 支持点击tool名称，直接调用调试
-![image](https://github.com/user-attachments/assets/4af1b769-de19-4cab-8a90-7f701b9a8d70)
+![image](https://github.com/user-attachments/assets/a9b22e98-d7b7-497a-93aa-c1501763fb8a)
 
 #### mcp调用Tool提示 + 动态修改LLM调用Tool的参数
 ![image](https://github.com/user-attachments/assets/080320e3-37d2-4f5a-ae3d-3517b3d692ad)
@@ -143,15 +143,13 @@ npm run dev
 #### 多聊天Workspace + 夜间模式
 ![image](https://github.com/user-attachments/assets/ca9d77d7-d023-431f-8359-6023ab3e338a)
 
-#### 定时任务列表  + 夜间模式
+#### 定时任务列表 +  定时发送消息给Agent 完成任务
 ![image](https://github.com/user-attachments/assets/302a767c-bd00-48e4-ac41-5443d98a4708)
 
 #### 从第三方安装mcp（支持任意mcp） 
-![image](https://github.com/user-attachments/assets/173484f1-58b3-4e55-821c-ec6ef6cd0572)
+![image](https://github.com/user-attachments/assets/8580f194-139c-4d1c-b423-68627663232c)
 
 
-#### 从第三方安装mcp界面
-![image](https://github.com/user-attachments/assets/06b1b2d4-e368-45f2-ac81-b9080838f9f5)
 
 
 
