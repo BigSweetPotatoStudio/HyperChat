@@ -1,1078 +1,1102 @@
 {
-    "HyperChat": {
-        "en": "HyperChat",
-        "zh": "HyperChat"
-    },
-    "Chat": {
-        "en": "Chat",
-        "zh": "聊天"
-    },
-    "MCP Market": {
-        "en": "MCP Market",
-        "zh": "MCP市场"
-    },
-    "Settings": {
-        "en": "Settings",
-        "zh": "设置"
-    },
-    "💻MCP": {
-        "en": "💻MCP",
-        "zh": "💻MCP"
-    },
-    "🧠LLM": {
-        "en": "🧠LLM",
-        "zh": "🧠LLM"
-    },
-    "English": {
-        "en": "English",
-        "zh": "英语"
-    },
-    "New Chat": {
-        "en": "New Chat",
-        "zh": "新建聊天"
-    },
-    "Chat Logs": {
-        "en": "Chat Logs",
-        "zh": "对话记录"
-    },
-    "Nothing 🤐": {
-        "en": "Nothing 🤐",
-        "zh": "没有了 🤐"
-    },
-    "Welcome": {
-        "en": "Welcome",
-        "zh": "欢迎"
-    },
-    "Start chatting": {
-        "en": "Start chatting",
-        "zh": "开始聊天"
-    },
-    "Add": {
-        "en": "Add",
-        "zh": "添加"
-    },
-    "Edit": {
-        "en": "Edit",
-        "zh": "编辑"
-    },
-    "Please add a LLM model": {
-        "en": "Please add a LLM model",
-        "zh": "请添加一个LLM模型"
-    },
-    "Start inputting": {
-        "en": "Start inputting",
-        "zh": "开始输入"
-    },
-    "mcp.so": {
-        "en": "mcp.so",
-        "zh": "mcp.so"
-    },
-    "pulsemcp": {
-        "en": "pulsemcp",
-        "zh": "pulsemcp"
-    },
-    "glama": {
-        "en": "glama",
-        "zh": "glama"
-    },
-    "smithery": {
-        "en": "smithery",
-        "zh": "smithery"
-    },
-    "Start": {
-        "en": "Start",
-        "zh": "开始"
-    },
-    "Close": {
-        "en": "Close",
-        "zh": "关闭"
-    },
-    "Github": {
-        "en": "Github",
-        "zh": "Github"
-    },
-    "https://github.com/BigSweetPotatoStudio/HyperChat": {
-        "en": "https://github.com/BigSweetPotatoStudio/HyperChat",
-        "zh": "https://github.com/BigSweetPotatoStudio/HyperChat"
-    },
-    "Telegram": {
-        "en": "Telegram",
-        "zh": "Telegram"
-    },
-    "https://t.me/dadigua001": {
-        "en": "https://t.me/dadigua001",
-        "zh": "https://t.me/dadigua001"
-    },
-    "Email": {
-        "en": "Email",
-        "zh": "电子邮件"
-    },
-    "0laopo0@gmail.com": {
-        "en": "0laopo0@gmail.com",
-        "zh": "0laopo0@gmail.com"
-    },
-    "X(Twitter)": {
-        "en": "X(Twitter)",
-        "zh": "X(推特)"
-    },
-    "Twitter": {
-        "en": "Twitter",
-        "zh": "推特"
-    },
-    "Bilibili": {
-        "en": "Bilibili",
-        "zh": "哔哩哔哩"
-    },
-    "client": {
-        "en": "client",
-        "zh": "客户端"
-    },
-    "status": {
-        "en": "status",
-        "zh": "状态"
-    },
-    "Operation": {
-        "en": "Operation",
-        "zh": "操作"
-    },
-    "fetch": {
-        "en": "fetch",
-        "zh": ""
-    },
-    "connected": {
-        "en": "connected",
-        "zh": ""
-    },
-    "Config": {
-        "en": "Config",
-        "zh": "配置"
-    },
-    "reload": {
-        "en": "reload",
-        "zh": "重载"
-    },
-    "disable": {
-        "en": "disable",
-        "zh": "禁用"
-    },
-    "disabled": {
-        "en": "disabled",
-        "zh": ""
-    },
-    "start": {
-        "en": "start",
-        "zh": "启动"
-    },
-    "enable": {
-        "en": "enable",
-        "zh": "启用"
-    },
-    "Add MCP": {
-        "en": "Add MCP",
-        "zh": "添加 MCP"
-    },
-    "Open the configuration file": {
-        "en": "Open the configuration file",
-        "zh": "打开配置文件"
-    },
-    "Cancel": {
-        "en": "Cancel",
-        "zh": "取消"
-    },
-    "My LLM Models": {
-        "en": "My LLM Models",
-        "zh": "我的大模型(LLM)"
-    },
-    "Name": {
-        "en": "Name",
-        "zh": "名称"
-    },
-    "LLM": {
-        "en": "LLM",
-        "zh": "大模型"
-    },
-    "Delete": {
-        "en": "Delete",
-        "zh": "删除"
-    },
-    "Top": {
-        "en": "Top",
-        "zh": "置顶"
-    },
-    "Configure MCP": {
-        "en": "Configure MCP",
-        "zh": "配置MCP"
-    },
-    "_type": {
-        "en": "_type",
-        "zh": "_type"
-    },
-    "Please enter the name": {
-        "en": "Please enter the name",
-        "zh": "请输入名称"
-    },
-    "command": {
-        "en": "command",
-        "zh": ""
-    },
-    "Please enter command": {
-        "en": "Please enter command",
-        "zh": "请输入命令"
-    },
-    "args": {
-        "en": "args",
-        "zh": ""
-    },
-    "Please enter args": {
-        "en": "Please enter args",
-        "zh": "请输⼊参数"
-    },
-    "env": {
-        "en": "env",
-        "zh": ""
-    },
-    "Please enter": {
-        "en": "Please enter",
-        "zh": "请输入"
-    },
-    "Configure LLM": {
-        "en": "Configure LLM",
-        "zh": "配置大模型(LLM)"
-    },
-    "key": {
-        "en": "key",
-        "zh": "key"
-    },
-    "baseURL": {
-        "en": "baseURL",
-        "zh": ""
-    },
-    "Please enter baseURL": {
-        "en": "Please enter baseURL",
-        "zh": "请输入baseURL"
-    },
-    "apiKey": {
-        "en": "apiKey",
-        "zh": "apiKey"
-    },
-    "Please enter apiKey": {
-        "en": "Please enter apiKey",
-        "zh": "请输入apiKey"
-    },
-    "model": {
-        "en": "model",
-        "zh": "模型"
-    },
-    "Please enter the model": {
-        "en": "Please enter the model",
-        "zh": "请输入型号"
-    },
-    "Alias": {
-        "en": "Alias",
-        "zh": "别名"
-    },
-    "The default is the model name": {
-        "en": "The default is the model name",
-        "zh": "默认是模型名称"
-    },
-    "Choose a prompt from below, and let's start chatting": {
-        "en": "Choose a prompt from below, and let's start chatting",
-        "zh": "从下面选择一个提示，让我们开始聊天"
-    },
-    "Reset": {
-        "en": "Reset",
-        "zh": "重置"
-    },
-    "MCP and Tools": {
-        "en": "MCP and Tools",
-        "zh": "MCP和工具"
-    },
-    "Resources": {
-        "en": "Resources",
-        "zh": "资源"
-    },
-    "Prompts": {
-        "en": "Prompts",
-        "zh": "提示"
-    },
-    "Select LLM": {
-        "en": "Select LLM",
-        "zh": "选择大模型"
-    },
-    "Token Usage": {
-        "en": "Token Usage",
-        "zh": "Token使用"
-    },
-    "Markdown": {
-        "en": "Markdown",
-        "zh": "Markdown"
-    },
-    "Text": {
-        "en": "Text",
-        "zh": "文本"
-    },
-    "Tool": {
-        "en": "Tool",
-        "zh": "工具"
-    },
-    "tools": {
-        "en": "tools",
-        "zh": "工具"
-    },
-    "Resources: ": {
-        "en": "Resources: ",
-        "zh": "资源："
-    },
-    "Clear": {
-        "en": "Clear",
-        "zh": "清楚"
-    },
-    "✅Completed": {
-        "en": "✅Completed",
-        "zh": "✅完成"
-    },
-    "Tool Call Result": {
-        "en": "Tool Call Result",
-        "zh": "工具调用结果"
-    },
-    "Tool Call": {
-        "en": "Tool Call",
-        "zh": "工具调用"
-    },
-    "Tool Name: ": {
-        "en": "Tool Name: ",
-        "zh": "工具名称: "
-    },
-    "Tool Arguments: ": {
-        "en": "Tool Arguments: ",
-        "zh": "工具参数: "
-    },
-    "HpyerTools": {
-        "en": "HpyerTools",
-        "zh": "Hpyer工具"
-    },
-    "search": {
-        "en": "search",
-        "zh": ""
-    },
-    "emoji": {
-        "en": "emoji",
-        "zh": ""
-    },
-    "Prompt": {
-        "en": "Prompt",
-        "zh": "提示"
-    },
-    "System Prompt": {
-        "en": "System Prompt",
-        "zh": "系统提示词"
-    },
-    "Please enter System Prompt": {
-        "en": "Please enter System Prompt",
-        "zh": "请输入系统提示词"
-    },
-    "Please select default LLM": {
-        "en": "Please select default LLM",
-        "zh": "请选定默认大模型(LLM)"
-    },
-    "MCP": {
-        "en": "MCP",
-        "zh": "MCP"
-    },
-    "Not Installed": {
-        "en": "Not Installed",
-        "zh": "未安装"
-    },
-    "goto nodejs": {
-        "en": "goto nodejs",
-        "zh": ""
-    },
-    "goto uv": {
-        "en": "goto uv",
-        "zh": ""
-    },
-    "Try Repair environment": {
-        "en": "Try Repair environment",
-        "zh": "修复环境"
-    },
-    "More MCP Market": {
-        "en": "More MCP Market",
-        "zh": "更多MCP市场"
-    },
-    "token:": {
-        "en": "token:",
-        "zh": ""
-    },
-    "built-in": {
-        "en": "built-in",
-        "zh": "内置"
-    },
-    "config": {
-        "en": "config",
-        "zh": "配置"
-    },
-    "delete": {
-        "en": "delete",
-        "zh": "删除"
-    },
-    "note": {
-        "en": "note",
-        "zh": "笔记"
-    },
-    "Confirm": {
-        "en": "Confirm",
-        "zh": "确认"
-    },
-    "Confirm Delete?": {
-        "en": "Confirm Delete?",
-        "zh": "确认删除？"
-    },
-    "MCP Extensions": {
-        "en": "MCP Extensions",
-        "zh": "MCP扩展"
-    },
-    " Github": {
-        "en": " Github",
-        "zh": " Github"
-    },
-    "Sync": {
-        "en": "Sync",
-        "zh": "同步"
-    },
-    "npx & nodejs: ": {
-        "en": "npx & nodejs: ",
-        "zh": ""
-    },
-    "Please run the command.": {
-        "en": "Please run the command.",
-        "zh": "请运行命令。"
-    },
-    "winget install OpenJS.NodeJS.LTS": {
-        "en": "winget install OpenJS.NodeJS.LTS",
-        "zh": ""
-    },
-    "uvx & python:": {
-        "en": "uvx & python:",
-        "zh": ""
-    },
-    "winget install --id=astral-sh.uv -e": {
-        "en": "winget install --id=astral-sh.uv -e",
-        "zh": ""
-    },
-    "Officially Maintained List": {
-        "en": "Officially Maintained List",
-        "zh": "官方维护列表"
-    },
-    "third party": {
-        "en": "third party",
-        "zh": "第三方"
-    },
-    "modelcontextprotocol.io/examples": {
-        "en": "modelcontextprotocol.io/examples",
-        "zh": "modelcontextprotocol.io/examples"
-    },
-    "pulsemcp.com": {
-        "en": "pulsemcp.com",
-        "zh": "pulsemcp.com"
-    },
-    "glama.ai": {
-        "en": "glama.ai",
-        "zh": "glama.ai"
-    },
-    "smithery.ai": {
-        "en": "smithery.ai",
-        "zh": "smithery.ai"
-    },
-    "MCP Configuration": {
-        "en": "MCP Configuration",
-        "zh": "MCP配置"
-    },
-    "No need config": {
-        "en": "No need config",
-        "zh": "无需配置"
-    },
-    "Install And Run": {
-        "en": "Install And Run",
-        "zh": "安装和运行"
-    },
-    "hyper_tools": {
-        "en": "hyper_tools",
-        "zh": ""
-    },
-    "@modelcontextprotocol/server-filesystem": {
-        "en": "@modelcontextprotocol/server-filesystem",
-        "zh": ""
-    },
-    "github": {
-        "en": "github",
-        "zh": ""
-    },
-    "setting": {
-        "en": "setting",
-        "zh": "设置"
-    },
-    "path": {
-        "en": "path",
-        "zh": ""
-    },
-    "Add Environment Variables": {
-        "en": "Add Environment Variables",
-        "zh": "添加环境变量"
-    },
-    "zhCN": {
-        "en": "zhCN",
-        "zh": ""
-    },
-    "enUS": {
-        "en": "enUS",
-        "zh": ""
-    },
-    "type:": {
-        "en": "type:",
-        "zh": ""
-    },
-    "stream": {
-        "en": "stream",
-        "zh": ""
-    },
-    "GitHub": {
-        "en": "GitHub",
-        "zh": ""
-    },
-    "Clone": {
-        "en": "Clone",
-        "zh": "克隆"
-    },
-    "WebDAV Url": {
-        "en": "WebDAV Url",
-        "zh": "WebDAV网址"
-    },
-    "Username": {
-        "en": "Username",
-        "zh": "用户名"
-    },
-    "Password": {
-        "en": "Password",
-        "zh": "密码"
-    },
-    "baseDirName": {
-        "en": "baseDirName",
-        "zh": "文件夹名称"
-    },
-    "autoSync": {
-        "en": "autoSync",
-        "zh": "自动同步"
-    },
-    "AutoSync": {
-        "en": "AutoSync",
-        "zh": "自动同步"
-    },
-    "Test": {
-        "en": "Test",
-        "zh": "测试"
-    },
-    "Save": {
-        "en": "Save",
-        "zh": "保存"
-    },
-    "LaunchStartup": {
-        "en": "LaunchStartup",
-        "zh": "开机启动"
-    },
-    "Startup": {
-        "en": "Startup",
-        "zh": "开机启动"
-    },
-    "openDevTools": {
-        "en": "openDevTools",
-        "zh": "打开开发者工具"
-    },
-    "logFile": {
-        "en": "logFile",
-        "zh": "日志文件"
-    },
-    "appDataDir": {
-        "en": "appDataDir",
-        "zh": "应用数据目录"
-    },
-    "QQ群": {
-        "en": "QQ群",
-        "zh": "QQ群"
-    },
-    "大地瓜的Bilibili": {
-        "en": "大地瓜的Bilibili",
-        "zh": "大地瓜的Bilibili"
-    },
-    "Fetch": {
-        "en": "Fetch",
-        "zh": ""
-    },
-    "openUrl": {
-        "en": "openUrl",
-        "zh": "打开网址"
-    },
-    "Some websites require you to log in to view content. Please log in from here.": {
-        "en": "Some websites require you to log in to view content. Please log in from here.",
-        "zh": "某些网站要求您登录才能查看内容。请从这里登录。"
-    },
-    "Open": {
-        "en": "Open",
-        "zh": "打开"
-    },
-    "open": {
-        "en": "open",
-        "zh": "打开"
-    },
-    "If you are using NVM, you might need to customize the PATH environment var.": {
-        "en": "If you are using NVM, you might need to customize the PATH environment var.",
-        "zh": "如果您正在使用 NVM，您可能需要自定义 PATH 环境变量。"
-    },
-    "Configure PATH": {
-        "en": "Configure PATH",
-        "zh": "配置路径"
-    },
-    "PATH": {
-        "en": "PATH",
-        "zh": "路径"
-    },
-    "Here, you would input the result of the command echo $PATH.": {
-        "en": "Here, you would input the result of the command echo $PATH.",
-        "zh": "在这里，你将输入命令 echo $PATH 的结果。"
-    },
-    "Knowledge Base(Exp)": {
-        "en": "Knowledge Base(Exp)",
-        "zh": "知识库（实验）"
-    },
-    "HyperTools": {
-        "en": "HyperTools",
-        "zh": "HyperTools"
-    },
-    "Syncing": {
-        "en": "Syncing",
-        "zh": "同步"
-    },
-    "Create": {
-        "en": "Create",
-        "zh": "创建"
-    },
-    "operation": {
-        "en": "operation",
-        "zh": "操作"
-    },
-    "Select": {
-        "en": "Select",
-        "zh": "选择"
-    },
-    "test search": {
-        "en": "test search",
-        "zh": "测试搜索"
-    },
-    "Search": {
-        "en": "Search",
-        "zh": "搜索"
-    },
-    "Check Progress": {
-        "en": "Check Progress",
-        "zh": "检查进度"
-    },
-    "remove": {
-        "en": "remove",
-        "zh": "移除"
-    },
-    "Remove": {
-        "en": "Remove",
-        "zh": "移除"
-    },
-    "Home": {
-        "en": "Home",
-        "zh": "主页"
-    },
-    "Please enter or select the model": {
-        "en": "Please enter or select the model",
-        "zh": "请填写或选择模型"
-    },
-    "name": {
-        "en": "name",
-        "zh": "名称"
-    },
-    "Progress": {
-        "en": "Progress",
-        "zh": "进展"
-    },
-    "KnowledgeBase": {
-        "en": "KnowledgeBase",
-        "zh": "知识库"
-    },
-    "KnowledgeBaseResource": {
-        "en": "KnowledgeBaseResource",
-        "zh": "知识库资源"
-    },
-    "Please select": {
-        "en": "Please select",
-        "zh": "请选定"
-    },
-    "description": {
-        "en": "description",
-        "zh": "描述"
-    },
-    "Add Agent": {
-        "en": "Add Agent",
-        "zh": "添加Agent"
-    },
-    "Clear Context": {
-        "en": "Clear Context",
-        "zh": "清除上下文"
-    },
-    "Fill Prompt Arguments": {
-        "en": "Fill Prompt Arguments",
-        "zh": "填充提示参数"
-    },
-    "More Setting": {
-        "en": "More Setting",
-        "zh": "更多设置"
-    },
-    "attachedDialogueCount": {
-        "en": "attachedDialogueCount",
-        "zh": "附加对话计数"
-    },
-    "Number of sent Dialogue Message attached per request": {
-        "en": "Number of sent Dialogue Message attached per request",
-        "zh": "每个请求附加的发送对话消息数量"
-    },
-    "Select Request Type": {
-        "en": "Select Request Type",
-        "zh": "选择请求方式"
-    },
-    "allowMCPs": {
-        "en": "allowMCPs",
-        "zh": "允许MCPs"
-    },
-    "Callable": {
-        "en": "Callable",
-        "zh": "可调用的"
-    },
-    "Allowed to be called by 'hyper_agent'": {
-        "en": "Allowed to be called by 'hyper_agent'",
-        "zh": "允许被'hyper_agent'调用"
-    },
-    "Please provide a description for more accurate call.": {
-        "en": "Please provide a description for more accurate call.",
-        "zh": "请提供更准确的通话描述"
-    },
-    "Please configure the parameters": {
-        "en": "Please configure the parameters",
-        "zh": "请配置参数"
-    },
-    "This software is free and OpenSource. Feel free to follow me, and I\n            will bring more utility software.": {
-        "en": "This software is free and OpenSource. Feel free to follow me, and I\n            will bring more utility software.",
-        "zh": "该软件是免费的开源软件。欢迎关注我，我会带来更多实用软件。"
-    },
-    "FilePath": {
-        "en": "FilePath",
-        "zh": "文件路径"
-    },
-    "Sure to delete?": {
-        "en": "Sure to delete?",
-        "zh": "确定要删除吗"
-    },
-    "LLM not support": {
-        "en": "LLM not support tool",
-        "zh": "LLM不支持工具"
-    },
-    "Please verify your network connection. If the network is working, there might be a small bug in the program. Here are the error messages: ": {
-        "en": "Please verify your network connection. If the network is working, there might be a small bug in the program. Here are the error messages: ",
-        "zh": "请检查您的网络连接。如果网络正常,程序中可能存在一个小错误。以下是错误消息:"
-    },
-    "Create Task": {
-        "en": "Create Task",
-        "zh": "新建任务"
-    },
-    "Task": {
-        "en": "Task",
-        "zh": "任务"
-    },
-    "Agent": {
-        "en": "Agent",
-        "zh": ""
-    },
-    "message": {
-        "en": "message",
-        "zh": "消息"
-    },
-    "cronExpression": {
-        "en": "cronExpression",
-        "zh": "cron表达式"
-    },
-    "TaskList": {
-        "en": "TaskList",
-        "zh": "任务列表"
-    },
-    "TaskResults": {
-        "en": "TaskResults",
-        "zh": "任务结果"
-    },
-    "enabled": {
-        "en": "enabled",
-        "zh": "启用"
-    },
-    "Are you sure to delete this task?": {
-        "en": "Are you sure to delete this task?",
-        "zh": "你确定要删除这个任务吗"
-    },
-    "ViewResults": {
-        "en": "ViewResults",
-        "zh": "查看结果"
-    },
-    "dateTime": {
-        "en": "dateTime",
-        "zh": "日期时间"
-    },
-    "Bcak": {
-        "en": "Bcak",
-        "zh": "返回"
-    },
-    "Are you sure to delete this?": {
-        "en": "Are you sure to delete this?",
-        "zh": "你确定要删除这个吗?"
-    },
-    "result": {
-        "en": "result",
-        "zh": "结果"
-    },
-    "View": {
-        "en": "View",
-        "zh": "查看"
-    },
-    "Please enter command message telling the Agent what to do.": {
-        "en": "Please enter command message telling the Agent what to do.",
-        "zh": "请键入命令消息告诉代理该做什么。"
-    },
-    "Please enter cronExpression, e.g., \"0 * * * *\"": {
-        "en": "Please enter cronExpression, e.g., \"0 * * * *\"",
-        "zh": "请输入cron表达式，例如，“0 * * * *”"
-    },
-    "temperature": {
-        "en": "temperature",
-        "zh": "温度"
-    },
-    "What sampling temperature to use, between 0 and 2. Higher values like 0.8 will make the output more random, while lower values like 0.2 will make it more focused and deterministic.": {
-        "en": "What sampling temperature to use, between 0 and 2. Higher values like 0.8 will make the output more random, while lower values like 0.2 will make it more focused and deterministic.",
-        "zh": "使用什么采样温度，介于0和2之间。较高的值如0.8会使输出更随机，而较低的值如0.2会使其更集中和确定。"
-    },
-    "Star": {
-        "en": "Star",
-        "zh": "收藏"
-    },
-    "Delete Success": {
-        "en": "Delete Success",
-        "zh": "删除成功"
-    },
-    "Please input": {
-        "en": "Please input",
-        "zh": "请输入"
-    },
-    "Please input!": {
-        "en": "Please input!",
-        "zh": "请输入！"
-    },
-    "This is an experimental feature, 5min sync once": {
-        "en": "This is an experimental feature, 5min sync once",
-        "zh": "这是一个实验性功能，每5分钟同步一次"
-    },
-    "DevTools": {
-        "en": "DevTools",
-        "zh": "开发者工具"
-    },
-    "mcpCallToolTimeout": {
-        "en": "mcpCallToolTimeout",
-        "zh": "mcp调用工具超时时间(s)"
-    },
-    "HyperChat Recommend List": {
-        "en": "HyperChat Recommend List",
-        "zh": "HyperChat 推荐列表"
-    },
-    "MCP Community": {
-        "en": "MCP Community",
-        "zh": "MCP社区"
-    },
-    "DeleteChatHistory(exclude Star)": {
-        "en": "DeleteChatHistory(exclude Star)",
-        "zh": "删除聊天历史（排除星标）"
-    },
-    "Keep the chat history for the last 30 days": {
-        "en": "Keep the chat history for the last 30 days",
-        "zh": "保留过去30天的聊天记录"
-    },
-    "Keep the chat history for the last 15 days": {
-        "en": "Keep the chat history for the last 15 days",
-        "zh": "保存过去15天的聊天记录"
-    },
-    "callToolType": {
-        "en": "callToolType",
-        "zh": "调用工具方式"
-    },
-    "Do you want to confirm calling the tool?": {
-        "en": "Do you want to confirm calling the tool?",
-        "zh": "您想确认调用该工具吗？"
-    },
-    "Need Confirm": {
-        "en": "Need Confirm",
-        "zh": "需要确认"
-    },
-    "Direct Call": {
-        "en": "Direct Call",
-        "zh": "直接调用"
-    },
-    "All": {
-        "en": "All",
-        "zh": "全部"
-    },
-    "MCP Tool": {
-        "en": "MCP Tool",
-        "zh": "MCP 工具"
-    },
-    "Unloaded MCP": {
-        "en": "Unloaded MCP",
-        "zh": "未加载的MCP"
-    },
-    "WebdavSetting": {
-        "en": "WebdavSetting",
-        "zh": "Webdav设置"
-    },
-    "Language": {
-        "en": "Language",
-        "zh": "语言"
-    },
-    "Sync Success": {
-        "en": "Sync Success",
-        "zh": "同步成功"
-    },
-    "cron format error!": {
-        "en": "cron format error!",
-        "zh": "cron格式错误！"
-    },
-    "type": {
-        "en": "type",
-        "zh": "类型"
-    },
-    "Embedding": {
-        "en": "Embedding",
-        "zh": "嵌入"
-    },
-    "Call-Tool-Step": {
-        "en": "Call-Tool-Step",
-        "zh": "调用工具步数"
-    },
-    "Currently, only PDF is supported, but in the future, DOC, PPT,\n            audio, and image formats will be supported.": {
-        "en": "Currently, only PDF is supported, but in the future, DOC, PPT,\n            audio, and image formats will be supported.",
-        "zh": "当前仅支持PDF，但未来将支持DOC、PPT、  \n            音频和图像格式。"
-    },
-    "Call Tool": {
-        "en": "Call Tool",
-        "zh": "调用工具"
-    },
-    "Allow this Chat": {
-        "en": "Allow this Chat",
-        "zh": "允许此聊天"
-    },
-    "Allow Once": {
-        "en": "Allow Once",
-        "zh": "允许一次"
-    },
-    "Comfirm Call Tool": {
-        "en": "Comfirm Call Tool",
-        "zh": "确认调用工具"
-    },
-    "User Cancel": {
-        "en": "User Cancel",
-        "zh": "用户取消"
-    },
-    "Terminal": {
-        "en": "Terminal",
-        "zh": "终端"
-    },
-    "Session Management": {
-        "en": "Session Management",
-        "zh": "会话管理"
-    },
-    "Hidden": {
-        "en": "Hidden",
-        "zh": "隐藏"
-    },
-    "Copied to clipboard": {
-        "en": "Copied to clipboard",
-        "zh": "复制到剪贴板"
-    },
-    "web asscess password": {
-        "en": "web asscess password",
-        "zh": "网络访问密码"
-    },
-    "Update": {
-        "en": "Update",
-        "zh": "更新"
-    },
-    "Password must contain only letters and numbers": {
-        "en": "Password must contain only letters and numbers",
-        "zh": "密码必须只包含大小字母和数字"
-    },
-    "Update Success, please restart": {
-        "en": "Update Success, please restart",
-        "zh": "更新成功，请重启"
-    },
-    "Set Default": {
-        "en": "Set Default",
-        "zh": "设置为默认"
-    },
-    "OK": {
-        "en": "OK",
-        "zh": "好的"
-    },
-    "Start inputting, You can use @ to call other agents, or quickly enter": {
-        "en": "Start inputting, You can use @ to call other agents, or quickly enter",
-        "zh": "开始输入 您可以使用 @ 调用其他代理 或快速输入"
-    },
-    "Please select allowed MCP": {
-        "en": "Please select allowed MCP",
-        "zh": "请选择允许的MCP"
-    },
-    "Edit Quicks Words": {
-        "en": "Edit Quicks Words",
-        "zh": "编辑快速词汇"
-    },
-    "Add Quick": {
-        "en": "Add Quick",
-        "zh": "添加快速词汇"
-    },
-    "Open Configuration File": {
-        "en": "Open Configuration File",
-        "zh": "打开配置文件"
-    },
-    "Build-in": {
-        "en": "Build-in",
-        "zh": "内置"
-    },
-    "Claude Desktop": {
-        "en": "Claude Desktop",
-        "zh": "Claude 桌面"
-    },
-    "you might need to customize the PATH environment var.": {
-        "en": "you might need to customize the PATH environment var.",
-        "zh": "你可能需要自定义 PATH 环境变量。"
-    },
-    "BuildIn MCP Configuration": {
-        "en": "BuildIn MCP Configuration",
-        "zh": "内置MCP配置"
-    },
-    "Enable": {
-        "en": "Enable",
-        "zh": "启用"
-    },
-    "Setting": {
-        "en": "Setting",
-        "zh": "设置"
-    },
-    "Disable": {
-        "en": "Disable",
-        "zh": "禁用"
-    }
+  "HyperChat": {
+    "en": "HyperChat",
+    "zh": "HyperChat"
+  },
+  "Chat": {
+    "en": "Chat",
+    "zh": "聊天"
+  },
+  "MCP Market": {
+    "en": "MCP Market",
+    "zh": "MCP市场"
+  },
+  "Settings": {
+    "en": "Settings",
+    "zh": "设置"
+  },
+  "💻MCP": {
+    "en": "💻MCP",
+    "zh": "💻MCP"
+  },
+  "🧠LLM": {
+    "en": "🧠LLM",
+    "zh": "🧠LLM"
+  },
+  "English": {
+    "en": "English",
+    "zh": "英语"
+  },
+  "New Chat": {
+    "en": "New Chat",
+    "zh": "新建聊天"
+  },
+  "Chat Logs": {
+    "en": "Chat Logs",
+    "zh": "对话记录"
+  },
+  "Nothing 🤐": {
+    "en": "Nothing 🤐",
+    "zh": "没有了 🤐"
+  },
+  "Welcome": {
+    "en": "Welcome",
+    "zh": "欢迎"
+  },
+  "Start chatting": {
+    "en": "Start chatting",
+    "zh": "开始聊天"
+  },
+  "Add": {
+    "en": "Add",
+    "zh": "添加"
+  },
+  "Edit": {
+    "en": "Edit",
+    "zh": "编辑"
+  },
+  "Please add a LLM model": {
+    "en": "Please add a LLM model",
+    "zh": "请添加一个LLM模型"
+  },
+  "Start inputting": {
+    "en": "Start inputting",
+    "zh": "开始输入"
+  },
+  "mcp.so": {
+    "en": "mcp.so",
+    "zh": "mcp.so"
+  },
+  "pulsemcp": {
+    "en": "pulsemcp",
+    "zh": "pulsemcp"
+  },
+  "glama": {
+    "en": "glama",
+    "zh": "glama"
+  },
+  "smithery": {
+    "en": "smithery",
+    "zh": "smithery"
+  },
+  "Start": {
+    "en": "Start",
+    "zh": "开始"
+  },
+  "Close": {
+    "en": "Close",
+    "zh": "关闭"
+  },
+  "Github": {
+    "en": "Github",
+    "zh": "Github"
+  },
+  "https://github.com/BigSweetPotatoStudio/HyperChat": {
+    "en": "https://github.com/BigSweetPotatoStudio/HyperChat",
+    "zh": "https://github.com/BigSweetPotatoStudio/HyperChat"
+  },
+  "Telegram": {
+    "en": "Telegram",
+    "zh": "Telegram"
+  },
+  "https://t.me/dadigua001": {
+    "en": "https://t.me/dadigua001",
+    "zh": "https://t.me/dadigua001"
+  },
+  "Email": {
+    "en": "Email",
+    "zh": "电子邮件"
+  },
+  "0laopo0@gmail.com": {
+    "en": "0laopo0@gmail.com",
+    "zh": "0laopo0@gmail.com"
+  },
+  "X(Twitter)": {
+    "en": "X(Twitter)",
+    "zh": "X(推特)"
+  },
+  "Twitter": {
+    "en": "Twitter",
+    "zh": "推特"
+  },
+  "Bilibili": {
+    "en": "Bilibili",
+    "zh": "哔哩哔哩"
+  },
+  "client": {
+    "en": "client",
+    "zh": "客户端"
+  },
+  "status": {
+    "en": "status",
+    "zh": "状态"
+  },
+  "Operation": {
+    "en": "Operation",
+    "zh": "操作"
+  },
+  "fetch": {
+    "en": "fetch",
+    "zh": ""
+  },
+  "connected": {
+    "en": "connected",
+    "zh": ""
+  },
+  "Config": {
+    "en": "Config",
+    "zh": "配置"
+  },
+  "reload": {
+    "en": "reload",
+    "zh": "重载"
+  },
+  "disable": {
+    "en": "disable",
+    "zh": "禁用"
+  },
+  "disabled": {
+    "en": "disabled",
+    "zh": ""
+  },
+  "start": {
+    "en": "start",
+    "zh": "启动"
+  },
+  "enable": {
+    "en": "enable",
+    "zh": "启用"
+  },
+  "Add MCP": {
+    "en": "Add MCP",
+    "zh": "添加 MCP"
+  },
+  "Open the configuration file": {
+    "en": "Open the configuration file",
+    "zh": "打开配置文件"
+  },
+  "Cancel": {
+    "en": "Cancel",
+    "zh": "取消"
+  },
+  "My LLM Models": {
+    "en": "My LLM Models",
+    "zh": "我的大模型(LLM)"
+  },
+  "Name": {
+    "en": "Name",
+    "zh": "名称"
+  },
+  "LLM": {
+    "en": "LLM",
+    "zh": "大模型"
+  },
+  "Delete": {
+    "en": "Delete",
+    "zh": "删除"
+  },
+  "Top": {
+    "en": "Top",
+    "zh": "置顶"
+  },
+  "Configure MCP": {
+    "en": "Configure MCP",
+    "zh": "配置MCP"
+  },
+  "_type": {
+    "en": "_type",
+    "zh": "_type"
+  },
+  "Please enter the name": {
+    "en": "Please enter the name",
+    "zh": "请输入名称"
+  },
+  "command": {
+    "en": "command",
+    "zh": ""
+  },
+  "Please enter command": {
+    "en": "Please enter command",
+    "zh": "请输入命令"
+  },
+  "args": {
+    "en": "args",
+    "zh": ""
+  },
+  "Please enter args": {
+    "en": "Please enter args",
+    "zh": "请输⼊参数"
+  },
+  "env": {
+    "en": "env",
+    "zh": ""
+  },
+  "Please enter": {
+    "en": "Please enter",
+    "zh": "请输入"
+  },
+  "Configure LLM": {
+    "en": "Configure LLM",
+    "zh": "配置大模型(LLM)"
+  },
+  "key": {
+    "en": "key",
+    "zh": "key"
+  },
+  "baseURL": {
+    "en": "baseURL",
+    "zh": ""
+  },
+  "Please enter baseURL": {
+    "en": "Please enter baseURL",
+    "zh": "请输入baseURL"
+  },
+  "apiKey": {
+    "en": "apiKey",
+    "zh": "apiKey"
+  },
+  "Please enter apiKey": {
+    "en": "Please enter apiKey",
+    "zh": "请输入apiKey"
+  },
+  "model": {
+    "en": "model",
+    "zh": "模型"
+  },
+  "Please enter the model": {
+    "en": "Please enter the model",
+    "zh": "请输入型号"
+  },
+  "Alias": {
+    "en": "Alias",
+    "zh": "别名"
+  },
+  "The default is the model name": {
+    "en": "The default is the model name",
+    "zh": "默认是模型名称"
+  },
+  "Choose a prompt from below, and let's start chatting": {
+    "en": "Choose a prompt from below, and let's start chatting",
+    "zh": "从下面选择一个提示，让我们开始聊天"
+  },
+  "Reset": {
+    "en": "Reset",
+    "zh": "重置"
+  },
+  "MCP and Tools": {
+    "en": "MCP and Tools",
+    "zh": "MCP和工具"
+  },
+  "Resources": {
+    "en": "Resources",
+    "zh": "资源"
+  },
+  "Prompts": {
+    "en": "Prompts",
+    "zh": "提示"
+  },
+  "Select LLM": {
+    "en": "Select LLM",
+    "zh": "选择大模型"
+  },
+  "Token Usage": {
+    "en": "Token Usage",
+    "zh": "Token使用"
+  },
+  "Markdown": {
+    "en": "Markdown",
+    "zh": "Markdown"
+  },
+  "Text": {
+    "en": "Text",
+    "zh": "文本"
+  },
+  "Tool": {
+    "en": "Tool",
+    "zh": "工具"
+  },
+  "tools": {
+    "en": "tools",
+    "zh": "工具"
+  },
+  "Resources: ": {
+    "en": "Resources: ",
+    "zh": "资源："
+  },
+  "Clear": {
+    "en": "Clear",
+    "zh": "清楚"
+  },
+  "✅Completed": {
+    "en": "✅Completed",
+    "zh": "✅完成"
+  },
+  "Tool Call Result": {
+    "en": "Tool Call Result",
+    "zh": "工具调用结果"
+  },
+  "Tool Call": {
+    "en": "Tool Call",
+    "zh": "工具调用"
+  },
+  "Tool Name: ": {
+    "en": "Tool Name: ",
+    "zh": "工具名称: "
+  },
+  "Tool Arguments: ": {
+    "en": "Tool Arguments: ",
+    "zh": "工具参数: "
+  },
+  "HpyerTools": {
+    "en": "HpyerTools",
+    "zh": "Hpyer工具"
+  },
+  "search": {
+    "en": "search",
+    "zh": ""
+  },
+  "emoji": {
+    "en": "emoji",
+    "zh": ""
+  },
+  "Prompt": {
+    "en": "Prompt",
+    "zh": "提示"
+  },
+  "System Prompt": {
+    "en": "System Prompt",
+    "zh": "系统提示词"
+  },
+  "Please enter System Prompt": {
+    "en": "Please enter System Prompt",
+    "zh": "请输入系统提示词"
+  },
+  "Please select default LLM": {
+    "en": "Please select default LLM",
+    "zh": "请选定默认大模型(LLM)"
+  },
+  "MCP": {
+    "en": "MCP",
+    "zh": "MCP"
+  },
+  "Not Installed": {
+    "en": "Not Installed",
+    "zh": "未安装"
+  },
+  "goto nodejs": {
+    "en": "goto nodejs",
+    "zh": ""
+  },
+  "goto uv": {
+    "en": "goto uv",
+    "zh": ""
+  },
+  "Try Repair environment": {
+    "en": "Try Repair environment",
+    "zh": "修复环境"
+  },
+  "More MCP Market": {
+    "en": "More MCP Market",
+    "zh": "更多MCP市场"
+  },
+  "token:": {
+    "en": "token:",
+    "zh": ""
+  },
+  "built-in": {
+    "en": "built-in",
+    "zh": "内置"
+  },
+  "config": {
+    "en": "config",
+    "zh": "配置"
+  },
+  "delete": {
+    "en": "delete",
+    "zh": "删除"
+  },
+  "note": {
+    "en": "note",
+    "zh": "笔记"
+  },
+  "Confirm": {
+    "en": "Confirm",
+    "zh": "确认"
+  },
+  "Confirm Delete?": {
+    "en": "Confirm Delete?",
+    "zh": "确认删除？"
+  },
+  "MCP Extensions": {
+    "en": "MCP Extensions",
+    "zh": "MCP扩展"
+  },
+  " Github": {
+    "en": " Github",
+    "zh": " Github"
+  },
+  "Sync": {
+    "en": "Sync",
+    "zh": "同步"
+  },
+  "npx & nodejs: ": {
+    "en": "npx & nodejs: ",
+    "zh": ""
+  },
+  "Please run the command.": {
+    "en": "Please run the command.",
+    "zh": "请运行命令。"
+  },
+  "winget install OpenJS.NodeJS.LTS": {
+    "en": "winget install OpenJS.NodeJS.LTS",
+    "zh": ""
+  },
+  "uvx & python:": {
+    "en": "uvx & python:",
+    "zh": ""
+  },
+  "winget install --id=astral-sh.uv -e": {
+    "en": "winget install --id=astral-sh.uv -e",
+    "zh": ""
+  },
+  "Officially Maintained List": {
+    "en": "Officially Maintained List",
+    "zh": "官方维护列表"
+  },
+  "third party": {
+    "en": "third party",
+    "zh": "第三方"
+  },
+  "modelcontextprotocol.io/examples": {
+    "en": "modelcontextprotocol.io/examples",
+    "zh": "modelcontextprotocol.io/examples"
+  },
+  "pulsemcp.com": {
+    "en": "pulsemcp.com",
+    "zh": "pulsemcp.com"
+  },
+  "glama.ai": {
+    "en": "glama.ai",
+    "zh": "glama.ai"
+  },
+  "smithery.ai": {
+    "en": "smithery.ai",
+    "zh": "smithery.ai"
+  },
+  "MCP Configuration": {
+    "en": "MCP Configuration",
+    "zh": "MCP配置"
+  },
+  "No need config": {
+    "en": "No need config",
+    "zh": "无需配置"
+  },
+  "Install And Run": {
+    "en": "Install And Run",
+    "zh": "安装和运行"
+  },
+  "hyper_tools": {
+    "en": "hyper_tools",
+    "zh": ""
+  },
+  "@modelcontextprotocol/server-filesystem": {
+    "en": "@modelcontextprotocol/server-filesystem",
+    "zh": ""
+  },
+  "github": {
+    "en": "github",
+    "zh": ""
+  },
+  "setting": {
+    "en": "setting",
+    "zh": "设置"
+  },
+  "path": {
+    "en": "path",
+    "zh": ""
+  },
+  "Add Environment Variables": {
+    "en": "Add Environment Variables",
+    "zh": "添加环境变量"
+  },
+  "zhCN": {
+    "en": "zhCN",
+    "zh": ""
+  },
+  "enUS": {
+    "en": "enUS",
+    "zh": ""
+  },
+  "type:": {
+    "en": "type:",
+    "zh": ""
+  },
+  "stream": {
+    "en": "stream",
+    "zh": ""
+  },
+  "GitHub": {
+    "en": "GitHub",
+    "zh": ""
+  },
+  "Clone": {
+    "en": "Clone",
+    "zh": "克隆"
+  },
+  "WebDAV Url": {
+    "en": "WebDAV Url",
+    "zh": "WebDAV网址"
+  },
+  "Username": {
+    "en": "Username",
+    "zh": "用户名"
+  },
+  "Password": {
+    "en": "Password",
+    "zh": "密码"
+  },
+  "baseDirName": {
+    "en": "baseDirName",
+    "zh": "文件夹名称"
+  },
+  "autoSync": {
+    "en": "autoSync",
+    "zh": "自动同步"
+  },
+  "AutoSync": {
+    "en": "AutoSync",
+    "zh": "自动同步"
+  },
+  "Test": {
+    "en": "Test",
+    "zh": "测试"
+  },
+  "Save": {
+    "en": "Save",
+    "zh": "保存"
+  },
+  "LaunchStartup": {
+    "en": "LaunchStartup",
+    "zh": "开机启动"
+  },
+  "Startup": {
+    "en": "Startup",
+    "zh": "开机启动"
+  },
+  "openDevTools": {
+    "en": "openDevTools",
+    "zh": "打开开发者工具"
+  },
+  "logFile": {
+    "en": "logFile",
+    "zh": "日志文件"
+  },
+  "appDataDir": {
+    "en": "appDataDir",
+    "zh": "应用数据目录"
+  },
+  "QQ群": {
+    "en": "QQ群",
+    "zh": "QQ群"
+  },
+  "大地瓜的Bilibili": {
+    "en": "大地瓜的Bilibili",
+    "zh": "大地瓜的Bilibili"
+  },
+  "Fetch": {
+    "en": "Fetch",
+    "zh": ""
+  },
+  "openUrl": {
+    "en": "openUrl",
+    "zh": "打开网址"
+  },
+  "Some websites require you to log in to view content. Please log in from here.": {
+    "en": "Some websites require you to log in to view content. Please log in from here.",
+    "zh": "某些网站要求您登录才能查看内容。请从这里登录。"
+  },
+  "Open": {
+    "en": "Open",
+    "zh": "打开"
+  },
+  "open": {
+    "en": "open",
+    "zh": "打开"
+  },
+  "If you are using NVM, you might need to customize the PATH environment var.": {
+    "en": "If you are using NVM, you might need to customize the PATH environment var.",
+    "zh": "如果您正在使用 NVM，您可能需要自定义 PATH 环境变量。"
+  },
+  "Configure PATH": {
+    "en": "Configure PATH",
+    "zh": "配置路径"
+  },
+  "PATH": {
+    "en": "PATH",
+    "zh": "路径"
+  },
+  "Here, you would input the result of the command echo $PATH.": {
+    "en": "Here, you would input the result of the command echo $PATH.",
+    "zh": "在这里，你将输入命令 echo $PATH 的结果。"
+  },
+  "Knowledge Base(Exp)": {
+    "en": "Knowledge Base(Exp)",
+    "zh": "知识库（实验）"
+  },
+  "HyperTools": {
+    "en": "HyperTools",
+    "zh": "HyperTools"
+  },
+  "Syncing": {
+    "en": "Syncing",
+    "zh": "同步"
+  },
+  "Create": {
+    "en": "Create",
+    "zh": "创建"
+  },
+  "operation": {
+    "en": "operation",
+    "zh": "操作"
+  },
+  "Select": {
+    "en": "Select",
+    "zh": "选择"
+  },
+  "test search": {
+    "en": "test search",
+    "zh": "测试搜索"
+  },
+  "Search": {
+    "en": "Search",
+    "zh": "搜索"
+  },
+  "Check Progress": {
+    "en": "Check Progress",
+    "zh": "检查进度"
+  },
+  "remove": {
+    "en": "remove",
+    "zh": "移除"
+  },
+  "Remove": {
+    "en": "Remove",
+    "zh": "移除"
+  },
+  "Home": {
+    "en": "Home",
+    "zh": "主页"
+  },
+  "Please enter or select the model": {
+    "en": "Please enter or select the model",
+    "zh": "请填写或选择模型"
+  },
+  "name": {
+    "en": "name",
+    "zh": "名称"
+  },
+  "Progress": {
+    "en": "Progress",
+    "zh": "进展"
+  },
+  "KnowledgeBase": {
+    "en": "KnowledgeBase",
+    "zh": "知识库"
+  },
+  "KnowledgeBaseResource": {
+    "en": "KnowledgeBaseResource",
+    "zh": "知识库资源"
+  },
+  "Please select": {
+    "en": "Please select",
+    "zh": "请选定"
+  },
+  "description": {
+    "en": "description",
+    "zh": "描述"
+  },
+  "Add Agent": {
+    "en": "Add Agent",
+    "zh": "添加Agent"
+  },
+  "Clear Context": {
+    "en": "Clear Context",
+    "zh": "清除上下文"
+  },
+  "Fill Prompt Arguments": {
+    "en": "Fill Prompt Arguments",
+    "zh": "填充提示参数"
+  },
+  "More Setting": {
+    "en": "More Setting",
+    "zh": "更多设置"
+  },
+  "attachedDialogueCount": {
+    "en": "attachedDialogueCount",
+    "zh": "附加对话计数"
+  },
+  "Number of sent Dialogue Message attached per request": {
+    "en": "Number of sent Dialogue Message attached per request",
+    "zh": "每个请求附加的发送对话消息数量"
+  },
+  "Select Request Type": {
+    "en": "Select Request Type",
+    "zh": "选择请求方式"
+  },
+  "allowMCPs": {
+    "en": "allowMCPs",
+    "zh": "允许MCPs"
+  },
+  "Callable": {
+    "en": "Callable",
+    "zh": "可调用的"
+  },
+  "Allowed to be called by 'hyper_agent'": {
+    "en": "Allowed to be called by 'hyper_agent'",
+    "zh": "允许被'hyper_agent'调用"
+  },
+  "Please provide a description for more accurate call.": {
+    "en": "Please provide a description for more accurate call.",
+    "zh": "请提供更准确的通话描述"
+  },
+  "Please configure the parameters": {
+    "en": "Please configure the parameters",
+    "zh": "请配置参数"
+  },
+  "This software is free and OpenSource. Feel free to follow me, and I\n            will bring more utility software.": {
+    "en": "This software is free and OpenSource. Feel free to follow me, and I\n            will bring more utility software.",
+    "zh": "该软件是免费的开源软件。欢迎关注我，我会带来更多实用软件。"
+  },
+  "FilePath": {
+    "en": "FilePath",
+    "zh": "文件路径"
+  },
+  "Sure to delete?": {
+    "en": "Sure to delete?",
+    "zh": "确定要删除吗"
+  },
+  "LLM not support": {
+    "en": "LLM not support tool",
+    "zh": "LLM不支持工具"
+  },
+  "Please verify your network connection. If the network is working, there might be a small bug in the program. Here are the error messages: ": {
+    "en": "Please verify your network connection. If the network is working, there might be a small bug in the program. Here are the error messages: ",
+    "zh": "请检查您的网络连接。如果网络正常,程序中可能存在一个小错误。以下是错误消息:"
+  },
+  "Create Task": {
+    "en": "Create Task",
+    "zh": "新建任务"
+  },
+  "Task": {
+    "en": "Task",
+    "zh": "任务"
+  },
+  "Agent": {
+    "en": "Agent",
+    "zh": ""
+  },
+  "message": {
+    "en": "message",
+    "zh": "消息"
+  },
+  "cronExpression": {
+    "en": "cronExpression",
+    "zh": "cron表达式"
+  },
+  "TaskList": {
+    "en": "TaskList",
+    "zh": "任务列表"
+  },
+  "TaskResults": {
+    "en": "TaskResults",
+    "zh": "任务结果"
+  },
+  "enabled": {
+    "en": "enabled",
+    "zh": "启用"
+  },
+  "Are you sure to delete this task?": {
+    "en": "Are you sure to delete this task?",
+    "zh": "你确定要删除这个任务吗"
+  },
+  "ViewResults": {
+    "en": "ViewResults",
+    "zh": "查看结果"
+  },
+  "dateTime": {
+    "en": "dateTime",
+    "zh": "日期时间"
+  },
+  "Bcak": {
+    "en": "Bcak",
+    "zh": "返回"
+  },
+  "Are you sure to delete this?": {
+    "en": "Are you sure to delete this?",
+    "zh": "你确定要删除这个吗?"
+  },
+  "result": {
+    "en": "result",
+    "zh": "结果"
+  },
+  "View": {
+    "en": "View",
+    "zh": "查看"
+  },
+  "Please enter command message telling the Agent what to do.": {
+    "en": "Please enter command message telling the Agent what to do.",
+    "zh": "请键入命令消息告诉代理该做什么。"
+  },
+  "Please enter cronExpression, e.g., \"0 * * * *\"": {
+    "en": "Please enter cronExpression, e.g., \"0 * * * *\"",
+    "zh": "请输入cron表达式，例如，“0 * * * *”"
+  },
+  "temperature": {
+    "en": "temperature",
+    "zh": "温度"
+  },
+  "What sampling temperature to use, between 0 and 2. Higher values like 0.8 will make the output more random, while lower values like 0.2 will make it more focused and deterministic.": {
+    "en": "What sampling temperature to use, between 0 and 2. Higher values like 0.8 will make the output more random, while lower values like 0.2 will make it more focused and deterministic.",
+    "zh": "使用什么采样温度，介于0和2之间。较高的值如0.8会使输出更随机，而较低的值如0.2会使其更集中和确定。"
+  },
+  "Star": {
+    "en": "Star",
+    "zh": "收藏"
+  },
+  "Delete Success": {
+    "en": "Delete Success",
+    "zh": "删除成功"
+  },
+  "Please input": {
+    "en": "Please input",
+    "zh": "请输入"
+  },
+  "Please input!": {
+    "en": "Please input!",
+    "zh": "请输入！"
+  },
+  "This is an experimental feature, 5min sync once": {
+    "en": "This is an experimental feature, 5min sync once",
+    "zh": "这是一个实验性功能，每5分钟同步一次"
+  },
+  "DevTools": {
+    "en": "DevTools",
+    "zh": "开发者工具"
+  },
+  "mcpCallToolTimeout": {
+    "en": "mcpCallToolTimeout",
+    "zh": "mcp调用工具超时时间(s)"
+  },
+  "HyperChat Recommend List": {
+    "en": "HyperChat Recommend List",
+    "zh": "HyperChat 推荐列表"
+  },
+  "MCP Community": {
+    "en": "MCP Community",
+    "zh": "MCP社区"
+  },
+  "DeleteChatHistory(exclude Star)": {
+    "en": "DeleteChatHistory(exclude Star)",
+    "zh": "删除聊天历史（排除星标）"
+  },
+  "Keep the chat history for the last 30 days": {
+    "en": "Keep the chat history for the last 30 days",
+    "zh": "保留过去30天的聊天记录"
+  },
+  "Keep the chat history for the last 15 days": {
+    "en": "Keep the chat history for the last 15 days",
+    "zh": "保存过去15天的聊天记录"
+  },
+  "callToolType": {
+    "en": "callToolType",
+    "zh": "调用工具方式"
+  },
+  "Do you want to confirm calling the tool?": {
+    "en": "Do you want to confirm calling the tool?",
+    "zh": "您想确认调用该工具吗？"
+  },
+  "Need Confirm": {
+    "en": "Need Confirm",
+    "zh": "需要确认"
+  },
+  "Direct Call": {
+    "en": "Direct Call",
+    "zh": "直接调用"
+  },
+  "All": {
+    "en": "All",
+    "zh": "全部"
+  },
+  "MCP Tool": {
+    "en": "MCP Tool",
+    "zh": "MCP 工具"
+  },
+  "Unloaded MCP": {
+    "en": "Unloaded MCP",
+    "zh": "未加载的MCP"
+  },
+  "WebdavSetting": {
+    "en": "WebdavSetting",
+    "zh": "Webdav设置"
+  },
+  "Language": {
+    "en": "Language",
+    "zh": "语言"
+  },
+  "Sync Success": {
+    "en": "Sync Success",
+    "zh": "同步成功"
+  },
+  "cron format error!": {
+    "en": "cron format error!",
+    "zh": "cron格式错误！"
+  },
+  "type": {
+    "en": "type",
+    "zh": "类型"
+  },
+  "Embedding": {
+    "en": "Embedding",
+    "zh": "嵌入"
+  },
+  "Call-Tool-Step": {
+    "en": "Call-Tool-Step",
+    "zh": "调用工具步数"
+  },
+  "Currently, only PDF is supported, but in the future, DOC, PPT,\n            audio, and image formats will be supported.": {
+    "en": "Currently, only PDF is supported, but in the future, DOC, PPT,\n            audio, and image formats will be supported.",
+    "zh": "当前仅支持PDF，但未来将支持DOC、PPT、  \n            音频和图像格式。"
+  },
+  "Call Tool": {
+    "en": "Call Tool",
+    "zh": "调用工具"
+  },
+  "Allow this Chat": {
+    "en": "Allow this Chat",
+    "zh": "允许此聊天"
+  },
+  "Allow Once": {
+    "en": "Allow Once",
+    "zh": "允许一次"
+  },
+  "Comfirm Call Tool": {
+    "en": "Comfirm Call Tool",
+    "zh": "确认调用工具"
+  },
+  "User Cancel": {
+    "en": "User Cancel",
+    "zh": "用户取消"
+  },
+  "Terminal": {
+    "en": "Terminal",
+    "zh": "终端"
+  },
+  "Session Management": {
+    "en": "Session Management",
+    "zh": "会话管理"
+  },
+  "Hidden": {
+    "en": "Hidden",
+    "zh": "隐藏"
+  },
+  "Copied to clipboard": {
+    "en": "Copied to clipboard",
+    "zh": "复制到剪贴板"
+  },
+  "web asscess password": {
+    "en": "web asscess password",
+    "zh": "网络访问密码"
+  },
+  "Update": {
+    "en": "Update",
+    "zh": "更新"
+  },
+  "Password must contain only letters and numbers": {
+    "en": "Password must contain only letters and numbers",
+    "zh": "密码必须只包含大小字母和数字"
+  },
+  "Update Success, please restart": {
+    "en": "Update Success, please restart",
+    "zh": "更新成功，请重启"
+  },
+  "Set Default": {
+    "en": "Set Default",
+    "zh": "设置为默认"
+  },
+  "OK": {
+    "en": "OK",
+    "zh": "好的"
+  },
+  "Start inputting, You can use @ to call other agents, or quickly enter": {
+    "en": "Start inputting, You can use @ to call other agents, or quickly enter",
+    "zh": "开始输入 您可以使用 @ 调用其他代理 或快速输入"
+  },
+  "Please select allowed MCP": {
+    "en": "Please select allowed MCP",
+    "zh": "请选择允许的MCP"
+  },
+  "Edit Quicks Words": {
+    "en": "Edit Quicks Words",
+    "zh": "编辑快速词汇"
+  },
+  "Add Quick": {
+    "en": "Add Quick",
+    "zh": "添加快速词汇"
+  },
+  "Open Configuration File": {
+    "en": "Open Configuration File",
+    "zh": "打开配置文件"
+  },
+  "Build-in": {
+    "en": "Build-in",
+    "zh": "内置"
+  },
+  "Claude Desktop": {
+    "en": "Claude Desktop",
+    "zh": "Claude 桌面"
+  },
+  "you might need to customize the PATH environment var.": {
+    "en": "you might need to customize the PATH environment var.",
+    "zh": "你可能需要自定义 PATH 环境变量。"
+  },
+  "BuildIn MCP Configuration": {
+    "en": "BuildIn MCP Configuration",
+    "zh": "内置MCP配置"
+  },
+  "Enable": {
+    "en": "Enable",
+    "zh": "启用"
+  },
+  "Setting": {
+    "en": "Setting",
+    "zh": "设置"
+  },
+  "Disable": {
+    "en": "Disable",
+    "zh": "禁用"
+  },
+  "Text Chat Test Success": {
+    "en": "Text Chat Test Success",
+    "zh": "文本聊天测试成功"
+  },
+  "Text Chat Test Failed": {
+    "en": "Text Chat Test Failed",
+    "zh": "文本聊天测试失败"
+  },
+  "Image Support Test Success": {
+    "en": "Image Support Test Success",
+    "zh": "图像支持测试成功"
+  },
+  "Tool Call Test Success": {
+    "en": "Tool Call Test Success",
+    "zh": "工具调用测试成功"
+  },
+  "Image Support Test Failed": {
+    "en": "Image Support Test Failed",
+    "zh": "图像支持测试失败"
+  },
+  "Tool Call Test Failed": {
+    "en": "Tool Call Test Failed",
+    "zh": "工具调用测试失败"
+  }
 }

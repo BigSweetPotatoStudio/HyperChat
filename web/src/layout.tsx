@@ -97,6 +97,7 @@ import {
   exportGeneratedCSS as collectCSS,
   isEnabled as isDarkReaderEnabled,
 } from "darkreader";
+import { Pre } from "./components/pre";
 
 type ProviderType = {
   label: string;
@@ -688,7 +689,7 @@ export function Layout() {
                 try {
                   setLoadingCheckLLM(true);
                   // message.info("Testing the configuration, please wait...");
-
+                  let save = true;
                   if (values.type == "embedding") {
                     let list = KNOWLEDGE_BASE.get().dbList.filter(
                       (x) => x.model == values.key,
@@ -733,97 +734,105 @@ export function Layout() {
                     ]);
 
                     let o = new OpenAiChannel(values, []);
-                    let testBaseRes = await o.testBase();
+                    let testBaseRes = await o.testBase().then(e => {
+                      setTimelineData((x) => {
+                        x.push({
+                          color: "green",
+                          children: t`Text Chat Test Success`,
+                        });
+                        return x.slice();
+                      });
+                      return true
+                    }).catch(e => {
+                      setTimelineData((x) => {
+                        x.push({
+                          color: "red",
+                          children: <Pre>{t`Text Chat Test Failed`}
+                            <div className="text-red-500">{e.message}</div>
+                          </Pre>,
+                        });
+                        return x.slice();
+                      });
+                      return false
+                    })
                     if (testBaseRes) {
-                      setTimelineData((x) => {
-                        x.push({
-                          color: "green",
-                          children: "Text Chat Test Success",
+                      await o.testImage().then(() => {
+                        setTimelineData((x) => {
+                          x.push({
+                            color: "green",
+                            children: t`Image Support Test Success`,
+                          });
+                          return x.slice();
                         });
-                        return x.slice();
-                      });
-                    } else {
-                      setTimelineData((x) => {
-                        x.push({
-                          color: "red",
-                          children: "Text Chat Test Failed",
-                        });
-                        return x.slice();
-                      });
-                    }
-                    if (!testBaseRes) {
-                      message.error(
-                        "Please check if the configuration is incorrect or if the network is available.",
-                      );
-                      setLoadingCheckLLM(false);
-                      setPending(false);
-                      return;
-                    }
-                    let testImageRes = await o.testImage();
-                    if (testImageRes) {
-                      setTimelineData((x) => {
-                        x.push({
-                          color: "green",
-                          children: "Image Support Test Success",
-                        });
-                        return x.slice();
-                      });
-                      values.supportImage = true;
-                    } else {
-                      setTimelineData((x) => {
-                        x.push({
-                          color: "red",
-                          children: "Image Support Test Failed",
-                        });
-                        return x.slice();
-                      });
-                    }
-                    values.supportImage = testImageRes;
-                    let testToolRes = await o.testTool().catch(async (e) => {
-                      await sleep(1000);
-                      return await o.testTool();
-                    });
-                    if (testToolRes) {
-                      setTimelineData((x) => {
-                        x.push({
-                          color: "green",
-                          children: "Tool Call Test Success",
-                        });
-                        return x.slice();
-                      });
-                    } else {
-                      setTimelineData((x) => {
-                        x.push({
-                          color: "red",
-                          children: "Tool Call Test Failed",
-                        });
-                        return x.slice();
-                      });
-                    }
-                    values.supportTool = testToolRes;
-                    setPending(false);
-                  }
-                  if (values.key) {
-                    let index = GPT_MODELS.get().data.findIndex(
-                      (e) => e.key == values.key,
-                    );
-                    if (index == -1) {
-                      return;
-                    }
-                    values.name = values.name || values.model;
-                    GPT_MODELS.get().data[index] = values;
-                    await GPT_MODELS.save();
-                  } else {
-                    values.name = values.name || values.model;
-                    values.key = v4();
-                    GPT_MODELS.get().data.push(values);
-                    await GPT_MODELS.save();
-                  }
-                  refresh();
-                  setIsAddModelConfigOpen(false);
+                        values.supportImage = true;
+                      }).catch(e => {
 
-                  setLoadingCheckLLM(false);
-                  message.success("save success!");
+                        setTimelineData((x) => {
+                          x.push({
+                            color: "red",
+                            children: <Pre>{t`Image Support Test Failed`}
+                              <div className="text-red-500">{e.message}</div>
+                            </Pre>,
+                          });
+                          return x.slice();
+                        });
+                        values.supportImage = false;
+                      })
+
+
+                      await o.testTool().then(() => {
+                        setTimelineData((x) => {
+                          x.push({
+                            color: "green",
+                            children: t`Tool Call Test Success`,
+                          });
+                          return x.slice();
+                        });
+                        values.supportTool = true;
+                      }).catch(e => {
+                        setTimelineData((x) => {
+                          x.push({
+                            color: "red",
+                            children: <Pre>{t`Tool Call Test Failed`}
+                              <div className="text-red-500">{e.message}</div>
+                            </Pre>,
+                          });
+                          return x.slice();
+                        });
+                        values.supportTool = false;
+                      })
+                      setPending(false);
+                      setLoadingCheckLLM(false);
+
+                    } else {
+                      save = false;
+                      setPending(false);
+                      setLoadingCheckLLM(false);
+                    }
+                  }
+                  if (save) {
+                    if (values.key) {
+                      let index = GPT_MODELS.get().data.findIndex(
+                        (e) => e.key == values.key,
+                      );
+                      if (index == -1) {
+                        return;
+                      }
+                      values.name = values.name || values.model;
+                      GPT_MODELS.get().data[index] = values;
+                      await GPT_MODELS.save();
+                    } else {
+                      values.name = values.name || values.model;
+                      values.key = v4();
+                      GPT_MODELS.get().data.push(values);
+                      await GPT_MODELS.save();
+                    }
+                    refresh();
+                    setIsAddModelConfigOpen(false);
+
+                    setLoadingCheckLLM(false);
+                    message.success("save success!");
+                  }
                 } catch {
                   setLoadingCheckLLM(false);
                   message.error("save failed!");

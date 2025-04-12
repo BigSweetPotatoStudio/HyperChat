@@ -12,7 +12,8 @@ import crypto from "crypto";
 import { createClient, zx } from "../es6.mjs";
 import { getMessageService } from "../message_service.mjs";
 import { Chat } from "openai/resources/index.mjs";
-const { fs } = zx;
+
+const { fs, retry } = zx;
 
 const isDev = false;
 
@@ -81,16 +82,7 @@ class WebDAVSync {
       return;
     }
     this._isSnyc = true;
-    let setting = electronData.initSync({ force: true });
-    this.webdavSetting = setting.webdav;
-    if (setting.webdav.url == "" || setting.webdav.username == "" || setting.webdav.password == "") {
-      this._isSnyc = false;
-      return;
-    }
-    this.client = createClient(setting.webdav.url, {
-      username: setting.webdav.username,
-      password: setting.webdav.password,
-    });
+
     console.log("---syncStart");
     let localPath: string = appDataDir;
     let remotePath: string = this.webdavSetting.baseDirName;
@@ -102,8 +94,22 @@ class WebDAVSync {
     });
 
     try {
-      await this._sync2(localPath, remotePath, DataList.filter(x => x.options.sync).map(x => x.KEY));
-      await this._sync2(localPath + "/messages", remotePath + "/messages", fs.readdirSync(path.join(localPath, "messages")).filter(x => x.endsWith(".json")));
+      let setting = electronData.initSync({ force: true });
+      this.webdavSetting = setting.webdav;
+      if (setting.webdav.url == "" || setting.webdav.username == "" || setting.webdav.password == "") {
+        throw new Error("please save your setting!");
+      }
+      this.client = createClient(setting.webdav.url, {
+        username: setting.webdav.username,
+        password: setting.webdav.password,
+      });
+
+      await retry(3, 1000, async () => {
+        let taks = this._sync2(localPath, remotePath, DataList.filter(x => x.options.sync).map(x => x.KEY));
+        let taks2 = await this._sync2(localPath + "/messages", remotePath + "/messages", fs.readdirSync(path.join(localPath, "messages")).filter(x => x.endsWith(".json")));
+        await Promise.all([taks, taks2]);
+      })
+
       getMessageService().sendAllToRenderer({
         type: "sync",
         data: {

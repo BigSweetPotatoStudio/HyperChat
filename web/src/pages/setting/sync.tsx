@@ -55,6 +55,7 @@ import { useForm } from "antd/es/form/Form";
 import { e } from "../../common/service";
 import { currLang, t } from "../../i18n";
 import { HeaderContext } from "../../common/context";
+import { Pre } from "../../components/pre";
 
 export function WebdavSetting() {
   const [num, setNum] = useState(0);
@@ -79,12 +80,29 @@ export function WebdavSetting() {
   const [webdavForm] = useForm();
   const [syncLoading, setSyncLoading] = useState(false);
   const webDavOnFinish = async (values, type?) => {
-    if (type === "test") {
+    if (type === "save") {
+      setSyncLoading(true);
       try {
         await call("testWebDav", [values]);
-        message.success("Test success");
+        
+        electronData.get().webdav = values;
+        await electronData.save();
+
+        await call("webDavSync", []);
+        message.success(t`Sync Success`);
+        setCurrResult({
+          data: null,
+          error: null,
+        });
+        setSyncLoading(false);
+        refresh();
       } catch (error) {
-        message.error("Test failed");
+        message.error("Sync failed");
+        setCurrResult({
+          data: null,
+          error: error,
+        });
+        setSyncLoading(false);
       }
     } else {
       await call("testWebDav", [values]);
@@ -95,7 +113,10 @@ export function WebdavSetting() {
       message.success("Save success");
     }
   };
-
+  const [currResult, setCurrResult] = useState({
+    data: null as any,
+    error: null as any,
+  });
   return (
     <div>
       <div className="relative flex flex-wrap">
@@ -163,16 +184,28 @@ export function WebdavSetting() {
                 </Button>
                 <Button
                   onClick={async () => {
-                    setSyncLoading(true);
-                    try {
-                      await call("webDavSync", []);
-                      message.success(t`Sync Success`);
-                      setSyncLoading(false);
-                      refresh();
-                    } catch (error) {
-                      message.error("Sync failed", error);
-                      setSyncLoading(false);
-                    }
+                    webdavForm.validateFields().then((values) => {
+                      webDavOnFinish(values, "save");
+                    });
+                    
+                    // setSyncLoading(true);
+                    // try {
+                    //   await call("webDavSync", []);
+                    //   message.success(t`Sync Success`);
+                    //   setCurrResult({
+                    //     data: null,
+                    //     error: null,
+                    //   });
+                    //   setSyncLoading(false);
+                    //   refresh();
+                    // } catch (error) {
+                    //   message.error("Sync failed");
+                    //   setCurrResult({
+                    //     data: null,
+                    //     error: error,
+                    //   });
+                    //   setSyncLoading(false);
+                    // }
                   }}
                   loading={syncLoading}
                 >
@@ -182,6 +215,18 @@ export function WebdavSetting() {
               </Space>
             </Form.Item>
           </Form>
+          {currResult.data && (
+            <div>
+              <div>Result:</div>
+              <div>{(currResult.data)}</div>
+            </div>
+          )}
+          {currResult.error && (
+            <div className="text-red-500 max-h-64 overflow-auto">
+              <div>Result:</div>
+              <Pre>{currResult.error.toString()}</Pre>
+            </div>
+          )}
         </div>
 
       </div>

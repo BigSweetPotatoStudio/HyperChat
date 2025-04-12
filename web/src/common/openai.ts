@@ -614,107 +614,98 @@ export class OpenAiChannel {
     this.totalTokens = 0;
   }
   async testBase() {
-    try {
-      let messages: Array<any> = [{ role: "user", content: "你是谁?" }];
-      let response = await this.openai.chat.completions.create({
-        model: this.options.model,
-        messages: messages,
-      });
-      console.log(response.choices[0].message.content);
-      return true;
-    } catch (e) {
-      return false;
-    }
+
+    let messages: Array<any> = [{ role: "user", content: "你是谁?" }];
+    let response = await this.openai.chat.completions.create({
+      model: this.options.model,
+      messages: messages,
+    });
+    console.log(response.choices[0].message.content);
+
   }
   async testImage() {
-    try {
-      let messages: Array<any> = [
-        {
-          role: "user",
-          content: [
-            {
-              type: "image_url",
-              image_url: { url: imageBase64 },
-            },
-            {
-              type: "text",
-              text: "这是什么图片",
-            },
-          ],
-        },
-      ];
-      let response = await this.openai.chat.completions.create({
-        model: this.options.model,
-        messages: messages,
-      });
-      console.log(response.choices[0].message.content);
-      return true;
-    } catch (e) {
-      return false;
-    }
+
+    let messages: Array<any> = [
+      {
+        role: "user",
+        content: [
+          {
+            type: "image_url",
+            image_url: { url: imageBase64 },
+          },
+          {
+            type: "text",
+            text: "这是什么图片",
+          },
+        ],
+      },
+    ];
+    let response = await this.openai.chat.completions.create({
+      model: this.options.model,
+      messages: messages,
+    });
+    console.log(response.choices[0].message.content);
+
   }
   async testTool() {
-    try {
-      const tools = [
-        {
-          type: "function" as const,
-          function: {
-            name: "current_time",
-            description: "Get the current local time as a string.",
-            parameters: {
-              type: "object",
-              properties: {},
-            },
+
+    const tools = [
+      {
+        type: "function" as const,
+        function: {
+          name: "current_time",
+          description: "Get the current local time as a string.",
+          parameters: {
+            type: "object",
+            properties: {},
           },
         },
-      ];
-      let messages: Array<any> = [
-        {
-          role: "user",
-          content: "hello, What's the time?",
-        },
-      ];
+      },
+    ];
+    let messages: Array<any> = [
+      {
+        role: "user",
+        content: "hello, What's the time?",
+      },
+    ];
 
-      let response = await this.openai.chat.completions.create({
-        model: this.options.model,
-        messages: messages,
-        tools,
-      });
+    let response = await this.openai.chat.completions.create({
+      model: this.options.model,
+      messages: messages,
+      tools,
+    });
 
-      messages.push(response.choices[0].message);
+    messages.push(response.choices[0].message);
 
-      let function_name =
-        response.choices[0].message.tool_calls![0]["function"]["name"];
-      let function_args =
-        response.choices[0].message.tool_calls![0]["function"]["arguments"];
+    let function_name =
+      response.choices[0].message.tool_calls![0]["function"]["name"];
+    let function_args =
+      response.choices[0].message.tool_calls![0]["function"]["arguments"];
 
-      let runs = {} as any;
+    let runs = {} as any;
 
-      runs[function_name] = () => {
-        return dayjs().format("YYYY-MM-DD HH:mm:ss");
-      };
+    runs[function_name] = () => {
+      return dayjs().format("YYYY-MM-DD HH:mm:ss");
+    };
 
-      console.log(function_name, function_args);
+    console.log(function_name, function_args);
 
-      let res = runs[function_name](function_args);
-      // console.log(res);
+    let res = runs[function_name](function_args);
+    // console.log(res);
 
-      messages.push({
-        role: "tool",
-        tool_call_id: response.choices[0].message.tool_calls![0]["id"],
-        content: res,
-      });
+    messages.push({
+      role: "tool",
+      tool_call_id: response.choices[0].message.tool_calls![0]["id"],
+      content: res,
+    });
 
-      response = await this.openai.chat.completions.create({
-        model: this.options.model,
-        messages: messages,
-        tools,
-      });
-      console.log(response.choices[0].message.content);
-      return true;
-    } catch (e) {
-      return false;
-    }
+    response = await this.openai.chat.completions.create({
+      model: this.options.model,
+      messages: messages,
+      tools,
+    });
+    console.log(response.choices[0].message.content);
+
   }
   messages_format(messages: MyMessage[]) {
     return messages.map((m) => {
