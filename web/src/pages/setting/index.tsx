@@ -43,7 +43,7 @@ import {
   Volume2,
 } from "lucide-react";
 import { AppSetting, ChatHistory, electronData } from "../../../../common/data";
-import { debounce } from "../../common";
+import { debounce, isOnBrowser } from "../../common";
 import {
   CloudSyncOutlined,
   CopyOutlined,
@@ -223,26 +223,26 @@ export function Setting() {
             </Form.Item>
             <Form.Item label={t`DevTools`} name="openDevTools">
               <Space wrap>
-                <Button
+                {!isOnBrowser && <Button
                   onClick={() => {
                     call("openDevTools", []);
                   }}
                 >
-                  openDevTools
-                </Button>
+                  {t`openDevTools`}({window.electron.platform === 'darwin' ? 'Alt+Cmd+I' : 'Ctrl+Shift+I'})
+                </Button>}
                 <Button
                   onClick={() =>
                     call("openExplorer", [electronData.get().logFilePath])
                   }
                 >
-                  logFile
+                  {t`logFile`}
                 </Button>
                 <Button
                   onClick={() =>
                     call("openExplorer", [electronData.get().appDataDir])
                   }
                 >
-                  appDataDir
+                  {t`appDataDir`}
                 </Button>
                 <Button
                   onClick={() =>
