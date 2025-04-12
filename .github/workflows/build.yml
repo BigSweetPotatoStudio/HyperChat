@@ -75,7 +75,16 @@ jobs:
         uses: actions/cache@v3
         id: cache-electron
         with:
-          path: electron/node_modules
+          path: |
+            electron/node_modules
+            ${{ github.workspace }}/node_modules/electron
+            ${{ github.workspace }}/electron/node_modules/electron
+            ~/.cache/electron
+            ~/.cache/electron-builder
+            ~/Library/Caches/electron
+            ~/Library/Caches/electron-builder
+            ~/AppData/Local/electron/Cache
+            ~/AppData/Local/electron-builder/Cache
           key: ${{ runner.os }}-node-electron-${{ hashFiles('electron/package-lock.json') }}
           restore-keys: |
             ${{ runner.os }}-node-electron-
