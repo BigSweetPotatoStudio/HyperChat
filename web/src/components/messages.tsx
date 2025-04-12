@@ -10,6 +10,7 @@ import dayjs from "dayjs";
 import { DownImage, MarkDown, UserContent } from "../pages/chat/component";
 import { Pre } from "./pre";
 import { AssistantToolContent } from "./assistant_tool_content";
+import { Icon } from "./icon";
 
 export const Messages = ({ messages, onSumbit, readOnly }: { messages: MyMessage[]; onSumbit: (messages: MyMessage[]) => void; readOnly?: boolean }) => {
     const [num, setNum] = React.useState(0);
@@ -34,7 +35,7 @@ export const Messages = ({ messages, onSumbit, readOnly }: { messages: MyMessage
                     key: i.toString(),
                     placement: x.role == "user" || x.role == "system" ? "end" as const : "start" as const,
                     avatar: {
-                        icon: x.role == "system" ? "⚙️" : <UserOutlined />,
+                        icon: x.role == "system" ? <Icon name="system-copy" /> : <UserOutlined />,
                         style: {
                             color: "#f56a00",
                             backgroundColor: "#fde3cf",
@@ -72,7 +73,7 @@ export const Messages = ({ messages, onSumbit, readOnly }: { messages: MyMessage
                 key: i.toString(),
                 placement: "end" as const,
                 avatar: {
-                    icon: x.role == "system" ? "⚙️" : <UserOutlined />,
+                    icon: x.role == "system" ? <Icon name="system-copy" /> : <UserOutlined />,
                     style: {
                         color: "#f56a00",
                         backgroundColor: "#fde3cf",
@@ -209,7 +210,7 @@ export const Messages = ({ messages, onSumbit, readOnly }: { messages: MyMessage
                     ...common,
                     placement: "start" as const,
                     avatar: {
-                        icon: "🤖",
+                        icon: <Icon name="bx-bot" />,
                         style: {
                             color: "#fff",
                             backgroundColor: "#87d068",
@@ -227,7 +228,7 @@ export const Messages = ({ messages, onSumbit, readOnly }: { messages: MyMessage
                                         message.success("Copied to clipboard");
                                     }}
                                 />
-                                {x.content_attached  && !readOnly && <SyncOutlined
+                                {x.content_attached && !readOnly && <SyncOutlined
                                     key="sync"
                                     className="hover:text-cyan-400"
                                     onClick={() => {

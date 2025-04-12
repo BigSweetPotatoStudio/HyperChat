@@ -1,4 +1,6 @@
 import {
+    CheckSquareOutlined,
+    CloseSquareOutlined,
     CompressOutlined,
     CopyOutlined,
     DownloadOutlined,
@@ -9,6 +11,7 @@ import {
     FundViewOutlined,
     IeOutlined,
     SyncOutlined,
+    ToolOutlined,
     UploadOutlined,
 } from "@ant-design/icons";
 import {
@@ -75,6 +78,7 @@ import { t } from "../i18n";
 import { MyMessage } from "../common/openai";
 import { Pre } from "./pre";
 import { DownImage } from "../pages/chat/component";
+import { Icon } from "./icon";
 
 // const md = markdownit({
 //     html: true,
@@ -534,19 +538,19 @@ export const AssistantToolContent = ({ contents }: { contents: MyMessage[] }) =>
                                                 key={index}
                                                 spinning={x.content_status == "loading"}
                                             >
-                                                <div className="flex items-center justify-between">
+                                                <div className="flex items-center">
                                                     <div
                                                         className="cursor-pointer"
                                                     >
                                                         <div className="line-clamp-1 text-blue-500">
-                                                            🔧
+                                                            <ToolOutlined className="" />
                                                             <span className="text-purple-500">
                                                                 {tool.restore_name || tool.function.name}
                                                             </span>{" "}
                                                             {tool.function.arguments}
                                                         </div>
                                                     </div>
-                                                    <a >
+                                                    <a className="ml-2">
                                                         {(() => {
                                                             let y = x;
                                                             x = contents.find(j => j.tool_call_id == tool.id);
@@ -563,11 +567,11 @@ export const AssistantToolContent = ({ contents }: { contents: MyMessage[] }) =>
                                                                         <SyncOutlined spin />
                                                                     ) : x.content_status == "error" ? (
                                                                         <div className="line-clamp-1 text-red-500">
-                                                                            ❌
+                                                                            <CloseSquareOutlined />
                                                                         </div>
                                                                     ) : (
-                                                                        <div className="line-clamp-1 text-green-400">
-                                                                            ✅
+                                                                        <div className="line-clamp-1 text-green-600">
+                                                                            <CheckSquareOutlined />
                                                                         </div>
                                                                     )}
                                                                 </span>
@@ -580,7 +584,10 @@ export const AssistantToolContent = ({ contents }: { contents: MyMessage[] }) =>
                                             children: (
                                                 <div key={index} className="max-h-80 overflow-auto bg-slate-200">
                                                     <div className="">
-                                                        <Pre>{tool.function.arguments}</Pre>
+                                                        <Pre><CopyOutlined onClick={async () => {
+                                                            await call("setClipboardText", [tool.function.arguments]);
+                                                            message.success(t`Copied to clipboard`);
+                                                        }} />{tool.function.arguments}</Pre>
                                                     </div>
 
                                                     <div>
@@ -598,17 +605,20 @@ export const AssistantToolContent = ({ contents }: { contents: MyMessage[] }) =>
                                                                         <SyncOutlined spin />
                                                                     ) : x.content_status == "error" ? (
                                                                         <div className="line-clamp-1 text-red-500">
-                                                                            ❌Error{" "}
+                                                                            <CloseSquareOutlined />{t`Error`}{" "}
 
                                                                         </div>
                                                                     ) : (
-                                                                        <div className="line-clamp-1 text-green-400">
-                                                                            ✅Completed{" "}
+                                                                        <div className="line-clamp-1 text-green-600">
+                                                                            <CheckSquareOutlined />{t`Completed`}{" "}
                                                                         </div>
                                                                     )}
                                                                 </span>
                                                                 <span className="text-gray-400">
-                                                                    {x?.content?.toString()}
+                                                                    <CopyOutlined onClick={async () => {
+                                                                        await call("setClipboardText", [x?.content?.toString()]);
+                                                                        message.success(t`Copied to clipboard`);
+                                                                    }} /> {x?.content?.toString()}
                                                                 </span>
                                                                 {x.content_attachment &&
                                                                     x.content_attachment.length > 0 &&

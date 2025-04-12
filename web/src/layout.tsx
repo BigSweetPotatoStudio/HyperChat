@@ -98,6 +98,7 @@ import {
   isEnabled as isDarkReaderEnabled,
 } from "darkreader";
 import { Pre } from "./components/pre";
+import { Icon } from "./components/icon";
 
 type ProviderType = {
   label: string;
@@ -389,8 +390,9 @@ export function Layout() {
                       setIsAddModelConfigOpen(true);
                     }
                   }}
+                  icon={<Icon name="brain" />}
                 >
-                  🧠LLM
+                  LLM
                 </Button>
                 <Select
                   className="hidden lg:inline-block"

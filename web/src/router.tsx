@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { SmileFilled } from "@ant-design/icons";
+import { CloudSyncOutlined, CommentOutlined, SmileFilled } from "@ant-design/icons";
 import {
   Outlet,
   Link,
@@ -20,6 +20,7 @@ import { t } from "./i18n";
 import { TaskResultsPage } from "./pages/hyperAgent/TaskResults";
 import { WebdavSetting } from "./pages/setting/sync";
 import { TerminalPage } from "./pages/setting/terminal";
+import { Icon } from "./components/icon";
 type RouteType = {
   path: string;
   name: React.ReactNode;
@@ -44,7 +45,7 @@ export function getLayoutRoute() {
       {
         path: "/Chat",
         name: t`Chat`,
-        icon: "💬",
+        icon: <CommentOutlined />,
         component: <WorkSpace />,
       },
       // {
@@ -56,25 +57,19 @@ export function getLayoutRoute() {
       {
         path: "/Market",
         name: t`MCP Extensions`,
-        icon: "💻",
+        icon: <Icon name="mcp"></Icon>,
         component: <Market />,
       },
       {
         path: "/KnowledgeBase",
         name: t`Knowledge Base(Exp)`,
-        icon: "📚",
+        icon: <Icon name="knowledgebase"></Icon>,
         component: <KnowledgeBase />,
       },
-      // {
-      //   path: "/HyperTools",
-      //   name: t`HyperTools`,
-      //   icon: "🛠️",
-      //   component: <HpyerTools />,
-      // },
       {
         path: "/Task",
         name: t`TaskList`,
-        icon: "📅",
+        icon: <Icon name="task"></Icon>,
         component: <Container from="/Task" default="List" />,
         routes: [
           {
@@ -94,25 +89,25 @@ export function getLayoutRoute() {
       {
         path: "/Setting",
         name: t`Settings`,
-        icon: "⚙️",
+        icon: <Icon name="system-copy" />,
         component: <Container from="/Setting" default="Setting" />,
         routes: [
           {
             path: "/Setting",
             name: t`Settings`,
-            icon: "📦",
+            icon: <Icon name="resources"/>,
             component: <Setting />,
           },
           {
             path: "/WebdavSetting",
             name: t`WebdavSetting`,
-            icon: "☁️",
+            icon: <CloudSyncOutlined />,
             component: <WebdavSetting />,
           },
           {
             path: "/HyperTools",
             name: t`HyperTools`,
-            icon: "🛠️",
+            icon: <Icon name="tool" />,
             component: <HpyerTools />,
           },
           // {

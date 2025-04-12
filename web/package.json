@@ -39,6 +39,7 @@
     "dayjs": "^1.11.13",
     "dotenv-webpack": "^8.1.0",
     "echarts": "^5.5.1",
+    "emoji-picker-react": "^4.12.2",
     "favicons": "^7.2.0",
     "favicons-webpack-plugin": "^6.0.1",
     "file-loader": "^6.2.0",

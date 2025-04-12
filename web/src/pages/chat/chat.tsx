@@ -909,12 +909,12 @@ export const Chat = ({
             {
               title: t`Agent`,
               value: "agent",
-              icon: "🤖",
+              icon: <Icon name="bx-bot" />,
             },
             {
               title: t`Task`,
               value: "task",
-              icon: "📅",
+              icon: <Icon name="task"></Icon>,
             },
           ]}
         />
@@ -1367,7 +1367,8 @@ export const Chat = ({
                         >
                           {supportTool == null || supportTool == true ? (
                             <>
-                              💻
+                              <span> <Icon name="mcp"></Icon></span>
+
                               <span className="px-1">
                                 {(() => {
                                   let set = new Set();
@@ -1398,7 +1399,7 @@ export const Chat = ({
                               </span>
                             </>
                           ) : (
-                            <>💻 {t`LLM not support`}</>
+                            <><Icon name="mcp"></Icon> {t`LLM not support`}</>
                           )}
                         </span>
                       </Tooltip>
@@ -1438,7 +1439,7 @@ export const Chat = ({
                           arrow
                         >
                           <span className="cursor-pointer">
-                            📦
+                            <Icon name="resources"/>{" "}
                             {resourcesRef.current.length}
                           </span>
                         </Dropdown>
@@ -1483,7 +1484,7 @@ export const Chat = ({
                           arrow
                         >
                           <span className="cursor-pointer">
-                            📜
+                            <Icon name="prompts" />{" "}
                             {promptsRef.current.length}
                           </span>
                         </Dropdown>
@@ -1492,7 +1493,7 @@ export const Chat = ({
                     <Divider type="vertical" />
                     <Tooltip title={t`Select LLM`}>
                       <span className="inline-block">
-                        🧠
+                        <Icon name="brain" />{" "}
                         <Select
                           size="small"
                           placeholder={
