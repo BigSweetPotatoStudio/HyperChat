@@ -71,7 +71,7 @@ export function WebdavSetting() {
       ); // 获取是否自动启动
       webdavForm.resetFields();
       webdavForm.setFieldsValue(
-        Object.assign(AppSetting.get().webdav, { baseDirName: "HyperChat" }),
+        Object.assign(electronData.get().webdav, { baseDirName: "HyperChat" }),
       );
       refresh();
     })();
@@ -88,8 +88,9 @@ export function WebdavSetting() {
       }
     } else {
       await call("testWebDav", [values]);
-      AppSetting.get().webdav = values;
-      await AppSetting.save();
+      message.success("Test success");
+      electronData.get().webdav = values;
+      await electronData.save();
 
       message.success("Save success");
     }
@@ -148,7 +149,7 @@ export function WebdavSetting() {
 
             <Form.Item wrapperCol={{ offset: 8, span: 16 }}>
               <Space>
-                <Button
+                {/* <Button
                   onClick={() => {
                     webdavForm.validateFields().then((values) => {
                       webDavOnFinish(values, "test");
@@ -156,7 +157,7 @@ export function WebdavSetting() {
                   }}
                 >
                   {t`Test`}
-                </Button>
+                </Button> */}
                 <Button type="primary" htmlType="submit">
                   {t`Save`}
                 </Button>
@@ -169,7 +170,7 @@ export function WebdavSetting() {
                       setSyncLoading(false);
                       refresh();
                     } catch (error) {
-                      message.error("Sync failed");
+                      message.error("Sync failed", error);
                       setSyncLoading(false);
                     }
                   }}

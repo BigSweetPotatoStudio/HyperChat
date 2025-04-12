@@ -71,6 +71,7 @@ import {
   JsonSchema2FormItemOrNull,
   JsonSchema2ProFormColumnsType,
 } from "../../common";
+import { Pre } from "../../components/pre";
 
 // export type Package = {
 //   type: "npx" | "uvx" | "other";
@@ -173,7 +174,10 @@ export function Market() {
   const [isAddMCPConfigOpen, setIsAddMCPConfigOpen] = useState(false);
   const [loadingOpenMCP, setLoadingOpenMCP] = useState(false);
   const [mcpform] = Form.useForm();
-
+  const [currResult, setCurrResult] = useState({
+    data: null as any,
+    error: null as any,
+  });
   useEffect(() => { }, []);
 
   const RenderEnableAndDisable = (item: InitedClient) => {
@@ -220,6 +224,7 @@ export function Market() {
           <>
             <span>
               {item.name}&nbsp;
+              {item.version && <Tag>{item.version}</Tag>}
               {item.source == "builtin" && <Tag color="blue">{t`built-in`}</Tag>}
               &nbsp;
               {item.config?.type ==
@@ -240,7 +245,7 @@ export function Market() {
             </span>
           </>
         }
-      // description={item.description}
+        description={item.servername}
       />
     );
   };
@@ -270,6 +275,10 @@ export function Market() {
                           onClick={() => {
                             mcpform.resetFields();
                             setIsAddMCPConfigOpen(true);
+                            setCurrResult({
+                              data: null,
+                              error: null,
+                            })
                           }}
                         >
                           {t`Add MCP`}
@@ -353,6 +362,10 @@ export function Market() {
                                   mcpform.resetFields();
                                   mcpform.setFieldsValue(formValues);
                                   setIsAddMCPConfigOpen(true);
+                                  setCurrResult({
+                                    data: null,
+                                    error: null,
+                                  })
                                 }} title={t`Setting`}>
                                   <SettingOutlined />
                                 </Button>
@@ -530,7 +543,7 @@ export function Market() {
                   </div>
                 ),
               },
-            ].filter(x => x != null)}
+            ].filter(x => x)}
           />
         </div>
         <div className="w-full p-4 lg:w-3/5">
@@ -798,11 +811,18 @@ export function Market() {
 
                   await call("openMcpClient", [values._name, mcpServerConfig]);
 
-
+                  setCurrResult({
+                    data: "success",
+                    error: null,
+                  });
                   refresh();
                   setIsAddMCPConfigOpen(false);
                 } catch (e) {
-                  message.error(e.message);
+                  // message.error(e.message);
+                  setCurrResult({
+                    data: null,
+                    error: e.message,
+                  });
                 } finally {
                   setLoadingOpenMCP(false);
                 }
@@ -910,6 +930,19 @@ export function Market() {
                   )}
                 </Form.List>
               </Form.Item>
+            </div>
+          )}
+
+          {currResult.data && (
+            <div>
+              <div>Result:</div>
+              <div>{(currResult.data)}</div>
+            </div>
+          )}
+          {currResult.error && (
+            <div className="text-red-500 max-h-64 overflow-auto">
+              <div>Result:</div>
+              <Pre>{currResult.error.toString()}</Pre>
             </div>
           )}
         </Modal>

@@ -33,7 +33,7 @@ for (let data of DataList) {
 
       return fs.writeFileSync(
         path.join(appDataDir, this.KEY),
-        JSON.stringify(this.format(this.data), null, 4)
+        JSON.stringify(this.format(this.data), null, 2)
       );
     },
   });
@@ -41,8 +41,14 @@ for (let data of DataList) {
 
 
 // export const MCPServerPORT = 16110;
+AppSetting.initSync({ force: true });
 
 electronData.initSync({ force: true });
+electronData.get().webdav.url = electronData.get().webdav.url || AppSetting.get().webdav.url;
+electronData.get().webdav.password = electronData.get().webdav.password || AppSetting.get().webdav.password;
+electronData.get().webdav.username = electronData.get().webdav.username || AppSetting.get().webdav.username;
+electronData.get().webdav.baseDirName = electronData.get().webdav.baseDirName || AppSetting.get().webdav.baseDirName;
+
 
 electronData.get().platform = process.platform;
 

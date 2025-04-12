@@ -19,7 +19,7 @@ for (let item of DataList) {
     async insave() {
       return await call("writeFile", [
         this.KEY,
-        JSON.stringify(this.format(this.data), null, 4),
+        JSON.stringify(this.format(this.data), null, 2),
       ]);
     },
   });

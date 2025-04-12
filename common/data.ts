@@ -72,35 +72,11 @@ export class Data<T> {
   }
 }
 
-export const electronData = new Data(
-  "electronData.json",
-  {
-    // port: 0,
-    password: "123456",
-    // mcp_server_port: 0,
-    version: "",
-    appDataDir: "",
-    logFilePath: "",
-    PATH: "",
-    platform: "",
-    firstOpen: true,
-    downloaded: {} as {
-      [s: string]: boolean;
-    },
-    updated: {} as {
-      [s: string]: boolean;
-    },
-    autoSync: false,
-    uuid: v4(),
-  },
-  {
-    sync: false,
-  }
-);
+
 
 export const AppSetting = new Data("app_setting.json", {
   isAutoLauncher: false,
-  webdav: {
+  webdav: { // 废弃⚠️ => electronData
     url: "",
     username: "",
     password: "",
@@ -120,6 +96,38 @@ export const AppSetting = new Data("app_setting.json", {
     quick: string;
   }>,
 });
+
+export const electronData = new Data(
+  "electronData.json",
+  {
+    // port: 0,
+    password: "123456",
+    // mcp_server_port: 0,
+    version: "",
+    appDataDir: "",
+    logFilePath: "",
+    PATH: "",
+    platform: "",
+    firstOpen: true,
+    downloaded: {} as {
+      [s: string]: boolean;
+    },
+    updated: {} as {
+      [s: string]: boolean;
+    },
+    autoSync: false,
+    webdav: {
+      url: "",
+      username: "",
+      password: "",
+      baseDirName: "",
+    },
+    uuid: v4(),
+  },
+  {
+    sync: false,
+  }
+);
 
 export type Tool_Call = {
   index: number;
@@ -256,7 +264,9 @@ export type IMCPClient = {
   ext: {
     configSchema?: { [s in string]: any };
   };
-  source: "hyperchat" | "claude" | "builtin"
+  source: "hyperchat" | "claude" | "builtin";
+  version: string;
+  servername: string;
 };
 export const MCP_CONFIG = new MCP_CONFIG_DATA(
   "mcp.json",

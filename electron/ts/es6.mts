@@ -35,6 +35,8 @@ export const { SSEServerTransport } = await import(
   /* webpackIgnore: true */ "@modelcontextprotocol/sdk/server/sse.js"
 );
 
+
+
 export const {
   ListToolsResultSchema,
   CallToolRequestSchema,
@@ -46,6 +48,11 @@ export const {
   GetPromptRequestSchema,
   ListToolsRequestSchema,
   ListPromptsRequestSchema,
+
+  NotificationSchema,
+  ProgressNotificationSchema,
+  LoggingMessageNotificationSchema,
+  ResourceListChangedNotificationSchema
 } = await import(
   /* webpackIgnore: true */ "@modelcontextprotocol/sdk/types.js"
 );

@@ -3,6 +3,10 @@ import {
   CallToolResultSchema,
   Client,
   CompatibilityCallToolResultSchema,
+  LoggingMessageNotificationSchema,
+  NotificationSchema,
+  ProgressNotificationSchema,
+  ResourceListChangedNotificationSchema,
   shellPathSync,
   SSEClientTransport,
   zx,
@@ -11,6 +15,7 @@ const { fs, os, sleep } = zx;
 import * as MCP from "@modelcontextprotocol/sdk/client/index.js";
 // import { StdioClientTransport } from "@modelcontextprotocol/sdk/client/stdio.js";
 import * as MCPTypes from "@modelcontextprotocol/sdk/types.js";
+
 import { Logger } from "ts/polyfills/index.mjs";
 import { appDataDir } from "ts/polyfills/index.mjs";
 import {
@@ -30,13 +35,15 @@ import { clientPaths } from "./claude.mjs";
 
 import { startTask } from "./task.mjs";
 
-import { spawn } from "node:child_process";
+import spawn from "cross-spawn";
 import { getMyDefaultEnvironment } from "./utils.mjs";
 import { zodToJsonSchema } from "zod-to-json-schema";
 import { Config } from "ts/const.mjs";
 import { v4 } from "uuid";
 import type { HyperChatCompletionTool, IMCPClient } from "../../../common/data";
 import { getMessageService } from "ts/message_service.mjs";
+import { shell } from "electron";
+import { Stream } from "node:stream";
 
 let config = MCP_CONFIG.initSync();
 let buildinMcpJSONPath = path.join(appDataDir, "mcpBuiltIn.json");
@@ -92,7 +99,8 @@ export class MCPClient implements IMCPClient {
   public client: MCP.Client = undefined;
   public status: "disconnected" | "connected" | "connecting" | "disabled" =
     "disconnected";
-
+  public version = "";
+  public servername = "";
   public ext: {
     configSchema?: { [s in string]: any };
   } = {};
@@ -104,6 +112,7 @@ export class MCPClient implements IMCPClient {
         ? zodToJsonSchema(s.configSchema)
         : undefined;
     }
+
   }
   async callTool(functionName: string, args: any): Promise<any> {
 
@@ -172,6 +181,7 @@ export class MCPClient implements IMCPClient {
   }
   async open() {
 
+
     if (this.config.disabled) {
       this.status = "disabled";
       return;
@@ -191,6 +201,7 @@ export class MCPClient implements IMCPClient {
       } else {
         await this.openStdio(this.config);
       }
+
       let client = this.client;
       // let c = client.getServerCapabilities();
       // console.log(c);
@@ -231,6 +242,9 @@ export class MCPClient implements IMCPClient {
           }
         }
       };
+      let res = await this.client.getServerVersion();
+      this.version = res.version;
+      this.servername = res.name;
 
       this.tools = tools_res.tools.map((tool) => {
         // let name = "m" + i + "_" + tool.name;
@@ -266,6 +280,18 @@ export class MCPClient implements IMCPClient {
           clientName: this.name,
         };
       });
+      // this.client.subscribeResource({
+      //   uri: "resource://modelcontextprotocol/metadata",
+      // });
+      // this.client.setLoggingLevel("debug");
+      this.client.setNotificationHandler(LoggingMessageNotificationSchema, (notification) => {
+        Logger.info("Received notification LoggingMessageNotificationSchema:", notification);
+      });
+
+      this.client.setNotificationHandler(ResourceListChangedNotificationSchema, (notification) => {
+        Logger.info("Received notification ResourceListChangedNotificationSchema:", notification);
+      });
+
       this.status = "connected";
       getMessageService().sendAllToRenderer({
         type: "changeMcpClient",
@@ -285,6 +311,8 @@ export class MCPClient implements IMCPClient {
     const client = new Client({
       name: this.name,
       version: "1.0.0",
+      capabilities: {
+      }
     });
 
     const transport = new SSEClientTransport(new URL(config?.url || config?.hyperchat?.url));
@@ -294,10 +322,15 @@ export class MCPClient implements IMCPClient {
   async openStdio(config: MCP_CONFIG_TYPE) {
     let env = Object.assign(getMyDefaultEnvironment(), config.env);
     // console.log("openStdio", config.command, config.args, env);
+    let stream = new Stream();
+    stream.on('data', (data) => {
+      console.log(`stderr: ${data}`);
+    });
     let params = {
       command: config.command,
       args: config.args,
       env: env,
+      // stderr: stream,
     };
 
     try {
@@ -305,18 +338,19 @@ export class MCPClient implements IMCPClient {
       const client = new Client({
         name: this.name,
         version: "1.0.0",
+        capabilities: {
+
+        }
       });
 
       await client.connect(transport);
       this.client = client;
     } catch (e) {
       Logger.error(params, e);
-      // if (os.platform() == "win32" && e.message.includes("Connection closed")) {
-      //   // log.error("Connection closed, testing");
-      //   e = await checkError(params)
-      //     .then((_) => e)
-      //     .catch((e) => e);
-      // }
+      if (e.message.includes("MCP error -32000: Connection closed")) {
+        await SpawnError(config.command, config.args, env);
+      }
+      // console.log("eeeeeeeeeeeeeeeeeeeeeeeee");
       throw e;
     }
   }
@@ -348,6 +382,52 @@ export class MCPClient implements IMCPClient {
   }
 }
 
+function SpawnError(command: string, args: string[], env) {
+  return new Promise((resolve, reject) => {
+    try {
+      // reject(new Error("test error"));
+      let child = spawn(command, args, {
+        // stdio: ['pipe', 'pipe', 'pipe', 'pipe'],  // 使用管道
+        stdio: 'pipe',
+
+        // 其他选项
+        cwd: os.homedir(),
+        // signal: abortCtrl.signal,
+        env: env,
+        shell: false,
+      });
+      let output = "";
+      // 添加事件处理器
+      child.stdout.on('data', (data) => {
+        output += data + "\n";
+        // console.log(`stdout: ${data}`);
+      });
+      
+      child.stderr.on('data', (data) => {
+        output += data + "\n";
+        // console.error(`stderr: ${data}`);
+      });
+
+      child.on('error', (err) => {
+        console.error(`Failed to start the child process: ${err}`);
+        reject(err); // 正确地拒绝 Promise
+      });
+
+      child.on('close', (code) => {
+        console.log(`The child process exited, exit code: ${code}`);
+        if (code !== 0) {
+          reject(new Error(`The child process exited, exit code: ${code}\n${output}`)); // 正确地拒绝 Promise
+        } else {
+          resolve(code); // 正确地完成 Promise
+        }
+      });
+    } catch (e) {
+      console.error(`Error creating child process: ${e}`);
+      reject(e); // 捕获并拒绝 Promise
+    }
+  });
+
+}
 
 let firstRunStatus = 0;
 

@@ -56,7 +56,7 @@ export class Data<T> {
   private async insave() {
     return fs.writeFile(
       path.join(appDataDir, this.KEY),
-      JSON.stringify(this.data, null, 4)
+      JSON.stringify(this.data, null, 2)
     );
   }
 }

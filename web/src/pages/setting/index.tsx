@@ -73,7 +73,7 @@ export function Setting() {
       ); // 获取是否自动启动
       webdavForm.resetFields();
       webdavForm.setFieldsValue(
-        Object.assign(AppSetting.get().webdav, { baseDirName: "HyperChat" }),
+        Object.assign(electronData.get().webdav, { baseDirName: "HyperChat" }),
       );
       const c = await call("getConfig");
       port.current = c.port;
@@ -81,23 +81,7 @@ export function Setting() {
     })();
   }, []);
   const [webdavForm] = useForm();
-  const [syncLoading, setSyncLoading] = useState(false);
-  const webDavOnFinish = async (values, type?) => {
-    if (type === "test") {
-      try {
-        await call("testWebDav", [values]);
-        message.success("Test success");
-      } catch (error) {
-        message.error("Test failed");
-      }
-    } else {
-      await call("testWebDav", [values]);
-      AppSetting.get().webdav = values;
-      await AppSetting.save();
 
-      message.success("Save success");
-    }
-  };
   const [password, setPassword] = useState("");
   return (
     <div className="overflow-auto h-full">
