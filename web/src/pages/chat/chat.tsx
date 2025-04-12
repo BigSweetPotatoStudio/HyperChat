@@ -222,7 +222,7 @@ import {
 import zodToJsonSchema from "zod-to-json-schema";
 import { Icon } from "../../components/icon";
 import { Messages } from "../../components/messages";
-import { getFirstCharacter } from "../../common";
+import { getFirstCharacter, getFirstEmoji } from "../../common";
 import { X } from "lucide-react";
 
 
@@ -790,7 +790,7 @@ export const Chat = ({
       });
       let formmatedData = ChatHistory.get()
         .data.filter((x) => {
-          x["agentName"] = getAgentNameObj[x.agentKey];
+          x["agentName"] = getAgentNameObj[x.agentKey || x["gptsKey"]];
           return (
             selectGptsKey.current == null ||
             x.agentKey == selectGptsKey.current ||
@@ -953,10 +953,11 @@ export const Chat = ({
         >
           <Conversations
             items={conversations.map((x) => {
+              let first = getFirstCharacter(x["agentName"]);
               return {
                 ...x,
                 label: x.label.toString() + ` - ${dayjs(x.dateTime).format("YYYY-MM-DD HH:mm:ss")}` + (x["agentName"] ? ` - ${x["agentName"]}` : ""),
-                icon: x.icon == "⭐" ? <StarOutlined /> : undefined,
+                icon: <>{first && <span className=" bg-slate-300 inline-block text-center" style={{ width: 22, height: 22 }}>{first}</span>}{x.icon == "⭐" ? <StarOutlined /> : undefined}</>,
               };
             })}
             activeKey={currentChat.current.key}
@@ -1439,7 +1440,7 @@ export const Chat = ({
                           arrow
                         >
                           <span className="cursor-pointer">
-                            <Icon name="resources"/>{" "}
+                            <Icon name="resources" />{" "}
                             {resourcesRef.current.length}
                           </span>
                         </Dropdown>
@@ -1836,6 +1837,7 @@ export const Chat = ({
               });
             }
             await Agents.save();
+            loadMoreData()
             // 修改更新agents状态
             call("openMcpClient", ["hyper_agent"]);
             refresh();

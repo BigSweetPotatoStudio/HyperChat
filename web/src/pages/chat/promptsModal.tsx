@@ -9,6 +9,8 @@ import {
   InputNumber,
   List,
   Modal,
+  Popconfirm,
+  Popover,
   Radio,
   Segmented,
   Select,
@@ -26,12 +28,12 @@ import {
 import React, { useContext, useEffect, useRef, useState } from "react";
 import { v4 as uuid } from "uuid";
 
-import { CloseOutlined, FormOutlined } from "@ant-design/icons";
+import { CloseOutlined, FormOutlined, SearchOutlined, SmileOutlined } from "@ant-design/icons";
 import { getClients, InitedClient } from "../../common/mcp";
 import { GPT_MODELS } from "../../../../common/data";
 import { t } from "../../i18n";
 import { NumberStep } from "../../common/numberStep";
-
+import EmojiPicker from 'emoji-picker-react';
 interface Values {
   label: string;
   prompt: string;
@@ -81,7 +83,9 @@ const ModalForm: React.FC<CollectionCreateFormProps> = ({
         label={t`Name`}
         rules={[{ required: true, message: `Please enter the name` }]}
       >
-        <Input />
+        <Input addonBefore={<Popover destroyTooltipOnHide={false} trigger="click" title={t`please select emoji!`} content={<EmojiPicker onEmojiClick={(emoji) =>
+          form.setFieldValue("label", emoji.emoji + form.getFieldValue("label"))
+        } />}><SmileOutlined className=" cursor-pointer" /></Popover>} />
       </Form.Item>
       <Form.Item
         name="prompt"

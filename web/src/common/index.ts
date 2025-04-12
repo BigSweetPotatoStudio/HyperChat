@@ -30,3 +30,13 @@ export function getFirstCharacter(str) {
   const match = str.match(/\p{Extended_Pictographic}|\S/u);
   return match ? match[0] : null;
 }
+export function getFirstEmoji(str: string): string | null {
+  if (!str || str.length === 0) {
+    return null;
+  }
+
+  // 使用正则表达式匹配第一个emoji
+  const emojiRegex = /\p{Extended_Pictographic}/u;
+  const match = str.match(emojiRegex);
+  return match ? match[0] : null;
+}
