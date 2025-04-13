@@ -18,7 +18,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [windows-latest, macos-latest, ubuntu-latest]
+        os: [windows-latest, macos-latest, macos-13, ubuntu-latest]
 
     runs-on: ${{ matrix.os }}
 
@@ -96,7 +96,7 @@ jobs:
         working-directory: ./electron
 
       - name: Build Electron App (macOS only)
-        if: matrix.os == 'macos-latest'
+        if: matrix.os == 'macos-latest' || matrix.os == 'macos-13'
         run: npm run prod
         env:
           APPLE_ID: ${{ secrets.APPLE_ID }}
@@ -109,7 +109,7 @@ jobs:
           MYRUNENV: github
 
       - name: Build Electron App (widnows+linux)
-        if: matrix.os != 'macos-latest'
+        if: matrix.os == 'windows-latest' || matrix.os == 'ubuntu-latest'
         run: npm run prod
         env:
           GH_TOKEN: ${{ secrets.GH_TOKEN }}

@@ -41,11 +41,13 @@ if (argv.prod) {
     overwrite: true,
   });
   await $`npx cross-env NODE_ENV=production myEnv=prod webpack`;
-  if (process.env.MYRUNENV === "github") {
-    if (process.env.GH_TOKEN) {
-      await $`npx cross-env NODE_ENV=production myEnv=prod electron-builder --publish always`;
+  if (process.env.MYRUNENV === "github" || process.env.GH_TOKEN) {
+    if (os.arch() === 'arm64' || os.arch() === 'arm') {
+      console.log('Building for ARM architecture');
+      await $`npx cross-env NODE_ENV=production myEnv=prod electron-builder --arm64 --publish always`;
     } else {
-      await $`npx cross-env NODE_ENV=production myEnv=prod electron-builder --publish never`;
+      console.log('Building for x86/x64 architecture');
+      await $`npx cross-env NODE_ENV=production myEnv=prod electron-builder --x64 --publish always`;
     }
   } else {
     await $`npx cross-env NODE_ENV=production myEnv=prod electron-builder --publish never`;
