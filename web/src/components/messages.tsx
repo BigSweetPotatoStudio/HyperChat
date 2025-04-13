@@ -18,10 +18,11 @@ export const Messages = ({ messages, onSumbit, readOnly }: { messages: MyMessage
         setNum((n) => n + 1);
     };
     const format = useCallback((x: MyMessage, i, arr) => {
+        x.content_attached = x.content_attached == null ? true : x.content_attached;
         let common = {
             className: {
                 "no-attached": !(
-                    x.content_attached == null || x.content_attached == true
+                    x.content_attached == true
                 ),
             } as any,
             role: x.role,

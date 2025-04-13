@@ -106,7 +106,9 @@ export async function callAgent(obj: {
     throw new Error("No model found");
   }
   let openai = new OpenAiChannel(
-    { ...config, ...agent, allowMCPs: agent.allowMCPs },
+    {
+      ...config, ...agent, allowMCPs: agent.allowMCPs, requestType: "stream",
+    },
     [
       {
         role: "system",
@@ -135,7 +137,7 @@ export async function callAgent(obj: {
     }
 
     await openai.completion();
-    let res = openai.lastMessage.content;
+
     // console.log("openai.completion() done", openai.messages);
     const item: ChatHistoryItem = {
       label: obj.message,

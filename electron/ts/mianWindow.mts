@@ -44,17 +44,17 @@ export const createWindow = () => {
     },
     icon: path.join(__dirname, "../web-build/assets/favicon.png"),
   });
-  const menu = new Menu()
-  menu.append(new MenuItem({
-    label: 'DevTools',
-    submenu: [{
-      role: 'help',
-      accelerator: process.platform === 'darwin' ? 'Alt+Cmd+I' : 'Ctrl+Shift+I',
-      click: () => { win.webContents.openDevTools(); }
-    }]
-  }))
+  // const menu = new Menu()
+  // menu.append(new MenuItem({
+  //   label: 'DevTools',
+  //   submenu: [{
+  //     role: 'help',
+  //     accelerator: process.platform === 'darwin' ? 'Alt+Cmd+I' : 'Ctrl+Shift+I',
+  //     click: () => { win.webContents.openDevTools(); }
+  //   }]
+  // }))
 
-  Menu.setApplicationMenu(menu)
+  // Menu.setApplicationMenu(menu)
 
   // win.maximize()
   win.show();

@@ -423,11 +423,12 @@ export class OpenAiChannel {
         );
 
         if (!Array.isArray(chatCompletion.choices)) {
+          console.log("chatCompletion", chatCompletion);
           throw new Error(
             (chatCompletion as any)?.error?.message ||
             "Provider returned error",
           );
-        }
+        } 
         this.lastMessage.content_status = "success";
         this.totalTokens = chatCompletion?.usage?.total_tokens;
         res.content_usage.completion_tokens =
