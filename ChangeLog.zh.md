@@ -8,12 +8,15 @@
 * 支持Claude Desktop 配置里的MCP。
 * 支持Web端直接查看配置文件
 * 支持快捷键MACOS`Alt+Cmd+I`   Windows`Ctrl+Shift+I`打开 开发者工具
-* 修复bug
+* 聊天记录列表支持显示Agent图标
+* 修复大量bug
 
 ![image](https://github.com/user-attachments/assets/e00bb252-83a6-40ca-928a-3162859b0c27)
 ![image](https://github.com/user-attachments/assets/5378bba1-91f5-4d77-accf-544d9a09e909)
 ![image](https://github.com/user-attachments/assets/2b236af6-a0bc-453a-b08e-8f3627a5d392)
 ![image](https://github.com/user-attachments/assets/ca3cc911-bc6a-4560-aede-f34969190e91)
+![image](https://github.com/user-attachments/assets/c69addb1-6a07-4fb8-8858-8851cfd31be6)
+![image](https://github.com/user-attachments/assets/23717164-7177-4622-a4bd-bd2d13be1edf)
 
 
 # 1.4.3
