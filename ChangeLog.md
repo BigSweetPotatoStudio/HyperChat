@@ -3,26 +3,29 @@
 
 # latest
 
-* Support displaying MCP Server version number and name.
-* When adding a model error, display detailed error.
-* When adding MCP error, display detailed error.
-* Optimize chat record storage by separating conversation messages to reduce loading and synchronization time.
-* Modify WebDav synchronization.
+* Support displaying the MCP Server version number and name.
+* Added detailed errors when the model errors.
+* Added detailed errors when MCP errors.
+* Optimized chat history storage, separating conversation messages to reduce loading and syncing time.
+* Modified WebDav synchronization.
 * Support MCP in Claude Desktop configuration.
-* Support direct viewing of configuration files on the web.
-* Support shortcut keys MACOS `Alt+Cmd+I` Windows `Ctrl+Shift+I` to open developer tools.
-* Fix bugs.
+* Support directly viewing configuration files on the web.
+* Support shortcut keys MACOS`Alt+Cmd+I` Windows`Ctrl+Shift+I` to open Developer Tools.
+* The chat history list supports displaying Agent icons.
+* Fix a large number of bugs.
 
 ![image](https://github.com/user-attachments/assets/e00bb252-83a6-40ca-928a-3162859b0c27)
 ![image](https://github.com/user-attachments/assets/5378bba1-91f5-4d77-accf-544d9a09e909)
 ![image](https://github.com/user-attachments/assets/2b236af6-a0bc-453a-b08e-8f3627a5d392)
 ![image](https://github.com/user-attachments/assets/ca3cc911-bc6a-4560-aede-f34969190e91)
+![image](https://github.com/user-attachments/assets/c69addb1-6a07-4fb8-8858-8851cfd31be6)
+![image](https://github.com/user-attachments/assets/23717164-7177-4622-a4bd-bd2d13be1edf)
 
 
 # 1.4.3
-* Rewrite markdown rendering, optimize `Artifacts`, support opening from the browser, downloading, and increase support for `Mermaid` pre-release.
-* Modify the display of tool calls.
-* Support chat selecting multiple models for comparison.
+* Rewrote markdown rendering, optimized `Artifacts`, supported opening from the browser, downloading, and added preliminary support for `Mermaid`.
+* Modified the display of tool calls.
+* Support selecting multiple models for comparison in chats.
 
 ![image](https://github.com/user-attachments/assets/b4b88d6c-da7f-4822-8ca7-a79c3d02b6a5)
 ![image](https://github.com/user-attachments/assets/d1b54fb3-e0d6-4999-9c89-879c8c095ab6)
@@ -34,44 +37,44 @@
 
 # 1.4.4
 
-* Fix the issue from the last version where the default chat setting for MCP became ineffective.
-* Fix the issue where the Agent could not modify the system prompt when not chatting.
-* Fix the error message for no LLM when first opened.
+* Fixed the issue in the last version where the default conversation settings for mcp were invalid.
+* Fixed the issue where the Agent couldn't modify system prompts if not in chat.
+* Fixed the error prompt when opened for the first time without LLM.
 
 
 # 1.4.1
 
-* Fix the bug in Gemini tool calls that do not support multiple tools.
-* Support selecting partial Tools for MCP to save tokens.
-* Support @ quick input + call Agent.
-* Fix bugs.
+* Fixed the bug where the Gemini tool call did not support multiple tools.
+* Supported selecting some Tools of MCP to save Tokens.
+* Supported quick input with @ + call Agent.
+* Fix bug.
 ![image](https://github.com/user-attachments/assets/63ae6853-5df4-4b29-8bc9-c33d99239833)
 ![image](https://github.com/user-attachments/assets/6010494f-1218-4714-bbfe-8e61969a6826)
 
 
 # 1.4.0
 
-* Add built-in mcp tool command line.
-* Support modifying network access password.
-* Fold display of tool calls.
-
+* Added built-in MCP tool command line.
+* Supported modifying the network access password.
+* Tools' call display is now collapsible.
+  
 ![8af53675c625ca34cfc4753a106e9462](https://github.com/user-attachments/assets/ef030a65-ba9e-4cd5-9ca8-669677b483be)
 ![image](https://github.com/user-attachments/assets/af1598b6-d912-4f04-8919-a3d3e1ed93bc)
 
 # 1.3.3
 
-* Can confirm when calling tools and modify parameters for large model calls.
-* Can click tools to test them.
-* The knowledge base is planned for redevelopment, currently not recommended for use. You can use OpenAI's embedding model instead of local embedding models.
+* Options during tool calls to confirm and modify parameters for large model calls.
+* Can click tools to test.
+* The knowledge base is planned for redevelopment, currently not recommended for use, can use OpenAI's embedding model instead of local embedding model.
 ![886a04f531ca15ef1f6e93ea8403c0b7](https://github.com/user-attachments/assets/7c6eb1d4-7ba1-430b-8fca-18023f7dadd3)
 ![image](https://github.com/user-attachments/assets/fc87b507-8427-4157-a0f9-78d141299151)
 
 
 # 1.2.15
 
-* Show MCP loading progress, add shortcut buttons.
-* Optimize mobile h5 display.
-* Fix bugs.
+* MCP loading progress display, added shortcut button.
+* Optimized mobile H5 display.
+* Fix bug.
 ![image](https://github.com/user-attachments/assets/1c60e98f-f57b-4a38-9464-c7548c09cc3c)
 ![image](https://github.com/user-attachments/assets/d8ba028d-d091-40f3-82bb-40e6f6ba10de)
 ![image](https://github.com/user-attachments/assets/f53652cd-07f4-4f98-89d5-865213dc3fb5)
@@ -79,54 +82,51 @@
 
 # 1.2.12
 
-* Support asking when calling tools ![image](https://github.com/user-attachments/assets/11c03c92-399e-457e-8000-ff00c3c1e059)
-* Chat supports displaying time ![image](https://github.com/user-attachments/assets/dba7bf09-99a1-46bd-9c94-052d18469b96)
-* Hypetool optimization, settings ![image](https://github.com/user-attachments/assets/cfc2c8e5-f7e7-4078-aaff-240b567f47c5)
+* Support asking when calling tools![image](https://github.com/user-attachments/assets/11c03c92-399e-457e-8000-ff00c3c1e059)
+* Chat supports displaying time![image](https://github.com/user-attachments/assets/dba7bf09-99a1-46bd-9c94-052d18469b96)
+* Hypetool optimization, settings![image](https://github.com/user-attachments/assets/cfc2c8e5-f7e7-4078-aaff-240b567f47c5)
 * Add historyFilterType hover tip by @xtyuns in https://github.com/BigSweetPotatoStudio/HyperChat/pull/52
 
 
 
 # 1.2.2
 
-* mac, linux automatically get PATH, no need to input PATH.
-* Add linux deb package.
-* Fix WebDav first synchronization error.
-* Fix bugs.
+* Automatically retrieve PATH for Mac and Linux, no need to input PATH anymore.
+* Added Linux deb package.
+* Fix WebDav first-time sync error. 
+* Fix bug.
 
 
 # 1.0.2
 
-* Increase setting temperature.
-* Fix bugs.
-* Support pasting in input box, uploading images.
+* Added setting temperature.
+* Fixed bugs.
+* Supported pasting in input box, uploading images.
 
 # 0.2.0
 
-* Add knowledge base.
+* Added knowledge base.
 
 
 # 0.1.1
 
-* Fix MacOS image uploading.
-* Add quick copy buttons, support buttons for copying messages and codes.
-* Optimize WebDav synchronization, keeping only 10 versions locally.
-* Markdown code rendering increases highlighting.
-* HTML Artifacts add error capture, support opening Chrome's console.
-
+* Fix MacOS image upload.
+* Added quick copy button, support copying messages and code.
+* Optimized WebDav sync function, local saves only 10 versions.
+* Added syntax highlighting to markdown code rendering.
+* HTML Artifacts now supports error capture, allows opening Chrome's console.
 
 
 # 0.1.0
 
 ## HyperChat
 
-* Support both plugin market + MCP native installation, quick installation and configuration from the plugin market, welcome to submit plugins, [Github](https://github.com/BigSweetPotatoStudio/HyperChatMCP)
-* WebDav synchronization logic optimization, backing up before syncing locally, syncing every 5 minutes.
-* LLM add testing function, test if it supports image input + tool calls (consuming a little token).
+* Supports two installation methods: plugin market and native MCP installation, fast installation and configuration from the plugin market, welcome to submit plugins, [Github](https://github.com/BigSweetPotatoStudio/HyperChatMCP)
+* WebDav sync logic optimized, local will back up before syncing, syncs every 5 minutes.
+* LLM added testing feature to check support for image input + tool calls (uses a bit of token).
 * Chat supports inputting images.
-* Chat supports displaying images returned by Tool Call as MCP resources.
+* Chat supports displaying images returned from Tool Call MCP resources.
 * Fix bugs.
-
-
 
 
 # 0.0.13
@@ -134,27 +134,26 @@
 ## HyperChat
 
 * Optimized the startup speed of MCP Server.
-* WebDav synchronization, temporarily does not support synchronizing MCP configuration, operating system inconsistencies may cause issues.
-* Support setting request method, Stream | Complete.
-* Support KaTeX, display mathematical formulas.
+* WebDav synchronization currently does not support MCP configuration synchronization, there may be issues due to inconsistent operating systems.
+* Supports setting request modes, Stream | Complete.
+* Supports KaTeX for displaying mathematical formulas.
 
 ## HyperTools
 
-* Optimized the Tool for opening web pages.
-
+* Optimized the Tool for opening webpages.
 
 
 # 0.0.11
 
 ## HyperChat
 
-* Bot display optimization, supports search, drag-and-drop sorting.
-* Conversation history supports filtering + searching.
-* For APIs that do not support statistics on large model token consumption, such as Qianwen, support fuzzy statistics based on word count.
-* Input box supports drag-and-drop files for quick input of file paths.
+* Optimized Bot display, supports search and drag-and-drop sorting.
+* Conversation records support filtering and searching.
+* For APIs that do not support counting token consumption of large models, such as Qianwen, fuzzy counting by word count is supported.
+* The input box supports dragging files for quick input of file paths.
 * My LLM Models list supports drag-and-drop sorting.
-* Supports quick configuration of Ollama and Qwen's API models.
+* Supports quick configuration of Ollama and Qwen API models.
 
 ## HyperTools
 
-* Optimized the Tool for opening web pages, more comprehensive information extraction. For example, answering this question `https://store.epicgames.com/zh-CN/   Which game is free for a limited time?`
+* Optimized the Tool for opening webpages, more complete information extraction. For example, answering this question `https://store.epicgames.com/zh-CN/   Which game is temporarily free?`
