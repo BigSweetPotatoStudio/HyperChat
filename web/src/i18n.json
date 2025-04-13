@@ -771,9 +771,9 @@
     "en": "LLM not support tool",
     "zh": "LLM不支持工具"
   },
-  "Please verify your network connection. If the network is working, there might be a small bug in the program. Here are the error messages: ": {
-    "en": "Please verify your network connection. If the network is working, there might be a small bug in the program. Here are the error messages: ",
-    "zh": "请检查您的网络连接。如果网络正常,程序中可能存在一个小错误。以下是错误消息:"
+  "Here are the error messages: ": {
+    "en": "Here are the error messages: ",
+    "zh": "以下是错误消息:"
   },
   "Create Task": {
     "en": "Create Task",

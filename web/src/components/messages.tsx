@@ -303,7 +303,7 @@ export const Messages = ({ messages, onSumbit, readOnly }: { messages: MyMessage
                                 <SyncOutlined spin />
                             ) : x.content_status == "error" ? (
                                 <div className="text-red-500">
-                                    {t`Please verify your network connection. If the network is working, there might be a small bug in the program. Here are the error messages: `}
+                                    {t`Here are the error messages: `}
                                     <div className="text-red-700">{x.content_error}</div>
                                 </div>
                             ) : null}

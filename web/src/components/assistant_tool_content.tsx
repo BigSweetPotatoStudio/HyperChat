@@ -493,6 +493,7 @@ export const AssistantToolContent = ({ contents }: { contents: MyMessage[] }) =>
             />
 
             {contents.map((x, i) => {
+ 
                 if (x.role === "assistant") {
                     x.content = x.content || "";
                     return (
@@ -531,6 +532,9 @@ export const AssistantToolContent = ({ contents }: { contents: MyMessage[] }) =>
                                     bordered={false}
                                     size="small"
                                     items={x.tool_calls?.map((tool: any, index) => {
+                                        if (x == null) {
+                                            return null;
+                                        }
                                         return {
                                             key: index.toString(),
                                             showArrow: false,
@@ -552,9 +556,9 @@ export const AssistantToolContent = ({ contents }: { contents: MyMessage[] }) =>
                                                     </div>
                                                     <a className="ml-2">
                                                         {(() => {
-                                                            let y = x;
-                                                            x = contents.find(j => j.tool_call_id == tool.id);
-                                                            if (x == undefined) {
+
+                                                            let x = contents.find(j => j.tool_call_id == tool.id);
+                                                            if (x == null) {
                                                                 return null;
                                                             }
                                                             return <div >
@@ -592,9 +596,9 @@ export const AssistantToolContent = ({ contents }: { contents: MyMessage[] }) =>
 
                                                     <div>
                                                         {(() => {
-                                                            let y = x;
-                                                            x = contents.find(j => j.tool_call_id == tool.id);
-                                                            if (x == undefined) {
+
+                                                            let x = contents.find(j => j.tool_call_id == tool.id);
+                                                            if (x == null) {
                                                                 return null;
                                                             }
                                                             return <div >

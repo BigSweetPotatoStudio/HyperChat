@@ -384,13 +384,13 @@ export class CommandFactory {
   }
   async changeChatHistory(item: ChatHistoryItem) {
     item.version = "2.0";
+    fs.writeFileSync(path.join(appDataDir, `messages/${item.key}.json`), JSON.stringify(item.messages, null, 2));
     let chatHistory = ChatHistory.initSync().data;
     let find = chatHistory.find(x => x.key === item.key);
     if (find) {
       Object.assign(find, item);
     }
 
-    fs.writeFileSync(path.join(appDataDir, `messages/${item.key}.json`), JSON.stringify(item.messages, null, 2));
     await ChatHistory.save((r) => {
       r.data = r.data.map((x) => {
         if (x.key == item.key) {

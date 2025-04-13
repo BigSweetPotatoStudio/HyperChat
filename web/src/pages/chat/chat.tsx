@@ -973,9 +973,21 @@ export const Chat = ({
                 }
                 // currentChat.current.messages=[]
                 // refresh();
-                if (item.messages == null || item.messages.length == 0) {
+                if (item.messages == null || item.messages.length == 0 || item.version == "2.0") {
                   let messages = await call("readJSON", [`messages/${item.key}.json`]).catch(() => []);
                   item.messages = messages || [];
+                  if (item.messages.length == 0 && item.agentKey != null) {
+                    let agent = Agents.get().data.find(x => x.key == item.agentKey);
+                    if (agent) {
+                      item.messages = [
+                        {
+                          role: "system" as const,
+                          content: agent.prompt,
+                          content_date: Date.now(), // Corrected to use Date.now() for current timestamp
+                        },
+                      ];
+                    }
+                  }
                 }
                 currentChatReset(item);
               }
