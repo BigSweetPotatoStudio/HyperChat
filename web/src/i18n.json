@@ -1106,5 +1106,17 @@
   "thinking": {
     "en": "thinking",
     "zh": "思考"
+  },
+  "Model Comparison in Chat": {
+    "en": "Model Comparison in Chat",
+    "zh": "聊天中的模型比较"
+  },
+  "Download Chat Config": {
+    "en": "Download Chat Config",
+    "zh": "下载聊天配置"
+  },
+  "Develop Mode": {
+    "en": "Develop Mode",
+    "zh": "开发模式"
   }
 }

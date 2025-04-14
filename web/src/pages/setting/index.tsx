@@ -177,6 +177,18 @@ export function Setting() {
                 {t`Update`}
               </Button>
             </Form.Item>
+            <Form.Item label={t`Develop Mode`}>
+              <Switch
+
+                value={electronData.get().isDeveloper}
+                onChange={async (value) => {
+                  electronData.get().isDeveloper = value;
+                  await electronData.save();
+                  refresh();
+                }}
+              ></Switch>
+            </Form.Item>
+
             <Form.Item
               label={t`DeleteChatHistory(exclude Star)`}
               name="deleteChatRecord"

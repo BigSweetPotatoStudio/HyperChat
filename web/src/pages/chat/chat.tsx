@@ -184,6 +184,7 @@ import {
   Agents,
   AppSetting,
   IMCPClient,
+  electronData,
 } from "../../../../common/data";
 
 import { PromptsModal } from "./promptsModal";
@@ -256,6 +257,7 @@ export const Chat = ({
       await GPT_MODELS.init();
       await AppSetting.init();
       await ChatHistory.init();
+      await electronData.init();
       AppSetting.get().quicks = AppSetting.get().quicks.map((x: any) => {
 
         if (x.quick == null) {
@@ -319,30 +321,7 @@ export const Chat = ({
           "",
         );
       }
-      // while (1) {
-      //   if (getMcpInited() == true) {
-      //     let clients = await getClients().catch(() => []);
-      //     clientsRef.current = clients;
-      //     let p = getPrompts(currentChat.current.allowMCPs);
-      //     promptsRef.current = p;
-      //     let r = getResourses(currentChat.current.allowMCPs);
-      //     resourcesRef.current = r;
 
-      //     DATA.current.mcpLoading = false;
-      //     refresh();
-      //     break;
-      //   } else {
-      //     let clients = await getClients().catch(() => []);
-      //     clientsRef.current = clients;
-      //     let p = getPrompts(currentChat.current.allowMCPs);
-      //     promptsRef.current = p;
-      //     let r = getResourses(currentChat.current.allowMCPs);
-      //     resourcesRef.current = r;
-      //     DATA.current.mcpLoading = false;
-      //     refresh();
-      //     break;
-      //   }
-      // }
     })();
   }, []);
 
@@ -1569,6 +1548,7 @@ export const Chat = ({
                     </Tooltip>
                     <Divider type="vertical" />
                     <SettingOutlined
+                      title={t`Settings`}
                       className="cursor-pointer hover:text-cyan-400"
                       onClick={() => {
                         setIsOpenMoreSetting(true);
@@ -1578,7 +1558,20 @@ export const Chat = ({
                       }}
                     />
                   </div>
-                  <div>
+                  <div className="flex">
+                    <div>
+                      {
+                        electronData.get().isDeveloper && <Button size="small" title={t`Download Chat Config`} onClick={() => {
+                          let a = document.createElement("a");
+                          a.href = URL.createObjectURL(
+                            new Blob([JSON.stringify(currentChat.current, null, 2)], { type: "text/json" }),
+                          );
+                          a.download = (currentChat.current.key || "none") + ".json";
+                          a.click();
+                        }}><DownloadOutlined /></Button>
+                      }
+                    </div>
+                    <Divider type="vertical" />
                     <Dropdown
                       trigger={['click']}
                       arrow
@@ -1607,7 +1600,7 @@ export const Chat = ({
                         },
                       }}
                     >
-                      <Button size="small">
+                      <Button size="small" title={t`Model Comparison in Chat`}>
                         <Icon name="duibi"></Icon>
                       </Button>
                     </Dropdown>
@@ -2248,8 +2241,8 @@ export const Chat = ({
           </div>
         </Modal>
         {contextHolder}
-      </div>
-    </div>
+      </div >
+    </div >
   );
 };
 

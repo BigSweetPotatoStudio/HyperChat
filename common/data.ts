@@ -126,6 +126,7 @@ export const electronData = new Data(
     },
     uuid: v4(),
     runTask: false,
+    isDeveloper: false,
   },
   {
     sync: false,
