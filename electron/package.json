@@ -200,6 +200,7 @@
     "dev:node": "nodemon -w ts --exec npx tsx task.mts --devnode",
     "prod": "npx tsx task.mts --prod",
     "start": "electron .",
+    "start:node": "node js/main_no_electron.js",
     "testprod": "npx tsx task.mts --testprod"
   },
   "version": "1.4.18"

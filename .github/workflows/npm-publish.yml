@@ -5,6 +5,8 @@ name: Node.js Package
 
 on:
   workflow_dispatch: {}
+  release:
+    types: [published]
   push:
     branches:
       - alpha
@@ -83,7 +85,16 @@ jobs:
 
       - run: cd electron && npm run build:node
 
-      - run: cd electron && npm publish --tag alpha --access=public
+      - name: Determine npm publish tag
+        id: publish-tag
+        run: |
+          if [[ $GITHUB_REF == *"alpha"* ]]; then
+          echo "tag=alpha" >> $GITHUB_OUTPUT
+            else
+          echo "tag=latest" >> $GITHUB_OUTPUT
+            fi
+
+      - run: cd electron && npm publish --tag ${{ steps.publish-tag.outputs.tag }} --access=public
         env:
           NODE_AUTH_TOKEN: ${{secrets.npm_token}}
 

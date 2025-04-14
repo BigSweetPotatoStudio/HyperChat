@@ -27,6 +27,66 @@ jobs:
       - name: Check out the repo
         uses: actions/checkout@v4
 
+      - name: Install Node.js
+        uses: actions/setup-node@v3.0.0
+        with:
+          node-version: "20"
+          registry-url: https://registry.npmjs.org/
+
+      - name: Install -g
+        run: npm install -g cross-env zx
+
+          # 根目录的依赖缓存
+      - name: Cache root dependencies
+        uses: actions/cache@v3
+        id: cache-root
+        with:
+          path: node_modules
+          key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-node-
+
+      # 安装根目录依赖（如果缓存未命中）
+      - name: Install root dependencies
+        if: steps.cache-root.outputs.cache-hit != 'true'
+        run: npm install
+
+      # web 目录的依赖缓存
+      - name: Cache web dependencies
+        uses: actions/cache@v3
+        id: cache-web
+        with:
+          path: web/node_modules
+          key: ${{ runner.os }}-node-web-${{ hashFiles('web/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-node-web-
+
+      # 安装 web 目录依赖（如果缓存未命中）
+      - name: Install web dependencies
+        if: steps.cache-web.outputs.cache-hit != 'true'
+        run: npm install
+        working-directory: ./web
+
+      # electron 目录的依赖缓存
+      - name: Cache electron dependencies
+        uses: actions/cache@v3
+        id: cache-electron
+        with:
+          path: electron/node_modules
+          key: ${{ runner.os }}-node-electron-${{ hashFiles('electron/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-node-electron-
+
+      # 安装 electron 目录依赖（如果缓存未命中）
+      - name: Install electron dependencies
+        if: steps.cache-electron.outputs.cache-hit != 'true'
+        run: npm install
+        working-directory: ./electron
+
+      - run: cd web && npm run build
+
+      - run: cd electron && npm run build:node
+
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v3
         
@@ -46,22 +106,35 @@ jobs:
         with:
           images: dadigua/hyperchat-mini
 
+      - name: Determine npm publish tag
+        id: publish-tag
+        run: |
+          if [[ $GITHUB_REF == *"alpha"* ]]; then
+          echo "tag=alpha" >> $GITHUB_OUTPUT
+            else
+          echo "tag=latest" >> $GITHUB_OUTPUT
+            fi
+
       - name: 获取npm上的最新版本
+        if: steps.publish-tag.outputs.tag != 'latest'
         id: npm-version
         run: |
           NPM_VERSION=$(npm view @dadigua/hyper-chat version 2>/dev/null || echo "")
           echo $NPM_VERSION
 
       - name: Build and push Docker image
+
         id: push
         uses: docker/build-push-action@3b5e8027fcad23fda98b2e3ac259d8d67585f671
         with:
           context: .
-          file: ./docker/no_electron/Dockerfile
+          file: "${{ steps.publish-tag.outputs.tag == 'alpha' && './docker/no_electron/Dockerfile-Alpha' || './docker/no_electron/Dockerfile' }}"
           platforms: linux/amd64,linux/arm64
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
+
+          
 
       - name: Generate artifact attestation
         uses: actions/attest-build-provenance@v2
