@@ -238,3 +238,7 @@ if (argv.test) {
     ]);
   });
 }
+
+if (argv.pre_commit) {
+
+}

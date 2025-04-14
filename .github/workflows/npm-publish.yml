@@ -95,14 +95,11 @@ jobs:
         env:
           NODE_AUTH_TOKEN: ${{secrets.npm_token}}
 
-      - name: SET GITHUB AND PUSH
-        if: steps.publish-tag.outputs.tag == 'alpha'
+      - name: SET GITHUB AND  git checkout .
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add .
-          git commit -m "action-generated"
-          git push
+          git checkout .
         env:
           GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
 

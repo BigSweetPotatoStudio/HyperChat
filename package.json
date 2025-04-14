@@ -1,13 +1,17 @@
 {
   "name": "@dadigua/hyper-chat",
-  "version": "1.4.20-alpha.5",
+  "version": "1.4.20-alpha.8",
   "main": "index.js",
   "scripts": {
     "dev": "tsx task.mts --dev",
     "test": "tsx task.mts --test",
     "prod": "tsx task.mts --prod",
-    "build": "tsx task.mts --build"
+    "build": "tsx task.mts --build",
+    "pre_commit": "tsx task.mts --pre_commit"
   },
+  "pre-commit": [
+    "pre_commit"
+  ],
   "author": "",
   "license": "ISC",
   "description": "",
@@ -20,5 +24,8 @@
     "tsx": "^4.9.3",
     "uuid": "^11.1.0",
     "zx": "8.0.1"
+  },
+  "devDependencies": {
+    "pre-commit": "^1.2.2"
   }
 }
