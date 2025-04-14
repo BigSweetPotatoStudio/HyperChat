@@ -14,8 +14,10 @@ import {
   message,
   Modal,
   Popconfirm,
+  Popover,
   Radio,
   Space,
+  Switch,
   Tabs,
   Tag,
   Tooltip,
@@ -49,6 +51,7 @@ import {
   DisconnectOutlined,
   GithubOutlined,
   MinusCircleOutlined,
+  MoreOutlined,
   PauseCircleOutlined,
   PlusOutlined,
   SettingOutlined,
@@ -72,6 +75,7 @@ import {
   JsonSchema2ProFormColumnsType,
 } from "../../common";
 import { Pre } from "../../components/pre";
+import { Icon } from "../../components/icon";
 
 // export type Package = {
 //   type: "npx" | "uvx" | "other";
@@ -182,7 +186,7 @@ export function Market() {
 
   const RenderEnableAndDisable = (item: InitedClient) => {
     return (
-      <Button onClick={async (e) => {
+      <Button key="enable" onClick={async (e) => {
         try {
           mcpLoadingObj[item.name] = true;
           setMcpLoadingObj({ ...mcpLoadingObj });
@@ -226,6 +230,7 @@ export function Market() {
               {item.name}&nbsp;
               {item.version && <Tag>{item.version}</Tag>}
               {item.source == "builtin" && <Tag color="blue">{t`built-in`}</Tag>}
+              {item.source == "hyperchat" && item.config.isSync && <Tag className=" text-blue-400">sync</Tag>}
               &nbsp;
               {item.config?.type ==
                 "sse" ? (
@@ -301,77 +306,93 @@ export function Market() {
                         renderItem={(item: InitedClient, index) => (
                           <List.Item
                             className="hover:cursor-pointer hover:bg-slate-300"
-                            actions={[
-                              (
-                                <a
-                                  key="list-loadmore-down"
-                                  className="text-lg hover:text-cyan-400"
-                                >
-                                  <Popconfirm
-                                    title="Sure to delete?"
-                                    onConfirm={async () => {
-                                      try {
-                                        await call("closeMcpClients", [
-                                          item.name,
-                                          {
-                                            isdelete: true,
-                                            isdisable: false,
-                                          }
-                                        ]);
-
-                                      } catch (e) {
-                                        message.error(e.message);
-                                      }
-                                    }}
+                            actions={[<Space.Compact>
+                              {[
+                                (
+                                  <a
+                                    key="list-del"
+                                    className="text-lg hover:text-cyan-400"
                                   >
-                                    <Button title={t`delete`} type="link">
-                                      <DeleteOutlined className="text-lg hover:text-cyan-400" />
-                                    </Button>
-                                  </Popconfirm>
-                                </a>
-                              ),
+                                    <Popconfirm
+                                      title="Sure to delete?"
+                                      onConfirm={async () => {
+                                        try {
+                                          await call("closeMcpClients", [
+                                            item.name,
+                                            {
+                                              isdelete: true,
+                                              isdisable: false,
+                                            }
+                                          ]);
 
-                              RenderEnableAndDisable(item),
+                                        } catch (e) {
+                                          message.error(e.message);
+                                        }
+                                      }}
+                                    >
+                                      <Button title={t`delete`} type="link">
+                                        <DeleteOutlined className="text-lg hover:text-cyan-400" />
+                                      </Button>
+                                    </Popconfirm>
+                                  </a>
+                                ),
 
-                              <a className="text-lg hover:text-cyan-400">
-                                <Button type="link" onClick={(e) => {
-                                  const config =
-                                    MCP_CONFIG.get().mcpServers[item.name];
+                                RenderEnableAndDisable(item),
 
-                                  let formValues = {
-                                    ...config,
-                                    name: item.name,
-                                  } as any;
-                                  formValues._name = item.name;
-                                  formValues._type = "edit";
-                                  formValues.command = [
-                                    formValues.command || "",
-                                    ...formValues.args || [],
-                                  ].join("   ");
-                                  formValues._envList = [];
-                                  for (let key in (formValues.env || {})) {
-                                    formValues._envList.push({
-                                      name: key,
-                                      value: formValues.env[key],
-                                    });
-                                  }
-                                  formValues.type =
-                                    formValues?.type || formValues?.hyperchat?.type || "stdio";
-                                  formValues.url =
-                                    formValues?.url || formValues?.hyperchat?.url || "";
-                                  mcpform.resetFields();
-                                  mcpform.setFieldsValue(formValues);
-                                  setIsAddMCPConfigOpen(true);
-                                  setCurrResult({
-                                    data: null,
-                                    error: null,
-                                  })
-                                }} title={t`Setting`}>
-                                  <SettingOutlined />
-                                </Button>
-                              </a>,
-                              // ) : undefined,
-                            ].filter((x) => x != null)}
+                                <a key="set-del" className="text-lg hover:text-cyan-400">
+                                  <Button type="link" onClick={async (e) => {
+                                    // await MCP_CONFIG.init()
+                                    // const config =
+                                    //   MCP_CONFIG.get().mcpServers[item.name];
+
+                                    let formValues = {
+                                      ...item.config,
+                                      name: item.name,
+                                    } as any;
+                                    formValues._name = item.name;
+                                    formValues._type = "edit";
+                                    formValues.command = [
+                                      formValues.command || "",
+                                      ...formValues.args || [],
+                                    ].join("   ");
+                                    formValues._envList = [];
+                                    for (let key in (formValues.env || {})) {
+                                      formValues._envList.push({
+                                        name: key,
+                                        value: formValues.env[key],
+                                      });
+                                    }
+                                    formValues.type =
+                                      formValues?.type || formValues?.hyperchat?.type || "stdio";
+                                    formValues.url =
+                                      formValues?.url || formValues?.hyperchat?.url || "";
+                                    mcpform.resetFields();
+                                    mcpform.setFieldsValue(formValues);
+                                    setIsAddMCPConfigOpen(true);
+                                    setCurrResult({
+                                      data: null,
+                                      error: null,
+                                    })
+                                  }} title={t`Setting`}>
+                                    <SettingOutlined />
+                                  </Button>
+                                </a>,
+                                <Popover key="more-setting" trigger="click" title={t`More Setting`} content={
+                                  <div>
+                                    {t`Sync`}: <Switch value={item.config.isSync} onChange={async (e) => {
+                                      // await MCP_CONFIG.init()
+                                      // MCP_CONFIG.get().mcpServers[item.name].isSync = e;
+                                      // await MCP_CONFIG.save();
+                                      // item.config.isSync = e;
+                                      // refresh();
+                                      item.config.isSync = e;
+                                      await call("openMcpClient", [item.name, item.config, { onlySave: true }]);
+                                    }}></Switch>
+                                  </div>
+                                }><Button type="link" icon={<MoreOutlined />} title={t`More Setting`}></Button></Popover>
+                                // ) : undefined,
+                              ].filter((x) => x != null)}
+                            </Space.Compact>]}
                           >
                             {ListItemMeta(item)}
                           </List.Item>

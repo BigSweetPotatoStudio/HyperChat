@@ -29,6 +29,7 @@ import {
   AppSetting,
   MCP_CONFIG,
   MCP_CONFIG_TYPE,
+  MCP_CONFIG_SYNC,
 } from "../../../common/data";
 
 import { clientPaths } from "./claude.mjs";
@@ -46,6 +47,13 @@ import { shell } from "electron";
 import { Stream } from "node:stream";
 
 let config = MCP_CONFIG.initSync();
+let sync_config = MCP_CONFIG_SYNC.initSync();
+for (let key in sync_config.mcpServers) {
+  if (sync_config.mcpServers[key].isSync) {
+    config.mcpServers[key] = sync_config.mcpServers[key];
+  }
+}
+
 let buildinMcpJSONPath = path.join(appDataDir, "mcpBuiltIn.json");
 let buildinMcpJSON = {
   mcpServers: {} as { [s: string]: MCP_CONFIG_TYPE },
@@ -85,7 +93,7 @@ for (let key in config.mcpServers) {
     config.mcpServers[key].url = config.mcpServers[key].hyperchat.url;
   }
 }
-await MCP_CONFIG.save();
+await MCP_CONFIG.save(false);
 
 await initMcpServer().catch((e) => {
   console.error("initMcpServer", e);
@@ -297,7 +305,7 @@ export class MCPClient implements IMCPClient {
         type: "changeMcpClient",
         data: mcpClients,
       })
-      this.saveConfig();
+   
     } catch (e) {
       this.status = "disconnected";
       getMessageService().sendAllToRenderer({
@@ -402,7 +410,7 @@ function SpawnError(command: string, args: string[], env) {
         output += data + "\n";
         // console.log(`stdout: ${data}`);
       });
-      
+
       child.stderr.on('data', (data) => {
         output += data + "\n";
         // console.error(`stderr: ${data}`);
@@ -453,8 +461,7 @@ export async function initMcpClients() {
     );
     return mcpClients;
   }
-
-  let config = await MCP_CONFIG.initSync();
+  let config = MCP_CONFIG.initSync();
 
   // console.log(config);
   let tasks = [];
@@ -578,7 +585,10 @@ initMcpClients().then(() => {
 });
 export async function openMcpClient(
   name: string = undefined,
-  clientConfig?: MCP_CONFIG_TYPE
+  clientConfig?: MCP_CONFIG_TYPE,
+  options = {
+    onlySave: false,
+  }
 ) {
 
   let mcpClient = mcpClients.find((c) => c.name == name);
@@ -594,15 +604,21 @@ export async function openMcpClient(
     mcpClients.push(mcpClient);
     mcpOBj[name] = mcpClient;
   }
-
-
-  try {
-    await mcpClient.open();
-  } catch (e) {
-    Logger.error("openMcpClient", e);
-    throw e;
+  if (options.onlySave) {
+    mcpClient.saveConfig();
+  } else {
+    try {
+      await mcpClient.open();
+      mcpClient.saveConfig();
+    } catch (e) {
+      Logger.error("openMcpClient", e);
+      throw e;
+    }
   }
-
+  getMessageService().sendAllToRenderer({
+    type: "changeMcpClient",
+    data: mcpClients,
+  })
   return mcpClients;
 }
 

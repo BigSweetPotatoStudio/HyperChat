@@ -7,6 +7,7 @@ import {
   Task,
   TaskList,
   IMCPClient,
+  electronData,
 } from "../../../common/data";
 import cron from "node-cron";
 import { Command } from "../command.mjs";
@@ -146,7 +147,7 @@ export async function callAgent(obj: {
       modelKey: config.key,
       agentKey: agent.key,
       sended: true,
-      requestType: "complete",
+      requestType: "stream",
       allowMCPs: agent.allowMCPs,
       attachedDialogueCount: agent.attachedDialogueCount,
       dateTime: Date.now(),
@@ -154,7 +155,6 @@ export async function callAgent(obj: {
       isTask: obj.type === "task",
       taskKey: obj.taskKey,
       confirm_call_tool: false,
-      lastMessage: openai.lastMessage,
     };
     Command.addChatHistory(item);
     // ChatHistory.initSync().data.unshift(item);
@@ -172,7 +172,7 @@ export async function callAgent(obj: {
       modelKey: config.key,
       agentKey: agent.key,
       sended: true,
-      requestType: "complete",
+      requestType: "stream",
       allowMCPs: agent.allowMCPs,
       attachedDialogueCount: agent.attachedDialogueCount,
       dateTime: Date.now(),
@@ -180,7 +180,6 @@ export async function callAgent(obj: {
       isTask: obj.type === "task",
       taskKey: obj.taskKey,
       confirm_call_tool: false,
-      lastMessage: openai.lastMessage,
     };
     Command.addChatHistory(item);
     throw new Error(e.message);
@@ -228,9 +227,11 @@ export function startTask(taskkey?: string) {
         continue;
       }
       let cronT = cron.schedule(task.cron, () => {
-        runTask(task.key, { force: false }).then((res) => {
-          Logger.info("task result", res);
-        });
+        if (electronData.initSync().runTask == true) {
+          runTask(task.key, { force: false }).then((res) => {
+            Logger.info("task result", res);
+          });
+        }
       });
       tObj[task.key] = {
         key: task.key,
@@ -252,10 +253,11 @@ export function startTask(taskkey?: string) {
     }
     // console.log("task", task);
     let cronT = cron.schedule(task.cron, () => {
-      // console.log("test", task);
-      runTask(task.key, { force: false }).then((res) => {
-        Logger.info("task result", res);
-      });
+      if (electronData.initSync().runTask == true) {
+        runTask(task.key, { force: false }).then((res) => {
+          Logger.info("task result", res);
+        });
+      }
     });
 
     tObj[task.key] = {

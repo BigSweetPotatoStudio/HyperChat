@@ -121,8 +121,13 @@ const Providers: ProviderType[] = [
   },
   {
     label: "Gemini",
-    baseURL: "https://generativelanguage.googleapis.com/v1beta/openai/",
+    baseURL: "https://generativelanguage.googleapis.com/v1beta/openai",
     value: "gemini",
+  },
+  {
+    label: "XAI",
+    baseURL: "https://api.x.ai/v1",
+    value: "xai",
   },
   {
     label: "Qwen",

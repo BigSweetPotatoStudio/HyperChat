@@ -279,22 +279,7 @@ export const Messages = ({ messages, onSumbit, readOnly }: { messages: MyMessage
                     content: (
                         <div>
 
-                            {x.reasoning_content && (
-                                <Collapse
-                                    defaultActiveKey={["reasoning_content"]}
-                                    items={[
-                                        {
-                                            key: "reasoning_content",
-                                            label: (
-                                                <div className="line-clamp-1">
-                                                    thinking: {x.reasoning_content}
-                                                </div>
-                                            ),
-                                            children: <Pre>{x.reasoning_content}</Pre>,
-                                        },
-                                    ]}
-                                />
-                            )}
+              
 
                             <AssistantToolContent
                                 contents={contents}

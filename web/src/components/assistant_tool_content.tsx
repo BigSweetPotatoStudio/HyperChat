@@ -11,6 +11,7 @@ import {
     FundViewOutlined,
     IeOutlined,
     SyncOutlined,
+    ThunderboltOutlined,
     ToolOutlined,
     UploadOutlined,
 } from "@ant-design/icons";
@@ -493,11 +494,57 @@ export const AssistantToolContent = ({ contents }: { contents: MyMessage[] }) =>
             />
 
             {contents.map((x, i) => {
- 
+
                 if (x.role === "assistant") {
                     x.content = x.content || "";
                     return (
                         <div key={i}>
+                            <div className="my-collapse reasoning_content">
+                                {x.reasoning_content && (
+                                    <Collapse
+                                        expandIcon={() => <ThunderboltOutlined />}
+                                        size="small"
+                                        defaultActiveKey={[x.content_status === "dataLoading" ? "reasoning_content" : undefined]}
+                                        items={[
+                                            {
+                                                key: "reasoning_content",
+                                                label: (
+                                                    <div className="line-clamp-1">
+                                                        {t`thinking`}: {x.reasoning_content}
+                                                    </div>
+                                                ),
+                                                children: render == "markdown" ? (
+                                                    <MarkdownPreview className="markdown-body text-sm" source={format(x.reasoning_content.toString())}
+                                                        // disableCopy
+                                                        components={{
+                                                            code: Code,
+                                                            p: katexR,
+                                                            li: katexR,
+                                                            h1: katexR,
+                                                            h2: katexR,
+                                                            h3: katexR,
+                                                            h4: katexR,
+                                                            h5: katexR,
+                                                            h6: katexR,
+                                                            ol: katexR,
+                                                            ul: katexR,
+                                                            menu: katexR,
+                                                        }} />
+                                                ) : render == "text" ? (
+                                                    <pre
+                                                        style={{
+                                                            whiteSpace: "pre-wrap",
+                                                            wordWrap: "break-word",
+                                                        }}
+                                                    >
+                                                        {(x.reasoning_content.toString())}
+                                                    </pre>
+                                                ) : null
+                                            },
+                                        ]}
+                                    />
+                                )}
+                            </div>
                             {
                                 render == "markdown" ? (
                                     <MarkdownPreview className="markdown-body" source={format(x.content.toString())}
@@ -527,6 +574,7 @@ export const AssistantToolContent = ({ contents }: { contents: MyMessage[] }) =>
                                     </pre>
                                 ) : null
                             }
+
                             <div className="my-collapse" style={{ display: x.tool_calls?.length > 0 ? "block" : "none" }}  >
                                 <Collapse
                                     bordered={false}

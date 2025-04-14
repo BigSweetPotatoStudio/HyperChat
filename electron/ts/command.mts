@@ -40,6 +40,8 @@ import cron from "node-cron";
 import { store } from "./rag/vectorStore.mjs";
 import { Config } from "./const.mjs";
 import { clientPaths } from "./mcp/claude.mjs";
+import { createBrowser } from "./mcp/servers/hyper_tools/web2.mjs";
+import { getConfig } from "./mcp/servers/hyper_tools/lib.mjs";
 
 
 export class CommandFactory {
@@ -59,9 +61,12 @@ export class CommandFactory {
   }
   async openMcpClient(
     clientName: string,
-    clientConfig?: MCP_CONFIG_TYPE
+    clientConfig?: MCP_CONFIG_TYPE,
+    options = {
+      onlySave: false,
+    }
   ) {
-    let res = await openMcpClient(clientName, clientConfig);
+    let res = await openMcpClient(clientName, clientConfig, options);
     return res.map((x) => x.toJSON());
   }
   async getMcpClients() {
@@ -241,6 +246,31 @@ export class CommandFactory {
       win.webContents.openDevTools();
     }
   }
+  async hyperToolOpenBrowser(url: string, { userAgent, } = {
+    userAgent: "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36",
+  }): Promise<void> {
+    if (getConfig().Web_Tools_Platform === "electron") {
+      const { BrowserWindow, dialog, shell, clipboard } = await import(
+        "electron"
+      );
+      let win = new BrowserWindow({
+        width: 1280,
+        height: 720,
+        webPreferences: {
+          webSecurity: false,
+        },
+      });
+
+      await win.loadURL(url, {
+        userAgent:
+          userAgent
+      });
+    } else if (getConfig().Web_Tools_Platform === "chrome") {
+      await createBrowser(true, url)
+    } else {
+      throw new Error("HyperTool Settings Web_Tools_Platform is none");
+    }
+  }
   async openBrowser(url: string, userAgent?): Promise<void> {
     const { BrowserWindow, dialog, shell, clipboard } = await import(
       "electron"
@@ -333,7 +363,7 @@ export class CommandFactory {
     return stopTask(taskkey);
   }
   async runTask(taskkey: string) {
-    return runTask(taskkey,{ force: true });
+    return runTask(taskkey, { force: true });
   }
   async callAgent(task: { command: string; agentName: string }) {
     let agent = Agents.initSync().data.find((x) => x.label === task.agentName);
@@ -360,6 +390,9 @@ export class CommandFactory {
 
   async addChatHistory(item: ChatHistoryItem) {
     item.version = "2.0";
+    if (item.isTask) {
+      item.lastMessage = item.messages[item.messages.length - 1];
+    }
     let chatHistory = ChatHistory.initSync().data;
     fs.writeFileSync(path.join(appDataDir, `messages/${item.key}.json`), JSON.stringify(item.messages, null, 2));
     let index = chatHistory.findIndex(x => x.key === item.key);
@@ -369,8 +402,7 @@ export class CommandFactory {
       chatHistory.splice(index, 1);
       chatHistory.unshift(item);
     }
-
-    await ChatHistory.save((r) => {
+    ChatHistory.format = (r) => {
       r.data = r.data.map((x) => {
         if (x.key == item.key) {
           let clone = Object.assign({}, x, { messages: [] });
@@ -380,7 +412,8 @@ export class CommandFactory {
         }
       })
       return r;
-    })
+    }
+    await ChatHistory.save()
   }
   async changeChatHistory(item: ChatHistoryItem) {
     item.version = "2.0";
@@ -390,13 +423,9 @@ export class CommandFactory {
     if (find) {
       Object.assign(find, item);
     }
-
-    await ChatHistory.save((r) => {
+    ChatHistory.format = (r) => {
       r.data = r.data.map((x) => {
         if (x.key == item.key) {
-          let clone = Object.assign({}, x, { messages: [] });
-          return clone;
-        } else if (x.version == "2.0") { 
           let clone = Object.assign({}, x, { messages: [] });
           return clone;
         } else {
@@ -404,7 +433,8 @@ export class CommandFactory {
         }
       })
       return r;
-    })
+    }
+    await ChatHistory.save()
   }
   async removeChatHistory(item: { key: string }) {
     let chatHistory = ChatHistory.initSync().data;

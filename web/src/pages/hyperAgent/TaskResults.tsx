@@ -149,9 +149,11 @@ export function TaskResultsPage() {
                 //   (item) => item.key !== row.key,
                 // );
                 // ChatHistory.save();
+
                 await call("removeChatHistory", [{
                   key: row.key,
                 }])
+                ChatHistory.get().data = ChatHistory.get().data.filter((x) => x.key !== row.key),
                 refresh();
               }}
             >

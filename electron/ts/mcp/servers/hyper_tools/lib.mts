@@ -8,6 +8,7 @@ import path from "path";
 
 export const NAME = "hyper_tools";
 
+
 export const configSchema = z.object({
   Web_Tools_Platform: z
     .enum(["electron", "chrome", "none"], {
@@ -43,7 +44,17 @@ export const configSchema = z.object({
     .string({
       description: "Chrome userData Path",
     })
-    .optional(),
+    .default(path.join(appDataDir, "Chrome")),
+  ChromeAutoClose: z
+    .enum(["true", "false"], {
+      description: "Whether to close automatically after use",
+    })
+    .default("true"),
+  ChromeHeadless: z
+    .enum(["true", "false"], {
+      description: "open the browser in headless(hidden) mode",
+    })
+    .default("false"),
 });
 
 // console.log("safeParse : ", configSchema.safeParse({}));

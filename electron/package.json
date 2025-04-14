@@ -61,14 +61,12 @@
       "target": [
         {
           "arch": [
-            "x64",
             "arm64"
           ],
           "target": "dmg"
         },
         {
           "arch": [
-            "x64",
             "arm64"
           ],
           "target": "zip"
@@ -204,5 +202,5 @@
     "start": "electron .",
     "testprod": "npx tsx task.mts --testprod"
   },
-  "version": "1.4.15"
+  "version": "1.4.18"
 }

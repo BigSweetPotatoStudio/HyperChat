@@ -47,14 +47,16 @@ export class Data<T> {
   get(): T {
     return this.data;
   }
+  set(data: T) {
+    this.data = data;
+  }
   // get d(): T {
   //   return this.data;
   // }
   format(x) {
     return x;
   };
-  async save(format = (x: T) => x) {
-    this.format = format;
+  async save() {
     this.insave();
   }
   private inget(): Promise<T> {
@@ -123,6 +125,7 @@ export const electronData = new Data(
       baseDirName: "",
     },
     uuid: v4(),
+    runTask: false,
   },
   {
     sync: false,
@@ -228,11 +231,6 @@ export const GPT_MODELS = new Data("gpt_models.json", {
   }>,
 });
 
-class MCP_CONFIG_DATA<T> extends Data<T> {
-  constructor(key: string, data: T, options) {
-    super(key, data, options);
-  }
-}
 
 export type MCP_CONFIG_TYPE = {
   command: string;
@@ -247,6 +245,7 @@ export type MCP_CONFIG_TYPE = {
     scope: "built-in" | "outer";
   };
   disabled: boolean;
+  isSync?: boolean;
 };
 
 export type HyperChatCompletionTool = OpenAI.ChatCompletionTool & {
@@ -270,6 +269,19 @@ export type IMCPClient = {
   version: string;
   servername: string;
 };
+
+class MCP_CONFIG_DATA<T> extends Data<T> {
+  save(sync = true): Promise<void> {
+    if (sync) {
+      let result: any = this.get();
+
+      MCP_CONFIG_SYNC.set(result);
+      MCP_CONFIG_SYNC.save();
+    }
+    return super.save();
+  }
+}
+
 export const MCP_CONFIG = new MCP_CONFIG_DATA(
   "mcp.json",
   {
@@ -277,6 +289,16 @@ export const MCP_CONFIG = new MCP_CONFIG_DATA(
   },
   {
     sync: false,
+  }
+);
+
+export const MCP_CONFIG_SYNC = new Data(
+  "mcp_sync.json",
+  {
+    mcpServers: {} as { [s: string]: MCP_CONFIG_TYPE },
+  },
+  {
+    sync: true,
   }
 );
 

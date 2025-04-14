@@ -49,7 +49,7 @@ electronData.get().webdav.password = electronData.get().webdav.password || AppSe
 electronData.get().webdav.username = electronData.get().webdav.username || AppSetting.get().webdav.username;
 electronData.get().webdav.baseDirName = electronData.get().webdav.baseDirName || AppSetting.get().webdav.baseDirName;
 
-
+electronData.get().runTask = electronData.get().runTask == null ? true : electronData.get().runTask;
 electronData.get().platform = process.platform;
 
 if (ENV_CONFIG.initSync({ force: true }).PATH != "") {

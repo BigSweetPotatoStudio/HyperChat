@@ -1102,5 +1102,9 @@
   "please select emoji!": {
     "en": "please select emoji!",
     "zh": "请选一个表情符号！"
+  },
+  "thinking": {
+    "en": "thinking",
+    "zh": "思考"
   }
 }
