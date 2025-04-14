@@ -18,5 +18,5 @@ RUN pip install uv
 
 RUN npm i -g @dadigua/hyper-chat@latest
 
-
+ENV NODE_ENV=production
 CMD ["hyper-chat"]
