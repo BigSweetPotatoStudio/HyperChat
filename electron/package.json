@@ -188,7 +188,7 @@
     "start:node": "node js/main_no_electron.js",
     "testprod": "npx tsx task.mts --testprod"
   },
-  "version": "1.4.20-alpha.5",
+  "version": "1.4.20-alpha.9",
   "bin": {
     "hyper-chat": "cli.js"
   }
