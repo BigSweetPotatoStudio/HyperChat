@@ -10,7 +10,6 @@
     "pre_commit": "tsx task.mts --pre_commit"
   },
   "pre-commit": [
-    "pre_commit"
   ],
   "author": "",
   "license": "ISC",
