@@ -31,6 +31,7 @@ jobs:
           node-version: "20"
           registry-url: https://registry.npmjs.org/
 
+
       - name: Install -g
         run: npm install -g cross-env zx
 
@@ -81,10 +82,6 @@ jobs:
         run: npm install
         working-directory: ./electron
 
-      - run: cd web && npm run build
-
-      - run: cd electron && npm run build:node
-
       - name: Determine npm publish tag
         id: publish-tag
         run: |
@@ -94,7 +91,25 @@ jobs:
           echo "tag=latest" >> $GITHUB_OUTPUT
             fi
 
+      - name: change alpha version
+        if: steps.publish-tag.outputs.tag == 'alpha'
+        run: npm version prerelease --preid=alpha
+
+      - run: cd web && npm run build
+      
+      - run: cd electron && npm run build:node
+
       - run: cd electron && npm publish --tag ${{ steps.publish-tag.outputs.tag }} --access=public
         env:
           NODE_AUTH_TOKEN: ${{secrets.npm_token}}
 
+      - name: push
+        if: steps.publish-tag.outputs.tag == 'alpha'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add .
+          git commit -m "action-generated"
+          git push
+        env:
+          GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
