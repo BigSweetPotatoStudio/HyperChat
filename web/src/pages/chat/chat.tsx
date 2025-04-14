@@ -527,6 +527,9 @@ export const Chat = ({
                         htmlType="submit"
                         onClick={() => {
                           currentChat.current.confirm_call_tool = false;
+                          if (openaiClient.current) {
+                            openaiClient.current.options.confirm_call_tool = false;
+                          }
                         }}
                       >
                         {t`Allow this Chat`}

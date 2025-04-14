@@ -34,7 +34,7 @@ module.exports = (env, argv) => {
     plugins: [
       // new Dotenv(),
       new webpack.EnvironmentPlugin({
-        NODE_ENV: process.env.NODE_ENV || "development",
+        NODE_ENV: "production",
         myEnv: process.env.myEnv || "prod",
         runtime: "node",
         no_electron: "1",
