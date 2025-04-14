@@ -198,13 +198,14 @@ export function TaskListPage() {
             setVisible(true);
           }}
         >{t`Create Task`}</Button>
+
         {/* <Button icon={<CaretRightOutlined />}>{t`Disable running tasks on this machine`}</Button>
         <Button icon={<StopOutlined />}>{t`Enable running tasks on this machine`}</Button> */}
-        <span>Run tasks on this local machine: <Switch checked={electronData.get().runTask} onChange={async (checked) => {
-          electronData.get().runTask = checked; 
+        <Button>{t`Main Switch`}: <Switch checked={electronData.get().runTask} onChange={async (checked) => {
+          electronData.get().runTask = checked;
           await electronData.save();
           refresh();
-        }}></Switch></span>
+        }}></Switch></Button>
       </div>
 
 

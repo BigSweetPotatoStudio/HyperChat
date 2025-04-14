@@ -458,6 +458,7 @@ function format(content) {
     return content;
 }
 
+
 export const AssistantToolContent = ({ contents }: { contents: MyMessage[] }) => {
     // console.log("AssistantToolContent", contents);
     const [num, setNum] = React.useState(0);
@@ -466,7 +467,7 @@ export const AssistantToolContent = ({ contents }: { contents: MyMessage[] }) =>
     };
 
     const [render, setRender] = React.useState("markdown");
-
+    // const extObj = useRef({} as any);
 
     return (
         <div
@@ -494,7 +495,11 @@ export const AssistantToolContent = ({ contents }: { contents: MyMessage[] }) =>
             />
 
             {contents.map((x, i) => {
-
+                // if (extObj.current[i] === undefined) {
+                //     if (x.content_status === "dataLoading") {
+                //         extObj.current[i] = "reasoning_content";
+                //     }
+                // }
                 if (x.role === "assistant") {
                     x.content = x.content || "";
                     return (
@@ -505,6 +510,11 @@ export const AssistantToolContent = ({ contents }: { contents: MyMessage[] }) =>
                                         expandIcon={() => <ThunderboltOutlined />}
                                         size="small"
                                         defaultActiveKey={[x.content_status === "dataLoading" ? "reasoning_content" : undefined]}
+                                        // activeKey={[extObj.current[i]]}
+                                        // onChange={() => {
+                                        //     extObj.current[i] = extObj.current[i] == null ? "reasoning_content" : null;
+                                        //     refresh();
+                                        // }}
                                         items={[
                                             {
                                                 key: "reasoning_content",
@@ -579,13 +589,13 @@ export const AssistantToolContent = ({ contents }: { contents: MyMessage[] }) =>
                                 <Collapse
                                     bordered={false}
                                     size="small"
+                                    expandIcon={() => <ToolOutlined className="" />}
                                     items={x.tool_calls?.map((tool: any, index) => {
                                         if (x == null) {
                                             return null;
                                         }
                                         return {
                                             key: index.toString(),
-                                            showArrow: false,
                                             label: <Spin
                                                 key={index}
                                                 spinning={x.content_status == "loading"}
@@ -595,7 +605,6 @@ export const AssistantToolContent = ({ contents }: { contents: MyMessage[] }) =>
                                                         className="cursor-pointer"
                                                     >
                                                         <div className="line-clamp-1 text-blue-500">
-                                                            <ToolOutlined className="" />
                                                             <span className="text-purple-500">
                                                                 {tool.restore_name || tool.function.name}
                                                             </span>{" "}

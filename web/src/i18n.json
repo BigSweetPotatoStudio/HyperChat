@@ -1118,5 +1118,9 @@
   "Develop Mode": {
     "en": "Develop Mode",
     "zh": "开发模式"
+  },
+  "Main Switch": {
+    "en": "Main Switch",
+    "zh": "总开关"
   }
 }

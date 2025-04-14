@@ -155,27 +155,30 @@ export function Setting() {
               ></InputNumber>
             </Form.Item>
             <Form.Item label={t`web asscess password`}>
-              <Input
-                className="w-full"
-                value={password}
-                onChange={async (e) => {
-                  setPassword(e.target.value || "123456");
-                }}
-              ></Input>
-              <Button
-                onClick={async () => {
-                  // Validate password: must contain alphanumeric characters
-                  if (!/^[a-zA-Z0-9]+$/.test(password)) {
-                    message.error(t`Password must contain only letters and numbers`);
-                    return;
-                  }
-                  electronData.get().password = password;
-                  await electronData.save();
-                  message.success(t`Update Success, please restart`);
-                }}
-              >
-                {t`Update`}
-              </Button>
+              <Space.Compact>
+                <Input
+                  className="w-full"
+                  value={password}
+                  onChange={async (e) => {
+                    setPassword(e.target.value || "123456");
+                  }}
+                ></Input>
+                <Button
+                  onClick={async () => {
+
+                    if (!/^[a-zA-Z0-9]+$/.test(password)) {
+                      message.error(t`Password must contain only letters and numbers`);
+                      return;
+                    }
+                    electronData.get().password = password;
+                    await electronData.save();
+                    message.success(t`Update Success, please restart`);
+                  }}
+                >
+                  {t`Update`}
+                </Button>
+              </Space.Compact>
+
             </Form.Item>
             <Form.Item label={t`Develop Mode`}>
               <Switch
