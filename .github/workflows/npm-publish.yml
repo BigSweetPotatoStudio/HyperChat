@@ -5,8 +5,6 @@ name: Node.js Package
 
 on:
   workflow_dispatch: {}
-  release:
-    types: [published]
   push:
     branches:
       - alpha
@@ -95,11 +93,11 @@ jobs:
         env:
           NODE_AUTH_TOKEN: ${{secrets.npm_token}}
 
-      - name: SET GITHUB AND  git checkout .
+      - name: SET GITHUB AND  reset
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git checkout .
+          git reset --hard HEAD 
         env:
           GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
 
