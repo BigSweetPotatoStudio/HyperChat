@@ -1,6 +1,6 @@
 {
   "name": "@dadigua/hyper-chat",
-  "version": "1.4.20-alpha.12",
+  "version": "1.4.20-alpha.13",
   "main": "index.js",
   "scripts": {
     "dev": "tsx task.mts --dev",
@@ -9,8 +9,7 @@
     "build": "tsx task.mts --build",
     "pre_commit": "tsx task.mts --pre_commit"
   },
-  "pre-commit": [
-  ],
+  "pre-commit": [],
   "author": "",
   "license": "ISC",
   "description": "",
