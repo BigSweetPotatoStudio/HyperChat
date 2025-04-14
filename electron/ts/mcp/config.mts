@@ -52,7 +52,9 @@ for (let key in sync_config.mcpServers) {
   if (sync_config.mcpServers[key].isSync) {
     config.mcpServers[key] = sync_config.mcpServers[key];
   } else {
-    sync_config.mcpServers[key].isSync = false;
+    if (config.mcpServers[key] != null) {
+      config.mcpServers[key].isSync = false;
+    }
   }
 }
 
