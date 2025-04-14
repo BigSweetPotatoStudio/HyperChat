@@ -545,6 +545,21 @@ export function Market() {
                         >
                           Claude Desktop Config
                         </Button>
+                        <Button title="isLoadClaudeConfig:">
+                          <Switch checked={electronData.get().isLoadClaudeConfig} onChange={async (checked) => {
+                            if (checked) {
+                              for (let x of mcpClients.filter(x => x.source == "claude")) {
+                                await call("openMcpClient", [x.name]);
+                              }
+                            } else {
+                              for (let x of mcpClients.filter(x => x.source == "claude")) {
+                                await call("closeMcpClients", [x.name, { isdelete: false, isdisable: true }]);
+                              }
+                            }
+                            electronData.get().isLoadClaudeConfig = checked;
+                            await electronData.save();
+                            refresh();
+                          }} /> </Button>
                       </Space.Compact>
                     </div>
                     <div style={{ maxHeight: "calc(100vh - 152px)", overflowY: "auto" }}>

@@ -7,7 +7,7 @@ RUN apt-get update
 RUN apt-get install -y curl
 
 # Add NodeSource repository for Node.js LTS
-RUN curl -fsSL https://deb.nodesource.com/setup_lts.x | bash -
+RUN curl -fsSL https://deb.nodesource.com/setup_20.x | bash -
 # Install Node.js and npm
 RUN apt-get install -y nodejs
 
@@ -16,7 +16,8 @@ RUN apt-get install -y python3 python3-pip
 # With pip.
 RUN pip install uv
 
-RUN npm i -g @dadigua/hyper-chat@latest
+COPY ../../electron/ /root/hyperchat
 
 ENV NODE_ENV=production
-CMD ["hyper-chat"]
+
+CMD ["node", "/root/hyperchat/js/main_no_electron.js"]

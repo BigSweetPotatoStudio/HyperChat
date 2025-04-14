@@ -51,6 +51,8 @@ let sync_config = MCP_CONFIG_SYNC.initSync();
 for (let key in sync_config.mcpServers) {
   if (sync_config.mcpServers[key].isSync) {
     config.mcpServers[key] = sync_config.mcpServers[key];
+  } else {
+    sync_config.mcpServers[key].isSync = false;
   }
 }
 
@@ -305,7 +307,7 @@ export class MCPClient implements IMCPClient {
         type: "changeMcpClient",
         data: mcpClients,
       })
-   
+
     } catch (e) {
       this.status = "disconnected";
       getMessageService().sendAllToRenderer({
@@ -369,6 +371,12 @@ export class MCPClient implements IMCPClient {
     if (this.source == "builtin") {
       buildinMcpJSON = fs.readJsonSync(buildinMcpJSONPath);
       this.config = buildinMcpJSON.mcpServers[this.name] as MCP_CONFIG_TYPE;
+    }
+    if (this.source == "claude") {
+      let p = clientPaths.claude;
+      Logger.info("initClaudeConfig", "found", p);
+      let config = fs.readJsonSync(p);
+      this.config = config.mcpServers[this.name] as MCP_CONFIG_TYPE;
     }
   }
   saveConfig({ isdelete }: { isdelete?: boolean } = {}) {
@@ -546,12 +554,18 @@ export async function initMcpClients() {
         if (mcpOBj[key] != null) {
           key = key + "_" + electronData.initSync().uuid.slice(0, 8);
         }
+
+        c.disabled = !electronData.initSync().isLoadClaudeConfig;
+
         const mcpClient = new MCPClient(key, c, "claude", order);
         mcpClients.push(mcpClient);
         mcpOBj[key] = mcpClient;
 
         try {
+
+
           tasks.push(
+
             mcpClient.open().then(() => {
               getMessageService().sendAllToRenderer({
                 type: "changeMcpClient",
