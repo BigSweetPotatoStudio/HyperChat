@@ -91,6 +91,12 @@ jobs:
           echo "tag=latest" >> $GITHUB_OUTPUT
             fi
 
+      - name: SET GITHUB
+        if: steps.publish-tag.outputs.tag == 'alpha'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            
       - name: change alpha version
         if: steps.publish-tag.outputs.tag == 'alpha'
         run: npm version prerelease --preid=alpha
@@ -106,8 +112,6 @@ jobs:
       - name: push
         if: steps.publish-tag.outputs.tag == 'alpha'
         run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add .
           git commit -m "action-generated"
           git push
