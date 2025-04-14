@@ -13,7 +13,9 @@ on:
   workflow_dispatch: {}
   release:
     types: [published]
-
+  push:
+    branches:
+      - alpha
 jobs:
   push_to_registry:
     name: Push Docker image to Docker Hub
