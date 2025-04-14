@@ -87,16 +87,6 @@ jobs:
           echo "tag=latest" >> $GITHUB_OUTPUT
             fi
 
-      - name: SET GITHUB
-        if: steps.publish-tag.outputs.tag == 'alpha'
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-            
-      - name: change alpha version
-        if: steps.publish-tag.outputs.tag == 'alpha'
-        run: npm version prerelease --preid=alpha
-
       - run: cd web && npm run build
       
       - run: cd electron && npm run build:node
@@ -104,6 +94,16 @@ jobs:
       - run: cd electron && npm publish --tag ${{ steps.publish-tag.outputs.tag }} --access=public
         env:
           NODE_AUTH_TOKEN: ${{secrets.npm_token}}
+
+      - name: SET GITHUB
+        if: steps.publish-tag.outputs.tag == 'alpha'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+              
+      - name: change alpha version
+        if: steps.publish-tag.outputs.tag == 'alpha'
+        run: npm version prerelease --preid=alpha
 
       - name: push
         if: steps.publish-tag.outputs.tag == 'alpha'
