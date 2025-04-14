@@ -83,7 +83,7 @@ jobs:
 
       - run: cd electron && npm run build:node
 
-      - run: cd electron && npm publish --access=public
+      - run: cd electron && npm publish --tag alpha --access=public
         env:
           NODE_AUTH_TOKEN: ${{secrets.npm_token}}
 
