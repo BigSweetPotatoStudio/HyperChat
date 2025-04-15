@@ -48,7 +48,7 @@ if (argv.prod) {
         await $`npx cross-env NODE_ENV=production myEnv=prod electron-builder --publish always`;
       } else {
         console.log('Building for x86/x64 architecture');
-        let pack = await fs.readJSON(path.resolve(__dirname, "./package.json"));
+        let pack = await fs.readJSON("./package.json");
         pack.build.mac.target = [{
           "arch": [
             "x64"
@@ -61,7 +61,7 @@ if (argv.prod) {
           ],
           "target": "zip"
         }];
-        await fs.writeJSON(path.resolve(__dirname, "./package.json"), pack, { spaces: 2 });
+        await fs.writeJSON("./package.json", pack, { spaces: 2 });
         await $`npx cross-env NODE_ENV=production myEnv=prod electron-builder --publish always`;
       }
     } else {

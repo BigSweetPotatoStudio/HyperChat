@@ -234,44 +234,14 @@ export function Layout() {
 
   const [loadingCheckLLM, setLoadingCheckLLM] = useState(false);
   const [syncStatus, setSyncStatus] = useState(0);
+
+  const [updateData, setUpdateData] = useState({} as any);
   useEffect(() => {
     msg_receive("message-from-main", async (res: any) => {
       // console.log("UpdateMsg! ", res);
 
       if (res.type == "UpdateMsg" && res.data.status == 1) {
-        Modal.confirm({
-          title: "A new version is available",
-          content: (
-            <div>
-              <div>current version: {electronData.get().version}</div>
-              <div>latest version: {res.data.info.version}</div>
-              {res.data.info.releaseName != res.data.info.version && (
-                <div>title: {res.data.info.releaseName}</div>
-              )}
-              <div>
-                changelog:{" "}
-                {typeof res.data.info.releaseNotes == "string" ? (
-                  <div
-                    style={{ color: "gray" }}
-                    dangerouslySetInnerHTML={{
-                      __html: res.data.info.releaseNotes,
-                    }}
-                  ></div>
-                ) : (
-                  res.data.info.releaseNotes.map((x) => {
-                    return (
-                      <div dangerouslySetInnerHTML={{ __html: x.note }}></div>
-                    );
-                  })
-                )}
-              </div>
-            </div>
-          ),
-          okText: "Download And Update",
-          onOk: async () => {
-            call("checkUpdateDownload", []);
-          },
-        });
+        setUpdateData(res.data);
       }
 
       if (res.type == "UpdateMsg" && res.data.status == 4) {
@@ -486,7 +456,45 @@ export function Layout() {
           headerTitleRender={(logo, title, _) => {
             return (
               <Link to="Home">
-                HyperChat<span>({electronData.get().version})</span>
+                HyperChat<span>({electronData.get().version}){updateData.info && <Tag className=" text-red-600" onClick={() => {
+                  Modal.confirm({
+                    title: t`A new version is available`,
+                    width: "80%",
+                    style: {
+                      maxWidth: 1024,
+                    },
+                    content: (
+                      <div>
+                        <div>current version: {electronData.get().version}</div>
+                        <div>latest version: {updateData.info.version}</div>
+                        {updateData.info.releaseName != updateData.info.version && (
+                          <div>title: {updateData.info.releaseName}</div>
+                        )}
+                        <div>
+                          changelog:{" "}
+                          {typeof updateData.info.releaseNotes == "string" ? (
+                            <div
+                              style={{ color: "gray" }}
+                              dangerouslySetInnerHTML={{
+                                __html: updateData.info.releaseNotes,
+                              }}
+                            ></div>
+                          ) : (
+                            updateData.info.releaseNotes.map((x) => {
+                              return (
+                                <div dangerouslySetInnerHTML={{ __html: x.note }}></div>
+                              );
+                            })
+                          )}
+                        </div>
+                      </div>
+                    ),
+                    okText: t`Download And Update`,
+                    onOk: async () => {
+                      call("checkUpdateDownload", []);
+                    },
+                  });
+                }}>{`New`}</Tag>}</span>
               </Link>
             );
           }}
