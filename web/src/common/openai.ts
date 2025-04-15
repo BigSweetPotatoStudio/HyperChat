@@ -281,9 +281,14 @@ export class OpenAiChannel {
   ): Promise<string> {
     this.status = "runing";
     this.index++;
-    return await this._completion(onUpdate, call_tool, step, {
+    let res = await this._completion(onUpdate, call_tool, step, {
       index: this.index,
+    }).catch((e) => {
+      this.status = "stop";
+      throw e;
     });
+    this.status = "stop";
+    return res;
   }
   async _completion(
     onUpdate?: (content: string) => void,
@@ -428,7 +433,7 @@ export class OpenAiChannel {
             (chatCompletion as any)?.error?.message ||
             "Provider returned error",
           );
-        } 
+        }
         this.lastMessage.content_status = "success";
         this.totalTokens = chatCompletion?.usage?.total_tokens;
         res.content_usage.completion_tokens =
@@ -608,6 +613,23 @@ export class OpenAiChannel {
     } else {
       // console.log("this.messages", this.messages);
       return res.content as string;
+    }
+  }
+
+  async completionParse(response_format: any): Promise<any> {
+    let completion = await this.openai.beta.chat.completions.parse({
+      messages: this.messages_format(this.messages),
+      model: this.options.model,
+      temperature: this.options.temperature,
+      response_format: response_format,
+    });
+    const res = completion.choices[0].message
+
+    // If the model refuses to respond, you will get a refusal message
+    if (res.refusal) {
+      throw new Error(res.refusal)
+    } else {
+      return res.parsed
     }
   }
   clear() {

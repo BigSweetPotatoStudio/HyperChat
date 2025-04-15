@@ -300,8 +300,22 @@ export class MCPClient implements IMCPClient {
         Logger.info("Received notification LoggingMessageNotificationSchema:", notification);
       });
 
-      this.client.setNotificationHandler(ResourceListChangedNotificationSchema, (notification) => {
+      this.client.setNotificationHandler(ResourceListChangedNotificationSchema, async (notification) => {
         Logger.info("Received notification ResourceListChangedNotificationSchema:", notification);
+        let resources_res = await client.listResources().catch((e) => {
+          return { resources: [] };
+        });
+        this.resources = resources_res.resources.map((x) => {
+          return {
+            ...x,
+            key: this.name + " > " + x.name,
+            clientName: this.name,
+          };
+        });
+        getMessageService().sendAllToRenderer({
+          type: "changeMcpClient",
+          data: mcpClients,
+        })
       });
 
       this.status = "connected";
@@ -623,6 +637,9 @@ export async function openMcpClient(
   if (options.onlySave) {
     mcpClient.saveConfig();
   } else {
+    if (mcpClient.source == "builtin") {
+      mcpClient.saveConfig();
+    }
     try {
       await mcpClient.open();
       mcpClient.saveConfig();
@@ -631,10 +648,7 @@ export async function openMcpClient(
       throw e;
     }
   }
-  getMessageService().sendAllToRenderer({
-    type: "changeMcpClient",
-    data: mcpClients,
-  })
+
   return mcpClients;
 }
 

@@ -25,11 +25,16 @@ for (let data of DataList) {
     },
     insave() {
       try {
-        getMessageService().sendAllToRenderer({
-          type: "syncNodeToWeb",
-          data: { key: this.KEY, data: this.data },
-        });
-      } catch (e) {}
+        if (this.KEY == "chat_history.json") {
+
+        } else {
+          getMessageService().sendAllToRenderer({
+            type: "syncNodeToWeb",
+            data: { key: this.KEY, data: this.data },
+          });
+        }
+
+      } catch (e) { }
 
       return fs.writeFileSync(
         path.join(appDataDir, this.KEY),

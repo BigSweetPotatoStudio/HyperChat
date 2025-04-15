@@ -147,7 +147,7 @@
     "log4js": "^6.9.1",
     "node-cron": "^3.0.3",
     "node-pty": "^1.0.0",
-    "openai": "^4.84.1",
+    "openai": "^4.94.0",
     "opusscript": "^0.1.1",
     "pdf-parse": "^1.1.1",
     "pdfjs-dist": "^4.10.38",
@@ -203,5 +203,5 @@
     "start:node": "node js/main_no_electron.js",
     "testprod": "npx tsx task.mts --testprod"
   },
-  "version": "1.4.20-alpha.12"
+  "version": "1.4.20-alpha.15"
 }

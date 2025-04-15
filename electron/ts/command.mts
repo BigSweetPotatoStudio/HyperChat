@@ -394,7 +394,9 @@ export class CommandFactory {
       item.lastMessage = item.messages[item.messages.length - 1];
     }
     let chatHistory = ChatHistory.initSync().data;
-    fs.writeFileSync(path.join(appDataDir, `messages/${item.key}.json`), JSON.stringify(item.messages, null, 2));
+    if (item.messages && item.messages.length > 0) {
+      fs.writeFileSync(path.join(appDataDir, `messages/${item.key}.json`), JSON.stringify(item.messages, null, 2));
+    }
     let index = chatHistory.findIndex(x => x.key === item.key);
     if (index === -1) {
       chatHistory.unshift(item);
@@ -417,7 +419,9 @@ export class CommandFactory {
   }
   async changeChatHistory(item: ChatHistoryItem) {
     item.version = "2.0";
-    fs.writeFileSync(path.join(appDataDir, `messages/${item.key}.json`), JSON.stringify(item.messages, null, 2));
+    if (item.messages && item.messages.length > 0) {
+      fs.writeFileSync(path.join(appDataDir, `messages/${item.key}.json`), JSON.stringify(item.messages, null, 2));
+    }
     let chatHistory = ChatHistory.initSync().data;
     let find = chatHistory.find(x => x.key === item.key);
     if (find) {

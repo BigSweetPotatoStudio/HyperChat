@@ -1,6 +1,6 @@
 {
   "name": "web",
-  "version": "1.4.20-alpha.12",
+  "version": "1.4.20-alpha.15",
   "private": true,
   "dependencies": {
     "@ant-design/cssinjs": "^1.21.1",
@@ -52,7 +52,7 @@
     "markdown-it": "^14.1.0",
     "mermaid": "^11.6.0",
     "mini-css-extract-plugin": "^2.9.0",
-    "openai": "^4.52.0",
+    "openai": "^4.94.0",
     "postcss-loader": "^8.1.1",
     "prettier": "^3.3.3",
     "prettier-plugin-tailwindcss": "^0.6.6",

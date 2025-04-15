@@ -1,7 +1,7 @@
 import { Attachments, Bubble } from "@ant-design/x";
-import React, { useCallback } from "react";
+import React, { useCallback, useEffect, useRef } from "react";
 import { MyMessage } from "../common/openai";
-import { CopyOutlined, DownloadOutlined, EditOutlined, LoadingOutlined, MinusCircleOutlined, StockOutlined, SyncOutlined, UploadOutlined, UserOutlined, WechatWorkOutlined } from "@ant-design/icons";
+import { BranchesOutlined, CopyOutlined, DownloadOutlined, EditOutlined, LoadingOutlined, MinusCircleOutlined, StockOutlined, SyncOutlined, UploadOutlined, UserOutlined, WechatWorkOutlined } from "@ant-design/icons";
 import { Collapse, message, Modal, Space, Spin, Tooltip } from "antd";
 import { v4 } from "uuid";
 import { call } from "../common/call";
@@ -12,7 +12,13 @@ import { Pre } from "./pre";
 import { AssistantToolContent } from "./assistant_tool_content";
 import { Icon } from "./icon";
 
-export const Messages = ({ messages, onSumbit, readOnly }: { messages: MyMessage[]; onSumbit: (messages: MyMessage[]) => void; readOnly?: boolean }) => {
+export const Messages = ({ messages, onSumbit, readOnly, setContainer, status, onClone }: {
+    messages: MyMessage[];
+    onSumbit: (messages: MyMessage[]) => void; readOnly?: boolean,
+    setContainer?: (container: any) => void;
+    status?: string;
+    onClone?: (index) => void;
+}) => {
     const [num, setNum] = React.useState(0);
     const refresh = () => {
         setNum((n) => n + 1);
@@ -94,7 +100,13 @@ export const Messages = ({ messages, onSumbit, readOnly }: { messages: MyMessage
                                 message.success(t`Copied to clipboard`);
                             }}
                         />
-
+                        {x.role == "user" && (
+                            <Tooltip title="Clone">
+                                <BranchesOutlined onClick={() => {
+                                    onClone && onClone(i);
+                                }} />
+                            </Tooltip>
+                        )}
                         {!readOnly && <EditOutlined
                             className="hover:text-cyan-400"
                             onClick={() => {
@@ -125,6 +137,7 @@ export const Messages = ({ messages, onSumbit, readOnly }: { messages: MyMessage
                                 <MinusCircleOutlined className="cursor-not-allowed" />
                             </Tooltip>
                         )}
+
                     </Space>
                 ),
                 content: (
@@ -229,6 +242,11 @@ export const Messages = ({ messages, onSumbit, readOnly }: { messages: MyMessage
                                         message.success("Copied to clipboard");
                                     }}
                                 />
+                                <Tooltip title="Clone">
+                                    <BranchesOutlined onClick={() => {
+                                        onClone && onClone(i);
+                                    }} />
+                                </Tooltip>
                                 {x.content_attached && !readOnly && <SyncOutlined
                                     key="sync"
                                     className="hover:text-cyan-400"
@@ -237,6 +255,7 @@ export const Messages = ({ messages, onSumbit, readOnly }: { messages: MyMessage
                                         onSumbit(messages.filter((x, index) => index < i));
                                     }}
                                 />}
+
                             </Space>
                             {
                                 <Space>
@@ -279,7 +298,7 @@ export const Messages = ({ messages, onSumbit, readOnly }: { messages: MyMessage
                     content: (
                         <div>
 
-              
+
 
                             <AssistantToolContent
                                 contents={contents}
@@ -319,8 +338,37 @@ export const Messages = ({ messages, onSumbit, readOnly }: { messages: MyMessage
         }
     }, [messages]);
 
+    const container = useRef<any>(null);
+    // console.log(status, "status")
+    let v = useRef<any>(status);
+    v.current = status;
+
+    useEffect(() => {
+        let t = setInterval(() => {
+            // console.log(v.current, container.current, "status")
+            if (v.current === "runing") {
+                // container.current.nativeElement.scrollTop = container.current.nativeElement.scrollHeight;\
+                if (container.current && container.current.nativeElement) {
+                    container.current.nativeElement.scrollTo({
+                        top: container.current.nativeElement.scrollHeight,
+                        // behavior: "smooth" 
+                    });
+                }
+            }
+        }, 100);
+        return () => {
+            clearInterval(t);
+        }
+    }, [v, container]);
+
+
     return <Bubble.List
-        autoScroll={true}
+        // autoScroll={true}
+        ref={(e) => {
+            container.current = e;
+            setContainer && setContainer(e);
+        }}
+        className="bubble-list"
         style={{
             paddingRight: 4,
             height:

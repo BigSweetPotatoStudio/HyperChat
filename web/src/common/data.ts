@@ -40,7 +40,7 @@ msg_receive("message-from-main", (msg) => {
   if (msg.type == "syncNodeToWeb") {
     let c = DataList.find((x) => x.KEY == msg.data.key);
     if (c) {
-      if (c.KEY == "ChatHistory.json") {
+      // if (c.KEY == "ChatHistory.json") {
         // let newData = msg.data.data;
 
         // for (let x of newData.data) {
@@ -50,9 +50,9 @@ msg_receive("message-from-main", (msg) => {
         //     break;
         //   }
         // }
-      } else {
+      // } else {
         Object.assign(c.get(), msg.data.data);
-      }
+      // }
     } else {
       console.error("syncNodeToWeb", msg.data.key, "not found");
     }

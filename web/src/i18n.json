@@ -1021,7 +1021,7 @@
   },
   "Start inputting, You can use @ to call other agents, or quickly enter": {
     "en": "Start inputting, You can use @ to call other agents, or quickly enter",
-    "zh": "开始输入 您可以使用 @ 调用其他代理 或快速输入"
+    "zh": "开始输入 您可以使用 @ 调用其他Agent 或快速输入"
   },
   "Please select allowed MCP": {
     "en": "Please select allowed MCP",
@@ -1122,5 +1122,13 @@
   "Main Switch": {
     "en": "Main Switch",
     "zh": "总开关"
+  },
+  "Rename": {
+    "en": "Rename",
+    "zh": "重命名"
+  },
+  "AI Generate": {
+    "en": "AI Generate",
+    "zh": "AI生成"
   }
 }

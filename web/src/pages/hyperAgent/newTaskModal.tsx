@@ -26,6 +26,8 @@ import { CloseOutlined, FormOutlined } from "@ant-design/icons";
 
 import { Agents, KNOWLEDGE_Store, Task } from "../../../../common/data";
 import { t } from "../../i18n";
+import { InputAI } from "../../components/input_ai";
+import { genCronExpression } from "../../components/ai";
 
 const models = [
   {
@@ -58,9 +60,9 @@ const ModalForm: React.FC<CollectionCreateFormProps> = ({
     setNum((x) => x + 1);
   };
   useEffect(() => {
-    (async()=>{
-        await Agents.init();
-        refresh();
+    (async () => {
+      await Agents.init();
+      refresh();
     })()
   }, []);
 
@@ -94,14 +96,16 @@ const ModalForm: React.FC<CollectionCreateFormProps> = ({
         label={t`message`}
         rules={[{ required: true, message: t`Please enter` }]}
       >
-        <Input.TextArea placeholder={t`Please enter command message telling the Agent what to do.`} rows={4}/>
+        <Input.TextArea placeholder={t`Please enter command message telling the Agent what to do.`} rows={4} />
       </Form.Item>
       <Form.Item<Values>
         name="cron"
         label={t`cronExpression`}
         rules={[{ required: true, message: t`Please enter` }]}
       >
-        <Input placeholder={t`Please enter cronExpression, e.g., "0 * * * *"`} />
+        <InputAI placeholder={t`Please enter cronExpression, e.g., "0 * * * *"`} extInput aiGen={(m) => {
+          return genCronExpression(m);
+        }} />
       </Form.Item>
 
       {/* <Form.Item<Values>

@@ -167,7 +167,7 @@ export type MyMessage = OpenAI.Chat.Completions.ChatCompletionMessageParam & {
   reasoning_content?: string;
   content_context?: any;
   content_attached?: boolean;
-  content_date: number;
+  content_date?: number;
   content_usage?: {
     prompt_tokens: number;
     completion_tokens: number;
@@ -218,19 +218,20 @@ export const Agents = new Data("gpts_list.json", {
   }>,
 });
 
+export type GPT_MODELS_TYPE = {
+  key: string;
+  name: string;
+  model: string;
+  apiKey: string;
+  baseURL: string;
+  provider: string;
+  supportImage: boolean;
+  supportTool: boolean;
+  call_tool_step?: number;
+  type?: "llm" | "embedding";
+}
 export const GPT_MODELS = new Data("gpt_models.json", {
-  data: [] as Array<{
-    key: string;
-    name: string;
-    model: string;
-    apiKey: string;
-    baseURL: string;
-    provider: string;
-    supportImage: boolean;
-    supportTool: boolean;
-    call_tool_step?: number;
-    type?: "llm" | "embedding";
-  }>,
+  data: [] as Array<GPT_MODELS_TYPE>,
 });
 
 
