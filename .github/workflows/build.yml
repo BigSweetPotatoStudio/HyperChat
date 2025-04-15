@@ -1,18 +1,18 @@
-name: HyperChat
+name: HyperChat-Mac-x64
 
 # on: [push, pull_request]
 on:
   workflow_dispatch: {}
-  # push:
-  #   branches:
-  #     - alpha
+  push:
+    branches:
+      - alpha
 
 jobs:
-  # build-mac-x64:
-  #   uses: ./.github/workflows/build-mac-x64.yml
+  build-mac-x64:
+    uses: ./.github/workflows/build-mac-x64.yml
 
   release:
-    # needs: build-mac-x64
+    needs: build-mac-x64
     name: build and release electron app
     strategy:
       fail-fast: false
