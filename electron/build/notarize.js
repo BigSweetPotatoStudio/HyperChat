@@ -14,6 +14,7 @@ exports.default = async function notarizing(context) {
     console.log("test...", os.arch());
 
     if (os.arch() === 'x64') {
+      console.log("test...1");
       const file = path.join(__dirname, '..', 'dist', 'latest-mac.yml');
       if (fs.existsSync(file)) {
         fs.rmSync(file);
@@ -22,7 +23,9 @@ exports.default = async function notarizing(context) {
         console.log('latest-mac.yml not found.');
       }
     }
-  } catch { }
+  } catch (e) {
+    console.log(e);
+  }
 
   // const appBundleId = context.packager.appInfo.info._configuration.appId;
   const appName = context.packager.appInfo.productFilename;
