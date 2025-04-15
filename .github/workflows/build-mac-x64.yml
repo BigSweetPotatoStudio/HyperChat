@@ -1,4 +1,4 @@
-name: HyperChat
+name: HyperChat-Mac-x64
 
 on:
   workflow_call:
