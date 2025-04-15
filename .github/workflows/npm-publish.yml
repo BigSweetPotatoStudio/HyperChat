@@ -84,10 +84,11 @@ jobs:
             else
           echo "tag=latest" >> $GITHUB_OUTPUT
             fi
+      - run: npm run prod_node
 
-      - run: cd web && npm run build
+      # - run: cd web && npm run build
       
-      - run: cd electron && npm run build:node
+      # - run: cd electron && npm run build:node
 
       - run: cd electron && npm publish --tag ${{ steps.publish-tag.outputs.tag }} --access=public
         env:
