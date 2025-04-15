@@ -60,7 +60,7 @@ import * as MCPTypes from "@modelcontextprotocol/sdk/types.js";
 import { io } from "socket.io-client";
 import { getURL_PRE } from "../../common/call";
 import "@xterm/xterm/css/xterm.css";
-
+import _ from 'lodash';
 import { Terminal } from "@xterm/xterm";
 import { FitAddon } from "@xterm/addon-fit";
 import { WebLinksAddon } from "@xterm/addon-web-links";
@@ -735,7 +735,7 @@ export const Chat = ({
       setLoading(true);
       let alls = []
       for (let diff of DATA.current.diffs) {
-        diff.messages = currentChat.current.messages.slice();
+        diff.messages = _.cloneDeep(currentChat.current.messages);
         let promise = iOnRequest(false, diff.modelKey, diff.messages, (openaiClient) => {
           diff.openaiClient = openaiClient;
         });
@@ -1307,25 +1307,12 @@ export const Chat = ({
                       }} status={openaiClient.current?.status}
                         onClone={async (i) => {
                           currentChat.current.key = v4();
-                          currentChat.current.messages = currentChat.current.messages.slice(0, i + 1);
+                          currentChat.current.messages = _.cloneDeep(currentChat.current.messages.slice(0, i + 1));
                           currentChat.current.icon = "";
-                          // currentChatReset({
-                          //   label: currentChat.current.label,
-                          //   modelKey: currentChat.current.modelKey,
-                          //   allowMCPs: currentChat.current.allowMCPs,
-                          //   temperature: currentChat.current.temperature,
-                          //   sended: true,
-                          //   confirm_call_tool: currentChat.current.confirm_call_tool,
-                          //   // icon: currentChat.current.icon,
-                          //   dateTime: Date.now(),
-                          //   isCalled: currentChat.current.isCalled,
-                          //   isTask: currentChat.current.isTask,
-                          //   taskKey: currentChat.current.taskKey,
-                          //   messages: currentChat.current.messages.slice(0, i + 1),
-                          //   key: v4(),
-                          // })
+
                           await call("addChatHistory", [currentChat.current]);
                           ChatHistory.get().data.unshift({ ...currentChat.current });
+
                           loadMoreData(false, false);
                         }}></Messages>
                     </div>
@@ -1335,14 +1322,19 @@ export const Chat = ({
 
                 {
                   DATA.current.diffs.map((x, i) => {
-                    return <Splitter.Panel key={i} className="h-full"  ><Watermark className="h-full  relative" content={x.label}>
-                      <div className=" absolute top-0 right-0 cursor-pointer z-10 text-red-400" onClick={() => {
-                        DATA.current.diffs = DATA.current.diffs.filter((_, j) => j != i);
-                        refresh();
-                      }}><CloseCircleOutlined /></div>
-                      <Messages readOnly messages={x.messages} onSumbit={(messages) => {
+                    return <Splitter.Panel key={i} className="h-full"  >
+                      <Watermark className="h-full  relative" content={x.label} font={{
+                        color: "rgba(0,0,0,.25)",
+                      }}>
+                        <div className=" absolute top-0 right-0 cursor-pointer z-10 text-red-400" onClick={() => {
+                          DATA.current.diffs = DATA.current.diffs.filter((_, j) => j != i);
+                          refresh();
+                        }}><CloseCircleOutlined /></div>
+                        <Messages readOnly messages={x.messages} onSumbit={(messages) => {
 
-                      }} status={x.openaiClient?.status}></Messages></Watermark></Splitter.Panel>;
+                        }} status={x.openaiClient?.status}></Messages>
+                      </Watermark>
+                    </Splitter.Panel>;
                   })}
               </Splitter>
 
@@ -1635,7 +1627,7 @@ export const Chat = ({
                       onClick={() => {
                         setIsOpenMoreSetting(true);
                         formMoreSetting.resetFields();
-                        console.log(currentChat.current);
+                        // console.log(currentChat.current);
                         formMoreSetting.setFieldsValue(currentChat.current);
                       }}
                     />

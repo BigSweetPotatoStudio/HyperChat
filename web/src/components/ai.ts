@@ -3,7 +3,7 @@ import { GPT_MODELS, GPT_MODELS_TYPE } from "../../../common/data";
 import { EVENT } from "../common/event";
 import { MyMessage, OpenAiChannel } from "../common/openai";
 
-import { zodResponseFormat, zodTextFormat} from 'openai/helpers/zod';
+import { zodResponseFormat, zodTextFormat } from 'openai/helpers/zod';
 
 
 export async function getDefaultModelConfig() {
@@ -33,48 +33,54 @@ export function getDefaultModelConfigSync(models: typeof GPT_MODELS): GPT_MODELS
 }
 export async function rename(messages: MyMessage[]) {
     let config = await getDefaultModelConfig();
-
-    let openaiClient = new OpenAiChannel({
-        baseURL: config.baseURL,
-        apiKey: config.apiKey,
-        model: config.model,
-        supportTool: false,
-        requestType: "complete",
-    }, messages);
-    let res = await openaiClient.completionParse(
-        zodResponseFormat(z.object({
-            name: z.string({
-                description: "Give this chat a name"
-            }),
-        }), "test")
-    );
-    // console.log(res);
-    return res.name;
+    try {
+        let openaiClient = new OpenAiChannel({
+            baseURL: config.baseURL,
+            apiKey: config.apiKey,
+            model: config.model,
+            supportTool: false,
+            requestType: "complete",
+        }, messages);
+        let res = await openaiClient.completionParse(
+            zodResponseFormat(z.object({
+                name: z.string({
+                    description: "Give this chat a name"
+                }),
+            }), "test")
+        )
+        // console.log(res);
+        return res.name;
+    } catch (e) {
+        return e.message;
+    }
 }
 
 export async function genCronExpression(message: string) {
     let config = await getDefaultModelConfig();
-
-    let openaiClient = new OpenAiChannel({
-        baseURL: config.baseURL,
-        apiKey: config.apiKey,
-        model: config.model,
-        supportTool: false,
-        requestType: "complete",
-    }, [{
-        role: "system",
-        content: "You are a cron expression generator. Please generate a cron expression for the following message.",
-    }, {
-        role: "user",
-        content: message,
-    }]);
-    let res = await openaiClient.completionParse(
-        zodResponseFormat(z.object({
-            cron: z.string({
-                description: "This is a cron expression"
-            }),
-        }), "test")
-    );
-    // console.log(res);
-    return res.cron;
+    try {
+        let openaiClient = new OpenAiChannel({
+            baseURL: config.baseURL,
+            apiKey: config.apiKey,
+            model: config.model,
+            supportTool: false,
+            requestType: "complete",
+        }, [{
+            role: "system",
+            content: "You are a cron expression generator. Please generate a cron expression for the following message.",
+        }, {
+            role: "user",
+            content: message,
+        }]);
+        let res = await openaiClient.completionParse(
+            zodResponseFormat(z.object({
+                cron: z.string({
+                    description: "This is a cron expression"
+                }),
+            }), "test")
+        );
+        // console.log(res);
+        return res.cron;
+    } catch (e) {
+        return e.message;
+    }
 }
