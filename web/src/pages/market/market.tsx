@@ -533,7 +533,7 @@ export function Market() {
                 children: (
                   <div className="bg-white p-0">
                     <div className="flex justify-center p-1">
-                      <Space.Compact>
+                      <>
                         <Button
                           title={t`Open Configuration File`}
                           icon={<SettingOutlined />}
@@ -545,7 +545,7 @@ export function Market() {
                         >
                           Claude Desktop Config
                         </Button>
-                        <Button title="isLoadClaudeConfig:">
+                        <span title="isLoadClaudeConfig:" className="my-bottom">
                           <Switch checked={electronData.get().isLoadClaudeConfig} onChange={async (checked) => {
                             if (checked) {
                               for (let x of mcpClients.filter(x => x.source == "claude")) {
@@ -559,8 +559,8 @@ export function Market() {
                             electronData.get().isLoadClaudeConfig = checked;
                             await electronData.save();
                             refresh();
-                          }} /> </Button>
-                      </Space.Compact>
+                          }} /> </span>
+                      </>
                     </div>
                     <div style={{ maxHeight: "calc(100vh - 152px)", overflowY: "auto" }}>
                       <List

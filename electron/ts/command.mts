@@ -181,24 +181,25 @@ export class CommandFactory {
   }
   async readDir(p, root = appDataDir) {
     p = path.join(root, p);
-    fs.ensureDirSync(p);
-    return fs.readdirSync(p);
+    await fs.ensureDir(p);
+    return await fs.readdir(p);
   }
   async removeFile(p, root = appDataDir) {
     p = path.join(root, p);
 
-    return fs.removeSync(p);
+    return await fs.remove(p);
   }
   async writeFile(p, text, root = appDataDir) {
     let localPath = path.join(root, p);
-    let res = fs.writeFileSync(localPath, text);
+    let res = await fs.writeFile(localPath, text);
 
     return res;
   }
   async readFile(p, root = appDataDir) {
     p = path.join(root, p);
     try {
-      return fs.readFileSync(p, "utf-8");
+      let r = await fs.readFile(p, "utf-8");
+      return r;
     } catch (e) {
       throw e;
     }
@@ -206,22 +207,22 @@ export class CommandFactory {
   async readJSON(p, root = appDataDir) {
     p = path.join(root, p);
     try {
-      let str = fs.readFileSync(p, "utf-8");
-      return JSON.parse(str);
+      let r = await fs.readJSON(p, "utf-8");
+      return r;
     } catch (e) {
       throw e;
     }
   }
   async exists(p, root = appDataDir) {
     p = path.join(root, p);
-    return fs.exists(p);
+    return await fs.exists(p);
   }
 
   async pathJoin(p, root = appDataDir) {
     if (root) {
       p = path.join(root, p);
     }
-    fs.ensureDirSync(path.dirname(p));
+    await fs.ensureDir(path.dirname(p));
     return p;
   }
   async getLocalIP(): Promise<string[]> {
@@ -470,7 +471,7 @@ export class CommandFactory {
     }
     ChatHistory.get().data = ChatHistory.get().data.filter(
       (x) => !x.deleted,
-    );  
+    );
     let newLen = ChatHistory.get().data.length;
     await ChatHistory.save();
     return oldLen - newLen;

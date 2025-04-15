@@ -201,11 +201,11 @@ export function TaskListPage() {
 
         {/* <Button icon={<CaretRightOutlined />}>{t`Disable running tasks on this machine`}</Button>
         <Button icon={<StopOutlined />}>{t`Enable running tasks on this machine`}</Button> */}
-        <Button>{t`Main Switch`}: <Switch checked={electronData.get().runTask} onChange={async (checked) => {
+        <span className="my-bottom">{t`Main Switch`}: <Switch checked={electronData.get().runTask} onChange={async (checked) => {
           electronData.get().runTask = checked;
           await electronData.save();
           refresh();
-        }}></Switch></Button>
+        }}></Switch></span>
       </div>
 
 

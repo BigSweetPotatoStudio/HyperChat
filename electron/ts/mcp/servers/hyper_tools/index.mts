@@ -11,13 +11,15 @@ async function createServer(endpoint: string, response) {
     name: NAME,
     version: CONST.getVersion,
   });
-  let { registerNoElectronTool } = await import("./no_electron.mjs");
-  registerNoElectronTool(server);
+
   if (process.env.no_electron != "1") {
-    if (getConfig().Web_Tools_Platform !== "none") {
-      let { registerElectronTool } = await import("./electron.mjs");
-      registerElectronTool(server);
-    }
+
+    let { registerElectronTool } = await import("./electron.mjs");
+    registerElectronTool(server);
+
+  } else {
+    let { registerNoElectronTool } = await import("./no_electron.mjs");
+    registerNoElectronTool(server);
   }
   await server.connect(transport);
 }

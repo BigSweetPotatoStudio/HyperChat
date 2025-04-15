@@ -54,7 +54,9 @@ if (process.env.runtime !== "node") {
     websocket = socket;
   });
   socket.on("message-from-main", (data: any) => {
-    console.log("Received message:", data);
+    if (process.env.myEnv == "dev") {
+      console.log("Received message:", data);
+    }
     if (callbacks["message-from-main"]) {
       for (let callback of callbacks["message-from-main"]) {
         callback(data);

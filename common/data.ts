@@ -11,7 +11,7 @@ export class Data<T> {
     this._inited = true;
     let localData = {};
     try {
-      this.localStorage = await this.inget();
+      this.localStorage = await this.inget().catch(() => "{}");
       if (this.localStorage) {
         localData = JSON.parse(this.localStorage);
       }

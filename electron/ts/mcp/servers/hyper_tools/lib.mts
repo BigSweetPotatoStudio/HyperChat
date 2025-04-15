@@ -9,12 +9,22 @@ import path from "path";
 export const NAME = "hyper_tools";
 
 
+
+let e = ["chrome", "none"]
+if (process.env.no_electron != "1") {
+  e = ["electron", "chrome", "none"]
+}
+let d = "none"
+if (process.env.no_electron != "1") {
+  d = "electron"
+}
+
 export const configSchema = z.object({
   Web_Tools_Platform: z
-    .enum(["electron", "chrome", "none"], {
+    .enum(e as any, {
       description: "Platform using web tools",
     })
-    .default("electron"),
+    .default(d),
   SearchEngine: z
     .enum(["google", "bing"], {
       description: "search engine",
