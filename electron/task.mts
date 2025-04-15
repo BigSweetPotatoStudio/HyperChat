@@ -42,29 +42,24 @@ if (argv.prod) {
   });
   await $`npx cross-env NODE_ENV=production myEnv=prod webpack`;
   if (process.env.MYRUNENV === "github" || process.env.GH_TOKEN) {
-    if (os.platform() == "darwin") {
-      if (os.arch() === 'arm64' || os.arch() === 'arm') {
-        console.log('Building for ARM architecture');
-        await $`npx cross-env NODE_ENV=production myEnv=prod electron-builder --publish always`;
-      } else {
-        console.log('Building for x86/x64 architecture');
-        let pack = await fs.readJSON("./package.json");
-        pack.build.afterAllArtifactBuild = "./build/remove-x64-latest-mac-yml.js";
-        pack.build.mac.target = [{
-          "arch": [
-            "x64"
-          ],
-          "target": "dmg"
-        },
-        {
-          "arch": [
-            "x64"
-          ],
-          "target": "zip"
-        }];
-        await fs.writeJSON("./package.json", pack, { spaces: 2 });
-        await $`npx cross-env NODE_ENV=production myEnv=prod electron-builder --publish always`;
-      }
+    if (os.platform() == "darwin" && os.arch() === 'x64') {
+      console.log('Building for x86/x64 architecture');
+      let pack = await fs.readJSON("./package.json");
+      pack.build.afterAllArtifactBuild = "./build/remove-x64-latest-mac-yml.js";
+      pack.build.mac.target = [{
+        "arch": [
+          "x64"
+        ],
+        "target": "dmg"
+      },
+      {
+        "arch": [
+          "x64"
+        ],
+        "target": "zip"
+      }];
+      await fs.writeJSON("./package.json", pack, { spaces: 2 });
+      await $`npx cross-env NODE_ENV=production myEnv=prod electron-builder --publish always`;
     } else {
       await $`npx cross-env NODE_ENV=production myEnv=prod electron-builder --publish always`;
     }
