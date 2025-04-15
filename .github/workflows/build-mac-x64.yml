@@ -8,16 +8,17 @@ on:
       - alpha
 
 jobs:
-  build-mac-x64:
-    uses: ./.github/workflows/build-mac-x64.yml
+  # check:
+  #   uses: ./.github/workflows/check-version.yml
 
   release:
-    needs: build-mac-x64
+    # needs: check
+    # if: ${{ needs.check.outputs.should_release == 'true' }}
     name: build and release electron app
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, windows-latest, macos-latest]
+        os: [macos-13]
 
     runs-on: ${{ matrix.os }}
 
