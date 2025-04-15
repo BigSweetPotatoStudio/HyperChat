@@ -59,6 +59,18 @@
       },
       "notarize": false,
       "target": [
+        {
+          "arch": [
+            "arm64"
+          ],
+          "target": "dmg"
+        },
+        {
+          "arch": [
+            "arm64"
+          ],
+          "target": "zip"
+        }
       ]
     },
     "nsis": {

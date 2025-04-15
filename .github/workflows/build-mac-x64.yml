@@ -1,8 +1,8 @@
 name: HyperChat
 
-# on: [push, pull_request]
 on:
   workflow_call:
+  workflow_dispatch: {}
 
 jobs:
   # check:

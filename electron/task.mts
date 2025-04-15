@@ -1,4 +1,4 @@
-import { $, within, argv, sleep, fs, fetch, usePowerShell, os } from "zx";
+import { $, within, argv, sleep, fs, fetch, usePowerShell, os, path } from "zx";
 import { pipeline } from "stream";
 import { promisify } from "util";
 
@@ -45,10 +45,24 @@ if (argv.prod) {
     if (os.platform() == "darwin") {
       if (os.arch() === 'arm64' || os.arch() === 'arm') {
         console.log('Building for ARM architecture');
-        await $`npx cross-env NODE_ENV=production myEnv=prod electron-builder --mac --arm64 --zip --publish always`;
+        await $`npx cross-env NODE_ENV=production myEnv=prod electron-builder --publish always`;
       } else {
         console.log('Building for x86/x64 architecture');
-        await $`npx cross-env NODE_ENV=production myEnv=prod electron-builder --mac --x64 --publish always`;
+        let pack = await fs.readJSON(path.resolve(__dirname, "./package.json"));
+        pack.build.mac.target = [{
+          "arch": [
+            "x64"
+          ],
+          "target": "dmg"
+        },
+        {
+          "arch": [
+            "x64"
+          ],
+          "target": "zip"
+        }];
+        await fs.writeJSON(path.resolve(__dirname, "./package.json"), pack, { spaces: 2 });
+        await $`npx cross-env NODE_ENV=production myEnv=prod electron-builder --publish always`;
       }
     } else {
       await $`npx cross-env NODE_ENV=production myEnv=prod electron-builder --publish always`;
