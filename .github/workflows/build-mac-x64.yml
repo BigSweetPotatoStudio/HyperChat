@@ -2,6 +2,19 @@ name: HyperChat-Mac-x64
 
 on:
   workflow_call:
+    secrets:
+      APPLE_ID:
+        required: true
+      APPLE_APP_SPECIFIC_PASSWORD:
+        required: true
+      CSC_LINK:
+        required: true
+      CSC_KEY_PASSWORD:
+        required: true
+      APPLE_TEAM_ID:
+        required: true
+      GH_TOKEN:
+        required: true
   workflow_dispatch: {}
 
 jobs:
