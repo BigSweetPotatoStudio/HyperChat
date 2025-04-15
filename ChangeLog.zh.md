@@ -1,3 +1,8 @@
+# latest
+
+![image](https://github.com/user-attachments/assets/7537941a-1e2d-41a8-abb6-2569fe040067)
+
+
 # 1.4.17
 * 修复MacOS不能复制，等快捷键失效的问题
 
