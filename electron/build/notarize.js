@@ -11,6 +11,8 @@ exports.default = async function notarizing(context) {
   console.log("Notarizing...");
 
   try {
+    console.log("test...", os.arch());
+
     if (os.arch() === 'x64') {
       const file = path.join(__dirname, '..', 'dist', 'latest-mac.yml');
       if (fs.existsSync(file)) {
