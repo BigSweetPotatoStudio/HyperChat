@@ -8,11 +8,11 @@ on:
       - alpha
 
 jobs:
-  build-mac-x64:
-    uses: ./.github/workflows/build-mac-x64.yml
+  # build-mac-x64:
+  #   uses: ./.github/workflows/build-mac-x64.yml
 
   release:
-    needs: build-mac-x64
+    # needs: build-mac-x64
     name: build and release electron app
     strategy:
       fail-fast: false
