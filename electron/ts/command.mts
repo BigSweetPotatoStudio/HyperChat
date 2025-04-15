@@ -42,6 +42,7 @@ import { Config } from "./const.mjs";
 import { clientPaths } from "./mcp/claude.mjs";
 import { createBrowser } from "./mcp/servers/hyper_tools/web2.mjs";
 import { getConfig } from "./mcp/servers/hyper_tools/lib.mjs";
+import dayjs from "dayjs";
 
 
 export class CommandFactory {
@@ -390,6 +391,7 @@ export class CommandFactory {
 
   async addChatHistory(item: ChatHistoryItem) {
     item.version = "2.0";
+    item.dateTime = Date.now();
     if (item.isTask) {
       item.lastMessage = item.messages[item.messages.length - 1];
     }
@@ -419,6 +421,7 @@ export class CommandFactory {
   }
   async changeChatHistory(item: ChatHistoryItem) {
     item.version = "2.0";
+    item.dateTime = Date.now();
     if (item.messages && item.messages.length > 0) {
       fs.writeFileSync(path.join(appDataDir, `messages/${item.key}.json`), JSON.stringify(item.messages, null, 2));
     }
@@ -452,7 +455,26 @@ export class CommandFactory {
     await ChatHistory.save()
     return;
   }
+  async clearChatHistory(day: number) {
+    let time = dayjs().subtract(day, "day").valueOf();
+    ChatHistory.initSync()
+    let oldLen = ChatHistory.get().data.length;
+    let f = ChatHistory.get().data.filter((x) => !x.icon);
+    for (let x of f) {
+      if (x.dateTime == null || x.dateTime < time) {
+        x.deleted = true;
+        if (fs.existsSync(path.join(appDataDir, `messages/${x.key}.json`))) {
+          fs.removeSync(path.join(appDataDir, `messages/${x.key}.json`));
+        }
+      }
+    }
+    ChatHistory.get().data = ChatHistory.get().data.filter(
+      (x) => !x.deleted,
+    );  
+    let newLen = ChatHistory.get().data.length;
+    await ChatHistory.save();
+    return oldLen - newLen;
+  }
 }
-
 export const Command = CommandFactory.prototype;
 

@@ -1130,5 +1130,17 @@
   "AI Generate": {
     "en": "AI Generate",
     "zh": "AI生成"
+  },
+  "ClearChatHistory(exclude Star)": {
+    "en": "ClearChatHistory(exclude Star)",
+    "zh": "清除聊天记录(不包括星标)"
+  },
+  "Clear logs older than ": {
+    "en": "Clear logs older than ",
+    "zh": "清除超过的日志"
+  },
+  " days": {
+    "en": " days",
+    "zh": "天"
   }
 }

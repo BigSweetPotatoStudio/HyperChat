@@ -83,6 +83,8 @@ export function Setting() {
   const [webdavForm] = useForm();
 
   const [password, setPassword] = useState("");
+  const [day, setDay] = useState(30);
+
   return (
     <div className="overflow-auto h-full">
       <div className="relative flex flex-wrap">
@@ -193,46 +195,18 @@ export function Setting() {
             </Form.Item>
 
             <Form.Item
-              label={t`DeleteChatHistory(exclude Star)`}
+              label={t`ClearChatHistory(exclude Star)`}
               name="deleteChatRecord"
             >
               <Space wrap>
+                <InputNumber placeholder="day" value={day} onChange={e => setDay(e)}></InputNumber>
                 <Button
                   onClick={async () => {
-                    await ChatHistory.init()
-                    let f = ChatHistory.get().data.filter((x) => !x.icon);
-                    let time = dayjs().subtract(30, "day").valueOf();
-                    for (let x of f) {
-                      // console.log(x.dateTime, time);
-                      if (x.dateTime == null || x.dateTime < time) {
-                        x.deleted = true;
-                      }
-                    }
-                    ChatHistory.get().data = ChatHistory.get().data.filter(
-                      (x) => !x.deleted,
-                    );
-                    await ChatHistory.save();
+                    let res = await call("clearChatHistory", [day]);
+                    message.success(t`Clear Success ` + res + t` records`);
                   }}
                 >
-                  {t`Keep the chat history for the last 30 days`}
-                </Button>
-                <Button
-                  onClick={async () => {
-                    let time = dayjs().subtract(15, "day").valueOf();
-                    await ChatHistory.init()
-                    let f = ChatHistory.get().data.filter((x) => !x.icon);
-                    for (let x of f) {
-                      if (x.dateTime == null || x.dateTime < time) {
-                        x.deleted = true;
-                      }
-                    }
-                    ChatHistory.get().data = ChatHistory.get().data.filter(
-                      (x) => !x.deleted,
-                    );
-                    await ChatHistory.save();
-                  }}
-                >
-                  {t`Keep the chat history for the last 15 days`}
+                  {t`Clear logs older than `}{day}{t` days`}
                 </Button>
               </Space>
             </Form.Item>

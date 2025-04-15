@@ -256,55 +256,56 @@ export const Chat = ({
   const [modal, contextHolder] = Modal.useModal();
   useEffect(() => {
     (async () => {
-      await Agents.init();
-      await GPT_MODELS.init();
-      await AppSetting.init();
-      await ChatHistory.init();
-      await electronData.init();
-      AppSetting.get().quicks = AppSetting.get().quicks.map((x: any) => {
+      try {
+        DATA.current.loadingMessages = true;
+        refresh();
+        await Agents.init();
+        await GPT_MODELS.init();
+        await AppSetting.init();
+        await ChatHistory.init();
+        await electronData.init();
+        AppSetting.get().quicks = AppSetting.get().quicks.map((x: any) => {
 
-        if (x.quick == null) {
-          let quick = x.value;
-          x.value = v4();
-          return { label: x.label, value: x.value, quick: quick }
-        } else {
-          return x;
-        }
-
-      });
-      // console.log("AppSetting", AppSetting.get().quicks);
-      refresh();
-      loadMoreData(false);
-
-      if (agentData.agentKey) {
-        try {
-          // let agents = await GPTS.init();
-          // let agent = agents.data.find((x) => x.label == data.agentKey);
-          await onGPTSClick(agentData.agentKey);
-
-          if (agentData.message) {
-            await onRequest(agentData.message);
-            agentData.onComplete(openaiClient.current.lastMessage.content);
+          if (x.quick == null) {
+            let quick = x.value;
+            x.value = v4();
+            return { label: x.label, value: x.value, quick: quick }
+          } else {
+            return x;
           }
-        } catch (e) {
-          console.error(" hyper_call_agent error: ", e);
-          agentData.onError(e);
-        }
-      } else if (onlyView.histroyKey) {
-        if (onlyView.histroyKey) {
-          let item = ChatHistory.get().data.find(
-            (x) => x.key === onlyView.histroyKey,
-          );
-          if (item) {
-            // currentChatReset({
-            //   ...item,
-            //   messages: [],
-            // });
 
-            if (item.messages == null || item.messages.length == 0 || item.version == "2.0") {
-              try {
-                DATA.current.loadingMessages = true;
-                refresh();
+        });
+        // console.log("AppSetting", AppSetting.get().quicks);
+        refresh();
+        loadMoreData(false);
+
+        if (agentData.agentKey) {
+          try {
+            // let agents = await GPTS.init();
+            // let agent = agents.data.find((x) => x.label == data.agentKey);
+            await onGPTSClick(agentData.agentKey);
+
+            if (agentData.message) {
+              await onRequest(agentData.message);
+              agentData.onComplete(openaiClient.current.lastMessage.content);
+            }
+          } catch (e) {
+            console.error(" hyper_call_agent error: ", e);
+            agentData.onError(e);
+          }
+        } else if (onlyView.histroyKey) {
+          if (onlyView.histroyKey) {
+            let item = ChatHistory.get().data.find(
+              (x) => x.key === onlyView.histroyKey,
+            );
+            if (item) {
+              // currentChatReset({
+              //   ...item,
+              //   messages: [],
+              // });
+
+              if (item.messages == null || item.messages.length == 0 || item.version == "2.0") {
+
                 let messages = await call("readJSON", [`messages/${item.key}.json`]).catch(() => []);
                 item.messages = messages || [];
                 if (item.messages.length == 0 && item.agentKey != null) {
@@ -319,32 +320,32 @@ export const Chat = ({
                     ];
                   }
                 }
-              } finally {
-                DATA.current.loadingMessages = false;
-                refresh();
+
               }
+              // setTimeout(() => {
+
+              currentChatReset(item);
+
+              // });
             }
-            // setTimeout(() => {
-
-            currentChatReset(item);
-
-            // });
           }
-        }
-      } else {
-        if (AppSetting.get().defaultAllowMCPs == undefined) {
-          let clients = await getClients().catch(() => [] as InitedClient[]);
-          AppSetting.get().defaultAllowMCPs = clients.filter(x => x.status != "disabled").map((v) => v.name);
-        }
+        } else {
+          if (AppSetting.get().defaultAllowMCPs == undefined) {
+            // let clients = await getClients().catch(() => [] as InitedClient[]);
+            AppSetting.get().defaultAllowMCPs = [];
+          }
 
-        currentChatReset(
-          {
-            allowMCPs: AppSetting.get().defaultAllowMCPs,
-          },
-          "",
-        );
+          currentChatReset(
+            {
+              allowMCPs: AppSetting.get().defaultAllowMCPs,
+            },
+            "",
+          );
+        }
+      } finally {
+        DATA.current.loadingMessages = false;
+        refresh();
       }
-
     })();
   }, [onlyView.histroyKey]);
 
