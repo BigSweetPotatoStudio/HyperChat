@@ -49,7 +49,7 @@ if (argv.prod) {
       } else {
         console.log('Building for x86/x64 architecture');
         let pack = await fs.readJSON("./package.json");
-        pack.build.afterAllArtifactBuild = "./build/remove-latest-mac-yml.js";
+        pack.build.afterAllArtifactBuild = "./build/remove-x64-latest-mac-yml.js";
         pack.build.mac.target = [{
           "arch": [
             "x64"
