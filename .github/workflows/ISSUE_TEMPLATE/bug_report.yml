@@ -1,0 +1,47 @@
+name: 🐛 Bug Report (English)
+description: Create a report to help us improve
+title: '[Bug]: '
+labels: ['bug']
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Regarding the bug of the dialogue, click Settings, turn on the development mode, ![Download configuration](https://github.com/user-attachments/assets/7537941a-1e2d-41a8-abb6-2569fe040067), download the dialogue configuration and send it to me
+
+  - type: dropdown
+    id: platform
+    attributes:
+      label: Platform
+      description: Which platform are you using?
+      options:
+        - Windows
+        - macOS
+        - Linux
+        - Node.js
+        - Docker
+    validations:
+      required: true
+
+  - type: input
+    id: version
+    attributes:
+      label: Version
+      description: What version are you running?
+      placeholder: e.g., v1.5.0
+    validations:
+      required: true
+
+  - type: textarea
+    id: description
+    attributes:
+      label: Bug Description
+      description: Please describe the issue in as much detail as possible. If possible, provide screenshots or screen recordings to help us better understand the problem.
+      placeholder: Tell us what happened... (Remember to attach screenshots/recordings if applicable)
+    validations:
+      required: true
+
+  - type: textarea
+    id: additional
+    attributes:
+      label: Additional Information
+      description: Anything that can give us more insight into the issue you are experiencing

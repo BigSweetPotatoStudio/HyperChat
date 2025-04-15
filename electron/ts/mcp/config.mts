@@ -636,6 +636,7 @@ export async function openMcpClient(
   }
   if (options.onlySave) {
     mcpClient.saveConfig();
+
   } else {
     if (mcpClient.source == "builtin") {
       mcpClient.saveConfig();
@@ -643,12 +644,16 @@ export async function openMcpClient(
     try {
       await mcpClient.open();
       mcpClient.saveConfig();
+
     } catch (e) {
       Logger.error("openMcpClient", e);
       throw e;
     }
   }
-
+  getMessageService().sendAllToRenderer({
+    type: "changeMcpClient",
+    data: mcpClients,
+  })
   return mcpClients;
 }
 

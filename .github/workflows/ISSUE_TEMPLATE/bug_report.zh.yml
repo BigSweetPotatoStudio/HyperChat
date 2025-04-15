@@ -1,0 +1,48 @@
+name: 错误报告 (中文)
+description: 创建一个报告以帮助我们改进
+title: '[错误]: '
+labels: ['bug']
+body:
+  - type: markdown
+    attributes:
+      value: |
+        关于对话的Bug，点击设置，开启开发模式，![下载配置](https://github.com/user-attachments/assets/7537941a-1e2d-41a8-abb6-2569fe040067)，下载对话配置发给我
+
+
+  - type: dropdown
+    id: platform
+    attributes:
+      label: 平台
+      description: 您正在使用哪个平台？
+      options:
+        - Windows
+        - macOS
+        - Linux
+        - Node.js
+        - Docker
+    validations:
+      required: true
+
+  - type: input
+    id: version
+    attributes:
+      label: 版本
+      description: 您正在运行的版本是什么？
+      placeholder: 例如 v1.5.0
+    validations:
+      required: true
+
+  - type: textarea
+    id: description
+    attributes:
+      label: 错误描述
+      description: 描述问题时请尽可能详细。请尽可能提供截图或屏幕录制，以帮助我们更好地理解问题。
+      placeholder: 告诉我们发生了什么...(记得附上截图/录屏，如果适用)
+    validations:
+      required: true
+
+  - type: textarea
+    id: additional
+    attributes:
+      label: 附加信息
+      description: 任何能让我们对你所遇到的问题有更多了解的东西
