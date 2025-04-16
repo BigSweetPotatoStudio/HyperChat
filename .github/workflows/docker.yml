@@ -11,8 +11,8 @@ name: Publish Docker image
 
 on:
   workflow_dispatch: {}
-  release:
-    types: [published]
+  # release:
+  #   types: [published]
   # push:
   #   branches:
   #     - alpha
