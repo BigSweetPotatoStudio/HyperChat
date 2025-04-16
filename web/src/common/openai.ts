@@ -517,11 +517,26 @@ export class OpenAiChannel {
             this.options.confirm_call_tool &&
             this.options.confirm_call_tool_cb
           ) {
-            tool.function.argumentsJSON =
-              await this.options.confirm_call_tool_cb(tool);
-            tool.function.arguments = JSON.stringify(
-              tool.function.argumentsJSON,
-            );
+            try {
+              tool.function.argumentsJSON =
+                await this.options.confirm_call_tool_cb(tool);
+              tool.function.arguments = JSON.stringify(
+                tool.function.argumentsJSON,
+              );
+            } catch (e) { 
+              let message: MyMessage = {
+                role: "tool" as const,
+                tool_call_id: tool.id,
+                content: "User Cancel",
+                content_status: "error",
+                content_attachment: [],
+                content_date: Date.now(),
+              };
+              this.messages.push(message as any);
+              onUpdate && onUpdate(this.lastMessage.content as string);
+              continue;
+            }
+
           }
         }
         // console.log("tool_calls", tool_calls);
