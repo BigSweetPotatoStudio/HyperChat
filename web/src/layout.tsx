@@ -969,6 +969,13 @@ export function Layout() {
           </Form.Item>
 
           <Form.Item
+            name="isStrict"
+            label={t`isStrict`}
+          >
+            <Switch></Switch>
+          </Form.Item>
+
+          <Form.Item
             name="type"
             label={t`type`}
             style={{

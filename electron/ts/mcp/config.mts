@@ -105,7 +105,7 @@ await initMcpServer().catch((e) => {
 
 export let mcpClients: Array<MCPClient> = [];
 export class MCPClient implements IMCPClient {
-  public tools = [];
+  public tools: Array<HyperChatCompletionTool> = [];
   public resources = [];
   public prompts = [];
   public client: MCP.Client = undefined;
@@ -257,10 +257,10 @@ export class MCPClient implements IMCPClient {
       let res = await this.client.getServerVersion();
       this.version = res.version;
       this.servername = res.name;
-      
-      
+
       this.tools = tools_res.tools.map((tool, i) => {
         let name = "m" + i + "_" + tool.name;
+
         return {
           type: "function" as const,
           function: {

@@ -106,6 +106,7 @@ export class OpenAiChannel {
       call_tool_step?: number;
       supportTool?: boolean;
       supportImage?: boolean;
+      isStrict?: boolean;
       allowMCPs?: string[];
       temperature?: number;
       confirm_call_tool?: boolean;
@@ -755,10 +756,10 @@ export class OpenAiChannel {
       return rest;
     });
   }
-  tools_format(tools) {
+  tools_format(tools: HyperChatCompletionTool[]) {
     return tools?.map((x) => {
       let { origin_name, restore_name, key, client, clientName, ...rest } = x;
-
+      rest.function.strict = !!this.options.isStrict;
       return rest;
     });
   }

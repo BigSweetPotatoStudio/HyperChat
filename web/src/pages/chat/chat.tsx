@@ -598,6 +598,7 @@ export const Chat = ({
           call_tool_step: config.call_tool_step,
           supportTool: config.supportTool,
           supportImage: config.supportImage,
+          isStrict: config.isStrict,
 
           requestType: currentChat.current.requestType,
           allowMCPs: currentChat.current.allowMCPs,

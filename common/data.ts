@@ -127,7 +127,7 @@ export const electronData = new Data(
     uuid: v4(),
     runTask: false,
     isDeveloper: false,
-    isLoadClaudeConfig: true
+    isLoadClaudeConfig: true,
   },
   {
     sync: false,
@@ -229,6 +229,7 @@ export type GPT_MODELS_TYPE = {
   supportTool: boolean;
   call_tool_step?: number;
   type?: "llm" | "embedding";
+  isStrict: boolean;
 }
 export const GPT_MODELS = new Data("gpt_models.json", {
   data: [] as Array<GPT_MODELS_TYPE>,
@@ -251,14 +252,14 @@ export type MCP_CONFIG_TYPE = {
   isSync?: boolean;
 };
 
-export type HyperChatCompletionTool = OpenAI.ChatCompletionTool & {
+export type HyperChatCompletionTool = typeof MCPTypes.ToolSchema._type & OpenAI.ChatCompletionTool & {
   origin_name?: string;
   restore_name?: string;
   clientName?: string;
   client?: string;
 };
 export type IMCPClient = {
-  tools: Array<typeof MCPTypes.ToolSchema._type & HyperChatCompletionTool>;
+  tools: Array<HyperChatCompletionTool>;
   prompts: Array<typeof MCPTypes.PromptSchema._type & { key: string }>;
   resources: Array<typeof MCPTypes.ResourceSchema._type & { key: string }>;
   name: string;

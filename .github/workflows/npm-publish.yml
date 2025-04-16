@@ -5,9 +5,11 @@ name: Node.js Package
 
 on:
   workflow_dispatch: {}
-  push:
-    branches:
-      - alpha
+  release:
+    types: [published]
+  # push:
+  #   branches:
+  #     - alpha
 
 permissions:
   contents: write
