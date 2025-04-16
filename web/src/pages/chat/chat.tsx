@@ -1308,12 +1308,13 @@ export const Chat = ({
                         onRequest();
                       }} status={openaiClient.current?.status}
                         onClone={async (i) => {
-                          currentChat.current.key = v4();
-                          currentChat.current.messages = _.cloneDeep(currentChat.current.messages.slice(0, i + 1));
-                          currentChat.current.icon = "";
-
-                          await call("addChatHistory", [currentChat.current]);
-                          ChatHistory.get().data.unshift({ ...currentChat.current });
+                          let clone = _.cloneDeep(currentChat.current);
+                          clone.key = v4();
+                          clone.messages = clone.messages.slice(0, i + 1);
+                          clone.icon = "";
+                          
+                          await call("addChatHistory", [clone]);
+                          ChatHistory.get().data.unshift(clone);
 
                           loadMoreData(false, false);
                         }}></Messages>
@@ -2332,9 +2333,9 @@ export const Chat = ({
             </button>
           </div>
         </Modal>
-        {contextHolder}
+        { contextHolder }
 
-        {/* <Modal
+  {/* <Modal
           width={800}
           title={t`Rename`}
           open={isOpenMoreSetting}
