@@ -103,6 +103,7 @@ await initMcpServer().catch((e) => {
   console.error("initMcpServer", e);
 });
 
+
 export let mcpClients: Array<MCPClient> = [];
 export class MCPClient implements IMCPClient {
   public tools: Array<HyperChatCompletionTool> = [];
@@ -124,7 +125,6 @@ export class MCPClient implements IMCPClient {
         ? zodToJsonSchema(s.configSchema)
         : undefined;
     }
-
   }
   async callTool(functionName: string, args: any): Promise<any> {
 
@@ -259,7 +259,7 @@ export class MCPClient implements IMCPClient {
       this.servername = res.name;
 
       this.tools = tools_res.tools.map((tool, i) => {
-        let name = "m" + i + "_" + tool.name;
+        let name = this.name.replace(/[^a-zA-Z0-9_]/g, "") + "_" + (tool.name.replace(/[^a-zA-Z0-9_]/g, "") || i.toString())
 
         return {
           type: "function" as const,
