@@ -8,21 +8,26 @@ on:
   push:
     tags:
       - "v*"
-    # branches:
-    #   - alpha
+    branches:
+      - alpha
 
 permissions:
   contents: write
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest]
+
+    runs-on: ${{ matrix.os }}
     steps:
       - name: Check out git repository
         uses: actions/checkout@v3.0.0
 
       - name: Install Node.js
-        uses: actions/setup-node@v3.0.0
+        uses: actions/setup-node@v4
         with:
           node-version: "20"
           registry-url: https://registry.npmjs.org/
@@ -37,9 +42,9 @@ jobs:
         id: cache-root
         with:
           path: node_modules
-          key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
+          key: ${{ matrix.os }}-node-${{ hashFiles('**/package-lock.json') }}
           restore-keys: |
-            ${{ runner.os }}-node-
+            ${{ matrix.os }}-node-
 
       # 安装根目录依赖（如果缓存未命中）
       - name: Install root dependencies
@@ -52,9 +57,9 @@ jobs:
         id: cache-web
         with:
           path: web/node_modules
-          key: ${{ runner.os }}-node-web-${{ hashFiles('web/package-lock.json') }}
+          key: ${{ matrix.os }}-node-web-${{ hashFiles('web/package-lock.json') }}
           restore-keys: |
-            ${{ runner.os }}-node-web-
+            ${{ matrix.os }}-node-web-
 
       # 安装 web 目录依赖（如果缓存未命中）
       - name: Install web dependencies
@@ -68,9 +73,9 @@ jobs:
         id: cache-electron
         with:
           path: electron/node_modules
-          key: ${{ runner.os }}-node-electron-${{ hashFiles('electron/package-lock.json') }}
+          key: ${{ matrix.os }}-node-electron-${{ hashFiles('electron/package-lock.json') }}
           restore-keys: |
-            ${{ runner.os }}-node-electron-
+            ${{ matrix.os }}-node-electron-
 
       # 安装 electron 目录依赖（如果缓存未命中）
       - name: Install electron dependencies

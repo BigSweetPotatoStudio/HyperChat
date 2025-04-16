@@ -4,8 +4,10 @@ name: HyperChat
 on:
   workflow_dispatch: {}
   push:
-    branches:
-      - alpha
+    tags:
+      - "v*"
+    # branches:
+    #   - alpha
 
 jobs:
   build-mac-x64:
@@ -33,7 +35,7 @@ jobs:
         uses: actions/checkout@v3.0.0
 
       - name: Install Node.js
-        uses: actions/setup-node@v3.0.0
+        uses: actions/setup-node@v4
         with:
           node-version: "20"
 
@@ -53,7 +55,7 @@ jobs:
           path: node_modules
           key: ${{ matrix.os }}-node-${{ hashFiles('**/package-lock.json') }}
           restore-keys: |
-            ${{ matrix.os}}-node-
+            ${{ matrix.os }}-node-
 
       # 安装根目录依赖（如果缓存未命中）
       - name: Install root dependencies
