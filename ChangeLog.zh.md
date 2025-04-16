@@ -8,6 +8,7 @@
 * 支持开发模式，快速导出对话配置，用于调试
 * 添加启用，禁用claude的mcp的开关
 * 添加Task运行全局控制启用，禁用开关
+* 工具调用取消优化，告诉大模型用户取消了操作
 
 ![支持聊天重命名](https://github.com/user-attachments/assets/9e178d72-2446-4d63-a1ac-ac0299a3d0a4)
 ![支持mcp配置同步](https://github.com/user-attachments/assets/ecc4945d-3170-476f-b653-badecf972957)
@@ -17,6 +18,8 @@
 ![支持开发模式，快速导出对话配置，用于调试](https://github.com/user-attachments/assets/124a6e1a-6436-4308-8475-9fb32b5e3f09)
 ![支持Task运行全局控制启用，禁用](https://github.com/user-attachments/assets/7537941a-1e2d-41a8-abb6-2569fe040067)
 ![支持开发模式，快速导出对话配置，用于调试](https://github.com/user-attachments/assets/9bfdf789-378e-43d7-bcdf-8a91c593fe16)
+![工具调用取消优化，告诉大模型用户取消了操作](https://github.com/user-attachments/assets/8b1186b3-929f-4c86-95ce-50dbf2216f01)
+
 
 
 # 1.4.17
