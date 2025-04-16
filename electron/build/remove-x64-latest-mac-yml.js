@@ -1,12 +1,12 @@
 const fs = require('fs');
 const path = require('path');
+const os = require("os");
 
 
-// scripts/afterAllArtifactBuild.js
-exports.default = async function afterAllArtifactBuild(context) {
-    console.log('afterAllArtifactBuild.');
 
+exports.default = async function (context) {
     const file = path.join(__dirname, '..', 'dist', 'latest-mac.yml');
+    console.log('test...', file);
     if (fs.existsSync(file)) {
         fs.rmSync(file);
         console.log('latest-mac.yml removed before publish.');
