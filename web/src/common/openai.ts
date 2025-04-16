@@ -527,7 +527,7 @@ export class OpenAiChannel {
               let message: MyMessage = {
                 role: "tool" as const,
                 tool_call_id: tool.id,
-                content: "User Cancel",
+                content: "The user cancel this tool call",
                 content_status: "error",
                 content_attachment: [],
                 content_date: Date.now(),
