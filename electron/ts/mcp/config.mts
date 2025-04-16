@@ -257,17 +257,18 @@ export class MCPClient implements IMCPClient {
       let res = await this.client.getServerVersion();
       this.version = res.version;
       this.servername = res.name;
-
-      this.tools = tools_res.tools.map((tool) => {
-        // let name = "m" + i + "_" + tool.name;
+      
+      
+      this.tools = tools_res.tools.map((tool, i) => {
+        let name = "m" + i + "_" + tool.name;
         return {
           type: "function" as const,
           function: {
-            name: tool.name,
+            name: name,
             description: tool.description,
             parameters: {
               type: tool.inputSchema.type,
-              properties: formatProperties(tool.inputSchema.properties, tool.name),
+              properties: formatProperties(tool.inputSchema.properties, name),
               required: tool.inputSchema.required,
             },
           },
@@ -713,11 +714,11 @@ export function formatProperties(obj: any, toolName: string = "") {
     for (let key in obj) {
       if (obj[key].type == "object") {
         obj[key].properties = formatProperties(obj[key].properties, toolName);
-        delete obj[key].additionalProperties; // Corrected to delete obj[key].additionalProperties
+        // delete obj[key].additionalProperties; // Corrected to delete obj[key].additionalProperties
         delete obj[key].items;
       } else if (obj[key].type == "array") {
         obj[key].items = formatProperties(obj[key].items, toolName);
-        delete obj[key].items.additionalProperties; // Corrected to delete obj[key].additionalProperties
+        // delete obj[key].items.additionalProperties; // Corrected to delete obj[key].additionalProperties
         delete obj[key].properties;
       }
     }
