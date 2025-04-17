@@ -143,7 +143,7 @@ export type Tool_Call = {
   function: {
     name: string;
     arguments: string;
-    argumentsJSON: any;
+    argumentsOBJ: any;
   };
 };
 

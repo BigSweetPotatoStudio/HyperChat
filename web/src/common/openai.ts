@@ -112,7 +112,7 @@ export class OpenAiChannel {
       confirm_call_tool?: boolean;
       confirm_call_tool_cb?: (tool: Tool_Call) => void;
     },
-    public messages: MyMessage[],
+    public messages: MyMessage[] = [],
     // public stream = true,
   ) {
     this.openai = new OpenAI({
@@ -154,6 +154,7 @@ export class OpenAiChannel {
         return response;
       },
     });
+
     this.options.temperature =
       typeof this.options.temperature === "number"
         ? this.options.temperature
@@ -162,15 +163,16 @@ export class OpenAiChannel {
   static create(options: {
     baseURL: string;
     apiKey: string;
-  }, cacheKey: string = ""): OpenAiChannel {
-    cacheKey = cacheKey + options.baseURL + options.apiKey;
+    model: string;
+  }): OpenAiChannel {
+    let cacheKey = options.baseURL + options.apiKey + options.model;
     if (cache.has(cacheKey)) {
       return cache.get(cacheKey);
     }
     let openai = new OpenAiChannel({
       baseURL: options.baseURL,
       apiKey: options.apiKey,
-
+      model: options.model,
     }, []);
     cache.set(cacheKey, openai);
     return openai;
@@ -282,6 +284,8 @@ export class OpenAiChannel {
   ): Promise<string> {
     this.status = "runing";
     this.index++;
+    this.openai.baseURL = this.options.baseURL;
+    this.openai.apiKey = this.options.apiKey;
     let res = await this._completion(onUpdate, call_tool, step, {
       index: this.index,
     }).catch((e) => {
@@ -373,8 +377,11 @@ export class OpenAiChannel {
             res.content_usage.prompt_tokens = chunk.usage.prompt_tokens;
             res.content_usage.total_tokens = chunk.usage.total_tokens;
           }
+          if (chunk?.choices == null) {
+            continue;
+          }
 
-          if (chunk.choices[0]?.delta?.tool_calls) {
+          if (chunk?.choices[0]?.delta?.tool_calls) {
 
             for (const [
               i,
@@ -393,7 +400,7 @@ export class OpenAiChannel {
                   function: {
                     name: "",
                     arguments: "",
-                    argumentsJSON: {},
+                    argumentsOBJ: {},
                   },
                 };
                 tool_calls[index] = tool;
@@ -405,7 +412,7 @@ export class OpenAiChannel {
             }
           }
 
-          res.content += chunk.choices[0]?.delta?.content || "";
+          res.content += (chunk.choices[0]?.delta?.content || "");
           res.reasoning_content +=
             (chunk.choices[0]?.delta as any)?.reasoning_content || "";
           res.content_date = Date.now();
@@ -460,7 +467,7 @@ export class OpenAiChannel {
                 name: "",
 
                 arguments: "",
-                argumentsJSON: {},
+                argumentsOBJ: {},
               },
             };
             tool_calls[i] = tool;
@@ -508,9 +515,14 @@ export class OpenAiChannel {
       this.lastMessage.tool_calls = tool_calls;
       for (let tool of tool_calls) {
         try {
-          tool.function.argumentsJSON = JSON.parse(tool.function.arguments);
+          tool.function.argumentsOBJ = JSON.parse(tool.function.arguments);
+          if (typeof tool.function.argumentsOBJ != "object") {
+            tool.function.argumentsOBJ = {} as any;
+            tool.function.arguments = "{}";
+          }
         } catch {
-          tool.function.argumentsJSON = {} as any;
+          tool.function.argumentsOBJ = {} as any;
+          tool.function.arguments = "{}";
         }
         if (process.env.runtime !== "node") {
           if (
@@ -518,16 +530,15 @@ export class OpenAiChannel {
             this.options.confirm_call_tool_cb
           ) {
             try {
-              tool.function.argumentsJSON =
+              tool.function.argumentsOBJ =
                 await this.options.confirm_call_tool_cb(tool);
-              tool.function.arguments = JSON.stringify(
-                tool.function.argumentsJSON,
-              );
-            } catch (e) { 
+
+            } catch (e) {
+
               let message: MyMessage = {
                 role: "tool" as const,
                 tool_call_id: tool.id,
-                content: "The user cancel this tool call",
+                content: "this tool call canceled by user.",
                 content_status: "error",
                 content_attachment: [],
                 content_date: Date.now(),
@@ -567,10 +578,10 @@ export class OpenAiChannel {
             (await callModule.getWebSocket()).emit("active", deviceId);
           }
         }
-
+        this.mcpAbortController = new AbortController();
         let call_res = await globalThis.ext2.call(
           "mcpCallTool",
-          [clientName, localtool.origin_name, tool.function.argumentsJSON],
+          [clientName, localtool.origin_name, tool.function.argumentsOBJ],
           {
             signal: this.mcpAbortController?.signal,
           },
@@ -600,19 +611,17 @@ export class OpenAiChannel {
         } else if (typeof call_res.content == "string") {
           this.lastMessage.content = call_res.content;
         } else if (Array.isArray(call_res.content)) {
+          let contents = []
           for (let c of call_res.content) {
             if (c.type == "text") {
-              this.lastMessage.content = this.lastMessage.content + "\n" + c.text;
+              contents.push(c.text);
             } else if (c.type == "image") {
               this.lastMessage.content_attachment.push(c);
             } else {
               antdmessage.warning("tool 返回类型只支持 text image");
             }
           }
-          // this.lastMessage.content = call_res.content
-          //   .filter((x) => x.type == "text")
-          //   .map((x) => x.text)
-          //   .join("\n");
+          this.lastMessage.content = contents.join("\n");
         } else {
           this.lastMessage.content = JSON.stringify(call_res.content);
         }
@@ -763,10 +772,13 @@ export class OpenAiChannel {
       if (rest.role == "assistant") {
         rest.tool_calls = rest.tool_calls?.map((x: Tool_Call) => {
           let { origin_name, restore_name, ...rest } = x;
-          let { argumentsJSON, ...functionRest } = rest.function;
+          let { argumentsOBJ, ...functionRest } = rest.function;
           rest.function = functionRest as any;
           return rest;
         }) as any;
+      }
+      if (rest.content == "") {
+        rest.content = " ";
       }
       return rest;
     });

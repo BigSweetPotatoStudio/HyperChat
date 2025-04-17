@@ -150,7 +150,7 @@ const ModalForm: React.FC<CollectionCreateFormProps> = ({
         label={t`attachedDialogueCount`}
         tooltip={t`Number of sent Dialogue Message attached per request`}
       >
-        <NumberStep defaultValue={20} max={40} />
+        <NumberStep defaultValue={10} max={20} />
       </Form.Item>
       <Form.Item
         name="confirm_call_tool"

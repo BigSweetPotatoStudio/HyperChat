@@ -725,7 +725,7 @@
   },
   "attachedDialogueCount": {
     "en": "attachedDialogueCount",
-    "zh": "附加对话计数"
+    "zh": "附加对话轮数"
   },
   "Number of sent Dialogue Message attached per request": {
     "en": "Number of sent Dialogue Message attached per request",

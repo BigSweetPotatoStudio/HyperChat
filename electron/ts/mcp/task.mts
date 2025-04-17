@@ -18,21 +18,21 @@ global.ext2 = {
     try {
       // const { Command } = await import(/* webpackIgnore: true */ "../command.mjs");
       let res;
-      const [clientName, functionName, argumentsJSON] = args;
+      const [clientName, functionName, argumentsObj] = args;
       if (
         name === "mcpCallTool" &&
         clientName == "hyper_agent" &&
         functionName.includes("call_agent")
       ) {
         let agent = Agents.initSync().data.find(
-          (x) => x.label === argumentsJSON.agent_name
+          (x) => x.label === argumentsObj.agent_name
         );
         if (agent == null) {
-          throw new Error(`Agent ${argumentsJSON.agent_name} not found`);
+          throw new Error(`Agent ${argumentsObj.agent_name} not found`);
         }
         res = await callAgent({
           agentKey: agent.key,
-          message: argumentsJSON.message,
+          message: argumentsObj.message,
           type: "isCalled",
         });
       } else {
@@ -157,10 +157,9 @@ export async function callAgent(obj: {
       confirm_call_tool: false,
     };
     Command.addChatHistory(item);
-    // ChatHistory.initSync().data.unshift(item);
-    // await ChatHistory.save();
+
     return openai.lastMessage;
-    // await onRequest(task.message);
+
   } catch (e) {
     console.error(" hyper_call_agent error: ", e);
     openai.lastMessage.content_error = e.message;

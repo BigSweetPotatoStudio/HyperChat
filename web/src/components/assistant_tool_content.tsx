@@ -81,100 +81,8 @@ import { Pre } from "./pre";
 import { DownImage } from "../pages/chat/component";
 import { Icon } from "./icon";
 
-// const md = markdownit({
-//     html: true,
-//     breaks: true,
 
-//     highlight: function (str, lang) {
-//         let fnName = "copy" + v4().replaceAll("-", "");
-//         window[fnName] = async () => {
-//             await call("setClipboardText", [str]);
-//             message.success(t`Copied to clipboard`);
-//         };
-//         if (lang && hljs.getLanguage(lang)) {
-//             try {
-//                 return (
-//                     `<div class="my-highlight" style="position:relative;padding:0px;" ><span onclick="${fnName}()" style="position:absolute;bottom:0px;left:0px;" role="img" aria-label="copy" tabindex="-1" class="anticon anticon-copy cursor-pointer"><svg viewBox="64 64 896 896" focusable="false" data-icon="copy" width="1em" height="1em" fill="currentColor" aria-hidden="true"><path d="M832 64H296c-4.4 0-8 3.6-8 8v56c0 4.4 3.6 8 8 8h496v688c0 4.4 3.6 8 8 8h56c4.4 0 8-3.6 8-8V96c0-17.7-14.3-32-32-32zM704 192H192c-17.7 0-32 14.3-32 32v530.7c0 8.5 3.4 16.6 9.4 22.6l173.3 173.3c2.2 2.2 4.7 4 7.4 5.5v1.9h4.2c3.5 1.3 7.2 2 11 2H704c17.7 0 32-14.3 32-32V224c0-17.7-14.3-32-32-32zM350 856.2L263.9 770H350v86.2zM664 888H414V746c0-22.1-17.9-40-40-40H232V264h432v624z"></path></svg></span><code class="hljs">` +
-//                     hljs.highlight(str, { language: lang, ignoreIllegals: true }).value +
-//                     "</code></div>"
-//                 );
-//             } catch (__) { }
-//         }
-
-//         return (
-//             `<div class="my-highlight" style="position:relative;padding:0px;" ><span onclick="${fnName}()" style="position:absolute;bottom:0px;left:0px;" role="img" aria-label="copy" tabindex="-1" class="anticon anticon-copy cursor-pointer"><svg viewBox="64 64 896 896" focusable="false" data-icon="copy" width="1em" height="1em" fill="currentColor" aria-hidden="true"><path d="M832 64H296c-4.4 0-8 3.6-8 8v56c0 4.4 3.6 8 8 8h496v688c0 4.4 3.6 8 8 8h56c4.4 0 8-3.6 8-8V96c0-17.7-14.3-32-32-32zM704 192H192c-17.7 0-32 14.3-32 32v530.7c0 8.5 3.4 16.6 9.4 22.6l173.3 173.3c2.2 2.2 4.7 4 7.4 5.5v1.9h4.2c3.5 1.3 7.2 2 11 2H704c17.7 0 32-14.3 32-32V224c0-17.7-14.3-32-32-32zM350 856.2L263.9 770H350v86.2zM664 888H414V746c0-22.1-17.9-40-40-40H232V264h432v624z"></path></svg></span><code class="hljs" >` +
-//             md.utils.escapeHtml(str) +
-//             "</code></div>"
-//         );
-//     },
-// });
-// md.use(mk);
-
-// function render(content) {
-//     content = content.replace(/\\\[(.+?)\\\]/gs, "$$" + "$1" + "$$");
-//     content = content.replace(/\\\((.+?)\\\)/g, "$$" + "$1" + "$$");
-//     return md.render(content);
-// }
-
-// function IRenderMarkdown(props) {
-//     return (
-//         <div
-//             className="markdown-body text-sm lg:text-base"
-//             dangerouslySetInnerHTML={{ __html: render(props.children) }}
-//         />
-//     );
-// }
-// const RenderMarkdown = React.memo(IRenderMarkdown);
-
-function extractHTMLContent(str) {
-    // 定义一个正则表达式来匹配 ```html 和 ``` 之间的所有内容
-    const regex = /```html(.*?)```/gs;
-    // 执行匹配并检查是否有结果
-    let match = regex.exec(str);
-    if (match && match[1]) {
-        // 如果有匹配项，返回捕获组中的内容，并去除多余的空白字符
-        return match[1].trim();
-    }
-    // 如果没有找到匹配的内容，则返回空字符串或 null
-    return "";
-}
-function extractSvgContent(str) {
-    // 定义一个正则表达式来匹配 ```svg 和 ``` 之间的所有内容
-    let regex = /```xml(\n?<svg.*?)```/gs;
-    // 执行匹配并检查是否有结果
-    let match = regex.exec(str);
-    if (match && match[1]) {
-        // 如果有匹配项，返回捕获组中的内容，并去除多余的空白字符
-        return match[1].trim();
-    }
-    // 定义一个正则表达式来匹配 ```svg 和 ``` 之间的所有内容
-    regex = /```svg(\n?<svg.*?)```/gs;
-    // 执行匹配并检查是否有结果
-    match = regex.exec(str);
-    if (match && match[1]) {
-        // 如果有匹配项，返回捕获组中的内容，并去除多余的空白字符
-        return match[1].trim();
-    }
-    return "";
-}
-function textToBase64Unicode(text) {
-    // 创建一个Uint8Array从TextEncoder输出的字节流
-    let encoder = new TextEncoder();
-    let uint8Array = encoder.encode(text);
-
-    // 将Uint8Array转化为字符串，因为btoa接受字符串作为参数
-    let binaryString = Array.from(uint8Array, (byte) =>
-        String.fromCharCode(byte),
-    ).join("");
-
-    // 使用btoa进行Base64编码
-    return btoa(binaryString);
-}
-
-
-
-let katexR = ({ children = [], className, ...props }) => {
-
+let katexR = ({ children = [],  ...props }) => {
     let regexs = [/\$(.+?)\$/gs];
     for (let regex of regexs) {
         if (typeof children === 'string' && regex.test(children)) {
@@ -185,10 +93,10 @@ let katexR = ({ children = [], className, ...props }) => {
                 })
             });
             return React.createElement(props.node.tagName, {
+                ...props.node.properties,
                 dangerouslySetInnerHTML: {
                     __html: html
                 },
-                className: String(className),
             });
         } else if (Array.isArray(children)) {
             const newChildren = children.map((child, i) => {
@@ -206,13 +114,13 @@ let katexR = ({ children = [], className, ...props }) => {
 
             });
             return React.createElement(props.node.tagName, {
-                className: String(className),
+                ...props.node.properties,
             }, newChildren);
         }
     }
 
     return React.createElement(props.node.tagName, {
-        className: String(className),
+        ...props.node.properties,
     }, children);
 
 }
@@ -529,13 +437,14 @@ export const AssistantToolContent = ({ contents }: { contents: MyMessage[] }) =>
                                                         components={{
                                                             code: Code,
                                                             p: katexR,
-                                                            li: katexR,
+
                                                             h1: katexR,
                                                             h2: katexR,
                                                             h3: katexR,
                                                             h4: katexR,
                                                             h5: katexR,
                                                             h6: katexR,
+                                                            li: katexR,
                                                             ol: katexR,
                                                             ul: katexR,
                                                             menu: katexR,
@@ -562,13 +471,14 @@ export const AssistantToolContent = ({ contents }: { contents: MyMessage[] }) =>
                                         components={{
                                             code: Code,
                                             p: katexR,
-                                            li: katexR,
+
                                             h1: katexR,
                                             h2: katexR,
                                             h3: katexR,
                                             h4: katexR,
                                             h5: katexR,
                                             h6: katexR,
+                                            li: katexR,
                                             ol: katexR,
                                             ul: katexR,
                                             menu: katexR,

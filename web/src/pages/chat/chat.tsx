@@ -185,6 +185,8 @@ import {
   AppSetting,
   IMCPClient,
   electronData,
+  HyperChatCompletionTool,
+  Tool_Call,
 } from "../../../../common/data";
 
 import { PromptsModal } from "./promptsModal";
@@ -254,6 +256,9 @@ export const Chat = ({
   }, [globalState]);
 
   const [modal, contextHolder] = Modal.useModal();
+  let getAgentNameObj = useRef({} as Record<string, string>);
+
+
   useEffect(() => {
     (async () => {
       try {
@@ -264,6 +269,9 @@ export const Chat = ({
         await AppSetting.init();
         await ChatHistory.init();
         await electronData.init();
+        Agents.get().data.forEach((x) => {
+          getAgentNameObj.current[x.key] = x.label;
+        });
         AppSetting.get().quicks = AppSetting.get().quicks.map((x: any) => {
 
           if (x.quick == null) {
@@ -497,11 +505,11 @@ export const Chat = ({
 
 
   const [loading, setLoading] = useState(false);
-
+  let cacheOBJ = useRef({} as Record<string, OpenAiChannel>);
   const onRequest = useCallback(async (message?: string) => {
     Clarity.event(`sender-${process.env.NODE_ENV}`);
     console.log("onRequest", message);
-    let confirm_call_tool_cb = (tool) => {
+    let confirm_call_tool_cb = (tool: Tool_Call) => {
       return new Promise((resolve, reject) => {
         console.log("tool", tool);
         let m = modal.confirm({
@@ -512,7 +520,7 @@ export const Chat = ({
           content: (
             <div>
               <Form
-                initialValues={tool.function.argumentsJSON}
+                initialValues={tool.function.argumentsOBJ}
                 name="control-hooks"
                 onFinish={(e) => {
                   // console.log(e);
@@ -573,7 +581,8 @@ export const Chat = ({
       });
     }
 
-    let iOnRequest = async (current: boolean, modelKey, messages: MyMessage[], setOpenaiClient: (openaiClient) => void) => {
+    let iOnRequest = async (index: number, modelKey, messages: MyMessage[], setOpenaiClient: (openaiClient) => void) => {
+      let current = index == -1 ? true : false;
       let config = GPT_MODELS.get().data.find(
         (x) => x.key == modelKey,
       );
@@ -584,16 +593,26 @@ export const Chat = ({
         }
         config = await getDefaultModelConfig();
       }
-      let openaiClient = OpenAiChannel.create(
-        {
-          baseURL: config.baseURL,
-          apiKey: config.apiKey,
-        },
-        current ? (modelKey + sessionID) : (modelKey + "-diff" + sessionID),
-      );
+      let openaiClient = (() => {
+        let cacheKey = index;
+        if (cacheOBJ.current[cacheKey]) {
+          return cacheOBJ.current[cacheKey];
+        }
+        let res = new OpenAiChannel(
+          {
+            baseURL: config.baseURL,
+            apiKey: config.apiKey,
+            model: config.model,
+          },
+        );
+        cacheOBJ.current[cacheKey] = res;
+        return res;
+      })();
       try {
         openaiClient.options = {
           ...openaiClient.options,
+          baseURL: config.baseURL,
+          apiKey: config.apiKey,
           model: config.model,
           call_tool_step: config.call_tool_step,
           supportTool: config.supportTool,
@@ -688,12 +707,14 @@ export const Chat = ({
         );
 
         Object.assign(messages, openaiClient.messages)
-        currentChat.current.messages = messages;
         refresh();
 
 
 
         if (current) {
+          // currentChat.current.messages = messages;
+          // refresh();
+
           await call("addChatHistory", [currentChat.current])
           let findIndex = ChatHistory.get().data.findIndex(
             (x) => x.key == currentChat.current.key,
@@ -710,11 +731,12 @@ export const Chat = ({
 
 
         console.error(e);
-        if (openaiClient) {
-          openaiClient.lastMessage.content_error = e.message;
-          Object.assign(messages, openaiClient.messages)
-        }
+
+        openaiClient.lastMessage.content_error = e.message;
+        Object.assign(messages, openaiClient.messages)
         refresh();
+
+
         if (current) {
           // await ChatHistory.save();
           await call("addChatHistory", [currentChat.current])
@@ -736,14 +758,14 @@ export const Chat = ({
     try {
       setLoading(true);
       let alls = []
-      for (let diff of DATA.current.diffs) {
+      for (let [index, diff] of DATA.current.diffs.entries()) {
         diff.messages = _.cloneDeep(currentChat.current.messages);
-        let promise = iOnRequest(false, diff.modelKey, diff.messages, (openaiClient) => {
+        let promise = iOnRequest(index, diff.modelKey, diff.messages, (openaiClient) => {
           diff.openaiClient = openaiClient;
         });
         alls.push(promise);
       }
-      let promise = iOnRequest(true, currentChat.current.modelKey, currentChat.current.messages, (c) => {
+      let promise = iOnRequest(-1, currentChat.current.modelKey, currentChat.current.messages, (c) => {
         openaiClient.current = c;
       });
       alls.push(promise);
@@ -797,15 +819,9 @@ export const Chat = ({
         return;
       }
       setLoadMoreing(true);
-      let getAgentNameObj = {
 
-      }
-      Agents.get().data.forEach((x) => {
-        getAgentNameObj[x.key] = x.label;
-      });
       let formmatedData = ChatHistory.get()
         .data.filter((x) => {
-          x["agentName"] = getAgentNameObj[x.agentKey || x["gptsKey"]];
           return (
             selectGptsKey.current == null ||
             x.agentKey == selectGptsKey.current ||
@@ -1008,10 +1024,11 @@ export const Chat = ({
         >
           <Conversations
             items={conversations.map((x) => {
-              let first = getFirstCharacter(x["agentName"]);
+              let agentName = getAgentNameObj.current[x.agentKey || x["gptsKey"]];
+              let first = getFirstCharacter(agentName);
               return {
                 ...x,
-                label: x.label.toString() + ` - ${dayjs(x.dateTime).format("YYYY-MM-DD HH:mm:ss")}` + (x["agentName"] ? ` - ${x["agentName"]}` : ""),
+                label: x.label.toString() + ` - ${dayjs(x.dateTime).format("YYYY-MM-DD HH:mm:ss")}` + (agentName ? ` - ${agentName}` : ""),
                 icon: <>{first && <span className="rounded bg-slate-300 inline-block text-center" style={{ width: 22, height: 22 }}>{first}</span>}{x.icon == "⭐" ? <StarOutlined /> : undefined}</>,
               };
             })}
@@ -1076,29 +1093,6 @@ export const Chat = ({
                   await call("changeChatHistory", [ChatHistory.get().data[index]])
 
                 }
-                // if (menuInfo.key === "clone") {
-                //   let index = ChatHistory.get().data.findIndex(
-                //     (x) => x.key === conversation.key,
-                //   );
-                //   let item = ChatHistory.get().data[index];
-
-                //   let clone = JSON.parse(JSON.stringify(item));
-                //   // ChatHistory.get().data.unshift({
-                //   //   ...clone,
-                //   //   key: v4(),
-                //   //   label: `${item.label} - Clone`,
-                //   //   dateTime: Date.now(),
-                //   // });
-                //   // ChatHistory.save();
-                //   await call("changeChatHistory", [{
-                //     ...clone,
-                //     key: v4(),
-                //     label: `${item.label} - Clone`,
-                //     dateTime: Date.now(),
-                //   }])
-                //   loadMoreData(false, false);
-                //   refresh();
-                // }
                 if (menuInfo.key === "rename") {
                   await onActiveChange(conversation.key);
 
@@ -1312,7 +1306,7 @@ export const Chat = ({
                           clone.key = v4();
                           clone.messages = clone.messages.slice(0, i + 1);
                           clone.icon = "";
-                          
+
                           await call("addChatHistory", [clone]);
                           ChatHistory.get().data.unshift(clone);
 
@@ -1919,7 +1913,9 @@ export const Chat = ({
               });
             }
             await Agents.save();
-            loadMoreData()
+            Agents.get().data.forEach((x) => {
+              getAgentNameObj.current[x.key] = x.label;
+            });
             // 修改更新agents状态
             call("openMcpClient", ["hyper_agent"]);
             refresh();
@@ -2214,7 +2210,12 @@ export const Chat = ({
             label={t`Name`}
           >
             <InputAI aiGen={async () => {
-              let res = await rename(currentChat.current.messages.filter(x => x.role != "tool"));
+              let res = await rename(currentChat.current.messages.filter(x => x.role != "tool").map(x => {
+                return {
+                  role: x.role,
+                  content: x.content || " ",
+                } as any;
+              }));
               return res;
             }} />
           </Form.Item>
@@ -2230,7 +2231,7 @@ export const Chat = ({
             label={t`attachedDialogueCount`}
             tooltip={t`Number of sent Dialogue Message attached per request`}
           >
-            <NumberStep defaultValue={20} max={40} />
+            <NumberStep defaultValue={10} max={20} />
           </Form.Item>
           <Form.Item
             name="confirm_call_tool"
@@ -2333,9 +2334,9 @@ export const Chat = ({
             </button>
           </div>
         </Modal>
-        { contextHolder }
+        {contextHolder}
 
-  {/* <Modal
+        {/* <Modal
           width={800}
           title={t`Rename`}
           open={isOpenMoreSetting}
@@ -2381,7 +2382,7 @@ const calcAttachDialogue = (
   overwrite = true,
 ) => {
   if (attachedDialogueCount == null) {
-    attachedDialogueCount = 20;
+    attachedDialogueCount = 10;
   }
   let c = 0;
   for (let i = messages.length - 1; i >= 0; i--) {

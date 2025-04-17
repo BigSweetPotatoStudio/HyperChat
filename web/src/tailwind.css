@@ -90,8 +90,6 @@ main {
 ul,
 menu {
   list-style: revert;
-  /* color: red;
-  font-size: 1.5em; */
 }
 
 div[role="user"] .ant-bubble-content-wrapper {

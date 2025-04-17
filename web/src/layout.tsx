@@ -120,9 +120,14 @@ const Providers: ProviderType[] = [
     value: "openrouter",
   },
   {
-    label: "Gemini",
+    label: "Gemini(Openai)",
     baseURL: "https://generativelanguage.googleapis.com/v1beta/openai",
     value: "gemini",
+  },
+  {
+    label: "Claude(Openai)",
+    baseURL: "https://api.anthropic.com/v1",
+    value: "cluade",
   },
   {
     label: "XAI",
