@@ -1,5 +1,4 @@
 import OpenAI from "openai";
-
 import type { HyperChatCompletionTool } from "./mcp";
 // import { call, getURL_PRE, getWebSocket } from "./call";
 import * as MCPTypes from "@modelcontextprotocol/sdk/types.js";
@@ -31,54 +30,8 @@ export {
   MyMessage,
   Tool_Call,
 }
-// export type MyMessage = OpenAI.Chat.Completions.ChatCompletionMessageParam & {
-//   tool_calls?: Tool_Call[]; // openai tool call
-//   content_status?:
-//   | "loading"
-//   | "success"
-//   | "error"
-//   | "dataLoading"
-//   | "dataLoadComplete";
-//   content_error?: string;
-//   content_from?: string;
-//   content_attachment?: Array<{
-//     type: string;
-//     text?: string;
-//     mimeType?: string;
-//     data?: string;
-//   }>;
-//   reasoning_content?: string;
-//   content_context?: any;
-//   content_attached?: boolean;
-//   content_date: number;
-//   content_usage?: {
-//     prompt_tokens: number;
-//     completion_tokens: number;
-//     total_tokens: number;
-//   };
-// };
 
-// class ClientName2Index {
-//   obj: { [s: string]: number } = {};
-//   index = 0;
-//   getIndex(name: string) {
-//     if (!this.obj[name]) {
-//       this.obj[name] = this.index;
-//       this.index++;
-//     }
-//     return this.obj[name];
-//   }
-//   getName(index: number) {
-//     for (let key in this.obj) {
-//       if (this.obj[key] == index) {
-//         return key;
-//       }
-//     }
-//   }
-// }
 
-// export const clientName2Index = new ClientName2Index();
-const cache = new Map<string, any>();
 
 const deviceId = v4();
 export class OpenAiChannel {
@@ -102,6 +55,7 @@ export class OpenAiChannel {
       baseURL: string;
       apiKey: string;
       model?: string;
+      provider?: string;
       requestType?: "complete" | "stream";
       call_tool_step?: number;
       supportTool?: boolean;
@@ -115,6 +69,7 @@ export class OpenAiChannel {
     public messages: MyMessage[] = [],
     // public stream = true,
   ) {
+
     this.openai = new OpenAI({
       baseURL:
         process.env.runtime === "node"
@@ -155,27 +110,11 @@ export class OpenAiChannel {
       },
     });
 
+
     this.options.temperature =
       typeof this.options.temperature === "number"
         ? this.options.temperature
         : undefined;
-  }
-  static create(options: {
-    baseURL: string;
-    apiKey: string;
-    model: string;
-  }): OpenAiChannel {
-    let cacheKey = options.baseURL + options.apiKey + options.model;
-    if (cache.has(cacheKey)) {
-      return cache.get(cacheKey);
-    }
-    let openai = new OpenAiChannel({
-      baseURL: options.baseURL,
-      apiKey: options.apiKey,
-      model: options.model,
-    }, []);
-    cache.set(cacheKey, openai);
-    return openai;
   }
   addMessage(
     message: MyMessage,

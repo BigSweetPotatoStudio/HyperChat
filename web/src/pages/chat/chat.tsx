@@ -610,7 +610,8 @@ export const Chat = ({
       })();
       try {
         openaiClient.options = {
-          ...openaiClient.options,
+          ...config,
+          provider: config.provider,
           baseURL: config.baseURL,
           apiKey: config.apiKey,
           model: config.model,

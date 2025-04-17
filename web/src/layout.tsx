@@ -127,8 +127,13 @@ const Providers: ProviderType[] = [
   {
     label: "Claude(Openai)",
     baseURL: "https://api.anthropic.com/v1",
-    value: "cluade",
+    value: "cluade-openai",
   },
+  // {
+  //   label: "Claude",
+  //   baseURL: "https://api.anthropic.com/v1",
+  //   value: "cluade",
+  // },
   {
     label: "XAI",
     baseURL: "https://api.x.ai/v1",
@@ -685,19 +690,48 @@ export function Layout() {
           title={t`Configure LLM`}
           open={isAddModelConfigOpen}
           maskClosable={false}
-          okButtonProps={{
-            autoFocus: true,
-            htmlType: "submit",
-            loading: loadingCheckLLM,
-          }}
-          cancelButtonProps={{ style: { display: "none" } }}
+          // okButtonProps={{
+          //   autoFocus: true,
+          //   htmlType: "submit",
+          //   loading: loadingCheckLLM,
+          // }}
+          // cancelButtonProps={{ style: { display: "none" } }}
           onCancel={() => {
             setIsAddModelConfigOpen(false);
           }}
+          footer={[
+            form.getFieldValue("key") && <Button key="save" onClick={() => {
+              form.validateFields().then(async (values) => {
+                if (values.key) {
+                  let index = GPT_MODELS.get().data.findIndex(
+                    (e) => e.key == values.key,
+                  );
+                  if (index == -1) {
+                    return;
+                  }
+                  values.name = values.name || values.model;
+                  GPT_MODELS.get().data[index] = values;
+                  await GPT_MODELS.save();
+                } else {
+                  values.name = values.name || values.model;
+                  values.key = v4();
+                  GPT_MODELS.get().data.push(values);
+                  await GPT_MODELS.save();
+                }
+                refresh();
+                setIsAddModelConfigOpen(false);
+              }).catch(() => { })
+            }}>
+              {t`Save`}
+            </Button>,
+            <Button key="submit" type="primary" htmlType="submit">
+              {t`Submit`}
+            </Button>
+          ].filter(x => x)}
           modalRender={(dom) => (
             <Form
               form={form}
-              layout="vertical"
+              layout="horizontal"
               name="AddModelConfig"
               initialValues={{
                 provider: Providers[0].value,
@@ -1006,6 +1040,8 @@ export function Layout() {
                 refresh();
               }}
             ></Select>
+
+
           </Form.Item>
 
           {(form.getFieldValue("type") == "llm" ||
@@ -1017,6 +1053,19 @@ export function Layout() {
                 ></InputNumber>
               </Form.Item>
             )}
+
+          {form.getFieldValue("key") && <Form.Item
+            name="supportImage"
+            label={t`supportImage`}
+          >
+            <Switch></Switch>
+          </Form.Item>}
+          {form.getFieldValue("key") && <Form.Item
+            name="supportTool"
+            label={t`supportTool`}
+          >
+            <Switch></Switch>
+          </Form.Item>}
         </Modal>
         <Modal
           title="Test LLM"
