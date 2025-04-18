@@ -210,7 +210,7 @@ import { QuickPath, SelectFile } from "../../common/selectFile";
 import Clarity from "@microsoft/clarity";
 import { ChatHistoryItem } from "../../../../common/data";
 import { useForm } from "antd/es/form/Form";
-import { t } from "../../i18n";
+import { currLang, t } from "../../i18n";
 import { NumberStep } from "../../common/numberStep";
 import { HeaderContext } from "../../common/context";
 import dayjs from "dayjs";
@@ -2218,12 +2218,10 @@ export const Chat = ({
             <InputAI aiGen={async () => {
               let res = await rename([{
                 role: "user" as const,
-                content: JSON.stringify(currentChat.current.messages.filter(x => x.role != "tool").map(x => {
-                  return {
-                    role: x.role,
-                    content: x.content || " ",
-                  } as any;
-                }))
+                content: `${currLang === "zhCN" ? "请使用中文" : ""}
+${currentChat.current.messages.filter(x => x.role != "tool").map(x => {
+                  return `` + x.role + `: ` + x.content;
+                }).join("\n")}`
               }]);
               return res;
             }} />

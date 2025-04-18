@@ -45,7 +45,7 @@ export async function rename(messages: MyMessage[]) {
         let res = await openaiClient.completionParse(
             zodResponseFormat(z.object({
                 name: z.string({
-                    description: "Give this chat a name"
+                    description: "Summarize this chat record"
                 }),
             }), "test")
         )

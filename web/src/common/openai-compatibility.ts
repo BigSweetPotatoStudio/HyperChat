@@ -55,7 +55,7 @@ export class OpenAICompatibility {
         temperature: number,
         response_format: any,
     }, options?: any) => {
-        if (this.provider === "anthropic"  || this.provider == "anthropic-openai") {
+        let get_json = async () => {
             let tool = {
                 type: 'function' as const,
                 function: {
@@ -71,7 +71,7 @@ export class OpenAICompatibility {
             }, options);
             // console.log(response);
             let choice = response.choices[0];
-            if(!choice.message.tool_calls || choice.message.tool_calls.length === 0) {
+            if (!choice.message.tool_calls || choice.message.tool_calls.length === 0) {
                 throw new Error("No tool call found");
             }
             let tool_call = choice.message.tool_calls[0];
@@ -82,8 +82,17 @@ export class OpenAICompatibility {
                     }
                 }]
             };
+        }
+
+        if (this.provider === "anthropic" || this.provider == "anthropic-openai") {
+            return await get_json();
         } else {
-            return await this.openai.beta.chat.completions.parse(body, options) as any;
+            return await this.openai.beta.chat.completions.parse(body, options).catch(async (e) => {
+                try {
+                    return await get_json();
+                } catch { }
+                throw e;
+            });
         }
     }) as any;;
 }
