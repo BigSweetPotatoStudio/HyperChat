@@ -182,31 +182,31 @@ export function registerTool(server: McpServer) {
     }
   );
 
-  server.tool(
-    "view-terminal-latest-output",
-    `View the current terminal latest output(manual call)`,
-    {
-      terminalID: z.number({ description: "terminalID" }),
-    },
-    async ({ terminalID }) => {
-      if (terminalID === -1) {
-        terminalID = lastTerminalID;
-      }
-      let c = terminalMap.get(terminalID);
-      if (c == null) {
-        throw new Error("terminalID not found, please create terminal first");
-      }
+  // server.tool(
+  //   "view-terminal-latest-output",
+  //   `View the current terminal latest output, after sigint the current command`,
+  //   {
+  //     terminalID: z.number({ description: "terminalID" }),
+  //   },
+  //   async ({ terminalID }) => {
+  //     if (terminalID === -1) {
+  //       terminalID = lastTerminalID;
+  //     }
+  //     let c = terminalMap.get(terminalID);
+  //     if (c == null) {
+  //       throw new Error("terminalID not found, please create terminal first");
+  //     }
 
-      return {
-        content: [
-          {
-            type: "text",
-            text: strip(c.stdout.slice(c.lastIndex)).slice(-maxToken),
-          },
-        ],
-      };
-    }
-  );
+  //     return {
+  //       content: [
+  //         {
+  //           type: "text",
+  //           text: strip(c.stdout.slice(c.lastIndex)).slice(-maxToken),
+  //         },
+  //       ],
+  //     };
+  //   }
+  // );
 
   server.tool(
     "sigint-current-command",

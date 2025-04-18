@@ -191,7 +191,6 @@ import {
 
 import { PromptsModal } from "./promptsModal";
 import {
-  getClients,
   getTools,
   InitedClient,
 } from "../../common/mcp";
@@ -770,7 +769,11 @@ export const Chat = ({
         openaiClient.current = c;
       });
       alls.push(promise);
-      await Promise.allSettled(alls);
+      await Promise.allSettled(alls).then((res) => {
+        console.log("all res", res);
+      });
+    } catch (e) {
+
     } finally {
       setLoading(false);
     }
@@ -1560,6 +1563,8 @@ export const Chat = ({
                         <Icon name="brain" />{" "}
                         <Select
                           size="small"
+                          showSearch
+                          optionFilterProp="label"
                           placeholder={
                             GPT_MODELS.get().data.length > 0
                               ? getDefaultModelConfigSync(GPT_MODELS).name
@@ -2211,12 +2216,15 @@ export const Chat = ({
             label={t`Name`}
           >
             <InputAI aiGen={async () => {
-              let res = await rename(currentChat.current.messages.filter(x => x.role != "tool").map(x => {
-                return {
-                  role: x.role,
-                  content: x.content || " ",
-                } as any;
-              }));
+              let res = await rename([{
+                role: "user" as const,
+                content: JSON.stringify(currentChat.current.messages.filter(x => x.role != "tool").map(x => {
+                  return {
+                    role: x.role,
+                    content: x.content || " ",
+                  } as any;
+                }))
+              }]);
               return res;
             }} />
           </Form.Item>

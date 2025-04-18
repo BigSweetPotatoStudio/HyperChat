@@ -29,11 +29,12 @@ import React, { useContext, useEffect, useRef, useState } from "react";
 import { v4 as uuid } from "uuid";
 
 import { CloseOutlined, FormOutlined, SearchOutlined, SmileOutlined } from "@ant-design/icons";
-import { getClients, InitedClient } from "../../common/mcp";
+import { InitedClient } from "../../common/mcp";
 import { GPT_MODELS } from "../../../../common/data";
 import { t } from "../../i18n";
 import { NumberStep } from "../../common/numberStep";
 import EmojiPicker from 'emoji-picker-react';
+import { HeaderContext } from "../../common/context";
 interface Values {
   label: string;
   prompt: string;
@@ -58,15 +59,13 @@ const ModalForm: React.FC<CollectionCreateFormProps> = ({
   const refresh = () => {
     setNum((x) => x + 1);
   };
-
+  const { mcpClients } = useContext(HeaderContext);
   const [form] = Form.useForm();
-  const [clients, setClients] = React.useState<InitedClient[]>([]);
+
   useEffect(() => {
     onFormInstanceReady(form);
     (async () => {
-      getClients().then((x) => {
-        setClients(x);
-      });
+
       GPT_MODELS.init().then(() => {
         refresh();
       });
@@ -118,7 +117,7 @@ const ModalForm: React.FC<CollectionCreateFormProps> = ({
           treeCheckable
           placeholder={t`Please select allowed MCP`}
           showCheckedStrategy={TreeSelect.SHOW_PARENT}
-          treeData={clients.map((x) => {
+          treeData={mcpClients.map((x) => {
             return {
               title: x.name,
               key: x.name,

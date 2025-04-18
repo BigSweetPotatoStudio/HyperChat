@@ -11,9 +11,7 @@ import type { HyperChatCompletionTool, IMCPClient } from "../../../common/data";
 let init = false;
 let McpClients: Array<IMCPClient>;
 
-export function getMcpClients() {
-  return McpClients || {};
-}
+
 
 // export type HyperChatCompletionTool = OpenAI.ChatCompletionTool & {
 //   // key?: string;

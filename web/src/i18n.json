@@ -261,7 +261,7 @@
   },
   "Alias": {
     "en": "Alias",
-    "zh": "别名"
+    "zh": "名称"
   },
   "The default is the model name": {
     "en": "The default is the model name",
@@ -1142,5 +1142,21 @@
   " days": {
     "en": " days",
     "zh": "天"
+  },
+  "Submit": {
+    "en": "Submit",
+    "zh": "提交"
+  },
+  "CallToolStrictMode": {
+    "en": "CallToolStrictMode",
+    "zh": "调用工具严格模式"
+  },
+  "supportImage": {
+    "en": "supportImage",
+    "zh": "支持图像"
+  },
+  "supportTool": {
+    "en": "supportTool",
+    "zh": "支持工具"
   }
 }

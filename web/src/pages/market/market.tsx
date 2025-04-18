@@ -66,7 +66,7 @@ import {
 window["z"] = z;
 
 import { jsonSchemaToZod } from "json-schema-to-zod";
-import { getMcpClients, InitedClient } from "../../common/mcp";
+import { InitedClient } from "../../common/mcp";
 import { t } from "../../i18n";
 import { HeaderContext } from "../../common/context";
 import {

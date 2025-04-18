@@ -83,7 +83,7 @@ import {
   KNOWLEDGE_BASE,
   MCP_CONFIG,
 } from "../../common/data";
-import { getClients, InitedClient, setClients } from "./common/mcp";
+import { InitedClient, initMcpClients, setClients } from "./common/mcp";
 import { EVENT } from "./common/event";
 import { OpenAiChannel } from "./common/openai";
 import { DndTable } from "./common/dndTable";
@@ -122,18 +122,18 @@ const Providers: ProviderType[] = [
   {
     label: "Gemini(Openai)",
     baseURL: "https://generativelanguage.googleapis.com/v1beta/openai",
-    value: "gemini",
+    value: "gemini-openai",
+  },
+  process.env.myEnv == "dev" && {
+    label: "Anthropic",
+    baseURL: "https://api.anthropic.com",
+    value: "anthropic",
   },
   {
-    label: "Claude(Openai)",
+    label: "Anthropic(Openai)",
     baseURL: "https://api.anthropic.com/v1",
-    value: "cluade-openai",
+    value: "anthropic-openai",
   },
-  // {
-  //   label: "Claude",
-  //   baseURL: "https://api.anthropic.com/v1",
-  //   value: "cluade",
-  // },
   {
     label: "XAI",
     baseURL: "https://api.x.ai/v1",
@@ -171,7 +171,7 @@ const Providers: ProviderType[] = [
     baseURL: "",
     value: "other",
   },
-];
+].filter((x) => x);
 
 msg_receive("message-from-main", (msg) => {
   if (msg.type == "TaskResult") {
@@ -229,7 +229,7 @@ export function Layout() {
       await MCP_CONFIG.init();
       await KNOWLEDGE_BASE.init();
       refresh();
-      await getClients();
+      await initMcpClients();
     })();
   }, []);
 
@@ -1003,16 +1003,10 @@ export function Layout() {
               ></Input>
             </Form.Item>
           )}
-          <Form.Item name="name" label="Alias">
+          <Form.Item name="name" label={t`Alias`}>
             <Input placeholder="The default is the model name"></Input>
           </Form.Item>
 
-          <Form.Item
-            name="isStrict"
-            label={t`isStrict`}
-          >
-            <Switch></Switch>
-          </Form.Item>
 
           <Form.Item
             name="type"
@@ -1045,27 +1039,36 @@ export function Layout() {
           </Form.Item>
 
           {(form.getFieldValue("type") == "llm" ||
-            form.getFieldValue("type") == null) && (
+            form.getFieldValue("type") == null) && (<>
+
               <Form.Item name="call_tool_step" label={t`Call-Tool-Step`}>
                 <InputNumber
                   style={{ width: "100%" }}
                   placeholder="default, the model is allowed to execute tools for 10 steps."
                 ></InputNumber>
               </Form.Item>
-            )}
+              <Form.Item
+                name="isStrict"
+                label={t`CallToolStrictMode`}
+              >
+                <Switch></Switch>
+              </Form.Item>
 
-          {form.getFieldValue("key") && <Form.Item
-            name="supportImage"
-            label={t`supportImage`}
-          >
-            <Switch></Switch>
-          </Form.Item>}
-          {form.getFieldValue("key") && <Form.Item
-            name="supportTool"
-            label={t`supportTool`}
-          >
-            <Switch></Switch>
-          </Form.Item>}
+              {form.getFieldValue("key") && <Form.Item
+                name="supportImage"
+                label={t`supportImage`}
+              >
+                <Switch></Switch>
+              </Form.Item>}
+              {form.getFieldValue("key") && <Form.Item
+                name="supportTool"
+                label={t`supportTool`}
+              >
+                <Switch></Switch>
+              </Form.Item>}
+
+            </>)}
+
         </Modal>
         <Modal
           title="Test LLM"

@@ -192,7 +192,7 @@ export class MCPClient implements IMCPClient {
     return out;
   }
   async open() {
-
+    console.log("open")
 
     if (this.config.disabled) {
       this.status = "disabled";
@@ -259,7 +259,7 @@ export class MCPClient implements IMCPClient {
       this.servername = res.name;
 
       this.tools = tools_res.tools.map((tool, i) => {
-        let name = this.name.replace(/[^a-zA-Z0-9_]/g, "") + "_" + (tool.name.replace(/[^a-zA-Z0-9_]/g, "") || i.toString())
+        let name = this.name.replace(/[^a-zA-Z0-9_-]/g, "") + "_" + (tool.name.replace(/[^a-zA-Z0-9_-]/g, "") || i.toString())
 
         return {
           type: "function" as const,
@@ -484,6 +484,10 @@ export async function initMcpClients() {
       "getMcpClients cached mcpClients",
       mcpClients.length
     );
+    getMessageService().sendAllToRenderer({
+      type: "changeMcpClient",
+      data: mcpClients,
+    })
     return mcpClients;
   }
   let config = MCP_CONFIG.initSync();
@@ -609,6 +613,10 @@ export async function initMcpClients() {
   await Promise.allSettled(tasks);
 
   firstRunStatus = 2;
+  getMessageService().sendAllToRenderer({
+    type: "changeMcpClient",
+    data: mcpClients,
+  })
   return mcpClients;
 }
 initMcpClients().then(() => {
@@ -659,10 +667,6 @@ export async function openMcpClient(
 }
 
 export async function getMcpClients() {
-  getMessageService().sendAllToRenderer({
-    type: "changeMcpClient",
-    data: mcpClients,
-  })
   return mcpClients;
 }
 

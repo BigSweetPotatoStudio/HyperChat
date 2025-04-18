@@ -35,6 +35,7 @@ export async function rename(messages: MyMessage[]) {
     let config = await getDefaultModelConfig();
     try {
         let openaiClient = new OpenAiChannel({
+            ...config,
             baseURL: config.baseURL,
             apiKey: config.apiKey,
             model: config.model,
@@ -59,6 +60,7 @@ export async function genCronExpression(message: string) {
     let config = await getDefaultModelConfig();
     try {
         let openaiClient = new OpenAiChannel({
+            ...config,
             baseURL: config.baseURL,
             apiKey: config.apiKey,
             model: config.model,

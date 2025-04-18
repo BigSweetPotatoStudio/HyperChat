@@ -1,4 +1,4 @@
-import OpenAI from "openai";
+
 import type { HyperChatCompletionTool } from "./mcp";
 // import { call, getURL_PRE, getWebSocket } from "./call";
 import * as MCPTypes from "@modelcontextprotocol/sdk/types.js";
@@ -23,8 +23,8 @@ import { v4 } from "uuid";
 import dayjs from "dayjs";
 import { isOnBrowser } from "./const";
 import type { MyMessage, Tool_Call } from "../../../common/data";
-
-
+import { OpenAICompatibility } from "./openai-compatibility";
+// import OpenAICompatibility from "openai";
 
 export {
   MyMessage,
@@ -35,7 +35,7 @@ export {
 
 const deviceId = v4();
 export class OpenAiChannel {
-  openai: OpenAI;
+  openai: OpenAICompatibility;
   get lastMessage(): MyMessage {
     return this.messages[this.messages.length - 1];
   }
@@ -67,10 +67,9 @@ export class OpenAiChannel {
       confirm_call_tool_cb?: (tool: Tool_Call) => void;
     },
     public messages: MyMessage[] = [],
-    // public stream = true,
   ) {
 
-    this.openai = new OpenAI({
+    this.openai = new OpenAICompatibility({
       baseURL:
         process.env.runtime === "node"
           ? options.baseURL
@@ -223,6 +222,7 @@ export class OpenAiChannel {
   ): Promise<string> {
     this.status = "runing";
     this.index++;
+    this.openai.provider = this.options.provider;
     this.openai.baseURL = this.options.baseURL;
     this.openai.apiKey = this.options.apiKey;
     let res = await this._completion(onUpdate, call_tool, step, {
@@ -289,13 +289,13 @@ export class OpenAiChannel {
     onUpdate && onUpdate(this.lastMessage.content as string);
     try {
       if (this.options.requestType === "stream") {
-        const stream = await this.openai.chat.completions.create(
+        const stream = await this.openai.completion(
           {
             messages: this.messages_format(messages),
             model: this.options.model,
             stream: true,
             stream_options: {
-              include_usage: true, // qwen bug stream not support include_usage
+              include_usage: true,
             },
             tools: tools && this.tools_format(tools),
             temperature: this.options.temperature,
@@ -362,7 +362,7 @@ export class OpenAiChannel {
         // }
         onUpdate && onUpdate(res.content as string);
       } else {
-        const chatCompletion = await this.openai.chat.completions.create(
+        const chatCompletion = await this.openai.completion(
           {
             messages: this.messages_format(messages),
             model: this.options.model,
@@ -510,11 +510,15 @@ export class OpenAiChannel {
         this.messages.push(message as any);
         onUpdate && onUpdate(this.lastMessage.content as string);
         if (process.env.runtime !== "node") {
-          if (
-            clientName === "hyper_agent" &&
-            localtool.origin_name == "call_agent"
-          ) {
-            (await callModule.getWebSocket()).emit("active", deviceId);
+          try {
+            if (
+              clientName === "hyper_agent" &&
+              localtool.origin_name == "call_agent"
+            ) {
+              (await callModule.getWebSocket()).emit("active", deviceId);
+            }
+          } catch (e) { 
+            console.error(e);
           }
         }
         this.mcpAbortController = new AbortController();
@@ -581,7 +585,10 @@ export class OpenAiChannel {
   }
 
   async completionParse(response_format: any): Promise<any> {
-    let completion = await this.openai.beta.chat.completions.parse({
+    this.openai.provider = this.options.provider;
+    this.openai.baseURL = this.options.baseURL;
+    this.openai.apiKey = this.options.apiKey;
+    let completion = await this.openai.parse({
       messages: this.messages_format(this.messages),
       model: this.options.model,
       temperature: this.options.temperature,
@@ -603,7 +610,7 @@ export class OpenAiChannel {
   async testBase() {
 
     let messages: Array<any> = [{ role: "user", content: "你是谁?" }];
-    let response = await this.openai.chat.completions.create({
+    let response = await this.openai.completion({
       model: this.options.model,
       messages: messages,
     });
@@ -627,7 +634,7 @@ export class OpenAiChannel {
         ],
       },
     ];
-    let response = await this.openai.chat.completions.create({
+    let response = await this.openai.completion({
       model: this.options.model,
       messages: messages,
     });
@@ -656,7 +663,7 @@ export class OpenAiChannel {
       },
     ];
 
-    let response = await this.openai.chat.completions.create({
+    let response = await this.openai.completion({
       model: this.options.model,
       messages: messages,
       tools,
@@ -686,7 +693,7 @@ export class OpenAiChannel {
       content: res,
     });
 
-    response = await this.openai.chat.completions.create({
+    response = await this.openai.completion({
       model: this.options.model,
       messages: messages,
       tools,
