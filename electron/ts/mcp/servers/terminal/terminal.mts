@@ -21,7 +21,7 @@ type Context = {
 
 export function registerTool(server: McpServer) {
   const terminalMap = new Map<number, Context>();
-  getMessageService().terminalMsg.emit("clear-terminal", {
+  getMessageService().terminalMsg?.emit("clear-terminal", {
     terminals: Array.from(terminalMap).map((x) => x[0]),
   });
 

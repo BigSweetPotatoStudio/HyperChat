@@ -33,7 +33,7 @@ export const HyperTools = {
   name: NAME,
   url: ``,
   configSchema: configSchema,
-  type: "streamableHttp",
+  // type: "streamableHttp",
 };
 
 export * from "./lib.mjs";

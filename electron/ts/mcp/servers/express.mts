@@ -6,7 +6,7 @@ import { MyServers } from "./index.mjs";
 
 import { Config } from "ts/const.mjs";
 import { v4 } from "uuid";
-import { isInitializeRequest, StreamableHTTPServerTransport } from "ts/es6.mjs";
+import { isInitializeRequest, SSEServerTransport, StreamableHTTPServerTransport } from "ts/es6.mjs";
 
 type HyperMcp = {
   createServer;
@@ -27,51 +27,72 @@ export async function initMcpServer() {
 
     async function register(serve: HyperMcp) {
       if (serve.type == "streamableHttp") {
+
+        const transport = new StreamableHTTPServerTransport({
+          sessionIdGenerator: undefined, // set to undefined for stateless servers
+        });
         let server = await serve.createServer();
-        
+        await server.connect(transport);
         app.post(`/${serve.name}/mcp`, async (req, res) => {
+          // console.log('Received MCP request:', req.body);
 
-          // Check for existing session ID
-          const sessionId = req.headers['mcp-session-id'] as string | undefined;
-          console.log("Received message", sessionId, req.body);
-          let transport;
-
-          if (sessionId && transports[sessionId]) {
-            // Reuse existing transport
-            transport = transports[sessionId];
-          } else if (sessionId) {
-            // New initialization request
-            console.log("New session ID", sessionId, req.body);
-            transport = new StreamableHTTPServerTransport({
-              sessionIdGenerator: undefined,
-            });
-
-            // let server = await serve.createServer();
-
-
-            // Clean up transport when closed
-            transport.onclose = () => {
-              delete transports[sessionId];
-            };
-            transports[sessionId] = transport;
-
-            // Connect to the MCP server
-            await server.connect(transport);
-          } else {
-            // Invalid request
-            res.status(400).json({
-              jsonrpc: '2.0',
-              error: {
-                code: -32000,
-                message: 'Bad Request: No valid session ID provided',
-              },
-              id: null,
-            });
-            return;
+          try {
+            await transport.handleRequest(req, res, req.body);
+          } catch (error) {
+            console.error('Error handling MCP request:', error);
+            if (!res.headersSent) {
+              res.status(500).json({
+                jsonrpc: '2.0',
+                error: {
+                  code: -32603,
+                  message: 'Internal server error',
+                },
+                id: null,
+              });
+            }
           }
 
-          // Handle the request
-          await transport.handleRequest(req, res, req.body);
+          // // Check for existing session ID
+          // const sessionId = req.headers['mcp-session-id'] as string | undefined;
+          // console.log("Received message", sessionId, req.body);
+          // let transport;
+
+          // if (sessionId && transports[sessionId]) {
+          //   // Reuse existing transport
+          //   transport = transports[sessionId];
+          // } else if (sessionId) {
+          //   // New initialization request
+          //   console.log("New session ID", sessionId, req.body);
+          //   transport = new StreamableHTTPServerTransport({
+          //     sessionIdGenerator: undefined,
+          //   });
+
+          //   // let server = await serve.createServer();
+
+
+          //   // Clean up transport when closed
+          //   transport.onclose = () => {
+          //     delete transports[sessionId];
+          //   };
+          //   transports[sessionId] = transport;
+
+          //   // Connect to the MCP server
+          //   await server.connect(transport);
+          // } else {
+          //   // Invalid request
+          //   res.status(400).json({
+          //     jsonrpc: '2.0',
+          //     error: {
+          //       code: -32000,
+          //       message: 'Bad Request: No valid session ID provided',
+          //     },
+          //     id: null,
+          //   });
+          //   return;
+          // }
+
+          // // Handle the request
+          // await transport.handleRequest(req, res, req.body);
         });
 
         // Reusable handler for GET and DELETE requests
@@ -90,8 +111,10 @@ export async function initMcpServer() {
 
         app.delete(`/${serve.name}/mcp`, handleSessionRequest);
       } else {
+        let transport;
 
         app.get(`/${serve.name}/sse`, async (req, res) => {
+          transport = new SSEServerTransport(`/${serve.name}/message`, res);
           // Start keep-alive ping
           const intervalId = setInterval(() => {
             if (!res.writableEnded) {
@@ -101,10 +124,11 @@ export async function initMcpServer() {
               clearInterval(intervalId);
             }
           }, KEEP_ALIVE_INTERVAL_MS);
-          await serve.createServer(`/${serve.name}/message`, res);
+          let server = await serve.createServer();
+          await server.connect(transport);
         });
         app.post(`/${serve.name}/message`, async (req, res) => {
-          await serve.handlePostMessage(req, res);
+          await transport.handlePostMessage(req, res);
         });
       }
     }

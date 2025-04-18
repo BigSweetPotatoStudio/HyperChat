@@ -8,8 +8,8 @@ import { registerTool } from "./terminal.mjs";
 let transport;
 async function createServer(endpoint: string, response) {
   //   console.log("Received connection");
-  transport = new SSEServerTransport(endpoint, response);
-  // console.log("==================", getConfig().Web_Tools_Platform);
+  // transport = new SSEServerTransport(endpoint, response);
+  // // console.log("==================", getConfig().Web_Tools_Platform);
   const server = new McpServer({
     name: NAME,
     version: CONST.getVersion,
@@ -18,7 +18,8 @@ async function createServer(endpoint: string, response) {
   registerTool(server);
 
   
-  await server.connect(transport);
+  // await server.connect(transport);
+  return server;
 }
 
 async function handlePostMessage(req, res) {
@@ -32,6 +33,7 @@ export const HyperTerminal = {
   name: NAME,
   url: ``,
   configSchema: configSchema,
+  // type: "streamableHttp",
 };
 
 

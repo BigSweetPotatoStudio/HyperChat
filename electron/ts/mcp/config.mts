@@ -117,7 +117,7 @@ await initMcpServer().catch((e) => {
   console.error("initMcpServer", e);
 });
 
-
+let notificationCount = 0;
 export let mcpClients: Array<MCPClient> = [];
 export class MCPClient implements IMCPClient {
   public tools: Array<HyperChatCompletionTool> = [];
@@ -234,6 +234,7 @@ export class MCPClient implements IMCPClient {
       // let c = client.getServerCapabilities();
       // console.log(c);
       let tools_res = await client.listTools().catch((e) => {
+        Logger.error("listTools error: ", e);
         return { tools: [] };
       });
       // console.log("listTools", tools_res);
@@ -266,7 +267,7 @@ export class MCPClient implements IMCPClient {
         } else {
           if (e.message.includes("not valid JSON")) {
           } else {
-            Logger.error("client stdio onerror: ", e);
+            Logger.error(`${this.name} client ${this.config?.type} onerror: `, e);
           }
         }
       };
@@ -314,6 +315,13 @@ export class MCPClient implements IMCPClient {
       // });
       // this.client.setLoggingLevel("debug");
       this.client.setNotificationHandler(LoggingMessageNotificationSchema, (notification) => {
+        notificationCount++;
+        console.log(`\nNotification #${notificationCount}: ${notification.params.level} - ${notification.params.data}`);
+        // Re-display the prompt
+        process.stdout.write('> ');
+      });
+
+      this.client.setNotificationHandler(LoggingMessageNotificationSchema, (notification) => {
         Logger.info("Received notification LoggingMessageNotificationSchema:", notification);
       });
 
@@ -358,7 +366,11 @@ export class MCPClient implements IMCPClient {
       }
     });
 
-    const transport = new SSEClientTransport(new URL(config?.url || config?.hyperchat?.url));
+    const transport = new SSEClientTransport(new URL(config?.url || config?.hyperchat?.url), {
+      requestInit: {
+        keepalive: true
+      }
+    });
     await client.connect(transport);
     this.client = client;
   }
@@ -371,7 +383,7 @@ export class MCPClient implements IMCPClient {
     });
 
     const transport = new StreamableHTTPClientTransport(new URL(config?.url), {
-      sessionId: v4(),
+      // sessionId: v4(),
     });
     await client.connect(transport);
     this.client = client;

@@ -300,12 +300,13 @@ let transport;
 
 async function createServer(endpoint: string, response) {
   //   console.log("Received connection");
-  transport = new SSEServerTransport(endpoint, response);
-  await server.connect(transport);
-  server.onclose = async () => {
-    await server.close();
-    // process.exit(0);
-  };
+  // transport = new SSEServerTransport(endpoint, response);
+  // await server.connect(transport);
+  // server.onclose = async () => {
+  //   await server.close();
+  //   // process.exit(0);
+  // };
+  return server;
 }
 
 async function handlePostMessage(req, res) {
@@ -318,4 +319,5 @@ export const HyperAgent = {
   handlePostMessage,
   name: NAME,
   url: ``,
+  // type: "streamableHttp",
 };

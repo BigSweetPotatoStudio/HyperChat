@@ -232,13 +232,9 @@ export function Market() {
               {item.source == "builtin" && <Tag color="blue">{t`built-in`}</Tag>}
               {item.source == "hyperchat" && item.config.isSync && <Tag className=" text-blue-400">sync</Tag>}
               &nbsp;
-              {item.config?.type ==
-                "sse" ? (
-                <Tag>sse</Tag>
-              ) : (
-                item.config?.type ==
-                  "streamableHttp" ? <Tag>streamableHttp</Tag> : ""
-              )}
+
+              {(item.config?.type && item.config?.type != "stdio") && <Tag>{item.config?.type}</Tag>}
+
               &nbsp;
               {item.status == "connecting" ? (
                 <SyncOutlined spin className="text-blue-400" />
@@ -816,7 +812,7 @@ export function Market() {
                     }
                   }
                   let mcpServerConfig = {} as any;
-                  if (values.type == "sse") {
+                  if (values.type == "sse" || values.type == "streamableHttp") {
                     mcpServerConfig = {
                       url: values.url,
                       type: values.type,
@@ -884,7 +880,7 @@ export function Market() {
           </Form.Item>
           <Form.Item
             name="type"
-            label="type"
+            label={t`type`}
             rules={[{ required: true, message: t`Please enter` }]}
           >
             <Radio.Group
@@ -894,9 +890,10 @@ export function Market() {
             >
               <Radio value="stdio">stdio</Radio>
               <Radio value="sse">sse</Radio>
+              <Radio value="streamableHttp">streamableHttp</Radio>
             </Radio.Group>
           </Form.Item>
-          {mcpform.getFieldValue("type") == "sse" ? (
+          {(mcpform.getFieldValue("type") == "sse" || mcpform.getFieldValue("type") == "streamableHttp") ? (
             <div>
               {" "}
               <Form.Item
