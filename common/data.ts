@@ -241,7 +241,7 @@ export type MCP_CONFIG_TYPE = {
   args: string[];
   env: { [s: string]: string };
   url: string;
-  type: "stdio" | "sse";
+  type: "stdio" | "sse" | "streamableHttp";
   hyperchat: {
     config: { [s in string]: any };
     url: string;

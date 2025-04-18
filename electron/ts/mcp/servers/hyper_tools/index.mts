@@ -1,12 +1,10 @@
-import { McpServer, SSEServerTransport } from "ts/es6.mjs";
+import { McpServer, SSEServerTransport, StreamableHTTPServerTransport } from "ts/es6.mjs";
 import { configSchema, getConfig, NAME } from "./lib.mjs";
 import { CONST } from "ts/polyfills/polyfills.mjs";
 
 let transport;
-async function createServer(endpoint: string, response) {
-  //   console.log("Received connection");
-  transport = new SSEServerTransport(endpoint, response);
-  // console.log("==================", getConfig().Web_Tools_Platform);
+async function createServer() {
+
   const server = new McpServer({
     name: NAME,
     version: CONST.getVersion,
@@ -21,7 +19,7 @@ async function createServer(endpoint: string, response) {
     let { registerNoElectronTool } = await import("./no_electron.mjs");
     registerNoElectronTool(server);
   }
-  await server.connect(transport);
+  return server;
 }
 
 async function handlePostMessage(req, res) {
@@ -35,6 +33,7 @@ export const HyperTools = {
   name: NAME,
   url: ``,
   configSchema: configSchema,
+  type: "streamableHttp",
 };
 
 export * from "./lib.mjs";

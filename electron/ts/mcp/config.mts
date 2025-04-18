@@ -9,6 +9,7 @@ import {
   ResourceListChangedNotificationSchema,
   shellPathSync,
   SSEClientTransport,
+  StreamableHTTPClientTransport,
   zx,
 } from "ts/es6.mjs";
 const { fs, os, sleep } = zx;
@@ -73,15 +74,28 @@ if (fs.existsSync(buildinMcpJSONPath)) {
 }
 for (let s of MyServers) {
   let key = s.name;
-  buildinMcpJSON.mcpServers[key] = {
-    type: "sse",
-    url: `http://localhost:${Config.mcp_server_port}/${key}/sse`,
-    hyperchat: {
-      scope: "built-in",
-      config: buildinMcpJSON.mcpServers[key]?.hyperchat?.config || {},
-    } as any,
-    disabled: buildinMcpJSON.mcpServers[key]?.disabled,
-  } as MCP_CONFIG_TYPE;
+  if (s.type == "streamableHttp") {
+    buildinMcpJSON.mcpServers[key] = {
+      type: "streamableHttp",
+      url: `http://localhost:${Config.mcp_server_port}/${key}/mcp`,
+      hyperchat: {
+        scope: "built-in",
+        config: buildinMcpJSON.mcpServers[key]?.hyperchat?.config || {},
+      } as any,
+      disabled: buildinMcpJSON.mcpServers[key]?.disabled,
+    } as MCP_CONFIG_TYPE;
+  } else {
+    buildinMcpJSON.mcpServers[key] = {
+      type: "sse",
+      url: `http://localhost:${Config.mcp_server_port}/${key}/sse`,
+      hyperchat: {
+        scope: "built-in",
+        config: buildinMcpJSON.mcpServers[key]?.hyperchat?.config || {},
+      } as any,
+      disabled: buildinMcpJSON.mcpServers[key]?.disabled,
+    } as MCP_CONFIG_TYPE;
+  }
+
 }
 fs.writeFileSync(buildinMcpJSONPath, JSON.stringify(buildinMcpJSON, null, 2));
 
@@ -192,7 +206,7 @@ export class MCPClient implements IMCPClient {
     return out;
   }
   async open() {
-    console.log("open")
+    // console.log("open", this.config)
 
     if (this.config.disabled) {
       this.status = "disabled";
@@ -210,6 +224,8 @@ export class MCPClient implements IMCPClient {
       // }
       if (this.config?.type == "sse" || this.config?.hyperchat?.type == "sse") {
         await this.openSse(this.config);
+      } else if (this.config?.type == "streamableHttp") {
+        await this.openStreamableHttp(this.config);
       } else {
         await this.openStdio(this.config);
       }
@@ -255,8 +271,8 @@ export class MCPClient implements IMCPClient {
         }
       };
       let res = await this.client.getServerVersion();
-      this.version = res.version;
-      this.servername = res.name;
+      this.version = res?.version;
+      this.servername = res?.name;
 
       this.tools = tools_res.tools.map((tool, i) => {
         let name = this.name.replace(/[^a-zA-Z0-9_-]/g, "") + "_" + (tool.name.replace(/[^a-zA-Z0-9_-]/g, "") || i.toString())
@@ -343,6 +359,20 @@ export class MCPClient implements IMCPClient {
     });
 
     const transport = new SSEClientTransport(new URL(config?.url || config?.hyperchat?.url));
+    await client.connect(transport);
+    this.client = client;
+  }
+  async openStreamableHttp(config: MCP_CONFIG_TYPE) {
+    const client = new Client({
+      name: this.name,
+      version: "1.0.0",
+      capabilities: {
+      }
+    });
+
+    const transport = new StreamableHTTPClientTransport(new URL(config?.url), {
+      sessionId: v4(),
+    });
     await client.connect(transport);
     this.client = client;
   }

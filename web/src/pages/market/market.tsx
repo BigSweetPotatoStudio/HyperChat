@@ -236,7 +236,8 @@ export function Market() {
                 "sse" ? (
                 <Tag>sse</Tag>
               ) : (
-                ""
+                item.config?.type ==
+                  "streamableHttp" ? <Tag>streamableHttp</Tag> : ""
               )}
               &nbsp;
               {item.status == "connecting" ? (

@@ -1,3 +1,5 @@
+
+
 export const zx = await import(/* webpackIgnore: true */ "zx");
 
 export const { $, usePowerShell, os, fs } = zx;
@@ -34,6 +36,16 @@ export const { Server } = await import(
 export const { SSEServerTransport } = await import(
   /* webpackIgnore: true */ "@modelcontextprotocol/sdk/server/sse.js"
 );
+export const { StreamableHTTPServerTransport } = await import(
+  /* webpackIgnore: true */ "@modelcontextprotocol/sdk/server/streamableHttp.js"
+);
+export const { StreamableHTTPClientTransport } = await import(
+  /* webpackIgnore: true */ "@modelcontextprotocol/sdk/client/streamableHttp.js"
+);
+
+export const { InMemoryTransport } = await import(
+  /* webpackIgnore: true */ "@modelcontextprotocol/sdk/inMemory.js"
+);
 
 
 
@@ -52,7 +64,9 @@ export const {
   NotificationSchema,
   ProgressNotificationSchema,
   LoggingMessageNotificationSchema,
-  ResourceListChangedNotificationSchema
+  ResourceListChangedNotificationSchema,
+  isInitializeRequest,
+
 } = await import(
   /* webpackIgnore: true */ "@modelcontextprotocol/sdk/types.js"
 );
@@ -60,6 +74,8 @@ export const {
 export const { RAGApplicationBuilder, TextLoader } = await import(
   /* webpackIgnore: true */ "@llm-tools/embedjs"
 );
+
+
 
 export const { OpenAiEmbeddings } = await import(
   /* webpackIgnore: true */ "@llm-tools/embedjs-openai"
