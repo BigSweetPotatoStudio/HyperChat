@@ -7,7 +7,18 @@ import { MyMessage } from "./openai";
 import { Completions } from "openai/resources/chat/completions";
 import { HyperChatCompletionTool } from "../../../common/data";
 import { message } from "antd";
+import { isOnBrowser } from "./const";
+let callModule = {
+    getURL_PRE: () => "",
+    getWebSocket: () => null,
+};
+if (process.env.runtime === "node") {
 
+} else {
+    let call = await import("./call");
+    callModule.getURL_PRE = call.getURL_PRE;
+    callModule.getWebSocket = call.getWebSocket;
+}
 export class OpenAICompatibility {
     openai: OpenAI;
     anthropic: AnthropicProvider;
@@ -39,12 +50,21 @@ export class OpenAICompatibility {
         max_tokens?: number,
     }, options?) => {
         if (this.provider === "anthropic") {
-            this.anthropic.client.baseURL = this.baseURL;
+            this.anthropic.client.baseURL = process.env.runtime === "node"
+                ? this.baseURL :
+                isOnBrowser
+                    ? (callModule.getURL_PRE() + "api/proxy" + `?baseURL=${encodeURIComponent(this.baseURL)}`)
+                    : this.baseURL;
             this.anthropic.client.apiKey = this.apiKey;
             return this.anthropic.completion(body, options) as any;
         } else {
-            this.openai.baseURL = this.baseURL;
+            this.openai.baseURL = process.env.runtime === "node"
+                ? this.baseURL :
+                isOnBrowser
+                    ? (callModule.getURL_PRE() + "api/proxy" + `?baseURL=${encodeURIComponent(this.baseURL)}`)
+                    : this.baseURL;
             this.openai.apiKey = this.apiKey;
+
             return this.openai.chat.completions.create(body, options) as any;
         }
     }) as any;
@@ -55,6 +75,7 @@ export class OpenAICompatibility {
         temperature: number,
         response_format: any,
     }, options?: any) => {
+
         let get_json = async () => {
             let tool = {
                 type: 'function' as const,
@@ -87,6 +108,13 @@ export class OpenAICompatibility {
         if (this.provider === "anthropic" || this.provider == "anthropic-openai") {
             return await get_json();
         } else {
+            this.openai.baseURL = process.env.runtime === "node"
+                ? this.baseURL :
+                isOnBrowser
+                    ? (callModule.getURL_PRE() + "api/proxy" + `?baseURL=${encodeURIComponent(this.baseURL)}`)
+                    : this.baseURL;
+            this.openai.apiKey = this.apiKey;
+
             return await this.openai.beta.chat.completions.parse(body, options).catch(async (e) => {
                 try {
                     return await get_json();

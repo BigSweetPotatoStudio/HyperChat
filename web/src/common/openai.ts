@@ -70,19 +70,16 @@ export class OpenAiChannel {
   ) {
 
     this.openai = new OpenAICompatibility({
-      baseURL:
-        process.env.runtime === "node"
-          ? options.baseURL
-          : isOnBrowser
-            ? callModule.getURL_PRE() + "api/proxy"
-            : options.baseURL,
+      baseURL: isOnBrowser
+        ? callModule.getURL_PRE() + "api/proxy"
+        : options.baseURL,
 
       apiKey: options.apiKey, // This is the default and can be omitted
       dangerouslyAllowBrowser: process.env.runtime !== "node",
       defaultHeaders: {
         "HTTP-Referer": "https://hyperchat.dadigua.men", // Optional. Site URL for rankings on openrouter.ai.
         "X-Title": "HyperChat", // Optional. Site title for rankings on openrouter.ai.
-        baseURL: encodeURIComponent(options.baseURL),
+        // baseURL: encodeURIComponent(options.baseURL),
       },
       fetch: async (url: RequestInfo, init?: RequestInit): Promise<Response> => {
         // console.log('About to make a request', url, init);
@@ -517,7 +514,7 @@ export class OpenAiChannel {
             ) {
               (await callModule.getWebSocket()).emit("active", deviceId);
             }
-          } catch (e) { 
+          } catch (e) {
             console.error(e);
           }
         }
