@@ -68,7 +68,9 @@ export class CommandFactory {
     }
   ) {
     let res = await openMcpClient(clientName, clientConfig, options);
-    return res.map((x) => x.toJSON());
+    return {
+      success: true,
+    };
   }
   async getMcpClients() {
     let res = await getMcpClients();
@@ -86,7 +88,9 @@ export class CommandFactory {
       isdelete,
       isdisable
     });
-    return res.map((x) => x.toJSON());
+    return {
+      success: true,
+    };
   }
   async mcpCallTool(name: string, functionName: string, args: any) {
     let mcpClients = await getMcpClients();

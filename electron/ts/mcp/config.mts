@@ -523,7 +523,7 @@ export async function initMcpClients() {
   }
   if (firstRunStatus == 2) {
     Logger.info(
-      "getMcpClients cached mcpClients",
+      "initMcpClients cached mcpClients",
       mcpClients.length
     );
     getMessageService().sendAllToRenderer({

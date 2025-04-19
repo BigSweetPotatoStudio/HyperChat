@@ -205,11 +205,12 @@ export const ChatHistory = new Data("chat_history.json", {
 
 export const Agents = new Data("gpts_list.json", {
   data: [] as Array<{
+    type?: "builtin" | "custom";
     key: string;
     label: string;
     prompt: string;
     description?: string;
-    callable: boolean;
+    callable?: boolean;
     allowMCPs: string[];
     modelKey?: string;
     attachedDialogueCount?: number;
@@ -238,18 +239,18 @@ export const GPT_MODELS = new Data("gpt_models.json", {
 
 
 export type MCP_CONFIG_TYPE = {
-  command: string;
-  args: string[];
-  env: { [s: string]: string };
-  url: string;
-  type: "stdio" | "sse" | "streamableHttp";
-  hyperchat: {
+  command?: string;
+  args?: string[];
+  env?: { [s: string]: string };
+  url?: string;
+  type?: "stdio" | "sse" | "streamableHttp";
+  hyperchat?: {
     config: { [s in string]: any };
     url: string;
     type: "stdio" | "sse";
     scope: "built-in" | "outer";
   };
-  disabled: boolean;
+  disabled?: boolean;
   isSync?: boolean;
 };
 

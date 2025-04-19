@@ -50,8 +50,11 @@ export function SortableItem(props) {
           {props.item.callable && (
             <FunctionOutlined className="text-blue-400" />
           )}
+          {props.item.type == "builtin" && (
+            <span className="text-red-400" >{props.item.type}</span>
+          )}
         </div>
-        <div
+        {props.item.type != "builtin" && <div
           style={{
             display: hover ? "block" : "none",
           }}
@@ -75,7 +78,7 @@ export function SortableItem(props) {
             <EditOutlined className="ml-2 cursor-pointer text-blue-400 hover:text-blue-800" />
           </span>
         </div>
-
+        }
         <div className="absolute bottom-0 line-clamp-2 w-full bg-slate-600 text-center text-sm text-slate-50">
           {props.item.label}
         </div>

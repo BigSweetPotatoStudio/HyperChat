@@ -256,7 +256,25 @@ export const Chat = ({
 
   const [modal, contextHolder] = Modal.useModal();
   let getAgentNameObj = useRef({} as Record<string, string>);
+  let builtinAgent = useRef([{
+    "key": "1",
+    "label": "MCP Helper",
+    "prompt": `
+# I am a super agent. According to the user's requirements, I first think and then design a tool flow, call various tools, and complete the recent addition of MCP
+# MCP is a command, and the operation method is similar to npx, uvx, etc. The user is a novice, and I want to do more.
 
+1. I can search + summarize the web page online, query the MCP running command line, and it is best to find the Gtihub web page to obtain command information.
+2. Try to add stdio. If adding stdio type MCP fails, I can use the terminal to enter the command to test the error.
+3. If an error is reported, use the terminal to help the user install the environment (such as nodejs or uv or python, etc.).
+4. If the test is successful, call the tool to add mcp.`,
+    "allowMCPs": [
+      "hyper_tools",
+      "hyper_terminal",
+      "hyper_settings"
+    ],
+    "confirm_call_tool": false,
+    "type": "builtin"
+  } as any]);
 
   useEffect(() => {
     (async () => {
@@ -268,6 +286,7 @@ export const Chat = ({
         await AppSetting.init();
         await ChatHistory.init();
         await electronData.init();
+        Agents.get().data = builtinAgent.current.concat(Agents.get().data.filter(x => x.type != "builtin"));
         Agents.get().data.forEach((x) => {
           getAgentNameObj.current[x.key] = x.label;
         });
@@ -1230,8 +1249,8 @@ export const Chat = ({
                                   }}
                                 >
                                   <SortableContext
-                                    items={Agents.get()
-                                      .data.filter(
+                                    items={(Agents.get()
+                                      .data).filter(
                                         (x) =>
                                           botSearchValue == "" ||
                                           x.label
@@ -1240,8 +1259,8 @@ export const Chat = ({
                                       )
                                       .map((x) => x.key)}
                                   >
-                                    {Agents.get()
-                                      .data.filter(
+                                    {(Agents.get()
+                                      .data).filter(
                                         (x) =>
                                           botSearchValue == "" ||
                                           x.label
