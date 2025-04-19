@@ -55,7 +55,7 @@ export function registerTool(server: McpServer) {
     "open-terminal",
     `open-terminal on ${os.platform} OS.`,
     {},
-    async ({}) => {
+    async ({ }) => {
       if (os.platform() != "win32") {
         process.env.PATH = shellPathSync();
       }
@@ -82,18 +82,35 @@ export function registerTool(server: McpServer) {
           terminalMap.delete(c.terminal.pid);
         }, timeout),
       };
+      let callback = (msg) => {
+        if (msg.terminalID == terminal.pid) {
+          c.terminal.write(msg.data);
+        }
+      };
       terminal.onExit((code) => {
         clearTimeout(c.timer);
         terminalMap.delete(terminal.pid);
         getMessageService().terminalMsg.emit("onClose-terminal", {
           terminalID: terminal.pid,
         });
+        getMessageService().removeTerminalMsgListener(callback);
       });
       getMessageService().terminalMsg.emit("open-terminal", {
         terminalID: terminal.pid,
         terminals: Array.from(terminalMap).map((x) => x[0]),
       });
+
       terminal.onData((data) => {
+        c.timer && clearTimeout(c.timer);
+        c.timer = setTimeout(() => {
+          try {
+            c.terminal.kill();
+          } catch (error) {
+            console.error("Error killing terminal:", error);
+          }
+          terminalMap.delete(c.terminal.pid);
+        }, timeout);
+
         getMessageService().terminalMsg.emit("terminal-send", {
           terminalID: terminal.pid,
           data: data,
@@ -102,6 +119,8 @@ export function registerTool(server: McpServer) {
         c.commamdOutput += data;
         // fs.writeFileSync("terminal.log", c.stdout);
       });
+
+      getMessageService().addTerminalMsgListener(callback);
       // terminal.write(`ssh ldh@ubuntu\r`);
       while (1) {
         await new Promise((resolve) => setTimeout(resolve, 100));
@@ -149,34 +168,36 @@ export function registerTool(server: McpServer) {
       c.commamdOutput = "";
       c.terminal.write(`${command}\r`);
 
-      c.timer && clearTimeout(c.timer);
-      c.timer = setTimeout(() => {
-        try {
-          c.terminal.kill();
-        } catch (error) {
-          console.error("Error killing terminal:", error);
-        }
-        terminalMap.delete(c.terminal.pid);
-      }, timeout);
+      // c.timer && clearTimeout(c.timer);
+      // c.timer = setTimeout(() => {
+      //   try {
+      //     c.terminal.kill();
+      //   } catch (error) {
+      //     console.error("Error killing terminal:", error);
+      //   }
+      //   terminalMap.delete(c.terminal.pid);
+      // }, timeout);
       let a = false;
       while (1) {
         if (a) {
           await new Promise((resolve) => setTimeout(resolve, 500));
-          if (c.commamdOutput.includes(`done-${terminalID}`)) {
+          // console.log(c.commamdOutput)
+          if (c.commamdOutput.match(/(\n|\r)done(\n|\r)/)) {
             break;
           }
         } else {
           await new Promise((resolve) => setTimeout(resolve, 100));
           if (checkEnd(c.commamdOutput)) {
-            c.terminal.write(`         echo done-${terminalID}\r`);
+            c.terminal.write(`                  echo done\r`);
             a = true;
           }
         }
       }
       c.lastIndex = c.stdout.length;
+      // fs.writeFileSync("terminal.log", c.commamdOutput.replace(/(\n|\r)done(\n|\r).*/, ""));
       return {
         content: [
-          { type: "text", text: strip(c.commamdOutput).slice(-maxToken) },
+          { type: "text", text: strip(c.commamdOutput.replace(/(\n|\r)done(\n|\r).*/s, "")).slice(-maxToken).replace("echo done", "") },
         ],
       };
     }

@@ -8,7 +8,8 @@
     "prod": "tsx task.mts --prod",
     "build": "tsx task.mts --build",
     "pre_commit": "tsx task.mts --pre_commit",
-    "prod_node": "tsx task.mts --prod_node"
+    "prod_node": "tsx task.mts --prod_node",
+    "updateVersion": "tsx task.mts --updateVersion"
   },
   "pre-commit": [],
   "author": "",

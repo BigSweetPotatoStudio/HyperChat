@@ -91,6 +91,8 @@ jobs:
             else
           echo "tag=latest" >> $GITHUB_OUTPUT
             fi
+
+      - run: npm run updateVersion
       - run: npm run prod_node
 
       # - run: cd web && npm run build

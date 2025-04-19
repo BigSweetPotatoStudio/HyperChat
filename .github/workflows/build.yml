@@ -103,6 +103,8 @@ jobs:
         run: npm install
         working-directory: ./electron
 
+      - run: npm run updateVersion
+
       - name: Build Electron App (macOS only)
         if: matrix.os == 'macos-latest' || matrix.os == 'macos-13'
         run: npm run prod

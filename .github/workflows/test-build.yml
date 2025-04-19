@@ -82,6 +82,8 @@ jobs:
         run: npm install
         working-directory: ./electron
 
+      - run: npm run prod_node
+
       - name: Build Electron App (macOS only)
         if: matrix.os == 'macos-latest'
         run: npm run prod
@@ -95,6 +97,7 @@ jobs:
           USE_HARD_LINKS: false
           MYRUNENV: github
 
+          
       - name: Build Electron App (widnows+linux)
         if: matrix.os != 'macos-latest'
         run: npm run prod

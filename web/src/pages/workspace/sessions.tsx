@@ -34,7 +34,7 @@ export function Sessions({ setSessionCount = undefined }) {
 
     const socket = io(URL_PRE + "terminal-message");
     socket.on("connect", () => {
-      console.log("erminal-message-connected");
+      console.log("terminal-message-connected");
     });
     socket.on("open-terminal", async (m: any) => {
       //   console.log("Received message:", m);
@@ -72,7 +72,10 @@ export function Sessions({ setSessionCount = undefined }) {
       };
       xterm.onData(function (data) {
         // console.log(data);
-        socket.emit("shell", data);
+        socket.emit("terminal-receive", {
+          terminalID: m.terminalID,
+          data: data,
+        });
       });
     });
     let xtermdata = "";

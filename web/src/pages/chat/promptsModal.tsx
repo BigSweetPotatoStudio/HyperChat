@@ -2,6 +2,7 @@ import {
   Button,
   Carousel,
   Checkbox,
+  Collapse,
   Form,
   FormInstance,
   FormProps,
@@ -95,6 +96,8 @@ const ModalForm: React.FC<CollectionCreateFormProps> = ({
       </Form.Item>
       <Form.Item name="modelKey" label={t`LLM`}>
         <Select
+          showSearch
+          optionFilterProp="label"
           placeholder={t`Please select default LLM`}
           allowClear
           options={GPT_MODELS.get().data.map((x) => {
@@ -182,6 +185,24 @@ const ModalForm: React.FC<CollectionCreateFormProps> = ({
           rows={2}
         />
       </Form.Item>
+      <Collapse>
+        <Collapse.Panel key="1" header={t`More Settings`}>
+          <Form.Item name="fallbackModelKey" label={t`TaskFallbackLLM`}>
+            <Select
+              showSearch
+              optionFilterProp="label"
+              placeholder={t`Please select TaskFallbackLLM`}
+              allowClear
+              options={GPT_MODELS.get().data.map((x) => {
+                return {
+                  label: x.name,
+                  value: x.key,
+                };
+              })}
+            />
+          </Form.Item>
+        </Collapse.Panel>
+      </Collapse>
     </Form>
   );
 };

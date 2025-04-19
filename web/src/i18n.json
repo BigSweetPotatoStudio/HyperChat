@@ -1158,5 +1158,21 @@
   "supportTool": {
     "en": "supportTool",
     "zh": "支持工具"
+  },
+  "Reload": {
+    "en": "Reload",
+    "zh": "重新加载"
+  },
+  "More Settings": {
+    "en": "More Settings",
+    "zh": "更多设置"
+  },
+  "TaskFallbackLLM": {
+    "en": "TaskFallbackLLM",
+    "zh": "任务备用大模型"
+  },
+  "Please select TaskFallbackLLM": {
+    "en": "Please select TaskFallbackLLM",
+    "zh": "请选择任务备用大模型"
   }
 }

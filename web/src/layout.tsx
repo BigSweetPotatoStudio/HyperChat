@@ -915,8 +915,11 @@ export function Layout() {
                 }
 
                 let value: any = {
-                  baseURL: find.baseURL,
                 };
+                if (find.baseURL) {
+                  value.baseURL = find.baseURL;
+                }
+
                 if (find.apiKey) {
                   value.apiKey = find.apiKey;
                 }

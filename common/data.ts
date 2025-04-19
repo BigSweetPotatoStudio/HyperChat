@@ -215,6 +215,7 @@ export const Agents = new Data("gpts_list.json", {
     attachedDialogueCount?: number;
     temperature?: number;
     confirm_call_tool: boolean;
+    fallbackModelKey?: string;
   }>,
 });
 

@@ -51,6 +51,22 @@ export class MessageService {
       });
     });
     this.terminalMsg = terminalMsg;
+    this.terminalMsg.on("connection", (socket) => {
+      Logger.info("terminalMsg 用户已连接，socket ID:", socket.id);
+      socket.on("terminal-receive", (msg) => {
+        // console.log("terminal-receive", msg);
+        this.terminalCallbacks.forEach((callback) => {
+          callback(msg);
+        });
+      });
+    });
+  }
+  terminalCallbacks = []
+  addTerminalMsgListener(callback: (msg: any) => void) {
+    this.terminalCallbacks.push(callback);
+  }
+  removeTerminalMsgListener(callback: (msg: any) => void) {
+    this.terminalCallbacks = this.terminalCallbacks.filter(cb => cb !== callback);
   }
 }
 

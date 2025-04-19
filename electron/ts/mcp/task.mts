@@ -98,91 +98,103 @@ export async function callAgent(obj: {
     throw new Error(`Agent ${obj.agentKey} not found`);
   }
   Logger.info("Running callAgent", agent.label, obj.message, obj.agentKey);
-  let config =
-    GPT_MODELS.initSync().data.find((x) => x.key == agent.modelKey) ||
-    GPT_MODELS.initSync().data[0];
 
-  if (!config) {
-    Logger.error("No model found");
-    throw new Error("No model found");
-  }
-  let openai = new OpenAiChannel(
-    {
-      ...config, ...agent, allowMCPs: agent.allowMCPs, requestType: "stream",
-    },
-    [
-      {
-        role: "system",
-        content: agent.prompt,
-        content_date: Date.now(),
-      },
-      { role: "user", content: obj.message, content_date: Date.now() },
-    ]
-  );
-  try {
+  async function runByKey(modelKey) {
+    let config =
+      GPT_MODELS.initSync().data.find((x) => x.key == modelKey) ||
+      GPT_MODELS.initSync().data[0];
 
-    global.getTools = (allowMCPs) => {
-      let tools: IMCPClient["tools"] = [];
-
-      mcpClients.forEach((v) => {
-        tools = tools.concat(
-          v.tools.filter((t) => {
-            if (!allowMCPs) return true;
-            return (
-              allowMCPs.includes(t.clientName) || allowMCPs.includes(t.restore_name)
-            );
-          }),
-        );
-      });
-      return tools;
+    if (!config) {
+      Logger.error("No model found");
+      throw new Error("No model found");
     }
+    let openai = new OpenAiChannel(
+      {
+        ...config, ...agent, allowMCPs: agent.allowMCPs, requestType: "stream",
+      },
+      [
+        {
+          role: "system",
+          content: agent.prompt,
+          content_date: Date.now(),
+        },
+        { role: "user", content: obj.message, content_date: Date.now() },
+      ]
+    );
+    try {
 
-    await openai.completion();
+      global.getTools = (allowMCPs) => {
+        let tools: IMCPClient["tools"] = [];
 
-    // console.log("openai.completion() done", openai.messages);
-    const item: ChatHistoryItem = {
-      label: obj.message,
-      key: v4(),
-      messages: openai.messages,
-      modelKey: config.key,
-      agentKey: agent.key,
-      sended: true,
-      requestType: "stream",
-      allowMCPs: agent.allowMCPs,
-      attachedDialogueCount: agent.attachedDialogueCount,
-      dateTime: Date.now(),
-      isCalled: obj.type === "isCalled",
-      isTask: obj.type === "task",
-      taskKey: obj.taskKey,
-      confirm_call_tool: false,
-    };
-    Command.addChatHistory(item);
+        mcpClients.forEach((v) => {
+          tools = tools.concat(
+            v.tools.filter((t) => {
+              if (!allowMCPs) return true;
+              return (
+                allowMCPs.includes(t.clientName) || allowMCPs.includes(t.restore_name)
+              );
+            }),
+          );
+        });
+        return tools;
+      }
 
-    return openai.lastMessage;
+      await openai.completion();
 
-  } catch (e) {
-    console.error(" hyper_call_agent error: ", e);
-    openai.lastMessage.content_error = e.message;
-    openai.lastMessage.content_status = "error";
-    const item: ChatHistoryItem = {
-      label: obj.message,
-      key: v4(),
-      messages: openai.messages,
-      modelKey: config.key,
-      agentKey: agent.key,
-      sended: true,
-      requestType: "stream",
-      allowMCPs: agent.allowMCPs,
-      attachedDialogueCount: agent.attachedDialogueCount,
-      dateTime: Date.now(),
-      isCalled: obj.type === "isCalled",
-      isTask: obj.type === "task",
-      taskKey: obj.taskKey,
-      confirm_call_tool: false,
-    };
-    Command.addChatHistory(item);
-    throw new Error(e.message);
+      // console.log("openai.completion() done", openai.messages);
+      const item: ChatHistoryItem = {
+        label: obj.message,
+        key: v4(),
+        messages: openai.messages,
+        modelKey: config.key,
+        agentKey: agent.key,
+        sended: true,
+        requestType: "stream",
+        allowMCPs: agent.allowMCPs,
+        attachedDialogueCount: agent.attachedDialogueCount,
+        dateTime: Date.now(),
+        isCalled: obj.type === "isCalled",
+        isTask: obj.type === "task",
+        taskKey: obj.taskKey,
+        confirm_call_tool: false,
+      };
+      Command.addChatHistory(item);
+
+      return openai.lastMessage;
+
+    } catch (e) {
+      console.error(" hyper_call_agent error: ", e);
+      openai.lastMessage.content_error = e.message;
+      openai.lastMessage.content_status = "error";
+      const item: ChatHistoryItem = {
+        label: obj.message,
+        key: v4(),
+        messages: openai.messages,
+        modelKey: config.key,
+        agentKey: agent.key,
+        sended: true,
+        requestType: "stream",
+        allowMCPs: agent.allowMCPs,
+        attachedDialogueCount: agent.attachedDialogueCount,
+        dateTime: Date.now(),
+        isCalled: obj.type === "isCalled",
+        isTask: obj.type === "task",
+        taskKey: obj.taskKey,
+        confirm_call_tool: false,
+      };
+      Command.addChatHistory(item);
+      throw new Error(e.message);
+    }
   }
+
+  return await runByKey(agent.modelKey).catch(async (e) => {
+    try {
+      if (agent.fallbackModelKey) {
+        return await runByKey(agent.fallbackModelKey);
+      }
+    } catch { }
+    throw e;
+  })
 }
 export async function runTask(taskKey: string, { force = false }) {
   let task = TaskList.initSync().data.find((x) => x.key === taskKey);
