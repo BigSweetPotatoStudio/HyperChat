@@ -1,5 +1,17 @@
 # latest
 
+* 支持Claude 官方API.
+* 优化了内置终端，允许用户输入
+* 支持Agent任务调用失败，使用备用大模型.
+* 添加内置Agent，`MCP helper`，帮助安装MCP
+* 修复Markdown渲染Bug
+* 修复聊天多模型对比的Bug
+
+![image](https://github.com/user-attachments/assets/c450aea2-c3f2-4527-ae06-8bcaa928416c)
+![image](https://github.com/user-attachments/assets/7094cef7-e6f2-452e-9a1d-59871d146364)
+![image](https://github.com/user-attachments/assets/5ebf05c7-007e-4eee-9b98-df5662b54f62)
+
+# 1.5.0
 * 支持聊天重命名
 * 支持mcp配置同步
 * 支持grok3的思维链
