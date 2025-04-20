@@ -522,7 +522,9 @@ const convertToolParams = (
 ): {
     tools: MessageCreateParamsNonStreaming['tools']
 } => {
-
+    if (!tools) {
+        return { tools: [] }
+    }
     const convertedTools: MessageCreateParamsNonStreaming['tools'] = tools.map(
         (tool) => {
             return {

@@ -798,6 +798,7 @@ export function Layout() {
                       });
                       return true
                     }).catch(e => {
+                      console.error(e);
                       setTimelineData((x) => {
                         x.push({
                           color: "red",
@@ -820,7 +821,7 @@ export function Layout() {
                         });
                         values.supportImage = true;
                       }).catch(e => {
-
+                        console.error(e);
                         setTimelineData((x) => {
                           x.push({
                             color: "red",
@@ -844,6 +845,7 @@ export function Layout() {
                         });
                         values.supportTool = true;
                       }).catch(e => {
+                        console.error(e);
                         setTimelineData((x) => {
                           x.push({
                             color: "red",

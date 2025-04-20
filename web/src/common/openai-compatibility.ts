@@ -26,9 +26,10 @@ export class OpenAICompatibility {
     apiKey: string;
     provider: string;
 
-    constructor(public options: ClientOptions) {
+    constructor(public options: ClientOptions & { provider: string }) {
         this.baseURL = options.baseURL;
         this.apiKey = options.apiKey;
+        this.provider = options.provider;
         this.openai = new OpenAI(options);
         this.anthropic = new AnthropicProvider({
             apiKey: options.apiKey,

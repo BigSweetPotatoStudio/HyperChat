@@ -70,11 +70,9 @@ export class OpenAiChannel {
   ) {
 
     this.openai = new OpenAICompatibility({
-      baseURL: isOnBrowser
-        ? callModule.getURL_PRE() + "api/proxy"
-        : options.baseURL,
-
+      baseURL: options.baseURL,
       apiKey: options.apiKey, // This is the default and can be omitted
+      provider: options.provider,
       dangerouslyAllowBrowser: process.env.runtime !== "node",
       defaultHeaders: {
         "HTTP-Referer": "https://hyperchat.dadigua.men", // Optional. Site URL for rankings on openrouter.ai.
