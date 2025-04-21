@@ -6,7 +6,7 @@
     "@ant-design/cssinjs": "^1.21.1",
     "@ant-design/icons": "^5.3.6",
     "@ant-design/pro-components": "^2.8.2",
-    "@ant-design/x": "^1.0.6",
+    "@ant-design/x": "^1.1.1",
     "@anthropic-ai/sdk": "^0.39.0",
     "@azure/identity": "^4.5.0",
     "@babel/plugin-proposal-private-property-in-object": "^7.21.11",
