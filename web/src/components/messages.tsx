@@ -7,7 +7,7 @@ import { v4 } from "uuid";
 import { call } from "../common/call";
 import { t } from "../i18n";
 import dayjs from "dayjs";
-import { DownImage, MarkDown, UserContent } from "../pages/chat/component";
+import { DownImage, UserContent } from "../pages/chat/component";
 import { Pre } from "./pre";
 import { AssistantToolContent } from "./assistant_tool_content";
 import { Icon } from "./icon";

@@ -198,7 +198,6 @@ import { EVENT } from "../../common/event";
 import InfiniteScroll from "react-infinite-scroll-component";
 import { call } from "../../common/call";
 import { MyAttachR } from "./attachR";
-import { DownImage, MarkDown, UserContent } from "./component";
 import { DndContext, PointerSensor, useSensor } from "@dnd-kit/core";
 import {
   horizontalListSortingStrategy,
@@ -245,6 +244,9 @@ export const Chat = ({
     histroyKey: "",
   },
 }) => {
+  useEffect(() => {
+    console.log("Chat")
+  }, []);
   const [num, setNum] = React.useState(0);
   const refresh = () => {
     setNum((n) => n + 1);

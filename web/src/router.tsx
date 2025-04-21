@@ -21,12 +21,13 @@ import { TaskResultsPage } from "./pages/hyperAgent/TaskResults";
 import { WebdavSetting } from "./pages/setting/sync";
 import { TerminalPage } from "./pages/setting/terminal";
 import { Icon } from "./components/icon";
+import { TestPage } from "./pages/TestPage";
 type RouteType = {
   path: string;
   name: React.ReactNode;
   hideInMenu?: boolean;
   icon?: React.ReactNode;
-  component: JSX.Element | { wait: (props) => JSX.Element };
+  component: JSX.Element;
   routes?: Array<RouteType>;
 };
 
@@ -95,7 +96,7 @@ export function getLayoutRoute() {
           {
             path: "/Setting",
             name: t`Settings`,
-            icon: <Icon name="resources"/>,
+            icon: <Icon name="resources" />,
             component: <Setting />,
           },
           {
@@ -116,16 +117,23 @@ export function getLayoutRoute() {
           //   icon: "⌨️",
           //   component: <TerminalPage />,
           // }
+
         ],
-        // component: <Setting />,
       },
+
+      {
+        path: "/TestPage",
+        name: t`TestPage`,
+        icon: "⌨️",
+        component: <TestPage />,
+      }
     ],
   };
 
   function Container(props: { from: string; default?: string }) {
     const navigate = useNavigate();
     const location = useLocation();
-    // console.log("location.pathname", location.pathname);
+
     useEffect(() => {
       if (props.default && location.pathname == props.from) {
         setTimeout(() => {
