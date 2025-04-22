@@ -54,6 +54,7 @@ import markdownit from "markdown-it";
 import mk from "@vscode/markdown-it-katex";
 import { DownImage } from "../pages/chat/component";
 import { Editor } from "./editor";
+import { t } from "../i18n";
 
 export function UserContent({ x, regenerate = undefined, submit }) {
     const [isEdit, setIsEdit] = useState(false);
@@ -97,7 +98,7 @@ export function UserContent({ x, regenerate = undefined, submit }) {
                                 setIsEdit(false);
                             }}
                         >
-                            Cancel
+                            {t`Cancel`}
                         </Button>
                         <Button
                             size="small"
@@ -112,7 +113,7 @@ export function UserContent({ x, regenerate = undefined, submit }) {
                                 }
                             }}
                         >
-                            Submit
+                            {t`Submit`}
                         </Button>
                     </Space.Compact>
                 </div>

@@ -22,6 +22,7 @@ import { WebdavSetting } from "./pages/setting/sync";
 import { TerminalPage } from "./pages/setting/terminal";
 import { Icon } from "./components/icon";
 import { TestPage } from "./pages/TestPage";
+import { VariableList } from "./pages/variableList/variableList";
 type RouteType = {
   path: string;
   name: React.ReactNode;
@@ -111,6 +112,14 @@ export function getLayoutRoute() {
             icon: <Icon name="tool" />,
             component: <HpyerTools />,
           },
+          
+          {
+            path: "/VariableList",
+            name: t`VariableList`,
+            icon: "⌨️",
+            component: <VariableList />,
+          }
+
           // {
           //   path: "/Terminal",
           //   name: t`Terminal`,

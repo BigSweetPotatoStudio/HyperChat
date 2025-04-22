@@ -1,7 +1,7 @@
 
 import React, { forwardRef, useEffect, useImperativeHandle, useRef, useState } from "react";
 import * as monaco from "monaco-editor";
-import { Agents, AppSetting } from "../../../common/data";
+import { Agents, AppSetting, VarList } from "../../../common/data";
 import { v4 } from "uuid";
 import { Button, Space } from "antd";
 import { FullscreenOutlined } from "@ant-design/icons";
@@ -54,7 +54,7 @@ export const Editor = forwardRef(({
     // }, [value]);
 
     const [editorHeight, setEditorHeight] = useState<number>(lineHeight * rows); // 初始高度为 4 行的高度
-
+    const cachegetLineCount = useRef<number>(undefined);
     // 在初始化编辑器后和内容变化时更新高度
     const updateEditorHeight = () => {
         // if (!autoHeight) return;
@@ -62,6 +62,10 @@ export const Editor = forwardRef(({
             const model = monacoRef.current.getModel();
             if (model) {
                 const lineCount = model.getLineCount();
+                if (cachegetLineCount.current == lineCount) {
+                    return;
+                }
+                cachegetLineCount.current = lineCount;
                 // 根据行数计算高度
                 const newHeight = Math.max(lineHeight, lineCount * lineHeight);
                 setEditorHeight(newHeight);
@@ -102,7 +106,7 @@ export const Editor = forwardRef(({
                 return;
             }
             await Agents.init();
-            await AppSetting.init();
+            await VarList.init();
 
 
             // Register a new language
@@ -128,6 +132,17 @@ export const Editor = forwardRef(({
                     "editor.foreground": "#000000",
                 },
             });
+
+            let varList = [...VarList.get().data?.map((v) => {
+                let varName = v.scope + "." + v.name;
+                return {
+                    label: varName,
+                    insertText: v.type == "var" ? `{{${varName}}}` : v.value,
+                    detail: `${v.name} ${v.type}`,
+                    value: v.value,
+                }
+            })]
+
             // Register a completion item provider for the new language
             monacoProvidersRef.current.push(monaco.languages.registerCompletionItemProvider("HyperPromptLanguage", {
                 provideCompletionItems: (model, position) => {
@@ -140,14 +155,14 @@ export const Editor = forwardRef(({
                     };
                     var suggestions = [
                         // {
-                        //     label: "simpleText",
+                        //     label: "user.TsimpleText",
                         //     kind: monaco.languages.CompletionItemKind.Text,
                         //     insertText: "simpleText",
                         //     range: range,
                         // },
                         ...Agents.get().data.map((agent) => {
                             return {
-                                label: agent.label,
+                                label: "agent." + agent.label,
                                 kind: monaco.languages.CompletionItemKind.Text,
                                 insertText: agent.label,
                                 range: range,
@@ -156,15 +171,11 @@ export const Editor = forwardRef(({
                                 documentation: `${agent.label} agent`
                             }
                         }),
-                        ...AppSetting.get().quicks?.map((quick) => {
+                        ...varList.map((x) => {
                             return {
-                                label: "q" + quick.label,
+                                ...x,
                                 kind: monaco.languages.CompletionItemKind.Text,
-                                insertText: `{{${quick.label}}}`,
                                 range: range,
-                                // 可以添加详细信息
-                                detail: 'Quick',
-                                documentation: `${quick.label} quick`
                             }
                         })
                     ];
@@ -265,7 +276,7 @@ export const Editor = forwardRef(({
                                 const variableName = match.substring(2, match.length - 2);
 
                                 // Find the corresponding quick in AppSetting
-                                const quick = AppSetting.get().quicks?.find(q => q.label === variableName);
+                                const v = varList.find((x) => x.label == variableName);
 
                                 return {
                                     range: new monaco.Range(
@@ -276,22 +287,23 @@ export const Editor = forwardRef(({
                                     ),
                                     contents: [
                                         {
-                                            value: quick
-                                                ? `**Variable:** ${variableName}\n\n${quick.quick}`
+                                            value: v
+                                                ? `**Variable:** ${v.label}\n\n${v.value}`
                                                 : `**Variable:** ${variableName}\n\nNo found for this variable.`
                                         }
                                     ]
                                 };
                             }
                         }
+                        const word = model.getWordAtPosition(position);
+                        return {
+                            range: new monaco.Range(position.lineNumber, word.startColumn, position.lineNumber, word.endColumn),
+                            contents: [
+                                { value: `**${word.word}** is a special term.` }
+                            ]
+                        };
                     }
-                    const word = model.getWordAtPosition(position);
-                    return {
-                        range: new monaco.Range(position.lineNumber, word.startColumn, position.lineNumber, word.endColumn),
-                        contents: [
-                            { value: `**${word.word}** is a special term.` }
-                        ]
-                    };
+
                 }
             }));
 
@@ -308,9 +320,9 @@ export const Editor = forwardRef(({
                     const endPosition = model.getPositionAt(match.index + match[0].length);
 
                     // Check if the variable exists in AppSetting
-                    const quickExists = AppSetting.get().quicks?.some(q => q.label === variableName);
+                    const varExists = varList.find((x) => x.label == variableName);
 
-                    if (!quickExists) {
+                    if (!varExists) {
                         markers.push({
                             message: `Variable "${variableName}" not found in quick settings`,
                             severity: monaco.MarkerSeverity.Warning,

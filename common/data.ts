@@ -88,11 +88,7 @@ export const AppSetting = new Data("app_setting.json", {
   darkTheme: false,
   mcpCallToolTimeout: 60,
   defaultAllowMCPs: undefined as string[] | undefined,
-  quicks: [{
-    label: "Hello",
-    value: "Hello",
-    quick: "Hello"
-  }] as Array<{
+  quicks: [] as Array<{
     value: string;
     label: string;
     quick: string;
@@ -381,6 +377,46 @@ export const TaskList = new Data(
   "tasklist.json",
   {
     data: [] as Array<Task>,
+  },
+  {
+    sync: true,
+  }
+);
+
+export type Var = {
+  key: string;
+  name: string;
+  value: string;
+  scope: string;
+  type: "var" | "quick";
+}
+
+export type VarScope = {
+  name: string;
+  key: string;
+}
+
+
+export const VarList = new Data(
+  "var.json",
+  {
+    data: [] as Array<Var>,
+  },
+  {
+    sync: true,
+  }
+);
+
+export const VarScopeList = new Data(
+  "var_scope.json",
+  {
+    data: [{
+      name: "var",
+      key: v4(),
+    },{
+      name: "quick",
+      key: v4(),
+    }] as Array<VarScope>,
   },
   {
     sync: true,
