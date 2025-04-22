@@ -1,295 +1,183 @@
-import React, { useEffect } from "react";
-import * as monaco from "monaco-editor";
-import { Agents, AppSetting } from "../../../common/data";
+import {
+    CopyOutlined,
+    DownloadOutlined,
+    FileMarkdownOutlined,
+    FileTextOutlined,
+    FundViewOutlined,
+    UploadOutlined,
+} from "@ant-design/icons";
+import {
+    Avatar,
+    Button,
+    Card,
+    Checkbox,
+    Divider,
+    Dropdown,
+    Flex,
+    Form,
+    Input,
+    message,
+    Modal,
+    Popconfirm,
+    Radio,
+    Result,
+    Segmented,
+    Select,
+    Space,
+    Spin,
+    Table,
+    Tag,
+    Tooltip,
+    Typography,
+} from "antd";
+import {
+    Attachments,
+    Bubble,
+    BubbleProps,
+    Conversations,
+    ConversationsProps,
+    Prompts,
+    Sender,
+    Suggestion,
+    ThoughtChain,
+    Welcome,
+    XProvider,
+    useXAgent,
+    useXChat,
+} from "@ant-design/x";
+const antdMessage = message;
+import React, { useCallback, useEffect, useRef, useState } from "react";
+// import "github-markdown-css/github-markdown-light.css";
 
-export const Editor = () => {
-    const monacoRef = React.useRef<monaco.editor.IStandaloneCodeEditor>();
-    const monacoModelRef = React.useRef<monaco.editor.ITextModel>();
-    const monacoProvidersRef = React.useRef<monaco.IDisposable[]>([]);
+
+import markdownit from "markdown-it";
+import mk from "@vscode/markdown-it-katex";
+import { DownImage } from "../pages/chat/component";
+import { Editor } from "./editor";
+
+export function UserContent({ x, regenerate = undefined, submit }) {
+    const [isEdit, setIsEdit] = useState(false);
+    const [value, setValue] = useState("");
+    const container = useRef<HTMLDivElement>(null);
+    const [width, setWidth] = useState(0);
     useEffect(() => {
-
-        (async () => {
-            if (monacoRef.current) {
-                return; // 如果已经有编辑器实例，就不再创建
-            }
-
-            if (document.getElementById("editor-container") == null) {
-                return;
-            }
-            await Agents.init();
-            await AppSetting.init();
-
-
-            // Register a new language
-            monaco.languages.register({ id: "HyperPromptLanguage" });
-
-            // Register a tokens provider for the language
-            monaco.languages.setMonarchTokensProvider("HyperPromptLanguage", {
-                tokenizer: {
-                    root: [
-                        [/{{.*}}/, "PromptVariable"], // Highlight {{...}} as a variable
-                    ],
-                },
-            });
-            monaco.editor.defineTheme("myCoolTheme", {
-                base: "vs",
-                inherit: false,
-                rules: [
-                    { token: "PromptVariable", foreground: "FFA500", fontStyle: "bold" },
-                ],
-                colors: {
-                    "editor.foreground": "#000000",
-                },
-            });
-            // Register a completion item provider for the new language
-            monacoProvidersRef.current.push(monaco.languages.registerCompletionItemProvider("HyperPromptLanguage", {
-                provideCompletionItems: (model, position) => {
-                    var word = model.getWordUntilPosition(position);
-                    var range = {
-                        startLineNumber: position.lineNumber,
-                        endLineNumber: position.lineNumber,
-                        startColumn: word.startColumn,
-                        endColumn: word.endColumn,
-                    };
-                    var suggestions = [
-                        // {
-                        //     label: "simpleText",
-                        //     kind: monaco.languages.CompletionItemKind.Text,
-                        //     insertText: "simpleText",
-                        //     range: range,
-                        // },
-                        ...Agents.get().data.map((agent) => {
-                            return {
-                                label: agent.label,
-                                kind: monaco.languages.CompletionItemKind.Text,
-                                insertText: agent.label,
-                                range: range,
-                                // 可以添加详细信息
-                                detail: 'Agent',
-                                documentation: `${agent.label} agent`
-                            }
-                        }),
-                        ...AppSetting.get().quicks?.map((quick) => {
-                            return {
-                                label: "q" + quick.label,
-                                kind: monaco.languages.CompletionItemKind.Text,
-                                insertText: `{{${quick.label}}}`,
-                                range: range,
-                                // 可以添加详细信息
-                                detail: 'Quick',
-                                documentation: `${quick.label} quick`
-                            }
-                        })
-                    ];
-                    return { suggestions: suggestions };
-                },
-            }));
-            // Register a completion item provider for the new language
-            monacoProvidersRef.current.push(monaco.languages.registerCompletionItemProvider("HyperPromptLanguage", {
-                // 指定触发字符，在用户输入@时立即触发补全
-                triggerCharacters: ['@'],
-                // replaceTriggerChar: true, // For example, if this configuration is enabled, @ will be replaced
-                provideCompletionItems: (model, position, context, token) => {
-                    // 获取当前行文本
-                    const lineContent = model.getLineContent(position.lineNumber);
-                    const wordUntilPosition = model.getWordUntilPosition(position);
-
-                    // console.log("Current line content:", position, lineContent, wordUntilPosition);
-                    // 判断是否是@触发的补全
-                    const isAtTrigger = lineContent.charAt(position.column - 2) === '@';
-
-
-
-                    // 根据触发方式提供不同的建议
-                    if (isAtTrigger) {
-                        // 创建范围对象
-                        const range = {
-                            startLineNumber: position.lineNumber,
-                            endLineNumber: position.lineNumber,
-                            startColumn: wordUntilPosition.startColumn,
-                            endColumn: wordUntilPosition.endColumn,
-                        };
-
-                        // const startColumn = wordUntilPosition.startColumn - 1; // -1 for the '@' character
-                        // const qrange = {
-                        //     startLineNumber: position.lineNumber,
-                        //     endLineNumber: position.lineNumber,
-                        //     startColumn: startColumn,
-                        //     endColumn: position.column,
-                        // };
-                        return {
-                            suggestions: [
-                                ...Agents.get().data.map((agent) => {
-                                    return {
-                                        label: agent.label,
-                                        kind: monaco.languages.CompletionItemKind.User,
-                                        insertText: agent.label,
-                                        range: range,
-                                        // 可以添加详细信息
-                                        detail: 'Agent',
-                                        documentation: `${agent.label} agent`
-                                    }
-                                }),
-                                // ...AppSetting.get().quicks?.map((quick) => {
-                                //     return {
-                                //         label: quick.label,
-                                //         kind: monaco.languages.CompletionItemKind.Text,
-                                //         insertText: quick.quick,
-
-                                //         range: qrange,
-                                //         // 可以添加详细信息
-                                //         detail: 'Quick',
-                                //         documentation: `${quick.label} quick`
-                                //     }
-                                // })
-                            ]
-                        };
-                    }
-
-                    // 默认建议
-                    var suggestions = [
-
-                        // 其他默认建议...
-                    ];
-
-                    return { suggestions: suggestions };
-                },
-
-
-            }));
-
-            monacoProvidersRef.current.push(monaco.languages.registerHoverProvider("HyperPromptLanguage", {
-
-                provideHover: (model, position) => {
-
-                    const lineContent = model.getLineContent(position.lineNumber);
-                    const wordUntilPosition = model.getWordUntilPosition(position);
-                    console.log("Current line content:", position, lineContent, wordUntilPosition);
-                    // Check if the cursor is on a variable {{...}}
-                    const variableMatch = lineContent.match(/{{([^{}]*)}}/g);
-                    if (variableMatch) {
-                        // Find which variable the cursor is on
-                        for (const match of variableMatch) {
-                            const startIndex = lineContent.indexOf(match);
-                            const endIndex = startIndex + match.length;
-
-                            // Check if cursor position is within this variable
-                            if (position.column > startIndex && position.column <= endIndex) {
-                                const variableName = match.substring(2, match.length - 2);
-
-                                // Find the corresponding quick in AppSetting
-                                const quick = AppSetting.get().quicks?.find(q => q.label === variableName);
-
-                                return {
-                                    range: new monaco.Range(
-                                        position.lineNumber,
-                                        startIndex + 1,
-                                        position.lineNumber,
-                                        endIndex + 1
-                                    ),
-                                    contents: [
-                                        {
-                                            value: quick
-                                                ? `**Variable:** ${variableName}\n\n${quick.quick}`
-                                                : `**Variable:** ${variableName}\n\nNo found for this variable.`
-                                        }
-                                    ]
-                                };
-                            }
-                        }
-                    }
-                    const word = model.getWordAtPosition(position);
-                    return {
-                        range: new monaco.Range(position.lineNumber, word.startColumn, position.lineNumber, word.endColumn),
-                        contents: [
-                            { value: `**${word.word}** is a special term.` }
-                        ]
-                    };
-                }
-            }));
-
-            function validate(model) {
-                const markers = [];
-                // Find all {{...}} variables in the text
-                const text = model.getValue();
-                const variableRegex = /{{([^{}]*)}}/g;
-                let match;
-                
-                while ((match = variableRegex.exec(text)) !== null) {
-                    const variableName = match[1];
-                    const startPosition = model.getPositionAt(match.index);
-                    const endPosition = model.getPositionAt(match.index + match[0].length);
-                    
-                    // Check if the variable exists in AppSetting
-                    const quickExists = AppSetting.get().quicks?.some(q => q.label === variableName);
-                    
-                    if (!quickExists) {
-                        markers.push({
-                            message: `Variable "${variableName}" not found in quick settings`,
-                            severity: monaco.MarkerSeverity.Warning,
-                            startLineNumber: startPosition.lineNumber,
-                            startColumn: startPosition.column,
-                            endLineNumber: endPosition.lineNumber,
-                            endColumn: endPosition.column,
-                        });
-                    }
-                    
-                    // Check if variable name is empty
-                    if (variableName.trim() === '') {
-                        markers.push({
-                            message: "Empty variable name",
-                            severity: monaco.MarkerSeverity.Error,
-                            startLineNumber: startPosition.lineNumber,
-                            startColumn: startPosition.column,
-                            endLineNumber: endPosition.lineNumber,
-                            endColumn: endPosition.column,
-                        });
-                    }
-                }
-                
-                monaco.editor.setModelMarkers(model, "owner", markers);
-            }
-
-
-
-            const uri = monaco.Uri.parse("inmemory://test");
-            let model = monaco.editor.createModel(getCode(), "HyperPromptLanguage", uri);
-            monacoRef.current = monaco.editor.create(document.getElementById("editor-container"), {
-                theme: "myCoolTheme",
-                model: model,
-                language: "HyperPromptLanguage",
-                // readOnly: true
-            });
-            validate(model);
+        if (x.content_context.edit) {
             
-            model.onDidChangeContent(() => {
-                validate(model);
-            });
-            monacoModelRef.current = model;
-
-            function getCode() {
-                return [
-                   
-                    "[Sun Mar 7 16:02:00 2004] [notice] Apache/1.3.29 (Unix) configured -- resuming normal operations",
-                    "[Sun Mar 7 16:02:00 2004] [info] Server built: Feb 27 2004 13:56:37",
-                    "[Sun Mar 7 16:02:00 2004] [notice] Accept mutex: sysvsem (Default: sysvsem)",
-                    "{{123}}",
-                    "{{俄罗斯方块}}",
-                    "[Sun Mar 7 16:05:49 2004] [info] [client xx.xx.xx.xx] (104)Connection reset by peer: client stopped connection before send body completed",
-                    "[Sun Mar 7 16:45:56 2004] [info] [client xx.xx.xx.xx] (104)Connection reset by peer: client stopped connection before send body completed",
-                    "[Sun Mar 7 17:13:50 2004] [info] [client xx.xx.xx.xx] (104)Connection reset by peer: client stopped connection before send body completed",
-                    "[Sun Mar 7 17:21:44 2004] [info] [client xx.xx.xx.xx] (104)Connection reset by peer: client stopped connection before send body completed",
-                ].join("\n");
+            setWidth(container.current ? container.current.offsetWidth : 500);
+            if (Array.isArray(x.content)) {
+                setValue(x.content[0].text);
+            } else {
+                setValue(x.content.toString());
             }
-        })();
-
-        return () => {
-            monacoProvidersRef.current.forEach(provider => provider.dispose());
-            monacoRef.current?.dispose();
-            monacoModelRef.current?.dispose();
+            setIsEdit(true);
+        } else {
+            setIsEdit(false);
         }
+    }, [x.content_context.edit]);
+    return (
+        <div ref={c => container.current = c}>
+            {isEdit ? (
+                <div>
+                    {/* <Input.TextArea
+                        rows={value.split("\n").length}
+                        style={{ minWidth: 600 }}
+                        value={value}
+                        onChange={(e) => {
+                            setValue(e.target.value);
+                        }}
+                    /> */}
+                    <Editor autoHeight style={{ width: width + "px", minWidth: 400 }} value={x.content.toString()} onChange={e=>{
+                        setValue(e);
+                    }}></Editor>
+                    <Space.Compact>
+                        <Button
+                            size="small"
+                            onClick={() => {
+                                x.content_context.edit = false;
+                                setIsEdit(false);
+                            }}
+                        >
+                            Cancel
+                        </Button>
+                        <Button
+                            size="small"
+                            onClick={() => {
+                                x.content_context.edit = false;
+                                setIsEdit(false);
+                                if (Array.isArray(x.content)) {
+                                    x.content[0].text = value;
+                                    submit(x.content);
+                                } else {
+                                    submit(value);
+                                }
+                            }}
+                        >
+                            Submit
+                        </Button>
+                    </Space.Compact>
+                </div>
+            ) : Array.isArray(x.content) ? (
+                x.content.map((c, i) => {
+                    if (c.type == "text") {
+                        return (
+                            <div key={i}>
+                                <pre
+                                    key={i}
+                                    style={{
+                                        whiteSpace: "pre-wrap",
+                                        wordWrap: "break-word",
+                                    }}
+                                >
+                                    {c.text.toString()}
+                                </pre>
+                                {x.content.length > 1 && i == 0 && (
+                                    <Divider plain>resources</Divider>
+                                )}
+                            </div>
+                        );
+                    } else if (c.type == "image_url") {
+                        return (
+                            <DownImage
+                                onClick={() => {
+                                    Modal.info({
+                                        width: "50%",
+                                        title: "Tip",
+                                        maskClosable: true,
+                                        content: (
+                                            <div>
+                                                <img
+                                                    className="bg-cover"
+                                                    src={c.image_url.url as string}
+                                                />
+                                            </div>
+                                        ),
+                                    });
+                                }}
+                                key={i}
+                                src={c.image_url.url}
+                                className="h-48 w-48"
+                            />
+                        );
+                    } else {
+                        return <span key={i}>unknown</span>;
+                    }
+                })
+            ) : (
 
-    }, [monacoRef, monacoProvidersRef])
-    return <div className="h-full" id="editor-container"></div>
-};
+                <pre
+                    style={{
+                        whiteSpace: "pre-wrap",
+                        wordWrap: "break-word",
+                    }}
+                >
+                    {x.content.toString()}
+                </pre>
+                // <Editor autoHeight style={{ width: "80%" }} value={x.content.toString()}></Editor>
+            )}
+        </div>
+    );
+}
+
+
+
 

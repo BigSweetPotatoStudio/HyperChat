@@ -47,7 +47,7 @@ import {
 } from "@ant-design/x";
 const antdMessage = message;
 import React, { useCallback, useEffect, useRef, useState } from "react";
-import "github-markdown-css/github-markdown-light.css";
+// import "github-markdown-css/github-markdown-light.css";
 
 
 import markdownit from "markdown-it";

@@ -1,0 +1,478 @@
+
+import React, { forwardRef, useEffect, useImperativeHandle, useRef, useState } from "react";
+import * as monaco from "monaco-editor";
+import { Agents, AppSetting } from "../../../common/data";
+import { v4 } from "uuid";
+import { Button, Space } from "antd";
+import { FullscreenOutlined } from "@ant-design/icons";
+
+export const Editor = forwardRef(({
+    value = "",
+    onChange = (value: string) => { },
+    style = {},
+    className = "",
+    action = false,
+    autoHeight = false,
+    rows = 1,
+}: {
+    value?: string,
+    onChange?: (value: string) => void,
+    style?: React.CSSProperties,
+    className?: string,
+    action?: React.ReactNode | false,
+    autoHeight?: boolean,
+    rows?: number,
+}, ref) => {
+    const [num, setNum] = React.useState(0);
+    const refresh = () => {
+        setNum((n) => n + 1);
+    };
+    const monacoRef = React.useRef<monaco.editor.IStandaloneCodeEditor>();
+    const monacoModelRef = React.useRef<monaco.editor.ITextModel>();
+    const monacoProvidersRef = React.useRef<monaco.IDisposable[]>([]);
+    const uid = useRef<string>("monaco-" + v4());
+    const lineHeight = 19; // 每行的估计高度，可能需要根据实际字体调整
+    // const minHeight = 100; // 最小高度
+    // const paddingHeight = 10; // 额外的内边距高度
+    // Split the value into lines and ensure it has at least the specified number of rows
+
+
+
+    // useEffect(() => {
+    //     if (monacoModelRef.current) {
+    //         if (autoHeight) {
+    //             if (rows) {
+    //                 const lines = value.split("\n");
+    //                 while (lines.length < rows) {
+    //                     lines.push("");
+    //                 }
+    //                 value = lines.join("\n");
+    //             }
+    //         }
+    //         monacoModelRef.current.setValue(value);
+    //     }
+    // }, [value]);
+
+    const [editorHeight, setEditorHeight] = useState<number>(lineHeight * rows); // 初始高度为 4 行的高度
+
+    // 在初始化编辑器后和内容变化时更新高度
+    const updateEditorHeight = () => {
+        // if (!autoHeight) return;
+        if (monacoRef.current) {
+            const model = monacoRef.current.getModel();
+            if (model) {
+                const lineCount = model.getLineCount();
+                // 根据行数计算高度
+                const newHeight = Math.max(lineHeight, lineCount * lineHeight);
+                setEditorHeight(newHeight);
+
+                // 通知编辑器重新布局
+                setTimeout(() => {
+                    monacoRef.current?.layout();
+                }, 10);
+            }
+        }
+    };
+
+    // 在Editor对象创建后设置初始高度
+    useEffect(() => {
+        updateEditorHeight();
+    }, [monacoRef.current]);
+    // 添加全屏状态
+    const [isFullscreen, setIsFullscreen] = useState(false);
+    // 使用 useImperativeHandle 暴露方法给外部
+    useImperativeHandle(ref, () => ({
+        setIsFullscreen: (value: boolean) => {
+            setIsFullscreen(!isFullscreen);
+            // 当全屏状态变化时，通知编辑器刷新布局
+            setTimeout(() => {
+                monacoRef.current?.layout();
+            }, 100);
+        },
+    }));
+
+    useEffect(() => {
+
+        (async () => {
+            if (monacoRef.current) {
+                return; // 如果已经有编辑器实例，就不再创建
+            }
+
+            if (document.getElementById(uid.current) == null) {
+                return;
+            }
+            await Agents.init();
+            await AppSetting.init();
+
+
+            // Register a new language
+            monaco.languages.register({ id: "HyperPromptLanguage" });
+
+            // Register a tokens provider for the language
+            monaco.languages.setMonarchTokensProvider("HyperPromptLanguage", {
+                tokenizer: {
+                    root: [
+                        [/{{.*}}/, "PromptVariable"], // Highlight {{...}} as a variable
+                        // [/[，。？！；：""''【】「」『』（）、]/, "ChinesePunctuation"]
+                    ],
+                },
+            });
+            monaco.editor.defineTheme("myCoolTheme", {
+                base: "vs",
+                inherit: false,
+                rules: [
+                    { token: "PromptVariable", foreground: "FFA500", fontStyle: "bold" },
+                    // { token: "ChinesePunctuation", foreground: "FFA500", fontStyle: "bold",  }, // 添加中文标点的样式
+                ],
+                colors: {
+                    "editor.foreground": "#000000",
+                },
+            });
+            // Register a completion item provider for the new language
+            monacoProvidersRef.current.push(monaco.languages.registerCompletionItemProvider("HyperPromptLanguage", {
+                provideCompletionItems: (model, position) => {
+                    var word = model.getWordUntilPosition(position);
+                    var range = {
+                        startLineNumber: position.lineNumber,
+                        endLineNumber: position.lineNumber,
+                        startColumn: word.startColumn,
+                        endColumn: word.endColumn,
+                    };
+                    var suggestions = [
+                        // {
+                        //     label: "simpleText",
+                        //     kind: monaco.languages.CompletionItemKind.Text,
+                        //     insertText: "simpleText",
+                        //     range: range,
+                        // },
+                        ...Agents.get().data.map((agent) => {
+                            return {
+                                label: agent.label,
+                                kind: monaco.languages.CompletionItemKind.Text,
+                                insertText: agent.label,
+                                range: range,
+                                // 可以添加详细信息
+                                detail: 'Agent',
+                                documentation: `${agent.label} agent`
+                            }
+                        }),
+                        ...AppSetting.get().quicks?.map((quick) => {
+                            return {
+                                label: "q" + quick.label,
+                                kind: monaco.languages.CompletionItemKind.Text,
+                                insertText: `{{${quick.label}}}`,
+                                range: range,
+                                // 可以添加详细信息
+                                detail: 'Quick',
+                                documentation: `${quick.label} quick`
+                            }
+                        })
+                    ];
+                    return { suggestions: suggestions };
+                },
+            }));
+            // Register a completion item provider for the new language
+            monacoProvidersRef.current.push(monaco.languages.registerCompletionItemProvider("HyperPromptLanguage", {
+                // 指定触发字符，在用户输入@时立即触发补全
+                triggerCharacters: ['@'],
+                // replaceTriggerChar: true, // For example, if this configuration is enabled, @ will be replaced
+                provideCompletionItems: (model, position, context, token) => {
+                    // 获取当前行文本
+                    const lineContent = model.getLineContent(position.lineNumber);
+                    const wordUntilPosition = model.getWordUntilPosition(position);
+
+                    // console.log("Current line content:", position, lineContent, wordUntilPosition);
+                    // 判断是否是@触发的补全
+                    const isAtTrigger = lineContent.charAt(position.column - 2) === '@';
+
+
+
+                    // 根据触发方式提供不同的建议
+                    if (isAtTrigger) {
+                        // 创建范围对象
+                        const range = {
+                            startLineNumber: position.lineNumber,
+                            endLineNumber: position.lineNumber,
+                            startColumn: wordUntilPosition.startColumn,
+                            endColumn: wordUntilPosition.endColumn,
+                        };
+
+                        // const startColumn = wordUntilPosition.startColumn - 1; // -1 for the '@' character
+                        // const qrange = {
+                        //     startLineNumber: position.lineNumber,
+                        //     endLineNumber: position.lineNumber,
+                        //     startColumn: startColumn,
+                        //     endColumn: position.column,
+                        // };
+                        return {
+                            suggestions: [
+                                ...Agents.get().data.map((agent) => {
+                                    return {
+                                        label: agent.label,
+                                        kind: monaco.languages.CompletionItemKind.User,
+                                        insertText: agent.label,
+                                        range: range,
+                                        // 可以添加详细信息
+                                        detail: 'Agent',
+                                        documentation: `${agent.label} agent`
+                                    }
+                                }),
+                                // ...AppSetting.get().quicks?.map((quick) => {
+                                //     return {
+                                //         label: quick.label,
+                                //         kind: monaco.languages.CompletionItemKind.Text,
+                                //         insertText: quick.quick,
+
+                                //         range: qrange,
+                                //         // 可以添加详细信息
+                                //         detail: 'Quick',
+                                //         documentation: `${quick.label} quick`
+                                //     }
+                                // })
+                            ]
+                        };
+                    }
+
+                    // 默认建议
+                    var suggestions = [
+
+                        // 其他默认建议...
+                    ];
+
+                    return { suggestions: suggestions };
+                },
+
+
+            }));
+
+            monacoProvidersRef.current.push(monaco.languages.registerHoverProvider("HyperPromptLanguage", {
+
+                provideHover: (model, position) => {
+
+                    const lineContent = model.getLineContent(position.lineNumber);
+                    // const wordUntilPosition = model.getWordUntilPosition(position);
+                    // console.log("Current line content:", position, lineContent, wordUntilPosition);
+                    // Check if the cursor is on a variable {{...}}
+                    const variableMatch = lineContent.match(/{{([^{}]*)}}/g);
+                    if (variableMatch) {
+                        // Find which variable the cursor is on
+                        for (const match of variableMatch) {
+                            const startIndex = lineContent.indexOf(match);
+                            const endIndex = startIndex + match.length;
+
+                            // Check if cursor position is within this variable
+                            if (position.column > startIndex && position.column <= endIndex) {
+                                const variableName = match.substring(2, match.length - 2);
+
+                                // Find the corresponding quick in AppSetting
+                                const quick = AppSetting.get().quicks?.find(q => q.label === variableName);
+
+                                return {
+                                    range: new monaco.Range(
+                                        position.lineNumber,
+                                        startIndex + 1,
+                                        position.lineNumber,
+                                        endIndex + 1
+                                    ),
+                                    contents: [
+                                        {
+                                            value: quick
+                                                ? `**Variable:** ${variableName}\n\n${quick.quick}`
+                                                : `**Variable:** ${variableName}\n\nNo found for this variable.`
+                                        }
+                                    ]
+                                };
+                            }
+                        }
+                    }
+                    const word = model.getWordAtPosition(position);
+                    return {
+                        range: new monaco.Range(position.lineNumber, word.startColumn, position.lineNumber, word.endColumn),
+                        contents: [
+                            { value: `**${word.word}** is a special term.` }
+                        ]
+                    };
+                }
+            }));
+
+            function validate(model) {
+                const markers = [];
+                // Find all {{...}} variables in the text
+                const text = model.getValue();
+                const variableRegex = /{{([^{}]*)}}/g;
+                let match;
+
+                while ((match = variableRegex.exec(text)) !== null) {
+                    const variableName = match[1];
+                    const startPosition = model.getPositionAt(match.index);
+                    const endPosition = model.getPositionAt(match.index + match[0].length);
+
+                    // Check if the variable exists in AppSetting
+                    const quickExists = AppSetting.get().quicks?.some(q => q.label === variableName);
+
+                    if (!quickExists) {
+                        markers.push({
+                            message: `Variable "${variableName}" not found in quick settings`,
+                            severity: monaco.MarkerSeverity.Warning,
+                            startLineNumber: startPosition.lineNumber,
+                            startColumn: startPosition.column,
+                            endLineNumber: endPosition.lineNumber,
+                            endColumn: endPosition.column,
+                        });
+                    }
+
+                    // Check if variable name is empty
+                    if (variableName.trim() === '') {
+                        markers.push({
+                            message: "Empty variable name",
+                            severity: monaco.MarkerSeverity.Error,
+                            startLineNumber: startPosition.lineNumber,
+                            startColumn: startPosition.column,
+                            endLineNumber: endPosition.lineNumber,
+                            endColumn: endPosition.column,
+                        });
+                    }
+                }
+
+                monaco.editor.setModelMarkers(model, "owner", markers);
+            }
+
+
+
+            const uri = monaco.Uri.parse("inmemory://" + uid.current);
+            let model = monaco.editor.createModel(value, "HyperPromptLanguage", uri);
+
+            let scrollbar = {
+                horizontal: 'hidden',
+            } as any;
+            if (autoHeight) {
+                scrollbar = {
+                    horizontal: 'hidden',
+                    vertical: 'hidden',
+                    alwaysConsumeMouseWheel: false // 禁止鼠标滚轮事件  
+                }
+            }
+            let editor = monaco.editor.create(document.getElementById(uid.current), {
+                theme: "myCoolTheme",
+                model: model,
+                language: "HyperPromptLanguage",
+                minimap: { enabled: false }, // 禁用滚动预览条
+                lineNumbers: 'off',
+                lineDecorationsWidth: 0,
+                scrollbar: scrollbar,
+                scrollBeyondLastLine: false, // 禁止滚动超过最后一行
+
+                // 添加自动换行设置
+                // wordWrap: 'on', // 启用自动换行
+                // wrappingStrategy: 'advanced', // 更智能的换行策略
+                // wordWrapBreakBeforeCharacters: ',.!?，。！？', // 在这些字符前换行
+                // wordWrapBreakAfterCharacters: ' \t、【】《》', // 在这些字符后换行
+
+
+                roundedSelection: true, // 启用圆角选择
+                fixedOverflowWidgets: true, // 修复溢出部件
+                fontFamily: "-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,'Noto Sans',sans-serif,'Apple Color Emoji','Segoe UI Emoji','Segoe UI Symbol','Noto Color Emoji'", // 设置字体为 JetBrains Mono
+                // wordSeparators: `\`~!@#$%^&*()-=+[{]}\\|;:\'",.<>/?、，。；：'"【】《》？！￥…（）`,
+                unicodeHighlight: {
+                    ambiguousCharacters: false,
+                    invisibleCharacters: false,
+                    nonBasicASCII: false
+                },
+
+
+                // readOnly: false // Enable editing
+            });
+            validate(model);
+
+            // // 添加操作栏项目
+            // editor.addAction({
+            //     id: 'bold-text',
+            //     label: '加粗',
+            //     keybindings: [monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyB],
+            //     contextMenuGroupId: 'formatting',
+            //     run: (ed) => {
+            //         const selection = ed.getSelection();
+            //         const model = ed.getModel();
+            //         if (selection && model) {
+            //             const selectedText = model.getValueInRange(selection);
+            //             const boldText = `**${selectedText}**`;
+            //             ed.executeEdits('', [
+            //                 { range: selection, text: boldText }
+            //             ]);
+            //         }
+            //         return null;
+            //     }
+            // });
+
+            // editor.addAction({
+            //     id: 'insert-variable',
+            //     label: '插入变量',
+            //     contextMenuGroupId: 'variables',
+            //     run: (ed) => {
+            //         // 显示变量选择对话框或直接插入模板
+            //         ed.executeEdits('', [
+            //             {
+            //                 range: ed.getSelection(),
+            //                 text: '{{变量名}}'
+            //             }
+            //         ]);
+            //         return null;
+            //     }
+            // });
+            monacoRef.current = editor;
+            model.onDidChangeContent(() => {
+                validate(model);
+                const newValue = model.getValue();
+                onChange(newValue);
+                updateEditorHeight(); // 更新编辑器高度
+            });
+
+            monacoModelRef.current = model;
+            refresh();
+        })();
+
+        return () => {
+            monacoProvidersRef.current.forEach(provider => provider.dispose());
+            monacoRef.current?.dispose();
+            monacoModelRef.current?.dispose();
+        }
+
+    }, [monacoRef, monacoProvidersRef])
+
+    const fullscreenStyle: React.CSSProperties = isFullscreen ? {
+        position: 'fixed',
+        top: 0,
+        left: 0,
+        width: '100vw',
+        height: '100vh',
+        zIndex: 1000,
+        backgroundColor: 'white',
+        ...style
+    } : style;
+
+
+    return <div className={"my-editor"} style={{
+        ...fullscreenStyle,
+        height: autoHeight ? editorHeight : fullscreenStyle.height,
+    }}>
+        <div className={className + " " + "h-full w-full"} id={uid.current} >
+        </div>
+        {action && <div className="editor-toolbar" style={{
+            position: "absolute",
+            bottom: 0,
+            right: 0,
+        }}>
+            <Space.Compact>
+                <Button
+                    size="small"
+                    icon={<FullscreenOutlined />}
+                    onClick={() => {
+                        setIsFullscreen(!isFullscreen);
+                    }}
+                >
+                </Button>
+            </Space.Compact>
+        </div>}
+    </div>
+});
+

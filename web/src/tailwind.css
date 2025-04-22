@@ -91,7 +91,9 @@ ul,
 menu {
   list-style: revert;
 }
-
+div[role="user"] .ant-bubble-content {
+    min-height: 0 !important;
+}
 div[role="user"] .ant-bubble-content-wrapper {
   align-items: flex-end;
 }
@@ -252,3 +254,15 @@ div[role="system"] .ant-bubble-content-wrapper {
     touch-action: manipulation;
     color: rgba(0, 0, 0, 0.88);
 }
+
+.my-editor{
+  position: relative;
+  border-width: 1px;
+  border-style: solid;
+  border-color: #d9d9d9;
+  /* transition: all 0.3s; */
+  border-radius: 6px;
+  overflow: hidden; /* 确保内部元素不溢出圆角 */
+  /* padding-bottom: 16px; */
+}
+

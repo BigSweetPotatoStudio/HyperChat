@@ -506,7 +506,7 @@ export const Chat = ({
         resources = resources.concat(v.resources);
       });
     resourcesRef.current = resources;
-
+    refresh();
   }, [mcpClients, currentChat.current.allowMCPs]);
 
   const selectGptsKey = useRef<string | undefined>(undefined);
@@ -1186,11 +1186,11 @@ export const Chat = ({
               style={{ alignSelf: "stretch", width: mobile.current.is ? "100%" : DATA.current.showHistory ? "calc(100vw - 265px)" : "100%" }}
             >
 
-              <Splitter layout={window.innerHeight > window.innerWidth ? "vertical" : "horizontal"} className="overflow-auto">
+              <Splitter layout={window.innerHeight > window.innerWidth ? "vertical" : "horizontal"} className="msg-container overflow-auto">
                 <Splitter.Panel >
                   <Spin spinning={DATA.current.loadingMessages} indicator={<LoadingOutlined spin />} tip="Loading..." fullscreen />
 
-                  <Watermark className="h-full  relative" content={DATA.current.diffs.length > 0 ? modelName : ""}>
+             
                     <div className="h-full">
                       {(currentChat.current.messages == null ||
                         currentChat.current.messages?.length == 0) && (
@@ -1340,7 +1340,7 @@ export const Chat = ({
                           loadMoreData(false, false);
                         }}></Messages>
                     </div>
-                  </Watermark>
+            
 
                 </Splitter.Panel>
 
@@ -1729,7 +1729,7 @@ export const Chat = ({
                             const { SendButton, LoadingButton, SpeechButton } = components;
                             return (
                               <Flex justify="space-between" align="center">
-                                <Flex gap="small" align="center">
+                                <Flex align="center">
 
                                   {supportImage && (
                                     <>
@@ -1777,8 +1777,7 @@ export const Chat = ({
 
                                           {(() => {
                                             let set = new Set();
-                                            for (let tool_name of currentChat.current
-                                              .allowMCPs) {
+                                            for (let tool_name of currentChat.current.allowMCPs) {
                                               let [name, _] = tool_name.split(" > ");
                                               set.add(name);
                                             }
@@ -1805,8 +1804,7 @@ export const Chat = ({
 
                                             (() => {
                                               let set = new Set();
-                                              for (let tool_name of currentChat.current
-                                                .allowMCPs) {
+                                              for (let tool_name of currentChat.current.allowMCPs) {
                                                 let [name, _] = tool_name.split(" > ");
                                                 set.add(name);
                                               }

@@ -241,7 +241,17 @@ export async function initHttp() {
   app.use(
     mount(
       "/" + electronData.get().password,
-      serve(path.join(__dirname, "../web-build")) as any
+      serve(path.join(__dirname, "../web-build"), {
+        maxage: 0,  // 禁用 HTML 文件缓存
+        setHeaders: (res, path) => {
+          // 为 HTML 文件设置特殊的缓存头
+          if (path.endsWith('.html')) {
+            res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+            res.setHeader('Pragma', 'no-cache');
+            res.setHeader('Expires', '0');
+          }
+        }
+      }) as any
     )
   );
   app.use(
