@@ -146,26 +146,20 @@ export const Messages = ({ messages, onSumbit, readOnly, setContainer, status, o
                         x={x}
                         submit={(content) => {
                             if (x.role == "system") {
-                                x.content = content;
+                                x.content_template = content;
                                 x.content_date = Date.now();
-
 
                                 let userIndex = messages.findLastIndex(
                                     (x) => x.role == "user",
                                 );
                                 if (userIndex > -1) {
-                                    // let content =
-                                    //     messages[userIndex].content;
-                                    // messages.splice(userIndex);
-                                    // refresh();
                                     onSumbit(messages.filter((x, index) => index <= userIndex));
-                                    //   onRequest(content as any);
                                 }
                             } else {
-                                x.content = content;
+                                x.content_template = content;
                                 x.content_date = Date.now();
                                 onSumbit(messages.filter((x, index) => index <= i));
-                                // onRequest(content);
+
                             }
                         }}
                     />

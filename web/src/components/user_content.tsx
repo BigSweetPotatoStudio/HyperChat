@@ -89,8 +89,9 @@ export function UserContent({ x, regenerate = undefined, submit }: { x: MyMessag
                         onChange={(e) => {
                             setValue(e.target.value);
                         }}
+                        placeholder="Please enter the content"
                     /> */}
-                    <Editor autoHeight style={{ width: width + "px", minWidth: 400 }} value={x.content_template || x.content.toString()} onChange={e => {
+                    <Editor autoHeight style={{ width: width + "px", minWidth: 300, border: "0px", padding: "4px 0" }} value={x.content_template || x.content.toString()} onChange={e => {
                         setValue(e);
                     }}></Editor>
                     <Space.Compact>
@@ -109,14 +110,7 @@ export function UserContent({ x, regenerate = undefined, submit }: { x: MyMessag
                                 x.content_sended = false;
                                 x.content_context.edit = false;
                                 setIsEdit(false);
-                                if (Array.isArray(x.content)) {
-                                    if (x.content[0].type == "text") {
-                                        x.content[0].text = value;
-                                        submit(x.content);
-                                    }
-                                } else {
-                                    submit(value);
-                                }
+                                submit(value);
                             }}
                         >
                             {t`Submit`}

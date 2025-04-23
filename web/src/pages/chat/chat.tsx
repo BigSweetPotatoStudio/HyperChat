@@ -231,6 +231,8 @@ import { Container, X } from "lucide-react";
 import { setInterval } from "node:timers/promises";
 import { getDefaultModelConfig, getDefaultModelConfigSync, rename } from "../../components/ai";
 import { InputAI } from "../../components/input_ai";
+import { MySender } from "../../components/my_sender";
+import { Editor } from "../../components/editor";
 
 
 export const Chat = ({
@@ -631,6 +633,23 @@ export const Chat = ({
         cacheOBJ.current[cacheKey] = res;
         return res;
       })();
+
+      function getFirstUserContent() {
+        let label = currentChat.current.label.toString();
+        let firstUser = messages.find(
+          (x) => x.content_attached != false && x.role == "user",
+        );
+        let firstUserContent = (firstUser as OpenAI.ChatCompletionUserMessageParam)?.content;
+        if (typeof firstUserContent == "string") {
+          label = firstUserContent;
+        } else if (Array.isArray(firstUserContent)) {
+          label = firstUserContent.find((x) => x.type == "text")?.text || "";
+        } else {
+          label = (firstUserContent as any).toString();
+        }
+        return label;
+      }
+
       try {
         openaiClient.options = {
           ...config,
@@ -736,40 +755,11 @@ export const Chat = ({
               sended: true,
               dateTime: Date.now(),
             };
-            // ChatHistory.get().data.unshift(currentChat.current);
-
 
           } else {
 
-
-            let label = currentChat.current.label.toString();
-            let firstUser = messages.find(
-              (x) => x.content_attached != false && x.role == "user",
-            );
-            let firstUserContent = (firstUser as OpenAI.ChatCompletionUserMessageParam)?.content;
-            if (typeof firstUserContent == "string") {
-              label = firstUserContent;
-            } else if (Array.isArray(firstUserContent)) {
-              label = firstUserContent.find((x) => x.type == "text")?.text || "";
-            } else {
-              label = (firstUserContent as any).toString();
-            }
-
-            currentChat.current.label = label;
+            currentChat.current.label = getFirstUserContent();
             currentChat.current.dateTime = Date.now();
-            // let findIndex = ChatHistory.get().data.findIndex(
-            //   (x) => x.key == currentChat.current.key,
-            // );
-
-            // if (findIndex > -1) {
-            //   // let find = ChatHistory.get().data.splice(findIndex, 1)[0];
-
-            //   currentChat.current.dateTime = Date.now();
-
-            //   // Object.assign(find, currentChat.current);
-            //   // ChatHistory.get().data.unshift(find);
-            // }
-
 
           }
         }
@@ -779,8 +769,9 @@ export const Chat = ({
         await openaiClient.completion(() => {
           Object.assign(messages, openaiClient.messages);
           refresh();
-
         });
+        currentChat.current.label = getFirstUserContent();
+
         resourceResListRef.current = [];
         setPromptResList([]);
 
@@ -1212,6 +1203,7 @@ export const Chat = ({
   const [newLabel, setNewLabel] = useState("");
   const [newValue, setNewValue] = useState("");
   const { token } = theme.useToken();
+  const editorRef = useRef<any>(null);
 
   return (
     <div key={sessionID} className="chat relative h-full">
@@ -1682,7 +1674,274 @@ export const Chat = ({
                     }
                   }}
                 >
-                  <Suggestion
+                  {true ? <div className="my-sender-container">
+                    <Editor
+                      ref={editorRef}
+                      style={{
+                        border: "0px",
+                        padding: "4px 0px",
+                      }} autoHeight rows={1} maxRows={10} value={value}
+                      onChange={(nextVal) => {
+                        setValue(nextVal);
+                      }}
+                      onSubmit={(s) => {
+                        if (DATA.current.suggestionShow) {
+                          return;
+                        }
+                        onRequest(s);
+                        setValue("");
+                        editorRef.current?.setValue("");
+    
+                      }}
+                    />
+
+                    <Sender
+                      className="my-sender"
+                      footer={({ components }) => {
+                        const { SendButton, LoadingButton, SpeechButton } = components;
+                        return (
+                          <Flex justify="space-between" align="center">
+                            <Flex align="center">
+
+                              {supportImage && (
+                                <>
+                                  <Upload
+                                    accept="image/*"
+                                    fileList={[]}
+                                    beforeUpload={async (file) => {
+                                      if (file.type.includes("image")) {
+                                        let path = await blobToBase64(file);
+                                        resourceResListRef.current.push({
+                                          call_name: "UserUpload",
+                                          contents: [
+                                            {
+                                              path: path,
+                                              blob: await urlToBase64(path),
+                                              type: "image",
+                                            },
+                                          ],
+                                          uid: v4(),
+                                        });
+                                        refresh();
+                                      } else {
+                                        message.warning(t`please uplaod image`);
+                                      }
+                                      return false;
+                                    }}
+                                  >
+                                    <Button
+                                      type="text"
+                                      icon={<LinkOutlined />}
+                                      onClick={() => { }}
+                                    />
+                                  </Upload>
+                                  {/* <Divider type="vertical" /> */}
+                                </>)}
+
+                              <Tooltip title={t`MCP and Tools`} placement="bottom">
+
+                                {supportTool == null || supportTool == true ? (
+                                  <Space.Compact>
+                                    <Button onClick={() => {
+                                      setIsToolsShow(true);
+                                    }} type="text" icon={<Icon name="mcp"></Icon>}>
+
+
+                                      {(() => {
+                                        let set = new Set();
+                                        for (let tool_name of currentChat.current.allowMCPs) {
+                                          let [name, _] = tool_name.split(" > ");
+                                          set.add(name);
+                                        }
+
+                                        let load = mcpClients.filter(
+                                          (v) => v.status == "connected",
+                                        ).length;
+                                        let all = mcpClients.filter(x => x.status !== "disabled").length;
+                                        let curr = mcpClients.filter((v) => {
+                                          return v.status !== "disabled" && set.has(v.name);
+                                        }).length;
+
+                                        return DATA.current.mcpLoading ? (
+                                          <>
+                                            {`${curr} `}
+                                            <SyncOutlined spin />
+                                            {`(${load}/${all})`}
+                                          </>
+                                        ) : (
+                                          curr
+                                        );
+                                      })()}
+                                      <Icon name="chuizi-copy"></Icon>{
+
+                                        (() => {
+                                          let set = new Set();
+                                          for (let tool_name of currentChat.current.allowMCPs) {
+                                            let [name, _] = tool_name.split(" > ");
+                                            set.add(name);
+                                          }
+
+                                          let curr = mcpClients.filter((v) => {
+                                            return v.status !== "disabled" && set.has(v.name);
+                                          });
+                                          let toolLen = 0;
+                                          for (let x of curr) {
+                                            toolLen += x.tools.length;
+                                          }
+                                          return (
+                                            <>
+                                              {toolLen}
+                                            </>
+                                          )
+                                        })()
+                                      }
+                                    </Button>
+
+                                  </Space.Compact>
+                                ) : (
+                                  <>  <Button
+                                    type="text"
+                                    icon={<Icon name="mcp"></Icon>}
+                                    onClick={() => { }}
+                                  >{t`LLM not support`}</Button>  </>
+                                )}
+
+                              </Tooltip>
+                              {/* <Divider type="vertical" /> */}
+                              <Tooltip title={t`Resources`} placement="bottom">
+                                <Dropdown
+                                  placement="top"
+                                  trigger={["click"]}
+                                  menu={{
+                                    items: resourcesRef.current.map((x, i) => {
+                                      return {
+                                        key: x.key,
+                                        label: !x.description
+                                          ? x.key
+                                          : `${x.key}--${x.description}`,
+                                      };
+                                    }),
+                                    onClick: async (item) => {
+                                      let resource = resourcesRef.current.find(
+                                        (x) => x.key === item.key,
+                                      );
+                                      if (resource) {
+                                        let res = await call("mcpCallResource", [
+                                          resource.clientName as string,
+                                          resource.uri,
+                                        ]);
+                                        let t = {
+                                          ...res,
+                                          call_name: resource.key + "--" + resource.uri,
+                                          uid: v4(),
+                                        };
+                                        console.log("mcpCallResource", t);
+                                        resourceResListRef.current.push(t);
+                                        refresh();
+                                      }
+                                    },
+                                  }}
+                                  arrow
+                                >
+                                  <Button type="text" className="cursor-pointer">
+                                    <Icon name="resources" />{" "}
+                                    {resourcesRef.current.length}
+                                  </Button>
+                                </Dropdown>
+                              </Tooltip>
+
+                              <Tooltip title={t`Prompts`} placement="bottom">
+                                <Dropdown
+                                  placement="top"
+                                  trigger={["click"]}
+                                  menu={{
+                                    items: promptsRef.current.map((x, i) => {
+                                      return {
+                                        key: x.key,
+                                        label: `${x.key} (${x.description})`,
+                                      };
+                                    }),
+                                    onClick: async (item) => {
+                                      let prompt = promptsRef.current.find(
+                                        (x) => x.key === item.key,
+                                      );
+                                      if (prompt) {
+                                        if (
+                                          prompt.arguments &&
+                                          prompt.arguments.length > 0
+                                        ) {
+                                          setIsFillPromptModalOpen(true);
+                                          setFillPromptFormItems(prompt.arguments);
+                                          mcpCallPromptCurr.current = prompt;
+                                        } else {
+                                          let res = await call("mcpCallPrompt", [
+                                            prompt.clientName as string,
+                                            prompt.name,
+                                            {},
+                                          ]);
+                                          console.log("mcpCallPrompt", res);
+                                          res.call_name = prompt.key;
+                                          res.uid = v4();
+                                          setPromptResList([...promptResList, res]);
+                                        }
+                                      }
+                                    },
+                                  }}
+                                  arrow
+                                >
+                                  <Button type="text" className="cursor-pointer">
+                                    <Icon name="prompts" />{" "}
+                                    {promptsRef.current.length}
+                                  </Button>
+                                </Dropdown>
+                              </Tooltip>
+                            </Flex>
+                            <Flex align="center">
+                              {/* <Button type="text" style={{
+                                    fontSize: 18,
+                                    color: token.colorText,
+                                  }} icon={<ApiOutlined />} />
+
+                                  <Divider type="vertical" /> */}
+                              {loading ? (
+                                <LoadingButton type="default" />
+                              ) : (
+                                <SendButton type="primary" disabled={false} />
+                              )}
+                            </Flex>
+                          </Flex>
+                        );
+                      }}
+                      actions={false}
+                      loading={loading}
+                      value={value}
+                      onChange={(nextVal) => {
+                        // if (nextVal === "/") {
+                        //   onTrigger();
+                        // } else if (!nextVal) {
+                        //   onTrigger(false);
+                        // }
+                        setValue(nextVal);
+                      }}
+                      onCancel={() => {
+                        setLoading(false);
+                        openaiClient.current?.cancel();
+                        for (let d of DATA.current.diffs) {
+                          d.openaiClient?.cancel();
+                        }
+                        // message.success("Cancel sending!");
+                      }}
+                      onSubmit={(s) => {
+                        if (DATA.current.suggestionShow) {
+                          return;
+                        }
+                        onRequest(value);
+                        setValue("");
+                        editorRef.current?.setValue("");
+                      }}
+                      placeholder={t`Start inputting, You can use @ to call other agents, or quickly enter`}
+                    />
+                  </div> : <Suggestion
                     items={[
                       {
                         label: "Agents",
@@ -1744,52 +2003,49 @@ export const Chat = ({
                       return (
                         <Sender
                           className="my-sender"
+                          onKeyDown={(e) => {
+                            if (DATA.current.suggestionShow) {
+                              if (
+                                e.key == "Enter" ||
+                                e.key == "ArrowDown" ||
+                                e.key == "ArrowUp" ||
+                                e.key == "Escape" ||
+                                e.key == "ArrowLeft" ||
+                                e.key == "ArrowRight"
+                              ) {
+                                onKeyDown(e);
+                              } else {
+                                onTrigger(false);
+                                DATA.current.suggestionShow = false;
+                              }
+                            } else {
+                              if (e.key == "@") {
+                                onTrigger(true);
+                                DATA.current.suggestionShow = true;
+                              }
+                            }
+                          }}
+                          onPasteFile={async (file) => {
+                            // console.log("onPasteFile", file);
 
-
-
-                          // onKeyDown={(e) => {
-                          //   if (DATA.current.suggestionShow) {
-                          //     if (
-                          //       e.key == "Enter" ||
-                          //       e.key == "ArrowDown" ||
-                          //       e.key == "ArrowUp" ||
-                          //       e.key == "Escape" ||
-                          //       e.key == "ArrowLeft" ||
-                          //       e.key == "ArrowRight"
-                          //     ) {
-                          //       onKeyDown(e);
-                          //     } else {
-                          //       onTrigger(false);
-                          //       DATA.current.suggestionShow = false;
-                          //     }
-                          //   } else {
-                          //     if (e.key == "@") {
-                          //       onTrigger(true);
-                          //       DATA.current.suggestionShow = true;
-                          //     }
-                          //   }
-                          // }}
-                          // onPasteFile={async (file) => {
-                          //   // console.log("onPasteFile", file);
-
-                          //   if (file.type.includes("image")) {
-                          //     let p = await blobToBase64(file);
-                          //     resourceResListRef.current.push({
-                          //       call_name: "UserUpload",
-                          //       contents: [
-                          //         {
-                          //           path: p,
-                          //           blob: p,
-                          //           type: "image",
-                          //         },
-                          //       ],
-                          //       uid: v4(),
-                          //     });
-                          //     refresh();
-                          //   } else {
-                          //     message.warning(t`please uplaod image`);
-                          //   }
-                          // }}
+                            if (file.type.includes("image")) {
+                              let p = await blobToBase64(file);
+                              resourceResListRef.current.push({
+                                call_name: "UserUpload",
+                                contents: [
+                                  {
+                                    path: p,
+                                    blob: p,
+                                    type: "image",
+                                  },
+                                ],
+                                uid: v4(),
+                              });
+                              refresh();
+                            } else {
+                              message.warning(t`please uplaod image`);
+                            }
+                          }}
                           footer={({ components }) => {
                             const { SendButton, LoadingButton, SpeechButton } = components;
                             return (
@@ -2035,7 +2291,7 @@ export const Chat = ({
                         />
                       );
                     }}
-                  </Suggestion>
+                  </Suggestion>}
                 </QuickPath>
               </div>
             </div>

@@ -15,6 +15,8 @@ export const Editor = forwardRef(({
     action = false,
     autoHeight = false,
     rows = 1,
+    maxRows,
+    onSubmit
 }: {
     value?: string,
     onChange?: (value: string) => void,
@@ -23,6 +25,8 @@ export const Editor = forwardRef(({
     action?: React.ReactNode | false,
     autoHeight?: boolean,
     rows?: number,
+    maxRows?: number,
+    onSubmit?: (value: string) => void,
 }, ref) => {
     const [num, setNum] = React.useState(0);
     const refresh = () => {
@@ -39,21 +43,6 @@ export const Editor = forwardRef(({
 
 
 
-    // useEffect(() => {
-    //     if (monacoModelRef.current) {
-    //         if (autoHeight) {
-    //             if (rows) {
-    //                 const lines = value.split("\n");
-    //                 while (lines.length < rows) {
-    //                     lines.push("");
-    //                 }
-    //                 value = lines.join("\n");
-    //             }
-    //         }
-    //         monacoModelRef.current.setValue(value);
-    //     }
-    // }, [value]);
-
     const [editorHeight, setEditorHeight] = useState<number>(lineHeight * rows); // 初始高度为 4 行的高度
     const cachegetLineCount = useRef<number>(undefined);
     // 在初始化编辑器后和内容变化时更新高度
@@ -63,6 +52,9 @@ export const Editor = forwardRef(({
             const model = monacoRef.current.getModel();
             if (model) {
                 const lineCount = model.getLineCount();
+                // if (lineHeight >= maxRows) {
+                //     return;
+                // }
                 if (cachegetLineCount.current == lineCount) {
                     return;
                 }
@@ -94,6 +86,9 @@ export const Editor = forwardRef(({
                 monacoRef.current?.layout();
             }, 100);
         },
+        setValue: (value: string) => {
+            monacoModelRef.current.setValue(value);
+        }
     }));
 
     useEffect(() => {
@@ -122,7 +117,7 @@ export const Editor = forwardRef(({
                     ],
                 },
             });
-            monaco.editor.defineTheme("myCoolTheme", {
+            monaco.editor.defineTheme("hyperChatCustomTheme", {
                 base: "vs",
                 inherit: false,
                 rules: [
@@ -143,11 +138,13 @@ export const Editor = forwardRef(({
                     detail: `${v.name} ${v.type} ${v.variableType}`,
                     value: v.value,
                 }
-            })]
+            })];
 
             // Register a completion item provider for the new language
             monacoProvidersRef.current.push(monaco.languages.registerCompletionItemProvider("HyperPromptLanguage", {
                 provideCompletionItems: (model, position) => {
+
+
                     var word = model.getWordUntilPosition(position);
                     var range = {
                         startLineNumber: position.lineNumber,
@@ -263,8 +260,10 @@ export const Editor = forwardRef(({
                 provideHover: async (model, position) => {
 
                     const lineContent = model.getLineContent(position.lineNumber);
-                    // const wordUntilPosition = model.getWordUntilPosition(position);
-                    // console.log("Current line content:", position, lineContent, wordUntilPosition);
+
+                    const wordUntilPosition = model.getWordUntilPosition(position);
+                    console.log("Current line content:", position, lineContent, wordUntilPosition);
+
                     // Check if the cursor is on a variable {{...}}
                     const variableMatch = lineContent.match(/{{([^{}]*)}}/g);
                     if (variableMatch) {
@@ -389,8 +388,16 @@ export const Editor = forwardRef(({
                 monaco.editor.setModelMarkers(model, "owner", markers);
             }
 
-
-
+            if (autoHeight) {
+                if (rows) {
+                    const lines = value.split("\n");
+                    while (lines.length < rows) {
+                        lines.push("");
+                    }
+                    value = lines.join("\n");
+                }
+            }
+            onChange && onChange(value);
             const uri = monaco.Uri.parse("inmemory://" + uid.current);
             let model = monaco.editor.createModel(value, "HyperPromptLanguage", uri);
 
@@ -405,7 +412,7 @@ export const Editor = forwardRef(({
                 }
             }
             let editor = monaco.editor.create(document.getElementById(uid.current), {
-                theme: "myCoolTheme",
+                theme: "hyperChatCustomTheme",
                 model: model,
                 language: "HyperPromptLanguage",
                 minimap: { enabled: false }, // 禁用滚动预览条
@@ -419,7 +426,17 @@ export const Editor = forwardRef(({
                 // wrappingStrategy: 'advanced', // 更智能的换行策略
                 // wordWrapBreakBeforeCharacters: ',.!?，。！？', // 在这些字符前换行
                 // wordWrapBreakAfterCharacters: ' \t、【】《》', // 在这些字符后换行
+                wordSeparators: `~!@#$%^&*()-=+[{]}\\|;:\'",.<>/?~！@#￥%……&*（）——-=+【{】}\\|；：'"，。、《》？`, // 包含中英文标点
 
+                // quickSuggestions: {
+                //     other: true,
+                //     comments: false,
+                //     strings: false
+                // },
+                // suggestOnTriggerCharacters: false, // 在手动触发时才显示建议
+                // acceptSuggestionOnEnter: "smart",
+
+                accessibilitySupport: "off", // 禁用辅助功能支持
 
                 roundedSelection: true, // 启用圆角选择
                 fixedOverflowWidgets: true, // 修复溢出部件
@@ -431,11 +448,20 @@ export const Editor = forwardRef(({
                     nonBasicASCII: false
                 },
 
-
                 // readOnly: false // Enable editing
             });
             validate(model);
-
+            // 为 Ctrl+Enter 绑定一个命令，这里示范调用 onChange 并可在此触发“提交”逻辑
+            editor.addCommand(
+                monaco.KeyMod.CtrlCmd | monaco.KeyCode.Enter,
+                () => {
+                    const currentValue = editor.getModel()?.getValue() ?? "";
+                    // 更新内容
+                    onSubmit && onSubmit(currentValue);
+                    // 如果需要提交，可以在这里调用一个提交回调：
+                    // props.onSubmit?.(currentValue);
+                }
+            );
             // // 添加操作栏项目
             // editor.addAction({
             //     id: 'bold-text',
@@ -491,23 +517,22 @@ export const Editor = forwardRef(({
 
     }, [monacoRef, monacoProvidersRef])
 
-    const fullscreenStyle: React.CSSProperties = isFullscreen ? {
-        position: 'fixed',
-        top: 0,
-        left: 0,
-        width: '100vw',
-        height: '100vh',
-        zIndex: 1000,
-        backgroundColor: 'white',
-        ...style
-    } : style;
+    // const fullscreenStyle: React.CSSProperties = isFullscreen ? {
+    //     position: 'fixed',
+    //     top: 0,
+    //     left: 0,
+    //     width: '100vw',
+    //     height: '100vh',
+    //     zIndex: 1000,
+    //     backgroundColor: 'white',
+    //     ...style
+    // } : style;
 
 
     return <div className={"my-editor"} style={{
-        ...fullscreenStyle,
-        height: autoHeight ? editorHeight : fullscreenStyle.height,
+        ...style,
     }}>
-        <div className={className + " " + "h-full w-full"} id={uid.current} >
+        <div style={{ height: autoHeight ? editorHeight : style.height, }} className={className + " " + "h-full w-full"} id={uid.current} >
         </div>
         {action && <div className="editor-toolbar" style={{
             position: "absolute",

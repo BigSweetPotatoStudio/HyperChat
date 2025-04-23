@@ -69,7 +69,7 @@ if (ENV_CONFIG.initSync({ force: true }).PATH != "") {
 
 if (VarList.get().data.length == 0) {
   VarList.get().data = VarList.get().data.concat(AppSetting.get().quicks.map(x => {
-    return { name: x.label, value: x.quick, type: "variable", key: x.value, scope: "quick" };
+    return { name: x.label, value: x.quick, type: "variable", key: x.value, scope: "quick", variableType: "string" };
   }));
 }
 VarList.save();

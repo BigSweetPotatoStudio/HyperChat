@@ -257,12 +257,27 @@ div[role="system"] .ant-bubble-content-wrapper {
 
 .my-editor{
   position: relative;
-  border-width: 1px;
-  border-style: solid;
-  border-color: #d9d9d9;
+  border: 1px solid #d9d9d9;
   /* transition: all 0.3s; */
   border-radius: 6px;
   overflow: hidden; /* 确保内部元素不溢出圆角 */
+  background: #fff;
   /* padding-bottom: 16px; */
 }
 
+.my-sender-container{
+  padding-top: 8px;
+  border: 1px solid #d9d9d9;
+  border-radius: 10px;
+  overflow: hidden; /* 确保内部元素不溢出圆角 */
+}
+
+.my-sender-container .ant-sender-content{
+  padding: 0;
+  height: 0;
+  display: none;
+}
+
+.my-sender-container .ant-sender{
+  border: 0px;
+}
