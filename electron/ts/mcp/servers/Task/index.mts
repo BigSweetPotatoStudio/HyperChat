@@ -8,7 +8,7 @@ import { Agents, KNOWLEDGE_BASE, TaskList } from "../../../../../common/data";
 import { EVENT } from "../../../common/event";
 import { v4 } from "uuid";
 import cron from "node-cron";
-import { startTask } from "../../task.mjs";
+import { startTask, stopTask } from "../../task.mjs";
 import { getMessageService } from "../../../message_service.mjs";
 
 // import { ListPromptsRequestSchema, ListToolsRequestSchema } from "@modelcontextprotocol/sdk/types.js";
@@ -130,6 +130,29 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
           required: ["name", "cron", "agent_name", "command"],
         },
       },
+      {
+        name: "list_tasks",
+        description: `List all scheduled tasks.`,
+        inputSchema: {
+          type: "object",
+          properties: {},
+          required: [],
+        },
+      },
+      {
+        name: "remove_task",
+        description: `Remove a scheduled task by name or key.`,
+        inputSchema: {
+          type: "object",
+          properties: {
+            task_identifier: {
+              type: "string",
+              description: "Task name or key to remove",
+            },
+          },
+          required: ["task_identifier"],
+        },
+      },
       // {
       //   name: "list_allowed_agents",
       //   description: `list all allow Agents`,
@@ -213,6 +236,29 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
         ],
       };
     }
+    case "list_tasks": {
+      return {
+        content: [
+          {
+            type: "text",
+            text: await list_tasks(),
+          },
+        ],
+      };
+    }
+    case "remove_task": {
+      if (!request.params.arguments?.task_identifier) {
+        throw new Error("task_identifier is required");
+      }
+      return {
+        content: [
+          {
+            type: "text",
+            text: await remove_task(request.params.arguments.task_identifier),
+          },
+        ],
+      };
+    }
     default:
       throw new Error("Unknown tool");
   }
@@ -290,6 +336,66 @@ async function add_task({
   await TaskList.save();
   startTask(key);
   return "Task added";
+}
+
+/**
+ * List all scheduled tasks with their details.
+ * @returns A formatted string with all tasks information
+ */
+async function list_tasks(): Promise<string> {
+  const taskList = TaskList.initSync({ force: true });
+  const agents = Agents.initSync({ force: true });
+
+  if (taskList.data.length === 0) {
+    return "No tasks found.";
+  }
+
+  const taskDetails = taskList.data.map(task => {
+    const agent = agents.data.find(a => a.key === task.agentKey);
+    const agentName = agent ? agent.label : 'Unknown agent';
+    const status = task.disabled ? 'Disabled' : 'Enabled';
+
+    return `- Task: ${task.name}
+  Key: ${task.key}
+  Agent: ${agentName}
+  Cron: ${task.cron}
+  Status: ${status}
+  Command: ${task.command}`;
+  }).join('\n\n');
+
+  return `Found ${taskList.data.length} task(s):\n\n${taskDetails}`;
+}
+
+/**
+ * Remove a task by its name or key.
+ * @param taskIdentifier The name or key of the task to remove
+ * @returns A message indicating the result of the operation
+ */
+async function remove_task(taskIdentifier: string): Promise<string> {
+  const taskList = TaskList.initSync({ force: true });
+
+  // First try to find by key
+  let taskIndex = taskList.data.findIndex(task => task.key === taskIdentifier);
+
+  // If not found by key, try by name
+  if (taskIndex === -1) {
+    taskIndex = taskList.data.findIndex(task => task.name === taskIdentifier);
+  }
+
+  if (taskIndex === -1) {
+    return `Task with identifier "${taskIdentifier}" not found.`;
+  }
+
+  const task = taskList.data[taskIndex];
+
+  // Stop the task before removing it
+  stopTask(task.key);
+
+  // Remove the task from the list
+  taskList.data.splice(taskIndex, 1);
+  await TaskList.save();
+
+  return `Task "${task.name}" (${task.key}) has been removed.`;
 }
 
 let transport;
