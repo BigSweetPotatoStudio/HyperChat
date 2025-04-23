@@ -1174,5 +1174,29 @@
   "Please select TaskFallbackLLM": {
     "en": "Please select TaskFallbackLLM",
     "zh": "请选择任务备用大模型"
+  },
+  "VariableList": {
+    "en": "VariableList",
+    "zh": "变量列表"
+  },
+  "TestPage": {
+    "en": "TestPage",
+    "zh": "测试页"
+  },
+  "Scope": {
+    "en": "Scope",
+    "zh": "作用域"
+  },
+  "Clear Select": {
+    "en": "Clear Select",
+    "zh": "清除选择"
+  },
+  "Are you sure to delete this scope?\nIncluding variables will also be deleted": {
+    "en": "Are you sure to delete this scope?\nIncluding variables will also be deleted",
+    "zh": "您确定要删除这个范围吗？\n包括的变量也将被删除"
+  },
+  "Old Name": {
+    "en": "Old Name",
+    "zh": "旧名称"
   }
 }

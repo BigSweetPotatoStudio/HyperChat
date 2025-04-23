@@ -2149,36 +2149,6 @@ export const Chat = ({
             {currTool.key
               ? JsonSchema2FormItemOrNull(
                 currTool.function.parameters,
-                // zodToJsonSchema(
-                // z.object({
-                //   // paths: z.array(
-                //   //   z.object({
-                //   //     first: z.array(
-                //   //       z.object({
-                //   //         arr: z.array(
-                //   //           z.string({
-                //   //             description: "filesystem path",
-                //   //           }),
-                //   //         ),
-                //   //       }),
-                //   //     ),
-                //   //     // s: z.string()
-                //   //   }),
-                //   // ),
-
-                //   a: z.object({
-                //     b: z.object({
-                //       c: z.object({
-                //         d: z.array(
-                //           z.string({
-                //             description: "filesystem path",
-                //           }),
-                //         ),
-                //       }),
-                //     }),
-                //   }),
-                // }),
-                // ),
               ) || t`No parameters`
               : []}
             <Form.Item className="flex justify-end">

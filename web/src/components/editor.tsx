@@ -5,6 +5,7 @@ import { Agents, AppSetting, VarList } from "../../../common/data";
 import { v4 } from "uuid";
 import { Button, Space } from "antd";
 import { FullscreenOutlined } from "@ant-design/icons";
+import { call } from "../common/call";
 
 export const Editor = forwardRef(({
     value = "",
@@ -136,9 +137,10 @@ export const Editor = forwardRef(({
             let varList = [...VarList.get().data?.map((v) => {
                 let varName = v.scope + "." + v.name;
                 return {
+                    ...v,
                     label: varName,
-                    insertText: v.type == "var" ? `{{${varName}}}` : v.value,
-                    detail: `${v.name} ${v.type}`,
+                    insertText: v.type == "variable" ? `{{${varName}}}` : v.value,
+                    detail: `${v.name} ${v.type} ${v.variableType}`,
                     value: v.value,
                 }
             })]
@@ -258,7 +260,7 @@ export const Editor = forwardRef(({
 
             monacoProvidersRef.current.push(monaco.languages.registerHoverProvider("HyperPromptLanguage", {
 
-                provideHover: (model, position) => {
+                provideHover: async (model, position) => {
 
                     const lineContent = model.getLineContent(position.lineNumber);
                     // const wordUntilPosition = model.getWordUntilPosition(position);
@@ -278,21 +280,59 @@ export const Editor = forwardRef(({
                                 // Find the corresponding quick in AppSetting
                                 const v = varList.find((x) => x.label == variableName);
 
-                                return {
-                                    range: new monaco.Range(
-                                        position.lineNumber,
-                                        startIndex + 1,
-                                        position.lineNumber,
-                                        endIndex + 1
-                                    ),
-                                    contents: [
-                                        {
-                                            value: v
-                                                ? `**Variable:** ${v.label}\n\n${v.value}`
-                                                : `**Variable:** ${variableName}\n\nNo found for this variable.`
+                                let value = `**Variable:** ${variableName}\n\nNo found for this variable.`;
+
+                                try {
+
+                                    if (v) {
+                                        if (v.variableType == "js") {
+                                            value = await call("runCode", [{ code: v.code }]);
+                                        } else if (v.variableType == "webjs") {
+                                            let code = `
+                                        (async () => {
+                                            ${v.code}
+                                           return await get()
+                                        })()
+                                            `;
+                                            // console.log(code);
+                                            value = await eval(code);
+                                        } else {
+                                            value = `**Variable:** ${v.label}\n\n${v.value}`;
                                         }
-                                    ]
-                                };
+                                    }
+
+                                    return {
+                                        range: new monaco.Range(
+                                            position.lineNumber,
+                                            startIndex + 1,
+                                            position.lineNumber,
+                                            endIndex + 1
+                                        ),
+                                        contents: [
+                                            {
+                                                value: value
+                                            }
+                                        ]
+                                    };
+                                } catch (e) {
+
+                                    return {
+                                        range: new monaco.Range(
+                                            position.lineNumber,
+                                            startIndex + 1,
+                                            position.lineNumber,
+                                            endIndex + 1
+                                        ),
+                                        contents: [
+                                            {
+                                                value: "error: "
+                                            },
+                                            {
+                                                value: e
+                                            }
+                                        ]
+                                    };
+                                }
                             }
                         }
                         const word = model.getWordAtPosition(position);
@@ -324,7 +364,7 @@ export const Editor = forwardRef(({
 
                     if (!varExists) {
                         markers.push({
-                            message: `Variable "${variableName}" not found in quick settings`,
+                            message: `Variable "${variableName}" not found!`,
                             severity: monaco.MarkerSeverity.Warning,
                             startLineNumber: startPosition.lineNumber,
                             startColumn: startPosition.column,

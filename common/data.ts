@@ -1,6 +1,7 @@
 import type OpenAI from "openai";
 import * as MCPTypes from "@modelcontextprotocol/sdk/types.js";
 import { v4 } from "uuid";
+import { z } from "zod";
 export const DataList: Data<any>[] = [];
 
 export class Data<T> {
@@ -152,6 +153,7 @@ export type MyMessage = OpenAI.Chat.Completions.ChatCompletionMessageParam & {
   | "error"
   | "dataLoading"
   | "dataLoadComplete";
+  content_template?: string;
   content_error?: string;
   content_from?: string;
   content_attachment?: Array<{
@@ -383,18 +385,25 @@ export const TaskList = new Data(
   }
 );
 
-export type Var = {
-  key: string;
-  name: string;
-  value: string;
-  scope: string;
-  type: "var" | "quick";
-}
+export const zodVar = z.object({
+  key: z.string(),
+  name: z.string(),
+  value: z.string(),
+  scope: z.string(),
+  type: z.enum(["variable", "quick"]),
+  variableType: z.enum(["string", "js", "webjs"]),
+  code: z.string().optional(),
+});
 
-export type VarScope = {
-  name: string;
-  key: string;
-}
+
+export type Var = z.infer<typeof zodVar>;
+
+export const zodVarScope = z.object({
+  key: z.string(),
+  name: z.string(),
+  type: z.enum(["builtin", "custom"]),
+});
+export type VarScope = z.infer<typeof zodVarScope>;
 
 
 export const VarList = new Data(
@@ -413,9 +422,11 @@ export const VarScopeList = new Data(
     data: [{
       name: "var",
       key: v4(),
-    },{
+      type: "custom",
+    }, {
       name: "quick",
       key: v4(),
+      type: "custom",
     }] as Array<VarScope>,
   },
   {
