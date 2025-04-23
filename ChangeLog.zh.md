@@ -1,4 +1,46 @@
-# latest
+# 1.5.4
+* 修复web访问的,添加大模型测试失败的问题。
+
+# 1.5.3
+
+* 支持Claude 官方API.
+* 优化了内置终端，允许用户输入
+* 支持Agent任务调用失败，使用备用大模型.
+* 添加内置Agent，`MCP helper`，帮助安装MCP
+* 修复Markdown渲染Bug
+* 修复聊天多模型对比的Bug
+
+![image](https://github.com/user-attachments/assets/c450aea2-c3f2-4527-ae06-8bcaa928416c)
+![image](https://github.com/user-attachments/assets/7094cef7-e6f2-452e-9a1d-59871d146364)
+![image](https://github.com/user-attachments/assets/5ebf05c7-007e-4eee-9b98-df5662b54f62)
+
+# 1.5.0
+* 支持聊天重命名
+* 支持mcp配置同步
+* 支持grok3的思维链
+* 支持ai生成cron表达式
+* 支持消息分叉克隆
+* 支持开发模式，快速导出对话配置，用于调试
+* 添加启用，禁用claude的mcp的开关
+* 添加Task运行全局控制启用，禁用开关
+* 工具调用取消优化，告诉大模型用户取消了操作
+
+![支持聊天重命名](https://github.com/user-attachments/assets/9e178d72-2446-4d63-a1ac-ac0299a3d0a4)
+![支持mcp配置同步](https://github.com/user-attachments/assets/ecc4945d-3170-476f-b653-badecf972957)
+![支持grok3的思维链](https://github.com/user-attachments/assets/6123221e-2646-4553-b8d4-16b49428c69a)
+![支持ai生成cron表达式](https://github.com/user-attachments/assets/5855ed6e-d502-4913-a712-7a1d65b7722f)
+![支持消息分叉克隆](https://github.com/user-attachments/assets/498d4e03-0555-4b9b-9838-ec46602fb501)
+![支持开发模式，快速导出对话配置，用于调试](https://github.com/user-attachments/assets/124a6e1a-6436-4308-8475-9fb32b5e3f09)
+![支持Task运行全局控制启用，禁用](https://github.com/user-attachments/assets/7537941a-1e2d-41a8-abb6-2569fe040067)
+![支持开发模式，快速导出对话配置，用于调试](https://github.com/user-attachments/assets/9bfdf789-378e-43d7-bcdf-8a91c593fe16)
+![工具调用取消优化，告诉大模型用户取消了操作](https://github.com/user-attachments/assets/8b1186b3-929f-4c86-95ce-50dbf2216f01)
+
+
+
+# 1.4.17
+* 修复MacOS不能复制，等快捷键失效的问题
+
+# 1.4.16
 
 * 支持显示MCP Server版本号和名称。
 * 添加模型报错时，显示详细错误。
@@ -8,12 +50,15 @@
 * 支持Claude Desktop 配置里的MCP。
 * 支持Web端直接查看配置文件
 * 支持快捷键MACOS`Alt+Cmd+I`   Windows`Ctrl+Shift+I`打开 开发者工具
-* 修复bug
+* 聊天记录列表支持显示Agent图标
+* 修复大量bug
 
 ![image](https://github.com/user-attachments/assets/e00bb252-83a6-40ca-928a-3162859b0c27)
 ![image](https://github.com/user-attachments/assets/5378bba1-91f5-4d77-accf-544d9a09e909)
 ![image](https://github.com/user-attachments/assets/2b236af6-a0bc-453a-b08e-8f3627a5d392)
 ![image](https://github.com/user-attachments/assets/ca3cc911-bc6a-4560-aede-f34969190e91)
+![image](https://github.com/user-attachments/assets/c69addb1-6a07-4fb8-8858-8851cfd31be6)
+![image](https://github.com/user-attachments/assets/23717164-7177-4622-a4bd-bd2d13be1edf)
 
 
 # 1.4.3
