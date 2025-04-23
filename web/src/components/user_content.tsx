@@ -55,18 +55,21 @@ import mk from "@vscode/markdown-it-katex";
 import { DownImage } from "../pages/chat/component";
 import { Editor } from "./editor";
 import { t } from "../i18n";
+import { MyMessage } from "../../../common/data";
 
-export function UserContent({ x, regenerate = undefined, submit }) {
+export function UserContent({ x, regenerate = undefined, submit }: { x: MyMessage, regenerate?: () => void, submit: (x: any) => void }) {
     const [isEdit, setIsEdit] = useState(false);
     const [value, setValue] = useState("");
     const container = useRef<HTMLDivElement>(null);
     const [width, setWidth] = useState(0);
     useEffect(() => {
         if (x.content_context.edit) {
-            
+
             setWidth(container.current ? container.current.offsetWidth : 500);
             if (Array.isArray(x.content)) {
-                setValue(x.content[0].text);
+                if (x.content[0].type == "text") {
+                    setValue(x.content[0].text);
+                }
             } else {
                 setValue(x.content.toString());
             }
@@ -87,7 +90,7 @@ export function UserContent({ x, regenerate = undefined, submit }) {
                             setValue(e.target.value);
                         }}
                     /> */}
-                    <Editor autoHeight style={{ width: width + "px", minWidth: 400 }} value={x.content.toString()} onChange={e=>{
+                    <Editor autoHeight style={{ width: width + "px", minWidth: 400 }} value={x.content_template || x.content.toString()} onChange={e => {
                         setValue(e);
                     }}></Editor>
                     <Space.Compact>
@@ -103,11 +106,14 @@ export function UserContent({ x, regenerate = undefined, submit }) {
                         <Button
                             size="small"
                             onClick={() => {
+                                x.content_sended = false;
                                 x.content_context.edit = false;
                                 setIsEdit(false);
                                 if (Array.isArray(x.content)) {
-                                    x.content[0].text = value;
-                                    submit(x.content);
+                                    if (x.content[0].type == "text") {
+                                        x.content[0].text = value;
+                                        submit(x.content);
+                                    }
                                 } else {
                                     submit(value);
                                 }
@@ -129,7 +135,7 @@ export function UserContent({ x, regenerate = undefined, submit }) {
                                         wordWrap: "break-word",
                                     }}
                                 >
-                                    {c.text.toString()}
+                                    {c.text.toString() || x.content_template}
                                 </pre>
                                 {x.content.length > 1 && i == 0 && (
                                     <Divider plain>resources</Divider>
@@ -171,7 +177,7 @@ export function UserContent({ x, regenerate = undefined, submit }) {
                         wordWrap: "break-word",
                     }}
                 >
-                    {x.content.toString()}
+                    {x.content.toString() || x.content_template}
                 </pre>
                 // <Editor autoHeight style={{ width: "80%" }} value={x.content.toString()}></Editor>
             )}

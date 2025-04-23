@@ -189,6 +189,7 @@ import {
   electronData,
   HyperChatCompletionTool,
   Tool_Call,
+  VarList,
 } from "../../../../common/data";
 
 import { PromptsModal } from "./promptsModal";
@@ -285,11 +286,14 @@ export const Chat = ({
       try {
         DATA.current.loadingMessages = true;
         refresh();
-        await Agents.init();
-        await GPT_MODELS.init();
-        await AppSetting.init();
-        await ChatHistory.init();
-        await electronData.init();
+        await Promise.all([
+          Agents.init(),
+          GPT_MODELS.init(),
+          AppSetting.init(),
+          ChatHistory.init(),
+          electronData.init(),
+          VarList.init(),
+        ]);
         Agents.get().data = builtinAgent.current.concat(Agents.get().data.filter(x => x.type != "builtin"));
         Agents.get().data.forEach((x) => {
           getAgentNameObj.current[x.key] = x.label;
@@ -352,11 +356,7 @@ export const Chat = ({
                 }
 
               }
-              // setTimeout(() => {
-
               currentChatReset(item);
-
-              // });
             }
           }
         } else {
@@ -454,8 +454,9 @@ export const Chat = ({
       newConfig.messages = [
         {
           role: "system" as const,
-          content: prompt,
+          content_template: prompt,
           content_date: Date.now(), // Corrected to use Date.now() for current timestamp
+          content: "",
         },
       ];
     }
@@ -647,6 +648,65 @@ export const Chat = ({
           temperature: currentChat.current.temperature,
           confirm_call_tool: currentChat.current.confirm_call_tool,
           confirm_call_tool_cb,
+          messages_format_callback: async (message) => {
+            if (message.role == "user" || message.role == "system") {
+              if (!message.content_sended) {
+                let varList = [...VarList.get().data?.map((v) => {
+                  let varName = v.scope + "." + v.name;
+                  return {
+                    ...v,
+                    label: varName,
+                    insertText: v.type == "variable" ? `{{${varName}}}` : v.value,
+                    detail: `${v.name} ${v.type} ${v.variableType}`,
+                    value: v.value,
+                  }
+                })];
+                async function renderTemplate(template: string) {
+                  let reg = /{{(.*?)}}/g;
+                  let matchs = template.match(reg);
+                  let subResults = [];
+                  for (let match of matchs || []) {
+                    let varName = match.slice(2, -2).trim();
+                    let v = varList.find((x) => x.label == varName);
+                    let value = varName;
+                    if (v) {
+                      if (v.variableType == "js") {
+                        value = await call("runCode", [{ code: v.code }]);
+                      } else if (v.variableType == "webjs") {
+                        let code = `
+                        (async () => {
+                            ${v.code}
+                           return await get()
+                        })()
+                        `;
+                        // console.log(code);
+                        value = await eval(code);
+                      } else {
+                        value = v.value;
+                      }
+                    }
+                    subResults.push({ value, varName });
+                  }
+                  let result = template.replace(reg, (match, p1) => {
+                    return subResults.find((x) => x.varName === p1.trim())?.value || match;
+                  });
+                  return result;
+                }
+                if (message.content_template) {
+                  if (typeof message.content == "string") {
+                    message.content = await renderTemplate(message.content_template);
+                  }
+                  else if (Array.isArray(message.content) && message.content.length >= 1) {
+                    if (message.content[0].type == "text") {
+                      message.content[0].text = await renderTemplate(message.content_template);
+                    }
+                  }
+
+                }
+                message.content_sended = true;
+              }
+            }
+          },
         }
         setOpenaiClient(openaiClient);
         openaiClient.messages = messages;
@@ -654,7 +714,8 @@ export const Chat = ({
           openaiClient.addMessage(
             {
               role: "user",
-              content: message,
+              content: "",
+              content_template: message,
               content_date: new Date().getTime(),
             },
             resourceResListRef.current,
@@ -793,7 +854,11 @@ export const Chat = ({
       });
       alls.push(promise);
       await Promise.allSettled(alls).then((res) => {
-        console.log("all res", res);
+        if (res.every(x => x.status == "fulfilled")) {
+
+        } else {
+          console.log("all res has error", res);
+        }
       });
     } catch (e) {
 
@@ -1190,129 +1255,129 @@ export const Chat = ({
                 <Splitter.Panel >
                   <Spin spinning={DATA.current.loadingMessages} indicator={<LoadingOutlined spin />} tip="Loading..." fullscreen />
 
-             
-                    <div className="h-full">
-                      {(currentChat.current.messages == null ||
-                        currentChat.current.messages?.length == 0) && (
-                          <>
-                            <Welcome
-                              icon="👋"
-                              title={t`Welcome`}
-                              className="mb-4"
-                              description={
-                                Agents.get().data.length > 0
-                                  ? t`Choose a prompt from below, and let's start chatting`
-                                  : t`Start chatting`
-                              }
-                            />
-                            <Space>
-                              <Input
-                                placeholder="search"
-                                value={botSearchValue}
-                                onChange={(e) => {
-                                  setBotSearchValue(e.target.value);
-                                }}
-                                allowClear
-                              ></Input>
-                              <Button
-                                onClick={() => {
-                                  setPromptsModalValue({
-                                    confirm_call_tool: false,
-                                  } as any);
-                                  setIsOpenPromptsModal(true);
+
+                  <div className="h-full">
+                    {(currentChat.current.messages == null ||
+                      currentChat.current.messages?.length == 0) && (
+                        <>
+                          <Welcome
+                            icon="👋"
+                            title={t`Welcome`}
+                            className="mb-4"
+                            description={
+                              Agents.get().data.length > 0
+                                ? t`Choose a prompt from below, and let's start chatting`
+                                : t`Start chatting`
+                            }
+                          />
+                          <Space>
+                            <Input
+                              placeholder="search"
+                              value={botSearchValue}
+                              onChange={(e) => {
+                                setBotSearchValue(e.target.value);
+                              }}
+                              allowClear
+                            ></Input>
+                            <Button
+                              onClick={() => {
+                                setPromptsModalValue({
+                                  confirm_call_tool: false,
+                                } as any);
+                                setIsOpenPromptsModal(true);
+                              }}
+                            >
+                              {t`Add Agent`}
+                            </Button>
+                          </Space>
+
+                          <div className="flex items-center">
+                            <div className="flex flex-wrap">
+                              <DndContext
+                                sensors={botSearchValue != "" ? [] : [sensors]}
+                                onDragEnd={(e) => {
+                                  try {
+                                    let data = Agents.get().data;
+                                    let oldIndex = data.findIndex(
+                                      (x) => x.key == e.active.id,
+                                    );
+
+                                    let newIndex = data.findIndex(
+                                      (x) => x.key == e.over.id,
+                                    );
+
+                                    let item = data[oldIndex];
+
+                                    data.splice(oldIndex, 1);
+
+                                    data.splice(newIndex, 0, item);
+
+                                    Agents.save();
+                                    refresh();
+                                  } catch { }
                                 }}
                               >
-                                {t`Add Agent`}
-                              </Button>
-                            </Space>
-
-                            <div className="flex items-center">
-                              <div className="flex flex-wrap">
-                                <DndContext
-                                  sensors={botSearchValue != "" ? [] : [sensors]}
-                                  onDragEnd={(e) => {
-                                    try {
-                                      let data = Agents.get().data;
-                                      let oldIndex = data.findIndex(
-                                        (x) => x.key == e.active.id,
-                                      );
-
-                                      let newIndex = data.findIndex(
-                                        (x) => x.key == e.over.id,
-                                      );
-
-                                      let item = data[oldIndex];
-
-                                      data.splice(oldIndex, 1);
-
-                                      data.splice(newIndex, 0, item);
-
-                                      Agents.save();
-                                      refresh();
-                                    } catch { }
-                                  }}
+                                <SortableContext
+                                  items={(Agents.get()
+                                    .data).filter(
+                                      (x) =>
+                                        botSearchValue == "" ||
+                                        x.label
+                                          .toLowerCase()
+                                          .includes(botSearchValue),
+                                    )
+                                    .map((x) => x.key)}
                                 >
-                                  <SortableContext
-                                    items={(Agents.get()
-                                      .data).filter(
-                                        (x) =>
-                                          botSearchValue == "" ||
-                                          x.label
-                                            .toLowerCase()
-                                            .includes(botSearchValue),
-                                      )
-                                      .map((x) => x.key)}
-                                  >
-                                    {(Agents.get()
-                                      .data).filter(
-                                        (x) =>
-                                          botSearchValue == "" ||
-                                          x.label
-                                            .toLowerCase()
-                                            .includes(botSearchValue),
-                                      )
-                                      .map((item) => (
-                                        <SortableItem
-                                          key={item.key}
-                                          id={item.key}
-                                          item={item}
-                                          onClick={(item) => {
-                                            // console.log("onGPTSClick", item);
-                                            onGPTSClick(item.key);
-                                          }}
-                                          onEdit={() => {
-                                            let value = Agents.get().data.find(
-                                              (y) => y.key === item.key,
-                                            );
-                                            setPromptsModalValue(value);
-                                            setIsOpenPromptsModal(true);
-                                          }}
-                                          onRemove={() => {
-                                            Modal.confirm({
-                                              title: "Tip",
-                                              maskClosable: true,
-                                              content: "Are you sure to delete?",
-                                              onOk: async () => {
-                                                let index = Agents.get().data.findIndex(
-                                                  (y) => y.key === item.key,
-                                                );
-                                                Agents.get().data.splice(index, 1);
-                                                await Agents.save();
-                                                call("openMcpClient", ["hyper_agent"]);
-                                                refresh();
-                                              },
-                                              onCancel(...args) { },
-                                            });
-                                          }}
-                                        />
-                                      ))}
-                                  </SortableContext>
-                                </DndContext>
-                              </div>
+                                  {(Agents.get()
+                                    .data).filter(
+                                      (x) =>
+                                        botSearchValue == "" ||
+                                        x.label
+                                          .toLowerCase()
+                                          .includes(botSearchValue),
+                                    )
+                                    .map((item) => (
+                                      <SortableItem
+                                        key={item.key}
+                                        id={item.key}
+                                        item={item}
+                                        onClick={(item) => {
+                                          // console.log("onGPTSClick", item);
+                                          onGPTSClick(item.key);
+                                        }}
+                                        onEdit={() => {
+                                          let value = Agents.get().data.find(
+                                            (y) => y.key === item.key,
+                                          );
+                                          setPromptsModalValue(value);
+                                          setIsOpenPromptsModal(true);
+                                        }}
+                                        onRemove={() => {
+                                          Modal.confirm({
+                                            title: "Tip",
+                                            maskClosable: true,
+                                            content: "Are you sure to delete?",
+                                            onOk: async () => {
+                                              let index = Agents.get().data.findIndex(
+                                                (y) => y.key === item.key,
+                                              );
+                                              Agents.get().data.splice(index, 1);
+                                              await Agents.save();
+                                              call("openMcpClient", ["hyper_agent"]);
+                                              refresh();
+                                            },
+                                            onCancel(...args) { },
+                                          });
+                                        }}
+                                      />
+                                    ))}
+                                </SortableContext>
+                              </DndContext>
                             </div>
-                          </>
-                        )}
-                      {/* <Bubble.List
+                          </div>
+                        </>
+                      )}
+                    {/* <Bubble.List
                       autoScroll={true}
                       style={{
                         paddingRight: 4,
@@ -1323,24 +1388,24 @@ export const Chat = ({
                         ?.map(format)
                         ?.filter((x) => x != null)}
                     /> */}
-                      <Messages messages={currentChat.current.messages} onSumbit={(messages) => {
-                        currentChat.current.messages = messages;
-                        refresh();
-                        onRequest();
-                      }} status={openaiClient.current?.status}
-                        onClone={async (i) => {
-                          let clone = _.cloneDeep(currentChat.current);
-                          clone.key = v4();
-                          clone.messages = clone.messages.slice(0, i + 1);
-                          clone.icon = "";
+                    <Messages messages={currentChat.current.messages} onSumbit={(messages) => {
+                      currentChat.current.messages = messages;
+                      refresh();
+                      onRequest();
+                    }} status={openaiClient.current?.status}
+                      onClone={async (i) => {
+                        let clone = _.cloneDeep(currentChat.current);
+                        clone.key = v4();
+                        clone.messages = clone.messages.slice(0, i + 1);
+                        clone.icon = "";
 
-                          await call("addChatHistory", [clone]);
-                          ChatHistory.get().data.unshift(clone);
+                        await call("addChatHistory", [clone]);
+                        ChatHistory.get().data.unshift(clone);
 
-                          loadMoreData(false, false);
-                        }}></Messages>
-                    </div>
-            
+                        loadMoreData(false, false);
+                      }}></Messages>
+                  </div>
+
 
                 </Splitter.Panel>
 
@@ -1446,7 +1511,7 @@ export const Chat = ({
                         }}
                       />
                     </Tooltip>
-             
+
                     <Divider type="vertical" />
                     <Tooltip title={t`Select LLM`}>
                       <span className="inline-block">
@@ -1877,7 +1942,7 @@ export const Chat = ({
                                       </Button>
                                     </Dropdown>
                                   </Tooltip>
-                        
+
                                   <Tooltip title={t`Prompts`} placement="bottom">
                                     <Dropdown
                                       placement="top"

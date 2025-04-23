@@ -368,7 +368,8 @@ export class MCPClient implements IMCPClient {
 
     const transport = new SSEClientTransport(new URL(config?.url || config?.hyperchat?.url), {
       requestInit: {
-        keepalive: true
+        keepalive: true,
+        headers: {}
       }
     });
     await client.connect(transport);

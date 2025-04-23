@@ -153,6 +153,7 @@ export type MyMessage = OpenAI.Chat.Completions.ChatCompletionMessageParam & {
   | "error"
   | "dataLoading"
   | "dataLoadComplete";
+  content_sended?: boolean;
   content_template?: string;
   content_error?: string;
   content_from?: string;
