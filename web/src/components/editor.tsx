@@ -7,6 +7,256 @@ import { Button, Space } from "antd";
 import { FullscreenOutlined } from "@ant-design/icons";
 import { call } from "../common/call";
 
+// Register a new language
+monaco.languages.register({ id: "HyperPromptLanguage" });
+
+// Register a tokens provider for the language
+monaco.languages.setMonarchTokensProvider("HyperPromptLanguage", {
+    tokenizer: {
+        root: [
+            [/{{.*}}/, "PromptVariable"], // Highlight {{...}} as a variable
+            // [/[，。？！；：""''【】「」『』（）、]/, "ChinesePunctuation"]
+        ],
+    },
+});
+monaco.editor.defineTheme("hyperChatCustomTheme", {
+    base: "vs",
+    inherit: false,
+    rules: [
+        { token: "PromptVariable", foreground: "FFA500", fontStyle: "bold" },
+        // { token: "ChinesePunctuation", foreground: "FFA500", fontStyle: "bold",  }, // 添加中文标点的样式
+    ],
+    colors: {
+        "editor.foreground": "#000000",
+    },
+});
+
+let monacoProviders = [];
+export function enableCompletionItemProvider() {
+    let varList = [...VarList.get().data?.map((v) => {
+        let varName = v.scope + "." + v.name;
+        return {
+            ...v,
+            varName
+        }
+    })];
+
+    // Register a completion item provider for the new language
+    monacoProviders.push(monaco.languages.registerCompletionItemProvider("HyperPromptLanguage", {
+        provideCompletionItems: (model, position) => {
+
+
+            var word = model.getWordUntilPosition(position);
+            var range = {
+                startLineNumber: position.lineNumber,
+                endLineNumber: position.lineNumber,
+                startColumn: word.startColumn,
+                endColumn: word.endColumn,
+            };
+            var suggestions = [
+                // {
+                //     label: "user.TsimpleText",
+                //     kind: monaco.languages.CompletionItemKind.Text,
+                //     insertText: "simpleText",
+                //     range: range,
+                // },
+                ...Agents.get().data.map((agent) => {
+                    return {
+                        label: "agent." + agent.label,
+                        kind: monaco.languages.CompletionItemKind.User,
+                        insertText: agent.label,
+                        range: range,
+                        // 可以添加详细信息
+                        detail: 'Agent',
+                        documentation: `${agent.label} agent`
+                    }
+                }),
+                ...varList.map((x) => {
+                    return {
+                        ...x,
+                        kind: x.type == "variable" ? monaco.languages.CompletionItemKind.Variable : monaco.languages.CompletionItemKind.Text,
+                        range: range,
+                        label: x.varName,
+                        insertText: x.type == "variable" ? `{{${x.varName}}}` : x.value,
+                        detail: x.description || `${x.name} ${x.type} ${x.variableType}`,
+                        value: x.value,
+                    }
+                })
+            ];
+            return { suggestions: suggestions };
+        },
+    }));
+    // Register a completion item provider for the new language
+    monacoProviders.push(monaco.languages.registerCompletionItemProvider("HyperPromptLanguage", {
+        // 指定触发字符，在用户输入@时立即触发补全
+        triggerCharacters: ['@'],
+        // replaceTriggerChar: true, // For example, if this configuration is enabled, @ will be replaced
+        provideCompletionItems: (model, position, context, token) => {
+            // 获取当前行文本
+            const lineContent = model.getLineContent(position.lineNumber);
+            const wordUntilPosition = model.getWordUntilPosition(position);
+
+            // console.log("Current line content:", position, lineContent, wordUntilPosition);
+            // 判断是否是@触发的补全
+            const isAtTrigger = lineContent.charAt(position.column - 2) === '@';
+
+
+
+            // 根据触发方式提供不同的建议
+            if (isAtTrigger) {
+                // 创建范围对象
+                const range = {
+                    startLineNumber: position.lineNumber,
+                    endLineNumber: position.lineNumber,
+                    startColumn: wordUntilPosition.startColumn,
+                    endColumn: wordUntilPosition.endColumn,
+                };
+
+                // const startColumn = wordUntilPosition.startColumn - 1; // -1 for the '@' character
+                // const qrange = {
+                //     startLineNumber: position.lineNumber,
+                //     endLineNumber: position.lineNumber,
+                //     startColumn: startColumn,
+                //     endColumn: position.column,
+                // };
+                return {
+                    suggestions: [
+                        ...Agents.get().data.map((agent) => {
+                            return {
+                                label: agent.label,
+                                kind: monaco.languages.CompletionItemKind.User,
+                                insertText: agent.label,
+                                range: range,
+                                // 可以添加详细信息
+                                detail: 'Agent',
+                                documentation: `${agent.label} agent`
+                            }
+                        }),
+                        // ...AppSetting.get().quicks?.map((quick) => {
+                        //     return {
+                        //         label: quick.label,
+                        //         kind: monaco.languages.CompletionItemKind.Text,
+                        //         insertText: quick.quick,
+
+                        //         range: qrange,
+                        //         // 可以添加详细信息
+                        //         detail: 'Quick',
+                        //         documentation: `${quick.label} quick`
+                        //     }
+                        // })
+                    ]
+                };
+            }
+
+            // 默认建议
+            var suggestions = [
+
+                // 其他默认建议...
+            ];
+
+            return { suggestions: suggestions };
+        },
+
+
+    }));
+
+
+    monacoProviders.push(monaco.languages.registerHoverProvider("HyperPromptLanguage", {
+
+        provideHover: async (model, position) => {
+
+            const lineContent = model.getLineContent(position.lineNumber);
+
+            const wordUntilPosition = model.getWordUntilPosition(position);
+            console.log("Current line content:", position, lineContent, wordUntilPosition);
+
+            // Check if the cursor is on a variable {{...}}
+            const variableMatch = lineContent.match(/{{([^{}]*)}}/g);
+            if (variableMatch) {
+                // Find which variable the cursor is on
+                for (const match of variableMatch) {
+                    const startIndex = lineContent.indexOf(match);
+                    const endIndex = startIndex + match.length;
+
+                    // Check if cursor position is within this variable
+                    if (position.column > startIndex && position.column <= endIndex) {
+                        const variableName = match.substring(2, match.length - 2);
+
+                        // Find the corresponding quick in AppSetting
+                        const v = varList.find((x) => x.varName == variableName);
+
+                        let value = `**Variable:** ${variableName}\n\nNo found for this variable.`;
+
+                        try {
+
+                            if (v) {
+                                if (v.variableType == "js") {
+                                    value = await call("runCode", [{ code: v.code }]);
+                                } else if (v.variableType == "webjs") {
+                                    let code = `
+                            (async () => {
+                                ${v.code}
+                               return await get()
+                            })()
+                                `;
+                                    // console.log(code);
+                                    value = await eval(code);
+                                } else {
+                                    value = `**Variable:** ${v.varName}\n\n${v.value}`;
+                                }
+                            }
+
+                            return {
+                                range: new monaco.Range(
+                                    position.lineNumber,
+                                    startIndex + 1,
+                                    position.lineNumber,
+                                    endIndex + 1
+                                ),
+                                contents: [
+                                    {
+                                        value: value
+                                    }
+                                ]
+                            };
+                        } catch (e) {
+
+                            return {
+                                range: new monaco.Range(
+                                    position.lineNumber,
+                                    startIndex + 1,
+                                    position.lineNumber,
+                                    endIndex + 1
+                                ),
+                                contents: [
+                                    {
+                                        value: "error: "
+                                    },
+                                    {
+                                        value: e
+                                    }
+                                ]
+                            };
+                        }
+                    }
+                }
+                const word = model.getWordAtPosition(position);
+                return {
+                    range: new monaco.Range(position.lineNumber, word.startColumn, position.lineNumber, word.endColumn),
+                    contents: [
+                        { value: `**${word.word}** is a special term.` }
+                    ]
+                };
+            }
+
+        }
+    }));
+}
+export function disableCompletionItemProvider() {
+    monacoProviders.forEach(provider => provider.dispose());
+}
+
+
 export const Editor = forwardRef(({
     value = "",
     onChange = (value: string) => { },
@@ -16,7 +266,10 @@ export const Editor = forwardRef(({
     autoHeight = false,
     rows = 1,
     maxRows,
-    onSubmit
+    onSubmit,
+    placeholder,
+    lineHeight = 19,
+    fontSize = 14,
 }: {
     value?: string,
     onChange?: (value: string) => void,
@@ -27,6 +280,9 @@ export const Editor = forwardRef(({
     rows?: number,
     maxRows?: number,
     onSubmit?: (value: string) => void,
+    placeholder?: string,
+    lineHeight?: number,
+    fontSize?: number,
 }, ref) => {
     const [num, setNum] = React.useState(0);
     const refresh = () => {
@@ -36,7 +292,7 @@ export const Editor = forwardRef(({
     const monacoModelRef = React.useRef<monaco.editor.ITextModel>();
     const monacoProvidersRef = React.useRef<monaco.IDisposable[]>([]);
     const uid = useRef<string>("monaco-" + v4());
-    const lineHeight = 19; // 每行的估计高度，可能需要根据实际字体调整
+
     // const minHeight = 100; // 最小高度
     // const paddingHeight = 10; // 额外的内边距高度
     // Split the value into lines and ensure it has at least the specified number of rows
@@ -52,9 +308,9 @@ export const Editor = forwardRef(({
             const model = monacoRef.current.getModel();
             if (model) {
                 const lineCount = model.getLineCount();
-                // if (lineHeight >= maxRows) {
-                //     return;
-                // }
+                if (maxRows != null && lineCount >= maxRows) {
+                    return;
+                }
                 if (cachegetLineCount.current == lineCount) {
                     return;
                 }
@@ -101,252 +357,22 @@ export const Editor = forwardRef(({
             if (document.getElementById(uid.current) == null) {
                 return;
             }
-            await Agents.init();
-            await VarList.init();
-
-
-            // Register a new language
-            monaco.languages.register({ id: "HyperPromptLanguage" });
-
-            // Register a tokens provider for the language
-            monaco.languages.setMonarchTokensProvider("HyperPromptLanguage", {
-                tokenizer: {
-                    root: [
-                        [/{{.*}}/, "PromptVariable"], // Highlight {{...}} as a variable
-                        // [/[，。？！；：""''【】「」『』（）、]/, "ChinesePunctuation"]
-                    ],
-                },
-            });
-            monaco.editor.defineTheme("hyperChatCustomTheme", {
-                base: "vs",
-                inherit: false,
-                rules: [
-                    { token: "PromptVariable", foreground: "FFA500", fontStyle: "bold" },
-                    // { token: "ChinesePunctuation", foreground: "FFA500", fontStyle: "bold",  }, // 添加中文标点的样式
-                ],
-                colors: {
-                    "editor.foreground": "#000000",
-                },
-            });
-
-            let varList = [...VarList.get().data?.map((v) => {
-                let varName = v.scope + "." + v.name;
-                return {
-                    ...v,
-                    label: varName,
-                    insertText: v.type == "variable" ? `{{${varName}}}` : v.value,
-                    detail: `${v.name} ${v.type} ${v.variableType}`,
-                    value: v.value,
-                }
-            })];
-
-            // Register a completion item provider for the new language
-            monacoProvidersRef.current.push(monaco.languages.registerCompletionItemProvider("HyperPromptLanguage", {
-                provideCompletionItems: (model, position) => {
-
-
-                    var word = model.getWordUntilPosition(position);
-                    var range = {
-                        startLineNumber: position.lineNumber,
-                        endLineNumber: position.lineNumber,
-                        startColumn: word.startColumn,
-                        endColumn: word.endColumn,
-                    };
-                    var suggestions = [
-                        // {
-                        //     label: "user.TsimpleText",
-                        //     kind: monaco.languages.CompletionItemKind.Text,
-                        //     insertText: "simpleText",
-                        //     range: range,
-                        // },
-                        ...Agents.get().data.map((agent) => {
-                            return {
-                                label: "agent." + agent.label,
-                                kind: monaco.languages.CompletionItemKind.Text,
-                                insertText: agent.label,
-                                range: range,
-                                // 可以添加详细信息
-                                detail: 'Agent',
-                                documentation: `${agent.label} agent`
-                            }
-                        }),
-                        ...varList.map((x) => {
-                            return {
-                                ...x,
-                                kind: monaco.languages.CompletionItemKind.Text,
-                                range: range,
-                            }
-                        })
-                    ];
-                    return { suggestions: suggestions };
-                },
-            }));
-            // Register a completion item provider for the new language
-            monacoProvidersRef.current.push(monaco.languages.registerCompletionItemProvider("HyperPromptLanguage", {
-                // 指定触发字符，在用户输入@时立即触发补全
-                triggerCharacters: ['@'],
-                // replaceTriggerChar: true, // For example, if this configuration is enabled, @ will be replaced
-                provideCompletionItems: (model, position, context, token) => {
-                    // 获取当前行文本
-                    const lineContent = model.getLineContent(position.lineNumber);
-                    const wordUntilPosition = model.getWordUntilPosition(position);
-
-                    // console.log("Current line content:", position, lineContent, wordUntilPosition);
-                    // 判断是否是@触发的补全
-                    const isAtTrigger = lineContent.charAt(position.column - 2) === '@';
+            // await Agents.init();
+            // await VarList.init();
 
 
 
-                    // 根据触发方式提供不同的建议
-                    if (isAtTrigger) {
-                        // 创建范围对象
-                        const range = {
-                            startLineNumber: position.lineNumber,
-                            endLineNumber: position.lineNumber,
-                            startColumn: wordUntilPosition.startColumn,
-                            endColumn: wordUntilPosition.endColumn,
-                        };
 
-                        // const startColumn = wordUntilPosition.startColumn - 1; // -1 for the '@' character
-                        // const qrange = {
-                        //     startLineNumber: position.lineNumber,
-                        //     endLineNumber: position.lineNumber,
-                        //     startColumn: startColumn,
-                        //     endColumn: position.column,
-                        // };
-                        return {
-                            suggestions: [
-                                ...Agents.get().data.map((agent) => {
-                                    return {
-                                        label: agent.label,
-                                        kind: monaco.languages.CompletionItemKind.User,
-                                        insertText: agent.label,
-                                        range: range,
-                                        // 可以添加详细信息
-                                        detail: 'Agent',
-                                        documentation: `${agent.label} agent`
-                                    }
-                                }),
-                                // ...AppSetting.get().quicks?.map((quick) => {
-                                //     return {
-                                //         label: quick.label,
-                                //         kind: monaco.languages.CompletionItemKind.Text,
-                                //         insertText: quick.quick,
-
-                                //         range: qrange,
-                                //         // 可以添加详细信息
-                                //         detail: 'Quick',
-                                //         documentation: `${quick.label} quick`
-                                //     }
-                                // })
-                            ]
-                        };
-                    }
-
-                    // 默认建议
-                    var suggestions = [
-
-                        // 其他默认建议...
-                    ];
-
-                    return { suggestions: suggestions };
-                },
-
-
-            }));
-
-            monacoProvidersRef.current.push(monaco.languages.registerHoverProvider("HyperPromptLanguage", {
-
-                provideHover: async (model, position) => {
-
-                    const lineContent = model.getLineContent(position.lineNumber);
-
-                    const wordUntilPosition = model.getWordUntilPosition(position);
-                    console.log("Current line content:", position, lineContent, wordUntilPosition);
-
-                    // Check if the cursor is on a variable {{...}}
-                    const variableMatch = lineContent.match(/{{([^{}]*)}}/g);
-                    if (variableMatch) {
-                        // Find which variable the cursor is on
-                        for (const match of variableMatch) {
-                            const startIndex = lineContent.indexOf(match);
-                            const endIndex = startIndex + match.length;
-
-                            // Check if cursor position is within this variable
-                            if (position.column > startIndex && position.column <= endIndex) {
-                                const variableName = match.substring(2, match.length - 2);
-
-                                // Find the corresponding quick in AppSetting
-                                const v = varList.find((x) => x.label == variableName);
-
-                                let value = `**Variable:** ${variableName}\n\nNo found for this variable.`;
-
-                                try {
-
-                                    if (v) {
-                                        if (v.variableType == "js") {
-                                            value = await call("runCode", [{ code: v.code }]);
-                                        } else if (v.variableType == "webjs") {
-                                            let code = `
-                                        (async () => {
-                                            ${v.code}
-                                           return await get()
-                                        })()
-                                            `;
-                                            // console.log(code);
-                                            value = await eval(code);
-                                        } else {
-                                            value = `**Variable:** ${v.label}\n\n${v.value}`;
-                                        }
-                                    }
-
-                                    return {
-                                        range: new monaco.Range(
-                                            position.lineNumber,
-                                            startIndex + 1,
-                                            position.lineNumber,
-                                            endIndex + 1
-                                        ),
-                                        contents: [
-                                            {
-                                                value: value
-                                            }
-                                        ]
-                                    };
-                                } catch (e) {
-
-                                    return {
-                                        range: new monaco.Range(
-                                            position.lineNumber,
-                                            startIndex + 1,
-                                            position.lineNumber,
-                                            endIndex + 1
-                                        ),
-                                        contents: [
-                                            {
-                                                value: "error: "
-                                            },
-                                            {
-                                                value: e
-                                            }
-                                        ]
-                                    };
-                                }
-                            }
-                        }
-                        const word = model.getWordAtPosition(position);
-                        return {
-                            range: new monaco.Range(position.lineNumber, word.startColumn, position.lineNumber, word.endColumn),
-                            contents: [
-                                { value: `**${word.word}** is a special term.` }
-                            ]
-                        };
-                    }
-
-                }
-            }));
 
             function validate(model) {
+                let varList = [...VarList.get().data?.map((v) => {
+                    let varName = v.scope + "." + v.name;
+                    return {
+                        ...v,
+                        varName
+                    }
+                })];
+
                 const markers = [];
                 // Find all {{...}} variables in the text
                 const text = model.getValue();
@@ -359,7 +385,7 @@ export const Editor = forwardRef(({
                     const endPosition = model.getPositionAt(match.index + match[0].length);
 
                     // Check if the variable exists in AppSetting
-                    const varExists = varList.find((x) => x.label == variableName);
+                    const varExists = varList.find((x) => x.varName == variableName);
 
                     if (!varExists) {
                         markers.push({
@@ -404,13 +430,13 @@ export const Editor = forwardRef(({
             let scrollbar = {
                 horizontal: 'hidden',
             } as any;
-            if (autoHeight) {
-                scrollbar = {
-                    horizontal: 'hidden',
-                    vertical: 'hidden',
-                    alwaysConsumeMouseWheel: false // 禁止鼠标滚轮事件  
-                }
-            }
+            // if (autoHeight) {
+            //     scrollbar = {
+            //         horizontal: 'hidden',
+            //         vertical: 'hidden',
+            //         alwaysConsumeMouseWheel: false // 禁止鼠标滚轮事件  
+            //     }
+            // }
             let editor = monaco.editor.create(document.getElementById(uid.current), {
                 theme: "hyperChatCustomTheme",
                 model: model,
@@ -421,6 +447,8 @@ export const Editor = forwardRef(({
                 scrollbar: scrollbar,
                 scrollBeyondLastLine: false, // 禁止滚动超过最后一行
 
+                lineHeight: lineHeight,
+                fontSize: fontSize,
                 // 添加自动换行设置
                 // wordWrap: 'on', // 启用自动换行
                 // wrappingStrategy: 'advanced', // 更智能的换行策略
@@ -450,6 +478,9 @@ export const Editor = forwardRef(({
 
                 // readOnly: false // Enable editing
             });
+            const lh = editor.getOption(monaco.editor.EditorOption.fontSize);
+            console.log("Line fontSize:", lh);
+
             validate(model);
             // 为 Ctrl+Enter 绑定一个命令，这里示范调用 onChange 并可在此触发“提交”逻辑
             editor.addCommand(
@@ -534,10 +565,24 @@ export const Editor = forwardRef(({
     }}>
         <div style={{ height: autoHeight ? editorHeight : style.height, }} className={className + " " + "h-full w-full"} id={uid.current} >
         </div>
+        {value == "" && placeholder && (
+            <div style={{
+                position: 'absolute',
+                top: "50%",
+                left: "20px",
+                transform: "translate(0%, -50%)",
+                color: '#999999',
+                pointerEvents: 'none',
+                zIndex: 1
+            }}>
+                {placeholder}
+            </div>
+        )}
         {action && <div className="editor-toolbar" style={{
             position: "absolute",
             bottom: 0,
             right: 0,
+            fontSize: fontSize,
         }}>
             <Space.Compact>
                 <Button

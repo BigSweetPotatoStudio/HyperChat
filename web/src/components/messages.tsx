@@ -144,7 +144,7 @@ export const Messages = ({ messages, onSumbit, readOnly, setContainer, status, o
                 content: (
                     <UserContent
                         x={x}
-                        submit={(content) => {
+                        onSubmit={(content) => {
                             if (x.role == "system") {
                                 x.content_template = content;
                                 x.content_date = Date.now();

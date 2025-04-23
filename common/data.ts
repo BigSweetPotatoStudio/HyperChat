@@ -394,6 +394,7 @@ export const zodVar = z.object({
   type: z.enum(["variable", "quick"]),
   variableType: z.enum(["string", "js", "webjs"]),
   code: z.string().optional(),
+  description: z.string().optional(),
 });
 
 
@@ -410,7 +411,33 @@ export type VarScope = z.infer<typeof zodVarScope>;
 export const VarList = new Data(
   "var.json",
   {
-    data: [] as Array<Var>,
+    data: [{
+      "key": "4c80381e-88fa-4010-a5c7-03420bbe7d12",
+      "name": "currentTime",
+      "variableType": "webjs",
+      "code": "function get(){\n    return new Date().toLocaleString('zh-CN', {\n  year: 'numeric',\n  month: '2-digit',\n  day: '2-digit',\n  hour: '2-digit',\n  minute: '2-digit',\n  second: '2-digit',\n  hour12: false\n});\n}",
+      "scope": "var",
+      "type": "variable",
+      "description": "Get the current time",
+    },
+    {
+      "key": "e7517b77-14cd-40ed-b25a-1fe0c328be1e",
+      "name": "LANG",
+      "variableType": "webjs",
+      "code": "function get(){\nlet currLang = navigator.language == \"zh-CN\" ? \"zhCN\" : \"enUS\";\nif (localStorage.getItem(\"currLang\")) {\n  currLang = localStorage.getItem(\"currLang\");\n}\nreturn currLang == \"zhCN\" ? \"中文\" : \"English\";\n}",
+      "scope": "var",
+      "type": "variable",
+      "description": "Get the current language",
+    },
+    {
+      "key": "6c9f704e-69ab-47b6-b10f-ae9927801ee8",
+      "name": "CLIPBOARD",
+      "variableType": "webjs",
+      "code": "async function get(){\n    return await window.navigator.clipboard.readText();\n}",
+      "scope": "var",
+      "type": "variable",
+      "description": "Get the clipboard contents",
+    }] as Array<Var>,
   },
   {
     sync: true,

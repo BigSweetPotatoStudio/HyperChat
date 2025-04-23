@@ -1198,5 +1198,13 @@
   "Old Name": {
     "en": "Old Name",
     "zh": "旧名称"
+  },
+  "edit variables": {
+    "en": "edit variables",
+    "zh": "编辑变量"
+  },
+  "You can use variables, for example, enter var, or use @ to call other agents.": {
+    "en": "You can use variables, for example, enter var, or use @ to call other agents.",
+    "zh": "您可以使用变量，例如，输入 var，或使用 @ 来调用其他代理。"
   }
 }

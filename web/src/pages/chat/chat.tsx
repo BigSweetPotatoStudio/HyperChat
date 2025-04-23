@@ -232,7 +232,8 @@ import { setInterval } from "node:timers/promises";
 import { getDefaultModelConfig, getDefaultModelConfigSync, rename } from "../../components/ai";
 import { InputAI } from "../../components/input_ai";
 import { MySender } from "../../components/my_sender";
-import { Editor } from "../../components/editor";
+import { disableCompletionItemProvider, Editor, enableCompletionItemProvider } from "../../components/editor";
+import { Link } from "react-router-dom";
 
 
 export const Chat = ({
@@ -296,6 +297,8 @@ export const Chat = ({
           electronData.init(),
           VarList.init(),
         ]);
+        disableCompletionItemProvider();
+        enableCompletionItemProvider();
         Agents.get().data = builtinAgent.current.concat(Agents.get().data.filter(x => x.type != "builtin"));
         Agents.get().data.forEach((x) => {
           getAgentNameObj.current[x.key] = x.label;
@@ -674,10 +677,7 @@ export const Chat = ({
                   let varName = v.scope + "." + v.name;
                   return {
                     ...v,
-                    label: varName,
-                    insertText: v.type == "variable" ? `{{${varName}}}` : v.value,
-                    detail: `${v.name} ${v.type} ${v.variableType}`,
-                    value: v.value,
+                    varName: varName,
                   }
                 })];
                 async function renderTemplate(template: string) {
@@ -686,7 +686,7 @@ export const Chat = ({
                   let subResults = [];
                   for (let match of matchs || []) {
                     let varName = match.slice(2, -2).trim();
-                    let v = varList.find((x) => x.label == varName);
+                    let v = varList.find((x) => x.varName == varName);
                     let value = varName;
                     if (v) {
                       if (v.variableType == "js") {
@@ -1571,6 +1571,7 @@ export const Chat = ({
                       </span>
                     </Tooltip>
                     <Divider type="vertical" />
+
                     <SettingOutlined
                       title={t`Settings`}
                       className="cursor-pointer hover:text-cyan-400"
@@ -1581,6 +1582,9 @@ export const Chat = ({
                         formMoreSetting.setFieldsValue(currentChat.current);
                       }}
                     />
+                    <Divider type="vertical" />
+                    <Link title={t`edit variables`} to={"/Setting/VariableList"}> <Button type="text" size="small" className="hover:text-cyan-400" icon={<Icon name="var" className="text-cyan-400"></Icon>}></Button></Link>
+
                   </div>
                   <div className="flex">
                     <div>
@@ -1691,8 +1695,10 @@ export const Chat = ({
                         onRequest(s);
                         setValue("");
                         editorRef.current?.setValue("");
-    
                       }}
+                      fontSize={16}
+                      lineHeight={24}
+                      placeholder={t`You can use variables, for example, enter var, or use @ to call other agents.`}
                     />
 
                     <Sender

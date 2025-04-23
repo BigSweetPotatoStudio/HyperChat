@@ -57,7 +57,7 @@ import { Editor } from "./editor";
 import { t } from "../i18n";
 import { MyMessage } from "../../../common/data";
 
-export function UserContent({ x, regenerate = undefined, submit }: { x: MyMessage, regenerate?: () => void, submit: (x: any) => void }) {
+export function UserContent({ x, regenerate = undefined,  onSubmit }: { x: MyMessage, regenerate?: () => void, onSubmit: (x: any) => void }) {
     const [isEdit, setIsEdit] = useState(false);
     const [value, setValue] = useState("");
     const container = useRef<HTMLDivElement>(null);
@@ -93,6 +93,11 @@ export function UserContent({ x, regenerate = undefined, submit }: { x: MyMessag
                     /> */}
                     <Editor autoHeight style={{ width: width + "px", minWidth: 300, border: "0px", padding: "4px 0" }} value={x.content_template || x.content.toString()} onChange={e => {
                         setValue(e);
+                    }} onSubmit={() => {
+                        x.content_sended = false;
+                        x.content_context.edit = false;
+                        setIsEdit(false);
+                        onSubmit(value);
                     }}></Editor>
                     <Space.Compact>
                         <Button
@@ -110,7 +115,7 @@ export function UserContent({ x, regenerate = undefined, submit }: { x: MyMessag
                                 x.content_sended = false;
                                 x.content_context.edit = false;
                                 setIsEdit(false);
-                                submit(value);
+                                onSubmit(value);
                             }}
                         >
                             {t`Submit`}

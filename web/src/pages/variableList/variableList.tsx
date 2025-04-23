@@ -304,6 +304,13 @@ Including variables will also be deleted`}</pre>} onConfirm={async () => {
                         refresh();
                     }} options={["variable", "quick"].map(item => ({ value: item, label: item }))} />
                 </Form.Item>
+                <Form.Item
+                    name="description"
+                    label={t`Description`}
+                    rules={[{ required: false, message: `Please enter` }]}
+                >
+                    <Input.TextArea placeholder="Please enter" />
+                </Form.Item>
 
                 <Form.Item className="flex justify-end">
                     <Button htmlType="submit">{t`Submit`}</Button>
