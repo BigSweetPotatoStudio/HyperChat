@@ -24,6 +24,7 @@ import dayjs from "dayjs";
 import { isOnBrowser } from "./const";
 import type { MyMessage, Tool_Call } from "../../../common/data";
 import { OpenAICompatibility } from "./openai-compatibility";
+import type OpenAI from "openai";
 // import OpenAICompatibility from "openai";
 
 export {
@@ -65,6 +66,7 @@ export class OpenAiChannel {
       temperature?: number;
       confirm_call_tool?: boolean;
       confirm_call_tool_cb?: (tool: Tool_Call) => void;
+      messages_format_callback?: (messages: MyMessage) => Promise<void>;
     },
     public messages: MyMessage[] = [],
   ) {
@@ -286,7 +288,7 @@ export class OpenAiChannel {
       if (this.options.requestType === "stream") {
         const stream = await this.openai.completion(
           {
-            messages: this.messages_format(messages),
+            messages: await this.messages_format(messages),
             model: this.options.model,
             stream: true,
             stream_options: {
@@ -359,7 +361,7 @@ export class OpenAiChannel {
       } else {
         const chatCompletion = await this.openai.completion(
           {
-            messages: this.messages_format(messages),
+            messages: await this.messages_format(messages),
             model: this.options.model,
             tools: tools && this.tools_format(tools),
             temperature: this.options.temperature,
@@ -584,7 +586,7 @@ export class OpenAiChannel {
     this.openai.baseURL = this.options.baseURL;
     this.openai.apiKey = this.options.apiKey;
     let completion = await this.openai.parse({
-      messages: this.messages_format(this.messages),
+      messages: await this.messages_format(this.messages),
       model: this.options.model,
       temperature: this.options.temperature,
       response_format: response_format,
@@ -696,8 +698,10 @@ export class OpenAiChannel {
     console.log(response.choices[0].message.content);
 
   }
-  messages_format(messages: MyMessage[]) {
-    return messages.map((m) => {
+  async messages_format(messages: MyMessage[]): Promise<OpenAI.Chat.Completions.ChatCompletionMessageParam[]> {
+    let results = []
+    for (let m of messages) {
+      this.options.messages_format_callback && await this.options.messages_format_callback(m);
       let {
         content_attachment,
         content_attached,
@@ -708,6 +712,8 @@ export class OpenAiChannel {
         reasoning_content,
         content_error,
         content_date,
+        content_sended,
+        content_template,
         ...rest
       } = m;
       if (rest.role == "assistant") {
@@ -721,8 +727,9 @@ export class OpenAiChannel {
       if (rest.content == "") {
         rest.content = " ";
       }
-      return rest;
-    });
+      results.push(rest);
+    }
+    return results;
   }
   tools_format(tools: HyperChatCompletionTool[]) {
     return tools?.map((x) => {

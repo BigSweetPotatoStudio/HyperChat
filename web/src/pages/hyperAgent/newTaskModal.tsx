@@ -28,6 +28,7 @@ import { Agents, KNOWLEDGE_Store, Task } from "../../../../common/data";
 import { t } from "../../i18n";
 import { InputAI } from "../../components/input_ai";
 import { genCronExpression } from "../../components/ai";
+import { Editor } from "../../components/editor";
 
 const models = [
   {
@@ -96,7 +97,7 @@ const ModalForm: React.FC<CollectionCreateFormProps> = ({
         label={t`message`}
         rules={[{ required: true, message: t`Please enter` }]}
       >
-        <Input.TextArea placeholder={t`Please enter command message telling the Agent what to do.`} rows={4} />
+         <Editor style={{ height: "200px" }} />
       </Form.Item>
       <Form.Item<Values>
         name="cron"

@@ -1174,5 +1174,81 @@
   "Please select TaskFallbackLLM": {
     "en": "Please select TaskFallbackLLM",
     "zh": "请选择任务备用大模型"
+  },
+  "VariableList": {
+    "en": "VariableList",
+    "zh": "变量列表"
+  },
+  "TestPage": {
+    "en": "TestPage",
+    "zh": "测试页"
+  },
+  "Scope": {
+    "en": "Scope",
+    "zh": "作用域"
+  },
+  "Clear Select": {
+    "en": "Clear Select",
+    "zh": "清除选择"
+  },
+  "Are you sure to delete this scope?\nIncluding variables will also be deleted": {
+    "en": "Are you sure to delete this scope?\nIncluding variables will also be deleted",
+    "zh": "您确定要删除这个范围吗？\n包括的变量也将被删除"
+  },
+  "Old Name": {
+    "en": "Old Name",
+    "zh": "旧名称"
+  },
+  "edit variables": {
+    "en": "edit variables",
+    "zh": "编辑变量"
+  },
+  "You can use variables, for example, enter var, or use @ to call other agents.": {
+    "en": "You can use variables, for example, enter var, or use @ to call other agents.",
+    "zh": "您可以使用变量，例如，输入 var，或使用 @ 来调用其他代理。"
+  },
+  "Variable": {
+    "en": "Variable",
+    "zh": "变量"
+  },
+  "variableType": {
+    "en": "variableType",
+    "zh": "变量类型"
+  },
+  "Code": {
+    "en": "Code",
+    "zh": "代码"
+  },
+  "Type": {
+    "en": "Type",
+    "zh": "类型"
+  },
+  "Description": {
+    "en": "Description",
+    "zh": "描述"
+  },
+  "are you sure to delete this variable?": {
+    "en": "are you sure to delete this variable?",
+    "zh": "你确定要删除这个变量吗？"
+  },
+  "VariableName": {
+    "en": "VariableName",
+    "zh": "变量名称"
+  },
+  "Value": {
+    "en": "Value",
+    "zh": "Value"
+  },
+  "Only alphanumeric characters are allowed": {
+    "en": "Only alphanumeric characters are allowed",
+    "zh": "仅允许字母和数字字符"
+  },
+  "Name cannot be \"hyper\"": {
+    "en": "Name cannot be \"hyper\"",
+    "zh": "名称不能是 \"hyper\""
+  },
+  "Name already exists": {
+    "en": "Name already exists",
+    "zh": "名称已存在"
   }
 }

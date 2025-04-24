@@ -7,10 +7,11 @@ import { v4 } from "uuid";
 import { call } from "../common/call";
 import { t } from "../i18n";
 import dayjs from "dayjs";
-import { DownImage, MarkDown, UserContent } from "../pages/chat/component";
+import { DownImage } from "../pages/chat/component";
 import { Pre } from "./pre";
 import { AssistantToolContent } from "./assistant_tool_content";
 import { Icon } from "./icon";
+import { UserContent } from "./user_content";
 
 export const Messages = ({ messages, onSumbit, readOnly, setContainer, status, onClone }: {
     messages: MyMessage[];
@@ -143,28 +144,22 @@ export const Messages = ({ messages, onSumbit, readOnly, setContainer, status, o
                 content: (
                     <UserContent
                         x={x}
-                        submit={(content) => {
+                        onSubmit={(content) => {
                             if (x.role == "system") {
-                                x.content = content;
+                                x.content_template = content;
                                 x.content_date = Date.now();
-
 
                                 let userIndex = messages.findLastIndex(
                                     (x) => x.role == "user",
                                 );
                                 if (userIndex > -1) {
-                                    // let content =
-                                    //     messages[userIndex].content;
-                                    // messages.splice(userIndex);
-                                    // refresh();
                                     onSumbit(messages.filter((x, index) => index <= userIndex));
-                                    //   onRequest(content as any);
                                 }
                             } else {
-                                x.content = content;
+                                x.content_template = content;
                                 x.content_date = Date.now();
                                 onSumbit(messages.filter((x, index) => index <= i));
-                                // onRequest(content);
+
                             }
                         }}
                     />

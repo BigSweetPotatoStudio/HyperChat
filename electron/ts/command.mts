@@ -43,7 +43,11 @@ import { clientPaths } from "./mcp/claude.mjs";
 import { createBrowser } from "./mcp/servers/hyper_tools/web2.mjs";
 import { getConfig } from "./mcp/servers/hyper_tools/lib.mjs";
 import dayjs from "dayjs";
+import vm from "node:vm";
 
+export const { createRequire } = await import(
+  /* webpackIgnore: true */ "module"
+);
 
 export class CommandFactory {
   async getConfig() {
@@ -479,6 +483,49 @@ export class CommandFactory {
     let newLen = ChatHistory.get().data.length;
     await ChatHistory.save();
     return oldLen - newLen;
+  }
+  async runCode({ code }: { code: string }) {
+    // 1. 构造一个完整的 require（ESM 下使用 import.meta.url）
+    const nativeRequire = createRequire(__filename);
+
+    const context = {
+      console,
+      require: nativeRequire,
+      module: { exports: {} },
+      exports: {},
+      process,
+      Buffer,
+      fetch,
+      resultContainer: { value: undefined, error: undefined, done: false },
+      setTimeout,
+      setInterval,
+    };
+    vm.createContext(context); // 将普通对象转换为 vm.Context 对象
+    // 在 VM 中使用动态导入
+    vm.runInContext(`
+  (async () => {
+       try {
+        ${code}
+        resultContainer.value = await get();
+        resultContainer.done = true;
+      } catch (err) {
+        resultContainer.error = err.message;
+        resultContainer.done = true;
+      }
+  })();
+`, context,
+      { filename: __filename, });
+    // 轮询等待结果
+    while (!context.resultContainer.done) {
+      await new Promise(resolve => setTimeout(resolve, 10));
+    }
+
+    // 检查是否有错误
+    if (context.resultContainer.error) {
+      throw new Error(context.resultContainer.error);
+    }
+
+    return context.resultContainer.value;
   }
 }
 export const Command = CommandFactory.prototype;
