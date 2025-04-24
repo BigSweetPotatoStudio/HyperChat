@@ -476,7 +476,7 @@ export const Chat = ({
 
 
     resourceResListRef.current = [];
-    setPromptResList([]);
+    promptResList.current = [];
     // let clients = await getClients().catch(() => []);
     // clientsRef.current = clients;
 
@@ -739,7 +739,7 @@ export const Chat = ({
               content_date: new Date().getTime(),
             },
             resourceResListRef.current,
-            promptResList,
+            promptResList.current,
           );
         }
 
@@ -774,7 +774,7 @@ export const Chat = ({
         currentChat.current.label = getFirstUserContent();
 
         resourceResListRef.current = [];
-        setPromptResList([]);
+        promptResList.current = [];
 
         calcAttachDialogue(
           openaiClient.messages,
@@ -957,7 +957,7 @@ export const Chat = ({
     >
   >([]);
 
-  const [promptResList, setPromptResList] = React.useState([]);
+  const promptResList = useRef([]);
 
   const [isFillPromptModalOpen, setIsFillPromptModalOpen] =
     React.useState(false);
@@ -1643,11 +1643,11 @@ export const Chat = ({
                     refresh();
                     message.success(t`Delete Success`);
                   }}
-                  promptResList={promptResList}
+                  promptResList={promptResList.current}
                   promptResListRemove={(x) => {
-                    setPromptResList(
-                      promptResList.filter((v) => v.uid != x.uid),
-                    );
+
+                    promptResList.current = promptResList.current.filter((v) => v.uid != x.uid);
+                    refresh();
                     message.success(t`Delete Success`);
                   }}
                 ></MyAttachR>
@@ -1889,7 +1889,9 @@ export const Chat = ({
                                           console.log("mcpCallPrompt", res);
                                           res.call_name = prompt.key;
                                           res.uid = v4();
-                                          setPromptResList([...promptResList, res]);
+                                          promptResList.current.push(res);
+                                          refresh();
+
                                         }
                                       }
                                     },
@@ -2238,7 +2240,9 @@ export const Chat = ({
                                               console.log("mcpCallPrompt", res);
                                               res.call_name = prompt.key;
                                               res.uid = v4();
-                                              setPromptResList([...promptResList, res]);
+                                              promptResList.current.push(res);
+                                              refresh();
+
                                             }
                                           }
                                         },
@@ -2520,7 +2524,8 @@ export const Chat = ({
                 console.log("mcpCallPrompt", res);
                 res.call_name = prompt.key;
                 res.uid = v4();
-                setPromptResList([...promptResList, res]);
+                promptResList.current.push(res);
+                refresh();
                 setIsFillPromptModalOpen(false);
               }}
             >
