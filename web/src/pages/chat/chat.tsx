@@ -40,6 +40,7 @@ import {
   Splitter,
   Table,
   Tag,
+  theme,
   Tooltip,
   Tree,
   Typography,
@@ -175,6 +176,7 @@ import {
   MenuUnfoldOutlined,
   CheckOutlined,
   DisconnectOutlined,
+  ApiOutlined,
 } from "@ant-design/icons";
 import type { ConfigProviderProps, GetProp } from "antd";
 import { MyMessage, OpenAiChannel } from "../../common/openai";
@@ -187,6 +189,7 @@ import {
   electronData,
   HyperChatCompletionTool,
   Tool_Call,
+  VarList,
 } from "../../../../common/data";
 
 import { PromptsModal } from "./promptsModal";
@@ -198,7 +201,6 @@ import { EVENT } from "../../common/event";
 import InfiniteScroll from "react-infinite-scroll-component";
 import { call } from "../../common/call";
 import { MyAttachR } from "./attachR";
-import { DownImage, MarkDown, UserContent } from "./component";
 import { DndContext, PointerSensor, useSensor } from "@dnd-kit/core";
 import {
   horizontalListSortingStrategy,
@@ -229,6 +231,9 @@ import { Container, X } from "lucide-react";
 import { setInterval } from "node:timers/promises";
 import { getDefaultModelConfig, getDefaultModelConfigSync, rename } from "../../components/ai";
 import { InputAI } from "../../components/input_ai";
+import { MySender } from "../../components/my_sender";
+import { disableCompletionItemProvider, Editor, enableCompletionItemProvider } from "../../components/editor";
+import { Link } from "react-router-dom";
 
 
 export const Chat = ({
@@ -245,6 +250,9 @@ export const Chat = ({
     histroyKey: "",
   },
 }) => {
+  useEffect(() => {
+    console.log("Chat")
+  }, []);
   const [num, setNum] = React.useState(0);
   const refresh = () => {
     setNum((n) => n + 1);
@@ -262,6 +270,7 @@ export const Chat = ({
     "prompt": `
 # I am a super agent. According to the user's requirements, I first think and then design a tool flow, call various tools, and complete the recent addition of MCP
 # MCP is a command, and the operation method is similar to npx, uvx, etc. The user is a novice, and I want to do more.
+# To answer a user please use {{var.LANG}}
 
 1. I can search + summarize the web page online, query the MCP running command line, and it is best to find the Gtihub web page to obtain command information.
 2. Try to add stdio. If adding stdio type MCP fails, I can use the terminal to enter the command to test the error.
@@ -281,11 +290,16 @@ export const Chat = ({
       try {
         DATA.current.loadingMessages = true;
         refresh();
-        await Agents.init();
-        await GPT_MODELS.init();
-        await AppSetting.init();
-        await ChatHistory.init();
-        await electronData.init();
+        await Promise.all([
+          Agents.init(),
+          GPT_MODELS.init(),
+          AppSetting.init(),
+          ChatHistory.init(),
+          electronData.init(),
+          VarList.init(),
+        ]);
+        disableCompletionItemProvider();
+        enableCompletionItemProvider();
         Agents.get().data = builtinAgent.current.concat(Agents.get().data.filter(x => x.type != "builtin"));
         Agents.get().data.forEach((x) => {
           getAgentNameObj.current[x.key] = x.label;
@@ -348,11 +362,7 @@ export const Chat = ({
                 }
 
               }
-              // setTimeout(() => {
-
               currentChatReset(item);
-
-              // });
             }
           }
         } else {
@@ -450,8 +460,9 @@ export const Chat = ({
       newConfig.messages = [
         {
           role: "system" as const,
-          content: prompt,
+          content_template: prompt,
           content_date: Date.now(), // Corrected to use Date.now() for current timestamp
+          content: "",
         },
       ];
     }
@@ -465,7 +476,7 @@ export const Chat = ({
 
 
     resourceResListRef.current = [];
-    setPromptResList([]);
+    promptResList.current = [];
     // let clients = await getClients().catch(() => []);
     // clientsRef.current = clients;
 
@@ -502,7 +513,7 @@ export const Chat = ({
         resources = resources.concat(v.resources);
       });
     resourcesRef.current = resources;
-
+    refresh();
   }, [mcpClients, currentChat.current.allowMCPs]);
 
   const selectGptsKey = useRef<string | undefined>(undefined);
@@ -626,6 +637,23 @@ export const Chat = ({
         cacheOBJ.current[cacheKey] = res;
         return res;
       })();
+
+      function getFirstUserContent() {
+        let label = currentChat.current.label.toString();
+        let firstUser = messages.find(
+          (x) => x.content_attached != false && x.role == "user",
+        );
+        let firstUserContent = (firstUser as OpenAI.ChatCompletionUserMessageParam)?.content;
+        if (typeof firstUserContent == "string") {
+          label = firstUserContent;
+        } else if (Array.isArray(firstUserContent)) {
+          label = firstUserContent.find((x) => x.type == "text")?.text || "";
+        } else {
+          label = (firstUserContent as any).toString();
+        }
+        return label;
+      }
+
       try {
         openaiClient.options = {
           ...config,
@@ -643,6 +671,62 @@ export const Chat = ({
           temperature: currentChat.current.temperature,
           confirm_call_tool: currentChat.current.confirm_call_tool,
           confirm_call_tool_cb,
+          messages_format_callback: async (message) => {
+            if (message.role == "user" || message.role == "system") {
+              if (!message.content_sended) {
+                let varList = [...VarList.get().data?.map((v) => {
+                  let varName = v.scope + "." + v.name;
+                  return {
+                    ...v,
+                    varName: varName,
+                  }
+                })];
+                async function renderTemplate(template: string) {
+                  let reg = /{{(.*?)}}/g;
+                  let matchs = template.match(reg);
+                  let subResults = [];
+                  for (let match of matchs || []) {
+                    let varName = match.slice(2, -2).trim();
+                    let v = varList.find((x) => x.varName == varName);
+                    let value = varName;
+                    if (v) {
+                      if (v.variableType == "js") {
+                        value = await call("runCode", [{ code: v.code }]);
+                      } else if (v.variableType == "webjs") {
+                        let code = `
+                        (async () => {
+                            ${v.code}
+                           return await get()
+                        })()
+                        `;
+                        // console.log(code);
+                        value = await eval(code);
+                      } else {
+                        value = v.value;
+                      }
+                    }
+                    subResults.push({ value, varName });
+                  }
+                  let result = template.replace(reg, (match, p1) => {
+                    return subResults.find((x) => x.varName === p1.trim())?.value || match;
+                  });
+                  return result;
+                }
+                if (message.content_template) {
+                  if (typeof message.content == "string") {
+                    message.content = await renderTemplate(message.content_template);
+                  }
+                  else if (Array.isArray(message.content) && message.content.length >= 1) {
+                    if (message.content[0].type == "text") {
+                      message.content[0].text = await renderTemplate(message.content_template);
+                    }
+                  }
+
+                }
+                message.content_sended = true;
+              }
+            }
+          },
         }
         setOpenaiClient(openaiClient);
         openaiClient.messages = messages;
@@ -650,11 +734,12 @@ export const Chat = ({
           openaiClient.addMessage(
             {
               role: "user",
-              content: message,
+              content: "",
+              content_template: message,
               content_date: new Date().getTime(),
             },
             resourceResListRef.current,
-            promptResList,
+            promptResList.current,
           );
         }
 
@@ -671,40 +756,11 @@ export const Chat = ({
               sended: true,
               dateTime: Date.now(),
             };
-            // ChatHistory.get().data.unshift(currentChat.current);
-
 
           } else {
 
-
-            let label = currentChat.current.label.toString();
-            let firstUser = messages.find(
-              (x) => x.content_attached != false && x.role == "user",
-            );
-            let firstUserContent = (firstUser as OpenAI.ChatCompletionUserMessageParam)?.content;
-            if (typeof firstUserContent == "string") {
-              label = firstUserContent;
-            } else if (Array.isArray(firstUserContent)) {
-              label = firstUserContent.find((x) => x.type == "text")?.text || "";
-            } else {
-              label = (firstUserContent as any).toString();
-            }
-
-            currentChat.current.label = label;
+            currentChat.current.label = getFirstUserContent();
             currentChat.current.dateTime = Date.now();
-            // let findIndex = ChatHistory.get().data.findIndex(
-            //   (x) => x.key == currentChat.current.key,
-            // );
-
-            // if (findIndex > -1) {
-            //   // let find = ChatHistory.get().data.splice(findIndex, 1)[0];
-
-            //   currentChat.current.dateTime = Date.now();
-
-            //   // Object.assign(find, currentChat.current);
-            //   // ChatHistory.get().data.unshift(find);
-            // }
-
 
           }
         }
@@ -714,10 +770,11 @@ export const Chat = ({
         await openaiClient.completion(() => {
           Object.assign(messages, openaiClient.messages);
           refresh();
-
         });
+        currentChat.current.label = getFirstUserContent();
+
         resourceResListRef.current = [];
-        setPromptResList([]);
+        promptResList.current = [];
 
         calcAttachDialogue(
           openaiClient.messages,
@@ -789,7 +846,11 @@ export const Chat = ({
       });
       alls.push(promise);
       await Promise.allSettled(alls).then((res) => {
-        console.log("all res", res);
+        if (res.every(x => x.status == "fulfilled")) {
+
+        } else {
+          console.log("all res has error", res);
+        }
       });
     } catch (e) {
 
@@ -896,7 +957,7 @@ export const Chat = ({
     >
   >([]);
 
-  const [promptResList, setPromptResList] = React.useState([]);
+  const promptResList = useRef([]);
 
   const [isFillPromptModalOpen, setIsFillPromptModalOpen] =
     React.useState(false);
@@ -1142,7 +1203,8 @@ export const Chat = ({
   const [isUpdateQuicks, setIsUpdateQuicks] = useState(false);
   const [newLabel, setNewLabel] = useState("");
   const [newValue, setNewValue] = useState("");
-
+  const { token } = theme.useToken();
+  const editorRef = useRef<any>(null);
 
   return (
     <div key={sessionID} className="chat relative h-full">
@@ -1182,133 +1244,133 @@ export const Chat = ({
               style={{ alignSelf: "stretch", width: mobile.current.is ? "100%" : DATA.current.showHistory ? "calc(100vw - 265px)" : "100%" }}
             >
 
-              <Splitter layout={window.innerHeight > window.innerWidth ? "vertical" : "horizontal"} className="overflow-auto">
+              <Splitter layout={window.innerHeight > window.innerWidth ? "vertical" : "horizontal"} className="msg-container overflow-auto">
                 <Splitter.Panel >
                   <Spin spinning={DATA.current.loadingMessages} indicator={<LoadingOutlined spin />} tip="Loading..." fullscreen />
 
-                  <Watermark className="h-full  relative" content={DATA.current.diffs.length > 0 ? modelName : ""}>
-                    <div className="h-full">
-                      {(currentChat.current.messages == null ||
-                        currentChat.current.messages?.length == 0) && (
-                          <>
-                            <Welcome
-                              icon="👋"
-                              title={t`Welcome`}
-                              className="mb-4"
-                              description={
-                                Agents.get().data.length > 0
-                                  ? t`Choose a prompt from below, and let's start chatting`
-                                  : t`Start chatting`
-                              }
-                            />
-                            <Space>
-                              <Input
-                                placeholder="search"
-                                value={botSearchValue}
-                                onChange={(e) => {
-                                  setBotSearchValue(e.target.value);
-                                }}
-                                allowClear
-                              ></Input>
-                              <Button
-                                onClick={() => {
-                                  setPromptsModalValue({
-                                    confirm_call_tool: false,
-                                  } as any);
-                                  setIsOpenPromptsModal(true);
+
+                  <div className="h-full">
+                    {(currentChat.current.messages == null ||
+                      currentChat.current.messages?.length == 0) && (
+                        <>
+                          <Welcome
+                            icon="👋"
+                            title={t`Welcome`}
+                            className="mb-4"
+                            description={
+                              Agents.get().data.length > 0
+                                ? t`Choose a prompt from below, and let's start chatting`
+                                : t`Start chatting`
+                            }
+                          />
+                          <Space>
+                            <Input
+                              placeholder="search"
+                              value={botSearchValue}
+                              onChange={(e) => {
+                                setBotSearchValue(e.target.value);
+                              }}
+                              allowClear
+                            ></Input>
+                            <Button
+                              onClick={() => {
+                                setPromptsModalValue({
+                                  confirm_call_tool: false,
+                                } as any);
+                                setIsOpenPromptsModal(true);
+                              }}
+                            >
+                              {t`Add Agent`}
+                            </Button>
+                          </Space>
+
+                          <div className="flex items-center">
+                            <div className="flex flex-wrap">
+                              <DndContext
+                                sensors={botSearchValue != "" ? [] : [sensors]}
+                                onDragEnd={(e) => {
+                                  try {
+                                    let data = Agents.get().data;
+                                    let oldIndex = data.findIndex(
+                                      (x) => x.key == e.active.id,
+                                    );
+
+                                    let newIndex = data.findIndex(
+                                      (x) => x.key == e.over.id,
+                                    );
+
+                                    let item = data[oldIndex];
+
+                                    data.splice(oldIndex, 1);
+
+                                    data.splice(newIndex, 0, item);
+
+                                    Agents.save();
+                                    refresh();
+                                  } catch { }
                                 }}
                               >
-                                {t`Add Agent`}
-                              </Button>
-                            </Space>
-
-                            <div className="flex items-center">
-                              <div className="flex flex-wrap">
-                                <DndContext
-                                  sensors={botSearchValue != "" ? [] : [sensors]}
-                                  onDragEnd={(e) => {
-                                    try {
-                                      let data = Agents.get().data;
-                                      let oldIndex = data.findIndex(
-                                        (x) => x.key == e.active.id,
-                                      );
-
-                                      let newIndex = data.findIndex(
-                                        (x) => x.key == e.over.id,
-                                      );
-
-                                      let item = data[oldIndex];
-
-                                      data.splice(oldIndex, 1);
-
-                                      data.splice(newIndex, 0, item);
-
-                                      Agents.save();
-                                      refresh();
-                                    } catch { }
-                                  }}
+                                <SortableContext
+                                  items={(Agents.get()
+                                    .data).filter(
+                                      (x) =>
+                                        botSearchValue == "" ||
+                                        x.label
+                                          .toLowerCase()
+                                          .includes(botSearchValue),
+                                    )
+                                    .map((x) => x.key)}
                                 >
-                                  <SortableContext
-                                    items={(Agents.get()
-                                      .data).filter(
-                                        (x) =>
-                                          botSearchValue == "" ||
-                                          x.label
-                                            .toLowerCase()
-                                            .includes(botSearchValue),
-                                      )
-                                      .map((x) => x.key)}
-                                  >
-                                    {(Agents.get()
-                                      .data).filter(
-                                        (x) =>
-                                          botSearchValue == "" ||
-                                          x.label
-                                            .toLowerCase()
-                                            .includes(botSearchValue),
-                                      )
-                                      .map((item) => (
-                                        <SortableItem
-                                          key={item.key}
-                                          id={item.key}
-                                          item={item}
-                                          onClick={(item) => {
-                                            // console.log("onGPTSClick", item);
-                                            onGPTSClick(item.key);
-                                          }}
-                                          onEdit={() => {
-                                            let value = Agents.get().data.find(
-                                              (y) => y.key === item.key,
-                                            );
-                                            setPromptsModalValue(value);
-                                            setIsOpenPromptsModal(true);
-                                          }}
-                                          onRemove={() => {
-                                            Modal.confirm({
-                                              title: "Tip",
-                                              maskClosable: true,
-                                              content: "Are you sure to delete?",
-                                              onOk: async () => {
-                                                let index = Agents.get().data.findIndex(
-                                                  (y) => y.key === item.key,
-                                                );
-                                                Agents.get().data.splice(index, 1);
-                                                await Agents.save();
-                                                call("openMcpClient", ["hyper_agent"]);
-                                                refresh();
-                                              },
-                                              onCancel(...args) { },
-                                            });
-                                          }}
-                                        />
-                                      ))}
-                                  </SortableContext>
-                                </DndContext>
-                              </div>
+                                  {(Agents.get()
+                                    .data).filter(
+                                      (x) =>
+                                        botSearchValue == "" ||
+                                        x.label
+                                          .toLowerCase()
+                                          .includes(botSearchValue),
+                                    )
+                                    .map((item) => (
+                                      <SortableItem
+                                        key={item.key}
+                                        id={item.key}
+                                        item={item}
+                                        onClick={(item) => {
+                                          // console.log("onGPTSClick", item);
+                                          onGPTSClick(item.key);
+                                        }}
+                                        onEdit={() => {
+                                          let value = Agents.get().data.find(
+                                            (y) => y.key === item.key,
+                                          );
+                                          setPromptsModalValue(value);
+                                          setIsOpenPromptsModal(true);
+                                        }}
+                                        onRemove={() => {
+                                          Modal.confirm({
+                                            title: "Tip",
+                                            maskClosable: true,
+                                            content: "Are you sure to delete?",
+                                            onOk: async () => {
+                                              let index = Agents.get().data.findIndex(
+                                                (y) => y.key === item.key,
+                                              );
+                                              Agents.get().data.splice(index, 1);
+                                              await Agents.save();
+                                              call("openMcpClient", ["hyper_agent"]);
+                                              refresh();
+                                            },
+                                            onCancel(...args) { },
+                                          });
+                                        }}
+                                      />
+                                    ))}
+                                </SortableContext>
+                              </DndContext>
                             </div>
-                          </>
-                        )}
-                      {/* <Bubble.List
+                          </div>
+                        </>
+                      )}
+                    {/* <Bubble.List
                       autoScroll={true}
                       style={{
                         paddingRight: 4,
@@ -1319,24 +1381,24 @@ export const Chat = ({
                         ?.map(format)
                         ?.filter((x) => x != null)}
                     /> */}
-                      <Messages messages={currentChat.current.messages} onSumbit={(messages) => {
-                        currentChat.current.messages = messages;
-                        refresh();
-                        onRequest();
-                      }} status={openaiClient.current?.status}
-                        onClone={async (i) => {
-                          let clone = _.cloneDeep(currentChat.current);
-                          clone.key = v4();
-                          clone.messages = clone.messages.slice(0, i + 1);
-                          clone.icon = "";
+                    <Messages messages={currentChat.current.messages} onSumbit={(messages) => {
+                      currentChat.current.messages = messages;
+                      refresh();
+                      onRequest();
+                    }} status={openaiClient.current?.status}
+                      onClone={async (i) => {
+                        let clone = _.cloneDeep(currentChat.current);
+                        clone.key = v4();
+                        clone.messages = clone.messages.slice(0, i + 1);
+                        clone.icon = "";
 
-                          await call("addChatHistory", [clone]);
-                          ChatHistory.get().data.unshift(clone);
+                        await call("addChatHistory", [clone]);
+                        ChatHistory.get().data.unshift(clone);
 
-                          loadMoreData(false, false);
-                        }}></Messages>
-                    </div>
-                  </Watermark>
+                        loadMoreData(false, false);
+                      }}></Messages>
+                  </div>
+
 
                 </Splitter.Panel>
 
@@ -1442,140 +1504,7 @@ export const Chat = ({
                         }}
                       />
                     </Tooltip>
-                    <Divider type="vertical" />
-                    <span className="inline-block">
-                      <Tooltip title={t`MCP and Tools`}>
-                        <span
-                          className="cursor-pointer"
-                          onClick={() => {
-                            setIsToolsShow(true);
-                          }}
-                        >
-                          {supportTool == null || supportTool == true ? (
-                            <>
-                              <span> <Icon name="mcp"></Icon></span>
 
-                              <span className="px-1">
-                                {(() => {
-                                  let set = new Set();
-                                  for (let tool_name of currentChat.current
-                                    .allowMCPs) {
-                                    let [name, _] = tool_name.split(" > ");
-                                    set.add(name);
-                                  }
-
-                                  let load = mcpClients.filter(
-                                    (v) => v.status == "connected",
-                                  ).length;
-                                  let all = mcpClients.filter(x => x.status !== "disabled").length;
-                                  let curr = mcpClients.filter((v) => {
-                                    return v.status !== "disabled" && set.has(v.name);
-                                  }).length;
-
-                                  return DATA.current.mcpLoading ? (
-                                    <>
-                                      {`${curr} `}
-                                      <SyncOutlined spin />
-                                      {`(${load}/${all})`}
-                                    </>
-                                  ) : (
-                                    curr
-                                  );
-                                })()}
-                              </span>
-                            </>
-                          ) : (
-                            <><Icon name="mcp"></Icon> {t`LLM not support`}</>
-                          )}
-                        </span>
-                      </Tooltip>
-                      <Divider type="vertical" />
-                      <Tooltip title={t`Resources`} placement="bottom">
-                        <Dropdown
-                          placement="top"
-                          menu={{
-                            items: resourcesRef.current.map((x, i) => {
-                              return {
-                                key: x.key,
-                                label: !x.description
-                                  ? x.key
-                                  : `${x.key}--${x.description}`,
-                              };
-                            }),
-                            onClick: async (item) => {
-                              let resource = resourcesRef.current.find(
-                                (x) => x.key === item.key,
-                              );
-                              if (resource) {
-                                let res = await call("mcpCallResource", [
-                                  resource.clientName as string,
-                                  resource.uri,
-                                ]);
-                                let t = {
-                                  ...res,
-                                  call_name: resource.key + "--" + resource.uri,
-                                  uid: v4(),
-                                };
-                                console.log("mcpCallResource", t);
-                                resourceResListRef.current.push(t);
-                                refresh();
-                              }
-                            },
-                          }}
-                          arrow
-                        >
-                          <span className="cursor-pointer">
-                            <Icon name="resources" />{" "}
-                            {resourcesRef.current.length}
-                          </span>
-                        </Dropdown>
-                      </Tooltip>
-                      <Divider type="vertical" />
-                      <Tooltip title={t`Prompts`} placement="bottom">
-                        <Dropdown
-                          placement="top"
-                          menu={{
-                            items: promptsRef.current.map((x, i) => {
-                              return {
-                                key: x.key,
-                                label: `${x.key} (${x.description})`,
-                              };
-                            }),
-                            onClick: async (item) => {
-                              let prompt = promptsRef.current.find(
-                                (x) => x.key === item.key,
-                              );
-                              if (prompt) {
-                                if (
-                                  prompt.arguments &&
-                                  prompt.arguments.length > 0
-                                ) {
-                                  setIsFillPromptModalOpen(true);
-                                  setFillPromptFormItems(prompt.arguments);
-                                  mcpCallPromptCurr.current = prompt;
-                                } else {
-                                  let res = await call("mcpCallPrompt", [
-                                    prompt.clientName as string,
-                                    prompt.name,
-                                    {},
-                                  ]);
-                                  console.log("mcpCallPrompt", res);
-                                  res.call_name = prompt.key;
-                                  res.uid = v4();
-                                  setPromptResList([...promptResList, res]);
-                                }
-                              }
-                            },
-                          }}
-                          arrow
-                        >
-                          <span className="cursor-pointer">
-                            <Icon name="prompts" />{" "}
-                            {promptsRef.current.length}
-                          </span>
-                        </Dropdown>
-                      </Tooltip>
-                    </span>
                     <Divider type="vertical" />
                     <Tooltip title={t`Select LLM`}>
                       <span className="inline-block">
@@ -1643,6 +1572,7 @@ export const Chat = ({
                       </span>
                     </Tooltip>
                     <Divider type="vertical" />
+
                     <SettingOutlined
                       title={t`Settings`}
                       className="cursor-pointer hover:text-cyan-400"
@@ -1653,6 +1583,9 @@ export const Chat = ({
                         formMoreSetting.setFieldsValue(currentChat.current);
                       }}
                     />
+                    <Divider type="vertical" />
+                    <Link title={t`edit variables`} to={"/Setting/VariableList"}> <Button type="text" size="small" className="hover:text-cyan-400" icon={<Icon name="var" className="text-cyan-400"></Icon>}></Button></Link>
+
                   </div>
                   <div className="flex">
                     <div>
@@ -1710,11 +1643,11 @@ export const Chat = ({
                     refresh();
                     message.success(t`Delete Success`);
                   }}
-                  promptResList={promptResList}
+                  promptResList={promptResList.current}
                   promptResListRemove={(x) => {
-                    setPromptResList(
-                      promptResList.filter((v) => v.uid != x.uid),
-                    );
+
+                    promptResList.current = promptResList.current.filter((v) => v.uid != x.uid);
+                    refresh();
                     message.success(t`Delete Success`);
                   }}
                 ></MyAttachR>
@@ -1746,7 +1679,278 @@ export const Chat = ({
                     }
                   }}
                 >
-                  <Suggestion
+                  {true ? <div className="my-sender-container">
+                    <Editor
+                      ref={editorRef}
+                      style={{
+                        border: "0px",
+                        padding: "4px 0px",
+                      }} autoHeight rows={1} maxRows={10} value={value}
+                      onChange={(nextVal) => {
+                        setValue(nextVal);
+                      }}
+                      onSubmit={(s) => {
+                        if (DATA.current.suggestionShow) {
+                          return;
+                        }
+                        onRequest(s);
+                        setValue("");
+                        editorRef.current?.setValue("");
+                      }}
+                      fontSize={16}
+                      lineHeight={24}
+                      placeholder={t`You can use variables by enter scope, for example, enter var, or use @ to call other agents.`}
+                    />
+
+                    <Sender
+                      className="my-sender"
+                      footer={({ components }) => {
+                        const { SendButton, LoadingButton, SpeechButton } = components;
+                        return (
+                          <Flex justify="space-between" align="center">
+                            <Flex align="center">
+
+                              {supportImage && (
+                                <>
+                                  <Upload
+                                    accept="image/*"
+                                    fileList={[]}
+                                    beforeUpload={async (file) => {
+                                      if (file.type.includes("image")) {
+                                        let path = await blobToBase64(file);
+                                        resourceResListRef.current.push({
+                                          call_name: "UserUpload",
+                                          contents: [
+                                            {
+                                              path: path,
+                                              blob: await urlToBase64(path),
+                                              type: "image",
+                                            },
+                                          ],
+                                          uid: v4(),
+                                        });
+                                        refresh();
+                                      } else {
+                                        message.warning(t`please uplaod image`);
+                                      }
+                                      return false;
+                                    }}
+                                  >
+                                    <Button
+                                      type="text"
+                                      icon={<LinkOutlined />}
+                                      onClick={() => { }}
+                                    />
+                                  </Upload>
+                                  {/* <Divider type="vertical" /> */}
+                                </>)}
+
+                              <Tooltip title={t`MCP and Tools`} placement="bottom">
+
+                                {supportTool == null || supportTool == true ? (
+                                  <Space.Compact>
+                                    <Button onClick={() => {
+                                      setIsToolsShow(true);
+                                    }} type="text" icon={<Icon name="mcp"></Icon>}>
+
+
+                                      {(() => {
+                                        let set = new Set();
+                                        for (let tool_name of currentChat.current.allowMCPs) {
+                                          let [name, _] = tool_name.split(" > ");
+                                          set.add(name);
+                                        }
+
+                                        let load = mcpClients.filter(
+                                          (v) => v.status == "connected",
+                                        ).length;
+                                        let all = mcpClients.filter(x => x.status !== "disabled").length;
+                                        let curr = mcpClients.filter((v) => {
+                                          return v.status !== "disabled" && set.has(v.name);
+                                        }).length;
+
+                                        return DATA.current.mcpLoading ? (
+                                          <>
+                                            {`${curr} `}
+                                            <SyncOutlined spin />
+                                            {`(${load}/${all})`}
+                                          </>
+                                        ) : (
+                                          curr
+                                        );
+                                      })()}
+                                      <Icon name="chuizi-copy"></Icon>{
+
+                                        (() => {
+                                          let set = new Set();
+                                          for (let tool_name of currentChat.current.allowMCPs) {
+                                            let [name, _] = tool_name.split(" > ");
+                                            set.add(name);
+                                          }
+
+                                          let curr = mcpClients.filter((v) => {
+                                            return v.status !== "disabled" && set.has(v.name);
+                                          });
+                                          let toolLen = 0;
+                                          for (let x of curr) {
+                                            toolLen += x.tools.length;
+                                          }
+                                          return (
+                                            <>
+                                              {toolLen}
+                                            </>
+                                          )
+                                        })()
+                                      }
+                                    </Button>
+
+                                  </Space.Compact>
+                                ) : (
+                                  <>  <Button
+                                    type="text"
+                                    icon={<Icon name="mcp"></Icon>}
+                                    onClick={() => { }}
+                                  >{t`LLM not support`}</Button>  </>
+                                )}
+
+                              </Tooltip>
+                              {/* <Divider type="vertical" /> */}
+                              <Tooltip title={t`Resources`} placement="bottom">
+                                <Dropdown
+                                  placement="top"
+                                  trigger={["click"]}
+                                  menu={{
+                                    items: resourcesRef.current.map((x, i) => {
+                                      return {
+                                        key: x.key,
+                                        label: !x.description
+                                          ? x.key
+                                          : `${x.key}--${x.description}`,
+                                      };
+                                    }),
+                                    onClick: async (item) => {
+                                      let resource = resourcesRef.current.find(
+                                        (x) => x.key === item.key,
+                                      );
+                                      if (resource) {
+                                        let res = await call("mcpCallResource", [
+                                          resource.clientName as string,
+                                          resource.uri,
+                                        ]);
+                                        let t = {
+                                          ...res,
+                                          call_name: resource.key + "--" + resource.uri,
+                                          uid: v4(),
+                                        };
+                                        console.log("mcpCallResource", t);
+                                        resourceResListRef.current.push(t);
+                                        refresh();
+                                      }
+                                    },
+                                  }}
+                                  arrow
+                                >
+                                  <Button type="text" className="cursor-pointer">
+                                    <Icon name="resources" />{" "}
+                                    {resourcesRef.current.length}
+                                  </Button>
+                                </Dropdown>
+                              </Tooltip>
+
+                              <Tooltip title={t`Prompts`} placement="bottom">
+                                <Dropdown
+                                  placement="top"
+                                  trigger={["click"]}
+                                  menu={{
+                                    items: promptsRef.current.map((x, i) => {
+                                      return {
+                                        key: x.key,
+                                        label: `${x.key} (${x.description})`,
+                                      };
+                                    }),
+                                    onClick: async (item) => {
+                                      let prompt = promptsRef.current.find(
+                                        (x) => x.key === item.key,
+                                      );
+                                      if (prompt) {
+                                        if (
+                                          prompt.arguments &&
+                                          prompt.arguments.length > 0
+                                        ) {
+                                          setIsFillPromptModalOpen(true);
+                                          setFillPromptFormItems(prompt.arguments);
+                                          mcpCallPromptCurr.current = prompt;
+                                        } else {
+                                          let res = await call("mcpCallPrompt", [
+                                            prompt.clientName as string,
+                                            prompt.name,
+                                            {},
+                                          ]);
+                                          console.log("mcpCallPrompt", res);
+                                          res.call_name = prompt.key;
+                                          res.uid = v4();
+                                          promptResList.current.push(res);
+                                          refresh();
+
+                                        }
+                                      }
+                                    },
+                                  }}
+                                  arrow
+                                >
+                                  <Button type="text" className="cursor-pointer">
+                                    <Icon name="prompts" />{" "}
+                                    {promptsRef.current.length}
+                                  </Button>
+                                </Dropdown>
+                              </Tooltip>
+                            </Flex>
+                            <Flex align="center">
+                              {/* <Button type="text" style={{
+                                    fontSize: 18,
+                                    color: token.colorText,
+                                  }} icon={<ApiOutlined />} />
+
+                                  <Divider type="vertical" /> */}
+                              {loading ? (
+                                <LoadingButton type="default" />
+                              ) : (
+                                <SendButton type="primary" disabled={false} />
+                              )}
+                            </Flex>
+                          </Flex>
+                        );
+                      }}
+                      actions={false}
+                      loading={loading}
+                      value={value}
+                      onChange={(nextVal) => {
+                        // if (nextVal === "/") {
+                        //   onTrigger();
+                        // } else if (!nextVal) {
+                        //   onTrigger(false);
+                        // }
+                        setValue(nextVal);
+                      }}
+                      onCancel={() => {
+                        setLoading(false);
+                        openaiClient.current?.cancel();
+                        for (let d of DATA.current.diffs) {
+                          d.openaiClient?.cancel();
+                        }
+                        // message.success("Cancel sending!");
+                      }}
+                      onSubmit={(s) => {
+                        if (DATA.current.suggestionShow) {
+                          return;
+                        }
+                        onRequest(value);
+                        setValue("");
+                        editorRef.current?.setValue("");
+                      }}
+                      placeholder={t`Start inputting, You can use @ to call other agents, or quickly enter`}
+                    />
+                  </div> : <Suggestion
                     items={[
                       {
                         label: "Agents",
@@ -1808,40 +2012,6 @@ export const Chat = ({
                       return (
                         <Sender
                           className="my-sender"
-                          prefix={
-                            supportImage && (
-                              <Upload
-                                accept="image/*"
-                                fileList={[]}
-                                beforeUpload={async (file) => {
-                                  if (file.type.includes("image")) {
-                                    let path = await blobToBase64(file);
-                                    resourceResListRef.current.push({
-                                      call_name: "UserUpload",
-                                      contents: [
-                                        {
-                                          path: path,
-                                          blob: await urlToBase64(path),
-                                          type: "image",
-                                        },
-                                      ],
-                                      uid: v4(),
-                                    });
-                                    refresh();
-                                  } else {
-                                    message.warning(t`please uplaod image`);
-                                  }
-                                  return false;
-                                }}
-                              >
-                                <Button
-                                  type="text"
-                                  icon={<LinkOutlined />}
-                                  onClick={() => { }}
-                                />
-                              </Upload>
-                            )
-                          }
                           onKeyDown={(e) => {
                             if (DATA.current.suggestionShow) {
                               if (
@@ -1885,6 +2055,224 @@ export const Chat = ({
                               message.warning(t`please uplaod image`);
                             }
                           }}
+                          footer={({ components }) => {
+                            const { SendButton, LoadingButton, SpeechButton } = components;
+                            return (
+                              <Flex justify="space-between" align="center">
+                                <Flex align="center">
+
+                                  {supportImage && (
+                                    <>
+                                      <Upload
+                                        accept="image/*"
+                                        fileList={[]}
+                                        beforeUpload={async (file) => {
+                                          if (file.type.includes("image")) {
+                                            let path = await blobToBase64(file);
+                                            resourceResListRef.current.push({
+                                              call_name: "UserUpload",
+                                              contents: [
+                                                {
+                                                  path: path,
+                                                  blob: await urlToBase64(path),
+                                                  type: "image",
+                                                },
+                                              ],
+                                              uid: v4(),
+                                            });
+                                            refresh();
+                                          } else {
+                                            message.warning(t`please uplaod image`);
+                                          }
+                                          return false;
+                                        }}
+                                      >
+                                        <Button
+                                          type="text"
+                                          icon={<LinkOutlined />}
+                                          onClick={() => { }}
+                                        />
+                                      </Upload>
+                                      {/* <Divider type="vertical" /> */}
+                                    </>)}
+
+                                  <Tooltip title={t`MCP and Tools`} placement="bottom">
+
+                                    {supportTool == null || supportTool == true ? (
+                                      <Space.Compact>
+                                        <Button onClick={() => {
+                                          setIsToolsShow(true);
+                                        }} type="text" icon={<Icon name="mcp"></Icon>}>
+
+
+                                          {(() => {
+                                            let set = new Set();
+                                            for (let tool_name of currentChat.current.allowMCPs) {
+                                              let [name, _] = tool_name.split(" > ");
+                                              set.add(name);
+                                            }
+
+                                            let load = mcpClients.filter(
+                                              (v) => v.status == "connected",
+                                            ).length;
+                                            let all = mcpClients.filter(x => x.status !== "disabled").length;
+                                            let curr = mcpClients.filter((v) => {
+                                              return v.status !== "disabled" && set.has(v.name);
+                                            }).length;
+
+                                            return DATA.current.mcpLoading ? (
+                                              <>
+                                                {`${curr} `}
+                                                <SyncOutlined spin />
+                                                {`(${load}/${all})`}
+                                              </>
+                                            ) : (
+                                              curr
+                                            );
+                                          })()}
+                                          <Icon name="chuizi-copy"></Icon>{
+
+                                            (() => {
+                                              let set = new Set();
+                                              for (let tool_name of currentChat.current.allowMCPs) {
+                                                let [name, _] = tool_name.split(" > ");
+                                                set.add(name);
+                                              }
+
+                                              let curr = mcpClients.filter((v) => {
+                                                return v.status !== "disabled" && set.has(v.name);
+                                              });
+                                              let toolLen = 0;
+                                              for (let x of curr) {
+                                                toolLen += x.tools.length;
+                                              }
+                                              return (
+                                                <>
+                                                  {toolLen}
+                                                </>
+                                              )
+                                            })()
+                                          }
+                                        </Button>
+
+                                      </Space.Compact>
+                                    ) : (
+                                      <>  <Button
+                                        type="text"
+                                        icon={<Icon name="mcp"></Icon>}
+                                        onClick={() => { }}
+                                      >{t`LLM not support`}</Button>  </>
+                                    )}
+
+                                  </Tooltip>
+                                  {/* <Divider type="vertical" /> */}
+                                  <Tooltip title={t`Resources`} placement="bottom">
+                                    <Dropdown
+                                      placement="top"
+                                      trigger={["click"]}
+                                      menu={{
+                                        items: resourcesRef.current.map((x, i) => {
+                                          return {
+                                            key: x.key,
+                                            label: !x.description
+                                              ? x.key
+                                              : `${x.key}--${x.description}`,
+                                          };
+                                        }),
+                                        onClick: async (item) => {
+                                          let resource = resourcesRef.current.find(
+                                            (x) => x.key === item.key,
+                                          );
+                                          if (resource) {
+                                            let res = await call("mcpCallResource", [
+                                              resource.clientName as string,
+                                              resource.uri,
+                                            ]);
+                                            let t = {
+                                              ...res,
+                                              call_name: resource.key + "--" + resource.uri,
+                                              uid: v4(),
+                                            };
+                                            console.log("mcpCallResource", t);
+                                            resourceResListRef.current.push(t);
+                                            refresh();
+                                          }
+                                        },
+                                      }}
+                                      arrow
+                                    >
+                                      <Button type="text" className="cursor-pointer">
+                                        <Icon name="resources" />{" "}
+                                        {resourcesRef.current.length}
+                                      </Button>
+                                    </Dropdown>
+                                  </Tooltip>
+
+                                  <Tooltip title={t`Prompts`} placement="bottom">
+                                    <Dropdown
+                                      placement="top"
+                                      trigger={["click"]}
+                                      menu={{
+                                        items: promptsRef.current.map((x, i) => {
+                                          return {
+                                            key: x.key,
+                                            label: `${x.key} (${x.description})`,
+                                          };
+                                        }),
+                                        onClick: async (item) => {
+                                          let prompt = promptsRef.current.find(
+                                            (x) => x.key === item.key,
+                                          );
+                                          if (prompt) {
+                                            if (
+                                              prompt.arguments &&
+                                              prompt.arguments.length > 0
+                                            ) {
+                                              setIsFillPromptModalOpen(true);
+                                              setFillPromptFormItems(prompt.arguments);
+                                              mcpCallPromptCurr.current = prompt;
+                                            } else {
+                                              let res = await call("mcpCallPrompt", [
+                                                prompt.clientName as string,
+                                                prompt.name,
+                                                {},
+                                              ]);
+                                              console.log("mcpCallPrompt", res);
+                                              res.call_name = prompt.key;
+                                              res.uid = v4();
+                                              promptResList.current.push(res);
+                                              refresh();
+
+                                            }
+                                          }
+                                        },
+                                      }}
+                                      arrow
+                                    >
+                                      <Button type="text" className="cursor-pointer">
+                                        <Icon name="prompts" />{" "}
+                                        {promptsRef.current.length}
+                                      </Button>
+                                    </Dropdown>
+                                  </Tooltip>
+                                </Flex>
+                                <Flex align="center">
+                                  {/* <Button type="text" style={{
+                                    fontSize: 18,
+                                    color: token.colorText,
+                                  }} icon={<ApiOutlined />} />
+
+                                  <Divider type="vertical" /> */}
+                                  {loading ? (
+                                    <LoadingButton type="default" />
+                                  ) : (
+                                    <SendButton type="primary" disabled={false} />
+                                  )}
+                                </Flex>
+                              </Flex>
+                            );
+                          }}
+                          actions={false}
                           loading={loading}
                           value={value}
                           onChange={(nextVal) => {
@@ -1914,7 +2302,7 @@ export const Chat = ({
                         />
                       );
                     }}
-                  </Suggestion>
+                  </Suggestion>}
                 </QuickPath>
               </div>
             </div>
@@ -2093,36 +2481,6 @@ export const Chat = ({
             {currTool.key
               ? JsonSchema2FormItemOrNull(
                 currTool.function.parameters,
-                // zodToJsonSchema(
-                // z.object({
-                //   // paths: z.array(
-                //   //   z.object({
-                //   //     first: z.array(
-                //   //       z.object({
-                //   //         arr: z.array(
-                //   //           z.string({
-                //   //             description: "filesystem path",
-                //   //           }),
-                //   //         ),
-                //   //       }),
-                //   //     ),
-                //   //     // s: z.string()
-                //   //   }),
-                //   // ),
-
-                //   a: z.object({
-                //     b: z.object({
-                //       c: z.object({
-                //         d: z.array(
-                //           z.string({
-                //             description: "filesystem path",
-                //           }),
-                //         ),
-                //       }),
-                //     }),
-                //   }),
-                // }),
-                // ),
               ) || t`No parameters`
               : []}
             <Form.Item className="flex justify-end">
@@ -2166,7 +2524,8 @@ export const Chat = ({
                 console.log("mcpCallPrompt", res);
                 res.call_name = prompt.key;
                 res.uid = v4();
-                setPromptResList([...promptResList, res]);
+                promptResList.current.push(res);
+                refresh();
                 setIsFillPromptModalOpen(false);
               }}
             >

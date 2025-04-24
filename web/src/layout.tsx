@@ -96,9 +96,17 @@ import {
   auto as followSystemColorScheme,
   exportGeneratedCSS as collectCSS,
   isEnabled as isDarkReaderEnabled,
+  setFetchMethod as setDarkReaderFetchMethod,
 } from "darkreader";
 import { Pre } from "./components/pre";
 import { Icon } from "./components/icon";
+
+setDarkReaderFetchMethod((url) => {
+  return fetch(url, {
+    credentials: "omit",
+    mode: "no-cors",
+  });
+})
 
 type ProviderType = {
   label: string;

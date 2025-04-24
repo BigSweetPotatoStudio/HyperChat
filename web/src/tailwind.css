@@ -91,7 +91,9 @@ ul,
 menu {
   list-style: revert;
 }
-
+div[role="user"] .ant-bubble-content {
+    min-height: 0 !important;
+}
 div[role="user"] .ant-bubble-content-wrapper {
   align-items: flex-end;
 }
@@ -251,4 +253,31 @@ div[role="system"] .ant-bubble-content-wrapper {
     user-select: none;
     touch-action: manipulation;
     color: rgba(0, 0, 0, 0.88);
+}
+
+.my-editor{
+  position: relative;
+  border: 1px solid #d9d9d9;
+  /* transition: all 0.3s; */
+  border-radius: 6px;
+  overflow: hidden; /* 确保内部元素不溢出圆角 */
+  background: #fff;
+  /* padding-bottom: 16px; */
+}
+
+.my-sender-container{
+  padding-top: 8px;
+  border: 1px solid #d9d9d9;
+  border-radius: 10px;
+  overflow: hidden; /* 确保内部元素不溢出圆角 */
+}
+
+.my-sender-container .ant-sender-content{
+  padding: 0;
+  height: 0;
+  display: none;
+}
+
+.my-sender-container .ant-sender{
+  border: 0px;
 }

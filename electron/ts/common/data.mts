@@ -6,6 +6,7 @@ import {
   ENV_CONFIG,
   MCP_CONFIG,
   MCP_CONFIG_TYPE,
+  VarList,
 } from "../../../common/data.js";
 
 import { appDataDir, CONST } from "ts/polyfills/index.mjs";
@@ -47,6 +48,7 @@ for (let data of DataList) {
 
 // export const MCPServerPORT = 16110;
 AppSetting.initSync({ force: true });
+VarList.initSync({ force: true });
 
 electronData.initSync({ force: true });
 electronData.get().webdav.url = electronData.get().webdav.url || AppSetting.get().webdav.url;
@@ -65,6 +67,12 @@ if (ENV_CONFIG.initSync({ force: true }).PATH != "") {
 }
 
 
+if (AppSetting.get().quicks.length > 0 && !fs.existsSync(path.join(appDataDir, VarList.KEY))) {
+  VarList.get().data = VarList.get().data.concat(AppSetting.get().quicks.map(x => {
+    return { name: x.label, value: x.quick, variableStrategy: "lazy", key: x.value, scope: "quick", variableType: "string" };
+  }));
+}
+VarList.save();
 // electronData.get().mcp_server_port = MCPServerPORT;
 
 electronData.get().version = CONST.getVersion;

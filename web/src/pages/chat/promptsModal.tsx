@@ -36,6 +36,7 @@ import { t } from "../../i18n";
 import { NumberStep } from "../../common/numberStep";
 import EmojiPicker from 'emoji-picker-react';
 import { HeaderContext } from "../../common/context";
+import { Editor } from "../../components/editor";
 interface Values {
   label: string;
   prompt: string;
@@ -92,7 +93,8 @@ const ModalForm: React.FC<CollectionCreateFormProps> = ({
         label={t`System Prompt`}
         rules={[{ required: true, message: `Please enter System Prompt` }]}
       >
-        <Input.TextArea placeholder="Please enter System Prompt" rows={4} />
+        {/* <Input.TextArea placeholder="Please enter System Prompt" rows={4} /> */}
+        <Editor style={{ height: "150px" }} />
       </Form.Item>
       <Form.Item name="modelKey" label={t`LLM`}>
         <Select
