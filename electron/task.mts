@@ -41,7 +41,7 @@ if (argv.prod) {
     overwrite: true,
   });
   await $`npx cross-env NODE_ENV=production myEnv=prod webpack`;
-  if (process.env.MYRUNENV === "github" || process.env.GH_TOKEN) {
+  if (process.env.MYRUNENV === "github" && process.env.GH_TOKEN) {
     if (os.platform() == "darwin" && os.arch() === 'x64') {
       console.log('Building for x86/x64 architecture');
       let pack = await fs.readJSON("./package.json");
