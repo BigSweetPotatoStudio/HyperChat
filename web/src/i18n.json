@@ -1206,5 +1206,37 @@
   "You can use variables, for example, enter var, or use @ to call other agents.": {
     "en": "You can use variables, for example, enter var, or use @ to call other agents.",
     "zh": "您可以使用变量，例如，输入 var，或使用 @ 来调用其他代理。"
+  },
+  "Variable": {
+    "en": "Variable",
+    "zh": "变量"
+  },
+  "variableType": {
+    "en": "variableType",
+    "zh": "变量类型"
+  },
+  "Code": {
+    "en": "Code",
+    "zh": "代码"
+  },
+  "Type": {
+    "en": "Type",
+    "zh": "类型"
+  },
+  "Description": {
+    "en": "Description",
+    "zh": "描述"
+  },
+  "are you sure to delete this variable?": {
+    "en": "are you sure to delete this variable?",
+    "zh": "你确定要删除这个变量吗？"
+  },
+  "VariableName": {
+    "en": "VariableName",
+    "zh": "变量名称"
+  },
+  "Value": {
+    "en": "Value",
+    "zh": "Value"
   }
 }

@@ -412,8 +412,17 @@ export const VarList = new Data(
   "var.json",
   {
     data: [{
-      "key": "4c80381e-88fa-4010-a5c7-03420bbe7d12",
-      "name": "currentTime",
+      "key": "4c80381e-88fa-4010-a5c7-03420bbe7d11",
+      "name": "currentTimeFromBrowser",
+      "variableType": "js",
+      "code": "function get(){\n    return new Date().toLocaleString('zh-CN', {\n  year: 'numeric',\n  month: '2-digit',\n  day: '2-digit',\n  hour: '2-digit',\n  minute: '2-digit',\n  second: '2-digit',\n  hour12: false\n});\n}",
+      "scope": "var",
+      "type": "variable",
+      "description": "Get the current time",
+    }, 
+    {
+      "key": "4c80381e-88fa-4010-a5c7-03420bbe7d14",
+      "name": "currentTimeFromServer",
       "variableType": "webjs",
       "code": "function get(){\n    return new Date().toLocaleString('zh-CN', {\n  year: 'numeric',\n  month: '2-digit',\n  day: '2-digit',\n  hour: '2-digit',\n  minute: '2-digit',\n  second: '2-digit',\n  hour12: false\n});\n}",
       "scope": "var",
@@ -437,7 +446,16 @@ export const VarList = new Data(
       "scope": "var",
       "type": "variable",
       "description": "Get the clipboard contents",
-    }] as Array<Var>,
+    },
+    {
+      "key": "88970a9a-d328-422a-bedc-617c0caf635c",
+      "name": "os",
+      "variableType": "js",
+      "code": "const os = require('os');\n/**\n * 获取系统名称\n * @returns {string} 系统名称的描述字符串\n */\nfunction get() {\n    const platform = os.platform();\n    let systemDescription = '';\n\n    switch (platform) {\n        case 'win32':\n            systemDescription = 'Windows';\n            break;\n        case 'darwin':\n            systemDescription = 'macOS';\n            break;\n        case 'linux':\n            systemDescription = 'Linux';\n            break;\n        default:\n            systemDescription = 'Unknown system';\n    }\n    return systemDescription;\n}",
+      "scope": "var",
+      "type": "variable",
+      "description": "Get the system name",
+    },] as Array<Var>,
   },
   {
     sync: true,

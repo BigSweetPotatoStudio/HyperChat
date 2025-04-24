@@ -45,6 +45,9 @@ import { getConfig } from "./mcp/servers/hyper_tools/lib.mjs";
 import dayjs from "dayjs";
 import vm from "node:vm";
 
+export const { createRequire } = await import(
+  /* webpackIgnore: true */ "module"
+);
 
 export class CommandFactory {
   async getConfig() {
@@ -482,11 +485,20 @@ export class CommandFactory {
     return oldLen - newLen;
   }
   async runCode({ code }: { code: string }) {
+    // 1. 构造一个完整的 require（ESM 下使用 import.meta.url）
+    const nativeRequire = createRequire(__filename);
 
     const context = {
-      import: async (specifier) => import(specifier),
-      console: console,
-      resultContainer: { value: undefined, error: undefined, done: false }
+      console,
+      require: nativeRequire,
+      module: { exports: {} },
+      exports: {},
+      process,
+      Buffer,
+      fetch,
+      resultContainer: { value: undefined, error: undefined, done: false },
+      setTimeout,
+      setInterval,
     };
     vm.createContext(context); // 将普通对象转换为 vm.Context 对象
     // 在 VM 中使用动态导入
@@ -501,7 +513,8 @@ export class CommandFactory {
         resultContainer.done = true;
       }
   })();
-`, context);
+`, context,
+      { filename: __filename, });
     // 轮询等待结果
     while (!context.resultContainer.done) {
       await new Promise(resolve => setTimeout(resolve, 10));

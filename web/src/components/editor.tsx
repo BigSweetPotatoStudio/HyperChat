@@ -423,7 +423,7 @@ export const Editor = forwardRef(({
                     value = lines.join("\n");
                 }
             }
-            onChange && onChange(value);
+            value && onChange && onChange(value);
             const uri = monaco.Uri.parse("inmemory://" + uid.current);
             let model = monaco.editor.createModel(value, "HyperPromptLanguage", uri);
 

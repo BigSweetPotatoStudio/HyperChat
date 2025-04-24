@@ -11,6 +11,8 @@ import {
 import { zodToJsonSchema } from "zod-to-json-schema"
 import { v4 } from "uuid";
 import { Popconfirm } from "antd/lib";
+import EditorReact from '@monaco-editor/react';
+
 export const VariableList = () => {
     const [num, setNum] = React.useState(0);
     const refresh = () => {
@@ -82,10 +84,10 @@ export const VariableList = () => {
                 }}
                 columns={[
                     {
-                        title: 'scope',
+                        title: t`Scope`,
                         dataIndex: 'name',
                         render: (text, record) => {
-                            return <span>{text}{" "}<EditOutlined onClick={() => {
+                            return <span>{text}{" "}<EditOutlined className="cursor-pointer hover:text-cyan-400" onClick={() => {
                                 scopeForm.resetFields();
                                 scopeForm.setFieldsValue({
                                     ...record,
@@ -100,7 +102,7 @@ Including variables will also be deleted`}</pre>} onConfirm={async () => {
                                     await VarList.save();
                                     refresh();
                                 }}>
-                                    <DeleteOutlined />
+                                    <DeleteOutlined className="cursor-pointer hover:text-cyan-400" />
 
                                 </Popconfirm>
                             </span>
@@ -120,7 +122,7 @@ Including variables will also be deleted`}</pre>} onConfirm={async () => {
                         <Button size="small" onClick={() => {
                             variableForm.resetFields();
                             variableForm.setFieldsValue({
-                                scope: VarScopeList.get().data[0]?.name,
+                                scope: scope.name || VarScopeList.get().data[0]?.name,
                                 type: "variable",
                                 variableType: "string"
                             });
@@ -131,11 +133,11 @@ Including variables will also be deleted`}</pre>} onConfirm={async () => {
 
                 columns={[
                     {
-                        title: 'name',
+                        title: t`VariableName`,
                         dataIndex: 'name',
                         width: 200,
                         render: (text, record) => {
-                            return <div><span className="line-clamp-1">{text}</span><EditOutlined onClick={() => {
+                            return <div><span className="line-clamp-1">{text}</span><EditOutlined className="cursor-pointer hover:text-cyan-400" onClick={() => {
                                 variableForm.resetFields();
                                 variableForm.setFieldsValue({
                                     ...record,
@@ -148,20 +150,20 @@ Including variables will also be deleted`}</pre>} onConfirm={async () => {
                                 await VarList.save();
                                 refresh();
                             }}>
-                                    <DeleteOutlined />
+                                    <DeleteOutlined className="cursor-pointer hover:text-cyan-400" />
 
                                 </Popconfirm></div>
                         }
                     },
                     {
-                        title: 'value',
+                        title: t`Value`,
                         dataIndex: 'value',
                         render: (text, record) => {
                             return <span className="line-clamp-2">{text || "code"}</span>
                         }
                     },
                     {
-                        title: 'scope',
+                        title: t`Scope`,
                         dataIndex: 'scope',
                         render: (text, record) => {
                             return <span className="line-clamp-1">{text}</span>
@@ -279,7 +281,7 @@ Including variables will also be deleted`}</pre>} onConfirm={async () => {
                     label={t`Code`}
                     rules={[{ required: true, message: `Please enter` }]}
                 >
-                    <Input.TextArea placeholder="Please enter" rows={4} />
+                    <EditorReact height="200px" defaultLanguage="javascript" defaultValue={variableForm.getFieldValue("code")} />
                 </Form.Item>}
                 {variableForm.getFieldValue("variableType") == "string" && <Form.Item
                     name="value"

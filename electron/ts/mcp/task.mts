@@ -8,6 +8,7 @@ import {
   TaskList,
   IMCPClient,
   electronData,
+  VarList,
 } from "../../../common/data";
 import cron from "node-cron";
 import { Command } from "../command.mjs";
@@ -111,14 +112,72 @@ export async function callAgent(obj: {
     let openai = new OpenAiChannel(
       {
         ...config, ...agent, allowMCPs: agent.allowMCPs, requestType: "stream",
+        messages_format_callback: async (message) => {
+          if (message.role == "user" || message.role == "system") {
+            if (!message.content_sended) {
+              let varList = [...VarList.initSync().data?.map((v) => {
+                let varName = v.scope + "." + v.name;
+                return {
+                  ...v,
+                  varName: varName,
+                }
+              })];
+              async function renderTemplate(template: string) {
+                let reg = /{{(.*?)}}/g;
+                let matchs = template.match(reg);
+                let subResults = [];
+                for (let match of matchs || []) {
+                  let varName = match.slice(2, -2).trim();
+                  let v = varList.find((x) => x.varName == varName);
+                  let value = varName;
+                  if (v) {
+                    if (v.variableType == "js") {
+                      value = await global.ext2.call("runCode", [{ code: v.code }]);
+                    } else if (v.variableType == "webjs") {
+                      value = await global.ext2.call("runCode", [{ code: v.code }]);
+                      // let code = `
+                      // (async () => {
+                      //     ${v.code}
+                      //    return await get()
+                      // })()
+                      // `;
+                      // // console.log(code);
+                      // value = await eval(code);
+                    } else {
+                      value = v.value;
+                    }
+                  }
+                  subResults.push({ value, varName });
+                }
+                let result = template.replace(reg, (match, p1) => {
+                  return subResults.find((x) => x.varName === p1.trim())?.value || match;
+                });
+                return result;
+              }
+              if (message.content_template) {
+                if (typeof message.content == "string") {
+                  message.content = await renderTemplate(message.content_template);
+                }
+                else if (Array.isArray(message.content) && message.content.length >= 1) {
+                  if (message.content[0].type == "text") {
+                    message.content[0].text = await renderTemplate(message.content_template);
+                  }
+                }
+
+              }
+              message.content_sended = true;
+            }
+          }
+        },
       },
       [
         {
           role: "system",
-          content: agent.prompt,
+          content_template: agent.prompt,
+          content: "",
           content_date: Date.now(),
         },
-        { role: "user", content: obj.message, content_date: Date.now() },
+        { role: "user", content: "", content_template: obj.message, content_date: Date.now() },
       ]
     );
     try {
