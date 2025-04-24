@@ -412,7 +412,7 @@ export const VarList = new Data(
   {
     data: [{
       "key": "4c80381e-88fa-4010-a5c7-03420bbe7d11",
-      "name": "currentTimeFromBrowser",
+      "name": "currentTime",
       "variableType": "js",
       "code": "function get(){\n    return new Date().toLocaleString('zh-CN', {\n  year: 'numeric',\n  month: '2-digit',\n  day: '2-digit',\n  hour: '2-digit',\n  minute: '2-digit',\n  second: '2-digit',\n  hour12: false\n});\n}",
       "scope": "var",
@@ -439,7 +439,7 @@ export const VarList = new Data(
     },
     {
       "key": "6c9f704e-69ab-47b6-b10f-ae9927801ee8",
-      "name": "CLIPBOARD",
+      "name": "Clipboard",
       "variableType": "webjs",
       "code": "async function get(){\n    return await window.navigator.clipboard.readText();\n}",
       "scope": "var",

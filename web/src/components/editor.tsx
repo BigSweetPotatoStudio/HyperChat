@@ -164,7 +164,10 @@ export function enableCompletionItemProvider() {
     monacoProviders.push(monaco.languages.registerHoverProvider("HyperPromptLanguage", {
 
         provideHover: async (model, position) => {
-
+            const word = model.getWordAtPosition(position);
+            if (!word) {
+                return;
+            }
             const lineContent = model.getLineContent(position.lineNumber);
 
             const wordUntilPosition = model.getWordUntilPosition(position);

@@ -1238,5 +1238,17 @@
   "Value": {
     "en": "Value",
     "zh": "Value"
+  },
+  "Only alphanumeric characters are allowed": {
+    "en": "Only alphanumeric characters are allowed",
+    "zh": "仅允许字母和数字字符"
+  },
+  "Name cannot be \"hyper\"": {
+    "en": "Name cannot be \"hyper\"",
+    "zh": "名称不能是 \"hyper\""
+  },
+  "Name already exists": {
+    "en": "Name already exists",
+    "zh": "名称已存在"
   }
 }
