@@ -385,13 +385,12 @@ export const TaskList = new Data(
     sync: true,
   }
 );
-
 export const zodVar = z.object({
   key: z.string(),
   name: z.string(),
   value: z.string(),
   scope: z.string(),
-  type: z.enum(["variable", "quick"]),
+  variableStrategy: z.enum(["lazy", "immediate"]),
   variableType: z.enum(["string", "js", "webjs"]),
   code: z.string().optional(),
   description: z.string().optional(),
@@ -417,7 +416,7 @@ export const VarList = new Data(
       "variableType": "js",
       "code": "function get(){\n    return new Date().toLocaleString('zh-CN', {\n  year: 'numeric',\n  month: '2-digit',\n  day: '2-digit',\n  hour: '2-digit',\n  minute: '2-digit',\n  second: '2-digit',\n  hour12: false\n});\n}",
       "scope": "var",
-      "type": "variable",
+      "variableStrategy": "lazy",
       "description": "Get the current time",
     }, 
     {
@@ -426,7 +425,7 @@ export const VarList = new Data(
       "variableType": "webjs",
       "code": "function get(){\n    return new Date().toLocaleString('zh-CN', {\n  year: 'numeric',\n  month: '2-digit',\n  day: '2-digit',\n  hour: '2-digit',\n  minute: '2-digit',\n  second: '2-digit',\n  hour12: false\n});\n}",
       "scope": "var",
-      "type": "variable",
+      "variableStrategy": "lazy",
       "description": "Get the current time",
     },
     {
@@ -435,7 +434,7 @@ export const VarList = new Data(
       "variableType": "webjs",
       "code": "function get(){\nlet currLang = navigator.language == \"zh-CN\" ? \"zhCN\" : \"enUS\";\nif (localStorage.getItem(\"currLang\")) {\n  currLang = localStorage.getItem(\"currLang\");\n}\nreturn currLang == \"zhCN\" ? \"中文\" : \"English\";\n}",
       "scope": "var",
-      "type": "variable",
+      "variableStrategy": "lazy",
       "description": "Get the current language",
     },
     {
@@ -444,7 +443,7 @@ export const VarList = new Data(
       "variableType": "webjs",
       "code": "async function get(){\n    return await window.navigator.clipboard.readText();\n}",
       "scope": "var",
-      "type": "variable",
+      "variableStrategy": "lazy",
       "description": "Get the clipboard contents",
     },
     {
@@ -453,7 +452,7 @@ export const VarList = new Data(
       "variableType": "js",
       "code": "const os = require('os');\n/**\n * 获取系统名称\n * @returns {string} 系统名称的描述字符串\n */\nfunction get() {\n    const platform = os.platform();\n    let systemDescription = '';\n\n    switch (platform) {\n        case 'win32':\n            systemDescription = 'Windows';\n            break;\n        case 'darwin':\n            systemDescription = 'macOS';\n            break;\n        case 'linux':\n            systemDescription = 'Linux';\n            break;\n        default:\n            systemDescription = 'Unknown system';\n    }\n    return systemDescription;\n}",
       "scope": "var",
-      "type": "variable",
+      "variableStrategy": "lazy",
       "description": "Get the system name",
     },] as Array<Var>,
   },

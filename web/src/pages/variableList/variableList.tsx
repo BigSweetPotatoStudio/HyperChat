@@ -123,7 +123,7 @@ Including variables will also be deleted`}</pre>} onConfirm={async () => {
                             variableForm.resetFields();
                             variableForm.setFieldsValue({
                                 scope: scope.name || VarScopeList.get().data[0]?.name,
-                                type: "variable",
+                                variableStrategy: "lazy",
                                 variableType: "string"
                             });
                             setIsVariableOpen(true);
@@ -297,15 +297,15 @@ Including variables will also be deleted`}</pre>} onConfirm={async () => {
                 >
                     <Select options={VarScopeList.get().data.map(item => ({ value: item.name, label: item.name }))} />
                 </Form.Item>
-                <Form.Item
-                    name="type"
-                    label={t`Type`}
+                {variableForm.getFieldValue("variableType") == "string" && <Form.Item
+                    name="variableStrategy"
+                    label={t`variableStrategy`}
                     rules={[{ required: true, message: `Please enter` }]}
                 >
                     <Select onChange={() => {
                         refresh();
-                    }} options={["variable", "quick"].map(item => ({ value: item, label: item }))} />
-                </Form.Item>
+                    }} options={["lazy", "immediate"].map(item => ({ value: item, label: item }))} />
+                </Form.Item>}
                 <Form.Item
                     name="description"
                     label={t`Description`}

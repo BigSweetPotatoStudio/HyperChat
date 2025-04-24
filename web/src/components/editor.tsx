@@ -74,12 +74,12 @@ export function enableCompletionItemProvider() {
                 ...varList.map((x) => {
                     return {
                         ...x,
-                        kind: x.type == "variable" ? monaco.languages.CompletionItemKind.Variable : monaco.languages.CompletionItemKind.Text,
+                        kind: x.variableStrategy == "immediate" ? monaco.languages.CompletionItemKind.Text : monaco.languages.CompletionItemKind.Variable,
                         range: range,
                         label: x.varName,
-                        insertText: x.type == "variable" ? `{{${x.varName}}}` : x.value,
-                        detail: x.description || `${x.name} ${x.type} ${x.variableType}`,
-                        value: x.value,
+                        insertText: x.variableStrategy == "immediate" ? x.value : `{{${x.varName}}}`,
+                        detail: x.description || `${x.name} ${x.variableStrategy} ${x.variableType}`,
+                        value: x.value, 
                     }
                 })
             ];

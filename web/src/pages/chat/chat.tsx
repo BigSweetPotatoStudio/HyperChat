@@ -270,6 +270,7 @@ export const Chat = ({
     "prompt": `
 # I am a super agent. According to the user's requirements, I first think and then design a tool flow, call various tools, and complete the recent addition of MCP
 # MCP is a command, and the operation method is similar to npx, uvx, etc. The user is a novice, and I want to do more.
+# To answer a user please use {{var.LANG}}
 
 1. I can search + summarize the web page online, query the MCP running command line, and it is best to find the Gtihub web page to obtain command information.
 2. Try to add stdio. If adding stdio type MCP fails, I can use the terminal to enter the command to test the error.

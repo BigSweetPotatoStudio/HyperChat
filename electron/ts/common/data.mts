@@ -69,7 +69,7 @@ if (ENV_CONFIG.initSync({ force: true }).PATH != "") {
 
 if (AppSetting.get().quicks.length > 0 && !fs.existsSync(path.join(appDataDir, VarList.KEY))) {
   VarList.get().data = VarList.get().data.concat(AppSetting.get().quicks.map(x => {
-    return { name: x.label, value: x.quick, type: "variable", key: x.value, scope: "quick", variableType: "string" };
+    return { name: x.label, value: x.quick, variableStrategy: "lazy", key: x.value, scope: "quick", variableType: "string" };
   }));
 }
 VarList.save();
