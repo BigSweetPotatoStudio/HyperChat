@@ -1681,6 +1681,7 @@ export const Chat = ({
                 >
                   {true ? <div className="my-sender-container">
                     <Editor
+                      submitType="enter"
                       ref={editorRef}
                       style={{
                         border: "0px",

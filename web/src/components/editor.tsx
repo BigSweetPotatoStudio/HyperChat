@@ -273,7 +273,7 @@ export const Editor = forwardRef(({
     placeholder,
     lineHeight = 19,
     fontSize = 14,
-    submitType = "enter"
+    submitType = "CtrlEnter"
 }: {
     value?: string,
     onChange?: (value: string) => void,
