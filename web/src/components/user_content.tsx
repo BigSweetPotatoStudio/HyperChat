@@ -118,7 +118,7 @@ export function UserContent({ x, regenerate = undefined, onSubmit }: { x: MyMess
                     </Space.Compact>
                 </div>
             ) : (!x.content_sended && x.role == "system" && maxWidth > 0) ? <div><Editor autoHeight style={{ width: maxWidth + "px", minWidth: 300, border: "0px", padding: "4px 0" }} value={x.content_template || x.content.toString()} onChange={e => {
-                setValue(e);
+                x.content_template = e;
             }} ></Editor></div> : Array.isArray(x.content) ? (
                 x.content.map((c, i) => {
                     if (c.type == "text") {

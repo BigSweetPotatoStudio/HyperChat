@@ -10,6 +10,7 @@ import {
   SwapOutlined,
 } from "@ant-design/icons";
 import { getFirstCharacter } from "../../common";
+import { Tooltip } from "antd";
 
 export function SortableItem(props) {
   const { attributes, listeners, setNodeRef, transform, transition } =
@@ -28,6 +29,7 @@ export function SortableItem(props) {
       {...attributes}
       {...listeners}
     >
+      <Tooltip title={props.item.description}>
       <div
         className="relative h-full w-full"
         style={{
@@ -83,6 +85,7 @@ export function SortableItem(props) {
           {props.item.label}
         </div>
       </div>
+      </Tooltip>
     </div>
   );
 }
