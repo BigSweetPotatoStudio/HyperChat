@@ -59,7 +59,7 @@ import OpenAI from "openai";
 import { v4 } from "uuid";
 import * as MCPTypes from "@modelcontextprotocol/sdk/types.js";
 import { io } from "socket.io-client";
-import { getURL_PRE } from "../../common/call";
+import { getURL_PRE, msg_receive } from "../../common/call";
 import "@xterm/xterm/css/xterm.css";
 import _ from 'lodash';
 import { Terminal } from "@xterm/xterm";
@@ -300,6 +300,15 @@ export const Chat = ({
         ]);
         disableCompletionItemProvider();
         enableCompletionItemProvider();
+        msg_receive("message-from-main", async (msg) => {
+          if (msg.type == "update_var_list") {
+            await VarList.init();
+            disableCompletionItemProvider();
+            enableCompletionItemProvider();
+          }
+        });
+
+
         Agents.get().data = builtinAgent.current.concat(Agents.get().data.filter(x => x.type != "builtin"));
         Agents.get().data.forEach((x) => {
           getAgentNameObj.current[x.key] = x.label;
@@ -1694,7 +1703,7 @@ export const Chat = ({
                         if (DATA.current.suggestionShow) {
                           return;
                         }
-                        if(s == "") {
+                        if (s == "") {
                           return;
                         }
                         onRequest(s);

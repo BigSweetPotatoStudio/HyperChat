@@ -57,15 +57,18 @@ import { Editor } from "./editor";
 import { t } from "../i18n";
 import { MyMessage } from "../../../common/data";
 
-export function UserContent({ x, regenerate = undefined,  onSubmit }: { x: MyMessage, regenerate?: () => void, onSubmit: (x: any) => void }) {
+export function UserContent({ x, regenerate = undefined, onSubmit }: { x: MyMessage, regenerate?: () => void, onSubmit: (x: any) => void }) {
     const [isEdit, setIsEdit] = useState(false);
     const [value, setValue] = useState("");
     const container = useRef<HTMLDivElement>(null);
     const [width, setWidth] = useState(0);
+    const [maxWidth, setMaxWidth] = useState(0);
+    // console.log(maxWidth)
     useEffect(() => {
+        setMaxWidth(container.current ? (container.current.parentElement.parentElement.parentElement.offsetWidth - 60) : 500);
         if (x.content_context.edit) {
 
-            setWidth(container.current ? container.current.offsetWidth : 500);
+            setWidth(container.current ? Math.min(container.current.offsetWidth + 50, maxWidth) : 500);
             if (Array.isArray(x.content)) {
                 if (x.content[0].type == "text") {
                     setValue(x.content[0].text);
@@ -80,17 +83,9 @@ export function UserContent({ x, regenerate = undefined,  onSubmit }: { x: MyMes
     }, [x.content_context.edit]);
     return (
         <div ref={c => container.current = c}>
+
             {isEdit ? (
                 <div>
-                    {/* <Input.TextArea
-                        rows={value.split("\n").length}
-                        style={{ minWidth: 600 }}
-                        value={value}
-                        onChange={(e) => {
-                            setValue(e.target.value);
-                        }}
-                        placeholder="Please enter the content"
-                    /> */}
                     <Editor autoHeight style={{ width: width + "px", minWidth: 300, border: "0px", padding: "4px 0" }} value={x.content_template || x.content.toString()} onChange={e => {
                         setValue(e);
                     }} onSubmit={() => {
@@ -122,7 +117,9 @@ export function UserContent({ x, regenerate = undefined,  onSubmit }: { x: MyMes
                         </Button>
                     </Space.Compact>
                 </div>
-            ) : Array.isArray(x.content) ? (
+            ) : (!x.content_sended && x.role == "system" && maxWidth > 0) ? <div><Editor autoHeight style={{ width: maxWidth + "px", minWidth: 300, border: "0px", padding: "4px 0" }} value={x.content_template || x.content.toString()} onChange={e => {
+                setValue(e);
+            }} ></Editor></div> : Array.isArray(x.content) ? (
                 x.content.map((c, i) => {
                     if (c.type == "text") {
                         return (

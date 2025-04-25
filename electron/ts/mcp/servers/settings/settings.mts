@@ -8,6 +8,10 @@ import { z } from "zod";
 import { shellPathSync, strip } from "ts/es6.mjs";
 import { getConfig } from "./lib.mjs";
 import { openMcpClient } from "ts/mcp/config.mjs";
+import { VarList, VarScopeList } from "../../../../../common/data";
+import { v4 } from "uuid";
+import dayjs from "dayjs";
+import { getMessageService } from "ts/message_service.mjs";
 
 
 type MCP_CONFIG_TYPE = {
@@ -65,7 +69,69 @@ export function registerTool(server: McpServer) {
       };
     }
   );
+  server.tool(
+    "set-variables",
+    `set-variables`,
+    {
 
+      variables: z.array(z.object({
+        name: z.string({
+          description: "Name of the variable",
+        }),
+        value: z.string({
+          description: "Value of the variable",
+        }),
+      }).optional()), // Optional array of strings
+    },
+    async ({ variables }) => {
+      VarList.initSync();
+      VarScopeList.initSync();
+      for (let v of variables) {
+        let scope, name;
+        if (v.name.includes(".")) {
+          [scope, name] = v.name.split(".");
+        } else {
+          scope = "var";
+          name = v.name;
+        }
+        if (VarScopeList.get().data.findIndex(v => v.name == scope) == -1) {
+          VarScopeList.get().data.push({
+            "key": v4(),
+            "name": scope,
+            type: "custom",
+          })
+        }
+        let findIndex = VarList.get().data.findIndex(v => v.name == name);
+        if (findIndex == -1) {
+          VarList.get().data.push({
+            "key": v4(),
+            "name": name,
+            "variableType": "string",
+            "code": "",
+            "scope": scope,
+            "variableStrategy": "lazy",
+            "description": v.value + " " + dayjs().format("YYYY-MM-DD HH:mm:ss"),
+            "value": v.value,
+          })
+        } else {
+          VarList.get().data[findIndex].value = v.value;
+          VarList.get().data[findIndex].description = v.value + " " + dayjs().format("YYYY-MM-DD HH:mm:ss");
+        }
+
+      }
+      await VarList.save();
+      await VarScopeList.save();
+      getMessageService().sendToRenderer({ type: "update_var_list" });
+      return {
+        content: [
+          {
+            type: "text",
+            text: `success added`,
+          },
+        ],
+      };
+    }
+  );
   // server.tool(
   //   "add-mcp2",
   //   `add-see-mcp or add streamableHttp mcp`,

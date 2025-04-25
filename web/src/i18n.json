@@ -1253,7 +1253,7 @@
   },
   "You can use variables by enter scope, for example, enter var, or use @ to call other agents.": {
     "en": "You can use variables by enter scope, for example, enter var, or use @ to call other agents.",
-    "zh": "你可以通过进入范围来使用变量，例如，进入 var，或者使用 @ 来调用其他代理。"
+    "zh": "你可以通过输入scope来使用变量，例如，输入var，或者使用 @ 来调用其他Agent。"
   },
   " Ctrl+Enter Send": {
     "en": " Ctrl+Enter Send",
