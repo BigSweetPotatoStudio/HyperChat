@@ -112,11 +112,11 @@ export function getLayoutRoute() {
             icon: <Icon name="tool" />,
             component: <HpyerTools />,
           },
-          
+
           {
             path: "/VariableList",
             name: t`VariableList`,
-            icon: "⌨️",
+            icon: <Icon name="var"></Icon>,
             component: <VariableList />,
           }
 
@@ -130,12 +130,12 @@ export function getLayoutRoute() {
         ],
       },
 
-      {
-        path: "/TestPage",
-        name: t`TestPage`,
-        icon: "⌨️",
-        component: <TestPage />,
-      }
+      // {
+      //   path: "/TestPage",
+      //   name: t`TestPage`,
+      //   icon: "⌨️",
+      //   component: <TestPage />,
+      // }
     ],
   };
 

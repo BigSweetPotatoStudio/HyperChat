@@ -1,4 +1,4 @@
-import React, { useEffect } from "react";
+import React, { useContext, useEffect } from "react";
 import { Editor } from "../../components/editor";
 import { Button, Form, Input, Modal, Radio, Select, Table } from "antd";
 import { VarScopeList, Var, VarList, zodVarScope } from "../../../../common/data";
@@ -12,8 +12,10 @@ import { zodToJsonSchema } from "zod-to-json-schema"
 import { v4 } from "uuid";
 import { Popconfirm } from "antd/lib";
 import EditorReact from '@monaco-editor/react';
+import { HeaderContext } from "../../common/context";
 
 export const VariableList = () => {
+    const { globalState, updateGlobalState, setLang } = useContext(HeaderContext);
     const [num, setNum] = React.useState(0);
     const refresh = () => {
         setNum((n) => n + 1);
