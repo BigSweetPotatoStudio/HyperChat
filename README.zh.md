@@ -21,7 +21,8 @@ HyperChat 是一个开源的Chat客户端，支持MCP，可以使用各家LLM的
 - [x] Docker 
     * 命令行的版本 `docker pull dadigua/hyperchat-mini:latest`
     * Ubuntu桌面 + Chrome + BrowserUse 版本(**coming soon**)
-- [x] `WebDAV` 同步
+- [x] `WebDAV` 支持增量同步
+- [x] 添加 `HyperPrompt` 提示词语法，支持变量（文本+js代码变量），基础语法检测+Hover实时预览。
 - [x] `MCP`扩展
 - [x] 支持暗黑模式🌙
 - [x] Resources，Prompts，Tools 支持
@@ -86,6 +87,9 @@ npm run dev
 ## Telegram
 
 [HyperChat用户交流](https://t.me/dadigua001)
+
+#### 超级输入，支持变量（文本+js代码变量），基础语法检测+Hover实时预览
+![动画](https://github.com/user-attachments/assets/b1ec72d9-be05-4f9a-bed1-16f4ed72de61)
 
 #### 聊天支持选择模型对比
 ![image_2025-04-07_21-26-19](https://github.com/user-attachments/assets/e8691cd7-0518-4da8-90f2-7dfd8b864a09)
