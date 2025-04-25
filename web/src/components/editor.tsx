@@ -6,6 +6,7 @@ import { v4 } from "uuid";
 import { Button, Space } from "antd";
 import { FullscreenOutlined } from "@ant-design/icons";
 import { call } from "../common/call";
+import { isOnBrowser } from "../common";
 
 // Register a new language
 monaco.languages.register({ id: "HyperPromptLanguage" });
@@ -171,7 +172,7 @@ export function enableCompletionItemProvider() {
             const lineContent = model.getLineContent(position.lineNumber);
 
             const wordUntilPosition = model.getWordUntilPosition(position);
-            console.log("Current line content:", position, lineContent, wordUntilPosition);
+            // console.log("Current line content:", position, lineContent, wordUntilPosition);
 
             // Check if the cursor is on a variable {{...}}
             const variableMatch = lineContent.match(/{{([^{}]*)}}/g);
@@ -273,7 +274,9 @@ export const Editor = forwardRef(({
     placeholder,
     lineHeight = 19,
     fontSize = 14,
-    submitType = "CtrlEnter"
+    submitType = "CtrlEnter",
+    onDragFile,
+    onParseFile
 }: {
     value?: string,
     onChange?: (value: string) => void,
@@ -287,7 +290,9 @@ export const Editor = forwardRef(({
     placeholder?: string,
     lineHeight?: number,
     fontSize?: number,
-    submitType?: "enter" | "CtrlEnter"
+    submitType?: "enter" | "CtrlEnter",
+    onDragFile?: (file: File) => void,
+    onParseFile?: (file: File) => void,
 }, ref) => {
     const [num, setNum] = React.useState(0);
     const refresh = () => {
@@ -349,6 +354,32 @@ export const Editor = forwardRef(({
         },
         setValue: (value: string) => {
             monacoModelRef.current.setValue(value);
+        },
+        focus: () => {
+            if (monacoRef.current) {
+                monacoRef.current.focus();
+            }
+        },
+        insertTextAtCursor: (text: string) => {
+            if (monacoRef.current) {
+                const position = monacoRef.current.getPosition();
+                if (position) {
+                    monacoRef.current.executeEdits('', [{
+                        range: new monaco.Range(
+                            position.lineNumber,
+                            position.column,
+                            position.lineNumber,
+                            position.column
+                        ),
+                        text: text
+                    }]);
+                    // Set cursor position after the inserted text
+                    monacoRef.current.setPosition({
+                        lineNumber: position.lineNumber,
+                        column: position.column + text.length
+                    });
+                }
+            }
         }
     }));
 
@@ -362,12 +393,6 @@ export const Editor = forwardRef(({
             if (document.getElementById(uid.current) == null) {
                 return;
             }
-            // await Agents.init();
-            // await VarList.init();
-
-
-
-
 
             function validate(model) {
                 let varList = [...VarList.get().data?.map((v) => {
@@ -480,7 +505,9 @@ export const Editor = forwardRef(({
                     invisibleCharacters: false,
                     nonBasicASCII: false
                 },
-
+                dropIntoEditor: {
+                    enabled: false
+                }, // 允许拖拽到编辑器中
                 // readOnly: false // Enable editing
             });
             const lh = editor.getOption(monaco.editor.EditorOption.fontSize);
@@ -560,6 +587,160 @@ export const Editor = forwardRef(({
                         // props.onSubmit?.(currentValue);
                     }
                 );
+            }
+
+
+
+            // 添加拖拽事件监听
+            const editorElement = document.getElementById(uid.current);
+            if (editorElement) {
+                editorElement.addEventListener('dragover', (e) => {
+                    e.preventDefault(); // 阻止默认行为
+                    e.stopPropagation();
+                    e.dataTransfer.dropEffect = 'copy'; // 显示复制图标
+                });
+
+                editorElement.addEventListener('drop', (e) => {
+
+
+                    // 处理拖拽的文件
+                    if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+                        const file = e.dataTransfer.files[0];
+                        console.log("Dropped file:", file);
+                        // e.preventDefault();
+                        if (isOnBrowser) {
+                            onDragFile && onDragFile(file);
+                        } else {
+                            const text = file.path;
+                            const position = editor.getTargetAtClientPoint(e.clientX, e.clientY);
+
+                            if (position && position.position) {
+                                editor.executeEdits('', [{
+                                    range: new monaco.Range(
+                                        position.position.lineNumber,
+                                        position.position.column,
+                                        position.position.lineNumber,
+                                        position.position.column
+                                    ),
+                                    text: text
+                                }]);
+                            }
+                        }
+
+                        // e.stopPropagation();
+                        // const reader = new FileReader();
+
+                        // reader.onload = (event) => {
+                        //     if (event.target && typeof event.target.result === 'string') {
+                        //         // 获取拖拽位置对应的编辑器位置
+                        //         const position = editor.getTargetAtClientPoint(e.clientX, e.clientY);
+                        //         if (position && position.position) {
+                        //             // 在拖放位置插入文本
+                        //             editor.executeEdits('', [{
+                        //                 range: new monaco.Range(
+                        //                     position.position.lineNumber,
+                        //                     position.position.column,
+                        //                     position.position.lineNumber,
+                        //                     position.position.column
+                        //                 ),
+                        //                 text: event.target.result
+                        //             }]);
+                        //         } else {
+                        //             // 如果无法确定位置，则在当前光标位置插入
+                        //             const currentPosition = editor.getPosition();
+                        //             if (currentPosition) {
+                        //                 editor.executeEdits('', [{
+                        //                     range: new monaco.Range(
+                        //                         currentPosition.lineNumber,
+                        //                         currentPosition.column,
+                        //                         currentPosition.lineNumber,
+                        //                         currentPosition.column
+                        //                     ),
+                        //                     text: event.target.result
+                        //                 }]);
+                        //             }
+                        //         }
+                        //     }
+                        // };
+
+                        // reader.readAsText(file);
+                    } else if (e.dataTransfer.getData('text')) {
+                        // 处理拖拽的文本
+                        const text = e.dataTransfer.getData('text');
+                        const position = editor.getTargetAtClientPoint(e.clientX, e.clientY);
+
+                        if (position && position.position) {
+                            editor.executeEdits('', [{
+                                range: new monaco.Range(
+                                    position.position.lineNumber,
+                                    position.position.column,
+                                    position.position.lineNumber,
+                                    position.position.column
+                                ),
+                                text: text
+                            }]);
+                        }
+                    }
+                });
+
+                // editor.onDidPaste(async (e) => {
+                //     let items = await navigator.clipboard.read();
+                //     let arr: any[] = Array.from(items);
+                //     for (const item of arr) {
+                //         if (item.kind === 'file') {
+                //             const file = item.getAsFile();
+                //             if (file && file.type.startsWith('image/')) {
+                //                 // const url = await uploadFile(file); // 你实现的上传函数
+                //                 const insertText = `![图片描述]`;
+
+                //                 // 插入到当前光标位置
+                //                 const position = editor.getPosition();
+                //                 editor.executeEdits('', [{
+                //                     range: new monaco.Range(position.lineNumber, position.column, position.lineNumber, position.column),
+                //                     text: insertText,
+                //                     forceMoveMarkers: true
+                //                 }]);
+
+                //                 // 聚焦回来
+                //                 editor.focus();
+                //             }
+                //         }
+                //     }
+                // });
+
+                // window.addEventListener('paste', (e) => {
+
+                //     const activeElement = document.activeElement;
+
+                //     // 判断是否是 Monaco 编辑器内部的 textarea
+                //     if (!activeElement || activeElement.tagName !== 'TEXTAREA' || !editor.getDomNode().contains(activeElement)) {
+                //         return; // 焦点不在编辑器上
+                //     }
+
+                //     const items = e.clipboardData.items;
+                //     let arr: any[] = Array.from(items);
+                //     for (const item of arr) {
+                //         if (item.kind === 'file') {
+                //             const file = item.getAsFile();
+                //             if (file && file.type.startsWith('image/')) {
+                //                 // const url = await uploadFile(file); // 你实现的上传函数
+                //                 const insertText = `![图片描述]`;
+
+                //                 // 插入到当前光标位置
+                //                 const position = editor.getPosition();
+                //                 editor.executeEdits('', [{
+                //                     range: new monaco.Range(position.lineNumber, position.column, position.lineNumber, position.column),
+                //                     text: insertText,
+                //                     forceMoveMarkers: true
+                //                 }]);
+
+                //                 // 聚焦回来
+                //                 editor.focus();
+                //             }
+                //         }
+                //     }
+                // });
+
             }
             // // 添加操作栏项目
             // editor.addAction({

@@ -120,7 +120,7 @@ export const fetch = async (url: string) => {
       fs.readFileSync(path.join(__dirname, "./markdown.js"), "utf-8").toString()
     )) as string;
     await page.close();
-    if (getConfig().ChromeAutoClose == "true") {
+    if (getConfig().ChromeAutoClose == "true" && getConfig().ChromeIsUseLocal == "true") {
       await browser.close();
     }
     return md;
@@ -198,7 +198,7 @@ export const search = async (words: string) => {
         `
       );
       await page.close();
-      if (getConfig().ChromeAutoClose == "true") {
+      if (getConfig().ChromeAutoClose == "true" && getConfig().ChromeIsUseLocal == "true") {
         await browser.close();
       }
     }

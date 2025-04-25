@@ -41,7 +41,7 @@ export const VariableList = () => {
 
 
 
-    return <div className="overflow-auto h-full"><div className="flex">
+    return <div className="overflow-auto h-full"><div className="flex flex-wrap">
         <div className="w-full lg:w-1/4">
             {/*  <Radio.Group
 
@@ -57,6 +57,7 @@ export const VariableList = () => {
             })}
         /> */}
             <Table
+                scroll={{ y: "calc(-151px + 100vh)" }}
                 size="small"
                 rowKey={"key"}
                 title={() => {
@@ -117,6 +118,7 @@ Including variables will also be deleted`}</pre>} onConfirm={async () => {
         </div>
         <div className="w-full lg:w-3/4">
             <Table
+                scroll={{ y: "calc(-151px + 100vh)" }}
                 size="small"
                 rowKey={"key"}
                 title={() => {
@@ -302,7 +304,7 @@ Including variables will also be deleted`}</pre>} onConfirm={async () => {
                     label={t`Value`}
                     rules={[{ required: true, message: `Please enter` }]}
                 >
-                    <Input.TextArea placeholder="Please enter" />
+                    <Input.TextArea placeholder="Please enter" rows={8}/>
                 </Form.Item>}
                 <Form.Item
                     name="scope"

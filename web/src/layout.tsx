@@ -35,6 +35,7 @@ import {
   Tag,
   Timeline,
   notification,
+  Drawer,
 } from "antd";
 import enUS from "antd/locale/en_US";
 import zhCN from "antd/locale/zh_CN";
@@ -100,6 +101,7 @@ import {
 } from "darkreader";
 import { Pre } from "./components/pre";
 import { Icon } from "./components/icon";
+import { getDefaultModelConfigSync } from "./components/ai";
 
 setDarkReaderFetchMethod((url) => {
   return fetch(url, {
@@ -295,7 +297,13 @@ export function Layout() {
         electronData.init(),
       ]);
       refresh();
+
+      let res = await call("checkUpdate", []);
+      if (res) {
+        console.log("checkUpdate: ", res);
+      }
       await initMcpClients();
+      refresh();
       Clarity.init("p731bym3zs");
       Clarity.consent();
       Clarity.event("openApp");
@@ -305,11 +313,6 @@ export function Layout() {
       );
       Clarity.setTag("version", electronData.get().version);
 
-      let res = await call("checkUpdate", []);
-      if (res) {
-        console.log("checkUpdate: ", res);
-      }
-      refresh();
     })();
   }, []);
 
@@ -346,6 +349,7 @@ export function Layout() {
     setLocal(e == "zhCN" ? zhCN : enUS);
     refresh();
   };
+  let defaultModel = getDefaultModelConfigSync(GPT_MODELS);
 
   return (
     <ConfigProvider locale={locale}>
@@ -552,19 +556,22 @@ export function Layout() {
           </HeaderContext.Provider>
         </ProLayout>
 
-        <Modal
+        <Drawer
           width={1000}
           title={t`My LLM Models`}
           open={isModelConfigOpen}
-          cancelButtonProps={{ style: { display: "none" } }}
-          onOk={() => {
+          // cancelButtonProps={{ style: { display: "none" } }}
+          onClose={() => {
             setIsModelConfigOpen(false);
           }}
-          onCancel={() => {
-            setIsModelConfigOpen(false);
+          styles={{
+            body: {
+              padding: 0,
+            }
           }}
         >
           <DndTable
+
             footer={() => (
               <div className="text-center">
                 <Button
@@ -590,7 +597,7 @@ export function Layout() {
               </div>
             )}
             size="small"
-            scroll={{ x: true }}
+            scroll={{ y: "calc(-151px + 100vh)" }}
             pagination={false}
             dataSource={GPT_MODELS.get().data}
             onMove={(data) => {
@@ -611,6 +618,7 @@ export function Layout() {
                       {record.type && <Tag color="red">{record.type}</Tag>}
                       {record.supportImage && <Tag color="blue">image</Tag>}
                       {record.supportTool && <Tag color="blue">tool</Tag>}
+                      {record.key == defaultModel.key && <Tag color="green">{t`default`}</Tag>}
                     </div>
                   );
                 },
@@ -621,6 +629,28 @@ export function Layout() {
                 key: "model",
                 width: 200,
               },
+              {
+                title: t`Provider`,
+                dataIndex: "provider",
+                key: "provider",
+                width: 200,
+                filters: Providers.map((x) => {
+                  return {
+                    text: x.label,
+                    value: x.value,
+                  };
+                }),
+                onFilter: (value, record) => record.provider.startsWith(value as string),
+                filterSearch: true,
+                render: (text, record, index) => {
+                  let find = Providers.find((x) => x.value == text);
+                  if (find == null) {
+                    return text;
+                  }
+                  return find.label;
+                }
+              },
+
               {
                 title: t`Operation`,
                 dataIndex: "key",
@@ -672,19 +702,19 @@ export function Layout() {
                       <a type="link">{t`Delete`}</a>
                     </Popconfirm>
 
-                    <Tooltip title="Set default">
+                    <Tooltip title={t`Set default`}>
                       <a
                         type="link"
                         onClick={async () => {
-                          GPT_MODELS.get().data = GPT_MODELS.get().data.filter(
-                            (e) => e.key != record.key,
-                          );
-                          GPT_MODELS.get().data.unshift(record);
+                          GPT_MODELS.get().data.forEach((m) => {
+                            m.isDefault = false;
+                          });
+                          record.isDefault = true;
                           await GPT_MODELS.save();
                           refresh();
                         }}
                       >
-                        {t`Top`}
+                        {t`Default`}
                       </a>
                     </Tooltip>
                   </div>
@@ -692,7 +722,7 @@ export function Layout() {
               },
             ]}
           />
-        </Modal>
+        </Drawer >
         <Modal
           width={600}
           title={t`Configure LLM`}

@@ -231,6 +231,7 @@ export type GPT_MODELS_TYPE = {
   call_tool_step?: number;
   type?: "llm" | "embedding";
   isStrict: boolean;
+  isDefault?: boolean;
 }
 export const GPT_MODELS = new Data("gpt_models.json", {
   data: [] as Array<GPT_MODELS_TYPE>,

@@ -1258,5 +1258,21 @@
   " Ctrl+Enter Send": {
     "en": " Ctrl+Enter Send",
     "zh": " Ctrl+Enter 发送"
+  },
+  "Set default": {
+    "en": "Set default",
+    "zh": "设为默认"
+  },
+  "Provider": {
+    "en": "Provider",
+    "zh": "提供商"
+  },
+  "Default": {
+    "en": "Default",
+    "zh": "默认"
+  },
+  "default": {
+    "en": "default",
+    "zh": "默认"
   }
 }

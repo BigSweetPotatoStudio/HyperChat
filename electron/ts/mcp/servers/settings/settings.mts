@@ -101,7 +101,7 @@ export function registerTool(server: McpServer) {
             type: "custom",
           })
         }
-        let findIndex = VarList.get().data.findIndex(v => v.name == name);
+        let findIndex = VarList.get().data.findIndex(v => v.name == name && v.scope == scope);
         if (findIndex == -1) {
           VarList.get().data.push({
             "key": v4(),

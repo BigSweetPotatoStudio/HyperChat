@@ -86,24 +86,24 @@ export function SelectFile(props: {
   let obj =
     props.type != "openDirectory"
       ? {
-          type: "openFile" as const,
-          filters:
-            props.uploadType == ("image" as const)
+        type: "openFile" as const,
+        filters:
+          props.uploadType == ("image" as const)
+            ? [
+              {
+                name: "Image Files",
+                extensions: ["jpg", "jpeg", "png", "gif"],
+              },
+            ]
+            : props.uploadType == ("video" as const)
               ? [
-                  {
-                    name: "Image Files",
-                    extensions: ["jpg", "jpeg", "png", "gif"],
-                  },
-                ]
-              : props.uploadType == ("video" as const)
-                ? [
-                    {
-                      name: "Image Files",
-                      extensions: ["jpg", "jpeg", "png", "gif"],
-                    },
-                  ]
-                : props.filters,
-        }
+                {
+                  name: "Image Files",
+                  extensions: ["jpg", "jpeg", "png", "gif"],
+                },
+              ]
+              : props.filters,
+      }
       : { type: "openDirectory" as const };
 
   const inputRef = useRef(null);
@@ -204,6 +204,7 @@ export function SelectFile(props: {
 
 export function QuickPath(props: {
   onChange?: (v: File) => void;
+  onParseFile?: (v: File) => void;
   children?: any;
 }) {
   const [isDragActive, setIsDragActive] = useState(false);
@@ -233,9 +234,27 @@ export function QuickPath(props: {
       e.stopPropagation();
       setIsDragActive(false);
 
-      props.onChange(e.dataTransfer.files[0]);
+      props.onChange && props.onChange(e.dataTransfer.files[0]);
     };
 
+    dropzone.addEventListener('paste', async (event) => {
+      const items = event.clipboardData.items;
+      let arr: any[] = Array.from(items);
+      for (const item of arr) {
+        if (item.kind === 'file') {
+          const file = item.getAsFile();
+          if (file && file.type.startsWith('image/')) {
+            (props.onParseFile) && props.onParseFile(file);
+
+            // 上传逻辑
+            // const url = await uploadFile(file); // 你需要实现这个函数
+            // // 将上传后的图片链接插入到编辑器中
+            // const insertText = `![图片描述](${url})`;
+            // editor.trigger('keyboard', 'type', { text: insertText });
+          }
+        }
+      }
+    });
     dropzone.addEventListener("dragenter", handleDragEnter);
     dropzone.addEventListener("dragleave", handleDragLeave);
     dropzone.addEventListener("dragover", handleDragOver);

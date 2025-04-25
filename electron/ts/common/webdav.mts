@@ -73,7 +73,7 @@ class WebDAVSync {
       filename: item.basename,
       filepath: item.filename,
       modifiedTime: new Date(item.lastmod),
-    }));
+    })).sort((a, b) => b.modifiedTime.getTime() - a.modifiedTime.getTime());
   }
   _isSnyc = false;
   sync = async () => {
@@ -468,8 +468,8 @@ class WebDAVSync {
               let content = fs.readFileSync(path.join(localPath, filename), "utf-8");
               await this.client.putFileContents(path.join(remotePath, remoteFileName), content);
               try {
-                let rf = remoteFiles.find((r) => r.filename.startsWith(name));
-                if (rf) {
+                let rfs = remoteFiles.filter((r) => r.filename.startsWith(name));
+                for (let rf of rfs) {
                   await this.client.deleteFile(rf.filepath);
                 }
               } catch (e) {

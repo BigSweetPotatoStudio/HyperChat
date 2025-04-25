@@ -12,8 +12,11 @@ export async function getDefaultModelConfig() {
     // const json = zodResponseFormat(BaseResponseSchema, 'final_schema');
     // console.log(json);
 
-    let config: GPT_MODELS_TYPE = null
+    let config: GPT_MODELS_TYPE = undefined
     await GPT_MODELS.init();
+    if (config == null) {
+        config = GPT_MODELS.get().data.find(m => m.isDefault);
+    }
     if (config == null) {
         if (GPT_MODELS.get().data.length == 0) {
             EVENT.fire("setIsModelConfigOpenTrue");
@@ -26,7 +29,10 @@ export async function getDefaultModelConfig() {
 
 export function getDefaultModelConfigSync(models: typeof GPT_MODELS): GPT_MODELS_TYPE | undefined {
     let config: GPT_MODELS_TYPE | undefined = undefined;
-    if (config == undefined) {
+    if (config == null) {
+        config = models.get().data.find(m => m.isDefault);
+    }
+    if (config == null) {
         config = models.get().data[0];
     }
     return config;

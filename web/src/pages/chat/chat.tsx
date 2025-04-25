@@ -1604,8 +1604,6 @@ export const Chat = ({
                         formMoreSetting.setFieldsValue(currentChat.current);
                       }}
                     />
-                    <Divider type="vertical" />
-                    <Link style={{ color: "inherit" }} title={t`edit variables`} to={"/Setting/VariableList"}> <Icon name="var" className="hover:text-cyan-400"></Icon></Link>
 
                   </div>
                   <div className="flex">
@@ -1621,6 +1619,9 @@ export const Chat = ({
                         }}><DownloadOutlined /></Button>
                       }
                     </div>
+
+                    <Divider type="vertical" />
+                    <Link style={{ color: "inherit" }} title={t`edit variables`} to={"/Setting/VariableList"}> <Icon name="var" className="hover:text-cyan-400"></Icon></Link>
                     <Divider type="vertical" />
                     <Dropdown
                       trigger={['click']}
@@ -1673,663 +1674,341 @@ export const Chat = ({
                   }}
                 ></MyAttachR>
 
-                <QuickPath
-                  onChange={async (file) => {
-                    if (file.path) {
-                      setValue((value) => {
-                        return value + " " + file.path;
-                      });
-                    } else {
-                      if (file.type.includes("image")) {
-                        let path = await blobToBase64(file);
-                        resourceResListRef.current.push({
-                          call_name: "UserUpload",
-                          contents: [
-                            {
-                              path: path,
-                              blob: path,
-                              type: "image",
-                            },
-                          ],
-                          uid: v4(),
-                        });
-                        refresh();
-                      } else {
-                        message.warning(t`please uplaod image`);
+                <div className="my-sender-container">
+                  {
+                    // <QuickPath
+                    //   onParseFile={async (file) => {
+                    //     if (!file) {
+                    //       return;
+                    //     }
+                    //     if (file.path) {
+                    //       editorRef.current?.insertTextAtCursor(file.path);
+                    //     } else {
+                    //       if (file.type.includes("image")) {
+                    //         let path = await blobToBase64(file);
+                    //         resourceResListRef.current.push({
+                    //           call_name: "UserUpload",
+                    //           contents: [
+                    //             {
+                    //               path: path,
+                    //               blob: path,
+                    //               type: "image",
+                    //             },
+                    //           ],
+                    //           uid: v4(),
+                    //         });
+                    //         refresh();
+                    //       } else {
+                    //         message.warning(t`please uplaod image`);
+                    //       }
+                    //     }
+                    //   }}
+                    // >
+                    // </QuickPath>
+                  }
+                  <Editor
+                    onDragFile={async (file) => {
+                      if (!file) {
+                        return;
                       }
-                    }
-                  }}
-                >
-                  {true ? <div className="my-sender-container">
-                    <Editor
-                      submitType="enter"
-                      ref={editorRef}
-                      style={{
-                        border: "0px",
-                        padding: "4px 0px 4px",
-                      }} autoHeight rows={1} maxRows={10} value={value}
-                      onChange={(nextVal) => {
-                        setValue(nextVal);
-                      }}
-                      onSubmit={(s) => {
-                        if (DATA.current.suggestionShow) {
-                          return;
+                      if (file.path) {
+                        editorRef.current?.insertTextAtCursor(file.path);
+                      } else {
+                        if (file.type.includes("image")) {
+                          let path = await blobToBase64(file);
+                          resourceResListRef.current.push({
+                            call_name: "UserUpload",
+                            contents: [
+                              {
+                                path: path,
+                                blob: path,
+                                type: "image",
+                              },
+                            ],
+                            uid: v4(),
+                          });
+                          refresh();
+                        } else {
+                          message.warning(t`please uplaod image`);
                         }
-                        if (s == "") {
-                          return;
-                        }
-                        onRequest(s);
-                        setValue("");
-                        editorRef.current?.setValue("");
-                      }}
-                      fontSize={16}
-                      lineHeight={32}
-                      placeholder={t`You can use variables by enter scope, for example, enter var, or use @ to call other agents.`}
-                    />
+                      }
+                    }}
+                    submitType="enter"
+                    ref={editorRef}
+                    style={{
+                      border: "0px",
+                      padding: "4px 0px 4px",
+                    }} autoHeight rows={1} maxRows={10} value={value}
+                    onChange={(nextVal) => {
+                      setValue(nextVal);
+                    }}
+                    onSubmit={(s) => {
+                      if (DATA.current.suggestionShow) {
+                        return;
+                      }
+                      if (s == "") {
+                        return;
+                      }
+                      onRequest(s);
+                      setValue("");
+                      editorRef.current?.setValue("");
+                    }}
+                    fontSize={16}
+                    lineHeight={32}
+                    placeholder={t`You can use variables by enter scope, for example, enter var, or use @ to call other agents.`}
+                  />
 
-                    <Sender
-                      className="my-sender"
-                      footer={({ components }) => {
-                        const { SendButton, LoadingButton, SpeechButton } = components;
-                        return (
-                          <Flex justify="space-between" align="center">
-                            <Flex align="center">
+                  <Sender
+                    className="my-sender"
+                    footer={({ components }) => {
+                      const { SendButton, LoadingButton, SpeechButton } = components;
+                      return (
+                        <Flex justify="space-between" align="center">
+                          <Flex align="center">
 
-                              {supportImage && (
-                                <>
-                                  <Upload
-                                    accept="image/*"
-                                    fileList={[]}
-                                    beforeUpload={async (file) => {
-                                      if (file.type.includes("image")) {
-                                        let path = await blobToBase64(file);
-                                        resourceResListRef.current.push({
-                                          call_name: "UserUpload",
-                                          contents: [
-                                            {
-                                              path: path,
-                                              blob: await urlToBase64(path),
-                                              type: "image",
-                                            },
-                                          ],
-                                          uid: v4(),
-                                        });
-                                        refresh();
-                                      } else {
-                                        message.warning(t`please uplaod image`);
+                            {supportImage && (
+                              <>
+                                <Upload
+                                  accept="image/*"
+                                  fileList={[]}
+                                  beforeUpload={async (file) => {
+                                    if (file.type.includes("image")) {
+                                      let path = await blobToBase64(file);
+                                      resourceResListRef.current.push({
+                                        call_name: "UserUpload",
+                                        contents: [
+                                          {
+                                            path: path,
+                                            blob: await urlToBase64(path),
+                                            type: "image",
+                                          },
+                                        ],
+                                        uid: v4(),
+                                      });
+                                      refresh();
+                                    } else {
+                                      message.warning(t`please uplaod image`);
+                                    }
+                                    return false;
+                                  }}
+                                >
+                                  <Button
+                                    type="text"
+                                    icon={<LinkOutlined />}
+                                    onClick={() => { }}
+                                  />
+                                </Upload>
+                                {/* <Divider type="vertical" /> */}
+                              </>)}
+
+                            <Tooltip title={t`MCP and Tools`} placement="bottom">
+
+                              {supportTool == null || supportTool == true ? (
+                                <Space.Compact>
+                                  <Button onClick={() => {
+                                    setIsToolsShow(true);
+                                  }} type="dashed" icon={<Icon name="mcp" ></Icon>}>
+
+
+                                    {(() => {
+                                      let set = new Set();
+                                      for (let tool_name of currentChat.current.allowMCPs) {
+                                        let [name, _] = tool_name.split(" > ");
+                                        set.add(name);
                                       }
-                                      return false;
-                                    }}
-                                  >
-                                    <Button
-                                      type="text"
-                                      icon={<LinkOutlined />}
-                                      onClick={() => { }}
-                                    />
-                                  </Upload>
-                                  {/* <Divider type="vertical" /> */}
-                                </>)}
 
-                              <Tooltip title={t`MCP and Tools`} placement="bottom">
+                                      let load = mcpClients.filter(
+                                        (v) => v.status == "connected",
+                                      ).length;
+                                      let all = mcpClients.filter(x => x.status !== "disabled").length;
+                                      let curr = mcpClients.filter((v) => {
+                                        return v.status !== "disabled" && set.has(v.name);
+                                      }).length;
 
-                                {supportTool == null || supportTool == true ? (
-                                  <Space.Compact>
-                                    <Button onClick={() => {
-                                      setIsToolsShow(true);
-                                    }} type="dashed" icon={<Icon name="mcp" ></Icon>}>
+                                      return DATA.current.mcpLoading ? (
+                                        <>
+                                          {`${curr} `}
+                                          <SyncOutlined spin />
+                                          {`(${load}/${all})`}
+                                        </>
+                                      ) : (
+                                        curr
+                                      );
+                                    })()}
+                                    <Icon name="chuizi-copy" ></Icon>{
 
-
-                                      {(() => {
+                                      (() => {
                                         let set = new Set();
                                         for (let tool_name of currentChat.current.allowMCPs) {
                                           let [name, _] = tool_name.split(" > ");
                                           set.add(name);
                                         }
 
-                                        let load = mcpClients.filter(
-                                          (v) => v.status == "connected",
-                                        ).length;
-                                        let all = mcpClients.filter(x => x.status !== "disabled").length;
                                         let curr = mcpClients.filter((v) => {
                                           return v.status !== "disabled" && set.has(v.name);
-                                        }).length;
-
-                                        return DATA.current.mcpLoading ? (
-                                          <>
-                                            {`${curr} `}
-                                            <SyncOutlined spin />
-                                            {`(${load}/${all})`}
-                                          </>
-                                        ) : (
-                                          curr
-                                        );
-                                      })()}
-                                      <Icon name="chuizi-copy" ></Icon>{
-
-                                        (() => {
-                                          let set = new Set();
-                                          for (let tool_name of currentChat.current.allowMCPs) {
-                                            let [name, _] = tool_name.split(" > ");
-                                            set.add(name);
-                                          }
-
-                                          let curr = mcpClients.filter((v) => {
-                                            return v.status !== "disabled" && set.has(v.name);
-                                          });
-                                          let toolLen = 0;
-                                          for (let x of curr) {
-                                            toolLen += x.tools.length;
-                                          }
-                                          return (
-                                            <>
-                                              {toolLen}
-                                            </>
-                                          )
-                                        })()
-                                      }
-                                    </Button>
-
-                                  </Space.Compact>
-                                ) : (
-                                  <>  <Button
-                                    size="small"
-                                    type="text"
-                                    icon={<Icon name="mcp"></Icon>}
-                                    onClick={() => { }}
-                                  >{t`LLM not support`}</Button>  </>
-                                )}
-
-                              </Tooltip>
-                              {/* <Divider type="vertical" /> */}
-                              <Tooltip title={t`Resources`} placement="bottom">
-                                <Dropdown
-                                  placement="top"
-                                  trigger={["click"]}
-                                  menu={{
-                                    items: resourcesRef.current.map((x, i) => {
-                                      return {
-                                        key: x.key,
-                                        label: !x.description
-                                          ? x.key
-                                          : `${x.key}--${x.description}`,
-                                      };
-                                    }),
-                                    onClick: async (item) => {
-                                      let resource = resourcesRef.current.find(
-                                        (x) => x.key === item.key,
-                                      );
-                                      if (resource) {
-                                        let res = await call("mcpCallResource", [
-                                          resource.clientName as string,
-                                          resource.uri,
-                                        ]);
-                                        let t = {
-                                          ...res,
-                                          call_name: resource.key + "--" + resource.uri,
-                                          uid: v4(),
-                                        };
-                                        console.log("mcpCallResource", t);
-                                        resourceResListRef.current.push(t);
-                                        refresh();
-                                      }
-                                    },
-                                  }}
-                                  arrow
-                                >
-                                  <Button size="small" type="default" className="cursor-pointer border-0">
-                                    <Icon name="resources" />{" "}
-                                    {resourcesRef.current.length}
-                                  </Button>
-                                </Dropdown>
-                              </Tooltip>
-
-                              <Tooltip title={t`Prompts`} placement="bottom">
-                                <Dropdown
-                                  placement="top"
-                                  trigger={["click"]}
-                                  menu={{
-                                    items: promptsRef.current.map((x, i) => {
-                                      return {
-                                        key: x.key,
-                                        label: `${x.key} (${x.description})`,
-                                      };
-                                    }),
-                                    onClick: async (item) => {
-                                      let prompt = promptsRef.current.find(
-                                        (x) => x.key === item.key,
-                                      );
-                                      if (prompt) {
-                                        if (
-                                          prompt.arguments &&
-                                          prompt.arguments.length > 0
-                                        ) {
-                                          setIsFillPromptModalOpen(true);
-                                          setFillPromptFormItems(prompt.arguments);
-                                          mcpCallPromptCurr.current = prompt;
-                                        } else {
-                                          let res = await call("mcpCallPrompt", [
-                                            prompt.clientName as string,
-                                            prompt.name,
-                                            {},
-                                          ]);
-                                          console.log("mcpCallPrompt", res);
-                                          res.call_name = prompt.key;
-                                          res.uid = v4();
-                                          promptResList.current.push(res);
-                                          refresh();
-
+                                        });
+                                        let toolLen = 0;
+                                        for (let x of curr) {
+                                          toolLen += x.tools.length;
                                         }
-                                      }
-                                    },
-                                  }}
-                                  arrow
-                                >
-                                  <Button size="small" type="default" className="cursor-pointer border-0">
-                                    <Icon name="prompts" />{" "}
-                                    {promptsRef.current.length}
+                                        return (
+                                          <>
+                                            {toolLen}
+                                          </>
+                                        )
+                                      })()
+                                    }
                                   </Button>
-                                </Dropdown>
-                              </Tooltip>
-                            </Flex>
-                            <Flex align="center">
-                              {/* <Button type="text" style={{
-                                    fontSize: 18,
-                                    color: token.colorText,
-                                  }} icon={<ApiOutlined />} />
 
-                                  <Divider type="vertical" /> */}
-                              {loading ? (
-                                <LoadingButton type="default" />
+                                </Space.Compact>
                               ) : (
-                                <SendButton type="primary" disabled={false} />
+                                <>  <Button
+                                  size="small"
+                                  type="text"
+                                  icon={<Icon name="mcp"></Icon>}
+                                  onClick={() => { }}
+                                >{t`LLM not support`}</Button>  </>
                               )}
-                            </Flex>
-                          </Flex>
-                        );
-                      }}
-                      actions={false}
-                      loading={loading}
-                      value={value}
-                      onChange={(nextVal) => {
-                        // if (nextVal === "/") {
-                        //   onTrigger();
-                        // } else if (!nextVal) {
-                        //   onTrigger(false);
-                        // }
-                        setValue(nextVal);
-                      }}
-                      onCancel={() => {
-                        setLoading(false);
-                        openaiClient.current?.cancel();
-                        for (let d of DATA.current.diffs) {
-                          d.openaiClient?.cancel();
-                        }
-                        // message.success("Cancel sending!");
-                      }}
-                      onSubmit={(s) => {
-                        if (DATA.current.suggestionShow) {
-                          return;
-                        }
-                        onRequest(value);
-                        setValue("");
-                        editorRef.current?.setValue("");
-                      }}
-                      placeholder={t`Start inputting, You can use @ to call other agents, or quickly enter`}
-                    />
-                  </div> : <Suggestion
-                    items={[
-                      {
-                        label: "Agents",
-                        value: "Agents",
-                        children: Agents.get()
-                          .data.filter((x) => x.callable)
-                          .map((x) => {
-                            return {
-                              label: x.label,
-                              value: x.key,
-                            };
-                          }),
-                      },
-                      {
-                        label: "Quicks",
-                        value: "Quicks",
-                        children: AppSetting.get().quicks,
-                      },
-                      {
-                        label: "UpdateQuicks",
-                        value: "Update---Quicks",
-                      },
-                    ]}
-                    onSelect={(itemVal) => {
-                      let agent = Agents.get().data.find(
-                        (x) => x.key == itemVal,
-                      );
-                      if (agent) {
-                        DATA.current.suggestionShow = false;
-                        let textarea = document.querySelector(
-                          ".my-sender .ant-sender-input",
-                        ) as HTMLTextAreaElement;
-                        let position = textarea.selectionStart;
 
-                        setValue((value) => {
-                          return `${value.slice(0, position)}${agent.label} ${value.slice(position)}`;
-                        });
-                      } else {
-                        if (itemVal == "Update---Quicks") {
-                          setIsUpdateQuicks(true);
-                          return;
-                        } else {
-                          DATA.current.suggestionShow = false;
-                          let textarea = document.querySelector(
-                            ".my-sender .ant-sender-input",
-                          ) as HTMLTextAreaElement;
-                          let position = textarea.selectionStart;
-                          let quick = AppSetting.get().quicks.find(x => x.value == itemVal)?.quick;
-                          setValue(`${value.slice(0, position - 1)}` + quick + ` ${value.slice(position)}`);
-                          return;
-                        }
-                      }
-                    }}
-                    onOpenChange={(open) => {
-                      DATA.current.suggestionShow = open;
-                    }}
-                  >
-                    {({ onTrigger, onKeyDown }) => {
-                      return (
-                        <Sender
-                          className="my-sender"
-                          onKeyDown={(e) => {
-                            if (DATA.current.suggestionShow) {
-                              if (
-                                e.key == "Enter" ||
-                                e.key == "ArrowDown" ||
-                                e.key == "ArrowUp" ||
-                                e.key == "Escape" ||
-                                e.key == "ArrowLeft" ||
-                                e.key == "ArrowRight"
-                              ) {
-                                onKeyDown(e);
-                              } else {
-                                onTrigger(false);
-                                DATA.current.suggestionShow = false;
-                              }
-                            } else {
-                              if (e.key == "@") {
-                                onTrigger(true);
-                                DATA.current.suggestionShow = true;
-                              }
-                            }
-                          }}
-                          onPasteFile={async (file) => {
-                            // console.log("onPasteFile", file);
-
-                            if (file.type.includes("image")) {
-                              let p = await blobToBase64(file);
-                              resourceResListRef.current.push({
-                                call_name: "UserUpload",
-                                contents: [
-                                  {
-                                    path: p,
-                                    blob: p,
-                                    type: "image",
+                            </Tooltip>
+                            {/* <Divider type="vertical" /> */}
+                            <Tooltip title={t`Resources`} placement="bottom">
+                              <Dropdown
+                                placement="top"
+                                trigger={["click"]}
+                                menu={{
+                                  items: resourcesRef.current.map((x, i) => {
+                                    return {
+                                      key: x.key,
+                                      label: !x.description
+                                        ? x.key
+                                        : `${x.key}--${x.description}`,
+                                    };
+                                  }),
+                                  onClick: async (item) => {
+                                    let resource = resourcesRef.current.find(
+                                      (x) => x.key === item.key,
+                                    );
+                                    if (resource) {
+                                      let res = await call("mcpCallResource", [
+                                        resource.clientName as string,
+                                        resource.uri,
+                                      ]);
+                                      let t = {
+                                        ...res,
+                                        call_name: resource.key + "--" + resource.uri,
+                                        uid: v4(),
+                                      };
+                                      console.log("mcpCallResource", t);
+                                      resourceResListRef.current.push(t);
+                                      refresh();
+                                    }
                                   },
-                                ],
-                                uid: v4(),
-                              });
-                              refresh();
-                            } else {
-                              message.warning(t`please uplaod image`);
-                            }
-                          }}
-                          footer={({ components }) => {
-                            const { SendButton, LoadingButton, SpeechButton } = components;
-                            return (
-                              <Flex justify="space-between" align="center">
-                                <Flex align="center">
+                                }}
+                                arrow
+                              >
+                                <Button size="small" type="default" className="cursor-pointer border-0">
+                                  <Icon name="resources" />{" "}
+                                  {resourcesRef.current.length}
+                                </Button>
+                              </Dropdown>
+                            </Tooltip>
 
-                                  {supportImage && (
-                                    <>
-                                      <Upload
-                                        accept="image/*"
-                                        fileList={[]}
-                                        beforeUpload={async (file) => {
-                                          if (file.type.includes("image")) {
-                                            let path = await blobToBase64(file);
-                                            resourceResListRef.current.push({
-                                              call_name: "UserUpload",
-                                              contents: [
-                                                {
-                                                  path: path,
-                                                  blob: await urlToBase64(path),
-                                                  type: "image",
-                                                },
-                                              ],
-                                              uid: v4(),
-                                            });
-                                            refresh();
-                                          } else {
-                                            message.warning(t`please uplaod image`);
-                                          }
-                                          return false;
-                                        }}
-                                      >
-                                        <Button
-                                          type="text"
-                                          icon={<LinkOutlined />}
-                                          onClick={() => { }}
-                                        />
-                                      </Upload>
-                                      {/* <Divider type="vertical" /> */}
-                                    </>)}
+                            <Tooltip title={t`Prompts`} placement="bottom">
+                              <Dropdown
+                                placement="top"
+                                trigger={["click"]}
+                                menu={{
+                                  items: promptsRef.current.map((x, i) => {
+                                    return {
+                                      key: x.key,
+                                      label: `${x.key} (${x.description})`,
+                                    };
+                                  }),
+                                  onClick: async (item) => {
+                                    let prompt = promptsRef.current.find(
+                                      (x) => x.key === item.key,
+                                    );
+                                    if (prompt) {
+                                      if (
+                                        prompt.arguments &&
+                                        prompt.arguments.length > 0
+                                      ) {
+                                        setIsFillPromptModalOpen(true);
+                                        setFillPromptFormItems(prompt.arguments);
+                                        mcpCallPromptCurr.current = prompt;
+                                      } else {
+                                        let res = await call("mcpCallPrompt", [
+                                          prompt.clientName as string,
+                                          prompt.name,
+                                          {},
+                                        ]);
+                                        console.log("mcpCallPrompt", res);
+                                        res.call_name = prompt.key;
+                                        res.uid = v4();
+                                        promptResList.current.push(res);
+                                        refresh();
 
-                                  <Tooltip title={t`MCP and Tools`} placement="bottom">
-
-                                    {supportTool == null || supportTool == true ? (
-                                      <Space.Compact>
-                                        <Button onClick={() => {
-                                          setIsToolsShow(true);
-                                        }} type="text" icon={<Icon name="mcp"></Icon>}>
-
-
-                                          {(() => {
-                                            let set = new Set();
-                                            for (let tool_name of currentChat.current.allowMCPs) {
-                                              let [name, _] = tool_name.split(" > ");
-                                              set.add(name);
-                                            }
-
-                                            let load = mcpClients.filter(
-                                              (v) => v.status == "connected",
-                                            ).length;
-                                            let all = mcpClients.filter(x => x.status !== "disabled").length;
-                                            let curr = mcpClients.filter((v) => {
-                                              return v.status !== "disabled" && set.has(v.name);
-                                            }).length;
-
-                                            return DATA.current.mcpLoading ? (
-                                              <>
-                                                {`${curr} `}
-                                                <SyncOutlined spin />
-                                                {`(${load}/${all})`}
-                                              </>
-                                            ) : (
-                                              curr
-                                            );
-                                          })()}
-                                          <Icon name="chuizi-copy"></Icon>{
-
-                                            (() => {
-                                              let set = new Set();
-                                              for (let tool_name of currentChat.current.allowMCPs) {
-                                                let [name, _] = tool_name.split(" > ");
-                                                set.add(name);
-                                              }
-
-                                              let curr = mcpClients.filter((v) => {
-                                                return v.status !== "disabled" && set.has(v.name);
-                                              });
-                                              let toolLen = 0;
-                                              for (let x of curr) {
-                                                toolLen += x.tools.length;
-                                              }
-                                              return (
-                                                <>
-                                                  {toolLen}
-                                                </>
-                                              )
-                                            })()
-                                          }
-                                        </Button>
-
-                                      </Space.Compact>
-                                    ) : (
-                                      <>  <Button
-                                        type="text"
-                                        icon={<Icon name="mcp"></Icon>}
-                                        onClick={() => { }}
-                                      >{t`LLM not support`}</Button>  </>
-                                    )}
-
-                                  </Tooltip>
-                                  {/* <Divider type="vertical" /> */}
-                                  <Tooltip title={t`Resources`} placement="bottom">
-                                    <Dropdown
-                                      placement="top"
-                                      trigger={["click"]}
-                                      menu={{
-                                        items: resourcesRef.current.map((x, i) => {
-                                          return {
-                                            key: x.key,
-                                            label: !x.description
-                                              ? x.key
-                                              : `${x.key}--${x.description}`,
-                                          };
-                                        }),
-                                        onClick: async (item) => {
-                                          let resource = resourcesRef.current.find(
-                                            (x) => x.key === item.key,
-                                          );
-                                          if (resource) {
-                                            let res = await call("mcpCallResource", [
-                                              resource.clientName as string,
-                                              resource.uri,
-                                            ]);
-                                            let t = {
-                                              ...res,
-                                              call_name: resource.key + "--" + resource.uri,
-                                              uid: v4(),
-                                            };
-                                            console.log("mcpCallResource", t);
-                                            resourceResListRef.current.push(t);
-                                            refresh();
-                                          }
-                                        },
-                                      }}
-                                      arrow
-                                    >
-                                      <Button type="text" className="cursor-pointer">
-                                        <Icon name="resources" />{" "}
-                                        {resourcesRef.current.length}
-                                      </Button>
-                                    </Dropdown>
-                                  </Tooltip>
-
-                                  <Tooltip title={t`Prompts`} placement="bottom">
-                                    <Dropdown
-                                      placement="top"
-                                      trigger={["click"]}
-                                      menu={{
-                                        items: promptsRef.current.map((x, i) => {
-                                          return {
-                                            key: x.key,
-                                            label: `${x.key} (${x.description})`,
-                                          };
-                                        }),
-                                        onClick: async (item) => {
-                                          let prompt = promptsRef.current.find(
-                                            (x) => x.key === item.key,
-                                          );
-                                          if (prompt) {
-                                            if (
-                                              prompt.arguments &&
-                                              prompt.arguments.length > 0
-                                            ) {
-                                              setIsFillPromptModalOpen(true);
-                                              setFillPromptFormItems(prompt.arguments);
-                                              mcpCallPromptCurr.current = prompt;
-                                            } else {
-                                              let res = await call("mcpCallPrompt", [
-                                                prompt.clientName as string,
-                                                prompt.name,
-                                                {},
-                                              ]);
-                                              console.log("mcpCallPrompt", res);
-                                              res.call_name = prompt.key;
-                                              res.uid = v4();
-                                              promptResList.current.push(res);
-                                              refresh();
-
-                                            }
-                                          }
-                                        },
-                                      }}
-                                      arrow
-                                    >
-                                      <Button type="text" className="cursor-pointer">
-                                        <Icon name="prompts" />{" "}
-                                        {promptsRef.current.length}
-                                      </Button>
-                                    </Dropdown>
-                                  </Tooltip>
-                                </Flex>
-                                <Flex align="center">
-                                  {/* <Button type="text" style={{
+                                      }
+                                    }
+                                  },
+                                }}
+                                arrow
+                              >
+                                <Button size="small" type="default" className="cursor-pointer border-0">
+                                  <Icon name="prompts" />{" "}
+                                  {promptsRef.current.length}
+                                </Button>
+                              </Dropdown>
+                            </Tooltip>
+                          </Flex>
+                          <Flex align="center">
+                            {/* <Button type="text" style={{
                                     fontSize: 18,
                                     color: token.colorText,
                                   }} icon={<ApiOutlined />} />
 
                                   <Divider type="vertical" /> */}
-                                  {loading ? (
-                                    <LoadingButton type="default" />
-                                  ) : (
-                                    <SendButton type="primary" disabled={false} />
-                                  )}
-                                </Flex>
-                              </Flex>
-                            );
-                          }}
-                          actions={false}
-                          loading={loading}
-                          value={value}
-                          onChange={(nextVal) => {
-                            // if (nextVal === "/") {
-                            //   onTrigger();
-                            // } else if (!nextVal) {
-                            //   onTrigger(false);
-                            // }
-                            setValue(nextVal);
-                          }}
-                          onCancel={() => {
-                            setLoading(false);
-                            openaiClient.current?.cancel();
-                            for (let d of DATA.current.diffs) {
-                              d.openaiClient?.cancel();
-                            }
-                            // message.success("Cancel sending!");
-                          }}
-                          onSubmit={(s) => {
-                            if (DATA.current.suggestionShow) {
-                              return;
-                            }
-                            setValue("");
-                            onRequest(s);
-                          }}
-                          placeholder={t`Start inputting, You can use @ to call other agents, or quickly enter`}
-                        />
+                            {loading ? (
+                              <LoadingButton type="default" />
+                            ) : (
+                              <SendButton type="primary" disabled={false} />
+                            )}
+                          </Flex>
+                        </Flex>
                       );
                     }}
-                  </Suggestion>}
-                </QuickPath>
+                    actions={false}
+                    loading={loading}
+                    value={value}
+                    onChange={(nextVal) => {
+                      // if (nextVal === "/") {
+                      //   onTrigger();
+                      // } else if (!nextVal) {
+                      //   onTrigger(false);
+                      // }
+                      setValue(nextVal);
+                    }}
+                    onCancel={() => {
+                      setLoading(false);
+                      openaiClient.current?.cancel();
+                      for (let d of DATA.current.diffs) {
+                        d.openaiClient?.cancel();
+                      }
+                      // message.success("Cancel sending!");
+                    }}
+                    onSubmit={(s) => {
+                      if (DATA.current.suggestionShow) {
+                        return;
+                      }
+                      onRequest(value);
+                      setValue("");
+                      editorRef.current?.setValue("");
+                    }}
+                    placeholder={t`Start inputting, You can use @ to call other agents, or quickly enter`}
+                  />
+                </div>
+
               </div>
             </div>
           </div>
