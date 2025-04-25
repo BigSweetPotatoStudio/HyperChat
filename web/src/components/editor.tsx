@@ -273,6 +273,7 @@ export const Editor = forwardRef(({
     placeholder,
     lineHeight = 19,
     fontSize = 14,
+    submitType = "enter"
 }: {
     value?: string,
     onChange?: (value: string) => void,
@@ -286,6 +287,7 @@ export const Editor = forwardRef(({
     placeholder?: string,
     lineHeight?: number,
     fontSize?: number,
+    submitType?: "enter" | "CtrlEnter"
 }, ref) => {
     const [num, setNum] = React.useState(0);
     const refresh = () => {
@@ -486,16 +488,79 @@ export const Editor = forwardRef(({
 
             validate(model);
             // 为 Ctrl+Enter 绑定一个命令，这里示范调用 onChange 并可在此触发“提交”逻辑
-            editor.addCommand(
-                monaco.KeyMod.CtrlCmd | monaco.KeyCode.Enter,
-                () => {
-                    const currentValue = editor.getModel()?.getValue() ?? "";
-                    // 更新内容
-                    onSubmit && onSubmit(currentValue);
-                    // 如果需要提交，可以在这里调用一个提交回调：
-                    // props.onSubmit?.(currentValue);
-                }
-            );
+            // editor.addCommand(
+            //     monaco.KeyCode.Enter,
+            //     () => {
+            //         try {
+            //             // 使用更简单的方法检测建议面板
+            //             const suggestWidgetVisible = document.querySelector('.suggest-widget.visible') !== null;
+
+            //             if (suggestWidgetVisible) {
+            //                 // 建议面板打开时，不提交
+            //                 console.log("Suggestion widget is visible, not submitting");
+            //                 return;
+            //             }
+
+            //             const currentValue = editor.getModel()?.getValue() ?? "";
+            //             // 更新内容
+            //             onSubmit && onSubmit(currentValue);
+            //         } catch (e) {
+            //             console.error("Error in Enter command:", e);
+            //         }
+            //     }
+            // );
+            if (submitType == "enter") {
+                // 如果你仍然想保留单独 Enter 提交功能，可以使用 onKeyDown 事件而不是 addCommand
+                editor.onKeyDown((e) => {
+                    if (e.keyCode === monaco.KeyCode.Enter && !e.ctrlKey && !e.shiftKey && !e.altKey && !e.metaKey) {
+                        // 检查建议面板是否可见
+                        const suggestWidgetVisible = document.querySelector('.suggest-widget.visible') !== null;
+                        if (!suggestWidgetVisible) {
+                            // 如果不可见才提交
+                            const currentValue = editor.getModel()?.getValue() ?? "";
+                            onSubmit && onSubmit(currentValue);
+                            e.preventDefault();
+                        }
+                    }
+                });
+
+                editor.addCommand(
+                    monaco.KeyMod.Shift | monaco.KeyCode.Enter,
+                    () => {
+                        // const currentValue = editor.getModel()?.getValue() ?? "";
+                        const position = editor.getPosition();
+                        if (position) {
+                            // const lineContent = editor.getModel().getLineContent(position.lineNumber);
+                            const insertText = "\n";
+                            editor.executeEdits("", [{
+                                range: new monaco.Range(
+                                    position.lineNumber,
+                                    position.column,
+                                    position.lineNumber,
+                                    position.column
+                                ),
+                                text: insertText
+                            }]);
+                            // Move cursor to new position
+                            editor.setPosition({
+                                lineNumber: position.lineNumber + 1,
+                                column: 1
+                            });
+                        }
+                    }
+                );
+            } else {
+                editor.addCommand(
+                    monaco.KeyMod.CtrlCmd | monaco.KeyCode.Enter,
+                    () => {
+                        const currentValue = editor.getModel()?.getValue() ?? "";
+                        // 更新内容
+                        onSubmit && onSubmit(currentValue);
+                        // 如果需要提交，可以在这里调用一个提交回调：
+                        // props.onSubmit?.(currentValue);
+                    }
+                );
+            }
             // // 添加操作栏项目
             // editor.addAction({
             //     id: 'bold-text',
@@ -565,7 +630,7 @@ export const Editor = forwardRef(({
 
     return <div className={"my-editor"} style={{
         ...style,
-    }} onClick={() => { 
+    }} onClick={() => {
         if (monacoRef.current) {
             monacoRef.current.focus();
         }

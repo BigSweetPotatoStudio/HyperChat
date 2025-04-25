@@ -1684,7 +1684,7 @@ export const Chat = ({
                       ref={editorRef}
                       style={{
                         border: "0px",
-                        padding: "12px 0px 8px",
+                        padding: "4px 0px 4px",
                       }} autoHeight rows={1} maxRows={10} value={value}
                       onChange={(nextVal) => {
                         setValue(nextVal);
@@ -1693,13 +1693,16 @@ export const Chat = ({
                         if (DATA.current.suggestionShow) {
                           return;
                         }
+                        if(s == "") {
+                          return;
+                        }
                         onRequest(s);
                         setValue("");
                         editorRef.current?.setValue("");
                       }}
                       fontSize={16}
-                      lineHeight={24}
-                      placeholder={t`You can use variables by enter scope, for example, enter var, or use @ to call other agents.` + t` Ctrl+Enter Send`}
+                      lineHeight={32}
+                      placeholder={t`You can use variables by enter scope, for example, enter var, or use @ to call other agents.`}
                     />
 
                     <Sender
