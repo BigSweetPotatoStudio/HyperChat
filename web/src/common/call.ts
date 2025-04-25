@@ -18,10 +18,10 @@ export function getURL_PRE() {
   return URL_PRE;
 }
 
-
 if (process.env.runtime !== "node") {
-  URL_PRE = location.origin + location.pathname;
   // web环境
+  URL_PRE = location.origin + location.pathname.replace("index.html", "");
+
   if (ext.invert && process.env.myEnv != "prod") {
     let config = await ext.invert("getConfig", []);
     URL_PRE =

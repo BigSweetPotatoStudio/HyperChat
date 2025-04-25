@@ -798,24 +798,33 @@ export function Market() {
               onFinish={async (values) => {
                 try {
                   setLoadingOpenMCP(true);
-                  // if (
-                  //   values._type == "edit" &&
-                  //   MCP_CONFIG.get().mcpServers[values._name].disabled
-                  // ) {
-                  //   message.error("MCP Service Disabled");
-                  //   return;
-                  // }
-                  if (values._type != "edit") {
-                    if (mcpClients.find(x => x.name === values._name)) {
+
+                  if (values._type != "edit") { // 新建
+                    if (mcpClients.find(x => x.name === values.name)) {
                       message.error(t`MCP Service Name already exists`);
                       return;
                     }
+                  } else { //编辑
+                    if (values.name != values._name) {
+                      await call("closeMcpClients", [values._name, { isdelete: true, isdisable: true }]);
+                    }
                   }
-                  let mcpServerConfig = {} as any;
+
+
+                  let mcpServerConfig = {} as MCP_CONFIG_TYPE;
                   if (values.type == "sse" || values.type == "streamableHttp") {
+                    let headers = {}
+                    let lines = values.headers.split("\n");
+                    for (let line of lines) {
+                      let [key, value] = line.split("=");
+                      if (key && value) {
+                        headers[key.trim()] = value.trim();
+                      }
+                    }
                     mcpServerConfig = {
                       url: values.url,
                       type: values.type,
+                      headers: headers,
                     };
                   } else {
                     let commands = values.command
@@ -823,13 +832,13 @@ export function Market() {
                       .filter((x) => x.trim() != "");
 
                     let [command, ...args] = commands;
-                    values.command = command;
+                    values.command = command.trim();
                     values.args = args;
                     values.env = {};
                     try {
                       values._envList = values._envList || [];
                       for (let x of values._envList) {
-                        values.env[x.name] = x.value;
+                        values.env[x.name.trim()] = x.value.trim();
                       }
                     } catch {
                       message.error("Please enter a valid JSON");
@@ -842,7 +851,7 @@ export function Market() {
                     }
                   }
 
-                  await call("openMcpClient", [values._name, mcpServerConfig]);
+                  await call("openMcpClient", [values.name, mcpServerConfig]);
 
                   setCurrResult({
                     data: "success",
@@ -870,14 +879,25 @@ export function Market() {
           </Form.Item>
           <Form.Item
             name="_name"
+            label={t`Old Name`}
+            className="hidden"
+            rules={[{ required: true, message: t`Please enter` }]}
+          >
+            <Input
+              disabled
+              placeholder="Please enter"
+            ></Input>
+          </Form.Item>
+          <Form.Item
+            name="name"
             label={t`Name`}
             rules={[{ required: true, message: t`Please enter` }]}
           >
             <Input
-              disabled={mcpform.getFieldValue("_type") == "edit"}
               placeholder="Please enter"
             ></Input>
           </Form.Item>
+
           <Form.Item
             name="type"
             label={t`type`}
@@ -902,6 +922,13 @@ export function Market() {
                 rules={[{ required: true, message: "Please enter" }]}
               >
                 <Input placeholder="Please enter url"></Input>
+              </Form.Item>
+              <Form.Item
+                name="headers"
+                label={t`request-headers`}
+              >
+                <Input.TextArea placeholder="Content-Type=application/json
+Authorization=Bearer token"></Input.TextArea>
               </Form.Item>
             </div>
           ) : (

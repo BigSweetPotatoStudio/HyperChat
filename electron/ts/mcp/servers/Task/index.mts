@@ -1,5 +1,5 @@
 import { BrowserWindow } from "electron";
-import { Logger } from "ts/polyfills/index.mjs";
+import { CONST, Logger } from "ts/polyfills/index.mjs";
 import { zx } from "../../../es6.mjs";
 const { fs, path, sleep } = zx;
 import dayjs from "dayjs";
@@ -33,7 +33,7 @@ const NAME = "hyper_agent";
 const server = new Server(
   {
     name: NAME,
-    version: "0.1.0",
+    version: CONST.getVersion,
   },
   {
     capabilities: {

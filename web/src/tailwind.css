@@ -266,11 +266,12 @@ div[role="system"] .ant-bubble-content-wrapper {
 }
 
 .my-sender-container{
-  padding-top: 8px;
+  padding-top: 4px;
   border: 1px solid #d9d9d9;
   border-radius: 10px;
   overflow: hidden; /* 确保内部元素不溢出圆角 */
 }
+
 
 .my-sender-container .ant-sender-content{
   padding: 0;
@@ -280,4 +281,6 @@ div[role="system"] .ant-bubble-content-wrapper {
 
 .my-sender-container .ant-sender{
   border: 0px;
+  box-shadow: none;
+  background: transparent;
 }

@@ -79,7 +79,7 @@ export function enableCompletionItemProvider() {
                         label: x.varName,
                         insertText: x.variableStrategy == "immediate" ? x.value : `{{${x.varName}}}`,
                         detail: x.description || `${x.name} ${x.variableStrategy} ${x.variableType}`,
-                        value: x.value, 
+                        value: x.value,
                     }
                 })
             ];
@@ -565,6 +565,10 @@ export const Editor = forwardRef(({
 
     return <div className={"my-editor"} style={{
         ...style,
+    }} onClick={() => { 
+        if (monacoRef.current) {
+            monacoRef.current.focus();
+        }
     }}>
         <div style={{ height: autoHeight ? editorHeight : style.height, }} className={className + " " + "h-full w-full"} id={uid.current} >
         </div>

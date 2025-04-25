@@ -19,6 +19,7 @@ import {
   ListToolsRequestSchema,
   CallToolRequestSchema,
 } from "ts/es6.mjs";
+import { CONST } from "ts/polyfills/polyfills.mjs";
 const { fs, path, sleep } = zx;
 // import { ListPromptsRequestSchema, ListToolsRequestSchema } from "@modelcontextprotocol/sdk/types.js";
 
@@ -31,7 +32,7 @@ const NAME = "hyper_knowledge_base";
 const server = new Server(
   {
     name: NAME,
-    version: "0.1.0",
+    version: CONST.getVersion,
   },
   {
     capabilities: {

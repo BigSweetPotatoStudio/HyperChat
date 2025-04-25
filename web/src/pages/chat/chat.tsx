@@ -1584,7 +1584,7 @@ export const Chat = ({
                       }}
                     />
                     <Divider type="vertical" />
-                    <Link title={t`edit variables`} to={"/Setting/VariableList"}> <Button type="text" size="small" className="hover:text-cyan-400" icon={<Icon name="var" className="text-cyan-400"></Icon>}></Button></Link>
+                    <Link style={{ color: "inherit" }} title={t`edit variables`} to={"/Setting/VariableList"}> <Icon name="var" className="hover:text-cyan-400"></Icon></Link>
 
                   </div>
                   <div className="flex">
@@ -1684,7 +1684,7 @@ export const Chat = ({
                       ref={editorRef}
                       style={{
                         border: "0px",
-                        padding: "4px 0px",
+                        padding: "12px 0px 8px",
                       }} autoHeight rows={1} maxRows={10} value={value}
                       onChange={(nextVal) => {
                         setValue(nextVal);
@@ -1699,7 +1699,7 @@ export const Chat = ({
                       }}
                       fontSize={16}
                       lineHeight={24}
-                      placeholder={t`You can use variables by enter scope, for example, enter var, or use @ to call other agents.`}
+                      placeholder={t`You can use variables by enter scope, for example, enter var, or use @ to call other agents.` + t` Ctrl+Enter Send`}
                     />
 
                     <Sender
@@ -1751,7 +1751,7 @@ export const Chat = ({
                                   <Space.Compact>
                                     <Button onClick={() => {
                                       setIsToolsShow(true);
-                                    }} type="text" icon={<Icon name="mcp"></Icon>}>
+                                    }} type="dashed" icon={<Icon name="mcp" ></Icon>}>
 
 
                                       {(() => {
@@ -1779,7 +1779,7 @@ export const Chat = ({
                                           curr
                                         );
                                       })()}
-                                      <Icon name="chuizi-copy"></Icon>{
+                                      <Icon name="chuizi-copy" ></Icon>{
 
                                         (() => {
                                           let set = new Set();
@@ -1807,6 +1807,7 @@ export const Chat = ({
                                   </Space.Compact>
                                 ) : (
                                   <>  <Button
+                                    size="small"
                                     type="text"
                                     icon={<Icon name="mcp"></Icon>}
                                     onClick={() => { }}
@@ -1850,7 +1851,7 @@ export const Chat = ({
                                   }}
                                   arrow
                                 >
-                                  <Button type="text" className="cursor-pointer">
+                                  <Button size="small" type="default" className="cursor-pointer border-0">
                                     <Icon name="resources" />{" "}
                                     {resourcesRef.current.length}
                                   </Button>
@@ -1898,7 +1899,7 @@ export const Chat = ({
                                   }}
                                   arrow
                                 >
-                                  <Button type="text" className="cursor-pointer">
+                                  <Button size="small" type="default" className="cursor-pointer border-0">
                                     <Icon name="prompts" />{" "}
                                     {promptsRef.current.length}
                                   </Button>
@@ -2370,6 +2371,32 @@ export const Chat = ({
         >
           <Tree
             checkable
+            selectedKeys={[]}
+            onSelect={(selectedKeys, info) => {
+              // console.log("onSelect", selectedKeys, info);
+              let [clientName, _] = (selectedKeys[0] as string).split(" > ");
+              if (info.node.isLeaf) {
+
+                if (info.node.checked) {
+                  currentChat.current.allowMCPs = currentChat.current.allowMCPs.filter(x => x != selectedKeys[0]);
+                  currentChat.current.allowMCPs = currentChat.current.allowMCPs.filter(x => x != clientName);
+                } else {
+                  currentChat.current.allowMCPs.push(selectedKeys[0] as string);
+                }
+              } else {
+                if (info.node.halfChecked || info.node.checked == false) {
+                  currentChat.current.allowMCPs = currentChat.current.allowMCPs.filter(x => !x.startsWith(clientName));
+                  currentChat.current.allowMCPs.push(info.node.key);
+                  info.node.children.forEach((x) => {
+                    currentChat.current.allowMCPs.push(x.key as string);
+                  });
+                } else {
+                  currentChat.current.allowMCPs = currentChat.current.allowMCPs.filter(x => !x.startsWith(clientName));
+                }
+              }
+
+              refresh();
+            }}
             onCheck={(checkedKeys) => {
               // console.log("onCheck", checkedKeys);
               currentChat.current.allowMCPs = checkedKeys as string[];
@@ -2378,7 +2405,7 @@ export const Chat = ({
             checkedKeys={currentChat.current.allowMCPs}
             treeData={mcpClients.filter(x => x.status != "disabled").map((x) => {
               return {
-                title: (
+                title: (<Tooltip title={x.servername}>
                   <span>
                     {x.name}{" "}{x.source == "claude" ? <Tag color="blue">{t`claude`}</Tag> : x.source == "builtin" ? <Tag color="blue">{t`built-in`}</Tag> : null}
                     {x.status == "connected" ? null : x.status ==
@@ -2395,29 +2422,30 @@ export const Chat = ({
                         }}
                       >{t`Reload`}</Button> : <DisconnectOutlined className="text-red-400" />
                     )}
-                  </span>
+                  </span></Tooltip>
                 ),
                 key: x.name,
-                children: x.tools.map((t) => {
+                children: x.tools.map((tool) => {
                   return {
                     title: (
-                      <Tooltip title={t.function.description}>
+                      <Tooltip title={tool.function.description}>
                         <span
-                          onClick={() => {
-                            setCurrTool(t);
+                        >
+                          {tool.origin_name || tool.function.name}
+                          <ApiOutlined onClick={(e) => {
+                            e.stopPropagation();
+                            setCurrTool(tool);
                             setCurrToolResult({
                               data: null,
                               error: null,
                             });
                             callToolForm.resetFields();
                             setCallToolOpen(true);
-                          }}
-                        >
-                          {t.origin_name || t.function.name}
+                          }} title={t`run`} className=" hover:text-cyan-400 ml-1" />
                         </span>
                       </Tooltip>
                     ),
-                    key: t.restore_name,
+                    key: tool.restore_name,
                     isLeaf: true,
                   };
                 }),

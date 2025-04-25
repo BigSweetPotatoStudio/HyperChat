@@ -89,7 +89,7 @@ export const AppSetting = new Data("app_setting.json", {
   darkTheme: false,
   mcpCallToolTimeout: 60,
   defaultAllowMCPs: undefined as string[] | undefined,
-  quicks: [] as Array<{
+  quicks: [] as Array<{  // 废弃⚠️
     value: string;
     label: string;
     quick: string;
@@ -241,13 +241,14 @@ export type MCP_CONFIG_TYPE = {
   command?: string;
   args?: string[];
   env?: { [s: string]: string };
+  headers?: { [s: string]: string };
   url?: string;
   type?: "stdio" | "sse" | "streamableHttp";
   hyperchat?: {
-    config: { [s in string]: any };
-    url: string;
-    type: "stdio" | "sse";
-    scope: "built-in" | "outer";
+    config: { [s in string]: any }; 
+    url: string;  // 废弃⚠️
+    type: "stdio" | "sse";  // 废弃⚠️
+    scope: "built-in" | "outer";  // 废弃⚠️
   };
   disabled?: boolean;
   isSync?: boolean;

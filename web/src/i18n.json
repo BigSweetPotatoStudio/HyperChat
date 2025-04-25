@@ -1250,5 +1250,13 @@
   "Name already exists": {
     "en": "Name already exists",
     "zh": "名称已存在"
+  },
+  "You can use variables by enter scope, for example, enter var, or use @ to call other agents.": {
+    "en": "You can use variables by enter scope, for example, enter var, or use @ to call other agents.",
+    "zh": "你可以通过进入范围来使用变量，例如，进入 var，或者使用 @ 来调用其他代理。"
+  },
+  " Ctrl+Enter Send": {
+    "en": " Ctrl+Enter Send",
+    "zh": " Ctrl+Enter 发送"
   }
 }

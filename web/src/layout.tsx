@@ -233,9 +233,11 @@ export function Layout() {
   useEffect(() => { }, []);
   useEffect(() => {
     (async () => {
-      await GPT_MODELS.init();
-      await MCP_CONFIG.init();
-      await KNOWLEDGE_BASE.init();
+      await Promise.all([
+        GPT_MODELS.init(),
+        MCP_CONFIG.init(),
+        KNOWLEDGE_BASE.init(),
+      ]);
       refresh();
       await initMcpClients();
     })();

@@ -369,7 +369,7 @@ export class MCPClient implements IMCPClient {
     const transport = new SSEClientTransport(new URL(config?.url || config?.hyperchat?.url), {
       requestInit: {
         keepalive: true,
-        headers: {}
+        headers: config.headers || {},
       }
     });
     await client.connect(transport);
@@ -384,6 +384,10 @@ export class MCPClient implements IMCPClient {
     });
 
     const transport = new StreamableHTTPClientTransport(new URL(config?.url), {
+      requestInit: {
+        keepalive: true,
+        headers: config.headers || {},
+      }
       // sessionId: v4(),
     });
     await client.connect(transport);
