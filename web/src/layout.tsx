@@ -230,32 +230,6 @@ export function Layout() {
       setIsModelConfigOpen(true);
     });
   }, []);
-  useEffect(() => { }, []);
-  useEffect(() => {
-    (async () => {
-      await Promise.all([
-        GPT_MODELS.init(),
-        MCP_CONFIG.init(),
-        KNOWLEDGE_BASE.init(),
-      ]);
-      refresh();
-      await initMcpClients();
-    })();
-  }, []);
-
-  const [locale, setLocal] = useState(currLang == "zhCN" ? zhCN : enUS);
-  const [collapsed, setCollapsed] = useState(false);
-  const [isModelConfigOpen, setIsModelConfigOpen] = useState(false);
-  const [isAddModelConfigOpen, setIsAddModelConfigOpen] = useState(false);
-  // const [currRow, setCurrRow] = useState({} as any);
-  const [form] = Form.useForm();
-
-  const [mcpClients, setMcpClients] = useState<InitedClient[]>([]);
-
-  const [loadingCheckLLM, setLoadingCheckLLM] = useState(false);
-  const [syncStatus, setSyncStatus] = useState(0);
-
-  const [updateData, setUpdateData] = useState({} as any);
   useEffect(() => {
     msg_receive("message-from-main", async (res: any) => {
       // console.log("UpdateMsg! ", res);
@@ -311,8 +285,17 @@ export function Layout() {
         }
       }
     });
+  }, []);
+  useEffect(() => {
     (async () => {
-      await electronData.init();
+      await Promise.all([
+        GPT_MODELS.init(),
+        MCP_CONFIG.init(),
+        KNOWLEDGE_BASE.init(),
+        electronData.init(),
+      ]);
+      refresh();
+      await initMcpClients();
       Clarity.init("p731bym3zs");
       Clarity.consent();
       Clarity.event("openApp");
@@ -322,13 +305,28 @@ export function Layout() {
       );
       Clarity.setTag("version", electronData.get().version);
 
-      refresh();
       let res = await call("checkUpdate", []);
       if (res) {
         console.log("checkUpdate: ", res);
       }
+      refresh();
     })();
   }, []);
+
+  const [locale, setLocal] = useState(currLang == "zhCN" ? zhCN : enUS);
+  const [collapsed, setCollapsed] = useState(false);
+  const [isModelConfigOpen, setIsModelConfigOpen] = useState(false);
+  const [isAddModelConfigOpen, setIsAddModelConfigOpen] = useState(false);
+  // const [currRow, setCurrRow] = useState({} as any);
+  const [form] = Form.useForm();
+
+  const [mcpClients, setMcpClients] = useState<InitedClient[]>([]);
+
+  const [loadingCheckLLM, setLoadingCheckLLM] = useState(false);
+  const [syncStatus, setSyncStatus] = useState(0);
+
+  const [updateData, setUpdateData] = useState({} as any);
+
 
   const [timelineData, setTimelineData] = useState([]);
   const [isOpenTestLLM, setIsOpenTestLLM] = useState(false);

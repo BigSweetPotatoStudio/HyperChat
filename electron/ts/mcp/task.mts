@@ -109,6 +109,7 @@ export async function callAgent(obj: {
       Logger.error("No model found");
       throw new Error("No model found");
     }
+
     let openai = new OpenAiChannel(
       {
         ...config, ...agent, allowMCPs: agent.allowMCPs, requestType: "stream",
@@ -132,9 +133,13 @@ export async function callAgent(obj: {
                   let value = varName;
                   if (v) {
                     if (v.variableType == "js") {
-                      value = await global.ext2.call("runCode", [{ code: v.code }]);
+                      value = await global.ext2.call("runCode", [{ code: v.code }]).catch(e => {
+                        throw new Error(`${varName} var runCode Error:\n${e.message}`);
+                      });
                     } else if (v.variableType == "webjs") {
-                      value = await global.ext2.call("runCode", [{ code: v.code }]);
+                      value = await global.ext2.call("runCode", [{ code: v.code }]).catch(e => {
+                        throw new Error(`${varName} var runCode Error: task is running in the nodejs environment, does not support webjs.\n${e.message}`);
+                      });
                       // let code = `
                       // (async () => {
                       //     ${v.code}

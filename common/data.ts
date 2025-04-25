@@ -245,7 +245,7 @@ export type MCP_CONFIG_TYPE = {
   url?: string;
   type?: "stdio" | "sse" | "streamableHttp";
   hyperchat?: {
-    config: { [s in string]: any }; 
+    config: { [s in string]: any };
     url: string;  // 废弃⚠️
     type: "stdio" | "sse";  // 废弃⚠️
     scope: "built-in" | "outer";  // 废弃⚠️
@@ -419,7 +419,7 @@ export const VarList = new Data(
       "scope": "var",
       "variableStrategy": "lazy",
       "description": "Get the current time",
-    }, 
+    },
     {
       "key": "4c80381e-88fa-4010-a5c7-03420bbe7d14",
       "name": "currentTimeFromServer",
