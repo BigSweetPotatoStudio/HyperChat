@@ -1,3 +1,14 @@
+# 1.6.0
+* 全新的输入编辑器，优化显示，添加变量系统，支持内置mcp设置变量，支持js代码变量
+* 大模型列表，支持过滤，优化显示
+* 修复支持mcp的提示词输入失败的问题
+* Agent列表支持hover显示描述。
+* webdav同步优化。
+
+
+![image](https://github.com/user-attachments/assets/b2c9d59f-650f-49b8-a0ea-f0634644b27e)
+![image](https://github.com/user-attachments/assets/3452890a-864b-4ea7-84d4-505bd1821fdc)
+
 # 1.5.4
 * 修复web访问的,添加大模型测试失败的问题。
 
