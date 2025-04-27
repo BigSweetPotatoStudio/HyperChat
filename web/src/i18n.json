@@ -1274,5 +1274,13 @@
   "default": {
     "en": "default",
     "zh": "默认"
+  },
+  "Loading...": {
+    "en": "Loading...",
+    "zh": "加载中..."
+  },
+  "run": {
+    "en": "run",
+    "zh": "run"
   }
 }

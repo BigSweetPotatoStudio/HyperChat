@@ -819,7 +819,7 @@ export const Editor = forwardRef(({
         <div style={{ height: autoHeight ? editorHeight : style.height, }} className={className + " " + "h-full w-full"} id={uid.current} >
         </div>
         {value == "" && placeholder && (
-            <div style={{
+            <div className="line-clamp-1" style={{
                 position: 'absolute',
                 top: "50%",
                 left: "20px",

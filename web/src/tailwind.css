@@ -27,8 +27,8 @@ main {
 }
 
 ::-webkit-scrollbar {
-  width: 8px; /* 滚动条宽度 */
-  height: 8px; /* 滚动条高度 */
+  width: 6px; /* 滚动条宽度 */
+  height: 6px; /* 滚动条高度 */
 }
 
 ::-webkit-scrollbar-track {
@@ -283,4 +283,18 @@ div[role="system"] .ant-bubble-content-wrapper {
   border: 0px;
   box-shadow: none;
   background: transparent;
+}
+
+.my-table-row:hover .menus{
+  display: inline-block;
+}
+
+.my-table-row .ant-table-cell{
+  border: 0px !important;
+  padding-top: 0px !important;
+  padding-bottom: 0px !important;
+}
+
+.my-spin .ant-spin-container {
+  height: 100%;
 }

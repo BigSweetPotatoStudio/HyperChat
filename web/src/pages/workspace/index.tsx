@@ -30,7 +30,7 @@ function Page({
     agentKey: "",
     message: "",
     onComplete: (text: string) => undefined,
-    onError: (e) => {},
+    onError: (e) => { },
   },
 }) {
   const [curr, setCurr] = useState({
@@ -125,7 +125,7 @@ function Page({
           onTitleChange={(t) => {
             onChange &&
               onChange({
-                title: t == undefined ? "HyperChat" : `HyperChat(${t})`,
+                title: t == undefined ? "HyperChat" : <>{`HyperChat`} <span className="text-sky-400">{t}</span></>,
               });
           }}
         />
@@ -316,7 +316,7 @@ export function WorkSpace() {
       </div>
       <div
         className="my-modal"
-        // style={{ visibility: open ? "visible" : "hidden" }}
+      // style={{ visibility: open ? "visible" : "hidden" }}
       >
         {/* <div className="ant-modal-root">
           <div className="ant-modal-wrap">
@@ -427,9 +427,9 @@ export function WorkSpace() {
               }}
               // fix eslintjsx-a11y/mouse-events-have-key-events
               // https://github.com/jsx-eslint/eslint-plugin-jsx-a11y/blob/master/docs/rules/mouse-events-have-key-events.md
-              onFocus={() => {}}
-              onBlur={() => {}}
-              // end
+              onFocus={() => { }}
+              onBlur={() => { }}
+            // end
             >
               <div>{t`Session Management`}</div>
               <div>
