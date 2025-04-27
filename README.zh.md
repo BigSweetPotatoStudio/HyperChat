@@ -7,12 +7,12 @@ HyperChat 是一个开源的Chat客户端，支持MCP，可以使用各家LLM的
 [![npm downloads](https://img.shields.io/npm/dm/@dadigua/hyper-chat)](https://npm-stat.com/charts.html?package=@dadigua/hyper-chat)
 
 
-* 支持 OpenAI风格的LLM，`OpenAI` , `Claude(OpenRouter)`, `Qwen`, `Deepseek`, `GLM`, `Ollama` 。
+* 支持 OpenAI风格的LLM，`OpenAI` ,`Claude`, `Claude(OpenAI)`, `Qwen`, `Deepseek`, `GLM`, `Ollama`，`xAI`, `Gemini` 。
 * 完全支持MCP。
 
 ## DEMO
 
-* [HyperChat](https://hyperchat.dadigua.men/123456/) on Docker
+* [HyperChat](https://hyperchat.dadigua.men/123456/) on Nodejs
 
 ## 功能: 
 
@@ -21,8 +21,8 @@ HyperChat 是一个开源的Chat客户端，支持MCP，可以使用各家LLM的
 - [x] Docker 
     * 命令行的版本 `docker pull dadigua/hyperchat-mini:latest`
     * Ubuntu桌面 + Chrome + BrowserUse 版本(**coming soon**)
-- [x] `WebDAV` 支持增量同步
-- [x] 添加 `HyperPrompt` 提示词语法，支持变量（文本+js代码变量），基础语法检测+Hover实时预览。
+- [x] `WebDAV` 支持增量同步，通过hash最快速同步。
+- [x] `HyperPrompt` 提示词语法，支持变量（文本+js代码变量），基础语法检测+Hover实时预览。
 - [x] `MCP`扩展
 - [x] 支持暗黑模式🌙
 - [x] Resources，Prompts，Tools 支持
@@ -37,18 +37,18 @@ HyperChat 是一个开源的Chat客户端，支持MCP，可以使用各家LLM的
 
 ### TODO:
 
-- 支持官方Claude协议
+- 实现多Agent交互系统。
 
 ### LLM
 
 | LLM      | 好用度    | 备注                         |
 | -------- | ------ | -------------------------- |
-| claude   | ⭐⭐⭐⭐⭐  | 不解释                    |
-| openai   | ⭐⭐⭐⭐ | 也可以完美支持多步function call(gpt-4o-mini也可以) |
-| gemini flash 2.0   | ⭐⭐⭐⭐ |  很好用 |
+| claude   | ⭐⭐⭐⭐⭐⭐  | 不解释                    |
+| openai   | ⭐⭐⭐⭐⭐ | 也可以完美支持多步function call(gpt-4o-mini也可以) |
+| gemini flash 2.5   | ⭐⭐⭐⭐⭐ |  很好用 |
 | qwen       | ⭐⭐⭐⭐    | 很好用                 |
 | doubao       | ⭐⭐⭐    | 使用起来感觉还行                   |
-| deepseek | ⭐⭐⭐      | 多步function call会出问题       |
+| deepseek | ⭐⭐⭐⭐      | 最近提升了       |
 
 ## 使用
 
