@@ -363,6 +363,10 @@ export function Market() {
                                       formValues?.type || formValues?.hyperchat?.type || "stdio";
                                     formValues.url =
                                       formValues?.url || formValues?.hyperchat?.url || "";
+
+
+                                    formValues.headers = Object.entries(formValues.headers || {}).map(([key, value]) => `${key}=${value}`).join("\n");
+
                                     mcpform.resetFields();
                                     mcpform.setFieldsValue(formValues);
                                     setIsAddMCPConfigOpen(true);

@@ -663,10 +663,22 @@ export async function initMcpClients() {
   getMessageService().sendAllToRenderer({
     type: "changeMcpClient",
     data: mcpClients,
-  })
+  });
   return mcpClients;
 }
+
+let t = setInterval(() => {
+  getMessageService().sendAllToRenderer({
+    type: "changeMcpClient",
+    data: mcpClients,
+  });
+}, 1000);
+
 initMcpClients().then(() => {
+  clearInterval(t);
+  startTask();
+}).catch((e) => {
+  clearInterval(t);
   startTask();
 });
 export async function openMcpClient(
