@@ -90,6 +90,10 @@ npm run dev
 
 [HyperChat User Community](https://t.me/dadigua001)
 
+## QQ
+
+[QQ用户群](https://qm.qq.com/cgi-bin/qm/qr?k=KrNWdu5sp7H3ves3ZPSd7ppKjQiPrAvZ&jump_from=webapi&authKey=xnW+Lcgk5KLh5NPh3lU0ddz9CFDbXgvjEy35wsYipUrCsqXFcqlvM5Yorh6jkGim)
+
 #### Super input, supports variables (text + js code variables), basic syntax checking + hover real-time preview
 ![Animation](https://github.com/user-attachments/assets/b1ec72d9-be05-4f9a-bed1-16f4ed72de61)
 
