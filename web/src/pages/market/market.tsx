@@ -813,7 +813,8 @@ export function Market() {
 
                   let mcpServerConfig = {} as MCP_CONFIG_TYPE;
                   if (values.type == "sse" || values.type == "streamableHttp") {
-                    let headers = {}
+                    let headers = {};
+                    values.headers = values.headers || "";
                     let lines = values.headers.split("\n");
                     for (let line of lines) {
                       let [key, value] = line.split("=");
