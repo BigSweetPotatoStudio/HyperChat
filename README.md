@@ -3,18 +3,18 @@
 
 ## Introduction
 
-HyperChat is an open-source chat client that supports MCP and can use APIs from various LLMs to achieve the best chat experience and enhance productivity tools.
+HyperChat is an open-source chat client that supports MCP and can use various LLM APIs to achieve the best chat experience, as well as implement productivity tools.
 
 [![Build](https://github.com/BigSweetPotatoStudio/HyperChat/actions/workflows/build.yml/badge.svg)](https://github.com/BigSweetPotatoStudio/HyperChat/actions/workflows/build.yml)
 [![@dadigua/hyper-chat](https://img.shields.io/npm/v/%40dadigua%2Fhyper-chat)](https://www.npmjs.com/package/@dadigua/hyper-chat)
 [![npm downloads](https://img.shields.io/npm/dm/@dadigua/hyper-chat)](https://npm-stat.com/charts.html?package=@dadigua/hyper-chat)
 
-* Supports OpenAI-style LLMs: `OpenAI`, `Claude(OpenRouter)`, `Qwen`, `Deepseek`, `GLM`, `Ollama`.
+* Supports OpenAI style LLMs, `OpenAI`, `Claude`, `Claude(OpenAI)`, `Qwen`, `Deepseek`, `GLM`, `Ollama`, `xAI`, `Gemini`.
 * Fully supports MCP.
 
 ## DEMO
 
-* [HyperChat](https://hyperchat.dadigua.men/123456/) on Docker
+* [HyperChat](https://hyperchat.dadigua.men/123456/) on Nodejs
 
 ## Features:
 
@@ -23,34 +23,34 @@ HyperChat is an open-source chat client that supports MCP and can use APIs from 
 - [x] Docker 
     * Command line version `docker pull dadigua/hyperchat-mini:latest`
     * Ubuntu desktop + Chrome + BrowserUse version (**coming soon**)
-- [x] `WebDAV` supports incremental sync
-- [x] Added `HyperPrompt` prompt syntax, supports variables (text + js code variables), basic syntax detection + hover real-time preview.
-- [x] `MCP` extensions
-- [x] Dark mode support 🌙
-- [x] Supports Resources, Prompts, Tools
-- [x] Supports both English and Chinese
+- [x] `WebDAV` supports incremental synchronization, the fastest synchronization through hash.
+- [x] `HyperPrompt` prompt syntax, supports variables (text + js code variables), basic syntax checking + hover real-time preview.
+- [x] `MCP` extension
+- [x] Supports dark mode🌙
+- [x] Resources, Prompts, Tools support
+- [x] Supports English and Chinese
 - [x] Supports `Artifacts`, `SVG`, `HTML`, `Mermaid` rendering
-- [x] Supports defining Agents, allowing preset prompts, and selecting permitted MCP
-- [x] Supports scheduled tasks, specifying an Agent to complete tasks at scheduled times and viewing task completion status.
-- [x] Supports `KaTeX`, displays mathematical formulas, code rendering increased with highlighting and quick copy
-- [x] Added `RAG`, based on MCP knowledge base
-- [x] Added ChatSpace concept, supports multiple conversations simultaneously
-- [x] Supports model comparison in chat
+- [x] Supports defining Agents, can preset prompts, select allowed MCPs
+- [x] Supports scheduled tasks, allows specifying Agents to complete tasks on schedule and view task completion status.
+- [x] Supports `KaTeX`, displays mathematical formulas, code rendering increases highlighting and quick copy
+- [x] Adds `RAG`, based on MCP knowledge base
+- [x] Introduces the concept of ChatSpace, supports multiple conversations simultaneously
+- [x] Supports chat model comparison selection
 
 ### TODO:
 
-- Support official Claude protocol
+- Implement a multi-Agent interaction system.
 
 ### LLM
 
-| LLM      | Usability    | Notes                         |
-| -------- | ------ | -------------------------- |
-| claude   | ⭐⭐⭐⭐⭐  | No explanation                    |
-| openai   | ⭐⭐⭐⭐ | Also supports multi-step function calls perfectly (gpt-4o-mini also works) |
-| gemini flash 2.0   | ⭐⭐⭐⭐ | Very usable |
-| qwen       | ⭐⭐⭐⭐    | Very usable                 |
-| doubao       | ⭐⭐⭐    | Feels okay to use                   |
-| deepseek | ⭐⭐⭐      | Multi-step function calls have issues       |
+| LLM                | Usability   | Notes                                           |
+| ------------------ | ----------- | ----------------------------------------------- |
+| claude             | ⭐⭐⭐⭐⭐⭐     | No explanation                                   |
+| openai             | ⭐⭐⭐⭐⭐      | Can also perfectly support multi-step function calls (gpt-4o-mini can also) |
+| gemini flash 2.5   | ⭐⭐⭐⭐⭐      | Very useful                                    |
+| qwen               | ⭐⭐⭐⭐       | Very useful                                    |
+| doubao             | ⭐⭐⭐        | Feels okay to use                             |
+| deepseek           | ⭐⭐⭐⭐       | Recently improved                             |
 
 ## Usage
 
@@ -88,16 +88,16 @@ npm run dev
 
 ## Telegram
 
-[HyperChat User Interaction](https://t.me/dadigua001)
+[HyperChat User Community](https://t.me/dadigua001)
 
-#### Super Input, supports variables (text + js code variables), basic syntax detection + hover real-time preview
+#### Super input, supports variables (text + js code variables), basic syntax checking + hover real-time preview
 ![Animation](https://github.com/user-attachments/assets/b1ec72d9-be05-4f9a-bed1-16f4ed72de61)
 
-#### Chat supports model comparison
+#### Chat supports model comparison selection
 ![image_2025-04-07_21-26-19](https://github.com/user-attachments/assets/e8691cd7-0518-4da8-90f2-7dfd8b864a09)
 ![image](https://github.com/user-attachments/assets/c9cd15c8-9bce-4df9-b2b2-5fc4e9224ea6)
 
-#### Supports clicking tool names for direct debugging
+#### Supports clicking on tool names for direct debugging
 ![image](https://github.com/user-attachments/assets/a9b22e98-d7b7-497a-93aa-c1501763fb8a)
 
 #### MCP tool call prompt + dynamic modification of LLM tool parameters
@@ -106,50 +106,50 @@ npm run dev
 #### Supports @ quick input + calling Agent
 ![17790cb3c686690e255462c7638b61f6](https://github.com/user-attachments/assets/12fd824c-cad7-4dd7-8df3-699c1da8d1cf)
 
-#### Supports `Artifacts`, `SVG`, `HTML`, `Mermaid` rendering
+#### Supports `Artifacts`, `SVG`, `HTML`, `Mermaid` rendering,
 ![image](https://github.com/user-attachments/assets/d823c671-e989-4f40-aadb-0bc0f3b35175)
 ![image](https://github.com/user-attachments/assets/869b03fe-f025-4d6d-945c-8dac13d37ee0)
 
-#### Supports selecting MCP + selecting certain Tools
+#### Supports selecting MCP + selecting specific Tools
 ![image](https://github.com/user-attachments/assets/9a297608-90be-4960-a4f1-ae627965486b)
 
-#### You can access through the web from anywhere + any device, and set a password
+#### You can access it through the Web anywhere + on any device, and you can set a password
 ![image](https://github.com/user-attachments/assets/a9825e5b-da6d-4e0a-852f-177a3f6df992)
 
-#### Calls terminal MCP to automatically analyze ASAR files + help decompress
+#### Calls terminal MCP to automatically analyze ASAR files + helps extract them
 ![image](https://github.com/user-attachments/assets/f9cc12cd-0c7e-4f2d-9649-4bb31240f4a6)
 
-#### Terminal view interface
+#### Calls terminal view interface
 ![image](https://github.com/user-attachments/assets/009317f2-d49b-432a-bb46-a15133d12f9f)
 
 #### Gaode Map MCP
 ![image](https://github.com/user-attachments/assets/549e8fee-085d-4e8a-86a8-184ebe1053e6)
 
-#### One-click webpage writing, and publish to (cloudflare)
+#### One-click to write a webpage and publish to (Cloudflare)
 ![image](https://github.com/user-attachments/assets/b558cf5c-8b07-4621-a95b-fa1c33181414)
 
-#### Call Google Search, asking what TGA Game of the Year is
+#### Calls Google Search, asks what the TGA Game of the Year is
 ![image](https://github.com/user-attachments/assets/36500a06-2260-4727-bfd2-5fedc72e6d58)
 
-#### What are the limited-time free games, please visit the website and call the tool
+#### What are the time-limited free games, please visit the website and call the tool
 ![image](https://github.com/user-attachments/assets/8961ef09-1498-4730-b25d-75b1dedbc7e5)
 
-#### Helps you open web pages, analyze results, and write to files
+#### Opens web pages for you, analyzes results, and writes to a file
 ![image](https://github.com/user-attachments/assets/a036dcf8-ffb4-4070-ac4f-a3b0533f66c2)
 
-#### Open GitHub README via web tools + command-line tools, learn + GIT clone + set up development environment
+#### Using web tools + command-line tools, open GitHub README to learn + GIT clone + set up development environment
 ![image](https://github.com/user-attachments/assets/fd0d737e-0eaa-4410-85e0-27fd45f0e5a5)
 
-#### Multi-chat Workspace + Night Mode
+#### Multi-chat workspace + night mode
 ![image](https://github.com/user-attachments/assets/ca9d77d7-d023-431f-8359-6023ab3e338a)
 
-#### Scheduled task list + scheduled messages to Agent to complete tasks
+#### Scheduled task list + scheduled message sending to Agent to complete tasks
 ![image](https://github.com/user-attachments/assets/302a767c-bd00-48e4-ac41-5443d98a4708)
 
-#### Install MCP from third parties (supports any MCP)
+#### Installing MCP from third parties (supports any MCP)
 ![image](https://github.com/user-attachments/assets/8580f194-139c-4d1c-b423-68627663232c)
 
-#### H5 Interface
+#### H5 interface
 ![image](https://github.com/user-attachments/assets/e8349fb5-c98e-4fef-a93d-778079a27237)
 ![image](https://github.com/user-attachments/assets/8a381114-6b26-4af2-90f2-270c0e85e819)
 ![image](https://github.com/user-attachments/assets/b1487b6b-2cbc-46d8-ab1e-a335417c23ce)
@@ -158,9 +158,9 @@ npm run dev
 #### Testing model capabilities
 ![image.png](./images/image48.png)
 
-#### Knowledge Base
+#### Knowledge base
 ![image.png](./images/image50.png)
 
 ## Disclaimer
 
-* This project is for learning and communication purposes only. If you use this project for any operations, such as web scraping, it has no relation to the developers of this project.
+* This project is for learning and communication purposes only. If you use this project for any operations, such as web scraping, it has nothing to do with the project's developers.
