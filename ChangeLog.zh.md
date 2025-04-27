@@ -5,11 +5,12 @@
 * Agent列表支持hover显示描述。
 * webdav同步优化。
 * see MCP支持添加headers
-* 聊天记录性能优化，使用虚拟列表
+* 聊天记录性能优化，使用虚拟列表+显示优化
 
 
 ![image](https://github.com/user-attachments/assets/b2c9d59f-650f-49b8-a0ea-f0634644b27e)
 ![image](https://github.com/user-attachments/assets/3452890a-864b-4ea7-84d4-505bd1821fdc)
+![image](https://github.com/user-attachments/assets/6b91d593-51ef-4e51-8d1b-324bc071e9a7)
 
 # 1.5.4
 * 修复web访问的,添加大模型测试失败的问题。
