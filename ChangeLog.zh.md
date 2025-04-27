@@ -1,9 +1,11 @@
-# 1.6.0
+# 1.6.3
 * 全新的输入编辑器，优化显示，添加变量系统，支持内置mcp设置变量，支持js代码变量
 * 大模型列表，支持过滤，优化显示
 * 修复支持mcp的提示词输入失败的问题
 * Agent列表支持hover显示描述。
 * webdav同步优化。
+* see MCP支持添加headers
+* 聊天记录性能优化，使用虚拟列表
 
 
 ![image](https://github.com/user-attachments/assets/b2c9d59f-650f-49b8-a0ea-f0634644b27e)
