@@ -141,7 +141,7 @@ jobs:
           file: "${{ steps.publish-tag.outputs.tag == 'alpha' && './docker/no_electron/Dockerfile-Alpha' || './docker/no_electron/Dockerfile' }}"
           platforms: linux/amd64,linux/arm64
           push: true
-          tags: latest
+          tags: dadigua/hyperchat-mini:latest
           labels: ${{ steps.meta.outputs.labels }}`
 
           
