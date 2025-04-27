@@ -81,27 +81,43 @@ jobs:
         run: npm install
         working-directory: ./electron
 
-      - name: Determine npm publish tag
-        id: publish-tag
+      # - name: Determine npm publish tag  # ${{ steps.publish-tag.outputs.tag }} 
+      #   id: publish-tag
+      #   run: |
+      #     if [[ $GITHUB_REF == *"alpha"* ]]; then
+      #     echo "tag=alpha" >> $GITHUB_OUTPUT
+      #       else
+      #     echo "tag=latest" >> $GITHUB_OUTPUT
+      #       fi
+
+      - name: Check version is alpha
+        id: check-alpha-version
         run: |
-          if [[ $GITHUB_REF == *"alpha"* ]]; then
-          echo "tag=alpha" >> $GITHUB_OUTPUT
-            else
-          echo "tag=latest" >> $GITHUB_OUTPUT
-            fi
+          PACKAGE_VERSION=$(node -p "require('./package.json').version")
+          if [[ $PACKAGE_VERSION == *"-alpha"* ]]; then
+            echo "is_alpha=true" >> $GITHUB_OUTPUT
+            echo "Version $PACKAGE_VERSION is alpha version, will continue with build"
+          else
+            echo "is_alpha=false" >> $GITHUB_OUTPUT
+            echo "Version $PACKAGE_VERSION is not alpha version, will skip build"
+          fi
 
-      - run: npm run updateVersion
-      - run: npm run prod_node
+      - name: Update Version
+        if: steps.check-alpha-version.outputs.is_alpha == 'true'
+        run: npm run updateVersion
 
-      # - run: cd web && npm run build
-      
-      # - run: cd electron && npm run build:node
+      - name: Build Production Node
+        if: steps.check-alpha-version.outputs.is_alpha == 'true'
+        run: npm run prod_node
 
-      - run: cd electron && npm publish --tag ${{ steps.publish-tag.outputs.tag }} --access=public
+
+      - run: cd electron && npm publish --tag alpha --access=public
+        if: steps.check-alpha-version.outputs.is_alpha == 'true'
         env:
           NODE_AUTH_TOKEN: ${{secrets.npm_token}}
 
       - name: SET GITHUB AND  reset
+        if: steps.check-alpha-version.outputs.is_alpha == 'true'
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
@@ -110,11 +126,11 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
 
       - name: change alpha version
-        if: steps.publish-tag.outputs.tag == 'alpha'
+        if: steps.check-alpha-version.outputs.is_alpha == 'true'
         run: npm version prerelease --preid=alpha
 
       - name: PUSH
-        if: steps.publish-tag.outputs.tag == 'alpha'
+        if: steps.check-alpha-version.outputs.is_alpha == 'true'
         run: |
           git push
         env:
