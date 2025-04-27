@@ -51,17 +51,17 @@ export async function initMcpClients() {
 //   console.log("getMcpClientsLoad", res);
 // }, 100);
 
-// initMcpClients()
-//   .then(() => {
-//     init = true;
-//   })
-//   .catch((e) => {
-//     init = true;
-//   });
+initMcpClients()
+  .then(() => {
+    init = true;
+  })
+  .catch((e) => {
+    init = true;
+  });
 
-// export function getMcpInited() {
-//   return init;
-// }
+export function getMcpInited() {
+  return init;
+}
 
 export function getTools(allowMCPs: string[] | undefined | false = undefined) {
   let tools: IMCPClient["tools"] = [];
