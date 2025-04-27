@@ -6,8 +6,6 @@ name: Node.js Package
 on:
   workflow_dispatch: {}
   push:
-    tags:
-      - "v*"
     branches:
       - alpha
 

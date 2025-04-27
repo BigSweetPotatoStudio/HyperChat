@@ -1,41 +1,40 @@
-name: test-build
+# This workflow will run tests using node and then publish a package to GitHub Packages when a release is created
+# For more information see: https://docs.github.com/en/actions/publishing-packages/publishing-nodejs-packages
 
-# on: [push, pull_request]
+name: Node.js Package
+
 on:
   workflow_dispatch: {}
   push:
-    branches-ignore:
-      - doc
-      - alpha
+    tags:
+      - "v*"
+
+permissions:
+  contents: write
 
 jobs:
-  test-build:
-    name: build and release electron app
+  build:
     strategy:
       fail-fast: false
       matrix:
-        os: [windows-latest]
+        os: [ubuntu-latest]
 
     runs-on: ${{ matrix.os }}
-
     steps:
       - name: Check out git repository
         uses: actions/checkout@v3.0.0
 
       - name: Install Node.js
-        uses: actions/setup-node@v4.0.0
+        uses: actions/setup-node@v4
         with:
           node-version: "20"
+          registry-url: https://registry.npmjs.org/
 
 
       - name: Install -g
         run: npm install -g cross-env zx
 
-      - name: Install python-setuptools
-        if: matrix.os == 'macos-latest'
-        run: brew install python-setuptools
-
-        # 根目录的依赖缓存
+          # 根目录的依赖缓存
       - name: Cache root dependencies
         uses: actions/cache@v3
         id: cache-root
@@ -82,40 +81,20 @@ jobs:
         run: npm install
         working-directory: ./electron
 
+      - run: npm run updateVersion
       - run: npm run prod_node
 
-      - name: Build Electron App (macOS only)
-        if: matrix.os == 'macos-latest'
-        run: npm run prod
+
+
+      - run: cd electron && npm publish --access=public
         env:
-          APPLE_ID: ${{ secrets.APPLE_ID }}
-          APPLE_APP_SPECIFIC_PASSWORD: ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}
-          CSC_LINK: ${{ secrets.CSC_LINK }}
-          CSC_KEY_PASSWORD: ${{ secrets.CSC_KEY_PASSWORD }}
-          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
-          # GH_TOKEN: ${{ secrets.GH_TOKEN }}
-          USE_HARD_LINKS: false
-          MYRUNENV: github
+          NODE_AUTH_TOKEN: ${{secrets.npm_token}}
 
-          
-      - name: Build Electron App (widnows+linux)
-        if: matrix.os != 'macos-latest'
-        run: npm run prod
+      - name: SET GITHUB AND  reset
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git reset --hard HEAD 
         env:
-          # GH_TOKEN: ${{ secrets.GH_TOKEN }}
-          MYRUNENV: github
+          GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
 
-      - name: upload artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: ${{ matrix.os }}
-          path: electron/dist
-
-      # - name: Publish Release
-      #   uses: softprops/action-gh-release@v2
-      #   if: startsWith(github.ref, 'refs/tags/')
-      #   with:
-      #     files: |
-      #       dist/*
-      #   env:
-      #     GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
