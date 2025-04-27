@@ -809,7 +809,7 @@ export function Market() {
                       return;
                     }
                   } else { //编辑
-                    if (values.name != values._name) {
+                    if (values._name && values.name != values._name) {
                       await call("closeMcpClients", [values._name, { isdelete: true, isdisable: true }]);
                     }
                   }
@@ -886,7 +886,7 @@ export function Market() {
             name="_name"
             label={t`Old Name`}
             className="hidden"
-            rules={[{ required: true, message: t`Please enter` }]}
+            rules={[{ message: t`Please enter` }]}
           >
             <Input
               disabled
