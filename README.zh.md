@@ -13,6 +13,7 @@ HyperChat 是一个开源的Chat客户端，支持MCP，可以使用各家LLM的
 ## DEMO
 
 * [HyperChat](https://hyperchat.dadigua.men/123456/) on Nodejs
+* [Docker](https://htmivlknrjln.ap-northeast-1.clawcloudrun.com/123456/#/Chat) on ClawCloud
 
 ## 功能: 
 
@@ -84,9 +85,10 @@ npm install
 npm run dev
 ```
 
-## Telegram
+## HyperChat用户交流
 
-[HyperChat用户交流](https://t.me/dadigua001)
+* [Telegram](https://t.me/dadigua001)
+* [QQ群](https://qm.qq.com/cgi-bin/qm/qr?k=KrNWdu5sp7H3ves3ZPSd7ppKjQiPrAvZ&jump_from=webapi&authKey=xnW+Lcgk5KLh5NPh3lU0ddz9CFDbXgvjEy35wsYipUrCsqXFcqlvM5Yorh6jkGim)
 
 #### 超级输入，支持变量（文本+js代码变量），基础语法检测+Hover实时预览
 ![动画](https://github.com/user-attachments/assets/b1ec72d9-be05-4f9a-bed1-16f4ed72de61)
