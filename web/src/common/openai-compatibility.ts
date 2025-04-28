@@ -54,7 +54,7 @@ export class OpenAICompatibility {
             this.anthropic.client.baseURL = process.env.runtime === "node"
                 ? this.baseURL :
                 isOnBrowser
-                    ? (callModule.getURL_PRE() + "api/proxy" + `?baseURL=${encodeURIComponent(this.baseURL)}`)
+                    ? (callModule.getURL_PRE() + "api/ai" + `?baseURL=${encodeURIComponent(this.baseURL)}`)
                     : this.baseURL;
             this.anthropic.client.apiKey = this.apiKey;
             return this.anthropic.completion(body, options) as any;
@@ -62,7 +62,7 @@ export class OpenAICompatibility {
             this.openai.baseURL = process.env.runtime === "node"
                 ? this.baseURL :
                 isOnBrowser
-                    ? (callModule.getURL_PRE() + "api/proxy" + `?baseURL=${encodeURIComponent(this.baseURL)}`)
+                    ? (callModule.getURL_PRE() + "api/ai" + `?baseURL=${encodeURIComponent(this.baseURL)}`)
                     : this.baseURL;
             this.openai.apiKey = this.apiKey;
 
@@ -112,7 +112,7 @@ export class OpenAICompatibility {
             this.openai.baseURL = process.env.runtime === "node"
                 ? this.baseURL :
                 isOnBrowser
-                    ? (callModule.getURL_PRE() + "api/proxy" + `?baseURL=${encodeURIComponent(this.baseURL)}`)
+                    ? (callModule.getURL_PRE() + "api/ai" + `?baseURL=${encodeURIComponent(this.baseURL)}`)
                     : this.baseURL;
             this.openai.apiKey = this.apiKey;
 

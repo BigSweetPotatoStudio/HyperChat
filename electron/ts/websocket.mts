@@ -124,7 +124,7 @@ export function genRouter(c, prefix: string) {
 let prefix = "/" + encodeURI(electronData.get().password) + "/api";
 
 async function proxy(ctx: Context, next: () => Promise<any>) {
-  if (ctx.path.startsWith(prefix + "/proxy")) {
+  if (ctx.path.startsWith(prefix + "/ai")) {
     // console.log("proxy", ctx.path, ctx.request.headers);
     try {
       const requestBody = ctx.request.body;
@@ -154,7 +154,7 @@ async function proxy(ctx: Context, next: () => Promise<any>) {
       if (baseURL.endsWith("/")) {
         baseURL = baseURL.slice(0, -1);
       }
-      baseURL = (baseURL as string) + ctx.path.replace(prefix + "/proxy", "");
+      baseURL = (baseURL as string) + ctx.path.replace(prefix + "/ai", "");
       // console.log("proxy", baseURL, headers, requestBody);
       // 发起请求，但不立即解析响应体
       const response = await fetch(baseURL, {
