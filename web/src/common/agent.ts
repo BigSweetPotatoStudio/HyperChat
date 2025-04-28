@@ -11,9 +11,10 @@ export class Agent {
     constructor(public agentData: AgentData, public inputs: { [key: string]: any; } = {}) {
 
     }
-    async init() {
+    async init(modelKey?: string) {
         await GPT_MODELS.init();
-        let gptModelData = GPT_MODELS.get().data.find((x) => x.key == this.agentData.modelKey) || getDefaultModelConfigSync(GPT_MODELS);
+        modelKey = modelKey || this.agentData.modelKey;
+        let gptModelData = GPT_MODELS.get().data.find((x) => x.key == modelKey) || getDefaultModelConfigSync(GPT_MODELS);
 
         if (!gptModelData) {
             throw new Error("Please add LLM first");

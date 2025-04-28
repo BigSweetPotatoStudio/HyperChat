@@ -104,7 +104,7 @@ export async function callAgent(obj: {
 
   async function runByKey(modelKey: string) {
     let agentInstance = new Agent(agent);
-    await agentInstance.init();
+    await agentInstance.init(modelKey);
     try {
 
       global.getTools = (allowMCPs) => {
