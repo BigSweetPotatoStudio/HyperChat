@@ -135,6 +135,7 @@ export async function search(words: string) {
         }),
         sleep(3000),
       ]);
+      await sleep(3000);
 
       Logger.info("Page loaded");
       let res = await executeClientScript(

@@ -350,6 +350,8 @@ export const Chat = ({
 
             if (agentData.message) {
               await onRequest(agentData.message);
+              // let relayMessage = openaiClient.current.getRelay(2);
+              // console.log("Relay Message:", relayMessage);
               agentData.onComplete(openaiClient.current.lastMessage.content);
             }
           } catch (e) {

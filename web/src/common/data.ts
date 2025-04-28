@@ -13,15 +13,30 @@ import { e } from "./service";
 
 for (let item of DataList) {
   item.override({
-    async inget() {
-      return await call("readFile", [this.KEY]).catch((e) => "");
+    async init() {
+      try {
+
+        this.localStorage = await call("readJSON", [this.KEY]);
+
+      } catch (e) {
+        this.localStorage = {};
+      }
+      this.data = Object.assign({}, this.data, this.localStorage);
+      return this.data;
     },
-    async insave() {
-      return await call("writeFile", [
+    initSync() {
+      throw new Error("saveSync is not supported in web");
+    },
+    async save() {
+      return await call("writeJSON", [
         this.KEY,
-        JSON.stringify(this.format(this.data), null, 2),
+        this.format(this.data),
       ]);
     },
+    saveSync() {
+      throw new Error("saveSync is not supported in web");
+    },
+
   });
 }
 
@@ -41,17 +56,17 @@ msg_receive("message-from-main", (msg) => {
     let c = DataList.find((x) => x.KEY == msg.data.key);
     if (c) {
       // if (c.KEY == "ChatHistory.json") {
-        // let newData = msg.data.data;
+      // let newData = msg.data.data;
 
-        // for (let x of newData.data) {
-        //   if (c.get().data.find((y) => y.key == x.key) == null) {
-        //     c.get().data.push(x);
-        //   } else {
-        //     break;
-        //   }
-        // }
+      // for (let x of newData.data) {
+      //   if (c.get().data.find((y) => y.key == x.key) == null) {
+      //     c.get().data.push(x);
+      //   } else {
+      //     break;
+      //   }
+      // }
       // } else {
-        Object.assign(c.get(), msg.data.data);
+      Object.assign(c.get(), msg.data.data);
       // }
     } else {
       console.error("syncNodeToWeb", msg.data.key, "not found");

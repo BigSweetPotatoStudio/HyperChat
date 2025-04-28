@@ -29,6 +29,7 @@ import {
   Select,
   Divider,
   Popconfirm,
+  Popover,
 } from "antd";
 import { call } from "../../common/call";
 import client from "socket.io-client";
@@ -63,6 +64,10 @@ import { v4 } from "uuid";
 import { useLocation, useNavigate } from "react-router-dom";
 import { HeaderContext } from "../../common/context";
 import { Icon } from "../../components/icon";
+
+const loadObj: {
+  [key: string]: any;
+} = {};
 
 export function TaskListPage() {
   const [num, setNum] = useState(0);
@@ -99,11 +104,24 @@ export function TaskListPage() {
       title: "message",
       dataIndex: "command",
       key: "command",
+      width: 300,
+      ellipsis: true,
       render: (text, row, index) => {
         return (
-          <Tooltip title={row.command}>
-            <div className="line-clamp-1 w-60">{row.command}</div>
-          </Tooltip>
+          <Popover placement="bottom" content={<div style={{
+            maxWidth: "calc(70vw)",
+          }}>
+            <div style={{
+              whiteSpace: "pre-wrap",
+              wordWrap: "break-word",
+            }} className="line-clamp-6">{row.command}</div>
+
+          </div>}>
+            <div style={{ height: 22 }} className="overflow-hidden w-60">{row.command}</div>
+          </Popover>
+          // <Tooltip title={row.command}>
+          //   <div className="line-clamp-1 w-60">{row.command}</div>
+          // </Tooltip>
         );
       },
     },
@@ -137,18 +155,22 @@ export function TaskListPage() {
       render: (text, row, index) => {
         return (
           <div className="flex gap-2">
-            <a
+            <Button
+              size="small"
+              type="link"
               onClick={() => {
                 navigate(`../Results?taskKey=${row.key}`);
               }}
-            >{t`ViewResults`}</a>
+            >{t`ViewResults`}</Button>
 
-            <a
+            <Button
+              size="small"
+              type="link"
               onClick={() => {
                 setCurrRow(row);
                 setVisible(true);
               }}
-            >{t`Edit`}</a>
+            >{t`Edit`}</Button>
 
             <Popconfirm
               title={t`Are you sure to delete this task?`}
@@ -162,16 +184,29 @@ export function TaskListPage() {
                 refresh();
               }}
             >
-              <a>{t`Delete`}</a>
+              <Button
+                size="small"
+                type="link">{t`Delete`}</Button>
             </Popconfirm>
 
-            <a
+            <Button
+              size="small"
+              type="link"
+              loading={loadObj[row.key]}
               className="text-red-300"
-              onClick={() => {
-                call("runTask", [row.key]);
+              onClick={async () => {
+                loadObj[row.key] = true;
+                refresh();
+                try {
+                  await call("runTask", [row.key]);
+                }
+                finally {
+                  loadObj[row.key] = false;
+                  refresh();
+                }
               }}
-            >{t`Test`}</a>
-          </div>
+            >{t`Test`}</Button>
+          </div >
         );
       },
     },
@@ -181,9 +216,11 @@ export function TaskListPage() {
 
   useEffect(() => {
     (async () => {
-      await TaskList.init();
-      await Agents.init();
-      await electronData.init();
+      await Promise.all([
+        TaskList.init(),
+        Agents.init(),
+        electronData.init(),
+      ]);
       refresh();
     })();
   }, []);

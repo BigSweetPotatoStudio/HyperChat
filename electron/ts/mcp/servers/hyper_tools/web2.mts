@@ -114,7 +114,9 @@ export const fetch = async (url: string) => {
       return await browser.newPage()
     });
     await page.goto(url);
+    // 等待页面加载完成
     await Promise.race([page.waitForNetworkIdle(), sleep(3000)]);
+    await sleep(3000);
     let md = (await executeClientScript(
       page,
       fs.readFileSync(path.join(__dirname, "./markdown.js"), "utf-8").toString()

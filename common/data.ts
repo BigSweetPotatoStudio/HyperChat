@@ -5,35 +5,19 @@ import { number, z } from "zod";
 export const DataList: Data<any>[] = [];
 
 export class Data<T> {
-  private localStorage: any = null;
-  private _inited = false;
-  async init({ force } = { force: true }) {
-    if (!force && this._inited) return this.data;
-    this._inited = true;
-    let localData = {};
-    try {
-      this.localStorage = await this.inget().catch(() => "{}");
-      if (this.localStorage) {
-        localData = JSON.parse(this.localStorage);
-      }
-    } catch (e) {
-      localData = {};
-    }
-    this.data = Object.assign({}, this.data, localData);
-    return this.data;
+  private localStorage: any = {};
+
+  async init({ force } = { force: true }): Promise<T> {
+    throw new Error("Method not implemented.");
   }
-  initSync({ force } = { force: true }) {
-    let localData = {};
-    try {
-      this.localStorage = this.inget();
-      if (this.localStorage) {
-        localData = JSON.parse(this.localStorage);
-      }
-    } catch (e) {
-      localData = {};
-    }
-    this.data = Object.assign({}, this.data, localData);
-    return this.data;
+  initSync({ force } = { force: true }): T {
+    throw new Error("Method not implemented.");
+  }
+  async save() {
+    throw new Error("Method not implemented.");
+  }
+  saveSync() {
+    throw new Error("Method not implemented.");
   }
 
   constructor(
@@ -51,27 +35,16 @@ export class Data<T> {
   set(data: T) {
     this.data = data;
   }
-  // get d(): T {
-  //   return this.data;
-  // }
   format(x) {
     return x;
   };
-  async save() {
-    this.insave();
-  }
-  private inget(): Promise<T> {
-    throw new Error("Method not implemented.");
-  }
 
-  private insave(): Promise<void> {
-    throw new Error("Method not implemented.");
-  }
 
-  public override({ inget, insave }) {
-    inget && (this.inget = inget);
-
-    insave && (this.insave = insave);
+  public override({ init, initSync, save, saveSync }: { init?: () => Promise<T>; initSync?: () => T; save?: () => Promise<void>; saveSync?: () => void }) {
+    init && (this.init = init);
+    initSync && (this.initSync = initSync);
+    save && (this.save = save);
+    saveSync && (this.saveSync = saveSync);
   }
 }
 

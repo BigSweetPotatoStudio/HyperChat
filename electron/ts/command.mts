@@ -221,6 +221,18 @@ export class CommandFactory {
       throw e;
     }
   }
+  async writeJSON(p, obj, root = appDataDir) {
+    p = path.join(root, p);
+    try {
+      let r = await fs.writeJSON(p, obj, {
+        spaces: 2,
+        encoding: "utf-8",
+      });
+      return r;
+    } catch (e) {
+      throw e;
+    }
+  }
   async exists(p, root = appDataDir) {
     p = path.join(root, p);
     return await fs.exists(p);
@@ -402,7 +414,7 @@ export class CommandFactory {
     item.version = "2.0";
     item.dateTime = Date.now();
     if (item.isTask) {
-      item.lastMessage = item.messages[item.messages.length - 1];
+      item.lastMessage = item.lastMessage || item.messages[item.messages.length - 1];
     }
     let chatHistory = ChatHistory.initSync().data;
     if (item.messages && item.messages.length > 0) {

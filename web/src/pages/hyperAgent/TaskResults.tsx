@@ -30,6 +30,7 @@ import {
   Divider,
   Popconfirm,
   TableColumnsType,
+  Popover,
 } from "antd";
 import { call } from "../../common/call";
 import client from "socket.io-client";
@@ -119,11 +120,23 @@ export function TaskResultsPage() {
           content = lastMessage?.content_error || "Error";
         }
         return (
-          <Tooltip title={content}>
-            <div className="line-clamp-1 w-96" style={{ color: lastMessage?.content_status == "error" ? "red" : "black" }}>
-              {content}
-            </div>
-          </Tooltip>
+          <Popover placement="bottom" content={<div style={{
+            maxWidth: "calc(70vw)",
+          }}>
+            <div style={{
+              whiteSpace: "pre-wrap",
+              wordWrap: "break-word",
+            }} className="line-clamp-6">{content}</div>
+
+          </div>}>
+            <div style={{ height: 22, color: lastMessage?.content_status == "error" ? "red" : "black" }} className="overflow-hidden w-60">{content}</div>
+          </Popover>
+
+          // <Tooltip title={content}>
+          //   <div className="line-clamp-1 w-96" style={{ color: lastMessage?.content_status == "error" ? "red" : "black" }}>
+          //     {content}
+          //   </div>
+          // </Tooltip>
         );
       },
     },
@@ -154,7 +167,7 @@ export function TaskResultsPage() {
                   key: row.key,
                 }])
                 ChatHistory.get().data = ChatHistory.get().data.filter((x) => x.key !== row.key),
-                refresh();
+                  refresh();
               }}
             >
               <a className="inline-block">{t`Delete`}</a>

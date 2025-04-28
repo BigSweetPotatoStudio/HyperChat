@@ -249,9 +249,9 @@ export class OpenAiChannel {
     } else {
       try {
         if (process.env.runtime === "node") {
-          tools = global.getTools(this.options.allowMCPs);
+          tools = globalThis.getTools(this.options.allowMCPs);
         } else {
-          tools = window.getTools(this.options.allowMCPs);
+          tools = globalThis.getTools(this.options.allowMCPs);
         }
       } catch (e) {
         tools = []
@@ -580,6 +580,34 @@ export class OpenAiChannel {
       return res.content as string;
     }
   }
+  getRelay(index: number) {
+    let assistantContent = [];
+    if (this.messages[index].role == "user") {
+      index++;
+    }
+    while (this.messages.length > index) {
+      let m = this.messages[index];
+      if (m.role == "user") {
+        break;
+      } else if (m.role == "assistant") {
+        if (typeof m.content == "string") {
+          assistantContent.push(m.content);
+        } else if (Array.isArray(m.content)) {
+          for (let c of m.content) {
+            if (c.type == "text") {
+              assistantContent.push(c.text);
+            } else if (c.type == "refusal") {
+              assistantContent.push(c.refusal);
+            } else {
+              console.warn("tool 返回类型只支持 text");
+            }
+          }
+        }
+      }
+      index++;
+    }
+    return assistantContent.join("\n").split("\n").filter((x) => x).join("\n");
+  }
 
   async completionParse(response_format: any): Promise<any> {
     this.openai.provider = this.options.provider;
@@ -600,10 +628,10 @@ export class OpenAiChannel {
       return res.parsed
     }
   }
-  clear() {
-    this.messages = this.messages.filter((m) => m.role === "system");
-    this.totalTokens = 0;
-  }
+  // clear() {
+  //   this.messages = this.messages.filter((m) => m.role === "system");
+  //   this.totalTokens = 0;
+  // }
   async testBase() {
 
     let messages: Array<any> = [{ role: "user", content: "你是谁?" }];

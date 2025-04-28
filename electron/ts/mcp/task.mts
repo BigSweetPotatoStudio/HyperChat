@@ -69,7 +69,8 @@ global.ext2 = {
 };
 
 import { OpenAiChannel } from "../../../web/src/common/openai";
-
+import { Agent } from "../../../web/src/common/agent";
+import { getDefaultModelConfigSync } from "../../../web/src/components/ai";
 import { v4 } from "uuid";
 import dayjs from "dayjs";
 
@@ -94,97 +95,16 @@ export async function callAgent(obj: {
   type: "task" | "isCalled" | "call";
   taskKey?: string;
 }) {
+
   let agent = Agents.initSync().data.find((x) => x.key === obj.agentKey);
   if (agent == null) {
     throw new Error(`Agent ${obj.agentKey} not found`);
   }
   Logger.info("Running callAgent", agent.label, obj.message, obj.agentKey);
 
-  async function runByKey(modelKey) {
-    let config =
-      GPT_MODELS.initSync().data.find((x) => x.key == modelKey) ||
-      GPT_MODELS.initSync().data[0];
-
-    if (!config) {
-      Logger.error("No model found");
-      throw new Error("No model found");
-    }
-
-    let openai = new OpenAiChannel(
-      {
-        ...config, ...agent, allowMCPs: agent.allowMCPs, requestType: "stream",
-        messages_format_callback: async (message) => {
-          if (message.role == "user" || message.role == "system") {
-            if (!message.content_sended) {
-              let varList = [...VarList.initSync().data?.map((v) => {
-                let varName = v.scope + "." + v.name;
-                return {
-                  ...v,
-                  varName: varName,
-                }
-              })];
-              async function renderTemplate(template: string) {
-                let reg = /{{(.*?)}}/g;
-                let matchs = template.match(reg);
-                let subResults = [];
-                for (let match of matchs || []) {
-                  let varName = match.slice(2, -2).trim();
-                  let v = varList.find((x) => x.varName == varName);
-                  let value = varName;
-                  if (v) {
-                    if (v.variableType == "js") {
-                      value = await global.ext2.call("runCode", [{ code: v.code }]).catch(e => {
-                        throw new Error(`${varName} var runCode Error:\n${e.message}`);
-                      });
-                    } else if (v.variableType == "webjs") {
-                      value = await global.ext2.call("runCode", [{ code: v.code }]).catch(e => {
-                        throw new Error(`${varName} var runCode Error: task is running in the nodejs environment, does not support webjs.\n${e.message}`);
-                      });
-                      // let code = `
-                      // (async () => {
-                      //     ${v.code}
-                      //    return await get()
-                      // })()
-                      // `;
-                      // // console.log(code);
-                      // value = await eval(code);
-                    } else {
-                      value = v.value;
-                    }
-                  }
-                  subResults.push({ value, varName });
-                }
-                let result = template.replace(reg, (match, p1) => {
-                  return subResults.find((x) => x.varName === p1.trim())?.value || match;
-                });
-                return result;
-              }
-              if (message.content_template) {
-                if (typeof message.content == "string") {
-                  message.content = await renderTemplate(message.content_template);
-                }
-                else if (Array.isArray(message.content) && message.content.length >= 1) {
-                  if (message.content[0].type == "text") {
-                    message.content[0].text = await renderTemplate(message.content_template);
-                  }
-                }
-
-              }
-              message.content_sended = true;
-            }
-          }
-        },
-      },
-      [
-        {
-          role: "system",
-          content_template: agent.prompt,
-          content: "",
-          content_date: Date.now(),
-        },
-        { role: "user", content: "", content_template: obj.message, content_date: Date.now() },
-      ]
-    );
+  async function runByKey(modelKey: string) {
+    let agentInstance = new Agent(agent);
+    await agentInstance.init();
     try {
 
       global.getTools = (allowMCPs) => {
@@ -203,14 +123,18 @@ export async function callAgent(obj: {
         return tools;
       }
 
-      await openai.completion();
-
-      // console.log("openai.completion() done", openai.messages);
+      let relayMessage = await agentInstance.receiveMessage({
+        role: "user",
+        content_template: obj.message,
+        content: "",
+        content_date: Date.now(),
+      });
+      console.log("relayMessage: ", relayMessage.content);
       const item: ChatHistoryItem = {
         label: obj.message,
         key: v4(),
-        messages: openai.messages,
-        modelKey: config.key,
+        messages: agentInstance.channel.messages,
+        modelKey: agentInstance.gptModelData.key,
         agentKey: agent.key,
         sended: true,
         requestType: "stream",
@@ -221,20 +145,19 @@ export async function callAgent(obj: {
         isTask: obj.type === "task",
         taskKey: obj.taskKey,
         confirm_call_tool: false,
+        lastMessage: relayMessage,
       };
       Command.addChatHistory(item);
-
-      return openai.lastMessage;
-
+      return relayMessage;
     } catch (e) {
       console.error(" hyper_call_agent error: ", e);
-      openai.lastMessage.content_error = e.message;
-      openai.lastMessage.content_status = "error";
+      agentInstance.channel.lastMessage.content_error = e.message;
+      agentInstance.channel.lastMessage.content_status = "error";
       const item: ChatHistoryItem = {
         label: obj.message,
         key: v4(),
-        messages: openai.messages,
-        modelKey: config.key,
+        messages: agentInstance.channel.messages,
+        modelKey: agentInstance.gptModelData.key,
         agentKey: agent.key,
         sended: true,
         requestType: "stream",
@@ -249,6 +172,154 @@ export async function callAgent(obj: {
       Command.addChatHistory(item);
       throw new Error(e.message);
     }
+
+    // GPT_MODELS.initSync();
+    // let config = GPT_MODELS.get().data.find((x) => x.key == modelKey) || getDefaultModelConfigSync(GPT_MODELS);
+
+    // if (!config) {
+    //   Logger.error("No model found");
+    //   throw new Error("No model found");
+    // }
+
+    // let openai = new OpenAiChannel(
+    //   {
+    //     ...config, ...agent, allowMCPs: agent.allowMCPs, requestType: "stream",
+    //     messages_format_callback: async (message) => {
+    //       if (message.role == "user" || message.role == "system") {
+    //         if (!message.content_sended) {
+    //           let varList = [...VarList.initSync().data?.map((v) => {
+    //             let varName = v.scope + "." + v.name;
+    //             return {
+    //               ...v,
+    //               varName: varName,
+    //             }
+    //           })];
+    //           async function renderTemplate(template: string) {
+    //             let reg = /{{(.*?)}}/g;
+    //             let matchs = template.match(reg);
+    //             let subResults = [];
+    //             for (let match of matchs || []) {
+    //               let varName = match.slice(2, -2).trim();
+    //               let v = varList.find((x) => x.varName == varName);
+    //               let value = varName;
+    //               if (v) {
+    //                 if (v.variableType == "js") {
+    //                   value = await global.ext2.call("runCode", [{ code: v.code }]).catch(e => {
+    //                     throw new Error(`${varName} var runCode Error:\n${e.message}`);
+    //                   });
+    //                 } else if (v.variableType == "webjs") {
+    //                   value = await global.ext2.call("runCode", [{ code: v.code }]).catch(e => {
+    //                     throw new Error(`${varName} var runCode Error: task is running in the nodejs environment, does not support webjs.\n${e.message}`);
+    //                   });
+    //                   // let code = `
+    //                   // (async () => {
+    //                   //     ${v.code}
+    //                   //    return await get()
+    //                   // })()
+    //                   // `;
+    //                   // // console.log(code);
+    //                   // value = await eval(code);
+    //                 } else {
+    //                   value = v.value;
+    //                 }
+    //               }
+    //               subResults.push({ value, varName });
+    //             }
+    //             let result = template.replace(reg, (match, p1) => {
+    //               return subResults.find((x) => x.varName === p1.trim())?.value || match;
+    //             });
+    //             return result;
+    //           }
+    //           if (message.content_template) {
+    //             if (typeof message.content == "string") {
+    //               message.content = await renderTemplate(message.content_template);
+    //             }
+    //             else if (Array.isArray(message.content) && message.content.length >= 1) {
+    //               if (message.content[0].type == "text") {
+    //                 message.content[0].text = await renderTemplate(message.content_template);
+    //               }
+    //             }
+
+    //           }
+    //           message.content_sended = true;
+    //         }
+    //       }
+    //     },
+    //   },
+    //   [
+    //     {
+    //       role: "system",
+    //       content_template: agent.prompt,
+    //       content: "",
+    //       content_date: Date.now(),
+    //     },
+    //     { role: "user", content: "", content_template: obj.message, content_date: Date.now() },
+    //   ]
+    // );
+    // try {
+
+    //   global.getTools = (allowMCPs) => {
+    //     let tools: IMCPClient["tools"] = [];
+
+    //     mcpClients.forEach((v) => {
+    //       tools = tools.concat(
+    //         v.tools.filter((t) => {
+    //           if (!allowMCPs) return true;
+    //           return (
+    //             allowMCPs.includes(t.clientName) || allowMCPs.includes(t.restore_name)
+    //           );
+    //         }),
+    //       );
+    //     });
+    //     return tools;
+    //   }
+
+    //   await openai.completion();
+
+    //   // console.log("openai.completion() done", openai.messages);
+    //   const item: ChatHistoryItem = {
+    //     label: obj.message,
+    //     key: v4(),
+    //     messages: openai.messages,
+    //     modelKey: config.key,
+    //     agentKey: agent.key,
+    //     sended: true,
+    //     requestType: "stream",
+    //     allowMCPs: agent.allowMCPs,
+    //     attachedDialogueCount: agent.attachedDialogueCount,
+    //     dateTime: Date.now(),
+    //     isCalled: obj.type === "isCalled",
+    //     isTask: obj.type === "task",
+    //     taskKey: obj.taskKey,
+    //     confirm_call_tool: false,
+    //   };
+    //   Command.addChatHistory(item);
+
+    //   return openai.lastMessage;
+
+    // } catch (e) {
+    //   console.error(" hyper_call_agent error: ", e);
+    //   openai.lastMessage.content_error = e.message;
+    //   openai.lastMessage.content_status = "error";
+    //   const item: ChatHistoryItem = {
+    //     label: obj.message,
+    //     key: v4(),
+    //     messages: openai.messages,
+    //     modelKey: config.key,
+    //     agentKey: agent.key,
+    //     sended: true,
+    //     requestType: "stream",
+    //     allowMCPs: agent.allowMCPs,
+    //     attachedDialogueCount: agent.attachedDialogueCount,
+    //     dateTime: Date.now(),
+    //     isCalled: obj.type === "isCalled",
+    //     isTask: obj.type === "task",
+    //     taskKey: obj.taskKey,
+    //     confirm_call_tool: false,
+    //   };
+    //   Command.addChatHistory(item);
+    //   throw new Error(e.message);
+    // }
   }
 
   return await runByKey(agent.modelKey).catch(async (e) => {
@@ -285,6 +356,7 @@ export async function runTask(taskKey: string, { force = false }) {
       type: "task",
       taskKey: task.key,
     });
+
     // throw new Error("test error");
     await trigger({ task, agent, result: lastMessage.content.toString() });
     // await onRequest(task.message);
