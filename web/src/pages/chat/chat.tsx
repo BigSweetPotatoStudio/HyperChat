@@ -461,7 +461,7 @@ export const Chat = ({
 
   const DATA = useRef({
     mcpLoading: false,
-    showHistory: mobile.current.is ? false : true,
+    showHistory: mobile.current.is ? false : onlyView.histroyKey ? false : true,
     suggestionShow: false,
     diffs: [] as Array<{
       messages: ChatHistoryItem["messages"];
@@ -1372,6 +1372,7 @@ export const Chat = ({
   const { token } = theme.useToken();
   const editorRef = useRef<any>(null);
 
+
   return (
     <div key={sessionID} className="chat relative h-full">
       <div className="h-full rounded-lg bg-white">
@@ -1396,7 +1397,7 @@ export const Chat = ({
           )}
 
           <div className="flex h-full">
-            {!onlyView.histroyKey && DATA.current.showHistory && (
+            {DATA.current.showHistory && (
               <>
                 <div className="hidden h-full w-0 flex-none overflow-hidden pr-2 lg:block lg:w-60">
                   {historyShowNode}
@@ -1407,7 +1408,7 @@ export const Chat = ({
             <Spin wrapperClassName="my-spin flex-grow-2 w-full h-full" style={{ height: "100%" }} spinning={DATA.current.loadingMessages} indicator={<LoadingOutlined spin />} tip={t`Loading...`}  >
               <div
                 className="h-full flex-grow-2 flex w-full flex-col justify-between"
-                style={{ alignSelf: "stretch", width: mobile.current.is ? "100%" : DATA.current.showHistory ? "calc(100vw - 265px)" : "100%" }}
+                style={{ alignSelf: "stretch", width: "100%" }}
               >
 
                 <Splitter layout={window.innerHeight > window.innerWidth ? "vertical" : "horizontal"} className="msg-container overflow-auto">
@@ -1560,7 +1561,7 @@ export const Chat = ({
 
                           await call("addChatHistory", [clone]);
                           ChatHistory.get().data.unshift(clone);
-                          
+
                           loadMoreData(false, false);
                         }}></Messages>
                     </div>

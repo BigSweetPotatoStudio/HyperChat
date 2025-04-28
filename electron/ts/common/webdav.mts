@@ -21,7 +21,8 @@ interface FileInfo {
   filepath: string;
   modifiedTime: Date;
   filename: string;
-  hash?: string;
+  _hash: string;
+  getHash: () => string;
 }
 
 let timer = undefined;
@@ -40,24 +41,6 @@ class WebDAVSync {
 
   constructor() { }
 
-  // private async getLocalFilesInfo(
-  //   localPath: string,
-  //   p = ""
-  // ): Promise<FileInfo[]> {
-  //   const files = await fs.readdir(localPath);
-  //   const fileInfos: FileInfo[] = [];
-
-  //   for (const file of files) {
-  //     const fullPath = path.join(localPath, file);
-  //     const stats = await fs.stat(fullPath);
-  //     fileInfos.push({
-  //       filename: file,
-  //       filepath: (p ? p + "/" : "") + file,
-  //       modifiedTime: stats.mtime,
-  //     });
-  //   }
-  //   return fileInfos;
-  // }
 
   private async getRemoteFilesInfo(remotePath: string): Promise<FileInfo[]> {
     const contents: any = await this.client
@@ -69,11 +52,67 @@ class WebDAVSync {
         }
       });
     // console.log(contents);
-    return (contents || []).map((item) => ({
-      filename: item.basename,
-      filepath: item.filename,
-      modifiedTime: new Date(item.lastmod),
-    })).sort((a, b) => b.modifiedTime.getTime() - a.modifiedTime.getTime());
+    return (contents || []).map((item) => {
+      let fileParse = path.parse(item.basename);
+      let [name, hash] = fileParse.name.split("___");
+      return {
+        filename: item.basename,
+        filepath: item.filename,
+        modifiedTime: new Date(item.lastmod),
+        _hash: hash,
+        getHash() {
+          return hash;
+        },
+      }
+    }).sort((a, b) => b.modifiedTime.getTime() - a.modifiedTime.getTime());
+  }
+  private getLocalFilesInfo(localPath: string, files: string[]) {
+    const fileInfos: FileInfo[] = [];
+
+    for (const filename of files) {
+      const fullPath = path.join(localPath, filename);
+      if (!fs.existsSync(fullPath)) {
+        continue;
+      }
+      let fileParse = path.parse(filename);
+      if (fileParse.ext == ".json") {
+        const stats = fs.statSync(fullPath);
+        fileInfos.push({
+          filename: filename,
+          filepath: fullPath,
+          modifiedTime: stats.mtime,
+          _hash: undefined,
+          getHash() {
+            if (this._hash) {
+              return this._hash;
+            }
+            let content = fs.readFileSync(fullPath, "utf-8");
+            let hash = crypto.createHash("md5").update(content.replace(/\r\n|\r|\n/g, '')).digest("hex");
+            this._hash = hash;
+            return hash;
+          },
+        });
+      } else {
+        const stats = fs.statSync(fullPath);
+
+        fileInfos.push({
+          filename: filename,
+          filepath: fullPath,
+          modifiedTime: stats.mtime,
+          _hash: undefined,
+          getHash() {
+            if (this._hash) {
+              return this._hash;
+            }
+            let content = fs.readFileSync(fullPath);
+            let hash = crypto.createHash("md5").update(content).digest("hex");
+            this._hash = hash;
+            return hash;
+          }
+        });
+      }
+    }
+    return fileInfos;
   }
   _isSnyc = false;
   sync = async () => {
@@ -130,27 +169,6 @@ class WebDAVSync {
       console.log("---syncEnd");
     }
   };
-  // async _syncFile(
-  //   fileName: string,
-  //   localPath: string = appDataDir,
-  //   remotePath: string = this.webdavSetting.baseDirName
-  // ) {
-  //   const content = await fs.readFile(path.join(localPath, fileName));
-  //   console.log(
-  //     "upload file",
-  //     path.join(remotePath, fileName).replace(/\\/g, "/")
-  //   );
-  //   await this.client.putFileContents(
-  //     path.join(remotePath, fileName).replace(/\\/g, "/"),
-  //     content
-  //   );
-  //   getMessageService().sendToRenderer({
-  //     type: "sync",
-  //     data: {
-  //       status: 0,
-  //     },
-  //   });
-  // }
   status: number = 0;
   // private async _sync(localPath: string, remotePath: string): Promise<void> {
   //   const localFiles = await this.getLocalFilesInfo(localPath);
@@ -408,85 +426,55 @@ class WebDAVSync {
   //     }
   //   } catch (e) { }
   // }
-  private getLocalFilesInfo2(localPath: string, files: string[]) {
-    const fileInfos: FileInfo[] = [];
 
-    for (const filename of files) {
-      const fullPath = path.join(localPath, filename);
-      if (!fs.existsSync(fullPath)) {
-        continue;
-      }
-      let fileParse = path.parse(filename);
-      if (fileParse.ext == ".json") {
-        const stats = fs.statSync(fullPath);
-        let content = fs.readFileSync(fullPath, "utf-8");
-        let hash = crypto.createHash("md5").update(content.replace(/\r\n|\r|\n/g, '')).digest("hex");
-        fileInfos.push({
-          filename: filename,
-          filepath: fullPath,
-          modifiedTime: stats.mtime,
-          hash: hash,
-        });
-      } else {
-        const stats = fs.statSync(fullPath);
-        let content = fs.readFileSync(fullPath);
-        let hash = crypto.createHash("md5").update(content).digest("hex");
-        fileInfos.push({
-          filename: filename,
-          filepath: fullPath,
-          modifiedTime: stats.mtime,
-          hash: hash,
-        });
-      }
-    }
-    return fileInfos;
-  }
   private async _sync2(localPath: string, remotePath: string, files: string[]) {
 
     let remoteFiles = await this.getRemoteFilesInfo(remotePath);
-    let localFiles = this.getLocalFilesInfo2(localPath, files);
+    let localFiles = this.getLocalFilesInfo(localPath, files);
     // console.log("localFiles", localFiles);
     // console.log("remoteFiles", remoteFiles);
 
-    for (let filename of files) {
-      if (fs.existsSync(path.join(localPath, filename))) {
-        let fileParse = path.parse(filename);
+    for (let localFile of localFiles) {
+      let filename = localFile.filename;
 
-        let localFile = localFiles.find((l) => l.filename === filename);
-        let remoteFileName = fileParse.name + "___" + localFile.hash + fileParse.ext;
+      let fileParse = path.parse(filename);
 
-        let remoteFile = remoteFiles.find((x) => x.filename.startsWith(fileParse.name));
+      let remoteFile = remoteFiles.find((x) => x.filename.startsWith(fileParse.name));
 
-        if (remoteFile) {
-          let fileParse = path.parse(remoteFile.filename);
-          let [name, hash] = fileParse.name.split("___");
-          if (hash == localFile.hash) {
+      if (remoteFile) {
+        let fileParse = path.parse(localFile.filename);
+        let name = fileParse.name;
+
+        if (localFile.modifiedTime > remoteFile.modifiedTime) {
+          let remoteFileName = fileParse.name + "___" + localFile.getHash() + fileParse.ext;
+          if (remoteFile.getHash() == localFile.getHash()) {
             isDev && Logger.info("skip upload file(hash match)", path.join(remotePath, remoteFileName));
           } else {
-            if (localFile.modifiedTime > remoteFile.modifiedTime) {
-              Logger.info("upload file(hash no match)", path.join(remotePath, remoteFileName));
-              let content = fs.readFileSync(path.join(localPath, filename), "utf-8");
-              await this.client.putFileContents(path.join(remotePath, remoteFileName), content);
-              try {
-                let rfs = remoteFiles.filter((r) => r.filename.startsWith(name));
-                for (let rf of rfs) {
-                  await this.client.deleteFile(rf.filepath);
-                }
-              } catch (e) {
-                console.log("delete error: ", e);
+            Logger.info("upload file(hash no match)", path.join(remotePath, remoteFileName));
+            let content = fs.readFileSync(path.join(localPath, filename), "utf-8");
+            await this.client.putFileContents(path.join(remotePath, remoteFileName), content);
+            try {
+              let rfs = remoteFiles.filter((r) => r.filename.startsWith(name));
+              for (let rf of rfs) {
+                await this.client.deleteFile(rf.filepath);
               }
-            } else {
-              isDev && Logger.info("skip upload file(time no match)", path.join(remotePath, remoteFileName));
+            } catch (e) {
+              console.log("delete error: ", e);
             }
           }
         } else {
-          Logger.info("upload file(not found)", path.join(remotePath, remoteFileName));
-          let content = fs.readFileSync(path.join(localPath, filename), "utf-8");
-          await this.client.putFileContents(path.join(remotePath, remoteFileName), content);
-
+          isDev && Logger.info("skip upload file(time no match)", path.join(localPath, filename));
         }
 
+      } else {
+        let remoteFileName = fileParse.name + "___" + localFile.getHash() + fileParse.ext;
+        Logger.info("upload file(not found)", path.join(remotePath, remoteFileName));
+        let content = fs.readFileSync(path.join(localPath, filename), "utf-8");
+        await this.client.putFileContents(path.join(remotePath, remoteFileName), content);
+
       }
+
+
     }
     // return;
     for (let remoteFile of remoteFiles) {
@@ -495,6 +483,8 @@ class WebDAVSync {
       }
       let fileParse = path.parse(remoteFile.filename);
       let [name, hash] = fileParse.name.split("___");
+
+
       const localFileName = name + fileParse.ext;
       const localFile = localFiles.find((l) => l.filename === localFileName);
 
@@ -502,16 +492,17 @@ class WebDAVSync {
       if (!localFile) {// 本地文件不存在，或者已删除
         Logger.info("download file(not found)", remoteFile.filepath);
         let content = await this.client.getFileContents(remoteFile.filepath, { format: "binary" });
-
         fs.writeFileSync(path.join(localPath, localFileName), content as Buffer);
-      } else if (localFile.hash == hash) { // hash
-        isDev && Logger.info("skip download file(hash match)", remoteFile.filepath);
+
       } else {
-        // hash不一致
         if (localFile.modifiedTime < remoteFile.modifiedTime) {
-          Logger.info("download file(hash no match)", remoteFile.filepath);
-          let content = await this.client.getFileContents(remoteFile.filepath, { format: "binary" });
-          fs.writeFileSync(path.join(localPath, localFileName), content as Buffer);
+          if (localFile.getHash() == hash) { //  hash不一致
+            isDev && Logger.info("skip download file(hash match)", remoteFile.filepath);
+          } else {
+            Logger.info("download file(hash no match)", remoteFile.filepath);
+            let content = await this.client.getFileContents(remoteFile.filepath, { format: "binary" });
+            fs.writeFileSync(path.join(localPath, localFileName), content as Buffer);
+          }
         } else {
           isDev && Logger.info("skip download file(time no match)", remoteFile.filepath);
         }

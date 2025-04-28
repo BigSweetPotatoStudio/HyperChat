@@ -262,7 +262,7 @@ export class MCPClient implements IMCPClient {
         if (this.config?.type == "sse" || this.config?.hyperchat?.type == "sse") {
           if (e.message.includes("Body Timeout Error")) {
           } else {
-            Logger.error("client see onerror: ", e);
+            Logger.error(`${this.name} client see onerror: `, e);
           }
         } else {
           if (e.message.includes("not valid JSON")) {

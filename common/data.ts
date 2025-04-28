@@ -1,7 +1,7 @@
 import type OpenAI from "openai";
 import * as MCPTypes from "@modelcontextprotocol/sdk/types.js";
 import { v4 } from "uuid";
-import { z } from "zod";
+import { number, z } from "zod";
 export const DataList: Data<any>[] = [];
 
 export class Data<T> {
@@ -125,6 +125,7 @@ export const electronData = new Data(
     runTask: false,
     isDeveloper: false,
     isLoadClaudeConfig: true,
+    lastSyncTime: 0,
   },
   {
     sync: false,
@@ -202,21 +203,23 @@ export const ChatHistory = new Data("chat_history.json", {
   data: [] as Array<ChatHistoryItem>,
 });
 
+export type AgentData = {
+  type?: "builtin" | "custom";
+  key: string;
+  label: string;
+  prompt: string;
+  description?: string;
+  callable?: boolean;
+  allowMCPs: string[];
+  modelKey?: string;
+  attachedDialogueCount?: number;
+  temperature?: number;
+  confirm_call_tool: boolean;
+  fallbackModelKey?: string;
+}
+
 export const Agents = new Data("gpts_list.json", {
-  data: [] as Array<{
-    type?: "builtin" | "custom";
-    key: string;
-    label: string;
-    prompt: string;
-    description?: string;
-    callable?: boolean;
-    allowMCPs: string[];
-    modelKey?: string;
-    attachedDialogueCount?: number;
-    temperature?: number;
-    confirm_call_tool: boolean;
-    fallbackModelKey?: string;
-  }>,
+  data: [] as Array<AgentData>,
 });
 
 export type GPT_MODELS_TYPE = {
