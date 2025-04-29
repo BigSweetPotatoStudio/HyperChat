@@ -23,6 +23,8 @@ import { TerminalPage } from "./pages/setting/terminal";
 import { Icon } from "./components/icon";
 import { TestPage } from "./pages/TestPage";
 import { VariableList } from "./pages/variableList/variableList";
+import { AgentPage } from "./pages/Agent";
+import { AgentCreatePage } from "./pages/Agent/create";
 type RouteType = {
   path: string;
   name: React.ReactNode;
@@ -50,11 +52,39 @@ export function getLayoutRoute() {
         icon: <CommentOutlined />,
         component: <WorkSpace />,
       },
+      {
+        path: "/Agent",
+        name: t`Agent`,
+        icon: <Icon name="bx-bot" />,
+        component: <Container from="/Agent" default="./List" />,
+        routes: [
+          {
+            path: "/List",
+            name: t`Agent`,
+            component: <AgentPage />,
+            hideInMenu: true,
+          },
+          {
+            path: "/Create",
+            name: t`Create`,
+            component: <AgentCreatePage />,
+            hideInMenu: true,
+          },
+        ],
+      },
+
       // {
-      //   path: "/WorkSpace",
-      //   name: "WorkSpace",
-      //   icon: "💬",
-      //   component: <WorkSpace />,
+      //   path: "/Agent",
+      //   name: "Agent",
+      //   icon: <Icon name="bx-bot" />,
+      //   component: <AgentPage />,
+      // },
+      // {
+      //   path: "/Agent/Create",
+      //   name: "AgentCreate",
+      //   icon: <Icon name="bx-bot" />,
+      //   component: <AgentCreatePage />,
+      //   hideInMenu: true,
       // },
       {
         path: "/Market",
@@ -72,7 +102,7 @@ export function getLayoutRoute() {
         path: "/Task",
         name: t`TaskList`,
         icon: <Icon name="task"></Icon>,
-        component: <Container from="/Task" default="List" />,
+        component: <Container from="/Task" default="list" />,
         routes: [
           {
             path: "/list",

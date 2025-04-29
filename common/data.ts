@@ -169,7 +169,7 @@ export type ChatHistoryItem = {
   deleted?: boolean;
   confirm_call_tool: boolean;
   lastMessage?: MyMessage;
-  version?: string;
+  version?: number | string;
 };
 
 export const ChatHistory = new Data("chat_history.json", {
@@ -189,6 +189,9 @@ export type AgentData = {
   temperature?: number;
   confirm_call_tool: boolean;
   fallbackModelKey?: string;
+  tags?: string[];
+  subAgents?: string[];
+  version?: number
 }
 
 export const Agents = new Data("gpts_list.json", {
