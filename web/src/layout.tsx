@@ -744,14 +744,14 @@ export function Layout() {
             form.getFieldValue("key") && <Button key="save" onClick={() => {
               form.validateFields().then(async (values) => {
                 if (values.key) {
-                  let index = GPT_MODELS.get().data.findIndex(
+                  let find = GPT_MODELS.get().data.find(
                     (e) => e.key == values.key,
                   );
-                  if (index == -1) {
+                  if (!find) {
                     return;
                   }
                   values.name = values.name || values.model;
-                  GPT_MODELS.get().data[index] = values;
+                  Object.assign(find, values);
                   await GPT_MODELS.save();
                 } else {
                   values.name = values.name || values.model;

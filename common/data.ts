@@ -147,7 +147,7 @@ export type Tool_Call = {
 
 
 export type MyMessage = OpenAI.Chat.Completions.ChatCompletionMessageParam & {
-  tool_calls?: Tool_Call[]; // openai tool call
+
   content_status?:
   | "loading"
   | "success"
@@ -165,6 +165,7 @@ export type MyMessage = OpenAI.Chat.Completions.ChatCompletionMessageParam & {
     data?: string;
   }>;
   reasoning_content?: string;
+  content_tool_calls?: Tool_Call[]; // openai tool call
   content_context?: any;
   content_attached?: boolean;
   content_date?: number;

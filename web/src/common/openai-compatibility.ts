@@ -89,7 +89,13 @@ export class OpenAICompatibility {
                             }],
                         } as any;
                     } else {
-                        return x;
+                        if (x.role === "assistant") {
+                            delete x.tool_calls;
+                            return x;
+                        } else {
+                            return x;
+                        }
+
                     }
                 })
             }

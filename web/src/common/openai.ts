@@ -270,7 +270,7 @@ export class OpenAiChannel {
       role: "assistant",
       content: "" as any,
       reasoning_content: "",
-      tool_calls: undefined,
+      content_tool_calls: [],
       content_status: "loading",
       content_attachment: [],
       content_usage: {
@@ -469,7 +469,7 @@ export class OpenAiChannel {
     onUpdate && onUpdate(this.lastMessage.content as string);
     // console.log("tool_calls", tool_calls, call_tool);
     if (tool_calls.length > 0 && call_tool) {
-      this.lastMessage.tool_calls = tool_calls;
+      this.lastMessage.content_tool_calls = tool_calls;
       for (let tool of tool_calls) {
         try {
           tool.function.argumentsOBJ = JSON.parse(tool.function.arguments);
@@ -747,10 +747,11 @@ export class OpenAiChannel {
         content_date,
         content_sended,
         content_template,
+        content_tool_calls,
         ...rest
       } = m;
       if (rest.role == "assistant") {
-        rest.tool_calls = rest.tool_calls?.map((x: Tool_Call) => {
+        rest.tool_calls = content_tool_calls?.map((x: Tool_Call) => {
           let { origin_name, restore_name, ...rest } = x;
           let { argumentsOBJ, ...functionRest } = rest.function;
           rest.function = functionRest as any;
