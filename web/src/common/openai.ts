@@ -288,9 +288,11 @@ export class OpenAiChannel {
     onUpdate && onUpdate(this.lastMessage.content as string);
     try {
       if (this.options.requestType === "stream") {
+        let format_message = await this.messages_format(messages);
+        onUpdate && onUpdate(res.content as string);
         const stream = await this.openai.completion(
           {
-            messages: await this.messages_format(messages),
+            messages: format_message,
             model: this.options.model,
             stream: true,
             stream_options: {
@@ -361,9 +363,11 @@ export class OpenAiChannel {
         // }
         onUpdate && onUpdate(res.content as string);
       } else {
+        let format_message = await this.messages_format(messages);
+        onUpdate && onUpdate(res.content as string);
         const chatCompletion = await this.openai.completion(
           {
-            messages: await this.messages_format(messages),
+            messages: format_message,
             model: this.options.model,
             tools: tools && this.tools_format(tools),
             temperature: this.options.temperature,
@@ -435,7 +439,7 @@ export class OpenAiChannel {
     // }
     onUpdate && onUpdate(this.lastMessage.content as string);
 
-    if (this.options.toolMode == "compatible" || (this.lastMessage.content.toString()).startsWith("<tool_use>")) {
+    if (this.options.toolMode == "compatible" && (this.lastMessage.content.toString()).includes("<tool_use>")) {
       let res = extractTool(this.lastMessage.content.toString());
       if (res) {
         tool_calls.push({
@@ -448,7 +452,7 @@ export class OpenAiChannel {
             argumentsOBJ: res.params,
           }
         });
-        this.lastMessage.content = "";
+        // this.lastMessage.content = "";
       }
     }
 
@@ -686,7 +690,7 @@ export class OpenAiChannel {
     messages.push(response.choices[0].message);
 
     let tool_calls = response.choices[0].message.tool_calls || [];
-    if (this.options.toolMode == "compatible" || (this.lastMessage.content.toString()).startsWith("<tool_use>")) {
+    if (this.options.toolMode == "compatible" && (response.choices[0].message.content.toString()).includes("<tool_use>")) {
       let res = extractTool(response.choices[0].message.content.toString());
       if (res) {
         tool_calls.push({
