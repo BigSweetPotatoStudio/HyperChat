@@ -6,9 +6,10 @@ name: Release-Node.js Package
 on:
   workflow_dispatch: {}
   push:
-    tags:
-      - "v*"
-
+    # tags:
+    #   - "v*"
+    branches:
+      - stable
 permissions:
   contents: write
 

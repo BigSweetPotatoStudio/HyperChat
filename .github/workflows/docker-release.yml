@@ -14,9 +14,10 @@ on:
   # release:
   #   types: [published]
   push:
-    tags:
-      - "v*"
-
+    # tags:
+    #   - "v*"
+    branches:
+      - stable
 jobs:
   push_to_registry:
     name: Push Docker image to Docker Hub
