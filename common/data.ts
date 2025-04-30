@@ -233,6 +233,7 @@ export type GPT_MODELS_TYPE = {
   supportTool: boolean;
   call_tool_step?: number;
   type?: "llm" | "embedding";
+  toolMode?: "standard" | "compatible";
   isStrict: boolean;
   isDefault?: boolean;
 }

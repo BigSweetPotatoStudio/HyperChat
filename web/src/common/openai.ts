@@ -22,9 +22,10 @@ import imageBase64 from "../common/openai_image_base64.txt";
 import { v4 } from "uuid";
 import dayjs from "dayjs";
 import { isOnBrowser } from "./const";
-import type { MyMessage, Tool_Call } from "../../../common/data";
+import type { GPT_MODELS_TYPE, MyMessage, Tool_Call } from "../../../common/data";
 import { OpenAICompatibility } from "./openai-compatibility";
 import type OpenAI from "openai";
+import { extractTool } from "./ai/prompt";
 // import OpenAICompatibility from "openai";
 
 export {
@@ -56,25 +57,26 @@ export class OpenAiChannel {
       baseURL: string;
       apiKey: string;
       model?: string;
-      provider?: string;
+      // provider?: string;  
+      // call_tool_step?: number;
+      // supportTool?: boolean;
+      // supportImage?: boolean;
+      // isStrict?: boolean;
+
       requestType?: "complete" | "stream";
-      call_tool_step?: number;
-      supportTool?: boolean;
-      supportImage?: boolean;
-      isStrict?: boolean;
+
       allowMCPs?: string[];
       temperature?: number;
       confirm_call_tool?: boolean;
       confirm_call_tool_cb?: (tool: Tool_Call) => void;
       messages_format_callback?: (messages: MyMessage) => Promise<void>;
-    },
+    } & Partial<GPT_MODELS_TYPE>,
     public messages: MyMessage[] = [],
   ) {
 
     this.openai = new OpenAICompatibility({
       baseURL: options.baseURL,
       apiKey: options.apiKey, // This is the default and can be omitted
-      provider: options.provider,
       dangerouslyAllowBrowser: process.env.runtime !== "node",
       defaultHeaders: {
         "HTTP-Referer": "https://hyperchat.dadigua.men", // Optional. Site URL for rankings on openrouter.ai.
@@ -104,7 +106,7 @@ export class OpenAiChannel {
         }
         return response;
       },
-    });
+    }, this.options);
 
 
     this.options.temperature =
@@ -219,7 +221,7 @@ export class OpenAiChannel {
   ): Promise<string> {
     this.status = "runing";
     this.index++;
-    this.openai.provider = this.options.provider;
+    this.openai.modelData = this.options;
     this.openai.baseURL = this.options.baseURL;
     this.openai.apiKey = this.options.apiKey;
     let res = await this._completion(onUpdate, call_tool, step, {
@@ -350,7 +352,7 @@ export class OpenAiChannel {
 
           res.content += (chunk.choices[0]?.delta?.content || "");
           res.reasoning_content +=
-            (chunk.choices[0]?.delta as any)?.reasoning_content || "";
+            (chunk.choices[0]?.delta as any)?.reasoning_content || (chunk.choices[0]?.delta as any)?.reasoning || "";
           res.content_date = Date.now();
           onUpdate && onUpdate(res.content as string);
         }
@@ -416,9 +418,7 @@ export class OpenAiChannel {
         }
 
         this.lastMessage.content = lastMessage.content;
-        this.lastMessage.reasoning_content = (
-          lastMessage as any
-        ).reasoning_content;
+        this.lastMessage.reasoning_content = (lastMessage as any).reasoning_content || (lastMessage as any).reasoning;
       }
     } catch (e) {
       this.lastMessage.content_status = "error";
@@ -434,6 +434,23 @@ export class OpenAiChannel {
     //   });
     // }
     onUpdate && onUpdate(this.lastMessage.content as string);
+
+    if (this.options.toolMode == "compatible" || (this.lastMessage.content.toString()).startsWith("<tool_use>")) {
+      let res = extractTool(this.lastMessage.content.toString());
+      if (res) {
+        tool_calls.push({
+          index: 0,
+          id: res.name,
+          type: "function",
+          function: {
+            name: res.name,
+            arguments: JSON.stringify(res.params),
+            argumentsOBJ: res.params,
+          }
+        });
+        this.lastMessage.content = "";
+      }
+    }
 
     tool_calls.forEach((tool) => {
       let localtool = tools.find((t) => t.function.name === tool.function.name);
@@ -582,7 +599,7 @@ export class OpenAiChannel {
   }
 
   async completionParse(response_format: any): Promise<any> {
-    this.openai.provider = this.options.provider;
+    this.openai.modelData = this.options;
     this.openai.baseURL = this.options.baseURL;
     this.openai.apiKey = this.options.apiKey;
     let completion = await this.openai.parse({
@@ -668,13 +685,25 @@ export class OpenAiChannel {
 
     messages.push(response.choices[0].message);
 
-    let function_name =
-      response.choices[0].message.tool_calls![0]["function"]["name"];
-    let function_args =
-      response.choices[0].message.tool_calls![0]["function"]["arguments"];
+    let tool_calls = response.choices[0].message.tool_calls || [];
+    if (this.options.toolMode == "compatible" || (this.lastMessage.content.toString()).startsWith("<tool_use>")) {
+      let res = extractTool(response.choices[0].message.content.toString());
+      if (res) {
+        tool_calls.push({
+          id: res.name,
+          type: "function",
+          function: {
+            name: res.name,
+            arguments: JSON.stringify(res.params),
+          }
+        });
+      }
+    }
 
     let runs = {} as any;
 
+    let function_name = tool_calls![0]["function"]["name"];
+    let function_args = tool_calls![0]["function"]["arguments"];
     runs[function_name] = () => {
       return dayjs().format("YYYY-MM-DD HH:mm:ss");
     };
@@ -686,7 +715,7 @@ export class OpenAiChannel {
 
     messages.push({
       role: "tool",
-      tool_call_id: response.choices[0].message.tool_calls![0]["id"],
+      tool_call_id: tool_calls![0]["id"],
       content: res,
     });
 
@@ -734,7 +763,11 @@ export class OpenAiChannel {
   tools_format(tools: HyperChatCompletionTool[]) {
     return tools?.map((x) => {
       let { origin_name, restore_name, key, client, clientName, ...rest } = x;
-      rest.function.strict = !!this.options.isStrict;
+      if (this.options.isStrict) {
+        rest.function.strict = true;
+      } else {
+        delete rest.function.strict;
+      }
       return rest;
     });
   }

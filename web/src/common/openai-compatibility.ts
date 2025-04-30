@@ -5,9 +5,10 @@ import { Completions as BetaCompletions } from "openai/resources/beta/chat/compl
 import { AnthropicProvider } from "./ai_provider/anthropic";
 import { MyMessage } from "./openai";
 import { Completions } from "openai/resources/chat/completions";
-import { HyperChatCompletionTool } from "../../../common/data";
+import { GPT_MODELS_TYPE, HyperChatCompletionTool } from "../../../common/data";
 import { message } from "antd";
 import { isOnBrowser } from "./const";
+import { genSystemPrompt } from "./ai/prompt";
 let callModule = {
     getURL_PRE: () => "",
     getWebSocket: () => null,
@@ -24,12 +25,10 @@ export class OpenAICompatibility {
     anthropic: AnthropicProvider;
     baseURL: string;
     apiKey: string;
-    provider: string;
 
-    constructor(public options: ClientOptions & { provider: string }) {
+    constructor(public options: ClientOptions, public modelData: Partial<GPT_MODELS_TYPE>) {
         this.baseURL = options.baseURL;
         this.apiKey = options.apiKey;
-        this.provider = options.provider;
         this.openai = new OpenAI(options);
         this.anthropic = new AnthropicProvider({
             apiKey: options.apiKey,
@@ -50,7 +49,9 @@ export class OpenAICompatibility {
         },
         max_tokens?: number,
     }, options?) => {
-        if (this.provider === "anthropic") {
+
+
+        if (this.modelData.provider === "anthropic") {
             this.anthropic.client.baseURL = process.env.runtime === "node"
                 ? this.baseURL :
                 isOnBrowser
@@ -59,6 +60,41 @@ export class OpenAICompatibility {
             this.anthropic.client.apiKey = this.apiKey;
             return this.anthropic.completion(body, options) as any;
         } else {
+            // this.modelData.toolMode = "compatible";
+
+            if (this.modelData.toolMode === "compatible") {
+                let system = body.messages.find(x => x.role === "system");
+                let systemPrompt = system?.content?.toString() || ""
+                let systemNew = genSystemPrompt(systemPrompt, body.tools);
+                if (system) {
+                    system.content = systemNew;
+                } else {
+                    body.messages.unshift({
+                        role: "system",
+                        content: systemNew,
+                    });
+                }
+                delete body.tools;
+
+                body.messages = body.messages.map((x) => {
+                    if (x.role === "tool") {
+                        return {
+                            role: "user",
+                            content: [{
+                                type: "text",
+                                text: `${x.tool_call_id} Tool use Result:`,
+                            }, {
+                                type: "text",
+                                text: x.content,
+                            }],
+                        } as any;
+                    } else {
+                        return x;
+                    }
+                })
+            }
+
+
             this.openai.baseURL = process.env.runtime === "node"
                 ? this.baseURL :
                 isOnBrowser
@@ -106,7 +142,7 @@ export class OpenAICompatibility {
             };
         }
 
-        if (this.provider === "anthropic" || this.provider == "anthropic-openai") {
+        if (this.modelData.provider === "anthropic" || this.modelData.provider == "anthropic-openai") {
             return await get_json();
         } else {
             this.openai.baseURL = process.env.runtime === "node"

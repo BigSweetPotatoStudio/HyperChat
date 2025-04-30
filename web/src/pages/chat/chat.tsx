@@ -680,14 +680,6 @@ export const Chat = ({
       try {
         openaiClient.options = {
           ...config,
-          provider: config.provider,
-          baseURL: config.baseURL,
-          apiKey: config.apiKey,
-          model: config.model,
-          call_tool_step: config.call_tool_step,
-          supportTool: config.supportTool,
-          supportImage: config.supportImage,
-          isStrict: config.isStrict,
 
           requestType: currentChat.current.requestType,
           allowMCPs: currentChat.current.allowMCPs,

@@ -667,6 +667,9 @@ export function Layout() {
                         }
 
                         setModelOptions([]);
+                        if (record.toolMode == null) {
+                          record.toolMode = "standard";
+                        }
                         form.setFieldsValue(record);
                         setIsAddModelConfigOpen(true);
                       }}
@@ -775,8 +778,12 @@ export function Layout() {
                 provider: Providers[0].value,
                 baseURL: Providers[0].baseURL,
                 type: "llm",
+                toolMode: "standard",
               }}
               clearOnDestroy
+              onFinishFailed={(err) => {
+                console.error(err);
+              }}
               onFinish={async (values) => {
                 try {
                   setLoadingCheckLLM(true);
@@ -825,7 +832,10 @@ export function Layout() {
                       },
                     ]);
 
-                    let o = new OpenAiChannel(values, []);
+                    let o = new OpenAiChannel({
+                      ...values,
+                      requestType: "complete"
+                    }, []);
                     let testBaseRes = await o.testBase().then(e => {
                       setTimelineData((x) => {
                         x.push({
@@ -1091,11 +1101,22 @@ export function Layout() {
                 ></InputNumber>
               </Form.Item>
               <Form.Item
+                name="toolMode"
+                label={t`toolMode`}
+              >
+                <Radio.Group onChange={() => {
+                  refresh();
+                }}>
+                  <Radio value="standard">{t`standard`}</Radio>
+                  <Radio value="compatible">{t`compatible`}</Radio>
+                </Radio.Group>
+              </Form.Item>
+              {form.getFieldValue("toolMode") == "standard" && <Form.Item
                 name="isStrict"
                 label={t`CallToolStrictMode`}
               >
                 <Switch></Switch>
-              </Form.Item>
+              </Form.Item>}
 
               {form.getFieldValue("key") && <Form.Item
                 name="supportImage"

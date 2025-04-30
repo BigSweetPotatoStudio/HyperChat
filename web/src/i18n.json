@@ -1282,5 +1282,17 @@
   "run": {
     "en": "run",
     "zh": "run"
+  },
+  "toolMode": {
+    "en": "toolMode",
+    "zh": "工具模式"
+  },
+  "standard": {
+    "en": "standard",
+    "zh": "标准"
+  },
+  "compatible": {
+    "en": "compatible",
+    "zh": "兼容"
   }
 }
