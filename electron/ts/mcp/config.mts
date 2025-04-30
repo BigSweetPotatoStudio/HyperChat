@@ -283,11 +283,7 @@ export class MCPClient implements IMCPClient {
           function: {
             name: name,
             description: tool.description,
-            parameters: {
-              type: tool.inputSchema.type,
-              properties: formatProperties(tool.inputSchema.properties, name),
-              required: tool.inputSchema.required,
-            },
+            parameters: tool.inputSchema,
           },
           origin_name: tool.name,
           restore_name: this.name + " > " + tool.name,
@@ -761,34 +757,3 @@ export async function closeMcpClients(name: string, {
 }
 
 
-export function formatProperties(obj: any, toolName: string = "") {
-  if (obj == null) {
-    return {
-      compatible: {
-        type: "string",
-        description: "ignore, no enter", // compatible gemini-openai
-      },
-    };
-  }
-  // if (toolName == "NOTION_INSERT_ROW_DATABASE") {
-  //   debugger;
-  // }
-  try {
-    for (let key in obj) {
-      if (obj[key].type == "object") {
-        obj[key].properties = formatProperties(obj[key].properties, toolName);
-        // delete obj[key].additionalProperties; // Corrected to delete obj[key].additionalProperties
-        delete obj[key].items;
-      } else if (obj[key].type == "array") {
-        obj[key].items = formatProperties(obj[key].items, toolName);
-        // delete obj[key].items.additionalProperties; // Corrected to delete obj[key].additionalProperties
-        delete obj[key].properties;
-      }
-    }
-
-  } catch (e) {
-    console.error(e);
-  }
-  // console.log(obj);
-  return obj;
-}

@@ -1407,7 +1407,7 @@ export const Chat = ({
                 >
                   {
                     DATA.current.diffs.length == 0 ?
-                      <div  className="msg-container overflow-auto">
+                      <div className="msg-container overflow-auto">
                         {(currentChat.current.messages == null ||
                           currentChat.current.messages?.length == 0) && (
                             <>
@@ -2109,22 +2109,35 @@ export const Chat = ({
                                         <Icon name="chuizi-copy" ></Icon>{
 
                                           (() => {
-                                            let set = new Set();
-                                            for (let tool_name of currentChat.current.allowMCPs) {
-                                              let [name, _] = tool_name.split(" > ");
-                                              set.add(name);
-                                            }
+                                            let tools: IMCPClient["tools"] = [];
 
-                                            let curr = mcpClients.filter((v) => {
-                                              return v.status !== "disabled" && set.has(v.name);
+                                            mcpClients.forEach((v) => {
+                                              tools = tools.concat(
+                                                v.tools.filter((t) => {
+
+                                                  return (
+                                                    currentChat.current.allowMCPs.includes(t.clientName) || currentChat.current.allowMCPs.includes(t.restore_name)
+                                                  );
+                                                }),
+                                              );
                                             });
-                                            let toolLen = 0;
-                                            for (let x of curr) {
-                                              toolLen += x.tools.length;
-                                            }
+
+                                            // let set = new Set();
+                                            // for (let tool_name of currentChat.current.allowMCPs) {
+                                            //   let [name, _] = tool_name.split(" > ");
+                                            //   set.add(name);
+                                            // }
+
+                                            // let curr = mcpClients.filter((v) => {
+                                            //   return v.status !== "disabled" && set.has(v.name);
+                                            // });
+                                            // let toolLen = 0;
+                                            // for (let x of curr) {
+                                            //   toolLen += x.tools.length;
+                                            // }
                                             return (
                                               <>
-                                                {toolLen}
+                                                {tools.length}
                                               </>
                                             )
                                           })()

@@ -94,34 +94,34 @@ export function mcpClientsToArray(mcpClients: Array<IMCPClient>): InitedClient[]
   return array;
 }
 
-export function formatProperties(obj: any, toolName: string = "") {
-  if (obj == null) {
-    return {
-      compatible: {
-        type: "string",
-        description: "ignore, no enter", // compatible gemini-openai
-      },
-    };
-  }
-  // if (toolName == "NOTION_INSERT_ROW_DATABASE") {
-  //   debugger;
-  // }
-  try {
-    for (let key in obj) {
-      if (obj[key].type == "object") {
-        obj[key].properties = formatProperties(obj[key].properties, toolName);
-        delete obj[key].additionalProperties; // Corrected to delete obj[key].additionalProperties
-        delete obj[key].items;
-      } else if (obj[key].type == "array") {
-        obj[key].items = formatProperties(obj[key].items, toolName);
-        delete obj[key].items.additionalProperties; // Corrected to delete obj[key].additionalProperties
-        delete obj[key].properties;
-      }
-    }
+// export function formatProperties(obj: any, toolName: string = "") {
+//   if (obj == null) {
+//     return {
+//       compatible: {
+//         type: "string",
+//         description: "ignore, no enter", // compatible gemini-openai
+//       },
+//     };
+//   }
+//   // if (toolName == "NOTION_INSERT_ROW_DATABASE") {
+//   //   debugger;
+//   // }
+//   try {
+//     for (let key in obj) {
+//       if (obj[key].type == "object") {
+//         obj[key].properties = formatProperties(obj[key].properties, toolName);
+//         delete obj[key].additionalProperties; // Corrected to delete obj[key].additionalProperties
+//         delete obj[key].items;
+//       } else if (obj[key].type == "array") {
+//         obj[key].items = formatProperties(obj[key].items, toolName);
+//         delete obj[key].items.additionalProperties; // Corrected to delete obj[key].additionalProperties
+//         delete obj[key].properties;
+//       }
+//     }
 
-  } catch (e) {
-    console.error(e);
-  }
-  // console.log(obj);
-  return obj;
-}
+//   } catch (e) {
+//     console.error(e);
+//   }
+//   // console.log(obj);
+//   return obj;
+// }

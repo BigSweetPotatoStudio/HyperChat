@@ -770,10 +770,72 @@ export class OpenAiChannel {
       let { origin_name, restore_name, key, client, clientName, ...rest } = x;
       if (this.options.isStrict) {
         rest.function.strict = true;
+        rest.function.parameters = formatProperties(rest.function.parameters, false);
       } else {
         delete rest.function.strict;
+        rest.function.parameters = formatProperties(rest.function.parameters, true);
       }
       return rest;
     });
   }
+}
+
+
+
+export function formatProperties(obj: any, delAdditionalProperties: boolean) {
+
+  if (obj == null) {
+    return {
+      compatible: {
+        type: "string",
+        description: "ignore, no enter", // compatible gemini-openai
+      },
+    };
+  }
+
+  try {
+    // 处理对象类型
+    if (obj.type === "object") {
+      // 递归处理所有属性
+      if (obj.properties) {
+        for (const key in obj.properties) {
+          const item = obj.properties[key];
+          if (!item) continue;
+
+          if (item.type === "object") {
+            obj.properties[key] = formatProperties(item, delAdditionalProperties);
+          } else if (item.type === "array" && item.items) {
+            obj.properties[key].items = formatProperties(item.items, delAdditionalProperties);
+          }
+        }
+      }
+
+      // 删除不需要的属性
+      if (delAdditionalProperties && obj.additionalProperties !== undefined) {
+        delete obj.additionalProperties;
+      }
+
+      // 对象类型不应该有items属性，删除它
+      delete obj.items;
+    }
+    // 处理数组类型
+    else if (obj.type === "array") {
+      // 递归处理数组项
+      if (obj.items) {
+        obj.items = formatProperties(obj.items, delAdditionalProperties);
+
+        // 删除数组项中的additionalProperties
+        if (delAdditionalProperties && obj.items.additionalProperties !== undefined) {
+          delete obj.items.additionalProperties;
+        }
+      }
+
+      // 数组类型不应该有properties属性，删除它
+      delete obj.properties;
+    }
+  } catch (e) {
+    console.error(e);
+  }
+  // console.log(obj);
+  return obj;
 }
