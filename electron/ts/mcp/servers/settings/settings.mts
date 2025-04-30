@@ -47,15 +47,24 @@ export function registerTool(server: McpServer) {
       args: z.array(z.string({
         description: "Arguments to pass to the command",
       })).optional(), // Optional array of strings
-      env: z.record(z.string({
-        description: "Environment variables for the command",
-      })).optional(), // Optional record of strings
+      env: z.array(z.object({
+        name: z.string({
+          description: "Name of the Environment variables",
+        }),
+        value: z.string({
+          description: "Value of the Environment variables",
+        }),
+      })), // Optional record of strings
     },
     async ({ name, command, args, env }) => {
+      let envs = {} as { [s: string]: string };
+      for (let e of (env || [])) {
+        envs[e.name?.trim()] = e.value?.trim();
+      }
       await openMcpClient(name, {
         command,
         args,
-        env,
+        env: envs,
         type: "stdio"
       });
 
@@ -81,7 +90,7 @@ export function registerTool(server: McpServer) {
         value: z.string({
           description: "Value of the variable",
         }),
-      }).optional()), // Optional array of strings
+      })), // Optional array of strings
     },
     async ({ variables }) => {
       VarList.initSync();
