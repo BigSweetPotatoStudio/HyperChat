@@ -65,8 +65,8 @@ export class OpenAiChannel {
 
       requestType?: "complete" | "stream";
 
-      allowMCPs?: string[];
-      temperature?: number;
+      allowMCPs?: string[]; // agentData
+      temperature?: number; // agentData
       confirm_call_tool?: boolean;
       confirm_call_tool_cb?: (tool: Tool_Call) => void;
       messages_format_callback?: (messages: MyMessage) => Promise<void>;

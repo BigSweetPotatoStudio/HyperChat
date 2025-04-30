@@ -109,10 +109,10 @@ export async function callAgent(obj: {
       Logger.error("No model found");
       throw new Error("No model found");
     }
-
+    let { type, ...agentData } = agent;
     let openai = new OpenAiChannel(
       {
-        ...config, ...agent, allowMCPs: agent.allowMCPs, requestType: "stream",
+        ...config, ...agentData, allowMCPs: agent.allowMCPs, requestType: "stream",
         messages_format_callback: async (message) => {
           if (message.role == "user" || message.role == "system") {
             if (!message.content_sended) {
