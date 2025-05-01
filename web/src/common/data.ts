@@ -6,40 +6,29 @@ import {
   GPT_MODELS,
   MCP_CONFIG,
   electronData,
-  DataList,
+  Data,
   MCP_CONFIG_TYPE,
+  DataList,
 } from "../../../common/data.js";
 import { e } from "./service";
 
-for (let item of DataList) {
-
-  item.override({
-    async init() {
-      try {
-
-        this.localStorage = await call("readJSON", [this.KEY]);
-
-      } catch (e) {
-        this.localStorage = {};
-      }
-      this.data = this.options.formatInit(Object.assign({}, this.data, this.localStorage));
-      return this.data;
-    },
-    initSync() {
-      throw new Error("saveSync is not supported in web");
-    },
-    async save() {
-      return await call("writeJSON", [
-        this.KEY,
-        this.options.formatSave(this.data),
-      ]);
-    },
-    saveSync() {
-      throw new Error("saveSync is not supported in web");
-    },
-
-  });
+Data.prototype.init = async function ({ } = {}) {
+  try {
+    this.localStorage = await call("readJSON", [this.KEY]);
+  } catch (e) {
+    this.localStorage = {};
+  }
+  this.data = this.options.formatInit(Object.assign({}, this.data, this.localStorage));
+  return this.data;
 }
+
+Data.prototype.save = async function () {
+  return await call("writeJSON", [
+    this.KEY,
+    this.options.formatSave(this.data),
+  ]);
+}
+
 
 // 初始化配置
 // await electronData.init();

@@ -7,10 +7,10 @@ export const DataList: Data<any>[] = [];
 export class Data<T> {
   private localStorage: any = {};
 
-  async init({ force } = { force: true }): Promise<T> {
+  async init({ } = {}): Promise<T> {
     throw new Error("Method not implemented.");
   }
-  initSync({ force } = { force: true }): T {
+  initSync({ } = {}): T {
     throw new Error("Method not implemented.");
   }
   async save() {
@@ -28,8 +28,8 @@ export class Data<T> {
       formatInit?: (x: T) => T;
       formatSave?: (x: T) => T;
     } = {
-      sync: true,
-    }
+        sync: true,
+      }
   ) {
     this.options.sync = this.options.sync != null ? this.options.sync : true;
     this.options.formatInit = this.options.formatInit || ((x) => x);
@@ -267,11 +267,18 @@ class MCP_CONFIG_DATA<T> extends Data<T> {
   save(sync = true): Promise<void> {
     if (sync) {
       let result: any = this.get();
-
       MCP_CONFIG_SYNC.set(result);
       MCP_CONFIG_SYNC.save();
     }
     return super.save();
+  }
+  saveSync(sync = true) {
+    if (sync) {
+      let result: any = this.get();
+      MCP_CONFIG_SYNC.set(result);
+      MCP_CONFIG_SYNC.saveSync();
+    }
+    return super.saveSync();
   }
 }
 

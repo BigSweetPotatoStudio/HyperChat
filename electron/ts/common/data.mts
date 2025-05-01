@@ -7,6 +7,7 @@ import {
   MCP_CONFIG,
   MCP_CONFIG_TYPE,
   VarList,
+  Data,
 } from "../../../common/data.js";
 
 import { appDataDir, CONST } from "ts/polyfills/index.mjs";
@@ -15,69 +16,108 @@ import { zx } from "../es6.mjs";
 import { getMessageService } from "../message_service.mjs";
 import { cat } from "@xenova/transformers";
 const { fs, path } = zx;
-for (let data of DataList) {
-  data.override({
-    async init() {
 
-      try {
-        if (await fs.exists(path.join(appDataDir, this.KEY))) {
-          this.localStorage = await fs.readJSON(path.join(appDataDir, this.KEY));
-        } else {
-          this.localStorage = {};
-        }
-      } catch (e) {
-        this.localStorage = {};
-      }
-      this.data = this.options.formatInit(Object.assign({}, this.data, this.localStorage));
-      return this.data;
-    },
-    initSync() {
-      try {
-        if (fs.existsSync(path.join(appDataDir, this.KEY))) {
-          this.localStorage = fs.readJsonSync(path.join(appDataDir, this.KEY));
-        } else {
-          this.localStorage = {};
-        }
-      } catch (e) {
-        this.localStorage = {};
-      }
-      this.data = this.options.formatInit(Object.assign({}, this.data, this.localStorage));
-      return this.data;
-    },
-    async save() {
-      try {
-        if (this.KEY == "chat_history.json") {
-        } else {
-          getMessageService().sendAllToRenderer({
-            type: "syncNodeToWeb",
-            data: { key: this.KEY, data: this.data },
-          });
-        }
-      } catch (e) { }
-
-      return await fs.writeFile(
-        path.join(appDataDir, this.KEY),
-        JSON.stringify(this.options.formatSave(this.data), null, 2)
-      );
-    },
-    saveSync() {
-      try {
-        if (this.KEY == "chat_history.json") {
-        } else {
-          getMessageService().sendAllToRenderer({
-            type: "syncNodeToWeb",
-            data: { key: this.KEY, data: this.data },
-          });
-        }
-      } catch (e) { }
-
-      return fs.writeFileSync(
-        path.join(appDataDir, this.KEY),
-        JSON.stringify(this.options.formatSave(this.data), null, 2)
-      );
-    }
-  });
+Data.prototype.init = async function ({ } = {}) {
+  try {
+    this.localStorage = await fs.readJSON(path.join(appDataDir, this.KEY));
+  } catch (e) {
+    this.localStorage = {};
+  }
+  this.data = this.options.formatInit(Object.assign({}, this.data, this.localStorage));
+  return this.data;
 }
+
+Data.prototype.initSync = function ({ } = {}) {
+  try {
+    if (fs.existsSync(path.join(appDataDir, this.KEY))) {
+      this.localStorage = fs.readJsonSync(path.join(appDataDir, this.KEY));
+    } else {
+      this.localStorage = {};
+    }
+  } catch (e) {
+    this.localStorage = {};
+  }
+  this.data = this.options.formatInit(Object.assign({}, this.data, this.localStorage));
+  return this.data;
+};
+
+Data.prototype.save = async function () {
+  return await fs.writeFile(
+    path.join(appDataDir, this.KEY),
+    JSON.stringify(this.options.formatSave(this.data), null, 2)
+  );
+}
+
+Data.prototype.saveSync = function () {
+  return fs.writeFileSync(
+    path.join(appDataDir, this.KEY),
+    JSON.stringify(this.options.formatSave(this.data), null, 2)
+  );
+};
+
+// for (let data of DataList) {
+//   data.override({
+//     async init() {
+
+//       try {
+//         if (await fs.exists(path.join(appDataDir, this.KEY))) {
+//           this.localStorage = await fs.readJSON(path.join(appDataDir, this.KEY));
+//         } else {
+//           this.localStorage = {};
+//         }
+//       } catch (e) {
+//         this.localStorage = {};
+//       }
+//       this.data = this.options.formatInit(Object.assign({}, this.data, this.localStorage));
+//       return this.data;
+//     },
+//     initSync() {
+//       try {
+//         if (fs.existsSync(path.join(appDataDir, this.KEY))) {
+//           this.localStorage = fs.readJsonSync(path.join(appDataDir, this.KEY));
+//         } else {
+//           this.localStorage = {};
+//         }
+//       } catch (e) {
+//         this.localStorage = {};
+//       }
+//       this.data = this.options.formatInit(Object.assign({}, this.data, this.localStorage));
+//       return this.data;
+//     },
+//     async save() {
+//       try {
+//         if (this.KEY == "chat_history.json") {
+//         } else {
+//           getMessageService().sendAllToRenderer({
+//             type: "syncNodeToWeb",
+//             data: { key: this.KEY, data: this.data },
+//           });
+//         }
+//       } catch (e) { }
+
+//       return await fs.writeFile(
+//         path.join(appDataDir, this.KEY),
+//         JSON.stringify(this.options.formatSave(this.data), null, 2)
+//       );
+//     },
+//     saveSync() {
+//       try {
+//         if (this.KEY == "chat_history.json") {
+//         } else {
+//           getMessageService().sendAllToRenderer({
+//             type: "syncNodeToWeb",
+//             data: { key: this.KEY, data: this.data },
+//           });
+//         }
+//       } catch (e) { }
+
+//       return fs.writeFileSync(
+//         path.join(appDataDir, this.KEY),
+//         JSON.stringify(this.options.formatSave(this.data), null, 2)
+//       );
+//     }
+//   });
+// }
 
 
 // export const MCPServerPORT = 16110;
