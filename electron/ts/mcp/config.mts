@@ -514,7 +514,7 @@ export async function initMcpClients() {
   while (1) {
     if (firstRunStatus == 1) {
       console.log("waiting");
-      await sleep(500);
+      await sleep(1000);
     } else {
       break;
     }
@@ -653,7 +653,10 @@ export async function initMcpClients() {
     Logger.error("initClaudeConfig", "error", e);
   }
 
-  await Promise.allSettled(tasks);
+  await Promise.allSettled(tasks).catch((e) => {
+    Logger.error("initMcpClient", e);
+    firstRunStatus = 2;
+  });
 
   firstRunStatus = 2;
   getMessageService().sendAllToRenderer({

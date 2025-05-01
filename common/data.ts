@@ -23,10 +23,17 @@ export class Data<T> {
   constructor(
     public KEY: string,
     private data: T,
-    public options = {
+    public options: {
+      sync?: boolean;
+      formatInit?: (x: T) => T;
+      formatSave?: (x: T) => T;
+    } = {
       sync: true,
     }
   ) {
+    this.options.sync = this.options.sync != null ? this.options.sync : true;
+    this.options.formatInit = this.options.formatInit || ((x) => x);
+    this.options.formatSave = this.options.formatSave || ((x) => x);
     DataList.push(this);
   }
   get(): T {
@@ -35,10 +42,6 @@ export class Data<T> {
   set(data: T) {
     this.data = data;
   }
-  format(x) {
-    return x;
-  };
-
 
   public override({ init, initSync, save, saveSync }: { init?: () => Promise<T>; initSync?: () => T; save?: () => Promise<void>; saveSync?: () => void }) {
     init && (this.init = init);
@@ -175,6 +178,8 @@ export type ChatHistoryItem = {
 
 export const ChatHistory = new Data("chat_history.json", {
   data: [] as Array<ChatHistoryItem>,
+}, {
+  sync: true,
 });
 
 export type AgentData = {

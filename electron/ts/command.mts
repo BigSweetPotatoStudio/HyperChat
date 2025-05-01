@@ -411,7 +411,7 @@ export class CommandFactory {
   }
 
   async addChatHistory(item: ChatHistoryItem) {
-    item.version = "2.0";
+    item.version = 2;
     item.dateTime = Date.now();
     if (item.isTask) {
       item.lastMessage = item.lastMessage || item.messages[item.messages.length - 1];
@@ -427,7 +427,7 @@ export class CommandFactory {
       chatHistory.splice(index, 1);
       chatHistory.unshift(item);
     }
-    ChatHistory.format = (r) => {
+    ChatHistory.options.formatSave = (r) => {
       r.data = r.data.map((x) => {
         if (x.key == item.key) {
           let clone = Object.assign({}, x, { messages: [] });
@@ -441,7 +441,7 @@ export class CommandFactory {
     await ChatHistory.save()
   }
   async changeChatHistory(item: ChatHistoryItem) {
-    item.version = "2.0";
+    item.version = 2;
     item.dateTime = Date.now();
     if (item.messages && item.messages.length > 0) {
       fs.writeFileSync(path.join(appDataDir, `messages/${item.key}.json`), JSON.stringify(item.messages, null, 2));
@@ -451,7 +451,7 @@ export class CommandFactory {
     if (find) {
       Object.assign(find, item);
     }
-    ChatHistory.format = (r) => {
+    ChatHistory.options.formatSave = (r) => {
       r.data = r.data.map((x) => {
         if (x.key == item.key) {
           let clone = Object.assign({}, x, { messages: [] });

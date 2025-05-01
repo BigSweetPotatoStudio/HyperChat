@@ -23,6 +23,7 @@ export class Agent {
         this.channel = new OpenAiChannel({
             ...gptModelData,
             ...this.agentData,
+            type: gptModelData.type,
             requestType: "stream",
             messages_format_callback: async (message) => {
                 await VarList.init();

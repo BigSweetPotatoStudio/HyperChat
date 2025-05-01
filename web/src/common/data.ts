@@ -12,6 +12,7 @@ import {
 import { e } from "./service";
 
 for (let item of DataList) {
+
   item.override({
     async init() {
       try {
@@ -21,7 +22,7 @@ for (let item of DataList) {
       } catch (e) {
         this.localStorage = {};
       }
-      this.data = Object.assign({}, this.data, this.localStorage);
+      this.data = this.options.formatInit(Object.assign({}, this.data, this.localStorage));
       return this.data;
     },
     initSync() {
@@ -30,7 +31,7 @@ for (let item of DataList) {
     async save() {
       return await call("writeJSON", [
         this.KEY,
-        this.format(this.data),
+        this.options.formatSave(this.data),
       ]);
     },
     saveSync() {

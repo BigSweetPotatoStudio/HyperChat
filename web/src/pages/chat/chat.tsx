@@ -369,7 +369,7 @@ export const Chat = ({
               //   messages: [],
               // });
 
-              if (item.messages == null || item.messages.length == 0 || item.version == "2.0") {
+              if (item.messages == null || item.messages.length == 0 || +item.version == 2) {
 
                 let messages = await call("readJSON", [`messages/${item.key}.json`]).catch(() => []);
                 item.messages = messages || [];
@@ -1023,7 +1023,7 @@ export const Chat = ({
       }
       // currentChat.current.messages=[]
       // refresh();
-      if (item.messages == null || item.messages.length == 0 || item.version == "2.0") {
+      if (item.messages == null || item.messages.length == 0 || +item.version == 2) {
         try {
           DATA.current.loadingMessages = true;
           refresh();

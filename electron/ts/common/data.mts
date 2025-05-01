@@ -28,7 +28,7 @@ for (let data of DataList) {
       } catch (e) {
         this.localStorage = {};
       }
-      this.data = Object.assign({}, this.data, this.localStorage);
+      this.data = this.options.formatInit(Object.assign({}, this.data, this.localStorage));
       return this.data;
     },
     initSync() {
@@ -41,7 +41,7 @@ for (let data of DataList) {
       } catch (e) {
         this.localStorage = {};
       }
-      this.data = Object.assign({}, this.data, this.localStorage);
+      this.data = this.options.formatInit(Object.assign({}, this.data, this.localStorage));
       return this.data;
     },
     async save() {
@@ -57,7 +57,7 @@ for (let data of DataList) {
 
       return await fs.writeFile(
         path.join(appDataDir, this.KEY),
-        JSON.stringify(this.format(this.data), null, 2)
+        JSON.stringify(this.options.formatSave(this.data), null, 2)
       );
     },
     saveSync() {
@@ -73,7 +73,7 @@ for (let data of DataList) {
 
       return fs.writeFileSync(
         path.join(appDataDir, this.KEY),
-        JSON.stringify(this.format(this.data), null, 2)
+        JSON.stringify(this.options.formatSave(this.data), null, 2)
       );
     }
   });
