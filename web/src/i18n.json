@@ -1294,5 +1294,17 @@
   "compatible": {
     "en": "compatible",
     "zh": "兼容"
+  },
+  "variableStrategy": {
+    "en": "variableStrategy",
+    "zh": "变量策略"
+  },
+  "lazy(Replace when Sending)": {
+    "en": "lazy(Replace when Sending)",
+    "zh": "lazy(发送时替换)"
+  },
+  "immediate(Replace immediately = Quick input)": {
+    "en": "immediate(Replace immediately = Quick input)",
+    "zh": "immediate(立即替换 = 快速输入)"
   }
 }

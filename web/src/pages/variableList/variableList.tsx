@@ -320,7 +320,11 @@ Including variables will also be deleted`}</pre>} onConfirm={async () => {
                 >
                     <Select onChange={() => {
                         refresh();
-                    }} options={["lazy", "immediate"].map(item => ({ value: item, label: item }))} />
+                    }} options={[{
+                        label: t`lazy(Replace when Sending)`, value: "lazy"
+                    }, {
+                        label: t`immediate(Replace immediately = Quick input)`, value: "immediate"
+                    }]} />
                 </Form.Item>}
                 <Form.Item
                     name="description"
