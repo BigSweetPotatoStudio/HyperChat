@@ -2026,7 +2026,7 @@ export const Chat = ({
                         }}
                         fontSize={16}
                         lineHeight={32}
-                        placeholder={t`You can use variables by enter scope, for example, enter var, or use @ to call other agents.`}
+                        placeholder={t`You can use variables by enter namespace, for example, enter var, or use @ to call other agents.`}
                       />
 
                       <Sender
