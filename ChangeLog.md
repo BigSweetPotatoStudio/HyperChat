@@ -3,17 +3,17 @@
 
 # 1.6.5
 
-* Fixed tool calls for models like qwen3, added tool call compatibility mode, similar to cline, through regex matching <tool_use>,
-* View the results of the repair task interface, displaying abnormal issues.
+* Fixed tool calls for models like qwen3, added a compatible mode for tool calls similar to cline, using regex to match <tool_use>,
+* View the repair task result interface, displaying issues with anomalies.
 * fixbug
 
 # 1.6.3
-* Brand new input editor, optimized display, added variable system, supports built-in mcp settings variables, supports js code variables
+* A brand new input editor, optimized display, added a variable system, supports built-in mcp for setting variables, supports js code variables
 * Large model list, supports filtering, optimized display
-* Fixed the issue where prompts supporting mcp failed to input
-* Agent list supports hover to display description.
-* WebDAV sync optimization.
-* see MCP supports adding headers
+* Fixed the issue where the prompt input supporting mcp failed
+* Agent list supports hover to display descriptions.
+* WebDAV synchronization optimization.
+* See MCP support to add headers
 * Chat record performance optimization, using virtual list + display optimization
 
 ![image](https://github.com/user-attachments/assets/b2c9d59f-650f-49b8-a0ea-f0634644b27e)
@@ -21,16 +21,16 @@
 ![image](https://github.com/user-attachments/assets/6b91d593-51ef-4e51-8d1b-324bc071e9a7)
 
 # 1.5.4
-* Fixed the issue where web access added large model test failure.
+* Fixed the issue of testing large models failing for web access.
 
 # 1.5.3
 
-* Supports Claude official API.
+* Support for Claude official API.
 * Optimized the built-in terminal, allowing user input
-* Supports Agent task call failure, using backup large model.
-* Added built-in Agent, `MCP helper`, to assist in installing MCP
+* Supports agent task call failure, using backup large model.
+* Added built-in agent, `MCP helper`, to assist with installing MCP
 * Fixed Markdown rendering bug
-* Fixed the bug of multi-model comparison in chat
+* Fixed the bug of comparing multiple models in chat
 
 ![image](https://github.com/user-attachments/assets/c450aea2-c3f2-4527-ae06-8bcaa928416c)
 ![image](https://github.com/user-attachments/assets/7094cef7-e6f2-452e-9a1d-59871d146364)
@@ -38,14 +38,14 @@
 
 # 1.5.0
 * Supports chat renaming
-* Supports mcp configuration sync
-* Supports grok3's thought chain
-* Supports ai-generated cron expressions
-* Supports message branching cloning
-* Supports development mode, quick export of conversation configuration for debugging
-* Added an enable/disable switch for Claude's MCP
-* Added global control enable/disable switch for Task execution
-* Tool call cancellation optimization, informing the large model user that the operation was cancelled
+* Supports mcp configuration synchronization
+* Supports grok3's thinking chain
+* Supports AI-generated cron expressions
+* Supports message forking and cloning
+* Supports development mode, quick export of dialogue configuration for debugging
+* Added a switch to enable or disable mcp for Claude
+* Added a global control enable/disable switch for Task running
+* Optimized tool call cancellation, informing large model users that the operation has been canceled
 
 ![支持聊天重命名](https://github.com/user-attachments/assets/9e178d72-2446-4d63-a1ac-ac0299a3d0a4)
 ![支持mcp配置同步](https://github.com/user-attachments/assets/ecc4945d-3170-476f-b653-badecf972957)
@@ -58,18 +58,18 @@
 ![工具调用取消优化，告诉大模型用户取消了操作](https://github.com/user-attachments/assets/8b1186b3-929f-4c86-95ce-50dbf2216f01)
 
 # 1.4.17
-* Fixed the issue of MacOS not being able to copy and other shortcut keys becoming ineffective
+* Fixed the issue of MacOS inability to copy and other shortcut keys becoming ineffective
 
 # 1.4.16
 
 * Supports displaying MCP Server version number and name.
-* Added detailed error display when the model fails.
-* Added detailed error display when MCP fails.
-* Optimized chat record storage, separating dialogue messages to reduce loading and sync time.
-* Modified WebDav sync.
+* Added detailed error display when the model reports an error.
+* Added detailed error display when MCP reports an error.
+* Optimized chat record storage by separating conversation messages, reducing loading and synchronization time.
+* Modified WebDAV synchronization.
 * Supports MCP in Claude Desktop configuration.
-* Supports direct viewing of configuration files on the web end
-* Supports shortcut keys MACOS `Alt+Cmd+I`   Windows `Ctrl+Shift+I` to open developer tools
+* Supports direct viewing of configuration files on the web.
+* Supports shortcuts MACOS `Alt+Cmd+I`   Windows `Ctrl+Shift+I` to open developer tools
 * Chat record list supports displaying Agent icons
 * Fixed numerous bugs
 
@@ -81,9 +81,9 @@
 ![image](https://github.com/user-attachments/assets/23717164-7177-4622-a4bd-bd2d13be1edf)
 
 # 1.4.3
-* Rewrote markdown rendering, optimized `Artifacts`, supports opening from browser, downloading, added support for `Mermaid` pre-releases,
-* Changed tool call display
-* Supports chat selection of multiple model comparisons
+* Rewrote markdown rendering, optimized `Artifacts`, supports opening, downloading from the browser, increased support for `Mermaid`
+* Modified the display of tool calls
+* Supports chat selection for multiple model comparison
 
 ![image](https://github.com/user-attachments/assets/b4b88d6c-da7f-4822-8ca7-a79c3d02b6a5)
 ![image](https://github.com/user-attachments/assets/d1b54fb3-e0d6-4999-9c89-879c8c095ab6)
@@ -92,15 +92,15 @@
 
 # 1.4.4
 
-* Fixed the issue in the previous version where the default conversation and setting mcp became ineffective.
-* Fixed the issue where the Agent could not modify the system prompt word when not chatting.
-* Fixed the non-LLM error prompt when first opened.
+* Fixed the issue of the default dialogue setting mcp becoming ineffective in the last version.
+* Fixed the issue where the Agent could not modify system prompts without chatting.
+* Fixed the error prompt when opened for the first time without LLM.
 
 # 1.4.1
 
-* Fixed the bug in Gemini tool calls that do not support multiple tools
-* Supports selecting some Tools of MCP, saving tokens
-* Supports @ quick input + calling Agent
+* Fixed the bug in Gemini tool calls, which did not support multiple tools.
+* Supports selecting part of the Tool for MCP to save tokens.
+* Supports quick input with @ + call Agent
 * fixbug
 ![image](https://github.com/user-attachments/assets/63ae6853-5df4-4b29-8bc9-c33d99239833)
 ![image](https://github.com/user-attachments/assets/6010494f-1218-4714-bbfe-8e61969a6826)
@@ -109,7 +109,7 @@
 
 * Added built-in mcp tool command line
 * Supports modifying network access password
-* Tool call collapsible display
+* Tool calls displayed in a folded manner
 
 ![8af53675c625ca34cfc4753a106e9462](https://github.com/user-attachments/assets/ef030a65-ba9e-4cd5-9ca8-669677b483be)
 ![image](https://github.com/user-attachments/assets/af1598b6-d912-4f04-8919-a3d3e1ed93bc)
@@ -117,14 +117,14 @@
 # 1.3.3
 
 * You can confirm when calling tools and modify parameters for large model calls
-* You can click on tools to test the tool calls.
-* The knowledge base is planned for redevelopment, and currently not recommended for use, you can use OpenAI's embedding model, and no longer develop local embedding models.
+* You can click on tools to test tool calls.
+* The knowledge base is planned to be redeveloped, and it's not recommended to use it currently. You can use OpenAI's embedding model and no longer use local embedding models.
 ![886a04f531ca15ef1f6e93ea8403c0b7](https://github.com/user-attachments/assets/7c6eb1d4-7ba1-430b-8fca-18023f7dadd3)
 ![image](https://github.com/user-attachments/assets/fc87b507-8427-4157-a0f9-78d141299151)
 
 # 1.2.15
 
-* mcp loading progress display, added shortcut button
+* MCP loading progress display, added quick buttons
 * Optimized mobile h5 display
 * fixbug
 ![image](https://github.com/user-attachments/assets/1c60e98f-f57b-4a38-9464-c7548c09cc3c)
@@ -133,23 +133,23 @@
 
 # 1.2.12
 
-* Supports asking when calling tools![image](https://github.com/user-attachments/assets/11c03c92-399e-457e-8000-ff00c3c1e059)
+* Support asking when calling tools![image](https://github.com/user-attachments/assets/11c03c92-399e-457e-8000-ff00c3c1e059)
 * Chat supports displaying time![image](https://github.com/user-attachments/assets/dba7bf09-99a1-46bd-9c94-052d18469b96)
 * hypetool optimization, settings![image](https://github.com/user-attachments/assets/cfc2c8e5-f7e7-4078-aaff-240b567f47c5)
 * Add historyFilterType hover tip by @xtyuns in https://github.com/BigSweetPotatoStudio/HyperChat/pull/52
 
 # 1.2.2
 
-* Mac, Linux automatically get PATH, no need to input PATH anymore.
-* Added linux deb package
-* fix WebDav first sync error
+* Mac, Linux automatically obtain PATH, no need to input PATH.
+* Added Linux deb package
+* fix WebDAV first synchronization reporting errors
 * fixbug
 
 # 1.0.2
 
-* Added setting temperature
-* Fixed bug
-* Supports paste in input box, upload images
+* Added temperature setting
+* Fixed bugs
+* Supports pasting in the input box, uploading images
 
 # 0.2.0
 
@@ -157,9 +157,9 @@
 
 # 0.1.1
 
-* fix MacOS image upload
-* Added quick copy button, supports copying messages and code
-* WebDav sync function optimization, only saving 10 versions locally
+* Fixed MacOS image upload
+* Added quick copy buttons, supports copying messages and code
+* WebDAV synchronization function optimization, only keeps 10 versions locally
 * Markdown code rendering increases highlighting
 * HTML Artifacts added error capture, supports opening Chrome's console
 
@@ -167,9 +167,9 @@
 
 ## HyperChat
 
-* Supports two installation methods: plugin market + native MCP installation, quick installation and configuration from the plugin market, welcome to submit plugins, [Github](https://github.com/BigSweetPotatoStudio/HyperChatMCP)
-* WebDav sync logic optimization, will back up before syncing, sync every 5 minutes
-* LLM added testing function, testing whether supports image input + tool calls (consuming a little token)
+* Supports two installation methods: plugin market + native MCP installation, quick installation and configuration in the plugin market, welcome to submit plugins, [Github](https://github.com/BigSweetPotatoStudio/HyperChatMCP)
+* WebDAV synchronization logic optimization, locally backs up before syncing, synchronizes every 5 minutes
+* LLM added testing function, testing for image input support + tool calls (consuming a small amount of tokens)
 * Chat supports image input
 * Chat supports displaying images returned by Tool Call MCP resources
 * fix bugs
@@ -179,25 +179,25 @@
 ## HyperChat
 
 * Optimized the startup speed of MCP Server.
-* WebDav sync temporarily does not support MCP configuration sync; operating system inconsistencies may cause issues.
-* Supports setting request method, Stream | Complete
+* WebDAV sync, temporarily does not support MCP configuration synchronization, operations may have problems due to inconsistent operating systems.
+* Supports setting request methods, Stream | Complete
 * Supports KaTeX, displaying mathematical formulas
 
 ## HyperTools
 
-* Optimized, opening web Tool
+* Optimized the tool for opening web pages
 
 # 0.0.11
 
 ## HyperChat
 
 * Bot display optimization, supports search, drag-and-drop sorting
-* Conversation history supports filtering + searching
-* For APIs that do not support token consumption statistics for large models, such as Qianwen, support fuzzy statistics based on word count
-* Input box supports drag-and-drop file for quick input of file paths
+* Chat record supports filtering + searching
+* For APIs that do not support counting the token consumption of large models, such as Qianwen, supports fuzzy statistics based on word count
+* Input box supports drag-and-drop files for quick input of file paths
 * My LLM Models list supports drag-and-drop sorting
-* Supports quick configuration for Ollama, Qwen's API model
+* Supports quick configuration for Ollama, Qwen's API models
 
 ## HyperTools
 
-* Optimized, opening web Tool, more comprehensive information extraction. For example, answer the question `https://store.epicgames.com/zh-CN/   Which game is temporarily free?`
+* Optimized the tool for opening web pages, more complete information extraction. For example, answering the question `https://store.epicgames.com/zh-CN/   Which game is temporarily free?`
