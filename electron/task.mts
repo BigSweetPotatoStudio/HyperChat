@@ -1,4 +1,4 @@
-import { $, within, argv, sleep, fs, fetch, usePowerShell, os } from "zx";
+import { $, within, argv, sleep, fs, fetch, usePowerShell, os, path } from "zx";
 import { pipeline } from "stream";
 import { promisify } from "util";
 
@@ -41,18 +41,30 @@ if (argv.prod) {
     overwrite: true,
   });
   await $`npx cross-env NODE_ENV=production myEnv=prod webpack`;
-  if (process.env.MYRUNENV === "github") {
-    if (process.env.GH_TOKEN) {
+  if (process.env.MYRUNENV === "github" && process.env.GH_TOKEN) {
+    if (os.platform() == "darwin" && os.arch() === 'x64') {
+      console.log('Building for x86/x64 architecture');
+      let pack = await fs.readJSON("./package.json");
+      pack.build.artifactBuildStarted = "./build/remove-x64-latest-mac-yml.js";
+      pack.build.mac.target = [{
+        "arch": [
+          "x64"
+        ],
+        "target": "dmg"
+      },
+      {
+        "arch": [
+          "x64"
+        ],
+        "target": "zip"
+      }];
+      await fs.writeJSON("./package.json", pack, { spaces: 2 });
       await $`npx cross-env NODE_ENV=production myEnv=prod electron-builder --publish always`;
     } else {
-      await $`npx cross-env NODE_ENV=production myEnv=prod electron-builder --publish never`;
+      await $`npx cross-env NODE_ENV=production myEnv=prod electron-builder --publish always`;
     }
   } else {
-    if (os.platform() === "win32") {
-      await $`npx cross-env NODE_ENV=production myEnv=prod electron-builder --publish never`;
-    } else if (os.platform() === "darwin") {
-      await $`npx cross-env NODE_ENV=production myEnv=prod electron-builder --mac --publish never`;
-    }
+    await $`npx cross-env NODE_ENV=production myEnv=prod electron-builder --publish never`;
   }
 }
 

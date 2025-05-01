@@ -9,32 +9,19 @@
  * - Summarizing all notes via a prompt
  */
 
-import { Logger } from "ts/polyfills/index.mjs";
-
+import { store } from "../../../rag/vectorStore.mjs";
 import dayjs from "dayjs";
 import { KNOWLEDGE_BASE } from "../../../../../common/data";
-import { zx } from "../../../es6.mjs";
+import {
+  Server,
+  SSEServerTransport,
+  zx,
+  ListToolsRequestSchema,
+  CallToolRequestSchema,
+} from "ts/es6.mjs";
+import { CONST } from "ts/polyfills/polyfills.mjs";
 const { fs, path, sleep } = zx;
 // import { ListPromptsRequestSchema, ListToolsRequestSchema } from "@modelcontextprotocol/sdk/types.js";
-
-const { Server } = await import(
-  /* webpackIgnore: true */ "@modelcontextprotocol/sdk/server/index.js"
-);
-const { SSEServerTransport } = await import(
-  /* webpackIgnore: true */ "@modelcontextprotocol/sdk/server/sse.js"
-);
-const {
-  ListToolsResultSchema,
-  CallToolRequestSchema,
-  CallToolResultSchema,
-  ListResourcesRequestSchema,
-  ReadResourceRequestSchema,
-  GetPromptRequestSchema,
-  ListToolsRequestSchema,
-  ListPromptsRequestSchema,
-} = await import(
-  /* webpackIgnore: true */ "@modelcontextprotocol/sdk/types.js"
-);
 
 const NAME = "hyper_knowledge_base";
 
@@ -45,7 +32,7 @@ const NAME = "hyper_knowledge_base";
 const server = new Server(
   {
     name: NAME,
-    version: "0.1.0",
+    version: CONST.getVersion,
   },
   {
     capabilities: {
@@ -72,9 +59,11 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
   } else {
     d = `Select knowledge base:\n${d}`;
   }
+
+
   return {
     tools: [
-      {
+      db.dbList.length > 0 && {
         name: "search_knowledge_base",
         description: `Search local knowledge base given keywords embedding and returns the RAG results.`,
         inputSchema: {
@@ -95,7 +84,7 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
           required: ["knowledge_base", "words"],
         },
       },
-      {
+      db.dbList.length > 0 && {
         name: "knowledge_base_add",
         description: `Add content to the knowledge base.`,
         inputSchema: {
@@ -125,7 +114,7 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
           properties: {},
         },
       },
-    ],
+    ].filter(x => x),
   };
 });
 
@@ -159,12 +148,24 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
       }
     }
     case "list_knowledge_base": {
+      KNOWLEDGE_BASE.initSync({ force: true })
+      if (KNOWLEDGE_BASE.get()
+        .dbList.length == 0) {
+        return {
+          content: [
+            {
+              type: "text",
+              text: `No knowledge base found`,
+            },
+          ],
+        };
+      }
       try {
         return {
           content: [
             {
               type: "text",
-              text: `knowledge base\n${KNOWLEDGE_BASE.initSync({ force: true })
+              text: `knowledge base\n${KNOWLEDGE_BASE.get()
                 .dbList.map((x) => x.name + " - " + x.description)
                 .join("\n")}`,
             },
@@ -185,7 +186,6 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
         throw new Error("content are required");
       }
       try {
-        let { store } = await import("../../../rag/vectorStore.mjs");
         await store.addResourceByName(knowledge_base, {
           text: content,
           type: "text",
@@ -208,7 +208,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
 });
 
 async function search(knowledge_base: string, words: string) {
-  let { store } = await import("../../../rag/vectorStore.mjs");
+
   let results = await store.searchByName(knowledge_base, words, 5);
   return `
 ### score: The high the score, the better.
@@ -223,13 +223,7 @@ let transport;
  */
 
 async function createServer(endpoint: string, response) {
-  //   console.log("Received connection");
-  transport = new SSEServerTransport(endpoint, response);
-  await server.connect(transport);
-  server.onclose = async () => {
-    await server.close();
-    // process.exit(0);
-  };
+  return server;
 }
 
 async function handlePostMessage(req, res) {
@@ -242,6 +236,7 @@ const HyperKnowledgeBase = {
   handlePostMessage,
   name: NAME,
   url: ``,
+  // type: "streamableHttp",
 };
 
 export { HyperKnowledgeBase };

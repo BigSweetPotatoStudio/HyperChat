@@ -7,6 +7,8 @@ import { autoLauncher } from "ts/polyfills/index.mjs";
 import {
   Agents,
   AppSetting,
+  ChatHistory,
+  ChatHistoryItem,
   electronData,
   MCP_CONFIG_TYPE,
   Task,
@@ -14,19 +16,17 @@ import {
 } from "../../common/data";
 import { appDataDir } from "ts/polyfills/index.mjs";
 import spawn from "cross-spawn";
-
+import crypto from "crypto";
 import {
   closeMcpClients,
   getMcpClients,
   initMcpClients,
-  loadObj,
   MCPClient,
   openMcpClient,
 } from "./mcp/config.mjs";
 import { checkUpdate } from "ts/polyfills/index.mjs";
 import { version } from "os";
 import { webdavClient } from "./common/webdav.mjs";
-import { FeatureExtraction } from "./common/model.mjs";
 import { progressList } from "./common/progress.mjs";
 import {
   KNOWLEDGE_BASE,
@@ -37,30 +37,17 @@ import { EVENT } from "./common/event";
 import { callAgent, runTask, startTask, stopTask } from "./mcp/task.mjs";
 import { getMyDefaultEnvironment } from "./mcp/utils.mjs";
 import cron from "node-cron";
-// function logCommand(
-//   target: any,
-//   propertyKey: string,
-//   descriptor: PropertyDescriptor
-// ) {
-//   const originalMethod = descriptor.value;
-//   descriptor.value = async function (...args: any[]) {
-//     try {
-//       commandHistory.add(propertyKey, args);
-//       commandHistory.save();
+import { store } from "./rag/vectorStore.mjs";
+import { Config } from "./const.mjs";
+import { clientPaths } from "./mcp/claude.mjs";
+import { createBrowser } from "./mcp/servers/hyper_tools/web2.mjs";
+import { getConfig } from "./mcp/servers/hyper_tools/lib.mjs";
+import dayjs from "dayjs";
+import vm from "node:vm";
 
-//       let res = await originalMethod.apply(this, args);
-//       commandHistory.last().status = CommandStatus.SUCCESS;
-//       commandHistory.save();
-//       return res;
-//     } catch (e) {
-//       commandHistory.last().status = CommandStatus.ERROR;
-//       commandHistory.last().error = e.message;
-//       commandHistory.save();
-//       throw e;
-//     }
-//   };
-//   return descriptor;
-// }
+export const { createRequire } = await import(
+  /* webpackIgnore: true */ "module"
+);
 
 export class CommandFactory {
   async getConfig() {
@@ -68,85 +55,66 @@ export class CommandFactory {
       version: CONST.getVersion,
       appDataDir: appDataDir,
       logPath: Logger.path,
+      password: electronData.initSync().password,
+      claudeConfigPath: clientPaths.claude,
+      ...Config
     };
   }
-  async initMcpClients(): Promise<{
-    [s: string]: MCPClient;
-  }> {
+  async initMcpClients() {
     let res = await initMcpClients();
-    let obj = {};
-    for (let key in res) {
-      obj[key] = res[key].toJSON();
-    }
-    return obj as any;
+    return res.map((x) => x.toJSON());
   }
   async openMcpClient(
     clientName: string,
-    clientConfig?: MCP_CONFIG_TYPE
-  ): Promise<{
-    [s: string]: MCPClient;
-  }> {
-    let res = await openMcpClient(clientName, clientConfig);
-    let obj = {};
-    for (let key in res) {
-      obj[key] = res[key].toJSON();
+    clientConfig?: MCP_CONFIG_TYPE,
+    options = {
+      onlySave: false,
     }
-    return obj as any;
+  ) {
+    let res = await openMcpClient(clientName, clientConfig, options);
+    return {
+      success: true,
+    };
   }
-  async getMcpClientsLoad() {
-    return loadObj;
-  }
-  async getMcpClients(): Promise<{
-    [s: string]: MCPClient;
-  }> {
+  async getMcpClients() {
     let res = await getMcpClients();
-    let obj = {};
-    for (let key in res) {
-      obj[key] = res[key].toJSON();
-    }
-    return obj as any;
+    return res.map((x) => x.toJSON());
   }
 
   async closeMcpClients(
     clientName: string = undefined,
-    isdelete: boolean = false
-  ) {
-    let res = await closeMcpClients(clientName, isdelete);
-    let obj = {};
-    for (let key in res) {
-      obj[key] = res[key].toJSON();
+    {
+      isdelete,
+      isdisable
     }
-    return obj;
+  ) {
+    let res = await closeMcpClients(clientName, {
+      isdelete,
+      isdisable
+    });
+    return {
+      success: true,
+    };
   }
-  async mcpCallTool(clientName: string, functionName: string, args: any) {
+  async mcpCallTool(name: string, functionName: string, args: any) {
     let mcpClients = await getMcpClients();
-    let client = mcpClients[clientName];
+    let client = mcpClients.find((x) => x.name === name);
     if (!client) {
       throw new Error("client not found");
     }
-    // console.log("mcpCallTool", client, functionName, args);
-    // if (client.status == "disconnected") {
-    //   await openMcpClients(clientName);
-    //   let mcpClients = await getMcpClients();
-    //   client = await mcpClients[clientName];
-    // }
-    // let tool = client.tools.find((tool) => tool.name == functionName);
-    // if (!tool) {
-    //   throw new Error("tool not found");
-    // }
     return await client.callTool(functionName, args);
   }
-  async mcpCallResource(clientName: string, uri: string) {
+  async mcpCallResource(name: string, uri: string) {
     let mcpClients = await getMcpClients();
-    let client = mcpClients[clientName];
+    let client = mcpClients.find((x) => x.name === name);
     if (!client) {
       throw new Error("client not found");
     }
     return await client.callResource(uri);
   }
-  async mcpCallPrompt(clientName: string, functionName: string, args: any) {
+  async mcpCallPrompt(name: string, functionName: string, args: any) {
     let mcpClients = await getMcpClients();
-    let client = mcpClients[clientName];
+    let client = mcpClients.find((x) => x.name === name);
     if (!client) {
       throw new Error("client not found");
     }
@@ -207,10 +175,6 @@ export class CommandFactory {
     );
     return clipboard.readText();
   }
-  async getData(): Promise<any> {
-    let { electronData: electron_data } = await import("../../common/data");
-    return electron_data.get();
-  }
   async isAutoLauncher(): Promise<boolean> {
     return autoLauncher.isEnabled();
   }
@@ -225,47 +189,48 @@ export class CommandFactory {
   }
   async readDir(p, root = appDataDir) {
     p = path.join(root, p);
-    fs.ensureDirSync(p);
-    return fs.readdirSync(p);
+    await fs.ensureDir(p);
+    return await fs.readdir(p);
   }
   async removeFile(p, root = appDataDir) {
     p = path.join(root, p);
 
-    return fs.removeSync(p);
+    return await fs.remove(p);
   }
   async writeFile(p, text, root = appDataDir) {
     let localPath = path.join(root, p);
-    let res = fs.writeFileSync(localPath, text);
+    let res = await fs.writeFile(localPath, text);
 
     return res;
   }
   async readFile(p, root = appDataDir) {
     p = path.join(root, p);
     try {
-      return fs.readFileSync(p, "utf-8");
+      let r = await fs.readFile(p, "utf-8");
+      return r;
     } catch (e) {
-      return "";
+      throw e;
     }
   }
   async readJSON(p, root = appDataDir) {
     p = path.join(root, p);
     try {
-      let str = fs.readFileSync(p, "utf-8");
-      return JSON.parse(str);
+      let r = await fs.readJSON(p, "utf-8");
+      return r;
     } catch (e) {
-      return null;
+      throw e;
     }
   }
   async exists(p, root = appDataDir) {
     p = path.join(root, p);
-    return fs.exists(p);
+    return await fs.exists(p);
   }
 
   async pathJoin(p, root = appDataDir) {
     if (root) {
       p = path.join(root, p);
     }
-    fs.ensureDirSync(path.dirname(p));
+    await fs.ensureDir(path.dirname(p));
     return p;
   }
   async getLocalIP(): Promise<string[]> {
@@ -289,6 +254,31 @@ export class CommandFactory {
     const win = BrowserWindow.getFocusedWindow();
     if (win) {
       win.webContents.openDevTools();
+    }
+  }
+  async hyperToolOpenBrowser(url: string, { userAgent, } = {
+    userAgent: "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36",
+  }): Promise<void> {
+    if (getConfig().Web_Tools_Platform === "electron") {
+      const { BrowserWindow, dialog, shell, clipboard } = await import(
+        "electron"
+      );
+      let win = new BrowserWindow({
+        width: 1280,
+        height: 720,
+        webPreferences: {
+          webSecurity: false,
+        },
+      });
+
+      await win.loadURL(url, {
+        userAgent:
+          userAgent
+      });
+    } else if (getConfig().Web_Tools_Platform === "chrome") {
+      await createBrowser(true, url)
+    } else {
+      throw new Error("HyperTool Settings Web_Tools_Platform is none");
     }
   }
   async openBrowser(url: string, userAgent?): Promise<void> {
@@ -345,27 +335,23 @@ export class CommandFactory {
   async webDavSync() {
     return await webdavClient.sync();
   }
-  async initEmbeddings(model: string) {
-    await FeatureExtraction.getInstance(model);
-  }
   async vectorStoreAdd(
     s: KNOWLEDGE_Store,
     r: KNOWLEDGE_Resource,
     move = false
   ) {
-    let { store } = await import("./rag/vectorStore.mjs");
     return await store.addResource(s, r, move);
   }
   async vectorStoreDelete(s: KNOWLEDGE_Store) {
-    let { store } = await import("./rag/vectorStore.mjs");
+
     return await store.delete(s);
   }
   async vectorStoreRemoveResource(s: KNOWLEDGE_Store, r: KNOWLEDGE_Resource) {
-    let { store } = await import("./rag/vectorStore.mjs");
+
     return await store.removeResource(s, r);
   }
   async vectorStoreSearch(s: KNOWLEDGE_Store, q: string, k: number) {
-    let { store } = await import("./rag/vectorStore.mjs");
+
     return await store.search(s, q, k);
   }
   async getProgressList() {
@@ -387,8 +373,7 @@ export class CommandFactory {
     return stopTask(taskkey);
   }
   async runTask(taskkey: string) {
-    let task = TaskList.initSync().data.find((x) => x.key === taskkey);
-    return runTask(task);
+    return runTask(taskkey, { force: true });
   }
   async callAgent(task: { command: string; agentName: string }) {
     let agent = Agents.initSync().data.find((x) => x.label === task.agentName);
@@ -398,6 +383,150 @@ export class CommandFactory {
       type: "call",
     });
   }
-}
+  async saveTempFile({ txt, ext }) {
+    // let filePath = path.join(os.tmpdir(), "temp.txt");
+    // md5(txt) + ext;
+    const hash = crypto
+      .createHash("sha256")
+      .update(txt as any)
+      .digest("hex");
+    let filename = hash + "." + ext;
 
+    let filePath = path.join(appDataDir, "temp", filename);
+    fs.ensureDirSync(path.dirname(filePath));
+    fs.writeFileSync(filePath, txt);
+    return filename;
+  }
+
+  async addChatHistory(item: ChatHistoryItem) {
+    item.version = "2.0";
+    item.dateTime = Date.now();
+    if (item.isTask) {
+      item.lastMessage = item.messages[item.messages.length - 1];
+    }
+    let chatHistory = ChatHistory.initSync().data;
+    if (item.messages && item.messages.length > 0) {
+      fs.writeFileSync(path.join(appDataDir, `messages/${item.key}.json`), JSON.stringify(item.messages, null, 2));
+    }
+    let index = chatHistory.findIndex(x => x.key === item.key);
+    if (index === -1) {
+      chatHistory.unshift(item);
+    } else {
+      chatHistory.splice(index, 1);
+      chatHistory.unshift(item);
+    }
+    ChatHistory.format = (r) => {
+      r.data = r.data.map((x) => {
+        if (x.key == item.key) {
+          let clone = Object.assign({}, x, { messages: [] });
+          return clone;
+        } else {
+          return x;
+        }
+      })
+      return r;
+    }
+    await ChatHistory.save()
+  }
+  async changeChatHistory(item: ChatHistoryItem) {
+    item.version = "2.0";
+    item.dateTime = Date.now();
+    if (item.messages && item.messages.length > 0) {
+      fs.writeFileSync(path.join(appDataDir, `messages/${item.key}.json`), JSON.stringify(item.messages, null, 2));
+    }
+    let chatHistory = ChatHistory.initSync().data;
+    let find = chatHistory.find(x => x.key === item.key);
+    if (find) {
+      Object.assign(find, item);
+    }
+    ChatHistory.format = (r) => {
+      r.data = r.data.map((x) => {
+        if (x.key == item.key) {
+          let clone = Object.assign({}, x, { messages: [] });
+          return clone;
+        } else {
+          return x;
+        }
+      })
+      return r;
+    }
+    await ChatHistory.save()
+  }
+  async removeChatHistory(item: { key: string }) {
+    let chatHistory = ChatHistory.initSync().data;
+    let findIndex = chatHistory.findIndex(x => x.key === item.key);
+    if (findIndex !== -1) {
+      chatHistory.splice(findIndex, 1);
+      if (fs.existsSync(path.join(appDataDir, `messages/${item.key}.json`))) {
+        fs.removeSync(path.join(appDataDir, `messages/${item.key}.json`));
+      }
+    }
+    await ChatHistory.save()
+    return;
+  }
+  async clearChatHistory(day: number) {
+    let time = dayjs().subtract(day, "day").valueOf();
+    ChatHistory.initSync()
+    let oldLen = ChatHistory.get().data.length;
+    let f = ChatHistory.get().data.filter((x) => !x.icon);
+    for (let x of f) {
+      if (x.dateTime == null || x.dateTime < time) {
+        x.deleted = true;
+        if (fs.existsSync(path.join(appDataDir, `messages/${x.key}.json`))) {
+          fs.removeSync(path.join(appDataDir, `messages/${x.key}.json`));
+        }
+      }
+    }
+    ChatHistory.get().data = ChatHistory.get().data.filter(
+      (x) => !x.deleted,
+    );
+    let newLen = ChatHistory.get().data.length;
+    await ChatHistory.save();
+    return oldLen - newLen;
+  }
+  async runCode({ code }: { code: string }) {
+    // 1. 构造一个完整的 require（ESM 下使用 import.meta.url）
+    const nativeRequire = createRequire(__filename);
+
+    const context = {
+      console,
+      require: nativeRequire,
+      module: { exports: {} },
+      exports: {},
+      process,
+      Buffer,
+      fetch,
+      resultContainer: { value: undefined, error: undefined, done: false },
+      setTimeout,
+      setInterval,
+    };
+    vm.createContext(context); // 将普通对象转换为 vm.Context 对象
+    // 在 VM 中使用动态导入
+    vm.runInContext(`
+  (async () => {
+       try {
+        ${code}
+        resultContainer.value = await get();
+        resultContainer.done = true;
+      } catch (err) {
+        resultContainer.error = err.message;
+        resultContainer.done = true;
+      }
+  })();
+`, context,
+      { filename: __filename, });
+    // 轮询等待结果
+    while (!context.resultContainer.done) {
+      await new Promise(resolve => setTimeout(resolve, 10));
+    }
+
+    // 检查是否有错误
+    if (context.resultContainer.error) {
+      throw new Error(context.resultContainer.error);
+    }
+
+    return context.resultContainer.value;
+  }
+}
 export const Command = CommandFactory.prototype;
+

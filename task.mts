@@ -6,29 +6,29 @@ import spawn from "cross-spawn";
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-let pack = await fs.readJSON(path.resolve(__dirname, "./package.json"));
-
-let webpackage = await fs.readJSON(
-  path.resolve(__dirname, "./web/package.json")
-);
-if (webpackage.version != pack.version) {
-  webpackage.version = pack.version;
-  await fs.writeFile(
-    path.resolve(__dirname, "./web/package.json"),
-    JSON.stringify(webpackage, null, 2)
+if (argv.updateVersion) {
+  let pack = await fs.readJSON(path.resolve(__dirname, "./package.json"));
+  let webpackage = await fs.readJSON(
+    path.resolve(__dirname, "./web/package.json")
   );
-}
-let electronpackage = await fs.readJSON(
-  path.resolve(__dirname, "./electron/package.json")
-);
-if (electronpackage.version != pack.version) {
-  electronpackage.version = pack.version;
-  await fs.writeFile(
-    path.resolve(__dirname, "./electron/package.json"),
-    JSON.stringify(electronpackage, null, 2)
+  if (webpackage.version != pack.version) {
+    webpackage.version = pack.version;
+    await fs.writeFile(
+      path.resolve(__dirname, "./web/package.json"),
+      JSON.stringify(webpackage, null, 2)
+    );
+  }
+  let electronpackage = await fs.readJSON(
+    path.resolve(__dirname, "./electron/package.json")
   );
+  if (electronpackage.version != pack.version) {
+    electronpackage.version = pack.version;
+    await fs.writeFile(
+      path.resolve(__dirname, "./electron/package.json"),
+      JSON.stringify(electronpackage, null, 2)
+    );
+  }
 }
-
 $.verbose = true;
 
 if (os.platform() === "win32") {
@@ -204,6 +204,28 @@ if (argv.prod) {
   // }
 }
 
+if (argv.prod_node) {
+  await $({
+    cwd: path.resolve(__dirname, "./web/"),
+  })`npx cross-env NODE_ENV=production myEnv=prod webpack -c webpack.config.js`;
+  await $({
+    cwd: path.resolve(__dirname, "./web/"),
+  })`npx cross-env NODE_ENV=development myEnv=dev webpack -c webpack.eval.js`;
+
+  await fs.copy(
+    `./web/public/logo.png`,
+    `./electron/web-build/assets/favicon.png`,
+    {
+      overwrite: true,
+    }
+  );
+
+  await $({
+    cwd: path.resolve(__dirname, "./electron/"),
+  })`npm run build:node`;
+
+}
+
 
 if (argv.build) {
   await $({
@@ -237,4 +259,8 @@ if (argv.test) {
       })`npm run testprod`,
     ]);
   });
+}
+
+if (argv.pre_commit) {
+
 }

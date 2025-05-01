@@ -29,6 +29,9 @@
     ],
     "outDir": "./dist"
   },
+  "files": [
+    "../common/data.ts"
+  ],
   "include": [
     "src",
     "types",

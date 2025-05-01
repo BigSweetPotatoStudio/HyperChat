@@ -35,13 +35,26 @@ Logger.info("execPath: ", process.execPath);
 Logger.info("NODE_ENV: ", process.env.NODE_ENV);
 Logger.info("myEnv: ", process.env.myEnv);
 
+
 Logger.info(
   path.join(__dirname, "../web-build/assets/favicon.png"),
   fs.existsSync(path.join(__dirname, "../web-build/assets/favicon.png"))
 );
 
 Logger.info("appDataDir: ", appDataDir);
-
+fs.ensureDirSync(path.join(appDataDir, "messages"));
 electronData.get().appDataDir = appDataDir;
 electronData.get().logFilePath = logFilePath;
 electronData.save();
+
+// 捕获未处理的异常
+process.on('uncaughtException', (error) => {  
+  Logger.error('Uncaught Exception:', error);  
+  // process.exit(1);  
+});
+
+// 捕获未处理的Promise拒绝
+process.on('unhandledRejection', (reason, promise) => {
+  Logger.error('Unhandled Rejection at:', promise, 'reason:', reason);
+  // 对于Promise错误，可以选择不终止应用
+});

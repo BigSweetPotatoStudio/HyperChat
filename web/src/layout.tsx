@@ -35,6 +35,7 @@ import {
   Tag,
   Timeline,
   notification,
+  Drawer,
 } from "antd";
 import enUS from "antd/locale/en_US";
 import zhCN from "antd/locale/zh_CN";
@@ -79,16 +80,35 @@ import {
   DataList,
   electronData,
   GPT_MODELS,
+  IMCPClient,
   KNOWLEDGE_BASE,
   MCP_CONFIG,
 } from "../../common/data";
-import { getClients } from "./common/mcp";
+import { InitedClient, initMcpClients, setClients } from "./common/mcp";
 import { EVENT } from "./common/event";
 import { OpenAiChannel } from "./common/openai";
 import { DndTable } from "./common/dndTable";
 import { sleep } from "./common/sleep";
 import { InputPlus } from "./common/input_plus";
 import { rejects } from "assert";
+import {
+  enable as enableDarkMode,
+  disable as disableDarkMode,
+  auto as followSystemColorScheme,
+  exportGeneratedCSS as collectCSS,
+  isEnabled as isDarkReaderEnabled,
+  setFetchMethod as setDarkReaderFetchMethod,
+} from "darkreader";
+import { Pre } from "./components/pre";
+import { Icon } from "./components/icon";
+import { getDefaultModelConfigSync } from "./components/ai";
+
+setDarkReaderFetchMethod((url) => {
+  return fetch(url, {
+    credentials: "omit",
+    mode: "no-cors",
+  });
+})
 
 type ProviderType = {
   label: string;
@@ -110,9 +130,24 @@ const Providers: ProviderType[] = [
     value: "openrouter",
   },
   {
-    label: "Gemini",
-    baseURL: "https://generativelanguage.googleapis.com/v1beta/openai/",
-    value: "gemini",
+    label: "Gemini(Openai)",
+    baseURL: "https://generativelanguage.googleapis.com/v1beta/openai",
+    value: "gemini-openai",
+  },
+  process.env.myEnv == "dev" && {
+    label: "Anthropic",
+    baseURL: "https://api.anthropic.com",
+    value: "anthropic",
+  },
+  {
+    label: "Anthropic(Openai)",
+    baseURL: "https://api.anthropic.com/v1",
+    value: "anthropic-openai",
+  },
+  {
+    label: "XAI",
+    baseURL: "https://api.x.ai/v1",
+    value: "xai",
   },
   {
     label: "Qwen",
@@ -146,7 +181,7 @@ const Providers: ProviderType[] = [
     baseURL: "",
     value: "other",
   },
-];
+].filter((x) => x);
 
 msg_receive("message-from-main", (msg) => {
   if (msg.type == "TaskResult") {
@@ -165,7 +200,7 @@ msg_receive("message-from-main", (msg) => {
         // console.log("Notification Clicked!");
         try {
           window["w"]["navigate"](`/Task/Results?taskKey=${msg.data.task.key}`);
-        } catch (e) {}
+        } catch (e) { }
       },
       duration: 10 * 1000,
     });
@@ -197,65 +232,12 @@ export function Layout() {
       setIsModelConfigOpen(true);
     });
   }, []);
-  useEffect(() => {}, []);
-  useEffect(() => {
-    (async () => {
-      await GPT_MODELS.init();
-      await MCP_CONFIG.init();
-      await KNOWLEDGE_BASE.init();
-      refresh();
-    })();
-  }, []);
-
-  const [locale, setLocal] = useState(currLang == "zhCN" ? zhCN : enUS);
-  const [collapsed, setCollapsed] = useState(false);
-  const [isModelConfigOpen, setIsModelConfigOpen] = useState(false);
-  const [isAddModelConfigOpen, setIsAddModelConfigOpen] = useState(false);
-  // const [currRow, setCurrRow] = useState({} as any);
-  const [form] = Form.useForm();
-
-  // const [isToolsShow, setIsToolsShow] = useState(false);
-
-  const [loadingCheckLLM, setLoadingCheckLLM] = useState(false);
-  const [syncStatus, setSyncStatus] = useState(0);
   useEffect(() => {
     msg_receive("message-from-main", async (res: any) => {
       // console.log("UpdateMsg! ", res);
 
       if (res.type == "UpdateMsg" && res.data.status == 1) {
-        Modal.confirm({
-          title: "A new version is available",
-          content: (
-            <div>
-              <div>current version: {electronData.get().version}</div>
-              <div>latest version: {res.data.info.version}</div>
-              {res.data.info.releaseName != res.data.info.version && (
-                <div>title: {res.data.info.releaseName}</div>
-              )}
-              <div>
-                changelog:{" "}
-                {typeof res.data.info.releaseNotes == "string" ? (
-                  <div
-                    style={{ color: "gray" }}
-                    dangerouslySetInnerHTML={{
-                      __html: res.data.info.releaseNotes,
-                    }}
-                  ></div>
-                ) : (
-                  res.data.info.releaseNotes.map((x) => {
-                    return (
-                      <div dangerouslySetInnerHTML={{ __html: x.note }}></div>
-                    );
-                  })
-                )}
-              </div>
-            </div>
-          ),
-          okText: "Download And Update",
-          onOk: async () => {
-            call("checkUpdateDownload", []);
-          },
-        });
+        setUpdateData(res.data);
       }
 
       if (res.type == "UpdateMsg" && res.data.status == 4) {
@@ -285,9 +267,43 @@ export function Layout() {
           refresh();
         }
       }
+      if (res.type === "changeMcpClient") {
+        setMcpClients(res.data);
+        setClients(res.data);
+        window.getTools = (allowMCPs) => {
+          let tools: IMCPClient["tools"] = [];
+
+          res.data.forEach((v) => {
+            tools = tools.concat(
+              v.tools.filter((t) => {
+                if (!allowMCPs) return true;
+                return (
+                  allowMCPs.includes(t.clientName) || allowMCPs.includes(t.restore_name)
+                );
+              }),
+            );
+          });
+          return tools;
+        }
+      }
     });
+  }, []);
+  useEffect(() => {
     (async () => {
-      await electronData.init();
+      await Promise.all([
+        GPT_MODELS.init(),
+        MCP_CONFIG.init(),
+        KNOWLEDGE_BASE.init(),
+        electronData.init(),
+      ]);
+      refresh();
+
+      let res = await call("checkUpdate", []);
+      if (res) {
+        console.log("checkUpdate: ", res);
+      }
+      await initMcpClients();
+      refresh();
       Clarity.init("p731bym3zs");
       Clarity.consent();
       Clarity.event("openApp");
@@ -297,13 +313,23 @@ export function Layout() {
       );
       Clarity.setTag("version", electronData.get().version);
 
-      refresh();
-      let res = await call("checkUpdate", []);
-      if (res) {
-        console.log("checkUpdate: ", res);
-      }
     })();
   }, []);
+
+  const [locale, setLocal] = useState(currLang == "zhCN" ? zhCN : enUS);
+  const [collapsed, setCollapsed] = useState(false);
+  const [isModelConfigOpen, setIsModelConfigOpen] = useState(false);
+  const [isAddModelConfigOpen, setIsAddModelConfigOpen] = useState(false);
+  // const [currRow, setCurrRow] = useState({} as any);
+  const [form] = Form.useForm();
+
+  const [mcpClients, setMcpClients] = useState<InitedClient[]>([]);
+
+  const [loadingCheckLLM, setLoadingCheckLLM] = useState(false);
+  const [syncStatus, setSyncStatus] = useState(0);
+
+  const [updateData, setUpdateData] = useState({} as any);
+
 
   const [timelineData, setTimelineData] = useState([]);
   const [isOpenTestLLM, setIsOpenTestLLM] = useState(false);
@@ -323,6 +349,7 @@ export function Layout() {
     setLocal(e == "zhCN" ? zhCN : enUS);
     refresh();
   };
+  let defaultModel = getDefaultModelConfigSync(GPT_MODELS);
 
   return (
     <ConfigProvider locale={locale}>
@@ -360,8 +387,9 @@ export function Layout() {
                       setIsAddModelConfigOpen(true);
                     }
                   }}
+                  icon={<Icon name="brain" />}
                 >
-                  🧠LLM
+                  LLM
                 </Button>
                 <Select
                   className="hidden lg:inline-block"
@@ -388,13 +416,13 @@ export function Layout() {
                     await AppSetting.save();
                     refresh();
                     if (checked) {
-                      window["DarkReader"].enable({
+                      enableDarkMode({
                         brightness: 100,
                         contrast: 90,
                         sepia: 10,
                       });
                     } else {
-                      window["DarkReader"].disable();
+                      disableDarkMode();
                     }
                   }}
                 />
@@ -439,11 +467,56 @@ export function Layout() {
               );
             },
           }}
-          logo={"./assets/favicon.png"}
+          logo={
+            <img
+              onClick={() => {
+                window.location.hash = "#/Home";
+              }}
+              src="./assets/favicon.png"
+            ></img>
+          }
           headerTitleRender={(logo, title, _) => {
             return (
-              <Link to="home">
-                {logo}HyperChat<span>({electronData.get().version})</span>
+              <Link to="Home">
+                HyperChat<span>({electronData.get().version}){updateData.info && <Tag className=" text-red-600" onClick={() => {
+                  Modal.confirm({
+                    title: t`A new version is available`,
+                    width: "80%",
+                    style: {
+                      maxWidth: 1024,
+                    },
+                    content: (
+                      <div>
+                        <div>current version: {electronData.get().version}</div>
+                        <div>latest version: {updateData.info.version}</div>
+                        {updateData.info.releaseName != updateData.info.version && (
+                          <div>title: {updateData.info.releaseName}</div>
+                        )}
+                        <div>
+                          changelog:{" "}
+                          {typeof updateData.info.releaseNotes == "string" ? (
+                            <div
+                              style={{ color: "gray" }}
+                              dangerouslySetInnerHTML={{
+                                __html: updateData.info.releaseNotes,
+                              }}
+                            ></div>
+                          ) : (
+                            updateData.info.releaseNotes.map((x) => {
+                              return (
+                                <div dangerouslySetInnerHTML={{ __html: x.note }}></div>
+                              );
+                            })
+                          )}
+                        </div>
+                      </div>
+                    ),
+                    okText: t`Download And Update`,
+                    onOk: async () => {
+                      call("checkUpdateDownload", []);
+                    },
+                  });
+                }}>{`New`}</Tag>}</span>
               </Link>
             );
           }}
@@ -473,25 +546,32 @@ export function Layout() {
           splitMenus={true}
         >
           <HeaderContext.Provider
-            value={{ globalState: num, updateGlobalState: refresh, setLang }}
+            value={{
+              globalState: num, updateGlobalState: refresh, setLang,
+              mcpClients,
+
+            }}
           >
             <Outlet />
           </HeaderContext.Provider>
         </ProLayout>
 
-        <Modal
+        <Drawer
           width={1000}
           title={t`My LLM Models`}
           open={isModelConfigOpen}
-          cancelButtonProps={{ style: { display: "none" } }}
-          onOk={() => {
+          // cancelButtonProps={{ style: { display: "none" } }}
+          onClose={() => {
             setIsModelConfigOpen(false);
           }}
-          onCancel={() => {
-            setIsModelConfigOpen(false);
+          styles={{
+            body: {
+              padding: 0,
+            }
           }}
         >
           <DndTable
+
             footer={() => (
               <div className="text-center">
                 <Button
@@ -517,7 +597,7 @@ export function Layout() {
               </div>
             )}
             size="small"
-            scroll={{ x: true }}
+            scroll={{ y: "calc(-151px + 100vh)" }}
             pagination={false}
             dataSource={GPT_MODELS.get().data}
             onMove={(data) => {
@@ -538,6 +618,7 @@ export function Layout() {
                       {record.type && <Tag color="red">{record.type}</Tag>}
                       {record.supportImage && <Tag color="blue">image</Tag>}
                       {record.supportTool && <Tag color="blue">tool</Tag>}
+                      {record.key == defaultModel.key && <Tag color="green">{t`default`}</Tag>}
                     </div>
                   );
                 },
@@ -548,6 +629,28 @@ export function Layout() {
                 key: "model",
                 width: 200,
               },
+              {
+                title: t`Provider`,
+                dataIndex: "provider",
+                key: "provider",
+                width: 200,
+                filters: Providers.map((x) => {
+                  return {
+                    text: x.label,
+                    value: x.value,
+                  };
+                }),
+                onFilter: (value, record) => record.provider.startsWith(value as string),
+                filterSearch: true,
+                render: (text, record, index) => {
+                  let find = Providers.find((x) => x.value == text);
+                  if (find == null) {
+                    return text;
+                  }
+                  return find.label;
+                }
+              },
+
               {
                 title: t`Operation`,
                 dataIndex: "key",
@@ -564,6 +667,9 @@ export function Layout() {
                         }
 
                         setModelOptions([]);
+                        if (record.toolMode == null) {
+                          record.toolMode = "standard";
+                        }
                         form.setFieldsValue(record);
                         setIsAddModelConfigOpen(true);
                       }}
@@ -599,19 +705,19 @@ export function Layout() {
                       <a type="link">{t`Delete`}</a>
                     </Popconfirm>
 
-                    <Tooltip title="Set default">
+                    <Tooltip title={t`Set default`}>
                       <a
                         type="link"
                         onClick={async () => {
-                          GPT_MODELS.get().data = GPT_MODELS.get().data.filter(
-                            (e) => e.key != record.key,
-                          );
-                          GPT_MODELS.get().data.unshift(record);
+                          GPT_MODELS.get().data.forEach((m) => {
+                            m.isDefault = false;
+                          });
+                          record.isDefault = true;
                           await GPT_MODELS.save();
                           refresh();
                         }}
                       >
-                        {t`Top`}
+                        {t`Default`}
                       </a>
                     </Tooltip>
                   </div>
@@ -619,37 +725,70 @@ export function Layout() {
               },
             ]}
           />
-        </Modal>
+        </Drawer >
         <Modal
           width={600}
           title={t`Configure LLM`}
           open={isAddModelConfigOpen}
           maskClosable={false}
-          okButtonProps={{
-            autoFocus: true,
-            htmlType: "submit",
-            loading: loadingCheckLLM,
-          }}
-          cancelButtonProps={{ style: { display: "none" } }}
+          // okButtonProps={{
+          //   autoFocus: true,
+          //   htmlType: "submit",
+          //   loading: loadingCheckLLM,
+          // }}
+          // cancelButtonProps={{ style: { display: "none" } }}
           onCancel={() => {
             setIsAddModelConfigOpen(false);
           }}
+          footer={[
+            form.getFieldValue("key") && <Button key="save" onClick={() => {
+              form.validateFields().then(async (values) => {
+                if (values.key) {
+                  let find = GPT_MODELS.get().data.find(
+                    (e) => e.key == values.key,
+                  );
+                  if (!find) {
+                    return;
+                  }
+                  values.name = values.name || values.model;
+                  Object.assign(find, values);
+                  await GPT_MODELS.save();
+                } else {
+                  values.name = values.name || values.model;
+                  values.key = v4();
+                  GPT_MODELS.get().data.push(values);
+                  await GPT_MODELS.save();
+                }
+                refresh();
+                setIsAddModelConfigOpen(false);
+              }).catch(() => { })
+            }}>
+              {t`Save`}
+            </Button>,
+            <Button key="submit" type="primary" htmlType="submit">
+              {t`Submit`}
+            </Button>
+          ].filter(x => x)}
           modalRender={(dom) => (
             <Form
               form={form}
-              layout="vertical"
+              layout="horizontal"
               name="AddModelConfig"
               initialValues={{
                 provider: Providers[0].value,
                 baseURL: Providers[0].baseURL,
                 type: "llm",
+                toolMode: "standard",
               }}
               clearOnDestroy
+              onFinishFailed={(err) => {
+                console.error(err);
+              }}
               onFinish={async (values) => {
                 try {
                   setLoadingCheckLLM(true);
                   // message.info("Testing the configuration, please wait...");
-
+                  let save = true;
                   if (values.type == "embedding") {
                     let list = KNOWLEDGE_BASE.get().dbList.filter(
                       (x) => x.model == values.key,
@@ -693,97 +832,111 @@ export function Layout() {
                       },
                     ]);
 
-                    let o = new OpenAiChannel(values, []);
-                    let testBaseRes = await o.testBase();
+                    let o = new OpenAiChannel({
+                      ...values,
+                      requestType: "complete"
+                    }, []);
+                    let testBaseRes = await o.testBase().then(e => {
+                      setTimelineData((x) => {
+                        x.push({
+                          color: "green",
+                          children: t`Text Chat Test Success`,
+                        });
+                        return x.slice();
+                      });
+                      return true
+                    }).catch(e => {
+                      console.error(e);
+                      setTimelineData((x) => {
+                        x.push({
+                          color: "red",
+                          children: <Pre>{t`Text Chat Test Failed`}
+                            <div className="text-red-500">{e.message}</div>
+                          </Pre>,
+                        });
+                        return x.slice();
+                      });
+                      return false
+                    })
                     if (testBaseRes) {
-                      setTimelineData((x) => {
-                        x.push({
-                          color: "green",
-                          children: "Text Chat Test Success",
+                      await o.testImage().then(() => {
+                        setTimelineData((x) => {
+                          x.push({
+                            color: "green",
+                            children: t`Image Support Test Success`,
+                          });
+                          return x.slice();
                         });
-                        return x.slice();
-                      });
-                    } else {
-                      setTimelineData((x) => {
-                        x.push({
-                          color: "red",
-                          children: "Text Chat Test Failed",
+                        values.supportImage = true;
+                      }).catch(e => {
+                        console.error(e);
+                        setTimelineData((x) => {
+                          x.push({
+                            color: "red",
+                            children: <Pre>{t`Image Support Test Failed`}
+                              <div className="text-red-500">{e.message}</div>
+                            </Pre>,
+                          });
+                          return x.slice();
                         });
-                        return x.slice();
-                      });
-                    }
-                    if (!testBaseRes) {
-                      message.error(
-                        "Please check if the configuration is incorrect or if the network is available.",
-                      );
-                      setLoadingCheckLLM(false);
-                      setPending(false);
-                      return;
-                    }
-                    let testImageRes = await o.testImage();
-                    if (testImageRes) {
-                      setTimelineData((x) => {
-                        x.push({
-                          color: "green",
-                          children: "Image Support Test Success",
-                        });
-                        return x.slice();
-                      });
-                      values.supportImage = true;
-                    } else {
-                      setTimelineData((x) => {
-                        x.push({
-                          color: "red",
-                          children: "Image Support Test Failed",
-                        });
-                        return x.slice();
-                      });
-                    }
-                    values.supportImage = testImageRes;
-                    let testToolRes = await o.testTool().catch((e) => {
-                      return o.testTool();
-                    });
-                    if (testToolRes) {
-                      setTimelineData((x) => {
-                        x.push({
-                          color: "green",
-                          children: "Tool Call Test Success",
-                        });
-                        return x.slice();
-                      });
-                    } else {
-                      setTimelineData((x) => {
-                        x.push({
-                          color: "red",
-                          children: "Tool Call Test Failed",
-                        });
-                        return x.slice();
-                      });
-                    }
-                    values.supportTool = testToolRes;
-                    setPending(false);
-                  }
-                  if (values.key) {
-                    let index = GPT_MODELS.get().data.findIndex(
-                      (e) => e.key == values.key,
-                    );
-                    if (index == -1) {
-                      return;
-                    }
-                    values.name = values.name || values.model;
-                    GPT_MODELS.get().data[index] = values;
-                    await GPT_MODELS.save();
-                  } else {
-                    values.name = values.name || values.model;
-                    values.key = v4();
-                    GPT_MODELS.get().data.push(values);
-                    await GPT_MODELS.save();
-                  }
-                  refresh();
-                  setIsAddModelConfigOpen(false);
+                        values.supportImage = false;
+                      })
 
-                  setLoadingCheckLLM(false);
-                  message.success("save success!");
+
+                      await o.testTool().then(() => {
+                        setTimelineData((x) => {
+                          x.push({
+                            color: "green",
+                            children: t`Tool Call Test Success`,
+                          });
+                          return x.slice();
+                        });
+                        values.supportTool = true;
+                      }).catch(e => {
+                        console.error(e);
+                        setTimelineData((x) => {
+                          x.push({
+                            color: "red",
+                            children: <Pre>{t`Tool Call Test Failed`}
+                              <div className="text-red-500">{e.message}</div>
+                            </Pre>,
+                          });
+                          return x.slice();
+                        });
+                        values.supportTool = false;
+                      })
+                      setPending(false);
+                      setLoadingCheckLLM(false);
+
+                    } else {
+                      save = false;
+                      setPending(false);
+                      setLoadingCheckLLM(false);
+                    }
+                  }
+                  if (save) {
+                    if (values.key) {
+                      let index = GPT_MODELS.get().data.findIndex(
+                        (e) => e.key == values.key,
+                      );
+                      if (index == -1) {
+                        return;
+                      }
+                      values.name = values.name || values.model;
+                      GPT_MODELS.get().data[index] = values;
+                      await GPT_MODELS.save();
+                    } else {
+                      values.name = values.name || values.model;
+                      values.key = v4();
+                      GPT_MODELS.get().data.push(values);
+                      await GPT_MODELS.save();
+                    }
+                    refresh();
+                    setIsAddModelConfigOpen(false);
+
+                    setLoadingCheckLLM(false);
+                    message.success("save success!");
+                  }
                 } catch {
                   setLoadingCheckLLM(false);
                   message.error("save failed!");
@@ -812,8 +965,11 @@ export function Layout() {
                 }
 
                 let value: any = {
-                  baseURL: find.baseURL,
                 };
+                if (find.baseURL) {
+                  value.baseURL = find.baseURL;
+                }
+
                 if (find.apiKey) {
                   value.apiKey = find.apiKey;
                 }
@@ -900,9 +1056,10 @@ export function Layout() {
               ></Input>
             </Form.Item>
           )}
-          <Form.Item name="name" label="Alias">
+          <Form.Item name="name" label={t`Alias`}>
             <Input placeholder="The default is the model name"></Input>
           </Form.Item>
+
 
           <Form.Item
             name="type"
@@ -910,7 +1067,7 @@ export function Layout() {
             style={{
               display:
                 form.getFieldValue("provider") == "openai" ||
-                form.getFieldValue("provider") == null
+                  form.getFieldValue("provider") == null
                   ? "block"
                   : "none",
             }}
@@ -930,17 +1087,52 @@ export function Layout() {
                 refresh();
               }}
             ></Select>
+
+
           </Form.Item>
 
           {(form.getFieldValue("type") == "llm" ||
-            form.getFieldValue("type") == null) && (
-            <Form.Item name="call_tool_step" label={t`Call-Tool-Step`}>
-              <InputNumber
-                style={{ width: "100%" }}
-                placeholder="default, the model is allowed to execute tools for 10 steps."
-              ></InputNumber>
-            </Form.Item>
-          )}
+            form.getFieldValue("type") == null) && (<>
+
+              <Form.Item name="call_tool_step" label={t`Call-Tool-Step`}>
+                <InputNumber
+                  style={{ width: "100%" }}
+                  placeholder="default, the model is allowed to execute tools for 10 steps."
+                ></InputNumber>
+              </Form.Item>
+              <Form.Item
+                name="toolMode"
+                label={t`toolMode`}
+              >
+                <Radio.Group onChange={() => {
+                  refresh();
+                }}>
+                  <Radio value="standard">{t`standard`}</Radio>
+                  <Radio value="compatible">{t`compatible`}</Radio>
+                </Radio.Group>
+              </Form.Item>
+              {form.getFieldValue("toolMode") == "standard" && <Form.Item
+                name="isStrict"
+                label={t`CallToolStrictMode`}
+              >
+                <Switch></Switch>
+              </Form.Item>}
+
+              {form.getFieldValue("key") && <Form.Item
+                name="supportImage"
+                label={t`supportImage`}
+              >
+                <Switch></Switch>
+              </Form.Item>}
+              {form.getFieldValue("key") && <Form.Item
+                name="supportTool"
+                label={t`supportTool`}
+              >
+                <Switch></Switch>
+              </Form.Item>}
+
+            </>)}
+
         </Modal>
         <Modal
           title="Test LLM"

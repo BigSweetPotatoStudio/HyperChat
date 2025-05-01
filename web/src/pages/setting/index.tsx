@@ -43,7 +43,7 @@ import {
   Volume2,
 } from "lucide-react";
 import { AppSetting, ChatHistory, electronData } from "../../../../common/data";
-import { debounce } from "../../common";
+import { debounce, isOnBrowser } from "../../common";
 import {
   CloudSyncOutlined,
   CopyOutlined,
@@ -62,41 +62,31 @@ export function Setting() {
     setNum((num) => num + 1);
   }
   const { globalState, updateGlobalState, setLang } = useContext(HeaderContext);
+  let port = useRef(0);
   useEffect(() => {
     (async () => {
       await AppSetting.init();
       await electronData.init();
+      setPassword(electronData.get().password);
       AppSetting.get().isAutoLauncher = await call("isAutoLauncher").catch(
         (x) => AppSetting.get().isAutoLauncher,
       ); // 获取是否自动启动
       webdavForm.resetFields();
       webdavForm.setFieldsValue(
-        Object.assign(AppSetting.get().webdav, { baseDirName: "HyperChat" }),
+        Object.assign(electronData.get().webdav, { baseDirName: "HyperChat" }),
       );
+      const c = await call("getConfig");
+      port.current = c.port;
       refresh();
     })();
   }, []);
   const [webdavForm] = useForm();
-  const [syncLoading, setSyncLoading] = useState(false);
-  const webDavOnFinish = async (values, type?) => {
-    if (type === "test") {
-      try {
-        await call("testWebDav", [values]);
-        message.success("Test success");
-      } catch (error) {
-        message.error("Test failed");
-      }
-    } else {
-      await call("testWebDav", [values]);
-      AppSetting.get().webdav = values;
-      await AppSetting.save();
 
-      message.success("Save success");
-    }
-  };
+  const [password, setPassword] = useState("");
+  const [day, setDay] = useState(30);
 
   return (
-    <div>
+    <div className="overflow-auto h-full">
       <div className="relative flex flex-wrap">
         <div className="w-full lg:w-1/2 lg:p-4">
           <Form
@@ -166,79 +156,91 @@ export function Setting() {
                 }}
               ></InputNumber>
             </Form.Item>
+            <Form.Item label={t`web asscess password`}>
+              <Space.Compact>
+                <Input
+                  className="w-full"
+                  value={password}
+                  onChange={async (e) => {
+                    setPassword(e.target.value || "123456");
+                  }}
+                ></Input>
+                <Button
+                  onClick={async () => {
+
+                    if (!/^[a-zA-Z0-9]+$/.test(password)) {
+                      message.error(t`Password must contain only letters and numbers`);
+                      return;
+                    }
+                    electronData.get().password = password;
+                    await electronData.save();
+                    message.success(t`Update Success, please restart`);
+                  }}
+                >
+                  {t`Update`}
+                </Button>
+              </Space.Compact>
+
+            </Form.Item>
+            <Form.Item label={t`Develop Mode`}>
+              <Switch
+
+                value={electronData.get().isDeveloper}
+                onChange={async (value) => {
+                  electronData.get().isDeveloper = value;
+                  await electronData.save();
+                  refresh();
+                }}
+              ></Switch>
+            </Form.Item>
+
             <Form.Item
-              label={t`DeleteChatHistory(exclude Star)`}
+              label={t`ClearChatHistory(exclude Star)`}
               name="deleteChatRecord"
             >
               <Space wrap>
+                <InputNumber placeholder="day" value={day} onChange={e => setDay(e)}></InputNumber>
                 <Button
                   onClick={async () => {
-                    let f = ChatHistory.get().data.filter((x) => !x.icon);
-                    let time = dayjs().subtract(30, "day").valueOf();
-                    for (let x of f) {
-                      // console.log(x.dateTime, time);
-                      if (x.dateTime == null || x.dateTime < time) {
-                        x.deleted = true;
-                      }
-                    }
-                    ChatHistory.get().data = ChatHistory.get().data.filter(
-                      (x) => !x.deleted,
-                    );
-                    await ChatHistory.save();
+                    let res = await call("clearChatHistory", [day]);
+                    message.success(t`Clear Success ` + res + t` records`);
                   }}
                 >
-                  {t`Keep the chat history for the last 30 days`}
-                </Button>
-                <Button
-                  onClick={async () => {
-                    let time = dayjs().subtract(15, "day").valueOf();
-                    let f = ChatHistory.get().data.filter((x) => !x.icon);
-                    for (let x of f) {
-                      if (x.dateTime == null || x.dateTime < time) {
-                        x.deleted = true;
-                      }
-                    }
-                    ChatHistory.get().data = ChatHistory.get().data.filter(
-                      (x) => !x.deleted,
-                    );
-                    await ChatHistory.save();
-                  }}
-                >
-                  {t`Keep the chat history for the last 15 days`}
+                  {t`Clear logs older than `}{day}{t` days`}
                 </Button>
               </Space>
             </Form.Item>
             <Form.Item label={t`DevTools`} name="openDevTools">
               <Space wrap>
-                <Button
+                {!isOnBrowser && <Button
                   onClick={() => {
                     call("openDevTools", []);
                   }}
                 >
-                  openDevTools
-                </Button>
+                  {t`openDevTools`}({window.electron.platform === 'darwin' ? 'Alt+Cmd+I' : 'Ctrl+Shift+I'})
+                </Button>}
                 <Button
                   onClick={() =>
                     call("openExplorer", [electronData.get().logFilePath])
                   }
                 >
-                  logFile
+                  {t`logFile`}
                 </Button>
                 <Button
                   onClick={() =>
                     call("openExplorer", [electronData.get().appDataDir])
                   }
                 >
-                  appDataDir
+                  {t`appDataDir`}
                 </Button>
                 <Button
                   onClick={() =>
                     window.open(
-                      `http://localhost:${electronData.get().port}/${electronData.get().password}/`,
+                      `http://localhost:${port.current}/${electronData.get().password}/`,
                     )
                   }
                 >
-                  OpenWeb(http://localhost:{electronData.get().port}/
+                  OpenWeb(http://localhost:{port.current}/
                   {electronData.get().password}/)
                 </Button>
               </Space>

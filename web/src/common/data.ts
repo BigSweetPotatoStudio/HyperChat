@@ -11,15 +11,15 @@ import {
 } from "../../../common/data.js";
 import { e } from "./service";
 
-for (let data of DataList) {
-  data.override({
+for (let item of DataList) {
+  item.override({
     async inget() {
       return await call("readFile", [this.KEY]).catch((e) => "");
     },
     async insave() {
       return await call("writeFile", [
         this.KEY,
-        JSON.stringify(this.data, null, 4),
+        JSON.stringify(this.format(this.data), null, 2),
       ]);
     },
   });
@@ -40,26 +40,26 @@ msg_receive("message-from-main", (msg) => {
   if (msg.type == "syncNodeToWeb") {
     let c = DataList.find((x) => x.KEY == msg.data.key);
     if (c) {
-      if (c.KEY == "ChatHistory.json") {
-        let newData = msg.data.data;
+      // if (c.KEY == "ChatHistory.json") {
+        // let newData = msg.data.data;
 
-        for (let x of newData.data) {
-          if (c.get().data.find((y) => y.key == x.key) == null) {
-            c.get().data.push(x);
-          } else {
-            break;
-          }
-        }
-      } else {
+        // for (let x of newData.data) {
+        //   if (c.get().data.find((y) => y.key == x.key) == null) {
+        //     c.get().data.push(x);
+        //   } else {
+        //     break;
+        //   }
+        // }
+      // } else {
         Object.assign(c.get(), msg.data.data);
-      }
+      // }
     } else {
       console.error("syncNodeToWeb", msg.data.key, "not found");
     }
   }
 });
 
-await ChatHistory.init();
+// await ChatHistory.init();
 // try {
 //   if (
 //     !electronData.get().updated[electronData.get().version] &&

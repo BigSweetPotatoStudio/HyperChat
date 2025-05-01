@@ -4,26 +4,6 @@ import { sleep } from "./sleep";
 
 export * from "./util";
 
-// console.log(process.env.NODE_ENV)
-// let BASE_URL = ''
-// // if (process.env.NODE_ENV === 'development') {
-// //     BASE_URL = 'http://localhost:8001'
-// // } else {
-
-// export async function request(url: string, options = {} as any) {
-//     if (!url.includes('?')) {
-//         let querystr = querystring.stringify(options.query)
-//         url = url + (querystr ? '?' + querystr : '')
-//     }
-
-//     options = Object.assign({}, options, {
-//         "Content-Type": "application/json",
-//         // 'Content-Type': 'application/x-www-form-urlencoded',
-//     })
-//     return fetch(BASE_URL + '/api' + url, options).then(res => res.json())
-// }
-
-// export { BASE_URL }
 export * from "./request";
 
 export async function retry(fn, count: number = 3, time: number) {
@@ -38,4 +18,25 @@ export async function retry(fn, count: number = 3, time: number) {
       }
     }
   }
+}
+
+
+export function getFirstCharacter(str) {
+  if (str == null || str.length === 0) {
+    return "";
+  }
+
+  // 使用正则表达式匹配第一个emoji或者普通的字符
+  const match = str.match(/\p{Extended_Pictographic}|\S/u);
+  return match ? match[0] : null;
+}
+export function getFirstEmoji(str: string): string | null {
+  if (!str || str.length === 0) {
+    return null;
+  }
+
+  // 使用正则表达式匹配第一个emoji
+  const emojiRegex = /\p{Extended_Pictographic}/u;
+  const match = str.match(emojiRegex);
+  return match ? match[0] : null;
 }

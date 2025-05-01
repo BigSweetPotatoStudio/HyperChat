@@ -9,47 +9,129 @@ on:
     branches:
       - alpha
 
+permissions:
+  contents: write
+
 jobs:
-  check:
-    uses: ./.github/workflows/check-version.yml
-
-
   build:
-    needs: check
-    if: ${{ needs.check.outputs.should_release == 'true' }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest]
 
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.os }}
     steps:
       - name: Check out git repository
         uses: actions/checkout@v3.0.0
 
       - name: Install Node.js
-        uses: actions/setup-node@v3.0.0
+        uses: actions/setup-node@v4.0.0
         with:
           node-version: "20"
           registry-url: https://registry.npmjs.org/
 
-      - uses: pnpm/action-setup@v4
-        with:
-          version: 9
 
       - name: Install -g
         run: npm install -g cross-env zx
 
-      - name: Install Dependencies
+          # 根目录的依赖缓存
+      - name: Cache root dependencies
+        uses: actions/cache@v3
+        id: cache-root
+        with:
+          path: node_modules
+          key: ${{ matrix.os }}-node-${{ hashFiles('**/package-lock.json') }}
+          restore-keys: |
+            ${{ matrix.os }}-node-
+
+      # 安装根目录依赖（如果缓存未命中）
+      - name: Install root dependencies
+        if: steps.cache-root.outputs.cache-hit != 'true'
         run: npm install
 
-      - name: Install Web Dependencies
-        run: cd web && pnpm install
+      # web 目录的依赖缓存
+      - name: Cache web dependencies
+        uses: actions/cache@v3
+        id: cache-web
+        with:
+          path: web/node_modules
+          key: ${{ matrix.os }}-node-web-${{ hashFiles('web/package-lock.json') }}
+          restore-keys: |
+            ${{ matrix.os }}-node-web-
 
-      - name: Install Electron Dependencies
-        run: cd electron && npm install
+      # 安装 web 目录依赖（如果缓存未命中）
+      - name: Install web dependencies
+        if: steps.cache-web.outputs.cache-hit != 'true'
+        run: npm install
+        working-directory: ./web
 
-      - run: cd web && npm run build
+      # electron 目录的依赖缓存
+      - name: Cache electron dependencies
+        uses: actions/cache@v3
+        id: cache-electron
+        with:
+          path: electron/node_modules
+          key: ${{ matrix.os }}-node-electron-${{ hashFiles('electron/package-lock.json') }}
+          restore-keys: |
+            ${{ matrix.os }}-node-electron-
 
-      - run: cd electron && npm run build:node
+      # 安装 electron 目录依赖（如果缓存未命中）
+      - name: Install electron dependencies
+        if: steps.cache-electron.outputs.cache-hit != 'true'
+        run: npm install
+        working-directory: ./electron
 
-      - run: cd electron && npm publish --access=public
+      # - name: Determine npm publish tag  # ${{ steps.publish-tag.outputs.tag }} 
+      #   id: publish-tag
+      #   run: |
+      #     if [[ $GITHUB_REF == *"alpha"* ]]; then
+      #     echo "tag=alpha" >> $GITHUB_OUTPUT
+      #       else
+      #     echo "tag=latest" >> $GITHUB_OUTPUT
+      #       fi
+
+      - name: Check version is alpha
+        id: check-alpha-version
+        run: |
+          PACKAGE_VERSION=$(node -p "require('./package.json').version")
+          if [[ $PACKAGE_VERSION == *"-alpha"* ]]; then
+            echo "is_alpha=true" >> $GITHUB_OUTPUT
+            echo "Version $PACKAGE_VERSION is alpha version, will continue with build"
+          else
+            echo "is_alpha=false" >> $GITHUB_OUTPUT
+            echo "Version $PACKAGE_VERSION is not alpha version, will skip build"
+          fi
+
+      - name: Update Version
+        if: steps.check-alpha-version.outputs.is_alpha == 'true'
+        run: npm run updateVersion
+
+      - name: Build Production Node
+        if: steps.check-alpha-version.outputs.is_alpha == 'true'
+        run: npm run prod_node
+
+
+      - run: cd electron && npm publish --tag alpha --access=public
+        if: steps.check-alpha-version.outputs.is_alpha == 'true'
         env:
           NODE_AUTH_TOKEN: ${{secrets.npm_token}}
 
+      - name: SET GITHUB AND  reset
+        if: steps.check-alpha-version.outputs.is_alpha == 'true'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git reset --hard HEAD 
+        env:
+          GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
+
+      - name: change alpha version
+        if: steps.check-alpha-version.outputs.is_alpha == 'true'
+        run: npm version prerelease --preid=alpha
+
+      - name: PUSH
+        if: steps.check-alpha-version.outputs.is_alpha == 'true'
+        run: |
+          git push
+        env:
+          GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}

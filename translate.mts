@@ -11,8 +11,7 @@ import {
 import OpenAI from "openai";
 import { fileURLToPath } from "url";
 import "dotenv/config";
-// load using import
-import { glob, globSync, globStream, globStreamSync, Glob } from "glob";
+
 
 if (os.platform() === "win32") {
   usePowerShell();
@@ -61,7 +60,7 @@ ${c}`
       json[key].zh = await translateZh(key);
     }
   }
-  fs.writeFileSync(p, JSON.stringify(json, null, 4));
+  fs.writeFileSync(p, JSON.stringify(json, null, 2));
 
   if ((await $`git diff README.zh.md`).toString().length > 0) {
     let s = await translateEN(fs.readFileSync("./README.zh.md").toString());

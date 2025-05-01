@@ -1,5 +1,5 @@
 import { BrowserWindow } from "electron";
-import { Logger } from "ts/polyfills/index.mjs";
+import { CONST, Logger } from "ts/polyfills/index.mjs";
 import { zx } from "../../../es6.mjs";
 const { fs, path, sleep } = zx;
 import dayjs from "dayjs";
@@ -13,24 +13,12 @@ import { getMessageService } from "../../../message_service.mjs";
 
 // import { ListPromptsRequestSchema, ListToolsRequestSchema } from "@modelcontextprotocol/sdk/types.js";
 
-const { Server } = await import(
-  /* webpackIgnore: true */ "@modelcontextprotocol/sdk/server/index.js"
-);
-const { SSEServerTransport } = await import(
-  /* webpackIgnore: true */ "@modelcontextprotocol/sdk/server/sse.js"
-);
-const {
-  ListToolsResultSchema,
-  CallToolRequestSchema,
-  CallToolResultSchema,
-  ListResourcesRequestSchema,
-  ReadResourceRequestSchema,
-  GetPromptRequestSchema,
+import {
+  Server,
+  SSEServerTransport,
   ListToolsRequestSchema,
-  ListPromptsRequestSchema,
-} = await import(
-  /* webpackIgnore: true */ "@modelcontextprotocol/sdk/types.js"
-);
+  CallToolRequestSchema,
+} from "ts/es6.mjs";
 
 /**
  * Type alias for a note object.
@@ -45,7 +33,7 @@ const NAME = "hyper_agent";
 const server = new Server(
   {
     name: NAME,
-    version: "0.1.0",
+    version: CONST.getVersion,
   },
   {
     capabilities: {
@@ -85,9 +73,9 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
   }
   return {
     tools: [
-      {
+      agents.data.length > 0 && {
         name: "call_agent",
-        description: `Call the Agent(Bot) by sending a message and return the result.`,
+        description: `Call the Agent by sending a message and return the result.`,
         inputSchema: {
           type: "object",
           properties: {
@@ -108,7 +96,7 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
           required: ["agent_name", "message"],
         },
       },
-      {
+      agents.data.length > 0 && {
         name: "add_task",
         description: `Schedule a task for the Agent to execute..`,
         inputSchema: {
@@ -144,14 +132,14 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
       },
       // {
       //   name: "list_allowed_agents",
-      //   description: `list all allow Agent(Bot)`,
+      //   description: `list all allow Agents`,
       //   inputSchema: {
       //     type: "object",
       //     properties: {},
       //     required: [],
       //   },
       // },
-    ],
+    ].filter((x) => x),
   };
 });
 
@@ -242,19 +230,21 @@ async function call_agent({
     throw new Error(`Agent ${agent_name} not found`);
   }
   let uid = v4();
+  if (process.env.myEnv == "dev") {
+    Logger.info(Object.keys(EVENT.callbacks), uid);
+  }
   return new Promise((resolve, reject) => {
     let callback = (m) => {
       // console.log("============================");
       // console.log("call_agent", m.uid, m.data);
 
-      if (m.uid == uid) {
-        if (m.error != undefined) {
-          reject(m.error);
-        } else {
-          resolve(m.data);
-        }
+      if (m.error != undefined) {
+        reject(m.error);
+      } else {
+        resolve(m.data);
       }
-      EVENT.clear("call_agent_res_" + uid);
+
+      // EVENT.clear("call_agent_res_" + uid);
     };
     EVENT.on("call_agent_res_" + uid, callback);
     getMessageService().sendToRenderer({
@@ -310,12 +300,13 @@ let transport;
 
 async function createServer(endpoint: string, response) {
   //   console.log("Received connection");
-  transport = new SSEServerTransport(endpoint, response);
-  await server.connect(transport);
-  server.onclose = async () => {
-    await server.close();
-    // process.exit(0);
-  };
+  // transport = new SSEServerTransport(endpoint, response);
+  // await server.connect(transport);
+  // server.onclose = async () => {
+  //   await server.close();
+  //   // process.exit(0);
+  // };
+  return server;
 }
 
 async function handlePostMessage(req, res) {
@@ -328,4 +319,5 @@ export const HyperAgent = {
   handlePostMessage,
   name: NAME,
   url: ``,
+  // type: "streamableHttp",
 };

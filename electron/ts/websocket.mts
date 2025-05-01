@@ -14,10 +14,19 @@ import { electronData } from "../../common/data";
 import { Command, CommandFactory } from "./command.mjs";
 
 import Router from "koa-router";
-import { HTTPPORT } from "./common/data.mjs";
+
 import { fs } from "./es6.mjs";
 import crypto from "crypto";
 import { getMessageService } from "./message_service.mjs";
+import { Config } from "./const.mjs";
+import { threadId } from "worker_threads";
+import { PassThrough } from "stream";
+import { sleep } from "./common/util.mjs";
+
+const uploadDir = "./uploads";
+const uploadDirPath = path.join(appDataDir, uploadDir);
+fs.ensureDirSync(uploadDirPath);
+fs.emptyDirSync(uploadDirPath);
 
 export function genRouter(c, prefix: string) {
   let functions = [];
@@ -67,12 +76,9 @@ export function genRouter(c, prefix: string) {
       }
     });
   }
-  const uploadDir = "./uploads";
 
-  fs.ensureDirSync(path.join(appDataDir, uploadDir));
   // console.log(prefix + "/uploads");
   router.post("/uploads", async (ctx) => {
-    // console.log("uploads");
     // 如果只上传一个文件，files.file就是文件对象
     const files = ctx.request.files;
     if (files && files.file) {
@@ -91,10 +97,12 @@ export function genRouter(c, prefix: string) {
 
       // 新的文件名 = 哈希值 + 原始扩展名
       const newFilename = `${hash}${ext}`;
-      const newPath = path.join(uploadDir, newFilename);
-      let filepath = path.join(process.cwd(), newPath);
+      // const newPath = path.join(uploadDir, newFilename);
+      let filepath = path.join(uploadDirPath, newFilename);
       // 重命名文件
-      await fs.rename(file.filepath, newPath);
+      await fs.move(file.filepath, filepath, {
+        overwrite: true,
+      });
 
       ctx.status = 200;
       ctx.body = {
@@ -109,13 +117,108 @@ export function genRouter(c, prefix: string) {
       throw new Error("No file uploaded");
     }
   });
+
   return router;
 }
 
+let prefix = "/" + encodeURI(electronData.get().password) + "/api";
 
+async function proxy(ctx: Context, next: () => Promise<any>) {
+  if (ctx.path.startsWith(prefix + "/ai")) {
+    // console.log("proxy", ctx.path, ctx.request.headers);
+    try {
+      const requestBody = ctx.request.body;
+      let baseURL = decodeURIComponent(
+        ctx.query["baseURL"] as string
+      );
+      if (process.env.NODE_ENV !== "production") {
+        console.log("baseURL: ", baseURL);
+      }
+      if (!baseURL) {
+        ctx.status = 400;
+        ctx.body = { success: false, message: "baseURL is required" };
+        return;
+      }
+      // console.log(ctx.request.headers);
+      delete ctx.request.headers["content-length"];
+      delete ctx.request.headers["origin"];
+      delete ctx.request.headers["host"];
+      let headers = {
+        ...(ctx.request.headers as any),
+        "HTTP-Referer": "https://hyperchat.dadigua.men",
+        "X-Title": "HyperChat",
+        // "Content-Type": "application/json",
+        // "X-Api-Key": ctx.request.headers["x-api-key"] as string,
+        // Authorization: ctx.request.headers["authorization"],
+      };
+      if (baseURL.endsWith("/")) {
+        baseURL = baseURL.slice(0, -1);
+      }
+      baseURL = (baseURL as string) + ctx.path.replace(prefix + "/ai", "");
+      // console.log("proxy", baseURL, headers, requestBody);
+      // 发起请求，但不立即解析响应体
+      const response = await fetch(baseURL, {
+        method: ctx.method,
+        headers: headers,
+        body: JSON.stringify(requestBody),
+      });
+      // console.log("proxy response", response.status, response.headers);
+      // 检查内容类型，确定是否为SSE
+      const contentType = response.headers.get("Content-Type");
+      const isSSE = contentType && contentType.includes("text/event-stream");
 
-const userSocketMap = new Map();
-let activeUser = undefined;
+      // 设置响应状态码和头部
+      ctx.status = response.status;
+      ctx.set("Content-Type", contentType || "application/json");
+      if (process.env.NODE_ENV !== "production") {
+        console.log("proxy", isSSE, contentType);
+      }
+      if (isSSE) {
+        // 处理SSE流
+        ctx.set("Content-Type", "text/event-stream");
+        ctx.set("Cache-Control", "no-cache");
+        ctx.set("Connection", "keep-alive");
+
+        // 获取响应体的可读流
+        const reader = response.body.getReader();
+
+        const stream = new PassThrough();
+
+        ctx.status = 200;
+        ctx.body = stream;
+
+        await next();
+        (async () => {
+          try {
+            while (true) {
+              const { done, value } = await reader.read();
+              if (done) {
+                stream.end();
+                break;
+              }
+              stream.write(value);
+            }
+          } catch (err) {
+            Logger.error("SSE streaming error:", err);
+            stream.end();
+          }
+        })();
+      } else {
+        // 非SSE请求按原方式处理
+        const data = await response.text();
+        ctx.body = data;
+      }
+    } catch (error) {
+      Logger.error("Proxy error:", error);
+      ctx.status = 500;
+      ctx.body = { success: false, message: error.message };
+    }
+  } else {
+    next();
+  }
+}
+
+electronData.initSync();
 export async function initHttp() {
   const app = new Koa() as any;
   app.use(cors() as any);
@@ -123,27 +226,42 @@ export async function initHttp() {
     koaBody({
       multipart: true, // 允许多部分（文件）上传
       formidable: {
-        uploadDir: "./uploads", // 设置上传文件的目录
+        uploadDir: uploadDirPath, // 设置上传文件的目录
         keepExtensions: true, // 保留文件的扩展名
       },
       jsonLimit: "1000mb",
     })
   );
-  const model_route = genRouter(
-    new CommandFactory(),
-    "/" + electronData.get().password + "/api"
-  );
+
+  const model_route = genRouter(new CommandFactory(), prefix);
   app.use(model_route.routes());
 
   Logger.info("serve: ", path.join(__dirname, "../web-build"));
-  Logger.info("password: ", electronData.initSync().password);
+  Logger.info("password: ", electronData.get().password);
   app.use(
     mount(
       "/" + electronData.get().password,
-      serve(path.join(__dirname, "../web-build")) as any
+      serve(path.join(__dirname, "../web-build"), {
+        maxage: 0,  // 禁用 HTML 文件缓存
+        setHeaders: (res, path) => {
+          // 为 HTML 文件设置特殊的缓存头
+          if (path.endsWith('.html')) {
+            res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+            res.setHeader('Pragma', 'no-cache');
+            res.setHeader('Expires', '0');
+          }
+        }
+      }) as any
+    )
+  );
+  app.use(
+    mount(
+      "/" + electronData.get().password + "/temp",
+      serve(path.join(appDataDir, "temp")) as any
     )
   );
 
+  app.use(proxy);
   // 错误处理
   app.on("error", (err, ctx) => {
     console.error("Server error", err);
@@ -158,11 +276,11 @@ export async function initHttp() {
     // pingInterval: 10 * 60 * 1000,
     maxHttpBufferSize: 1e10,
   });
-  let PORT = HTTPPORT;
+  let PORT = Config.port;
   PORT = await execFallback(PORT, (port) => {
-    server.listen(port, () => {});
+    server.listen(port, () => { });
   });
-  electronData.get().port = PORT;
+  Config.port = PORT;
   Logger.info("http server listen on: ", PORT);
   await electronData.save();
 
@@ -170,23 +288,8 @@ export async function initHttp() {
     console.log("error: ", e);
   });
   let main = io.of("/" + electronData.get().password + "/main-message");
-  main.on("connection", (socket) => {
-    Logger.info("用户已连接，socket ID:", socket.id);
-
-    // 用户登录时记录关系
-    socket.on("active", (userId) => {
-      userSocketMap.set(userId, socket.id);
-      activeUser = userId;
-      getMessageService().init(main, activeUser, userSocketMap);
-    });
-    socket.on("disconnect", () => {
-      // 遍历删除断开连接的socket
-      for (const [userId, socketId] of userSocketMap.entries()) {
-        if (socketId === socket.id) {
-          userSocketMap.delete(userId);
-        }
-      }
-    });
-  });
-  getMessageService().init(main, activeUser, userSocketMap);
+  let terminalMsg = io.of(
+    "/" + electronData.get().password + "/terminal-message"
+  );
+  getMessageService().init(main, terminalMsg);
 }

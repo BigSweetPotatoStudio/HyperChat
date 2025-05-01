@@ -33,25 +33,31 @@ const { fs } = zx;
 let browser;
 let launcher;
 
-const newFlags = ChromeLauncher.Launcher.defaultFlags().filter(
-  (flag) => flag !== "--disable-extensions" && flag !== "--mute-audio"
-);
-export async function createBrowser(log = false) {
-  if (browser) {
+
+
+export async function createBrowser(force = false, url = "") {
+  const newFlags = ChromeLauncher.Launcher.defaultFlags().filter(
+    (flag) => flag !== "--disable-extensions" && flag !== "--mute-audio"
+  );
+  if (getConfig().ChromeHeadless == "true") {
+    newFlags.push("--headless");
+  }
+  if (force == false && browser) {
     return browser;
   }
   let browserURL;
-  if (getConfig().isAutoLauncher) {
+  if (getConfig().ChromeIsUseLocal) {
     try {
+      fs.ensureDirSync(getConfig().ChromeUserData);
       launcher = await ChromeLauncher.launch({
-        startingUrl: getConfig().startingUrl,
-        userDataDir: false,
+        startingUrl: url || getConfig().ChromeStartingUrl,
+        userDataDir: getConfig().ChromeUserData || false,
         port: 9222,
         ignoreDefaultFlags: true,
         chromeFlags: newFlags,
         // handleSIGINT: true,
         logLevel: "silent",
-        chromePath: getConfig().chromePath || undefined,
+        chromePath: getConfig().ChromePath || undefined,
         // chromePath: "C:\\Users\\0laop\\AppData\\Local\\Google\\Chrome SxS\\Application\\chrome.exe",
       });
       // console.log("Chrome debugging port: " + launcher.port);
@@ -60,10 +66,10 @@ export async function createBrowser(log = false) {
       console.error(e);
     }
   } else {
-    browserURL = getConfig().browserURL;
+    browserURL = getConfig().ChromeBrowserURL;
   }
 
-  log && console.log("browserURL", browserURL);
+  console.log("browserURL", browserURL);
 
   browser = await new Promise(async (resolve, reject) => {
     let t = setTimeout(() => {
@@ -90,7 +96,7 @@ export async function createBrowser(log = false) {
         );
       });
   });
-  log && console.log("browser connected");
+  console.log("browser connected");
 
   return browser;
   // let testPage = await browser.newPage();
@@ -103,7 +109,10 @@ export async function createBrowser(log = false) {
 export const fetch = async (url: string) => {
   try {
     let browser = await createBrowser();
-    let page = await browser.newPage();
+    let page = await browser.newPage().catch(async (error) => {
+      browser = await createBrowser(true);
+      return await browser.newPage()
+    });
     await page.goto(url);
     await Promise.race([page.waitForNetworkIdle(), sleep(3000)]);
     let md = (await executeClientScript(
@@ -111,21 +120,27 @@ export const fetch = async (url: string) => {
       fs.readFileSync(path.join(__dirname, "./markdown.js"), "utf-8").toString()
     )) as string;
     await page.close();
+    if (getConfig().ChromeAutoClose == "true" && getConfig().ChromeIsUseLocal == "true") {
+      await browser.close();
+    }
     return md;
   } catch (e) {
     Logger.error(e);
     throw e;
   } finally {
+
   }
 };
 
 export const search = async (words: string) => {
   try {
     let browser = await createBrowser();
-
+    let page = await browser.newPage().catch(async (error) => {
+      browser = await createBrowser(true);
+      return await browser.newPage()
+    });
     let res = [];
-    let page = await browser.newPage();
-    if (getConfig().SEARCH_ENGINE == "bing") {
+    if (getConfig().SearchEngine == "bing") {
       await page.goto(
         `https://www.bing.com/search?q=` + encodeURIComponent(words)
       );
@@ -183,12 +198,16 @@ export const search = async (words: string) => {
         `
       );
       await page.close();
+      if (getConfig().ChromeAutoClose == "true" && getConfig().ChromeIsUseLocal == "true") {
+        await browser.close();
+      }
     }
     return res;
   } catch (e) {
     Logger.error(e);
     throw e;
   } finally {
+
   }
 };
 

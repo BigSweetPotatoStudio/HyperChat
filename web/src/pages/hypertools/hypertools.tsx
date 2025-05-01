@@ -20,8 +20,10 @@ import {
 import React, { useContext, useEffect, useRef, useState } from "react";
 import { call } from "../../common/call";
 import { t } from "../../i18n";
+import { HeaderContext } from "../../common/context";
 
 export function HpyerTools() {
+    const { globalState, updateGlobalState, mcpClients } = useContext(HeaderContext);
   const [url, setUrl] = useState("");
   return (
     <div className="lg:p-4">
@@ -38,10 +40,17 @@ export function HpyerTools() {
               />
               <Button
                 onClick={() => {
-                  call("openBrowser", [url]);
+                  call("hyperToolOpenBrowser", [url]);
                 }}
               >
-                {t`open`}
+                {t`Open`}
+              </Button>
+              <Button
+                onClick={() => {
+                  call("hyperToolOpenBrowser", ["https://github.com/BigSweetPotatoStudio/HyperChat"]);
+                }}
+              >
+                {t`Test`}
               </Button>
             </Space.Compact>
           </Form.Item>

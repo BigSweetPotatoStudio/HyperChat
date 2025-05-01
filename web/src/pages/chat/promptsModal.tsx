@@ -2,6 +2,7 @@ import {
   Button,
   Carousel,
   Checkbox,
+  Collapse,
   Form,
   FormInstance,
   FormProps,
@@ -9,27 +10,33 @@ import {
   InputNumber,
   List,
   Modal,
+  Popconfirm,
+  Popover,
   Radio,
   Segmented,
   Select,
   Slider,
   Space,
   Switch,
+  Tooltip,
   Tree,
   TreeDataNode,
   TreeProps,
+  TreeSelect,
   Typography,
   message,
 } from "antd";
 import React, { useContext, useEffect, useRef, useState } from "react";
 import { v4 as uuid } from "uuid";
 
-import { CloseOutlined, FormOutlined } from "@ant-design/icons";
-import { getClients, InitedClient } from "../../common/mcp";
+import { CloseOutlined, FormOutlined, SearchOutlined, SmileOutlined } from "@ant-design/icons";
+import { InitedClient } from "../../common/mcp";
 import { GPT_MODELS } from "../../../../common/data";
 import { t } from "../../i18n";
 import { NumberStep } from "../../common/numberStep";
-
+import EmojiPicker from 'emoji-picker-react';
+import { HeaderContext } from "../../common/context";
+import { Editor } from "../../components/editor";
 interface Values {
   label: string;
   prompt: string;
@@ -54,15 +61,13 @@ const ModalForm: React.FC<CollectionCreateFormProps> = ({
   const refresh = () => {
     setNum((x) => x + 1);
   };
-
+  const { mcpClients } = useContext(HeaderContext);
   const [form] = Form.useForm();
-  const [clients, setClients] = React.useState<InitedClient[]>([]);
+
   useEffect(() => {
     onFormInstanceReady(form);
     (async () => {
-      getClients().then((x) => {
-        setClients(x);
-      });
+
       GPT_MODELS.init().then(() => {
         refresh();
       });
@@ -79,17 +84,22 @@ const ModalForm: React.FC<CollectionCreateFormProps> = ({
         label={t`Name`}
         rules={[{ required: true, message: `Please enter the name` }]}
       >
-        <Input />
+        <Input addonBefore={<Popover destroyTooltipOnHide={false} trigger="click" title={t`please select emoji!`} content={<EmojiPicker onEmojiClick={(emoji) =>
+          form.setFieldValue("label", emoji.emoji + form.getFieldValue("label"))
+        } />}><SmileOutlined className=" cursor-pointer" /></Popover>} />
       </Form.Item>
       <Form.Item
         name="prompt"
         label={t`System Prompt`}
         rules={[{ required: true, message: `Please enter System Prompt` }]}
       >
-        <Input.TextArea placeholder="Please enter System Prompt" rows={4} />
+        {/* <Input.TextArea placeholder="Please enter System Prompt" rows={4} /> */}
+        <Editor style={{ height: "150px" }} />
       </Form.Item>
       <Form.Item name="modelKey" label={t`LLM`}>
         <Select
+          showSearch
+          optionFilterProp="label"
           placeholder={t`Please select default LLM`}
           allowClear
           options={GPT_MODELS.get().data.map((x) => {
@@ -104,18 +114,30 @@ const ModalForm: React.FC<CollectionCreateFormProps> = ({
         name="allowMCPs"
         label={t`allowMCPs`}
         rules={[
-          { required: false, message: `Please select the allowed MCP client.` },
+          { required: false, message: t`Please select allowed MCP` },
         ]}
       >
-        <Checkbox.Group
-          options={clients.map((x) => {
+        <TreeSelect
+          multiple
+          treeCheckable
+          placeholder={t`Please select allowed MCP`}
+          showCheckedStrategy={TreeSelect.SHOW_PARENT}
+          treeData={mcpClients.map((x) => {
             return {
-              label: x.name,
+              title: x.name,
+              key: x.name,
               value: x.name,
-              disabled:
-                form.getFieldValue("callable") && x.name == "hyper_agent"
-                  ? true
-                  : false,
+              children: x.tools.map((t) => {
+                return {
+                  title: (
+                    <Tooltip title={t.function.description}>
+                      <span>{t.origin_name || t.function.name}</span>
+                    </Tooltip>
+                  ),
+                  key: t.restore_name,
+                  value: t.restore_name,
+                };
+              }),
             };
           })}
         />
@@ -132,7 +154,7 @@ const ModalForm: React.FC<CollectionCreateFormProps> = ({
         label={t`attachedDialogueCount`}
         tooltip={t`Number of sent Dialogue Message attached per request`}
       >
-        <NumberStep defaultValue={20} max={40} />
+        <NumberStep defaultValue={10} max={20} />
       </Form.Item>
       <Form.Item
         name="confirm_call_tool"
@@ -146,15 +168,15 @@ const ModalForm: React.FC<CollectionCreateFormProps> = ({
       </Form.Item>
       <Form.Item name="callable" label={t`Callable`} valuePropName="checked">
         <Checkbox
-          onChange={() => {
-            form.setFieldValue(
-              "allowMCPs",
-              (form.getFieldValue("allowMCPs") || []).filter(
-                (x) => x != "hyper_agent",
-              ),
-            );
-            refresh();
-          }}
+        // onChange={() => {
+        //   form.setFieldValue(
+        //     "allowMCPs",
+        //     (form.getFieldValue("allowMCPs") || []).filter(
+        //       (x) => x != "hyper_agent",
+        //     ),
+        //   );
+        //   refresh();
+        // }}
         >
           {t`Allowed to be called by 'hyper_agent'`}
         </Checkbox>
@@ -165,6 +187,24 @@ const ModalForm: React.FC<CollectionCreateFormProps> = ({
           rows={2}
         />
       </Form.Item>
+      <Collapse>
+        <Collapse.Panel key="1" header={t`More Settings`}>
+          <Form.Item name="fallbackModelKey" label={t`TaskFallbackLLM`}>
+            <Select
+              showSearch
+              optionFilterProp="label"
+              placeholder={t`Please select TaskFallbackLLM`}
+              allowClear
+              options={GPT_MODELS.get().data.map((x) => {
+                return {
+                  label: x.name,
+                  value: x.key,
+                };
+              })}
+            />
+          </Form.Item>
+        </Collapse.Panel>
+      </Collapse>
     </Form>
   );
 };
@@ -184,8 +224,12 @@ export const PromptsModal: React.FC<CollectionCreateFormModalProps> = ({
 }) => {
   const [formInstance, setFormInstance] = useState<FormInstance>();
   initialValues.allowMCPs = initialValues.allowMCPs || [];
-  initialValues.confirm_call_tool = initialValues.confirm_call_tool == undefined ? false : initialValues.confirm_call_tool;
-
+  initialValues.confirm_call_tool =
+    initialValues.confirm_call_tool == undefined
+      ? false
+      : initialValues.confirm_call_tool;
+  initialValues.callable =
+    initialValues.callable == undefined ? true : initialValues.callable;
   return (
     <Modal
       width={800}

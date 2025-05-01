@@ -4,5 +4,10 @@
         "hyper-chat": "cli.js"
     },
     "main": "js/main_no_electron.js",
-    "devDependencies": {}
+    "devDependencies": {},
+    "files": [
+        "web-build",
+        "js",
+        "README.md"
+    ]
 }

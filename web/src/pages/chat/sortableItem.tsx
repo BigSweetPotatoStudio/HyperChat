@@ -9,6 +9,8 @@ import {
   FunctionOutlined,
   SwapOutlined,
 } from "@ant-design/icons";
+import { getFirstCharacter } from "../../common";
+import { Tooltip } from "antd";
 
 export function SortableItem(props) {
   const { attributes, listeners, setNodeRef, transform, transition } =
@@ -27,6 +29,7 @@ export function SortableItem(props) {
       {...attributes}
       {...listeners}
     >
+      <Tooltip title={props.item.description}>
       <div
         className="relative h-full w-full"
         style={{
@@ -49,8 +52,11 @@ export function SortableItem(props) {
           {props.item.callable && (
             <FunctionOutlined className="text-blue-400" />
           )}
+          {props.item.type == "builtin" && (
+            <span className="text-red-400" >{props.item.type}</span>
+          )}
         </div>
-        <div
+        {props.item.type != "builtin" && <div
           style={{
             display: hover ? "block" : "none",
           }}
@@ -74,17 +80,13 @@ export function SortableItem(props) {
             <EditOutlined className="ml-2 cursor-pointer text-blue-400 hover:text-blue-800" />
           </span>
         </div>
-
+        }
         <div className="absolute bottom-0 line-clamp-2 w-full bg-slate-600 text-center text-sm text-slate-50">
           {props.item.label}
         </div>
       </div>
+      </Tooltip>
     </div>
   );
 }
 
-function getFirstCharacter(str) {
-  // 使用正则表达式匹配第一个emoji或者普通的字符
-  const match = str.match(/\p{Extended_Pictographic}|\S/u);
-  return match ? match[0] : null;
-}

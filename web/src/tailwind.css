@@ -6,6 +6,15 @@
 @tailwind components;
 @tailwind utilities;
 
+.icon {
+  width: 1em;
+  height: 1em;
+  vertical-align: -0.15em;
+  fill: currentColor;
+  overflow: hidden;
+}
+
+
 .ant-form-item-label {
   @apply text-gray-900;
   @apply font-bold;
@@ -13,13 +22,13 @@
 
 main {
   /* height: calc(100vh - 56px) !important; */
-
-  height: calc(var(--vh, 1vh) * 100 - 56px) !important;;
+  overflow-y: hidden !important;
+  height: calc(var(--vh, 1vh) * 100 - 56px) !important;
 }
 
 ::-webkit-scrollbar {
-  width: 8px; /* 滚动条宽度 */
-  height: 8px; /* 滚动条高度 */
+  width: 6px; /* 滚动条宽度 */
+  height: 6px; /* 滚动条高度 */
 }
 
 ::-webkit-scrollbar-track {
@@ -38,6 +47,7 @@ main {
 .markdown-body > pre > code {
   white-space: pre-wrap;
   overflow-wrap: break-word;
+  padding: 0.5rem;
 }
 
 .my-prefix-layout .my-prefix-layout-content {
@@ -45,14 +55,45 @@ main {
   padding-inline: 0.5rem;
 }
 
+.markdown-body hr:not(code hr) {
+  margin: 0.5rem 0 !important;
+}
+.markdown-body p:not(code p) {
+  margin: 0.5rem 0 !important;
+}
+.markdown-body ol:not(code ol) {
+  margin: 0.5rem 0 !important;
+}
+.markdown-body ul:not(code ul) {
+  margin: 0.5rem 0 !important;
+}
+.markdown-body h1:not(code h1) {
+  margin: 0.5rem 0 !important;
+}
+.markdown-body h2:not(code h2) {
+  margin: 0.5rem 0 !important;
+}
+.markdown-body h3:not(code h3) {
+  margin: 0.5rem 0 !important;
+}
+.markdown-body h4:not(code h4) {
+  margin: 0.5rem 0 !important;
+}
+.markdown-body h5:not(code h5) {
+  margin: 0.5rem 0 !important;
+}
+.markdown-body h6:not(code h6) {
+  margin: 0.5rem 0 !important;
+}
+
 .markdown-body ol,
 ul,
 menu {
   list-style: revert;
-  /* color: red;
-  font-size: 1.5em; */
 }
-
+div[role="user"] .ant-bubble-content {
+    min-height: 0 !important;
+}
 div[role="user"] .ant-bubble-content-wrapper {
   align-items: flex-end;
 }
@@ -62,14 +103,29 @@ div[role="system"] .ant-bubble-content-wrapper {
 }
 
 .no-attached {
-  /* opacity: 0.8; */
   background: repeating-linear-gradient(
     135deg,
-    #d3d3d3,
-    /* 灰色 */ #d3d3d3 10px,
+    #eeeeee,
+    /* 灰色 */ #eeeeee 10px,
     #ffffff 10px,
     #ffffff 20px
   );
+}
+
+.ant-bubble {
+  /* flex-wrap: wrap; */
+  position: relative;
+}
+
+/* 选中最后一个 .no-attached（即使标签不同） */
+.no-attached:not(:has(~ .no-attached))::after {
+  content: "---Context Cleared---";
+  /* color: #ccc; */
+  width: 100%;
+  text-align: center;
+  bottom: -1rem;
+  position: absolute;
+  color: red;
 }
 
 .myworkspace .ant-tabs-content {
@@ -101,4 +157,144 @@ div[role="system"] .ant-bubble-content-wrapper {
   overflow: hidden;
   /* text-overflow: ellipsis; */
   white-space: nowrap;
+}
+
+.my-modal .ant-modal-wrap {
+  height: 0% !important;
+}
+
+.my-modal .ant-modal {
+  position: fixed !important;
+  /* left: 50%;
+  transform: translateX(-50%); */
+  right: 0;
+  top: 0;
+}
+
+.markdown-body pre {
+  padding: 0;
+}
+
+.modal-tools .ant-btn {
+  font-size: 0.8rem;
+}
+
+.my-collapse .ant-collapse-header {
+  padding-top: 0.2rem !important;
+  padding-bottom: 0.2rem !important;
+}
+
+.reasoning_content {
+
+  .markdown-body hr:not(code hr) {
+    margin: 0.25rem 0 !important;
+  }
+  .markdown-body p:not(code p) {
+    margin: 0.25rem 0 !important;
+  }
+  .markdown-body ol:not(code ol) {
+    margin: 0.25rem 0 !important;
+  }
+  .markdown-body ul:not(code ul) {
+    margin: 0.25rem 0 !important;
+  }
+  .markdown-body h1:not(code h1) {
+    margin: 0.25rem 0 !important;
+  }
+  .markdown-body h2:not(code h2) {
+    margin: 0.25rem 0 !important;
+  }
+  .markdown-body h3:not(code h3) {
+    margin: 0.25rem 0 !important;
+  }
+  .markdown-body h4:not(code h4) {
+    margin: 0.25rem 0 !important;
+  }
+  .markdown-body h5:not(code h5) {
+    margin: 0.25rem 0 !important;
+  }
+  .markdown-body h6:not(code h6) {
+    margin: 0.25rem 0 !important;
+  }
+}
+
+.ant-bubble-content{
+  padding: 0.5rem !important;
+}
+
+.market .ant-tabs-nav {
+  margin-bottom: 0 !important;
+}
+
+@keyframes textColorCycle {
+  0% { color: #9ca3af; }
+  50% { color: #22c55e; }
+  100% { color: #9ca3af; }
+}
+.animate-text-color {
+  animation: textColorCycle 1s infinite;
+}
+
+.my-bottom {
+  outline: none;
+    position: relative;
+    display: inline-flex;
+    gap: 0.5rem;
+    align-items: center;
+    justify-content: center;
+    font-weight: 400;
+    white-space: nowrap;
+    text-align: center;
+    background-image: none;
+    background: transparent;
+    border: 1px solid transparent;
+    cursor: pointer;
+    transition: all 0.2s cubic-bezier(0.645, 0.045, 0.355, 1);
+    user-select: none;
+    touch-action: manipulation;
+    color: rgba(0, 0, 0, 0.88);
+}
+
+.my-editor{
+  position: relative;
+  border: 1px solid #d9d9d9;
+  /* transition: all 0.3s; */
+  border-radius: 6px;
+  overflow: hidden; /* 确保内部元素不溢出圆角 */
+  background: #fff;
+  /* padding-bottom: 16px; */
+}
+
+.my-sender-container{
+  padding-top: 4px;
+  border: 1px solid #d9d9d9;
+  border-radius: 10px;
+  overflow: hidden; /* 确保内部元素不溢出圆角 */
+}
+
+
+.my-sender-container .ant-sender-content{
+  padding: 0;
+  height: 0;
+  display: none;
+}
+
+.my-sender-container .ant-sender{
+  border: 0px;
+  box-shadow: none;
+  background: transparent;
+}
+
+.my-table-row:hover .menus{
+  display: inline-block;
+}
+
+.my-table-row .ant-table-cell{
+  border: 0px !important;
+  padding-top: 0px !important;
+  padding-bottom: 0px !important;
+}
+
+.my-spin .ant-spin-container {
+  height: 100%;
 }

@@ -55,7 +55,7 @@ export async function fetch(url: string) {
     Logger.info("Page loaded: " + url, __dirname);
     let md = await executeClientScript(
       win,
-      fs.readFileSync(path.join(__dirname, "./turndown.js"), "utf-8").toString()
+      fs.readFileSync(path.join(__dirname, "./markdown.js"), "utf-8").toString()
     );
     return md as string;
   } catch (e) {
@@ -78,7 +78,7 @@ export async function search(words: string) {
   // win.webContents.openDevTools();
 
   try {
-    if (getConfig().SEARCH_ENGINE == "bing") {
+    if (getConfig().SearchEngine == "bing") {
       await win.loadURL(
         `https://www.bing.com/search?q=` + encodeURIComponent(words),
         {

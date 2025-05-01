@@ -46,9 +46,11 @@ import {
 } from "lucide-react";
 import { debounce } from "../../common";
 import {
+  CaretRightOutlined,
   CloudSyncOutlined,
   CopyOutlined,
   ExclamationCircleFilled,
+  StopOutlined,
 } from "@ant-design/icons";
 import { sleep } from "../../common/sleep";
 import dayjs from "dayjs";
@@ -56,10 +58,11 @@ import { useForm } from "antd/es/form/Form";
 import { e } from "../../common/service";
 import { t } from "../../i18n";
 import { NewTaskModal } from "./newTaskModal";
-import { Agents, TaskList } from "../../../../common/data";
+import { Agents, electronData, TaskList } from "../../../../common/data";
 import { v4 } from "uuid";
 import { useLocation, useNavigate } from "react-router-dom";
 import { HeaderContext } from "../../common/context";
+import { Icon } from "../../components/icon";
 
 export function TaskListPage() {
   const [num, setNum] = useState(0);
@@ -180,19 +183,31 @@ export function TaskListPage() {
     (async () => {
       await TaskList.init();
       await Agents.init();
+      await electronData.init();
       refresh();
     })();
   }, []);
 
   return (
-    <div>
-      <Button
-        type="primary"
-        onClick={() => {
-          setCurrRow({});
-          setVisible(true);
-        }}
-      >{t`Create Task`}</Button>
+    <div className="overflow-auto h-full">
+      <div className="flex gap-2">
+        <Button
+          type="primary"
+          onClick={() => {
+            setCurrRow({});
+            setVisible(true);
+          }}
+        >{t`Create Task`}</Button>
+
+        {/* <Button icon={<CaretRightOutlined />}>{t`Disable running tasks on this machine`}</Button>
+        <Button icon={<StopOutlined />}>{t`Enable running tasks on this machine`}</Button> */}
+        <span className="my-bottom">{t`Main Switch`}: <Switch checked={electronData.get().runTask} onChange={async (checked) => {
+          electronData.get().runTask = checked;
+          await electronData.save();
+          refresh();
+        }}></Switch></span>
+      </div>
+
 
       <Table
         pagination={false}
@@ -232,7 +247,7 @@ export function TaskListPage() {
               refresh();
               setVisible(false);
             }
-          } catch {}
+          } catch { }
         }}
       />
     </div>

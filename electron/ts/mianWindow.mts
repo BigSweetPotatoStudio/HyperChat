@@ -3,6 +3,7 @@ import {
   BrowserWindow,
   ipcMain,
   Menu,
+  MenuItem,
   nativeImage,
   shell,
   Tray,
@@ -13,6 +14,7 @@ import path from "path";
 
 import { electronData } from "../../common/data";
 import p from "../package.json" assert { type: "json" };
+import { Config } from "./const.mjs";
 
 let title = `${p.productName}-${app.getVersion()} by Dadigua`;
 Logger.info("title   : ", title);
@@ -22,7 +24,7 @@ export const createWindow = () => {
     width: 1440,
     height: 900,
     title: title,
-    autoHideMenuBar: process.env.myEnv == "prod",
+    autoHideMenuBar: true,
     // titleBarOverlay: {
     //   height: 40,
     //   color: "rgba(255,255,255,0.1)",
@@ -38,10 +40,21 @@ export const createWindow = () => {
       webSecurity: false,
       preload: path.join(__dirname, "./preload.js"), // 设置预加载的脚本
       sandbox: false,
-      allowRunningInsecureContent: true
+      allowRunningInsecureContent: true,
     },
     icon: path.join(__dirname, "../web-build/assets/favicon.png"),
   });
+  // const menu = new Menu()
+  // menu.append(new MenuItem({
+  //   label: 'DevTools',
+  //   submenu: [{
+  //     role: 'help',
+  //     accelerator: process.platform === 'darwin' ? 'Alt+Cmd+I' : 'Ctrl+Shift+I',
+  //     click: () => { win.webContents.openDevTools(); }
+  //   }]
+  // }))
+
+  // Menu.setApplicationMenu(menu)
 
   // win.maximize()
   win.show();
@@ -50,9 +63,7 @@ export const createWindow = () => {
   } else {
     win
       .loadURL(
-        `http://localhost:${electronData.get().port}/${
-          electronData.get().password
-        }/#/`
+        `http://localhost:${Config.port}/${electronData.get().password}/#/`
       )
       .catch((e) => {
         let indexFile = path.join(__dirname, "../web-build/index.html");

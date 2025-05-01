@@ -15,6 +15,7 @@ interface Window {
   translate: any;
   tools: any;
   // clarity: any;
+  getTools: any;
 }
 
 declare module "*.png" {

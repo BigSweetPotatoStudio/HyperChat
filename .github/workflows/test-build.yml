@@ -7,8 +7,8 @@ on:
     branches-ignore:
       - doc
       - alpha
-
-
+      - stable
+      - main
 
 jobs:
   test-build:
@@ -25,29 +25,66 @@ jobs:
         uses: actions/checkout@v3.0.0
 
       - name: Install Node.js
-        uses: actions/setup-node@v3.0.0
+        uses: actions/setup-node@v4.0.0
         with:
           node-version: "20"
 
-      - uses: pnpm/action-setup@v4
-        with:
-          version: 9
 
       - name: Install -g
         run: npm install -g cross-env zx
 
-      - name: Install Dependencies
-        run: npm install
-
-      - name: Install Web Dependencies
-        run: cd web && pnpm install
-        
       - name: Install python-setuptools
         if: matrix.os == 'macos-latest'
         run: brew install python-setuptools
 
-      - name: Install Electron Dependencies
-        run: cd electron && npm install
+        # 根目录的依赖缓存
+      - name: Cache root dependencies
+        uses: actions/cache@v3
+        id: cache-root
+        with:
+          path: node_modules
+          key: ${{ matrix.os }}-node-${{ hashFiles('**/package-lock.json') }}
+          restore-keys: |
+            ${{ matrix.os }}-node-
+
+      # 安装根目录依赖（如果缓存未命中）
+      - name: Install root dependencies
+        if: steps.cache-root.outputs.cache-hit != 'true'
+        run: npm install
+
+      # web 目录的依赖缓存
+      - name: Cache web dependencies
+        uses: actions/cache@v3
+        id: cache-web
+        with:
+          path: web/node_modules
+          key: ${{ matrix.os }}-node-web-${{ hashFiles('web/package-lock.json') }}
+          restore-keys: |
+            ${{ matrix.os }}-node-web-
+
+      # 安装 web 目录依赖（如果缓存未命中）
+      - name: Install web dependencies
+        if: steps.cache-web.outputs.cache-hit != 'true'
+        run: npm install
+        working-directory: ./web
+
+      # electron 目录的依赖缓存
+      - name: Cache electron dependencies
+        uses: actions/cache@v3
+        id: cache-electron
+        with:
+          path: electron/node_modules
+          key: ${{ matrix.os }}-node-electron-${{ hashFiles('electron/package-lock.json') }}
+          restore-keys: |
+            ${{ matrix.os }}-node-electron-
+
+      # 安装 electron 目录依赖（如果缓存未命中）
+      - name: Install electron dependencies
+        if: steps.cache-electron.outputs.cache-hit != 'true'
+        run: npm install
+        working-directory: ./electron
+
+      - run: npm run prod_node
 
       - name: Build Electron App (macOS only)
         if: matrix.os == 'macos-latest'
@@ -58,22 +95,23 @@ jobs:
           CSC_LINK: ${{ secrets.CSC_LINK }}
           CSC_KEY_PASSWORD: ${{ secrets.CSC_KEY_PASSWORD }}
           APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
-          # GH_TOKEN: ${{ secrets.GH_TOKEN }} // 不要上传
+          # GH_TOKEN: ${{ secrets.GH_TOKEN }}
           USE_HARD_LINKS: false
           MYRUNENV: github
 
+          
       - name: Build Electron App (widnows+linux)
         if: matrix.os != 'macos-latest'
         run: npm run prod
         env:
-          # GH_TOKEN: ${{ secrets.GH_TOKEN }} // 不要上传
+          # GH_TOKEN: ${{ secrets.GH_TOKEN }}
           MYRUNENV: github
 
       - name: upload artifacts
         uses: actions/upload-artifact@v4
         with:
           name: ${{ matrix.os }}
-          path: dist
+          path: electron/dist
 
       # - name: Publish Release
       #   uses: softprops/action-gh-release@v2

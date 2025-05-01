@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { SmileFilled } from "@ant-design/icons";
+import { CloudSyncOutlined, CommentOutlined, SmileFilled } from "@ant-design/icons";
 import {
   Outlet,
   Link,
@@ -19,12 +19,16 @@ import { TaskListPage } from "./pages/hyperAgent/TaskList";
 import { t } from "./i18n";
 import { TaskResultsPage } from "./pages/hyperAgent/TaskResults";
 import { WebdavSetting } from "./pages/setting/sync";
+import { TerminalPage } from "./pages/setting/terminal";
+import { Icon } from "./components/icon";
+import { TestPage } from "./pages/TestPage";
+import { VariableList } from "./pages/variableList/variableList";
 type RouteType = {
   path: string;
   name: React.ReactNode;
   hideInMenu?: boolean;
   icon?: React.ReactNode;
-  component: JSX.Element | { wait: (props) => JSX.Element };
+  component: JSX.Element;
   routes?: Array<RouteType>;
 };
 
@@ -38,12 +42,12 @@ export function getLayoutRoute() {
         path: "/home",
         name: t`Home`,
         hideInMenu: true,
-        component: <Chat />,
+        component: <WorkSpace />,
       },
       {
         path: "/Chat",
         name: t`Chat`,
-        icon: "💬",
+        icon: <CommentOutlined />,
         component: <WorkSpace />,
       },
       // {
@@ -55,25 +59,19 @@ export function getLayoutRoute() {
       {
         path: "/Market",
         name: t`MCP Extensions`,
-        icon: "💻",
+        icon: <Icon name="mcp"></Icon>,
         component: <Market />,
       },
       {
         path: "/KnowledgeBase",
         name: t`Knowledge Base(Exp)`,
-        icon: "📚",
+        icon: <Icon name="knowledgebase"></Icon>,
         component: <KnowledgeBase />,
       },
-      // {
-      //   path: "/HyperTools",
-      //   name: t`HyperTools`,
-      //   icon: "🛠️",
-      //   component: <HpyerTools />,
-      // },
       {
         path: "/Task",
         name: t`TaskList`,
-        icon: "📅",
+        icon: <Icon name="task"></Icon>,
         component: <Container from="/Task" default="List" />,
         routes: [
           {
@@ -93,37 +91,58 @@ export function getLayoutRoute() {
       {
         path: "/Setting",
         name: t`Settings`,
-        icon: "⚙️",
+        icon: <Icon name="system-copy" />,
         component: <Container from="/Setting" default="Setting" />,
         routes: [
           {
             path: "/Setting",
             name: t`Settings`,
-            icon: "📦",
+            icon: <Icon name="resources" />,
             component: <Setting />,
           },
           {
             path: "/WebdavSetting",
             name: t`WebdavSetting`,
-            icon: "☁️",
+            icon: <CloudSyncOutlined />,
             component: <WebdavSetting />,
           },
           {
             path: "/HyperTools",
             name: t`HyperTools`,
-            icon: "🛠️",
+            icon: <Icon name="tool" />,
             component: <HpyerTools />,
           },
+
+          {
+            path: "/VariableList",
+            name: t`VariableList`,
+            icon: <Icon name="var"></Icon>,
+            component: <VariableList />,
+          }
+
+          // {
+          //   path: "/Terminal",
+          //   name: t`Terminal`,
+          //   icon: "⌨️",
+          //   component: <TerminalPage />,
+          // }
+
         ],
-        // component: <Setting />,
       },
+
+      // {
+      //   path: "/TestPage",
+      //   name: t`TestPage`,
+      //   icon: "⌨️",
+      //   component: <TestPage />,
+      // }
     ],
   };
 
   function Container(props: { from: string; default?: string }) {
     const navigate = useNavigate();
     const location = useLocation();
-    // console.log("location.pathname", location.pathname);
+
     useEffect(() => {
       if (props.default && location.pathname == props.from) {
         setTimeout(() => {

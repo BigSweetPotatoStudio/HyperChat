@@ -81,7 +81,6 @@ class CheckUpdate extends ICheckUpdate {
 }
 import { getMessageService } from "ts/message_service.mjs";
 async function sendToRender(type, data) {
-  // const { getMessageService } = await import("../message_service.mjs");
   getMessageService().sendAllToRenderer({
     type: type,
     data: data,
