@@ -120,7 +120,7 @@ export type Tool_Call = {
 
 
 export type MyMessage = OpenAI.Chat.Completions.ChatCompletionMessageParam & {
-  tool_calls?: Tool_Call[]; // openai tool call
+
   content_status?:
   | "loading"
   | "success"
@@ -138,6 +138,7 @@ export type MyMessage = OpenAI.Chat.Completions.ChatCompletionMessageParam & {
     data?: string;
   }>;
   reasoning_content?: string;
+  content_tool_calls?: Tool_Call[]; // openai tool call
   content_context?: any;
   content_attached?: boolean;
   content_date?: number;
@@ -209,6 +210,7 @@ export type GPT_MODELS_TYPE = {
   supportTool: boolean;
   call_tool_step?: number;
   type?: "llm" | "embedding";
+  toolMode?: "standard" | "compatible";
   isStrict: boolean;
   isDefault?: boolean;
 }

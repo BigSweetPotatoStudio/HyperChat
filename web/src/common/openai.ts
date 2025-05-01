@@ -22,9 +22,10 @@ import imageBase64 from "../common/openai_image_base64.txt";
 import { v4 } from "uuid";
 import dayjs from "dayjs";
 import { isOnBrowser } from "./const";
-import type { MyMessage, Tool_Call } from "../../../common/data";
+import type { GPT_MODELS_TYPE, MyMessage, Tool_Call } from "../../../common/data";
 import { OpenAICompatibility } from "./openai-compatibility";
 import type OpenAI from "openai";
+import { extractTool } from "./ai/prompt";
 // import OpenAICompatibility from "openai";
 
 export {
@@ -56,25 +57,26 @@ export class OpenAiChannel {
       baseURL: string;
       apiKey: string;
       model?: string;
-      provider?: string;
+      // provider?: string;  
+      // call_tool_step?: number;
+      // supportTool?: boolean;
+      // supportImage?: boolean;
+      // isStrict?: boolean;
+
       requestType?: "complete" | "stream";
-      call_tool_step?: number;
-      supportTool?: boolean;
-      supportImage?: boolean;
-      isStrict?: boolean;
-      allowMCPs?: string[];
-      temperature?: number;
+
+      allowMCPs?: string[]; // agentData
+      temperature?: number; // agentData
       confirm_call_tool?: boolean;
       confirm_call_tool_cb?: (tool: Tool_Call) => void;
       messages_format_callback?: (messages: MyMessage) => Promise<void>;
-    },
+    } & Partial<GPT_MODELS_TYPE>,
     public messages: MyMessage[] = [],
   ) {
 
     this.openai = new OpenAICompatibility({
       baseURL: options.baseURL,
       apiKey: options.apiKey, // This is the default and can be omitted
-      provider: options.provider,
       dangerouslyAllowBrowser: process.env.runtime !== "node",
       defaultHeaders: {
         "HTTP-Referer": "https://hyperchat.dadigua.men", // Optional. Site URL for rankings on openrouter.ai.
@@ -104,7 +106,7 @@ export class OpenAiChannel {
         }
         return response;
       },
-    });
+    }, this.options);
 
 
     this.options.temperature =
@@ -219,7 +221,7 @@ export class OpenAiChannel {
   ): Promise<string> {
     this.status = "runing";
     this.index++;
-    this.openai.provider = this.options.provider;
+    this.openai.modelData = this.options;
     this.openai.baseURL = this.options.baseURL;
     this.openai.apiKey = this.options.apiKey;
     let res = await this._completion(onUpdate, call_tool, step, {
@@ -268,7 +270,7 @@ export class OpenAiChannel {
       role: "assistant",
       content: "" as any,
       reasoning_content: "",
-      tool_calls: undefined,
+      content_tool_calls: [],
       content_status: "loading",
       content_attachment: [],
       content_usage: {
@@ -286,9 +288,11 @@ export class OpenAiChannel {
     onUpdate && onUpdate(this.lastMessage.content as string);
     try {
       if (this.options.requestType === "stream") {
+        let format_message = await this.messages_format(messages);
+        onUpdate && onUpdate(res.content as string);
         const stream = await this.openai.completion(
           {
-            messages: await this.messages_format(messages),
+            messages: format_message,
             model: this.options.model,
             stream: true,
             stream_options: {
@@ -350,7 +354,7 @@ export class OpenAiChannel {
 
           res.content += (chunk.choices[0]?.delta?.content || "");
           res.reasoning_content +=
-            (chunk.choices[0]?.delta as any)?.reasoning_content || "";
+            (chunk.choices[0]?.delta as any)?.reasoning_content || (chunk.choices[0]?.delta as any)?.reasoning || "";
           res.content_date = Date.now();
           onUpdate && onUpdate(res.content as string);
         }
@@ -359,9 +363,11 @@ export class OpenAiChannel {
         // }
         onUpdate && onUpdate(res.content as string);
       } else {
+        let format_message = await this.messages_format(messages);
+        onUpdate && onUpdate(res.content as string);
         const chatCompletion = await this.openai.completion(
           {
-            messages: await this.messages_format(messages),
+            messages: format_message,
             model: this.options.model,
             tools: tools && this.tools_format(tools),
             temperature: this.options.temperature,
@@ -416,9 +422,7 @@ export class OpenAiChannel {
         }
 
         this.lastMessage.content = lastMessage.content;
-        this.lastMessage.reasoning_content = (
-          lastMessage as any
-        ).reasoning_content;
+        this.lastMessage.reasoning_content = (lastMessage as any).reasoning_content || (lastMessage as any).reasoning;
       }
     } catch (e) {
       this.lastMessage.content_status = "error";
@@ -435,6 +439,23 @@ export class OpenAiChannel {
     // }
     onUpdate && onUpdate(this.lastMessage.content as string);
 
+    if (this.options.toolMode == "compatible" && (this.lastMessage.content.toString()).includes("<tool_use>")) {
+      let res = extractTool(this.lastMessage.content.toString());
+      if (res) {
+        tool_calls.push({
+          index: 0,
+          id: res.name,
+          type: "function",
+          function: {
+            name: res.name,
+            arguments: JSON.stringify(res.params),
+            argumentsOBJ: res.params,
+          }
+        });
+        // this.lastMessage.content = "";
+      }
+    }
+
     tool_calls.forEach((tool) => {
       let localtool = tools.find((t) => t.function.name === tool.function.name);
       if (localtool) {
@@ -448,7 +469,7 @@ export class OpenAiChannel {
     onUpdate && onUpdate(this.lastMessage.content as string);
     // console.log("tool_calls", tool_calls, call_tool);
     if (tool_calls.length > 0 && call_tool) {
-      this.lastMessage.tool_calls = tool_calls;
+      this.lastMessage.content_tool_calls = tool_calls;
       for (let tool of tool_calls) {
         try {
           tool.function.argumentsOBJ = JSON.parse(tool.function.arguments);
@@ -610,7 +631,7 @@ export class OpenAiChannel {
   }
 
   async completionParse(response_format: any): Promise<any> {
-    this.openai.provider = this.options.provider;
+    this.openai.modelData = this.options;
     this.openai.baseURL = this.options.baseURL;
     this.openai.apiKey = this.options.apiKey;
     let completion = await this.openai.parse({
@@ -696,13 +717,25 @@ export class OpenAiChannel {
 
     messages.push(response.choices[0].message);
 
-    let function_name =
-      response.choices[0].message.tool_calls![0]["function"]["name"];
-    let function_args =
-      response.choices[0].message.tool_calls![0]["function"]["arguments"];
+    let tool_calls = response.choices[0].message.tool_calls || [];
+    if (this.options.toolMode == "compatible" && (response.choices[0].message.content.toString()).includes("<tool_use>")) {
+      let res = extractTool(response.choices[0].message.content.toString());
+      if (res) {
+        tool_calls.push({
+          id: res.name,
+          type: "function",
+          function: {
+            name: res.name,
+            arguments: JSON.stringify(res.params),
+          }
+        });
+      }
+    }
 
     let runs = {} as any;
 
+    let function_name = tool_calls![0]["function"]["name"];
+    let function_args = tool_calls![0]["function"]["arguments"];
     runs[function_name] = () => {
       return dayjs().format("YYYY-MM-DD HH:mm:ss");
     };
@@ -714,7 +747,7 @@ export class OpenAiChannel {
 
     messages.push({
       role: "tool",
-      tool_call_id: response.choices[0].message.tool_calls![0]["id"],
+      tool_call_id: tool_calls![0]["id"],
       content: res,
     });
 
@@ -742,10 +775,11 @@ export class OpenAiChannel {
         content_date,
         content_sended,
         content_template,
+        content_tool_calls,
         ...rest
       } = m;
       if (rest.role == "assistant") {
-        rest.tool_calls = rest.tool_calls?.map((x: Tool_Call) => {
+        rest.tool_calls = content_tool_calls?.map((x: Tool_Call) => {
           let { origin_name, restore_name, ...rest } = x;
           let { argumentsOBJ, ...functionRest } = rest.function;
           rest.function = functionRest as any;
@@ -762,8 +796,74 @@ export class OpenAiChannel {
   tools_format(tools: HyperChatCompletionTool[]) {
     return tools?.map((x) => {
       let { origin_name, restore_name, key, client, clientName, ...rest } = x;
-      rest.function.strict = !!this.options.isStrict;
+      if (this.options.isStrict) {
+        rest.function.strict = true;
+        rest.function.parameters = formatProperties(rest.function.parameters, false);
+      } else {
+        delete rest.function.strict;
+        rest.function.parameters = formatProperties(rest.function.parameters, true);
+      }
       return rest;
     });
   }
+}
+
+
+
+export function formatProperties(obj: any, delAdditionalProperties: boolean) {
+
+  if (obj == null) {
+    return {
+      compatible: {
+        type: "string",
+        description: "ignore, no enter", // compatible gemini-openai
+      },
+    };
+  }
+
+  try {
+    // 处理对象类型
+    if (obj.type === "object") {
+      // 递归处理所有属性
+      if (obj.properties) {
+        for (const key in obj.properties) {
+          const item = obj.properties[key];
+          if (!item) continue;
+
+          if (item.type === "object") {
+            obj.properties[key] = formatProperties(item, delAdditionalProperties);
+          } else if (item.type === "array" && item.items) {
+            obj.properties[key].items = formatProperties(item.items, delAdditionalProperties);
+          }
+        }
+      }
+
+      // 删除不需要的属性
+      if (delAdditionalProperties && obj.additionalProperties !== undefined) {
+        delete obj.additionalProperties;
+      }
+
+      // 对象类型不应该有items属性，删除它
+      delete obj.items;
+    }
+    // 处理数组类型
+    else if (obj.type === "array") {
+      // 递归处理数组项
+      if (obj.items) {
+        obj.items = formatProperties(obj.items, delAdditionalProperties);
+
+        // 删除数组项中的additionalProperties
+        if (delAdditionalProperties && obj.items.additionalProperties !== undefined) {
+          delete obj.items.additionalProperties;
+        }
+      }
+
+      // 数组类型不应该有properties属性，删除它
+      delete obj.properties;
+    }
+  } catch (e) {
+    console.error(e);
+  }
+  // console.log(obj);
+  return obj;
 }

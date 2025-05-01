@@ -1,6 +1,6 @@
 {
   "name": "@dadigua/hyper-chat",
-  "version": "1.6.5-alpha.2",
+  "version": "1.6.6-alpha.3",
   "main": "index.js",
   "scripts": {
     "dev": "tsx task.mts --dev",
@@ -9,7 +9,9 @@
     "build": "tsx task.mts --build",
     "pre_commit": "tsx task.mts --pre_commit",
     "prod_node": "tsx task.mts --prod_node",
-    "updateVersion": "tsx task.mts --updateVersion"
+    "updateVersion": "tsx task.mts --updateVersion",
+    "docs:dev": "vuepress dev docs",
+    "docs:build": "vuepress build docs"
   },
   "pre-commit": [],
   "author": "",
@@ -27,6 +29,11 @@
     "zx": "8.0.1"
   },
   "devDependencies": {
-    "pre-commit": "^1.2.2"
+    "@vuepress/bundler-vite": "^2.0.0-rc.22",
+    "@vuepress/theme-default": "^2.0.0-rc.98",
+    "pre-commit": "^1.2.2",
+    "sass-embedded": "^1.87.0",
+    "vue": "^3.5.13",
+    "vuepress": "^2.0.0-rc.22"
   }
 }

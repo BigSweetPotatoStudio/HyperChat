@@ -4,8 +4,10 @@ name: HyperChat
 on:
   workflow_dispatch: {}
   push:
-    tags:
-      - "v*"
+    # tags:
+    #   - "v*"
+    branches:
+      - stable
     # branches:
     #   - alpha
 

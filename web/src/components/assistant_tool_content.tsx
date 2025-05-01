@@ -495,12 +495,12 @@ export const AssistantToolContent = ({ contents }: { contents: MyMessage[] }) =>
                                 ) : null
                             }
 
-                            <div className="my-collapse" style={{ display: x.tool_calls?.length > 0 ? "block" : "none" }}  >
+                            <div className="my-collapse" style={{ display: x.content_tool_calls?.length > 0 ? "block" : "none" }}  >
                                 <Collapse
                                     bordered={false}
                                     size="small"
                                     expandIcon={() => <ToolOutlined className="" />}
-                                    items={x.tool_calls?.map((tool: any, index) => {
+                                    items={x.content_tool_calls?.map((tool: any, index) => {
                                         if (x == null) {
                                             return null;
                                         }

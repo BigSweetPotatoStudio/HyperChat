@@ -1,9 +1,9 @@
 import React, { useContext, useEffect } from "react";
 import { Editor } from "../../components/editor";
-import { Button, Form, Input, Modal, Radio, Select, Table } from "antd";
+import { Button, Form, Input, Modal, Radio, Select, Table, Tooltip } from "antd";
 import { VarScopeList, Var, VarList, zodVarScope } from "../../../../common/data";
 import { EditIcon } from "lucide-react";
-import { DeleteOutlined, EditOutlined } from "@ant-design/icons";
+import { DeleteOutlined, EditOutlined, QuestionCircleOutlined } from "@ant-design/icons";
 import { t } from "../../i18n";
 import {
     JsonSchema2FormItemOrNull,
@@ -87,7 +87,7 @@ export const VariableList = () => {
                 }}
                 columns={[
                     {
-                        title: t`Scope`,
+                        title: <>{t`NameSpace`}<Tooltip title={t`Changed the name, it was previously called scope`}><QuestionCircleOutlined /></Tooltip> </>,
                         dataIndex: 'name',
                         render: (text, record) => {
                             return <span>{text}{" "}<EditOutlined className="cursor-pointer hover:text-cyan-400" onClick={() => {
@@ -96,7 +96,7 @@ export const VariableList = () => {
                                     ...record,
                                 });
                                 setIsScopeOpen(true);
-                            }} />{" "}<Popconfirm title={<pre>{t`Are you sure to delete this scope?
+                            }} />{" "}<Popconfirm title={<pre>{t`Are you sure to delete this NameSpace?
 Including variables will also be deleted`}</pre>} onConfirm={async () => {
 
                                     VarScopeList.get().data = VarScopeList.get().data.filter(x => x.key !== record.key);
@@ -167,7 +167,7 @@ Including variables will also be deleted`}</pre>} onConfirm={async () => {
                         }
                     },
                     {
-                        title: t`Scope`,
+                        title: t`NameSpace`,
                         dataIndex: 'scope',
                         render: (text, record) => {
                             return <span className="line-clamp-1">{text}</span>
@@ -187,7 +187,7 @@ Including variables will also be deleted`}</pre>} onConfirm={async () => {
         </div>
     </div>
         <Modal
-            title={t`Scope`}
+            title={t`NameSpace`}
             open={isScopeOpen}
             footer={[]}
             onCancel={() => setIsScopeOpen(false)}
@@ -304,11 +304,11 @@ Including variables will also be deleted`}</pre>} onConfirm={async () => {
                     label={t`Value`}
                     rules={[{ required: true, message: `Please enter` }]}
                 >
-                    <Input.TextArea placeholder="Please enter" rows={8}/>
+                    <Input.TextArea placeholder="Please enter" rows={8} />
                 </Form.Item>}
                 <Form.Item
                     name="scope"
-                    label={t`Scope`}
+                    label={t`NameSpace`}
                     rules={[{ required: true, message: `Please enter` }]}
                 >
                     <Select options={VarScopeList.get().data.map(item => ({ value: item.name, label: item.name }))} />
@@ -320,7 +320,11 @@ Including variables will also be deleted`}</pre>} onConfirm={async () => {
                 >
                     <Select onChange={() => {
                         refresh();
-                    }} options={["lazy", "immediate"].map(item => ({ value: item, label: item }))} />
+                    }} options={[{
+                        label: t`lazy(Replace when Sending)`, value: "lazy"
+                    }, {
+                        label: t`immediate(Replace immediately = Quick input)`, value: "immediate"
+                    }]} />
                 </Form.Item>}
                 <Form.Item
                     name="description"

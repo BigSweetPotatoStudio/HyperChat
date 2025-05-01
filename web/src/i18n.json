@@ -1183,17 +1183,17 @@
     "en": "TestPage",
     "zh": "测试页"
   },
-  "Scope": {
-    "en": "Scope",
-    "zh": "作用域"
+  "NameSpace": {
+    "en": "NameSpace",
+    "zh": "命名空间"
   },
   "Clear Select": {
     "en": "Clear Select",
     "zh": "清除选择"
   },
-  "Are you sure to delete this scope?\nIncluding variables will also be deleted": {
-    "en": "Are you sure to delete this scope?\nIncluding variables will also be deleted",
-    "zh": "您确定要删除这个范围吗？\n包括的变量也将被删除"
+  "Are you sure to delete this NameSpace?\nIncluding variables will also be deleted": {
+    "en": "Are you sure to delete this NameSpace?\nIncluding variables will also be deleted",
+    "zh": "您确定要删除这个命名空间吗？\n包括的变量也将被删除"
   },
   "Old Name": {
     "en": "Old Name",
@@ -1251,9 +1251,9 @@
     "en": "Name already exists",
     "zh": "名称已存在"
   },
-  "You can use variables by enter scope, for example, enter var, or use @ to call other agents.": {
-    "en": "You can use variables by enter scope, for example, enter var, or use @ to call other agents.",
-    "zh": "你可以通过输入scope来使用变量，例如，输入var，或者使用 @ 来调用其他Agent。"
+  "You can use variables by enter namespace, for example, enter var, or use @ to call other agents.": {
+    "en": "You can use variables by enter namespace, for example, enter var, or use @ to call other agents.",
+    "zh": "你可以通过输入命名空间来使用变量，例如，输入var，或者使用 @ 来调用其他Agent。"
   },
   " Ctrl+Enter Send": {
     "en": " Ctrl+Enter Send",
@@ -1282,5 +1282,33 @@
   "run": {
     "en": "run",
     "zh": "run"
+  },
+  "toolMode": {
+    "en": "toolMode",
+    "zh": "工具模式"
+  },
+  "standard": {
+    "en": "standard",
+    "zh": "标准"
+  },
+  "compatible": {
+    "en": "compatible",
+    "zh": "兼容"
+  },
+  "variableStrategy": {
+    "en": "variableStrategy",
+    "zh": "变量策略"
+  },
+  "lazy(Replace when Sending)": {
+    "en": "lazy(Replace when Sending)",
+    "zh": "lazy(发送时替换)"
+  },
+  "immediate(Replace immediately = Quick input)": {
+    "en": "immediate(Replace immediately = Quick input)",
+    "zh": "immediate(立即替换 = 快速输入)"
+  },
+  "Changed the name, it was previously called scope": {
+    "en": "Changed the name, it was previously called scope",
+    "zh": "更改了名称，之前叫做scope"
   }
 }
