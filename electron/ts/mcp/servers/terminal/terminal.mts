@@ -178,11 +178,12 @@ export function registerTool(server: McpServer) {
       //   terminalMap.delete(c.terminal.pid);
       // }, timeout);
       let a = false;
+
       while (1) {
         if (a) {
           await new Promise((resolve) => setTimeout(resolve, 500));
           // console.log(c.commamdOutput)
-          if (c.commamdOutput.match(/(\n|\r)done(\n|\r)/)) {
+          if (strip(c.commamdOutput).match(/(\n|\r)done(\n|\r)/)) {
             break;
           }
         } else {
@@ -194,10 +195,10 @@ export function registerTool(server: McpServer) {
         }
       }
       c.lastIndex = c.stdout.length;
-      // fs.writeFileSync("terminal.log", c.commamdOutput.replace(/(\n|\r)done(\n|\r).*/, ""));
+      // fs.writeFileSync("terminal.log", strip(c.commamdOutput));
       return {
         content: [
-          { type: "text", text: strip(c.commamdOutput.replace(/(\n|\r)done(\n|\r).*/s, "")).slice(-maxToken).replace("echo done", "") },
+          { type: "text", text: strip(c.commamdOutput).slice(-maxToken) },
         ],
       };
     }

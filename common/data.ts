@@ -103,7 +103,7 @@ export const electronData = new Data(
     isLoadClaudeConfig: true,
     lastSyncTime: 0,
     windowSize: {
-      width: 1600,
+      width: 1440,
       height: 900,
     },
     browserNetworkSetting: "server-proxy"

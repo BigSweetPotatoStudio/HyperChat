@@ -111,7 +111,7 @@ for (let key in config.mcpServers) {
     config.mcpServers[key].url = config.mcpServers[key].hyperchat.url;
   }
 }
-await MCP_CONFIG.save(false);
+MCP_CONFIG.saveSync(false);
 
 await initMcpServer().catch((e) => {
   console.error("initMcpServer", e);
@@ -218,7 +218,7 @@ export class MCPClient implements IMCPClient {
         type: "changeMcpClient",
         data: mcpClients,
       })
-      // await sleep(Math.random() * 10000);
+      await sleep(Math.random() * 1000);
       // if(Math.random() > 0.5) {
       //   throw new Error("test error");
       // }
@@ -626,10 +626,7 @@ export async function initMcpClients() {
         mcpOBj[key] = mcpClient;
 
         try {
-
-
           tasks.push(
-
             mcpClient.open().then(() => {
               getMessageService().sendAllToRenderer({
                 type: "changeMcpClient",
@@ -673,10 +670,12 @@ let t = setInterval(() => {
   });
 }, 1000);
 
-initMcpClients().then(() => {
+Promise.race([initMcpClients(), sleep(1000 * 60)]).then(() => {
+  firstRunStatus = 2;
   clearInterval(t);
   startTask();
 }).catch((e) => {
+  firstRunStatus = 2;
   clearInterval(t);
   startTask();
 });

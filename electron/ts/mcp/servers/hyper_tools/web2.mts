@@ -6,6 +6,7 @@ import { ChromeLauncher, zx } from "ts/es6.mjs";
 import { configSchema, getConfig, NAME } from "./lib.mjs";
 import { z } from "zod";
 import { Logger } from "ts/polyfills/polyfills.mjs";
+
 const { fs } = zx;
 
 // let mcpconfig = await getMCPConfg();
@@ -114,6 +115,15 @@ export const fetch = async (url: string) => {
       return await browser.newPage()
     });
     await page.goto(url);
+
+    // Scroll down the page gradually to load lazy content
+    await page.evaluate(async () => {
+
+      setInterval(() => {
+        window.scrollTo(0, document.body.scrollHeight);
+      }, 1000);
+
+    });
     // 等待页面加载完成
     await Promise.race([page.waitForNetworkIdle(), sleep(3000)]);
     await sleep(3000);

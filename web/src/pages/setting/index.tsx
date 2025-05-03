@@ -179,6 +179,16 @@ export function Setting() {
                 >
                   {t`Update`}
                 </Button>
+                <Button
+                  onClick={() =>
+                    window.open(
+                      `http://localhost:${port.current}/${electronData.get().password}/`,
+                    )
+                  }
+                >
+                  OpenWeb(http://localhost:{port.current}/
+                  {electronData.get().password}/)
+                </Button>
               </Space.Compact>
 
             </Form.Item>
@@ -205,19 +215,44 @@ export function Setting() {
 
             {!isOnBrowser && <Form.Item label={t`Startup window size`}>
               <Select
-                options={[{
-                  label: "1280x720",
-                  value: "1280x720",
-                }, {
-                  label: "1367x768",
-                  value: "1367x768",
-                }, {
-                  label: "1600x900",
-                  value: "1600x900",
-                }, {
-                  label: "1920x1080",
-                  value: "1920x1080",
-                }]}
+                options={[
+                  // 4:3 比例
+                  {
+                    label: "1024x768 (4:3)",
+                    value: "1024x768",
+                  }, {
+                    label: "1280x960 (4:3)",
+                    value: "1280x960",
+                  }, {
+                    label: "1600x1200 (4:3)",
+                    value: "1600x1200",
+                  },
+                  // 16:10 比例
+                  {
+                    label: "1280x800 (16:10)",
+                    value: "1280x800",
+                  }, {
+                    label: "1440x900 (16:10)",
+                    value: "1440x900",
+                  }, {
+                    label: "1680x1050 (16:10)",
+                    value: "1680x1050",
+                  },
+                  // 16:9 比例
+                  {
+                    label: "1280x720 (16:9)",
+                    value: "1280x720",
+                  }, {
+                    label: "1366x768 (16:9)",
+                    value: "1366x768",
+                  }, {
+                    label: "1600x900 (16:9)",
+                    value: "1600x900",
+                  }, {
+                    label: "1920x1080 (16:9)",
+                    value: "1920x1080",
+                  }
+                ]}
                 value={electronData.get().windowSize.width + "x" + electronData.get().windowSize.height}
                 onChange={(e) => {
                   let [width, height] = e.split("x").map(x => parseInt(x));
@@ -280,16 +315,6 @@ export function Setting() {
                   }
                 >
                   {t`appDataDir`}
-                </Button>
-                <Button
-                  onClick={() =>
-                    window.open(
-                      `http://localhost:${port.current}/${electronData.get().password}/`,
-                    )
-                  }
-                >
-                  OpenWeb(http://localhost:{port.current}/
-                  {electronData.get().password}/)
                 </Button>
               </Space>
             </Form.Item>
