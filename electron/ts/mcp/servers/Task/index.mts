@@ -287,7 +287,7 @@ async function add_task({
     cron,
     disabled: false,
   });
-  await TaskList.save();
+  await TaskList.saveSync();
   startTask(key);
   return "Task added";
 }

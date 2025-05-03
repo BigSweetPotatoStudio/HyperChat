@@ -438,7 +438,7 @@ export class CommandFactory {
       })
       return r;
     }
-    await ChatHistory.save()
+    ChatHistory.saveSync();
   }
   async changeChatHistory(item: ChatHistoryItem) {
     item.version = 2;
@@ -462,7 +462,7 @@ export class CommandFactory {
       })
       return r;
     }
-    await ChatHistory.save()
+    await ChatHistory.saveSync()
   }
   async removeChatHistory(item: { key: string }) {
     let chatHistory = ChatHistory.initSync().data;
@@ -473,7 +473,7 @@ export class CommandFactory {
         fs.removeSync(path.join(appDataDir, `messages/${item.key}.json`));
       }
     }
-    await ChatHistory.save()
+    await ChatHistory.saveSync()
     return;
   }
   async clearChatHistory(day: number) {
@@ -493,7 +493,7 @@ export class CommandFactory {
       (x) => !x.deleted,
     );
     let newLen = ChatHistory.get().data.length;
-    await ChatHistory.save();
+    await ChatHistory.saveSync();
     return oldLen - newLen;
   }
   async runCode({ code }: { code: string }) {

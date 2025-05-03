@@ -45,7 +45,7 @@ Logger.info("appDataDir: ", appDataDir);
 fs.ensureDirSync(path.join(appDataDir, "messages"));
 electronData.get().appDataDir = appDataDir;
 electronData.get().logFilePath = logFilePath;
-electronData.save();
+electronData.saveSync();
 
 // 捕获未处理的异常
 process.on('uncaughtException', (error) => {  

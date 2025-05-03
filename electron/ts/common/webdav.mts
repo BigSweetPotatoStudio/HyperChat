@@ -273,7 +273,7 @@ class WebDAVSync {
   //             //       }
   //             //     }
   //             //   }
-  //             //   await ChatHistory.save();
+  //             //   await ChatHistory.saveSync();
   //             // }
 
   //             try {
@@ -379,7 +379,7 @@ class WebDAVSync {
   //           //       }
   //           //     }
   //           //   }
-  //           //   await ChatHistory.save();
+  //           //   await ChatHistory.saveSync();
   //           // }
 
   //           getMessageService().sendAllToRenderer({

@@ -443,11 +443,11 @@ export class MCPClient implements IMCPClient {
     if (this.source == "hyperchat") {
       if (isdelete) {
         delete MCP_CONFIG.initSync().mcpServers[this.name];
-        MCP_CONFIG.save()
+        MCP_CONFIG.saveSync()
         return;
       } else {
         MCP_CONFIG.initSync().mcpServers[this.name] = this.config;
-        MCP_CONFIG.save()
+        MCP_CONFIG.saveSync()
       }
 
     } else if (this.source == "builtin") {

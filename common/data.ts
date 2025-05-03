@@ -102,6 +102,10 @@ export const electronData = new Data(
     isDeveloper: false,
     isLoadClaudeConfig: true,
     lastSyncTime: 0,
+    windowSize: {
+      width: 1600,
+      height: 900,
+    }
   },
   {
     sync: false,

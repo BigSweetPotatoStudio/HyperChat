@@ -187,7 +187,7 @@
 //       db.resources = [];
 //     }
 //     db.resources.push(res);
-//     await KNOWLEDGE_BASE.save();
+//     await KNOWLEDGE_BASE.saveSync();
 //     return res;
 //   }
 // }

@@ -182,6 +182,35 @@ export function Setting() {
               </Space.Compact>
 
             </Form.Item>
+
+
+            {!isOnBrowser && <Form.Item label={t`Startup window size`}>
+              <Select
+                options={[{
+                  label: "1280x720",
+                  value: "1280x720",
+                }, {
+                  label: "1367x768",
+                  value: "1367x768",
+                }, {
+                  label: "1600x900",
+                  value: "1600x900",
+                }, {
+                  label: "1920x1080",
+                  value: "1920x1080",
+                }]}
+                value={electronData.get().windowSize.width + "x" + electronData.get().windowSize.height}
+                onChange={(e) => {
+                  let [width, height] = e.split("x").map(x => parseInt(x));
+                  electronData.get().windowSize.width = width;
+                  electronData.get().windowSize.height = height;
+                  electronData.save();
+                  refresh();
+                  message.success(t`Save Success, please restart`);
+                }}
+              />
+            </Form.Item>}
+
             <Form.Item label={t`Develop Mode`}>
               <Switch
 

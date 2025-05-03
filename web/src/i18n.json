@@ -1310,5 +1310,13 @@
   "Changed the name, it was previously called scope": {
     "en": "Changed the name, it was previously called scope",
     "zh": "更改了名称，之前叫做scope"
+  },
+  "Startup window size": {
+    "en": "Startup window size",
+    "zh": "启动窗口大小"
+  },
+  "Save Success, please restart": {
+    "en": "Save Success, please restart",
+    "zh": "保存成功，请重启"
   }
 }

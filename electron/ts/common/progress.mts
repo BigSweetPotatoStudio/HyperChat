@@ -34,7 +34,7 @@ class ProgressList {
     if (progress.loaded == progress.total) {
       progress.status = "success";
     }
-    electronData.save();
+    electronData.saveSync();
   }
   getData() {
     return this.data;

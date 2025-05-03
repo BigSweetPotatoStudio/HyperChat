@@ -282,7 +282,7 @@ export async function initHttp() {
   });
   Config.port = PORT;
   Logger.info("http server listen on: ", PORT);
-  await electronData.save();
+  await electronData.saveSync();
 
   io.on("error", (e) => {
     console.log("error: ", e);

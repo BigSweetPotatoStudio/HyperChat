@@ -222,8 +222,7 @@ export class OpenAiChannel {
     this.status = "runing";
     this.index++;
     this.openai.modelData = this.options;
-    this.openai.baseURL = this.options.baseURL;
-    this.openai.apiKey = this.options.apiKey;
+
     let res = await this._completion(onUpdate, call_tool, step, {
       index: this.index,
     }).catch((e) => {
@@ -632,8 +631,7 @@ export class OpenAiChannel {
 
   async completionParse(response_format: any): Promise<any> {
     this.openai.modelData = this.options;
-    this.openai.baseURL = this.options.baseURL;
-    this.openai.apiKey = this.options.apiKey;
+
     let completion = await this.openai.parse({
       messages: await this.messages_format(this.messages),
       model: this.options.model,

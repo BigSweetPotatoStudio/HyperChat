@@ -128,8 +128,8 @@ export function registerTool(server: McpServer) {
         }
 
       }
-      await VarList.save();
-      await VarScopeList.save();
+      await VarList.saveSync();
+      await VarScopeList.saveSync();
       getMessageService().sendToRenderer({ type: "update_var_list" });
       return {
         content: [

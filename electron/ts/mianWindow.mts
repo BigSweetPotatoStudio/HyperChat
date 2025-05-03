@@ -19,10 +19,11 @@ import { Config } from "./const.mjs";
 let title = `${p.productName}-${app.getVersion()} by Dadigua`;
 Logger.info("title   : ", title);
 
+electronData.initSync();
 export const createWindow = () => {
   const win = new BrowserWindow({
-    width: 1440,
-    height: 900,
+    width: electronData.get().windowSize.width || 1600,
+    height: electronData.get().windowSize.height || 900,
     title: title,
     autoHideMenuBar: true,
     // titleBarOverlay: {

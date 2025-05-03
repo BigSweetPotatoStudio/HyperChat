@@ -32,7 +32,7 @@
 //   }
 //   async save() {
 //     taskHistory.get().history = this.history;
-//     await taskHistory.save();
+//     await taskHistory.saveSync();
 //   }
 // }
 

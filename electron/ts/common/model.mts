@@ -38,7 +38,7 @@ export class FeatureExtraction {
       );
     }
     electronData.get().downloaded[model] = true;
-    electronData.save();
+    electronData.saveSync();
     return this.instance;
   }
   static async embeddings(texts: string[]) {

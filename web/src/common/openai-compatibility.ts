@@ -9,6 +9,7 @@ import { GPT_MODELS_TYPE, HyperChatCompletionTool } from "../../../common/data";
 import { message } from "antd";
 import { isOnBrowser } from "./const";
 import { genSystemPrompt } from "./ai/prompt";
+import { get } from "lodash";
 let callModule = {
     getURL_PRE: () => "",
     getWebSocket: () => null,
@@ -23,18 +24,22 @@ if (process.env.runtime === "node") {
 export class OpenAICompatibility {
     openai: OpenAI;
     anthropic: AnthropicProvider;
-    baseURL: string;
-    apiKey: string;
 
     constructor(public options: ClientOptions, public modelData: Partial<GPT_MODELS_TYPE>) {
-        this.baseURL = options.baseURL;
-        this.apiKey = options.apiKey;
+
         this.openai = new OpenAI(options);
         this.anthropic = new AnthropicProvider({
             apiKey: options.apiKey,
             baseURL: options.baseURL,
             dangerouslyAllowBrowser: process.env.runtime !== "node",
         });
+    }
+    get baseURL() {
+        return process.env.runtime === "node"
+            ? this.modelData.baseURL :
+            isOnBrowser
+                ? (callModule.getURL_PRE() + "api/ai" + `?baseURL=${encodeURIComponent(this.modelData.baseURL)}`)
+                : this.modelData.baseURL;
     }
 
     completion: Completions["create"] = ((body: {
@@ -50,14 +55,9 @@ export class OpenAICompatibility {
         max_tokens?: number,
     }, options?) => {
 
-
         if (this.modelData.provider === "anthropic") {
-            this.anthropic.client.baseURL = process.env.runtime === "node"
-                ? this.baseURL :
-                isOnBrowser
-                    ? (callModule.getURL_PRE() + "api/ai" + `?baseURL=${encodeURIComponent(this.baseURL)}`)
-                    : this.baseURL;
-            this.anthropic.client.apiKey = this.apiKey;
+            this.anthropic.client.baseURL = this.baseURL
+            this.anthropic.client.apiKey = this.modelData.apiKey;
             return this.anthropic.completion(body, options) as any;
         } else {
             // this.modelData.toolMode = "compatible";
@@ -101,12 +101,8 @@ export class OpenAICompatibility {
             }
 
 
-            this.openai.baseURL = process.env.runtime === "node"
-                ? this.baseURL :
-                isOnBrowser
-                    ? (callModule.getURL_PRE() + "api/ai" + `?baseURL=${encodeURIComponent(this.baseURL)}`)
-                    : this.baseURL;
-            this.openai.apiKey = this.apiKey;
+            this.openai.baseURL = this.baseURL;
+            this.openai.apiKey = this.modelData.apiKey;
 
             return this.openai.chat.completions.create(body, options) as any;
         }
@@ -151,12 +147,8 @@ export class OpenAICompatibility {
         if (this.modelData.provider === "anthropic" || this.modelData.provider == "anthropic-openai") {
             return await get_json();
         } else {
-            this.openai.baseURL = process.env.runtime === "node"
-                ? this.baseURL :
-                isOnBrowser
-                    ? (callModule.getURL_PRE() + "api/ai" + `?baseURL=${encodeURIComponent(this.baseURL)}`)
-                    : this.baseURL;
-            this.openai.apiKey = this.apiKey;
+            this.openai.baseURL = this.baseURL;
+            this.openai.apiKey = this.modelData.apiKey;
 
             return await this.openai.beta.chat.completions.parse(body, options).catch(async (e) => {
                 try {
@@ -165,5 +157,17 @@ export class OpenAICompatibility {
                 throw e;
             });
         }
-    }) as any;;
+    }) as any;
+
+    listModels: Completions["list"] = () => {
+        if (this.modelData.provider === "anthropic") {
+            this.anthropic.client.baseURL = this.baseURL
+            this.anthropic.client.apiKey = this.modelData.apiKey;
+            return this.anthropic.client.models as any;
+        } else {
+            this.openai.baseURL = this.baseURL;
+            this.openai.apiKey = this.modelData.apiKey;
+            return this.openai.models.list() as any;
+        }
+    }
 }

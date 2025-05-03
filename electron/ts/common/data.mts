@@ -136,7 +136,7 @@ electronData.get().platform = process.platform;
 if (ENV_CONFIG.initSync({ force: true }).PATH != "") {
   electronData.get().PATH = ENV_CONFIG.get().PATH;
   ENV_CONFIG.get().PATH = "";
-  ENV_CONFIG.save();
+  ENV_CONFIG.saveSync();
 }
 
 
@@ -146,13 +146,13 @@ if (AppSetting.get().quicks.length > 0 && !fs.existsSync(path.join(appDataDir, V
     return { name: x.label, value: x.quick, variableStrategy: "lazy", key: x.value, scope: "quick", variableType: "string" };
   }));
   AppSetting.get().quicks = [];
-  VarList.save();
+  VarList.saveSync();
 }
 
-AppSetting.save();
+AppSetting.saveSync();
 // electronData.get().mcp_server_port = MCPServerPORT;
 
 electronData.get().version = CONST.getVersion;
 
-electronData.save();
+electronData.saveSync();
 
