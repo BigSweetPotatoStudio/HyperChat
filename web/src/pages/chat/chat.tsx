@@ -266,38 +266,38 @@ export const Chat = ({
 
   const [modal, contextHolder] = Modal.useModal();
   let getAgentNameObj = useRef({} as Record<string, string>);
-//   let builtinAgent = useRef([{
-//     "key": "1",
-//     "label": "💧MCP Helper",
-//     "prompt": `# I am a super agent. According to the user's requirements, I first think and then design a tool flow, call various tools, and complete the recent addition of MCP
-// # MCP is a command, and the operation method is similar to npx, uvx, etc. The user is a novice, and I want to do more.
-// # To answer a user please use {{var.LANG}}
+  let builtinAgent = useRef([{
+    "key": "1",
+    "label": "💧MCP Helper",
+    "prompt": `# I am a super agent. According to the user's requirements, I first think and then design a tool flow, call various tools, and complete the recent addition of MCP
+# MCP is a command, and the operation method is similar to npx, uvx, etc. The user is a novice, and I want to do more.
+# To answer a user please use {{var.LANG}}
 
-// 1. I can search + summarize the web page online, query the MCP running command line, and it is best to find the Gtihub web page to obtain command information.
-// 2. Try to add stdio. If adding stdio type MCP fails, I can use the terminal to enter the command to test the error.
-// 3. If an error is reported, use the terminal to help the user install the environment (such as nodejs or uv or python, etc.).
-// 4. If the test is successful, call the tool to add mcp.`,
-//     "allowMCPs": [
-//       "hyper_tools",
-//       "hyper_terminal",
-//       "hyper_settings"
-//     ],
-//     "confirm_call_tool": false,
-//     "description": "This is an assistant for adding mcp. You can send the Github URL or installation URL to it, and it will automatically install stdio mcp for you.",
-//     "type": "builtin"
-//   }, {
-//     "key": "2",
-//     "label": "😎Task Demo",
-//     "prompt": "# 我是一个超级Agent，根据用户的要求，先设计一个工具流，调用各种工具，完成工具流\n* 当前操作系统是 {{var.os}}\n* 当前时间是  {{var.currentTime}} \n* 用户期待用 {{var.LANG}} 回复\n* 完成工作流后，最后把记忆写入memory.hyper变量，方便下次使用。\n\n这是你的记忆:\n   {{memory.hyper}}",
-//     "modelKey": "208f7893-aefe-4940-b309-17d63e3753ba",
-//     "allowMCPs": [
-//       "hyper_tools",
-//       "hyper_settings"
-//     ],
-//     "confirm_call_tool": false,
-//     "description": "这个可以使用网页的工作流，演示使用变量，实现记忆功能",
-//     "type": "builtin"
-//   }] as any);
+1. I can search + summarize the web page online, query the MCP running command line, and it is best to find the Gtihub web page to obtain command information.
+2. Try to add stdio. If adding stdio type MCP fails, I can use the terminal to enter the command to test the error.
+3. If an error is reported, use the terminal to help the user install the environment (such as nodejs or uv or python, etc.).
+4. If the test is successful, call the tool to add mcp.`,
+    "allowMCPs": [
+      "hyper_tools",
+      "hyper_terminal",
+      "hyper_settings"
+    ],
+    "confirm_call_tool": false,
+    "description": "This is an assistant for adding mcp. You can send the Github URL or installation URL to it, and it will automatically install stdio mcp for you.",
+    "type": "builtin"
+  }, {
+    "key": "2",
+    "label": "😎Task Demo",
+    "prompt": "# 我是一个超级Agent，根据用户的要求，先设计一个工具流，调用各种工具，完成工具流\n* 当前操作系统是 {{var.os}}\n* 当前时间是  {{var.currentTime}} \n* 用户期待用 {{var.LANG}} 回复\n* 完成工作流后，最后把记忆写入memory.hyper变量，方便下次使用。\n\n这是你的记忆:\n   {{memory.hyper}}",
+    "modelKey": "208f7893-aefe-4940-b309-17d63e3753ba",
+    "allowMCPs": [
+      "hyper_tools",
+      "hyper_settings"
+    ],
+    "confirm_call_tool": false,
+    "description": "这个可以使用网页的工作流，演示使用变量，实现记忆功能",
+    "type": "builtin"
+  }] as any);
 
   useEffect(() => {
     (async () => {
@@ -323,20 +323,9 @@ export const Chat = ({
         });
 
 
-        Agents.get().data = Agents.get().data.filter(x => x.type != "builtin");
+        Agents.get().data = builtinAgent.current.concat(Agents.get().data.filter(x => x.type != "builtin"));
         Agents.get().data.forEach((x) => {
           getAgentNameObj.current[x.key] = x.label;
-        });
-        AppSetting.get().quicks = AppSetting.get().quicks.map((x: any) => {
-
-          if (x.quick == null) {
-            let quick = x.value;
-            x.value = v4();
-            return { label: x.label, value: x.value, quick: quick }
-          } else {
-            return x;
-          }
-
         });
         // console.log("AppSetting", AppSetting.get().quicks);
         refresh();
@@ -1009,7 +998,6 @@ export const Chat = ({
 
   let modelName = currModel?.name;
   // console.log("modelName", modelName);
-  const scrollableDivID = useRef("scrollableDiv" + v4());
 
   const onActiveChange = async (key) => {
     if (currentChat.current.key == key) {
@@ -1266,9 +1254,7 @@ export const Chat = ({
     error: null as any,
   });
 
-  const [isUpdateQuicks, setIsUpdateQuicks] = useState(false);
-  const [newLabel, setNewLabel] = useState("");
-  const [newValue, setNewValue] = useState("");
+
   const { token } = theme.useToken();
   const editorRef = useRef<any>(null);
 
@@ -1854,37 +1840,6 @@ export const Chat = ({
                     ></MyAttachR>
 
                     <div className="my-sender-container">
-                      {
-                        // <QuickPath
-                        //   onParseFile={async (file) => {
-                        //     if (!file) {
-                        //       return;
-                        //     }
-                        //     if (file.path) {
-                        //       editorRef.current?.insertTextAtCursor(file.path);
-                        //     } else {
-                        //       if (file.type.includes("image")) {
-                        //         let path = await blobToBase64(file);
-                        //         resourceResListRef.current.push({
-                        //           call_name: "UserUpload",
-                        //           contents: [
-                        //             {
-                        //               path: path,
-                        //               blob: path,
-                        //               type: "image",
-                        //             },
-                        //           ],
-                        //           uid: v4(),
-                        //         });
-                        //         refresh();
-                        //       } else {
-                        //         message.warning(t`please uplaod image`);
-                        //       }
-                        //     }
-                        //   }}
-                        // >
-                        // </QuickPath>
-                      }
                       <Editor
                         onDragFile={async (file) => {
                           if (!file) {
@@ -2555,96 +2510,7 @@ ${currentChat.current.messages.filter(x => x.role != "tool").map(x => {
             </Radio.Group>
           </Form.Item>
         </Modal>
-        <Modal
-          open={isUpdateQuicks}
-          title={t`Edit Quicks Words`}
-          width={800}
-          cancelButtonProps={{ style: { display: "none" } }}
-          onCancel={() => setIsUpdateQuicks(false)}
-          onOk={() => setIsUpdateQuicks(false)}
-        >
-          <div>
-            <ul className="mb-4">
-              {AppSetting.get().quicks?.map((phrase, index) => (
-                <li key={index} className="mb-2 rounded bg-gray-100 p-2">
-                  <Space.Compact style={{ width: "100%" }}>
-                    <Input
-                      size="small"
-                      value={phrase.label}
-                      onChange={async (e) => {
-                        AppSetting.get().quicks[index].label = e.target.value;
-                        refresh();
-                      }}
-                      placeholder="Label"
-                    />
-                    <Button
-                      size="small"
-                      type="primary"
-                      onClick={async () => {
-                        AppSetting.save();
-                        message.success(t`Save Success`);
-                        refresh();
-                      }}
-                    >
-                      {t`Save`}
-                    </Button>
-                    <Button
-                      size="small"
-                      danger
-                      onClick={async () => {
-                        AppSetting.get().quicks.splice(index, 1);
-                        AppSetting.save();
-                        message.success(t`Delete Success`);
-                        refresh();
-                      }}
-                    >
-                      {t`Delete`}
-                    </Button>
-                  </Space.Compact>
 
-                  <Input.TextArea
-                    size="small"
-                    value={phrase.quick}
-                    onChange={async (e) => {
-                      AppSetting.get().quicks[index].quick = e.target.value;
-                      refresh();
-                    }}
-                    placeholder="quick words"
-                  />
-                </li>
-              ))}
-            </ul>
-            <h3 className="mb-2 font-bold">{t`Add Quick`}</h3>
-            <Input
-              size="small"
-              value={newLabel}
-              onChange={(e) => setNewLabel(e.target.value)}
-              placeholder="New Words label"
-            />
-            <Input.TextArea
-              size="small"
-              value={newValue}
-              onChange={(e) => setNewValue(e.target.value)}
-              placeholder="New Words value"
-            />
-            <button
-              className="w-full rounded bg-green-500 px-2 py-1 text-white hover:bg-green-600"
-              onClick={async () => {
-                AppSetting.get().quicks.push({
-                  label: newLabel,
-                  value: v4(),
-                  quick: newValue,
-                });
-                await AppSetting.save();
-                refresh();
-                setNewLabel("");
-                setNewValue("");
-              }}
-            >
-              {t`Add Quick`}
-            </button>
-          </div>
-        </Modal>
         {contextHolder}
 
 
