@@ -129,7 +129,7 @@ async function proxy(ctx: Context, next: () => Promise<any>) {
     try {
       const requestBody = ctx.request.body;
       let baseURL = decodeURIComponent(
-        ctx.query["baseURL"] as string
+        ctx.request.headers["baseurl"] as string
       );
       if (process.env.NODE_ENV !== "production") {
         console.log("baseURL: ", baseURL);
@@ -143,6 +143,7 @@ async function proxy(ctx: Context, next: () => Promise<any>) {
       delete ctx.request.headers["content-length"];
       delete ctx.request.headers["origin"];
       delete ctx.request.headers["host"];
+      delete ctx.request.headers["baseurl"];
       let headers = {
         ...(ctx.request.headers as any),
         "HTTP-Referer": "https://hyperchat.dadigua.men",
@@ -160,7 +161,7 @@ async function proxy(ctx: Context, next: () => Promise<any>) {
       const response = await fetch(baseURL, {
         method: ctx.method,
         headers: headers,
-        body: JSON.stringify(requestBody),
+        body: (ctx.method === "GET" || ctx.method === "HEAD") ? undefined : JSON.stringify(requestBody),
       });
       // console.log("proxy response", response.status, response.headers);
       // 检查内容类型，确定是否为SSE

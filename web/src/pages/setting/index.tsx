@@ -182,7 +182,26 @@ export function Setting() {
               </Space.Compact>
 
             </Form.Item>
-
+            {isOnBrowser && <Form.Item label={t`Network Settings`}>
+              <Radio.Group
+                options={[
+                  {
+                    label: t`local-browser` + t`(Need to solve cors problem)`,
+                    value: "local-browser",
+                  },
+                  {
+                    label: t`server-proxy`,
+                    value: "server-proxy",
+                  },
+                ]}
+                value={electronData.get().browserNetworkSetting}
+                onChange={async (e) => {
+                  electronData.get().browserNetworkSetting = e.target.value;
+                  await electronData.save();
+                  refresh();
+                }}
+              />
+            </Form.Item>}
 
             {!isOnBrowser && <Form.Item label={t`Startup window size`}>
               <Select

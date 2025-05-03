@@ -12,11 +12,7 @@ import { HyperChatCompletionTool, MyMessage } from "../../../../common/data";
 export class AnthropicProvider {
     client: Anthropic;
     constructor(public options) {
-        this.client = new Anthropic({
-            apiKey: options.apiKey,
-            baseURL: options.baseURL,
-            dangerouslyAllowBrowser: process.env.runtime !== "node",
-        });
+        this.client = new Anthropic(options);
     }
 
     stream: any = async function* (body: {

@@ -5,7 +5,7 @@ import { Completions as BetaCompletions } from "openai/resources/beta/chat/compl
 import { AnthropicProvider } from "./ai_provider/anthropic";
 import { MyMessage } from "./openai";
 import { Completions } from "openai/resources/chat/completions";
-import { GPT_MODELS_TYPE, HyperChatCompletionTool } from "../../../common/data";
+import { electronData, GPT_MODELS_TYPE, HyperChatCompletionTool } from "../../../common/data";
 import { message } from "antd";
 import { isOnBrowser } from "./const";
 import { genSystemPrompt } from "./ai/prompt";
@@ -26,20 +26,49 @@ export class OpenAICompatibility {
     anthropic: AnthropicProvider;
 
     constructor(public options: ClientOptions, public modelData: Partial<GPT_MODELS_TYPE>) {
-
+        options.fetch = async (url: RequestInfo, init?: RequestInit): Promise<Response> => {
+            // console.log('About to make a request', url, init);
+            if (process.env.runtime !== "node" && isOnBrowser && electronData.get().browserNetworkSetting === "server-proxy") {
+                init.headers = {
+                    ...init.headers,
+                    baseURL: encodeURIComponent(this.modelData.baseURL),
+                }
+            }
+            const response = await fetch(url, init);
+            // console.log('Got response', response);
+            // 兼容Gemini OpenAI 提示词错误
+            if (response.status === 400) {
+                let json = await response.clone().json();
+                if (Array.isArray(json)) {
+                    let res = {
+                        error: {
+                            message: "",
+                        }
+                    }
+                    for (let r of json) {
+                        res.error.message += r.error.message + "\n";
+                    }
+                    return new Response(JSON.stringify(res), {
+                        status: 400,
+                    });
+                }
+            }
+            return response;
+        };
         this.openai = new OpenAI(options);
         this.anthropic = new AnthropicProvider({
             apiKey: options.apiKey,
             baseURL: options.baseURL,
             dangerouslyAllowBrowser: process.env.runtime !== "node",
+            fetch: options.fetch,
         });
     }
     get baseURL() {
-        return process.env.runtime === "node"
-            ? this.modelData.baseURL :
-            isOnBrowser
-                ? (callModule.getURL_PRE() + "api/ai" + `?baseURL=${encodeURIComponent(this.modelData.baseURL)}`)
-                : this.modelData.baseURL;
+        if (process.env.runtime !== "node" && isOnBrowser && electronData.get().browserNetworkSetting === "server-proxy")
+            return (callModule.getURL_PRE() + "api/ai")
+        else {
+            return this.modelData.baseURL;
+        }
     }
 
     completion: Completions["create"] = ((body: {
@@ -163,7 +192,7 @@ export class OpenAICompatibility {
         if (this.modelData.provider === "anthropic") {
             this.anthropic.client.baseURL = this.baseURL
             this.anthropic.client.apiKey = this.modelData.apiKey;
-            return this.anthropic.client.models as any;
+            return this.anthropic.client.models.list() as any;
         } else {
             this.openai.baseURL = this.baseURL;
             this.openai.apiKey = this.modelData.apiKey;

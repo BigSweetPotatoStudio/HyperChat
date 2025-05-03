@@ -83,29 +83,6 @@ export class OpenAiChannel {
         "X-Title": "HyperChat", // Optional. Site title for rankings on openrouter.ai.
         // baseURL: encodeURIComponent(options.baseURL),
       },
-      fetch: async (url: RequestInfo, init?: RequestInit): Promise<Response> => {
-        // console.log('About to make a request', url, init);
-        const response = await fetch(url, init);
-        // console.log('Got response', response);
-        // 兼容Gemini OpenAI 提示词错误
-        if (response.status === 400) {
-          let json = await response.clone().json();
-          if (Array.isArray(json)) {
-            let res = {
-              error: {
-                message: "",
-              }
-            }
-            for (let r of json) {
-              res.error.message += r.error.message + "\n";
-            }
-            return new Response(JSON.stringify(res), {
-              status: 400,
-            });
-          }
-        }
-        return response;
-      },
     }, this.options);
 
 

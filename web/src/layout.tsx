@@ -102,6 +102,7 @@ import {
 import { Pre } from "./components/pre";
 import { Icon } from "./components/icon";
 import { getDefaultModelConfigSync } from "./components/ai";
+import { OpenAICompatibility } from "./common/openai-compatibility";
 
 setDarkReaderFetchMethod((url) => {
   return fetch(url, {
@@ -350,6 +351,36 @@ export function Layout() {
     refresh();
   };
   let defaultModel = getDefaultModelConfigSync(GPT_MODELS);
+
+  const onFocus = async () => {
+    const openai = new OpenAI({
+      baseURL: form.getFieldValue("baseURL"),
+      apiKey: form.getFieldValue("apiKey") || "",
+      dangerouslyAllowBrowser: true,
+    });
+    const openai2 = new OpenAICompatibility({
+      baseURL: form.getFieldValue("baseURL"),
+      apiKey: form.getFieldValue("apiKey") || "",
+      dangerouslyAllowBrowser: true,
+    }, {
+      baseURL: form.getFieldValue("baseURL"),
+      apiKey: form.getFieldValue("apiKey") || "",
+      provider: form.getFieldValue("provider"),
+    })
+
+
+    try {
+      const list = await openai2.listModels();
+      setModelOptions(
+        list.data.map((x) => {
+          return { value: x.id, label: x.id };
+        }),
+      );
+      // console.log(list);
+    } catch {
+      setModelOptions([]);
+    }
+  }
 
   return (
     <ConfigProvider locale={locale}>
@@ -1006,24 +1037,7 @@ export function Layout() {
                 showSearch
                 placeholder={t`Please enter or select the model`}
                 optionFilterProp="label"
-                onFocus={async () => {
-                  const openai = new OpenAI({
-                    baseURL: form.getFieldValue("baseURL"),
-                    apiKey: form.getFieldValue("apiKey") || "",
-                    dangerouslyAllowBrowser: true,
-                  });
-                  try {
-                    const list = await openai.models.list();
-                    setModelOptions(
-                      list.data.map((x) => {
-                        return { value: x.id, label: x.id };
-                      }),
-                    );
-                    // console.log(list);
-                  } catch {
-                    setModelOptions([]);
-                  }
-                }}
+                onFocus={onFocus}
                 options={modelOptions}
               />
             </Form.Item>
@@ -1035,24 +1049,7 @@ export function Layout() {
             >
               <Input
                 placeholder={t`Please enter or select the model`}
-                onFocus={async () => {
-                  const openai = new OpenAI({
-                    baseURL: form.getFieldValue("baseURL"),
-                    apiKey: form.getFieldValue("apiKey") || "",
-                    dangerouslyAllowBrowser: true,
-                  });
-                  try {
-                    const list = await openai.models.list();
-                    setModelOptions(
-                      list.data.map((x) => {
-                        return { value: x.id, label: x.id };
-                      }),
-                    );
-                    // console.log(list);
-                  } catch {
-                    setModelOptions([]);
-                  }
-                }}
+                onFocus={onFocus}
               ></Input>
             </Form.Item>
           )}

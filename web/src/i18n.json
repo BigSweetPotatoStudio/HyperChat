@@ -1318,5 +1318,21 @@
   "Save Success, please restart": {
     "en": "Save Success, please restart",
     "zh": "保存成功，请重启"
+  },
+  "Network Settings": {
+    "en": "Network Settings",
+    "zh": "网络设置"
+  },
+  "local-browser": {
+    "en": "local-browser",
+    "zh": "本地浏览器"
+  },
+  "server-proxy": {
+    "en": "server-proxy",
+    "zh": "服务器代理"
+  },
+  "(Need to solve cors problem)": {
+    "en": "(Need to solve cors problem)",
+    "zh": "(需要解决跨域问题)"
   }
 }
