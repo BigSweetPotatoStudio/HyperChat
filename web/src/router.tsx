@@ -52,7 +52,7 @@ export function getLayoutRoute() {
         icon: <CommentOutlined />,
         component: <WorkSpace />,
       },
-      {
+      process.env.myEnv == "dev" && {
         path: "/Agent",
         name: t`Agent`,
         icon: <Icon name="bx-bot" />,
@@ -166,7 +166,7 @@ export function getLayoutRoute() {
       //   icon: "⌨️",
       //   component: <TestPage />,
       // }
-    ],
+    ].filter(x => x)
   };
 
   function Container(props: { from: string; default?: string }) {
