@@ -1,4 +1,4 @@
-import puppeteer, { Page } from "puppeteer-core";
+import puppeteer, { Browser, Page } from "puppeteer-core";
 // import * as ChromeLauncher from "chrome-launcher";
 import path from "path";
 import { ChromeLauncher, zx } from "ts/es6.mjs";
@@ -36,7 +36,7 @@ let launcher;
 
 
 
-export async function createBrowser(force = false, url = "") {
+export async function createBrowser(force = false, url = ""): Promise<Browser> {
   const newFlags = ChromeLauncher.Launcher.defaultFlags().filter(
     (flag) => flag !== "--disable-extensions" && flag !== "--mute-audio"
   );
@@ -148,6 +148,7 @@ export const search = async (words: string) => {
   try {
     let browser = await createBrowser();
     let page = await browser.newPage().catch(async (error) => {
+      Logger.error("newPage error: ",error);
       browser = await createBrowser(true);
       return await browser.newPage()
     });
@@ -179,7 +180,8 @@ export const search = async (words: string) => {
       await page.goto(
         `https://www.google.com/search?q=` + encodeURIComponent(words)
       );
-      await Promise.race([page.waitForNetworkIdle(), sleep(3000)]);
+      await Promise.race([page.waitForSelector("#search"), sleep(3000)]);
+  
       res = await executeClientScript(
         page,
         `
@@ -210,9 +212,9 @@ export const search = async (words: string) => {
         `
       );
       await page.close();
-      if (getConfig().ChromeAutoClose == "true" && getConfig().ChromeIsUseLocal == "true") {
-        await browser.close();
-      }
+    }
+    if (getConfig().ChromeAutoClose == "true" && getConfig().ChromeIsUseLocal == "true") {
+      await browser.close();
     }
     return res;
   } catch (e) {

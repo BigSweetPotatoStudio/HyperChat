@@ -42,8 +42,6 @@ export async function fetch(url: string) {
         "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/132.0.0.0 Safari/537.36",
     });
 
-    // 等待页面加载完成
-    await sleep(3000);
     await Promise.race([
       new Promise((resolve) => {
         win.webContents.on("did-finish-load", () => {
@@ -52,6 +50,8 @@ export async function fetch(url: string) {
       }),
       sleep(3000),
     ]);
+    await sleep(3000);
+    
     Logger.info("Page loaded: " + url, __dirname);
     let md = await executeClientScript(
       win,
@@ -135,7 +135,6 @@ export async function search(words: string) {
         }),
         sleep(3000),
       ]);
-      await sleep(3000);
 
       Logger.info("Page loaded");
       let res = await executeClientScript(
