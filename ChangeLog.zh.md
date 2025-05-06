@@ -8,6 +8,11 @@
 * nodejs版本，添加网络设置，允许通过本地浏览器直连。
 * fixbug
 
+![image](https://github.com/user-attachments/assets/5c51c083-4ed8-4961-af62-ec34eba3e08e)
+![image](https://github.com/user-attachments/assets/943e454e-8506-4a87-a486-d5f465b470f1)
+![image](https://github.com/user-attachments/assets/b958bf63-add2-434a-a8e1-405ee1c773d9)
+
+
 # 1.6.5
 
 * 修复qwen3等模型的工具调用，添加工具调用兼容模式，类似cline，通过正则匹配<tool_use>,
