@@ -1100,6 +1100,7 @@ export function Layout() {
               <Form.Item
                 name="toolMode"
                 label={t`toolMode`}
+                tooltip={t`Standard calls tools by passing tools parameters, and compatible calls tools by writing tools into the system prompt.`}
               >
                 <Radio.Group onChange={() => {
                   refresh();
@@ -1108,12 +1109,12 @@ export function Layout() {
                   <Radio value="compatible">{t`compatible`}</Radio>
                 </Radio.Group>
               </Form.Item>
-              {form.getFieldValue("toolMode") == "standard" && <Form.Item
+              {/* {form.getFieldValue("toolMode") == "standard" && <Form.Item
                 name="isStrict"
                 label={t`CallToolStrictMode`}
               >
                 <Switch></Switch>
-              </Form.Item>}
+              </Form.Item>} */}
 
               {form.getFieldValue("key") && <Form.Item
                 name="supportImage"

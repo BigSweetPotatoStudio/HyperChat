@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { CloudSyncOutlined, CommentOutlined, SmileFilled } from "@ant-design/icons";
+import { CloudSyncOutlined, CommentOutlined, FolderOpenOutlined, SmileFilled } from "@ant-design/icons";
 import {
   Outlet,
   Link,
@@ -14,7 +14,7 @@ import { Chat } from "./pages/chat";
 import { Market } from "./pages/market/market";
 import { HpyerTools } from "./pages/hypertools/hypertools";
 import { KnowledgeBase } from "./pages/knowledgeBase/knowledgeBase";
-import { WorkSpace } from "./pages/workspace";
+import { ChatSpace } from "./pages/workspace";
 import { TaskListPage } from "./pages/hyperAgent/TaskList";
 import { t } from "./i18n";
 import { TaskResultsPage } from "./pages/hyperAgent/TaskResults";
@@ -25,6 +25,7 @@ import { TestPage } from "./pages/TestPage";
 import { VariableList } from "./pages/variableList/variableList";
 import { AgentPage } from "./pages/Agent";
 import { AgentCreatePage } from "./pages/Agent/create";
+import { Workspace } from "./pages/workspace/workspace";
 type RouteType = {
   path: string;
   name: React.ReactNode;
@@ -44,14 +45,21 @@ export function getLayoutRoute() {
         path: "/home",
         name: t`Home`,
         hideInMenu: true,
-        component: <WorkSpace />,
+        component: <ChatSpace />,
       },
       {
         path: "/Chat",
         name: t`Chat`,
         icon: <CommentOutlined />,
-        component: <WorkSpace />,
+        component: <ChatSpace />,
       },
+      process.env.myEnv == "dev" && {
+        path: "/Workspace",
+        name: t`Workspace`,
+        icon: <FolderOpenOutlined />,
+        component: <Workspace />,
+      },
+
       process.env.myEnv == "dev" && {
         path: "/Agent",
         name: t`Agent`,

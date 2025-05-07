@@ -21,7 +21,7 @@ import Draggable from "react-draggable";
 import { Sessions } from "./sessions";
 import { LaptopOutlined, MinusOutlined } from "@ant-design/icons";
 import { t } from "../../i18n";
-function Page({
+function ChatPage({
   sessionID = "",
   type = undefined,
   onChange = undefined,
@@ -144,7 +144,7 @@ function Page({
   );
 }
 
-export function WorkSpace() {
+export function ChatSpace() {
   const [num, setNum] = useState(0);
   function refresh() {
     setNum((num) => num + 1);
@@ -167,7 +167,7 @@ export function WorkSpace() {
             label: "New Tab",
             closeIcon: false,
             children: (
-              <Page
+              <ChatPage
                 type="hyperchat"
                 onChange={(item) => {
                   n.label = item.title;
@@ -208,7 +208,7 @@ export function WorkSpace() {
       label: "HyperChat",
       closable: false,
       children: (
-        <Page
+        <ChatPage
           sessionID={v4()}
           type="hyperchat"
           onChange={(item) => {
@@ -285,7 +285,7 @@ export function WorkSpace() {
               key: v4(),
               label: "New Tab",
               children: (
-                <Page
+                <ChatPage
                   onChange={(item) => {
                     n.label = item.title;
                     refresh();
@@ -316,96 +316,9 @@ export function WorkSpace() {
       </div>
       <div
         className="my-modal"
-      // style={{ visibility: open ? "visible" : "hidden" }}
-      >
-        {/* <div className="ant-modal-root">
-          <div className="ant-modal-wrap">
-            <div
-              role="dialog"
-              aria-labelledby=":r1a:"
-              aria-modal="true"
-              className="ant-modal"
-            >
-              <Draggable
-                disabled={disabled}
-                bounds={bounds}
-                nodeRef={draggleRef}
-                onStart={(event, uiData) => onStart(event, uiData)}
-              >
-                <div ref={draggleRef}>
-                  <div className="ant-modal-content">
-                    <div className="ant-modal-header">
-                      <div className="ant-modal-title" id=":r1a:">
-                        <div className="width: 100%; cursor: move;">
-                          Session Management
-                        </div>
-                      </div>
-                    </div>
-                    <div className="ant-modal-body">
-                      <div className="p-0">
-                        <div className="height: 500px; max-width: 1024px; width: 90%;">
-                          <div className="ant-tabs ant-tabs-top ant-tabs-editable ant-tabs-card ant-tabs-editable-card css-dev-only-do-not-override-1yacf91">
-                            <div
-                              role="tablist"
-                              aria-orientation="horizontal"
-                              className="ant-tabs-nav"
-                            >
-                              <div className="ant-tabs-nav-wrap">
-                                <div className="ant-tabs-nav-list">
-                                  <div className="ant-tabs-ink-bar ant-tabs-ink-bar-animated"></div>
-                                </div>
-                              </div>
-                              <div className="ant-tabs-nav-operations ant-tabs-nav-operations-hidden">
-                                <button
-                                  type="button"
-                                  className="ant-tabs-nav-more"
-                                  aria-haspopup="listbox"
-                                  aria-controls="rc-tabs-1-more-popup"
-                                  id="rc-tabs-1-more"
-                                  aria-expanded="false"
-                                >
-                                  <span
-                                    role="img"
-                                    aria-label="ellipsis"
-                                    className="anticon anticon-ellipsis"
-                                  >
-                                    <svg
-                                      viewBox="64 64 896 896"
-                                      focusable="false"
-                                      data-icon="ellipsis"
-                                      width="1em"
-                                      height="1em"
-                                      fill="currentColor"
-                                      aria-hidden="true"
-                                    >
-                                      <path d="M176 511a56 56 0 10112 0 56 56 0 10-112 0zm280 0a56 56 0 10112 0 56 56 0 10-112 0zm280 0a56 56 0 10112 0 56 56 0 10-112 0z"></path>
-                                    </svg>
-                                  </span>
-                                </button>
-                              </div>
-                            </div>
-                            <div className="ant-tabs-content-holder">
-                              <div className="ant-tabs-content ant-tabs-content-top"></div>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                    <div className="ant-modal-footer">
-                      <button
-                        type="button"
-                        className="ant-btn css-dev-only-do-not-override-1yacf91 ant-btn-default ant-btn-color-default ant-btn-variant-outlined"
-                      >
-                        <span>Hidden</span>
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              </Draggable>
-            </div>
-          </div>
-        </div> */}
 
+      >
+   
         <Modal
           open={true}
           width={"70%"}
