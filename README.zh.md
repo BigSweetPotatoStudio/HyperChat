@@ -104,7 +104,8 @@ npm run dev
 ![image](https://github.com/user-attachments/assets/080320e3-37d2-4f5a-ae3d-3517b3d692ad)
 
 #### 支持 @ 快速输入 + 调用Agent
-![17790cb3c686690e255462c7638b61f6](https://github.com/user-attachments/assets/12fd824c-cad7-4dd7-8df3-699c1da8d1cf)
+![image](https://github.com/user-attachments/assets/405ab516-fb8d-4f5b-b0f4-f3470354059e)
+
 
 #### 支持 `Artifacts`, `SVG`,`HTML`,`Mermaid` 渲染,
 ![image](https://github.com/user-attachments/assets/d823c671-e989-4f40-aadb-0bc0f3b35175)
@@ -119,8 +120,9 @@ npm run dev
 #### 调用terminal mcp  自动帮我分析asar文件 + 帮我解压
 ![image](https://github.com/user-attachments/assets/f9cc12cd-0c7e-4f2d-9649-4bb31240f4a6)
 
-#### 调用terminal 查看界面
-![image](https://github.com/user-attachments/assets/009317f2-d49b-432a-bb46-a15133d12f9f)
+#### 调用terminal，编译并升级nginx
+![image](https://github.com/user-attachments/assets/29a659cc-c844-4ca9-abe0-ff4372882f6b)
+
 
 #### 高德地图MCP
 ![image](https://github.com/user-attachments/assets/549e8fee-085d-4e8a-86a8-184ebe1053e6)
