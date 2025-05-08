@@ -1,4 +1,4 @@
-import { Avatar, Badge, Button, List, Modal, Segmented, Tabs } from "antd";
+import { Avatar, Badge, Button, List, Modal, Segmented, Splitter, Tabs } from "antd";
 import React, {
   useState,
   useEffect,
@@ -21,6 +21,7 @@ import Draggable from "react-draggable";
 import { Sessions } from "./sessions";
 import { LaptopOutlined, MinusOutlined } from "@ant-design/icons";
 import { t } from "../../i18n";
+import { EVENT } from "../../common/event";
 function ChatPage({
   sessionID = "",
   type = undefined,
@@ -264,61 +265,76 @@ export function ChatSpace() {
       setOpen(false);
     }
   }, [sessionCount]);
+  const [sizes, setSizes] = useState(["100%", 0] as any);
   return (
     <div className="myworkspace flex h-full flex-col">
-      <Tabs
-        className="h-full"
-        tabPosition="bottom"
-        type="editable-card"
-        activeKey={activeKey}
-        centered
-        items={items}
-        onChange={(e) => {
-          setActiveKey(e);
-        }}
-        onEdit={(
-          targetKey: React.MouseEvent | React.KeyboardEvent | string,
-          action: "add" | "remove",
-        ) => {
-          if (action === "add") {
-            let n = {
-              key: v4(),
-              label: "New Tab",
-              children: (
-                <ChatPage
-                  onChange={(item) => {
-                    n.label = item.title;
-                    refresh();
-                  }}
-                />
-              ),
-            };
-            setItems([...items, n]);
-            setActiveKey(n.key);
-          } else {
-            setItems(items.filter((item) => item.key !== targetKey));
-            let find = items.findIndex((item) => item.key == targetKey);
-            if (find == -1) return;
-            setActiveKey(items[find - 1]?.key);
-          }
-        }}
-      />
+      <Splitter onResize={(sizes) => {
+        setSizes(sizes)
+        EVENT.fire("chatspace-resize", sizes)
+      }} >
+        <Splitter.Panel size={sizes[0]} style={{ overflow: "hidden" }}>
+          <Tabs
+            className="h-full"
+            tabPosition="bottom"
+            type="editable-card"
+            activeKey={activeKey}
+            centered
+            items={items}
+            onChange={(e) => {
+              setActiveKey(e);
+            }}
+            onEdit={(
+              targetKey: React.MouseEvent | React.KeyboardEvent | string,
+              action: "add" | "remove",
+            ) => {
+              if (action === "add") {
+                let n = {
+                  key: v4(),
+                  label: "New Tab",
+                  children: (
+                    <ChatPage
+                      onChange={(item) => {
+                        n.label = item.title;
+                        refresh();
+                      }}
+                    />
+                  ),
+                };
+                setItems([...items, n]);
+                setActiveKey(n.key);
+              } else {
+                setItems(items.filter((item) => item.key !== targetKey));
+                let find = items.findIndex((item) => item.key == targetKey);
+                if (find == -1) return;
+                setActiveKey(items[find - 1]?.key);
+              }
+            }}
+          />
+        </Splitter.Panel>
+        <Splitter.Panel size={sizes[1]} min="20%" max="70%">
+          <Sessions setSessionCount={setSessionCount} />
+        </Splitter.Panel>
+      </Splitter>
       <div style={{ position: "fixed", bottom: 0, right: 0, margin: 15 }}>
         <Badge
-          count={sessionCount}
+          // count={sessionCount}
           className="cursor-pointer"
           onClick={() => {
-            setOpen((e) => !e);
+            if (sizes[1] == 0) {
+              setSizes(["60%", "40%"]);
+              EVENT.fire("chatspace-resize", sizes)
+            } else {
+              setSizes(["100%", 0]);
+            }
           }}
         >
           <LaptopOutlined />
         </Badge>
       </div>
-      <div
+      {/* <div
         className="my-modal"
 
       >
-   
         <Modal
           open={true}
           width={"70%"}
@@ -374,7 +390,7 @@ export function ChatSpace() {
             <Sessions setSessionCount={setSessionCount} />
           </div>
         </Modal>
-      </div>
+      </div> */}
     </div>
   );
 }

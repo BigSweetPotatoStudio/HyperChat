@@ -16,7 +16,7 @@
     "@dnd-kit/utilities": "^3.2.2",
     "@effortlessmotion/html-webpack-inline-source-plugin": "^1.0.3",
     "@microsoft/clarity": "^1.0.0",
-    "@modelcontextprotocol/sdk": "^1.11.0",
+    "@modelcontextprotocol/sdk": "^1.10.2",
     "@monaco-editor/react": "^4.7.0",
     "@mozilla/readability": "^0.5.0",
     "@testing-library/jest-dom": "^5.17.0",

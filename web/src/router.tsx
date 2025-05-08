@@ -14,7 +14,7 @@ import { Chat } from "./pages/chat";
 import { Market } from "./pages/market/market";
 import { HpyerTools } from "./pages/hypertools/hypertools";
 import { KnowledgeBase } from "./pages/knowledgeBase/knowledgeBase";
-import { ChatSpace } from "./pages/workspace";
+import { ChatSpace } from "./pages/workspace/chatspace";
 import { TaskListPage } from "./pages/hyperAgent/TaskList";
 import { t } from "./i18n";
 import { TaskResultsPage } from "./pages/hyperAgent/TaskResults";
@@ -53,33 +53,32 @@ export function getLayoutRoute() {
         icon: <CommentOutlined />,
         component: <ChatSpace />,
       },
-      process.env.myEnv == "dev" && {
-        path: "/Workspace",
-        name: t`Workspace`,
-        icon: <FolderOpenOutlined />,
-        component: <Workspace />,
-      },
-
-      process.env.myEnv == "dev" && {
-        path: "/Agent",
-        name: t`Agent`,
-        icon: <Icon name="bx-bot" />,
-        component: <Container from="/Agent" default="./List" />,
-        routes: [
-          {
-            path: "/List",
-            name: t`Agent`,
-            component: <AgentPage />,
-            hideInMenu: true,
-          },
-          {
-            path: "/Create",
-            name: t`Create`,
-            component: <AgentCreatePage />,
-            hideInMenu: true,
-          },
-        ],
-      },
+      // process.env.myEnv == "dev" && {
+      //   path: "/Workspace",
+      //   name: t`Workspace`,
+      //   icon: <FolderOpenOutlined />,
+      //   component: <Workspace />,
+      // },
+      // process.env.myEnv == "dev" && {
+      //   path: "/Agent",
+      //   name: t`Agent`,
+      //   icon: <Icon name="bx-bot" />,
+      //   component: <Container from="/Agent" default="./List" />,
+      //   routes: [
+      //     {
+      //       path: "/List",
+      //       name: t`Agent`,
+      //       component: <AgentPage />,
+      //       hideInMenu: true,
+      //     },
+      //     {
+      //       path: "/Create",
+      //       name: t`Create`,
+      //       component: <AgentCreatePage />,
+      //       hideInMenu: true,
+      //     },
+      //   ],
+      // },
 
       // {
       //   path: "/Agent",

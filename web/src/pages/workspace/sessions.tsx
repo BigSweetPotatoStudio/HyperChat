@@ -21,6 +21,7 @@ import Draggable from "react-draggable";
 import { sleep } from "../../common/sleep";
 import { LaptopOutlined } from "@ant-design/icons";
 import { t } from "../../i18n";
+import { EVENT } from "../../common/event";
 
 export function Sessions({ setSessionCount = undefined }) {
   //   const [activeKey, setActiveKey] = useState("1");
@@ -30,6 +31,12 @@ export function Sessions({ setSessionCount = undefined }) {
   }
 
   useEffect(() => {
+    (async () => {
+      // await call("OpenTerminal", []);
+    })();
+  }, [])
+
+  useEffect(() => {
     let URL_PRE = getURL_PRE();
 
     const socket = io(URL_PRE + "terminal-message");
@@ -37,7 +44,7 @@ export function Sessions({ setSessionCount = undefined }) {
       console.log("terminal-message-connected");
     });
     socket.on("open-terminal", async (m: any) => {
-      //   console.log("Received message:", m);
+      console.log("Received message:", m);
       let uid = v4();
       let sssion = {
         type: "terminal" as const,
@@ -68,8 +75,23 @@ export function Sessions({ setSessionCount = undefined }) {
       xterm.open(terminalRef);
       fitAddon.fit();
       window.onresize = () => {
-        fitAddon.fit();
+        setTimeout(() => {
+          fitAddon.fit();
+        }, 500);
       };
+      let first = true;
+      EVENT.on("chatspace-resize", () => {
+        setTimeout(() => {
+          fitAddon.fit();
+          // if (first) {
+          //   first = false;
+          //   socket.emit("terminal-receive", {
+          //     terminalID: m.terminalID,
+          //     data: "clear\r",
+          //   });
+          // }
+        }, 500);
+      });
       xterm.onData(function (data) {
         // console.log(data);
         socket.emit("terminal-receive", {
@@ -101,7 +123,11 @@ export function Sessions({ setSessionCount = undefined }) {
         refresh();
       }
     });
-    ///
+    setTimeout(() => {
+      call("OpenTerminal", []);
+    }, 1000);
+
+
   }, []);
   const data = useRef({
     sessions: [] as {
@@ -114,15 +140,15 @@ export function Sessions({ setSessionCount = undefined }) {
   });
 
   return (
-    <div style={{ height: "500px" }}>
+    <div style={{ height: "500px", minWidth: "500px" }}>
       <Tabs
         type="editable-card"
-        hideAdd
         activeKey={data.current.activeKey}
         onChange={(key) => {
           data.current.activeKey = key;
           refresh();
         }}
+        hideAdd
         // onEdit={(targetKey, action: "add" | "remove") => {
         //   if (action === "add") {
         //     add();
@@ -139,7 +165,7 @@ export function Sessions({ setSessionCount = undefined }) {
               children: (
                 <div
                   id={"terminal-" + x.id}
-                  //   style={{ height: "500px", width: "1000px"  }}
+                //   style={{ height: "500px", width: "1000px"  }}
                 ></div>
               ),
             };
