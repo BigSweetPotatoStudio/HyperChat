@@ -42,14 +42,43 @@ function checkEnd(str: string) {
     return false;
   }
 }
-export async function OpenTerminal() {
+
+export async function GetTerminals() {
+  for (let id of terminalMap.keys()) {
+    getMessageService().terminalMsg.emit("open-terminal", {
+      terminalID: id,
+      terminals: Array.from(terminalMap).map((x) => x[0]),
+    });
+  }
+  return Array.from(terminalMap.keys());
+}
+export async function CloseTerminal(TerminalID) {
+  let terminal = terminalMap.get(TerminalID);
+  if (terminal) {
+    terminal.terminal.kill();
+    terminalMap.delete(TerminalID);
+    getMessageService().terminalMsg.emit("close-terminal", {
+      terminalID: TerminalID,
+    });
+  }
+}
+export async function OpenTerminal(useCache = false) {
+  if (useCache && lastTerminalID) {
+    getMessageService().terminalMsg.emit("open-terminal", {
+      terminalID: lastTerminalID,
+      terminals: Array.from(terminalMap).map((x) => x[0]),
+    });
+    return;
+  }
   if (os.platform() != "win32") {
     process.env.PATH = shellPathSync();
   }
+  let lastTerminal = terminalMap.get(lastTerminalID);
+
   const terminal = pty.spawn(shell, [], {
     name: "xterm-color",
-    cols: 80,
-    rows: 30,
+    cols: lastTerminal?.terminal?.cols || 80,
+    rows: lastTerminal?.terminal?.rows || 30,
     cwd: process.env.HOME,
     env: process.env,
     useConpty: os.platform() == "win32",
@@ -63,12 +92,18 @@ export async function OpenTerminal() {
   };
   let callback = (msg) => {
     if (msg.terminalID == terminal.pid) {
-      c.terminal.write(msg.data);
+      if (msg.type == "resize") {
+        // Logger.info("resize terminal: ", msg);
+        c.terminal.resize(msg.data.cols, msg.data.rows);
+      } else {
+        c.terminal.write(msg.data);
+      }
+
     }
   };
   terminal.onExit((code) => {
     terminalMap.delete(terminal.pid);
-    getMessageService().terminalMsg.emit("onClose-terminal", {
+    getMessageService().terminalMsg.emit("close-terminal", {
       terminalID: terminal.pid,
     });
     getMessageService().removeTerminalMsgListener(callback);
@@ -79,6 +114,7 @@ export async function OpenTerminal() {
   });
 
   terminal.onData((data) => {
+    Logger.info("terminal onData: ", data);
     getMessageService().terminalMsg.emit("terminal-send", {
       terminalID: terminal.pid,
       data: data,
@@ -88,7 +124,6 @@ export async function OpenTerminal() {
 
   });
 
-  getMessageService().addTerminalMsgListener(callback);
   // terminal.write(`clear\r`);
   while (1) {
     await new Promise((resolve) => setTimeout(resolve, 100));
@@ -96,6 +131,8 @@ export async function OpenTerminal() {
       break;
     }
   }
+  getMessageService().addTerminalMsgListener(callback);
+
   terminalMap.set(terminal.pid, c);
   lastTerminalID = terminal.pid;
   c.lastIndex = c.stdout.length;
@@ -148,7 +185,7 @@ export function registerTool(server: McpServer) {
   //     terminal.onExit((code) => {
   //       clearTimeout(c.timer);
   //       terminalMap.delete(terminal.pid);
-  //       getMessageService().terminalMsg.emit("onClose-terminal", {
+  //       getMessageService().terminalMsg.emit("close-terminal", {
   //         terminalID: terminal.pid,
   //       });
   //       getMessageService().removeTerminalMsgListener(callback);

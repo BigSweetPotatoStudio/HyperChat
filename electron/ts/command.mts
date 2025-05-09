@@ -44,7 +44,7 @@ import { createBrowser } from "./mcp/servers/hyper_tools/web2.mjs";
 import { getConfig } from "./mcp/servers/hyper_tools/lib.mjs";
 import dayjs from "dayjs";
 import vm from "node:vm";
-import { OpenTerminal } from "./mcp/servers/terminal/terminal.mjs";
+import { CloseTerminal, GetTerminals, OpenTerminal } from "./mcp/servers/terminal/terminal.mjs";
 
 export const { createRequire } = await import(
   /* webpackIgnore: true */ "module"
@@ -477,8 +477,14 @@ export class CommandFactory {
     await ChatHistory.saveSync()
     return;
   }
-  async OpenTerminal() {
-    return await OpenTerminal();
+  async OpenTerminal(useCache) {
+    return await OpenTerminal(useCache);
+  }
+  async GetTerminals() {
+    return await GetTerminals();
+  }
+  async CloseTerminal(TerminalID) {
+    return await CloseTerminal(TerminalID);
   }
   async clearChatHistory(day: number) {
     let time = dayjs().subtract(day, "day").valueOf();
