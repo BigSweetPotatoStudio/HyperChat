@@ -14,9 +14,7 @@ const shell = os.platform() === "win32" ? "powershell.exe" : "bash";
 
 type Context = {
   terminal: pty.IPty;
-  stdout: string;
   commamdOutput: string;
-  lastIndex: number;
 };
 const terminalMap = new Map<number, Context>();
 
@@ -45,31 +43,23 @@ function checkEnd(str: string) {
 
 export async function GetTerminals() {
   for (let id of terminalMap.keys()) {
-    getMessageService().terminalMsg.emit("open-terminal", {
-      terminalID: id,
-      terminals: Array.from(terminalMap).map((x) => x[0]),
-    });
+    lastTerminalID = id;
+    // getMessageService().terminalMsg.emit("open-terminal", {
+    //   terminalID: id,
+    //   terminals: Array.from(terminalMap).map((x) => x[0]),
+    // });
   }
   return Array.from(terminalMap.keys());
 }
 export async function CloseTerminal(TerminalID) {
   let terminal = terminalMap.get(TerminalID);
   if (terminal) {
+    Logger.info("Terminal exited with code: ", terminal.terminal.pid);
     terminal.terminal.kill();
-    terminalMap.delete(TerminalID);
-    getMessageService().terminalMsg.emit("close-terminal", {
-      terminalID: TerminalID,
-    });
   }
 }
-export async function OpenTerminal(useCache = false) {
-  if (useCache && lastTerminalID) {
-    getMessageService().terminalMsg.emit("open-terminal", {
-      terminalID: lastTerminalID,
-      terminals: Array.from(terminalMap).map((x) => x[0]),
-    });
-    return;
-  }
+export async function OpenTerminal() {
+
   if (os.platform() != "win32") {
     process.env.PATH = shellPathSync();
   }
@@ -87,7 +77,6 @@ export async function OpenTerminal(useCache = false) {
   let c = {
     terminal: terminal,
     commamdOutput: "",
-    stdout: "",
     lastIndex: 0,
   };
   let callback = (msg) => {
@@ -98,10 +87,10 @@ export async function OpenTerminal(useCache = false) {
       } else {
         c.terminal.write(msg.data);
       }
-
     }
   };
   terminal.onExit((code) => {
+    Logger.info("Terminal exited with code: ", code);
     terminalMap.delete(terminal.pid);
     getMessageService().terminalMsg.emit("close-terminal", {
       terminalID: terminal.pid,
@@ -114,12 +103,12 @@ export async function OpenTerminal(useCache = false) {
   });
 
   terminal.onData((data) => {
-    Logger.info("terminal onData: ", data);
+    // Logger.info("terminal onData: ", data);
     getMessageService().terminalMsg.emit("terminal-send", {
       terminalID: terminal.pid,
       data: data,
     });
-    c.stdout += data;
+
     c.commamdOutput += data;
 
   });
@@ -127,7 +116,7 @@ export async function OpenTerminal(useCache = false) {
   // terminal.write(`clear\r`);
   while (1) {
     await new Promise((resolve) => setTimeout(resolve, 100));
-    if (checkEnd(c.stdout)) {
+    if (checkEnd(c.commamdOutput)) {
       break;
     }
   }
@@ -135,7 +124,13 @@ export async function OpenTerminal(useCache = false) {
 
   terminalMap.set(terminal.pid, c);
   lastTerminalID = terminal.pid;
-  c.lastIndex = c.stdout.length;
+
+  return lastTerminalID;
+}
+
+export async function ActiveAITerminal(TerminalID) {
+  lastTerminalID = TerminalID;
+  return lastTerminalID;
 }
 
 export function registerTool(server: McpServer) {
@@ -251,7 +246,7 @@ export function registerTool(server: McpServer) {
       }),
     },
     async ({ command }) => {
-      if (lastTerminalID === 0) {
+      if (lastTerminalID === 0 || !terminalMap.has(lastTerminalID)) {
         await OpenTerminal();
       }
       let c = terminalMap.get(lastTerminalID);
@@ -289,7 +284,7 @@ export function registerTool(server: McpServer) {
           }
         }
       }
-      c.lastIndex = c.stdout.length;
+
       // fs.writeFileSync("terminal.log", strip(c.commamdOutput));
       return {
         content: [

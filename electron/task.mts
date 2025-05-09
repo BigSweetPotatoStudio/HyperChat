@@ -20,15 +20,8 @@ if (argv.watch) {
 }
 
 if (argv.devnode) {
-  let rootPackageJSON = await fs.readJSON("../package.json");
-  let packageJSON = await fs.readJSON("./package.json");
-  packageJSON.version = rootPackageJSON.version;
-  // console.log(packageJSON.dependencies);
-  fs.writeJSON("./package.json", packageJSON, {
-    spaces: 2,
-  });
   await $`npx cross-env NODE_ENV=development myEnv=dev webpack -c webpack.no_electron.js`;
-  await $`node js/main_no_electron.js`;
+  await $`npx cross-env NODE_ENV=production node js/main_no_electron.js`;
 }
 
 if (argv.testprod) {

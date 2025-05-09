@@ -25,11 +25,17 @@ import { EVENT } from "../../common/event";
 import { ClipboardAddon, IClipboardProvider, ClipboardSelectionType } from '@xterm/addon-clipboard';
 
 let URL_PRE = getURL_PRE();
-
+let lastSizes = {} as { cols: number; rows: number };
 const socket = io(URL_PRE + "terminal-message");
 socket.on("connect", () => {
   console.log("terminal-message-connected");
 });
+
+type SessionType = {
+  type: "terminal" | "other";
+  id: string;
+  context: any;
+};
 export function Sessions({ setSessionCount = undefined }) {
   //   const [activeKey, setActiveKey] = useState("1");
   const [num, setNum] = useState(0);
@@ -44,23 +50,21 @@ export function Sessions({ setSessionCount = undefined }) {
   }, [])
 
   useEffect(() => {
+    async function OpenTerminal(terminalID) {
 
-    socket.on("open-terminal", async (m: any) => {
-      console.log("Received message:", m);
-      let uid = v4();
+      console.log("Received message:", terminalID);
       let sssion = {
         type: "terminal" as const,
-        id: m.terminalID,
-        uid,
+        id: terminalID,
         context: {} as any,
       };
       data.current.sessions.push(sssion);
       setSessionCount(data.current.sessions.length);
-      data.current.activeKey = uid;
+      data.current.activeKey = terminalID;
       refresh();
       await sleep(500);
       const terminalRef = document.getElementById(
-        "terminal-" + m.terminalID,
+        "terminal-" + terminalID,
       ) as HTMLDivElement;
       if (!terminalRef) {
         console.error("Terminal element not found");
@@ -77,59 +81,85 @@ export function Sessions({ setSessionCount = undefined }) {
         // xterm.
         return true; // Allow other keys to propagate
       });
-      sssion.context.xterm = xterm;
+
       const fitAddon = new FitAddon();
       xterm.loadAddon(fitAddon);
       xterm.loadAddon(new WebLinksAddon());
       const clipboardAddon = new ClipboardAddon();
 
+
       xterm.loadAddon(clipboardAddon);
       xterm.open(terminalRef);
+      await sleep(500);
       xterm.onResize((size) => {
         console.log("Resized to: ", size.cols, size.rows);
+        lastSizes = size;
         socket.emit("terminal-receive", {
-          terminalID: m.terminalID,
+          terminalID: terminalID,
           type: "resize",
           data: size,
         });
       });
-      setTimeout(() => {
-        fitAddon.fit();
-      }, 500);
+
+      fitAddon.fit();
       window.onresize = () => {
         setTimeout(() => {
           fitAddon.fit();
-        }, 500);
+        }, 1000);
       };
 
       EVENT.on("chatspace-resize", () => {
         setTimeout(() => {
           fitAddon.fit();
-        }, 500);
+        }, 1000);
       });
 
       xterm.onData(function (data) {
-        console.log("xterm onData: ", data);
+        // console.log("xterm onData: ", data);
         socket.emit("terminal-receive", {
-          terminalID: m.terminalID,
+          terminalID: terminalID,
           data: data,
         });
       });
+      sssion.context.xterm = xterm;
+      sssion.context.fitAddon = fitAddon;
+      sssion.context.xtermdata = "";
+    }
+    socket.on("open-terminal", (m) => {
+      OpenTerminal(m.terminalID);
     });
-    let xtermdata = "";
+    let sessionObj = {};
+
     socket.on("terminal-send", async (m) => {
-      //   console.log("Received terminal-send message:", m);
+      // console.log("terminal-send: ", m.data);
       let sssion = data.current.sessions.find((x) => x.id == m.terminalID);
-      while (!sssion || !sssion.context.xterm) {
-        await sleep(1000);
-        sssion = data.current.sessions.find((x) => x.id == m.terminalID);
-        xtermdata += m.data;
+      if (sessionObj[m.terminalID] == undefined) {
+        sessionObj[m.terminalID] = {
+          xtermdata: "",
+          timer: 0
+        };
       }
-      sssion.context.xterm.write(xtermdata + m.data);
-      xtermdata = "";
+      sessionObj[m.terminalID].xtermdata += m.data;
+      clearTimeout(sessionObj[m.terminalID].timer);
+      if (sssion && sssion.context.xterm) {
+
+      } else {
+        sessionObj[m.terminalID].timer = setTimeout(() => {
+          // console.log("terminal-send2: ", sessionObj[m.terminalID].xtermdata);
+          if (sssion && sssion.context.xterm) {
+            sssion.context.xterm.write(sessionObj[m.terminalID].xtermdata);
+            sessionObj[m.terminalID].xtermdata = "";
+          }
+        }, 1000);
+        return;
+      }
+      // console.log("terminal-send2: ", sessionObj[m.terminalID].xtermdata);
+
+      sssion.context.xterm.write(sessionObj[m.terminalID].xtermdata);
+      sessionObj[m.terminalID].xtermdata = "";
     });
     socket.on("close-terminal", async (m) => {
-      //   console.log("Received terminal-send message:", m);
+      // console.log("close-terminal:", m);
       let sssion = data.current.sessions.find((x) => x.id == m.terminalID);
       if (sssion) {
         data.current.sessions = data.current.sessions.filter(
@@ -141,20 +171,18 @@ export function Sessions({ setSessionCount = undefined }) {
     });
     setTimeout(async () => {
       let terminalIDs = await call("GetTerminals", []);
+      for (let id of terminalIDs) {
+        await OpenTerminal(id);
+      }
       if (terminalIDs.length == 0) {
-        await call("OpenTerminal", [true]);
+        await call("OpenTerminal", []);
       }
     }, 1000);
 
 
   }, []);
   const data = useRef({
-    sessions: [] as {
-      type: "terminal" | "other";
-      id: string;
-      uid: string;
-      context: any;
-    }[],
+    sessions: [] as SessionType[],
     activeKey: "",
   });
 
@@ -166,21 +194,35 @@ export function Sessions({ setSessionCount = undefined }) {
         onChange={(key) => {
           data.current.activeKey = key;
           refresh();
+          call("ActiveAITerminal", [key]);
+          let session = data.current.sessions.find((x) => { return x.id == key });
+          if (session) {
+            // console.log("session", session);
+
+            setTimeout(() => {
+              session.context.fitAddon.fit();
+            }, 1000);
+          }
         }}
         // hideAdd
         onEdit={(targetKey, action: "add" | "remove") => {
           if (action === "add") {
-            call("OpenTerminal", [false]);
+            call("OpenTerminal", []);
           } else {
-            // remove(targetKey);
+            data.current.sessions = data.current.sessions.filter(
+              (x) => x.id != targetKey,
+            );
+            setSessionCount(data.current.sessions.length);
+            refresh();
+            call("CloseTerminal", [targetKey],);
           }
         }}
         items={data.current.sessions.map((x) => {
           if (x.type == "terminal") {
             return {
               label: t`Terminal` + "-" + x.id,
-              key: x.uid,
-              closable: false,
+              key: x.id,
+              closable: true,
               children: (
                 <Dropdown menu={{
                   items: [
@@ -237,7 +279,7 @@ export function Sessions({ setSessionCount = undefined }) {
 
                   <div
                     id={"terminal-" + x.id}
-                    style={{ height: "calc(-155px + 100vh)", minWidth: "500px" }}
+                    style={{ height: "calc(-155px + 100vh)", minWidth: "400px" }}
                   ></div>
                 </Dropdown>
               ),
@@ -245,7 +287,7 @@ export function Sessions({ setSessionCount = undefined }) {
           } else {
             return {
               label: "Other",
-              key: x.uid,
+              key: x.id,
               children: <div>Other</div>,
             };
           }
