@@ -1,7 +1,8 @@
+
 export class LoggerPolyfill {
-  info(...args) {}
-  warn(...args) {}
-  error(...args) {}
+  info(...args) { }
+  warn(...args) { }
+  error(...args) { }
   path = "";
 }
 
@@ -27,11 +28,20 @@ import path from "path";
 import os from "os";
 
 import { zx } from "ts/es6.mjs";
-const { fs } = zx;
+const { fs, argv } = zx;
 
 export const dirName = "HyperChat";
-export const appDataDir = path.join(os.homedir(), "Documents", dirName);
+let appDataDir = path.join(os.homedir(), "Documents", dirName);
+if (process.env.no_electron == "1") {
+  try {
+    appDataDir = argv.appDataDir || path.join(os.homedir(), "Documents", dirName);
+  } catch (e) {
+    Logger.error("appDataDir set failed", e);
+  }
+}
+
 fs.ensureDirSync(appDataDir);
+export { appDataDir };
 
 Context.CONST = {
   userDataPath: appDataDir,
@@ -45,7 +55,7 @@ export const CONST = Context.CONST as typeof Context.CONST;
 export class AutoLauncher {
   public autoLauncher;
 
-  constructor() {}
+  constructor() { }
   async enable() {
     throw new Error("Method not implemented.");
   }
@@ -64,11 +74,11 @@ export const autoLauncher = Context.autoLauncher as AutoLauncher;
 ////////////////////////////////////////
 
 export class CheckUpdate {
-  constructor() {}
-  checkUpdate() {}
+  constructor() { }
+  checkUpdate() { }
   // 退出并安装
-  quitAndInstall() {}
-  download() {}
-  updaterEvent() {}
+  quitAndInstall() { }
+  download() { }
+  updaterEvent() { }
 }
 export let checkUpdate = Context.checkUpdate as CheckUpdate;
