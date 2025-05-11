@@ -59,7 +59,6 @@ export function Sessions({ setSessionCount = undefined }) {
         context: {} as any,
       };
       data.current.sessions.push(sssion);
-      setSessionCount(data.current.sessions.length);
       data.current.activeKey = terminalID;
       refresh();
       await sleep(500);
@@ -131,6 +130,14 @@ export function Sessions({ setSessionCount = undefined }) {
     let sessionObj = {};
 
     socket.on("terminal-send", async (m) => {
+      if (m.type == "execute-status-change") {
+        if (m.data.status == 1) {
+          setSessionCount(1)
+        } else {
+          setSessionCount(0)
+        }
+        return;
+      }
       // console.log("terminal-send: ", m.data);
       let sssion = data.current.sessions.find((x) => x.id == m.terminalID);
       if (sessionObj[m.terminalID] == undefined) {
@@ -165,7 +172,6 @@ export function Sessions({ setSessionCount = undefined }) {
         data.current.sessions = data.current.sessions.filter(
           (x) => x.id != m.terminalID,
         );
-        setSessionCount(data.current.sessions.length);
         refresh();
       }
     });
@@ -212,7 +218,6 @@ export function Sessions({ setSessionCount = undefined }) {
             data.current.sessions = data.current.sessions.filter(
               (x) => x.id != targetKey,
             );
-            setSessionCount(data.current.sessions.length);
             refresh();
             call("CloseTerminal", [targetKey],);
           }

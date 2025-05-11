@@ -254,7 +254,13 @@ export function registerTool(server: McpServer) {
         throw new Error("terminalID not found, please create terminal first");
       }
       Logger.info(`execute-command ${lastTerminalID}: ${command}`);
-
+      getMessageService().terminalMsg.emit("terminal-send", {
+        type: "execute-status-change",
+        terminalID: lastTerminalID,
+        data: {
+          status: 1,
+        }
+      });
       c.commamdOutput = "";
       c.terminal.write(`${command}\r`);
 
@@ -284,7 +290,13 @@ export function registerTool(server: McpServer) {
           }
         }
       }
-
+      getMessageService().terminalMsg.emit("terminal-send", {
+        type: "execute-status-change",
+        terminalID: lastTerminalID,
+        data: {
+          status: 0,
+        }
+      });
       // fs.writeFileSync("terminal.log", strip(c.commamdOutput));
       return {
         content: [
@@ -320,33 +332,33 @@ export function registerTool(server: McpServer) {
   //   }
   // );
 
-  server.tool(
-    "sigint-current-command",
-    `sigint the current command. Ctrl+C`,
-    {
+  // server.tool(
+  //   "sigint-current-command",
+  //   `sigint the current command. Ctrl+C`,
+  //   {
 
-    },
-    async ({ }) => {
-      let c = terminalMap.get(lastTerminalID);
-      if (c == null) {
-        throw new Error("terminalID not found, please create terminal first");
-      }
+  //   },
+  //   async ({ }) => {
+  //     let c = terminalMap.get(lastTerminalID);
+  //     if (c == null) {
+  //       throw new Error("terminalID not found, please create terminal first");
+  //     }
 
-      c.commamdOutput = "";
-      c.terminal.write(``);
+  //     c.commamdOutput = "";
+  //     c.terminal.write(``);
 
-      while (1) {
-        await new Promise((resolve) => setTimeout(resolve, 100));
-        if (checkEnd(c.commamdOutput)) {
-          break;
-        }
-      }
+  //     while (1) {
+  //       await new Promise((resolve) => setTimeout(resolve, 100));
+  //       if (checkEnd(c.commamdOutput)) {
+  //         break;
+  //       }
+  //     }
 
-      return {
-        content: [
-          { type: "text", text: strip(c.commamdOutput).slice(-maxToken) },
-        ],
-      };
-    }
-  );
+  //     return {
+  //       content: [
+  //         { type: "text", text: strip(c.commamdOutput).slice(-maxToken) },
+  //       ],
+  //     };
+  //   }
+  // );
 }

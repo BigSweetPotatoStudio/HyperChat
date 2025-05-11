@@ -19,7 +19,7 @@ import { WebLinksAddon } from "@xterm/addon-web-links";
 import type { DraggableData, DraggableEvent } from "react-draggable";
 import Draggable from "react-draggable";
 import { Sessions } from "./sessions";
-import { LaptopOutlined, MinusOutlined } from "@ant-design/icons";
+import { ClockCircleOutlined, LaptopOutlined, MinusOutlined } from "@ant-design/icons";
 import { t } from "../../i18n";
 import { EVENT } from "../../common/event";
 function ChatPage({
@@ -266,6 +266,9 @@ export function ChatSpace() {
     }
   }, [sessionCount]);
   const [sizes, setSizes] = useState(["100%", 0] as any);
+
+  console.log(sessionCount);
+
   return (
     <div className="myworkspace flex h-full flex-col">
       <Splitter onResize={(sizes) => {
@@ -317,7 +320,7 @@ export function ChatSpace() {
       </Splitter>
       <div style={{ position: "fixed", bottom: 0, right: 0, margin: 15 }}>
         <Badge
-          // count={sessionCount}
+          count={sessionCount ? <ClockCircleOutlined style={{ color: '#f5222d' }} /> : 0}
           className="cursor-pointer"
           onClick={() => {
             if (sizes[1] == 0) {
