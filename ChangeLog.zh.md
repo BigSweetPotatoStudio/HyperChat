@@ -1,3 +1,28 @@
+# 1.7.2
+
+* 添加终端显示，手动输入命令 + AI模型 通过`hyper_terminal`MCP工具 输入命令
+* 修复bug
+
+![image](https://github.com/user-attachments/assets/70da7e2b-5555-4611-863c-f71ded3432b2)
+![7ec10af4a0474fbb3ed39e13a383bc3a](https://github.com/user-attachments/assets/0ba16d29-136c-4788-91d8-8c8dbc754716)
+![b6042f845409bddbcd6ad3f712f27216](https://github.com/user-attachments/assets/62549b1c-4e27-40fb-b877-b9a4be157778)
+
+
+# 1.7.0
+
+* 提升工具的兼容性，对于gemini的
+* 修复选择mcp的部分工具，显示已选择工具的计数错误。
+* HyperTool，fetch工具会自动滚动(有些数据是懒加载的，需要滚动触发)，search工具提升速度。
+* 变量的前缀命名修改，scope改成namespace。
+* electron版本，添加启动窗口大小的设置。
+* nodejs版本，添加网络设置，允许通过本地浏览器直连。
+* fixbug
+
+![image](https://github.com/user-attachments/assets/5c51c083-4ed8-4961-af62-ec34eba3e08e)
+![image](https://github.com/user-attachments/assets/943e454e-8506-4a87-a486-d5f465b470f1)
+![image](https://github.com/user-attachments/assets/b958bf63-add2-434a-a8e1-405ee1c773d9)
+
+
 # 1.6.5
 
 * 修复qwen3等模型的工具调用，添加工具调用兼容模式，类似cline，通过正则匹配<tool_use>,
