@@ -1,4 +1,4 @@
-import { Avatar, Badge, Button, List, Modal, Segmented, Tabs } from "antd";
+import { Avatar, Badge, Button, List, Modal, Segmented, Splitter, Tabs } from "antd";
 import React, {
   useState,
   useEffect,
@@ -19,9 +19,10 @@ import { WebLinksAddon } from "@xterm/addon-web-links";
 import type { DraggableData, DraggableEvent } from "react-draggable";
 import Draggable from "react-draggable";
 import { Sessions } from "./sessions";
-import { LaptopOutlined, MinusOutlined } from "@ant-design/icons";
+import { ClockCircleOutlined, LaptopOutlined, MinusOutlined } from "@ant-design/icons";
 import { t } from "../../i18n";
-function Page({
+import { EVENT } from "../../common/event";
+function ChatPage({
   sessionID = "",
   type = undefined,
   onChange = undefined,
@@ -144,7 +145,7 @@ function Page({
   );
 }
 
-export function WorkSpace() {
+export function ChatSpace() {
   const [num, setNum] = useState(0);
   function refresh() {
     setNum((num) => num + 1);
@@ -167,7 +168,7 @@ export function WorkSpace() {
             label: "New Tab",
             closeIcon: false,
             children: (
-              <Page
+              <ChatPage
                 type="hyperchat"
                 onChange={(item) => {
                   n.label = item.title;
@@ -208,7 +209,7 @@ export function WorkSpace() {
       label: "HyperChat",
       closable: false,
       children: (
-        <Page
+        <ChatPage
           sessionID={v4()}
           type="hyperchat"
           onChange={(item) => {
@@ -264,148 +265,78 @@ export function WorkSpace() {
       setOpen(false);
     }
   }, [sessionCount]);
+  const [sizes, setSizes] = useState(["100%", 0] as any);
+
+
   return (
     <div className="myworkspace flex h-full flex-col">
-      <Tabs
-        className="h-full"
-        tabPosition="bottom"
-        type="editable-card"
-        activeKey={activeKey}
-        centered
-        items={items}
-        onChange={(e) => {
-          setActiveKey(e);
-        }}
-        onEdit={(
-          targetKey: React.MouseEvent | React.KeyboardEvent | string,
-          action: "add" | "remove",
-        ) => {
-          if (action === "add") {
-            let n = {
-              key: v4(),
-              label: "New Tab",
-              children: (
-                <Page
-                  onChange={(item) => {
-                    n.label = item.title;
-                    refresh();
-                  }}
-                />
-              ),
-            };
-            setItems([...items, n]);
-            setActiveKey(n.key);
-          } else {
-            setItems(items.filter((item) => item.key !== targetKey));
-            let find = items.findIndex((item) => item.key == targetKey);
-            if (find == -1) return;
-            setActiveKey(items[find - 1]?.key);
-          }
-        }}
-      />
+      <Splitter onResize={(sizes) => {
+        setSizes(sizes)
+        EVENT.fire("chatspace-resize", sizes)
+      }} >
+        <Splitter.Panel size={sizes[0]} style={{ overflow: "hidden" }}>
+          <Tabs
+            className="h-full"
+            tabPosition="bottom"
+            type="editable-card"
+            activeKey={activeKey}
+            centered
+            items={items}
+            onChange={(e) => {
+              setActiveKey(e);
+            }}
+            onEdit={(
+              targetKey: React.MouseEvent | React.KeyboardEvent | string,
+              action: "add" | "remove",
+            ) => {
+              if (action === "add") {
+                let n = {
+                  key: v4(),
+                  label: "New Tab",
+                  children: (
+                    <ChatPage
+                      onChange={(item) => {
+                        n.label = item.title;
+                        refresh();
+                      }}
+                    />
+                  ),
+                };
+                setItems([...items, n]);
+                setActiveKey(n.key);
+              } else {
+                setItems(items.filter((item) => item.key !== targetKey));
+                let find = items.findIndex((item) => item.key == targetKey);
+                if (find == -1) return;
+                setActiveKey(items[find - 1]?.key);
+              }
+            }}
+          />
+        </Splitter.Panel>
+        <Splitter.Panel size={sizes[1]} min="20%" max="70%">
+          <Sessions setSessionCount={setSessionCount} />
+        </Splitter.Panel>
+      </Splitter>
       <div style={{ position: "fixed", bottom: 0, right: 0, margin: 15 }}>
         <Badge
-          count={sessionCount}
+          count={sessionCount ? <ClockCircleOutlined style={{ color: '#f5222d' }} /> : 0}
           className="cursor-pointer"
           onClick={() => {
-            setOpen((e) => !e);
+            if (sizes[1] == 0) {
+              setSizes(["60%", "40%"]);
+              EVENT.fire("chatspace-resize", sizes)
+            } else {
+              setSizes(["100%", 0]);
+            }
           }}
         >
           <LaptopOutlined />
         </Badge>
       </div>
-      <div
+      {/* <div
         className="my-modal"
-      // style={{ visibility: open ? "visible" : "hidden" }}
-      >
-        {/* <div className="ant-modal-root">
-          <div className="ant-modal-wrap">
-            <div
-              role="dialog"
-              aria-labelledby=":r1a:"
-              aria-modal="true"
-              className="ant-modal"
-            >
-              <Draggable
-                disabled={disabled}
-                bounds={bounds}
-                nodeRef={draggleRef}
-                onStart={(event, uiData) => onStart(event, uiData)}
-              >
-                <div ref={draggleRef}>
-                  <div className="ant-modal-content">
-                    <div className="ant-modal-header">
-                      <div className="ant-modal-title" id=":r1a:">
-                        <div className="width: 100%; cursor: move;">
-                          Session Management
-                        </div>
-                      </div>
-                    </div>
-                    <div className="ant-modal-body">
-                      <div className="p-0">
-                        <div className="height: 500px; max-width: 1024px; width: 90%;">
-                          <div className="ant-tabs ant-tabs-top ant-tabs-editable ant-tabs-card ant-tabs-editable-card css-dev-only-do-not-override-1yacf91">
-                            <div
-                              role="tablist"
-                              aria-orientation="horizontal"
-                              className="ant-tabs-nav"
-                            >
-                              <div className="ant-tabs-nav-wrap">
-                                <div className="ant-tabs-nav-list">
-                                  <div className="ant-tabs-ink-bar ant-tabs-ink-bar-animated"></div>
-                                </div>
-                              </div>
-                              <div className="ant-tabs-nav-operations ant-tabs-nav-operations-hidden">
-                                <button
-                                  type="button"
-                                  className="ant-tabs-nav-more"
-                                  aria-haspopup="listbox"
-                                  aria-controls="rc-tabs-1-more-popup"
-                                  id="rc-tabs-1-more"
-                                  aria-expanded="false"
-                                >
-                                  <span
-                                    role="img"
-                                    aria-label="ellipsis"
-                                    className="anticon anticon-ellipsis"
-                                  >
-                                    <svg
-                                      viewBox="64 64 896 896"
-                                      focusable="false"
-                                      data-icon="ellipsis"
-                                      width="1em"
-                                      height="1em"
-                                      fill="currentColor"
-                                      aria-hidden="true"
-                                    >
-                                      <path d="M176 511a56 56 0 10112 0 56 56 0 10-112 0zm280 0a56 56 0 10112 0 56 56 0 10-112 0zm280 0a56 56 0 10112 0 56 56 0 10-112 0z"></path>
-                                    </svg>
-                                  </span>
-                                </button>
-                              </div>
-                            </div>
-                            <div className="ant-tabs-content-holder">
-                              <div className="ant-tabs-content ant-tabs-content-top"></div>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                    <div className="ant-modal-footer">
-                      <button
-                        type="button"
-                        className="ant-btn css-dev-only-do-not-override-1yacf91 ant-btn-default ant-btn-color-default ant-btn-variant-outlined"
-                      >
-                        <span>Hidden</span>
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              </Draggable>
-            </div>
-          </div>
-        </div> */}
 
+      >
         <Modal
           open={true}
           width={"70%"}
@@ -461,7 +392,7 @@ export function WorkSpace() {
             <Sessions setSessionCount={setSessionCount} />
           </div>
         </Modal>
-      </div>
+      </div> */}
     </div>
   );
 }

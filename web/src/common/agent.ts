@@ -1,7 +1,9 @@
+import { v4 } from "uuid";
 import { AgentData, MyMessage, GPT_MODELS_TYPE, VarList, GPT_MODELS } from "../../../common/data";
 import { getDefaultModelConfigSync } from "../components/ai";
 import { OpenAiChannel } from "./openai";
 import _ from 'lodash';
+import dayjs from "dayjs";
 
 export class Agent {
     artifacts: any[] = [];
@@ -108,4 +110,9 @@ export class Agent {
         // lastMessage.content = result;
         return lastMessage;
     }
+}
+
+
+export function genAgentKey() {
+    return `${v4().slice(0, 8)}-${dayjs().format("YYYYMMDD-HHmmss")}`;
 }

@@ -46,13 +46,18 @@ class WebDAVSync {
     const contents: any = await this.client
       .getDirectoryContents(remotePath)
       .catch(async (e) => {
+        console.error(e);
         if (e.status === 404) {
           await this.client.createDirectory(remotePath);
           return [];
         }
       });
-    // console.log(contents);
-    return (contents || []).map((item) => {
+    if (!Array.isArray(contents)) {
+      console.log(contents);
+      throw new Error("getDirectoryContents error: " + contents);
+    }
+
+    return contents.map((item) => {
       let fileParse = path.parse(item.basename);
       let [name, hash] = fileParse.name.split("___");
       return {
@@ -431,8 +436,8 @@ class WebDAVSync {
 
     let remoteFiles = await this.getRemoteFilesInfo(remotePath);
     let localFiles = this.getLocalFilesInfo(localPath, files);
-    // console.log("localFiles", localFiles);
-    // console.log("remoteFiles", remoteFiles);
+    console.log("localFiles length", localFiles.length);
+    console.log("remoteFiles length", remoteFiles.length);
 
     for (let localFile of localFiles) {
       let filename = localFile.filename;

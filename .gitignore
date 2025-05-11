@@ -28,3 +28,5 @@ __pycache__/
 dist/
 .env
 *.log
+.continuerules
+.continue/

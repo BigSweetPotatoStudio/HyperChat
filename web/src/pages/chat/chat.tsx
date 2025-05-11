@@ -1842,6 +1842,7 @@ export const Chat = ({
                     <div className="my-sender-container">
                       <Editor
                         onDragFile={async (file) => {
+
                           if (!file) {
                             return;
                           }
@@ -1866,6 +1867,33 @@ export const Chat = ({
                               message.warning(t`please uplaod image`);
                             }
                           }
+                        }}
+
+                        onParseFile={async (file) => {
+                          if (!file) {
+                            return;
+                          }
+                          // if (file.path) {
+                          //   editorRef.current?.insertTextAtCursor(file.path);
+                          // } else {
+                            if (file.type.includes("image")) {
+                              let path = await blobToBase64(file);
+                              resourceResListRef.current.push({
+                                call_name: "UserUpload",
+                                contents: [
+                                  {
+                                    path: path,
+                                    blob: path,
+                                    type: "image",
+                                  },
+                                ],
+                                uid: v4(),
+                              });
+                              refresh();
+                            } else {
+                              message.warning(t`please uplaod image`);
+                            }
+                          // }
                         }}
                         submitType="enter"
                         ref={editorRef}

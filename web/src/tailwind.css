@@ -226,6 +226,10 @@ div[role="system"] .ant-bubble-content-wrapper {
   margin-bottom: 0 !important;
 }
 
+.my-tabs .ant-tabs-nav {
+  margin-bottom: 0 !important;
+}
+
 @keyframes textColorCycle {
   0% { color: #9ca3af; }
   50% { color: #22c55e; }

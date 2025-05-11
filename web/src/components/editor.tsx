@@ -505,8 +505,9 @@ export const Editor = forwardRef(({
                     invisibleCharacters: false,
                     nonBasicASCII: false
                 },
+
                 dropIntoEditor: {
-                    enabled: false
+                    enabled: false, // 禁用拖拽到编辑器中
                 }, // 允许拖拽到编辑器中
                 // readOnly: false // Enable editing
             });
@@ -514,28 +515,7 @@ export const Editor = forwardRef(({
             console.log("Line fontSize:", lh);
 
             validate(model);
-            // 为 Ctrl+Enter 绑定一个命令，这里示范调用 onChange 并可在此触发“提交”逻辑
-            // editor.addCommand(
-            //     monaco.KeyCode.Enter,
-            //     () => {
-            //         try {
-            //             // 使用更简单的方法检测建议面板
-            //             const suggestWidgetVisible = document.querySelector('.suggest-widget.visible') !== null;
 
-            //             if (suggestWidgetVisible) {
-            //                 // 建议面板打开时，不提交
-            //                 console.log("Suggestion widget is visible, not submitting");
-            //                 return;
-            //             }
-
-            //             const currentValue = editor.getModel()?.getValue() ?? "";
-            //             // 更新内容
-            //             onSubmit && onSubmit(currentValue);
-            //         } catch (e) {
-            //             console.error("Error in Enter command:", e);
-            //         }
-            //     }
-            // );
             if (submitType == "enter") {
                 // 如果你仍然想保留单独 Enter 提交功能，可以使用 onKeyDown 事件而不是 addCommand
                 editor.onKeyDown((e) => {
@@ -583,16 +563,15 @@ export const Editor = forwardRef(({
                         const currentValue = editor.getModel()?.getValue() ?? "";
                         // 更新内容
                         onSubmit && onSubmit(currentValue);
-                        // 如果需要提交，可以在这里调用一个提交回调：
-                        // props.onSubmit?.(currentValue);
                     }
                 );
             }
 
 
 
+
             // 添加拖拽事件监听
-            const editorElement = document.getElementById(uid.current);
+            const editorElement = editor.getContainerDomNode();
             if (editorElement) {
                 editorElement.addEventListener('dragover', (e) => {
                     e.preventDefault(); // 阻止默认行为
@@ -601,7 +580,8 @@ export const Editor = forwardRef(({
                 });
 
                 editorElement.addEventListener('drop', (e) => {
-
+                    e.preventDefault(); // 阻止默认行为
+                    e.stopPropagation();
 
                     // 处理拖拽的文件
                     if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
@@ -682,6 +662,27 @@ export const Editor = forwardRef(({
                         }
                     }
                 });
+                // editorElement.removeEventListener("paste")
+
+                window.addEventListener('paste', (e) => {
+                    // 1. 检查焦点是否在编辑器内
+                    if (!editor.hasTextFocus()) return;
+                    e.stopPropagation();
+                    // console.log('Window paste event triggered', e.clipboardData.items);
+                    const items = e.clipboardData.items;
+                    let arr: any[] = Array.from(items);
+                    for (const item of arr) {
+                        if (item.kind === 'file') {
+                            const file = item.getAsFile();
+                            if (file && file.type.startsWith('image/')) {
+                                (onParseFile) && onParseFile(file);
+                            }
+                        }
+                    }
+                }, true);
+                // editorElement.addEventListener('paste', (e) => {
+                //     console.log("Pasted data:", e.clipboardData.items);
+                // });
 
                 // editor.onDidPaste(async (e) => {
                 //     let items = await navigator.clipboard.read();
