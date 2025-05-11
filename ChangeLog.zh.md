@@ -1,3 +1,13 @@
+# 1.7.2
+
+* 添加终端显示，手动输入命令 + AI模型 通过`hyper_terminal`MCP工具 输入命令
+* 修复bug
+
+![image](https://github.com/user-attachments/assets/70da7e2b-5555-4611-863c-f71ded3432b2)
+![7ec10af4a0474fbb3ed39e13a383bc3a](https://github.com/user-attachments/assets/0ba16d29-136c-4788-91d8-8c8dbc754716)
+![b6042f845409bddbcd6ad3f712f27216](https://github.com/user-attachments/assets/62549b1c-4e27-40fb-b877-b9a4be157778)
+
+
 # 1.7.0
 
 * 提升工具的兼容性，对于gemini的
