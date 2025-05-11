@@ -267,7 +267,6 @@ export function ChatSpace() {
   }, [sessionCount]);
   const [sizes, setSizes] = useState(["100%", 0] as any);
 
-  console.log(sessionCount);
 
   return (
     <div className="myworkspace flex h-full flex-col">
