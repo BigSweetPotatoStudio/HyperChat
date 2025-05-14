@@ -128,7 +128,7 @@ export type Tool_Call = {
 
 
 export type MyMessage = OpenAI.Chat.Completions.ChatCompletionMessageParam & {
-
+  id?: string,
   content_status?:
   | "loading"
   | "success"

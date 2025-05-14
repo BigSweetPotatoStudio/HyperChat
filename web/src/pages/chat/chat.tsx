@@ -236,6 +236,7 @@ import { InputAI } from "../../components/input_ai";
 import { MySender } from "../../components/my_sender";
 import { disableCompletionItemProvider, Editor, enableCompletionItemProvider } from "../../components/editor";
 import { Link } from "react-router-dom";
+import { AIChannel } from "../../common/ai/ai";
 
 
 export const Chat = ({
@@ -416,7 +417,7 @@ export const Chat = ({
     );
   };
 
-  const openaiClient = useRef<OpenAiChannel>();
+  const openaiClient = useRef<AIChannel>();
 
   // const clientsRef = useRef<InitedClient[]>([]);
 
@@ -457,7 +458,7 @@ export const Chat = ({
     diffs: [] as Array<{
       messages: ChatHistoryItem["messages"];
       modelKey: string;
-      openaiClient: OpenAiChannel;
+      openaiClient: AIChannel;
       label: string;
     }>,
     loadingMessages: false,
@@ -548,7 +549,7 @@ export const Chat = ({
 
 
   const [loading, setLoading] = useState(false);
-  let cacheOBJ = useRef({} as Record<string, OpenAiChannel>);
+  let cacheOBJ = useRef({} as Record<string, AIChannel>);
   const onRequest = useCallback(async (message?: string) => {
     Clarity.event(`sender-${process.env.NODE_ENV}`);
     console.log("onRequest", message);
@@ -641,7 +642,7 @@ export const Chat = ({
         if (cacheOBJ.current[cacheKey]) {
           return cacheOBJ.current[cacheKey];
         }
-        let res = new OpenAiChannel(
+        let res = new AIChannel(
           {
             baseURL: config.baseURL,
             apiKey: config.apiKey,
