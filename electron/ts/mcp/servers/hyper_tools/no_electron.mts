@@ -58,7 +58,7 @@ export function registerNoElectronTool(server: McpServer) {
     `Searches the internet for a given keyword and returns the search results.`,
     {
       words: z.string({
-        description: `words to serach`,
+        description: `words to search`,
       }),
     },
     async ({ words }) => {

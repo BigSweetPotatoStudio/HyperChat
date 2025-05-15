@@ -5,6 +5,11 @@ import * as MCPTypes from "@modelcontextprotocol/sdk/types.js";
 import OpenAI from "openai";
 import { jsonSchemaToZod } from "json-schema-to-zod";
 import { v4 } from "uuid";
+import { createAnthropic } from '@ai-sdk/anthropic';
+
+import { createOpenAICompatible } from '@ai-sdk/openai-compatible';
+
+
 let antdmessage: { warning: (msg: string) => void };
 let callModule = {
     getURL_PRE: () => "",
@@ -49,10 +54,21 @@ export class AIChannel {
         step = 0,
     ): Promise<string> {
 
-
         if (this.options.provider == "openai") {
             this.aiprovider = createOpenAI({
                 compatibility: 'strict', // strict mode, enable when using the OpenAI API,
+                baseURL: this.options.baseURL,
+                apiKey: this.options.apiKey,
+            });
+
+        } else if (this.options.provider == "anthropic") {
+            this.aiprovider = createAnthropic({
+                // baseURL: this.options.baseURL,
+                apiKey: this.options.apiKey,
+            });
+        } else {
+            this.aiprovider = createOpenAICompatible({
+                name: this.options.model,
                 baseURL: this.options.baseURL,
                 apiKey: this.options.apiKey,
             });
@@ -83,7 +99,7 @@ export class AIChannel {
         const { response, fullStream, usage, finishReason } = await streamText({
             model: this.aiprovider(this.options.model),
             maxSteps: this.options.call_tool_step || 10,
-            temperature: this.options.temperature,
+            temperature: this.options.temperature == null ? 1 : this.options.temperature,
             messages: messages,
             tools: aiTools,
             onError: (error) => {
@@ -110,6 +126,7 @@ export class AIChannel {
 
         onUpdate && onUpdate();
         let index = 0;
+        let first = false;
         for await (let full of fullStream) {
             console.log(full);
             if (full.type == 'step-start') {
@@ -126,7 +143,6 @@ export class AIChannel {
                         total_tokens: 0,
                     },
                     content_date: Date.now(),
-                    id: full.messageId,
                 };
                 this.messages.push(res);
                 res.content_status = "success";
@@ -162,7 +178,6 @@ export class AIChannel {
                     content_status: res.isError ? "error" : "success",
                     content_attachment: [],
                     content_date: Date.now(),
-                    id: (full as any).messageId,
                 };
                 this.messages.push(res);
                 onUpdate && onUpdate();
