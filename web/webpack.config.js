@@ -189,6 +189,9 @@ module.exports = (env, argv) => {
         ".cjs": [".cjs", ".cts"],
         ".mjs": [".mjs", ".mts"],
       },
+      alias: {
+        "@": path.resolve(__dirname, "."),
+      },
       fallback: {
         "process/browser": require.resolve("process/browser"),
         querystring: require.resolve("querystring-es3"),
