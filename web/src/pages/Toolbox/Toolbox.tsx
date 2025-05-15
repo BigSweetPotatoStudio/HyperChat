@@ -10,6 +10,7 @@ import { createOpenAI } from '@ai-sdk/openai';
 import { GPT_MODELS } from "../../../../common/data";
 import GenerateSpeechPanel from "./generateSpeech";
 import { TranscribePanel } from "./Transcribe";
+import GenerateImagePanel from "./generateImage";
 
 export const ToolboxPage = () => {
     useEffect(() => {
@@ -29,6 +30,11 @@ export const ToolboxPage = () => {
                     label: t`Generate Speech`,
                     key: "generateSpeech",
                     children: <GenerateSpeechPanel />,
+                },
+                {
+                    label: t`Generate Image`,
+                    key: "generateImage",
+                    children: <GenerateImagePanel />,
                 }
             ]}
         />
