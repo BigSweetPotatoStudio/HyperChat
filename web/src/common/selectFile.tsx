@@ -32,6 +32,7 @@ export function SelectFile(props: {
   type?: "openFile" | "openDirectory";
   uploadType?: "image" | "video" | "any";
   children?: React.ReactNode;
+  onFileChange?: (file: File) => void;
 }) {
   const [value, setValue] = useState(props.value || "");
   const [isDragActive, setIsDragActive] = useState(false);
@@ -115,19 +116,22 @@ export function SelectFile(props: {
           fileList={[]}
           beforeUpload={async (file) => {
             if (file) {
+              props.onFileChange && props.onFileChange(file);
               //   const reader = new FileReader();
               //   reader.onload = (e) => {};
               //   reader.readAsDataURL(file);
-              let form = new FormData();
-              form.append("file", file);
-              let res = await fetch("./api/uploads", {
-                method: "POST",
-                // No need to set Content-Type header when sending FormData
-                // Browser will automatically set the correct multipart/form-data with boundary
-                body: form,
-              }).then((r) => r.json());
-              setValue(res.data.filepath);
-              props.onChange(res.data.filepath);
+              if (props.onChange) {
+                let form = new FormData();
+                form.append("file", file);
+                let res = await fetch("./api/uploads", {
+                  method: "POST",
+                  // No need to set Content-Type header when sending FormData
+                  // Browser will automatically set the correct multipart/form-data with boundary
+                  body: form,
+                }).then((r) => r.json());
+                setValue(res.data.filepath);
+                props.onChange && props.onChange(res.data.filepath);
+              }
             }
             return false;
           }}

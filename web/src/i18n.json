@@ -1334,5 +1334,101 @@
   "(Need to solve cors problem)": {
     "en": "(Need to solve cors problem)",
     "zh": "(需要解决跨域问题)"
+  },
+  "ToolboxPage": {
+    "en": "ToolboxPage",
+    "zh": "工具箱页面"
+  },
+  "Standard calls tools by passing tools parameters, and compatible calls tools by writing tools into the system prompt.": {
+    "en": "Standard calls tools by passing tools parameters, and compatible calls tools by writing tools into the system prompt.",
+    "zh": "标准调用工具通过传递工具参数，兼容调用工具通过将工具写入系统提示。"
+  },
+  "transcribe": {
+    "en": "transcribe",
+    "zh": "转录"
+  },
+  "Generate Speech": {
+    "en": "Generate Speech",
+    "zh": "生成语音"
+  },
+  "Generate Image": {
+    "en": "Generate Image",
+    "zh": "生成图像"
+  },
+  "Transcribe Audio to Text by OpenAI": {
+    "en": "Transcribe Audio to Text by OpenAI",
+    "zh": "通过OpenAI将音频转录为文本"
+  },
+  "Start Recording": {
+    "en": "Start Recording",
+    "zh": "开始录音"
+  },
+  "Options": {
+    "en": "Options",
+    "zh": "选项"
+  },
+  "Transcribe": {
+    "en": "Transcribe",
+    "zh": "转录"
+  },
+  "Result": {
+    "en": "Result",
+    "zh": "结果"
+  },
+  "Generate Speech from Text by OpenAI": {
+    "en": "Generate Speech from Text by OpenAI",
+    "zh": "通过OpenAI将文本生成语音"
+  },
+  "Enter text to convert to speech": {
+    "en": "Enter text to convert to speech",
+    "zh": "输入文本以转换为语音"
+  },
+  "Model": {
+    "en": "Model",
+    "zh": "模型"
+  },
+  "Voice": {
+    "en": "Voice",
+    "zh": "语音"
+  },
+  "Generate Images from Text by OpenAI": {
+    "en": "Generate Images from Text by OpenAI",
+    "zh": "通过OpenAI将文本生成图像"
+  },
+  "Enter prompt to generate images (e.g. \"A futuristic cityscape at sunset\")": {
+    "en": "Enter prompt to generate images (e.g. \"A futuristic cityscape at sunset\")",
+    "zh": "输入提示以生成图像（例如“日落时分的未来城市景观”）"
+  },
+  "Size": {
+    "en": "Size",
+    "zh": "大小"
+  },
+  "Count": {
+    "en": "Count",
+    "zh": "计数"
+  },
+  "Generate Images": {
+    "en": "Generate Images",
+    "zh": "生成图像"
+  },
+  "Recording started": {
+    "en": "Recording started",
+    "zh": "录音开始"
+  },
+  "Stop Recording": {
+    "en": "Stop Recording",
+    "zh": "停止录音"
+  },
+  "Recording completed": {
+    "en": "Recording completed",
+    "zh": "录音完成"
+  },
+  "Clear Recording": {
+    "en": "Clear Recording",
+    "zh": "清除录音"
+  },
+  "Preview": {
+    "en": "Preview",
+    "zh": "预览"
   }
 }

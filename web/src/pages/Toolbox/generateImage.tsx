@@ -81,6 +81,14 @@ const GenerateImagePanel = () => {
                     <Select.Option value="1024x1792">{`1024x1792`}</Select.Option>
                 </>
             );
+        } else if (modelName === 'gpt-image-1') {
+            return (
+                <>
+                    <Select.Option value="1024x1024">{`1024x1024`}</Select.Option>
+                    <Select.Option value="1024x1536">{`1024x1536`}</Select.Option>
+                    <Select.Option value="1536x1024">{`1536x1024`}</Select.Option>
+                </>
+            );
         } else {
             return (
                 <>
@@ -97,7 +105,7 @@ const GenerateImagePanel = () => {
             <h2 className="text-xl mb-4">{t`Generate Images from Text by OpenAI`}</h2>
             <Space direction="vertical" style={{ width: '100%' }}>
                 <div>
-                    <div>
+                    {/* <div>
                         <span className="mr-2">{t`Style`}:</span>
                         <Select
                             onChange={(value) => setStyle(value)}
@@ -108,7 +116,7 @@ const GenerateImagePanel = () => {
                             <Select.Option value="vivid">{`Vivid`}</Select.Option>
                             <Select.Option value="natural">{`Natural`}</Select.Option>
                         </Select>
-                    </div>
+                    </div> */}
 
 
                 </div>
@@ -129,7 +137,13 @@ const GenerateImagePanel = () => {
                                 onChange={(value) => {
                                     setModelName(value);
                                     // 重置为默认尺寸
-                                    setImageSize("1024x1024");
+                                    if (value === 'dall-e-3') {
+                                        setImageSize("1024x1024");
+                                    } else if (value === 'dall-e-2') {
+                                        setImageSize("1024x1024");
+                                    } else if (value === 'gpt-image-1') {
+                                        setImageSize("1024x1024");
+                                    }
                                     // // DALL-E 3重置为标准质量
                                     // if (value === 'dall-e-3') {
                                     //     setQuality("standard");
@@ -141,6 +155,8 @@ const GenerateImagePanel = () => {
                             >
                                 <Select.Option value="dall-e-3">{`DALL-E 3`}</Select.Option>
                                 <Select.Option value="dall-e-2">{`DALL-E 2`}</Select.Option>
+                                <Select.Option value="gpt-image-1">{`GPT Image 1
+`}</Select.Option>
                             </Select>
                         </div>
 
