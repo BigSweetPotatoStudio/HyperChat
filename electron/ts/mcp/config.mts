@@ -240,7 +240,7 @@ export class MCPClient implements IMCPClient {
         Logger.error("listTools error: ", e);
         return { tools: [] };
       });
-      console.log("listTools", tools_res);
+      // console.log("listTools", tools_res);
       let resources_res = await client.listResources().catch((e) => {
         return { resources: [] };
       });
@@ -259,20 +259,21 @@ export class MCPClient implements IMCPClient {
         this.tools = [];
         this.resources = [];
         this.prompts = [];
-      };      client.onerror = (e) => {
+      };
+      client.onerror = (e) => {
         // console.log("client onerror: ", this.config);
         if (this.config?.type == "sse" || this.config?.hyperchat?.type == "sse") {
           if (e.message.includes("Body Timeout Error")) {
             // 对于超时错误，只记录信息，不显示为错误
-            Logger.info(`${this.name} client encountered timeout, this is normal for SSE`);
+            console.log(`${this.name} client encountered timeout, this is normal for SSE`);
           } else {
             Logger.error(`${this.name} client see onerror: `, e);
           }
         } else if (this.config?.type == "streamableHttp") {
           if (e.message.includes("SSE stream disconnected") || e.message.includes("terminated")) {
             // 处理 SSE 流断开的情况
-            Logger.info(`${this.name} StreamableHTTP connection terminated, will reconnect automatically`);
-            
+            console.log(`${this.name} StreamableHTTP connection terminated, will reconnect automatically`);
+
             // 状态改为连接中，但不立即重连，让 transport.onclose 处理重连
             this.status = "connecting";
             getMessageService().sendAllToRenderer({
@@ -392,24 +393,24 @@ export class MCPClient implements IMCPClient {
     });
     await client.connect(transport);
     this.client = client;
-  }  async openStreamableHttp(config: MCP_CONFIG_TYPE) {
+  } async openStreamableHttp(config: MCP_CONFIG_TYPE) {
     const client = new Client({
       name: this.name,
       version: "1.0.0",
       capabilities: {
       }
-    });    const transport = new StreamableHTTPClientTransport(new URL(config?.url), {
+    }); const transport = new StreamableHTTPClientTransport(new URL(config?.url), {
       requestInit: {
         keepalive: true,
         headers: config.headers || {},
       }
       // sessionId: v4(),
     });
-    
+
     try {
       await client.connect(transport);
       this.client = client;
-      
+
       // 添加自动重连机制
       transport.onclose = async () => {
         if (this.status === "connected" && !this.config.disabled) {
@@ -419,7 +420,7 @@ export class MCPClient implements IMCPClient {
             type: "changeMcpClient",
             data: mcpClients,
           });
-          
+
           // 等待5秒后尝试重新连接
           setTimeout(async () => {
             try {
@@ -446,10 +447,10 @@ export class MCPClient implements IMCPClient {
   async openStdio(config: MCP_CONFIG_TYPE) {
     let env = Object.assign(getMyDefaultEnvironment(), config.env);
     // console.log("openStdio", config.command, config.args, env);
-    let stream = new Stream();
-    stream.on('data', (data) => {
-      console.log(`stderr: ${data}`);
-    });
+    // let stream = new Stream();
+    // stream.on('data', (data) => {
+    //   console.log(`stderr: ${data}`);
+    // });
     let params = {
       command: config.command,
       args: config.args,
@@ -474,7 +475,6 @@ export class MCPClient implements IMCPClient {
       if (e.message.includes("MCP error -32000: Connection closed")) {
         await SpawnError(config.command, config.args, env);
       }
-      // console.log("eeeeeeeeeeeeeeeeeeeeeeeee");
       throw e;
     }
   }
@@ -525,16 +525,16 @@ export class MCPClient implements IMCPClient {
       this.reconnectAttempts = 0;
       return false;
     }
-    
+
     this.reconnectAttempts++;
     Logger.info(`Attempting to reconnect ${this.name} (attempt ${this.reconnectAttempts}/${this.maxReconnectAttempts})...`);
-    
+
     this.status = "connecting";
     getMessageService().sendAllToRenderer({
       type: "changeMcpClient",
       data: mcpClients,
     });
-    
+
     try {
       await sleep(this.reconnectDelay);
       await this.open();
@@ -543,15 +543,15 @@ export class MCPClient implements IMCPClient {
       return true;
     } catch (error) {
       Logger.error(`Failed to reconnect to ${this.name}:`, error);
-      
+
       // 指数退避策略，每次失败后增加等待时间
       this.reconnectDelay = Math.min(this.reconnectDelay * 1.5, 30000); // 最大30秒
-      
+
       // 触发下一次重连
       setTimeout(() => {
         this.tryReconnect();
       }, 0);
-      
+
       return false;
     }
   }

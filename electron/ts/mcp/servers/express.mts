@@ -40,7 +40,7 @@ export async function initMcpServer() {
               sessionIdGenerator: undefined,
             });
             res.on('close', () => {
-              console.log('Request closed');
+              // console.log('Request closed');
               transport.close();
               server.close();
             });

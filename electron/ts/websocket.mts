@@ -20,6 +20,7 @@ import { getMessageService } from "./message_service.mjs";
 import { Config } from "./const.mjs";
 import { PassThrough } from "stream";
 import { sleep } from "./common/util.mjs";
+import { registers } from "./mcpGateWay.mjs";
 
 const uploadDir = "./uploads";
 const uploadDirPath = path.join(appDataDir, uploadDir);
@@ -44,7 +45,7 @@ export function genRouter(c) {
     .forEach((name) => {
       functions.push(name);
     });
-  console.log("Command functions: ", functions);
+  // console.log("Command functions: ", functions);
   let router = Router();
   for (let name of functions) {
     // 不再添加前缀，因为在app.use(apiPrefix, model_route)中已经添加了前缀
@@ -134,8 +135,10 @@ export function genRouter(c) {
 
   return router;
 }
+electronData.initSync();
+let prefix = "/" + encodeURI(electronData.get().password);
 
-let apiPrefix = "/" + encodeURI(electronData.get().password) + "/api";
+let apiPrefix = prefix + "/api";
 
 // 代理中间件
 function proxyMiddleware(req: Request, res: Response, next: NextFunction) {
@@ -243,7 +246,7 @@ function proxyMiddleware(req: Request, res: Response, next: NextFunction) {
   }
 }
 
-electronData.initSync();
+
 export async function initHttp() {
   const app = express();
 
@@ -273,9 +276,9 @@ export async function initHttp() {
   };
 
   // 静态资源
-  app.use("/" + electronData.get().password, express.static(path.join(__dirname, "../web-build"), staticOptions));
-  app.use("/" + electronData.get().password + "/temp", express.static(path.join(appDataDir, "temp")));
-
+  app.use(prefix, express.static(path.join(__dirname, "../web-build"), staticOptions));
+  app.use(prefix + "/temp", express.static(path.join(appDataDir, "temp")));
+  app.use(prefix + "/mcp", registers(prefix + "/mcp"));
   // 代理
   app.use(proxyMiddleware);
   // 错误处理中间件

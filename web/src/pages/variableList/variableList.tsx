@@ -224,7 +224,7 @@ Including variables will also be deleted`}</pre>} onConfirm={async () => {
                     label={t`Name`}
                     rules={[
                         { required: true, message: t`Please enter the name` },
-                        { pattern: /^[a-zA-Z0-9]+$/, message: t`Only alphanumeric characters are allowed` },
+                        { pattern: /^[a-zA-Z0-9]+$/, message: t`Only allow alphanumeric characters` },
                         {
                             validator: async (rule, value) => {
                                 if (VarScopeList.get().data.find(x => x.name == value)) {

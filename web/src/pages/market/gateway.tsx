@@ -30,7 +30,7 @@ export function MCPGateWayPage() {
     const handleCreateOrUpdateGateway = async (values: GatewayFormValues) => {
         try {
             const gatewayData = MCP_GateWay.get();
-            
+
             if (values.key) {
                 // 更新现有网关
                 const index = gatewayData.data.findIndex(item => item.name === values.key);
@@ -49,7 +49,7 @@ export function MCPGateWayPage() {
                     allowMCPs: values.allowMCPs,
                 });
             }
-            
+
             await MCP_GateWay.save();
             setIsModalOpen(false);
             message.success(values.key ? t`Gateway updated successfully` : t`Gateway created successfully`);
@@ -142,7 +142,7 @@ export function MCPGateWayPage() {
                 dataSource={MCP_GateWay.get().data}
                 columns={columns}
             />
-            
+
             <GatewayModal
                 open={isModalOpen}
                 onCreate={handleCreateOrUpdateGateway}
@@ -182,7 +182,7 @@ const GatewayForm: React.FC<GatewayFormProps> = ({
 }) => {
     const [form] = Form.useForm();
     const { mcpClients } = useContext(HeaderContext);
-    
+
     useEffect(() => {
         onFormInstanceReady(form);
     }, []);
@@ -195,7 +195,7 @@ const GatewayForm: React.FC<GatewayFormProps> = ({
             <Form.Item
                 name="name"
                 label={t`name`}
-                rules={[{ required: true, message: t`Please enter name` }]}
+                rules={[{ required: true, pattern: /^[a-zA-Z0-9]+$/, message: t`Only allow alphanumeric characters` }]}
             >
                 <Input placeholder={t`Please enter name`} />
             </Form.Item>
