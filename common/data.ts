@@ -478,3 +478,18 @@ export const VarScopeList = new Data(
     sync: true,
   }
 );
+
+
+export const MCP_GateWay = new Data(
+  "mcp_gateway.json",
+  {
+    data: [] as Array<{
+      name: string;
+      description?: string;
+      allowMCPs: string[];
+    }>,
+  },
+  {
+    sync: true,
+  }
+);
