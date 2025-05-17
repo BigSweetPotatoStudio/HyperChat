@@ -7,10 +7,11 @@ import React, {
 } from "react";
 import { Space, Button, Table, Popover, Popconfirm, Form, Modal, Input, TreeSelect, message, FormInstance } from "antd"; // 添加了Form、Modal、Input、TreeSelect等导入
 import { t } from "@/src/i18n";
-import { MCP_GateWay } from "../../../../common/data";
+import { electronData, MCP_GateWay } from "../../../../common/data";
 import { HeaderContext } from "../../common/context";
 import { v4 as uuid } from "uuid";
 import { call } from "@/src/common/call";
+import { CopyOutlined } from "@ant-design/icons";
 
 export function MCPGateWayPage() {
     const { mcpClients } = useContext(HeaderContext);
@@ -188,12 +189,32 @@ const GatewayForm: React.FC<GatewayFormProps> = ({
     initialValues,
     onFormInstanceReady,
 }) => {
+    const [refresh, setRefresh] = useState(0);
     const [form] = Form.useForm();
     const { mcpClients } = useContext(HeaderContext);
+    const [name, setName] = useState(initialValues.name || "");
+    let config = useRef<any>({
+        port: 0,
+        password: "",
+    });
+
+    useEffect(() => {
+        (async () => {
+            const c = await call("getConfig");
+            config.current.port = c.port;
+            config.current.password = c.password;
+            setRefresh((prev) => prev + 1);
+        })()
+    }, []);
 
     useEffect(() => {
         onFormInstanceReady(form);
     }, []);
+
+    let urls = ({
+        sse: `${location.protocol}//${location.hostname}:${config.current.port}/${config.current.password}/mcp/${name}/sse`,
+        streamableHttp: `${location.protocol}//${location.hostname}:${config.current.port}/${config.current.password}/mcp/${name}/mcp`,
+    });
 
     return (
         <Form form={form} name="gateway_form" initialValues={initialValues}>
@@ -205,7 +226,9 @@ const GatewayForm: React.FC<GatewayFormProps> = ({
                 label={t`name`}
                 rules={[{ required: true, pattern: /^[a-zA-Z0-9]+$/, message: t`Only allow alphanumeric characters` }]}
             >
-                <Input placeholder={t`Please enter name`} />
+                <Input placeholder={t`Please enter name`} onChange={e => {
+                    setName(e.target.value);
+                }} />
             </Form.Item>
             <Form.Item
                 name="description"
@@ -242,6 +265,18 @@ const GatewayForm: React.FC<GatewayFormProps> = ({
                         };
                     }) || []}
                 />
+            </Form.Item>
+            <Form.Item label="sse">
+                <Input disabled value={urls.sse} addonAfter={<CopyOutlined onClick={async () => {
+                    await call("setClipboardText", [urls.sse]);
+                    message.success(t`Copied to clipboard`);
+                }} />} />
+            </Form.Item>
+            <Form.Item label="streamableHttp">
+                <Input disabled value={urls.streamableHttp} addonAfter={<CopyOutlined onClick={async () => {
+                    await call("setClipboardText", [urls.streamableHttp]);
+                    message.success(t`Copied to clipboard`);
+                }} />} />
             </Form.Item>
         </Form>
     );

@@ -48,8 +48,7 @@ async function createServer(name: string, description: string, allowMCPs: string
      * Exposes a single "create_note" tool that lets clients create new notes.
      */
     server.setRequestHandler(ListToolsRequestSchema, async () => {
-        
-        console.log("gateway allowMCPs", allowMCPs);
+        // console.log("gateway allowMCPs", allowMCPs);
         let getTools = (allowMCPs) => {
             let tools: IMCPClient["tools"] = [];
 
