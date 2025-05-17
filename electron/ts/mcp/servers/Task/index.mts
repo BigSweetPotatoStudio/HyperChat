@@ -319,5 +319,5 @@ export const HyperAgent = {
   handlePostMessage,
   name: NAME,
   url: ``,
-  // type: "streamableHttp",
+  type: "streamableHttp",
 };

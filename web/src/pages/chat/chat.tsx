@@ -550,7 +550,7 @@ export const Chat = ({
   const [loading, setLoading] = useState(false);
   let cacheOBJ = useRef({} as Record<string, OpenAiChannel>);
   const onRequest = useCallback(async (message?: string) => {
-    Clarity.event(`sender-${process.env.NODE_ENV}`);
+    Clarity && Clarity.event(`sender-${process.env.NODE_ENV}`);
     console.log("onRequest", message);
     let confirm_call_tool_cb = (tool: Tool_Call) => {
       return new Promise((resolve, reject) => {

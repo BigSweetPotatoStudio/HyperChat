@@ -28,15 +28,23 @@ export async function initMcpServer() {
     async function register(serve: HyperMcp) {
       if (serve.type == "streamableHttp") {
 
-        const transport = new StreamableHTTPServerTransport({
-          sessionIdGenerator: undefined, // set to undefined for stateless servers
-        });
-        let server = await serve.createServer();
-        await server.connect(transport);
+
+        // let server = await serve.createServer();
+        // await server.connect(transport);
         app.post(`/${serve.name}/mcp`, async (req, res) => {
           // console.log('Received MCP request:', req.body);
 
           try {
+            const server = await serve.createServer();
+            const transport = new StreamableHTTPServerTransport({
+              sessionIdGenerator: undefined,
+            });
+            res.on('close', () => {
+              console.log('Request closed');
+              transport.close();
+              server.close();
+            });
+            await server.connect(transport);
             await transport.handleRequest(req, res, req.body);
           } catch (error) {
             console.error('Error handling MCP request:', error);
@@ -52,47 +60,8 @@ export async function initMcpServer() {
             }
           }
 
-          // // Check for existing session ID
-          // const sessionId = req.headers['mcp-session-id'] as string | undefined;
-          // console.log("Received message", sessionId, req.body);
-          // let transport;
-
-          // if (sessionId && transports[sessionId]) {
-          //   // Reuse existing transport
-          //   transport = transports[sessionId];
-          // } else if (sessionId) {
-          //   // New initialization request
-          //   console.log("New session ID", sessionId, req.body);
-          //   transport = new StreamableHTTPServerTransport({
-          //     sessionIdGenerator: undefined,
-          //   });
-
-          //   // let server = await serve.createServer();
 
 
-          //   // Clean up transport when closed
-          //   transport.onclose = () => {
-          //     delete transports[sessionId];
-          //   };
-          //   transports[sessionId] = transport;
-
-          //   // Connect to the MCP server
-          //   await server.connect(transport);
-          // } else {
-          //   // Invalid request
-          //   res.status(400).json({
-          //     jsonrpc: '2.0',
-          //     error: {
-          //       code: -32000,
-          //       message: 'Bad Request: No valid session ID provided',
-          //     },
-          //     id: null,
-          //   });
-          //   return;
-          // }
-
-          // // Handle the request
-          // await transport.handleRequest(req, res, req.body);
         });
 
         // Reusable handler for GET and DELETE requests
