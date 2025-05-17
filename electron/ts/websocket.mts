@@ -20,7 +20,7 @@ import { getMessageService } from "./message_service.mjs";
 import { Config } from "./const.mjs";
 import { PassThrough } from "stream";
 import { sleep } from "./common/util.mjs";
-import { registers } from "./mcpGateWay.mjs";
+import { registers, refreshRoutes } from "./mcpGateWay.mjs";
 
 const uploadDir = "./uploads";
 const uploadDirPath = path.join(appDataDir, uploadDir);
@@ -278,7 +278,37 @@ export async function initHttp() {
   // 静态资源
   app.use(prefix, express.static(path.join(__dirname, "../web-build"), staticOptions));
   app.use(prefix + "/temp", express.static(path.join(appDataDir, "temp")));
-  app.use(prefix + "/mcp", registers(prefix + "/mcp"));
+  
+  // MCP 路由刷新函数
+  let mcpRouter = registers(prefix + "/mcp");
+  app.use(prefix + "/mcp", mcpRouter);
+  
+  // 添加 API 端点用于刷新 MCP 路由
+  app.post(prefix + "/api/refreshMcpRoutes", (req, res) => {
+    try {
+      // 获取新的路由实例
+      const newRouter = refreshRoutes(prefix + "/mcp");
+      
+      // 移除旧路由
+      app._router.stack = app._router.stack.filter((layer: any) => {
+        return layer.handle !== mcpRouter;
+      });
+      
+      // 添加新路由
+      mcpRouter = newRouter;
+      app.use(prefix + "/mcp", mcpRouter);
+      
+      res.json({ success: true, message: "MCP 路由已刷新" });
+    } catch (error) {
+      console.error("刷新 MCP 路由时出错:", error);
+      res.status(500).json({ 
+        success: false, 
+        message: "刷新 MCP 路由失败", 
+        error: error instanceof Error ? error.message : String(error) 
+      });
+    }
+  });
+  
   // 代理
   app.use(proxyMiddleware);
   // 错误处理中间件

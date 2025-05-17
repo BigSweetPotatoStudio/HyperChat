@@ -10,6 +10,7 @@ import { t } from "@/src/i18n";
 import { MCP_GateWay } from "../../../../common/data";
 import { HeaderContext } from "../../common/context";
 import { v4 as uuid } from "uuid";
+import { call } from "@/src/common/call";
 
 export function MCPGateWayPage() {
     const { mcpClients } = useContext(HeaderContext);
@@ -20,7 +21,7 @@ export function MCPGateWayPage() {
         allowMCPs: [],
     });
     const [refresh, setRefresh] = useState(0);
-    useEffect(() => { 
+    useEffect(() => {
         (async () => {
             await MCP_GateWay.init();
             setRefresh((prev) => prev + 1);
@@ -57,6 +58,7 @@ export function MCPGateWayPage() {
             }
 
             await MCP_GateWay.save();
+            await call("refreshMcpRoutes", []);
             setIsModalOpen(false);
             message.success(values.key ? t`Gateway updated successfully` : t`Gateway created successfully`);
             handleUpdate();
