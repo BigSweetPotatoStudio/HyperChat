@@ -33,6 +33,7 @@ export function SelectFile(props: {
   uploadType?: "image" | "video" | "any";
   children?: React.ReactNode;
   onFileChange?: (file: File) => void;
+  useBrowser?: boolean;
 }) {
   const [value, setValue] = useState(props.value || "");
   const [isDragActive, setIsDragActive] = useState(false);
@@ -69,7 +70,7 @@ export function SelectFile(props: {
       // );
       // setFiles((prevFiles) => [...prevFiles, ...droppedFiles]);
       setValue(e.dataTransfer.files[0].path);
-      props.onChange(e.dataTransfer.files[0].path);
+      props.onChange && props.onChange(e.dataTransfer.files[0].path);
     };
 
     dropzone.addEventListener("dragenter", handleDragEnter);
@@ -99,17 +100,16 @@ export function SelectFile(props: {
             : props.uploadType == ("video" as const)
               ? [
                 {
-                  name: "Image Files",
-                  extensions: ["jpg", "jpeg", "png", "gif"],
+                  name: "Video Files",
+                  extensions: ["mp4", "mkv", "webm"],
                 },
               ]
               : props.filters,
       }
       : { type: "openDirectory" as const };
 
-  const inputRef = useRef(null);
 
-  if (isOnBrowser) {
+  if (isOnBrowser || props.useBrowser) {
     return (
       <div>
         <Upload
@@ -130,7 +130,7 @@ export function SelectFile(props: {
                   body: form,
                 }).then((r) => r.json());
                 setValue(res.data.filepath);
-                props.onChange && props.onChange(res.data.filepath);
+                props.onChange(res.data.filepath);
               }
             }
             return false;
@@ -150,7 +150,7 @@ export function SelectFile(props: {
                   closeIcon
                   onClose={() => {
                     setValue("");
-                    props.onChange("");
+                    props.onChange && props.onChange("");
                   }}
                 >
                   {value}
@@ -169,13 +169,12 @@ export function SelectFile(props: {
     <div
       ref={dropRef}
       onClick={async () => {
-        if (isOnBrowser) {
-          inputRef.current.click();
-        } else {
-          let path = await call("selectFile", [obj]);
-          setValue(path);
-          props.onChange(path);
-        }
+
+        let path = await call("selectFile", [obj]);
+        setValue(path);
+
+        props.onChange && props.onChange(path);
+        props.onFileChange && props.onFileChange(new File([], path));
       }}
     >
       {props.children ? (
@@ -192,7 +191,7 @@ export function SelectFile(props: {
               closeIcon
               onClose={() => {
                 setValue("");
-                props.onChange("");
+                props.onChange && props.onChange("");
               }}
             >
               {value}

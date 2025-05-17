@@ -122,6 +122,7 @@ export const TranscribePanel = () => {
                     </Button>
 
                     <SelectFile
+                        useBrowser
                         onFileChange={(file) => {
                             if (file) {
                                 const url = URL.createObjectURL(file);
@@ -132,7 +133,7 @@ export const TranscribePanel = () => {
                         filters={[
                             {
                                 name: "Audio Files",
-                                extensions: [".mp3", ".wav"],
+                                extensions: ["mp3", "wav"],
                             },
                         ]}
                     />
