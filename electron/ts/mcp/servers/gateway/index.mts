@@ -2,7 +2,7 @@
 
 import { store } from "../../../rag/vectorStore.mjs";
 import dayjs from "dayjs";
-import { KNOWLEDGE_BASE } from "../../../../../common/data";
+import { IMCPClient, KNOWLEDGE_BASE } from "../../../../../common/data";
 import {
     Server,
     SSEServerTransport,
@@ -11,6 +11,8 @@ import {
     CallToolRequestSchema,
 } from "ts/es6.mjs";
 import { CONST } from "ts/polyfills/polyfills.mjs";
+import { mcpClients } from "ts/mcp/config.mjs";
+import { Command } from "ts/command.mjs";
 const { fs, path, sleep } = zx;
 
 
@@ -46,17 +48,30 @@ async function createServer(name: string, description: string, allowMCPs: string
      * Exposes a single "create_note" tool that lets clients create new notes.
      */
     server.setRequestHandler(ListToolsRequestSchema, async () => {
+        let getTools = (allowMCPs) => {
+            let tools: IMCPClient["tools"] = [];
 
+            mcpClients.forEach((v) => {
+                tools = tools.concat(
+                    v.tools.filter((t) => {
+                        if (!allowMCPs) return true;
+                        return (
+                            allowMCPs.includes(t.clientName) || allowMCPs.includes(t.restore_name)
+                        );
+                    }),
+                );
+            });
+            return tools;
+        }
         return {
             tools: [
-                {
-                    name: "list_knowledge_base",
-                    description: `List all local knowledge bases.`,
-                    inputSchema: {
-                        type: "object",
-                        properties: {},
-                    },
-                },
+                ...getTools(allowMCPs).map((tool) => {
+                    return {
+                        name: tool.function.name,
+                        description: tool.function.description,
+                        inputSchema: tool.function.parameters,
+                    };
+                }),
             ].filter(x => x),
         };
     });
@@ -66,13 +81,37 @@ async function createServer(name: string, description: string, allowMCPs: string
      * Creates a new note with the provided title and content, and returns success message.
      */
     server.setRequestHandler(CallToolRequestSchema, async (request) => {
-        switch (request.params.name) {
-            case "search_knowledge_base": {
+        try {
+            let getTools = (allowMCPs) => {
+                let tools: IMCPClient["tools"] = [];
+
+                mcpClients.forEach((v) => {
+                    tools = tools.concat(
+                        v.tools.filter((t) => {
+                            if (!allowMCPs) return true;
+                            return (
+                                allowMCPs.includes(t.clientName) || allowMCPs.includes(t.restore_name)
+                            );
+                        }),
+                    );
+                });
+                return tools;
             }
 
-
-            default:
-                throw new Error("Unknown tool");
+            let find = getTools(allowMCPs).find((tool) => {
+                return tool.function.name === request.params.name;
+            });
+            console.log("find", find, request.params.arguments);
+            return await Command.mcpCallTool(find.clientName, find.origin_name, request.params.arguments);
+        } catch (error) {
+            return {
+                content: [
+                    {
+                        type: "text",
+                        text: `error: ${error.message}`,
+                    },
+                ],
+            };
         }
     });
 

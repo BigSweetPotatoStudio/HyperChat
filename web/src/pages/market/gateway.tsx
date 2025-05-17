@@ -20,6 +20,12 @@ export function MCPGateWayPage() {
         allowMCPs: [],
     });
     const [refresh, setRefresh] = useState(0);
+    useEffect(() => { 
+        (async () => {
+            await MCP_GateWay.init();
+            setRefresh((prev) => prev + 1);
+        })()
+    }, [])
 
     // 更新数据
     const handleUpdate = async () => {

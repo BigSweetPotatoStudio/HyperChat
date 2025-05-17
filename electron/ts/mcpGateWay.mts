@@ -4,6 +4,12 @@ import { isInitializeRequest, SSEServerTransport, StreamableHTTPServerTransport 
 import { createServer } from "./mcp/servers/gateway/index.mjs";
 const KEEP_ALIVE_INTERVAL_MS = 25000; // Send keep-alive every 25 seconds
 
+const transports = {
+    streamable: {} as Record<string, any>,
+    sse: {} as Record<string, any>
+};
+
+
 function register(route, name, description, allowMCPs, prefix) {
     console.log(`Registering MCP Gateway: ${name}`, allowMCPs);
 
@@ -15,7 +21,6 @@ function register(route, name, description, allowMCPs, prefix) {
         // await server.connect(transport);
         route.post(`/${name}/mcp`, async (req, res) => {
             // console.log('Received MCP request:', req.body);
-
             try {
                 const server = await createServer(name, description, allowMCPs);
                 const transport = new StreamableHTTPServerTransport({
@@ -62,28 +67,36 @@ function register(route, name, description, allowMCPs, prefix) {
 
         route.delete(`/${name}/mcp`, handleSessionRequest);
     }
-    if (true || type == "sse") {
-        let transport;
 
-        route.get(`/${name}/sse`, async (req, res) => {
-            transport = new SSEServerTransport(prefix + `/${name}/message`, res);
-            // Start keep-alive ping
-            const intervalId = setInterval(() => {
-                if (!res.writableEnded) {
-                    res.write(': keepalive\n\n');
-                } else {
-                    // Should not happen if close handler is working, but clear just in case
-                    clearInterval(intervalId);
-                }
-            }, KEEP_ALIVE_INTERVAL_MS);
-            let server = await createServer(name, description, allowMCPs);
-            await server.connect(transport);
-        });
-        route.post(`/${name}/message`, async (req, res) => {
-            await transport.handlePostMessage(req, res);
-        });
-    }
+
+    route.get(`/${name}/sse`, async (req, res) => {
+        let transport = new SSEServerTransport(prefix + `/${name}/message`, res);
+        transports.sse[transport.sessionId] = transport;
+
+        // Start keep-alive ping
+        const intervalId = setInterval(() => {
+            if (!res.writableEnded) {
+                res.write(': keepalive\n\n');
+            } else {
+                // Should not happen if close handler is working, but clear just in case
+                clearInterval(intervalId);
+            }
+        }, KEEP_ALIVE_INTERVAL_MS);
+        let server = await createServer(name, description, allowMCPs);
+        await server.connect(transport);
+    });
+    route.post(`/${name}/message`, async (req, res) => {
+        // await transport.handlePostMessage(req, res);
+        const sessionId = req.query.sessionId as string;
+        const transport = transports.sse[sessionId];
+        if (transport) {
+            await transport.handlePostMessage(req, res, req.body);
+        } else {
+            res.status(400).send('No transport found for sessionId');
+        }
+    });
 }
+
 
 export function registers(prefix: string) {
     let route = Router();
