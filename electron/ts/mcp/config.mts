@@ -263,23 +263,27 @@ export class MCPClient implements IMCPClient {
       client.onerror = (e) => {
         // console.log("client onerror: ", this.config);
         if (this.config?.type == "sse" || this.config?.hyperchat?.type == "sse") {
-          if (e.message.includes("Body Timeout Error")) {
+          if (e.message.includes("SSE stream disconnected") || e.message.includes("Body Timeout Error")) {
             // 对于超时错误，只记录信息，不显示为错误
-            console.log(`${this.name} client encountered timeout, this is normal for SSE`);
+            if (process.env.myEnv == "dev") {
+              console.log(`${this.name} client encountered timeout, this is normal for SSE`);
+            }
           } else {
             Logger.error(`${this.name} client see onerror: `, e);
           }
         } else if (this.config?.type == "streamableHttp") {
-          if (e.message.includes("SSE stream disconnected") || e.message.includes("terminated")) {
+          if (e.message.includes("SSE stream disconnected") || e.message.includes("connection terminated")) {
             // 处理 SSE 流断开的情况
-            console.log(`${this.name} StreamableHTTP connection terminated, will reconnect automatically`);
+            if (process.env.myEnv == "dev") {
+              console.log(`${this.name} StreamableHTTP connection terminated, will reconnect automatically`);
+              // 状态改为连接中，但不立即重连，让 transport.onclose 处理重连
+              // this.status = "connecting";
+              // getMessageService().sendAllToRenderer({
+              //   type: "changeMcpClient",
+              //   data: mcpClients,
+              // });
+            }
 
-            // 状态改为连接中，但不立即重连，让 transport.onclose 处理重连
-            this.status = "connecting";
-            getMessageService().sendAllToRenderer({
-              type: "changeMcpClient",
-              data: mcpClients,
-            });
           } else if (e.message.includes("not valid JSON")) {
             // JSON解析错误，可能是部分数据损坏
             Logger.info(`${this.name} client received invalid JSON, continuing`);
@@ -393,13 +397,15 @@ export class MCPClient implements IMCPClient {
     });
     await client.connect(transport);
     this.client = client;
-  } async openStreamableHttp(config: MCP_CONFIG_TYPE) {
+  }
+  async openStreamableHttp(config: MCP_CONFIG_TYPE) {
     const client = new Client({
       name: this.name,
       version: "1.0.0",
       capabilities: {
       }
-    }); const transport = new StreamableHTTPClientTransport(new URL(config?.url), {
+    });
+    const transport = new StreamableHTTPClientTransport(new URL(config?.url), {
       requestInit: {
         keepalive: true,
         headers: config.headers || {},
@@ -411,35 +417,6 @@ export class MCPClient implements IMCPClient {
       await client.connect(transport);
       this.client = client;
 
-      // 添加自动重连机制
-      transport.onclose = async () => {
-        if (this.status === "connected" && !this.config.disabled) {
-          Logger.info(`${this.name} StreamableHTTP transport closed, attempting to reconnect in 5 seconds...`);
-          this.status = "connecting";
-          getMessageService().sendAllToRenderer({
-            type: "changeMcpClient",
-            data: mcpClients,
-          });
-
-          // 等待5秒后尝试重新连接
-          setTimeout(async () => {
-            try {
-              // 重新打开连接
-              if (this.status !== "disabled") {
-                await this.open();
-                Logger.info(`${this.name} StreamableHTTP reconnected successfully`);
-              }
-            } catch (reconnectError) {
-              Logger.error(`Failed to reconnect ${this.name}:`, reconnectError);
-              this.status = "disconnected";
-              getMessageService().sendAllToRenderer({
-                type: "changeMcpClient",
-                data: mcpClients,
-              });
-            }
-          }, 5000);
-        }
-      };
     } catch (e) {
       throw e;
     }

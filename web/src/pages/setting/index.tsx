@@ -128,6 +128,21 @@ export function Setting() {
                 }}
               ></Switch>
             </Form.Item>
+            <Form.Item label={t`LaunchStartup`}>
+              <Radio.Group
+                value={electronData.get().closeAction}
+                onChange={async (e) => {
+                  electronData.get().closeAction = e.target.value;
+                  await electronData.save();
+                  refresh();
+                }}
+              >
+                <Radio value="minimize">{t`Minimize to Tray`}</Radio>
+                <Radio value="exit">{t`Exit Application`}</Radio>
+                <Radio value={0}>{t`Ask Every Time`}</Radio>
+              </Radio.Group>
+            </Form.Item>
+
             <Form.Item
               label={t`autoSync`}
               tooltip={t`This is an experimental feature, 5min sync once`}
