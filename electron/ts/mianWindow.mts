@@ -127,7 +127,7 @@ export const createWindow = () => {
 
       // 检查是否已有记住的选择
       const savedCloseAction = electronData.initSync().closeAction;
-      
+
       if (savedCloseAction) {
         // 如果用户之前已经选择并记住了选择
         if (savedCloseAction === 'minimize') {
@@ -222,12 +222,24 @@ export const createWindow = () => {
   tray.setContextMenu(contextMenu);
   // 单击触发
   tray.on("click", () => {
-    // 双击通知区图标实现应用的显示或隐藏
-    win.isVisible() ? win.hide() : win.show();
-    if (process.platform === "darwin") {
-      win.isVisible() ? app.dock.show() : app.dock.hide();
+    // 先记录当前状态
+    const isCurrentlyVisible = win.isVisible();
+
+    // 基于当前状态切换
+    if (isCurrentlyVisible) {
+      win.hide();
+      if (process.platform === "darwin") {
+        app.dock.hide();
+      } else {
+        win.setSkipTaskbar(true);
+      }
     } else {
-      win.isVisible() ? win.setSkipTaskbar(false) : win.setSkipTaskbar(true);
+      win.show();
+      if (process.platform === "darwin") {
+        app.dock.show();
+      } else {
+        win.setSkipTaskbar(false);
+      }
     }
   });
 
