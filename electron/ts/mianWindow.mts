@@ -218,30 +218,46 @@ export const createWindow = () => {
       },
     },
   ]);
-  // // 载入托盘菜单
-  tray.setContextMenu(contextMenu);
-  // 单击触发
-  tray.on("click", () => {
-    // 先记录当前状态
-    const isCurrentlyVisible = win.isVisible();
+  // 针对 macOS 平台的特殊处理
+  if (process.platform === 'darwin') {
+    // macOS 上设置为不弹出上下文菜单
+    tray.on('click', (event, bounds) => {
+      // 先记录当前状态
+      const isCurrentlyVisible = win.isVisible();
 
-    // 基于当前状态切换
-    if (isCurrentlyVisible) {
-      win.hide();
-      if (process.platform === "darwin") {
+      // 基于当前状态切换
+      if (isCurrentlyVisible) {
+        win.hide();
         app.dock.hide();
       } else {
-        win.setSkipTaskbar(true);
-      }
-    } else {
-      win.show();
-      if (process.platform === "darwin") {
+        win.show();
         app.dock.show();
+      }
+    });
+
+    // 设置为右键点击显示菜单
+    tray.on('right-click', () => {
+      tray.popUpContextMenu(contextMenu);
+    });
+  } else {
+    // 载入托盘菜单
+    tray.setContextMenu(contextMenu);
+
+    // 单击触发
+    tray.on("click", () => {
+      // 先记录当前状态
+      const isCurrentlyVisible = win.isVisible();
+
+      // 基于当前状态切换
+      if (isCurrentlyVisible) {
+        win.hide();
+        win.setSkipTaskbar(true);
       } else {
+        win.show();
         win.setSkipTaskbar(false);
       }
-    }
-  });
+    });
+  }
 
   app.on("window-all-closed", () => {
     if (process.platform !== "darwin") app.quit();
