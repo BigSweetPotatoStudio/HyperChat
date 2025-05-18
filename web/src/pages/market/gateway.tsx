@@ -246,7 +246,7 @@ const GatewayForm: React.FC<GatewayFormProps> = ({
                     treeCheckable
                     placeholder={t`Please select allowed MCP`}
                     showCheckedStrategy={TreeSelect.SHOW_PARENT}
-                    treeData={mcpClients?.map((x) => {
+                    treeData={mcpClients?.filter(x => x.status != "disabled")?.map((x) => {
                         return {
                             title: x.name,
                             key: x.name,

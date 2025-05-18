@@ -1335,9 +1335,9 @@
     "en": "(Need to solve cors problem)",
     "zh": "(需要解决跨域问题)"
   },
-  "ToolboxPage": {
-    "en": "ToolboxPage",
-    "zh": "工具箱页面"
+  "Toolbox": {
+    "en": "Toolbox",
+    "zh": "工具箱"
   },
   "Standard calls tools by passing tools parameters, and compatible calls tools by writing tools into the system prompt.": {
     "en": "Standard calls tools by passing tools parameters, and compatible calls tools by writing tools into the system prompt.",
@@ -1430,5 +1430,45 @@
   "Preview": {
     "en": "Preview",
     "zh": "预览"
+  },
+  "MCP Gateway": {
+    "en": "MCP Gateway",
+    "zh": "MCP 网关"
+  },
+  "Create Gateway": {
+    "en": "Create Gateway",
+    "zh": "创建网关"
+  },
+  "Edit Gateway": {
+    "en": "Edit Gateway",
+    "zh": "编辑网关"
+  },
+  "Only allow alphanumeric characters": {
+    "en": "Only allow alphanumeric characters",
+    "zh": "只允许字母数字字符"
+  },
+  "Please enter name": {
+    "en": "Please enter name",
+    "zh": "请输入名称"
+  },
+  "Please enter description": {
+    "en": "Please enter description",
+    "zh": "请输入描述"
+  },
+  "GenerateSpeech": {
+    "en": "GenerateSpeech",
+    "zh": "生成语音"
+  },
+  "GenerateImage": {
+    "en": "GenerateImage",
+    "zh": "生成图像"
+  },
+  "Copy": {
+    "en": "Copy",
+    "zh": "复制"
+  },
+  "Parse": {
+    "en": "Parse",
+    "zh": "粘贴"
   }
 }

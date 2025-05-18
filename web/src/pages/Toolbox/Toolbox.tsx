@@ -11,33 +11,44 @@ import { GPT_MODELS } from "../../../../common/data";
 import GenerateSpeechPanel from "./generateSpeech";
 import { TranscribePanel } from "./Transcribe";
 import GenerateImagePanel from "./generateImage";
+import { useLocation } from "react-router-dom";
 
 export const ToolboxPage = () => {
-    useEffect(() => {
+    const location = useLocation();
 
-    }, [])
 
-    return <div className="h-full">
-        <Tabs
-            tabPosition={"left"}
-            items={[
-                {
-                    label: t`transcribe`,
-                    key: "transcribe",
-                    children: <TranscribePanel />,
-                },
-                {
-                    label: t`Generate Speech`,
-                    key: "generateSpeech",
-                    children: <GenerateSpeechPanel />,
-                },
-                {
-                    label: t`Generate Image`,
-                    key: "generateImage",
-                    children: <GenerateImagePanel />,
-                }
-            ]}
-        />
-    </div>
+    // console.log("ToolboxPage location:", location);
+
+    if (location.pathname == '/Toolbox/Transcribe') {
+        return <TranscribePanel />;
+    }
+    if (location.pathname == '/Toolbox/GenerateImage') {
+        return <GenerateImagePanel />;
+    }
+    if (true || location.pathname == '/Toolbox/GenerateSpeech') {
+        return <GenerateSpeechPanel />;
+    }
+    // return <div className="h-full">
+    //     <Tabs
+    //         tabPosition={"left"}
+    //         items={[
+    //             {
+    //                 label: t`transcribe`,
+    //                 key: "transcribe",
+    //                 children: <TranscribePanel />,
+    //             },
+    //             {
+    //                 label: t`Generate Speech`,
+    //                 key: "generateSpeech",
+    //                 children: <GenerateSpeechPanel />,
+    //             },
+    //             {
+    //                 label: t`Generate Image`,
+    //                 key: "generateImage",
+    //                 children: <GenerateImagePanel />,
+    //             }
+    //         ]}
+    //     />
+    // </div>
 };
 

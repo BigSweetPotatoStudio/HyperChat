@@ -170,10 +170,27 @@ export function getLayoutRoute() {
       },
 
       {
-        path: "/ToolboxPage",
-        name: t`ToolboxPage`,
-        icon: "⌨️",
-        component: <ToolboxPage />,
+        path: "/Toolbox",
+        name: t`Toolbox`,
+        icon: <Icon name="tools-hardware" />,
+        component: <Container from="/Toolbox" default="Transcribe" />,
+        routes: [
+          {
+            path: "/Transcribe",
+            name: t`Transcribe`,
+            component: <ToolboxPage />,
+          },
+          {
+            path: "/GenerateSpeech",
+            name: t`GenerateSpeech`,
+            component: <ToolboxPage />,
+          },
+          {
+            path: "/GenerateImage",
+            name: t`GenerateImage`,
+            component: <ToolboxPage />,
+          }, 
+        ],
       }
     ].filter(x => x)
   };
@@ -188,7 +205,7 @@ export function getLayoutRoute() {
           navigate(props.default);
         }, 0);
       }
-    }, [props.default, location.pathname]);
+    }, [location.pathname]);
     return (
       <div className="my-container h-full">
         <Outlet />
