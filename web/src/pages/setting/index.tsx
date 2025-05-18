@@ -128,7 +128,7 @@ export function Setting() {
                 }}
               ></Switch>
             </Form.Item>
-            <Form.Item label={t`LaunchStartup`}>
+            <Form.Item label={t`Exit Action`}>
               <Radio.Group
                 value={electronData.get().closeAction}
                 onChange={async (e) => {
