@@ -106,7 +106,8 @@ export const electronData = new Data(
       width: 1440,
       height: 900,
     },
-    browserNetworkSetting: "server-proxy"
+    browserNetworkSetting: "server-proxy",
+    closeAction: undefined as "minimize" | "exit" | undefined,
   },
   {
     sync: false,

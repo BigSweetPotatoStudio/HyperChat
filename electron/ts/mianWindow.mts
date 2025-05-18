@@ -1,6 +1,7 @@
 import {
   app,
   BrowserWindow,
+  dialog,
   ipcMain,
   Menu,
   MenuItem,
@@ -108,65 +109,127 @@ export const createWindow = () => {
   });
   // 触发关闭时触发
   win.on("close", (event) => {
-    app.quit();
-    // if (process.env.myEnv == "dev") {
-    //   app.quit();
-    // } else {
-    //   // 截获 close 默认行为
-    //   event.preventDefault();
-    //   // 点击关闭时触发close事件，我们按照之前的思路在关闭时，隐藏窗口，隐藏任务栏窗口
-    //   win.hide();
+    // app.quit();
+    if (false && process.env.myEnv == "dev") {
+      win.destroy();
+      app.quit();
+    } else {
+      // 截获 close 默认行为
+      event.preventDefault();
+      // 点击关闭时触发close事件，我们按照之前的思路在关闭时，隐藏窗口，隐藏任务栏窗口
+      // win.hide();
 
-    //   if (process.platform === "darwin") {
-    //     app.dock.hide();
-    //   } else {
-    //     win.setSkipTaskbar(true);
-    //   }
-    // }
+      // if (process.platform === "darwin") {
+      //   app.dock.hide();
+      // } else {
+      //   win.setSkipTaskbar(true);
+      // }
+
+      // 检查是否已有记住的选择
+      const savedCloseAction = electronData.initSync().closeAction;
+      
+      if (savedCloseAction) {
+        // 如果用户之前已经选择并记住了选择
+        if (savedCloseAction === 'minimize') {
+          // 最小化到托盘
+          win.hide();
+          if (process.platform === "darwin") {
+            app.dock.hide();
+          } else {
+            win.setSkipTaskbar(true);
+          }
+        } else if (savedCloseAction === 'exit') {
+          // 直接退出
+          win.destroy();
+          app.quit();
+        }
+      } else {
+        // 显示英文确认对话框
+        const options = {
+          type: 'question' as const,
+          buttons: ['Minimize to Tray', 'Exit Application', 'Cancel'],
+          defaultId: 0,
+          title: 'Close Confirmation',
+          message: 'What would you like to do?',
+          detail: 'You can minimize the application to system tray or exit completely.',
+          checkboxLabel: 'Remember my choice',
+          checkboxChecked: false
+        };
+
+        dialog.showMessageBox(win, options).then((response) => {
+          const rememberChoice = response.checkboxChecked;
+
+          if (response.response === 0) { // 最小化到托盘
+            // 如果选择记住
+            if (rememberChoice) {
+              electronData.get().closeAction = 'minimize';
+              electronData.saveSync();
+            }
+
+            win.hide();
+            if (process.platform === "darwin") {
+              app.dock.hide();
+            } else {
+              win.setSkipTaskbar(true);
+            }
+          } else if (response.response === 1) { // 直接退出
+            // 如果选择记住
+            if (rememberChoice) {
+              electronData.get().closeAction = 'exit';
+              electronData.saveSync();
+            }
+
+            win.destroy();
+            app.quit();
+          }
+          // 如果选择"Cancel"，什么都不做，对话框关闭
+        });
+      }
+    }
   });
   // 创建原始图标
-  // const icon = nativeImage.createFromPath(
-  //   path.join(__dirname, "../web-build/assets/favicon.png")
-  // );
+  const icon = nativeImage.createFromPath(
+    path.join(__dirname, "../web-build/assets/favicon.png")
+  );
 
   // 调整图标大小
-  // let trayIcon = icon.resize({
-  //   width: 20,
-  //   height: 20, // 根据平台调整图标大小,
-  // });
+  let trayIcon = icon.resize({
+    width: 20,
+    height: 20, // 根据平台调整图标大小,
+  });
 
   // 新建托盘
-  // let tray = new Tray(trayIcon);
+  let tray = new Tray(trayIcon);
   // 托盘名称
-  // tray.setToolTip(title);
+  tray.setToolTip(title);
   // 托盘菜单
-  // const contextMenu = Menu.buildFromTemplate([
-  //   {
-  //     label: "显示",
-  //     click: () => {
-  //       win.show();
-  //     },
-  //   },
-  //   {
-  //     label: "退出",
-  //     click: () => {
-  //       win.destroy();
-  //       app.quit();
-  //     },
-  //   },
-  // ]);
+  const contextMenu = Menu.buildFromTemplate([
+    {
+      label: "显示",
+      click: () => {
+        win.show();
+      },
+    },
+    {
+      label: "退出",
+      click: () => {
+        win.destroy();
+        app.quit();
+      },
+    },
+  ]);
   // // 载入托盘菜单
-  // tray.setContextMenu(contextMenu);
-  // // 单击触发
-  // tray.on("double-click", () => {
-  //   // 双击通知区图标实现应用的显示或隐藏
-  //   win.isVisible() ? win.hide() : win.show();
-  //   if (process.platform === "darwin") {
-  //     win.isVisible() ? app.dock.show() : app.dock.hide();
-  //   } else {
-  //     win.isVisible() ? win.setSkipTaskbar(false) : win.setSkipTaskbar(true);
-  //   }
-  // });
+  tray.setContextMenu(contextMenu);
+  // 单击触发
+  tray.on("click", () => {
+    // 双击通知区图标实现应用的显示或隐藏
+    win.isVisible() ? win.hide() : win.show();
+    if (process.platform === "darwin") {
+      win.isVisible() ? app.dock.show() : app.dock.hide();
+    } else {
+      win.isVisible() ? win.setSkipTaskbar(false) : win.setSkipTaskbar(true);
+    }
+  });
 
   app.on("window-all-closed", () => {
     if (process.platform !== "darwin") app.quit();

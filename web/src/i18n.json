@@ -1470,5 +1470,21 @@
   "Parse": {
     "en": "Parse",
     "zh": "粘贴"
+  },
+  "Minimize to Tray": {
+    "en": "Minimize to Tray",
+    "zh": "最小化到托盘"
+  },
+  "Exit Application": {
+    "en": "Exit Application",
+    "zh": "退出应用程序"
+  },
+  "Ask Every Time": {
+    "en": "Ask Every Time",
+    "zh": "每次询问"
+  },
+  "Exit Action": {
+    "en": "Exit Action",
+    "zh": "退出操作"
   }
 }
