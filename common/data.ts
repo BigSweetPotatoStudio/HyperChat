@@ -128,7 +128,7 @@ export type Tool_Call = {
 
 
 export type MyMessage = OpenAI.Chat.Completions.ChatCompletionMessageParam & {
-
+  id?: string,
   content_status?:
   | "loading"
   | "success"
@@ -473,6 +473,21 @@ export const VarScopeList = new Data(
       key: v4(),
       type: "custom",
     }] as Array<VarScope>,
+  },
+  {
+    sync: true,
+  }
+);
+
+
+export const MCP_GateWay = new Data(
+  "mcp_gateway.json",
+  {
+    data: [] as Array<{
+      name: string;
+      description?: string;
+      allowMCPs: string[];
+    }>,
   },
   {
     sync: true,

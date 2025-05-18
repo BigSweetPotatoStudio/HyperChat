@@ -1,4 +1,4 @@
-import type { CommandFactory as Command } from "../../../electron/ts/command.mts";
+import type { Command } from "../../../electron/ts/command.mts";
 import { io } from "socket.io-client";
 import { sleep } from "./sleep";
 import { isOnBrowser } from "./const";

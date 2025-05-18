@@ -33,7 +33,7 @@ export const HyperTerminal = {
   name: NAME,
   url: ``,
   configSchema: configSchema,
-  // type: "streamableHttp",
+  type: "streamableHttp",
 };
 
 

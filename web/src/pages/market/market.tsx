@@ -76,6 +76,7 @@ import {
 } from "../../common";
 import { Pre } from "../../components/pre";
 import { Icon } from "../../components/icon";
+import { MCPGateWayPage } from "./gateway";
 
 // export type Package = {
 //   type: "npx" | "uvx" | "other";
@@ -415,75 +416,7 @@ export function Market() {
                         <List.Item
                           className="hover:cursor-pointer hover:bg-slate-300"
                           actions={[
-                            // item.source == "builtin" && (
-                            //   <a
-                            //     key="list-loadmore-down"
-                            //     className="text-lg hover:text-cyan-400"
-                            //   >
-                            //     {MCP_CONFIG.get().mcpServers[item.name] ? (
-                            //       <Popconfirm
-                            //         title="Sure to delete?"
-                            //         onConfirm={async () => {
-                            //           try {
-                            //             await call("closeMcpClients", [
-                            //               item.uid,
-                            //               {
-                            //                 isdelete: true,
-                            //                 isdisable: false,
-                            //               }
-                            //             ]);
-                            //           } catch (e) {
-                            //             message.error(e.message);
-                            //           }
-                            //         }}
-                            //       >
-                            //         <Tooltip
-                            //           title="uninstall"
-                            //           placement="bottom"
-                            //         >
-                            //           <DeleteOutlined className="text-lg hover:text-cyan-400" />
-                            //         </Tooltip>
-                            //       </Popconfirm>
-                            //     ) : (
-                            //       <Tooltip title="install" placement="bottom">
-                            //         <CloudDownloadOutlined
-                            //           onClick={async (e) => {
-                            //             e.stopPropagation();
-                            //             mcpconfigform.resetFields();
-
-                            //             setCurrRow(item);
-                            //             let zo = eval(
-                            //               jsonSchemaToZod(item.ext.configSchema),
-                            //             );
-                            //             mcpconfigform?.setFieldsValue(
-                            //               zo.safeParse({}).data,
-                            //             );
-                            //             if (
-                            //               Object.keys(
-                            //                 MCP_CONFIG.get().mcpServers[
-                            //                   item.name
-                            //                 ]?.hyperchat.config || {},
-                            //               ).length > 0
-                            //             ) {
-                            //               mcpconfigform.setFieldsValue(
-                            //                 MCP_CONFIG.get().mcpServers[
-                            //                   item.name
-                            //                 ]?.hyperchat.config || {},
-                            //               );
-                            //             }
-                            //             setMcpconfigOpen(true);
-                            //             await getClients();
-                            //             refresh();
-                            //           }}
-                            //         />
-                            //       </Tooltip>
-                            //     )}
-                            //   </a>
-                            // ),
-
-
                             RenderEnableAndDisable(item),
-
                             item.status != "disabled" ? (
                               <a className="text-lg hover:text-cyan-400">
                                 <Button type="link" title={t`Setting`} onClick={async (e) => {
@@ -511,14 +444,7 @@ export function Market() {
                                 </Button>
                               </a>
                             ) : undefined,
-                            // item.github ? (
-                            //   <a
-                            //     className="text-lg hover:text-cyan-400"
-                            //     href={item.github}
-                            //   >
-                            //     <GithubOutlined />
-                            //   </a>
-                            // ) : undefined,
+
                           ].filter((x) => x != null)}
                         >
                           {ListItemMeta(item)}
@@ -580,6 +506,13 @@ export function Market() {
                   </div>
                 ),
               },
+              {
+                label: t`MCP Gateway`,
+                key: "mcpGateway",
+                children: (<div>
+                  <MCPGateWayPage />
+                </div>)
+              }
             ].filter(x => x)}
           />
         </div>

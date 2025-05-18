@@ -15,6 +15,11 @@
     "sourceMap": true,
     "strict": false,
     "strictNullChecks": false,
+    "paths": {
+      "@/*": [
+        "./*"
+      ]
+    },
     "lib": [
       "ESNext",
       "DOM"

@@ -182,12 +182,11 @@ export function Setting() {
                 <Button
                   onClick={() =>
                     window.open(
-                      `http://localhost:${port.current}/${electronData.get().password}/`,
+                      `${location.protocol}//${location.hostname}:${port.current}/${electronData.get().password}/`,
                     )
                   }
                 >
-                  OpenWeb(http://localhost:{port.current}/
-                  {electronData.get().password}/)
+                  OpenWeb({`${location.protocol}//${location.hostname}:${port.current}/${electronData.get().password}/`})
                 </Button>
               </Space.Compact>
 

@@ -550,7 +550,7 @@ export const Chat = ({
   const [loading, setLoading] = useState(false);
   let cacheOBJ = useRef({} as Record<string, OpenAiChannel>);
   const onRequest = useCallback(async (message?: string) => {
-    Clarity.event(`sender-${process.env.NODE_ENV}`);
+    Clarity && Clarity.event(`sender-${process.env.NODE_ENV}`);
     console.log("onRequest", message);
     let confirm_call_tool_cb = (tool: Tool_Call) => {
       return new Promise((resolve, reject) => {
@@ -1263,7 +1263,7 @@ export const Chat = ({
     <div key={sessionID} className="chat relative h-full">
       <div className="h-full rounded-lg bg-white">
         <XProvider>
-          {mobile.current.is && (
+          {/* {mobile.current.is ? (
             <>
               <Drawer
                 placement="left"
@@ -1280,17 +1280,37 @@ export const Chat = ({
                 {historyShowNode}
               </Drawer>
             </>
-          )}
+          ) : <>
+            <div className="hidden h-full w-0 flex-none overflow-hidden pr-2 lg:block lg:w-60">
+              {historyShowNode}
+            </div>
+            <Divider type="vertical" className="hidden h-full lg:block" />
+          </>} */}
 
           <div className="flex h-full">
-            {DATA.current.showHistory && (
+            {mobile.current.is ? (
               <>
-                <div className="hidden h-full w-0 flex-none overflow-hidden pr-2 lg:block lg:w-60">
+                <Drawer
+                  placement="left"
+                  className="chat"
+                  onClose={(e) => {
+                    DATA.current.showHistory = false;
+                    refresh();
+                  }}
+                  footer={null}
+                  title={t`Chat Logs`}
+                  open={DATA.current.showHistory}
+                  getContainer={false}
+                >
                   {historyShowNode}
-                </div>
-                <Divider type="vertical" className="hidden h-full lg:block" />
+                </Drawer>
               </>
-            )}
+            ) :
+              <div style={{ display: DATA.current.showHistory ? "block" : "none" }} className="hidden h-full w-0 flex-none overflow-hidden pr-2 lg:block lg:w-60">
+                {historyShowNode}
+              </div>
+            }
+            <Divider style={{ display: !mobile.current.is && DATA.current.showHistory ? "block" : "none" }} type="vertical" className="hidden h-full lg:block" />
             <div style={{ alignSelf: "stretch", width: (mobile.current.is) ? "100%" : DATA.current.showHistory ? "calc(100% - 265px)" : "100%" }}>
               <Spin wrapperClassName="my-spin w-full h-full"
 
@@ -1876,23 +1896,23 @@ export const Chat = ({
                           // if (file.path) {
                           //   editorRef.current?.insertTextAtCursor(file.path);
                           // } else {
-                            if (file.type.includes("image")) {
-                              let path = await blobToBase64(file);
-                              resourceResListRef.current.push({
-                                call_name: "UserUpload",
-                                contents: [
-                                  {
-                                    path: path,
-                                    blob: path,
-                                    type: "image",
-                                  },
-                                ],
-                                uid: v4(),
-                              });
-                              refresh();
-                            } else {
-                              message.warning(t`please uplaod image`);
-                            }
+                          if (file.type.includes("image")) {
+                            let path = await blobToBase64(file);
+                            resourceResListRef.current.push({
+                              call_name: "UserUpload",
+                              contents: [
+                                {
+                                  path: path,
+                                  blob: path,
+                                  type: "image",
+                                },
+                              ],
+                              uid: v4(),
+                            });
+                            refresh();
+                          } else {
+                            message.warning(t`please uplaod image`);
+                          }
                           // }
                         }}
                         submitType="enter"

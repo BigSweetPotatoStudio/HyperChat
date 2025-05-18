@@ -1,6 +1,5 @@
-import Koa, { Context } from "koa";
-import serve from "koa-static";
-import cors from "@koa/cors";
+import express, { Request, Response, NextFunction } from "express";
+import cors from "cors";
 import http from "http";
 import path from "path";
 import { Server as SocketIO } from "socket.io";
@@ -8,42 +7,50 @@ import { appDataDir, Logger } from "ts/polyfills/index.mjs";
 
 import { execFallback } from "./common/execFallback.mjs";
 
-import mount from "koa-mount";
-import { koaBody } from "koa-body";
+import multer from "multer";
+import bodyParser from "body-parser";
 import { electronData } from "../../common/data";
 import { Command, CommandFactory } from "./command.mjs";
 
-import Router from "koa-router";
+import { Router } from "express";
 
 import { fs } from "./es6.mjs";
 import crypto from "crypto";
 import { getMessageService } from "./message_service.mjs";
 import { Config } from "./const.mjs";
-import { threadId } from "worker_threads";
 import { PassThrough } from "stream";
 import { sleep } from "./common/util.mjs";
+import { registers, refreshRoutes } from "./mcpGateWay.mjs";
 
 const uploadDir = "./uploads";
 const uploadDirPath = path.join(appDataDir, uploadDir);
 fs.ensureDirSync(uploadDirPath);
 fs.emptyDirSync(uploadDirPath);
 
-export function genRouter(c, prefix: string) {
+// 配置multer用于文件上传
+const storage = multer.diskStorage({
+  destination: function (req, file, cb) {
+    cb(null, uploadDirPath);
+  },
+  filename: function (req, file, cb) {
+    cb(null, file.originalname);
+  }
+});
+const upload = multer({ storage: storage });
+
+export function genRouter(c) {
   let functions = [];
   Object.getOwnPropertyNames(Object.getPrototypeOf(c))
     .filter((x) => x != "constructor")
     .forEach((name) => {
       functions.push(name);
     });
-
-  let router = new Router({
-    prefix: prefix,
-  });
-
+  // console.log("Command functions: ", functions);
+  let router = Router();
   for (let name of functions) {
-    router.post(`/${name}`, async (ctx: Koa.Context) => {
-      let args = ctx.request.body;
-      // console.log(name, args);
+    // 不再添加前缀，因为在app.use(apiPrefix, model_route)中已经添加了前缀
+    router.post(`/${name}`, async (req: Request, res: Response, next: NextFunction) => {
+      let args = req.body;
       try {
         if (name == "getHistory") {
           // log.info(name, args);
@@ -53,143 +60,164 @@ export function genRouter(c, prefix: string) {
               name,
               args[0],
               "writeFile Data length: " + args[1].length
-              // res
             );
           } else {
             Logger.info(
               name,
               args
-              // res
             );
           }
         }
-        let res = await Command[name](...args);
 
-        ctx.body = {
+        // 调用Command方法处理请求
+        let result = await Command[name](...args);
+
+        // 发送JSON响应
+        res.json({
           code: 0,
           success: true,
-          data: res,
-        };
+          data: result,
+        });
       } catch (e) {
+        // 错误处理
         Logger.error(e);
-        ctx.body = { success: false, code: 1, message: e.message };
+        res.status(500).json({
+          success: false,
+          code: 1,
+          message: e instanceof Error ? e.message : 'Unknown error'
+        });
       }
     });
   }
+  // 文件上传处理
+  router.post(`/uploads`, upload.single('file'), async (req: Request, res: Response) => {
+    try {
+      // 使用multer上传的文件会被添加到req.file
+      if (req.file) {
+        const file = req.file;
+        // 读取文件内容
+        const fileContent = await fs.readFile(file.path);
 
-  // console.log(prefix + "/uploads");
-  router.post("/uploads", async (ctx) => {
-    // 如果只上传一个文件，files.file就是文件对象
-    const files = ctx.request.files;
-    if (files && files.file) {
-      const file = files.file;
-      // 读取文件内容
-      const fileContent = await fs.readFile(file.filepath);
+        // 计算文件的SHA256哈希值
+        const hash = crypto
+          .createHash("sha256")
+          .update(fileContent as any)
+          .digest("hex");
 
-      // 计算文件的SHA256哈希值
-      const hash = crypto
-        .createHash("sha256")
-        .update(fileContent as any)
-        .digest("hex");
+        // 获取文件扩展名
+        const ext = path.extname(file.originalname);
 
-      // 获取文件扩展名
-      const ext = path.extname(file.originalFilename);
+        // 新的文件名 = 哈希值 + 原始扩展名
+        const newFilename = `${hash}${ext}`;
+        let filepath = path.join(uploadDirPath, newFilename);
+        // 重命名文件
+        await fs.move(file.path, filepath, {
+          overwrite: true,
+        });
 
-      // 新的文件名 = 哈希值 + 原始扩展名
-      const newFilename = `${hash}${ext}`;
-      // const newPath = path.join(uploadDir, newFilename);
-      let filepath = path.join(uploadDirPath, newFilename);
-      // 重命名文件
-      await fs.move(file.filepath, filepath, {
-        overwrite: true,
+        res.status(200).json({
+          data: {
+            filename: newFilename,
+            filepath: filepath,
+            mimetype: file.mimetype,
+          },
+        });
+      } else {
+        throw new Error("No file uploaded");
+      }
+    } catch (error) {
+      res.status(400).json({
+        success: false,
+        message: error instanceof Error ? error.message : 'Unknown error'
       });
-
-      ctx.status = 200;
-      ctx.body = {
-        data: {
-          filename: newFilename,
-          filepath: filepath,
-          // url: url + "/" + newFilename,
-          mimetype: file.mimetype,
-        },
-      };
-    } else {
-      throw new Error("No file uploaded");
     }
   });
 
   return router;
 }
+electronData.initSync();
+let prefix = "/" + encodeURI(electronData.get().password);
 
-let prefix = "/" + encodeURI(electronData.get().password) + "/api";
+let apiPrefix = prefix + "/api";
 
-async function proxy(ctx: Context, next: () => Promise<any>) {
-  if (ctx.path.startsWith(prefix + "/ai")) {
-    // console.log("proxy", ctx.path, ctx.request.headers);
-    try {
-      const requestBody = ctx.request.body;
-      let baseURL = decodeURIComponent(
-        ctx.request.headers["baseurl"] as string
-      );
-      if (process.env.NODE_ENV !== "production") {
-        console.log("baseURL: ", baseURL);
-      }
-      if (!baseURL) {
-        ctx.status = 400;
-        ctx.body = { success: false, message: "baseURL is required" };
-        return;
-      }
-      // console.log(ctx.request.headers);
-      delete ctx.request.headers["content-length"];
-      delete ctx.request.headers["origin"];
-      delete ctx.request.headers["host"];
-      delete ctx.request.headers["baseurl"];
-      let headers = {
-        ...(ctx.request.headers as any),
-        "HTTP-Referer": "https://hyperchat.dadigua.men",
-        "X-Title": "HyperChat",
-        // "Content-Type": "application/json",
-        // "X-Api-Key": ctx.request.headers["x-api-key"] as string,
-        // Authorization: ctx.request.headers["authorization"],
-      };
-      if (baseURL.endsWith("/")) {
-        baseURL = baseURL.slice(0, -1);
-      }
-      baseURL = (baseURL as string) + ctx.path.replace(prefix + "/ai", "");
-      // console.log("proxy", baseURL, headers, requestBody);
-      // 发起请求，但不立即解析响应体
-      const response = await fetch(baseURL, {
-        method: ctx.method,
-        headers: headers,
-        body: (ctx.method === "GET" || ctx.method === "HEAD") ? undefined : JSON.stringify(requestBody),
-      });
-      // console.log("proxy response", response.status, response.headers);
-      // 检查内容类型，确定是否为SSE
-      const contentType = response.headers.get("Content-Type");
-      const isSSE = contentType && contentType.includes("text/event-stream");
+// 代理中间件
+function proxyMiddleware(req: Request, res: Response, next: NextFunction) {
+  if (req.path.startsWith(apiPrefix + "/ai")) {
+    // 处理代理请求
+    (async () => {
+      try {
+        const requestBody = req.body;
+        let baseURL = req.headers["baseurl"]
+          ? decodeURIComponent(req.headers["baseurl"] as string)
+          : '';
 
-      // 设置响应状态码和头部
-      ctx.status = response.status;
-      ctx.set("Content-Type", contentType || "application/json");
-      if (process.env.NODE_ENV !== "production") {
-        console.log("proxy", isSSE, contentType);
-      }
-      if (isSSE) {
-        // 处理SSE流
-        ctx.set("Content-Type", "text/event-stream");
-        ctx.set("Cache-Control", "no-cache");
-        ctx.set("Connection", "keep-alive");
+        if (process.env.NODE_ENV !== "production") {
+          console.log("baseURL: ", baseURL);
+        }
 
-        // 获取响应体的可读流
-        const reader = response.body.getReader();
+        if (!baseURL) {
+          return res.status(400).json({ success: false, message: "baseURL is required" });
+        }        // 处理headers - 将headers处理成Record<string, string>格式
+        let customHeaders: Record<string, string> = {};
 
-        const stream = new PassThrough();
+        // 构建新的headers对象
+        for (const key in req.headers) {
+          if (req.headers[key] !== undefined &&
+            key !== 'content-length' &&
+            key !== 'origin' &&
+            key !== 'host' &&
+            key !== 'baseurl') {
+            const value = req.headers[key];
+            if (typeof value === 'string') {
+              customHeaders[key] = value;
+            } else if (Array.isArray(value) && value.length > 0) {
+              customHeaders[key] = value[0];
+            }
+          }
+        }
 
-        ctx.status = 200;
-        ctx.body = stream;
+        // 添加自定义headers
+        customHeaders["HTTP-Referer"] = "https://hyperchat.dadigua.men";
+        customHeaders["X-Title"] = "HyperChat";
 
-        await next();
-        (async () => {
+        // 处理URL
+        if (baseURL.endsWith("/")) {
+          baseURL = baseURL.slice(0, -1);
+        }
+        baseURL = baseURL + req.path.replace(apiPrefix + "/ai", "");
+
+        // 发起请求
+        const response = await fetch(baseURL, {
+          method: req.method,
+          headers: customHeaders,
+          body: (req.method === "GET" || req.method === "HEAD") ? undefined : JSON.stringify(requestBody),
+        });
+
+        // 检查内容类型，确定是否为SSE
+        const contentType = response.headers.get("Content-Type");
+        const isSSE = contentType && contentType.includes("text/event-stream");
+
+        // 设置响应头
+        res.status(response.status);
+        res.setHeader("Content-Type", contentType || "application/json");
+
+        if (process.env.NODE_ENV !== "production") {
+          console.log("proxy", isSSE, contentType);
+        }
+
+        if (isSSE) {
+          // 处理SSE流
+          res.setHeader("Content-Type", "text/event-stream");
+          res.setHeader("Cache-Control", "no-cache");
+          res.setHeader("Connection", "keep-alive");
+
+          // 获取响应体的可读流
+          const reader = response.body.getReader();
+          const stream = new PassThrough();
+
+          // 将PassThrough流连接到响应
+          stream.pipe(res);
+
           try {
             while (true) {
               const { done, value } = await reader.read();
@@ -203,71 +231,97 @@ async function proxy(ctx: Context, next: () => Promise<any>) {
             Logger.error("SSE streaming error:", err);
             stream.end();
           }
-        })();
-      } else {
-        // 非SSE请求按原方式处理
-        const data = await response.text();
-        ctx.body = data;
+        } else {
+          // 非SSE请求按原方式处理
+          const data = await response.text();
+          res.send(data);
+        }
+      } catch (error) {
+        Logger.error("Proxy error:", error);
+        res.status(500).json({ success: false, message: error.message });
       }
-    } catch (error) {
-      Logger.error("Proxy error:", error);
-      ctx.status = 500;
-      ctx.body = { success: false, message: error.message };
-    }
+    })();
   } else {
     next();
   }
 }
 
-electronData.initSync();
+
 export async function initHttp() {
-  const app = new Koa() as any;
-  app.use(cors() as any);
-  app.use(
-    koaBody({
-      multipart: true, // 允许多部分（文件）上传
-      formidable: {
-        uploadDir: uploadDirPath, // 设置上传文件的目录
-        keepExtensions: true, // 保留文件的扩展名
-      },
-      jsonLimit: "1000mb",
-    })
-  );
+  const app = express();
 
-  const model_route = genRouter(new CommandFactory(), prefix);
-  app.use(model_route.routes());
+  // 配置中间件
+  app.use(cors());
+  app.use(bodyParser.json({ limit: "1000mb" }));
+  app.use(bodyParser.urlencoded({ extended: true }));
 
+  const model_route = genRouter(new CommandFactory());
+  // 在apiPrefix路径下挂载路由
+  app.use(apiPrefix, model_route);
+
+  // 静态文件服务
   Logger.info("serve: ", path.join(__dirname, "../web-build"));
   Logger.info("password: ", electronData.get().password);
-  app.use(
-    mount(
-      "/" + electronData.get().password,
-      serve(path.join(__dirname, "../web-build"), {
-        maxage: 0,  // 禁用 HTML 文件缓存
-        setHeaders: (res, path) => {
-          // 为 HTML 文件设置特殊的缓存头
-          if (path.endsWith('.html')) {
-            res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
-            res.setHeader('Pragma', 'no-cache');
-            res.setHeader('Expires', '0');
-          }
-        }
-      }) as any
-    )
-  );
-  app.use(
-    mount(
-      "/" + electronData.get().password + "/temp",
-      serve(path.join(appDataDir, "temp")) as any
-    )
-  );
 
-  app.use(proxy);
-  // 错误处理
-  app.on("error", (err, ctx) => {
-    console.error("Server error", err);
+  const staticOptions = {
+    maxAge: 0, // 禁用 HTML 文件缓存
+    setHeaders: (res, filePath) => {
+      // 为 HTML 文件设置特殊的缓存头
+      if (filePath.endsWith('.html')) {
+        res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+        res.setHeader('Pragma', 'no-cache');
+        res.setHeader('Expires', '0');
+      }
+    }
+  };
+
+  // 静态资源
+  app.use(prefix, express.static(path.join(__dirname, "../web-build"), staticOptions));
+  app.use(prefix + "/temp", express.static(path.join(appDataDir, "temp")));
+  
+  // MCP 路由刷新函数
+  let mcpRouter = registers(prefix + "/mcp");
+  app.use(prefix + "/mcp", mcpRouter);
+  
+  // 添加 API 端点用于刷新 MCP 路由
+  app.post(prefix + "/api/refreshMcpRoutes", (req, res) => {
+    try {
+      // 获取新的路由实例
+      const newRouter = refreshRoutes(prefix + "/mcp");
+      
+      // 移除旧路由
+      app._router.stack = app._router.stack.filter((layer: any) => {
+        return layer.handle !== mcpRouter;
+      });
+      
+      // 添加新路由
+      mcpRouter = newRouter;
+      app.use(prefix + "/mcp", mcpRouter);
+      
+      res.json({ success: true, message: "MCP 路由已刷新" });
+    } catch (error) {
+      console.error("刷新 MCP 路由时出错:", error);
+      res.status(500).json({ 
+        success: false, 
+        message: "刷新 MCP 路由失败", 
+        error: error instanceof Error ? error.message : String(error) 
+      });
+    }
   });
-  let server = http.createServer(app.callback());
+  
+  // 代理
+  app.use(proxyMiddleware);
+  // 错误处理中间件
+  app.use((err: Error, req: Request, res: Response, next: NextFunction) => {
+    console.error("Server error", err);
+    res.status(500).json({
+      success: false,
+      message: err.message || 'Internal Server Error'
+    });
+  });
+
+  // 创建HTTP服务器
+  let server = http.createServer(app);
   const io = new SocketIO(server, {
     cors: {
       origin: "*",
@@ -277,6 +331,8 @@ export async function initHttp() {
     // pingInterval: 10 * 60 * 1000,
     maxHttpBufferSize: 1e10,
   });
+
+  // 开始监听端口
   let PORT = Config.port;
   PORT = await execFallback(PORT, (port) => {
     server.listen(port, () => { });
@@ -285,12 +341,13 @@ export async function initHttp() {
   Logger.info("http server listen on: ", PORT);
   await electronData.saveSync();
 
+  // 错误处理
   io.on("error", (e) => {
     console.log("error: ", e);
   });
+
+  // 创建Socket.IO命名空间
   let main = io.of("/" + electronData.get().password + "/main-message");
-  let terminalMsg = io.of(
-    "/" + electronData.get().password + "/terminal-message"
-  );
+  let terminalMsg = io.of("/" + electronData.get().password + "/terminal-message");
   getMessageService().init(main, terminalMsg);
 }

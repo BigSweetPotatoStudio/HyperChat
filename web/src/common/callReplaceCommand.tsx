@@ -1,7 +1,7 @@
 import React from "react";
 
 import { ext } from "./call";
-import type { CommandFactory as Command } from "../../../electron/ts/command.mjs";
+import type { Command } from "../../../electron/ts/command.mjs";
 import { Modal } from "antd";
 import { Pre } from "../components/pre";
 export const replaceCommand: Partial<Command> = {

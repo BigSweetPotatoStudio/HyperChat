@@ -26,6 +26,8 @@ import { VariableList } from "./pages/variableList/variableList";
 import { AgentPage } from "./pages/Agent";
 import { AgentCreatePage } from "./pages/Agent/create";
 import { Workspace } from "./pages/workspace/workspace";
+import { ToolboxPage } from "./pages/Toolbox/Toolbox";
+
 type RouteType = {
   path: string;
   name: React.ReactNode;
@@ -167,12 +169,29 @@ export function getLayoutRoute() {
         ],
       },
 
-      // {
-      //   path: "/TestPage",
-      //   name: t`TestPage`,
-      //   icon: "⌨️",
-      //   component: <TestPage />,
-      // }
+      {
+        path: "/Toolbox",
+        name: t`Toolbox`,
+        icon: <Icon name="tools-hardware" />,
+        component: <Container from="/Toolbox" default="Transcribe" />,
+        routes: [
+          {
+            path: "/Transcribe",
+            name: t`Transcribe`,
+            component: <ToolboxPage />,
+          },
+          {
+            path: "/GenerateSpeech",
+            name: t`GenerateSpeech`,
+            component: <ToolboxPage />,
+          },
+          {
+            path: "/GenerateImage",
+            name: t`GenerateImage`,
+            component: <ToolboxPage />,
+          }, 
+        ],
+      }
     ].filter(x => x)
   };
 
@@ -186,7 +205,7 @@ export function getLayoutRoute() {
           navigate(props.default);
         }, 0);
       }
-    }, [props.default, location.pathname]);
+    }, [location.pathname]);
     return (
       <div className="my-container h-full">
         <Outlet />

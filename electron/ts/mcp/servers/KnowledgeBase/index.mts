@@ -236,7 +236,7 @@ const HyperKnowledgeBase = {
   handlePostMessage,
   name: NAME,
   url: ``,
-  // type: "streamableHttp",
+  type: "streamableHttp",
 };
 
 export { HyperKnowledgeBase };

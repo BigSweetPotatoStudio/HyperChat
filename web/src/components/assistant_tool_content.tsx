@@ -82,7 +82,7 @@ import { DownImage } from "../pages/chat/component";
 import { Icon } from "./icon";
 
 
-let katexR = ({ children = [],  ...props }) => {
+let katexR = ({ children = [], ...props }) => {
     let regexs = [/\$(.+?)\$/gs];
     for (let regex of regexs) {
         if (typeof children === 'string' && regex.test(children)) {
@@ -586,10 +586,34 @@ export const AssistantToolContent = ({ contents }: { contents: MyMessage[] }) =>
                                                                     )}
                                                                 </span>
                                                                 <span className="text-gray-400">
-                                                                    <CopyOutlined onClick={async () => {
+                                                                    {/* <CopyOutlined onClick={async () => {
                                                                         await call("setClipboardText", [x?.content?.toString()]);
                                                                         message.success(t`Copied to clipboard`);
-                                                                    }} /> {x?.content?.toString()}
+                                                                    }} /> {x?.content?.toString()} */}
+
+                                                                    {
+                                                                        Array.isArray(x.content) ? x.content.map((c, i) => {
+                                                                            return <div key={i}>
+                                                                                {
+                                                                                    (c.type == "text") ? <div>
+                                                                                        <CopyOutlined onClick={async () => {
+                                                                                            await call("setClipboardText", [c?.text?.toString()]);
+                                                                                            message.success(t`Copied to clipboard`);
+                                                                                        }} /> {c?.text?.toString()}
+                                                                                    </div> : c.type == "image" ? <DownImage
+                                                                                        key={i}
+                                                                                        src={`data:${c.mimeType};base64,${c.data}`}
+                                                                                    /> : undefined
+                                                                                }
+                                                                            </div>
+                                                                        }) :
+                                                                            <>
+                                                                                <CopyOutlined onClick={async () => {
+                                                                                    await call("setClipboardText", [x?.content?.toString()]);
+                                                                                    message.success(t`Copied to clipboard`);
+                                                                                }} /> {x?.content?.toString()}
+                                                                            </>
+                                                                    }
                                                                 </span>
                                                                 {x.content_attachment &&
                                                                     x.content_attachment.length > 0 &&

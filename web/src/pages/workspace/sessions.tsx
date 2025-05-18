@@ -91,7 +91,7 @@ export function Sessions({ setSessionCount = undefined }) {
       xterm.open(terminalRef);
       await sleep(500);
       xterm.onResize((size) => {
-        console.log("Resized to: ", size.cols, size.rows);
+        console.log("Resized to: ", terminalID, size.cols, size.rows);
         lastSizes = size;
         socket.emit("terminal-receive", {
           terminalID: terminalID,
@@ -101,17 +101,29 @@ export function Sessions({ setSessionCount = undefined }) {
       });
 
       fitAddon.fit();
-      window.onresize = () => {
-        setTimeout(() => {
-          fitAddon.fit();
-        }, 1000);
-      };
+      // window.onresize = () => {
+      //   setTimeout(() => {
+      //     fitAddon.fit();
+      //   }, 1000);
+      // };
 
-      EVENT.on("chatspace-resize", () => {
-        setTimeout(() => {
-          fitAddon.fit();
-        }, 1000);
+      // EVENT.on("chatspace-resize", () => {
+      //   setTimeout(() => {
+      //     fitAddon.fit();
+      //   }, 1000);
+      // });
+
+      const resizeObserver = new ResizeObserver((entries) => {
+        for (let entry of entries) {
+          // console.log(entry.contentRect.width, entry.contentRect.height)
+          setTimeout(() => {
+            fitAddon.fit();
+          }, 1000);
+
+        }
       });
+      resizeObserver.observe(terminalRef);
+
 
       xterm.onData(function (data) {
         // console.log("xterm onData: ", data);
