@@ -3,6 +3,7 @@
 * 支持mcp网关，把多个mcp工具合并到一个网关，支持sse+http，方便给外部软件调用
 * 添加工具箱，支持OpenAI其他的一些API
 * 内置的mcp从`see`升级`streamableHttp`
+* 添加最小化到托盘的功能
 
 ![image](https://github.com/user-attachments/assets/3b4a7279-747f-48c3-aa20-46cec929b364)
 ![image](https://github.com/user-attachments/assets/f3d6ec07-af4a-4ce7-aef4-6b644080b093)
