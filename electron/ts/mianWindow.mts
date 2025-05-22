@@ -44,7 +44,7 @@ export const createWindow = () => {
       sandbox: false,
       allowRunningInsecureContent: true,
     },
-    icon: path.join(__dirname, "../web-build/assets/favicon.png"),
+    icon: iconPath,
   });
   // const menu = new Menu()
   // menu.append(new MenuItem({
@@ -188,9 +188,7 @@ export const createWindow = () => {
     }
   });
   // 创建原始图标
-  const icon = nativeImage.createFromPath(
-    path.join(__dirname, "../web-build/assets/favicon.png")
-  );
+  const icon = nativeImage.createFromPath(iconPath);
 
   // 调整图标大小
   let trayIcon = icon.resize({
