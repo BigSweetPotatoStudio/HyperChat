@@ -1936,7 +1936,7 @@ export const Chat = ({
                           editorRef.current?.setValue("");
                         }}
                         fontSize={16}
-                        lineHeight={32}
+                        lineHeight={28}
                         placeholder={t`You can use variables by enter namespace, for example, enter var, or use @ to call other agents.`}
                       />
 

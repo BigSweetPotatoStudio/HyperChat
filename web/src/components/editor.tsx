@@ -318,21 +318,28 @@ export const Editor = forwardRef(({
             const model = monacoRef.current.getModel();
             if (model) {
                 const lineCount = model.getLineCount();
-                if (maxRows != null && lineCount >= maxRows) {
+                if (maxRows == null) {
                     return;
                 }
+
                 if (cachegetLineCount.current == lineCount) {
                     return;
                 }
                 cachegetLineCount.current = lineCount;
-                // 根据行数计算高度
-                const newHeight = Math.max(lineHeight, lineCount * lineHeight);
-                setEditorHeight(newHeight);
 
-                // 通知编辑器重新布局
-                setTimeout(() => {
-                    monacoRef.current?.layout();
-                }, 10);
+                // 根据行数计算高度
+                const newHeight = Math.min(lineHeight * maxRows, lineCount * lineHeight);
+                setEditorHeight((prev) => {
+                    if (prev == newHeight) {
+                        return prev;
+                    }
+                    // 通知编辑器重新布局
+                    setTimeout(() => {
+                        monacoRef.current?.layout();
+                    }, 10);
+                    return newHeight
+
+                });
             }
         }
     };
@@ -471,6 +478,10 @@ export const Editor = forwardRef(({
                 theme: "hyperChatCustomTheme",
                 model: model,
                 language: "HyperPromptLanguage",
+                // 禁用 sticky scroll
+                stickyScroll: {
+                    enabled: false
+                },
                 minimap: { enabled: false }, // 禁用滚动预览条
                 lineNumbers: 'off',
                 lineDecorationsWidth: 0,
@@ -480,7 +491,7 @@ export const Editor = forwardRef(({
                 lineHeight: lineHeight,
                 fontSize: fontSize,
                 // 添加自动换行设置
-                // wordWrap: 'on', // 启用自动换行
+                wordWrap: 'on', // 启用自动换行
                 // wrappingStrategy: 'advanced', // 更智能的换行策略
                 // wordWrapBreakBeforeCharacters: ',.!?，。！？', // 在这些字符前换行
                 // wordWrapBreakAfterCharacters: ' \t、【】《》', // 在这些字符后换行
@@ -607,41 +618,7 @@ export const Editor = forwardRef(({
                             }
                         }
 
-                        // e.stopPropagation();
-                        // const reader = new FileReader();
 
-                        // reader.onload = (event) => {
-                        //     if (event.target && typeof event.target.result === 'string') {
-                        //         // 获取拖拽位置对应的编辑器位置
-                        //         const position = editor.getTargetAtClientPoint(e.clientX, e.clientY);
-                        //         if (position && position.position) {
-                        //             // 在拖放位置插入文本
-                        //             editor.executeEdits('', [{
-                        //                 range: new monaco.Range(
-                        //                     position.position.lineNumber,
-                        //                     position.position.column,
-                        //                     position.position.lineNumber,
-                        //                     position.position.column
-                        //                 ),
-                        //                 text: event.target.result
-                        //             }]);
-                        //         } else {
-                        //             // 如果无法确定位置，则在当前光标位置插入
-                        //             const currentPosition = editor.getPosition();
-                        //             if (currentPosition) {
-                        //                 editor.executeEdits('', [{
-                        //                     range: new monaco.Range(
-                        //                         currentPosition.lineNumber,
-                        //                         currentPosition.column,
-                        //                         currentPosition.lineNumber,
-                        //                         currentPosition.column
-                        //                     ),
-                        //                     text: event.target.result
-                        //                 }]);
-                        //             }
-                        //         }
-                        //     }
-                        // };
 
                         // reader.readAsText(file);
                     } else if (e.dataTransfer.getData('text')) {
@@ -667,12 +644,14 @@ export const Editor = forwardRef(({
                 window.addEventListener('paste', (e) => {
                     // 1. 检查焦点是否在编辑器内
                     if (!editor.hasTextFocus()) return;
-                    e.stopPropagation();
+
+                    // e.stopPropagation();
                     // console.log('Window paste event triggered', e.clipboardData.items);
                     const items = e.clipboardData.items;
                     let arr: any[] = Array.from(items);
                     for (const item of arr) {
                         if (item.kind === 'file') {
+                            e.stopPropagation();
                             const file = item.getAsFile();
                             if (file && file.type.startsWith('image/')) {
                                 (onParseFile) && onParseFile(file);
@@ -680,104 +659,14 @@ export const Editor = forwardRef(({
                         }
                     }
                 }, true);
-                // editorElement.addEventListener('paste', (e) => {
-                //     console.log("Pasted data:", e.clipboardData.items);
-                // });
 
-                // editor.onDidPaste(async (e) => {
-                //     let items = await navigator.clipboard.read();
-                //     let arr: any[] = Array.from(items);
-                //     for (const item of arr) {
-                //         if (item.kind === 'file') {
-                //             const file = item.getAsFile();
-                //             if (file && file.type.startsWith('image/')) {
-                //                 // const url = await uploadFile(file); // 你实现的上传函数
-                //                 const insertText = `![图片描述]`;
 
-                //                 // 插入到当前光标位置
-                //                 const position = editor.getPosition();
-                //                 editor.executeEdits('', [{
-                //                     range: new monaco.Range(position.lineNumber, position.column, position.lineNumber, position.column),
-                //                     text: insertText,
-                //                     forceMoveMarkers: true
-                //                 }]);
 
-                //                 // 聚焦回来
-                //                 editor.focus();
-                //             }
-                //         }
-                //     }
-                // });
 
-                // window.addEventListener('paste', (e) => {
-
-                //     const activeElement = document.activeElement;
-
-                //     // 判断是否是 Monaco 编辑器内部的 textarea
-                //     if (!activeElement || activeElement.tagName !== 'TEXTAREA' || !editor.getDomNode().contains(activeElement)) {
-                //         return; // 焦点不在编辑器上
-                //     }
-
-                //     const items = e.clipboardData.items;
-                //     let arr: any[] = Array.from(items);
-                //     for (const item of arr) {
-                //         if (item.kind === 'file') {
-                //             const file = item.getAsFile();
-                //             if (file && file.type.startsWith('image/')) {
-                //                 // const url = await uploadFile(file); // 你实现的上传函数
-                //                 const insertText = `![图片描述]`;
-
-                //                 // 插入到当前光标位置
-                //                 const position = editor.getPosition();
-                //                 editor.executeEdits('', [{
-                //                     range: new monaco.Range(position.lineNumber, position.column, position.lineNumber, position.column),
-                //                     text: insertText,
-                //                     forceMoveMarkers: true
-                //                 }]);
-
-                //                 // 聚焦回来
-                //                 editor.focus();
-                //             }
-                //         }
-                //     }
-                // });
 
             }
-            // // 添加操作栏项目
-            // editor.addAction({
-            //     id: 'bold-text',
-            //     label: '加粗',
-            //     keybindings: [monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyB],
-            //     contextMenuGroupId: 'formatting',
-            //     run: (ed) => {
-            //         const selection = ed.getSelection();
-            //         const model = ed.getModel();
-            //         if (selection && model) {
-            //             const selectedText = model.getValueInRange(selection);
-            //             const boldText = `**${selectedText}**`;
-            //             ed.executeEdits('', [
-            //                 { range: selection, text: boldText }
-            //             ]);
-            //         }
-            //         return null;
-            //     }
-            // });
 
-            // editor.addAction({
-            //     id: 'insert-variable',
-            //     label: '插入变量',
-            //     contextMenuGroupId: 'variables',
-            //     run: (ed) => {
-            //         // 显示变量选择对话框或直接插入模板
-            //         ed.executeEdits('', [
-            //             {
-            //                 range: ed.getSelection(),
-            //                 text: '{{变量名}}'
-            //             }
-            //         ]);
-            //         return null;
-            //     }
-            // });
+
             monacoRef.current = editor;
             model.onDidChangeContent(() => {
                 validate(model);
