@@ -465,7 +465,7 @@ export class OpenAiChannel {
             try {
               tool.function.argumentsOBJ =
                 await this.options.confirm_call_tool_cb(tool);
-
+              tool.function.arguments = JSON.stringify(tool.function.argumentsOBJ);
             } catch (e) {
 
               let message: MyMessage = {
@@ -760,9 +760,12 @@ export class OpenAiChannel {
           rest.function = functionRest as any;
           return rest;
         }) as any;
+        if (rest.tool_calls?.length == 0) {
+          delete rest.tool_calls;
+        }
       }
       if (rest.content == "") {
-        rest.content = " ";
+        delete rest.content;
       }
       results.push(rest);
     }
