@@ -420,7 +420,7 @@ export class OpenAiChannel {
       if (res) {
         tool_calls.push({
           index: 0,
-          id: res.name,
+          id: "call_compatible" + "_" + v4().slice(0, 8),
           type: "function",
           function: {
             name: res.name,
