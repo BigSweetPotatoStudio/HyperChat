@@ -629,7 +629,7 @@ export class OpenAiChannel {
   //   this.totalTokens = 0;
   // }
   async testBase() {
-
+    this.openai.modelData = this.options;
     let messages: Array<any> = [{ role: "user", content: "你是谁?" }];
     let response = await this.openai.completion({
       model: this.options.model,
@@ -639,7 +639,7 @@ export class OpenAiChannel {
 
   }
   async testImage() {
-
+    this.openai.modelData = this.options;
     let messages: Array<any> = [
       {
         role: "user",
@@ -663,7 +663,7 @@ export class OpenAiChannel {
 
   }
   async testTool() {
-
+    this.openai.modelData = this.options;
     const tools = [
       {
         type: "function" as const,

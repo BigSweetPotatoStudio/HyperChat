@@ -83,7 +83,11 @@ export class OpenAICompatibility {
         },
         max_tokens?: number,
     }, options?) => {
-
+        if (this.modelData.provider === "qwen") { 
+            if(!body.stream){
+                body["enable_thinking"] = false;
+            }
+        }
         if (this.modelData.provider === "anthropic") {
             this.anthropic.client.baseURL = this.baseURL
             this.anthropic.client.apiKey = this.modelData.apiKey;
