@@ -754,13 +754,18 @@ export class OpenAiChannel {
         ...rest
       } = m;
       if (rest.role == "assistant") {
-        rest.tool_calls = content_tool_calls?.map((x: Tool_Call) => {
-          let { origin_name, restore_name, ...rest } = x;
-          let { argumentsOBJ, ...functionRest } = rest.function;
-          rest.function = functionRest as any;
-          return rest;
-        }) as any;
-        if (rest.tool_calls?.length == 0) {
+        // Check if content_tool_calls is valid and has items before mapping
+        if (content_tool_calls && content_tool_calls.length > 0) {
+          rest.tool_calls = content_tool_calls.map((x: Tool_Call) => {
+            // Using 'restCall' to avoid shadowing the outer 'rest' variable from message destructuring
+            let { origin_name, restore_name, ...restCall } = x; 
+            let { argumentsOBJ, ...functionRest } = restCall.function; // argumentsOBJ is part of x.function
+            restCall.function = functionRest as any;
+            return restCall; // Return the modified 'restCall' object
+          }) as any;
+        } else {
+          // If content_tool_calls is null, undefined, or empty,
+          // ensure tool_calls is not part of the resulting object.
           delete rest.tool_calls;
         }
       }
