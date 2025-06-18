@@ -269,7 +269,7 @@ export const Editor = forwardRef(({
     action = false,
     autoHeight = false,
     rows = 1,
-    maxRows,
+    maxRows = Number.MAX_VALUE,
     onSubmit,
     placeholder,
     lineHeight = 19,
