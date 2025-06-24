@@ -10,6 +10,7 @@ export interface ProviderConfig {
     icon?: string;
     description?: string;
     hasApiKey?: boolean;
+    apiKey?: string; // 新增 API Key 字段
     isCustom: boolean;
     isBuiltIn: boolean;
 }
@@ -266,5 +267,32 @@ export class ProviderManager {
             return true;
         }
         return false;
+    }
+
+    // 获取提供商的 API Key 信息
+    static getProviderApiKey(key: string): { apiKey: string; baseURL: string } | null {
+        const data = PROVIDER_CONFIGS.get();
+        
+        // 先查找自定义提供商
+        const customProvider = data.customProviders.find(p => p.key === key);
+        if (customProvider && customProvider.hasApiKey) {
+            return {
+                apiKey: customProvider.apiKey || '',
+                baseURL: customProvider.baseURL || '',
+            };
+        }
+        
+        // 查找内置提供商的 API Key
+        if (data.builtinApiKeys && data.builtinApiKeys[key]) {
+            return data.builtinApiKeys[key];
+        }
+        
+        return null;
+    }
+
+    // 检查提供商是否有 API Key
+    static hasProviderApiKey(key: string): boolean {
+        const apiKeyInfo = this.getProviderApiKey(key);
+        return !!(apiKeyInfo && apiKeyInfo.apiKey && apiKeyInfo.apiKey.trim() !== '');
     }
 }

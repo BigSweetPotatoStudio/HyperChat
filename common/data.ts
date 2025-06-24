@@ -54,11 +54,11 @@ export class Data<T> {
     // 自动注册到 DataList
     DataList.push(this);
   }
-  // 获取数据（需先加载）
+  // 获取数据（需先加载init）
   get(): T {
     return this.data;
   }
-  // 设置数据（不推荐直接用）
+  // 设置数据 (需要保存save)
   set(data: T) {
     this.data = data;
   }

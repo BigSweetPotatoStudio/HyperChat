@@ -93,10 +93,9 @@ export function ProviderSettings() {
     return models.length;
   };
 
-  // 检查提供商是否有API Key
+  // 检查提供商是否有API Key（从Provider数据读取，而非模型数据）
   const hasProviderApiKey = (provider: ProviderConfig): boolean => {
-    const models = GPT_MODELS.get().data.filter(model => model.provider === provider.value);
-    return models.some(model => model.apiKey && model.apiKey.trim() !== '');
+    return ProviderManager.hasProviderApiKey(provider.key);
   };
 
   // 获取提供商的模型列表
@@ -221,9 +220,14 @@ export function ProviderSettings() {
   const handleAddApiKey = (provider: ProviderConfig) => {
     setSelectedProvider(provider);
     apiKeyForm.resetFields();
+    
+    // 获取已保存的 API Key 信息
+    const apiKeyInfo = ProviderManager.getProviderApiKey(provider.key);
+    
     apiKeyForm.setFieldsValue({
       provider: provider.value,
-      baseURL: provider.baseURL,
+      baseURL: apiKeyInfo?.baseURL || provider.baseURL,
+      apiKey: apiKeyInfo?.apiKey || '',
     });
     setIsApiKeyModalOpen(true);
   };
@@ -308,18 +312,14 @@ export function ProviderSettings() {
           };
         }
       } else {
-        // 添加新模型 - 获取提供商的 baseURL（对于已有模型的提供商，使用第一个模型的 baseURL）
-        const providerModels = getProviderModels(selectedProvider);
-        const providerBaseURL = providerModels.length > 0 
-          ? providerModels[0].baseURL 
-          : selectedProvider.baseURL;
-          
+        // 添加新模型 - 从 Provider 获取 apiKey 和 baseURL
+        const providerApiInfo = ProviderManager.getProviderApiKey(selectedProvider.key);
         const newModel: GPT_MODELS_TYPE = {
           key: v4(),
           name: values.name,
           model: values.model,
-          apiKey: providerModels[0]?.apiKey || '',
-          baseURL: providerBaseURL,
+          apiKey: providerApiInfo?.apiKey || '',
+          baseURL: providerApiInfo?.baseURL || selectedProvider.baseURL,
           provider: selectedProvider.value,
           supportImage: values.supportImage,
           supportTool: values.supportTool,
