@@ -150,10 +150,10 @@ export function ProviderSettings() {
     setIsProviderModalOpen(true);
   };
 
-  // 删除提供商
+  // 删除提供商（内置则禁用，非内置则彻底删除并移除相关模型）
   const handleDeleteProvider = async (provider: ProviderConfig) => {
     if (provider.isBuiltIn) {
-      // 禁用内置提供商
+      // 禁用内置提供商（仅隐藏，不会删除数据）
       const success = ProviderManager.toggleBuiltinProvider(provider.key, true);
       if (success) {
         message.success(t`Provider disabled successfully`);
@@ -162,16 +162,15 @@ export function ProviderSettings() {
         message.error(t`Failed to disable provider`);
       }
     } else {
-      // 删除自定义提供商
+      // 删除自定义提供商及其下所有模型
       const success = ProviderManager.removeCustomProvider(provider.key);
       if (success) {
-        // 同时删除该提供商下的所有模型
+        // 过滤掉该提供商下的所有模型
         const currentModels = GPT_MODELS.get().data;
         const filteredModels = currentModels.filter(model => model.provider !== provider.value);
         GPT_MODELS.set({ data: filteredModels });
         await GPT_MODELS.save();
-        
-        message.success(t`Provider deleted successfully`);
+        message.success(t`Provider and all related models deleted successfully`);
         await refresh();
       } else {
         message.error(t`Failed to delete provider`);
@@ -179,7 +178,8 @@ export function ProviderSettings() {
     }
   };
 
-  // 保存提供商
+  // 保存提供商（新增或编辑）
+  // values: 表单提交的提供商信息
   const handleSaveProvider = async (values: any) => {
     setLoading(true);
     try {
@@ -228,49 +228,29 @@ export function ProviderSettings() {
     setIsApiKeyModalOpen(true);
   };
 
-  // 保存API Key配置
+  /**
+   * 保存API Key配置到对应的Provider（而不是模型）
+   * @param values 表单提交的API Key和BaseURL
+   */
   const handleSaveApiKey = async (values: any) => {
     if (!selectedProvider) return;
-
     setLoading(true);
     try {
-      // 对于 other 提供商，使用用户输入的 baseURL
+      // 处理 baseURL
       const finalBaseURL = selectedProvider.value === 'other' ? values.baseURL : selectedProvider.baseURL;
-      
-      // 检查是否已有该提供商的模型
-      const existingModels = GPT_MODELS.get().data.filter(
-        config => config.provider === selectedProvider.value
-      );
-
-      if (existingModels.length > 0) {
-        // 更新现有模型的API Key
-        existingModels.forEach(model => {
-          model.apiKey = values.apiKey;
-          model.baseURL = finalBaseURL;
-        });
+      // 更新 provider 的 apiKey 和 baseURL
+      const success = ProviderManager.updateProviderApiKey(selectedProvider.key, {
+        apiKey: values.apiKey,
+        baseURL: finalBaseURL,
+      });
+      if (success) {
+        message.success(t`API Key configured successfully!`);
       } else {
-        // 创建默认模型
-        // const defaultModel: GPT_MODELS_TYPE = {
-        //   key: v4(),
-        //   name: `${selectedProvider.label} Default`,
-        //   model: 'auto',
-        //   apiKey: values.apiKey,
-        //   baseURL: finalBaseURL,
-        //   provider: selectedProvider.value,
-        //   supportImage: true,
-        //   supportTool: true,
-        //   type: 'llm',
-        //   toolMode: 'standard',
-        //   isStrict: false,
-        // };
-        // GPT_MODELS.get().data.push(defaultModel);
+        message.error(t`Failed to save API Key`);
       }
-
-      await GPT_MODELS.save();
+      await PROVIDER_CONFIGS.save();
       await refresh();
-      
       setIsApiKeyModalOpen(false);
-      message.success(t`API Key configured successfully!`);
     } catch (error) {
       message.error(t`Failed to save configuration`);
       console.error('Save failed:', error);
