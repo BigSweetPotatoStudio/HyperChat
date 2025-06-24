@@ -10,6 +10,7 @@ import {
   MCP_CONFIG_TYPE,
   DataList,
 } from "../../../common/data.js";
+import { PROVIDER_CONFIGS } from "../../../common/providers.js";
 import { e } from "./service";
 
 Data.prototype.init = async function ({ } = {}) {
