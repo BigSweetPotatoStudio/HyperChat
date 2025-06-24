@@ -2,24 +2,39 @@ import type OpenAI from "openai";
 import * as MCPTypes from "@modelcontextprotocol/sdk/types.js";
 import { v4 } from "uuid";
 import { number, z } from "zod";
+
+// 全局数据实例列表，所有 Data 实例会自动加入此数组
 export const DataList: Data<any>[] = [];
 
+/**
+ * 通用数据管理类，支持异步/同步初始化与保存，可自定义格式化方法
+ * @template T 数据类型
+ */
 export class Data<T> {
   private localStorage: any = {};
-
+  // 尽量使用异步初始化数据
   async init({ } = {}): Promise<T> {
     throw new Error("Method not implemented.");
   }
+  // 不推荐用的同步初始化方法
   initSync({ } = {}): T {
     throw new Error("Method not implemented.");
   }
+  // 尽量使用异步保存数据
   async save() {
     throw new Error("Method not implemented.");
   }
+  // 不推荐用的同步保存方法
   saveSync() {
     throw new Error("Method not implemented.");
   }
 
+  /**
+   * 构造函数
+   * @param KEY 数据唯一标识（文件名）
+   * @param data 初始数据
+   * @param options 配置项
+   */
   constructor(
     public KEY: string,
     private data: T,
@@ -31,18 +46,26 @@ export class Data<T> {
         sync: true,
       }
   ) {
+    // 默认 sync 为 true
     this.options.sync = this.options.sync != null ? this.options.sync : true;
+    // 初始化格式化函数
     this.options.formatInit = this.options.formatInit || ((x) => x);
     this.options.formatSave = this.options.formatSave || ((x) => x);
+    // 自动注册到 DataList
     DataList.push(this);
   }
+  // 获取数据（需先加载）
   get(): T {
     return this.data;
   }
+  // 设置数据（不推荐直接用）
   set(data: T) {
     this.data = data;
   }
 
+  /**
+   * 动态重写 init/initSync/save/saveSync 方法
+   */
   public override({ init, initSync, save, saveSync }: { init?: () => Promise<T>; initSync?: () => T; save?: () => Promise<void>; saveSync?: () => void }) {
     init && (this.init = init);
     initSync && (this.initSync = initSync);
