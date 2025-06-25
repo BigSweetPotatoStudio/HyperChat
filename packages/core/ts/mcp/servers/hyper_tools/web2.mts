@@ -3,8 +3,8 @@ import puppeteer, { Browser, Page } from "puppeteer-core";
 import path from "path";
 import { ChromeLauncher, zx } from "ts/es6.mjs";
 
-import { getConfig, NAME } from "./lib.mjs";
-import { z } from "zod";
+import { getConfig } from "./lib.mjs";
+// import { z } from "zod";
 import { Logger } from "ts/polyfills/polyfills.mjs";
 
 const { fs } = zx;
@@ -40,34 +40,37 @@ export async function createBrowser(force = false, url = ""): Promise<Browser> {
   const newFlags = ChromeLauncher.Launcher.defaultFlags().filter(
     (flag) => flag !== "--disable-extensions" && flag !== "--mute-audio"
   );
-  if (getConfig().ChromeHeadless == "true") {
+  if (getConfig()?.ChromeHeadless === "true") {
     newFlags.push("--headless");
   }
   if (force == false && browser) {
     return browser;
   }
-  let browserURL;
-  if (getConfig().ChromeIsUseLocal) {
+  let browserURL: string = 'http://localhost:9222';
+  const config = getConfig();
+  if (config?.ChromeIsUseLocal) {
     try {
-      fs.ensureDirSync(getConfig().ChromeUserData);
+      if (config.ChromeUserData) {
+        fs.ensureDirSync(config.ChromeUserData);
+      }
       launcher = await ChromeLauncher.launch({
-        startingUrl: url || getConfig().ChromeStartingUrl,
-        userDataDir: getConfig().ChromeUserData || false,
+        startingUrl: url || config.ChromeStartingUrl,
+        userDataDir: config.ChromeUserData || false,
         port: 9222,
         ignoreDefaultFlags: true,
         chromeFlags: newFlags,
         // handleSIGINT: true,
         logLevel: "silent",
-        chromePath: getConfig().ChromePath || undefined,
+        ...(config.ChromePath && { chromePath: config.ChromePath }),
         // chromePath: "C:\\Users\\0laop\\AppData\\Local\\Google\\Chrome SxS\\Application\\chrome.exe",
       });
       // console.log("Chrome debugging port: " + launcher.port);
       browserURL = `http://localhost:${launcher.port}`;
-    } catch (e) {
-      console.error(e);
+    } catch (_e) {
+      console.error(_e);
     }
   } else {
-    browserURL = getConfig().ChromeBrowserURL;
+    browserURL = config?.ChromeBrowserURL || 'http://localhost:9222';
   }
 
   console.log("browserURL", browserURL);
@@ -89,7 +92,7 @@ export async function createBrowser(force = false, url = ""): Promise<Browser> {
         clearTimeout(t);
         resolve(b);
       })
-      .catch((e) => {
+      .catch((_e) => {
         reject(
           new Error(
             "failed connect to browser, please close the browser, then try again"
@@ -110,7 +113,7 @@ export async function createBrowser(force = false, url = ""): Promise<Browser> {
 export const fetch = async (url: string) => {
   try {
     let browser = await createBrowser();
-    let page = await browser.newPage().catch(async (error) => {
+    let page = await browser.newPage().catch(async (_error) => {
       browser = await createBrowser(true);
       return await browser.newPage()
     });
@@ -132,7 +135,8 @@ export const fetch = async (url: string) => {
       fs.readFileSync(path.join(__dirname, "./markdown.js"), "utf-8").toString()
     )) as string;
     await page.close();
-    if (getConfig().ChromeAutoClose == "true" && getConfig().ChromeIsUseLocal == "true") {
+    const autoCloseConfig = getConfig();
+    if (autoCloseConfig?.ChromeAutoClose === "true" && autoCloseConfig?.ChromeIsUseLocal === "true") {
       await browser.close();
     }
     return md;
@@ -147,13 +151,14 @@ export const fetch = async (url: string) => {
 export const search = async (words: string) => {
   try {
     let browser = await createBrowser();
-    let page = await browser.newPage().catch(async (error) => {
-      Logger.error("newPage error: ",error);
+    let page = await browser.newPage().catch(async (_error) => {
+      Logger.error("newPage error: ",_error);
       browser = await createBrowser(true);
       return await browser.newPage()
     });
     let res: any[] = [];
-    if (getConfig().SearchEngine == "bing") {
+    const searchConfig = getConfig();
+    if (searchConfig?.SearchEngine === "bing") {
       await page.goto(
         `https://www.bing.com/search?q=` + encodeURIComponent(words)
       );
@@ -213,7 +218,8 @@ export const search = async (words: string) => {
       )) as any[];
       await page.close();
     }
-    if (getConfig().ChromeAutoClose == "true" && getConfig().ChromeIsUseLocal == "true") {
+    const closeConfig = getConfig();
+    if (closeConfig?.ChromeAutoClose === "true" && closeConfig?.ChromeIsUseLocal === "true") {
       await browser.close();
     }
     return res;
@@ -248,6 +254,6 @@ async function executeClientScript<T>(page: Page, script: string): Promise<T> {
   }
 }
 
-export async function sleep(t) {
+export async function sleep(t: number) {
   return new Promise((resolve) => setTimeout(resolve, t));
 }

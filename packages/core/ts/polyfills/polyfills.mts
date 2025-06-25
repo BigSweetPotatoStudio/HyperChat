@@ -1,8 +1,8 @@
 
 export class LoggerPolyfill {
-  info(...args) { }
-  warn(...args) { }
-  error(...args) { }
+  info(...args: any[]) { }
+  warn(...args: any[]) { }
+  error(...args: any[]) { }
   path = "";
 }
 

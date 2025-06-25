@@ -1,6 +1,6 @@
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import os from "os";
-import fs from "fs";
+// import fs from "fs";
 // import uuid from "uuid";
 
 import * as pty from "node-pty";
@@ -51,7 +51,7 @@ export async function GetTerminals() {
   }
   return Array.from(terminalMap.keys());
 }
-export async function CloseTerminal(TerminalID) {
+export async function CloseTerminal(TerminalID: any) {
   let terminal = terminalMap.get(TerminalID);
   if (terminal) {
     Logger.info("Terminal exited with code: ", terminal.terminal.pid);
@@ -69,7 +69,7 @@ export async function OpenTerminal() {
     name: "xterm-color",
     cols: lastTerminal?.terminal?.cols || 80,
     rows: lastTerminal?.terminal?.rows || 30,
-    cwd: process.env.HOME,
+    cwd: process.env.HOME || os.homedir(),
     env: process.env,
     useConpty: os.platform() == "win32",
   });
@@ -79,7 +79,7 @@ export async function OpenTerminal() {
     commamdOutput: "",
     lastIndex: 0,
   };
-  let callback = (msg) => {
+  let callback = (msg: any) => {
     if (msg.terminalID == terminal.pid) {
       if (msg.type == "resize") {
         // Logger.info("resize terminal: ", msg);
@@ -128,7 +128,7 @@ export async function OpenTerminal() {
   return lastTerminalID;
 }
 
-export async function ActiveAITerminal(TerminalID) {
+export async function ActiveAITerminal(TerminalID: any) {
   lastTerminalID = TerminalID;
   return lastTerminalID;
 }
@@ -136,8 +136,8 @@ export async function ActiveAITerminal(TerminalID) {
 export function registerTool(server: McpServer) {
   const config = getConfig();
   // const promptPattern = /\$\s*$|\>\s*$|#\s*$/m;
-  checkCount = config.Terminal_End_CheckCount || 15;
-  const maxToken = config.Terminal_Output_MaxToken || 10000;
+  checkCount = config?.Terminal_End_CheckCount || 15;
+  const maxToken = config?.Terminal_Output_MaxToken || 10000;
   // console.log("checkCount: ", checkCount);
 
   // Add an addition tool

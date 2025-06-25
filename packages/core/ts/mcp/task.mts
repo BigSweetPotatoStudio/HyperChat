@@ -1,21 +1,15 @@
 import { Logger } from "ts/polyfills/index.mjs";
 import {
-  ChatHistory,
-  ChatHistoryItem,
-  GPT_MODELS,
   Agents,
-  Task,
   TaskList,
-  IMCPClient,
   electronData,
-  VarList,
 } from "../../../shared/data.mjs";
 import cron from "node-cron";
 import { Command } from "../command.mjs";
-import { mcpClients } from "./config.mjs";
+// import { mcpClients } from "./config.mjs";
 // global["window"] = {} as any;
-global.ext2 = {
-  invert: async (name, args) => {
+(global as any).ext2 = {
+  invert: async (name: any, args: any) => {
     try {
       // const { Command } = await import(/* webpackIgnore: true */ "../command.mjs");
       let res;
@@ -47,13 +41,13 @@ global.ext2 = {
       };
     } catch (e) {
       Logger.error(name, args, e);
-      return { success: false, code: 1, message: e.message };
+      return { success: false, code: 1, message: (e as Error).message };
     }
   },
-  async call(command, args, options) {
+  async call(command: any, args: any, options: any) {
     try {
       // console.log(`command ${command}`, args);
-      let res = await global.ext2.invert(command, args, options);
+      let res = await (global as any).ext2.invert(command, args, options);
       if (res.success) {
         return res.data;
       } else {
@@ -69,9 +63,9 @@ global.ext2 = {
 };
 
 // import { Agent } from "../../../web/src/common/agent";
-import { getDefaultModelConfigSync } from "../../../web/src/components/ai";
-import { v4 } from "uuid";
-import dayjs from "dayjs";
+// import { getDefaultModelConfigSync } from "../../../web/src/components/ai";
+// import { v4 } from "uuid";
+// import dayjs from "dayjs";
 
 import { getMessageService } from "../message_service.mjs";
 let tObj: {
@@ -81,7 +75,7 @@ let tObj: {
   };
 } = {};
 
-function trigger({ task, agent, result }) {
+function trigger({ task, agent, result }: { task: any; agent: any; result: any }) {
   getMessageService().sendAllToRenderer({
     type: "TaskResult",
     data: { task, agent, result },
@@ -101,7 +95,7 @@ export async function callAgent(obj: {
   }
   Logger.info("Running callAgent", agent.label, obj.message, obj.agentKey);
 
-  async function runByKey(modelKey: string) {
+  async function runByKey(_modelKey: string) {
     return {
       content: "",
     }
@@ -177,10 +171,10 @@ export async function callAgent(obj: {
 
   }
 
-  return await runByKey(agent.modelKey).catch(async (e) => {
+  return await runByKey(agent.modelKey || '').catch(async (e) => {
     try {
       if (agent.fallbackModelKey) {
-        return await runByKey(agent.fallbackModelKey);
+        return await runByKey(agent.fallbackModelKey || '');
       }
     } catch { }
     throw e;
@@ -248,7 +242,7 @@ export function startTask(taskkey?: string) {
       const find = tObj[taskkey];
       if (find) {
         find.cronT.stop();
-        tObj[taskkey] = undefined;
+        delete tObj[taskkey];
       }
     } catch (e) {
       Logger.info(`Stopping error ${e}`);
@@ -282,7 +276,7 @@ export function stopTask(taskkey?: string) {
       const find = tObj[taskkey];
       if (find) {
         find.cronT.stop();
-        tObj[taskkey] = undefined;
+        delete tObj[taskkey];
       }
       Logger.info("stoped task", taskkey);
     } catch (e) {

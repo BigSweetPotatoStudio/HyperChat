@@ -34,7 +34,7 @@ class CheckUpdate extends ICheckUpdate {
   override download() {
     autoUpdater.downloadUpdate();
   }
-  updaterEvent() {
+  override updaterEvent() {
     //* 监听updater的事件
     /**
      * -1 检查更新失败 0 正在检查更新 1 检测到新版本，准备下载 2 未检测到新版本 3 下载中 4 下载完成
@@ -80,7 +80,7 @@ class CheckUpdate extends ICheckUpdate {
   }
 }
 import { getMessageService } from "ts/message_service.mjs";
-async function sendToRender(type, data) {
+async function sendToRender(type: any, data: any) {
   getMessageService().sendAllToRenderer({
     type: type,
     data: data,

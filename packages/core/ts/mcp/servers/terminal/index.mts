@@ -1,12 +1,12 @@
-import { McpServer, SSEServerTransport } from "ts/es6.mjs";
-import { configSchema, getConfig, NAME } from "./lib.mjs";
+import { McpServer } from "ts/es6.mjs";
+import { configSchema, NAME } from "./lib.mjs";
 import { CONST } from "ts/polyfills/polyfills.mjs";
 import { registerTool } from "./terminal.mjs";
 
 
 
-let transport;
-async function createServer(endpoint: string, response) {
+let transport: any;
+async function createServer(_endpoint: string, _response: any) {
   //   console.log("Received connection");
   // transport = new SSEServerTransport(endpoint, response);
   // // console.log("==================", getConfig().Web_Tools_Platform);
@@ -22,9 +22,11 @@ async function createServer(endpoint: string, response) {
   return server;
 }
 
-async function handlePostMessage(req, res) {
+async function handlePostMessage(req: any, res: any) {
   //   console.log("Received message");
-  await transport.handlePostMessage(req, res);
+  if (transport) {
+    await transport.handlePostMessage(req, res);
+  }
 }
 
 export const HyperTerminal = {

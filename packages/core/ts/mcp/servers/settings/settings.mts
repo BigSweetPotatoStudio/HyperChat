@@ -1,12 +1,12 @@
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
-import os from "os";
-import fs from "fs";
+// import os from "os";
+// import fs from "fs";
 // import uuid from "uuid";
 
-import * as pty from "node-pty";
+// import * as pty from "node-pty";
 import { z } from "zod";
-import { shellPathSync, strip } from "ts/es6.mjs";
-import { getConfig } from "./lib.mjs";
+// import { shellPathSync, strip } from "ts/es6.mjs";
+// import { getConfig } from "./lib.mjs";
 import { openMcpClient } from "ts/mcp/config.mjs";
 import { VarList, VarScopeList } from "../../../../../shared/data.mjs";
 import { v4 } from "uuid";
@@ -14,25 +14,25 @@ import dayjs from "dayjs";
 import { getMessageService } from "ts/message_service.mjs";
 
 
-type MCP_CONFIG_TYPE = {
-  command: string;
-  args: string[];
-  env: { [s: string]: string };
-  url: string;
-  type: "stdio" | "sse" | "streamableHttp";
-  hyperchat: {
-    config: { [s in string]: any };
-    url: string;
-    type: "stdio" | "sse";
-    scope: "built-in" | "outer";
-  };
-  disabled: boolean;
-  isSync?: boolean;
-};
+// type MCP_CONFIG_TYPE = {
+//   command: string;
+//   args: string[];
+//   env: { [s: string]: string };
+//   url: string;
+//   type: "stdio" | "sse" | "streamableHttp";
+//   hyperchat: {
+//     config: { [s in string]: any };
+//     url: string;
+//     type: "stdio" | "sse";
+//     scope: "built-in" | "outer";
+//   };
+//   disabled: boolean;
+//   isSync?: boolean;
+// };
 
 export function registerTool(server: McpServer) {
 
-  const config = getConfig();
+  // const config = getConfig();
 
   server.tool(
     "add-stdio-mcp",
@@ -59,11 +59,11 @@ export function registerTool(server: McpServer) {
     async ({ name, command, args, env }) => {
       let envs = {} as { [s: string]: string };
       for (let e of (env || [])) {
-        envs[e.name?.trim()] = e.value?.trim();
+        envs[e.name?.trim() || ''] = e.value?.trim() || '';
       }
       await openMcpClient(name, {
         command,
-        args,
+        args: args || [],
         env: envs,
         type: "stdio"
       });
@@ -106,7 +106,7 @@ export function registerTool(server: McpServer) {
         if (VarScopeList.get().data.findIndex(v => v.name == scope) == -1) {
           VarScopeList.get().data.push({
             "key": v4(),
-            "name": scope,
+            "name": scope || '',
             type: "custom",
           })
         }
@@ -114,17 +114,17 @@ export function registerTool(server: McpServer) {
         if (findIndex == -1) {
           VarList.get().data.push({
             "key": v4(),
-            "name": name,
+            "name": name || '',
             "variableType": "string",
             "code": "",
-            "scope": scope,
+            "scope": scope || '',
             "variableStrategy": "lazy",
             "description": v.value + " " + dayjs().format("YYYY-MM-DD HH:mm:ss"),
             "value": v.value,
           })
         } else {
-          VarList.get().data[findIndex].value = v.value;
-          VarList.get().data[findIndex].description = v.value + " " + dayjs().format("YYYY-MM-DD HH:mm:ss");
+          VarList.get().data[findIndex]!.value = v.value;
+          VarList.get().data[findIndex]!.description = v.value + " " + dayjs().format("YYYY-MM-DD HH:mm:ss");
         }
 
       }

@@ -1,7 +1,7 @@
 import log4js from "log4js";
 import dayjs from "dayjs";
 import {
-  CONST,
+  // CONST,
   Context,
   Logger,
   LoggerPolyfill,
@@ -35,17 +35,17 @@ log4js.configure({
 const logger = log4js.getLogger();
 
 class LoggerC extends LoggerPolyfill {
-  info(...args) {
+  override info(...args: any[]) {
     let [msg, ...rest] = args;
     logger.info(msg, ...rest);
     console.log(...args);
   }
-  warn(...args) {
+  override warn(...args: any[]) {
     let [msg, ...rest] = args;
     logger.warn(msg, ...rest);
     console.log(...args);
   }
-  error(...args) {
+  override error(...args: any[]) {
     let [msg, ...rest] = args;
     logger.error(msg, ...rest);
     console.log(...args);

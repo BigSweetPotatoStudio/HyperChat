@@ -3,7 +3,7 @@ import { fs } from "ts/es6.mjs";
 import { appDataDir } from "ts/polyfills/polyfills.mjs";
 import { z } from "zod";
 // import { MCP_CONFIG } from "../../../../../common/data.mjs";
-import zodToJsonSchema, { zodPatterns } from "zod-to-json-schema";
+// import zodToJsonSchema from "zod-to-json-schema";
 import path from "path";
 
 export const NAME = "hyper_tools";
