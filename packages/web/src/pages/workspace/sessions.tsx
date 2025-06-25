@@ -212,7 +212,7 @@ export function Sessions({ setSessionCount = undefined }) {
         onChange={(key) => {
           data.current.activeKey = key;
           refresh();
-          call("ActiveAITerminal", [key]);
+          call("ActiveAITerminal", { TerminalID: key });
           let session = data.current.sessions.find((x) => { return x.id == key });
           if (session) {
             // console.log("session", session);
@@ -231,7 +231,7 @@ export function Sessions({ setSessionCount = undefined }) {
               (x) => x.id != targetKey,
             );
             refresh();
-            call("CloseTerminal", [targetKey],);
+            call("CloseTerminal", { TerminalID: targetKey });
           }
         }}
         items={data.current.sessions.map((x) => {

@@ -177,7 +177,7 @@ export function Layout() {
           icon: <ExclamationCircleFilled />,
           okText: "Restart And Update",
           onOk() {
-            call("quitAndInstall", []);
+            call("quitAndInstall");
           },
         });
       }
@@ -227,7 +227,7 @@ export function Layout() {
       ]);
       refresh();
 
-      let res = await call("checkUpdate", []);
+      let res = await call("checkUpdate");
       if (res) {
         console.log("checkUpdate: ", res);
       }
@@ -423,7 +423,7 @@ export function Layout() {
                     ),
                     okText: t`Download And Update`,
                     onOk: async () => {
-                      call("checkUpdateDownload", []);
+                      call("checkUpdateDownload");
                     },
                   });
                 }}>{`New`}</Tag>}</span>

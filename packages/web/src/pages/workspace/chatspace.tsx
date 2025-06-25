@@ -87,10 +87,10 @@ function ChatPage({
                   <Button
                     type="link"
                     onClick={() => {
-                      call("openBrowser", [
-                        "https://www.google.com/",
-                        "Chrome",
-                      ]);
+                      call("openBrowser", {
+                        url: "https://www.google.com/",
+                        userAgent: "Chrome",
+                      });
                     }}
                   >
                     login Google
@@ -181,14 +181,14 @@ export function ChatSpace() {
                   uid,
                   onComplete: (text) => {
                     setActiveKey(activeKey);
-                    call("call_agent_res", [uid, text, undefined]);
+                    call("call_agent_res", { uid, data: text, error: undefined });
                     setItems((items) =>
                       items.filter((item) => item.key !== n.key),
                     );
                   },
                   onError: (e) => {
                     setActiveKey(activeKey);
-                    call("call_agent_res", [uid, "", e.message]);
+                    call("call_agent_res", { uid, data: "", error: e.message });
                     setItems((items) =>
                       items.filter((item) => item.key !== n.key),
                     );

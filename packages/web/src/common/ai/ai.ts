@@ -9,7 +9,7 @@
  * - 工具确认和执行流程管理
  */
 
-import { GPT_MODELS_TYPE, HyperChatCompletionTool, MyMessage, Tool_Call } from "../../../../common/data.mjs";
+import { GPT_MODELS_TYPE, HyperChatCompletionTool, MyMessage, Tool_Call } from "../../../../shared/data.mjs";
 import { createOpenAI } from '@ai-sdk/openai';
 import { CoreMessage, generateText, streamText, tool, convertToCoreMessages } from 'ai';
 import * as MCPTypes from "@modelcontextprotocol/sdk/types.js";
@@ -453,7 +453,11 @@ export class AIChannel {
 
                     let call_res = await globalThis.ext2.call(
                         "mcpCallTool",
-                        [clientName, origin_name, parameters],
+                        {
+                            name: clientName,
+                            functionName: origin_name,
+                            args: parameters
+                        },
 
                     ).then((res) => {
 

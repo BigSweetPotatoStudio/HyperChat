@@ -63,7 +63,7 @@ export const AgentCreatePage = () => {
                         }
                         await Agents.save();
                         // 修改更新agents状态
-                        await call("openMcpClient", ["hyper_agent"]);
+                        await call("openMcpClient", { clientName: "hyper_agent" });
                         refresh();
                         history.back();
     

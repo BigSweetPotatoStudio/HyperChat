@@ -59,7 +59,7 @@ export function MCPGateWayPage() {
             }
 
             await MCP_GateWay.save();
-            await call("refreshMcpRoutes", []);
+            await call("refreshMcpRoutes");
             setIsModalOpen(false);
             message.success(values.key ? t`Gateway updated successfully` : t`Gateway created successfully`);
             handleUpdate();
@@ -268,13 +268,13 @@ const GatewayForm: React.FC<GatewayFormProps> = ({
             </Form.Item>
             <Form.Item label="sse">
                 <Input disabled value={urls.sse} addonAfter={<CopyOutlined onClick={async () => {
-                    await call("setClipboardText", [urls.sse]);
+                    await call("setClipboardText", { text: urls.sse });
                     message.success(t`Copied to clipboard`);
                 }} />} />
             </Form.Item>
             <Form.Item label="streamableHttp">
                 <Input disabled value={urls.streamableHttp} addonAfter={<CopyOutlined onClick={async () => {
-                    await call("setClipboardText", [urls.streamableHttp]);
+                    await call("setClipboardText", { text: urls.streamableHttp });
                     message.success(t`Copied to clipboard`);
                 }} />} />
             </Form.Item>

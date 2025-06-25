@@ -152,11 +152,11 @@ export function Market() {
 
   let init = async () => {
     (async () => {
-      let x = await call("exec", ["node", ["-v"]]);
+      let x = await call("exec", { command: "node", args: ["-v"] });
       setNodeV(x);
     })();
     (async () => {
-      let y = await call("exec", ["uv", ["-V"]]);
+      let y = await call("exec", { command: "uv", args: ["-V"] });
       setUvVer(y);
     })();
 
@@ -194,12 +194,13 @@ export function Market() {
 
 
           if (item.status != "disabled") {
-            await call("closeMcpClients", [item.name, {
+            await call("closeMcpClients", {
+              clientName: item.name,
               isdelete: false,
               isdisable: true
-            }]);
+            });
           } else {
-            await call("openMcpClient", [item.name]);
+            await call("openMcpClient", { clientName: item.name });
           }
 
         } catch (e) {
@@ -290,8 +291,8 @@ export function Market() {
                           title={t`Open Configuration File`}
                           icon={<SettingOutlined />}
                           onClick={async () => {
-                            let p = await call("pathJoin", ["mcp.json"]);
-                            await call("openExplorer", [p]);
+                            let p = await call("pathJoin", { path: "mcp.json" });
+                            await call("openExplorer", { path: p });
                           }}
                         >
                         </Button>
@@ -315,13 +316,11 @@ export function Market() {
                                       title="Sure to delete?"
                                       onConfirm={async () => {
                                         try {
-                                          await call("closeMcpClients", [
-                                            item.name,
-                                            {
-                                              isdelete: true,
-                                              isdisable: false,
-                                            }
-                                          ]);
+                                          await call("closeMcpClients", {
+                                            clientName: item.name,
+                                            isdelete: true,
+                                            isdisable: false,
+                                          });
 
                                         } catch (e) {
                                           message.error(e.message);
@@ -388,7 +387,7 @@ export function Market() {
                                       // item.config.isSync = e;
                                       // refresh();
                                       item.config.isSync = e;
-                                      await call("openMcpClient", [item.name, item.config, { onlySave: true }]);
+                                      await call("openMcpClient", { clientName: item.name, config: item.config, onlySave: true });
                                     }}></Switch>
                                   </div>
                                 }><Button type="link" icon={<MoreOutlined />} title={t`More Setting`}></Button></Popover>
@@ -466,8 +465,8 @@ export function Market() {
                           icon={<SettingOutlined />}
                           onClick={async () => {
 
-                            let c = await call("getConfig", []);
-                            await call("openExplorer", [c.claudeConfigPath]);
+                            let c = await call("getConfig");
+                            await call("openExplorer", { path: c.claudeConfigPath });
                           }}
                         >
                           Claude Desktop Config
@@ -476,11 +475,11 @@ export function Market() {
                           <Switch checked={electronData.get().isLoadClaudeConfig} onChange={async (checked) => {
                             if (checked) {
                               for (let x of mcpClients.filter(x => x.source == "claude")) {
-                                await call("openMcpClient", [x.name]);
+                                await call("openMcpClient", { clientName: x.name });
                               }
                             } else {
                               for (let x of mcpClients.filter(x => x.source == "claude")) {
-                                await call("closeMcpClients", [x.name, { isdelete: false, isdisable: true }]);
+                                await call("closeMcpClients", { clientName: x.name, isdelete: false, isdisable: true });
                               }
                             }
                             electronData.get().isLoadClaudeConfig = checked;
@@ -671,10 +670,10 @@ export function Market() {
                 if (
                   currRow.source == "builtin"
                 ) {
-                  await call("openMcpClient", [
-                    currRow.name,
-                    currRow.config,
-                  ]);
+                  await call("openMcpClient", {
+                    clientName: currRow.name,
+                    config: currRow.config,
+                  });
                   setMcpconfigOpen(false);
                 } else {
                   // ! 不会生效了
@@ -743,7 +742,7 @@ export function Market() {
                     }
                   } else { //编辑
                     if (values._name && values.name != values._name) {
-                      await call("closeMcpClients", [values._name, { isdelete: true, isdisable: true }]);
+                      await call("closeMcpClients", { clientName: values._name, isdelete: true, isdisable: true });
                     }
                   }
 
@@ -789,7 +788,7 @@ export function Market() {
                     }
                   }
 
-                  await call("openMcpClient", [values.name, mcpServerConfig]);
+                  await call("openMcpClient", { clientName: values.name, config: mcpServerConfig });
 
                   setCurrResult({
                     data: "success",

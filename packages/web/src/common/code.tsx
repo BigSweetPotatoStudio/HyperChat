@@ -11,7 +11,7 @@ export function Code(props) {
       <CopyOutlined
         className="cursor-pointer"
         onClick={async () => {
-          await call("setClipboardText", [props.children]);
+          await call("setClipboardText", { text: props.children });
           message.success("Copied to clipboard");
         }}
       />

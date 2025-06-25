@@ -137,9 +137,9 @@ export function TaskListPage() {
               row.disabled = !e;
               await TaskList.save();
               if (!row.disabled) {
-                await call("startTask", [row.key]);
+                await call("startTask", { taskkey: row.key });
               } else {
-                await call("stopTask", [row.key]);
+                await call("stopTask", { taskkey: row.key });
               }
 
               refresh();
@@ -175,7 +175,7 @@ export function TaskListPage() {
             <Popconfirm
               title={t`Are you sure to delete this task?`}
               onConfirm={() => {
-                call("stopTask", [row.key]);
+                call("stopTask", { taskkey: row.key });
                 TaskList.get().data = TaskList.get().data.filter(
                   (item) => item.key !== row.key,
                 );
@@ -198,7 +198,7 @@ export function TaskListPage() {
                 loadObj[row.key] = true;
                 refresh();
                 try {
-                  await call("runTask", [row.key]);
+                  await call("runTask", { taskkey: row.key });
                 }
                 finally {
                   loadObj[row.key] = false;
@@ -268,19 +268,19 @@ export function TaskListPage() {
               TaskList.get().data[i] = v;
               await TaskList.save();
               if (!v.disabled) {
-                await call("startTask", [v.key]);
+                await call("startTask", { taskkey: v.key });
               }
               refresh();
               setVisible(false);
             } else {
               v.key = v4();
-              await call("checkTask", [v]).catch((e) => {
+              await call("checkTask", { task: v }).catch((e) => {
                 message.error(t`cron format error!`);
                 throw e;
               });
               TaskList.get().data.push(v);
               await TaskList.save();
-              await call("startTask", [v.key]);
+              await call("startTask", { taskkey: v.key });
               refresh();
               setVisible(false);
             }

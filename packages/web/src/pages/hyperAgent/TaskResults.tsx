@@ -163,9 +163,9 @@ export function TaskResultsPage() {
                 // );
                 // ChatHistory.save();
 
-                await call("removeChatHistory", [{
+                await call("removeChatHistory", {
                   key: row.key,
-                }])
+                })
                 ChatHistory.get().data = ChatHistory.get().data.filter((x) => x.key !== row.key),
                   refresh();
               }}

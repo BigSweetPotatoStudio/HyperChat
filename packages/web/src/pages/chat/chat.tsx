@@ -359,7 +359,7 @@ export const Chat = ({
 
               if (item.messages == null || item.messages.length == 0 || +item.version == 2) {
 
-                let messages = await call("readJSON", [`messages/${item.key}.json`]).catch(() => []);
+                let messages = await call("readJSON", { path: `messages/${item.key}.json` }).catch(() => []);
                 item.messages = messages || [];
                 if (item.messages.length == 0 && item.agentKey != null) {
                   let agent = Agents.get().data.find(x => x.key == item.agentKey);
@@ -696,7 +696,7 @@ export const Chat = ({
                     let value = varName;
                     if (v) {
                       if (v.variableType == "js") {
-                        value = await call("runCode", [{ code: v.code }]);
+                        value = await call("runCode", { code: v.code });
                       } else if (v.variableType == "webjs") {
                         let code = `
                         (async () => {
@@ -796,7 +796,7 @@ export const Chat = ({
           // currentChat.current.messages = messages;
           // refresh();
 
-          await call("addChatHistory", [currentChat.current])
+          await call("addChatHistory", { item: currentChat.current })
           let findIndex = ChatHistory.get().data.findIndex(
             (x) => x.key == currentChat.current.key,
           );
@@ -820,7 +820,7 @@ export const Chat = ({
 
         if (current) {
           // await ChatHistory.save();
-          await call("addChatHistory", [currentChat.current])
+          await call("addChatHistory", { item: currentChat.current })
           let findIndex = ChatHistory.get().data.findIndex(
             (x) => x.key == currentChat.current.key,
           );
@@ -1014,7 +1014,7 @@ export const Chat = ({
         try {
           DATA.current.loadingMessages = true;
           refresh();
-          let messages = await call("readJSON", [`messages/${item.key}.json`]).catch(() => []);
+          let messages = await call("readJSON", { path: `messages/${item.key}.json` }).catch(() => []);
           item.messages = messages || [];
           if (item.messages.length == 0 && item.agentKey != null) {
             let agent = Agents.get().data.find(x => x.key == item.agentKey);
@@ -1157,7 +1157,7 @@ export const Chat = ({
                     if (menuInfo.key === "remove") {
 
 
-                      await call("removeChatHistory", [{ key: conversation.key }]);
+                      await call("removeChatHistory", { key: conversation.key });
                       let index = ChatHistory.get().data.findIndex(
                         (x) => x.key === conversation.key,
                       );
@@ -1177,7 +1177,7 @@ export const Chat = ({
                       }
                       loadMoreData(false, false);
                       refresh();
-                      await call("changeChatHistory", [ChatHistory.get().data[index]])
+                      await call("changeChatHistory", { item: ChatHistory.get().data[index] })
 
                     }
                     if (menuInfo.key === "rename") {
@@ -1427,7 +1427,7 @@ export const Chat = ({
                                                   );
                                                   Agents.get().data.splice(index, 1);
                                                   await Agents.save();
-                                                  call("openMcpClient", ["hyper_agent"]);
+                                                  call("openMcpClient", { clientName: "hyper_agent" });
                                                   refresh();
                                                 },
                                                 onCancel(...args) { },
@@ -1453,7 +1453,7 @@ export const Chat = ({
                             clone.messages = clone.messages.slice(0, i + 1);
                             clone.icon = "";
 
-                            await call("addChatHistory", [clone]);
+                            await call("addChatHistory", { item: clone });
                             ChatHistory.get().data.unshift(clone);
 
                             loadMoreData(false, false);
@@ -1568,7 +1568,7 @@ export const Chat = ({
                                                       );
                                                       Agents.get().data.splice(index, 1);
                                                       await Agents.save();
-                                                      call("openMcpClient", ["hyper_agent"]);
+                                                      call("openMcpClient", { clientName: "hyper_agent" });
                                                       refresh();
                                                     },
                                                     onCancel(...args) { },
@@ -1594,7 +1594,7 @@ export const Chat = ({
                                 clone.messages = clone.messages.slice(0, i + 1);
                                 clone.icon = "";
 
-                                await call("addChatHistory", [clone]);
+                                await call("addChatHistory", { item: clone });
                                 ChatHistory.get().data.unshift(clone);
 
                                 loadMoreData(false, false);
@@ -2083,10 +2083,10 @@ export const Chat = ({
                                           (x) => x.key === item.key,
                                         );
                                         if (resource) {
-                                          let res = await call("mcpCallResource", [
-                                            resource.clientName as string,
-                                            resource.uri,
-                                          ]);
+                                          let res = await call("mcpCallResource", {
+                                            name: resource.clientName as string,
+                                            uri: resource.uri,
+                                          });
                                           let t = {
                                             ...res,
                                             call_name: resource.key + "--" + resource.uri,
@@ -2131,11 +2131,11 @@ export const Chat = ({
                                             setFillPromptFormItems(prompt.arguments);
                                             mcpCallPromptCurr.current = prompt;
                                           } else {
-                                            let res = await call("mcpCallPrompt", [
-                                              prompt.clientName as string,
-                                              prompt.name,
-                                              {},
-                                            ]);
+                                            let res = await call("mcpCallPrompt", {
+                                              name: prompt.clientName as string,
+                                              functionName: prompt.name,
+                                              args: {},
+                                            });
                                             console.log("mcpCallPrompt", res);
                                             res.call_name = prompt.key;
                                             res.uid = v4();
@@ -2230,7 +2230,7 @@ export const Chat = ({
               getAgentNameObj.current[x.key] = x.label;
             });
             // 修改更新agents状态
-            call("openMcpClient", ["hyper_agent"]);
+            call("openMcpClient", { clientName: "hyper_agent" });
             refresh();
             setIsOpenPromptsModal(false);
           }}
@@ -2317,7 +2317,7 @@ export const Chat = ({
                         onClick={async () => {
                           x.status = "connecting";
                           refresh();
-                          await call("openMcpClient", [x.name]);
+                          await call("openMcpClient", { clientName: x.name });
                         }}
                       >{t`Reload`}</Button> : <DisconnectOutlined className="text-red-400" />
                     )}
@@ -2371,11 +2371,11 @@ export const Chat = ({
             onFinish={async (values) => {
               console.log("onFinish", values);
               try {
-                let call_res = await call("mcpCallTool", [
-                  currTool.clientName,
-                  currTool.origin_name,
-                  values,
-                ]);
+                let call_res = await call("mcpCallTool", {
+                  name: currTool.clientName,
+                  functionName: currTool.origin_name,
+                  args: values,
+                });
                 setCurrToolResult({
                   data: call_res,
                   error: null,
@@ -2443,11 +2443,11 @@ export const Chat = ({
               clearOnDestroy
               onFinish={async (values) => {
                 let prompt = mcpCallPromptCurr.current;
-                let res = await call("mcpCallPrompt", [
-                  prompt.clientName as string,
-                  prompt.name,
-                  values,
-                ]);
+                let res = await call("mcpCallPrompt", {
+                  name: prompt.clientName as string,
+                  functionName: prompt.name,
+                  args: values,
+                });
                 console.log("mcpCallPrompt", res);
                 res.call_name = prompt.key;
                 res.uid = v4();
@@ -2505,7 +2505,7 @@ export const Chat = ({
                 if (item) {
                   item.label = values.label;
                   currentChat.current.label = values.label;
-                  await call("changeChatHistory", [currentChat.current]);
+                  await call("changeChatHistory", { item: currentChat.current });
                   loadMoreData();
                 }
                 refresh();

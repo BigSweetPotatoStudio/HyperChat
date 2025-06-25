@@ -299,7 +299,7 @@ export function Setting() {
                 <InputNumber placeholder="day" value={day} onChange={e => setDay(e)}></InputNumber>
                 <Button
                   onClick={async () => {
-                    let res = await call("clearChatHistory", [day]);
+                    let res = await call("clearChatHistory", { day });
                     message.success(t`Clear Success ` + res + t` records`);
                   }}
                 >
@@ -311,21 +311,21 @@ export function Setting() {
               <Space wrap>
                 {!isOnBrowser && <Button
                   onClick={() => {
-                    call("openDevTools", []);
+                    call("openDevTools");
                   }}
                 >
                   {t`openDevTools`}({window.electron.platform === 'darwin' ? 'Alt+Cmd+I' : 'Ctrl+Shift+I'})
                 </Button>}
                 <Button
                   onClick={() =>
-                    call("openExplorer", [electronData.get().logFilePath])
+                    call("openExplorer", { path: electronData.get().logFilePath })
                   }
                 >
                   {t`logFile`}
                 </Button>
                 <Button
                   onClick={() =>
-                    call("openExplorer", [electronData.get().appDataDir])
+                    call("openExplorer", { path: electronData.get().appDataDir })
                   }
                 >
                   {t`appDataDir`}

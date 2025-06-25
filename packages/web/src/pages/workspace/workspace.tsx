@@ -160,14 +160,14 @@ export function Workspace() {
                   uid,
                   onComplete: (text) => {
                     setActiveKey(activeKey);
-                    call("call_agent_res", [uid, text, undefined]);
+                    call("call_agent_res", { uid, data: text, error: undefined });
                     setItems((items) =>
                       items.filter((item) => item.key !== n.key),
                     );
                   },
                   onError: (e) => {
                     setActiveKey(activeKey);
-                    call("call_agent_res", [uid, "", e.message]);
+                    call("call_agent_res", { uid, data: "", error: e.message });
                     setItems((items) =>
                       items.filter((item) => item.key !== n.key),
                     );

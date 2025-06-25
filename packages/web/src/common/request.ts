@@ -12,7 +12,7 @@ export async function request(
   BASE_URL = process.env.REACT_APP_REMOTE_URL,
 ) {
   // let token = localStorage.getItem(".token");
-  let token = await call("readFile", [".token"]);
+  let token = await call("readFile", { path: ".token" });
   options.headers = Object.assign({}, options.headers, {
     Authorization: "Bearer " + token,
   });

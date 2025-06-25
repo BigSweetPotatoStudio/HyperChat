@@ -94,7 +94,7 @@ export function genRouter(c: any) {
         }
 
         // 调用 Command 方法处理请求
-        let result = await (Command[name as keyof typeof Command] as any)(...args);
+        let result = await (Command[name as keyof typeof Command] as any)(args);
 
         // 返回统一格式的成功响应
         res.json({

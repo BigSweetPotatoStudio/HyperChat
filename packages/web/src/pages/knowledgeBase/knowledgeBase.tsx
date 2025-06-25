@@ -84,12 +84,12 @@ export function KnowledgeBase() {
           <Popconfirm
             title={t`Sure to delete?`}
             onConfirm={async () => {
-              await call("vectorStoreDelete", [record]);
+              await call("vectorStoreDelete", { store: record });
               KNOWLEDGE_BASE.get().dbList = KNOWLEDGE_BASE.get().dbList.filter(
                 (x) => x.key !== record.key,
               );
               await KNOWLEDGE_BASE.save();
-              call("openMcpClient", ["hyper_knowledge_base"]);
+              call("openMcpClient", { clientName: "hyper_knowledge_base" });
               refresh();
             }}
           >
@@ -143,11 +143,11 @@ export function KnowledgeBase() {
                   onSearch={async (e) => {
                     // console.log("searchValue", e);
                     setLoadingSearch(true);
-                    let res = await call("vectorStoreSearch", [
-                      currRowKnowledgeBase,
-                      e,
-                      5,
-                    ]);
+                    let res = await call("vectorStoreSearch", {
+                      store: currRowKnowledgeBase,
+                      query: e,
+                      k: 5,
+                    });
                     Modal.info({
                       title: "Search Result",
                       width: 1200,
@@ -201,10 +201,10 @@ export function KnowledgeBase() {
                       <a
                         onClick={async () => {
                           // let f = await call("pathJoin", [record.filepath]);
-                          let e = await call("exists", [record.filepath]);
+                          let e = await call("exists", { path: record.filepath });
                           if (e) {
-                            let p = await call("pathJoin", [record.filepath]);
-                            await call("openExplorer", [p]);
+                            let p = await call("pathJoin", { path: record.filepath });
+                            await call("openExplorer", { path: p });
                           } else {
                             message.error("file not exists");
                           }
@@ -216,10 +216,10 @@ export function KnowledgeBase() {
                       <Popconfirm
                         title={t`Sure to delete?`}
                         onConfirm={async () => {
-                          let f = await call("vectorStoreRemoveResource", [
-                            currRowKnowledgeBase,
-                            record,
-                          ]);
+                          let f = await call("vectorStoreRemoveResource", {
+                            store: currRowKnowledgeBase,
+                            resource: record,
+                          });
                           currRowKnowledgeBase.resources =
                             currRowKnowledgeBase.resources.filter((x) => {
                               return x.key !== record.key;
@@ -273,7 +273,7 @@ export function KnowledgeBase() {
             KNOWLEDGE_BASE.get().dbList.push(v);
           }
           await KNOWLEDGE_BASE.save();
-          call("openMcpClient", ["hyper_knowledge_base"]);
+          call("openMcpClient", { clientName: "hyper_knowledge_base" });
           setIsOpenKnowledgeBase(false);
         }}
         onCancel={() => {
@@ -286,7 +286,7 @@ export function KnowledgeBase() {
         initialValues={{} as any}
         onCreate={async (v) => {
           v.key = v4();
-          let r = await call("vectorStoreAdd", [currRowKnowledgeBase, v, isOnBrowser]);
+          let r = await call("vectorStoreAdd", { store: currRowKnowledgeBase, resource: v, move: isOnBrowser });
           if (!Array.isArray(currRowKnowledgeBase.resources)) {
             currRowKnowledgeBase.resources = [];
           }

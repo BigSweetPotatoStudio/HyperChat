@@ -107,11 +107,11 @@ async function createServer(name: string, description: string, allowMCPs: string
                 throw new Error(`Tool not found: ${request.params.name}`);
             }
 
-            return await Command.mcpCallTool(
-                find.clientName || '', 
-                find.origin_name || '', 
-                request.params.arguments || {}
-            );
+            return await Command.mcpCallTool({
+                name: find.clientName || '', 
+                functionName: find.origin_name || '', 
+                args: request.params.arguments || {}
+            });
         } catch (error) {
             return {
                 content: [

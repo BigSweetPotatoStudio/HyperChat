@@ -61,7 +61,7 @@ export default function App() {
         setLoading(true);
         try {
           // 触发 WebDAV 同步
-          await call("webDavSync", []);
+          await call("webDavSync");
           setLoading(false);
         } catch (e) {
           setLoading(false);

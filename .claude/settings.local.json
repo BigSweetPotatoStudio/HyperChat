@@ -5,7 +5,12 @@
       "Bash(npx tsc:*)",
       "Bash(find:*)",
       "Bash(mkdir:*)",
-      "Bash(rm:*)"
+      "Bash(rm:*)",
+      "Bash(for:*)",
+      "Bash(do echo \"=== $file ===\")",
+      "Bash(done)",
+      "Bash(rg:*)",
+      "Bash(npm run type-check:*)"
     ],
     "deny": []
   }

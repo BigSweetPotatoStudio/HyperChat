@@ -15,7 +15,7 @@ import { e } from "./service";
 
 Data.prototype.init = async function ({ } = {}) {
   try {
-    this.localStorage = await call("readJSON", [this.KEY]);
+    this.localStorage = await call("readJSON", { path: this.KEY });
   } catch (e) {
     this.localStorage = {};
   }
@@ -24,10 +24,10 @@ Data.prototype.init = async function ({ } = {}) {
 }
 
 Data.prototype.save = async function () {
-  return await call("writeJSON", [
-    this.KEY,
-    this.options.formatSave(this.data),
-  ]);
+  return await call("writeJSON", {
+    path: this.KEY,
+    obj: this.options.formatSave(this.data),
+  });
 }
 
 

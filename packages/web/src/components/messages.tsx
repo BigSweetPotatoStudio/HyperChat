@@ -93,11 +93,11 @@ export const Messages = ({ messages, onSumbit, readOnly, setContainer, status, o
                             className="hover:text-cyan-400"
                             key="copy"
                             onClick={() => {
-                                call("setClipboardText", [
-                                    Array.isArray(x.content)
+                                call("setClipboardText", {
+                                    text: Array.isArray(x.content)
                                         ? (x.content[0] as any).text
                                         : x.content.toString(),
-                                ]);
+                                });
                                 message.success(t`Copied to clipboard`);
                             }}
                         />
@@ -233,7 +233,7 @@ export const Messages = ({ messages, onSumbit, readOnly, setContainer, status, o
                                     className="hover:text-cyan-400"
                                     key="copy"
                                     onClick={() => {
-                                        call("setClipboardText", [x.content.toString()]);
+                                        call("setClipboardText", { text: x.content.toString() });
                                         message.success("Copied to clipboard");
                                     }}
                                 />

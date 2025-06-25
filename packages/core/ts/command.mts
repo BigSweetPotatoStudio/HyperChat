@@ -71,13 +71,19 @@ export class CommandFactory {
     return res.map((x) => x.toJSON());
   }
   // 打开 MCP 客户端
-  async openMcpClient(
-    clientName: string,
-    clientConfig?: MCP_CONFIG_TYPE,
+  async openMcpClient({
+    clientName,
+    clientConfig,
     options = {
       onlySave: false,
     }
-  ) {
+  }: {
+    clientName: string;
+    clientConfig?: MCP_CONFIG_TYPE;
+    options?: {
+      onlySave: boolean;
+    };
+  }) {
     await openMcpClient(clientName, clientConfig, options);
     return {
       success: true,
@@ -89,16 +95,15 @@ export class CommandFactory {
     return clients.map((x) => x.toJSON());
   }
   // 关闭 MCP 客户端
-  async closeMcpClients(
-    clientName: string,
-    {
-      isdelete,
-      isdisable
-    }: {
-      isdelete?: boolean;
-      isdisable?: boolean;
-    } = {}
-  ) {
+  async closeMcpClients({
+    clientName,
+    isdelete,
+    isdisable
+  }: {
+    clientName: string;
+    isdelete?: boolean;
+    isdisable?: boolean;
+  }) {
     await closeMcpClients(clientName, {
       ...(isdelete !== undefined && { isdelete }),
       ...(isdisable !== undefined && { isdisable })
@@ -108,7 +113,15 @@ export class CommandFactory {
     };
   }
   // 调用 MCP 工具
-  async mcpCallTool(name: string, functionName: string, args: any) {
+  async mcpCallTool({
+    name,
+    functionName,
+    args
+  }: {
+    name: string;
+    functionName: string;
+    args: any;
+  }) {
     let mcpClients = await getMcpClients();
     let client = mcpClients.find((x) => x.name === name);
     if (!client) {
@@ -117,7 +130,13 @@ export class CommandFactory {
     return await client.callTool(functionName, args);
   }
   // 调用 MCP 资源
-  async mcpCallResource(name: string, uri: string) {
+  async mcpCallResource({
+    name,
+    uri
+  }: {
+    name: string;
+    uri: string;
+  }) {
     let mcpClients = await getMcpClients();
     let client = mcpClients.find((x) => x.name === name);
     if (!client) {
@@ -126,7 +145,15 @@ export class CommandFactory {
     return await client.callResource(uri);
   }
   // 调用 MCP Prompt
-  async mcpCallPrompt(name: string, functionName: string, args: any) {
+  async mcpCallPrompt({
+    name,
+    functionName,
+    args
+  }: {
+    name: string;
+    functionName: string;
+    args: any;
+  }) {
     let mcpClients = await getMcpClients();
     let client = mcpClients.find((x) => x.name === name);
     if (!client) {
@@ -135,7 +162,11 @@ export class CommandFactory {
     return await client.callPrompt(functionName, args);
   }
   // 文件路径处理，返回处理后路径
-  async processedFilePath(filePath: string): Promise<string> {
+  async processedFilePath({
+    filePath
+  }: {
+    filePath: string;
+  }): Promise<string> {
     // 获取文件目录和文件名
     const dirName = path.dirname(filePath);
     const baseName = path.basename(filePath);
@@ -179,7 +210,11 @@ export class CommandFactory {
     }
   }
   // 设置剪贴板内容
-  async setClipboardText(text: string) {
+  async setClipboardText({
+    text
+  }: {
+    text: string;
+  }) {
     const { clipboard } = await import("electron");
     clipboard.writeText(text);
   }
@@ -203,21 +238,47 @@ export class CommandFactory {
     return appDataDir;
   }
   // 读取目录
-  async readDir(p: string, root: string = appDataDir): Promise<string[]> {
+  async readDir({
+    path: p,
+    root = appDataDir
+  }: {
+    path: string;
+    root?: string;
+  }): Promise<string[]> {
     p = path.join(root, p);
     await fs.ensureDir(p);
     return await fs.readdir(p);
   }
   // 删除文件
-  async removeFile(p: string, root: string = appDataDir): Promise<void> {
+  async removeFile({
+    path: p,
+    root = appDataDir
+  }: {
+    path: string;
+    root?: string;
+  }): Promise<void> {
     p = path.join(root, p);
     return await fs.remove(p);
   }
-  async writeFile(p: string, text: string, root: string = appDataDir): Promise<void> {
+  async writeFile({
+    path: p,
+    text,
+    root = appDataDir
+  }: {
+    path: string;
+    text: string;
+    root?: string;
+  }): Promise<void> {
     let localPath = path.join(root, p);
     await fs.writeFile(localPath, text);
   }
-  async readFile(p: string, root: string = appDataDir): Promise<string> {
+  async readFile({
+    path: p,
+    root = appDataDir
+  }: {
+    path: string;
+    root?: string;
+  }): Promise<string> {
     p = path.join(root, p);
     try {
       let r = await fs.readFile(p, "utf-8");
@@ -226,7 +287,13 @@ export class CommandFactory {
       throw e;
     }
   }
-  async readJSON(p: string, root: string = appDataDir): Promise<any> {
+  async readJSON({
+    path: p,
+    root = appDataDir
+  }: {
+    path: string;
+    root?: string;
+  }): Promise<any> {
     p = path.join(root, p);
     try {
       let r = await fs.readJSON(p);
@@ -235,7 +302,15 @@ export class CommandFactory {
       throw e;
     }
   }
-  async writeJSON(p: string, obj: any, root: string = appDataDir): Promise<void> {
+  async writeJSON({
+    path: p,
+    obj,
+    root = appDataDir
+  }: {
+    path: string;
+    obj: any;
+    root?: string;
+  }): Promise<void> {
     p = path.join(root, p);
     try {
       await fs.writeJSON(p, obj, {
@@ -246,12 +321,24 @@ export class CommandFactory {
       throw e;
     }
   }
-  async exists(p: string, root: string = appDataDir): Promise<boolean> {
+  async exists({
+    path: p,
+    root = appDataDir
+  }: {
+    path: string;
+    root?: string;
+  }): Promise<boolean> {
     p = path.join(root, p);
     return await fs.exists(p);
   }
 
-  async pathJoin(p: string, root: string = appDataDir): Promise<string> {
+  async pathJoin({
+    path: p,
+    root = appDataDir
+  }: {
+    path: string;
+    root?: string;
+  }): Promise<string> {
     if (root) {
       p = path.join(root, p);
     }
@@ -261,11 +348,19 @@ export class CommandFactory {
   async getLocalIP(): Promise<string[]> {
     return getLocalIP();
   }
-  async isPortUse(port: number): Promise<boolean> {
+  async isPortUse({
+    port
+  }: {
+    port: number;
+  }): Promise<boolean> {
     return isPortUse(port);
   }
 
-  async openExplorer(p: string) {
+  async openExplorer({
+    path: p
+  }: {
+    path: string;
+  }) {
     const { shell } = await import("electron");
     return shell.showItemInFolder(p);
   }
@@ -298,7 +393,13 @@ export class CommandFactory {
       throw new Error("HyperTool Settings Web_Tools_Platform is none");
     }
   }
-  async openBrowser(url: string, userAgent?: string): Promise<void> {
+  async openBrowser({
+    url,
+    userAgent
+  }: {
+    url: string;
+    userAgent?: string;
+  }): Promise<void> {
     const { BrowserWindow } = await import("electron");
     let win = new BrowserWindow({
       width: 1280,
@@ -314,7 +415,13 @@ export class CommandFactory {
         "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36",
     });
   }
-  async exec(command: string, args?: Array<string>): Promise<string> {
+  async exec({
+    command,
+    args
+  }: {
+    command: string;
+    args?: Array<string>;
+  }): Promise<string> {
     if (electronData.initSync().PATH) {
       process.env.PATH = electronData.get().PATH;
     } else {
@@ -337,10 +444,18 @@ export class CommandFactory {
   async quitAndInstall() {
     checkUpdate.quitAndInstall();
   }
-  async testWebDav(values: { url: string; username: string; password: string }) {
-    let client = createClient(values.url, {
-      username: values.username,
-      password: values.password,
+  async testWebDav({
+    url,
+    username,
+    password
+  }: {
+    url: string;
+    username: string;
+    password: string;
+  }) {
+    let client = createClient(url, {
+      username: username,
+      password: password,
     });
     return await client.getDirectoryContents("/");
   }
@@ -350,54 +465,106 @@ export class CommandFactory {
   async webDavSync() {
     return await webdavClient.sync();
   }
-  async vectorStoreAdd(
-    s: KNOWLEDGE_Store,
-    r: KNOWLEDGE_Resource,
+  async vectorStoreAdd({
+    store: s,
+    resource: r,
     move = false
-  ) {
+  }: {
+    store: KNOWLEDGE_Store;
+    resource: KNOWLEDGE_Resource;
+    move?: boolean;
+  }) {
     return await store.addResource(s, r, move);
   }
-  async vectorStoreDelete(s: KNOWLEDGE_Store) {
+  async vectorStoreDelete({
+    store: s
+  }: {
+    store: KNOWLEDGE_Store;
+  }) {
 
     return await store.delete(s);
   }
-  async vectorStoreRemoveResource(s: KNOWLEDGE_Store, r: KNOWLEDGE_Resource) {
+  async vectorStoreRemoveResource({
+    store: s,
+    resource: r
+  }: {
+    store: KNOWLEDGE_Store;
+    resource: KNOWLEDGE_Resource;
+  }) {
 
     return await store.removeResource(s, r);
   }
-  async vectorStoreSearch(s: KNOWLEDGE_Store, q: string, k: number) {
+  async vectorStoreSearch({
+    store: s,
+    query: q,
+    k
+  }: {
+    store: KNOWLEDGE_Store;
+    query: string;
+    k: number;
+  }) {
 
     return await store.search(s, q, k);
   }
   async getProgressList() {
     return progressList.getData();
   }
-  async call_agent_res(uid: string, data: any, error: any) {
+  async call_agent_res({
+    uid,
+    data,
+    error
+  }: {
+    uid: string;
+    data: any;
+    error: any;
+  }) {
     EVENT.fire("call_agent_res_" + uid, { uid, data, error });
   }
-  async checkTask(task?: Task) {
+  async checkTask({
+    task
+  }: {
+    task?: Task;
+  }) {
     if (task && cron.validate(task.cron)) {
     } else {
       throw new Error("cron Error");
     }
   }
-  async startTask(taskkey?: string) {
+  async startTask({
+    taskkey
+  }: {
+    taskkey?: string;
+  } = {}) {
     return startTask(taskkey);
   }
-  async stopTask(taskkey?: string) {
+  async stopTask({
+    taskkey
+  }: {
+    taskkey?: string;
+  } = {}) {
     return stopTask(taskkey);
   }
-  async runTask(taskkey: string) {
+  async runTask({
+    taskkey
+  }: {
+    taskkey: string;
+  }) {
     return runTask(taskkey, { force: true });
   }
-  async callAgent(task: { command: string; agentName: string }) {
-    let agent = Agents.initSync().data.find((x) => x.label === task.agentName);
+  async callAgent({
+    command,
+    agentName
+  }: {
+    command: string;
+    agentName: string;
+  }) {
+    let agent = Agents.initSync().data.find((x) => x.label === agentName);
     if (!agent) {
-      throw new Error(`Agent not found: ${task.agentName}`);
+      throw new Error(`Agent not found: ${agentName}`);
     }
     return callAgent({
       agentKey: agent.key,
-      message: task.command,
+      message: command,
       type: "call",
     });
   }
@@ -416,7 +583,11 @@ export class CommandFactory {
     return filename;
   }
 
-  async addChatHistory(item: ChatHistoryItem) {
+  async addChatHistory({
+    item
+  }: {
+    item: ChatHistoryItem;
+  }) {
     item.version = 2;
     item.dateTime = Date.now();
     if (item.isTask) {
@@ -446,7 +617,11 @@ export class CommandFactory {
     }
     await ChatHistory.save();
   }
-  async changeChatHistory(item: ChatHistoryItem) {
+  async changeChatHistory({
+    item
+  }: {
+    item: ChatHistoryItem;
+  }) {
     item.version = 2;
     item.dateTime = Date.now();
     if (item.messages && item.messages.length > 0) {
@@ -470,13 +645,17 @@ export class CommandFactory {
     }
     await ChatHistory.save()
   }
-  async removeChatHistory(item: { key: string }) {
+  async removeChatHistory({
+    key
+  }: {
+    key: string;
+  }) {
     let chatHistory = ChatHistory.initSync().data;
-    let findIndex = chatHistory.findIndex(x => x.key === item.key);
+    let findIndex = chatHistory.findIndex(x => x.key === key);
     if (findIndex !== -1) {
       chatHistory.splice(findIndex, 1);
-      if (fs.existsSync(path.join(appDataDir, `messages/${item.key}.json`))) {
-        fs.removeSync(path.join(appDataDir, `messages/${item.key}.json`));
+      if (fs.existsSync(path.join(appDataDir, `messages/${key}.json`))) {
+        fs.removeSync(path.join(appDataDir, `messages/${key}.json`));
       }
     }
     await ChatHistory.saveSync()
@@ -488,13 +667,25 @@ export class CommandFactory {
   async GetTerminals() {
     return await GetTerminals();
   }
-  async CloseTerminal(TerminalID: string) {
+  async CloseTerminal({
+    TerminalID
+  }: {
+    TerminalID: string;
+  }) {
     return await CloseTerminal(TerminalID);
   }
-  async ActiveAITerminal(TerminalID: string) {
+  async ActiveAITerminal({
+    TerminalID
+  }: {
+    TerminalID: string;
+  }) {
     return await ActiveAITerminal(TerminalID);
   }
-  async clearChatHistory(day: number) {
+  async clearChatHistory({
+    day
+  }: {
+    day: number;
+  }) {
     let time = dayjs().subtract(day, "day").valueOf();
     ChatHistory.initSync()
     let oldLen = ChatHistory.get().data.length;

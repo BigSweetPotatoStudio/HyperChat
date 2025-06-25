@@ -1,5 +1,5 @@
 import { v4 } from "uuid";
-import { AgentData, MyMessage, GPT_MODELS_TYPE, VarList, GPT_MODELS } from "../../../common/data.mjs";
+import { AgentData, MyMessage, GPT_MODELS_TYPE, VarList, GPT_MODELS } from "../../../shared/data.mjs";
 import { getDefaultModelConfigSync } from "../components/ai";
 import { OpenAiChannel } from "./openai.js";
 import _ from 'lodash';

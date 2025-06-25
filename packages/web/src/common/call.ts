@@ -70,7 +70,7 @@ if (process.env.runtime !== "node") {
 globalThis.ext2.call = call;
 export async function call<k extends keyof Command>(
   command: k,
-  args: Parameters<Command[k]> = [] as any,
+  args: Parameters<Command[k]>[0] = {},
   options: { signal?: AbortSignal } = {},
 ): Promise<ReturnType<Command[k]>> {
   try {

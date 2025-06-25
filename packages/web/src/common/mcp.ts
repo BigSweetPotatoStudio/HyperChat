@@ -40,7 +40,7 @@ export {
 
 
 export async function initMcpClients() {
-  let res: any = await call("initMcpClients", []);
+  let res: any = await call("initMcpClients");
   McpClients = res;
   console.log("initMcpClients", McpClients);
 
@@ -113,7 +113,7 @@ export function getResourses(mcp: string[]) {
 }
 
 export async function getClients() {
-  return await call("getMcpClients", []);
+  return await call("getMcpClients");
 }
 export async function setClients(res) {
   McpClients = res;

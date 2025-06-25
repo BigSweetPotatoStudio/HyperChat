@@ -195,7 +195,7 @@ export function enableCompletionItemProvider() {
 
                             if (v) {
                                 if (v.variableType == "js") {
-                                    value = await call("runCode", [{ code: v.code }]);
+                                    value = await call("runCode", { code: v.code });
                                 } else if (v.variableType == "webjs") {
                                     let code = `
                             (async () => {

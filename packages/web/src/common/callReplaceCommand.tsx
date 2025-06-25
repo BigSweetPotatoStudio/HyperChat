@@ -1,11 +1,11 @@
 import React from "react";
 
 import { ext } from "./call";
-import type { Command } from "../../../electron/ts/command.mjs";
+import type { Command } from "../../../core/ts/command.mjs";
 import { Modal } from "antd";
 import { Pre } from "../components/pre";
 export const replaceCommand: Partial<Command> = {
-  setClipboardText: async (text: string) => {
+  setClipboardText: async ({ text }: { text: string }) => {
     const copy = (text: string) => {
       if (navigator.clipboard && window.isSecureContext) {
         // Use the modern Clipboard API when available and in secure context
@@ -30,7 +30,7 @@ export const replaceCommand: Partial<Command> = {
     };
     copy(text);
   },
-  openExplorer: async (path: string) => {
+  openExplorer: async ({ path }: { path: string }) => {
     let res = await ext.invert("readFile", [path, ""]);
 
     Modal.info({

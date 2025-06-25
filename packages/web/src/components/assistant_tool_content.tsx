@@ -303,12 +303,12 @@ const Code = ({ inline, children = [], className, ...props }) => {
 
                     let filename = ""
                     if (isHtml) {
-                        filename = await call("saveTempFile", [{ txt: code, ext: "html" }]);
+                        filename = await call("saveTempFile", { txt: code, ext: "html" });
                     } else if (isSvg) {
-                        filename = await call("saveTempFile", [{ txt: code, ext: "svg" }]);
+                        filename = await call("saveTempFile", { txt: code, ext: "svg" });
                     } else if (isMermaid) {
                         const str = await mermaid.render(demoid.current, code);
-                        filename = await call("saveTempFile", [{ txt: str.svg, ext: "svg" }]);
+                        filename = await call("saveTempFile", { txt: str.svg, ext: "svg" });
                     }
                     window.open(getURL_PRE() + "temp/" + filename);
 
@@ -342,17 +342,17 @@ const Code = ({ inline, children = [], className, ...props }) => {
                     } else {
                         let filename = ""
                         if (isHtml) {
-                            filename = await call("saveTempFile", [{ txt: code, ext: "html" }]);
+                            filename = await call("saveTempFile", { txt: code, ext: "html" });
                         } else if (isSvg) {
-                            filename = await call("saveTempFile", [{ txt: code, ext: "svg" }]);
+                            filename = await call("saveTempFile", { txt: code, ext: "svg" });
                         } else if (isMermaid) {
                             const str = await mermaid.render(demoid.current, code);
-                            filename = await call("saveTempFile", [{ txt: str.svg, ext: "svg" }]);
+                            filename = await call("saveTempFile", { txt: str.svg, ext: "svg" });
                         }
                         setArtifact(<Artifact url={getURL_PRE() + "temp/" + filename} type="html" />);
                     }
                 }} icon={artifact ? <EyeInvisibleOutlined /> : <EyeOutlined />} /><Button onClick={async () => {
-                    await call("setClipboardText", [code]);
+                    await call("setClipboardText", { text: code });
                     message.success(t`Copied to clipboard`);
                 }} icon={<CopyOutlined />} /></span>}
         </span>
@@ -556,7 +556,7 @@ export const AssistantToolContent = ({ contents }: { contents: MyMessage[] }) =>
                                                 <div key={index} className="max-h-80 overflow-auto bg-slate-200">
                                                     <div className="">
                                                         <Pre><CopyOutlined onClick={async () => {
-                                                            await call("setClipboardText", [tool.function.arguments]);
+                                                            await call("setClipboardText", { text: tool.function.arguments });
                                                             message.success(t`Copied to clipboard`);
                                                         }} />{tool.function.arguments}</Pre>
                                                     </div>
@@ -587,7 +587,7 @@ export const AssistantToolContent = ({ contents }: { contents: MyMessage[] }) =>
                                                                 </span>
                                                                 <span className="text-gray-400">
                                                                     {/* <CopyOutlined onClick={async () => {
-                                                                        await call("setClipboardText", [x?.content?.toString()]);
+                                                                        await call("setClipboardText", { text: x?.content?.toString() });
                                                                         message.success(t`Copied to clipboard`);
                                                                     }} /> {x?.content?.toString()} */}
 
@@ -597,7 +597,7 @@ export const AssistantToolContent = ({ contents }: { contents: MyMessage[] }) =>
                                                                                 {
                                                                                     (c.type == "text") ? <div>
                                                                                         <CopyOutlined onClick={async () => {
-                                                                                            await call("setClipboardText", [c?.text?.toString()]);
+                                                                                            await call("setClipboardText", { text: c?.text?.toString() });
                                                                                             message.success(t`Copied to clipboard`);
                                                                                         }} /> {c?.text?.toString()}
                                                                                     </div> : c.type == "image" ? <DownImage
@@ -609,7 +609,7 @@ export const AssistantToolContent = ({ contents }: { contents: MyMessage[] }) =>
                                                                         }) :
                                                                             <>
                                                                                 <CopyOutlined onClick={async () => {
-                                                                                    await call("setClipboardText", [x?.content?.toString()]);
+                                                                                    await call("setClipboardText", { text: x?.content?.toString() });
                                                                                     message.success(t`Copied to clipboard`);
                                                                                 }} /> {x?.content?.toString()}
                                                                             </>
