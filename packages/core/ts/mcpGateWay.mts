@@ -1,4 +1,4 @@
-import { Router } from "express";
+import { Router, Request, Response } from "express";
 import { MCP_GateWay } from "../../shared/data.mjs";
 import { SSEServerTransport, StreamableHTTPServerTransport } from "ts/es6.mjs";
 import { createServer } from "./mcp/servers/gateway/index.mjs";
@@ -42,19 +42,23 @@ function register(route: Router, name: string, description: string, allowMCPs: s
 
         // let server = await serve.createServer();
         // await server.connect(transport);
-        route.post(`/${name}/mcp`, async (req, res) => {
+        route.post(`/${name}/mcp`, async (req: Request, res: Response) => {
             // console.log('Received MCP request:', req.body);
             try {
                 const server = await createServer(name, description, allowMCPs);
                 const transport = new StreamableHTTPServerTransport({
-                    sessionIdGenerator: undefined,
+                    sessionIdGenerator: () => Date.now().toString(),
                 });
+                // 强制确保 sessionId 为 string
+                if (typeof transport.sessionId !== 'string') {
+                    transport.sessionId = Date.now().toString();
+                }
+                await server.connect(transport as any);
                 res.on('close', () => {
                     // console.log('Request closed');
                     transport.close();
                     server.close();
                 });
-                await server.connect(transport);
                 await transport.handleRequest(req, res, req.body);
             } catch (error) {
                 console.error('Error handling MCP request:', error);
@@ -75,7 +79,7 @@ function register(route: Router, name: string, description: string, allowMCPs: s
         });
 
         // Reusable handler for GET and DELETE requests
-        const handleSessionRequest = async (req, res) => {
+        const handleSessionRequest = async (_req: Request, res: Response) => {
             res.writeHead(405).end(JSON.stringify({
                 jsonrpc: "2.0",
                 error: {
@@ -92,7 +96,7 @@ function register(route: Router, name: string, description: string, allowMCPs: s
     }
 
 
-    route.get(`/${name}/sse`, async (req, res) => {
+    route.get(`/${name}/sse`, async (_req: Request, res: Response) => {
         let transport = new SSEServerTransport(prefix + `/${name}/message`, res);
         transports.sse[transport.sessionId] = transport;
 
@@ -108,7 +112,7 @@ function register(route: Router, name: string, description: string, allowMCPs: s
         let server = await createServer(name, description, allowMCPs);
         await server.connect(transport);
     });
-    route.post(`/${name}/message`, async (req, res) => {
+    route.post(`/${name}/message`, async (req: Request, res: Response) => {
         // await transport.handlePostMessage(req, res);
         const sessionId = req.query.sessionId as string;
         const transport = transports.sse[sessionId];
@@ -124,7 +128,14 @@ function register(route: Router, name: string, description: string, allowMCPs: s
 export function registers(prefix: string) {
     let route = Router();
     MCP_GateWay.initSync().data.forEach((serve) => {
-        register(route, serve.name, serve.description, serve.allowMCPs, prefix);
+        // Provide default values to avoid undefined
+        register(
+            route,
+            serve.name ?? 'default',
+            serve.description ?? '',
+            serve.allowMCPs ?? [],
+            prefix
+        );
     });
     return route;
 }

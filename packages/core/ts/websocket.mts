@@ -30,7 +30,7 @@ import crypto from "crypto";
 import { getMessageService } from "./message_service.mjs";
 import { Config } from "./const.mjs";
 import { PassThrough } from "stream";
-import { sleep } from "./common/util.mjs";
+
 import { registers, refreshRoutes } from "./mcpGateWay.mjs";
 
 // 文件上传目录配置
@@ -44,10 +44,10 @@ fs.emptyDirSync(uploadDirPath); // 启动时清空上传目录
  * 用于处理 HTTP 文件上传请求
  */
 const storage = multer.diskStorage({
-  destination: function (req, file, cb) {
+  destination: function (_req, _file, cb) {
     cb(null, uploadDirPath);
   },
-  filename: function (req, file, cb) {
+  filename: function (_req, file, cb) {
     cb(null, file.originalname); // 保持原始文件名
   }
 });
@@ -62,20 +62,20 @@ const upload = multer({ storage: storage });
  * @param c - Command 类实例
  * @returns Express Router 实例
  */
-export function genRouter(c) {
+export function genRouter(c: any) {
   // 获取 Command 类的所有方法名（排除构造函数）
-  let functions = [];
+  let functions: string[] = [];
   Object.getOwnPropertyNames(Object.getPrototypeOf(c))
     .filter((x) => x != "constructor")
     .forEach((name) => {
       functions.push(name);
     });
-  
+
   let router = Router();
-  
+
   // 为每个 Command 方法生成对应的 POST 路由
   for (let name of functions) {
-    router.post(`/${name}`, async (req: Request, res: Response, next: NextFunction) => {
+    router.post(`/${name}`, async (req: Request, res: Response, _next: NextFunction) => {
       let args = req.body;
       try {
         // 日志记录（getHistory 方法不记录，避免日志过多）
@@ -94,7 +94,7 @@ export function genRouter(c) {
         }
 
         // 调用 Command 方法处理请求
-        let result = await Command[name](...args);
+        let result = await (Command[name as keyof typeof Command] as any)(...args);
 
         // 返回统一格式的成功响应
         res.json({
@@ -102,7 +102,7 @@ export function genRouter(c) {
           success: true,
           data: result,
         });
-      } catch (e) {
+      } catch (e: any) {
         // 统一错误处理
         Logger.error(e);
         res.status(500).json({
@@ -195,7 +195,7 @@ function proxyMiddleware(req: Request, res: Response, next: NextFunction) {
             if (typeof value === 'string') {
               customHeaders[key] = value;
             } else if (Array.isArray(value) && value.length > 0) {
-              customHeaders[key] = value[0];
+              customHeaders[key] = value[0] ?? '';
             }
           }
         }
@@ -214,7 +214,7 @@ function proxyMiddleware(req: Request, res: Response, next: NextFunction) {
         const response = await fetch(baseURL, {
           method: req.method,
           headers: customHeaders,
-          body: (req.method === "GET" || req.method === "HEAD") ? undefined : JSON.stringify(requestBody),
+          body: (req.method === "GET" || req.method === "HEAD") ? null : JSON.stringify(requestBody),
         });
 
         // 检查内容类型，确定是否为SSE
@@ -236,20 +236,20 @@ function proxyMiddleware(req: Request, res: Response, next: NextFunction) {
           res.setHeader("Connection", "keep-alive");
 
           // 获取响应体的可读流
-          const reader = response.body.getReader();
+          const reader = response.body?.getReader();
           const stream = new PassThrough();
 
           // 将PassThrough流连接到响应
           stream.pipe(res);
 
           try {
-            while (true) {
-              const { done, value } = await reader.read();
-              if (done) {
+            while (reader) {
+              const readResult = await reader.read();
+              if (readResult.done) {
                 stream.end();
                 break;
               }
-              stream.write(value);
+              stream.write(readResult.value);
             }
           } catch (err) {
             Logger.error("SSE streaming error:", err);
@@ -260,10 +260,11 @@ function proxyMiddleware(req: Request, res: Response, next: NextFunction) {
           const data = await response.text();
           res.send(data);
         }
-      } catch (error) {
+      } catch (error: any) {
         Logger.error("Proxy error:", error);
-        res.status(500).json({ success: false, message: error.message });
+        res.status(500).json({ success: false, message: error?.message ?? String(error) });
       }
+      return;
     })();
   } else {
     next();
@@ -299,7 +300,7 @@ export async function initHttp() {
 
   const staticOptions = {
     maxAge: 0, // 禁用 HTML 文件缓存
-    setHeaders: (res, filePath) => {
+    setHeaders: (res: any, filePath: string) => {
       // 为 HTML 文件设置特殊的缓存头
       if (filePath.endsWith('.html')) {
         res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
@@ -318,7 +319,7 @@ export async function initHttp() {
   app.use(prefix + "/mcp", mcpRouter);
 
   // 添加 API 端点用于刷新 MCP 路由
-  app.post(prefix + "/api/refreshMcpRoutes", (req, res) => {
+  app.post(prefix + "/api/refreshMcpRoutes", (_req, res) => {
     try {
       // 获取新的路由实例
       const newRouter = refreshRoutes(prefix + "/mcp");
@@ -346,7 +347,7 @@ export async function initHttp() {
   // 代理
   app.use(proxyMiddleware);
   // 错误处理中间件
-  app.use((err: Error, req: Request, res: Response, next: NextFunction) => {
+  app.use((err: Error, _req: Request, res: Response, _next: NextFunction) => {
     console.error("Server error", err);
     res.status(500).json({
       success: false,
@@ -383,6 +384,6 @@ export async function initHttp() {
   // 创建Socket.IO命名空间
   let main = io.of("/" + electronData.get().password + "/main-message");
   let terminalMsg = io.of("/" + electronData.get().password + "/terminal-message");
-  getMessageService().init(main, terminalMsg);
+  getMessageService().init(main as any, terminalMsg as any);
 }
 

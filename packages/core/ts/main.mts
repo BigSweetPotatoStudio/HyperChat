@@ -14,15 +14,9 @@ import "./first.mjs";
 import {
   app,
   BrowserWindow,
-  nativeImage,
-  Tray,
   ipcMain,
   protocol,
   net,
-  Menu,
-  // desktopCapturer,
-  session,
-  shell,
 } from "electron";
 import "ts/polyfills/electron_autoupdate.mjs";
 import path from "node:path";
@@ -55,31 +49,31 @@ Logger.info("start main");
  * @param args - 命令参数数组
  * @returns 统一格式的响应对象 {code, success, data/message}
  */
-ipcMain.handle("command", async (event, name, args) => {
+ipcMain.handle("command", async (_event, name: keyof typeof Command, args: any) => {
   try {
-    let res = await Command[name](...args);
-    if (name == "getHistory") {
+    const arr = Array.isArray(args) ? args : [];
+    let res = await (Command[name] as any)(...arr);
+    if ((name as string) === "getHistory") {
       // getHistory 命令不记录日志，避免日志过多
     } else {
-      if (name == "writeFile") {
+      if ((name as string) === "writeFile") {
         Logger.info(
           name,
-          args[0],
-          "writeFile Data length: " + args[1].length
+          arr[0],
+          "writeFile Data length: " + (arr[1]?.length ?? 0)
         );
       } else {
-        Logger.info(name, args);
+        Logger.info(name, arr);
       }
     }
-
     return {
       code: 0,
       success: true,
       data: res,
     };
-  } catch (e) {
+  } catch (e: any) {
     Logger.error(name, args, e);
-    return { success: false, code: 1, message: e.message };
+    return { success: false, code: 1, message: e?.message ?? String(e) };
   }
 });
 
@@ -91,7 +85,7 @@ ipcMain.handle("command", async (event, name, args) => {
  */
 app.on(
   "certificate-error",
-  (event, webContents, url, error, certificate, callback) => {
+  (event, _webContents, _url, _error, _certificate, callback) => {
     event.preventDefault();
     callback(true); // 忽略证书错误
   }

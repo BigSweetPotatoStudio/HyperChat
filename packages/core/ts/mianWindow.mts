@@ -2,18 +2,18 @@ import {
   app,
   BrowserWindow,
   dialog,
-  ipcMain,
+  // ipcMain, // 未使用
   Menu,
-  MenuItem,
+  // MenuItem, // 未使用
   nativeImage,
   shell,
   Tray,
 } from "electron";
 import { Logger } from "ts/polyfills/index.mjs";
-import { get } from "http";
+// import { get } from "http"; // 未使用
 import path from "path";
 
-import { electronData } from "../../common/data.mjs";
+import { electronData } from "../../shared/data.mjs";
 import p from "../package.json" assert { type: "json" };
 import { Config } from "./const.mjs";
 
@@ -77,7 +77,7 @@ export const createWindow = () => {
       .loadURL(
         `http://localhost:${Config.port}/${electronData.get().password}/#/`
       )
-      .catch((e) => {
+      .catch((_e) => {
         let indexFile = path.join(__dirname, "../web-build/index.html");
         win.loadFile(indexFile, {
           hash: "#/",
@@ -121,8 +121,8 @@ export const createWindow = () => {
   win.on("close", async (event) => {
     // app.quit();
     if (false && process.env.myEnv == "dev") {
-      win.destroy();
-      app.quit();
+      // win.destroy();
+      // app.quit();
     } else {
       // 截获 close 默认行为
       event.preventDefault();
@@ -231,7 +231,7 @@ export const createWindow = () => {
   // 针对 macOS 平台的特殊处理
   if (process.platform === 'darwin') {
     // macOS 上设置为不弹出上下文菜单
-    tray.on('click', (event, bounds) => {
+    tray.on('click', () => {
       // 先记录当前状态
       const isCurrentlyVisible = win.isVisible();
 

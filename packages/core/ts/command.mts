@@ -420,7 +420,7 @@ export class CommandFactory {
     item.version = 2;
     item.dateTime = Date.now();
     if (item.isTask) {
-      item.lastMessage = item.lastMessage || (item.messages && item.messages.length > 0 ? item.messages[item.messages.length - 1] : undefined);
+      item.lastMessage = (item.lastMessage || (item.messages && item.messages.length > 0 ? item.messages[item.messages.length - 1] : undefined)) as any;
     }
     let chatHistory = ChatHistory.initSync().data;
     if (item.messages && item.messages.length > 0) {

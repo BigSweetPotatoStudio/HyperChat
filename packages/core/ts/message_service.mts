@@ -3,7 +3,7 @@
 import { Logger } from "ts/polyfills/polyfills.mjs";
 import type { Server as SocketIO } from "socket.io";
 const userSocketMap = new Map();
-let activeUser = undefined;
+let activeUser: string | undefined = undefined;
 
 /**
  * message_service.mts 负责后端消息推送与 Socket 通信：
@@ -13,11 +13,11 @@ let activeUser = undefined;
  * - 监听用户连接、断开、激活等事件
  */
 export class MessageService {
-  MainMsg: SocketIO;
+  MainMsg!: SocketIO;
   genMainMsg = () => {
     return this.MainMsg;
   };
-  terminalMsg: SocketIO;
+  terminalMsg!: SocketIO;
   // 发送消息到渲染进程
   async sendToRenderer(data: any, channel: string = "message-from-main") {
     const { genMainMsg } = this;
@@ -40,7 +40,7 @@ export class MessageService {
     genMainMsg().emit(channel, data);
   }
   // 初始化消息服务，监听连接、激活、断开等事件
-  init(MainMsg, terminalMsg) {
+  init(MainMsg: SocketIO, terminalMsg: SocketIO) {
     this.MainMsg = MainMsg;
     this.MainMsg.on("connection", (socket) => {
       Logger.info("用户已连接,socket ID:", socket.id);
@@ -69,7 +69,7 @@ export class MessageService {
       });
     });
   }
-  terminalCallbacks = []
+  terminalCallbacks: Array<(msg: any) => void> = [];
   addTerminalMsgListener(callback: (msg: any) => void) {
     this.terminalCallbacks.push(callback);
   }
