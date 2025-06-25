@@ -1,15 +1,9 @@
 //* 检查更新工具类
 import { autoUpdater } from "electron-updater";
 
-//* 引入工具类
 
-import { Clone, Context, Logger, CheckUpdate as ICheckUpdate } from "./index";
-
-// autoUpdater.logger = Logger;
-
-class CheckUpdate extends ICheckUpdate {
+class CheckUpdate {
   constructor() {
-    super();
     //* 设置检查更新的url 可以不设置 忽略
     autoUpdater.autoDownload = false;
     // autoUpdater.forceDevUpdateConfig = true; // 强制使用dev配置
@@ -21,20 +15,20 @@ class CheckUpdate extends ICheckUpdate {
 
     this.updaterEvent();
   }
-  override checkUpdate() {
+  checkUpdate() {
     //* 开始检查更新
     return autoUpdater.checkForUpdatesAndNotify().catch((err) => {
       Logger.info("网络连接问题，检测更新失败", err);
     });
   }
   // 退出并安装
-  override quitAndInstall() {
+  quitAndInstall() {
     autoUpdater.quitAndInstall();
   }
-  override download() {
+  download() {
     autoUpdater.downloadUpdate();
   }
-  override updaterEvent() {
+  updaterEvent() {
     //* 监听updater的事件
     /**
      * -1 检查更新失败 0 正在检查更新 1 检测到新版本，准备下载 2 未检测到新版本 3 下载中 4 下载完成
@@ -79,7 +73,8 @@ class CheckUpdate extends ICheckUpdate {
     });
   }
 }
-import { getMessageService } from "@hyperchat/core/message_service";
+import { getMessageService } from "@hyperchat/core/message_service.mjs";
+import { Logger } from "@hyperchat/core/polyfills/log.mjs";
 async function sendToRender(type: any, data: any) {
   getMessageService().sendAllToRenderer({
     type: type,
@@ -87,5 +82,4 @@ async function sendToRender(type: any, data: any) {
   });
 }
 
-
-Clone(Context.checkUpdate, new CheckUpdate());
+export const checkUpdate = new CheckUpdate();

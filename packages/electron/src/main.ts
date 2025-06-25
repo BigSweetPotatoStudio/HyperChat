@@ -19,7 +19,7 @@ import {
 } from "electron";
 import "./polyfills/electron_autoupdate";
 import path from "node:path";
-import { Command, initHttp } from "./core";
+import { Command, ElectronCommand, initHttp } from "./core";
 import { createWindow } from "./window/mainWindow";
 
 Logger.info("start main");
@@ -40,18 +40,32 @@ Logger.info("start main");
  * 处理来自渲染进程的所有命令请求，统一的错误处理和日志记录
  * 
  * @param event - IPC 事件对象
- * @param name - 命令名称，对应 Command 模块中的方法
+ * @param name - 命令名称，对应 Command 或 ElectronCommand 模块中的方法
  * @param args - 命令参数数组
  * @returns 统一格式的响应对象 {code, success, data/message}
  */
-ipcMain.handle("command", async (_event, name: keyof typeof Command, args: any) => {
+ipcMain.handle("command", async (_event, name: string, args: any) => {
   try {
     const arr = Array.isArray(args) ? args : [];
-    let res = await (Command[name] as any)(...arr);
-    if ((name as string) === "getHistory") {
+    let res;
+    
+    // 首先尝试从 ElectronCommand 中查找方法
+    if (ElectronCommand[name as keyof typeof ElectronCommand]) {
+      res = await (ElectronCommand[name as keyof typeof ElectronCommand] as any)(...arr);
+    } 
+    // 如果没有找到，再从 Command 中查找
+    else if (Command[name as keyof typeof Command]) {
+      res = await (Command[name as keyof typeof Command] as any)(...arr);
+    } 
+    // 如果都没有找到，抛出错误
+    else {
+      throw new Error(`Command '${name}' not found`);
+    }
+    
+    if (name === "getHistory") {
       // getHistory 命令不记录日志，避免日志过多
     } else {
-      if ((name as string) === "writeFile") {
+      if (name === "writeFile") {
         Logger.info(
           name,
           arr[0],

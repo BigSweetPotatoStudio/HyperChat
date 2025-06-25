@@ -1,4 +1,5 @@
 import type { Command } from "../../../core/ts/command.mts";
+import type { ElectronCommand } from "../../../electron/src/command.mts";
 import { io } from "socket.io-client";
 import { sleep } from "./sleep";
 import { isOnBrowser } from "./const";
@@ -74,13 +75,6 @@ export async function call<k extends keyof Command>(
   options: { signal?: AbortSignal } = {},
 ): Promise<ReturnType<Command[k]>> {
   try {
-    // console.log(`command ${command}`, args);
-    if (isOnBrowser) {
-      const { replaceCommand } = await import("./callReplaceCommand");
-      if (replaceCommand[command]) {
-        return await replaceCommand[command].apply(null, args);
-      }
-    }
     let res = await ext.invert(command, args, options);
     if (res.success) {
       return res.data;
@@ -93,6 +87,26 @@ export async function call<k extends keyof Command>(
     throw e;
   }
 }
+
+export async function callElectron<k extends keyof ElectronCommand>(
+  command: k,
+  args: Parameters<ElectronCommand[k]>[0] = {},
+  options: { signal?: AbortSignal } = {},
+): Promise<ReturnType<ElectronCommand[k]>> {
+  try {
+    let res = await ext.invert(command, args, options);
+    if (res.success) {
+      return res.data;
+    } else {
+      throw new Error(res.message);
+    }
+  } catch (e) {
+    console.error(command, args, e);
+
+    throw e;
+  }
+}
+
 
 export async function msg_receive(
   channel: string,

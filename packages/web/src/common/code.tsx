@@ -3,6 +3,7 @@ import React, { useCallback, useEffect, useRef, useState } from "react";
 import { Button, Form, Input, message, Modal, Space } from "antd";
 import { CopyOutlined } from "@ant-design/icons";
 import { call } from "./call";
+import { setClipboardText } from "./util";
 
 export function Code(props) {
   return (
@@ -11,7 +12,7 @@ export function Code(props) {
       <CopyOutlined
         className="cursor-pointer"
         onClick={async () => {
-          await call("setClipboardText", { text: props.children });
+          await setClipboardText({ text: props.children });
           message.success("Copied to clipboard");
         }}
       />

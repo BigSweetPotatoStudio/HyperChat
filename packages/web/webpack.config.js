@@ -138,10 +138,8 @@ module.exports = (env, argv) => {
       // new Dotenv(),
       new webpack.EnvironmentPlugin({
         NODE_ENV: process.env.NODE_ENV || "development",
-        REACT_APP_REMOTE_URL:
-          "https://www.dadigua.men" ||
-          (isDev ? "http://localhost:18002" : "https://www.dadigua.men"),
         myEnv: process.env.myEnv || "dev",
+        myRuntime: "web",
       }),
       new webpack.ProvidePlugin({
         process: "process/browser",

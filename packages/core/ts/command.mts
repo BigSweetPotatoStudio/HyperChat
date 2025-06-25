@@ -21,7 +21,6 @@ import {
   initMcpClients,
   openMcpClient,
 } from "./mcp/config.mjs";
-import { checkUpdate } from "ts/polyfills/index.mjs";
 import { webdavClient } from "./common/webdav.mjs";
 import { progressList } from "./common/progress.mjs";
 import {
@@ -35,8 +34,6 @@ import cron from "node-cron";
 import { store } from "./rag/vectorStore.mjs";
 import { Config } from "./const.mjs";
 import { clientPaths } from "./mcp/claude.mjs";
-import { createBrowser } from "./mcp/servers/hyper_tools/web2.mjs";
-import { getConfig } from "./mcp/servers/hyper_tools/lib.mjs";
 import dayjs from "dayjs";
 import vm from "node:vm";
 import { ActiveAITerminal, CloseTerminal, GetTerminals, OpenTerminal } from "./mcp/servers/terminal/terminal.mjs";
@@ -179,51 +176,6 @@ export class CommandFactory {
     // 返回新的文件路径
     return path.join(dirName, newFileName);
   }
-  // 文件选择对话框
-  async selectFile(
-    opts: {
-      type: "openFile" | "openDirectory";
-      filters?: Array<{ name: string; extensions: string[] }>;
-    } = { type: "openFile" }
-  ) {
-    opts.type = opts.type || "openFile";
-    const { dialog } = await import("electron");
-    try {
-      const dialogOptions: any = {
-        properties: [opts.type],
-      };
-      if (opts.filters) {
-        dialogOptions.filters = opts.filters;
-      }
-      const result = await dialog.showOpenDialog(dialogOptions);
-
-      if (!result.canceled) {
-        const filePath = result.filePaths[0];
-        Logger.info("Selected file:", filePath);
-        return filePath;
-      } else {
-        console.error("No file selected");
-        return "";
-      }
-    } catch (error) {
-      console.error("Error selecting file:", error);
-      return "";
-    }
-  }
-  // 设置剪贴板内容
-  async setClipboardText({
-    text
-  }: {
-    text: string;
-  }) {
-    const { clipboard } = await import("electron");
-    clipboard.writeText(text);
-  }
-  // 获取剪贴板内容
-  async getClipboardText(): Promise<string> {
-    const { clipboard } = await import("electron");
-    return clipboard.readText();
-  }
   // 自动启动相关
   async isAutoLauncher(): Promise<boolean> {
     return autoLauncher.isEnabled();
@@ -357,65 +309,6 @@ export class CommandFactory {
     return isPortUse(port);
   }
 
-  async openExplorer({
-    path: p
-  }: {
-    path: string;
-  }) {
-    const { shell } = await import("electron");
-    return shell.showItemInFolder(p);
-  }
-
-  async openDevTools() {
-    const { BrowserWindow } = await import("electron");
-    const win = BrowserWindow.getFocusedWindow();
-    if (win) {
-      win.webContents.openDevTools();
-    }
-  }
-  async hyperToolOpenBrowser(url: string, { userAgent }: { userAgent?: string } = {}): Promise<void> {
-    const config = getConfig();
-    if (config?.Web_Tools_Platform === "electron") {
-      const { BrowserWindow } = await import("electron");
-      let win = new BrowserWindow({
-        width: 1280,
-        height: 720,
-        webPreferences: {
-          webSecurity: false,
-        },
-      });
-
-      await win.loadURL(url, {
-        userAgent: userAgent || "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36"
-      });
-    } else if (config?.Web_Tools_Platform === "chrome") {
-      await createBrowser(true, url)
-    } else {
-      throw new Error("HyperTool Settings Web_Tools_Platform is none");
-    }
-  }
-  async openBrowser({
-    url,
-    userAgent
-  }: {
-    url: string;
-    userAgent?: string;
-  }): Promise<void> {
-    const { BrowserWindow } = await import("electron");
-    let win = new BrowserWindow({
-      width: 1280,
-      height: 720,
-      webPreferences: {
-        webSecurity: false,
-      },
-    });
-
-    await win.loadURL(url, {
-      userAgent:
-        userAgent ||
-        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36",
-    });
-  }
   async exec({
     command,
     args
@@ -434,16 +327,6 @@ export class CommandFactory {
       env: Object.assign(getMyDefaultEnvironment(), process.env as any),
     });
     return p.stdout;
-  }
-  async checkUpdate() {
-    return checkUpdate.checkUpdate();
-  }
-  async checkUpdateDownload() {
-    checkUpdate.download();
-  }
-
-  async quitAndInstall() {
-    checkUpdate.quitAndInstall();
   }
   async testWebDav({
     url,

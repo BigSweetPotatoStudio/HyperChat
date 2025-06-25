@@ -5,6 +5,7 @@ import { BranchesOutlined, CopyOutlined, DownloadOutlined, EditOutlined, Loading
 import { Collapse, message, Modal, Space, Spin, Tooltip } from "antd";
 import { v4 } from "uuid";
 import { call } from "../common/call";
+import { setClipboardText } from "../common/util";
 import { t } from "../i18n";
 import dayjs from "dayjs";
 import { DownImage } from "../pages/chat/component";
@@ -92,8 +93,8 @@ export const Messages = ({ messages, onSumbit, readOnly, setContainer, status, o
                         <CopyOutlined
                             className="hover:text-cyan-400"
                             key="copy"
-                            onClick={() => {
-                                call("setClipboardText", {
+                            onClick={async () => {
+                                await setClipboardText({
                                     text: Array.isArray(x.content)
                                         ? (x.content[0] as any).text
                                         : x.content.toString(),
@@ -232,8 +233,8 @@ export const Messages = ({ messages, onSumbit, readOnly, setContainer, status, o
                                 <CopyOutlined
                                     className="hover:text-cyan-400"
                                     key="copy"
-                                    onClick={() => {
-                                        call("setClipboardText", { text: x.content.toString() });
+                                    onClick={async () => {
+                                        await setClipboardText({ text: x.content.toString() });
                                         message.success("Copied to clipboard");
                                     }}
                                 />

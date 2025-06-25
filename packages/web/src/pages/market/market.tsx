@@ -73,6 +73,7 @@ import {
   JsonSchema2FormItem,
   JsonSchema2FormItemOrNull,
   JsonSchema2ProFormColumnsType,
+  showText,
 } from "../../common";
 import { Pre } from "../../components/pre";
 import { Icon } from "../../components/icon";
@@ -292,7 +293,7 @@ export function Market() {
                           icon={<SettingOutlined />}
                           onClick={async () => {
                             let p = await call("pathJoin", { path: "mcp.json" });
-                            await call("openExplorer", { path: p });
+                            await showText({ path: p });
                           }}
                         >
                         </Button>
@@ -387,7 +388,10 @@ export function Market() {
                                       // item.config.isSync = e;
                                       // refresh();
                                       item.config.isSync = e;
-                                      await call("openMcpClient", { clientName: item.name, config: item.config, onlySave: true });
+                                      await call("openMcpClient", {
+                                        clientName: item.name, clientConfig: item.config,
+                                        options: { onlySave: true }
+                                      });
                                     }}></Switch>
                                   </div>
                                 }><Button type="link" icon={<MoreOutlined />} title={t`More Setting`}></Button></Popover>
@@ -466,7 +470,7 @@ export function Market() {
                           onClick={async () => {
 
                             let c = await call("getConfig");
-                            await call("openExplorer", { path: c.claudeConfigPath });
+                            await showText({ path: c.claudeConfigPath });
                           }}
                         >
                           Claude Desktop Config
@@ -672,7 +676,7 @@ export function Market() {
                 ) {
                   await call("openMcpClient", {
                     clientName: currRow.name,
-                    config: currRow.config,
+                    clientConfig: currRow.config,
                   });
                   setMcpconfigOpen(false);
                 } else {
@@ -788,7 +792,7 @@ export function Market() {
                     }
                   }
 
-                  await call("openMcpClient", { clientName: values.name, config: mcpServerConfig });
+                  await call("openMcpClient", { clientName: values.name, clientConfig: mcpServerConfig });
 
                   setCurrResult({
                     data: "success",

@@ -12,3 +12,9 @@ packages/core 专注于 Node.js 相关的功能
 packages/electron 专门处理 Electron 桌面应用的需求。
 packages/web 专注于 Web 前端的实现
 packages/cli 专注于命令行前端的实现
+
+
+## 前后端通信
+
+* 前后端通信默认通过  packages/core/ts/command.mts 实现，前端通过调用 call 的方法来实现与后端的交互。
+* electron web环境 提供更多electron接口 packages/electron/src/command.mts， 前端通过调用 callElectron  的方法来实现与后端的交互。

@@ -11,6 +11,7 @@ import { electronData, MCP_GateWay } from "../../../../shared/data.mjs";
 import { HeaderContext } from "../../common/context";
 import { v4 as uuid } from "uuid";
 import { call } from "@/src/common/call";
+import { setClipboardText } from "@/src/common/util";
 import { CopyOutlined } from "@ant-design/icons";
 
 export function MCPGateWayPage() {
@@ -268,13 +269,13 @@ const GatewayForm: React.FC<GatewayFormProps> = ({
             </Form.Item>
             <Form.Item label="sse">
                 <Input disabled value={urls.sse} addonAfter={<CopyOutlined onClick={async () => {
-                    await call("setClipboardText", { text: urls.sse });
+                    await setClipboardText({ text: urls.sse });
                     message.success(t`Copied to clipboard`);
                 }} />} />
             </Form.Item>
             <Form.Item label="streamableHttp">
                 <Input disabled value={urls.streamableHttp} addonAfter={<CopyOutlined onClick={async () => {
-                    await call("setClipboardText", { text: urls.streamableHttp });
+                    await setClipboardText({ text: urls.streamableHttp });
                     message.success(t`Copied to clipboard`);
                 }} />} />
             </Form.Item>

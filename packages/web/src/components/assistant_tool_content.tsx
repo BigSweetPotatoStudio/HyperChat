@@ -70,6 +70,7 @@ import katex from 'katex';
 import 'katex/dist/katex.css';
 // let webviewErrorValue = "";
 import { call, getURL_PRE } from "../common/call";
+import { setClipboardText } from "../common/util";
 // import hljs from "highlight.js"; // https://highlightjs.org
 // import "highlight.js/styles/github.css";
 import { v4 } from "uuid";
@@ -352,7 +353,7 @@ const Code = ({ inline, children = [], className, ...props }) => {
                         setArtifact(<Artifact url={getURL_PRE() + "temp/" + filename} type="html" />);
                     }
                 }} icon={artifact ? <EyeInvisibleOutlined /> : <EyeOutlined />} /><Button onClick={async () => {
-                    await call("setClipboardText", { text: code });
+                    await setClipboardText({ text: code });
                     message.success(t`Copied to clipboard`);
                 }} icon={<CopyOutlined />} /></span>}
         </span>
@@ -556,7 +557,7 @@ export const AssistantToolContent = ({ contents }: { contents: MyMessage[] }) =>
                                                 <div key={index} className="max-h-80 overflow-auto bg-slate-200">
                                                     <div className="">
                                                         <Pre><CopyOutlined onClick={async () => {
-                                                            await call("setClipboardText", { text: tool.function.arguments });
+                                                            await setClipboardText({ text: tool.function.arguments });
                                                             message.success(t`Copied to clipboard`);
                                                         }} />{tool.function.arguments}</Pre>
                                                     </div>
@@ -597,7 +598,7 @@ export const AssistantToolContent = ({ contents }: { contents: MyMessage[] }) =>
                                                                                 {
                                                                                     (c.type == "text") ? <div>
                                                                                         <CopyOutlined onClick={async () => {
-                                                                                            await call("setClipboardText", { text: c?.text?.toString() });
+                                                                                            await setClipboardText({ text: c?.text?.toString() });
                                                                                             message.success(t`Copied to clipboard`);
                                                                                         }} /> {c?.text?.toString()}
                                                                                     </div> : c.type == "image" ? <DownImage
@@ -609,7 +610,7 @@ export const AssistantToolContent = ({ contents }: { contents: MyMessage[] }) =>
                                                                         }) :
                                                                             <>
                                                                                 <CopyOutlined onClick={async () => {
-                                                                                    await call("setClipboardText", { text: x?.content?.toString() });
+                                                                                    await setClipboardText({ text: x?.content?.toString() });
                                                                                     message.success(t`Copied to clipboard`);
                                                                                 }} /> {x?.content?.toString()}
                                                                             </>

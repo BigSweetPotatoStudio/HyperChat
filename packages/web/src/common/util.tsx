@@ -1,8 +1,10 @@
 import { MinusCircleOutlined, PlusOutlined } from "@ant-design/icons";
 import { ProFormColumnsType } from "@ant-design/pro-components";
-import { Button, Form, Input, InputNumber, Select, Space, Switch } from "antd";
+import { Button, Form, Input, InputNumber, Modal, Select, Space, Switch } from "antd";
 import React from "react";
 import { useLocation } from "react-router-dom";
+import { Pre } from "../components/pre";
+import { call } from "./call";
 
 export function debounce<T>(func: T, wait): T {
   let timeout;
@@ -470,4 +472,50 @@ export function JsonSchema2FormItemOrNull(p) {
   } else {
     return res;
   }
+}
+
+
+export const setClipboardText = async ({ text }: { text: string }) => {
+  const copy = (text: string) => {
+    if (navigator.clipboard && window.isSecureContext) {
+      // Use the modern Clipboard API when available and in secure context
+      navigator.clipboard.writeText(text).catch((err) => {
+        console.error("Failed to copy text using Clipboard API:", err);
+        fallbackCopy(text);
+      });
+    } else {
+      fallbackCopy(text);
+    }
+  };
+
+  const fallbackCopy = (text: string) => {
+    const textarea = document.createElement("textarea");
+    textarea.value = text;
+    textarea.style.position = "absolute";
+    textarea.style.opacity = "0";
+    document.body.appendChild(textarea);
+    textarea.select();
+    document.execCommand("copy");
+    document.body.removeChild(textarea);
+  };
+  copy(text);
+}
+
+
+export const showText = async ({ path }: { path: string }) => {
+  let text = await call("readFile", { path });
+  Modal.info({
+    title: 'File Content',
+    width: "80%",
+    style: {
+      maxWidth: 1024,
+    },
+    maskClosable: true,
+    content: (
+      <Pre>
+        {text}
+      </Pre>
+    ),
+    onOk() { },
+  });
 }

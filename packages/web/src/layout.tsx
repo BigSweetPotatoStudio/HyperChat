@@ -73,10 +73,10 @@ import {
 } from "@ant-design/pro-components";
 import { getLayoutRoute } from "./router";
 import { currLang, setCurrLang, t } from "./i18n";
-import { call, msg_receive } from "./common/call";
+import { call, callElectron, msg_receive } from "./common/call";
 import {
   AppSetting,
-  ChatHistory,  DataList,
+  ChatHistory, DataList,
   electronData,
   GPT_MODELS,
   IMCPClient,
@@ -177,7 +177,7 @@ export function Layout() {
           icon: <ExclamationCircleFilled />,
           okText: "Restart And Update",
           onOk() {
-            call("quitAndInstall");
+            callElectron("quitAndInstall");
           },
         });
       }
@@ -226,10 +226,11 @@ export function Layout() {
         electronData.init(),
       ]);
       refresh();
-
-      let res = await call("checkUpdate");
-      if (res) {
-        console.log("checkUpdate: ", res);
+      if (process.env.myRuntime == "electron") {
+        let res = await callElectron("checkUpdate");
+        if (res) {
+          console.log("checkUpdate: ", res);
+        }
       }
       await initMcpClients();
       refresh();
@@ -245,7 +246,7 @@ export function Layout() {
     })();
   }, []);
 
-  const [locale, setLocal] = useState(currLang == "zhCN" ? zhCN : enUS);  const [collapsed, setCollapsed] = useState(false);
+  const [locale, setLocal] = useState(currLang == "zhCN" ? zhCN : enUS); const [collapsed, setCollapsed] = useState(false);
   const [isModelConfigOpen, setIsModelConfigOpen] = useState(false);
   const [mcpClients, setMcpClients] = useState<InitedClient[]>([]);
 
@@ -423,7 +424,7 @@ export function Layout() {
                     ),
                     okText: t`Download And Update`,
                     onOk: async () => {
-                      call("checkUpdateDownload");
+                      callElectron("checkUpdateDownload");
                     },
                   });
                 }}>{`New`}</Tag>}</span>

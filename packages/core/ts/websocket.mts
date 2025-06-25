@@ -21,7 +21,7 @@ import { execFallback } from "./common/execFallback.mjs";
 import multer from "multer";
 import bodyParser from "body-parser";
 import { electronData } from "../../shared/data.mjs";
-import { Command, CommandFactory } from "./command.mjs";
+import { Command } from "./command.mjs";
 
 import { Router } from "express";
 
@@ -276,6 +276,13 @@ import { dirname } from 'node:path';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
+
+type MyRouter = {
+  prefix: string;
+  router: express.Router;
+}
+export const routers: MyRouter[] = [];
+
 export async function initHttp() {
   const app = express();
 
@@ -284,9 +291,14 @@ export async function initHttp() {
   app.use(bodyParser.json({ limit: "1000mb" }));
   app.use(bodyParser.urlencoded({ extended: true }));
 
-  const model_route = genRouter(new CommandFactory());
-  // 在apiPrefix路径下挂载路由
-  app.use(apiPrefix, model_route);
+  routers.push({
+    prefix: apiPrefix,
+    router: genRouter(Command)
+  })
+
+  for (const route of routers) {
+    app.use(route.prefix, route.router);
+  }
   // 静态文件服务
   let staticPath = path.join(__dirname, "../web-build");
   if (process.env.myEnv == "dev") {
