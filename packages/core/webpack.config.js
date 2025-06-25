@@ -19,7 +19,7 @@ module.exports = (env, argv) => {
   return {
     target: "node",
     entry: {
-      main_no_electron: "./ts/main_no_electron",
+      main_no_electron: "./src/main_no_electron",
     },
     // publicPath: '/',
     // experiments: {
@@ -71,7 +71,7 @@ module.exports = (env, argv) => {
         ".mjs": [".mjs", ".mts"],
       },
       alias: {
-        ts: path.resolve(__dirname, "./ts"),
+        src: path.resolve(__dirname, "./src"),
       },
       plugins: [
         new TsconfigPathsPlugin({

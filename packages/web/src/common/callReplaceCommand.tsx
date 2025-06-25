@@ -1,7 +1,7 @@
 import React from "react";
 
 import { ext } from "./call";
-import type { Command } from "../../../core/ts/command.mjs";
+import type { Command } from "../../../core/src/command.mjs";
 import { Modal } from "antd";
 import { Pre } from "../components/pre";
 export const replaceCommand: Partial<Command> = {

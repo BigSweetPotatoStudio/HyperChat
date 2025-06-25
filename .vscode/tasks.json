@@ -1,0 +1,21 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "type": "npm",
+            "script": "dev",
+            "path": "packages/core",
+            "problemMatcher": [],
+            "label": "dev core",
+            "detail": "dev core(nodejs)"
+        },
+        {
+            "type": "npm",
+            "script": "dev",
+            "path": "packages/web",
+            "problemMatcher": [],
+            "label": "dev web",
+            "detail": "dev web(react)"
+        }
+    ]
+}

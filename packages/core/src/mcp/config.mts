@@ -22,14 +22,14 @@ import {
   SSEClientTransport,
   StreamableHTTPClientTransport,
   zx,
-} from "ts/es6.mjs";
+} from "src/es6.mjs";
 const { fs, os, sleep } = zx;
 import * as MCP from "@modelcontextprotocol/sdk/client/index.js";
 // import { StdioClientTransport } from "@modelcontextprotocol/sdk/client/stdio.js";
 import * as MCPTypes from "@modelcontextprotocol/sdk/types.js";
 
-import { Logger } from "ts/polyfills/index.mjs";
-import { appDataDir } from "ts/polyfills/index.mjs";
+import { Logger } from "src/polyfills/index.mjs";
+import { appDataDir } from "src/polyfills/index.mjs";
 import {
   StdioClientTransport,
   type StdioServerParameters as _StdioServerParameters,
@@ -51,10 +51,10 @@ import { startTask } from "./task.mjs";
 import spawn from "cross-spawn";
 import { getMyDefaultEnvironment } from "./utils.mjs";
 import { zodToJsonSchema } from "zod-to-json-schema";
-import { Config } from "ts/const.mjs";
+import { Config } from "src/const.mjs";
 import { v4 as _v4 } from "uuid";
 import type { HyperChatCompletionTool, IMCPClient } from "../../../shared/data.mjs";
-import { getMessageService } from "ts/message_service.mjs";
+import { getMessageService } from "src/message_service.mjs";
 import { shell as _shell } from "electron";
 import { Stream as _Stream } from "node:stream";
 

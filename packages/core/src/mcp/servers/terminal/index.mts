@@ -1,6 +1,6 @@
-import { McpServer } from "ts/es6.mjs";
+import { McpServer } from "src/es6.mjs";
 import { configSchema, NAME } from "./lib.mjs";
-import { CONST } from "ts/polyfills/polyfills.mjs";
+import { CONST } from "src/polyfills/polyfills.mjs";
 import { registerTool } from "./terminal.mjs";
 
 

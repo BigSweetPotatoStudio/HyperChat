@@ -6,7 +6,7 @@ import {
   PdfLoader,
   RAGApplicationBuilder,
   TextLoader,
-} from "ts/es6.mjs";
+} from "src/es6.mjs";
 
 export class MyRag {
   app!: RAGApplication;

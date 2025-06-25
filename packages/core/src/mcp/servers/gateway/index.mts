@@ -9,10 +9,10 @@ import {
     zx,
     ListToolsRequestSchema,
     CallToolRequestSchema,
-} from "ts/es6.mjs";
-import { CONST } from "ts/polyfills/polyfills.mjs";
-import { mcpClients } from "ts/mcp/config.mjs";
-import { Command } from "ts/command.mjs";
+} from "src/es6.mjs";
+import { CONST } from "src/polyfills/polyfills.mjs";
+import { mcpClients } from "src/mcp/config.mjs";
+import { Command } from "src/command.mjs";
 const { fs: _fs, path: _path, sleep: _sleep } = zx;
 
 

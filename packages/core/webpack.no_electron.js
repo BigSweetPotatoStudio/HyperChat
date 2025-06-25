@@ -11,7 +11,7 @@ module.exports = (env, argv) => {
   return {
     target: "node", // 指定构建目标为 Node.js
     entry: {
-      main_no_electron: "./ts/main_no_electron", // 入口文件，主进程代码
+      main_no_electron: "./src/main_no_electron", // 入口文件，主进程代码
     },
     externalsPresets: { node: true }, // 忽略 Node.js 内置模块
     externals: [nodeExternals()], // 排除 node_modules 依赖，提升构建速度
@@ -54,7 +54,7 @@ module.exports = (env, argv) => {
         ".mjs": [".mjs", ".mts"],
       },
       alias: {
-        ts: path.resolve(__dirname, "./ts"), // ts 路径别名
+        src: path.resolve(__dirname, "./src"), // src 路径别名
       },
       plugins: [
         new TsconfigPathsPlugin({

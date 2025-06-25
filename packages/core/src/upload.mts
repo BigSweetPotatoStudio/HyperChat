@@ -7,7 +7,7 @@
 // import { getMessageService } from "./message_service.mjs";
 
 
-// import { Logger } from "ts/polyfills/index.mjs";
+// import { Logger } from "src/polyfills/index.mjs";
 
 // // autoUpdater.logger = Logger;
 

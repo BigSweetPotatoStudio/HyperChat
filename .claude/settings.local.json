@@ -10,7 +10,8 @@
       "Bash(do echo \"=== $file ===\")",
       "Bash(done)",
       "Bash(rg:*)",
-      "Bash(npm run type-check:*)"
+      "Bash(npm run type-check:*)",
+      "Bash(mv:*)"
     ],
     "deny": []
   }

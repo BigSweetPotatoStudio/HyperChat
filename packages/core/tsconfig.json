@@ -34,8 +34,8 @@
     ],
     "baseUrl": ".",
     "paths": {
-      "ts": [
-        "./ts",
+      "src": [
+        "./src",
       ],
     },
     "target": "ESNext",
@@ -46,7 +46,7 @@
     "outDir": "./js",
   },
   "include": [
-    "ts",
+    "src",
     "types/*"
   ],
   "exclude": [

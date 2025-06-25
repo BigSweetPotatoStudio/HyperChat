@@ -1,4 +1,4 @@
-import type { Command } from "../../../core/ts/command.mts";
+import type { Command } from "../../../core/src/command.mts";
 import type { ElectronCommand } from "../../../electron/src/command.mts";
 import { io } from "socket.io-client";
 import { sleep } from "./sleep";

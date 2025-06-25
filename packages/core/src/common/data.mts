@@ -6,7 +6,7 @@ import {
   Data,
 } from "../../../shared/data.mjs";
 
-import { appDataDir, CONST } from "ts/polyfills/index.mjs";
+import { appDataDir, CONST } from "src/polyfills/index.mjs";
 
 import { zx } from "../es6.mjs";
 const { fs, path } = zx;

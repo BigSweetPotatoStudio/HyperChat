@@ -18,8 +18,8 @@ import {
   zx,
   ListToolsRequestSchema,
   CallToolRequestSchema,
-} from "ts/es6.mjs";
-import { CONST } from "ts/polyfills/polyfills.mjs";
+} from "src/es6.mjs";
+import { CONST } from "src/polyfills/polyfills.mjs";
 const { fs: _fs, path: _path, sleep: _sleep } = zx;
 // import { ListPromptsRequestSchema, ListToolsRequestSchema } from "@modelcontextprotocol/sdk/types.js";
 

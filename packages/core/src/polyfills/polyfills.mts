@@ -19,7 +19,7 @@ export const Context = {
 import path from "path";
 import os from "os";
 
-import { zx } from "ts/es6.mjs";
+import { zx } from "src/es6.mjs";
 const { fs, argv } = zx;
 
 export const dirName = "HyperChat";

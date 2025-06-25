@@ -1,4 +1,4 @@
-import { getDefaultEnvironment, os, shellPathSync } from "ts/es6.mjs";
+import { getDefaultEnvironment, os, shellPathSync } from "src/es6.mjs";
 import {
   electronData,
   // MCP_CONFIG,

@@ -5,10 +5,10 @@ import os from "os";
 
 import * as pty from "node-pty";
 import { z } from "zod";
-import { shellPathSync, strip } from "ts/es6.mjs";
+import { shellPathSync, strip } from "src/es6.mjs";
 import { getConfig } from "./lib.mjs";
-import { getMessageService } from "ts/message_service.mjs";
-import { Logger } from "ts/polyfills/polyfills.mjs";
+import { getMessageService } from "src/message_service.mjs";
+import { Logger } from "src/polyfills/polyfills.mjs";
 
 const shell = os.platform() === "win32" ? "powershell.exe" : "bash";
 

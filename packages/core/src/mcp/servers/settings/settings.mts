@@ -5,13 +5,13 @@ import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 
 // import * as pty from "node-pty";
 import { z } from "zod";
-// import { shellPathSync, strip } from "ts/es6.mjs";
+// import { shellPathSync, strip } from "src/es6.mjs";
 // import { getConfig } from "./lib.mjs";
-import { openMcpClient } from "ts/mcp/config.mjs";
+import { openMcpClient } from "src/mcp/config.mjs";
 import { VarList, VarScopeList } from "../../../../../shared/data.mjs";
 import { v4 } from "uuid";
 import dayjs from "dayjs";
-import { getMessageService } from "ts/message_service.mjs";
+import { getMessageService } from "src/message_service.mjs";
 
 
 // type MCP_CONFIG_TYPE = {

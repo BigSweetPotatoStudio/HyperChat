@@ -15,7 +15,7 @@
     "resolveJsonModule": true,
     "baseUrl": ".",
     "paths": {
-      "@hyperchat/core/*": ["../core/ts/*"],
+      "@hyperchat/core/*": ["../core/src/*"],
       "@hyperchat/shared/*": ["../shared/*"]
     }
   },

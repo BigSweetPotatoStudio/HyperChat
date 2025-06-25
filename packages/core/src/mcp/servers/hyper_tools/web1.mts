@@ -1,8 +1,8 @@
 import { BrowserWindow } from "electron";
-import { Logger } from "ts/polyfills/index.mjs";
+import { Logger } from "src/polyfills/index.mjs";
 import path from "path";
-import { sleep } from "ts/common/util.mjs";
-import { zx } from "ts/es6.mjs";
+import { sleep } from "src/common/util.mjs";
+import { zx } from "src/es6.mjs";
 import { getConfig } from "./lib.mjs";
 const { fs } = zx;
 
