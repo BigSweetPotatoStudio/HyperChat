@@ -1,4 +1,5 @@
-import { CONST, Logger } from "ts/polyfills/index.mjs";
+import { CONST } from "ts/polyfills/index.mjs";
+import { Logger } from "./polyfills/log.mjs";
 import { createClient, shellPathSync, zx } from "./es6.mjs";
 const { fs, os, path } = zx;
 import { isPortUse } from "./common/checkport.mjs";

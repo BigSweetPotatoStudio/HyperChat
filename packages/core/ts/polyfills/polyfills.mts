@@ -1,13 +1,9 @@
 
-export class LoggerPolyfill {
-  info(..._args: any[]) { }
-  warn(..._args: any[]) { }
-  error(..._args: any[]) { }
-  path = "";
-}
+import { Logger } from "./log.mjs";
+
+export { Logger };
 
 export const Context = {
-  Logger: {} as any,
   CONST: {} as {
     userDataPath: string;
     getVersion: string;
@@ -18,11 +14,7 @@ export const Context = {
   checkUpdate: {} as any,
 };
 
-export function Clone(a: any, b: any) {
-  Object.assign(a, b);
-  Object.setPrototypeOf(a, b);
-}
-export const Logger = Context.Logger as LoggerPolyfill;
+
 
 import path from "path";
 import os from "os";

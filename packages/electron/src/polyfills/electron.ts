@@ -2,27 +2,11 @@ import ELogger from "electron-log";
 import AutoLaunch from "auto-launch";
 import {
   Context,
-  LoggerPolyfill,
   AutoLauncher as IAutoLaunch,
-  Clone,
 } from "@hyperchat/core/polyfills/polyfills.mjs";
 
 import { app } from "electron";
 
-class LoggerC extends LoggerPolyfill {
-  override info(...args: any[]) {
-    ELogger.info(...args);
-  }
-  override warn(...args: any[]) {
-    ELogger.warn(...args);
-  }
-  override error(...args: any[]) {
-    ELogger.error(...args);
-  }
-  override path = ELogger.transports.file.getFile().path;
-}
-
-Clone(Context.Logger, new LoggerC());
 
 
 /////////////////////////////
@@ -62,6 +46,6 @@ export class AutoLauncher extends IAutoLaunch {
     return this.autoLauncher.isEnabled();
   }
 }
-Clone(Context.autoLauncher, new AutoLauncher());
+
 
 ///////////////////////////

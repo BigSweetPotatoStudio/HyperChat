@@ -12,7 +12,7 @@ export const toolTextSplitter = async (text: string) => {
 
 const texts = await toolTextSplitter(`
   
-sk-4a9f875b950045638db1f7d712162fb3
+12312313
   `);
 
 console.log("texts", texts);
