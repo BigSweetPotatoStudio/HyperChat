@@ -1,3 +1,49 @@
+/**
+ * 事件系统模块
+ * 
+ * 核心功能：
+ * - 提供灵活的事件发布/订阅机制
+ * - 支持事件保持（hold）功能
+ * - 支持一次性事件监听
+ * - 支持 Promise 化的事件等待
+ * - 提供完整的事件生命周期管理
+ * 
+ * 特色功能：
+ * - fireHold: 如果没有监听器时保持事件，有监听器时立即触发
+ * - once: 一次性事件监听，触发后自动移除
+ * - onPromise: 将事件转换为 Promise 形式
+ * - 类型安全的事件名称约束
+ * 
+ * 使用场景：
+ * - 组件间的松耦合通信
+ * - 异步流程的事件协调
+ * - 模块间状态同步
+ * - 用户界面事件处理
+ * 
+ * @template T - 事件名称类型，通常为字符串字面量联合类型
+ */
+
+/**
+ * 创建类型安全的事件管理器
+ * 
+ * @param name - 事件管理器的名称，用于调试和标识
+ * @returns 事件管理器实例
+ * 
+ * @example
+ * ```typescript
+ * // 创建类型安全的事件管理器
+ * type AppEvents = 'user-login' | 'data-updated' | 'error-occurred';
+ * const appEvent = createEvent<AppEvents>('app');
+ * 
+ * // 监听事件
+ * appEvent.on('user-login', (user) => {
+ *   console.log('用户登录:', user);
+ * });
+ * 
+ * // 触发事件
+ * appEvent.fire('user-login', { id: 1, name: 'John' });
+ * ```
+ */
 export function createEvent<T extends string>(name: string) {
 
     let event = {
