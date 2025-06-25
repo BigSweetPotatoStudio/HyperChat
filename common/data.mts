@@ -74,8 +74,7 @@ export class Data<T> {
   }
 }
 
-
-
+// 应用设置数据，包含主题、WebDAV、MCP超时等
 export const AppSetting = new Data("app_setting.json", {
   isAutoLauncher: false,
   webdav: { // 废弃⚠️ => electronData
@@ -95,6 +94,7 @@ export const AppSetting = new Data("app_setting.json", {
   }>,
 });
 
+// Electron 相关数据，包含端口、密码、版本、窗口大小等
 export const electronData = new Data(
   "electronData.json",
   {
@@ -137,6 +137,7 @@ export const electronData = new Data(
   }
 );
 
+// 工具调用类型定义
 export type Tool_Call = {
   index: number;
   id: string;
@@ -150,7 +151,7 @@ export type Tool_Call = {
   };
 };
 
-
+// 消息类型扩展，支持多种内容状态、附件、推理内容等
 export type MyMessage = OpenAI.Chat.Completions.ChatCompletionMessageParam & {
   id?: string,
   content_status?:
@@ -182,7 +183,7 @@ export type MyMessage = OpenAI.Chat.Completions.ChatCompletionMessageParam & {
   tool_call_id?: string;
 };
 
-
+// 聊天历史项类型，包含消息、模型、代理、任务等信息
 export type ChatHistoryItem = {
   label: string;
   key: string;

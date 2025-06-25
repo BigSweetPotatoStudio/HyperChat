@@ -50,7 +50,9 @@ export const { createRequire } = await import(
   /* webpackIgnore: true */ "module"
 );
 
+// CommandFactory 类封装了 HyperChat 命令行/服务端的主要操作，包括 MCP 客户端管理、文件操作、剪贴板、自动启动等
 export class CommandFactory {
+  // 获取应用配置
   async getConfig() {
     return {
       version: CONST.getVersion,
@@ -61,10 +63,12 @@ export class CommandFactory {
       ...Config
     };
   }
+  // 初始化 MCP 客户端
   async initMcpClients() {
     let res = await initMcpClients();
     return res.map((x) => x.toJSON());
   }
+  // 打开 MCP 客户端
   async openMcpClient(
     clientName: string,
     clientConfig?: MCP_CONFIG_TYPE,
@@ -77,11 +81,12 @@ export class CommandFactory {
       success: true,
     };
   }
+  // 获取所有 MCP 客户端
   async getMcpClients() {
     let res = await getMcpClients();
     return res.map((x) => x.toJSON());
   }
-
+  // 关闭 MCP 客户端
   async closeMcpClients(
     clientName: string = undefined,
     {
@@ -97,6 +102,7 @@ export class CommandFactory {
       success: true,
     };
   }
+  // 调用 MCP 工具
   async mcpCallTool(name: string, functionName: string, args: any) {
     let mcpClients = await getMcpClients();
     let client = mcpClients.find((x) => x.name === name);
@@ -105,6 +111,7 @@ export class CommandFactory {
     }
     return await client.callTool(functionName, args);
   }
+  // 调用 MCP 资源
   async mcpCallResource(name: string, uri: string) {
     let mcpClients = await getMcpClients();
     let client = mcpClients.find((x) => x.name === name);
@@ -113,6 +120,7 @@ export class CommandFactory {
     }
     return await client.callResource(uri);
   }
+  // 调用 MCP Prompt
   async mcpCallPrompt(name: string, functionName: string, args: any) {
     let mcpClients = await getMcpClients();
     let client = mcpClients.find((x) => x.name === name);
@@ -121,6 +129,7 @@ export class CommandFactory {
     }
     return await client.callPrompt(functionName, args);
   }
+  // 文件路径处理，返回处理后路径
   async processedFilePath(filePath: string): Promise<string> {
     // 获取文件目录和文件名
     const dirName = path.dirname(filePath);
@@ -133,6 +142,7 @@ export class CommandFactory {
     // 返回新的文件路径
     return path.join(dirName, newFileName);
   }
+  // 文件选择对话框
   async selectFile(
     opts: {
       type: "openFile" | "openDirectory";
@@ -162,20 +172,21 @@ export class CommandFactory {
       return "";
     }
   }
-  // 示例：设置剪切板内容
+  // 设置剪贴板内容
   async setClipboardText(text: string) {
     const { BrowserWindow, dialog, shell, clipboard } = await import(
       "electron"
     );
     clipboard.writeText(text);
   }
-  // 示例：获取剪切板内容
+  // 获取剪贴板内容
   async getClipboardText(): Promise<string> {
     const { BrowserWindow, dialog, shell, clipboard } = await import(
       "electron"
     );
     return clipboard.readText();
   }
+  // 自动启动相关
   async isAutoLauncher(): Promise<boolean> {
     return autoLauncher.isEnabled();
   }
@@ -185,14 +196,17 @@ export class CommandFactory {
   async disableAutoLauncher(): Promise<void> {
     return autoLauncher.disable();
   }
+  // 获取应用数据目录
   async getAppDataDir(): Promise<string> {
     return appDataDir;
   }
+  // 读取目录
   async readDir(p, root = appDataDir) {
     p = path.join(root, p);
     await fs.ensureDir(p);
     return await fs.readdir(p);
   }
+  // 删除文件
   async removeFile(p, root = appDataDir) {
     p = path.join(root, p);
 

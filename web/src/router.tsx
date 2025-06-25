@@ -37,6 +37,7 @@ type RouteType = {
   routes?: Array<RouteType>;
 };
 
+// router.tsx 负责定义 Web 前端的所有路由结构，支持多页面和嵌套路由
 export function getLayoutRoute() {
   let route: RouteType = {
     path: "/",

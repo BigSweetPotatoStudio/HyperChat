@@ -483,3 +483,6 @@ export function Layout() {
     </ConfigProvider>
   );
 }
+
+// layout.tsx 作为 Web 前端的全局布局组件，负责导航、主题、路由等统一管理
+// 这里省略部分实现，实际包含侧边栏、头部、内容区等
