@@ -6,7 +6,7 @@
 import { McpServer } from "@hyperchat/core/es6";
 import { configSchema, NAME } from "@hyperchat/core/mcp/servers/hyper_tools/lib";
 import { CONST } from "@hyperchat/core/polyfills/index.mjs";
-import { registerElectronTool } from "./mcp/servers/hyper_tools/electron";
+import { registerElectronTool } from "./mcp/servers/hyper_tools/electron.mjs";
 
 export async function createElectronMcpServer() {
   const server = new McpServer({
@@ -28,4 +28,4 @@ export const ElectronHyperTools = {
 
 // Re-export core functionality
 export * from "@hyperchat/core/mcp/servers/hyper_tools/lib";
-export * from "./polyfills/index";
+export * from "./polyfills/index.mjs";

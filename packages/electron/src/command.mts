@@ -1,8 +1,8 @@
 import { Logger } from "@hyperchat/core/src/polyfills/log.mjs";
 import { createBrowser } from "@hyperchat/core/src/mcp/servers/hyper_tools/web2.mjs";
 import { getConfig } from "@hyperchat/core/src/mcp/servers/hyper_tools/lib.mjs";
-import { checkUpdate } from "./polyfills/electron_autoupdate";
-import { autoLauncher } from "./polyfills/electron";
+import { checkUpdate } from "./polyfills/electron_autoupdate.mjs";
+import { autoLauncher } from "./polyfills/electron.mjs";
 
 /**
  * ElectronCommandFactory 类封装了 Electron 特有的操作，包括文件选择、剪贴板、浏览器窗口等

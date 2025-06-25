@@ -17,10 +17,10 @@ import {
   protocol,
   net,
 } from "electron";
-import "./polyfills/electron_autoupdate";
+import "./polyfills/electron_autoupdate.mjs";
 import path from "node:path";
-import { Command, ElectronCommand, initHttp } from "./core";
-import { createWindow } from "./window/mainWindow";
+import { Command, ElectronCommand, initHttp } from "./core.mjs";
+import { createWindow } from "./window/mainWindow.mjs";
 
 Logger.info("start main");
 

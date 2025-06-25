@@ -10,8 +10,8 @@ module.exports = (env, argv) => {
   return {
     target: "electron-main",
     entry: {
-      main: "./src/main.ts",
-      preload: "./src/preload.ts",
+      main: "./src/main.mts",
+      preload: "./src/preload.mts",
     },
     externalsPresets: { node: true }, // in order to ignore built-in modules like path, fs, etc.
     externals: [nodeExternals()],
