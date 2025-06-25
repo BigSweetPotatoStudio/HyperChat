@@ -46,6 +46,14 @@ import dayjs from "dayjs";
 import vm from "node:vm";
 import { ActiveAITerminal, CloseTerminal, GetTerminals, OpenTerminal } from "./mcp/servers/terminal/terminal.mjs";
 
+/**
+ * command.mts 是 HyperChat 后端的业务调度核心：
+ * - 封装所有与前端交互的命令（如配置、MCP 客户端、任务、文件、剪贴板等）
+ * - 通过 CommandFactory 类对外暴露方法，供主进程和 HTTP 服务调用
+ * - 支持自动启动、WebDAV、知识库、AI 任务流等多种后端能力
+ * - 依赖大量工具模块和数据结构，代码量大，建议分块阅读
+ */
+
 export const { createRequire } = await import(
   /* webpackIgnore: true */ "module"
 );

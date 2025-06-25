@@ -17,6 +17,13 @@ import { electronData } from "../../common/data.mjs";
 import p from "../package.json" assert { type: "json" };
 import { Config } from "./const.mjs";
 
+/**
+ * mianWindow.mts 负责 Electron 主窗口的创建与管理：
+ * - 设置窗口大小、标题、图标、菜单等
+ * - 配置 webview、预加载脚本、沙箱等安全参数
+ * - 支持多平台窗口特性和自定义行为
+ * - 依赖 electronData 进行窗口状态持久化
+ */
 let title = `${p.productName}-${app.getVersion()} by Dadigua`;
 Logger.info("title   : ", title);
 

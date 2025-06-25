@@ -1,4 +1,5 @@
-
+// es6.mts 封装了后端常用依赖和工具的动态导入，便于主流程统一调用
+// 包括 zx、shell-path、webdav、MCP 协议、chrome-launcher 等
 
 export const zx = await import(/* webpackIgnore: true */ "zx");
 
@@ -47,8 +48,7 @@ export const { InMemoryTransport } = await import(
   /* webpackIgnore: true */ "@modelcontextprotocol/sdk/inMemory.js"
 );
 
-
-
+// 统一导出各类协议 schema，便于后端主流程调用
 export const {
   ListToolsResultSchema,
   CallToolRequestSchema,
@@ -74,8 +74,6 @@ export const {
 export const { RAGApplicationBuilder, TextLoader } = await import(
   /* webpackIgnore: true */ "@llm-tools/embedjs"
 );
-
-
 
 export const { OpenAiEmbeddings } = await import(
   /* webpackIgnore: true */ "@llm-tools/embedjs-openai"
