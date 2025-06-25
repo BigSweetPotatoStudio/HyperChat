@@ -35,7 +35,7 @@
     "outDir": "./dist"
   },
   "files": [
-    "../common/data.mts"
+    "../shared/data.mts"
   ],
   "include": [
     "src",

@@ -217,7 +217,7 @@ module.exports = (env, argv) => {
     //   },
     // },
     devServer: {
-      static: path.resolve(__dirname, "../electron/web-build"), // 告诉服务器从哪里提供内容，通常是webpack的输出目录
+      static: path.resolve(__dirname, "build"), // 告诉服务器从哪里提供内容，通常是webpack的输出目录
       port: 8080, // 设置端口号，默认是8080
       open: false, // 告诉dev-server在服务器启动后打开浏览器
       hot: true, // 启用webpack的模块热替换特性（HMR）

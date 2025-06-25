@@ -18,7 +18,7 @@ import {
   electronData,
   KNOWLEDGE_BASE,
   KNOWLEDGE_Store,
-} from "../../../../common/data.mjs";
+} from "../../../../shared/data.mjs";
 import { KnowledgeBaseModal } from "./knowledgeBaseModal";
 import { v4 } from "uuid";
 import { KnowledgeBaseResourceModal } from "./knowledgeBaseResourceModal";

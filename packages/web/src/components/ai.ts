@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { GPT_MODELS, GPT_MODELS_TYPE } from "../../../common/data.mjs";
+import { GPT_MODELS, GPT_MODELS_TYPE } from "../../../shared/data.mjs";
 import { EVENT } from "../common/event";
 import { MyMessage, OpenAiChannel } from "../common/openai.js";
 

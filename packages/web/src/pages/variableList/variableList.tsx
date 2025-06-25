@@ -1,7 +1,7 @@
 import React, { useContext, useEffect } from "react";
 import { Editor } from "../../components/editor";
 import { Button, Form, Input, Modal, Radio, Select, Table, Tooltip } from "antd";
-import { VarScopeList, Var, VarList, zodVarScope } from "../../../../common/data.mjs";
+import { VarScopeList, Var, VarList, zodVarScope } from "../../../../shared/data.mjs";
 import { EditIcon } from "lucide-react";
 import { DeleteOutlined, EditOutlined, QuestionCircleOutlined } from "@ant-design/icons";
 import { t } from "../../i18n";

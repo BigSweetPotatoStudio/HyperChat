@@ -40,7 +40,7 @@ import {
 import { HeaderContext } from "./common/context";
 import { PageContainer, ProCard, ProLayout } from "@ant-design/pro-components";
 import { getRoute, getLayoutRoute } from "./router";
-import { electronData, DataList } from "../../common/data.mjs";
+import { electronData, DataList } from "../../shared/data.mjs";
 import { call } from "./common/call";
 import { EVENT } from "./common/event";
 
