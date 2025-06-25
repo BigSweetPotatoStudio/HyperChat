@@ -1,3 +1,14 @@
+/**
+ * HyperChat HTTP 服务器和 WebSocket 服务模块
+ * 
+ * 核心功能：
+ * - 启动 Express HTTP 服务器，提供 REST API
+ * - 集成 Socket.IO WebSocket 服务，支持实时通信
+ * - 处理文件上传和静态资源服务
+ * - 提供 MCP（模型上下文协议）路由网关
+ * - 统一的 API 路由生成和错误处理
+ */
+
 import express, { Request, Response, NextFunction } from "express";
 import cors from "cors";
 import http from "http";
@@ -22,38 +33,54 @@ import { PassThrough } from "stream";
 import { sleep } from "./common/util.mjs";
 import { registers, refreshRoutes } from "./mcpGateWay.mjs";
 
+// 文件上传目录配置
 const uploadDir = "./uploads";
 const uploadDirPath = path.join(appDataDir, uploadDir);
 fs.ensureDirSync(uploadDirPath);
-fs.emptyDirSync(uploadDirPath);
+fs.emptyDirSync(uploadDirPath); // 启动时清空上传目录
 
-// 配置multer用于文件上传
+/**
+ * Multer 文件上传配置
+ * 用于处理 HTTP 文件上传请求
+ */
 const storage = multer.diskStorage({
   destination: function (req, file, cb) {
     cb(null, uploadDirPath);
   },
   filename: function (req, file, cb) {
-    cb(null, file.originalname);
+    cb(null, file.originalname); // 保持原始文件名
   }
 });
 const upload = multer({ storage: storage });
 
+/**
+ * 动态路由生成器
+ * 
+ * 基于 Command 类的方法自动生成 REST API 路由
+ * 每个 Command 方法对应一个 POST 接口
+ * 
+ * @param c - Command 类实例
+ * @returns Express Router 实例
+ */
 export function genRouter(c) {
+  // 获取 Command 类的所有方法名（排除构造函数）
   let functions = [];
   Object.getOwnPropertyNames(Object.getPrototypeOf(c))
     .filter((x) => x != "constructor")
     .forEach((name) => {
       functions.push(name);
     });
-  // console.log("Command functions: ", functions);
+  
   let router = Router();
+  
+  // 为每个 Command 方法生成对应的 POST 路由
   for (let name of functions) {
-    // 不再添加前缀，因为在app.use(apiPrefix, model_route)中已经添加了前缀
     router.post(`/${name}`, async (req: Request, res: Response, next: NextFunction) => {
       let args = req.body;
       try {
+        // 日志记录（getHistory 方法不记录，避免日志过多）
         if (name == "getHistory") {
-          // log.info(name, args);
+          // 跳过日志记录
         } else {
           if (name == "writeFile") {
             Logger.info(
@@ -62,24 +89,21 @@ export function genRouter(c) {
               "writeFile Data length: " + args[1].length
             );
           } else {
-            Logger.info(
-              name,
-              args
-            );
+            Logger.info(name, args);
           }
         }
 
-        // 调用Command方法处理请求
+        // 调用 Command 方法处理请求
         let result = await Command[name](...args);
 
-        // 发送JSON响应
+        // 返回统一格式的成功响应
         res.json({
           code: 0,
           success: true,
           data: result,
         });
       } catch (e) {
-        // 错误处理
+        // 统一错误处理
         Logger.error(e);
         res.status(500).json({
           success: false,

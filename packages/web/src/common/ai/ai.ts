@@ -1,3 +1,14 @@
+/**
+ * AI 通道核心实现模块
+ * 
+ * 负责：
+ * - 统一管理多种 AI 模型提供商（OpenAI、Anthropic、兼容 OpenAI 的模型）
+ * - 处理流式和非流式文本生成
+ * - 集成 MCP 工具调用功能
+ * - 消息格式化和转换
+ * - 工具确认和执行流程管理
+ */
+
 import { GPT_MODELS_TYPE, HyperChatCompletionTool, MyMessage, Tool_Call } from "../../../../common/data.mjs";
 import { createOpenAI } from '@ai-sdk/openai';
 import { CoreMessage, generateText, streamText, tool, convertToCoreMessages } from 'ai';
@@ -10,14 +21,18 @@ import { createAnthropic } from '@ai-sdk/anthropic';
 import { createOpenAICompatible } from '@ai-sdk/openai-compatible';
 
 
+// 跨环境兼容性处理（Node.js vs Browser）
 let antdmessage: { warning: (msg: string) => void };
 let callModule = {
     getURL_PRE: () => "",
     getWebSocket: () => null,
 };
+
 if (process.env.runtime === "node") {
+    // Node.js 环境：使用 console.warn
     antdmessage = { warning: console.warn };
 } else {
+    // 浏览器环境：使用 Ant Design 的 message 组件
     const { message } = await import("antd");
     antdmessage = { warning: message.warning };
     let call = await import("../call");
@@ -25,66 +40,89 @@ if (process.env.runtime === "node") {
     callModule.getWebSocket = call.getWebSocket;
 }
 
+/**
+ * AI 通道类
+ * 
+ * 封装了与各种 AI 模型提供商的交互逻辑
+ * 支持流式生成、工具调用、消息格式化等功能
+ */
 export class AIChannel {
-    aiprovider: any = undefined;
+    aiprovider: any = undefined; // AI SDK 提供商实例
+    
     constructor(
         public options: {
-            baseURL: string;
-            apiKey: string;
-            model?: string;
+            baseURL: string;          // API 基础 URL
+            apiKey: string;           // API 密钥
+            model?: string;           // 模型名称
 
-            requestType?: "complete" | "stream";
-            allowMCPs?: string[]; // agentData
-            temperature?: number; // agentData
-            confirm_call_tool?: boolean;
-            confirm_call_tool_cb?: (tool: Tool_Call) => void;
-            messages_format_callback?: (messages: MyMessage) => Promise<void>;
+            requestType?: "complete" | "stream";     // 请求类型
+            allowMCPs?: string[];                    // 允许的 MCP 服务器列表
+            temperature?: number;                    // 温度参数
+            confirm_call_tool?: boolean;             // 是否需要确认工具调用
+            confirm_call_tool_cb?: (tool: Tool_Call) => void;  // 工具调用确认回调
+            messages_format_callback?: (messages: MyMessage) => Promise<void>;  // 消息格式化回调
         } & Partial<GPT_MODELS_TYPE>,
-        public messages: MyMessage[] = [],
+        public messages: MyMessage[] = [],   // 消息历史
     ) {
 
     }
+    
+    /**
+     * 获取最后一条消息
+     */
     get lastMessage(): MyMessage {
         return this.messages[this.messages.length - 1];
     }
-    status: "runing" | "stop" = "stop";
+    
+    status: "runing" | "stop" = "stop";  // 运行状态
+    /**
+     * 文本生成完成方法
+     * 
+     * @param onUpdate - 更新回调函数
+     * @param call_tool - 是否启用工具调用
+     * @param step - 递归步数（用于工具调用链）
+     * @returns 生成的文本内容
+     */
     async completion(
         onUpdate?: () => void,
         call_tool: boolean = true,
         step = 0,
     ): Promise<string> {
 
+        // 根据提供商类型初始化 AI 客户端
         if (this.options.provider == "openai") {
             this.aiprovider = createOpenAI({
-                compatibility: 'strict', // strict mode, enable when using the OpenAI API,
+                compatibility: 'strict', // 严格模式，启用 OpenAI API 兼容性
                 baseURL: this.options.baseURL,
                 apiKey: this.options.apiKey,
             });
 
         } else if (this.options.provider == "anthropic") {
             this.aiprovider = createAnthropic({
-                // baseURL: this.options.baseURL,
+                // baseURL: this.options.baseURL,  // Anthropic 不支持自定义 baseURL
                 apiKey: this.options.apiKey,
             });
         } else {
+            // 兼容 OpenAI 的其他提供商
             this.aiprovider = createOpenAICompatible({
                 name: this.options.model,
                 baseURL: this.options.baseURL,
                 apiKey: this.options.apiKey,
             });
         }
+        
+        // 格式化消息历史
         let messages = (await this.messages_format(this.messages)).slice();
         console.log("messages", messages);
+        
+        // 获取可用的工具列表
         let tools: HyperChatCompletionTool[];
         if (!call_tool || this.options.supportTool === false) {
             tools = undefined;
         } else {
             try {
-                if (process.env.runtime === "node") {
-                    tools = globalThis.getTools(this.options.allowMCPs);
-                } else {
-                    tools = globalThis.getTools(this.options.allowMCPs);
-                }
+                // 从全局获取可用工具（基于允许的 MCP 服务器）
+                tools = globalThis.getTools(this.options.allowMCPs);
             } catch (e) {
                 tools = []
             }
@@ -94,8 +132,10 @@ export class AIChannel {
             }
         }
 
+        // 转换工具格式为 AI SDK 兼容格式
         let aiTools = tools && this.tools_format(tools);
-        // console.log("aiTools", aiTools);
+        
+        // 开始流式文本生成
         const { response, fullStream, usage, finishReason } = await streamText({
             model: this.aiprovider(this.options.model),
             maxSteps: this.options.call_tool_step || 10,

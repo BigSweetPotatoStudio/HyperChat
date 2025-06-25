@@ -1,3 +1,14 @@
+/**
+ * MCP (Model Context Protocol) 客户端配置和连接管理模块
+ * 
+ * 核心功能：
+ * - 管理 MCP 服务器配置（内置服务器 + 用户自定义服务器）
+ * - 处理不同传输类型的 MCP 连接（stdio、HTTP、SSE）
+ * - 提供统一的 MCP 客户端接口和工具调用
+ * - 支持配置同步和热重载
+ * - 处理连接重试和错误恢复
+ */
+
 import path from "path";
 import {
   CallToolResultSchema,
@@ -48,8 +59,11 @@ import { shell } from "electron";
 import { Stream } from "node:stream";
 
 
+// 初始化 MCP 配置，合并用户配置和同步配置
 let config = await MCP_CONFIG.init();
 let sync_config = await MCP_CONFIG_SYNC.init();
+
+// 配置合并逻辑：同步配置优先级更高
 for (let key in sync_config.mcpServers) {
   if (sync_config.mcpServers[key].isSync) {
     config.mcpServers[key] = sync_config.mcpServers[key];
@@ -60,19 +74,25 @@ for (let key in sync_config.mcpServers) {
   }
 }
 
+// 内置 MCP 服务器配置管理
 let buildinMcpJSONPath = path.join(appDataDir, "mcpBuiltIn.json");
 let buildinMcpJSON = {
   mcpServers: {} as { [s: string]: MCP_CONFIG_TYPE },
 }
+
+// MCP 客户端实例缓存
 let mcpOBj = {} as { [s: string]: MCPClient };
+
+// 读取已保存的内置服务器配置
 if (fs.existsSync(buildinMcpJSONPath)) {
   try {
     buildinMcpJSON = fs.readJsonSync(buildinMcpJSONPath);
   } catch (e) {
     Logger.error("Failed to read buildInMcp.json", e);
   }
-
 }
+
+// 注册内置 MCP 服务器配置
 for (let s of MyServers) {
   let key = s.name;
   if (s.type == "streamableHttp") {

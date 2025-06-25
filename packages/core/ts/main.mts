@@ -1,3 +1,14 @@
+/**
+ * HyperChat Electron 主进程入口文件
+ * 
+ * 职责：
+ * - 初始化 Electron 应用和主窗口
+ * - 启动 HTTP 服务器和 WebSocket 连接
+ * - 处理 IPC 通信（渲染进程与主进程间通信）
+ * - 管理应用生命周期事件
+ * - 注册自定义协议处理器
+ */
+
 import { Logger } from "ts/polyfills/index.mjs";
 import "./first.mjs";
 import {
@@ -34,25 +45,30 @@ Logger.info("start main");
 //   win.loadURL("https://www.baidu.com");
 // };
 
+/**
+ * IPC 命令处理器
+ * 
+ * 处理来自渲染进程的所有命令请求，统一的错误处理和日志记录
+ * 
+ * @param event - IPC 事件对象
+ * @param name - 命令名称，对应 Command 模块中的方法
+ * @param args - 命令参数数组
+ * @returns 统一格式的响应对象 {code, success, data/message}
+ */
 ipcMain.handle("command", async (event, name, args) => {
   try {
     let res = await Command[name](...args);
     if (name == "getHistory") {
-      // log.info(name, args);
+      // getHistory 命令不记录日志，避免日志过多
     } else {
       if (name == "writeFile") {
         Logger.info(
           name,
           args[0],
           "writeFile Data length: " + args[1].length
-          // res
         );
       } else {
-        Logger.info(
-          name,
-          args
-          // res
-        );
+        Logger.info(name, args);
       }
     }
 
@@ -69,6 +85,10 @@ ipcMain.handle("command", async (event, name, args) => {
 
 // app.commandLine.appendSwitch("remote-debugging-port", "8315");
 // app.commandLine.appendSwitch("enable-usermedia-screen-capturing");
+/**
+ * 证书错误处理：忽略所有证书错误
+ * 主要用于开发环境或自签名证书的场景
+ */
 app.on(
   "certificate-error",
   (event, webContents, url, error, certificate, callback) => {
@@ -77,14 +97,26 @@ app.on(
   }
 );
 
+/**
+ * 应用就绪时的初始化流程
+ * 
+ * 执行顺序：
+ * 1. 启动 HTTP 服务器和 WebSocket
+ * 2. 创建主窗口
+ * 3. 注册自定义协议处理器
+ * 4. 监听应用激活事件
+ */
 app.whenReady().then(async () => {
-  // hide menu for Mac
+  // MacOS 下隐藏 dock 图标（可选）
   // if (process.platform == "darwin") {
   //   app.dock.hide();
   // }
+  
+  // 初始化 HTTP 服务器，处理 Web 请求和 MCP 连接
   await initHttp().catch((e) => {
     Logger.info("initHttp error: ", e);
   });
+  
   try {
     createWindow();
   } catch (e) {
@@ -92,12 +124,19 @@ app.whenReady().then(async () => {
     throw e;
   }
 
-
+  /**
+   * 注册 fs:// 协议处理器
+   * 用于访问本地文件系统资源
+   */
   protocol.handle("fs", (request) => {
     let p = request.url.replace("fs://", "");
     return net.fetch("file://" + path.join(__dirname, "../", p));
   });
 
+  /**
+   * macOS 应用激活事件处理
+   * 当点击 dock 图标且没有窗口时重新创建窗口
+   */
   app.on("activate", () => {
     if (BrowserWindow.getAllWindows().length === 0) createWindow();
   });
