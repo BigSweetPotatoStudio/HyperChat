@@ -4,6 +4,12 @@ import { HyperKnowledgeBase } from "./KnowledgeBase/index.mjs";
 import { HyperSettings } from "./settings/index.mjs";
 import { HyperAgent } from "./Task/index.mjs";
 import { HyperTerminal } from "./terminal/index.mjs";
-export const MyServers = [];
+type ServerConfig = {
+  name: string;
+  type: string;
+  configSchema?: any;
+};
+
+export const MyServers: ServerConfig[] = [];
 
 MyServers.push(HyperTools, HyperKnowledgeBase, HyperAgent, HyperTerminal, HyperSettings);

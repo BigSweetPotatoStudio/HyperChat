@@ -21,17 +21,17 @@ class CheckUpdate extends ICheckUpdate {
 
     this.updaterEvent();
   }
-  checkUpdate() {
+  override checkUpdate() {
     //* 开始检查更新
     return autoUpdater.checkForUpdatesAndNotify().catch((err) => {
       Logger.info("网络连接问题，检测更新失败", err);
     });
   }
   // 退出并安装
-  quitAndInstall() {
+  override quitAndInstall() {
     autoUpdater.quitAndInstall();
   }
-  download() {
+  override download() {
     autoUpdater.downloadUpdate();
   }
   updaterEvent() {

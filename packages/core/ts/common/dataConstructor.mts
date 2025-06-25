@@ -2,8 +2,8 @@ import { Logger, appDataDir } from "ts/polyfills/index.mjs";
 import { zx } from "../es6.mjs";
 const { fs, path } = zx;
 export class Data<T> {
-  private localStorage = null;
-  async init(isCatch = true) {
+  private localStorage: string | null = null;
+  async init(_isCatch = true) {
     let localData = {};
     try {
       this.localStorage = await this.inget();
@@ -17,7 +17,7 @@ export class Data<T> {
     this.data = Object.assign({}, this.data, localData);
     return this.data;
   }
-  initSync(isCatch = true) {
+  initSync(_isCatch = true) {
     let localData = {};
     try {
       this.localStorage = this.ingetSync();
@@ -39,16 +39,16 @@ export class Data<T> {
   async save() {
     this.insave();
   }
-  private async inget() {
+  private async inget(): Promise<string> {
     if (await fs.exists(path.join(appDataDir, this.KEY))) {
-      return await fs.readFile(path.join(appDataDir, this.KEY));
+      return await fs.readFile(path.join(appDataDir, this.KEY), 'utf-8');
     } else {
       return "";
     }
   }
-  private ingetSync() {
+  private ingetSync(): string {
     if (fs.existsSync(path.join(appDataDir, this.KEY))) {
-      return fs.readFileSync(path.join(appDataDir, this.KEY));
+      return fs.readFileSync(path.join(appDataDir, this.KEY), 'utf-8');
     } else {
       return "";
     }

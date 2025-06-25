@@ -19,7 +19,7 @@ const platformPaths = {
 };
 
 const platform = process.platform as keyof typeof platformPaths;
-const { baseDir, vscodePath } = platformPaths[platform];
+const { baseDir, vscodePath: _vscodePath } = platformPaths[platform];
 
 // Define client paths using the platform-specific base directories
 export const clientPaths = {

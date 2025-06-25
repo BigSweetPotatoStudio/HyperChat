@@ -1,16 +1,16 @@
 import App from "express";
-import { electronData } from "../../../../common/data.mjs";
+// import { electronData } from "../../../../common/data.mjs";
 import { execFallback } from "../../common/execFallback.mjs";
-import { Logger } from "ts/polyfills/index.mjs";
+// import { Logger } from "ts/polyfills/index.mjs";
 import { MyServers } from "./index.mjs";
 
 import { Config } from "ts/const.mjs";
-import { v4 } from "uuid";
-import { isInitializeRequest, SSEServerTransport, StreamableHTTPServerTransport } from "ts/es6.mjs";
+// import { v4 } from "uuid";
+import { SSEServerTransport, StreamableHTTPServerTransport } from "ts/es6.mjs";
 
 type HyperMcp = {
-  createServer;
-  handlePostMessage;
+  createServer: () => Promise<any>;
+  handlePostMessage: (req: any, res: any) => Promise<void>;
   name: string;
   url: string;
   type: "sse" | "streamableHttp";
@@ -19,9 +19,9 @@ const KEEP_ALIVE_INTERVAL_MS = 25000; // Send keep-alive every 25 seconds
 
 
 // Map to store transports by session ID
-const transports: { [sessionId: string]: any } = {};
+// const transports: { [sessionId: string]: any } = {};
 export async function initMcpServer() {
-  let PORT = await new Promise<number>(async (resolve, reject) => {
+  let PORT = await new Promise<number>(async (resolve, _reject) => {
     // Logger.info("initMcpServer", MCPServerPORT);
     const app = App();
 
@@ -65,7 +65,7 @@ export async function initMcpServer() {
         });
 
         // Reusable handler for GET and DELETE requests
-        const handleSessionRequest = async (req, res) => {
+        const handleSessionRequest = async (_req: any, res: any) => {
           res.writeHead(405).end(JSON.stringify({
             jsonrpc: "2.0",
             error: {
@@ -80,9 +80,9 @@ export async function initMcpServer() {
 
         app.delete(`/${serve.name}/mcp`, handleSessionRequest);
       } else {
-        let transport;
+        let transport: any;
 
-        app.get(`/${serve.name}/sse`, async (req, res) => {
+        app.get(`/${serve.name}/sse`, async (_req: any, res: any) => {
           transport = new SSEServerTransport(`/${serve.name}/message`, res);
           // Start keep-alive ping
           const intervalId = setInterval(() => {
@@ -102,7 +102,7 @@ export async function initMcpServer() {
       }
     }
     for (let serve of MyServers) {
-      await register(serve);
+      await register(serve as any);
     }
     let PORT = Config.mcp_server_port;
 

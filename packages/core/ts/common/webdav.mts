@@ -1,17 +1,15 @@
-import type { FileStat, WebDAVClient } from "webdav";
+import type { WebDAVClient } from "webdav";
 
-import { promises } from "fs";
-import path, { join } from "path";
+import path from "path";
 
 import { appDataDir } from "ts/polyfills/index.mjs";
 import { Logger } from "ts/polyfills/index.mjs";
 
-import { AppSetting, ChatHistory, DataList, electronData } from "../../../shared/data.mjs";
+import { DataList, electronData } from "../../../shared/data.mjs";
 
 import crypto from "crypto";
 import { createClient, zx } from "../es6.mjs";
 import { getMessageService } from "../message_service.mjs";
-import { Chat } from "openai/resources/index.mjs";
 
 const { fs, retry } = zx;
 
@@ -25,13 +23,12 @@ interface FileInfo {
   getHash: () => string;
 }
 
-let timer = undefined;
 class WebDAVSync {
-  private client: WebDAVClient;
+  private client!: WebDAVClient;
   init() {
 
 
-    timer = setInterval(async () => {
+    setInterval(async () => {
       if ((await electronData.init()).autoSync) {
         Logger.info("autoSync 5min");
         this.sync();
@@ -51,22 +48,23 @@ class WebDAVSync {
           await this.client.createDirectory(remotePath);
           return [];
         }
+        throw e;
       });
     if (!Array.isArray(contents)) {
       console.log(contents);
       throw new Error("getDirectoryContents error: " + contents);
     }
 
-    return contents.map((item) => {
+    return contents.map((item: any) => {
       let fileParse = path.parse(item.basename);
-      let [name, hash] = fileParse.name.split("___");
+      let [_name, hash] = fileParse.name.split("___");
       return {
         filename: item.basename,
         filepath: item.filename,
         modifiedTime: new Date(item.lastmod),
-        _hash: hash,
+        _hash: hash || '',
         getHash() {
-          return hash;
+          return hash || '';
         },
       }
     }).sort((a, b) => b.modifiedTime.getTime() - a.modifiedTime.getTime());
@@ -86,7 +84,7 @@ class WebDAVSync {
           filename: filename,
           filepath: fullPath,
           modifiedTime: stats.mtime,
-          _hash: undefined,
+          _hash: '',
           getHash() {
             if (this._hash) {
               return this._hash;
@@ -104,7 +102,7 @@ class WebDAVSync {
           filename: filename,
           filepath: fullPath,
           modifiedTime: stats.mtime,
-          _hash: undefined,
+          _hash: '',
           getHash() {
             if (this._hash) {
               return this._hash;
@@ -517,15 +515,6 @@ class WebDAVSync {
 }
 
 
-function minDate(a?: Date, b?: Date) {
-  if (!a) {
-    return b;
-  }
-  if (!b) {
-    return a;
-  }
-  return a.getTime() < b.getTime() ? a : b;
-}
 
 export const webdavClient = new WebDAVSync();
 webdavClient.init();

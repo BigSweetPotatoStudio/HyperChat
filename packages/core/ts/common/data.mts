@@ -11,7 +11,7 @@ import { appDataDir, CONST } from "ts/polyfills/index.mjs";
 import { zx } from "../es6.mjs";
 const { fs, path } = zx;
 
-Data.prototype.init = async function (options: any = {}) {
+Data.prototype.init = async function (_options: any = {}) {
   try {
     (this as any).localStorage = await fs.readJSON(path.join(appDataDir, this.KEY));
   } catch (e) {
@@ -38,7 +38,7 @@ Data.prototype.initSync = function ({ } = {}) {
 Data.prototype.save = async function () {
   return await fs.writeFile(
     path.join(appDataDir, this.KEY),
-    JSON.stringify(this.options.formatSave(this.data), null, 2)
+    JSON.stringify(this.options?.formatSave?.((this as any).data) || (this as any).data, null, 2)
   );
 }
 

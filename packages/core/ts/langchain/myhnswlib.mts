@@ -36,7 +36,7 @@ export interface HNSWLibArgs extends HNSWLibBase {
 export class HNSWLib extends SaveableVectorStore {
   declare FilterType: (doc: Document) => boolean;
 
-  _index?: HierarchicalNSWT;
+  _index?: HierarchicalNSWT | undefined;
 
   docstore: SynchronousInMemoryDocstore;
 
@@ -51,7 +51,7 @@ export class HNSWLib extends SaveableVectorStore {
     this._index = args.index;
     this.args = args;
     this.embeddings = embeddings;
-    this.docstore = args?.docstore ?? new SynchronousInMemoryDocstore();
+    this.docstore = args.docstore ?? new SynchronousInMemoryDocstore();
   }
 
   /**
@@ -87,7 +87,7 @@ export class HNSWLib extends SaveableVectorStore {
   private async initIndex(vectors: number[][]) {
     if (!this._index) {
       if (this.args.numDimensions === undefined) {
-        this.args.numDimensions = vectors[0].length;
+        this.args.numDimensions = vectors[0]?.length || 0;
       }
       this.index = await HNSWLib.getHierarchicalNSW(this.args);
     }
@@ -130,7 +130,7 @@ export class HNSWLib extends SaveableVectorStore {
     if (vectors.length !== documents.length) {
       throw new Error(`Vectors and metadatas must have the same length`);
     }
-    if (vectors[0].length !== this.args.numDimensions) {
+    if (vectors[0]?.length !== this.args.numDimensions) {
       throw new Error(
         `Vectors must have the same length as the number of dimensions (${this.args.numDimensions})`
       );
@@ -143,8 +143,11 @@ export class HNSWLib extends SaveableVectorStore {
     const docstoreSize = this.index.getCurrentCount();
     const toSave: Record<string, Document> = {};
     for (let i = 0; i < vectors.length; i += 1) {
-      this.index.addPoint(vectors[i], docstoreSize + i, allowReplaceDeleted);
-      toSave[docstoreSize + i] = documents[i];
+      const vector = vectors[i];
+      if (vector) {
+        this.index.addPoint(vector, docstoreSize + i, allowReplaceDeleted);
+        toSave[docstoreSize + i] = documents[i] as Document;
+      }
     }
     this.docstore.add(toSave);
   }
@@ -212,7 +215,7 @@ export class HNSWLib extends SaveableVectorStore {
    * @param params An object with a directory property that specifies the directory from which to delete the vector store.
    * @returns A Promise that resolves when the vector store has been deleted.
    */
-  async delete(params: { directory: string }) {
+  override async delete(params: { directory: string }) {
     const fs = await import("node:fs/promises");
     const path = await import("node:path");
     try {
@@ -230,7 +233,7 @@ export class HNSWLib extends SaveableVectorStore {
       await fs.rm(path.join(params.directory, "docstore.json"), {
         force: true,
       }),
-      await fs.rm(path.join(params.directory, "args.json"), ),
+      await fs.rm(path.join(params.directory, "args.json"), { force: true }),
     ]);
   }
 
@@ -240,7 +243,7 @@ export class HNSWLib extends SaveableVectorStore {
    * @param directory The directory to which to save the vector store.
    * @returns A Promise that resolves when the vector store has been saved.
    */
-  async save(directory: string) {
+  override async save(directory: string) {
     const fs = await import("node:fs/promises");
     const path = await import("node:path");
     await fs.mkdir(directory, { recursive: true });
@@ -265,7 +268,7 @@ export class HNSWLib extends SaveableVectorStore {
    * @param embeddings The embeddings to be used by the HNSWLib instance.
    * @returns A Promise that resolves to a new HNSWLib instance.
    */
-  static async load(directory: string, embeddings: EmbeddingsInterface) {
+  static override async load(directory: string, embeddings: EmbeddingsInterface) {
     const fs = await import("node:fs/promises");
     const path = await import("node:path");
     const args = JSON.parse(
@@ -298,7 +301,7 @@ export class HNSWLib extends SaveableVectorStore {
    * @param dbConfig An optional configuration object for the document store.
    * @returns A Promise that resolves to a new HNSWLib instance.
    */
-  static async fromTexts(
+  static override async fromTexts(
     texts: string[],
     metadatas: object[] | object,
     embeddings: EmbeddingsInterface,
@@ -310,7 +313,7 @@ export class HNSWLib extends SaveableVectorStore {
     for (let i = 0; i < texts.length; i += 1) {
       const metadata = Array.isArray(metadatas) ? metadatas[i] : metadatas;
       const newDoc = new Document({
-        pageContent: texts[i],
+        pageContent: texts[i] || '',
         metadata,
       });
       docs.push(newDoc);
@@ -327,7 +330,7 @@ export class HNSWLib extends SaveableVectorStore {
    * @param dbConfig An optional configuration object for the document store.
    * @returns A Promise that resolves to a new HNSWLib instance.
    */
-  static async fromDocuments(
+  static override async fromDocuments(
     docs: Document[],
     embeddings: EmbeddingsInterface,
     dbConfig?: {
@@ -335,7 +338,7 @@ export class HNSWLib extends SaveableVectorStore {
     }
   ): Promise<HNSWLib> {
     const args: HNSWLibArgs = {
-      docstore: dbConfig?.docstore,
+      ...(dbConfig?.docstore && { docstore: dbConfig.docstore }),
       space: "cosine",
     };
     const instance = new this(embeddings, args);

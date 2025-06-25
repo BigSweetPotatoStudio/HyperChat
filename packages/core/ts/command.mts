@@ -100,8 +100,8 @@ export class CommandFactory {
     } = {}
   ) {
     await closeMcpClients(clientName, {
-      isdelete,
-      isdisable
+      ...(isdelete !== undefined && { isdelete }),
+      ...(isdisable !== undefined && { isdisable })
     });
     return {
       success: true,

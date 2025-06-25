@@ -1,5 +1,5 @@
-import { McpServer, SSEServerTransport, StreamableHTTPServerTransport } from "ts/es6.mjs";
-import { configSchema, getConfig, NAME } from "./lib.mjs";
+import { McpServer } from "ts/es6.mjs";
+import { configSchema, NAME } from "./lib.mjs";
 import { CONST } from "ts/polyfills/polyfills.mjs";
 
 

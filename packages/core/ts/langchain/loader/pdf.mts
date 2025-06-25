@@ -5,7 +5,7 @@ import { PDFLoader } from "@langchain/community/document_loaders/fs/pdf";
 //   export default pdfjs;
 // }
 
-function pdfLoader(path) {
+export function _pdfLoader(path: string) {
   return new PDFLoader(path, {
     // you may need to add `.then(m => m.default)` to the end of the import
     pdfjs: () => import("pdfjs-dist").then((m) => m.default),

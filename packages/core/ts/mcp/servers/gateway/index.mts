@@ -1,11 +1,11 @@
 
 
-import { store } from "../../../rag/vectorStore.mjs";
-import dayjs from "dayjs";
-import { IMCPClient, KNOWLEDGE_BASE } from "../../../../../common/data.mjs";
+// import { store } from "../../../rag/vectorStore.mjs";
+// import dayjs from "dayjs";
+import { IMCPClient } from "../../../../../shared/data.mjs";
 import {
     Server,
-    SSEServerTransport,
+    SSEServerTransport as _SSEServerTransport,
     zx,
     ListToolsRequestSchema,
     CallToolRequestSchema,
@@ -13,7 +13,7 @@ import {
 import { CONST } from "ts/polyfills/polyfills.mjs";
 import { mcpClients } from "ts/mcp/config.mjs";
 import { Command } from "ts/command.mjs";
-const { fs, path, sleep } = zx;
+const { fs: _fs, path: _path, sleep: _sleep } = zx;
 
 
 
@@ -49,7 +49,7 @@ async function createServer(name: string, description: string, allowMCPs: string
      */
     server.setRequestHandler(ListToolsRequestSchema, async () => {
         // console.log("gateway allowMCPs", allowMCPs);
-        let getTools = (allowMCPs) => {
+        let getTools = (allowMCPs: any) => {
             let tools: IMCPClient["tools"] = [];
 
             mcpClients.forEach((v) => {
@@ -66,7 +66,7 @@ async function createServer(name: string, description: string, allowMCPs: string
         }
         return {
             tools: [
-                ...getTools(allowMCPs).map((tool) => {
+                ...getTools(allowMCPs).map((tool: any) => {
                     return {
                         name: tool.function.name,
                         description: tool.function.description,
@@ -83,7 +83,7 @@ async function createServer(name: string, description: string, allowMCPs: string
      */
     server.setRequestHandler(CallToolRequestSchema, async (request) => {
         try {
-            let getTools = (allowMCPs) => {
+            let getTools = (allowMCPs: any) => {
                 let tools: IMCPClient["tools"] = [];
 
                 mcpClients.forEach((v) => {
@@ -103,13 +103,17 @@ async function createServer(name: string, description: string, allowMCPs: string
                 return tool.function.name === request.params.name;
             });
 
+            if (!find) {
+                throw new Error(`Tool not found: ${request.params.name}`);
+            }
+
             return await Command.mcpCallTool(find.clientName, find.origin_name, request.params.arguments);
         } catch (error) {
             return {
                 content: [
                     {
                         type: "text",
-                        text: `error: ${error.message}`,
+                        text: `error: ${error instanceof Error ? error.message : String(error)}`,
                     },
                 ],
             };

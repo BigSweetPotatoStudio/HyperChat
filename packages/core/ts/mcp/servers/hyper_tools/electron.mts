@@ -3,7 +3,7 @@ import { z } from "zod";
 
 import * as web1 from "./web1.mjs";
 import * as web2 from "./web2.mjs";
-import { MCP_CONFIG } from "../../../../../common/data.mjs";
+// import { MCP_CONFIG } from "../../../../../common/data.mjs";
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import dayjs from "dayjs";
 export function registerElectronTool(server: McpServer) {
@@ -28,7 +28,7 @@ export function registerElectronTool(server: McpServer) {
     }
   );
 
-  if (getConfig().Web_Tools_Platform == "none") {
+  if (getConfig()?.Web_Tools_Platform === "none") {
     return;
   }
 

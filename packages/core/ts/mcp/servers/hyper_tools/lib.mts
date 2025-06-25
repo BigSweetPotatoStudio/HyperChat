@@ -1,8 +1,8 @@
-import { fs, McpServer, SSEServerTransport } from "ts/es6.mjs";
+import { fs } from "ts/es6.mjs";
 
-import { appDataDir, CONST } from "ts/polyfills/polyfills.mjs";
+import { appDataDir } from "ts/polyfills/polyfills.mjs";
 import { z } from "zod";
-import { MCP_CONFIG } from "../../../../../common/data.mjs";
+// import { MCP_CONFIG } from "../../../../../common/data.mjs";
 import zodToJsonSchema, { zodPatterns } from "zod-to-json-schema";
 import path from "path";
 

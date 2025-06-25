@@ -6,7 +6,7 @@ import { z } from "zod";
 
 
 import * as web2 from "./web2.mjs";
-import { MCP_CONFIG } from "../../../../../common/data.mjs";
+// import { MCP_CONFIG } from "../../../../../common/data.mjs";
 
 export function registerNoElectronTool(server: McpServer) {
   server.tool(
@@ -29,7 +29,7 @@ export function registerNoElectronTool(server: McpServer) {
     }
   );
 
-  if (getConfig().Web_Tools_Platform == "none") {
+  if (getConfig()?.Web_Tools_Platform === "none") {
     return;
   }
   server.tool(

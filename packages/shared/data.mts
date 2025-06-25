@@ -295,7 +295,7 @@ export type IMCPClient = {
 };
 
 class MCP_CONFIG_DATA<T> extends Data<T> {
-  async save(sync = true): Promise<void> {
+  override async save(sync = true): Promise<void> {
     if (sync) {
       let result: any = this.get();
       MCP_CONFIG_SYNC.set(result);
@@ -304,7 +304,7 @@ class MCP_CONFIG_DATA<T> extends Data<T> {
     return super.save();
   }
   // 不推荐用的同步保存方法，已改为异步实现
-  async saveSync(sync = true) {
+  override async saveSync(sync = true) {
     // 兼容旧接口，内部直接调用异步 save
     await this.save(sync);
   }

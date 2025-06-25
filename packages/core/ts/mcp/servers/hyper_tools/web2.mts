@@ -3,7 +3,7 @@ import puppeteer, { Browser, Page } from "puppeteer-core";
 import path from "path";
 import { ChromeLauncher, zx } from "ts/es6.mjs";
 
-import { configSchema, getConfig, NAME } from "./lib.mjs";
+import { getConfig, NAME } from "./lib.mjs";
 import { z } from "zod";
 import { Logger } from "ts/polyfills/polyfills.mjs";
 
@@ -31,7 +31,7 @@ const { fs } = zx;
 // // * Otherwise, a detected Chrome (stable) will be used
 // let CHROME_PATH = config.chromePath || undefined;
 
-let browser;
+let browser: Browser | undefined;
 let launcher;
 
 
@@ -99,7 +99,7 @@ export async function createBrowser(force = false, url = ""): Promise<Browser> {
   });
   console.log("browser connected");
 
-  return browser;
+  return browser as Browser;
   // let testPage = await browser.newPage();
   // await testPage.goto("https://www.google.com/search?q=hello");
   // await testPage.close();
@@ -152,13 +152,13 @@ export const search = async (words: string) => {
       browser = await createBrowser(true);
       return await browser.newPage()
     });
-    let res = [];
+    let res: any[] = [];
     if (getConfig().SearchEngine == "bing") {
       await page.goto(
         `https://www.bing.com/search?q=` + encodeURIComponent(words)
       );
       await Promise.race([page.waitForNetworkIdle(), sleep(3000)]);
-      res = await executeClientScript(
+      res = (await executeClientScript(
         page,
         `
         let resArr = [];
@@ -174,7 +174,7 @@ export const search = async (words: string) => {
   }
     resolve(resArr);
         `
-      );
+      )) as any[];
       await page.close();
     } else {
       await page.goto(
@@ -182,7 +182,7 @@ export const search = async (words: string) => {
       );
       await Promise.race([page.waitForSelector("#search"), sleep(3000)]);
   
-      res = await executeClientScript(
+      res = (await executeClientScript(
         page,
         `
         let resArr = [];
@@ -210,7 +210,7 @@ export const search = async (words: string) => {
   }
     resolve(resArr);
         `
-      );
+      )) as any[];
       await page.close();
     }
     if (getConfig().ChromeAutoClose == "true" && getConfig().ChromeIsUseLocal == "true") {

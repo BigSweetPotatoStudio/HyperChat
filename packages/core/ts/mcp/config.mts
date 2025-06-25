@@ -15,10 +15,10 @@ import {
   Client,
   CompatibilityCallToolResultSchema,
   LoggingMessageNotificationSchema,
-  NotificationSchema,
-  ProgressNotificationSchema,
+  NotificationSchema as _NotificationSchema,
+  ProgressNotificationSchema as _ProgressNotificationSchema,
   ResourceListChangedNotificationSchema,
-  shellPathSync,
+  shellPathSync as _shellPathSync,
   SSEClientTransport,
   StreamableHTTPClientTransport,
   zx,
@@ -32,7 +32,7 @@ import { Logger } from "ts/polyfills/index.mjs";
 import { appDataDir } from "ts/polyfills/index.mjs";
 import {
   StdioClientTransport,
-  type StdioServerParameters,
+  type StdioServerParameters as _StdioServerParameters,
 } from "@modelcontextprotocol/sdk/client/stdio.js";
 import { initMcpServer, MyServers } from "./servers/index.mjs";
 
@@ -52,11 +52,11 @@ import spawn from "cross-spawn";
 import { getMyDefaultEnvironment } from "./utils.mjs";
 import { zodToJsonSchema } from "zod-to-json-schema";
 import { Config } from "ts/const.mjs";
-import { v4 } from "uuid";
+import { v4 as _v4 } from "uuid";
 import type { HyperChatCompletionTool, IMCPClient } from "../../../shared/data.mjs";
 import { getMessageService } from "ts/message_service.mjs";
-import { shell } from "electron";
-import { Stream } from "node:stream";
+import { shell as _shell } from "electron";
+import { Stream as _Stream } from "node:stream";
 
 
 // 初始化 MCP 配置，合并用户配置和同步配置
@@ -65,8 +65,8 @@ let sync_config = await MCP_CONFIG_SYNC.init();
 
 // 配置合并逻辑：同步配置优先级更高
 for (let key in sync_config.mcpServers) {
-  if (sync_config.mcpServers[key].isSync) {
-    config.mcpServers[key] = sync_config.mcpServers[key];
+  if (sync_config.mcpServers[key]?.isSync) {
+    config.mcpServers[key] = sync_config.mcpServers[key]!;
   } else {
     if (config.mcpServers[key] != null) {
       config.mcpServers[key].isSync = false;
@@ -95,7 +95,7 @@ if (fs.existsSync(buildinMcpJSONPath)) {
 // 注册内置 MCP 服务器配置
 for (let s of MyServers) {
   let key = s.name;
-  if (s.type == "streamableHttp") {
+  if (s.type === "streamableHttp") {
     buildinMcpJSON.mcpServers[key] = {
       type: "streamableHttp",
       url: `http://localhost:${Config.mcp_server_port}/${key}/mcp`,
@@ -122,7 +122,7 @@ fs.writeFileSync(buildinMcpJSONPath, JSON.stringify(buildinMcpJSON, null, 2));
 
 for (let key in config.mcpServers) {
   if (
-    config.mcpServers[key].hyperchat?.scope == "built-in"
+    config.mcpServers[key]?.hyperchat?.scope === "built-in"
   ) {
     delete config.mcpServers[key];
   }
@@ -142,9 +142,9 @@ let notificationCount = 0;
 export let mcpClients: Array<MCPClient> = [];
 export class MCPClient implements IMCPClient {
   public tools: Array<HyperChatCompletionTool> = [];
-  public resources = [];
-  public prompts = [];
-  public client: MCP.Client = undefined;
+  public resources: any[] = [];
+  public prompts: any[] = [];
+  public client!: MCP.Client;
   public status: "disconnected" | "connected" | "connecting" | "disabled" =
     "disconnected";
   public version = "";
@@ -157,11 +157,9 @@ export class MCPClient implements IMCPClient {
   private reconnectDelay = 5000; // 5秒
 
   constructor(public name: string, public config: MCP_CONFIG_TYPE, public source: "hyperchat" | "claude" | "builtin" = "hyperchat", public order: number = 0) {
-    let s = MyServers.find((s) => s.name == name);
-    if (s) {
-      this.ext.configSchema = s.configSchema
-        ? zodToJsonSchema(s.configSchema)
-        : undefined;
+    let s = MyServers.find((s) => s.name === name);
+    if (s?.configSchema) {
+      this.ext.configSchema = zodToJsonSchema(s.configSchema);
     }
   }
   async callTool(functionName: string, args: any): Promise<any> {
@@ -263,10 +261,10 @@ export class MCPClient implements IMCPClient {
         return { tools: [] };
       });
       // console.log("listTools", tools_res);
-      let resources_res = await client.listResources().catch((e) => {
+      let resources_res = await client.listResources().catch((_e) => {
         return { resources: [] };
       });
-      let listPrompts_res = await client.listPrompts().catch((e) => {
+      let listPrompts_res = await client.listPrompts().catch((_e) => {
         return { prompts: [] };
       });
       // let listResourceTemplates_res = await client
@@ -319,13 +317,16 @@ export class MCPClient implements IMCPClient {
         }
       };
       let res = await this.client.getServerVersion();
-      this.version = res?.version;
-      this.servername = res?.name;
+      this.version = res?.version || '';
+      this.servername = res?.name || '';
 
       this.tools = tools_res.tools.map((tool, i) => {
         let name = this.name.replace(/[^a-zA-Z0-9_-]/g, "") + "_" + (tool.name.replace(/[^a-zA-Z0-9_-]/g, "") || i.toString())
 
         return {
+          name: tool.name,
+          inputSchema: tool.inputSchema,
+          description: tool.description,
           type: "function" as const,
           function: {
             name: name,
@@ -337,7 +338,7 @@ export class MCPClient implements IMCPClient {
           key: this.name,
           clientName: this.name,
           client: this.name,
-        };
+        } as HyperChatCompletionTool;
       });
       this.resources = resources_res.resources.map((x) => {
         return {
@@ -370,7 +371,7 @@ export class MCPClient implements IMCPClient {
 
       this.client.setNotificationHandler(ResourceListChangedNotificationSchema, async (notification) => {
         Logger.info("Received notification ResourceListChangedNotificationSchema:", notification);
-        let resources_res = await client.listResources().catch((e) => {
+        let resources_res = await client.listResources().catch((_e) => {
           return { resources: [] };
         });
         this.resources = resources_res.resources.map((x) => {
@@ -409,7 +410,9 @@ export class MCPClient implements IMCPClient {
       }
     });
 
-    const transport = new SSEClientTransport(new URL(config?.url || config?.hyperchat?.url), {
+    const url = config?.url || config?.hyperchat?.url;
+    if (!url) throw new Error('URL is required for SSE transport');
+    const transport = new SSEClientTransport(new URL(url), {
       requestInit: {
         keepalive: true,
         headers: config.headers || {},
@@ -425,7 +428,8 @@ export class MCPClient implements IMCPClient {
       capabilities: {
       }
     });
-    const transport = new StreamableHTTPClientTransport(new URL(config?.url), {
+    if (!config?.url) throw new Error('URL is required for StreamableHTTP transport');
+    const transport = new StreamableHTTPClientTransport(new URL(config.url), {
       requestInit: {
         keepalive: true,
         headers: config.headers || {},
@@ -434,7 +438,7 @@ export class MCPClient implements IMCPClient {
     });
 
     try {
-      await client.connect(transport);
+      await client.connect(transport as any);
       this.client = client;
 
     } catch (e) {
@@ -448,9 +452,10 @@ export class MCPClient implements IMCPClient {
     // stream.on('data', (data) => {
     //   console.log(`stderr: ${data}`);
     // });
+    if (!config.command) throw new Error('Command is required for stdio transport');
     let params = {
       command: config.command,
-      args: config.args,
+      args: config.args || [],
       env: env,
       // stderr: stream,
     };
@@ -469,8 +474,8 @@ export class MCPClient implements IMCPClient {
       this.client = client;
     } catch (e) {
       Logger.error(params, e);
-      if (e.message.includes("MCP error -32000: Connection closed")) {
-        await SpawnError(config.command, config.args, env);
+      if (e instanceof Error && e.message.includes("MCP error -32000: Connection closed")) {
+        await SpawnError(config.command!, config.args || [], env);
       }
       throw e;
     }
@@ -554,7 +559,7 @@ export class MCPClient implements IMCPClient {
   }
 }
 
-function SpawnError(command: string, args: string[], env) {
+function SpawnError(command: string, args: string[], env: any) {
   return new Promise((resolve, reject) => {
     try {
       // reject(new Error("test error"));
@@ -570,12 +575,12 @@ function SpawnError(command: string, args: string[], env) {
       });
       let output = "";
       // 添加事件处理器
-      child.stdout.on('data', (data) => {
+      child.stdout?.on('data', (data) => {
         output += data + "\n";
         // console.log(`stdout: ${data}`);
       });
 
-      child.stderr.on('data', (data) => {
+      child.stderr?.on('data', (data) => {
         output += data + "\n";
         // console.error(`stderr: ${data}`);
       });
@@ -655,7 +660,7 @@ export async function initMcpClients() {
                 type: "changeMcpClient",
                 data: mcpClients,
               })
-            }).catch((e) => {
+            }).catch((_e) => {
               getMessageService().sendAllToRenderer({
                 type: "changeMcpClient",
                 data: mcpClients,
@@ -677,6 +682,7 @@ export async function initMcpClients() {
     order++;
 
     const c = config.mcpServers[key];
+    if (!c) continue;
     if (mcpOBj[key] != null) {
       key = key + "_" + electronData.initSync().uuid.slice(0, 8);
     }
@@ -690,7 +696,7 @@ export async function initMcpClients() {
             type: "changeMcpClient",
             data: mcpClients,
           })
-        }).catch((e) => {
+        }).catch((_e) => {
           getMessageService().sendAllToRenderer({
             type: "changeMcpClient",
             data: mcpClients,
@@ -728,7 +734,7 @@ export async function initMcpClients() {
                 type: "changeMcpClient",
                 data: mcpClients,
               })
-            }).catch((e) => {
+            }).catch((_e) => {
               getMessageService().sendAllToRenderer({
                 type: "changeMcpClient",
                 data: mcpClients,
@@ -770,13 +776,13 @@ Promise.race([initMcpClients(), sleep(1000 * 60)]).then(() => {
   firstRunStatus = 2;
   clearInterval(t);
   startTask();
-}).catch((e) => {
+}).catch((_e) => {
   firstRunStatus = 2;
   clearInterval(t);
   startTask();
 });
 export async function openMcpClient(
-  name: string = undefined,
+  name?: string,
   clientConfig?: MCP_CONFIG_TYPE,
   options = {
     onlySave: false,
@@ -792,6 +798,7 @@ export async function openMcpClient(
     }
     delete mcpClient.config.disabled;
   } else {
+    if (!name || !clientConfig) throw new Error('Name and clientConfig are required');
     mcpClient = new MCPClient(name, clientConfig, "hyperchat", order);
     mcpClients.push(mcpClient);
     mcpOBj[name] = mcpClient;
@@ -826,6 +833,9 @@ export async function getMcpClients() {
 export async function closeMcpClients(name: string, {
   isdelete,
   isdisable
+}: {
+  isdelete?: boolean;
+  isdisable?: boolean;
 }) {
   let mcpClient = mcpClients.find((c) => c.name == name);
   if (mcpClient == null) {
@@ -834,7 +844,7 @@ export async function closeMcpClients(name: string, {
   if (mcpClient.client != null) {
     await mcpClient.client.close();
   }
-  mcpClient.client = undefined;
+  mcpClient.client = null as any;
   mcpClient.tools = [];
   mcpClient.prompts = [];
   mcpClient.resources = [];

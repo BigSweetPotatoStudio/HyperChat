@@ -1,9 +1,9 @@
-import { BrowserWindow } from "electron";
+// import { BrowserWindow } from "electron";
 import { CONST, Logger } from "ts/polyfills/index.mjs";
 import { zx } from "../../../es6.mjs";
-const { fs, path, sleep } = zx;
-import dayjs from "dayjs";
-import { Agents, KNOWLEDGE_BASE, TaskList } from "../../../../../shared/data.mjs";
+const { fs: _fs, path: _path, sleep: _sleep } = zx;
+// import dayjs from "dayjs";
+import { Agents, TaskList } from "../../../../../shared/data.mjs";
 
 import { EVENT } from "../../../common/event.mjs";
 import { v4 } from "uuid";
@@ -15,7 +15,7 @@ import { getMessageService } from "../../../message_service.mjs";
 
 import {
   Server,
-  SSEServerTransport,
+  SSEServerTransport as _SSEServerTransport,
   ListToolsRequestSchema,
   CallToolRequestSchema,
 } from "ts/es6.mjs";
@@ -193,7 +193,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
 
       if (!request.params.arguments?.cron) {
         throw new Error("cron are required");
-      } else if (!cron.validate(request.params.arguments?.cron)) {
+      } else if (!cron.validate(request.params.arguments?.cron as string)) {
         throw new Error("cron is not valid");
       }
 
@@ -234,7 +234,7 @@ async function call_agent({
     Logger.info(Object.keys(EVENT.callbacks), uid);
   }
   return new Promise((resolve, reject) => {
-    let callback = (m) => {
+    let callback = (m: any) => {
       // console.log("============================");
       // console.log("call_agent", m.uid, m.data);
 
@@ -292,13 +292,13 @@ async function add_task({
   return "Task added";
 }
 
-let transport;
+let transport: any;
 /**
  * Start the server using stdio transport.
  * This allows the server to communicate via standard input/output streams.
  */
 
-async function createServer(endpoint: string, response) {
+async function createServer(_endpoint: string, _response: any) {
   //   console.log("Received connection");
   // transport = new SSEServerTransport(endpoint, response);
   // await server.connect(transport);
@@ -309,9 +309,11 @@ async function createServer(endpoint: string, response) {
   return server;
 }
 
-async function handlePostMessage(req, res) {
+async function handlePostMessage(req: any, res: any) {
   //   console.log("Received message");
-  await transport.handlePostMessage(req, res);
+  if (transport) {
+    await transport.handlePostMessage(req, res);
+  }
 }
 
 export const HyperAgent = {

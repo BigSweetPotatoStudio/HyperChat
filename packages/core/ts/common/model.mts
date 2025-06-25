@@ -6,13 +6,13 @@ import path from "path";
 import { progressList } from "./progress.mjs";
 import type { FeatureExtractionPipeline } from "@xenova/transformers";
 
-import { electronData } from "../../../common/data.mjs";
+import { electronData } from "../../../shared/data.mjs";
 
 export class FeatureExtraction {
   // NOTE: Replace this with your own task and model
   static task = "feature-extraction";
   // static model = "Xenova/all-MiniLM-L6-v2"; // Xenova/all-MiniLM-L6-v2  Xenova/bge-m3
-  static instance: FeatureExtractionPipeline = null;
+  static instance: FeatureExtractionPipeline | null = null;
   static async getInstance(model: string) {
     if (this.instance === null) {
       // Dynamically import the Transformers.js library
@@ -28,7 +28,7 @@ export class FeatureExtraction {
         this.task as "feature-extraction",
         "Xenova/" + model,
         {
-          progress_callback: (p) => {
+          progress_callback: (p: any) => {
             // console.log("progress_callback: ", p);
             if (p.status == "progress") {
               progressList.setProgress(p.file, p.loaded, p.total);
@@ -46,6 +46,9 @@ export class FeatureExtraction {
       return [];
     }
     // const texts = ["What is BGE M3?", "Defination of BM25"];
+    if (!this.instance) {
+      throw new Error("Model instance not initialized");
+    }
     const embeddings = await this.instance(texts, {
       pooling: "mean",
       normalize: true,
@@ -58,6 +61,9 @@ export class FeatureExtraction {
   }
   static async embedding(text: string) {
     // const texts = ["What is BGE M3?", "Defination of BM25"];
+    if (!this.instance) {
+      throw new Error("Model instance not initialized");
+    }
     const embeddings = await this.instance(text, {
       pooling: "mean",
       normalize: true,

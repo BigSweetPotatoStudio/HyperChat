@@ -6,12 +6,14 @@ export function getLocalIP(): string[] {
   for (const devName in interfaces) {
     const iface = interfaces[devName];
 
-    for (let i = 0; i < iface.length; i++) {
-      const alias = iface[i];
-      if (alias.family === "IPv4" && !alias.internal) {
-        // 返回第一个找到的非内部的IPv4地址
-        ips.push(alias.address);
-        // return alias.address;
+    if (iface) {
+      for (let i = 0; i < iface.length; i++) {
+        const alias = iface[i];
+        if (alias && alias.family === "IPv4" && !alias.internal) {
+          // 返回第一个找到的非内部的IPv4地址
+          ips.push(alias?.address || '');
+          // return alias.address;
+        }
       }
     }
   }
@@ -61,7 +63,7 @@ export function sanitizeFileName(fileName: string): string {
   sanitized = sanitized.replace(/\.+$/, "");
 
   // 检查是否是保留名称
-  const nameWithoutExt = sanitized.split(".")[0].toUpperCase();
+  const nameWithoutExt = sanitized.split(".")[0]?.toUpperCase() || '';
   if (WINDOWS_RESERVED_NAMES.includes(nameWithoutExt)) {
     sanitized = "_" + sanitized;
   }
@@ -88,15 +90,15 @@ export const spawnWithOutput = (
     let stdout = "";
     let stderr = "";
 
-    proc.stdout.pipe(process.stdout);
-    proc.stderr.pipe(process.stderr);
+    proc.stdout?.pipe(process.stdout);
+    proc.stderr?.pipe(process.stderr);
 
-    proc.stdout.on("data", (data) => {
+    proc.stdout?.on("data", (data) => {
       stdout += data.toString();
       // console.log(data.toString()); // 实时输出
     });
 
-    proc.stderr.on("data", (data) => {
+    proc.stderr?.on("data", (data) => {
       stderr += data.toString();
       // console.error(data.toString()); // 实时输出错误
     });
@@ -120,6 +122,6 @@ export const spawnWithOutput = (
 };
 
 
-export async function sleep(t) {
+export async function sleep(t: number) {
   return new Promise(resolve => setTimeout(resolve, t));
 }

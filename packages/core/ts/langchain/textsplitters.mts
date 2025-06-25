@@ -5,7 +5,7 @@ const textSplitter = new TokenTextSplitter({
   chunkOverlap: 0,
 });
 
-export const toolTextSplitter = async (text) => {
+export const toolTextSplitter = async (text: string) => {
   const texts = await textSplitter.splitText(text);
   return texts;
 };

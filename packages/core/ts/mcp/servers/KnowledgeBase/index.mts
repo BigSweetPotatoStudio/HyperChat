@@ -10,17 +10,17 @@
  */
 
 import { store } from "../../../rag/vectorStore.mjs";
-import dayjs from "dayjs";
+// import dayjs from "dayjs";
 import { KNOWLEDGE_BASE } from "../../../../../shared/data.mjs";
 import {
   Server,
-  SSEServerTransport,
+  SSEServerTransport as _SSEServerTransport,
   zx,
   ListToolsRequestSchema,
   CallToolRequestSchema,
 } from "ts/es6.mjs";
 import { CONST } from "ts/polyfills/polyfills.mjs";
-const { fs, path, sleep } = zx;
+const { fs: _fs, path: _path, sleep: _sleep } = zx;
 // import { ListPromptsRequestSchema, ListToolsRequestSchema } from "@modelcontextprotocol/sdk/types.js";
 
 const NAME = "hyper_knowledge_base";
@@ -216,19 +216,21 @@ result:
 ${JSON.stringify(results)}`;
 }
 
-let transport;
+let transport: any;
 /**
  * Start the server using stdio transport.
  * This allows the server to communicate via standard input/output streams.
  */
 
-async function createServer(endpoint: string, response) {
+async function createServer(_endpoint: string, _response: any) {
   return server;
 }
 
-async function handlePostMessage(req, res) {
+async function handlePostMessage(req: any, res: any) {
   //   console.log("Received message");
-  await transport.handlePostMessage(req, res);
+  if (transport) {
+    await transport.handlePostMessage(req, res);
+  }
 }
 
 const HyperKnowledgeBase = {

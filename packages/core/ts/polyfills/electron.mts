@@ -10,16 +10,16 @@ import {
 import { app } from "electron";
 
 class LoggerC extends LoggerPolyfill {
-  info(...args: any[]) {
+  override info(...args: any[]) {
     ELogger.info(...args);
   }
-  warn(...args: any[]) {
+  override warn(...args: any[]) {
     ELogger.warn(...args);
   }
-  error(...args: any[]) {
+  override error(...args: any[]) {
     ELogger.error(...args);
   }
-  path = ELogger.transports.file.getFile().path;
+  override path = ELogger.transports.file.getFile().path;
 }
 
 Clone(Context.Logger, new LoggerC());
@@ -46,19 +46,19 @@ export class AutoLauncher extends IAutoLaunch {
       path: app.getPath("exe"),
     });
   }
-  async enable() {
+  override async enable() {
     if (!(await this.autoLauncher.isEnabled())) {
       return this.autoLauncher.enable();
     }
   }
 
-  async disable() {
+  override async disable() {
     if (await this.autoLauncher.isEnabled()) {
       await this.autoLauncher.disable();
     }
   }
 
-  async isEnabled() {
+  override async isEnabled() {
     return this.autoLauncher.isEnabled();
   }
 }
