@@ -1,8 +1,8 @@
 
 export class LoggerPolyfill {
-  info(...args: any[]) { }
-  warn(...args: any[]) { }
-  error(...args: any[]) { }
+  info(..._args: any[]) { }
+  warn(..._args: any[]) { }
+  error(..._args: any[]) { }
   path = "";
 }
 
@@ -18,7 +18,7 @@ export const Context = {
   checkUpdate: {} as any,
 };
 
-export function Clone(a, b) {
+export function Clone(a: any, b: any) {
   Object.assign(a, b);
   Object.setPrototypeOf(a, b);
 }
@@ -53,7 +53,7 @@ Context.CONST = {
 export const CONST = Context.CONST as typeof Context.CONST;
 
 export class AutoLauncher {
-  public autoLauncher;
+  public autoLauncher: any;
 
   constructor() { }
   async enable() {

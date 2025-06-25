@@ -4,9 +4,9 @@ import {
   Context,
   LoggerPolyfill,
   AutoLauncher as IAutoLaunch,
-  CheckUpdate as ICheckUpdate,
   Clone,
 } from "./polyfills.mjs";
+
 import { app } from "electron";
 
 class LoggerC extends LoggerPolyfill {

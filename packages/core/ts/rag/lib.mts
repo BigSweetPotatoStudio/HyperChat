@@ -9,14 +9,14 @@ import {
 } from "ts/es6.mjs";
 
 export class MyRag {
-  app: RAGApplication;
-  async search(query: string, top) {
+  app!: RAGApplication;
+  async search(query: string, top: number) {
     return (await this.app.search(query)).slice(0, top);
   }
   remove(uniqueId: string) {
     return this.app.deleteLoader(uniqueId);
   }
-  async addText(text: string) {
+  async addText(_text: string) {
     return this.app.addLoader(new TextLoader({ text: "..." }));
   }
   async addPdf(filepath: string) {

@@ -2,7 +2,7 @@
 import type OpenAI from "openai";
 import * as MCPTypes from "@modelcontextprotocol/sdk/types.js";
 import { v4 } from "uuid";
-import { number, z } from "zod";
+import { z } from "zod";
 
 // 全局数据实例列表，所有 Data 实例会自动加入此数组
 export const DataList: Data<any>[] = [];
@@ -12,7 +12,6 @@ export const DataList: Data<any>[] = [];
  * @template T 数据类型
  */
 export class Data<T> {
-  private localStorage: any = {};
   // 尽量使用异步初始化数据
   async init(): Promise<T> {
     throw new Error("Method not implemented.");

@@ -50,7 +50,7 @@ class LoggerC extends LoggerPolyfill {
     logger.error(msg, ...rest);
     console.log(...args);
   }
-  path = logpath;
+  override path = logpath;
 }
 
 Clone(Context.Logger, new LoggerC());

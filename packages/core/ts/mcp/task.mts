@@ -31,7 +31,7 @@ import { Command } from "../command.mjs";
           type: "isCalled",
         });
       } else {
-        res = await Command[name](...args);
+        res = await (Command as any)[name](...args);
       }
 
       return {
@@ -211,7 +211,7 @@ export async function runTask(taskKey: string, { force = false }) {
     // await onRequest(task.message);
   } catch (e) {
     Logger.error(" task_call_agent error: ", e);
-    await trigger({ task, agent, result: e.message });
+    await trigger({ task, agent, result: (e as Error).message });
   } finally {
   }
 }
@@ -237,6 +237,10 @@ export function startTask(taskkey?: string) {
   } else {
     Logger.info(`enable task ${taskkey}`);
     let task = TaskList.initSync().data.find((x) => x.key === taskkey);
+
+    if (!task) {
+      throw new Error(`Task ${taskkey} not found`);
+    }
 
     try {
       const find = tObj[taskkey];
@@ -265,18 +269,18 @@ export function startTask(taskkey?: string) {
 
 export function stopTask(taskkey?: string) {
   if (!taskkey) {
-    Logger.info(`Stopping tasks ${tObj.length}`);
+    Logger.info(`Stopping tasks ${Object.keys(tObj).length}`);
     for (let key in tObj) {
-      tObj[key].cronT.stop();
+      tObj[key]?.cronT?.stop();
     }
     tObj = {};
   } else {
     Logger.info(`Stopping task ${taskkey}`);
     try {
-      const find = tObj[taskkey];
+      const find = tObj[taskkey!];
       if (find) {
         find.cronT.stop();
-        delete tObj[taskkey];
+        delete tObj[taskkey!];
       }
       Logger.info("stoped task", taskkey);
     } catch (e) {

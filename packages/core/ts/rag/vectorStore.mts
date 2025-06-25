@@ -45,14 +45,14 @@ class Store {
     await ragapp.init(storePath, store);
     let res;
     if (r.type === "file") {
-      let x = path.parse(r.filepath);
+      let x = path.parse(r.filepath!);
       if (x.ext === ".pdf") {
         r.name = x.name + x.ext;
         let filepath = path.join(fileirectory, r.key + ".pdf");
         if (move) {
-          await fs.move(r.filepath, filepath);
+          await fs.move(r.filepath!, filepath);
         } else {
-          await fs.copy(r.filepath, filepath);
+          await fs.copy(r.filepath!, filepath);
         }
 
         r.filepath = path.relative(appDataDir, filepath);
@@ -62,10 +62,10 @@ class Store {
         throw new Error("Not implemented");
       }
     } else {
-      let text = r.text;
+      let text = r.text!;
       let filepath = path.join(fileirectory, r.key + ".txt");
       fs.writeFileSync(filepath, text);
-      r.name = text.split("\n").filter((x) => x.trim())[0];
+      r.name = text.split("\n").filter((x) => x.trim())[0] || 'Untitled';
       r.filepath = path.relative(appDataDir, filepath);
       delete r.text;
       res = await ragapp.addText(text);
@@ -81,16 +81,16 @@ class Store {
     const storePath = path.join(basedirectory, storeKey + ".db");
     let ragapp = new MyRag();
     await ragapp.init(storePath, store);
-    await ragapp.remove(r.uniqueId);
-    fs.removeSync(path.join(appDataDir, r.filepath));
+    await ragapp.remove(r.uniqueId!);
+    fs.removeSync(path.join(appDataDir, r.filepath!));
   }
 
   async delete(store: KNOWLEDGE_Store) {
     let storeKey = store.key;
     const storePath = path.join(basedirectory, storeKey + ".db");
-    let ragapp = new MyRag();
-    // await ragapp.init(storePath, store);
-    // delete ragapp.app;
+    // let _ragapp = new MyRag();
+    // await _ragapp.init(storePath, store);
+    // delete _ragapp.app;
     try {
       fs.removeSync(storePath);
     } catch (e) {
@@ -102,7 +102,7 @@ class Store {
     if (find) {
       for (let r of find.resources) {
         try {
-          fs.removeSync(path.join(appDataDir, r.filepath));
+          fs.removeSync(path.join(appDataDir, r.filepath!));
         } catch (e) {
           console.error(e);
         }
