@@ -13,7 +13,7 @@ import {
   MCP_CONFIG_TYPE,
   Task,
   TaskList,
-} from "../../common/data.mjs";
+} from "../../shared/data.mjs";
 import { appDataDir } from "ts/polyfills/index.mjs";
 import spawn from "cross-spawn";
 import crypto from "crypto";
@@ -32,7 +32,7 @@ import {
   KNOWLEDGE_BASE,
   KNOWLEDGE_Resource,
   KNOWLEDGE_Store,
-} from "../../common/data.mjs";
+} from "../../shared/data.mjs";
 import { EVENT } from "./common/event.mjs";
 import { callAgent, runTask, startTask, stopTask } from "./mcp/task.mjs";
 import { getMyDefaultEnvironment } from "./mcp/utils.mjs";

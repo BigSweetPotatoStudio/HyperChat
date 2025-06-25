@@ -9,8 +9,8 @@ import {
   Data,
   MCP_CONFIG_TYPE,
   DataList,
-} from "../../../common/data.mjs";
-import { PROVIDER_CONFIGS } from "../../../common/providers.js";
+} from "../../../shared/data.mjs";
+import { PROVIDER_CONFIGS } from "../../../shared/providers";
 import { e } from "./service";
 
 Data.prototype.init = async function ({ } = {}) {

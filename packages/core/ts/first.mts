@@ -1,7 +1,7 @@
 import { Logger } from "ts/polyfills/index.mjs";
 import { zx } from "./es6.mjs";
 const { $, fs, cd, fetch, sleep, path } = zx;
-import { electronData } from "../../common/data.mjs";
+import { electronData } from "../../shared/data.mjs";
 import "./common/data.mjs";
 import { appDataDir } from "ts/polyfills/index.mjs";
 

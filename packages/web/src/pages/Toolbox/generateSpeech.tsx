@@ -5,7 +5,7 @@ import { SoundOutlined, LoadingOutlined } from "@ant-design/icons";
 
 import { experimental_generateSpeech as generateSpeech } from 'ai';
 import { createOpenAI } from '@ai-sdk/openai';
-import { GPT_MODELS } from "../../../../common/data.mjs";
+import { GPT_MODELS } from "../../../../shared/data.mjs";
 
 const { TextArea } = Input;
 

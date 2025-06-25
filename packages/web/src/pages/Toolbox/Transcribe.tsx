@@ -6,7 +6,7 @@ import { AudioOutlined, AudioMutedOutlined, LoadingOutlined, ClearOutlined } fro
 
 import { Experimental_TranscriptionResult, experimental_transcribe as transcribe } from 'ai';
 import { createOpenAI } from '@ai-sdk/openai';
-import { GPT_MODELS } from "../../../../common/data.mjs";
+import { GPT_MODELS } from "../../../../shared/data.mjs";
 import { SelectFile } from "@/src/common/selectFile";
 
 // 录音组件

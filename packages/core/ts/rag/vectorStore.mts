@@ -7,7 +7,7 @@ import {
   KNOWLEDGE_BASE,
   KNOWLEDGE_Resource,
   KNOWLEDGE_Store,
-} from "../../../common/data.mjs";
+} from "../../../shared/data.mjs";
 import { v4 } from "uuid";
 import { zx } from "../es6.mjs";
 import { MyRag } from "./lib.mjs";

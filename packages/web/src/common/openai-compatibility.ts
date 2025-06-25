@@ -5,7 +5,7 @@ import { Completions as BetaCompletions } from "openai/resources/beta/chat/compl
 import { AnthropicProvider } from "./ai_provider/anthropic";
 import { MyMessage } from "./openai.js";
 import { Completions } from "openai/resources/chat/completions";
-import { electronData, GPT_MODELS_TYPE, HyperChatCompletionTool } from "../../../common/data.mjs";
+import { electronData, GPT_MODELS_TYPE, HyperChatCompletionTool } from "../../../shared/data.mjs";
 import { message } from "antd";
 import { isOnBrowser } from "./const";
 import { genSystemPrompt } from "./ai/prompt";

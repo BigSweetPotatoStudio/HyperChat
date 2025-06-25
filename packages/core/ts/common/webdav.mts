@@ -6,7 +6,7 @@ import path, { join } from "path";
 import { appDataDir } from "ts/polyfills/index.mjs";
 import { Logger } from "ts/polyfills/index.mjs";
 
-import { AppSetting, ChatHistory, DataList, electronData } from "../../../common/data.mjs";
+import { AppSetting, ChatHistory, DataList, electronData } from "../../../shared/data.mjs";
 
 import crypto from "crypto";
 import { createClient, zx } from "../es6.mjs";

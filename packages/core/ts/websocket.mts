@@ -9,7 +9,7 @@ import { execFallback } from "./common/execFallback.mjs";
 
 import multer from "multer";
 import bodyParser from "body-parser";
-import { electronData } from "../../common/data.mjs";
+import { electronData } from "../../shared/data.mjs";
 import { Command, CommandFactory } from "./command.mjs";
 
 import { Router } from "express";
@@ -245,7 +245,11 @@ function proxyMiddleware(req: Request, res: Response, next: NextFunction) {
     next();
   }
 }
-import { __dirname } from "ts/const.mjs";
+import { fileURLToPath } from 'node:url';
+import { dirname } from 'node:path';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
 
 export async function initHttp() {
   const app = express();
@@ -258,9 +262,15 @@ export async function initHttp() {
   const model_route = genRouter(new CommandFactory());
   // 在apiPrefix路径下挂载路由
   app.use(apiPrefix, model_route);
-
   // 静态文件服务
-  Logger.info("serve: ", path.join(__dirname, "../web-build"));
+  let staticPath = path.join(__dirname, "../web-build");
+  if (process.env.myEnv == "dev") {
+    staticPath = path.join(__dirname, "../../web/build");
+    Logger.info("Running in development mode, serving from: ", staticPath);
+  } else {
+    Logger.info("Running in production mode, serving from: ", staticPath);
+  }
+
   Logger.info("password: ", electronData.get().password);
 
   const staticOptions = {
@@ -276,7 +286,7 @@ export async function initHttp() {
   };
 
   // 静态资源
-  app.use(prefix, express.static(path.join(__dirname, "../web-build"), staticOptions));
+  app.use(prefix, express.static(staticPath, staticOptions));
   app.use(prefix + "/temp", express.static(path.join(appDataDir, "temp")));
 
   // MCP 路由刷新函数

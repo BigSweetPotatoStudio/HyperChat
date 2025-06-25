@@ -11,7 +11,7 @@
 
 import { store } from "../../../rag/vectorStore.mjs";
 import dayjs from "dayjs";
-import { KNOWLEDGE_BASE } from "../../../../../common/data.mjs";
+import { KNOWLEDGE_BASE } from "../../../../../shared/data.mjs";
 import {
   Server,
   SSEServerTransport,

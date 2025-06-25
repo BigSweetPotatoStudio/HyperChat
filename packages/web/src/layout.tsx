@@ -76,14 +76,13 @@ import { currLang, setCurrLang, t } from "./i18n";
 import { call, msg_receive } from "./common/call";
 import {
   AppSetting,
-  ChatHistory,
-  DataList,
+  ChatHistory,  DataList,
   electronData,
   GPT_MODELS,
   IMCPClient,
   KNOWLEDGE_BASE,
   MCP_CONFIG,
-} from "../../common/data.mjs";
+} from "../../shared/data.mjs";
 import { InitedClient, initMcpClients, setClients } from "./common/mcp";
 import { EVENT } from "./common/event";
 import { DndTable } from "./common/dndTable";

@@ -1,7 +1,7 @@
 
 import React, { forwardRef, useEffect, useImperativeHandle, useRef, useState } from "react";
 import * as monaco from "monaco-editor";
-import { Agents, AppSetting, VarList } from "../../../common/data.mjs";
+import { Agents, AppSetting, VarList } from "../../../shared/data.mjs";
 import { v4 } from "uuid";
 import { Button, Space } from "antd";
 import { FullscreenOutlined } from "@ant-design/icons";
@@ -596,7 +596,7 @@ export const Editor = forwardRef(({
 
                     // 处理拖拽的文件
                     if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
-                        const file = e.dataTransfer.files[0];
+                        const file: any = e.dataTransfer.files[0];
                         console.log("Dropped file:", file);
                         // e.preventDefault();
                         if (isOnBrowser) {

@@ -1,4 +1,4 @@
-import { electronData } from "../../../common/data.mjs";
+import { electronData } from "../../../shared/data.mjs";
 
 
 class Progress {

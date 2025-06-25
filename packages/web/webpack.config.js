@@ -200,12 +200,6 @@ module.exports = (env, argv) => {
     externals: {
       ["react-native-sqlite-storage"]: "null",
     },
-    output: {
-      filename: isDev ? "[name].js" : "[name].js", // 使用 contenthash 作为文件名的一部分
-      chunkFilename: isDev ? "[name].js" : "[name].js", // 对于动态导入的模块
-      path: path.resolve(__dirname, "../electron/web-build"),
-      publicPath: "",
-    },
     mode: isDev ? "development" : "production",
     devtool: isDev ? "source-map" : false,
     cache: {
@@ -216,6 +210,12 @@ module.exports = (env, argv) => {
     //     chunks: 'all',
     //   },
     // },
+    output: {
+      filename: isDev ? "[name].js" : "[name].js", // 使用 contenthash 作为文件名的一部分
+      chunkFilename: isDev ? "[name].js" : "[name].js", // 对于动态导入的模块
+      path: path.resolve(__dirname, "build"),
+      publicPath: "",
+    },
     devServer: {
       static: path.resolve(__dirname, "build"), // 告诉服务器从哪里提供内容，通常是webpack的输出目录
       port: 8080, // 设置端口号，默认是8080

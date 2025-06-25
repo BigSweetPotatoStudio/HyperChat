@@ -1,4 +1,4 @@
-import type { Command } from "../../../electron/ts/command.mts";
+import type { Command } from "../../../core/ts/command.mts";
 import { io } from "socket.io-client";
 import { sleep } from "./sleep";
 import { isOnBrowser } from "./const";
@@ -26,6 +26,9 @@ if (process.env.runtime !== "node") {
     let config = await ext.invert("getConfig", []);
     URL_PRE =
       "http://localhost:" + config.data.port + "/" + config.data.password + "/";
+  }
+  if (process.env.myEnv == "dev") {
+    URL_PRE = "http://localhost:16100/123456/";
   }
   ext.invert = async (command: string, args: any, options: any = {}) => {
     const { signal } = options;

@@ -186,13 +186,12 @@ import {
   ChatHistory,
   GPT_MODELS,
   Agents,
-  AppSetting,
-  IMCPClient,
+  AppSetting, IMCPClient,
   electronData,
   HyperChatCompletionTool,
   Tool_Call,
   VarList,
-} from "../../../../common/data.mjs";
+} from "../../../../shared/data.mjs";
 
 import { PromptsModal } from "./promptsModal";
 import {
@@ -212,7 +211,7 @@ import {
 import { SortableItem } from "./sortableItem";
 import { QuickPath, SelectFile } from "../../common/selectFile";
 import Clarity from "@microsoft/clarity";
-import { ChatHistoryItem } from "../../../../common/data.mjs";
+import { ChatHistoryItem } from "../../../../shared/data.mjs";
 import { useForm } from "antd/es/form/Form";
 import { currLang, t } from "../../i18n";
 import { NumberStep } from "../../common/numberStep";
@@ -1861,8 +1860,7 @@ export const Chat = ({
 
                     <div className="my-sender-container">
                       <Editor
-                        onDragFile={async (file) => {
-
+                        onDragFile={async (file: any) => {
                           if (!file) {
                             return;
                           }

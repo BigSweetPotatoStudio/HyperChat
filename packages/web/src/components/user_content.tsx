@@ -55,7 +55,7 @@ import mk from "@vscode/markdown-it-katex";
 import { DownImage } from "../pages/chat/component";
 import { Editor } from "./editor";
 import { t } from "../i18n";
-import { MyMessage } from "../../../common/data.mjs";
+import { MyMessage } from "../../../shared/data.mjs";
 
 export function UserContent({ x, regenerate = undefined, onSubmit }: { x: MyMessage, regenerate?: () => void, onSubmit: (x: any) => void }) {
     const [isEdit, setIsEdit] = useState(false);

@@ -24,7 +24,7 @@ import {
   exportGeneratedCSS as collectCSS,
   isEnabled as isDarkReaderEnabled,
 } from "darkreader";
-import { AppSetting } from "../../common/data.mjs";
+import { AppSetting } from "../../shared/data.mjs";
 
 // 初始化应用设置，自动切换暗色主题
 (async () => {

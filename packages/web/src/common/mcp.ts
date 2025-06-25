@@ -4,8 +4,8 @@ import * as MCPTypes from "@modelcontextprotocol/sdk/types.js";
 import { sleep } from "./sleep";
 
 
-import { TEMP_FILE, MCP_CONFIG, MCP_CONFIG_TYPE } from "../../../common/data.mjs";
-import type { HyperChatCompletionTool, IMCPClient } from "../../../common/data.mjs";
+import { TEMP_FILE, MCP_CONFIG, MCP_CONFIG_TYPE } from "../../../shared/data.mjs";
+import type { HyperChatCompletionTool, IMCPClient } from "../../../shared/data.mjs";
 
 
 let init = false;

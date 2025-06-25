@@ -7,7 +7,7 @@ import {
   MCP_CONFIG_TYPE,
   VarList,
   Data,
-} from "../../../common/data.mjs";
+} from "../../../shared/data.mjs";
 
 import { appDataDir, CONST } from "ts/polyfills/index.mjs";
 

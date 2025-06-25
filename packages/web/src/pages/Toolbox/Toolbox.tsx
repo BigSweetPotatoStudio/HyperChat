@@ -7,7 +7,7 @@ import { Divide } from "lucide-react";
 
 import { experimental_transcribe as transcribe } from 'ai';
 import { createOpenAI } from '@ai-sdk/openai';
-import { GPT_MODELS } from "../../../../common/data.mjs";
+import { GPT_MODELS } from "../../../../shared/data.mjs";
 import GenerateSpeechPanel from "./generateSpeech";
 import { TranscribePanel } from "./Transcribe";
 import GenerateImagePanel from "./generateImage";

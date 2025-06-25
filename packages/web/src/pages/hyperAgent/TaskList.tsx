@@ -59,7 +59,7 @@ import { useForm } from "antd/es/form/Form";
 import { e } from "../../common/service";
 import { t } from "../../i18n";
 import { NewTaskModal } from "./newTaskModal";
-import { Agents, electronData, TaskList } from "../../../../common/data.mjs";
+import { Agents, electronData, TaskList } from "../../../../shared/data.mjs";
 import { v4 } from "uuid";
 import { useLocation, useNavigate } from "react-router-dom";
 import { HeaderContext } from "../../common/context";
