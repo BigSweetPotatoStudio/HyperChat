@@ -1,10 +1,7 @@
 import {
   electronData,
   AppSetting,
-  DataList,
   ENV_CONFIG,
-  MCP_CONFIG,
-  MCP_CONFIG_TYPE,
   VarList,
   Data,
 } from "../../../shared/data.mjs";
@@ -12,32 +9,30 @@ import {
 import { appDataDir, CONST } from "ts/polyfills/index.mjs";
 
 import { zx } from "../es6.mjs";
-import { getMessageService } from "../message_service.mjs";
-import { cat } from "@xenova/transformers";
 const { fs, path } = zx;
 
 Data.prototype.init = async function (options: any = {}) {
   try {
-    this.localStorage = await fs.readJSON(path.join(appDataDir, this.KEY));
+    (this as any).localStorage = await fs.readJSON(path.join(appDataDir, this.KEY));
   } catch (e) {
-    this.localStorage = {};
+    (this as any).localStorage = {};
   }
-  this.data = this.options.formatInit(Object.assign({}, this.data, this.localStorage));
-  return this.data;
+  (this as any).data = this.options?.formatInit?.(Object.assign({}, (this as any).data, (this as any).localStorage)) || {};
+  return (this as any).data;
 }
 
 Data.prototype.initSync = function ({ } = {}) {
   try {
     if (fs.existsSync(path.join(appDataDir, this.KEY))) {
-      this.localStorage = fs.readJsonSync(path.join(appDataDir, this.KEY));
+      (this as any).localStorage = fs.readJsonSync(path.join(appDataDir, this.KEY));
     } else {
-      this.localStorage = {};
+      (this as any).localStorage = {};
     }
   } catch (e) {
-    this.localStorage = {};
+    (this as any).localStorage = {};
   }
-  this.data = this.options.formatInit(Object.assign({}, this.data, this.localStorage));
-  return this.data;
+  (this as any).data = this.options?.formatInit?.(Object.assign({}, (this as any).data, (this as any).localStorage)) || {};
+  return (this as any).data;
 };
 
 Data.prototype.save = async function () {

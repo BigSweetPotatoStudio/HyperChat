@@ -1,35 +1,29 @@
 import { CONST, Logger } from "ts/polyfills/index.mjs";
 import { createClient, shellPathSync, zx } from "./es6.mjs";
-const { fs, os, sleep, retry, path, $ } = zx;
+const { fs, os, path } = zx;
 import { isPortUse } from "./common/checkport.mjs";
 import { getLocalIP, spawnWithOutput } from "./common/util.mjs";
 import { autoLauncher } from "ts/polyfills/index.mjs";
 import {
   Agents,
-  AppSetting,
   ChatHistory,
   ChatHistoryItem,
   electronData,
   MCP_CONFIG_TYPE,
   Task,
-  TaskList,
 } from "../../shared/data.mjs";
 import { appDataDir } from "ts/polyfills/index.mjs";
-import spawn from "cross-spawn";
 import crypto from "crypto";
 import {
   closeMcpClients,
   getMcpClients,
   initMcpClients,
-  MCPClient,
   openMcpClient,
 } from "./mcp/config.mjs";
 import { checkUpdate } from "ts/polyfills/index.mjs";
-import { version } from "os";
 import { webdavClient } from "./common/webdav.mjs";
 import { progressList } from "./common/progress.mjs";
 import {
-  KNOWLEDGE_BASE,
   KNOWLEDGE_Resource,
   KNOWLEDGE_Store,
 } from "../../shared/data.mjs";
@@ -84,25 +78,28 @@ export class CommandFactory {
       onlySave: false,
     }
   ) {
-    let res = await openMcpClient(clientName, clientConfig, options);
+    await openMcpClient(clientName, clientConfig, options);
     return {
       success: true,
     };
   }
   // 获取所有 MCP 客户端
   async getMcpClients() {
-    let res = await getMcpClients();
-    return res.map((x) => x.toJSON());
+    const clients = await getMcpClients();
+    return clients.map((x) => x.toJSON());
   }
   // 关闭 MCP 客户端
   async closeMcpClients(
-    clientName: string = undefined,
+    clientName: string,
     {
       isdelete,
       isdisable
-    }
+    }: {
+      isdelete?: boolean;
+      isdisable?: boolean;
+    } = {}
   ) {
-    let res = await closeMcpClients(clientName, {
+    await closeMcpClients(clientName, {
       isdelete,
       isdisable
     });
@@ -158,14 +155,15 @@ export class CommandFactory {
     } = { type: "openFile" }
   ) {
     opts.type = opts.type || "openFile";
-    const { BrowserWindow, dialog, shell, clipboard } = await import(
-      "electron"
-    );
+    const { dialog } = await import("electron");
     try {
-      const result = await dialog.showOpenDialog({
+      const dialogOptions: any = {
         properties: [opts.type],
-        filters: opts.filters,
-      });
+      };
+      if (opts.filters) {
+        dialogOptions.filters = opts.filters;
+      }
+      const result = await dialog.showOpenDialog(dialogOptions);
 
       if (!result.canceled) {
         const filePath = result.filePaths[0];
@@ -182,16 +180,12 @@ export class CommandFactory {
   }
   // 设置剪贴板内容
   async setClipboardText(text: string) {
-    const { BrowserWindow, dialog, shell, clipboard } = await import(
-      "electron"
-    );
+    const { clipboard } = await import("electron");
     clipboard.writeText(text);
   }
   // 获取剪贴板内容
   async getClipboardText(): Promise<string> {
-    const { BrowserWindow, dialog, shell, clipboard } = await import(
-      "electron"
-    );
+    const { clipboard } = await import("electron");
     return clipboard.readText();
   }
   // 自动启动相关
@@ -209,24 +203,21 @@ export class CommandFactory {
     return appDataDir;
   }
   // 读取目录
-  async readDir(p, root = appDataDir) {
+  async readDir(p: string, root: string = appDataDir): Promise<string[]> {
     p = path.join(root, p);
     await fs.ensureDir(p);
     return await fs.readdir(p);
   }
   // 删除文件
-  async removeFile(p, root = appDataDir) {
+  async removeFile(p: string, root: string = appDataDir): Promise<void> {
     p = path.join(root, p);
-
     return await fs.remove(p);
   }
-  async writeFile(p, text, root = appDataDir) {
+  async writeFile(p: string, text: string, root: string = appDataDir): Promise<void> {
     let localPath = path.join(root, p);
-    let res = await fs.writeFile(localPath, text);
-
-    return res;
+    await fs.writeFile(localPath, text);
   }
-  async readFile(p, root = appDataDir) {
+  async readFile(p: string, root: string = appDataDir): Promise<string> {
     p = path.join(root, p);
     try {
       let r = await fs.readFile(p, "utf-8");
@@ -235,33 +226,32 @@ export class CommandFactory {
       throw e;
     }
   }
-  async readJSON(p, root = appDataDir) {
+  async readJSON(p: string, root: string = appDataDir): Promise<any> {
     p = path.join(root, p);
     try {
-      let r = await fs.readJSON(p, "utf-8");
+      let r = await fs.readJSON(p);
       return r;
     } catch (e) {
       throw e;
     }
   }
-  async writeJSON(p, obj, root = appDataDir) {
+  async writeJSON(p: string, obj: any, root: string = appDataDir): Promise<void> {
     p = path.join(root, p);
     try {
-      let r = await fs.writeJSON(p, obj, {
+      await fs.writeJSON(p, obj, {
         spaces: 2,
         encoding: "utf-8",
       });
-      return r;
     } catch (e) {
       throw e;
     }
   }
-  async exists(p, root = appDataDir) {
+  async exists(p: string, root: string = appDataDir): Promise<boolean> {
     p = path.join(root, p);
     return await fs.exists(p);
   }
 
-  async pathJoin(p, root = appDataDir) {
+  async pathJoin(p: string, root: string = appDataDir): Promise<string> {
     if (root) {
       p = path.join(root, p);
     }
@@ -275,29 +265,22 @@ export class CommandFactory {
     return isPortUse(port);
   }
 
-  async openExplorer(p) {
-    const { BrowserWindow, dialog, shell, clipboard } = await import(
-      "electron"
-    );
+  async openExplorer(p: string) {
+    const { shell } = await import("electron");
     return shell.showItemInFolder(p);
   }
 
   async openDevTools() {
-    const { BrowserWindow, dialog, shell, clipboard } = await import(
-      "electron"
-    );
+    const { BrowserWindow } = await import("electron");
     const win = BrowserWindow.getFocusedWindow();
     if (win) {
       win.webContents.openDevTools();
     }
   }
-  async hyperToolOpenBrowser(url: string, { userAgent, } = {
-    userAgent: "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36",
-  }): Promise<void> {
-    if (getConfig().Web_Tools_Platform === "electron") {
-      const { BrowserWindow, dialog, shell, clipboard } = await import(
-        "electron"
-      );
+  async hyperToolOpenBrowser(url: string, { userAgent }: { userAgent?: string } = {}): Promise<void> {
+    const config = getConfig();
+    if (config?.Web_Tools_Platform === "electron") {
+      const { BrowserWindow } = await import("electron");
       let win = new BrowserWindow({
         width: 1280,
         height: 720,
@@ -307,19 +290,16 @@ export class CommandFactory {
       });
 
       await win.loadURL(url, {
-        userAgent:
-          userAgent
+        userAgent: userAgent || "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36"
       });
-    } else if (getConfig().Web_Tools_Platform === "chrome") {
+    } else if (config?.Web_Tools_Platform === "chrome") {
       await createBrowser(true, url)
     } else {
       throw new Error("HyperTool Settings Web_Tools_Platform is none");
     }
   }
-  async openBrowser(url: string, userAgent?): Promise<void> {
-    const { BrowserWindow, dialog, shell, clipboard } = await import(
-      "electron"
-    );
+  async openBrowser(url: string, userAgent?: string): Promise<void> {
+    const { BrowserWindow } = await import("electron");
     let win = new BrowserWindow({
       width: 1280,
       height: 720,
@@ -357,7 +337,7 @@ export class CommandFactory {
   async quitAndInstall() {
     checkUpdate.quitAndInstall();
   }
-  async testWebDav(values) {
+  async testWebDav(values: { url: string; username: string; password: string }) {
     let client = createClient(values.url, {
       username: values.username,
       password: values.password,
@@ -392,11 +372,11 @@ export class CommandFactory {
   async getProgressList() {
     return progressList.getData();
   }
-  async call_agent_res(uid, data, error) {
+  async call_agent_res(uid: string, data: any, error: any) {
     EVENT.fire("call_agent_res_" + uid, { uid, data, error });
   }
   async checkTask(task?: Task) {
-    if (cron.validate(task.cron)) {
+    if (task && cron.validate(task.cron)) {
     } else {
       throw new Error("cron Error");
     }
@@ -412,18 +392,21 @@ export class CommandFactory {
   }
   async callAgent(task: { command: string; agentName: string }) {
     let agent = Agents.initSync().data.find((x) => x.label === task.agentName);
+    if (!agent) {
+      throw new Error(`Agent not found: ${task.agentName}`);
+    }
     return callAgent({
       agentKey: agent.key,
       message: task.command,
       type: "call",
     });
   }
-  async saveTempFile({ txt, ext }) {
+  async saveTempFile({ txt, ext }: { txt: string; ext: string }): Promise<string> {
     // let filePath = path.join(os.tmpdir(), "temp.txt");
     // md5(txt) + ext;
     const hash = crypto
       .createHash("sha256")
-      .update(txt as any)
+      .update(txt)
       .digest("hex");
     let filename = hash + "." + ext;
 
@@ -437,7 +420,7 @@ export class CommandFactory {
     item.version = 2;
     item.dateTime = Date.now();
     if (item.isTask) {
-      item.lastMessage = item.lastMessage || item.messages[item.messages.length - 1];
+      item.lastMessage = item.lastMessage || (item.messages && item.messages.length > 0 ? item.messages[item.messages.length - 1] : undefined);
     }
     let chatHistory = ChatHistory.initSync().data;
     if (item.messages && item.messages.length > 0) {
@@ -505,10 +488,10 @@ export class CommandFactory {
   async GetTerminals() {
     return await GetTerminals();
   }
-  async CloseTerminal(TerminalID) {
+  async CloseTerminal(TerminalID: string) {
     return await CloseTerminal(TerminalID);
   }
-  async ActiveAITerminal(TerminalID) {
+  async ActiveAITerminal(TerminalID: string) {
     return await ActiveAITerminal(TerminalID);
   }
   async clearChatHistory(day: number) {

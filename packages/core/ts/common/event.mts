@@ -39,7 +39,7 @@ export function createEvent<T extends string>(name: string) {
         onPromise(name: T) {
 
             return new Promise((resolve, reject) => {
-                event.on(name, (data) => {
+                event.on(name, (data: any) => {
                     resolve(data)
                 })
             })

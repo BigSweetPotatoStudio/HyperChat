@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { MCP_GateWay } from "../../shared/data.mjs";
-import { isInitializeRequest, SSEServerTransport, StreamableHTTPServerTransport } from "ts/es6.mjs";
+import { SSEServerTransport, StreamableHTTPServerTransport } from "ts/es6.mjs";
 import { createServer } from "./mcp/servers/gateway/index.mjs";
 const KEEP_ALIVE_INTERVAL_MS = 25000; // Send keep-alive every 25 seconds
 
@@ -33,7 +33,7 @@ function clearTransports() {
 }
 
 
-function register(route, name, description, allowMCPs, prefix) {
+function register(route: Router, name: string, description: string, allowMCPs: string[], prefix: string) {
     console.log(`Registering MCP Gateway: ${name}`, allowMCPs);
 
     let type;

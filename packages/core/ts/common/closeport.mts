@@ -26,7 +26,7 @@ export function closePort(port: number) {
         console.log(pids)
         // 终止进程
         pids.forEach(pid => {
-            exec(`taskkill /PID ${pid} /F`, (err, stdout, stderr) => {
+            exec(`taskkill /PID ${pid} /F`, (err, _stdout, stderr) => {
                 if (err) {
                     console.error(`终止进程失败: ${err.message}`);
                     return;
