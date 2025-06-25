@@ -17,11 +17,11 @@ import {
   Switch,
   Radio,
 } from 'antd';
-import { 
-  PlusOutlined, 
-  CheckOutlined, 
-  EditOutlined, 
-  DeleteOutlined, 
+import {
+  PlusOutlined,
+  CheckOutlined,
+  EditOutlined,
+  DeleteOutlined,
   SettingOutlined,
   ArrowLeftOutlined
 } from '@ant-design/icons';
@@ -61,7 +61,7 @@ const ProviderIcon: React.FC<{ iconType: string; className?: string }> = ({ icon
   };
 
   const icon = iconMap[iconType] || iconMap.custom;
-  
+
   return (
     <div className={`${className} rounded-full ${icon.bg} flex items-center justify-center ${icon.text} text-xs`}>
       {icon.content}
@@ -73,18 +73,18 @@ export function ProviderSettings() {
   const [apiKeyForm] = Form.useForm();
   const [modelForm] = Form.useForm();
   const [providerForm] = Form.useForm();
-  
+
   const [providers, setProviders] = useState<ProviderConfig[]>([]);
   const [selectedProvider, setSelectedProvider] = useState<ProviderConfig | null>(null);
   const [view, setView] = useState<'providers' | 'models'>('providers');
-  
+
   // Modal states
   const [isApiKeyModalOpen, setIsApiKeyModalOpen] = useState(false);
   const [isModelModalOpen, setIsModelModalOpen] = useState(false);
   const [isProviderModalOpen, setIsProviderModalOpen] = useState(false);
   const [editingModel, setEditingModel] = useState<GPT_MODELS_TYPE | null>(null);
   const [editingProvider, setEditingProvider] = useState<ProviderConfig | null>(null);
-  
+
   const [loading, setLoading] = useState(false);
 
   // 获取提供商的模型数量
@@ -107,7 +107,7 @@ export function ProviderSettings() {
   const refresh = async () => {
     await GPT_MODELS.init();
     await PROVIDER_CONFIGS.init();
-    
+
     // 获取所有可用的提供商
     const allProviders = ProviderManager.getAllProviders();
     setProviders(allProviders);
@@ -220,10 +220,10 @@ export function ProviderSettings() {
   const handleAddApiKey = (provider: ProviderConfig) => {
     setSelectedProvider(provider);
     apiKeyForm.resetFields();
-    
+
     // 获取已保存的 API Key 信息
     const apiKeyInfo = ProviderManager.getProviderApiKey(provider.key);
-    
+
     apiKeyForm.setFieldsValue({
       provider: provider.value,
       baseURL: apiKeyInfo?.baseURL || provider.baseURL,
@@ -332,7 +332,7 @@ export function ProviderSettings() {
 
       await GPT_MODELS.save();
       await refresh();
-      
+
       setIsModelModalOpen(false);
       message.success(editingModel ? t`Model updated successfully!` : t`Model added successfully!`);
     } catch (error) {
@@ -447,6 +447,7 @@ export function ProviderSettings() {
             <Card
               className="h-full"
               hoverable
+              size='small'
               bodyStyle={{ padding: '16px' }}
               extra={
                 <Space>
@@ -504,16 +505,19 @@ export function ProviderSettings() {
                 <Text type="secondary" className="text-sm mb-3">
                   {provider.description}
                 </Text>
-                {hasProviderApiKey(provider) && (
-                  <Tag color="green" className="mb-2">
-                    {t`Active`}
-                  </Tag>
-                )}
-                {provider.isCustom && (
-                  <Tag color="orange" className="mb-2">
-                    {t`Custom`}
-                  </Tag>
-                )}
+                <div className='flex flex-wrap justify-center gap-2'>
+                  {hasProviderApiKey(provider) && (
+                    <Tag color="green" className="mb-2">
+                      {t`Active`}
+                    </Tag>
+                  )}
+                  {provider.isCustom && (
+                    <Tag color="orange" className="mb-2">
+                      {t`Custom`}
+                    </Tag>
+                  )}
+                </div>
+
               </div>
             </Card>
           </Col>
@@ -625,7 +629,6 @@ export function ProviderSettings() {
               label={t`API Key`}
               rules={[
                 { required: true, message: t`Please enter API Key` },
-                { min: 10, message: t`API Key must be at least 10 characters` }
               ]}
             >
               <Input.Password
