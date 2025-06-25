@@ -4,7 +4,6 @@ import { createClient, shellPathSync, zx } from "./es6.mjs";
 const { fs, os, path } = zx;
 import { isPortUse } from "./common/checkport.mjs";
 import { getLocalIP, spawnWithOutput } from "./common/util.mjs";
-import { autoLauncher } from "ts/polyfills/index.mjs";
 import {
   Agents,
   ChatHistory,
@@ -175,16 +174,6 @@ export class CommandFactory {
     const newFileName = `${fileName}.processed${extName}`;
     // 返回新的文件路径
     return path.join(dirName, newFileName);
-  }
-  // 自动启动相关
-  async isAutoLauncher(): Promise<boolean> {
-    return autoLauncher.isEnabled();
-  }
-  async enableAutoLauncher(): Promise<void> {
-    return autoLauncher.enable();
-  }
-  async disableAutoLauncher(): Promise<void> {
-    return autoLauncher.disable();
   }
   // 获取应用数据目录
   async getAppDataDir(): Promise<string> {

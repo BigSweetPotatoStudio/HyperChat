@@ -1,6 +1,6 @@
 
 import { Logger } from "./log.mjs";
-
+import p from "../../package.json";
 export { Logger };
 
 export const Context = {
@@ -24,53 +24,55 @@ const { fs, argv } = zx;
 
 export const dirName = "HyperChat";
 let appDataDir = path.join(os.homedir(), "Documents", dirName);
-if (process.env.use_electron == "1") {
-  try {
-    appDataDir = argv.appDataDir || path.join(os.homedir(), "Documents", dirName);
-  } catch (e) {
-    Logger.error("appDataDir set failed", e);
+
+try {
+  if (argv.appDataDir && typeof argv.appDataDir === "string") {
+    // 如果命令行参数中指定了 appDataDir，则使用该路径
+    appDataDir = argv.appDataDir
   }
+} catch (e) {
+  Logger.error("appDataDir set failed", e);
 }
+
 
 fs.ensureDirSync(appDataDir);
 export { appDataDir };
 
-Context.CONST = {
+
+export const CONST = {
   userDataPath: appDataDir,
-  getVersion: "",
+  getVersion: p.version,
   appDataDir: appDataDir,
   dirName: dirName,
 };
 
-export const CONST = Context.CONST as typeof Context.CONST;
+// export class AutoLauncher {
+//   public autoLauncher: any;
 
-export class AutoLauncher {
-  public autoLauncher: any;
+//   constructor() { }
+//   async enable() {
+//     throw new Error("Method not implemented.");
+//   }
 
-  constructor() { }
-  async enable() {
-    throw new Error("Method not implemented.");
-  }
+//   async disable() {
+//     throw new Error("Method not implemented.");
+//   }
 
-  async disable() {
-    throw new Error("Method not implemented.");
-  }
+//   async isEnabled() {
+//     return Promise.resolve(false);
+//   }
+// }
 
-  async isEnabled() {
-    return Promise.resolve(false);
-  }
-}
+// export const autoLauncher = Context.autoLauncher as AutoLauncher;
 
-export const autoLauncher = Context.autoLauncher as AutoLauncher;
+// ////////////////////////////////////////
 
-////////////////////////////////////////
-
-export class CheckUpdate {
-  constructor() { }
-  checkUpdate() { }
-  // 退出并安装
-  quitAndInstall() { }
-  download() { }
-  updaterEvent() { }
-}
-export let checkUpdate = Context.checkUpdate as CheckUpdate;
+// export class CheckUpdate {
+//   constructor() { }
+//   checkUpdate() { }
+//   // 退出并安装
+//   quitAndInstall() { }
+//   download() { }
+//   updaterEvent() { }
+// }
+// export let checkUpdate = Context.checkUpdate as CheckUpdate;

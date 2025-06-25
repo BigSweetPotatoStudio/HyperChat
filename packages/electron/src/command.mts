@@ -2,6 +2,7 @@ import { Logger } from "@hyperchat/core/ts/polyfills/log.mjs";
 import { createBrowser } from "@hyperchat/core/ts/mcp/servers/hyper_tools/web2.mjs";
 import { getConfig } from "@hyperchat/core/ts/mcp/servers/hyper_tools/lib.mjs";
 import { checkUpdate } from "./polyfills/electron_autoupdate";
+import { autoLauncher } from "./polyfills/electron";
 
 /**
  * ElectronCommandFactory 类封装了 Electron 特有的操作，包括文件选择、剪贴板、浏览器窗口等
@@ -18,7 +19,16 @@ export class ElectronCommandFactory {
   async quitAndInstall() {
     checkUpdate.quitAndInstall();
   }
-
+  // 自动启动相关
+  async isAutoLauncher(): Promise<boolean> {
+    return autoLauncher.isEnabled();
+  }
+  async enableAutoLauncher(): Promise<void> {
+    return autoLauncher.enable();
+  }
+  async disableAutoLauncher(): Promise<void> {
+    return autoLauncher.disable();
+  }
   // 文件选择对话框
   async selectFile(
     opts: {
