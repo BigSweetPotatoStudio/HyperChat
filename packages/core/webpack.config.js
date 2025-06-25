@@ -19,8 +19,7 @@ module.exports = (env, argv) => {
   return {
     target: "node",
     entry: {
-      main: "./ts/main",
-      preload: "./ts/preload",
+      main_no_electron: "./ts/main_no_electron",
     },
     // publicPath: '/',
     // experiments: {
@@ -38,7 +37,7 @@ module.exports = (env, argv) => {
         NODE_ENV: "production",
         myEnv: process.env.myEnv || "prod",
         runtime: "node",
-        // no_electron: "0",
+        use_electron: "0",
       }),
     ],
     module: {

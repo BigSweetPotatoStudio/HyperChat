@@ -1,0 +1,31 @@
+/**
+ * Electron 包的主入口
+ * 创建支持 electron 的 MCP 服务器
+ */
+
+import { McpServer } from "@hyperchat/core/es6";
+import { configSchema, NAME } from "@hyperchat/core/mcp/servers/hyper_tools/lib";
+import { CONST } from "@hyperchat/core/polyfills/index.mjs";
+import { registerElectronTool } from "./mcp/servers/hyper_tools/electron";
+
+export async function createElectronMcpServer() {
+  const server = new McpServer({
+    name: NAME,
+    version: CONST.getVersion,
+  });
+
+  registerElectronTool(server);
+  return server;
+}
+
+export const ElectronHyperTools = {
+  createServer: createElectronMcpServer,
+  name: NAME,
+  url: ``,
+  configSchema: configSchema,
+  type: "streamableHttp",
+};
+
+// Re-export core functionality
+export * from "@hyperchat/core/mcp/servers/hyper_tools/lib";
+export * from "./polyfills/index";

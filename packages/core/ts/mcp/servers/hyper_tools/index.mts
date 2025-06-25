@@ -10,15 +10,9 @@ async function createServer() {
     version: CONST.getVersion,
   });
 
-  if (process.env.use_electron) {
-
-    let { registerElectronTool } = await import("./electron.mjs");
-    registerElectronTool(server);
-
-  } else {
-    let { registerNoElectronTool } = await import("./no_electron.mjs");
-    registerNoElectronTool(server);
-  }
+  // Core only supports no_electron mode
+  let { registerNoElectronTool } = await import("./no_electron.mjs");
+  registerNoElectronTool(server);
   return server;
 }
 

@@ -3,7 +3,7 @@ import { autoUpdater } from "electron-updater";
 
 //* 引入工具类
 
-import { Clone, Context, Logger, CheckUpdate as ICheckUpdate } from "ts/polyfills/index.mjs";
+import { Clone, Context, Logger, CheckUpdate as ICheckUpdate } from "./index";
 
 // autoUpdater.logger = Logger;
 
@@ -79,7 +79,7 @@ class CheckUpdate extends ICheckUpdate {
     });
   }
 }
-import { getMessageService } from "ts/message_service.mjs";
+import { getMessageService } from "@hyperchat/core/message_service";
 async function sendToRender(type: any, data: any) {
   getMessageService().sendAllToRenderer({
     type: type,

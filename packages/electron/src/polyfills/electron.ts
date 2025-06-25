@@ -5,7 +5,7 @@ import {
   LoggerPolyfill,
   AutoLauncher as IAutoLaunch,
   Clone,
-} from "./polyfills.mjs";
+} from "@hyperchat/core/polyfills/polyfills.mjs";
 
 import { app } from "electron";
 
@@ -65,5 +65,3 @@ export class AutoLauncher extends IAutoLaunch {
 Clone(Context.autoLauncher, new AutoLauncher());
 
 ///////////////////////////
-
-

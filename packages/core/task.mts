@@ -20,7 +20,7 @@ if (argv.watch) {
 }
 
 if (argv.devnode) {
-  await $`npx cross-env NODE_ENV=production myEnv=dev tsx ts/main_no_electron.mts`;
+  await $`npx cross-env NODE_ENV=production myEnv=dev tsx ts/main.mts`;
 }
 
 if (argv.testprod) {

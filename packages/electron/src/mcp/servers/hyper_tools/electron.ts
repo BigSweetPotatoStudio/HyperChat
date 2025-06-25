@@ -1,8 +1,8 @@
-import { configSchema, getConfig } from "./lib.mjs";
+import { configSchema, getConfig } from "@hyperchat/core/mcp/servers/hyper_tools/lib";
 import { z } from "zod";
 
-import * as web1 from "./web1.mjs";
-import * as web2 from "./web2.mjs";
+import * as web1 from "@hyperchat/core/mcp/servers/hyper_tools/web1";
+import * as web2 from "@hyperchat/core/mcp/servers/hyper_tools/web2";
 // import { MCP_CONFIG } from "../../../../../common/data.mjs";
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import dayjs from "dayjs";
