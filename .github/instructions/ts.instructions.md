@@ -13,5 +13,4 @@ HyperChat 是一个多平台的 AI 聊天应用，该项目拥有完善的 MCP�
 * 支持web前端，通过浏览器访问，支持h5。
 * 支持electron，相当于自带了浏览器。
 * 支持命令行前端，类似Claude Code。只能聊天，配置通过web前端完成。
-* 支持vscode，通过webview访问。
-
+* 支持vscode插件，通过webview访问构建。
