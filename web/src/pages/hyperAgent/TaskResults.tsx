@@ -63,7 +63,7 @@ import {
   TaskList,
   ChatHistory,
   ChatHistoryItem,
-} from "../../../../common/data";
+} from "../../../../common/data.mjs";
 import { v4 } from "uuid";
 import { useLocation, useNavigate } from "react-router-dom";
 import { Chat } from "../chat";

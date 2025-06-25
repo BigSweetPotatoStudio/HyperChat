@@ -13,11 +13,11 @@ export const DataList: Data<any>[] = [];
 export class Data<T> {
   private localStorage: any = {};
   // 尽量使用异步初始化数据
-  async init({ } = {}): Promise<T> {
+  async init(): Promise<T> {
     throw new Error("Method not implemented.");
   }
   // 不推荐用的同步初始化方法
-  initSync({ } = {}): T {
+  initSync(): T {
     throw new Error("Method not implemented.");
   }
   // 尽量使用异步保存数据
@@ -293,21 +293,18 @@ export type IMCPClient = {
 };
 
 class MCP_CONFIG_DATA<T> extends Data<T> {
-  save(sync = true): Promise<void> {
+  async save(sync = true): Promise<void> {
     if (sync) {
       let result: any = this.get();
       MCP_CONFIG_SYNC.set(result);
-      MCP_CONFIG_SYNC.save();
+      await MCP_CONFIG_SYNC.save();
     }
     return super.save();
   }
-  saveSync(sync = true) {
-    if (sync) {
-      let result: any = this.get();
-      MCP_CONFIG_SYNC.set(result);
-      MCP_CONFIG_SYNC.saveSync();
-    }
-    return super.saveSync();
+  // 不推荐用的同步保存方法，已改为异步实现
+  async saveSync(sync = true) {
+    // 兼容旧接口，内部直接调用异步 save
+    await this.save(sync);
   }
 }
 

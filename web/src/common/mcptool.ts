@@ -1,5 +1,5 @@
 
-import { IMCPClient } from "../../../common/data";
+import { IMCPClient } from "../../../common/data.mjs";
 import type { InitedClient } from "./mcp";
 
 export function getToolsOnNode(

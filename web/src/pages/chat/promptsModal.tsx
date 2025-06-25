@@ -31,7 +31,7 @@ import { v4 as uuid } from "uuid";
 
 import { CloseOutlined, FormOutlined, SearchOutlined, SmileOutlined } from "@ant-design/icons";
 import { InitedClient } from "../../common/mcp";
-import { GPT_MODELS } from "../../../../common/data";
+import { GPT_MODELS } from "../../../../common/data.mjs";
 import { t } from "../../i18n";
 import { NumberStep } from "../../common/numberStep";
 import EmojiPicker from 'emoji-picker-react';

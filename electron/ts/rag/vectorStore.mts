@@ -7,7 +7,7 @@ import {
   KNOWLEDGE_BASE,
   KNOWLEDGE_Resource,
   KNOWLEDGE_Store,
-} from "../../../common/data";
+} from "../../../common/data.mjs";
 import { v4 } from "uuid";
 import { zx } from "../es6.mjs";
 import { MyRag } from "./lib.mjs";
@@ -98,7 +98,7 @@ class Store {
       throw e;
     }
 
-    let find = KNOWLEDGE_BASE.initSync().dbList.find((x) => (x.key = storeKey));
+    let find = (await KNOWLEDGE_BASE.init()).dbList.find((x) => (x.key = storeKey));
     if (find) {
       for (let r of find.resources) {
         try {
@@ -117,7 +117,7 @@ class Store {
     return await ragapp.search(query, k);
   }
   async searchByName(store_name: string, query: string, k: number = 5) {
-    let db = KNOWLEDGE_BASE.initSync().dbList.find((x) => x.name == store_name);
+    let db = (await KNOWLEDGE_BASE.init()).dbList.find((x) => x.name == store_name);
     if (!db) {
       throw new Error("Knowledge base not found");
     }
@@ -131,7 +131,7 @@ class Store {
       text: string;
     }
   ) {
-    let db = KNOWLEDGE_BASE.initSync().dbList.find((x) => x.name == store_name);
+    let db = (await KNOWLEDGE_BASE.init()).dbList.find((x) => x.name == store_name);
     if (!db) {
       throw new Error("Knowledge base not found");
     }
@@ -141,7 +141,7 @@ class Store {
       db.resources = [];
     }
     db.resources.push(res);
-    await KNOWLEDGE_BASE.saveSync();
+    await KNOWLEDGE_BASE.save();
     return res;
   }
 }

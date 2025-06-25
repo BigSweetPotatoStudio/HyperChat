@@ -13,14 +13,17 @@ import { Logger } from "ts/polyfills/index.mjs";
 import { get } from "http";
 import path from "path";
 
-import { electronData } from "../../common/data";
+import { electronData } from "../../common/data.mjs";
 import p from "../package.json" assert { type: "json" };
 import { Config } from "./const.mjs";
 
 let title = `${p.productName}-${app.getVersion()} by Dadigua`;
 Logger.info("title   : ", title);
 
-electronData.initSync();
+(async () => {
+  await electronData.init();
+})();
+
 export const createWindow = () => {
   const win = new BrowserWindow({
     width: electronData.get().windowSize.width || 1600,
@@ -108,7 +111,7 @@ export const createWindow = () => {
     }
   });
   // 触发关闭时触发
-  win.on("close", (event) => {
+  win.on("close", async (event) => {
     // app.quit();
     if (false && process.env.myEnv == "dev") {
       win.destroy();
@@ -126,7 +129,7 @@ export const createWindow = () => {
       // }
 
       // 检查是否已有记住的选择
-      const savedCloseAction = electronData.initSync().closeAction;
+      const savedCloseAction = (await electronData.init()).closeAction;
 
       if (savedCloseAction) {
         // 如果用户之前已经选择并记住了选择
@@ -156,14 +159,14 @@ export const createWindow = () => {
           checkboxChecked: false
         };
 
-        dialog.showMessageBox(win, options).then((response) => {
+        dialog.showMessageBox(win, options).then(async (response) => {
           const rememberChoice = response.checkboxChecked;
 
           if (response.response === 0) { // 最小化到托盘
             // 如果选择记住
             if (rememberChoice) {
               electronData.get().closeAction = 'minimize';
-              electronData.saveSync();
+              await electronData.save();
             }
 
             win.hide();
@@ -176,7 +179,7 @@ export const createWindow = () => {
             // 如果选择记住
             if (rememberChoice) {
               electronData.get().closeAction = 'exit';
-              electronData.saveSync();
+              await electronData.save();
             }
 
             win.destroy();

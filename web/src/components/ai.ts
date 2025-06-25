@@ -1,7 +1,7 @@
 import { z } from "zod";
-import { GPT_MODELS, GPT_MODELS_TYPE } from "../../../common/data";
+import { GPT_MODELS, GPT_MODELS_TYPE } from "../../../common/data.mjs";
 import { EVENT } from "../common/event";
-import { MyMessage, OpenAiChannel } from "../common/openai";
+import { MyMessage, OpenAiChannel } from "../common/openai.js";
 
 import { zodResponseFormat, zodTextFormat } from 'openai/helpers/zod';
 

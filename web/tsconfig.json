@@ -35,7 +35,7 @@
     "outDir": "./dist"
   },
   "files": [
-    "../common/data.ts"
+    "../common/data.mts"
   ],
   "include": [
     "src",

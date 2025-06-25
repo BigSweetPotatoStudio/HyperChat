@@ -26,7 +26,7 @@ import {
   electronData,
   MCP_CONFIG,
   MCP_CONFIG_TYPE,
-} from "../../../../common/data";
+} from "../../../../common/data.mjs";
 import { EVENT } from "../../common/event";
 import { Code } from "../../common/code";
 // import * as DATA from "../../../public/mcp_data.js";

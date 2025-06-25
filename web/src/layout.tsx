@@ -83,10 +83,9 @@ import {
   IMCPClient,
   KNOWLEDGE_BASE,
   MCP_CONFIG,
-} from "../../common/data";
+} from "../../common/data.mjs";
 import { InitedClient, initMcpClients, setClients } from "./common/mcp";
 import { EVENT } from "./common/event";
-import { OpenAiChannel } from "./common/openai";
 import { DndTable } from "./common/dndTable";
 import { sleep } from "./common/sleep";
 import { InputPlus } from "./common/input_plus";
@@ -117,7 +116,7 @@ setDarkReaderFetchMethod((url) => {
 msg_receive("message-from-main", (msg) => {
   if (msg.type == "TaskResult") {
     // setTimeout(() => {
-    //   ChatHistory.init({ force: true });
+    //   ChatHistory.init();
     // }, 300);
     notification.open({
       message: (

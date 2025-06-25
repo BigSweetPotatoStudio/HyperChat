@@ -1,4 +1,4 @@
-import { Data } from './data';
+import { Data } from './data.mjs';
 import { v4 } from 'uuid';
 
 // 提供商配置接口

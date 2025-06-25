@@ -115,7 +115,7 @@
 //     let storeKey = store.key;
 //     const storeDirectory = path.join(basedirectory, storeKey);
 //     fs.removeSync(storeDirectory);
-//     let find = KNOWLEDGE_BASE.initSync({ force: true }).dbList.find(
+//     let find = KNOWLEDGE_BASE.initSync().dbList.find(
 //       (x) => (x.key = storeKey)
 //     );
 //     if (find) {
@@ -159,7 +159,7 @@
 //     return res;
 //   }
 //   async searchByName(store_name: string, query: string, k: number = 5) {
-//     let db = KNOWLEDGE_BASE.initSync({ force: true }).dbList.find(
+//     let db = KNOWLEDGE_BASE.initSync().dbList.find(
 //       (x) => x.name == store_name
 //     );
 //     if (!db) {
@@ -175,7 +175,7 @@
 //       markdown: string;
 //     }
 //   ) {
-//     let db = KNOWLEDGE_BASE.initSync({ force: true }).dbList.find(
+//     let db = KNOWLEDGE_BASE.initSync().dbList.find(
 //       (x) => x.name == store_name
 //     );
 //     if (!db) {

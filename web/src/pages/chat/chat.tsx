@@ -181,7 +181,7 @@ import {
   EllipsisOutlined,
 } from "@ant-design/icons";
 import type { ConfigProviderProps, GetProp } from "antd";
-import { MyMessage, OpenAiChannel } from "../../common/openai";
+import { MyMessage, OpenAiChannel } from "../../common/openai.js";
 import {
   ChatHistory,
   GPT_MODELS,
@@ -192,7 +192,7 @@ import {
   HyperChatCompletionTool,
   Tool_Call,
   VarList,
-} from "../../../../common/data";
+} from "../../../../common/data.mjs";
 
 import { PromptsModal } from "./promptsModal";
 import {
@@ -212,7 +212,7 @@ import {
 import { SortableItem } from "./sortableItem";
 import { QuickPath, SelectFile } from "../../common/selectFile";
 import Clarity from "@microsoft/clarity";
-import { ChatHistoryItem } from "../../../../common/data";
+import { ChatHistoryItem } from "../../../../common/data.mjs";
 import { useForm } from "antd/es/form/Form";
 import { currLang, t } from "../../i18n";
 import { NumberStep } from "../../common/numberStep";

@@ -7,7 +7,7 @@ import React, {
 } from "react";
 import { Space, Button, Table, Popover, Popconfirm, Form, Modal, Input, TreeSelect, message, FormInstance } from "antd"; // 添加了Form、Modal、Input、TreeSelect等导入
 import { t } from "@/src/i18n";
-import { electronData, MCP_GateWay } from "../../../../common/data";
+import { electronData, MCP_GateWay } from "../../../../common/data.mjs";
 import { HeaderContext } from "../../common/context";
 import { v4 as uuid } from "uuid";
 import { call } from "@/src/common/call";

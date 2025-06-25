@@ -2,7 +2,7 @@ import { fs, McpServer, SSEServerTransport } from "ts/es6.mjs";
 
 import { appDataDir, CONST } from "ts/polyfills/polyfills.mjs";
 import { z } from "zod";
-import { MCP_CONFIG } from "../../../../../common/data";
+import { MCP_CONFIG } from "../../../../../common/data.mjs";
 import zodToJsonSchema, { zodPatterns } from "zod-to-json-schema";
 import path from "path";
 
@@ -11,11 +11,11 @@ export const NAME = "hyper_tools";
 
 
 let e = ["chrome", "none"]
-if (process.env.no_electron != "1") {
+if (process.env.use_electron == "1") {
   e = ["electron", "chrome", "none"]
 }
 let d = "none"
-if (process.env.no_electron != "1") {
+if (process.env.use_electron == "1") {
   d = "electron"
 }
 

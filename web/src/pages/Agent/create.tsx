@@ -2,7 +2,7 @@ import React, { useContext, useEffect, useState } from "react";
 import { Editor } from "../../components/editor";
 import { DndContext, PointerSensor, useSensor } from "@dnd-kit/core";
 import { SortableContext } from "@dnd-kit/sortable";
-import { AgentData, Agents, GPT_MODELS } from "../../../../common/data";
+import { AgentData, Agents, GPT_MODELS } from "../../../../common/data.mjs";
 import { SortableItem } from "../chat/sortableItem";
 import { Button, Card, Checkbox, Collapse, Divider, Form, Input, Popover, Radio, Select, Tabs, Tag, Tooltip, TreeSelect } from "antd";
 import { DeleteOutlined, EditOutlined, FunctionOutlined, SettingFilled, SmileOutlined, SwapOutlined } from "@ant-design/icons";

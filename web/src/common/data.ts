@@ -9,7 +9,7 @@ import {
   Data,
   MCP_CONFIG_TYPE,
   DataList,
-} from "../../../common/data.js";
+} from "../../../common/data.mjs";
 import { PROVIDER_CONFIGS } from "../../../common/providers.js";
 import { e } from "./service";
 

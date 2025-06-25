@@ -1,4 +1,4 @@
-import { electronData } from "../../../common/data";
+import { electronData } from "../../../common/data.mjs";
 
 
 class Progress {
@@ -22,7 +22,7 @@ class ProgressList {
   reset() {
     this.data = [];
   }
-  setProgress(name: string, loaded: number, total: number) {
+  async setProgress(name: string, loaded: number, total: number) {
     let progress = this.data.find((x) => x.name == name);
     if (!progress) {
       progress = new Progress(name, loaded, total);
@@ -34,7 +34,7 @@ class ProgressList {
     if (progress.loaded == progress.total) {
       progress.status = "success";
     }
-    electronData.saveSync();
+    await electronData.save();
   }
   getData() {
     return this.data;

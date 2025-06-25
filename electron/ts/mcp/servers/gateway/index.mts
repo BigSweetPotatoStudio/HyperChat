@@ -2,7 +2,7 @@
 
 import { store } from "../../../rag/vectorStore.mjs";
 import dayjs from "dayjs";
-import { IMCPClient, KNOWLEDGE_BASE } from "../../../../../common/data";
+import { IMCPClient, KNOWLEDGE_BASE } from "../../../../../common/data.mjs";
 import {
     Server,
     SSEServerTransport,

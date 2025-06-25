@@ -13,7 +13,7 @@ import {
   MCP_CONFIG_TYPE,
   Task,
   TaskList,
-} from "../../common/data";
+} from "../../common/data.mjs";
 import { appDataDir } from "ts/polyfills/index.mjs";
 import spawn from "cross-spawn";
 import crypto from "crypto";
@@ -32,8 +32,8 @@ import {
   KNOWLEDGE_BASE,
   KNOWLEDGE_Resource,
   KNOWLEDGE_Store,
-} from "../../common/data";
-import { EVENT } from "./common/event";
+} from "../../common/data.mjs";
+import { EVENT } from "./common/event.mjs";
 import { callAgent, runTask, startTask, stopTask } from "./mcp/task.mjs";
 import { getMyDefaultEnvironment } from "./mcp/utils.mjs";
 import cron from "node-cron";
@@ -439,7 +439,7 @@ export class CommandFactory {
       })
       return r;
     }
-    ChatHistory.saveSync();
+    await ChatHistory.save();
   }
   async changeChatHistory(item: ChatHistoryItem) {
     item.version = 2;
@@ -463,7 +463,7 @@ export class CommandFactory {
       })
       return r;
     }
-    await ChatHistory.saveSync()
+    await ChatHistory.save()
   }
   async removeChatHistory(item: { key: string }) {
     let chatHistory = ChatHistory.initSync().data;

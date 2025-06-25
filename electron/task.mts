@@ -20,8 +20,7 @@ if (argv.watch) {
 }
 
 if (argv.devnode) {
-  await $`npx cross-env NODE_ENV=development myEnv=dev webpack -c webpack.no_electron.js`;
-  await $`npx cross-env NODE_ENV=production node js/main_no_electron.js`;
+  await $`npx cross-env NODE_ENV=production myEnv=dev tsx ts/main_no_electron.mts`;
 }
 
 if (argv.testprod) {

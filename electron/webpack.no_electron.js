@@ -37,7 +37,7 @@ module.exports = (env, argv) => {
         NODE_ENV: "production",
         myEnv: process.env.myEnv || "prod",
         runtime: "node",
-        no_electron: "1",
+        use_electron: "1",
       }),
     ],
     module: {

@@ -8,7 +8,7 @@ import { z } from "zod";
 import { shellPathSync, strip } from "ts/es6.mjs";
 import { getConfig } from "./lib.mjs";
 import { openMcpClient } from "ts/mcp/config.mjs";
-import { VarList, VarScopeList } from "../../../../../common/data";
+import { VarList, VarScopeList } from "../../../../../common/data.mjs";
 import { v4 } from "uuid";
 import dayjs from "dayjs";
 import { getMessageService } from "ts/message_service.mjs";

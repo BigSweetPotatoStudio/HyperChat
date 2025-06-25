@@ -6,7 +6,7 @@ import path, { join } from "path";
 import { appDataDir } from "ts/polyfills/index.mjs";
 import { Logger } from "ts/polyfills/index.mjs";
 
-import { AppSetting, ChatHistory, DataList, electronData } from "../../../common/data";
+import { AppSetting, ChatHistory, DataList, electronData } from "../../../common/data.mjs";
 
 import crypto from "crypto";
 import { createClient, zx } from "../es6.mjs";
@@ -31,8 +31,8 @@ class WebDAVSync {
   init() {
 
 
-    timer = setInterval(() => {
-      if (electronData.initSync().autoSync) {
+    timer = setInterval(async () => {
+      if ((await electronData.init()).autoSync) {
         Logger.info("autoSync 5min");
         this.sync();
       }
@@ -136,7 +136,7 @@ class WebDAVSync {
     });
 
     try {
-      let setting = electronData.initSync({ force: true });
+      let setting = await electronData.init();
 
       let localPath: string = appDataDir;
       let remotePath: string = setting.webdav.baseDirName;
@@ -190,7 +190,7 @@ class WebDAVSync {
   //   // 生成hash
   //   for (let data of DataList) {
   //     let filename = data.KEY;
-  //     let json = data.initSync({ force: true });
+  //     let json = data.initSync();
   //     if (data.options.sync) {
   //       // console.log("sync data", path.join(localPath + "/_sync", data.KEY));
   //       let fullPath = path.join(localPath, filename);
@@ -229,7 +229,7 @@ class WebDAVSync {
   //   try {
   //     for (let data of DataList) {
   //       let filename = data.KEY;
-  //       // let json =  data.initSync({ force: true });
+  //       // let json =  data.initSync();
   //       if (data.options.sync) {
   //         // console.log("sync data", path.join(localPath + "/_sync", data.KEY));
   //         let p = path.parse(filename);
@@ -264,7 +264,7 @@ class WebDAVSync {
   //               content
   //             );
   //             // if (data.KEY == ChatHistory.KEY) {
-  //             //   let history = ChatHistory.initSync({ force: true });
+  //             //   let history = ChatHistory.initSync();
   //             //   for (let item of history.data) {
   //             //     if (item.messages.length == 0 && fs.existsSync(path.join(appDataDir, "messages", item.key + ".json"))) {
   //             //       let content = fs.readFileSync(path.join(appDataDir, "messages", item.key + ".json"), "utf-8")
@@ -371,7 +371,7 @@ class WebDAVSync {
   //           );
 
   //           // if (name + ext == ChatHistory.KEY) {
-  //           //   let history = ChatHistory.initSync({ force: true });
+  //           //   let history = ChatHistory.initSync();
   //           //   for (let item of history.data) {
   //           //     if (item.messages.length == 0) {
   //           //       let content = await fs.readFile(path.join(appDataDir, "messages", item.key + ".json"), "utf-8").catch(e => "")

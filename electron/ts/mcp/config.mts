@@ -31,7 +31,7 @@ import {
   MCP_CONFIG,
   MCP_CONFIG_TYPE,
   MCP_CONFIG_SYNC,
-} from "../../../common/data";
+} from "../../../common/data.mjs";
 
 import { clientPaths } from "./claude.mjs";
 
@@ -42,13 +42,14 @@ import { getMyDefaultEnvironment } from "./utils.mjs";
 import { zodToJsonSchema } from "zod-to-json-schema";
 import { Config } from "ts/const.mjs";
 import { v4 } from "uuid";
-import type { HyperChatCompletionTool, IMCPClient } from "../../../common/data";
+import type { HyperChatCompletionTool, IMCPClient } from "../../../common/data.mjs";
 import { getMessageService } from "ts/message_service.mjs";
 import { shell } from "electron";
 import { Stream } from "node:stream";
 
-let config = MCP_CONFIG.initSync();
-let sync_config = MCP_CONFIG_SYNC.initSync();
+
+let config = await MCP_CONFIG.init();
+let sync_config = await MCP_CONFIG_SYNC.init();
 for (let key in sync_config.mcpServers) {
   if (sync_config.mcpServers[key].isSync) {
     config.mcpServers[key] = sync_config.mcpServers[key];

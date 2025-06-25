@@ -32,7 +32,7 @@ const { fs, argv } = zx;
 
 export const dirName = "HyperChat";
 let appDataDir = path.join(os.homedir(), "Documents", dirName);
-if (process.env.no_electron == "1") {
+if (process.env.use_electron == "1") {
   try {
     appDataDir = argv.appDataDir || path.join(os.homedir(), "Documents", dirName);
   } catch (e) {

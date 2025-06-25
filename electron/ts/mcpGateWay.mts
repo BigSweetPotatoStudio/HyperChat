@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { MCP_GateWay } from "../../common/data";
+import { MCP_GateWay } from "../../common/data.mjs";
 import { isInitializeRequest, SSEServerTransport, StreamableHTTPServerTransport } from "ts/es6.mjs";
 import { createServer } from "./mcp/servers/gateway/index.mjs";
 const KEEP_ALIVE_INTERVAL_MS = 25000; // Send keep-alive every 25 seconds

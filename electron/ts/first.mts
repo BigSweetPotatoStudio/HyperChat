@@ -1,7 +1,7 @@
 import { Logger } from "ts/polyfills/index.mjs";
 import { zx } from "./es6.mjs";
 const { $, fs, cd, fetch, sleep, path } = zx;
-import { electronData } from "../../common/data";
+import { electronData } from "../../common/data.mjs";
 import "./common/data.mjs";
 import { appDataDir } from "ts/polyfills/index.mjs";
 
@@ -29,6 +29,8 @@ fs.writeFileSync(logFilePath, "");
 
 // 记录新的启动日志
 Logger.info("Application started. Previous logs cleared.");
+// 兼容ESM环境下的__dirname
+const __dirname = path.dirname(new URL(import.meta.url).pathname);
 Logger.info("__dirname", __dirname);
 Logger.info("process.cwd()", process.cwd());
 Logger.info("execPath: ", process.execPath);
@@ -45,7 +47,9 @@ Logger.info("appDataDir: ", appDataDir);
 fs.ensureDirSync(path.join(appDataDir, "messages"));
 electronData.get().appDataDir = appDataDir;
 electronData.get().logFilePath = logFilePath;
-electronData.saveSync();
+(async () => {
+  await electronData.save();
+})();
 
 // 捕获未处理的异常
 process.on('uncaughtException', (error) => {  

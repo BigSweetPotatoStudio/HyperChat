@@ -25,7 +25,7 @@ import {
   exportGeneratedCSS as collectCSS,
   isEnabled as isDarkReaderEnabled,
 } from "darkreader";
-import { AppSetting } from "../../common/data";
+import { AppSetting } from "../../common/data.mjs";
 
 (async () => {
   await AppSetting.init();

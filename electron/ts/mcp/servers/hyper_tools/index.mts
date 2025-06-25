@@ -10,7 +10,7 @@ async function createServer() {
     version: CONST.getVersion,
   });
 
-  if (process.env.no_electron != "1") {
+  if (process.env.use_electron) {
 
     let { registerElectronTool } = await import("./electron.mjs");
     registerElectronTool(server);

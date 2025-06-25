@@ -1,5 +1,5 @@
 import type { RAGApplication } from "@llm-tools/embedjs";
-import { GPT_MODELS, KNOWLEDGE_Store } from "../../../common/data";
+import { GPT_MODELS, KNOWLEDGE_Store } from "../../../common/data.mjs";
 import {
   LibSqlDb,
   OpenAiEmbeddings,

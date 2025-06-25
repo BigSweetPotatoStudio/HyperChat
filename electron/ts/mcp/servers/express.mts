@@ -1,5 +1,5 @@
 import App from "express";
-import { electronData } from "../../../../common/data";
+import { electronData } from "../../../../common/data.mjs";
 import { execFallback } from "../../common/execFallback.mjs";
 import { Logger } from "ts/polyfills/index.mjs";
 import { MyServers } from "./index.mjs";

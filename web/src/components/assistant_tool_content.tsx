@@ -76,7 +76,7 @@ import { v4 } from "uuid";
 import { sleep } from "../common/sleep";
 import { isOnBrowser } from "../common/util";
 import { t } from "../i18n";
-import { MyMessage } from "../common/openai";
+import { MyMessage } from "../common/openai.js";
 import { Pre } from "./pre";
 import { DownImage } from "../pages/chat/component";
 import { Icon } from "./icon";

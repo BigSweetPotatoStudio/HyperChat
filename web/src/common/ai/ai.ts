@@ -1,4 +1,4 @@
-import { GPT_MODELS_TYPE, HyperChatCompletionTool, MyMessage, Tool_Call } from "../../../../common/data";
+import { GPT_MODELS_TYPE, HyperChatCompletionTool, MyMessage, Tool_Call } from "../../../../common/data.mjs";
 import { createOpenAI } from '@ai-sdk/openai';
 import { CoreMessage, generateText, streamText, tool, convertToCoreMessages } from 'ai';
 import * as MCPTypes from "@modelcontextprotocol/sdk/types.js";

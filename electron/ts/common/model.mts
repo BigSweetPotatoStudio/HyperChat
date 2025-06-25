@@ -6,7 +6,7 @@ import path from "path";
 import { progressList } from "./progress.mjs";
 import type { FeatureExtractionPipeline } from "@xenova/transformers";
 
-import { electronData } from "../../../common/data";
+import { electronData } from "../../../common/data.mjs";
 
 export class FeatureExtraction {
   // NOTE: Replace this with your own task and model
@@ -38,7 +38,7 @@ export class FeatureExtraction {
       );
     }
     electronData.get().downloaded[model] = true;
-    electronData.saveSync();
+    await electronData.save();
     return this.instance;
   }
   static async embeddings(texts: string[]) {

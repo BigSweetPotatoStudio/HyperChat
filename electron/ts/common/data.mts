@@ -1,4 +1,3 @@
-
 import {
   electronData,
   AppSetting,
@@ -8,7 +7,7 @@ import {
   MCP_CONFIG_TYPE,
   VarList,
   Data,
-} from "../../../common/data.js";
+} from "../../../common/data.mjs";
 
 import { appDataDir, CONST } from "ts/polyfills/index.mjs";
 
@@ -17,7 +16,7 @@ import { getMessageService } from "../message_service.mjs";
 import { cat } from "@xenova/transformers";
 const { fs, path } = zx;
 
-Data.prototype.init = async function ({ } = {}) {
+Data.prototype.init = async function (options: any = {}) {
   try {
     this.localStorage = await fs.readJSON(path.join(appDataDir, this.KEY));
   } catch (e) {
@@ -48,12 +47,12 @@ Data.prototype.save = async function () {
   );
 }
 
-Data.prototype.saveSync = function () {
-  return fs.writeFileSync(
-    path.join(appDataDir, this.KEY),
-    JSON.stringify(this.options.formatSave(this.data), null, 2)
-  );
-};
+// Data.prototype.saveSync = function () {
+//   return fs.writeFileSync(
+//     path.join(appDataDir, this.KEY),
+//     JSON.stringify(this.options.formatSave(this.data), null, 2)
+//   );
+// };
 
 // for (let data of DataList) {
 //   data.override({
@@ -121,9 +120,9 @@ Data.prototype.saveSync = function () {
 
 
 // export const MCPServerPORT = 16110;
-AppSetting.initSync({ force: true });
 
-electronData.initSync({ force: true });
+await AppSetting.init();
+await electronData.init();
 electronData.get().webdav.url = electronData.get().webdav.url || AppSetting.get().webdav.url;
 electronData.get().webdav.password = electronData.get().webdav.password || AppSetting.get().webdav.password;
 electronData.get().webdav.username = electronData.get().webdav.username || AppSetting.get().webdav.username;
@@ -133,26 +132,24 @@ electronData.get().runTask = electronData.get().runTask == null ? true : electro
 electronData.get().isLoadClaudeConfig = electronData.get().isLoadClaudeConfig == null ? true : electronData.get().isLoadClaudeConfig;
 electronData.get().platform = process.platform;
 
-if (ENV_CONFIG.initSync({ force: true }).PATH != "") {
+if ((await ENV_CONFIG.init()).PATH != "") {
   electronData.get().PATH = ENV_CONFIG.get().PATH;
   ENV_CONFIG.get().PATH = "";
-  ENV_CONFIG.saveSync();
+  await ENV_CONFIG.save();
 }
 
-
 if (AppSetting.get().quicks.length > 0 && !fs.existsSync(path.join(appDataDir, VarList.KEY))) {
-  VarList.initSync({ force: true });
+  await VarList.init();
   VarList.get().data = VarList.get().data.concat(AppSetting.get().quicks.map(x => {
     return { name: x.label, value: x.quick, variableStrategy: "lazy", key: x.value, scope: "quick", variableType: "string" };
   }));
   AppSetting.get().quicks = [];
-  VarList.saveSync();
+  await VarList.save();
 }
 
-AppSetting.saveSync();
+await AppSetting.save();
 // electronData.get().mcp_server_port = MCPServerPORT;
-
 electronData.get().version = CONST.getVersion;
+await electronData.save();
 
-electronData.saveSync();
 

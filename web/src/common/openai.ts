@@ -22,7 +22,7 @@ import imageBase64 from "../common/openai_image_base64.txt";
 import { v4 } from "uuid";
 import dayjs from "dayjs";
 import { isOnBrowser } from "./const";
-import type { GPT_MODELS_TYPE, MyMessage, Tool_Call } from "../../../common/data";
+import type { GPT_MODELS_TYPE, MyMessage, Tool_Call } from "../../../common/data.mjs";
 import { OpenAICompatibility } from "./openai-compatibility";
 import type OpenAI from "openai";
 import { extractTool } from "./ai/prompt";

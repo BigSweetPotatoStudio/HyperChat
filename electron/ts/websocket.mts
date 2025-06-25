@@ -9,7 +9,7 @@ import { execFallback } from "./common/execFallback.mjs";
 
 import multer from "multer";
 import bodyParser from "body-parser";
-import { electronData } from "../../common/data";
+import { electronData } from "../../common/data.mjs";
 import { Command, CommandFactory } from "./command.mjs";
 
 import { Router } from "express";
@@ -135,9 +135,9 @@ export function genRouter(c) {
 
   return router;
 }
-electronData.initSync();
-let prefix = "/" + encodeURI(electronData.get().password);
 
+await electronData.init();
+let prefix = "/" + encodeURI(electronData.get().password);
 let apiPrefix = prefix + "/api";
 
 // 代理中间件
@@ -245,7 +245,7 @@ function proxyMiddleware(req: Request, res: Response, next: NextFunction) {
     next();
   }
 }
-
+import { __dirname } from "ts/const.mjs";
 
 export async function initHttp() {
   const app = express();
@@ -278,37 +278,37 @@ export async function initHttp() {
   // 静态资源
   app.use(prefix, express.static(path.join(__dirname, "../web-build"), staticOptions));
   app.use(prefix + "/temp", express.static(path.join(appDataDir, "temp")));
-  
+
   // MCP 路由刷新函数
   let mcpRouter = registers(prefix + "/mcp");
   app.use(prefix + "/mcp", mcpRouter);
-  
+
   // 添加 API 端点用于刷新 MCP 路由
   app.post(prefix + "/api/refreshMcpRoutes", (req, res) => {
     try {
       // 获取新的路由实例
       const newRouter = refreshRoutes(prefix + "/mcp");
-      
+
       // 移除旧路由
       app._router.stack = app._router.stack.filter((layer: any) => {
         return layer.handle !== mcpRouter;
       });
-      
+
       // 添加新路由
       mcpRouter = newRouter;
       app.use(prefix + "/mcp", mcpRouter);
-      
+
       res.json({ success: true, message: "MCP 路由已刷新" });
     } catch (error) {
       console.error("刷新 MCP 路由时出错:", error);
-      res.status(500).json({ 
-        success: false, 
-        message: "刷新 MCP 路由失败", 
-        error: error instanceof Error ? error.message : String(error) 
+      res.status(500).json({
+        success: false,
+        message: "刷新 MCP 路由失败",
+        error: error instanceof Error ? error.message : String(error)
       });
     }
   });
-  
+
   // 代理
   app.use(proxyMiddleware);
   // 错误处理中间件
@@ -339,7 +339,7 @@ export async function initHttp() {
   });
   Config.port = PORT;
   Logger.info("http server listen on: ", PORT);
-  await electronData.saveSync();
+  await electronData.save();
 
   // 错误处理
   io.on("error", (e) => {
@@ -351,3 +351,4 @@ export async function initHttp() {
   let terminalMsg = io.of("/" + electronData.get().password + "/terminal-message");
   getMessageService().init(main, terminalMsg);
 }
+

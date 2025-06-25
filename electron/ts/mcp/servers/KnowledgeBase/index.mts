@@ -11,7 +11,7 @@
 
 import { store } from "../../../rag/vectorStore.mjs";
 import dayjs from "dayjs";
-import { KNOWLEDGE_BASE } from "../../../../../common/data";
+import { KNOWLEDGE_BASE } from "../../../../../common/data.mjs";
 import {
   Server,
   SSEServerTransport,
@@ -48,7 +48,7 @@ const server = new Server(
  * Exposes a single "create_note" tool that lets clients create new notes.
  */
 server.setRequestHandler(ListToolsRequestSchema, async () => {
-  let db = KNOWLEDGE_BASE.initSync({ force: true });
+  let db = KNOWLEDGE_BASE.initSync();
   let d = db.dbList
     .map((x) => {
       return `${x.name} - ${x.description}`;
@@ -148,7 +148,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
       }
     }
     case "list_knowledge_base": {
-      KNOWLEDGE_BASE.initSync({ force: true })
+      KNOWLEDGE_BASE.initSync()
       if (KNOWLEDGE_BASE.get()
         .dbList.length == 0) {
         return {

@@ -3,9 +3,9 @@ import { CONST, Logger } from "ts/polyfills/index.mjs";
 import { zx } from "../../../es6.mjs";
 const { fs, path, sleep } = zx;
 import dayjs from "dayjs";
-import { Agents, KNOWLEDGE_BASE, TaskList } from "../../../../../common/data";
+import { Agents, KNOWLEDGE_BASE, TaskList } from "../../../../../common/data.mjs";
 
-import { EVENT } from "../../../common/event";
+import { EVENT } from "../../../common/event.mjs";
 import { v4 } from "uuid";
 import cron from "node-cron";
 import { startTask } from "../../task.mjs";
@@ -49,7 +49,7 @@ const server = new Server(
  * Exposes a single "create_note" tool that lets clients create new notes.
  */
 server.setRequestHandler(ListToolsRequestSchema, async () => {
-  let agents = Agents.initSync({ force: true });
+  let agents = Agents.initSync();
   let d = agents.data
     .filter((x) => x.callable)
     .map((x) => {
@@ -171,7 +171,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
       }
     }
     case "list_allowed_agents": {
-      const agents = Agents.initSync({ force: true });
+      const agents = Agents.initSync();
       return {
         content: [
           {
@@ -225,7 +225,7 @@ async function call_agent({
   agent_name: string;
   message: string;
 }) {
-  let agents = Agents.initSync({ force: true });
+  let agents = Agents.initSync();
   if (agents.data.find((x) => x.label == agent_name) == null) {
     throw new Error(`Agent ${agent_name} not found`);
   }
@@ -272,7 +272,7 @@ async function add_task({
   description?: string;
 }) {
   // console.log("add_task", name, cron, agent_name, command, description);
-  const agents = Agents.initSync({ force: true });
+  const agents = Agents.initSync();
   const agent = agents.data.find((x) => x.label == agent_name);
   if (agent == null) {
     throw new Error(`Agent ${agent_name} not found`);

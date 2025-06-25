@@ -1,6 +1,6 @@
 import { Attachments, Bubble } from "@ant-design/x";
 import React, { useCallback, useEffect, useRef } from "react";
-import { MyMessage } from "../common/openai";
+import { MyMessage } from "../common/openai.js";
 import { BranchesOutlined, CopyOutlined, DownloadOutlined, EditOutlined, LoadingOutlined, MinusCircleOutlined, StockOutlined, SyncOutlined, UploadOutlined, UserOutlined, WechatWorkOutlined } from "@ant-design/icons";
 import { Collapse, message, Modal, Space, Spin, Tooltip } from "antd";
 import { v4 } from "uuid";
