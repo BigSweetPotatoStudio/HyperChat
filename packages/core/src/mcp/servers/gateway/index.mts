@@ -81,7 +81,7 @@ async function createServer(name: string, description: string, allowMCPs: string
      * Handler for the create_note tool.
      * Creates a new note with the provided title and content, and returns success message.
      */
-    server.setRequestHandler(CallToolRequestSchema, async (request) => {
+    server.setRequestHandler(CallToolRequestSchema, async (request: any) => {
         try {
             let getTools = (allowMCPs: any) => {
                 let tools: IMCPClient["tools"] = [];
@@ -108,8 +108,8 @@ async function createServer(name: string, description: string, allowMCPs: string
             }
 
             return await Command.mcpCallTool({
-                name: find.clientName || '', 
-                functionName: find.origin_name || '', 
+                name: find.clientName || '',
+                functionName: find.origin_name || '',
                 args: request.params.arguments || {}
             });
         } catch (error) {

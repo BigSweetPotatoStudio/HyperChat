@@ -1,8 +1,8 @@
 
-import type OpenAI from "openai";
-import * as MCPTypes from "@modelcontextprotocol/sdk/types.js";
-import { v4 } from "uuid";
-import { z } from "zod";
+import type OpenAI from "../core/node_modules/openai";
+import * as MCPTypes from "../core/node_modules/@modelcontextprotocol/sdk/dist/esm/types.js";
+import { v4 } from "../core/node_modules/uuid";
+
 
 // 全局数据实例列表，所有 Data 实例会自动加入此数组
 export const DataList: Data<any>[] = [];
@@ -407,26 +407,23 @@ export const TaskList = new Data(
     sync: true,
   }
 );
-export const zodVar = z.object({
-  key: z.string(),
-  name: z.string(),
-  value: z.string(),
-  scope: z.string(),
-  variableStrategy: z.enum(["lazy", "immediate"]),
-  variableType: z.enum(["string", "js", "webjs"]),
-  code: z.string().optional(),
-  description: z.string().optional(),
-});
+export type Var = {
+  key: string;
+  name: string;
+  value?: string;
+  scope: string;
+  variableStrategy: "lazy" | "immediate";
+  variableType: "string" | "js" | "webjs";
+  code?: string;
+  description?: string;
+};
 
+export type VarScope = {
+  key: string;
+  name: string;
+  type: "builtin" | "custom";
+};
 
-export type Var = z.infer<typeof zodVar>;
-
-export const zodVarScope = z.object({
-  key: z.string(),
-  name: z.string(),
-  type: z.enum(["builtin", "custom"]),
-});
-export type VarScope = z.infer<typeof zodVarScope>;
 
 
 export const VarList = new Data(

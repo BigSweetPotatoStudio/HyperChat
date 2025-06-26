@@ -35,7 +35,7 @@ import os from "os";
  */
 export function getLocalIP(): string[] {
   const interfaces = os.networkInterfaces();
-  let ips = [];
+  let ips: string[] = [];
   for (const devName in interfaces) {
     const iface = interfaces[devName];
 

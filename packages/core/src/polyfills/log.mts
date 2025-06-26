@@ -4,7 +4,7 @@
  * 提供统一的日志记录接口，支持不同环境的日志实现
  */
 
-import fs from "fs-extra";
+import { fs } from "zx";
 import path from "path";
 import dayjs from "dayjs";
 import log4js from "log4js";

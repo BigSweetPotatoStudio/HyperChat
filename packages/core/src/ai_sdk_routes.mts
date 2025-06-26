@@ -1,5 +1,5 @@
 import { Router, Request, Response } from 'express';
-import { streamText, StreamingTextResponse } from 'ai';
+import { streamText } from 'ai';
 import { createOpenAI } from '@ai-sdk/openai';
 import { createAnthropic } from '@ai-sdk/anthropic';
 import { GPT_MODELS } from "../../shared/data.mjs";
@@ -47,15 +47,17 @@ export function createAISDKRouter(): Router {
 
       if (!messages || !Array.isArray(messages)) {
         Logger.error('Invalid request: messages missing or not array');
-        return res.status(400).json({
+        res.status(400).json({
           error: 'Messages array is required'
         });
+        return;
       }
 
       if (!modelKey) {
-        return res.status(400).json({
+        res.status(400).json({
           error: 'Model key is required'
         });
+        return;
       }
 
       // 获取模型配置
@@ -63,9 +65,10 @@ export function createAISDKRouter(): Router {
       const config = GPT_MODELS.get().data.find(x => x.key === modelKey);
       
       if (!config) {
-        return res.status(404).json({
+        res.status(404).json({
           error: `Model not found: ${modelKey}`
         });
+        return;
       }
 
       Logger.info('AI SDK Chat request:', { 

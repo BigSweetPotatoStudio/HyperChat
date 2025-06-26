@@ -57,8 +57,6 @@ import { Config } from "../const.mjs";
 import { v4 as _v4 } from "uuid";
 import type { HyperChatCompletionTool, IMCPClient } from "../../../shared/data.mjs";
 import { getMessageService } from "../message_service.mjs";
-import { shell as _shell } from "electron";
-import { Stream as _Stream } from "node:stream";
 
 
 // 初始化 MCP 配置，合并用户配置和同步配置
@@ -639,7 +637,7 @@ export async function initMcpClients() {
   let config = MCP_CONFIG.initSync();
 
   // console.log(config);
-  let tasks = [];
+  let tasks: any[] = [];
 
   try {
     let p = buildinMcpJSONPath;

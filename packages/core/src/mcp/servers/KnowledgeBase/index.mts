@@ -122,7 +122,7 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
  * Handler for the create_note tool.
  * Creates a new note with the provided title and content, and returns success message.
  */
-server.setRequestHandler(CallToolRequestSchema, async (request) => {
+server.setRequestHandler(CallToolRequestSchema, async (request: any) => {
   switch (request.params.name) {
     case "search_knowledge_base": {
       const knowledge_base = String(request.params.arguments?.knowledge_base);

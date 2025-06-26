@@ -63,7 +63,7 @@ export function registerNoElectronTool(server: McpServer) {
     },
     async ({ words }) => {
       let config = getConfig() as z.infer<typeof configSchema>;
-      let res = [];
+      let res: any[] = [];
       if (config.Web_Tools_Platform == "chrome") {
         res = await web2.search(words);
       }

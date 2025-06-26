@@ -30,12 +30,12 @@ import {
 import { EVENT } from "./common/event.mjs";
 import { callAgent, runTask, startTask, stopTask } from "./mcp/task.mjs";
 import { getMyDefaultEnvironment } from "./mcp/utils.mjs";
-import cron from "node-cron";
+import * as cron from "node-cron";
 import { store } from "./rag/vectorStore.mjs";
 import { Config } from "./const.mjs";
 import { clientPaths } from "./mcp/claude.mjs";
 import dayjs from "dayjs";
-import vm from "node:vm";
+import * as vm from "node:vm";
 import { ActiveAITerminal, CloseTerminal, GetTerminals, OpenTerminal } from "./mcp/servers/terminal/terminal.mjs";
 
 /**
@@ -623,68 +623,6 @@ export class CommandFactory {
     return context.resultContainer.value;
   }
 
-  // 新增聊天相关方法 - 使用 Vercel AI SDK
-  async streamChat({
-    modelKey,
-    messages,
-    options = {}
-  }: {
-    modelKey: string;
-    messages: MyMessage[];
-    options?: {
-      temperature?: number;
-      maxTokens?: number;
-      onChunk?: (chunk: string) => void;
-      onFinish?: (result: { text: string; usage?: any }) => void;
-      onError?: (error: Error) => void;
-    };
-  }) {
-    const { chatService } = await import("./chat_service.mjs");
-    const { GPT_MODELS } = await import("../../shared/data.mjs");
-    
-    await GPT_MODELS.init();
-    const config = GPT_MODELS.get().data.find(x => x.key === modelKey);
-    
-    if (!config) {
-      throw new Error(`Model not found: ${modelKey}`);
-    }
-
-    return await chatService.streamChat(config, messages, options);
-  }
-
-  async generateChat({
-    modelKey,
-    messages,
-    options = {}
-  }: {
-    modelKey: string;
-    messages: MyMessage[];
-    options?: {
-      temperature?: number;
-      maxTokens?: number;
-    };
-  }) {
-    const { chatService } = await import("./chat_service.mjs");
-    const { GPT_MODELS } = await import("../../shared/data.mjs");
-    
-    await GPT_MODELS.init();
-    const config = GPT_MODELS.get().data.find(x => x.key === modelKey);
-    
-    if (!config) {
-      throw new Error(`Model not found: ${modelKey}`);
-    }
-
-    const result = await chatService.generateChat(config, messages, options);
-    
-    // 创建助手消息
-    const assistantMessage = chatService.createAssistantMessage(result);
-    
-    return {
-      message: assistantMessage,
-      usage: result.usage,
-      finishReason: result.finishReason,
-    };
-  }
 }
 // export const Command = CommandFactory.prototype;
 export const Command = new CommandFactory();
