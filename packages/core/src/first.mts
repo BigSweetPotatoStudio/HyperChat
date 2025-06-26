@@ -30,18 +30,17 @@ fs.writeFileSync(logFilePath, "");
 // 记录新的启动日志
 Logger.info("Application started. Previous logs cleared.");
 // 兼容ESM环境下的__dirname
-const __dirname = path.dirname(new URL(import.meta.url).pathname);
+import { fileURLToPath } from 'node:url';
+import { dirname } from 'node:path';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
 Logger.info("__dirname", __dirname);
 Logger.info("process.cwd()", process.cwd());
 Logger.info("execPath: ", process.execPath);
 Logger.info("NODE_ENV: ", process.env.NODE_ENV);
 Logger.info("myEnv: ", process.env.myEnv);
 
-
-Logger.info(
-  path.join(__dirname, "../web-build/assets/favicon.png"),
-  fs.existsSync(path.join(__dirname, "../web-build/assets/favicon.png"))
-);
 
 Logger.info("appDataDir: ", appDataDir);
 fs.ensureDirSync(path.join(appDataDir, "messages"));
@@ -52,8 +51,8 @@ electronData.get().logFilePath = logFilePath;
 })();
 
 // 捕获未处理的异常
-process.on('uncaughtException', (error) => {  
-  Logger.error('Uncaught Exception:', error);  
+process.on('uncaughtException', (error) => {
+  Logger.error('Uncaught Exception:', error);
   // process.exit(1);  
 });
 
