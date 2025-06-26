@@ -10,9 +10,8 @@ export interface ProviderConfig {
     icon?: string; // 图标
     description?: string; // 描述
     hasApiKey?: boolean;
-    apiKey?: string; // 新增 API Key 字段
-    isCustom: boolean; // 是否自定义
-    isBuiltIn: boolean; // 是否内置
+    apiKey?: string; // API Key 字段
+    isBuiltIn: boolean; // 是否内置（true=内置，false=自定义）
 }
 
 // 默认内置提供商列表，支持 OpenAI、Claude、Gemini、Qwen、Deepseek 等主流大模型
@@ -25,7 +24,6 @@ export const BUILTIN_PROVIDERS: ProviderConfig[] = [
         description: 'GPT-4, GPT-3.5 等模型',
         icon: 'openai',
         isBuiltIn: true,
-        isCustom: false,
     },
     {
         key: 'anthropic',
@@ -35,7 +33,6 @@ export const BUILTIN_PROVIDERS: ProviderConfig[] = [
         description: 'Claude 系列模型',
         icon: 'anthropic',
         isBuiltIn: true,
-        isCustom: false,
     },
     {
         key: 'openrouter',
@@ -45,7 +42,6 @@ export const BUILTIN_PROVIDERS: ProviderConfig[] = [
         description: '多模型聚合平台',
         icon: 'openrouter',
         isBuiltIn: true,
-        isCustom: false,
     },
     {
         key: 'gemini',
@@ -55,7 +51,6 @@ export const BUILTIN_PROVIDERS: ProviderConfig[] = [
         description: 'Gemini Pro, Gemini Flash',
         icon: 'gemini',
         isBuiltIn: true,
-        isCustom: false,
     },
     {
         key: 'qwen',
@@ -65,7 +60,6 @@ export const BUILTIN_PROVIDERS: ProviderConfig[] = [
         description: '通义千问系列模型',
         icon: 'qwen',
         isBuiltIn: true,
-        isCustom: false,
     },
     {
         key: 'deepseek',
@@ -75,7 +69,6 @@ export const BUILTIN_PROVIDERS: ProviderConfig[] = [
         description: 'DeepSeek 推理模型',
         icon: 'deepseek',
         isBuiltIn: true,
-        isCustom: false,
     },
     {
         key: 'doubao',
@@ -85,7 +78,6 @@ export const BUILTIN_PROVIDERS: ProviderConfig[] = [
         description: '豆包大模型',
         icon: 'doubao',
         isBuiltIn: true,
-        isCustom: false,
     },
     {
         key: 'xai',
@@ -95,7 +87,6 @@ export const BUILTIN_PROVIDERS: ProviderConfig[] = [
         description: 'Grok 系列模型',
         icon: 'xai',
         isBuiltIn: true,
-        isCustom: false,
     },
     {
         key: 'glm',
@@ -105,7 +96,6 @@ export const BUILTIN_PROVIDERS: ProviderConfig[] = [
         description: '智谱 GLM 系列模型',
         icon: 'glm',
         isBuiltIn: true,
-        isCustom: false,
     },
     {
         key: 'ollama',
@@ -115,7 +105,6 @@ export const BUILTIN_PROVIDERS: ProviderConfig[] = [
         description: '本地部署的开源模型',
         icon: 'ollama',
         isBuiltIn: true,
-        isCustom: false,
     },
 ];
 
@@ -141,12 +130,11 @@ export class ProviderManager {
     }
 
     // 添加自定义提供商
-    static addCustomProvider(provider: Omit<ProviderConfig, 'key' | 'isBuiltIn' | 'isCustom'>): ProviderConfig {
+    static addCustomProvider(provider: Omit<ProviderConfig, 'key' | 'isBuiltIn'>): ProviderConfig {
         const newProvider: ProviderConfig = {
             ...provider,
             key: v4(),
             isBuiltIn: false,
-            isCustom: true,
         };
 
         const data = PROVIDER_CONFIGS.get();
@@ -181,7 +169,6 @@ export class ProviderManager {
                 ...updates,
                 key, // 确保key不被更改
                 isBuiltIn: false,
-                isCustom: true,
             };
             PROVIDER_CONFIGS.save();
             return true;

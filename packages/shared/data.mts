@@ -247,7 +247,10 @@ export type GPT_MODELS_TYPE = {
   isStrict: boolean;
   isDefault?: boolean;
 }
-export const GPT_MODELS = new Data("gpt_models.json", {
+
+export class AIModelConfig<T> extends Data<T> {
+}
+export const GPT_MODELS = new AIModelConfig("gpt_models.json", {
   data: [] as Array<GPT_MODELS_TYPE>,
 });
 

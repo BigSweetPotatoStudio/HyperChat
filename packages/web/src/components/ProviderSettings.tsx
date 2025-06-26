@@ -511,7 +511,7 @@ export function ProviderSettings() {
                       {t`Active`}
                     </Tag>
                   )}
-                  {provider.isCustom && (
+                  {!provider.isBuiltIn && (
                     <Tag color="orange" className="mb-2">
                       {t`Custom`}
                     </Tag>
