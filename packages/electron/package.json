@@ -1,5 +1,111 @@
 {
   "name": "@hyperchat/electron",
+  "author": "Dadigua <0laopo0@gmail.com>",
+  "build": {
+    "afterSign": "./build/notarize.js",
+    "appId": "men.dadigua.hpyerchat",
+    "artifactName": "${productName}-${version}-${os}-${arch}.${ext}",
+    "asar": true,
+    "copyright": "Copyright © 2024 ${author}",
+    "extraFiles": [],
+    "extraResources": [],
+    "files": [
+      "!src/**",
+      "!*.mts",
+      "!python/**",
+      "!tmp/**",
+      "!tests/**",
+      "!web/**",
+      "!lib/**",
+      "!README.md",
+      "!ldh.todo",
+      "!depend",
+      "!tsconfig.json",
+      "!webpack.config.js"
+    ],
+    "icon": "./web-build/assets/favicon.png",
+    "linux": {
+      "target": [
+        {
+          "arch": [
+            "x64",
+            "arm64"
+          ],
+          "target": "AppImage"
+        },
+        {
+          "arch": [
+            "x64",
+            "arm64"
+          ],
+          "target": "deb"
+        },
+        {
+          "arch": [
+            "x64",
+            "arm64"
+          ],
+          "target": "tar.gz"
+        }
+      ]
+    },
+    "mac": {
+      "entitlements": "build/mac/entitlements.mac.plist",
+      "entitlementsInherit": "build/mac/entitlements.mac.plist",
+      "extendInfo": {
+        "NSCameraUsageDescription": "Please give us access to your camera",
+        "NSMicrophoneUsageDescription": "Please give us access to your microphone",
+        "com.apple.security.device.audio-input": true,
+        "com.apple.security.device.camera": true
+      },
+      "notarize": false,
+      "target": [
+        {
+          "arch": [
+            "arm64"
+          ],
+          "target": "dmg"
+        },
+        {
+          "arch": [
+            "arm64"
+          ],
+          "target": "zip"
+        }
+      ]
+    },
+    "nsis": {
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "deleteAppDataOnUninstall": false,
+      "oneClick": false,
+      "perMachine": true,
+      "shortcutName": "HyperChat"
+    },
+    "productName": "HyperChat",
+    "publish": [
+      {
+        "provider": "github"
+      }
+    ],
+    "win": {
+      "target": [
+        {
+          "arch": [
+            "x64"
+          ],
+          "target": "nsis"
+        },
+        {
+          "arch": [
+            "x64"
+          ],
+          "target": "zip"
+        }
+      ]
+    }
+  },
   "version": "1.0.0",
   "description": "HyperChat Electron main process and related functionality",
   "main": "js/electron/src/main.mjs",
