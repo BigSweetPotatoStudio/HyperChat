@@ -9,7 +9,7 @@
  * - 注册自定义协议处理器
  */
 
-import { Logger } from "@hyperchat/core/polyfills/log.mjs";
+import { Logger } from "../../core/src/polyfills/log.mjs";
 import {
   app,
   BrowserWindow,

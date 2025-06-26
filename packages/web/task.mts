@@ -152,7 +152,7 @@ if (argv.pre) {
 
 
 if (argv.test) {
-  let pack = await import("./package.json");
+  let pack = await import("./package.json", { with: { type: "json" } });
 
   let p = path.resolve(__dirname, `../dist/${pack.version}`);
   await fs.ensureDir(p);

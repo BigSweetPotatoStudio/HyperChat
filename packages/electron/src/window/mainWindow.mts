@@ -9,12 +9,17 @@ import {
   shell,
   Tray,
 } from "electron";
-import { Logger } from "@hyperchat/core/polyfills/index.mjs";
+import { Logger } from "../../../core/src/polyfills/index.mjs";
 import path from "path";
 
-import { electronData } from "@hyperchat/shared/data.mjs";
-import p from "../../package.json";
-import { Config } from "@hyperchat/core/const.mjs";
+import { electronData } from "../../../shared/data.mjs";
+import p from "../../package.json" with { type: "json" };
+import { Config } from "../../../core/src/const.mjs";
+import { fileURLToPath } from 'node:url';
+import { dirname } from 'node:path';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
 
 /**
  * mainWindow.ts 负责 Electron 主窗口的创建与管理：

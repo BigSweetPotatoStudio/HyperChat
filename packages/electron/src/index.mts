@@ -3,29 +3,29 @@
  * 创建支持 electron 的 MCP 服务器
  */
 
-import { McpServer } from "@hyperchat/core/es6.mjs";
-import { configSchema, NAME } from "@hyperchat/core/mcp/servers/hyper_tools/lib.mjs";
-import { CONST } from "@hyperchat/core/polyfills/index.mjs";
-import { registerElectronTool } from "./mcp/servers/hyper_tools/electron.mjs";
+// import { McpServer } from "../../core/src/es6.mjs";
+// import { configSchema, NAME } from "../../core/src/mcp/servers/hyper_tools/lib.mjs";
+// import { CONST } from "../../core/src/polyfills/index.mjs";
+// import { registerElectronTool } from "./mcp/servers/hyper_tools/electron.mjs";
 
-export async function createElectronMcpServer() {
-  const server = new McpServer({
-    name: NAME,
-    version: CONST.getVersion,
-  });
+// export async function createElectronMcpServer() {
+//   const server = new McpServer({
+//     name: NAME,
+//     version: CONST.getVersion,
+//   });
 
-  registerElectronTool(server);
-  return server;
-}
+//   registerElectronTool(server);
+//   return server;
+// }
 
-export const ElectronHyperTools = {
-  createServer: createElectronMcpServer,
-  name: NAME,
-  url: ``,
-  configSchema: configSchema,
-  type: "streamableHttp",
-};
+// export const ElectronHyperTools = {
+//   createServer: createElectronMcpServer,
+//   name: NAME,
+//   url: ``,
+//   configSchema: configSchema,
+//   type: "streamableHttp",
+// };
 
 // Re-export core functionality
-export * from "@hyperchat/core/mcp/servers/hyper_tools/lib.mjs";
-export * from "./polyfills/index.mjs";
+// export * from "../../core/src/mcp/servers/hyper_tools/lib.mjs";
+// export * from "./polyfills/index.mjs";

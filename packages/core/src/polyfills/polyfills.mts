@@ -1,6 +1,6 @@
 
 import { Logger } from "./log.mjs";
-import p from "../../package.json";
+import p from "../../package.json" with { type: "json" };
 export { Logger };
 
 export const Context = {

@@ -12,8 +12,12 @@ if (os.platform() == "win32") {
 }
 
 if (argv.dev) {
-  await $`npx cross-env NODE_ENV=development myEnv=dev webpack`;
-  await $`npm run start`;
+  await $`npx tsc`;
+  await $`npx cross-env NODE_ENV=production myEnv=dev electron .`;
+}
+
+if (argv.rebuild) {
+  await $`npx electron-rebuild`;
 }
 if (argv.watch) {
   await $`npx cross-env NODE_ENV=development myEnv=dev webpack`;

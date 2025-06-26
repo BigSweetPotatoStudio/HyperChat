@@ -11,7 +11,7 @@
     "jsxFactory": "React.createElement",
     "jsx": "react",
     "module": "ESNext",
-    "moduleResolution": "bundler",
+    "moduleResolution": "node",
     "removeComments": false,
     "sourceMap": true,
     "strict": true,

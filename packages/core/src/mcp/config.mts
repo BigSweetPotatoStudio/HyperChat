@@ -9,6 +9,8 @@
  * - 处理连接重试和错误恢复
  */
 
+// 引入数据持久化增强模块，为 Data 类添加 init/initSync/save/saveSync 方法实现
+import "../common/data.mjs";
 import path from "path";
 import {
   CallToolResultSchema,

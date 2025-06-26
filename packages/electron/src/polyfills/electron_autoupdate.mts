@@ -1,5 +1,8 @@
 //* 检查更新工具类
-import { autoUpdater } from "electron-updater";
+import pkg from "electron-updater";
+const { autoUpdater } = pkg;
+import { getMessageService } from "../../../core/src/message_service.mjs";
+import { Logger } from "../../../core/src/polyfills/log.mjs";
 
 
 class CheckUpdate {
@@ -73,8 +76,6 @@ class CheckUpdate {
     });
   }
 }
-import { getMessageService } from "@hyperchat/core/message_service.mjs";
-import { Logger } from "@hyperchat/core/polyfills/log.mjs";
 async function sendToRender(type: any, data: any) {
   getMessageService().sendAllToRenderer({
     type: type,

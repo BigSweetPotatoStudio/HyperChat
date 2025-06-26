@@ -1,6 +1,6 @@
-import { Logger } from "@hyperchat/core/src/polyfills/log.mjs";
-import { createBrowser } from "@hyperchat/core/src/mcp/servers/hyper_tools/web2.mjs";
-import { getConfig } from "@hyperchat/core/src/mcp/servers/hyper_tools/lib.mjs";
+import { Logger } from "../../core/src/polyfills/log.mjs";
+import { createBrowser } from "../../core/src/mcp/servers/hyper_tools/web2.mjs";
+import { getConfig } from "../../core/src/mcp/servers/hyper_tools/lib.mjs";
 import { checkUpdate } from "./polyfills/electron_autoupdate.mjs";
 import { autoLauncher } from "./polyfills/electron.mjs";
 
