@@ -1,4 +1,3 @@
-import ELogger from "electron-log";
 import AutoLaunch from "auto-launch";
 import {
   Context,

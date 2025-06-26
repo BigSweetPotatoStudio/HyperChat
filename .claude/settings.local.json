@@ -11,7 +11,9 @@
       "Bash(done)",
       "Bash(rg:*)",
       "Bash(npm run type-check:*)",
-      "Bash(mv:*)"
+      "Bash(mv:*)",
+      "Bash(cat:*)",
+      "Bash(ls:*)"
     ],
     "deny": []
   }
