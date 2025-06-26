@@ -32,6 +32,7 @@ import { Config } from "./const.mjs";
 import { PassThrough } from "stream";
 
 import { registers, refreshRoutes } from "./mcpGateWay.mjs";
+import { createAISDKRouter } from "./ai_sdk_routes.mjs";
 
 // 文件上传目录配置
 const uploadDir = "./uploads";
@@ -291,10 +292,20 @@ export async function initHttp() {
   app.use(bodyParser.json({ limit: "1000mb" }));
   app.use(bodyParser.urlencoded({ extended: true }));
 
+  // 添加 AI SDK 路由 (先注册，避免被 genRouter 覆盖)
+  const aiRouter = createAISDKRouter();
+  routers.push({
+    prefix: apiPrefix,
+    router: aiRouter
+  })
+
   routers.push({
     prefix: apiPrefix,
     router: genRouter(Command)
   })
+
+  // 调试: 记录路由注册
+  Logger.info('AI SDK routes registered at prefix:', apiPrefix);
 
   for (const route of routers) {
     app.use(route.prefix, route.router);

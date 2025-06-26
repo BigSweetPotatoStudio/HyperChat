@@ -13,7 +13,9 @@
       "Bash(npm run type-check:*)",
       "Bash(mv:*)",
       "Bash(cat:*)",
-      "Bash(ls:*)"
+      "Bash(ls:*)",
+      "Bash(npm install:*)",
+      "Bash(npm run build:*)"
     ],
     "deny": []
   }
