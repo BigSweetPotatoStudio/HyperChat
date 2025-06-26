@@ -1,11 +1,11 @@
 import puppeteer, { Browser, Page } from "puppeteer-core";
 // import * as ChromeLauncher from "chrome-launcher";
 import path from "path";
-import { ChromeLauncher, zx } from "src/es6.mjs";
+import { ChromeLauncher, zx } from "../../../es6.mjs";
 
 import { getConfig } from "./lib.mjs";
 // import { z } from "zod";
-import { Logger } from "src/polyfills/polyfills.mjs";
+import { Logger } from "../../../polyfills/polyfills.mjs";
 
 const { fs } = zx;
 

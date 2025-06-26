@@ -1,6 +1,6 @@
-import { fs } from "src/es6.mjs";
+import { fs } from "../../../es6.mjs";
 // import { MCP_CONFIG } from "../../../../../common/data.mjs";
-import { appDataDir } from "src/polyfills/polyfills.mjs";
+import { appDataDir } from "../../../polyfills/polyfills.mjs";
 import { z } from "zod";
 import path from "path";
 

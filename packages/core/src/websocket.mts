@@ -14,7 +14,7 @@ import cors from "cors";
 import http from "http";
 import path from "path";
 import { Server as SocketIO } from "socket.io";
-import { appDataDir, Logger } from "src/polyfills/index.mjs";
+import { appDataDir, Logger } from "./polyfills/index.mjs";
 
 import { execFallback } from "./common/execFallback.mjs";
 

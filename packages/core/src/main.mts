@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-import { Logger } from "src/polyfills/index.mjs";
+import { Logger } from "./polyfills/index.mjs";
 import "./first.mjs";
 import { initHttp } from "./websocket.mjs";
 

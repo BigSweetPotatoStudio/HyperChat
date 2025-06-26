@@ -1,4 +1,4 @@
-import { CONST } from "src/polyfills/index.mjs";
+import { CONST } from "./polyfills/index.mjs";
 import { Logger } from "./polyfills/log.mjs";
 import { createClient, shellPathSync, zx } from "./es6.mjs";
 const { fs, os, path } = zx;
@@ -12,7 +12,7 @@ import {
   MCP_CONFIG_TYPE,
   Task,
 } from "../../shared/data.mjs";
-import { appDataDir } from "src/polyfills/index.mjs";
+import { appDataDir } from "./polyfills/index.mjs";
 import crypto from "crypto";
 import {
   closeMcpClients,

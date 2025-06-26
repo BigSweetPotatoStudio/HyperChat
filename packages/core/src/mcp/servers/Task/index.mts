@@ -1,5 +1,5 @@
 // import { BrowserWindow } from "electron";
-import { CONST, Logger } from "src/polyfills/index.mjs";
+import { CONST, Logger } from "../../../polyfills/index.mjs";
 import { zx } from "../../../es6.mjs";
 const { fs: _fs, path: _path, sleep: _sleep } = zx;
 // import dayjs from "dayjs";
@@ -18,7 +18,7 @@ import {
   SSEServerTransport as _SSEServerTransport,
   ListToolsRequestSchema,
   CallToolRequestSchema,
-} from "src/es6.mjs";
+} from "../../../es6.mjs";
 
 /**
  * Type alias for a note object.

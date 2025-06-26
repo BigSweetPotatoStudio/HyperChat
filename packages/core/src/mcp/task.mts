@@ -1,4 +1,4 @@
-import { Logger } from "src/polyfills/index.mjs";
+import { Logger } from "../polyfills/index.mjs";
 import {
   Agents,
   TaskList,

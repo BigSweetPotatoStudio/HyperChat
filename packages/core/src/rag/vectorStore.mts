@@ -1,6 +1,6 @@
 // import { Embeddings } from "@langchain/core/embeddings";
 import path from "path";
-import { appDataDir, Logger } from "src/polyfills/index.mjs";
+import { appDataDir, Logger } from "../polyfills/index.mjs";
 
 // import { FeatureExtraction } from "../common/model.mjs";
 import {

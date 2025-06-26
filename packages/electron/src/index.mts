@@ -3,8 +3,8 @@
  * 创建支持 electron 的 MCP 服务器
  */
 
-import { McpServer } from "@hyperchat/core/es6";
-import { configSchema, NAME } from "@hyperchat/core/mcp/servers/hyper_tools/lib";
+import { McpServer } from "@hyperchat/core/es6.mjs";
+import { configSchema, NAME } from "@hyperchat/core/mcp/servers/hyper_tools/lib.mjs";
 import { CONST } from "@hyperchat/core/polyfills/index.mjs";
 import { registerElectronTool } from "./mcp/servers/hyper_tools/electron.mjs";
 
@@ -27,5 +27,5 @@ export const ElectronHyperTools = {
 };
 
 // Re-export core functionality
-export * from "@hyperchat/core/mcp/servers/hyper_tools/lib";
+export * from "@hyperchat/core/mcp/servers/hyper_tools/lib.mjs";
 export * from "./polyfills/index.mjs";

@@ -1,6 +1,6 @@
 // import { activeUser, userSocketMap, genMainMsg } from "./websocket.mjs";
 
-import { Logger } from "src/polyfills/polyfills.mjs";
+import { Logger } from "./polyfills/polyfills.mjs";
 import type { Server as SocketIO } from "socket.io";
 const userSocketMap = new Map();
 let activeUser: string | undefined = undefined;

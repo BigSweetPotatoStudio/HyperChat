@@ -9,13 +9,12 @@ import {
   shell,
   Tray,
 } from "electron";
-import { Logger } from "../polyfills/index";
-// import { get } from "http"; // 未使用
+import { Logger } from "@hyperchat/core/polyfills/index.mjs";
 import path from "path";
 
-import { electronData } from "../shared";
+import { electronData } from "@hyperchat/shared/data.mjs";
 import p from "../../package.json";
-import { Config } from "../core";
+import { Config } from "@hyperchat/core/const.mjs";
 
 /**
  * mainWindow.ts 负责 Electron 主窗口的创建与管理：

@@ -7,11 +7,11 @@ import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
 // import { shellPathSync, strip } from "src/es6.mjs";
 // import { getConfig } from "./lib.mjs";
-import { openMcpClient } from "src/mcp/config.mjs";
+import { openMcpClient } from "../../config.mjs";
 import { VarList, VarScopeList } from "../../../../../shared/data.mjs";
 import { v4 } from "uuid";
 import dayjs from "dayjs";
-import { getMessageService } from "src/message_service.mjs";
+import { getMessageService } from "../../../message_service.mjs";
 
 
 // type MCP_CONFIG_TYPE = {

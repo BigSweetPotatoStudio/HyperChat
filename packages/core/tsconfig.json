@@ -32,18 +32,12 @@
       "ESNext",
       "DOM",
     ],
-    "baseUrl": ".",
-    "paths": {
-      "src": [
-        "./src",
-      ],
-    },
     "target": "ESNext",
+    "outDir": "./js",
     "typeRoots": [
       "./node_modules/@types",
       "./types/"
     ],
-    "outDir": "./js",
   },
   "include": [
     "src",

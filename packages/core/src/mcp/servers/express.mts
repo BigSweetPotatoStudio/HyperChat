@@ -4,9 +4,9 @@ import { execFallback } from "../../common/execFallback.mjs";
 // import { Logger } from "src/polyfills/index.mjs";
 import { MyServers } from "./index.mjs";
 
-import { Config } from "src/const.mjs";
+import { Config } from "../../const.mjs";
 // import { v4 } from "uuid";
-import { SSEServerTransport, StreamableHTTPServerTransport } from "src/es6.mjs";
+import { SSEServerTransport, StreamableHTTPServerTransport } from "../../es6.mjs";
 
 type HyperMcp = {
   createServer: () => Promise<any>;
