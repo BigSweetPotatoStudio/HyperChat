@@ -49,7 +49,7 @@ const server = new Server(
  * Exposes a single "create_note" tool that lets clients create new notes.
  */
 server.setRequestHandler(ListToolsRequestSchema, async () => {
-  let agents = Agents.initSync();
+  let agents = await Agents.init();
   let d = agents.data
     .filter((x) => x.callable)
     .map((x) => {
@@ -171,7 +171,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request: any) => {
       }
     }
     case "list_allowed_agents": {
-      const agents = Agents.initSync();
+      const agents = await Agents.init();
       return {
         content: [
           {
@@ -225,7 +225,7 @@ async function call_agent({
   agent_name: string;
   message: string;
 }) {
-  let agents = Agents.initSync();
+  let agents = await Agents.init();
   if (agents.data.find((x) => x.label == agent_name) == null) {
     throw new Error(`Agent ${agent_name} not found`);
   }
@@ -272,13 +272,13 @@ async function add_task({
   description?: string;
 }) {
   // console.log("add_task", name, cron, agent_name, command, description);
-  const agents = Agents.initSync();
+  const agents = await Agents.init();
   const agent = agents.data.find((x) => x.label == agent_name);
   if (agent == null) {
     throw new Error(`Agent ${agent_name} not found`);
   }
   let key = v4();
-  TaskList.initSync().data.push({
+  (await TaskList.init()).data.push({
     key: key,
     name,
     command: command,
@@ -287,7 +287,7 @@ async function add_task({
     cron,
     disabled: false,
   });
-  await TaskList.saveSync();
+  await TaskList.save();
   startTask(key);
   return "Task added";
 }

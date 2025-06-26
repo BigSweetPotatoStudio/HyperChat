@@ -25,7 +25,7 @@ import {
 
 export function getMyDefaultEnvironment() {
   let env = Object.assign(getDefaultEnvironment(), process.env);
-  electronData.initSync();
+  electronData.init();
   if (electronData.get().PATH) {
     env.PATH = electronData.get().PATH;
   } else {

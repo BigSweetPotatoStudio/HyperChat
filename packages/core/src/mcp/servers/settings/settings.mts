@@ -93,8 +93,8 @@ export function registerTool(server: McpServer) {
       })), // Optional array of strings
     },
     async ({ variables }) => {
-      VarList.initSync();
-      VarScopeList.initSync();
+      VarList.init();
+      VarScopeList.init();
       for (let v of variables) {
         let scope, name;
         if (v.name.includes(".")) {
@@ -128,8 +128,8 @@ export function registerTool(server: McpServer) {
         }
 
       }
-      await VarList.saveSync();
-      await VarScopeList.saveSync();
+      await VarList.save();
+      await VarScopeList.save();
       getMessageService().sendToRenderer({ type: "update_var_list" });
       return {
         content: [

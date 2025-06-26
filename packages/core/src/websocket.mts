@@ -338,14 +338,14 @@ export async function initHttp() {
   app.use(prefix + "/temp", express.static(path.join(appDataDir, "temp")));
 
   // MCP 路由刷新函数
-  let mcpRouter = registers(prefix + "/mcp");
+  let mcpRouter = await registers(prefix + "/mcp");
   app.use(prefix + "/mcp", mcpRouter);
 
   // 添加 API 端点用于刷新 MCP 路由
-  app.post(prefix + "/api/refreshMcpRoutes", (_req, res) => {
+  app.post(prefix + "/api/refreshMcpRoutes", async (_req, res) => {
     try {
       // 获取新的路由实例
-      const newRouter = refreshRoutes(prefix + "/mcp");
+      const newRouter = await refreshRoutes(prefix + "/mcp");
 
       // 移除旧路由
       app._router.stack = app._router.stack.filter((layer: any) => {

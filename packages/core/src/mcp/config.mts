@@ -132,7 +132,7 @@ for (let key in config.mcpServers) {
     config.mcpServers[key].url = config.mcpServers[key].hyperchat.url;
   }
 }
-MCP_CONFIG.saveSync(false);
+MCP_CONFIG.save();
 
 await initMcpServer().catch((e) => {
   console.error("initMcpServer", e);
@@ -480,9 +480,9 @@ export class MCPClient implements IMCPClient {
       throw e;
     }
   }
-  loadConfig() {
+  async loadConfig() {
     if (this.source == "hyperchat") {
-      this.config = MCP_CONFIG.initSync().mcpServers[this.name] as MCP_CONFIG_TYPE;
+      this.config = (await MCP_CONFIG.init()).mcpServers[this.name] as MCP_CONFIG_TYPE;
     }
     if (this.source == "builtin") {
       buildinMcpJSON = fs.readJsonSync(buildinMcpJSONPath);
@@ -495,15 +495,15 @@ export class MCPClient implements IMCPClient {
       this.config = config.mcpServers[this.name] as MCP_CONFIG_TYPE;
     }
   }
-  saveConfig({ isdelete }: { isdelete?: boolean } = {}) {
+  async saveConfig({ isdelete }: { isdelete?: boolean } = {}) {
     if (this.source == "hyperchat") {
       if (isdelete) {
-        delete MCP_CONFIG.initSync().mcpServers[this.name];
-        MCP_CONFIG.saveSync()
+        delete (await MCP_CONFIG.init()).mcpServers[this.name];
+        MCP_CONFIG.save()
         return;
       } else {
-        MCP_CONFIG.initSync().mcpServers[this.name] = this.config;
-        MCP_CONFIG.saveSync()
+        (await MCP_CONFIG.init()).mcpServers[this.name] = this.config;
+        MCP_CONFIG.save()
       }
 
     } else if (this.source == "builtin") {
@@ -634,7 +634,7 @@ export async function initMcpClients() {
     })
     return mcpClients;
   }
-  let config = MCP_CONFIG.initSync();
+  let config = await MCP_CONFIG.init();
 
   // console.log(config);
   let tasks: any[] = [];
@@ -648,7 +648,7 @@ export async function initMcpClients() {
         order++;
         const c = config.mcpServers[key];
         if (mcpOBj[key] != null) {
-          key = key + "_" + electronData.initSync().uuid.slice(0, 8);
+          key = key + "_" + (await electronData.init()).uuid.slice(0, 8);
         }
         const mcpClient = new MCPClient(key, c, "builtin", order);
         mcpClients.push(mcpClient);
@@ -684,7 +684,7 @@ export async function initMcpClients() {
     const c = config.mcpServers[key];
     if (!c) continue;
     if (mcpOBj[key] != null) {
-      key = key + "_" + electronData.initSync().uuid.slice(0, 8);
+      key = key + "_" + (await electronData.init()).uuid.slice(0, 8);
     }
     const mcpClient = new MCPClient(key, c, "hyperchat", order);
     mcpClients.push(mcpClient);
@@ -718,10 +718,10 @@ export async function initMcpClients() {
 
         const c = config.mcpServers[key];
         if (mcpOBj[key] != null) {
-          key = key + "_" + electronData.initSync().uuid.slice(0, 8);
+          key = key + "_" + (await electronData.init()).uuid.slice(0, 8);
         }
 
-        c.disabled = !electronData.initSync().isLoadClaudeConfig;
+        c.disabled = !(await electronData.init()).isLoadClaudeConfig;
 
         const mcpClient = new MCPClient(key, c, "claude", order);
         mcpClients.push(mcpClient);
@@ -792,7 +792,7 @@ export async function openMcpClient(
   let mcpClient = mcpClients.find((c) => c.name == name);
   if (mcpClient != null) {
     if (clientConfig == null) {
-      mcpClient.loadConfig();
+      await mcpClient.loadConfig();
     } else {
       mcpClient.config = clientConfig;
     }
@@ -804,15 +804,15 @@ export async function openMcpClient(
     mcpOBj[name] = mcpClient;
   }
   if (options.onlySave) {
-    mcpClient.saveConfig();
+    await mcpClient.saveConfig();
 
   } else {
     if (mcpClient.source == "builtin") {
-      mcpClient.saveConfig();
+      await mcpClient.saveConfig();
     }
     try {
       await mcpClient.open();
-      mcpClient.saveConfig();
+      await mcpClient.saveConfig();
 
     } catch (e) {
       Logger.error("openMcpClient", e);
@@ -851,10 +851,10 @@ export async function closeMcpClients(name: string, {
   if (isdisable) {
     mcpClient.status = "disabled";
     mcpClient.config.disabled = true;
-    mcpClient.saveConfig();
+    await mcpClient.saveConfig();
   }
   if (isdelete) {
-    mcpClient.saveConfig({ isdelete: isdelete });
+    await mcpClient.saveConfig({ isdelete: isdelete });
     mcpClients = mcpClients.filter((c) => c.name != name);
   }
   getMessageService().sendAllToRenderer({

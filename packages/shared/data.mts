@@ -18,16 +18,8 @@ export class Data<T> {
   async init(): Promise<T> {
     throw new Error("Method not implemented.");
   }
-  // 不推荐用的同步初始化方法
-  initSync(): T {
-    throw new Error("Method not implemented.");
-  }
   // 尽量使用异步保存数据
   async save() {
-    throw new Error("Method not implemented.");
-  }
-  // 不推荐用的同步保存方法
-  saveSync() {
     throw new Error("Method not implemented.");
   }
 
@@ -70,9 +62,7 @@ export class Data<T> {
    */
   public override({ init, initSync, save, saveSync }: { init?: () => Promise<T>; initSync?: () => T; save?: () => Promise<void>; saveSync?: () => void }) {
     init && (this.init = init);
-    initSync && (this.initSync = initSync);
     save && (this.save = save);
-    saveSync && (this.saveSync = saveSync);
   }
 }
 
@@ -296,19 +286,19 @@ export type IMCPClient = {
 };
 
 class MCP_CONFIG_DATA<T> extends Data<T> {
-  override async save(sync = true): Promise<void> {
-    if (sync) {
-      let result: any = this.get();
-      MCP_CONFIG_SYNC.set(result);
-      await MCP_CONFIG_SYNC.save();
-    }
-    return super.save();
-  }
-  // 不推荐用的同步保存方法，已改为异步实现
-  override async saveSync(sync = true) {
-    // 兼容旧接口，内部直接调用异步 save
-    await this.save(sync);
-  }
+  // override async save(sync = true): Promise<void> {
+  //   if (sync) {
+  //     let result: any = this.get();
+  //     MCP_CONFIG_SYNC.set(result);
+  //     await MCP_CONFIG_SYNC.save();
+  //   }
+  //   return super.save();
+  // }
+  // // 不推荐用的同步保存方法，已改为异步实现
+  // override async save(sync = true) {
+  //   // 兼容旧接口，内部直接调用异步 save
+  //   await this.save(sync);
+  // }
 }
 
 export const MCP_CONFIG = new MCP_CONFIG_DATA(

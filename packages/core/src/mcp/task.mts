@@ -19,7 +19,7 @@ import { Command } from "../command.mjs";
         clientName == "hyper_agent" &&
         functionName.includes("call_agent")
       ) {
-        let agent = Agents.initSync().data.find(
+        let agent = (await Agents.init()).data.find(
           (x) => x.label === argumentsObj.agent_name
         );
         if (agent == null) {
@@ -89,7 +89,7 @@ export async function callAgent(obj: {
   taskKey?: string;
 }) {
 
-  let agent = Agents.initSync().data.find((x) => x.key === obj.agentKey);
+  let agent = (await Agents.init()).data.find((x) => x.key === obj.agentKey);
   if (agent == null) {
     throw new Error(`Agent ${obj.agentKey} not found`);
   }
@@ -181,7 +181,7 @@ export async function callAgent(obj: {
   })
 }
 export async function runTask(taskKey: string, { force = false }) {
-  let task = TaskList.initSync().data.find((x) => x.key === taskKey);
+  let task = (await TaskList.init()).data.find((x) => x.key === taskKey);
   if (task == null) {
     throw new Error(`Task ${taskKey} not found`);
   }
@@ -194,7 +194,7 @@ export async function runTask(taskKey: string, { force = false }) {
   }
 
   Logger.info("Running task", task.name);
-  let agent = Agents.initSync().data.find((x) => x.key === task.agentKey);
+  let agent = (await Agents.init()).data.find((x) => x.key === task.agentKey);
   if (agent == null) {
     throw new Error(`Agent ${task.agentKey} not found`);
   }
@@ -215,15 +215,16 @@ export async function runTask(taskKey: string, { force = false }) {
   } finally {
   }
 }
-export function startTask(taskkey?: string) {
+export async function startTask(taskkey?: string) {
   if (!taskkey) {
-    Logger.info(`enable tasks ${TaskList.initSync().data.length}`);
-    for (let task of TaskList.initSync().data) {
+    const taskList = (await TaskList.init()).data;
+    Logger.info(`enable tasks ${taskList.length}`);
+    for (let task of taskList) {
       if (task.disabled) {
         continue;
       }
-      let cronT = cron.schedule(task.cron, () => {
-        if (electronData.initSync().runTask == true) {
+      let cronT = cron.schedule(task.cron, async () => {
+        if ((await electronData.init()).runTask == true) {
           runTask(task.key, { force: false }).then((res) => {
             Logger.info("task result", res);
           });
@@ -236,7 +237,7 @@ export function startTask(taskkey?: string) {
     }
   } else {
     Logger.info(`enable task ${taskkey}`);
-    let task = TaskList.initSync().data.find((x) => x.key === taskkey);
+    let task = (await TaskList.init()).data.find((x) => x.key === taskkey);
 
     if (!task) {
       throw new Error(`Task ${taskkey} not found`);
@@ -252,8 +253,8 @@ export function startTask(taskkey?: string) {
       Logger.info(`Stopping error ${e}`);
     }
     // console.log("task", task);
-    let cronT = cron.schedule(task.cron, () => {
-      if (electronData.initSync().runTask == true) {
+    let cronT = cron.schedule(task.cron, async () => {
+      if ((await electronData.init()).runTask == true) {
         runTask(task.key, { force: false }).then((res) => {
           Logger.info("task result", res);
         });

@@ -58,7 +58,7 @@ export class CommandFactory {
       version: CONST.getVersion,
       appDataDir: appDataDir,
       logPath: Logger.path,
-      password: electronData.initSync().password,
+      password: (await electronData.init()).password,
       claudeConfigPath: clientPaths.claude,
       ...Config
     };
@@ -306,7 +306,7 @@ export class CommandFactory {
     command: string;
     args?: Array<string>;
   }): Promise<string> {
-    if (electronData.initSync().PATH) {
+    if ((await electronData.init()).PATH) {
       process.env.PATH = electronData.get().PATH;
     } else {
       if (os.platform() != "win32") {
@@ -432,7 +432,8 @@ export class CommandFactory {
     command: string;
     agentName: string;
   }) {
-    let agent = Agents.initSync().data.find((x) => x.label === agentName);
+    let AgentsData = await Agents.init();
+    let agent = AgentsData.data.find((x) => x.label === agentName);
     if (!agent) {
       throw new Error(`Agent not found: ${agentName}`);
     }
@@ -467,7 +468,8 @@ export class CommandFactory {
     if (item.isTask) {
       item.lastMessage = (item.lastMessage || (item.messages && item.messages.length > 0 ? item.messages[item.messages.length - 1] : undefined)) as any;
     }
-    let chatHistory = ChatHistory.initSync().data;
+
+    let chatHistory = (await ChatHistory.init()).data;
     if (item.messages && item.messages.length > 0) {
       fs.writeFileSync(path.join(appDataDir, `messages/${item.key}.json`), JSON.stringify(item.messages, null, 2));
     }
@@ -501,7 +503,7 @@ export class CommandFactory {
     if (item.messages && item.messages.length > 0) {
       fs.writeFileSync(path.join(appDataDir, `messages/${item.key}.json`), JSON.stringify(item.messages, null, 2));
     }
-    let chatHistory = ChatHistory.initSync().data;
+    let chatHistory = (await ChatHistory.init()).data;
     let find = chatHistory.find(x => x.key === item.key);
     if (find) {
       Object.assign(find, item);
@@ -524,7 +526,7 @@ export class CommandFactory {
   }: {
     key: string;
   }) {
-    let chatHistory = ChatHistory.initSync().data;
+    let chatHistory = (await ChatHistory.init()).data;
     let findIndex = chatHistory.findIndex(x => x.key === key);
     if (findIndex !== -1) {
       chatHistory.splice(findIndex, 1);
@@ -532,7 +534,7 @@ export class CommandFactory {
         fs.removeSync(path.join(appDataDir, `messages/${key}.json`));
       }
     }
-    await ChatHistory.saveSync()
+    await ChatHistory.save()
     return;
   }
   async OpenTerminal() {
@@ -561,7 +563,7 @@ export class CommandFactory {
     day: number;
   }) {
     let time = dayjs().subtract(day, "day").valueOf();
-    ChatHistory.initSync()
+    await ChatHistory.init()
     let oldLen = ChatHistory.get().data.length;
     let f = ChatHistory.get().data.filter((x) => !x.icon);
     for (let x of f) {
@@ -576,7 +578,7 @@ export class CommandFactory {
       (x) => !x.deleted,
     );
     let newLen = ChatHistory.get().data.length;
-    await ChatHistory.saveSync();
+    await ChatHistory.save();
     return oldLen - newLen;
   }
   async runCode({ code }: { code: string }) {

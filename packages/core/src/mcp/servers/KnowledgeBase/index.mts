@@ -48,7 +48,7 @@ const server = new Server(
  * Exposes a single "create_note" tool that lets clients create new notes.
  */
 server.setRequestHandler(ListToolsRequestSchema, async () => {
-  let db = KNOWLEDGE_BASE.initSync();
+  let db = await KNOWLEDGE_BASE.init();
   let d = db.dbList
     .map((x) => {
       return `${x.name} - ${x.description}`;
@@ -148,7 +148,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request: any) => {
       }
     }
     case "list_knowledge_base": {
-      KNOWLEDGE_BASE.initSync()
+      await KNOWLEDGE_BASE.init()
       if (KNOWLEDGE_BASE.get()
         .dbList.length == 0) {
         return {

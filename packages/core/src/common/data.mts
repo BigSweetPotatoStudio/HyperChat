@@ -66,7 +66,7 @@ Data.prototype.init = async function (_options: any = {}) {
  * @param _ - 初始化选项（当前未使用）
  * @returns any - 返回初始化后的数据对象
  */
-Data.prototype.initSync = function ({ } = {}) {
+Data.prototype.init = function ({ } = {}) {
   try {
     if (fs.existsSync(path.join(appDataDir, this.KEY))) {
       (this as any).localStorage = fs.readJsonSync(path.join(appDataDir, this.KEY));
@@ -95,82 +95,6 @@ Data.prototype.save = async function () {
   );
 }
 
-/*
- * 注释掉的同步保存方法，保留供参考
- */
-// Data.prototype.saveSync = function () {
-//   return fs.writeFileSync(
-//     path.join(appDataDir, this.KEY),
-//     JSON.stringify(this.options.formatSave(this.data), null, 2)
-//   );
-// };
-
-// for (let data of DataList) {
-//   data.override({
-//     async init() {
-
-//       try {
-//         if (await fs.exists(path.join(appDataDir, this.KEY))) {
-//           this.localStorage = await fs.readJSON(path.join(appDataDir, this.KEY));
-//         } else {
-//           this.localStorage = {};
-//         }
-//       } catch (e) {
-//         this.localStorage = {};
-//       }
-//       this.data = this.options.formatInit(Object.assign({}, this.data, this.localStorage));
-//       return this.data;
-//     },
-//     initSync() {
-//       try {
-//         if (fs.existsSync(path.join(appDataDir, this.KEY))) {
-//           this.localStorage = fs.readJsonSync(path.join(appDataDir, this.KEY));
-//         } else {
-//           this.localStorage = {};
-//         }
-//       } catch (e) {
-//         this.localStorage = {};
-//       }
-//       this.data = this.options.formatInit(Object.assign({}, this.data, this.localStorage));
-//       return this.data;
-//     },
-//     async save() {
-//       try {
-//         if (this.KEY == "chat_history.json") {
-//         } else {
-//           getMessageService().sendAllToRenderer({
-//             type: "syncNodeToWeb",
-//             data: { key: this.KEY, data: this.data },
-//           });
-//         }
-//       } catch (e) { }
-
-//       return await fs.writeFile(
-//         path.join(appDataDir, this.KEY),
-//         JSON.stringify(this.options.formatSave(this.data), null, 2)
-//       );
-//     },
-//     saveSync() {
-//       try {
-//         if (this.KEY == "chat_history.json") {
-//         } else {
-//           getMessageService().sendAllToRenderer({
-//             type: "syncNodeToWeb",
-//             data: { key: this.KEY, data: this.data },
-//           });
-//         }
-//       } catch (e) { }
-
-//       return fs.writeFileSync(
-//         path.join(appDataDir, this.KEY),
-//         JSON.stringify(this.options.formatSave(this.data), null, 2)
-//       );
-//     }
-//   });
-// }
-
-
-// export const MCPServerPORT = 16110;
 
 /*
  * ==========================================
