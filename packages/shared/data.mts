@@ -16,10 +16,16 @@ export const DataList: Data<any>[] = [];
 export class Data<T> {
   // 尽量使用异步初始化数据
   async init(): Promise<T> {
-    throw new Error("Method not implemented.");
+    return this._init();
   }
   // 尽量使用异步保存数据
   async save() {
+    return this._save();
+  }
+  private async _init(): Promise<T> {
+    throw new Error("Method not implemented.");
+  }
+  private async _save() {
     throw new Error("Method not implemented.");
   }
 
@@ -58,11 +64,11 @@ export class Data<T> {
   }
 
   /**
-   * 动态重写 init/initSync/save/saveSync 方法
+   * 动态重写 init/save 方法
    */
-  public override({ init, initSync, save, saveSync }: { init?: () => Promise<T>; initSync?: () => T; save?: () => Promise<void>; saveSync?: () => void }) {
-    init && (this.init = init);
-    save && (this.save = save);
+  public override({ init, save }: { init: () => Promise<T>; save: () => Promise<void>; }) {
+    (this._init = init);
+    (this._save = save);
   }
 }
 
@@ -286,19 +292,14 @@ export type IMCPClient = {
 };
 
 class MCP_CONFIG_DATA<T> extends Data<T> {
-  // override async save(sync = true): Promise<void> {
-  //   if (sync) {
-  //     let result: any = this.get();
-  //     MCP_CONFIG_SYNC.set(result);
-  //     await MCP_CONFIG_SYNC.save();
-  //   }
-  //   return super.save();
-  // }
-  // // 不推荐用的同步保存方法，已改为异步实现
-  // override async save(sync = true) {
-  //   // 兼容旧接口，内部直接调用异步 save
-  //   await this.save(sync);
-  // }
+  override async save(sync = true): Promise<void> {
+    if (sync) {
+      let result: any = this.get();
+      MCP_CONFIG_SYNC.set(result);
+      await MCP_CONFIG_SYNC.save();
+    }
+    return super.save();
+  }
 }
 
 export const MCP_CONFIG = new MCP_CONFIG_DATA(

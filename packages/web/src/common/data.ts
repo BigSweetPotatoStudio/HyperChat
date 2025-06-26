@@ -11,7 +11,7 @@ import {
  * Finally, it merges the loaded data with the default data structure.
  * @returns {Promise<any>} A promise that resolves with the initialized data.
  */
-Data.prototype.init = async function ({ } = {}) {
+Data.prototype["_init"] = async function ({ } = {}) {
   try {
     this.localStorage = await call("readJSON", { path: this.KEY });
   } catch (e) {
@@ -26,7 +26,7 @@ Data.prototype.init = async function ({ } = {}) {
  * It writes the data as a JSON file to the path specified by `this.KEY`.
  * @returns {Promise<any>} A promise that resolves when the data is saved.
  */
-Data.prototype.save = async function () {
+Data.prototype["_save"] = async function () {
   return await call("writeJSON", {
     path: this.KEY,
     obj: this.options.formatSave(this.data),

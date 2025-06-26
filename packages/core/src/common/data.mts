@@ -47,7 +47,7 @@ const { fs, path } = zx;
  * @param _options - 初始化选项（当前未使用）
  * @returns Promise<any> - 返回初始化后的数据对象
  */
-Data.prototype.init = async function (_options: any = {}) {
+Data.prototype["_init"] = async function (_options: any = {}) {
   try {
     (this as any).localStorage = await fs.readJSON(path.join(appDataDir, this.KEY));
   } catch (e) {
@@ -57,28 +57,7 @@ Data.prototype.init = async function (_options: any = {}) {
   return (this as any).data;
 }
 
-/**
- * 同步初始化数据
- * 
- * 同步版本的数据初始化方法，不返回 Promise
- * 主要用于需要立即获取数据的场景
- * 
- * @param _ - 初始化选项（当前未使用）
- * @returns any - 返回初始化后的数据对象
- */
-Data.prototype.init = function ({ } = {}) {
-  try {
-    if (fs.existsSync(path.join(appDataDir, this.KEY))) {
-      (this as any).localStorage = fs.readJsonSync(path.join(appDataDir, this.KEY));
-    } else {
-      (this as any).localStorage = {};
-    }
-  } catch (e) {
-    (this as any).localStorage = {};
-  }
-  (this as any).data = this.options?.formatInit?.(Object.assign({}, (this as any).data, (this as any).localStorage)) || {};
-  return (this as any).data;
-};
+
 
 /**
  * 异步保存数据到文件系统
@@ -88,7 +67,7 @@ Data.prototype.init = function ({ } = {}) {
  * 
  * @returns Promise<void> - 保存完成的 Promise
  */
-Data.prototype.save = async function () {
+Data.prototype["_save"] = async function () {
   return await fs.writeFile(
     path.join(appDataDir, this.KEY),
     JSON.stringify(this.options?.formatSave?.((this as any).data) || (this as any).data, null, 2)
