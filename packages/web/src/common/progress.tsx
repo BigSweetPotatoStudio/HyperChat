@@ -1,51 +1,68 @@
 import React, { useEffect, useState } from "react";
 import { call } from "./call";
-import { Button, Progress } from "antd";
+import { Progress } from "antd";
 
-// // Create a feature-extraction pipeline
-// const extractor = await pipeline("feature-extraction", "Xenova/bge-m3");
+/**
+ * Defines the structure of a single progress item.
+ */
+interface ProgressItem {
+  name: string;
+  progress: number;
+}
 
-// // Compute sentence embeddings
-// const texts = ["What is BGE M3?", "Defination of BM25"];
-// const embeddings = await extractor(texts, { pooling: "cls", normalize: true });
-// console.log(embeddings);
-// // Tensor {
-// //   dims: [ 2, 1024 ],
-// //   type: 'float32',
-// //   data: Float32Array(2048) [ -0.0340719036757946, -0.04478546231985092, ... ],
-// //   size: 2048
-// // }
+/**
+ * Defines the props for the MyProgress component.
+ */
+interface MyProgressProps {
+  /**
+   * The interval in milliseconds at which to check for progress updates.
+   * @default 1000 (1 second)
+   */
+  time?: number;
+}
 
-// console.log(embeddings.tolist()); // Convert embeddings to a JavaScript list
-// // [
-// //   [ -0.0340719036757946, -0.04478546231985092, -0.004497686866670847, ... ],
-// //   [ -0.015383965335786343, -0.041989751160144806, -0.025820579379796982, ... ]
-// // ]
-export function MyProgress({ time = 1000 }) {
-  let [data, setData] = useState([]);
+/**
+ * A React component that displays a list of progress items fetched from a backend API.
+ * It periodically polls the backend for updates and renders them as Ant Design Progress bars.
+ * @param {MyProgressProps} props - The props for the component.
+ * @returns {React.ReactElement} The rendered progress component.
+ */
+export function MyProgress({ time = 1000 }: MyProgressProps): React.ReactElement {
+  const [data, setData] = useState<ProgressItem[]>([]);
+
+  /**
+   * Fetches the latest progress list from the backend.
+   */
   async function checkProgress() {
-    let data = await call("getProgressList", []);
-    setData(data);
-    console.log(data);
+    try {
+      const fetchedData: ProgressItem[] = await call("getProgressList", []);
+      setData(fetchedData);
+      console.log("Progress data fetched:", fetchedData);
+    } catch (error) {
+      console.error("Failed to fetch progress list:", error);
+    }
   }
+
   useEffect(() => {
-    checkProgress();
-    let t = setInterval(checkProgress, time);
+    checkProgress(); // Initial fetch
+    const intervalId = setInterval(checkProgress, time);
+
+    // Cleanup function to clear the interval when the component unmounts.
     return () => {
-      clearInterval(t);
+      clearInterval(intervalId);
     };
-  }, []);
+  }, [time]); // Re-run effect if `time` prop changes.
+
   return (
     <div>
-      {data.map((x, i) => {
-        return (
-          <div>
-            <div className="text-lg font-bold">{x.name}</div>
-            <Progress key={i} percent={x.progress} size="small" />
-          </div>
-        );
-      })}
-      {data.length == 0 && <div>No progress</div>}
+      {data.map((x, i) => (
+        <div key={i}>
+          <div className="text-lg font-bold">{x.name}</div>
+          <Progress percent={x.progress} size="small" />
+        </div>
+      ))}
+      {data.length === 0 && <div>No progress</div>}
     </div>
   );
 }
+

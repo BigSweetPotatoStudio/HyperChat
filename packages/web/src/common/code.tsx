@@ -1,20 +1,40 @@
-import React, { useCallback, useEffect, useRef, useState } from "react";
-
-import { Button, Form, Input, message, Modal, Space } from "antd";
+import React from "react";
+import { message } from "antd";
 import { CopyOutlined } from "@ant-design/icons";
-import { call } from "./call";
 import { setClipboardText } from "./util";
 
-export function Code(props) {
+/**
+ * Props for the Code component.
+ */
+interface CodeProps {
+  /**
+   * The code content to be displayed.
+   */
+  children: string;
+}
+
+/**
+ * A component that displays a piece of code with a copy-to-clipboard button.
+ * @param {CodeProps} props - The props for the component.
+ * @returns {React.ReactElement} The rendered code component.
+ */
+export function Code({ children }: CodeProps): React.ReactElement {
+  const handleCopy = async () => {
+    try {
+      await setClipboardText({ text: children });
+      message.success("Copied to clipboard");
+    } catch (error) {
+      message.error("Failed to copy");
+      console.error("Failed to copy to clipboard:", error);
+    }
+  };
+
   return (
     <code className="bg-slate-300 p-1">
-      {props.children}{" "}
+      {children}{" "}
       <CopyOutlined
         className="cursor-pointer"
-        onClick={async () => {
-          await setClipboardText({ text: props.children });
-          message.success("Copied to clipboard");
-        }}
+        onClick={handleCopy}
       />
     </code>
   );

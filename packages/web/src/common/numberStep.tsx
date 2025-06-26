@@ -1,46 +1,78 @@
 import {
   Col,
-  Input,
   InputNumber,
   InputNumberProps,
   Row,
   Slider,
-  Tag,
 } from "antd";
 import React, { useEffect, useState } from "react";
-export function NumberStep(props: any) {
-  const [inputValue, setInputValue] = useState(props.value);
 
-  const onChange: InputNumberProps["onChange"] = (value) => {
-    if (Number.isNaN(value)) {
-      return;
-    }
-    let v = typeof value === "number" ? value : undefined;
-    setInputValue(v);
-    props.onChange && props.onChange(v);
+/**
+ * Defines the props for the NumberStep component.
+ * It extends Ant Design's InputNumberProps to inherit common number input properties.
+ */
+interface NumberStepProps extends InputNumberProps {
+  /**
+   * The current value of the number input.
+   */
+  value?: number;
+  /**
+   * Callback function triggered when the value changes.
+   * @param value The new numeric value.
+   */
+  onChange?: (value: number | undefined) => void;
+}
+
+/**
+ * A component that provides a numeric input with an accompanying slider for easy adjustment.
+ * It combines Ant Design's Slider and InputNumber components.
+ * @param {NumberStepProps} props - The props for the component.
+ * @returns {React.ReactElement} The rendered NumberStep component.
+ */
+export function NumberStep({
+  value,
+  onChange,
+  min,
+  max,
+  step,
+  defaultValue,
+  ...restProps
+}: NumberStepProps): React.ReactElement {
+  const [inputValue, setInputValue] = useState<number | undefined>(value);
+
+  useEffect(() => {
+    setInputValue(value);
+  }, [value]);
+
+  const handleInputChange: InputNumberProps["onChange"] = (newValue) => {
+    // Ensure the value is a number, otherwise set to undefined.
+    const numericValue = typeof newValue === "number" && !Number.isNaN(newValue) ? newValue : undefined;
+    setInputValue(numericValue);
+    onChange?.(numericValue);
   };
 
   return (
     <Row className="w-full">
       <Col span={16}>
         <Slider
-          defaultValue={props.defaultValue}
-          min={props.min}
-          max={props.max}
-          onChange={onChange}
+          min={min}
+          max={max}
+          onChange={handleInputChange}
           value={inputValue}
-          step={props.step}
+          step={step}
+          defaultValue={defaultValue}
         />
       </Col>
       <Col span={8}>
         <InputNumber
-          defaultValue={props.defaultValue}
-          min={props.min}
-          max={props.max}
+          min={min}
+          max={max}
           style={{ margin: "0 16px" }}
-          step={props.step}
+          step={step}
           value={inputValue}
-          onChange={onChange}
+          onChange={handleInputChange}
+          defaultValue={defaultValue}
+          {...restProps}
         />
       </Col>
     </Row>

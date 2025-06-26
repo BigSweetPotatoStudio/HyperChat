@@ -1,39 +1,86 @@
 import type { Command } from "../../../core/src/command.mts";
 import type { ElectronCommand } from "../../../electron/src/command.mts";
-import { io } from "socket.io-client";
+import { io, Socket } from "socket.io-client";
 import { sleep } from "./sleep";
-import { isOnBrowser } from "./const";
-let ext = {} as any;
-if (typeof window == "undefined") {
-  ext = { ...global.ext };
-} else {
-  ext = { ...window.ext };
+
+/**
+ * Represents the response structure for API calls.
+ */
+interface ApiResponse<T> {
+  success: boolean;
+  data?: T;
+  message?: string;
 }
 
+/**
+ * Defines the interface for the extension object (`ext`) used for backend communication.
+ */
+interface Ext {
+  /**
+   * Sends a command to the backend.
+   * @param command The name of the command to execute.
+   * @param args The arguments for the command.
+   * @param options Optional settings, like an AbortSignal.
+   */
+  invert: <K extends keyof Command | keyof ElectronCommand>(
+    command: K,
+    args: any,
+    options?: { signal?: AbortSignal }
+  ) => Promise<ApiResponse<any>>;
+
+  /**
+   * Registers a listener for messages from the backend.
+   * @param channel The channel to listen on.
+   * @param listener The callback function to execute when a message is received.
+   */
+  receive: (channel: string, listener: (data: any) => void) => void;
+}
+
+let ext: Ext = {} as any;
+
+// Assign the appropriate extension object based on the environment (Node.js or browser).
+if (typeof window === "undefined") {
+  ext = { ...global.ext } as Ext;
+} else {
+  ext = { ...window.ext } as Ext;
+}
+
+// Provide a global accessor for the extension object.
 globalThis.ext2 = ext;
 
-let websocket = undefined;
-let URL_PRE;
+let websocket: Socket | undefined = undefined;
+let URL_PRE: string;
 
+/**
+ * Gets the base URL prefix for API calls.
+ * @returns {string} The base URL.
+ */
 export function getURL_PRE() {
   return URL_PRE;
 }
 
+// Initialize communication logic only in non-Node.js environments.
 if (process.env.runtime !== "node") {
-  // web环境
+  // In a browser context, determine the base URL.
   URL_PRE = location.origin + location.pathname.replace("index.html", "");
 
-  if (ext.invert && process.env.myEnv != "prod") {
-    let config = await ext.invert("getConfig", []);
-    URL_PRE =
-      "http://localhost:" + config.data.port + "/" + config.data.password + "/";
+  // If an invert function is already defined (e.g., in Electron), use it to get config.
+  if (ext.invert && process.env.myEnv !== "prod") {
+    (async () => {
+      const config = await ext.invert("getConfig", []);
+      URL_PRE = `http://localhost:${config.data.port}/${config.data.password}/`;
+    })();
   }
-  if (process.env.myEnv == "dev") {
+
+  // Override URL for local development environment.
+  if (process.env.myEnv === "dev") {
     URL_PRE = "http://localhost:16100/123456/";
   }
+
+  // Define the 'invert' method for making API calls via fetch.
   ext.invert = async (command: string, args: any, options: any = {}) => {
     const { signal } = options;
-    let res = await fetch(URL_PRE + "api/" + command, {
+    const res = await fetch(`${URL_PRE}api/${command}`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -43,7 +90,10 @@ if (process.env.runtime !== "node") {
     }).then((res) => res.json());
     return res;
   };
-  let callbacks: { [key: string]: Array<(data: any) => void> } = {};
+
+  const callbacks: Record<string, Array<(data: any) => void>> = {};
+  
+  // Define the 'receive' method for handling incoming WebSocket messages.
   ext.receive = (channel: string, listener: (data: any) => void) => {
     if (callbacks[channel]) {
       callbacks[channel].push(listener);
@@ -52,30 +102,43 @@ if (process.env.runtime !== "node") {
     }
   };
 
+  // Initialize WebSocket connection.
   const socket = io(URL_PRE + "main-message");
   socket.on("connect", () => {
-    console.log("connected");
+    console.log("WebSocket connected");
     websocket = socket;
   });
+
   socket.on("message-from-main", (data: any) => {
-    if (process.env.myEnv == "dev") {
+    if (process.env.myEnv === "dev") {
       console.log("Received message:", data);
     }
     if (callbacks["message-from-main"]) {
-      for (let callback of callbacks["message-from-main"]) {
+      for (const callback of callbacks["message-from-main"]) {
         callback(data);
       }
     }
   });
 }
+
 globalThis.ext2.call = call;
+
+/**
+ * Makes a generic API call to the core backend.
+ * @template k - The key of the command in the `Command` interface.
+ * @param {k} command - The name of the command to execute.
+ * @param {Parameters<Command[k]>[0]} [args={}] - The arguments for the command.
+ * @param {{ signal?: AbortSignal }} [options={}] - Optional request options, like an AbortSignal.
+ * @returns {Promise<ReturnType<Command[k]>>} A promise that resolves with the command's return value.
+ * @throws {Error} If the API call fails or returns an error.
+ */
 export async function call<k extends keyof Command>(
   command: k,
-  args: Parameters<Command[k]>[0] = {},
-  options: { signal?: AbortSignal } = {},
+  args: Parameters<Command[k]>[0] = {} as any,
+  options: { signal?: AbortSignal } = {}
 ): Promise<ReturnType<Command[k]>> {
   try {
-    let res = await ext.invert(command, args, options);
+    const res = await ext.invert(command, args, options);
     if (res.success) {
       return res.data;
     } else {
@@ -83,18 +146,26 @@ export async function call<k extends keyof Command>(
     }
   } catch (e) {
     console.error(command, args, e);
-
     throw e;
   }
 }
 
+/**
+ * Makes a specific API call to the Electron main process.
+ * @template k - The key of the command in the `ElectronCommand` interface.
+ * @param {k} command - The name of the command to execute.
+ * @param {Parameters<ElectronCommand[k]>[0]} [args={}] - The arguments for the command.
+ * @param {{ signal?: AbortSignal }} [options={}] - Optional request options, like an AbortSignal.
+ * @returns {Promise<ReturnType<ElectronCommand[k]>>} A promise that resolves with the command's return value.
+ * @throws {Error} If the API call fails or returns an error.
+ */
 export async function callElectron<k extends keyof ElectronCommand>(
   command: k,
-  args: Parameters<ElectronCommand[k]>[0] = {},
-  options: { signal?: AbortSignal } = {},
+  args: Parameters<ElectronCommand[k]>[0] = {} as any,
+  options: { signal?: AbortSignal } = {}
 ): Promise<ReturnType<ElectronCommand[k]>> {
   try {
-    let res = await ext.invert(command, args, options);
+    const res = await ext.invert(command, args, options);
     if (res.success) {
       return res.data;
     } else {
@@ -102,19 +173,26 @@ export async function callElectron<k extends keyof ElectronCommand>(
     }
   } catch (e) {
     console.error(command, args, e);
-
     throw e;
   }
 }
 
-
+/**
+ * Registers a listener for a specific message channel from the backend.
+ * @param {string} channel - The name of the channel to listen to.
+ * @param {(data: any) => void} listener - The callback function to handle incoming data.
+ */
 export async function msg_receive(
   channel: string,
-  listener: (data: any) => void,
+  listener: (data: any) => void
 ) {
   ext.receive(channel, listener);
 }
 
+/**
+ * Asynchronously gets the WebSocket instance, waiting for it to connect if necessary.
+ * @returns {Promise<Socket>} A promise that resolves with the connected WebSocket instance.
+ */
 export async function getWebSocket() {
   while (websocket == null) {
     await sleep(500);

@@ -1,49 +1,80 @@
-import querystring from "querystring";
 import { call } from "./call";
-import { Modal, message } from "antd";
-import { log } from "zx/core";
-import { config } from "./config";
+import { Modal } from "antd";
 
-console.log("NODE_ENV: ", process.env.NODE_ENV);
+/**
+ * Defines the structure for the options parameter of the request function.
+ */
+interface RequestOptions extends RequestInit {
+  /**
+   * The body of the request. Can be a FormData object or any JSON-serializable object.
+   */
+  body?: FormData | object;
+  /**
+   * Whether to hide error messages displayed via Ant Design Modal.
+   * @default false
+   */
+  hideMsg?: boolean;
+}
 
+/**
+ * Makes an authenticated API request to the backend.
+ * It automatically attaches an Authorization header with a bearer token.
+ * Handles JSON and FormData request bodies, and provides error handling with Ant Design Modal.
+ *
+ * @param {string} url - The API endpoint URL (relative to BASE_URL).
+ * @param {RequestOptions} [options={}] - Configuration options for the request.
+ * @param {string} [BASE_URL=process.env.REACT_APP_REMOTE_URL] - The base URL for the API. Defaults to `process.env.REACT_APP_REMOTE_URL`.
+ * @returns {Promise<any>} A promise that resolves with the JSON response data if successful, or rejects with an error.
+ * @throws {Error} If the request fails, returns a 401 status, or the API response indicates an error.
+ */
 export async function request(
   url: string,
-  options = {} as any,
-  BASE_URL = process.env.REACT_APP_REMOTE_URL,
+  options: RequestOptions = {},
+  BASE_URL: string = process.env.REACT_APP_REMOTE_URL || "",
 ) {
-  // let token = localStorage.getItem(".token");
-  let token = await call("readFile", { path: ".token" });
-  options.headers = Object.assign({}, options.headers, {
-    Authorization: "Bearer " + token,
-  });
-  if (options.body instanceof FormData) {
-  } else {
-    options = Object.assign({}, options, {
-      headers: Object.assign({}, options.headers, {
+  // Retrieve authentication token.
+  const token: string = await call("readFile", { path: ".token" });
+
+  // Set Authorization header.
+  options.headers = {
+    ...options.headers,
+    Authorization: `Bearer ${token}`,
+  };
+
+  // Handle request body: FormData or JSON.
+  if (!(options.body instanceof FormData)) {
+    options = {
+      ...options,
+      headers: {
+        ...options.headers,
         "Content-Type": "application/json",
-      }),
+      },
       body: JSON.stringify(options.body),
-    });
+    };
   }
+
   return fetch(BASE_URL + url, options)
     .then((res) => {
+      // Handle unauthorized access.
       if (res.status === 401) {
-        throw new Error("未登录");
+        throw new Error("Unauthorized: Please log in.");
       }
       return res;
     })
     .then((res) => res.json())
     .then((res) => {
+      // Handle API-specific success/error response.
       if (!res.success) {
-        // message.error(res.message)
-        !options.hideMsg &&
-          res.message &&
+        // Display error message if not hidden.
+        if (!options.hideMsg && res.message) {
           Modal.error({
-            title: "Tip",
+            title: "Error",
             content: res.message,
           });
-        throw new Error(res.message);
+        }
+        throw new Error(res.message || "An unknown API error occurred.");
       }
       return res;
     });
 }
+

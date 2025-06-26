@@ -1,70 +1,38 @@
 import { call } from "./call";
-import OpenAI from "openai";
 import * as MCPTypes from "@modelcontextprotocol/sdk/types.js";
-import { sleep } from "./sleep";
 
-
-import { TEMP_FILE, MCP_CONFIG, MCP_CONFIG_TYPE } from "../../../shared/data.mjs";
+import { TEMP_FILE } from "../../../shared/data.mjs";
 import type { HyperChatCompletionTool, IMCPClient } from "../../../shared/data.mjs";
 
-
-let init = false;
-let McpClients: Array<IMCPClient>;
-
-
-
-// export type HyperChatCompletionTool = OpenAI.ChatCompletionTool & {
-//   // key?: string;
-//   origin_name?: string;
-//   restore_name?: string;
-//   clientName?: string;
-//   client?: string;
-// };
-
-// export type InitedClient = {
-//   tools: Array<HyperChatCompletionTool>;
-//   prompts: Array<typeof MCPTypes.PromptSchema._type & { key: string }>;
-//   resources: Array<typeof MCPTypes.ResourceSchema._type & { key: string }>;
-//   name: string;
-//   status: "disconnected" | "connected" | "connecting" | "disabled";
-//   order: number;
-//   config: MCP_CONFIG_TYPE;
-//   ext: any;
-//   source: "hyperchat" | "claude"
-// };
+/**
+ * Stores the initialized MCP clients.
+ * @type {IMCPClient[]}
+ */
+let McpClients: IMCPClient[];
 
 export {
   HyperChatCompletionTool,
   IMCPClient as InitedClient
 }
 
-
+/**
+ * Initializes the MCP clients by calling the backend.
+ * Fetches the list of available MCP clients and stores them globally.
+ */
 export async function initMcpClients() {
   let res: any = await call("initMcpClients");
   McpClients = res;
   console.log("initMcpClients", McpClients);
-
 }
 
-// setInterval(async () => {
-//   let res = await call("getMcpClientsLoad", []);
-//   console.log("getMcpClientsLoad", res);
-// }, 100);
-
-// initMcpClients()
-//   .then(() => {
-//     init = true;
-//   })
-//   .catch((e) => {
-//     init = true;
-//   });
-
-// export function getMcpInited() {
-//   return init;
-// }
-
-export function getTools(allowMCPs: string[] | undefined | false = undefined) {
-  let tools: IMCPClient["tools"] = [];
+/**
+ * Retrieves a filtered list of tools from the initialized MCP clients.
+ * @param {string[] | undefined | false} [allowMCPs=undefined] - An optional array of MCP client names to filter by.
+ *   If `undefined` or `false`, all tools are returned. Otherwise, only tools from the specified MCP clients are included.
+ * @returns {HyperChatCompletionTool[]} An array of filtered tools.
+ */
+export function getTools(allowMCPs: string[] | undefined | false = undefined): HyperChatCompletionTool[] {
+  let tools: HyperChatCompletionTool[] = [];
 
   McpClients.forEach((v) => {
     tools = tools.concat(
@@ -78,14 +46,20 @@ export function getTools(allowMCPs: string[] | undefined | false = undefined) {
   });
   return tools;
 }
-export function getPrompts(mcp: string[]) {
-  let set = new Set();
+
+/**
+ * Retrieves a filtered list of prompts from the initialized MCP clients.
+ * @param {string[]} mcp - An array of tool names (e.g., "clientName > toolName") to filter prompts by their client names.
+ * @returns {(typeof MCPTypes.PromptSchema._type & { key: string })[]} An array of filtered prompts.
+ */
+export function getPrompts(mcp: string[]): (typeof MCPTypes.PromptSchema._type & { key: string })[] {
+  let set = new Set<string>();
   for (let tool_name of mcp) {
     let [name, _] = tool_name.split(" > ");
     set.add(name);
   }
 
-  let prompts: IMCPClient["prompts"] = [];
+  let prompts: (typeof MCPTypes.PromptSchema._type & { key: string })[] = [];
 
   McpClients
     .filter((m) => set.has(m.name))
@@ -95,14 +69,19 @@ export function getPrompts(mcp: string[]) {
   return prompts;
 }
 
-export function getResourses(mcp: string[]) {
-  let set = new Set();
+/**
+ * Retrieves a filtered list of resources from the initialized MCP clients.
+ * @param {string[]} mcp - An array of tool names (e.g., "clientName > toolName") to filter resources by their client names.
+ * @returns {(typeof MCPTypes.ResourceSchema._type & { key: string })[]} An array of filtered resources.
+ */
+export function getResourses(mcp: string[]): (typeof MCPTypes.ResourceSchema._type & { key: string })[] {
+  let set = new Set<string>();
   for (let tool_name of mcp) {
     let [name, _] = tool_name.split(" > ");
     set.add(name);
   }
 
-  let resources: IMCPClient["resources"] = [];
+  let resources: (typeof MCPTypes.ResourceSchema._type & { key: string })[] = [];
 
   McpClients
     .filter((m) => set.has(m.name))
@@ -112,60 +91,81 @@ export function getResourses(mcp: string[]) {
   return resources;
 }
 
-export async function getClients() {
+/**
+ * Fetches the current list of MCP clients from the backend.
+ * @returns {Promise<IMCPClient[]>} A promise that resolves with an array of MCP clients.
+ */
+export async function getClients(): Promise<IMCPClient[]> {
   return await call("getMcpClients");
 }
-export async function setClients(res) {
+
+/**
+ * Sets the global list of MCP clients.
+ * @param {IMCPClient[]} res - The array of MCP clients to set.
+ */
+export async function setClients(res: IMCPClient[]) {
   McpClients = res;
 }
 
-
-export async function getMCPExtensionData() {
-  // Because of GitHub's rate limiting、
-
-  // let latest = await fetch(
-  //   "https://api.github.com/repos/BigSweetPotatoStudio/HyperChatMCP/releases/latest",
-  // ).then((res) => res.json());
-  // let js = await latest.assets[0].browser_download_url;
-  let jscode;
+/**
+ * Fetches and executes external MCP extension data (JavaScript code).
+ * This function attempts to fetch the latest extension data from a remote URL.
+ * If fetching fails (e.g., due to network issues), it falls back to a cached version.
+ * The fetched code is executed using `eval`, which requires careful security consideration.
+ * The data is expected to be in a JSONP format, calling a global `jsonp` function.
+ * @returns {Promise<any>} A promise that resolves with the data returned by the executed extension code.
+ * @throws {Error} If the network is not connected and no cache is available, or if the JSONP callback is not received within a timeout.
+ */
+export async function getMCPExtensionData(): Promise<any> {
+  let jscode: string | undefined;
   try {
-    let js =
-      process.env.myEnv == "dev"
+    // Determine the URL for the extension data based on the environment.
+    let jsUrl =
+      process.env.myEnv === "dev"
         ? "https://dev.hyperchatmcp.pages.dev/main.js"
         : "https://hyperchatmcp.pages.dev/main.js";
-    jscode = await fetch(js).then((res) => res.text());
+    
+    // Fetch the JavaScript code.
+    jscode = await fetch(jsUrl).then((res) => res.text());
+    
+    // Initialize TEMP_FILE for caching.
     await TEMP_FILE.init();
 
+    // Execute the fetched code using a Promise and a global JSONP callback.
     let res = await new Promise(async (resolve, reject) => {
-      window["jsonp"] = function (res) {
-        resolve(res.data);
+      // Define a global JSONP callback function.
+      window["jsonp"] = function (data: any) {
+        resolve(data);
       };
+      // Execute the fetched JavaScript code.
       eval(jscode);
 
+      // Set a timeout for the JSONP callback to prevent indefinite waiting.
       setTimeout(() => {
-        reject(new Error("The network is not connected"));
+        reject(new Error("The network is not connected or JSONP callback timed out."));
       }, 5000);
     });
     return res;
-  } catch (e) {
-    if (TEMP_FILE.get().mcpExtensionDataJS != "") {
+  } catch (e: any) {
+    // If fetching fails, try to use the cached version.
+    if (TEMP_FILE.get().mcpExtensionDataJS !== "") {
       jscode = TEMP_FILE.get().mcpExtensionDataJS;
       return new Promise(async (resolve, reject) => {
-        window["jsonp"] = function (res) {
-          // res.data.unshift({
-          //   name: "hyper_tools",
-          //   description: "hyper_tools",
-          // });
-          resolve(res.data);
+        window["jsonp"] = function (data: any) {
+          resolve(data);
         };
         eval(jscode);
       });
     } else {
+      // If no network and no cache, throw an error.
       throw new Error("The network is not connected and there is no cache.");
     }
   } finally {
-    TEMP_FILE.get().mcpExtensionDataJS = jscode;
-    TEMP_FILE.save();
+    // Cache the fetched JavaScript code if it was successfully obtained.
+    if (jscode) {
+      TEMP_FILE.get().mcpExtensionDataJS = jscode;
+      TEMP_FILE.save();
+    }
   }
 }
 

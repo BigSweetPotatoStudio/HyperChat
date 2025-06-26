@@ -2,10 +2,19 @@
 import { IMCPClient } from "../../../shared/data.mjs";
 import type { InitedClient } from "./mcp";
 
+/**
+ * Retrieves a filtered list of tools from MCP clients, specifically for Node.js environment.
+ * This function is similar to `getTools` in `mcp.ts` but is intended for use where `IMCPClient`
+ * might be directly available from a Node.js context.
+ * @param {IMCPClient[]} mcpClients - An array of MCP client objects.
+ * @param {string[] | undefined | false} [allowMCPs=undefined] - An optional array of MCP client names to filter by.
+ *   If `undefined` or `false`, all tools are returned. Otherwise, only tools from the specified MCP clients are included.
+ * @returns {InitedClient["tools"]} An array of filtered tools.
+ */
 export function getToolsOnNode(
-  mcpClients,
+  mcpClients: IMCPClient[],
   allowMCPs: string[] | undefined | false = undefined,
-) {
+): InitedClient["tools"] {
   let tools: InitedClient["tools"] = [];
   mcpClients.forEach((v) => {
     tools = tools.concat(
@@ -18,110 +27,3 @@ export function getToolsOnNode(
   return tools;
 }
 
-export function mcpClientsToArray(mcpClients: Array<IMCPClient>): InitedClient[] {
-  let array: InitedClient[] = [];
-
-  // for (let mcpClient of mcpClients) {
-
-  //   let client = mcpClient;
-  //   let key = client.name;
-  //   array.push({
-  //     ...client,
-  //     prompts: client.prompts.map((x) => {
-  //       return {
-  //         ...x,
-  //         key: key + " > " + x.name,
-  //         clientName: key,
-  //       };
-  //     }),
-  //     resources: client.resources.map((x) => {
-  //       return {
-  //         ...x,
-  //         key: key + " > " + x.name,
-  //         clientName: key,
-  //       };
-  //     }),
-  //     tools: client.tools
-  //       .map((tool) => {
-  //         // let name = "m" + i + "_" + tool.name;
-  //         return {
-  //           type: "function" as const,
-  //           function: {
-  //             name: tool.name,
-  //             description: tool.description,
-  //             parameters: {
-  //               type: tool.inputSchema.type,
-  //               properties: formatProperties(tool.inputSchema.properties, tool.name),
-  //               required: tool.inputSchema.required,
-  //             },
-  //           },
-  //           origin_name: tool.name,
-  //           restore_name: key + " > " + tool.name,
-  //           key: key,
-  //           clientName: key,
-  //           client: key,
-  //         };
-  //       })
-  //       .filter((x) => x != null),
-  //     name: key,
-  //     status: client.status,
-  //     order: client.config.hyperchat?.scope == "built-in" ? client.order : 10000,
-  //     // get config() {
-  //     //   let config = MCP_CONFIG.get().mcpServers[key];
-  //     //   if (config == null) {
-  //     //     return { hyperchat: {} } as any;
-  //     //   }
-  //     //   if (config.hyperchat == null) {
-  //     //     config.hyperchat = {} as any;
-  //     //   }
-  //     //   return config;
-  //     // },
-  //     // set config(value: any) {
-  //     //   MCP_CONFIG.get().mcpServers[key] = value;
-  //     // },
-  //     source: client.source,
-  //     ext: client.ext,
-  //   });
-  // }
-  // array.sort((a, b) => {
-  //   return a.order - b.order;
-  // });
-  // array.forEach((client, i) => {
-  //   client.tools.forEach((tool) => {
-  //     tool.function.name = "m" + (i + 1) + "_" + tool.function.name;
-  //   });
-  // });
-  return array;
-}
-
-// export function formatProperties(obj: any, toolName: string = "") {
-//   if (obj == null) {
-//     return {
-//       compatible: {
-//         type: "string",
-//         description: "ignore, no enter", // compatible gemini-openai
-//       },
-//     };
-//   }
-//   // if (toolName == "NOTION_INSERT_ROW_DATABASE") {
-//   //   debugger;
-//   // }
-//   try {
-//     for (let key in obj) {
-//       if (obj[key].type == "object") {
-//         obj[key].properties = formatProperties(obj[key].properties, toolName);
-//         delete obj[key].additionalProperties; // Corrected to delete obj[key].additionalProperties
-//         delete obj[key].items;
-//       } else if (obj[key].type == "array") {
-//         obj[key].items = formatProperties(obj[key].items, toolName);
-//         delete obj[key].items.additionalProperties; // Corrected to delete obj[key].additionalProperties
-//         delete obj[key].properties;
-//       }
-//     }
-
-//   } catch (e) {
-//     console.error(e);
-//   }
-//   // console.log(obj);
-//   return obj;
-// }

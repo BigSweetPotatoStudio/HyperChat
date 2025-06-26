@@ -6,19 +6,31 @@ import { useLocation } from "react-router-dom";
 import { Pre } from "../components/pre";
 import { call } from "./call";
 
-export function debounce<T>(func: T, wait): T {
-  let timeout;
-  return function executedFunction(...args) {
+/**
+ * Debounces a function, delaying its execution until after a specified `wait` time
+ * has passed since the last time it was invoked.
+ * @template T - The type of the function to debounce.
+ * @param {T} func - The function to debounce.
+ * @param {number} wait - The number of milliseconds to delay.
+ * @returns {T} A new, debounced function.
+ */
+export function debounce<T extends (...args: any[]) => any>(func: T, wait: number): T {
+  let timeout: ReturnType<typeof setTimeout>;
+  return function executedFunction(this: any, ...args: Parameters<T>) {
     const later = () => {
       clearTimeout(timeout);
-      (func as any)(...args);
+      func.apply(this, args);
     };
     clearTimeout(timeout);
     timeout = setTimeout(later, wait);
-  } as any;
+  } as T;
 }
 
-export function useQuery() {
+/**
+ * A React Hook that parses the query parameters from the current URL.
+ * @returns {URLSearchParams} An instance of URLSearchParams containing the query parameters.
+ */
+export function useQuery(): URLSearchParams {
   const { search } = useLocation();
 
   return React.useMemo(() => new URLSearchParams(search), [search]);
@@ -26,35 +38,56 @@ export function useQuery() {
 
 export * from "./const";
 
+/**
+ * Converts a JSON Schema definition into an array of Ant Design ProFormColumnsType.
+ * This function recursively processes the schema to generate form columns suitable for ProForm.
+ * @param {any} schema - The JSON Schema object to convert.
+ * @returns {ProFormColumnsType[]} An array of ProFormColumnsType representing the form fields.
+ */
+/**
+ * Converts a JSON Schema definition into an array of Ant Design ProFormColumnsType.
+ * This function recursively processes the schema to generate form columns suitable for ProForm.
+ * @param {any} schema - The JSON Schema object to convert.
+ * @returns {ProFormColumnsType[]} An array of ProFormColumnsType representing the form fields.
+ */
 export function JsonSchema2ProFormColumnsType(
   schema: any,
 ): ProFormColumnsType[] {
+  /**
+   * Formats a single property from JSON Schema into a ProFormColumnsType.
+   * @param {object} prop - The property object from JSON Schema.
+   * @param {string} prop.type - The data type of the property (e.g., "string", "number", "boolean").
+   * @param {string} prop.description - The description of the property.
+   * @param {boolean} prop.required - Indicates if the property is required.
+   * @param {any[]} prop.anyOf - Used for union types (e.g., string | null).
+   * @param {string[]} prop.enum - An array of allowed values for string enums.
+   * @param {string} key - The key (name) of the property.
+   * @returns {ProFormColumnsType} The formatted ProFormColumnsType for the property.
+   */
   function formatColumns(
     prop: {
-      type: string;
+      type: string | string[];
       description: string;
-      required: boolean;
-      anyOf: any[];
-      enum: string[];
+      required?: boolean;
+      anyOf?: any[];
+      enum?: string[];
     },
-    key,
-  ) {
-    let type = prop.type;
-    let required = prop.required;
-
+    key: string,
+  ): ProFormColumnsType {
+    let type = Array.isArray(prop.type) ? prop.type[0] : prop.type;
+    let required = prop.required || false;
     let description = prop.description;
 
-    if (Array.isArray(prop.type)) {
-      type = prop.type[0];
-      required = !prop.required;
-    }
     if (Array.isArray(prop.anyOf)) {
-      type = prop.anyOf[0].type;
-      description = prop.anyOf[0].description;
-
-      required = !prop.anyOf.find((x) => x.type == "null");
+      const nonNullType = prop.anyOf.find((x) => x.type !== "null");
+      if (nonNullType) {
+        type = nonNullType.type;
+        description = nonNullType.description || description;
+      }
+      required = !prop.anyOf.some((x) => x.type === "null");
     }
-    let formItemProps = {
+
+    const formItemProps = {
       required: required,
       rules: [
         {
@@ -64,13 +97,14 @@ export function JsonSchema2ProFormColumnsType(
       tooltip: description,
     };
 
-    let fieldProps = {
+    const fieldProps: Record<string, any> = {
       placeholder: description,
       style: {
         width: "100%",
       },
       allowClear: false,
     };
+
     let column: ProFormColumnsType;
     if (type === "string") {
       if (prop.enum) {
@@ -90,7 +124,6 @@ export function JsonSchema2ProFormColumnsType(
           title: key,
           dataIndex: key,
           valueType: "text",
-
           fieldProps,
           formItemProps,
         };
@@ -112,49 +145,57 @@ export function JsonSchema2ProFormColumnsType(
         formItemProps,
       };
     } else {
-      // console.log("type", prop.type);
       column = {
         title: key,
         dataIndex: key,
         valueType: "text",
-
         fieldProps,
         formItemProps,
       };
     }
+    // If key is null (e.g., for array items), remove dataIndex and title.
     if (key == null) {
       delete column.dataIndex;
       delete column.title;
-      delete (column as any).formItemProps.name;
+      // The 'name' property for formItemProps is typically used for Form.Item, not ProFormColumnsType directly.
+      // This line might be a remnant or intended for a specific use case not fully clear from context.
+      delete (column.formItemProps as any).name;
     }
     return column;
   }
 
-  function run(item) {
+  /**
+   * Recursively processes the schema properties to generate ProFormColumnsType.
+   * @param {any} item - The current schema item (object type).
+   * @returns {ProFormColumnsType[]} Generated columns.
+   */
+  function run(item: any): ProFormColumnsType[] {
     const columns: ProFormColumnsType[] = [];
     for (const key in item.properties) {
-      let prop = item.properties[key];
+      let prop = { ...item.properties[key] }; // Create a shallow copy to avoid modifying original schema
 
-      prop = { ...prop };
-
-      prop.required = true;
-      if (Array.isArray(item.required)) {
-        prop.required = item.required.includes(key);
-      }
+      // Determine if the property is required based on the parent schema's required array.
+      prop.required = Array.isArray(item.required) ? item.required.includes(key) : false;
 
       let description = prop.description;
       let defaultValue = prop.default;
+
+      // Handle union types (e.g., ["string", "null"] or anyOf).
       if (Array.isArray(prop.type)) {
         prop.type = prop.type[0];
-        prop.required = !prop.type.include("null");
+        prop.required = !prop.type.includes("null");
       }
       if (Array.isArray(prop.anyOf)) {
-        prop.type = prop.anyOf[0].type;
-        description = prop.anyOf[0].description;
-        defaultValue = prop.anyOf[0].default;
-        prop.required = !prop.anyOf.find((x) => x.type == "null");
+        const nonNullType = prop.anyOf.find((x: any) => x.type !== "null");
+        if (nonNullType) {
+          prop.type = nonNullType.type;
+          description = nonNullType.description || description;
+          defaultValue = nonNullType.default || defaultValue;
+        }
+        prop.required = !prop.anyOf.some((x: any) => x.type === "null");
       }
-      let formItemProps = {
+
+      const formItemProps = {
         required: prop.required,
         rules: [
           {
@@ -163,7 +204,7 @@ export function JsonSchema2ProFormColumnsType(
         ],
         tooltip: description,
       };
-      let fieldProps = {
+      const fieldProps = {
         placeholder: description,
         style: {
           width: "100%",
@@ -171,6 +212,7 @@ export function JsonSchema2ProFormColumnsType(
         allowClear: false,
       };
 
+      // Handle array type properties by creating a formList.
       if (prop.type === "array") {
         const column: ProFormColumnsType = {
           title: key,
@@ -179,15 +221,15 @@ export function JsonSchema2ProFormColumnsType(
           valueType: "formList",
           fieldProps,
           formItemProps,
+          // Recursively generate columns for array items.
           columns: prop.properties
             ? JsonSchema2ProFormColumnsType(prop.properties)
-            : [formatColumns(prop.items, undefined)],
+            : [formatColumns(prop.items, undefined)], // For simple arrays, format the item schema.
         };
         columns.push(column);
-        continue;
       } else {
+        // For other types, format as a regular column.
         columns.push(formatColumns(prop, key));
-        continue;
       }
     }
     return columns;
@@ -199,6 +241,8 @@ export function JsonSchema2ProFormColumnsType(
     return [];
   }
 }
+
+
 
 const formItemLayout = {
   labelCol: {
@@ -218,55 +262,78 @@ const formItemLayout = {
 //   },
 // };
 
+/**
+ * Converts a JSON Schema definition into an array of Ant Design Form.Item components.
+ * This function recursively processes the schema to generate form items.
+ * @param {any} schema - The JSON Schema object to convert.
+ * @param {any[]} [keys=[]] - An array of keys representing the current path in the form.
+ * @returns {React.ReactNode[]} An array of React nodes representing the form items.
+ */
+/**
+ * Converts a JSON Schema definition into an array of Ant Design Form.Item components.
+ * This function recursively processes the schema to generate form items.
+ * @param {any} schema - The JSON Schema object to convert.
+ * @param {any[]} [keys=[]] - An array of keys representing the current path in the form.
+ * @returns {React.ReactNode[]} An array of React nodes representing the form items.
+ */
 export function JsonSchema2FormItem(schema: any, keys: any[] = []) {
-  // console.log("schema", schema);
+  /**
+   * Formats a single property from JSON Schema into an Ant Design Form.Item.
+   * @param {object} prop - The property object from JSON Schema.
+   * @param {string | string[]} prop.type - The data type of the property.
+   * @param {string} prop.description - The description of the property.
+   * @param {boolean} prop.required - Indicates if the property is required.
+   * @param {any[]} prop.anyOf - Used for union types.
+   * @param {string[]} prop.enum - An array of allowed values for string enums.
+   * @param {any} prop.properties - Properties for object types.
+   * @param {any} prop.items - Items for array types.
+   * @param {any[]} currentKeys - The current path keys for the form item.
+   * @returns {React.ReactNode} The formatted Form.Item component.
+   */
   function formatColumns(
     prop: {
-      type: string;
+      type: string | string[];
       description: string;
-      required: boolean;
-      anyOf: any[];
-      enum: string[];
-      properties: any;
-      items: any;
+      required?: boolean;
+      anyOf?: any[];
+      enum?: string[];
+      properties?: any;
+      items?: any;
     },
-    keys: any[],
+    currentKeys: any[],
   ) {
-    let type = prop.type;
-    let required = prop.required;
+    let type = Array.isArray(prop.type) ? prop.type[0] : prop.type;
+    let required = prop.required || false;
 
     let description = prop.description;
 
-    if (Array.isArray(prop.type)) {
-      type = prop.type[0];
-      required = !prop.required;
-    }
     if (Array.isArray(prop.anyOf)) {
-      type = prop.anyOf[0].type;
-      description = prop.anyOf[0].description;
-
-      required = !prop.anyOf.find((x) => x.type == "null");
+      const nonNullType = prop.anyOf.find((x) => x.type !== "null");
+      if (nonNullType) {
+        type = nonNullType.type;
+        description = nonNullType.description || description;
+      }
+      required = !prop.anyOf.some((x) => x.type === "null");
     }
 
     let formItem;
     let label =
-      typeof keys[keys.length - 1] === "string" ? keys[keys.length - 1] : "";
-    // console.log(label);
-    // typeof keys[keys.length - 1] === "string" ? keys[keys.length - 1] : "";
-    if (type == "array") {
+      typeof currentKeys[currentKeys.length - 1] === "string" ? currentKeys[currentKeys.length - 1] : "";
+
+    if (type === "array") {
       return (
-        <Form.List name={keys} key={keys.toString()}>
+        <Form.List name={currentKeys} key={currentKeys.toString()}>
           {(fields, { add, remove }) => (
             <>
               <Form.Item
-                key={keys.toString()}
+                key={currentKeys.toString()}
                 label={label}
-                required={prop.required}
+                required={required}
               >
-                {fields.map((field, index) => {
+                {fields.map((field) => {
                   return (
                     <div key={field.key} className="flex w-full">
-                      {prop.items.type === "object"
+                      {prop.items?.type === "object"
                         ? JsonSchema2FormItem(prop.items as any, [field.name])
                         : formatColumns(prop.items as any, [field.name])}
                       <MinusCircleOutlined
@@ -291,10 +358,10 @@ export function JsonSchema2FormItem(schema: any, keys: any[] = []) {
           )}
         </Form.List>
       );
-    } else if (type == "object") {
+    } else if (type === "object") {
       formItem = (
-        <Form.Item className="w-full" key={keys.toString()} label={label}>
-          {JsonSchema2FormItem(prop, [...keys])}
+        <Form.Item className="w-full" key={currentKeys.toString()} label={label}>
+          {JsonSchema2FormItem(prop, [...currentKeys])}
         </Form.Item>
       );
     } else if (type === "string") {
@@ -302,8 +369,8 @@ export function JsonSchema2FormItem(schema: any, keys: any[] = []) {
         formItem = (
           <Form.Item
             className="w-full"
-            key={keys.toString()}
-            name={keys}
+            key={currentKeys.toString()}
+            name={currentKeys}
             label={label}
             tooltip={description}
             normalize={(value) => {
@@ -335,8 +402,8 @@ export function JsonSchema2FormItem(schema: any, keys: any[] = []) {
         formItem = (
           <Form.Item
             className="w-full"
-            key={keys.toString()}
-            name={keys}
+            key={currentKeys.toString()}
+            name={currentKeys}
             label={label}
             tooltip={description}
             normalize={(value) => {
@@ -365,8 +432,8 @@ export function JsonSchema2FormItem(schema: any, keys: any[] = []) {
       formItem = (
         <Form.Item
           className="w-full"
-          key={keys.toString()}
-          name={keys}
+          key={currentKeys.toString()}
+          name={currentKeys}
           label={label}
           tooltip={description}
           normalize={(value) => {
@@ -394,8 +461,8 @@ export function JsonSchema2FormItem(schema: any, keys: any[] = []) {
       formItem = (
         <Form.Item
           className="w-full"
-          key={keys.toString()}
-          name={keys}
+          key={currentKeys.toString()}
+          name={currentKeys}
           label={label}
           tooltip={description}
           normalize={(value) => {
@@ -418,8 +485,8 @@ export function JsonSchema2FormItem(schema: any, keys: any[] = []) {
       formItem = (
         <Form.Item
           className="w-full"
-          key={keys.toString()}
-          name={keys}
+          key={currentKeys.toString()}
+          name={currentKeys}
           label={label}
           tooltip={description}
           normalize={(value) => {
@@ -465,6 +532,12 @@ export function JsonSchema2FormItem(schema: any, keys: any[] = []) {
   }
 }
 
+/**
+ * Converts a JSON Schema definition into an array of Ant Design Form.Item components.
+ * If the conversion results in an empty array, it returns null.
+ * @param {any} p - The JSON Schema object to convert.
+ * @returns {React.ReactNode[] | null} An array of React nodes representing the form items, or null if no items are generated.
+ */
 export function JsonSchema2FormItemOrNull(p) {
   let res = JsonSchema2FormItem(p);
   if (res.length == 0) {
@@ -475,6 +548,12 @@ export function JsonSchema2FormItemOrNull(p) {
 }
 
 
+/**
+ * Copies the given text to the clipboard.
+ * It attempts to use the modern Clipboard API first, falling back to a textarea-based method if not available or in an insecure context.
+ * @param {{ text: string }} params - An object containing the text to copy.
+ * @param {string} params.text - The text content to be copied to the clipboard.
+ */
 export const setClipboardText = async ({ text }: { text: string }) => {
   const copy = (text: string) => {
     if (navigator.clipboard && window.isSecureContext) {
@@ -502,6 +581,11 @@ export const setClipboardText = async ({ text }: { text: string }) => {
 }
 
 
+/**
+ * Displays the content of a file in an Ant Design Modal.
+ * @param {{ path: string }} params - An object containing the path to the file.
+ * @param {string} params.path - The absolute path to the file to display.
+ */
 export const showText = async ({ path }: { path: string }) => {
   let text = await call("readFile", { path });
   Modal.info({
