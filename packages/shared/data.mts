@@ -1,7 +1,9 @@
 
-import type OpenAI from "../core/node_modules/openai";
-import * as MCPTypes from "../core/node_modules/@modelcontextprotocol/sdk/dist/esm/types.js";
-import { v4 } from "../core/node_modules/uuid";
+// import type OpenAI from "../core/node_modules/openai";
+// import * as MCPTypes from "../core/node_modules/@modelcontextprotocol/sdk/dist/esm/types.js";
+// import { v4 } from "../core/node_modules/uuid/dist/esm-node/index.js";
+
+import { v4, OpenAI, MCPTypes } from "../core/src/lib.mjs";
 
 
 // 全局数据实例列表，所有 Data 实例会自动加入此数组

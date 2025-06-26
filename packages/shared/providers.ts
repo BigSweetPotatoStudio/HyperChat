@@ -1,5 +1,5 @@
 import { Data } from './data.mjs';
-import { v4 } from 'uuid';
+import { v4, OpenAI, MCPTypes } from "../core/src/lib.mjs";
 
 // 提供商配置接口，描述每个大模型 API 的基本信息
 export interface ProviderConfig {
