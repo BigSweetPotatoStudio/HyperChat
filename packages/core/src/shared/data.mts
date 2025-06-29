@@ -272,11 +272,13 @@ export type MCP_CONFIG_TYPE = {
   isSync?: boolean;
 };
 
-export type HyperChatCompletionTool = typeof MCPTypes.ToolSchema._type & OpenAI.ChatCompletionTool & {
-  origin_name?: string;
-  restore_name?: string;
-  clientName?: string;
-  client?: string;
+export type HyperChatCompletionTool = MCPTypes.Tool & {
+  new_name: string;
+  client_name: string;
+  origin_name: string; // ! 废弃⚠️
+  restore_name: string; // ! 废弃⚠️
+  clientName?: string; // ! 废弃⚠️
+  client?: string; // ! 废弃⚠️
 };
 export type IMCPClient = {
   tools: Array<HyperChatCompletionTool>;

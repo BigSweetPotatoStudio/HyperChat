@@ -170,7 +170,7 @@ export class ProviderManager {
                 ...updates,
                 key, // 确保key不被更改
                 isBuiltIn: false,
-            };
+            } as any;;
             PROVIDER_CONFIGS.save();
             return true;
         }
@@ -237,7 +237,7 @@ export class ProviderManager {
                 ...data.customProviders[customIndex],
                 ...updates,
                 hasApiKey: !!updates.apiKey,
-            };
+            } as any;;
             PROVIDER_CONFIGS.save();
             return true;
         }
@@ -260,7 +260,7 @@ export class ProviderManager {
     // 获取提供商的 API Key 信息
     static getProviderApiKey(key: string): { apiKey: string; baseURL: string } | null {
         const data = PROVIDER_CONFIGS.get();
-        
+
         // 先查找自定义提供商
         const customProvider = data.customProviders.find(p => p.key === key);
         if (customProvider && customProvider.hasApiKey) {
@@ -269,12 +269,12 @@ export class ProviderManager {
                 baseURL: customProvider.baseURL || '',
             };
         }
-        
+
         // 查找内置提供商的 API Key
         if (data.builtinApiKeys && data.builtinApiKeys[key]) {
             return data.builtinApiKeys[key];
         }
-        
+
         return null;
     }
 

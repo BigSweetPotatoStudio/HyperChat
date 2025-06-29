@@ -196,10 +196,10 @@ export const availableTools = (tools: HyperChatCompletionTool[]) => {
     .map((tool) => {
       return `
   <tool>
-    <name>${tool.function.name}</name>
-    <description>${tool.function.description}</description>
+    <name>${tool.name}</name>
+    <description>${tool.description}</description>
     <arguments>
-      ${tool.function.parameters ? JSON.stringify(tool.function.parameters) : ''}
+      ${tool.inputSchema ? JSON.stringify(tool.inputSchema) : ''}
     </arguments>
   </tool>
   `

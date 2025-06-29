@@ -1,95 +1,55 @@
 
-import type { HyperChatCompletionTool } from "./mcp";
+import type { HyperChatCompletionTool } from "./data.mjs";
 // import { call, getURL_PRE, getWebSocket } from "./call";
 import * as MCPTypes from "@modelcontextprotocol/sdk/types.js";
+import type { CoreMessage, LanguageModel, StreamTextResult, ToolChoice, CoreTool, ToolSet } from 'ai';
+import { streamText } from 'ai';
+import { createOpenAI } from '@ai-sdk/openai';
+import { createAnthropic } from '@ai-sdk/anthropic';
 
-let antdmessage: { warning: (msg: string) => void };
-let callModule = {
-  getURL_PRE: () => "",
-  getWebSocket: () => null,
-};
-if (process.env.runtime === "node") {
-  antdmessage = { warning: console.warn };
-} else {
-  const { message } = await import("antd");
-  antdmessage = { warning: message.warning };
-  let call = await import("./call");
-  callModule.getURL_PRE = call.getURL_PRE;
-  callModule.getWebSocket = call.getWebSocket;
-}
 
-import imageBase64 from "../common/openai_image_base64.txt";
+// let antdmessage: { warning: (msg: string) => void };
+// let callModule = {
+//   getURL_PRE: () => "",
+//   getWebSocket: () => null,
+// };
+// if (process.env.runtime === "node") {
+//   antdmessage = { warning: console.warn };
+// } else {
+//   const { message } = await import("antd");
+//   antdmessage = { warning: message.warning };
+//   let call = await import("./call");
+//   callModule.getURL_PRE = call.getURL_PRE;
+//   callModule.getWebSocket = call.getWebSocket;
+// }
+
 import { v4 } from "uuid";
 import dayjs from "dayjs";
-import { isOnBrowser } from "./const";
-import type { GPT_MODELS_TYPE, MyMessage, Tool_Call } from "./data.mjs";
-import { OpenAICompatibility } from "./openai-compatibility";
-import type OpenAI from "openai";
+// import { isOnBrowser } from "./const";
+import { GPT_MODELS, type GPT_MODELS_TYPE, type MyMessage, type Tool_Call } from "./data.mjs";
 import { extractTool } from "./prompt";
-// import OpenAICompatibility from "openai";
 
-export {
-  MyMessage,
-  Tool_Call,
-}
 
 
 
 const deviceId = v4();
 export class OpenAiChannel {
-  openai: OpenAICompatibility;
   get lastMessage(): MyMessage {
-    return this.messages[this.messages.length - 1];
-  }
-  totalTokens = 0;
-  get estimateTotalTokens() {
-    let total = 0;
-    for (let m of this.messages) {
-      total += m.content.length;
+    if (!this.messages || this.messages.length === 0) {
+      throw new Error("No messages found");
+    } else {
+      return this.messages[this.messages.length - 1]!;
     }
-    return total;
   }
   private abortController: AbortController | null = null;
   private mcpAbortController: AbortController | null = null;
 
   constructor(
     public options: {
-      baseURL: string;
-      apiKey: string;
-      model?: string;
-      // provider?: string;  
-      // call_tool_step?: number;
-      // supportTool?: boolean;
-      // supportImage?: boolean;
-      // isStrict?: boolean;
-
-      requestType?: "complete" | "stream";
-
-      allowMCPs?: string[]; // agentData
-      temperature?: number; // agentData
       confirm_call_tool?: boolean;
-      confirm_call_tool_cb?: (tool: Tool_Call) => void;
-      messages_format_callback?: (messages: MyMessage) => Promise<void>;
-    } & Partial<GPT_MODELS_TYPE>,
+    },
     public messages: MyMessage[] = [],
   ) {
-
-    this.openai = new OpenAICompatibility({
-      baseURL: options.baseURL,
-      apiKey: options.apiKey, // This is the default and can be omitted
-      dangerouslyAllowBrowser: process.env.runtime !== "node",
-      defaultHeaders: {
-        "HTTP-Referer": "https://hyperchat.dadigua.men", // Optional. Site URL for rankings on openrouter.ai.
-        "X-Title": "HyperChat", // Optional. Site title for rankings on openrouter.ai.
-        // baseURL: encodeURIComponent(options.baseURL),
-      },
-    }, this.options);
-
-
-    this.options.temperature =
-      typeof this.options.temperature === "number"
-        ? this.options.temperature
-        : undefined;
   }
   addMessage(
     message: MyMessage,
@@ -97,13 +57,16 @@ export class OpenAiChannel {
     promptResList: Array<MCPTypes.GetPromptResult> = [],
   ) {
     if (resourceResList.length > 0) {
-      message.content = [
-        {
-          type: "text",
-          text: message.content.toString() as string,
-        },
-      ];
-
+      if (message.content == "" || message.content == null) {
+        message.content = [];
+      } else {
+        message.content = [
+          {
+            type: "text",
+            text: message.content.toString() as string,
+          },
+        ];
+      }
       for (let r of resourceResList) {
         for (let content of r.contents) {
           if (content.text) {
@@ -117,63 +80,12 @@ export class OpenAiChannel {
               image_url: { url: content.blob },
             } as any);
           } else {
-            antdmessage.warning("resource only supports text + images.");
+            this.ext.antdmessage.warning("resource only supports text + images.");
           }
         }
       }
     }
     this.messages.push(message);
-    if (promptResList.length > 0) {
-      for (let p of promptResList) {
-        for (let m of p.messages) {
-          if (m.content.type == "text") {
-            this.messages.push({
-              role: m.role,
-              content: m.content.text as string,
-              content_from: p.call_name as string,
-              content_attachment: [],
-              content_date: Date.now(),
-            });
-          } else if (m.content.type == "resource") {
-            if (m.content.resource.text) {
-              this.messages.push({
-                role: m.role,
-                content: m.content.resource.text as string,
-                content_from: p.call_name as string,
-                content_attachment: [],
-                content_date: Date.now(),
-              });
-            } else if (
-              m.content.resource.blob &&
-              m.content.resource?.mimeType.startsWith("image")
-            ) {
-              if (m.role == "user") {
-                this.messages.push({
-                  role: m.role as "user",
-                  content: [
-                    {
-                      type: "image_url",
-                      image_url: { url: m.content.resource.blob } as any,
-                    },
-                  ],
-                  content_from: p.call_name as string,
-                  content_attachment: [],
-                  content_date: Date.now(),
-                });
-              } else {
-                antdmessage.warning(
-                  "openai only user role support submit image.",
-                );
-              }
-            } else {
-              antdmessage.warning("resource only supports text + images.");
-            }
-          } else {
-            antdmessage.warning("prompt only supports text + resource.");
-          }
-        }
-      }
-    }
 
     return this;
   }
@@ -192,17 +104,23 @@ export class OpenAiChannel {
   index = 0;
   status: "runing" | "stop" = "stop";
   async completion(
-    onUpdate?: (content: string) => void,
-    call_tool: boolean = true,
-    step = 0,
+    options: Parameters<typeof streamText>[0],
+    params: {
+      modelKey: string;
+      allowMCPs: string[],
+      onUpdate?: () => void;
+      call_tool?: boolean;
+      confirm_call_tool_cb?: (tool: Tool_Call) => Promise<boolean>;
+    }
   ): Promise<string> {
     this.status = "runing";
     this.index++;
-    this.openai.modelData = this.options;
-
-    let res = await this._completion(onUpdate, call_tool, step, {
-      index: this.index,
-    }).catch((e) => {
+    let newParams = {
+      ...params,
+      context: { index: this.index },
+      step: 0,
+    }
+    let res = await this._completion(options, newParams).catch((e) => {
       this.status = "stop";
       throw e;
     });
@@ -210,39 +128,47 @@ export class OpenAiChannel {
     return res;
   }
   async _completion(
-    onUpdate?: (content: string) => void,
-    call_tool: boolean = true,
-    step = 0,
-    context: { index: number } = { index: 0 },
-  ): Promise<string> {
-    if (context.index < this.index) {
-      throw new Error("User Cancel Requesting");
+    options: Parameters<typeof streamText>[0],
+    params: {
+      modelKey: string;
+      allowMCPs: string[],
+      onUpdate?: () => void;
+      call_tool?: boolean;
+      step: number;
+      context: {}
+      confirm_call_tool_cb?: (tool: Tool_Call) => Promise<boolean>;
     }
+  ): Promise<string> {
+
     if (this.status == "stop") {
       throw new Error("User Cancel Requesting");
     }
-    let tools: HyperChatCompletionTool[];
-    if (!call_tool || this.options.supportTool === false) {
-      tools = undefined;
-    } else {
-      try {
-        if (process.env.runtime === "node") {
-          tools = globalThis.getTools(this.options.allowMCPs);
-        } else {
-          tools = globalThis.getTools(this.options.allowMCPs);
-        }
-      } catch (e) {
-        tools = []
-      }
-
-      if (tools.length == 0) {
-        tools = undefined;
-      }
+    let modelConfig = GPT_MODELS.get().data.find((x) => x.key === params.modelKey);
+    if (!modelConfig) {
+      throw new Error(`Model not found: ${params.modelKey}`);
     }
+    let tools: HyperChatCompletionTool[];
+    // if (!params.call_tool || modelConfig.supportTool === false) {
+    //   tools = undefined;
+    // } else {
+    //   try {
+    //     if (process.env.runtime === "node") {
+    //       tools = globalThis.getTools(allowMCPs);
+    //     } else {
+    //       tools = globalThis.getTools(allowMCPs);
+    //     }
+    //   } catch (e) {
+    //     tools = []
+    //   }
+
+    //   if (tools.length == 0) {
+    //     tools = undefined;
+    //   }
+    // }
     let tool_calls = [] as Array<Tool_Call>;
     // let content: string = "";
     this.abortController = new AbortController();
-    let res: MyMessage = {
+    let newMessage: MyMessage = {
       role: "assistant",
       content: "" as any,
       reasoning_content: "",
@@ -260,149 +186,74 @@ export class OpenAiChannel {
     let messages = this.messages.filter(
       (m) => m.content_attached == null || m.content_attached == true,
     );
-    this.messages.push(res as any);
-    onUpdate && onUpdate(this.lastMessage.content as string);
+    this.messages.push(newMessage as any);
+    params.onUpdate && params.onUpdate();
     try {
-      if (this.options.requestType === "stream") {
-        let format_message = await this.messages_format(messages);
-        onUpdate && onUpdate(res.content as string);
-        const stream = await this.openai.completion(
-          {
-            messages: format_message,
-            model: this.options.model,
-            stream: true,
-            stream_options: {
-              include_usage: true,
-            },
-            tools: tools && this.tools_format(tools),
-            temperature: this.options.temperature,
-          },
-          {
-            signal: this.abortController.signal,
-          },
-        );
-        this.lastMessage.content_status = "success";
-        this.lastMessage.content_status = "dataLoading";
-        onUpdate && onUpdate(res.content as string);
 
-        for await (const chunk of stream) {
+      let format_message = await this.messages2core(messages);
+      params.onUpdate && params.onUpdate();
 
-          if (chunk.usage) {
-            this.totalTokens = chunk.usage.total_tokens;
-            res.content_usage.completion_tokens = chunk.usage.completion_tokens;
-            res.content_usage.prompt_tokens = chunk.usage.prompt_tokens;
-            res.content_usage.total_tokens = chunk.usage.total_tokens;
-          }
-          if (chunk?.choices == null) {
-            continue;
-          }
-
-          if (chunk?.choices[0]?.delta?.tool_calls) {
-
-            for (const [
-              i,
-              tool_call,
-            ] of chunk.choices[0].delta.tool_calls.entries()) {
-              let index = tool_call.index || i;
-
-              let tool = tool_calls[index];
-              if (!tool) {
-                tool = {
-                  index: index,
-                  id: "",
-                  type: "function",
-                  restore_name: "",
-                  origin_name: "",
-                  function: {
-                    name: "",
-                    arguments: "",
-                    argumentsOBJ: {},
-                  },
-                };
-                tool_calls[index] = tool;
-              }
-              tool.function.name += tool_call.function.name || "";
-
-              tool.function.arguments += tool_call.function.arguments || "";
-              tool.id += tool_call.id || "";
-            }
-          }
-
-          res.content += (chunk.choices[0]?.delta?.content || "");
-          res.reasoning_content +=
-            (chunk.choices[0]?.delta as any)?.reasoning_content || (chunk.choices[0]?.delta as any)?.reasoning || "";
-          res.content_date = Date.now();
-          onUpdate && onUpdate(res.content as string);
-        }
-        // if (res.content == "") {
-        //   res.content = undefined;
-        // }
-        onUpdate && onUpdate(res.content as string);
-      } else {
-        let format_message = await this.messages_format(messages);
-        onUpdate && onUpdate(res.content as string);
-        const chatCompletion = await this.openai.completion(
-          {
-            messages: format_message,
-            model: this.options.model,
-            tools: tools && this.tools_format(tools),
-            temperature: this.options.temperature,
-          },
-          {
-            signal: this.abortController.signal,
-          },
-        );
-
-        if (!Array.isArray(chatCompletion.choices)) {
-          console.log("chatCompletion", chatCompletion);
-          throw new Error(
-            (chatCompletion as any)?.error?.message ||
-            "Provider returned error",
-          );
-        }
-        this.lastMessage.content_status = "success";
-        this.totalTokens = chatCompletion?.usage?.total_tokens;
-        res.content_usage.completion_tokens =
-          chatCompletion?.usage?.completion_tokens;
-        res.content_usage.prompt_tokens = chatCompletion?.usage?.prompt_tokens;
-        res.content_usage.total_tokens = chatCompletion?.usage?.total_tokens;
-
-        let lastMessage =
-          chatCompletion.choices[chatCompletion.choices.length - 1].message;
-
-        let i = 0;
-        for (let restool of lastMessage.tool_calls || []) {
-          let tool = tool_calls[i];
-          if (!tool) {
-            tool = {
-              index: i,
-              id: "",
-              type: "function",
-
-              restore_name: "",
-              origin_name: "",
-              function: {
-                name: "",
-
-                arguments: "",
-                argumentsOBJ: {},
-              },
-            };
-            tool_calls[i] = tool;
-          }
-          tool_calls[i].index = i;
-          tool.function.name += restool.function.name || "";
-          tool.function.arguments += restool.function.arguments || "";
-          tool.id += restool.id || "";
-          i++;
-        }
-
-        this.lastMessage.content = lastMessage.content;
-        this.lastMessage.reasoning_content = (lastMessage as any).reasoning_content || (lastMessage as any).reasoning;
+      const aiTools = this.tools_format_ai(this.ext.mcpTools || []);
+      options.tools = {
+        ...options.tools,
+        ...aiTools,
       }
+
+      const result = await streamText({
+        ...options,
+        abortSignal: this.abortController.signal,
+      });
+
+      this.lastMessage.content_status = "success";
+      this.lastMessage.content_status = "dataLoading";
+      params.onUpdate && params.onUpdate();
+
+      for await (const delta of result.textStream) {
+        newMessage.content += delta;
+        newMessage.content_date = Date.now();
+        params.onUpdate && params.onUpdate();
+      }
+
+      // 获取最终结果和使用情况
+      const finalResult = await result.text;
+      const usage = await result.usage;
+
+      if (usage) {
+        newMessage.content_usage = {
+          prompt_tokens: 0,
+          completion_tokens: 0,
+          total_tokens: 0,
+        }
+        newMessage.content_usage.completion_tokens = usage.completionTokens;
+        newMessage.content_usage.prompt_tokens = usage.promptTokens;
+        newMessage.content_usage.total_tokens = usage.totalTokens;
+      }
+
+      // 处理工具调用
+      const toolCalls = await result.toolCalls;
+      if (toolCalls && toolCalls.length > 0) {
+        for (const [index, toolCall] of toolCalls.entries()) {
+          let tool: Tool_Call = {
+            index: index,
+            id: toolCall.toolCallId,
+            type: "function",
+            restore_name: "",
+            origin_name: "",
+            function: {
+              name: toolCall.toolName,
+              arguments: JSON.stringify(toolCall.args),
+              argumentsOBJ: toolCall.args || {},
+            },
+          };
+          tool_calls[index] = tool;
+        }
+      }
+
+      params.onUpdate && params.onUpdate();
+
     } catch (e) {
       this.lastMessage.content_status = "error";
-      onUpdate && onUpdate(this.lastMessage.content as string);
+      params.onUpdate && params.onUpdate();
       throw e;
     }
     this.lastMessage.content_status = "dataLoadComplete";
@@ -413,38 +264,38 @@ export class OpenAiChannel {
     //     text: this.lastMessage.reasoning_content,
     //   });
     // }
-    onUpdate && onUpdate(this.lastMessage.content as string);
+    params.onUpdate && params.onUpdate();
 
-    if (this.options.toolMode == "compatible" && (this.lastMessage.content.toString()).includes("<tool_use>")) {
-      let res = extractTool(this.lastMessage.content.toString());
-      if (res) {
-        tool_calls.push({
-          index: 0,
-          id: "call_compatible" + "_" + v4().slice(0, 8),
-          type: "function",
-          function: {
-            name: res.name,
-            arguments: JSON.stringify(res.params),
-            argumentsOBJ: res.params,
-          }
-        });
-        // this.lastMessage.content = "";
-      }
-    }
+    // if (this.options.toolMode == "compatible" && (this.lastMessage.content.toString()).includes("<tool_use>")) {
+    //   let res = extractTool(this.lastMessage.content.toString());
+    //   if (res) {
+    //     tool_calls.push({
+    //       index: 0,
+    //       id: "call_compatible" + "_" + v4().slice(0, 8),
+    //       type: "function",
+    //       function: {
+    //         name: res.name,
+    //         arguments: JSON.stringify(res.params),
+    //         argumentsOBJ: res.params,
+    //       }
+    //     });
+    //     // this.lastMessage.content = "";
+    //   }
+    // }
 
-    tool_calls.forEach((tool) => {
-      let localtool = tools.find((t) => t.function.name === tool.function.name);
-      if (localtool) {
-        tool.restore_name = localtool.restore_name;
-        tool.origin_name = localtool.origin_name;
-      }
-      if (tool.id == "") {
-        tool.id = v4();
-      }
-    });
-    onUpdate && onUpdate(this.lastMessage.content as string);
+    // tool_calls.forEach((tool) => {
+    //   let localtool = tools.find((t) => t.function.name === tool.function.name);
+    //   if (localtool) {
+    //     tool.restore_name = localtool.restore_name;
+    //     tool.origin_name = localtool.origin_name;
+    //   }
+    //   if (tool.id == "") {
+    //     tool.id = v4();
+    //   }
+    // });
+    params.onUpdate && params.onUpdate();
     // console.log("tool_calls", tool_calls, call_tool);
-    if (tool_calls.length > 0 && call_tool) {
+    if (tool_calls.length > 0 && params.call_tool) {
       this.lastMessage.content_tool_calls = tool_calls;
       for (let tool of tool_calls) {
         try {
@@ -460,11 +311,11 @@ export class OpenAiChannel {
         if (process.env.runtime !== "node") {
           if (
             this.options.confirm_call_tool &&
-            this.options.confirm_call_tool_cb
+            params.confirm_call_tool_cb
           ) {
             try {
               tool.function.argumentsOBJ =
-                await this.options.confirm_call_tool_cb(tool);
+                await params.confirm_call_tool_cb(tool);
               tool.function.arguments = JSON.stringify(tool.function.argumentsOBJ);
             } catch (e) {
 
@@ -477,17 +328,18 @@ export class OpenAiChannel {
                 content_date: Date.now(),
               };
               this.messages.push(message as any);
-              onUpdate && onUpdate(this.lastMessage.content as string);
+              params.onUpdate && params.onUpdate();
               continue;
             }
 
           }
         }
         // console.log("tool_calls", tool_calls);
-        let localtool = tools.find(
-          (t) => t.function.name === tool.function.name,
-        );
-        let clientName = localtool?.clientName;
+        // let localtool = tools.find(
+        //   (t) => t.name === tool.function.name,
+        // );
+        // let clientName = localtool?.clientName;
+        let clientName = "";
         if (!clientName) {
           console.error("client not found", tool);
           throw new Error("client not found");
@@ -496,32 +348,32 @@ export class OpenAiChannel {
         let message: MyMessage = {
           role: "tool" as const,
           tool_call_id: tool.id,
-          content: "",
+          content: [],
           content_status: "loading",
           content_attachment: [],
           content_date: Date.now(),
         };
         this.messages.push(message as any);
-        onUpdate && onUpdate(this.lastMessage.content as string);
-        if (process.env.runtime !== "node") {
-          try {
-            if (
-              clientName === "hyper_agent" &&
-              localtool.origin_name == "call_agent"
-            ) {
-              (await callModule.getWebSocket()).emit("active", deviceId);
-            }
-          } catch (e) {
-            console.error(e);
-          }
-        }
+        params.onUpdate && params.onUpdate();
+        // if (process.env.runtime !== "node") {
+        //   try {
+        //     if (
+        //       clientName === "hyper_agent" &&
+        //       localtool.origin_name == "call_agent"
+        //     ) {
+        //       (await callModule.getWebSocket()).emit("active", deviceId);
+        //     }
+        //   } catch (e) {
+        //     console.error(e);
+        //   }
+        // }
         this.mcpAbortController = new AbortController();
         let call_res = await globalThis.ext2.call(
           "mcpCallTool",
           {
             name: clientName,
-            functionName: localtool.origin_name,
-            args: tool.function.argumentsOBJ
+            functionName: "",
+            args: ""
           },
           {
             signal: this.mcpAbortController?.signal,
@@ -530,17 +382,17 @@ export class OpenAiChannel {
           .then((res) => {
             if (res["isError"]) {
               this.lastMessage.content_status = "error";
-              onUpdate && onUpdate(this.lastMessage.content as string);
+              params.onUpdate && params.onUpdate();
               return res;
             } else {
               this.lastMessage.content_status = "success";
-              onUpdate && onUpdate(this.lastMessage.content as string);
+              params.onUpdate && params.onUpdate();
               return res;
             }
           })
           .catch((e) => {
             this.lastMessage.content_status = "error";
-            onUpdate && onUpdate(this.lastMessage.content as string);
+            params.onUpdate && params.onUpdate();
             return {
               content: { error: e.message },
             };
@@ -552,242 +404,285 @@ export class OpenAiChannel {
         } else if (typeof call_res.content == "string") {
           this.lastMessage.content = call_res.content;
         } else if (Array.isArray(call_res.content)) {
-          let contents = []
+          this.lastMessage.content = [];
           for (let c of call_res.content) {
             if (c.type == "text") {
-              contents.push(c.text);
+              this.lastMessage.content.push({
+                type: "text",
+                text: c.text,
+              })
             } else if (c.type == "image") {
-              this.lastMessage.content_attachment.push(c);
+              // this.lastMessage.content_attachment.push(c);
+              this.lastMessage.content.push({
+                type: "image",
+                image_url: { url: c.blob },
+              } as any)
             } else {
-              antdmessage.warning("tool 返回类型只支持 text image");
+              this.ext.antdmessage.warning("tool 返回类型只支持 text image");
             }
           }
-          this.lastMessage.content = contents.join("\n");
         } else {
-          this.lastMessage.content = JSON.stringify(call_res.content);
+          this.lastMessage.content = "error: tool call return type not supported";
         }
 
-        onUpdate && onUpdate(this.lastMessage.content as string);
+        params.onUpdate && params.onUpdate();
       }
-      // console.log("this.messages", this.messages);
+      params.step++;
       return await this._completion(
-        onUpdate,
-        (this.options.call_tool_step || 10) > step + 1,
-        step + 1,
-        context,
+        options,
+        params
       );
     } else {
       // console.log("this.messages", this.messages);
-      return res.content as string;
+      return newMessage.content as string;
     }
   }
-  getRelay(index: number) {
-    let assistantContent = [];
-    if (this.messages[index].role == "user") {
-      index++;
-    }
-    while (this.messages.length > index) {
-      let m = this.messages[index];
-      if (m.role == "user") {
-        break;
-      } else if (m.role == "assistant") {
-        if (typeof m.content == "string") {
-          assistantContent.push(m.content);
-        } else if (Array.isArray(m.content)) {
-          for (let c of m.content) {
-            if (c.type == "text") {
-              assistantContent.push(c.text);
-            } else if (c.type == "refusal") {
-              assistantContent.push(c.refusal);
-            } else {
-              console.warn("tool 返回类型只支持 text");
-            }
-          }
-        }
-      }
-      index++;
-    }
-    return assistantContent.join("\n").split("\n").filter((x) => x).join("\n");
+  ext: {
+    antdmessage: { warning: (string) => void };
+    isOnBrowser: boolean;
+    mcpTools: HyperChatCompletionTool[];
+  } = {} as any;
+  register(ext: this["ext"]) {
+    this.ext = ext;
   }
+  // getRelay(index: number) {
+  //   let assistantContent = [];
+  //   if (this.messages[index].role == "user") {
+  //     index++;
+  //   }
+  //   while (this.messages.length > index) {
+  //     let m = this.messages[index];
+  //     if (m.role == "user") {
+  //       break;
+  //     } else if (m.role == "assistant") {
+  //       if (typeof m.content == "string") {
+  //         assistantContent.push(m.content);
+  //       } else if (Array.isArray(m.content)) {
+  //         for (let c of m.content) {
+  //           if (c.type == "text") {
+  //             assistantContent.push(c.text);
+  //           } else if (c.type == "refusal") {
+  //             assistantContent.push(c.refusal);
+  //           } else {
+  //             console.warn("tool 返回类型只支持 text");
+  //           }
+  //         }
+  //       }
+  //     }
+  //     index++;
+  //   }
+  //   return assistantContent.join("\n").split("\n").filter((x) => x).join("\n");
+  // }
 
   async completionParse(response_format: any): Promise<any> {
-    this.openai.modelData = this.options;
+    // 使用工具调用来实现结构化输出
+    // const tool: CoreTool = {
+    //   description: 'Parse response according to schema',
+    //   parameters: response_format.json_schema?.schema || response_format,
+    // };
 
-    let completion = await this.openai.parse({
-      messages: await this.messages_format(this.messages),
-      model: this.options.model,
-      temperature: this.options.temperature,
-      response_format: response_format,
-    });
-    const res = completion.choices[0].message
+    // const result = await this.aiProvider.streamText({
+    //   model: this.aiProvider.model,
+    //   messages: await this.messages_format_ai(this.messages),
+    //   tools: { parse_response: tool },
+    //   toolChoice: { type: 'tool', toolName: 'parse_response' },
+    //   temperature: this.options.temperature,
+    // });
 
-    // If the model refuses to respond, you will get a refusal message
-    if (res.refusal) {
-      throw new Error(res.refusal)
-    } else {
-      return res.parsed
-    }
+    // const toolCalls = await result.toolCalls;
+    // if (toolCalls && toolCalls.length > 0) {
+    //   return toolCalls[0].args;
+    // }
+
+    // throw new Error('No structured output received');
   }
   // clear() {
   //   this.messages = this.messages.filter((m) => m.role === "system");
   //   this.totalTokens = 0;
   // }
   async testBase() {
-    this.openai.modelData = this.options;
-    let messages: Array<any> = [{ role: "user", content: "你是谁?" }];
-    let response = await this.openai.completion({
-      model: this.options.model,
-      messages: messages,
-    });
-    console.log(response.choices[0].message.content);
-
+    // let messages: CoreMessage[] = [{ role: "user", content: "你是谁?" }];
+    // const result = await streamText({
+    //   model: this.aiProvider.model,
+    //   messages: messages,
+    // });
+    // const text = await result.text;
+    // console.log(text);
   }
   async testImage() {
-    this.openai.modelData = this.options;
-    let messages: Array<any> = [
-      {
-        role: "user",
-        content: [
-          {
-            type: "image_url",
-            image_url: { url: imageBase64 },
-          },
-          {
-            type: "text",
-            text: "这是什么图片",
-          },
-        ],
-      },
-    ];
-    let response = await this.openai.completion({
-      model: this.options.model,
-      messages: messages,
-    });
-    console.log(response.choices[0].message.content);
-
+    // let messages: CoreMessage[] = [
+    //   {
+    //     role: "user",
+    //     content: [
+    //       {
+    //         type: "image",
+    //         image: imageBase64,
+    //       },
+    //       {
+    //         type: "text",
+    //         text: "这是什么图片",
+    //       },
+    //     ],
+    //   },
+    // ];
+    // const result = await this.aiProvider.streamText({
+    //   model: this.aiProvider.model,
+    //   messages: messages,
+    // });
+    // const text = await result.text;
+    // console.log(text);
   }
   async testTool() {
-    this.openai.modelData = this.options;
-    const tools = [
-      {
-        type: "function" as const,
-        function: {
-          name: "current_time",
-          description: "Get the current local time as a string.",
-          parameters: {
-            type: "object",
-            properties: {},
-          },
-        },
-      },
-    ];
-    let messages: Array<any> = [
-      {
-        role: "user",
-        content: "hello, What's the time?",
-      },
-    ];
+    // const tools = {
+    //   current_time: {
+    //     description: "Get the current local time as a string.",
+    //     parameters: {
+    //       type: "object",
+    //       properties: {},
+    //     },
+    //   } as CoreTool,
+    // };
 
-    let response = await this.openai.completion({
-      model: this.options.model,
-      messages: messages,
-      tools,
-    });
+    // let messages: CoreMessage[] = [
+    //   {
+    //     role: "user",
+    //     content: "hello, What's the time?",
+    //   },
+    // ];
 
-    messages.push(response.choices[0].message);
+    // const result = await this.aiProvider.streamText({
+    //   model: this.aiProvider.model,
+    //   messages: messages,
+    //   tools,
+    // });
 
-    let tool_calls = response.choices[0].message.tool_calls || [];
-    if (this.options.toolMode == "compatible" && (response.choices[0].message.content.toString()).includes("<tool_use>")) {
-      let res = extractTool(response.choices[0].message.content.toString());
-      if (res) {
-        tool_calls.push({
-          id: res.name,
-          type: "function",
-          function: {
-            name: res.name,
-            arguments: JSON.stringify(res.params),
-          }
-        });
-      }
-    }
+    // const toolCalls = await result.toolCalls;
+    // if (toolCalls && toolCalls.length > 0) {
+    //   const toolCall = toolCalls[0];
+    //   console.log(toolCall.toolName, toolCall.args);
 
-    let runs = {} as any;
+    //   const timeResult = dayjs().format("YYYY-MM-DD HH:mm:ss");
 
-    let function_name = tool_calls![0]["function"]["name"];
-    let function_args = tool_calls![0]["function"]["arguments"];
-    runs[function_name] = () => {
-      return dayjs().format("YYYY-MM-DD HH:mm:ss");
-    };
+    //   messages.push({
+    //     role: "assistant",
+    //     content: await result.text,
+    //   });
 
-    console.log(function_name, function_args);
+    //   messages.push({
+    //     role: "tool",
+    //     content: [
+    //       {
+    //         type: "tool-result",
+    //         toolCallId: toolCall.toolCallId,
+    //         toolName: toolCall.toolName,
+    //         result: timeResult,
+    //       },
+    //     ],
+    //   });
 
-    let res = runs[function_name](function_args);
-    // console.log(res);
+    //   const finalResult = await this.aiProvider.streamText({
+    //     model: this.aiProvider.model,
+    //     messages: messages,
+    //     tools,
+    //   });
 
-    messages.push({
-      role: "tool",
-      tool_call_id: tool_calls![0]["id"],
-      content: res,
-    });
-
-    response = await this.openai.completion({
-      model: this.options.model,
-      messages: messages,
-      tools,
-    });
-    console.log(response.choices[0].message.content);
-
+    //   console.log(await finalResult.text);
+    // }
   }
-  async messages_format(messages: MyMessage[]): Promise<OpenAI.Chat.Completions.ChatCompletionMessageParam[]> {
-    let results = []
-    for (let m of messages) {
-      this.options.messages_format_callback && await this.options.messages_format_callback(m);
-      let {
-        content_attachment,
-        content_attached,
-        content_context,
-        content_from,
-        content_status,
-        content_usage,
-        reasoning_content,
-        content_error,
-        content_date,
-        content_sended,
-        content_template,
-        content_tool_calls,
-        ...rest
-      } = m;
-      if (rest.role == "assistant") {
-        rest.tool_calls = content_tool_calls?.map((x: Tool_Call) => {
-          let { origin_name, restore_name, ...rest } = x;
-          let { argumentsOBJ, ...functionRest } = rest.function;
-          rest.function = functionRest as any;
-          return rest;
-        }) as any;
-        if (rest.tool_calls?.length == 0) {
-          delete rest.tool_calls;
-        }
-      }
-      if (rest.content == "") {
-        delete rest.content;
-      }
-      results.push(rest);
-    }
+  async messages2core(messages: MyMessage[]): Promise<CoreMessage[]> {
+    let results: CoreMessage[] = [];
+    // for (let m of messages) {
+    //   // this.options.messages_format_callback && await this.options.messages_format_callback(m);
+
+    //   let content = m.content;
+
+    //   // 处理数组形式的 content (多模态)
+    //   if (Array.isArray(content)) {
+    //     const parts = content.map(part => {
+    //       if (part.type === 'text') {
+    //         return { type: 'text' as const, text: part.text };
+    //       } else if (part.type === 'image_url') {
+    //         return { type: 'image' as const, image: part.image_url.url };
+    //       }
+    //       return part;
+    //     });
+    //     content = parts;
+    //   }
+
+    //   if (m.role === 'tool') {
+    //     results.push({
+    //       role: 'tool',
+    //       content: [
+    //         {
+    //           type: 'tool-result',
+    //           toolCallId: m.tool_call_id || '',
+    //           toolName: '', // 需要从工具调用历史中获取
+    //           result: content as string,
+    //         },
+    //       ],
+    //     });
+    //   } else {
+    //     results.push({
+    //       role: m.role as 'system' | 'user' | 'assistant',
+    //       content: content || '',
+    //     });
+    //   }
+    // }
     return results;
   }
-  tools_format(tools: HyperChatCompletionTool[]) {
-    return tools?.map((x) => {
-      let { origin_name, restore_name, key, client, clientName, ...rest } = x;
-      if (this.options.isStrict) {
-        rest.function.strict = true;
-        rest.function.parameters = formatProperties(rest.function.parameters, false);
-      } else {
-        delete rest.function.strict;
-        rest.function.parameters = formatProperties(rest.function.parameters, true);
-      }
-      return rest;
-    });
+
+  // 保持原有格式化方法用于兼容性
+  async messages_format(messages: MyMessage[]): Promise<any[]> {
+    return [];
+    // let results = []
+    // for (let m of messages) {
+    //   // this.options.messages_format_callback && await this.options.messages_format_callback(m);
+    //   let {
+    //     content_attachment,
+    //     content_attached,
+    //     content_context,
+    //     content_from,
+    //     content_status,
+    //     content_usage,
+    //     reasoning_content,
+    //     content_error,
+    //     content_date,
+    //     content_sended,
+    //     content_template,
+    //     content_tool_calls,
+    //     ...rest
+    //   } = m;
+    //   if (rest.role == "assistant") {
+    //     rest.tool_calls = content_tool_calls?.map((x: Tool_Call) => {
+    //       let { origin_name, restore_name, ...rest } = x;
+    //       let { argumentsOBJ, ...functionRest } = rest.function;
+    //       rest.function = functionRest as any;
+    //       return rest;
+    //     }) as any;
+    //     if (rest.tool_calls?.length == 0) {
+    //       delete rest.tool_calls;
+    //     }
+    //   }
+    //   if (rest.content == "") {
+    //     delete rest.content;
+    //   }
+    //   results.push(rest);
+    // }
+    // return results;
   }
+  tools_format_ai(tools: HyperChatCompletionTool[]): ToolSet {
+    const result: ToolSet = {};
+
+    for (const tool of tools) {
+      result[tool.name] = {
+        description: tool.description || '',
+        parameters: tool.inputSchema,
+      };
+    }
+
+    return result;
+  }
+
 }
 
 
