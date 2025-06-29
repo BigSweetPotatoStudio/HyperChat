@@ -24,4 +24,4 @@ packages/cli 专注于命令行前端的实现
 
 ## 记忆
 
-[x] 我现在要改造这个hyperchat项目，以前都用在web浏览器前端发出llm请求通过OpenAI的库。现在我想改成在code目录下(nodejs环境)中通过ai库发请求，然后通过前端后端通信，使用@ai-sdk/react渲染web界面，不要修改原页面，添加一个新页面路由是chat2
+[x] 我现在要改造这个hyperchat项目，以前都用在web浏览器前端发出llm请求通过OpenAI的库。现在我想改成在code目录下(nodejs环境)中通过ai库发请求，代码在packages/core/src/shared/ai.mts 。前后端共用

@@ -181,8 +181,8 @@ import {
   EllipsisOutlined,
 } from "@ant-design/icons";
 import type { ConfigProviderProps, GetProp } from "antd";
-import { MyMessage } from "../../common/openai.js";
-import { AiChannel as OpenAiChannel } from "../../../../core/src/shared/ai.mjs";
+import { MyMessage } from "../../../../core/src/shared/data.mjs";
+import { AiChannel } from "../../../../core/src/shared/ai.mjs";
 
 import {
   ChatHistory,
@@ -237,7 +237,6 @@ import { InputAI } from "../../components/input_ai";
 import { MySender } from "../../components/my_sender";
 import { disableCompletionItemProvider, Editor, enableCompletionItemProvider } from "../../components/editor";
 import { Link } from "react-router-dom";
-import { AIChannel } from "@/src/common/ai/ai";
 
 export const Chat = ({
   onTitleChange = undefined,
@@ -417,7 +416,7 @@ export const Chat = ({
     );
   };
 
-  const openaiClient = useRef<OpenAiChannel>();
+  const openaiClient = useRef<AiChannel>();
 
   // const clientsRef = useRef<InitedClient[]>([]);
 
@@ -458,7 +457,7 @@ export const Chat = ({
     diffs: [] as Array<{
       messages: ChatHistoryItem["messages"];
       modelKey: string;
-      openaiClient: OpenAiChannel;
+      openaiClient: AiChannel;
       label: string;
     }>,
     loadingMessages: false,
@@ -549,7 +548,7 @@ export const Chat = ({
 
 
   const [loading, setLoading] = useState(false);
-  let cacheOBJ = useRef({} as Record<string, OpenAiChannel>);
+  let cacheOBJ = useRef({} as Record<string, AiChannel>);
   const onRequest = useCallback(async (message?: string) => {
     Clarity && Clarity.event(`sender-${process.env.NODE_ENV}`);
     console.log("onRequest", message);
@@ -644,7 +643,7 @@ export const Chat = ({
         if (cacheOBJ.current[cacheKey]) {
           return cacheOBJ.current[cacheKey];
         }
-        let res = new OpenAiChannel(
+        let res = new AiChannel(
           {
             // baseURL: config.baseURL,
             // apiKey: config.apiKey,

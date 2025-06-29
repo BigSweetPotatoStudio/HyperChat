@@ -23,3 +23,8 @@ packages/cli 专注于命令行前端的实现
 
 * 前后端通信默认通过  packages/core/src/command.mts 实现，前端通过调用 call 的方法来实现与后端的交互。
 * electron web环境 提供更多electron接口 packages/electron/src/command.mts， 前端通过调用 callElectron  的方法来实现与后端的交互。
+
+
+## 记忆
+
+[x] 我现在要改造这个hyperchat项目，以前都用在web浏览器前端发出llm请求通过OpenAI的库。现在我想改成在code目录下(nodejs环境)中通过ai库发请求，代码在packages/core/src/shared/ai.mts 。前后端共用
