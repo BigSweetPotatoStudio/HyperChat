@@ -168,6 +168,9 @@ let apiPrefix = prefix + "/api";
 // 代理中间件
 function proxyMiddleware(req: Request, res: Response, next: NextFunction) {
   if (req.path.startsWith(apiPrefix + "/ai")) {
+    if (process.env.myEnv === "dev") {
+      console.log("Proxy request:", req.method, req.url);
+    }
     // 处理代理请求
     (async () => {
       try {
@@ -176,9 +179,6 @@ function proxyMiddleware(req: Request, res: Response, next: NextFunction) {
           ? decodeURIComponent(req.headers["baseurl"] as string)
           : '';
 
-        if (process.env.NODE_ENV !== "production") {
-          console.log("baseURL: ", baseURL);
-        }
 
         if (!baseURL) {
           return res.status(400).json({ success: false, message: "baseURL is required" });
@@ -209,15 +209,21 @@ function proxyMiddleware(req: Request, res: Response, next: NextFunction) {
         if (baseURL.endsWith("/")) {
           baseURL = baseURL.slice(0, -1);
         }
-        baseURL = baseURL + req.path.replace(apiPrefix + "/ai", "");
+
+        baseURL = baseURL + req.url.replace(apiPrefix + "/ai", "");
+        if (process.env.myEnv === "dev") {
+          console.log("baseURL: ", baseURL);
+        }
 
         // 发起请求
         const response = await fetch(baseURL, {
           method: req.method,
           headers: customHeaders,
-          body: (req.method === "GET" || req.method === "HEAD") ? null : JSON.stringify(requestBody),
+          body: JSON.stringify(requestBody),
         });
-
+        if (!response.ok) {
+          console.error("Proxy request failed:", response.statusText);
+        }
         // 检查内容类型，确定是否为SSE
         const contentType = response.headers.get("Content-Type");
         const isSSE = contentType && contentType.includes("text/event-stream");
@@ -226,7 +232,7 @@ function proxyMiddleware(req: Request, res: Response, next: NextFunction) {
         res.status(response.status);
         res.setHeader("Content-Type", contentType || "application/json");
 
-        if (process.env.NODE_ENV !== "production") {
+        if (process.env.myEnv !== "dev") {
           console.log("proxy", isSSE, contentType);
         }
 

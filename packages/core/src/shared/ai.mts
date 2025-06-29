@@ -209,19 +209,19 @@ export class AiChannel {
       let ai: any = null;
       let fetch: any = undefined;
       if (this.ext.platform === "web") {
+        let baseURL = modelConfig.baseURL;
+        modelConfig.baseURL = this.ext.getURL_PRE() + "api/ai";
         fetch = async (url: RequestInfo, init?: RequestInit): Promise<Response> => {
           // If in a browser environment and server proxy is enabled, modify headers for proxying.
           init = {
             ...init,
             headers: {
               ...(init?.headers || {}),
-              baseURL: encodeURIComponent(modelConfig.baseURL || ""), // Encode base URL for proxy
+              baseURL: encodeURIComponent(baseURL), // Encode base URL for proxy
             },
           };
 
-          const response = await globalThis.fetch(this.ext.getURL_PRE() + "api/ai", init);
-
-          return response;
+          return globalThis.fetch(url, init);
         };
       }
       if (modelConfig.provider === 'anthropic') {
@@ -230,7 +230,7 @@ export class AiChannel {
           apiKey: modelConfig.apiKey,
           fetch
         });
-      } else if (modelConfig.provider === 'google' || modelConfig.provider === 'gemini') {
+      } else if (modelConfig.provider === 'gemini') {
         ai = createGoogleGenerativeAI({
           baseURL: modelConfig.baseURL,
           apiKey: modelConfig.apiKey,

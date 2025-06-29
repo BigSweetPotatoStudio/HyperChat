@@ -37,7 +37,7 @@ export const BUILTIN_PROVIDERS: ProviderConfig[] = [
     {
         key: 'gemini',
         label: 'Google Gemini',
-        baseURL: 'https://generativelanguage.googleapis.com/v1beta/openai',
+        baseURL: 'https://generativelanguage.googleapis.com/v1beta',
         // value: 'gemini-openai',
         description: 'Gemini Pro, Gemini Flash',
         icon: 'gemini',
