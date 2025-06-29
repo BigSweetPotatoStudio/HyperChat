@@ -28,7 +28,7 @@ import {
   Descriptions,
   Select,
 } from "antd";
-import { call } from "../../common/call";
+import { call, callElectron } from "../../common/call";
 import client from "socket.io-client";
 import SimplePeer from "simple-peer";
 import {
@@ -68,7 +68,7 @@ export function Setting() {
       await AppSetting.init();
       await electronData.init();
       setPassword(electronData.get().password);
-      AppSetting.get().isAutoLauncher = await call("isAutoLauncher").catch(
+      AppSetting.get().isAutoLauncher = await callElectron("isAutoLauncher").catch(
         (x) => AppSetting.get().isAutoLauncher,
       ); // 获取是否自动启动
       webdavForm.resetFields();
@@ -120,9 +120,9 @@ export function Setting() {
                   AppSetting.get().isAutoLauncher = value;
                   await AppSetting.save();
                   if (value) {
-                    await call("enableAutoLauncher");
+                    await callElectron("enableAutoLauncher");
                   } else {
-                    await call("disableAutoLauncher");
+                    await callElectron("disableAutoLauncher");
                   }
                   refresh();
                 }}
@@ -311,21 +311,21 @@ export function Setting() {
               <Space wrap>
                 {!isOnBrowser && <Button
                   onClick={() => {
-                    call("openDevTools");
+                    callElectron("openDevTools");
                   }}
                 >
                   {t`openDevTools`}({window.electron.platform === 'darwin' ? 'Alt+Cmd+I' : 'Ctrl+Shift+I'})
                 </Button>}
                 <Button
                   onClick={() =>
-                    call("openExplorer", { path: electronData.get().logFilePath })
+                    callElectron("openExplorer", { path: electronData.get().logFilePath })
                   }
                 >
                   {t`logFile`}
                 </Button>
                 <Button
                   onClick={() =>
-                    call("openExplorer", { path: electronData.get().appDataDir })
+                    callElectron("openExplorer", { path: electronData.get().appDataDir })
                   }
                 >
                   {t`appDataDir`}

@@ -28,7 +28,7 @@ import {
   Descriptions,
   Select,
 } from "antd";
-import { call } from "../../common/call";
+import { call, callElectron } from "../../common/call";
 import client from "socket.io-client";
 import SimplePeer from "simple-peer";
 import {
@@ -67,7 +67,7 @@ export function WebdavSetting() {
     (async () => {
       await AppSetting.init();
       await electronData.init();
-      AppSetting.get().isAutoLauncher = await call("isAutoLauncher").catch(
+      AppSetting.get().isAutoLauncher = await callElectron("isAutoLauncher").catch(
         (x) => AppSetting.get().isAutoLauncher,
       ); // 获取是否自动启动
       webdavForm.resetFields();
@@ -83,12 +83,12 @@ export function WebdavSetting() {
     if (type === "save") {
       setSyncLoading(true);
       try {
-        await call("testWebDav", [values]);
+        await call("testWebDav", values);
         
         electronData.get().webdav = values;
         await electronData.save();
 
-        await call("webDavSync", []);
+        await call("webDavSync")
         message.success(t`Sync Success`);
         setCurrResult({
           data: null,
@@ -105,7 +105,7 @@ export function WebdavSetting() {
         setSyncLoading(false);
       }
     } else {
-      await call("testWebDav", [values]);
+      await call("testWebDav", values);
       message.success("Test success");
       electronData.get().webdav = values;
       await electronData.save();
