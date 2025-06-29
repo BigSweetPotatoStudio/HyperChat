@@ -311,10 +311,9 @@ export interface ProviderConfig {
   apiKey?: string; // API Key 字段
   isBuiltIn: boolean; // 是否内置（true=内置，false=自定义）
 }
-// 提供商管理数据存储，包含自定义、禁用、API Key 等
+// 提供商管理数据存储，包含自定义、API Key 等
 export const PROVIDER_CONFIGS = new Data('provider_configs.json', {
   customProviders: [] as Array<ProviderConfig>,
-  disabledBuiltinProviders: [] as string[], // 存储被禁用的内置提供商key
   builtinApiKeys: {} as { [key: string]: { apiKey: string; baseURL: string } }, // 新增属性
 });
 

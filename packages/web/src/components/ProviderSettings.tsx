@@ -151,31 +151,26 @@ export function ProviderSettings() {
     setIsProviderModalOpen(true);
   };
 
-  // 删除提供商（内置则禁用，非内置则彻底删除并移除相关模型）
+  // 删除提供商（内置不能删除，非内置则彻底删除并移除相关模型）
   const handleDeleteProvider = async (provider: ProviderConfig) => {
     if (provider.isBuiltIn) {
-      // 禁用内置提供商（仅隐藏，不会删除数据）
-      const success = ProviderManager.toggleBuiltinProvider(provider.key, true);
-      if (success) {
-        message.success(t`Provider disabled successfully`);
-        await refresh();
-      } else {
-        message.error(t`Failed to disable provider`);
-      }
+      // 内置提供商不能删除
+      message.error(t`Built-in providers cannot be deleted`);
+      return;
+    }
+    
+    // 删除自定义提供商及其下所有模型
+    const success = ProviderManager.removeCustomProvider(provider.key);
+    if (success) {
+      // 过滤掉该提供商下的所有模型
+      const currentModels = AI_MODELS.get().data;
+      const filteredModels = currentModels.filter(model => model.provider !== provider.key);
+      AI_MODELS.set({ data: filteredModels });
+      await AI_MODELS.save();
+      message.success(t`Provider and all related models deleted successfully`);
+      await refresh();
     } else {
-      // 删除自定义提供商及其下所有模型
-      const success = ProviderManager.removeCustomProvider(provider.key);
-      if (success) {
-        // 过滤掉该提供商下的所有模型
-        const currentModels = AI_MODELS.get().data;
-        const filteredModels = currentModels.filter(model => model.provider !== provider.key);
-        AI_MODELS.set({ data: filteredModels });
-        await AI_MODELS.save();
-        message.success(t`Provider and all related models deleted successfully`);
-        await refresh();
-      } else {
-        message.error(t`Failed to delete provider`);
-      }
+      message.error(t`Failed to delete provider`);
     }
   };
 
@@ -464,25 +459,27 @@ export function ProviderSettings() {
                       }}
                     />
                   )}
-                  <Popconfirm
-                    title={provider.isBuiltIn ? t`Disable this provider?` : t`Delete this provider?`}
-                    description={provider.isBuiltIn ? t`This will hide the provider from the list` : t`This will permanently delete the provider and all its models`}
-                    onConfirm={(e) => {
-                      e?.stopPropagation();
-                      handleDeleteProvider(provider);
-                    }}
-                    okText={t`Yes`}
-                    cancelText={t`No`}
-                  >
-                    <Button
-                      type="text"
-                      size="small"
-                      danger={!provider.isBuiltIn}
-                      icon={provider.isBuiltIn ? <EyeInvisibleOutlined /> : <DeleteOutlined />}
-                      title={provider.isBuiltIn ? t`Disable Provider` : t`Delete Provider`}
-                      onClick={(e) => e.stopPropagation()}
-                    />
-                  </Popconfirm>
+                  {!provider.isBuiltIn && (
+                    <Popconfirm
+                      title={t`Delete this provider?`}
+                      description={t`This will permanently delete the provider and all its models`}
+                      onConfirm={(e) => {
+                        e?.stopPropagation();
+                        handleDeleteProvider(provider);
+                      }}
+                      okText={t`Yes`}
+                      cancelText={t`No`}
+                    >
+                      <Button
+                        type="text"
+                        size="small"
+                        danger
+                        icon={<DeleteOutlined />}
+                        title={t`Delete Provider`}
+                        onClick={(e) => e.stopPropagation()}
+                      />
+                    </Popconfirm>
+                  )}
                 </Space>
               }
               onClick={() => handleProviderClick(provider)}

@@ -105,14 +105,9 @@ export const BUILTIN_PROVIDERS: ProviderConfig[] = [
 export class ProviderManager {
     // 获取所有可用的提供商（内置 + 自定义）
     static getAllProviders(): ProviderConfig[] {
-        const { customProviders, disabledBuiltinProviders } = PROVIDER_CONFIGS.get();
+        const { customProviders } = PROVIDER_CONFIGS.get();
 
-        // 过滤掉被禁用的内置提供商
-        const enabledBuiltinProviders = BUILTIN_PROVIDERS.filter(
-            provider => !disabledBuiltinProviders.includes(provider.key)
-        );
-
-        return [...enabledBuiltinProviders, ...customProviders];
+        return [...BUILTIN_PROVIDERS, ...customProviders];
     }
 
     // 添加自定义提供商
@@ -163,27 +158,6 @@ export class ProviderManager {
         return false;
     }
 
-    // 禁用/启用内置提供商
-    static toggleBuiltinProvider(key: string, disabled: boolean): boolean {
-        const provider = BUILTIN_PROVIDERS.find(p => p.key === key);
-        if (!provider) return false;
-
-        const data = PROVIDER_CONFIGS.get();
-
-        if (disabled) {
-            if (!data.disabledBuiltinProviders.includes(key)) {
-                data.disabledBuiltinProviders.push(key);
-            }
-        } else {
-            const index = data.disabledBuiltinProviders.indexOf(key);
-            if (index !== -1) {
-                data.disabledBuiltinProviders.splice(index, 1);
-            }
-        }
-
-        PROVIDER_CONFIGS.save();
-        return true;
-    }
 
     // 获取单个提供商
     static getProvider(key: string): ProviderConfig | null {
@@ -229,8 +203,7 @@ export class ProviderManager {
         // 再查找内置
         const builtinIndex = BUILTIN_PROVIDERS.findIndex(p => p.key === key);
         if (builtinIndex !== -1) {
-            // 由于内置是常量数组，不能直接改，需在 disabledBuiltinProviders 里做标记，或扩展 PROVIDER_CONFIGS 存储
-            // 这里简单做法：在 PROVIDER_CONFIGS 里维护一份 builtinApiKeys
+            // 在 PROVIDER_CONFIGS 里维护一份 builtinApiKeys
             if (!data.builtinApiKeys) data.builtinApiKeys = {};
             data.builtinApiKeys[key] = {
                 apiKey: updates.apiKey,
