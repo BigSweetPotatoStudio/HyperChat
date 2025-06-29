@@ -100,7 +100,6 @@ import {
 import { Pre } from "./components/pre";
 import { Icon } from "./components/icon";
 import { getDefaultModelConfigSync } from "./components/ai";
-import { OpenAICompatibility } from "./common/openai-compatibility";
 import { ProviderSettings } from "./components/ProviderSettings";
 
 setDarkReaderFetchMethod((url) => {
