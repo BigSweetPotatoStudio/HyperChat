@@ -181,7 +181,9 @@ import {
   EllipsisOutlined,
 } from "@ant-design/icons";
 import type { ConfigProviderProps, GetProp } from "antd";
-import { MyMessage, OpenAiChannel } from "../../common/openai.js";
+import { MyMessage } from "../../common/openai.js";
+import { AiChannel as OpenAiChannel } from "../../../../core/src/shared/ai.mjs";
+
 import {
   ChatHistory,
   GPT_MODELS,
@@ -235,7 +237,7 @@ import { InputAI } from "../../components/input_ai";
 import { MySender } from "../../components/my_sender";
 import { disableCompletionItemProvider, Editor, enableCompletionItemProvider } from "../../components/editor";
 import { Link } from "react-router-dom";
-
+import { AIChannel } from "@/src/common/ai/ai";
 
 export const Chat = ({
   onTitleChange = undefined,
@@ -642,12 +644,19 @@ export const Chat = ({
         }
         let res = new OpenAiChannel(
           {
-            baseURL: config.baseURL,
-            apiKey: config.apiKey,
-            model: config.model,
+            // baseURL: config.baseURL,
+            // apiKey: config.apiKey,
+            // model: config.model,
           },
         );
         cacheOBJ.current[cacheKey] = res;
+        res.register({
+          antdmessage: {
+            warning: antdMessage.warning,
+          },
+          isOnBrowser: false,
+          mcpTools: getTools(currentChat.current.allowMCPs),
+        })
         return res;
       })();
 
@@ -668,71 +677,71 @@ export const Chat = ({
       }
 
       try {
-        openaiClient.options = {
-          ...config,
+        // openaiClient.options = {
+        //   ...config,
 
-          requestType: currentChat.current.requestType,
-          allowMCPs: currentChat.current.allowMCPs,
-          temperature: currentChat.current.temperature,
-          confirm_call_tool: currentChat.current.confirm_call_tool,
-          confirm_call_tool_cb,
-          messages_format_callback: async (message) => {
-            if (message.role == "user" || message.role == "system") {
-              if (!message.content_sended) {
-                let varList = [...VarList.get().data?.map((v) => {
-                  let varName = v.scope + "." + v.name;
-                  return {
-                    ...v,
-                    varName: varName,
-                  }
-                })];
-                async function renderTemplate(template: string) {
-                  let reg = /{{(.*?)}}/g;
-                  let matchs = template.match(reg);
-                  let subResults = [];
-                  for (let match of matchs || []) {
-                    let varName = match.slice(2, -2).trim();
-                    let v = varList.find((x) => x.varName == varName);
-                    let value = varName;
-                    if (v) {
-                      if (v.variableType == "js") {
-                        value = await call("runCode", { code: v.code });
-                      } else if (v.variableType == "webjs") {
-                        let code = `
-                        (async () => {
-                            ${v.code}
-                           return await get()
-                        })()
-                        `;
-                        // console.log(code);
-                        value = await eval(code);
-                      } else {
-                        value = v.value;
-                      }
-                    }
-                    subResults.push({ value, varName });
-                  }
-                  let result = template.replace(reg, (match, p1) => {
-                    return subResults.find((x) => x.varName === p1.trim())?.value || match;
-                  });
-                  return result;
-                }
-                if (message.content_template) {
-                  if (typeof message.content == "string") {
-                    message.content = await renderTemplate(message.content_template);
-                  }
-                  else if (Array.isArray(message.content) && message.content.length >= 1) {
-                    if (message.content[0].type == "text") {
-                      message.content[0].text = await renderTemplate(message.content_template);
-                    }
-                  }
+        //   requestType: currentChat.current.requestType,
+        //   allowMCPs: currentChat.current.allowMCPs,
+        //   temperature: currentChat.current.temperature,
+        //   confirm_call_tool: currentChat.current.confirm_call_tool,
+        //   confirm_call_tool_cb,
+        //   messages_format_callback: async (message) => {
+        //     if (message.role == "user" || message.role == "system") {
+        //       if (!message.content_sended) {
+        //         let varList = [...VarList.get().data?.map((v) => {
+        //           let varName = v.scope + "." + v.name;
+        //           return {
+        //             ...v,
+        //             varName: varName,
+        //           }
+        //         })];
+        //         async function renderTemplate(template: string) {
+        //           let reg = /{{(.*?)}}/g;
+        //           let matchs = template.match(reg);
+        //           let subResults = [];
+        //           for (let match of matchs || []) {
+        //             let varName = match.slice(2, -2).trim();
+        //             let v = varList.find((x) => x.varName == varName);
+        //             let value = varName;
+        //             if (v) {
+        //               if (v.variableType == "js") {
+        //                 value = await call("runCode", { code: v.code });
+        //               } else if (v.variableType == "webjs") {
+        //                 let code = `
+        //                 (async () => {
+        //                     ${v.code}
+        //                    return await get()
+        //                 })()
+        //                 `;
+        //                 // console.log(code);
+        //                 value = await eval(code);
+        //               } else {
+        //                 value = v.value;
+        //               }
+        //             }
+        //             subResults.push({ value, varName });
+        //           }
+        //           let result = template.replace(reg, (match, p1) => {
+        //             return subResults.find((x) => x.varName === p1.trim())?.value || match;
+        //           });
+        //           return result;
+        //         }
+        //         if (message.content_template) {
+        //           if (typeof message.content == "string") {
+        //             message.content = await renderTemplate(message.content_template);
+        //           }
+        //           else if (Array.isArray(message.content) && message.content.length >= 1) {
+        //             if (message.content[0].type == "text") {
+        //               message.content[0].text = await renderTemplate(message.content_template);
+        //             }
+        //           }
 
-                }
-                message.content_sended = true;
-              }
-            }
-          },
-        }
+        //         }
+        //         message.content_sended = true;
+        //       }
+        //     }
+        //   },
+        // }
         setOpenaiClient(openaiClient);
         openaiClient.messages = messages;
         if (message) {
@@ -772,10 +781,16 @@ export const Chat = ({
         refresh();
 
 
-        await openaiClient.completion(() => {
-          Object.assign(messages, openaiClient.messages);
-          refresh();
-        });
+        await openaiClient.completion(
+          {
+            modelKey: config.key,
+            allowMCPs: currentChat.current.allowMCPs,
+            onUpdate: () => {
+              Object.assign(messages, openaiClient.messages);
+              refresh();
+            }
+          }
+        );
         currentChat.current.label = getFirstUserContent();
 
         resourceResListRef.current = [];

@@ -4,7 +4,7 @@ import type { HyperChatCompletionTool } from "./data.mjs";
 import * as MCPTypes from "@modelcontextprotocol/sdk/types.js";
 import type { CoreMessage, LanguageModel, StreamTextResult, ToolChoice, CoreTool, ToolSet } from 'ai';
 import { streamText } from 'ai';
-import { createOpenAI } from '@ai-sdk/openai';
+import { createOpenAI, openai } from '@ai-sdk/openai';
 import { createAnthropic } from '@ai-sdk/anthropic';
 
 
@@ -33,7 +33,7 @@ import { extractTool } from "./prompt";
 
 
 const deviceId = v4();
-export class OpenAiChannel {
+export class AiChannel {
   get lastMessage(): MyMessage {
     if (!this.messages || this.messages.length === 0) {
       throw new Error("No messages found");
@@ -104,14 +104,14 @@ export class OpenAiChannel {
   index = 0;
   status: "runing" | "stop" = "stop";
   async completion(
-    options: Parameters<typeof streamText>[0],
     params: {
       modelKey: string;
       allowMCPs: string[],
       onUpdate?: () => void;
       call_tool?: boolean;
       confirm_call_tool_cb?: (tool: Tool_Call) => Promise<boolean>;
-    }
+    },
+    options?: Parameters<typeof streamText>[0]
   ): Promise<string> {
     this.status = "runing";
     this.index++;
@@ -120,7 +120,7 @@ export class OpenAiChannel {
       context: { index: this.index },
       step: 0,
     }
-    let res = await this._completion(options, newParams).catch((e) => {
+    let res = await this._completion(newParams, options).catch((e) => {
       this.status = "stop";
       throw e;
     });
@@ -128,7 +128,6 @@ export class OpenAiChannel {
     return res;
   }
   async _completion(
-    options: Parameters<typeof streamText>[0],
     params: {
       modelKey: string;
       allowMCPs: string[],
@@ -137,17 +136,21 @@ export class OpenAiChannel {
       step: number;
       context: {}
       confirm_call_tool_cb?: (tool: Tool_Call) => Promise<boolean>;
-    }
+    },
+    options: Parameters<typeof streamText>[0] = {
+      model: openai('gpt-4o'),
+      prompt: 'hello',
+    },
   ): Promise<string> {
 
     if (this.status == "stop") {
       throw new Error("User Cancel Requesting");
     }
+    await GPT_MODELS.init();
     let modelConfig = GPT_MODELS.get().data.find((x) => x.key === params.modelKey);
     if (!modelConfig) {
       throw new Error(`Model not found: ${params.modelKey}`);
     }
-    let tools: HyperChatCompletionTool[];
     // if (!params.call_tool || modelConfig.supportTool === false) {
     //   tools = undefined;
     // } else {
@@ -192,13 +195,26 @@ export class OpenAiChannel {
 
       let format_message = await this.messages2core(messages);
       params.onUpdate && params.onUpdate();
-
-      const aiTools = this.tools_format_ai(this.ext.mcpTools || []);
+      let tools: HyperChatCompletionTool[] = this.ext.mcpTools || [];
+      const aiTools = this.tools_format_ai(tools || []);
       options.tools = {
         ...options.tools,
         ...aiTools,
       }
-
+      let ai: any = null;
+      if (modelConfig.provider === 'anthropic') {
+        ai = createAnthropic({
+          baseURL: modelConfig.baseURL,
+          apiKey: modelConfig.apiKey,
+        });
+      } else {
+        // 默认使用 OpenAI 兼容格式
+        ai = createOpenAI({
+          baseURL: modelConfig.baseURL,
+          apiKey: modelConfig.apiKey,
+        });
+      }
+      options.model = ai(modelConfig.model);
       const result = await streamText({
         ...options,
         abortSignal: this.abortController.signal,
@@ -208,26 +224,31 @@ export class OpenAiChannel {
       this.lastMessage.content_status = "dataLoading";
       params.onUpdate && params.onUpdate();
 
-      for await (const delta of result.textStream) {
-        newMessage.content += delta;
-        newMessage.content_date = Date.now();
+      for await (const delta of result.fullStream) {
+        console.log("delta", delta);
+        if (delta.type == "error") {
+          throw delta.error;
+        }
+        if (delta.type == "text-delta") {
+          newMessage.content += delta.textDelta;
+          newMessage.content_date = Date.now();
+        }
+        if (delta.type == "step-finish") {
+          if (delta.usage) {
+            newMessage.content_usage = {
+              prompt_tokens: delta.usage.promptTokens || 0,
+              completion_tokens: delta.usage.completionTokens || 0,
+              total_tokens: delta.usage.totalTokens || 0,
+            }
+          }
+        }
         params.onUpdate && params.onUpdate();
       }
 
-      // 获取最终结果和使用情况
-      const finalResult = await result.text;
-      const usage = await result.usage;
+      // // 获取最终结果和使用情况
+      // const finalResult = await result.text;
+      // const usage = await result.usage;
 
-      if (usage) {
-        newMessage.content_usage = {
-          prompt_tokens: 0,
-          completion_tokens: 0,
-          total_tokens: 0,
-        }
-        newMessage.content_usage.completion_tokens = usage.completionTokens;
-        newMessage.content_usage.prompt_tokens = usage.promptTokens;
-        newMessage.content_usage.total_tokens = usage.totalTokens;
-      }
 
       // 处理工具调用
       const toolCalls = await result.toolCalls;
@@ -429,8 +450,8 @@ export class OpenAiChannel {
       }
       params.step++;
       return await this._completion(
-        options,
-        params
+
+        params, options,
       );
     } else {
       // console.log("this.messages", this.messages);

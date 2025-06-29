@@ -279,6 +279,11 @@ export type HyperChatCompletionTool = MCPTypes.Tool & {
   restore_name: string; // ! 废弃⚠️
   clientName?: string; // ! 废弃⚠️
   client?: string; // ! 废弃⚠️
+  function: {
+    name: string;
+    description: string;
+    parameters: string; // JSON string
+  }
 };
 export type IMCPClient = {
   tools: Array<HyperChatCompletionTool>;
