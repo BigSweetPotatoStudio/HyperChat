@@ -179,7 +179,8 @@ export type MyMessage = OpenAI.Chat.Completions.ChatCompletionMessageParam & {
     completion_tokens: number;
     total_tokens: number;
   };
-  tool_call_id?: string;
+  tool_call_id?: string; // 工具调用的 ID
+  tool_call_name?: string; // 工具调用的名称 // 谷歌需要
 };
 
 // 聊天历史项类型，包含消息、模型、代理、任务等信息

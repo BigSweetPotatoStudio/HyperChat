@@ -379,6 +379,7 @@ export class AiChannel {
         let message: MyMessage = {
           role: "tool" as const,
           tool_call_id: tool.id,
+          tool_call_name: tool.function.name,
           content: [],
           content_status: "loading",
           content_attachment: [],
@@ -660,8 +661,8 @@ export class AiChannel {
           content: [
             {
               type: 'tool-result',
-              toolCallId: m.tool_call_id || '',
-              toolName: '', // 需要从工具调用历史中获取
+              toolCallId: m.tool_call_id || "",
+              toolName: m.tool_call_name || "", // 需要从工具调用历史中获取
               result: m.content as string,
             },
           ],
