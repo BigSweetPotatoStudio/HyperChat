@@ -11,7 +11,6 @@ import {
 import { Layout } from "./layout";
 import { Setting } from "./pages/setting";
 import { Chat } from "./pages/chat";
-import { Chat2 } from "./pages/chat2";
 import { Market } from "./pages/market/market";
 import { HpyerTools } from "./pages/hypertools/hypertools";
 import { KnowledgeBase } from "./pages/knowledgeBase/knowledgeBase";
@@ -56,12 +55,6 @@ export function getLayoutRoute() {
         name: t`Chat`,
         icon: <CommentOutlined />,
         component: <ChatSpace />,
-      },
-      {
-        path: "/Chat2",
-        name: t`Chat2 (AI SDK)`,
-        icon: <CommentOutlined />,
-        component: <Chat2 />,
       },
       // process.env.myEnv == "dev" && {
       //   path: "/Workspace",
