@@ -1,10 +1,22 @@
 import { Data } from './data.mjs';
 import { v4 } from 'uuid';
 
+export type KnownProvider =
+    | "openai"
+    | "anthropic"
+    | "openrouter"
+    | "gemini"
+    | "qwen"
+    | "deepseek"
+    | "doubao"
+    | "xai"
+    | "glm"
+    | "ollama";
+
 
 // 提供商配置接口，描述每个大模型 API 的基本信息
 export interface ProviderConfig {
-    key: string; // 唯一标识
+    key: KnownProvider | string; // 唯一标识
     label: string; // 显示名称
     baseURL: string; // API 基础地址
     value: string; // 唯一值

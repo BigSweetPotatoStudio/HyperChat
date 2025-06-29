@@ -2,6 +2,7 @@
 import OpenAI from "openai";
 import * as MCPTypes from "@modelcontextprotocol/sdk/types.js";
 import { v4 } from "uuid";
+import type { KnownProvider } from "./providers.mjs";
 
 
 
@@ -237,7 +238,7 @@ export type GPT_MODELS_TYPE = {
   model: string;
   apiKey: string;
   baseURL: string;
-  provider: string;
+  provider: KnownProvider | string;
   supportImage: boolean;
   supportTool: boolean;
   call_tool_step?: number;
@@ -271,16 +272,19 @@ export type MCP_CONFIG_TYPE = {
   isSync?: boolean;
 };
 
-export type HyperChatCompletionTool = MCPTypes.Tool & {
+export type HyperChatCompletionTool = {
   name: string;
-  origin_name: string; // ! 废弃⚠️
-  restore_name: string; // ! 废弃⚠️
+  origin_name: string;
+  restore_name: string;
   clientName: string;
-  // function: {
-  //   name: string;
-  //   description: string;
-  //   parameters: string; // JSON string
-  // }
+  description: string;
+  inputSchema: {
+    [x: string]: unknown;
+    type: "object";
+    properties?: {
+      [x: string]: unknown;
+    } | undefined;
+  };
 };
 export type IMCPClient = {
   tools: Array<HyperChatCompletionTool>;

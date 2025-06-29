@@ -273,15 +273,6 @@ export class AiChannel {
         params.onUpdate && params.onUpdate();
       }
 
-      // // 获取最终结果和使用情况
-      // const finalResult = await result.text;
-      // const usage = await result.usage;
-
-
-      // 处理工具调用
-      // const toolCalls = await result.toolCalls;
-      // newMessage.toolCalls = toolCalls;
-
       params.onUpdate && params.onUpdate();
 
     } catch (e) {
@@ -291,12 +282,7 @@ export class AiChannel {
     }
     this.lastMessage.content_status = "dataLoadComplete";
     this.lastMessage.content_date = Date.now();
-    // if (this.lastMessage.reasoning_content) {
-    //   this.lastMessage.content_attachment.push({
-    //     type: "text",
-    //     text: this.lastMessage.reasoning_content,
-    //   });
-    // }
+
     params.onUpdate && params.onUpdate();
 
     // if (this.options.toolMode == "compatible" && (this.lastMessage.content.toString()).includes("<tool_use>")) {
@@ -316,16 +302,6 @@ export class AiChannel {
     //   }
     // }
 
-    // tool_calls.forEach((tool) => {
-    //   let localtool = tools.find((t) => t.function.name === tool.function.name);
-    //   if (localtool) {
-    //     tool.restore_name = localtool.restore_name;
-    //     tool.origin_name = localtool.origin_name;
-    //   }
-    //   if (tool.id == "") {
-    //     tool.id = v4();
-    //   }
-    // });
     params.onUpdate && params.onUpdate();
     // console.log("tool_calls", tool_calls, call_tool);
     if (newMessage.content_tool_calls && newMessage.content_tool_calls.length > 0) {

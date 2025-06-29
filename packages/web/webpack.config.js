@@ -5,86 +5,37 @@ const WebpackPwaManifest = require("webpack-pwa-manifest");
 const HtmlWebpackPlugin = require("html-webpack-plugin");
 const FaviconsWebpackPlugin = require("favicons-webpack-plugin");
 const { CleanWebpackPlugin } = require("clean-webpack-plugin");
-const { GenerateSW, InjectManifest } = require('workbox-webpack-plugin');
-// const Dotenv = require('dotenv-webpack');
+const { GenerateSW } = require('workbox-webpack-plugin');
 
 module.exports = (env, argv) => {
+  // 环境变量设置
   process.env.myEnv = process.env.myEnv || "dev";
   process.env.NODE_ENV = process.env.NODE_ENV || "development";
-  console.log("ENV:", process.env.NODE_ENV); // 打印出传入的环境变量
-  console.log("myEnv:", process.env.myEnv); // 打印出Webpack的mode值
-
-  const isDev = process.env.NODE_ENV !== "production" ? true : false;
+  
+  const isDev = process.env.NODE_ENV !== "production";
+  
+  console.log("ENV:", process.env.NODE_ENV);
+  console.log("myEnv:", process.env.myEnv);
   return {
     entry: {
-      // t: './src/test',
       index: "./src/index",
     },
-    // publicPath: '/',
+    
+    mode: isDev ? "development" : "production",
+    devtool: isDev ? "source-map" : false,
+    
     plugins: [
-      ...(isDev
-        ? [
-          // (() => {
-          //   let workboxPlugin = new InjectManifest({
-          //     // 排除不需要缓存的文件
-          //     exclude: [/\.map$/, /asset-manifest\.json$/],
-          //     // 增加文件大小限制
-          //     maximumFileSizeToCacheInBytes: 40 * 1024 * 1024, // 40MB
-          //     // 自定义 Service Worker 文件路径
-          //     swSrc: './src/sw.js',
-          //     swDest: './service-worker.js', // 输出的 Service Worker 文件名，默认为 "service-worker.js"
-          //     // additionalManifestEntries: [], // 额外要缓存的条目
-          //     // dontCacheBustURLsMatching: /\.\w{8}\./,  // 跳过对已有 hash 的 URL 进行缓存破坏
-          //   });
-          //   if (process.env.NODE_ENV !== 'production') {
-          //     Object.defineProperty(workboxPlugin, 'alreadyCalled', {
-          //       get() {
-          //         return false
-          //       },
-          //       set() { }
-          //     })
-          //   }
-          //   return workboxPlugin;
-          // })(),
-        ]
-        : [
-          // GenerateSW 会为你创建一个完整的 Service Worker 文件
-          // 适合大多数基本的 PWA 用例
-          new GenerateSW({
-            clientsClaim: true, // Service Worker 激活后立即控制所有客户端
-            skipWaiting: true,  // 新 Service Worker 安装后立即激活
-            exclude: [/\.map$/, /asset-manifest\.json$/],
-            // 增加文件大小限制
-            maximumFileSizeToCacheInBytes: 40 * 1024 * 1024, // 40MB
-            // runtimeCaching: [  // 配置运行时缓存策略
-            //   {
-            //     urlPattern: /^https:\/\/api\.example\.com\//, // 匹配 API 请求
-            //     handler: 'NetworkFirst',  // 优先使用网络，失败时回退到缓存
-            //     options: {
-            //       cacheName: 'api-cache',
-            //       expiration: {
-            //         maxEntries: 50,       // 最多缓存50个请求
-            //         maxAgeSeconds: 86400, // 缓存1天
-            //       },
-            //     },
-            //   },
-            //   {
-            //     urlPattern: /\.(?:png|jpg|jpeg|svg|gif)$/, // 匹配图片文件
-            //     handler: 'CacheFirst',    // 优先使用缓存，减少网络请求
-            //     options: {
-            //       cacheName: 'images-cache',
-            //       expiration: {
-            //         maxEntries: 60,
-            //         maxAgeSeconds: 2592000, // 30天
-            //       },
-            //     },
-            //   },
-            // ],
-            // navigateFallback: '/index.html', // SPA 应用常用，处理导航请求的回退页面
-            // navigateFallbackDenylist: [/^\/api\//], // 不应用回退策略的路径
-          }),
-        ]),
-      // PWA manifest 插件
+      // PWA Service Worker (仅生产环境)
+      ...(!isDev ? [
+        new GenerateSW({
+          clientsClaim: true,
+          skipWaiting: true,
+          exclude: [/\.map$/, /asset-manifest\.json$/],
+          maximumFileSizeToCacheInBytes: 40 * 1024 * 1024, // 40MB
+        })
+      ] : []),
+      
+      // PWA Manifest
       new WebpackPwaManifest({
         filename: 'manifest.json',
         name: 'HyperChat',
@@ -101,23 +52,20 @@ module.exports = (env, argv) => {
             destination: path.join('icons'),
           },
         ],
-        // screenshots: [
-        //   {
-        //     src: "screenshots/screenshot1.png",
-        //     sizes: "1280x720",
-        //     type: "image/png",
-        //     form_factor: "wide"
-        //   }
-        // ],
       }),
+      
+      // CSS 提取
       new MiniCssExtractPlugin({
-        filename: isDev ? "[name].css" : "[name].[contenthash].css", // 使用 contenthash
+        filename: isDev ? "[name].css" : "[name].[contenthash].css",
       }),
-
+      
+      // HTML 生成
       new HtmlWebpackPlugin({
-        title: "dadigua-toolbox", // 用于设置生成的HTML文档的标题
-        template: "public/index.html", // 模板文件路径
+        title: "HyperChat",
+        template: "public/index.html",
       }),
+      
+      // 图标生成
       new FaviconsWebpackPlugin({
         logo: "public/logo.png",
         favicons: {
@@ -133,27 +81,34 @@ module.exports = (env, argv) => {
             windows: false,
           },
         },
-      }), // svg works too!,
+      }),
+      
+      // 清理构建目录
       new CleanWebpackPlugin(),
-      // new Dotenv(),
+      
+      // 环境变量
       new webpack.EnvironmentPlugin({
         NODE_ENV: process.env.NODE_ENV || "development",
         myEnv: process.env.myEnv || "dev",
         myRuntime: "web",
       }),
+      
+      // 全局变量
       new webpack.ProvidePlugin({
         process: "process/browser",
       }),
     ],
+    
     module: {
       rules: [
+        // TypeScript/JavaScript 处理
         {
           test: /\.[cm]?(ts|js)x?$/,
           use: {
             loader: "ts-loader",
             options: {
               configFile: "tsconfig.json",
-              transpileOnly: true, // 确保放在这里
+              transpileOnly: true,
             },
           },
           exclude: /node_modules/,
@@ -161,10 +116,14 @@ module.exports = (env, argv) => {
             fullySpecified: false,
           },
         },
+        
+        // CSS 处理
         {
           test: /\.css$/,
           use: [MiniCssExtractPlugin.loader, "css-loader", "postcss-loader"],
         },
+        
+        // 图片处理
         {
           test: /\.(png|jpe?g|gif|webp)$/i,
           use: [
@@ -173,15 +132,17 @@ module.exports = (env, argv) => {
             },
           ],
         },
+        
+        // 文本文件处理
         {
           test: /\.txt$/i,
           use: "raw-loader",
         },
       ],
     },
+    
     resolve: {
       extensions: [".tsx", ".ts", ".js", ".jsx", ".css"],
-      // Add support for TypeScripts fully qualified ESM imports.
       extensionAlias: {
         ".js": [".js", ".ts"],
         ".cjs": [".cjs", ".cts"],
@@ -195,34 +156,31 @@ module.exports = (env, argv) => {
         querystring: require.resolve("querystring-es3"),
       },
     },
+    
     externals: {
       ["react-native-sqlite-storage"]: "null",
     },
-    mode: isDev ? "development" : "production",
-    devtool: isDev ? "source-map" : false,
+    
     cache: {
-      type: "filesystem", // 使用文件系统级别的缓存
+      type: "filesystem",
     },
-    // optimization: {
-    //   splitChunks: {
-    //     chunks: 'all',
-    //   },
-    // },
+    
     output: {
-      filename: isDev ? "[name].js" : "[name].js", // 使用 contenthash 作为文件名的一部分
-      chunkFilename: isDev ? "[name].js" : "[name].js", // 对于动态导入的模块
+      filename: isDev ? "[name].js" : "[name].[contenthash].js",
+      chunkFilename: isDev ? "[name].js" : "[name].[contenthash].js",
       path: path.resolve(__dirname, "build"),
       publicPath: "",
     },
+    
     devServer: {
-      static: path.resolve(__dirname, "build"), // 告诉服务器从哪里提供内容，通常是webpack的输出目录
-      port: 8080, // 设置端口号，默认是8080
-      open: false, // 告诉dev-server在服务器启动后打开浏览器
-      hot: true, // 启用webpack的模块热替换特性（HMR）
-      compress: true, // 启用gzip压缩
-      historyApiFallback: true, // 当找不到路径的时候，默认加载index.html文件
+      static: path.resolve(__dirname, "build"),
+      port: 8080,
+      open: false,
+      hot: true,
+      compress: true,
+      historyApiFallback: true,
       devMiddleware: {
-        writeToDisk: true, // 启用文件写入磁盘
+        writeToDisk: true,
       },
     },
   };
