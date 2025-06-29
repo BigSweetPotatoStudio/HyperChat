@@ -25,8 +25,8 @@ import {
   SettingOutlined,
   ArrowLeftOutlined
 } from '@ant-design/icons';
-import { GPT_MODELS, GPT_MODELS_TYPE } from '../../../shared/data.mjs';
-import { PROVIDER_CONFIGS, ProviderConfig } from '../../../core/src/shared/data.mjs';
+
+import { GPT_MODELS, GPT_MODELS_TYPE, PROVIDER_CONFIGS, ProviderConfig } from '../../../core/src/shared/data.mjs';
 import { ProviderManager } from '../../../core/src/shared/providers.mjs';
 import { v4 } from 'uuid';
 import { t } from '../i18n';
