@@ -5,6 +5,8 @@ import React from "react";
 import { useLocation } from "react-router-dom";
 import { Pre } from "../components/pre";
 import { call } from "./call";
+import { v4 } from "uuid";
+import dayjs from "dayjs";
 
 /**
  * Debounces a function, delaying its execution until after a specified `wait` time
@@ -602,4 +604,9 @@ export const showText = async ({ path }: { path: string }) => {
     ),
     onOk() { },
   });
+}
+
+export function getMyUuid() {
+  // Generate a UUID using the built-in crypto API
+  return dayjs().format('YYYYMMDD') + '-' + v4().slice(0, 8);
 }

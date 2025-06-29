@@ -305,7 +305,6 @@ export interface ProviderConfig {
   key: KnownProvider; // 唯一标识
   label: string; // 显示名称
   baseURL: string; // API 基础地址
-  value: string; // 唯一值
   icon?: string; // 图标
   description?: string; // 描述
   hasApiKey?: boolean;

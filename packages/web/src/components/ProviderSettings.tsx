@@ -91,7 +91,7 @@ export function ProviderSettings() {
 
   // 获取提供商的模型数量
   const getProviderModelCount = (provider: ProviderConfig): number => {
-    const models = AI_MODELS.get().data.filter(model => model.provider === provider.value);
+    const models = AI_MODELS.get().data.filter(model => model.provider === provider.key);
     return models.length;
   };
 
@@ -102,7 +102,7 @@ export function ProviderSettings() {
 
   // 获取提供商的模型列表
   const getProviderModels = (provider: ProviderConfig): AIModelConfigItem[] => {
-    return AI_MODELS.get().data.filter(model => model.provider === provider.value);
+    return AI_MODELS.get().data.filter(model => model.provider === provider.key);
   };
 
   // 刷新数据
@@ -168,7 +168,7 @@ export function ProviderSettings() {
       if (success) {
         // 过滤掉该提供商下的所有模型
         const currentModels = AI_MODELS.get().data;
-        const filteredModels = currentModels.filter(model => model.provider !== provider.value);
+        const filteredModels = currentModels.filter(model => model.provider !== provider.key);
         AI_MODELS.set({ data: filteredModels });
         await AI_MODELS.save();
         message.success(t`Provider and all related models deleted successfully`);
@@ -227,7 +227,7 @@ export function ProviderSettings() {
     const apiKeyInfo = ProviderManager.getProviderApiKey(provider.key);
 
     apiKeyForm.setFieldsValue({
-      provider: provider.value,
+      provider: provider.key,
       baseURL: apiKeyInfo?.baseURL || provider.baseURL,
       apiKey: apiKeyInfo?.apiKey || '',
     });
@@ -243,7 +243,7 @@ export function ProviderSettings() {
     setLoading(true);
     try {
       // 处理 baseURL
-      const finalBaseURL = selectedProvider.value === 'other' ? values.baseURL : selectedProvider.baseURL;
+      const finalBaseURL = selectedProvider.isBuiltIn ? values.baseURL : selectedProvider.baseURL;
       // 更新 provider 的 apiKey 和 baseURL
       const success = ProviderManager.updateProviderApiKey(selectedProvider.key, {
         apiKey: values.apiKey,
@@ -322,7 +322,7 @@ export function ProviderSettings() {
           model: values.model,
           apiKey: providerApiInfo?.apiKey || '',
           baseURL: providerApiInfo?.baseURL || selectedProvider.baseURL,
-          provider: selectedProvider.value,
+          provider: selectedProvider.key,
           supportImage: values.supportImage,
           supportTool: values.supportTool,
           type: values.type,
@@ -610,13 +610,13 @@ export function ProviderSettings() {
               <Input />
             </Form.Item>
 
-            {selectedProvider.value !== 'other' && (
-              <Form.Item name="baseURL" style={{ display: 'none' }}>
+            {selectedProvider.isBuiltIn && (
+              <Form.Item name="baseURL" >
                 <Input />
               </Form.Item>
             )}
 
-            {selectedProvider.value === 'other' && (
+            {!selectedProvider.isBuiltIn && (
               <Form.Item
                 name="baseURL"
                 label={t`Base URL`}
