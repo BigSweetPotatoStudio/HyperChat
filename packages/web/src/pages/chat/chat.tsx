@@ -582,13 +582,15 @@ export const Chat = ({
                 >
                   <span>Tool Name: </span>
                   <span className="text-purple-500">
-                    {tool.restore_name || tool.function.name}
+                    {getTools().find(
+                      (x) => x.name == tool.function.name,
+                    ).restore_name}
                   </span>
                 </pre>
                 {JsonSchema2FormItemOrNull(
                   getTools().find(
-                    (x) => x.restore_name == tool.restore_name,
-                  ).function.parameters,
+                    (x) => x.name == tool.function.name,
+                  ).inputSchema,
                 ) || t`No parameters`}
                 <Form.Item>
                   <div className="flex flex-wrap justify-between">
@@ -2342,10 +2344,10 @@ export const Chat = ({
                 children: x.tools.map((tool) => {
                   return {
                     title: (
-                      <Tooltip title={tool.function.description}>
+                      <Tooltip title={tool.description}>
                         <span
                         >
-                          {tool.origin_name || tool.function.name}
+                          {tool.origin_name || tool.name}
                           <ApiOutlined onClick={(e) => {
                             e.stopPropagation();
                             setCurrTool(tool);

@@ -324,21 +324,13 @@ export class MCPClient implements IMCPClient {
         let name = this.name.replace(/[^a-zA-Z0-9_-]/g, "") + "_" + (tool.name.replace(/[^a-zA-Z0-9_-]/g, "") || i.toString())
 
         return {
-          name: tool.name,
+          name: name,
           inputSchema: tool.inputSchema,
           description: tool.description,
           type: "function" as const,
-          function: {
-            name: name,
-            description: tool.description,
-            parameters: tool.inputSchema,
-          },
           origin_name: tool.name,
           restore_name: this.name + " > " + tool.name,
-          key: this.name,
           clientName: this.name,
-          client_name:  this.name,
-          client: this.name,
         } as HyperChatCompletionTool;
       });
       this.resources = resources_res.resources.map((x) => {

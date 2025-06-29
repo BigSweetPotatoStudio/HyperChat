@@ -245,7 +245,6 @@ export class AiChannel {
             type: "function",
             function: {
               name: delta.toolName,
-              arguments: JSON.stringify(delta.args), // 废弃
               args: delta.args || {},
             }
           });
@@ -322,37 +321,36 @@ export class AiChannel {
         try {
           if (typeof tool.function.args != "object") {
             tool.function.args = {} as any;
-            tool.function.arguments = "{}";
           }
         } catch {
           tool.function.args = {} as any;
-          tool.function.arguments = "{}";
         }
-        if (process.env.runtime !== "node") {
-          if (
-            this.options.confirm_call_tool &&
-            params.confirm_call_tool_cb
-          ) {
-            try {
-              tool.function.args = await params.confirm_call_tool_cb(tool);
-              tool.function.arguments = JSON.stringify(tool.function.args);
-            } catch (e) {
+        // if (process.env.runtime !== "node") {
+        //   if (
+        //     this.options.confirm_call_tool &&
+        //     params.confirm_call_tool_cb
+        //   ) {
+        //     try {
+        //       tool.function.args = await params.confirm_call_tool_cb(tool);
+        //     } catch (e) {
 
-              let message: MyMessage = {
-                role: "tool" as const,
-                tool_call_id: tool.id,
-                content: "this tool call canceled by user.",
-                content_status: "error",
-                content_attachment: [],
-                content_date: Date.now(),
-              };
-              this.messages.push(message as any);
-              params.onUpdate && params.onUpdate();
-              continue;
-            }
+        //       let message: MyMessage = {
+        //         role: "tool" as const,
+        //         tool_call_id: tool.id,
+        //         content: "this tool call canceled by user.",
+        //         content_status: "error",
+        //         content_attachment: [],
+        //         content_date: Date.now(),
+        //       };
+        //       this.messages.push(message as any);
+        //       params.onUpdate && params.onUpdate();
+        //       continue;
+        //     }
 
-          }
-        }
+        //   }
+        // }
+
+
         // console.log("tool_calls", tool_calls);
         // let localtool = tools.find(
         //   (t) => t.name === tool.function.name,
@@ -399,8 +397,8 @@ export class AiChannel {
         let call_res = await globalThis.ext2.call(
           "mcpCallTool",
           {
-            name: localTool?.client_name || "",
-            functionName: tool.function.name,
+            name: localTool?.clientName || "",
+            functionName: localTool.origin_name,
             args: tool.function.args || {},
           },
           {

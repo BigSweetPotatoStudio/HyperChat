@@ -137,14 +137,13 @@ export const electronData = new Data(
 
 // 工具调用类型定义
 export type Tool_Call = {
+  // origin_name?: string;  // 废弃
+  // restore_name?: string; // 废弃
   index: number;
   id: string;
   type: "function";
-  origin_name?: string;
-  restore_name?: string;
   function: {
     name: string;
-    arguments: string;
     args: any;
   };
 };
@@ -273,16 +272,15 @@ export type MCP_CONFIG_TYPE = {
 };
 
 export type HyperChatCompletionTool = MCPTypes.Tool & {
-  client_name: string;
+  name: string;
   origin_name: string; // ! 废弃⚠️
   restore_name: string; // ! 废弃⚠️
-  clientName?: string; // ! 废弃⚠️
-  client?: string; // ! 废弃⚠️
-  function: {
-    name: string;
-    description: string;
-    parameters: string; // JSON string
-  }
+  clientName: string;
+  // function: {
+  //   name: string;
+  //   description: string;
+  //   parameters: string; // JSON string
+  // }
 };
 export type IMCPClient = {
   tools: Array<HyperChatCompletionTool>;
