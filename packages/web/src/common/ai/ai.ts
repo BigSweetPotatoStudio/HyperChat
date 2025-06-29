@@ -204,7 +204,7 @@ export class AIChannel {
                     function: {
                         name: tool.function.name,
                         arguments: JSON.stringify((full as any).args),
-                        argumentsOBJ: (full as any).args,
+                        args: (full as any).args,
                     }
                 });
                 onUpdate && onUpdate();
@@ -369,7 +369,7 @@ export class AIChannel {
                 }
                 content_tool_calls?.map((x: Tool_Call) => {
                     let { origin_name, restore_name, ...rest } = x;
-                    let { argumentsOBJ, ...functionRest } = rest.function;
+                    let { args: argumentsOBJ, ...functionRest } = rest.function;
                     rest.function = functionRest as any;
                     obj[x.id] = rest.function.name;
                     core.content.push({
@@ -439,7 +439,7 @@ export class AIChannel {
                                     function: {
                                         name: rest.function.name,
                                         arguments: JSON.stringify(parameters),
-                                        argumentsOBJ: parameters,
+                                        args: parameters,
                                     }
                                 });
                             } catch (e) {

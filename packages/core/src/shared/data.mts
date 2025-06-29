@@ -145,7 +145,7 @@ export type Tool_Call = {
   function: {
     name: string;
     arguments: string;
-    argumentsOBJ: any;
+    args: any;
   };
 };
 
@@ -273,7 +273,6 @@ export type MCP_CONFIG_TYPE = {
 };
 
 export type HyperChatCompletionTool = MCPTypes.Tool & {
-  new_name: string;
   client_name: string;
   origin_name: string; // ! 废弃⚠️
   restore_name: string; // ! 废弃⚠️

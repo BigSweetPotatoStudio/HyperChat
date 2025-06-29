@@ -3,9 +3,10 @@ import type { HyperChatCompletionTool } from "./data.mjs";
 // import { call, getURL_PRE, getWebSocket } from "./call";
 import * as MCPTypes from "@modelcontextprotocol/sdk/types.js";
 import type { CoreMessage, LanguageModel, StreamTextResult, ToolChoice, CoreTool, ToolSet } from 'ai';
-import { streamText } from 'ai';
+import { jsonSchema, streamText } from 'ai';
 import { createOpenAI, openai } from '@ai-sdk/openai';
 import { createAnthropic } from '@ai-sdk/anthropic';
+import { jsonSchemaToZod } from "json-schema-to-zod";
 
 
 // let antdmessage: { warning: (msg: string) => void };
@@ -168,7 +169,7 @@ export class AiChannel {
     //     tools = undefined;
     //   }
     // }
-    let tool_calls = [] as Array<Tool_Call>;
+    // let content_tool_calls = [] as Array<Tool_Call>;
     // let content: string = "";
     this.abortController = new AbortController();
     let newMessage: MyMessage = {
@@ -191,16 +192,19 @@ export class AiChannel {
     );
     this.messages.push(newMessage as any);
     params.onUpdate && params.onUpdate();
+
+    let format_message = await this.messages2core(messages);
+    options.messages = format_message;
+    delete options.prompt; // 确保不使用 prompt
+    let tools: HyperChatCompletionTool[] = this.ext.mcpTools || [];
+    const aiTools = this.tools_format_ai(tools || []);
+    options.tools = {
+      ...options.tools,
+      ...aiTools,
+    }
     try {
 
-      let format_message = await this.messages2core(messages);
-      params.onUpdate && params.onUpdate();
-      let tools: HyperChatCompletionTool[] = this.ext.mcpTools || [];
-      const aiTools = this.tools_format_ai(tools || []);
-      options.tools = {
-        ...options.tools,
-        ...aiTools,
-      }
+
       let ai: any = null;
       if (modelConfig.provider === 'anthropic') {
         ai = createAnthropic({
@@ -223,7 +227,7 @@ export class AiChannel {
       this.lastMessage.content_status = "success";
       this.lastMessage.content_status = "dataLoading";
       params.onUpdate && params.onUpdate();
-
+      let toolIndex = 0;
       for await (const delta of result.fullStream) {
         console.log("delta", delta);
         if (delta.type == "error") {
@@ -232,6 +236,19 @@ export class AiChannel {
         if (delta.type == "text-delta") {
           newMessage.content += delta.textDelta;
           newMessage.content_date = Date.now();
+        }
+        if (delta.type == "tool-call") {
+          newMessage.content_tool_calls = newMessage.content_tool_calls || [];
+          newMessage.content_tool_calls.push({
+            index: toolIndex++,
+            id: delta.toolCallId,
+            type: "function",
+            function: {
+              name: delta.toolName,
+              arguments: JSON.stringify(delta.args), // 废弃
+              args: delta.args || {},
+            }
+          });
         }
         if (delta.type == "step-finish") {
           if (delta.usage) {
@@ -251,24 +268,8 @@ export class AiChannel {
 
 
       // 处理工具调用
-      const toolCalls = await result.toolCalls;
-      if (toolCalls && toolCalls.length > 0) {
-        for (const [index, toolCall] of toolCalls.entries()) {
-          let tool: Tool_Call = {
-            index: index,
-            id: toolCall.toolCallId,
-            type: "function",
-            restore_name: "",
-            origin_name: "",
-            function: {
-              name: toolCall.toolName,
-              arguments: JSON.stringify(toolCall.args),
-              argumentsOBJ: toolCall.args || {},
-            },
-          };
-          tool_calls[index] = tool;
-        }
-      }
+      // const toolCalls = await result.toolCalls;
+      // newMessage.toolCalls = toolCalls;
 
       params.onUpdate && params.onUpdate();
 
@@ -316,17 +317,15 @@ export class AiChannel {
     // });
     params.onUpdate && params.onUpdate();
     // console.log("tool_calls", tool_calls, call_tool);
-    if (tool_calls.length > 0 && params.call_tool) {
-      this.lastMessage.content_tool_calls = tool_calls;
-      for (let tool of tool_calls) {
+    if (newMessage.content_tool_calls && newMessage.content_tool_calls.length > 0) {
+      for (let tool of newMessage.content_tool_calls) {
         try {
-          tool.function.argumentsOBJ = JSON.parse(tool.function.arguments);
-          if (typeof tool.function.argumentsOBJ != "object") {
-            tool.function.argumentsOBJ = {} as any;
+          if (typeof tool.function.args != "object") {
+            tool.function.args = {} as any;
             tool.function.arguments = "{}";
           }
         } catch {
-          tool.function.argumentsOBJ = {} as any;
+          tool.function.args = {} as any;
           tool.function.arguments = "{}";
         }
         if (process.env.runtime !== "node") {
@@ -335,9 +334,8 @@ export class AiChannel {
             params.confirm_call_tool_cb
           ) {
             try {
-              tool.function.argumentsOBJ =
-                await params.confirm_call_tool_cb(tool);
-              tool.function.arguments = JSON.stringify(tool.function.argumentsOBJ);
+              tool.function.args = await params.confirm_call_tool_cb(tool);
+              tool.function.arguments = JSON.stringify(tool.function.args);
             } catch (e) {
 
               let message: MyMessage = {
@@ -360,11 +358,11 @@ export class AiChannel {
         //   (t) => t.name === tool.function.name,
         // );
         // let clientName = localtool?.clientName;
-        let clientName = "";
-        if (!clientName) {
-          console.error("client not found", tool);
-          throw new Error("client not found");
-        }
+        // let clientName = "";
+        // if (!clientName) {
+        //   console.error("client not found", tool);
+        //   throw new Error("client not found");
+        // }
 
         let message: MyMessage = {
           role: "tool" as const,
@@ -388,13 +386,22 @@ export class AiChannel {
         //     console.error(e);
         //   }
         // }
+        let localTool = this.ext.mcpTools.find(
+          (t) => t.name === tool.function.name
+        );
+        if (!localTool) {
+          this.ext.antdmessage.warning(
+            `Tool ${tool.function.name} not found in MCP tools.`,
+          );
+          continue;
+        }
         this.mcpAbortController = new AbortController();
         let call_res = await globalThis.ext2.call(
           "mcpCallTool",
           {
-            name: clientName,
-            functionName: "",
-            args: ""
+            name: localTool?.client_name || "",
+            functionName: tool.function.name,
+            args: tool.function.args || {},
           },
           {
             signal: this.mcpAbortController?.signal,
@@ -612,43 +619,73 @@ export class AiChannel {
   }
   async messages2core(messages: MyMessage[]): Promise<CoreMessage[]> {
     let results: CoreMessage[] = [];
-    // for (let m of messages) {
-    //   // this.options.messages_format_callback && await this.options.messages_format_callback(m);
 
-    //   let content = m.content;
+    for (let m of messages) {
+      // results.push(m as CoreMessage);
 
-    //   // 处理数组形式的 content (多模态)
-    //   if (Array.isArray(content)) {
-    //     const parts = content.map(part => {
-    //       if (part.type === 'text') {
-    //         return { type: 'text' as const, text: part.text };
-    //       } else if (part.type === 'image_url') {
-    //         return { type: 'image' as const, image: part.image_url.url };
-    //       }
-    //       return part;
-    //     });
-    //     content = parts;
-    //   }
+      //   let content = m.content;
 
-    //   if (m.role === 'tool') {
-    //     results.push({
-    //       role: 'tool',
-    //       content: [
-    //         {
-    //           type: 'tool-result',
-    //           toolCallId: m.tool_call_id || '',
-    //           toolName: '', // 需要从工具调用历史中获取
-    //           result: content as string,
-    //         },
-    //       ],
-    //     });
-    //   } else {
-    //     results.push({
-    //       role: m.role as 'system' | 'user' | 'assistant',
-    //       content: content || '',
-    //     });
-    //   }
-    // }
+      //   // 处理数组形式的 content (多模态)
+      //   if (Array.isArray(content)) {
+      //     const parts = content.map(part => {
+      //       if (part.type === 'text') {
+      //         return { type: 'text' as const, text: part.text };
+      //       } else if (part.type === 'image_url') {
+      //         return { type: 'image' as const, image: part.image_url.url };
+      //       }
+      //       return part;
+      //     });
+      //     content = parts;
+      //   }
+
+
+
+
+      if (m.role === 'tool') {
+        results.push({
+          role: 'tool',
+          content: [
+            {
+              type: 'tool-result',
+              toolCallId: m.tool_call_id || '',
+              toolName: '', // 需要从工具调用历史中获取
+              result: m.content as string,
+            },
+          ],
+        });
+      } else if (m.role === 'system') {
+        results.push({
+          role: 'system',
+          content: m.content as string,
+        });
+      } else if (m.role === 'user' || m.role === 'assistant') {
+        let content: any[] = []
+        if (typeof m.content === 'string') {
+          content.push({ type: 'text', text: m.content });
+        } else if (Array.isArray(m.content)) {
+          for (let c of m.content) {
+            content.push(c)
+          }
+        } else {
+          throw new Error(`Unsupported content type: ${typeof m.content}`);
+        }
+        if (m.content_tool_calls && m.content_tool_calls.length > 0) {
+          for (let toolCall of m.content_tool_calls) {
+            let toolCallId = toolCall.id || v4();
+            content.push({
+              args: toolCall.function.args || {},
+              toolCallId: toolCallId,
+              toolName: toolCall.function.name,
+              type: "tool-call",
+            } as any);
+          }
+        }
+        results.push({
+          role: m.role as "user" | "assistant",
+          content: content as any,
+        });
+      }
+    }
     return results;
   }
 
@@ -697,7 +734,7 @@ export class AiChannel {
     for (const tool of tools) {
       result[tool.name] = {
         description: tool.description || '',
-        parameters: tool.inputSchema,
+        parameters: tool.inputSchema == null ? undefined : eval(jsonSchemaToZod(tool.inputSchema as any)),
       };
     }
 

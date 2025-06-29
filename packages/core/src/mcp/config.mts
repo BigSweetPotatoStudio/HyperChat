@@ -337,6 +337,7 @@ export class MCPClient implements IMCPClient {
           restore_name: this.name + " > " + tool.name,
           key: this.name,
           clientName: this.name,
+          client_name:  this.name,
           client: this.name,
         } as HyperChatCompletionTool;
       });

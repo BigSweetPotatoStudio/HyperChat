@@ -564,7 +564,7 @@ export const Chat = ({
           content: (
             <div>
               <Form
-                initialValues={tool.function.argumentsOBJ}
+                initialValues={tool.function.args}
                 name="control-hooks"
                 onFinish={(e) => {
                   // console.log(e);
