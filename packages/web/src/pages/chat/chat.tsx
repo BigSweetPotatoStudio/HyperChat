@@ -657,8 +657,9 @@ export const Chat = ({
           antdmessage: {
             warning: antdMessage.warning,
           },
-          isOnBrowser: false,
           mcpTools: getTools(currentChat.current.allowMCPs),
+          platform: "web",
+          getURL_PRE
         })
         return res;
       })();

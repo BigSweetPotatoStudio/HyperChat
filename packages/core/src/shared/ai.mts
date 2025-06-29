@@ -6,6 +6,7 @@ import type { CoreMessage, LanguageModel, StreamTextResult, ToolChoice, CoreTool
 import { jsonSchema, streamText } from 'ai';
 import { createOpenAI, openai } from '@ai-sdk/openai';
 import { createAnthropic } from '@ai-sdk/anthropic';
+import { createGoogleGenerativeAI } from '@ai-sdk/google';
 import { jsonSchemaToZod } from "json-schema-to-zod";
 
 
@@ -206,16 +207,41 @@ export class AiChannel {
 
 
       let ai: any = null;
+      let fetch: any = undefined;
+      if (this.ext.platform === "web") {
+        fetch = async (url: RequestInfo, init?: RequestInit): Promise<Response> => {
+          // If in a browser environment and server proxy is enabled, modify headers for proxying.
+          init = {
+            ...init,
+            headers: {
+              ...(init?.headers || {}),
+              baseURL: encodeURIComponent(modelConfig.baseURL || ""), // Encode base URL for proxy
+            },
+          };
+
+          const response = await globalThis.fetch(this.ext.getURL_PRE() + "api/ai", init);
+
+          return response;
+        };
+      }
       if (modelConfig.provider === 'anthropic') {
         ai = createAnthropic({
           baseURL: modelConfig.baseURL,
           apiKey: modelConfig.apiKey,
+          fetch
+        });
+      } else if (modelConfig.provider === 'google' || modelConfig.provider === 'gemini') {
+        ai = createGoogleGenerativeAI({
+          baseURL: modelConfig.baseURL,
+          apiKey: modelConfig.apiKey,
+          fetch
         });
       } else {
         // 默认使用 OpenAI 兼容格式
         ai = createOpenAI({
           baseURL: modelConfig.baseURL,
           apiKey: modelConfig.apiKey,
+          fetch
         });
       }
       options.model = ai(modelConfig.model);
@@ -453,8 +479,9 @@ export class AiChannel {
   }
   ext: {
     antdmessage: { warning: (string) => void };
-    isOnBrowser: boolean;
     mcpTools: HyperChatCompletionTool[];
+    platform: "nodejs" | "web";
+    getURL_PRE: () => string;
   } = {} as any;
   register(ext: this["ext"]) {
     this.ext = ext;
