@@ -245,7 +245,7 @@ export type AIModelConfigItem = {
   call_tool_step?: number;
   type?: "llm" | "embedding";
   toolMode?: "standard" | "compatible";
-  isStrict: boolean;
+  // isStrict: boolean; // 废弃⚠️
   isDefault?: boolean;
 }
 

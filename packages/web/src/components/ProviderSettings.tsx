@@ -284,7 +284,7 @@ export function ProviderSettings() {
       toolMode: model.toolMode,
       supportImage: model.supportImage,
       supportTool: model.supportTool,
-      isDefault: false, // 暂时设为false，后续可以实现默认模型逻辑
+      isDefault: model.isDefault || false,
     });
     setIsModelModalOpen(true);
   };
@@ -294,6 +294,15 @@ export function ProviderSettings() {
 
     setLoading(true);
     try {
+      // 如果设置为默认模型，需要将其他模型的 isDefault 设为 false
+      if (values.isDefault) {
+        AI_MODELS.get().data.forEach(model => {
+          if (model.key !== editingModel?.key) {
+            model.isDefault = false;
+          }
+        });
+      }
+
       if (editingModel) {
         // 编辑现有模型
         const index = AI_MODELS.get().data.findIndex(m => m.key === editingModel.key);
@@ -306,6 +315,7 @@ export function ProviderSettings() {
             toolMode: values.toolMode,
             supportImage: values.supportImage,
             supportTool: values.supportTool,
+            isDefault: values.isDefault,
           };
         }
       } else {
@@ -322,7 +332,7 @@ export function ProviderSettings() {
           supportTool: values.supportTool,
           type: values.type,
           toolMode: values.toolMode,
-          isStrict: false,
+          isDefault: values.isDefault,
         };
         AI_MODELS.get().data.push(newModel);
       }
@@ -356,12 +366,41 @@ export function ProviderSettings() {
     }
   };
 
+  // 设置默认模型
+  const handleSetDefaultModel = async (model: AIModelConfigItem) => {
+    try {
+      // 将所有模型的 isDefault 设为 false
+      AI_MODELS.get().data.forEach(m => {
+        m.isDefault = false;
+      });
+      
+      // 将选中的模型设为默认
+      const targetModel = AI_MODELS.get().data.find(m => m.key === model.key);
+      if (targetModel) {
+        targetModel.isDefault = true;
+      }
+      
+      await AI_MODELS.save();
+      await refresh();
+      message.success(t`Default model set successfully!`);
+    } catch (error) {
+      message.error(t`Failed to set default model`);
+      console.error('Set default failed:', error);
+    }
+  };
+
   // 模型表格列配置
   const modelColumns = [
     {
       title: t`Name`,
       dataIndex: 'name',
       key: 'name',
+      render: (name: string, record: AIModelConfigItem) => (
+        <Space>
+          <span>{name}</span>
+          {record.isDefault && <Tag color="gold">{t`Default`}</Tag>}
+        </Space>
+      ),
     },
     {
       title: t`Model`,
@@ -393,6 +432,15 @@ export function ProviderSettings() {
       key: 'actions',
       render: (_: any, record: AIModelConfigItem) => (
         <Space>
+          {!record.isDefault && (
+            <Button
+              size="small"
+              type="link"
+              onClick={() => handleSetDefaultModel(record)}
+            >
+              {t`Set Default`}
+            </Button>
+          )}
           <Button
             size="small"
             icon={<EditOutlined />}
@@ -706,14 +754,19 @@ export function ProviderSettings() {
           </Form.Item>
 
           <Row gutter={16}>
-            <Col span={12}>
+            <Col span={8}>
               <Form.Item name="supportImage" valuePropName="checked">
                 <Switch /> <span className="ml-2">{t`Support Images`}</span>
               </Form.Item>
             </Col>
-            <Col span={12}>
+            <Col span={8}>
               <Form.Item name="supportTool" valuePropName="checked">
                 <Switch /> <span className="ml-2">{t`Support Tools`}</span>
+              </Form.Item>
+            </Col>
+            <Col span={8}>
+              <Form.Item name="isDefault" valuePropName="checked">
+                <Switch /> <span className="ml-2">{t`Set as Default`}</span>
               </Form.Item>
             </Col>
           </Row>
