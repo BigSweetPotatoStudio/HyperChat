@@ -11,7 +11,8 @@ import { Chat } from "../chat";
 import { it } from "node:test";
 import { v4 } from "uuid";
 import { io } from "socket.io-client";
-import { call, getURL_PRE, msg_receive } from "../../common/call";
+import { call, callElectron, getURL_PRE, msg_receive } from "../../common/call";
+
 import { AI_MODELS, Agents } from "../../../../shared/data.mjs";
 import { Terminal } from "@xterm/xterm";
 import { FitAddon } from "@xterm/addon-fit";
@@ -87,7 +88,7 @@ function ChatPage({
                   <Button
                     type="link"
                     onClick={() => {
-                      call("openBrowser", {
+                      callElectron("openBrowser", {
                         url: "https://www.google.com/",
                         userAgent: "Chrome",
                       });

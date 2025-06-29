@@ -37,7 +37,7 @@ const { Option } = Select;
 
 // 模型编辑接口
 interface ModelFormData {
-  name: string;
+  name?: string;
   model: string;
   type: 'llm' | 'embedding';
   toolMode: 'standard' | 'compatible';
@@ -158,7 +158,7 @@ export function ProviderSettings() {
       message.error(t`Built-in providers cannot be deleted`);
       return;
     }
-    
+
     // 删除自定义提供商及其下所有模型
     const success = ProviderManager.removeCustomProvider(provider.key);
     if (success) {
@@ -294,6 +294,9 @@ export function ProviderSettings() {
 
     setLoading(true);
     try {
+      // 如果名称为空，使用模型ID作为名称
+      const finalName = values.name?.trim() || values.model;
+
       // 如果设置为默认模型，需要将其他模型的 isDefault 设为 false
       if (values.isDefault) {
         AI_MODELS.get().data.forEach(model => {
@@ -309,7 +312,7 @@ export function ProviderSettings() {
         if (index >= 0) {
           AI_MODELS.get().data[index] = {
             ...AI_MODELS.get().data[index],
-            name: values.name,
+            name: finalName,
             model: values.model,
             type: values.type,
             toolMode: values.toolMode,
@@ -323,7 +326,7 @@ export function ProviderSettings() {
         const providerApiInfo = ProviderManager.getProviderApiKey(selectedProvider.key);
         const newModel: AIModelConfigItem = {
           key: v4(),
-          name: values.name,
+          name: finalName,
           model: values.model,
           apiKey: providerApiInfo?.apiKey || '',
           baseURL: providerApiInfo?.baseURL || selectedProvider.baseURL,
@@ -373,13 +376,13 @@ export function ProviderSettings() {
       AI_MODELS.get().data.forEach(m => {
         m.isDefault = false;
       });
-      
+
       // 将选中的模型设为默认
       const targetModel = AI_MODELS.get().data.find(m => m.key === model.key);
       if (targetModel) {
         targetModel.isDefault = true;
       }
-      
+
       await AI_MODELS.save();
       await refresh();
       message.success(t`Default model set successfully!`);
@@ -432,7 +435,7 @@ export function ProviderSettings() {
       key: 'actions',
       render: (_: any, record: AIModelConfigItem) => (
         <Space>
-          {!record.isDefault && (
+          {!record.isDefault && record.type === "llm" && (
             <Button
               size="small"
               type="link"
@@ -716,19 +719,17 @@ export function ProviderSettings() {
           autoComplete="off"
         >
           <Form.Item
-            name="name"
-            label={t`Model Name`}
-            rules={[{ required: true, message: t`Please enter model name` }]}
-          >
-            <Input placeholder={t`e.g., GPT-4 Turbo`} />
-          </Form.Item>
-
-          <Form.Item
             name="model"
             label={t`Model ID`}
             rules={[{ required: true, message: t`Please enter model ID` }]}
           >
-            <Input placeholder={t`e.g., gpt-4-turbo-preview`} />
+            <Input placeholder={t`e.g., gpt-4.1`} />
+          </Form.Item>
+          <Form.Item
+            name="name"
+            label={t`Model Name`}
+          >
+            <Input placeholder={t`Optional, will use Model ID if empty`} />
           </Form.Item>
 
           <Form.Item

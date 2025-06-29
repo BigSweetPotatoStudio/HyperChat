@@ -42,7 +42,7 @@ import {
   VolumeX,
   Volume2,
 } from "lucide-react";
-import { AppSetting, ChatHistory, electronData } from "../../../../shared/data.mjs";
+import { AppSetting, ChatHistory, electronData } from "@hyperchat/shared/data.mjs";
 import { debounce, isOnBrowser } from "../../common";
 import {
   CloudSyncOutlined,

@@ -152,7 +152,6 @@ export type Tool_Call = {
 
 // 消息类型扩展，支持多种内容状态、附件、推理内容等
 export type MyMessage = OpenAI.Chat.Completions.ChatCompletionMessageParam & {
-  id?: string,
   content_status?:
   | "loading" // request is loading
   | "success" // request is success

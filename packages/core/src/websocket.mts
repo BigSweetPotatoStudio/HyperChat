@@ -20,7 +20,7 @@ import { execFallback } from "./common/execFallback.mjs";
 
 import multer from "multer";
 import bodyParser from "body-parser";
-import { electronData } from "../../shared/data.mjs";
+import { electronData } from "./shared/data.mjs";
 import { Command } from "./command.mjs";
 
 import { Router } from "express";
