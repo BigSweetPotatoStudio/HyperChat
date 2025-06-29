@@ -152,11 +152,11 @@ export type Tool_Call = {
 export type MyMessage = OpenAI.Chat.Completions.ChatCompletionMessageParam & {
   id?: string,
   content_status?:
-  | "loading"
-  | "success"
-  | "error"
-  | "dataLoading"
-  | "dataLoadComplete";
+  | "loading" // request is loading
+  | "success" // request is success
+  | "error" // request is error
+  | "dataLoading" // stream data is loading
+  | "dataLoadComplete"; // stream is load complete
   content_sended?: boolean;
   content_template?: string;
   content_error?: string;
@@ -189,7 +189,7 @@ export type ChatHistoryItem = {
   agentKey: string;
   sended: boolean;
   icon?: string;
-  requestType: "complete" | "stream";
+  requestType: "complete" | "stream";  // 以后只支持 stream
   dateTime: number;
   isCalled: boolean;
   isTask: boolean;

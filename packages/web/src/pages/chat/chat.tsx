@@ -677,6 +677,62 @@ export const Chat = ({
         }
         return label;
       }
+      let messages_format_callback = async (message) => {
+        if (message.role == "user" || message.role == "system") {
+          if (!message.content_sended) {
+            let varList = [...VarList.get().data?.map((v) => {
+              let varName = v.scope + "." + v.name;
+              return {
+                ...v,
+                varName: varName,
+              }
+            })];
+            async function renderTemplate(template: string) {
+              let reg = /{{(.*?)}}/g;
+              let matchs = template.match(reg);
+              let subResults = [];
+              for (let match of matchs || []) {
+                let varName = match.slice(2, -2).trim();
+                let v = varList.find((x) => x.varName == varName);
+                let value = varName;
+                if (v) {
+                  if (v.variableType == "js") {
+                    value = await call("runCode", { code: v.code });
+                  } else if (v.variableType == "webjs") {
+                    let code = `
+                        (async () => {
+                            ${v.code}
+                           return await get()
+                        })()
+                        `;
+                    // console.log(code);
+                    value = await eval(code);
+                  } else {
+                    value = v.value;
+                  }
+                }
+                subResults.push({ value, varName });
+              }
+              let result = template.replace(reg, (match, p1) => {
+                return subResults.find((x) => x.varName === p1.trim())?.value || match;
+              });
+              return result;
+            }
+            if (message.content_template) {
+              if (typeof message.content == "string") {
+                message.content = await renderTemplate(message.content_template);
+              }
+              else if (Array.isArray(message.content) && message.content.length >= 1) {
+                if (message.content[0].type == "text") {
+                  message.content[0].text = await renderTemplate(message.content_template);
+                }
+              }
+
+            }
+            message.content_sended = true;
+          }
+        }
+      }
 
       try {
         // openaiClient.options = {
@@ -758,7 +814,13 @@ export const Chat = ({
             promptResList.current,
           );
         }
-
+        for(let m of openaiClient.messages) {
+          if (m.role == "user") {
+            if (!m.content_sended) {
+              await messages_format_callback(m);
+            }
+          }
+        }
         if (current) {
           if (currentChat.current.sended == false) {
 
@@ -883,15 +945,6 @@ export const Chat = ({
 
   const [isToolsShow, setIsToolsShow] = useState(false);
 
-  const [loadMoreing, setLoadMoreing] = useState(false);
-  const [conversations, setConversations] = useState<
-    GetProp<ConversationsProps, "items">
-  >([]);
-
-  let loadIndex = useRef(0);
-
-  const loadDataTatal = useRef(0);
-
   const [historyFilterSearchValue, setHistoryFilterSearchValue] = useState("");
 
   const historyFilterType = useRef<
@@ -910,68 +963,10 @@ export const Chat = ({
     async (loadMore = true, loadIndexChange = true) => {
       refresh();
       return;
-      // console.log(historyFilterType, historyFilterSearchValue, loadIndex.current);
-      // console.log("loadMoreData: ", ChatHistory.get().data);
-      if (ChatHistory.get().data.length == 0) {
-        console.log("waiting ChatHistory init");
-        return;
-      }
-      if (loadIndexChange) {
-        if (loadMore) {
-          loadIndex.current += 35;
-        } else {
-          loadIndex.current = 35;
-        }
-      }
-      if (loadMoreing) {
-        return;
-      }
-      setLoadMoreing(true);
-
-      let formmatedData = ChatHistory.get()
-        .data.filter((x) => {
-          return (
-            selectGptsKey.current == null ||
-            x.agentKey == selectGptsKey.current ||
-            x["gptsKey"] == selectGptsKey.current
-          );
-        })
-        .filter((x) => {
-          if (historyFilterType.current == "all") {
-            return !x.isCalled && !x.isTask;
-          } else if (historyFilterType.current == "agent") {
-            return x.isCalled == true;
-          } else if (historyFilterType.current == "task") {
-            return x.isTask == true;
-          } else if (historyFilterType.current == "star") {
-            return x.icon == "⭐";
-          } else {
-            return (
-              historyFilterSearchValue == "" ||
-              x.label
-                .toString()
-                .toLowerCase()
-                .includes(historyFilterSearchValue)
-            );
-          }
-        });
-      loadDataTatal.current = formmatedData.length;
-      formmatedData = formmatedData.slice(0, loadIndex.current);
-      setConversations(formmatedData);
-      // console.log("loadMoreData", loadIndex.current, loadDataTatal.current);
-      setLoadMoreing(false);
     },
     [historyFilterSearchValue],
   );
 
-  // const [resourceResList, setResourceResList] = React.useState<
-  //   Array<
-  //     MCPTypes.ReadResourceResult & {
-  //       call_name: string;
-  //       uid: string;
-  //     }
-  //   >
-  // >([]);
   const resourceResListRef = useRef<
     Array<
       MCPTypes.ReadResourceResult & {
@@ -1758,39 +1753,6 @@ export const Chat = ({
                                   };
                                 })}
                             ></Select>
-                          </span>
-                        </Tooltip>
-                        <Divider type="vertical" />
-                        <Tooltip title={t`Select Request Type`}>
-                          <span className="inline-block">
-                            <span>type:</span>
-                            <Dropdown
-                              trigger={['click']}
-                              arrow
-                              menu={{
-                                selectable: true,
-                                selectedKeys: [currentChat.current.requestType],
-                                items: [
-                                  {
-                                    label: "stream",
-                                    key: "stream",
-                                  },
-                                  {
-                                    label: "complete",
-                                    key: "complete",
-                                  },
-                                ],
-                                onClick: (e) => {
-                                  currentChat.current.requestType = e.key as any;
-                                  refresh();
-                                },
-                              }}
-                            >
-                              <Button size="small" type="link">
-                                {currentChat.current.requestType}
-                                <DownOutlined />
-                              </Button>
-                            </Dropdown>
                           </span>
                         </Tooltip>
                         <Divider type="vertical" />
