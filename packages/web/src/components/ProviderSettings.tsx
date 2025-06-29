@@ -23,7 +23,8 @@ import {
   EditOutlined,
   DeleteOutlined,
   SettingOutlined,
-  ArrowLeftOutlined
+  ArrowLeftOutlined,
+  EyeInvisibleOutlined
 } from '@ant-design/icons';
 
 import { AI_MODELS, AIModelConfigItem, PROVIDER_CONFIGS, ProviderConfig } from '../../../core/src/shared/data.mjs';
@@ -476,8 +477,9 @@ export function ProviderSettings() {
                     <Button
                       type="text"
                       size="small"
-                      danger
-                      icon={<DeleteOutlined />}
+                      danger={!provider.isBuiltIn}
+                      icon={provider.isBuiltIn ? <EyeInvisibleOutlined /> : <DeleteOutlined />}
+                      title={provider.isBuiltIn ? t`Disable Provider` : t`Delete Provider`}
                       onClick={(e) => e.stopPropagation()}
                     />
                   </Popconfirm>
@@ -512,7 +514,11 @@ export function ProviderSettings() {
                       {t`Active`}
                     </Tag>
                   )}
-                  {!provider.isBuiltIn && (
+                  {provider.isBuiltIn ? (
+                    <Tag color="blue" className="mb-2">
+                      {t`Built-in`}
+                    </Tag>
+                  ) : (
                     <Tag color="orange" className="mb-2">
                       {t`Custom`}
                     </Tag>

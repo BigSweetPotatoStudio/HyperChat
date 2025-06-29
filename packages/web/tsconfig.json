@@ -33,7 +33,7 @@
       "./node_modules/@types",
       "./types/"
     ],
-    "outDir": "./dist"
+    "outDir": "./js"
   },
   "files": [
     "../shared/data.mts"
