@@ -6,7 +6,7 @@ import { AudioOutlined, AudioMutedOutlined, LoadingOutlined, ClearOutlined } fro
 
 import { Experimental_TranscriptionResult, experimental_transcribe as transcribe } from 'ai';
 import { createOpenAI } from '@ai-sdk/openai';
-import { GPT_MODELS } from "../../../../shared/data.mjs";
+import { AI_MODELS } from "../../../../shared/data.mjs";
 import { SelectFile } from "@/src/common/selectFile";
 
 // 录音组件
@@ -80,7 +80,7 @@ export const TranscribePanel = () => {
 
         try {
             setLoading(true);
-            const model = (await GPT_MODELS.init()).data.find(model => model.provider === "openai");
+            const model = (await AI_MODELS.init()).data.find(model => model.provider === "openai");
             if (!model) {
                 message.error(t`Model not found, please check your OpenAI API key.`);
                 return;

@@ -42,7 +42,7 @@ import {
   electronData,
   AppSetting,
   MCP_CONFIG,
-  MCP_CONFIG_TYPE,
+  MCPServerConfig,
   MCP_CONFIG_SYNC,
 } from "../../../shared/data.mjs";
 
@@ -77,7 +77,7 @@ for (let key in sync_config.mcpServers) {
 // 内置 MCP 服务器配置管理
 let buildinMcpJSONPath = path.join(appDataDir, "mcpBuiltIn.json");
 let buildinMcpJSON = {
-  mcpServers: {} as { [s: string]: MCP_CONFIG_TYPE },
+  mcpServers: {} as { [s: string]: MCPServerConfig },
 }
 
 // MCP 客户端实例缓存
@@ -104,7 +104,7 @@ for (let s of MyServers) {
         config: buildinMcpJSON.mcpServers[key]?.hyperchat?.config || {},
       } as any,
       disabled: buildinMcpJSON.mcpServers[key]?.disabled,
-    } as MCP_CONFIG_TYPE;
+    } as MCPServerConfig;
   } else {
     buildinMcpJSON.mcpServers[key] = {
       type: "sse",
@@ -114,7 +114,7 @@ for (let s of MyServers) {
         config: buildinMcpJSON.mcpServers[key]?.hyperchat?.config || {},
       } as any,
       disabled: buildinMcpJSON.mcpServers[key]?.disabled,
-    } as MCP_CONFIG_TYPE;
+    } as MCPServerConfig;
   }
 
 }
@@ -144,7 +144,7 @@ export class MCPClient implements IMCPClient {
   private maxReconnectAttempts = 5;
   private reconnectDelay = 5000; // 5秒
 
-  constructor(public name: string, public config: MCP_CONFIG_TYPE, public source: "hyperchat" | "claude" | "builtin" = "hyperchat", public order: number = 0) {
+  constructor(public name: string, public config: MCPServerConfig, public source: "hyperchat" | "claude" | "builtin" = "hyperchat", public order: number = 0) {
     let s = MyServers.find((s) => s.name === name);
     if (s?.configSchema) {
       this.ext.configSchema = zodToJsonSchema(s.configSchema);
@@ -383,7 +383,7 @@ export class MCPClient implements IMCPClient {
       throw e;
     }
   }
-  async openSse(config: MCP_CONFIG_TYPE) {
+  async openSse(config: MCPServerConfig) {
     const client = new Client({
       name: this.name,
       version: "1.0.0",
@@ -402,7 +402,7 @@ export class MCPClient implements IMCPClient {
     await client.connect(transport);
     this.client = client;
   }
-  async openStreamableHttp(config: MCP_CONFIG_TYPE) {
+  async openStreamableHttp(config: MCPServerConfig) {
     const client = new Client({
       name: this.name,
       version: "1.0.0",
@@ -426,7 +426,7 @@ export class MCPClient implements IMCPClient {
       throw e;
     }
   }
-  async openStdio(config: MCP_CONFIG_TYPE) {
+  async openStdio(config: MCPServerConfig) {
     let env = Object.assign(getMyDefaultEnvironment(), config.env);
     // console.log("openStdio", config.command, config.args, env);
     // let stream = new Stream();
@@ -463,17 +463,17 @@ export class MCPClient implements IMCPClient {
   }
   async loadConfig() {
     if (this.source == "hyperchat") {
-      this.config = (await MCP_CONFIG.init()).mcpServers[this.name] as MCP_CONFIG_TYPE;
+      this.config = (await MCP_CONFIG.init()).mcpServers[this.name] as MCPServerConfig;
     }
     if (this.source == "builtin") {
       buildinMcpJSON = fs.readJsonSync(buildinMcpJSONPath);
-      this.config = buildinMcpJSON.mcpServers[this.name] as MCP_CONFIG_TYPE;
+      this.config = buildinMcpJSON.mcpServers[this.name] as MCPServerConfig;
     }
     if (this.source == "claude") {
       let p = clientPaths.claude;
       Logger.info("initClaudeConfig", "found", p);
       let config = fs.readJsonSync(p);
-      this.config = config.mcpServers[this.name] as MCP_CONFIG_TYPE;
+      this.config = config.mcpServers[this.name] as MCPServerConfig;
     }
   }
   async saveConfig({ isdelete }: { isdelete?: boolean } = {}) {
@@ -764,7 +764,7 @@ Promise.race([initMcpClients(), sleep(1000 * 60)]).then(() => {
 });
 export async function openMcpClient(
   name?: string,
-  clientConfig?: MCP_CONFIG_TYPE,
+  clientConfig?: MCPServerConfig,
   options = {
     onlySave: false,
   }

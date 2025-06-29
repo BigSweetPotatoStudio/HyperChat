@@ -78,7 +78,7 @@ import {
   AppSetting,
   ChatHistory, DataList,
   electronData,
-  GPT_MODELS,
+  AI_MODELS,
   IMCPClient,
   KNOWLEDGE_BASE,
   MCP_CONFIG,
@@ -219,7 +219,7 @@ export function Layout() {
   useEffect(() => {
     (async () => {
       await Promise.all([
-        GPT_MODELS.init(),
+        AI_MODELS.init(),
         MCP_CONFIG.init(),
         KNOWLEDGE_BASE.init(),
         electronData.init(),
@@ -264,7 +264,7 @@ export function Layout() {
     setLocal(e == "zhCN" ? zhCN : enUS);
     refresh();
   };
-  let defaultModel = getDefaultModelConfigSync(GPT_MODELS);
+  let defaultModel = getDefaultModelConfigSync(AI_MODELS);
 
   return (
     <ConfigProvider locale={locale}>

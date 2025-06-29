@@ -229,11 +229,11 @@ export type AgentData = {
   version?: number
 }
 
-export const Agents = new Data("gpts_list.json", {
+export const Agents = new Data("gpts_list.json", { // agents.json
   data: [] as Array<AgentData>,
 });
 
-export type GPT_MODELS_TYPE = {
+export type AIModelConfigItem = {
   key: string;
   name: string;
   model: string;
@@ -249,10 +249,10 @@ export type GPT_MODELS_TYPE = {
   isDefault?: boolean;
 }
 
-export class AIModelConfig<T = { data: Array<GPT_MODELS_TYPE> }> extends Data<T> {
+export class AIModelConfig<T = { data: Array<AIModelConfigItem> }> extends Data<T> {
   providerConfigs: any;
   override async init(): Promise<T> {
-    let res: { data: Array<GPT_MODELS_TYPE> } = await this._init() as any;
+    let res: { data: Array<AIModelConfigItem> } = await this._init() as any;
     let providerConfigs = await PROVIDER_CONFIGS.init();
     this.providerConfigs = providerConfigs;
     for (let item of res.data) {
@@ -264,7 +264,9 @@ export class AIModelConfig<T = { data: Array<GPT_MODELS_TYPE> }> extends Data<T>
   }
   getGroupData(): { label: string, value: string, options: Array<{ label: string, value: string }> }[] {
     // let providerConfigs = await PROVIDER_CONFIGS.init();
-    const modelData = (this.get() as { data: Array<GPT_MODELS_TYPE> }).data;
+    const modelData = (this.get() as { data: Array<AIModelConfigItem> }).data.filter(
+      (x) => x.type == "llm" || x.type == null,
+    );
     const providers = ProviderManager.getAllProviders();
 
     return providers.map((provider) => {
@@ -283,8 +285,8 @@ export class AIModelConfig<T = { data: Array<GPT_MODELS_TYPE> }> extends Data<T>
 
   }
 }
-export const GPT_MODELS = new AIModelConfig("gpt_models.json", {
-  data: [] as Array<GPT_MODELS_TYPE>,
+export const AI_MODELS = new AIModelConfig("gpt_models.json", { // ai_models.json
+  data: [] as Array<AIModelConfigItem>,
 });
 
 export type KnownProvider =
@@ -317,7 +319,7 @@ export const PROVIDER_CONFIGS = new Data('provider_configs.json', {
   builtinApiKeys: {} as { [key: string]: { apiKey: string; baseURL: string } }, // 新增属性
 });
 
-export type MCP_CONFIG_TYPE = {
+export type MCPServerConfig = {
   command?: string;
   args?: string[];
   env?: { [s: string]: string };
@@ -355,7 +357,7 @@ export type IMCPClient = {
   name: string;
   status: "disconnected" | "connected" | "connecting" | "disabled";
   order: number;
-  config: MCP_CONFIG_TYPE;
+  config: MCPServerConfig;
   ext: {
     configSchema?: { [s in string]: any };
   };
@@ -378,7 +380,7 @@ class MCP_CONFIG_DATA<T> extends Data<T> {
 export const MCP_CONFIG = new MCP_CONFIG_DATA(
   "mcp.json",
   {
-    mcpServers: {} as { [s: string]: MCP_CONFIG_TYPE },
+    mcpServers: {} as { [s: string]: MCPServerConfig },
   },
   {
     sync: false,
@@ -388,7 +390,7 @@ export const MCP_CONFIG = new MCP_CONFIG_DATA(
 export const MCP_CONFIG_SYNC = new Data(
   "mcp_sync.json",
   {
-    mcpServers: {} as { [s: string]: MCP_CONFIG_TYPE },
+    mcpServers: {} as { [s: string]: MCPServerConfig },
   },
   {
     sync: true,
@@ -415,20 +417,20 @@ export const TEMP_FILE = new Data(
   }
 );
 
-export type KNOWLEDGE_Store = {
+export type KnowledgeStore = {
   localPath: string;
   key: string;
-  resources: KNOWLEDGE_Resource[];
+  resources: KnowledgeResource[];
   name: string;
   model: string;
   description: string;
 };
 
-export type KNOWLEDGE_Resource = {
+export type KnowledgeResource = {
   key: string;
   name: string;
   type: "file" | "text";
-  fragments?: KNOWLEDGE_Resource_Fragment[];
+  fragments?: KnowledgeFragment[];
   filepath?: string;
   text?: string;
   uniqueId: string;
@@ -436,7 +438,7 @@ export type KNOWLEDGE_Resource = {
   loaderType: string;
 };
 
-export type KNOWLEDGE_Resource_Fragment = {
+export type KnowledgeFragment = {
   resourceKey: string;
   date: number;
   text: string;
@@ -446,7 +448,7 @@ export type KNOWLEDGE_Resource_Fragment = {
 export const KNOWLEDGE_BASE = new Data(
   "knowledge_base.json",
   {
-    dbList: [] as Array<KNOWLEDGE_Store>,
+    dbList: [] as Array<KnowledgeStore>,
   },
   {
     sync: false,

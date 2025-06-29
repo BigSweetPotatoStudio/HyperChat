@@ -21,11 +21,11 @@ import {
 } from "antd";
 import React, { useContext, useEffect, useRef, useState } from "react";
 import { v4 as uuid } from "uuid";
-import { GPT_MODELS, KNOWLEDGE_Store } from "../../../../shared/data.mjs";
+import { AI_MODELS, KnowledgeStore } from "../../../../shared/data.mjs";
 
 import { t } from "../../i18n";
 
-type Values = KNOWLEDGE_Store;
+type Values = KnowledgeStore;
 
 interface CollectionCreateFormProps {
   initialValues: Values;
@@ -66,7 +66,7 @@ const ModalForm: React.FC<CollectionCreateFormProps> = ({
       >
         <Select
           placeholder={t`Please select`}
-          options={GPT_MODELS.get()
+          options={AI_MODELS.get()
             .data.filter((x) => x.type == "embedding")
             .map((x) => {
               return {

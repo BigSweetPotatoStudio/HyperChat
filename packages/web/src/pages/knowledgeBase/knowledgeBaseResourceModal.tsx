@@ -25,11 +25,11 @@ import { v4 as uuid } from "uuid";
 import { CloseOutlined, FormOutlined } from "@ant-design/icons";
 
 
-import { KNOWLEDGE_Resource, GPT_MODELS } from "../../../../shared/data.mjs";
+import { KnowledgeResource, AI_MODELS } from "../../../../shared/data.mjs";
 import { SelectFile } from "../../common/selectFile";
 import { t } from "../../i18n";
 
-type Values = KNOWLEDGE_Resource;
+type Values = KnowledgeResource;
 
 interface CollectionCreateFormProps {
   initialValues: Values;

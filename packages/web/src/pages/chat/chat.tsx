@@ -186,7 +186,7 @@ import { AiChannel } from "../../../../core/src/shared/ai.mjs";
 
 import {
   ChatHistory,
-  GPT_MODELS,
+  AI_MODELS,
   Agents,
   AppSetting, IMCPClient,
   electronData,
@@ -306,7 +306,7 @@ export const Chat = ({
         refresh();
         await Promise.all([
           Agents.init(),
-          GPT_MODELS.init(),
+          AI_MODELS.init(),
           AppSetting.init(),
           ChatHistory.init(),
           electronData.init(),
@@ -628,11 +628,11 @@ export const Chat = ({
 
     let iOnRequest = async (index: number, modelKey, messages: MyMessage[], setOpenaiClient: (openaiClient) => void) => {
       let current = index == -1 ? true : false;
-      let config = GPT_MODELS.get().data.find(
+      let config = AI_MODELS.get().data.find(
         (x) => x.key == modelKey,
       );
       if (config == null) {
-        if (GPT_MODELS.get().data.length == 0) {
+        if (AI_MODELS.get().data.length == 0) {
           EVENT.fire("setIsModelConfigOpenTrue");
           throw new Error("Please add LLM first");
         }
@@ -998,8 +998,8 @@ export const Chat = ({
 
 
   let currModel = (
-    GPT_MODELS.get().data.find((x) => x.key == currentChat.current.modelKey) ||
-    getDefaultModelConfigSync(GPT_MODELS)
+    AI_MODELS.get().data.find((x) => x.key == currentChat.current.modelKey) ||
+    getDefaultModelConfigSync(AI_MODELS)
   );
 
   let supportImage = currModel?.supportImage;
@@ -1730,8 +1730,8 @@ export const Chat = ({
                               showSearch
                               optionFilterProp="label"
                               placeholder={
-                                GPT_MODELS.get().data.length > 0
-                                  ? getDefaultModelConfigSync(GPT_MODELS).name
+                                AI_MODELS.get().data.length > 0
+                                  ? getDefaultModelConfigSync(AI_MODELS).name
                                   : "Please add a LLM model"
                               }
                               className="w-60"
@@ -1741,7 +1741,7 @@ export const Chat = ({
                                 currentChat.current.modelKey = value;
                                 refresh();
                               }}
-                              options={GPT_MODELS.getGroupData()}
+                              options={AI_MODELS.getGroupData()}
                             ></Select>
                           </span>
                         </Tooltip>
@@ -1781,7 +1781,7 @@ export const Chat = ({
                           arrow
                           menu={{
                             selectable: true,
-                            items: GPT_MODELS.get()
+                            items: AI_MODELS.get()
                               .data.filter(
                                 (x) => x.type == "llm" || x.type == null,
                               )
@@ -1794,7 +1794,7 @@ export const Chat = ({
                               }),
                             onClick: (e) => {
                               if (!DATA.current.diffs.find(x => x.modelKey == e.key)) {
-                                let name = GPT_MODELS.get().data.find((x) => x.key == e.key)?.name;
+                                let name = AI_MODELS.get().data.find((x) => x.key == e.key)?.name;
                                 DATA.current.diffs.push({ modelKey: e.key, messages: currentChat.current.messages, openaiClient: undefined, label: name });
                                 refresh();
                               } else {

@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { GPT_MODELS, GPT_MODELS_TYPE } from "../../../shared/data.mjs";
+import { AI_MODELS, AIModelConfigItem } from "../../../shared/data.mjs";
 import { EVENT } from "../common/event";
 import { MyMessage, OpenAiChannel } from "../common/openai.js";
 
@@ -12,23 +12,23 @@ export async function getDefaultModelConfig() {
     // const json = zodResponseFormat(BaseResponseSchema, 'final_schema');
     // console.log(json);
 
-    let config: GPT_MODELS_TYPE = undefined
-    await GPT_MODELS.init();
+    let config: AIModelConfigItem = undefined
+    await AI_MODELS.init();
     if (config == null) {
-        config = GPT_MODELS.get().data.find(m => m.isDefault);
+        config = AI_MODELS.get().data.find(m => m.isDefault);
     }
     if (config == null) {
-        if (GPT_MODELS.get().data.length == 0) {
+        if (AI_MODELS.get().data.length == 0) {
             EVENT.fire("setIsModelConfigOpenTrue");
             throw new Error("Please add LLM first");
         }
-        config = GPT_MODELS.get().data[0];
+        config = AI_MODELS.get().data[0];
     }
     return config;
 }
 
-export function getDefaultModelConfigSync(models: typeof GPT_MODELS): GPT_MODELS_TYPE | undefined {
-    let config: GPT_MODELS_TYPE | undefined = undefined;
+export function getDefaultModelConfigSync(models: typeof AI_MODELS): AIModelConfigItem | undefined {
+    let config: AIModelConfigItem | undefined = undefined;
     if (config == null) {
         config = models.get().data.find(m => m.isDefault);
     }

@@ -5,7 +5,7 @@ import { FileImageOutlined, LoadingOutlined } from "@ant-design/icons";
 
 import { experimental_generateImage as generateImage } from 'ai';
 import { createOpenAI } from '@ai-sdk/openai';
-import { GPT_MODELS } from "../../../../shared/data.mjs";
+import { AI_MODELS } from "../../../../shared/data.mjs";
 
 const { TextArea } = Input;
 
@@ -32,7 +32,7 @@ const GenerateImagePanel = () => {
             setImageUrls([]);
 
             // 获取OpenAI配置
-            const model = (await GPT_MODELS.init()).data.find(model => model.provider === "openai");
+            const model = (await AI_MODELS.init()).data.find(model => model.provider === "openai");
             if (!model) {
                 message.error(t`Model not found, please check your OpenAI API key.`);
                 setGenerating(false);

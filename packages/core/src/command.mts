@@ -9,7 +9,7 @@ import {
   ChatHistory,
   ChatHistoryItem,
   electronData,
-  MCP_CONFIG_TYPE,
+  MCPServerConfig,
   MyMessage,
   Task,
 } from "../../shared/data.mjs";
@@ -24,8 +24,8 @@ import {
 import { webdavClient } from "./common/webdav.mjs";
 import { progressList } from "./common/progress.mjs";
 import {
-  KNOWLEDGE_Resource,
-  KNOWLEDGE_Store,
+  KnowledgeResource,
+  KnowledgeStore,
 } from "../../shared/data.mjs";
 import { EVENT } from "./common/event.mjs";
 import { callAgent, runTask, startTask, stopTask } from "./mcp/task.mjs";
@@ -77,7 +77,7 @@ export class CommandFactory {
     }
   }: {
     clientName: string;
-    clientConfig?: MCP_CONFIG_TYPE;
+    clientConfig?: MCPServerConfig;
     options?: {
       onlySave: boolean;
     };
@@ -344,8 +344,8 @@ export class CommandFactory {
     resource: r,
     move = false
   }: {
-    store: KNOWLEDGE_Store;
-    resource: KNOWLEDGE_Resource;
+    store: KnowledgeStore;
+    resource: KnowledgeResource;
     move?: boolean;
   }) {
     return await store.addResource(s, r, move);
@@ -353,7 +353,7 @@ export class CommandFactory {
   async vectorStoreDelete({
     store: s
   }: {
-    store: KNOWLEDGE_Store;
+    store: KnowledgeStore;
   }) {
 
     return await store.delete(s);
@@ -362,8 +362,8 @@ export class CommandFactory {
     store: s,
     resource: r
   }: {
-    store: KNOWLEDGE_Store;
-    resource: KNOWLEDGE_Resource;
+    store: KnowledgeStore;
+    resource: KnowledgeResource;
   }) {
 
     return await store.removeResource(s, r);
@@ -373,7 +373,7 @@ export class CommandFactory {
     query: q,
     k
   }: {
-    store: KNOWLEDGE_Store;
+    store: KnowledgeStore;
     query: string;
     k: number;
   }) {

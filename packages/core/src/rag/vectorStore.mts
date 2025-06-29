@@ -5,8 +5,8 @@ import { appDataDir, Logger } from "../polyfills/index.mjs";
 // import { FeatureExtraction } from "../common/model.mjs";
 import {
   KNOWLEDGE_BASE,
-  KNOWLEDGE_Resource,
-  KNOWLEDGE_Store,
+  KnowledgeResource,
+  KnowledgeStore,
 } from "../../../shared/data.mjs";
 import { v4 } from "uuid";
 import { zx } from "../es6.mjs";
@@ -35,8 +35,8 @@ const fileirectory = path.join(appDataDir, "files");
 fs.ensureDirSync(fileirectory);
 class Store {
   async addResource(
-    store: KNOWLEDGE_Store,
-    r: KNOWLEDGE_Resource,
+    store: KnowledgeStore,
+    r: KnowledgeResource,
     move = false
   ) {
     let storeKey = store.key;
@@ -76,7 +76,7 @@ class Store {
     r.loaderType = res.loaderType;
     return r;
   }
-  async removeResource(store: KNOWLEDGE_Store, r: KNOWLEDGE_Resource) {
+  async removeResource(store: KnowledgeStore, r: KnowledgeResource) {
     let storeKey = store.key;
     const storePath = path.join(basedirectory, storeKey + ".db");
     let ragapp = new MyRag();
@@ -85,7 +85,7 @@ class Store {
     fs.removeSync(path.join(appDataDir, r.filepath!));
   }
 
-  async delete(store: KNOWLEDGE_Store) {
+  async delete(store: KnowledgeStore) {
     let storeKey = store.key;
     const storePath = path.join(basedirectory, storeKey + ".db");
     // let _ragapp = new MyRag();
@@ -109,7 +109,7 @@ class Store {
       }
     }
   }
-  async search(store: KNOWLEDGE_Store, query: string, k: number) {
+  async search(store: KnowledgeStore, query: string, k: number) {
     let storeKey = store.key;
     const storePath = path.join(basedirectory, storeKey + ".db");
     let ragapp = new MyRag();

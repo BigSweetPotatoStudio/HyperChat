@@ -1,5 +1,5 @@
 import type { RAGApplication } from "@llm-tools/embedjs";
-import { GPT_MODELS, KNOWLEDGE_Store } from "../../../shared/data.mjs";
+import { AI_MODELS, KnowledgeStore } from "../../../shared/data.mjs";
 import {
   LibSqlDb,
   OpenAiEmbeddings,
@@ -22,8 +22,8 @@ export class MyRag {
   async addPdf(filepath: string) {
     return this.app.addLoader(new PdfLoader({ filePathOrUrl: filepath }));
   }
-  async init(storePath: string, store: KNOWLEDGE_Store) {
-    let gpt_m = (await GPT_MODELS.init()).data.find((x) => x.key == store.model);
+  async init(storePath: string, store: KnowledgeStore) {
+    let gpt_m = (await AI_MODELS.init()).data.find((x) => x.key == store.model);
     if (gpt_m == null) {
       throw new Error("Model not found");
     }

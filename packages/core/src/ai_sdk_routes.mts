@@ -2,7 +2,7 @@ import { Router, Request, Response } from 'express';
 import { streamText } from 'ai';
 import { createOpenAI } from '@ai-sdk/openai';
 import { createAnthropic } from '@ai-sdk/anthropic';
-import { GPT_MODELS } from "../../shared/data.mjs";
+import { AI_MODELS } from "../../shared/data.mjs";
 import { Logger } from "./polyfills/log.mjs";
 
 /**
@@ -61,8 +61,8 @@ export function createAISDKRouter(): Router {
       }
 
       // 获取模型配置
-      await GPT_MODELS.init();
-      const config = GPT_MODELS.get().data.find(x => x.key === modelKey);
+      await AI_MODELS.init();
+      const config = AI_MODELS.get().data.find(x => x.key === modelKey);
       
       if (!config) {
         res.status(404).json({
@@ -145,8 +145,8 @@ export function createAISDKRouter(): Router {
   // GET /api/models - 获取可用模型列表
   router.get('/models', async (_req: Request, res: Response) => {
     try {
-      await GPT_MODELS.init();
-      const models = GPT_MODELS.get().data
+      await AI_MODELS.init();
+      const models = AI_MODELS.get().data
         .filter(x => x.type === 'llm' || x.type == null)
         .map(model => ({
           id: model.key,

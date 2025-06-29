@@ -1,5 +1,5 @@
 import { v4 } from "uuid";
-import { AgentData, MyMessage, GPT_MODELS_TYPE, VarList, GPT_MODELS } from "../../../shared/data.mjs";
+import { AgentData, MyMessage, AIModelConfigItem, VarList, AI_MODELS } from "../../../shared/data.mjs";
 import { getDefaultModelConfigSync } from "../components/ai";
 import { OpenAiChannel } from "./openai.js";
 import _ from 'lodash';
@@ -27,9 +27,9 @@ export class Agent {
     channel: OpenAiChannel;
     /**
      * The configuration data for the GPT model used by the agent.
-     * @type {GPT_MODELS_TYPE}
+     * @type {AIModelConfigItem}
      */
-    gptModelData: GPT_MODELS_TYPE;
+    gptModelData: AIModelConfigItem;
 
     /**
      * Creates an instance of the Agent class.
@@ -46,9 +46,9 @@ export class Agent {
      * @throws {Error} If a language model is not configured.
      */
     async init(modelKey?: string) {
-        await GPT_MODELS.init();
+        await AI_MODELS.init();
         modelKey = modelKey || this.agentData.modelKey;
-        let gptModelData = GPT_MODELS.get().data.find((x) => x.key == modelKey) || getDefaultModelConfigSync(GPT_MODELS);
+        let gptModelData = AI_MODELS.get().data.find((x) => x.key == modelKey) || getDefaultModelConfigSync(AI_MODELS);
 
         if (!gptModelData) {
             throw new Error("Please add LLM first");

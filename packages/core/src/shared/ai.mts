@@ -27,7 +27,7 @@ import { jsonSchemaToZod } from "json-schema-to-zod";
 import { v4 } from "uuid";
 import dayjs from "dayjs";
 // import { isOnBrowser } from "./const";
-import { GPT_MODELS, type GPT_MODELS_TYPE, type MyMessage, type Tool_Call } from "./data.mjs";
+import { AI_MODELS, type AIModelConfigItem, type MyMessage, type Tool_Call } from "./data.mjs";
 import { extractTool } from "./prompt";
 
 
@@ -147,8 +147,8 @@ export class AiChannel {
     if (this.status == "stop") {
       throw new Error("User Cancel Requesting");
     }
-    await GPT_MODELS.init();
-    let modelConfig = GPT_MODELS.get().data.find((x) => x.key === params.modelKey);
+    await AI_MODELS.init();
+    let modelConfig = AI_MODELS.get().data.find((x) => x.key === params.modelKey);
     if (!modelConfig) {
       throw new Error(`Model not found: ${params.modelKey}`);
     }

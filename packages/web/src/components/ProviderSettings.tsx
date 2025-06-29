@@ -26,7 +26,7 @@ import {
   ArrowLeftOutlined
 } from '@ant-design/icons';
 
-import { GPT_MODELS, GPT_MODELS_TYPE, PROVIDER_CONFIGS, ProviderConfig } from '../../../core/src/shared/data.mjs';
+import { AI_MODELS, AIModelConfigItem, PROVIDER_CONFIGS, ProviderConfig } from '../../../core/src/shared/data.mjs';
 import { ProviderManager } from '../../../core/src/shared/providers.mjs';
 import { v4 } from 'uuid';
 import { t } from '../i18n';
@@ -83,14 +83,14 @@ export function ProviderSettings() {
   const [isApiKeyModalOpen, setIsApiKeyModalOpen] = useState(false);
   const [isModelModalOpen, setIsModelModalOpen] = useState(false);
   const [isProviderModalOpen, setIsProviderModalOpen] = useState(false);
-  const [editingModel, setEditingModel] = useState<GPT_MODELS_TYPE | null>(null);
+  const [editingModel, setEditingModel] = useState<AIModelConfigItem | null>(null);
   const [editingProvider, setEditingProvider] = useState<ProviderConfig | null>(null);
 
   const [loading, setLoading] = useState(false);
 
   // 获取提供商的模型数量
   const getProviderModelCount = (provider: ProviderConfig): number => {
-    const models = GPT_MODELS.get().data.filter(model => model.provider === provider.value);
+    const models = AI_MODELS.get().data.filter(model => model.provider === provider.value);
     return models.length;
   };
 
@@ -100,13 +100,13 @@ export function ProviderSettings() {
   };
 
   // 获取提供商的模型列表
-  const getProviderModels = (provider: ProviderConfig): GPT_MODELS_TYPE[] => {
-    return GPT_MODELS.get().data.filter(model => model.provider === provider.value);
+  const getProviderModels = (provider: ProviderConfig): AIModelConfigItem[] => {
+    return AI_MODELS.get().data.filter(model => model.provider === provider.value);
   };
 
   // 刷新数据
   const refresh = async () => {
-    await GPT_MODELS.init();
+    await AI_MODELS.init();
     await PROVIDER_CONFIGS.init();
 
     // 获取所有可用的提供商
@@ -166,10 +166,10 @@ export function ProviderSettings() {
       const success = ProviderManager.removeCustomProvider(provider.key);
       if (success) {
         // 过滤掉该提供商下的所有模型
-        const currentModels = GPT_MODELS.get().data;
+        const currentModels = AI_MODELS.get().data;
         const filteredModels = currentModels.filter(model => model.provider !== provider.value);
-        GPT_MODELS.set({ data: filteredModels });
-        await GPT_MODELS.save();
+        AI_MODELS.set({ data: filteredModels });
+        await AI_MODELS.save();
         message.success(t`Provider and all related models deleted successfully`);
         await refresh();
       } else {
@@ -278,7 +278,7 @@ export function ProviderSettings() {
     setIsModelModalOpen(true);
   };
 
-  const handleEditModel = (model: GPT_MODELS_TYPE) => {
+  const handleEditModel = (model: AIModelConfigItem) => {
     setEditingModel(model);
     modelForm.resetFields();
     modelForm.setFieldsValue({
@@ -300,10 +300,10 @@ export function ProviderSettings() {
     try {
       if (editingModel) {
         // 编辑现有模型
-        const index = GPT_MODELS.get().data.findIndex(m => m.key === editingModel.key);
+        const index = AI_MODELS.get().data.findIndex(m => m.key === editingModel.key);
         if (index >= 0) {
-          GPT_MODELS.get().data[index] = {
-            ...GPT_MODELS.get().data[index],
+          AI_MODELS.get().data[index] = {
+            ...AI_MODELS.get().data[index],
             name: values.name,
             model: values.model,
             type: values.type,
@@ -315,7 +315,7 @@ export function ProviderSettings() {
       } else {
         // 添加新模型 - 从 Provider 获取 apiKey 和 baseURL
         const providerApiInfo = ProviderManager.getProviderApiKey(selectedProvider.key);
-        const newModel: GPT_MODELS_TYPE = {
+        const newModel: AIModelConfigItem = {
           key: v4(),
           name: values.name,
           model: values.model,
@@ -328,10 +328,10 @@ export function ProviderSettings() {
           toolMode: values.toolMode,
           isStrict: false,
         };
-        GPT_MODELS.get().data.push(newModel);
+        AI_MODELS.get().data.push(newModel);
       }
 
-      await GPT_MODELS.save();
+      await AI_MODELS.save();
       await refresh();
 
       setIsModelModalOpen(false);
@@ -345,12 +345,12 @@ export function ProviderSettings() {
   };
 
   // 删除模型
-  const handleDeleteModel = async (model: GPT_MODELS_TYPE) => {
+  const handleDeleteModel = async (model: AIModelConfigItem) => {
     try {
-      const index = GPT_MODELS.get().data.findIndex(m => m.key === model.key);
+      const index = AI_MODELS.get().data.findIndex(m => m.key === model.key);
       if (index >= 0) {
-        GPT_MODELS.get().data.splice(index, 1);
-        await GPT_MODELS.save();
+        AI_MODELS.get().data.splice(index, 1);
+        await AI_MODELS.save();
         await refresh();
         message.success(t`Model deleted successfully!`);
       }
@@ -385,7 +385,7 @@ export function ProviderSettings() {
     {
       title: t`Features`,
       key: 'features',
-      render: (_: any, record: GPT_MODELS_TYPE) => (
+      render: (_: any, record: AIModelConfigItem) => (
         <Space>
           {record.supportImage && <Tag color="purple">{t`Image`}</Tag>}
           {record.supportTool && <Tag color="cyan">{t`Tools`}</Tag>}
@@ -395,7 +395,7 @@ export function ProviderSettings() {
     {
       title: t`Actions`,
       key: 'actions',
-      render: (_: any, record: GPT_MODELS_TYPE) => (
+      render: (_: any, record: AIModelConfigItem) => (
         <Space>
           <Button
             size="small"

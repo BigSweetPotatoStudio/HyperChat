@@ -25,7 +25,7 @@ import {
 import {
   electronData,
   MCP_CONFIG,
-  MCP_CONFIG_TYPE,
+  MCPServerConfig,
 } from "../../../../shared/data.mjs";
 import { EVENT } from "../../common/event";
 import { Code } from "../../common/code";
@@ -751,7 +751,7 @@ export function Market() {
                   }
 
 
-                  let mcpServerConfig = {} as MCP_CONFIG_TYPE;
+                  let mcpServerConfig = {} as MCPServerConfig;
                   if (values.type == "sse" || values.type == "streamableHttp") {
                     let headers = {};
                     values.headers = values.headers || "";

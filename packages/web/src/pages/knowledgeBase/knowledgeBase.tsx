@@ -17,7 +17,7 @@ import { MyProgress } from "../../common/progress";
 import {
   electronData,
   KNOWLEDGE_BASE,
-  KNOWLEDGE_Store,
+  KnowledgeStore,
 } from "../../../../shared/data.mjs";
 import { KnowledgeBaseModal } from "./knowledgeBaseModal";
 import { v4 } from "uuid";
@@ -44,7 +44,7 @@ export function KnowledgeBase() {
   }, []);
   const [isOpenProgress, setIsOpenProgress] = useState(false);
   const [currRowKnowledgeBase, setCurrRowKnowledgeBase] = useState(
-    {} as any as KNOWLEDGE_Store,
+    {} as any as KnowledgeStore,
   );
 
   const columns = [
@@ -111,7 +111,7 @@ export function KnowledgeBase() {
           <Space>
             <Button
               onClick={() => {
-                setCurrRowKnowledgeBase({} as any as KNOWLEDGE_Store);
+                setCurrRowKnowledgeBase({} as any as KnowledgeStore);
                 setIsOpenKnowledgeBase(true);
               }}
               type="primary"

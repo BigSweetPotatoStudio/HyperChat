@@ -31,7 +31,7 @@ import { v4 as uuid } from "uuid";
 
 import { CloseOutlined, FormOutlined, SearchOutlined, SmileOutlined } from "@ant-design/icons";
 import { InitedClient } from "../../common/mcp";
-import { GPT_MODELS } from "../../../../shared/data.mjs";
+import { AI_MODELS } from "../../../../shared/data.mjs";
 import { t } from "../../i18n";
 import { NumberStep } from "../../common/numberStep";
 import EmojiPicker from 'emoji-picker-react';
@@ -68,7 +68,7 @@ const ModalForm: React.FC<CollectionCreateFormProps> = ({
     onFormInstanceReady(form);
     (async () => {
 
-      GPT_MODELS.init().then(() => {
+      AI_MODELS.init().then(() => {
         refresh();
       });
     })();
@@ -102,7 +102,7 @@ const ModalForm: React.FC<CollectionCreateFormProps> = ({
           optionFilterProp="label"
           placeholder={t`Please select default LLM`}
           allowClear
-          options={GPT_MODELS.get().data.map((x) => {
+          options={AI_MODELS.get().data.map((x) => {
             return {
               label: x.name,
               value: x.key,
@@ -195,7 +195,7 @@ const ModalForm: React.FC<CollectionCreateFormProps> = ({
               optionFilterProp="label"
               placeholder={t`Please select TaskFallbackLLM`}
               allowClear
-              options={GPT_MODELS.get().data.map((x) => {
+              options={AI_MODELS.get().data.map((x) => {
                 return {
                   label: x.name,
                   value: x.key,
