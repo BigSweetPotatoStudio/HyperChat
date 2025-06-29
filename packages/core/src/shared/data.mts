@@ -2,7 +2,7 @@
 import OpenAI from "openai";
 import * as MCPTypes from "@modelcontextprotocol/sdk/types.js";
 import { v4 } from "uuid";
-import type { KnownProvider } from "./providers.mjs";
+
 
 
 
@@ -23,10 +23,10 @@ export class Data<T> {
   async save() {
     return this._save();
   }
-  private async _init(): Promise<T> {
+  async _init(): Promise<T> { // 内部使用
     throw new Error("Method not implemented.");
   }
-  private async _save() {
+  async _save() { // 内部使用
     throw new Error("Method not implemented.");
   }
 
@@ -76,21 +76,21 @@ export class Data<T> {
 // 应用设置数据，包含主题、WebDAV、MCP超时等
 export const AppSetting = new Data("app_setting.json", {
   isAutoLauncher: false,
-  webdav: { // 废弃⚠️ => electronData
-    url: "",
-    username: "",
-    password: "",
-    baseDirName: "",
-    // autoSync: false, // 废弃⚠️ => electronData
-  },
+  // webdav: { // 废弃⚠️ => electronData
+  //   url: "",
+  //   username: "",
+  //   password: "",
+  //   baseDirName: "",
+  //   // autoSync: false, // 废弃⚠️ => electronData
+  // },
   darkTheme: false,
   mcpCallToolTimeout: 60,
   defaultAllowMCPs: undefined as string[] | undefined,
-  quicks: [] as Array<{  // 废弃⚠️
-    value: string;
-    label: string;
-    quick: string;
-  }>,
+  // quicks: [] as Array<{  // 废弃⚠️
+  //   value: string;
+  //   label: string;
+  //   quick: string;
+  // }>,
 });
 
 // Electron 相关数据，包含端口、密码、版本、窗口大小等
@@ -190,7 +190,7 @@ export type ChatHistoryItem = {
   agentKey: string;
   sended: boolean;
   icon?: string;
-  requestType: "complete" | "stream";  // 以后只支持 stream
+  requestType: "stream";  // 以后只支持 stream
   dateTime: number;
   isCalled: boolean;
   isTask: boolean;
@@ -249,11 +249,46 @@ export type GPT_MODELS_TYPE = {
 }
 
 export class AIModelConfig<T> extends Data<T> {
+  override async init(): Promise<T> {
+    let data = await this._init();
+    let providerConfigs = await PROVIDER_CONFIGS.init();
+
+    return data;
+  }
 }
 export const GPT_MODELS = new AIModelConfig("gpt_models.json", {
   data: [] as Array<GPT_MODELS_TYPE>,
 });
 
+export type KnownProvider =
+  | "openai"
+  | "anthropic"
+  | "openrouter"
+  | "gemini"
+  | "qwen"
+  | "deepseek"
+  | "doubao"
+  | "xai"
+  | "glm"
+  | "ollama";
+// 提供商配置接口，描述每个大模型 API 的基本信息
+export interface ProviderConfig {
+  key: KnownProvider; // 唯一标识
+  label: string; // 显示名称
+  baseURL: string; // API 基础地址
+  value: string; // 唯一值
+  icon?: string; // 图标
+  description?: string; // 描述
+  hasApiKey?: boolean;
+  apiKey?: string; // API Key 字段
+  isBuiltIn: boolean; // 是否内置（true=内置，false=自定义）
+}
+// 提供商管理数据存储，包含自定义、禁用、API Key 等
+export const PROVIDER_CONFIGS = new Data('provider_configs.json', {
+  customProviders: [] as Array<ProviderConfig>,
+  disabledBuiltinProviders: [] as string[], // 存储被禁用的内置提供商key
+  builtinApiKeys: {} as { [key: string]: { apiKey: string; baseURL: string } }, // 新增属性
+});
 
 export type MCP_CONFIG_TYPE = {
   command?: string;
@@ -264,9 +299,9 @@ export type MCP_CONFIG_TYPE = {
   type?: "stdio" | "sse" | "streamableHttp";
   hyperchat?: {
     config: { [s in string]: any };
-    url: string;  // 废弃⚠️
-    type: "stdio" | "sse";  // 废弃⚠️
-    scope: "built-in" | "outer";  // 废弃⚠️
+    // url: string;  // 废弃⚠️
+    // type: "stdio" | "sse";  // 废弃⚠️
+    // scope: "built-in" | "outer";  // 废弃⚠️
   };
   disabled?: boolean;
   isSync?: boolean;

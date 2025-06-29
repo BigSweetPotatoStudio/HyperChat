@@ -120,18 +120,6 @@ for (let s of MyServers) {
 }
 fs.writeFileSync(buildinMcpJSONPath, JSON.stringify(buildinMcpJSON, null, 2));
 
-for (let key in config.mcpServers) {
-  if (
-    config.mcpServers[key]?.hyperchat?.scope === "built-in"
-  ) {
-    delete config.mcpServers[key];
-  }
-
-  if (config.mcpServers[key]?.hyperchat?.type == "sse") {
-    config.mcpServers[key].type = "sse";
-    config.mcpServers[key].url = config.mcpServers[key].hyperchat.url;
-  }
-}
 MCP_CONFIG.save();
 
 await initMcpServer().catch((e) => {
@@ -245,7 +233,7 @@ export class MCPClient implements IMCPClient {
       // if(Math.random() > 0.5) {
       //   throw new Error("test error");
       // }
-      if (this.config?.type == "sse" || this.config?.hyperchat?.type == "sse") {
+      if (this.config?.type == "sse") {
         await this.openSse(this.config);
       } else if (this.config?.type == "streamableHttp") {
         await this.openStreamableHttp(this.config);
@@ -283,7 +271,7 @@ export class MCPClient implements IMCPClient {
       };
       client.onerror = (e) => {
         // console.log("client onerror: ", this.config);
-        if (this.config?.type == "sse" || this.config?.hyperchat?.type == "sse") { // sse
+        if (this.config?.type == "sse") { // sse
           this.status = "disconnected";
           if (e.message.includes("SSE stream disconnected") || e.message.includes("Body Timeout Error")) {
             // 对于超时错误，只记录信息，不显示为错误
@@ -403,7 +391,7 @@ export class MCPClient implements IMCPClient {
       }
     });
 
-    const url = config?.url || config?.hyperchat?.url;
+    const url = config?.url;
     if (!url) throw new Error('URL is required for SSE transport');
     const transport = new SSEClientTransport(new URL(url), {
       requestInit: {

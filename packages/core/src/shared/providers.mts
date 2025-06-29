@@ -1,31 +1,9 @@
-import { Data } from './data.mjs';
+import { Data, PROVIDER_CONFIGS, ProviderConfig } from './data.mjs';
 import { v4 } from 'uuid';
 
-export type KnownProvider =
-    | "openai"
-    | "anthropic"
-    | "openrouter"
-    | "gemini"
-    | "qwen"
-    | "deepseek"
-    | "doubao"
-    | "xai"
-    | "glm"
-    | "ollama";
 
 
-// 提供商配置接口，描述每个大模型 API 的基本信息
-export interface ProviderConfig {
-    key: KnownProvider | string; // 唯一标识
-    label: string; // 显示名称
-    baseURL: string; // API 基础地址
-    value: string; // 唯一值
-    icon?: string; // 图标
-    description?: string; // 描述
-    hasApiKey?: boolean;
-    apiKey?: string; // API Key 字段
-    isBuiltIn: boolean; // 是否内置（true=内置，false=自定义）
-}
+
 
 // 默认内置提供商列表，支持 OpenAI、Claude、Gemini、Qwen、Deepseek 等主流大模型
 export const BUILTIN_PROVIDERS: ProviderConfig[] = [
@@ -121,12 +99,7 @@ export const BUILTIN_PROVIDERS: ProviderConfig[] = [
     },
 ];
 
-// 提供商管理数据存储，包含自定义、禁用、API Key 等
-export const PROVIDER_CONFIGS = new Data('provider_configs.json', {
-    customProviders: [] as Array<ProviderConfig>,
-    disabledBuiltinProviders: [] as string[], // 存储被禁用的内置提供商key
-    builtinApiKeys: {} as { [key: string]: { apiKey: string; baseURL: string } }, // 新增属性
-});
+
 
 // 提供商管理工具类，支持增删改查、启用禁用等
 export class ProviderManager {
@@ -146,7 +119,7 @@ export class ProviderManager {
     static addCustomProvider(provider: Omit<ProviderConfig, 'key' | 'isBuiltIn'>): ProviderConfig {
         const newProvider: ProviderConfig = {
             ...provider,
-            key: v4(),
+            key: v4() as any,
             isBuiltIn: false,
         };
 
