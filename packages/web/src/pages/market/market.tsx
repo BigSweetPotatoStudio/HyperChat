@@ -26,7 +26,7 @@ import {
   electronData,
   MCP_CONFIG,
   MCPServerConfig,
-} from "../../../../shared/data.mjs";
+} from "@hyperchat/shared/data.mjs";
 import { EVENT } from "../../common/event";
 import { Code } from "../../common/code";
 // import * as DATA from "../../../public/mcp_data.js";

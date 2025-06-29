@@ -2,7 +2,7 @@ import { call, msg_receive } from "./call";
 import {
   Data,
   DataList,
-} from "../../../shared/data.mjs";
+} from "@hyperchat/shared/data.mjs";
 
 /**
  * Initializes the data object by loading data from storage.

@@ -24,7 +24,7 @@ import { v4 as uuid } from "uuid";
 
 import { CloseOutlined, FormOutlined } from "@ant-design/icons";
 
-import { Agents, KnowledgeStore, Task } from "../../../../shared/data.mjs";
+import { Agents, KnowledgeStore, Task } from "@hyperchat/shared/data.mjs";
 import { t } from "../../i18n";
 import { InputAI } from "../../components/input_ai";
 import { genCronExpression } from "../../components/ai";

@@ -22,7 +22,7 @@
 // import { v4 } from "uuid";
 // import dayjs from "dayjs";
 // import { isOnBrowser } from "./const";
-// import type { GPT_MODELS_TYPE, MyMessage, Tool_Call } from "../../../shared/data.mjs";
+// import type { GPT_MODELS_TYPE, MyMessage, Tool_Call } from "@hyperchat/shared/data.mjs";
 // import { OpenAICompatibility } from "./openai-compatibility";
 // import type OpenAI from "openai";
 // import { extractTool } from "./ai/prompt";

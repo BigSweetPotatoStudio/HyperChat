@@ -181,8 +181,8 @@ import {
   EllipsisOutlined,
 } from "@ant-design/icons";
 import type { ConfigProviderProps, GetProp } from "antd";
-import { MyMessage } from "../../../../core/src/shared/data.mjs";
-import { AiChannel } from "../../../../core/src/shared/ai.mjs";
+import { MyMessage } from "@hyperchat/shared/data.mjs";
+import { AiChannel } from "@hyperchat/shared/ai.mjs";
 
 import {
   ChatHistory,
@@ -193,7 +193,7 @@ import {
   HyperChatCompletionTool,
   Tool_Call,
   VarList,
-} from "../../../../core/src/shared/data.mjs";
+} from "@hyperchat/shared/data.mjs";
 
 import { PromptsModal } from "./promptsModal";
 import {
@@ -213,7 +213,7 @@ import {
 import { SortableItem } from "./sortableItem";
 import { QuickPath, SelectFile } from "../../common/selectFile";
 import Clarity from "@microsoft/clarity";
-import { ChatHistoryItem } from "../../../../core/src/shared/data.mjs";
+import { ChatHistoryItem } from "@hyperchat/shared/data.mjs";
 import { useForm } from "antd/es/form/Form";
 import { currLang, t } from "../../i18n";
 import { NumberStep } from "../../common/numberStep";

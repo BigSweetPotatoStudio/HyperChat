@@ -21,7 +21,7 @@ import {
 } from "antd";
 import React, { useContext, useEffect, useRef, useState } from "react";
 import { v4 as uuid } from "uuid";
-import { AI_MODELS, KnowledgeStore } from "../../../../shared/data.mjs";
+import { AI_MODELS, KnowledgeStore } from "@hyperchat/shared/data.mjs";
 
 import { t } from "../../i18n";
 

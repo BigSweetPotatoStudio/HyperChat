@@ -12,7 +12,7 @@ import { it } from "node:test";
 import { v4 } from "uuid";
 import { io } from "socket.io-client";
 import { call, getURL_PRE, msg_receive } from "../../common/call";
-import { AI_MODELS, Agents } from "../../../../shared/data.mjs";
+import { AI_MODELS, Agents } from "@hyperchat/shared/data.mjs";
 import { Terminal } from "@xterm/xterm";
 import { FitAddon } from "@xterm/addon-fit";
 import { WebLinksAddon } from "@xterm/addon-web-links";

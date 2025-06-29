@@ -17,9 +17,9 @@
     "strict": false,
     "strictNullChecks": false,
     "paths": {
-      "@hyperchat/core/*": [
-        "../core/src/*"
-      ],
+      // "@hyperchat/core/*": [
+      //   "../core/src/*"
+      // ],
       "@hyperchat/shared/*": [
         "../core/src/shared/*"
       ],
@@ -38,9 +38,6 @@
     ],
     "outDir": "./js"
   },
-  "files": [
-    "../shared/data.mts"
-  ],
   "include": [
     "src",
     "types",

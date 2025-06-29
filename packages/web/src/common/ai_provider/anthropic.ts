@@ -4,7 +4,7 @@
 // import { max } from "lodash";
 
 // import { ContentBlock, ImageBlockParam, Message, MessageCreateParamsNonStreaming, RawMessageStreamEvent, TextBlock, TextBlockParam, ToolResultBlockParam, ToolUseBlock, ToolUseBlockParam } from "@anthropic-ai/sdk/resources";
-// import { HyperChatCompletionTool, MyMessage } from "../../../../shared/data.mjs";
+// import { HyperChatCompletionTool, MyMessage } from "@hyperchat/shared/data.mjs";
 
 
 

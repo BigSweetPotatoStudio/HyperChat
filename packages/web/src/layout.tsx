@@ -82,7 +82,7 @@ import {
   IMCPClient,
   KNOWLEDGE_BASE,
   MCP_CONFIG,
-} from "../../shared/data.mjs";
+} from "@hyperchat/shared/data.mjs";
 import { InitedClient, initMcpClients, setClients } from "./common/mcp";
 import { EVENT } from "./common/event";
 import { DndTable } from "./common/dndTable";

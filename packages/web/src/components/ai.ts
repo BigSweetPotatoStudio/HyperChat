@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { AI_MODELS, AIModelConfigItem } from "../../../shared/data.mjs";
+import { AI_MODELS, AIModelConfigItem } from "@hyperchat/shared/data.mjs";
 import { EVENT } from "../common/event";
 import { MyMessage, OpenAiChannel } from "../common/openai.js";
 

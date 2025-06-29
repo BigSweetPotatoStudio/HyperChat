@@ -1,5 +1,5 @@
 
-import { IMCPClient } from "../../../shared/data.mjs";
+import { IMCPClient } from "@hyperchat/shared/data.mjs";
 import type { InitedClient } from "./mcp";
 
 /**

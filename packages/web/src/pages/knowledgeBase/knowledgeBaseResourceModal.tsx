@@ -25,7 +25,7 @@ import { v4 as uuid } from "uuid";
 import { CloseOutlined, FormOutlined } from "@ant-design/icons";
 
 
-import { KnowledgeResource, AI_MODELS } from "../../../../shared/data.mjs";
+import { KnowledgeResource, AI_MODELS } from "@hyperchat/shared/data.mjs";
 import { SelectFile } from "../../common/selectFile";
 import { t } from "../../i18n";
 

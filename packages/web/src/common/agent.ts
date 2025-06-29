@@ -1,5 +1,5 @@
 // import { v4 } from "uuid";
-// import { AgentData, MyMessage, AIModelConfigItem, VarList, AI_MODELS } from "../../../shared/data.mjs";
+// import { AgentData, MyMessage, AIModelConfigItem, VarList, AI_MODELS } from "@hyperchat/shared/data.mjs";
 // import { getDefaultModelConfigSync } from "../components/ai";
 // import { OpenAiChannel } from "./openai.js";
 // import _ from 'lodash';
