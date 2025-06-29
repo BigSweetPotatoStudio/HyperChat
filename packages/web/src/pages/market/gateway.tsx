@@ -255,8 +255,8 @@ const GatewayForm: React.FC<GatewayFormProps> = ({
                             children: x.tools.map((t) => {
                                 return {
                                     title: (
-                                        <Popover title={t.function.description}>
-                                            <span>{t.origin_name || t.function.name}</span>
+                                        <Popover title={t.description}>
+                                            <span>{t.origin_name || t.name}</span>
                                         </Popover>
                                     ),
                                     key: t.restore_name,

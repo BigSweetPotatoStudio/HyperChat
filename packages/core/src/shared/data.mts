@@ -137,8 +137,8 @@ export const electronData = new Data(
 
 // 工具调用类型定义
 export type Tool_Call = {
-  // origin_name?: string;  // 废弃
-  // restore_name?: string; // 废弃
+  origin_name: string;  // 废弃
+  restore_name: string; // 废弃
   index: number;
   id: string;
   type: "function";

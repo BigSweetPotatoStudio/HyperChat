@@ -239,6 +239,16 @@ export class AiChannel {
         }
         if (delta.type == "tool-call") {
           newMessage.content_tool_calls = newMessage.content_tool_calls || [];
+          let localTool = this.ext.mcpTools.find(
+            (t) => t.name === delta.toolName
+          );
+          if (!localTool) {
+            this.ext.antdmessage.warning(
+              `Tool ${delta.toolName} not found in MCP tools.`,
+            );
+            continue;
+          }
+
           newMessage.content_tool_calls.push({
             index: toolIndex++,
             id: delta.toolCallId,
@@ -246,7 +256,9 @@ export class AiChannel {
             function: {
               name: delta.toolName,
               args: delta.args || {},
-            }
+            },
+            origin_name: localTool.origin_name,
+            restore_name: localTool.restore_name,
           });
         }
         if (delta.type == "step-finish") {

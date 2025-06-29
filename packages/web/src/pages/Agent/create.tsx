@@ -123,8 +123,8 @@ export const AgentCreatePage = () => {
                                     children: x.tools.map((t) => {
                                         return {
                                             title: (
-                                                <Tooltip title={t.function.description}>
-                                                    <span>{t.origin_name || t.function.name}</span>
+                                                <Tooltip title={t.description}>
+                                                    <span>{t.origin_name || t.name}</span>
                                                 </Tooltip>
                                             ),
                                             key: t.restore_name,
