@@ -1741,16 +1741,7 @@ export const Chat = ({
                                 currentChat.current.modelKey = value;
                                 refresh();
                               }}
-                              options={GPT_MODELS.get()
-                                .data.filter(
-                                  (x) => x.type == "llm" || x.type == null,
-                                )
-                                .map((x) => {
-                                  return {
-                                    label: x.name,
-                                    value: x.key,
-                                  };
-                                })}
+                              options={GPT_MODELS.getGroupData()}
                             ></Select>
                           </span>
                         </Tooltip>

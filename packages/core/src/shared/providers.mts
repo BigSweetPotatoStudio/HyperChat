@@ -1,4 +1,4 @@
-import { Data, PROVIDER_CONFIGS, ProviderConfig } from './data.mjs';
+import { PROVIDER_CONFIGS, ProviderConfig } from './data.mjs';
 import { v4 } from 'uuid';
 
 

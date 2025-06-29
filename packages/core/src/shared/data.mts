@@ -2,6 +2,7 @@
 import OpenAI from "openai";
 import * as MCPTypes from "@modelcontextprotocol/sdk/types.js";
 import { v4 } from "uuid";
+import { ProviderManager } from "./providers.mjs";
 
 
 
@@ -236,8 +237,8 @@ export type GPT_MODELS_TYPE = {
   key: string;
   name: string;
   model: string;
-  apiKey: string;
-  baseURL: string;
+  apiKey: string; // 废弃 get from provider
+  baseURL: string; // 废弃 get from provider
   provider: KnownProvider | string;
   supportImage: boolean;
   supportTool: boolean;
@@ -248,12 +249,38 @@ export type GPT_MODELS_TYPE = {
   isDefault?: boolean;
 }
 
-export class AIModelConfig<T> extends Data<T> {
+export class AIModelConfig<T = { data: Array<GPT_MODELS_TYPE> }> extends Data<T> {
+  providerConfigs: any;
   override async init(): Promise<T> {
-    let data = await this._init();
+    let res: { data: Array<GPT_MODELS_TYPE> } = await this._init() as any;
     let providerConfigs = await PROVIDER_CONFIGS.init();
+    this.providerConfigs = providerConfigs;
+    for (let item of res.data) {
+      let provider = providerConfigs.builtinApiKeys[item.provider as KnownProvider] || providerConfigs.customProviders.find(p => p.key === item.provider);
+      item.apiKey = provider?.apiKey || '';
+      item.baseURL = provider?.baseURL || '';
+    }
+    return res as any;
+  }
+  getGroupData(): { label: string, value: string, options: Array<{ label: string, value: string }> }[] {
+    // let providerConfigs = await PROVIDER_CONFIGS.init();
+    const modelData = (this.get() as { data: Array<GPT_MODELS_TYPE> }).data;
+    const providers = ProviderManager.getAllProviders();
 
-    return data;
+    return providers.map((provider) => {
+      // 找到该供应商下的所有模型
+      const providerModels = modelData.filter(model => model.provider === provider.key);
+
+      return {
+        label: provider.label,
+        value: provider.key,
+        options: providerModels.map(model => ({
+          label: model.name,
+          value: model.key
+        })),
+      };
+    }).filter(group => group.options.length > 0); // 只返回有模型的供应商
+
   }
 }
 export const GPT_MODELS = new AIModelConfig("gpt_models.json", {
