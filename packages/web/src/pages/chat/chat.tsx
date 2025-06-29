@@ -222,6 +222,7 @@ import dayjs from "dayjs";
 import { sleep } from "../../common/sleep";
 import { BetaSchemaForm, DrawerForm } from "@ant-design/pro-components";
 import {
+  getMyUuid,
   JsonSchema2FormItem,
   JsonSchema2FormItemOrNull,
   JsonSchema2ProFormColumnsType,
@@ -828,7 +829,7 @@ export const Chat = ({
             currentChat.current = {
               ...currentChat.current,
 
-              key: v4(),
+              key: getMyUuid(),
               label: message.toString(),
               messages: openaiClient.messages,
               sended: true,
@@ -1461,7 +1462,7 @@ export const Chat = ({
                         }} status={openaiClient.current?.status}
                           onClone={async (i) => {
                             let clone = _.cloneDeep(currentChat.current);
-                            clone.key = v4();
+                            clone.key = getMyUuid();
                             clone.messages = clone.messages.slice(0, i + 1);
                             clone.icon = "";
 
