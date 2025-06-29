@@ -256,6 +256,12 @@ export class AIModelConfig<T = { data: Array<AIModelConfigItem> }> extends Data<
     let providerConfigs = await PROVIDER_CONFIGS.init();
     this.providerConfigs = providerConfigs;
     for (let item of res.data) {
+      if (item.provider === "gemini-openai") {
+        item.provider = "gemini"; // 兼容旧数据
+      }
+      if (item.provider === "anthropic-openai") {
+        item.provider = "anthropic"; // 兼容旧数据
+      }
       let provider = providerConfigs.builtinApiKeys[item.provider as KnownProvider] || providerConfigs.customProviders.find(p => p.key === item.provider);
       item.apiKey = provider?.apiKey || '';
       item.baseURL = provider?.baseURL || '';
