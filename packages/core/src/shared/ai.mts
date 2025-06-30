@@ -7,23 +7,12 @@ import { jsonSchema, streamText } from 'ai';
 import { createOpenAI, openai } from '@ai-sdk/openai';
 import { createAnthropic } from '@ai-sdk/anthropic';
 import { createGoogleGenerativeAI } from '@ai-sdk/google';
+import { createOpenRouter } from '@openrouter/ai-sdk-provider';
+import { createOpenAICompatible } from '@ai-sdk/openai-compatible';
 import { jsonSchemaToZod } from "json-schema-to-zod";
+import { z } from "zod";
+globalThis["z"] = z; // 兼容旧版本的 zod
 
-
-// let antdmessage: { warning: (msg: string) => void };
-// let callModule = {
-//   getURL_PRE: () => "",
-//   getWebSocket: () => null,
-// };
-// if (process.env.runtime === "node") {
-//   antdmessage = { warning: console.warn };
-// } else {
-//   const { message } = await import("antd");
-//   antdmessage = { warning: message.warning };
-//   let call = await import("./call");
-//   callModule.getURL_PRE = call.getURL_PRE;
-//   callModule.getWebSocket = call.getWebSocket;
-// }
 
 import { v4 } from "uuid";
 import dayjs from "dayjs";
@@ -217,9 +206,22 @@ export class AiChannel {
           apiKey: modelConfig.apiKey,
           fetch
         });
-      } else {
+      } else if (modelConfig.provider === 'openrouter') {
         // 默认使用 OpenAI 兼容格式
+        ai = createOpenRouter({
+          baseURL: modelConfig.baseURL,
+          apiKey: modelConfig.apiKey,
+          fetch
+        });
+      } else if (modelConfig.provider === 'openai') {
         ai = createOpenAI({
+          baseURL: modelConfig.baseURL,
+          apiKey: modelConfig.apiKey,
+          fetch
+        });
+      } else {
+        ai = createOpenAICompatible({
+          name: modelConfig.model,
           baseURL: modelConfig.baseURL,
           apiKey: modelConfig.apiKey,
           fetch
@@ -245,7 +247,11 @@ export class AiChannel {
           throw delta.error;
         }
         if (delta.type == "text-delta") {
-          newMessage.content += delta.textDelta;
+          newMessage.content += (delta.textDelta || "");
+          newMessage.content_date = Date.now();
+        }
+        if (delta.type == "reasoning") {
+          newMessage.reasoning_content += (delta.textDelta || "");
           newMessage.content_date = Date.now();
         }
         if (delta.type == "tool-call") {
