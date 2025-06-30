@@ -18,7 +18,7 @@ function clearTransports() {
             transport.close();
         }
     });
-    
+
     // 关闭所有streamable传输连接
     Object.keys(transports.streamable).forEach(sessionId => {
         const transport = transports.streamable[sessionId];
@@ -26,7 +26,7 @@ function clearTransports() {
             transport.close();
         }
     });
-    
+
     // 重置传输对象
     transports.sse = {};
     transports.streamable = {};
@@ -36,10 +36,8 @@ function clearTransports() {
 function register(route: Router, name: string, description: string, allowMCPs: string[], prefix: string) {
     console.log(`Registering MCP Gateway: ${name}`, allowMCPs);
 
-    let type;
-    if (true || type == "streamableHttp") {
-
-
+    // type == "streamableHttp"
+    {
         // let server = await serve.createServer();
         // await server.connect(transport);
         route.post(`/${name}/mcp`, async (req: Request, res: Response) => {
@@ -47,12 +45,8 @@ function register(route: Router, name: string, description: string, allowMCPs: s
             try {
                 const server = await createServer(name, description, allowMCPs);
                 const transport = new StreamableHTTPServerTransport({
-                    sessionIdGenerator: () => Date.now().toString(),
+                    sessionIdGenerator: undefined, // 由 MCP_GateWay 提供
                 });
-                // 强制确保 sessionId 为 string
-                if (typeof transport.sessionId !== 'string') {
-                    transport.sessionId = Date.now().toString();
-                }
                 await server.connect(transport as any);
                 res.on('close', () => {
                     // console.log('Request closed');
@@ -95,33 +89,35 @@ function register(route: Router, name: string, description: string, allowMCPs: s
         route.delete(`/${name}/mcp`, handleSessionRequest);
     }
 
+    // type == "see"
+    {
+        route.get(`/${name}/sse`, async (_req: Request, res: Response) => {
+            let transport = new SSEServerTransport(prefix + `/${name}/message`, res);
+            transports.sse[transport.sessionId] = transport;
 
-    route.get(`/${name}/sse`, async (_req: Request, res: Response) => {
-        let transport = new SSEServerTransport(prefix + `/${name}/message`, res);
-        transports.sse[transport.sessionId] = transport;
-
-        // Start keep-alive ping
-        const intervalId = setInterval(() => {
-            if (!res.writableEnded) {
-                res.write(': keepalive\n\n');
+            // Start keep-alive ping
+            const intervalId = setInterval(() => {
+                if (!res.writableEnded) {
+                    res.write(': keepalive\n\n');
+                } else {
+                    // Should not happen if close handler is working, but clear just in case
+                    clearInterval(intervalId);
+                }
+            }, KEEP_ALIVE_INTERVAL_MS);
+            let server = await createServer(name, description, allowMCPs);
+            await server.connect(transport);
+        });
+        route.post(`/${name}/message`, async (req: Request, res: Response) => {
+            // await transport.handlePostMessage(req, res);
+            const sessionId = req.query.sessionId as string;
+            const transport = transports.sse[sessionId];
+            if (transport) {
+                await transport.handlePostMessage(req, res, req.body);
             } else {
-                // Should not happen if close handler is working, but clear just in case
-                clearInterval(intervalId);
+                res.status(400).send('No transport found for sessionId');
             }
-        }, KEEP_ALIVE_INTERVAL_MS);
-        let server = await createServer(name, description, allowMCPs);
-        await server.connect(transport);
-    });
-    route.post(`/${name}/message`, async (req: Request, res: Response) => {
-        // await transport.handlePostMessage(req, res);
-        const sessionId = req.query.sessionId as string;
-        const transport = transports.sse[sessionId];
-        if (transport) {
-            await transport.handlePostMessage(req, res, req.body);
-        } else {
-            res.status(400).send('No transport found for sessionId');
-        }
-    });
+        });
+    }
 }
 
 
@@ -154,8 +150,8 @@ export async function registers(prefix: string) {
 export function refreshRoutes(prefix: string) {
     // 清除现有连接
     clearTransports();
-    
-    
+
+
     // 创建新的路由实例
     return registers(prefix);
 }
