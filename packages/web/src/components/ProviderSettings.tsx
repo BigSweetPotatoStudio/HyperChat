@@ -557,11 +557,13 @@ export function ProviderSettings() {
                   {provider.description}
                 </Text>
                 <div className='flex flex-wrap justify-center gap-2'>
-                  {hasProviderApiKey(provider) && (
-                    <Tag color="green" className="mb-2">
-                      {t`Active`}
-                    </Tag>
-                  )}
+                  {
+                  // hasProviderApiKey(provider) && (
+                  //   <Tag color="green" className="mb-2">
+                  //     {t`Active`}
+                  //   </Tag>
+                  // )
+                  }
                   {provider.isBuiltIn ? (
                     <Tag color="blue" className="mb-2">
                       {t`Built-in`}
