@@ -10,12 +10,10 @@ import { Icon } from "../../components/icon";
 import { t } from "../../i18n";
 import { Link } from "react-router-dom";
 import { getFirstCharacter } from "../../common";
+import { useForceUpdate } from "../../hooks/useForceUpdate";
 
 export const AgentPage = () => {
-    const [num, setNum] = React.useState(0);
-    const refresh = () => {
-        setNum((n) => n + 1);
-    };
+    const refresh = useForceUpdate();
     useEffect(() => {
         (async () => {
             await Agents.init();
@@ -135,10 +133,7 @@ export function AgentCard({ item, onClick, onRemove, onEdit }:
         onEdit?: (item: AgentData) => void
     }
 ) {
-    const [num, setNum] = React.useState(0);
-    const refresh = () => {
-        setNum((n) => n + 1);
-    };
+    const refresh = useForceUpdate();
     const [hover, setHover] = useState(false);
     useEffect(() => {
         // if (item.version == null) {

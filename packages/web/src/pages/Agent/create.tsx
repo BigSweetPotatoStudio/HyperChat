@@ -15,12 +15,10 @@ import EmojiPicker from "emoji-picker-react";
 import { HeaderContext } from "../../common/context";
 import { v4 } from "uuid";
 import { call } from "../../common/call";
+import { useForceUpdate } from "../../hooks/useForceUpdate";
 
 export const AgentCreatePage = () => {
-    const [num, setNum] = React.useState(0);
-    const refresh = () => {
-        setNum((n) => n + 1);
-    };
+    const refresh = useForceUpdate();
     const { mcpClients } = useContext(HeaderContext);
     const [form] = Form.useForm();
 

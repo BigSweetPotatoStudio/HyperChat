@@ -29,6 +29,7 @@ import { t } from "../../i18n";
 import { InputAI } from "../../components/input_ai";
 import { genCronExpression } from "../../components/ai";
 import { Editor } from "../../components/editor";
+import { useForceUpdate } from "../../hooks/useForceUpdate";
 
 const models = [
   {
@@ -56,10 +57,7 @@ const ModalForm: React.FC<CollectionCreateFormProps> = ({
     onFormInstanceReady(form);
   }, []);
 
-  const [num, setNum] = useState(0);
-  const refresh = () => {
-    setNum((x) => x + 1);
-  };
+  const refresh = useForceUpdate();
   useEffect(() => {
     (async () => {
       await Agents.init();

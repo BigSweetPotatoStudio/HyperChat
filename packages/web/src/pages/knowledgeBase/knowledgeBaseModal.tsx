@@ -24,6 +24,7 @@ import { v4 as uuid } from "uuid";
 import { AI_MODELS, KnowledgeStore } from "@hyperchat/shared/data.mjs";
 
 import { t } from "../../i18n";
+import { useForceUpdate } from "../../hooks/useForceUpdate";
 
 type Values = KnowledgeStore;
 
@@ -41,10 +42,7 @@ const ModalForm: React.FC<CollectionCreateFormProps> = ({
     onFormInstanceReady(form);
   }, []);
 
-  const [num, setNum] = useState(0);
-  const refresh = () => {
-    setNum((x) => x + 1);
-  };
+  const refresh = useForceUpdate();
 
   return (
     <Form form={form} name="form_in_modal" initialValues={initialValues}>

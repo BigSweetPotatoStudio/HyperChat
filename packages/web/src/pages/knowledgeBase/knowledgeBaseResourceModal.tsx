@@ -28,6 +28,7 @@ import { CloseOutlined, FormOutlined } from "@ant-design/icons";
 import { KnowledgeResource, AI_MODELS } from "@hyperchat/shared/data.mjs";
 import { SelectFile } from "../../common/selectFile";
 import { t } from "../../i18n";
+import { useForceUpdate } from "../../hooks/useForceUpdate";
 
 type Values = KnowledgeResource;
 
@@ -45,10 +46,7 @@ const ModalForm: React.FC<CollectionCreateFormProps> = ({
     onFormInstanceReady(form);
   }, []);
 
-  const [num, setNum] = useState(0);
-  const refresh = () => {
-    setNum((x) => x + 1);
-  };
+  const refresh = useForceUpdate();
 
   return (
     <Form form={form} name="form_in_modal" initialValues={initialValues}>

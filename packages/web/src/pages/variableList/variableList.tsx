@@ -13,13 +13,11 @@ import { v4 } from "uuid";
 import { Popconfirm } from "antd/lib";
 import EditorReact from '@monaco-editor/react';
 import { HeaderContext } from "../../common/context";
+import { useForceUpdate } from "../../hooks/useForceUpdate";
 
 export const VariableList = () => {
     const { globalState, updateGlobalState, setLang } = useContext(HeaderContext);
-    const [num, setNum] = React.useState(0);
-    const refresh = () => {
-        setNum((n) => n + 1);
-    };
+    const refresh = useForceUpdate();
     const [scope, setScope] = React.useState({
         name: undefined,
         key: undefined

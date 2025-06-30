@@ -23,6 +23,7 @@ import { ClearOutlined, CopyFilled, CopyOutlined, LaptopOutlined, SnippetsOutlin
 import { t } from "../../i18n";
 import { EVENT } from "../../common/event";
 import { ClipboardAddon, IClipboardProvider, ClipboardSelectionType } from '@xterm/addon-clipboard';
+import { useForceUpdate } from "../../hooks/useForceUpdate";
 
 let URL_PRE = getURL_PRE();
 let lastSizes = {} as { cols: number; rows: number };
@@ -38,10 +39,7 @@ type SessionType = {
 };
 export function Sessions({ setSessionCount = undefined }) {
   //   const [activeKey, setActiveKey] = useState("1");
-  const [num, setNum] = useState(0);
-  function refresh() {
-    setNum((num) => num + 1);
-  }
+  const refresh = useForceUpdate();
 
   useEffect(() => {
     (async () => {
@@ -188,12 +186,12 @@ export function Sessions({ setSessionCount = undefined }) {
       }
     });
     setTimeout(async () => {
-      let terminalIDs = await call("GetTerminals", []);
+      let terminalIDs = await call("GetTerminals");
       for (let id of terminalIDs) {
         await OpenTerminal(id);
       }
       if (terminalIDs.length == 0) {
-        await call("OpenTerminal", []);
+        await call("OpenTerminal");
       }
     }, 1000);
 
@@ -225,13 +223,13 @@ export function Sessions({ setSessionCount = undefined }) {
         // hideAdd
         onEdit={(targetKey, action: "add" | "remove") => {
           if (action === "add") {
-            call("OpenTerminal", []);
+            call("OpenTerminal");
           } else {
             data.current.sessions = data.current.sessions.filter(
               (x) => x.id != targetKey,
             );
             refresh();
-            call("CloseTerminal", { TerminalID: targetKey });
+            call("CloseTerminal", { TerminalID: targetKey as any });
           }
         }}
         items={data.current.sessions.map((x) => {

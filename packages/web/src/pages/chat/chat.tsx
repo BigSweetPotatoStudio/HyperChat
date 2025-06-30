@@ -167,6 +167,7 @@ import { MySender } from "../../components/my_sender";
 import { disableCompletionItemProvider, Editor, enableCompletionItemProvider } from "../../components/editor";
 import { Link } from "react-router-dom";
 import { BuiltinAgents } from "./utils/builtinAgent";
+import { useForceUpdate } from "../../hooks/useForceUpdate";
 
 /**
  * Chat组件的Props类型定义
@@ -222,11 +223,8 @@ export const Chat = ({
     console.log("Chat")
   }, []);
 
-  // 组件刷新计数器和刷新函数
-  const [num, setNum] = React.useState(0);
-  const refresh = () => {
-    setNum((n) => n + 1);
-  };
+  // 使用强制刷新 hook
+  const refresh = useForceUpdate();
 
   // 从上下文获取全局状态和MCP客户端
   const { globalState, updateGlobalState, mcpClients } = useContext(HeaderContext);

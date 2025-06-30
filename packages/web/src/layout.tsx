@@ -20,6 +20,7 @@
 
 
 import React, { createContext, useEffect, useState } from "react";
+import { useForceUpdate } from "./hooks/useForceUpdate";
 import {
   Routes,
   Route,
@@ -213,16 +214,17 @@ msg_receive("message-from-main", (msg: MessageFromMain) => {
  * 管理 MCP 客户端、同步状态、更新检查等全局状态
  */
 export function Layout(): JSX.Element {
-  // 用于触发组件重新渲染的计数器
-  const [num, setNum] = useState<number>(0);
+  // 使用强制更新 hook
+  const refresh = useForceUpdate();
   
-  /**
-   * 刷新组件的函数
-   * 通过更新状态来触发组件重新渲染
-   */
-  function refresh(): void {
-    setNum((n) => n + 1);
-  }
+  // 全局状态版本号，用于组件间通信
+  const [globalStateVersion, setGlobalStateVersion] = useState<number>(0);
+  
+  // 组合的刷新函数，同时更新强制刷新和全局状态版本
+  const combinedRefresh = (): void => {
+    refresh();
+    setGlobalStateVersion(prev => prev + 1);
+  };
   
   const navigate = useNavigate();
   const location = useLocation();
@@ -281,9 +283,9 @@ export function Layout(): JSX.Element {
         if (res.data.status == 0) {
           // 同步完成后刷新组件
           setTimeout(() => {
-            refresh();
+            combinedRefresh();
           }, 500);
-          refresh();
+          combinedRefresh();
         }
       }
       
@@ -324,7 +326,7 @@ export function Layout(): JSX.Element {
         KNOWLEDGE_BASE.init(),
         electronData.init(),
       ]);
-      refresh();
+      combinedRefresh();
       
       // 如果在 Electron 环境中，检查更新
       if (process.env.myRuntime == "electron") {
@@ -336,7 +338,7 @@ export function Layout(): JSX.Element {
       
       // 初始化 MCP 客户端
       await initMcpClients();
-      refresh();
+      combinedRefresh();
       
       // 初始化 Microsoft Clarity 分析工具
       Clarity.init("p731bym3zs");
@@ -374,7 +376,7 @@ export function Layout(): JSX.Element {
   const setLang = (e: string): void => {
     setCurrLang(e);
     setLocal(e == "zhCN" ? zhCN : enUS);
-    refresh();
+    combinedRefresh();
   };
   
   // 获取默认模型配置
@@ -446,7 +448,7 @@ export function Layout(): JSX.Element {
                   onChange={async (checked) => {
                     AppSetting.get().darkTheme = checked;
                     await AppSetting.save();
-                    refresh();
+                    combinedRefresh();
                     
                     // 应用主题设置
                     if (checked) {
@@ -601,8 +603,8 @@ export function Layout(): JSX.Element {
           {/* 头部上下文提供者 - 向子组件传递全局状态 */}
           <HeaderContext.Provider
             value={{
-              globalState: num, 
-              updateGlobalState: refresh, 
+              globalState: globalStateVersion, 
+              updateGlobalState: combinedRefresh, 
               setLang,
               mcpClients,
             }}

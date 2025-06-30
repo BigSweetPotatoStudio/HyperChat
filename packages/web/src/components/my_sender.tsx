@@ -7,15 +7,13 @@ import { Icon } from "./icon";
 import { call } from "../common/call";
 import { HeaderContext } from "../common/context";
 import { v4 } from "uuid";
+import { useForceUpdate } from "../hooks/useForceUpdate";
 
 
 export function MySender({ supportImage, loading, value, setValue, supportTool, resourcesRef, promptsRef, onRequest, currentChat,
     onCancel, onSubmit, onChange, onPromptClick, onResourcesClick, onToolClick }) {
     const { globalState, updateGlobalState, mcpClients } = useContext(HeaderContext);
-    const [num, setNum] = React.useState(0);
-    const refresh = () => {
-        setNum((n) => n + 1);
-    };
+    const refresh = useForceUpdate();
 
     return (
         <Sender

@@ -37,6 +37,7 @@ import { NumberStep } from "../../common/numberStep";
 import EmojiPicker from 'emoji-picker-react';
 import { HeaderContext } from "../../common/context";
 import { Editor } from "../../components/editor";
+import { useForceUpdate } from "../../hooks/useForceUpdate";
 interface Values {
   label: string;
   prompt: string;
@@ -57,10 +58,7 @@ const ModalForm: React.FC<CollectionCreateFormProps> = ({
   initialValues,
   onFormInstanceReady,
 }) => {
-  const [num, setNum] = useState(0);
-  const refresh = () => {
-    setNum((x) => x + 1);
-  };
+  const refresh = useForceUpdate();
   const { mcpClients } = useContext(HeaderContext);
   const [form] = Form.useForm();
 

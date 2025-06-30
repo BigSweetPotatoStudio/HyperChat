@@ -7,6 +7,7 @@ import { Button, Space } from "antd";
 import { FullscreenOutlined } from "@ant-design/icons";
 import { call } from "../common/call";
 import { isOnBrowser } from "../common";
+import { useForceUpdate } from "../hooks/useForceUpdate";
 
 // Register a new language
 monaco.languages.register({ id: "HyperPromptLanguage" });
@@ -294,10 +295,7 @@ export const Editor = forwardRef(({
     onDragFile?: (file: File) => void,
     onParseFile?: (file: File) => void,
 }, ref) => {
-    const [num, setNum] = React.useState(0);
-    const refresh = () => {
-        setNum((n) => n + 1);
-    };
+    const refresh = useForceUpdate();
     const monacoRef = React.useRef<monaco.editor.IStandaloneCodeEditor>();
     const monacoModelRef = React.useRef<monaco.editor.ITextModel>();
     const monacoProvidersRef = React.useRef<monaco.IDisposable[]>([]);

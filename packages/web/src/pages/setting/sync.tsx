@@ -36,6 +36,7 @@ import { t } from "../../i18n";
 import { HeaderContext } from "../../common/context";
 import { Pre } from "../../components/pre";
 import { AppSetting, electronData } from "@hyperchat/shared/data.mjs";
+import { useForceUpdate } from "../../hooks/useForceUpdate";
 
 /**
  * WebDAV 配置表单字段类型定义
@@ -66,15 +67,8 @@ interface ResultState {
  * 用于配置和管理 WebDAV 服务器连接，实现数据同步功能
  */
 export function WebdavSetting(): JSX.Element {
-  // 状态管理：用于强制组件重新渲染
-  const [num, setNum] = useState<number>(0);
-  
-  /**
-   * 强制刷新组件
-   */
-  const refresh = useCallback((): void => {
-    setNum((prev) => prev + 1);
-  }, []);
+  // 使用强制更新 hook
+  const refresh = useForceUpdate();
 
   // 获取全局上下文
   const { globalState, updateGlobalState, setLang } = useContext(HeaderContext);

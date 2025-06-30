@@ -1,6 +1,6 @@
 import React, { useContext, useEffect, useState } from "react";
 
-import { call } from "../../common/call";
+import { call, callElectron } from "../../common/call";
 import {
   Button,
   Divider,
@@ -26,14 +26,12 @@ import { Divide } from "lucide-react";
 import { t } from "../../i18n";
 import { HeaderContext } from "../../common/context";
 import { isOnBrowser } from "../../common/util";
+import { useForceUpdate } from "../../hooks/useForceUpdate";
 
 const { Search } = Input;
 
 export function KnowledgeBase() {
-  const [num, setNum] = React.useState(0);
-  const refresh = () => {
-    setNum((n) => n + 1);
-  };
+  const refresh = useForceUpdate();
   const { globalState, updateGlobalState } = useContext(HeaderContext);
 
   useEffect(() => {
@@ -204,7 +202,7 @@ export function KnowledgeBase() {
                           let e = await call("exists", { path: record.filepath });
                           if (e) {
                             let p = await call("pathJoin", { path: record.filepath });
-                            await call("openExplorer", { path: p });
+                            await callElectron("openExplorer", { path: p });
                           } else {
                             message.error("file not exists");
                           }

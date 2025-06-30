@@ -69,6 +69,7 @@ import { v4 } from "uuid";
 import { useLocation, useNavigate } from "react-router-dom";
 import { HeaderContext } from "../../common/context";
 import { Icon } from "../../components/icon";
+import { useForceUpdate } from "../../hooks/useForceUpdate";
 
 // 加载状态管理对象
 const loadObj: Record<string, boolean> = {};
@@ -78,15 +79,8 @@ const loadObj: Record<string, boolean> = {};
  * @returns JSX.Element
  */
 export function TaskListPage(): JSX.Element {
-  // 强制刷新计数器
-  const [num, setNum] = useState<number>(0);
-  
-  /**
-   * 刷新组件状态
-   */
-  const refresh = (): void => {
-    setNum((x) => x + 1);
-  };
+  // 使用强制更新 hook
+  const refresh = useForceUpdate();
   
   // 全局状态管理
   const { globalState, updateGlobalState } = useContext(HeaderContext);

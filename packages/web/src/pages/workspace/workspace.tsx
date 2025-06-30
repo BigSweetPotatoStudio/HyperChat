@@ -11,7 +11,7 @@ import { Chat } from "../chat";
 import { it } from "node:test";
 import { v4 } from "uuid";
 import { io } from "socket.io-client";
-import { call, getURL_PRE, msg_receive } from "../../common/call";
+import { call, callElectron, getURL_PRE, msg_receive } from "../../common/call";
 import { AI_MODELS, Agents } from "@hyperchat/shared/data.mjs";
 import { Terminal } from "@xterm/xterm";
 import { FitAddon } from "@xterm/addon-fit";
@@ -21,6 +21,7 @@ import Draggable from "react-draggable";
 import { Sessions } from "./sessions";
 import { LaptopOutlined, MinusOutlined } from "@ant-design/icons";
 import { t } from "../../i18n";
+import { useForceUpdate } from "../../hooks/useForceUpdate";
 function WorkSpacePage({
   sessionID = "",
   type = undefined,
@@ -84,7 +85,7 @@ function WorkSpacePage({
                 <div>{t`Please open the folder`}</div>
 
                 <Button onClick={async () => {
-                  let path = await call("selectFile", [{ type: "openDirectory" }]);
+                  let path = await callElectron("selectFile", { type: "openDirectory" });
                   console.log(path);
                 }}>Open</Button>
               </div>
@@ -125,10 +126,7 @@ function WorkSpacePage({
 }
 
 export function Workspace() {
-  const [num, setNum] = useState(0);
-  function refresh() {
-    setNum((num) => num + 1);
-  }
+  const refresh = useForceUpdate();
 
   useEffect(() => {
     msg_receive(

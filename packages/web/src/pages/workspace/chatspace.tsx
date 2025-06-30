@@ -23,6 +23,7 @@ import { Sessions } from "./sessions";
 import { ClockCircleOutlined, LaptopOutlined, MinusOutlined } from "@ant-design/icons";
 import { t } from "../../i18n";
 import { EVENT } from "../../common/event";
+import { useForceUpdate } from "../../hooks/useForceUpdate";
 function ChatPage({
   sessionID = "",
   type = undefined,
@@ -147,10 +148,7 @@ function ChatPage({
 }
 
 export function ChatSpace() {
-  const [num, setNum] = useState(0);
-  function refresh() {
-    setNum((num) => num + 1);
-  }
+  const refresh = useForceUpdate();
 
   useEffect(() => {
     msg_receive(

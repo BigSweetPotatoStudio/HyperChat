@@ -38,6 +38,7 @@ import { isOnBrowser } from "../../common";
 import { useForm } from "antd/es/form/Form";
 import { currLang, t } from "../../i18n";
 import { HeaderContext } from "../../common/context";
+import { useForceUpdate } from "../../hooks/useForceUpdate";
 
 // 未使用的导入（已注释）
 // import client from "socket.io-client";
@@ -92,9 +93,6 @@ interface WebDAVFormData {
 export const Setting: FC = () => {
   // ==================== 状态管理 ====================
   
-  /** 组件刷新计数器，用于强制重新渲染 */
-  const [num, setNum] = useState<number>(0);
-  
   /** 访问密码输入值 */
   const [password, setPassword] = useState<string>("");
   
@@ -102,6 +100,9 @@ export const Setting: FC = () => {
   const [day, setDay] = useState<number>(30);
   
   // ==================== Hooks ====================
+  
+  /** 组件强制更新函数 */
+  const refresh = useForceUpdate();
   
   /** 获取全局上下文 */
   const { globalState, updateGlobalState, setLang } = useContext(HeaderContext) || {
@@ -118,13 +119,6 @@ export const Setting: FC = () => {
 
   // ==================== 工具函数 ====================
   
-  /**
-   * 强制组件重新渲染
-   */
-  const refresh = useCallback((): void => {
-    setNum((prevNum) => prevNum + 1);
-  }, []);
-
   // ==================== 副作用 ====================
   
   /**

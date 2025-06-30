@@ -1,6 +1,6 @@
 import { Attachments, Bubble } from "@ant-design/x";
 import React, { useCallback, useEffect, useRef } from "react";
-import { MyMessage } from "../common/openai.js";
+import { MyMessage } from "../../../core/src/shared/data.mjs";
 import { BranchesOutlined, CopyOutlined, DownloadOutlined, EditOutlined, LoadingOutlined, MinusCircleOutlined, StockOutlined, SyncOutlined, UploadOutlined, UserOutlined, WechatWorkOutlined } from "@ant-design/icons";
 import { Collapse, message, Modal, Space, Spin, Tooltip } from "antd";
 import { v4 } from "uuid";
@@ -13,6 +13,7 @@ import { Pre } from "./pre";
 import { AssistantToolContent } from "./assistant_tool_content";
 import { Icon } from "./icon";
 import { UserContent } from "./user_content";
+import { useForceUpdate } from "../hooks/useForceUpdate";
 
 export const Messages = ({ messages, onSumbit, readOnly, setContainer, status, onClone }: {
     messages: MyMessage[];
@@ -21,10 +22,7 @@ export const Messages = ({ messages, onSumbit, readOnly, setContainer, status, o
     status?: string;
     onClone?: (index) => void;
 }) => {
-    const [num, setNum] = React.useState(0);
-    const refresh = () => {
-        setNum((n) => n + 1);
-    };
+    const refresh = useForceUpdate();
     const format = useCallback((x: MyMessage, i, arr) => {
         x.content_attached = x.content_attached == null ? true : x.content_attached;
         let common = {

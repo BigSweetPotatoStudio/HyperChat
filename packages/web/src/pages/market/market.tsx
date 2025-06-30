@@ -32,6 +32,7 @@ import { Code } from "../../common/code";
 import { getMCPExtensionData } from "../../common/mcp";
 import { zodToJsonSchema } from "zod-to-json-schema";
 import { z } from "zod";
+import { useForceUpdate } from "../../hooks/useForceUpdate";
 
 /**
  * MCP 市场页面的类型定义
@@ -116,13 +117,8 @@ import { MCPGateWayPage } from "./gateway";
 export function Market() {
   // ==================== 状态管理 ====================
   
-  /** 强制刷新计数器 */
-  const [num, setNum] = React.useState<number>(0);
-  
   /** 强制刷新组件 */
-  const refresh = (): void => {
-    setNum((n) => n + 1);
-  };
+  const refresh = useForceUpdate();
 
   /** 全局上下文，包含 MCP 客户端信息 */
   const { globalState, updateGlobalState, mcpClients } = useContext(HeaderContext);
