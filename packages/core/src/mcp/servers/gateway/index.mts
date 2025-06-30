@@ -62,17 +62,12 @@ async function createServer(name: string, description: string, allowMCPs: string
                     }),
                 );
             });
+            console.log("gateway tools", allowMCPs, tools.length);
             return tools;
         }
         return {
             tools: [
-                ...getTools(allowMCPs).map((tool: any) => {
-                    return {
-                        name: tool.function.name,
-                        description: tool.function.description,
-                        inputSchema: tool.function.parameters,
-                    };
-                }),
+                ...getTools(allowMCPs),
             ].filter(x => x),
         };
     });
