@@ -283,8 +283,8 @@ export class AIModelConfig<T = { data: Array<AIModelConfigItem> }> extends Data<
         label: provider.label,
         value: provider.key,
         options: providerModels.map(model => ({
-          label: model.name,
-          value: model.key
+          label: `${provider.key}:${model.name}`,
+          value: model.key,
         })),
       };
     }).filter(group => group.options.length > 0); // 只返回有模型的供应商
