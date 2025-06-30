@@ -2175,7 +2175,7 @@ export const Chat = ({
               return {
                 title: (<Tooltip title={x.servername}>
                   <span>
-                    {x.name}{" "}{x.source == "claude" ? <Tag color="blue">{t`claude`}</Tag> : x.source == "builtin" ? <Tag color="blue">{t`built-in`}</Tag> : null}
+                    {x.name}{" "}{x.source == "builtin" ? <Tag color="blue">{t`built-in`}</Tag> : null}
                     {x.status == "connected" ? null : x.status ==
                       "connecting" ? (
                       <SyncOutlined spin className="m-1 text-blue-400" />

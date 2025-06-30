@@ -2,7 +2,7 @@
 
 // import { store } from "../../../rag/vectorStore.mjs";
 // import dayjs from "dayjs";
-import { IMCPClient } from "../../../../../shared/data.mjs";
+import { IMCPClient } from "../../../shared/data.mjs";
 import {
     Server,
     SSEServerTransport as _SSEServerTransport,
@@ -100,7 +100,7 @@ async function createServer(name: string, description: string, allowMCPs: string
             }
 
             let find = getTools(allowMCPs).find((tool) => {
-                return tool.function.name === request.params.name;
+                return tool.name === request.params.name;
             });
 
             if (!find) {

@@ -365,7 +365,7 @@ export type IMCPClient = {
   ext: {
     configSchema?: { [s in string]: any };
   };
-  source: "hyperchat" | "claude" | "builtin";
+  source: "hyperchat" | "builtin";
   version: string;
   servername: string;
 };

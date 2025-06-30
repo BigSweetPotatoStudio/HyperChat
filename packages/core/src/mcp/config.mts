@@ -44,7 +44,7 @@ import {
   MCP_CONFIG,
   MCPServerConfig,
   MCP_CONFIG_SYNC,
-  HyperChatCompletionTool, 
+  HyperChatCompletionTool,
   IMCPClient
 } from "../shared/data.mjs";
 
@@ -146,7 +146,7 @@ export class MCPClient implements IMCPClient {
   private maxReconnectAttempts = 5;
   private reconnectDelay = 5000; // 5秒
 
-  constructor(public name: string, public config: MCPServerConfig, public source: "hyperchat" | "claude" | "builtin" = "hyperchat", public order: number = 0) {
+  constructor(public name: string, public config: MCPServerConfig, public source: "hyperchat" | "builtin" = "hyperchat", public order: number = 0) {
     let s = MyServers.find((s) => s.name === name);
     if (s?.configSchema) {
       this.ext.configSchema = zodToJsonSchema(s.configSchema);
@@ -471,12 +471,6 @@ export class MCPClient implements IMCPClient {
       buildinMcpJSON = fs.readJsonSync(buildinMcpJSONPath);
       this.config = buildinMcpJSON.mcpServers[this.name] as MCPServerConfig;
     }
-    if (this.source == "claude") {
-      let p = clientPaths.claude;
-      Logger.info("initClaudeConfig", "found", p);
-      let config = fs.readJsonSync(p);
-      this.config = config.mcpServers[this.name] as MCPServerConfig;
-    }
   }
   async saveConfig({ isdelete }: { isdelete?: boolean } = {}) {
     if (this.source == "hyperchat") {
@@ -658,7 +652,7 @@ export async function initMcpClients() {
       }
     }
   } catch (e) {
-    Logger.error("initClaudeConfig", "error", e);
+    Logger.error("buildinMcpJSONPath", "error", e);
   }
 
   for (let key in config.mcpServers) {
@@ -691,49 +685,7 @@ export async function initMcpClients() {
       continue;
     }
   }
-  try {
-    let p = clientPaths.claude;
-    if (fs.existsSync(p)) {
-      Logger.info("initClaudeConfig", "found", p);
-      let config = fs.readJsonSync(p);
-      for (let key in config.mcpServers) {
-        order++;
 
-        const c = config.mcpServers[key];
-        if (mcpOBj[key] != null) {
-          key = key + "_" + (await electronData.init()).uuid.slice(0, 8);
-        }
-
-        c.disabled = !(await electronData.init()).isLoadClaudeConfig;
-
-        const mcpClient = new MCPClient(key, c, "claude", order);
-        mcpClients.push(mcpClient);
-        mcpOBj[key] = mcpClient;
-
-        try {
-          tasks.push(
-            mcpClient.open().then(() => {
-              getMessageService().sendAllToRenderer({
-                type: "changeMcpClient",
-                data: mcpClients,
-              })
-            }).catch((_e) => {
-              getMessageService().sendAllToRenderer({
-                type: "changeMcpClient",
-                data: mcpClients,
-              })
-            })
-          );
-        } catch (e) {
-          Logger.error("initMcpClient", e);
-          continue;
-        }
-
-      }
-    }
-  } catch (e) {
-    Logger.error("initClaudeConfig", "error", e);
-  }
 
   await Promise.allSettled(tasks).catch((e) => {
     Logger.error("initMcpClient", e);
