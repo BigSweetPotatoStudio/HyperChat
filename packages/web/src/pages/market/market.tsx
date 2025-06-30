@@ -29,18 +29,44 @@ import {
 } from "@hyperchat/shared/data.mjs";
 import { EVENT } from "../../common/event";
 import { Code } from "../../common/code";
-// import * as DATA from "../../../public/mcp_data.js";
 import { getMCPExtensionData } from "../../common/mcp";
 import { zodToJsonSchema } from "zod-to-json-schema";
-
 import { z } from "zod";
-// DATA.MCP.data = [
-//   {
-//     name: "hyper_tools",
-//     description: "hyper_tools",
-//   },
-//   ...DATA.MCP.data,
-// ];
+
+/**
+ * MCP 市场页面的类型定义
+ */
+
+/** MCP 服务器配置的环境变量项 */
+interface EnvListItem {
+  name: string;
+  value: string;
+}
+
+/** 表单配置项 */
+interface MCPFormValues {
+  _type?: 'edit' | 'create';
+  _name?: string;
+  name: string;
+  type: 'stdio' | 'sse' | 'streamableHttp';
+  command?: string;
+  args?: string[];
+  env?: Record<string, string>;
+  _envList?: EnvListItem[];
+  url?: string;
+  headers?: string | Record<string, string>;
+}
+
+/** 操作结果状态 */
+interface OperationResult {
+  data: any;
+  error: any;
+}
+
+/** MCP 加载状态映射 */
+interface MCPLoadingState {
+  [clientName: string]: boolean;
+}
 import {
   BranchesOutlined,
   CaretRightOutlined,
@@ -79,89 +105,92 @@ import { Pre } from "../../components/pre";
 import { Icon } from "../../components/icon";
 import { MCPGateWayPage } from "./gateway";
 
-// export type Package = {
-//   type: "npx" | "uvx" | "other";
-//   name: string;
-//   github?: string;
-//   description: string;
-//   keywords: string[];
-//   resolve: (config: any) => {
-//     command: string;
-//     args: string[];
-//     env: Record<string, string>;
-//   };
-//   configSchema: any;
-// };
-
-// const config = z.object({
-//   paths: z.array(
-//     z.object({
-//       path: z.string({
-//         description: "filesystem path",
-//         required_error: "path is required",
-//       }),
-//     }),
-//   ),
-//   path: z.string({
-//     description: "filesystem path",
-//   }),
-//   port: z.number({
-//     description: "port",
-//   }),
-//   host: z.boolean({
-//     description: "host",
-//   }),
-// });
-
-// type Config = z.infer<typeof config>;
-
-// const p: Package = {
-//   type: "npx",
-//   name: "@modelcontextprotocol/server-filesystem",
-//   github: "https://github.com/modelcontextprotocol/servers.git",
-//   description: "Server 1 filesystem",
-//   keywords: ["server", "filesystem"],
-//   resolve: (config: Config) => {
-//     return {
-//       command: "npx",
-//       args: [
-//         "-y",
-//         "@modelcontextprotocol/server-filesystem",
-//         ...config.paths.map((x) => x.path),
-//       ],
-//       env: {},
-//     };
-//   },
-//   configSchema: zodToJsonSchema(config),
-// };
-
-
+/**
+ * MCP Market 页面组件
+ * 提供 MCP（模型上下文协议）服务的管理界面，包括：
+ * - 社区 MCP 服务的安装和配置
+ * - 内置 MCP 服务的启用和配置
+ * - MCP Gateway 管理
+ * - 环境检查和修复工具
+ */
 export function Market() {
-  const [num, setNum] = React.useState(0);
-  const refresh = () => {
+  // ==================== 状态管理 ====================
+  
+  /** 强制刷新计数器 */
+  const [num, setNum] = React.useState<number>(0);
+  
+  /** 强制刷新组件 */
+  const refresh = (): void => {
     setNum((n) => n + 1);
   };
+
+  /** 全局上下文，包含 MCP 客户端信息 */
   const { globalState, updateGlobalState, mcpClients } = useContext(HeaderContext);
-  const [nodeV, setNodeV] = useState("");
-  const [uv, setUvVer] = useState("");
-  const [mcpLoadingObj, setMcpLoadingObj] = useState(
-    {} as any as { [s: string]: boolean },
-  );
+  
+  /** Node.js 版本信息 */
+  const [nodeV, setNodeV] = useState<string>("");
+  
+  /** UV 工具版本信息 */
+  const [uv, setUvVer] = useState<string>("");
+  
+  /** MCP 服务加载状态映射 */
+  const [mcpLoadingObj, setMcpLoadingObj] = useState<MCPLoadingState>({});
 
-  // const [mcpExtensionData, setMcpExtensionData] = useState<any>([]);
+  // ==================== 表单和模态框状态 ====================
+  
+  /** PATH 配置表单实例 */
+  const [form] = Form.useForm();
+  
+  /** MCP 内置服务配置表单实例 */
+  const [mcpconfigform] = Form.useForm();
+  
+  /** PATH 配置模态框开启状态 */
+  const [isPathOpen, setIsPathOpen] = useState<boolean>(false);
+  
+  /** 当前选中的 MCP 客户端行 */
+  const [currRow, setCurrRow] = useState<InitedClient>({
+    ext: {}
+  } as InitedClient);
+  
+  /** MCP 内置服务配置模态框开启状态 */
+  const [mcpconfigOpen, setMcpconfigOpen] = useState<boolean>(false);
+  
+  /** 添加 MCP 配置模态框开启状态 */
+  const [isAddMCPConfigOpen, setIsAddMCPConfigOpen] = useState<boolean>(false);
+  
+  /** MCP 服务开启操作加载状态 */
+  const [loadingOpenMCP, setLoadingOpenMCP] = useState<boolean>(false);
+  
+  /** MCP 服务配置表单实例 */
+  const [mcpform] = Form.useForm<MCPFormValues>();
+  
+  /** 操作结果状态 */
+  const [currResult, setCurrResult] = useState<OperationResult>({
+    data: null,
+    error: null,
+  });
 
+  /** 搜索关键词 */
+  const [searchValue, setSearchValue] = useState<string>("");
 
-  let init = async () => {
+  // ==================== 初始化和生命周期 ====================
+
+  /**
+   * 初始化环境检查
+   * 检查 Node.js 和 UV 工具是否已安装
+   */
+  const init = async (): Promise<void> => {
     (async () => {
-      let x = await call("exec", { command: "node", args: ["-v"] });
-      setNodeV(x);
+      const nodeVersion = await call("exec", { command: "node", args: ["-v"] });
+      setNodeV(nodeVersion);
     })();
     (async () => {
-      let y = await call("exec", { command: "uv", args: ["-V"] });
-      setUvVer(y);
+      const uvVersion = await call("exec", { command: "uv", args: ["-V"] });
+      setUvVer(uvVersion);
     })();
-
   };
+
+  // 组件挂载时执行初始化
   useEffect(() => {
     init();
     (async () => {
@@ -169,84 +198,98 @@ export function Market() {
       refresh();
     })();
   }, []);
-  const [form] = Form.useForm();
-  const [mcpconfigform] = Form.useForm();
-  const [isPathOpen, setIsPathOpen] = useState(false);
-  const [currRow, setCurrRow] = useState({
-    ext: {}
-  } as InitedClient);
-  const [mcpconfigOpen, setMcpconfigOpen] = useState(false);
 
-  const [isAddMCPConfigOpen, setIsAddMCPConfigOpen] = useState(false);
-  const [loadingOpenMCP, setLoadingOpenMCP] = useState(false);
-  const [mcpform] = Form.useForm();
-  const [currResult, setCurrResult] = useState({
-    data: null as any,
-    error: null as any,
-  });
-  useEffect(() => { }, []);
+  // ==================== 组件方法 ====================
 
-  const RenderEnableAndDisable = (item: InitedClient) => {
+  /**
+   * 渲染启用/禁用按钮
+   * @param item MCP 客户端信息
+   * @returns 启用/禁用按钮组件
+   */
+  const RenderEnableAndDisable = (item: InitedClient): JSX.Element => {
     return (
-      <Button key="enable" onClick={async (e) => {
-        try {
-          mcpLoadingObj[item.name] = true;
-          setMcpLoadingObj({ ...mcpLoadingObj });
+      <Button 
+        key="enable" 
+        onClick={async (e: React.MouseEvent) => {
+          try {
+            // 设置当前 MCP 服务为加载状态
+            mcpLoadingObj[item.name] = true;
+            setMcpLoadingObj({ ...mcpLoadingObj });
 
-
-          if (item.status != "disabled") {
-            await call("closeMcpClients", {
-              clientName: item.name,
-              isdelete: false,
-              isdisable: true
-            });
-          } else {
-            await call("openMcpClient", { clientName: item.name });
+            if (item.status !== "disabled") {
+              // 如果当前状态不是禁用，则关闭服务
+              await call("closeMcpClients", {
+                clientName: item.name,
+                isdelete: false,
+                isdisable: true
+              });
+            } else {
+              // 如果当前状态是禁用，则开启服务
+              await call("openMcpClient", { clientName: item.name });
+            }
+          } catch (e: any) {
+            message.error(e.message);
+          } finally {
+            // 清除加载状态
+            mcpLoadingObj[item.name] = false;
+            setMcpLoadingObj({ ...mcpLoadingObj });
           }
-
-        } catch (e) {
-          message.error(e.message);
-        } finally {
-          mcpLoadingObj[item.name] = false;
-          setMcpLoadingObj({ ...mcpLoadingObj });
+        }} 
+        type="link" 
+        title={item.status === "disabled" ? t`Enable` : t`Disable`}
+        icon={
+          item.status === "disabled" ? (
+            <CaretRightOutlined />
+          ) : (
+            <StopOutlined />
+          )
         }
-      }} type="link" title={
-        item.status == "disabled"
-          ? t`Enable`
-          : t`Disable`
-      } icon={
-        item.status == "disabled" ? (
-          <CaretRightOutlined />
-        ) : (
-          <StopOutlined />
-        )
-      }></Button>
+      />
     );
   };
-  const ListItemMeta = (item: InitedClient) => {
+
+  /**
+   * 渲染列表项元数据
+   * @param item MCP 客户端信息
+   * @returns 列表项元数据组件
+   */
+  const ListItemMeta = (item: InitedClient): JSX.Element => {
     return (
       <List.Item.Meta
         className="px-2"
         title={
           <>
             <span>
+              {/* MCP 服务名称 */}
               {item.name}&nbsp;
+              
+              {/* 版本标签 */}
               {item.version && <Tag>{item.version}</Tag>}
-              {item.source == "builtin" && <Tag color="blue">{t`built-in`}</Tag>}
-              {item.source == "hyperchat" && item.config.isSync && <Tag className=" text-blue-400">sync</Tag>}
+              
+              {/* 内置服务标签 */}
+              {item.source === "builtin" && <Tag color="blue">{t`built-in`}</Tag>}
+              
+              {/* 同步标签 */}
+              {item.source === "hyperchat" && item.config.isSync && (
+                <Tag className="text-blue-400">sync</Tag>
+              )}
               &nbsp;
 
-              {(item.config?.type && item.config?.type != "stdio") && <Tag>{item.config?.type}</Tag>}
+              {/* 服务类型标签（非 stdio 类型时显示） */}
+              {(item.config?.type && item.config?.type !== "stdio") && (
+                <Tag>{item.config?.type}</Tag>
+              )}
 
               &nbsp;
-              {item.status == "connecting" ? (
+              
+              {/* 连接状态图标 */}
+              {item.status === "connecting" ? (
                 <SyncOutlined spin className="text-blue-400" />
-              ) : item.status == "connected" ? (
+              ) : item.status === "connected" ? (
                 <CheckCircleTwoTone twoToneColor="#52c41a" />
-              ) : item.status == "disconnected" ? (
+              ) : item.status === "disconnected" ? (
                 <DisconnectOutlined className="text-red-400" />
-              ) : item.status ==
-                "disabled" ? null : null}
+              ) : item.status === "disabled" ? null : null}
             </span>
           </>
         }
@@ -255,27 +298,32 @@ export function Market() {
     );
   };
 
-  const [searchValue, setSearchValue] = useState("");
+  // ==================== 组件渲染 ====================
 
   return (
     <div className="market overflow-auto">
       <div className="flex flex-wrap">
+        {/* 左侧：MCP 服务管理面板 */}
         <div className="w-full lg:w-2/5">
           <Tabs
             className="rounded-lg bg-white"
             type="card"
             items={[
-
+              // MCP 社区服务标签页
               {
                 label: t`MCP Community`,
                 key: "thirdparty",
                 children: (
                   <div className="bg-white p-0">
+                    {/* 搜索和操作栏 */}
                     <div className="flex justify-center p-1">
                       <Space.Compact>
-                        <Input placeholder="Search" onChange={e => {
-                          setSearchValue(e.target.value);
-                        }} />
+                        <Input 
+                          placeholder="Search" 
+                          onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+                            setSearchValue(e.target.value);
+                          }} 
+                        />
                         <Button
                           onClick={() => {
                             mcpform.resetFields();
@@ -283,7 +331,7 @@ export function Market() {
                             setCurrResult({
                               data: null,
                               error: null,
-                            })
+                            });
                           }}
                         >
                           {t`Add MCP`}
@@ -292,112 +340,140 @@ export function Market() {
                           title={t`Open Configuration File`}
                           icon={<SettingOutlined />}
                           onClick={async () => {
-                            let p = await call("pathJoin", { path: "mcp.json" });
-                            await showText({ path: p });
+                            const configPath = await call("pathJoin", { path: "mcp.json" });
+                            await showText({ path: configPath });
                           }}
-                        >
-                        </Button>
+                        />
                       </Space.Compact>
                     </div>
+                    
+                    {/* MCP 服务列表 */}
                     <div style={{ maxHeight: "calc(100vh - 152px)", overflowY: "auto" }}>
                       <List
                         itemLayout="horizontal"
-                        dataSource={mcpClients.filter(x => x.source == "hyperchat" && x.name && x.name.includes(searchValue))}
-                        renderItem={(item: InitedClient, index) => (
+                        dataSource={mcpClients.filter(x => 
+                          x.source === "hyperchat" && 
+                          x.name && 
+                          x.name.includes(searchValue)
+                        )}
+                        renderItem={(item: InitedClient, index: number) => (
                           <List.Item
                             className="hover:cursor-pointer hover:bg-slate-300"
-                            actions={[<Space.Compact>
-                              {[
-                                (
-                                  <a
-                                    key="list-del"
-                                    className="text-lg hover:text-cyan-400"
-                                  >
-                                    <Popconfirm
-                                      title="Sure to delete?"
-                                      onConfirm={async () => {
-                                        try {
-                                          await call("closeMcpClients", {
-                                            clientName: item.name,
-                                            isdelete: true,
-                                            isdisable: false,
-                                          });
-
-                                        } catch (e) {
-                                          message.error(e.message);
-                                        }
-                                      }}
+                            actions={[
+                              <Space.Compact key="actions">
+                                {[
+                                  // 删除按钮
+                                  (
+                                    <a
+                                      key="list-del"
+                                      className="text-lg hover:text-cyan-400"
                                     >
-                                      <Button title={t`delete`} type="link">
-                                        <DeleteOutlined className="text-lg hover:text-cyan-400" />
-                                      </Button>
-                                    </Popconfirm>
-                                  </a>
-                                ),
+                                      <Popconfirm
+                                        title="Sure to delete?"
+                                        onConfirm={async () => {
+                                          try {
+                                            await call("closeMcpClients", {
+                                              clientName: item.name,
+                                              isdelete: true,
+                                              isdisable: false,
+                                            });
+                                          } catch (e: any) {
+                                            message.error(e.message);
+                                          }
+                                        }}
+                                      >
+                                        <Button title={t`delete`} type="link">
+                                          <DeleteOutlined className="text-lg hover:text-cyan-400" />
+                                        </Button>
+                                      </Popconfirm>
+                                    </a>
+                                  ),
 
-                                RenderEnableAndDisable(item),
+                                  // 启用/禁用按钮
+                                  RenderEnableAndDisable(item),
 
-                                <a key="set-del" className="text-lg hover:text-cyan-400">
-                                  <Button type="link" onClick={async (e) => {
-                                    // await MCP_CONFIG.init()
-                                    // const config =
-                                    //   MCP_CONFIG.get().mcpServers[item.name];
+                                  // 设置按钮
+                                  <a key="set-del" className="text-lg hover:text-cyan-400">
+                                    <Button 
+                                      type="link" 
+                                      onClick={async (e: React.MouseEvent) => {
+                                        // 准备表单数据进行编辑
+                                        let formValues = {
+                                          ...item.config,
+                                          name: item.name,
+                                        } as any;
+                                        
+                                        formValues._name = item.name;
+                                        formValues._type = "edit";
+                                        formValues.command = [
+                                          formValues.command || "",
+                                          ...formValues.args || [],
+                                        ].join("   ");
+                                        formValues._envList = [];
+                                        
+                                        // 转换环境变量格式
+                                        for (let key in (formValues.env || {})) {
+                                          formValues._envList.push({
+                                            name: key,
+                                            value: formValues.env[key],
+                                          });
+                                        }
+                                        
+                                        formValues.type =
+                                          formValues?.type || formValues?.hyperchat?.type || "stdio";
+                                        formValues.url =
+                                          formValues?.url || formValues?.hyperchat?.url || "";
 
-                                    let formValues = {
-                                      ...item.config,
-                                      name: item.name,
-                                    } as any;
-                                    formValues._name = item.name;
-                                    formValues._type = "edit";
-                                    formValues.command = [
-                                      formValues.command || "",
-                                      ...formValues.args || [],
-                                    ].join("   ");
-                                    formValues._envList = [];
-                                    for (let key in (formValues.env || {})) {
-                                      formValues._envList.push({
-                                        name: key,
-                                        value: formValues.env[key],
-                                      });
+                                        // 转换 headers 格式
+                                        formValues.headers = Object.entries(formValues.headers || {})
+                                          .map(([key, value]) => `${key}=${value}`)
+                                          .join("\n");
+
+                                        mcpform.resetFields();
+                                        mcpform.setFieldsValue(formValues);
+                                        setIsAddMCPConfigOpen(true);
+                                        setCurrResult({
+                                          data: null,
+                                          error: null,
+                                        });
+                                      }} 
+                                      title={t`Setting`}
+                                    >
+                                      <SettingOutlined />
+                                    </Button>
+                                  </a>,
+                                  
+                                  // 更多设置按钮
+                                  <Popover 
+                                    key="more-setting" 
+                                    trigger="click" 
+                                    title={t`More Setting`} 
+                                    content={
+                                      <div>
+                                        {t`Sync`}: 
+                                        <Switch 
+                                          value={item.config.isSync} 
+                                          onChange={async (checked: boolean) => {
+                                            item.config.isSync = checked;
+                                            await call("openMcpClient", {
+                                              clientName: item.name, 
+                                              clientConfig: item.config,
+                                              options: { onlySave: true }
+                                            });
+                                          }}
+                                        />
+                                      </div>
                                     }
-                                    formValues.type =
-                                      formValues?.type || formValues?.hyperchat?.type || "stdio";
-                                    formValues.url =
-                                      formValues?.url || formValues?.hyperchat?.url || "";
-
-
-                                    formValues.headers = Object.entries(formValues.headers || {}).map(([key, value]) => `${key}=${value}`).join("\n");
-
-                                    mcpform.resetFields();
-                                    mcpform.setFieldsValue(formValues);
-                                    setIsAddMCPConfigOpen(true);
-                                    setCurrResult({
-                                      data: null,
-                                      error: null,
-                                    })
-                                  }} title={t`Setting`}>
-                                    <SettingOutlined />
-                                  </Button>
-                                </a>,
-                                <Popover key="more-setting" trigger="click" title={t`More Setting`} content={
-                                  <div>
-                                    {t`Sync`}: <Switch value={item.config.isSync} onChange={async (e) => {
-                                      // await MCP_CONFIG.init()
-                                      // MCP_CONFIG.get().mcpServers[item.name].isSync = e;
-                                      // await MCP_CONFIG.save();
-                                      // item.config.isSync = e;
-                                      // refresh();
-                                      item.config.isSync = e;
-                                      await call("openMcpClient", {
-                                        clientName: item.name, clientConfig: item.config,
-                                        options: { onlySave: true }
-                                      });
-                                    }}></Switch>
-                                  </div>
-                                }><Button type="link" icon={<MoreOutlined />} title={t`More Setting`}></Button></Popover>
-                                // ) : undefined,
+                                  >
+                                    <Button 
+                                      type="link" 
+                                      icon={<MoreOutlined />} 
+                                      title={t`More Setting`}
+                                    />
+                                  </Popover>
                               ].filter((x) => x != null)}
-                            </Space.Compact>]}
+                              </Space.Compact>
+                            ]}
                           >
                             {ListItemMeta(item)}
                           </List.Item>
@@ -407,6 +483,7 @@ export function Market() {
                   </div>
                 ),
               },
+              // 内置服务标签页
               {
                 label: t`Build-in`,
                 key: "official",
@@ -414,40 +491,42 @@ export function Market() {
                   <div className="bg-white p-0">
                     <List
                       itemLayout="horizontal"
-                      dataSource={mcpClients.filter(x => x.source == "builtin")}
-                      renderItem={(item: InitedClient, index) => (
+                      dataSource={mcpClients.filter(x => x.source === "builtin")}
+                      renderItem={(item: InitedClient, index: number) => (
                         <List.Item
                           className="hover:cursor-pointer hover:bg-slate-300"
                           actions={[
+                            // 启用/禁用按钮
                             RenderEnableAndDisable(item),
-                            item.status != "disabled" ? (
-                              <a className="text-lg hover:text-cyan-400">
-                                <Button type="link" title={t`Setting`} onClick={async (e) => {
-                                  e.stopPropagation();
-                                  mcpconfigform.resetFields();
-                                  let zo = eval(
-                                    jsonSchemaToZod(item.ext.configSchema),
-                                  );
-                                  mcpconfigform?.setFieldsValue(
-                                    zo.safeParse({}).data,
-                                  );
+                            
+                            // 设置按钮（仅当服务未禁用时显示）
+                            item.status !== "disabled" ? (
+                              <a className="text-lg hover:text-cyan-400" key="builtin-setting">
+                                <Button 
+                                  type="link" 
+                                  title={t`Setting`} 
+                                  onClick={async (e: React.MouseEvent) => {
+                                    e.stopPropagation();
+                                    mcpconfigform.resetFields();
+                                    
+                                    // 根据配置 schema 生成默认值
+                                    const zodSchema = eval(jsonSchemaToZod(item.ext.configSchema));
+                                    mcpconfigform?.setFieldsValue(zodSchema.safeParse({}).data);
 
+                                    // 设置当前配置值
+                                    mcpconfigform.setFieldsValue(
+                                      item.config?.hyperchat?.config || {},
+                                    );
 
-                                  mcpconfigform.setFieldsValue(
-                                    item.config?.hyperchat?.config || {},
-                                  );
-
-                                  setCurrRow(item);
-                                  setMcpconfigOpen(true);
-                                  refresh();
-                                }}>
-                                  <SettingOutlined
-
-                                  />
+                                    setCurrRow(item);
+                                    setMcpconfigOpen(true);
+                                    refresh();
+                                  }}
+                                >
+                                  <SettingOutlined />
                                 </Button>
                               </a>
                             ) : undefined,
-
                           ].filter((x) => x != null)}
                         >
                           {ListItemMeta(item)}
@@ -457,18 +536,24 @@ export function Market() {
                   </div>
                 ),
               },
+              // MCP Gateway 标签页
               {
                 label: t`MCP Gateway`,
                 key: "mcpGateway",
-                children: (<div>
-                  <MCPGateWayPage />
-                </div>)
+                children: (
+                  <div>
+                    <MCPGateWayPage />
+                  </div>
+                )
               }
             ].filter(x => x)}
           />
         </div>
+        
+        {/* 右侧：MCP 市场和帮助信息 */}
         <div className="w-full p-4 lg:w-3/5">
           <div>
+            {/* MCP 市场链接 */}
             <h1>{t`More MCP Market`}</h1>
             <div>
               <a href="https://modelcontextprotocol.io/examples">
@@ -487,8 +572,11 @@ export function Market() {
             <div>
               <a href="https://smithery.ai/">smithery.ai</a>
             </div>
+            
+            {/* 环境检查和帮助信息 */}
             <div>Help: </div>
             <div className="help">
+              {/* Node.js 环境检查 */}
               <div>
                 <div>
                   <Space>
@@ -499,12 +587,12 @@ export function Market() {
                 {!nodeV && (
                   <div>
                     <Space>
-                      {electronData.get().platform == "win32" ? (
+                      {electronData.get().platform === "win32" ? (
                         <div>
                           <span>{t`Please run the command.`}</span>
                           <Code>winget install OpenJS.NodeJS.LTS</Code>
                         </div>
-                      ) : electronData.get().platform == "darwin" ? (
+                      ) : electronData.get().platform === "darwin" ? (
                         <div>
                           <span>{t`Please run the command.`}</span>
                           <Code>brew install node</Code>
@@ -513,27 +601,28 @@ export function Market() {
                         ""
                       )}
                       <a href="https://nodejs.org/">goto nodejs</a>
-                    </Space>{" "}
+                    </Space>
                   </div>
                 )}
               </div>
+              
+              {/* UV 工具环境检查 */}
               <div>
                 <div>
                   <Space>
-                    <span className="font-bold">uv:</span>{" "}
+                    <span className="font-bold">uv:</span>
                     {uv || t`Not Installed`}
                   </Space>
                 </div>
-
                 {!uv && (
                   <div>
                     <Space>
-                      {electronData.get().platform == "win32" ? (
+                      {electronData.get().platform === "win32" ? (
                         <div>
                           <span>{t`Please run the command.`}</span>
                           <Code>winget install --id=astral-sh.uv -e</Code>
                         </div>
-                      ) : electronData.get().platform == "darwin" ? (
+                      ) : electronData.get().platform === "darwin" ? (
                         <div>
                           <span>{t`Please run the command.`}</span>
                           <Code>brew install uv</Code>
@@ -547,6 +636,7 @@ export function Market() {
                 )}
               </div>
 
+              {/* 环境修复按钮 */}
               <Tooltip
                 title={t`you might need to customize the PATH environment var.`}
               >
@@ -562,6 +652,10 @@ export function Market() {
             </div>
           </div>
         </div>
+        
+        {/* ==================== 模态框组件 ==================== */}
+        
+        {/* PATH 配置模态框 */}
         <Modal
           width={600}
           title={t`Configure PATH`}
@@ -580,7 +674,7 @@ export function Market() {
                 PATH: electronData.get().PATH,
               }}
               clearOnDestroy
-              onFinish={async (values) => {
+              onFinish={async (values: { PATH: string }) => {
                 electronData.get().PATH = values.PATH;
                 await electronData.save();
                 init();
@@ -592,9 +686,11 @@ export function Market() {
           )}
         >
           <Form.Item name="PATH" label="PATH">
-            <Input placeholder="Here, you would input the result of the command echo $PATH."></Input>
+            <Input placeholder="Here, you would input the result of the command echo $PATH." />
           </Form.Item>
         </Modal>
+        
+        {/* 内置 MCP 配置模态框 */}
         <Modal
           title={t`BuildIn MCP Configuration`}
           open={mcpconfigOpen}
@@ -605,53 +701,35 @@ export function Market() {
           <Form
             name="buildinMcpConfigform"
             form={mcpconfigform}
-            onFinish={async (values) => {
-              // console.log("onFinish", values);
-              let zo = eval(jsonSchemaToZod(currRow.ext.configSchema));
-
-              values = zo.safeParse(values).data;
-              // console.log("onFinish", values);
+            onFinish={async (values: any) => {
+              // 使用 Zod schema 验证配置数据
+              const zodSchema = eval(jsonSchemaToZod(currRow.ext.configSchema));
+              const validatedValues = zodSchema.safeParse(values).data;
+              
+              // 更新配置
               currRow.config = {
                 ...currRow.config,
                 hyperchat: {
-                  config: values,
+                  config: validatedValues,
                 } as any
-              }
+              };
 
               try {
-                if (
-                  currRow.source == "builtin"
-                ) {
+                if (currRow.source === "builtin") {
                   await call("openMcpClient", {
                     clientName: currRow.name,
                     clientConfig: currRow.config,
                   });
                   setMcpconfigOpen(false);
-                } else {
-                  // ! 不会生效了
-                  // let config = currRow.resolve(values);
-                  // config.hyperchat = {
-                  //   url: "",
-                  //   type: "stdio",
-                  //   scope: "outer",
-                  //   config: values,
-                  // };
-                  // await call("openMcpClient", [currRow.name, config]);
-
-                  // MCP_CONFIG.get().mcpServers[currRow.name] = config;
-                  // await MCP_CONFIG.save();
-
-                  // await getClients();
-                  // setMcpconfigOpen(false);
                 }
-              } catch (e) {
+              } catch (e: any) {
                 message.error(e.message);
               }
             }}
           >
             {currRow.ext.configSchema
               ? JsonSchema2FormItemOrNull(currRow.ext.configSchema) ||
-              t`No parameters`
+                t`No parameters`
               : []}
             <Form.Item className="flex justify-end">
               <Button htmlType="submit">Submit</Button>
@@ -659,6 +737,7 @@ export function Market() {
           </Form>
         </Modal>
 
+        {/* 添加/编辑 MCP 配置模态框 */}
         <Modal
           width={600}
           title={t`Configure MCP`}
@@ -683,64 +762,78 @@ export function Market() {
               layout="vertical"
               name="Configure MCP"
               clearOnDestroy
-              onFinish={async (values) => {
+              onFinish={async (values: MCPFormValues) => {
                 try {
                   setLoadingOpenMCP(true);
 
-                  if (values._type != "edit") { // 新建
+                  // 检查服务名称是否已存在（新建时）
+                  if (values._type !== "edit") {
                     if (mcpClients.find(x => x.name === values.name)) {
                       message.error(t`MCP Service Name already exists`);
                       return;
                     }
-                  } else { //编辑
-                    if (values._name && values.name != values._name) {
-                      await call("closeMcpClients", { clientName: values._name, isdelete: true, isdisable: true });
+                  } else {
+                    // 编辑时，如果名称改变则删除旧服务
+                    if (values._name && values.name !== values._name) {
+                      await call("closeMcpClients", { 
+                        clientName: values._name, 
+                        isdelete: true, 
+                        isdisable: true 
+                      });
                     }
                   }
 
-
                   let mcpServerConfig = {} as MCPServerConfig;
-                  if (values.type == "sse" || values.type == "streamableHttp") {
-                    let headers = {};
-                    values.headers = values.headers || "";
-                    let lines = values.headers.split("\n");
+                  
+                  // 根据服务类型构建配置
+                  if (values.type === "sse" || values.type === "streamableHttp") {
+                    let headers: Record<string, string> = {};
+                    const headersString = (values.headers as string) || "";
+                    const lines = headersString.split("\n");
                     for (let line of lines) {
-                      let [key, value] = line.split("=");
+                      const [key, value] = line.split("=");
                       if (key && value) {
                         headers[key.trim()] = value.trim();
                       }
                     }
                     mcpServerConfig = {
-                      url: values.url,
+                      url: values.url!,
                       type: values.type,
                       headers: headers,
                     };
                   } else {
-                    let commands = values.command
+                    // 处理 stdio 类型的配置
+                    const commands = values.command!
                       .split(" ")
-                      .filter((x) => x.trim() != "");
+                      .filter((x) => x.trim() !== "");
 
-                    let [command, ...args] = commands;
+                    const [command, ...args] = commands;
                     values.command = command.trim();
                     values.args = args;
                     values.env = {};
+                    
                     try {
                       values._envList = values._envList || [];
-                      for (let x of values._envList) {
-                        values.env[x.name.trim()] = x.value.trim();
+                      for (let envItem of values._envList) {
+                        values.env[envItem.name.trim()] = envItem.value.trim();
                       }
                     } catch {
                       message.error("Please enter a valid JSON");
                       return;
                     }
+                    
                     mcpServerConfig = {
                       command: values.command,
                       args: values.args,
                       env: values.env,
-                    }
+                    };
                   }
 
-                  await call("openMcpClient", { clientName: values.name, clientConfig: mcpServerConfig });
+                  // 开启 MCP 客户端
+                  await call("openMcpClient", { 
+                    clientName: values.name, 
+                    clientConfig: mcpServerConfig 
+                  });
 
                   setCurrResult({
                     data: "success",
@@ -748,8 +841,7 @@ export function Market() {
                   });
                   refresh();
                   setIsAddMCPConfigOpen(false);
-                } catch (e) {
-                  // message.error(e.message);
+                } catch (e: any) {
                   setCurrResult({
                     data: null,
                     error: e.message,
@@ -763,8 +855,9 @@ export function Market() {
             </Form>
           )}
         >
+          {/* 表单隐藏字段 */}
           <Form.Item className="hidden" name="_type" label="_type">
-            <Input></Input>
+            <Input />
           </Form.Item>
           <Form.Item
             name="_name"
@@ -772,28 +865,26 @@ export function Market() {
             className="hidden"
             rules={[{ message: t`Please enter` }]}
           >
-            <Input
-              disabled
-              placeholder="Please enter"
-            ></Input>
+            <Input disabled placeholder="Please enter" />
           </Form.Item>
+          
+          {/* 服务名称 */}
           <Form.Item
             name="name"
             label={t`Name`}
             rules={[{ required: true, message: t`Please enter` }]}
           >
-            <Input
-              placeholder="Please enter"
-            ></Input>
+            <Input placeholder="Please enter" />
           </Form.Item>
 
+          {/* 服务类型选择 */}
           <Form.Item
             name="type"
             label={t`type`}
             rules={[{ required: true, message: t`Please enter` }]}
           >
             <Radio.Group
-              onChange={(e) => {
+              onChange={() => {
                 refresh();
               }}
             >
@@ -802,34 +893,37 @@ export function Market() {
               <Radio value="streamableHttp">streamableHttp</Radio>
             </Radio.Group>
           </Form.Item>
-          {(mcpform.getFieldValue("type") == "sse" || mcpform.getFieldValue("type") == "streamableHttp") ? (
+          
+          {/* 根据服务类型显示不同的配置项 */}
+          {(mcpform.getFieldValue("type") === "sse" || 
+            mcpform.getFieldValue("type") === "streamableHttp") ? (
             <div>
-              {" "}
+              {/* HTTP 服务配置 */}
               <Form.Item
                 name="url"
                 label="url"
                 rules={[{ required: true, message: "Please enter" }]}
               >
-                <Input placeholder="Please enter url"></Input>
+                <Input placeholder="Please enter url" />
               </Form.Item>
-              <Form.Item
-                name="headers"
-                label={t`request-headers`}
-              >
-                <Input.TextArea placeholder="Content-Type=application/json
-Authorization=Bearer token"></Input.TextArea>
+              <Form.Item name="headers" label={t`request-headers`}>
+                <Input.TextArea 
+                  placeholder="Content-Type=application/json&#10;Authorization=Bearer token" 
+                />
               </Form.Item>
             </div>
           ) : (
             <div>
+              {/* 命令行服务配置 */}
               <Form.Item
                 name="command"
                 label="command"
                 rules={[{ required: true, message: "Please enter" }]}
               >
-                <Input placeholder="Please enter command"></Input>
+                <Input placeholder="Please enter command" />
               </Form.Item>
 
+              {/* 环境变量配置 */}
               <Form.Item label="env">
                 <Form.List name="_envList">
                   {(fields, { add, remove }) => (
@@ -883,10 +977,11 @@ Authorization=Bearer token"></Input.TextArea>
             </div>
           )}
 
+          {/* 操作结果显示 */}
           {currResult.data && (
             <div>
               <div>Result:</div>
-              <div>{(currResult.data)}</div>
+              <div>{currResult.data}</div>
             </div>
           )}
           {currResult.error && (
