@@ -36,7 +36,11 @@ import { clientPaths } from "./mcp/claude.mjs";
 import dayjs from "dayjs";
 import * as vm from "node:vm";
 import { ActiveAITerminal, CloseTerminal, GetTerminals, OpenTerminal } from "./mcp/servers/terminal/terminal.mjs";
+import { fileURLToPath } from 'node:url';
+import { dirname } from 'node:path';
 
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
 /**
  * command.mts 是 HyperChat 后端的业务调度核心：
  * - 封装所有与前端交互的命令（如配置、MCP 客户端、任务、文件、剪贴板等）

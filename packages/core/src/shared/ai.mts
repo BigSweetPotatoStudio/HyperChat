@@ -47,8 +47,8 @@ export class AiChannel {
   private mcpAbortController: AbortController | null = null;
 
   constructor(
-    public options: {
-      confirm_call_tool?: boolean;
+    public options?: {
+
     },
     public messages: MyMessage[] = [],
   ) {
@@ -111,9 +111,10 @@ export class AiChannel {
       allowMCPs: string[],
       onUpdate?: () => void;
       call_tool?: boolean;
+      confirm_call_tool?: boolean;  // 默认当成false
       confirm_call_tool_cb?: (tool: Tool_Call) => Promise<boolean>;
     },
-    options?: Parameters<typeof streamText>[0]
+    options: Omit<Parameters<typeof streamText>[0], 'model' | 'prompt'> = {},
   ): Promise<string> {
     this.status = "runing";
     this.index++;
@@ -136,13 +137,11 @@ export class AiChannel {
       onUpdate?: () => void;
       call_tool?: boolean;
       step: number;
-      context: {}
+      context: {},
+      confirm_call_tool?: boolean;  // 默认当成false
       confirm_call_tool_cb?: (tool: Tool_Call) => Promise<boolean>;
     },
-    options: Parameters<typeof streamText>[0] = {
-      model: openai('gpt-4o'),
-      prompt: 'hello',
-    },
+    options: Omit<Parameters<typeof streamText>[0], 'model' | 'prompt'> = {},
   ): Promise<string> {
 
     if (this.status == "stop") {
@@ -153,25 +152,7 @@ export class AiChannel {
     if (!modelConfig) {
       throw new Error(`Model not found: ${params.modelKey}`);
     }
-    // if (!params.call_tool || modelConfig.supportTool === false) {
-    //   tools = undefined;
-    // } else {
-    //   try {
-    //     if (process.env.runtime === "node") {
-    //       tools = globalThis.getTools(allowMCPs);
-    //     } else {
-    //       tools = globalThis.getTools(allowMCPs);
-    //     }
-    //   } catch (e) {
-    //     tools = []
-    //   }
 
-    //   if (tools.length == 0) {
-    //     tools = undefined;
-    //   }
-    // }
-    // let content_tool_calls = [] as Array<Tool_Call>;
-    // let content: string = "";
     this.abortController = new AbortController();
     let newMessage: MyMessage = {
       role: "assistant",
@@ -196,7 +177,7 @@ export class AiChannel {
 
     let format_message = await this.messages2core(messages);
     options.messages = format_message;
-    delete options.prompt; // 确保不使用 prompt
+
     let tools: HyperChatCompletionTool[] = this.ext.mcpTools || [];
     const aiTools = this.tools_format_ai(tools || []);
     options.tools = {
@@ -244,9 +225,13 @@ export class AiChannel {
           fetch
         });
       }
-      options.model = ai(modelConfig.model);
-      const result = await streamText({
+      // options.model = ai(modelConfig.model);
+      let newOptions: Parameters<typeof streamText>[0] = {
         ...options,
+        model: ai(modelConfig.model),
+      }
+      const result = await streamText({
+        ...newOptions,
         abortSignal: this.abortController.signal,
       });
 
@@ -339,30 +324,30 @@ export class AiChannel {
         } catch {
           tool.function.args = {} as any;
         }
-        // if (process.env.runtime !== "node") {
-        //   if (
-        //     this.options.confirm_call_tool &&
-        //     params.confirm_call_tool_cb
-        //   ) {
-        //     try {
-        //       tool.function.args = await params.confirm_call_tool_cb(tool);
-        //     } catch (e) {
+        if (process.env.runtime !== "node") {
+          if (
+            params.confirm_call_tool &&
+            params.confirm_call_tool_cb
+          ) {
+            try {
+              tool.function.args = await params.confirm_call_tool_cb(tool);
+            } catch (e) {
 
-        //       let message: MyMessage = {
-        //         role: "tool" as const,
-        //         tool_call_id: tool.id,
-        //         content: "this tool call canceled by user.",
-        //         content_status: "error",
-        //         content_attachment: [],
-        //         content_date: Date.now(),
-        //       };
-        //       this.messages.push(message as any);
-        //       params.onUpdate && params.onUpdate();
-        //       continue;
-        //     }
+              let message: MyMessage = {
+                role: "tool" as const,
+                tool_call_id: tool.id,
+                content: "this tool call canceled by user.",
+                content_status: "error",
+                content_attachment: [],
+                content_date: Date.now(),
+              };
+              this.messages.push(message as any);
+              params.onUpdate && params.onUpdate();
+              continue;
+            }
 
-        //   }
-        // }
+          }
+        }
 
 
         // console.log("tool_calls", tool_calls);

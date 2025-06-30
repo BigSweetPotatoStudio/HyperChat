@@ -1,17 +1,41 @@
+/**
+ * @fileoverview HyperChat聊天界面组件
+ * 
+ * 这是HyperChat应用的核心聊天界面组件，提供以下主要功能：
+ * 
+ * 1. AI对话功能：
+ *    - 支持多种AI模型（OpenAI、Claude、Gemini等）
+ *    - 流式和完整两种请求模式
+ *    - 支持文本和图片输入
+ * 
+ * 2. MCP（模型上下文协议）集成：
+ *    - 工具调用和确认机制
+ *    - 资源和提示管理
+ *    - 多MCP客户端支持
+ * 
+ * 3. Agent管理：
+ *    - 内置和自定义Agent
+ *    - Agent配置和编辑
+ *    - 模板变量替换
+ * 
+ * 4. 聊天记录管理：
+ *    - 历史记录存储和加载
+ *    - 搜索和过滤功能
+ *    - 星标和分类管理
+ * 
+ * 5. 用户界面：
+ *    - 响应式设计（支持移动端）
+ *    - 拖拽排序
+ *    - 多种显示模式
+ * 
+ * @author HyperChat Team
+ * @version 1.0.0
+ */
+
 import {
-  Attachments,
-  Bubble,
-  BubbleProps,
-  Conversations,
-  ConversationsProps,
-  Prompts,
   Sender,
-  Suggestion,
-  ThoughtChain,
   Welcome,
   XProvider,
-  useXAgent,
-  useXChat,
 } from "@ant-design/x";
 import {
   Avatar,
@@ -63,113 +87,21 @@ import { io } from "socket.io-client";
 import { getURL_PRE, msg_receive } from "../../common/call";
 import "@xterm/xterm/css/xterm.css";
 import _ from 'lodash';
-import { Terminal } from "@xterm/xterm";
-import { FitAddon } from "@xterm/addon-fit";
-import { WebLinksAddon } from "@xterm/addon-web-links";
-import { z } from "zod";
+import { blobToBase64, calcAttachDialogue, urlToBase64 } from "./utils/index"
 
-function Pre(p) {
-  return (
-    <div>
-      <pre
-        style={{
-          whiteSpace: "pre-wrap",
-          wordWrap: "break-word",
-        }}
-      >
-        {p.children as string}
-      </pre>
-    </div>
-  );
-}
-
-function urlToBase64(url: string) {
-  return new Promise<string>((resolve, reject) => {
-    // 创建图片对象
-    const img = new Image();
-
-    // 跨域支持
-    img.crossOrigin = "Anonymous";
-
-    img.onload = function () {
-      // 创建画布
-      const canvas = document.createElement("canvas");
-      const ctx = canvas.getContext("2d");
-
-      // 设置画布大小
-      canvas.width = (this as any).width;
-      canvas.height = (this as any).height;
-
-      // 绘制图片
-      ctx.drawImage(this as any, 0, 0);
-
-      // 转换为 Base64
-      const base64 = canvas.toDataURL("image/png");
-      // console.log(base64);
-      resolve(base64);
-    };
-
-    img.onerror = function () {
-      reject(new Error("图片加载失败"));
-    };
-
-    // 设置图片源
-    img.src = url;
-  });
-}
-
-function blobToBase64(blob) {
-  return new Promise<string>((resolve, reject) => {
-    const reader = new FileReader();
-
-    reader.onload = () => {
-      resolve(reader.result as string); // reader.result 包含 Base64 字符串
-    };
-
-    reader.onerror = (error) => {
-      reject(error);
-    };
-
-    reader.onabort = () => {
-      reject(new Error("读取中断"));
-    };
-
-    reader.readAsDataURL(blob);
-  });
-}
 
 import {
-  AlipayCircleOutlined,
-  AppstoreOutlined,
-  BarsOutlined,
-  BulbOutlined,
-  CheckCircleOutlined,
   CommentOutlined,
   DeleteOutlined,
   EditOutlined,
-  GithubOutlined,
   LoadingOutlined,
-  SmileOutlined,
-  StopOutlined,
-  UserOutlined,
-  FileMarkdownOutlined,
-  FileTextOutlined,
-  RedoOutlined,
   StarOutlined,
   SearchOutlined,
-  DownOutlined,
   SyncOutlined,
   LinkOutlined,
-  FileImageOutlined,
-  ToolOutlined,
-  CopyOutlined,
   SettingOutlined,
   LeftOutlined,
-  MinusCircleOutlined,
   DownloadOutlined,
-  UploadOutlined,
-  StockOutlined,
-  WechatWorkOutlined,
   PlusCircleOutlined,
   CloseCircleOutlined,
   ClearOutlined,
@@ -211,7 +143,6 @@ import {
   verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
 import { SortableItem } from "./sortableItem";
-import { QuickPath, SelectFile } from "../../common/selectFile";
 import Clarity from "@microsoft/clarity";
 import { ChatHistoryItem } from "@hyperchat/shared/data.mjs";
 import { useForm } from "antd/es/form/Form";
@@ -220,12 +151,9 @@ import { NumberStep } from "../../common/numberStep";
 import { HeaderContext } from "../../common/context";
 import dayjs from "dayjs";
 import { sleep } from "../../common/sleep";
-import { BetaSchemaForm, DrawerForm } from "@ant-design/pro-components";
 import {
   getMyUuid,
-  JsonSchema2FormItem,
   JsonSchema2FormItemOrNull,
-  JsonSchema2ProFormColumnsType,
 } from "../../common/util";
 import zodToJsonSchema from "zod-to-json-schema";
 import { Icon } from "../../components/icon";
@@ -238,8 +166,43 @@ import { InputAI } from "../../components/input_ai";
 import { MySender } from "../../components/my_sender";
 import { disableCompletionItemProvider, Editor, enableCompletionItemProvider } from "../../components/editor";
 import { Link } from "react-router-dom";
+import { BuiltinAgents } from "./utils/builtinAgent";
 
+/**
+ * Chat组件的Props类型定义
+ */
+interface ChatProps {
+  /** 标题变化回调函数 */
+  onTitleChange?: (title?: string) => void;
+  /** 会话ID */
+  sessionID?: string;
+  /** Agent数据配置 */
+  data?: {
+    /** 用户ID */
+    uid: string;
+    /** Agent键值 */
+    agentKey: string;
+    /** 消息内容 */
+    message: string;
+    /** 完成回调 */
+    onComplete: (text: string) => void;
+    /** 错误回调 */
+    onError: (error: any) => void;
+  };
+  /** 仅查看模式配置 */
+  onlyView?: {
+    /** 历史记录键值 */
+    histroyKey: string;
+  };
+}
 
+/**
+ * Chat聊天组件 - HyperChat应用的核心聊天界面
+ * 支持AI对话、MCP工具调用、多模型切换等功能
+ * 
+ * @param props Chat组件的属性
+ * @returns Chat组件JSX元素
+ */
 export const Chat = ({
   onTitleChange = undefined,
   sessionID = "",
@@ -253,53 +216,34 @@ export const Chat = ({
   onlyView = {
     histroyKey: "",
   },
-}) => {
+}: ChatProps) => {
+  // 组件初始化日志
   useEffect(() => {
     console.log("Chat")
   }, []);
+
+  // 组件刷新计数器和刷新函数
   const [num, setNum] = React.useState(0);
   const refresh = () => {
     setNum((n) => n + 1);
   };
+
+  // 从上下文获取全局状态和MCP客户端
   const { globalState, updateGlobalState, mcpClients } = useContext(HeaderContext);
+
+  // 监听全局状态变化，触发数据加载
   useEffect(() => {
     loadMoreData(false);
   }, [globalState]);
 
+  // Modal实例和上下文holder
   const [modal, contextHolder] = Modal.useModal();
-  let getAgentNameObj = useRef({} as Record<string, string>);
-  let builtinAgent = useRef([{
-    "key": "1",
-    "label": "💧MCP Helper",
-    "prompt": `# I am a super agent. According to the user's requirements, I first think and then design a tool flow, call various tools, and complete the recent addition of MCP
-# MCP is a command, and the operation method is similar to npx, uvx, etc. The user is a novice, and I want to do more.
-# To answer a user please use {{var.LANG}}
 
-1. I can search + summarize the web page online, query the MCP running command line, and it is best to find the Gtihub web page to obtain command information.
-2. Try to add stdio. If adding stdio type MCP fails, I can use the terminal to enter the command to test the error.
-3. If an error is reported, use the terminal to help the user install the environment (such as nodejs or uv or python, etc.).
-4. If the test is successful, call the tool to add mcp.`,
-    "allowMCPs": [
-      "hyper_tools",
-      "hyper_terminal",
-      "hyper_settings"
-    ],
-    "confirm_call_tool": false,
-    "description": "This is an assistant for adding mcp. You can send the Github URL or installation URL to it, and it will automatically install stdio mcp for you.",
-    "type": "builtin"
-  }, {
-    "key": "2",
-    "label": "😎Task Demo",
-    "prompt": "# 我是一个超级Agent，根据用户的要求，先设计一个工具流，调用各种工具，完成工具流\n* 当前操作系统是 {{var.os}}\n* 当前时间是  {{var.currentTime}} \n* 用户期待用 {{var.LANG}} 回复\n* 完成工作流后，最后把记忆写入memory.hyper变量，方便下次使用。\n\n这是你的记忆:\n   {{memory.hyper}}",
-    "modelKey": "208f7893-aefe-4940-b309-17d63e3753ba",
-    "allowMCPs": [
-      "hyper_tools",
-      "hyper_settings"
-    ],
-    "confirm_call_tool": false,
-    "description": "这个可以使用网页的工作流，演示使用变量，实现记忆功能",
-    "type": "builtin"
-  }] as any);
+  // Agent名称映射对象
+  let getAgentNameObj = useRef({} as Record<string, string>);
+
+  // 内置Agent配置
+  let builtinAgent = useRef(BuiltinAgents as any);
 
   useEffect(() => {
     (async () => {
@@ -329,21 +273,21 @@ export const Chat = ({
         Agents.get().data.forEach((x) => {
           getAgentNameObj.current[x.key] = x.label;
         });
-        // console.log("AppSetting", AppSetting.get().quicks);
         refresh();
         loadMoreData(false);
 
         if (agentData.agentKey) {
           try {
-            // let agents = await GPTS.init();
-            // let agent = agents.data.find((x) => x.label == data.agentKey);
             await onGPTSClick(agentData.agentKey);
 
             if (agentData.message) {
               await onRequest(agentData.message);
-              // let relayMessage = openaiClient.current.getRelay(2);
-              // console.log("Relay Message:", relayMessage);
-              agentData.onComplete(openaiClient.current.lastMessage.content);
+              // 确保content是字符串类型
+              const content = openaiClient.current.lastMessage.content;
+              const contentStr = typeof content === 'string' ? content :
+                Array.isArray(content) ? content.map(c => (c as any).text || '').join('') :
+                  String(content);
+              agentData.onComplete(contentStr);
             }
           } catch (e) {
             console.error(" hyper_call_agent error: ", e);
@@ -355,10 +299,6 @@ export const Chat = ({
               (x) => x.key === onlyView.histroyKey,
             );
             if (item) {
-              // currentChatReset({
-              //   ...item,
-              //   messages: [],
-              // });
 
               if (item.messages == null || item.messages.length == 0 || +item.version == 2) {
 
@@ -401,6 +341,11 @@ export const Chat = ({
     })();
   }, [onlyView.histroyKey]);
 
+  /**
+   * GPT Agent点击处理函数
+   * @param key Agent的键值
+   * @param options 选项配置
+   */
   const onGPTSClick = async (key: string, { loadHistory = true } = {}) => {
     let find = Agents.get().data.find((y) => y.key === key);
     selectGptsKey.current = find.key;
@@ -418,18 +363,23 @@ export const Chat = ({
     );
   };
 
+  /** AI通道客户端引用 */
   const openaiClient = useRef<AiChannel>();
 
-  // const clientsRef = useRef<InitedClient[]>([]);
-
+  /** MCP提示列表引用 */
   const promptsRef = useRef<InitedClient["prompts"]>([]);
+  /** MCP资源列表引用 */
   const resourcesRef = useRef<InitedClient["resources"]>([]);
 
+  /** 提示模态框开关状态 */
   const [isOpenPromptsModal, setIsOpenPromptsModal] = useState(false);
+  /** 提示模态框的值 */
   const [promptsModalValue, setPromptsModalValue] = useState({} as any);
 
+  /** 输入框的值 */
   const [value, setValue] = React.useState("");
 
+  /** 默认聊天配置 */
   const defaultChatValue: ChatHistoryItem = {
     label: "",
     key: "",
@@ -448,25 +398,40 @@ export const Chat = ({
     icon: ""
   };
 
+  /** 移动端检测 */
   const mobile = useRef({
     is: window.innerWidth < 1024,
   });
 
+  /** 组件数据状态 */
   const DATA = useRef({
+    /** MCP加载状态 */
     mcpLoading: false,
+    /** 是否显示历史记录 */
     showHistory: mobile.current.is ? false : onlyView.histroyKey ? false : true,
+    /** 建议显示状态 */
     suggestionShow: false,
+    /** 对比差异列表 */
     diffs: [] as Array<{
       messages: ChatHistoryItem["messages"];
       modelKey: string;
       openaiClient: AiChannel;
       label: string;
     }>,
+    /** 消息加载状态 */
     loadingMessages: false,
+    /** 是否滚动到底部 */
     scrollBottom: true,
   });
 
+  /** 当前聊天引用 */
   const currentChat = React.useRef<ChatHistoryItem>(defaultChatValue);
+
+  /**
+   * 重置当前聊天配置
+   * @param newConfig 新的聊天配置
+   * @param prompt 提示词
+   */
   const currentChatReset = async (
     newConfig: Partial<ChatHistoryItem>,
     prompt = "",
@@ -493,18 +458,11 @@ export const Chat = ({
 
     resourceResListRef.current = [];
     promptResList.current = [];
-    // let clients = await getClients().catch(() => []);
-    // clientsRef.current = clients;
-
-    // clientsRef.current;
-    // let p = getPrompts(currentChat.current.allowMCPs);
-    // promptsRef.current = p;
-    // let r = getResourses(currentChat.current.allowMCPs);
-    // resourcesRef.current = r;
 
     refresh();
   };
 
+  // 监听MCP客户端和允许的MCP变化，更新提示和资源列表
   useEffect(() => {
     let set = new Set();
     for (let tool_name of currentChat.current.allowMCPs) {
@@ -512,8 +470,8 @@ export const Chat = ({
       set.add(name);
     }
 
+    // 收集所有允许的MCP客户端的提示
     let prompts: IMCPClient["prompts"] = [];
-
     mcpClients
       .filter((m) => set.has(m.name))
       .forEach((v) => {
@@ -521,8 +479,8 @@ export const Chat = ({
       });
     promptsRef.current = prompts;
 
+    // 收集所有允许的MCP客户端的资源
     let resources: IMCPClient["resources"] = [];
-
     mcpClients
       .filter((m) => set.has(m.name))
       .forEach((v) => {
@@ -532,7 +490,10 @@ export const Chat = ({
     refresh();
   }, [mcpClients, currentChat.current.allowMCPs]);
 
+  /** 选中的GPT键值 */
   const selectGptsKey = useRef<string | undefined>(undefined);
+
+  // 监听当前聊天的agentKey变化，更新标题
   useEffect(() => {
     if (currentChat.current.agentKey == null) {
       onTitleChange && onTitleChange();
@@ -548,13 +509,25 @@ export const Chat = ({
     }
   }, [currentChat.current.agentKey]);
 
-
+  /** 加载状态 */
   const [loading, setLoading] = useState(false);
+  /** AI通道缓存对象 */
   let cacheOBJ = useRef({} as Record<string, AiChannel>);
+
+  /**
+   * 处理用户请求的核心函数
+   * @param message 可选的消息内容
+   */
   const onRequest = useCallback(async (message?: string) => {
     Clarity && Clarity.event(`sender-${process.env.NODE_ENV}`);
     console.log("onRequest", message);
-    let confirm_call_tool_cb = (tool: Tool_Call) => {
+
+    /**
+     * 工具调用确认回调函数
+     * @param tool 要调用的工具
+     * @returns Promise<any> 用户确认的参数
+     */
+    let confirm_call_tool_cb = (tool: Tool_Call): Promise<any> => {
       return new Promise((resolve, reject) => {
         console.log("tool", tool);
         let m = modal.confirm({
@@ -608,9 +581,6 @@ export const Chat = ({
                         htmlType="submit"
                         onClick={() => {
                           currentChat.current.confirm_call_tool = false;
-                          if (openaiClient.current) {
-                            openaiClient.current.options.confirm_call_tool = false;
-                          }
                         }}
                       >
                         {t`Allow this Chat`}
@@ -640,18 +610,12 @@ export const Chat = ({
         }
         config = await getDefaultModelConfig();
       }
-      let openaiClient = (() => {
+      let aiClient = (() => {
         let cacheKey = index;
         if (cacheOBJ.current[cacheKey]) {
           return cacheOBJ.current[cacheKey];
         }
-        let res = new AiChannel(
-          {
-            // baseURL: config.baseURL,
-            // apiKey: config.apiKey,
-            // model: config.model,
-          },
-        );
+        let res = new AiChannel({});
         cacheOBJ.current[cacheKey] = res;
         res.register({
           antdmessage: {
@@ -737,75 +701,11 @@ export const Chat = ({
       }
 
       try {
-        // openaiClient.options = {
-        //   ...config,
 
-        //   requestType: currentChat.current.requestType,
-        //   allowMCPs: currentChat.current.allowMCPs,
-        //   temperature: currentChat.current.temperature,
-        //   confirm_call_tool: currentChat.current.confirm_call_tool,
-        //   confirm_call_tool_cb,
-        //   messages_format_callback: async (message) => {
-        //     if (message.role == "user" || message.role == "system") {
-        //       if (!message.content_sended) {
-        //         let varList = [...VarList.get().data?.map((v) => {
-        //           let varName = v.scope + "." + v.name;
-        //           return {
-        //             ...v,
-        //             varName: varName,
-        //           }
-        //         })];
-        //         async function renderTemplate(template: string) {
-        //           let reg = /{{(.*?)}}/g;
-        //           let matchs = template.match(reg);
-        //           let subResults = [];
-        //           for (let match of matchs || []) {
-        //             let varName = match.slice(2, -2).trim();
-        //             let v = varList.find((x) => x.varName == varName);
-        //             let value = varName;
-        //             if (v) {
-        //               if (v.variableType == "js") {
-        //                 value = await call("runCode", { code: v.code });
-        //               } else if (v.variableType == "webjs") {
-        //                 let code = `
-        //                 (async () => {
-        //                     ${v.code}
-        //                    return await get()
-        //                 })()
-        //                 `;
-        //                 // console.log(code);
-        //                 value = await eval(code);
-        //               } else {
-        //                 value = v.value;
-        //               }
-        //             }
-        //             subResults.push({ value, varName });
-        //           }
-        //           let result = template.replace(reg, (match, p1) => {
-        //             return subResults.find((x) => x.varName === p1.trim())?.value || match;
-        //           });
-        //           return result;
-        //         }
-        //         if (message.content_template) {
-        //           if (typeof message.content == "string") {
-        //             message.content = await renderTemplate(message.content_template);
-        //           }
-        //           else if (Array.isArray(message.content) && message.content.length >= 1) {
-        //             if (message.content[0].type == "text") {
-        //               message.content[0].text = await renderTemplate(message.content_template);
-        //             }
-        //           }
-
-        //         }
-        //         message.content_sended = true;
-        //       }
-        //     }
-        //   },
-        // }
-        setOpenaiClient(openaiClient);
-        openaiClient.messages = messages;
+        setOpenaiClient(aiClient);
+        aiClient.messages = messages;
         if (message) {
-          openaiClient.addMessage(
+          aiClient.addMessage(
             {
               role: "user",
               content: "",
@@ -816,8 +716,8 @@ export const Chat = ({
             promptResList.current,
           );
         }
-        for(let m of openaiClient.messages) {
-          if (m.role == "user") {
+        for (let m of aiClient.messages) {
+          if (m.role == "user" || m.role == "system") {
             if (!m.content_sended) {
               await messages_format_callback(m);
             }
@@ -825,14 +725,12 @@ export const Chat = ({
         }
         if (current) {
           if (currentChat.current.sented == false) {
-
-
             currentChat.current = {
               ...currentChat.current,
 
               key: getMyUuid(),
               label: message.toString(),
-              messages: openaiClient.messages,
+              messages: aiClient.messages,
               sented: true,
               dateTime: Date.now(),
             };
@@ -846,36 +744,35 @@ export const Chat = ({
         }
         refresh();
 
-
-        await openaiClient.completion(
-          {
-            modelKey: config.key,
-            allowMCPs: currentChat.current.allowMCPs,
-            onUpdate: () => {
-              Object.assign(messages, openaiClient.messages);
-              refresh();
-            }
+        await aiClient.completion({
+          modelKey: config.key,
+          allowMCPs: currentChat.current.allowMCPs,
+          confirm_call_tool: currentChat.current.confirm_call_tool,
+          confirm_call_tool_cb,
+          onUpdate: () => {
+            Object.assign(messages, aiClient.messages);
+            refresh();
           }
-        );
+        }, {
+          temperature: currentChat.current.temperature,
+        });
         currentChat.current.label = getFirstUserContent();
 
         resourceResListRef.current = [];
         promptResList.current = [];
 
         calcAttachDialogue(
-          openaiClient.messages,
+          aiClient.messages,
           currentChat.current.attachedDialogueCount,
           false,
         );
 
-        Object.assign(messages, openaiClient.messages)
+        Object.assign(messages, aiClient.messages)
         refresh();
 
 
 
         if (current) {
-          // currentChat.current.messages = messages;
-          // refresh();
 
           await call("addChatHistory", { item: currentChat.current })
           let findIndex = ChatHistory.get().data.findIndex(
@@ -894,8 +791,8 @@ export const Chat = ({
 
         console.error(e);
 
-        openaiClient.lastMessage.content_error = e.message;
-        Object.assign(messages, openaiClient.messages)
+        aiClient.lastMessage.content_error = e.message;
+        Object.assign(messages, aiClient.messages)
         refresh();
 
 
@@ -939,19 +836,24 @@ export const Chat = ({
         }
       });
     } catch (e) {
-
+      // 错误处理
     } finally {
       setLoading(false);
     }
   }, []);
 
+  /** 工具显示状态 */
   const [isToolsShow, setIsToolsShow] = useState(false);
 
+  /** 历史记录搜索值 */
   const [historyFilterSearchValue, setHistoryFilterSearchValue] = useState("");
 
+  /** 历史记录过滤类型 */
   const historyFilterType = useRef<
     "all" | "star" | "search" | "agent" | "task"
   >("all");
+
+  // 监听过滤条件变化，重新加载数据
   useEffect(() => {
     loadMoreData(false);
   }, [
@@ -960,7 +862,11 @@ export const Chat = ({
     selectGptsKey.current,
   ]);
 
-
+  /**
+   * 加载更多数据的函数
+   * @param loadMore 是否加载更多
+   * @param loadIndexChange 是否改变加载索引
+   */
   const loadMoreData = useCallback(
     async (loadMore = true, loadIndexChange = true) => {
       refresh();
@@ -969,6 +875,7 @@ export const Chat = ({
     [historyFilterSearchValue],
   );
 
+  /** 资源结果列表引用 */
   const resourceResListRef = useRef<
     Array<
       MCPTypes.ReadResourceResult & {
@@ -978,52 +885,61 @@ export const Chat = ({
     >
   >([]);
 
-  const promptResList = useRef([]);
+  /** 提示结果列表引用 */
+  const promptResList = useRef<Array<MCPTypes.GetPromptResult>>([]);
 
+  /** 填充提示模态框开关状态 */
   const [isFillPromptModalOpen, setIsFillPromptModalOpen] =
     React.useState(false);
+  /** 更多设置模态框开关状态 */
   const [isOpenMoreSetting, setIsOpenMoreSetting] = React.useState(false);
 
+  /** 更多设置表单实例 */
   const [formMoreSetting] = useForm();
 
+  /** 填充提示表单项状态 */
   const [fillPromptFormItems, setFillPromptFormItems] = React.useState([]);
+  /** MCP调用提示当前值引用 */
   const mcpCallPromptCurr = useRef({} as any);
 
+  /** 拖拽传感器配置 */
   const sensors = useSensor(PointerSensor, {
     activationConstraint: {
       distance: 5,
     },
   });
+  /** 机器人搜索值 */
   const [botSearchValue, setBotSearchValue] = useState("");
 
-  // const [historyFilterSign, setHistoryFilterSign] = useState<number>(0);
-
-
-
+  /** 获取当前模型配置 */
   let currModel = (
     AI_MODELS.get().data.find((x) => x.key == currentChat.current.modelKey) ||
     getDefaultModelConfigSync(AI_MODELS)
   );
 
+  /** 是否支持图片 */
   let supportImage = currModel?.supportImage;
-
+  /** 是否支持工具 */
   let supportTool = currModel?.supportTool;
-
+  /** 模型名称 */
   let modelName = currModel?.name;
-  // console.log("modelName", modelName);
 
-  const onActiveChange = async (key) => {
+  /**
+   * 聊天记录激活处理函数
+   * @param key 聊天记录的键值
+   */
+  const onActiveChange = async (key: string) => {
     if (currentChat.current.key == key) {
       return;
     }
     let item = ChatHistory.get().data.find((x) => x.key == key);
     if (item) {
-      // console.log("onActiveChange", item);
+      // 移动端关闭历史记录面板
       if (mobile.current.is) {
         DATA.current.showHistory = false;
       }
-      // currentChat.current.messages=[]
-      // refresh();
+
+      // 如果消息为空或版本过旧，重新加载消息
       if (item.messages == null || item.messages.length == 0 || +item.version == 2) {
         try {
           DATA.current.loadingMessages = true;
@@ -1037,7 +953,7 @@ export const Chat = ({
                 {
                   role: "system" as const,
                   content: agent.prompt,
-                  content_date: Date.now(), // Corrected to use Date.now() for current timestamp
+                  content_date: Date.now(),
                 },
               ];
             }
@@ -1051,8 +967,12 @@ export const Chat = ({
     }
   }
 
+  /** 表格高度状态 */
   const [tableHeight, setTableHeight] = useState(500);
+  /** 表格容器引用 */
   const tableContainerRef = useRef<HTMLDivElement>(null);
+
+  // 监听窗口大小变化，调整表格高度
   useEffect(() => {
     const handleResize = () => {
       if (tableContainerRef.current) {
@@ -1061,13 +981,13 @@ export const Chat = ({
       }
     };
 
-    // Initial calculation
+    // 初始计算
     handleResize();
 
-    // Add event listener for window resize
+    // 添加窗口大小变化监听器
     window.addEventListener("resize", handleResize);
 
-    // Cleanup event listener on component unmount
+    // 组件卸载时清理监听器
     return () => {
       window.removeEventListener("resize", handleResize);
     };
@@ -1259,46 +1179,28 @@ export const Chat = ({
     </div>
   );
 
+  /** 调用工具模态框开关状态 */
   const [callToolOpen, setCallToolOpen] = useState(false);
+  /** 调用工具表单实例 */
   const [callToolForm] = Form.useForm();
+  /** 当前工具信息 */
   const [currTool, setCurrTool] = useState({} as any);
+  /** 当前工具执行结果 */
   const [currToolResult, setCurrToolResult] = useState({
     data: null as any,
     error: null as any,
   });
 
-
+  /** Ant Design主题token */
   const { token } = theme.useToken();
+  /** 编辑器引用 */
   const editorRef = useRef<any>(null);
 
-
+  // 渲染组件JSX
   return (
     <div key={sessionID} className="chat relative h-full">
       <div className="h-full rounded-lg bg-white">
         <XProvider>
-          {/* {mobile.current.is ? (
-            <>
-              <Drawer
-                placement="left"
-                className="chat"
-                onClose={(e) => {
-                  DATA.current.showHistory = false;
-                  refresh();
-                }}
-                footer={null}
-                title={t`Chat Logs`}
-                open={DATA.current.showHistory}
-                getContainer={false}
-              >
-                {historyShowNode}
-              </Drawer>
-            </>
-          ) : <>
-            <div className="hidden h-full w-0 flex-none overflow-hidden pr-2 lg:block lg:w-60">
-              {historyShowNode}
-            </div>
-            <Divider type="vertical" className="hidden h-full lg:block" />
-          </>} */}
 
           <div className="flex h-full">
             {mobile.current.is ? (
@@ -1756,7 +1658,6 @@ export const Chat = ({
                           onClick={() => {
                             setIsOpenMoreSetting(true);
                             formMoreSetting.resetFields();
-                            // console.log(currentChat.current);
                             formMoreSetting.setFieldsValue(currentChat.current);
                           }}
                         />
@@ -1863,9 +1764,6 @@ export const Chat = ({
                           if (!file) {
                             return;
                           }
-                          // if (file.path) {
-                          //   editorRef.current?.insertTextAtCursor(file.path);
-                          // } else {
                           if (file.type.includes("image")) {
                             let path = await blobToBase64(file);
                             resourceResListRef.current.push({
@@ -1881,9 +1779,8 @@ export const Chat = ({
                             });
                             refresh();
                           } else {
-                            message.warning(t`please uplaod image`);
+                            message.warning(t`please upload image`);
                           }
-                          // }
                         }}
                         submitType="enter"
                         ref={editorRef}
@@ -2361,6 +2258,7 @@ export const Chat = ({
                 });
               }
             }}
+
           >
             <pre
               style={{
@@ -2535,35 +2433,4 @@ ${currentChat.current.messages.filter(x => x.role != "tool").map(x => {
       </div>
     </div>
   );
-};
-
-const calcAttachDialogue = (
-  messages,
-  attachedDialogueCount,
-  overwrite = true,
-) => {
-  if (attachedDialogueCount == null) {
-    attachedDialogueCount = 10;
-  }
-  let c = 0;
-  for (let i = messages.length - 1; i >= 0; i--) {
-    let m = messages[i];
-    if (m.role == "system") {
-      m.content_attached = true;
-      continue;
-    }
-
-    if (overwrite) {
-      m.content_attached = c < attachedDialogueCount;
-    } else {
-      if (m.content_attached == false && c < attachedDialogueCount) {
-      } else {
-        m.content_attached = c < attachedDialogueCount;
-      }
-    }
-
-    if (m.role == "user") {
-      c++;
-    }
-  }
 };
