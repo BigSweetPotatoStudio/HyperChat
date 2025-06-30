@@ -6,8 +6,8 @@ import {
 } from "../shared/data.mjs";
 import cron from "node-cron";
 import { Command } from "../command.mjs";
-// import { mcpClients } from "./config.mjs";
-// global["window"] = {} as any;
+
+
 (global as any).ext2 = {
   invert: async (name: any, args: any) => {
     try {

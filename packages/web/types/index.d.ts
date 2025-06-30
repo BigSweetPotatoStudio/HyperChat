@@ -16,6 +16,10 @@ interface Window {
   tools: any;
   // clarity: any;
   getTools: any;
+  w: {
+    navigate: (path: string) => void;
+    location: any;
+  };
 }
 
 declare module "*.png" {

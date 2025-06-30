@@ -89,7 +89,7 @@ import {
   ProFormColumnsType,
   ProFormInstance,
 } from "@ant-design/pro-components";
-window["z"] = z;
+
 
 import { jsonSchemaToZod } from "json-schema-to-zod";
 import { InitedClient } from "../../common/mcp";
