@@ -17,9 +17,9 @@
     "strict": false,
     "strictNullChecks": false,
     "paths": {
-      // "@hyperchat/core/*": [
-      //   "../core/src/*"
-      // ],
+      "@/*": [
+        "./*"
+      ],
       "@hyperchat/shared/*": [
         "../core/src/shared/*"
       ],

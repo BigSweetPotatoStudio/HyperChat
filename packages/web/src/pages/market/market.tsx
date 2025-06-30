@@ -457,58 +457,6 @@ export function Market() {
                   </div>
                 ),
               },
-              mcpClients.filter(x => x.source == "claude").length > 0 && {
-                label: t`Claude Desktop`,
-                key: "claude",
-                children: (
-                  <div className="bg-white p-0">
-                    <div className="flex justify-center p-1">
-                      <>
-                        <Button
-                          title={t`Open Configuration File`}
-                          icon={<SettingOutlined />}
-                          onClick={async () => {
-
-                            let c = await call("getConfig");
-                            await showText({ path: c.claudeConfigPath });
-                          }}
-                        >
-                          Claude Desktop Config
-                        </Button>
-                        <span title="isLoadClaudeConfig:" className="my-bottom">
-                          <Switch checked={electronData.get().isLoadClaudeConfig} onChange={async (checked) => {
-                            if (checked) {
-                              for (let x of mcpClients.filter(x => x.source == "claude")) {
-                                await call("openMcpClient", { clientName: x.name });
-                              }
-                            } else {
-                              for (let x of mcpClients.filter(x => x.source == "claude")) {
-                                await call("closeMcpClients", { clientName: x.name, isdelete: false, isdisable: true });
-                              }
-                            }
-                            electronData.get().isLoadClaudeConfig = checked;
-                            await electronData.save();
-                            refresh();
-                          }} /> </span>
-                      </>
-                    </div>
-                    <div style={{ maxHeight: "calc(100vh - 152px)", overflowY: "auto" }}>
-                      <List
-                        itemLayout="horizontal"
-                        dataSource={mcpClients.filter(x => x.source == "claude" && x.name && x.name.includes(searchValue))}
-                        renderItem={(item: any, index) => (
-                          <List.Item
-                            className="hover:cursor-pointer hover:bg-slate-300"
-
-                          >
-                            {ListItemMeta(item)}
-                          </List.Item>
-                        )}
-                      />
-                    </div>
-                  </div>
-                ),
-              },
               {
                 label: t`MCP Gateway`,
                 key: "mcpGateway",
