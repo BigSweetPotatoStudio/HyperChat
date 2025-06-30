@@ -144,6 +144,7 @@ export function ProviderSettings() {
     }
     setEditingProvider(provider);
     providerForm.setFieldsValue({
+      key: provider.key,
       label: provider.label,
       baseURL: provider.baseURL,
       description: provider.description,
@@ -195,7 +196,7 @@ export function ProviderSettings() {
         // 添加新提供商
         ProviderManager.createOpenAICompatibilityProvider(
           values.label,
-          v4(), // 使用UUID作为value
+          values.key, // 使用用户输入的key
           values.baseURL,
           values.description
         );
@@ -799,6 +800,35 @@ export function ProviderSettings() {
           onFinish={handleSaveProvider}
           autoComplete="off"
         >
+          <Form.Item
+            name="key"
+            label={t`Provider Key`}
+            help={editingProvider ? t`Provider key cannot be changed` : t`Unique identifier for this provider (letters and numbers only)`}
+            rules={[
+              { required: true, message: t`Please enter provider key` },
+              { 
+                pattern: /^[a-zA-Z0-9]+$/, 
+                message: t`Only letters and numbers are allowed` 
+              },
+              {
+                validator: async (_, value) => {
+                  if (!value) return;
+                  // 检查key是否唯一（编辑时排除自己）
+                  const existingProvider = providers.find(p => 
+                    p.key === value && (!editingProvider || p.key !== editingProvider.key)
+                  );
+                  if (existingProvider) {
+                    throw new Error(t`Provider key already exists`);
+                  }
+                }
+              }
+            ]}
+          >
+            <Input 
+              placeholder={t`e.g., custom-openai`} 
+              disabled={!!editingProvider} // 编辑时禁用key修改
+            />
+          </Form.Item>
           <Form.Item
             name="label"
             label={t`Provider Name`}

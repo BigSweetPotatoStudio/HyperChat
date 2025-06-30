@@ -114,7 +114,7 @@ export class ProviderManager {
     static addCustomProvider(provider: Omit<ProviderConfig, 'isBuiltIn'>): ProviderConfig {
         const newProvider: ProviderConfig = {
             ...provider,
-            key: v4() as any,
+            key: provider.key,
             isBuiltIn: false,
         };
 
@@ -173,14 +173,14 @@ export class ProviderManager {
     // 创建 OpenAI Compatibility 类型的提供商
     static createOpenAICompatibilityProvider(
         label: string,
-        value: string,
+        key: string,
         baseURL: string,
         description?: string
     ): ProviderConfig {
         return this.addCustomProvider({
             label,
             baseURL,
-            key: value as any,
+            key: key as any,
             description: description || '自定义兼容 OpenAI API 的服务',
             icon: 'custom',
         });

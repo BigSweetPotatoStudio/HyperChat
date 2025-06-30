@@ -3,7 +3,7 @@ import {
   electronData,
   // MCP_CONFIG,
   // MCP_CONFIG_TYPE,
-} from "../../../shared/data.mjs";
+} from "../shared/data.mjs";
 
 // export async function getMCPConfg(): Promise<{
 //   mcpServers: { [s: string]: MCP_CONFIG_TYPE };

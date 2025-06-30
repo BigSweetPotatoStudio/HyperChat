@@ -3,7 +3,7 @@ import { CONST, Logger } from "../../../polyfills/index.mjs";
 import { zx } from "../../../es6.mjs";
 const { fs: _fs, path: _path, sleep: _sleep } = zx;
 // import dayjs from "dayjs";
-import { Agents, TaskList } from "../../../../../shared/data.mjs";
+import { Agents, TaskList } from "../../../shared/data.mjs";
 
 import { EVENT } from "../../../common/event.mjs";
 import { v4 } from "uuid";

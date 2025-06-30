@@ -31,7 +31,7 @@ import {
   ENV_CONFIG,
   VarList,
   Data,
-} from "../../../shared/data.mjs";
+} from "../shared/data.mjs";
 
 import { appDataDir, CONST } from "../polyfills/index.mjs";
 
@@ -91,10 +91,10 @@ await AppSetting.init();
 await electronData.init();
 
 // 2. 处理 WebDAV 配置继承 - 从应用设置继承到电子应用数据
-electronData.get().webdav.url = electronData.get().webdav.url || AppSetting.get().webdav.url;
-electronData.get().webdav.password = electronData.get().webdav.password || AppSetting.get().webdav.password;
-electronData.get().webdav.username = electronData.get().webdav.username || AppSetting.get().webdav.username;
-electronData.get().webdav.baseDirName = electronData.get().webdav.baseDirName || AppSetting.get().webdav.baseDirName;
+// electronData.get().webdav.url = electronData.get().webdav.url || AppSetting.get().webdav.url;
+// electronData.get().webdav.password = electronData.get().webdav.password || AppSetting.get().webdav.password;
+// electronData.get().webdav.username = electronData.get().webdav.username || AppSetting.get().webdav.username;
+// electronData.get().webdav.baseDirName = electronData.get().webdav.baseDirName || AppSetting.get().webdav.baseDirName;
 
 // 3. 设置默认值和平台信息
 electronData.get().runTask = electronData.get().runTask == null ? true : electronData.get().runTask;
@@ -109,14 +109,14 @@ if ((await ENV_CONFIG.init()).PATH != "") {
 }
 
 // 5. 处理快捷方式迁移 - 将旧版本的快捷方式迁移到新的变量列表系统
-if (AppSetting.get().quicks.length > 0 && !fs.existsSync(path.join(appDataDir, VarList.KEY))) {
-  await VarList.init();
-  VarList.get().data = VarList.get().data.concat(AppSetting.get().quicks.map(x => {
-    return { name: x.label, value: x.quick, variableStrategy: "lazy", key: x.value, scope: "quick", variableType: "string" };
-  }));
-  AppSetting.get().quicks = [];
-  await VarList.save();
-}
+// if (AppSetting.get().quicks.length > 0 && !fs.existsSync(path.join(appDataDir, VarList.KEY))) {
+//   await VarList.init();
+//   VarList.get().data = VarList.get().data.concat(AppSetting.get().quicks.map(x => {
+//     return { name: x.label, value: x.quick, variableStrategy: "lazy", key: x.value, scope: "quick", variableType: "string" };
+//   }));
+//   AppSetting.get().quicks = [];
+//   await VarList.save();
+// }
 
 // 6. 最终保存所有配置
 await AppSetting.save();

@@ -3,7 +3,7 @@ import {
   Agents,
   TaskList,
   electronData,
-} from "../../../shared/data.mjs";
+} from "../shared/data.mjs";
 import cron from "node-cron";
 import { Command } from "../command.mjs";
 // import { mcpClients } from "./config.mjs";

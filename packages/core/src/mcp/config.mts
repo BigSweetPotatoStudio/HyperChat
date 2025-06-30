@@ -44,7 +44,9 @@ import {
   MCP_CONFIG,
   MCPServerConfig,
   MCP_CONFIG_SYNC,
-} from "../../../shared/data.mjs";
+  HyperChatCompletionTool, 
+  IMCPClient
+} from "../shared/data.mjs";
 
 import { clientPaths } from "./claude.mjs";
 
@@ -55,7 +57,7 @@ import { getMyDefaultEnvironment } from "./utils.mjs";
 import { zodToJsonSchema } from "zod-to-json-schema";
 import { Config } from "../const.mjs";
 import { v4 as _v4 } from "uuid";
-import type { HyperChatCompletionTool, IMCPClient } from "../../../shared/data.mjs";
+
 import { getMessageService } from "../message_service.mjs";
 
 

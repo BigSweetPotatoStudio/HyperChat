@@ -12,7 +12,9 @@ import {
   MCPServerConfig,
   MyMessage,
   Task,
-} from "../../shared/data.mjs";
+  KnowledgeResource,
+  KnowledgeStore,
+} from "./shared/data.mjs";
 import { appDataDir } from "./polyfills/index.mjs";
 import crypto from "crypto";
 import {
@@ -23,10 +25,7 @@ import {
 } from "./mcp/config.mjs";
 import { webdavClient } from "./common/webdav.mjs";
 import { progressList } from "./common/progress.mjs";
-import {
-  KnowledgeResource,
-  KnowledgeStore,
-} from "../../shared/data.mjs";
+
 import { EVENT } from "./common/event.mjs";
 import { callAgent, runTask, startTask, stopTask } from "./mcp/task.mjs";
 import { getMyDefaultEnvironment } from "./mcp/utils.mjs";

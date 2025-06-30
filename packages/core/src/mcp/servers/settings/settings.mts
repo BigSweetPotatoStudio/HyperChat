@@ -8,7 +8,7 @@ import { z } from "zod";
 // import { shellPathSync, strip } from "src/es6.mjs";
 // import { getConfig } from "./lib.mjs";
 import { openMcpClient } from "../../config.mjs";
-import { VarList, VarScopeList } from "../../../../../shared/data.mjs";
+import { VarList, VarScopeList } from "../../../shared/data.mjs";
 import { v4 } from "uuid";
 import dayjs from "dayjs";
 import { getMessageService } from "../../../message_service.mjs";

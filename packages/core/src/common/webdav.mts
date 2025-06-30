@@ -5,7 +5,7 @@ import path from "path";
 import { appDataDir } from "../polyfills/index.mjs";
 import { Logger } from "../polyfills/index.mjs";
 
-import { DataList, electronData } from "../../../shared/data.mjs";
+import { DataList, electronData } from "../shared/data.mjs";
 
 import crypto from "crypto";
 import { createClient, zx } from "../es6.mjs";
