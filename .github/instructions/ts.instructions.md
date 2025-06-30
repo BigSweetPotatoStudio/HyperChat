@@ -30,3 +30,37 @@ packages/cli 专注于命令行前端的实现
 ## 记忆
 
 [x] 我现在要改造这个hyperchat项目，以前都用在web浏览器前端发出llm请求通过OpenAI的库。现在我想改成在code目录下(nodejs环境)中通过ai库发请求，代码在packages/core/src/shared/ai.mts 。前后端共用
+
+
+
+
+/projects/
+├── /my_project_1/                // 项目一的工作区
+│   ├── .hyperchat/               // HyperChat 在此工作区的所有配置和数据 (对项目隔离)
+│   │   ├── agents/
+│   │   │   ├── chats/
+│   │   │   │   └── history_<uuid>.json // 此工作区内 AI Agent 的聊天历史
+│   │   │   └── memory/
+│   │   │       └── memory_<uuid>.json  // 此工作区内 AI Agent 的记忆
+│   │   ├── mcp.json                   // 此工作区专属的(MCP) 配置文件 (可添加到全局配置)
+│   ├── src/                      // 项目源代码
+│   │   └── main.py
+│   └── README.md                 // 项目说明文件
+│
+└── /my_project_2/                // 项目二的工作区
+    ├── .hyperchat/               // 与项目一隔离的另一套 HyperChat 配置
+    │   └── ... (结构同上)
+    ├── data/
+    └── report.docx
+
+
+
+~/Documents/HyperChat/
+├── agents/                       // <new> 的 agents.json 文件夹
+│   ├── chats/
+│   │   └── history_<uuid>.json  // 某个 AI Agent 的聊天历史记录
+│   └── memory/
+│       └── memory_<uuid>.json   // 某个 AI Agent 的记忆数据
+├── mcp.json                     // 全局主控程序 (MCP) 配置文件
+├── ai_models.json               // AI 模型配置文件，包含所有可用的 AI 模型信息
+└── agents.json                  // <old> agents.json 文件，包含所有 AI Agent 的配置和状态

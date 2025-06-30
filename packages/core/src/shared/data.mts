@@ -189,7 +189,7 @@ export type ChatHistoryItem = {
   messages: Array<MyMessage>;
   modelKey: string;
   agentKey: string;
-  sended: boolean;
+  sented: boolean;
   icon?: string;
   requestType: "stream";  // 以后只支持 stream
   dateTime: number;
@@ -229,7 +229,7 @@ export type AgentData = {
   version?: number
 }
 
-export const Agents = new Data("gpts_list.json", { // agents.json
+export const Agents = new Data("agents.json", {
   data: [] as Array<AgentData>,
 });
 
@@ -268,7 +268,7 @@ export class AIModelConfig<T = { data: Array<AIModelConfigItem> }> extends Data<
     }
     return res as any;
   }
-  getGroupData(): { label: string, value: string, options: Array<{ label: string, value: string }> }[] {
+  getGroupedByProvider(): { label: string, value: string, options: Array<{ label: string, value: string }> }[] {
     // let providerConfigs = await PROVIDER_CONFIGS.init();
     const modelData = (this.get() as { data: Array<AIModelConfigItem> }).data.filter(
       (x) => x.type == "llm" || x.type == null,
@@ -291,7 +291,7 @@ export class AIModelConfig<T = { data: Array<AIModelConfigItem> }> extends Data<
 
   }
 }
-export const AI_MODELS = new AIModelConfig("gpt_models.json", { // ai_models.json
+export const AI_MODELS = new AIModelConfig("ai_models.json", { // ai_models.json
   data: [] as Array<AIModelConfigItem>,
 });
 

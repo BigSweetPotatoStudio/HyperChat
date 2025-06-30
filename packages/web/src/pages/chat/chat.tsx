@@ -436,7 +436,7 @@ export const Chat = ({
     messages: [],
     modelKey: undefined,
     agentKey: undefined,
-    sended: false,
+    sented: false,
     requestType: "stream",
     allowMCPs: [],
     temperature: undefined,
@@ -824,7 +824,7 @@ export const Chat = ({
           }
         }
         if (current) {
-          if (currentChat.current.sended == false) {
+          if (currentChat.current.sented == false) {
 
 
             currentChat.current = {
@@ -833,7 +833,7 @@ export const Chat = ({
               key: getMyUuid(),
               label: message.toString(),
               messages: openaiClient.messages,
-              sended: true,
+              sented: true,
               dateTime: Date.now(),
             };
 
@@ -1672,7 +1672,7 @@ export const Chat = ({
                                       messages: [],
                                       // 返回
                                       allowMCPs: AppSetting.get().defaultAllowMCPs,
-                                      sended: false,
+                                      sented: false,
                                       agentKey: undefined,
                                     });
                                     selectGptsKey.current = undefined;
@@ -1699,7 +1699,7 @@ export const Chat = ({
                                 currentChatReset({
                                   messages: [],
                                   allowMCPs: AppSetting.get().defaultAllowMCPs,
-                                  sended: false,
+                                  sented: false,
                                   agentKey: undefined,
                                 });
                                 selectGptsKey.current = undefined;
@@ -1734,7 +1734,7 @@ export const Chat = ({
                               optionFilterProp="label"
                               placeholder={
                                 AI_MODELS.get().data.length > 0
-                                  ? getDefaultModelConfigSync(AI_MODELS).name
+                                  ? `${getDefaultModelConfigSync(AI_MODELS).provider}:${getDefaultModelConfigSync(AI_MODELS).name}`
                                   : "Please add a LLM model"
                               }
                               className="w-60"
@@ -1744,7 +1744,7 @@ export const Chat = ({
                                 currentChat.current.modelKey = value;
                                 refresh();
                               }}
-                              options={AI_MODELS.getGroupData()}
+                              options={AI_MODELS.getGroupedByProvider()}
                             ></Select>
                           </span>
                         </Tooltip>
