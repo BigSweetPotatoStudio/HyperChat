@@ -91,9 +91,9 @@ export class MessageService {
         ...data,
         timestamp: data.timestamp || Date.now()
       };
-      
+
       mainSocket.emit(channel, messageWithTimestamp);
-      Logger.debug(`Message broadcasted to all clients on channel: ${channel}`);
+      // Logger.debug(`Message broadcasted to all clients on channel: ${channel}`);
     } catch (error) {
       Logger.error("Failed to broadcast message to all renderers:", error);
     }
@@ -111,10 +111,10 @@ export class MessageService {
 
     this.mainSocket = mainSocket;
     this.terminalSocket = terminalSocket;
-    
+
     this.setupMainSocketListeners();
     this.setupTerminalSocketListeners();
-    
+
     this.isInitialized = true;
     Logger.info("MessageService initialized successfully");
   }
@@ -127,17 +127,17 @@ export class MessageService {
 
     this.mainSocket.on("connection", (socket: Socket) => {
       Logger.info(`Main socket connected: ${socket.id}`);
-      
+
       // 监听用户激活事件
       socket.on("active", (userId: string) => {
         this.handleUserActive(userId, socket.id);
       });
-      
+
       // 监听断开连接事件
       socket.on("disconnect", (reason: string) => {
         this.handleUserDisconnect(socket.id, reason);
       });
-      
+
       // 监听错误事件
       socket.on("error", (error: Error) => {
         Logger.error(`Socket error for ${socket.id}:`, error);
@@ -153,11 +153,11 @@ export class MessageService {
 
     this.terminalSocket.on("connection", (socket: Socket) => {
       Logger.info(`Terminal socket connected: ${socket.id}`);
-      
+
       socket.on("terminal-receive", (msg: TerminalMessage) => {
         this.handleTerminalMessage(msg);
       });
-      
+
       socket.on("error", (error: Error) => {
         Logger.error(`Terminal socket error for ${socket.id}:`, error);
       });
@@ -171,7 +171,7 @@ export class MessageService {
     if (previousSocketId && previousSocketId !== socketId) {
       Logger.info(`User ${userId} switched from socket ${previousSocketId} to ${socketId}`);
     }
-    
+
     userSocketMap.set(userId, socketId);
     activeUser = userId;
     Logger.info(`User ${userId} activated with socket ${socketId}`);
@@ -182,7 +182,7 @@ export class MessageService {
    */
   private handleUserDisconnect(socketId: string, reason: string): void {
     let disconnectedUserId: string | null = null;
-    
+
     // 查找并删除断开连接的socket映射
     for (const [userId, userSocketId] of userSocketMap.entries()) {
       if (userSocketId === socketId) {
@@ -191,12 +191,12 @@ export class MessageService {
         break;
       }
     }
-    
+
     // 如果断开的是当前活跃用户，清除活跃用户状态
     if (disconnectedUserId === activeUser) {
       activeUser = undefined;
     }
-    
+
     Logger.info(`Socket ${socketId} disconnected (reason: ${reason})${disconnectedUserId ? `, user: ${disconnectedUserId}` : ''}`);
   }
 
