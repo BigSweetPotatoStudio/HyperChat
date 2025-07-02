@@ -1,3 +1,6 @@
+export const dirName = "HyperChat";
+let appDataDir = path.join(os.homedir(), "Documents", dirName);
+
 
 import { Logger } from "./log.mjs";
 import p from "../../package.json" with { type: "json" };
@@ -22,8 +25,6 @@ import os from "os";
 import { zx } from "../es6.mjs";
 const { fs, argv } = zx;
 
-export const dirName = "HyperChat";
-let appDataDir = path.join(os.homedir(), "Documents", dirName);
 
 try {
   if (argv.appDataDir && typeof argv.appDataDir === "string") {
@@ -40,7 +41,6 @@ export { appDataDir };
 
 
 export const CONST = {
-  userDataPath: appDataDir,
   getVersion: p.version,
   appDataDir: appDataDir,
   dirName: dirName,

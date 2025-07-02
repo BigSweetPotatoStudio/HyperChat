@@ -9,40 +9,81 @@ import path from "path";
 import dayjs from "dayjs";
 import log4js from "log4js";
 import os from "os";
+import { CONST } from "../const.mjs";
 
-const logDir = path.join(os.homedir(), ".hyperchat", "logs");
+const logDir = path.join(CONST.appDataDir, ".logs");
 fs.ensureDirSync(logDir);
 let logpath = path.join(logDir, `${dayjs().format("YYYY-MM-DD")}.log`);
+
+// 根据环境变量设置日志级别
+const isDevMode = process.env.myEnv === 'dev';
+const logLevel = isDevMode ? 'debug' : 'info';
+
 log4js.configure({
   appenders: {
-    log: {
+    file: {
       type: "file",
       filename: logpath,
     },
+    console: {
+      type: "console",
+    },
   },
-  categories: { default: { appenders: ["log"], level: "trace" } },
+  categories: {
+    default: {
+      appenders: isDevMode ? ["file", "console"] : ["file"],
+      level: logLevel
+    }
+  },
 });
 const logger = log4js.getLogger();
 
-
-
-
 export class LoggerLog4 {
+  debug(...args: any[]) {
+    let [msg, ...rest] = args;
+    logger.debug(msg, ...rest);
+  }
   info(...args: any[]) {
     let [msg, ...rest] = args;
     logger.info(msg, ...rest);
-    console.log(...args);
   }
   warn(...args: any[]) {
     let [msg, ...rest] = args;
     logger.warn(msg, ...rest);
-    console.log(...args);
   }
   error(...args: any[]) {
     let [msg, ...rest] = args;
     logger.error(msg, ...rest);
-    console.log(...args);
   }
+
+  // 添加一些实用方法
+  get isDevMode() {
+    return isDevMode;
+  }
+
+  get logLevel() {
+    return logLevel;
+  }
+
+  // 添加日志环境信息
+  logEnvironmentInfo() {
+    this.info("=== Logger Environment Info ===");
+    this.info("Development Mode:", isDevMode);
+    this.info("Log Level:", logLevel);
+    this.info("NODE_ENV:", process.env.NODE_ENV);
+    this.info("myEnv:", process.env.myEnv);
+    this.info("Log File Path:", logpath);
+    this.info("================================");
+  }
+
+  // 设置不同级别的演示方法
+  testAllLogLevels() {
+    this.debug("This is a debug message - only visible in development mode");
+    this.info("This is an info message");
+    this.warn("This is a warning message");
+    this.error("This is an error message");
+  }
+
   path = logpath;
 }
 

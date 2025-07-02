@@ -15,6 +15,8 @@
  * - 前端连接时的端口引用
  */
 
+import { os, path } from "zx";
+import p from "../package.json" with { type: "json" };
 /** HTTP 服务器默认端口 */
 const HTTPPORT = 16100;
 
@@ -32,4 +34,15 @@ export const Config = {
   port: HTTPPORT,
   /** MCP 服务器端口 */
   mcp_server_port: MCPServerPORT,
+};
+
+
+export const dirName = "HyperChat";
+let appDataDir = path.join(os.homedir(), "Documents", dirName);
+
+
+export const CONST = {
+  getVersion: p.version,
+  appDataDir: appDataDir,
+  dirName: dirName,
 };
