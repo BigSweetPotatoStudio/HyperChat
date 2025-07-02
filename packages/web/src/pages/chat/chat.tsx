@@ -596,7 +596,7 @@ export const Chat = ({
       });
     }
 
-    let iOnRequest = async (index: number, modelKey, messages: MyMessage[], setOpenaiClient: (openaiClient) => void) => {
+    let iOnRequest = async (index: number, modelKey, messages: MyMessage[], setAiClient: (openaiClient) => void) => {
       let current = index == -1 ? true : false;
       let config = AI_MODELS.get().data.find(
         (x) => x.key == modelKey,
@@ -615,14 +615,6 @@ export const Chat = ({
         }
         let res = new AiChannel({});
         cacheOBJ.current[cacheKey] = res;
-        res.register({
-          antdmessage: {
-            warning: antdMessage.warning,
-          },
-          mcpTools: getTools(currentChat.current.allowMCPs),
-          platform: "web",
-          getURL_PRE
-        })
         return res;
       })();
 
@@ -700,7 +692,7 @@ export const Chat = ({
 
       try {
 
-        setOpenaiClient(aiClient);
+        setAiClient(aiClient);
         aiClient.messages = messages;
         if (message) {
           aiClient.addMessage(
@@ -741,7 +733,14 @@ export const Chat = ({
           }
         }
         refresh();
-
+        aiClient.register({
+          antdmessage: {
+            warning: antdMessage.warning,
+          },
+          mcpTools: getTools(currentChat.current.allowMCPs),
+          platform: "web",
+          getURL_PRE
+        })
         await aiClient.completion({
           modelKey: config.key,
           allowMCPs: currentChat.current.allowMCPs,

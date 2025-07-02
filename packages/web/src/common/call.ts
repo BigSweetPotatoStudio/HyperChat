@@ -22,7 +22,7 @@ interface Ext {
    * @param args The arguments for the command.
    * @param options Optional settings, like an AbortSignal.
    */
-  invert: <K extends keyof Command | keyof ElectronCommand>(
+  call: <K extends keyof Command | keyof ElectronCommand>(
     command: K,
     args: any,
     options?: { signal?: AbortSignal }
@@ -36,17 +36,8 @@ interface Ext {
   receive: (channel: string, listener: (data: any) => void) => void;
 }
 
-let ext: Ext = {} as any;
-
-// Assign the appropriate extension object based on the environment (Node.js or browser).
-if (typeof window === "undefined") {
-  ext = { ...global.ext } as Ext;
-} else {
-  ext = { ...window.ext } as Ext;
-}
-
-// Provide a global accessor for the extension object.
-globalThis.ext2 = ext;
+const ext: Ext = {} as any;
+globalThis.ext = ext;
 
 let websocket: Socket | undefined = undefined;
 let URL_PRE: string;
@@ -65,9 +56,9 @@ if (process.env.runtime !== "node") {
   URL_PRE = location.origin + location.pathname.replace("index.html", "");
 
   // If an invert function is already defined (e.g., in Electron), use it to get config.
-  if (ext.invert && process.env.myEnv !== "prod") {
+  if (ext.call && process.env.myEnv !== "prod") {
     (async () => {
-      const config = await ext.invert("getConfig", []);
+      const config = await ext.call("getConfig", []);
       URL_PRE = `http://localhost:${config.data.port}/${config.data.password}/`;
     })();
   }
@@ -78,7 +69,7 @@ if (process.env.runtime !== "node") {
   }
 
   // Define the 'invert' method for making API calls via fetch.
-  ext.invert = async (command: string, args: any, options: any = {}) => {
+  ext.call = async (command: string, args: any, options: any = {}) => {
     const { signal } = options;
     const res = await fetch(`${URL_PRE}api/${command}`, {
       method: "POST",
@@ -92,7 +83,7 @@ if (process.env.runtime !== "node") {
   };
 
   const callbacks: Record<string, Array<(data: any) => void>> = {};
-  
+
   // Define the 'receive' method for handling incoming WebSocket messages.
   ext.receive = (channel: string, listener: (data: any) => void) => {
     if (callbacks[channel]) {
@@ -121,7 +112,6 @@ if (process.env.runtime !== "node") {
   });
 }
 
-globalThis.ext2.call = call;
 
 /**
  * Makes a generic API call to the core backend.
@@ -138,7 +128,7 @@ export async function call<k extends keyof Command>(
   options: { signal?: AbortSignal } = {}
 ): Promise<ReturnType<Command[k]>> {
   try {
-    const res = await ext.invert(command, args, options);
+    const res = await ext.call(command, args, options);
     if (res.success) {
       return res.data;
     } else {
@@ -165,7 +155,7 @@ export async function callElectron<k extends keyof ElectronCommand>(
   options: { signal?: AbortSignal } = {}
 ): Promise<ReturnType<ElectronCommand[k]>> {
   try {
-    const res = await ext.invert(command, args, options);
+    const res = await ext.call(command, args, options);
     if (res.success) {
       return res.data;
     } else {

@@ -480,8 +480,8 @@ export const AssistantToolContent = ({ contents }: { contents: MyMessage[] }) =>
                                                                                     />
                                                                                     {c.text}
                                                                                 </div>
-                                                                            ) : c.type === "image" ? (
-                                                                                <DownImage src={`data:${c.mimeType};base64,${c.data}`} />
+                                                                            ) : c.type === "image_url" ? (
+                                                                                <DownImage src={`data:${c.image_url.url}`} />
                                                                             ) : null}
                                                                         </div>
                                                                     )) : (

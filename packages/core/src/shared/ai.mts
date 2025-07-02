@@ -400,7 +400,7 @@ export class AiChannel {
           continue;
         }
         this.mcpAbortController = new AbortController();
-        let call_res = await globalThis.ext2.call(
+        let call_res: MCPTypes.CallToolResult = await globalThis.ext.call(
           "mcpCallTool",
           {
             name: localTool?.clientName || "",
@@ -444,11 +444,10 @@ export class AiChannel {
                 text: c.text,
               })
             } else if (c.type == "image") {
-              // this.lastMessage.content_attachment.push(c);
               this.lastMessage.content.push({
-                type: "image",
-                image_url: { url: c.blob },
-              } as any)
+                type: "image_url",
+                image_url: { url: `data:${c.mimeType};base64,${c.data}`  },
+              })
             } else {
               this.ext.antdmessage.warning("tool 返回类型只支持 text image");
             }

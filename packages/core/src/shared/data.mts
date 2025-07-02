@@ -150,8 +150,32 @@ export type Tool_Call = {
   };
 };
 
+type CommonContent =  Array<{ text: string; type: "text" } | { type: "image_url", image_url: { url: string } }>;
+
+type UserMessage = {
+  role: "user";
+  content: string | CommonContent;
+};
+
+type SystemMessage = {
+  role: "system";
+  content: string | CommonContent;
+};
+
+type AssistantMessage = {
+  role: "assistant";
+  content: string | CommonContent;
+}
+
+type ToolMessage = {
+  role: "tool";
+  content: string | CommonContent;
+  tool_calls?: Tool_Call[];
+};
+
+type AllMessage = UserMessage | SystemMessage | AssistantMessage | ToolMessage;
 // 消息类型扩展，支持多种内容状态、附件、推理内容等
-export type MyMessage = OpenAI.Chat.Completions.ChatCompletionMessageParam & {
+export type MyMessage = AllMessage & {
   content_status?:
   | "loading" // request is loading
   | "success" // request is success

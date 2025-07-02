@@ -1,5 +1,7 @@
-interface Window {
-  ext: any;
+interface globalThis {
+  ext: {
+    call: (tool: string, params: any) => Promise<any>;
+  };
   tools: any;
   getTools: any;
 }
