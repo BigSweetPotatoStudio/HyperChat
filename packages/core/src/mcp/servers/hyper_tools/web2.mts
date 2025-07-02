@@ -34,7 +34,11 @@ const { fs } = zx;
 let browser: Browser | undefined;
 let launcher;
 
+import { fileURLToPath } from 'node:url';
+import { dirname } from 'node:path';
 
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
 
 export async function createBrowser(force = false, url = ""): Promise<Browser> {
   const newFlags = ChromeLauncher.Launcher.defaultFlags().filter(
