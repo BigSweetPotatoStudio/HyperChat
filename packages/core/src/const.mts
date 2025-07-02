@@ -52,7 +52,9 @@ try {
 
 fs.ensureDirSync(appDataDir);
 
-
+export {
+  appDataDir
+}
 export const CONST = {
   getVersion: p.version,
   appDataDir: appDataDir,
