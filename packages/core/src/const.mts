@@ -15,7 +15,7 @@
  * - 前端连接时的端口引用
  */
 
-import { os, path } from "zx";
+import { argv, fs, os, path } from "zx";
 import p from "../package.json" with { type: "json" };
 /** HTTP 服务器默认端口 */
 const HTTPPORT = 16100;
@@ -39,6 +39,18 @@ export const Config = {
 
 export const dirName = "HyperChat";
 let appDataDir = path.join(os.homedir(), "Documents", dirName);
+
+try {
+  if (argv.appDataDir && typeof argv.appDataDir === "string") {
+    // 如果命令行参数中指定了 appDataDir，则使用该路径
+    appDataDir = argv.appDataDir
+  }
+} catch (e) {
+  console.error("appDataDir set failed", e);
+}
+
+
+fs.ensureDirSync(appDataDir);
 
 
 export const CONST = {

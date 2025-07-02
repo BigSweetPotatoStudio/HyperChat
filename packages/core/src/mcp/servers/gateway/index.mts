@@ -10,7 +10,7 @@ import {
     ListToolsRequestSchema,
     CallToolRequestSchema,
 } from "../../../es6.mjs";
-import { CONST } from "../../../polyfills/polyfills.mjs";
+import { CONST } from "../../../const.mjs";
 import { mcpClients } from "../../config.mjs";
 import { Command } from "../../../command.mjs";
 const { fs: _fs, path: _path, sleep: _sleep } = zx;

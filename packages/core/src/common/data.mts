@@ -33,7 +33,7 @@ import {
   Data,
 } from "../shared/data.mjs";
 
-import { appDataDir, CONST } from "../polyfills/index.mjs";
+import { appDataDir } from "../polyfills/index.mjs";
 
 import { zx } from "../es6.mjs";
 const { fs, path } = zx;
@@ -120,8 +120,6 @@ if ((await ENV_CONFIG.init()).PATH != "") {
 
 // 6. 最终保存所有配置
 await AppSetting.save();
-// electronData.get().mcp_server_port = MCPServerPORT; // 保留供参考
-electronData.get().version = CONST.getVersion;
 await electronData.save();
 
 

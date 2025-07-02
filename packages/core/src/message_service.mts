@@ -118,7 +118,15 @@ export class MessageService {
     this.isInitialized = true;
     Logger.info("MessageService initialized successfully");
   }
-
+  get terminalMsg() {
+    if (!this.terminalSocket) {
+      Logger.warn("Terminal socket not initialized, returning null");
+      return {
+        emit: () => { }
+      };
+    }
+    return this.terminalSocket!;
+  }
   /**
    * 设置主Socket监听器
    */

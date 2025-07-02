@@ -31,7 +31,7 @@ import * as MCP from "@modelcontextprotocol/sdk/client/index.js";
 import * as MCPTypes from "@modelcontextprotocol/sdk/types.js";
 
 import { Logger } from "../polyfills/index.mjs";
-import { appDataDir } from "../polyfills/index.mjs";
+import { CONST } from "../const.mjs";
 import {
   StdioClientTransport,
   type StdioServerParameters as _StdioServerParameters,
@@ -67,7 +67,7 @@ let sync_config = await MCP_CONFIG_SYNC.init();
 
 
 // 内置 MCP 服务器配置管理
-const buildinMcpJSONPath = path.join(appDataDir, "mcpBuiltIn.json");
+const buildinMcpJSONPath = path.join(CONST.appDataDir, "mcpBuiltIn.json");
 let buildinMcpJSON: { mcpServers: Record<string, MCPServerConfig> } = {
   mcpServers: {},
 };

@@ -1,4 +1,4 @@
-import { CONST } from "./polyfills/index.mjs";
+import { CONST } from "./const.mjs";
 import { Logger } from "./polyfills/log.mjs";
 import { createClient, shellPathSync, zx } from "./es6.mjs";
 const { fs, os, path } = zx;

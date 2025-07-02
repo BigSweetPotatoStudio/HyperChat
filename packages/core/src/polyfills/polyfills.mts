@@ -1,9 +1,7 @@
-export const dirName = "HyperChat";
-let appDataDir = path.join(os.homedir(), "Documents", dirName);
+
 
 
 import { Logger } from "./log.mjs";
-import p from "../../package.json" with { type: "json" };
 export { Logger };
 
 export const Context = {
@@ -26,25 +24,15 @@ import { zx } from "../es6.mjs";
 const { fs, argv } = zx;
 
 
-try {
-  if (argv.appDataDir && typeof argv.appDataDir === "string") {
-    // 如果命令行参数中指定了 appDataDir，则使用该路径
-    appDataDir = argv.appDataDir
-  }
-} catch (e) {
-  Logger.error("appDataDir set failed", e);
-}
+import { CONST } from "../const.mjs";
+export const appDataDir = CONST.appDataDir;
 
 
-fs.ensureDirSync(appDataDir);
-export { appDataDir };
-
-
-export const CONST = {
-  getVersion: p.version,
-  appDataDir: appDataDir,
-  dirName: dirName,
-};
+// export const CONST = {
+//   getVersion: p.version,
+//   appDataDir: appDataDir,
+//   dirName: dirName,
+// };
 
 // export class AutoLauncher {
 //   public autoLauncher: any;
