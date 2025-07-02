@@ -2,8 +2,8 @@ import type { WebDAVClient } from "webdav";
 
 import path from "path";
 
-import { appDataDir } from "../polyfills/index.mjs";
-import { Logger } from "../polyfills/index.mjs";
+import { appDataDir } from "../const.mjs";
+import { Logger } from "../log.mjs";
 
 import { DataList, electronData } from "../shared/data.mjs";
 

@@ -1,5 +1,5 @@
 // import { BrowserWindow } from "electron";
-import { Logger } from "../../../polyfills/index.mjs";
+import { Logger } from "../../../log.mjs";
 import { zx } from "../../../es6.mjs";
 const { fs: _fs, path: _path, sleep: _sleep } = zx;
 // import dayjs from "dayjs";

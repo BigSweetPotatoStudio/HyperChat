@@ -3,7 +3,7 @@ import { streamText } from 'ai';
 import { createOpenAI } from '@ai-sdk/openai';
 import { createAnthropic } from '@ai-sdk/anthropic';
 import { AI_MODELS } from "./shared/data.mjs";
-import { Logger } from "./polyfills/log.mjs";
+import { Logger } from "./log.mjs";
 
 /**
  * AI SDK 标准路由处理器

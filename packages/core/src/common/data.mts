@@ -33,7 +33,7 @@ import {
   Data,
 } from "../shared/data.mjs";
 
-import { appDataDir } from "../polyfills/index.mjs";
+import { appDataDir } from "../const.mjs";
 
 import { zx } from "../es6.mjs";
 const { fs, path } = zx;

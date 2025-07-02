@@ -1,9 +1,10 @@
-import { Logger } from "./polyfills/index.mjs";
+import { appDataDir } from "./const.mjs";
+import { Logger } from "./log.mjs";
 import { zx } from "./es6.mjs";
 const { fs, path } = zx;
 import { electronData } from "./shared/data.mjs";
 import "./common/data.mjs";
-import { appDataDir } from "./polyfills/index.mjs";
+
 
 // global.ext = {
 //   invert: async (name, args) => {

@@ -14,7 +14,7 @@ import cors from "cors";
 import http from "http";
 import path from "path";
 import { Server as SocketIO } from "socket.io";
-import { appDataDir, Logger } from "./polyfills/index.mjs";
+import { Logger } from "./log.mjs";
 
 import { execFallback } from "./common/execFallback.mjs";
 
@@ -28,7 +28,7 @@ import { Router } from "express";
 import { fs } from "./es6.mjs";
 import crypto from "crypto";
 import { getMessageService } from "./message_service.mjs";
-import { Config } from "./const.mjs";
+import { appDataDir, Config } from "./const.mjs";
 import { PassThrough } from "stream";
 
 import { registers, refreshRoutes } from "./mcpGateWay.mjs";

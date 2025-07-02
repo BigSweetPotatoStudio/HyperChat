@@ -1,6 +1,6 @@
 // import { Embeddings } from "@langchain/core/embeddings";
 import path from "path";
-import { appDataDir, Logger } from "../polyfills/index.mjs";
+import { Logger } from "../log.mjs";
 
 // import { FeatureExtraction } from "../common/model.mjs";
 import {
@@ -11,6 +11,7 @@ import {
 import { v4 } from "uuid";
 import { zx } from "../es6.mjs";
 import { MyRag } from "./lib.mjs";
+import { appDataDir } from "../const.mjs";
 const { fs } = zx;
 // Save the vector store to a directory
 

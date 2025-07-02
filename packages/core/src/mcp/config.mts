@@ -30,7 +30,7 @@ import * as MCP from "@modelcontextprotocol/sdk/client/index.js";
 // import { StdioClientTransport } from "@modelcontextprotocol/sdk/client/stdio.js";
 import * as MCPTypes from "@modelcontextprotocol/sdk/types.js";
 
-import { Logger } from "../polyfills/index.mjs";
+import { Logger } from "../log.mjs";
 import { CONST } from "../const.mjs";
 import {
   StdioClientTransport,

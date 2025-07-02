@@ -5,7 +5,7 @@ import { ChromeLauncher, zx } from "../../../es6.mjs";
 
 import { getConfig } from "./lib.mjs";
 // import { z } from "zod";
-import { Logger } from "../../../polyfills/polyfills.mjs";
+import { Logger } from "../../../log.mjs";
 
 const { fs } = zx;
 

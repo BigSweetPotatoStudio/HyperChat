@@ -1,5 +1,5 @@
 import { CONST } from "./const.mjs";
-import { Logger } from "./polyfills/log.mjs";
+import { Logger } from "./log.mjs";
 import { createClient, shellPathSync, zx } from "./es6.mjs";
 const { fs, os, path } = zx;
 import { isPortUse } from "./common/checkport.mjs";
@@ -15,7 +15,7 @@ import {
   KnowledgeResource,
   KnowledgeStore,
 } from "./shared/data.mjs";
-import { appDataDir } from "./polyfills/index.mjs";
+import { appDataDir } from "./const.mjs";
 import crypto from "crypto";
 import {
   closeMcpClients,

@@ -1,4 +1,4 @@
-import { Logger } from "./polyfills/polyfills.mjs";
+import { Logger } from "./log.mjs";
 import type { Server as SocketIO, Socket } from "socket.io";
 
 // 类型定义

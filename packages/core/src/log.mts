@@ -9,7 +9,7 @@ import path from "path";
 import dayjs from "dayjs";
 import log4js from "log4js";
 import os from "os";
-import { CONST } from "../const.mjs";
+import { CONST } from "./const.mjs";
 
 const logDir = path.join(CONST.appDataDir, ".logs");
 fs.ensureDirSync(logDir);

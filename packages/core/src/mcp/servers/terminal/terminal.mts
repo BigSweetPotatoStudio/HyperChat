@@ -8,7 +8,7 @@ import { z } from "zod";
 import { shellPathSync, strip } from "../../../es6.mjs";
 import { getConfig } from "./lib.mjs";
 import { getMessageService } from "../../../message_service.mjs";
-import { Logger } from "../../../polyfills/polyfills.mjs";
+import { Logger } from "../../../log.mjs";
 
 const shell = os.platform() === "win32" ? "powershell.exe" : "bash";
 

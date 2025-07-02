@@ -1,7 +1,7 @@
 import AutoLaunch from "auto-launch";
 import {
   Context,
-} from "../../../core/src/polyfills/polyfills.mjs";
+} from "../../../core/src/polyfills.mjs";
 
 import { app } from "electron";
 

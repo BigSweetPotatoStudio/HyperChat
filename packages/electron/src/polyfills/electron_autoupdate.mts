@@ -2,7 +2,7 @@
 import pkg from "electron-updater";
 const { autoUpdater } = pkg;
 import { getMessageService } from "../../../core/src/message_service.mjs";
-import { Logger } from "../../../core/src/polyfills/log.mjs";
+import { Logger } from "../../../core/src/log.mjs";
 
 
 class CheckUpdate {
