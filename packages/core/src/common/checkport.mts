@@ -8,6 +8,8 @@
  * 
  * 依赖关系：
  * - net: Node.js 内置网络模块
+
+import { Logger } from "../log.mjs";
  * 
  * 检测原理：
  * - 尝试在指定端口创建 TCP 服务器
@@ -36,13 +38,13 @@ import net from "net";
  * // 检查 HTTP 默认端口
  * const httpPortInUse = await isPortUse(80);
  * if (httpPortInUse) {
- *   console.log('端口 80 已被占用');
+ *   Logger.warn('端口 80 已被占用');
  * }
  * 
  * // 检查应用端口
  * const appPortInUse = await isPortUse(3000);
  * if (!appPortInUse) {
- *   console.log('端口 3000 可用，可以启动服务');
+ *   Logger.info('端口 3000 可用，可以启动服务');
  * }
  * ```
  */
@@ -53,17 +55,17 @@ export async function isPortUse(port: number): Promise<boolean> {
     server.once("error", (err: any) => {
       if (err.code === "EADDRINUSE") {
         // 端口已经被使用
-        console.log(`Port ${port} is already in use.`);
+        Logger.warn(`Port ${port} is already in use.`);
         resolve(true);
       } else {
-        console.log(err);
+        Logger.error(err);
         reject(err);
       }
     });
 
     server.once("listening", () => {
       // 端口未被使用
-      // console.log(`Port ${port} is available.`);
+      // Logger.info(`Port ${port} is available.`);
       server.close();
       resolve(false);
     });
@@ -71,7 +73,7 @@ export async function isPortUse(port: number): Promise<boolean> {
     try {
       server.listen(port);
     } catch (e) {
-      console.log(e);
+      Logger.error(e);
     }
   });
 }

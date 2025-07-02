@@ -236,8 +236,8 @@ async function call_agent({
   }
   return new Promise((resolve, reject) => {
     let callback = (m: any) => {
-      // console.log("============================");
-      // console.log("call_agent", m.uid, m.data);
+      // Logger.debug("============================");
+      // Logger.debug("call_agent", m.uid, m.data);
 
       if (m.error != undefined) {
         reject(m.error);
@@ -272,7 +272,7 @@ async function add_task({
   command: string;
   description?: string;
 }) {
-  // console.log("add_task", name, cron, agent_name, command, description);
+  // Logger.debug("add_task", name, cron, agent_name, command, description);
   const agents = await Agents.init();
   const agent = agents.data.find((x) => x.label == agent_name);
   if (agent == null) {
@@ -300,7 +300,7 @@ let transport: any;
  */
 
 async function createServer(_endpoint: string, _response: any) {
-  //   console.log("Received connection");
+  //   Logger.debug("Received connection");
   // transport = new SSEServerTransport(endpoint, response);
   // await server.connect(transport);
   // server.onclose = async () => {
@@ -311,7 +311,7 @@ async function createServer(_endpoint: string, _response: any) {
 }
 
 async function handlePostMessage(req: any, res: any) {
-  //   console.log("Received message");
+  //   Logger.debug("Received message");
   if (transport) {
     await transport.handlePostMessage(req, res);
   }

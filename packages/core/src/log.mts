@@ -53,7 +53,14 @@ export class LoggerLog4 {
   }
   error(...args: any[]) {
     let [msg, ...rest] = args;
-    logger.error(msg, ...rest);
+
+    if (isDevMode) {
+      // 在开发模式下，额外输出错误堆栈信息
+      console.error(`[ERROR] ${msg}`, ...rest);
+    } else {
+      // 在生产模式下，记录简洁的错误信息
+      logger.error(msg);
+    }
   }
 
   // 添加一些实用方法

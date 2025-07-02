@@ -169,7 +169,7 @@ let apiPrefix = prefix + "/api";
 function proxyMiddleware(req: Request, res: Response, next: NextFunction) {
   if (req.path.startsWith(apiPrefix + "/ai")) {
     if (process.env.myEnv === "dev") {
-      console.log("Proxy request:", req.method, req.url);
+      Logger.debug("Proxy request:", req.method, req.url);
     }
     // 处理代理请求
     (async () => {
@@ -212,7 +212,7 @@ function proxyMiddleware(req: Request, res: Response, next: NextFunction) {
 
         baseURL = baseURL + req.url.replace(apiPrefix + "/ai", "");
         if (process.env.myEnv === "dev") {
-          console.log("baseURL: ", baseURL);
+          Logger.debug("baseURL: ", baseURL);
         }
 
         // 发起请求
@@ -222,7 +222,7 @@ function proxyMiddleware(req: Request, res: Response, next: NextFunction) {
           body: JSON.stringify(requestBody),
         });
         if (!response.ok) {
-          console.error("Proxy request failed:", response.statusText);
+          Logger.error("Proxy request failed:", response.statusText);
         }
         // 检查内容类型，确定是否为SSE
         const contentType = response.headers.get("Content-Type");
@@ -233,7 +233,7 @@ function proxyMiddleware(req: Request, res: Response, next: NextFunction) {
         res.setHeader("Content-Type", contentType || "application/json");
 
         if (process.env.myEnv !== "dev") {
-          console.log("proxy", isSSE, contentType);
+          Logger.debug("proxy", isSSE, contentType);
         }
 
         if (isSSE) {
@@ -364,7 +364,7 @@ export async function initHttp() {
 
       res.json({ success: true, message: "MCP 路由已刷新" });
     } catch (error) {
-      console.error("刷新 MCP 路由时出错:", error);
+      Logger.error("刷新 MCP 路由时出错:", error);
       res.status(500).json({
         success: false,
         message: "刷新 MCP 路由失败",
@@ -377,7 +377,7 @@ export async function initHttp() {
   app.use(proxyMiddleware);
   // 错误处理中间件
   app.use((err: Error, _req: Request, res: Response, _next: NextFunction) => {
-    console.error("Server error", err);
+    Logger.error("Server error", err);
     res.status(500).json({
       success: false,
       message: err.message || 'Internal Server Error'
@@ -407,7 +407,7 @@ export async function initHttp() {
 
   // 错误处理
   io.on("error", (e) => {
-    console.log("error: ", e);
+    Logger.error("error: ", e);
   });
 
   // 创建Socket.IO命名空间

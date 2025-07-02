@@ -20,6 +20,7 @@ import {
   CallToolRequestSchema,
 } from "../../../es6.mjs";
 import { CONST } from "../../../const.mjs";
+import { Logger } from "../../../log.mjs";
 const { fs: _fs, path: _path, sleep: _sleep } = zx;
 // import { ListPromptsRequestSchema, ListToolsRequestSchema } from "@modelcontextprotocol/sdk/types.js";
 
@@ -227,7 +228,7 @@ async function createServer(_endpoint: string, _response: any) {
 }
 
 async function handlePostMessage(req: any, res: any) {
-  //   console.log("Received message");
+  //   Logger.info("Received message");
   if (transport) {
     await transport.handlePostMessage(req, res);
   }

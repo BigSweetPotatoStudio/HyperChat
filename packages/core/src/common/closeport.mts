@@ -8,6 +8,8 @@
  * 
  * 依赖关系：
  * - child_process: Node.js 内置子进程模块
+
+import { Logger } from "../log.mjs";
  * 
  * 工作原理：
  * 1. 使用 netstat 命令查找端口占用情况
@@ -42,7 +44,7 @@ import { exec } from 'child_process';
  * 
  * // 通常在服务重启前使用
  * closePort(8080);
- * console.log('端口已清理，可以重新启动服务');
+ * Logger.info('端口已清理，可以重新启动服务');
  * ```
  * 
  * @warning 此函数会强制终止进程，可能导致数据丢失，请谨慎使用
@@ -52,12 +54,12 @@ export function closePort(port: number) {
     // 查找占用端口的进程ID
     exec(`netstat -ano | findstr :${port}`, (err, stdout, stderr) => {
         if (err) {
-            console.error(`查找端口失败: ${err.message}`);
+            Logger.error(`查找端口失败: ${err.message}`);
             return;
         }
 
         if (stderr) {
-            console.error(`查找端口时出现错误: ${stderr}`);
+            Logger.error(`查找端口时出现错误: ${stderr}`);
             return;
         }
 
@@ -67,24 +69,24 @@ export function closePort(port: number) {
         const pids = listeningLines.map(line => line.trim().split(/\s+/).pop()).filter(pid => pid && pid !== '0');
 
         if (pids.length === 0) {
-            console.log(`端口 ${port} 上没有运行的进程。`);
+            Logger.info(`端口 ${port} 上没有运行的进程。`);
             return;
         }
-        console.log(pids)
+        Logger.debug(pids)
         // 终止进程
         pids.forEach(pid => {
             exec(`taskkill /PID ${pid} /F`, (err, _stdout, stderr) => {
                 if (err) {
-                    console.error(`终止进程失败: ${err.message}`);
+                    Logger.error(`终止进程失败: ${err.message}`);
                     return;
                 }
 
                 if (stderr) {
-                    console.error(`终止进程时出现错误: ${stderr}`);
+                    Logger.error(`终止进程时出现错误: ${stderr}`);
                     return;
                 }
 
-                console.log(`成功终止了PID为 ${pid} 的进程。`);
+                Logger.info(`成功终止了PID为 ${pid} 的进程。`);
             });
         });
     });

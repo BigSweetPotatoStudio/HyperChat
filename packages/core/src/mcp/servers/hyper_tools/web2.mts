@@ -68,16 +68,16 @@ export async function createBrowser(force = false, url = ""): Promise<Browser> {
         ...(config.ChromePath && { chromePath: config.ChromePath }),
         // chromePath: "C:\\Users\\0laop\\AppData\\Local\\Google\\Chrome SxS\\Application\\chrome.exe",
       });
-      // console.log("Chrome debugging port: " + launcher.port);
+      // Logger.debug("Chrome debugging port: " + launcher.port);
       browserURL = `http://localhost:${launcher.port}`;
     } catch (_e) {
-      console.error(_e);
+      Logger.error(_e);
     }
   } else {
     browserURL = config?.ChromeBrowserURL || 'http://localhost:9222';
   }
 
-  console.log("browserURL", browserURL);
+  Logger.debug("browserURL", browserURL);
 
   browser = await new Promise(async (resolve, reject) => {
     let t = setTimeout(() => {
@@ -104,7 +104,7 @@ export async function createBrowser(force = false, url = ""): Promise<Browser> {
         );
       });
   });
-  console.log("browser connected");
+  Logger.info("browser connected");
 
   return browser as Browser;
   // let testPage = await browser.newPage();

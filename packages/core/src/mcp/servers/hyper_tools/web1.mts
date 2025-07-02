@@ -207,7 +207,7 @@
 //         )
 //       ),
 //     ]);
-//     console.log("error openUrl", result);
+//     Logger.error("error openUrl", result);
 //     return result as T;
 //   } catch (error) {
 //     Logger.error("Error executing client script:", error);

@@ -18,6 +18,7 @@
  */
 
 import os from "os";
+import { Logger } from "../log.mjs";
 
 /**
  * 获取本机所有可用的 IPv4 地址
@@ -30,7 +31,7 @@ import os from "os";
  * @example
  * ```typescript
  * const ips = getLocalIP();
- * console.log(ips); // ['192.168.1.100', '10.0.0.50']
+ * Logger.debug(ips); // ['192.168.1.100', '10.0.0.50']
  * ```
  */
 export function getLocalIP(): string[] {
@@ -153,9 +154,9 @@ import spawn from "cross-spawn";
  * ```typescript
  * try {
  *   const result = await spawnWithOutput('node', ['--version']);
- *   console.log('Node version:', result.stdout);
+ *   Logger.info('Node version:', result.stdout);
  * } catch (error) {
- *   console.error('Command failed:', error.message);
+ *   Logger.error('Command failed:', error.message);
  * }
  * ```
  */
@@ -172,12 +173,12 @@ export const spawnWithOutput = (
 
     proc.stdout?.on("data", (data) => {
       stdout += data.toString();
-      // console.log(data.toString()); // 实时输出
+      // Logger.debug(data.toString()); // 实时输出
     });
 
     proc.stderr?.on("data", (data) => {
       stderr += data.toString();
-      // console.error(data.toString()); // 实时输出错误
+      // Logger.error(data.toString()); // 实时输出错误
     });
 
     proc.on("close", (code) => {

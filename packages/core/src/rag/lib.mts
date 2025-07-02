@@ -7,6 +7,7 @@ import {
   RAGApplicationBuilder,
   TextLoader,
 } from "../es6.mjs";
+import { Logger } from "../log.mjs";
 
 export class MyRag {
   app!: RAGApplication;
@@ -27,7 +28,7 @@ export class MyRag {
     if (gpt_m == null) {
       throw new Error("Model not found");
     }
-    // console.log("Using model", gpt_m);
+    // Logger.debug("Using model", gpt_m);
     this.app = await new RAGApplicationBuilder()
       .setModel("NO_MODEL")
       .setEmbeddingModel(

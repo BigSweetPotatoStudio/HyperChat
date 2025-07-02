@@ -20,7 +20,7 @@ export const configSchema = z.object({
   }).default(5 * 60 * 1000),
 });
 
-// console.log("safeParse : ", configSchema.safeParse({}));
+// Logger.debug("safeParse : ", configSchema.safeParse({}));
 export function getConfig() {
   let buildinMcpJSONPath = path.join(appDataDir, "mcpBuiltIn.json");
   let mcpconfig = fs.readJSONSync(buildinMcpJSONPath);

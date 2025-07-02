@@ -46,7 +46,7 @@ import { Command } from "../command.mjs";
   },
   async call(command: any, args: any, options: any) {
     try {
-      // console.log(`command ${command}`, args);
+      // Logger.debug(`command ${command}`, args);
       let res = await (global as any).ext2.invert(command, args, options);
       if (res.success) {
         return res.data;
@@ -54,7 +54,7 @@ import { Command } from "../command.mjs";
         throw new Error(res.message);
       }
     } catch (e) {
-      console.error(command, args, e);
+      Logger.error(command, args, e);
 
       throw e;
     }
@@ -125,7 +125,7 @@ export async function callAgent(obj: {
     //     content: "",
     //     content_date: Date.now(),
     //   });
-    //   console.log("relayMessage: ", relayMessage.content);
+    //   Logger.debug("relayMessage: ", relayMessage.content);
     //   const item: ChatHistoryItem = {
     //     label: obj.message,
     //     key: v4(),
@@ -146,7 +146,7 @@ export async function callAgent(obj: {
     //   Command.addChatHistory(item);
     //   return relayMessage;
     // } catch (e) {
-    //   console.error(" hyper_call_agent error: ", e);
+    //   Logger.error(" hyper_call_agent error: ", e);
     //   agentInstance.channel.lastMessage.content_error = e.message;
     //   agentInstance.channel.lastMessage.content_status = "error";
     //   const item: ChatHistoryItem = {
@@ -252,7 +252,7 @@ export async function startTask(taskkey?: string) {
     } catch (e) {
       Logger.info(`Stopping error ${e}`);
     }
-    // console.log("task", task);
+    // Logger.debug("task", task);
     let cronT = cron.schedule(task.cron, async () => {
       if ((await electronData.init()).runTask == true) {
         runTask(task.key, { force: false }).then((res) => {

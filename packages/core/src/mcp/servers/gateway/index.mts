@@ -13,6 +13,7 @@ import {
 import { CONST } from "../../../const.mjs";
 import { mcpClients } from "../../config.mjs";
 import { Command } from "../../../command.mjs";
+import { Logger } from "../../../log.mjs";
 const { fs: _fs, path: _path, sleep: _sleep } = zx;
 
 
@@ -48,7 +49,7 @@ async function createServer(name: string, description: string, allowMCPs: string
      * Exposes a single "create_note" tool that lets clients create new notes.
      */
     server.setRequestHandler(ListToolsRequestSchema, async () => {
-        // console.log("gateway allowMCPs", allowMCPs);
+        // Logger.debug("gateway allowMCPs", allowMCPs);
         let getTools = (allowMCPs: any) => {
             let tools: IMCPClient["tools"] = [];
 
@@ -62,7 +63,7 @@ async function createServer(name: string, description: string, allowMCPs: string
                     }),
                 );
             });
-            console.log("gateway tools", allowMCPs, tools.length);
+            Logger.debug("gateway tools", allowMCPs, tools.length);
             return tools;
         }
         return {

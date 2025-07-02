@@ -2,6 +2,7 @@
 // import { Embeddings } from "@langchain/core/embeddings";
 // import path from "path";
 // import { appDataDir } from "../polyfills/index.mjs";
+import { Logger } from "../log.mjs";
 
 // import { FeatureExtraction } from "../common/model.mjs";
 // import { toolTextSplitter } from "./textsplitters.mjs";
@@ -59,7 +60,7 @@
 
 //         const loader = new PDFLoader(r.filepath);
 //         const docs = await loader.load();
-//         // console.log("docs", docs);
+//         // Logger.debug("docs", docs);
 //         await vectorStore.addDocuments(docs);
 //         await vectorStore.save(storeDirectory);
 //         return r;
@@ -102,7 +103,7 @@
 //       vectorStore = await HNSWLib.fromDocuments([], embeddings);
 //     }
 //     for (let [i, v] of vectorStore.docstore._docs) {
-//       // console.log("deleteDocument", i, v);
+//       // Logger.debug("deleteDocument", i, v);
 //       if (v.metadata.resourceKey === r.key) {
 //         vectorStore.deleteDocument(i);
 //       }
@@ -123,7 +124,7 @@
 //         try {
 //           fs.removeSync(path.join(appDataDir, r.filepath));
 //         } catch (e) {
-//           console.error(e);
+//           Logger.error(e);
 //         }
 //       }
 //     }
@@ -146,7 +147,7 @@
 //       );
 //     let res = [];
 //     for (const [doc, score] of similaritySearchResults) {
-//       // console.log(
+//       // Logger.debug(
 //       //   `* ${doc.pageContent} [${JSON.stringify(doc.metadata, null)}]`
 //       // );
 //       res.push({
@@ -199,7 +200,7 @@
 // // export async function test() {
 // //   let e = await embeddings.embedQuery("Hello, world!");
 
-// //   console.log("embeddings.embedQuery", e);
+// //   Logger.debug("embeddings.embedQuery", e);
 // // }
 
 // // const vectorStore = await HNSWLib.fromDocuments([], embeddings);

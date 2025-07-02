@@ -58,7 +58,7 @@ class Store {
 
         r.filepath = path.relative(appDataDir, filepath);
         res = await ragapp.addPdf(filepath);
-        console.log("addPdf", res);
+        Logger.debug("addPdf", res);
       } else {
         throw new Error("Not implemented");
       }
@@ -70,7 +70,7 @@ class Store {
       r.filepath = path.relative(appDataDir, filepath);
       delete r.text;
       res = await ragapp.addText(text);
-      // console.log("addText", res);
+      // Logger.debug("addText", res);
     }
     r.entriesAdded = res.entriesAdded;
     r.uniqueId = res.uniqueId;
@@ -105,7 +105,7 @@ class Store {
         try {
           fs.removeSync(path.join(appDataDir, r.filepath!));
         } catch (e) {
-          console.error(e);
+          Logger.error(e);
         }
       }
     }
@@ -154,7 +154,7 @@ export const store = new Store();
 // export async function test() {
 //   let e = await embeddings.embedQuery("Hello, world!");
 
-//   console.log("embeddings.embedQuery", e);
+//   Logger.debug("embeddings.embedQuery", e);
 // }
 
 // const vectorStore = await HNSWLib.fromDocuments([], embeddings);

@@ -7,6 +7,7 @@ import { progressList } from "./progress.mjs";
 import type { FeatureExtractionPipeline } from "@xenova/transformers";
 
 import { electronData } from "../../../shared/data.mjs";
+import { Logger } from "../log.mjs";
 
 export class FeatureExtraction {
   // NOTE: Replace this with your own task and model
@@ -29,7 +30,7 @@ export class FeatureExtraction {
         "Xenova/" + model,
         {
           progress_callback: (p: any) => {
-            // console.log("progress_callback: ", p);
+            // Logger.debug("progress_callback: ", p);
             if (p.status == "progress") {
               progressList.setProgress(p.file, p.loaded, p.total);
             }
@@ -53,9 +54,9 @@ export class FeatureExtraction {
       pooling: "mean",
       normalize: true,
     });
-    // console.log(embeddings);
+    // Logger.debug(embeddings);
 
-    // console.log(embeddings.tolist()); // Convert embeddings to a JavaScript list
+    // Logger.debug(embeddings.tolist()); // Convert embeddings to a JavaScript list
 
     return embeddings.tolist();
   }
@@ -76,7 +77,7 @@ export class FeatureExtraction {
 // const embed_fun: any = {};
 // embed_fun.sourceColumn = "text";
 // embed_fun.embed = async function (batch) {
-//   console.log("batch", batch);
+//   Logger.debug("batch", batch);
 //   let result = [];
 //   // Given a batch of strings, we will use the `pipe` function to get
 //   // the vector embedding of each string.
@@ -98,7 +99,7 @@ export class FeatureExtraction {
 
 // You can also import any other data, but make sure that you have a column
 // for the embedding function to use.
-// console.log(
+// Logger.debug(
 //   "数据保存成功！",
 //   (await BgeM3.embedding("Cherry")).embedding.length
 // );
@@ -128,7 +129,7 @@ export class FeatureExtraction {
 //     .vectorSearch(await BgeM3.embedding("a sweet fruit to eat"))
 //     .limit(20)
 //     .toArray();
-//   console.log(results.map((x) => x.item));
+//   Logger.debug(results.map((x) => x.item));
 // }
 // createTable();
 // const table = await db.createTable("my_table2", data);
@@ -137,13 +138,13 @@ export class FeatureExtraction {
 //   .vectorSearch((await BgeM3.embedding("a sweet fruit to eat")).embedding)
 //   .limit(20)
 //   .toArray();
-// console.log(results);
+// Logger.debug(results);
 // Create the table with the embedding function
 // const table: any = await db.openTable("food_table");
 
 // const table = await db.createTable("food_table", data);
 
-// console.log("数据保存成功！");
+// Logger.debug("数据保存成功！");
 
 // const searchQuery: lancedb.VectorQuery = table.search(
 //   "a sweet fruit to eat"
@@ -152,4 +153,4 @@ export class FeatureExtraction {
 //   .limit(2) // 限制返回2条结果
 //   .toArray(); // 执行查询并收集结果
 
-// console.log(results);
+// Logger.debug(results);

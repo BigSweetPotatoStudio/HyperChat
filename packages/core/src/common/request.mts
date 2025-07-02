@@ -8,6 +8,8 @@
  * - 基于环境变量的基础 URL 配置
  * 
  * 依赖关系：
+
+import { Logger } from "../log.mjs";
  * - querystring: Node.js 内置查询字符串处理
  * - zx: 现代化的脚本执行库（提供 fetch）
  * 
@@ -25,13 +27,13 @@ import querystring from "querystring";
 import { fetch } from "zx";
 
 // 调试信息：显示当前环境和配置
-console.log("NODE_ENV: ", process.env.NODE_ENV);
+Logger.info("NODE_ENV: ", process.env.NODE_ENV);
 let BASE_URL = "";
 
 // 从环境变量获取基础 URL，支持开发和生产环境的不同配置
 BASE_URL = process.env.REACT_APP_BASE_URL || "http://localhost:5000";
 
-console.log(BASE_URL);
+Logger.info(BASE_URL);
 
 /**
  * 统一的 HTTP 请求函数

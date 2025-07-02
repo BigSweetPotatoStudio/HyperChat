@@ -17,6 +17,7 @@
 
 import { argv, fs, os, path } from "zx";
 import p from "../package.json" with { type: "json" };
+import { Logger } from "./log.mjs";
 /** HTTP 服务器默认端口 */
 const HTTPPORT = 16100;
 
@@ -46,7 +47,7 @@ try {
     appDataDir = argv.appDataDir
   }
 } catch (e) {
-  console.error("appDataDir set failed", e);
+  Logger.error("appDataDir set failed", e);
 }
 
 

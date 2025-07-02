@@ -2,6 +2,7 @@ import { Router, Request, Response } from "express";
 import { MCP_GateWay } from "./shared/data.mjs";
 import { SSEServerTransport, StreamableHTTPServerTransport } from "./es6.mjs";
 import { createServer } from "./mcp/servers/gateway/index.mjs";
+import { Logger } from "./log.mjs";
 const KEEP_ALIVE_INTERVAL_MS = 25000; // Send keep-alive every 25 seconds
 
 const transports = {
@@ -34,14 +35,14 @@ function clearTransports() {
 
 
 function register(route: Router, name: string, description: string, allowMCPs: string[], prefix: string) {
-    console.log(`Registering MCP Gateway: ${name}`, allowMCPs);
+    Logger.info(`Registering MCP Gateway: ${name}`, allowMCPs);
 
     // type == "streamableHttp"
     {
         // let server = await serve.createServer();
         // await server.connect(transport);
         route.post(`/${name}/mcp`, async (req: Request, res: Response) => {
-            // console.log('Received MCP request:', req.body);
+            // Logger.debug('Received MCP request:', req.body);
             try {
                 const server = await createServer(name, description, allowMCPs);
                 const transport = new StreamableHTTPServerTransport({
@@ -49,13 +50,13 @@ function register(route: Router, name: string, description: string, allowMCPs: s
                 });
                 await server.connect(transport as any);
                 res.on('close', () => {
-                    // console.log('Request closed');
+                    // Logger.debug('Request closed');
                     transport.close();
                     server.close();
                 });
                 await transport.handleRequest(req, res, req.body);
             } catch (error) {
-                console.error('Error handling MCP request:', error);
+                Logger.error('Error handling MCP request:', error);
                 if (!res.headersSent) {
                     res.status(500).json({
                         jsonrpc: '2.0',

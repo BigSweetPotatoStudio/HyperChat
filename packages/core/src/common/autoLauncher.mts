@@ -1,13 +1,14 @@
 // // src/AutoLauncher.ts
 // import { app } from "electron";
 // import AutoLaunch from "auto-launch";
+import { Logger } from "../log.mjs";
 
 // export class AutoLauncher {
 //   private autoLauncher: AutoLaunch;
 
 //   constructor() {
 //     // let path = app.getPath("exe");
-//     // console.log("path: ", path);
+//     // Logger.debug("path: ", path);
 //     this.autoLauncher = new AutoLaunch({
 //       name: app.getName(),
 //       path: app.getPath("exe"),

@@ -6,6 +6,7 @@ import type { EmbeddingsInterface } from "@langchain/core/embeddings";
 import { SaveableVectorStore } from "@langchain/core/vectorstores";
 import { Document } from "@langchain/core/documents";
 import { SynchronousInMemoryDocstore } from "./stores/doc/in_memory.mjs";
+import { Logger } from "../log.mjs";
 
 const allowReplaceDeleted = false;
 /**
@@ -177,7 +178,7 @@ export class HNSWLib extends SaveableVectorStore {
     }
     if (k > this.index.getCurrentCount()) {
       const total = this.index.getCurrentCount();
-      console.warn(
+      Logger.warn(
         `k (${k}) is greater than the number of elements in the index (${total}), setting k to ${total}`
       );
       // eslint-disable-next-line no-param-reassign

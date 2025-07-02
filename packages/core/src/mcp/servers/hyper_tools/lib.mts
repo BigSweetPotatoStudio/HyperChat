@@ -5,6 +5,7 @@ import { z } from "zod";
 // import { MCP_CONFIG } from "../../../../../common/data.mjs";
 // import zodToJsonSchema from "zod-to-json-schema";
 import path from "path";
+import { Logger } from "../../../log.mjs";
 
 export const NAME = "hyper_tools";
 
@@ -67,7 +68,7 @@ export const configSchema = z.object({
     .default("false"),
 });
 
-// console.log("safeParse : ", configSchema.safeParse({}));
+// Logger.debug("safeParse : ", configSchema.safeParse({}));
 export function getConfig() {
   let buildinMcpJSONPath = path.join(appDataDir, "mcpBuiltIn.json");
   let mcpconfig = fs.readJSONSync(buildinMcpJSONPath);

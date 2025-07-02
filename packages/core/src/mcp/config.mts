@@ -115,7 +115,7 @@ fs.writeFileSync(buildinMcpJSONPath, JSON.stringify(buildinMcpJSON, null, 2));
 MCP_CONFIG.save();
 
 await initMcpServer().catch((e) => {
-  console.error("initMcpServer", e);
+  Logger.error("initMcpServer", e);
 });
 
 // 常量定义
@@ -259,12 +259,12 @@ export class MCPClient implements IMCPClient {
 
       let client = this.client;
       // let c = client.getServerCapabilities();
-      // console.log(c);
+      // Logger.debug(c);
       let tools_res = await client.listTools().catch((e) => {
         Logger.error("listTools error: ", e);
         return { tools: [] };
       });
-      // console.log("listTools", tools_res);
+      // Logger.debug("listTools", tools_res);
       let resources_res = await client.listResources().catch((_e) => {
         return { resources: [] };
       });
@@ -305,7 +305,7 @@ export class MCPClient implements IMCPClient {
         notificationCount++;
         Logger.info(`Notification #${notificationCount}: ${notification.params.level} - ${notification.params.data}`);
         if (process.env.myEnv === "dev") {
-          console.log(`\nNotification #${notificationCount}: ${notification.params.level} - ${notification.params.data}`);
+          Logger.debug(`\nNotification #${notificationCount}: ${notification.params.level} - ${notification.params.data}`);
           process.stdout.write('> ');
         }
       });
@@ -378,10 +378,10 @@ export class MCPClient implements IMCPClient {
   }
   async openStdio(config: MCPServerConfig) {
     let env = Object.assign(getMyDefaultEnvironment(), config.env);
-    // console.log("openStdio", config.command, config.args, env);
+    // Logger.debug("openStdio", config.command, config.args, env);
     // let stream = new Stream();
     // stream.on('data', (data) => {
-    //   console.log(`stderr: ${data}`);
+    //   Logger.debug(`stderr: ${data}`);
     // });
     if (!config.command) throw new Error('Command is required for stdio transport');
     let params = {
@@ -530,21 +530,21 @@ function SpawnError(command: string, args: string[], env: Record<string, string>
       // 添加事件处理器
       child.stdout?.on('data', (data) => {
         output += data + "\n";
-        // console.log(`stdout: ${data}`);
+        // Logger.debug(`stdout: ${data}`);
       });
 
       child.stderr?.on('data', (data) => {
         output += data + "\n";
-        // console.error(`stderr: ${data}`);
+        // Logger.error(`stderr: ${data}`);
       });
 
       child.on('error', (err) => {
-        console.error(`Failed to start the child process: ${err}`);
+        Logger.error(`Failed to start the child process: ${err}`);
         reject(err); // 正确地拒绝 Promise
       });
 
       child.on('close', (code) => {
-        console.log(`The child process exited, exit code: ${code}`);
+        Logger.info(`The child process exited, exit code: ${code}`);
         if (code !== 0) {
           reject(new Error(`The child process exited, exit code: ${code}\n${output}`)); // 正确地拒绝 Promise
         } else {
@@ -552,7 +552,7 @@ function SpawnError(command: string, args: string[], env: Record<string, string>
         }
       });
     } catch (e) {
-      console.error(`Error creating child process: ${e}`);
+      Logger.error(`Error creating child process: ${e}`);
       reject(e); // 捕获并拒绝 Promise
     }
   });
@@ -581,7 +581,7 @@ export async function initMcpClients(): Promise<MCPClient[]> {
   }
   let config = await MCP_CONFIG.init();
 
-  // console.log(config);
+  // Logger.debug(config);
   let tasks: any[] = [];
 
   try {

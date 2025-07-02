@@ -3,6 +3,7 @@ import App from "express";
 import { execFallback } from "../../common/execFallback.mjs";
 // import { Logger } from "src/polyfills/index.mjs";
 import { MyServers } from "./index.mjs";
+import { Logger } from "../../log.mjs";
 
 import { Config } from "../../const.mjs";
 // import { v4 } from "uuid";
@@ -32,7 +33,7 @@ export async function initMcpServer() {
         // let server = await serve.createServer();
         // await server.connect(transport);
         app.post(`/${serve.name}/mcp`, async (req, res) => {
-          // console.log('Received MCP request:', req.body);
+          // Logger.debug('Received MCP request:', req.body);
 
           try {
             const server = await serve.createServer();
@@ -40,14 +41,14 @@ export async function initMcpServer() {
               sessionIdGenerator: undefined,
             });
             res.on('close', () => {
-              // console.log('Request closed');
+              // Logger.debug('Request closed');
               transport.close();
               server.close();
             });
             await server.connect(transport);
             await transport.handleRequest(req, res, req.body);
           } catch (error) {
-            console.error('Error handling MCP request:', error);
+            Logger.error('Error handling MCP request:', error);
             if (!res.headersSent) {
               res.status(500).json({
                 jsonrpc: '2.0',
@@ -108,7 +109,7 @@ export async function initMcpServer() {
 
     PORT = await execFallback(PORT, (port: number) => {
       app.listen(port, () => {
-        // console.log(`McpServer is running on port ${port}`);
+        // Logger.info(`McpServer is running on port ${port}`);
         resolve(port);
       });
     });

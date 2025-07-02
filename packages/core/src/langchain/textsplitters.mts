@@ -1,4 +1,5 @@
 import { TokenTextSplitter } from "@langchain/textsplitters";
+import { Logger } from "../log.mjs";
 
 const textSplitter = new TokenTextSplitter({
   chunkSize: 1000,
@@ -15,4 +16,4 @@ const texts = await toolTextSplitter(`
 12312313
   `);
 
-console.log("texts", texts);
+Logger.debug("texts", texts);

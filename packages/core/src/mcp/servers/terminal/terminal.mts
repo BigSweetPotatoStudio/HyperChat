@@ -138,7 +138,7 @@ export function registerTool(server: McpServer) {
   // const promptPattern = /\$\s*$|\>\s*$|#\s*$/m;
   checkCount = config?.Terminal_End_CheckCount || 15;
   const maxToken = config?.Terminal_Output_MaxToken || 10000;
-  // console.log("checkCount: ", checkCount);
+  // Logger.debug("checkCount: ", checkCount);
 
   // Add an addition tool
   // server.tool(
@@ -167,7 +167,7 @@ export function registerTool(server: McpServer) {
   //         try {
   //           terminal.kill();
   //         } catch (error) {
-  //           console.error("Error killing terminal:", error);
+  //           Logger.error("Error killing terminal:", error);
   //         }
   //         terminalMap.delete(c.terminal.pid);
   //       }, timeout),
@@ -196,7 +196,7 @@ export function registerTool(server: McpServer) {
   //         try {
   //           c.terminal.kill();
   //         } catch (error) {
-  //           console.error("Error killing terminal:", error);
+  //           Logger.error("Error killing terminal:", error);
   //         }
   //         terminalMap.delete(c.terminal.pid);
   //       }, timeout);
@@ -269,7 +269,7 @@ export function registerTool(server: McpServer) {
       //   try {
       //     c.terminal.kill();
       //   } catch (error) {
-      //     console.error("Error killing terminal:", error);
+      //     Logger.error("Error killing terminal:", error);
       //   }
       //   terminalMap.delete(c.terminal.pid);
       // }, timeout);
@@ -278,7 +278,7 @@ export function registerTool(server: McpServer) {
       while (1) {
         if (a) {
           await new Promise((resolve) => setTimeout(resolve, 500));
-          // console.log(c.commamdOutput)
+          // Logger.debug(c.commamdOutput)
           if (strip(c.commamdOutput).match(/(\n|\r)done(\n|\r)/)) {
             break;
           }

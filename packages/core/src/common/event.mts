@@ -23,6 +23,8 @@
  * @template T - 事件名称类型，通常为字符串字面量联合类型
  */
 
+import { Logger } from "../log.mjs";
+
 /**
  * 创建类型安全的事件管理器
  * 
@@ -37,7 +39,7 @@
  * 
  * // 监听事件
  * appEvent.on('user-login', (user) => {
- *   console.log('用户登录:', user);
+ *   Logger.info('用户登录:', user);
  * });
  * 
  * // 触发事件

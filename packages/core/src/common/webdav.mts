@@ -43,7 +43,7 @@ class WebDAVSync {
     const contents: any = await this.client
       .getDirectoryContents(remotePath)
       .catch(async (e) => {
-        console.error(e);
+        Logger.error(e);
         if (e.status === 404) {
           await this.client.createDirectory(remotePath);
           return [];
@@ -51,7 +51,7 @@ class WebDAVSync {
         throw e;
       });
     if (!Array.isArray(contents)) {
-      console.log(contents);
+      Logger.debug(contents);
       throw new Error("getDirectoryContents error: " + contents);
     }
 
@@ -124,7 +124,7 @@ class WebDAVSync {
     }
     this._isSnyc = true;
 
-    console.log("---syncStart");
+    Logger.debug("---syncStart");
 
     getMessageService().sendAllToRenderer({
       type: "sync",
@@ -169,7 +169,7 @@ class WebDAVSync {
       throw error;
     } finally {
       this._isSnyc = false;
-      console.log("---syncEnd");
+      Logger.debug("---syncEnd");
     }
   };
   status: number = 0;
@@ -184,13 +184,13 @@ class WebDAVSync {
   //   await fs.ensureDir(localBackupPath);
 
   //   let localSyncFiles = await this.getLocalFilesInfo(localSyncPath, "_sync");
-  //   // console.log("sync", localPath, remotePath, localSyncPath, localBackupPath);
+  //   // Logger.debug("sync", localPath, remotePath, localSyncPath, localBackupPath);
   //   // 生成hash
   //   for (let data of DataList) {
   //     let filename = data.KEY;
   //     let json = data.initSync();
   //     if (data.options.sync) {
-  //       // console.log("sync data", path.join(localPath + "/_sync", data.KEY));
+  //       // Logger.debug("sync data", path.join(localPath + "/_sync", data.KEY));
   //       let fullPath = path.join(localPath, filename);
   //       if (!fs.existsSync(fullPath)) {
   //         continue;
@@ -199,7 +199,7 @@ class WebDAVSync {
 
   //       let md5 = crypto.createHash("md5").update(content).digest("hex");
   //       let p = path.parse(filename);
-  //       // console.log(p);
+  //       // Logger.debug(p);
   //       let hashFileName = p.name + "___" + md5 + p.ext;
   //       let localSyncFilePATH = path.join(localSyncPath, hashFileName);
   //       let localSyncFile = localSyncFiles.find((x) =>
@@ -229,7 +229,7 @@ class WebDAVSync {
   //       let filename = data.KEY;
   //       // let json =  data.initSync();
   //       if (data.options.sync) {
-  //         // console.log("sync data", path.join(localPath + "/_sync", data.KEY));
+  //         // Logger.debug("sync data", path.join(localPath + "/_sync", data.KEY));
   //         let p = path.parse(filename);
   //         // 查找远程对应的文件
   //         let remoteFile = remoteFiles.find((x) =>
@@ -250,7 +250,7 @@ class WebDAVSync {
   //             localSyncFile != null &&
   //             remoteFile?.filename != localSyncFile.filename
   //           ) {
-  //             console.log(
+  //             Logger.debug(
   //               "upload file",
   //               remotePath + "/" + localSyncFile.filename
   //             );
@@ -284,17 +284,17 @@ class WebDAVSync {
   //               if (rf) {
   //                 await this.client.deleteFile(rf.filepath);
   //               } else {
-  //                 console.log("deleteed not found", p.name);
+  //                 Logger.debug("deleteed not found", p.name);
   //               }
   //             } catch (e) {
-  //               console.log("delete error: ", e);
+  //               Logger.debug("delete error: ", e);
   //             }
   //           }
   //         }
   //       }
   //     }
   //   } catch (e) {
-  //     console.trace("upload error: ", e);
+  //     Logger.error("upload error: ", e);
   //     throw e;
   //   }
 
@@ -327,7 +327,7 @@ class WebDAVSync {
   //         if (localSyncFile?.filename === remoteFile.filename) {
   //           // 不用同步
   //           if (!fs.existsSync(path.join(localPath, name + ext))) {
-  //             console.log("restore file", remoteFile.filepath);
+  //             Logger.debug("restore file", remoteFile.filepath);
   //             const content = await fs.readFile(
   //               path.join(localSyncPath, remoteFile.filename)
   //             );
@@ -344,7 +344,7 @@ class WebDAVSync {
   //           //     remoteFile.filename
   //           //   );
   //           // }
-  //           console.log("download file", remoteFile.filepath);
+  //           Logger.debug("download file", remoteFile.filepath);
   //           // 把上一个hash文件备份
   //           if (localSyncFile) {
   //             await fs.move(
@@ -393,7 +393,7 @@ class WebDAVSync {
   //       }
   //     }
   //   } catch (e) {
-  //     console.trace("download error: ", e);
+  //     Logger.error("download error: ", e);
   //     throw e;
   //   }
 
@@ -409,7 +409,7 @@ class WebDAVSync {
   //     for (let data of DataList) {
   //       let filename = data.KEY;
   //       if (data.options.sync) {
-  //         // console.log("sync data", path.join(localPath + "/_sync", data.KEY));
+  //         // Logger.debug("sync data", path.join(localPath + "/_sync", data.KEY));
   //         let fullPath = path.join(localPath, filename);
   //         if (!fs.existsSync(fullPath)) {
   //           continue;
@@ -434,8 +434,8 @@ class WebDAVSync {
 
     let remoteFiles = await this.getRemoteFilesInfo(remotePath);
     let localFiles = this.getLocalFilesInfo(localPath, files);
-    console.log("localFiles length", localFiles.length);
-    console.log("remoteFiles length", remoteFiles.length);
+    Logger.debug("localFiles length", localFiles.length);
+    Logger.debug("remoteFiles length", remoteFiles.length);
 
     for (let localFile of localFiles) {
       let filename = localFile.filename;
@@ -462,7 +462,7 @@ class WebDAVSync {
                 await this.client.deleteFile(rf.filepath);
               }
             } catch (e) {
-              console.log("delete error: ", e);
+              Logger.error("delete error: ", e);
             }
           }
         } else {
@@ -558,15 +558,15 @@ webdavClient.init();
 //   let timeoutId;
 //   let status: number = 0;
 //   return async function c(...args) {
-//     console.log("debounce", status);
+//     Logger.debug("debounce", status);
 //     const context = this;
 //     if (status == 0) {
-//       console.log("定时器还未运行，直接取消");
+//       Logger.debug("定时器还未运行，直接取消");
 //       // 清除之前的定时器
 //       clearTimeout(timeoutId);
 //       timeoutId = null;
 //     } else if (status == 1) {
-//       console.log("定时器已经运行，函数还没有完成，等待");
+//       Logger.debug("定时器已经运行，函数还没有完成，等待");
 //       while (true) {
 //         if (status == 1) {
 //           await sleep(300);
@@ -578,7 +578,7 @@ webdavClient.init();
 
 //       c.apply(context, args);
 //     } else if (status == 2) {
-//       console.log("函数已经完成", timeoutId);
+//       Logger.debug("函数已经完成", timeoutId);
 //       status = 0;
 //     }
 //     // 设置新的定时器
