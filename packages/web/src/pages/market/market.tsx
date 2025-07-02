@@ -265,11 +265,6 @@ export function Market() {
               {/* 内置服务标签 */}
               {item.source === "builtin" && <Tag color="blue">{t`built-in`}</Tag>}
               
-              {/* 同步标签 */}
-              {item.source === "hyperchat" && item.config.isSync && (
-                <Tag className="text-blue-400">sync</Tag>
-              )}
-              &nbsp;
 
               {/* 服务类型标签（非 stdio 类型时显示） */}
               {(item.config?.type && item.config?.type !== "stdio") && (
@@ -439,34 +434,34 @@ export function Market() {
                                     </Button>
                                   </a>,
                                   
-                                  // 更多设置按钮
-                                  <Popover 
-                                    key="more-setting" 
-                                    trigger="click" 
-                                    title={t`More Setting`} 
-                                    content={
-                                      <div>
-                                        {t`Sync`}: 
-                                        <Switch 
-                                          value={item.config.isSync} 
-                                          onChange={async (checked: boolean) => {
-                                            item.config.isSync = checked;
-                                            await call("openMcpClient", {
-                                              clientName: item.name, 
-                                              clientConfig: item.config,
-                                              options: { onlySave: true }
-                                            });
-                                          }}
-                                        />
-                                      </div>
-                                    }
-                                  >
-                                    <Button 
-                                      type="link" 
-                                      icon={<MoreOutlined />} 
-                                      title={t`More Setting`}
-                                    />
-                                  </Popover>
+                                  // // 更多设置按钮
+                                  // <Popover 
+                                  //   key="more-setting" 
+                                  //   trigger="click" 
+                                  //   title={t`More Setting`} 
+                                  //   content={
+                                  //     <div>
+                                  //       {t`Sync`}: 
+                                  //       <Switch 
+                                  //         value={item.config.isSync} 
+                                  //         onChange={async (checked: boolean) => {
+                                  //           item.config.isSync = checked;
+                                  //           await call("openMcpClient", {
+                                  //             clientName: item.name, 
+                                  //             clientConfig: item.config,
+                                  //             options: { onlySave: true }
+                                  //           });
+                                  //         }}
+                                  //       />
+                                  //     </div>
+                                  //   }
+                                  // >
+                                  //   <Button 
+                                  //     type="link" 
+                                  //     icon={<MoreOutlined />} 
+                                  //     title={t`More Setting`}
+                                  //   />
+                                  // </Popover>
                               ].filter((x) => x != null)}
                               </Space.Compact>
                             ]}

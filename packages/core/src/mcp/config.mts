@@ -65,25 +65,15 @@ import { getMessageService } from "../message_service.mjs";
 let config = await MCP_CONFIG.init();
 let sync_config = await MCP_CONFIG_SYNC.init();
 
-// 配置合并逻辑：同步配置优先级更高
-for (let key in sync_config.mcpServers) {
-  if (sync_config.mcpServers[key]?.isSync) {
-    config.mcpServers[key] = sync_config.mcpServers[key]!;
-  } else {
-    if (config.mcpServers[key] != null) {
-      config.mcpServers[key].isSync = false;
-    }
-  }
-}
 
 // 内置 MCP 服务器配置管理
-let buildinMcpJSONPath = path.join(appDataDir, "mcpBuiltIn.json");
-let buildinMcpJSON = {
-  mcpServers: {} as { [s: string]: MCPServerConfig },
-}
+const buildinMcpJSONPath = path.join(appDataDir, "mcpBuiltIn.json");
+let buildinMcpJSON: { mcpServers: Record<string, MCPServerConfig> } = {
+  mcpServers: {},
+};
 
 // MCP 客户端实例缓存
-let mcpOBj = {} as { [s: string]: MCPClient };
+const mcpOBj: Record<string, MCPClient> = {};
 
 // 读取已保存的内置服务器配置
 if (fs.existsSync(buildinMcpJSONPath)) {
@@ -128,6 +118,12 @@ await initMcpServer().catch((e) => {
   console.error("initMcpServer", e);
 });
 
+// 常量定义
+const DEFAULT_RECONNECT_DELAY = 5000; // 5秒
+const MAX_RECONNECT_DELAY = 30000; // 最大30秒
+const DEFAULT_MAX_RECONNECT_ATTEMPTS = 5;
+const RECONNECT_BACKOFF_FACTOR = 1.5;
+
 let notificationCount = 0;
 export let mcpClients: Array<MCPClient> = [];
 export class MCPClient implements IMCPClient {
@@ -143,8 +139,8 @@ export class MCPClient implements IMCPClient {
     configSchema?: { [s in string]: any };
   } = {};
   private reconnectAttempts = 0;
-  private maxReconnectAttempts = 5;
-  private reconnectDelay = 5000; // 5秒
+  private maxReconnectAttempts = DEFAULT_MAX_RECONNECT_ATTEMPTS;
+  private reconnectDelay = DEFAULT_RECONNECT_DELAY;
 
   constructor(public name: string, public config: MCPServerConfig, public source: "hyperchat" | "builtin" = "hyperchat", public order: number = 0) {
     let s = MyServers.find((s) => s.name === name);
@@ -153,72 +149,96 @@ export class MCPClient implements IMCPClient {
     }
   }
   async callTool(functionName: string, args: any): Promise<any> {
+    await this.ensureConnected();
 
-    if (this.status == "disconnected") {
-      Logger.error("MCP callTool disconnected, restarting");
+    const mcpCallToolTimeout = (await AppSetting.init()).mcpCallToolTimeout;
+    const timeoutMs = mcpCallToolTimeout * 1000;
+
+    try {
+      return await this.client.callTool(
+        { name: functionName, arguments: args },
+        CallToolResultSchema,
+        { timeout: timeoutMs }
+      );
+    } catch (error) {
+      Logger.info("MCP CallTool Error, trying compatibility mode:", functionName, args, error);
+      return await this.callToolCompatibility(functionName, args, timeoutMs);
+    }
+  }
+
+  private async callToolCompatibility(functionName: string, args: any, timeoutMs: number): Promise<any> {
+    try {
+      const res = await this.client.request(
+        {
+          method: "tools/call",
+          params: { name: functionName, arguments: args },
+        },
+        CompatibilityCallToolResultSchema,
+        { timeout: timeoutMs }
+      );
+
+      Logger.info("CompatibilityCallToolResultSchema success:", res);
+      return res.toolResult || res;
+    } catch (error) {
+      Logger.error("MCP CallTool Compatibility Error:", functionName, args, error);
+      throw error;
+    }
+  }
+
+  private async ensureConnected(): Promise<void> {
+    if (this.status === "disconnected") {
+      Logger.info(`${this.name} is disconnected, attempting to reconnect...`);
       await this.open();
     }
-    let mcpCallToolTimeout = (await AppSetting.init()).mcpCallToolTimeout;
-    let res = await this.client
-      .callTool(
-        {
-          name: functionName,
-          arguments: args,
-        },
-        CallToolResultSchema,
-        { timeout: mcpCallToolTimeout * 1000 }
-      )
-      .catch(async (e) => {
-        Logger.info("MCP CallTool Error: ", functionName, args, e);
-        return await this.client
-          .request(
-            {
-              method: "tools/call",
-              params: {
-                name: functionName,
-                arguments: args,
-              },
-            },
-            CompatibilityCallToolResultSchema,
-            { timeout: mcpCallToolTimeout * 1000 }
-          )
-          .then((res) => {
-            console.log("CompatibilityCallToolResultSchema: ", res);
-            if (res.toolResult) {
-              return res.toolResult;
-            } else {
-              return res;
-            }
-          }).catch((e) => {
-            Logger.info("MCP CallTool Compatibility Error: ", functionName, args, e);
-            throw e;
-          });
-      });
-    return res;
-
   }
   async callResource(uri: string): Promise<MCPTypes.ReadResourceResult> {
-    Logger.info("MCP callTool", uri);
-    if (this.status == "disconnected") {
-      Logger.error("MCP callTool disconnected, restarting");
-      await this.open();
-    }
-    return await this.client.readResource({ uri: uri });
+    Logger.info("MCP callResource", uri);
+    await this.ensureConnected();
+    return await this.client.readResource({ uri });
   }
   async callPrompt(functionName: string, args: any): Promise<any> {
     Logger.info("MCP callPrompt", functionName, args);
-    if (this.status == "disconnected") {
-      Logger.error("MCP callTool disconnected, restarting");
-      await this.open();
-    }
+    await this.ensureConnected();
     return await this.client.getPrompt({ name: functionName, arguments: args });
   }
+  private mapToolsToHyperChatFormat(tools: any[]): HyperChatCompletionTool[] {
+    return tools.map((tool, i) => {
+      const safeName = this.name.replace(/[^a-zA-Z0-9_-]/g, "") + "_" +
+        (tool.name.replace(/[^a-zA-Z0-9_-]/g, "") || i.toString());
+
+      return {
+        name: safeName,
+        inputSchema: tool.inputSchema,
+        description: tool.description,
+        type: "function" as const,
+        origin_name: tool.name,
+        restore_name: `${this.name} > ${tool.name}`,
+        clientName: this.name,
+      };
+    });
+  }
+
+  private mapResourcesToHyperChatFormat(resources: any[]): any[] {
+    return resources.map(resource => ({
+      ...resource,
+      key: `${this.name} > ${resource.name}`,
+      clientName: this.name,
+    }));
+  }
+
+  private mapPromptsToHyperChatFormat(prompts: any[]): any[] {
+    return prompts.map(prompt => ({
+      ...prompt,
+      key: `${this.name} > ${prompt.name}`,
+      clientName: this.name,
+    }));
+  }
+
   toJSON() {
-    let { client, ...out } = this;
+    const { client, ...out } = this;
     return out;
   }
-  async open() {
-    // console.log("open", this.config)
+  async open(): Promise<void> {
 
     if (this.config.disabled) {
       this.status = "disabled";
@@ -226,15 +246,9 @@ export class MCPClient implements IMCPClient {
     }
     try {
       this.status = "connecting";
-      getMessageService().sendAllToRenderer({
-        type: "changeMcpClient",
-        data: mcpClients,
-      })
+      this.notifyStatusChange();
+      // 添加随机延迟避免同时连接冲突
       await sleep(Math.random() * 1000);
-
-      // if(Math.random() > 0.5) {
-      //   throw new Error("test error");
-      // }
       if (this.config?.type == "sse") {
         await this.openSse(this.config);
       } else if (this.config?.type == "streamableHttp") {
@@ -264,85 +278,36 @@ export class MCPClient implements IMCPClient {
       //   });
 
       client.onclose = () => {
-        Logger.info("client close");
+        Logger.info(`${this.name} client connection closed`);
         this.status = "disconnected";
-        getMessageService().sendAllToRenderer({
-          type: "changeMcpClient",
-          data: mcpClients,
-        })
+        this.notifyStatusChange();
+
+        // 如果不是主动关闭，尝试重连
+        if (!this.config.disabled) {
+          setTimeout(() => this.tryReconnect(), 2000);
+        }
       };
       client.onerror = (e) => {
-        // console.log("client onerror: ", this.config);
-        if (this.config?.type == "sse" || this.config?.type == "streamableHttp") { // sse || streamableHttp
-          // 超时不设置 
-          this.status = "disconnected";
-          if (e.message.includes("SSE stream disconnected") || e.message.includes("connection terminated") || e.message.includes("Body Timeout Error")) {
-            // 处理 SSE 流断开的情况
-            if (process.env.myEnv == "dev") {
-              console.log(e.message);
-              console.log(`${this.name} StreamableHTTP connection terminated, will reconnect automatically`);
-            }
-          } else {
-            this.status = "disconnected";
-            Logger.error(`${this.name} client ${this.config?.type} onerror: `, e);
-          }
-        } else { // stdio
-          if (e.message.includes("not valid JSON")) {
-            Logger.info(`${this.name} client received invalid JSON, continuing`);
-          } else {
-            Logger.error(`${this.name} client ${this.config?.type} onerror: `, e);
-            this.status = "disconnected";
-            getMessageService().sendAllToRenderer({
-              type: "changeMcpClient",
-              data: mcpClients,
-            })
-          }
-        }
+        this.handleClientError(e);
       };
       let res = await this.client.getServerVersion();
       this.version = res?.version || '';
       this.servername = res?.name || '';
 
-      this.tools = tools_res.tools.map((tool, i) => {
-        let name = this.name.replace(/[^a-zA-Z0-9_-]/g, "") + "_" + (tool.name.replace(/[^a-zA-Z0-9_-]/g, "") || i.toString())
-
-        return {
-          name: name,
-          inputSchema: tool.inputSchema,
-          description: tool.description,
-          type: "function" as const,
-          origin_name: tool.name,
-          restore_name: this.name + " > " + tool.name,
-          clientName: this.name,
-        } as HyperChatCompletionTool;
-      });
-      this.resources = resources_res.resources.map((x) => {
-        return {
-          ...x,
-          key: this.name + " > " + x.name,
-          clientName: this.name,
-        };
-      });
-      this.prompts = listPrompts_res.prompts.map((x) => {
-        return {
-          ...x,
-          key: this.name + " > " + x.name,
-          clientName: this.name,
-        };
-      });
+      this.tools = this.mapToolsToHyperChatFormat(tools_res.tools);
+      this.resources = this.mapResourcesToHyperChatFormat(resources_res.resources);
+      this.prompts = this.mapPromptsToHyperChatFormat(listPrompts_res.prompts);
       // this.client.subscribeResource({
       //   uri: "resource://modelcontextprotocol/metadata",
       // });
       // this.client.setLoggingLevel("debug");
       this.client.setNotificationHandler(LoggingMessageNotificationSchema, (notification) => {
         notificationCount++;
-        console.log(`\nNotification #${notificationCount}: ${notification.params.level} - ${notification.params.data}`);
-        // Re-display the prompt
-        process.stdout.write('> ');
-      });
-
-      this.client.setNotificationHandler(LoggingMessageNotificationSchema, (notification) => {
-        Logger.info("Received notification LoggingMessageNotificationSchema:", notification);
+        Logger.info(`Notification #${notificationCount}: ${notification.params.level} - ${notification.params.data}`);
+        if (process.env.myEnv === "dev") {
+          console.log(`\nNotification #${notificationCount}: ${notification.params.level} - ${notification.params.data}`);
+          process.stdout.write('> ');
+        }
       });
 
       this.client.setNotificationHandler(ResourceListChangedNotificationSchema, async (notification) => {
@@ -350,13 +315,7 @@ export class MCPClient implements IMCPClient {
         let resources_res = await client.listResources().catch((_e) => {
           return { resources: [] };
         });
-        this.resources = resources_res.resources.map((x) => {
-          return {
-            ...x,
-            key: this.name + " > " + x.name,
-            clientName: this.name,
-          };
-        });
+        this.resources = this.mapResourcesToHyperChatFormat(resources_res.resources);
         getMessageService().sendAllToRenderer({
           type: "changeMcpClient",
           data: mcpClients,
@@ -364,17 +323,13 @@ export class MCPClient implements IMCPClient {
       });
 
       this.status = "connected";
-      getMessageService().sendAllToRenderer({
-        type: "changeMcpClient",
-        data: mcpClients,
-      })
+      this.notifyStatusChange();
+      Logger.info(`${this.name} client connected successfully`);
 
     } catch (e) {
       this.status = "disconnected";
-      getMessageService().sendAllToRenderer({
-        type: "changeMcpClient",
-        data: mcpClients,
-      })
+      this.notifyStatusChange();
+      Logger.error(`Failed to connect ${this.name}:`, e);
       throw e;
     }
   }
@@ -484,16 +439,49 @@ export class MCPClient implements IMCPClient {
   }
 
   // 添加新的重连方法
-  async tryReconnect() {
+  private handleClientError(error: Error) {
+    const isStreamConnection = this.config?.type === "sse" || this.config?.type === "streamableHttp";
+    const isRecoverableError = error.message.includes("SSE stream disconnected") ||
+      error.message.includes("connection terminated") ||
+      error.message.includes("Body Timeout Error");
+
+    if (isStreamConnection) {
+      if (isRecoverableError) {
+        if (process.env.myEnv === "dev") {
+          Logger.info(`${this.name} connection interrupted: ${error.message}`);
+        }
+        // 自动重连可恢复的错误
+        setTimeout(() => this.tryReconnect(), 1000);
+      } else {
+        this.status = "disconnected";
+        Logger.error(`${this.name} client ${this.config?.type} error:`, error);
+      }
+    } else {
+      // stdio 连接处理
+      if (error.message.includes("not valid JSON")) {
+        Logger.info(`${this.name} client received invalid JSON, continuing`);
+      } else {
+        Logger.error(`${this.name} client ${this.config?.type} error:`, error);
+        this.status = "disconnected";
+        this.notifyStatusChange();
+      }
+    }
+  }
+
+  private notifyStatusChange() {
+    getMessageService().sendAllToRenderer({
+      type: "changeMcpClient",
+      data: mcpClients,
+    });
+  }
+
+  async tryReconnect(): Promise<boolean> {
     if (this.status === "disabled" || this.reconnectAttempts >= this.maxReconnectAttempts) {
       if (this.reconnectAttempts >= this.maxReconnectAttempts) {
         Logger.error(`Maximum reconnection attempts (${this.maxReconnectAttempts}) reached for ${this.name}`);
       }
       this.status = "disconnected";
-      getMessageService().sendAllToRenderer({
-        type: "changeMcpClient",
-        data: mcpClients,
-      });
+      this.notifyStatusChange();
       this.reconnectAttempts = 0;
       return false;
     }
@@ -502,35 +490,30 @@ export class MCPClient implements IMCPClient {
     Logger.info(`Attempting to reconnect ${this.name} (attempt ${this.reconnectAttempts}/${this.maxReconnectAttempts})...`);
 
     this.status = "connecting";
-    getMessageService().sendAllToRenderer({
-      type: "changeMcpClient",
-      data: mcpClients,
-    });
+    this.notifyStatusChange();
 
     try {
       await sleep(this.reconnectDelay);
       await this.open();
       Logger.info(`Successfully reconnected to ${this.name}`);
       this.reconnectAttempts = 0;
+      this.reconnectDelay = DEFAULT_RECONNECT_DELAY; // 重置延迟时间
       return true;
     } catch (error) {
       Logger.error(`Failed to reconnect to ${this.name}:`, error);
 
       // 指数退避策略，每次失败后增加等待时间
-      this.reconnectDelay = Math.min(this.reconnectDelay * 1.5, 30000); // 最大30秒
+      this.reconnectDelay = Math.min(this.reconnectDelay * RECONNECT_BACKOFF_FACTOR, MAX_RECONNECT_DELAY);
 
       // 触发下一次重连
-      setTimeout(() => {
-        this.tryReconnect();
-      }, 0);
-
+      setTimeout(() => this.tryReconnect(), 1000);
       return false;
     }
   }
 }
 
-function SpawnError(command: string, args: string[], env: any) {
-  return new Promise((resolve, reject) => {
+function SpawnError(command: string, args: string[], env: Record<string, string>) {
+  return new Promise<number>((resolve, reject) => {
     try {
       // reject(new Error("test error"));
       let child = spawn(command, args, {
@@ -579,29 +562,21 @@ function SpawnError(command: string, args: string[], env: any) {
 let firstRunStatus = 0;
 
 let order = 0;
-export async function initMcpClients() {
-  // console.log("initMcpClientsRunning", firstRunStatus);
+export async function initMcpClients(): Promise<MCPClient[]> {
+  // 等待初始化完成
+  while (firstRunStatus === 1) {
+    Logger.info("Waiting for MCP clients initialization...");
+    await sleep(1000);
+  }
 
-  while (1) {
-    if (firstRunStatus == 1) {
-      console.log("waiting");
-      await sleep(1000);
-    } else {
-      break;
-    }
-  }
-  if (firstRunStatus == 0) {
+  if (firstRunStatus === 0) {
     firstRunStatus = 1;
-  }
-  if (firstRunStatus == 2) {
-    Logger.info(
-      "initMcpClients cached mcpClients",
-      mcpClients.length
-    );
+  } else if (firstRunStatus === 2) {
+    Logger.info("Returning cached MCP clients:", mcpClients.length);
     getMessageService().sendAllToRenderer({
       type: "changeMcpClient",
       data: mcpClients,
-    })
+    });
     return mcpClients;
   }
   let config = await MCP_CONFIG.init();

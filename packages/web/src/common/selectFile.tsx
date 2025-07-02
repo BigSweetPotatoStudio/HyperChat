@@ -6,8 +6,8 @@ import {
   Upload,
   message,
 } from "antd";
-import React, { useEffect, useRef, useState } from "react";
-import { call } from "./call";
+import React, { useEffect, useMemo, useRef, useState } from "react";
+import { call, callElectron } from "./call";
 import { isOnBrowser } from "./const"; // Corrected import from util to const
 
 /**
@@ -182,7 +182,7 @@ export function SelectFile(props: SelectFileProps): React.ReactElement {
     <div
       ref={dropRef}
       onClick={async () => {
-        const path = await call("selectFile", [fileDialogOptions]);
+        const path = await callElectron("selectFile", fileDialogOptions);
         setValue(path);
         props.onChange?.(path);
         // For native dialogs, we don't have a File object directly, so create a dummy one.

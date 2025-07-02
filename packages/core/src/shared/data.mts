@@ -337,7 +337,6 @@ export type MCPServerConfig = {
     // scope: "built-in" | "outer";  // 废弃⚠️
   };
   disabled?: boolean;
-  isSync?: boolean;
 };
 
 export type HyperChatCompletionTool = {
