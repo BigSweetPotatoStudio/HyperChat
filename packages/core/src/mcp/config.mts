@@ -273,24 +273,17 @@ export class MCPClient implements IMCPClient {
       };
       client.onerror = (e) => {
         // console.log("client onerror: ", this.config);
-        if (this.config?.type == "sse") { // sse
+        if (this.config?.type == "sse" || this.config?.type == "streamableHttp") { // sse || streamableHttp
+          // 超时不设置 
           this.status = "disconnected";
-          if (e.message.includes("SSE stream disconnected") || e.message.includes("Body Timeout Error")) {
-            // 对于超时错误，只记录信息，不显示为错误
-            if (process.env.myEnv == "dev") {
-              console.log(`${this.name} client encountered timeout, this is normal for SSE`);
-            }
-          } else {
-            Logger.error(`${this.name} client see onerror: `, e);
-          }
-        } else if (this.config?.type == "streamableHttp") { // streamableHttp
-          this.status = "disconnected";
-          if (e.message.includes("SSE stream disconnected") || e.message.includes("connection terminated")) {
+          if (e.message.includes("SSE stream disconnected") || e.message.includes("connection terminated") || e.message.includes("Body Timeout Error")) {
             // 处理 SSE 流断开的情况
             if (process.env.myEnv == "dev") {
+              console.log(e.message);
               console.log(`${this.name} StreamableHTTP connection terminated, will reconnect automatically`);
             }
           } else {
+            this.status = "disconnected";
             Logger.error(`${this.name} client ${this.config?.type} onerror: `, e);
           }
         } else { // stdio
