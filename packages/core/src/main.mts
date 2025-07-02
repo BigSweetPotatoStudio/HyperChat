@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 import { Logger } from "./log.mjs";
 import "./first.mjs";
-import { initHttp } from "./websocket.mjs";
+import { initHttp } from "./http.mjs";
 
 // 主入口文件，负责初始化 HTTP 服务和日志
 
