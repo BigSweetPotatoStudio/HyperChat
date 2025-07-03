@@ -100,12 +100,12 @@ jobs:
         run: npm install
         working-directory: ./packages/electron
 
-      # 检查代码格式
+      # 检查 core 目录ts 类型
       - name: check core types
         run: npx tsc --noEmit
         working-directory: ./packages/core
 
-      # 检查 web 目录类型
+      # 检查 web 目录ts 类型
       - name: check web types
         run: npx tsc --noEmit
         working-directory: ./packages/web
