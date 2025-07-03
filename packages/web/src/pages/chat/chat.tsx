@@ -517,8 +517,11 @@ export const Chat = ({
    * @param message 可选的消息内容
    */
   const onRequest = useCallback(async (message?: string) => {
-    Clarity && Clarity.event(`sender-${process.env.NODE_ENV}`);
-    console.log("onRequest", message);
+    try {
+      Clarity.event(`sender-${process.env.NODE_ENV}`);
+    } catch (e) {
+      console.error("Clarity error:", e);
+    }
 
     /**
      * 工具调用确认回调函数
@@ -719,7 +722,7 @@ export const Chat = ({
               ...currentChat.current,
 
               key: getMyUuid(),
-              label: message.toString(),
+              label: getFirstUserContent(),
               messages: aiClient.messages,
               sented: true,
               dateTime: Date.now(),

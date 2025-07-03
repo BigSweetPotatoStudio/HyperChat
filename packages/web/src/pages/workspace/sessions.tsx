@@ -27,7 +27,7 @@ import { useForceUpdate } from "../../hooks/useForceUpdate";
 
 let URL_PRE = getURL_PRE();
 let lastSizes = {} as { cols: number; rows: number };
-const socket = io(URL_PRE + "terminal-message");
+const socket = io(URL_PRE + "/terminal-message");
 socket.on("connect", () => {
   console.log("terminal-message-connected");
 });

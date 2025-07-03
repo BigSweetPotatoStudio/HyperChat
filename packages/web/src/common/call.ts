@@ -22,11 +22,17 @@ interface Ext {
    * @param args The arguments for the command.
    * @param options Optional settings, like an AbortSignal.
    */
-  call: <K extends keyof Command | keyof ElectronCommand>(
+  call: <K extends keyof Command>(
     command: K,
     args: any,
     options?: { signal?: AbortSignal }
-  ) => Promise<ApiResponse<any>>;
+  ) => Promise<ReturnType<Command[K]>>
+
+  callElectron: <K extends keyof ElectronCommand>(
+    command: K,
+    args: any,
+    options?: { signal?: AbortSignal }
+  ) => Promise<ReturnType<ElectronCommand[K]>>
 
   /**
    * Registers a listener for messages from the backend.
@@ -47,40 +53,25 @@ let URL_PRE: string;
  * @returns {string} The base URL.
  */
 export function getURL_PRE() {
-  return URL_PRE;
+  if (URL_PRE.endsWith("/")) {
+    URL_PRE = URL_PRE.slice(0, -1);
+  } else {
+    return URL_PRE;
+  }
 }
 
-// Initialize communication logic only in non-Node.js environments.
-if (process.env.runtime !== "node") {
+{
   // In a browser context, determine the base URL.
   URL_PRE = location.origin + location.pathname.replace("index.html", "");
 
-  // If an invert function is already defined (e.g., in Electron), use it to get config.
-  if (ext.call && process.env.myEnv !== "prod") {
-    (async () => {
-      const config = await ext.call("getConfig", []);
-      URL_PRE = `http://localhost:${config.data.port}/${config.data.password}/`;
-    })();
-  }
-
   // Override URL for local development environment.
   if (process.env.myEnv === "dev") {
-    URL_PRE = "http://localhost:16100/123456/";
+    URL_PRE = "http://localhost:16100/123456";
   }
 
   // Define the 'invert' method for making API calls via fetch.
-  ext.call = async (command: string, args: any, options: any = {}) => {
-    const { signal } = options;
-    const res = await fetch(`${URL_PRE}api/${command}`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(args),
-      signal: signal,
-    }).then((res) => res.json());
-    return res;
-  };
+  ext.call = call;
+  ext.callElectron = callElectron;
 
   const callbacks: Record<string, Array<(data: any) => void>> = {};
 
@@ -94,7 +85,7 @@ if (process.env.runtime !== "node") {
   };
 
   // Initialize WebSocket connection.
-  const socket = io(URL_PRE + "main-message");
+  const socket = io(getURL_PRE() + "/main-message");
   socket.on("connect", () => {
     console.log("WebSocket connected");
     websocket = socket;
@@ -128,7 +119,15 @@ export async function call<k extends keyof Command>(
   options: { signal?: AbortSignal } = {}
 ): Promise<ReturnType<Command[k]>> {
   try {
-    const res = await ext.call(command, args, options);
+    const { signal } = options;
+    const res = await fetch(`${getURL_PRE()}/call/${command}`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(args),
+      signal: signal,
+    }).then((res) => res.json());
     if (res.success) {
       return res.data;
     } else {
@@ -155,7 +154,15 @@ export async function callElectron<k extends keyof ElectronCommand>(
   options: { signal?: AbortSignal } = {}
 ): Promise<ReturnType<ElectronCommand[k]>> {
   try {
-    const res = await ext.call(command, args, options);
+    const { signal } = options;
+    const res = await fetch(`${getURL_PRE()}/Electron/${command}`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(args),
+      signal: signal,
+    }).then((res) => res.json());
     if (res.success) {
       return res.data;
     } else {

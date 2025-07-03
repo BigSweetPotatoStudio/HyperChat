@@ -243,7 +243,7 @@ const Code: React.FC<CodeProps> = ({ inline, children = [], className, ...props 
             const str = await mermaid.render(demoid.current, code);
             filename = await call("saveTempFile", { txt: str.svg, ext: "svg" });
         }
-        window.open(getURL_PRE() + "temp/" + filename);
+        window.open(getURL_PRE() + "/temp/" + filename);
     };
 
     const handleDownload = async () => {
@@ -275,7 +275,7 @@ const Code: React.FC<CodeProps> = ({ inline, children = [], className, ...props 
                 const str = await mermaid.render(demoid.current, code);
                 filename = await call("saveTempFile", { txt: str.svg, ext: "svg" });
             }
-            setArtifact(<Artifact url={getURL_PRE() + "temp/" + filename} type="html" />);
+            setArtifact(<Artifact url={getURL_PRE() + "/temp/" + filename} type="html" />);
         }
     };
 

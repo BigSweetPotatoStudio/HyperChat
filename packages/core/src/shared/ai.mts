@@ -1,6 +1,6 @@
 
 import type { HyperChatCompletionTool } from "./data.mjs";
-// import { call, getURL_PRE, getWebSocket } from "./call";
+
 import * as MCPTypes from "@modelcontextprotocol/sdk/types.js";
 import type { CoreMessage, LanguageModel, StreamTextResult, ToolChoice, CoreTool, ToolSet } from 'ai';
 import { jsonSchema, streamText } from 'ai';
@@ -180,7 +180,7 @@ export class AiChannel {
       let fetch: any = undefined;
       if (this.ext.platform === "web") {
         let baseURL = modelConfig.baseURL;
-        modelConfig.baseURL = this.ext.getURL_PRE() + "api/ai";
+        modelConfig.baseURL = this.ext.getURL_PRE() + "/ai";
         fetch = async (url: RequestInfo, init?: RequestInit): Promise<Response> => {
           // If in a browser environment and server proxy is enabled, modify headers for proxying.
           init = {

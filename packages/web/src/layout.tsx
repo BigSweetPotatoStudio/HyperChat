@@ -98,7 +98,7 @@ import { currLang, setCurrLang, t } from "./i18n";
 import { call, callElectron, msg_receive } from "./common/call";
 import {
   AppSetting,
-  ChatHistory, 
+  ChatHistory,
   DataList,
   electronData,
   AI_MODELS,
@@ -199,7 +199,7 @@ msg_receive("message-from-main", (msg: MessageFromMain) => {
         try {
           // 导航到任务结果页面
           window.w.navigate(`/Task/Results?taskKey=${msg.data.task.key}`);
-        } catch (e) { 
+        } catch (e) {
           console.error("Navigation error:", e);
         }
       },
@@ -213,22 +213,22 @@ msg_receive("message-from-main", (msg: MessageFromMain) => {
  * 提供全局导航、主题切换、语言切换等功能
  * 管理 MCP 客户端、同步状态、更新检查等全局状态
  */
-export function Layout(): JSX.Element {
+export function Layout() {
   // 使用强制更新 hook
   const refresh = useForceUpdate();
-  
+
   // 全局状态版本号，用于组件间通信
   const [globalStateVersion, setGlobalStateVersion] = useState<number>(0);
-  
+
   // 组合的刷新函数，同时更新强制刷新和全局状态版本
   const combinedRefresh = (): void => {
     refresh();
     setGlobalStateVersion(prev => prev + 1);
   };
-  
+
   const navigate = useNavigate();
   const location = useLocation();
-  
+
   // 将导航函数和位置信息暴露到全局 window 对象
   window["w"] = {
     navigate,
@@ -246,7 +246,7 @@ export function Layout(): JSX.Element {
         navigate("/Chat");
       }
     });
-    
+
     // 注册模型配置打开事件监听器
     EVENT.on("setIsModelConfigOpenTrue", () => {
       setIsModelConfigOpen(true);
@@ -288,12 +288,12 @@ export function Layout(): JSX.Element {
           combinedRefresh();
         }
       }
-      
+
       // 处理 MCP 客户端变化
       if (res.type === "changeMcpClient") {
         setMcpClients(res.data);
         setClients(res.data);
-        
+
         // 设置全局工具获取函数
         window.getTools = (allowMCPs?: string[]) => {
           let tools: IMCPClient["tools"] = [];
@@ -327,7 +327,7 @@ export function Layout(): JSX.Element {
         electronData.init(),
       ]);
       combinedRefresh();
-      
+
       // 如果在 Electron 环境中，检查更新
       if (process.env.myRuntime == "electron") {
         let res = await callElectron("checkUpdate");
@@ -335,20 +335,24 @@ export function Layout(): JSX.Element {
           console.log("checkUpdate: ", res);
         }
       }
-      
+
       // 初始化 MCP 客户端
       await initMcpClients();
       combinedRefresh();
-      
-      // 初始化 Microsoft Clarity 分析工具
-      Clarity.init("p731bym3zs");
-      Clarity.consent();
-      Clarity.event("openApp");
-      Clarity.setTag("env", process.env.NODE_ENV);
-      Clarity.event(
-        `openApp-${process.env.NODE_ENV}-${electronData.get().version}`,
-      );
-      Clarity.setTag("version", electronData.get().version);
+
+      try {
+        // 初始化 Microsoft Clarity 分析工具
+        Clarity.init("p731bym3zs");
+        Clarity.consent();
+        Clarity.event("openApp");
+        Clarity.setTag("env", process.env.NODE_ENV);
+        Clarity.event(
+          `openApp-${process.env.NODE_ENV}-${electronData.get().version}`,
+        );
+        Clarity.setTag("version", electronData.get().version);
+      } catch (e) {
+        console.error("Clarity error:", e);
+      }
     })();
   }, []);
 
@@ -378,7 +382,7 @@ export function Layout(): JSX.Element {
     setLocal(e == "zhCN" ? zhCN : enUS);
     combinedRefresh();
   };
-  
+
   // 获取默认模型配置
   let defaultModel = getDefaultModelConfigSync(AI_MODELS);
 
@@ -415,7 +419,7 @@ export function Layout(): JSX.Element {
                 <a href="https://github.com/BigSweetPotatoStudio/HyperChat">
                   <GithubFilled></GithubFilled>
                 </a>
-                
+
                 {/* AI 提供商设置按钮 */}
                 <Button
                   onClick={() => {
@@ -425,7 +429,7 @@ export function Layout(): JSX.Element {
                 >
                   {t`AI Providers`}
                 </Button>
-                
+
                 {/* 语言切换选择器 */}
                 <Select
                   className="hidden lg:inline-block"
@@ -449,7 +453,7 @@ export function Layout(): JSX.Element {
                     AppSetting.get().darkTheme = checked;
                     await AppSetting.save();
                     combinedRefresh();
-                    
+
                     // 应用主题设置
                     if (checked) {
                       enableDarkMode({
@@ -523,8 +527,8 @@ export function Layout(): JSX.Element {
                   ({electronData.get().version})
                   {/* 有新版本时显示更新标签 */}
                   {updateData.info && (
-                    <Tag 
-                      className=" text-red-600" 
+                    <Tag
+                      className=" text-red-600"
                       onClick={() => {
                         Modal.confirm({
                           title: t`A new version is available`,
@@ -551,7 +555,7 @@ export function Layout(): JSX.Element {
                                 ) : (
                                   updateData.info.releaseNotes.map((x, index) => {
                                     return (
-                                      <div 
+                                      <div
                                         key={index}
                                         dangerouslySetInnerHTML={{ __html: x.note }}
                                       ></div>
@@ -603,8 +607,8 @@ export function Layout(): JSX.Element {
           {/* 头部上下文提供者 - 向子组件传递全局状态 */}
           <HeaderContext.Provider
             value={{
-              globalState: globalStateVersion, 
-              updateGlobalState: combinedRefresh, 
+              globalState: globalStateVersion,
+              updateGlobalState: combinedRefresh,
               setLang,
               mcpClients,
             }}
@@ -612,7 +616,7 @@ export function Layout(): JSX.Element {
             <Outlet />
           </HeaderContext.Provider>
         </ProLayout>
-        
+
         {/* AI 提供商设置抽屉 */}
         <Drawer
           width={1000}

@@ -23,6 +23,7 @@ import { Logger } from "../log.mjs";
  */
 
 import net from "net";
+import { Logger } from "../log.mjs";
 
 /**
  * 检测端口是否被占用
