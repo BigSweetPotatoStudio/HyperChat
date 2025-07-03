@@ -96,7 +96,8 @@ export function MySender({
     onToolClick 
 }: MySenderProps) {
     // 获取全局状态和 MCP 客户端
-    const { globalState, updateGlobalState, mcpClients } = useContext(HeaderContext);
+    const context = useContext(HeaderContext);
+    const { globalState, updateGlobalState, mcpClients } = context || {};
     const refresh = useForceUpdate();
 
     return (
@@ -135,16 +136,16 @@ export function MySender({
                                                 // 计算当前聊天允许的 MCP 服务
                                                 let set = new Set<string>();
                                                 for (let tool_name of currentChat.current.allowMCPs) {
-                                                    let [name, _] = tool_name.split(" > ");
-                                                    set.add(name);
+                                                    let [name, _] = (tool_name || "").split(" > ");
+                                                    if (name) set.add(name);
                                                 }
 
                                                 // 统计 MCP 连接状态
-                                                let load = mcpClients.filter(
+                                                let load = (mcpClients || []).filter(
                                                     (v) => v.status == "connected",
                                                 ).length;
-                                                let all = mcpClients.filter(x => x.status !== "disabled").length;
-                                                let curr = mcpClients.filter((v) => {
+                                                let all = (mcpClients || []).filter(x => x.status !== "disabled").length;
+                                                let curr = (mcpClients || []).filter((v) => {
                                                     return v.status !== "disabled" && set.has(v.name);
                                                 }).length;
 
@@ -166,11 +167,11 @@ export function MySender({
                                                 // 计算当前可用的工具数量
                                                 let set = new Set<string>();
                                                 for (let tool_name of currentChat.current.allowMCPs) {
-                                                    let [name, _] = tool_name.split(" > ");
-                                                    set.add(name);
+                                                    let [name, _] = (tool_name || "").split(" > ");
+                                                    if (name) set.add(name);
                                                 }
 
-                                                let curr = mcpClients.filter((v) => {
+                                                let curr = (mcpClients || []).filter((v) => {
                                                     return v.status !== "disabled" && set.has(v.name);
                                                 });
                                                 let toolLen = 0;

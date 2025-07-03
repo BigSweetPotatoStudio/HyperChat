@@ -7,7 +7,7 @@ Object.assign(i18nText, json);
 let currLang = navigator.language == "zh-CN" ? "zhCN" : "enUS";
 
 if (localStorage.getItem("currLang")) {
-  currLang = localStorage.getItem("currLang");
+  currLang = localStorage.getItem("currLang") || currLang;
 }
 if (process.env.NODE_ENV == "development") {
   window.localStorage.setItem("i18nText", JSON.stringify(i18nText, null, 2));

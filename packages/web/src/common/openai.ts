@@ -860,7 +860,7 @@ export class OpenAiChannel {
     // Implementation moved to backend
   }
   
-  async completionParse(format: any) {
+  async completionParse(format: any): Promise<any> {
     // Implementation moved to backend
     throw new Error("Not implemented in frontend");
   }

@@ -59,7 +59,8 @@ const ModalForm: React.FC<CollectionCreateFormProps> = ({
   onFormInstanceReady,
 }) => {
   const refresh = useForceUpdate();
-  const { mcpClients } = useContext(HeaderContext);
+  const context = useContext(HeaderContext);
+  const { mcpClients } = context || {};
   const [form] = Form.useForm();
 
   useEffect(() => {
@@ -120,7 +121,7 @@ const ModalForm: React.FC<CollectionCreateFormProps> = ({
           treeCheckable
           placeholder={t`Please select allowed MCP`}
           showCheckedStrategy={TreeSelect.SHOW_PARENT}
-          treeData={mcpClients.map((x) => {
+          treeData={(mcpClients || []).map((x) => {
             return {
               title: x.name,
               key: x.name,

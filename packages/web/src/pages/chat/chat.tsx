@@ -227,7 +227,8 @@ export const Chat = ({
   const refresh = useForceUpdate();
 
   // 从上下文获取全局状态和MCP客户端
-  const { globalState, updateGlobalState, mcpClients } = useContext(HeaderContext);
+  const context = useContext(HeaderContext);
+  const { globalState, updateGlobalState, mcpClients } = context || {};
 
   // 监听全局状态变化，触发数据加载
   useEffect(() => {
@@ -281,7 +282,7 @@ export const Chat = ({
             if (agentData.message) {
               await onRequest(agentData.message);
               // 确保content是字符串类型
-              const content = openaiClient.current.lastMessage.content;
+              const content = openaiClient.current?.lastMessage.content;
               const contentStr = typeof content === 'string' ? content :
                 Array.isArray(content) ? content.map(c => (c as any).text || '').join('') :
                   String(content);
@@ -298,7 +299,7 @@ export const Chat = ({
             );
             if (item) {
 
-              if (item.messages == null || item.messages.length == 0 || +item.version == 2) {
+              if (item.messages == null || item.messages.length == 0 || +(item.version || 0) == 2) {
 
                 let messages = await call("readJSON", { path: `messages/${item.key}.json` }).catch(() => []);
                 item.messages = messages || [];
@@ -326,9 +327,7 @@ export const Chat = ({
           }
 
           currentChatReset(
-            {
-              allowMCPs: AppSetting.get().defaultAllowMCPs,
-            },
+            { allowMCPs: AppSetting.get().defaultAllowMCPs || [] },
             "",
           );
         }
@@ -346,18 +345,20 @@ export const Chat = ({
    */
   const onGPTSClick = async (key: string, { loadHistory = true } = {}) => {
     let find = Agents.get().data.find((y) => y.key === key);
+    if (!find) return;
+    
     selectGptsKey.current = find.key;
     historyFilterType.current = "all";
     await currentChatReset(
       {
-        allowMCPs: find.allowMCPs,
+        allowMCPs: find.allowMCPs || [],
         agentKey: find.key,
-        modelKey: find.modelKey,
-        attachedDialogueCount: find.attachedDialogueCount,
-        temperature: find.temperature,
-        confirm_call_tool: find.confirm_call_tool,
+        ...(find.modelKey ? { modelKey: find.modelKey } : {}),
+        ...(find.attachedDialogueCount !== undefined ? { attachedDialogueCount: find.attachedDialogueCount } : {}),
+        ...(find.temperature !== undefined ? { temperature: find.temperature } : {}),
+        confirm_call_tool: find.confirm_call_tool || false,
       },
-      find.prompt,
+      find.prompt || "",
     );
   };
 
@@ -382,18 +383,15 @@ export const Chat = ({
     label: "",
     key: "",
     messages: [],
-    modelKey: undefined,
-    agentKey: undefined,
+    modelKey: "",
+    agentKey: "",
     sented: false,
     requestType: "stream",
     allowMCPs: [],
-    temperature: undefined,
-    attachedDialogueCount: undefined,
     dateTime: Date.now(),
     isCalled: agentData.agentKey ? true : false,
     isTask: false,
-    confirm_call_tool: true,
-    icon: ""
+    confirm_call_tool: false,
   };
 
   /** 移动端检测 */
@@ -470,7 +468,7 @@ export const Chat = ({
 
     // 收集所有允许的MCP客户端的提示
     let prompts: IMCPClient["prompts"] = [];
-    mcpClients
+    (mcpClients || [])
       .filter((m) => set.has(m.name))
       .forEach((v) => {
         prompts = prompts.concat(v.prompts);
@@ -479,7 +477,7 @@ export const Chat = ({
 
     // 收集所有允许的MCP客户端的资源
     let resources: IMCPClient["resources"] = [];
-    mcpClients
+    (mcpClients || [])
       .filter((m) => set.has(m.name))
       .forEach((v) => {
         resources = resources.concat(v.resources);
@@ -559,13 +557,13 @@ export const Chat = ({
                   <span className="text-purple-500">
                     {getTools().find(
                       (x) => x.name == tool.function.name,
-                    ).restore_name}
+                    )?.restore_name || tool.function.name}
                   </span>
                 </pre>
                 {JsonSchema2FormItemOrNull(
                   getTools().find(
                     (x) => x.name == tool.function.name,
-                  ).inputSchema,
+                  )?.inputSchema,
                 ) || t`No parameters`}
                 <Form.Item>
                   <div className="flex flex-wrap justify-between">
@@ -649,28 +647,28 @@ export const Chat = ({
             async function renderTemplate(template: string) {
               let reg = /{{(.*?)}}/g;
               let matchs = template.match(reg);
-              let subResults = [];
+              let subResults: { value: string; varName: string; }[] = [];
               for (let match of matchs || []) {
                 let varName = match.slice(2, -2).trim();
                 let v = varList.find((x) => x.varName == varName);
-                let value = varName;
+                let value: string = varName;
                 if (v) {
                   if (v.variableType == "js") {
-                    value = await call("runCode", { code: v.code });
+                    value = String(await call("runCode", { code: v.code || "" }) || "");
                   } else if (v.variableType == "webjs") {
                     let code = `
                         (async () => {
-                            ${v.code}
+                            ${v.code || ""}
                            return await get()
                         })()
                         `;
                     // console.log(code);
-                    value = await eval(code);
+                    value = String(await eval(code) || "");
                   } else {
-                    value = v.value;
+                    value = v.value || "";
                   }
                 }
-                subResults.push({ value, varName });
+                subResults.push({ value: String(value || ""), varName });
               }
               let result = template.replace(reg, (match, p1) => {
                 return subResults.find((x) => x.varName === p1.trim())?.value || match;
@@ -754,7 +752,7 @@ export const Chat = ({
             refresh();
           }
         }, {
-          temperature: currentChat.current.temperature,
+          ...(currentChat.current.temperature !== undefined ? { temperature: currentChat.current.temperature } : {}),
         });
         currentChat.current.label = getFirstUserContent();
 
@@ -791,7 +789,7 @@ export const Chat = ({
 
         console.error(e);
 
-        aiClient.lastMessage.content_error = e.message;
+        aiClient.lastMessage.content_error = e instanceof Error ? e.message : String(e);
         Object.assign(messages, aiClient.messages)
         refresh();
 
@@ -810,13 +808,13 @@ export const Chat = ({
         }
         refresh();
         antdMessage.error(
-          e.message || t`An error occurred, please try again later`,
+          e instanceof Error ? e.message : t`An error occurred, please try again later`,
         );
       }
     }
     try {
       setLoading(true);
-      let alls = []
+      let alls: Promise<void>[] = []
       for (let [index, diff] of DATA.current.diffs.entries()) {
         diff.messages = _.cloneDeep(currentChat.current.messages);
         let promise = iOnRequest(index, diff.modelKey, diff.messages, (openaiClient) => {
@@ -898,7 +896,7 @@ export const Chat = ({
   const [formMoreSetting] = useForm();
 
   /** 填充提示表单项状态 */
-  const [fillPromptFormItems, setFillPromptFormItems] = React.useState([]);
+  const [fillPromptFormItems, setFillPromptFormItems] = React.useState<any[]>([]);
   /** MCP调用提示当前值引用 */
   const mcpCallPromptCurr = useRef({} as any);
 
@@ -940,7 +938,7 @@ export const Chat = ({
       }
 
       // 如果消息为空或版本过旧，重新加载消息
-      if (item.messages == null || item.messages.length == 0 || +item.version == 2) {
+      if (item.messages == null || item.messages.length == 0 || +(item.version || 0) == 2) {
         try {
           DATA.current.loadingMessages = true;
           refresh();
@@ -1104,14 +1102,19 @@ export const Chat = ({
                       let index = ChatHistory.get().data.findIndex(
                         (x) => x.key === conversation.key,
                       );
-                      if (ChatHistory.get().data[index].icon == "⭐") {
-                        ChatHistory.get().data[index].icon = "";
-                      } else {
-                        ChatHistory.get().data[index].icon = "⭐";
+                      if (index >= 0) {
+                        const item = ChatHistory.get().data[index];
+                        if (item) {
+                          if (item.icon == "⭐") {
+                            item.icon = "";
+                          } else {
+                            item.icon = "⭐";
+                          }
+                          loadMoreData(false, false);
+                          refresh();
+                          await call("changeChatHistory", { item })
+                        }
                       }
-                      loadMoreData(false, false);
-                      refresh();
-                      await call("changeChatHistory", { item: ChatHistory.get().data[index] })
 
                     }
                     if (menuInfo.key === "rename") {
@@ -1283,14 +1286,16 @@ export const Chat = ({
                                         );
 
                                         let newIndex = data.findIndex(
-                                          (x) => x.key == e.over.id,
+                                          (x) => x.key == e.over?.id,
                                         );
 
-                                        let item = data[oldIndex];
-
-                                        data.splice(oldIndex, 1);
-
-                                        data.splice(newIndex, 0, item);
+                                        if (oldIndex >= 0 && newIndex >= 0) {
+                                          let item = data[oldIndex];
+                                          if (item) {
+                                            data.splice(oldIndex, 1);
+                                            data.splice(newIndex, 0, item);
+                                          }
+                                        }
 
                                         Agents.save();
                                         refresh();
@@ -1362,7 +1367,7 @@ export const Chat = ({
                           currentChat.current.messages = messages;
                           refresh();
                           onRequest();
-                        }} status={openaiClient.current?.status}
+                        }} {...(openaiClient.current?.status ? { status: openaiClient.current.status } : {})}
                           onClone={async (i) => {
                             let clone = _.cloneDeep(currentChat.current);
                             clone.key = getMyUuid();
@@ -1424,14 +1429,16 @@ export const Chat = ({
                                             );
 
                                             let newIndex = data.findIndex(
-                                              (x) => x.key == e.over.id,
+                                              (x) => x.key == e.over?.id,
                                             );
 
-                                            let item = data[oldIndex];
-
-                                            data.splice(oldIndex, 1);
-
-                                            data.splice(newIndex, 0, item);
+                                            if (oldIndex >= 0 && newIndex >= 0) {
+                                              let item = data[oldIndex];
+                                              if (item) {
+                                                data.splice(oldIndex, 1);
+                                                data.splice(newIndex, 0, item);
+                                              }
+                                            }
 
                                             Agents.save();
                                             refresh();
@@ -1503,7 +1510,7 @@ export const Chat = ({
                               currentChat.current.messages = messages;
                               refresh();
                               onRequest();
-                            }} status={openaiClient.current?.status}
+                            }} {...(openaiClient.current?.status ? { status: openaiClient.current.status } : {})}
                               onClone={async (i) => {
                                 let clone = _.cloneDeep(currentChat.current);
                                 clone.key = v4();
@@ -1573,9 +1580,9 @@ export const Chat = ({
                                     currentChatReset({
                                       messages: [],
                                       // 返回
-                                      allowMCPs: AppSetting.get().defaultAllowMCPs,
+                                      allowMCPs: AppSetting.get().defaultAllowMCPs || [],
                                       sented: false,
-                                      agentKey: undefined,
+                                      agentKey: "",
                                     });
                                     selectGptsKey.current = undefined;
                                     loadMoreData(false);
@@ -1600,9 +1607,9 @@ export const Chat = ({
                               } else {
                                 currentChatReset({
                                   messages: [],
-                                  allowMCPs: AppSetting.get().defaultAllowMCPs,
+                                  allowMCPs: AppSetting.get().defaultAllowMCPs || [],
                                   sented: false,
-                                  agentKey: undefined,
+                                  agentKey: "",
                                 });
                                 selectGptsKey.current = undefined;
                               }
@@ -1636,7 +1643,7 @@ export const Chat = ({
                               optionFilterProp="label"
                               placeholder={
                                 AI_MODELS.get().data.length > 0
-                                  ? `${getDefaultModelConfigSync(AI_MODELS).provider}:${getDefaultModelConfigSync(AI_MODELS).name}`
+                                  ? `${getDefaultModelConfigSync(AI_MODELS)?.provider || 'unknown'}:${getDefaultModelConfigSync(AI_MODELS)?.name || 'unknown'}`
                                   : "Please add a LLM model"
                               }
                               className="w-60"
@@ -1699,7 +1706,7 @@ export const Chat = ({
                             onClick: (e) => {
                               if (!DATA.current.diffs.find(x => x.modelKey == e.key)) {
                                 let name = AI_MODELS.get().data.find((x) => x.key == e.key)?.name;
-                                DATA.current.diffs.push({ modelKey: e.key, messages: currentChat.current.messages, openaiClient: undefined, label: name });
+                                DATA.current.diffs.push({ modelKey: e.key, messages: currentChat.current.messages, openaiClient: undefined, label: name || "" } as any);
                                 refresh();
                               } else {
                                 DATA.current.diffs = DATA.current.diffs.filter(x => x.modelKey != e.key);
@@ -1746,9 +1753,9 @@ export const Chat = ({
                                 call_name: "UserUpload",
                                 contents: [
                                   {
-                                    path: path,
+                                    uri: path,
                                     blob: path,
-                                    type: "image",
+                                    mimeType: "image/*",
                                   },
                                 ],
                                 uid: v4(),
@@ -1770,9 +1777,9 @@ export const Chat = ({
                               call_name: "UserUpload",
                               contents: [
                                 {
-                                  path: path,
+                                  uri: path,
                                   blob: path,
-                                  type: "image",
+                                  mimeType: "image/*",
                                 },
                               ],
                               uid: v4(),
@@ -1827,9 +1834,9 @@ export const Chat = ({
                                             call_name: "UserUpload",
                                             contents: [
                                               {
-                                                path: path,
+                                                uri: path,
                                                 blob: await urlToBase64(path),
-                                                type: "image",
+                                                mimeType: "image/*",
                                               },
                                             ],
                                             uid: v4(),
@@ -1866,11 +1873,11 @@ export const Chat = ({
                                             set.add(name);
                                           }
 
-                                          let load = mcpClients.filter(
+                                          let load = (mcpClients || []).filter(
                                             (v) => v.status == "connected",
                                           ).length;
-                                          let all = mcpClients.filter(x => x.status !== "disabled").length;
-                                          let curr = mcpClients.filter((v) => {
+                                          let all = (mcpClients || []).filter(x => x.status !== "disabled").length;
+                                          let curr = (mcpClients || []).filter((v) => {
                                             return v.status !== "disabled" && set.has(v.name);
                                           }).length;
 
@@ -1889,7 +1896,7 @@ export const Chat = ({
                                           (() => {
                                             let tools: IMCPClient["tools"] = [];
 
-                                            mcpClients.forEach((v) => {
+                                            (mcpClients || []).forEach((v) => {
                                               tools = tools.concat(
                                                 v.tools.filter((t) => {
 
@@ -2142,24 +2149,31 @@ export const Chat = ({
             selectedKeys={[]}
             onSelect={(selectedKeys, info) => {
               // console.log("onSelect", selectedKeys, info);
-              let [clientName, _] = (selectedKeys[0] as string).split(" > ");
+              let [clientName, _] = (selectedKeys[0] as string || "").split(" > ");
+              clientName = clientName || "";
               if (info.node.isLeaf) {
 
                 if (info.node.checked) {
                   currentChat.current.allowMCPs = currentChat.current.allowMCPs.filter(x => x != selectedKeys[0]);
-                  currentChat.current.allowMCPs = currentChat.current.allowMCPs.filter(x => x != clientName);
+                  if (clientName) {
+                    currentChat.current.allowMCPs = currentChat.current.allowMCPs.filter(x => x != clientName);
+                  }
                 } else {
                   currentChat.current.allowMCPs.push(selectedKeys[0] as string);
                 }
               } else {
                 if (info.node.halfChecked || info.node.checked == false) {
-                  currentChat.current.allowMCPs = currentChat.current.allowMCPs.filter(x => !x.startsWith(clientName));
+                  if (clientName) {
+                    currentChat.current.allowMCPs = currentChat.current.allowMCPs.filter(x => !x.startsWith(clientName));
+                  }
                   currentChat.current.allowMCPs.push(info.node.key);
                   info.node.children.forEach((x) => {
                     currentChat.current.allowMCPs.push(x.key as string);
                   });
                 } else {
-                  currentChat.current.allowMCPs = currentChat.current.allowMCPs.filter(x => !x.startsWith(clientName));
+                  if (clientName) {
+                    currentChat.current.allowMCPs = currentChat.current.allowMCPs.filter(x => !x.startsWith(clientName));
+                  }
                 }
               }
 
@@ -2171,7 +2185,7 @@ export const Chat = ({
               refresh();
             }}
             checkedKeys={currentChat.current.allowMCPs}
-            treeData={mcpClients.filter(x => x.status != "disabled").map((x) => {
+            treeData={(mcpClients || []).filter(x => x.status != "disabled").map((x) => {
               return {
                 title: (<Tooltip title={x.servername}>
                   <span>

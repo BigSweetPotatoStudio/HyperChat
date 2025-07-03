@@ -345,7 +345,7 @@ export function Layout() {
         Clarity.init("p731bym3zs");
         Clarity.consent();
         Clarity.event("openApp");
-        Clarity.setTag("env", process.env.NODE_ENV);
+        Clarity.setTag("env", process.env.NODE_ENV || "unknown");
         Clarity.event(
           `openApp-${process.env.NODE_ENV}-${electronData.get().version}`,
         );
@@ -539,21 +539,21 @@ export function Layout() {
                           content: (
                             <div>
                               <div>current version: {electronData.get().version}</div>
-                              <div>latest version: {updateData.info.version}</div>
-                              {updateData.info.releaseName != updateData.info.version && (
-                                <div>title: {updateData.info.releaseName}</div>
+                              <div>latest version: {updateData.info?.version}</div>
+                              {updateData.info?.releaseName != updateData.info?.version && (
+                                <div>title: {updateData.info?.releaseName}</div>
                               )}
                               <div>
                                 changelog:{" "}
-                                {typeof updateData.info.releaseNotes == "string" ? (
+                                {typeof updateData.info?.releaseNotes == "string" ? (
                                   <div
                                     style={{ color: "gray" }}
                                     dangerouslySetInnerHTML={{
-                                      __html: updateData.info.releaseNotes,
+                                      __html: updateData.info?.releaseNotes || '',
                                     }}
                                   ></div>
                                 ) : (
-                                  updateData.info.releaseNotes.map((x, index) => {
+                                  updateData.info?.releaseNotes?.map((x, index) => {
                                     return (
                                       <div
                                         key={index}
@@ -600,7 +600,7 @@ export function Layout() {
            * 菜单项渲染器
            * 将菜单项包装为 React Router 链接
            */
-          menuItemRender={(item, dom) => <Link to={item.path}>{dom}</Link>}
+          menuItemRender={(item, dom) => <Link to={item.path || '/'}>{dom}</Link>}
           layout="mix"
           splitMenus={true}
         >

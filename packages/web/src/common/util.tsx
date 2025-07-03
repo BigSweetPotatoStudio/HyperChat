@@ -226,7 +226,7 @@ export function JsonSchema2ProFormColumnsType(
           // Recursively generate columns for array items.
           columns: prop.properties
             ? JsonSchema2ProFormColumnsType(prop.properties)
-            : [formatColumns(prop.items, undefined)], // For simple arrays, format the item schema.
+            : [formatColumns(prop.items, "item")], // For simple arrays, format the item schema.
         };
         columns.push(column);
       } else {

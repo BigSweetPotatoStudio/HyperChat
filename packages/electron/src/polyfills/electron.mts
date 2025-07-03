@@ -1,17 +1,9 @@
 import AutoLaunch from "auto-launch";
-import {
-  Context,
-} from "../../../core/src/polyfills.mjs";
-
 import { app } from "electron";
 
 
 
-/////////////////////////////
-export const userDataPath = app.getPath("userData");
 
-Context.CONST.userDataPath = userDataPath;
-Context.CONST.getVersion = app.getVersion();
 
 ///////////////////////////
 

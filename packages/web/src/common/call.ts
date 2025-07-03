@@ -55,6 +55,7 @@ let URL_PRE: string;
 export function getURL_PRE() {
   if (URL_PRE.endsWith("/")) {
     URL_PRE = URL_PRE.slice(0, -1);
+    return URL_PRE;
   } else {
     return URL_PRE;
   }
@@ -126,7 +127,7 @@ export async function call<k extends keyof Command>(
         "Content-Type": "application/json",
       },
       body: JSON.stringify(args),
-      signal: signal,
+      signal: signal || null,
     }).then((res) => res.json());
     if (res.success) {
       return res.data;
@@ -161,7 +162,7 @@ export async function callElectron<k extends keyof ElectronCommand>(
         "Content-Type": "application/json",
       },
       body: JSON.stringify(args),
-      signal: signal,
+      signal: signal || null,
     }).then((res) => res.json());
     if (res.success) {
       return res.data;

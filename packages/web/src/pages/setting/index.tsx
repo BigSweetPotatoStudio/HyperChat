@@ -314,7 +314,21 @@ export const Setting: FC = () => {
    */
   const handleWindowSizeChange = async (sizeString: string): Promise<void> => {
     try {
-      const [width, height] = sizeString.split("x").map(x => parseInt(x));
+      const parts = sizeString.split("x");
+      const widthStr = parts[0];
+      const heightStr = parts[1];
+      
+      if (!widthStr || !heightStr) {
+        throw new Error("Invalid window size format");
+      }
+      
+      const width = parseInt(widthStr);
+      const height = parseInt(heightStr);
+      
+      if (isNaN(width) || isNaN(height)) {
+        throw new Error("Invalid window size format");
+      }
+      
       electronData.get().windowSize.width = width;
       electronData.get().windowSize.height = height;
       await electronData.save();

@@ -101,7 +101,7 @@ export const TranscribePanel = () => {
             message.success(t`Transcription completed`);
         } catch (error) {
             console.error("Transcription error:", error);
-            message.error(t`Transcription failed: ${error.message}`);
+            message.error(t`Transcription failed: ${error instanceof Error ? error.message : String(error)}`);
         } finally {
             setLoading(false);
         }
@@ -195,7 +195,7 @@ export const TranscribePanel = () => {
                         <div className="p-2 min-h-[100px]">
                             {result?.language && <div>Lang: {result?.language}</div>}
                             <div>{
-                                result?.segments?.length > 0 ? result?.segments.map((segment, index) => (
+                                (result?.segments?.length || 0) > 0 ? result?.segments?.map((segment, index) => (
                                     <div key={index}>
                                         <><div>Start: {segment.startSecond} seconds</div>
                                             <div>End: {segment.endSecond} seconds</div></>

@@ -60,7 +60,7 @@ const GenerateImagePanel = () => {
             message.success(t`Images generated successfully`);
         } catch (error) {
             console.error("Error generating images:", error);
-            message.error(t`Failed to generate images: ${error.message}`);
+            message.error(t`Failed to generate images: ${error instanceof Error ? error.message : String(error)}`);
         } finally {
             setGenerating(false);
         }

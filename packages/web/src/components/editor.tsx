@@ -33,7 +33,7 @@ monaco.editor.defineTheme("hyperChatCustomTheme", {
     },
 });
 
-let monacoProviders = [];
+let monacoProviders: monaco.IDisposable[] = [];
 export function enableCompletionItemProvider() {
     let varList = [...VarList.get().data?.map((v) => {
         let varName = v.scope + "." + v.name;
@@ -45,7 +45,7 @@ export function enableCompletionItemProvider() {
 
     // Register a completion item provider for the new language
     monacoProviders.push(monaco.languages.registerCompletionItemProvider("HyperPromptLanguage", {
-        provideCompletionItems: (model, position) => {
+        provideCompletionItems: (model, position, context, token) => {
 
 
             var word = model.getWordUntilPosition(position);
@@ -79,7 +79,7 @@ export function enableCompletionItemProvider() {
                         kind: x.variableStrategy == "immediate" ? monaco.languages.CompletionItemKind.Text : monaco.languages.CompletionItemKind.Variable,
                         range: range,
                         label: x.varName,
-                        insertText: x.variableStrategy == "immediate" ? x.value : `{{${x.varName}}}`,
+                        insertText: x.variableStrategy == "immediate" ? (x.value || "") : `{{${x.varName}}}`,
                         detail: x.description || `${x.name} ${x.variableStrategy} ${x.variableType}`,
                         value: x.value,
                     }
@@ -165,7 +165,7 @@ export function enableCompletionItemProvider() {
 
     monacoProviders.push(monaco.languages.registerHoverProvider("HyperPromptLanguage", {
 
-        provideHover: async (model, position) => {
+        provideHover: async (model, position, token, context) => {
             const word = model.getWordAtPosition(position);
             if (!word) {
                 return;
@@ -196,18 +196,20 @@ export function enableCompletionItemProvider() {
 
                             if (v) {
                                 if (v.variableType == "js") {
-                                    value = await call("runCode", { code: v.code });
+                                    const result = await call("runCode", { code: v.code || "" });
+                                    value = String(result || "");
                                 } else if (v.variableType == "webjs") {
                                     let code = `
                             (async () => {
-                                ${v.code}
+                                ${v.code || ""}
                                return await get()
                             })()
                                 `;
                                     // console.log(code);
-                                    value = await eval(code);
+                                    const result = await eval(code);
+                                    value = String(result || "");
                                 } else {
-                                    value = `**Variable:** ${v.varName}\n\n${v.value}`;
+                                    value = `**Variable:** ${v.varName}\n\n${v.value || ""}`;
                                 }
                             }
 
@@ -238,7 +240,7 @@ export function enableCompletionItemProvider() {
                                         value: "error: "
                                     },
                                     {
-                                        value: e
+                                        value: String(e)
                                     }
                                 ]
                             };
@@ -247,13 +249,13 @@ export function enableCompletionItemProvider() {
                 }
                 const word = model.getWordAtPosition(position);
                 return {
-                    range: new monaco.Range(position.lineNumber, word.startColumn, position.lineNumber, word.endColumn),
+                    range: new monaco.Range(position.lineNumber, word?.startColumn || 1, position.lineNumber, word?.endColumn || 1),
                     contents: [
-                        { value: `**${word.word}** is a special term.` }
+                        { value: `**${word?.word || 'unknown'}** is a special term.` }
                     ]
                 };
             }
-
+            return undefined;
         }
     }));
 }
@@ -358,7 +360,7 @@ export const Editor = forwardRef(({
             }, 100);
         },
         setValue: (value: string) => {
-            monacoModelRef.current.setValue(value);
+            monacoModelRef.current?.setValue(value);
         },
         focus: () => {
             if (monacoRef.current) {
@@ -399,7 +401,7 @@ export const Editor = forwardRef(({
                 return;
             }
 
-            function validate(model) {
+            function validate(model: monaco.editor.ITextModel) {
                 let varList = [...VarList.get().data?.map((v) => {
                     let varName = v.scope + "." + v.name;
                     return {
@@ -408,7 +410,7 @@ export const Editor = forwardRef(({
                     }
                 })];
 
-                const markers = [];
+                const markers: monaco.editor.IMarkerData[] = [];
                 // Find all {{...}} variables in the text
                 const text = model.getValue();
                 const variableRegex = /{{([^{}]*)}}/g;
@@ -472,7 +474,9 @@ export const Editor = forwardRef(({
             //         alwaysConsumeMouseWheel: false // 禁止鼠标滚轮事件  
             //     }
             // }
-            let editor = monaco.editor.create(document.getElementById(uid.current), {
+            const editorElement = document.getElementById(uid.current);
+            if (!editorElement) return;
+            let editor = monaco.editor.create(editorElement, {
                 theme: "hyperChatCustomTheme",
                 model: model,
                 language: "HyperPromptLanguage",
@@ -580,20 +584,22 @@ export const Editor = forwardRef(({
 
 
             // 添加拖拽事件监听
-            const editorElement = editor.getContainerDomNode();
-            if (editorElement) {
-                editorElement.addEventListener('dragover', (e) => {
+            const dragEditorElement = editor.getContainerDomNode();
+            if (dragEditorElement) {
+                dragEditorElement.addEventListener('dragover', (e) => {
                     e.preventDefault(); // 阻止默认行为
                     e.stopPropagation();
-                    e.dataTransfer.dropEffect = 'copy'; // 显示复制图标
+                    if (e.dataTransfer) {
+                        e.dataTransfer.dropEffect = 'copy'; // 显示复制图标
+                    }
                 });
 
-                editorElement.addEventListener('drop', (e) => {
+                dragEditorElement.addEventListener('drop', (e) => {
                     e.preventDefault(); // 阻止默认行为
                     e.stopPropagation();
 
                     // 处理拖拽的文件
-                    if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+                    if (e.dataTransfer?.files && e.dataTransfer.files.length > 0) {
                         const file: any = e.dataTransfer.files[0];
                         console.log("Dropped file:", file);
                         // e.preventDefault();
@@ -619,7 +625,7 @@ export const Editor = forwardRef(({
 
 
                         // reader.readAsText(file);
-                    } else if (e.dataTransfer.getData('text')) {
+                    } else if (e.dataTransfer?.getData('text')) {
                         // 处理拖拽的文本
                         const text = e.dataTransfer.getData('text');
                         const position = editor.getTargetAtClientPoint(e.clientX, e.clientY);
@@ -645,8 +651,8 @@ export const Editor = forwardRef(({
 
                     // e.stopPropagation();
                     // console.log('Window paste event triggered', e.clipboardData.items);
-                    const items = e.clipboardData.items;
-                    let arr: any[] = Array.from(items);
+                    const items = e.clipboardData?.items;
+                    let arr: any[] = Array.from(items || []);
                     for (const item of arr) {
                         if (item.kind === 'file') {
                             e.stopPropagation();

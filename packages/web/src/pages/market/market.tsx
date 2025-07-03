@@ -121,7 +121,8 @@ export function Market() {
   const refresh = useForceUpdate();
 
   /** 全局上下文，包含 MCP 客户端信息 */
-  const { globalState, updateGlobalState, mcpClients } = useContext(HeaderContext);
+  const context = useContext(HeaderContext);
+  const { globalState, updateGlobalState, mcpClients } = context || {};
   
   /** Node.js 版本信息 */
   const [nodeV, setNodeV] = useState<string>("");
@@ -342,7 +343,7 @@ export function Market() {
                     <div style={{ maxHeight: "calc(100vh - 152px)", overflowY: "auto" }}>
                       <List
                         itemLayout="horizontal"
-                        dataSource={mcpClients.filter(x => 
+                        dataSource={(mcpClients || []).filter(x => 
                           x.source === "hyperchat" && 
                           x.name && 
                           x.name.includes(searchValue)
@@ -482,7 +483,7 @@ export function Market() {
                   <div className="bg-white p-0">
                     <List
                       itemLayout="horizontal"
-                      dataSource={mcpClients.filter(x => x.source === "builtin")}
+                      dataSource={(mcpClients || []).filter(x => x.source === "builtin")}
                       renderItem={(item: InitedClient, index: number) => (
                         <List.Item
                           className="hover:cursor-pointer hover:bg-slate-300"
@@ -501,8 +502,10 @@ export function Market() {
                                     mcpconfigform.resetFields();
                                     
                                     // 根据配置 schema 生成默认值
-                                    const zodSchema = eval(jsonSchemaToZod(item.ext.configSchema));
-                                    mcpconfigform?.setFieldsValue(zodSchema.safeParse({}).data);
+                                    if (item.ext.configSchema) {
+                                        const zodSchema = eval(jsonSchemaToZod(item.ext.configSchema));
+                                        mcpconfigform?.setFieldsValue(zodSchema.safeParse({}).data);
+                                    }
 
                                     // 设置当前配置值
                                     mcpconfigform.setFieldsValue(
@@ -694,8 +697,11 @@ export function Market() {
             form={mcpconfigform}
             onFinish={async (values: any) => {
               // 使用 Zod schema 验证配置数据
-              const zodSchema = eval(jsonSchemaToZod(currRow.ext.configSchema));
-              const validatedValues = zodSchema.safeParse(values).data;
+              let validatedValues = values;
+              if (currRow.ext.configSchema) {
+                  const zodSchema = eval(jsonSchemaToZod(currRow.ext.configSchema));
+                  validatedValues = zodSchema.safeParse(values).data;
+              }
               
               // 更新配置
               currRow.config = {
@@ -759,7 +765,7 @@ export function Market() {
 
                   // 检查服务名称是否已存在（新建时）
                   if (values._type !== "edit") {
-                    if (mcpClients.find(x => x.name === values.name)) {
+                    if ((mcpClients || []).find(x => x.name === values.name)) {
                       message.error(t`MCP Service Name already exists`);
                       return;
                     }
@@ -799,7 +805,7 @@ export function Market() {
                       .filter((x) => x.trim() !== "");
 
                     const [command, ...args] = commands;
-                    values.command = command.trim();
+                    values.command = command?.trim() || '';
                     values.args = args;
                     values.env = {};
                     

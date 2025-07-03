@@ -62,7 +62,7 @@ export const AgentPage = () => {
                         {(Agents.get()
                             .data).filter(
                                 (x) =>
-                                    x.subAgents?.length > 0
+                                    (x.subAgents?.length || 0) > 0
                             ).filter(
                                 (x) =>
                                     botSearchValue == "" ||

@@ -171,7 +171,7 @@ export const Messages = ({ messages, onSumbit, readOnly, setContainer, status, o
                     return;
                 }
 
-                let contents = [];
+                let contents: MyMessage[] = [];
                 let index = i;
                 while (index >= 0) {
                     if (arr[index].role == "user") {
@@ -321,6 +321,7 @@ export const Messages = ({ messages, onSumbit, readOnly, setContainer, status, o
                                     } else if (x.type == "text") {
                                         return <Pre>{x.text}</Pre>;
                                     }
+                                    return null;
                                 })}
 
 

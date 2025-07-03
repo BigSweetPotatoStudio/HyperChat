@@ -17,7 +17,7 @@ export const InputAI = ({ value, onChange, aiGen, extInput, ...props }: {
             {...props}
             className="w-full"
             value={value}
-            onChange={(e) => onChange(e.target.value)}
+            onChange={(e) => onChange?.(e.target.value)}
         />
         {
 
@@ -27,7 +27,7 @@ export const InputAI = ({ value, onChange, aiGen, extInput, ...props }: {
             </div>} onConfirm={async () => {
                 if (aiGen) {
                     let res = await aiGen(p);
-                    onChange(res);
+                    onChange?.(res);
                 }
             }}>
                 <Button><BulbOutlined className="text-yellow-300" /></Button>

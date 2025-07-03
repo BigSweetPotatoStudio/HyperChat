@@ -60,7 +60,7 @@ const GenerateSpeechPanel = () => {
             message.success(t`Speech generated successfully`);
         } catch (error) {
             console.error("Error generating speech:", error);
-            message.error(t`Failed to generate speech: ${error.message}`);
+            message.error(t`Failed to generate speech: ${error instanceof Error ? error.message : String(error)}`);
         } finally {
             setGenerating(false);
         }

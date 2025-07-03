@@ -72,7 +72,8 @@ interface GatewayUrls {
  */
 export function MCPGateWayPage(): JSX.Element {
     // 获取 MCP 客户端列表上下文
-    const { mcpClients } = useContext(HeaderContext);
+    const context = useContext(HeaderContext);
+    const { mcpClients } = context || {};
     
     // 控制模态框显示状态
     const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
@@ -119,7 +120,7 @@ export function MCPGateWayPage(): JSX.Element {
                 if (index !== -1) {
                     gatewayData.data[index] = {
                         name: values.name,
-                        description: values.description,
+                        ...(values.description !== undefined && { description: values.description }),
                         allowMCPs: values.allowMCPs,
                     };
                 }
@@ -127,7 +128,7 @@ export function MCPGateWayPage(): JSX.Element {
                 // 创建新网关
                 gatewayData.data.push({
                     name: values.name,
-                    description: values.description,
+                    ...(values.description !== undefined && { description: values.description }),
                     allowMCPs: values.allowMCPs,
                 });
             }
@@ -311,7 +312,8 @@ const GatewayForm: React.FC<GatewayFormProps> = ({
     // Ant Design 表单实例
     const [form] = Form.useForm<GatewayFormValues>();
     // MCP 客户端列表上下文
-    const { mcpClients } = useContext(HeaderContext);
+    const context = useContext(HeaderContext);
+    const { mcpClients } = context || {};
     // 当前网关名称
     const [name, setName] = useState<string>(initialValues.name || "");
     // 配置信息引用
@@ -479,7 +481,9 @@ export const GatewayModal: React.FC<GatewayFormModalProps> = ({
             setLoading(true);
             const values = await formInstance?.validateFields();
             formInstance?.resetFields();
-            await onCreate(values);
+            if (values) {
+                await onCreate(values);
+            }
             setLoading(false);
         } catch (error) {
             setLoading(false);

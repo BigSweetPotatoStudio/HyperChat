@@ -13,12 +13,12 @@ import {
  */
 Data.prototype["_init"] = async function ({ } = {}) {
   try {
-    this.localStorage = await call("readJSON", { path: this.KEY });
+    (this as any).localStorage = await call("readJSON", { path: this.KEY });
   } catch (e) {
-    this.localStorage = {};
+    (this as any).localStorage = {};
   }
-  this.data = this.options.formatInit(Object.assign({}, this.data, this.localStorage));
-  return this.data;
+  (this as any).data = this.options?.formatInit?.(Object.assign({}, (this as any).data, (this as any).localStorage)) || Object.assign({}, (this as any).data, (this as any).localStorage);
+  return (this as any).data;
 }
 
 /**
@@ -29,7 +29,7 @@ Data.prototype["_init"] = async function ({ } = {}) {
 Data.prototype["_save"] = async function () {
   return await call("writeJSON", {
     path: this.KEY,
-    obj: this.options.formatSave(this.data),
+    obj: this.options?.formatSave?.((this as any).data) || (this as any).data,
   });
 }
 

@@ -7,8 +7,6 @@
     "resolveJsonModule": true,
     "esModuleInterop": true,
     "experimentalDecorators": true,
-    "jsxFactory": "React.createElement",
-    "jsx": "react",
     "module": "ESNext",
     "moduleResolution": "bundler",
     "removeComments": false,

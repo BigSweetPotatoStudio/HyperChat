@@ -56,7 +56,7 @@ export function getPrompts(mcp: string[]): (typeof MCPTypes.PromptSchema._type &
   let set = new Set<string>();
   for (let tool_name of mcp) {
     let [name, _] = tool_name.split(" > ");
-    set.add(name);
+    if (name) set.add(name);
   }
 
   let prompts: (typeof MCPTypes.PromptSchema._type & { key: string })[] = [];
@@ -78,7 +78,7 @@ export function getResourses(mcp: string[]): (typeof MCPTypes.ResourceSchema._ty
   let set = new Set<string>();
   for (let tool_name of mcp) {
     let [name, _] = tool_name.split(" > ");
-    set.add(name);
+    if (name) set.add(name);
   }
 
   let resources: (typeof MCPTypes.ResourceSchema._type & { key: string })[] = [];
@@ -138,7 +138,7 @@ export async function getMCPExtensionData(): Promise<any> {
         resolve(data);
       };
       // Execute the fetched JavaScript code.
-      eval(jscode);
+      if (jscode) eval(jscode);
 
       // Set a timeout for the JSONP callback to prevent indefinite waiting.
       setTimeout(() => {
@@ -154,7 +154,7 @@ export async function getMCPExtensionData(): Promise<any> {
         window["jsonp"] = function (data: any) {
           resolve(data);
         };
-        eval(jscode);
+        if (jscode) eval(jscode);
       });
     } else {
       // If no network and no cache, throw an error.

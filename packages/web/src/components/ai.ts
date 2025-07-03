@@ -12,7 +12,7 @@ export async function getDefaultModelConfig() {
     // const json = zodResponseFormat(BaseResponseSchema, 'final_schema');
     // console.log(json);
 
-    let config: AIModelConfigItem = undefined
+    let config: AIModelConfigItem | undefined = undefined
     await AI_MODELS.init();
     if (config == null) {
         config = AI_MODELS.get().data.find(m => m.isDefault);
@@ -23,6 +23,9 @@ export async function getDefaultModelConfig() {
             throw new Error("Please add LLM first");
         }
         config = AI_MODELS.get().data[0];
+    }
+    if (!config) {
+        throw new Error("No model configuration available");
     }
     return config;
 }
@@ -57,8 +60,8 @@ export async function rename(messages: MyMessage[]) {
         )
         // console.log(res);
         return res?.name || "Untitled";
-    } catch (e) {
-        return e.message;
+    } catch (e: any) {
+        return e?.message || "Error generating name";
     }
 }
 
@@ -88,7 +91,7 @@ export async function genCronExpression(message: string) {
         );
         // console.log(res);
         return res?.cron || "0 0 * * *";
-    } catch (e) {
-        return e.message;
+    } catch (e: any) {
+        return e?.message || "Error generating cron expression";
     }
 }

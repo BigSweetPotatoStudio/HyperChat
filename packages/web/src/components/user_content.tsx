@@ -126,8 +126,9 @@ export function UserContent({ x, regenerate = undefined, onSubmit }: UserContent
             
             // 设置编辑器的初始值
             if (Array.isArray(x.content)) {
-                if (x.content[0].type === "text") {
-                    setValue(x.content[0].text);
+                const firstContent = x.content?.[0];
+                if (firstContent && firstContent.type === "text" && 'text' in firstContent) {
+                    setValue(firstContent.text);
                 }
             } else {
                 setValue(x.content.toString());

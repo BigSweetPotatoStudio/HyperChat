@@ -83,7 +83,8 @@ export function TaskListPage(): JSX.Element {
   const refresh = useForceUpdate();
   
   // 全局状态管理
-  const { globalState, updateGlobalState } = useContext(HeaderContext);
+  const context = useContext(HeaderContext);
+  const { globalState, updateGlobalState } = context || {};
   
   // 路由相关 hooks
   // 路由相关 hooks
@@ -239,7 +240,7 @@ export function TaskListPage(): JSX.Element {
             <Button
               size="small"
               type="link"
-              loading={loadObj[row.key]}
+              {...(loadObj[row.key] !== undefined ? { loading: loadObj[row.key] } : {})}
               className="text-red-300"
               onClick={async () => {
                 // 设置加载状态

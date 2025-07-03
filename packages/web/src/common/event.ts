@@ -126,10 +126,12 @@ export function createEvent<T extends EventMap>(name: string): EventEmitter<T> {
         const listeners = [...callbacks[name]!]; // Create a copy to handle removals during iteration
         for (let i = 0; i < listeners.length; i++) {
           const callback = listeners[i];
-          if (callback.once) {
+          if (callback && callback.once) {
             this.off(name, callback as EventCallback<T[K]>);
           }
-          callback.apply({}, args);
+          if (callback) {
+            callback.apply({}, args);
+          }
         }
       }
       return this;

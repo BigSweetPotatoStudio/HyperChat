@@ -11,7 +11,7 @@ import React, { useEffect, useState } from "react";
  * Defines the props for the NumberStep component.
  * It extends Ant Design's InputNumberProps to inherit common number input properties.
  */
-interface NumberStepProps extends InputNumberProps {
+interface NumberStepProps extends Omit<InputNumberProps, 'value' | 'onChange' | 'min' | 'max' | 'step' | 'defaultValue'> {
   /**
    * The current value of the number input.
    */
@@ -21,6 +21,22 @@ interface NumberStepProps extends InputNumberProps {
    * @param value The new numeric value.
    */
   onChange?: (value: number | undefined) => void;
+  /**
+   * The minimum value.
+   */
+  min?: number;
+  /**
+   * The maximum value.
+   */
+  max?: number;
+  /**
+   * The step size for value changes.
+   */
+  step?: number;
+  /**
+   * The default value.
+   */
+  defaultValue?: number;
 }
 
 /**
@@ -65,14 +81,16 @@ export function NumberStep({
       </Col>
       <Col span={8}>
         <InputNumber
-          min={min}
-          max={max}
-          style={{ margin: "0 16px" }}
-          step={step}
-          value={inputValue}
-          onChange={handleInputChange}
-          defaultValue={defaultValue}
-          {...restProps}
+          {...{
+            min,
+            max,
+            style: { margin: "0 16px" },
+            step: step as any,
+            value: inputValue as any,
+            onChange: handleInputChange,
+            defaultValue,
+            ...(restProps || {})
+          }}
         />
       </Col>
     </Row>

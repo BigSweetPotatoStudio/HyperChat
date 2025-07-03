@@ -70,7 +70,7 @@ const Row: React.FC<RowProps> = (props) => {
   };
 
   const contextValue = useMemo<RowContextProps>(
-    () => ({ setActivatorNodeRef, listeners }),
+    () => ({ setActivatorNodeRef, listeners: listeners || {} }),
     [setActivatorNodeRef, listeners]
   );
 

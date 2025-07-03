@@ -19,7 +19,8 @@ import { useForceUpdate } from "../../hooks/useForceUpdate";
 
 export const AgentCreatePage = () => {
     const refresh = useForceUpdate();
-    const { mcpClients } = useContext(HeaderContext);
+    const context = useContext(HeaderContext);
+  const { mcpClients } = context || {};
     const [form] = Form.useForm();
 
 
@@ -113,7 +114,7 @@ export const AgentCreatePage = () => {
                             treeCheckable
                             placeholder={t`Please select allowed MCP`}
                             showCheckedStrategy={TreeSelect.SHOW_PARENT}
-                            treeData={mcpClients.map((x) => {
+                            treeData={(mcpClients || []).map((x) => {
                                 return {
                                     title: x.name,
                                     key: x.name,

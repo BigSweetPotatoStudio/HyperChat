@@ -82,7 +82,7 @@ const detectCodeLanguage = (className?: string, code?: string) => {
     const isHtml = /^language-html/.test(lower);
     const isMermaid = /^language-mermaid/.test(lower);
     let isSvg = /^language-svg/.test(lower);
-    isSvg = isSvg || (/^language-xml/.test(lower) && code?.includes("<svg"));
+    isSvg = isSvg || (/^language-xml/.test(lower) && Boolean(code?.includes("<svg")));
     const isHigh = /code-highlight/.test(lower);
     
     return { isHtml, isSvg, isMermaid, isHigh };
@@ -379,7 +379,7 @@ export const AssistantToolContent = ({ contents }: { contents: MyMessage[] }) =>
                                 <Collapse
                                     expandIcon={() => <ThunderboltOutlined />}
                                     size="small"
-                                    defaultActiveKey={x.content_status === "dataLoading" ? ["reasoning_content"] : undefined}
+                                    defaultActiveKey={x.content_status === "dataLoading" ? ["reasoning_content"] : []}
                                     items={[{
                                         key: "reasoning_content",
                                         label: (
@@ -497,8 +497,8 @@ export const AssistantToolContent = ({ contents }: { contents: MyMessage[] }) =>
                                                                     )
                                                                 }
                                                             </span>
-                                                            {toolResult.content_attachment?.length > 0 && 
-                                                                toolResult.content_attachment.map((attachment, i) => (
+                                                            {(toolResult.content_attachment?.length || 0) > 0 && 
+                                                                toolResult.content_attachment?.map((attachment, i) => (
                                                                     attachment.type === "image" ? (
                                                                         <DownImage 
                                                                             key={i}

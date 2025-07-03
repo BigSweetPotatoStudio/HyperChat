@@ -55,7 +55,9 @@ const px2rem = px2remTransformer({
 
 // 挂载 React 根组件
 if (document.getElementById("root")) {
-  const root = ReactDOM.createRoot(document.getElementById("root"));
+  const rootElement = document.getElementById("root");
+  if (!rootElement) throw new Error("Root element not found");
+  const root = ReactDOM.createRoot(rootElement);
   root.render(
     // <React.StrictMode>
     <ConfigProvider theme={{

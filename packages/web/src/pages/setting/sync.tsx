@@ -71,7 +71,8 @@ export function WebdavSetting(): JSX.Element {
   const refresh = useForceUpdate();
 
   // 获取全局上下文
-  const { globalState, updateGlobalState, setLang } = useContext(HeaderContext);
+  const context = useContext(HeaderContext);
+  const { globalState, updateGlobalState, setLang } = context || {};
   
   // WebDAV 表单实例
   const [webdavForm] = useForm<WebDavFormValues>();

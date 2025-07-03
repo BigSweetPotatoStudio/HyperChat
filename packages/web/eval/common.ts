@@ -1,5 +1,5 @@
 export class ExecResult<T> {
-  data: T;
+  data!: T;
   step = 1;
   stepCount: number;
   progress = 0;

@@ -24,18 +24,31 @@ import { ClockCircleOutlined, LaptopOutlined, MinusOutlined } from "@ant-design/
 import { t } from "../../i18n";
 import { EVENT } from "../../common/event";
 import { useForceUpdate } from "../../hooks/useForceUpdate";
+interface ChatPageProps {
+  sessionID?: string;
+  type?: string;
+  onChange?: (item: any) => void;
+  hyperChatData?: {
+    uid: string;
+    agentKey: string;
+    message: string;
+    onComplete: (text: string) => void;
+    onError: (e: any) => void;
+  };
+}
+
 function ChatPage({
   sessionID = "",
-  type = undefined,
-  onChange = undefined,
+  type,
+  onChange,
   hyperChatData = {
     uid: "",
     agentKey: "",
     message: "",
-    onComplete: (text: string) => undefined,
-    onError: (e) => { },
+    onComplete: (text: string) => {},
+    onError: (e) => {},
   },
-}) {
+}: ChatPageProps) {
   const [curr, setCurr] = useState({
     title: "",
     type: type,

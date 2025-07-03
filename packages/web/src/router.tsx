@@ -202,8 +202,9 @@ export function getLayoutRoute() {
 
     useEffect(() => {
       if (props.default && location.pathname == props.from) {
+        const defaultPath = props.default;
         setTimeout(() => {
-          navigate(props.default);
+          navigate(defaultPath);
         }, 0);
       }
     }, [location.pathname]);

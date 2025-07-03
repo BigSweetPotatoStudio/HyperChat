@@ -32,7 +32,8 @@ const { Search } = Input;
 
 export function KnowledgeBase() {
   const refresh = useForceUpdate();
-  const { globalState, updateGlobalState } = useContext(HeaderContext);
+  const context = useContext(HeaderContext);
+  const { globalState, updateGlobalState } = context || {};
 
   useEffect(() => {
     (async () => {
@@ -199,9 +200,9 @@ export function KnowledgeBase() {
                       <a
                         onClick={async () => {
                           // let f = await call("pathJoin", [record.filepath]);
-                          let e = await call("exists", { path: record.filepath });
+                          let e = await call("exists", { path: record.filepath || "" });
                           if (e) {
-                            let p = await call("pathJoin", { path: record.filepath });
+                            let p = await call("pathJoin", { path: record.filepath || "" });
                             await callElectron("openExplorer", { path: p });
                           } else {
                             message.error("file not exists");
@@ -264,7 +265,10 @@ export function KnowledgeBase() {
             let i = KNOWLEDGE_BASE.get().dbList.findIndex(
               (x) => x.key === currRowKnowledgeBase.key,
             );
-            Object.assign(KNOWLEDGE_BASE.get().dbList[i], v);
+            const existingItem = KNOWLEDGE_BASE.get().dbList[i];
+            if (i >= 0 && existingItem) {
+              Object.assign(existingItem, v);
+            }
           } else {
             v.key = v4();
             v.resources = [];

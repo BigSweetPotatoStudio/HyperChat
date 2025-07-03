@@ -72,7 +72,8 @@ import { useForceUpdate } from "../../hooks/useForceUpdate";
 
 export function TaskResultsPage() {
   const refresh = useForceUpdate();
-  const { globalState, updateGlobalState } = useContext(HeaderContext);
+  const context = useContext(HeaderContext);
+  const { globalState, updateGlobalState } = context || {};
   useEffect(() => {
     (async () => {
       await ChatHistory.init();

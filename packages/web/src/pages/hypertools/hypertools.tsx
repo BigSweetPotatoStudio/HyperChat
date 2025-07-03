@@ -23,7 +23,8 @@ import { t } from "../../i18n";
 import { HeaderContext } from "../../common/context";
 
 export function HpyerTools() {
-    const { globalState, updateGlobalState, mcpClients } = useContext(HeaderContext);
+    const context = useContext(HeaderContext);
+    const { globalState, updateGlobalState, mcpClients } = context || {};
   const [url, setUrl] = useState("");
   return (
     <div className="lg:p-4">

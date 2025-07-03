@@ -37,7 +37,11 @@ type SessionType = {
   id: string;
   context: any;
 };
-export function Sessions({ setSessionCount = undefined }) {
+interface SessionsProps {
+  setSessionCount?: (count: number) => void;
+}
+
+export function Sessions({ setSessionCount }: SessionsProps) {
   //   const [activeKey, setActiveKey] = useState("1");
   const refresh = useForceUpdate();
 
@@ -142,9 +146,9 @@ export function Sessions({ setSessionCount = undefined }) {
     socket.on("terminal-send", async (m) => {
       if (m.type == "execute-status-change") {
         if (m.data.status == 1) {
-          setSessionCount(1)
+          setSessionCount?.(1)
         } else {
-          setSessionCount(0)
+          setSessionCount?.(0)
         }
         return;
       }

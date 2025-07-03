@@ -90,10 +90,15 @@ export function SelectFile(props: SelectFileProps): React.ReactElement {
       setIsDragActive(false);
 
       if (e.dataTransfer?.files && e.dataTransfer.files.length > 0) {
-        const filePath = e.dataTransfer.files[0].path;
-        setValue(filePath);
-        props.onChange?.(filePath);
-        props.onFileChange?.(e.dataTransfer.files[0]);
+        const file = e.dataTransfer.files[0];
+        const filePath = file?.path;
+        if (filePath) {
+          setValue(filePath);
+          props.onChange?.(filePath);
+        }
+        if (file) {
+          props.onFileChange?.(file);
+        }
       }
     };
 
@@ -110,7 +115,7 @@ export function SelectFile(props: SelectFileProps): React.ReactElement {
     };
   }, [props.onChange, props.onFileChange]);
 
-  const fileDialogOptions = useMemo(() => {
+  const fileDialogOptions = useMemo((): { type?: "openFile" | "openDirectory"; filters?: { name: string; extensions: string[]; }[]; } => {
     if (props.type === "openDirectory") {
       return { type: "openDirectory" as const };
     } else {
@@ -120,9 +125,10 @@ export function SelectFile(props: SelectFileProps): React.ReactElement {
       } else if (props.uploadType === "video") {
         extensions = ["mp4", "mkv", "webm"];
       }
+      const filters = extensions.length > 0 ? [{ name: "Files", extensions }] : props.filters;
       return {
         type: "openFile" as const,
-        filters: extensions.length > 0 ? [{ name: "Files", extensions }] : props.filters,
+        ...(filters && { filters }),
       };
     }
   }, [props.type, props.uploadType, props.filters]);
@@ -183,10 +189,12 @@ export function SelectFile(props: SelectFileProps): React.ReactElement {
       ref={dropRef}
       onClick={async () => {
         const path = await callElectron("selectFile", fileDialogOptions);
-        setValue(path);
-        props.onChange?.(path);
-        // For native dialogs, we don't have a File object directly, so create a dummy one.
-        props.onFileChange?.(new File([], path));
+        if (path) {
+          setValue(path);
+          props.onChange?.(path);
+          // For native dialogs, we don't have a File object directly, so create a dummy one.
+          props.onFileChange?.(new File([], path));
+        }
       }}
     >
       {props.children ? (
@@ -273,7 +281,10 @@ export function QuickPath(props: QuickPathProps): React.ReactElement {
       setIsDragActive(false);
 
       if (e.dataTransfer?.files && e.dataTransfer.files.length > 0) {
-        props.onChange?.(e.dataTransfer.files[0]);
+        const file = e.dataTransfer.files[0];
+        if (file) {
+          props.onChange?.(file);
+        }
       }
     };
 
@@ -283,7 +294,7 @@ export function QuickPath(props: QuickPathProps): React.ReactElement {
 
       for (let i = 0; i < items.length; i++) {
         const item = items[i];
-        if (item.kind === 'file') {
+        if (item && item.kind === 'file') {
           const file = item.getAsFile();
           if (file && file.type.startsWith('image/')) {
             props.onParseFile?.(file);

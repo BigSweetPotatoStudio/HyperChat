@@ -42,18 +42,21 @@ export async function request(
   };
 
   // Handle request body: FormData or JSON.
+  let requestOptions: RequestInit;
   if (!(options.body instanceof FormData)) {
-    options = {
+    requestOptions = {
       ...options,
       headers: {
         ...options.headers,
         "Content-Type": "application/json",
       },
-      body: JSON.stringify(options.body) as BodyInit,
+      body: JSON.stringify(options.body),
     };
+  } else {
+    requestOptions = options as RequestInit;
   }
 
-  return fetch(BASE_URL + url, options as RequestInit)
+  return fetch(BASE_URL + url, requestOptions)
     .then((res) => {
       // Handle unauthorized access.
       if (res.status === 401) {

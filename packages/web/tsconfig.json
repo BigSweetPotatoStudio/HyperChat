@@ -1,21 +1,10 @@
 {
+  "extends": "../core/tsconfig.json",
   "compilerOptions": {
-    "allowJs": true,
-    "checkJs": false,
-    "composite": false,
-    "esModuleInterop": true,
-    "allowSyntheticDefaultImports": true,
+    "baseUrl": ".",
     "jsxFactory": "React.createElement",
     "jsxFragmentFactory": "React.Fragment",
     "jsx": "react",
-    "module": "esnext",
-    "moduleResolution": "bundler",
-    "experimentalDecorators": true,
-    "removeComments": false,
-    "resolveJsonModule": true,
-    "sourceMap": true,
-    "strict": false,
-    "strictNullChecks": false,
     "paths": {
       "@/*": [
         "./*"
@@ -24,19 +13,6 @@
         "../core/src/shared/*"
       ],
     },
-    "lib": [
-      "ESNext",
-      "DOM"
-    ],
-    "types": [
-      "node",
-    ],
-    "target": "ESNext",
-    "typeRoots": [
-      "./node_modules/@types",
-      "./types/"
-    ],
-    "outDir": "./js"
   },
   "include": [
     "src",

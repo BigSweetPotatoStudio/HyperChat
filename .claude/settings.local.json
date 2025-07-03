@@ -15,7 +15,8 @@
       "Bash(cat:*)",
       "Bash(ls:*)",
       "Bash(npm install:*)",
-      "Bash(npm run build:*)"
+      "Bash(npm run build:*)",
+      "Bash(sed:*)"
     ],
     "deny": []
   }

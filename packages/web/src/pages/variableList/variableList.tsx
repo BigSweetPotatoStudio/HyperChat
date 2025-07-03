@@ -16,7 +16,8 @@ import { HeaderContext } from "../../common/context";
 import { useForceUpdate } from "../../hooks/useForceUpdate";
 
 export const VariableList = () => {
-    const { globalState, updateGlobalState, setLang } = useContext(HeaderContext);
+    const context = useContext(HeaderContext);
+    const { globalState, updateGlobalState, setLang } = context || {};
     const refresh = useForceUpdate();
     const [scope, setScope] = React.useState({
         name: undefined,
@@ -77,7 +78,7 @@ export const VariableList = () => {
                 }}
 
                 rowSelection={{
-                    type: "radio", selectedRowKeys: [scope.key], onChange: (selectedRowKeys) => {
+                    type: "radio", selectedRowKeys: scope.key ? [scope.key] : [], onChange: (selectedRowKeys) => {
                         setScope(
                             (VarScopeList.get().data.find(x => x.key == selectedRowKeys[0]) || {}) as any
                         );

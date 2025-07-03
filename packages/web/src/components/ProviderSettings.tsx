@@ -65,8 +65,8 @@ const ProviderIcon: React.FC<{ iconType: string; className?: string }> = ({ icon
   const icon = iconMap[iconType] || iconMap.custom;
 
   return (
-    <div className={`${className} rounded-full ${icon.bg} flex items-center justify-center ${icon.text} text-xs`}>
-      {icon.content}
+    <div className={`${className} rounded-full ${icon?.bg || 'bg-gray-500'} flex items-center justify-center ${icon?.text || 'text-white'} text-xs`}>
+      {icon?.content || '?'}
     </div>
   );
 };
@@ -311,8 +311,13 @@ export function ProviderSettings() {
         // 编辑现有模型
         const index = AI_MODELS.get().data.findIndex(m => m.key === editingModel.key);
         if (index >= 0) {
-          AI_MODELS.get().data[index] = {
-            ...AI_MODELS.get().data[index],
+          const existingModel = AI_MODELS.get().data[index];
+          if (!existingModel) return;
+          const updatedModel: AIModelConfigItem = {
+            key: existingModel.key,
+            apiKey: existingModel.apiKey,
+            baseURL: existingModel.baseURL,
+            provider: existingModel.provider,
             name: finalName,
             model: values.model,
             type: values.type,
@@ -320,7 +325,13 @@ export function ProviderSettings() {
             supportImage: values.supportImage,
             supportTool: values.supportTool,
             isDefault: values.isDefault,
+            ...(existingModel.call_tool_step !== undefined ? { call_tool_step: existingModel.call_tool_step } : {}),
           };
+          
+          // 这些属性不在表单中，保持现有值
+          // key, apiKey, baseURL, provider, call_tool_step 从现有模型中保留
+          
+          AI_MODELS.get().data[index] = updatedModel;
         }
       } else {
         // 添加新模型 - 从 Provider 获取 apiKey 和 baseURL
@@ -330,8 +341,8 @@ export function ProviderSettings() {
           name: finalName,
           model: values.model,
           apiKey: providerApiInfo?.apiKey || '',
-          baseURL: providerApiInfo?.baseURL || selectedProvider.baseURL,
-          provider: selectedProvider.key,
+          baseURL: providerApiInfo?.baseURL || selectedProvider.baseURL || '',
+          provider: selectedProvider.key || '',
           supportImage: values.supportImage,
           supportTool: values.supportTool,
           type: values.type,
