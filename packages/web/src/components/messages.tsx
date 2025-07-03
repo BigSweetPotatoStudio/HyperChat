@@ -354,7 +354,7 @@ export const Messages = ({ messages, onSumbit, readOnly, setContainer, status, o
         return () => {
             clearInterval(t);
         }
-    }, [v, container]);
+    }, []);
 
 
     return <Bubble.List

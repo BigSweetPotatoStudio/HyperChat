@@ -26,8 +26,7 @@ packages/cli 专注于命令行前端的实现
 ## 记忆
 
 [x] 我现在要改造这个hyperchat项目，以前都用在web浏览器前端发出llm请求通过OpenAI的库。现在我想改成在code目录下(nodejs环境)中通过ai库发请求，代码在packages/core/src/shared/ai.mts 。前后端共用
-
-
+[ ] 正在添加工作区概念，支持在不同工作区之间隔离数据和配置如下，支持显示当前工具区文件夹（树状），agent等配置作为文件保存在.hyperchat目录下。
 
 2.0 版本的 HyperChat 项目结构如下：
 
@@ -39,7 +38,7 @@ packages/cli 专注于命令行前端的实现
 │   │   │   ├── chats/
 │   │   │   │   └── history_<uuid>.json // 此工作区内 AI Agent 的聊天历史
 │   │   │   └── memory/
-│   │   │       └── memory_<uuid>.json  // 此工作区内 AI Agent 的记忆
+│   │   │       └── memory_<name>.md  // 此工作区内 AI Agent 的记忆
 │   │   ├── mcp.json                   // 此工作区专属的(MCP) 配置文件 (可添加到全局配置)
 │   ├── src/                      // 项目源代码
 │   │   └── main.py
