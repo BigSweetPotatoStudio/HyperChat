@@ -13,7 +13,7 @@ HyperChat is an open-source, multi-platform AI chat client that fully supports M
 
 ## 🎯 Project Vision
 
-**[HyperChat 1.0](./README.1.md)** is a completely manually written project that showcases the fine craftsmanship of traditional software development.
+**[HyperChat 1.0](./archive/README.1.md)** is a completely manually written project that showcases the fine craftsmanship of traditional software development.
 
 **HyperChat 2.0** marks a shift towards the **Vibe Coding** development model, recommending the use of AI tools such as Claude Code and GitHub Copilot to accelerate the development process, embodying a new era of AI collaborative development.
 
