@@ -283,9 +283,9 @@ export class MCPClient implements IMCPClient {
         this.notifyStatusChange();
 
         // 如果不是主动关闭，尝试重连
-        if (!this.config.disabled) {
-          setTimeout(() => this.tryReconnect(), 2000);
-        }
+        // if (!this.config.disabled) {
+        //   setTimeout(() => this.tryReconnect(), 2000);
+        // }
       };
       client.onerror = (e) => {
         this.handleClientError(e);

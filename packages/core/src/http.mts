@@ -63,6 +63,7 @@ export const routers: MyRouter[] = [];
  * 集成所有中间件、路由和 WebSocket 服务
  */
 export async function initHttp(): Promise<void> {
+  Logger.info('Routes registered with prefix:', urlPrefix);
   const app = express();
 
   // 基础中间件配置
@@ -80,8 +81,8 @@ export async function initHttp(): Promise<void> {
     prefix: callNodejsApiPath,
     router: createUploadRouter()
   });
-  
-  Logger.info('Routes registered with prefix:', callNodejsApiPath);
+
+
 
   // 应用所有路由
   for (const route of routers) {
@@ -89,7 +90,7 @@ export async function initHttp(): Promise<void> {
   }
 
   // 静态文件服务配置
-  const staticPath = process.env.myEnv === "dev" 
+  const staticPath = process.env.myEnv === "dev"
     ? path.join(__dirname, "../../web/build")
     : path.join(__dirname, "../web-build");
 
@@ -119,7 +120,7 @@ export async function initHttp(): Promise<void> {
   app.post(urlPrefix + "/api/refreshMcpRoutes", async (_req, res) => {
     try {
       const newRouter = await refreshRoutes(urlPrefix + "/mcp");
-      
+
       // 安全地移除旧路由
       app._router.stack = app._router.stack.filter((layer: any) => {
         return layer.handle !== mcpRouter;
@@ -145,10 +146,10 @@ export async function initHttp(): Promise<void> {
   // 全局错误处理中间件
   app.use((err: Error, _req: Request, res: Response, _next: NextFunction) => {
     Logger.error("Server error:", err);
-    
+
     res.status(500).json({
       success: false,
-      message: process.env.myEnv === "dev" 
+      message: process.env.myEnv === "dev"
         ? (err.message || 'Internal Server Error')
         : 'Internal Server Error'
     });
@@ -171,7 +172,7 @@ export async function initHttp(): Promise<void> {
       Logger.info(`HTTP server listening on port: ${port}`);
     });
   });
-  
+
   Config.port = PORT;
   await electronData.save();
 
@@ -183,9 +184,9 @@ export async function initHttp(): Promise<void> {
   // 创建 Socket.IO 命名空间
   const mainNamespace = io.of("/" + electronData.get().password + "/main-message");
   const terminalNamespace = io.of("/" + electronData.get().password + "/terminal-message");
-  
+
   getMessageService().init(mainNamespace as any, terminalNamespace as any);
-  
+
   Logger.info("HTTP server initialization completed successfully");
 }
 
