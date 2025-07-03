@@ -25,6 +25,7 @@ import { Logger } from "../log.mjs";
 
 import querystring from "querystring";
 import { fetch } from "zx";
+import { Logger } from "../log.mjs";
 
 // 调试信息：显示当前环境和配置
 Logger.info("NODE_ENV: ", process.env.NODE_ENV);

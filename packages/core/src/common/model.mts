@@ -1,12 +1,12 @@
 // This file (model.js) contains all the logic for loading the model and running predictions.
 
 // import { pipeline, env } from "@xenova/transformers";
-import { appDataDir } from "../index.mjs";
+import { appDataDir } from "../const.mjs";
 import path from "path";
 import { progressList } from "./progress.mjs";
 import type { FeatureExtractionPipeline } from "@xenova/transformers";
 
-import { electronData } from "../../../shared/data.mjs";
+import { electronData } from "../shared/data.mjs";
 import { Logger } from "../log.mjs";
 
 export class FeatureExtraction {

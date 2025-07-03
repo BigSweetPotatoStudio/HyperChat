@@ -28,6 +28,7 @@ import { Logger } from "../log.mjs";
  */
 
 import { exec } from 'child_process';
+import { Logger } from '../log.mjs';
 
 /**
  * 强制关闭占用指定端口的进程
