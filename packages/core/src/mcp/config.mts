@@ -117,7 +117,6 @@ const MAX_RECONNECT_DELAY = 30000; // 最大30秒
 const DEFAULT_MAX_RECONNECT_ATTEMPTS = 5;
 const RECONNECT_BACKOFF_FACTOR = 1.5;
 
-let notificationCount = 0;
 export let mcpClients: Array<MCPClient> = [];
 export class MCPClient implements IMCPClient {
   public tools: Array<HyperChatCompletionTool> = [];
@@ -230,12 +229,14 @@ export class MCPClient implements IMCPClient {
     const { client, ...out } = this;
     return out;
   }
-  async close(): Promise<void> {
+  async close(sendMsg = true): Promise<void> {
     this.client.onclose = () => { };
     this.client.onerror = () => { };
     await this.client.close();
     this.status = "disconnected";
-    this.notifyStatusChange();
+    if (sendMsg) {
+      this.notifyStatusChange();
+    }
   }
   async open(): Promise<void> {
 
@@ -299,26 +300,13 @@ export class MCPClient implements IMCPClient {
       this.resources = this.mapResourcesToHyperChatFormat(resources_res.resources);
       this.prompts = this.mapPromptsToHyperChatFormat(listPrompts_res.prompts);
 
-
-      // this.client.setNotificationHandler(LoggingMessageNotificationSchema, (notification) => {
-      //   notificationCount++;
-      //   Logger.info(`Notification #${notificationCount}: ${notification.params.level} - ${notification.params.data}`);
-      //   if (process.env.myEnv === "dev") {
-      //     Logger.debug(`\nNotification #${notificationCount}: ${notification.params.level} - ${notification.params.data}`);
-      //     process.stdout.write('> ');
-      //   }
-      // });
-
       this.client.setNotificationHandler(ResourceListChangedNotificationSchema, async (notification) => {
         Logger.info("Received notification ResourceListChangedNotificationSchema:", notification);
         let resources_res = await client.listResources().catch((_e) => {
           return { resources: [] };
         });
         this.resources = this.mapResourcesToHyperChatFormat(resources_res.resources);
-        getMessageService().sendAllToRenderer({
-          type: "changeMcpClient",
-          data: this,
-        });
+        this.notifyStatusChange();
       });
 
       this.status = "connected";
@@ -596,15 +584,9 @@ export async function initMcpClients(): Promise<MCPClient[]> {
         try {
           tasks.push(
             mcpClient.open().then(() => {
-              getMessageService().sendAllToRenderer({
-                type: "changeMcpClient",
-                data: mcpClient,
-              });
+              mcpClient.notifyStatusChange();
             }).catch((_e) => {
-              getMessageService().sendAllToRenderer({
-                type: "changeMcpClient",
-                data: mcpClient,
-              });
+              mcpClient.notifyStatusChange();
             })
           );
         } catch (e) {
@@ -632,15 +614,9 @@ export async function initMcpClients(): Promise<MCPClient[]> {
     try {
       tasks.push(
         mcpClient.open().then(() => {
-          getMessageService().sendAllToRenderer({
-            type: "changeMcpClient",
-            data: mcpClient,
-          });
+          mcpClient.notifyStatusChange();
         }).catch((_e) => {
-          getMessageService().sendAllToRenderer({
-            type: "changeMcpClient",
-            data: mcpClient,
-          });
+          mcpClient.notifyStatusChange();
         })
       );
     } catch (e) {
@@ -675,6 +651,7 @@ export async function openMcpClient(
     } else {
       mcpClient.config = clientConfig;
     }
+    await mcpClient.close(false);
     delete mcpClient.config.disabled;
   } else {
     if (!name || !clientConfig) throw new Error('Name and clientConfig are required');
@@ -698,10 +675,6 @@ export async function openMcpClient(
       throw e;
     }
   }
-  // getMessageService().sendAllToRenderer({
-  //   type: "changeMcpClient",
-  //   data: mcpClient,
-  // });
   return mcpClients;
 }
 
@@ -735,6 +708,8 @@ export async function closeMcpClients(name: string, {
   }
   if (isdelete) {
     await mcpClient.saveConfig({ isdelete: isdelete });
+    mcpClient.status = "deleted";
+    mcpClient.notifyStatusChange();
     mcpClients = mcpClients.filter((c) => c.name != name);
   }
   return mcpClients;

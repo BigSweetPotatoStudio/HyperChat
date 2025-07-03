@@ -29,33 +29,15 @@ import {
   useNavigate,
   useLocation,
 } from "react-router-dom";
-import { v4 } from "uuid";
-import OpenAI from "openai";
 import Clarity from "@microsoft/clarity";
 import {
   Button,
-  Table,
   Switch,
   Modal,
-  message,
-  Radio,
-  Input,
-  Tabs,
   ConfigProvider,
-  Popconfirm,
-  Popover,
-  Dropdown,
   Space,
-  MenuProps,
   Select,
-  Spin,
-  Progress,
-  Form,
-  Divider,
-  Tooltip,
-  InputNumber,
   Tag,
-  Timeline,
   notification,
   Drawer,
 } from "antd";
@@ -63,34 +45,13 @@ import enUS from "antd/locale/en_US";
 import zhCN from "antd/locale/zh_CN";
 
 import {
-  AndroidOutlined,
-  CheckOutlined,
-  ChromeFilled,
-  CloseOutlined,
-  CloudOutlined,
-  CrownFilled,
-  DownOutlined,
   ExclamationCircleFilled,
-  GiftOutlined,
   GithubFilled,
-  InfoCircleFilled,
-  LoadingOutlined,
-  LogoutOutlined,
-  MinusCircleOutlined,
-  PlusOutlined,
-  QuestionCircleFilled,
-  RocketOutlined,
-  SmileFilled,
-  SmileOutlined,
   SyncOutlined,
-  TabletFilled,
 } from "@ant-design/icons";
 
 import { HeaderContext } from "./common/context";
 import {
-  PageContainer,
-  ProBreadcrumb,
-  ProCard,
   ProLayout,
 } from "@ant-design/pro-components";
 import { getLayoutRoute } from "./router";
@@ -98,8 +59,6 @@ import { currLang, setCurrLang, t } from "./i18n";
 import { call, callElectron, msg_receive } from "./common/call";
 import {
   AppSetting,
-  ChatHistory,
-  DataList,
   electronData,
   AI_MODELS,
   IMCPClient,
@@ -107,10 +66,6 @@ import {
 } from "@hyperchat/shared/data.mjs";
 import { InitedClient, setClients } from "./common/mcp";
 import { EVENT } from "./common/event";
-import { DndTable } from "./common/dndTable";
-import { sleep } from "./common/sleep";
-import { InputPlus } from "./common/input_plus";
-import { rejects } from "assert";
 import {
   enable as enableDarkMode,
   disable as disableDarkMode,
@@ -119,7 +74,6 @@ import {
   isEnabled as isDarkReaderEnabled,
   setFetchMethod as setDarkReaderFetchMethod,
 } from "darkreader";
-import { Pre } from "./components/pre";
 import { Icon } from "./components/icon";
 import { getDefaultModelConfigSync } from "./components/ai";
 import { ProviderSettings } from "./components/ProviderSettings";
@@ -293,14 +247,19 @@ export function Layout() {
         // 支持单个客户端更新或批量替换，通过 ref 更新并触发刷新
         const payload = res.data;
 
-        const idx = mcpClientsRef.current.findIndex((c) => c.name === payload.name);
-        if (idx >= 0) mcpClientsRef.current[idx] = payload;
-        mcpClientsRef.current = mcpClientsRef.current;
-        combinedRefresh();
-        // 同步全局
-        setClients(mcpClientsRef.current);
-
-        // 设置全局工具获取函数
+        if (payload.status === "deleted") {
+          const idx = mcpClientsRef.current.findIndex((c) => c.name === payload.name);
+          if (idx >= 0) mcpClientsRef.current.splice(idx, 1);
+          combinedRefresh();
+          setClients(mcpClientsRef.current);
+        } else {
+          const idx = mcpClientsRef.current.findIndex((c) => c.name === payload.name);
+          if (idx >= 0) mcpClientsRef.current[idx] = payload;
+          mcpClientsRef.current = mcpClientsRef.current;
+          combinedRefresh();
+          // 同步全局
+          setClients(mcpClientsRef.current);
+        }
         window.getTools = (allowMCPs?: string[]) => {
           let tools: IMCPClient["tools"] = [];
 

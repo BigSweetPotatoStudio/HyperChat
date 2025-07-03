@@ -387,7 +387,7 @@ export type IMCPClient = {
   prompts: Array<typeof MCPTypes.PromptSchema._type & { key: string }>;
   resources: Array<typeof MCPTypes.ResourceSchema._type & { key: string }>;
   name: string;
-  status: "disconnected" | "connected" | "connecting" | "disabled";
+  status: "disconnected" | "connected" | "connecting" | "disabled" | "deleted";
   order: number;
   config: MCPServerConfig;
   ext: {

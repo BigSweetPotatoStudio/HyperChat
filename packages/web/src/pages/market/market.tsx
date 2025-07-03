@@ -24,14 +24,9 @@ import {
 } from "antd";
 import {
   electronData,
-  MCP_CONFIG,
   MCPServerConfig,
 } from "@hyperchat/shared/data.mjs";
-import { EVENT } from "../../common/event";
 import { Code } from "../../common/code";
-import { getMCPExtensionData } from "../../common/mcp";
-import { zodToJsonSchema } from "zod-to-json-schema";
-import { z } from "zod";
 import { useForceUpdate } from "../../hooks/useForceUpdate";
 
 /**
@@ -369,6 +364,7 @@ export function Market() {
                                               isdelete: true,
                                               isdisable: false,
                                             });
+
                                           } catch (e: any) {
                                             message.error(e.message);
                                           }
