@@ -12,7 +12,7 @@ on:
 
 jobs:
   test-build:
-    name: build and release electron app
+    name: test-build
     strategy:
       fail-fast: false
       matrix:
