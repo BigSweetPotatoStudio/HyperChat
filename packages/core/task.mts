@@ -17,7 +17,7 @@ if (argv.watch) {
 }
 
 if (argv.dev) {
-  await $`npx cross-env NODE_ENV=production myEnv=dev tsx src/main.mts`;
+  await $`npx cross-env NODE_ENV=production myEnv=dev tsx --inspect=19999 src/main.mts`;
 }
 
 

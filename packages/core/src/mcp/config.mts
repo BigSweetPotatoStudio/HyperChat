@@ -117,12 +117,12 @@ const MAX_RECONNECT_DELAY = 30000; // 最大30秒
 const DEFAULT_MAX_RECONNECT_ATTEMPTS = 5;
 const RECONNECT_BACKOFF_FACTOR = 1.5;
 
-export let mcpClients: Array<MCPClient> = [];
+export const mcpClients: Array<MCPClient> = [];
 export class MCPClient implements IMCPClient {
   public tools: Array<HyperChatCompletionTool> = [];
   public resources: any[] = [];
   public prompts: any[] = [];
-  public client!: MCP.Client;
+  public client: MCP.Client | undefined = undefined;
   public status: IMCPClient["status"] = "disconnected";
   public version = "";
   public servername = "";
@@ -140,6 +140,9 @@ export class MCPClient implements IMCPClient {
     }
   }
   async callTool(functionName: string, args: any): Promise<any> {
+    if (!this.client) {
+      throw new Error("MCP Client is not initialized");
+    }
     await this.ensureConnected();
 
     const mcpCallToolTimeout = (await AppSetting.init()).mcpCallToolTimeout;
@@ -158,6 +161,9 @@ export class MCPClient implements IMCPClient {
   }
 
   private async callToolCompatibility(functionName: string, args: any, timeoutMs: number): Promise<any> {
+    if (!this.client) {
+      throw new Error("MCP Client is not initialized");
+    }
     try {
       const res = await this.client.request(
         {
@@ -183,11 +189,17 @@ export class MCPClient implements IMCPClient {
     }
   }
   async callResource(uri: string): Promise<MCPTypes.ReadResourceResult> {
+    if (!this.client) {
+      throw new Error("MCP Client is not initialized");
+    }
     Logger.info("MCP callResource", uri);
     await this.ensureConnected();
     return await this.client.readResource({ uri });
   }
   async callPrompt(functionName: string, args: any): Promise<any> {
+    if (!this.client) {
+      throw new Error("MCP Client is not initialized");
+    }
     Logger.info("MCP callPrompt", functionName, args);
     await this.ensureConnected();
     return await this.client.getPrompt({ name: functionName, arguments: args });
@@ -230,9 +242,11 @@ export class MCPClient implements IMCPClient {
     return out;
   }
   async close(sendMsg = true): Promise<void> {
-    this.client.onclose = () => { };
-    this.client.onerror = () => { };
-    await this.client.close();
+    if (this.client) {
+      this.client.onclose = () => { };
+      this.client.onerror = () => { };
+      await this.client.close();
+    }
     this.status = "disconnected";
     if (sendMsg) {
       this.notifyStatusChange();
@@ -245,19 +259,29 @@ export class MCPClient implements IMCPClient {
       return;
     }
     try {
+      if (this.client) {
+        this.client.onclose = () => { };
+        this.client.onerror = () => { };
+        this.client.close();
+      }
+    } catch (e) {
+      Logger.error("Error closing client before opening new connection:", e);
+    }
+
+    try {
       this.status = "connecting";
       this.notifyStatusChange();
       // 添加随机延迟避免同时连接冲突
       await sleep(Math.random() * 1000);
+      let client: MCP.Client = undefined as any;
       if (this.config?.type == "sse") {
-        await this.openSse(this.config);
+        client = await this.openSse(this.config);
       } else if (this.config?.type == "streamableHttp") {
-        await this.openStreamableHttp(this.config);
+        client = await this.openStreamableHttp(this.config);
       } else {
-        await this.openStdio(this.config);
+        client = await this.openStdio(this.config);
       }
 
-      let client = this.client;
       // let c = client.getServerCapabilities();
       // Logger.debug(c);
       let tools_res = await client.listTools().catch((e) => {
@@ -292,7 +316,7 @@ export class MCPClient implements IMCPClient {
       client.onerror = (e) => {
         this.handleClientError(e);
       };
-      let res = await this.client.getServerVersion();
+      let res = await client.getServerVersion();
       this.version = res?.version || '';
       this.servername = res?.name || '';
 
@@ -300,7 +324,7 @@ export class MCPClient implements IMCPClient {
       this.resources = this.mapResourcesToHyperChatFormat(resources_res.resources);
       this.prompts = this.mapPromptsToHyperChatFormat(listPrompts_res.prompts);
 
-      this.client.setNotificationHandler(ResourceListChangedNotificationSchema, async (notification) => {
+      client.setNotificationHandler(ResourceListChangedNotificationSchema, async (notification) => {
         Logger.info("Received notification ResourceListChangedNotificationSchema:", notification);
         let resources_res = await client.listResources().catch((_e) => {
           return { resources: [] };
@@ -313,6 +337,8 @@ export class MCPClient implements IMCPClient {
       this.notifyStatusChange();
       Logger.info(`${this.name} client connected successfully`);
 
+
+      this.client = client;
     } catch (e) {
       this.status = "disconnected";
       this.notifyStatusChange();
@@ -337,7 +363,7 @@ export class MCPClient implements IMCPClient {
       }
     });
     await client.connect(transport);
-    this.client = client;
+    return client;
   }
   async openStreamableHttp(config: MCPServerConfig) {
     const client = new Client({
@@ -355,13 +381,10 @@ export class MCPClient implements IMCPClient {
       // sessionId: v4(),
     });
 
-    try {
-      await client.connect(transport as any);
-      this.client = client;
 
-    } catch (e) {
-      throw e;
-    }
+    await client.connect(transport as any);
+    return client;
+
   }
   async openStdio(config: MCPServerConfig) {
     let env = Object.assign(getMyDefaultEnvironment(), config.env);
@@ -389,7 +412,7 @@ export class MCPClient implements IMCPClient {
       });
 
       await client.connect(transport);
-      this.client = client;
+      return client;
     } catch (e) {
       Logger.error(params, e);
       if (e instanceof Error && e.message.includes("MCP error -32000: Connection closed")) {
@@ -651,10 +674,15 @@ export async function openMcpClient(
     } else {
       mcpClient.config = clientConfig;
     }
-    await mcpClient.close(false);
     delete mcpClient.config.disabled;
   } else {
-    if (!name || !clientConfig) throw new Error('Name and clientConfig are required');
+    if (!name) {
+      throw new Error('Name is required');
+    }
+    if (clientConfig == null) {
+      clientConfig = MCP_CONFIG.get().mcpServers[name] as MCPServerConfig;
+    }
+    if (!clientConfig) throw new Error('clientConfig are required');
     mcpClient = new MCPClient(name, clientConfig, "hyperchat", order);
     mcpClients.push(mcpClient);
     mcpOBj[name] = mcpClient;
@@ -710,7 +738,10 @@ export async function closeMcpClients(name: string, {
     await mcpClient.saveConfig({ isdelete: isdelete });
     mcpClient.status = "deleted";
     mcpClient.notifyStatusChange();
-    mcpClients = mcpClients.filter((c) => c.name != name);
+    let index = mcpClients.findIndex((c) => c.name == name);
+    if (index >= 0) {
+      mcpClients.splice(index, 1);
+    }
   }
   return mcpClients;
 }
