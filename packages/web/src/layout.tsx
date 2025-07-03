@@ -19,7 +19,7 @@
  */
 
 
-import React, { createContext, useEffect, useState } from "react";
+import React, { createContext, useEffect, useState, useRef } from "react";
 import { useForceUpdate } from "./hooks/useForceUpdate";
 import {
   Routes,
@@ -106,7 +106,7 @@ import {
   KNOWLEDGE_BASE,
   MCP_CONFIG,
 } from "@hyperchat/shared/data.mjs";
-import { InitedClient, initMcpClients, setClients } from "./common/mcp";
+import { InitedClient, setClients } from "./common/mcp";
 import { EVENT } from "./common/event";
 import { DndTable } from "./common/dndTable";
 import { sleep } from "./common/sleep";
@@ -161,7 +161,7 @@ interface SyncMessage {
 
 interface McpClientMessage {
   type: "changeMcpClient";
-  data: InitedClient[];
+  data: InitedClient;
 }
 
 // 联合类型定义所有可能的消息类型
@@ -291,14 +291,21 @@ export function Layout() {
 
       // 处理 MCP 客户端变化
       if (res.type === "changeMcpClient") {
-        setMcpClients(res.data);
-        setClients(res.data);
+        // 支持单个客户端更新或批量替换，通过 ref 更新并触发刷新
+        const payload = res.data;
+
+        const idx = mcpClientsRef.current.findIndex((c) => c.name === payload.name);
+        if (idx >= 0) mcpClientsRef.current[idx] = payload;
+        mcpClientsRef.current = mcpClientsRef.current;
+        combinedRefresh();
+        // 同步全局
+        setClients(mcpClientsRef.current);
 
         // 设置全局工具获取函数
         window.getTools = (allowMCPs?: string[]) => {
           let tools: IMCPClient["tools"] = [];
 
-          res.data.forEach((v) => {
+          mcpClientsRef.current.forEach((v) => {
             tools = tools.concat(
               v.tools.filter((t) => {
                 if (!allowMCPs) return true;
@@ -337,7 +344,16 @@ export function Layout() {
       }
 
       // 初始化 MCP 客户端
-      await initMcpClients();
+      let res = await call("initMcpClients");
+      for (let client of res) {
+        let index = mcpClientsRef.current.findIndex((c) => c.name === client.name);
+        if (index === -1) {
+          mcpClientsRef.current.push(client);
+        } else {
+          mcpClientsRef.current[index] = client;
+        }
+      }
+      setClients(mcpClientsRef.current);
       combinedRefresh();
 
       try {
@@ -360,7 +376,7 @@ export function Layout() {
   const [locale, setLocal] = useState(currLang == "zhCN" ? zhCN : enUS); // 国际化语言设置
   const [collapsed, setCollapsed] = useState<boolean>(false); // 侧边栏折叠状态
   const [isModelConfigOpen, setIsModelConfigOpen] = useState<boolean>(false); // AI 提供商设置抽屉是否打开
-  const [mcpClients, setMcpClients] = useState<InitedClient[]>([]); // MCP 客户端列表
+  const mcpClientsRef = useRef<InitedClient[]>([]); // MCP 客户端列表
   const [syncStatus, setSyncStatus] = useState<number>(0); // 同步状态：0-正常，1-同步中，-1-失败
   const [updateData, setUpdateData] = useState<UpdateMessage["data"]>({} as any); // 更新数据
   /**
@@ -610,7 +626,7 @@ export function Layout() {
               globalState: globalStateVersion,
               updateGlobalState: combinedRefresh,
               setLang,
-              mcpClients,
+              mcpClients: mcpClientsRef.current,
             }}
           >
             <Outlet />

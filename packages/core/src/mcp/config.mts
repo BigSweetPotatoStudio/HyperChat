@@ -279,8 +279,10 @@ export class MCPClient implements IMCPClient {
 
       client.onclose = () => {
         Logger.info(`${this.name} client connection closed`);
-        this.status = "disconnected";
-        this.notifyStatusChange();
+        if (this.status == "connected") {
+          this.status = "disconnected";
+          this.notifyStatusChange();
+        }
 
         // 如果不是主动关闭，尝试重连
         // if (!this.config.disabled) {
@@ -297,18 +299,16 @@ export class MCPClient implements IMCPClient {
       this.tools = this.mapToolsToHyperChatFormat(tools_res.tools);
       this.resources = this.mapResourcesToHyperChatFormat(resources_res.resources);
       this.prompts = this.mapPromptsToHyperChatFormat(listPrompts_res.prompts);
-      // this.client.subscribeResource({
-      //   uri: "resource://modelcontextprotocol/metadata",
+
+
+      // this.client.setNotificationHandler(LoggingMessageNotificationSchema, (notification) => {
+      //   notificationCount++;
+      //   Logger.info(`Notification #${notificationCount}: ${notification.params.level} - ${notification.params.data}`);
+      //   if (process.env.myEnv === "dev") {
+      //     Logger.debug(`\nNotification #${notificationCount}: ${notification.params.level} - ${notification.params.data}`);
+      //     process.stdout.write('> ');
+      //   }
       // });
-      // this.client.setLoggingLevel("debug");
-      this.client.setNotificationHandler(LoggingMessageNotificationSchema, (notification) => {
-        notificationCount++;
-        Logger.info(`Notification #${notificationCount}: ${notification.params.level} - ${notification.params.data}`);
-        if (process.env.myEnv === "dev") {
-          Logger.debug(`\nNotification #${notificationCount}: ${notification.params.level} - ${notification.params.data}`);
-          process.stdout.write('> ');
-        }
-      });
 
       this.client.setNotificationHandler(ResourceListChangedNotificationSchema, async (notification) => {
         Logger.info("Received notification ResourceListChangedNotificationSchema:", notification);
@@ -318,8 +318,8 @@ export class MCPClient implements IMCPClient {
         this.resources = this.mapResourcesToHyperChatFormat(resources_res.resources);
         getMessageService().sendAllToRenderer({
           type: "changeMcpClient",
-          data: mcpClients,
-        })
+          data: this,
+        });
       });
 
       this.status = "connected";
@@ -471,7 +471,7 @@ export class MCPClient implements IMCPClient {
   private notifyStatusChange() {
     getMessageService().sendAllToRenderer({
       type: "changeMcpClient",
-      data: mcpClients,
+      data: this,
     });
   }
 
@@ -573,10 +573,6 @@ export async function initMcpClients(): Promise<MCPClient[]> {
     firstRunStatus = 1;
   } else if (firstRunStatus === 2) {
     Logger.info("Returning cached MCP clients:", mcpClients.length);
-    getMessageService().sendAllToRenderer({
-      type: "changeMcpClient",
-      data: mcpClients,
-    });
     return mcpClients;
   }
   let config = await MCP_CONFIG.init();
@@ -603,13 +599,13 @@ export async function initMcpClients(): Promise<MCPClient[]> {
             mcpClient.open().then(() => {
               getMessageService().sendAllToRenderer({
                 type: "changeMcpClient",
-                data: mcpClients,
-              })
+                data: mcpClient,
+              });
             }).catch((_e) => {
               getMessageService().sendAllToRenderer({
                 type: "changeMcpClient",
-                data: mcpClients,
-              })
+                data: mcpClient,
+              });
             })
           );
         } catch (e) {
@@ -639,13 +635,13 @@ export async function initMcpClients(): Promise<MCPClient[]> {
         mcpClient.open().then(() => {
           getMessageService().sendAllToRenderer({
             type: "changeMcpClient",
-            data: mcpClients,
-          })
+            data: mcpClient,
+          });
         }).catch((_e) => {
           getMessageService().sendAllToRenderer({
             type: "changeMcpClient",
-            data: mcpClients,
-          })
+            data: mcpClient,
+          });
         })
       );
     } catch (e) {
@@ -661,29 +657,10 @@ export async function initMcpClients(): Promise<MCPClient[]> {
   });
 
   firstRunStatus = 2;
-  getMessageService().sendAllToRenderer({
-    type: "changeMcpClient",
-    data: mcpClients,
-  });
+
   return mcpClients;
 }
 
-let t = setInterval(() => {
-  getMessageService().sendAllToRenderer({
-    type: "changeMcpClient",
-    data: mcpClients,
-  });
-}, 1000);
-
-Promise.race([initMcpClients(), sleep(1000 * 60)]).then(() => {
-  firstRunStatus = 2;
-  clearInterval(t);
-  startTask();
-}).catch((_e) => {
-  firstRunStatus = 2;
-  clearInterval(t);
-  startTask();
-});
 export async function openMcpClient(
   name?: string,
   clientConfig?: MCPServerConfig,
@@ -722,10 +699,10 @@ export async function openMcpClient(
       throw e;
     }
   }
-  getMessageService().sendAllToRenderer({
-    type: "changeMcpClient",
-    data: mcpClients,
-  })
+  // getMessageService().sendAllToRenderer({
+  //   type: "changeMcpClient",
+  //   data: mcpClient,
+  // });
   return mcpClients;
 }
 
@@ -760,10 +737,6 @@ export async function closeMcpClients(name: string, {
     await mcpClient.saveConfig({ isdelete: isdelete });
     mcpClients = mcpClients.filter((c) => c.name != name);
   }
-  getMessageService().sendAllToRenderer({
-    type: "changeMcpClient",
-    data: mcpClients,
-  })
   return mcpClients;
 }
 

@@ -15,15 +15,7 @@ export {
   IMCPClient as InitedClient
 }
 
-/**
- * Initializes the MCP clients by calling the backend.
- * Fetches the list of available MCP clients and stores them globally.
- */
-export async function initMcpClients() {
-  let res: any = await call("initMcpClients");
-  McpClients = res;
-  console.log("initMcpClients", McpClients);
-}
+
 
 /**
  * Retrieves a filtered list of tools from the initialized MCP clients.
