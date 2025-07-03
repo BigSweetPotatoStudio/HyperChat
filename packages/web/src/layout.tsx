@@ -104,7 +104,6 @@ import {
   AI_MODELS,
   IMCPClient,
   KNOWLEDGE_BASE,
-  MCP_CONFIG,
 } from "@hyperchat/shared/data.mjs";
 import { InitedClient, setClients } from "./common/mcp";
 import { EVENT } from "./common/event";
@@ -329,7 +328,6 @@ export function Layout() {
       // 并行初始化各种数据源
       await Promise.all([
         AI_MODELS.init(),
-        MCP_CONFIG.init(),
         KNOWLEDGE_BASE.init(),
         electronData.init(),
       ]);

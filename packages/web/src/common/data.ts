@@ -34,19 +34,6 @@ Data.prototype["_save"] = async function () {
 }
 
 
-// The following block is an example of an initial setup process.
-// It checks if this is the first time the app is opened and initializes
-// necessary configurations like MCP_CONFIG and GPT_MODELS.
-// await electronData.init();
-// if (electronData.get().firstOpen) {
-//   await MCP_CONFIG.init();
-//   MCP_CONFIG.save();
-//   await GPT_MODELS.init();
-//   GPT_MODELS.save();
-//   electronData.get().firstOpen = false;
-//   await electronData.save();
-// }
-
 /**
  * Listens for messages from the main process (backend) to sync data.
  */

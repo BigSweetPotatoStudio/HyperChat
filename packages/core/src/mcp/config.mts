@@ -43,12 +43,9 @@ import {
   AppSetting,
   MCP_CONFIG,
   MCPServerConfig,
-  MCP_CONFIG_SYNC,
   HyperChatCompletionTool,
   IMCPClient
 } from "../shared/data.mjs";
-
-import { clientPaths } from "./claude.mjs";
 
 import { startTask } from "./task.mjs";
 
@@ -61,10 +58,7 @@ import { v4 as _v4 } from "uuid";
 import { getMessageService } from "../message_service.mjs";
 
 
-// 初始化 MCP 配置，合并用户配置和同步配置
-let config = await MCP_CONFIG.init();
-let sync_config = await MCP_CONFIG_SYNC.init();
-
+await MCP_CONFIG.init();
 
 // 内置 MCP 服务器配置管理
 const buildinMcpJSONPath = path.join(CONST.appDataDir, "mcpBuiltIn.json");
@@ -112,7 +106,6 @@ for (let s of MyServers) {
 }
 fs.writeFileSync(buildinMcpJSONPath, JSON.stringify(buildinMcpJSON, null, 2));
 
-MCP_CONFIG.save();
 
 await initMcpServer().catch((e) => {
   Logger.error("initMcpServer", e);
@@ -131,8 +124,7 @@ export class MCPClient implements IMCPClient {
   public resources: any[] = [];
   public prompts: any[] = [];
   public client!: MCP.Client;
-  public status: "disconnected" | "connected" | "connecting" | "disabled" =
-    "disconnected";
+  public status: IMCPClient["status"] = "disconnected";
   public version = "";
   public servername = "";
   public ext: {
@@ -237,6 +229,13 @@ export class MCPClient implements IMCPClient {
   toJSON() {
     const { client, ...out } = this;
     return out;
+  }
+  async close(): Promise<void> {
+    this.client.onclose = () => { };
+    this.client.onerror = () => { };
+    await this.client.close();
+    this.status = "disconnected";
+    this.notifyStatusChange();
   }
   async open(): Promise<void> {
 
@@ -413,7 +412,8 @@ export class MCPClient implements IMCPClient {
   }
   async loadConfig() {
     if (this.source == "hyperchat") {
-      this.config = (await MCP_CONFIG.init()).mcpServers[this.name] as MCPServerConfig;
+      await MCP_CONFIG.init();
+      this.config = MCP_CONFIG.get().mcpServers[this.name] as MCPServerConfig;
     }
     if (this.source == "builtin") {
       buildinMcpJSON = fs.readJsonSync(buildinMcpJSONPath);
@@ -423,12 +423,12 @@ export class MCPClient implements IMCPClient {
   async saveConfig({ isdelete }: { isdelete?: boolean } = {}) {
     if (this.source == "hyperchat") {
       if (isdelete) {
-        delete (await MCP_CONFIG.init()).mcpServers[this.name];
-        MCP_CONFIG.save()
+        delete MCP_CONFIG.get().mcpServers[this.name];
+        await MCP_CONFIG.save();
         return;
       } else {
-        (await MCP_CONFIG.init()).mcpServers[this.name] = this.config;
-        MCP_CONFIG.save()
+        MCP_CONFIG.get().mcpServers[this.name] = this.config;
+        await MCP_CONFIG.save();
       }
 
     } else if (this.source == "builtin") {
@@ -468,7 +468,7 @@ export class MCPClient implements IMCPClient {
     }
   }
 
-  private notifyStatusChange() {
+  notifyStatusChange() {
     getMessageService().sendAllToRenderer({
       type: "changeMcpClient",
       data: this,
@@ -575,7 +575,6 @@ export async function initMcpClients(): Promise<MCPClient[]> {
     Logger.info("Returning cached MCP clients:", mcpClients.length);
     return mcpClients;
   }
-  let config = await MCP_CONFIG.init();
 
   // Logger.debug(config);
   let tasks: any[] = [];
@@ -619,10 +618,10 @@ export async function initMcpClients(): Promise<MCPClient[]> {
     Logger.error("buildinMcpJSONPath", "error", e);
   }
 
-  for (let key in config.mcpServers) {
+  for (let key in MCP_CONFIG.get().mcpServers) {
     order++;
 
-    const c = config.mcpServers[key];
+    const c = MCP_CONFIG.get().mcpServers[key];
     if (!c) continue;
     if (mcpOBj[key] != null) {
       key = key + "_" + (await electronData.init()).uuid.slice(0, 8);
@@ -722,7 +721,7 @@ export async function closeMcpClients(name: string, {
     return;
   }
   if (mcpClient.client != null) {
-    await mcpClient.client.close();
+    await mcpClient.close();
   }
   mcpClient.client = null as any;
   mcpClient.tools = [];
@@ -732,6 +731,7 @@ export async function closeMcpClients(name: string, {
     mcpClient.status = "disabled";
     mcpClient.config.disabled = true;
     await mcpClient.saveConfig();
+    mcpClient.notifyStatusChange();
   }
   if (isdelete) {
     await mcpClient.saveConfig({ isdelete: isdelete });

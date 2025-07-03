@@ -16,12 +16,17 @@ export const DataList: Data<any>[] = [];
  * @template T 数据类型
  */
 export class Data<T> {
+  private inited = false;
   // 尽量使用异步初始化数据
   async init(): Promise<T> {
+    this.inited = true;
     return this._init();
   }
   // 尽量使用异步保存数据
   async save() {
+    if (!this.inited) {
+      await this.init();
+    }
     return this._save();
   }
   async _init(): Promise<T> { // 内部使用
@@ -393,18 +398,8 @@ export type IMCPClient = {
   servername: string;
 };
 
-class MCP_CONFIG_DATA<T> extends Data<T> {
-  override async save(sync = true): Promise<void> {
-    if (sync) {
-      let result: any = this.get();
-      MCP_CONFIG_SYNC.set(result);
-      await MCP_CONFIG_SYNC.save();
-    }
-    return super.save();
-  }
-}
 
-export const MCP_CONFIG = new MCP_CONFIG_DATA(
+export const MCP_CONFIG = new Data(
   "mcp.json",
   {
     mcpServers: {} as { [s: string]: MCPServerConfig },
@@ -414,15 +409,7 @@ export const MCP_CONFIG = new MCP_CONFIG_DATA(
   }
 );
 
-export const MCP_CONFIG_SYNC = new Data(
-  "mcp_sync.json",
-  {
-    mcpServers: {} as { [s: string]: MCPServerConfig },
-  },
-  {
-    sync: true,
-  }
-);
+
 
 export const ENV_CONFIG = new Data(
   "env.json",

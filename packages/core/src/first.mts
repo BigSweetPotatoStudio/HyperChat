@@ -29,7 +29,7 @@ const logFilePath = Logger.path;
 fs.writeFileSync(logFilePath, "");
 
 // 记录新的启动日志
-Logger.info("Application started. Previous logs cleared.");
+Logger.info("Application started.");
 // 兼容ESM环境下的__dirname
 import { fileURLToPath } from 'node:url';
 import { dirname } from 'node:path';
