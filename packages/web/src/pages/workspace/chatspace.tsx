@@ -170,7 +170,7 @@ export function ChatSpace() {
         if (msg.type == "call_agent") {
           let { agent_name, message, uid } = msg.data;
           let agents = await Agents.init();
-          let agent = agents.data.find((x) => x.label == agent_name);
+          let agent = agents.data.find((x) => x.name == agent_name);
           if (agent == null) {
             throw new Error(`Agent ${agent_name} not found`);
           }

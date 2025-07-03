@@ -39,7 +39,7 @@ import { HeaderContext } from "../../common/context";
 import { Editor } from "../../components/editor";
 import { useForceUpdate } from "../../hooks/useForceUpdate";
 interface Values {
-  label: string;
+  name: string;
   prompt: string;
   callable: boolean;
   key?: string;

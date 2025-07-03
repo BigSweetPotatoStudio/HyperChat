@@ -99,7 +99,7 @@ export function TaskResultsPage() {
             {
               Agents.get().data.find(
                 (x) => x.key == row.agentKey || x.key == row["gptsKey"],
-              )?.label
+              )?.name
             }
           </Tag>
         );

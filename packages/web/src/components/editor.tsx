@@ -64,13 +64,13 @@ export function enableCompletionItemProvider() {
                 // },
                 ...Agents.get().data.map((agent) => {
                     return {
-                        label: "agent." + agent.label,
+                        label: "agent." + agent.name,
                         kind: monaco.languages.CompletionItemKind.User,
-                        insertText: agent.label,
+                        insertText: agent.name,
                         range: range,
                         // 可以添加详细信息
                         detail: 'Agent',
-                        documentation: `${agent.label} agent`
+                        documentation: `${agent.name} agent`
                     }
                 }),
                 ...varList.map((x) => {
@@ -125,13 +125,13 @@ export function enableCompletionItemProvider() {
                     suggestions: [
                         ...Agents.get().data.map((agent) => {
                             return {
-                                label: agent.label,
+                                label: agent.name,
                                 kind: monaco.languages.CompletionItemKind.User,
-                                insertText: agent.label,
+                                insertText: agent.name,
                                 range: range,
                                 // 可以添加详细信息
                                 detail: 'Agent',
-                                documentation: `${agent.label} agent`
+                                documentation: `${agent.name} agent`
                             }
                         }),
                         // ...AppSetting.get().quicks?.map((quick) => {

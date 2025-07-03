@@ -100,7 +100,7 @@ export const AppSetting = new Data("app_setting.json", {
 });
 
 // Electron 相关数据，包含端口、密码、版本、窗口大小等
-export const electronData = new Data(
+export const LocalSetting = new Data(
   "electronData.json",
   {
     // port: 0,
@@ -240,10 +240,10 @@ export const ChatHistory = new Data("chat_history.json", {
   sync: true,
 });
 
-export type AgentData = {
+export type Agent = {
   type?: "builtin" | "custom";
   key: string;
-  label: string;
+  name: string;
   prompt: string;
   description?: string;
   callable?: boolean;
@@ -258,8 +258,9 @@ export type AgentData = {
   version?: number
 }
 
+
 export const Agents = new Data("agents.json", {
-  data: [] as Array<AgentData>,
+  data: [] as Array<Agent>,
 });
 
 export type AIModelConfigItem = {
@@ -594,3 +595,11 @@ export const MCP_GateWay = new Data(
     sync: true,
   }
 );
+
+
+type WorkSpace = {
+  path: string;
+  mcp: Record<string, IMCPClient>;
+  agents: Array<Agent>;
+  historys: Array<ChatHistoryItem>;
+};

@@ -85,7 +85,7 @@ const ModalForm: React.FC<CollectionCreateFormProps> = ({
         <Select placeholder={t`Please select`}>
           {Agents.get().data.map((x) => (
             <Select.Option key={x.key} value={x.key}>
-              {x.label}
+              {x.name}
             </Select.Option>
           ))}
         </Select>

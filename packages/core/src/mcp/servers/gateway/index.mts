@@ -11,7 +11,7 @@ import {
     CallToolRequestSchema,
 } from "../../../es6.mjs";
 import { CONST } from "../../../const.mjs";
-import { mcpClients } from "../../config.mjs";
+import { globalMcpClients } from "../../config.mjs";
 import { Command } from "../../../command.mjs";
 import { Logger } from "../../../log.mjs";
 const { fs: _fs, path: _path, sleep: _sleep } = zx;
@@ -53,7 +53,7 @@ async function createServer(name: string, description: string, allowMCPs: string
         let getTools = (allowMCPs: any) => {
             let tools: IMCPClient["tools"] = [];
 
-            mcpClients.forEach((v) => {
+            Object.values(globalMcpClients).forEach((v) => {
                 tools = tools.concat(
                     v.tools.filter((t) => {
                         if (!allowMCPs) return true;
@@ -82,7 +82,7 @@ async function createServer(name: string, description: string, allowMCPs: string
             let getTools = (allowMCPs: any) => {
                 let tools: IMCPClient["tools"] = [];
 
-                mcpClients.forEach((v) => {
+                Object.values(globalMcpClients).forEach((v) => {
                     tools = tools.concat(
                         v.tools.filter((t) => {
                             if (!allowMCPs) return true;

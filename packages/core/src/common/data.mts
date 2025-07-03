@@ -26,7 +26,7 @@
  */
 
 import {
-  electronData,
+  LocalSetting,
   AppSetting,
   ENV_CONFIG,
   VarList,
@@ -88,7 +88,7 @@ Data.prototype["_save"] = async function () {
 
 // 1. 初始化应用设置和电子应用数据
 await AppSetting.init();
-await electronData.init();
+await LocalSetting.init();
 
 // 2. 处理 WebDAV 配置继承 - 从应用设置继承到电子应用数据
 // electronData.get().webdav.url = electronData.get().webdav.url || AppSetting.get().webdav.url;
@@ -97,13 +97,13 @@ await electronData.init();
 // electronData.get().webdav.baseDirName = electronData.get().webdav.baseDirName || AppSetting.get().webdav.baseDirName;
 
 // 3. 设置默认值和平台信息
-electronData.get().runTask = electronData.get().runTask == null ? true : electronData.get().runTask;
-electronData.get().isLoadClaudeConfig = electronData.get().isLoadClaudeConfig == null ? true : electronData.get().isLoadClaudeConfig;
-electronData.get().platform = process.platform;
+LocalSetting.get().runTask = LocalSetting.get().runTask == null ? true : LocalSetting.get().runTask;
+LocalSetting.get().isLoadClaudeConfig = LocalSetting.get().isLoadClaudeConfig == null ? true : LocalSetting.get().isLoadClaudeConfig;
+LocalSetting.get().platform = process.platform;
 
 // 4. 处理环境变量迁移 - 将临时的 PATH 配置迁移到电子应用数据
 if ((await ENV_CONFIG.init()).PATH != "") {
-  electronData.get().PATH = ENV_CONFIG.get().PATH;
+  LocalSetting.get().PATH = ENV_CONFIG.get().PATH;
   ENV_CONFIG.get().PATH = "";
   await ENV_CONFIG.save();
 }
@@ -120,6 +120,6 @@ if ((await ENV_CONFIG.init()).PATH != "") {
 
 // 6. 最终保存所有配置
 await AppSetting.save();
-await electronData.save();
+await LocalSetting.save();
 
 

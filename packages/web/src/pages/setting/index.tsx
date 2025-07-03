@@ -33,7 +33,7 @@ import {
   type FormInstance,
 } from "antd";
 import { call, callElectron } from "../../common/call";
-import { AppSetting, electronData } from "@hyperchat/shared/data.mjs";
+import { AppSetting, LocalSetting } from "@hyperchat/shared/data.mjs";
 import { isOnBrowser } from "../../common";
 import { useForm } from "antd/es/form/Form";
 import { currLang, t } from "../../i18n";
@@ -130,10 +130,10 @@ export const Setting: FC = () => {
       try {
         // 初始化应用设置和电子应用数据
         await AppSetting.init();
-        await electronData.init();
+        await LocalSetting.init();
         
         // 设置初始密码
-        setPassword(electronData.get().password);
+        setPassword(LocalSetting.get().password);
         
         // 获取自动启动状态
         try {
@@ -146,7 +146,7 @@ export const Setting: FC = () => {
         // 初始化 WebDAV 表单
         webdavForm.resetFields();
         webdavForm.setFieldsValue({
-          ...electronData.get().webdav,
+          ...LocalSetting.get().webdav,
           baseDirName: "HyperChat",
         });
         
@@ -230,8 +230,8 @@ export const Setting: FC = () => {
    */
   const handleCloseActionChange = async (value: "minimize" | "exit" | 0): Promise<void> => {
     try {
-      (electronData.get() as any).closeAction = value; // 使用 any 类型断言避免类型检查问题
-      await electronData.save();
+      (LocalSetting.get() as any).closeAction = value; // 使用 any 类型断言避免类型检查问题
+      await LocalSetting.save();
       refresh();
     } catch (error) {
       console.error("设置关闭动作失败:", error);
@@ -244,8 +244,8 @@ export const Setting: FC = () => {
    */
   const handleAutoSyncChange = async (enabled: boolean): Promise<void> => {
     try {
-      electronData.get().autoSync = enabled;
-      await electronData.save();
+      LocalSetting.get().autoSync = enabled;
+      await LocalSetting.save();
       refresh();
     } catch (error) {
       console.error("设置自动同步失败:", error);
@@ -278,8 +278,8 @@ export const Setting: FC = () => {
         return;
       }
       
-      electronData.get().password = password;
-      await electronData.save();
+      LocalSetting.get().password = password;
+      await LocalSetting.save();
       message.success(t`Update Success, please restart`);
     } catch (error) {
       console.error("更新密码失败:", error);
@@ -291,7 +291,7 @@ export const Setting: FC = () => {
    * 打开 Web 访问链接
    */
   const handleOpenWeb = (): void => {
-    const webUrl = `${location.protocol}//${location.hostname}:${port.current}/${electronData.get().password}/`;
+    const webUrl = `${location.protocol}//${location.hostname}:${port.current}/${LocalSetting.get().password}/`;
     window.open(webUrl);
   };
 
@@ -300,8 +300,8 @@ export const Setting: FC = () => {
    */
   const handleNetworkSettingChange = async (value: "local-browser" | "server-proxy"): Promise<void> => {
     try {
-      electronData.get().browserNetworkSetting = value;
-      await electronData.save();
+      LocalSetting.get().browserNetworkSetting = value;
+      await LocalSetting.save();
       refresh();
     } catch (error) {
       console.error("设置网络配置失败:", error);
@@ -329,9 +329,9 @@ export const Setting: FC = () => {
         throw new Error("Invalid window size format");
       }
       
-      electronData.get().windowSize.width = width;
-      electronData.get().windowSize.height = height;
-      await electronData.save();
+      LocalSetting.get().windowSize.width = width;
+      LocalSetting.get().windowSize.height = height;
+      await LocalSetting.save();
       refresh();
       message.success(t`Save Success, please restart`);
     } catch (error) {
@@ -345,8 +345,8 @@ export const Setting: FC = () => {
    */
   const handleDeveloperModeChange = async (value: boolean): Promise<void> => {
     try {
-      electronData.get().isDeveloper = value;
-      await electronData.save();
+      LocalSetting.get().isDeveloper = value;
+      await LocalSetting.save();
       refresh();
     } catch (error) {
       console.error("设置开发者模式失败:", error);
@@ -378,14 +378,14 @@ export const Setting: FC = () => {
    * 打开日志文件位置
    */
   const handleOpenLogFile = (): void => {
-    callElectron("openExplorer", { path: electronData.get().logFilePath });
+    callElectron("openExplorer", { path: LocalSetting.get().logFilePath });
   };
 
   /**
    * 打开应用数据目录
    */
   const handleOpenAppDataDir = (): void => {
-    callElectron("openExplorer", { path: electronData.get().appDataDir });
+    callElectron("openExplorer", { path: LocalSetting.get().appDataDir });
   };
 
   // ==================== 渲染 ====================
@@ -423,7 +423,7 @@ export const Setting: FC = () => {
             {/* 应用退出行为设置 */}
             <Form.Item label={t`Exit Action`}>
               <Radio.Group
-                value={(electronData.get() as any).closeAction}
+                value={(LocalSetting.get() as any).closeAction}
                 onChange={(e) => handleCloseActionChange(e.target.value)}
               >
                 <Radio value="minimize">{t`Minimize to Tray`}</Radio>
@@ -440,7 +440,7 @@ export const Setting: FC = () => {
               <Switch
                 checkedChildren="AutoSync"
                 unCheckedChildren="Close"
-                value={(electronData.get() as any).autoSync}
+                value={(LocalSetting.get() as any).autoSync}
                 onChange={handleAutoSyncChange}
               />
             </Form.Item>
@@ -466,7 +466,7 @@ export const Setting: FC = () => {
                   {t`Update`}
                 </Button>
                 <Button onClick={handleOpenWeb}>
-                  OpenWeb({`${location.protocol}//${location.hostname}:${port.current}/${electronData.get().password}/`})
+                  OpenWeb({`${location.protocol}//${location.hostname}:${port.current}/${LocalSetting.get().password}/`})
                 </Button>
               </Space.Compact>
             </Form.Item>
@@ -476,7 +476,7 @@ export const Setting: FC = () => {
               <Form.Item label={t`Network Settings`}>
                 <Radio.Group
                   options={networkOptions}
-                  value={(electronData.get() as any).browserNetworkSetting}
+                  value={(LocalSetting.get() as any).browserNetworkSetting}
                   onChange={(e) => handleNetworkSettingChange(e.target.value)}
                 />
               </Form.Item>
@@ -487,7 +487,7 @@ export const Setting: FC = () => {
               <Form.Item label={t`Startup window size`}>
                 <Select
                   options={windowSizeOptions}
-                  value={`${electronData.get().windowSize.width}x${electronData.get().windowSize.height}`}
+                  value={`${LocalSetting.get().windowSize.width}x${LocalSetting.get().windowSize.height}`}
                   onChange={handleWindowSizeChange}
                 />
               </Form.Item>
@@ -496,7 +496,7 @@ export const Setting: FC = () => {
             {/* 开发者模式设置 */}
             <Form.Item label={t`Develop Mode`}>
               <Switch
-                value={(electronData.get() as any).isDeveloper}
+                value={(LocalSetting.get() as any).isDeveloper}
                 onChange={handleDeveloperModeChange}
               />
             </Form.Item>

@@ -8,7 +8,7 @@ import {
   Agents,
   ChatHistory,
   ChatHistoryItem,
-  electronData,
+  LocalSetting,
   MCPServerConfig,
   MyMessage,
   Task,
@@ -61,7 +61,7 @@ export class CommandFactory {
       version: CONST.getVersion,
       appDataDir: appDataDir,
       logPath: Logger.path,
-      password: (await electronData.init()).password,
+      password: (await LocalSetting.init()).password,
       claudeConfigPath: clientPaths.claude,
       ...Config
     };
@@ -309,8 +309,8 @@ export class CommandFactory {
     command: string;
     args?: Array<string>;
   }): Promise<string> {
-    if ((await electronData.init()).PATH) {
-      process.env.PATH = electronData.get().PATH;
+    if ((await LocalSetting.init()).PATH) {
+      process.env.PATH = LocalSetting.get().PATH;
     } else {
       if (os.platform() != "win32") {
         process.env.PATH = shellPathSync();
@@ -436,7 +436,7 @@ export class CommandFactory {
     agentName: string;
   }) {
     let AgentsData = await Agents.init();
-    let agent = AgentsData.data.find((x) => x.label === agentName);
+    let agent = AgentsData.data.find((x) => x.name === agentName);
     if (!agent) {
       throw new Error(`Agent not found: ${agentName}`);
     }

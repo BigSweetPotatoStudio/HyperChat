@@ -20,7 +20,7 @@ import { dirname } from 'node:path';
 
 import { Logger } from "./log.mjs";
 import { execFallback } from "./common/execFallback.mjs";
-import { electronData } from "./shared/data.mjs";
+import { LocalSetting } from "./shared/data.mjs";
 import { Command } from "./command.mjs";
 import { getMessageService } from "./message_service.mjs";
 import { appDataDir, Config } from "./const.mjs";
@@ -47,8 +47,8 @@ interface MyRouter {
 }
 
 // 初始化全局变量
-await electronData.init();
-export const urlPrefix = "/" + encodeURI(electronData.get().password);
+await LocalSetting.init();
+export const urlPrefix = "/" + encodeURI(LocalSetting.get().password);
 
 
 export const callNodejsApiPath = urlPrefix + "/call";
@@ -95,7 +95,7 @@ export async function initHttp(): Promise<void> {
     : path.join(__dirname, "../web-build");
 
   Logger.info(`Serving static files from: ${staticPath}`);
-  Logger.info("Server password:", electronData.get().password);
+  Logger.info("Server password:", LocalSetting.get().password);
 
   const staticOptions = {
     maxAge: 0,
@@ -174,7 +174,7 @@ export async function initHttp(): Promise<void> {
   });
 
   Config.port = PORT;
-  await electronData.save();
+  await LocalSetting.save();
 
   // Socket.IO 错误处理
   io.on("error", (error) => {
@@ -182,8 +182,8 @@ export async function initHttp(): Promise<void> {
   });
 
   // 创建 Socket.IO 命名空间
-  const mainNamespace = io.of("/" + electronData.get().password + "/main-message");
-  const terminalNamespace = io.of("/" + electronData.get().password + "/terminal-message");
+  const mainNamespace = io.of("/" + LocalSetting.get().password + "/main-message");
+  const terminalNamespace = io.of("/" + LocalSetting.get().password + "/terminal-message");
 
   getMessageService().init(mainNamespace as any, terminalNamespace as any);
 

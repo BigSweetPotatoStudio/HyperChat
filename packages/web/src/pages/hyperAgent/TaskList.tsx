@@ -64,7 +64,7 @@ import { useForm } from "antd/es/form/Form";
 import { e } from "../../common/service";
 import { t } from "../../i18n";
 import { NewTaskModal } from "./newTaskModal";
-import { Agents, electronData, TaskList, Task } from "@hyperchat/shared/data.mjs";
+import { Agents, LocalSetting, TaskList, Task } from "@hyperchat/shared/data.mjs";
 import { v4 } from "uuid";
 import { useLocation, useNavigate } from "react-router-dom";
 import { HeaderContext } from "../../common/context";
@@ -118,7 +118,7 @@ export function TaskListPage(): JSX.Element {
       render: (text: string, row: Task, index: number) => {
         return (
           <Tag color="blue">
-            {Agents.get().data.find((x) => x.key == row.agentKey)?.label}
+            {Agents.get().data.find((x) => x.key == row.agentKey)?.name}
           </Tag>
         );
       },
@@ -278,7 +278,7 @@ export function TaskListPage(): JSX.Element {
       await Promise.all([
         TaskList.init(),
         Agents.init(),
-        electronData.init(),
+        LocalSetting.init(),
       ]);
       refresh();
     })();
@@ -301,10 +301,10 @@ export function TaskListPage(): JSX.Element {
         <span className="my-bottom">
           {t`Main Switch`}: 
           <Switch 
-            checked={electronData.get().runTask} 
+            checked={LocalSetting.get().runTask} 
             onChange={async (checked: boolean) => {
-              electronData.get().runTask = checked;
-              await electronData.save();
+              LocalSetting.get().runTask = checked;
+              await LocalSetting.save();
               refresh();
             }}
           />

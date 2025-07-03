@@ -6,7 +6,7 @@ import path from "path";
 import { progressList } from "./progress.mjs";
 import type { FeatureExtractionPipeline } from "@xenova/transformers";
 
-import { electronData } from "../shared/data.mjs";
+import { LocalSetting } from "../shared/data.mjs";
 import { Logger } from "../log.mjs";
 
 export class FeatureExtraction {
@@ -38,8 +38,8 @@ export class FeatureExtraction {
         }
       );
     }
-    electronData.get().downloaded[model] = true;
-    await electronData.save();
+    LocalSetting.get().downloaded[model] = true;
+    await LocalSetting.save();
     return this.instance;
   }
   static async embeddings(texts: string[]) {

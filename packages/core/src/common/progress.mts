@@ -21,7 +21,7 @@
  * - ProgressList: 进度列表管理器，支持多任务跟踪
  */
 
-import { electronData } from "../shared/data.mjs";
+import { LocalSetting } from "../shared/data.mjs";
 
 /**
  * 进度项数据模型
@@ -116,7 +116,7 @@ class ProgressList {
     if (progress.loaded == progress.total) {
       progress.status = "success";
     }
-    await electronData.save();
+    await LocalSetting.save();
   }
   
   /**

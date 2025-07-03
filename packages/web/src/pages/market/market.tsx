@@ -23,7 +23,7 @@ import {
   Tooltip,
 } from "antd";
 import {
-  electronData,
+  LocalSetting,
   MCPServerConfig,
 } from "@hyperchat/shared/data.mjs";
 import { Code } from "../../common/code";
@@ -186,7 +186,7 @@ export function Market() {
   useEffect(() => {
     init();
     (async () => {
-      await electronData.init();
+      await LocalSetting.init();
       refresh();
     })();
   }, []);
@@ -577,12 +577,12 @@ export function Market() {
                 {!nodeV && (
                   <div>
                     <Space>
-                      {electronData.get().platform === "win32" ? (
+                      {LocalSetting.get().platform === "win32" ? (
                         <div>
                           <span>{t`Please run the command.`}</span>
                           <Code>winget install OpenJS.NodeJS.LTS</Code>
                         </div>
-                      ) : electronData.get().platform === "darwin" ? (
+                      ) : LocalSetting.get().platform === "darwin" ? (
                         <div>
                           <span>{t`Please run the command.`}</span>
                           <Code>brew install node</Code>
@@ -607,12 +607,12 @@ export function Market() {
                 {!uv && (
                   <div>
                     <Space>
-                      {electronData.get().platform === "win32" ? (
+                      {LocalSetting.get().platform === "win32" ? (
                         <div>
                           <span>{t`Please run the command.`}</span>
                           <Code>winget install --id=astral-sh.uv -e</Code>
                         </div>
-                      ) : electronData.get().platform === "darwin" ? (
+                      ) : LocalSetting.get().platform === "darwin" ? (
                         <div>
                           <span>{t`Please run the command.`}</span>
                           <Code>brew install uv</Code>
@@ -661,12 +661,12 @@ export function Market() {
               layout="vertical"
               name="ConfigurePATH"
               initialValues={{
-                PATH: electronData.get().PATH,
+                PATH: LocalSetting.get().PATH,
               }}
               clearOnDestroy
               onFinish={async (values: { PATH: string }) => {
-                electronData.get().PATH = values.PATH;
-                await electronData.save();
+                LocalSetting.get().PATH = values.PATH;
+                await LocalSetting.save();
                 init();
                 setIsPathOpen(false);
               }}

@@ -19,7 +19,7 @@ import {
     FormInstance 
 } from "antd";
 import { t } from "@/src/i18n";
-import { electronData, MCP_GateWay } from "@hyperchat/shared/data.mjs";
+import { LocalSetting, MCP_GateWay } from "@hyperchat/shared/data.mjs";
 import { HeaderContext } from "../../common/context";
 import { v4 as uuid } from "uuid";
 import { call } from "@/src/common/call";

@@ -54,7 +54,7 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
   let d = agents.data
     .filter((x) => x.callable)
     .map((x) => {
-      return `${x.label} - ${x.description || ""}`;
+      return `${x.name} - ${x.description || ""}`;
     })
     .join("\n");
   if (agents.data.filter((x) => x.callable).length == 0) {
@@ -64,7 +64,7 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
   }
   let d2 = agents.data
     .map((x) => {
-      return `${x.label} - ${x.description || ""}`;
+      return `${x.name} - ${x.description || ""}`;
     })
     .join("\n");
   if (agents.data.length == 0) {
@@ -85,7 +85,7 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
               enum: agents.data
                 .filter((x) => x.callable)
                 .map((x) => {
-                  return x.label;
+                  return x.name;
                 }),
               description: d,
             },
@@ -114,7 +114,7 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
             agent_name: {
               type: "string",
               enum: agents.data.map((x) => {
-                return x.label;
+                return x.name;
               }),
               description: d2,
             },
@@ -180,7 +180,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request: any) => {
             text: agents.data
               .filter((x) => x.callable)
               .map((x) => {
-                return `${x.label} - ${x.description || ""}`;
+                return `${x.name} - ${x.description || ""}`;
               })
               .join("\n"),
           },
@@ -227,7 +227,7 @@ async function call_agent({
   message: string;
 }) {
   let agents = await Agents.init();
-  if (agents.data.find((x) => x.label == agent_name) == null) {
+  if (agents.data.find((x) => x.name == agent_name) == null) {
     throw new Error(`Agent ${agent_name} not found`);
   }
   let uid = v4();
@@ -274,7 +274,7 @@ async function add_task({
 }) {
   // Logger.debug("add_task", name, cron, agent_name, command, description);
   const agents = await Agents.init();
-  const agent = agents.data.find((x) => x.label == agent_name);
+  const agent = agents.data.find((x) => x.name == agent_name);
   if (agent == null) {
     throw new Error(`Agent ${agent_name} not found`);
   }

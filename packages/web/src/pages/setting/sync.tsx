@@ -35,7 +35,7 @@ import { useForm } from "antd/es/form/Form";
 import { t } from "../../i18n";
 import { HeaderContext } from "../../common/context";
 import { Pre } from "../../components/pre";
-import { AppSetting, electronData } from "@hyperchat/shared/data.mjs";
+import { AppSetting, LocalSetting } from "@hyperchat/shared/data.mjs";
 import { useForceUpdate } from "../../hooks/useForceUpdate";
 
 /**
@@ -95,7 +95,7 @@ export function WebdavSetting(): JSX.Element {
       try {
         // 初始化应用设置和电子数据
         await AppSetting.init();
-        await electronData.init();
+        await LocalSetting.init();
         
         // 获取自动启动状态（仅在 Electron 环境下）
         AppSetting.get().isAutoLauncher = await callElectron("isAutoLauncher").catch(
@@ -105,7 +105,7 @@ export function WebdavSetting(): JSX.Element {
         // 重置并设置表单初始值
         webdavForm.resetFields();
         webdavForm.setFieldsValue(
-          Object.assign(electronData.get().webdav || {}, { baseDirName: "HyperChat" }),
+          Object.assign(LocalSetting.get().webdav || {}, { baseDirName: "HyperChat" }),
         );
         
         refresh();
@@ -129,8 +129,8 @@ export function WebdavSetting(): JSX.Element {
         await call("testWebDav", values);
         
         // 保存 WebDAV 配置
-        electronData.get().webdav = values;
-        await electronData.save();
+        LocalSetting.get().webdav = values;
+        await LocalSetting.save();
 
         // 执行 WebDAV 同步
         await call("webDavSync");
@@ -159,8 +159,8 @@ export function WebdavSetting(): JSX.Element {
         message.success("Test success");
         
         // 保存 WebDAV 配置
-        electronData.get().webdav = values;
-        await electronData.save();
+        LocalSetting.get().webdav = values;
+        await LocalSetting.save();
         
         message.success("Save success");
       } catch (error) {

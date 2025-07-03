@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import { Editor } from "../../components/editor";
 import { DndContext, PointerSensor, useSensor } from "@dnd-kit/core";
 import { SortableContext } from "@dnd-kit/sortable";
-import { AgentData, Agents } from "@hyperchat/shared/data.mjs";
+import { Agent, Agents } from "@hyperchat/shared/data.mjs";
 import { SortableItem } from "../chat/sortableItem";
 import { Button, Card, Divider, Tabs, Tag, Tooltip } from "antd";
 import { DeleteOutlined, EditOutlined, FunctionOutlined, SettingFilled, SwapOutlined } from "@ant-design/icons";
@@ -66,7 +66,7 @@ export const AgentPage = () => {
                             ).filter(
                                 (x) =>
                                     botSearchValue == "" ||
-                                    x.label
+                                    x.name
                                         .toLowerCase()
                                         .includes(botSearchValue),
                             )
@@ -97,7 +97,7 @@ export const AgentPage = () => {
                             ).filter(
                                 (x) =>
                                     botSearchValue == "" ||
-                                    x.label
+                                    x.name
                                         .toLowerCase()
                                         .includes(botSearchValue),
                             )
@@ -127,10 +127,10 @@ export const AgentPage = () => {
 
 export function AgentCard({ item, onClick, onRemove, onEdit }:
     {
-        item: AgentData,
-        onClick?: (item: AgentData) => void,
-        onRemove?: (item: AgentData) => void,
-        onEdit?: (item: AgentData) => void
+        item: Agent,
+        onClick?: (item: Agent) => void,
+        onRemove?: (item: Agent) => void,
+        onEdit?: (item: Agent) => void
     }
 ) {
     const refresh = useForceUpdate();
@@ -167,7 +167,7 @@ export function AgentCard({ item, onClick, onRemove, onEdit }:
                 }}
             >
                 <div className="flex h-4/5 w-full items-center justify-center">
-                    <div className="text-xl">{getFirstCharacter(item.label)}</div>
+                    <div className="text-xl">{getFirstCharacter(item.name)}</div>
                 </div>
                 <div className="absolute left-0 top-0 z-10">
                     {item.callable && (
@@ -201,7 +201,7 @@ export function AgentCard({ item, onClick, onRemove, onEdit }:
                 </div>
                 }
                 <div className="absolute bottom-0 line-clamp-2 w-full bg-slate-600 text-center text-sm text-slate-50">
-                    {item.label}
+                    {item.name}
                 </div>
             </div>
         </Tooltip>
@@ -236,7 +236,7 @@ export function AgentCard({ item, onClick, onRemove, onEdit }:
                                 if (!find) {
                                     return undefined
                                 }
-                                return <Tag className="text-sky-400">{find.label}</Tag>
+                                return <Tag className="text-sky-400">{find.name}</Tag>
                             })
                         }
                     </div>

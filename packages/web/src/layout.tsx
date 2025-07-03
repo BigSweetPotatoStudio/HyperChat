@@ -59,7 +59,7 @@ import { currLang, setCurrLang, t } from "./i18n";
 import { call, callElectron, msg_receive } from "./common/call";
 import {
   AppSetting,
-  electronData,
+  LocalSetting,
   AI_MODELS,
   IMCPClient,
   KNOWLEDGE_BASE,
@@ -288,7 +288,7 @@ export function Layout() {
       await Promise.all([
         AI_MODELS.init(),
         KNOWLEDGE_BASE.init(),
-        electronData.init(),
+        LocalSetting.init(),
       ]);
       combinedRefresh();
 
@@ -320,9 +320,9 @@ export function Layout() {
         Clarity.event("openApp");
         Clarity.setTag("env", process.env.NODE_ENV || "unknown");
         Clarity.event(
-          `openApp-${process.env.NODE_ENV}-${electronData.get().version}`,
+          `openApp-${process.env.NODE_ENV}-${LocalSetting.get().version}`,
         );
-        Clarity.setTag("version", electronData.get().version);
+        Clarity.setTag("version", LocalSetting.get().version);
       } catch (e) {
         console.error("Clarity error:", e);
       }
@@ -497,7 +497,7 @@ export function Layout() {
               <Link to="Home">
                 HyperChat
                 <span>
-                  ({electronData.get().version})
+                  ({LocalSetting.get().version})
                   {/* 有新版本时显示更新标签 */}
                   {updateData.info && (
                     <Tag
@@ -511,7 +511,7 @@ export function Layout() {
                           },
                           content: (
                             <div>
-                              <div>current version: {electronData.get().version}</div>
+                              <div>current version: {LocalSetting.get().version}</div>
                               <div>latest version: {updateData.info?.version}</div>
                               {updateData.info?.releaseName != updateData.info?.version && (
                                 <div>title: {updateData.info?.releaseName}</div>

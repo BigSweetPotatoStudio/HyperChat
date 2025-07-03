@@ -1,6 +1,6 @@
 import { getDefaultEnvironment, os, shellPathSync } from "../es6.mjs";
 import {
-  electronData,
+  LocalSetting,
   // MCP_CONFIG,
   // MCP_CONFIG_TYPE,
 } from "../shared/data.mjs";
@@ -25,9 +25,9 @@ import {
 
 export function getMyDefaultEnvironment() {
   let env = Object.assign(getDefaultEnvironment(), process.env);
-  electronData.init();
-  if (electronData.get().PATH) {
-    env.PATH = electronData.get().PATH;
+  LocalSetting.init();
+  if (LocalSetting.get().PATH) {
+    env.PATH = LocalSetting.get().PATH;
   } else {
     if (os.platform() != "win32") {
       env.PATH = shellPathSync();

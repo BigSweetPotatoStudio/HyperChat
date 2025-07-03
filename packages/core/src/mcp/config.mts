@@ -39,7 +39,7 @@ import {
 import { initMcpServer, MyServers } from "./servers/index.mjs";
 
 import {
-  electronData,
+  LocalSetting,
   AppSetting,
   MCP_CONFIG,
   MCPServerConfig,
@@ -66,8 +66,6 @@ let buildinMcpJSON: { mcpServers: Record<string, MCPServerConfig> } = {
   mcpServers: {},
 };
 
-// MCP 客户端实例缓存
-const mcpOBj: Record<string, MCPClient> = {};
 
 // 读取已保存的内置服务器配置
 if (fs.existsSync(buildinMcpJSONPath)) {
@@ -117,7 +115,9 @@ const MAX_RECONNECT_DELAY = 30000; // 最大30秒
 const DEFAULT_MAX_RECONNECT_ATTEMPTS = 5;
 const RECONNECT_BACKOFF_FACTOR = 1.5;
 
-export const mcpClients: Array<MCPClient> = [];
+
+
+export const globalMcpClients: Record<string, MCPClient> = {};
 export class MCPClient implements IMCPClient {
   public tools: Array<HyperChatCompletionTool> = [];
   public resources: any[] = [];
@@ -292,9 +292,9 @@ export class MCPClient implements IMCPClient {
       let resources_res = await client.listResources().catch((_e) => {
         return { resources: [] };
       });
-      let listPrompts_res = await client.listPrompts().catch((_e) => {
-        return { prompts: [] };
-      });
+      // let listPrompts_res = await client.listPrompts().catch((_e) => {
+      //   return { prompts: [] };
+      // });
       // let listResourceTemplates_res = await client
       //   .listResourceTemplates()
       //   .catch((e) => {
@@ -308,12 +308,9 @@ export class MCPClient implements IMCPClient {
           this.notifyStatusChange();
         }
 
-        // 如果不是主动关闭，尝试重连
-        // if (!this.config.disabled) {
-        //   setTimeout(() => this.tryReconnect(), 2000);
-        // }
       };
       client.onerror = (e) => {
+        Logger.info(`${this.name} client onerror: ${e.message}`);
         this.handleClientError(e);
       };
       let res = await client.getServerVersion();
@@ -322,7 +319,7 @@ export class MCPClient implements IMCPClient {
 
       this.tools = this.mapToolsToHyperChatFormat(tools_res.tools);
       this.resources = this.mapResourcesToHyperChatFormat(resources_res.resources);
-      this.prompts = this.mapPromptsToHyperChatFormat(listPrompts_res.prompts);
+      // this.prompts = this.mapPromptsToHyperChatFormat(listPrompts_res.prompts);
 
       client.setNotificationHandler(ResourceListChangedNotificationSchema, async (notification) => {
         Logger.info("Received notification ResourceListChangedNotificationSchema:", notification);
@@ -451,32 +448,35 @@ export class MCPClient implements IMCPClient {
 
   // 添加新的重连方法
   private handleClientError(error: Error) {
-    const isStreamConnection = this.config?.type === "sse" || this.config?.type === "streamableHttp";
-    const isRecoverableError = error.message.includes("SSE stream disconnected") ||
-      error.message.includes("connection terminated") ||
-      error.message.includes("Body Timeout Error");
+    // if (this.status === "connected") {
+    //   this.status = "disconnected";
+    //   const isStreamConnection = this.config?.type === "sse" || this.config?.type === "streamableHttp";
+    //   const isRecoverableError = error.message.includes("SSE stream disconnected") ||
+    //     error.message.includes("connection terminated") ||
+    //     error.message.includes("Body Timeout Error");
 
-    if (isStreamConnection) {
-      if (isRecoverableError) {
-        if (process.env.myEnv === "dev") {
-          Logger.info(`${this.name} connection interrupted: ${error.message}`);
-        }
-        // 自动重连可恢复的错误
-        setTimeout(() => this.tryReconnect(), 1000);
-      } else {
-        this.status = "disconnected";
-        Logger.error(`${this.name} client ${this.config?.type} error:`, error);
-      }
-    } else {
-      // stdio 连接处理
-      if (error.message.includes("not valid JSON")) {
-        Logger.info(`${this.name} client received invalid JSON, continuing`);
-      } else {
-        Logger.error(`${this.name} client ${this.config?.type} error:`, error);
-        this.status = "disconnected";
-        this.notifyStatusChange();
-      }
-    }
+    //   if (isStreamConnection) {
+    //     if (isRecoverableError) {
+    //       if (process.env.myEnv === "dev") {
+    //         Logger.info(`${this.name} connection interrupted: ${error.message}`);
+    //       }
+    //       // 自动重连可恢复的错误
+    //       // setTimeout(() => this.tryReconnect(), 1000);
+    //     } else {
+    //       this.status = "disconnected";
+    //       Logger.error(`${this.name} client ${this.config?.type} error:`, error);
+    //     }
+    //   } else {
+    //     // stdio 连接处理
+    //     if (error.message.includes("not valid JSON")) {
+    //       Logger.info(`${this.name} client received invalid JSON, continuing`);
+    //     } else {
+    //       Logger.error(`${this.name} client ${this.config?.type} error:`, error);
+    //       this.status = "disconnected";
+    //       this.notifyStatusChange();
+    //     }
+    //   }
+    // }
   }
 
   notifyStatusChange() {
@@ -583,8 +583,8 @@ export async function initMcpClients(): Promise<MCPClient[]> {
   if (firstRunStatus === 0) {
     firstRunStatus = 1;
   } else if (firstRunStatus === 2) {
-    Logger.info("Returning cached MCP clients:", mcpClients.length);
-    return mcpClients;
+    Logger.info("Returning cached MCP clients:", Object.keys(globalMcpClients).length);
+    return Object.values(globalMcpClients);
   }
 
   // Logger.debug(config);
@@ -598,12 +598,11 @@ export async function initMcpClients(): Promise<MCPClient[]> {
       for (let key in config.mcpServers) {
         order++;
         const c = config.mcpServers[key];
-        if (mcpOBj[key] != null) {
-          key = key + "_" + (await electronData.init()).uuid.slice(0, 8);
+        if (globalMcpClients[key] != null) {
+          continue;
         }
         const mcpClient = new MCPClient(key, c, "builtin", order);
-        mcpClients.push(mcpClient);
-        mcpOBj[key] = mcpClient;
+        globalMcpClients[key] = mcpClient;
         try {
           tasks.push(
             mcpClient.open().then(() => {
@@ -626,14 +625,13 @@ export async function initMcpClients(): Promise<MCPClient[]> {
   for (let key in MCP_CONFIG.get().mcpServers) {
     order++;
 
-    const c = MCP_CONFIG.get().mcpServers[key];
-    if (!c) continue;
-    if (mcpOBj[key] != null) {
-      key = key + "_" + (await electronData.init()).uuid.slice(0, 8);
+    const mcpServerConfig = MCP_CONFIG.get().mcpServers[key];
+    if (!mcpServerConfig) continue;
+    if (globalMcpClients[key] != null) {
+      continue;
     }
-    const mcpClient = new MCPClient(key, c, "hyperchat", order);
-    mcpClients.push(mcpClient);
-    mcpOBj[key] = mcpClient;
+    const mcpClient = new MCPClient(key, mcpServerConfig, "hyperchat", order);
+    globalMcpClients[key] = mcpClient;
     try {
       tasks.push(
         mcpClient.open().then(() => {
@@ -656,18 +654,22 @@ export async function initMcpClients(): Promise<MCPClient[]> {
 
   firstRunStatus = 2;
 
-  return mcpClients;
+  return Object.values(globalMcpClients);
 }
 
+await initMcpClients().catch((e) => {
+  Logger.error("initMcpClients error", e);
+});
+
 export async function openMcpClient(
-  name?: string,
+  name: string,
   clientConfig?: MCPServerConfig,
   options = {
     onlySave: false,
   }
 ) {
 
-  let mcpClient = mcpClients.find((c) => c.name == name);
+  let mcpClient = globalMcpClients[name];
   if (mcpClient != null) {
     if (clientConfig == null) {
       await mcpClient.loadConfig();
@@ -684,8 +686,7 @@ export async function openMcpClient(
     }
     if (!clientConfig) throw new Error('clientConfig are required');
     mcpClient = new MCPClient(name, clientConfig, "hyperchat", order);
-    mcpClients.push(mcpClient);
-    mcpOBj[name] = mcpClient;
+    globalMcpClients[name] = mcpClient;
   }
   if (options.onlySave) {
     await mcpClient.saveConfig();
@@ -703,11 +704,11 @@ export async function openMcpClient(
       throw e;
     }
   }
-  return mcpClients;
+  return Object.values(globalMcpClients);
 }
 
 export async function getMcpClients() {
-  return mcpClients;
+  return Object.values(globalMcpClients);
 }
 
 export async function closeMcpClients(name: string, {
@@ -717,7 +718,7 @@ export async function closeMcpClients(name: string, {
   isdelete?: boolean;
   isdisable?: boolean;
 }) {
-  let mcpClient = mcpClients.find((c) => c.name == name);
+  let mcpClient = globalMcpClients[name];
   if (mcpClient == null) {
     return;
   }
@@ -738,12 +739,9 @@ export async function closeMcpClients(name: string, {
     await mcpClient.saveConfig({ isdelete: isdelete });
     mcpClient.status = "deleted";
     mcpClient.notifyStatusChange();
-    let index = mcpClients.findIndex((c) => c.name == name);
-    if (index >= 0) {
-      mcpClients.splice(index, 1);
-    }
+    delete globalMcpClients[name];
   }
-  return mcpClients;
+  return Object.values(globalMcpClients);
 }
 
 

@@ -121,7 +121,7 @@ import {
   AI_MODELS,
   Agents,
   AppSetting, IMCPClient,
-  electronData,
+  LocalSetting,
   HyperChatCompletionTool,
   Tool_Call,
   VarList,
@@ -254,7 +254,7 @@ export const Chat = ({
           AI_MODELS.init(),
           AppSetting.init(),
           ChatHistory.init(),
-          electronData.init(),
+          LocalSetting.init(),
           VarList.init(),
         ]);
         disableCompletionItemProvider();
@@ -270,7 +270,7 @@ export const Chat = ({
 
         Agents.get().data = builtinAgent.current.concat(Agents.get().data.filter(x => x.type != "builtin"));
         Agents.get().data.forEach((x) => {
-          getAgentNameObj.current[x.key] = x.label;
+          getAgentNameObj.current[x.key] = x.name;
         });
         refresh();
         loadMoreData(false);
@@ -365,8 +365,6 @@ export const Chat = ({
   /** AI通道客户端引用 */
   const openaiClient = useRef<AiChannel>();
 
-  /** MCP提示列表引用 */
-  const promptsRef = useRef<InitedClient["prompts"]>([]);
   /** MCP资源列表引用 */
   const resourcesRef = useRef<InitedClient["resources"]>([]);
 
@@ -466,15 +464,6 @@ export const Chat = ({
       set.add(name);
     }
 
-    // 收集所有允许的MCP客户端的提示
-    let prompts: IMCPClient["prompts"] = [];
-    (mcpClients || [])
-      .filter((m) => set.has(m.name))
-      .forEach((v) => {
-        prompts = prompts.concat(v.prompts);
-      });
-    promptsRef.current = prompts;
-
     // 收集所有允许的MCP客户端的资源
     let resources: IMCPClient["resources"] = [];
     (mcpClients || [])
@@ -498,7 +487,7 @@ export const Chat = ({
         (x) => x.key == currentChat.current.agentKey,
       );
       if (find) {
-        onTitleChange && onTitleChange(find.label);
+        onTitleChange && onTitleChange(find.name);
       } else {
         onTitleChange && onTitleChange("");
       }
@@ -1307,7 +1296,7 @@ export const Chat = ({
                                         .data).filter(
                                           (x) =>
                                             botSearchValue == "" ||
-                                            x.label
+                                            x.name
                                               .toLowerCase()
                                               .includes(botSearchValue),
                                         )
@@ -1317,7 +1306,7 @@ export const Chat = ({
                                         .data).filter(
                                           (x) =>
                                             botSearchValue == "" ||
-                                            x.label
+                                            x.name
                                               .toLowerCase()
                                               .includes(botSearchValue),
                                         )
@@ -1450,7 +1439,7 @@ export const Chat = ({
                                             .data).filter(
                                               (x) =>
                                                 botSearchValue == "" ||
-                                                x.label
+                                                x.name
                                                   .toLowerCase()
                                                   .includes(botSearchValue),
                                             )
@@ -1460,7 +1449,7 @@ export const Chat = ({
                                             .data).filter(
                                               (x) =>
                                                 botSearchValue == "" ||
-                                                x.label
+                                                x.name
                                                   .toLowerCase()
                                                   .includes(botSearchValue),
                                             )
@@ -1673,7 +1662,7 @@ export const Chat = ({
                       <div className="flex">
                         <div>
                           {
-                            electronData.get().isDeveloper && <Button size="small" title={t`Download Chat Config`} onClick={() => {
+                            LocalSetting.get().isDeveloper && <Button size="small" title={t`Download Chat Config`} onClick={() => {
                               let a = document.createElement("a");
                               a.href = URL.createObjectURL(
                                 new Blob([JSON.stringify(currentChat.current, null, 2)], { type: "text/json" }),
@@ -1983,7 +1972,7 @@ export const Chat = ({
                                   </Dropdown>
                                 </Tooltip>
 
-                                <Tooltip title={t`Prompts`} placement="bottom">
+                                {/* <Tooltip title={t`Prompts`} placement="bottom">
                                   <Dropdown
                                     placement="top"
                                     trigger={["click"]}
@@ -2029,7 +2018,7 @@ export const Chat = ({
                                       {promptsRef.current.length}
                                     </Button>
                                   </Dropdown>
-                                </Tooltip>
+                                </Tooltip> */}
                               </Flex>
                               <Flex align="center">
                                 {/* <Button type="text" style={{
@@ -2103,7 +2092,7 @@ export const Chat = ({
             }
             await Agents.save();
             Agents.get().data.forEach((x) => {
-              getAgentNameObj.current[x.key] = x.label;
+              getAgentNameObj.current[x.key] = x.name;
             });
             // 修改更新agents状态
             call("openMcpClient", { clientName: "hyper_agent" });

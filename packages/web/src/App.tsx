@@ -40,7 +40,7 @@ import {
 import { HeaderContext } from "./common/context";
 import { PageContainer, ProCard, ProLayout } from "@ant-design/pro-components";
 import { getRoute, getLayoutRoute } from "./router";
-import { electronData, DataList } from "@hyperchat/shared/data.mjs";
+import { LocalSetting, DataList } from "@hyperchat/shared/data.mjs";
 import { call } from "./common/call";
 import { EVENT } from "./common/event";
 
@@ -56,7 +56,7 @@ export default function App() {
   useEffect(() => {
     (async () => {
       // 初始化 electronData，自动同步 WebDAV 数据
-      let st = await electronData.init();
+      let st = await LocalSetting.init();
       if (st.autoSync) {
         setLoading(true);
         try {

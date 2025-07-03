@@ -2,7 +2,7 @@ import { Logger } from "../log.mjs";
 import {
   Agents,
   TaskList,
-  electronData,
+  LocalSetting,
 } from "../shared/data.mjs";
 import cron from "node-cron";
 import { Command } from "../command.mjs";
@@ -20,7 +20,7 @@ import { Command } from "../command.mjs";
         functionName.includes("call_agent")
       ) {
         let agent = (await Agents.init()).data.find(
-          (x) => x.label === argumentsObj.agent_name
+          (x) => x.name === argumentsObj.agent_name
         );
         if (agent == null) {
           throw new Error(`Agent ${argumentsObj.agent_name} not found`);
@@ -93,7 +93,7 @@ export async function callAgent(obj: {
   if (agent == null) {
     throw new Error(`Agent ${obj.agentKey} not found`);
   }
-  Logger.info("Running callAgent", agent.label, obj.message, obj.agentKey);
+  Logger.info("Running callAgent", agent.name, obj.message, obj.agentKey);
 
   async function runByKey(_modelKey: string) {
     return {
@@ -224,7 +224,7 @@ export async function startTask(taskkey?: string) {
         continue;
       }
       let cronT = cron.schedule(task.cron, async () => {
-        if ((await electronData.init()).runTask == true) {
+        if ((await LocalSetting.init()).runTask == true) {
           runTask(task.key, { force: false }).then((res) => {
             Logger.info("task result", res);
           });
@@ -254,7 +254,7 @@ export async function startTask(taskkey?: string) {
     }
     // Logger.debug("task", task);
     let cronT = cron.schedule(task.cron, async () => {
-      if ((await electronData.init()).runTask == true) {
+      if ((await LocalSetting.init()).runTask == true) {
         runTask(task.key, { force: false }).then((res) => {
           Logger.info("task result", res);
         });

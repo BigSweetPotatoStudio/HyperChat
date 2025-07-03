@@ -5,7 +5,7 @@ import path from "path";
 import { appDataDir } from "../const.mjs";
 import { Logger } from "../log.mjs";
 
-import { DataList, electronData } from "../shared/data.mjs";
+import { DataList, LocalSetting } from "../shared/data.mjs";
 
 import crypto from "crypto";
 import { createClient, zx } from "../es6.mjs";
@@ -29,7 +29,7 @@ class WebDAVSync {
 
 
     setInterval(async () => {
-      if ((await electronData.init()).autoSync) {
+      if ((await LocalSetting.init()).autoSync) {
         Logger.info("autoSync 5min");
         this.sync();
       }
@@ -134,7 +134,7 @@ class WebDAVSync {
     });
 
     try {
-      let setting = await electronData.init();
+      let setting = await LocalSetting.init();
 
       let localPath: string = appDataDir;
       let remotePath: string = setting.webdav.baseDirName;

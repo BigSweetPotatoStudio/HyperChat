@@ -3,7 +3,7 @@ import { Button, Space, message, Input, Select, Divider } from "antd";
 import { t } from "@/src/i18n";
 import { SoundOutlined, LoadingOutlined } from "@ant-design/icons";
 
-import { experimental_generateSpeech as generateSpeech } from 'ai';
+import { experimental_generateSpeech as generateSpeech } from "ai";
 import { createOpenAI } from '@ai-sdk/openai';
 import { AI_MODELS } from "@hyperchat/shared/data.mjs";
 

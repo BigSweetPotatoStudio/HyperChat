@@ -15,7 +15,7 @@ import {
 } from "antd";
 import { MyProgress } from "../../common/progress";
 import {
-  electronData,
+  LocalSetting,
   KNOWLEDGE_BASE,
   KnowledgeStore,
 } from "@hyperchat/shared/data.mjs";

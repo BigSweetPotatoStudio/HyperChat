@@ -2,7 +2,7 @@ import { appDataDir } from "./const.mjs";
 import { Logger } from "./log.mjs";
 import { zx } from "./es6.mjs";
 const { fs, path } = zx;
-import { electronData } from "./shared/data.mjs";
+import { LocalSetting } from "./shared/data.mjs";
 import "./common/data.mjs";
 
 
@@ -45,10 +45,10 @@ Logger.info("myEnv: ", process.env.myEnv);
 
 Logger.info("appDataDir: ", appDataDir);
 fs.ensureDirSync(path.join(appDataDir, "messages"));
-electronData.get().appDataDir = appDataDir;
-electronData.get().logFilePath = logFilePath;
+LocalSetting.get().appDataDir = appDataDir;
+LocalSetting.get().logFilePath = logFilePath;
 (async () => {
-  await electronData.save();
+  await LocalSetting.save();
 })();
 
 // 捕获未处理的异常
