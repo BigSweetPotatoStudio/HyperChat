@@ -10,7 +10,7 @@ HyperChat 是一个开源的多平台 AI 聊天客户端，完全支持 MCP（�
 
 ## 🎯 项目愿景
 
-**[HyperChat 1.0](./README.1.md)** 是一个完全手工编写的项目，展现了传统软件开发的精细工艺。
+**[HyperChat 1.0](./archive/README.1.md)** 是一个完全手工编写的项目，展现了传统软件开发的精细工艺。
 
 **HyperChat 2.0** 标志着向 **Vibe Coding** 开发模式的转变，推荐使用 Claude Code 和 GitHub Copilot 等 AI 工具来加速开发过程，体现了 AI 协作开发的新时代。
 
