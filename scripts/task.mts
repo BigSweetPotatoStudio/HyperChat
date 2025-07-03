@@ -5,26 +5,26 @@ import spawn from "cross-spawn";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
-
+const rootDir = path.resolve(__dirname, "../");
 if (argv.updateVersion) {
-  let pack = await fs.readJSON(path.resolve(__dirname, "./package.json"));
+  let pack = await fs.readJSON(path.resolve(rootDir, "./package.json"));
   let webpackage = await fs.readJSON(
-    path.resolve(__dirname, "./web/package.json")
+    path.resolve(rootDir, "./web/package.json")
   );
   if (webpackage.version != pack.version) {
     webpackage.version = pack.version;
     await fs.writeFile(
-      path.resolve(__dirname, "./web/package.json"),
+      path.resolve(rootDir, "./web/package.json"),
       JSON.stringify(webpackage, null, 2)
     );
   }
   let electronpackage = await fs.readJSON(
-    path.resolve(__dirname, "./electron/package.json")
+    path.resolve(rootDir, "./electron/package.json")
   );
   if (electronpackage.version != pack.version) {
     electronpackage.version = pack.version;
     await fs.writeFile(
-      path.resolve(__dirname, "./electron/package.json"),
+      path.resolve(rootDir, "./electron/package.json"),
       JSON.stringify(electronpackage, null, 2)
     );
   }
@@ -130,7 +130,7 @@ if (argv.dev) {
     "npx",
     ["cross-env", "NODE_ENV=development", "myEnv=dev", "webpack", "serve"],
     {
-      cwd: path.resolve(__dirname, "./web/"),
+      cwd: path.resolve(rootDir, "./web/"),
     }
   );
   spawnWithOutput(
@@ -145,12 +145,12 @@ if (argv.dev) {
       "webpack.eval.js",
     ],
     {
-      cwd: path.resolve(__dirname, "./web/"),
+      cwd: path.resolve(rootDir, "./web/"),
     }
   );
 
   spawnWithOutput("npm", ["run", "dev"], {
-    cwd: path.resolve(__dirname, "./electron/"),
+    cwd: path.resolve(rootDir, "./electron/"),
   });
 
   // $({
@@ -166,10 +166,10 @@ if (argv.dev) {
 
 if (argv.prod) {
   await $({
-    cwd: path.resolve(__dirname, "./web/"),
+    cwd: path.resolve(rootDir, "./web/"),
   })`npx cross-env NODE_ENV=production myEnv=prod webpack -c webpack.config.js`;
   await $({
-    cwd: path.resolve(__dirname, "./web/"),
+    cwd: path.resolve(rootDir, "./web/"),
   })`npx cross-env NODE_ENV=development myEnv=dev webpack -c webpack.eval.js`;
 
   await fs.copy(
@@ -181,7 +181,7 @@ if (argv.prod) {
   );
 
   await $({
-    cwd: path.resolve(__dirname, "./electron/"),
+    cwd: path.resolve(rootDir, "./electron/"),
   })`npm run prod`;
 
   // let p = path.resolve(__dirname, `./dist`);
@@ -206,10 +206,10 @@ if (argv.prod) {
 
 if (argv.prod_node) {
   await $({
-    cwd: path.resolve(__dirname, "./web/"),
+    cwd: path.resolve(rootDir, "./web/"),
   })`npx cross-env NODE_ENV=production myEnv=prod webpack -c webpack.config.js`;
   await $({
-    cwd: path.resolve(__dirname, "./web/"),
+    cwd: path.resolve(rootDir, "./web/"),
   })`npx cross-env NODE_ENV=development myEnv=dev webpack -c webpack.eval.js`;
 
   await fs.copy(
@@ -221,7 +221,7 @@ if (argv.prod_node) {
   );
 
   await $({
-    cwd: path.resolve(__dirname, "./electron/"),
+    cwd: path.resolve(rootDir, "./electron/"),
   })`npm run build:node`;
 
 }
@@ -229,10 +229,10 @@ if (argv.prod_node) {
 
 if (argv.build) {
   await $({
-    cwd: path.resolve(__dirname, "./web/"),
+    cwd: path.resolve(rootDir, "./web/"),
   })`npx cross-env NODE_ENV=production myEnv=prod webpack -c webpack.config.js`;
   await $({
-    cwd: path.resolve(__dirname, "./web/"),
+    cwd: path.resolve(rootDir, "./web/"),
   })`npx cross-env NODE_ENV=development myEnv=dev webpack -c webpack.eval.js`;
 
   await fs.copy(
@@ -244,7 +244,7 @@ if (argv.build) {
   );
 
   await $({
-    cwd: path.resolve(__dirname, "./electron/"),
+    cwd: path.resolve(rootDir, "./electron/"),
   })`npm run build`;
 }
 
@@ -252,10 +252,10 @@ if (argv.test) {
   await within(() => {
     return Promise.all([
       $({
-        cwd: path.resolve(__dirname, "./web/"),
+        cwd: path.resolve(rootDir, "./web/"),
       })`npx cross-env NODE_ENV=development myEnv=test webpack -c webpack.config.js`,
       $({
-        cwd: path.resolve(__dirname, "./electron/"),
+        cwd: path.resolve(rootDir, "./electron/"),
       })`npm run testprod`,
     ]);
   });

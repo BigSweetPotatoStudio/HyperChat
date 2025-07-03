@@ -1,9 +1,7 @@
 {
   "name": "@dadigua/hyper-chat",
-  "version": "1.8.4",
   "scripts": {
     "dev": "tsx task.mts --dev",
-    "test": "tsx task.mts --test",
     "prod": "tsx task.mts --prod",
     "build": "tsx task.mts --build",
     "pre_commit": "tsx task.mts --pre_commit",

@@ -19,8 +19,8 @@ if (os.platform() === "win32") {
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
-
-let p = path.resolve(__dirname, "./web/src/i18n.json");
+const rootDir = path.resolve(__dirname, "../");
+let i18nPath = path.resolve(rootDir, "./web/src/i18n.json");
 
 const openai = new OpenAI({
   apiKey: process.env.apiKey, // This is the default and can be omitted
@@ -46,7 +46,7 @@ ${c}`
   );
   console.log("end");
 } else {
-  let json = JSON.parse(fs.readFileSync(p).toString());
+  let json = JSON.parse(fs.readFileSync(i18nPath).toString());
   for (let key in json) {
     // if (!hasChinese(key)) {
     //   delete json[key];
@@ -60,7 +60,7 @@ ${c}`
       json[key].zh = await translateZh(key);
     }
   }
-  fs.writeFileSync(p, JSON.stringify(json, null, 2));
+  fs.writeFileSync(i18nPath, JSON.stringify(json, null, 2));
 
   if ((await $`git diff README.zh.md`).toString().length > 0) {
     let s = await translateEN(fs.readFileSync("./README.zh.md").toString());
