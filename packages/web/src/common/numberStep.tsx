@@ -55,12 +55,12 @@ export function NumberStep({
     <Row className="w-full">
       <Col span={16}>
         <Slider
-          min={min}
-          max={max}
+          min={min ?? 0}
+          max={max ?? 100}
           onChange={handleInputChange}
-          value={inputValue}
-          step={step}
-          defaultValue={defaultValue}
+          value={inputValue ?? 0}
+          step={step ?? 1}
+          defaultValue={defaultValue ?? 0}
         />
       </Col>
       <Col span={8}>

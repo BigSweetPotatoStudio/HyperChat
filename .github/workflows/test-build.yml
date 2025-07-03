@@ -100,10 +100,15 @@ jobs:
         run: npm install
         working-directory: ./packages/electron
 
-      # 构建生产版本 Node.js 包
-      - name: Build production node packages
+      # 检查代码格式
+      - name: check core types
         run: npx tsc --noEmit
         working-directory: ./packages/core
+
+      # 检查 web 目录类型
+      - name: check web types
+        run: npx tsc --noEmit
+        working-directory: ./packages/web
 
       # - name: Build Electron App (macOS only)
       #   if: matrix.os == 'macos-latest'

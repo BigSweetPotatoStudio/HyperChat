@@ -18,7 +18,7 @@ import {
   message,
 } from "antd";
 import React, { useContext, useEffect, useRef, useState } from "react";
-import { call } from "../../common/call";
+import { call, callElectron } from "../../common/call";
 import { t } from "../../i18n";
 import { HeaderContext } from "../../common/context";
 
@@ -40,14 +40,14 @@ export function HpyerTools() {
               />
               <Button
                 onClick={() => {
-                  call("hyperToolOpenBrowser", [url]);
+                  callElectron("hyperToolOpenBrowser", url);
                 }}
               >
                 {t`Open`}
               </Button>
               <Button
                 onClick={() => {
-                  call("hyperToolOpenBrowser", ["https://github.com/BigSweetPotatoStudio/HyperChat"]);
+                  callElectron("hyperToolOpenBrowser", "https://github.com/BigSweetPotatoStudio/HyperChat");
                 }}
               >
                 {t`Test`}

@@ -118,7 +118,7 @@ export const DndTable = <T extends { key: React.Key }>(props: DndTableProps<T>) 
   return (
     <DndContext modifiers={[restrictToVerticalAxis]} onDragEnd={onDragEnd}>
       <SortableContext
-        items={dataSource.map((i) => i.key)}
+        items={dataSource.map((i) => i.key as string)}
         strategy={verticalListSortingStrategy}
       >
         <Table<T>

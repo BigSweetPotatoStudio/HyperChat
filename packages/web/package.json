@@ -106,6 +106,7 @@
   "scripts": {
     "start": "npx cross-env myEnv=dev webpack serve --config webpack.config.js",
     "dev": "npm start",
+    "check": "npx tsc --noEmit",
     "dev:all": "npx tsx task.mts --dev",
     "watch": "webpack -w",
     "build": "npx cross-env NODE_ENV=production myEnv=prod webpack",

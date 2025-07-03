@@ -26,6 +26,8 @@ interface InternalCallback<T extends any[]> extends EventCallback<T> {
  */
 export interface EventEmitter<T extends EventMap> {
   name: string;
+  holds: Partial<{ [K in keyof T]: T[K][] }>;
+  callbacks: Partial<{ [K in keyof T]: InternalCallback<T[K]>[] }>;
   clearAll(): void;
   clear<K extends keyof T>(name: K): void;
   clearCallBack<K extends keyof T>(name: K): void;

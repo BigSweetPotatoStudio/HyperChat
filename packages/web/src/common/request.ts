@@ -4,7 +4,7 @@ import { Modal } from "antd";
 /**
  * Defines the structure for the options parameter of the request function.
  */
-interface RequestOptions extends RequestInit {
+interface RequestOptions extends Omit<RequestInit, 'body'> {
   /**
    * The body of the request. Can be a FormData object or any JSON-serializable object.
    */
@@ -49,11 +49,11 @@ export async function request(
         ...options.headers,
         "Content-Type": "application/json",
       },
-      body: JSON.stringify(options.body),
+      body: JSON.stringify(options.body) as BodyInit,
     };
   }
 
-  return fetch(BASE_URL + url, options)
+  return fetch(BASE_URL + url, options as RequestInit)
     .then((res) => {
       // Handle unauthorized access.
       if (res.status === 401) {

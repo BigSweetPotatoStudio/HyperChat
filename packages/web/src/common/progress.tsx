@@ -35,7 +35,7 @@ export function MyProgress({ time = 1000 }: MyProgressProps): React.ReactElement
    */
   async function checkProgress() {
     try {
-      const fetchedData: ProgressItem[] = await call("getProgressList", []);
+      const fetchedData: ProgressItem[] = await call("getProgressList", undefined);
       setData(fetchedData);
       console.log("Progress data fetched:", fetchedData);
     } catch (error) {

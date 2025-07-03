@@ -849,3 +849,19 @@
 //   // console.log(obj);
 //   return obj;
 // }
+
+export interface MyMessage {
+  role: "user" | "assistant" | "system";
+  content: string;
+}
+
+export class OpenAiChannel {
+  constructor(config: any, messages: MyMessage[]) {
+    // Implementation moved to backend
+  }
+  
+  async completionParse(format: any) {
+    // Implementation moved to backend
+    throw new Error("Not implemented in frontend");
+  }
+}

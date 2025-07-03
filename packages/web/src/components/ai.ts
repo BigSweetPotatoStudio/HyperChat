@@ -56,7 +56,7 @@ export async function rename(messages: MyMessage[]) {
             }), "test")
         )
         // console.log(res);
-        return res.name;
+        return res?.name || "Untitled";
     } catch (e) {
         return e.message;
     }
@@ -87,7 +87,7 @@ export async function genCronExpression(message: string) {
             }), "test")
         );
         // console.log(res);
-        return res.cron;
+        return res?.cron || "0 0 * * *";
     } catch (e) {
         return e.message;
     }

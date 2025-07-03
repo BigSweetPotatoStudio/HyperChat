@@ -96,8 +96,9 @@
     "url": "git+https://github.com/BigSweetPotatoStudio/HyperChat.git"
   },
   "scripts": {
-    "dev": "nodemon -w src --exec npx tsx task.mts --devnode",
-    "start": "npm run dev"
+    "dev": "nodemon -w src --exec npx tsx task.mts --dev",
+    "start": "npm run dev",
+    "check": "npx tsc --noEmit"
   },
   "version": "0.0.0"
 }
