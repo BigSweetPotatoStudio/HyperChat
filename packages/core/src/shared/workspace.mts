@@ -10,10 +10,11 @@ const CONSTANTS = {
   CONFIG_FILES: {
     WORKSPACE: 'workspace.json',
     MCP: 'mcp.json',
+    AGENT_CONFIG: 'config.json',
   },
   DIRECTORIES: {
     AGENTS: 'agents',
-    CHATS: 'chats',
+    CHAT_LOGS: 'chatlogs',
     KNOWLEDGE: 'knowledge',
     TEMP: 'temp',
   },
@@ -25,7 +26,7 @@ const CONSTANTS = {
 } as const;
 
 // 重新实现需要的类型定义
-export type Agent = {
+export type AgentConfig = {
   type?: "builtin" | "custom";
   key: string;
   name: string;
@@ -41,7 +42,12 @@ export type Agent = {
   tags?: string[];
   subAgents?: string[];
   version?: number;
+  created: number;
+  lastModified: number;
 };
+
+// 兼容旧的 Agent 类型
+export type Agent = AgentConfig;
 
 export type ChatHistoryItem = {
   label: string;
@@ -95,6 +101,338 @@ export type IMCPClient = {
 };
 
 /**
+ * Agent 类 - 管理单个 Agent 的配置和聊天记录
+ */
+export class AgentInstance {
+  private config: AgentConfig;
+  private chatLogs: DataList<ChatHistoryItem>;
+  private agentPath: string;
+  private configPath: string;
+
+  constructor(agentPath: string, config?: AgentConfig) {
+    this.agentPath = agentPath;
+    this.configPath = path.join(agentPath, CONSTANTS.CONFIG_FILES.AGENT_CONFIG);
+
+    this.config = config || {
+      key: path.basename(agentPath),
+      name: path.basename(agentPath),
+      prompt: '',
+      allowMCPs: [],
+      confirm_call_tool: false,
+      created: Date.now(),
+      lastModified: Date.now(),
+    };
+
+    this.chatLogs = new DataList<ChatHistoryItem>(path.join(agentPath, CONSTANTS.DIRECTORIES.CHAT_LOGS));
+  }
+
+  /**
+   * 初始化 Agent
+   */
+  async init(): Promise<void> {
+    // 创建目录结构
+    await this.createDirectories();
+
+    // 加载配置
+    await this.loadConfig();
+
+    // 加载聊天记录
+    await this.chatLogs.load();
+  }
+
+  /**
+   * 创建目录结构
+   */
+  private async createDirectories(): Promise<void> {
+    const directories = [
+      this.agentPath,
+      path.join(this.agentPath, CONSTANTS.DIRECTORIES.CHAT_LOGS),
+    ];
+
+    for (const dir of directories) {
+      if (!fs.existsSync(dir)) {
+        await fs.promises.mkdir(dir, { recursive: true });
+      }
+    }
+  }
+
+  /**
+   * 加载 Agent 配置
+   */
+  private async loadConfig(): Promise<void> {
+    if (fs.existsSync(this.configPath)) {
+      try {
+        const content = await fs.promises.readFile(this.configPath, "utf-8");
+        const config = JSON.parse(content) as AgentConfig;
+        this.config = { ...this.config, ...config };
+      } catch (error) {
+        console.warn(`加载 Agent 配置失败 ${this.config.key}:`, error);
+      }
+    }
+  }
+
+  /**
+   * 保存 Agent 配置
+   */
+  async saveConfig(): Promise<boolean> {
+    try {
+      this.config.lastModified = Date.now();
+      await fs.promises.writeFile(this.configPath, JSON.stringify(this.config, null, 2), "utf-8");
+      return true;
+    } catch (error) {
+      console.warn(`保存 Agent 配置失败 ${this.config.key}:`, error);
+      return false;
+    }
+  }
+
+  /**
+   * 获取 Agent 配置
+   */
+  getConfig(): AgentConfig {
+    return this.config;
+  }
+
+  /**
+   * 更新 Agent 配置
+   */
+  async updateConfig(updates: Partial<AgentConfig>): Promise<boolean> {
+    this.config = { ...this.config, ...updates };
+    return await this.saveConfig();
+  }
+
+  /**
+   * 获取所有聊天记录
+   */
+  async getChatLogs(): Promise<ChatHistoryItem[]> {
+    return await this.chatLogs.getAll();
+  }
+
+  /**
+   * 获取单个聊天记录
+   */
+  async getChatLog(key: string): Promise<ChatHistoryItem | null> {
+    return await this.chatLogs.get(key);
+  }
+
+  /**
+   * 添加或更新聊天记录
+   */
+  async setChatLog(chatLog: ChatHistoryItem): Promise<boolean> {
+    // 确保聊天记录与当前 Agent 关联
+    chatLog.agentKey = this.config.key;
+    return await this.chatLogs.set(chatLog);
+  }
+
+  /**
+   * 删除聊天记录
+   */
+  async deleteChatLog(key: string): Promise<boolean> {
+    return await this.chatLogs.delete(key);
+  }
+
+  /**
+   * 清空所有聊天记录
+   */
+  async clearChatLogs(): Promise<boolean> {
+    return await this.chatLogs.clear();
+  }
+
+  /**
+   * 获取聊天记录数量
+   */
+  async getChatLogsCount(): Promise<number> {
+    return await this.chatLogs.size();
+  }
+
+  /**
+   * 检查 Agent 是否存在
+   */
+  exists(): boolean {
+    return fs.existsSync(this.agentPath) && fs.existsSync(this.configPath);
+  }
+
+  /**
+   * 删除整个 Agent
+   */
+  async delete(): Promise<boolean> {
+    try {
+      if (fs.existsSync(this.agentPath)) {
+        await fs.promises.rm(this.agentPath, { recursive: true, force: true });
+      }
+      return true;
+    } catch (error) {
+      console.warn(`删除 Agent 失败 ${this.config.key}:`, error);
+      return false;
+    }
+  }
+
+  /**
+   * 获取 Agent 摘要信息
+   */
+  async getSummary(): Promise<{
+    config: AgentConfig;
+    chatLogsCount: number;
+    lastChatTime?: number;
+  }> {
+    const chatLogs = await this.getChatLogs();
+    const lastChatTime = chatLogs.length > 0
+      ? Math.max(...chatLogs.map(log => log.dateTime))
+      : undefined;
+
+    return {
+      config: this.config,
+      chatLogsCount: chatLogs.length,
+      lastChatTime,
+    };
+  }
+}
+
+/**
+ * Agent 管理器类 - 管理所有 Agent 实例
+ */
+export class AgentManager {
+  private agentsPath: string;
+  private agents: Map<string, AgentInstance> = new Map();
+
+  constructor(agentsPath: string) {
+    this.agentsPath = agentsPath;
+  }
+
+  /**
+   * 初始化 Agent 管理器
+   */
+  async init(): Promise<void> {
+    if (!fs.existsSync(this.agentsPath)) {
+      await fs.promises.mkdir(this.agentsPath, { recursive: true });
+    }
+    await this.loadAllAgents();
+  }
+
+  /**
+   * 加载所有 Agent
+   */
+  private async loadAllAgents(): Promise<void> {
+    if (!fs.existsSync(this.agentsPath)) {
+      return;
+    }
+
+    try {
+      const entries = await fs.promises.readdir(this.agentsPath, { withFileTypes: true });
+
+      for (const entry of entries) {
+        if (entry.isDirectory() && !entry.name.startsWith('.')) {
+          const agentPath = path.join(this.agentsPath, entry.name);
+          const agent = new AgentInstance(agentPath);
+
+          if (agent.exists()) {
+            await agent.init();
+            this.agents.set(entry.name, agent);
+          }
+        }
+      }
+    } catch (error) {
+      console.warn('加载 Agent 列表失败:', error);
+    }
+  }
+
+  /**
+   * 创建新的 Agent
+   */
+  async createAgent(config: Partial<AgentConfig>): Promise<AgentInstance | null> {
+    const key = config.key || `${dayjs().format("YYMMDD-HHmmss")}-${v4().slice(0, 8)}`;
+    const agentPath = path.join(this.agentsPath, key);
+
+    if (this.agents.has(key)) {
+      console.warn(`Agent ${key} 已存在`);
+      return null;
+    }
+
+    const agentConfig: AgentConfig = {
+      key,
+      name: config.name || key,
+      prompt: config.prompt || '',
+      allowMCPs: config.allowMCPs || [],
+      confirm_call_tool: config.confirm_call_tool ?? false,
+      created: Date.now(),
+      lastModified: Date.now(),
+      ...config,
+    };
+
+    try {
+      const agent = new AgentInstance(agentPath, agentConfig);
+      await agent.init();
+      await agent.saveConfig();
+
+      this.agents.set(key, agent);
+      return agent;
+    } catch (error) {
+      console.warn(`创建 Agent 失败 ${key}:`, error);
+      return null;
+    }
+  }
+
+  /**
+   * 获取 Agent 实例
+   */
+  getAgent(key: string): AgentInstance | null {
+    return this.agents.get(key) || null;
+  }
+
+  /**
+   * 获取所有 Agent 配置
+   */
+  async getAllAgents(): Promise<AgentConfig[]> {
+    const configs: AgentConfig[] = [];
+    for (const agent of this.agents.values()) {
+      configs.push(agent.getConfig());
+    }
+    return configs;
+  }
+
+  /**
+   * 删除 Agent
+   */
+  async deleteAgent(key: string): Promise<boolean> {
+    const agent = this.agents.get(key);
+    if (!agent) {
+      return false;
+    }
+
+    const success = await agent.delete();
+    if (success) {
+      this.agents.delete(key);
+    }
+    return success;
+  }
+
+  /**
+   * 获取 Agent 数量
+   */
+  getAgentsCount(): number {
+    return this.agents.size;
+  }
+
+  /**
+   * 获取所有 Agent 的摘要信息
+   */
+  async getAllAgentsSummary(): Promise<Array<{
+    config: AgentConfig;
+    chatLogsCount: number;
+    lastChatTime?: number;
+  }>> {
+    const summaries: Array<{
+      config: AgentConfig;
+      chatLogsCount: number;
+      lastChatTime?: number;
+    }> = [];
+    for (const agent of this.agents.values()) {
+      summaries.push(await agent.getSummary());
+    }
+    return summaries;
+  }
+}
+
+/**
  * 文件夹数据列表管理类
  * 专门处理一个文件夹中全部是同一种类型文件的情况
  */
@@ -108,7 +446,7 @@ export class DataList<T extends { key: string }> {
     private dirPath: string,
     private getItemKey: (item: T) => string = (item) => item.key,
     private generateKey: () => string = () => `${dayjs().format("YYMMDD-HHmmss")}-${v4().slice(0, 8)}`
-  ) {}
+  ) { }
 
   /**
    * 获取文件名（基于 key）
@@ -146,7 +484,7 @@ export class DataList<T extends { key: string }> {
     try {
       const dirStat = await fs.promises.stat(this.dirPath);
       const currentModified = dirStat.mtime.getTime();
-      
+
       // 如果目录没有修改且已加载，跳过
       if (this.loaded && currentModified <= this.lastModified) {
         return;
@@ -160,7 +498,7 @@ export class DataList<T extends { key: string }> {
           try {
             const content = await fs.promises.readFile(filePath, "utf-8");
             const item = JSON.parse(content) as T;
-            
+
             // 确保 item 有必要的字段
             if (item && typeof item === 'object' && 'key' in item && item.key && typeof item.key === 'string') {
               return { key: this.getItemKey(item), item };
@@ -247,11 +585,11 @@ export class DataList<T extends { key: string }> {
       const filePath = path.join(this.dirPath, filename);
 
       await fs.promises.writeFile(filePath, JSON.stringify(item, null, 2), "utf-8");
-      
+
       // 更新内存中的数据
       await this.ensureLoaded();
       this.items.set(key, item);
-      
+
       return true;
     } catch (error) {
       const errorMsg = error instanceof Error ? error.message : String(error);
@@ -275,7 +613,7 @@ export class DataList<T extends { key: string }> {
       // 从内存中删除
       await this.ensureLoaded();
       this.items.delete(key);
-      
+
       return true;
     } catch (error) {
       const errorMsg = error instanceof Error ? error.message : String(error);
@@ -322,7 +660,7 @@ export class DataList<T extends { key: string }> {
       const key = this.getItemKey(item);
       const filename = this.getFileName(key);
       currentFiles.add(filename);
-      
+
       const filePath = path.join(this.dirPath, filename);
       try {
         await fs.promises.writeFile(filePath, JSON.stringify(item, null, 2), "utf-8");
@@ -382,7 +720,7 @@ export class DataList<T extends { key: string }> {
         const deletePromises = files
           .filter(file => file.endsWith('.json') && !file.startsWith('.'))
           .map(file => fs.promises.unlink(path.join(this.dirPath, file)));
-        
+
         await Promise.all(deletePromises);
       }
 
@@ -467,8 +805,7 @@ export type WorkspaceFileNode = {
  */
 export class Workspace {
   private config: WorkspaceConfig;
-  private agents: DataList<Agent>;
-  private chatHistory: DataList<ChatHistoryItem>;
+  private agentManager: AgentManager;
   private mcpConfig: Record<string, MCPServerConfig> = {};
   private mcpClients: Record<string, IMCPClient> = {};
   private fileTree?: WorkspaceFileNode;
@@ -477,7 +814,7 @@ export class Workspace {
 
   constructor(workspacePath: string, config?: WorkspaceConfig) {
     const hyperChatPath = path.join(workspacePath, this.HYPERCHAT_DIR);
-    
+
     this.config = config || {
       key: `${dayjs().format("YYMMDD-HHmmss")}-${v4().slice(0, 8)}`,
       name: path.basename(workspacePath),
@@ -493,8 +830,7 @@ export class Workspace {
       },
     };
 
-    this.agents = new DataList<Agent>(path.join(hyperChatPath, CONSTANTS.DIRECTORIES.AGENTS));
-    this.chatHistory = new DataList<ChatHistoryItem>(path.join(hyperChatPath, CONSTANTS.DIRECTORIES.CHATS));
+    this.agentManager = new AgentManager(path.join(hyperChatPath, CONSTANTS.DIRECTORIES.AGENTS));
   }
 
   /**
@@ -524,10 +860,10 @@ export class Workspace {
   async init(): Promise<void> {
     // 创建目录结构
     await this.createDirectories();
-    
+
     // 加载数据
     await this.load();
-    
+
     // 保存配置
     await this.saveConfig();
   }
@@ -540,7 +876,6 @@ export class Workspace {
     const directories = [
       hyperChatPath,
       path.join(hyperChatPath, CONSTANTS.DIRECTORIES.AGENTS),
-      path.join(hyperChatPath, CONSTANTS.DIRECTORIES.CHATS),
       path.join(hyperChatPath, CONSTANTS.DIRECTORIES.KNOWLEDGE),
       path.join(hyperChatPath, CONSTANTS.DIRECTORIES.TEMP),
     ];
@@ -573,9 +908,8 @@ export class Workspace {
     // 加载配置文件
     await this.loadConfig();
 
-    // 加载 agents 和 chatHistory
-    await this.agents.load();
-    await this.chatHistory.load();
+    // 加载 agents
+    await this.agentManager.init();
 
     // 加载 MCP 配置
     await this.loadMcpConfig();
@@ -588,12 +922,12 @@ export class Workspace {
    */
   private async loadConfig(): Promise<void> {
     const configPath = path.join(this.getHyperChatPath(), CONSTANTS.CONFIG_FILES.WORKSPACE);
-    
+
     if (fs.existsSync(configPath)) {
       try {
         const content = await fs.promises.readFile(configPath, "utf-8");
         const config = JSON.parse(content);
-        
+
         if (validateWorkspaceConfig(config)) {
           this.config = { ...this.config, ...config };
         } else {
@@ -610,7 +944,7 @@ export class Workspace {
    */
   private async loadMcpConfig(): Promise<void> {
     const mcpPath = path.join(this.getHyperChatPath(), CONSTANTS.CONFIG_FILES.MCP);
-    
+
     if (fs.existsSync(mcpPath)) {
       try {
         const content = await fs.promises.readFile(mcpPath, "utf-8");
@@ -627,7 +961,7 @@ export class Workspace {
    */
   async saveConfig(): Promise<void> {
     const configPath = path.join(this.getHyperChatPath(), CONSTANTS.CONFIG_FILES.WORKSPACE);
-    
+
     try {
       await fs.promises.writeFile(configPath, JSON.stringify(this.config, null, 2), "utf-8");
     } catch (error) {
@@ -640,7 +974,7 @@ export class Workspace {
    */
   async saveMcpConfig(): Promise<void> {
     const mcpPath = path.join(this.getHyperChatPath(), CONSTANTS.CONFIG_FILES.MCP);
-    
+
     try {
       await fs.promises.writeFile(mcpPath, JSON.stringify({ mcpServers: this.mcpConfig }, null, 2), "utf-8");
     } catch (error) {
@@ -662,67 +996,80 @@ export class Workspace {
   /**
    * 获取所有 agents
    */
-  async getAgents(): Promise<Agent[]> {
-    return await this.agents.getAll();
+  async getAgents(): Promise<AgentConfig[]> {
+    return await this.agentManager.getAllAgents();
   }
 
   /**
-   * 获取单个 agent
+   * 获取单个 agent 实例
    */
-  async getAgent(key: string): Promise<Agent | null> {
-    return await this.agents.get(key);
+  getAgentInstance(key: string): AgentInstance | null {
+    return this.agentManager.getAgent(key);
   }
 
   /**
-   * 添加或更新 agent
+   * 获取单个 agent 配置
    */
-  async setAgent(agent: Agent): Promise<boolean> {
-    return await this.agents.set(agent);
+  async getAgent(key: string): Promise<AgentConfig | null> {
+    const instance = this.agentManager.getAgent(key);
+    return instance ? instance.getConfig() : null;
+  }
+
+  /**
+   * 创建或更新 agent
+   */
+  async setAgent(agent: Partial<AgentConfig>): Promise<boolean> {
+    if (agent.key) {
+      // 更新现有 agent
+      const instance = this.agentManager.getAgent(agent.key);
+      if (instance) {
+        return await instance.updateConfig(agent);
+      }
+    }
+
+    // 创建新 agent
+    const newAgent = await this.agentManager.createAgent(agent);
+    return newAgent !== null;
   }
 
   /**
    * 删除 agent
    */
   async deleteAgent(key: string): Promise<boolean> {
-    return await this.agents.delete(key);
+    return await this.agentManager.deleteAgent(key);
   }
 
   /**
    * 获取所有 agents 数量
    */
   async getAgentsCount(): Promise<number> {
-    return await this.agents.size();
-  }
-
-  // ========== Chat History 管理 ==========
-
-  /**
-   * 获取所有聊天历史
-   */
-  async getChatHistory(): Promise<ChatHistoryItem[]> {
-    return await this.chatHistory.getAll();
+    return this.agentManager.getAgentsCount();
   }
 
   /**
-   * 获取单个聊天历史
+   * 获取 Agent 的聊天记录
    */
-  async getChatHistoryItem(key: string): Promise<ChatHistoryItem | null> {
-    return await this.chatHistory.get(key);
+  async getAgentChatLogs(agentKey: string): Promise<ChatHistoryItem[]> {
+    const instance = this.agentManager.getAgent(agentKey);
+    return instance ? await instance.getChatLogs() : [];
   }
 
   /**
-   * 添加或更新聊天历史
+   * 添加 Agent 聊天记录
    */
-  async setChatHistoryItem(item: ChatHistoryItem): Promise<boolean> {
-    return await this.chatHistory.set(item);
+  async addAgentChatLog(agentKey: string, chatLog: ChatHistoryItem): Promise<boolean> {
+    const instance = this.agentManager.getAgent(agentKey);
+    return instance ? await instance.setChatLog(chatLog) : false;
   }
 
   /**
-   * 删除聊天历史
+   * 删除 Agent 聊天记录
    */
-  async deleteChatHistoryItem(key: string): Promise<boolean> {
-    return await this.chatHistory.delete(key);
+  async deleteAgentChatLog(agentKey: string, chatKey: string): Promise<boolean> {
+    const instance = this.agentManager.getAgent(agentKey);
+    return instance ? await instance.deleteChatLog(chatKey) : false;
   }
+
 
   // ========== MCP 管理 ==========
 
@@ -881,13 +1228,11 @@ export class Workspace {
    */
   async getSummary(): Promise<{
     agentsCount: number;
-    chatHistoryCount: number;
     mcpServersCount: number;
     lastSync?: number;
   }> {
     return {
       agentsCount: await this.getAgentsCount(),
-      chatHistoryCount: await this.chatHistory.size(),
       mcpServersCount: Object.keys(this.mcpConfig).length,
       lastSync: this.lastSync,
     };
@@ -1031,7 +1376,7 @@ export class WorkspaceManager {
   /**
    * 添加或更新单个 agent
    */
-  async addOrUpdateAgent(workspacePath: string, agent: Agent): Promise<boolean> {
+  async addOrUpdateAgent(workspacePath: string, agent: Partial<AgentConfig>): Promise<boolean> {
     const workspace = this.getWorkspaceInstance(workspacePath);
     if (!workspace) {
       return false;
@@ -1053,7 +1398,7 @@ export class WorkspaceManager {
   /**
    * 获取指定工作区的所有 agents
    */
-  async getWorkspaceAgents(workspacePath: string): Promise<Agent[]> {
+  async getWorkspaceAgents(workspacePath: string): Promise<AgentConfig[]> {
     const workspace = this.getWorkspaceInstance(workspacePath);
     if (!workspace) {
       return [];
@@ -1064,7 +1409,7 @@ export class WorkspaceManager {
   /**
    * 获取指定工作区的单个 agent
    */
-  async getWorkspaceAgent(workspacePath: string, agentKey: string): Promise<Agent | null> {
+  async getWorkspaceAgent(workspacePath: string, agentKey: string): Promise<AgentConfig | null> {
     const workspace = this.getWorkspaceInstance(workspacePath);
     if (!workspace) {
       return null;
@@ -1077,7 +1422,7 @@ export class WorkspaceManager {
    */
   async loadExistingWorkspace(workspacePath: string): Promise<Workspace | null> {
     const workspace = new Workspace(workspacePath);
-    
+
     // 检查工作区是否存在
     if (!workspace.exists()) {
       return null;
@@ -1086,7 +1431,7 @@ export class WorkspaceManager {
     try {
       // 加载工作区数据
       await workspace.load();
-      
+
       // 将工作区添加到管理器
       this.workspaces.set(workspacePath, workspace);
 
@@ -1137,14 +1482,14 @@ export class WorkspaceManager {
   /**
    * 从全局配置加载 agents
    */
-  async loadGlobalAgents(): Promise<Agent[]> {
+  async loadGlobalAgents(): Promise<AgentConfig[]> {
     return await this.globalWorkspace.getAgents();
   }
 
   /**
    * 保存 agent 到全局配置
    */
-  async saveGlobalAgent(agent: Agent): Promise<boolean> {
+  async saveGlobalAgent(agent: Partial<AgentConfig>): Promise<boolean> {
     return await this.globalWorkspace.setAgent(agent);
   }
 
@@ -1158,23 +1503,23 @@ export class WorkspaceManager {
   /**
    * 获取合并的 agents（全局 + 工作区）
    */
-  async getMergedAgents(workspacePath: string): Promise<Agent[]> {
+  async getMergedAgents(workspacePath: string): Promise<AgentConfig[]> {
     const globalAgents = await this.loadGlobalAgents();
     const workspaceAgents = await this.getWorkspaceAgents(workspacePath);
-    
+
     // 创建一个 Map 来去重，工作区的配置覆盖全局配置
-    const mergedAgentsMap = new Map<string, Agent>();
-    
+    const mergedAgentsMap = new Map<string, AgentConfig>();
+
     // 先添加全局 agents
     globalAgents.forEach(agent => {
       mergedAgentsMap.set(agent.key, { ...agent, type: 'builtin' });
     });
-    
+
     // 再添加工作区 agents，会覆盖同名的全局 agents
     workspaceAgents.forEach(agent => {
       mergedAgentsMap.set(agent.key, { ...agent, type: 'custom' });
     });
-    
+
     return Array.from(mergedAgentsMap.values());
   }
 
@@ -1183,10 +1528,10 @@ export class WorkspaceManager {
    */
   async getMergedMcpConfig(workspacePath: string): Promise<Record<string, MCPServerConfig>> {
     const globalConfig = this.globalWorkspace.getMcpConfig();
-    
+
     const workspace = this.getWorkspaceInstance(workspacePath);
     const workspaceConfig = workspace ? workspace.getMcpConfig() : {};
-    
+
     // 合并配置，工作区配置覆盖全局配置
     return { ...globalConfig, ...workspaceConfig };
   }
@@ -1224,7 +1569,7 @@ export class Data<T> {
       try {
         const globalConfigPath = CONSTANTS.GLOBAL_PATH;
         const filePath = path.join(globalConfigPath, this.fileName);
-        
+
         if (fs.existsSync(filePath)) {
           const content = await fs.promises.readFile(filePath, "utf-8");
           this.data = JSON.parse(content);
@@ -1243,7 +1588,7 @@ export class Data<T> {
       if (!fs.existsSync(globalConfigPath)) {
         await fs.promises.mkdir(globalConfigPath, { recursive: true });
       }
-      
+
       const filePath = path.join(globalConfigPath, this.fileName);
       await fs.promises.writeFile(filePath, JSON.stringify(this.data, null, 2), "utf-8");
     } catch (error) {

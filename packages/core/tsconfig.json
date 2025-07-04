@@ -24,6 +24,7 @@
     "exactOptionalPropertyTypes": false,
     "noUncheckedIndexedAccess": true,
     "noImplicitOverride": true,
+    "useUnknownInCatchVariables": true,
     "allowUnreachableCode": false,
     "allowUnusedLabels": false,
     "lib": [
