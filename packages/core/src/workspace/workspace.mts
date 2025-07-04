@@ -35,11 +35,7 @@ export class Workspace {
       created: Date.now(),
       lastAccessed: Date.now(),
       settings: {
-        enableMCP: true,
-        enableAgents: true,
         enableKnowledgeBase: true,
-        autoSave: true,
-        syncToCloud: false,
       },
     };
 

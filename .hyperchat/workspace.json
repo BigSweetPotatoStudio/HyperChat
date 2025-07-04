@@ -8,8 +8,8 @@
   "settings": {
     "enableMCP": true,
     "enableAgents": true,
-    "enableKnowledgeBase": true,
     "autoSave": true,
-    "syncToCloud": false
+    "syncToCloud": false,
+    "enableKnowledgeBase": true
   }
 }

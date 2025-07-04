@@ -84,13 +84,9 @@ export type WorkspaceConfig = {
 
 // 工作区设置
 export type WorkspaceSettings = {
-  enableMCP: boolean;
-  enableAgents: boolean;
   enableKnowledgeBase: boolean;
   defaultModel?: string;
   defaultAgent?: string;
-  autoSave: boolean;
-  syncToCloud: boolean;
 };
 
 // 工作区文件树节点
@@ -127,10 +123,6 @@ export function validateWorkspaceSettings(settings: any): settings is WorkspaceS
   return (
     settings &&
     typeof settings === 'object' &&
-    typeof settings.enableMCP === 'boolean' &&
-    typeof settings.enableAgents === 'boolean' &&
-    typeof settings.enableKnowledgeBase === 'boolean' &&
-    typeof settings.autoSave === 'boolean' &&
-    typeof settings.syncToCloud === 'boolean'
+    typeof settings.enableKnowledgeBase === 'boolean'
   );
 }
