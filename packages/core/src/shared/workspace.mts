@@ -4,6 +4,26 @@ import * as fs from "fs";
 import dayjs from "dayjs";
 import * as os from "os";
 
+// 常量定义
+const CONSTANTS = {
+  HYPERCHAT_DIR: '.hyperchat',
+  CONFIG_FILES: {
+    WORKSPACE: 'workspace.json',
+    MCP: 'mcp.json',
+  },
+  DIRECTORIES: {
+    AGENTS: 'agents',
+    CHATS: 'chats',
+    KNOWLEDGE: 'knowledge',
+    TEMP: 'temp',
+  },
+  FILE_PATTERNS: {
+    JSON: '.json',
+    HIDDEN_PREFIX: '.',
+  },
+  GLOBAL_PATH: path.join(os.homedir(), 'Documents', 'HyperChat', '.hyperchat'),
+} as const;
+
 // 重新实现需要的类型定义
 export type Agent = {
   type?: "builtin" | "custom";
@@ -81,6 +101,8 @@ export type IMCPClient = {
 export class DataList<T extends { key: string }> {
   private items: Map<string, T> = new Map();
   private loaded = false;
+  private lastModified = 0;
+  private loadPromise?: Promise<void>;
 
   constructor(
     private dirPath: string,
@@ -99,32 +121,66 @@ export class DataList<T extends { key: string }> {
    * 加载所有文件
    */
   async load(): Promise<void> {
+    // 避免并发加载
+    if (this.loadPromise) {
+      return this.loadPromise;
+    }
+
+    this.loadPromise = this._doLoad();
+    await this.loadPromise;
+    this.loadPromise = undefined;
+  }
+
+  /**
+   * 实际执行加载的方法
+   */
+  private async _doLoad(): Promise<void> {
     this.items.clear();
 
     if (!fs.existsSync(this.dirPath)) {
       this.loaded = true;
+      this.lastModified = Date.now();
       return;
     }
 
     try {
-      const files = await fs.promises.readdir(this.dirPath);
+      const dirStat = await fs.promises.stat(this.dirPath);
+      const currentModified = dirStat.mtime.getTime();
+      
+      // 如果目录没有修改且已加载，跳过
+      if (this.loaded && currentModified <= this.lastModified) {
+        return;
+      }
 
-      for (const file of files) {
-        if (file.endsWith('.json') && !file.startsWith('.')) {
+      const files = await fs.promises.readdir(this.dirPath);
+      const loadPromises = files
+        .filter(file => file.endsWith('.json') && !file.startsWith('.'))
+        .map(async (file) => {
           const filePath = path.join(this.dirPath, file);
           try {
             const content = await fs.promises.readFile(filePath, "utf-8");
             const item = JSON.parse(content) as T;
             
             // 确保 item 有必要的字段
-            if (item && typeof item === 'object' && 'key' in item && item.key) {
-              this.items.set(this.getItemKey(item), item);
+            if (item && typeof item === 'object' && 'key' in item && item.key && typeof item.key === 'string') {
+              return { key: this.getItemKey(item), item };
+            } else {
+              console.warn(`文件 ${file} 数据格式无效，缺少必要的 key 字段`);
             }
           } catch (error) {
             console.warn(`加载文件 ${file} 失败:`, error);
           }
+          return null;
+        });
+
+      const results = await Promise.all(loadPromises);
+      results.forEach(result => {
+        if (result) {
+          this.items.set(result.key, result.item);
         }
-      }
+      });
+
+      this.lastModified = currentModified;
     } catch (error) {
       console.warn(`读取目录 ${this.dirPath} 失败:`, error);
     }
@@ -138,6 +194,20 @@ export class DataList<T extends { key: string }> {
   private async ensureLoaded(): Promise<void> {
     if (!this.loaded) {
       await this.load();
+      return;
+    }
+
+    // 检查目录是否有更新
+    if (fs.existsSync(this.dirPath)) {
+      try {
+        const dirStat = await fs.promises.stat(this.dirPath);
+        if (dirStat.mtime.getTime() > this.lastModified) {
+          await this.load();
+        }
+      } catch (error) {
+        // 如果无法获取状态，重新加载
+        await this.load();
+      }
     }
   }
 
@@ -161,21 +231,21 @@ export class DataList<T extends { key: string }> {
    * 添加或更新单个项目
    */
   async set(item: T): Promise<boolean> {
-    // 确保目录存在
-    if (!fs.existsSync(this.dirPath)) {
-      await fs.promises.mkdir(this.dirPath, { recursive: true });
-    }
-
-    // 如果没有 key，生成新的 key
-    if (!item.key) {
-      (item as any).key = this.generateKey();
-    }
-
-    const key = this.getItemKey(item);
-    const filename = this.getFileName(key);
-    const filePath = path.join(this.dirPath, filename);
-
     try {
+      // 确保目录存在
+      if (!fs.existsSync(this.dirPath)) {
+        await fs.promises.mkdir(this.dirPath, { recursive: true });
+      }
+
+      // 如果没有 key，生成新的 key
+      if (!item.key) {
+        (item as any).key = this.generateKey();
+      }
+
+      const key = this.getItemKey(item);
+      const filename = this.getFileName(key);
+      const filePath = path.join(this.dirPath, filename);
+
       await fs.promises.writeFile(filePath, JSON.stringify(item, null, 2), "utf-8");
       
       // 更新内存中的数据
@@ -184,7 +254,8 @@ export class DataList<T extends { key: string }> {
       
       return true;
     } catch (error) {
-      console.warn(`保存文件 ${filename} 失败:`, error);
+      const errorMsg = error instanceof Error ? error.message : String(error);
+      console.warn(`保存文件 ${this.getFileName(this.getItemKey(item))} 失败:`, errorMsg);
       return false;
     }
   }
@@ -207,7 +278,8 @@ export class DataList<T extends { key: string }> {
       
       return true;
     } catch (error) {
-      console.warn(`删除文件 ${filename} 失败:`, error);
+      const errorMsg = error instanceof Error ? error.message : String(error);
+      console.warn(`删除文件 ${filename} 失败: ${errorMsg}`);
       return false;
     }
   }
@@ -236,16 +308,17 @@ export class DataList<T extends { key: string }> {
       console.warn(`读取目录失败:`, error);
     }
 
-    // 保存当前的项目
-    const currentFiles = new Set<string>();
-    let success = true;
-
-    for (const item of items) {
-      // 如果没有 key，生成新的 key
+    // 为没有 key 的项目生成 key
+    const itemsWithKeys = items.map(item => {
       if (!item.key) {
         (item as any).key = this.generateKey();
       }
+      return item;
+    });
 
+    // 并行保存所有文件
+    const currentFiles = new Set<string>();
+    const savePromises = itemsWithKeys.map(async (item) => {
       const key = this.getItemKey(item);
       const filename = this.getFileName(key);
       currentFiles.add(filename);
@@ -253,23 +326,29 @@ export class DataList<T extends { key: string }> {
       const filePath = path.join(this.dirPath, filename);
       try {
         await fs.promises.writeFile(filePath, JSON.stringify(item, null, 2), "utf-8");
+        return { success: true, filename };
       } catch (error) {
         console.warn(`保存文件 ${filename} 失败:`, error);
-        success = false;
+        return { success: false, filename, error };
       }
-    }
+    });
 
-    // 删除不再存在的文件
-    for (const existingFile of existingFiles) {
-      if (!currentFiles.has(existingFile)) {
+    const saveResults = await Promise.all(savePromises);
+    const success = saveResults.every(result => result.success);
+
+    // 并行删除不再存在的文件
+    const deletePromises = Array.from(existingFiles)
+      .filter(file => !currentFiles.has(file))
+      .map(async (existingFile) => {
         const filePath = path.join(this.dirPath, existingFile);
         try {
           await fs.promises.unlink(filePath);
         } catch (error) {
           console.warn(`删除旧文件 ${existingFile} 失败:`, error);
         }
-      }
-    }
+      });
+
+    await Promise.all(deletePromises);
 
     // 重新加载数据到内存
     await this.load();
@@ -300,18 +379,18 @@ export class DataList<T extends { key: string }> {
     try {
       if (fs.existsSync(this.dirPath)) {
         const files = await fs.promises.readdir(this.dirPath);
-        for (const file of files) {
-          if (file.endsWith('.json') && !file.startsWith('.')) {
-            const filePath = path.join(this.dirPath, file);
-            await fs.promises.unlink(filePath);
-          }
-        }
+        const deletePromises = files
+          .filter(file => file.endsWith('.json') && !file.startsWith('.'))
+          .map(file => fs.promises.unlink(path.join(this.dirPath, file)));
+        
+        await Promise.all(deletePromises);
       }
 
       this.items.clear();
       return true;
     } catch (error) {
-      console.warn(`清空目录失败:`, error);
+      const errorMsg = error instanceof Error ? error.message : String(error);
+      console.warn(`清空目录失败: ${errorMsg}`);
       return false;
     }
   }
@@ -339,6 +418,38 @@ export type WorkspaceSettings = {
   syncToCloud: boolean;
 };
 
+/**
+ * 验证工作区配置
+ */
+function validateWorkspaceConfig(config: any): config is WorkspaceConfig {
+  return (
+    config &&
+    typeof config === 'object' &&
+    typeof config.key === 'string' &&
+    typeof config.name === 'string' &&
+    typeof config.path === 'string' &&
+    typeof config.created === 'number' &&
+    typeof config.lastAccessed === 'number' &&
+    config.settings &&
+    typeof config.settings === 'object'
+  );
+}
+
+/**
+ * 验证工作区设置
+ */
+function validateWorkspaceSettings(settings: any): settings is WorkspaceSettings {
+  return (
+    settings &&
+    typeof settings === 'object' &&
+    typeof settings.enableMCP === 'boolean' &&
+    typeof settings.enableAgents === 'boolean' &&
+    typeof settings.enableKnowledgeBase === 'boolean' &&
+    typeof settings.autoSave === 'boolean' &&
+    typeof settings.syncToCloud === 'boolean'
+  );
+}
+
 // 工作区文件树节点
 export type WorkspaceFileNode = {
   name: string;
@@ -362,7 +473,7 @@ export class Workspace {
   private mcpClients: Record<string, IMCPClient> = {};
   private fileTree?: WorkspaceFileNode;
   private lastSync?: number;
-  private readonly HYPERCHAT_DIR = ".hyperchat";
+  private readonly HYPERCHAT_DIR = CONSTANTS.HYPERCHAT_DIR;
 
   constructor(workspacePath: string, config?: WorkspaceConfig) {
     const hyperChatPath = path.join(workspacePath, this.HYPERCHAT_DIR);
@@ -382,8 +493,8 @@ export class Workspace {
       },
     };
 
-    this.agents = new DataList<Agent>(path.join(hyperChatPath, "agents"));
-    this.chatHistory = new DataList<ChatHistoryItem>(path.join(hyperChatPath, "chats"));
+    this.agents = new DataList<Agent>(path.join(hyperChatPath, CONSTANTS.DIRECTORIES.AGENTS));
+    this.chatHistory = new DataList<ChatHistoryItem>(path.join(hyperChatPath, CONSTANTS.DIRECTORIES.CHATS));
   }
 
   /**
@@ -428,10 +539,10 @@ export class Workspace {
     const hyperChatPath = this.getHyperChatPath();
     const directories = [
       hyperChatPath,
-      path.join(hyperChatPath, "agents"),
-      path.join(hyperChatPath, "chats"),
-      path.join(hyperChatPath, "knowledge"),
-      path.join(hyperChatPath, "temp"),
+      path.join(hyperChatPath, CONSTANTS.DIRECTORIES.AGENTS),
+      path.join(hyperChatPath, CONSTANTS.DIRECTORIES.CHATS),
+      path.join(hyperChatPath, CONSTANTS.DIRECTORIES.KNOWLEDGE),
+      path.join(hyperChatPath, CONSTANTS.DIRECTORIES.TEMP),
     ];
 
     for (const dir of directories) {
@@ -442,7 +553,7 @@ export class Workspace {
 
     // 创建默认配置文件
     const defaultFiles = [
-      { name: "mcp.json", content: JSON.stringify({ mcpServers: {} }, null, 2) },
+      { name: CONSTANTS.CONFIG_FILES.MCP, content: JSON.stringify({ mcpServers: {} }, null, 2) },
     ];
 
     for (const file of defaultFiles) {
@@ -476,13 +587,18 @@ export class Workspace {
    * 加载工作区配置
    */
   private async loadConfig(): Promise<void> {
-    const configPath = path.join(this.getHyperChatPath(), "workspace.json");
+    const configPath = path.join(this.getHyperChatPath(), CONSTANTS.CONFIG_FILES.WORKSPACE);
     
     if (fs.existsSync(configPath)) {
       try {
         const content = await fs.promises.readFile(configPath, "utf-8");
-        const config = JSON.parse(content) as WorkspaceConfig;
-        this.config = { ...this.config, ...config };
+        const config = JSON.parse(content);
+        
+        if (validateWorkspaceConfig(config)) {
+          this.config = { ...this.config, ...config };
+        } else {
+          console.warn('工作区配置格式无效，使用默认配置');
+        }
       } catch (error) {
         console.warn(`加载工作区配置失败:`, error);
       }
@@ -493,7 +609,7 @@ export class Workspace {
    * 加载 MCP 配置
    */
   private async loadMcpConfig(): Promise<void> {
-    const mcpPath = path.join(this.getHyperChatPath(), "mcp.json");
+    const mcpPath = path.join(this.getHyperChatPath(), CONSTANTS.CONFIG_FILES.MCP);
     
     if (fs.existsSync(mcpPath)) {
       try {
@@ -510,7 +626,7 @@ export class Workspace {
    * 保存工作区配置
    */
   async saveConfig(): Promise<void> {
-    const configPath = path.join(this.getHyperChatPath(), "workspace.json");
+    const configPath = path.join(this.getHyperChatPath(), CONSTANTS.CONFIG_FILES.WORKSPACE);
     
     try {
       await fs.promises.writeFile(configPath, JSON.stringify(this.config, null, 2), "utf-8");
@@ -523,7 +639,7 @@ export class Workspace {
    * 保存 MCP 配置
    */
   async saveMcpConfig(): Promise<void> {
-    const mcpPath = path.join(this.getHyperChatPath(), "mcp.json");
+    const mcpPath = path.join(this.getHyperChatPath(), CONSTANTS.CONFIG_FILES.MCP);
     
     try {
       await fs.promises.writeFile(mcpPath, JSON.stringify({ mcpServers: this.mcpConfig }, null, 2), "utf-8");
@@ -781,7 +897,7 @@ export class Workspace {
 // 工作区管理器类 - 简化为只管理工作区的注册和发现
 export class WorkspaceManager {
   private workspaces: Map<string, Workspace> = new Map(); // key 是 path
-  private readonly GLOBAL_HYPERCHAT_DIR = path.join(os.homedir(), 'Documents', 'HyperChat', '.hyperchat');
+  private readonly GLOBAL_HYPERCHAT_DIR = CONSTANTS.GLOBAL_PATH;
   private globalWorkspace: Workspace;
 
   constructor() {
@@ -985,7 +1101,7 @@ export class WorkspaceManager {
    * 检查指定路径是否为工作区（是否包含 .hyperchat 文件夹）
    */
   isWorkspaceDirectory(directoryPath: string): boolean {
-    const hyperChatPath = path.join(directoryPath, ".hyperchat");
+    const hyperChatPath = path.join(directoryPath, CONSTANTS.HYPERCHAT_DIR);
     return fs.existsSync(hyperChatPath) && fs.statSync(hyperChatPath).isDirectory();
   }
 
@@ -1106,7 +1222,7 @@ export class Data<T> {
   async init(): Promise<T> {
     if (!this.loaded) {
       try {
-        const globalConfigPath = path.join(os.homedir(), 'Documents', 'HyperChat', '.hyperchat');
+        const globalConfigPath = CONSTANTS.GLOBAL_PATH;
         const filePath = path.join(globalConfigPath, this.fileName);
         
         if (fs.existsSync(filePath)) {
@@ -1123,7 +1239,7 @@ export class Data<T> {
 
   async save(): Promise<void> {
     try {
-      const globalConfigPath = path.join(os.homedir(), 'Documents', 'HyperChat', '.hyperchat');
+      const globalConfigPath = CONSTANTS.GLOBAL_PATH;
       if (!fs.existsSync(globalConfigPath)) {
         await fs.promises.mkdir(globalConfigPath, { recursive: true });
       }
