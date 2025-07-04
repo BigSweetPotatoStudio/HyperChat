@@ -39,7 +39,6 @@ tmp/
 __pycache__/
 *.spec
 *.log
-tests/
 .env
 *.log
 js/

@@ -16,7 +16,10 @@
       "Bash(ls:*)",
       "Bash(npm install:*)",
       "Bash(npm run build:*)",
-      "Bash(sed:*)"
+      "Bash(sed:*)",
+      "Bash(npx jest:*)",
+      "Bash(npm run test:*)",
+      "Bash(npm test)"
     ],
     "deny": []
   }
