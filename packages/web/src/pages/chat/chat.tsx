@@ -267,6 +267,8 @@ export const Chat = ({
           }
         });
 
+        const defaultModel = getDefaultModelConfigSync(AI_MODELS);
+        currentChat.current.modelKey = defaultModel ? defaultModel.key : "";
 
         Agents.get().data = builtinAgent.current.concat(Agents.get().data.filter(x => x.type != "builtin"));
         Agents.get().data.forEach((x) => {
@@ -346,7 +348,7 @@ export const Chat = ({
   const onGPTSClick = async (key: string, { loadHistory = true } = {}) => {
     let find = Agents.get().data.find((y) => y.key === key);
     if (!find) return;
-    
+
     selectGptsKey.current = find.key;
     historyFilterType.current = "all";
     await currentChatReset(
@@ -896,7 +898,7 @@ export const Chat = ({
     },
   });
   /** 机器人搜索值 */
-  const [botSearchValue, setBotSearchValue] = useState("");
+  const [agentSearchValue, setAgentSearchValue] = useState("");
 
   /** 获取当前模型配置 */
   let currModel = (
@@ -1245,9 +1247,9 @@ export const Chat = ({
                               <Space>
                                 <Input
                                   placeholder="search"
-                                  value={botSearchValue}
+                                  value={agentSearchValue}
                                   onChange={(e) => {
-                                    setBotSearchValue(e.target.value);
+                                    setAgentSearchValue(e.target.value);
                                   }}
                                   allowClear
                                 ></Input>
@@ -1266,7 +1268,7 @@ export const Chat = ({
                               <div className="flex items-center">
                                 <div className="flex flex-wrap">
                                   <DndContext
-                                    sensors={botSearchValue != "" ? [] : [sensors]}
+                                    sensors={agentSearchValue != "" ? [] : [sensors]}
                                     onDragEnd={(e) => {
                                       try {
                                         let data = Agents.get().data;
@@ -1295,20 +1297,20 @@ export const Chat = ({
                                       items={(Agents.get()
                                         .data).filter(
                                           (x) =>
-                                            botSearchValue == "" ||
+                                            agentSearchValue == "" ||
                                             x.name
                                               .toLowerCase()
-                                              .includes(botSearchValue),
+                                              .includes(agentSearchValue),
                                         )
                                         .map((x) => x.key)}
                                     >
                                       {(Agents.get()
                                         .data).filter(
                                           (x) =>
-                                            botSearchValue == "" ||
+                                            agentSearchValue == "" ||
                                             x.name
                                               .toLowerCase()
-                                              .includes(botSearchValue),
+                                              .includes(agentSearchValue),
                                         )
                                         .map((item) => (
                                           <SortableItem
@@ -1388,9 +1390,9 @@ export const Chat = ({
                                   <Space>
                                     <Input
                                       placeholder="search"
-                                      value={botSearchValue}
+                                      value={agentSearchValue}
                                       onChange={(e) => {
-                                        setBotSearchValue(e.target.value);
+                                        setAgentSearchValue(e.target.value);
                                       }}
                                       allowClear
                                     ></Input>
@@ -1409,7 +1411,7 @@ export const Chat = ({
                                   <div className="flex items-center">
                                     <div className="flex flex-wrap">
                                       <DndContext
-                                        sensors={botSearchValue != "" ? [] : [sensors]}
+                                        sensors={agentSearchValue != "" ? [] : [sensors]}
                                         onDragEnd={(e) => {
                                           try {
                                             let data = Agents.get().data;
@@ -1438,20 +1440,20 @@ export const Chat = ({
                                           items={(Agents.get()
                                             .data).filter(
                                               (x) =>
-                                                botSearchValue == "" ||
+                                                agentSearchValue == "" ||
                                                 x.name
                                                   .toLowerCase()
-                                                  .includes(botSearchValue),
+                                                  .includes(agentSearchValue),
                                             )
                                             .map((x) => x.key)}
                                         >
                                           {(Agents.get()
                                             .data).filter(
                                               (x) =>
-                                                botSearchValue == "" ||
+                                                agentSearchValue == "" ||
                                                 x.name
                                                   .toLowerCase()
-                                                  .includes(botSearchValue),
+                                                  .includes(agentSearchValue),
                                             )
                                             .map((item) => (
                                               <SortableItem
@@ -1632,12 +1634,12 @@ export const Chat = ({
                               optionFilterProp="label"
                               placeholder={
                                 AI_MODELS.get().data.length > 0
-                                  ? `${getDefaultModelConfigSync(AI_MODELS)?.provider || 'unknown'}:${getDefaultModelConfigSync(AI_MODELS)?.name || 'unknown'}`
+                                  ? `${currModel?.provider || 'unknown'}:${currModel?.name || 'unknown'}`
                                   : "Please add a LLM model"
                               }
                               className="w-60"
                               allowClear
-                              value={currentChat.current.modelKey}
+                              value={currentChat.current.modelKey }
                               onChange={(value) => {
                                 currentChat.current.modelKey = value;
                                 refresh();
