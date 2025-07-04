@@ -31,6 +31,8 @@ packages/cli 专注于命令行前端的实现
 2.0 版本的 HyperChat 项目结构如下：
 
 ```
+# 工作区如下
+
 /projects/
 ├── /my_project_1/                // 项目一的工作区
 │   ├── .hyperchat/               // HyperChat 在此工作区的所有配置和数据 (对项目隔离)
@@ -51,8 +53,11 @@ packages/cli 专注于命令行前端的实现
     └── report.docx
 
 
+# 全局 HyperChat 配置和数据存储在 ~/Documents/HyperChat/ 目录下，结构如下：
 
-~/Documents/HyperChat/
+```
+
+~/Documents/HyperChat/.hyperchat/
 ├── agents/                       // <new> 的 agents.json 文件夹
 │   ├── chats/
 │   │   └── history_<uuid>.json  // 某个 AI Agent 的聊天历史记录
