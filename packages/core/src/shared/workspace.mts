@@ -492,23 +492,60 @@ export class DataList<T extends { key: string }> {
 
       const files = await fs.promises.readdir(this.dirPath);
       const loadPromises = files
-        .filter(file => file.endsWith('.json') && !file.startsWith('.'))
+        .filter(file => {
+          // 严格过滤：只处理 .json 文件
+          if (file.endsWith('.json')) {
+            return true;
+          }
+          return false;
+        })
         .map(async (file) => {
           const filePath = path.join(this.dirPath, file);
           try {
-            const content = await fs.promises.readFile(filePath, "utf-8");
-            const item = JSON.parse(content) as T;
-
-            // 确保 item 有必要的字段
-            if (item && typeof item === 'object' && 'key' in item && item.key && typeof item.key === 'string') {
-              return { key: this.getItemKey(item), item };
-            } else {
-              console.warn(`文件 ${file} 数据格式无效，缺少必要的 key 字段`);
+            // 检查文件是否为普通文件（不是目录、符号链接等）
+            const fileStat = await fs.promises.stat(filePath);
+            if (!fileStat.isFile()) {
+              console.warn(`跳过非文件项: ${file}`);
+              return null;
             }
+
+            const content = await fs.promises.readFile(filePath, "utf-8");
+            
+            let item: T;
+            try {
+              item = JSON.parse(content) as T;
+            } catch (jsonError) {
+              // 提供更详细的 JSON 解析错误信息
+              if (jsonError instanceof SyntaxError) {
+                console.warn(`JSON 语法错误 ${file}: ${jsonError.message}`);
+              } else {
+                console.warn(`JSON 解析失败 ${file}:`, jsonError);
+              }
+              return null;
+            }
+
+            // 验证解析结果
+            if (!item || typeof item !== 'object') {
+              console.warn(`文件 ${file} 解析结果不是对象`);
+              return null;
+            }
+            
+            return { key: this.getItemKey(item), item };
           } catch (error) {
-            console.warn(`加载文件 ${file} 失败:`, error);
+            // 提供更详细的文件处理错误信息
+            if (error instanceof Error) {
+              if (error.message.includes('ENOENT')) {
+                console.warn(`文件不存在: ${file}`);
+              } else if (error.message.includes('EACCES')) {
+                console.warn(`无权限访问文件: ${file}`);
+              } else {
+                console.warn(`加载文件 ${file} 失败: ${error.message}`);
+              }
+            } else {
+              console.warn(`加载文件 ${file} 失败:`, error);
+            }
+            return null;
           }
-          return null;
         });
 
       const results = await Promise.all(loadPromises);
