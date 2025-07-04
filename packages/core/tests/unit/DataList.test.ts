@@ -15,7 +15,8 @@ describe('DataList 类测试', () => {
   let dataList: DataList<TestItem>;
 
   beforeEach(async () => {
-    tempDir = path.join(os.tmpdir(), 'datalist-test', Date.now().toString());
+    tempDir = path.join(os.tmpdir(), 'datalist-test', "123");
+    // console.log(`临时目录: ${tempDir}`);
     fs.mkdirSync(tempDir, { recursive: true });
     dataList = new DataList<TestItem>(tempDir);
     await dataList.load();
@@ -273,7 +274,6 @@ describe('DataList 类测试', () => {
         path.join(tempDir, 'not-json.txt'),
         'This is not JSON'
       );
-      
       const newDataList = new DataList<TestItem>(tempDir);
       await newDataList.load();
       

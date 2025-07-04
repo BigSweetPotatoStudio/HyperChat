@@ -1,5 +1,8 @@
 # 请回复中文
 
+## typescript使用指南
+* import .mts 文件时，使用 import { xxx } from './xxx.mjs' 的方式导入。
+
 ## 项目概述
 
 HyperChat 是一个多平台的 AI 聊天应用，该项目拥有完善的 MCP（模型上下文协议） 支持，并集成了包括 OpenAI、Claude、Gemini、Qwen、Deepseek 等在内的多种大语言模型 API。
