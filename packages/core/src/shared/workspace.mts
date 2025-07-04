@@ -1,11 +1,321 @@
-import { Data } from "./data.mjs";
-import { Agent, ChatHistoryItem, IMCPClient, MCPServerConfig } from "./data.mjs";
 import { v4 } from "uuid";
 import * as path from "path";
 import * as fs from "fs";
-import { promisify } from "util";
 import dayjs from "dayjs";
 import * as os from "os";
+
+// 重新实现需要的类型定义
+export type Agent = {
+  type?: "builtin" | "custom";
+  key: string;
+  name: string;
+  prompt: string;
+  description?: string;
+  callable?: boolean;
+  allowMCPs: string[];
+  modelKey?: string;
+  attachedDialogueCount?: number;
+  temperature?: number;
+  confirm_call_tool: boolean;
+  fallbackModelKey?: string;
+  tags?: string[];
+  subAgents?: string[];
+  version?: number;
+};
+
+export type ChatHistoryItem = {
+  label: string;
+  key: string;
+  messages: Array<any>;
+  modelKey: string;
+  agentKey: string;
+  sented: boolean;
+  icon?: string;
+  requestType: "stream";
+  dateTime: number;
+  isCalled: boolean;
+  isTask: boolean;
+  taskKey?: string;
+  allowMCPs: string[];
+  attachedDialogueCount?: number;
+  temperature?: number;
+  deleted?: boolean;
+  confirm_call_tool: boolean;
+  lastMessage?: any;
+  version?: number | string;
+};
+
+export type MCPServerConfig = {
+  command?: string;
+  args?: string[];
+  env?: { [s: string]: string };
+  headers?: { [s: string]: string };
+  url?: string;
+  type?: "stdio" | "sse" | "streamableHttp";
+  hyperchat?: {
+    config: { [s in string]: any };
+  };
+  disabled?: boolean;
+};
+
+export type IMCPClient = {
+  tools: Array<any>;
+  prompts: Array<any>;
+  resources: Array<any>;
+  name: string;
+  status: "disconnected" | "connected" | "connecting" | "disabled" | "deleted";
+  order: number;
+  config: MCPServerConfig;
+  ext: {
+    configSchema?: { [s in string]: any };
+  };
+  source: "hyperchat" | "builtin";
+  version: string;
+  servername: string;
+};
+
+/**
+ * 文件夹数据列表管理类
+ * 专门处理一个文件夹中全部是同一种类型文件的情况
+ */
+export class DataList<T extends { key: string }> {
+  private items: Map<string, T> = new Map();
+  private loaded = false;
+
+  constructor(
+    private dirPath: string,
+    private getItemKey: (item: T) => string = (item) => item.key,
+    private generateKey: () => string = () => `${dayjs().format("YYMMDD-HHmmss")}-${v4().slice(0, 8)}`
+  ) {}
+
+  /**
+   * 获取文件名（基于 key）
+   */
+  private getFileName(key: string): string {
+    return `${key}.json`;
+  }
+
+  /**
+   * 加载所有文件
+   */
+  async load(): Promise<void> {
+    this.items.clear();
+
+    if (!fs.existsSync(this.dirPath)) {
+      this.loaded = true;
+      return;
+    }
+
+    try {
+      const files = await fs.promises.readdir(this.dirPath);
+
+      for (const file of files) {
+        if (file.endsWith('.json') && !file.startsWith('.')) {
+          const filePath = path.join(this.dirPath, file);
+          try {
+            const content = await fs.promises.readFile(filePath, "utf-8");
+            const item = JSON.parse(content) as T;
+            
+            // 确保 item 有必要的字段
+            if (item && typeof item === 'object' && 'key' in item && item.key) {
+              this.items.set(this.getItemKey(item), item);
+            }
+          } catch (error) {
+            console.warn(`加载文件 ${file} 失败:`, error);
+          }
+        }
+      }
+    } catch (error) {
+      console.warn(`读取目录 ${this.dirPath} 失败:`, error);
+    }
+
+    this.loaded = true;
+  }
+
+  /**
+   * 确保已加载数据
+   */
+  private async ensureLoaded(): Promise<void> {
+    if (!this.loaded) {
+      await this.load();
+    }
+  }
+
+  /**
+   * 获取所有项目
+   */
+  async getAll(): Promise<T[]> {
+    await this.ensureLoaded();
+    return Array.from(this.items.values());
+  }
+
+  /**
+   * 获取单个项目
+   */
+  async get(key: string): Promise<T | null> {
+    await this.ensureLoaded();
+    return this.items.get(key) || null;
+  }
+
+  /**
+   * 添加或更新单个项目
+   */
+  async set(item: T): Promise<boolean> {
+    // 确保目录存在
+    if (!fs.existsSync(this.dirPath)) {
+      await fs.promises.mkdir(this.dirPath, { recursive: true });
+    }
+
+    // 如果没有 key，生成新的 key
+    if (!item.key) {
+      (item as any).key = this.generateKey();
+    }
+
+    const key = this.getItemKey(item);
+    const filename = this.getFileName(key);
+    const filePath = path.join(this.dirPath, filename);
+
+    try {
+      await fs.promises.writeFile(filePath, JSON.stringify(item, null, 2), "utf-8");
+      
+      // 更新内存中的数据
+      await this.ensureLoaded();
+      this.items.set(key, item);
+      
+      return true;
+    } catch (error) {
+      console.warn(`保存文件 ${filename} 失败:`, error);
+      return false;
+    }
+  }
+
+  /**
+   * 删除单个项目
+   */
+  async delete(key: string): Promise<boolean> {
+    const filename = this.getFileName(key);
+    const filePath = path.join(this.dirPath, filename);
+
+    try {
+      if (fs.existsSync(filePath)) {
+        await fs.promises.unlink(filePath);
+      }
+
+      // 从内存中删除
+      await this.ensureLoaded();
+      this.items.delete(key);
+      
+      return true;
+    } catch (error) {
+      console.warn(`删除文件 ${filename} 失败:`, error);
+      return false;
+    }
+  }
+
+  /**
+   * 保存整个列表（批量保存）
+   */
+  async saveAll(items: T[]): Promise<boolean> {
+    // 确保目录存在
+    if (!fs.existsSync(this.dirPath)) {
+      await fs.promises.mkdir(this.dirPath, { recursive: true });
+    }
+
+    // 获取现有文件
+    const existingFiles = new Set<string>();
+    try {
+      if (fs.existsSync(this.dirPath)) {
+        const files = await fs.promises.readdir(this.dirPath);
+        for (const file of files) {
+          if (file.endsWith('.json') && !file.startsWith('.')) {
+            existingFiles.add(file);
+          }
+        }
+      }
+    } catch (error) {
+      console.warn(`读取目录失败:`, error);
+    }
+
+    // 保存当前的项目
+    const currentFiles = new Set<string>();
+    let success = true;
+
+    for (const item of items) {
+      // 如果没有 key，生成新的 key
+      if (!item.key) {
+        (item as any).key = this.generateKey();
+      }
+
+      const key = this.getItemKey(item);
+      const filename = this.getFileName(key);
+      currentFiles.add(filename);
+      
+      const filePath = path.join(this.dirPath, filename);
+      try {
+        await fs.promises.writeFile(filePath, JSON.stringify(item, null, 2), "utf-8");
+      } catch (error) {
+        console.warn(`保存文件 ${filename} 失败:`, error);
+        success = false;
+      }
+    }
+
+    // 删除不再存在的文件
+    for (const existingFile of existingFiles) {
+      if (!currentFiles.has(existingFile)) {
+        const filePath = path.join(this.dirPath, existingFile);
+        try {
+          await fs.promises.unlink(filePath);
+        } catch (error) {
+          console.warn(`删除旧文件 ${existingFile} 失败:`, error);
+        }
+      }
+    }
+
+    // 重新加载数据到内存
+    await this.load();
+
+    return success;
+  }
+
+  /**
+   * 检查项目是否存在
+   */
+  async has(key: string): Promise<boolean> {
+    await this.ensureLoaded();
+    return this.items.has(key);
+  }
+
+  /**
+   * 获取项目数量
+   */
+  async size(): Promise<number> {
+    await this.ensureLoaded();
+    return this.items.size;
+  }
+
+  /**
+   * 清空所有项目
+   */
+  async clear(): Promise<boolean> {
+    try {
+      if (fs.existsSync(this.dirPath)) {
+        const files = await fs.promises.readdir(this.dirPath);
+        for (const file of files) {
+          if (file.endsWith('.json') && !file.startsWith('.')) {
+            const filePath = path.join(this.dirPath, file);
+            await fs.promises.unlink(filePath);
+          }
+        }
+      }
+
+      this.items.clear();
+      return true;
+    } catch (error) {
+      console.warn(`清空目录失败:`, error);
+      return false;
+    }
+  }
+}
 
 // 工作区配置类型定义
 export type WorkspaceConfig = {
@@ -44,8 +354,8 @@ export type WorkspaceFileNode = {
 // 工作区数据结构
 export type WorkspaceData = {
   config: WorkspaceConfig;
-  agents: Agent[];
-  chatHistory: ChatHistoryItem[];
+  agents: DataList<Agent>;
+  chatHistory: DataList<ChatHistoryItem>;
   mcpClients: Record<string, IMCPClient>;
   mcpConfig: Record<string, MCPServerConfig>;
   fileTree?: WorkspaceFileNode;
@@ -101,8 +411,8 @@ export class WorkspaceManager {
 
     const workspaceData: WorkspaceData = {
       config,
-      agents: [],
-      chatHistory: [],
+      agents: new DataList<Agent>(path.join(hyperChatPath, "agents")),
+      chatHistory: new DataList<ChatHistoryItem>(path.join(hyperChatPath, "chats")),
       mcpClients: {},
       mcpConfig: {},
     };
@@ -250,8 +560,7 @@ export class WorkspaceManager {
     const directories = [
       hyperChatPath,
       path.join(hyperChatPath, "agents"),
-      path.join(hyperChatPath, "agents", "chats"),
-      path.join(hyperChatPath, "agents", "memory"),
+      path.join(hyperChatPath, "chats"),
       path.join(hyperChatPath, "knowledge"),
       path.join(hyperChatPath, "temp"),
     ];
@@ -265,7 +574,6 @@ export class WorkspaceManager {
     // 创建默认配置文件
     const defaultFiles = [
       { name: "mcp.json", content: JSON.stringify({ mcpServers: {} }, null, 2) },
-      { name: "chat_history.json", content: JSON.stringify({ data: [] }, null, 2) },
     ];
 
     for (const file of defaultFiles) {
@@ -308,12 +616,12 @@ export class WorkspaceManager {
 
     const hyperChatPath = path.join(workspacePath, this.HYPERCHAT_DIR);
 
-    // 加载 agents 文件夹
-    await this.loadAgents(workspaceData, hyperChatPath);
+    // 加载 agents 和 chatHistory 使用 DataList
+    await workspaceData.agents.load();
+    await workspaceData.chatHistory.load();
 
     // 加载其他配置文件
     const configFiles = [
-      { name: "chat_history.json", target: "chatHistory" },
       { name: "mcp.json", target: "mcpConfig" },
     ];
 
@@ -323,7 +631,7 @@ export class WorkspaceManager {
         try {
           const content = await fs.promises.readFile(filePath, "utf-8");
           const data = JSON.parse(content);
-          (workspaceData as any)[config.target] = data.data || data;
+          (workspaceData as any)[config.target] = data.mcpServers || data;
         } catch (error) {
           console.warn(`加载配置文件 ${config.name} 失败:`, error);
         }
@@ -342,12 +650,10 @@ export class WorkspaceManager {
 
     const hyperChatPath = path.join(workspacePath, this.HYPERCHAT_DIR);
 
-    // 保存 agents 文件夹
-    await this.saveAgents(workspaceData, hyperChatPath);
+    // agents 和 chatHistory 会自动保存，不需要手动处理
 
     // 保存其他配置文件
     const configFiles = [
-      { name: "chat_history.json", data: { data: workspaceData.chatHistory } },
       { name: "mcp.json", data: { mcpServers: workspaceData.mcpConfig } },
     ];
 
@@ -363,103 +669,6 @@ export class WorkspaceManager {
     workspaceData.lastSync = Date.now();
   }
 
-  /**
-   * 加载 agents 文件夹中的所有 agent 配置
-   */
-  private async loadAgents(workspaceData: WorkspaceData, hyperChatPath: string): Promise<void> {
-    const agentsPath = path.join(hyperChatPath, "agents");
-
-    if (!fs.existsSync(agentsPath)) {
-      workspaceData.agents = [];
-      return;
-    }
-
-    try {
-      const files = await fs.promises.readdir(agentsPath);
-      const agents: Agent[] = [];
-
-      for (const file of files) {
-        if (file.endsWith('.json') && !file.startsWith('.')) {
-          const filePath = path.join(agentsPath, file);
-          try {
-            const content = await fs.promises.readFile(filePath, "utf-8");
-            const agent = JSON.parse(content) as Agent;
-
-            // 确保 agent 有必要的字段
-            if (agent.key && agent.name) {
-              agents.push(agent);
-            }
-          } catch (error) {
-            console.warn(`加载 agent 文件 ${file} 失败:`, error);
-          }
-        }
-      }
-
-      workspaceData.agents = agents;
-    } catch (error) {
-      console.warn(`读取 agents 文件夹失败:`, error);
-      workspaceData.agents = [];
-    }
-  }
-
-  /**
-   * 保存 agents 到文件夹中的单独文件
-   */
-  private async saveAgents(workspaceData: WorkspaceData, hyperChatPath: string): Promise<void> {
-    const agentsPath = path.join(hyperChatPath, "agents");
-
-    // 确保 agents 文件夹存在
-    if (!fs.existsSync(agentsPath)) {
-      await fs.promises.mkdir(agentsPath, { recursive: true });
-    }
-
-    // 获取现有的 agent 文件
-    const existingFiles = new Set<string>();
-    try {
-      const files = await fs.promises.readdir(agentsPath);
-      for (const file of files) {
-        if (file.endsWith('.json') && !file.startsWith('.')) {
-          existingFiles.add(file);
-        }
-      }
-    } catch (error) {
-      console.warn(`读取 agents 文件夹失败:`, error);
-    }
-
-    // 保存当前的 agents
-    const currentFiles = new Set<string>();
-    for (const agent of workspaceData.agents) {
-      const filename = this.getAgentFileName(agent);
-      currentFiles.add(filename);
-
-      const filePath = path.join(agentsPath, filename);
-      try {
-        await fs.promises.writeFile(filePath, JSON.stringify(agent, null, 2), "utf-8");
-      } catch (error) {
-        console.warn(`保存 agent 文件 ${filename} 失败:`, error);
-      }
-    }
-
-    // 删除不再存在的 agent 文件
-    for (const existingFile of existingFiles) {
-      if (!currentFiles.has(existingFile)) {
-        const filePath = path.join(agentsPath, existingFile);
-        try {
-          await fs.promises.unlink(filePath);
-        } catch (error) {
-          console.warn(`删除旧的 agent 文件 ${existingFile} 失败:`, error);
-        }
-      }
-    }
-  }
-
-  /**
-   * 生成 agent 文件名
-   */
-  private getAgentFileName(agent: Agent): string {
-    // 使用 agent 的 key 作为文件名，确保唯一性
-    return `${agent.key}.json`;
-  }
 
   /**
    * 生成新的 agent key
@@ -479,114 +688,76 @@ export class WorkspaceManager {
    * 添加或更新单个 agent
    */
   async addOrUpdateAgent(workspacePath: string, agent: Agent): Promise<boolean> {
-    // 对于全局工作区，需要特殊处理，因为它可能不在 workspaces Map 中
+    // 对于全局工作区，直接使用 DataList
     if (this.isGlobalWorkspace(workspacePath)) {
-      // 确保全局工作区目录存在
-      if (!fs.existsSync(workspacePath)) {
-        await this.createGlobalDirectories();
-      }
-    } else {
-      const workspaceData = this.workspaces.get(workspacePath);
-      if (!workspaceData) {
-        return false;
-      }
+      const globalAgents = new DataList<Agent>(path.join(workspacePath, "agents"));
+      return await globalAgents.set(agent);
     }
 
-    // 如果没有 key，生成新的 key
-    if (!agent.key) {
-      agent.key = this.generateAgentKey();
-    }
-
-    // 更新内存中的 agents（如果不是全局工作区）
-    if (!this.isGlobalWorkspace(workspacePath)) {
-      const workspaceData = this.workspaces.get(workspacePath);
-      if (workspaceData) {
-        const existingIndex = workspaceData.agents.findIndex(a => a.key === agent.key);
-        if (existingIndex >= 0) {
-          workspaceData.agents[existingIndex] = agent;
-        } else {
-          workspaceData.agents.push(agent);
-        }
-      }
-    }
-
-    // 保存到文件（统一逻辑）
-    const agentsPath = path.join(workspacePath, "agents");
-    
-    // 确保 agents 文件夹存在
-    if (!fs.existsSync(agentsPath)) {
-      await fs.promises.mkdir(agentsPath, { recursive: true });
-    }
-
-    const filename = this.getAgentFileName(agent);
-    const filePath = path.join(agentsPath, filename);
-
-    try {
-      await fs.promises.writeFile(filePath, JSON.stringify(agent, null, 2), "utf-8");
-      return true;
-    } catch (error) {
-      console.warn(`保存 agent 文件失败:`, error);
+    // 对于普通工作区
+    const workspaceData = this.workspaces.get(workspacePath);
+    if (!workspaceData) {
       return false;
     }
+
+    return await workspaceData.agents.set(agent);
   }
 
   /**
    * 删除单个 agent
    */
   async deleteAgent(workspacePath: string, agentKey: string): Promise<boolean> {
+    // 对于全局工作区，直接使用 DataList
+    if (this.isGlobalWorkspace(workspacePath)) {
+      const globalAgents = new DataList<Agent>(path.join(workspacePath, "agents"));
+      return await globalAgents.delete(agentKey);
+    }
+
+    // 对于普通工作区
     const workspaceData = this.workspaces.get(workspacePath);
     if (!workspaceData) {
       return false;
     }
 
-    // 从内存中删除
-    const agentIndex = workspaceData.agents.findIndex(a => a.key === agentKey);
-    if (agentIndex < 0) {
-      return false;
-    }
-
-    const agent = workspaceData.agents[agentIndex];
-    workspaceData.agents.splice(agentIndex, 1);
-
-    // 删除文件
-    const hyperChatPath = path.join(workspacePath, this.HYPERCHAT_DIR);
-    const agentsPath = path.join(hyperChatPath, "agents");
-    if (!agent) {
-      console.warn(`Agent with key ${agentKey} not found in workspace ${workspacePath}`);
-      return false;
-    }
-    const filename = this.getAgentFileName(agent);
-    const filePath = path.join(agentsPath, filename);
-
-    try {
-      if (fs.existsSync(filePath)) {
-        await fs.promises.unlink(filePath);
-      }
-      return true;
-    } catch (error) {
-      console.warn(`删除 agent 文件失败:`, error);
-      return false;
-    }
+    return await workspaceData.agents.delete(agentKey);
   }
 
   /**
    * 获取指定工作区的所有 agents
    */
-  getWorkspaceAgents(workspacePath: string): Agent[] {
+  async getWorkspaceAgents(workspacePath: string): Promise<Agent[]> {
+    // 对于全局工作区，直接使用 DataList
+    if (this.isGlobalWorkspace(workspacePath)) {
+      const globalAgents = new DataList<Agent>(path.join(workspacePath, "agents"));
+      return await globalAgents.getAll();
+    }
+
+    // 对于普通工作区
     const workspaceData = this.workspaces.get(workspacePath);
-    return workspaceData ? workspaceData.agents : [];
+    if (!workspaceData) {
+      return [];
+    }
+
+    return await workspaceData.agents.getAll();
   }
 
   /**
    * 获取指定工作区的单个 agent
    */
-  getWorkspaceAgent(workspacePath: string, agentKey: string): Agent | null {
+  async getWorkspaceAgent(workspacePath: string, agentKey: string): Promise<Agent | null> {
+    // 对于全局工作区，直接使用 DataList
+    if (this.isGlobalWorkspace(workspacePath)) {
+      const globalAgents = new DataList<Agent>(path.join(workspacePath, "agents"));
+      return await globalAgents.get(agentKey);
+    }
+
+    // 对于普通工作区
     const workspaceData = this.workspaces.get(workspacePath);
     if (!workspaceData) {
       return null;
     }
 
-    return workspaceData.agents.find(a => a.key === agentKey) || null;
+    return await workspaceData.agents.get(agentKey);
   }
 
   /**
@@ -613,8 +784,8 @@ export class WorkspaceManager {
 
       const workspaceData: WorkspaceData = {
         config,
-        agents: [],
-        chatHistory: [],
+        agents: new DataList<Agent>(path.join(hyperChatPath, "agents")),
+        chatHistory: new DataList<ChatHistoryItem>(path.join(hyperChatPath, "chats")),
         mcpClients: {},
         mcpConfig: {},
       };
@@ -694,35 +865,11 @@ export class WorkspaceManager {
   }
 
   /**
-   * 从全局配置加载 agents（使用统一的加载逻辑）
+   * 从全局配置加载 agents（使用 DataList）
    */
   async loadGlobalAgents(): Promise<Agent[]> {
-    // 创建临时的工作区数据对象
-    const tempWorkspaceData: WorkspaceData = {
-      config: {
-        key: 'global',
-        name: 'Global',
-        path: this.GLOBAL_HYPERCHAT_DIR,
-        description: 'Global HyperChat Configuration',
-        created: Date.now(),
-        lastAccessed: Date.now(),
-        settings: {
-          enableMCP: true,
-          enableAgents: true,
-          enableKnowledgeBase: true,
-          autoSave: true,
-          syncToCloud: false,
-        },
-      },
-      agents: [],
-      chatHistory: [],
-      mcpClients: {},
-      mcpConfig: {},
-    };
-
-    // 使用统一的 loadAgents 方法
-    await this.loadAgents(tempWorkspaceData, this.GLOBAL_HYPERCHAT_DIR);
-    return tempWorkspaceData.agents;
+    const globalAgents = new DataList<Agent>(path.join(this.GLOBAL_HYPERCHAT_DIR, "agents"));
+    return await globalAgents.getAll();
   }
 
   /**
@@ -758,7 +905,7 @@ export class WorkspaceManager {
    */
   async getMergedAgents(workspacePath: string): Promise<Agent[]> {
     const globalAgents = await this.loadGlobalAgents();
-    const workspaceAgents = this.getWorkspaceAgents(workspacePath);
+    const workspaceAgents = await this.getWorkspaceAgents(workspacePath);
     
     // 创建一个 Map 来去重，工作区的配置覆盖全局配置
     const mergedAgentsMap = new Map<string, Agent>();
@@ -824,6 +971,63 @@ export class WorkspaceManager {
    */
   getGlobalWorkspacePath(): string {
     return this.GLOBAL_HYPERCHAT_DIR;
+  }
+}
+
+// 简单的配置数据管理类
+export class Data<T> {
+  private data: T;
+  private loaded = false;
+
+  constructor(
+    private fileName: string,
+    private defaultData: T,
+    private options: { sync?: boolean } = { sync: true }
+  ) {
+    this.data = defaultData;
+  }
+
+  async init(): Promise<T> {
+    if (!this.loaded) {
+      try {
+        const globalConfigPath = path.join(os.homedir(), 'Documents', 'HyperChat', '.hyperchat');
+        const filePath = path.join(globalConfigPath, this.fileName);
+        
+        if (fs.existsSync(filePath)) {
+          const content = await fs.promises.readFile(filePath, "utf-8");
+          this.data = JSON.parse(content);
+        }
+      } catch (error) {
+        console.warn(`加载配置文件 ${this.fileName} 失败:`, error);
+      }
+      this.loaded = true;
+    }
+    return this.data;
+  }
+
+  async save(): Promise<void> {
+    try {
+      const globalConfigPath = path.join(os.homedir(), 'Documents', 'HyperChat', '.hyperchat');
+      if (!fs.existsSync(globalConfigPath)) {
+        await fs.promises.mkdir(globalConfigPath, { recursive: true });
+      }
+      
+      const filePath = path.join(globalConfigPath, this.fileName);
+      await fs.promises.writeFile(filePath, JSON.stringify(this.data, null, 2), "utf-8");
+    } catch (error) {
+      console.warn(`保存配置文件 ${this.fileName} 失败:`, error);
+    }
+  }
+
+  get(): T {
+    return this.data;
+  }
+
+  set(data: T): void {
+    this.data = data;
+    if (this.options.sync) {
+      this.save();
+    }
   }
 }
 
