@@ -982,30 +982,22 @@ export class WorkspaceManager {
   }
 
   /**
-   * 扫描目录查找所有工作区
+   * 检查指定路径是否为工作区（是否包含 .hyperchat 文件夹）
    */
-  async scanForWorkspaces(rootPath: string): Promise<Workspace[]> {
-    const workspaces: Workspace[] = [];
-    
-    try {
-      const entries = await fs.promises.readdir(rootPath);
-      
-      for (const entry of entries) {
-        const entryPath = path.join(rootPath, entry);
-        const stats = await fs.promises.stat(entryPath);
-        
-        if (stats.isDirectory()) {
-          const workspace = await this.loadExistingWorkspace(entryPath);
-          if (workspace) {
-            workspaces.push(workspace);
-          }
-        }
-      }
-    } catch (error) {
-      console.warn(`扫描工作区失败 ${rootPath}:`, error);
+  isWorkspaceDirectory(directoryPath: string): boolean {
+    const hyperChatPath = path.join(directoryPath, ".hyperchat");
+    return fs.existsSync(hyperChatPath) && fs.statSync(hyperChatPath).isDirectory();
+  }
+
+  /**
+   * 从当前目录获取工作区（如果存在）
+   */
+  async getWorkspaceFromDirectory(directoryPath: string): Promise<Workspace | null> {
+    if (!this.isWorkspaceDirectory(directoryPath)) {
+      return null;
     }
 
-    return workspaces;
+    return await this.loadExistingWorkspace(directoryPath);
   }
 
   /**
