@@ -351,53 +351,26 @@ export type WorkspaceFileNode = {
   isHidden?: boolean;
 };
 
-// 工作区数据结构
-export type WorkspaceData = {
-  config: WorkspaceConfig;
-  agents: DataList<Agent>;
-  chatHistory: DataList<ChatHistoryItem>;
-  mcpClients: Record<string, IMCPClient>;
-  mcpConfig: Record<string, MCPServerConfig>;
-  fileTree?: WorkspaceFileNode;
-  lastSync?: number;
-};
-
-// 工作区管理器类
-export class WorkspaceManager {
-  private workspaces: Map<string, WorkspaceData> = new Map(); // key 是 path
+/**
+ * 工作区类 - 封装单个工作区的所有操作
+ */
+export class Workspace {
+  private config: WorkspaceConfig;
+  private agents: DataList<Agent>;
+  private chatHistory: DataList<ChatHistoryItem>;
+  private mcpConfig: Record<string, MCPServerConfig> = {};
+  private mcpClients: Record<string, IMCPClient> = {};
+  private fileTree?: WorkspaceFileNode;
+  private lastSync?: number;
   private readonly HYPERCHAT_DIR = ".hyperchat";
-  private readonly GLOBAL_HYPERCHAT_DIR = path.join(os.homedir(), 'Documents', 'HyperChat', '.hyperchat');
 
-  constructor() {
-    this.loadWorkspaces();
-    this.initGlobalWorkspace();
-  }
-
-  /**
-   * 创建新工作区
-   */
-  async createWorkspace(workspacePath: string, name: string, description?: string): Promise<WorkspaceConfig> {
-    const key = this.generateWorkspaceKey();
+  constructor(workspacePath: string, config?: WorkspaceConfig) {
     const hyperChatPath = path.join(workspacePath, this.HYPERCHAT_DIR);
-
-    // 检查目录是否存在，不存在则创建
-    if (!fs.existsSync(workspacePath)) {
-      throw new Error(`工作区路径不存在: ${workspacePath}`);
-    }
-
-    // 检查工作区是否已存在
-    if (this.workspaces.has(workspacePath)) {
-      throw new Error(`工作区已存在: ${workspacePath}`);
-    }
-
-    // 创建 .hyperchat 目录结构
-    await this.createWorkspaceDirectories(hyperChatPath);
-
-    const config: WorkspaceConfig = {
-      key,
-      name,
+    
+    this.config = config || {
+      key: `${dayjs().format("YYMMDD-HHmmss")}-${v4().slice(0, 8)}`,
+      name: path.basename(workspacePath),
       path: workspacePath,
-      description,
       created: Date.now(),
       lastAccessed: Date.now(),
       settings: {
@@ -409,61 +382,295 @@ export class WorkspaceManager {
       },
     };
 
-    const workspaceData: WorkspaceData = {
-      config,
-      agents: new DataList<Agent>(path.join(hyperChatPath, "agents")),
-      chatHistory: new DataList<ChatHistoryItem>(path.join(hyperChatPath, "chats")),
-      mcpClients: {},
-      mcpConfig: {},
-    };
-
-    this.workspaces.set(workspacePath, workspaceData);
-    await this.saveWorkspaceConfig(workspacePath);
-
-    return config;
+    this.agents = new DataList<Agent>(path.join(hyperChatPath, "agents"));
+    this.chatHistory = new DataList<ChatHistoryItem>(path.join(hyperChatPath, "chats"));
   }
 
   /**
-   * 获取指定工作区
+   * 获取工作区配置
    */
-  getWorkspace(workspacePath: string): WorkspaceData | null {
-    return this.workspaces.get(workspacePath) || null;
+  getConfig(): WorkspaceConfig {
+    return this.config;
   }
 
   /**
-   * 获取所有工作区列表
+   * 获取工作区路径
    */
-  getWorkspaceList(): WorkspaceConfig[] {
-    return Array.from(this.workspaces.values()).map(data => data.config);
+  getPath(): string {
+    return this.config.path;
   }
 
   /**
-   * 删除工作区
+   * 获取 .hyperchat 目录路径
    */
-  async deleteWorkspace(workspacePath: string): Promise<boolean> {
-    if (!this.workspaces.has(workspacePath)) {
-      return false;
-    }
+  getHyperChatPath(): string {
+    return path.join(this.config.path, this.HYPERCHAT_DIR);
+  }
 
-    const workspaceData = this.workspaces.get(workspacePath);
-    if (workspaceData) {
-      const hyperChatPath = path.join(workspacePath, this.HYPERCHAT_DIR);
+  /**
+   * 初始化工作区
+   */
+  async init(): Promise<void> {
+    // 创建目录结构
+    await this.createDirectories();
+    
+    // 加载数据
+    await this.load();
+    
+    // 保存配置
+    await this.saveConfig();
+  }
 
-      // 删除工作区文件夹
-      if (fs.existsSync(hyperChatPath)) {
-        await fs.promises.rm(hyperChatPath, { recursive: true, force: true });
+  /**
+   * 创建工作区目录结构
+   */
+  private async createDirectories(): Promise<void> {
+    const hyperChatPath = this.getHyperChatPath();
+    const directories = [
+      hyperChatPath,
+      path.join(hyperChatPath, "agents"),
+      path.join(hyperChatPath, "chats"),
+      path.join(hyperChatPath, "knowledge"),
+      path.join(hyperChatPath, "temp"),
+    ];
+
+    for (const dir of directories) {
+      if (!fs.existsSync(dir)) {
+        await fs.promises.mkdir(dir, { recursive: true });
       }
     }
 
-    this.workspaces.delete(workspacePath);
+    // 创建默认配置文件
+    const defaultFiles = [
+      { name: "mcp.json", content: JSON.stringify({ mcpServers: {} }, null, 2) },
+    ];
 
-    return true;
+    for (const file of defaultFiles) {
+      const filePath = path.join(hyperChatPath, file.name);
+      if (!fs.existsSync(filePath)) {
+        await fs.promises.writeFile(filePath, file.content, "utf-8");
+      }
+    }
   }
 
   /**
-   * 扫描工作区文件树
+   * 加载工作区数据
    */
-  async scanWorkspaceFiles(workspacePath: string, options: {
+  async load(): Promise<void> {
+    const hyperChatPath = this.getHyperChatPath();
+
+    // 加载配置文件
+    await this.loadConfig();
+
+    // 加载 agents 和 chatHistory
+    await this.agents.load();
+    await this.chatHistory.load();
+
+    // 加载 MCP 配置
+    await this.loadMcpConfig();
+
+    this.config.lastAccessed = Date.now();
+  }
+
+  /**
+   * 加载工作区配置
+   */
+  private async loadConfig(): Promise<void> {
+    const configPath = path.join(this.getHyperChatPath(), "workspace.json");
+    
+    if (fs.existsSync(configPath)) {
+      try {
+        const content = await fs.promises.readFile(configPath, "utf-8");
+        const config = JSON.parse(content) as WorkspaceConfig;
+        this.config = { ...this.config, ...config };
+      } catch (error) {
+        console.warn(`加载工作区配置失败:`, error);
+      }
+    }
+  }
+
+  /**
+   * 加载 MCP 配置
+   */
+  private async loadMcpConfig(): Promise<void> {
+    const mcpPath = path.join(this.getHyperChatPath(), "mcp.json");
+    
+    if (fs.existsSync(mcpPath)) {
+      try {
+        const content = await fs.promises.readFile(mcpPath, "utf-8");
+        const data = JSON.parse(content);
+        this.mcpConfig = data.mcpServers || {};
+      } catch (error) {
+        console.warn(`加载 MCP 配置失败:`, error);
+      }
+    }
+  }
+
+  /**
+   * 保存工作区配置
+   */
+  async saveConfig(): Promise<void> {
+    const configPath = path.join(this.getHyperChatPath(), "workspace.json");
+    
+    try {
+      await fs.promises.writeFile(configPath, JSON.stringify(this.config, null, 2), "utf-8");
+    } catch (error) {
+      console.warn(`保存工作区配置失败:`, error);
+    }
+  }
+
+  /**
+   * 保存 MCP 配置
+   */
+  async saveMcpConfig(): Promise<void> {
+    const mcpPath = path.join(this.getHyperChatPath(), "mcp.json");
+    
+    try {
+      await fs.promises.writeFile(mcpPath, JSON.stringify({ mcpServers: this.mcpConfig }, null, 2), "utf-8");
+    } catch (error) {
+      console.warn(`保存 MCP 配置失败:`, error);
+    }
+  }
+
+  /**
+   * 保存所有数据
+   */
+  async save(): Promise<void> {
+    await this.saveConfig();
+    await this.saveMcpConfig();
+    this.lastSync = Date.now();
+  }
+
+  // ========== Agent 管理 ==========
+
+  /**
+   * 获取所有 agents
+   */
+  async getAgents(): Promise<Agent[]> {
+    return await this.agents.getAll();
+  }
+
+  /**
+   * 获取单个 agent
+   */
+  async getAgent(key: string): Promise<Agent | null> {
+    return await this.agents.get(key);
+  }
+
+  /**
+   * 添加或更新 agent
+   */
+  async setAgent(agent: Agent): Promise<boolean> {
+    return await this.agents.set(agent);
+  }
+
+  /**
+   * 删除 agent
+   */
+  async deleteAgent(key: string): Promise<boolean> {
+    return await this.agents.delete(key);
+  }
+
+  /**
+   * 获取所有 agents 数量
+   */
+  async getAgentsCount(): Promise<number> {
+    return await this.agents.size();
+  }
+
+  // ========== Chat History 管理 ==========
+
+  /**
+   * 获取所有聊天历史
+   */
+  async getChatHistory(): Promise<ChatHistoryItem[]> {
+    return await this.chatHistory.getAll();
+  }
+
+  /**
+   * 获取单个聊天历史
+   */
+  async getChatHistoryItem(key: string): Promise<ChatHistoryItem | null> {
+    return await this.chatHistory.get(key);
+  }
+
+  /**
+   * 添加或更新聊天历史
+   */
+  async setChatHistoryItem(item: ChatHistoryItem): Promise<boolean> {
+    return await this.chatHistory.set(item);
+  }
+
+  /**
+   * 删除聊天历史
+   */
+  async deleteChatHistoryItem(key: string): Promise<boolean> {
+    return await this.chatHistory.delete(key);
+  }
+
+  // ========== MCP 管理 ==========
+
+  /**
+   * 获取 MCP 配置
+   */
+  getMcpConfig(): Record<string, MCPServerConfig> {
+    return this.mcpConfig;
+  }
+
+  /**
+   * 设置 MCP 配置
+   */
+  async setMcpConfig(config: Record<string, MCPServerConfig>): Promise<void> {
+    this.mcpConfig = config;
+    await this.saveMcpConfig();
+  }
+
+  /**
+   * 添加或更新单个 MCP 服务器配置
+   */
+  async setMcpServer(name: string, config: MCPServerConfig): Promise<void> {
+    this.mcpConfig[name] = config;
+    await this.saveMcpConfig();
+  }
+
+  /**
+   * 删除 MCP 服务器配置
+   */
+  async deleteMcpServer(name: string): Promise<void> {
+    delete this.mcpConfig[name];
+    await this.saveMcpConfig();
+  }
+
+  // ========== 文件树管理 ==========
+
+  /**
+   * 扫描并更新文件树
+   */
+  async updateFileTree(options: {
+    includeHidden?: boolean;
+    maxDepth?: number;
+    excludePatterns?: string[];
+  } = {}): Promise<boolean> {
+    try {
+      this.fileTree = await this.scanFiles(this.config.path, options);
+      return true;
+    } catch (error) {
+      console.error('更新文件树失败:', error);
+      return false;
+    }
+  }
+
+  /**
+   * 获取文件树
+   */
+  getFileTree(): WorkspaceFileNode | undefined {
+    return this.fileTree;
+  }
+
+  /**
+   * 扫描文件
+   */
+  private async scanFiles(workspacePath: string, options: {
     includeHidden?: boolean;
     maxDepth?: number;
     excludePatterns?: string[];
@@ -528,146 +735,157 @@ export class WorkspaceManager {
     return await scanDirectory(workspacePath);
   }
 
+  // ========== 工具方法 ==========
+
+  /**
+   * 删除整个工作区
+   */
+  async delete(): Promise<boolean> {
+    try {
+      const hyperChatPath = this.getHyperChatPath();
+      if (fs.existsSync(hyperChatPath)) {
+        await fs.promises.rm(hyperChatPath, { recursive: true, force: true });
+      }
+      return true;
+    } catch (error) {
+      console.warn(`删除工作区失败:`, error);
+      return false;
+    }
+  }
+
+  /**
+   * 检查工作区是否存在
+   */
+  exists(): boolean {
+    return fs.existsSync(this.getHyperChatPath());
+  }
+
+  /**
+   * 获取工作区信息摘要
+   */
+  async getSummary(): Promise<{
+    agentsCount: number;
+    chatHistoryCount: number;
+    mcpServersCount: number;
+    lastSync?: number;
+  }> {
+    return {
+      agentsCount: await this.getAgentsCount(),
+      chatHistoryCount: await this.chatHistory.size(),
+      mcpServersCount: Object.keys(this.mcpConfig).length,
+      lastSync: this.lastSync,
+    };
+  }
+}
+
+// 工作区管理器类 - 简化为只管理工作区的注册和发现
+export class WorkspaceManager {
+  private workspaces: Map<string, Workspace> = new Map(); // key 是 path
+  private readonly GLOBAL_HYPERCHAT_DIR = path.join(os.homedir(), 'Documents', 'HyperChat', '.hyperchat');
+  private globalWorkspace: Workspace;
+
+  constructor() {
+    // 创建全局工作区
+    this.globalWorkspace = new Workspace(path.dirname(this.GLOBAL_HYPERCHAT_DIR));
+    this.initGlobalWorkspace();
+  }
+
+  /**
+   * 创建新工作区
+   */
+  async createWorkspace(workspacePath: string, name: string, description?: string): Promise<Workspace> {
+    // 检查目录是否存在
+    if (!fs.existsSync(workspacePath)) {
+      throw new Error(`工作区路径不存在: ${workspacePath}`);
+    }
+
+    // 检查工作区是否已存在
+    if (this.workspaces.has(workspacePath)) {
+      throw new Error(`工作区已存在: ${workspacePath}`);
+    }
+
+    // 创建工作区配置
+    const config: WorkspaceConfig = {
+      key: this.generateWorkspaceKey(),
+      name,
+      path: workspacePath,
+      description,
+      created: Date.now(),
+      lastAccessed: Date.now(),
+      settings: {
+        enableMCP: true,
+        enableAgents: true,
+        enableKnowledgeBase: true,
+        autoSave: true,
+        syncToCloud: false,
+      },
+    };
+
+    // 创建工作区实例
+    const workspace = new Workspace(workspacePath, config);
+    await workspace.init();
+
+    // 注册工作区
+    this.workspaces.set(workspacePath, workspace);
+
+    return workspace;
+  }
+
+  /**
+   * 获取指定工作区
+   */
+  getWorkspace(workspacePath: string): Workspace | null {
+    return this.workspaces.get(workspacePath) || null;
+  }
+
+  /**
+   * 获取全局工作区
+   */
+  getGlobalWorkspace(): Workspace {
+    return this.globalWorkspace;
+  }
+
+  /**
+   * 获取所有工作区列表
+   */
+  getWorkspaceList(): WorkspaceConfig[] {
+    return Array.from(this.workspaces.values()).map(workspace => workspace.getConfig());
+  }
+
+  /**
+   * 删除工作区
+   */
+  async deleteWorkspace(workspacePath: string): Promise<boolean> {
+    const workspace = this.workspaces.get(workspacePath);
+    if (!workspace) {
+      return false;
+    }
+
+    // 删除工作区
+    const success = await workspace.delete();
+    if (success) {
+      this.workspaces.delete(workspacePath);
+    }
+
+    return success;
+  }
+
   /**
    * 更新工作区文件树
    */
   async updateWorkspaceFileTree(workspacePath: string): Promise<boolean> {
-    const workspaceData = this.workspaces.get(workspacePath);
-    if (!workspaceData) {
+    const workspace = this.workspaces.get(workspacePath);
+    if (!workspace) {
       return false;
     }
 
-    try {
-      const fileTree = await this.scanWorkspaceFiles(workspacePath, {
-        includeHidden: false,
-        maxDepth: 5,
-        excludePatterns: ['node_modules', '.git', 'dist', 'build', '.hyperchat'],
-      });
-
-      workspaceData.fileTree = fileTree;
-      await this.saveWorkspaceData(workspacePath);
-      return true;
-    } catch (error) {
-      console.error('更新文件树失败:', error);
-      return false;
-    }
+    return await workspace.updateFileTree({
+      includeHidden: false,
+      maxDepth: 5,
+      excludePatterns: ['node_modules', '.git', 'dist', 'build', '.hyperchat'],
+    });
   }
 
-  /**
-   * 创建工作区目录结构
-   */
-  private async createWorkspaceDirectories(hyperChatPath: string): Promise<void> {
-    const directories = [
-      hyperChatPath,
-      path.join(hyperChatPath, "agents"),
-      path.join(hyperChatPath, "chats"),
-      path.join(hyperChatPath, "knowledge"),
-      path.join(hyperChatPath, "temp"),
-    ];
-
-    for (const dir of directories) {
-      if (!fs.existsSync(dir)) {
-        await fs.promises.mkdir(dir, { recursive: true });
-      }
-    }
-
-    // 创建默认配置文件
-    const defaultFiles = [
-      { name: "mcp.json", content: JSON.stringify({ mcpServers: {} }, null, 2) },
-    ];
-
-    for (const file of defaultFiles) {
-      const filePath = path.join(hyperChatPath, file.name);
-      if (!fs.existsSync(filePath)) {
-        await fs.promises.writeFile(filePath, file.content, "utf-8");
-      }
-    }
-  }
-
-  /**
-   * 加载工作区配置
-   */
-  private async loadWorkspaces(): Promise<void> {
-    // 这里应该从全局配置中加载所有工作区信息
-    // 暂时为空，后续可以扩展
-  }
-
-  /**
-   * 保存工作区配置
-   */
-  private async saveWorkspaceConfig(workspacePath: string): Promise<void> {
-    const workspaceData = this.workspaces.get(workspacePath);
-    if (!workspaceData) {
-      return;
-    }
-
-    const configPath = path.join(workspacePath, this.HYPERCHAT_DIR, "workspace.json");
-    await fs.promises.writeFile(configPath, JSON.stringify(workspaceData.config, null, 2), "utf-8");
-  }
-
-  /**
-   * 加载工作区数据
-   */
-  private async loadWorkspaceData(workspacePath: string): Promise<void> {
-    const workspaceData = this.workspaces.get(workspacePath);
-    if (!workspaceData) {
-      return;
-    }
-
-    const hyperChatPath = path.join(workspacePath, this.HYPERCHAT_DIR);
-
-    // 加载 agents 和 chatHistory 使用 DataList
-    await workspaceData.agents.load();
-    await workspaceData.chatHistory.load();
-
-    // 加载其他配置文件
-    const configFiles = [
-      { name: "mcp.json", target: "mcpConfig" },
-    ];
-
-    for (const config of configFiles) {
-      const filePath = path.join(hyperChatPath, config.name);
-      if (fs.existsSync(filePath)) {
-        try {
-          const content = await fs.promises.readFile(filePath, "utf-8");
-          const data = JSON.parse(content);
-          (workspaceData as any)[config.target] = data.mcpServers || data;
-        } catch (error) {
-          console.warn(`加载配置文件 ${config.name} 失败:`, error);
-        }
-      }
-    }
-  }
-
-  /**
-   * 保存工作区数据
-   */
-  private async saveWorkspaceData(workspacePath: string): Promise<void> {
-    const workspaceData = this.workspaces.get(workspacePath);
-    if (!workspaceData) {
-      return;
-    }
-
-    const hyperChatPath = path.join(workspacePath, this.HYPERCHAT_DIR);
-
-    // agents 和 chatHistory 会自动保存，不需要手动处理
-
-    // 保存其他配置文件
-    const configFiles = [
-      { name: "mcp.json", data: { mcpServers: workspaceData.mcpConfig } },
-    ];
-
-    for (const config of configFiles) {
-      const filePath = path.join(hyperChatPath, config.name);
-      try {
-        await fs.promises.writeFile(filePath, JSON.stringify(config.data, null, 2), "utf-8");
-      } catch (error) {
-        console.warn(`保存配置文件 ${config.name} 失败:`, error);
-      }
-    }
-
-    workspaceData.lastSync = Date.now();
-  }
 
 
   /**
@@ -685,120 +903,80 @@ export class WorkspaceManager {
   }
 
   /**
+   * 获取指定工作区或全局工作区
+   */
+  private getWorkspaceInstance(workspacePath: string): Workspace | null {
+    if (this.isGlobalWorkspace(workspacePath)) {
+      return this.globalWorkspace;
+    }
+    return this.workspaces.get(workspacePath) || null;
+  }
+
+  /**
    * 添加或更新单个 agent
    */
   async addOrUpdateAgent(workspacePath: string, agent: Agent): Promise<boolean> {
-    // 对于全局工作区，直接使用 DataList
-    if (this.isGlobalWorkspace(workspacePath)) {
-      const globalAgents = new DataList<Agent>(path.join(workspacePath, "agents"));
-      return await globalAgents.set(agent);
-    }
-
-    // 对于普通工作区
-    const workspaceData = this.workspaces.get(workspacePath);
-    if (!workspaceData) {
+    const workspace = this.getWorkspaceInstance(workspacePath);
+    if (!workspace) {
       return false;
     }
-
-    return await workspaceData.agents.set(agent);
+    return await workspace.setAgent(agent);
   }
 
   /**
    * 删除单个 agent
    */
   async deleteAgent(workspacePath: string, agentKey: string): Promise<boolean> {
-    // 对于全局工作区，直接使用 DataList
-    if (this.isGlobalWorkspace(workspacePath)) {
-      const globalAgents = new DataList<Agent>(path.join(workspacePath, "agents"));
-      return await globalAgents.delete(agentKey);
-    }
-
-    // 对于普通工作区
-    const workspaceData = this.workspaces.get(workspacePath);
-    if (!workspaceData) {
+    const workspace = this.getWorkspaceInstance(workspacePath);
+    if (!workspace) {
       return false;
     }
-
-    return await workspaceData.agents.delete(agentKey);
+    return await workspace.deleteAgent(agentKey);
   }
 
   /**
    * 获取指定工作区的所有 agents
    */
   async getWorkspaceAgents(workspacePath: string): Promise<Agent[]> {
-    // 对于全局工作区，直接使用 DataList
-    if (this.isGlobalWorkspace(workspacePath)) {
-      const globalAgents = new DataList<Agent>(path.join(workspacePath, "agents"));
-      return await globalAgents.getAll();
-    }
-
-    // 对于普通工作区
-    const workspaceData = this.workspaces.get(workspacePath);
-    if (!workspaceData) {
+    const workspace = this.getWorkspaceInstance(workspacePath);
+    if (!workspace) {
       return [];
     }
-
-    return await workspaceData.agents.getAll();
+    return await workspace.getAgents();
   }
 
   /**
    * 获取指定工作区的单个 agent
    */
   async getWorkspaceAgent(workspacePath: string, agentKey: string): Promise<Agent | null> {
-    // 对于全局工作区，直接使用 DataList
-    if (this.isGlobalWorkspace(workspacePath)) {
-      const globalAgents = new DataList<Agent>(path.join(workspacePath, "agents"));
-      return await globalAgents.get(agentKey);
-    }
-
-    // 对于普通工作区
-    const workspaceData = this.workspaces.get(workspacePath);
-    if (!workspaceData) {
+    const workspace = this.getWorkspaceInstance(workspacePath);
+    if (!workspace) {
       return null;
     }
-
-    return await workspaceData.agents.get(agentKey);
+    return await workspace.getAgent(agentKey);
   }
 
   /**
    * 加载现有工作区（从已存在的 .hyperchat 文件夹）
    */
-  async loadExistingWorkspace(workspacePath: string): Promise<WorkspaceConfig | null> {
-    const hyperChatPath = path.join(workspacePath, this.HYPERCHAT_DIR);
+  async loadExistingWorkspace(workspacePath: string): Promise<Workspace | null> {
+    const workspace = new Workspace(workspacePath);
     
-    // 检查 .hyperchat 目录是否存在
-    if (!fs.existsSync(hyperChatPath)) {
-      return null;
-    }
-
-    // 检查工作区配置文件是否存在
-    const configPath = path.join(hyperChatPath, "workspace.json");
-    if (!fs.existsSync(configPath)) {
+    // 检查工作区是否存在
+    if (!workspace.exists()) {
       return null;
     }
 
     try {
-      // 读取工作区配置
-      const content = await fs.promises.readFile(configPath, "utf-8");
-      const config = JSON.parse(content) as WorkspaceConfig;
-
-      const workspaceData: WorkspaceData = {
-        config,
-        agents: new DataList<Agent>(path.join(hyperChatPath, "agents")),
-        chatHistory: new DataList<ChatHistoryItem>(path.join(hyperChatPath, "chats")),
-        mcpClients: {},
-        mcpConfig: {},
-      };
-
-      // 将工作区添加到管理器
-      this.workspaces.set(workspacePath, workspaceData);
-      
       // 加载工作区数据
-      await this.loadWorkspaceData(workspacePath);
+      await workspace.load();
+      
+      // 将工作区添加到管理器
+      this.workspaces.set(workspacePath, workspace);
 
-      return config;
+      return workspace;
     } catch (error) {
-      console.warn(`加载工作区配置失败 ${workspacePath}:`, error);
+      console.warn(`加载工作区失败 ${workspacePath}:`, error);
       return null;
     }
   }
@@ -806,8 +984,8 @@ export class WorkspaceManager {
   /**
    * 扫描目录查找所有工作区
    */
-  async scanForWorkspaces(rootPath: string): Promise<WorkspaceConfig[]> {
-    const workspaces: WorkspaceConfig[] = [];
+  async scanForWorkspaces(rootPath: string): Promise<Workspace[]> {
+    const workspaces: Workspace[] = [];
     
     try {
       const entries = await fs.promises.readdir(rootPath);
@@ -817,9 +995,9 @@ export class WorkspaceManager {
         const stats = await fs.promises.stat(entryPath);
         
         if (stats.isDirectory()) {
-          const config = await this.loadExistingWorkspace(entryPath);
-          if (config) {
-            workspaces.push(config);
+          const workspace = await this.loadExistingWorkspace(entryPath);
+          if (workspace) {
+            workspaces.push(workspace);
           }
         }
       }
@@ -835,19 +1013,10 @@ export class WorkspaceManager {
    */
   private async initGlobalWorkspace(): Promise<void> {
     try {
-      // 创建全局 HyperChat 目录结构
-      await this.createGlobalDirectories();
+      await this.globalWorkspace.init();
     } catch (error) {
       console.warn('初始化全局工作区失败:', error);
     }
-  }
-
-  /**
-   * 创建全局目录结构（与普通工作区结构相同）
-   */
-  private async createGlobalDirectories(): Promise<void> {
-    // 使用与普通工作区相同的目录结构
-    await this.createWorkspaceDirectories(this.GLOBAL_HYPERCHAT_DIR);
   }
 
   /**
@@ -858,46 +1027,24 @@ export class WorkspaceManager {
   }
 
   /**
-   * 获取全局 agents 目录路径
-   */
-  getGlobalAgentsPath(): string {
-    return path.join(this.GLOBAL_HYPERCHAT_DIR, "agents");
-  }
-
-  /**
-   * 从全局配置加载 agents（使用 DataList）
+   * 从全局配置加载 agents
    */
   async loadGlobalAgents(): Promise<Agent[]> {
-    const globalAgents = new DataList<Agent>(path.join(this.GLOBAL_HYPERCHAT_DIR, "agents"));
-    return await globalAgents.getAll();
+    return await this.globalWorkspace.getAgents();
   }
 
   /**
-   * 保存 agent 到全局配置（使用统一的保存逻辑）
+   * 保存 agent 到全局配置
    */
   async saveGlobalAgent(agent: Agent): Promise<boolean> {
-    return await this.addOrUpdateAgent(this.GLOBAL_HYPERCHAT_DIR, agent);
+    return await this.globalWorkspace.setAgent(agent);
   }
 
   /**
-   * 删除全局 agent（使用统一的删除逻辑）
+   * 删除全局 agent
    */
   async deleteGlobalAgent(agentKey: string): Promise<boolean> {
-    return await this.deleteAgent(this.GLOBAL_HYPERCHAT_DIR, agentKey);
-  }
-
-  /**
-   * 获取全局 MCP 配置路径
-   */
-  getGlobalMcpConfigPath(): string {
-    return path.join(this.GLOBAL_HYPERCHAT_DIR, "mcp.json");
-  }
-
-  /**
-   * 获取全局 AI 模型配置路径
-   */
-  getGlobalAiModelsConfigPath(): string {
-    return path.join(this.GLOBAL_HYPERCHAT_DIR, "ai_models.json");
+    return await this.globalWorkspace.deleteAgent(agentKey);
   }
 
   /**
@@ -927,33 +1074,10 @@ export class WorkspaceManager {
    * 获取合并的 MCP 配置（全局 + 工作区）
    */
   async getMergedMcpConfig(workspacePath: string): Promise<Record<string, MCPServerConfig>> {
-    const globalMcpPath = this.getGlobalMcpConfigPath();
-    const workspaceMcpPath = path.join(workspacePath, this.HYPERCHAT_DIR, "mcp.json");
+    const globalConfig = this.globalWorkspace.getMcpConfig();
     
-    let globalConfig: Record<string, MCPServerConfig> = {};
-    let workspaceConfig: Record<string, MCPServerConfig> = {};
-    
-    // 加载全局 MCP 配置
-    try {
-      if (fs.existsSync(globalMcpPath)) {
-        const content = await fs.promises.readFile(globalMcpPath, "utf-8");
-        const data = JSON.parse(content);
-        globalConfig = data.mcpServers || {};
-      }
-    } catch (error) {
-      console.warn('加载全局 MCP 配置失败:', error);
-    }
-    
-    // 加载工作区 MCP 配置
-    try {
-      if (fs.existsSync(workspaceMcpPath)) {
-        const content = await fs.promises.readFile(workspaceMcpPath, "utf-8");
-        const data = JSON.parse(content);
-        workspaceConfig = data.mcpServers || {};
-      }
-    } catch (error) {
-      console.warn('加载工作区 MCP 配置失败:', error);
-    }
+    const workspace = this.getWorkspaceInstance(workspacePath);
+    const workspaceConfig = workspace ? workspace.getMcpConfig() : {};
     
     // 合并配置，工作区配置覆盖全局配置
     return { ...globalConfig, ...workspaceConfig };
