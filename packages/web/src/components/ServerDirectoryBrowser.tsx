@@ -142,8 +142,7 @@ export function ServerDirectoryBrowser({
   const handleSelect = (selectedKeys: React.Key[], info: any) => {
     console.log("Tree node selected:", info.node); // 调试日志
     if (info.node.nodeType === "directory") {
-      setSelectedPath(info.node.key);
-      setCurrentPath(info.node.key);
+      setSelectedPath(info.node.key); // 只记录选择的路径，不改变当前浏览路径
     }
   };
 
@@ -167,17 +166,20 @@ export function ServerDirectoryBrowser({
   const navigateToParent = async () => {
     const parentPath = currentPath.split("/").slice(0, -1).join("/") || "/";
     setCurrentPath(parentPath);
+    // 不自动更新选择路径，让用户手动选择
     await initializeTree();
   };
 
   // 导航到主目录
   const navigateToHome = async () => {
     setCurrentPath("~");
+    // 不自动更新选择路径，让用户手动选择
     await initializeTree();
   };
 
   // 刷新当前目录
   const refreshCurrentDirectory = async () => {
+    // 只刷新目录树，不改变选择
     await initializeTree();
   };
 
@@ -194,6 +196,7 @@ export function ServerDirectoryBrowser({
   // 当对话框打开时初始化
   useEffect(() => {
     if (visible) {
+      setSelectedPath(""); // 初始化时不预选任何路径
       initializeTree();
     }
   }, [visible, currentPath]);
@@ -242,26 +245,27 @@ export function ServerDirectoryBrowser({
           </Space>
         </div>
 
-        {/* 当前路径显示 */}
+        {/* 当前浏览路径 */}
         <div className="mb-4">
           <Input
             value={currentPath}
             onChange={(e) => setCurrentPath(e.target.value)}
             onPressEnter={initializeTree}
-            placeholder="输入路径..."
-            addonBefore="当前路径:"
+            placeholder="输入要浏览的路径..."
+            addonBefore="浏览路径:"
           />
         </div>
 
         {/* 选择的路径显示 */}
-        {selectedPath && (
-          <Alert
-            message={`已选择: ${selectedPath}`}
-            type="info"
-            showIcon
-            style={{ marginBottom: 16 }}
+        <div className="mb-4">
+          <Input
+            value={selectedPath}
+            onChange={(e) => setSelectedPath(e.target.value)}
+            placeholder="选择的目录路径..."
+            addonBefore="选择路径:"
           />
-        )}
+        </div>
+
 
         {/* 目录树 */}
         <div className="directory-tree" style={{ height: 400, overflow: "auto" }}>
