@@ -22,7 +22,7 @@ packages/cli 专注于命令行前端的实现
 ## i18n Web前端
 
 * i18n 相关的代码在 packages/web/src/i18n.ts 中。 软件默认使用英文  然后，通过 t`english` 转成中文
-
+* packages/web/src/i18n.json 不用修改。后续我会提供一个脚本来自动生成 i18n.json 文件。
 
 ## 前后端通信
 

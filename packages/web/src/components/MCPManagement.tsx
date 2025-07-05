@@ -19,6 +19,7 @@ import {
   PlayCircleOutlined,
   StopOutlined,
   DeleteOutlined,
+  PlusOutlined,
 } from "@ant-design/icons";
 import { call } from "../common/call";
 import { t } from "../i18n";
@@ -51,14 +52,26 @@ export function MCPManagement({ workspace, mcpClients, onRefresh }: MCPManagemen
   const [mcpRefreshing, setMcpRefreshing] = useState(false);
   const [mcpDetailDrawer, setMcpDetailDrawer] = useState(false);
   const [selectedMcpClient, setSelectedMcpClient] = useState<MCPClient | null>(null);
+  const [addMcpModalOpen, setAddMcpModalOpen] = useState(false);
 
   // 刷新MCP客户端列表
   const refreshMcpClients = async () => {
     try {
       setMcpRefreshing(true);
       
-      // 重新初始化MCP客户端
-      await call("initMcpClients");
+      if (workspace.isGlobal) {
+        // 全局工作区：重新初始化全局MCP客户端
+        await call("initMcpClients");
+      } else {
+        // 项目工作区：启动工作区特定的MCP客户端
+        try {
+          await call("startWorkspaceMcpClients", { workspacePath: workspace.path });
+        } catch (error) {
+          // 如果工作区MCP启动失败，可能是新系统不可用，回退到全局初始化
+          console.warn("Workspace MCP start failed, falling back to global init:", error);
+          await call("initMcpClients");
+        }
+      }
       
       // 调用父组件的刷新函数
       await onRefresh();
@@ -117,7 +130,22 @@ export function MCPManagement({ workspace, mcpClients, onRefresh }: MCPManagemen
   // 删除MCP客户端
   const deleteMcpClient = async (clientName: string) => {
     try {
-      await call("closeMcpClients", { clientName, isdelete: true });
+      if (workspace.isGlobal) {
+        // 全局工作区使用原有方法
+        await call("closeMcpClients", { clientName, isdelete: true });
+      } else {
+        // 项目工作区使用新的工作区特定方法
+        try {
+          await call("deleteWorkspaceMcpServerConfig", { 
+            workspacePath: workspace.path, 
+            serverName: clientName 
+          });
+        } catch (error) {
+          // 回退到全局方法
+          console.warn("Workspace MCP delete failed, falling back to global method:", error);
+          await call("closeMcpClients", { clientName, isdelete: true });
+        }
+      }
       message.success(t`MCP client deleted successfully`);
       await refreshMcpClients();
     } catch (error) {
@@ -137,14 +165,23 @@ export function MCPManagement({ workspace, mcpClients, onRefresh }: MCPManagemen
       <div className="p-2 overflow-auto" style={{ height: 'calc(100vh - 160px)' }}>
         <div className="flex justify-between items-center mb-2">
           <span className="text-sm font-medium">{`MCP (${mcpClients.length})`}</span>
-          <Button
-            type="text"
-            size="small"
-            icon={<ReloadOutlined spin={mcpRefreshing} />}
-            onClick={refreshMcpClients}
-            loading={mcpRefreshing}
-            title={t`Refresh MCP clients`}
-          />
+          <div className="flex gap-1">
+            <Button
+              type="text"
+              size="small"
+              icon={<PlusOutlined />}
+              onClick={() => setAddMcpModalOpen(true)}
+              title={t`Add MCP server`}
+            />
+            <Button
+              type="text"
+              size="small"
+              icon={<ReloadOutlined spin={mcpRefreshing} />}
+              onClick={refreshMcpClients}
+              loading={mcpRefreshing}
+              title={t`Refresh MCP clients`}
+            />
+          </div>
         </div>
         
         {mcpClients.length > 0 ? (
@@ -225,6 +262,11 @@ export function MCPManagement({ workspace, mcpClients, onRefresh }: MCPManagemen
                         {client.source === "builtin" && (
                           <Tag color="blue">{t`Built-in`}</Tag>
                         )}
+                        {workspace.isGlobal ? (
+                          <Tag color="green">{t`Global`}</Tag>
+                        ) : (
+                          <Tag color="orange">{t`Workspace`}</Tag>
+                        )}
                       </Space>
                     }
                     description={
@@ -264,6 +306,32 @@ export function MCPManagement({ workspace, mcpClients, onRefresh }: MCPManagemen
           <Empty description={t`No MCP clients`} image={Empty.PRESENTED_IMAGE_SIMPLE} />
         )}
       </div>
+
+      {/* 添加MCP服务器模态框 */}
+      <Modal
+        title={t`Add MCP Server`}
+        open={addMcpModalOpen}
+        onCancel={() => setAddMcpModalOpen(false)}
+        footer={[
+          <Button key="cancel" onClick={() => setAddMcpModalOpen(false)}>
+            {t`Cancel`}
+          </Button>,
+          <Button key="submit" type="primary" disabled>
+            {t`Add`}
+          </Button>
+        ]}
+      >
+        <div className="text-center py-8">
+          <p className="text-gray-500">
+            {workspace.isGlobal 
+              ? t`Global MCP configuration - Coming soon`
+              : t`Workspace MCP configuration - Coming soon`}
+          </p>
+          <p className="text-xs text-gray-400 mt-2">
+            {t`This feature is under development`}
+          </p>
+        </div>
+      </Modal>
 
       {/* MCP客户端详情抽屉 */}
       <Drawer

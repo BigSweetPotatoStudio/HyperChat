@@ -1862,5 +1862,45 @@
   "Failed to refresh file tree": {
     "en": "Failed to refresh file tree",
     "zh": "刷新文件树失败"
+  },
+  "Add MCP server": {
+    "en": "Add MCP server",
+    "zh": "添加MCP服务器"
+  },
+  "Add MCP Server": {
+    "en": "Add MCP Server",
+    "zh": "添加MCP服务器"
+  },
+  "Workspace": {
+    "en": "Workspace",
+    "zh": "工作区"
+  },
+  "Global MCP configuration - Coming soon": {
+    "en": "Global MCP configuration - Coming soon",
+    "zh": "全局MCP配置 - 即将推出"
+  },
+  "Workspace MCP configuration - Coming soon": {
+    "en": "Workspace MCP configuration - Coming soon",
+    "zh": "工作区MCP配置 - 即将推出"
+  },
+  "This feature is under development": {
+    "en": "This feature is under development",
+    "zh": "此功能正在开发中"
+  },
+  "MCP clients refreshed successfully": {
+    "en": "MCP clients refreshed successfully",
+    "zh": "MCP客户端刷新成功"
+  },
+  "Failed to refresh MCP clients": {
+    "en": "Failed to refresh MCP clients",
+    "zh": "刷新MCP客户端失败"
+  },
+  "Global Configuration": {
+    "en": "Global Configuration",
+    "zh": "全局配置"
+  },
+  "Refresh MCP clients": {
+    "en": "Refresh MCP clients",
+    "zh": "刷新MCP客户端"
   }
 }

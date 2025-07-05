@@ -199,6 +199,15 @@ export function Workspace() {
         workspacePath: values.path,
         name: folderName,
       });
+
+      // 尝试启动工作区的MCP服务
+      try {
+        await call("startWorkspaceMcpClients", { workspacePath: values.path });
+      } catch (mcpError) {
+        console.warn("Failed to start workspace MCP clients, but workspace creation succeeded:", mcpError);
+        // 不阻止工作区创建，只是警告
+      }
+
       message.success(t`Workspace created or opened successfully`);
       setCreateModalOpen(false);
       form.resetFields();
@@ -213,6 +222,16 @@ export function Workspace() {
   // 删除工作区
   const deleteWorkspace = async (workspace: WorkspaceInfo) => {
     try {
+      // 先停止工作区的MCP服务
+      if (!workspace.isGlobal) {
+        try {
+          await call("stopWorkspaceMcpClients", { workspacePath: workspace.path });
+        } catch (mcpError) {
+          console.warn("Failed to stop workspace MCP clients:", mcpError);
+          // 不阻止工作区删除，只是警告
+        }
+      }
+
       await call("deleteWorkspace", { workspacePath: workspace.path });
       message.success(t`Workspace deleted successfully`);
       // 如果删除的是当前活动工作区，切换到全局工作区
@@ -332,6 +351,15 @@ export function Workspace() {
     setActiveWorkspaceKey(key);
     const workspace = key === "global" ? globalWorkspace : workspaces.find(ws => ws.path === key);
     if (workspace) {
+      // 如果是项目工作区，尝试启动其MCP服务
+      if (!workspace.isGlobal) {
+        try {
+          await call("startWorkspaceMcpClients", { workspacePath: workspace.path });
+        } catch (mcpError) {
+          console.warn("Failed to start workspace MCP clients on switch:", mcpError);
+          // 不阻止工作区切换，只是警告
+        }
+      }
       await loadWorkspaceDetails(workspace);
     }
   };

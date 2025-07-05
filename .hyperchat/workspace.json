@@ -1,15 +1,8 @@
 {
   "name": "HyperChat",
-  "description": "HyperChat 项目工作区",
-  "created": 1720069200000,
-  "lastAccessed": 1751719875485,
+  "created": 1751730675536,
+  "lastAccessed": 1751730675539,
   "settings": {
-    "enableMCP": true,
-    "enableAgents": true,
-    "autoSave": true,
-    "syncToCloud": false,
     "enableKnowledgeBase": true
-  },
-  "key": "hyperchat-workspace",
-  "path": "/mnt/d/projects/HyperChat"
+  }
 }

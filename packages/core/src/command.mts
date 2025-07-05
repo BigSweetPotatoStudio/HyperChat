@@ -23,6 +23,14 @@ import {
   initMcpClients,
   openMcpClient,
 } from "./mcp/config.mjs";
+import { 
+  getMCPManager,
+  initMCPManager,
+  getAllMCPClients,
+  getWorkspaceMCPClients as getWorkspaceMCPClientsFromManager,
+  getGlobalMCPClients,
+  getBuiltinMCPClients
+} from "./workspace/mcp/index.mjs";
 import { webdavClient } from "./common/webdav.mjs";
 import { progressList } from "./common/progress.mjs";
 
@@ -69,10 +77,29 @@ export class CommandFactory {
   }
   // 初始化 MCP 客户端
   async initMcpClients() {
-    let res = await initMcpClients();
-    return res.map((x) => x.toJSON());
+    try {
+      // 使用新的工作区MCP管理器
+      const manager = await initMCPManager();
+      
+      // 启动全局客户端
+      await manager.startClients("global");
+      
+      // 获取所有客户端并转换为JSON格式
+      const clients = getAllMCPClients();
+      return clients.map((client) => client.toJSON());
+    } catch (error) {
+      console.error("Failed to initialize MCP clients:", error);
+      // 如果新系统失败，回退到旧系统
+      try {
+        let res = await initMcpClients();
+        return res.map((x) => x.toJSON());
+      } catch (fallbackError) {
+        console.error("Fallback to old MCP system also failed:", fallbackError);
+        throw error;
+      }
+    }
   }
-  // 打开 MCP 客户端
+  // 打开 MCP 客户端（主要用于兼容性，推荐使用工作区特定的方法）
   async openMcpClient({
     clientName,
     clientConfig,
@@ -86,15 +113,49 @@ export class CommandFactory {
       onlySave: boolean;
     };
   }) {
-    await openMcpClient(clientName, clientConfig, options);
-    return {
-      success: true,
-    };
+    try {
+      if (clientConfig && !options.onlySave) {
+        // 使用新的MCP管理器添加到全局范围
+        const manager = getMCPManager();
+        await manager.setServerConfig(clientName, clientConfig, "global");
+      } else {
+        // 回退到旧系统
+        await openMcpClient(clientName, clientConfig, options);
+      }
+      return {
+        success: true,
+      };
+    } catch (error) {
+      console.error(`Failed to open MCP client ${clientName}:`, error);
+      // 如果新系统失败，尝试旧系统
+      try {
+        await openMcpClient(clientName, clientConfig, options);
+        return {
+          success: true,
+        };
+      } catch (fallbackError) {
+        console.error(`Fallback to old MCP system also failed:`, fallbackError);
+        throw error;
+      }
+    }
   }
-  // 获取所有 MCP 客户端
+  // 获取所有 MCP 客户端（全局范围）
   async getMcpClients() {
-    const clients = await getMcpClients();
-    return clients.map((x) => x.toJSON());
+    try {
+      // 使用新的工作区MCP管理器获取全局客户端
+      const clients = getGlobalMCPClients();
+      return clients.map((client) => client.toJSON());
+    } catch (error) {
+      console.error("Failed to get MCP clients from new system:", error);
+      // 如果新系统失败，回退到旧系统
+      try {
+        const clients = await getMcpClients();
+        return clients.map((x) => x.toJSON());
+      } catch (fallbackError) {
+        console.error("Fallback to old MCP system also failed:", fallbackError);
+        throw error;
+      }
+    }
   }
   // 关闭 MCP 客户端
   async closeMcpClients({
@@ -106,13 +167,39 @@ export class CommandFactory {
     isdelete?: boolean;
     isdisable?: boolean;
   }) {
-    await closeMcpClients(clientName, {
-      ...(isdelete !== undefined && { isdelete }),
-      ...(isdisable !== undefined && { isdisable })
-    });
-    return {
-      success: true,
-    };
+    try {
+      const manager = getMCPManager();
+      
+      if (isdelete) {
+        // 删除客户端配置
+        await manager.deleteServerConfig(clientName, "global");
+      } else if (isdisable) {
+        // 停止客户端但保留配置
+        await manager.stopClient(clientName, "global");
+      } else {
+        // 重启客户端
+        await manager.restartClient(clientName, "global");
+      }
+      
+      return {
+        success: true,
+      };
+    } catch (error) {
+      console.error(`Failed to manage MCP client ${clientName}:`, error);
+      // 回退到旧系统
+      try {
+        await closeMcpClients(clientName, {
+          ...(isdelete !== undefined && { isdelete }),
+          ...(isdisable !== undefined && { isdisable })
+        });
+        return {
+          success: true,
+        };
+      } catch (fallbackError) {
+        console.error(`Fallback to old MCP system also failed:`, fallbackError);
+        throw error;
+      }
+    }
   }
   // 调用 MCP 工具
   async mcpCallTool({
@@ -124,12 +211,31 @@ export class CommandFactory {
     functionName: string;
     args: any;
   }) {
-    let mcpClients = await getMcpClients();
-    let client = mcpClients.find((x) => x.name === name);
-    if (!client) {
-      throw new Error("client not found");
+    try {
+      // 使用新的MCP管理器
+      const allClients = getAllMCPClients();
+      let client = allClients.find((x) => x.name === name);
+      
+      if (!client) {
+        throw new Error(`MCP client "${name}" not found`);
+      }
+      
+      return await client.callTool(functionName, args);
+    } catch (error) {
+      console.error(`Failed to call MCP tool using new system:`, error);
+      // 回退到旧系统
+      try {
+        let mcpClients = await getMcpClients();
+        let client = mcpClients.find((x) => x.name === name);
+        if (!client) {
+          throw new Error("client not found");
+        }
+        return await client.callTool(functionName, args);
+      } catch (fallbackError) {
+        console.error(`Fallback to old MCP system also failed:`, fallbackError);
+        throw error;
+      }
     }
-    return await client.callTool(functionName, args);
   }
   // 调用 MCP 资源
   async mcpCallResource({
@@ -139,12 +245,31 @@ export class CommandFactory {
     name: string;
     uri: string;
   }) {
-    let mcpClients = await getMcpClients();
-    let client = mcpClients.find((x) => x.name === name);
-    if (!client) {
-      throw new Error("client not found");
+    try {
+      // 使用新的MCP管理器
+      const allClients = getAllMCPClients();
+      let client = allClients.find((x) => x.name === name);
+      
+      if (!client) {
+        throw new Error(`MCP client "${name}" not found`);
+      }
+      
+      return await client.callResource(uri);
+    } catch (error) {
+      console.error(`Failed to call MCP resource using new system:`, error);
+      // 回退到旧系统
+      try {
+        let mcpClients = await getMcpClients();
+        let client = mcpClients.find((x) => x.name === name);
+        if (!client) {
+          throw new Error("client not found");
+        }
+        return await client.callResource(uri);
+      } catch (fallbackError) {
+        console.error(`Fallback to old MCP system also failed:`, fallbackError);
+        throw error;
+      }
     }
-    return await client.callResource(uri);
   }
   // 调用 MCP Prompt
   async mcpCallPrompt({
@@ -156,12 +281,31 @@ export class CommandFactory {
     functionName: string;
     args: any;
   }) {
-    let mcpClients = await getMcpClients();
-    let client = mcpClients.find((x) => x.name === name);
-    if (!client) {
-      throw new Error("client not found");
+    try {
+      // 使用新的MCP管理器
+      const allClients = getAllMCPClients();
+      let client = allClients.find((x) => x.name === name);
+      
+      if (!client) {
+        throw new Error(`MCP client "${name}" not found`);
+      }
+      
+      return await client.callPrompt(functionName, args);
+    } catch (error) {
+      console.error(`Failed to call MCP prompt using new system:`, error);
+      // 回退到旧系统
+      try {
+        let mcpClients = await getMcpClients();
+        let client = mcpClients.find((x) => x.name === name);
+        if (!client) {
+          throw new Error("client not found");
+        }
+        return await client.callPrompt(functionName, args);
+      } catch (fallbackError) {
+        console.error(`Fallback to old MCP system also failed:`, fallbackError);
+        throw error;
+      }
     }
-    return await client.callPrompt(functionName, args);
   }
   // 文件路径处理，返回处理后路径
   async processedFilePath({
@@ -875,13 +1019,34 @@ export class CommandFactory {
   }: {
     workspacePath: string;
   }): Promise<any[]> {
-    const workspaceManager = getWorkspaceManager();
-    // 检查是否为全局工作区
-    const workspace = workspaceManager.isGlobalWorkspace(workspacePath) 
-      ? workspaceManager.getGlobalWorkspace()
-      : workspaceManager.getWorkspace(workspacePath);
-    if (!workspace) return [];
-    return workspace.getMcpClients().map(client => client.toJSON());
+    try {
+      const workspaceManager = getWorkspaceManager();
+      
+      // 检查是否为全局工作区
+      if (workspaceManager.isGlobalWorkspace(workspacePath)) {
+        // 全局工作区返回全局客户端
+        const clients = getGlobalMCPClients();
+        return clients.map(client => client.toJSON());
+      } else {
+        // 普通工作区返回工作区特定的客户端
+        const clients = getWorkspaceMCPClientsFromManager(workspacePath);
+        return clients.map(client => client.toJSON());
+      }
+    } catch (error) {
+      console.error("Failed to get workspace MCP clients from new system:", error);
+      // 如果新系统失败，回退到旧的工作区系统
+      try {
+        const workspaceManager = getWorkspaceManager();
+        const workspace = workspaceManager.isGlobalWorkspace(workspacePath) 
+          ? workspaceManager.getGlobalWorkspace()
+          : workspaceManager.getWorkspace(workspacePath);
+        if (!workspace) return [];
+        return workspace.getMcpClients().map(client => client.toJSON());
+      } catch (fallbackError) {
+        console.error("Fallback to old workspace MCP system also failed:", fallbackError);
+        return [];
+      }
+    }
   }
 
   /**
@@ -1039,6 +1204,135 @@ export class CommandFactory {
       return { exists, isDirectory, readable };
     } catch (error) {
       return { exists: false, isDirectory: false, readable: false };
+    }
+  }
+
+  // ========== 新的工作区 MCP 管理 API ==========
+
+  /**
+   * 启动工作区 MCP 服务
+   */
+  async startWorkspaceMcpClients({
+    workspacePath
+  }: {
+    workspacePath: string;
+  }): Promise<any[]> {
+    try {
+      const manager = getMCPManager();
+      
+      // 确保管理器已初始化
+      if (!manager['initialized']) {
+        await manager.init();
+      }
+      
+      // 加载并启动工作区MCP客户端
+      await manager.loadWorkspaceConfig(workspacePath);
+      const clients = await manager.startClients("workspace", workspacePath);
+      
+      return clients.map(client => client.toJSON());
+    } catch (error) {
+      console.error(`Failed to start workspace MCP clients for ${workspacePath}:`, error);
+      throw error;
+    }
+  }
+
+  /**
+   * 停止工作区 MCP 服务
+   */
+  async stopWorkspaceMcpClients({
+    workspacePath
+  }: {
+    workspacePath: string;
+  }): Promise<void> {
+    try {
+      const manager = getMCPManager();
+      await manager.stopClients("workspace", workspacePath);
+    } catch (error) {
+      console.error(`Failed to stop workspace MCP clients for ${workspacePath}:`, error);
+      throw error;
+    }
+  }
+
+  /**
+   * 获取所有 MCP 客户端（包括全局、工作区和内置）
+   */
+  async getAllMcpClients(): Promise<any[]> {
+    try {
+      const clients = getAllMCPClients();
+      return clients.map(client => client.toJSON());
+    } catch (error) {
+      console.error("Failed to get all MCP clients:", error);
+      // 回退到旧系统
+      try {
+        const clients = await getMcpClients();
+        return clients.map((x) => x.toJSON());
+      } catch (fallbackError) {
+        console.error("Fallback to old MCP system also failed:", fallbackError);
+        throw error;
+      }
+    }
+  }
+
+  /**
+   * 获取内置 MCP 客户端
+   */
+  async getBuiltinMcpClients(): Promise<any[]> {
+    try {
+      const clients = getBuiltinMCPClients();
+      return clients.map(client => client.toJSON());
+    } catch (error) {
+      console.error("Failed to get builtin MCP clients:", error);
+      return [];
+    }
+  }
+
+  /**
+   * 添加或更新工作区 MCP 服务器配置
+   */
+  async setWorkspaceMcpServerConfig({
+    workspacePath,
+    serverName,
+    serverConfig
+  }: {
+    workspacePath: string;
+    serverName: string;
+    serverConfig: MCPServerConfig;
+  }): Promise<void> {
+    try {
+      const manager = getMCPManager();
+      const workspaceManager = getWorkspaceManager();
+      
+      const scope = workspaceManager.isGlobalWorkspace(workspacePath) ? "global" : "workspace";
+      const actualWorkspacePath = scope === "workspace" ? workspacePath : undefined;
+      
+      await manager.setServerConfig(serverName, serverConfig, scope, actualWorkspacePath);
+    } catch (error) {
+      console.error(`Failed to set MCP server config for ${workspacePath}:`, error);
+      throw error;
+    }
+  }
+
+  /**
+   * 删除工作区 MCP 服务器配置
+   */
+  async deleteWorkspaceMcpServerConfig({
+    workspacePath,
+    serverName
+  }: {
+    workspacePath: string;
+    serverName: string;
+  }): Promise<void> {
+    try {
+      const manager = getMCPManager();
+      const workspaceManager = getWorkspaceManager();
+      
+      const scope = workspaceManager.isGlobalWorkspace(workspacePath) ? "global" : "workspace";
+      const actualWorkspacePath = scope === "workspace" ? workspacePath : undefined;
+      
+      await manager.deleteServerConfig(serverName, scope, actualWorkspacePath);
+    } catch (error) {
+      console.error(`Failed to delete MCP server config for ${workspacePath}:`, error);
+      throw error;
     }
   }
 
