@@ -709,7 +709,7 @@ export class CommandFactory {
   }
 
   /**
-   * 获取工作区文件树
+   * 获取工作区文件树（已废弃，建议使用 getWorkspaceDirectoryList）
    */
   async getWorkspaceFileTree({
     workspacePath
@@ -727,6 +727,88 @@ export class CommandFactory {
       excludePatterns: ['node_modules', '.git', 'dist', 'build', '.hyperchat'],
     });
     return workspace.getFileTree();
+  }
+
+  /**
+   * 获取工作区指定目录的子项列表（懒加载）
+   */
+  async getWorkspaceDirectoryList({
+    workspacePath,
+    directoryPath = ""
+  }: {
+    workspacePath: string;
+    directoryPath?: string;
+  }): Promise<any[]> {
+    const { getWorkspaceManager } = await import("./workspace/index.mjs");
+    const { fs, path } = zx;
+    
+    try {
+      const workspaceManager = getWorkspaceManager();
+      const workspace = workspaceManager.getWorkspace(workspacePath);
+      if (!workspace) return [];
+
+      // 构建完整路径
+      const fullPath = directoryPath 
+        ? path.join(workspacePath, directoryPath)
+        : workspacePath;
+
+      // 检查路径是否存在且是目录
+      if (!fs.existsSync(fullPath)) {
+        return [];
+      }
+
+      const stats = await fs.promises.stat(fullPath);
+      if (!stats.isDirectory()) {
+        return [];
+      }
+
+      // 读取目录内容
+      const entries = await fs.promises.readdir(fullPath, { withFileTypes: true });
+      const result = [];
+
+      for (const entry of entries) {
+        // 跳过隐藏文件和排除的目录
+        if (entry.name.startsWith('.') || 
+            ['node_modules', '.git', 'dist', 'build', '.hyperchat'].includes(entry.name)) {
+          continue;
+        }
+
+        const itemPath = path.join(fullPath, entry.name);
+        const relativePath = directoryPath 
+          ? path.join(directoryPath, entry.name).replace(/\\/g, '/')
+          : entry.name;
+
+        try {
+          const itemStats = await fs.promises.stat(itemPath);
+          
+          result.push({
+            name: entry.name,
+            path: relativePath,
+            type: entry.isDirectory() ? "directory" : "file",
+            size: entry.isFile() ? itemStats.size : undefined,
+            modified: itemStats.mtime.getTime(),
+            extension: entry.isFile() ? path.extname(entry.name).toLowerCase() : undefined,
+            isLeaf: !entry.isDirectory(),
+          });
+        } catch (error) {
+          // 忽略无法访问的文件
+          continue;
+        }
+      }
+
+      // 排序：目录在前，文件在后，然后按名称排序
+      result.sort((a, b) => {
+        if (a.type !== b.type) {
+          return a.type === "directory" ? -1 : 1;
+        }
+        return a.name.localeCompare(b.name);
+      });
+
+      return result;
+    } catch (error) {
+      console.error("Failed to list workspace directory:", error);
+      return [];
+    }
   }
 
   /**

@@ -60,6 +60,8 @@ interface FileNode {
   size?: number;
   modified: number;
   extension?: string;
+  isLeaf?: boolean;
+  loaded?: boolean;
 }
 
 export function Workspace() {
@@ -69,7 +71,7 @@ export function Workspace() {
   const [activeWorkspaceKey, setActiveWorkspaceKey] = useState<string>("global");
   const [workspaceDetails, setWorkspaceDetails] = useState<{
     [key: string]: {
-      fileTree?: FileNode;
+      fileTreeData?: FileNode[];
       agents: any[];
       mcpClients: any[];
     }
@@ -141,10 +143,13 @@ export function Workspace() {
     try {
       const details: any = { agents: [], mcpClients: [] };
 
-      // 如果不是全局工作区，加载文件树
+      // 如果不是全局工作区，加载根目录文件列表（懒加载）
       if (!workspace.isGlobal) {
-        const tree = await call("getWorkspaceFileTree", { workspacePath: workspace.path });
-        details.fileTree = tree;
+        const rootItems = await call("getWorkspaceDirectoryList", { 
+          workspacePath: workspace.path,
+          directoryPath: ""
+        });
+        details.fileTreeData = rootItems;
       }
 
       // 加载 Agents
@@ -225,14 +230,84 @@ export function Workspace() {
     }
   };
 
-  // 将文件树转换为 Tree 组件需要的格式
-  const convertFileTreeToTreeData = (node: FileNode): any => {
-    return {
-      title: node.name,
-      key: node.path,
-      icon: node.type === "directory" ? <FolderOutlined /> : <FileOutlined />,
-      children: node.children?.map(convertFileTreeToTreeData),
+
+  // 更新文件树数据，插入子项
+  const updateTreeDataWithChildren = (
+    data: FileNode[],
+    targetPath: string,
+    children: FileNode[]
+  ): FileNode[] => {
+    return data.map((node) => {
+      if (node.path === targetPath) {
+        return {
+          ...node,
+          children: children,
+          loaded: true,
+        };
+      }
+      if (node.children) {
+        return {
+          ...node,
+          children: updateTreeDataWithChildren(node.children, targetPath, children),
+        };
+      }
+      return node;
+    });
+  };
+
+  // 文件树组件
+  const FileTreeComponent = ({ 
+    workspace, 
+    initialData, 
+    onDataUpdate 
+  }: { 
+    workspace: WorkspaceInfo;
+    initialData: FileNode[];
+    onDataUpdate: (data: FileNode[]) => void;
+  }) => {
+    const [treeData, setTreeData] = useState<FileNode[]>(initialData);
+
+    // 当初始数据变化时更新组件状态
+    useEffect(() => {
+      setTreeData(initialData);
+    }, [initialData]);
+
+    // 转换为 Tree 组件需要的格式
+    const convertToTreeData = (items: FileNode[]): any[] => {
+      return items.map((item) => ({
+        title: item.name,
+        key: item.path,
+        icon: item.type === "directory" ? <FolderOutlined /> : <FileOutlined />,
+        isLeaf: item.isLeaf || item.type === "file",
+        children: item.children ? convertToTreeData(item.children) : undefined,
+      }));
     };
+
+    const handleLoadData = async (node: any) => {
+      if (node.isLeaf) return;
+      
+      try {
+        const children = await call("getWorkspaceDirectoryList", {
+          workspacePath: workspace.path,
+          directoryPath: node.key
+        });
+
+        const updatedData = updateTreeDataWithChildren(treeData, node.key, children);
+        setTreeData(updatedData);
+        onDataUpdate(updatedData);
+      } catch (error) {
+        console.error("Failed to load directory children:", error);
+        message.error(t`Failed to load directory contents`);
+      }
+    };
+
+    return (
+      <Tree
+        showIcon
+        treeData={convertToTreeData(treeData)}
+        loadData={handleLoadData}
+      />
+    );
   };
 
   useEffect(() => {
@@ -334,11 +409,20 @@ export function Workspace() {
               className="h-full"
               bodyStyle={{ padding: '8px', height: 'calc(100% - 48px)', overflow: 'auto' }}
             >
-              {!currentWorkspace.isGlobal && details.fileTree ? (
-                <Tree
-                  showIcon
-                  defaultExpandAll
-                  treeData={[convertFileTreeToTreeData(details.fileTree)]}
+              {!currentWorkspace.isGlobal && details.fileTreeData ? (
+                <FileTreeComponent
+                  workspace={currentWorkspace}
+                  initialData={details.fileTreeData}
+                  onDataUpdate={(updatedData) => {
+                    const key = currentWorkspace.isGlobal ? "global" : currentWorkspace.path;
+                    setWorkspaceDetails(prev => ({
+                      ...prev,
+                      [key]: {
+                        ...prev[key],
+                        fileTreeData: updatedData
+                      }
+                    }));
+                  }}
                 />
               ) : (
                 <Empty
