@@ -424,13 +424,16 @@ export function Workspace() {
   };
 
   // 处理标签页关闭（删除工作区）
-  const handleTabEdit = async (targetKey: React.Key, action: 'add' | 'remove') => {
+  const handleTabEdit = (targetKey: string | React.MouseEvent<Element, MouseEvent> | React.KeyboardEvent<Element>, action: 'add' | 'remove') => {
     if (action === 'add') {
       setCreateModalOpen(true);
     } else if (action === 'remove') {
-      const workspace = workspaces.find(ws => ws.path === targetKey);
-      if (workspace) {
-        await deleteWorkspace(workspace);
+      // 确保 targetKey 是字符串类型
+      if (typeof targetKey === 'string') {
+        const workspace = workspaces.find(ws => ws.path === targetKey);
+        if (workspace) {
+          deleteWorkspace(workspace);
+        }
       }
     }
   };
@@ -446,18 +449,18 @@ export function Workspace() {
           items={getTabItems()}
           tabBarStyle={{ marginBottom: 16 }}
           addIcon={<PlusOutlined />}
-          tabBarExtraContent={{
-            right: (
-              <Tooltip title="新建工作区">
-                <Button
-                  type="text"
-                  size="small"
-                  icon={<PlusOutlined />}
-                  onClick={() => setCreateModalOpen(true)}
-                />
-              </Tooltip>
-            )
-          }}
+          // tabBarExtraContent={{
+          //   right: (
+          //     <Tooltip title="新建工作区">
+          //       <Button
+          //         type="text"
+          //         size="small"
+          //         icon={<PlusOutlined />}
+          //         onClick={() => setCreateModalOpen(true)}
+          //       />
+          //     </Tooltip>
+          //   )
+          // }}
         />
         
         <div style={{ height: 'calc(100% - 48px)' }}>
