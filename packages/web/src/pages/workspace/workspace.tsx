@@ -43,6 +43,7 @@ import { MCPManagement } from "../../components/MCPManagement";
 import { AgentManagement } from "../../components/AgentManagement";
 import { FileTreeComponent } from "../../components/FileTreeComponent";
 import { WorkspaceSidebar } from "../../components/WorkspaceSidebar";
+import { getPanelSizes, savePanelSizes } from "../../utils/storage";
 
 const { Title, Text } = Typography;
 
@@ -94,6 +95,13 @@ export function Workspace() {
   const [selectedPath, setSelectedPath] = useState<string>("");
   const [showHiddenFiles, setShowHiddenFiles] = useState(true);
   const [form] = Form.useForm();
+  
+  // 面板尺寸状态 - 使用数组格式，与Ant Design Splitter兼容
+  const [panelSizes, setPanelSizes] = useState<any[]>(() => {
+    // 初始化时使用默认工作区的尺寸
+    const sizes = getPanelSizes('global');
+    return [sizes.left, sizes.middle, sizes.right];
+  });
 
   // 监听MCP客户端状态变化
   useEffect(() => {
@@ -375,6 +383,29 @@ export function Workspace() {
     // 不需要重新加载数据，文件树组件会自动通过useEffect重新过滤和渲染
   };
 
+  // 处理面板尺寸变化
+  const handlePanelSizeChange = (sizes: any[]) => {
+    const currentWorkspace = getCurrentWorkspace();
+    if (currentWorkspace && sizes.length >= 3) {
+      // 直接更新状态数组
+      setPanelSizes(sizes);
+      
+      // 构建保存到localStorage的对象格式
+      const sizesToSave = {
+        left: sizes[0],
+        middle: sizes[1], 
+        right: sizes[2]
+      };
+      
+      // 保存到localStorage（使用防抖，避免频繁保存）
+      const workspaceKey = currentWorkspace.isGlobal ? 'global' : currentWorkspace.path;
+      clearTimeout((handlePanelSizeChange as any).timeoutId);
+      (handlePanelSizeChange as any).timeoutId = setTimeout(() => {
+        savePanelSizes(workspaceKey, sizesToSave);
+      }, 500); // 500ms 防抖
+    }
+  };
+
   useEffect(() => {
     loadWorkspaces();
   }, []);
@@ -384,6 +415,10 @@ export function Workspace() {
     const currentWorkspace = getCurrentWorkspace();
     if (currentWorkspace) {
       loadWorkspaceDetails(currentWorkspace);
+      // 加载当前工作区的面板尺寸
+      const workspaceKey = currentWorkspace.isGlobal ? 'global' : currentWorkspace.path;
+      const sizes = getPanelSizes(workspaceKey);
+      setPanelSizes([sizes.left, sizes.middle, sizes.right]);
     }
   }, [activeWorkspaceKey, workspaces, globalWorkspace]);
 
@@ -484,9 +519,16 @@ export function Workspace() {
 
     return (
       <div className="h-full">
-        <Splitter style={{ height: '100%' }}>
+        <Splitter 
+          style={{ height: '100%' }}
+          onResize={handlePanelSizeChange}
+        >
           {/* 左侧面板：工作区侧边栏 */}
-          <Splitter.Panel defaultSize="25%" min="15%" max="40%">
+          <Splitter.Panel 
+            size={panelSizes[0]} 
+            min="15%" 
+            max="40%"
+          >
             <WorkspaceSidebar
               workspace={currentWorkspace}
               fileTreeData={details.fileTreeData}
@@ -497,7 +539,10 @@ export function Workspace() {
           </Splitter.Panel>
 
           {/* 中间面板：操作界面 */}
-          <Splitter.Panel defaultSize="50%" min="30%">
+          <Splitter.Panel 
+            size={panelSizes[1]} 
+            min="30%"
+          >
             <Card
               title={t`Workspace Operations`}
               size="small"
@@ -519,7 +564,11 @@ export function Workspace() {
           </Splitter.Panel>
 
           {/* 右侧面板：Agents 和 MCP 管理 */}
-          <Splitter.Panel defaultSize="25%" min="15%" max="40%">
+          <Splitter.Panel 
+            size={panelSizes[2]} 
+            min="15%" 
+            max="40%"
+          >
             <Card
               title={t`Management Panel`}
               size="small"
