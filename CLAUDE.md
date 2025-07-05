@@ -19,6 +19,10 @@ packages/electron 专门处理 Electron 桌面应用的需求。
 packages/web 专注于 Web 前端的实现
 packages/cli 专注于命令行前端的实现
 
+## i18n Web前端
+
+* i18n 相关的代码在 packages/web/src/i18n.ts 中。
+
 
 ## 前后端通信
 

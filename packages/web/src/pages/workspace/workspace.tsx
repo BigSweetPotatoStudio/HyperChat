@@ -16,6 +16,7 @@ import {
   Empty,
   Badge,
   Typography,
+  Splitter,
 } from "antd";
 import {
   FolderOpenOutlined,
@@ -83,12 +84,12 @@ export function Workspace() {
   const loadWorkspaces = async () => {
     try {
       setLoading(true);
-      
+
       // 加载全局工作区
       const globalWs = await call("getGlobalWorkspace");
       if (globalWs) {
-        const globalSummary = await call("getCurrentWorkspace", { 
-          workspacePath: globalWs.path || "~/.hyperchat" 
+        const globalSummary = await call("getCurrentWorkspace", {
+          workspacePath: globalWs.path || "~/.hyperchat"
         });
         setGlobalWorkspace({
           ...globalWs,
@@ -103,7 +104,7 @@ export function Workspace() {
       // 加载项目工作区列表
       const workspaceList = await call("getWorkspaceList");
       const workspaceInfos: WorkspaceInfo[] = [];
-      
+
       for (const ws of workspaceList) {
         try {
           // ws 现在已经包含了正确的 path 字段
@@ -120,7 +121,7 @@ export function Workspace() {
           console.warn(`Failed to load workspace ${ws.name}:`, error);
         }
       }
-      
+
       setWorkspaces(workspaceInfos);
     } catch (error) {
       console.error("Failed to load workspaces:", error);
@@ -133,13 +134,13 @@ export function Workspace() {
   // 加载工作区详细信息
   const loadWorkspaceDetails = async (workspace: WorkspaceInfo) => {
     const key = workspace.isGlobal ? "global" : workspace.path;
-    
+
     // 如果已经加载过，直接返回
     if (workspaceDetails[key]) return;
 
     try {
       const details: any = { agents: [], mcpClients: [] };
-      
+
       // 如果不是全局工作区，加载文件树
       if (!workspace.isGlobal) {
         const tree = await call("getWorkspaceFileTree", { workspacePath: workspace.path });
@@ -153,7 +154,7 @@ export function Workspace() {
       // 加载 MCP 客户端
       const mcpList = await call("getWorkspaceMcpClients", { workspacePath: workspace.path });
       details.mcpClients = mcpList;
-      
+
       setWorkspaceDetails(prev => ({
         ...prev,
         [key]: details
@@ -210,13 +211,13 @@ export function Workspace() {
     try {
       form.setFieldsValue({ path });
       setSelectedPath(path);
-      
+
       // 检查是否已经是工作区
       const isWorkspace = await call("isWorkspaceDirectory", { directoryPath: path });
       if (isWorkspace) {
         message.warning("该目录已经是一个工作区");
       }
-      
+
       setDirectoryBrowserOpen(false);
     } catch (error) {
       console.error("Failed to process selected directory:", error);
@@ -237,7 +238,7 @@ export function Workspace() {
   useEffect(() => {
     loadWorkspaces();
   }, []);
-  
+
   // 当工作区加载完成后，自动加载当前活动工作区的详情
   useEffect(() => {
     const currentWorkspace = getCurrentWorkspace();
@@ -271,7 +272,7 @@ export function Workspace() {
   // 生成标签页items
   const getTabItems = () => {
     const items: any[] = [];
-    
+
     // 全局工作区标签页（不可关闭）
     if (globalWorkspace) {
       items.push({
@@ -288,7 +289,7 @@ export function Workspace() {
         closable: false, // 全局工作区不可关闭
       });
     }
-    
+
     // 项目工作区标签页（可关闭）
     workspaces.forEach(workspace => {
       items.push({
@@ -304,7 +305,7 @@ export function Workspace() {
         closable: true, // 项目工作区可关闭
       });
     });
-    
+
     return items;
   };
 
@@ -312,7 +313,7 @@ export function Workspace() {
   const renderWorkspaceContent = () => {
     const currentWorkspace = getCurrentWorkspace();
     const details = getCurrentDetails();
-    
+
     if (!currentWorkspace) {
       return (
         <Empty
@@ -322,103 +323,149 @@ export function Workspace() {
       );
     }
 
-    const tabItems: any[] = [];
-    
-    // 文件树标签页（仅非全局工作区显示）
-    if (!currentWorkspace.isGlobal) {
-      tabItems.push({
-        label: "文件树",
-        key: "files",
-        children: (
-          <div className="overflow-auto" style={{ maxHeight: "calc(100vh - 200px)" }}>
-            {details.fileTree ? (
-              <Tree
-                showIcon
-                defaultExpandAll
-                treeData={[convertFileTreeToTreeData(details.fileTree)]}
-              />
-            ) : (
-              <Empty description="暂无文件树数据" />
-            )}
-          </div>
-        ),
-      });
-    }
-    
-    // Agents 标签页
-    tabItems.push({
-      label: `Agents (${details.agents.length})`,
-      key: "agents",
-      children: (
-        <div className="overflow-auto" style={{ maxHeight: "calc(100vh - 200px)" }}>
-          {details.agents.length > 0 ? (
-            <List
-              dataSource={details.agents}
-              renderItem={(agent) => (
-                <List.Item
-                  actions={[
-                    <Button key="edit" size="small">编辑</Button>,
-                    <Button key="delete" size="small" danger>删除</Button>,
-                  ]}
-                >
-                  <List.Item.Meta
-                    title={agent.name || agent.key}
-                    description={agent.description || agent.prompt?.slice(0, 100)}
-                  />
-                  <Tag>{agent.type || "自定义"}</Tag>
-                </List.Item>
-              )}
-            />
-          ) : (
-            <Empty description="暂无 Agents" />
-          )}
-        </div>
-      ),
-    });
-    
-    // MCP 客户端标签页
-    tabItems.push({
-      label: `MCP (${details.mcpClients.length})`,
-      key: "mcp",
-      children: (
-        <div className="overflow-auto" style={{ maxHeight: "calc(100vh - 200px)" }}>
-          {details.mcpClients.length > 0 ? (
-            <List
-              dataSource={details.mcpClients}
-              renderItem={(client) => (
-                <List.Item
-                  actions={[
-                    <Button key="restart" size="small">重启</Button>,
-                    <Button key="delete" size="small" danger>删除</Button>,
-                  ]}
-                >
-                  <List.Item.Meta
-                    title={client.name}
-                    description={`${client.servername || ""} - ${client.config?.type || "stdio"}`}
-                  />
-                  <Space>
-                    <Tag color={client.status === "connected" ? "green" : "red"}>
-                      {client.status}
-                    </Tag>
-                    {client.source === "builtin" && <Tag color="blue">内置</Tag>}
-                  </Space>
-                </List.Item>
-              )}
-            />
-          ) : (
-            <Empty description="暂无 MCP 客户端" />
-          )}
-        </div>
-      ),
-    });
-    
     return (
       <div className="h-full">
-        <Tabs 
-          items={tabItems} 
-          style={{ height: '100%' }}
-          tabBarStyle={{ marginBottom: 16 }}
-        />
+        <Splitter style={{ height: '100%' }}>
+          {/* 左侧面板：文件树 */}
+          <Splitter.Panel defaultSize="25%" min="15%" max="40%">
+            <Card
+              title="文件树"
+              size="small"
+              className="h-full"
+              bodyStyle={{ padding: '8px', height: 'calc(100% - 48px)', overflow: 'auto' }}
+            >
+              {!currentWorkspace.isGlobal && details.fileTree ? (
+                <Tree
+                  showIcon
+                  defaultExpandAll
+                  treeData={[convertFileTreeToTreeData(details.fileTree)]}
+                />
+              ) : (
+                <Empty
+                  description={currentWorkspace.isGlobal ? "全局工作区无文件树" : "暂无文件树数据"}
+                  image={Empty.PRESENTED_IMAGE_SIMPLE}
+                  style={{ marginTop: '20%' }}
+                />
+              )}
+            </Card>
+          </Splitter.Panel>
+
+          {/* 中间面板：操作界面 */}
+          <Splitter.Panel defaultSize="50%" min="30%">
+            <Card
+              title="工作区操作"
+              size="small"
+              className="h-full"
+              bodyStyle={{ padding: '16px', height: 'calc(100% - 48px)', overflow: 'auto' }}
+            >
+              <div className="text-center">
+                <Empty
+                  description="操作界面待开发"
+                  image={Empty.PRESENTED_IMAGE_SIMPLE}
+                  style={{ marginTop: '20%' }}
+                >
+                  <p className="text-gray-500 mt-4">
+                    这里将显示工作区的主要操作界面
+                  </p>
+                </Empty>
+              </div>
+            </Card>
+          </Splitter.Panel>
+
+          {/* 右侧面板：Agents 和 MCP 管理 */}
+          <Splitter.Panel defaultSize="25%" min="15%" max="40%">
+            <Card
+              title="管理面板"
+              size="small"
+              className="h-full"
+              bodyStyle={{ padding: '0', height: 'calc(100% - 48px)' }}
+            >
+              <Tabs
+                size="small"
+                items={[
+                  {
+                    label: `Agents (${details.agents.length})`,
+                    key: "agents",
+                    children: (
+                      <div className="p-2 overflow-auto" style={{ height: 'calc(100vh - 160px)' }}>
+                        {details.agents.length > 0 ? (
+                          <List
+                            size="small"
+                            dataSource={details.agents}
+                            renderItem={(agent) => (
+                              <List.Item
+                                actions={[
+                                  <Button key="edit" size="small" type="link">编辑</Button>,
+                                  <Button key="delete" size="small" type="link" danger>删除</Button>,
+                                ]}
+                              >
+                                <List.Item.Meta
+                                  title={<span className="text-sm">{agent.name || agent.key}</span>}
+                                  description={
+                                    <span className="text-xs text-gray-500">
+                                      {agent.description || agent.prompt?.slice(0, 50)}
+                                    </span>
+                                  }
+                                />
+                              </List.Item>
+                            )}
+                          />
+                        ) : (
+                          <Empty description="暂无 Agents" image={Empty.PRESENTED_IMAGE_SIMPLE} />
+                        )}
+                      </div>
+                    ),
+                  },
+                  {
+                    label: `MCP (${details.mcpClients.length})`,
+                    key: "mcp",
+                    children: (
+                      <div className="p-2 overflow-auto" style={{ height: 'calc(100vh - 160px)' }}>
+                        {details.mcpClients.length > 0 ? (
+                          <List
+                            size="small"
+                            dataSource={details.mcpClients}
+                            renderItem={(client) => (
+                              <List.Item
+                                actions={[
+                                  <Button key="restart" size="small" type="link">重启</Button>,
+                                  <Button key="delete" size="small" type="link" danger>删除</Button>,
+                                ]}
+                              >
+                                <List.Item.Meta
+                                  title={<span className="text-sm">{client.name}</span>}
+                                  description={
+                                    <div className="text-xs">
+                                      <div className="text-gray-500">
+                                        {client.servername || ""} - {client.config?.type || "stdio"}
+                                      </div>
+                                      <Space size="small" className="mt-1">
+                                        <Tag
+                                          color={client.status === "connected" ? "green" : "red"}
+                                        >
+                                          {client.status}
+                                        </Tag>
+                                        {client.source === "builtin" && (
+                                          <Tag color="blue" >内置</Tag>
+                                        )}
+                                      </Space>
+                                    </div>
+                                  }
+                                />
+                              </List.Item>
+                            )}
+                          />
+                        ) : (
+                          <Empty description="暂无 MCP 客户端" image={Empty.PRESENTED_IMAGE_SIMPLE} />
+                        )}
+                      </div>
+                    ),
+                  },
+                ]}
+              />
+            </Card>
+          </Splitter.Panel>
+        </Splitter>
       </div>
     );
   };
@@ -449,20 +496,20 @@ export function Workspace() {
           items={getTabItems()}
           tabBarStyle={{ marginBottom: 16 }}
           addIcon={<PlusOutlined />}
-          // tabBarExtraContent={{
-          //   right: (
-          //     <Tooltip title="新建工作区">
-          //       <Button
-          //         type="text"
-          //         size="small"
-          //         icon={<PlusOutlined />}
-          //         onClick={() => setCreateModalOpen(true)}
-          //       />
-          //     </Tooltip>
-          //   )
-          // }}
+        // tabBarExtraContent={{
+        //   right: (
+        //     <Tooltip title="新建工作区">
+        //       <Button
+        //         type="text"
+        //         size="small"
+        //         icon={<PlusOutlined />}
+        //         onClick={() => setCreateModalOpen(true)}
+        //       />
+        //     </Tooltip>
+        //   )
+        // }}
         />
-        
+
         <div style={{ height: 'calc(100% - 48px)' }}>
           {renderWorkspaceContent()}
         </div>
