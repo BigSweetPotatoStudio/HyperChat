@@ -331,6 +331,106 @@
     "en": "Configuration",
     "zh": "配置"
   },
+  "Create Agent": {
+    "en": "Create Agent",
+    "zh": "创建Agent"
+  },
+  "Agent Details": {
+    "en": "Agent Details",
+    "zh": "Agent详情"
+  },
+  "Edit Agent": {
+    "en": "Edit Agent", 
+    "zh": "编辑Agent"
+  },
+  "Agent Name": {
+    "en": "Agent Name",
+    "zh": "Agent名称"
+  },
+  "Description": {
+    "en": "Description",
+    "zh": "描述"
+  },
+  "Prompt": {
+    "en": "Prompt",
+    "zh": "提示词"
+  },
+  "Key": {
+    "en": "Key",
+    "zh": "键"
+  },
+  "Model": {
+    "en": "Model",
+    "zh": "模型"
+  },
+  "No description": {
+    "en": "No description",
+    "zh": "无描述"
+  },
+  "Run Agent": {
+    "en": "Run Agent",
+    "zh": "运行Agent"
+  },
+  "Are you sure you want to delete this agent?": {
+    "en": "Are you sure you want to delete this agent?",
+    "zh": "您确定要删除此Agent吗？"
+  },
+  "Agent updated successfully": {
+    "en": "Agent updated successfully",
+    "zh": "Agent更新成功"
+  },
+  "Agent created successfully": {
+    "en": "Agent created successfully",
+    "zh": "Agent创建成功"
+  },
+  "Failed to save agent": {
+    "en": "Failed to save agent",
+    "zh": "保存Agent失败"
+  },
+  "Agent deleted successfully": {
+    "en": "Agent deleted successfully",
+    "zh": "Agent删除成功"
+  },
+  "Failed to delete agent": {
+    "en": "Failed to delete agent",
+    "zh": "删除Agent失败"
+  },
+  "Agent started successfully": {
+    "en": "Agent started successfully",
+    "zh": "Agent启动成功"
+  },
+  "Failed to run agent": {
+    "en": "Failed to run agent",
+    "zh": "运行Agent失败"
+  },
+  "Please enter agent name": {
+    "en": "Please enter agent name",
+    "zh": "请输入Agent名称"
+  },
+  "Enter agent name": {
+    "en": "Enter agent name",
+    "zh": "输入Agent名称"
+  },
+  "Enter agent description": {
+    "en": "Enter agent description",
+    "zh": "输入Agent描述"
+  },
+  "Please enter agent prompt": {
+    "en": "Please enter agent prompt",
+    "zh": "请输入Agent提示词"
+  },
+  "Enter agent prompt": {
+    "en": "Enter agent prompt",
+    "zh": "输入Agent提示词"
+  },
+  "Agents": {
+    "en": "Agents",
+    "zh": "智能代理"
+  },
+  "MCP": {
+    "en": "MCP",
+    "zh": "MCP"
+  },
   "Top": {
     "en": "Top",
     "zh": "置顶"
