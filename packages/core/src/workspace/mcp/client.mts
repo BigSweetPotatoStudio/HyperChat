@@ -47,8 +47,6 @@ export class WorkspaceMCPClientImpl implements WorkspaceMCPClient {
     return this.mcpType === "builtin" ? "builtin" : "hyperchat";
   }
   public workspacePath?: string;
-  public dynamic?: boolean;
-  public priority?: number;
   
   public ext: {
     configSchema?: { [s in string]: any };
@@ -66,15 +64,11 @@ export class WorkspaceMCPClientImpl implements WorkspaceMCPClient {
     options: {
       mcpType?: MCPType;
       workspacePath?: string;
-      dynamic?: boolean;
-      priority?: number;
     } = {}
   ) {
     this.scope = scope;
     this.mcpType = options.mcpType || "custom";
     this.workspacePath = options.workspacePath;
-    this.dynamic = options.dynamic;
-    this.priority = options.priority;
 
     // 如果是内置服务器，设置配置模式
     if (this.mcpType === "builtin") {
@@ -202,8 +196,6 @@ export class WorkspaceMCPClientImpl implements WorkspaceMCPClient {
       scope: this.scope,
       mcpType: this.mcpType,
       workspacePath: this.workspacePath,
-      dynamic: this.dynamic,
-      priority: this.priority,
     };
   }
 

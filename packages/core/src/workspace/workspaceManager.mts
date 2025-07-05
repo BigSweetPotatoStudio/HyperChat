@@ -5,11 +5,9 @@ import { v4 } from "uuid";
 import { CONSTANTS } from "./constants.mjs";
 import type { 
   WorkspaceConfig, 
-  AgentConfig, 
-  MCPServerConfig 
+  AgentConfig 
 } from "./types.mjs";
 import { Workspace } from "./workspace.mjs";
-import { getMCPManager, startWorkspaceMCP, stopWorkspaceMCP } from "./mcp/index.mjs";
 
 // 工作区管理器类 - 简化为只管理工作区的注册和发现
 export class WorkspaceManager {
@@ -55,13 +53,6 @@ export class WorkspaceManager {
     // 注册工作区
     this.workspaces.set(workspacePath, workspace);
 
-    // 启动工作区 MCP 服务
-    try {
-      await startWorkspaceMCP(workspacePath);
-    } catch (error) {
-      console.warn(`启动工作区 MCP 服务失败: ${workspacePath}`, error);
-    }
-
     return workspace;
   }
 
@@ -93,13 +84,6 @@ export class WorkspaceManager {
     const workspace = this.workspaces.get(workspacePath);
     if (!workspace) {
       return false;
-    }
-
-    // 停止工作区 MCP 服务
-    try {
-      await stopWorkspaceMCP(workspacePath);
-    } catch (error) {
-      console.warn(`停止工作区 MCP 服务失败: ${workspacePath}`, error);
     }
 
     // 删除工作区
@@ -213,13 +197,6 @@ export class WorkspaceManager {
       // 将工作区添加到管理器
       this.workspaces.set(workspacePath, workspace);
 
-      // 启动工作区 MCP 服务
-      try {
-        await startWorkspaceMCP(workspacePath);
-      } catch (error) {
-        console.warn(`启动工作区 MCP 服务失败: ${workspacePath}`, error);
-      }
-
       return workspace;
     } catch (error) {
       console.warn(`加载工作区失败 ${workspacePath}:`, error);
@@ -323,104 +300,4 @@ export class WorkspaceManager {
     return this.GLOBAL_HYPERCHAT_DIR;
   }
 
-  // ========== MCP 管理 ==========
-
-  /**
-   * 启动工作区 MCP 服务
-   */
-  async startWorkspaceMCP(workspacePath: string): Promise<void> {
-    try {
-      await startWorkspaceMCP(workspacePath);
-    } catch (error) {
-      console.error(`启动工作区 MCP 服务失败: ${workspacePath}`, error);
-      throw error;
-    }
-  }
-
-  /**
-   * 停止工作区 MCP 服务
-   */
-  async stopWorkspaceMCP(workspacePath: string): Promise<void> {
-    try {
-      await stopWorkspaceMCP(workspacePath);
-    } catch (error) {
-      console.error(`停止工作区 MCP 服务失败: ${workspacePath}`, error);
-      throw error;
-    }
-  }
-
-  /**
-   * 获取 MCP 管理器实例
-   */
-  getMCPManager() {
-    return getMCPManager();
-  }
-
-  /**
-   * 添加或更新工作区 MCP 服务器配置
-   */
-  async setWorkspaceMCPServer(
-    workspacePath: string, 
-    name: string, 
-    config: MCPServerConfig
-  ): Promise<void> {
-    const manager = getMCPManager();
-    await manager.setServerConfig(name, config, "workspace", workspacePath);
-  }
-
-  /**
-   * 删除工作区 MCP 服务器配置
-   */
-  async deleteWorkspaceMCPServer(workspacePath: string, name: string): Promise<void> {
-    const manager = getMCPManager();
-    await manager.deleteServerConfig(name, "workspace", workspacePath);
-  }
-
-  /**
-   * 添加或更新全局 MCP 服务器配置
-   */
-  async setGlobalMCPServer(name: string, config: MCPServerConfig): Promise<void> {
-    const manager = getMCPManager();
-    await manager.setServerConfig(name, config, "global");
-  }
-
-  /**
-   * 删除全局 MCP 服务器配置
-   */
-  async deleteGlobalMCPServer(name: string): Promise<void> {
-    const manager = getMCPManager();
-    await manager.deleteServerConfig(name, "global");
-  }
-
-  /**
-   * 获取所有 MCP 客户端
-   */
-  getAllMCPClients() {
-    const manager = getMCPManager();
-    return manager.getAllClients();
-  }
-
-  /**
-   * 获取指定工作区的 MCP 客户端
-   */
-  getWorkspaceMCPClients(workspacePath: string) {
-    const manager = getMCPManager();
-    return manager.getClientsByScope("workspace", workspacePath);
-  }
-
-  /**
-   * 获取全局 MCP 客户端
-   */
-  getGlobalMCPClients() {
-    const manager = getMCPManager();
-    return manager.getClientsByScope("global");
-  }
-
-  /**
-   * 获取内置 MCP 客户端
-   */
-  getBuiltinMCPClients() {
-    const manager = getMCPManager();
-    return manager.getAllClients().filter(client => client.mcpType === "builtin");
-  }
 }

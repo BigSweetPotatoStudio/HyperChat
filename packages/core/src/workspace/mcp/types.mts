@@ -55,15 +55,6 @@ export interface WorkspaceMCPClient extends IMCPClient {
    */
   workspacePath?: string;
   
-  /**
-   * 是否为动态启动的客户端
-   */
-  dynamic?: boolean;
-  
-  /**
-   * 客户端优先级（数字越小优先级越高）
-   */
-  priority?: number;
 }
 
 export interface MCPManagerOptions {

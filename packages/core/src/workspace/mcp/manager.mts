@@ -201,8 +201,6 @@ export class WorkspaceMCPManager {
         {
           mcpType,
           workspacePath,
-          dynamic: true,
-          priority: this.getScopePriority(scope),
         }
       );
 
@@ -417,16 +415,6 @@ export class WorkspaceMCPManager {
     return workspacePath ? `${scope}:${workspacePath}:${name}` : `${scope}:${name}`;
   }
 
-  /**
-   * 获取范围优先级
-   */
-  private getScopePriority(scope: MCPScope): number {
-    switch (scope) {
-      case "global": return 1;
-      case "workspace": return 2;
-      default: return 999;
-    }
-  }
 
   /**
    * 确保目录存在

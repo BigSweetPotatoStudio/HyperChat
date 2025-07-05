@@ -14,6 +14,8 @@ import {
   validateWorkspaceConfig 
 } from "./types.mjs";
 import { AgentManager } from "./agentManager.mjs";
+import { WorkspaceMCPManager } from "./mcp/manager.mjs";
+import type { WorkspaceMCPClientImpl } from "./mcp/client.mjs";
 
 /**
  * 工作区类 - 封装单个工作区的所有操作
@@ -21,14 +23,18 @@ import { AgentManager } from "./agentManager.mjs";
 export class Workspace {
   private config: WorkspaceConfig;
   private agentManager: AgentManager;
-  private mcpConfig: Record<string, MCPServerConfig> = {};
-  private mcpClients: Record<string, IMCPClient> = {};
+  private mcpManager: WorkspaceMCPManager;
   private fileTree?: WorkspaceFileNode;
   private lastSync?: number;
   private readonly HYPERCHAT_DIR = CONSTANTS.HYPERCHAT_DIR;
+  private isGlobal: boolean;
 
   constructor(private workspacePath: string, config?: WorkspaceConfig) {
     const hyperChatPath = path.join(workspacePath, this.HYPERCHAT_DIR);
+    
+    // 检查是否为全局工作区
+    this.isGlobal = workspacePath === CONSTANTS.GLOBAL_PATH || 
+                   workspacePath === path.dirname(CONSTANTS.GLOBAL_PATH);
 
     this.config = config || {
       name: path.basename(workspacePath),
@@ -40,6 +46,9 @@ export class Workspace {
     };
 
     this.agentManager = new AgentManager(path.join(hyperChatPath, CONSTANTS.DIRECTORIES.AGENTS));
+    
+    // 初始化 MCP 管理器
+    this.mcpManager = new WorkspaceMCPManager();
   }
 
   /**
@@ -63,6 +72,9 @@ export class Workspace {
   async init(): Promise<void> {
     // 创建目录结构
     await this.createDirectories();
+
+    // 初始化 MCP 管理器
+    await this.mcpManager.init();
 
     // 加载数据
     await this.load();
@@ -114,8 +126,13 @@ export class Workspace {
     // 加载 agents
     await this.agentManager.init();
 
-    // 加载 MCP 配置
-    await this.loadMcpConfig();
+    // 加载工作区 MCP 配置并启动客户端
+    if (this.isGlobal) {
+      await this.mcpManager.startClients("global");
+    } else {
+      await this.mcpManager.loadWorkspaceConfig(this.workspacePath);
+      await this.mcpManager.startClients("workspace", this.workspacePath);
+    }
 
     this.config.lastAccessed = Date.now();
   }
@@ -142,22 +159,6 @@ export class Workspace {
     }
   }
 
-  /**
-   * 加载 MCP 配置
-   */
-  private async loadMcpConfig(): Promise<void> {
-    const mcpPath = path.join(this.getHyperChatPath(), CONSTANTS.CONFIG_FILES.MCP);
-
-    if (fs.existsSync(mcpPath)) {
-      try {
-        const content = await fs.promises.readFile(mcpPath, "utf-8");
-        const data = JSON.parse(content);
-        this.mcpConfig = data.mcpServers || {};
-      } catch (error) {
-        console.warn(`加载 MCP 配置失败:`, error);
-      }
-    }
-  }
 
   /**
    * 保存工作区配置
@@ -172,25 +173,12 @@ export class Workspace {
     }
   }
 
-  /**
-   * 保存 MCP 配置
-   */
-  async saveMcpConfig(): Promise<void> {
-    const mcpPath = path.join(this.getHyperChatPath(), CONSTANTS.CONFIG_FILES.MCP);
-
-    try {
-      await fs.promises.writeFile(mcpPath, JSON.stringify({ mcpServers: this.mcpConfig }, null, 2), "utf-8");
-    } catch (error) {
-      console.warn(`保存 MCP 配置失败:`, error);
-    }
-  }
 
   /**
    * 保存所有数据
    */
   async save(): Promise<void> {
     await this.saveConfig();
-    await this.saveMcpConfig();
     this.lastSync = Date.now();
   }
 
@@ -276,34 +264,61 @@ export class Workspace {
   // ========== MCP 管理 ==========
 
   /**
-   * 获取 MCP 配置
+   * 获取 MCP 客户端
    */
-  getMcpConfig(): Record<string, MCPServerConfig> {
-    return this.mcpConfig;
+  getMcpClients(): WorkspaceMCPClientImpl[] {
+    if (this.isGlobal) {
+      return this.mcpManager.getClientsByScope("global");
+    } else {
+      return this.mcpManager.getClientsByScope("workspace", this.workspacePath);
+    }
   }
 
   /**
-   * 设置 MCP 配置
+   * 获取所有 MCP 客户端（包含全局的）
    */
-  async setMcpConfig(config: Record<string, MCPServerConfig>): Promise<void> {
-    this.mcpConfig = config;
-    await this.saveMcpConfig();
+  getAllMcpClients(): WorkspaceMCPClientImpl[] {
+    return this.mcpManager.getAllClients();
   }
 
   /**
    * 添加或更新单个 MCP 服务器配置
    */
   async setMcpServer(name: string, config: MCPServerConfig): Promise<void> {
-    this.mcpConfig[name] = config;
-    await this.saveMcpConfig();
+    const scope = this.isGlobal ? "global" : "workspace";
+    await this.mcpManager.setServerConfig(name, config, scope, this.workspacePath);
   }
 
   /**
    * 删除 MCP 服务器配置
    */
   async deleteMcpServer(name: string): Promise<void> {
-    delete this.mcpConfig[name];
-    await this.saveMcpConfig();
+    const scope = this.isGlobal ? "global" : "workspace";
+    await this.mcpManager.deleteServerConfig(name, scope, this.workspacePath);
+  }
+
+  /**
+   * 启动 MCP 客户端
+   */
+  async startMcpClients(): Promise<void> {
+    const scope = this.isGlobal ? "global" : "workspace";
+    await this.mcpManager.startClients(scope, this.workspacePath);
+  }
+
+  /**
+   * 停止 MCP 客户端
+   */
+  async stopMcpClients(): Promise<void> {
+    const scope = this.isGlobal ? "global" : "workspace";
+    await this.mcpManager.stopClients(scope, this.workspacePath);
+  }
+
+  /**
+   * 重启 MCP 客户端
+   */
+  async restartMcpClient(name: string): Promise<void> {
+    const scope = this.isGlobal ? "global" : "workspace";
+    await this.mcpManager.restartClient(name, scope, this.workspacePath);
   }
 
   // ========== 文件树管理 ==========
@@ -407,6 +422,12 @@ export class Workspace {
    */
   async delete(): Promise<boolean> {
     try {
+      // 停止 MCP 客户端
+      await this.stopMcpClients();
+      
+      // 销毁 MCP 管理器
+      await this.mcpManager.destroy();
+
       const hyperChatPath = this.getHyperChatPath();
       if (fs.existsSync(hyperChatPath)) {
         await fs.promises.rm(hyperChatPath, { recursive: true, force: true });
@@ -435,7 +456,7 @@ export class Workspace {
   }> {
     return {
       agentsCount: await this.getAgentsCount(),
-      mcpServersCount: Object.keys(this.mcpConfig).length,
+      mcpServersCount: this.getMcpClients().length,
       lastSync: this.lastSync,
     };
   }
