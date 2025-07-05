@@ -242,40 +242,40 @@ export function Layout() {
         }
       }
 
-      // 处理 MCP 客户端变化
-      if (res.type === "changeMcpClient") {
-        // 支持单个客户端更新或批量替换，通过 ref 更新并触发刷新
-        const payload = res.data;
+      // // 处理 MCP 客户端变化
+      // if (res.type === "changeMcpClient") {
+      //   // 支持单个客户端更新或批量替换，通过 ref 更新并触发刷新
+      //   const payload = res.data;
 
-        if (payload.status === "deleted") {
-          const idx = mcpClientsRef.current.findIndex((c) => c.name === payload.name);
-          if (idx >= 0) mcpClientsRef.current.splice(idx, 1);
-          combinedRefresh();
-          setClients(mcpClientsRef.current);
-        } else {
-          const idx = mcpClientsRef.current.findIndex((c) => c.name === payload.name);
-          if (idx >= 0) mcpClientsRef.current[idx] = payload;
-          mcpClientsRef.current = mcpClientsRef.current;
-          combinedRefresh();
-          // 同步全局
-          setClients(mcpClientsRef.current);
-        }
-        window.getTools = (allowMCPs?: string[]) => {
-          let tools: IMCPClient["tools"] = [];
+      //   if (payload.status === "deleted") {
+      //     const idx = mcpClientsRef.current.findIndex((c) => c.name === payload.name);
+      //     if (idx >= 0) mcpClientsRef.current.splice(idx, 1);
+      //     combinedRefresh();
+      //     setClients(mcpClientsRef.current);
+      //   } else {
+      //     const idx = mcpClientsRef.current.findIndex((c) => c.name === payload.name);
+      //     if (idx >= 0) mcpClientsRef.current[idx] = payload;
+      //     mcpClientsRef.current = mcpClientsRef.current;
+      //     combinedRefresh();
+      //     // 同步全局
+      //     setClients(mcpClientsRef.current);
+      //   }
+      //   window.getTools = (allowMCPs?: string[]) => {
+      //     let tools: IMCPClient["tools"] = [];
 
-          mcpClientsRef.current.forEach((v) => {
-            tools = tools.concat(
-              v.tools.filter((t) => {
-                if (!allowMCPs) return true;
-                return (
-                  allowMCPs.includes(t.clientName) || allowMCPs.includes(t.restore_name)
-                );
-              }),
-            );
-          });
-          return tools;
-        }
-      }
+      //     mcpClientsRef.current.forEach((v) => {
+      //       tools = tools.concat(
+      //         v.tools.filter((t) => {
+      //           if (!allowMCPs) return true;
+      //           return (
+      //             allowMCPs.includes(t.clientName) || allowMCPs.includes(t.restore_name)
+      //           );
+      //         }),
+      //       );
+      //     });
+      //     return tools;
+      //   }
+      // }
     });
   }, []);
   /**
@@ -300,18 +300,18 @@ export function Layout() {
         }
       }
 
-      // 初始化 MCP 客户端
-      let res = await call("initMcpClients");
-      for (let client of res) {
-        let index = mcpClientsRef.current.findIndex((c) => c.name === client.name);
-        if (index === -1) {
-          mcpClientsRef.current.push(client);
-        } else {
-          mcpClientsRef.current[index] = client;
-        }
-      }
-      setClients(mcpClientsRef.current);
-      combinedRefresh();
+      // // 初始化 MCP 客户端
+      // let res = await call("initMcpClients");
+      // for (let client of res) {
+      //   let index = mcpClientsRef.current.findIndex((c) => c.name === client.name);
+      //   if (index === -1) {
+      //     mcpClientsRef.current.push(client);
+      //   } else {
+      //     mcpClientsRef.current[index] = client;
+      //   }
+      // }
+      // setClients(mcpClientsRef.current);
+      // combinedRefresh();
 
       try {
         // 初始化 Microsoft Clarity 分析工具
