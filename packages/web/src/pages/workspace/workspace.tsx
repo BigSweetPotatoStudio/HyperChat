@@ -306,16 +306,18 @@ export function Workspace() {
     }, [initialData]);
 
     const onLoadData = ({ key, children }: any) =>
-      new Promise<void>((resolve) => {
+      new Promise<void>(async (resolve) => {
         if (children) {
           resolve();
           return;
         }
 
-        call("getWorkspaceDirectoryList", {
-          workspacePath: workspace.path,
-          directoryPath: key
-        }).then((childrenData) => {
+        try {
+          const childrenData: FileNode[] = await call("getWorkspaceDirectoryList", {
+            workspacePath: workspace.path,
+            directoryPath: key
+          });
+          
           const treeChildren = childrenData.map((item: FileNode) => ({
             title: item.name,
             key: item.path,
@@ -325,11 +327,11 @@ export function Workspace() {
 
           setTreeData((origin) => updateTreeData(origin, key, treeChildren));
           resolve();
-        }).catch((error) => {
+        } catch (error) {
           console.error("Failed to load directory children:", error);
           message.error(t`Failed to load directory contents`);
           resolve();
-        });
+        }
       });
 
     return (
@@ -449,8 +451,9 @@ export function Workspace() {
                     setWorkspaceDetails(prev => ({
                       ...prev,
                       [key]: {
-                        ...prev[key],
-                        fileTreeData: updatedData
+                        fileTreeData: updatedData,
+                        agents: prev[key]?.agents || [],
+                        mcpClients: prev[key]?.mcpClients || []
                       }
                     }));
                   }}

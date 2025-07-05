@@ -764,7 +764,18 @@ export class CommandFactory {
 
       // 读取目录内容
       const entries = await fs.promises.readdir(fullPath, { withFileTypes: true });
-      const result = [];
+      
+      interface DirectoryItem {
+        name: string;
+        path: string;
+        type: "directory" | "file";
+        size?: number;
+        modified: number;
+        extension?: string;
+        isLeaf: boolean;
+      }
+      
+      const result: DirectoryItem[] = [];
 
       for (const entry of entries) {
         // 跳过隐藏文件和排除的目录
