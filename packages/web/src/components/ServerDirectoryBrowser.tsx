@@ -54,6 +54,7 @@ export function ServerDirectoryBrowser({
   const [selectedPath, setSelectedPath] = useState<string>("");
   const [expandedKeys, setExpandedKeys] = useState<string[]>([]);
   const [currentPath, setCurrentPath] = useState<string>(initialPath);
+  const [isRootPath, setIsRootPath] = useState<boolean>(false);
 
   // 加载目录内容
   const loadDirectory = async (path: string): Promise<ServerDirectoryNode[]> => {
@@ -73,6 +74,17 @@ export function ServerDirectoryBrowser({
     }
   };
 
+  // 检查是否为根路径
+  const checkIsRootPath = async (path: string) => {
+    try {
+      const parentPath = await call("getServerParentDirectory", { path });
+      setIsRootPath(parentPath === path);
+    } catch (error) {
+      // 如果无法获取父目录，可能已经是根目录
+      setIsRootPath(true);
+    }
+  };
+
   // 初始化加载根目录
   const initializeTree = async () => {
     setLoading(true);
@@ -80,8 +92,10 @@ export function ServerDirectoryBrowser({
       const homeDir = await loadDirectory(currentPath);
       setTreeData(homeDir);
       if (homeDir.length > 0) {
-        setExpandedKeys([homeDir[0].path]);
+        setExpandedKeys([homeDir[0]!.path]);
       }
+      // 检查是否为根路径
+      await checkIsRootPath(currentPath);
     } catch (error) {
       console.error("Failed to initialize tree:", error);
     } finally {
@@ -164,10 +178,15 @@ export function ServerDirectoryBrowser({
 
   // 导航到父目录
   const navigateToParent = async () => {
-    const parentPath = currentPath.split("/").slice(0, -1).join("/") || "/";
-    setCurrentPath(parentPath);
-    // 不自动更新选择路径，让用户手动选择
-    await initializeTree();
+    try {
+      const parentPath = await call("getServerParentDirectory", { path: currentPath });
+      setCurrentPath(parentPath);
+      // 不自动更新选择路径，让用户手动选择
+      await initializeTree();
+    } catch (error) {
+      console.error("Failed to get parent directory:", error);
+      message.error("获取父目录失败");
+    }
   };
 
   // 导航到主目录
@@ -231,7 +250,7 @@ export function ServerDirectoryBrowser({
               icon={<FolderOpenOutlined />}
               onClick={navigateToParent}
               size="small"
-              disabled={currentPath === "/" || currentPath === "~"}
+              disabled={isRootPath}
             >
               上级目录
             </Button>

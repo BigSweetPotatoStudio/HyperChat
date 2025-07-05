@@ -73,8 +73,11 @@ export class WorkspaceManager {
   /**
    * 获取所有工作区列表
    */
-  getWorkspaceList(): WorkspaceConfig[] {
-    return Array.from(this.workspaces.values()).map(workspace => workspace.getConfig());
+  getWorkspaceList(): (WorkspaceConfig & { path: string })[] {
+    return Array.from(this.workspaces.entries()).map(([path, workspace]) => ({
+      ...workspace.getConfig(),
+      path
+    }));
   }
 
   /**

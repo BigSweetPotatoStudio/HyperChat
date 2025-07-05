@@ -871,6 +871,43 @@ export class CommandFactory {
   }
 
   /**
+   * 获取服务器路径的父目录
+   */
+  async getServerParentDirectory({
+    path: targetPath
+  }: {
+    path: string;
+  }): Promise<string> {
+    const { fs, os, path } = zx;
+    
+    try {
+      // 处理特殊路径
+      let resolvedPath = targetPath;
+      if (targetPath === "~") {
+        resolvedPath = os.homedir();
+      } else if (targetPath.startsWith("~/")) {
+        resolvedPath = path.join(os.homedir(), targetPath.slice(2));
+      }
+
+      // 解析为绝对路径
+      resolvedPath = path.resolve(resolvedPath);
+      
+      // 获取父目录
+      const parentPath = path.dirname(resolvedPath);
+      
+      // 如果已经是根目录，返回自身
+      if (parentPath === resolvedPath) {
+        return resolvedPath;
+      }
+      
+      return parentPath;
+    } catch (error: any) {
+      console.error("Failed to get parent directory:", error);
+      throw new Error(`无法获取父目录: ${error.message}`);
+    }
+  }
+
+  /**
    * 检查服务器路径是否存在
    */
   async checkServerPath({

@@ -101,14 +101,12 @@ export function Workspace() {
       const workspaceInfos: WorkspaceInfo[] = [];
       
       for (const ws of workspaceList) {
-        // 获取工作区路径（从配置中推导）
-        const wsPath = ws.path || ws.name; // 假设有路径信息
         try {
-          const summary = await call("getCurrentWorkspace", { workspacePath: wsPath });
+          // ws 现在已经包含了正确的 path 字段
+          const summary = await call("getCurrentWorkspace", { workspacePath: ws.path });
           if (summary) {
             workspaceInfos.push({
               ...ws,
-              path: wsPath,
               agentsCount: summary.agentsCount || 0,
               mcpServersCount: summary.mcpServersCount || 0,
             });
