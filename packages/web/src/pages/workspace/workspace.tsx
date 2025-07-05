@@ -103,12 +103,10 @@ export function Workspace() {
       const globalWs = await call("getGlobalWorkspace");
       if (globalWs) {
         const globalSummary = await call("getCurrentWorkspace", {
-          workspacePath: globalWs.path || "~/.hyperchat"
+          workspacePath: globalWs.path
         });
         setGlobalWorkspace({
           ...globalWs,
-          path: globalWs.path || "~/.hyperchat", // 保留真实路径
-          displayPath: "global", // 添加显示用的路径
           agentsCount: 0,
           mcpServersCount: 0,
           isGlobal: true,
@@ -173,17 +171,12 @@ export function Workspace() {
       let mcpList;
       if (workspace.isGlobal) {
         // 全局工作区获取所有MCP客户端
-        console.log("Loading global MCP clients...");
         mcpList = await call("getMcpClients");
-        console.log("Global MCP clients loaded:", mcpList);
       } else {
         // 项目工作区获取特定工作区的MCP客户端
-        console.log("Loading workspace MCP clients for:", workspace.path);
         mcpList = await call("getWorkspaceMcpClients", { workspacePath: workspace.path });
-        console.log("Workspace MCP clients loaded:", mcpList);
       }
       details.mcpClients = mcpList || [];
-      console.log("Final MCP clients:", details.mcpClients);
 
       setWorkspaceDetails(prev => ({
         ...prev,

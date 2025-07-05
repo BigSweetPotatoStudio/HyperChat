@@ -710,7 +710,11 @@ export class CommandFactory {
     const { getWorkspaceManager } = await import("./workspace/index.mjs");
     const workspaceManager = getWorkspaceManager();
     const globalWorkspace = workspaceManager.getGlobalWorkspace();
-    return globalWorkspace.getConfig();
+    const globalPath = workspaceManager.getGlobalWorkspacePath();
+    return {
+      ...globalWorkspace.getConfig(),
+      path: globalPath
+    };
   }
 
   /**
