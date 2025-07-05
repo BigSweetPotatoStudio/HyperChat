@@ -102,6 +102,7 @@ export function Workspace() {
       // 加载全局工作区
       const globalWs = await call("getGlobalWorkspace");
       if (globalWs) {
+        console.log("Global workspace path:", globalWs.path);
         const globalSummary = await call("getCurrentWorkspace", {
           workspacePath: globalWs.path
         });
@@ -154,14 +155,14 @@ export function Workspace() {
     try {
       const details: any = { agents: [], mcpClients: [] };
 
-      // 如果不是全局工作区，加载根目录文件列表（懒加载）
-      if (!workspace.isGlobal) {
-        const rootItems = await call("getWorkspaceDirectoryList", { 
-          workspacePath: workspace.path,
-          directoryPath: ""
-        });
-        details.fileTreeData = rootItems;
-      }
+      // 加载根目录文件列表（懒加载）
+      console.log("Loading file tree for workspace:", workspace.path, "isGlobal:", workspace.isGlobal);
+      const rootItems = await call("getWorkspaceDirectoryList", { 
+        workspacePath: workspace.path,
+        directoryPath: ""
+      });
+      console.log("File tree loaded:", rootItems?.length, "items");
+      details.fileTreeData = rootItems;
 
       // 加载 Agents
       const agentList = await call("getWorkspaceAgents", { workspacePath: workspace.path });
@@ -486,7 +487,7 @@ export function Workspace() {
               className="h-full"
               bodyStyle={{ padding: '8px', height: 'calc(100% - 48px)', overflow: 'auto' }}
             >
-              {!currentWorkspace.isGlobal && details.fileTreeData ? (
+              {details.fileTreeData ? (
                 <FileTreeComponent
                   workspace={currentWorkspace}
                   initialData={details.fileTreeData}
@@ -504,7 +505,7 @@ export function Workspace() {
                 />
               ) : (
                 <Empty
-                  description={currentWorkspace.isGlobal ? t`Global workspace has no file tree` : t`No file tree data`}
+                  description={t`No file tree data`}
                   image={Empty.PRESENTED_IMAGE_SIMPLE}
                   style={{ marginTop: '20%' }}
                 />

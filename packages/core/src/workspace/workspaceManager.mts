@@ -293,14 +293,14 @@ export class WorkspaceManager {
    * 检查是否为全局工作区
    */
   isGlobalWorkspace(workspacePath: string): boolean {
-    return workspacePath === this.GLOBAL_HYPERCHAT_DIR;
+    return workspacePath === path.dirname(this.GLOBAL_HYPERCHAT_DIR);
   }
 
   /**
    * 获取全局工作区路径
    */
   getGlobalWorkspacePath(): string {
-    return this.GLOBAL_HYPERCHAT_DIR;
+    return path.dirname(this.GLOBAL_HYPERCHAT_DIR);
   }
 
 }

@@ -753,7 +753,10 @@ export class CommandFactory {
     
     try {
       const workspaceManager = getWorkspaceManager();
-      const workspace = workspaceManager.getWorkspace(workspacePath);
+      // 检查是否为全局工作区
+      const workspace = workspaceManager.isGlobalWorkspace(workspacePath) 
+        ? workspaceManager.getGlobalWorkspace()
+        : workspaceManager.getWorkspace(workspacePath);
       if (!workspace) return [];
 
       // 构建完整路径
@@ -881,7 +884,10 @@ export class CommandFactory {
   }): Promise<any[]> {
     const { getWorkspaceManager } = await import("./workspace/index.mjs");
     const workspaceManager = getWorkspaceManager();
-    const workspace = workspaceManager.getWorkspace(workspacePath);
+    // 检查是否为全局工作区
+    const workspace = workspaceManager.isGlobalWorkspace(workspacePath) 
+      ? workspaceManager.getGlobalWorkspace()
+      : workspaceManager.getWorkspace(workspacePath);
     if (!workspace) return [];
     return workspace.getMcpClients().map(client => client.toJSON());
   }
