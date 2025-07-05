@@ -7,7 +7,7 @@ import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
 // import { shellPathSync, strip } from "src/es6.mjs";
 // import { getConfig } from "./lib.mjs";
-import { openMcpClient } from "../../config.mjs";
+import { Command } from "../../../command.mjs";
 import { VarList, VarScopeList } from "../../../shared/data.mjs";
 import { v4 } from "uuid";
 import dayjs from "dayjs";
@@ -61,12 +61,16 @@ export function registerTool(server: McpServer) {
       for (let e of (env || [])) {
         envs[e.name?.trim() || ''] = e.value?.trim() || '';
       }
-      await openMcpClient(name, {
-        command,
-        args: args || [],
-        env: envs,
-        type: "stdio"
-      });
+      await Command.openMcpClient({
+        clientName: name, clientConfig: {
+          command,
+          args: args || [],
+          env: envs,
+          type: "stdio"
+        }
+      })
+
+
 
       return {
         content: [

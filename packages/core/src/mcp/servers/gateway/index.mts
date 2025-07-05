@@ -11,9 +11,11 @@ import {
     CallToolRequestSchema,
 } from "../../../es6.mjs";
 import { CONST } from "../../../const.mjs";
-import { globalMcpClients } from "../../config.mjs";
+
 import { Command } from "../../../command.mjs";
 import { Logger } from "../../../log.mjs";
+import { getAllMCPClients } from "../../../workspace/index.mjs";
+
 const { fs: _fs, path: _path, sleep: _sleep } = zx;
 
 
@@ -50,10 +52,10 @@ async function createServer(name: string, description: string, allowMCPs: string
      */
     server.setRequestHandler(ListToolsRequestSchema, async () => {
         // Logger.debug("gateway allowMCPs", allowMCPs);
-        let getTools = (allowMCPs: any) => {
+        let getTools =  (allowMCPs: any) => {
             let tools: IMCPClient["tools"] = [];
 
-            Object.values(globalMcpClients).forEach((v) => {
+            getAllMCPClients().forEach((v) => {
                 tools = tools.concat(
                     v.tools.filter((t) => {
                         if (!allowMCPs) return true;
@@ -68,7 +70,7 @@ async function createServer(name: string, description: string, allowMCPs: string
         }
         return {
             tools: [
-                ...getTools(allowMCPs),
+                ...(getTools(allowMCPs)),
             ].filter(x => x),
         };
     });
@@ -79,23 +81,24 @@ async function createServer(name: string, description: string, allowMCPs: string
      */
     server.setRequestHandler(CallToolRequestSchema, async (request: any) => {
         try {
-            let getTools = (allowMCPs: any) => {
-                let tools: IMCPClient["tools"] = [];
+        let getTools = (allowMCPs: any) => {
+            let tools: IMCPClient["tools"] = [];
 
-                Object.values(globalMcpClients).forEach((v) => {
-                    tools = tools.concat(
-                        v.tools.filter((t) => {
-                            if (!allowMCPs) return true;
-                            return (
-                                allowMCPs.includes(t.clientName) || allowMCPs.includes(t.restore_name)
-                            );
-                        }),
-                    );
-                });
-                return tools;
-            }
+            getAllMCPClients().forEach((v) => {
+                tools = tools.concat(
+                    v.tools.filter((t) => {
+                        if (!allowMCPs) return true;
+                        return (
+                            allowMCPs.includes(t.clientName) || allowMCPs.includes(t.restore_name)
+                        );
+                    }),
+                );
+            });
+            Logger.debug("gateway tools", allowMCPs, tools.length);
+            return tools;
+        }
 
-            let find = getTools(allowMCPs).find((tool) => {
+            let find = (getTools(allowMCPs)).find((tool) => {
                 return tool.name === request.params.name;
             });
 

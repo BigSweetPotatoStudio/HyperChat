@@ -17,12 +17,12 @@ import {
 } from "./shared/data.mjs";
 import { appDataDir } from "./const.mjs";
 import crypto from "crypto";
-import {
-  closeMcpClients,
-  getMcpClients,
-  initMcpClients,
-  openMcpClient,
-} from "./mcp/config.mjs";
+// import {
+//   closeMcpClients,
+//   getMcpClients,
+//   initMcpClients,
+//   openMcpClient,
+// } from "./mcp/config.mjs";
 import { 
   getMCPManager,
   initMCPManager,
@@ -74,47 +74,52 @@ export class CommandFactory {
       ...Config
     };
   }
-  // 初始化 MCP 客户端
+  /**
+   * 初始化全局范围的 MCP 客户端
+   * 启动内置 MCP 服务（hyper_tools、knowledge_base、settings、agent、terminal）
+   * 以及全局工作区配置的自定义 MCP 服务
+   * @returns 返回所有已启动客户端的JSON格式信息
+   */
   async initMcpClients() {
-    try {
-      // 使用新的工作区MCP管理器
-      const manager = await initMCPManager();
-      
-      // 启动全局客户端
-      await manager.startClients("global");
-      
-      // 获取所有客户端并转换为JSON格式
-      const clients = getAllMCPClients();
-      return clients.map((client) => client.toJSON());
-    } catch (error) {
-      console.error("Failed to initialize MCP clients:", error);
-      // 如果新系统失败，回退到旧系统
-      try {
-        let res = await initMcpClients();
-        return res.map((x) => x.toJSON());
-      } catch (fallbackError) {
-        console.error("Fallback to old MCP system also failed:", fallbackError);
-        throw error;
-      }
-    }
+    // 初始化工作区MCP管理器
+    const manager = await initMCPManager();
+    
+    // 启动全局工作区的MCP客户端（包括内置和自定义服务）
+    await manager.startClients("global");
+    
+    // 获取所有客户端并转换为前端可用的JSON格式
+    const clients = getAllMCPClients();
+    return clients.map((client) => client.toJSON());
   }
 
   /**
-   * 强制重新加载MCP配置文件
+   * 强制重新加载全局MCP配置文件
+   * 停止所有全局MCP客户端，重新读取配置文件，然后重新启动
+   * 用于在配置文件被外部修改时同步更新
+   * @returns 返回重新加载后的客户端列表
    */
   async forceReloadMcpClients() {
     try {
-      // 使用新的工作区系统处理全局工作区
+      // 获取全局工作区路径（~/Documents/HyperChat）
       const workspaceManager = getWorkspaceManager();
       const globalWorkspacePath = workspaceManager.getGlobalWorkspacePath();
       
+      // 委托给工作区特定的重新加载方法
       return await this.forceReloadWorkspaceMcpClients({ workspacePath: globalWorkspacePath });
     } catch (error) {
       console.error("Failed to force reload MCP clients:", error);
       throw error;
     }
   }
-  // 打开 MCP 客户端（主要用于兼容性，推荐使用工作区特定的方法）
+  /**
+   * 添加或启动全局范围的 MCP 客户端
+   * 兼容性方法，主要用于支持旧的调用方式
+   * 推荐使用 setWorkspaceMcpServerConfig 方法进行工作区特定的配置
+   * @param clientName MCP客户端名称
+   * @param clientConfig MCP服务器配置（包含连接信息、认证等）
+   * @param options 选项，onlySave=true时仅保存配置不启动服务
+   * @returns 操作结果
+   */
   async openMcpClient({
     clientName,
     clientConfig,
@@ -128,51 +133,35 @@ export class CommandFactory {
       onlySave: boolean;
     };
   }) {
-    try {
-      if (clientConfig && !options.onlySave) {
-        // 使用新的MCP管理器添加到全局范围
-        const manager = getMCPManager();
-        await manager.setServerConfig(clientName, clientConfig, "global");
-      } else {
-        // 回退到旧系统
-        await openMcpClient(clientName, clientConfig, options);
-      }
-      return {
-        success: true,
-      };
-    } catch (error) {
-      console.error(`Failed to open MCP client ${clientName}:`, error);
-      // 如果新系统失败，尝试旧系统
-      try {
-        await openMcpClient(clientName, clientConfig, options);
-        return {
-          success: true,
-        };
-      } catch (fallbackError) {
-        console.error(`Fallback to old MCP system also failed:`, fallbackError);
-        throw error;
-      }
+    if (clientConfig && !options.onlySave) {
+      // 将配置添加到全局工作区并启动客户端
+      const manager = getMCPManager();
+      await manager.setServerConfig(clientName, clientConfig, "global");
     }
+    return {
+      success: true,
+    };
   }
-  // 获取所有 MCP 客户端（全局范围）
+  /**
+   * 获取所有活跃的 MCP 客户端信息
+   * 包括全局、各工作区的内置和自定义 MCP 服务
+   * @returns 所有客户端的详细信息数组（包含状态、工具、资源等）
+   */
   async getMcpClients() {
-    try {
-      // 使用新的工作区MCP管理器获取所有客户端
-      const clients = getAllMCPClients();
-      return clients.map((client) => client.toJSON());
-    } catch (error) {
-      console.error("Failed to get MCP clients from new system:", error);
-      // 如果新系统失败，回退到旧系统
-      try {
-        const clients = await getMcpClients();
-        return clients.map((x) => x.toJSON());
-      } catch (fallbackError) {
-        console.error("Fallback to old MCP system also failed:", fallbackError);
-        throw error;
-      }
-    }
+    // 从工作区MCP管理器获取所有客户端实例
+    const clients = getAllMCPClients();
+    // 转换为前端可用的JSON格式，包含客户端状态和功能信息
+    return clients.map((client) => client.toJSON());
   }
-  // 关闭 MCP 客户端
+  /**
+   * 管理全局范围的 MCP 客户端生命周期
+   * 支持删除、禁用或重启操作
+   * @param clientName MCP客户端名称
+   * @param isdelete 是否删除：true=从配置文件中删除并停止服务
+   * @param isdisable 是否禁用：true=停止服务但保留配置
+   * @returns 操作结果
+   * @note 如果两个参数都为false或未设置，则执行重启操作
+   */
   async closeMcpClients({
     clientName,
     isdelete,
@@ -182,41 +171,32 @@ export class CommandFactory {
     isdelete?: boolean;
     isdisable?: boolean;
   }) {
-    try {
-      const manager = getMCPManager();
-      
-      if (isdelete) {
-        // 删除客户端配置
-        await manager.deleteServerConfig(clientName, "global");
-      } else if (isdisable) {
-        // 停止客户端但保留配置
-        await manager.stopClient(clientName, "global");
-      } else {
-        // 重启客户端
-        await manager.restartClient(clientName, "global");
-      }
-      
-      return {
-        success: true,
-      };
-    } catch (error) {
-      console.error(`Failed to manage MCP client ${clientName}:`, error);
-      // 回退到旧系统
-      try {
-        await closeMcpClients(clientName, {
-          ...(isdelete !== undefined && { isdelete }),
-          ...(isdisable !== undefined && { isdisable })
-        });
-        return {
-          success: true,
-        };
-      } catch (fallbackError) {
-        console.error(`Fallback to old MCP system also failed:`, fallbackError);
-        throw error;
-      }
+    const manager = getMCPManager();
+    
+    if (isdelete) {
+      // 从全局配置中永久删除客户端配置并停止服务
+      await manager.deleteServerConfig(clientName, "global");
+    } else if (isdisable) {
+      // 仅停止客户端服务，保留配置以便后续重启
+      await manager.stopClient(clientName, "global");
+    } else {
+      // 重启客户端（先停止再启动）
+      await manager.restartClient(clientName, "global");
     }
+    
+    return {
+      success: true,
+    };
   }
-  // 调用 MCP 工具
+  /**
+   * 调用指定 MCP 客户端的工具函数
+   * 用于执行 MCP 服务提供的各种功能（如文件操作、系统调用等）
+   * @param name MCP客户端名称（如 hyper_tools、knowledge_base 等）
+   * @param functionName 要调用的工具函数名称
+   * @param args 传递给工具函数的参数对象
+   * @returns 工具函数的执行结果
+   * @throws 如果指定的MCP客户端不存在或工具调用失败
+   */
   async mcpCallTool({
     name,
     functionName,
@@ -226,33 +206,25 @@ export class CommandFactory {
     functionName: string;
     args: any;
   }) {
-    try {
-      // 使用新的MCP管理器
-      const allClients = getAllMCPClients();
-      let client = allClients.find((x) => x.name === name);
-      
-      if (!client) {
-        throw new Error(`MCP client "${name}" not found`);
-      }
-      
-      return await client.callTool(functionName, args);
-    } catch (error) {
-      console.error(`Failed to call MCP tool using new system:`, error);
-      // 回退到旧系统
-      try {
-        let mcpClients = await getMcpClients();
-        let client = mcpClients.find((x) => x.name === name);
-        if (!client) {
-          throw new Error("client not found");
-        }
-        return await client.callTool(functionName, args);
-      } catch (fallbackError) {
-        console.error(`Fallback to old MCP system also failed:`, fallbackError);
-        throw error;
-      }
+    // 从所有活跃的MCP客户端中查找指定名称的客户端
+    const allClients = getAllMCPClients();
+    let client = allClients.find((x) => x.name === name);
+    
+    if (!client) {
+      throw new Error(`MCP client "${name}" not found`);
     }
+    
+    // 执行工具调用并返回结果
+    return await client.callTool(functionName, args);
   }
-  // 调用 MCP 资源
+  /**
+   * 获取指定 MCP 客户端的资源内容
+   * 用于访问 MCP 服务提供的各种资源（如文件内容、数据等）
+   * @param name MCP客户端名称
+   * @param uri 资源URI（格式由具体MCP服务定义）
+   * @returns 资源的内容数据
+   * @throws 如果指定的MCP客户端不存在或资源访问失败
+   */
   async mcpCallResource({
     name,
     uri
@@ -260,33 +232,26 @@ export class CommandFactory {
     name: string;
     uri: string;
   }) {
-    try {
-      // 使用新的MCP管理器
-      const allClients = getAllMCPClients();
-      let client = allClients.find((x) => x.name === name);
-      
-      if (!client) {
-        throw new Error(`MCP client "${name}" not found`);
-      }
-      
-      return await client.callResource(uri);
-    } catch (error) {
-      console.error(`Failed to call MCP resource using new system:`, error);
-      // 回退到旧系统
-      try {
-        let mcpClients = await getMcpClients();
-        let client = mcpClients.find((x) => x.name === name);
-        if (!client) {
-          throw new Error("client not found");
-        }
-        return await client.callResource(uri);
-      } catch (fallbackError) {
-        console.error(`Fallback to old MCP system also failed:`, fallbackError);
-        throw error;
-      }
+    // 从所有活跃的MCP客户端中查找指定名称的客户端
+    const allClients = getAllMCPClients();
+    let client = allClients.find((x) => x.name === name);
+    
+    if (!client) {
+      throw new Error(`MCP client "${name}" not found`);
     }
+    
+    // 获取指定URI的资源内容
+    return await client.callResource(uri);
   }
-  // 调用 MCP Prompt
+  /**
+   * 调用指定 MCP 客户端的提示模板
+   * 用于获取预定义的提示内容，通常用于AI对话或任务执行
+   * @param name MCP客户端名称
+   * @param functionName 提示模板函数名称
+   * @param args 传递给提示模板的参数
+   * @returns 渲染后的提示内容
+   * @throws 如果指定的MCP客户端不存在或提示调用失败
+   */
   async mcpCallPrompt({
     name,
     functionName,
@@ -296,54 +261,53 @@ export class CommandFactory {
     functionName: string;
     args: any;
   }) {
-    try {
-      // 使用新的MCP管理器
-      const allClients = getAllMCPClients();
-      let client = allClients.find((x) => x.name === name);
-      
-      if (!client) {
-        throw new Error(`MCP client "${name}" not found`);
-      }
-      
-      return await client.callPrompt(functionName, args);
-    } catch (error) {
-      console.error(`Failed to call MCP prompt using new system:`, error);
-      // 回退到旧系统
-      try {
-        let mcpClients = await getMcpClients();
-        let client = mcpClients.find((x) => x.name === name);
-        if (!client) {
-          throw new Error("client not found");
-        }
-        return await client.callPrompt(functionName, args);
-      } catch (fallbackError) {
-        console.error(`Fallback to old MCP system also failed:`, fallbackError);
-        throw error;
-      }
+    // 从所有活跃的MCP客户端中查找指定名称的客户端
+    const allClients = getAllMCPClients();
+    let client = allClients.find((x) => x.name === name);
+    
+    if (!client) {
+      throw new Error(`MCP client "${name}" not found`);
     }
+    
+    // 调用提示模板并返回渲染结果
+    return await client.callPrompt(functionName, args);
   }
-  // 文件路径处理，返回处理后路径
+  /**
+   * 生成处理后的文件路径
+   * 在原文件名中添加 ".processed" 后缀，用于标识已处理的文件
+   * @param filePath 原始文件路径
+   * @returns 处理后的文件路径（例："file.txt" -> "file.processed.txt"）
+   */
   async processedFilePath({
     filePath
   }: {
     filePath: string;
   }): Promise<string> {
-    // 获取文件目录和文件名
+    // 解析文件路径的各个组成部分
     const dirName = path.dirname(filePath);
     const baseName = path.basename(filePath);
-    // 获取文件名和扩展名
     const extName = path.extname(baseName);
     const fileName = path.basename(baseName, extName);
-    // 构造新的文件名
+    
+    // 在文件名和扩展名之间添加 ".processed" 标识
     const newFileName = `${fileName}.processed${extName}`;
-    // 返回新的文件路径
+    
+    // 返回完整的处理后路径
     return path.join(dirName, newFileName);
   }
-  // 获取应用数据目录
+  /**
+   * 获取应用数据存储目录路径
+   * @returns 应用数据目录的绝对路径
+   */
   async getAppDataDir(): Promise<string> {
     return appDataDir;
   }
-  // 读取目录
+  /**
+   * 读取指定目录下的所有文件和子目录名称
+   * @param path 相对于 root 的目录路径
+   * @param root 根目录，默认为应用数据目录
+   * @returns 目录中所有项目的名称数组
+   */
   async readDir({
     path: p,
     root = appDataDir
@@ -351,11 +315,16 @@ export class CommandFactory {
     path: string;
     root?: string;
   }): Promise<string[]> {
+    // 拼接完整路径并确保目录存在
     p = path.join(root, p);
     await fs.ensureDir(p);
     return await fs.readdir(p);
   }
-  // 删除文件
+  /**
+   * 删除指定的文件或目录
+   * @param path 相对于 root 的文件或目录路径
+   * @param root 根目录，默认为应用数据目录
+   */
   async removeFile({
     path: p,
     root = appDataDir
@@ -363,9 +332,17 @@ export class CommandFactory {
     path: string;
     root?: string;
   }): Promise<void> {
+    // 拼接完整路径并执行删除操作
     p = path.join(root, p);
     return await fs.remove(p);
   }
+  /**
+   * 写入文本内容到指定文件
+   * 如果目标文件不存在则创建，存在则覆盖
+   * @param path 相对于 root 的文件路径
+   * @param text 要写入的文本内容
+   * @param root 根目录，默认为应用数据目录
+   */
   async writeFile({
     path: p,
     text,
@@ -375,9 +352,17 @@ export class CommandFactory {
     text: string;
     root?: string;
   }): Promise<void> {
+    // 拼接完整路径并写入文件
     let localPath = path.join(root, p);
     await fs.writeFile(localPath, text);
   }
+  /**
+   * 读取指定文件的文本内容
+   * @param path 相对于 root 的文件路径
+   * @param root 根目录，默认为应用数据目录
+   * @returns 文件的UTF-8编码文本内容
+   * @throws 如果文件不存在或无法读取
+   */
   async readFile({
     path: p,
     root = appDataDir
@@ -385,6 +370,7 @@ export class CommandFactory {
     path: string;
     root?: string;
   }): Promise<string> {
+    // 拼接完整路径并读取文件内容
     p = path.join(root, p);
     try {
       let r = await fs.readFile(p, "utf-8");
@@ -393,6 +379,13 @@ export class CommandFactory {
       throw e;
     }
   }
+  /**
+   * 读取并解析JSON文件
+   * @param path 相对于 root 的JSON文件路径
+   * @param root 根目录，默认为应用数据目录
+   * @returns 解析后的JavaScript对象
+   * @throws 如果文件不存在、无法读取或JSON格式错误
+   */
   async readJSON({
     path: p,
     root = appDataDir
@@ -400,6 +393,7 @@ export class CommandFactory {
     path: string;
     root?: string;
   }): Promise<any> {
+    // 拼接完整路径并读取JSON文件
     p = path.join(root, p);
     try {
       let r = await fs.readJSON(p);
@@ -408,6 +402,12 @@ export class CommandFactory {
       throw e;
     }
   }
+  /**
+   * 将JavaScript对象序列化为JSON并写入文件
+   * @param path 相对于 root 的JSON文件路径
+   * @param obj 要序列化的JavaScript对象
+   * @param root 根目录，默认为应用数据目录
+   */
   async writeJSON({
     path: p,
     obj,
@@ -417,16 +417,23 @@ export class CommandFactory {
     obj: any;
     root?: string;
   }): Promise<void> {
+    // 拼接完整路径并写入格式化的JSON文件
     p = path.join(root, p);
     try {
       await fs.writeJSON(p, obj, {
-        spaces: 2,
+        spaces: 2,      // 2个空格缩进以便阅读
         encoding: "utf-8",
       });
     } catch (e) {
       throw e;
     }
   }
+  /**
+   * 检查指定路径的文件或目录是否存在
+   * @param path 相对于 root 的文件或目录路径
+   * @param root 根目录，默认为应用数据目录
+   * @returns 如果路径存在返回true，否则返回false
+   */
   async exists({
     path: p,
     root = appDataDir
@@ -434,10 +441,17 @@ export class CommandFactory {
     path: string;
     root?: string;
   }): Promise<boolean> {
+    // 拼接完整路径并检查存在性
     p = path.join(root, p);
     return await fs.exists(p);
   }
 
+  /**
+   * 拼接路径并确保父目录存在
+   * @param path 相对路径
+   * @param root 根目录，默认为应用数据目录
+   * @returns 拼接后的完整路径
+   */
   async pathJoin({
     path: p,
     root = appDataDir
@@ -445,9 +459,11 @@ export class CommandFactory {
     path: string;
     root?: string;
   }): Promise<string> {
+    // 如果指定了根目录，则拼接路径
     if (root) {
       p = path.join(root, p);
     }
+    // 确保父目录存在（递归创建）
     await fs.ensureDir(path.dirname(p));
     return p;
   }
@@ -791,7 +807,9 @@ export class CommandFactory {
   // ========== 工作区管理 API ==========
 
   /**
-   * 获取所有工作区列表
+   * 获取所有已知的工作区列表
+   * 包括全局工作区和所有已创建的普通工作区
+   * @returns 工作区信息数组，包含路径、名称、描述等
    */
   async getWorkspaceList(): Promise<any[]> {
     const workspaceManager = getWorkspaceManager();
@@ -799,7 +817,12 @@ export class CommandFactory {
   }
 
   /**
-   * 创建或打开工作区
+   * 创建或初始化新的工作区
+   * 在指定目录中创建 .hyperchat 配置文件夹和必要的配置文件
+   * @param workspacePath 工作区根目录的绝对路径
+   * @param name 工作区显示名称，默认使用目录名
+   * @param description 工作区描述信息
+   * @returns 新创建的工作区配置信息
    */
   async createWorkspace({
     workspacePath,
@@ -812,7 +835,7 @@ export class CommandFactory {
   }): Promise<any> {
     const workspaceManager = getWorkspaceManager();
     
-    // 如果没有提供名称，从路径提取文件夹名称
+    // 如果没有提供名称，从路径提取文件夹名称作为默认名称
     const workspaceName = name || path.basename(workspacePath) || 'Workspace';
     
     const workspace = await workspaceManager.createWorkspace(workspacePath, workspaceName, description);
@@ -820,7 +843,10 @@ export class CommandFactory {
   }
 
   /**
-   * 删除工作区
+   * 删除指定的工作区
+   * 删除 .hyperchat 配置文件夹及其内容，但不删除工作区目录本身
+   * @param workspacePath 要删除的工作区路径
+   * @returns 删除成功返回true，失败返回false
    */
   async deleteWorkspace({
     workspacePath
@@ -832,7 +858,10 @@ export class CommandFactory {
   }
 
   /**
-   * 加载现有工作区
+   * 加载已存在的工作区配置
+   * 从指定目录的 .hyperchat 文件夹中读取工作区配置
+   * @param workspacePath 工作区根目录路径
+   * @returns 工作区配置信息，如果不存在则返回null
    */
   async loadWorkspace({
     workspacePath
@@ -845,7 +874,10 @@ export class CommandFactory {
   }
 
   /**
-   * 获取当前工作区信息
+   * 获取已加载的工作区信息
+   * 从内存缓存中获取工作区配置，不会重新读取文件
+   * @param workspacePath 工作区路径
+   * @returns 工作区配置信息，如果未加载则返回null
    */
   async getCurrentWorkspace({
     workspacePath
@@ -859,6 +891,8 @@ export class CommandFactory {
 
   /**
    * 获取全局工作区信息
+   * 全局工作区位于 ~/Documents/HyperChat，用于存储全局配置和数据
+   * @returns 全局工作区的配置信息和路径
    */
   async getGlobalWorkspace() {
     const workspaceManager = getWorkspaceManager();
@@ -871,7 +905,11 @@ export class CommandFactory {
   }
 
   /**
-   * 获取工作区文件树（已废弃，建议使用 getWorkspaceDirectoryList）
+   * 获取工作区完整文件树（已废弃，建议使用 getWorkspaceDirectoryList 实现懒加载）
+   * 这个方法会一次性加载整个目录树，对于大型项目可能导致性能问题
+   * @param workspacePath 工作区路径
+   * @returns 完整的文件树结构，如果工作区不存在则返回null
+   * @deprecated 推荐使用 getWorkspaceDirectoryList 方法实现懒加载
    */
   async getWorkspaceFileTree({
     workspacePath
@@ -882,6 +920,7 @@ export class CommandFactory {
     const workspace = workspaceManager.getWorkspace(workspacePath);
     if (!workspace) return null;
     
+    // 更新文件树，排除常见的构建产物目录
     await workspace.updateFileTree({
       includeHidden: false,
       maxDepth: 5,
@@ -891,7 +930,11 @@ export class CommandFactory {
   }
 
   /**
-   * 获取工作区指定目录的子项列表（懒加载）
+   * 获取工作区指定目录的直接子项列表（懒加载方式）
+   * 仅加载指定目录的直接子项，不递归加载所有子目录，适合大型项目
+   * @param workspacePath 工作区根目录路径
+   * @param directoryPath 相对于工作区的目录路径，默认为根目录
+   * @returns 目录项目列表，包含文件名、类型、大小、修改时间等信息
    */
   async getWorkspaceDirectoryList({
     workspacePath,
@@ -1291,20 +1334,8 @@ export class CommandFactory {
    * 获取所有 MCP 客户端（包括全局、工作区和内置）
    */
   async getAllMcpClients(): Promise<any[]> {
-    try {
-      const clients = getAllMCPClients();
-      return clients.map(client => client.toJSON());
-    } catch (error) {
-      console.error("Failed to get all MCP clients:", error);
-      // 回退到旧系统
-      try {
-        const clients = await getMcpClients();
-        return clients.map((x) => x.toJSON());
-      } catch (fallbackError) {
-        console.error("Fallback to old MCP system also failed:", fallbackError);
-        throw error;
-      }
-    }
+    const clients = getAllMCPClients();
+    return clients.map(client => client.toJSON());
   }
 
   /**
