@@ -17,6 +17,7 @@ import {
   Badge,
   Typography,
   Splitter,
+  Spin,
 } from "antd";
 import {
   FolderOpenOutlined,
@@ -255,6 +256,25 @@ export function Workspace() {
     });
   };
 
+  // 更新树数据的工具函数（按照官方示例）
+  const updateTreeData = (list: any[], key: React.Key, children: any[]): any[] =>
+    list.map((node) => {
+      if (node.key === key) {
+        console.log("Updating node:", node.key, "with children:", children);
+        return {
+          ...node,
+          children,
+        };
+      }
+      if (node.children) {
+        return {
+          ...node,
+          children: updateTreeData(node.children, key, children),
+        };
+      }
+      return node;
+    });
+
   // 文件树组件
   const FileTreeComponent = ({ 
     workspace, 
@@ -265,47 +285,59 @@ export function Workspace() {
     initialData: FileNode[];
     onDataUpdate: (data: FileNode[]) => void;
   }) => {
-    const [treeData, setTreeData] = useState<FileNode[]>(initialData);
-
-    // 当初始数据变化时更新组件状态
-    useEffect(() => {
-      setTreeData(initialData);
-    }, [initialData]);
-
-    // 转换为 Tree 组件需要的格式
-    const convertToTreeData = (items: FileNode[]): any[] => {
-      return items.map((item) => ({
+    // 初始化树数据
+    const [treeData, setTreeData] = useState(() => 
+      initialData.map((item) => ({
         title: item.name,
         key: item.path,
         icon: item.type === "directory" ? <FolderOutlined /> : <FileOutlined />,
-        isLeaf: item.isLeaf || item.type === "file",
-        children: item.children ? convertToTreeData(item.children) : undefined,
+        isLeaf: item.type === "file",
+      }))
+    );
+
+    // 当初始数据变化时更新组件状态
+    useEffect(() => {
+      const newTreeData = initialData.map((item) => ({
+        title: item.name,
+        key: item.path,
+        icon: item.type === "directory" ? <FolderOutlined /> : <FileOutlined />,
+        isLeaf: item.type === "file",
       }));
-    };
+      setTreeData(newTreeData);
+    }, [initialData]);
 
-    const handleLoadData = async (node: any) => {
-      if (node.isLeaf) return;
-      
-      try {
-        const children = await call("getWorkspaceDirectoryList", {
+    const onLoadData = ({ key, children }: any) =>
+      new Promise<void>((resolve) => {
+        if (children) {
+          resolve();
+          return;
+        }
+
+        call("getWorkspaceDirectoryList", {
           workspacePath: workspace.path,
-          directoryPath: node.key
-        });
+          directoryPath: key
+        }).then((childrenData) => {
+          const treeChildren = childrenData.map((item: FileNode) => ({
+            title: item.name,
+            key: item.path,
+            icon: item.type === "directory" ? <FolderOutlined /> : <FileOutlined />,
+            isLeaf: item.type === "file",
+          }));
 
-        const updatedData = updateTreeDataWithChildren(treeData, node.key, children);
-        setTreeData(updatedData);
-        onDataUpdate(updatedData);
-      } catch (error) {
-        console.error("Failed to load directory children:", error);
-        message.error(t`Failed to load directory contents`);
-      }
-    };
+          setTreeData((origin) => updateTreeData(origin, key, treeChildren));
+          resolve();
+        }).catch((error) => {
+          console.error("Failed to load directory children:", error);
+          message.error(t`Failed to load directory contents`);
+          resolve();
+        });
+      });
 
     return (
       <Tree
         showIcon
-        treeData={convertToTreeData(treeData)}
-        loadData={handleLoadData}
+        loadData={onLoadData}
+        treeData={treeData}
       />
     );
   };
