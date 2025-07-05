@@ -107,7 +107,8 @@ export function Workspace() {
         });
         setGlobalWorkspace({
           ...globalWs,
-          path: "global",
+          path: globalWs.path || "~/.hyperchat", // 保留真实路径
+          displayPath: "global", // 添加显示用的路径
           agentsCount: 0,
           mcpServersCount: 0,
           isGlobal: true,
@@ -169,8 +170,20 @@ export function Workspace() {
       details.agents = agentList;
 
       // 加载 MCP 客户端
-      const mcpList = await call("getWorkspaceMcpClients", { workspacePath: workspace.path });
+      let mcpList;
+      if (workspace.isGlobal) {
+        // 全局工作区获取所有MCP客户端
+        console.log("Loading global MCP clients...");
+        mcpList = await call("getMcpClients");
+        console.log("Global MCP clients loaded:", mcpList);
+      } else {
+        // 项目工作区获取特定工作区的MCP客户端
+        console.log("Loading workspace MCP clients for:", workspace.path);
+        mcpList = await call("getWorkspaceMcpClients", { workspacePath: workspace.path });
+        console.log("Workspace MCP clients loaded:", mcpList);
+      }
       details.mcpClients = mcpList || [];
+      console.log("Final MCP clients:", details.mcpClients);
 
       setWorkspaceDetails(prev => ({
         ...prev,
@@ -542,24 +555,24 @@ export function Workspace() {
                   {
                     label: t`Agents`,
                     key: "agents",
-                    children: (
+                    children: currentWorkspace ? (
                       <AgentManagement
                         workspace={currentWorkspace}
                         agents={details.agents || []}
                         onRefresh={refreshWorkspaceDetails}
                       />
-                    ),
+                    ) : <Empty description={t`No workspace selected`} />,
                   },
                   {
                     label: t`MCP`,
                     key: "mcp",
-                    children: (
+                    children: currentWorkspace ? (
                       <MCPManagement
                         workspace={currentWorkspace}
                         mcpClients={details.mcpClients || []}
                         onRefresh={refreshWorkspaceDetails}
                       />
-                    ),
+                    ) : <Empty description={t`No workspace selected`} />,
                   },
                 ]}
               />

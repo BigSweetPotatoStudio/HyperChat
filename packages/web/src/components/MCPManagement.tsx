@@ -56,12 +56,17 @@ export function MCPManagement({ workspace, mcpClients, onRefresh }: MCPManagemen
   const refreshMcpClients = async () => {
     try {
       setMcpRefreshing(true);
+      console.log("Refreshing MCP clients for workspace:", workspace);
       
       // 重新初始化MCP客户端
+      console.log("Calling initMcpClients...");
       await call("initMcpClients");
+      console.log("initMcpClients completed");
       
       // 调用父组件的刷新函数
+      console.log("Calling parent onRefresh...");
       await onRefresh();
+      console.log("Parent onRefresh completed");
       
       message.success(t`MCP clients refreshed successfully`);
     } catch (error) {

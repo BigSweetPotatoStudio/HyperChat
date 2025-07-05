@@ -706,7 +706,7 @@ export class CommandFactory {
   /**
    * 获取全局工作区信息
    */
-  async getGlobalWorkspace(): Promise<any> {
+  async getGlobalWorkspace() {
     const { getWorkspaceManager } = await import("./workspace/index.mjs");
     const workspaceManager = getWorkspaceManager();
     const globalWorkspace = workspaceManager.getGlobalWorkspace();

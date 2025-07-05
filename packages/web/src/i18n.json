@@ -431,6 +431,10 @@
     "en": "MCP",
     "zh": "MCP"
   },
+  "No workspace selected": {
+    "en": "No workspace selected",
+    "zh": "未选择工作区"
+  },
   "Top": {
     "en": "Top",
     "zh": "置顶"
