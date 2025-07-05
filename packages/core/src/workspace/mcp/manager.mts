@@ -7,7 +7,6 @@ import * as path from "path";
 import * as fs from "fs";
 import type { 
   WorkspaceMCPConfig, 
-  WorkspaceMCPClient, 
   MCPScope, 
   MCPManagerOptions, 
   MCPManagerEvents 
@@ -20,7 +19,7 @@ import { MyServers } from "../../mcp/servers/index.mjs";
 import { Config } from "../../const.mjs";
 
 export class WorkspaceMCPManager {
-  private clients: Map<string, WorkspaceMCPClient> = new Map();
+  private clients: Map<string, WorkspaceMCPClientImpl> = new Map();
   private configs: Map<string, WorkspaceMCPConfig> = new Map();
   private options: MCPManagerOptions;
   private events: MCPManagerEvents;
@@ -166,7 +165,7 @@ export class WorkspaceMCPManager {
   /**
    * 启动指定范围的 MCP 客户端
    */
-  async startClients(scope: MCPScope, workspacePath?: string): Promise<WorkspaceMCPClient[]> {
+  async startClients(scope: MCPScope, workspacePath?: string): Promise<WorkspaceMCPClientImpl[]> {
     const configKey = scope === "workspace" ? `workspace:${workspacePath}` : scope;
     const config = this.configs.get(configKey);
     
@@ -174,7 +173,7 @@ export class WorkspaceMCPManager {
       throw new Error(`未找到 ${scope} 范围的配置`);
     }
 
-    const clients: WorkspaceMCPClient[] = [];
+    const clients: WorkspaceMCPClientImpl[] = [];
     const tasks: Promise<void>[] = [];
 
     for (const [name, serverConfig] of Object.entries(config.mcpServers)) {
@@ -238,7 +237,7 @@ export class WorkspaceMCPManager {
    * 停止指定范围的 MCP 客户端
    */
   async stopClients(scope: MCPScope, workspacePath?: string): Promise<void> {
-    const clientsToStop: WorkspaceMCPClient[] = [];
+    const clientsToStop: WorkspaceMCPClientImpl[] = [];
 
     for (const [clientId, client] of this.clients) {
       if (client.scope === scope && 
@@ -265,14 +264,14 @@ export class WorkspaceMCPManager {
   /**
    * 获取所有客户端
    */
-  getAllClients(): WorkspaceMCPClient[] {
+  getAllClients(): WorkspaceMCPClientImpl[] {
     return Array.from(this.clients.values());
   }
 
   /**
    * 获取指定范围的客户端
    */
-  getClientsByScope(scope: MCPScope, workspacePath?: string): WorkspaceMCPClient[] {
+  getClientsByScope(scope: MCPScope, workspacePath?: string): WorkspaceMCPClientImpl[] {
     return this.getAllClients().filter(client => 
       client.scope === scope && 
       (scope !== "workspace" || client.workspacePath === workspacePath)
@@ -282,7 +281,7 @@ export class WorkspaceMCPManager {
   /**
    * 获取单个客户端
    */
-  getClient(name: string, scope: MCPScope, workspacePath?: string): WorkspaceMCPClient | null {
+  getClient(name: string, scope: MCPScope, workspacePath?: string): WorkspaceMCPClientImpl | null {
     const clientId = this.getClientId(name, scope, workspacePath);
     return this.clients.get(clientId) || null;
   }
