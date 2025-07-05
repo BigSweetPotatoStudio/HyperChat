@@ -187,6 +187,150 @@
     "en": "Delete",
     "zh": "删除"
   },
+  "Refresh MCP clients": {
+    "en": "Refresh MCP clients",
+    "zh": "刷新MCP客户端"
+  },
+  "MCP clients refreshed successfully": {
+    "en": "MCP clients refreshed successfully",
+    "zh": "MCP客户端刷新成功"
+  },
+  "Failed to refresh MCP clients": {
+    "en": "Failed to refresh MCP clients",
+    "zh": "刷新MCP客户端失败"
+  },
+  "MCP client restarted successfully": {
+    "en": "MCP client restarted successfully",
+    "zh": "MCP客户端重启成功"
+  },
+  "Failed to restart MCP client": {
+    "en": "Failed to restart MCP client",
+    "zh": "重启MCP客户端失败"
+  },
+  "MCP client disabled successfully": {
+    "en": "MCP client disabled successfully",
+    "zh": "MCP客户端停用成功"
+  },
+  "Failed to disable MCP client": {
+    "en": "Failed to disable MCP client",
+    "zh": "停用MCP客户端失败"
+  },
+  "MCP client enabled successfully": {
+    "en": "MCP client enabled successfully",
+    "zh": "MCP客户端启用成功"
+  },
+  "Failed to enable MCP client": {
+    "en": "Failed to enable MCP client",
+    "zh": "启用MCP客户端失败"
+  },
+  "MCP client deleted successfully": {
+    "en": "MCP client deleted successfully",
+    "zh": "MCP客户端删除成功"
+  },
+  "Failed to delete MCP client": {
+    "en": "Failed to delete MCP client",
+    "zh": "删除MCP客户端失败"
+  },
+  "MCP Client Details": {
+    "en": "MCP Client Details",
+    "zh": "MCP客户端详情"
+  },
+  "View Details": {
+    "en": "View Details",
+    "zh": "查看详情"
+  },
+  "Restart": {
+    "en": "Restart",
+    "zh": "重启"
+  },
+  "Enable": {
+    "en": "Enable",
+    "zh": "启用"
+  },
+  "Disable": {
+    "en": "Disable",
+    "zh": "停用"
+  },
+  "Disabled": {
+    "en": "Disabled",
+    "zh": "已停用"
+  },
+  "Connected": {
+    "en": "Connected",
+    "zh": "已连接"
+  },
+  "Disconnected": {
+    "en": "Disconnected",
+    "zh": "未连接"
+  },
+  "tools": {
+    "en": "tools",
+    "zh": "工具"
+  },
+  "resources": {
+    "en": "resources",
+    "zh": "资源"
+  },
+  "Confirm Delete": {
+    "en": "Confirm Delete",
+    "zh": "确认删除"
+  },
+  "Are you sure you want to delete this MCP client?": {
+    "en": "Are you sure you want to delete this MCP client?",
+    "zh": "您确定要删除此MCP客户端吗？"
+  },
+  "Name": {
+    "en": "Name",
+    "zh": "名称"
+  },
+  "Server Name": {
+    "en": "Server Name",
+    "zh": "服务器名称"
+  },
+  "Status": {
+    "en": "Status",
+    "zh": "状态"
+  },
+  "Type": {
+    "en": "Type",
+    "zh": "类型"
+  },
+  "Source": {
+    "en": "Source",
+    "zh": "来源"
+  },
+  "Built-in": {
+    "en": "Built-in",
+    "zh": "内置"
+  },
+  "Custom": {
+    "en": "Custom",
+    "zh": "自定义"
+  },
+  "Tools Count": {
+    "en": "Tools Count",
+    "zh": "工具数量"
+  },
+  "Resources Count": {
+    "en": "Resources Count",
+    "zh": "资源数量"
+  },
+  "Prompts Count": {
+    "en": "Prompts Count",
+    "zh": "提示数量"
+  },
+  "Available Tools": {
+    "en": "Available Tools",
+    "zh": "可用工具"
+  },
+  "Available Resources": {
+    "en": "Available Resources",
+    "zh": "可用资源"
+  },
+  "Configuration": {
+    "en": "Configuration",
+    "zh": "配置"
+  },
   "Top": {
     "en": "Top",
     "zh": "置顶"

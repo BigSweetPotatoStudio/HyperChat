@@ -18,6 +18,9 @@ import {
   Typography,
   Splitter,
   Spin,
+  Drawer,
+  Descriptions,
+  Dropdown,
 } from "antd";
 import {
   FolderOpenOutlined,
@@ -28,11 +31,17 @@ import {
   SettingOutlined,
   GlobalOutlined,
   AppstoreOutlined,
+  ReloadOutlined,
+  PlayCircleOutlined,
+  StopOutlined,
+  InfoCircleOutlined,
+  MoreOutlined,
 } from "@ant-design/icons";
 import { call } from "../../common/call";
 import { useForceUpdate } from "../../hooks/useForceUpdate";
 import { t } from "../../i18n";
 import { ServerDirectoryBrowser } from "../../components/ServerDirectoryBrowser";
+import { getClients } from "../../common/mcp";
 
 const { Title, Text } = Typography;
 
@@ -81,6 +90,9 @@ export function Workspace() {
   const [createModalOpen, setCreateModalOpen] = useState(false);
   const [directoryBrowserOpen, setDirectoryBrowserOpen] = useState(false);
   const [selectedPath, setSelectedPath] = useState<string>("");
+  const [mcpDetailDrawer, setMcpDetailDrawer] = useState(false);
+  const [selectedMcpClient, setSelectedMcpClient] = useState<any>(null);
+  const [mcpRefreshing, setMcpRefreshing] = useState(false);
   const [form] = Form.useForm();
 
   // 加载工作区列表
@@ -159,7 +171,7 @@ export function Workspace() {
 
       // 加载 MCP 客户端
       const mcpList = await call("getWorkspaceMcpClients", { workspacePath: workspace.path });
-      details.mcpClients = mcpList;
+      details.mcpClients = mcpList || [];
 
       setWorkspaceDetails(prev => ({
         ...prev,
@@ -231,6 +243,107 @@ export function Workspace() {
       console.error("Failed to process selected directory:", error);
       message.error(t`Failed to process selected directory`);
     }
+  };
+
+  // 刷新MCP客户端列表
+  const refreshMcpClients = async (workspace?: WorkspaceInfo) => {
+    try {
+      setMcpRefreshing(true);
+      
+      // 重新初始化MCP客户端
+      await call("initMcpClients");
+      
+      // 如果有指定工作区，重新加载该工作区的详情
+      if (workspace) {
+        const key = workspace.isGlobal ? "global" : workspace.path;
+        // 清除缓存，强制重新加载
+        setWorkspaceDetails(prev => {
+          const newDetails = { ...prev };
+          delete newDetails[key];
+          return newDetails;
+        });
+        await loadWorkspaceDetails(workspace);
+      } else {
+        // 重新加载当前工作区
+        const currentWorkspace = getCurrentWorkspace();
+        if (currentWorkspace) {
+          const key = currentWorkspace.isGlobal ? "global" : currentWorkspace.path;
+          setWorkspaceDetails(prev => {
+            const newDetails = { ...prev };
+            delete newDetails[key];
+            return newDetails;
+          });
+          await loadWorkspaceDetails(currentWorkspace);
+        }
+      }
+      
+      message.success(t`MCP clients refreshed successfully`);
+    } catch (error) {
+      console.error("Failed to refresh MCP clients:", error);
+      message.error(t`Failed to refresh MCP clients`);
+    } finally {
+      setMcpRefreshing(false);
+    }
+  };
+
+  // 重启MCP客户端
+  const restartMcpClient = async (clientName: string) => {
+    try {
+      // 先关闭客户端
+      await call("closeMcpClients", { clientName });
+      // 等待一秒后重新打开
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      await call("openMcpClient", { clientName });
+      
+      message.success(t`MCP client restarted successfully`);
+      // 刷新当前工作区
+      await refreshMcpClients();
+    } catch (error) {
+      console.error(`Failed to restart MCP client ${clientName}:`, error);
+      message.error(t`Failed to restart MCP client`);
+    }
+  };
+
+  // 停用MCP客户端
+  const disableMcpClient = async (clientName: string) => {
+    try {
+      await call("closeMcpClients", { clientName, isdisable: true });
+      message.success(t`MCP client disabled successfully`);
+      await refreshMcpClients();
+    } catch (error) {
+      console.error(`Failed to disable MCP client ${clientName}:`, error);
+      message.error(t`Failed to disable MCP client`);
+    }
+  };
+
+  // 启用MCP客户端
+  const enableMcpClient = async (clientName: string) => {
+    try {
+      await call("openMcpClient", { clientName });
+      message.success(t`MCP client enabled successfully`);
+      await refreshMcpClients();
+    } catch (error) {
+      console.error(`Failed to enable MCP client ${clientName}:`, error);
+      message.error(t`Failed to enable MCP client`);
+    }
+  };
+
+  // 删除MCP客户端
+  const deleteMcpClient = async (clientName: string) => {
+    try {
+      await call("closeMcpClients", { clientName, isdelete: true });
+      message.success(t`MCP client deleted successfully`);
+      await refreshMcpClients();
+    } catch (error) {
+      console.error(`Failed to delete MCP client ${clientName}:`, error);
+      message.error(t`Failed to delete MCP client`);
+    }
+  };
+
+  // 显示MCP客户端详情
+  const showMcpClientDetails = (client: any) => {
+    setSelectedMcpClient(client);
+    setMcpDetailDrawer(true);
   };
 
 
@@ -547,7 +660,22 @@ export function Workspace() {
                     ),
                   },
                   {
-                    label: `MCP (${details.mcpClients.length})`,
+                    label: (
+                      <Space>
+                        {`MCP (${details.mcpClients.length})`}
+                        <Button
+                          type="text"
+                          size="small"
+                          icon={<ReloadOutlined spin={mcpRefreshing} />}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            refreshMcpClients(currentWorkspace);
+                          }}
+                          loading={mcpRefreshing}
+                          title={t`Refresh MCP clients`}
+                        />
+                      </Space>
+                    ),
                     key: "mcp",
                     children: (
                       <div className="p-2 overflow-auto" style={{ height: 'calc(100vh - 160px)' }}>
@@ -555,35 +683,115 @@ export function Workspace() {
                           <List
                             size="small"
                             dataSource={details.mcpClients}
-                            renderItem={(client) => (
-                              <List.Item
-                                actions={[
-                                  <Button key="restart" size="small" type="link">{t`Restart`}</Button>,
-                                  <Button key="delete" size="small" type="link" danger>{t`Delete`}</Button>,
-                                ]}
-                              >
-                                <List.Item.Meta
-                                  title={<span className="text-sm">{client.name}</span>}
-                                  description={
-                                    <div className="text-xs">
-                                      <div className="text-gray-500">
-                                        {client.servername || ""} - {client.config?.type || "stdio"}
-                                      </div>
-                                      <Space size="small" className="mt-1">
-                                        <Tag
-                                          color={client.status === "connected" ? "green" : "red"}
-                                        >
-                                          {client.status}
-                                        </Tag>
+                            renderItem={(client) => {
+                              const isConnected = client.status === "connected";
+                              const isDisabled = client.status === "disabled" || client.config?.disabled;
+                              
+                              const menuItems = [
+                                {
+                                  key: "details",
+                                  icon: <InfoCircleOutlined />,
+                                  label: t`View Details`,
+                                  onClick: () => showMcpClientDetails(client),
+                                },
+                                {
+                                  key: "restart",
+                                  icon: <ReloadOutlined />,
+                                  label: t`Restart`,
+                                  disabled: isDisabled,
+                                  onClick: () => restartMcpClient(client.name),
+                                },
+                                {
+                                  type: "divider"
+                                },
+                                isDisabled ? {
+                                  key: "enable",
+                                  icon: <PlayCircleOutlined />,
+                                  label: t`Enable`,
+                                  onClick: () => enableMcpClient(client.name),
+                                } : {
+                                  key: "disable",
+                                  icon: <StopOutlined />,
+                                  label: t`Disable`,
+                                  onClick: () => disableMcpClient(client.name),
+                                },
+                                {
+                                  type: "divider"
+                                },
+                                {
+                                  key: "delete",
+                                  icon: <DeleteOutlined />,
+                                  label: t`Delete`,
+                                  danger: true,
+                                  onClick: () => {
+                                    Modal.confirm({
+                                      title: t`Confirm Delete`,
+                                      content: t`Are you sure you want to delete this MCP client?`,
+                                      onOk: () => deleteMcpClient(client.name),
+                                    });
+                                  },
+                                },
+                              ];
+                              
+                              return (
+                                <List.Item
+                                  actions={[
+                                    <Dropdown
+                                      key="more"
+                                      menu={{ items: menuItems }}
+                                      trigger={['click']}
+                                    >
+                                      <Button
+                                        type="text"
+                                        size="small"
+                                        icon={<MoreOutlined />}
+                                        onClick={(e) => e.stopPropagation()}
+                                      />
+                                    </Dropdown>
+                                  ]}
+                                >
+                                  <List.Item.Meta
+                                    title={
+                                      <Space>
+                                        <span className="text-sm">{client.name}</span>
                                         {client.source === "builtin" && (
-                                          <Tag color="blue" >{t`Built-in`}</Tag>
+                                          <Tag color="blue" size="small">{t`Built-in`}</Tag>
                                         )}
                                       </Space>
-                                    </div>
-                                  }
-                                />
-                              </List.Item>
-                            )}
+                                    }
+                                    description={
+                                      <div className="text-xs">
+                                        <div className="text-gray-500 mb-1">
+                                          {client.servername || client.name} - {client.config?.type || "stdio"}
+                                        </div>
+                                        <Space size="small">
+                                          <Tag
+                                            color={
+                                              isDisabled ? "default" :
+                                              isConnected ? "green" : "red"
+                                            }
+                                            size="small"
+                                          >
+                                            {isDisabled ? t`Disabled` : 
+                                             isConnected ? t`Connected` : t`Disconnected`}
+                                          </Tag>
+                                          {client.tools && (
+                                            <Tag color="cyan" size="small">
+                                              {client.tools.length} {t`tools`}
+                                            </Tag>
+                                          )}
+                                          {client.resources && (
+                                            <Tag color="purple" size="small">
+                                              {client.resources.length} {t`resources`}
+                                            </Tag>
+                                          )}
+                                        </Space>
+                                      </div>
+                                    }
+                                  />
+                                </List.Item>
+                              );
+                            }}
                           />
                         ) : (
                           <Empty description={t`No MCP clients`} image={Empty.PRESENTED_IMAGE_SIMPLE} />
@@ -696,6 +904,113 @@ export function Workspace() {
         title={t`Select Workspace Directory`}
         initialPath="~"
       />
+
+      {/* MCP客户端详情抽屉 */}
+      <Drawer
+        title={t`MCP Client Details`}
+        open={mcpDetailDrawer}
+        onClose={() => {
+          setMcpDetailDrawer(false);
+          setSelectedMcpClient(null);
+        }}
+        width={600}
+      >
+        {selectedMcpClient && (
+          <div>
+            <Descriptions
+              title={selectedMcpClient.name}
+              bordered
+              column={1}
+              size="small"
+            >
+              <Descriptions.Item label={t`Name`}>
+                {selectedMcpClient.name}
+              </Descriptions.Item>
+              <Descriptions.Item label={t`Server Name`}>
+                {selectedMcpClient.servername || "N/A"}
+              </Descriptions.Item>
+              <Descriptions.Item label={t`Status`}>
+                <Tag
+                  color={
+                    selectedMcpClient.status === "disabled" ? "default" :
+                    selectedMcpClient.status === "connected" ? "green" : "red"
+                  }
+                >
+                  {selectedMcpClient.status === "disabled" ? t`Disabled` :
+                   selectedMcpClient.status === "connected" ? t`Connected` : t`Disconnected`}
+                </Tag>
+              </Descriptions.Item>
+              <Descriptions.Item label={t`Type`}>
+                {selectedMcpClient.config?.type || "stdio"}
+              </Descriptions.Item>
+              <Descriptions.Item label={t`Source`}>
+                <Tag color={selectedMcpClient.source === "builtin" ? "blue" : "default"}>
+                  {selectedMcpClient.source === "builtin" ? t`Built-in` : t`Custom`}
+                </Tag>
+              </Descriptions.Item>
+              <Descriptions.Item label={t`Tools Count`}>
+                {selectedMcpClient.tools?.length || 0}
+              </Descriptions.Item>
+              <Descriptions.Item label={t`Resources Count`}>
+                {selectedMcpClient.resources?.length || 0}
+              </Descriptions.Item>
+              <Descriptions.Item label={t`Prompts Count`}>
+                {selectedMcpClient.prompts?.length || 0}
+              </Descriptions.Item>
+            </Descriptions>
+
+            {/* 工具列表 */}
+            {selectedMcpClient.tools && selectedMcpClient.tools.length > 0 && (
+              <div className="mt-4">
+                <Title level={5}>{t`Available Tools`}</Title>
+                <List
+                  size="small"
+                  bordered
+                  dataSource={selectedMcpClient.tools}
+                  renderItem={(tool: any) => (
+                    <List.Item>
+                      <List.Item.Meta
+                        title={tool.name}
+                        description={tool.description}
+                      />
+                    </List.Item>
+                  )}
+                />
+              </div>
+            )}
+
+            {/* 资源列表 */}
+            {selectedMcpClient.resources && selectedMcpClient.resources.length > 0 && (
+              <div className="mt-4">
+                <Title level={5}>{t`Available Resources`}</Title>
+                <List
+                  size="small"
+                  bordered
+                  dataSource={selectedMcpClient.resources}
+                  renderItem={(resource: any) => (
+                    <List.Item>
+                      <List.Item.Meta
+                        title={resource.name || resource.uri}
+                        description={resource.description}
+                      />
+                    </List.Item>
+                  )}
+                />
+              </div>
+            )}
+
+            {/* 配置信息 */}
+            {selectedMcpClient.config && (
+              <div className="mt-4">
+                <Title level={5}>{t`Configuration`}</Title>
+                <pre className="bg-gray-100 p-2 rounded text-xs overflow-auto">
+                  {JSON.stringify(selectedMcpClient.config, null, 2)}
+                </pre>
+              </div>
+            )}
+          </div>
+        )}
+      </Drawer>
     </div>
   );
 }
