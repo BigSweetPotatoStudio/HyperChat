@@ -42,6 +42,7 @@ import { getClients } from "../../common/mcp";
 import { MCPManagement } from "../../components/MCPManagement";
 import { AgentManagement } from "../../components/AgentManagement";
 import { FileTreeComponent } from "../../components/FileTreeComponent";
+import { WorkspaceSidebar } from "../../components/WorkspaceSidebar";
 
 const { Title, Text } = Typography;
 
@@ -484,30 +485,15 @@ export function Workspace() {
     return (
       <div className="h-full">
         <Splitter style={{ height: '100%' }}>
-          {/* 左侧面板：文件树 */}
+          {/* 左侧面板：工作区侧边栏 */}
           <Splitter.Panel defaultSize="25%" min="15%" max="40%">
-            <Card
-              title={t`File Tree`}
-              size="small"
-              className="h-full"
-              bodyStyle={{ padding: '8px', height: 'calc(100% - 48px)', overflow: 'auto' }}
-            >
-              {details.fileTreeData ? (
-                <FileTreeComponent
-                  workspace={currentWorkspace}
-                  initialData={details.fileTreeData}
-                  showHidden={showHiddenFiles}
-                  onShowHiddenChange={handleShowHiddenChange}
-                  onRefresh={refreshFileTree}
-                />
-              ) : (
-                <Empty
-                  description={t`No file tree data`}
-                  image={Empty.PRESENTED_IMAGE_SIMPLE}
-                  style={{ marginTop: '20%' }}
-                />
-              )}
-            </Card>
+            <WorkspaceSidebar
+              workspace={currentWorkspace}
+              fileTreeData={details.fileTreeData}
+              showHidden={showHiddenFiles}
+              onShowHiddenChange={handleShowHiddenChange}
+              onRefreshFileTree={refreshFileTree}
+            />
           </Splitter.Panel>
 
           {/* 中间面板：操作界面 */}
