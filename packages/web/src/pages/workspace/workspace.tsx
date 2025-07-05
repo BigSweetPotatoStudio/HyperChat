@@ -125,7 +125,7 @@ export function Workspace() {
       setWorkspaces(workspaceInfos);
     } catch (error) {
       console.error("Failed to load workspaces:", error);
-      message.error("加载工作区失败");
+      message.error(t`Failed to load workspaces`);
     } finally {
       setLoading(false);
     }
@@ -161,7 +161,7 @@ export function Workspace() {
       }));
     } catch (error) {
       console.error("Failed to load workspace details:", error);
-      message.error("加载工作区详情失败");
+      message.error(t`Failed to load workspace details`);
     }
   };
 
@@ -173,14 +173,14 @@ export function Workspace() {
         name: values.name,
         description: values.description,
       });
-      message.success("工作区创建成功");
+      message.success(t`Workspace created successfully`);
       setCreateModalOpen(false);
       form.resetFields();
       setSelectedPath("");
       loadWorkspaces();
     } catch (error) {
       console.error("Failed to create workspace:", error);
-      message.error("创建工作区失败");
+      message.error(t`Failed to create workspace`);
     }
   };
 
@@ -188,7 +188,7 @@ export function Workspace() {
   const deleteWorkspace = async (workspace: WorkspaceInfo) => {
     try {
       await call("deleteWorkspace", { workspacePath: workspace.path });
-      message.success("工作区删除成功");
+      message.success(t`Workspace deleted successfully`);
       // 如果删除的是当前活动工作区，切换到全局工作区
       if (activeWorkspaceKey === workspace.path) {
         setActiveWorkspaceKey("global");
@@ -202,7 +202,7 @@ export function Workspace() {
       loadWorkspaces();
     } catch (error) {
       console.error("Failed to delete workspace:", error);
-      message.error("删除工作区失败");
+      message.error(t`Failed to delete workspace`);
     }
   };
 
@@ -215,13 +215,13 @@ export function Workspace() {
       // 检查是否已经是工作区
       const isWorkspace = await call("isWorkspaceDirectory", { directoryPath: path });
       if (isWorkspace) {
-        message.warning("该目录已经是一个工作区");
+        message.warning(t`This directory is already a workspace`);
       }
 
       setDirectoryBrowserOpen(false);
     } catch (error) {
       console.error("Failed to process selected directory:", error);
-      message.error("处理选择的目录失败");
+      message.error(t`Failed to process selected directory`);
     }
   };
 
@@ -280,8 +280,8 @@ export function Workspace() {
         label: (
           <Space>
             <GlobalOutlined />
-            <span>{globalWorkspace.name || "全局工作区"}</span>
-            <Tag color="blue" >全局</Tag>
+            <span>{globalWorkspace.name || t`Global Workspace`}</span>
+            <Tag color="blue" >{t`Global`}</Tag>
             <Badge count={globalWorkspace.agentsCount} size="small" />
             <Badge count={globalWorkspace.mcpServersCount} size="small" />
           </Space>
@@ -317,7 +317,7 @@ export function Workspace() {
     if (!currentWorkspace) {
       return (
         <Empty
-          description="请选择一个工作区查看详情"
+          description={t`Please select a workspace to view details`}
           image={Empty.PRESENTED_IMAGE_SIMPLE}
         />
       );
@@ -329,7 +329,7 @@ export function Workspace() {
           {/* 左侧面板：文件树 */}
           <Splitter.Panel defaultSize="25%" min="15%" max="40%">
             <Card
-              title="文件树"
+              title={t`File Tree`}
               size="small"
               className="h-full"
               bodyStyle={{ padding: '8px', height: 'calc(100% - 48px)', overflow: 'auto' }}
@@ -342,7 +342,7 @@ export function Workspace() {
                 />
               ) : (
                 <Empty
-                  description={currentWorkspace.isGlobal ? "全局工作区无文件树" : "暂无文件树数据"}
+                  description={currentWorkspace.isGlobal ? t`Global workspace has no file tree` : t`No file tree data`}
                   image={Empty.PRESENTED_IMAGE_SIMPLE}
                   style={{ marginTop: '20%' }}
                 />
@@ -353,19 +353,19 @@ export function Workspace() {
           {/* 中间面板：操作界面 */}
           <Splitter.Panel defaultSize="50%" min="30%">
             <Card
-              title="工作区操作"
+              title={t`Workspace Operations`}
               size="small"
               className="h-full"
               bodyStyle={{ padding: '16px', height: 'calc(100% - 48px)', overflow: 'auto' }}
             >
               <div className="text-center">
                 <Empty
-                  description="操作界面待开发"
+                  description={t`Operations interface under development`}
                   image={Empty.PRESENTED_IMAGE_SIMPLE}
                   style={{ marginTop: '20%' }}
                 >
                   <p className="text-gray-500 mt-4">
-                    这里将显示工作区的主要操作界面
+                    {t`Main workspace operations interface will be displayed here`}
                   </p>
                 </Empty>
               </div>
@@ -375,7 +375,7 @@ export function Workspace() {
           {/* 右侧面板：Agents 和 MCP 管理 */}
           <Splitter.Panel defaultSize="25%" min="15%" max="40%">
             <Card
-              title="管理面板"
+              title={t`Management Panel`}
               size="small"
               className="h-full"
               bodyStyle={{ padding: '0', height: 'calc(100% - 48px)' }}
@@ -395,8 +395,8 @@ export function Workspace() {
                             renderItem={(agent) => (
                               <List.Item
                                 actions={[
-                                  <Button key="edit" size="small" type="link">编辑</Button>,
-                                  <Button key="delete" size="small" type="link" danger>删除</Button>,
+                                  <Button key="edit" size="small" type="link">{t`Edit`}</Button>,
+                                  <Button key="delete" size="small" type="link" danger>{t`Delete`}</Button>,
                                 ]}
                               >
                                 <List.Item.Meta
@@ -411,7 +411,7 @@ export function Workspace() {
                             )}
                           />
                         ) : (
-                          <Empty description="暂无 Agents" image={Empty.PRESENTED_IMAGE_SIMPLE} />
+                          <Empty description={t`No Agents`} image={Empty.PRESENTED_IMAGE_SIMPLE} />
                         )}
                       </div>
                     ),
@@ -428,8 +428,8 @@ export function Workspace() {
                             renderItem={(client) => (
                               <List.Item
                                 actions={[
-                                  <Button key="restart" size="small" type="link">重启</Button>,
-                                  <Button key="delete" size="small" type="link" danger>删除</Button>,
+                                  <Button key="restart" size="small" type="link">{t`Restart`}</Button>,
+                                  <Button key="delete" size="small" type="link" danger>{t`Delete`}</Button>,
                                 ]}
                               >
                                 <List.Item.Meta
@@ -446,7 +446,7 @@ export function Workspace() {
                                           {client.status}
                                         </Tag>
                                         {client.source === "builtin" && (
-                                          <Tag color="blue" >内置</Tag>
+                                          <Tag color="blue" >{t`Built-in`}</Tag>
                                         )}
                                       </Space>
                                     </div>
@@ -456,7 +456,7 @@ export function Workspace() {
                             )}
                           />
                         ) : (
-                          <Empty description="暂无 MCP 客户端" image={Empty.PRESENTED_IMAGE_SIMPLE} />
+                          <Empty description={t`No MCP clients`} image={Empty.PRESENTED_IMAGE_SIMPLE} />
                         )}
                       </div>
                     ),
@@ -517,7 +517,7 @@ export function Workspace() {
 
       {/* 创建工作区模态框 */}
       <Modal
-        title="创建新工作区"
+        title={t`Create New Workspace`}
         open={createModalOpen}
         onCancel={() => {
           setCreateModalOpen(false);
@@ -535,29 +535,29 @@ export function Workspace() {
           onFinish={createWorkspace}
         >
           <Form.Item
-            label="工作区名称"
+            label={t`Workspace Name`}
             name="name"
-            rules={[{ required: true, message: "请输入工作区名称" }]}
+            rules={[{ required: true, message: t`Please enter workspace name` }]}
           >
-            <Input placeholder="输入工作区名称" />
+            <Input placeholder={t`Enter workspace name`} />
           </Form.Item>
 
           <Form.Item
-            label="描述"
+            label={t`Description`}
             name="description"
           >
-            <Input.TextArea placeholder="可选的工作区描述" rows={3} />
+            <Input.TextArea placeholder={t`Optional workspace description`} rows={3} />
           </Form.Item>
 
           <Form.Item
-            label="文件夹路径"
+            label={t`Folder Path`}
             name="path"
-            rules={[{ required: true, message: "请选择文件夹路径" }]}
+            rules={[{ required: true, message: t`Please select folder path` }]}
           >
             <Input.Group compact>
               <Input
                 style={{ width: "calc(100% - 100px)" }}
-                placeholder="选择工作区文件夹"
+                placeholder={t`Select workspace folder`}
                 value={selectedPath || form.getFieldValue('path') || ''}
                 readOnly
               />
@@ -565,7 +565,7 @@ export function Workspace() {
                 icon={<FolderOpenOutlined />}
                 onClick={() => setDirectoryBrowserOpen(true)}
               >
-                选择目录
+                {t`Select Directory`}
               </Button>
             </Input.Group>
           </Form.Item>
@@ -577,7 +577,7 @@ export function Workspace() {
         visible={directoryBrowserOpen}
         onClose={() => setDirectoryBrowserOpen(false)}
         onSelect={handleServerDirectorySelect}
-        title="选择工作区目录"
+        title={t`Select Workspace Directory`}
         initialPath="~"
       />
     </div>
