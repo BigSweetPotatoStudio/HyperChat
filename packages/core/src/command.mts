@@ -628,6 +628,162 @@ export class CommandFactory {
     return context.resultContainer.value;
   }
 
+  // ========== 工作区管理 API ==========
+
+  /**
+   * 获取所有工作区列表
+   */
+  async getWorkspaceList(): Promise<any[]> {
+    const { getWorkspaceManager } = await import("./workspace/index.mjs");
+    const workspaceManager = getWorkspaceManager();
+    return workspaceManager.getWorkspaceList();
+  }
+
+  /**
+   * 创建新工作区
+   */
+  async createWorkspace({
+    workspacePath,
+    name,
+    description
+  }: {
+    workspacePath: string;
+    name: string;
+    description?: string;
+  }): Promise<any> {
+    const { getWorkspaceManager } = await import("./workspace/index.mjs");
+    const workspaceManager = getWorkspaceManager();
+    const workspace = await workspaceManager.createWorkspace(workspacePath, name, description);
+    return workspace.getConfig();
+  }
+
+  /**
+   * 删除工作区
+   */
+  async deleteWorkspace({
+    workspacePath
+  }: {
+    workspacePath: string;
+  }): Promise<boolean> {
+    const { getWorkspaceManager } = await import("./workspace/index.mjs");
+    const workspaceManager = getWorkspaceManager();
+    return await workspaceManager.deleteWorkspace(workspacePath);
+  }
+
+  /**
+   * 加载现有工作区
+   */
+  async loadWorkspace({
+    workspacePath
+  }: {
+    workspacePath: string;
+  }): Promise<any | null> {
+    const { getWorkspaceManager } = await import("./workspace/index.mjs");
+    const workspaceManager = getWorkspaceManager();
+    const workspace = await workspaceManager.loadExistingWorkspace(workspacePath);
+    return workspace ? workspace.getConfig() : null;
+  }
+
+  /**
+   * 获取当前工作区信息
+   */
+  async getCurrentWorkspace({
+    workspacePath
+  }: {
+    workspacePath: string;
+  }): Promise<any | null> {
+    const { getWorkspaceManager } = await import("./workspace/index.mjs");
+    const workspaceManager = getWorkspaceManager();
+    const workspace = workspaceManager.getWorkspace(workspacePath);
+    return workspace ? workspace.getConfig() : null;
+  }
+
+  /**
+   * 获取全局工作区信息
+   */
+  async getGlobalWorkspace(): Promise<any> {
+    const { getWorkspaceManager } = await import("./workspace/index.mjs");
+    const workspaceManager = getWorkspaceManager();
+    const globalWorkspace = workspaceManager.getGlobalWorkspace();
+    return globalWorkspace.getConfig();
+  }
+
+  /**
+   * 获取工作区文件树
+   */
+  async getWorkspaceFileTree({
+    workspacePath
+  }: {
+    workspacePath: string;
+  }): Promise<any | null> {
+    const { getWorkspaceManager } = await import("./workspace/index.mjs");
+    const workspaceManager = getWorkspaceManager();
+    const workspace = workspaceManager.getWorkspace(workspacePath);
+    if (!workspace) return null;
+    
+    await workspace.updateFileTree({
+      includeHidden: false,
+      maxDepth: 5,
+      excludePatterns: ['node_modules', '.git', 'dist', 'build', '.hyperchat'],
+    });
+    return workspace.getFileTree();
+  }
+
+  /**
+   * 检查目录是否为工作区
+   */
+  async isWorkspaceDirectory({
+    directoryPath
+  }: {
+    directoryPath: string;
+  }): Promise<boolean> {
+    const { getWorkspaceManager } = await import("./workspace/index.mjs");
+    const workspaceManager = getWorkspaceManager();
+    return workspaceManager.isWorkspaceDirectory(directoryPath);
+  }
+
+  /**
+   * 从目录获取工作区
+   */
+  async getWorkspaceFromDirectory({
+    directoryPath
+  }: {
+    directoryPath: string;
+  }): Promise<any | null> {
+    const { getWorkspaceManager } = await import("./workspace/index.mjs");
+    const workspaceManager = getWorkspaceManager();
+    const workspace = await workspaceManager.getWorkspaceFromDirectory(directoryPath);
+    return workspace ? workspace.getConfig() : null;
+  }
+
+  /**
+   * 获取工作区代理列表
+   */
+  async getWorkspaceAgents({
+    workspacePath
+  }: {
+    workspacePath: string;
+  }): Promise<any[]> {
+    const { getWorkspaceManager } = await import("./workspace/index.mjs");
+    const workspaceManager = getWorkspaceManager();
+    return await workspaceManager.getWorkspaceAgents(workspacePath);
+  }
+
+  /**
+   * 获取工作区 MCP 客户端
+   */
+  async getWorkspaceMcpClients({
+    workspacePath
+  }: {
+    workspacePath: string;
+  }): Promise<any[]> {
+    const { getWorkspaceManager } = await import("./workspace/index.mjs");
+    const workspaceManager = getWorkspaceManager();
+    const workspace = workspaceManager.getWorkspace(workspacePath);
+    if (!workspace) return [];
+    return workspace.getMcpClients().map(client => client.toJSON());
+  }
+
 }
 // export const Command = CommandFactory.prototype;
 export const Command = new CommandFactory();

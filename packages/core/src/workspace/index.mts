@@ -69,6 +69,11 @@ import { WorkspaceConfig } from "./types.mjs";
 // 全局工作区管理器实例
 export const workspaceManager = new WorkspaceManager();
 
+// 获取工作区管理器实例的函数
+export function getWorkspaceManager(): WorkspaceManager {
+  return workspaceManager;
+}
+
 // 工作区配置数据存储（全局工作区列表）
 export const WorkspaceConfigs = new Data("workspace_configs.json", {
   workspaces: [] as WorkspaceConfig[],

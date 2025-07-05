@@ -1,16 +1,9 @@
-import React, { useEffect, useState } from "react";
-import { CloudSyncOutlined, CommentOutlined, FolderOpenOutlined, SmileFilled } from "@ant-design/icons";
-import {
-  Outlet,
-  Link,
-  useNavigate,
-  Route,
-  useLocation,
-} from "react-router-dom";
+import React from "react";
+import { CommentOutlined, FolderOpenOutlined } from "@ant-design/icons";
+import { Route } from "react-router-dom";
 
 import { Layout } from "./layout";
 import { Setting } from "./pages/setting";
-import { Chat } from "./pages/chat";
 import { Market } from "./pages/market/market";
 import { HpyerTools } from "./pages/hypertools/hypertools";
 import { KnowledgeBase } from "./pages/knowledgeBase/knowledgeBase";
@@ -19,14 +12,10 @@ import { TaskListPage } from "./pages/hyperAgent/TaskList";
 import { t } from "./i18n";
 import { TaskResultsPage } from "./pages/hyperAgent/TaskResults";
 import { WebdavSetting } from "./pages/setting/sync";
-import { TerminalPage } from "./pages/setting/terminal";
 import { Icon } from "./components/icon";
-import { TestPage } from "./pages/TestPage";
 import { VariableList } from "./pages/variableList/variableList";
-import { AgentPage } from "./pages/Agent";
-import { AgentCreatePage } from "./pages/Agent/create";
-import { Workspace } from "./pages/workspace/workspace";
 import { ToolboxPage } from "./pages/Toolbox/Toolbox";
+import { Workspace } from "./pages/workspace/workspace";
 
 type RouteType = {
   path: string;
@@ -37,7 +26,7 @@ type RouteType = {
   routes?: Array<RouteType>;
 };
 
-// router.tsx 负责定义 Web 前端的所有路由结构，支持多页面和嵌套路由
+// 简化的路由结构，移除复杂的嵌套和注释代码
 export function getLayoutRoute() {
   let route: RouteType = {
     path: "/",
@@ -56,46 +45,12 @@ export function getLayoutRoute() {
         icon: <CommentOutlined />,
         component: <ChatSpace />,
       },
-      // process.env.myEnv == "dev" && {
-      //   path: "/Workspace",
-      //   name: t`Workspace`,
-      //   icon: <FolderOpenOutlined />,
-      //   component: <Workspace />,
-      // },
-      // process.env.myEnv == "dev" && {
-      //   path: "/Agent",
-      //   name: t`Agent`,
-      //   icon: <Icon name="bx-bot" />,
-      //   component: <Container from="/Agent" default="./List" />,
-      //   routes: [
-      //     {
-      //       path: "/List",
-      //       name: t`Agent`,
-      //       component: <AgentPage />,
-      //       hideInMenu: true,
-      //     },
-      //     {
-      //       path: "/Create",
-      //       name: t`Create`,
-      //       component: <AgentCreatePage />,
-      //       hideInMenu: true,
-      //     },
-      //   ],
-      // },
-
-      // {
-      //   path: "/Agent",
-      //   name: "Agent",
-      //   icon: <Icon name="bx-bot" />,
-      //   component: <AgentPage />,
-      // },
-      // {
-      //   path: "/Agent/Create",
-      //   name: "AgentCreate",
-      //   icon: <Icon name="bx-bot" />,
-      //   component: <AgentCreatePage />,
-      //   hideInMenu: true,
-      // },
+      {
+        path: "/Workspace",
+        name: t`Workspace`,
+        icon: <FolderOpenOutlined />,
+        component: <Workspace />,
+      },
       {
         path: "/Market",
         name: t`MCP Extensions`,
@@ -112,109 +67,48 @@ export function getLayoutRoute() {
         path: "/Task",
         name: t`TaskList`,
         icon: <Icon name="task"></Icon>,
-        component: <Container from="/Task" default="list" />,
-        routes: [
-          {
-            path: "/list",
-            name: t`TaskList`,
-            component: <TaskListPage />,
-            hideInMenu: true,
-          },
-          {
-            path: "/Results",
-            name: t`TaskResults`,
-            component: <TaskResultsPage />,
-            hideInMenu: true,
-          },
-        ],
+        component: <TaskListPage />,
+      },
+      {
+        path: "/Task/Results",
+        name: t`TaskResults`,
+        hideInMenu: true,
+        component: <TaskResultsPage />,
       },
       {
         path: "/Setting",
         name: t`Settings`,
         icon: <Icon name="system-copy" />,
-        component: <Container from="/Setting" default="Setting" />,
-        routes: [
-          {
-            path: "/Setting",
-            name: t`Settings`,
-            icon: <Icon name="resources" />,
-            component: <Setting />,
-          },
-          {
-            path: "/WebdavSetting",
-            name: t`WebdavSetting`,
-            icon: <CloudSyncOutlined />,
-            component: <WebdavSetting />,
-          },
-          {
-            path: "/HyperTools",
-            name: t`HyperTools`,
-            icon: <Icon name="tool" />,
-            component: <HpyerTools />,
-          },
-
-          {
-            path: "/VariableList",
-            name: t`VariableList`,
-            icon: <Icon name="var"></Icon>,
-            component: <VariableList />,
-          }
-
-          // {
-          //   path: "/Terminal",
-          //   name: t`Terminal`,
-          //   icon: "⌨️",
-          //   component: <TerminalPage />,
-          // }
-
-        ],
+        component: <Setting />,
       },
-
+      {
+        path: "/Setting/WebdavSetting",
+        name: t`WebdavSetting`,
+        hideInMenu: true,
+        component: <WebdavSetting />,
+      },
+      {
+        path: "/Setting/HyperTools",
+        name: t`HyperTools`,
+        hideInMenu: true,
+        component: <HpyerTools />,
+      },
+      {
+        path: "/Setting/VariableList",
+        name: t`VariableList`,
+        hideInMenu: true,
+        component: <VariableList />,
+      },
       {
         path: "/Toolbox",
         name: t`Toolbox`,
         icon: <Icon name="tools-hardware" />,
-        component: <Container from="/Toolbox" default="Transcribe" />,
-        routes: [
-          {
-            path: "/Transcribe",
-            name: t`Transcribe`,
-            component: <ToolboxPage />,
-          },
-          {
-            path: "/GenerateSpeech",
-            name: t`GenerateSpeech`,
-            component: <ToolboxPage />,
-          },
-          {
-            path: "/GenerateImage",
-            name: t`GenerateImage`,
-            component: <ToolboxPage />,
-          }, 
-        ],
+        component: <ToolboxPage />,
       }
-    ].filter(x => x)
+    ]
   };
 
-  function Container(props: { from: string; default?: string }) {
-    const navigate = useNavigate();
-    const location = useLocation();
-
-    useEffect(() => {
-      if (props.default && location.pathname == props.from) {
-        const defaultPath = props.default;
-        setTimeout(() => {
-          navigate(defaultPath);
-        }, 0);
-      }
-    }, [location.pathname]);
-    return (
-      <div className="my-container h-full">
-        <Outlet />
-      </div>
-    );
-  }
-
+  // 简化的路径处理，移除复杂的嵌套逻辑
   function run(route, prefix) {
     if (Array.isArray(route.routes)) {
       for (let r of route.routes) {
@@ -228,7 +122,6 @@ export function getLayoutRoute() {
     return route;
   }
   route = run(route, "");
-  // console.log(route);
   return route;
 }
 
