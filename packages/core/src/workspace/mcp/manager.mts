@@ -125,6 +125,68 @@ export class WorkspaceMCPManager {
   }
 
   /**
+   * 启动单个指定名称的客户端
+   */
+  private async startSingleClient(name: string, workspacePath: string, serverConfig: MCPServerConfig): Promise<void> {
+    const clientId = this.getClientId(name, workspacePath);
+    
+    // 如果客户端已存在，先停止它
+    if (this.clients.has(clientId)) {
+      await this.stopClient(name, workspacePath);
+    }
+    
+    // 创建新客户端
+    const client = new WorkspaceMCPClientImpl(
+      name,
+      serverConfig,
+      "workspace",
+      this.order++,
+      {
+        mcpType: "custom",
+        workspacePath,
+      }
+    );
+    
+    this.clients.set(clientId, client);
+    
+    // 启动客户端
+    await this.startClient(client, clientId);
+    
+    this.logInfo(`单个客户端 ${clientId} 重启完成`);
+  }
+
+  /**
+   * 启动单个内置客户端
+   */
+  private async startSingleBuiltinClient(name: string, workspacePath: string, serverConfig: MCPServerConfig): Promise<void> {
+    const clientId = this.getClientId(name, workspacePath);
+    
+    // 如果客户端已存在，先停止它
+    if (this.clients.has(clientId)) {
+      await this.stopClient(name, workspacePath);
+    }
+    
+    // 创建新的内置客户端
+    const client = new WorkspaceMCPClientImpl(
+      name,
+      serverConfig,
+      "workspace",
+      this.order++,
+      {
+        mcpType: "builtin",
+        workspacePath,
+      }
+    );
+    
+    this.clients.set(clientId, client);
+    
+    // 启动客户端
+    await this.startClient(client, clientId);
+    
+    this.logInfo(`单个内置客户端 ${clientId} 重启完成`);
+  }
+
+  /**
    * 启动单个客户端
    */
   private async startClient(client: WorkspaceMCPClientImpl, clientId: string): Promise<void> {
@@ -288,12 +350,61 @@ export class WorkspaceMCPManager {
    * 重启客户端
    */
   async restartClient(name: string, workspacePath: string): Promise<void> {
-    await this.stopClient(name, workspacePath);
-    
-    const config = this.configs.get(workspacePath);
-    
-    if (config && config.mcpServers[name]) {
-      await this.startClients(workspacePath);
+    try {
+      this.logInfo(`开始重启客户端 ${name} (工作区: ${workspacePath})`);
+      
+      // 停止客户端
+      await this.stopClient(name, workspacePath);
+      
+      // 先检查是否是内置客户端
+      const builtinServer = MyServers.find(server => server.name === name);
+      
+      if (builtinServer) {
+        // 内置客户端：从 MyServers 获取配置
+        this.logInfo(`重启内置客户端 ${name}`);
+        const serverConfig: MCPServerConfig = {
+          type: builtinServer.type === "streamableHttp" ? "streamableHttp" : "sse",
+          url: builtinServer.type === "streamableHttp" 
+            ? `http://localhost:${Config.mcp_server_port}/${builtinServer.name}/mcp`
+            : `http://localhost:${Config.mcp_server_port}/${builtinServer.name}/sse`,
+          hyperchat: {
+            scope: "built-in",
+            config: {},
+          } as any,
+          disabled: false,
+        };
+        
+        // 启动内置客户端
+        await this.startSingleBuiltinClient(name, workspacePath, serverConfig);
+      } else {
+        // 自定义客户端：从配置文件中获取配置
+        const config = this.configs.get(workspacePath);
+        
+        if (!config) {
+          throw new Error(`工作区 ${workspacePath} 的配置不存在`);
+        }
+        
+        if (!config.mcpServers[name]) {
+          throw new Error(`客户端 ${name} 的配置不存在`);
+        }
+        
+        // 只重启指定的客户端，而不是所有客户端
+        await this.startSingleClient(name, workspacePath, config.mcpServers[name]);
+      }
+      
+      this.logInfo(`客户端 ${name} 重启成功`);
+    } catch (error) {
+      this.logError(`客户端 ${name} 重启失败:`, error);
+      
+      // 通知错误事件
+      const clientId = this.getClientId(name, workspacePath);
+      this.events.onError?.(error as Error, { 
+        clientId, 
+        workspacePath, 
+        operation: 'restart' 
+      });
+      
+      throw error; // 重新抛出错误，让调用者知道重启失败
     }
   }
 
@@ -328,10 +439,9 @@ export class WorkspaceMCPManager {
     let configPath: string;
     
     // 判断是否为全局工作区
-    const globalWorkspacePath = path.dirname(CONSTANTS.GLOBAL_PATH);
-    if (workspacePath === globalWorkspacePath) {
+    if (workspacePath === CONSTANTS.GLOBAL_PATH) {
       // 全局工作区使用特定的全局配置路径
-      configPath = path.join(CONSTANTS.GLOBAL_PATH, CONSTANTS.CONFIG_FILES.MCP);
+      configPath = path.join(CONSTANTS.GLOBAL_PATH, CONSTANTS.HYPERCHAT_DIR, CONSTANTS.CONFIG_FILES.MCP);
     } else {
       // 普通工作区使用标准路径
       configPath = path.join(workspacePath, CONSTANTS.HYPERCHAT_DIR, CONSTANTS.CONFIG_FILES.MCP);

@@ -34,7 +34,7 @@ import { webdavClient } from "./common/webdav.mjs";
 import { progressList } from "./common/progress.mjs";
 
 import { EVENT } from "./common/event.mjs";
-import { callAgent, runTask, startTask, stopTask } from "./mcp/task.mjs";
+// import { callAgent, runTask, startTask, stopTask } from "./mcp/task.mjs";
 import { getMyDefaultEnvironment } from "./mcp/utils.mjs";
 import * as cron from "node-cron";
 import { store } from "./rag/vectorStore.mjs";
@@ -114,13 +114,14 @@ export class CommandFactory {
     }
   }
   /**
-   * 添加或启动全局范围的 MCP 客户端
+   * 添加或启动全局范围的 MCP 客户端（兼容性方法）
    * 兼容性方法，主要用于支持旧的调用方式
    * 推荐使用 setWorkspaceMcpServerConfig 方法进行工作区特定的配置
    * @param clientName MCP客户端名称
    * @param clientConfig MCP服务器配置（包含连接信息、认证等）
    * @param options 选项，onlySave=true时仅保存配置不启动服务
    * @returns 操作结果
+   * @deprecated 推荐使用 setWorkspaceMcpServerConfig 方法
    */
   async openMcpClient({
     clientName,
@@ -146,6 +147,40 @@ export class CommandFactory {
       success: true,
     };
   }
+
+  /**
+   * 在指定工作区中启动或重启 MCP 客户端
+   * 适用于所有工作区（包括全局工作区）
+   * @param workspacePath 工作区路径
+   * @param clientName MCP客户端名称
+   * @param clientConfig MCP服务器配置（可选，用于添加新客户端）
+   * @returns 操作结果
+   */
+  async startWorkspaceMcpClient({
+    workspacePath,
+    clientName,
+    clientConfig
+  }: {
+    workspacePath: string;
+    clientName: string;
+    clientConfig?: MCPServerConfig;
+  }) {
+    const manager = getMCPManager();
+    
+    if (clientConfig) {
+      // 如果提供了配置，先设置配置再启动
+      await manager.setServerConfig(clientName, clientConfig, workspacePath);
+    } else {
+      // 如果没有配置，尝试重启现有客户端
+      await manager.restartClient(clientName, workspacePath);
+    }
+    
+    return {
+      success: true,
+      clientName,
+      workspacePath
+    };
+  }
   /**
    * 获取所有活跃的 MCP 客户端信息
    * 包括全局、各工作区的内置和自定义 MCP 服务
@@ -158,13 +193,14 @@ export class CommandFactory {
     return clients.map((client) => client.toJSON());
   }
   /**
-   * 管理全局范围的 MCP 客户端生命周期
+   * 管理全局范围的 MCP 客户端生命周期（兼容性方法）
    * 支持删除、禁用或重启操作
    * @param clientName MCP客户端名称
    * @param isdelete 是否删除：true=从配置文件中删除并停止服务
    * @param isdisable 是否禁用：true=停止服务但保留配置
    * @returns 操作结果
    * @note 如果两个参数都为false或未设置，则执行重启操作
+   * @deprecated 推荐使用 manageWorkspaceMcpClient 方法进行工作区特定的操作
    */
   async closeMcpClients({
     clientName,
@@ -192,6 +228,49 @@ export class CommandFactory {
     
     return {
       success: true,
+    };
+  }
+
+  /**
+   * 管理指定工作区的 MCP 客户端生命周期
+   * 支持删除、禁用、重启操作，适用于所有工作区（包括全局）
+   * @param workspacePath 工作区路径
+   * @param clientName MCP客户端名称
+   * @param action 操作类型：'restart'|重启, 'disable'|禁用, 'delete'|删除
+   * @returns 操作结果
+   */
+  async manageWorkspaceMcpClient({
+    workspacePath,
+    clientName,
+    action
+  }: {
+    workspacePath: string;
+    clientName: string;
+    action: 'restart' | 'disable' | 'delete';
+  }) {
+    const manager = getMCPManager();
+    
+    switch (action) {
+      case 'delete':
+        // 从工作区配置中永久删除客户端配置并停止服务
+        await manager.deleteServerConfig(clientName, workspacePath);
+        break;
+      case 'disable':
+        // 仅停止客户端服务，保留配置以便后续重启
+        await manager.stopClient(clientName, workspacePath);
+        break;
+      case 'restart':
+      default:
+        // 重启客户端（先停止再启动）
+        await manager.restartClient(clientName, workspacePath);
+        break;
+    }
+    
+    return {
+      success: true,
+      action,
+      clientName,
+      workspacePath
     };
   }
   /**
@@ -589,45 +668,45 @@ export class CommandFactory {
       throw new Error("cron Error");
     }
   }
-  async startTask({
-    taskkey
-  }: {
-    taskkey?: string;
-  } = {}) {
-    return startTask(taskkey);
-  }
-  async stopTask({
-    taskkey
-  }: {
-    taskkey?: string;
-  } = {}) {
-    return stopTask(taskkey);
-  }
-  async runTask({
-    taskkey
-  }: {
-    taskkey: string;
-  }) {
-    return runTask(taskkey, { force: true });
-  }
-  async callAgent({
-    command,
-    agentName
-  }: {
-    command: string;
-    agentName: string;
-  }) {
-    let AgentsData = await Agents.init();
-    let agent = AgentsData.data.find((x) => x.name === agentName);
-    if (!agent) {
-      throw new Error(`Agent not found: ${agentName}`);
-    }
-    return callAgent({
-      agentKey: agent.key,
-      message: command,
-      type: "call",
-    });
-  }
+  // async startTask({
+  //   taskkey
+  // }: {
+  //   taskkey?: string;
+  // } = {}) {
+  //   return startTask(taskkey);
+  // }
+  // async stopTask({
+  //   taskkey
+  // }: {
+  //   taskkey?: string;
+  // } = {}) {
+  //   return stopTask(taskkey);
+  // }
+  // async runTask({
+  //   taskkey
+  // }: {
+  //   taskkey: string;
+  // }) {
+  //   return runTask(taskkey, { force: true });
+  // }
+  // async callAgent({
+  //   command,
+  //   agentName
+  // }: {
+  //   command: string;
+  //   agentName: string;
+  // }) {
+  //   let AgentsData = await Agents.init();
+  //   let agent = AgentsData.data.find((x) => x.name === agentName);
+  //   if (!agent) {
+  //     throw new Error(`Agent not found: ${agentName}`);
+  //   }
+  //   return callAgent({
+  //     agentKey: agent.key,
+  //     message: command,
+  //     type: "call",
+  //   });
+  // }
   async saveTempFile({ txt, ext }: { txt: string; ext: string }): Promise<string> {
     // let filePath = path.join(os.tmpdir(), "temp.txt");
     // md5(txt) + ext;
@@ -1336,26 +1415,6 @@ export class CommandFactory {
     }
   }
 
-  /**
-   * 获取所有 MCP 客户端（包括全局、工作区和内置）
-   */
-  async getAllMcpClients(): Promise<any[]> {
-    const clients = getAllMCPClients();
-    return clients.map(client => client.toJSON());
-  }
-
-  /**
-   * 获取内置 MCP 客户端
-   */
-  async getBuiltinMcpClients(): Promise<any[]> {
-    try {
-      const clients = getBuiltinMCPClients();
-      return clients.map(client => client.toJSON());
-    } catch (error) {
-      console.error("Failed to get builtin MCP clients:", error);
-      return [];
-    }
-  }
 
   /**
    * 添加或更新工作区 MCP 服务器配置
@@ -1370,9 +1429,7 @@ export class CommandFactory {
     serverConfig: MCPServerConfig;
   }): Promise<void> {
     try {
-      const manager = getMCPManager();
-      const workspaceManager = getWorkspaceManager();
-      
+      const manager = getMCPManager();      
       await manager.setServerConfig(serverName, serverConfig, workspacePath);
     } catch (error) {
       console.error(`Failed to set MCP server config for ${workspacePath}:`, error);
@@ -1392,8 +1449,6 @@ export class CommandFactory {
   }): Promise<void> {
     try {
       const manager = getMCPManager();
-      const workspaceManager = getWorkspaceManager();
-      
       await manager.deleteServerConfig(serverName, workspacePath);
     } catch (error) {
       console.error(`Failed to delete MCP server config for ${workspacePath}:`, error);

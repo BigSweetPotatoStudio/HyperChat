@@ -88,15 +88,14 @@ export function MCPManagement({ workspace, mcpClients, onRefresh }: MCPManagemen
   // 重启MCP客户端
   const restartMcpClient = async (clientName: string) => {
     try {
-      // 先关闭客户端
-      await call("closeMcpClients", { clientName });
-      // 等待一秒后重新打开
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      await call("openMcpClient", { clientName });
+      // 使用新的工作区特定的重启方法
+      await call("manageWorkspaceMcpClient", {
+        workspacePath: workspace.path,
+        clientName,
+        action: "restart"
+      });
       
       message.success(t`MCP client restarted successfully`);
-      // 刷新列表
-      await refreshMcpClients();
     } catch (error) {
       console.error(`Failed to restart MCP client ${clientName}:`, error);
       message.error(t`Failed to restart MCP client`);
@@ -106,9 +105,13 @@ export function MCPManagement({ workspace, mcpClients, onRefresh }: MCPManagemen
   // 停用MCP客户端
   const disableMcpClient = async (clientName: string) => {
     try {
-      await call("closeMcpClients", { clientName, isdisable: true });
+      // 使用新的工作区特定的禁用方法
+      await call("manageWorkspaceMcpClient", {
+        workspacePath: workspace.path,
+        clientName,
+        action: "disable"
+      });
       message.success(t`MCP client disabled successfully`);
-      await refreshMcpClients();
     } catch (error) {
       console.error(`Failed to disable MCP client ${clientName}:`, error);
       message.error(t`Failed to disable MCP client`);
@@ -118,9 +121,12 @@ export function MCPManagement({ workspace, mcpClients, onRefresh }: MCPManagemen
   // 启用MCP客户端
   const enableMcpClient = async (clientName: string) => {
     try {
-      await call("openMcpClient", { clientName });
+      // 使用新的工作区特定的启动方法
+      await call("startWorkspaceMcpClient", {
+        workspacePath: workspace.path,
+        clientName
+      });
       message.success(t`MCP client enabled successfully`);
-      await refreshMcpClients();
     } catch (error) {
       console.error(`Failed to enable MCP client ${clientName}:`, error);
       message.error(t`Failed to enable MCP client`);
@@ -130,24 +136,13 @@ export function MCPManagement({ workspace, mcpClients, onRefresh }: MCPManagemen
   // 删除MCP客户端
   const deleteMcpClient = async (clientName: string) => {
     try {
-      if (workspace.isGlobal) {
-        // 全局工作区使用原有方法
-        await call("closeMcpClients", { clientName, isdelete: true });
-      } else {
-        // 项目工作区使用新的工作区特定方法
-        try {
-          await call("deleteWorkspaceMcpServerConfig", { 
-            workspacePath: workspace.path, 
-            serverName: clientName 
-          });
-        } catch (error) {
-          // 回退到全局方法
-          console.warn("Workspace MCP delete failed, falling back to global method:", error);
-          await call("closeMcpClients", { clientName, isdelete: true });
-        }
-      }
+      // 使用统一的工作区特定的删除方法
+      await call("manageWorkspaceMcpClient", {
+        workspacePath: workspace.path,
+        clientName,
+        action: "delete"
+      });
       message.success(t`MCP client deleted successfully`);
-      await refreshMcpClients();
     } catch (error) {
       console.error(`Failed to delete MCP client ${clientName}:`, error);
       message.error(t`Failed to delete MCP client`);
