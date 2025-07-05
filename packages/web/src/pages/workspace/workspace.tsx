@@ -155,16 +155,23 @@ export function Workspace() {
 
     // 如果已经加载过，直接返回
     if (workspaceDetails[key]) return;
+    
+    return loadWorkspaceDetailsWithHiddenFlag(workspace, showHiddenFiles);
+  };
+
+  // 加载工作区详细信息（支持指定隐藏文件参数）
+  const loadWorkspaceDetailsWithHiddenFlag = async (workspace: WorkspaceInfo, includeHidden: boolean) => {
+    const key = workspace.isGlobal ? "global" : workspace.path;
 
     try {
       const details: any = { agents: [], mcpClients: [] };
 
       // 加载根目录文件列表（懒加载）
-      console.log("Loading file tree for workspace:", workspace.path, "isGlobal:", workspace.isGlobal);
+      console.log("Loading file tree for workspace:", workspace.path, "isGlobal:", workspace.isGlobal, "includeHidden:", includeHidden);
       const rootItems = await call("getWorkspaceDirectoryList", { 
         workspacePath: workspace.path,
         directoryPath: "",
-        includeHidden: showHiddenFiles
+        includeHidden: includeHidden
       });
       console.log("File tree loaded:", rootItems?.length, "items");
       details.fileTreeData = rootItems;
@@ -274,8 +281,19 @@ export function Workspace() {
   // 处理隐藏文件显示切换
   const handleShowHiddenChange = async (showHidden: boolean) => {
     setShowHiddenFiles(showHidden);
-    // 重新加载当前工作区的文件树
-    await refreshWorkspaceDetails();
+    // 重新加载当前工作区的文件树，使用新的showHidden值
+    const currentWorkspace = getCurrentWorkspace();
+    if (currentWorkspace) {
+      const key = currentWorkspace.isGlobal ? "global" : currentWorkspace.path;
+      // 清除缓存，强制重新加载
+      setWorkspaceDetails(prev => {
+        const newDetails = { ...prev };
+        delete newDetails[key];
+        return newDetails;
+      });
+      // 直接调用loadWorkspaceDetails并传入新的showHidden值
+      await loadWorkspaceDetailsWithHiddenFlag(currentWorkspace, showHidden);
+    }
   };
 
 
