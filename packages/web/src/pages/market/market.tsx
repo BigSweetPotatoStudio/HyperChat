@@ -259,7 +259,7 @@ export function Market() {
               {item.version && <Tag>{item.version}</Tag>}
               
               {/* 内置服务标签 */}
-              {item.source === "builtin" && <Tag color="blue">{t`built-in`}</Tag>}
+              {item.mcpType === "builtin" && <Tag color="blue">{t`built-in`}</Tag>}
               
 
               {/* 服务类型标签（非 stdio 类型时显示） */}
@@ -339,7 +339,7 @@ export function Market() {
                       <List
                         itemLayout="horizontal"
                         dataSource={(mcpClients || []).filter(x => 
-                          x.source === "hyperchat" && 
+                          x.mcpType !== "builtin" && 
                           x.name && 
                           x.name.includes(searchValue)
                         )}
@@ -479,7 +479,7 @@ export function Market() {
                   <div className="bg-white p-0">
                     <List
                       itemLayout="horizontal"
-                      dataSource={(mcpClients || []).filter(x => x.source === "builtin")}
+                      dataSource={(mcpClients || []).filter(x => x.mcpType === "builtin")}
                       renderItem={(item: InitedClient, index: number) => (
                         <List.Item
                           className="hover:cursor-pointer hover:bg-slate-300"
@@ -708,7 +708,7 @@ export function Market() {
               };
 
               try {
-                if (currRow.source === "builtin") {
+                if (currRow.mcpType === "builtin") {
                   await call("openMcpClient", {
                     clientName: currRow.name,
                     clientConfig: currRow.config,

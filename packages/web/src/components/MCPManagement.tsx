@@ -32,6 +32,7 @@ interface MCPClient {
   status: string;
   config?: any;
   source?: string;
+  mcpType?: "builtin" | "custom";
   tools?: any[];
   resources?: any[];
   prompts?: any[];
@@ -254,13 +255,10 @@ export function MCPManagement({ workspace, mcpClients, onRefresh }: MCPManagemen
                     title={
                       <Space>
                         <span className="text-sm">{client.name}</span>
-                        {client.source === "builtin" && (
+                        {client.mcpType === "builtin" ? (
                           <Tag color="blue">{t`Built-in`}</Tag>
-                        )}
-                        {workspace.isGlobal ? (
-                          <Tag color="green">{t`Global`}</Tag>
                         ) : (
-                          <Tag color="orange">{t`Workspace`}</Tag>
+                          <Tag color="green">{t`Custom`}</Tag>
                         )}
                       </Space>
                     }

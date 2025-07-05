@@ -72,25 +72,7 @@ export class CommandFactory {
       ...Config
     };
   }
-  /**
-   * 初始化全局范围的 MCP 客户端
-   * 启动内置 MCP 服务（hyper_tools、knowledge_base、settings、agent、terminal）
-   * 以及全局工作区配置的自定义 MCP 服务
-   * @returns 返回所有已启动客户端的JSON格式信息
-   */
-  async initMcpClients() {
-    // 初始化工作区MCP管理器
-    const manager = await initMCPManager();
-    
-    // 获取全局工作区路径并启动MCP客户端
-    const workspaceManager = getWorkspaceManager();
-    const globalWorkspacePath = workspaceManager.getGlobalWorkspacePath();
-    await manager.startClients(globalWorkspacePath);
-    
-    // 获取所有客户端并转换为前端可用的JSON格式
-    const clients = manager.getAllClients();
-    return clients.map((client) => client.toJSON());
-  }
+
 
   /**
    * 强制重新加载全局MCP配置文件
@@ -134,13 +116,7 @@ export class CommandFactory {
       onlySave: boolean;
     };
   }) {
-    if (clientConfig && !options.onlySave) {
-      // 将配置添加到全局工作区并启动客户端
-      const manager = getMCPManager();
-      const workspaceManager = getWorkspaceManager();
-      const globalWorkspacePath = workspaceManager.getGlobalWorkspacePath();
-      await manager.setServerConfig(clientName, clientConfig, globalWorkspacePath);
-    }
+
     return {
       success: true,
     };

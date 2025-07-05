@@ -2180,12 +2180,12 @@ export const Chat = ({
               return {
                 title: (<Tooltip title={x.servername}>
                   <span>
-                    {x.name}{" "}{x.source == "builtin" ? <Tag color="blue">{t`built-in`}</Tag> : null}
+                    {x.name}{" "}{x.mcpType == "builtin" ? <Tag color="blue">{t`built-in`}</Tag> : null}
                     {x.status == "connected" ? null : x.status ==
                       "connecting" ? (
                       <SyncOutlined spin className="m-1 text-blue-400" />
                     ) : (
-                      x.source == "hyperchat" ? <Button
+                      x.mcpType !== "builtin" ? <Button
                         className="m-1"
                         size="small"
                         onClick={async () => {

@@ -43,9 +43,7 @@ export class WorkspaceMCPClientImpl implements WorkspaceMCPClient {
   public servername = "";
   public scope: "workspace";
   public mcpType: MCPType;
-  get source(): "hyperchat" | "builtin" {
-    return this.mcpType === "builtin" ? "builtin" : "hyperchat";
-  }
+
   public workspacePath: string;
   
   public ext: {
