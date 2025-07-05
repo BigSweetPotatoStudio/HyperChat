@@ -390,7 +390,12 @@ export function Workspace() {
         label: (
           <Space>
             <GlobalOutlined />
-            <span>{globalWorkspace.name || t`Global Workspace`}</span>
+            <div style={{ textAlign: 'left' }}>
+              <div>{globalWorkspace.name || t`Global Workspace`}</div>
+              <div style={{ fontSize: '11px', color: '#999', lineHeight: '1.2' }}>
+                {t`Global Configuration`}
+              </div>
+            </div>
             <Tag color="blue" >{t`Global`}</Tag>
             <Badge count={globalWorkspace.agentsCount} size="small" />
             <Badge count={globalWorkspace.mcpServersCount} size="small" />
@@ -407,7 +412,12 @@ export function Workspace() {
         label: (
           <Space>
             <FolderOpenOutlined />
-            <span>{workspace.name}</span>
+            <div style={{ textAlign: 'left' }}>
+              <div>{workspace.name}</div>
+              <div style={{ fontSize: '11px', color: '#999', lineHeight: '1.2' }}>
+                {workspace.path}
+              </div>
+            </div>
             <Badge count={workspace.agentsCount} size="small" />
             <Badge count={workspace.mcpServersCount} size="small" />
           </Space>
