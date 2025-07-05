@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import {
   Card,
   List,
@@ -260,7 +260,6 @@ export function Workspace() {
   const updateTreeData = (list: any[], key: React.Key, children: any[]): any[] =>
     list.map((node) => {
       if (node.key === key) {
-        console.log("Updating node:", node.key, "with children:", children);
         return {
           ...node,
           children,
