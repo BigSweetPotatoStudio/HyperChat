@@ -38,6 +38,7 @@ import * as vm from "node:vm";
 import { ActiveAITerminal, CloseTerminal, GetTerminals, OpenTerminal } from "./mcp/servers/terminal/terminal.mjs";
 import { fileURLToPath } from 'node:url';
 import { dirname } from 'node:path';
+import { getWorkspaceManager } from "./workspace/index.mjs";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -634,7 +635,6 @@ export class CommandFactory {
    * 获取所有工作区列表
    */
   async getWorkspaceList(): Promise<any[]> {
-    const { getWorkspaceManager } = await import("./workspace/index.mjs");
     const workspaceManager = getWorkspaceManager();
     return workspaceManager.getWorkspaceList();
   }
@@ -651,8 +651,6 @@ export class CommandFactory {
     name?: string;
     description?: string;
   }): Promise<any> {
-    const { getWorkspaceManager } = await import("./workspace/index.mjs");
-    
     const workspaceManager = getWorkspaceManager();
     
     // 如果没有提供名称，从路径提取文件夹名称
@@ -670,7 +668,6 @@ export class CommandFactory {
   }: {
     workspacePath: string;
   }): Promise<boolean> {
-    const { getWorkspaceManager } = await import("./workspace/index.mjs");
     const workspaceManager = getWorkspaceManager();
     return await workspaceManager.deleteWorkspace(workspacePath);
   }
@@ -683,7 +680,6 @@ export class CommandFactory {
   }: {
     workspacePath: string;
   }): Promise<any | null> {
-    const { getWorkspaceManager } = await import("./workspace/index.mjs");
     const workspaceManager = getWorkspaceManager();
     const workspace = await workspaceManager.loadExistingWorkspace(workspacePath);
     return workspace ? workspace.getConfig() : null;
@@ -697,7 +693,6 @@ export class CommandFactory {
   }: {
     workspacePath: string;
   }): Promise<any | null> {
-    const { getWorkspaceManager } = await import("./workspace/index.mjs");
     const workspaceManager = getWorkspaceManager();
     const workspace = workspaceManager.getWorkspace(workspacePath);
     return workspace ? workspace.getConfig() : null;
@@ -707,7 +702,6 @@ export class CommandFactory {
    * 获取全局工作区信息
    */
   async getGlobalWorkspace() {
-    const { getWorkspaceManager } = await import("./workspace/index.mjs");
     const workspaceManager = getWorkspaceManager();
     const globalWorkspace = workspaceManager.getGlobalWorkspace();
     const globalPath = workspaceManager.getGlobalWorkspacePath();
@@ -725,7 +719,6 @@ export class CommandFactory {
   }: {
     workspacePath: string;
   }): Promise<any | null> {
-    const { getWorkspaceManager } = await import("./workspace/index.mjs");
     const workspaceManager = getWorkspaceManager();
     const workspace = workspaceManager.getWorkspace(workspacePath);
     if (!workspace) return null;
@@ -748,7 +741,6 @@ export class CommandFactory {
     workspacePath: string;
     directoryPath?: string;
   }): Promise<any[]> {
-    const { getWorkspaceManager } = await import("./workspace/index.mjs");
     const { fs, path } = zx;
     
     try {
@@ -846,7 +838,6 @@ export class CommandFactory {
   }: {
     directoryPath: string;
   }): Promise<boolean> {
-    const { getWorkspaceManager } = await import("./workspace/index.mjs");
     const workspaceManager = getWorkspaceManager();
     return workspaceManager.isWorkspaceDirectory(directoryPath);
   }
@@ -859,7 +850,6 @@ export class CommandFactory {
   }: {
     directoryPath: string;
   }): Promise<any | null> {
-    const { getWorkspaceManager } = await import("./workspace/index.mjs");
     const workspaceManager = getWorkspaceManager();
     const workspace = await workspaceManager.getWorkspaceFromDirectory(directoryPath);
     return workspace ? workspace.getConfig() : null;
@@ -873,7 +863,6 @@ export class CommandFactory {
   }: {
     workspacePath: string;
   }): Promise<any[]> {
-    const { getWorkspaceManager } = await import("./workspace/index.mjs");
     const workspaceManager = getWorkspaceManager();
     return await workspaceManager.getWorkspaceAgents(workspacePath);
   }
@@ -886,7 +875,6 @@ export class CommandFactory {
   }: {
     workspacePath: string;
   }): Promise<any[]> {
-    const { getWorkspaceManager } = await import("./workspace/index.mjs");
     const workspaceManager = getWorkspaceManager();
     // 检查是否为全局工作区
     const workspace = workspaceManager.isGlobalWorkspace(workspacePath) 

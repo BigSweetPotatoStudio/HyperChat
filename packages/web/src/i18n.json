@@ -1850,5 +1850,17 @@
   "Failed to load directory contents": {
     "en": "Failed to load directory contents",
     "zh": "加载目录内容失败"
+  },
+  "Refresh file tree": {
+    "en": "Refresh file tree",
+    "zh": "刷新文件树"
+  },
+  "File tree refreshed successfully": {
+    "en": "File tree refreshed successfully",
+    "zh": "文件树刷新成功"
+  },
+  "Failed to refresh file tree": {
+    "en": "Failed to refresh file tree",
+    "zh": "刷新文件树失败"
   }
 }

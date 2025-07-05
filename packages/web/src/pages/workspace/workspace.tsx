@@ -8,7 +8,6 @@ import {
   Input,
   message,
   Tabs,
-  Tree,
   Space,
   Tag,
   Tooltip,
@@ -26,8 +25,6 @@ import {
   FolderOpenOutlined,
   PlusOutlined,
   DeleteOutlined,
-  FileOutlined,
-  FolderOutlined,
   SettingOutlined,
   GlobalOutlined,
   AppstoreOutlined,
@@ -36,8 +33,6 @@ import {
   StopOutlined,
   InfoCircleOutlined,
   MoreOutlined,
-  EyeOutlined,
-  EyeInvisibleOutlined,
 } from "@ant-design/icons";
 import { call } from "../../common/call";
 import { useForceUpdate } from "../../hooks/useForceUpdate";
@@ -46,6 +41,7 @@ import { ServerDirectoryBrowser } from "../../components/ServerDirectoryBrowser"
 import { getClients } from "../../common/mcp";
 import { MCPManagement } from "../../components/MCPManagement";
 import { AgentManagement } from "../../components/AgentManagement";
+import { FileTreeComponent } from "../../components/FileTreeComponent";
 
 const { Title, Text } = Typography;
 
@@ -270,145 +266,40 @@ export function Workspace() {
     }
   };
 
+  // 刷新文件树
+  const refreshFileTree = async () => {
+    const currentWorkspace = getCurrentWorkspace();
+    if (currentWorkspace) {
+      const key = currentWorkspace.isGlobal ? "global" : currentWorkspace.path;
+      
+      try {
+        // 重新加载文件树数据
+        const rootItems = await call("getWorkspaceDirectoryList", { 
+          workspacePath: currentWorkspace.path,
+          directoryPath: ""
+        });
+        
+        // 更新工作区详情中的文件树数据
+        setWorkspaceDetails(prev => ({
+          ...prev,
+          [key]: {
+            ...prev[key],
+            fileTreeData: rootItems,
+            agents: prev[key]?.agents ?? [],
+            mcpClients: prev[key]?.mcpClients ?? []
+          }
+        }));
+      } catch (error) {
+        console.error("Failed to refresh file tree:", error);
+        throw error; // 重新抛出错误，让组件显示错误消息
+      }
+    }
+  };
+
   // 处理隐藏文件显示切换
   const handleShowHiddenChange = (showHidden: boolean) => {
     setShowHiddenFiles(showHidden);
     // 不需要重新加载数据，文件树组件会自动通过useEffect重新过滤和渲染
-  };
-
-
-  // 更新文件树数据，插入子项
-  const updateTreeDataWithChildren = (
-    data: FileNode[],
-    targetPath: string,
-    children: FileNode[]
-  ): FileNode[] => {
-    return data.map((node) => {
-      if (node.path === targetPath) {
-        return {
-          ...node,
-          children: children,
-          loaded: true,
-        };
-      }
-      if (node.children) {
-        return {
-          ...node,
-          children: updateTreeDataWithChildren(node.children, targetPath, children),
-        };
-      }
-      return node;
-    });
-  };
-
-  // 更新树数据的工具函数（按照官方示例）
-  const updateTreeData = (list: any[], key: React.Key, children: any[]): any[] =>
-    list.map((node) => {
-      if (node.key === key) {
-        return {
-          ...node,
-          children,
-        };
-      }
-      if (node.children) {
-        return {
-          ...node,
-          children: updateTreeData(node.children, key, children),
-        };
-      }
-      return node;
-    });
-
-  // 过滤隐藏文件的工具函数
-  const filterHiddenFiles = (items: FileNode[], showHidden: boolean): FileNode[] => {
-    if (showHidden) return items;
-    return items.filter(item => !item.isHidden);
-  };
-
-  // 将文件节点转换为树节点的函数
-  const mapFileNodeToTreeNode = (item: FileNode) => ({
-    title: (
-      <span style={{ opacity: item.isHidden ? 0.6 : 1 }}>
-        {item.name}
-      </span>
-    ),
-    key: item.path,
-    icon: item.type === "directory" ? <FolderOutlined /> : <FileOutlined />,
-    isLeaf: item.type === "file",
-  });
-
-  // 文件树组件
-  const FileTreeComponent = ({ 
-    workspace, 
-    initialData, 
-    onDataUpdate,
-    showHidden,
-    onShowHiddenChange
-  }: { 
-    workspace: WorkspaceInfo;
-    initialData: FileNode[];
-    onDataUpdate: (data: FileNode[]) => void;
-    showHidden: boolean;
-    onShowHiddenChange: (show: boolean) => void;
-  }) => {
-    // 初始化树数据（过滤隐藏文件）
-    const [treeData, setTreeData] = useState(() => {
-      const filteredData = filterHiddenFiles(initialData, showHidden);
-      return filteredData.map(mapFileNodeToTreeNode);
-    });
-
-    // 当初始数据或showHidden变化时更新组件状态
-    useEffect(() => {
-      const filteredData = filterHiddenFiles(initialData, showHidden);
-      const newTreeData = filteredData.map(mapFileNodeToTreeNode);
-      setTreeData(newTreeData);
-    }, [initialData, showHidden]);
-
-    const onLoadData = ({ key, children }: any) =>
-      new Promise<void>(async (resolve) => {
-        if (children) {
-          resolve();
-          return;
-        }
-
-        try {
-          const childrenData: FileNode[] = await call("getWorkspaceDirectoryList", {
-            workspacePath: workspace.path,
-            directoryPath: key
-          });
-          
-          const filteredChildren = filterHiddenFiles(childrenData, showHidden);
-          const treeChildren = filteredChildren.map(mapFileNodeToTreeNode);
-
-          setTreeData((origin) => updateTreeData(origin, key, treeChildren));
-          resolve();
-        } catch (error) {
-          console.error("Failed to load directory children:", error);
-          message.error(t`Failed to load directory contents`);
-          resolve();
-        }
-      });
-
-    return (
-      <div>
-        <div className="flex justify-between items-center mb-2 px-1">
-          <span className="text-xs text-gray-500">{t`Files`}</span>
-          <Button
-            type="text"
-            size="small"
-            icon={showHidden ? <EyeOutlined /> : <EyeInvisibleOutlined />}
-            onClick={() => onShowHiddenChange(!showHidden)}
-            title={showHidden ? t`Hide hidden files` : t`Show hidden files`}
-            className="text-xs"
-          />
-        </div>
-        <Tree
-          showIcon
-          loadData={onLoadData}
-          treeData={treeData}
-        />
-      </div>
-    );
   };
 
   useEffect(() => {
@@ -526,17 +417,7 @@ export function Workspace() {
                   initialData={details.fileTreeData}
                   showHidden={showHiddenFiles}
                   onShowHiddenChange={handleShowHiddenChange}
-                  onDataUpdate={(updatedData) => {
-                    const key = currentWorkspace.isGlobal ? "global" : currentWorkspace.path;
-                    setWorkspaceDetails(prev => ({
-                      ...prev,
-                      [key]: {
-                        fileTreeData: updatedData,
-                        agents: prev[key]?.agents || [],
-                        mcpClients: prev[key]?.mcpClients || []
-                      }
-                    }));
-                  }}
+                  onRefresh={refreshFileTree}
                 />
               ) : (
                 <Empty
