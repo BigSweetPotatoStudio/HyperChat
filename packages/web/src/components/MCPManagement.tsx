@@ -60,26 +60,26 @@ export function MCPManagement({ workspace, mcpClients, onRefresh }: MCPManagemen
       setMcpRefreshing(true);
       
       if (workspace.isGlobal) {
-        // 全局工作区：重新初始化全局MCP客户端
-        await call("initMcpClients");
+        // 全局工作区：强制重新加载全局MCP客户端
+        await call("forceReloadMcpClients");
       } else {
-        // 项目工作区：启动工作区特定的MCP客户端
+        // 项目工作区：强制重新加载工作区特定的MCP客户端
         try {
-          await call("startWorkspaceMcpClients", { workspacePath: workspace.path });
+          await call("forceReloadWorkspaceMcpClients", { workspacePath: workspace.path });
         } catch (error) {
-          // 如果工作区MCP启动失败，可能是新系统不可用，回退到全局初始化
-          console.warn("Workspace MCP start failed, falling back to global init:", error);
-          await call("initMcpClients");
+          // 如果工作区MCP强制重新加载失败，回退到全局强制重新加载
+          console.warn("Workspace MCP force reload failed, falling back to global force reload:", error);
+          await call("forceReloadMcpClients");
         }
       }
       
       // 调用父组件的刷新函数
       await onRefresh();
       
-      message.success(t`MCP clients refreshed successfully`);
+      message.success(t`MCP clients reloaded successfully`);
     } catch (error) {
-      console.error("Failed to refresh MCP clients:", error);
-      message.error(t`Failed to refresh MCP clients`);
+      console.error("Failed to reload MCP clients:", error);
+      message.error(t`Failed to reload MCP clients`);
     } finally {
       setMcpRefreshing(false);
     }

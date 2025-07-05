@@ -28,7 +28,6 @@ import {
   initMCPManager,
   getAllMCPClients,
   getWorkspaceMCPClients as getWorkspaceMCPClientsFromManager,
-  getGlobalMCPClients,
   getBuiltinMCPClients
 } from "./workspace/mcp/index.mjs";
 import { webdavClient } from "./common/webdav.mjs";
@@ -99,6 +98,26 @@ export class CommandFactory {
       }
     }
   }
+
+  /**
+   * 强制重新加载MCP配置文件
+   */
+  async forceReloadMcpClients() {
+    try {
+      // 清除新系统的缓存
+      const manager = getMCPManager();
+      if (manager) {
+        // 停止所有现有客户端
+        await manager.stopAllClients();
+      }
+      
+      // 重新初始化
+      return await this.initMcpClients();
+    } catch (error) {
+      console.error("Failed to force reload MCP clients:", error);
+      throw error;
+    }
+  }
   // 打开 MCP 客户端（主要用于兼容性，推荐使用工作区特定的方法）
   async openMcpClient({
     clientName,
@@ -142,8 +161,8 @@ export class CommandFactory {
   // 获取所有 MCP 客户端（全局范围）
   async getMcpClients() {
     try {
-      // 使用新的工作区MCP管理器获取全局客户端
-      const clients = getGlobalMCPClients();
+      // 使用新的工作区MCP管理器获取所有客户端
+      const clients = getAllMCPClients();
       return clients.map((client) => client.toJSON());
     } catch (error) {
       console.error("Failed to get MCP clients from new system:", error);
@@ -1024,8 +1043,8 @@ export class CommandFactory {
       
       // 检查是否为全局工作区
       if (workspaceManager.isGlobalWorkspace(workspacePath)) {
-        // 全局工作区返回全局客户端
-        const clients = getGlobalMCPClients();
+        // 使用工作区路径获取客户端
+        const clients = getWorkspaceMCPClientsFromManager(workspacePath);
         return clients.map(client => client.toJSON());
       } else {
         // 普通工作区返回工作区特定的客户端
@@ -1220,18 +1239,37 @@ export class CommandFactory {
     try {
       const manager = getMCPManager();
       
-      // 确保管理器已初始化
-      if (!manager['initialized']) {
-        await manager.init();
-      }
-      
-      // 加载并启动工作区MCP客户端
-      await manager.loadWorkspaceConfig(workspacePath);
-      const clients = await manager.startClients("workspace", workspacePath);
+      // 启动工作区MCP客户端
+      const clients = await manager.startClients(workspacePath);
       
       return clients.map(client => client.toJSON());
     } catch (error) {
       console.error(`Failed to start workspace MCP clients for ${workspacePath}:`, error);
+      throw error;
+    }
+  }
+
+  /**
+   * 强制重新加载工作区MCP配置
+   */
+  async forceReloadWorkspaceMcpClients({
+    workspacePath
+  }: {
+    workspacePath: string;
+  }): Promise<any[]> {
+    try {
+      const manager = getMCPManager();
+      
+      // 管理器不需要显式初始化
+      
+      // 强制重新加载工作区配置
+      await manager.forceReloadWorkspaceConfig(workspacePath);
+      
+      // 获取重新加载后的客户端
+      const clients = manager.getClientsByWorkspace(workspacePath);
+      return clients.map(client => client.toJSON());
+    } catch (error) {
+      console.error(`Failed to force reload workspace MCP clients for ${workspacePath}:`, error);
       throw error;
     }
   }
@@ -1246,7 +1284,7 @@ export class CommandFactory {
   }): Promise<void> {
     try {
       const manager = getMCPManager();
-      await manager.stopClients("workspace", workspacePath);
+      await manager.stopClients(workspacePath);
     } catch (error) {
       console.error(`Failed to stop workspace MCP clients for ${workspacePath}:`, error);
       throw error;
@@ -1302,10 +1340,7 @@ export class CommandFactory {
       const manager = getMCPManager();
       const workspaceManager = getWorkspaceManager();
       
-      const scope = workspaceManager.isGlobalWorkspace(workspacePath) ? "global" : "workspace";
-      const actualWorkspacePath = scope === "workspace" ? workspacePath : undefined;
-      
-      await manager.setServerConfig(serverName, serverConfig, scope, actualWorkspacePath);
+      await manager.setServerConfig(serverName, serverConfig, workspacePath);
     } catch (error) {
       console.error(`Failed to set MCP server config for ${workspacePath}:`, error);
       throw error;
@@ -1326,10 +1361,7 @@ export class CommandFactory {
       const manager = getMCPManager();
       const workspaceManager = getWorkspaceManager();
       
-      const scope = workspaceManager.isGlobalWorkspace(workspacePath) ? "global" : "workspace";
-      const actualWorkspacePath = scope === "workspace" ? workspacePath : undefined;
-      
-      await manager.deleteServerConfig(serverName, scope, actualWorkspacePath);
+      await manager.deleteServerConfig(serverName, workspacePath);
     } catch (error) {
       console.error(`Failed to delete MCP server config for ${workspacePath}:`, error);
       throw error;

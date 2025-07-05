@@ -583,8 +583,18 @@ export async function initMcpClients(): Promise<MCPClient[]> {
   if (firstRunStatus === 0) {
     firstRunStatus = 1;
   } else if (firstRunStatus === 2) {
-    Logger.info("Returning cached MCP clients:", Object.keys(globalMcpClients).length);
-    return Object.values(globalMcpClients);
+    // 验证缓存的客户端是否有效
+    const cachedClients = Object.values(globalMcpClients);
+    const validClients = cachedClients.filter(client => client.status !== "disconnected");
+    
+    if (validClients.length > 0) {
+      Logger.info("Returning cached MCP clients:", validClients.length);
+      return validClients;
+    } else {
+      Logger.warn("所有缓存的客户端都已断开连接，重新初始化");
+      firstRunStatus = 0; // 重置状态以重新初始化
+      return initMcpClients();
+    }
   }
 
   // Logger.debug(config);

@@ -14,7 +14,6 @@ export {
 export type {
   WorkspaceMCPConfig,
   WorkspaceMCPClient,
-  MCPScope,
   MCPType,
   MCPManagerOptions,
   MCPManagerEvents,
@@ -59,7 +58,6 @@ export function getMCPManager(): WorkspaceMCPManager {
  */
 export async function initMCPManager(): Promise<WorkspaceMCPManager> {
   const manager = getMCPManager();
-  await manager.init();
   return manager;
 }
 
@@ -79,17 +77,9 @@ export async function destroyMCPManager(): Promise<void> {
 export async function startWorkspaceMCP(workspacePath: string): Promise<void> {
   const manager = getMCPManager();
   
-  // 确保管理器已初始化
-  if (!manager['initialized']) {
-    await manager.init();
-  }
-  
   try {
-    // 加载工作区配置
-    await manager.loadWorkspaceConfig(workspacePath);
-    
     // 启动工作区客户端
-    await manager.startClients("workspace", workspacePath);
+    await manager.startClients(workspacePath);
     
     Logger.info(`工作区 MCP 服务已启动: ${workspacePath}`);
   } catch (error) {
@@ -105,7 +95,7 @@ export async function stopWorkspaceMCP(workspacePath: string): Promise<void> {
   const manager = getMCPManager();
   
   try {
-    await manager.stopClients("workspace", workspacePath);
+    await manager.stopClients(workspacePath);
     Logger.info(`工作区 MCP 服务已停止: ${workspacePath}`);
   } catch (error) {
     Logger.error(`停止工作区 MCP 服务失败: ${workspacePath}`, error);
@@ -126,15 +116,7 @@ export function getAllMCPClients() {
  */
 export function getWorkspaceMCPClients(workspacePath: string) {
   const manager = getMCPManager();
-  return manager.getClientsByScope("workspace", workspacePath);
-}
-
-/**
- * 获取全局 MCP 客户端
- */
-export function getGlobalMCPClients() {
-  const manager = getMCPManager();
-  return manager.getClientsByScope("global");
+  return manager.getClientsByWorkspace(workspacePath);
 }
 
 /**

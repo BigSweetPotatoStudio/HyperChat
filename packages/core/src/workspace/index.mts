@@ -44,7 +44,6 @@ export {
   stopWorkspaceMCP,
   getAllMCPClients,
   getWorkspaceMCPClients,
-  getGlobalMCPClients,
   getBuiltinMCPClients,
   initWorkspaceMCP,
   isWorkspaceMCPInitialized,
@@ -55,7 +54,6 @@ export {
 export type {
   WorkspaceMCPConfig,
   WorkspaceMCPClient,
-  MCPScope,
   MCPType,
   MCPManagerOptions,
   MCPManagerEvents,

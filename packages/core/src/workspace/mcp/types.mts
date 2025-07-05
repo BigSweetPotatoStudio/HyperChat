@@ -4,7 +4,6 @@
 
 import type { MCPServerConfig, IMCPClient } from "../../shared/data.mjs";
 
-export type MCPScope = "global" | "workspace";
 export type MCPType = "builtin" | "custom";
 
 export interface WorkspaceMCPConfig {
@@ -14,14 +13,14 @@ export interface WorkspaceMCPConfig {
   mcpServers: Record<string, MCPServerConfig>;
   
   /**
-   * 工作区路径（仅工作区配置有效）
+   * 工作区路径
    */
-  workspacePath?: string;
+  workspacePath: string;
   
   /**
-   * 配置范围
+   * 配置范围（固定为 workspace）
    */
-  scope: MCPScope;
+  scope: "workspace";
   
   /**
    * 是否自动启动
@@ -41,9 +40,9 @@ export interface WorkspaceMCPConfig {
 
 export interface WorkspaceMCPClient extends IMCPClient {
   /**
-   * 配置范围
+   * 配置范围（固定为 workspace）
    */
-  scope: MCPScope;
+  scope: "workspace";
   
   /**
    * MCP 类型
@@ -51,9 +50,9 @@ export interface WorkspaceMCPClient extends IMCPClient {
   mcpType: MCPType;
   
   /**
-   * 工作区路径（仅工作区客户端有效）
+   * 工作区路径
    */
-  workspacePath?: string;
+  workspacePath: string;
   
 }
 

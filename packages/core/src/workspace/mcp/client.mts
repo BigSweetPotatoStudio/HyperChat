@@ -16,7 +16,7 @@ import {
   ResourceListChangedNotificationSchema 
 } from "../../es6.mjs";
 import type { MCPServerConfig, HyperChatCompletionTool } from "../../shared/data.mjs";
-import type { WorkspaceMCPClient, MCPScope, MCPType } from "./types.mjs";
+import type { WorkspaceMCPClient, MCPType } from "./types.mjs";
 import { Logger } from "../../log.mjs";
 import { getMessageService } from "../../message_service.mjs";
 import { AppSetting } from "../../shared/data.mjs";
@@ -41,12 +41,12 @@ export class WorkspaceMCPClientImpl implements WorkspaceMCPClient {
   public status: WorkspaceMCPClient["status"] = "disconnected";
   public version = "";
   public servername = "";
-  public scope: MCPScope;
+  public scope: "workspace";
   public mcpType: MCPType;
   get source(): "hyperchat" | "builtin" {
     return this.mcpType === "builtin" ? "builtin" : "hyperchat";
   }
-  public workspacePath?: string;
+  public workspacePath: string;
   
   public ext: {
     configSchema?: { [s in string]: any };
@@ -59,12 +59,12 @@ export class WorkspaceMCPClientImpl implements WorkspaceMCPClient {
   constructor(
     public name: string,
     public config: MCPServerConfig,
-    scope: MCPScope,
+    scope: "workspace",
     public order: number = 0,
     options: {
       mcpType?: MCPType;
-      workspacePath?: string;
-    } = {}
+      workspacePath: string;
+    }
   ) {
     this.scope = scope;
     this.mcpType = options.mcpType || "custom";
@@ -457,23 +457,7 @@ export class WorkspaceMCPClientImpl implements WorkspaceMCPClient {
    * 获取客户端的唯一标识符
    */
   getUniqueId(): string {
-    return this.workspacePath 
-      ? `${this.scope}:${this.workspacePath}:${this.name}`
-      : `${this.scope}:${this.name}`;
-  }
-
-  /**
-   * 检查是否为工作区客户端
-   */
-  isWorkspaceClient(): boolean {
-    return this.scope === "workspace" && !!this.workspacePath;
-  }
-
-  /**
-   * 检查是否为全局客户端
-   */
-  isGlobalClient(): boolean {
-    return this.scope === "global";
+    return `${this.workspacePath}:${this.name}`;
   }
 
   /**
@@ -488,22 +472,14 @@ export class WorkspaceMCPClientImpl implements WorkspaceMCPClient {
    */
   getDisplayName(): string {
     const typePrefix = this.mcpType === "builtin" ? "[内置]" : "[自定义]";
-    const scopePrefix = this.scope === "global" ? "[全局]" : "[工作区]";
-    return `${typePrefix}${scopePrefix} ${this.name}`;
+    return `${typePrefix} ${this.name}`;
   }
 
   /**
    * 获取客户端配置的保存路径
    */
   getConfigPath(): string {
-    switch (this.scope) {
-      case "global":
-        return "global";
-      case "workspace":
-        return this.workspacePath || "unknown";
-      default:
-        return "unknown";
-    }
+    return this.workspacePath;
   }
 
   /**
