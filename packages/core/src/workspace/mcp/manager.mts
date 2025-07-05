@@ -103,9 +103,10 @@ export class WorkspaceMCPManager {
   private async loadGlobalConfig(): Promise<void> {
     const globalPath = path.join(CONSTANTS.GLOBAL_PATH, CONSTANTS.CONFIG_FILES.MCP);
     
-    let globalConfig: WorkspaceMCPConfig = {
+    // 获取已存在的全局配置（包含内置服务器）
+    let globalConfig = this.configs.get("global") || {
       mcpServers: {},
-      scope: "global",
+      scope: "global" as MCPScope,
       autoStart: true,
       created: Date.now(),
       lastModified: Date.now(),
@@ -115,8 +116,15 @@ export class WorkspaceMCPManager {
       try {
         const content = await fs.promises.readFile(globalPath, "utf-8");
         const data = JSON.parse(content);
-        globalConfig.mcpServers = data.mcpServers || {};
-        this.logInfo(`从全局配置加载了 ${Object.keys(globalConfig.mcpServers).length} 个服务器`);
+        
+        // 合并用户配置的服务器和内置服务器
+        const userServers = data.mcpServers || {};
+        globalConfig.mcpServers = {
+          ...globalConfig.mcpServers, // 保留内置服务器
+          ...userServers // 添加用户配置的服务器
+        };
+        
+        this.logInfo(`从全局配置加载了 ${Object.keys(userServers).length} 个用户配置的服务器`);
       } catch (error) {
         this.logError("加载全局 MCP 配置失败:", error);
       }
@@ -128,6 +136,7 @@ export class WorkspaceMCPManager {
     }
 
     this.configs.set("global", globalConfig);
+    this.logInfo(`全局配置总共包含 ${Object.keys(globalConfig.mcpServers).length} 个服务器`);
   }
 
   /**
