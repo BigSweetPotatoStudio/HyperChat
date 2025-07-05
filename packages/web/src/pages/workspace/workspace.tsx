@@ -171,22 +171,24 @@ export function Workspace() {
     }
   };
 
-  // 创建新工作区
-  const createWorkspace = async (values: { name: string; description?: string; path: string }) => {
+  // 创建或打开工作区
+  const createOrOpenWorkspace = async (values: { path: string }) => {
     try {
+      // 从路径提取文件夹名称作为工作区名称
+      const folderName = values.path.split(/[/\\]/).pop() || 'Workspace';
+      
       await call("createWorkspace", {
         workspacePath: values.path,
-        name: values.name,
-        description: values.description,
+        name: folderName,
       });
-      message.success(t`Workspace created successfully`);
+      message.success(t`Workspace created or opened successfully`);
       setCreateModalOpen(false);
       form.resetFields();
       setSelectedPath("");
       loadWorkspaces();
     } catch (error) {
-      console.error("Failed to create workspace:", error);
-      message.error(t`Failed to create workspace`);
+      console.error("Failed to create or open workspace:", error);
+      message.error(t`Failed to create or open workspace`);
     }
   };
 
@@ -633,9 +635,9 @@ export function Workspace() {
         </div>
       </div>
 
-      {/* 创建工作区模态框 */}
+      {/* 创建或打开工作区模态框 */}
       <Modal
-        title={t`Create New Workspace`}
+        title={t`Create or Open Workspace`}
         open={createModalOpen}
         onCancel={() => {
           setCreateModalOpen(false);
@@ -650,27 +652,13 @@ export function Workspace() {
         <Form
           form={form}
           layout="vertical"
-          onFinish={createWorkspace}
+          onFinish={createOrOpenWorkspace}
         >
-          <Form.Item
-            label={t`Workspace Name`}
-            name="name"
-            rules={[{ required: true, message: t`Please enter workspace name` }]}
-          >
-            <Input placeholder={t`Enter workspace name`} />
-          </Form.Item>
-
-          <Form.Item
-            label={t`Description`}
-            name="description"
-          >
-            <Input.TextArea placeholder={t`Optional workspace description`} rows={3} />
-          </Form.Item>
-
           <Form.Item
             label={t`Folder Path`}
             name="path"
             rules={[{ required: true, message: t`Please select folder path` }]}
+            extra={t`The workspace name will be automatically set to the folder name`}
           >
             <Input.Group compact>
               <Input

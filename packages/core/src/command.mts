@@ -640,7 +640,7 @@ export class CommandFactory {
   }
 
   /**
-   * 创建新工作区
+   * 创建或打开工作区
    */
   async createWorkspace({
     workspacePath,
@@ -648,12 +648,17 @@ export class CommandFactory {
     description
   }: {
     workspacePath: string;
-    name: string;
+    name?: string;
     description?: string;
   }): Promise<any> {
     const { getWorkspaceManager } = await import("./workspace/index.mjs");
+    
     const workspaceManager = getWorkspaceManager();
-    const workspace = await workspaceManager.createWorkspace(workspacePath, name, description);
+    
+    // 如果没有提供名称，从路径提取文件夹名称
+    const workspaceName = name || path.basename(workspacePath) || 'Workspace';
+    
+    const workspace = await workspaceManager.createWorkspace(workspacePath, workspaceName, description);
     return workspace.getConfig();
   }
 
