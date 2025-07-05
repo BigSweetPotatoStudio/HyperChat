@@ -784,6 +784,119 @@ export class CommandFactory {
     return workspace.getMcpClients().map(client => client.toJSON());
   }
 
+  /**
+   * 列出服务器上的目录内容
+   */
+  async listServerDirectory({
+    path: dirPath = "~"
+  }: {
+    path?: string;
+  }): Promise<any[]> {
+    const { fs, os, path } = zx;
+    
+    try {
+      // 处理特殊路径
+      let resolvedPath = dirPath;
+      if (dirPath === "~") {
+        resolvedPath = os.homedir();
+      } else if (dirPath.startsWith("~/")) {
+        resolvedPath = path.join(os.homedir(), dirPath.slice(2));
+      }
+
+      // 安全检查：确保路径是绝对路径
+      resolvedPath = path.resolve(resolvedPath);
+
+      // 检查路径是否存在且是目录
+      if (!fs.existsSync(resolvedPath)) {
+        throw new Error(`路径不存在: ${resolvedPath}`);
+      }
+
+      const stats = await fs.promises.stat(resolvedPath);
+      if (!stats.isDirectory()) {
+        throw new Error(`路径不是目录: ${resolvedPath}`);
+      }
+
+      // 读取目录内容
+      const entries = await fs.promises.readdir(resolvedPath, { withFileTypes: true });
+      
+      const result = [];
+      for (const entry of entries) {
+        // 跳过隐藏文件（以 . 开头的文件）
+        if (entry.name.startsWith('.')) {
+          continue;
+        }
+
+        const fullPath = path.join(resolvedPath, entry.name);
+        const itemStats = await fs.promises.stat(fullPath).catch(() => null);
+        
+        if (itemStats) {
+          result.push({
+            name: entry.name,
+            path: fullPath,
+            type: entry.isDirectory() ? "directory" : "file",
+            size: entry.isFile() ? itemStats.size : undefined,
+            modified: itemStats.mtime.getTime(),
+          });
+        }
+      }
+
+      // 排序：目录在前，文件在后，然后按名称排序
+      result.sort((a, b) => {
+        if (a.type !== b.type) {
+          return a.type === "directory" ? -1 : 1;
+        }
+        return a.name.localeCompare(b.name);
+      });
+
+      return result;
+    } catch (error) {
+      console.error("Failed to list directory:", error);
+      throw new Error(`无法读取目录: ${error.message}`);
+    }
+  }
+
+  /**
+   * 获取服务器上的当前工作目录
+   */
+  async getServerCurrentDirectory(): Promise<string> {
+    return process.cwd();
+  }
+
+  /**
+   * 检查服务器路径是否存在
+   */
+  async checkServerPath({
+    path: targetPath
+  }: {
+    path: string;
+  }): Promise<{ exists: boolean; isDirectory: boolean; readable: boolean }> {
+    const { fs, path } = zx;
+    
+    try {
+      const resolvedPath = path.resolve(targetPath);
+      const exists = fs.existsSync(resolvedPath);
+      
+      if (!exists) {
+        return { exists: false, isDirectory: false, readable: false };
+      }
+
+      const stats = await fs.promises.stat(resolvedPath);
+      const isDirectory = stats.isDirectory();
+      
+      // 检查是否可读
+      let readable = true;
+      try {
+        await fs.promises.access(resolvedPath, fs.constants.R_OK);
+      } catch {
+        readable = false;
+      }
+
+      return { exists, isDirectory, readable };
+    } catch (error) {
+      return { exists: false, isDirectory: false, readable: false };
+    }
+  }
+
 }
 // export const Command = CommandFactory.prototype;
 export const Command = new CommandFactory();

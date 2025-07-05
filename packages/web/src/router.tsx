@@ -7,7 +7,7 @@ import { Setting } from "./pages/setting";
 import { Market } from "./pages/market/market";
 import { HpyerTools } from "./pages/hypertools/hypertools";
 import { KnowledgeBase } from "./pages/knowledgeBase/knowledgeBase";
-import { ChatSpace } from "./pages/workspace/chatspace";
+import { ChatSpace } from "./pages/chat/chatspace";
 import { TaskListPage } from "./pages/hyperAgent/TaskList";
 import { t } from "./i18n";
 import { TaskResultsPage } from "./pages/hyperAgent/TaskResults";

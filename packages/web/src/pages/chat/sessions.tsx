@@ -7,7 +7,7 @@ import React, {
   useContext,
   useRef,
 } from "react";
-import { Chat } from "../chat";
+import { Chat } from ".";
 import { it } from "node:test";
 import { v4 } from "uuid";
 import { io } from "socket.io-client";

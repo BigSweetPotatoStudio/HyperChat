@@ -30,7 +30,7 @@ import {
 import { call } from "../../common/call";
 import { useForceUpdate } from "../../hooks/useForceUpdate";
 import { t } from "../../i18n";
-import { DirectoryPicker } from "../../components/DirectoryPicker";
+import { ServerDirectoryBrowser } from "../../components/ServerDirectoryBrowser";
 
 const { Title, Text } = Typography;
 
@@ -71,6 +71,7 @@ export function Workspace() {
   const [mcpClients, setMcpClients] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const [createModalOpen, setCreateModalOpen] = useState(false);
+  const [directoryBrowserOpen, setDirectoryBrowserOpen] = useState(false);
   const [form] = Form.useForm();
 
   // 加载工作区列表
@@ -188,8 +189,8 @@ export function Workspace() {
     }
   };
 
-  // 选择文件夹
-  const handleDirectorySelect = async (path: string, handle?: FileSystemDirectoryHandle) => {
+  // 选择服务器目录
+  const handleServerDirectorySelect = async (path: string) => {
     try {
       form.setFieldsValue({ path });
       
@@ -198,6 +199,8 @@ export function Workspace() {
       if (isWorkspace) {
         message.warning("该目录已经是一个工作区");
       }
+      
+      setDirectoryBrowserOpen(false);
     } catch (error) {
       console.error("Failed to process selected directory:", error);
       message.error("处理选择的目录失败");
@@ -487,13 +490,25 @@ export function Workspace() {
                 placeholder="选择工作区文件夹"
                 readOnly
               />
-              <DirectoryPicker onDirectorySelect={handleDirectorySelect}>
+              <Button
+                icon={<FolderOpenOutlined />}
+                onClick={() => setDirectoryBrowserOpen(true)}
+              >
                 选择目录
-              </DirectoryPicker>
+              </Button>
             </Input.Group>
           </Form.Item>
         </Form>
       </Modal>
+
+      {/* 服务器目录浏览器 */}
+      <ServerDirectoryBrowser
+        visible={directoryBrowserOpen}
+        onClose={() => setDirectoryBrowserOpen(false)}
+        onSelect={handleServerDirectorySelect}
+        title="选择工作区目录"
+        initialPath="~"
+      />
     </div>
   );
 }
