@@ -155,23 +155,15 @@ export function Workspace() {
 
     // 如果已经加载过，直接返回
     if (workspaceDetails[key]) return;
-    
-    return loadWorkspaceDetailsWithHiddenFlag(workspace, showHiddenFiles);
-  };
-
-  // 加载工作区详细信息（支持指定隐藏文件参数）
-  const loadWorkspaceDetailsWithHiddenFlag = async (workspace: WorkspaceInfo, includeHidden: boolean) => {
-    const key = workspace.isGlobal ? "global" : workspace.path;
 
     try {
       const details: any = { agents: [], mcpClients: [] };
 
       // 加载根目录文件列表（懒加载）
-      console.log("Loading file tree for workspace:", workspace.path, "isGlobal:", workspace.isGlobal, "includeHidden:", includeHidden);
+      console.log("Loading file tree for workspace:", workspace.path, "isGlobal:", workspace.isGlobal);
       const rootItems = await call("getWorkspaceDirectoryList", { 
         workspacePath: workspace.path,
-        directoryPath: "",
-        includeHidden: includeHidden
+        directoryPath: ""
       });
       console.log("File tree loaded:", rootItems?.length, "items");
       details.fileTreeData = rootItems;
@@ -279,21 +271,9 @@ export function Workspace() {
   };
 
   // 处理隐藏文件显示切换
-  const handleShowHiddenChange = async (showHidden: boolean) => {
+  const handleShowHiddenChange = (showHidden: boolean) => {
     setShowHiddenFiles(showHidden);
-    // 重新加载当前工作区的文件树，使用新的showHidden值
-    const currentWorkspace = getCurrentWorkspace();
-    if (currentWorkspace) {
-      const key = currentWorkspace.isGlobal ? "global" : currentWorkspace.path;
-      // 清除缓存，强制重新加载
-      setWorkspaceDetails(prev => {
-        const newDetails = { ...prev };
-        delete newDetails[key];
-        return newDetails;
-      });
-      // 直接调用loadWorkspaceDetails并传入新的showHidden值
-      await loadWorkspaceDetailsWithHiddenFlag(currentWorkspace, showHidden);
-    }
+    // 不需要重新加载数据，文件树组件会自动通过useEffect重新过滤和渲染
   };
 
 
@@ -339,6 +319,24 @@ export function Workspace() {
       return node;
     });
 
+  // 过滤隐藏文件的工具函数
+  const filterHiddenFiles = (items: FileNode[], showHidden: boolean): FileNode[] => {
+    if (showHidden) return items;
+    return items.filter(item => !item.isHidden);
+  };
+
+  // 将文件节点转换为树节点的函数
+  const mapFileNodeToTreeNode = (item: FileNode) => ({
+    title: (
+      <span style={{ opacity: item.isHidden ? 0.6 : 1 }}>
+        {item.name}
+      </span>
+    ),
+    key: item.path,
+    icon: item.type === "directory" ? <FolderOutlined /> : <FileOutlined />,
+    isLeaf: item.type === "file",
+  });
+
   // 文件树组件
   const FileTreeComponent = ({ 
     workspace, 
@@ -353,34 +351,18 @@ export function Workspace() {
     showHidden: boolean;
     onShowHiddenChange: (show: boolean) => void;
   }) => {
-    // 初始化树数据
-    const [treeData, setTreeData] = useState(() => 
-      initialData.map((item) => ({
-        title: (
-          <span style={{ opacity: item.isHidden ? 0.6 : 1 }}>
-            {item.name}
-          </span>
-        ),
-        key: item.path,
-        icon: item.type === "directory" ? <FolderOutlined /> : <FileOutlined />,
-        isLeaf: item.type === "file",
-      }))
-    );
+    // 初始化树数据（过滤隐藏文件）
+    const [treeData, setTreeData] = useState(() => {
+      const filteredData = filterHiddenFiles(initialData, showHidden);
+      return filteredData.map(mapFileNodeToTreeNode);
+    });
 
-    // 当初始数据变化时更新组件状态
+    // 当初始数据或showHidden变化时更新组件状态
     useEffect(() => {
-      const newTreeData = initialData.map((item) => ({
-        title: (
-          <span style={{ opacity: item.isHidden ? 0.6 : 1 }}>
-            {item.name}
-          </span>
-        ),
-        key: item.path,
-        icon: item.type === "directory" ? <FolderOutlined /> : <FileOutlined />,
-        isLeaf: item.type === "file",
-      }));
+      const filteredData = filterHiddenFiles(initialData, showHidden);
+      const newTreeData = filteredData.map(mapFileNodeToTreeNode);
       setTreeData(newTreeData);
-    }, [initialData]);
+    }, [initialData, showHidden]);
 
     const onLoadData = ({ key, children }: any) =>
       new Promise<void>(async (resolve) => {
@@ -392,20 +374,11 @@ export function Workspace() {
         try {
           const childrenData: FileNode[] = await call("getWorkspaceDirectoryList", {
             workspacePath: workspace.path,
-            directoryPath: key,
-            includeHidden: showHidden
+            directoryPath: key
           });
           
-          const treeChildren = childrenData.map((item: FileNode) => ({
-            title: (
-              <span style={{ opacity: item.isHidden ? 0.6 : 1 }}>
-                {item.name}
-              </span>
-            ),
-            key: item.path,
-            icon: item.type === "directory" ? <FolderOutlined /> : <FileOutlined />,
-            isLeaf: item.type === "file",
-          }));
+          const filteredChildren = filterHiddenFiles(childrenData, showHidden);
+          const treeChildren = filteredChildren.map(mapFileNodeToTreeNode);
 
           setTreeData((origin) => updateTreeData(origin, key, treeChildren));
           resolve();

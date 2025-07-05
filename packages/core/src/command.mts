@@ -743,12 +743,10 @@ export class CommandFactory {
    */
   async getWorkspaceDirectoryList({
     workspacePath,
-    directoryPath = "",
-    includeHidden = true
+    directoryPath = ""
   }: {
     workspacePath: string;
     directoryPath?: string;
-    includeHidden?: boolean;
   }): Promise<any[]> {
     const { getWorkspaceManager } = await import("./workspace/index.mjs");
     const { fs, path } = zx;
@@ -796,8 +794,8 @@ export class CommandFactory {
         const isHidden = entry.name.startsWith('.');
         const isExcluded = ['node_modules', '.git', 'dist', 'build'].includes(entry.name);
         
-        // 跳过排除的目录，但保留隐藏文件（除非用户不想要）
-        if (isExcluded || (!includeHidden && isHidden)) {
+        // 跳过排除的目录
+        if (isExcluded) {
           continue;
         }
 
