@@ -1734,5 +1734,121 @@
   "Exit Action": {
     "en": "Exit Action",
     "zh": "退出操作"
+  },
+  "Files": {
+    "en": "Files",
+    "zh": "文件"
+  },
+  "Hide hidden files": {
+    "en": "Hide hidden files",
+    "zh": "隐藏隐藏文件"
+  },
+  "Show hidden files": {
+    "en": "Show hidden files",
+    "zh": "显示隐藏文件"
+  },
+  "File Tree": {
+    "en": "File Tree",
+    "zh": "文件树"
+  },
+  "Workspace Operations": {
+    "en": "Workspace Operations",
+    "zh": "工作区操作"
+  },
+  "Management Panel": {
+    "en": "Management Panel",
+    "zh": "管理面板"
+  },
+  "Global Workspace": {
+    "en": "Global Workspace",
+    "zh": "全局工作区"
+  },
+  "Global Configuration": {
+    "en": "Global Configuration",
+    "zh": "全局配置"
+  },
+  "Global": {
+    "en": "Global",
+    "zh": "全局"
+  },
+  "Create or Open Workspace": {
+    "en": "Create or Open Workspace",
+    "zh": "创建或打开工作区"
+  },
+  "Folder Path": {
+    "en": "Folder Path",
+    "zh": "文件夹路径"
+  },
+  "Please select folder path": {
+    "en": "Please select folder path",
+    "zh": "请选择文件夹路径"
+  },
+  "The workspace name will be automatically set to the folder name": {
+    "en": "The workspace name will be automatically set to the folder name",
+    "zh": "工作区名称将自动设置为文件夹名称"
+  },
+  "Select workspace folder": {
+    "en": "Select workspace folder",
+    "zh": "选择工作区文件夹"
+  },
+  "Select Directory": {
+    "en": "Select Directory",
+    "zh": "选择目录"
+  },
+  "Select Workspace Directory": {
+    "en": "Select Workspace Directory",
+    "zh": "选择工作区目录"
+  },
+  "Failed to load workspaces": {
+    "en": "Failed to load workspaces",
+    "zh": "加载工作区失败"
+  },
+  "Failed to load workspace details": {
+    "en": "Failed to load workspace details",
+    "zh": "加载工作区详情失败"
+  },
+  "Workspace created or opened successfully": {
+    "en": "Workspace created or opened successfully",
+    "zh": "工作区创建或打开成功"
+  },
+  "Failed to create or open workspace": {
+    "en": "Failed to create or open workspace",
+    "zh": "创建或打开工作区失败"
+  },
+  "Workspace deleted successfully": {
+    "en": "Workspace deleted successfully",
+    "zh": "工作区删除成功"
+  },
+  "Failed to delete workspace": {
+    "en": "Failed to delete workspace",
+    "zh": "删除工作区失败"
+  },
+  "This directory is already a workspace": {
+    "en": "This directory is already a workspace",
+    "zh": "此目录已经是一个工作区"
+  },
+  "Failed to process selected directory": {
+    "en": "Failed to process selected directory",
+    "zh": "处理选定目录失败"
+  },
+  "Please select a workspace to view details": {
+    "en": "Please select a workspace to view details",
+    "zh": "请选择工作区以查看详情"
+  },
+  "No file tree data": {
+    "en": "No file tree data",
+    "zh": "无文件树数据"
+  },
+  "Operations interface under development": {
+    "en": "Operations interface under development",
+    "zh": "操作界面开发中"
+  },
+  "Main workspace operations interface will be displayed here": {
+    "en": "Main workspace operations interface will be displayed here",
+    "zh": "主要的工作区操作界面将在这里显示"
+  },
+  "Failed to load directory contents": {
+    "en": "Failed to load directory contents",
+    "zh": "加载目录内容失败"
   }
 }
