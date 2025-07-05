@@ -819,7 +819,15 @@ export class CommandFactory {
       // 读取目录内容
       const entries = await fs.promises.readdir(resolvedPath, { withFileTypes: true });
       
-      const result = [];
+      interface DirectoryItem {
+        name: string;
+        path: string;
+        type: "directory" | "file";
+        size?: number;
+        modified: number;
+      }
+      
+      const result: DirectoryItem[] = [];
       for (const entry of entries) {
         // 跳过隐藏文件（以 . 开头的文件）
         if (entry.name.startsWith('.')) {
@@ -849,7 +857,7 @@ export class CommandFactory {
       });
 
       return result;
-    } catch (error) {
+    } catch (error: any) {
       console.error("Failed to list directory:", error);
       throw new Error(`无法读取目录: ${error.message}`);
     }

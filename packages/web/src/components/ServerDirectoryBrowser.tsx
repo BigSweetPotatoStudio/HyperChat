@@ -140,8 +140,10 @@ export function ServerDirectoryBrowser({
 
   // 处理目录选择
   const handleSelect = (selectedKeys: React.Key[], info: any) => {
-    if (info.node.type === "directory") {
-      setSelectedPath(info.node.path);
+    console.log("Tree node selected:", info.node); // 调试日志
+    if (info.node.nodeType === "directory") {
+      setSelectedPath(info.node.key);
+      setCurrentPath(info.node.key);
     }
   };
 
@@ -155,7 +157,7 @@ export function ServerDirectoryBrowser({
         </Space>
       ),
       key: node.path,
-      type: node.type,
+      nodeType: node.type, // 使用 nodeType 而不是 type 避免冲突
       isLeaf: node.type === "file",
       children: node.children ? convertToTreeData(node.children) : undefined,
     }));
@@ -272,7 +274,7 @@ export function ServerDirectoryBrowser({
                 onExpand={handleExpand}
                 onSelect={handleSelect}
                 loadData={async (node: any) => {
-                  if (node.type === "directory" && !node.loaded) {
+                  if (node.nodeType === "directory" && !node.loaded) {
                     const children = await loadChildren({
                       name: node.title.props.children[1].props.children,
                       path: node.key,

@@ -72,6 +72,7 @@ export function Workspace() {
   const [loading, setLoading] = useState(false);
   const [createModalOpen, setCreateModalOpen] = useState(false);
   const [directoryBrowserOpen, setDirectoryBrowserOpen] = useState(false);
+  const [selectedPath, setSelectedPath] = useState<string>("");
   const [form] = Form.useForm();
 
   // 加载工作区列表
@@ -167,6 +168,7 @@ export function Workspace() {
       message.success("工作区创建成功");
       setCreateModalOpen(false);
       form.resetFields();
+      setSelectedPath("");
       loadWorkspaces();
     } catch (error) {
       console.error("Failed to create workspace:", error);
@@ -193,6 +195,7 @@ export function Workspace() {
   const handleServerDirectorySelect = async (path: string) => {
     try {
       form.setFieldsValue({ path });
+      setSelectedPath(path);
       
       // 检查是否已经是工作区
       const isWorkspace = await call("isWorkspaceDirectory", { directoryPath: path });
@@ -453,6 +456,7 @@ export function Workspace() {
         onCancel={() => {
           setCreateModalOpen(false);
           form.resetFields();
+          setSelectedPath("");
         }}
         onOk={() => {
           form.submit();
@@ -488,6 +492,7 @@ export function Workspace() {
               <Input
                 style={{ width: "calc(100% - 100px)" }}
                 placeholder="选择工作区文件夹"
+                value={selectedPath || form.getFieldValue('path') || ''}
                 readOnly
               />
               <Button
