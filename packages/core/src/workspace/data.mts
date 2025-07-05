@@ -18,7 +18,7 @@ export class Data<T> {
   async init(): Promise<T> {
     if (!this.loaded) {
       try {
-        const globalConfigPath = CONSTANTS.GLOBAL_PATH;
+        const globalConfigPath = path.join(CONSTANTS.GLOBAL_PATH, CONSTANTS.HYPERCHAT_DIR);
         const filePath = path.join(globalConfigPath, this.fileName);
 
         if (fs.existsSync(filePath)) {
@@ -35,7 +35,7 @@ export class Data<T> {
 
   async save(): Promise<void> {
     try {
-      const globalConfigPath = CONSTANTS.GLOBAL_PATH;
+      const globalConfigPath = path.join(CONSTANTS.GLOBAL_PATH, CONSTANTS.HYPERCHAT_DIR);
       if (!fs.existsSync(globalConfigPath)) {
         await fs.promises.mkdir(globalConfigPath, { recursive: true });
       }

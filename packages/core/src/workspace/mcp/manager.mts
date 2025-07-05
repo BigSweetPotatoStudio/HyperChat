@@ -172,7 +172,17 @@ export class WorkspaceMCPManager {
    * 加载工作区配置
    */
   async loadWorkspaceConfig(workspacePath: string): Promise<WorkspaceMCPConfig> {
-    const configPath = path.join(workspacePath, CONSTANTS.HYPERCHAT_DIR, CONSTANTS.CONFIG_FILES.MCP);
+    let configPath: string;
+    
+    // 判断是否为全局工作区
+    if (workspacePath === CONSTANTS.GLOBAL_PATH) {
+      // 全局工作区使用特定的全局配置路径
+      configPath = path.join(CONSTANTS.GLOBAL_PATH, CONSTANTS.HYPERCHAT_DIR, CONSTANTS.CONFIG_FILES.MCP);
+      this.logInfo(`使用全局配置路径: ${configPath}`);
+    } else {
+      // 普通工作区使用标准路径
+      configPath = path.join(workspacePath, CONSTANTS.HYPERCHAT_DIR, CONSTANTS.CONFIG_FILES.MCP);
+    }
     
     let workspaceConfig: WorkspaceMCPConfig = {
       mcpServers: {},
@@ -315,7 +325,17 @@ export class WorkspaceMCPManager {
       return;
     }
 
-    const configPath = path.join(workspacePath, CONSTANTS.HYPERCHAT_DIR, CONSTANTS.CONFIG_FILES.MCP);
+    let configPath: string;
+    
+    // 判断是否为全局工作区
+    const globalWorkspacePath = path.dirname(CONSTANTS.GLOBAL_PATH);
+    if (workspacePath === globalWorkspacePath) {
+      // 全局工作区使用特定的全局配置路径
+      configPath = path.join(CONSTANTS.GLOBAL_PATH, CONSTANTS.CONFIG_FILES.MCP);
+    } else {
+      // 普通工作区使用标准路径
+      configPath = path.join(workspacePath, CONSTANTS.HYPERCHAT_DIR, CONSTANTS.CONFIG_FILES.MCP);
+    }
 
     try {
       await this.ensureDirectoryExists(path.dirname(configPath));

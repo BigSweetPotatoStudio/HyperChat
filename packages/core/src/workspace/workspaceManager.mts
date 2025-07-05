@@ -12,12 +12,12 @@ import { Workspace } from "./workspace.mjs";
 // 工作区管理器类 - 简化为只管理工作区的注册和发现
 export class WorkspaceManager {
   private workspaces: Map<string, Workspace> = new Map(); // key 是 path
-  private readonly GLOBAL_HYPERCHAT_DIR = CONSTANTS.GLOBAL_PATH;
+  private readonly GLOBAL_HYPERCHAT_DIR = path.join(CONSTANTS.GLOBAL_PATH, CONSTANTS.HYPERCHAT_DIR);
   private globalWorkspace: Workspace;
 
   constructor() {
     // 创建全局工作区
-    this.globalWorkspace = new Workspace(path.dirname(this.GLOBAL_HYPERCHAT_DIR));
+    this.globalWorkspace = new Workspace(CONSTANTS.GLOBAL_PATH);
     this.initGlobalWorkspace();
   }
 
@@ -293,14 +293,14 @@ export class WorkspaceManager {
    * 检查是否为全局工作区
    */
   isGlobalWorkspace(workspacePath: string): boolean {
-    return workspacePath === path.dirname(this.GLOBAL_HYPERCHAT_DIR);
+    return workspacePath === CONSTANTS.GLOBAL_PATH;
   }
 
   /**
    * 获取全局工作区路径
    */
   getGlobalWorkspacePath(): string {
-    return path.dirname(this.GLOBAL_HYPERCHAT_DIR);
+    return CONSTANTS.GLOBAL_PATH;
   }
 
 }

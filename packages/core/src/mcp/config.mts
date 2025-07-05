@@ -667,9 +667,9 @@ export async function initMcpClients(): Promise<MCPClient[]> {
   return Object.values(globalMcpClients);
 }
 
-await initMcpClients().catch((e) => {
-  Logger.error("initMcpClients error", e);
-});
+// await initMcpClients().catch((e) => {
+//   Logger.error("initMcpClients error", e);
+// });
 
 export async function openMcpClient(
   name: string,

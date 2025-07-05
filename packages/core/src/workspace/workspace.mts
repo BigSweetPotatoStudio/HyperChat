@@ -33,8 +33,7 @@ export class Workspace {
     const hyperChatPath = path.join(workspacePath, this.HYPERCHAT_DIR);
     
     // 检查是否为全局工作区
-    this.isGlobal = workspacePath === CONSTANTS.GLOBAL_PATH || 
-                   workspacePath === path.dirname(CONSTANTS.GLOBAL_PATH);
+    this.isGlobal = workspacePath === CONSTANTS.GLOBAL_PATH;
 
     this.config = config || {
       name: path.basename(workspacePath),

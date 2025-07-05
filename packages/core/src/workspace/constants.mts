@@ -19,5 +19,5 @@ export const CONSTANTS = {
     JSON: '.json',
     HIDDEN_PREFIX: '.',
   },
-  GLOBAL_PATH: path.join(os.homedir(), 'Documents', 'HyperChat', '.hyperchat'),
+  GLOBAL_PATH: path.join(os.homedir(), 'Documents', 'HyperChat'),
 } as const;

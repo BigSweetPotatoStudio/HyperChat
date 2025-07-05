@@ -104,15 +104,11 @@ export class CommandFactory {
    */
   async forceReloadMcpClients() {
     try {
-      // 清除新系统的缓存
-      const manager = getMCPManager();
-      if (manager) {
-        // 停止所有现有客户端
-        await manager.stopAllClients();
-      }
+      // 使用新的工作区系统处理全局工作区
+      const workspaceManager = getWorkspaceManager();
+      const globalWorkspacePath = workspaceManager.getGlobalWorkspacePath();
       
-      // 重新初始化
-      return await this.initMcpClients();
+      return await this.forceReloadWorkspaceMcpClients({ workspacePath: globalWorkspacePath });
     } catch (error) {
       console.error("Failed to force reload MCP clients:", error);
       throw error;
