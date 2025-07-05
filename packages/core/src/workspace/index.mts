@@ -33,6 +33,34 @@ export { WorkspaceManager } from "./workspaceManager.mjs";
 // 导出数据管理类
 export { Data } from "./data.mjs";
 
+// 导出 MCP 相关模块
+export {
+  WorkspaceMCPManager,
+  WorkspaceMCPClientImpl,
+  getMCPManager,
+  initMCPManager,
+  destroyMCPManager,
+  startWorkspaceMCP,
+  stopWorkspaceMCP,
+  getAllMCPClients,
+  getWorkspaceMCPClients,
+  getGlobalMCPClients,
+  getBuiltinMCPClients,
+  initWorkspaceMCP,
+  isWorkspaceMCPInitialized,
+  restartWorkspaceMCP,
+  cleanupWorkspaceMCP,
+} from "./mcp/index.mjs";
+
+export type {
+  WorkspaceMCPConfig,
+  WorkspaceMCPClient,
+  MCPScope,
+  MCPType,
+  MCPManagerOptions,
+  MCPManagerEvents,
+} from "./mcp/types.mjs";
+
 // 导出全局实例
 import { WorkspaceManager } from "./workspaceManager.mjs";
 import { Data } from "./data.mjs";

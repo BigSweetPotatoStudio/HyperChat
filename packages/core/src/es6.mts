@@ -27,7 +27,9 @@ export const ChromeLauncher = await import(
 export const { Client } = await import(
   /* webpackIgnore: true */ "@modelcontextprotocol/sdk/client/index.js"
 );
-
+export const { StdioClientTransport } = await import(
+  /* webpackIgnore: true */ "@modelcontextprotocol/sdk/client/stdio.js"
+);
 export const { SSEClientTransport } = await import(
   /* webpackIgnore: true */ "@modelcontextprotocol/sdk/client/sse.js"
 );
