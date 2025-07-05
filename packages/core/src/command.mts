@@ -743,10 +743,12 @@ export class CommandFactory {
    */
   async getWorkspaceDirectoryList({
     workspacePath,
-    directoryPath = ""
+    directoryPath = "",
+    includeHidden = true
   }: {
     workspacePath: string;
     directoryPath?: string;
+    includeHidden?: boolean;
   }): Promise<any[]> {
     const { getWorkspaceManager } = await import("./workspace/index.mjs");
     const { fs, path } = zx;
@@ -785,14 +787,17 @@ export class CommandFactory {
         modified: number;
         extension?: string;
         isLeaf: boolean;
+        isHidden: boolean;
       }
       
       const result: DirectoryItem[] = [];
 
       for (const entry of entries) {
-        // 跳过隐藏文件和排除的目录
-        if (entry.name.startsWith('.') || 
-            ['node_modules', '.git', 'dist', 'build', '.hyperchat'].includes(entry.name)) {
+        const isHidden = entry.name.startsWith('.');
+        const isExcluded = ['node_modules', '.git', 'dist', 'build'].includes(entry.name);
+        
+        // 跳过排除的目录，但保留隐藏文件（除非用户不想要）
+        if (isExcluded || (!includeHidden && isHidden)) {
           continue;
         }
 
@@ -812,6 +817,7 @@ export class CommandFactory {
             modified: itemStats.mtime.getTime(),
             extension: entry.isFile() ? path.extname(entry.name).toLowerCase() : undefined,
             isLeaf: !entry.isDirectory(),
+            isHidden: isHidden,
           });
         } catch (error) {
           // 忽略无法访问的文件

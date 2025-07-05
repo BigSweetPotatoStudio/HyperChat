@@ -36,6 +36,8 @@ import {
   StopOutlined,
   InfoCircleOutlined,
   MoreOutlined,
+  EyeOutlined,
+  EyeInvisibleOutlined,
 } from "@ant-design/icons";
 import { call } from "../../common/call";
 import { useForceUpdate } from "../../hooks/useForceUpdate";
@@ -74,6 +76,7 @@ interface FileNode {
   extension?: string;
   isLeaf?: boolean;
   loaded?: boolean;
+  isHidden?: boolean;
 }
 
 export function Workspace() {
@@ -92,6 +95,7 @@ export function Workspace() {
   const [createModalOpen, setCreateModalOpen] = useState(false);
   const [directoryBrowserOpen, setDirectoryBrowserOpen] = useState(false);
   const [selectedPath, setSelectedPath] = useState<string>("");
+  const [showHiddenFiles, setShowHiddenFiles] = useState(true);
   const [form] = Form.useForm();
 
   // 加载工作区列表
@@ -159,7 +163,8 @@ export function Workspace() {
       console.log("Loading file tree for workspace:", workspace.path, "isGlobal:", workspace.isGlobal);
       const rootItems = await call("getWorkspaceDirectoryList", { 
         workspacePath: workspace.path,
-        directoryPath: ""
+        directoryPath: "",
+        includeHidden: showHiddenFiles
       });
       console.log("File tree loaded:", rootItems?.length, "items");
       details.fileTreeData = rootItems;
@@ -266,6 +271,13 @@ export function Workspace() {
     }
   };
 
+  // 处理隐藏文件显示切换
+  const handleShowHiddenChange = async (showHidden: boolean) => {
+    setShowHiddenFiles(showHidden);
+    // 重新加载当前工作区的文件树
+    await refreshWorkspaceDetails();
+  };
+
 
   // 更新文件树数据，插入子项
   const updateTreeDataWithChildren = (
@@ -313,16 +325,24 @@ export function Workspace() {
   const FileTreeComponent = ({ 
     workspace, 
     initialData, 
-    onDataUpdate 
+    onDataUpdate,
+    showHidden,
+    onShowHiddenChange
   }: { 
     workspace: WorkspaceInfo;
     initialData: FileNode[];
     onDataUpdate: (data: FileNode[]) => void;
+    showHidden: boolean;
+    onShowHiddenChange: (show: boolean) => void;
   }) => {
     // 初始化树数据
     const [treeData, setTreeData] = useState(() => 
       initialData.map((item) => ({
-        title: item.name,
+        title: (
+          <span style={{ opacity: item.isHidden ? 0.6 : 1 }}>
+            {item.name}
+          </span>
+        ),
         key: item.path,
         icon: item.type === "directory" ? <FolderOutlined /> : <FileOutlined />,
         isLeaf: item.type === "file",
@@ -332,7 +352,11 @@ export function Workspace() {
     // 当初始数据变化时更新组件状态
     useEffect(() => {
       const newTreeData = initialData.map((item) => ({
-        title: item.name,
+        title: (
+          <span style={{ opacity: item.isHidden ? 0.6 : 1 }}>
+            {item.name}
+          </span>
+        ),
         key: item.path,
         icon: item.type === "directory" ? <FolderOutlined /> : <FileOutlined />,
         isLeaf: item.type === "file",
@@ -350,11 +374,16 @@ export function Workspace() {
         try {
           const childrenData: FileNode[] = await call("getWorkspaceDirectoryList", {
             workspacePath: workspace.path,
-            directoryPath: key
+            directoryPath: key,
+            includeHidden: showHidden
           });
           
           const treeChildren = childrenData.map((item: FileNode) => ({
-            title: item.name,
+            title: (
+              <span style={{ opacity: item.isHidden ? 0.6 : 1 }}>
+                {item.name}
+              </span>
+            ),
             key: item.path,
             icon: item.type === "directory" ? <FolderOutlined /> : <FileOutlined />,
             isLeaf: item.type === "file",
@@ -370,11 +399,24 @@ export function Workspace() {
       });
 
     return (
-      <Tree
-        showIcon
-        loadData={onLoadData}
-        treeData={treeData}
-      />
+      <div>
+        <div className="flex justify-between items-center mb-2 px-1">
+          <span className="text-xs text-gray-500">{t`Files`}</span>
+          <Button
+            type="text"
+            size="small"
+            icon={showHidden ? <EyeOutlined /> : <EyeInvisibleOutlined />}
+            onClick={() => onShowHiddenChange(!showHidden)}
+            title={showHidden ? t`Hide hidden files` : t`Show hidden files`}
+            className="text-xs"
+          />
+        </div>
+        <Tree
+          showIcon
+          loadData={onLoadData}
+          treeData={treeData}
+        />
+      </div>
     );
   };
 
@@ -491,6 +533,8 @@ export function Workspace() {
                 <FileTreeComponent
                   workspace={currentWorkspace}
                   initialData={details.fileTreeData}
+                  showHidden={showHiddenFiles}
+                  onShowHiddenChange={handleShowHiddenChange}
                   onDataUpdate={(updatedData) => {
                     const key = currentWorkspace.isGlobal ? "global" : currentWorkspace.path;
                     setWorkspaceDetails(prev => ({
