@@ -34,7 +34,7 @@ import {
   InfoCircleOutlined,
   MoreOutlined,
 } from "@ant-design/icons";
-import { call } from "../../common/call";
+import { call, msg_receive } from "../../common/call";
 import { useForceUpdate } from "../../hooks/useForceUpdate";
 import { t } from "../../i18n";
 import { ServerDirectoryBrowser } from "../../components/ServerDirectoryBrowser";
@@ -93,6 +93,43 @@ export function Workspace() {
   const [selectedPath, setSelectedPath] = useState<string>("");
   const [showHiddenFiles, setShowHiddenFiles] = useState(true);
   const [form] = Form.useForm();
+
+  // 监听MCP客户端状态变化
+  useEffect(() => {
+    msg_receive("message-from-main", (res: any) => {
+      if (res.type === "changeMcpClient") {
+        const payload = res.data;
+        
+        // 更新工作区详情中的MCP客户端数据
+        setWorkspaceDetails(prev => {
+          const newDetails = { ...prev };
+          
+          // 更新所有工作区的MCP客户端数据
+          Object.keys(newDetails).forEach(key => {
+            const details = newDetails[key];
+            if (details && details.mcpClients) {
+              const idx = details.mcpClients.findIndex((c: any) => c.name === payload.name);
+              if (idx >= 0) {
+                if (payload.status === "deleted") {
+                  details.mcpClients.splice(idx, 1);
+                } else {
+                  details.mcpClients[idx] = payload;
+                }
+              } else if (payload.status !== "deleted") {
+                // 如果是新的客户端，添加到列表中
+                details.mcpClients.push(payload);
+              }
+            }
+          });
+          
+          return newDetails;
+        });
+      }
+    });
+
+    // 没有 unsubscribe，返回空函数
+    return () => {};
+  }, []);
 
   // 加载工作区列表
   const loadWorkspaces = async () => {
@@ -275,13 +312,29 @@ export function Workspace() {
     const currentWorkspace = getCurrentWorkspace();
     if (currentWorkspace) {
       const key = currentWorkspace.isGlobal ? "global" : currentWorkspace.path;
-      // 清除缓存，强制重新加载
-      setWorkspaceDetails(prev => {
-        const newDetails = { ...prev };
-        delete newDetails[key];
-        return newDetails;
-      });
-      await loadWorkspaceDetails(currentWorkspace);
+      // 只刷新MCP客户端数据，保留文件树和其他数据
+      try {
+        let mcpList;
+        if (currentWorkspace.isGlobal) {
+          // 全局工作区获取所有MCP客户端
+          mcpList = await call("getMcpClients");
+        } else {
+          // 项目工作区获取特定工作区的MCP客户端
+          mcpList = await call("getWorkspaceMcpClients", { workspacePath: currentWorkspace.path });
+        }
+        
+        // 只更新MCP客户端数据，保留其他数据
+        setWorkspaceDetails(prev => ({
+          ...prev,
+          [key]: {
+            ...prev[key],
+            mcpClients: mcpList || []
+          }
+        }) as any);
+      } catch (error) {
+        console.error("Failed to refresh MCP clients:", error);
+        throw error;
+      }
     }
   };
 
