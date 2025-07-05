@@ -26,9 +26,7 @@ import crypto from "crypto";
 import { 
   getMCPManager,
   initMCPManager,
-  getAllMCPClients,
-  getWorkspaceMCPClients as getWorkspaceMCPClientsFromManager,
-  getBuiltinMCPClients
+  getWorkspaceMCPClients as getWorkspaceMCPClientsFromManager
 } from "./workspace/mcp/index.mjs";
 import { webdavClient } from "./common/webdav.mjs";
 import { progressList } from "./common/progress.mjs";
@@ -90,7 +88,7 @@ export class CommandFactory {
     await manager.startClients(globalWorkspacePath);
     
     // 获取所有客户端并转换为前端可用的JSON格式
-    const clients = getAllMCPClients();
+    const clients = manager.getAllClients();
     return clients.map((client) => client.toJSON());
   }
 
@@ -188,7 +186,8 @@ export class CommandFactory {
    */
   async getMcpClients() {
     // 从工作区MCP管理器获取所有客户端实例
-    const clients = getAllMCPClients();
+    const manager = getMCPManager();
+    const clients = manager.getAllClients();
     // 转换为前端可用的JSON格式，包含客户端状态和功能信息
     return clients.map((client) => client.toJSON());
   }
@@ -292,7 +291,8 @@ export class CommandFactory {
     args: any;
   }) {
     // 从所有活跃的MCP客户端中查找指定名称的客户端
-    const allClients = getAllMCPClients();
+    const manager = getMCPManager();
+    const allClients = manager.getAllClients();
     let client = allClients.find((x) => x.name === name);
     
     if (!client) {
@@ -318,7 +318,8 @@ export class CommandFactory {
     uri: string;
   }) {
     // 从所有活跃的MCP客户端中查找指定名称的客户端
-    const allClients = getAllMCPClients();
+    const manager = getMCPManager();
+    const allClients = manager.getAllClients();
     let client = allClients.find((x) => x.name === name);
     
     if (!client) {
@@ -347,7 +348,8 @@ export class CommandFactory {
     args: any;
   }) {
     // 从所有活跃的MCP客户端中查找指定名称的客户端
-    const allClients = getAllMCPClients();
+    const manager = getMCPManager();
+    const allClients = manager.getAllClients();
     let client = allClients.find((x) => x.name === name);
     
     if (!client) {

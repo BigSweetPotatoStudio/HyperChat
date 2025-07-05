@@ -14,7 +14,8 @@ import { CONST } from "../../../const.mjs";
 
 import { Command } from "../../../command.mjs";
 import { Logger } from "../../../log.mjs";
-import { getAllMCPClients } from "../../../workspace/index.mjs";
+
+import { workspaceManager } from "../../../workspace/index.mjs";
 
 const { fs: _fs, path: _path, sleep: _sleep } = zx;
 
@@ -54,8 +55,7 @@ async function createServer(name: string, description: string, allowMCPs: string
         // Logger.debug("gateway allowMCPs", allowMCPs);
         let getTools =  (allowMCPs: any) => {
             let tools: IMCPClient["tools"] = [];
-
-            getAllMCPClients().forEach((v) => {
+            workspaceManager.getGlobalWorkspace().getMcpClients().forEach((v) => {
                 tools = tools.concat(
                     v.tools.filter((t) => {
                         if (!allowMCPs) return true;
@@ -84,7 +84,7 @@ async function createServer(name: string, description: string, allowMCPs: string
         let getTools = (allowMCPs: any) => {
             let tools: IMCPClient["tools"] = [];
 
-            getAllMCPClients().forEach((v) => {
+            workspaceManager.getGlobalWorkspace().getMcpClients().forEach((v) => {
                 tools = tools.concat(
                     v.tools.filter((t) => {
                         if (!allowMCPs) return true;

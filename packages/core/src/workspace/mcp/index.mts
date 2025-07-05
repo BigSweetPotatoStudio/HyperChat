@@ -104,25 +104,9 @@ export async function stopWorkspaceMCP(workspacePath: string): Promise<void> {
 }
 
 /**
- * 获取所有 MCP 客户端（包括全局、工作区和内置）
- */
-export function getAllMCPClients() {
-  const manager = getMCPManager();
-  return manager.getAllClients();
-}
-
-/**
  * 获取指定工作区的 MCP 客户端
  */
 export function getWorkspaceMCPClients(workspacePath: string) {
   const manager = getMCPManager();
   return manager.getClientsByWorkspace(workspacePath);
-}
-
-/**
- * 获取内置 MCP 客户端
- */
-export function getBuiltinMCPClients() {
-  const manager = getMCPManager();
-  return manager.getAllClients().filter(client => client.mcpType === "builtin");
 }
