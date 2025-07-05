@@ -323,14 +323,8 @@ export function Workspace() {
       const key = currentWorkspace.isGlobal ? "global" : currentWorkspace.path;
       // 只刷新MCP客户端数据，保留文件树和其他数据
       try {
-        let mcpList;
-        if (currentWorkspace.isGlobal) {
-          // 全局工作区获取所有MCP客户端
-          mcpList = await call("getMcpClients");
-        } else {
-          // 项目工作区获取特定工作区的MCP客户端
-          mcpList = await call("getWorkspaceMcpClients", { workspacePath: currentWorkspace.path });
-        }
+        // 所有工作区（包括全局）都使用相同的方法获取MCP客户端
+        const mcpList = await call("getWorkspaceMcpClients", { workspacePath: currentWorkspace.path });
         
         // 只更新MCP客户端数据，保留其他数据
         setWorkspaceDetails(prev => ({

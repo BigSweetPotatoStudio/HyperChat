@@ -84,8 +84,10 @@ export class CommandFactory {
     // 初始化工作区MCP管理器
     const manager = await initMCPManager();
     
-    // 启动全局工作区的MCP客户端（包括内置和自定义服务）
-    await manager.startClients("global");
+    // 获取全局工作区路径并启动MCP客户端
+    const workspaceManager = getWorkspaceManager();
+    const globalWorkspacePath = workspaceManager.getGlobalWorkspacePath();
+    await manager.startClients(globalWorkspacePath);
     
     // 获取所有客户端并转换为前端可用的JSON格式
     const clients = getAllMCPClients();
@@ -136,7 +138,9 @@ export class CommandFactory {
     if (clientConfig && !options.onlySave) {
       // 将配置添加到全局工作区并启动客户端
       const manager = getMCPManager();
-      await manager.setServerConfig(clientName, clientConfig, "global");
+      const workspaceManager = getWorkspaceManager();
+      const globalWorkspacePath = workspaceManager.getGlobalWorkspacePath();
+      await manager.setServerConfig(clientName, clientConfig, globalWorkspacePath);
     }
     return {
       success: true,
@@ -172,16 +176,18 @@ export class CommandFactory {
     isdisable?: boolean;
   }) {
     const manager = getMCPManager();
+    const workspaceManager = getWorkspaceManager();
+    const globalWorkspacePath = workspaceManager.getGlobalWorkspacePath();
     
     if (isdelete) {
       // 从全局配置中永久删除客户端配置并停止服务
-      await manager.deleteServerConfig(clientName, "global");
+      await manager.deleteServerConfig(clientName, globalWorkspacePath);
     } else if (isdisable) {
       // 仅停止客户端服务，保留配置以便后续重启
-      await manager.stopClient(clientName, "global");
+      await manager.stopClient(clientName, globalWorkspacePath);
     } else {
       // 重启客户端（先停止再启动）
-      await manager.restartClient(clientName, "global");
+      await manager.restartClient(clientName, globalWorkspacePath);
     }
     
     return {

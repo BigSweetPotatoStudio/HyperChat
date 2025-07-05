@@ -84,11 +84,12 @@ export function getResourses(mcp: string[]): (typeof MCPTypes.ResourceSchema._ty
 }
 
 /**
- * Fetches the current list of MCP clients from the backend.
- * @returns {Promise<IMCPClient[]>} A promise that resolves with an array of MCP clients.
+ * Fetches the current list of all active MCP clients from the backend.
+ * This includes clients from all workspaces (global and project workspaces).
+ * @returns {Promise<IMCPClient[]>} A promise that resolves with an array of all MCP clients.
  */
 export async function getClients(): Promise<IMCPClient[]> {
-  return await call("getMcpClients");
+  return await call("getAllMcpClients");
 }
 
 /**
