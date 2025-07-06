@@ -416,6 +416,7 @@ export class WorkspaceMCPClientImpl implements WorkspaceMCPClient {
     getMessageService().sendAllToRenderer({
       type: "changeMcpClient",
       data: this.toJSON(),
+      workspacePath: this.workspacePath,
     });
   }
 

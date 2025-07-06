@@ -27,20 +27,11 @@ import {
 } from "@ant-design/icons";
 import { call } from "../common/call";
 import { t } from "../i18n";
-import { HyperChatCompletionTool, MCPServerConfig } from "@hyperchat/shared/data.mjs";
+import { HyperChatCompletionTool, IMCPClient, MCPServerConfig } from "@hyperchat/shared/data.mjs";
 
 const { Title } = Typography;
 
-interface MCPClient {
-  name: string;
-  servername?: string;
-  status: string;
-  config?: MCPServerConfig;
-  source?: string;
-  mcpType?: "builtin" | "custom";
-  tools: HyperChatCompletionTool[];
-  resources: any[];
-  prompts: any[];
+interface MCPClient extends IMCPClient {
 }
 
 interface WorkspaceInfo {
@@ -166,7 +157,7 @@ export function MCPManagement({ workspace, mcpClients, onRefresh }: MCPManagemen
   // 过滤MCP客户端
   const getFilteredMcpClients = () => {
     // 将对象转换为数组
-    let filteredClients = Object.values(mcpClients);
+    let filteredClients = Object.values(mcpClients).sort((a, b) => a.order - b.order);
 
     // 按状态过滤
     if (statusFilter === "enabled") {
@@ -443,8 +434,8 @@ export function MCPManagement({ workspace, mcpClients, onRefresh }: MCPManagemen
                 {selectedMcpClient.config?.type || "stdio"}
               </Descriptions.Item>
               <Descriptions.Item label={t`Source`}>
-                <Tag color={selectedMcpClient.source === "builtin" ? "blue" : "default"}>
-                  {selectedMcpClient.source === "builtin" ? t`Built-in` : t`Custom`}
+                <Tag color={selectedMcpClient.mcpType === "builtin" ? "blue" : "default"}>
+                  {selectedMcpClient.mcpType === "builtin" ? t`Built-in` : t`Custom`}
                 </Tag>
               </Descriptions.Item>
               <Descriptions.Item label={t`Tools Count`}>

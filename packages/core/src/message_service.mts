@@ -6,6 +6,7 @@ interface MessageData {
   type: string;
   data?: any;
   timestamp?: number;
+  workspacePath: string;
 }
 
 interface TerminalMessage {
