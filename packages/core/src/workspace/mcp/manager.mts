@@ -49,6 +49,10 @@ export class WorkspaceMCPManager {
 
     // 启动内置服务器
     for (const server of MyServers) {
+      // 检查配置文件中是否有对内置服务器的disabled设置
+      const userServerConfig = config.mcpServers[server.name];
+      const isDisabled = userServerConfig?.disabled || false;
+      
       const serverConfig: MCPServerConfig = {
         type: server.type === "streamableHttp" ? "streamableHttp" : "sse",
         url: server.type === "streamableHttp" 
@@ -58,7 +62,7 @@ export class WorkspaceMCPManager {
           scope: "built-in",
           config: {},
         } as any,
-        disabled: false,
+        disabled: isDisabled,
       };
 
       const clientId = this.getClientId(server.name, workspacePath);
@@ -83,15 +87,17 @@ export class WorkspaceMCPManager {
       this.clients.set(clientId, client);
       clients.push(client);
 
-      tasks.push(this.startClient(client, clientId));
+      // 只有非禁用的客户端才启动连接
+      if (!isDisabled) {
+        tasks.push(this.startClient(client, clientId));
+      } else {
+        // 禁用的客户端设置为disabled状态
+        client.status = "disabled";
+      }
     }
 
     // 启动用户配置的服务器
     for (const [name, serverConfig] of Object.entries(config.mcpServers)) {
-      if (serverConfig.disabled) {
-        continue;
-      }
-
       const clientId = this.getClientId(name, workspacePath);
       
       // 如果客户端已存在，跳过
@@ -114,7 +120,13 @@ export class WorkspaceMCPManager {
       this.clients.set(clientId, client);
       clients.push(client);
 
-      tasks.push(this.startClient(client, clientId));
+      // 只有非禁用的客户端才启动连接
+      if (!serverConfig.disabled) {
+        tasks.push(this.startClient(client, clientId));
+      } else {
+        // 禁用的客户端设置为disabled状态
+        client.status = "disabled";
+      }
     }
 
     // 等待所有客户端启动完成

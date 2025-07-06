@@ -11,6 +11,7 @@ import {
   Descriptions,
   Typography,
   message,
+  Select,
 } from "antd";
 import {
   ReloadOutlined,
@@ -20,6 +21,7 @@ import {
   StopOutlined,
   DeleteOutlined,
   PlusOutlined,
+  FilterOutlined,
 } from "@ant-design/icons";
 import { call } from "../common/call";
 import { t } from "../i18n";
@@ -54,6 +56,7 @@ export function MCPManagement({ workspace, mcpClients, onRefresh }: MCPManagemen
   const [mcpDetailDrawer, setMcpDetailDrawer] = useState(false);
   const [selectedMcpClient, setSelectedMcpClient] = useState<MCPClient | null>(null);
   const [addMcpModalOpen, setAddMcpModalOpen] = useState(false);
+  const [statusFilter, setStatusFilter] = useState<string>("all");
 
   // 刷新MCP客户端列表
   const refreshMcpClients = async () => {
@@ -156,11 +159,29 @@ export function MCPManagement({ workspace, mcpClients, onRefresh }: MCPManagemen
     setMcpDetailDrawer(true);
   };
 
+  // 过滤MCP客户端
+  const getFilteredMcpClients = () => {
+    if (statusFilter === "all") {
+      return mcpClients;
+    } else if (statusFilter === "enabled") {
+      return mcpClients.filter(client => {
+        const isDisabled = client.status === "disabled" || client.config?.disabled;
+        return !isDisabled;
+      });
+    } else if (statusFilter === "disabled") {
+      return mcpClients.filter(client => {
+        const isDisabled = client.status === "disabled" || client.config?.disabled;
+        return isDisabled;
+      });
+    }
+    return mcpClients;
+  };
+
   return (
     <>
       <div className="p-2 overflow-auto" style={{ height: 'calc(100vh - 160px)' }}>
         <div className="flex justify-between items-center mb-2">
-          <span className="text-sm font-medium">{`MCP (${mcpClients.length})`}</span>
+          <span className="text-sm font-medium">{`MCP (${getFilteredMcpClients().length}/${mcpClients.length})`}</span>
           <div className="flex gap-1">
             <Button
               type="text"
@@ -180,10 +201,26 @@ export function MCPManagement({ workspace, mcpClients, onRefresh }: MCPManagemen
           </div>
         </div>
         
-        {mcpClients.length > 0 ? (
+        {/* 状态过滤器 */}
+        <div className="mb-2">
+          <Select
+            size="small"
+            style={{ width: "100%" }}
+            value={statusFilter}
+            onChange={setStatusFilter}
+            options={[
+              { value: "all", label: t`All` },
+              { value: "enabled", label: t`Enabled only` },
+              { value: "disabled", label: t`Disabled only` },
+            ]}
+            suffixIcon={<FilterOutlined />}
+          />
+        </div>
+        
+        {getFilteredMcpClients().length > 0 ? (
           <List
             size="small"
-            dataSource={mcpClients}
+            dataSource={getFilteredMcpClients()}
             renderItem={(client) => {
               const isConnected = client.status === "connected";
               const isDisabled = client.status === "disabled" || client.config?.disabled;
@@ -296,7 +333,18 @@ export function MCPManagement({ workspace, mcpClients, onRefresh }: MCPManagemen
             }}
           />
         ) : (
-          <Empty description={t`No MCP clients`} image={Empty.PRESENTED_IMAGE_SIMPLE} />
+          <Empty 
+            description={
+              mcpClients.length === 0 
+                ? t`No MCP clients` 
+                : statusFilter === "enabled" 
+                  ? t`No enabled MCP clients` 
+                  : statusFilter === "disabled"
+                    ? t`No disabled MCP clients`
+                    : t`No MCP clients`
+            } 
+            image={Empty.PRESENTED_IMAGE_SIMPLE} 
+          />
         )}
       </div>
 
