@@ -32,8 +32,18 @@ packages/cli 专注于命令行前端的实现
 
 ## 记忆
 
-[x] 我现在要改造这个hyperchat项目，以前都用在web浏览器前端发出llm请求通过OpenAI的库。现在我想改成在code目录下(nodejs环境)中通过ai库发请求，代码在packages/core/src/shared/ai.mts 。前后端共用
-[ ] 正在添加工作区概念，支持在不同工作区之间隔离数据和配置如下，支持显示当前工具区文件夹（树状），agent等配置作为文件保存在.hyperchat目录下。
+- [x] 我现在要改造这个hyperchat项目，以前都用在web浏览器前端发出llm请求通过OpenAI的库。现在我想改成在code目录下(nodejs环境)中通过ai库发请求，代码在packages/core/src/shared/ai.mts 。前后端共用
+- [x] 工作区概念已经实现，支持在不同工作区之间隔离数据和配置，支持显示当前工作区文件夹（树状），agent等配置作为文件保存在.hyperchat目录下。
+
+### 2.0 工作区实现状态
+- [x] 核心工作区管理类 (workspace.mts, workspaceManager.mts)
+- [x] Agent管理器 (agentManager.mts) - 处理agents文件夹管理
+- [x] 文件系统数据存储 (dataList.mts) - 聊天记录存储机制
+- [x] MCP工作区管理 (workspace/mcp/manager.mts, client.mts)
+- [x] 前端工作区组件 (workspace.tsx, WorkspaceSidebar.tsx, FileTreeComponent.tsx)
+- [x] 完整的目录结构支持 - 自动创建和管理.hyperchat目录
+- [x] 类型安全 - 完整的TypeScript类型定义
+- [ ] Agent工作区管理 - 支持对Agent的增删改查未完成
 
 2.0 版本的 HyperChat 项目结构如下：
 
