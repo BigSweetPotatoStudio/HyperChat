@@ -39,25 +39,9 @@ import { NumberStep } from "../common/numberStep";
 import EmojiPicker from 'emoji-picker-react';
 import { Editor } from "./editor";
 import { useForceUpdate } from "../hooks/useForceUpdate";
-
+import { AgentConfig } from "@hyperchat/shared/types.js";
 const { Title, Text } = Typography;
 
-interface AgentConfig {
-  key: string;
-  name: string;
-  description?: string;
-  prompt?: string;
-  modelKey?: string;
-  allowMCPs?: string[];
-  confirm_call_tool?: boolean;
-  temperature?: number;
-  tags?: string[];
-  created?: number;
-  lastModified?: number;
-  callable?: boolean;
-  attachedDialogueCount?: number;
-  fallbackModelKey?: string;
-}
 
 interface Agent {
   config: AgentConfig;

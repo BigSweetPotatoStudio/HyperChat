@@ -3,6 +3,7 @@ import OpenAI from "openai";
 import * as MCPTypes from "@modelcontextprotocol/sdk/types.js";
 import { v4 } from "uuid";
 import { ProviderManager } from "./providers.mjs";
+import { AgentConfig } from "./types.js";
 
 
 
@@ -240,27 +241,10 @@ export const ChatHistory = new Data("chat_history.json", {
   sync: true,
 });
 
-export type Agent = {
-  type?: "builtin" | "custom";
-  key: string;
-  name: string;
-  prompt: string;
-  description?: string;
-  callable?: boolean;
-  allowMCPs: string[];
-  modelKey?: string;
-  attachedDialogueCount?: number;
-  temperature?: number;
-  confirm_call_tool: boolean;
-  fallbackModelKey?: string;
-  tags?: string[];
-  subAgents?: string[];
-  version?: number
-}
 
 
 export const Agents = new Data("agents.json", {
-  data: [] as Array<Agent>,
+  data: [] as Array<AgentConfig>,
 });
 
 export type AIModelConfigItem = {
@@ -600,6 +584,6 @@ export const MCP_GateWay = new Data(
 type WorkSpace = {
   path: string;
   mcp: Record<string, IMCPClient>;
-  agents: Array<Agent>;
+  agents: Array<AgentConfig>;
   historys: Array<ChatHistoryItem>;
 };

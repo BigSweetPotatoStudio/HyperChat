@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import { Editor } from "../../components/editor";
 import { DndContext, PointerSensor, useSensor } from "@dnd-kit/core";
 import { SortableContext } from "@dnd-kit/sortable";
-import { Agent, Agents } from "@hyperchat/shared/data.mjs";
+import { Agents } from "@hyperchat/shared/data.mjs";
 import { SortableItem } from "../chat/sortableItem";
 import { Button, Card, Divider, Tabs, Tag, Tooltip } from "antd";
 import { DeleteOutlined, EditOutlined, FunctionOutlined, SettingFilled, SwapOutlined } from "@ant-design/icons";
@@ -11,6 +11,7 @@ import { t } from "../../i18n";
 import { Link } from "react-router-dom";
 import { getFirstCharacter } from "../../common";
 import { useForceUpdate } from "../../hooks/useForceUpdate";
+import { AgentConfig } from "@hyperchat/shared/types";
 
 export const AgentPage = () => {
     const refresh = useForceUpdate();
@@ -127,10 +128,10 @@ export const AgentPage = () => {
 
 export function AgentCard({ item, onClick, onRemove, onEdit }:
     {
-        item: Agent,
-        onClick?: (item: Agent) => void,
-        onRemove?: (item: Agent) => void,
-        onEdit?: (item: Agent) => void
+        item: AgentConfig,
+        onClick?: (item: AgentConfig) => void,
+        onRemove?: (item: AgentConfig) => void,
+        onEdit?: (item: AgentConfig) => void
     }
 ) {
     const refresh = useForceUpdate();

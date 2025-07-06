@@ -136,3 +136,23 @@ export interface ConnectionStatus {
   totalConnections: number;
   terminalListeners: number;
 }
+
+
+export type AgentConfig = {
+  type?: "builtin" | "custom";
+  key: string;
+  name: string;
+  prompt: string;
+  description?: string;
+  callable?: boolean;
+  allowMCPs: string[];
+  modelKey?: string;
+  attachedDialogueCount?: number;
+  temperature?: number;
+  confirm_call_tool: boolean;
+  fallbackModelKey?: string;
+  tags?: string[];
+  subAgents?: string[];
+  version?: number;
+  created?: number;
+}
