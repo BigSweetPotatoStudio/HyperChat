@@ -30,7 +30,7 @@ export class AgentInstance {
       lastModified: Date.now(),
     };
 
-    this.chatLogs = new DataList<ChatHistoryItem>(path.join(agentPath, CONSTANTS.DIRECTORIES.CHAT_LOGS));
+    this.chatLogs = new DataList<ChatHistoryItem>(path.join(agentPath, CONSTANTS.DIRECTORIES.CHAT_LOGS), DataList.FileFormat.YAML);
   }
 
   /**
@@ -238,8 +238,8 @@ export class AgentManager {
           if (agent.exists()) {
             await agent.init();
             const config = agent.getConfig();
-            
-            
+
+
             this.agents.set(config.key, agent);
             this.nameToKey.set(config.name, config.key);
           }
@@ -270,12 +270,12 @@ export class AgentManager {
   private async generateUniqueFolderName(baseName: string): Promise<string> {
     let folderName = this.createSafeFolderName(baseName);
     let counter = 1;
-    
+
     while (fs.existsSync(path.join(this.agentsPath, folderName))) {
       folderName = `${this.createSafeFolderName(baseName)}_${counter}`;
       counter++;
     }
-    
+
     return folderName;
   }
 
@@ -285,7 +285,7 @@ export class AgentManager {
   async createAgent(config: Partial<AgentConfig>): Promise<AgentInstance | null> {
     const key = config.key || `${dayjs().format("YYMMDD-HHmmss")}-${v4().slice(0, 8)}`;
     const name = config.name || key;
-    
+
     if (this.agents.has(key)) {
       console.warn(`Agent ${key} 已存在`);
       return null;

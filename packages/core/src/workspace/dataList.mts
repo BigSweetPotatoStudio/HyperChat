@@ -2,12 +2,23 @@ import * as path from "path";
 import * as fs from "fs";
 import dayjs from "dayjs";
 import { v4 } from "uuid";
+import * as yaml from "js-yaml";
+
+/**
+ * 文件格式枚举
+ */
+export enum FileFormat {
+  JSON = 'json',
+  YAML = 'yaml'
+}
 
 /**
  * 文件夹数据列表管理类
  * 专门处理一个文件夹中全部是同一种类型文件的情况
+ * 支持 JSON 和 YAML 格式
  */
 export class DataList<T extends { key: string }> {
+  static FileFormat = FileFormat;
   private items: Map<string, T> = new Map();
   private loaded = false;
   private lastModified = 0;
@@ -15,15 +26,56 @@ export class DataList<T extends { key: string }> {
 
   constructor(
     private dirPath: string,
+    private defaultFormat: FileFormat = FileFormat.JSON,
     private getItemKey: (item: T) => string = (item) => item.key,
-    private generateKey: () => string = () => `${dayjs().format("YYMMDD-HHmmss")}-${v4().slice(0, 8)}`
+    private generateKey: () => string = () => `${dayjs().format("YYMMDD-HHmmss")}-${v4().slice(0, 8)}`,
   ) { }
 
   /**
-   * 获取文件名（基于 key）
+   * 获取文件名（基于 key 和格式）
    */
-  private getFileName(key: string): string {
-    return `${key}.json`;
+  private getFileName(key: string, format: FileFormat = this.defaultFormat): string {
+    return `${key}.${format}`;
+  }
+
+  /**
+   * 检测文件格式
+   */
+  private detectFileFormat(filename: string): FileFormat | null {
+    if (filename.endsWith('.json')) {
+      return FileFormat.JSON;
+    } else if (filename.endsWith('.yaml') || filename.endsWith('.yml')) {
+      return FileFormat.YAML;
+    }
+    return null;
+  }
+
+  /**
+   * 解析文件内容
+   */
+  private parseFileContent(content: string, format: FileFormat): T {
+    switch (format) {
+      case FileFormat.JSON:
+        return JSON.parse(content) as T;
+      case FileFormat.YAML:
+        return yaml.load(content) as T;
+      default:
+        throw new Error(`不支持的文件格式: ${format}`);
+    }
+  }
+
+  /**
+   * 序列化内容
+   */
+  private serializeContent(item: T, format: FileFormat): string {
+    switch (format) {
+      case FileFormat.JSON:
+        return JSON.stringify(item, null, 2);
+      case FileFormat.YAML:
+        return yaml.dump(item, { indent: 2 });
+      default:
+        throw new Error(`不支持的文件格式: ${format}`);
+    }
   }
 
   /**
@@ -45,7 +97,7 @@ export class DataList<T extends { key: string }> {
    */
   private async _doLoad(): Promise<void> {
     this.items.clear();
-  
+
     if (!fs.existsSync(this.dirPath)) {
       this.loaded = true;
       this.lastModified = Date.now();
@@ -64,11 +116,9 @@ export class DataList<T extends { key: string }> {
       const files = await fs.promises.readdir(this.dirPath);
       const loadPromises = files
         .filter(file => {
-          // 严格过滤：只处理 .json 文件
-          if (file.endsWith('.json')) {
-            return true;
-          }
-          return false;
+          // 支持 JSON 和 YAML 文件
+          const format = this.detectFileFormat(file);
+          return format !== null;
         })
         .map(async (file) => {
           const filePath = path.join(this.dirPath, file);
@@ -81,12 +131,18 @@ export class DataList<T extends { key: string }> {
             }
 
             const content = await fs.promises.readFile(filePath, "utf-8");
+            const format = this.detectFileFormat(file);
+
+            if (!format) {
+              console.warn(`不支持的文件格式: ${file}`);
+              return null;
+            }
 
             let item: T;
             try {
-              item = JSON.parse(content) as T;
-            } catch (jsonError) {
-              console.warn(`${file} json parse 失败`);
+              item = this.parseFileContent(content, format);
+            } catch (parseError) {
+              console.warn(`${file} 解析失败 (${format}):`, parseError);
               return null;
             }
 
@@ -185,10 +241,11 @@ export class DataList<T extends { key: string }> {
       }
 
       const key = this.getItemKey(item);
-      const filename = this.getFileName(key);
+      const filename = this.getFileName(key, this.defaultFormat);
       const filePath = path.join(this.dirPath, filename);
+      const content = this.serializeContent(item, this.defaultFormat);
 
-      await fs.promises.writeFile(filePath, JSON.stringify(item, null, 2), "utf-8");
+      await fs.promises.writeFile(filePath, content, "utf-8");
 
       // 更新内存中的数据
       await this.ensureLoaded();
@@ -206,24 +263,30 @@ export class DataList<T extends { key: string }> {
    * 删除单个项目
    */
   async delete(key: string): Promise<boolean> {
-    const filename = this.getFileName(key);
-    const filePath = path.join(this.dirPath, filename);
+    // 尝试删除所有可能的格式文件
+    const formats = [FileFormat.JSON, FileFormat.YAML];
+    let deleted = false;
 
-    try {
-      if (fs.existsSync(filePath)) {
-        await fs.promises.unlink(filePath);
+    for (const format of formats) {
+      const filename = this.getFileName(key, format);
+      const filePath = path.join(this.dirPath, filename);
+
+      try {
+        if (fs.existsSync(filePath)) {
+          await fs.promises.unlink(filePath);
+          deleted = true;
+        }
+      } catch (error) {
+        const errorMsg = error instanceof Error ? error.message : String(error);
+        console.warn(`删除文件 ${filename} 失败: ${errorMsg}`);
       }
-
-      // 从内存中删除
-      await this.ensureLoaded();
-      this.items.delete(key);
-
-      return true;
-    } catch (error) {
-      const errorMsg = error instanceof Error ? error.message : String(error);
-      console.warn(`删除文件 ${filename} 失败: ${errorMsg}`);
-      return false;
     }
+
+    // 从内存中删除
+    await this.ensureLoaded();
+    this.items.delete(key);
+
+    return deleted;
   }
 
   /**
@@ -241,7 +304,8 @@ export class DataList<T extends { key: string }> {
       if (fs.existsSync(this.dirPath)) {
         const files = await fs.promises.readdir(this.dirPath);
         for (const file of files) {
-          if (file.endsWith('.json') && !file.startsWith('.')) {
+          const format = this.detectFileFormat(file);
+          if (format && !file.startsWith('.')) {
             existingFiles.add(file);
           }
         }
@@ -253,7 +317,7 @@ export class DataList<T extends { key: string }> {
     // 为没有 key 的项目生成 key
     const itemsWithKeys = items.map(item => {
       if (!item.key) {
-        (item as any).key = this.generateKey();
+        (item).key = this.generateKey();
       }
       return item;
     });
@@ -262,12 +326,13 @@ export class DataList<T extends { key: string }> {
     const currentFiles = new Set<string>();
     const savePromises = itemsWithKeys.map(async (item) => {
       const key = this.getItemKey(item);
-      const filename = this.getFileName(key);
+      const filename = this.getFileName(key, this.defaultFormat);
       currentFiles.add(filename);
 
       const filePath = path.join(this.dirPath, filename);
       try {
-        await fs.promises.writeFile(filePath, JSON.stringify(item, null, 2), "utf-8");
+        const content = this.serializeContent(item, this.defaultFormat);
+        await fs.promises.writeFile(filePath, content, "utf-8");
         return { success: true, filename };
       } catch (error) {
         console.warn(`保存文件 ${filename} 失败:`, error);
@@ -322,7 +387,10 @@ export class DataList<T extends { key: string }> {
       if (fs.existsSync(this.dirPath)) {
         const files = await fs.promises.readdir(this.dirPath);
         const deletePromises = files
-          .filter(file => file.endsWith('.json') && !file.startsWith('.'))
+          .filter(file => {
+            const format = this.detectFileFormat(file);
+            return format && !file.startsWith('.');
+          })
           .map(file => fs.promises.unlink(path.join(this.dirPath, file)));
 
         await Promise.all(deletePromises);
@@ -335,5 +403,80 @@ export class DataList<T extends { key: string }> {
       console.warn(`清空目录失败: ${errorMsg}`);
       return false;
     }
+  }
+
+  /**
+   * 设置默认文件格式
+   */
+  setDefaultFormat(format: FileFormat): void {
+    this.defaultFormat = format;
+  }
+
+  /**
+   * 获取当前默认文件格式
+   */
+  getDefaultFormat(): FileFormat {
+    return this.defaultFormat;
+  }
+
+  /**
+   * 将所有文件迁移到指定格式
+   */
+  async migrateToFormat(targetFormat: FileFormat): Promise<boolean> {
+    await this.ensureLoaded();
+
+    const allItems = Array.from(this.items.values());
+    if (allItems.length === 0) {
+      this.defaultFormat = targetFormat;
+      return true;
+    }
+
+    // 读取所有现有文件并删除
+    const existingFiles: string[] = [];
+    try {
+      if (fs.existsSync(this.dirPath)) {
+        const files = await fs.promises.readdir(this.dirPath);
+        for (const file of files) {
+          const format = this.detectFileFormat(file);
+          if (format && !file.startsWith('.')) {
+            existingFiles.push(file);
+          }
+        }
+      }
+    } catch (error) {
+      console.warn('读取现有文件失败:', error);
+      return false;
+    }
+
+    // 更新默认格式
+    this.defaultFormat = targetFormat;
+
+    // 重新保存所有项目到新格式
+    const success = await this.saveAll(allItems);
+
+    if (success) {
+      // 删除旧格式的文件
+      const deletePromises = existingFiles
+        .filter(file => !this.detectFileFormat(file) || this.detectFileFormat(file) !== targetFormat)
+        .map(async (file) => {
+          const filePath = path.join(this.dirPath, file);
+          try {
+            await fs.promises.unlink(filePath);
+          } catch (error) {
+            console.warn(`删除旧文件 ${file} 失败:`, error);
+          }
+        });
+
+      await Promise.all(deletePromises);
+    }
+
+    return success;
+  }
+
+  /**
+   * 检查是否支持指定格式
+   */
+  static isSupportedFormat(format: string): format is FileFormat {
+    return Object.values(FileFormat).includes(format as FileFormat);
   }
 }
