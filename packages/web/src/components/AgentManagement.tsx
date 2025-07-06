@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useContext, useEffect } from "react";
 import {
   List,
   Button,
@@ -13,6 +13,14 @@ import {
   message,
   Form,
   Input,
+  Select,
+  TreeSelect,
+  Checkbox,
+  Radio,
+  Collapse,
+  InputNumber,
+  Tooltip,
+  Popover,
 } from "antd";
 import {
   PlusOutlined,
@@ -21,14 +29,20 @@ import {
   DeleteOutlined,
   InfoCircleOutlined,
   PlayCircleOutlined,
+  SmileOutlined,
 } from "@ant-design/icons";
 import { call } from "../common/call";
 import { t } from "../i18n";
+import { HeaderContext } from "../common/context";
+import { AI_MODELS } from "@hyperchat/shared/data.mjs";
+import { NumberStep } from "../common/numberStep";
+import EmojiPicker from 'emoji-picker-react';
+import { Editor } from "./editor";
+import { useForceUpdate } from "../hooks/useForceUpdate";
 
 const { Title, Text } = Typography;
-const { TextArea } = Input;
 
-interface Agent {
+interface AgentConfig {
   key: string;
   name: string;
   description?: string;
@@ -40,8 +54,30 @@ interface Agent {
   tags?: string[];
   created?: number;
   lastModified?: number;
-  chatLogsCount?: number;
+  callable?: boolean;
+  attachedDialogueCount?: number;
+  fallbackModelKey?: string;
+}
+
+interface Agent {
+  config: AgentConfig;
+  chatLogsCount: number;
   lastChatTime?: number;
+  // 支持旧格式的兼容性
+  key?: string;
+  name?: string;
+  description?: string;
+  prompt?: string;
+  modelKey?: string;
+  allowMCPs?: string[];
+  confirm_call_tool?: boolean;
+  temperature?: number;
+  tags?: string[];
+  created?: number;
+  lastModified?: number;
+  callable?: boolean;
+  attachedDialogueCount?: number;
+  fallbackModelKey?: string;
 }
 
 interface WorkspaceInfo {
@@ -61,6 +97,15 @@ export function AgentManagement({ workspace, agents, onRefresh }: AgentManagemen
   const [selectedAgent, setSelectedAgent] = useState<Agent | null>(null);
   const [editingAgent, setEditingAgent] = useState<Agent | null>(null);
   const [form] = Form.useForm();
+  const refresh = useForceUpdate();
+  const context = useContext(HeaderContext);
+  const { mcpClients } = context || {};
+
+  useEffect(() => {
+    AI_MODELS.init().then(() => {
+      refresh();
+    });
+  }, []);
 
   // 显示Agent详情
   const showAgentDetails = (agent: Agent) => {
@@ -71,14 +116,6 @@ export function AgentManagement({ workspace, agents, onRefresh }: AgentManagemen
   // 编辑Agent
   const editAgent = (agent: Agent) => {
     setEditingAgent(agent);
-    form.setFieldsValue({
-      name: agent.name,
-      description: agent.description,
-      prompt: agent.prompt,
-      modelKey: agent.modelKey,
-      temperature: agent.temperature,
-      tags: agent.tags?.join(', '),
-    });
     setAgentEditModal(true);
   };
 
@@ -92,37 +129,37 @@ export function AgentManagement({ workspace, agents, onRefresh }: AgentManagemen
   // 保存Agent
   const saveAgent = async (values: any) => {
     try {
-      if (editingAgent) {
+      const agentConfig = {
+        name: values.label,
+        description: values.description,
+        prompt: values.prompt,
+        allowMCPs: values.allowMCPs || [],
+        confirm_call_tool: values.confirm_call_tool ?? false,
+        modelKey: values.modelKey,
+        temperature: values.temperature,
+        callable: values.callable ?? true,
+        attachedDialogueCount: values.attachedDialogueCount,
+        fallbackModelKey: values.fallbackModelKey,
+      };
+
+      if (editingAgent || values.key) {
         // 更新现有Agent
+        const agentKey = editingAgent?.config?.key || editingAgent?.key || values.key;
+        
+        if (!agentKey) {
+          throw new Error('Agent key is missing');
+        }
         await call('updateAgent', {
           workspacePath: workspace.path,
-          agentKey: editingAgent.key,
-          updates: {
-            name: values.name,
-            description: values.description,
-            prompt: values.prompt,
-            allowMCPs: values.allowMCPs || [],
-            confirm_call_tool: values.confirm_call_tool || false,
-            modelKey: values.modelKey,
-            temperature: values.temperature,
-            tags: values.tags || []
-          }
+          agentKey: agentKey,
+          updates: agentConfig
         });
         message.success(t`Agent updated successfully`);
       } else {
         // 创建新Agent
         await call('createAgent', {
           workspacePath: workspace.path,
-          config: {
-            name: values.name,
-            description: values.description,
-            prompt: values.prompt,
-            allowMCPs: values.allowMCPs || [],
-            confirm_call_tool: values.confirm_call_tool || false,
-            modelKey: values.modelKey,
-            temperature: values.temperature,
-            tags: values.tags || []
-          }
+          config: agentConfig
         });
         message.success(t`Agent created successfully`);
       }
@@ -239,9 +276,9 @@ export function AgentManagement({ workspace, agents, onRefresh }: AgentManagemen
                   <List.Item.Meta
                     title={
                       <Space>
-                        <span className="text-sm">{agent.name || agent.key}</span>
-                        {agent.modelKey && (
-                          <Tag color="green">{agent.modelKey}</Tag>
+                        <span className="text-sm">{agent.config?.name || agent.name || agent.config?.key || agent.key}</span>
+                        {(agent.config?.modelKey || agent.modelKey) && (
+                          <Tag color="green">{agent.config?.modelKey || agent.modelKey}</Tag>
                         )}
                         {agent.chatLogsCount !== undefined && (
                           <Tag color="blue">{agent.chatLogsCount} chats</Tag>
@@ -251,11 +288,11 @@ export function AgentManagement({ workspace, agents, onRefresh }: AgentManagemen
                     description={
                       <div className="text-xs">
                         <div className="text-gray-500 mb-1">
-                          {agent.description || agent.prompt?.slice(0, 50) || t`No description`}
+                          {agent.config?.description || agent.description || agent.config?.prompt?.slice(0, 50) || agent.prompt?.slice(0, 50) || t`No description`}
                         </div>
                         <Space size="small">
                           <Tag color="blue">
-                            {agent.key}
+                            {agent.config?.key || agent.key}
                           </Tag>
                         </Space>
                       </div>
@@ -289,70 +326,98 @@ export function AgentManagement({ workspace, agents, onRefresh }: AgentManagemen
       >
         {selectedAgent && (
           <div>
-            <Descriptions
-              title={selectedAgent.name || selectedAgent.key}
-              bordered
-              column={1}
-              size="small"
-            >
-              <Descriptions.Item label={t`Name`}>
-                {selectedAgent.name || selectedAgent.key}
-              </Descriptions.Item>
-              <Descriptions.Item label={t`Key`}>
-                {selectedAgent.key}
-              </Descriptions.Item>
-              <Descriptions.Item label={t`Description`}>
-                {selectedAgent.description || t`No description`}
-              </Descriptions.Item>
-              <Descriptions.Item label={t`Model`}>
-                {selectedAgent.modelKey || "N/A"}
-              </Descriptions.Item>
-              <Descriptions.Item label={t`Chat Logs`}>
-                {selectedAgent.chatLogsCount || 0}
-              </Descriptions.Item>
-              <Descriptions.Item label={t`Last Chat`}>
-                {selectedAgent.lastChatTime ? new Date(selectedAgent.lastChatTime).toLocaleString() : 'Never'}
-              </Descriptions.Item>
-              <Descriptions.Item label={t`Tags`}>
-                {selectedAgent.tags?.map(tag => <Tag key={tag}>{tag}</Tag>) || 'None'}
-              </Descriptions.Item>
-              <Descriptions.Item label={t`Created`}>
-                {selectedAgent.created ? new Date(selectedAgent.created).toLocaleString() : 'Unknown'}
-              </Descriptions.Item>
-            </Descriptions>
+            {(() => {
+              const config = selectedAgent.config || selectedAgent;
+              return (
+                <Descriptions
+                  title={config.name || config.key}
+                  bordered
+                  column={1}
+                  size="small"
+                >
+                  <Descriptions.Item label={t`Name`}>
+                    {config.name || config.key}
+                  </Descriptions.Item>
+                  <Descriptions.Item label={t`Key`}>
+                    {config.key}
+                  </Descriptions.Item>
+                  <Descriptions.Item label={t`Description`}>
+                    {config.description || t`No description`}
+                  </Descriptions.Item>
+                  <Descriptions.Item label={t`Model`}>
+                    {config.modelKey || "N/A"}
+                  </Descriptions.Item>
+                  <Descriptions.Item label={t`Chat Logs`}>
+                    {selectedAgent.chatLogsCount || 0}
+                  </Descriptions.Item>
+                  <Descriptions.Item label={t`Last Chat`}>
+                    {selectedAgent.lastChatTime ? new Date(selectedAgent.lastChatTime).toLocaleString() : 'Never'}
+                  </Descriptions.Item>
+                  <Descriptions.Item label={t`Callable`}>
+                    {config.callable ? 'Yes' : 'No'}
+                  </Descriptions.Item>
+                  <Descriptions.Item label={t`Attached Dialogue Count`}>
+                    {config.attachedDialogueCount || 'Default'}
+                  </Descriptions.Item>
+                  <Descriptions.Item label={t`Fallback Model`}>
+                    {config.fallbackModelKey || 'None'}
+                  </Descriptions.Item>
+                  <Descriptions.Item label={t`Created`}>
+                    {config.created ? new Date(config.created).toLocaleString() : 'Unknown'}
+                  </Descriptions.Item>
+                </Descriptions>
+              );
+            })()}
 
             {/* Prompt内容 */}
-            {selectedAgent.prompt && (
-              <div className="mt-4">
-                <Title level={5}>{t`Prompt`}</Title>
-                <div className="bg-gray-100 p-3 rounded text-sm whitespace-pre-wrap">
-                  {selectedAgent.prompt}
+            {(() => {
+              const config = selectedAgent.config || selectedAgent;
+              const prompt = config.prompt || selectedAgent.prompt;
+              return prompt && (
+                <div className="mt-4">
+                  <Title level={5}>{t`Prompt`}</Title>
+                  <div className="bg-gray-100 p-3 rounded text-sm whitespace-pre-wrap">
+                    {prompt}
+                  </div>
                 </div>
-              </div>
-            )}
+              );
+            })()}
 
             {/* MCP 配置 */}
-            {selectedAgent.allowMCPs && selectedAgent.allowMCPs.length > 0 && (
-              <div className="mt-4">
-                <Title level={5}>{t`Allowed MCPs`}</Title>
-                <Space wrap>
-                  {selectedAgent.allowMCPs.map(mcp => (
-                    <Tag key={mcp} color="purple">{mcp}</Tag>
-                  ))}
-                </Space>
-              </div>
-            )}
+            {(() => {
+              const config = selectedAgent.config || selectedAgent;
+              const allowMCPs = config.allowMCPs || selectedAgent.allowMCPs;
+              return allowMCPs && allowMCPs.length > 0 && (
+                <div className="mt-4">
+                  <Title level={5}>{t`Allowed MCPs`}</Title>
+                  <Space wrap>
+                    {allowMCPs.map(mcp => (
+                      <Tag key={mcp} color="purple">{mcp}</Tag>
+                    ))}
+                  </Space>
+                </div>
+              );
+            })()}
 
             {/* 其他配置 */}
-            <div className="mt-4">
-              <Title level={5}>{t`Settings`}</Title>
-              <div className="space-y-2">
-                <div>Tool Confirmation: {selectedAgent.confirm_call_tool ? 'Enabled' : 'Disabled'}</div>
-                {selectedAgent.temperature !== undefined && (
-                  <div>Temperature: {selectedAgent.temperature}</div>
-                )}
-              </div>
-            </div>
+            {(() => {
+              const config = selectedAgent.config || selectedAgent;
+              return (
+                <div className="mt-4">
+                  <Title level={5}>{t`Settings`}</Title>
+                  <div className="space-y-2">
+                    <div>Tool Confirmation: {config.confirm_call_tool ? 'Enabled' : 'Disabled'}</div>
+                    {config.temperature !== undefined && (
+                      <div>Temperature: {config.temperature}</div>
+                    )}
+                    {config.attachedDialogueCount !== undefined && (
+                      <div>Attached Dialogue Count: {config.attachedDialogueCount}</div>
+                    )}
+                    <div>Callable: {config.callable ? 'Yes' : 'No'}</div>
+                  </div>
+                </div>
+              );
+            })()}
           </div>
         )}
       </Drawer>
@@ -370,59 +435,179 @@ export function AgentManagement({ workspace, agents, onRefresh }: AgentManagemen
           form.submit();
         }}
         destroyOnClose
-        width={600}
+        width={800}
+        okButtonProps={{ autoFocus: true }}
+        afterOpenChange={(open) => {
+          // 当模态框打开时，设置表单值
+          if (open) {
+            if (editingAgent) {
+              // 编辑模式：设置Agent的现有值
+              const config = editingAgent.config || editingAgent;
+              const formValues = {
+                key: config.key,
+                label: config.name,
+                description: config.description,
+                prompt: config.prompt,
+                modelKey: config.modelKey,
+                temperature: config.temperature ?? 1,
+                allowMCPs: config.allowMCPs || [],
+                confirm_call_tool: config.confirm_call_tool ?? false,
+                callable: config.callable ?? true,
+                attachedDialogueCount: config.attachedDialogueCount ?? 10,
+                fallbackModelKey: config.fallbackModelKey,
+              };
+              form.setFieldsValue(formValues);
+            } else {
+              // 创建模式：设置默认值
+              form.setFieldsValue({
+                allowMCPs: [],
+                confirm_call_tool: false,
+                callable: true,
+                temperature: 1,
+                attachedDialogueCount: 10,
+              });
+            }
+          }
+        }}
       >
         <Form
           form={form}
           layout="vertical"
           onFinish={saveAgent}
+          preserve={false}
         >
-          <Form.Item
-            label={t`Agent Name`}
-            name="name"
-            rules={[{ required: true, message: t`Please enter agent name` }]}
-          >
-            <Input placeholder={t`Enter agent name`} />
+          <Form.Item className="hidden" name="key" label={"key"}>
+            <Input />
           </Form.Item>
           
           <Form.Item
-            label={t`Description`}
-            name="description"
+            name="label"
+            label={t`Name`}
+            rules={[{ required: true, message: t`Please enter the name` }]}
           >
-            <Input placeholder={t`Enter agent description`} />
-          </Form.Item>
-          
-          <Form.Item
-            label={t`Prompt`}
-            name="prompt"
-            rules={[{ required: true, message: t`Please enter agent prompt` }]}
-          >
-            <TextArea 
-              rows={6} 
-              placeholder={t`Enter agent prompt`}
+            <Input 
+              addonBefore={
+                <Popover 
+                  destroyTooltipOnHide={false} 
+                  trigger="click" 
+                  title={t`please select emoji!`} 
+                  content={
+                    <EmojiPicker 
+                      onEmojiClick={(emoji) =>
+                        form.setFieldValue("label", emoji.emoji + form.getFieldValue("label"))
+                      } 
+                    />
+                  }
+                >
+                  <SmileOutlined className=" cursor-pointer" />
+                </Popover>
+              } 
             />
           </Form.Item>
-
+          
           <Form.Item
-            label={t`Model Key`}
-            name="modelKey"
+            name="prompt"
+            label={t`System Prompt`}
+            rules={[{ required: true, message: t`Please enter System Prompt` }]}
           >
-            <Input placeholder={t`Enter model key (optional)`} />
+            <Editor style={{ height: "150px" }} />
           </Form.Item>
-
+          
+          <Form.Item name="modelKey" label={t`LLM`}>
+            <Select
+              showSearch
+              optionFilterProp="label"
+              placeholder={t`Please select default LLM`}
+              allowClear
+              options={AI_MODELS.get().data.map((x) => ({
+                label: x.name,
+                value: x.key,
+              }))}
+            />
+          </Form.Item>
+          
           <Form.Item
-            label={t`Temperature`}
+            name="allowMCPs"
+            label={t`allowMCPs`}
+          >
+            <TreeSelect
+              multiple
+              treeCheckable
+              placeholder={t`Please select allowed MCP`}
+              showCheckedStrategy={TreeSelect.SHOW_PARENT}
+              treeData={(mcpClients || []).map((x) => ({
+                title: x.name,
+                key: x.name,
+                value: x.name,
+                children: x.tools.map((t) => ({
+                  title: (
+                    <Tooltip title={t.description}>
+                      <span>{t.origin_name || t.name}</span>
+                    </Tooltip>
+                  ),
+                  key: t.restore_name,
+                  value: t.restore_name,
+                })),
+              }))}
+            />
+          </Form.Item>
+          
+          <Form.Item
             name="temperature"
+            label={t`temperature`}
+            tooltip={t`What sampling temperature to use, between 0 and 2. Higher values like 0.8 will make the output more random, while lower values like 0.2 will make it more focused and deterministic.`}
           >
-            <Input type="number" min={0} max={2} step={0.1} placeholder="0.7" />
+            <NumberStep defaultValue={1} min={0} max={2} step={0.1} />
           </Form.Item>
-
+          
           <Form.Item
-            label={t`Tags`}
-            name="tags"
+            name="attachedDialogueCount"
+            label={t`attachedDialogueCount`}
+            tooltip={t`Number of sent Dialogue Message attached per request`}
           >
-            <Input placeholder={t`Enter tags separated by commas`} />
+            <NumberStep defaultValue={10} max={20} />
           </Form.Item>
+          
+          <Form.Item
+            name="confirm_call_tool"
+            label={t`callToolType`}
+            tooltip={t`Do you want to confirm calling the tool?`}
+          >
+            <Radio.Group>
+              <Radio value={true}>{t`Need Confirm`}</Radio>
+              <Radio value={false}>{t`Direct Call`}</Radio>
+            </Radio.Group>
+          </Form.Item>
+          
+          <Form.Item name="callable" label={t`Callable`} valuePropName="checked">
+            <Checkbox>
+              {t`Allowed to be called by 'hyper_agent'`}
+            </Checkbox>
+          </Form.Item>
+          
+          <Form.Item name="description" label={t`description`}>
+            <Input.TextArea
+              placeholder={t`Please provide a description for more accurate call.`}
+              rows={2}
+            />
+          </Form.Item>
+          
+          <Collapse>
+            <Collapse.Panel key="1" header={t`More Settings`}>
+              <Form.Item name="fallbackModelKey" label={t`TaskFallbackLLM`}>
+                <Select
+                  showSearch
+                  optionFilterProp="label"
+                  placeholder={t`Please select TaskFallbackLLM`}
+                  allowClear
+                  options={AI_MODELS.get().data.map((x) => ({
+                    label: x.name,
+                    value: x.key,
+                  }))}
+                />
+              </Form.Item>
+            </Collapse.Panel>
+          </Collapse>
         </Form>
       </Modal>
     </>

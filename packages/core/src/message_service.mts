@@ -1,24 +1,32 @@
 import { Logger } from "./log.mjs";
 import type { Server as SocketIO, Socket } from "socket.io";
 import dayjs from "dayjs";
+import type { 
+  MessageData, 
+  TerminalMessage, 
+} from "./shared/types.js";
 
-// 类型定义
-interface MessageData {
-  type: string;
-  data?: any;
-  timestamp?: string;
-  workspacePath: string;
-}
-
-interface TerminalMessage {
-  command?: string;
-  output?: string;
-  error?: string;
-  [key: string]: any;
-}
-
+/**
+ * ����p{�
+ */
 type TerminalCallback = (msg: TerminalMessage) => void;
+
+/**
+ * (7Socket {�
+ */
 type UserSocketMap = Map<string, string>;
+
+/**
+ * ޥ��o
+ */
+interface ConnectionStatus {
+  isInitialized: boolean;
+  activeUser?: string;
+  connectedUsers: string[];
+  totalConnections: number;
+  terminalListeners: number;
+}
+
 
 // 用户Socket映射和活跃用户管理
 const userSocketMap: UserSocketMap = new Map();
@@ -246,7 +254,7 @@ export class MessageService {
   /**
    * 获取当前连接状态信息
    */
-  getConnectionStatus() {
+  getConnectionStatus(): ConnectionStatus {
     return {
       isInitialized: this.isInitialized,
       activeUser,
