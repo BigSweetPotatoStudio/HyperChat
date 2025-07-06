@@ -1,7 +1,7 @@
 import { z } from "zod";
-import { AI_MODELS, AIModelConfigItem } from "@hyperchat/shared/data.mjs";
+import { AI_MODELS, AIModelConfigItem, MyMessage } from "@hyperchat/shared/data.mjs";
 import { EVENT } from "../common/event";
-import { MyMessage, OpenAiChannel } from "../common/openai.js";
+import { AiChannel } from "@hyperchat/shared/ai.mjs";
 
 import { zodResponseFormat, zodTextFormat } from 'openai/helpers/zod';
 
@@ -43,15 +43,14 @@ export function getDefaultModelConfigSync(models: typeof AI_MODELS): AIModelConf
 export async function rename(messages: MyMessage[]) {
     let config = await getDefaultModelConfig();
     try {
-        let openaiClient = new OpenAiChannel({
-            ...config,
-            baseURL: config.baseURL,
-            apiKey: config.apiKey,
-            model: config.model,
-            supportTool: false,
-            requestType: "complete",
-        }, messages);
-        let res = await openaiClient.completionParse(
+        let aiClient = new AiChannel({}, messages);
+        aiClient.register({
+            antdmessage: { warning: (msg) => console.warn(msg) },
+            mcpTools: [],
+            platform: "web",
+            getURL_PRE: () => ""
+        });
+        let res = await aiClient.completionParse(
             zodResponseFormat(z.object({
                 name: z.string({
                     description: "Summarize this chat record"
@@ -68,21 +67,26 @@ export async function rename(messages: MyMessage[]) {
 export async function genCronExpression(message: string) {
     let config = await getDefaultModelConfig();
     try {
-        let openaiClient = new OpenAiChannel({
-            ...config,
-            baseURL: config.baseURL,
-            apiKey: config.apiKey,
-            model: config.model,
-            supportTool: false,
-            requestType: "complete",
-        }, [{
+        let aiClient = new AiChannel({}, [{
             role: "system",
             content: "You are a cron expression generator. Please generate a cron expression for the following message.",
+            content_status: "success",
+            content_attachment: [],
+            content_date: Date.now(),
         }, {
             role: "user",
             content: message,
+            content_status: "success",
+            content_attachment: [],
+            content_date: Date.now(),
         }]);
-        let res = await openaiClient.completionParse(
+        aiClient.register({
+            antdmessage: { warning: (msg) => console.warn(msg) },
+            mcpTools: [],
+            platform: "web",
+            getURL_PRE: () => ""
+        });
+        let res = await aiClient.completionParse(
             zodResponseFormat(z.object({
                 cron: z.string({
                     description: "This is a cron expression"
