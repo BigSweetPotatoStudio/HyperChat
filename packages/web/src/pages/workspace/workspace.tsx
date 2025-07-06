@@ -46,6 +46,7 @@ import { MCPManagement } from "../../components/MCPManagement";
 import { AgentManagement } from "../../components/AgentManagement";
 import { FileTreeComponent } from "../../components/FileTreeComponent";
 import { WorkspaceSidebar } from "../../components/WorkspaceSidebar";
+import { WorkspaceChat } from "../../components/WorkspaceChat";
 import { getPanelSizes, savePanelSizes, getWorkspaceHistory, addToWorkspaceHistory, removeFromWorkspaceHistory } from "../../utils/storage";
 
 const { Title, Text } = Typography;
@@ -546,28 +547,18 @@ export function Workspace() {
             />
           </Splitter.Panel>
 
-          {/* 中间面板：操作界面 */}
+          {/* 中间面板：聊天界面 */}
           <Splitter.Panel 
             size={panelSizes[1]} 
             min="30%"
           >
             <Card
-              title={t`Workspace Operations`}
+              title={t`Workspace Chat`}
               size="small"
               className="h-full"
-              bodyStyle={{ padding: '16px', height: 'calc(100% - 48px)', overflow: 'auto' }}
+              bodyStyle={{ padding: '0', height: 'calc(100% - 48px)', overflow: 'hidden' }}
             >
-              <div className="text-center">
-                <Empty
-                  description={t`Operations interface under development`}
-                  image={Empty.PRESENTED_IMAGE_SIMPLE}
-                  style={{ marginTop: '20%' }}
-                >
-                  <p className="text-gray-500 mt-4">
-                    {t`Main workspace operations interface will be displayed here`}
-                  </p>
-                </Empty>
-              </div>
+              <WorkspaceChat workspace={currentWorkspace} />
             </Card>
           </Splitter.Panel>
 
