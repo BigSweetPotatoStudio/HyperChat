@@ -39,7 +39,7 @@ interface Ext {
    * @param channel The channel to listen on.
    * @param listener The callback function to execute when a message is received.
    */
-  receive: (channel: string, listener: (data: any) => void) => void;
+  receive: (channel: string, listener: (data: any) => void) => () => void;
 }
 
 const ext: Ext = {} as any;
@@ -82,6 +82,14 @@ export function getURL_PRE() {
       callbacks[channel].push(listener);
     } else {
       callbacks[channel] = [listener];
+    }
+
+    return () => {
+      if (!callbacks[channel]) return;
+      let index = callbacks[channel].indexOf(listener);
+      if (index !== -1) {
+        callbacks[channel].splice(index, 1);
+      }
     }
   };
 
@@ -180,11 +188,11 @@ export async function callElectron<k extends keyof ElectronCommand>(
  * @param {string} channel - The name of the channel to listen to.
  * @param {(data: any) => void} listener - The callback function to handle incoming data.
  */
-export async function msg_receive(
+export function msg_receive(
   channel: string,
   listener: (data: any) => void
 ) {
-  ext.receive(channel, listener);
+  return ext.receive(channel, listener);
 }
 
 /**

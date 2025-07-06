@@ -110,7 +110,8 @@ export function Workspace() {
 
   // 监听MCP客户端状态变化
   useEffect(() => {
-    msg_receive("message-from-main", (res: any) => {
+    // 监听传统的 MCP 变化消息（兼容性）
+    const unsubscribeChangeMcp = msg_receive("message-from-main", (res: any) => {
       if (res.type === "changeMcpClient") {
         const payload = res.data;
 
@@ -118,7 +119,7 @@ export function Workspace() {
         setWorkspaceDetails(prev => {
           const newDetails = { ...prev };
 
-          // 更新所有工作区的MCP客户端数据
+          // 更新所有工作区的MCP客户端数据（兼容旧的行为）
           Object.keys(newDetails).forEach(key => {
             const details = newDetails[key];
             if (details && details.mcpClients) {
@@ -137,8 +138,46 @@ export function Workspace() {
       }
     });
 
-    // 没有 unsubscribe，返回空函数
-    return () => { };
+    // 监听新的工作区特定的 MCP 状态变化消息
+    const unsubscribeMcpStatus = msg_receive("mcp-status-change", (res: any) => {
+      console.log("收到 MCP 状态变化通知:", res);
+      
+      const { workspacePath, data } = res;
+      if (!workspacePath || !data) return;
+      
+      const { serverName, status } = data;
+      
+      // 只更新指定工作区的 MCP 客户端数据
+      setWorkspaceDetails(prev => {
+        const newDetails = { ...prev };
+        const workspaceDetails = newDetails[workspacePath];
+        
+        if (workspaceDetails && workspaceDetails.mcpClients) {
+          if (status === "deleted" || status === "disconnected") {
+            // 删除或断开连接的客户端
+            delete workspaceDetails.mcpClients[serverName];
+          } else {
+            // 添加或更新客户端
+            workspaceDetails.mcpClients[serverName] = {
+              name: serverName,
+              status,
+              workspacePath,
+              ...data
+            };
+          }
+          
+          console.log(`工作区 ${workspacePath} 的 MCP 客户端 ${serverName} 状态更新为: ${status}`);
+        }
+        
+        return newDetails;
+      });
+    });
+
+    // 返回清理函数
+    return () => {
+      if (unsubscribeChangeMcp) unsubscribeChangeMcp();
+      if (unsubscribeMcpStatus) unsubscribeMcpStatus();
+    };
   }, []);
 
   // 加载工作区列表

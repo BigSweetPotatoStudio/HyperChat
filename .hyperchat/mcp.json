@@ -1,8 +1,0 @@
-{
-  "mcpServers": {
-    "hyper_tools": {
-      "type": "streamableHttp",
-      "url": "http://localhost:16100/123456/mcp/test/mcp"
-    }
-  }
-}
