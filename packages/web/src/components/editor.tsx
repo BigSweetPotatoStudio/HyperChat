@@ -16,8 +16,7 @@ monaco.languages.register({ id: "HyperPromptLanguage" });
 monaco.languages.setMonarchTokensProvider("HyperPromptLanguage", {
     tokenizer: {
         root: [
-            [/{{.*}}/, "PromptVariable"], // Highlight {{...}} as a variable
-            // [/[，。？！；：""''【】「」『』（）、]/, "ChinesePunctuation"]
+            [/{{.*}}/, "PromptVariable"],
         ],
     },
 });
@@ -26,7 +25,6 @@ monaco.editor.defineTheme("hyperChatCustomTheme", {
     inherit: false,
     rules: [
         { token: "PromptVariable", foreground: "FFA500", fontStyle: "bold" },
-        // { token: "ChinesePunctuation", foreground: "FFA500", fontStyle: "bold",  }, // 添加中文标点的样式
     ],
     colors: {
         "editor.foreground": "#000000",
@@ -35,8 +33,8 @@ monaco.editor.defineTheme("hyperChatCustomTheme", {
 
 let monacoProviders: monaco.IDisposable[] = [];
 export function enableCompletionItemProvider() {
-    let varList = [...VarList.get().data?.map((v) => {
-        let varName = v.scope + "." + v.name;
+    const varList = [...VarList.get().data?.map((v) => {
+        const varName = v.scope + "." + v.name;
         return {
             ...v,
             varName
@@ -46,29 +44,20 @@ export function enableCompletionItemProvider() {
     // Register a completion item provider for the new language
     monacoProviders.push(monaco.languages.registerCompletionItemProvider("HyperPromptLanguage", {
         provideCompletionItems: (model, position, context, token) => {
-
-
-            var word = model.getWordUntilPosition(position);
-            var range = {
+            const word = model.getWordUntilPosition(position);
+            const range = {
                 startLineNumber: position.lineNumber,
                 endLineNumber: position.lineNumber,
                 startColumn: word.startColumn,
                 endColumn: word.endColumn,
             };
-            var suggestions = [
-                // {
-                //     label: "user.TsimpleText",
-                //     kind: monaco.languages.CompletionItemKind.Text,
-                //     insertText: "simpleText",
-                //     range: range,
-                // },
+            const suggestions = [
                 ...Agents.get().data.map((agent) => {
                     return {
                         label: "agent." + agent.name,
                         kind: monaco.languages.CompletionItemKind.User,
                         insertText: agent.name,
                         range: range,
-                        // 可以添加详细信息
                         detail: 'Agent',
                         documentation: `${agent.name} agent`
                     }
@@ -90,23 +79,14 @@ export function enableCompletionItemProvider() {
     }));
     // Register a completion item provider for the new language
     monacoProviders.push(monaco.languages.registerCompletionItemProvider("HyperPromptLanguage", {
-        // 指定触发字符，在用户输入@时立即触发补全
         triggerCharacters: ['@'],
-        // replaceTriggerChar: true, // For example, if this configuration is enabled, @ will be replaced
         provideCompletionItems: (model, position, context, token) => {
             // 获取当前行文本
             const lineContent = model.getLineContent(position.lineNumber);
             const wordUntilPosition = model.getWordUntilPosition(position);
 
-            // console.log("Current line content:", position, lineContent, wordUntilPosition);
-            // 判断是否是@触发的补全
             const isAtTrigger = lineContent.charAt(position.column - 2) === '@';
-
-
-
-            // 根据触发方式提供不同的建议
             if (isAtTrigger) {
-                // 创建范围对象
                 const range = {
                     startLineNumber: position.lineNumber,
                     endLineNumber: position.lineNumber,
@@ -114,13 +94,6 @@ export function enableCompletionItemProvider() {
                     endColumn: wordUntilPosition.endColumn,
                 };
 
-                // const startColumn = wordUntilPosition.startColumn - 1; // -1 for the '@' character
-                // const qrange = {
-                //     startLineNumber: position.lineNumber,
-                //     endLineNumber: position.lineNumber,
-                //     startColumn: startColumn,
-                //     endColumn: position.column,
-                // };
                 return {
                     suggestions: [
                         ...Agents.get().data.map((agent) => {
@@ -129,34 +102,15 @@ export function enableCompletionItemProvider() {
                                 kind: monaco.languages.CompletionItemKind.User,
                                 insertText: agent.name,
                                 range: range,
-                                // 可以添加详细信息
                                 detail: 'Agent',
                                 documentation: `${agent.name} agent`
                             }
                         }),
-                        // ...AppSetting.get().quicks?.map((quick) => {
-                        //     return {
-                        //         label: quick.label,
-                        //         kind: monaco.languages.CompletionItemKind.Text,
-                        //         insertText: quick.quick,
-
-                        //         range: qrange,
-                        //         // 可以添加详细信息
-                        //         detail: 'Quick',
-                        //         documentation: `${quick.label} quick`
-                        //     }
-                        // })
                     ]
                 };
             }
 
-            // 默认建议
-            var suggestions = [
-
-                // 其他默认建议...
-            ];
-
-            return { suggestions: suggestions };
+            return { suggestions: [] };
         },
 
 
@@ -173,7 +127,6 @@ export function enableCompletionItemProvider() {
             const lineContent = model.getLineContent(position.lineNumber);
 
             const wordUntilPosition = model.getWordUntilPosition(position);
-            // console.log("Current line content:", position, lineContent, wordUntilPosition);
 
             // Check if the cursor is on a variable {{...}}
             const variableMatch = lineContent.match(/{{([^{}]*)}}/g);
@@ -187,7 +140,6 @@ export function enableCompletionItemProvider() {
                     if (position.column > startIndex && position.column <= endIndex) {
                         const variableName = match.substring(2, match.length - 2);
 
-                        // Find the corresponding quick in AppSetting
                         const v = varList.find((x) => x.varName == variableName);
 
                         let value = `**Variable:** ${variableName}\n\nNo found for this variable.`;
@@ -205,7 +157,6 @@ export function enableCompletionItemProvider() {
                                return await get()
                             })()
                                 `;
-                                    // console.log(code);
                                     const result = await eval(code);
                                     value = String(result || "");
                                 } else {
@@ -303,17 +254,12 @@ export const Editor = forwardRef(({
     const monacoProvidersRef = React.useRef<monaco.IDisposable[]>([]);
     const uid = useRef<string>("monaco-" + v4());
 
-    // const minHeight = 100; // 最小高度
-    // const paddingHeight = 10; // 额外的内边距高度
-    // Split the value into lines and ensure it has at least the specified number of rows
 
 
 
-    const [editorHeight, setEditorHeight] = useState<number>(lineHeight * rows); // 初始高度为 4 行的高度
+    const [editorHeight, setEditorHeight] = useState<number>(lineHeight * rows);
     const cachegetLineCount = useRef<number>(undefined);
-    // 在初始化编辑器后和内容变化时更新高度
     const updateEditorHeight = () => {
-        // if (!autoHeight) return;
         if (monacoRef.current) {
             const model = monacoRef.current.getModel();
             if (model) {
@@ -327,34 +273,28 @@ export const Editor = forwardRef(({
                 }
                 cachegetLineCount.current = lineCount;
 
-                // 根据行数计算高度
                 const newHeight = Math.min(lineHeight * maxRows, lineCount * lineHeight);
                 setEditorHeight((prev) => {
                     if (prev == newHeight) {
                         return prev;
                     }
-                    // 通知编辑器重新布局
                     setTimeout(() => {
                         monacoRef.current?.layout();
                     }, 10);
-                    return newHeight
-
+                    return newHeight;
                 });
             }
         }
     };
 
-    // 在Editor对象创建后设置初始高度
     useEffect(() => {
         updateEditorHeight();
     }, [monacoRef.current]);
-    // 添加全屏状态
+    
     const [isFullscreen, setIsFullscreen] = useState(false);
-    // 使用 useImperativeHandle 暴露方法给外部
     useImperativeHandle(ref, () => ({
         setIsFullscreen: (value: boolean) => {
             setIsFullscreen(!isFullscreen);
-            // 当全屏状态变化时，通知编辑器刷新布局
             setTimeout(() => {
                 monacoRef.current?.layout();
             }, 100);
@@ -380,7 +320,6 @@ export const Editor = forwardRef(({
                         ),
                         text: text
                     }]);
-                    // Set cursor position after the inserted text
                     monacoRef.current.setPosition({
                         lineNumber: position.lineNumber,
                         column: position.column + text.length

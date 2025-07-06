@@ -112,7 +112,7 @@ export function AgentManagement({ workspace, agents, onRefresh }: AgentManagemen
   };
 
   // 保存Agent
-  const saveAgent = async (values: any) => {
+  const saveAgent = async (values) => {
     try {
       const agentConfig = {
         name: values.label,
@@ -275,11 +275,11 @@ export function AgentManagement({ workspace, agents, onRefresh }: AgentManagemen
                         <div className="text-gray-500 mb-1">
                           {agent.config.description || agent.config.prompt?.slice(0, 50) || t`No description`}
                         </div>
-                        <Space size="small">
+                        {/* <Space size="small">
                           <Tag color="blue">
                             {agent.config.key}
                           </Tag>
-                        </Space>
+                        </Space> */}
                       </div>
                     }
                   />
