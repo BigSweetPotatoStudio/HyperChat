@@ -43,7 +43,7 @@ import * as vm from "node:vm";
 import { ActiveAITerminal, CloseTerminal, GetTerminals, OpenTerminal } from "./mcp/servers/terminal/terminal.mjs";
 import { fileURLToPath } from 'node:url';
 import { dirname } from 'node:path';
-import { getWorkspaceManager } from "./workspace/index.mjs";
+import { getWorkspaceManager, workspaceManager } from "./workspace/index.mjs";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -160,18 +160,7 @@ export class CommandFactory {
       throw error;
     }
   }
-  /**
-   * 获取所有活跃的 MCP 客户端信息
-   * 包括全局、各工作区的内置和自定义 MCP 服务
-   * @returns 所有客户端的详细信息数组（包含状态、工具、资源等）
-   */
-  async getMcpClients() {
-    // 从工作区MCP管理器获取所有客户端实例
-    const manager = getMCPManager();
-    const clients = manager.getAllClients();
-    // 转换为前端可用的JSON格式，包含客户端状态和功能信息
-    return clients.map((client) => client.toJSON());
-  }
+
   /**
    * 管理全局范围的 MCP 客户端生命周期（兼容性方法）
    * 支持删除、禁用或重启操作
@@ -282,12 +271,47 @@ export class CommandFactory {
     args: any;
   }) {
     // 从所有活跃的MCP客户端中查找指定名称的客户端
-    const manager = getMCPManager();
-    const allClients = manager.getAllClients();
+    const allClients = workspaceManager.getGlobalWorkspace().getMcpClients();
     let client = allClients.find((x) => x.name === name);
     
     if (!client) {
       throw new Error(`MCP client "${name}" not found`);
+    }
+    
+    // 执行工具调用并返回结果
+    return await client.callTool(functionName, args);
+  }
+  /**
+   * 调用指定工作区的 MCP 客户端工具函数
+   * 用于执行指定工作区中 MCP 服务提供的各种功能（如文件操作、系统调用等）
+   * @param workspacePath 工作区路径
+   * @param name MCP客户端名称（如 hyper_tools、knowledge_base 等）
+   * @param functionName 要调用的工具函数名称
+   * @param args 传递给工具函数的参数对象
+   * @returns 工具函数的执行结果
+   * @throws 如果指定的MCP客户端不存在或工具调用失败
+   */
+  async mcpCallToolWithWorkspace({
+    workspacePath,
+    name,
+    functionName,
+    args
+  }: {
+    workspacePath: string;
+    name: string;
+    functionName: string;
+    args: any;
+  }) {
+    // 从指定工作区的MCP客户端中查找指定名称的客户端
+    const workspace = workspaceManager.getWorkspace(workspacePath);
+    if (!workspace) {
+      throw new Error(`Workspace "${workspacePath}" not found`);
+    }
+    const allClients = workspace.getMcpClients();
+    let client = allClients.find((x) => x.name === name);
+    
+    if (!client) {
+      throw new Error(`MCP client "${name}" not found in workspace "${workspacePath}"`);
     }
     
     // 执行工具调用并返回结果
@@ -309,12 +333,44 @@ export class CommandFactory {
     uri: string;
   }) {
     // 从所有活跃的MCP客户端中查找指定名称的客户端
-    const manager = getMCPManager();
-    const allClients = manager.getAllClients();
+    const allClients = workspaceManager.getGlobalWorkspace().getMcpClients();
     let client = allClients.find((x) => x.name === name);
     
     if (!client) {
       throw new Error(`MCP client "${name}" not found`);
+    }
+    
+    // 获取指定URI的资源内容
+    return await client.callResource(uri);
+  }
+  /**
+   * 获取指定工作区的 MCP 客户端资源内容
+   * 用于访问指定工作区中 MCP 服务提供的各种资源（如文件内容、数据等）
+   * @param workspacePath 工作区路径
+   * @param name MCP客户端名称
+   * @param uri 资源URI（格式由具体MCP服务定义）
+   * @returns 资源的内容数据
+   * @throws 如果指定的MCP客户端不存在或资源访问失败
+   */
+  async mcpCallResourceWithWorkspace({
+    workspacePath,
+    name,
+    uri
+  }: {
+    workspacePath: string;
+    name: string;
+    uri: string;
+  }) {
+    // 从指定工作区的MCP客户端中查找指定名称的客户端
+    const workspace = workspaceManager.getWorkspace(workspacePath);
+    if (!workspace) {
+      throw new Error(`Workspace "${workspacePath}" not found`);
+    }
+    const allClients = workspace.getMcpClients();
+    let client = allClients.find((x) => x.name === name);
+    
+    if (!client) {
+      throw new Error(`MCP client "${name}" not found in workspace "${workspacePath}"`);
     }
     
     // 获取指定URI的资源内容
@@ -339,12 +395,47 @@ export class CommandFactory {
     args: any;
   }) {
     // 从所有活跃的MCP客户端中查找指定名称的客户端
-    const manager = getMCPManager();
-    const allClients = manager.getAllClients();
+    const allClients = workspaceManager.getGlobalWorkspace().getMcpClients();
     let client = allClients.find((x) => x.name === name);
     
     if (!client) {
       throw new Error(`MCP client "${name}" not found`);
+    }
+    
+    // 调用提示模板并返回渲染结果
+    return await client.callPrompt(functionName, args);
+  }
+  /**
+   * 调用指定工作区的 MCP 客户端提示模板
+   * 用于获取指定工作区中预定义的提示内容，通常用于AI对话或任务执行
+   * @param workspacePath 工作区路径
+   * @param name MCP客户端名称
+   * @param functionName 提示模板函数名称
+   * @param args 传递给提示模板的参数
+   * @returns 渲染后的提示内容
+   * @throws 如果指定的MCP客户端不存在或提示调用失败
+   */
+  async mcpCallPromptWithWorkspace({
+    workspacePath,
+    name,
+    functionName,
+    args
+  }: {
+    workspacePath: string;
+    name: string;
+    functionName: string;
+    args: any;
+  }) {
+    // 从指定工作区的MCP客户端中查找指定名称的客户端
+    const workspace = workspaceManager.getWorkspace(workspacePath);
+    if (!workspace) {
+      throw new Error(`Workspace "${workspacePath}" not found`);
+    }
+    const allClients = workspace.getMcpClients();
+    let client = allClients.find((x) => x.name === name);
+    
+    if (!client) {
+      throw new Error(`MCP client "${name}" not found in workspace "${workspacePath}"`);
     }
     
     // 调用提示模板并返回渲染结果
@@ -1354,10 +1445,10 @@ export class CommandFactory {
     workspacePath: string;
   }): Promise<any[]> {
     try {
-      const manager = getMCPManager();
+      const manager = getMCPManager(workspacePath);
       
       // 启动工作区MCP客户端
-      const clients = await manager.startClients(workspacePath);
+      const clients = await manager.startClients();
       
       return clients.map(client => client.toJSON());
     } catch (error) {

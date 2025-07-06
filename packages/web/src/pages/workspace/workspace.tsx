@@ -141,17 +141,17 @@ export function Workspace() {
     // 监听新的工作区特定的 MCP 状态变化消息
     const unsubscribeMcpStatus = msg_receive("mcp-status-change", (res: any) => {
       console.log("收到 MCP 状态变化通知:", res);
-      
+
       const { workspacePath, data } = res;
       if (!workspacePath || !data) return;
-      
+
       const { serverName, status } = data;
-      
+
       // 只更新指定工作区的 MCP 客户端数据
       setWorkspaceDetails(prev => {
         const newDetails = { ...prev };
         const workspaceDetails = newDetails[workspacePath];
-        
+
         if (workspaceDetails && workspaceDetails.mcpClients) {
           if (status === "deleted" || status === "disconnected") {
             // 删除或断开连接的客户端
@@ -165,10 +165,10 @@ export function Workspace() {
               ...data
             };
           }
-          
+
           console.log(`工作区 ${workspacePath} 的 MCP 客户端 ${serverName} 状态更新为: ${status}`);
         }
-        
+
         return newDetails;
       });
     });
@@ -261,14 +261,8 @@ export function Workspace() {
       details.agents = agentList;
 
       // 加载 MCP 客户端
-      let mcpList;
-      if (workspace.isGlobal) {
-        // 全局工作区获取所有MCP客户端
-        mcpList = await call("getMcpClients");
-      } else {
-        // 项目工作区获取特定工作区的MCP客户端
-        mcpList = await call("getWorkspaceMcpClients", { workspacePath: workspace.path });
-      }
+      let mcpList = await call("getWorkspaceMcpClients", { workspacePath: workspace.path });
+
       // 将数组转换为对象格式，使用 name 作为 key
       const mcpClients: Record<string, any> = {};
       if (mcpList && Array.isArray(mcpList)) {
