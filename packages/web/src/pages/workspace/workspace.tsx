@@ -85,7 +85,7 @@ export function Workspace() {
   const refresh = useForceUpdate();
   const [workspaces, setWorkspaces] = useState<WorkspaceInfo[]>([]);
   const [globalWorkspace, setGlobalWorkspace] = useState<WorkspaceInfo | null>(null);
-  const [activeWorkspaceKey, setActiveWorkspaceKey] = useState<string>("global");
+  const [activeWorkspaceKey, setActiveWorkspaceKey] = useState<string>("");
   const [workspaceDetails, setWorkspaceDetails] = useState<{
     [key: string]: {
       fileTreeData?: FileNode[];
@@ -100,11 +100,11 @@ export function Workspace() {
   const [showHiddenFiles, setShowHiddenFiles] = useState(true);
   const [workspaceHistory, setWorkspaceHistory] = useState(() => getWorkspaceHistory());
   const [form] = Form.useForm();
-  
+
   // 面板尺寸状态 - 使用数组格式，与Ant Design Splitter兼容
   const [panelSizes, setPanelSizes] = useState<any[]>(() => {
-    // 初始化时使用默认工作区的尺寸
-    const sizes = getPanelSizes('global');
+    // 初始化时使用默认工作区的尺寸，先用默认值
+    const sizes = { left: '25%', middle: '50%', right: '25%' };
     return [sizes.left, sizes.middle, sizes.right];
   });
 
@@ -113,11 +113,11 @@ export function Workspace() {
     msg_receive("message-from-main", (res: any) => {
       if (res.type === "changeMcpClient") {
         const payload = res.data;
-        
+
         // 更新工作区详情中的MCP客户端数据
         setWorkspaceDetails(prev => {
           const newDetails = { ...prev };
-          
+
           // 更新所有工作区的MCP客户端数据
           Object.keys(newDetails).forEach(key => {
             const details = newDetails[key];
@@ -131,14 +131,14 @@ export function Workspace() {
               }
             }
           });
-          
+
           return newDetails;
         });
       }
     });
 
     // 没有 unsubscribe，返回空函数
-    return () => {};
+    return () => { };
   }, []);
 
   // 加载工作区列表
@@ -153,13 +153,19 @@ export function Workspace() {
         const globalSummary = await call("getCurrentWorkspace", {
           workspacePath: globalWs.path
         });
-        setGlobalWorkspace({
+        const globalWorkspaceInfo = {
           ...globalWs,
           agentsCount: 0,
           mcpServersCount: 0,
           isGlobal: true,
           ...globalSummary,
-        });
+        };
+        setGlobalWorkspace(globalWorkspaceInfo);
+
+        // 如果还没有选择工作区，默认选择全局工作区
+        if (!activeWorkspaceKey) {
+          setActiveWorkspaceKey(globalWs.path);
+        }
       }
 
       // 加载项目工作区列表
@@ -194,7 +200,7 @@ export function Workspace() {
 
   // 加载工作区详细信息
   const loadWorkspaceDetails = async (workspace: WorkspaceInfo) => {
-    const key = workspace.isGlobal ? "global" : workspace.path;
+    const key = workspace.path;
 
     // 如果已经加载过，直接返回
     if (workspaceDetails[key]) return;
@@ -204,7 +210,7 @@ export function Workspace() {
 
       // 加载根目录文件列表（懒加载）
       console.log("Loading file tree for workspace:", workspace.path, "isGlobal:", workspace.isGlobal);
-      const rootItems = await call("getWorkspaceDirectoryList", { 
+      const rootItems = await call("getWorkspaceDirectoryList", {
         workspacePath: workspace.path,
         directoryPath: ""
       });
@@ -250,7 +256,7 @@ export function Workspace() {
     try {
       // 从路径提取文件夹名称作为工作区名称
       const folderName = values.path.split(/[/\\]/).pop() || 'Workspace';
-      
+
       await call("createWorkspace", {
         workspacePath: values.path,
         name: folderName,
@@ -293,12 +299,12 @@ export function Workspace() {
       }
 
       await call("deleteWorkspace", { workspacePath: workspace.path });
-      
-      
+
+
       message.success(t`Workspace deleted successfully`);
       // 如果删除的是当前活动工作区，切换到全局工作区
       if (activeWorkspaceKey === workspace.path) {
-        setActiveWorkspaceKey("global");
+        setActiveWorkspaceKey(globalWorkspace?.path || "");
       }
       // 清除详情缓存
       setWorkspaceDetails(prev => {
@@ -336,15 +342,15 @@ export function Workspace() {
   const refreshWorkspaceDetails = async () => {
     const currentWorkspace = getCurrentWorkspace();
     if (currentWorkspace) {
-      const key = currentWorkspace.isGlobal ? "global" : currentWorkspace.path;
-      
+      const key = currentWorkspace.path;
+
       try {
         // 刷新 Agents
         const agentList = await call("getWorkspaceAgentsSummary", { workspacePath: currentWorkspace.path });
-        
+
         // 刷新 MCP 客户端
         const mcpList = await call("getWorkspaceMcpClients", { workspacePath: currentWorkspace.path });
-        
+
         // 将数组转换为对象格式
         const mcpClients: Record<string, any> = {};
         if (mcpList && Array.isArray(mcpList)) {
@@ -354,7 +360,7 @@ export function Workspace() {
             }
           });
         }
-        
+
         // 更新工作区详情数据
         setWorkspaceDetails(prev => ({
           ...prev,
@@ -375,15 +381,15 @@ export function Workspace() {
   const refreshFileTree = async () => {
     const currentWorkspace = getCurrentWorkspace();
     if (currentWorkspace) {
-      const key = currentWorkspace.isGlobal ? "global" : currentWorkspace.path;
-      
+      const key = currentWorkspace.path;
+
       try {
         // 重新加载文件树数据
-        const rootItems = await call("getWorkspaceDirectoryList", { 
+        const rootItems = await call("getWorkspaceDirectoryList", {
           workspacePath: currentWorkspace.path,
           directoryPath: ""
         });
-        
+
         // 更新工作区详情中的文件树数据
         setWorkspaceDetails(prev => ({
           ...prev,
@@ -413,16 +419,16 @@ export function Workspace() {
     if (currentWorkspace && sizes.length >= 3) {
       // 直接更新状态数组
       setPanelSizes(sizes);
-      
+
       // 构建保存到localStorage的对象格式
       const sizesToSave = {
         left: sizes[0],
-        middle: sizes[1], 
+        middle: sizes[1],
         right: sizes[2]
       };
-      
+
       // 保存到localStorage（使用防抖，避免频繁保存）
-      const workspaceKey = currentWorkspace.isGlobal ? 'global' : currentWorkspace.path;
+      const workspaceKey = currentWorkspace.path;
       clearTimeout((handlePanelSizeChange as any).timeoutId);
       (handlePanelSizeChange as any).timeoutId = setTimeout(() => {
         savePanelSizes(workspaceKey, sizesToSave);
@@ -440,7 +446,7 @@ export function Workspace() {
     if (currentWorkspace) {
       loadWorkspaceDetails(currentWorkspace);
       // 加载当前工作区的面板尺寸
-      const workspaceKey = currentWorkspace.isGlobal ? 'global' : currentWorkspace.path;
+      const workspaceKey = currentWorkspace.path;
       const sizes = getPanelSizes(workspaceKey);
       setPanelSizes([sizes.left, sizes.middle, sizes.right]);
     }
@@ -448,7 +454,7 @@ export function Workspace() {
 
   // 获取当前活动工作区
   const getCurrentWorkspace = () => {
-    if (activeWorkspaceKey === "global") {
+    if (globalWorkspace && activeWorkspaceKey === globalWorkspace.path) {
       return globalWorkspace;
     }
     return workspaces.find(ws => ws.path === activeWorkspaceKey);
@@ -462,7 +468,7 @@ export function Workspace() {
   // 处理标签页切换
   const handleTabChange = async (key: string) => {
     setActiveWorkspaceKey(key);
-    const workspace = key === "global" ? globalWorkspace : workspaces.find(ws => ws.path === key);
+    const workspace = (globalWorkspace && key === globalWorkspace.path) ? globalWorkspace : workspaces.find(ws => ws.path === key);
     if (workspace) {
       // 如果是项目工作区，尝试启动其MCP服务
       if (!workspace.isGlobal) {
@@ -484,14 +490,14 @@ export function Workspace() {
     // 全局工作区标签页（不可关闭）
     if (globalWorkspace) {
       items.push({
-        key: "global",
+        key: globalWorkspace.path,
         label: (
           <Space>
             <GlobalOutlined />
             <div style={{ textAlign: 'left' }}>
               <div>{globalWorkspace.name || t`Global Workspace`}</div>
               <div style={{ fontSize: '11px', color: '#999', lineHeight: '1.2' }}>
-                {t`Global Configuration`}
+                {globalWorkspace.path}
               </div>
             </div>
             <Tag color="blue" >{t`Global`}</Tag>
@@ -543,14 +549,14 @@ export function Workspace() {
 
     return (
       <div className="h-full">
-        <Splitter 
+        <Splitter
           style={{ height: '100%' }}
           onResize={handlePanelSizeChange}
         >
           {/* 左侧面板：工作区侧边栏 */}
-          <Splitter.Panel 
-            size={panelSizes[0]} 
-            min="15%" 
+          <Splitter.Panel
+            size={panelSizes[0]}
+            min="15%"
             max="40%"
           >
             <WorkspaceSidebar
@@ -563,8 +569,8 @@ export function Workspace() {
           </Splitter.Panel>
 
           {/* 中间面板：聊天界面 */}
-          <Splitter.Panel 
-            size={panelSizes[1]} 
+          <Splitter.Panel
+            size={panelSizes[1]}
             min="30%"
           >
             <Card
@@ -578,9 +584,9 @@ export function Workspace() {
           </Splitter.Panel>
 
           {/* 右侧面板：Agents 和 MCP 管理 */}
-          <Splitter.Panel 
-            size={panelSizes[2]} 
-            min="15%" 
+          <Splitter.Panel
+            size={panelSizes[2]}
+            min="15%"
             max="40%"
           >
             <Card
@@ -708,62 +714,62 @@ export function Workspace() {
               </Button>
             </Space.Compact>
           </Form.Item>
-          
+
           {/* 历史记录 */}
           {workspaceHistory.length > 0 && (
-              <>
-                <Divider orientation="left">
-                  <Space>
-                    <HistoryOutlined />
-                    <span>{t`Recent Workspaces`}</span>
-                  </Space>
-                </Divider>
-                <List
-                  size="small"
-                  dataSource={workspaceHistory}
-                  renderItem={(item) => (
-                    <List.Item
-                      style={{ cursor: 'pointer', padding: '8px 0' }}
-                      onClick={() => {
-                        form.setFieldsValue({ path: item.path });
-                        setSelectedPath(item.path);
-                      }}
-                      actions={[
-                        <Button
-                          key="remove"
-                          type="text"
-                          size="small"
-                          icon={<DeleteOutlined />}
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            removeFromWorkspaceHistory(item.path);
-                            setWorkspaceHistory(getWorkspaceHistory());
-                          }}
-                          title={t`Remove from history`}
-                        />
-                      ]}
-                    >
-                      <List.Item.Meta
-                        avatar={<FolderOpenOutlined />}
-                        title={
-                          <Space>
-                            <span>{item.name}</span>
-                            <Tag color="blue">
-                              <ClockCircleOutlined />
-                              {new Date(item.lastUsed).toLocaleDateString()}
-                            </Tag>
-                          </Space>
-                        }
-                        description={
-                          <Text type="secondary" style={{ fontSize: '12px' }}>
-                            {item.path}
-                          </Text>
-                        }
+            <>
+              <Divider orientation="left">
+                <Space>
+                  <HistoryOutlined />
+                  <span>{t`Recent Workspaces`}</span>
+                </Space>
+              </Divider>
+              <List
+                size="small"
+                dataSource={workspaceHistory}
+                renderItem={(item) => (
+                  <List.Item
+                    style={{ cursor: 'pointer', padding: '8px 0' }}
+                    onClick={() => {
+                      form.setFieldsValue({ path: item.path });
+                      setSelectedPath(item.path);
+                    }}
+                    actions={[
+                      <Button
+                        key="remove"
+                        type="text"
+                        size="small"
+                        icon={<DeleteOutlined />}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          removeFromWorkspaceHistory(item.path);
+                          setWorkspaceHistory(getWorkspaceHistory());
+                        }}
+                        title={t`Remove from history`}
                       />
-                    </List.Item>
-                  )}
-                />
-              </>
+                    ]}
+                  >
+                    <List.Item.Meta
+                      avatar={<FolderOpenOutlined />}
+                      title={
+                        <Space>
+                          <span>{item.name}</span>
+                          <Tag color="blue">
+                            <ClockCircleOutlined />
+                            {new Date(item.lastUsed).toLocaleDateString()}
+                          </Tag>
+                        </Space>
+                      }
+                      description={
+                        <Text type="secondary" style={{ fontSize: '12px' }}>
+                          {item.path}
+                        </Text>
+                      }
+                    />
+                  </List.Item>
+                )}
+              />
+            </>
           )}
         </Form>
       </Modal>
