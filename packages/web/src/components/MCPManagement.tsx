@@ -27,6 +27,7 @@ import {
 } from "@ant-design/icons";
 import { call } from "../common/call";
 import { t } from "../i18n";
+import { HyperChatCompletionTool, MCPServerConfig } from "@hyperchat/shared/data.mjs";
 
 const { Title } = Typography;
 
@@ -34,12 +35,12 @@ interface MCPClient {
   name: string;
   servername?: string;
   status: string;
-  config?: any;
+  config?: MCPServerConfig;
   source?: string;
   mcpType?: "builtin" | "custom";
-  tools?: any[];
-  resources?: any[];
-  prompts?: any[];
+  tools: HyperChatCompletionTool[];
+  resources: any[];
+  prompts: any[];
 }
 
 interface WorkspaceInfo {
