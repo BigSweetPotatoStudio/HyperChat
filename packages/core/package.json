@@ -105,7 +105,7 @@
   "scripts": {
     "dev": "nodemon -w src --exec npx tsx task.mts --dev",
     "start": "npm run dev",
-    "check": "npx tsc --noEmit",
+    "typecheck": "npx tsc --noEmit",
     "test": "vitest run",
     "test:unit": "vitest run tests/unit",
     "test:integration": "vitest run tests/integration",

@@ -5,6 +5,7 @@
 
 import { initMCPManager, getMCPManager } from "./index.mjs";
 import { Logger } from "../../log.mjs";
+import { CONSTANTS } from "../constants.mjs";
 
 let initialized = false;
 
@@ -19,11 +20,11 @@ export async function initWorkspaceMCP(): Promise<void> {
   try {
     Logger.info("正在初始化工作区 MCP 系统...");
 
-    // 初始化 MCP 管理器
-    const manager = await initMCPManager();
+    // 初始化全局 MCP 管理器
+    const manager = await initMCPManager(CONSTANTS.GLOBAL_PATH);
 
     // 启动全局服务器（包括内置服务器）
-    await manager.startClients("global");
+    await manager.startClients();
     Logger.info("全局 MCP 服务器已启动（包括内置服务器）");
 
     initialized = true;
@@ -49,13 +50,13 @@ export async function restartWorkspaceMCP(): Promise<void> {
   try {
     Logger.info("正在重启工作区 MCP 系统...");
 
-    const manager = getMCPManager();
+    const manager = getMCPManager(CONSTANTS.GLOBAL_PATH);
 
     // 停止所有客户端
-    await manager.stopClients("global");
+    await manager.stopClients();
 
     // 重新启动
-    await manager.startClients("global");
+    await manager.startClients();
 
     Logger.info("工作区 MCP 系统重启完成");
 
@@ -76,7 +77,7 @@ export async function cleanupWorkspaceMCP(): Promise<void> {
   try {
     Logger.info("正在清理工作区 MCP 系统...");
 
-    const manager = getMCPManager();
+    const manager = getMCPManager(CONSTANTS.GLOBAL_PATH);
     await manager.destroy();
 
     initialized = false;

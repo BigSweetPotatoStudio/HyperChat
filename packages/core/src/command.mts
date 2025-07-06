@@ -140,14 +140,14 @@ export class CommandFactory {
     clientConfig?: MCPServerConfig;
   }) {
     try {
-      const manager = getMCPManager();
+      const manager = getMCPManager(workspacePath);
       
       if (clientConfig) {
         // 如果提供了配置，先设置配置再启动
-        await manager.setServerConfig(clientName, clientConfig, workspacePath);
+        await manager.setServerConfig(clientName, clientConfig);
       } else {
         // 如果没有配置，尝试重启现有客户端
-        await manager.restartClient(clientName, workspacePath);
+        await manager.restartClient(clientName);
       }
       
       return {
@@ -192,19 +192,19 @@ export class CommandFactory {
     isdisable?: boolean;
   }) {
     try {
-      const manager = getMCPManager();
       const workspaceManager = getWorkspaceManager();
       const globalWorkspacePath = workspaceManager.getGlobalWorkspacePath();
+      const manager = getMCPManager(globalWorkspacePath);
       
       if (isdelete) {
         // 从全局配置中永久删除客户端配置并停止服务
-        await manager.deleteServerConfig(clientName, globalWorkspacePath);
+        await manager.deleteServerConfig(clientName);
       } else if (isdisable) {
         // 仅停止客户端服务，保留配置以便后续重启
-        await manager.stopClient(clientName, globalWorkspacePath);
+        await manager.stopClient(clientName);
       } else {
         // 重启客户端（先停止再启动）
-        await manager.restartClient(clientName, globalWorkspacePath);
+        await manager.restartClient(clientName);
       }
       
       return {
@@ -234,21 +234,21 @@ export class CommandFactory {
     action: 'restart' | 'disable' | 'delete';
   }) {
     try {
-      const manager = getMCPManager();
+      const manager = getMCPManager(workspacePath);
       
       switch (action) {
         case 'delete':
           // 从工作区配置中永久删除客户端配置并停止服务
-          await manager.deleteServerConfig(clientName, workspacePath);
+          await manager.deleteServerConfig(clientName);
           break;
         case 'disable':
           // 仅停止客户端服务，保留配置以便后续重启
-          await manager.stopClient(clientName, workspacePath);
+          await manager.stopClient(clientName);
           break;
         case 'restart':
         default:
           // 重启客户端（先停止再启动）
-          await manager.restartClient(clientName, workspacePath);
+          await manager.restartClient(clientName);
           break;
       }
       
@@ -1375,15 +1375,15 @@ export class CommandFactory {
     workspacePath: string;
   }): Promise<any[]> {
     try {
-      const manager = getMCPManager();
+      const manager = getMCPManager(workspacePath);
       
       // 管理器不需要显式初始化
       
       // 强制重新加载工作区配置
-      await manager.forceReloadWorkspaceConfig(workspacePath);
+      await manager.forceReloadWorkspaceConfig();
       
       // 获取重新加载后的客户端
-      const clients = manager.getClientsByWorkspace(workspacePath);
+      const clients = manager.getClientsByWorkspace();
       return clients.map(client => client.toJSON());
     } catch (error) {
       console.error(`Failed to force reload workspace MCP clients for ${workspacePath}:`, error);
@@ -1400,8 +1400,8 @@ export class CommandFactory {
     workspacePath: string;
   }): Promise<void> {
     try {
-      const manager = getMCPManager();
-      await manager.stopClients(workspacePath);
+      const manager = getMCPManager(workspacePath);
+      await manager.stopClients();
     } catch (error) {
       console.error(`Failed to stop workspace MCP clients for ${workspacePath}:`, error);
       throw error;
@@ -1422,8 +1422,8 @@ export class CommandFactory {
     serverConfig: MCPServerConfig;
   }): Promise<void> {
     try {
-      const manager = getMCPManager();      
-      await manager.setServerConfig(serverName, serverConfig, workspacePath);
+      const manager = getMCPManager(workspacePath);      
+      await manager.setServerConfig(serverName, serverConfig);
     } catch (error) {
       console.error(`Failed to set MCP server config for ${workspacePath}:`, error);
       throw error;
@@ -1441,8 +1441,8 @@ export class CommandFactory {
     serverName: string;
   }): Promise<void> {
     try {
-      const manager = getMCPManager();
-      await manager.deleteServerConfig(serverName, workspacePath);
+      const manager = getMCPManager(workspacePath);
+      await manager.deleteServerConfig(serverName);
     } catch (error) {
       console.error(`Failed to delete MCP server config for ${workspacePath}:`, error);
       throw error;

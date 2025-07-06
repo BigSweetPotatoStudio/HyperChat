@@ -47,7 +47,7 @@ export class Workspace {
     this.agentManager = new AgentManager(path.join(hyperChatPath, CONSTANTS.DIRECTORIES.AGENTS));
     
     // 使用全局 MCP 管理器
-    this.mcpManager = getMCPManager();
+    this.mcpManager = getMCPManager(workspacePath);
   }
 
   /**
@@ -126,7 +126,7 @@ export class Workspace {
 
     // 加载工作区 MCP 配置并启动客户端
     // 启动MCP客户端
-    await this.mcpManager.startClients(this.workspacePath);
+    await this.mcpManager.startClients();
 
     this.config.lastAccessed = Date.now();
   }
@@ -314,7 +314,7 @@ export class Workspace {
    * 获取 MCP 客户端
    */
   getMcpClients(): WorkspaceMCPClientImpl[] {
-    return this.mcpManager.getClientsByWorkspace(this.workspacePath);
+    return this.mcpManager.getClientsByWorkspace();
   }
 
   /**
@@ -328,35 +328,35 @@ export class Workspace {
    * 添加或更新单个 MCP 服务器配置
    */
   async setMcpServer(name: string, config: MCPServerConfig): Promise<void> {
-    await this.mcpManager.setServerConfig(name, config, this.workspacePath);
+    await this.mcpManager.setServerConfig(name, config);
   }
 
   /**
    * 删除 MCP 服务器配置
    */
   async deleteMcpServer(name: string): Promise<void> {
-    await this.mcpManager.deleteServerConfig(name, this.workspacePath);
+    await this.mcpManager.deleteServerConfig(name);
   }
 
   /**
    * 启动 MCP 客户端
    */
   async startMcpClients(): Promise<void> {
-    await this.mcpManager.startClients(this.workspacePath);
+    await this.mcpManager.startClients();
   }
 
   /**
    * 停止 MCP 客户端
    */
   async stopMcpClients(): Promise<void> {
-    await this.mcpManager.stopClients(this.workspacePath);
+    await this.mcpManager.stopClients();
   }
 
   /**
    * 重启 MCP 客户端
    */
   async restartMcpClient(name: string): Promise<void> {
-    await this.mcpManager.restartClient(name, this.workspacePath);
+    await this.mcpManager.restartClient(name);
   }
 
   // ========== 文件树管理 ==========
