@@ -526,7 +526,9 @@ export const Editor = forwardRef(({
             });
             const lh = editor.getOption(monaco.editor.EditorOption.fontSize);
             console.log("Line fontSize:", lh);
-
+            if (value != undefined) {
+                model.setValue(value); // 设置初始值
+            }
             validate(model);
 
             if (submitType == "enter") {

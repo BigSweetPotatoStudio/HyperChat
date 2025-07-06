@@ -63,21 +63,6 @@ interface Agent {
   config: AgentConfig;
   chatLogsCount: number;
   lastChatTime?: number;
-  // 支持旧格式的兼容性
-  key?: string;
-  name?: string;
-  description?: string;
-  prompt?: string;
-  modelKey?: string;
-  allowMCPs?: string[];
-  confirm_call_tool?: boolean;
-  temperature?: number;
-  tags?: string[];
-  created?: number;
-  lastModified?: number;
-  callable?: boolean;
-  attachedDialogueCount?: number;
-  fallbackModelKey?: string;
 }
 
 interface WorkspaceInfo {
@@ -144,7 +129,7 @@ export function AgentManagement({ workspace, agents, onRefresh }: AgentManagemen
 
       if (editingAgent || values.key) {
         // 更新现有Agent
-        const agentKey = editingAgent?.config?.key || editingAgent?.key || values.key;
+        const agentKey = editingAgent?.config.key || values.key;
         
         if (!agentKey) {
           throw new Error('Agent key is missing');
@@ -179,7 +164,7 @@ export function AgentManagement({ workspace, agents, onRefresh }: AgentManagemen
     try {
       await call('deleteAgent', {
         workspacePath: workspace.path,
-        agentKey: agent.key
+        agentKey: agent.config.key
       });
       message.success(t`Agent deleted successfully`);
       await onRefresh();
@@ -276,9 +261,9 @@ export function AgentManagement({ workspace, agents, onRefresh }: AgentManagemen
                   <List.Item.Meta
                     title={
                       <Space>
-                        <span className="text-sm">{agent.config?.name || agent.name || agent.config?.key || agent.key}</span>
-                        {(agent.config?.modelKey || agent.modelKey) && (
-                          <Tag color="green">{agent.config?.modelKey || agent.modelKey}</Tag>
+                        <span className="text-sm">{agent.config.name || agent.config.key}</span>
+                        {agent.config.modelKey && (
+                          <Tag color="green">{agent.config.modelKey}</Tag>
                         )}
                         {agent.chatLogsCount !== undefined && (
                           <Tag color="blue">{agent.chatLogsCount} chats</Tag>
@@ -288,11 +273,11 @@ export function AgentManagement({ workspace, agents, onRefresh }: AgentManagemen
                     description={
                       <div className="text-xs">
                         <div className="text-gray-500 mb-1">
-                          {agent.config?.description || agent.description || agent.config?.prompt?.slice(0, 50) || agent.prompt?.slice(0, 50) || t`No description`}
+                          {agent.config.description || agent.config.prompt?.slice(0, 50) || t`No description`}
                         </div>
                         <Space size="small">
                           <Tag color="blue">
-                            {agent.config?.key || agent.key}
+                            {agent.config.key}
                           </Tag>
                         </Space>
                       </div>
@@ -326,98 +311,80 @@ export function AgentManagement({ workspace, agents, onRefresh }: AgentManagemen
       >
         {selectedAgent && (
           <div>
-            {(() => {
-              const config = selectedAgent.config || selectedAgent;
-              return (
-                <Descriptions
-                  title={config.name || config.key}
-                  bordered
-                  column={1}
-                  size="small"
-                >
-                  <Descriptions.Item label={t`Name`}>
-                    {config.name || config.key}
-                  </Descriptions.Item>
-                  <Descriptions.Item label={t`Key`}>
-                    {config.key}
-                  </Descriptions.Item>
-                  <Descriptions.Item label={t`Description`}>
-                    {config.description || t`No description`}
-                  </Descriptions.Item>
-                  <Descriptions.Item label={t`Model`}>
-                    {config.modelKey || "N/A"}
-                  </Descriptions.Item>
-                  <Descriptions.Item label={t`Chat Logs`}>
-                    {selectedAgent.chatLogsCount || 0}
-                  </Descriptions.Item>
-                  <Descriptions.Item label={t`Last Chat`}>
-                    {selectedAgent.lastChatTime ? new Date(selectedAgent.lastChatTime).toLocaleString() : 'Never'}
-                  </Descriptions.Item>
-                  <Descriptions.Item label={t`Callable`}>
-                    {config.callable ? 'Yes' : 'No'}
-                  </Descriptions.Item>
-                  <Descriptions.Item label={t`Attached Dialogue Count`}>
-                    {config.attachedDialogueCount || 'Default'}
-                  </Descriptions.Item>
-                  <Descriptions.Item label={t`Fallback Model`}>
-                    {config.fallbackModelKey || 'None'}
-                  </Descriptions.Item>
-                  <Descriptions.Item label={t`Created`}>
-                    {config.created ? new Date(config.created).toLocaleString() : 'Unknown'}
-                  </Descriptions.Item>
-                </Descriptions>
-              );
-            })()}
+            <Descriptions
+              title={selectedAgent.config.name || selectedAgent.config.key}
+              bordered
+              column={1}
+              size="small"
+            >
+              <Descriptions.Item label={t`Name`}>
+                {selectedAgent.config.name || selectedAgent.config.key}
+              </Descriptions.Item>
+              <Descriptions.Item label={t`Key`}>
+                {selectedAgent.config.key}
+              </Descriptions.Item>
+              <Descriptions.Item label={t`Description`}>
+                {selectedAgent.config.description || t`No description`}
+              </Descriptions.Item>
+              <Descriptions.Item label={t`Model`}>
+                {selectedAgent.config.modelKey || "N/A"}
+              </Descriptions.Item>
+              <Descriptions.Item label={t`Chat Logs`}>
+                {selectedAgent.chatLogsCount || 0}
+              </Descriptions.Item>
+              <Descriptions.Item label={t`Last Chat`}>
+                {selectedAgent.lastChatTime ? new Date(selectedAgent.lastChatTime).toLocaleString() : 'Never'}
+              </Descriptions.Item>
+              <Descriptions.Item label={t`Callable`}>
+                {selectedAgent.config.callable ? 'Yes' : 'No'}
+              </Descriptions.Item>
+              <Descriptions.Item label={t`Attached Dialogue Count`}>
+                {selectedAgent.config.attachedDialogueCount || 'Default'}
+              </Descriptions.Item>
+              <Descriptions.Item label={t`Fallback Model`}>
+                {selectedAgent.config.fallbackModelKey || 'None'}
+              </Descriptions.Item>
+              <Descriptions.Item label={t`Created`}>
+                {selectedAgent.config.created ? new Date(selectedAgent.config.created).toLocaleString() : 'Unknown'}
+              </Descriptions.Item>
+            </Descriptions>
 
             {/* Prompt内容 */}
-            {(() => {
-              const config = selectedAgent.config || selectedAgent;
-              const prompt = config.prompt || selectedAgent.prompt;
-              return prompt && (
-                <div className="mt-4">
-                  <Title level={5}>{t`Prompt`}</Title>
-                  <div className="bg-gray-100 p-3 rounded text-sm whitespace-pre-wrap">
-                    {prompt}
-                  </div>
+            {selectedAgent.config.prompt && (
+              <div className="mt-4">
+                <Title level={5}>{t`Prompt`}</Title>
+                <div className="bg-gray-100 p-3 rounded text-sm whitespace-pre-wrap">
+                  {selectedAgent.config.prompt}
                 </div>
-              );
-            })()}
+              </div>
+            )}
 
             {/* MCP 配置 */}
-            {(() => {
-              const config = selectedAgent.config || selectedAgent;
-              const allowMCPs = config.allowMCPs || selectedAgent.allowMCPs;
-              return allowMCPs && allowMCPs.length > 0 && (
-                <div className="mt-4">
-                  <Title level={5}>{t`Allowed MCPs`}</Title>
-                  <Space wrap>
-                    {allowMCPs.map(mcp => (
-                      <Tag key={mcp} color="purple">{mcp}</Tag>
-                    ))}
-                  </Space>
-                </div>
-              );
-            })()}
+            {selectedAgent.config.allowMCPs && selectedAgent.config.allowMCPs.length > 0 && (
+              <div className="mt-4">
+                <Title level={5}>{t`Allowed MCPs`}</Title>
+                <Space wrap>
+                  {selectedAgent.config.allowMCPs.map(mcp => (
+                    <Tag key={mcp} color="purple">{mcp}</Tag>
+                  ))}
+                </Space>
+              </div>
+            )}
 
             {/* 其他配置 */}
-            {(() => {
-              const config = selectedAgent.config || selectedAgent;
-              return (
-                <div className="mt-4">
-                  <Title level={5}>{t`Settings`}</Title>
-                  <div className="space-y-2">
-                    <div>Tool Confirmation: {config.confirm_call_tool ? 'Enabled' : 'Disabled'}</div>
-                    {config.temperature !== undefined && (
-                      <div>Temperature: {config.temperature}</div>
-                    )}
-                    {config.attachedDialogueCount !== undefined && (
-                      <div>Attached Dialogue Count: {config.attachedDialogueCount}</div>
-                    )}
-                    <div>Callable: {config.callable ? 'Yes' : 'No'}</div>
-                  </div>
-                </div>
-              );
-            })()}
+            <div className="mt-4">
+              <Title level={5}>{t`Settings`}</Title>
+              <div className="space-y-2">
+                <div>Tool Confirmation: {selectedAgent.config.confirm_call_tool ? 'Enabled' : 'Disabled'}</div>
+                {selectedAgent.config.temperature !== undefined && (
+                  <div>Temperature: {selectedAgent.config.temperature}</div>
+                )}
+                {selectedAgent.config.attachedDialogueCount !== undefined && (
+                  <div>Attached Dialogue Count: {selectedAgent.config.attachedDialogueCount}</div>
+                )}
+                <div>Callable: {selectedAgent.config.callable ? 'Yes' : 'No'}</div>
+              </div>
+            </div>
           </div>
         )}
       </Drawer>
@@ -442,20 +409,20 @@ export function AgentManagement({ workspace, agents, onRefresh }: AgentManagemen
           if (open) {
             if (editingAgent) {
               // 编辑模式：设置Agent的现有值
-              const config = editingAgent.config || editingAgent;
               const formValues = {
-                key: config.key,
-                label: config.name,
-                description: config.description,
-                prompt: config.prompt,
-                modelKey: config.modelKey,
-                temperature: config.temperature ?? 1,
-                allowMCPs: config.allowMCPs || [],
-                confirm_call_tool: config.confirm_call_tool ?? false,
-                callable: config.callable ?? true,
-                attachedDialogueCount: config.attachedDialogueCount ?? 10,
-                fallbackModelKey: config.fallbackModelKey,
+                key: editingAgent.config.key,
+                label: editingAgent.config.name,
+                description: editingAgent.config.description,
+                prompt: editingAgent.config.prompt,
+                modelKey: editingAgent.config.modelKey,
+                temperature: editingAgent.config.temperature ?? 1,
+                allowMCPs: editingAgent.config.allowMCPs || [],
+                confirm_call_tool: editingAgent.config.confirm_call_tool ?? false,
+                callable: editingAgent.config.callable ?? true,
+                attachedDialogueCount: editingAgent.config.attachedDialogueCount ?? 10,
+                fallbackModelKey: editingAgent.config.fallbackModelKey,
               };
+              form.resetFields();
               form.setFieldsValue(formValues);
             } else {
               // 创建模式：设置默认值
