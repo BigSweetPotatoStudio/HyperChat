@@ -90,7 +90,7 @@ export function Workspace() {
     [key: string]: {
       fileTreeData?: FileNode[];
       agents: any[];
-      mcpClients: any[];
+      mcpClients: Record<string, any>;
     }
   }>({});
   const [loading, setLoading] = useState(false);
@@ -122,16 +122,12 @@ export function Workspace() {
           Object.keys(newDetails).forEach(key => {
             const details = newDetails[key];
             if (details && details.mcpClients) {
-              const idx = details.mcpClients.findIndex((c: any) => c.name === payload.name);
-              if (idx >= 0) {
-                if (payload.status === "deleted") {
-                  details.mcpClients.splice(idx, 1);
-                } else {
-                  details.mcpClients[idx] = payload;
-                }
-              } else if (payload.status !== "deleted") {
-                // 如果是新的客户端，添加到列表中
-                details.mcpClients.push(payload);
+              if (payload.status === "deleted") {
+                // 删除客户端
+                delete details.mcpClients[payload.name];
+              } else {
+                // 添加或更新客户端
+                details.mcpClients[payload.name] = payload;
               }
             }
           });
@@ -204,7 +200,7 @@ export function Workspace() {
     if (workspaceDetails[key]) return;
 
     try {
-      const details: any = { agents: [], mcpClients: [] };
+      const details: any = { agents: [], mcpClients: {} };
 
       // 加载根目录文件列表（懒加载）
       console.log("Loading file tree for workspace:", workspace.path, "isGlobal:", workspace.isGlobal);
@@ -228,7 +224,16 @@ export function Workspace() {
         // 项目工作区获取特定工作区的MCP客户端
         mcpList = await call("getWorkspaceMcpClients", { workspacePath: workspace.path });
       }
-      details.mcpClients = mcpList || [];
+      // 将数组转换为对象格式，使用 name 作为 key
+      const mcpClients: Record<string, any> = {};
+      if (mcpList && Array.isArray(mcpList)) {
+        mcpList.forEach((client: any) => {
+          if (client && client.name) {
+            mcpClients[client.name] = client;
+          }
+        });
+      }
+      details.mcpClients = mcpClients;
 
       setWorkspaceDetails(prev => ({
         ...prev,
@@ -340,13 +345,23 @@ export function Workspace() {
         // 刷新 MCP 客户端
         const mcpList = await call("getWorkspaceMcpClients", { workspacePath: currentWorkspace.path });
         
+        // 将数组转换为对象格式
+        const mcpClients: Record<string, any> = {};
+        if (mcpList && Array.isArray(mcpList)) {
+          mcpList.forEach((client: any) => {
+            if (client && client.name) {
+              mcpClients[client.name] = client;
+            }
+          });
+        }
+        
         // 更新工作区详情数据
         setWorkspaceDetails(prev => ({
           ...prev,
           [key]: {
             ...prev[key],
             agents: agentList || [],
-            mcpClients: mcpList || []
+            mcpClients: mcpClients
           }
         }) as any);
       } catch (error) {
@@ -441,7 +456,7 @@ export function Workspace() {
 
   // 获取当前工作区详情
   const getCurrentDetails = () => {
-    return workspaceDetails[activeWorkspaceKey] || { agents: [], mcpClients: [] };
+    return workspaceDetails[activeWorkspaceKey] || { agents: [], mcpClients: {} };
   };
 
   // 处理标签页切换
@@ -594,7 +609,7 @@ export function Workspace() {
                     children: currentWorkspace ? (
                       <MCPManagement
                         workspace={currentWorkspace}
-                        mcpClients={details.mcpClients || []}
+                        mcpClients={details.mcpClients || {}}
                         onRefresh={refreshWorkspaceDetails}
                       />
                     ) : <Empty description={t`No workspace selected`} />,

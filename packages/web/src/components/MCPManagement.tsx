@@ -50,7 +50,7 @@ interface WorkspaceInfo {
 
 interface MCPManagementProps {
   workspace: WorkspaceInfo;
-  mcpClients: MCPClient[];
+  mcpClients: Record<string, MCPClient>;
   onRefresh: () => Promise<void>;
 }
 
@@ -165,7 +165,8 @@ export function MCPManagement({ workspace, mcpClients, onRefresh }: MCPManagemen
 
   // 过滤MCP客户端
   const getFilteredMcpClients = () => {
-    let filteredClients = mcpClients;
+    // 将对象转换为数组
+    let filteredClients = Object.values(mcpClients);
 
     // 按状态过滤
     if (statusFilter === "enabled") {
@@ -197,7 +198,7 @@ export function MCPManagement({ workspace, mcpClients, onRefresh }: MCPManagemen
     <>
       <div className="p-2 overflow-auto" style={{ height: 'calc(100vh - 160px)' }}>
         <div className="flex justify-between items-center mb-2">
-          <span className="text-sm font-medium">{`MCP (${getFilteredMcpClients().length}/${mcpClients.length})`}</span>
+          <span className="text-sm font-medium">{`MCP (${getFilteredMcpClients().length}/${Object.keys(mcpClients).length})`}</span>
           <div className="flex gap-1">
             <Button
               type="text"
@@ -362,7 +363,7 @@ export function MCPManagement({ workspace, mcpClients, onRefresh }: MCPManagemen
         ) : (
           <Empty
             description={
-              mcpClients.length === 0
+              Object.keys(mcpClients).length === 0
                 ? t`No MCP clients`
                 : searchText.trim()
                   ? t`No matching MCP clients found`

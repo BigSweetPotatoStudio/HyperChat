@@ -26,9 +26,9 @@ packages/cli 专注于命令行前端的实现
 
 ## 前后端通信
 
-* 前后端通信默认通过  packages/core/src/command.mts 实现，前端通过调用 call 的方法来实现与后端的交互。
+* 前端发送消息给后端，默认通过  packages/core/src/command.mts 实现，前端通过调用 call 的方法来实现与后端的交互。
 * electron提供更多electron接口 packages/electron/src/command.mts， 前端通过调用 callElectron 的方法来实现与electron的交互。
-
+* 后端发送消息给前端是通过websocket实现的 packages/core/src/message_service.mts，前端通过监听 websocket 的消息来接收后端发送的消息。
 
 ## 记忆
 
