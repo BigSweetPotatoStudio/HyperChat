@@ -8,7 +8,7 @@ import { Agents, TaskList } from "../../../shared/data.mjs";
 import { EVENT } from "../../../common/event.mjs";
 import { v4 } from "uuid";
 import cron from "node-cron";
-import { startTask } from "../../task.mjs";
+// import { startTask } from "../../task.mts.bak";
 import { getMessageService } from "../../../message_service.mjs";
 
 // import { ListPromptsRequestSchema, ListToolsRequestSchema } from "@modelcontextprotocol/sdk/types.js";
@@ -248,14 +248,14 @@ async function call_agent({
       // EVENT.clear("call_agent_res_" + uid);
     };
     EVENT.on("call_agent_res_" + uid, callback);
-    getMessageService().sendToRenderer({
-      type: "call_agent",
-      data: {
-        agent_name: agent_name,
-        message: message,
-        uid,
-      },
-    });
+    // getMessageService().sendToRenderer({
+    //   type: "call_agent",
+    //   data: {
+    //     agent_name: agent_name,
+    //     message: message,
+    //     uid,
+    //   },
+    // });
   });
 }
 
@@ -289,7 +289,7 @@ async function add_task({
     disabled: false,
   });
   await TaskList.save();
-  startTask(key);
+  // startTask(key);
   return "Task added";
 }
 

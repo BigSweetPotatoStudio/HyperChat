@@ -17,18 +17,11 @@ import {
 } from "./shared/data.mjs";
 import { appDataDir } from "./const.mjs";
 import crypto from "crypto";
-// import {
-//   closeMcpClients,
-//   getMcpClients,
-//   initMcpClients,
-//   openMcpClient,
-// } from "./mcp/config.mjs";
 import { 
   getMCPManager,
   initMCPManager,
   getWorkspaceMCPClients as getWorkspaceMCPClientsFromManager
 } from "./workspace/mcp/index.mjs";
-import { webdavClient } from "./common/webdav.mjs";
 import { progressList } from "./common/progress.mjs";
 
 import { EVENT } from "./common/event.mjs";
@@ -680,12 +673,6 @@ export class CommandFactory {
       password: password,
     });
     return await client.getDirectoryContents("/");
-  }
-  async webDaveInit() {
-    return webdavClient.init();
-  }
-  async webDavSync() {
-    return await webdavClient.sync();
   }
   async vectorStoreAdd({
     store: s,

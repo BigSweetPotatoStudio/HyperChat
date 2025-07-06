@@ -134,7 +134,7 @@ export function registerTool(server: McpServer) {
       }
       await VarList.save();
       await VarScopeList.save();
-      getMessageService().sendToRenderer({ type: "update_var_list" });
+      // getMessageService().sendToRenderer({ type: "update_var_list" });
       return {
         content: [
           {
