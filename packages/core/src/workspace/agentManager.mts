@@ -2,6 +2,7 @@ import * as path from "path";
 import * as fs from "fs";
 import dayjs from "dayjs";
 import { v4 } from "uuid";
+import * as yaml from "js-yaml";
 import { CONSTANTS } from "./constants.mjs";
 import { AgentConfig, ChatHistoryItem } from "./types.mjs";
 import { DataList } from "./dataList.mjs";
@@ -66,13 +67,45 @@ export class AgentInstance {
    * 加载 Agent 配置
    */
   private async loadConfig(): Promise<void> {
+    // 检查是否需要迁移配置文件
+    await this.migrateConfigIfNeeded();
+    
     if (fs.existsSync(this.configPath)) {
       try {
         const content = await fs.promises.readFile(this.configPath, "utf-8");
-        const config = JSON.parse(content) as AgentConfig;
+        const config = yaml.load(content) as AgentConfig;
         this.config = { ...this.config, ...config };
       } catch (error) {
         console.warn(`加载 Agent 配置失败 ${this.config.key}:`, error);
+      }
+    }
+  }
+
+  /**
+   * 迁移配置文件：从 config.json 到 agent.yaml
+   */
+  private async migrateConfigIfNeeded(): Promise<void> {
+    const oldConfigPath = path.join(this.agentPath, 'config.json');
+    
+    // 如果旧的 config.json 存在且新的 agent.yaml 不存在，则进行迁移
+    if (fs.existsSync(oldConfigPath) && !fs.existsSync(this.configPath)) {
+      try {
+        console.log(`正在迁移 Agent 配置文件: ${oldConfigPath} -> ${this.configPath}`);
+        
+        // 读取旧的 JSON 配置
+        const oldContent = await fs.promises.readFile(oldConfigPath, "utf-8");
+        const oldConfig = JSON.parse(oldContent) as AgentConfig;
+        
+        // 转换为 YAML 格式并保存
+        const yamlContent = yaml.dump(oldConfig, { indent: 2 });
+        await fs.promises.writeFile(this.configPath, yamlContent, "utf-8");
+        
+        // 删除旧的 config.json 文件
+        await fs.promises.unlink(oldConfigPath);
+        
+        console.log(`Agent 配置文件迁移完成: ${this.config.key}`);
+      } catch (error) {
+        console.warn(`迁移 Agent 配置文件失败 ${this.config.key}:`, error);
       }
     }
   }
@@ -83,7 +116,8 @@ export class AgentInstance {
   async saveConfig(): Promise<boolean> {
     try {
       this.config.lastModified = Date.now();
-      await fs.promises.writeFile(this.configPath, JSON.stringify(this.config, null, 2), "utf-8");
+      const yamlContent = yaml.dump(this.config, { indent: 2 });
+      await fs.promises.writeFile(this.configPath, yamlContent, "utf-8");
       return true;
     } catch (error) {
       console.warn(`保存 Agent 配置失败 ${this.config.key}:`, error);

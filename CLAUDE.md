@@ -60,13 +60,13 @@ packages/cli 专注于命令行前端的实现
         │   ├── agent1-key/
         │   │   ├── memory.md            # Agent记忆
         │   │   ├── sub_agents/          # <sub_agents>子代理文件夹（类似 agents 文件夹）
-        │   │   ├── config.json          # Agent配置
+        │   │   ├── agent.yaml           # Agent配置
         │   │   └── chatlogs/            # 聊天记录文件夹
-        │   │       ├── chat1.json
-        │   │       ├── chat2.json
+        │   │       ├── chat1.yaml
+        │   │       ├── chat2.yaml
         │   │       └── ...
         │   ├── agent2-key/
-        │   │   ├── config.json
+        │   │   ├── agent.yaml
         │   │   └── chatlogs/
         │   │       └── ...
         │   └── ...
@@ -84,13 +84,13 @@ packages/cli 专注于命令行前端的实现
     │   ├── agent1-key/
     │   │   ├── memory.md            # Agent记忆
     │   │   ├── sub_agents/          # <sub_agents>子代理文件夹（类似 agents 文件夹）
-    │   │   ├── config.json          # Agent配置
+    │   │   ├── agent.yaml           # Agent配置
     │   │   └── chatlogs/            # 聊天记录文件夹
-    │   │       ├── chat1.json
-    │   │       ├── chat2.json
+    │   │       ├── chat1.yaml
+    │   │       ├── chat2.yaml
     │   │       └── ...
     │   ├── agent2-key/
-    │   │   ├── config.json
+    │   │   ├── agent.yaml
     │   │   └── chatlogs/
     │   │       └── ...
     │   └── ...
