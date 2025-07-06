@@ -24,11 +24,12 @@ packages/cli 专注于命令行前端的实现
 * i18n 相关的代码在 packages/web/src/i18n.ts 中。 软件默认使用英文  然后，通过 t`english` 转成中文
 * packages/web/src/i18n.json 不用修改。后续我会提供一个脚本来自动生成 i18n.json 文件。
 
-## 前后端通信
+## 开发逻辑
 
 * 前端发送消息给后端，默认通过  packages/core/src/command.mts 实现，前端通过调用 call 的方法来实现与后端的交互。
 * electron提供更多electron接口 packages/electron/src/command.mts， 前端通过调用 callElectron 的方法来实现与electron的交互。
 * 后端发送消息给前端是通过websocket实现的 packages/core/src/message_service.mts，前端通过监听 websocket 的消息来接收后端发送的消息。
+* packages/core/src/shared/types.mts 定义了前端和后端交互的类型，确保前后端的数据结构一致。目前类型是分散的，没有集中到这个文件。
 
 ## 记忆
 
