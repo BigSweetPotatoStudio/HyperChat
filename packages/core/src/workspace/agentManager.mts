@@ -72,7 +72,14 @@ export class AgentInstance {
       try {
         const content = await fs.promises.readFile(this.configPath, "utf-8");
         const config = yaml.load(content) as AgentConfig;
+        
+        // 合并配置，但确保 name 字段不为空
         this.config = { ...this.config, ...config };
+        
+        // 如果从配置文件读取的 name 为空，使用默认的 key 作为 name
+        if (!this.config.name || this.config.name.trim() === '') {
+          this.config.name = this.config.key;
+        }
       } catch (error) {
         console.warn(`加载 Agent 配置失败 ${this.config.key}:`, error);
       }

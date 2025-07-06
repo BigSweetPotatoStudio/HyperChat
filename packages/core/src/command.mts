@@ -30,7 +30,6 @@ import { getMyDefaultEnvironment } from "./mcp/utils.mjs";
 import * as cron from "node-cron";
 import { store } from "./rag/vectorStore.mjs";
 import { Config } from "./const.mjs";
-import { clientPaths } from "./mcp/claude.mjs";
 import dayjs from "dayjs";
 import * as vm from "node:vm";
 import { ActiveAITerminal, CloseTerminal, GetTerminals, OpenTerminal } from "./mcp/servers/terminal/terminal.mjs";
@@ -61,7 +60,6 @@ export class CommandFactory {
       appDataDir: appDataDir,
       logPath: Logger.path,
       password: (await LocalSetting.init()).password,
-      claudeConfigPath: clientPaths.claude,
       ...Config
     };
   }

@@ -1,11 +1,12 @@
 import { Logger } from "./log.mjs";
 import type { Server as SocketIO, Socket } from "socket.io";
+import dayjs from "dayjs";
 
 // 类型定义
 interface MessageData {
   type: string;
   data?: any;
-  timestamp?: number;
+  timestamp?: string;
   workspacePath: string;
 }
 
@@ -61,7 +62,7 @@ export class MessageService {
       const socketId = activeUser ? userSocketMap.get(activeUser) : null;
       const messageWithTimestamp = {
         ...data,
-        timestamp: data.timestamp || Date.now()
+        timestamp: data.timestamp || dayjs().format('YYYY-MM-DD HH:mm:ss')
       };
 
       if (socketId) {
@@ -90,7 +91,7 @@ export class MessageService {
     try {
       const messageWithTimestamp = {
         ...data,
-        timestamp: data.timestamp || Date.now()
+        timestamp: data.timestamp || dayjs().format('YYYY-MM-DD HH:mm:ss')
       };
 
       mainSocket.emit(channel, messageWithTimestamp);
