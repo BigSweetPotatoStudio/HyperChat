@@ -33,8 +33,15 @@ interface Agent {
   name: string;
   description?: string;
   prompt?: string;
-  model?: string;
-  config?: any;
+  modelKey?: string;
+  allowMCPs?: string[];
+  confirm_call_tool?: boolean;
+  temperature?: number;
+  tags?: string[];
+  created?: number;
+  lastModified?: number;
+  chatLogsCount?: number;
+  lastChatTime?: number;
 }
 
 interface WorkspaceInfo {
@@ -68,6 +75,9 @@ export function AgentManagement({ workspace, agents, onRefresh }: AgentManagemen
       name: agent.name,
       description: agent.description,
       prompt: agent.prompt,
+      modelKey: agent.modelKey,
+      temperature: agent.temperature,
+      tags: agent.tags?.join(', '),
     });
     setAgentEditModal(true);
   };
@@ -84,11 +94,36 @@ export function AgentManagement({ workspace, agents, onRefresh }: AgentManagemen
     try {
       if (editingAgent) {
         // 更新现有Agent
-        // TODO: 实现更新Agent的API调用
+        await call('updateAgent', {
+          workspacePath: workspace.path,
+          agentKey: editingAgent.key,
+          updates: {
+            name: values.name,
+            description: values.description,
+            prompt: values.prompt,
+            allowMCPs: values.allowMCPs || [],
+            confirm_call_tool: values.confirm_call_tool || false,
+            modelKey: values.modelKey,
+            temperature: values.temperature,
+            tags: values.tags || []
+          }
+        });
         message.success(t`Agent updated successfully`);
       } else {
         // 创建新Agent
-        // TODO: 实现创建Agent的API调用
+        await call('createAgent', {
+          workspacePath: workspace.path,
+          config: {
+            name: values.name,
+            description: values.description,
+            prompt: values.prompt,
+            allowMCPs: values.allowMCPs || [],
+            confirm_call_tool: values.confirm_call_tool || false,
+            modelKey: values.modelKey,
+            temperature: values.temperature,
+            tags: values.tags || []
+          }
+        });
         message.success(t`Agent created successfully`);
       }
       
@@ -105,7 +140,10 @@ export function AgentManagement({ workspace, agents, onRefresh }: AgentManagemen
   // 删除Agent
   const deleteAgent = async (agent: Agent) => {
     try {
-      // TODO: 实现删除Agent的API调用
+      await call('deleteAgent', {
+        workspacePath: workspace.path,
+        agentKey: agent.key
+      });
       message.success(t`Agent deleted successfully`);
       await onRefresh();
     } catch (error) {
@@ -202,8 +240,11 @@ export function AgentManagement({ workspace, agents, onRefresh }: AgentManagemen
                     title={
                       <Space>
                         <span className="text-sm">{agent.name || agent.key}</span>
-                        {agent.model && (
-                          <Tag color="green">{agent.model}</Tag>
+                        {agent.modelKey && (
+                          <Tag color="green">{agent.modelKey}</Tag>
+                        )}
+                        {agent.chatLogsCount !== undefined && (
+                          <Tag color="blue">{agent.chatLogsCount} chats</Tag>
                         )}
                       </Space>
                     }
@@ -264,7 +305,19 @@ export function AgentManagement({ workspace, agents, onRefresh }: AgentManagemen
                 {selectedAgent.description || t`No description`}
               </Descriptions.Item>
               <Descriptions.Item label={t`Model`}>
-                {selectedAgent.model || "N/A"}
+                {selectedAgent.modelKey || "N/A"}
+              </Descriptions.Item>
+              <Descriptions.Item label={t`Chat Logs`}>
+                {selectedAgent.chatLogsCount || 0}
+              </Descriptions.Item>
+              <Descriptions.Item label={t`Last Chat`}>
+                {selectedAgent.lastChatTime ? new Date(selectedAgent.lastChatTime).toLocaleString() : 'Never'}
+              </Descriptions.Item>
+              <Descriptions.Item label={t`Tags`}>
+                {selectedAgent.tags?.map(tag => <Tag key={tag}>{tag}</Tag>) || 'None'}
+              </Descriptions.Item>
+              <Descriptions.Item label={t`Created`}>
+                {selectedAgent.created ? new Date(selectedAgent.created).toLocaleString() : 'Unknown'}
               </Descriptions.Item>
             </Descriptions>
 
@@ -278,15 +331,28 @@ export function AgentManagement({ workspace, agents, onRefresh }: AgentManagemen
               </div>
             )}
 
-            {/* 配置信息 */}
-            {selectedAgent.config && (
+            {/* MCP 配置 */}
+            {selectedAgent.allowMCPs && selectedAgent.allowMCPs.length > 0 && (
               <div className="mt-4">
-                <Title level={5}>{t`Configuration`}</Title>
-                <pre className="bg-gray-100 p-2 rounded text-xs overflow-auto">
-                  {JSON.stringify(selectedAgent.config, null, 2)}
-                </pre>
+                <Title level={5}>{t`Allowed MCPs`}</Title>
+                <Space wrap>
+                  {selectedAgent.allowMCPs.map(mcp => (
+                    <Tag key={mcp} color="purple">{mcp}</Tag>
+                  ))}
+                </Space>
               </div>
             )}
+
+            {/* 其他配置 */}
+            <div className="mt-4">
+              <Title level={5}>{t`Settings`}</Title>
+              <div className="space-y-2">
+                <div>Tool Confirmation: {selectedAgent.confirm_call_tool ? 'Enabled' : 'Disabled'}</div>
+                {selectedAgent.temperature !== undefined && (
+                  <div>Temperature: {selectedAgent.temperature}</div>
+                )}
+              </div>
+            </div>
           </div>
         )}
       </Drawer>
@@ -332,9 +398,30 @@ export function AgentManagement({ workspace, agents, onRefresh }: AgentManagemen
             rules={[{ required: true, message: t`Please enter agent prompt` }]}
           >
             <TextArea 
-              rows={8} 
+              rows={6} 
               placeholder={t`Enter agent prompt`}
             />
+          </Form.Item>
+
+          <Form.Item
+            label={t`Model Key`}
+            name="modelKey"
+          >
+            <Input placeholder={t`Enter model key (optional)`} />
+          </Form.Item>
+
+          <Form.Item
+            label={t`Temperature`}
+            name="temperature"
+          >
+            <Input type="number" min={0} max={2} step={0.1} placeholder="0.7" />
+          </Form.Item>
+
+          <Form.Item
+            label={t`Tags`}
+            name="tags"
+          >
+            <Input placeholder={t`Enter tags separated by commas`} />
           </Form.Item>
         </Form>
       </Modal>

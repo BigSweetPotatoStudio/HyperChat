@@ -60,6 +60,10 @@ export class WorkspaceManager {
    * 获取指定工作区
    */
   getWorkspace(workspacePath: string): Workspace | null {
+    // 如果是全局工作区，返回全局工作区实例
+    if (this.isGlobalWorkspace(workspacePath)) {
+      return this.globalWorkspace;
+    }
     return this.workspaces.get(workspacePath) || null;
   }
 
@@ -293,7 +297,10 @@ export class WorkspaceManager {
    * 检查是否为全局工作区
    */
   isGlobalWorkspace(workspacePath: string): boolean {
-    return workspacePath === CONSTANTS.GLOBAL_PATH;
+    // 规范化路径以防止路径分隔符问题
+    const normalizedWorkspacePath = path.resolve(workspacePath);
+    const normalizedGlobalPath = path.resolve(CONSTANTS.GLOBAL_PATH);
+    return normalizedWorkspacePath === normalizedGlobalPath;
   }
 
   /**

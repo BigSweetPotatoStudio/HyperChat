@@ -1434,6 +1434,306 @@ export class CommandFactory {
     }
   }
 
+  // ========== Agent 管理 API ==========
+
+  /**
+   * 创建新的 Agent
+   * @param workspacePath 工作区路径
+   * @param config Agent 配置
+   * @returns 创建的 Agent 配置
+   */
+  async createAgent({
+    workspacePath,
+    config
+  }: {
+    workspacePath: string;
+    config: Partial<{
+      key: string;
+      name: string;
+      prompt: string;
+      description?: string;
+      allowMCPs: string[];
+      confirm_call_tool: boolean;
+      modelKey?: string;
+      temperature?: number;
+      tags?: string[];
+    }>;
+  }): Promise<any> {
+    try {
+      const workspaceManager = getWorkspaceManager();
+      const workspace = workspaceManager.getWorkspace(workspacePath);
+      
+      if (!workspace) {
+        throw new Error(`工作区不存在: ${workspacePath}`);
+      }
+
+      const agentInstance = await workspace.createAgent(config);
+      
+      if (!agentInstance) {
+        throw new Error('创建 Agent 失败');
+      }
+
+      return agentInstance.getConfig();
+    } catch (error) {
+      console.error(`Failed to create agent for ${workspacePath}:`, error);
+      throw error;
+    }
+  }
+
+  /**
+   * 获取工作区中的所有 Agent
+   * @param workspacePath 工作区路径
+   * @returns Agent 配置列表
+   */
+  async getWorkspaceAgentList({
+    workspacePath
+  }: {
+    workspacePath: string;
+  }): Promise<any[]> {
+    try {
+      const workspaceManager = getWorkspaceManager();
+      const workspace = workspaceManager.getWorkspace(workspacePath);
+      
+      if (!workspace) {
+        throw new Error(`工作区不存在: ${workspacePath}`);
+      }
+
+      return await workspace.getAllAgents();
+    } catch (error) {
+      console.error(`Failed to get agents for ${workspacePath}:`, error);
+      throw error;
+    }
+  }
+
+  /**
+   * 获取工作区中所有 Agent 的摘要信息
+   * @param workspacePath 工作区路径
+   * @returns Agent 摘要信息列表
+   */
+  async getWorkspaceAgentsSummary({
+    workspacePath
+  }: {
+    workspacePath: string;
+  }): Promise<any[]> {
+    try {
+      const workspaceManager = getWorkspaceManager();
+      const workspace = workspaceManager.getWorkspace(workspacePath);
+      
+      if (!workspace) {
+        throw new Error(`工作区不存在: ${workspacePath}`);
+      }
+
+      return await workspace.getAllAgentsSummary();
+    } catch (error) {
+      console.error(`Failed to get agent summaries for ${workspacePath}:`, error);
+      throw error;
+    }
+  }
+
+  /**
+   * 获取指定 Agent 的配置
+   * @param workspacePath 工作区路径
+   * @param agentKey Agent 键名
+   * @returns Agent 配置
+   */
+  async getAgent({
+    workspacePath,
+    agentKey
+  }: {
+    workspacePath: string;
+    agentKey: string;
+  }): Promise<any | null> {
+    try {
+      const workspaceManager = getWorkspaceManager();
+      const workspace = workspaceManager.getWorkspace(workspacePath);
+      
+      if (!workspace) {
+        throw new Error(`工作区不存在: ${workspacePath}`);
+      }
+
+      const agentConfig = await workspace.getAgent(agentKey);
+      return agentConfig;
+    } catch (error) {
+      console.error(`Failed to get agent ${agentKey} for ${workspacePath}:`, error);
+      throw error;
+    }
+  }
+
+  /**
+   * 更新 Agent 配置
+   * @param workspacePath 工作区路径
+   * @param agentKey Agent 键名
+   * @param updates 更新的配置
+   * @returns 更新结果
+   */
+  async updateAgent({
+    workspacePath,
+    agentKey,
+    updates
+  }: {
+    workspacePath: string;
+    agentKey: string;
+    updates: Partial<{
+      name: string;
+      prompt: string;
+      description?: string;
+      allowMCPs: string[];
+      confirm_call_tool: boolean;
+      modelKey?: string;
+      temperature?: number;
+      tags?: string[];
+    }>;
+  }): Promise<boolean> {
+    try {
+      const workspaceManager = getWorkspaceManager();
+      const workspace = workspaceManager.getWorkspace(workspacePath);
+      
+      if (!workspace) {
+        throw new Error(`工作区不存在: ${workspacePath}`);
+      }
+
+      const agentInstance = workspace.getAgentInstance(agentKey);
+      if (!agentInstance) {
+        throw new Error(`Agent 不存在: ${agentKey}`);
+      }
+
+      return await agentInstance.updateConfig(updates);
+    } catch (error) {
+      console.error(`Failed to update agent ${agentKey} for ${workspacePath}:`, error);
+      throw error;
+    }
+  }
+
+  /**
+   * 删除 Agent
+   * @param workspacePath 工作区路径
+   * @param agentKey Agent 键名
+   * @returns 删除结果
+   */
+  async deleteAgent({
+    workspacePath,
+    agentKey
+  }: {
+    workspacePath: string;
+    agentKey: string;
+  }): Promise<boolean> {
+    try {
+      const workspaceManager = getWorkspaceManager();
+      const workspace = workspaceManager.getWorkspace(workspacePath);
+      
+      if (!workspace) {
+        throw new Error(`工作区不存在: ${workspacePath}`);
+      }
+
+      return await workspace.deleteAgent(agentKey);
+    } catch (error) {
+      console.error(`Failed to delete agent ${agentKey} for ${workspacePath}:`, error);
+      throw error;
+    }
+  }
+
+  /**
+   * 获取 Agent 的聊天记录
+   * @param workspacePath 工作区路径
+   * @param agentKey Agent 键名
+   * @returns 聊天记录列表
+   */
+  async getAgentChatLogs({
+    workspacePath,
+    agentKey
+  }: {
+    workspacePath: string;
+    agentKey: string;
+  }): Promise<any[]> {
+    try {
+      const workspaceManager = getWorkspaceManager();
+      const workspace = workspaceManager.getWorkspace(workspacePath);
+      
+      if (!workspace) {
+        throw new Error(`工作区不存在: ${workspacePath}`);
+      }
+
+      const agentInstance = workspace.getAgentInstance(agentKey);
+      if (!agentInstance) {
+        throw new Error(`Agent 不存在: ${agentKey}`);
+      }
+
+      return await agentInstance.getChatLogs();
+    } catch (error) {
+      console.error(`Failed to get chat logs for agent ${agentKey} in ${workspacePath}:`, error);
+      throw error;
+    }
+  }
+
+  /**
+   * 删除 Agent 的聊天记录
+   * @param workspacePath 工作区路径
+   * @param agentKey Agent 键名
+   * @param chatKey 聊天记录键名
+   * @returns 删除结果
+   */
+  async deleteAgentChatLog({
+    workspacePath,
+    agentKey,
+    chatKey
+  }: {
+    workspacePath: string;
+    agentKey: string;
+    chatKey: string;
+  }): Promise<boolean> {
+    try {
+      const workspaceManager = getWorkspaceManager();
+      const workspace = workspaceManager.getWorkspace(workspacePath);
+      
+      if (!workspace) {
+        throw new Error(`工作区不存在: ${workspacePath}`);
+      }
+
+      const agentInstance = workspace.getAgentInstance(agentKey);
+      if (!agentInstance) {
+        throw new Error(`Agent 不存在: ${agentKey}`);
+      }
+
+      return await agentInstance.deleteChatLog(chatKey);
+    } catch (error) {
+      console.error(`Failed to delete chat log ${chatKey} for agent ${agentKey} in ${workspacePath}:`, error);
+      throw error;
+    }
+  }
+
+  /**
+   * 清空 Agent 的所有聊天记录
+   * @param workspacePath 工作区路径
+   * @param agentKey Agent 键名
+   * @returns 清空结果
+   */
+  async clearAgentChatLogs({
+    workspacePath,
+    agentKey
+  }: {
+    workspacePath: string;
+    agentKey: string;
+  }): Promise<boolean> {
+    try {
+      const workspaceManager = getWorkspaceManager();
+      const workspace = workspaceManager.getWorkspace(workspacePath);
+      
+      if (!workspace) {
+        throw new Error(`工作区不存在: ${workspacePath}`);
+      }
+
+      const agentInstance = workspace.getAgentInstance(agentKey);
+      if (!agentInstance) {
+        throw new Error(`Agent 不存在: ${agentKey}`);
+      }
+
+      return await agentInstance.clearChatLogs();
+    } catch (error) {
+      console.error(`Failed to clear chat logs for agent ${agentKey} in ${workspacePath}:`, error);
+      throw error;
+    }
+  }
+
 }
 // export const Command = CommandFactory.prototype;
 export const Command = new CommandFactory();

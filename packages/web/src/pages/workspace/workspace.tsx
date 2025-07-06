@@ -210,8 +210,8 @@ export function Workspace() {
       console.log("File tree loaded:", rootItems?.length, "items");
       details.fileTreeData = rootItems;
 
-      // 加载 Agents
-      const agentList = await call("getWorkspaceAgents", { workspacePath: workspace.path });
+      // 加载 Agents（获取摘要信息）
+      const agentList = await call("getWorkspaceAgentsSummary", { workspacePath: workspace.path });
       details.agents = agentList;
 
       // 加载 MCP 客户端
@@ -321,21 +321,25 @@ export function Workspace() {
     const currentWorkspace = getCurrentWorkspace();
     if (currentWorkspace) {
       const key = currentWorkspace.isGlobal ? "global" : currentWorkspace.path;
-      // 只刷新MCP客户端数据，保留文件树和其他数据
+      
       try {
-        // 所有工作区（包括全局）都使用相同的方法获取MCP客户端
+        // 刷新 Agents
+        const agentList = await call("getWorkspaceAgentsSummary", { workspacePath: currentWorkspace.path });
+        
+        // 刷新 MCP 客户端
         const mcpList = await call("getWorkspaceMcpClients", { workspacePath: currentWorkspace.path });
         
-        // 只更新MCP客户端数据，保留其他数据
+        // 更新工作区详情数据
         setWorkspaceDetails(prev => ({
           ...prev,
           [key]: {
             ...prev[key],
+            agents: agentList || [],
             mcpClients: mcpList || []
           }
         }) as any);
       } catch (error) {
-        console.error("Failed to refresh MCP clients:", error);
+        console.error("Failed to refresh workspace details:", error);
         throw error;
       }
     }

@@ -186,6 +186,31 @@ export class Workspace {
   }
 
   /**
+   * 获取所有 agents (别名，为了兼容性)
+   */
+  async getAllAgents(): Promise<AgentConfig[]> {
+    return await this.agentManager.getAllAgents();
+  }
+
+  /**
+   * 获取所有 agents 摘要信息
+   */
+  async getAllAgentsSummary(): Promise<Array<{
+    config: AgentConfig;
+    chatLogsCount: number;
+    lastChatTime?: number;
+  }>> {
+    return await this.agentManager.getAllAgentsSummary();
+  }
+
+  /**
+   * 创建新的 agent
+   */
+  async createAgent(config: Partial<AgentConfig>): Promise<import("./agentManager.mjs").AgentInstance | null> {
+    return await this.agentManager.createAgent(config);
+  }
+
+  /**
    * 获取单个 agent 实例
    */
   getAgentInstance(key: string): import("./agentManager.mjs").AgentInstance | null {
@@ -253,6 +278,34 @@ export class Workspace {
   async deleteAgentChatLog(agentKey: string, chatKey: string): Promise<boolean> {
     const instance = this.agentManager.getAgent(agentKey);
     return instance ? await instance.deleteChatLog(chatKey) : false;
+  }
+
+  /**
+   * 清空 Agent 所有聊天记录
+   */
+  async clearAgentChatLogs(agentKey: string): Promise<boolean> {
+    const instance = this.agentManager.getAgent(agentKey);
+    return instance ? await instance.clearChatLogs() : false;
+  }
+
+  /**
+   * 获取 Agent 聊天记录数量
+   */
+  async getAgentChatLogsCount(agentKey: string): Promise<number> {
+    const instance = this.agentManager.getAgent(agentKey);
+    return instance ? await instance.getChatLogsCount() : 0;
+  }
+
+  /**
+   * 获取 Agent 摘要信息
+   */
+  async getAgentSummary(agentKey: string): Promise<{
+    config: AgentConfig;
+    chatLogsCount: number;
+    lastChatTime?: number;
+  } | null> {
+    const instance = this.agentManager.getAgent(agentKey);
+    return instance ? await instance.getSummary() : null;
   }
 
   // ========== MCP 管理 ==========

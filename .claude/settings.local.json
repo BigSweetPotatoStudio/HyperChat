@@ -20,7 +20,8 @@
       "Bash(npx jest:*)",
       "Bash(npm run test:*)",
       "Bash(npm test)",
-      "Bash(node:*)"
+      "Bash(node:*)",
+      "Bash(npm run check:*)"
     ],
     "deny": []
   }
