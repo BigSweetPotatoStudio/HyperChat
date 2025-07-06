@@ -97,3 +97,96 @@ export const clearAllPanelSizes = (): void => {
     console.warn('Failed to clear all panel sizes:', error);
   }
 };
+
+/**
+ * 工作区历史记录管理
+ */
+
+interface WorkspaceHistoryItem {
+  path: string;
+  name: string;
+  lastUsed: number;
+}
+
+const WORKSPACE_HISTORY_KEY = 'workspace_history';
+const MAX_HISTORY_ITEMS = 10;
+
+/**
+ * 获取工作区历史记录
+ */
+export const getWorkspaceHistory = (): WorkspaceHistoryItem[] => {
+  try {
+    const stored = localStorage.getItem(WORKSPACE_HISTORY_KEY);
+    if (stored) {
+      const history = JSON.parse(stored) as WorkspaceHistoryItem[];
+      // 按最近使用时间排序
+      return history.sort((a, b) => b.lastUsed - a.lastUsed);
+    }
+  } catch (error) {
+    console.warn('Failed to get workspace history:', error);
+  }
+  return [];
+};
+
+/**
+ * 添加工作区到历史记录
+ */
+export const addToWorkspaceHistory = (path: string, name?: string): void => {
+  try {
+    const history = getWorkspaceHistory();
+    const now = Date.now();
+    
+    // 检查是否已存在
+    const existingIndex = history.findIndex(item => item.path === path);
+    
+    // 提取文件夹名作为默认名称
+    const folderName = name || path.split(/[/\\]/).pop() || 'Workspace';
+    
+    if (existingIndex >= 0) {
+      // 更新已存在的记录
+      history[existingIndex] = {
+        path,
+        name: folderName,
+        lastUsed: now
+      };
+    } else {
+      // 添加新记录
+      history.unshift({
+        path,
+        name: folderName,
+        lastUsed: now
+      });
+    }
+    
+    // 限制历史记录数量
+    const limitedHistory = history.slice(0, MAX_HISTORY_ITEMS);
+    
+    localStorage.setItem(WORKSPACE_HISTORY_KEY, JSON.stringify(limitedHistory));
+  } catch (error) {
+    console.warn('Failed to add to workspace history:', error);
+  }
+};
+
+/**
+ * 从历史记录中删除工作区
+ */
+export const removeFromWorkspaceHistory = (path: string): void => {
+  try {
+    const history = getWorkspaceHistory();
+    const filteredHistory = history.filter(item => item.path !== path);
+    localStorage.setItem(WORKSPACE_HISTORY_KEY, JSON.stringify(filteredHistory));
+  } catch (error) {
+    console.warn('Failed to remove from workspace history:', error);
+  }
+};
+
+/**
+ * 清空工作区历史记录
+ */
+export const clearWorkspaceHistory = (): void => {
+  try {
+    localStorage.removeItem(WORKSPACE_HISTORY_KEY);
+  } catch (error) {
+    console.warn('Failed to clear workspace history:', error);
+  }
+};

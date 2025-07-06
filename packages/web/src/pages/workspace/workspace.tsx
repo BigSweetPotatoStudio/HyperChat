@@ -20,6 +20,7 @@ import {
   Drawer,
   Descriptions,
   Dropdown,
+  Divider,
 } from "antd";
 import {
   FolderOpenOutlined,
@@ -33,6 +34,8 @@ import {
   StopOutlined,
   InfoCircleOutlined,
   MoreOutlined,
+  HistoryOutlined,
+  ClockCircleOutlined,
 } from "@ant-design/icons";
 import { call, msg_receive } from "../../common/call";
 import { useForceUpdate } from "../../hooks/useForceUpdate";
@@ -43,7 +46,7 @@ import { MCPManagement } from "../../components/MCPManagement";
 import { AgentManagement } from "../../components/AgentManagement";
 import { FileTreeComponent } from "../../components/FileTreeComponent";
 import { WorkspaceSidebar } from "../../components/WorkspaceSidebar";
-import { getPanelSizes, savePanelSizes } from "../../utils/storage";
+import { getPanelSizes, savePanelSizes, getWorkspaceHistory, addToWorkspaceHistory, removeFromWorkspaceHistory } from "../../utils/storage";
 
 const { Title, Text } = Typography;
 
@@ -94,6 +97,7 @@ export function Workspace() {
   const [directoryBrowserOpen, setDirectoryBrowserOpen] = useState(false);
   const [selectedPath, setSelectedPath] = useState<string>("");
   const [showHiddenFiles, setShowHiddenFiles] = useState(true);
+  const [workspaceHistory, setWorkspaceHistory] = useState(() => getWorkspaceHistory());
   const [form] = Form.useForm();
   
   // 面板尺寸状态 - 使用数组格式，与Ant Design Splitter兼容
@@ -254,6 +258,10 @@ export function Workspace() {
         // 不阻止工作区创建，只是警告
       }
 
+      // 添加到历史记录
+      addToWorkspaceHistory(values.path, folderName);
+      setWorkspaceHistory(getWorkspaceHistory());
+
       message.success(t`Workspace created or opened successfully`);
       setCreateModalOpen(false);
       form.resetFields();
@@ -279,6 +287,8 @@ export function Workspace() {
       }
 
       await call("deleteWorkspace", { workspacePath: workspace.path });
+      
+      
       message.success(t`Workspace deleted successfully`);
       // 如果删除的是当前活动工作区，切换到全局工作区
       if (activeWorkspaceKey === workspace.path) {
@@ -677,7 +687,7 @@ export function Workspace() {
             rules={[{ required: true, message: t`Please select folder path` }]}
             extra={t`The workspace name will be automatically set to the folder name`}
           >
-            <Input.Group compact>
+            <Space.Compact style={{ width: "100%" }}>
               <Input
                 style={{ width: "calc(100% - 100px)" }}
                 placeholder={t`Select workspace folder`}
@@ -690,8 +700,65 @@ export function Workspace() {
               >
                 {t`Select Directory`}
               </Button>
-            </Input.Group>
+            </Space.Compact>
           </Form.Item>
+          
+          {/* 历史记录 */}
+          {workspaceHistory.length > 0 && (
+              <>
+                <Divider orientation="left">
+                  <Space>
+                    <HistoryOutlined />
+                    <span>{t`Recent Workspaces`}</span>
+                  </Space>
+                </Divider>
+                <List
+                  size="small"
+                  dataSource={workspaceHistory}
+                  renderItem={(item) => (
+                    <List.Item
+                      style={{ cursor: 'pointer', padding: '8px 0' }}
+                      onClick={() => {
+                        form.setFieldsValue({ path: item.path });
+                        setSelectedPath(item.path);
+                      }}
+                      actions={[
+                        <Button
+                          key="remove"
+                          type="text"
+                          size="small"
+                          icon={<DeleteOutlined />}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            removeFromWorkspaceHistory(item.path);
+                            setWorkspaceHistory(getWorkspaceHistory());
+                          }}
+                          title={t`Remove from history`}
+                        />
+                      ]}
+                    >
+                      <List.Item.Meta
+                        avatar={<FolderOpenOutlined />}
+                        title={
+                          <Space>
+                            <span>{item.name}</span>
+                            <Tag color="blue">
+                              <ClockCircleOutlined />
+                              {new Date(item.lastUsed).toLocaleDateString()}
+                            </Tag>
+                          </Space>
+                        }
+                        description={
+                          <Text type="secondary" style={{ fontSize: '12px' }}>
+                            {item.path}
+                          </Text>
+                        }
+                      />
+                    </List.Item>
+                  )}
+                />
+              </>
+          )}
         </Form>
       </Modal>
 
