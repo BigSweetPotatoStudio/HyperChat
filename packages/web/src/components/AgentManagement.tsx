@@ -115,7 +115,7 @@ export function AgentManagement({ workspace, agents, onRefresh }: AgentManagemen
   const saveAgent = async (values) => {
     try {
       const agentConfig = {
-        name: values.label,
+        name: values.name,
         description: values.description,
         prompt: values.prompt,
         allowMCPs: values.allowMCPs || [],
@@ -127,10 +127,10 @@ export function AgentManagement({ workspace, agents, onRefresh }: AgentManagemen
         fallbackModelKey: values.fallbackModelKey,
       };
 
-      if (editingAgent || values.key) {
+      if (editingAgent) {
         // 更新现有Agent
-        const agentKey = editingAgent?.config.key || values.key;
-        
+        const agentKey = editingAgent?.config.key;
+
         if (!agentKey) {
           throw new Error('Agent key is missing');
         }
@@ -148,7 +148,7 @@ export function AgentManagement({ workspace, agents, onRefresh }: AgentManagemen
         });
         message.success(t`Agent created successfully`);
       }
-      
+
       setAgentEditModal(false);
       form.resetFields();
       setEditingAgent(null);
@@ -198,7 +198,7 @@ export function AgentManagement({ workspace, agents, onRefresh }: AgentManagemen
             title={t`Create Agent`}
           />
         </div>
-        
+
         {agents.length > 0 ? (
           <List
             size="small"
@@ -240,7 +240,7 @@ export function AgentManagement({ workspace, agents, onRefresh }: AgentManagemen
                   },
                 },
               ];
-              
+
               return (
                 <List.Item
                   actions={[
@@ -288,8 +288,8 @@ export function AgentManagement({ workspace, agents, onRefresh }: AgentManagemen
             }}
           />
         ) : (
-          <Empty 
-            description={t`No Agents`} 
+          <Empty
+            description={t`No Agents`}
             image={Empty.PRESENTED_IMAGE_SIMPLE}
           >
             <Button type="primary" size="small" onClick={createAgent}>
@@ -411,7 +411,7 @@ export function AgentManagement({ workspace, agents, onRefresh }: AgentManagemen
               // 编辑模式：设置Agent的现有值
               const formValues = {
                 key: editingAgent.config.key,
-                label: editingAgent.config.name,
+                name: editingAgent.config.name,
                 description: editingAgent.config.description,
                 prompt: editingAgent.config.prompt,
                 modelKey: editingAgent.config.modelKey,
@@ -443,35 +443,32 @@ export function AgentManagement({ workspace, agents, onRefresh }: AgentManagemen
           onFinish={saveAgent}
           preserve={false}
         >
-          <Form.Item className="hidden" name="key" label={"key"}>
-            <Input />
-          </Form.Item>
-          
+
           <Form.Item
-            name="label"
+            name="name"
             label={t`Name`}
             rules={[{ required: true, message: t`Please enter the name` }]}
           >
-            <Input 
+            <Input
               addonBefore={
-                <Popover 
-                  destroyTooltipOnHide={false} 
-                  trigger="click" 
-                  title={t`please select emoji!`} 
+                <Popover
+                  destroyTooltipOnHide={false}
+                  trigger="click"
+                  title={t`please select emoji!`}
                   content={
-                    <EmojiPicker 
+                    <EmojiPicker
                       onEmojiClick={(emoji) =>
                         form.setFieldValue("label", emoji.emoji + form.getFieldValue("label"))
-                      } 
+                      }
                     />
                   }
                 >
                   <SmileOutlined className=" cursor-pointer" />
                 </Popover>
-              } 
+              }
             />
           </Form.Item>
-          
+
           <Form.Item
             name="prompt"
             label={t`System Prompt`}
@@ -479,7 +476,7 @@ export function AgentManagement({ workspace, agents, onRefresh }: AgentManagemen
           >
             <Editor style={{ height: "150px" }} />
           </Form.Item>
-          
+
           <Form.Item name="modelKey" label={t`LLM`}>
             <Select
               showSearch
@@ -492,7 +489,7 @@ export function AgentManagement({ workspace, agents, onRefresh }: AgentManagemen
               }))}
             />
           </Form.Item>
-          
+
           <Form.Item
             name="allowMCPs"
             label={t`allowMCPs`}
@@ -518,7 +515,7 @@ export function AgentManagement({ workspace, agents, onRefresh }: AgentManagemen
               }))}
             />
           </Form.Item>
-          
+
           <Form.Item
             name="temperature"
             label={t`temperature`}
@@ -526,7 +523,7 @@ export function AgentManagement({ workspace, agents, onRefresh }: AgentManagemen
           >
             <NumberStep defaultValue={1} min={0} max={2} step={0.1} />
           </Form.Item>
-          
+
           <Form.Item
             name="attachedDialogueCount"
             label={t`attachedDialogueCount`}
@@ -534,7 +531,7 @@ export function AgentManagement({ workspace, agents, onRefresh }: AgentManagemen
           >
             <NumberStep defaultValue={10} max={20} />
           </Form.Item>
-          
+
           <Form.Item
             name="confirm_call_tool"
             label={t`callToolType`}
@@ -545,20 +542,20 @@ export function AgentManagement({ workspace, agents, onRefresh }: AgentManagemen
               <Radio value={false}>{t`Direct Call`}</Radio>
             </Radio.Group>
           </Form.Item>
-          
+
           <Form.Item name="callable" label={t`Callable`} valuePropName="checked">
             <Checkbox>
               {t`Allowed to be called by 'hyper_agent'`}
             </Checkbox>
           </Form.Item>
-          
+
           <Form.Item name="description" label={t`description`}>
             <Input.TextArea
               placeholder={t`Please provide a description for more accurate call.`}
               rows={2}
             />
           </Form.Item>
-          
+
           <Collapse>
             <Collapse.Panel key="1" header={t`More Settings`}>
               <Form.Item name="fallbackModelKey" label={t`TaskFallbackLLM`}>
