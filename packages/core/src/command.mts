@@ -139,21 +139,26 @@ export class CommandFactory {
     clientName: string;
     clientConfig?: MCPServerConfig;
   }) {
-    const manager = getMCPManager();
-    
-    if (clientConfig) {
-      // 如果提供了配置，先设置配置再启动
-      await manager.setServerConfig(clientName, clientConfig, workspacePath);
-    } else {
-      // 如果没有配置，尝试重启现有客户端
-      await manager.restartClient(clientName, workspacePath);
+    try {
+      const manager = getMCPManager();
+      
+      if (clientConfig) {
+        // 如果提供了配置，先设置配置再启动
+        await manager.setServerConfig(clientName, clientConfig, workspacePath);
+      } else {
+        // 如果没有配置，尝试重启现有客户端
+        await manager.restartClient(clientName, workspacePath);
+      }
+      
+      return {
+        success: true,
+        clientName,
+        workspacePath
+      };
+    } catch (error) {
+      console.error(`Failed to start MCP client ${clientName} for ${workspacePath}:`, error);
+      throw error;
     }
-    
-    return {
-      success: true,
-      clientName,
-      workspacePath
-    };
   }
   /**
    * 获取所有活跃的 MCP 客户端信息
@@ -186,24 +191,29 @@ export class CommandFactory {
     isdelete?: boolean;
     isdisable?: boolean;
   }) {
-    const manager = getMCPManager();
-    const workspaceManager = getWorkspaceManager();
-    const globalWorkspacePath = workspaceManager.getGlobalWorkspacePath();
-    
-    if (isdelete) {
-      // 从全局配置中永久删除客户端配置并停止服务
-      await manager.deleteServerConfig(clientName, globalWorkspacePath);
-    } else if (isdisable) {
-      // 仅停止客户端服务，保留配置以便后续重启
-      await manager.stopClient(clientName, globalWorkspacePath);
-    } else {
-      // 重启客户端（先停止再启动）
-      await manager.restartClient(clientName, globalWorkspacePath);
+    try {
+      const manager = getMCPManager();
+      const workspaceManager = getWorkspaceManager();
+      const globalWorkspacePath = workspaceManager.getGlobalWorkspacePath();
+      
+      if (isdelete) {
+        // 从全局配置中永久删除客户端配置并停止服务
+        await manager.deleteServerConfig(clientName, globalWorkspacePath);
+      } else if (isdisable) {
+        // 仅停止客户端服务，保留配置以便后续重启
+        await manager.stopClient(clientName, globalWorkspacePath);
+      } else {
+        // 重启客户端（先停止再启动）
+        await manager.restartClient(clientName, globalWorkspacePath);
+      }
+      
+      return {
+        success: true,
+      };
+    } catch (error) {
+      console.error(`Failed to manage MCP client ${clientName}:`, error);
+      throw error;
     }
-    
-    return {
-      success: true,
-    };
   }
 
   /**
@@ -223,30 +233,35 @@ export class CommandFactory {
     clientName: string;
     action: 'restart' | 'disable' | 'delete';
   }) {
-    const manager = getMCPManager();
-    
-    switch (action) {
-      case 'delete':
-        // 从工作区配置中永久删除客户端配置并停止服务
-        await manager.deleteServerConfig(clientName, workspacePath);
-        break;
-      case 'disable':
-        // 仅停止客户端服务，保留配置以便后续重启
-        await manager.stopClient(clientName, workspacePath);
-        break;
-      case 'restart':
-      default:
-        // 重启客户端（先停止再启动）
-        await manager.restartClient(clientName, workspacePath);
-        break;
+    try {
+      const manager = getMCPManager();
+      
+      switch (action) {
+        case 'delete':
+          // 从工作区配置中永久删除客户端配置并停止服务
+          await manager.deleteServerConfig(clientName, workspacePath);
+          break;
+        case 'disable':
+          // 仅停止客户端服务，保留配置以便后续重启
+          await manager.stopClient(clientName, workspacePath);
+          break;
+        case 'restart':
+        default:
+          // 重启客户端（先停止再启动）
+          await manager.restartClient(clientName, workspacePath);
+          break;
+      }
+      
+      return {
+        success: true,
+        action,
+        clientName,
+        workspacePath
+      };
+    } catch (error) {
+      console.error(`Failed to ${action} MCP client ${clientName} for ${workspacePath}:`, error);
+      throw error;
     }
-    
-    return {
-      success: true,
-      action,
-      clientName,
-      workspacePath
-    };
   }
   /**
    * 调用指定 MCP 客户端的工具函数

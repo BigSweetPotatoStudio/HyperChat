@@ -360,10 +360,10 @@ export class WorkspaceMCPClientImpl implements WorkspaceMCPClient {
       await client.connect(transport);
       return client;
     } catch (e) {
-      this.logError("openStdio error:", params, e);
-      if (e instanceof Error && e.message.includes("MCP error -32000: Connection closed")) {
-        await this.spawnError(config.command!, config.args || [], env);
-      }
+      // this.logError("openStdio error:", params, e);
+      // if (e instanceof Error && e.message.includes("MCP error -32000: Connection closed")) {
+      //   await this.spawnError(config.command!, config.args || [], env);
+      // }
       throw e;
     }
   }

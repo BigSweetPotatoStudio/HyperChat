@@ -195,11 +195,12 @@ export class WorkspaceMCPManager {
       this.logInfo(`客户端 ${clientId} 启动成功`);
       client.notifyStatusChange();
       this.events.onClientStatusChange?.(client);
-    } catch (error) {
+    } catch (error) { 
       this.logError(`客户端 ${clientId} 启动失败:`, error);
       client.notifyStatusChange();
       this.events.onClientStatusChange?.(client);
       this.events.onError?.(error as Error, { clientId, workspacePath: client.workspacePath });
+      throw error;
     }
   }
 
