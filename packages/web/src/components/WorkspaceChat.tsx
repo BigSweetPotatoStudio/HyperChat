@@ -477,7 +477,7 @@ export const WorkspaceChat = ({ workspace }: WorkspaceChatProps) => {
                 ref={editorRef}
                 style={{
                   border: "0px",
-                  padding: "4px 0px 4px",
+                  padding: "8px 0px 8px",
                 }}
                 autoHeight
                 rows={1}
@@ -497,7 +497,7 @@ export const WorkspaceChat = ({ workspace }: WorkspaceChatProps) => {
                 placeholder={t`Start inputting...`}
               />
               {/* 发送区域操作栏 */}
-              <div className="flex justify-between items-center mt-2 p-2 border-t bg-gray-50 rounded-b">
+              <div className="flex justify-between items-center p-2 border-t bg-gray-50 rounded-b">
                 <Flex align="center" gap={8}>
 
                   <Upload

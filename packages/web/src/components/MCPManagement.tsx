@@ -65,7 +65,7 @@ export function MCPManagement({ workspace, mcpClients, onRefresh }: MCPManagemen
   const refreshMcpClients = async () => {
     try {
       setMcpRefreshing(true);
-      
+
       if (workspace.isGlobal) {
         // 全局工作区：强制重新加载全局MCP客户端
         await call("forceReloadMcpClients");
@@ -79,10 +79,10 @@ export function MCPManagement({ workspace, mcpClients, onRefresh }: MCPManagemen
           await call("forceReloadMcpClients");
         }
       }
-      
+
       // 调用父组件的刷新函数
       await onRefresh();
-      
+
       message.success(t`MCP clients reloaded successfully`);
     } catch (error) {
       console.error("Failed to reload MCP clients:", error);
@@ -101,7 +101,7 @@ export function MCPManagement({ workspace, mcpClients, onRefresh }: MCPManagemen
         clientName,
         action: "restart"
       });
-      
+
       message.success(t`MCP client restarted successfully`);
     } catch (error) {
       console.error(`Failed to restart MCP client ${clientName}:`, error);
@@ -165,7 +165,7 @@ export function MCPManagement({ workspace, mcpClients, onRefresh }: MCPManagemen
   // 过滤MCP客户端
   const getFilteredMcpClients = () => {
     let filteredClients = mcpClients;
-    
+
     // 按状态过滤
     if (statusFilter === "enabled") {
       filteredClients = filteredClients.filter(client => {
@@ -178,17 +178,17 @@ export function MCPManagement({ workspace, mcpClients, onRefresh }: MCPManagemen
         return isDisabled;
       });
     }
-    
+
     // 按搜索文本过滤
     if (searchText.trim()) {
       const searchLower = searchText.toLowerCase();
-      filteredClients = filteredClients.filter(client => 
+      filteredClients = filteredClients.filter(client =>
         client.name.toLowerCase().includes(searchLower) ||
         client.servername?.toLowerCase().includes(searchLower) ||
         client.config?.type?.toLowerCase().includes(searchLower)
       );
     }
-    
+
     return filteredClients;
   };
 
@@ -215,7 +215,7 @@ export function MCPManagement({ workspace, mcpClients, onRefresh }: MCPManagemen
             />
           </div>
         </div>
-        
+
         {/* 搜索和过滤 */}
         <div className="mb-2">
           <Space.Compact style={{ width: "100%" }}>
@@ -242,7 +242,7 @@ export function MCPManagement({ workspace, mcpClients, onRefresh }: MCPManagemen
             />
           </Space.Compact>
         </div>
-        
+
         {getFilteredMcpClients().length > 0 ? (
           <List
             size="small"
@@ -250,7 +250,7 @@ export function MCPManagement({ workspace, mcpClients, onRefresh }: MCPManagemen
             renderItem={(client) => {
               const isConnected = client.status === "connected";
               const isDisabled = client.status === "disabled" || client.config?.disabled;
-              
+
               const menuItems = [
                 {
                   key: "details",
@@ -296,7 +296,7 @@ export function MCPManagement({ workspace, mcpClients, onRefresh }: MCPManagemen
                   },
                 },
               ];
-              
+
               return (
                 <List.Item
                   actions={[
@@ -321,7 +321,7 @@ export function MCPManagement({ workspace, mcpClients, onRefresh }: MCPManagemen
                         {client.mcpType === "builtin" ? (
                           <Tag color="blue">{t`Built-in`}</Tag>
                         ) : (
-                          <Tag color="green">{t`Custom`}</Tag>
+                          null
                         )}
                       </Space>
                     }
@@ -334,11 +334,11 @@ export function MCPManagement({ workspace, mcpClients, onRefresh }: MCPManagemen
                           <Tag
                             color={
                               isDisabled ? "default" :
-                              isConnected ? "green" : "red"
+                                isConnected ? "green" : "red"
                             }
                           >
-                            {isDisabled ? t`Disabled` : 
-                             isConnected ? t`Connected` : t`Disconnected`}
+                            {isDisabled ? t`Disabled` :
+                              isConnected ? t`Connected` : t`Disconnected`}
                           </Tag>
                           {client.tools && (
                             <Tag color="cyan">
@@ -359,19 +359,19 @@ export function MCPManagement({ workspace, mcpClients, onRefresh }: MCPManagemen
             }}
           />
         ) : (
-          <Empty 
+          <Empty
             description={
-              mcpClients.length === 0 
-                ? t`No MCP clients` 
+              mcpClients.length === 0
+                ? t`No MCP clients`
                 : searchText.trim()
                   ? t`No matching MCP clients found`
-                  : statusFilter === "enabled" 
-                    ? t`No enabled MCP clients` 
+                  : statusFilter === "enabled"
+                    ? t`No enabled MCP clients`
                     : statusFilter === "disabled"
                       ? t`No disabled MCP clients`
                       : t`No MCP clients`
-            } 
-            image={Empty.PRESENTED_IMAGE_SIMPLE} 
+            }
+            image={Empty.PRESENTED_IMAGE_SIMPLE}
           />
         )}
       </div>
@@ -392,7 +392,7 @@ export function MCPManagement({ workspace, mcpClients, onRefresh }: MCPManagemen
       >
         <div className="text-center py-8">
           <p className="text-gray-500">
-            {workspace.isGlobal 
+            {workspace.isGlobal
               ? t`Global MCP configuration - Coming soon`
               : t`Workspace MCP configuration - Coming soon`}
           </p>
@@ -430,11 +430,11 @@ export function MCPManagement({ workspace, mcpClients, onRefresh }: MCPManagemen
                 <Tag
                   color={
                     selectedMcpClient.status === "disabled" ? "default" :
-                    selectedMcpClient.status === "connected" ? "green" : "red"
+                      selectedMcpClient.status === "connected" ? "green" : "red"
                   }
                 >
                   {selectedMcpClient.status === "disabled" ? t`Disabled` :
-                   selectedMcpClient.status === "connected" ? t`Connected` : t`Disconnected`}
+                    selectedMcpClient.status === "connected" ? t`Connected` : t`Disconnected`}
                 </Tag>
               </Descriptions.Item>
               <Descriptions.Item label={t`Type`}>
