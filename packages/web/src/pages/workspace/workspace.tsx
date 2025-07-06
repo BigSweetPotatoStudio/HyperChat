@@ -119,19 +119,18 @@ export function Workspace() {
         setWorkspaceDetails(prev => {
           const newDetails = { ...prev };
 
-          // 更新所有工作区的MCP客户端数据（兼容旧的行为）
-          Object.keys(newDetails).forEach(key => {
-            const details = newDetails[key];
-            if (details && details.mcpClients) {
-              if (payload.status === "deleted") {
-                // 删除客户端
-                delete details.mcpClients[payload.name];
-              } else {
-                // 添加或更新客户端
-                details.mcpClients[payload.name] = payload;
-              }
+          // 更新指定工作区的 MCP 客户端数据
+          const details = newDetails[payload.workspacePath]
+          if (details && details.mcpClients) {
+            if (payload.status === "deleted") {
+              // 删除客户端
+              delete details.mcpClients[payload.name];
+            } else {
+              // 添加或更新客户端
+              details.mcpClients[payload.name] = payload;
             }
-          });
+          }
+
 
           return newDetails;
         });
