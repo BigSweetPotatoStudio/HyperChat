@@ -556,7 +556,7 @@ export function Workspace() {
               title={t`Workspace Chat`}
               size="small"
               className="h-full"
-              bodyStyle={{ padding: '0', height: 'calc(100% - 48px)', overflow: 'hidden' }}
+              bodyStyle={{ padding: '0', height: 'calc(100% - 36px)', overflow: 'hidden' }}
             >
               <WorkspaceChat workspace={currentWorkspace} />
             </Card>

@@ -25,7 +25,6 @@ import {
   theme,
 } from "antd";
 import {
-  Sender,
   Welcome,
   XProvider,
 } from "@ant-design/x";
@@ -39,7 +38,7 @@ import {
 } from "@ant-design/icons";
 
 import { v4 } from "uuid";
-import { call } from "../common/call";
+import { call, getURL_PRE } from "../common/call";
 import { blobToBase64, urlToBase64 } from "../pages/chat/utils/index";
 import { AiChannel } from "@hyperchat/shared/ai.mjs";
 import {
@@ -49,6 +48,7 @@ import {
   Agents,
   LocalSetting,
   VarList,
+  ChatHistoryItem,
 } from "@hyperchat/shared/data.mjs";
 import { MyMessage } from "@hyperchat/shared/data.mjs";
 import { Messages } from "./messages";
@@ -59,6 +59,7 @@ import { t } from "../i18n";
 import { getMyUuid } from "../common/util";
 import { HeaderContext } from "../common/context";
 import { useForceUpdate } from "../hooks/useForceUpdate";
+import { MyAttachR } from "../pages/chat/attachR";
 
 /**
  * 工作区聊天组件的Props类型定义
@@ -103,10 +104,11 @@ export const WorkspaceChat = ({ workspace }: WorkspaceChatProps) => {
     isCalled: false,
     isTask: false,
     confirm_call_tool: false,
+
   };
 
   // 当前聊天引用
-  const currentChat = React.useRef(defaultChatValue);
+  const currentChat = React.useRef<ChatHistoryItem>(defaultChatValue);
 
   // 加载状态
   const [loading, setLoading] = useState(false);
@@ -182,7 +184,16 @@ export const WorkspaceChat = ({ workspace }: WorkspaceChatProps) => {
   /**
    * 处理用户请求的核心函数
    */
-  const onRequest = useCallback(async (message?: string) => {
+  const onRequest = useCallback(async (content?: string) => {
+    let aiClient = (() => {
+      let cacheKey = "workspace-chat";
+      if (cacheOBJ.current[cacheKey]) {
+        return cacheOBJ.current[cacheKey];
+      }
+      let res = new AiChannel({});
+      cacheOBJ.current[cacheKey] = res;
+      return res;
+    })();
     try {
       setLoading(true);
 
@@ -196,25 +207,17 @@ export const WorkspaceChat = ({ workspace }: WorkspaceChatProps) => {
         config = await getDefaultModelConfig();
       }
 
-      let aiClient = (() => {
-        let cacheKey = "workspace-chat";
-        if (cacheOBJ.current[cacheKey]) {
-          return cacheOBJ.current[cacheKey];
-        }
-        let res = new AiChannel({});
-        cacheOBJ.current[cacheKey] = res;
-        return res;
-      })();
+
 
       openaiClient.current = aiClient;
       aiClient.messages = currentChat.current.messages;
 
-      if (message) {
+      if (content) {
         aiClient.addMessage(
           {
             role: "user",
             content: "",
-            content_template: message,
+            content_template: content,
             content_date: new Date().getTime(),
           },
           resourceResListRef.current,
@@ -238,13 +241,13 @@ export const WorkspaceChat = ({ workspace }: WorkspaceChatProps) => {
         currentChat.current = {
           ...currentChat.current,
           key: getMyUuid(),
-          label: message || "New Chat",
+          label: content || "New Chat",
           messages: aiClient.messages,
           sented: true,
           dateTime: Date.now(),
         };
       } else {
-        currentChat.current.label = message || currentChat.current.label;
+        currentChat.current.label = content || currentChat.current.label;
         currentChat.current.dateTime = Date.now();
       }
 
@@ -256,7 +259,7 @@ export const WorkspaceChat = ({ workspace }: WorkspaceChatProps) => {
         },
         mcpTools: [],
         platform: "web",
-        getURL_PRE: () => ""
+        getURL_PRE: getURL_PRE
       })
 
       await aiClient.completion({
@@ -405,9 +408,24 @@ export const WorkspaceChat = ({ workspace }: WorkspaceChatProps) => {
                 </Tooltip>
               </div>
             </div>
+            <MyAttachR
+              resourceResList={resourceResListRef.current}
+              resourceResListRemove={(x) => {
+                resourceResListRef.current =
+                  resourceResListRef.current.filter((v) => v.uid != x.uid);
+                refresh();
+                message.success(t`Delete Success`);
+              }}
+              promptResList={promptResList.current}
+              promptResListRemove={(x) => {
 
+                promptResList.current = promptResList.current.filter((v) => v.uid != x.uid);
+                refresh();
+                message.success(t`Delete Success`);
+              }}
+            ></MyAttachR>
             {/* 发送框 */}
-            <div className="sender-container">
+            <div className="my-sender-container">
               <Editor
                 onDragFile={async (file: any) => {
                   if (!file) return;
@@ -458,13 +476,12 @@ export const WorkspaceChat = ({ workspace }: WorkspaceChatProps) => {
                 submitType="enter"
                 ref={editorRef}
                 style={{
-                  border: "1px solid #d9d9d9",
-                  borderRadius: "6px",
-                  padding: "8px 12px",
+                  border: "0px",
+                  padding: "4px 0px 4px",
                 }}
                 autoHeight
                 rows={1}
-                maxRows={6}
+                maxRows={10}
                 value={value}
                 onChange={(nextVal) => {
                   setValue(nextVal);
@@ -475,13 +492,17 @@ export const WorkspaceChat = ({ workspace }: WorkspaceChatProps) => {
                   setValue("");
                   editorRef.current?.setValue("");
                 }}
-                fontSize={14}
-                lineHeight={20}
+                fontSize={16}
+                lineHeight={28}
                 placeholder={t`Start inputting...`}
               />
-              <div className="operation-container">
-                {supportImage && (
+              {/* 发送区域操作栏 */}
+              <div className="flex justify-between items-center mt-2 p-2 border-t bg-gray-50 rounded-b">
+                <Flex align="center" gap={8}>
+
                   <Upload
+                    disabled={!supportImage}
+                    className={`${!supportImage ? 'pointer-events-none opacity-50 text-gray-400' : ''}`}
                     accept="image/*"
                     fileList={[]}
                     beforeUpload={async (file) => {
@@ -505,83 +526,56 @@ export const WorkspaceChat = ({ workspace }: WorkspaceChatProps) => {
                       return false;
                     }}
                   >
-                    <Button
-                      type="text"
-                      icon={<LinkOutlined />}
-                      size="small"
-                    />
+                    <Tooltip title={t`Upload Image`}>
+                      <Button
+                        type="text"
+                        icon={<LinkOutlined />}
+                        size="small"
+                      />
+                    </Tooltip>
                   </Upload>
-                )}
-        
-              </div>
-              <Sender
-                className="mt-2"
-                footer={({ components }) => {
-                  const { SendButton, LoadingButton } = components;
-                  return (
-                    <Flex justify="space-between" align="center">
-                      <Flex align="center">
-                        {supportImage && (
-                          <Upload
-                            accept="image/*"
-                            fileList={[]}
-                            beforeUpload={async (file) => {
-                              if (file.type.includes("image")) {
-                                let path = await blobToBase64(file);
-                                resourceResListRef.current.push({
-                                  call_name: "UserUpload",
-                                  contents: [
-                                    {
-                                      uri: path,
-                                      blob: await urlToBase64(path),
-                                      mimeType: "image/*",
-                                    },
-                                  ],
-                                  uid: v4(),
-                                });
-                                refresh();
-                              } else {
-                                message.warning(t`please upload image`);
-                              }
-                              return false;
-                            }}
-                          >
-                            <Button
-                              type="text"
-                              icon={<LinkOutlined />}
-                              size="small"
-                            />
-                          </Upload>
-                        )}
-                      </Flex>
 
-                      <Flex align="center">
-                        {loading ? (
-                          <LoadingButton type="default" />
-                        ) : (
-                          <SendButton type="primary" disabled={false} />
-                        )}
-                      </Flex>
-                    </Flex>
-                  );
-                }}
-                actions={false}
-                loading={loading}
-                value={value}
-                onChange={(nextVal) => {
-                  setValue(nextVal);
-                }}
-                onCancel={() => {
-                  setLoading(false);
-                  openaiClient.current?.cancel();
-                }}
-                onSubmit={(s) => {
-                  onRequest(value);
-                  setValue("");
-                  editorRef.current?.setValue("");
-                }}
-                placeholder={t`Start inputting...`}
-              />
+
+                  {/* 附件显示区域
+                  {resourceResListRef.current.length > 0 && (
+                    <span className="text-sm text-gray-500">
+                      {resourceResListRef.current.length} {t`attachments`}
+                    </span>
+                  )} */}
+                </Flex>
+
+                <Flex align="center" gap={8}>
+                  {loading && (
+                    <Button
+                      size="small"
+                      type="text"
+                      onClick={() => {
+                        setLoading(false);
+                        openaiClient.current?.cancel();
+                      }}
+                    >
+                      {t`Cancel`}
+                    </Button>
+                  )}
+
+                  <Button
+                    type="primary"
+                    size="small"
+                    icon={loading ? <LoadingOutlined /> : <SendOutlined />}
+                    loading={loading}
+                    disabled={!value.trim() || loading}
+                    onClick={() => {
+                      if (value.trim()) {
+                        onRequest(value);
+                        setValue("");
+                        editorRef.current?.setValue("");
+                      }
+                    }}
+                  >
+                    {loading ? t`Sending` : t`Send`}
+                  </Button>
+                </Flex>
+              </div>
             </div>
           </div>
         </div>

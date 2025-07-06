@@ -1785,7 +1785,11 @@ export const Chat = ({
                         style={{
                           border: "0px",
                           padding: "4px 0px 4px",
-                        }} autoHeight rows={1} maxRows={10} value={value}
+                        }} 
+                        autoHeight 
+                        rows={1} 
+                        maxRows={10} 
+                        value={value}
                         onChange={(nextVal) => {
                           setValue(nextVal);
                         }}
