@@ -67,9 +67,7 @@ export class AgentInstance {
    * 加载 Agent 配置
    */
   private async loadConfig(): Promise<void> {
-    // 检查是否需要迁移配置文件
-    await this.migrateConfigIfNeeded();
-    
+
     if (fs.existsSync(this.configPath)) {
       try {
         const content = await fs.promises.readFile(this.configPath, "utf-8");
@@ -81,34 +79,6 @@ export class AgentInstance {
     }
   }
 
-  /**
-   * 迁移配置文件：从 config.json 到 agent.yaml
-   */
-  private async migrateConfigIfNeeded(): Promise<void> {
-    const oldConfigPath = path.join(this.agentPath, 'config.json');
-    
-    // 如果旧的 config.json 存在且新的 agent.yaml 不存在，则进行迁移
-    if (fs.existsSync(oldConfigPath) && !fs.existsSync(this.configPath)) {
-      try {
-        console.log(`正在迁移 Agent 配置文件: ${oldConfigPath} -> ${this.configPath}`);
-        
-        // 读取旧的 JSON 配置
-        const oldContent = await fs.promises.readFile(oldConfigPath, "utf-8");
-        const oldConfig = JSON.parse(oldContent) as AgentConfig;
-        
-        // 转换为 YAML 格式并保存
-        const yamlContent = yaml.dump(oldConfig, { indent: 2 });
-        await fs.promises.writeFile(this.configPath, yamlContent, "utf-8");
-        
-        // 删除旧的 config.json 文件
-        await fs.promises.unlink(oldConfigPath);
-        
-        console.log(`Agent 配置文件迁移完成: ${this.config.key}`);
-      } catch (error) {
-        console.warn(`迁移 Agent 配置文件失败 ${this.config.key}:`, error);
-      }
-    }
-  }
 
   /**
    * 保存 Agent 配置
@@ -232,7 +202,8 @@ export class AgentInstance {
  */
 export class AgentManager {
   private agentsPath: string;
-  private agents: Map<string, AgentInstance> = new Map();
+  private agents: Map<string, AgentInstance> = new Map(); // key -> AgentInstance
+  private nameToKey: Map<string, string> = new Map(); // name -> key
 
   constructor(agentsPath: string) {
     this.agentsPath = agentsPath;
@@ -266,7 +237,11 @@ export class AgentManager {
 
           if (agent.exists()) {
             await agent.init();
-            this.agents.set(entry.name, agent);
+            const config = agent.getConfig();
+            
+            
+            this.agents.set(config.key, agent);
+            this.nameToKey.set(config.name, config.key);
           }
         }
       }
@@ -275,21 +250,54 @@ export class AgentManager {
     }
   }
 
+
+  /**
+   * 创建安全的文件夹名称
+   */
+  private createSafeFolderName(name: string): string {
+    // 移除或替换不安全的字符
+    return name
+      .replace(/[\\/:*?"<>|]/g, '_') // 替换Windows不允许的字符
+      .replace(/[\s\t\n\r]/g, '_') // 替换空白字符
+      .replace(/\.+$/g, '') // 移除结尾的点
+      .replace(/^\s*$/, 'Unnamed') // 如果名称为空，使用默认名称
+      .substring(0, 100); // 限制长度
+  }
+
+  /**
+   * 生成唯一的文件夹名称
+   */
+  private async generateUniqueFolderName(baseName: string): Promise<string> {
+    let folderName = this.createSafeFolderName(baseName);
+    let counter = 1;
+    
+    while (fs.existsSync(path.join(this.agentsPath, folderName))) {
+      folderName = `${this.createSafeFolderName(baseName)}_${counter}`;
+      counter++;
+    }
+    
+    return folderName;
+  }
+
   /**
    * 创建新的 Agent
    */
   async createAgent(config: Partial<AgentConfig>): Promise<AgentInstance | null> {
     const key = config.key || `${dayjs().format("YYMMDD-HHmmss")}-${v4().slice(0, 8)}`;
-    const agentPath = path.join(this.agentsPath, key);
-
+    const name = config.name || key;
+    
     if (this.agents.has(key)) {
       console.warn(`Agent ${key} 已存在`);
       return null;
     }
 
+    // 使用 name 作为文件夹名称
+    const folderName = await this.generateUniqueFolderName(name);
+    const agentPath = path.join(this.agentsPath, folderName);
+
     const agentConfig: AgentConfig = {
       key,
-      name: config.name || key,
+      name,
       prompt: config.prompt || '',
       allowMCPs: config.allowMCPs || [],
       confirm_call_tool: config.confirm_call_tool ?? false,
@@ -304,6 +312,7 @@ export class AgentManager {
       await agent.saveConfig();
 
       this.agents.set(key, agent);
+      this.nameToKey.set(name, key);
       return agent;
     } catch (error) {
       console.warn(`创建 Agent 失败 ${key}:`, error);
@@ -312,10 +321,18 @@ export class AgentManager {
   }
 
   /**
-   * 获取 Agent 实例
+   * 获取 Agent 实例 (通过 key)
    */
   getAgent(key: string): AgentInstance | null {
     return this.agents.get(key) || null;
+  }
+
+  /**
+   * 获取 Agent 实例 (通过 name)
+   */
+  getAgentByName(name: string): AgentInstance | null {
+    const key = this.nameToKey.get(name);
+    return key ? this.agents.get(key) || null : null;
   }
 
   /**
@@ -338,11 +355,24 @@ export class AgentManager {
       return false;
     }
 
+    const config = agent.getConfig();
     const success = await agent.delete();
     if (success) {
       this.agents.delete(key);
+      this.nameToKey.delete(config.name);
     }
     return success;
+  }
+
+  /**
+   * 通过 name 删除 Agent
+   */
+  async deleteAgentByName(name: string): Promise<boolean> {
+    const key = this.nameToKey.get(name);
+    if (!key) {
+      return false;
+    }
+    return await this.deleteAgent(key);
   }
 
   /**
