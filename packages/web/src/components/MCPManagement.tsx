@@ -12,6 +12,7 @@ import {
   Typography,
   message,
   Select,
+  Input,
 } from "antd";
 import {
   ReloadOutlined,
@@ -22,6 +23,7 @@ import {
   DeleteOutlined,
   PlusOutlined,
   FilterOutlined,
+  SearchOutlined,
 } from "@ant-design/icons";
 import { call } from "../common/call";
 import { t } from "../i18n";
@@ -57,6 +59,7 @@ export function MCPManagement({ workspace, mcpClients, onRefresh }: MCPManagemen
   const [selectedMcpClient, setSelectedMcpClient] = useState<MCPClient | null>(null);
   const [addMcpModalOpen, setAddMcpModalOpen] = useState(false);
   const [statusFilter, setStatusFilter] = useState<string>("all");
+  const [searchText, setSearchText] = useState<string>("");
 
   // 刷新MCP客户端列表
   const refreshMcpClients = async () => {
@@ -161,20 +164,32 @@ export function MCPManagement({ workspace, mcpClients, onRefresh }: MCPManagemen
 
   // 过滤MCP客户端
   const getFilteredMcpClients = () => {
-    if (statusFilter === "all") {
-      return mcpClients;
-    } else if (statusFilter === "enabled") {
-      return mcpClients.filter(client => {
+    let filteredClients = mcpClients;
+    
+    // 按状态过滤
+    if (statusFilter === "enabled") {
+      filteredClients = filteredClients.filter(client => {
         const isDisabled = client.status === "disabled" || client.config?.disabled;
         return !isDisabled;
       });
     } else if (statusFilter === "disabled") {
-      return mcpClients.filter(client => {
+      filteredClients = filteredClients.filter(client => {
         const isDisabled = client.status === "disabled" || client.config?.disabled;
         return isDisabled;
       });
     }
-    return mcpClients;
+    
+    // 按搜索文本过滤
+    if (searchText.trim()) {
+      const searchLower = searchText.toLowerCase();
+      filteredClients = filteredClients.filter(client => 
+        client.name.toLowerCase().includes(searchLower) ||
+        client.servername?.toLowerCase().includes(searchLower) ||
+        client.config?.type?.toLowerCase().includes(searchLower)
+      );
+    }
+    
+    return filteredClients;
   };
 
   return (
@@ -201,20 +216,31 @@ export function MCPManagement({ workspace, mcpClients, onRefresh }: MCPManagemen
           </div>
         </div>
         
-        {/* 状态过滤器 */}
+        {/* 搜索和过滤 */}
         <div className="mb-2">
-          <Select
-            size="small"
-            style={{ width: "100%" }}
-            value={statusFilter}
-            onChange={setStatusFilter}
-            options={[
-              { value: "all", label: t`All` },
-              { value: "enabled", label: t`Enabled only` },
-              { value: "disabled", label: t`Disabled only` },
-            ]}
-            suffixIcon={<FilterOutlined />}
-          />
+          <Space.Compact style={{ width: "100%" }}>
+            <Input
+              size="small"
+              placeholder={t`Search MCP clients...`}
+              value={searchText}
+              onChange={(e) => setSearchText(e.target.value)}
+              prefix={<SearchOutlined />}
+              allowClear
+              style={{ flex: 1 }}
+            />
+            <Select
+              size="small"
+              style={{ width: "40%" }}
+              value={statusFilter}
+              onChange={setStatusFilter}
+              options={[
+                { value: "all", label: t`All` },
+                { value: "enabled", label: t`Enabled` },
+                { value: "disabled", label: t`Disabled` },
+              ]}
+              suffixIcon={<FilterOutlined />}
+            />
+          </Space.Compact>
         </div>
         
         {getFilteredMcpClients().length > 0 ? (
@@ -337,11 +363,13 @@ export function MCPManagement({ workspace, mcpClients, onRefresh }: MCPManagemen
             description={
               mcpClients.length === 0 
                 ? t`No MCP clients` 
-                : statusFilter === "enabled" 
-                  ? t`No enabled MCP clients` 
-                  : statusFilter === "disabled"
-                    ? t`No disabled MCP clients`
-                    : t`No MCP clients`
+                : searchText.trim()
+                  ? t`No matching MCP clients found`
+                  : statusFilter === "enabled" 
+                    ? t`No enabled MCP clients` 
+                    : statusFilter === "disabled"
+                      ? t`No disabled MCP clients`
+                      : t`No MCP clients`
             } 
             image={Empty.PRESENTED_IMAGE_SIMPLE} 
           />
