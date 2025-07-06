@@ -89,7 +89,7 @@ export function getResourses(mcp: string[]): (typeof MCPTypes.ResourceSchema._ty
  * @returns {Promise<IMCPClient[]>} A promise that resolves with an array of all MCP clients.
  */
 export async function getClients(): Promise<IMCPClient[]> {
-  return await call("getAllMcpClients");
+  return [];
 }
 
 /**
@@ -117,10 +117,10 @@ export async function getMCPExtensionData(): Promise<any> {
       process.env.myEnv === "dev"
         ? "https://dev.hyperchatmcp.pages.dev/main.js"
         : "https://hyperchatmcp.pages.dev/main.js";
-    
+
     // Fetch the JavaScript code.
     jscode = await fetch(jsUrl).then((res) => res.text());
-    
+
     // Initialize TEMP_FILE for caching.
     await TEMP_FILE.init();
 

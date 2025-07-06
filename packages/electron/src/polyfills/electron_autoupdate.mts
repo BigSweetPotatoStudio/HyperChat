@@ -77,10 +77,10 @@ class CheckUpdate {
   }
 }
 async function sendToRender(type: any, data: any) {
-  getMessageService().sendAllToRenderer({
-    type: type,
-    data: data,
-  });
+  // getMessageService().sendAllToRenderer({
+  //   type: type,
+  //   data: data,
+  // });
 }
 
 export const checkUpdate = new CheckUpdate();

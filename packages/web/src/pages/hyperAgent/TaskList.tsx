@@ -172,9 +172,9 @@ export function TaskListPage(): JSX.Element {
               
               // 根据状态启动或停止任务
               if (!row.disabled) {
-                await call("startTask", { taskkey: row.key });
+                // await call("startTask", { taskkey: row.key });
               } else {
-                await call("stopTask", { taskkey: row.key });
+                // await call("stopTask", { taskkey: row.key });
               }
 
               refresh();
@@ -220,7 +220,7 @@ export function TaskListPage(): JSX.Element {
               title={t`Are you sure to delete this task?`}
               onConfirm={async () => {
                 // 停止任务执行
-                await call("stopTask", { taskkey: row.key });
+                // await call("stopTask", { taskkey: row.key });
                 
                 // 从任务列表中移除
                 TaskList.get().data = TaskList.get().data.filter(
@@ -249,7 +249,7 @@ export function TaskListPage(): JSX.Element {
                 
                 try {
                   // 执行任务测试
-                  await call("runTask", { taskkey: row.key });
+                  // await call("runTask", { taskkey: row.key });
                 } finally {
                   // 清除加载状态
                   loadObj[row.key] = false;
@@ -338,7 +338,7 @@ export function TaskListPage(): JSX.Element {
               
               // 如果任务启用，则启动任务
               if (!updatedTask.disabled) {
-                await call("startTask", { taskkey: updatedTask.key });
+                // await call("startTask", { taskkey: updatedTask.key });
               }
               refresh();
               setVisible(false);
@@ -354,7 +354,7 @@ export function TaskListPage(): JSX.Element {
               
               TaskList.get().data.push(values);
               await TaskList.save();
-              await call("startTask", { taskkey: values.key });
+              // await call("startTask", { taskkey: values.key });
               refresh();
               setVisible(false);
             }

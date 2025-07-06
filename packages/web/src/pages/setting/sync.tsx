@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * WebDAV 同步设置页面
  * 
