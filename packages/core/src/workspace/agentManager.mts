@@ -4,9 +4,10 @@ import dayjs from "dayjs";
 import { v4 } from "uuid";
 import * as yaml from "js-yaml";
 import { CONSTANTS } from "./constants.mjs";
-import { AgentConfig, ChatHistoryItem } from "./types.mjs";
+
 import { DataList } from "./dataList.mjs";
 import { sanitizeFileName } from "../common/util.mjs";
+import { AgentConfig, ChatHistoryItem } from "../shared/types.mjs";
 
 /**
  * Agent 类 - 管理单个 Agent 的配置和聊天记录

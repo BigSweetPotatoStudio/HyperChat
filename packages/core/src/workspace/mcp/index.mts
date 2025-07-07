@@ -40,7 +40,7 @@ export function getMCPManager(workspacePath: string): WorkspaceMCPManager {
       },
       {
         onClientStatusChange: (client) => {
-          Logger.info(`MCP客户端状态变化: ${client.name} -> ${client.status}`);
+          Logger.info(`MCP客户端状态变化: ${client.serverName} -> ${client.status}`);
         },
         onConfigUpdate: (config) => {
           Logger.info(`MCP配置更新: ${config.scope} 范围`);

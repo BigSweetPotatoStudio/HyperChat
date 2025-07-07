@@ -21,56 +21,9 @@ export type AgentConfig = {
 // 兼容旧的 Agent 类型
 export type Agent = AgentConfig;
 
-export type ChatHistoryItem = {
-  label: string;
-  key: string;
-  messages: Array<any>;
-  modelKey: string;
-  agentKey: string;
-  sented: boolean;
-  icon?: string;
-  requestType: "stream";
-  dateTime: number;
-  isCalled: boolean;
-  isTask: boolean;
-  taskKey?: string;
-  allowMCPs: string[];
-  attachedDialogueCount?: number;
-  temperature?: number;
-  deleted?: boolean;
-  confirm_call_tool: boolean;
-  lastMessage?: any;
-  version?: number | string;
-};
 
-export type MCPServerConfig = {
-  command?: string;
-  args?: string[];
-  env?: { [s: string]: string };
-  headers?: { [s: string]: string };
-  url?: string;
-  type?: "stdio" | "sse" | "streamableHttp";
-  hyperchat?: {
-    config: { [s in string]: any };
-  };
-  disabled?: boolean;
-};
 
-export type IMCPClient = {
-  tools: Array<any>;
-  prompts: Array<any>;
-  resources: Array<any>;
-  name: string;
-  status: "disconnected" | "connected" | "connecting" | "disabled" | "deleted";
-  order: number;
-  config: MCPServerConfig;
-  ext: {
-    configSchema?: { [s in string]: any };
-  };
-  source: "hyperchat" | "builtin";
-  version: string;
-  servername: string;
-};
+
 
 // 工作区配置类型定义
 export type WorkspaceConfig = {

@@ -19,6 +19,7 @@ import {
   Divider,
   Flex,
   Select,
+  Space,
   Tooltip,
   Upload,
   message,
@@ -35,6 +36,7 @@ import {
   ClearOutlined,
   LoadingOutlined,
   SendOutlined,
+  SyncOutlined,
 } from "@ant-design/icons";
 
 import { v4 } from "uuid";
@@ -70,7 +72,7 @@ interface WorkspaceChatProps {
   /** 指定的Agent Key，用于Agent聊天 */
   agentKey?: string;
   workspaceDetails: WorkspaceDetails;
-  mcpClients: Record<string, IMCPClient>;
+  mcpClients: IMCPClient[];
 }
 
 /**
@@ -124,6 +126,9 @@ export const WorkspaceChat = ({ workspace, agentKey, workspaceDetails, mcpClient
 
   // 提示结果列表引用
   const promptResList = useRef<Array<any>>([]);
+
+  /** 工具显示状态 */
+  const [isToolsShow, setIsToolsShow] = useState(false);
 
   // 初始化
   useEffect(() => {
@@ -308,9 +313,10 @@ export const WorkspaceChat = ({ workspace, agentKey, workspaceDetails, mcpClient
     getDefaultModelConfigSync(AI_MODELS)
   );
 
-  // 是否支持图片
+  /** 是否支持图片 */
   let supportImage = currModel?.supportImage;
-
+  /** 是否支持工具 */
+  let supportTool = currModel?.supportTool;
   const { token } = theme.useToken();
   const agent = workspaceDetails[workspace.path]?.agents.find(a => a.config.key === agentKey);
 
@@ -536,7 +542,87 @@ export const WorkspaceChat = ({ workspace, agentKey, workspaceDetails, mcpClient
                       />
                     </Tooltip>
                   </Upload>
+                  <Tooltip title={t`MCP and Tools`} placement="bottom">
 
+                    {supportTool == null || supportTool == true ? (
+                      <Space.Compact>
+                        <Button onClick={() => {
+                          setIsToolsShow(true);
+                        }} type="dashed" icon={<Icon name="mcp" ></Icon>}>
+
+
+                          {(() => {
+                            let set = new Set();
+                            for (let tool_name of currentChat.current.allowMCPs) {
+                              let [name, _] = tool_name.split(" > ");
+                              set.add(name);
+                            }
+                            let loading = mcpClients.filter((v) => v.status == "connecting").length > 0;
+                            let load = (mcpClients || []).filter(
+                              (v) => v.status == "connected",
+                            ).length;
+                            let all = (mcpClients || []).filter(x => x.status !== "disabled").length;
+                            let curr = (mcpClients || []).filter((v) => {
+                              return v.status !== "disabled" && set.has(v.serverName);
+                            }).length;
+
+                            return loading ? (
+                              <>
+                                {`${curr} `}
+                                <SyncOutlined spin />
+                                {`(${load}/${all})`}
+                              </>
+                            ) : curr
+                          })()}
+                          <Icon name="chuizi-copy" ></Icon>{
+
+                            (() => {
+                              let tools: IMCPClient["tools"] = [];
+
+                              (mcpClients || []).forEach((v) => {
+                                tools = tools.concat(
+                                  v.tools.filter((t) => {
+
+                                    return (
+                                      currentChat.current.allowMCPs.includes(t.clientName) || currentChat.current.allowMCPs.includes(t.restore_name)
+                                    );
+                                  }),
+                                );
+                              });
+
+                              // let set = new Set();
+                              // for (let tool_name of currentChat.current.allowMCPs) {
+                              //   let [name, _] = tool_name.split(" > ");
+                              //   set.add(name);
+                              // }
+
+                              // let curr = mcpClients.filter((v) => {
+                              //   return v.status !== "disabled" && set.has(v.name);
+                              // });
+                              // let toolLen = 0;
+                              // for (let x of curr) {
+                              //   toolLen += x.tools.length;
+                              // }
+                              return (
+                                <>
+                                  {tools.length}
+                                </>
+                              )
+                            })()
+                          }
+                        </Button>
+
+                      </Space.Compact>
+                    ) : (
+                      <>  <Button
+                        size="small"
+                        type="text"
+                        icon={<Icon name="mcp"></Icon>}
+                        onClick={() => { }}
+                      >{t`LLM not support`}</Button>  </>
+                    )}
+
+                  </Tooltip>
 
                   {/* 附件显示区域
                   {resourceResListRef.current.length > 0 && (

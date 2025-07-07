@@ -40,7 +40,7 @@ interface WorkspaceInfo {
 
 interface MCPManagementProps {
   workspace: WorkspaceInfo;
-  mcpClients: Record<string, IMCPClient>;
+  mcpClients: IMCPClient[];
   onRefresh: () => Promise<void>;
 }
 
@@ -175,8 +175,8 @@ export function MCPManagement({ workspace, mcpClients, onRefresh }: MCPManagemen
     if (searchText.trim()) {
       const searchLower = searchText.toLowerCase();
       filteredClients = filteredClients.filter(client =>
-        client.name.toLowerCase().includes(searchLower) ||
-        client.servername?.toLowerCase().includes(searchLower) ||
+        client.serverName.toLowerCase().includes(searchLower) ||
+        client.serverName?.toLowerCase().includes(searchLower) ||
         client.config?.type?.toLowerCase().includes(searchLower)
       );
     }
@@ -255,7 +255,7 @@ export function MCPManagement({ workspace, mcpClients, onRefresh }: MCPManagemen
                   icon: <ReloadOutlined />,
                   label: t`Restart`,
                   disabled: isDisabled,
-                  onClick: () => restartMcpClient(client.name),
+                  onClick: () => restartMcpClient(client.serverName),
                 },
                 {
                   type: "divider" as const
@@ -264,12 +264,12 @@ export function MCPManagement({ workspace, mcpClients, onRefresh }: MCPManagemen
                   key: "enable",
                   icon: <PlayCircleOutlined />,
                   label: t`Enable`,
-                  onClick: () => enableMcpClient(client.name),
+                  onClick: () => enableMcpClient(client.serverName),
                 } : {
                   key: "disable",
                   icon: <StopOutlined />,
                   label: t`Disable`,
-                  onClick: () => disableMcpClient(client.name),
+                  onClick: () => disableMcpClient(client.serverName),
                 },
                 {
                   type: "divider" as const
@@ -283,7 +283,7 @@ export function MCPManagement({ workspace, mcpClients, onRefresh }: MCPManagemen
                     Modal.confirm({
                       title: t`Confirm Delete`,
                       content: t`Are you sure you want to delete this MCP client?`,
-                      onOk: () => deleteMcpClient(client.name),
+                      onOk: () => deleteMcpClient(client.serverName),
                     });
                   },
                 },
@@ -309,9 +309,14 @@ export function MCPManagement({ workspace, mcpClients, onRefresh }: MCPManagemen
                   <List.Item.Meta
                     title={
                       <Space>
-                        <span className="text-sm">{client.name}</span>
+                        <span className="text-sm">{client.serverName}</span>
                         {client.mcpType === "builtin" ? (
                           <Tag color="blue">{t`Built-in`}</Tag>
+                        ) : (
+                          null
+                        )}
+                        {client.workspacePath !== workspace.path ? (
+                          <Tag color="red">{t`Global`}</Tag>
                         ) : (
                           null
                         )}
@@ -320,7 +325,7 @@ export function MCPManagement({ workspace, mcpClients, onRefresh }: MCPManagemen
                     description={
                       <div className="text-xs">
                         <div className="text-gray-500 mb-1">
-                          {client.servername || client.name} - {client.config?.type || "stdio"}
+                          {client.serverName || client.serverName} - {client.config?.type || "stdio"}
                         </div>
                         <Space size="small">
                           <Tag
@@ -407,16 +412,16 @@ export function MCPManagement({ workspace, mcpClients, onRefresh }: MCPManagemen
         {selectedMcpClient && (
           <div>
             <Descriptions
-              title={selectedMcpClient.name}
+              title={selectedMcpClient.serverName}
               bordered
               column={1}
               size="small"
             >
               <Descriptions.Item label={t`Name`}>
-                {selectedMcpClient.name}
+                {selectedMcpClient.serverName}
               </Descriptions.Item>
               <Descriptions.Item label={t`Server Name`}>
-                {selectedMcpClient.servername || "N/A"}
+                {selectedMcpClient.serverName || "N/A"}
               </Descriptions.Item>
               <Descriptions.Item label={t`Status`}>
                 <Tag

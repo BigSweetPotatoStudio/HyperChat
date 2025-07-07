@@ -45,9 +45,9 @@ export interface ChangeMcpClientData {
   tools: Array<any>; // HyperChatCompletionTool
   resources: any[];
   prompts: any[];
-  status: "connecting" | "connected" | "disconnected" | "error" | "disabled";
+  status: "connecting" | "connected" | "disconnected" | "error" | "disabled" | "deleted";
   version: string;
-  servername: string;
+  serverName: string;
   scope: "workspace";
   mcpType: any; // MCPType
   workspacePath: string;
@@ -154,6 +154,7 @@ export type AgentConfig = {
   subAgents?: string[];
   version?: number;
   created?: number;
+  lastModified?: number;
 }
 
 /**
@@ -331,8 +332,8 @@ export type IMCPClient = {
   tools: Array<HyperChatCompletionTool>;
   prompts: Array<any>; // MCPTypes.PromptSchema._type & { key: string }
   resources: Array<any>; // MCPTypes.ResourceSchema._type & { key: string }
-  name: string;
-  status: "disconnected" | "connected" | "connecting" | "disabled" | "deleted";
+  serverName: string;
+  status: "disconnected" | "connected" | "connecting" | "disabled" | "deleted" | "error";
   order: number;
   config: MCPServerConfig;
   ext: {
@@ -340,7 +341,7 @@ export type IMCPClient = {
   };
   mcpType: "builtin" | "custom";
   version: string;
-  servername: string;
+  workspacePath: string;
 };
 
 export type KnowledgeStore = {

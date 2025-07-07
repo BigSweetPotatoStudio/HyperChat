@@ -1,0 +1,71 @@
+label: 发消息  123
+key: 20250708-a3280e23
+messages:
+  - role: system
+    content_template: 你是谁一个通用人工智能
+    content_date: 1751905633234
+    content: 你是谁一个通用人工智能
+    content_attached: true
+    content_context: {}
+    content_sended: true
+  - role: user
+    content: 发消息  123
+    content_template: 发消息  123
+    content_date: 1751905643365
+    content_sended: true
+    content_attached: true
+    content_context: {}
+  - role: assistant
+    content: 我将使用Telegram发送消息"123"。
+    reasoning_content: ''
+    content_tool_calls:
+      - index: 0
+        id: toolu_016wwDeaUQoWC32xb155Ui2M
+        type: function
+        function:
+          name: telegram-send_sent_message
+          args:
+            message: '123'
+        origin_name: sent_message
+        restore_name: '[自定义] telegram-send > sent_message'
+    content_status: dataLoadComplete
+    content_attachment: []
+    content_usage:
+      prompt_tokens: 379
+      completion_tokens: 73
+      total_tokens: 452
+    content_date: 1751905645303
+    content_attached: true
+  - role: tool
+    tool_call_id: toolu_016wwDeaUQoWC32xb155Ui2M
+    tool_call_name: telegram-send_sent_message
+    content:
+      - type: text
+        text: send message successfully
+    content_status: success
+    content_attachment: []
+    content_date: 1751905645303
+    content_attached: true
+  - role: assistant
+    content: 消息"123"已成功发送。
+    reasoning_content: ''
+    content_tool_calls: []
+    content_status: dataLoadComplete
+    content_attachment: []
+    content_usage:
+      prompt_tokens: 475
+      completion_tokens: 15
+      total_tokens: 490
+    content_date: 1751905648624
+    content_attached: true
+modelKey: 729fc35a-1b21-480e-967a-a232bca6ad4d
+agentKey: 人工智能
+sented: true
+requestType: stream
+allowMCPs:
+  - telegram-send
+dateTime: 1751905648634
+isCalled: false
+isTask: false
+confirm_call_tool: false
+temperature: 1

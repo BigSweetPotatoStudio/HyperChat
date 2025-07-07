@@ -205,25 +205,25 @@ export function Market() {
         onClick={async (e: React.MouseEvent) => {
           try {
             // 设置当前 MCP 服务为加载状态
-            mcpLoadingObj[item.name] = true;
+            mcpLoadingObj[item.serverName] = true;
             setMcpLoadingObj({ ...mcpLoadingObj });
 
             if (item.status !== "disabled") {
               // 如果当前状态不是禁用，则关闭服务
               await call("closeMcpClients", {
-                clientName: item.name,
+                clientName: item.serverName,
                 isdelete: false,
                 isdisable: true
               });
             } else {
               // 如果当前状态是禁用，则开启服务
-              await call("openMcpClient", { clientName: item.name });
+              await call("openMcpClient", { clientName: item.serverName });
             }
           } catch (e: any) {
             message.error(e.message);
           } finally {
             // 清除加载状态
-            mcpLoadingObj[item.name] = false;
+            mcpLoadingObj[item.serverName] = false;
             setMcpLoadingObj({ ...mcpLoadingObj });
           }
         }} 
@@ -253,7 +253,7 @@ export function Market() {
           <>
             <span>
               {/* MCP 服务名称 */}
-              {item.name}&nbsp;
+              {item.serverName}&nbsp;
               
               {/* 版本标签 */}
               {item.version && <Tag>{item.version}</Tag>}
@@ -280,7 +280,7 @@ export function Market() {
             </span>
           </>
         }
-        description={item.servername}
+        description={item.serverName}
       />
     );
   };
@@ -360,7 +360,7 @@ export function Market() {
                                         onConfirm={async () => {
                                           try {
                                             await call("closeMcpClients", {
-                                              clientName: item.name,
+                                              clientName: item.serverName,
                                               isdelete: true,
                                               isdisable: false,
                                             });
@@ -388,10 +388,10 @@ export function Market() {
                                         // 准备表单数据进行编辑
                                         let formValues = {
                                           ...item.config,
-                                          name: item.name,
+                                          name: item.serverName,
                                         } as any;
                                         
-                                        formValues._name = item.name;
+                                        formValues._name = item.serverName;
                                         formValues._type = "edit";
                                         formValues.command = [
                                           formValues.command || "",
@@ -710,7 +710,7 @@ export function Market() {
               try {
                 if (currRow.mcpType === "builtin") {
                   await call("openMcpClient", {
-                    clientName: currRow.name,
+                    clientName: currRow.serverName,
                     clientConfig: currRow.config,
                   });
                   setMcpconfigOpen(false);

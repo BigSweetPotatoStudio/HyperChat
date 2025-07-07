@@ -61,7 +61,7 @@ interface AgentManagementProps {
   agents: Agent[];
   onRefresh: () => Promise<void>;
   onOpenChat?: (agent: Agent) => void;
-  mcpClients: Record<string, IMCPClient>;
+  mcpClients: IMCPClient[];
 }
 
 export function AgentManagement({ workspace, agents, onRefresh, onOpenChat, mcpClients }: AgentManagementProps) {
@@ -539,9 +539,9 @@ export function AgentManagement({ workspace, agents, onRefresh, onOpenChat, mcpC
               placeholder={t`Please select allowed MCP`}
               showCheckedStrategy={TreeSelect.SHOW_PARENT}
               treeData={(Object.values(mcpClients) || []).map((x) => ({
-                title: x.name,
-                key: x.name,
-                value: x.name,
+                title: x.serverName,
+                key: x.serverName,
+                value: x.serverName,
                 children: x.tools.map((t) => ({
                   title: (
                     <Tooltip title={t.description}>

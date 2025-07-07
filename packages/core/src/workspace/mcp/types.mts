@@ -48,12 +48,6 @@ export interface WorkspaceMCPClient extends IMCPClient {
    * MCP 类型
    */
   mcpType: MCPType;
-  
-  /**
-   * 工作区路径
-   */
-  workspacePath: string;
-  
 }
 
 export interface MCPManagerOptions {

@@ -14,6 +14,7 @@ import {
   Task,
   KnowledgeResource,
   KnowledgeStore,
+  IMCPClient,
 } from "./shared/data.mjs";
 import { appDataDir } from "./const.mjs";
 import crypto from "crypto";
@@ -263,7 +264,7 @@ export class CommandFactory {
   }) {
     // 从所有活跃的MCP客户端中查找指定名称的客户端
     const allClients = workspaceManager.getGlobalWorkspace().getMcpClients();
-    let client = allClients.find((x) => x.name === name);
+    let client = allClients.find((x) => x.serverName === name);
     
     if (!client) {
       throw new Error(`MCP client "${name}" not found`);
@@ -299,7 +300,7 @@ export class CommandFactory {
       throw new Error(`Workspace "${workspacePath}" not found`);
     }
     const allClients = workspace.getMcpClients();
-    let client = allClients.find((x) => x.name === name);
+    let client = allClients.find((x) => x.serverName === name);
     
     if (!client) {
       throw new Error(`MCP client "${name}" not found in workspace "${workspacePath}"`);
@@ -325,7 +326,7 @@ export class CommandFactory {
   }) {
     // 从所有活跃的MCP客户端中查找指定名称的客户端
     const allClients = workspaceManager.getGlobalWorkspace().getMcpClients();
-    let client = allClients.find((x) => x.name === name);
+    let client = allClients.find((x) => x.serverName === name);
     
     if (!client) {
       throw new Error(`MCP client "${name}" not found`);
@@ -358,7 +359,7 @@ export class CommandFactory {
       throw new Error(`Workspace "${workspacePath}" not found`);
     }
     const allClients = workspace.getMcpClients();
-    let client = allClients.find((x) => x.name === name);
+    let client = allClients.find((x) => x.serverName === name);
     
     if (!client) {
       throw new Error(`MCP client "${name}" not found in workspace "${workspacePath}"`);
@@ -387,7 +388,7 @@ export class CommandFactory {
   }) {
     // 从所有活跃的MCP客户端中查找指定名称的客户端
     const allClients = workspaceManager.getGlobalWorkspace().getMcpClients();
-    let client = allClients.find((x) => x.name === name);
+    let client = allClients.find((x) => x.serverName === name);
     
     if (!client) {
       throw new Error(`MCP client "${name}" not found`);
@@ -423,7 +424,7 @@ export class CommandFactory {
       throw new Error(`Workspace "${workspacePath}" not found`);
     }
     const allClients = workspace.getMcpClients();
-    let client = allClients.find((x) => x.name === name);
+    let client = allClients.find((x) => x.serverName === name);
     
     if (!client) {
       throw new Error(`MCP client "${name}" not found in workspace "${workspacePath}"`);
@@ -1230,7 +1231,7 @@ export class CommandFactory {
     workspacePath
   }: {
     workspacePath: string;
-  }): Promise<any[]> {
+  }): Promise<IMCPClient[]> {
     try {
       const workspaceManager = getWorkspaceManager();
       

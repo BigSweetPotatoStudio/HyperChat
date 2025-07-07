@@ -40,7 +40,6 @@ export class WorkspaceMCPClientImpl implements WorkspaceMCPClient {
   public client: MCP.Client | undefined = undefined;
   public status: WorkspaceMCPClient["status"] = "disconnected";
   public version = "";
-  public servername = "";
   public scope: "workspace";
   public mcpType: MCPType;
 
@@ -55,7 +54,7 @@ export class WorkspaceMCPClientImpl implements WorkspaceMCPClient {
   private reconnectDelay = DEFAULT_RECONNECT_DELAY;
 
   constructor(
-    public name: string,
+    public serverName: string,
     public config: MCPServerConfig,
     scope: "workspace",
     public order: number = 0,
@@ -70,7 +69,7 @@ export class WorkspaceMCPClientImpl implements WorkspaceMCPClient {
 
     // 如果是内置服务器，设置配置模式
     if (this.mcpType === "builtin") {
-      const server = MyServers.find((s) => s.name === name);
+      const server = MyServers.find((s) => s.name === serverName);
       if (server?.configSchema) {
         this.ext.configSchema = zodToJsonSchema(server.configSchema);
       }
@@ -147,7 +146,7 @@ export class WorkspaceMCPClientImpl implements WorkspaceMCPClient {
 
   private mapToolsToHyperChatFormat(tools: any[]): HyperChatCompletionTool[] {
     return tools.map((tool, i) => {
-      const safeName = this.name.replace(/[^a-zA-Z0-9_-]/g, "") + "_" +
+      const safeName = this.serverName.replace(/[^a-zA-Z0-9_-]/g, "") + "_" +
         (tool.name.replace(/[^a-zA-Z0-9_-]/g, "") || i.toString());
 
       return {
@@ -157,7 +156,7 @@ export class WorkspaceMCPClientImpl implements WorkspaceMCPClient {
         type: "function" as const,
         origin_name: tool.name,
         restore_name: `${this.getDisplayName()} > ${tool.name}`,
-        clientName: this.name,
+        clientName: this.serverName,
         scope: this.scope,
         mcpType: this.mcpType,
         workspacePath: this.workspacePath,
@@ -169,7 +168,7 @@ export class WorkspaceMCPClientImpl implements WorkspaceMCPClient {
     return resources.map(resource => ({
       ...resource,
       key: `${this.getDisplayName()} > ${resource.name}`,
-      clientName: this.name,
+      clientName: this.serverName,
       scope: this.scope,
       mcpType: this.mcpType,
       workspacePath: this.workspacePath,
@@ -180,7 +179,7 @@ export class WorkspaceMCPClientImpl implements WorkspaceMCPClient {
     return prompts.map(prompt => ({
       ...prompt,
       key: `${this.getDisplayName()} > ${prompt.name}`,
-      clientName: this.name,
+      clientName: this.serverName,
       scope: this.scope,
       mcpType: this.mcpType,
       workspacePath: this.workspacePath,
@@ -268,7 +267,7 @@ export class WorkspaceMCPClientImpl implements WorkspaceMCPClient {
       // 获取服务器版本信息
       const res = await client.getServerVersion();
       this.version = res?.version || '';
-      this.servername = res?.name || '';
+      this.serverName = res?.name || '';
 
       // 映射工具和资源
       this.tools = this.mapToolsToHyperChatFormat(tools_res.tools);
@@ -299,7 +298,7 @@ export class WorkspaceMCPClientImpl implements WorkspaceMCPClient {
 
   private async openSse(config: MCPServerConfig): Promise<MCP.Client> {
     const client = new MCP.Client({
-      name: this.name,
+      name: this.serverName,
       version: "1.0.0",
       capabilities: {}
     });
@@ -320,7 +319,7 @@ export class WorkspaceMCPClientImpl implements WorkspaceMCPClient {
 
   private async openStreamableHttp(config: MCPServerConfig): Promise<MCP.Client> {
     const client = new MCP.Client({
-      name: this.name,
+      name: this.serverName,
       version: "1.0.0",
       capabilities: {}
     });
@@ -352,7 +351,7 @@ export class WorkspaceMCPClientImpl implements WorkspaceMCPClient {
     try {
       const transport = new StdioClientTransport(params);
       const client = new MCP.Client({
-        name: this.name,
+        name: this.serverName,
         version: "1.0.0",
         capabilities: {}
       });
@@ -456,7 +455,7 @@ export class WorkspaceMCPClientImpl implements WorkspaceMCPClient {
    * 获取客户端的唯一标识符
    */
   getUniqueId(): string {
-    return `${this.workspacePath}:${this.name}`;
+    return `${this.workspacePath}:${this.serverName}`;
   }
 
   /**
@@ -470,8 +469,8 @@ export class WorkspaceMCPClientImpl implements WorkspaceMCPClient {
    * 获取显示名称
    */
   getDisplayName(): string {
-    const typePrefix = this.mcpType === "builtin" ? "[内置]" : "[自定义]";
-    return `${typePrefix} ${this.name}`;
+    const typePrefix = this.mcpType === "builtin" ? "[builtin]" : "[custom]";
+    return `${typePrefix} ${this.serverName}`;
   }
 
   /**
@@ -485,13 +484,13 @@ export class WorkspaceMCPClientImpl implements WorkspaceMCPClient {
    * 记录日志时添加范围信息
    */
   private logInfo(message: string, ...args: any[]) {
-    Logger.info(`[${this.scope.toUpperCase()}:${this.mcpType.toUpperCase()}] ${this.name}: ${message}`, ...args);
+    Logger.info(`[${this.scope.toUpperCase()}:${this.mcpType.toUpperCase()}] ${this.serverName}: ${message}`, ...args);
   }
 
   /**
    * 记录错误时添加范围信息
    */
   private logError(message: string, ...args: any[]) {
-    Logger.error(`[${this.scope.toUpperCase()}:${this.mcpType.toUpperCase()}] ${this.name}: ${message}`, ...args);
+    Logger.error(`[${this.scope.toUpperCase()}:${this.mcpType.toUpperCase()}] ${this.serverName}: ${message}`, ...args);
   }
 }

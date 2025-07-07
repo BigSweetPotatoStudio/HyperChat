@@ -52,7 +52,7 @@ import { FileTreeComponent } from "../../components/FileTreeComponent";
 import { WorkspaceSidebar } from "../../components/WorkspaceSidebar";
 import { WorkspaceChat } from "../../components/WorkspaceChat";
 import { getPanelSizes, savePanelSizes, getWorkspaceHistory, addToWorkspaceHistory, removeFromWorkspaceHistory } from "../../utils/storage";
-import { AgentConfig } from "@hyperchat/shared/types.mjs";
+import { AgentConfig, IMCPClient, MessageData, MessageDataMap } from "@hyperchat/shared/types.mjs";
 import { HeaderContext } from "../../common/context";
 import { ProviderSettings } from "../../components/ProviderSettings";
 import { AppHeader } from "../../components/AppHeader";
@@ -112,7 +112,7 @@ export type WorkspaceDetails = {
       chatLogsCount: number;
       lastChatTime?: number;
     }[];
-    mcpClients: Record<string, any>;
+    mcpClients: Record<string, IMCPClient>;
   }
 };
 
@@ -183,9 +183,9 @@ export function Workspace() {
   // 监听MCP客户端状态变化
   useEffect(() => {
     // 监听传统的 MCP 变化消息（兼容性）
-    const unsubscribeChangeMcp = msg_receive("message-from-main", (res: any) => {
+    const unsubscribeChangeMcp = msg_receive("message-from-main", (res: MessageData) => {
       if (res.type === "changeMcpClient") {
-        const payload = res.data;
+        const payload = res.data as MessageDataMap["changeMcpClient"];
 
         // 更新工作区详情中的MCP客户端数据
         setWorkspaceDetails(prev => {
@@ -196,10 +196,10 @@ export function Workspace() {
           if (details && details.mcpClients) {
             if (payload.status === "deleted") {
               // 删除客户端
-              delete details.mcpClients[payload.name];
+              delete details.mcpClients[payload.serverName];
             } else {
               // 添加或更新客户端
-              details.mcpClients[payload.name] = payload;
+              details.mcpClients[payload.serverName] = payload;
             }
           }
 
@@ -298,11 +298,11 @@ export function Workspace() {
       let mcpList = await call("getWorkspaceMcpClients", { workspacePath: workspace.path });
 
       // 将数组转换为对象格式，使用 name 作为 key
-      const mcpClients: Record<string, any> = {};
+      const mcpClients: Record<string, IMCPClient> = {};
       if (mcpList && Array.isArray(mcpList)) {
-        mcpList.forEach((client: any) => {
-          if (client && client.name) {
-            mcpClients[client.name] = client;
+        mcpList.forEach((client) => {
+          if (client && client.serverName) {
+            mcpClients[client.serverName] = client;
           }
         });
       }
@@ -419,11 +419,11 @@ export function Workspace() {
         const mcpList = await call("getWorkspaceMcpClients", { workspacePath: currentWorkspace.path });
 
         // 将数组转换为对象格式
-        const mcpClients: Record<string, any> = {};
+        const mcpClients: Record<string, IMCPClient> = {};
         if (mcpList && Array.isArray(mcpList)) {
-          mcpList.forEach((client: any) => {
-            if (client && client.name) {
-              mcpClients[client.name] = client;
+          mcpList.forEach((client) => {
+            if (client && client.serverName) {
+              mcpClients[client.serverName] = client;
             }
           });
         }
@@ -464,7 +464,7 @@ export function Workspace() {
             ...prev[key],
             fileTreeData: rootItems,
             agents: prev[key]?.agents ?? [],
-            mcpClients: prev[key]?.mcpClients ?? []
+            mcpClients: prev[key]?.mcpClients ?? {}
           }
         }));
       } catch (error) {
@@ -718,6 +718,8 @@ export function Workspace() {
       );
     }
 
+    // 普通工作区可以使用全局MCP客户端
+    const mcpClients = Object.values(Object.assign({}, globalDetails.mcpClients, details.mcpClients)).sort((a, b) => a.order - b.order);
     return (
       <div className="h-full">
         <Splitter
@@ -794,7 +796,7 @@ export function Workspace() {
                             agentKey={tab.agentKey}
                             workspaceDetails={workspaceDetails}
                             key={tab.key}
-                            mcpClients={Object.assign({}, globalDetails.mcpClients, details.mcpClients || {})}
+                            mcpClients={mcpClients}
                           />
                         )}
                       </div>
@@ -833,7 +835,7 @@ export function Workspace() {
                         agents={details.agents || []}
                         onRefresh={refreshWorkspaceDetails}
                         onOpenChat={openAgentChat}
-                        mcpClients={details.mcpClients || {}}
+                        mcpClients={mcpClients}
                       />
                     ) : <Empty description={t`No workspace selected`} />,
                   },
@@ -843,7 +845,7 @@ export function Workspace() {
                     children: currentWorkspace ? (
                       <MCPManagement
                         workspace={currentWorkspace}
-                        mcpClients={details.mcpClients || {}}
+                        mcpClients={mcpClients}
                         onRefresh={refreshWorkspaceDetails}
                       />
                     ) : <Empty description={t`No workspace selected`} />,

@@ -5,9 +5,6 @@ export { CONSTANTS } from "./constants.mjs";
 export type {
   AgentConfig,
   Agent,
-  ChatHistoryItem,
-  MCPServerConfig,
-  IMCPClient,
   WorkspaceConfig,
   WorkspaceSettings,
   WorkspaceFileNode

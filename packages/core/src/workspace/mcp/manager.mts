@@ -225,7 +225,7 @@ export class WorkspaceMCPManager {
     const clientsToStop = Array.from(this.clients.values());
 
     const tasks = clientsToStop.map(async (client) => {
-      const clientId = this.getClientId(client.name);
+      const clientId = this.getClientId(client.serverName);
       try {
         await client.close();
         this.clients.delete(clientId);
