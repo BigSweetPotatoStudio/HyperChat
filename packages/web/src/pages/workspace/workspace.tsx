@@ -50,7 +50,7 @@ import { FileTreeComponent } from "../../components/FileTreeComponent";
 import { WorkspaceSidebar } from "../../components/WorkspaceSidebar";
 import { WorkspaceChat } from "../../components/WorkspaceChat";
 import { getPanelSizes, savePanelSizes, getWorkspaceHistory, addToWorkspaceHistory, removeFromWorkspaceHistory } from "../../utils/storage";
-import { AgentConfig } from "@hyperchat/shared/types";
+import { AgentConfig } from "@hyperchat/shared/types.mjs";
 
 const { Title, Text } = Typography;
 

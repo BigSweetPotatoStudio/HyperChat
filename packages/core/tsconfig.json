@@ -34,7 +34,8 @@
     "outDir": "./js",
     "typeRoots": [
       "./node_modules/@types",
-      "./types/"
+      "./types",
+      "./src/shared"
     ],
     "composite": true,
     "incremental": true,

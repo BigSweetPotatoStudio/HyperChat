@@ -1,9 +1,45 @@
-
-import OpenAI from "openai";
-import * as MCPTypes from "@modelcontextprotocol/sdk/types.js";
 import { v4 } from "uuid";
 import { ProviderManager } from "./providers.mjs";
-import { AgentConfig } from "./types.js";
+import type { 
+  AgentConfig, 
+  DataOptions,
+  Tool_Call,
+  MyMessage,
+  ChatHistoryItem,
+  AIModelConfigItem,
+  KnownProvider,
+  ProviderConfig,
+  MCPServerConfig,
+  HyperChatCompletionTool,
+  IMCPClient,
+  KnowledgeStore,
+  KnowledgeResource,
+  KnowledgeFragment,
+  Task,
+  Var,
+  VarScope,
+} from "./types.mjs";
+
+
+export type {
+  AgentConfig,
+  DataOptions,
+  Tool_Call,
+  MyMessage,
+  ChatHistoryItem,
+  AIModelConfigItem,
+  KnownProvider,
+  ProviderConfig,
+  MCPServerConfig,
+  HyperChatCompletionTool,
+  IMCPClient,
+  KnowledgeStore,
+  KnowledgeResource,
+  KnowledgeFragment,
+  Task,
+  Var,
+  VarScope,
+} from "./types.mjs";
 
 
 
@@ -46,11 +82,7 @@ export class Data<T> {
   constructor(
     public KEY: string,
     private data: T,
-    public options: {
-      sync?: boolean;
-      formatInit?: (x: T) => T;
-      formatSave?: (x: T) => T;
-    } = {
+    public options: DataOptions = {
         sync: true,
       }
   ) {
@@ -143,97 +175,6 @@ export const LocalSetting = new Data(
   }
 );
 
-// 工具调用类型定义
-export type Tool_Call = {
-  origin_name: string;  // 废弃
-  restore_name: string; // 废弃
-  index: number;
-  id: string;
-  type: "function";
-  function: {
-    name: string;
-    args: any;
-  };
-};
-
-type CommonContent =  Array<{ text: string; type: "text" } | { type: "image_url", image_url: { url: string } }>;
-
-type UserMessage = {
-  role: "user";
-  content: string | CommonContent;
-};
-
-type SystemMessage = {
-  role: "system";
-  content: string | CommonContent;
-};
-
-type AssistantMessage = {
-  role: "assistant";
-  content: string | CommonContent;
-}
-
-type ToolMessage = {
-  role: "tool";
-  content: string | CommonContent;
-  tool_calls?: Tool_Call[];
-};
-
-type AllMessage = UserMessage | SystemMessage | AssistantMessage | ToolMessage;
-// 消息类型扩展，支持多种内容状态、附件、推理内容等
-export type MyMessage = AllMessage & {
-  content_status?:
-  | "loading" // request is loading
-  | "success" // request is success
-  | "error" // request is error
-  | "dataLoading" // stream data is loading
-  | "dataLoadComplete"; // stream is load complete
-  content_sended?: boolean;
-  content_template?: string;
-  content_error?: string;
-  content_from?: string;
-  content_attachment?: Array<{
-    type: string;
-    text?: string;
-    mimeType?: string;
-    data?: string;
-  }>;
-  reasoning_content?: string;
-  content_tool_calls?: Tool_Call[]; // openai tool call
-  content_context?: any;
-  content_attached?: boolean;
-  content_date?: number;
-  content_usage?: {
-    prompt_tokens: number;
-    completion_tokens: number;
-    total_tokens: number;
-  };
-  tool_call_id?: string; // 工具调用的 ID
-  tool_call_name?: string; // 工具调用的名称 // 谷歌需要
-};
-
-// 聊天历史项类型，包含消息、模型、代理、任务等信息
-export type ChatHistoryItem = {
-  label: string;
-  key: string;
-  messages: Array<MyMessage>;
-  modelKey: string;
-  agentKey: string;
-  sented: boolean;
-  icon?: string;
-  requestType: "stream";  // 以后只支持 stream
-  dateTime: number;
-  isCalled: boolean;
-  isTask: boolean;
-  taskKey?: string;
-  allowMCPs: string[];
-  attachedDialogueCount?: number;
-  temperature?: number;
-  deleted?: boolean;
-  confirm_call_tool: boolean;
-  lastMessage?: MyMessage;
-  version?: number | string;
-};
 
 export const ChatHistory = new Data("chat_history.json", {
   data: [] as Array<ChatHistoryItem>,
@@ -247,21 +188,6 @@ export const Agents = new Data("agents.json", {
   data: [] as Array<AgentConfig>,
 });
 
-export type AIModelConfigItem = {
-  key: string;
-  name: string;
-  model: string;
-  apiKey: string; // 废弃 get from provider
-  baseURL: string; // 废弃 get from provider
-  provider: KnownProvider | string;
-  supportImage: boolean;
-  supportTool: boolean;
-  call_tool_step?: number;
-  type?: "llm" | "embedding";
-  toolMode?: "standard" | "compatible";
-  // isStrict: boolean; // 废弃⚠️
-  isDefault?: boolean;
-}
 
 export class AIModelConfig<T = { data: Array<AIModelConfigItem> }> extends Data<T> {
   providerConfigs: any;
@@ -309,79 +235,12 @@ export const AI_MODELS = new AIModelConfig("ai_models.json", { // ai_models.json
   data: [] as Array<AIModelConfigItem>,
 });
 
-export type KnownProvider =
-  | "openai"
-  | "anthropic"
-  | "openrouter"
-  | "gemini"
-  | "qwen"
-  | "deepseek"
-  | "doubao"
-  | "xai"
-  | "glm"
-  | "ollama";
-// 提供商配置接口，描述每个大模型 API 的基本信息
-export interface ProviderConfig {
-  key: KnownProvider; // 唯一标识
-  label: string; // 显示名称
-  baseURL: string; // API 基础地址
-  icon?: string; // 图标
-  description?: string; // 描述
-  hasApiKey?: boolean;
-  apiKey?: string; // API Key 字段
-  isBuiltIn: boolean; // 是否内置（true=内置，false=自定义）
-}
 // 提供商管理数据存储，包含自定义、API Key 等
 export const PROVIDER_CONFIGS = new Data('provider_configs.json', {
   customProviders: [] as Array<ProviderConfig>,
   builtinApiKeys: {} as { [key: string]: { apiKey: string; baseURL: string } }, // 新增属性
 });
 
-export type MCPServerConfig = {
-  command?: string;
-  args?: string[];
-  env?: { [s: string]: string };
-  headers?: { [s: string]: string };
-  url?: string;
-  type?: "stdio" | "sse" | "streamableHttp";
-  hyperchat?: {
-    config: { [s in string]: any };
-    // url: string;  // 废弃⚠️
-    // type: "stdio" | "sse";  // 废弃⚠️
-    // scope: "built-in" | "outer";  // 废弃⚠️
-  };
-  disabled?: boolean;
-};
-
-export type HyperChatCompletionTool = {
-  name: string;
-  origin_name: string;
-  restore_name: string;
-  clientName: string;
-  description: string;
-  inputSchema: {
-    [x: string]: unknown;
-    type: "object";
-    properties?: {
-      [x: string]: unknown;
-    } | undefined;
-  };
-};
-export type IMCPClient = {
-  tools: Array<HyperChatCompletionTool>;
-  prompts: Array<typeof MCPTypes.PromptSchema._type & { key: string }>;
-  resources: Array<typeof MCPTypes.ResourceSchema._type & { key: string }>;
-  name: string;
-  status: "disconnected" | "connected" | "connecting" | "disabled" | "deleted";
-  order: number;
-  config: MCPServerConfig;
-  ext: {
-    configSchema?: { [s in string]: any };
-  };
-  mcpType: "builtin" | "custom";
-  version: string;
-  servername: string;
-};
 
 
 export const MCP_CONFIG = new Data(
@@ -416,33 +275,6 @@ export const TEMP_FILE = new Data(
   }
 );
 
-export type KnowledgeStore = {
-  localPath: string;
-  key: string;
-  resources: KnowledgeResource[];
-  name: string;
-  model: string;
-  description: string;
-};
-
-export type KnowledgeResource = {
-  key: string;
-  name: string;
-  type: "file" | "text";
-  fragments?: KnowledgeFragment[];
-  filepath?: string;
-  text?: string;
-  uniqueId: string;
-  entriesAdded: number;
-  loaderType: string;
-};
-
-export type KnowledgeFragment = {
-  resourceKey: string;
-  date: number;
-  text: string;
-  vector: number[];
-};
 
 export const KNOWLEDGE_BASE = new Data(
   "knowledge_base.json",
@@ -454,16 +286,6 @@ export const KNOWLEDGE_BASE = new Data(
   }
 );
 
-export type Task = {
-  key: string;
-  name: string;
-  command: string;
-  agentKey: string;
-  description: string;
-  cron: string;
-  disabled: boolean;
-  // status: "pending" | "runing" | "error" | "done";
-};
 
 export const TaskList = new Data(
   "tasklist.json",
@@ -474,22 +296,6 @@ export const TaskList = new Data(
     sync: true,
   }
 );
-export type Var = {
-  key: string;
-  name: string;
-  value?: string;
-  scope: string;
-  variableStrategy: "lazy" | "immediate";
-  variableType: "string" | "js" | "webjs";
-  code?: string;
-  description?: string;
-};
-
-export type VarScope = {
-  key: string;
-  name: string;
-  type: "builtin" | "custom";
-};
 
 
 
@@ -581,9 +387,3 @@ export const MCP_GateWay = new Data(
 );
 
 
-type WorkSpace = {
-  path: string;
-  mcp: Record<string, IMCPClient>;
-  agents: Array<AgentConfig>;
-  historys: Array<ChatHistoryItem>;
-};

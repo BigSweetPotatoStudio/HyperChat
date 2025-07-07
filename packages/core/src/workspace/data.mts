@@ -1,6 +1,7 @@
 import * as path from "path";
 import * as fs from "fs";
 import { CONSTANTS } from "./constants.mjs";
+import type { DataOptions } from "../shared/types.mjs";
 
 // 简单的配置数据管理类
 export class Data<T> {
@@ -10,7 +11,7 @@ export class Data<T> {
   constructor(
     private fileName: string,
     private defaultData: T,
-    private options: { sync?: boolean } = { sync: true }
+    private options: DataOptions = { sync: true }
   ) {
     this.data = defaultData;
   }

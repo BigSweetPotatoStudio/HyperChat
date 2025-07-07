@@ -1,5 +1,5 @@
 
-import type { HyperChatCompletionTool } from "./data.mjs";
+import type { HyperChatCompletionTool, MyMessage, Tool_Call, AIModelConfigItem } from "./types.mjs";
 
 import * as MCPTypes from "@modelcontextprotocol/sdk/types.js";
 import type { CoreMessage, LanguageModel, StreamTextResult, ToolChoice, CoreTool, ToolSet } from 'ai';
@@ -17,7 +17,7 @@ globalThis["z"] = z; // 兼容旧版本的 zod
 import { v4 } from "uuid";
 import dayjs from "dayjs";
 // import { isOnBrowser } from "./const";
-import { AI_MODELS, type AIModelConfigItem, type MyMessage, type Tool_Call } from "./data.mjs";
+import { AI_MODELS } from "./data.mjs";
 import { extractTool } from "./prompt";
 
 

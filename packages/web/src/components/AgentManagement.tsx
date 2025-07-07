@@ -40,7 +40,7 @@ import { NumberStep } from "../common/numberStep";
 import EmojiPicker from 'emoji-picker-react';
 import { Editor } from "./editor";
 import { useForceUpdate } from "../hooks/useForceUpdate";
-import { AgentConfig } from "@hyperchat/shared/types.js";
+import { AgentConfig } from "@hyperchat/shared/types.mjs";
 const { Title, Text } = Typography;
 
 
