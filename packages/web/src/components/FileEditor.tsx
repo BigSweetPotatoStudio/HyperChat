@@ -253,7 +253,7 @@ export function FileEditor({ filePath, workspacePath, fileName, onClose }: FileE
           language={language}
           value={content}
           onChange={handleEditorChange}
-          theme="vs-dark"
+          theme="vs-light"
           options={{
             fontSize: 14,
             fontFamily: 'Monaco, Menlo, "Ubuntu Mono", monospace',
