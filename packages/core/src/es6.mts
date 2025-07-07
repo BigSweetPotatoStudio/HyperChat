@@ -3,7 +3,10 @@
 
 export const zx = await import(/* webpackIgnore: true */ "zx");
 
-export const { $, usePowerShell, os, fs } = zx;
+import fs from "fs-extra";
+export { fs };
+
+export const { $, usePowerShell, os } = zx;
 export const { shellPathSync } = await import(
   /* webpackIgnore: true */ "shell-path"
 );

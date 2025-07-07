@@ -1,6 +1,7 @@
 {
   "extends": "../core/tsconfig.json",
   "compilerOptions": {
+    "composite": false,
     "baseUrl": ".",
     "jsxFactory": "React.createElement",
     "jsxFragmentFactory": "React.Fragment",

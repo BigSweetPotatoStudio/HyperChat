@@ -3,7 +3,6 @@
     "allowJs": true,
     "checkJs": false,
     "skipLibCheck": true,
-    "composite": false,
     "resolveJsonModule": true,
     "esModuleInterop": true,
     "experimentalDecorators": true,
@@ -37,11 +36,15 @@
       "./node_modules/@types",
       "./types/"
     ],
+    "composite": true,
+    "incremental": true,
+    "tsBuildInfoFile": "./js/.tsbuildinfo",
   },
   "include": [
     "src",
     "types/*",
-    "tests"
+    "tests",
+    "./package.json"
   ],
   "exclude": [
     "node_modules"
