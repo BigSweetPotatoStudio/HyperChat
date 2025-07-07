@@ -21,8 +21,6 @@ import {
   Descriptions,
   Dropdown,
   Divider,
-  Select,
-  Switch,
 } from "antd";
 import {
   FolderOpenOutlined,
@@ -40,22 +38,11 @@ import {
   ClockCircleOutlined,
   MessageOutlined,
   CloseOutlined,
-  GithubFilled,
-  SyncOutlined,
-  ExclamationCircleFilled,
 } from "@ant-design/icons";
 import { call, msg_receive, callElectron } from "../../common/call";
 import { useForceUpdate } from "../../hooks/useForceUpdate";
-import { t, currLang, setCurrLang } from "../../i18n";
+import { t } from "../../i18n";
 import { useNavigate } from "react-router-dom";
-import {
-  AppSetting,
-  LocalSetting,
-} from "@hyperchat/shared/data.mjs";
-import {
-  enable as enableDarkMode,
-  disable as disableDarkMode,
-} from "darkreader";
 import { ServerDirectoryBrowser } from "../../components/ServerDirectoryBrowser";
 import { getClients } from "../../common/mcp";
 import { MCPManagement } from "../../components/MCPManagement";
@@ -66,8 +53,9 @@ import { WorkspaceChat } from "../../components/WorkspaceChat";
 import { getPanelSizes, savePanelSizes, getWorkspaceHistory, addToWorkspaceHistory, removeFromWorkspaceHistory } from "../../utils/storage";
 import { AgentConfig } from "@hyperchat/shared/types.mjs";
 import { HeaderContext } from "../../common/context";
-import { Icon } from "../../components/icon";
 import { ProviderSettings } from "../../components/ProviderSettings";
+import { AppHeader } from "../../components/AppHeader";
+import { AppActions } from "../../components/AppActions";
 
 const { Title, Text } = Typography;
 
@@ -158,7 +146,7 @@ export function Workspace() {
     const sizes = { left: '25%', middle: '50%', right: '25%' };
     return [sizes.left, sizes.middle, sizes.right];
   });
-  const [updateData, setUpdateData] = useState({} as any); // 更新数据
+
   // 监听MCP客户端状态变化
   useEffect(() => {
     // 监听传统的 MCP 变化消息（兼容性）
@@ -182,69 +170,14 @@ export function Workspace() {
             }
           }
 
-
           return newDetails;
-        });
-      }
-
-      if (res.type == "UpdateMsg" && res.data.status == 1) {
-        setUpdateData(res.data);
-      }
-
-      // 处理更新下载完成消息
-      if (res.type == "UpdateMsg" && res.data.status == 4) {
-        Modal.confirm({
-          title: "Update",
-          content:
-            "The new version has been downloaded, do you want to restart and update?",
-          icon: <ExclamationCircleFilled />,
-          okText: "Restart And Update",
-          onOk() {
-            callElectron("quitAndInstall");
-          },
         });
       }
     });
 
-    // 监听新的工作区特定的 MCP 状态变化消息
-    // const unsubscribeMcpStatus = msg_receive("mcp-status-change", (res: any) => {
-    //   console.log("收到 MCP 状态变化通知:", res);
-
-    //   const { workspacePath, data } = res;
-    //   if (!workspacePath || !data) return;
-
-    //   const { serverName, status } = data;
-
-    //   // 只更新指定工作区的 MCP 客户端数据
-    //   setWorkspaceDetails(prev => {
-    //     const newDetails = { ...prev };
-    //     const workspaceDetails = newDetails[workspacePath];
-
-    //     if (workspaceDetails && workspaceDetails.mcpClients) {
-    //       if (status === "deleted" || status === "disconnected") {
-    //         // 删除或断开连接的客户端
-    //         delete workspaceDetails.mcpClients[serverName];
-    //       } else {
-    //         // 添加或更新客户端
-    //         workspaceDetails.mcpClients[serverName] = {
-    //           name: serverName,
-    //           status,
-    //           workspacePath,
-    //           ...data
-    //         };
-    //       }
-
-    //       console.log(`工作区 ${workspacePath} 的 MCP 客户端 ${serverName} 状态更新为: ${status}`);
-    //     }
-
-    //     return newDetails;
-    //   });
-    // });
-
     // 返回清理函数
     return () => {
       if (unsubscribeChangeMcp) unsubscribeChangeMcp();
-      // if (unsubscribeMcpStatus) unsubscribeMcpStatus();
     };
   }, []);
 
@@ -859,72 +792,8 @@ export function Workspace() {
           borderBottom: '1px solid #f0f0f0',
           minHeight: '48px'
         }}>
-          {/* 左侧内容 - 显示Logo和标题 */}
-          <div style={{ display: "flex", alignItems: "center" }}>
-            <img
-              onClick={() => {
-                navigate("/Workspace");
-              }}
-              src="./assets/favicon.png"
-              style={{ width: 32, height: 32, marginRight: 16, cursor: "pointer" }}
-            />
-            <span style={{ fontSize: 18, fontWeight: "bold" }}>
-              HyperChat
-              <span style={{ fontSize: 14, fontWeight: "normal", marginLeft: 8 }}>
-                ({LocalSetting.get().version})
-                {/* 有新版本时显示更新标签 */}
-                {updateData?.info && (
-                  <Tag
-                    className=" text-red-600"
-                    onClick={() => {
-                      Modal.confirm({
-                        title: t`A new version is available`,
-                        width: "80%",
-                        style: {
-                          maxWidth: 1024,
-                        },
-                        content: (
-                          <div>
-                            <div>current version: {LocalSetting.get().version}</div>
-                            <div>latest version: {updateData.info?.version}</div>
-                            {updateData.info?.releaseName != updateData.info?.version && (
-                              <div>title: {updateData.info?.releaseName}</div>
-                            )}
-                            <div>
-                              changelog:{" "}
-                              {typeof updateData.info?.releaseNotes == "string" ? (
-                                <div
-                                  style={{ color: "gray" }}
-                                  dangerouslySetInnerHTML={{
-                                    __html: updateData.info?.releaseNotes || '',
-                                  }}
-                                ></div>
-                              ) : (
-                                updateData.info?.releaseNotes?.map((x, index) => {
-                                  return (
-                                    <div
-                                      key={index}
-                                      dangerouslySetInnerHTML={{ __html: x.note }}
-                                    ></div>
-                                  );
-                                })
-                              )}
-                            </div>
-                          </div>
-                        ),
-                        okText: t`Download And Update`,
-                        onOk: async () => {
-                          callElectron("checkUpdateDownload");
-                        },
-                      });
-                    }}
-                  >
-                    {`New`}
-                  </Tag>
-                )}
-              </span>
-            </span>
-          </div>
+          {/* 左侧内容 - 应用标题和Logo */}
+          <AppHeader />
 
           {/* 中间的工作区切换标签 */}
           <div style={{ flex: 1, display: 'flex', justifyContent: 'center' }}>
@@ -940,64 +809,11 @@ export function Workspace() {
             />
           </div>
 
-          {/* 右侧内容 - 显示操作按钮 */}
-          <div>
-            <Space>
-              {/* GitHub 链接 */}
-              <a href="https://github.com/BigSweetPotatoStudio/HyperChat">
-                <GithubFilled style={{ fontSize: 20 }} />
-              </a>
-
-              {/* AI 提供商设置按钮 */}
-              <Button
-                onClick={() => {
-                  setLocalIsModelConfigOpen(true);
-                }}
-                icon={<Icon name="brain" />}
-              >
-                {t`AI Providers`}
-              </Button>
-
-              {/* 语言切换选择器 */}
-              <Select
-                value={currLang}
-                style={{ width: 120 }}
-                onChange={(e) => {
-                  setCurrLang(e);
-                  refresh();
-                }}
-                options={[
-                  { value: "zhCN", label: "中文" },
-                  { value: "enUS", label: "English" },
-                ]}
-              />
-
-              {/* 主题切换开关 */}
-              <Switch
-                checkedChildren={"🌙"}
-                unCheckedChildren={"☀️"}
-                checked={AppSetting.get().darkTheme}
-                onChange={async (checked) => {
-                  AppSetting.get().darkTheme = checked;
-                  await AppSetting.save();
-                  refresh();
-
-                  // 应用主题设置
-                  if (checked) {
-                    enableDarkMode({
-                      brightness: 100,
-                      contrast: 90,
-                      sepia: 10,
-                    });
-                  } else {
-                    disableDarkMode();
-                  }
-                }}
-              />
-
-
-            </Space>
-          </div>
+          {/* 右侧内容 - 操作按钮 */}
+          <AppActions 
+            onAIProviderClick={() => setLocalIsModelConfigOpen(true)}
+            onRefresh={refresh}
+          />
         </div>
 
         <div style={{ height: 'calc(100% - 48px)', padding: '16px' }}>

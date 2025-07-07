@@ -293,7 +293,7 @@ export function WorkspaceSidebar({
 
   return (
     <Card
-      title={t`Workspace Panel`}
+      title={t`Workspace View`}
       size="small"
       className={`h-full ${className}`}
       bodyStyle={{ padding: 0, height: 'calc(100% - 48px)' }}
