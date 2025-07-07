@@ -846,7 +846,7 @@ export function Workspace() {
                     label: (
                       <Space>
                         {t`MCP`}
-                        <Badge count={Object.keys(mcpClients || {}).length} size="small" />
+                        <Badge count={mcpClients.filter(x => x.status == "connected").length} size="small" />
                       </Space>
                     ),
                     key: "mcp",

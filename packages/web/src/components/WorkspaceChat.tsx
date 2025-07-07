@@ -18,9 +18,12 @@ import {
   Button,
   Divider,
   Flex,
+  Modal,
   Select,
   Space,
+  Tag,
   Tooltip,
+  Tree,
   Upload,
   message,
   theme,
@@ -37,6 +40,8 @@ import {
   LoadingOutlined,
   SendOutlined,
   SyncOutlined,
+  DisconnectOutlined,
+  ApiOutlined,
 } from "@ant-design/icons";
 
 import { v4 } from "uuid";
@@ -558,11 +563,11 @@ export const WorkspaceChat = ({ workspace, agentKey, workspaceDetails, mcpClient
                               set.add(name);
                             }
                             let loading = mcpClients.filter((v) => v.status == "connecting").length > 0;
-                            let load = (mcpClients || []).filter(
+                            let load = mcpClients.filter(
                               (v) => v.status == "connected",
                             ).length;
-                            let all = (mcpClients || []).filter(x => x.status !== "disabled").length;
-                            let curr = (mcpClients || []).filter((v) => {
+                            let all = mcpClients.filter(x => x.status !== "disabled").length;
+                            let curr = mcpClients.filter((v) => {
                               return v.status !== "disabled" && set.has(v.serverName);
                             }).length;
 
@@ -579,7 +584,7 @@ export const WorkspaceChat = ({ workspace, agentKey, workspaceDetails, mcpClient
                             (() => {
                               let tools: IMCPClient["tools"] = [];
 
-                              (mcpClients || []).forEach((v) => {
+                              mcpClients.forEach((v) => {
                                 tools = tools.concat(
                                   v.tools.filter((t) => {
 
@@ -668,6 +673,119 @@ export const WorkspaceChat = ({ workspace, agentKey, workspaceDetails, mcpClient
           </div>
         </div>
       </XProvider>
+
+      <Modal
+        width={1000}
+        open={isToolsShow}
+        onCancel={() => setIsToolsShow(false)}
+        maskClosable
+        title={t`MCP Tool`}
+        // onOk={() => setIsToolsShow(false)}
+        footer={[
+          <Button
+            key="1"
+            type="primary"
+            onClick={() => {
+              setIsToolsShow(false);
+            }}
+          >
+            {t`OK`}
+          </Button>,
+        ]}
+      // cancelButtonProps={{ style: { display: "none" } }}
+      >
+        <Tree
+          checkable
+          selectedKeys={[]}
+          onSelect={(selectedKeys, info) => {
+            // console.log("onSelect", selectedKeys, info);
+            let [clientName, _] = (selectedKeys[0] as string || "").split(" > ");
+            clientName = clientName || "";
+            if (info.node.isLeaf) {
+
+              if (info.node.checked) {
+                currentChat.current.allowMCPs = currentChat.current.allowMCPs.filter(x => x != selectedKeys[0]);
+                if (clientName) {
+                  currentChat.current.allowMCPs = currentChat.current.allowMCPs.filter(x => x != clientName);
+                }
+              } else {
+                currentChat.current.allowMCPs.push(selectedKeys[0] as string);
+              }
+            } else {
+              if (info.node.halfChecked || info.node.checked == false) {
+                if (clientName) {
+                  currentChat.current.allowMCPs = currentChat.current.allowMCPs.filter(x => !x.startsWith(clientName));
+                }
+                currentChat.current.allowMCPs.push(info.node.key);
+                info.node.children.forEach((x) => {
+                  currentChat.current.allowMCPs.push(x.key as string);
+                });
+              } else {
+                if (clientName) {
+                  currentChat.current.allowMCPs = currentChat.current.allowMCPs.filter(x => !x.startsWith(clientName));
+                }
+              }
+            }
+
+            refresh();
+          }}
+          onCheck={(checkedKeys) => {
+            // console.log("onCheck", checkedKeys);
+            currentChat.current.allowMCPs = checkedKeys as string[];
+            refresh();
+          }}
+          checkedKeys={currentChat.current.allowMCPs}
+          treeData={mcpClients.filter(x => x.status != "disabled").map((x) => {
+            return {
+              title: (<Tooltip title={x.serverName}>
+                <span>
+                  {x.serverName}{" "}{x.mcpType == "builtin" ? <Tag color="blue">{t`built-in`}</Tag> : null}
+                  {x.status == "connected" ? null : x.status ==
+                    "connecting" ? (
+                    <SyncOutlined spin className="m-1 text-blue-400" />
+                  ) : (
+                    x.mcpType !== "builtin" ? <Button
+                      className="m-1"
+                      size="small"
+                      onClick={async () => {
+                        x.status = "connecting";
+                        refresh();
+                        await call("startWorkspaceMcpClient", { clientName: x.serverName, workspacePath: workspace.path });
+                      }}
+                    >{t`Reload`}</Button> : <DisconnectOutlined className="text-red-400" />
+                  )}
+                </span></Tooltip>
+              ),
+              key: x.serverName,
+              children: x.tools.map((tool) => {
+                return {
+                  title: (
+                    <Tooltip title={tool.description}>
+                      <span
+                      >
+                        {tool.origin_name || tool.name}
+                        {/* <ApiOutlined onClick={(e) => {
+                          e.stopPropagation();
+                          setCurrTool(tool);
+                          setCurrToolResult({
+                            data: null,
+                            error: null,
+                          });
+                          callToolForm.resetFields();
+                          setCallToolOpen(true);
+                        }} title={t`run`} className=" hover:text-cyan-400 ml-1" /> */}
+                      </span>
+                    </Tooltip>
+                  ),
+                  key: tool.restore_name,
+                  isLeaf: true,
+                };
+              }),
+            };
+          })}
+        />
+
+      </Modal>
     </div>
   );
 };

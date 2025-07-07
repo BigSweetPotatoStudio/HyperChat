@@ -240,8 +240,6 @@ export function MCPManagement({ workspace, mcpClients, onRefresh }: MCPManagemen
             size="small"
             dataSource={getFilteredMcpClients()}
             renderItem={(client) => {
-              const isConnected = client.status === "connected";
-              const isDisabled = client.status === "disabled" || client.config?.disabled;
 
               const menuItems = [
                 {
@@ -254,13 +252,12 @@ export function MCPManagement({ workspace, mcpClients, onRefresh }: MCPManagemen
                   key: "restart",
                   icon: <ReloadOutlined />,
                   label: t`Restart`,
-                  disabled: isDisabled,
                   onClick: () => restartMcpClient(client.serverName),
                 },
                 {
                   type: "divider" as const
                 },
-                isDisabled ? {
+                client.status === "disabled" ? {
                   key: "enable",
                   icon: <PlayCircleOutlined />,
                   label: t`Enable`,
@@ -330,12 +327,14 @@ export function MCPManagement({ workspace, mcpClients, onRefresh }: MCPManagemen
                         <Space size="small">
                           <Tag
                             color={
-                              isDisabled ? "default" :
-                                isConnected ? "green" : "red"
+                              client.status === "connected" ? "green" :
+                                client.status === "disabled" ? "gray" :
+                                  client.status === "disconnected" ? "orange" :
+                                    client.status === "error" ? "volcano" :
+                                      client.status === "connecting" ? "blue" : "default"
                             }
                           >
-                            {isDisabled ? t`Disabled` :
-                              isConnected ? t`Connected` : t`Disconnected`}
+                            {client.status}
                           </Tag>
                           {client.tools && (
                             <Tag color="cyan">
