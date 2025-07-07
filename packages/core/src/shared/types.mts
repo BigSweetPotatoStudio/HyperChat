@@ -227,12 +227,9 @@ export type ChatHistoryItem = {
   messages: Array<MyMessage>;
   modelKey: string;
   agentKey: string;
-  sented: boolean;
   icon?: string;
-  requestType: "stream";  // 以后只支持 stream
   dateTime: number;
-  isCalled: boolean;
-  isTask: boolean;
+  chatType: "user" | "task" | "called";
   taskKey?: string;
   allowMCPs: string[];
   attachedDialogueCount?: number;

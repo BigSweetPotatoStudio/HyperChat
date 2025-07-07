@@ -66,7 +66,7 @@ import { HeaderContext } from "../common/context";
 import { useForceUpdate } from "../hooks/useForceUpdate";
 import { MyAttachR } from "../pages/chat/attachR";
 import { WorkspaceDetails, WorkspaceInfo } from "../pages/workspace/workspace";
-import { HyperChatCompletionTool, IMCPClient } from "@hyperchat/shared/types.mjs";
+import { AllMessage, HyperChatCompletionTool, IMCPClient } from "@hyperchat/shared/types.mjs";
 
 /**
  * 工作区聊天组件的Props类型定义
@@ -104,12 +104,9 @@ export const WorkspaceChat = ({ workspace, agentKey, workspaceDetails, mcpClient
     messages: [] as MyMessage[],
     modelKey: "",
     agentKey: "",
-    sented: false,
-    requestType: "stream" as const,
     allowMCPs: [] as string[],
     dateTime: Date.now(),
-    isCalled: false,
-    isTask: false,
+    chatType: "user" as const, // "user" | "task" | "called"
     confirm_call_tool: false,
     temperature: undefined as number | undefined,
   });
@@ -165,9 +162,7 @@ export const WorkspaceChat = ({ workspace, agentKey, workspaceDetails, mcpClient
           defaultChatValue.current.confirm_call_tool = agent.config.confirm_call_tool || false;
 
         } else {
-          currentChatReset(
-            {},
-          );
+          currentChatReset({});
         }
 
         refresh();
@@ -181,7 +176,7 @@ export const WorkspaceChat = ({ workspace, agentKey, workspaceDetails, mcpClient
    * 重置当前聊天配置
    */
   const currentChatReset = async (
-    newConfig: Partial<typeof defaultChatValue.current>,
+    newConfig: Partial<ChatHistoryItem>,
   ) => {
 
     currentChat.current = {
@@ -239,20 +234,27 @@ export const WorkspaceChat = ({ workspace, agentKey, workspaceDetails, mcpClient
           }
         }
       }
-
-      if (currentChat.current.sented == false) {
-        currentChat.current = {
-          ...currentChat.current,
-          key: getMyUuid(),
-          label: content || "New Chat",
-          messages: aiClient.messages,
-          sented: true,
-          dateTime: Date.now(),
-        };
-      } else {
-        currentChat.current.label = content || currentChat.current.label;
-        currentChat.current.dateTime = Date.now();
+      function getFirstUserContent() {
+        let label = currentChat.current.label.toString();
+        let firstUser = aiClient.messages.find(
+          (x) => x.content_attached != false && x.role == "user",
+        );
+        let firstUserContent = (firstUser as AllMessage)?.content;
+        if (typeof firstUserContent == "string") {
+          label = firstUserContent;
+        } else if (Array.isArray(firstUserContent)) {
+          label = firstUserContent.find((x) => x.type == "text")?.text || "";
+        } else {
+          label = (firstUserContent as any).toString() || "New Chat";
+        }
+        return label;
       }
+
+      currentChat.current.key = currentChat.current.key || getMyUuid();
+      currentChat.current.label = currentChat.current.label || getFirstUserContent() || "New Chat";
+      currentChat.current.messages = aiClient.messages;
+      currentChat.current.dateTime = Date.now();
+
 
       refresh();
 
@@ -363,9 +365,7 @@ export const WorkspaceChat = ({ workspace, agentKey, workspaceDetails, mcpClient
                     size="small"
                     icon={<ClearOutlined />}
                     onClick={() => {
-                      currentChatReset({
-                        sented: false,
-                      });
+                      currentChatReset({});
                     }}
                   />
                 </Tooltip>
