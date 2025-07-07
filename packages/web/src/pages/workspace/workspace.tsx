@@ -38,6 +38,7 @@ import {
   ClockCircleOutlined,
   MessageOutlined,
   CloseOutlined,
+  FileTextOutlined,
 } from "@ant-design/icons";
 import { call, msg_receive, callElectron } from "../../common/call";
 import { useForceUpdate } from "../../hooks/useForceUpdate";
@@ -56,6 +57,8 @@ import { HeaderContext } from "../../common/context";
 import { ProviderSettings } from "../../components/ProviderSettings";
 import { AppHeader } from "../../components/AppHeader";
 import { AppActions } from "../../components/AppActions";
+
+import { FileEditor } from "../../components/FileEditor";
 
 const { Title, Text } = Typography;
 
@@ -92,8 +95,11 @@ interface FileNode {
 interface ChatTab {
   key: string;
   title: string;
+  type: 'chat' | 'file';
   agentKey?: string;
   agentName?: string;
+  filePath?: string;
+  fileName?: string;
   workspacePath: string;
   closable?: boolean;
 }
@@ -535,8 +541,36 @@ export function Workspace() {
       const newTab: ChatTab = {
         key: tabKey,
         title: agent.config.name || agent.config.key,
+        type: 'chat',
         agentKey: agent.config.key,
         agentName: agent.config.name || agent.config.key,
+        workspacePath: currentWorkspace.path,
+        closable: true,
+      };
+      setChatTabs(prev => [...prev, newTab]);
+      setActiveChatTab(tabKey);
+    }
+  };
+
+  // 打开文件编辑器
+  const openFileEditor = (filePath: string, fileName: string) => {
+    const currentWorkspace = getCurrentWorkspace();
+    if (!currentWorkspace) return;
+
+    const tabKey = `${currentWorkspace.path}-file-${filePath}`;
+    const existingTab = chatTabs.find(tab => tab.key === tabKey);
+
+    if (existingTab) {
+      // 如果已存在，切换到该标签页
+      setActiveChatTab(tabKey);
+    } else {
+      // 创建新的文件编辑标签页
+      const newTab: ChatTab = {
+        key: tabKey,
+        title: fileName,
+        type: 'file',
+        filePath: filePath,
+        fileName: fileName,
         workspacePath: currentWorkspace.path,
         closable: true,
       };
@@ -569,6 +603,7 @@ export function Workspace() {
       const defaultTab: ChatTab = {
         key: defaultTabKey,
         title: t`Workspace Chat`,
+        type: 'chat',
         workspacePath: workspace.path,
         closable: false,
       };
@@ -661,6 +696,7 @@ export function Workspace() {
               showHidden={showHiddenFiles}
               onShowHiddenChange={handleShowHiddenChange}
               onRefreshFileTree={refreshFileTree}
+              onFileSelect={openFileEditor}
             />
           </Splitter.Panel>
 
@@ -692,19 +728,34 @@ export function Workspace() {
                     key: tab.key,
                     label: (
                       <Space size="small">
-                        {tab.agentKey ? <MessageOutlined /> : <GlobalOutlined />}
+                        {tab.type === 'file' ? (
+                          <FileTextOutlined />
+                        ) : tab.agentKey ? (
+                          <MessageOutlined />
+                        ) : (
+                          <GlobalOutlined />
+                        )}
                         <span>{tab.title}</span>
                       </Space>
                     ),
                     closable: tab.closable,
                     children: (
                       <div style={{ height: 'calc(100vh - 116px)', overflow: 'hidden' }}>
-                        <WorkspaceChat
-                          workspace={currentWorkspace}
-                          agentKey={tab.agentKey}
-                          workspaceDetails={workspaceDetails}
-                          key={tab.key}
-                        />
+                        {tab.type === 'file' && tab.filePath && tab.fileName ? (
+                          <FileEditor
+                            filePath={tab.filePath}
+                            workspacePath={tab.workspacePath}
+                            fileName={tab.fileName}
+                            onClose={() => closeChatTab(tab.key)}
+                          />
+                        ) : (
+                          <WorkspaceChat
+                            workspace={currentWorkspace}
+                            agentKey={tab.agentKey}
+                            workspaceDetails={workspaceDetails}
+                            key={tab.key}
+                          />
+                        )}
                       </div>
                     ),
                   }))}

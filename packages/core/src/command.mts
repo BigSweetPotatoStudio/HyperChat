@@ -1866,6 +1866,76 @@ export class CommandFactory {
     }
   }
 
+  /**
+   * 读取工作区内指定文件的内容
+   */
+  async readWorkspaceFile({ workspacePath, filePath }: { workspacePath: string, filePath: string }): Promise<string> {
+    try {
+      const workspace = workspaceManager.getWorkspace(workspacePath);
+      if (!workspace) {
+        throw new Error(`工作区不存在: ${workspacePath}`);
+      }
+
+      // 构建完整的文件路径，确保安全性
+      const fullPath = path.resolve(workspacePath, filePath);
+      
+      // 检查文件路径是否在工作区范围内（防止路径遍历攻击）
+      if (!fullPath.startsWith(path.resolve(workspacePath))) {
+        throw new Error(`文件路径超出工作区范围: ${filePath}`);
+      }
+
+      // 检查文件是否存在
+      if (!await fs.exists(fullPath)) {
+        throw new Error(`文件不存在: ${filePath}`);
+      }
+
+      // 检查是否为文件（不是目录）
+      const stats = await fs.stat(fullPath);
+      if (!stats.isFile()) {
+        throw new Error(`指定路径不是文件: ${filePath}`);
+      }
+
+      // 读取文件内容
+      const content = await fs.readFile(fullPath, 'utf8');
+      return content;
+    } catch (error) {
+      console.error(`Failed to read workspace file ${filePath} in ${workspacePath}:`, error);
+      throw error;
+    }
+  }
+
+  /**
+   * 写入内容到工作区内指定文件
+   */
+  async writeWorkspaceFile({ workspacePath, filePath, content }: { workspacePath: string, filePath: string, content: string }): Promise<void> {
+    try {
+      const workspace = workspaceManager.getWorkspace(workspacePath);
+      if (!workspace) {
+        throw new Error(`工作区不存在: ${workspacePath}`);
+      }
+
+      // 构建完整的文件路径，确保安全性
+      const fullPath = path.resolve(workspacePath, filePath);
+      
+      // 检查文件路径是否在工作区范围内（防止路径遍历攻击）
+      if (!fullPath.startsWith(path.resolve(workspacePath))) {
+        throw new Error(`文件路径超出工作区范围: ${filePath}`);
+      }
+
+      // 确保目录存在
+      const dirPath = path.dirname(fullPath);
+      await fs.ensureDir(dirPath);
+
+      // 写入文件内容
+      await fs.writeFile(fullPath, content, 'utf8');
+      
+      console.log(`Successfully wrote file ${filePath} in workspace ${workspacePath}`);
+    } catch (error) {
+      console.error(`Failed to write workspace file ${filePath} in ${workspacePath}:`, error);
+      throw error;
+    }
+  }
+
 }
 // export const Command = CommandFactory.prototype;
 export const Command = new CommandFactory();

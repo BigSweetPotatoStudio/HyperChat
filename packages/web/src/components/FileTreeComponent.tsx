@@ -35,6 +35,7 @@ interface FileTreeComponentProps {
   onShowHiddenChange: (show: boolean) => void;
   onRefresh?: () => Promise<void>;
   onDataUpdate?: (data: FileNode[]) => void;
+  onFileSelect?: (filePath: string, fileName: string) => void;
 }
 
 // 过滤隐藏文件的工具函数
@@ -79,9 +80,27 @@ export function FileTreeComponent({
   showHidden,
   onShowHiddenChange,
   onRefresh,
-  onDataUpdate
+  onDataUpdate,
+  onFileSelect
 }: FileTreeComponentProps) {
   const [refreshing, setRefreshing] = useState(false);
+  // 存储路径到文件节点的映射
+  const [nodeMap, setNodeMap] = useState<Map<string, FileNode>>(new Map());
+
+  // 创建节点映射的辅助函数
+  const createNodeMap = (nodes: FileNode[]): Map<string, FileNode> => {
+    const map = new Map<string, FileNode>();
+    const traverse = (items: FileNode[]) => {
+      items.forEach(item => {
+        map.set(item.path, item);
+        if (item.children) {
+          traverse(item.children);
+        }
+      });
+    };
+    traverse(nodes);
+    return map;
+  };
 
   // 初始化树数据（过滤隐藏文件）
   const [treeData, setTreeData] = useState(() => {
@@ -94,6 +113,7 @@ export function FileTreeComponent({
     const filteredData = filterHiddenFiles(initialData, showHidden);
     const newTreeData = filteredData.map(mapFileNodeToTreeNode);
     setTreeData(newTreeData);
+    setNodeMap(createNodeMap(initialData)); // 使用原始数据创建映射
   }, [initialData, showHidden]);
 
   // 处理刷新操作
@@ -112,6 +132,23 @@ export function FileTreeComponent({
     }
   };
 
+  // 处理文件选择
+  const handleSelect = (selectedKeys: React.Key[], info: any) => {
+    if (selectedKeys.length === 0 || !onFileSelect) return;
+    
+    const selectedKey = selectedKeys[0] as string;
+    const selectedNode = info.node;
+    
+    // 只处理文件类型的节点
+    if (selectedNode.isLeaf) {
+      // 从nodeMap中获取文件节点信息
+      const fileNode = nodeMap.get(selectedKey);
+      if (fileNode) {
+        onFileSelect(selectedKey, fileNode.name);
+      }
+    }
+  };
+
   const onLoadData = ({ key, children }: any) =>
     new Promise<void>(async (resolve) => {
       if (children) {
@@ -127,6 +164,15 @@ export function FileTreeComponent({
         
         const filteredChildren = filterHiddenFiles(childrenData, showHidden);
         const treeChildren = filteredChildren.map(mapFileNodeToTreeNode);
+
+        // 更新nodeMap
+        setNodeMap(prevMap => {
+          const newMap = new Map(prevMap);
+          childrenData.forEach(child => {
+            newMap.set(child.path, child);
+          });
+          return newMap;
+        });
 
         setTreeData((origin) => updateTreeData(origin, key, treeChildren));
         resolve();
@@ -166,6 +212,7 @@ export function FileTreeComponent({
         showIcon
         loadData={onLoadData}
         treeData={treeData}
+        onSelect={handleSelect}
       />
     </div>
   );

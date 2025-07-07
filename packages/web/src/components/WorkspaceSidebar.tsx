@@ -36,6 +36,7 @@ interface WorkspaceSidebarProps {
   showHidden: boolean;
   onShowHiddenChange: (show: boolean) => void;
   onRefreshFileTree?: () => Promise<void>;
+  onFileSelect?: (filePath: string, fileName: string) => void;
   className?: string;
 }
 
@@ -74,6 +75,7 @@ export function WorkspaceSidebar({
   showHidden,
   onShowHiddenChange,
   onRefreshFileTree,
+  onFileSelect,
   className = ""
 }: WorkspaceSidebarProps) {
   const [activeTab, setActiveTab] = useState("files");
@@ -140,6 +142,7 @@ export function WorkspaceSidebar({
         showHidden={showHidden}
         onShowHiddenChange={onShowHiddenChange}
         onRefresh={onRefreshFileTree}
+        onFileSelect={onFileSelect}
       />
     );
   };
