@@ -1735,7 +1735,7 @@ export class CommandFactory {
   }: {
     workspacePath: string;
     agentKey: string;
-  }): Promise<any[]> {
+  }): Promise<{ chatLogs: any[] }> {
     try {
       const workspaceManager = getWorkspaceManager();
       const workspace = workspaceManager.getWorkspace(workspacePath);
@@ -1749,7 +1749,8 @@ export class CommandFactory {
         throw new Error(`Agent 不存在: ${agentKey}`);
       }
 
-      return await agentInstance.getChatLogs();
+      const chatLogs = await agentInstance.getChatLogs();
+      return { chatLogs };
     } catch (error) {
       console.error(`Failed to get chat logs for agent ${agentKey} in ${workspacePath}:`, error);
       throw error;

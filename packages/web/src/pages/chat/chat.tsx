@@ -163,7 +163,6 @@ import { Container, X } from "lucide-react";
 import { setInterval } from "node:timers/promises";
 import { getDefaultModelConfig, getDefaultModelConfigSync, rename } from "../../components/ai";
 import { InputAI } from "../../components/input_ai";
-import { MySender } from "../../components/my_sender";
 import { disableCompletionItemProvider, Editor, enableCompletionItemProvider } from "../../components/editor";
 import { Link } from "react-router-dom";
 import { BuiltinAgents } from "./utils/builtinAgent";

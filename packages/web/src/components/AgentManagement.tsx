@@ -31,6 +31,7 @@ import {
   PlayCircleOutlined,
   SmileOutlined,
   MessageOutlined,
+  HistoryOutlined,
 } from "@ant-design/icons";
 import { call } from "../common/call";
 import { t } from "../i18n";
@@ -65,8 +66,12 @@ interface AgentManagementProps {
 export function AgentManagement({ workspace, agents, onRefresh, onOpenChat }: AgentManagementProps) {
   const [agentDetailDrawer, setAgentDetailDrawer] = useState(false);
   const [agentEditModal, setAgentEditModal] = useState(false);
+  const [chatHistoryModal, setChatHistoryModal] = useState(false);
   const [selectedAgent, setSelectedAgent] = useState<Agent | null>(null);
   const [editingAgent, setEditingAgent] = useState<Agent | null>(null);
+  const [chatHistoryAgent, setChatHistoryAgent] = useState<Agent | null>(null);
+  const [chatHistoryList, setChatHistoryList] = useState<any[]>([]);
+  const [loadingChatHistory, setLoadingChatHistory] = useState(false);
   const [form] = Form.useForm();
   const refresh = useForceUpdate();
   const context = useContext(HeaderContext);
@@ -171,6 +176,28 @@ export function AgentManagement({ workspace, agents, onRefresh, onOpenChat }: Ag
     }
   };
 
+  // 查看聊天历史
+  const viewChatHistory = async (agent: Agent) => {
+    try {
+      setLoadingChatHistory(true);
+      setChatHistoryAgent(agent);
+      setChatHistoryModal(true);
+      
+      // 获取Agent的聊天历史记录
+      const result = await call('getAgentChatLogs', {
+        workspacePath: workspace.path,
+        agentKey: agent.config.key
+      });
+      
+      setChatHistoryList(result.chatLogs || []);
+    } catch (error) {
+      console.error("Failed to load chat history:", error);
+      message.error(t`Failed to load chat history`);
+    } finally {
+      setLoadingChatHistory(false);
+    }
+  };
+
   return (
     <>
       <div className="p-2 overflow-auto" style={{ height: 'calc(100vh - 160px)' }}>
@@ -196,6 +223,12 @@ export function AgentManagement({ workspace, agents, onRefresh, onOpenChat }: Ag
                   icon: <MessageOutlined />,
                   label: t`Open Chat`,
                   onClick: () => onOpenChat && onOpenChat(agent),
+                },
+                {
+                  key: "history",
+                  icon: <HistoryOutlined />,
+                  label: t`Chat History`,
+                  onClick: () => viewChatHistory(agent),
                 },
                 {
                   key: "details",
@@ -240,6 +273,17 @@ export function AgentManagement({ workspace, agents, onRefresh, onOpenChat }: Ag
                         onOpenChat && onOpenChat(agent);
                       }}
                       title={t`Open Chat`}
+                    />,
+                    <Button
+                      key="history"
+                      type="text"
+                      size="small"
+                      icon={<HistoryOutlined />}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        viewChatHistory(agent);
+                      }}
+                      title={t`Chat History`}
                     />,
                     <Dropdown
                       key="more"
@@ -570,6 +614,82 @@ export function AgentManagement({ workspace, agents, onRefresh, onOpenChat }: Ag
             </Collapse.Panel>
           </Collapse>
         </Form>
+      </Modal>
+
+      {/* 聊天历史模态框 */}
+      <Modal
+        title={
+          <Space>
+            <HistoryOutlined />
+            {t`Chat History`} - {chatHistoryAgent?.config.name || chatHistoryAgent?.config.key}
+          </Space>
+        }
+        open={chatHistoryModal}
+        onCancel={() => {
+          setChatHistoryModal(false);
+          setChatHistoryAgent(null);
+          setChatHistoryList([]);
+        }}
+        footer={null}
+        width={800}
+        destroyOnClose
+      >
+        <div style={{ maxHeight: '60vh', overflowY: 'auto' }}>
+          {loadingChatHistory ? (
+            <div className="text-center py-8">
+              <Space>
+                <span>{t`Loading chat history...`}</span>
+              </Space>
+            </div>
+          ) : chatHistoryList.length > 0 ? (
+            <List
+              dataSource={chatHistoryList}
+              renderItem={(chatLog: any, index) => (
+                <List.Item
+                  key={chatLog.key || index}
+                  className="hover:bg-gray-50 cursor-pointer"
+                  onClick={() => {
+                    // TODO: 可以添加打开具体聊天记录的功能
+                    message.info(t`Open chat record: ${chatLog.label || chatLog.key}`);
+                  }}
+                >
+                  <List.Item.Meta
+                    title={
+                      <Space>
+                        {chatLog.icon && <span>{chatLog.icon}</span>}
+                        <span>{chatLog.label || `Chat ${index + 1}`}</span>
+                        {chatLog.messages && (
+                          <Tag color="blue">{chatLog.messages.length} messages</Tag>
+                        )}
+                        {chatLog.modelKey && (
+                          <Tag color="green">{chatLog.modelKey}</Tag>
+                        )}
+                      </Space>
+                    }
+                    description={
+                      <div>
+                        <div className="text-xs text-gray-500">
+                          {chatLog.dateTime 
+                            ? new Date(chatLog.dateTime).toLocaleString() 
+                            : 'Unknown time'
+                          }
+                        </div>
+                        <div className="text-xs text-gray-400">
+                          Key: {chatLog.key}
+                        </div>
+                      </div>
+                    }
+                  />
+                </List.Item>
+              )}
+            />
+          ) : (
+            <Empty
+              description={t`No chat history found`}
+              image={Empty.PRESENTED_IMAGE_SIMPLE}
+            />
+          )}
+        </div>
       </Modal>
     </>
   );
