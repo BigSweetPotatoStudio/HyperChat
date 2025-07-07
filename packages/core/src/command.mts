@@ -1042,7 +1042,16 @@ export class CommandFactory {
   }) {
     const workspaceManager = getWorkspaceManager();
     const workspace = workspaceManager.getWorkspace(workspacePath);
-    return workspace ? workspace.getConfig() : null;
+    if (!workspace) return null;
+    
+    const config = workspace.getConfig();
+    const summary = await workspace.getSummary();
+    
+    return {
+      ...config,
+      agentsCount: summary.agentsCount,
+      mcpServersCount: summary.mcpServersCount
+    };
   }
 
   /**

@@ -674,8 +674,6 @@ export function Workspace() {
               </div>
             </div>
             <Tag color="blue" >{t`Global`}</Tag>
-            <Badge count={globalWorkspace.agentsCount} size="small" />
-            <Badge count={globalWorkspace.mcpServersCount} size="small" />
           </Space>
         ),
         closable: false, // 全局工作区不可关闭
@@ -695,8 +693,6 @@ export function Workspace() {
                 {workspace.path}
               </div>
             </div>
-            <Badge count={workspace.agentsCount} size="small" />
-            <Badge count={workspace.mcpServersCount} size="small" />
           </Space>
         ),
         closable: true, // 项目工作区可关闭
@@ -829,7 +825,12 @@ export function Workspace() {
                 size="small"
                 items={[
                   {
-                    label: t`Agents`,
+                    label: (
+                      <Space>
+                        {t`Agents`}
+                        <Badge count={details.agents?.length || 0} size="small" />
+                      </Space>
+                    ),
                     key: "agents",
                     children: currentWorkspace ? (
                       <AgentManagement
@@ -842,7 +843,12 @@ export function Workspace() {
                     ) : <Empty description={t`No workspace selected`} />,
                   },
                   {
-                    label: t`MCP`,
+                    label: (
+                      <Space>
+                        {t`MCP`}
+                        <Badge count={Object.keys(mcpClients || {}).length} size="small" />
+                      </Space>
+                    ),
                     key: "mcp",
                     children: currentWorkspace ? (
                       <MCPManagement
