@@ -18,7 +18,7 @@ export const UserContext = createContext<UserData | null>(null);
 /**
  * Defines the shape of the data provided by HeaderContext.
  */
-interface HeaderContextType {
+export interface HeaderContextType {
   /**
    * A numeric state value used globally, e.g., for triggering updates.
    */

@@ -398,3 +398,15 @@ export type VarScope = {
   name: string;
   type: "builtin" | "custom";
 };
+
+
+export interface DirectoryItem {
+  name: string;
+  path: string;
+  type: "directory" | "file";
+  size?: number;
+  modified: number;
+  extension?: string;
+  isLeaf: boolean;
+  isHidden: boolean;
+}

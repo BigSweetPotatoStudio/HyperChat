@@ -14,8 +14,8 @@ export type AgentConfig = {
   tags?: string[];
   subAgents?: string[];
   version?: number;
-  created: number;
-  lastModified: number;
+  created?: number;
+  lastModified?: number;
 };
 
 // 兼容旧的 Agent 类型
@@ -32,6 +32,8 @@ export type WorkspaceConfig = {
   created: number;
   lastAccessed: number;
   settings: WorkspaceSettings;
+  agentsCount?: number;
+  mcpServersCount?: number;
 };
 
 // 工作区设置

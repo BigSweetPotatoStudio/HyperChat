@@ -70,6 +70,8 @@ interface WorkspaceConfig {
   settings: {
     enableKnowledgeBase: boolean;
   };
+  agentsCount?: number;
+  mcpServersCount?: number;
 }
 
 export interface WorkspaceInfo extends WorkspaceConfig {

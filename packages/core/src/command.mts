@@ -16,9 +16,10 @@ import {
   KnowledgeStore,
   IMCPClient,
 } from "./shared/data.mjs";
+import { AgentConfig, DirectoryItem } from "./shared/types.mjs";
 import { appDataDir } from "./const.mjs";
 import crypto from "crypto";
-import { 
+import {
   getMCPManager,
   initMCPManager,
   getWorkspaceMCPClients as getWorkspaceMCPClientsFromManager
@@ -77,7 +78,7 @@ export class CommandFactory {
       // 获取全局工作区路径（~/Documents/HyperChat）
       const workspaceManager = getWorkspaceManager();
       const globalWorkspacePath = workspaceManager.getGlobalWorkspacePath();
-      
+
       // 委托给工作区特定的重新加载方法
       return await this.forceReloadWorkspaceMcpClients({ workspacePath: globalWorkspacePath });
     } catch (error) {
@@ -133,7 +134,7 @@ export class CommandFactory {
   }) {
     try {
       const manager = getMCPManager(workspacePath);
-      
+
       if (clientConfig) {
         // 如果提供了配置，先设置配置再启动
         await manager.setServerConfig(clientName, clientConfig);
@@ -141,7 +142,7 @@ export class CommandFactory {
         // 如果没有配置，尝试重启现有客户端
         await manager.restartClient(clientName);
       }
-      
+
       return {
         success: true,
         clientName,
@@ -176,7 +177,7 @@ export class CommandFactory {
       const workspaceManager = getWorkspaceManager();
       const globalWorkspacePath = workspaceManager.getGlobalWorkspacePath();
       const manager = getMCPManager(globalWorkspacePath);
-      
+
       if (isdelete) {
         // 从全局配置中永久删除客户端配置并停止服务
         await manager.deleteServerConfig(clientName);
@@ -187,7 +188,7 @@ export class CommandFactory {
         // 重启客户端（先停止再启动）
         await manager.restartClient(clientName);
       }
-      
+
       return {
         success: true,
       };
@@ -216,7 +217,7 @@ export class CommandFactory {
   }) {
     try {
       const manager = getMCPManager(workspacePath);
-      
+
       switch (action) {
         case 'delete':
           // 从工作区配置中永久删除客户端配置并停止服务
@@ -232,7 +233,7 @@ export class CommandFactory {
           await manager.restartClient(clientName);
           break;
       }
-      
+
       return {
         success: true,
         action,
@@ -260,16 +261,16 @@ export class CommandFactory {
   }: {
     name: string;
     functionName: string;
-    args: any;
+    args: Record<string, unknown>;
   }) {
     // 从所有活跃的MCP客户端中查找指定名称的客户端
     const allClients = workspaceManager.getGlobalWorkspace().getMcpClients();
     let client = allClients.find((x) => x.serverName === name);
-    
+
     if (!client) {
       throw new Error(`MCP client "${name}" not found`);
     }
-    
+
     // 执行工具调用并返回结果
     return await client.callTool(functionName, args);
   }
@@ -292,7 +293,7 @@ export class CommandFactory {
     workspacePath: string;
     name: string;
     functionName: string;
-    args: any;
+    args: Record<string, unknown>;
   }) {
     // 从指定工作区的MCP客户端中查找指定名称的客户端
     const workspace = workspaceManager.getWorkspace(workspacePath);
@@ -301,11 +302,11 @@ export class CommandFactory {
     }
     const allClients = workspace.getMcpClients();
     let client = allClients.find((x) => x.serverName === name);
-    
+
     if (!client) {
       throw new Error(`MCP client "${name}" not found in workspace "${workspacePath}"`);
     }
-    
+
     // 执行工具调用并返回结果
     return await client.callTool(functionName, args);
   }
@@ -327,11 +328,11 @@ export class CommandFactory {
     // 从所有活跃的MCP客户端中查找指定名称的客户端
     const allClients = workspaceManager.getGlobalWorkspace().getMcpClients();
     let client = allClients.find((x) => x.serverName === name);
-    
+
     if (!client) {
       throw new Error(`MCP client "${name}" not found`);
     }
-    
+
     // 获取指定URI的资源内容
     return await client.callResource(uri);
   }
@@ -360,11 +361,11 @@ export class CommandFactory {
     }
     const allClients = workspace.getMcpClients();
     let client = allClients.find((x) => x.serverName === name);
-    
+
     if (!client) {
       throw new Error(`MCP client "${name}" not found in workspace "${workspacePath}"`);
     }
-    
+
     // 获取指定URI的资源内容
     return await client.callResource(uri);
   }
@@ -384,16 +385,16 @@ export class CommandFactory {
   }: {
     name: string;
     functionName: string;
-    args: any;
+    args: Record<string, unknown>;
   }) {
     // 从所有活跃的MCP客户端中查找指定名称的客户端
     const allClients = workspaceManager.getGlobalWorkspace().getMcpClients();
     let client = allClients.find((x) => x.serverName === name);
-    
+
     if (!client) {
       throw new Error(`MCP client "${name}" not found`);
     }
-    
+
     // 调用提示模板并返回渲染结果
     return await client.callPrompt(functionName, args);
   }
@@ -416,7 +417,7 @@ export class CommandFactory {
     workspacePath: string;
     name: string;
     functionName: string;
-    args: any;
+    args: Record<string, unknown>;
   }) {
     // 从指定工作区的MCP客户端中查找指定名称的客户端
     const workspace = workspaceManager.getWorkspace(workspacePath);
@@ -425,11 +426,11 @@ export class CommandFactory {
     }
     const allClients = workspace.getMcpClients();
     let client = allClients.find((x) => x.serverName === name);
-    
+
     if (!client) {
       throw new Error(`MCP client "${name}" not found in workspace "${workspacePath}"`);
     }
-    
+
     // 调用提示模板并返回渲染结果
     return await client.callPrompt(functionName, args);
   }
@@ -449,10 +450,10 @@ export class CommandFactory {
     const baseName = path.basename(filePath);
     const extName = path.extname(baseName);
     const fileName = path.basename(baseName, extName);
-    
+
     // 在文件名和扩展名之间添加 ".processed" 标识
     const newFileName = `${fileName}.processed${extName}`;
-    
+
     // 返回完整的处理后路径
     return path.join(dirName, newFileName);
   }
@@ -553,7 +554,7 @@ export class CommandFactory {
   }: {
     path: string;
     root?: string;
-  }): Promise<any> {
+  }): Promise<Record<string, unknown>> {
     // 拼接完整路径并读取JSON文件
     p = path.join(root, p);
     try {
@@ -575,7 +576,7 @@ export class CommandFactory {
     root = appDataDir
   }: {
     path: string;
-    obj: any;
+    obj: Record<string, unknown>;
     root?: string;
   }): Promise<void> {
     // 拼接完整路径并写入格式化的JSON文件
@@ -654,7 +655,7 @@ export class CommandFactory {
       }
     }
     let p = await spawnWithOutput(command, args, {
-      env: Object.assign(getMyDefaultEnvironment(), process.env as any),
+      env: Object.assign(getMyDefaultEnvironment(), process.env as Record<string, string>),
     });
     return p.stdout;
   }
@@ -723,8 +724,8 @@ export class CommandFactory {
     error
   }: {
     uid: string;
-    data: any;
-    error: any;
+    data: unknown;
+    error: unknown;
   }) {
     EVENT.fire("call_agent_res_" + uid, { uid, data, error });
   }
@@ -800,7 +801,7 @@ export class CommandFactory {
     item.version = 2;
     item.dateTime = Date.now();
     if (item.isTask) {
-      item.lastMessage = (item.lastMessage || (item.messages && item.messages.length > 0 ? item.messages[item.messages.length - 1] : undefined)) as any;
+      item.lastMessage = (item.lastMessage || (item.messages && item.messages.length > 0 ? item.messages[item.messages.length - 1] : undefined)) as MyMessage | undefined;
     }
 
     let chatHistory = (await ChatHistory.init()).data;
@@ -966,7 +967,7 @@ export class CommandFactory {
    * 包括全局工作区和所有已创建的普通工作区
    * @returns 工作区信息数组，包含路径、名称、描述等
    */
-  async getWorkspaceList(): Promise<any[]> {
+  async getWorkspaceList() {
     const workspaceManager = getWorkspaceManager();
     return workspaceManager.getWorkspaceList();
   }
@@ -987,12 +988,12 @@ export class CommandFactory {
     workspacePath: string;
     name?: string;
     description?: string;
-  }): Promise<any> {
+  }): Promise<Record<string, unknown>> {
     const workspaceManager = getWorkspaceManager();
-    
+
     // 如果没有提供名称，从路径提取文件夹名称作为默认名称
     const workspaceName = name || path.basename(workspacePath) || 'Workspace';
-    
+
     const workspace = await workspaceManager.createWorkspace(workspacePath, workspaceName, description);
     return workspace.getConfig();
   }
@@ -1022,7 +1023,7 @@ export class CommandFactory {
     workspacePath
   }: {
     workspacePath: string;
-  }): Promise<any | null> {
+  }): Promise<Record<string, unknown> | null> {
     const workspaceManager = getWorkspaceManager();
     const workspace = await workspaceManager.loadExistingWorkspace(workspacePath);
     return workspace ? workspace.getConfig() : null;
@@ -1038,7 +1039,7 @@ export class CommandFactory {
     workspacePath
   }: {
     workspacePath: string;
-  }): Promise<any | null> {
+  }) {
     const workspaceManager = getWorkspaceManager();
     const workspace = workspaceManager.getWorkspace(workspacePath);
     return workspace ? workspace.getConfig() : null;
@@ -1070,11 +1071,11 @@ export class CommandFactory {
     workspacePath
   }: {
     workspacePath: string;
-  }): Promise<any | null> {
+  }) {
     const workspaceManager = getWorkspaceManager();
     const workspace = workspaceManager.getWorkspace(workspacePath);
     if (!workspace) return null;
-    
+
     // 更新文件树，排除常见的构建产物目录
     await workspace.updateFileTree({
       includeHidden: false,
@@ -1097,19 +1098,19 @@ export class CommandFactory {
   }: {
     workspacePath: string;
     directoryPath?: string;
-  }): Promise<any[]> {
+  }) {
     const { fs, path } = zx;
-    
+
     try {
       const workspaceManager = getWorkspaceManager();
       // 检查是否为全局工作区
-      const workspace = workspaceManager.isGlobalWorkspace(workspacePath) 
+      const workspace = workspaceManager.isGlobalWorkspace(workspacePath)
         ? workspaceManager.getGlobalWorkspace()
         : workspaceManager.getWorkspace(workspacePath);
       if (!workspace) return [];
 
       // 构建完整路径
-      const fullPath = directoryPath 
+      const fullPath = directoryPath
         ? path.join(workspacePath, directoryPath)
         : workspacePath;
 
@@ -1125,37 +1126,28 @@ export class CommandFactory {
 
       // 读取目录内容
       const entries = await fs.promises.readdir(fullPath, { withFileTypes: true });
-      
-      interface DirectoryItem {
-        name: string;
-        path: string;
-        type: "directory" | "file";
-        size?: number;
-        modified: number;
-        extension?: string;
-        isLeaf: boolean;
-        isHidden: boolean;
-      }
-      
+
+
+
       const result: DirectoryItem[] = [];
 
       for (const entry of entries) {
         const isHidden = entry.name.startsWith('.');
         const isExcluded = ['node_modules', '.git', 'dist', 'build'].includes(entry.name);
-        
+
         // 跳过排除的目录
         if (isExcluded) {
           continue;
         }
 
         const itemPath = path.join(fullPath, entry.name);
-        const relativePath = directoryPath 
+        const relativePath = directoryPath
           ? path.join(directoryPath, entry.name).replace(/\\/g, '/')
           : entry.name;
 
         try {
           const itemStats = await fs.promises.stat(itemPath);
-          
+
           result.push({
             name: entry.name,
             path: relativePath,
@@ -1206,7 +1198,7 @@ export class CommandFactory {
     directoryPath
   }: {
     directoryPath: string;
-  }): Promise<any | null> {
+  }): Promise<Record<string, unknown> | null> {
     const workspaceManager = getWorkspaceManager();
     const workspace = await workspaceManager.getWorkspaceFromDirectory(directoryPath);
     return workspace ? workspace.getConfig() : null;
@@ -1219,7 +1211,7 @@ export class CommandFactory {
     workspacePath
   }: {
     workspacePath: string;
-  }): Promise<any[]> {
+  }): Promise<Record<string, unknown>[]> {
     const workspaceManager = getWorkspaceManager();
     return await workspaceManager.getWorkspaceAgents(workspacePath);
   }
@@ -1234,7 +1226,7 @@ export class CommandFactory {
   }): Promise<IMCPClient[]> {
     try {
       const workspaceManager = getWorkspaceManager();
-      
+
       // 检查是否为全局工作区
       if (workspaceManager.isGlobalWorkspace(workspacePath)) {
         // 使用工作区路径获取客户端
@@ -1250,7 +1242,7 @@ export class CommandFactory {
       // 如果新系统失败，回退到旧的工作区系统
       try {
         const workspaceManager = getWorkspaceManager();
-        const workspace = workspaceManager.isGlobalWorkspace(workspacePath) 
+        const workspace = workspaceManager.isGlobalWorkspace(workspacePath)
           ? workspaceManager.getGlobalWorkspace()
           : workspaceManager.getWorkspace(workspacePath);
         if (!workspace) return [];
@@ -1269,9 +1261,9 @@ export class CommandFactory {
     path: dirPath = "~"
   }: {
     path?: string;
-  }): Promise<any[]> {
+  }): Promise<unknown[]> {
     const { fs, os, path } = zx;
-    
+
     try {
       // 处理特殊路径
       let resolvedPath = dirPath;
@@ -1296,7 +1288,7 @@ export class CommandFactory {
 
       // 读取目录内容
       const entries = await fs.promises.readdir(resolvedPath, { withFileTypes: true });
-      
+
       interface DirectoryItem {
         name: string;
         path: string;
@@ -1304,7 +1296,7 @@ export class CommandFactory {
         size?: number;
         modified: number;
       }
-      
+
       const result: DirectoryItem[] = [];
       for (const entry of entries) {
         // 跳过隐藏文件（以 . 开头的文件）
@@ -1314,7 +1306,7 @@ export class CommandFactory {
 
         const fullPath = path.join(resolvedPath, entry.name);
         const itemStats = await fs.promises.stat(fullPath).catch(() => null);
-        
+
         if (itemStats) {
           result.push({
             name: entry.name,
@@ -1335,9 +1327,9 @@ export class CommandFactory {
       });
 
       return result;
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Failed to list directory:", error);
-      throw new Error(`无法读取目录: ${error.message}`);
+      throw new Error(`无法读取目录: ${error instanceof Error ? error.message : '未知错误'}`);
     }
   }
 
@@ -1357,7 +1349,7 @@ export class CommandFactory {
     path: string;
   }): Promise<string> {
     const { fs, os, path } = zx;
-    
+
     try {
       // 处理特殊路径
       let resolvedPath = targetPath;
@@ -1369,19 +1361,19 @@ export class CommandFactory {
 
       // 解析为绝对路径
       resolvedPath = path.resolve(resolvedPath);
-      
+
       // 获取父目录
       const parentPath = path.dirname(resolvedPath);
-      
+
       // 如果已经是根目录，返回自身
       if (parentPath === resolvedPath) {
         return resolvedPath;
       }
-      
+
       return parentPath;
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Failed to get parent directory:", error);
-      throw new Error(`无法获取父目录: ${error.message}`);
+      throw new Error(`无法获取父目录: ${error instanceof Error ? error.message : '未知错误'}`);
     }
   }
 
@@ -1394,18 +1386,18 @@ export class CommandFactory {
     path: string;
   }): Promise<{ exists: boolean; isDirectory: boolean; readable: boolean }> {
     const { fs, path } = zx;
-    
+
     try {
       const resolvedPath = path.resolve(targetPath);
       const exists = fs.existsSync(resolvedPath);
-      
+
       if (!exists) {
         return { exists: false, isDirectory: false, readable: false };
       }
 
       const stats = await fs.promises.stat(resolvedPath);
       const isDirectory = stats.isDirectory();
-      
+
       // 检查是否可读
       let readable = true;
       try {
@@ -1429,13 +1421,13 @@ export class CommandFactory {
     workspacePath
   }: {
     workspacePath: string;
-  }): Promise<any[]> {
+  }): Promise<Record<string, unknown>[]> {
     try {
       const manager = getMCPManager(workspacePath);
-      
+
       // 启动工作区MCP客户端
       const clients = await manager.startClients();
-      
+
       return clients.map(client => client.toJSON());
     } catch (error) {
       console.error(`Failed to start workspace MCP clients for ${workspacePath}:`, error);
@@ -1450,15 +1442,15 @@ export class CommandFactory {
     workspacePath
   }: {
     workspacePath: string;
-  }): Promise<any[]> {
+  }): Promise<Record<string, unknown>[]> {
     try {
       const manager = getMCPManager(workspacePath);
-      
+
       // 管理器不需要显式初始化
-      
+
       // 强制重新加载工作区配置
       await manager.forceReloadWorkspaceConfig();
-      
+
       // 获取重新加载后的客户端
       const clients = manager.getClientsByWorkspace();
       return clients.map(client => client.toJSON());
@@ -1499,7 +1491,7 @@ export class CommandFactory {
     serverConfig: MCPServerConfig;
   }): Promise<void> {
     try {
-      const manager = getMCPManager(workspacePath);      
+      const manager = getMCPManager(workspacePath);
       await manager.setServerConfig(serverName, serverConfig);
     } catch (error) {
       console.error(`Failed to set MCP server config for ${workspacePath}:`, error);
@@ -1550,17 +1542,17 @@ export class CommandFactory {
       temperature?: number;
       tags?: string[];
     }>;
-  }): Promise<any> {
+  }): Promise<AgentConfig> {
     try {
       const workspaceManager = getWorkspaceManager();
       const workspace = workspaceManager.getWorkspace(workspacePath);
-      
+
       if (!workspace) {
         throw new Error(`工作区不存在: ${workspacePath}`);
       }
 
       const agentInstance = await workspace.createAgent(config);
-      
+
       if (!agentInstance) {
         throw new Error('创建 Agent 失败');
       }
@@ -1581,11 +1573,11 @@ export class CommandFactory {
     workspacePath
   }: {
     workspacePath: string;
-  }): Promise<any[]> {
+  }): Promise<Record<string, unknown>[]> {
     try {
       const workspaceManager = getWorkspaceManager();
       const workspace = workspaceManager.getWorkspace(workspacePath);
-      
+
       if (!workspace) {
         throw new Error(`工作区不存在: ${workspacePath}`);
       }
@@ -1606,11 +1598,11 @@ export class CommandFactory {
     workspacePath
   }: {
     workspacePath: string;
-  }): Promise<any[]> {
+  }): Promise<Record<string, unknown>[]> {
     try {
       const workspaceManager = getWorkspaceManager();
       const workspace = workspaceManager.getWorkspace(workspacePath);
-      
+
       if (!workspace) {
         throw new Error(`工作区不存在: ${workspacePath}`);
       }
@@ -1634,11 +1626,11 @@ export class CommandFactory {
   }: {
     workspacePath: string;
     agentKey: string;
-  }): Promise<any | null> {
+  }): Promise<Record<string, unknown> | null> {
     try {
       const workspaceManager = getWorkspaceManager();
       const workspace = workspaceManager.getWorkspace(workspacePath);
-      
+
       if (!workspace) {
         throw new Error(`工作区不存在: ${workspacePath}`);
       }
@@ -1679,7 +1671,7 @@ export class CommandFactory {
     try {
       const workspaceManager = getWorkspaceManager();
       const workspace = workspaceManager.getWorkspace(workspacePath);
-      
+
       if (!workspace) {
         throw new Error(`工作区不存在: ${workspacePath}`);
       }
@@ -1712,7 +1704,7 @@ export class CommandFactory {
     try {
       const workspaceManager = getWorkspaceManager();
       const workspace = workspaceManager.getWorkspace(workspacePath);
-      
+
       if (!workspace) {
         throw new Error(`工作区不存在: ${workspacePath}`);
       }
@@ -1736,11 +1728,11 @@ export class CommandFactory {
   }: {
     workspacePath: string;
     agentKey: string;
-  }): Promise<{ chatLogs: any[] }> {
+  }): Promise<{ chatLogs: ChatHistoryItem[] }> {
     try {
       const workspaceManager = getWorkspaceManager();
       const workspace = workspaceManager.getWorkspace(workspacePath);
-      
+
       if (!workspace) {
         throw new Error(`工作区不存在: ${workspacePath}`);
       }
@@ -1777,7 +1769,7 @@ export class CommandFactory {
     try {
       const workspaceManager = getWorkspaceManager();
       const workspace = workspaceManager.getWorkspace(workspacePath);
-      
+
       if (!workspace) {
         throw new Error(`工作区不存在: ${workspacePath}`);
       }
@@ -1810,7 +1802,7 @@ export class CommandFactory {
     try {
       const workspaceManager = getWorkspaceManager();
       const workspace = workspaceManager.getWorkspace(workspacePath);
-      
+
       if (!workspace) {
         throw new Error(`工作区不存在: ${workspacePath}`);
       }
@@ -1846,7 +1838,7 @@ export class CommandFactory {
     try {
       const workspaceManager = getWorkspaceManager();
       const workspace = workspaceManager.getWorkspace(workspacePath);
-      
+
       if (!workspace) {
         throw new Error(`工作区不存在: ${workspacePath}`);
       }
@@ -1859,7 +1851,7 @@ export class CommandFactory {
       // 设置 agentKey 确保关联正确
       chatLog.agentKey = agentKey;
       chatLog.dateTime = Date.now();
-      
+
       return await agentInstance.setChatLog(chatLog);
     } catch (error) {
       console.error(`Failed to save chat log for agent ${agentKey} in ${workspacePath}:`, error);
@@ -1879,7 +1871,7 @@ export class CommandFactory {
 
       // 构建完整的文件路径，确保安全性
       const fullPath = path.resolve(workspacePath, filePath);
-      
+
       // 检查文件路径是否在工作区范围内（防止路径遍历攻击）
       if (!fullPath.startsWith(path.resolve(workspacePath))) {
         throw new Error(`文件路径超出工作区范围: ${filePath}`);
@@ -1917,7 +1909,7 @@ export class CommandFactory {
 
       // 构建完整的文件路径，确保安全性
       const fullPath = path.resolve(workspacePath, filePath);
-      
+
       // 检查文件路径是否在工作区范围内（防止路径遍历攻击）
       if (!fullPath.startsWith(path.resolve(workspacePath))) {
         throw new Error(`文件路径超出工作区范围: ${filePath}`);
@@ -1929,7 +1921,7 @@ export class CommandFactory {
 
       // 写入文件内容
       await fs.writeFile(fullPath, content, 'utf8');
-      
+
       console.log(`Successfully wrote file ${filePath} in workspace ${workspacePath}`);
     } catch (error) {
       console.error(`Failed to write workspace file ${filePath} in ${workspacePath}:`, error);

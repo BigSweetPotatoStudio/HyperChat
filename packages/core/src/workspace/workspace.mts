@@ -8,11 +8,10 @@ import {
   WorkspaceSettings, 
   WorkspaceFileNode, 
   AgentConfig, 
-  ChatHistoryItem, 
-  MCPServerConfig, 
-  IMCPClient,
   validateWorkspaceConfig 
 } from "./types.mjs";
+import type { ChatHistoryItem } from "../shared/types.mjs";
+import type { MCPServerConfig } from "../shared/data.mjs";
 import { AgentManager } from "./agentManager.mjs";
 import { getMCPManager } from "./mcp/index.mjs";
 import type { WorkspaceMCPClientImpl } from "./mcp/client.mjs";

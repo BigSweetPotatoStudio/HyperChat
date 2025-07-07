@@ -4,7 +4,7 @@ import dayjs from "dayjs";
 import type { 
   MessageData, 
   TerminalMessage, 
-} from "./shared/types.js";
+} from "./shared/types.mjs";
 
 /**
  * ����p{�
