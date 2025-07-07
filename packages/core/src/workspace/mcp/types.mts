@@ -22,10 +22,6 @@ export interface WorkspaceMCPConfig {
    */
   scope: "workspace";
   
-  /**
-   * 是否自动启动
-   */
-  autoStart?: boolean;
   
   /**
    * 配置创建时间

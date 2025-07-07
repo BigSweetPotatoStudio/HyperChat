@@ -38,23 +38,7 @@ export interface SyncData {
 /**
  * MCP客户端状态变化消息数据
  */
-export interface ChangeMcpClientData {
-  name: string;
-  config: any; // MCPServerConfig
-  order: number;
-  tools: Array<any>; // HyperChatCompletionTool
-  resources: any[];
-  prompts: any[];
-  status: "connecting" | "connected" | "disconnected" | "error" | "disabled" | "deleted";
-  version: string;
-  serverName: string;
-  scope: "workspace";
-  mcpType: any; // MCPType
-  workspacePath: string;
-  ext: {
-    configSchema?: { [s in string]: any };
-  };
-}
+export type ChangeMcpClientData = IMCPClient;
 
 /**
  * 下载进度消息数据
