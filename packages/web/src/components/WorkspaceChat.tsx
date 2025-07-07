@@ -272,9 +272,16 @@ export const WorkspaceChat = ({ workspace, agentKey, workspaceDetails }: Workspa
       refresh();
 
       // 保存聊天记录
-      if (workspace && !workspace.isGlobal) {
-        await call("addChatHistory", { item: currentChat.current });
+
+      if (agentKey) {
+        // 如果是 Agent 聊天，保存到 Agent 的聊天记录中
+        await call("saveAgentChatLog", {
+          workspacePath: workspace.path,
+          agentKey: agentKey,
+          chatLog: currentChat.current
+        });
       }
+
 
     } catch (e) {
       console.error(e);
@@ -349,7 +356,7 @@ export const WorkspaceChat = ({ workspace, agentKey, workspaceDetails }: Workspa
                     }}
                   />
                 </Tooltip>
-{/* 
+                {/* 
                 <Tooltip title={t`Clear Context`}>
                   <Button
                     size="small"

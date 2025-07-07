@@ -204,12 +204,6 @@ export function AgentManagement({ workspace, agents, onRefresh, onOpenChat }: Ag
                   onClick: () => showAgentDetails(agent),
                 },
                 {
-                  key: "run",
-                  icon: <PlayCircleOutlined />,
-                  label: t`Run Agent`,
-                  onClick: () => runAgent(agent),
-                },
-                {
                   key: "edit",
                   icon: <EditOutlined />,
                   label: t`Edit`,

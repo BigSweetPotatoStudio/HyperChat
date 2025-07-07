@@ -790,7 +790,7 @@ export class CommandFactory {
     fs.writeFileSync(filePath, txt);
     return filename;
   }
-
+  // 废弃 ⚠️
   async addChatHistory({
     item
   }: {
@@ -1821,6 +1821,46 @@ export class CommandFactory {
       return await agentInstance.clearChatLogs();
     } catch (error) {
       console.error(`Failed to clear chat logs for agent ${agentKey} in ${workspacePath}:`, error);
+      throw error;
+    }
+  }
+
+  /**
+   * 保存 Agent 聊天记录
+   * @param workspacePath 工作区路径
+   * @param agentKey Agent 键名
+   * @param chatLog 聊天记录
+   * @returns 保存结果
+   */
+  async saveAgentChatLog({
+    workspacePath,
+    agentKey,
+    chatLog
+  }: {
+    workspacePath: string;
+    agentKey: string;
+    chatLog: ChatHistoryItem;
+  }): Promise<boolean> {
+    try {
+      const workspaceManager = getWorkspaceManager();
+      const workspace = workspaceManager.getWorkspace(workspacePath);
+      
+      if (!workspace) {
+        throw new Error(`工作区不存在: ${workspacePath}`);
+      }
+
+      const agentInstance = workspace.getAgentInstance(agentKey);
+      if (!agentInstance) {
+        throw new Error(`Agent 不存在: ${agentKey}`);
+      }
+
+      // 设置 agentKey 确保关联正确
+      chatLog.agentKey = agentKey;
+      chatLog.dateTime = Date.now();
+      
+      return await agentInstance.setChatLog(chatLog);
+    } catch (error) {
+      console.error(`Failed to save chat log for agent ${agentKey} in ${workspacePath}:`, error);
       throw error;
     }
   }
