@@ -267,7 +267,8 @@ export class WorkspaceMCPClientImpl implements WorkspaceMCPClient {
       // 获取服务器版本信息
       const res = await client.getServerVersion();
       this.version = res?.version || '';
-      this.serverName = res?.name || '';
+      // 保留构造函数中传入的 serverName，不被服务器返回的名称覆盖
+      // this.serverName = res?.name || '';
 
       // 映射工具和资源
       this.tools = this.mapToolsToHyperChatFormat(tools_res.tools);

@@ -22,8 +22,8 @@ export class WorkspaceMCPManager {
   private workspaceConfig: WorkspaceMCPConfig | null = null;
   private options: MCPManagerOptions;
   private events: MCPManagerEvents;
-  private order: number = 0;
   private workspacePath: string;
+  private serverOrderMap: Map<string, number> = new Map();
 
   constructor(workspacePath: string, options: MCPManagerOptions = {}, events: MCPManagerEvents = {}) {
     this.workspacePath = workspacePath;
@@ -38,6 +38,42 @@ export class WorkspaceMCPManager {
   }
 
   /**
+   * 初始化所有服务器的order，确保顺序稳定
+   */
+  private initializeServerOrders(config: WorkspaceMCPConfig): void {
+    // 清空现有的order映射
+    this.serverOrderMap.clear();
+    
+    let orderIndex = 0;
+    
+    // 首先为内置服务器分配order（按名称排序确保稳定性）
+    const sortedBuiltinServers = [...MyServers].sort((a, b) => a.name.localeCompare(b.name));
+    for (const server of sortedBuiltinServers) {
+      this.serverOrderMap.set(server.name, orderIndex++);
+    }
+    
+    // 然后为自定义服务器分配order（按名称排序确保稳定性）
+    const sortedCustomServers = Object.keys(config.mcpServers).sort();
+    for (const serverName of sortedCustomServers) {
+      if (!this.serverOrderMap.has(serverName)) {
+        this.serverOrderMap.set(serverName, orderIndex++);
+      }
+    }
+  }
+
+  /**
+   * 获取服务器的稳定order，如果不存在则分配新的order
+   */
+  private getServerOrder(serverName: string): number {
+    if (!this.serverOrderMap.has(serverName)) {
+      // 为新服务器分配order，基于当前已有的服务器数量
+      const nextOrder = this.serverOrderMap.size;
+      this.serverOrderMap.set(serverName, nextOrder);
+    }
+    return this.serverOrderMap.get(serverName)!;
+  }
+
+  /**
    * 启动工作区的 MCP 客户端
    */
   async startClients(): Promise<WorkspaceMCPClientImpl[]> {
@@ -45,6 +81,9 @@ export class WorkspaceMCPManager {
 
     // 加载工作区配置
     const config = await this.loadWorkspaceConfig();
+
+    // 初始化所有服务器的order，确保顺序稳定
+    this.initializeServerOrders(config);
 
     const clients: WorkspaceMCPClientImpl[] = [];
     const tasks: Promise<void>[] = [];
@@ -79,7 +118,7 @@ export class WorkspaceMCPManager {
         server.name,
         serverConfig,
         "workspace",
-        this.order++,
+        this.getServerOrder(server.name),
         {
           mcpType: "builtin",
           workspacePath: this.workspacePath,
@@ -112,7 +151,7 @@ export class WorkspaceMCPManager {
         name,
         serverConfig,
         "workspace",
-        this.order++,
+        this.getServerOrder(name),
         {
           mcpType: "custom",
           workspacePath: this.workspacePath,
@@ -154,7 +193,7 @@ export class WorkspaceMCPManager {
       name,
       serverConfig,
       "workspace",
-      this.order++,
+      this.getServerOrder(name),
       {
         mcpType: "custom",
         workspacePath: this.workspacePath,
@@ -185,7 +224,7 @@ export class WorkspaceMCPManager {
       name,
       serverConfig,
       "workspace",
-      this.order++,
+      this.getServerOrder(name),
       {
         mcpType: "builtin",
         workspacePath: this.workspacePath,
