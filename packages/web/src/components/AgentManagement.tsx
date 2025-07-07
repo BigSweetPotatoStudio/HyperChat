@@ -30,6 +30,7 @@ import {
   InfoCircleOutlined,
   PlayCircleOutlined,
   SmileOutlined,
+  MessageOutlined,
 } from "@ant-design/icons";
 import { call } from "../common/call";
 import { t } from "../i18n";
@@ -58,9 +59,10 @@ interface AgentManagementProps {
   workspace: WorkspaceInfo;
   agents: Agent[];
   onRefresh: () => Promise<void>;
+  onOpenChat?: (agent: Agent) => void;
 }
 
-export function AgentManagement({ workspace, agents, onRefresh }: AgentManagementProps) {
+export function AgentManagement({ workspace, agents, onRefresh, onOpenChat }: AgentManagementProps) {
   const [agentDetailDrawer, setAgentDetailDrawer] = useState(false);
   const [agentEditModal, setAgentEditModal] = useState(false);
   const [selectedAgent, setSelectedAgent] = useState<Agent | null>(null);
@@ -190,6 +192,12 @@ export function AgentManagement({ workspace, agents, onRefresh }: AgentManagemen
             renderItem={(agent) => {
               const menuItems = [
                 {
+                  key: "chat",
+                  icon: <MessageOutlined />,
+                  label: t`Open Chat`,
+                  onClick: () => onOpenChat && onOpenChat(agent),
+                },
+                {
                   key: "details",
                   icon: <InfoCircleOutlined />,
                   label: t`View Details`,
@@ -228,6 +236,17 @@ export function AgentManagement({ workspace, agents, onRefresh }: AgentManagemen
               return (
                 <List.Item
                   actions={[
+                    <Button
+                      key="chat"
+                      type="text"
+                      size="small"
+                      icon={<MessageOutlined />}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onOpenChat && onOpenChat(agent);
+                      }}
+                      title={t`Open Chat`}
+                    />,
                     <Dropdown
                       key="more"
                       menu={{ items: menuItems }}

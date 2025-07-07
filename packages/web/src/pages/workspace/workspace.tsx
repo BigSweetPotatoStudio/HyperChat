@@ -36,6 +36,8 @@ import {
   MoreOutlined,
   HistoryOutlined,
   ClockCircleOutlined,
+  MessageOutlined,
+  CloseOutlined,
 } from "@ant-design/icons";
 import { call, msg_receive } from "../../common/call";
 import { useForceUpdate } from "../../hooks/useForceUpdate";
@@ -81,6 +83,15 @@ interface FileNode {
   isHidden?: boolean;
 }
 
+interface ChatTab {
+  key: string;
+  title: string;
+  agentKey?: string;
+  agentName?: string;
+  workspacePath: string;
+  closable?: boolean;
+}
+
 export function Workspace() {
   const refresh = useForceUpdate();
   const [workspaces, setWorkspaces] = useState<WorkspaceInfo[]>([]);
@@ -100,6 +111,8 @@ export function Workspace() {
   const [showHiddenFiles, setShowHiddenFiles] = useState(true);
   const [workspaceHistory, setWorkspaceHistory] = useState(() => getWorkspaceHistory());
   const [form] = Form.useForm();
+  const [chatTabs, setChatTabs] = useState<ChatTab[]>([]);
+  const [activeChatTab, setActiveChatTab] = useState<string>("");
 
   // 面板尺寸状态 - 使用数组格式，与Ant Design Splitter兼容
   const [panelSizes, setPanelSizes] = useState<any[]>(() => {
@@ -481,6 +494,8 @@ export function Workspace() {
       const workspaceKey = currentWorkspace.path;
       const sizes = getPanelSizes(workspaceKey);
       setPanelSizes([sizes.left, sizes.middle, sizes.right]);
+      // 初始化默认聊天标签页
+      initDefaultChatTab(currentWorkspace);
     }
   }, [activeWorkspaceKey, workspaces, globalWorkspace]);
 
@@ -512,6 +527,66 @@ export function Workspace() {
         }
       }
       await loadWorkspaceDetails(workspace);
+    }
+  };
+
+  // 打开Agent聊天
+  const openAgentChat = (agent: any) => {
+    const currentWorkspace = getCurrentWorkspace();
+    if (!currentWorkspace) return;
+
+    const tabKey = `${currentWorkspace.path}-${agent.config.key}`;
+    const existingTab = chatTabs.find(tab => tab.key === tabKey);
+    
+    if (existingTab) {
+      // 如果已存在，切换到该标签页
+      setActiveChatTab(tabKey);
+    } else {
+      // 创建新的聊天标签页
+      const newTab: ChatTab = {
+        key: tabKey,
+        title: agent.config.name || agent.config.key,
+        agentKey: agent.config.key,
+        agentName: agent.config.name || agent.config.key,
+        workspacePath: currentWorkspace.path,
+        closable: true,
+      };
+      setChatTabs(prev => [...prev, newTab]);
+      setActiveChatTab(tabKey);
+    }
+  };
+
+  // 关闭聊天标签页
+  const closeChatTab = (tabKey: string) => {
+    const newTabs = chatTabs.filter(tab => tab.key !== tabKey);
+    setChatTabs(newTabs);
+    
+    // 如果关闭的是当前活动标签页，切换到其他标签页
+    if (activeChatTab === tabKey) {
+      if (newTabs.length > 0 && newTabs[newTabs.length - 1]) {
+        setActiveChatTab(newTabs[newTabs.length - 1]!.key);
+      } else {
+        setActiveChatTab("");
+      }
+    }
+  };
+
+  // 初始化默认聊天标签页
+  const initDefaultChatTab = (workspace: WorkspaceInfo) => {
+    const defaultTabKey = `${workspace.path}-default`;
+    const hasDefaultTab = chatTabs.some(tab => tab.key === defaultTabKey);
+    
+    if (!hasDefaultTab) {
+      const defaultTab: ChatTab = {
+        key: defaultTabKey,
+        title: t`Workspace Chat`,
+        workspacePath: workspace.path,
+        closable: false,
+      };
+      setChatTabs(prev => [defaultTab, ...prev]);
+      if (!activeChatTab) {
+        setActiveChatTab(defaultTabKey);
+      }
     }
   };
 
@@ -606,12 +681,49 @@ export function Workspace() {
             min="30%"
           >
             <Card
-              title={t`Workspace Chat`}
+              title={null}
               size="small"
               className="h-full"
-              bodyStyle={{ padding: '0', height: 'calc(100% - 36px)', overflow: 'hidden' }}
+              bodyStyle={{ padding: '0', height: '100%', overflow: 'hidden' }}
             >
-              <WorkspaceChat workspace={currentWorkspace} />
+              {chatTabs.length > 0 ? (
+                <Tabs
+                  type="editable-card"
+                  activeKey={activeChatTab}
+                  onChange={setActiveChatTab}
+                  onEdit={(targetKey, action) => {
+                    if (action === 'remove' && typeof targetKey === 'string') {
+                      closeChatTab(targetKey);
+                    }
+                  }}
+                  hideAdd
+                  size="small"
+                  tabBarStyle={{ marginBottom: 0, padding: '0 8px' }}
+                  items={chatTabs.map(tab => ({
+                    key: tab.key,
+                    label: (
+                      <Space size="small">
+                        {tab.agentKey ? <MessageOutlined /> : <GlobalOutlined />}
+                        <span>{tab.title}</span>
+                      </Space>
+                    ),
+                    closable: tab.closable,
+                    children: (
+                      <div style={{ height: 'calc(100vh - 200px)', overflow: 'hidden' }}>
+                        <WorkspaceChat 
+                          workspace={currentWorkspace} 
+                          agentKey={tab.agentKey}
+                          key={tab.key}
+                        />
+                      </div>
+                    ),
+                  }))}
+                />
+              ) : (
+                <div className="h-full flex items-center justify-center">
+                  <Empty description={t`No chat tabs open`} />
+                </div>
+              )}
             </Card>
           </Splitter.Panel>
 
@@ -638,6 +750,7 @@ export function Workspace() {
                         workspace={currentWorkspace}
                         agents={details.agents || []}
                         onRefresh={refreshWorkspaceDetails}
+                        onOpenChat={openAgentChat}
                       />
                     ) : <Empty description={t`No workspace selected`} />,
                   },

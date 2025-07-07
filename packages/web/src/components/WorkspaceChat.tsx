@@ -71,12 +71,14 @@ interface WorkspaceChatProps {
     name: string;
     isGlobal?: boolean;
   };
+  /** 指定的Agent Key，用于Agent聊天 */
+  agentKey?: string;
 }
 
 /**
  * 工作区聊天组件
  */
-export const WorkspaceChat = ({ workspace }: WorkspaceChatProps) => {
+export const WorkspaceChat = ({ workspace, agentKey }: WorkspaceChatProps) => {
   // 使用强制刷新 hook
   const refresh = useForceUpdate();
 
@@ -141,17 +143,39 @@ export const WorkspaceChat = ({ workspace }: WorkspaceChatProps) => {
         const defaultModel = getDefaultModelConfigSync(AI_MODELS);
         currentChat.current.modelKey = defaultModel ? defaultModel.key : "";
 
-        currentChatReset(
-          { allowMCPs: AppSetting.get().defaultAllowMCPs || [] },
-          "",
-        );
+        // 如果指定了agentKey，使用Agent配置
+        if (agentKey) {
+          const agent = Agents.get().data.find(a => a.key === agentKey);
+          if (agent) {
+            currentChatReset(
+              { 
+                allowMCPs: agent.allowMCPs || [],
+                agentKey: agentKey,
+                modelKey: agent.modelKey || defaultModel?.key || "",
+                temperature: agent.temperature,
+                confirm_call_tool: agent.confirm_call_tool || false,
+              },
+              agent.prompt || "",
+            );
+          } else {
+            currentChatReset(
+              { allowMCPs: AppSetting.get().defaultAllowMCPs || [], agentKey: agentKey },
+              "",
+            );
+          }
+        } else {
+          currentChatReset(
+            { allowMCPs: AppSetting.get().defaultAllowMCPs || [] },
+            "",
+          );
+        }
 
         refresh();
       } catch (error) {
         console.error("Failed to initialize workspace chat:", error);
       }
     })();
-  }, [workspace]);
+  }, [workspace, agentKey]);
 
   /**
    * 重置当前聊天配置
@@ -298,7 +322,7 @@ export const WorkspaceChat = ({ workspace }: WorkspaceChatProps) => {
     } finally {
       setLoading(false);
     }
-  }, [workspace]);
+  }, [workspace, agentKey]);
 
   // 获取当前模型配置
   let currModel = (
@@ -323,10 +347,10 @@ export const WorkspaceChat = ({ workspace }: WorkspaceChatProps) => {
               currentChat.current.messages?.length == 0) && (
                 <>
                   <Welcome
-                    icon="💬"
-                    title={t`Workspace Chat`}
+                    icon={agentKey ? "🤖" : "💬"}
+                    title={agentKey ? (Agents.get().data.find(a => a.key === agentKey)?.name || t`Agent Chat`) : t`Workspace Chat`}
                     className="mb-4"
-                    description={t`Start chatting in your workspace`}
+                    description={agentKey ? t`Chatting with agent` : t`Start chatting in your workspace`}
                   />
                 </>
               )}
