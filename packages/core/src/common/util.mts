@@ -83,53 +83,94 @@ const WINDOWS_RESERVED_NAMES = [
   "LPT9",
 ];
 
+
 /**
- * 文件名安全化处理
+ * 安全化文件名函数（仅处理文件名，不包含扩展名）
  * 
- * 将用户输入的文件名处理为在 Windows 和其他操作系统上都安全的格式
- * 主要处理以下问题：
- * - 移除或替换非法字符 (<>:"/\|?* 等)
- * - 处理 Windows 保留名称 (CON, PRN, AUX 等)
- * - 移除文件名末尾的点
- * - 控制文件名长度
- * - 确保文件名不为空
+ * 确保文件名在各种操作系统上都是合法的，主要处理：
+ * - 移除或替换非法字符（< > : " | ? * \ /）
+ * - 处理 Windows 保留名称（CON, PRN, AUX 等）
+ * - 移除首尾空白字符和点号
+ * - 限制文件名长度，防止过长
+ * - 确保非空结果
  * 
- * @param fileName - 需要处理的文件名
- * @returns 安全的文件名字符串
+ * @param fileName - 原始文件名（不应包含扩展名）
+ * @param maxLength - 最大长度限制，默认 100 字符
+ * @returns 安全的文件名
  * 
  * @example
  * ```typescript
- * sanitizeFileName("CON.txt"); // "_CON.txt"
- * sanitizeFileName("file<>name"); // "file__name"
- * sanitizeFileName("name..."); // "name"
+ * // 基本字符替换
+ * sanitizeFileName("My File<>:*?|");     // "My_File_"
+ * sanitizeFileName("project/name\\test"); // "project_name_test"
+ * 
+ * // Windows 保留名称处理
+ * sanitizeFileName("CON");               // "CON_"
+ * sanitizeFileName("aux");               // "aux_"
+ * sanitizeFileName("LPT1");              // "LPT1_"
+ * 
+ * // 空白和特殊字符处理
+ * sanitizeFileName("  test  ");          // "test"
+ * sanitizeFileName("file   name");       // "file_name"
+ * sanitizeFileName("...file...");        // "file"
+ * 
+ * // 边界情况
+ * sanitizeFileName("");                  // "unnamed"
+ * sanitizeFileName("   ");               // "unnamed"
+ * sanitizeFileName("...");               // "unnamed"
+ * 
+ * // 长度限制
+ * sanitizeFileName("a".repeat(150), 50); // "a".repeat(50)
  * ```
  */
-export function sanitizeFileName(fileName: string): string {
-  // 去除首尾空格
+export function sanitizeFileName(fileName: string, maxLength: number = 50, defaultName: string = 'unnamed'): string {
+  if (!fileName || typeof fileName !== 'string') {
+    return defaultName;
+  }
+
+  // 移除首尾空白字符
   let sanitized = fileName.trim();
 
-  sanitized = sanitized.replace(/[\n\r]+/g, " ");
+  // 如果为空，返回默认名称
+  if (!sanitized) {
+    return defaultName;
+  }
 
-  // 替换非法字符
-  sanitized = sanitized.replace(/[<>:"\/\\|?*\x00-\x1F]+/g, "_");
+  // 替换非法字符为下划线
+  // Windows 和其他系统都不允许的字符: < > : " | ? * \ /
+  sanitized = sanitized.replace(/[<>:"|?*\\/]/g, '_');
 
-  // 处理以点结尾的情况
-  sanitized = sanitized.replace(/\.+$/, "");
+  // 替换其他可能有问题的字符
+  sanitized = sanitized
+    .replace(/[\x00-\x1f\x7f]/g, '_')     // 控制字符
+    .replace(/[\r\n\t]/g, '_')           // 换行、回车、制表符
+    .replace(/\s+/g, '_')                // 连续空白字符替换为单个下划线
+    .replace(/_+/g, '_');                // 连续下划线合并为单个
 
-  // 检查是否是保留名称
-  const nameWithoutExt = sanitized.split(".")[0]?.toUpperCase() || '';
-  if (WINDOWS_RESERVED_NAMES.includes(nameWithoutExt)) {
-    sanitized = "_" + sanitized;
+  // 移除首尾的点号和下划线
+  sanitized = sanitized.replace(/^[._]+|[._]+$/g, '');
+
+  // 如果处理后为空，返回默认名称
+  if (!sanitized) {
+    return defaultName;
+  }
+
+  // 检查 Windows 保留名称（不区分大小写）
+  const upperName = sanitized.toUpperCase();
+  if (WINDOWS_RESERVED_NAMES.includes(upperName)) {
+    sanitized = sanitized + '_';
   }
 
   // 限制长度
-  if (sanitized.length > 128) {
-    sanitized = sanitized.substring(0, 128);
+  if (sanitized.length > maxLength) {
+    sanitized = sanitized.substring(0, maxLength);
+    // 确保截断后不以点号或下划线结尾
+    sanitized = sanitized.replace(/[._]+$/, '');
   }
 
-  // 确保文件名不为空
+  // 最终检查，确保非空
   if (!sanitized) {
-    sanitized = "_";
+    return defaultName;
   }
 
   return sanitized;

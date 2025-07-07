@@ -27,8 +27,8 @@ export class DataList<T extends { key: string }> {
   constructor(
     private dirPath: string,
     private defaultFormat: FileFormat = FileFormat.JSON,
+    private generateKey: (item: T) => string = () => `${dayjs().format("YYMMDD-HHmmss")}-${v4().slice(0, 8)}`,
     private getItemKey: (item: T) => string = (item) => item.key,
-    private generateKey: () => string = () => `${dayjs().format("YYMMDD-HHmmss")}-${v4().slice(0, 8)}`,
   ) { }
 
   /**
@@ -152,7 +152,16 @@ export class DataList<T extends { key: string }> {
               return null;
             }
 
-            return { key: this.getItemKey(item), item };
+            // 从文件名获取 key（去掉扩展名）
+            const fileKey = path.basename(file, path.extname(file));
+
+            // 确保对象的 key 与文件名保持一致
+            if (item.key && item.key !== fileKey) {
+              console.warn(`文件 ${file} 中的 key (${item.key}) 与文件名不匹配，使用文件名作为 key: ${fileKey}`);
+            }
+            item.key = fileKey;
+
+            return { key: fileKey, item };
           } catch (error) {
             // 提供更详细的文件处理错误信息
             if (error instanceof Error) {
@@ -237,10 +246,11 @@ export class DataList<T extends { key: string }> {
 
       // 如果没有 key，生成新的 key
       if (!item.key) {
-        (item as any).key = this.generateKey();
+        item.key = this.generateKey(item);
       }
 
       const key = this.getItemKey(item);
+
       const filename = this.getFileName(key, this.defaultFormat);
       const filePath = path.join(this.dirPath, filename);
       const content = this.serializeContent(item, this.defaultFormat);
@@ -317,7 +327,7 @@ export class DataList<T extends { key: string }> {
     // 为没有 key 的项目生成 key
     const itemsWithKeys = items.map(item => {
       if (!item.key) {
-        (item).key = this.generateKey();
+        item.key = this.generateKey(item);
       }
       return item;
     });

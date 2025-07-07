@@ -6,6 +6,7 @@ import * as yaml from "js-yaml";
 import { CONSTANTS } from "./constants.mjs";
 import { AgentConfig, ChatHistoryItem } from "./types.mjs";
 import { DataList } from "./dataList.mjs";
+import { sanitizeFileName } from "../common/util.mjs";
 
 /**
  * Agent 类 - 管理单个 Agent 的配置和聊天记录
@@ -30,7 +31,9 @@ export class AgentInstance {
       lastModified: Date.now(),
     };
 
-    this.chatLogs = new DataList<ChatHistoryItem>(path.join(agentPath, CONSTANTS.DIRECTORIES.CHAT_LOGS), DataList.FileFormat.YAML);
+    this.chatLogs = new DataList<ChatHistoryItem>(path.join(agentPath, CONSTANTS.DIRECTORIES.CHAT_LOGS), DataList.FileFormat.YAML,
+      // (item) => `${dayjs().format("YYMMDD-HHmmss")}-${sanitizeFileName(item.label, 50, v4().slice(0, 8))}`
+    );
   }
 
   /**
@@ -67,21 +70,24 @@ export class AgentInstance {
    * 加载 Agent 配置
    */
   private async loadConfig(): Promise<void> {
+    // 确保 key 始终与文件夹名称保持一致
+    const folderName = path.basename(this.agentPath);
+    this.config.key = folderName;
 
     if (fs.existsSync(this.configPath)) {
       try {
         const content = await fs.promises.readFile(this.configPath, "utf-8");
         const config = yaml.load(content) as AgentConfig;
-        
-        // 合并配置，但确保 name 字段不为空
-        this.config = { ...this.config, ...config };
-        
-        // 如果从配置文件读取的 name 为空，使用默认的 key 作为 name
+
+        // 合并配置，但强制使用文件夹名称作为 key
+        this.config = { ...this.config, ...config, key: folderName };
+
+        // 如果从配置文件读取的 name 为空，使用文件夹名称作为 name
         if (!this.config.name || this.config.name.trim() === '') {
-          this.config.name = this.config.key;
+          this.config.name = folderName;
         }
       } catch (error) {
-        console.warn(`加载 Agent 配置失败 ${this.config.key}:`, error);
+        console.warn(`加载 Agent 配置失败 ${folderName}:`, error);
       }
     }
   }
@@ -262,13 +268,8 @@ export class AgentManager {
    * 创建安全的文件夹名称
    */
   private createSafeFolderName(name: string): string {
-    // 移除或替换不安全的字符
-    return name
-      .replace(/[\\/:*?"<>|]/g, '_') // 替换Windows不允许的字符
-      .replace(/[\s\t\n\r]/g, '_') // 替换空白字符
-      .replace(/\.+$/g, '') // 移除结尾的点
-      .replace(/^\s*$/, 'Unnamed') // 如果名称为空，使用默认名称
-      .substring(0, 100); // 限制长度
+    // 使用通用的文件名安全化函数
+    return sanitizeFileName(name, 50); // 限制为50字符
   }
 
   /**
@@ -290,27 +291,29 @@ export class AgentManager {
    * 创建新的 Agent
    */
   async createAgent(config: Partial<AgentConfig>): Promise<AgentInstance | null> {
-    const key = config.key || `${dayjs().format("YYMMDD-HHmmss")}-${v4().slice(0, 8)}`;
-    const name = config.name || key;
+    const name = config.name || `${dayjs().format("YYMMDD-HHmmss")}-${v4().slice(0, 8)}`;
+
+    // 使用 name 作为文件夹名称
+    const folderName = await this.generateUniqueFolderName(name);
+    const agentPath = path.join(this.agentsPath, folderName);
+
+    // key 与文件夹名称保持一致
+    const key = folderName;
 
     if (this.agents.has(key)) {
       console.warn(`Agent ${key} 已存在`);
       return null;
     }
 
-    // 使用 name 作为文件夹名称
-    const folderName = await this.generateUniqueFolderName(name);
-    const agentPath = path.join(this.agentsPath, folderName);
-
     const agentConfig: AgentConfig = {
-      key,
+      ...config,
+      key,  // 使用文件夹名称作为 key
       name,
       prompt: config.prompt || '',
       allowMCPs: config.allowMCPs || [],
       confirm_call_tool: config.confirm_call_tool ?? false,
       created: Date.now(),
-      lastModified: Date.now(),
-      ...config,
+      lastModified: Date.now()
     };
 
     try {
