@@ -209,7 +209,7 @@ export function AgentManagement({ workspace, agents, onRefresh, onOpenChat, mcpC
       onOk: async () => {
         try {
           if (!chatHistoryAgent) return;
-          
+
           await call('deleteAgentChatLog', {
             workspacePath: workspace.path,
             agentKey: chatHistoryAgent.config.key,
@@ -217,14 +217,14 @@ export function AgentManagement({ workspace, agents, onRefresh, onOpenChat, mcpC
           });
 
           message.success(t`Chat log deleted successfully`);
-          
+
           // 重新加载聊天历史列表
           const result = await call('getAgentChatLogs', {
             workspacePath: workspace.path,
             agentKey: chatHistoryAgent.config.key
           });
           setChatHistoryList(result.chatLogs || []);
-          
+
           // 刷新Agent列表以更新聊天记录数量
           await onRefresh();
         } catch (error) {
@@ -237,7 +237,7 @@ export function AgentManagement({ workspace, agents, onRefresh, onOpenChat, mcpC
 
   return (
     <>
-      <div className="p-2 overflow-auto" style={{ height: 'calc(100vh - 160px)' }}>
+      <div className="p-2 overflow-auto" >
         <div className="flex justify-between items-center mb-2">
           <span className="text-sm font-medium">{`Agents (${agents.length})`}</span>
           <Button
@@ -688,7 +688,7 @@ export function AgentManagement({ workspace, agents, onRefresh, onOpenChat, mcpC
                     setChatHistoryModal(false);
                     setChatHistoryAgent(null);
                     setChatHistoryList([]);
-                    
+
                     // 打开聊天并加载历史记录
                     if (chatHistoryAgent && onOpenChat) {
                       onOpenChat(chatHistoryAgent, chatLog);

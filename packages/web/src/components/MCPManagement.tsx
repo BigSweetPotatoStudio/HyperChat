@@ -186,7 +186,7 @@ export function MCPManagement({ workspace, mcpClients, onRefresh }: MCPManagemen
 
   return (
     <>
-      <div className="p-2 overflow-auto" style={{ height: 'calc(100vh - 160px)' }}>
+      <div className="p-2 overflow-auto">
         <div className="flex justify-between items-center mb-2">
           <span className="text-sm font-medium">{`MCP (${getFilteredMcpClients().length}/${Object.keys(mcpClients).length})`}</span>
           <div className="flex gap-1">

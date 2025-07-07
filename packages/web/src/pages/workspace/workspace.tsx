@@ -59,6 +59,7 @@ import { AppHeader } from "../../components/AppHeader";
 import { AppActions } from "../../components/AppActions";
 
 import { FileEditor } from "../../components/FileEditor";
+import { Icon } from "@/src/components/icon";
 
 const { Title, Text } = Typography;
 
@@ -823,15 +824,18 @@ export function Workspace() {
             <Card
               title={t`Management Panel`}
               size="small"
-              className="h-full"
-              bodyStyle={{ padding: '0', height: 'calc(100% - 48px)' }}
+            // className="h-full"
+            // bodyStyle={{ padding: 0, height: 'calc(100% - 48px)' }}
             >
               <Tabs
+                animated={true}
+                tabBarStyle={{ marginBottom: 0, padding: '0 8px' }}
                 size="small"
                 items={[
                   {
                     label: (
                       <Space>
+                        <Icon name="bx-bot"></Icon>
                         {t`Agents`}
                         <Badge count={details.agents?.length || 0} size="small" />
                       </Space>
@@ -850,6 +854,7 @@ export function Workspace() {
                   {
                     label: (
                       <Space>
+                        <Icon name="mcp"></Icon>
                         {t`MCP`}
                         <Badge count={mcpClients.filter(x => x.status == "connected").length} size="small" />
                       </Space>
@@ -913,6 +918,7 @@ export function Workspace() {
               addIcon={<PlusOutlined />}
               style={{ marginBottom: 0 }}
               tabBarStyle={{ marginBottom: 0, background: 'transparent' }}
+
             />
           </div>
 
@@ -923,7 +929,7 @@ export function Workspace() {
           />
         </div>
 
-        <div style={{ height: 'calc(100% - 48px)', padding: '16px' }}>
+        <div style={{ height: 'calc(100% - 54px)', padding: '8px' }}>
           {renderWorkspaceContent()}
         </div>
       </div>

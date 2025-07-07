@@ -150,7 +150,7 @@ export function WorkspaceSidebar({
   // 渲染待办事项标签页
   const renderTodos = () => {
     return (
-      <div className="p-2">
+      <div className="px-2">
         <div className="space-y-2">
           {todos.map(todo => (
             <div
