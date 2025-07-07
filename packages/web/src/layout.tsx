@@ -3,13 +3,13 @@
  * 
  * 这是 HyperChat Web 前端应用的主布局组件，负责：
  * 1. 全局状态管理 - 管理语言设置、主题、同步状态等
- * 2. 路由导航 - 提供侧边栏导航和页面路由
+ * 2. 路由导航 - 提供简单的导航和页面路由
  * 3. 消息处理 - 监听来自主进程的各种消息并响应
  * 4. 初始化逻辑 - 初始化各种数据源和服务
  * 5. UI 交互 - 提供用户界面交互功能
  * 
  * 主要功能模块：
- * - ProLayout: 基于 Ant Design Pro 的布局组件
+ * - Layout: 基于 Ant Design 的标准布局组件
  * - 主题切换: 支持明暗主题切换
  * - 语言切换: 支持中英文切换
  * - MCP 客户端管理: 管理模型上下文协议客户端
@@ -31,30 +31,20 @@ import {
 } from "react-router-dom";
 import Clarity from "@microsoft/clarity";
 import {
-  Button,
-  Switch,
   Modal,
   ConfigProvider,
-  Space,
-  Select,
   Tag,
   notification,
-  Drawer,
+  Layout as AntLayout,
 } from "antd";
 import enUS from "antd/locale/en_US";
 import zhCN from "antd/locale/zh_CN";
 
 import {
   ExclamationCircleFilled,
-  GithubFilled,
-  SyncOutlined,
 } from "@ant-design/icons";
 
 import { HeaderContext } from "./common/context";
-import {
-  ProLayout,
-} from "@ant-design/pro-components";
-import { getLayoutRoute } from "./router";
 import { currLang, setCurrLang, t } from "./i18n";
 import { call, callElectron, msg_receive } from "./common/call";
 import {
@@ -74,9 +64,7 @@ import {
   isEnabled as isDarkReaderEnabled,
   setFetchMethod as setDarkReaderFetchMethod,
 } from "darkreader";
-import { Icon } from "./components/icon";
 import { getDefaultModelConfigSync } from "./components/ai";
-import { ProviderSettings } from "./components/ProviderSettings";
 
 // 定义消息类型
 interface TaskResultMessage {
@@ -161,6 +149,8 @@ msg_receive("message-from-main", (msg: MessageFromMain) => {
   }
 });
 
+const { Header, Content } = AntLayout;
+
 /**
  * 应用程序主布局组件
  * 提供全局导航、主题切换、语言切换等功能
@@ -194,9 +184,9 @@ export function Layout() {
    */
   useEffect(() => {
     setTimeout(() => {
-      // 如果访问根路径，自动重定向到聊天页面
+      // 如果访问根路径，自动重定向到工作区页面
       if (location.pathname == "/") {
-        navigate("/Chat");
+        navigate("/Workspace");
       }
     });
 
@@ -331,7 +321,6 @@ export function Layout() {
 
   // 状态管理
   const [locale, setLocal] = useState(currLang == "zhCN" ? zhCN : enUS); // 国际化语言设置
-  const [collapsed, setCollapsed] = useState<boolean>(false); // 侧边栏折叠状态
   const [isModelConfigOpen, setIsModelConfigOpen] = useState<boolean>(false); // AI 提供商设置抽屉是否打开
   const mcpClientsRef = useRef<InitedClient[]>([]); // MCP 客户端列表
   const [syncStatus, setSyncStatus] = useState<number>(0); // 同步状态：0-正常，1-同步中，-1-失败
@@ -361,251 +350,21 @@ export function Layout() {
 
   return (
     <ConfigProvider locale={locale}>
-      <div style={{ width: "100%", margin: "0px auto" }}>
-        <ProLayout
-          prefixCls="my-prefix"
-          collapsed={collapsed}
-          onCollapse={(collapsed) => {
-            setCollapsed(collapsed);
-          }}
-          route={getLayoutRoute()}
-          location={{
-            pathname: location.pathname,
-          }}
-          token={{
-            header: {
-              colorBgMenuItemSelected: "rgba(0,0,0,0.04)",
-            },
-          }}
-          siderMenuType="group"
-          menu={{
-            collapsedShowGroupTitle: true,
-          }}
-          /**
-           * 动作渲染器 - 右上角的操作按钮区域
-           * 包含 GitHub 链接、AI 提供商设置、语言切换、主题切换等
-           */
-          actionsRender={(props) => {
-            return (
-              <Space>
-                {/* GitHub 链接 */}
-                <a href="https://github.com/BigSweetPotatoStudio/HyperChat">
-                  <GithubFilled></GithubFilled>
-                </a>
-
-                {/* AI 提供商设置按钮 */}
-                <Button
-                  onClick={() => {
-                    setIsModelConfigOpen(true);
-                  }}
-                  icon={<Icon name="brain" />}
-                >
-                  {t`AI Providers`}
-                </Button>
-
-                {/* 语言切换选择器 */}
-                <Select
-                  className="hidden lg:inline-block"
-                  value={currLang}
-                  style={{ width: 120 }}
-                  onChange={(e) => {
-                    setLang(e);
-                  }}
-                  options={[
-                    { value: "zhCN", label: "中文" },
-                    { value: "enUS", label: "English" },
-                  ]}
-                />
-
-                {/* 主题切换开关 */}
-                <Switch
-                  checkedChildren={"🌙"}
-                  unCheckedChildren={"☀️"}
-                  checked={AppSetting.get().darkTheme}
-                  onChange={async (checked) => {
-                    AppSetting.get().darkTheme = checked;
-                    await AppSetting.save();
-                    combinedRefresh();
-
-                    // 应用主题设置
-                    if (checked) {
-                      enableDarkMode({
-                        brightness: 100,
-                        contrast: 90,
-                        sepia: 10,
-                      });
-                    } else {
-                      disableDarkMode();
-                    }
-                  }}
-                />
-              </Space>
-            );
-          }}
-          /**
-           * 头像区域渲染器 - 右上角的用户操作区域
-           * 显示同步状态按钮
-           */
-          avatarProps={{
-            render: (props, dom) => {
-              return (
-                <>
-                  {/* 同步状态按钮 */}
-                  <Button
-                    type="link"
-                    style={{
-                      color:
-                        syncStatus == 1
-                          ? undefined // 同步中 - 默认颜色
-                          : syncStatus == -1
-                            ? "red" // 同步失败 - 红色
-                            : "gray", // 正常状态 - 灰色
-                    }}
-                    onClick={() => {
-                      navigate("./Setting/WebdavSetting");
-                    }}
-                  >
-                    <SyncOutlined spin={syncStatus == 1} />
-                    {syncStatus == 1
-                      ? "Syncing"
-                      : syncStatus == -1
-                        ? "Failed"
-                        : "Sync"}
-                  </Button>
-                </>
-              );
-            },
-          }}
-          /**
-           * 应用 Logo 区域
-           * 点击可跳转到首页
-           */
-          logo={
-            <img
-              onClick={() => {
-                window.location.hash = "#/Home";
-              }}
-              src="./assets/favicon.png"
-            ></img>
-          }
-          /**
-           * 头部标题渲染器
-           * 显示应用名称、版本号和更新提示
-           */
-          headerTitleRender={(logo, title, _) => {
-            return (
-              <Link to="Home">
-                HyperChat
-                <span>
-                  ({LocalSetting.get().version})
-                  {/* 有新版本时显示更新标签 */}
-                  {updateData.info && (
-                    <Tag
-                      className=" text-red-600"
-                      onClick={() => {
-                        Modal.confirm({
-                          title: t`A new version is available`,
-                          width: "80%",
-                          style: {
-                            maxWidth: 1024,
-                          },
-                          content: (
-                            <div>
-                              <div>current version: {LocalSetting.get().version}</div>
-                              <div>latest version: {updateData.info?.version}</div>
-                              {updateData.info?.releaseName != updateData.info?.version && (
-                                <div>title: {updateData.info?.releaseName}</div>
-                              )}
-                              <div>
-                                changelog:{" "}
-                                {typeof updateData.info?.releaseNotes == "string" ? (
-                                  <div
-                                    style={{ color: "gray" }}
-                                    dangerouslySetInnerHTML={{
-                                      __html: updateData.info?.releaseNotes || '',
-                                    }}
-                                  ></div>
-                                ) : (
-                                  updateData.info?.releaseNotes?.map((x, index) => {
-                                    return (
-                                      <div
-                                        key={index}
-                                        dangerouslySetInnerHTML={{ __html: x.note }}
-                                      ></div>
-                                    );
-                                  })
-                                )}
-                              </div>
-                            </div>
-                          ),
-                          okText: t`Download And Update`,
-                          onOk: async () => {
-                            callElectron("checkUpdateDownload");
-                          },
-                        });
-                      }}
-                    >
-                      {`New`}
-                    </Tag>
-                  )}
-                </span>
-              </Link>
-            );
-          }}
-          /**
-           * 菜单页脚渲染器
-           * 在侧边栏底部显示欢迎信息
-           */
-          menuFooterRender={(props) => {
-            if (props?.collapsed) return undefined;
-            return (
-              <div
-                style={{
-                  textAlign: "center",
-                  paddingBlockStart: 12,
-                }}
-              >
-                Welcome to use
-              </div>
-            );
-          }}
-          /**
-           * 菜单项渲染器
-           * 将菜单项包装为 React Router 链接
-           */
-          menuItemRender={(item, dom) => <Link to={item.path || '/'}>{dom}</Link>}
-          layout="mix"
-          splitMenus={true}
-        >
+      <AntLayout style={{ minHeight: "100vh" }}>
+        <Content style={{ padding: "0" }}>
           {/* 头部上下文提供者 - 向子组件传递全局状态 */}
           <HeaderContext.Provider
             value={{
               globalState: globalStateVersion,
               updateGlobalState: combinedRefresh,
               setLang,
-              mcpClients: mcpClientsRef.current,
             }}
           >
             <Outlet />
           </HeaderContext.Provider>
-        </ProLayout>
+        </Content>
 
-        {/* AI 提供商设置抽屉 */}
-        <Drawer
-          width={1000}
-          title={t`AI Provider Settings`}
-          open={isModelConfigOpen}
-          onClose={() => {
-            setIsModelConfigOpen(false);
-          }}
-          styles={{
-            body: {
-              padding: 0,
-            }
-          }}
-        >
-          <ProviderSettings />
-        </Drawer>      </div>
+      </AntLayout>
     </ConfigProvider>
   );
 }

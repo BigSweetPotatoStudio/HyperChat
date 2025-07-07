@@ -31,8 +31,7 @@ import { HyperChatCompletionTool, IMCPClient, MCPServerConfig } from "@hyperchat
 
 const { Title } = Typography;
 
-interface MCPClient extends IMCPClient {
-}
+
 
 interface WorkspaceInfo {
   path: string;
@@ -41,14 +40,14 @@ interface WorkspaceInfo {
 
 interface MCPManagementProps {
   workspace: WorkspaceInfo;
-  mcpClients: Record<string, MCPClient>;
+  mcpClients: Record<string, IMCPClient>;
   onRefresh: () => Promise<void>;
 }
 
 export function MCPManagement({ workspace, mcpClients, onRefresh }: MCPManagementProps) {
   const [mcpRefreshing, setMcpRefreshing] = useState(false);
   const [mcpDetailDrawer, setMcpDetailDrawer] = useState(false);
-  const [selectedMcpClient, setSelectedMcpClient] = useState<MCPClient | null>(null);
+  const [selectedMcpClient, setSelectedMcpClient] = useState<IMCPClient | null>(null);
   const [addMcpModalOpen, setAddMcpModalOpen] = useState(false);
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [searchText, setSearchText] = useState<string>("");
@@ -149,7 +148,7 @@ export function MCPManagement({ workspace, mcpClients, onRefresh }: MCPManagemen
   };
 
   // 显示MCP客户端详情
-  const showMcpClientDetails = (client: MCPClient) => {
+  const showMcpClientDetails = (client: IMCPClient) => {
     setSelectedMcpClient(client);
     setMcpDetailDrawer(true);
   };

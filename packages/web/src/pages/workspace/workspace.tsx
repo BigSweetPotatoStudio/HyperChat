@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useContext } from "react";
 import {
   Card,
   List,
@@ -21,6 +21,8 @@ import {
   Descriptions,
   Dropdown,
   Divider,
+  Select,
+  Switch,
 } from "antd";
 import {
   FolderOpenOutlined,
@@ -38,10 +40,22 @@ import {
   ClockCircleOutlined,
   MessageOutlined,
   CloseOutlined,
+  GithubFilled,
+  SyncOutlined,
+  ExclamationCircleFilled,
 } from "@ant-design/icons";
-import { call, msg_receive } from "../../common/call";
+import { call, msg_receive, callElectron } from "../../common/call";
 import { useForceUpdate } from "../../hooks/useForceUpdate";
-import { t } from "../../i18n";
+import { t, currLang, setCurrLang } from "../../i18n";
+import { useNavigate } from "react-router-dom";
+import {
+  AppSetting,
+  LocalSetting,
+} from "@hyperchat/shared/data.mjs";
+import {
+  enable as enableDarkMode,
+  disable as disableDarkMode,
+} from "darkreader";
 import { ServerDirectoryBrowser } from "../../components/ServerDirectoryBrowser";
 import { getClients } from "../../common/mcp";
 import { MCPManagement } from "../../components/MCPManagement";
@@ -51,6 +65,9 @@ import { WorkspaceSidebar } from "../../components/WorkspaceSidebar";
 import { WorkspaceChat } from "../../components/WorkspaceChat";
 import { getPanelSizes, savePanelSizes, getWorkspaceHistory, addToWorkspaceHistory, removeFromWorkspaceHistory } from "../../utils/storage";
 import { AgentConfig } from "@hyperchat/shared/types.mjs";
+import { HeaderContext } from "../../common/context";
+import { Icon } from "../../components/icon";
+import { ProviderSettings } from "../../components/ProviderSettings";
 
 const { Title, Text } = Typography;
 
@@ -107,6 +124,18 @@ export type WorkspaceDetails = {
 
 export function Workspace() {
   const refresh = useForceUpdate();
+  const headerContext = useContext(HeaderContext);
+  const navigate = useNavigate();
+
+  // 只从context获取真正需要在Layout中管理的状态
+
+
+  // 本地状态管理 - 直接使用从 Layout 传递的状态
+  const [localIsModelConfigOpen, setLocalIsModelConfigOpen] = useState(false);
+
+  // 组合的刷新函数
+
+
   const [activeWorkspaceKey, setActiveWorkspaceKey] = useState<string>("");
 
   const [workspaces, setWorkspaces] = useState<WorkspaceInfo[]>([]);
@@ -129,7 +158,7 @@ export function Workspace() {
     const sizes = { left: '25%', middle: '50%', right: '25%' };
     return [sizes.left, sizes.middle, sizes.right];
   });
-
+  const [updateData, setUpdateData] = useState({} as any); // 更新数据
   // 监听MCP客户端状态变化
   useEffect(() => {
     // 监听传统的 MCP 变化消息（兼容性）
@@ -157,47 +186,65 @@ export function Workspace() {
           return newDetails;
         });
       }
+
+      if (res.type == "UpdateMsg" && res.data.status == 1) {
+        setUpdateData(res.data);
+      }
+
+      // 处理更新下载完成消息
+      if (res.type == "UpdateMsg" && res.data.status == 4) {
+        Modal.confirm({
+          title: "Update",
+          content:
+            "The new version has been downloaded, do you want to restart and update?",
+          icon: <ExclamationCircleFilled />,
+          okText: "Restart And Update",
+          onOk() {
+            callElectron("quitAndInstall");
+          },
+        });
+      }
     });
 
     // 监听新的工作区特定的 MCP 状态变化消息
-    const unsubscribeMcpStatus = msg_receive("mcp-status-change", (res: any) => {
-      console.log("收到 MCP 状态变化通知:", res);
+    // const unsubscribeMcpStatus = msg_receive("mcp-status-change", (res: any) => {
+    //   console.log("收到 MCP 状态变化通知:", res);
 
-      const { workspacePath, data } = res;
-      if (!workspacePath || !data) return;
+    //   const { workspacePath, data } = res;
+    //   if (!workspacePath || !data) return;
 
-      const { serverName, status } = data;
+    //   const { serverName, status } = data;
 
-      // 只更新指定工作区的 MCP 客户端数据
-      setWorkspaceDetails(prev => {
-        const newDetails = { ...prev };
-        const workspaceDetails = newDetails[workspacePath];
+    //   // 只更新指定工作区的 MCP 客户端数据
+    //   setWorkspaceDetails(prev => {
+    //     const newDetails = { ...prev };
+    //     const workspaceDetails = newDetails[workspacePath];
 
-        if (workspaceDetails && workspaceDetails.mcpClients) {
-          if (status === "deleted" || status === "disconnected") {
-            // 删除或断开连接的客户端
-            delete workspaceDetails.mcpClients[serverName];
-          } else {
-            // 添加或更新客户端
-            workspaceDetails.mcpClients[serverName] = {
-              name: serverName,
-              status,
-              workspacePath,
-              ...data
-            };
-          }
+    //     if (workspaceDetails && workspaceDetails.mcpClients) {
+    //       if (status === "deleted" || status === "disconnected") {
+    //         // 删除或断开连接的客户端
+    //         delete workspaceDetails.mcpClients[serverName];
+    //       } else {
+    //         // 添加或更新客户端
+    //         workspaceDetails.mcpClients[serverName] = {
+    //           name: serverName,
+    //           status,
+    //           workspacePath,
+    //           ...data
+    //         };
+    //       }
 
-          console.log(`工作区 ${workspacePath} 的 MCP 客户端 ${serverName} 状态更新为: ${status}`);
-        }
+    //       console.log(`工作区 ${workspacePath} 的 MCP 客户端 ${serverName} 状态更新为: ${status}`);
+    //     }
 
-        return newDetails;
-      });
-    });
+    //     return newDetails;
+    //   });
+    // });
 
     // 返回清理函数
     return () => {
       if (unsubscribeChangeMcp) unsubscribeChangeMcp();
-      if (unsubscribeMcpStatus) unsubscribeMcpStatus();
+      // if (unsubscribeMcpStatus) unsubscribeMcpStatus();
     };
   }, []);
 
@@ -718,7 +765,7 @@ export function Workspace() {
                     ),
                     closable: tab.closable,
                     children: (
-                      <div style={{ height: 'calc(100vh - 200px)', overflow: 'hidden' }}>
+                      <div style={{ height: 'calc(100vh - 116px)', overflow: 'hidden' }}>
                         <WorkspaceChat
                           workspace={currentWorkspace}
                           agentKey={tab.agentKey}
@@ -761,6 +808,7 @@ export function Workspace() {
                         agents={details.agents || []}
                         onRefresh={refreshWorkspaceDetails}
                         onOpenChat={openAgentChat}
+                        mcpClients={details.mcpClients || {}}
                       />
                     ) : <Empty description={t`No workspace selected`} />,
                   },
@@ -800,31 +848,159 @@ export function Workspace() {
   };
 
   return (
-    <div className="workspace-page h-full p-4">
+    <div className="workspace-page h-full">
       <div className="h-full">
-        <Tabs
-          type="editable-card"
-          activeKey={activeWorkspaceKey}
-          onChange={handleTabChange}
-          onEdit={handleTabEdit}
-          items={getTabItems()}
-          tabBarStyle={{ marginBottom: 16 }}
-          addIcon={<PlusOutlined />}
-        // tabBarExtraContent={{
-        //   right: (
-        //     <Tooltip title="新建工作区">
-        //       <Button
-        //         type="text"
-        //         size="small"
-        //         icon={<PlusOutlined />}
-        //         onClick={() => setCreateModalOpen(true)}
-        //       />
-        //     </Tooltip>
-        //   )
-        // }}
-        />
+        <div style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          padding: '0 24px',
+          background: '#fafafa',
+          borderBottom: '1px solid #f0f0f0',
+          minHeight: '48px'
+        }}>
+          {/* 左侧内容 - 显示Logo和标题 */}
+          <div style={{ display: "flex", alignItems: "center" }}>
+            <img
+              onClick={() => {
+                navigate("/Workspace");
+              }}
+              src="./assets/favicon.png"
+              style={{ width: 32, height: 32, marginRight: 16, cursor: "pointer" }}
+            />
+            <span style={{ fontSize: 18, fontWeight: "bold" }}>
+              HyperChat
+              <span style={{ fontSize: 14, fontWeight: "normal", marginLeft: 8 }}>
+                ({LocalSetting.get().version})
+                {/* 有新版本时显示更新标签 */}
+                {updateData?.info && (
+                  <Tag
+                    className=" text-red-600"
+                    onClick={() => {
+                      Modal.confirm({
+                        title: t`A new version is available`,
+                        width: "80%",
+                        style: {
+                          maxWidth: 1024,
+                        },
+                        content: (
+                          <div>
+                            <div>current version: {LocalSetting.get().version}</div>
+                            <div>latest version: {updateData.info?.version}</div>
+                            {updateData.info?.releaseName != updateData.info?.version && (
+                              <div>title: {updateData.info?.releaseName}</div>
+                            )}
+                            <div>
+                              changelog:{" "}
+                              {typeof updateData.info?.releaseNotes == "string" ? (
+                                <div
+                                  style={{ color: "gray" }}
+                                  dangerouslySetInnerHTML={{
+                                    __html: updateData.info?.releaseNotes || '',
+                                  }}
+                                ></div>
+                              ) : (
+                                updateData.info?.releaseNotes?.map((x, index) => {
+                                  return (
+                                    <div
+                                      key={index}
+                                      dangerouslySetInnerHTML={{ __html: x.note }}
+                                    ></div>
+                                  );
+                                })
+                              )}
+                            </div>
+                          </div>
+                        ),
+                        okText: t`Download And Update`,
+                        onOk: async () => {
+                          callElectron("checkUpdateDownload");
+                        },
+                      });
+                    }}
+                  >
+                    {`New`}
+                  </Tag>
+                )}
+              </span>
+            </span>
+          </div>
 
-        <div style={{ height: 'calc(100% - 48px)' }}>
+          {/* 中间的工作区切换标签 */}
+          <div style={{ flex: 1, display: 'flex', justifyContent: 'center' }}>
+            <Tabs
+              type="editable-card"
+              activeKey={activeWorkspaceKey}
+              onChange={handleTabChange}
+              onEdit={handleTabEdit}
+              items={getTabItems()}
+              addIcon={<PlusOutlined />}
+              style={{ marginBottom: 0 }}
+              tabBarStyle={{ marginBottom: 0, background: 'transparent' }}
+            />
+          </div>
+
+          {/* 右侧内容 - 显示操作按钮 */}
+          <div>
+            <Space>
+              {/* GitHub 链接 */}
+              <a href="https://github.com/BigSweetPotatoStudio/HyperChat">
+                <GithubFilled style={{ fontSize: 20 }} />
+              </a>
+
+              {/* AI 提供商设置按钮 */}
+              <Button
+                onClick={() => {
+                  setLocalIsModelConfigOpen(true);
+                }}
+                icon={<Icon name="brain" />}
+              >
+                {t`AI Providers`}
+              </Button>
+
+              {/* 语言切换选择器 */}
+              <Select
+                value={currLang}
+                style={{ width: 120 }}
+                onChange={(e) => {
+                  setCurrLang(e);
+                  refresh();
+                }}
+                options={[
+                  { value: "zhCN", label: "中文" },
+                  { value: "enUS", label: "English" },
+                ]}
+              />
+
+              {/* 主题切换开关 */}
+              <Switch
+                checkedChildren={"🌙"}
+                unCheckedChildren={"☀️"}
+                checked={AppSetting.get().darkTheme}
+                onChange={async (checked) => {
+                  AppSetting.get().darkTheme = checked;
+                  await AppSetting.save();
+                  refresh();
+
+                  // 应用主题设置
+                  if (checked) {
+                    enableDarkMode({
+                      brightness: 100,
+                      contrast: 90,
+                      sepia: 10,
+                    });
+                  } else {
+                    disableDarkMode();
+                  }
+                }}
+              />
+
+
+            </Space>
+          </div>
+        </div>
+
+        <div style={{ height: 'calc(100% - 48px)', padding: '16px' }}>
           {renderWorkspaceContent()}
         </div>
       </div>
@@ -937,6 +1113,23 @@ export function Workspace() {
         title={t`Select Workspace Directory`}
         initialPath="~"
       />
+
+      {/* AI 提供商设置抽屉 */}
+      <Drawer
+        width={1000}
+        title={t`AI Provider Settings`}
+        open={localIsModelConfigOpen}
+        onClose={() => {
+          setLocalIsModelConfigOpen(false);
+        }}
+        styles={{
+          body: {
+            padding: 0,
+          }
+        }}
+      >
+        <ProviderSettings />
+      </Drawer>
 
     </div>
   );

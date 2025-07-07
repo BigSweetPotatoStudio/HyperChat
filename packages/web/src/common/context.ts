@@ -20,10 +20,6 @@ export const UserContext = createContext<UserData | null>(null);
  */
 interface HeaderContextType {
   /**
-   * A list of initialized MCP clients.
-   */
-  mcpClients: InitedClient[];
-  /**
    * A numeric state value used globally, e.g., for triggering updates.
    */
   globalState: number;

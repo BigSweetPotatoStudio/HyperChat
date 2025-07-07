@@ -80,7 +80,7 @@ export const WorkspaceChat = ({ workspace, agentKey, workspaceDetails }: Workspa
 
   // 从上下文获取全局状态和MCP客户端
   const context = useContext(HeaderContext);
-  const { globalState, updateGlobalState, mcpClients } = context || {};
+  const { globalState, updateGlobalState } = context || {};
 
   // AI通道客户端引用
   const aiClientRef = useRef<AiChannel>(new AiChannel({}));

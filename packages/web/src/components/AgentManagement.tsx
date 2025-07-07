@@ -41,7 +41,7 @@ import { NumberStep } from "../common/numberStep";
 import EmojiPicker from 'emoji-picker-react';
 import { Editor } from "./editor";
 import { useForceUpdate } from "../hooks/useForceUpdate";
-import { AgentConfig } from "@hyperchat/shared/types.mjs";
+import { AgentConfig, IMCPClient } from "@hyperchat/shared/types.mjs";
 const { Title, Text } = Typography;
 
 
@@ -61,9 +61,10 @@ interface AgentManagementProps {
   agents: Agent[];
   onRefresh: () => Promise<void>;
   onOpenChat?: (agent: Agent) => void;
+  mcpClients: Record<string, IMCPClient>;
 }
 
-export function AgentManagement({ workspace, agents, onRefresh, onOpenChat }: AgentManagementProps) {
+export function AgentManagement({ workspace, agents, onRefresh, onOpenChat, mcpClients }: AgentManagementProps) {
   const [agentDetailDrawer, setAgentDetailDrawer] = useState(false);
   const [agentEditModal, setAgentEditModal] = useState(false);
   const [chatHistoryModal, setChatHistoryModal] = useState(false);
@@ -75,7 +76,7 @@ export function AgentManagement({ workspace, agents, onRefresh, onOpenChat }: Ag
   const [form] = Form.useForm();
   const refresh = useForceUpdate();
   const context = useContext(HeaderContext);
-  const { mcpClients } = context || {};
+
 
   useEffect(() => {
     AI_MODELS.init().then(() => {
@@ -537,7 +538,7 @@ export function AgentManagement({ workspace, agents, onRefresh, onOpenChat }: Ag
               treeCheckable
               placeholder={t`Please select allowed MCP`}
               showCheckedStrategy={TreeSelect.SHOW_PARENT}
-              treeData={(mcpClients || []).map((x) => ({
+              treeData={(Object.values(mcpClients) || []).map((x) => ({
                 title: x.name,
                 key: x.name,
                 value: x.name,
