@@ -50,6 +50,7 @@ import { FileTreeComponent } from "../../components/FileTreeComponent";
 import { WorkspaceSidebar } from "../../components/WorkspaceSidebar";
 import { WorkspaceChat } from "../../components/WorkspaceChat";
 import { getPanelSizes, savePanelSizes, getWorkspaceHistory, addToWorkspaceHistory, removeFromWorkspaceHistory } from "../../utils/storage";
+import { AgentConfig } from "@hyperchat/shared/types";
 
 const { Title, Text } = Typography;
 
@@ -63,7 +64,7 @@ interface WorkspaceConfig {
   };
 }
 
-interface WorkspaceInfo extends WorkspaceConfig {
+export interface WorkspaceInfo extends WorkspaceConfig {
   path: string;
   agentsCount: number;
   mcpServersCount: number;
@@ -92,18 +93,26 @@ interface ChatTab {
   closable?: boolean;
 }
 
+export type WorkspaceDetails = {
+  [key: string]: {
+    fileTreeData?: FileNode[];
+    agents: {
+      config: AgentConfig;
+      chatLogsCount: number;
+      lastChatTime?: number;
+    }[];
+    mcpClients: Record<string, any>;
+  }
+};
+
 export function Workspace() {
   const refresh = useForceUpdate();
+  const [activeWorkspaceKey, setActiveWorkspaceKey] = useState<string>("");
+
   const [workspaces, setWorkspaces] = useState<WorkspaceInfo[]>([]);
   const [globalWorkspace, setGlobalWorkspace] = useState<WorkspaceInfo | null>(null);
-  const [activeWorkspaceKey, setActiveWorkspaceKey] = useState<string>("");
-  const [workspaceDetails, setWorkspaceDetails] = useState<{
-    [key: string]: {
-      fileTreeData?: FileNode[];
-      agents: any[];
-      mcpClients: Record<string, any>;
-    }
-  }>({});
+  const [workspaceDetails, setWorkspaceDetails] = useState<WorkspaceDetails>({});
+
   const [loading, setLoading] = useState(false);
   const [createModalOpen, setCreateModalOpen] = useState(false);
   const [directoryBrowserOpen, setDirectoryBrowserOpen] = useState(false);
@@ -537,7 +546,7 @@ export function Workspace() {
 
     const tabKey = `${currentWorkspace.path}-${agent.config.key}`;
     const existingTab = chatTabs.find(tab => tab.key === tabKey);
-    
+
     if (existingTab) {
       // 如果已存在，切换到该标签页
       setActiveChatTab(tabKey);
@@ -560,7 +569,7 @@ export function Workspace() {
   const closeChatTab = (tabKey: string) => {
     const newTabs = chatTabs.filter(tab => tab.key !== tabKey);
     setChatTabs(newTabs);
-    
+
     // 如果关闭的是当前活动标签页，切换到其他标签页
     if (activeChatTab === tabKey) {
       if (newTabs.length > 0 && newTabs[newTabs.length - 1]) {
@@ -575,7 +584,7 @@ export function Workspace() {
   const initDefaultChatTab = (workspace: WorkspaceInfo) => {
     const defaultTabKey = `${workspace.path}-default`;
     const hasDefaultTab = chatTabs.some(tab => tab.key === defaultTabKey);
-    
+
     if (!hasDefaultTab) {
       const defaultTab: ChatTab = {
         key: defaultTabKey,
@@ -710,9 +719,10 @@ export function Workspace() {
                     closable: tab.closable,
                     children: (
                       <div style={{ height: 'calc(100vh - 200px)', overflow: 'hidden' }}>
-                        <WorkspaceChat 
-                          workspace={currentWorkspace} 
+                        <WorkspaceChat
+                          workspace={currentWorkspace}
                           agentKey={tab.agentKey}
+                          workspaceDetails={workspaceDetails}
                           key={tab.key}
                         />
                       </div>

@@ -44,8 +44,6 @@ import { AiChannel } from "@hyperchat/shared/ai.mjs";
 import {
   AI_MODELS,
   ChatHistory,
-  AppSetting,
-  Agents,
   LocalSetting,
   VarList,
   ChatHistoryItem,
@@ -60,25 +58,23 @@ import { getMyUuid } from "../common/util";
 import { HeaderContext } from "../common/context";
 import { useForceUpdate } from "../hooks/useForceUpdate";
 import { MyAttachR } from "../pages/chat/attachR";
+import { WorkspaceDetails, WorkspaceInfo } from "../pages/workspace/workspace";
 
 /**
  * 工作区聊天组件的Props类型定义
  */
 interface WorkspaceChatProps {
   /** 工作区信息 */
-  workspace?: {
-    path: string;
-    name: string;
-    isGlobal?: boolean;
-  };
+  workspace: WorkspaceInfo;
   /** 指定的Agent Key，用于Agent聊天 */
   agentKey?: string;
+  workspaceDetails: WorkspaceDetails;
 }
 
 /**
  * 工作区聊天组件
  */
-export const WorkspaceChat = ({ workspace, agentKey }: WorkspaceChatProps) => {
+export const WorkspaceChat = ({ workspace, agentKey, workspaceDetails }: WorkspaceChatProps) => {
   // 使用强制刷新 hook
   const refresh = useForceUpdate();
 
@@ -87,13 +83,13 @@ export const WorkspaceChat = ({ workspace, agentKey }: WorkspaceChatProps) => {
   const { globalState, updateGlobalState, mcpClients } = context || {};
 
   // AI通道客户端引用
-  const openaiClient = useRef<AiChannel>();
+  const aiClientRef = useRef<AiChannel>(new AiChannel({}));
 
   // 输入框的值
-  const [value, setValue] = React.useState("");
+  const [value, setValue] = useState("");
 
   // 默认聊天配置
-  const defaultChatValue = {
+  const defaultChatValue = useRef({
     label: "",
     key: "",
     messages: [] as MyMessage[],
@@ -106,11 +102,11 @@ export const WorkspaceChat = ({ workspace, agentKey }: WorkspaceChatProps) => {
     isCalled: false,
     isTask: false,
     confirm_call_tool: false,
-
-  };
+    temperature: undefined as number | undefined,
+  });
 
   // 当前聊天引用
-  const currentChat = React.useRef<ChatHistoryItem>(defaultChatValue);
+  const currentChat = useRef<ChatHistoryItem>(defaultChatValue.current);
 
   // 加载状态
   const [loading, setLoading] = useState(false);
@@ -132,9 +128,7 @@ export const WorkspaceChat = ({ workspace, agentKey }: WorkspaceChatProps) => {
     (async () => {
       try {
         await Promise.all([
-          Agents.init(),
           AI_MODELS.init(),
-          AppSetting.init(),
           ChatHistory.init(),
           LocalSetting.init(),
           VarList.init(),
@@ -142,31 +136,25 @@ export const WorkspaceChat = ({ workspace, agentKey }: WorkspaceChatProps) => {
 
         const defaultModel = getDefaultModelConfigSync(AI_MODELS);
         currentChat.current.modelKey = defaultModel ? defaultModel.key : "";
-
+        const agent = workspaceDetails[workspace.path]?.agents.find(a => a.config.key === agentKey);
         // 如果指定了agentKey，使用Agent配置
-        if (agentKey) {
-          const agent = Agents.get().data.find(a => a.key === agentKey);
-          if (agent) {
-            currentChatReset(
-              { 
-                allowMCPs: agent.allowMCPs || [],
-                agentKey: agentKey,
-                modelKey: agent.modelKey || defaultModel?.key || "",
-                temperature: agent.temperature,
-                confirm_call_tool: agent.confirm_call_tool || false,
-              },
-              agent.prompt || "",
-            );
-          } else {
-            currentChatReset(
-              { allowMCPs: AppSetting.get().defaultAllowMCPs || [], agentKey: agentKey },
-              "",
-            );
-          }
+        if (agentKey && agent) {
+
+          defaultChatValue.current.agentKey = agentKey;
+          defaultChatValue.current.messages = [{
+            role: "system" as const,
+            content_template: agent.config.prompt || "",
+            content_date: Date.now(),
+            content: "",
+          }]
+          defaultChatValue.current.allowMCPs = agent.config.allowMCPs || [];
+          defaultChatValue.current.modelKey = agent.config.modelKey || defaultModel?.key || "";
+          defaultChatValue.current.temperature = agent.config.temperature;
+          defaultChatValue.current.confirm_call_tool = agent.config.confirm_call_tool || false;
+
         } else {
           currentChatReset(
-            { allowMCPs: AppSetting.get().defaultAllowMCPs || [] },
-            "",
+            { allowMCPs: [] },
           );
         }
 
@@ -181,21 +169,11 @@ export const WorkspaceChat = ({ workspace, agentKey }: WorkspaceChatProps) => {
    * 重置当前聊天配置
    */
   const currentChatReset = async (
-    newConfig: Partial<typeof defaultChatValue>,
-    prompt = "",
+    newConfig: Partial<typeof defaultChatValue.current>,
   ) => {
-    if (prompt) {
-      newConfig.messages = [
-        {
-          role: "system" as const,
-          content_template: prompt,
-          content_date: Date.now(),
-          content: "",
-        },
-      ];
-    }
+
     currentChat.current = {
-      ...defaultChatValue,
+      ...defaultChatValue.current,
       ...newConfig,
     };
 
@@ -209,15 +187,7 @@ export const WorkspaceChat = ({ workspace, agentKey }: WorkspaceChatProps) => {
    * 处理用户请求的核心函数
    */
   const onRequest = useCallback(async (content?: string) => {
-    let aiClient = (() => {
-      let cacheKey = "workspace-chat";
-      if (cacheOBJ.current[cacheKey]) {
-        return cacheOBJ.current[cacheKey];
-      }
-      let res = new AiChannel({});
-      cacheOBJ.current[cacheKey] = res;
-      return res;
-    })();
+    let aiClient = aiClientRef.current;
     try {
       setLoading(true);
 
@@ -231,9 +201,6 @@ export const WorkspaceChat = ({ workspace, agentKey }: WorkspaceChatProps) => {
         config = await getDefaultModelConfig();
       }
 
-
-
-      openaiClient.current = aiClient;
       aiClient.messages = currentChat.current.messages;
 
       if (content) {
@@ -336,7 +303,8 @@ export const WorkspaceChat = ({ workspace, agentKey }: WorkspaceChatProps) => {
   let modelName = currModel?.name;
 
   const { token } = theme.useToken();
-
+  const agent = workspaceDetails[workspace.path]?.agents.find(a => a.config.key === agentKey);
+  
   return (
     <div className="workspace-chat h-full">
       <XProvider>
@@ -348,7 +316,7 @@ export const WorkspaceChat = ({ workspace, agentKey }: WorkspaceChatProps) => {
                 <>
                   <Welcome
                     icon={agentKey ? "🤖" : "💬"}
-                    title={agentKey ? (Agents.get().data.find(a => a.key === agentKey)?.name || t`Agent Chat`) : t`Workspace Chat`}
+                    title={agentKey ? (agent?.config.name || t`Agent Chat`) : t`Workspace Chat`}
                     className="mb-4"
                     description={agentKey ? t`Chatting with agent` : t`Start chatting in your workspace`}
                   />
@@ -362,7 +330,7 @@ export const WorkspaceChat = ({ workspace, agentKey }: WorkspaceChatProps) => {
                 refresh();
                 onRequest();
               }}
-              {...(openaiClient.current?.status ? { status: openaiClient.current.status } : {})}
+              {...(aiClientRef.current?.status ? { status: aiClientRef.current.status } : {})}
             />
           </div>
 
@@ -377,9 +345,8 @@ export const WorkspaceChat = ({ workspace, agentKey }: WorkspaceChatProps) => {
                     onClick={() => {
                       currentChatReset({
                         messages: [],
-                        allowMCPs: AppSetting.get().defaultAllowMCPs || [],
                         sented: false,
-                        agentKey: "",
+                        agentKey: currentChat.current.agentKey
                       });
                     }}
                   />
@@ -575,7 +542,7 @@ export const WorkspaceChat = ({ workspace, agentKey }: WorkspaceChatProps) => {
                       type="text"
                       onClick={() => {
                         setLoading(false);
-                        openaiClient.current?.cancel();
+                        aiClientRef.current?.cancel();
                       }}
                     >
                       {t`Cancel`}
