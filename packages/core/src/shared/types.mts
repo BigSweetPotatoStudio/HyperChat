@@ -150,7 +150,6 @@ export type AgentConfig = {
   attachedDialogueCount?: number;
   temperature?: number;
   confirm_call_tool: boolean;
-  fallbackModelKey?: string;
   tags?: string[];
   subAgents?: string[];
   version?: number;
@@ -296,6 +295,7 @@ export type AIModelConfigItem = {
   type?: "llm" | "embedding";
   toolMode?: "standard" | "compatible";
   isDefault?: boolean;
+  fullName?: string; // 提供商:模型名称
 }
 
 export type MCPServerConfig = {

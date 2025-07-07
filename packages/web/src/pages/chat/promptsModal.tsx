@@ -186,7 +186,7 @@ const ModalForm: React.FC<CollectionCreateFormProps> = ({
           rows={2}
         />
       </Form.Item>
-      <Collapse>
+      {/* <Collapse>
         <Collapse.Panel key="1" header={t`More Settings`}>
           <Form.Item name="fallbackModelKey" label={t`TaskFallbackLLM`}>
             <Select
@@ -203,7 +203,7 @@ const ModalForm: React.FC<CollectionCreateFormProps> = ({
             />
           </Form.Item>
         </Collapse.Panel>
-      </Collapse>
+      </Collapse> */}
     </Form>
   );
 };

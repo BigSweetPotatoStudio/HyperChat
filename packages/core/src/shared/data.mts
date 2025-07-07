@@ -1,7 +1,7 @@
 import { v4 } from "uuid";
 import { ProviderManager } from "./providers.mjs";
-import type { 
-  AgentConfig, 
+import type {
+  AgentConfig,
   DataOptions,
   Tool_Call,
   MyMessage,
@@ -83,8 +83,8 @@ export class Data<T> {
     public KEY: string,
     private data: T,
     public options: DataOptions = {
-        sync: true,
-      }
+      sync: true,
+    }
   ) {
     // 默认 sync 为 true
     this.options.sync = this.options.sync != null ? this.options.sync : true;
@@ -205,6 +205,7 @@ export class AIModelConfig<T = { data: Array<AIModelConfigItem> }> extends Data<
       let provider = providerConfigs.builtinApiKeys[item.provider as KnownProvider] || providerConfigs.customProviders.find(p => p.key === item.provider);
       item.apiKey = provider?.apiKey || '';
       item.baseURL = provider?.baseURL || '';
+      item.fullName = `${item.provider}:${item.name}`;
     }
     return res as any;
   }

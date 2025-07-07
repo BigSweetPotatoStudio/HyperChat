@@ -115,7 +115,6 @@ export function AgentManagement({ workspace, agents, onRefresh, onOpenChat }: Ag
         temperature: values.temperature,
         callable: values.callable ?? true,
         attachedDialogueCount: values.attachedDialogueCount,
-        fallbackModelKey: values.fallbackModelKey,
       };
 
       if (editingAgent) {
@@ -182,13 +181,13 @@ export function AgentManagement({ workspace, agents, onRefresh, onOpenChat }: Ag
       setLoadingChatHistory(true);
       setChatHistoryAgent(agent);
       setChatHistoryModal(true);
-      
+
       // 获取Agent的聊天历史记录
       const result = await call('getAgentChatLogs', {
         workspacePath: workspace.path,
         agentKey: agent.config.key
       });
-      
+
       setChatHistoryList(result.chatLogs || []);
     } catch (error) {
       console.error("Failed to load chat history:", error);
@@ -304,7 +303,7 @@ export function AgentManagement({ workspace, agents, onRefresh, onOpenChat }: Ag
                       <Space>
                         <span className="text-sm">{agent.config.name || agent.config.key}</span>
                         {agent.config.modelKey && (
-                          <Tag color="green">{agent.config.modelKey}</Tag>
+                          <Tag color="green">{AI_MODELS.get().data.find(x => x.key === agent.config.modelKey)?.fullName || agent.config.modelKey}</Tag>
                         )}
                         {agent.chatLogsCount !== undefined && (
                           <Tag color="blue">{agent.chatLogsCount} chats</Tag>
@@ -368,7 +367,9 @@ export function AgentManagement({ workspace, agents, onRefresh, onOpenChat }: Ag
                 {selectedAgent.config.description || t`No description`}
               </Descriptions.Item>
               <Descriptions.Item label={t`Model`}>
-                {selectedAgent.config.modelKey || "N/A"}
+                {selectedAgent.config.modelKey
+                  ? AI_MODELS.get().data.find(x => x.key === selectedAgent.config.modelKey)?.fullName || selectedAgent.config.modelKey
+                  : "N/A"}
               </Descriptions.Item>
               <Descriptions.Item label={t`Chat Logs`}>
                 {selectedAgent.chatLogsCount || 0}
@@ -381,9 +382,6 @@ export function AgentManagement({ workspace, agents, onRefresh, onOpenChat }: Ag
               </Descriptions.Item>
               <Descriptions.Item label={t`Attached Dialogue Count`}>
                 {selectedAgent.config.attachedDialogueCount || 'Default'}
-              </Descriptions.Item>
-              <Descriptions.Item label={t`Fallback Model`}>
-                {selectedAgent.config.fallbackModelKey || 'None'}
               </Descriptions.Item>
               <Descriptions.Item label={t`Created`}>
                 {selectedAgent.config.created ? new Date(selectedAgent.config.created).toLocaleString() : 'Unknown'}
@@ -461,7 +459,6 @@ export function AgentManagement({ workspace, agents, onRefresh, onOpenChat }: Ag
                 confirm_call_tool: editingAgent.config.confirm_call_tool ?? false,
                 callable: editingAgent.config.callable ?? true,
                 attachedDialogueCount: editingAgent.config.attachedDialogueCount ?? 10,
-                fallbackModelKey: editingAgent.config.fallbackModelKey,
               };
               form.resetFields();
               form.setFieldsValue(formValues);
@@ -525,7 +522,7 @@ export function AgentManagement({ workspace, agents, onRefresh, onOpenChat }: Ag
               placeholder={t`Please select default LLM`}
               allowClear
               options={AI_MODELS.get().data.map((x) => ({
-                label: x.name,
+                label: x.fullName || x.name,
                 value: x.key,
               }))}
             />
@@ -597,7 +594,7 @@ export function AgentManagement({ workspace, agents, onRefresh, onOpenChat }: Ag
             />
           </Form.Item>
 
-          <Collapse>
+          {/* <Collapse>
             <Collapse.Panel key="1" header={t`More Settings`}>
               <Form.Item name="fallbackModelKey" label={t`TaskFallbackLLM`}>
                 <Select
@@ -606,13 +603,13 @@ export function AgentManagement({ workspace, agents, onRefresh, onOpenChat }: Ag
                   placeholder={t`Please select TaskFallbackLLM`}
                   allowClear
                   options={AI_MODELS.get().data.map((x) => ({
-                    label: x.name,
+                    label: x.fullName || x.name,
                     value: x.key,
                   }))}
                 />
               </Form.Item>
             </Collapse.Panel>
-          </Collapse>
+          </Collapse> */}
         </Form>
       </Modal>
 
@@ -662,15 +659,15 @@ export function AgentManagement({ workspace, agents, onRefresh, onOpenChat }: Ag
                           <Tag color="blue">{chatLog.messages.length} messages</Tag>
                         )}
                         {chatLog.modelKey && (
-                          <Tag color="green">{chatLog.modelKey}</Tag>
+                          <Tag color="green">{AI_MODELS.get().data.find(x => x.key === chatLog.modelKey)?.fullName || chatLog.modelKey}</Tag>
                         )}
                       </Space>
                     }
                     description={
                       <div>
                         <div className="text-xs text-gray-500">
-                          {chatLog.dateTime 
-                            ? new Date(chatLog.dateTime).toLocaleString() 
+                          {chatLog.dateTime
+                            ? new Date(chatLog.dateTime).toLocaleString()
                             : 'Unknown time'
                           }
                         </div>

@@ -337,7 +337,7 @@ export function ProviderSettings() {
         // 添加新模型 - 从 Provider 获取 apiKey 和 baseURL
         const providerApiInfo = ProviderManager.getProviderApiKey(selectedProvider.key);
         const newModel: AIModelConfigItem = {
-          key: v4(),
+          key: selectedProvider.key + ':' + values.model, // 使用提供商key和模型id生成唯一key
           name: finalName,
           model: values.model,
           apiKey: providerApiInfo?.apiKey || '',

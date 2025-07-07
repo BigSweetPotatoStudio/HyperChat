@@ -11,7 +11,6 @@ export type AgentConfig = {
   attachedDialogueCount?: number;
   temperature?: number;
   confirm_call_tool: boolean;
-  fallbackModelKey?: string;
   tags?: string[];
   subAgents?: string[];
   version?: number;

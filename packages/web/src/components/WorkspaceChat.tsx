@@ -306,8 +306,6 @@ export const WorkspaceChat = ({ workspace, agentKey, workspaceDetails }: Workspa
 
   // 是否支持图片
   let supportImage = currModel?.supportImage;
-  // 模型名称
-  let modelName = currModel?.name;
 
   const { token } = theme.useToken();
   const agent = workspaceDetails[workspace.path]?.agents.find(a => a.config.key === agentKey);
@@ -381,13 +379,13 @@ export const WorkspaceChat = ({ workspace, agentKey, workspaceDetails }: Workspa
                       size="small"
                       showSearch
                       optionFilterProp="label"
-                      placeholder={
-                        AI_MODELS.get().data.length > 0
-                          ? `${currModel?.provider || 'unknown'}:${currModel?.name || 'unknown'}`
-                          : "Please add a LLM model"
-                      }
+                      // placeholder={
+                      //   AI_MODELS.get().data.length > 0
+                      //     ? `${currModel?.provider || 'unknown'}:${currModel?.name || 'unknown'}`
+                      //     : "Please add a LLM model"
+                      // }
                       className="w-48"
-                      allowClear
+                      // allowClear
                       value={currentChat.current.modelKey}
                       onChange={(value) => {
                         currentChat.current.modelKey = value;
