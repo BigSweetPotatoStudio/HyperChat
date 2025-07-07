@@ -46,7 +46,7 @@ export type {
 
 
 // 全局数据实例列表，所有 Data 实例会自动加入此数组
-export const DataList: Data<any>[] = [];
+export const DataList: Data<unknown>[] = [];
 
 /**
  * 通用数据管理类，支持异步/同步初始化与保存，可自定义格式化方法
@@ -190,11 +190,11 @@ export const Agents = new Data("agents.json", {
 
 
 export class AIModelConfig<T = { data: Array<AIModelConfigItem> }> extends Data<T> {
-  providerConfigs: any;
+  providerConfigs!: typeof PROVIDER_CONFIGS;
   override async init(): Promise<T> {
-    let res: { data: Array<AIModelConfigItem> } = await this._init() as any;
+    let res: { data: Array<AIModelConfigItem> } = await this._init() as { data: Array<AIModelConfigItem> };
     let providerConfigs = await PROVIDER_CONFIGS.init();
-    this.providerConfigs = providerConfigs;
+    this.providerConfigs = providerConfigs as any;
     for (let item of res.data) {
       if (item.provider === "gemini-openai") {
         item.provider = "gemini"; // 兼容旧数据
@@ -207,7 +207,7 @@ export class AIModelConfig<T = { data: Array<AIModelConfigItem> }> extends Data<
       item.baseURL = provider?.baseURL || '';
       item.fullName = `${item.provider}:${item.name}`;
     }
-    return res as any;
+    return res as T;
   }
   getGroupedByProvider(): { label: string, value: string, options: Array<{ label: string, value: string }> }[] {
     // let providerConfigs = await PROVIDER_CONFIGS.init();

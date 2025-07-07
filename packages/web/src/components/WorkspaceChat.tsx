@@ -103,6 +103,22 @@ export const WorkspaceChat = ({ workspace, agentKey, workspaceDetails, mcpClient
   // 输入框的值
   const [value, setValue] = useState("");
 
+  // 发送历史记录（最多50条）
+  const [sendHistory, setSendHistory] = useState<string[]>([]);
+  // 发送历史记录 Ref，用于在事件中获取最新值
+  const sendHistoryRef = useRef<string[]>([]);
+  useEffect(() => {
+    sendHistoryRef.current = sendHistory;
+  }, [sendHistory]);
+
+  // 当前历史记录索引（-1表示没有在浏览历史）
+  const [historyIndex, setHistoryIndex] = useState<number>(-1);
+  // 历史记录索引 Ref，用于在事件中获取最新值
+  const historyIndexRef = useRef<number>(-1);
+  useEffect(() => {
+    historyIndexRef.current = historyIndex;
+  }, [historyIndex]);
+
   // 默认聊天配置
   const defaultChatValue = useRef({
     label: "",
@@ -161,6 +177,81 @@ export const WorkspaceChat = ({ workspace, agentKey, workspaceDetails, mcpClient
     } catch (error) {
       console.error("Failed to save settings:", error);
       message.error(t`Failed to save settings`);
+    }
+  };
+
+  // 从localStorage加载发送历史记录
+  useEffect(() => {
+    const savedHistory = localStorage.getItem('workspace-chat-send-history');
+    if (savedHistory) {
+      try {
+        const history = JSON.parse(savedHistory);
+        if (Array.isArray(history)) {
+          setSendHistory(history.slice(-50)); // 确保不超过50条
+        }
+      } catch (e) {
+        console.error('Failed to load send history:', e);
+      }
+    }
+  }, []);
+
+  // 保存发送历史记录到localStorage
+  const saveSendHistory = (history: string[]) => {
+    try {
+      localStorage.setItem('workspace-chat-send-history', JSON.stringify(history));
+    } catch (e) {
+      console.error('Failed to save send history:', e);
+    }
+  };
+
+  // 添加消息到发送历史记录
+  const addToSendHistory = (message: string) => {
+    if (!message.trim()) return;
+
+    setSendHistory(prev => {
+      // 如果消息已存在，先移除旧的
+      const filtered = prev.filter(msg => msg !== message);
+      // 添加到末尾，保持最多50条
+      const newHistory = [...filtered, message].slice(-50);
+      saveSendHistory(newHistory);
+      return newHistory;
+    });
+
+    // 重置历史记录索引
+    setHistoryIndex(-1);
+  };
+
+  // 处理键盘事件（上下箭头键导航历史记录）
+  const handleKeyDown = (e: { key: string }) => {
+    const history = sendHistoryRef.current;
+    const currentIndex = historyIndexRef.current; // 使用ref获取最新值
+    
+    if (e.key === 'ArrowUp') {
+      if (history.length > 0) {
+        const newIndex = currentIndex === -1 ? history.length - 1 : Math.max(0, currentIndex - 1);
+        setHistoryIndex(newIndex);
+        const historyMessage = history[newIndex];
+        if (historyMessage !== undefined) {
+          setValue(historyMessage);
+          if (editorRef.current) editorRef.current.setValue(historyMessage);
+        }
+      }
+    } else if (e.key === 'ArrowDown') {
+      if (history.length > 0 && currentIndex >= 0) {
+        const newIndex = currentIndex + 1;
+        if (newIndex >= history.length) {
+          setHistoryIndex(-1);
+          setValue("");
+          if (editorRef.current) editorRef.current.setValue("");
+        } else {
+          setHistoryIndex(newIndex);
+          const historyMessage = history[newIndex];
+          if (historyMessage !== undefined) {
+            setValue(historyMessage);
+            if (editorRef.current) editorRef.current.setValue(historyMessage);
+          }
+        }
+      }
     }
   };
 
@@ -639,8 +730,10 @@ export const WorkspaceChat = ({ workspace, agentKey, workspaceDetails, mcpClient
                 onChange={(nextVal) => {
                   setValue(nextVal);
                 }}
+                onKeyDown={handleKeyDown}
                 onSubmit={(s) => {
                   if (s == "") return;
+                  addToSendHistory(s);
                   onRequest(s);
                   setValue("");
                   editorRef.current?.setValue("");
@@ -803,6 +896,7 @@ export const WorkspaceChat = ({ workspace, agentKey, workspaceDetails, mcpClient
                     disabled={!value.trim() || loading}
                     onClick={() => {
                       if (value.trim()) {
+                        addToSendHistory(value);
                         onRequest(value);
                         setValue("");
                         editorRef.current?.setValue("");

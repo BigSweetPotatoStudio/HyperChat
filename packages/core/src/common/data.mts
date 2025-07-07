@@ -47,7 +47,7 @@ const { fs, path } = zx;
  * @param _options - 初始化选项（当前未使用）
  * @returns Promise<any> - 返回初始化后的数据对象
  */
-Data.prototype["_init"] = async function (_options: any = {}) {
+Data.prototype["_init"] = async function (_options: Record<string, unknown> = {}) {
   try {
     (this as any).localStorage = await fs.readJSON(path.join(appDataDir, this.KEY));
   } catch (e) {

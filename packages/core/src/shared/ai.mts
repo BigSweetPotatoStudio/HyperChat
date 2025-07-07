@@ -1,5 +1,5 @@
 
-import type { HyperChatCompletionTool, MyMessage, Tool_Call, AIModelConfigItem, CommonContentItem } from "./types.mjs";
+import type { HyperChatCompletionTool, MyMessage, Tool_Call, AIModelConfigItem, CommonContentItem, AIProvider, AIExtension, ResponseFormat, CustomFetch, JSONSchemaObject } from "./types.mjs";
 
 import * as MCPTypes from "@modelcontextprotocol/sdk/types.js";
 import type { CoreMessage, LanguageModel, StreamTextResult, ToolChoice, CoreTool, ToolSet, TextPart, FilePart, ToolCallPart, ImagePart } from 'ai';
@@ -176,8 +176,9 @@ export class AiChannel {
     try {
 
 
-      let ai: any = null;
-      let fetch: any = undefined;
+      let aiProvider: any = null;
+      let ai: LanguageModel | null = null;
+      let fetch: CustomFetch | undefined = undefined;
       if (this.ext.platform === "web") {
         let baseURL = modelConfig.baseURL;
         modelConfig.baseURL = this.ext.getURL_PRE() + "/ai";
@@ -195,42 +196,47 @@ export class AiChannel {
         };
       }
       if (modelConfig.provider === 'anthropic') {
-        ai = createAnthropic({
+        aiProvider = createAnthropic({
           baseURL: modelConfig.baseURL,
           apiKey: modelConfig.apiKey,
           fetch
         });
+        ai = aiProvider(modelConfig.model);
       } else if (modelConfig.provider === 'gemini') {
-        ai = createGoogleGenerativeAI({
+        aiProvider = createGoogleGenerativeAI({
           baseURL: modelConfig.baseURL,
           apiKey: modelConfig.apiKey,
           fetch
         });
+        ai = aiProvider(modelConfig.model);
       } else if (modelConfig.provider === 'openrouter') {
         // 默认使用 OpenAI 兼容格式
-        ai = createOpenRouter({
+        aiProvider = createOpenRouter({
           baseURL: modelConfig.baseURL,
           apiKey: modelConfig.apiKey,
           fetch
         });
+        ai = aiProvider(modelConfig.model);
       } else if (modelConfig.provider === 'openai') {
-        ai = createOpenAI({
+        aiProvider = createOpenAI({
           baseURL: modelConfig.baseURL,
           apiKey: modelConfig.apiKey,
           fetch
         });
+        ai = aiProvider(modelConfig.model);
       } else {
-        ai = createOpenAICompatible({
+        aiProvider = createOpenAICompatible({
           name: modelConfig.model,
           baseURL: modelConfig.baseURL,
           apiKey: modelConfig.apiKey,
           fetch
         });
+        ai = aiProvider(modelConfig.model);
       }
-      // options.model = ai(modelConfig.model);
+      if (!ai) throw new Error('AI model not initialized');
       let newOptions: Parameters<typeof streamText>[0] = {
         ...options,
-        model: ai(modelConfig.model),
+        model: ai,
       }
       const result = await streamText({
         ...newOptions,
@@ -336,7 +342,7 @@ export class AiChannel {
             params.confirm_call_tool_cb
           ) {
             try {
-              tool.function.args = await params.confirm_call_tool_cb(tool);
+              tool.function.args = (await params.confirm_call_tool_cb(tool)) as any;
             } catch (e) {
 
               let message: MyMessage = {
@@ -490,7 +496,7 @@ export class AiChannel {
     this.ext = ext;
   }
 
-  async completionParse(response_format): Promise<any> {
+  async completionParse(response_format: ResponseFormat): Promise<unknown> {
     // 使用工具调用来实现结构化输出
     // const tool: CoreTool = {
     //   description: 'Parse response according to schema',
@@ -511,6 +517,7 @@ export class AiChannel {
     // }
 
     // throw new Error('No structured output received');
+    return null;
   }
   // clear() {
   //   this.messages = this.messages.filter((m) => m.role === "system");

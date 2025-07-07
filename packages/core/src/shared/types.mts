@@ -53,11 +53,10 @@ export interface DownloadProgressData {
 /**
  * 终端消息数据
  */
-export interface TerminalReceiveData {
+export interface TerminalReceiveData extends TerminalMessageExtended {
   command?: string;
   output?: string;
   error?: string;
-  [key: string]: any;
 }
 
 /**
@@ -93,11 +92,10 @@ export interface MessageData<T extends keyof MessageDataMap = keyof MessageDataM
 /**
  * 终端消息数据结构
  */
-export interface TerminalMessage {
+export interface TerminalMessage extends TerminalMessageExtended {
   command?: string;
   output?: string;
   error?: string;
-  [key: string]: any;
 }
 
 /**
@@ -144,10 +142,10 @@ export type AgentConfig = {
 /**
  * Data类的配置选项类型
  */
-export interface DataOptions {
+export interface DataOptions<T = unknown> {
   sync?: boolean;
-  formatInit?: (x: any) => any;
-  formatSave?: (x: any) => any;
+  formatInit?: DataFormatFunction<T>;
+  formatSave?: DataFormatFunction<T>;
 }
 
 // 工具调用类型定义
@@ -159,7 +157,7 @@ export type Tool_Call = {
   type: "function";
   function: {
     name: string;
-    args: any;
+    args: ToolCallArgs;
   };
 };
 
@@ -210,7 +208,7 @@ export type MyMessage = AllMessage & {
   }>;
   reasoning_content?: string;
   content_tool_calls?: Tool_Call[]; // openai tool call
-  content_context?: any;
+  content_context?: Record<string, unknown>;
   content_attached?: boolean;
   content_date?: number;
   content_usage?: {
@@ -290,7 +288,7 @@ export type MCPServerConfig = {
   url?: string;
   type?: "stdio" | "sse" | "streamableHttp";
   hyperchat?: {
-    config: { [s in string]: any };
+    config: Record<string, unknown>;
   };
   disabled?: boolean;
 };
@@ -313,14 +311,14 @@ export type HyperChatCompletionTool = {
 
 export type IMCPClient = {
   tools: Array<HyperChatCompletionTool>;
-  prompts: Array<any>; // MCPTypes.PromptSchema._type & { key: string }
-  resources: Array<any>; // MCPTypes.ResourceSchema._type & { key: string }
+  prompts: Array<MCPPromptSchema & { key: string }>;
+  resources: Array<MCPResourceSchema & { key: string }>;
   serverName: string;
   status: "disconnected" | "connected" | "connecting" | "disabled" | "deleted" | "error";
   order: number;
   config: MCPServerConfig;
   ext: {
-    configSchema?: { [s in string]: any };
+    configSchema?: MCPConfigSchema;
   };
   mcpType: "builtin" | "custom";
   version: string;
@@ -393,3 +391,123 @@ export interface DirectoryItem {
   isLeaf: boolean;
   isHidden: boolean;
 }
+
+/**
+ * MCP 相关类型定义
+ */
+export interface MCPPromptSchema {
+  name: string;
+  description?: string;
+  arguments?: Array<{
+    name: string;
+    description?: string;
+    required?: boolean;
+  }>;
+}
+
+export interface MCPResourceSchema {
+  uri: string;
+  name: string;
+  description?: string;
+  mimeType?: string;
+}
+
+/**
+ * MCP 配置 Schema
+ */
+export interface MCPConfigSchema {
+  [key: string]: {
+    type: string;
+    description?: string;
+    default?: unknown;
+    required?: boolean;
+  };
+}
+
+/**
+ * 数据格式化函数类型
+ */
+export type DataFormatFunction<T = unknown> = (data: T) => T;
+
+/**
+ * 工具调用参数类型
+ */
+export interface ToolCallArgs {
+  [key: string]: unknown;
+}
+
+/**
+ * 终端消息扩展属性
+ */
+export interface TerminalMessageExtended {
+  command?: string;
+  output?: string;
+  error?: string;
+  exitCode?: number;
+  timestamp?: number;
+  workdir?: string;
+}
+
+/**
+ * JSON Schema 对象类型
+ */
+export interface JSONSchemaObject {
+  type: "object";
+  properties?: {
+    [key: string]: JSONSchemaProperty;
+  };
+  required?: string[];
+  additionalProperties?: boolean;
+}
+
+export interface JSONSchemaProperty {
+  type: "string" | "number" | "boolean" | "array" | "object";
+  description?: string;
+  enum?: unknown[];
+  items?: JSONSchemaProperty;
+  properties?: {
+    [key: string]: JSONSchemaProperty;
+  };
+}
+
+/**
+ * AI 相关类型定义
+ */
+export interface AIProvider {
+  model: string;
+  apiKey: string;
+  baseURL: string;
+  [key: string]: unknown;
+}
+
+/**
+ * AI 扩展平台接口
+ */
+export interface AIExtension {
+  platform: "web" | "node" | "electron";
+  getURL_PRE?(): string;
+  [key: string]: unknown;
+}
+
+/**
+ * 响应格式类型
+ */
+export interface ResponseFormat {
+  json_schema?: {
+    schema: JSONSchemaObject;
+  };
+  [key: string]: unknown;
+}
+
+/**
+ * 自定义 fetch 类型
+ */
+export type CustomFetch = (url: RequestInfo, init?: RequestInit) => Promise<Response>;
+
+/**
+ * 事件系统相关类型
+ */
+export type EventCallback<T = unknown> = (...args: T[]) => void;
+export type EventCallbackWithOnce<T = unknown> = EventCallback<T> & { once?: boolean };
+export type EventHoldsMap = Record<string, unknown[][]>;
+export type EventCallbacksMap = Record<string, EventCallbackWithOnce[]>;

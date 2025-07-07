@@ -16,6 +16,7 @@ import {
   ResourceListChangedNotificationSchema 
 } from "../../es6.mjs";
 import type { MCPServerConfig, HyperChatCompletionTool } from "../../shared/data.mjs";
+import type { MCPPromptSchema, MCPResourceSchema, MCPConfigSchema, ToolCallArgs } from "../../shared/types.mjs";
 import type { WorkspaceMCPClient, MCPType } from "./types.mjs";
 import { Logger } from "../../log.mjs";
 import { getMessageService } from "../../message_service.mjs";
@@ -35,8 +36,8 @@ const RECONNECT_BACKOFF_FACTOR = 1.5;
 
 export class WorkspaceMCPClientImpl implements WorkspaceMCPClient {
   public tools: Array<HyperChatCompletionTool> = [];
-  public resources: any[] = [];
-  public prompts: any[] = [];
+  public resources: Array<MCPResourceSchema & { key: string; clientName: string; scope: string; mcpType: MCPType; workspacePath: string; }> = [];
+  public prompts: Array<MCPPromptSchema & { key: string; clientName: string; scope: string; mcpType: MCPType; workspacePath: string; }> = [];
   public client: MCP.Client | undefined = undefined;
   public status: WorkspaceMCPClient["status"] = "disconnected";
   public version = "";
@@ -46,7 +47,7 @@ export class WorkspaceMCPClientImpl implements WorkspaceMCPClient {
   public workspacePath: string;
   
   public ext: {
-    configSchema?: { [s in string]: any };
+    configSchema?: MCPConfigSchema;
   } = {};
   
   private reconnectAttempts = 0;
@@ -71,12 +72,12 @@ export class WorkspaceMCPClientImpl implements WorkspaceMCPClient {
     if (this.mcpType === "builtin") {
       const server = MyServers.find((s) => s.name === serverName);
       if (server?.configSchema) {
-        this.ext.configSchema = zodToJsonSchema(server.configSchema);
+        this.ext.configSchema = zodToJsonSchema(server.configSchema) as any;
       }
     }
   }
 
-  async callTool(functionName: string, args: any): Promise<any> {
+  async callTool(functionName: string, args: ToolCallArgs): Promise<MCPTypes.CallToolResult> {
     if (!this.client) {
       throw new Error("MCP Client is not initialized");
     }
@@ -87,17 +88,17 @@ export class WorkspaceMCPClientImpl implements WorkspaceMCPClient {
 
     try {
       return await this.client.callTool(
-        { name: functionName, arguments: args },
+        { name: functionName, arguments: args as any },
         CallToolResultSchema,
         { timeout: timeoutMs }
-      );
+      ) as any;
     } catch (error) {
       this.logInfo("MCP CallTool Error, trying compatibility mode:", functionName, args, error);
       return await this.callToolCompatibility(functionName, args, timeoutMs);
     }
   }
 
-  private async callToolCompatibility(functionName: string, args: any, timeoutMs: number): Promise<any> {
+  private async callToolCompatibility(functionName: string, args: ToolCallArgs, timeoutMs: number): Promise<MCPTypes.CallToolResult> {
     if (!this.client) {
       throw new Error("MCP Client is not initialized");
     }
@@ -105,14 +106,14 @@ export class WorkspaceMCPClientImpl implements WorkspaceMCPClient {
       const res = await this.client.request(
         {
           method: "tools/call",
-          params: { name: functionName, arguments: args },
+          params: { name: functionName, arguments: args as any },
         },
         CompatibilityCallToolResultSchema,
         { timeout: timeoutMs }
       );
 
       this.logInfo("CompatibilityCallToolResultSchema success:", res);
-      return res.toolResult || res;
+      return (res as any).toolResult || res;
     } catch (error) {
       this.logError("MCP CallTool Compatibility Error:", functionName, args, error);
       throw error;
@@ -135,16 +136,16 @@ export class WorkspaceMCPClientImpl implements WorkspaceMCPClient {
     return await this.client.readResource({ uri });
   }
 
-  async callPrompt(functionName: string, args: any): Promise<any> {
+  async callPrompt(functionName: string, args: ToolCallArgs): Promise<MCPTypes.GetPromptResult> {
     if (!this.client) {
       throw new Error("MCP Client is not initialized");
     }
     this.logInfo("MCP callPrompt", functionName, args);
     await this.ensureConnected();
-    return await this.client.getPrompt({ name: functionName, arguments: args });
+    return await this.client.getPrompt({ name: functionName, arguments: args as any });
   }
 
-  private mapToolsToHyperChatFormat(tools: any[]): HyperChatCompletionTool[] {
+  private mapToolsToHyperChatFormat(tools: MCPTypes.Tool[]): HyperChatCompletionTool[] {
     return tools.map((tool, i) => {
       const safeName = this.serverName.replace(/[^a-zA-Z0-9_-]/g, "") + "_" +
         (tool.name.replace(/[^a-zA-Z0-9_-]/g, "") || i.toString());
@@ -152,7 +153,7 @@ export class WorkspaceMCPClientImpl implements WorkspaceMCPClient {
       return {
         name: safeName,
         inputSchema: tool.inputSchema,
-        description: tool.description,
+        description: tool.description || '',
         type: "function" as const,
         origin_name: tool.name,
         restore_name: `${this.getDisplayName()} > ${tool.name}`,
@@ -164,7 +165,7 @@ export class WorkspaceMCPClientImpl implements WorkspaceMCPClient {
     });
   }
 
-  private mapResourcesToHyperChatFormat(resources: any[]): any[] {
+  private mapResourcesToHyperChatFormat(resources: MCPTypes.Resource[]): Array<MCPResourceSchema & { key: string; clientName: string; scope: string; mcpType: MCPType; workspacePath: string; }> {
     return resources.map(resource => ({
       ...resource,
       key: `${this.getDisplayName()} > ${resource.name}`,
@@ -175,7 +176,7 @@ export class WorkspaceMCPClientImpl implements WorkspaceMCPClient {
     }));
   }
 
-  private mapPromptsToHyperChatFormat(prompts: any[]): any[] {
+  private mapPromptsToHyperChatFormat(prompts: MCPTypes.Prompt[]): Array<MCPPromptSchema & { key: string; clientName: string; scope: string; mcpType: MCPType; workspacePath: string; }> {
     return prompts.map(prompt => ({
       ...prompt,
       key: `${this.getDisplayName()} > ${prompt.name}`,
@@ -334,7 +335,7 @@ export class WorkspaceMCPClientImpl implements WorkspaceMCPClient {
       }
     });
 
-    await client.connect(transport as any);
+    await client.connect(transport);
     return client;
   }
 
@@ -484,14 +485,14 @@ export class WorkspaceMCPClientImpl implements WorkspaceMCPClient {
   /**
    * 记录日志时添加范围信息
    */
-  private logInfo(message: string, ...args: any[]) {
+  private logInfo(message: string, ...args: unknown[]) {
     Logger.info(`[${this.scope.toUpperCase()}:${this.mcpType.toUpperCase()}] ${this.serverName}: ${message}`, ...args);
   }
 
   /**
    * 记录错误时添加范围信息
    */
-  private logError(message: string, ...args: any[]) {
+  private logError(message: string, ...args: unknown[]) {
     Logger.error(`[${this.scope.toUpperCase()}:${this.mcpType.toUpperCase()}] ${this.serverName}: ${message}`, ...args);
   }
 }

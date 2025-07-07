@@ -230,7 +230,8 @@ export const Editor = forwardRef(({
     fontSize = 14,
     submitType = "CtrlEnter",
     onDragFile,
-    onParseFile
+    onParseFile,
+    onKeyDown
 }: {
     value?: string,
     onChange?: (value: string) => void,
@@ -247,6 +248,7 @@ export const Editor = forwardRef(({
     submitType?: "enter" | "CtrlEnter",
     onDragFile?: (file: File) => void,
     onParseFile?: (file: File) => void,
+    onKeyDown?: (e: { key: string }) => void,
 }, ref) => {
     const refresh = useForceUpdate();
     const monacoRef = React.useRef<monaco.editor.IStandaloneCodeEditor>();
@@ -290,7 +292,7 @@ export const Editor = forwardRef(({
     useEffect(() => {
         updateEditorHeight();
     }, [monacoRef.current]);
-    
+
     const [isFullscreen, setIsFullscreen] = useState(false);
     useImperativeHandle(ref, () => ({
         setIsFullscreen: (value: boolean) => {
@@ -473,6 +475,30 @@ export const Editor = forwardRef(({
             if (submitType == "enter") {
                 // 如果你仍然想保留单独 Enter 提交功能，可以使用 onKeyDown 事件而不是 addCommand
                 editor.onKeyDown((e) => {
+                    // 检查是否应该触发自定义的 onKeyDown 事件（历史记录导航）
+                    if (onKeyDown && (e.keyCode === monaco.KeyCode.UpArrow || e.keyCode === monaco.KeyCode.DownArrow)) {
+                        const position = editor.getPosition();
+                        const model = editor.getModel();
+
+                        if (position && model) {
+                            const isFirstLine = position.lineNumber === 1;
+                            const isLastLine = position.lineNumber === model.getLineCount();
+
+                            // 只有在第一行按上箭头或最后一行按下箭头时才触发历史记录导航
+                            const shouldTriggerHistory =
+                                (e.keyCode === monaco.KeyCode.UpArrow && isFirstLine) ||
+                                (e.keyCode === monaco.KeyCode.DownArrow && isLastLine);
+
+                            if (shouldTriggerHistory) {
+                                // 创建一个简化的键盘事件对象
+                                const reactKeyboardEvent = {
+                                    key: e.browserEvent.key,
+                                };
+                                onKeyDown(reactKeyboardEvent);
+                            }
+                        }
+                    }
+
                     if (e.keyCode === monaco.KeyCode.Enter && !e.ctrlKey && !e.shiftKey && !e.altKey && !e.metaKey) {
                         // 检查建议面板是否可见
                         const suggestWidgetVisible = document.querySelector('.suggest-widget.visible') !== null;
@@ -511,6 +537,33 @@ export const Editor = forwardRef(({
                     }
                 );
             } else {
+                // 对于 CtrlEnter 模式，也需要处理 onKeyDown 事件
+                editor.onKeyDown((e) => {
+                    // 检查是否应该触发自定义的 onKeyDown 事件（历史记录导航）
+                    if (onKeyDown && (e.keyCode === monaco.KeyCode.UpArrow || e.keyCode === monaco.KeyCode.DownArrow)) {
+                        const position = editor.getPosition();
+                        const model = editor.getModel();
+
+                        if (position && model) {
+                            const isFirstLine = position.lineNumber === 1;
+                            const isLastLine = position.lineNumber === model.getLineCount();
+
+                            // 只有在第一行按上箭头或最后一行按下箭头时才触发历史记录导航
+                            const shouldTriggerHistory =
+                                (e.keyCode === monaco.KeyCode.UpArrow && isFirstLine) ||
+                                (e.keyCode === monaco.KeyCode.DownArrow && isLastLine);
+
+                            if (shouldTriggerHistory) {
+                                // 创建一个简化的键盘事件对象
+                                const reactKeyboardEvent = {
+                                    key: e.browserEvent.key,
+                                };
+                                onKeyDown(reactKeyboardEvent);
+                            }
+                        }
+                    }
+                });
+
                 editor.addCommand(
                     monaco.KeyMod.CtrlCmd | monaco.KeyCode.Enter,
                     () => {

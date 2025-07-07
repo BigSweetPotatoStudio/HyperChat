@@ -39,19 +39,19 @@ log4js.configure({
 const logger = log4js.getLogger();
 
 export class LoggerLog4 {
-  debug(...args: any[]) {
+  debug(...args: unknown[]) {
     let [msg, ...rest] = args;
     logger.debug(msg, ...rest);
   }
-  info(...args: any[]) {
+  info(...args: unknown[]) {
     let [msg, ...rest] = args;
     logger.info(msg, ...rest);
   }
-  warn(...args: any[]) {
+  warn(...args: unknown[]) {
     let [msg, ...rest] = args;
     logger.warn(msg, ...rest);
   }
-  error(...args: any[]) {
+  error(...args: unknown[]) {
     let [msg, ...rest] = args;
 
     if (isDevMode) {

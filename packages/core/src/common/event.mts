@@ -24,6 +24,7 @@
  */
 
 import { Logger } from "../log.mjs";
+import type { EventCallback, EventCallbackWithOnce, EventHoldsMap, EventCallbacksMap } from "../shared/types.mjs";
 
 /**
  * 创建类型安全的事件管理器
@@ -50,12 +51,8 @@ export function createEvent<T extends string>(name: string) {
 
     let event = {
         name,
-        holds: {} as {
-            [key: string]: Array<any>
-        },
-        callbacks: {} as {
-            [key: string]: Array<Function>
-        },
+        holds: {} as EventHoldsMap,
+        callbacks: {} as EventCallbacksMap,
         clearAll() {
             this.callbacks = {}
             this.holds = {}
@@ -70,7 +67,7 @@ export function createEvent<T extends string>(name: string) {
         clearHolds(name: T) {
             this.holds[name] = [];
         },
-        on(name: T, callback: any) {
+        on(name: T, callback: EventCallbackWithOnce) {
             if (event.hasEvent(name)) {
                 this.callbacks[name]?.push(callback);
             } else {
@@ -87,12 +84,12 @@ export function createEvent<T extends string>(name: string) {
         onPromise(name: T) {
 
             return new Promise((resolve, _reject) => {
-                event.on(name, (data: any) => {
+                event.on(name, (data: unknown) => {
                     resolve(data)
                 })
             })
         },
-        off(name: T, callback: any) {
+        off(name: T, callback: EventCallbackWithOnce) {
             if (event.hasEvent(name)) {
                 const index = this.callbacks[name]?.findIndex(x => x === callback);
                 if (index !== undefined && index !== -1) {
@@ -117,13 +114,13 @@ export function createEvent<T extends string>(name: string) {
         //     }
         //     return event;
         // },
-        fire(name: T, ...args: any[]) {
+        fire(name: T, ...args: unknown[]) {
             if (event.hasEvent(name)) {
                 const callbacks = this.callbacks[name];
                 if (callbacks) {
                     for (let i = 0; i < callbacks.length; i++) {
                         let callback = callbacks[i];
-                        if (callback && (callback as any).once) {
+                        if (callback && callback.once) {
                             callbacks.splice(i, 1);
                             i--;
                         }
@@ -135,7 +132,7 @@ export function createEvent<T extends string>(name: string) {
             }
             return event;
         },
-        fireHold(name: T, ...args: any[]) {
+        fireHold(name: T, ...args: unknown[]) {
             if (event.hasEvent(name)) {
                 this.callbacks[name]?.forEach((x) => {
                     x.apply(globalThis, args);
@@ -148,17 +145,17 @@ export function createEvent<T extends string>(name: string) {
             }
             return event;
         },
-        clearAndFireHold(name: T, ...args: any[]) {
+        clearAndFireHold(name: T, ...args: unknown[]) {
             event.clearHolds(name);
             event.fireHold(name, ...args);
         },
-        fireHoldOnce(name: T, ...args: any[]) {
+        fireHoldOnce(name: T, ...args: unknown[]) {
             if (event.hasEvent(name)) {
-                const waitMoves: any[] = [];
+                const waitMoves: number[] = [];
                 this.callbacks[name]?.forEach((x, index) => {
                     x.apply(this, args);
                     // tslint:disable-next-line:no-unused-expression
-                    (x as any).once && waitMoves.push(index);
+                    x.once && waitMoves.push(index);
                 });
                 let t;
                 // tslint:disable-next-line:no-conditional-assignment
@@ -173,8 +170,8 @@ export function createEvent<T extends string>(name: string) {
             }
             return event;
         },
-        once(name: T, callback: any) {
-            callback.once = true;
+        once(name: T, callback: EventCallback) {
+            (callback as EventCallbackWithOnce).once = true;
             this.on(name, callback);
             return event;
         },
@@ -185,4 +182,4 @@ export function createEvent<T extends string>(name: string) {
     return event;
 }
 
-export const EVENT = createEvent<any>('globle');
+export const EVENT = createEvent<string>('globle');
