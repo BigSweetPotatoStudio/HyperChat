@@ -39,7 +39,7 @@ import {
 
 import { v4 } from "uuid";
 import { call, getURL_PRE } from "../common/call";
-import { blobToBase64, urlToBase64 } from "../pages/chat/utils/index";
+import { blobToBase64, calcAttachDialogue, urlToBase64 } from "../pages/chat/utils/index";
 import { AiChannel } from "@hyperchat/shared/ai.mjs";
 import {
   AI_MODELS,
@@ -154,7 +154,7 @@ export const WorkspaceChat = ({ workspace, agentKey, workspaceDetails }: Workspa
 
         } else {
           currentChatReset(
-            { allowMCPs: [] },
+            {},
           );
         }
 
@@ -304,7 +304,7 @@ export const WorkspaceChat = ({ workspace, agentKey, workspaceDetails }: Workspa
 
   const { token } = theme.useToken();
   const agent = workspaceDetails[workspace.path]?.agents.find(a => a.config.key === agentKey);
-  
+
   return (
     <div className="workspace-chat h-full">
       <XProvider>
@@ -341,27 +341,29 @@ export const WorkspaceChat = ({ workspace, agentKey, workspaceDetails }: Workspa
                 <Tooltip title={t`New Chat`}>
                   <Button
                     size="small"
-                    icon={<PlusCircleOutlined />}
+                    icon={<ClearOutlined />}
                     onClick={() => {
                       currentChatReset({
-                        messages: [],
                         sented: false,
-                        agentKey: currentChat.current.agentKey
                       });
                     }}
                   />
                 </Tooltip>
-
+{/* 
                 <Tooltip title={t`Clear Context`}>
                   <Button
                     size="small"
                     icon={<ClearOutlined />}
                     onClick={() => {
-                      currentChat.current.messages = [];
+                      calcAttachDialogue(
+                        currentChat.current.messages,
+                        0,
+                        true,
+                      );
                       refresh();
                     }}
                   />
-                </Tooltip>
+                </Tooltip> */}
 
                 <Divider type="vertical" />
 
