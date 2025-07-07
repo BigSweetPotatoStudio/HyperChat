@@ -38,9 +38,10 @@ packages/cli 专注于命令行前端的实现
 
 - [x] 我现在要改造这个hyperchat项目，以前都用在web浏览器前端发出llm请求通过OpenAI的库。现在我想改成在code目录下(nodejs环境)中通过ai库发请求，代码在packages/core/src/shared/ai.mts 。前后端共用
 - [x] 工作区概念已经实现，支持在不同工作区之间隔离数据和配置，支持显示当前工作区文件夹（树状），agent等配置作为文件保存在.hyperchat目录下。
-
-### 2.0 工作区实现状态
 - [x] 核心工作区管理类 (workspace.mts, workspaceManager.mts)
+
+### 2.0 TODO
+- [ ] 减少any使用，多使用这个文件定义的类型 packages/core/src/shared/types.mts
 
 
 2.0 版本的 HyperChat 项目结构如下：

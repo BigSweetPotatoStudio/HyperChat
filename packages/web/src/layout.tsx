@@ -36,6 +36,7 @@ import {
   Tag,
   notification,
   Layout as AntLayout,
+  theme,
 } from "antd";
 import enUS from "antd/locale/en_US";
 import zhCN from "antd/locale/zh_CN";
@@ -349,7 +350,26 @@ export function Layout() {
   let defaultModel = getDefaultModelConfigSync(AI_MODELS);
 
   return (
-    <ConfigProvider locale={locale}>
+    <ConfigProvider
+      locale={locale}
+      theme={{
+        algorithm: theme.compactAlgorithm, // 紧凑主题
+        token: {
+          // 主要品牌色
+          colorPrimary: "#91bcf8",
+          // 成功色
+          colorSuccess: '#52c41a',
+          // 警告色  
+          colorWarning: '#faad14',
+          // 错误色
+          colorError: '#ff4d4f',
+          // 字体大小
+          fontSize: 14,
+          // 边框圆角
+          borderRadius: 6,
+        },
+      }}
+    >
       <AntLayout style={{ minHeight: "100vh" }}>
         <Content style={{ padding: "0" }}>
           {/* 头部上下文提供者 - 向子组件传递全局状态 */}

@@ -758,6 +758,7 @@ export function Workspace() {
             >
               {getCurrentWorkspaceTabs().length > 0 ? (
                 <Tabs
+                  className="myFullTabs"
                   type="editable-card"
                   activeKey={getCurrentActiveTab()}
                   onChange={setCurrentActiveTab}
@@ -785,7 +786,7 @@ export function Workspace() {
                     ),
                     closable: tab.closable,
                     children: (
-                      <div style={{ height: 'calc(100vh - 116px)', overflow: 'hidden' }}>
+                      <div style={{ height: '100%', overflow: 'hidden' }}>
                         {tab.type === 'file' && tab.filePath && tab.fileName ? (
                           <FileEditor
                             filePath={tab.filePath}

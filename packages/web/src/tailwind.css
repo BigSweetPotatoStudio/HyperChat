@@ -230,6 +230,22 @@ div[role="system"] .ant-bubble-content-wrapper {
   margin-bottom: 0 !important;
 }
 
+.myFullTabs {
+  height: 100%;
+}
+.myFullTabs .ant-tabs-nav {
+  margin-bottom: 0 !important;
+}
+.myFullTabs .ant-tabs-content-holder {
+  height: 100%;
+}
+.myFullTabs .ant-tabs-content {
+  height: 100%;
+}
+.myFullTabs .ant-tabs-tabpane  {
+  height: 100%;
+}
+
 @keyframes textColorCycle {
   0% { color: #9ca3af; }
   50% { color: #22c55e; }

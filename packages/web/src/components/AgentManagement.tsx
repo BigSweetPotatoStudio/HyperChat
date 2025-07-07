@@ -21,6 +21,7 @@ import {
   InputNumber,
   Tooltip,
   Popover,
+  Slider,
 } from "antd";
 import {
   PlusOutlined,
@@ -415,10 +416,7 @@ export function AgentManagement({ workspace, agents, onRefresh, onOpenChat, mcpC
               <Descriptions.Item label={t`Last Chat`}>
                 {selectedAgent.lastChatTime ? new Date(selectedAgent.lastChatTime).toLocaleString() : 'Never'}
               </Descriptions.Item>
-              <Descriptions.Item label={t`Callable`}>
-                {selectedAgent.config.callable ? 'Yes' : 'No'}
-              </Descriptions.Item>
-              <Descriptions.Item label={t`Attached Dialogue Count`}>
+              <Descriptions.Item label={t`Context History`}>
                 {selectedAgent.config.attachedDialogueCount || 'Default'}
               </Descriptions.Item>
               <Descriptions.Item label={t`Created`}>
@@ -457,9 +455,8 @@ export function AgentManagement({ workspace, agents, onRefresh, onOpenChat, mcpC
                   <div>Temperature: {selectedAgent.config.temperature}</div>
                 )}
                 {selectedAgent.config.attachedDialogueCount !== undefined && (
-                  <div>Attached Dialogue Count: {selectedAgent.config.attachedDialogueCount}</div>
+                  <div>Context History: {selectedAgent.config.attachedDialogueCount}</div>
                 )}
-                <div>Callable: {selectedAgent.config.callable ? 'Yes' : 'No'}</div>
               </div>
             </div>
           </div>
@@ -507,7 +504,7 @@ export function AgentManagement({ workspace, agents, onRefresh, onOpenChat, mcpC
                 confirm_call_tool: false,
                 callable: true,
                 temperature: 1,
-                attachedDialogueCount: 10,
+                attachedDialogueCount: 5,
               });
             }
           }
@@ -553,11 +550,11 @@ export function AgentManagement({ workspace, agents, onRefresh, onOpenChat, mcpC
             <Editor style={{ height: "150px" }} />
           </Form.Item>
 
-          <Form.Item name="modelKey" label={t`LLM`}>
+          <Form.Item name="modelKey" label={t`Language Model`}>
             <Select
               showSearch
               optionFilterProp="label"
-              placeholder={t`Please select default LLM`}
+              placeholder={t`Choose the AI model for this agent`}
               allowClear
               options={AI_MODELS.get().data.map((x) => ({
                 label: x.fullName || x.name,
@@ -568,12 +565,12 @@ export function AgentManagement({ workspace, agents, onRefresh, onOpenChat, mcpC
 
           <Form.Item
             name="allowMCPs"
-            label={t`allowMCPs`}
+            label={t`Available Tools`}
           >
             <TreeSelect
               multiple
               treeCheckable
-              placeholder={t`Please select allowed MCP`}
+              placeholder={t`Select tools and capabilities for this agent`}
               showCheckedStrategy={TreeSelect.SHOW_PARENT}
               treeData={(Object.values(mcpClients) || []).map((x) => ({
                 title: x.serverName,
@@ -592,42 +589,11 @@ export function AgentManagement({ workspace, agents, onRefresh, onOpenChat, mcpC
             />
           </Form.Item>
 
-          <Form.Item
-            name="temperature"
-            label={t`temperature`}
-            tooltip={t`What sampling temperature to use, between 0 and 2. Higher values like 0.8 will make the output more random, while lower values like 0.2 will make it more focused and deterministic.`}
-          >
-            <NumberStep defaultValue={1} min={0} max={2} step={0.1} />
-          </Form.Item>
+          {AgentCommonFormItems}
 
-          <Form.Item
-            name="attachedDialogueCount"
-            label={t`attachedDialogueCount`}
-            tooltip={t`Number of sent Dialogue Message attached per request`}
-          >
-            <NumberStep defaultValue={10} max={20} />
-          </Form.Item>
-
-          <Form.Item
-            name="confirm_call_tool"
-            label={t`callToolType`}
-            tooltip={t`Do you want to confirm calling the tool?`}
-          >
-            <Radio.Group>
-              <Radio value={true}>{t`Need Confirm`}</Radio>
-              <Radio value={false}>{t`Direct Call`}</Radio>
-            </Radio.Group>
-          </Form.Item>
-
-          <Form.Item name="callable" label={t`Callable`} valuePropName="checked">
-            <Checkbox>
-              {t`Allowed to be called by 'hyper_agent'`}
-            </Checkbox>
-          </Form.Item>
-
-          <Form.Item name="description" label={t`description`}>
+          <Form.Item name="description" label={t`Description`}>
             <Input.TextArea
-              placeholder={t`Please provide a description for more accurate call.`}
+              placeholder={t`Describe what this agent does and its capabilities...`}
               rows={2}
             />
           </Form.Item>
@@ -747,3 +713,36 @@ export function AgentManagement({ workspace, agents, onRefresh, onOpenChat, mcpC
     </>
   );
 }
+
+export const AgentCommonFormItems = (
+  <>
+    <Form.Item
+      name="temperature"
+      label={t`temperature`}
+      tooltip={t`What sampling temperature to use, between 0 and 2. Higher values like 0.8 will make the output more random, while lower values like 0.2 will make it more focused and deterministic.`}
+    >
+      <Slider min={0} max={2} step={0.1} />
+    </Form.Item>
+    <Form.Item
+      name="attachedDialogueCount"
+      label={t`Context History`}
+      tooltip={t`Number of previous conversation messages to include for context (affects memory usage)`}
+    >
+      <InputNumber min={1} max={10} className="w-full" changeOnWheel keyboard step={1} />
+    </Form.Item>
+
+    <Form.Item
+      name="confirm_call_tool"
+      label={t`Tool Execution`}
+      tooltip={t`Do you want to confirm calling the tool?`}
+    >
+      <Radio.Group>
+        <Radio value={true}>{t`Need Confirm`}</Radio>
+        <Radio value={false}>{t`Direct Call`}</Radio>
+      </Radio.Group>
+    </Form.Item>
+
+
+
+  </>
+)

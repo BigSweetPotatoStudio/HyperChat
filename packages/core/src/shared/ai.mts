@@ -1,8 +1,8 @@
 
-import type { HyperChatCompletionTool, MyMessage, Tool_Call, AIModelConfigItem } from "./types.mjs";
+import type { HyperChatCompletionTool, MyMessage, Tool_Call, AIModelConfigItem, CommonContentItem } from "./types.mjs";
 
 import * as MCPTypes from "@modelcontextprotocol/sdk/types.js";
-import type { CoreMessage, LanguageModel, StreamTextResult, ToolChoice, CoreTool, ToolSet } from 'ai';
+import type { CoreMessage, LanguageModel, StreamTextResult, ToolChoice, CoreTool, ToolSet, TextPart, FilePart, ToolCallPart, ImagePart } from 'ai';
 import { jsonSchema, streamText } from 'ai';
 import { createOpenAI, openai } from '@ai-sdk/openai';
 import { createAnthropic } from '@ai-sdk/anthropic';
@@ -44,7 +44,7 @@ export class AiChannel {
   }
   addMessage(
     message: MyMessage,
-    resourceResList: Array<MCPTypes.ReadResourceResult> = [],
+    resourceResList: Array<CommonContentItem> = [],
     promptResList: Array<MCPTypes.GetPromptResult> = [],
   ) {
     if (resourceResList.length > 0) {
@@ -58,22 +58,22 @@ export class AiChannel {
           },
         ];
       }
-      for (let r of resourceResList) {
-        for (let content of r.contents) {
-          if (content.text) {
-            message.content.push({
-              type: "text",
-              text: content.text.toString() as string,
-            });
-          } else if (content.type == "image") {
-            message.content.push({
-              type: "image_url",
-              image_url: { url: content.blob },
-            } as any);
-          } else {
-            this.ext.antdmessage.warning("resource only supports text + images.");
-          }
+      for (let content of resourceResList) {
+
+        if (content.type == "text") {
+          message.content.push({
+            type: "text",
+            text: content.text.toString() as string,
+          });
+        } else if (content.type == "image_url") {
+          message.content.push({
+            type: "image_url",
+            image_url: { url: content.image_url.url },
+          });
+        } else {
+          this.ext.antdmessage.warning("resource only supports text + images.");
         }
+
       }
     }
     this.messages.push(message);
@@ -145,7 +145,7 @@ export class AiChannel {
     this.abortController = new AbortController();
     let newMessage: MyMessage = {
       role: "assistant",
-      content: "" as any,
+      content: "",
       reasoning_content: "",
       content_tool_calls: [],
       content_status: "loading",
@@ -161,7 +161,7 @@ export class AiChannel {
     let messages = this.messages.filter(
       (m) => m.content_attached == null || m.content_attached == true,
     );
-    this.messages.push(newMessage as any);
+    this.messages.push(newMessage);
     params.onUpdate && params.onUpdate();
 
     let format_message = await this.messages2core(messages);
@@ -325,10 +325,10 @@ export class AiChannel {
       for (let tool of newMessage.content_tool_calls) {
         try {
           if (typeof tool.function.args != "object") {
-            tool.function.args = {} as any;
+            tool.function.args = {};
           }
         } catch {
-          tool.function.args = {} as any;
+          tool.function.args = {};
         }
         if (process.env.runtime !== "node") {
           if (
@@ -347,7 +347,7 @@ export class AiChannel {
                 content_attachment: [],
                 content_date: Date.now(),
               };
-              this.messages.push(message as any);
+              this.messages.push(message);
               params.onUpdate && params.onUpdate();
               continue;
             }
@@ -376,7 +376,7 @@ export class AiChannel {
           content_attachment: [],
           content_date: Date.now(),
         };
-        this.messages.push(message as any);
+        this.messages.push(message);
         params.onUpdate && params.onUpdate();
         // if (process.env.runtime !== "node") {
         //   try {
@@ -447,7 +447,7 @@ export class AiChannel {
             } else if (c.type == "image") {
               this.lastMessage.content.push({
                 type: "image_url",
-                image_url: { url: `data:${c.mimeType};base64,${c.data}`  },
+                image_url: { url: `data:${c.mimeType};base64,${c.data}` },
               })
             } else {
               this.ext.antdmessage.warning("tool 返回类型只支持 text image");
@@ -474,40 +474,23 @@ export class AiChannel {
     mcpTools: HyperChatCompletionTool[];
     platform: "nodejs" | "web";
     getURL_PRE: () => string;
-  } = {} as any;
+  } = {
+    antdmessage: {
+      warning: (msg) => {
+        console.warn(msg);
+      },
+    },
+    mcpTools: [],
+    platform: "nodejs",
+    getURL_PRE: () => {
+      return "";
+    },
+  };
   register(ext: this["ext"]) {
     this.ext = ext;
   }
-  // getRelay(index: number) {
-  //   let assistantContent = [];
-  //   if (this.messages[index].role == "user") {
-  //     index++;
-  //   }
-  //   while (this.messages.length > index) {
-  //     let m = this.messages[index];
-  //     if (m.role == "user") {
-  //       break;
-  //     } else if (m.role == "assistant") {
-  //       if (typeof m.content == "string") {
-  //         assistantContent.push(m.content);
-  //       } else if (Array.isArray(m.content)) {
-  //         for (let c of m.content) {
-  //           if (c.type == "text") {
-  //             assistantContent.push(c.text);
-  //           } else if (c.type == "refusal") {
-  //             assistantContent.push(c.refusal);
-  //           } else {
-  //             console.warn("tool 返回类型只支持 text");
-  //           }
-  //         }
-  //       }
-  //     }
-  //     index++;
-  //   }
-  //   return assistantContent.join("\n").split("\n").filter((x) => x).join("\n");
-  // }
 
-  async completionParse(response_format: any): Promise<any> {
+  async completionParse(response_format): Promise<any> {
     // 使用工具调用来实现结构化输出
     // const tool: CoreTool = {
     //   description: 'Parse response according to schema',
@@ -533,119 +516,10 @@ export class AiChannel {
   //   this.messages = this.messages.filter((m) => m.role === "system");
   //   this.totalTokens = 0;
   // }
-  async testBase() {
-    // let messages: CoreMessage[] = [{ role: "user", content: "你是谁?" }];
-    // const result = await streamText({
-    //   model: this.aiProvider.model,
-    //   messages: messages,
-    // });
-    // const text = await result.text;
-    // console.log(text);
-  }
-  async testImage() {
-    // let messages: CoreMessage[] = [
-    //   {
-    //     role: "user",
-    //     content: [
-    //       {
-    //         type: "image",
-    //         image: imageBase64,
-    //       },
-    //       {
-    //         type: "text",
-    //         text: "这是什么图片",
-    //       },
-    //     ],
-    //   },
-    // ];
-    // const result = await this.aiProvider.streamText({
-    //   model: this.aiProvider.model,
-    //   messages: messages,
-    // });
-    // const text = await result.text;
-    // console.log(text);
-  }
-  async testTool() {
-    // const tools = {
-    //   current_time: {
-    //     description: "Get the current local time as a string.",
-    //     parameters: {
-    //       type: "object",
-    //       properties: {},
-    //     },
-    //   } as CoreTool,
-    // };
-
-    // let messages: CoreMessage[] = [
-    //   {
-    //     role: "user",
-    //     content: "hello, What's the time?",
-    //   },
-    // ];
-
-    // const result = await this.aiProvider.streamText({
-    //   model: this.aiProvider.model,
-    //   messages: messages,
-    //   tools,
-    // });
-
-    // const toolCalls = await result.toolCalls;
-    // if (toolCalls && toolCalls.length > 0) {
-    //   const toolCall = toolCalls[0];
-    //   console.log(toolCall.toolName, toolCall.args);
-
-    //   const timeResult = dayjs().format("YYYY-MM-DD HH:mm:ss");
-
-    //   messages.push({
-    //     role: "assistant",
-    //     content: await result.text,
-    //   });
-
-    //   messages.push({
-    //     role: "tool",
-    //     content: [
-    //       {
-    //         type: "tool-result",
-    //         toolCallId: toolCall.toolCallId,
-    //         toolName: toolCall.toolName,
-    //         result: timeResult,
-    //       },
-    //     ],
-    //   });
-
-    //   const finalResult = await this.aiProvider.streamText({
-    //     model: this.aiProvider.model,
-    //     messages: messages,
-    //     tools,
-    //   });
-
-    //   console.log(await finalResult.text);
-    // }
-  }
   async messages2core(messages: MyMessage[]): Promise<CoreMessage[]> {
     let results: CoreMessage[] = [];
 
     for (let m of messages) {
-      // results.push(m as CoreMessage);
-
-      //   let content = m.content;
-
-      //   // 处理数组形式的 content (多模态)
-      //   if (Array.isArray(content)) {
-      //     const parts = content.map(part => {
-      //       if (part.type === 'text') {
-      //         return { type: 'text' as const, text: part.text };
-      //       } else if (part.type === 'image_url') {
-      //         return { type: 'image' as const, image: part.image_url.url };
-      //       }
-      //       return part;
-      //     });
-      //     content = parts;
-      //   }
-
-
-
-
       if (m.role === 'tool') {
         results.push({
           role: 'tool',
@@ -661,15 +535,44 @@ export class AiChannel {
       } else if (m.role === 'system') {
         results.push({
           role: 'system',
-          content: m.content as string,
+          content: m.content,
         });
-      } else if (m.role === 'user' || m.role === 'assistant') {
-        let content: any[] = []
+      } else if (m.role === 'user') {
+        let content: Array<TextPart | ImagePart> = []
         if (typeof m.content === 'string') {
           content.push({ type: 'text', text: m.content });
         } else if (Array.isArray(m.content)) {
           for (let c of m.content) {
-            content.push(c)
+            if (c.type === 'text') {
+              content.push({ type: 'text', text: c.text });
+            } else if (c.type === 'image_url') {
+              content.push({
+                type: 'image',
+                image: c.image_url.url,
+              });
+            } else {
+              console.error(new Error(`Unsupported content type: ${c}`));
+            }
+          }
+        } else {
+          throw new Error(`Unsupported content type: ${typeof m.content}`);
+        }
+
+        results.push({
+          role: m.role as "user",
+          content: content,
+        });
+      } else if (m.role === 'assistant') {
+        let content: Array<TextPart | ToolCallPart> = []
+        if (typeof m.content === 'string') {
+          content.push({ type: 'text', text: m.content });
+        } else if (Array.isArray(m.content)) {
+          for (let c of m.content) {
+            if (c.type === 'text') {
+              content.push({ type: 'text', text: c.text });
+            } else {
+              console.error(new Error(`Unsupported content type: ${c}`));
+            }
           }
         } else {
           throw new Error(`Unsupported content type: ${typeof m.content}`);
@@ -682,57 +585,18 @@ export class AiChannel {
               toolCallId: toolCallId,
               toolName: toolCall.function.name,
               type: "tool-call",
-            } as any);
+            });
           }
         }
         results.push({
-          role: m.role as "user" | "assistant",
-          content: content as any,
+          role: m.role as "assistant",
+          content: content
         });
       }
     }
     return results;
   }
 
-  // 保持原有格式化方法用于兼容性
-  async messages_format(messages: MyMessage[]): Promise<any[]> {
-    return [];
-    // let results = []
-    // for (let m of messages) {
-    //   // this.options.messages_format_callback && await this.options.messages_format_callback(m);
-    //   let {
-    //     content_attachment,
-    //     content_attached,
-    //     content_context,
-    //     content_from,
-    //     content_status,
-    //     content_usage,
-    //     reasoning_content,
-    //     content_error,
-    //     content_date,
-    //     content_sended,
-    //     content_template,
-    //     content_tool_calls,
-    //     ...rest
-    //   } = m;
-    //   if (rest.role == "assistant") {
-    //     rest.tool_calls = content_tool_calls?.map((x: Tool_Call) => {
-    //       let { origin_name, restore_name, ...rest } = x;
-    //       let { argumentsOBJ, ...functionRest } = rest.function;
-    //       rest.function = functionRest as any;
-    //       return rest;
-    //     }) as any;
-    //     if (rest.tool_calls?.length == 0) {
-    //       delete rest.tool_calls;
-    //     }
-    //   }
-    //   if (rest.content == "") {
-    //     delete rest.content;
-    //   }
-    //   results.push(rest);
-    // }
-    // return results;
-  }
   tools_format_ai(tools: HyperChatCompletionTool[]): ToolSet {
     const result: ToolSet = {};
 
@@ -748,62 +612,3 @@ export class AiChannel {
 
 }
 
-
-
-export function formatProperties(obj: any, delAdditionalProperties: boolean) {
-
-  if (obj == null) {
-    return {
-      compatible: {
-        type: "string",
-        description: "ignore, no enter", // compatible gemini-openai
-      },
-    };
-  }
-
-  try {
-    // 处理对象类型
-    if (obj.type === "object") {
-      // 递归处理所有属性
-      if (obj.properties) {
-        for (const key in obj.properties) {
-          const item = obj.properties[key];
-          if (!item) continue;
-
-          if (item.type === "object") {
-            obj.properties[key] = formatProperties(item, delAdditionalProperties);
-          } else if (item.type === "array" && item.items) {
-            obj.properties[key].items = formatProperties(item.items, delAdditionalProperties);
-          }
-        }
-      }
-
-      // 删除不需要的属性
-      if (delAdditionalProperties && obj.additionalProperties !== undefined) {
-        delete obj.additionalProperties;
-      }
-
-      // 对象类型不应该有items属性，删除它
-      delete obj.items;
-    }
-    // 处理数组类型
-    else if (obj.type === "array") {
-      // 递归处理数组项
-      if (obj.items) {
-        obj.items = formatProperties(obj.items, delAdditionalProperties);
-
-        // 删除数组项中的additionalProperties
-        if (delAdditionalProperties && obj.items.additionalProperties !== undefined) {
-          delete obj.items.additionalProperties;
-        }
-      }
-
-      // 数组类型不应该有properties属性，删除它
-      delete obj.properties;
-    }
-  } catch (e) {
-    console.error(e);
-  }
-  // console.log(obj);
-  return obj;
-}

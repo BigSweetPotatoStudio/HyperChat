@@ -105,26 +105,6 @@ export function AppActions({ onAIProviderClick, onRefresh }: AppActionsProps) {
         onChange={handleThemeChange}
       />
 
-      {/* 同步状态按钮 */}
-      <Button
-        type="text"
-        style={{
-          color:
-            syncStatus == 1
-              ? undefined // 同步中 - 默认颜色
-              : syncStatus == -1
-                ? "red" // 同步失败 - 红色
-                : "gray", // 正常状态 - 灰色
-        }}
-        onClick={handleSyncClick}
-      >
-        <SyncOutlined spin={syncStatus == 1} />
-        {syncStatus == 1
-          ? "Syncing"
-          : syncStatus == -1
-            ? "Failed"
-            : "Sync"}
-      </Button>
     </Space>
   );
 }

@@ -6,7 +6,7 @@
  * 2. 操作栏（模型选择、设置等）
  * 3. 发送框
  */
-
+import * as MCPTypes from "@modelcontextprotocol/sdk/types.js";
 import React, {
   useCallback,
   useContext,
@@ -27,6 +27,8 @@ import {
   Upload,
   message,
   theme,
+  Form,
+  Dropdown,
 } from "antd";
 import {
   Welcome,
@@ -61,12 +63,14 @@ import { Icon } from "./icon";
 import { getDefaultModelConfig, getDefaultModelConfigSync } from "./ai";
 import { Editor } from "./editor";
 import { t } from "../i18n";
-import { getMyUuid } from "../common/util";
+import { getMyUuid, JsonSchema2FormItemOrNull } from "../common/util";
 import { HeaderContext } from "../common/context";
 import { useForceUpdate } from "../hooks/useForceUpdate";
 import { MyAttachR } from "../pages/chat/attachR";
 import { WorkspaceDetails, WorkspaceInfo } from "../pages/workspace/workspace";
-import { AllMessage, HyperChatCompletionTool, IMCPClient } from "@hyperchat/shared/types.mjs";
+import { AllMessage, CommonContent, CommonContentItem, HyperChatCompletionTool, IMCPClient, Tool_Call } from "@hyperchat/shared/types.mjs";
+import { NumberStep } from "../common/numberStep";
+import { AgentCommonFormItems } from "./AgentManagement";
 
 /**
  * 工作区聊天组件的Props类型定义
@@ -126,13 +130,39 @@ export const WorkspaceChat = ({ workspace, agentKey, workspaceDetails, mcpClient
   const editorRef = useRef<any>(null);
 
   // 资源结果列表引用
-  const resourceResListRef = useRef<Array<any>>([]);
+  const resourceResListRef = useRef<(CommonContentItem & { uid: string })[]>([]);
 
   // 提示结果列表引用
   const promptResList = useRef<Array<any>>([]);
 
   /** 工具显示状态 */
   const [isToolsShow, setIsToolsShow] = useState(false);
+
+  /** 设置模态框状态 */
+  const [isSettingsShow, setIsSettingsShow] = useState(false);
+
+  /** 设置表单 */
+  const [settingsForm] = Form.useForm();
+
+  // Modal实例和上下文holder
+  const [modal, contextHolder] = Modal.useModal();
+  // 保存设置
+  const saveSettings = async (values: any) => {
+    try {
+      // 更新当前聊天配置
+
+      currentChat.current.temperature = values.temperature;
+      currentChat.current.attachedDialogueCount = values.attachedDialogueCount;
+      currentChat.current.confirm_call_tool = values.confirm_call_tool;
+
+      setIsSettingsShow(false);
+      refresh();
+      message.success(t`Settings saved successfully`);
+    } catch (error) {
+      console.error("Failed to save settings:", error);
+      message.error(t`Failed to save settings`);
+    }
+  };
 
   // 初始化
   useEffect(() => {
@@ -150,34 +180,42 @@ export const WorkspaceChat = ({ workspace, agentKey, workspaceDetails, mcpClient
         const agent = workspaceDetails[workspace.path]?.agents.find(a => a.config.key === agentKey);
         // 如果有要加载的聊天记录，优先加载聊天记录
         if (chatLogToLoad) {
-          currentChatReset({
+          defaultChatValue.current = ({
+            ...defaultChatValue.current,
             key: chatLogToLoad.key,
             label: chatLogToLoad.label || chatLogToLoad.key,
-            messages: chatLogToLoad.messages || [],
+            messages: chatLogToLoad.messages.filter(m => m.role === "system") || [],
             modelKey: chatLogToLoad.modelKey || defaultModel?.key || "",
             agentKey: chatLogToLoad.agentKey || agentKey || "",
             allowMCPs: chatLogToLoad.allowMCPs || [],
             dateTime: chatLogToLoad.dateTime || Date.now(),
-            chatType: chatLogToLoad.chatType || "user",
+            chatType: chatLogToLoad.chatType as "user" || "user",
             confirm_call_tool: chatLogToLoad.confirm_call_tool || false,
             temperature: chatLogToLoad.temperature,
+          });
+          currentChatReset({
+            messages: chatLogToLoad.messages || [],
           });
         }
         // 否则如果指定了agentKey，使用Agent配置
         else if (agentKey && agent) {
 
-          defaultChatValue.current.agentKey = agentKey;
-          defaultChatValue.current.messages = [{
-            role: "system" as const,
-            content_template: agent.config.prompt || "",
-            content_date: Date.now(),
-            content: "",
-          }]
-          defaultChatValue.current.allowMCPs = agent.config.allowMCPs || [];
-          defaultChatValue.current.modelKey = agent.config.modelKey || defaultModel?.key || "";
-          defaultChatValue.current.temperature = agent.config.temperature;
-          defaultChatValue.current.confirm_call_tool = agent.config.confirm_call_tool || false;
+          defaultChatValue.current = ({
+            ...defaultChatValue.current,
+            agentKey: agentKey,
+            messages: [{
+              role: "system" as const,
+              content_template: agent.config.prompt || "",
+              content_date: Date.now(),
+              content: "",
+            }],
+            allowMCPs: agent.config.allowMCPs || [],
+            modelKey: agent.config.modelKey || defaultModel?.key || "",
+            temperature: agent.config.temperature,
+            confirm_call_tool: agent.config.confirm_call_tool || false,
+          });
 
+          currentChatReset({});
         } else {
           currentChatReset({});
         }
@@ -206,11 +244,81 @@ export const WorkspaceChat = ({ workspace, agentKey, workspaceDetails, mcpClient
 
     refresh();
   };
-
+  let confirm_call_tool_cb = (tool: Tool_Call): Promise<any> => {
+    return new Promise((resolve, reject) => {
+      console.log("tool", tool);
+      let m = modal.confirm({
+        title: t`Comfirm Call Tool`,
+        width: "90%",
+        style: { maxWidth: 1024 },
+        footer: [],
+        content: (
+          <div>
+            <Form
+              initialValues={tool.function.args}
+              name="control-hooks"
+              onFinish={(e) => {
+                // console.log(e);
+                resolve(e);
+                m.destroy();
+              }}
+            >
+              <pre
+                style={{
+                  whiteSpace: "pre-wrap",
+                  wordWrap: "break-word",
+                  padding: "8px 0",
+                  textAlign: "center",
+                }}
+              >
+                <span>Tool Name: </span>
+                <span className="text-purple-500">
+                  {getTools(mcpClients).find(
+                    (x) => x.name == tool.function.name,
+                  )?.restore_name || tool.function.name}
+                </span>
+              </pre>
+              {JsonSchema2FormItemOrNull(
+                getTools(mcpClients).find(
+                  (x) => x.name == tool.function.name,
+                )?.inputSchema,
+              ) || t`No parameters`}
+              <Form.Item>
+                <div className="flex flex-wrap justify-between">
+                  <Button
+                    onClick={() => {
+                      m.destroy();
+                      reject(new Error(t`User Cancel`));
+                    }}
+                  >{t`Cancel`}</Button>
+                  <Space>
+                    <Button
+                      type="primary"
+                      ghost
+                      htmlType="submit"
+                      onClick={() => {
+                        currentChat.current.confirm_call_tool = false;
+                      }}
+                    >
+                      {t`Allow this Chat`}
+                    </Button>
+                    <Button type="primary" htmlType="submit">
+                      {t`Allow Once`}
+                    </Button>
+                  </Space>
+                </div>
+              </Form.Item>
+            </Form>
+          </div>
+        ),
+      });
+    });
+  }
   /**
    * 处理用户请求的核心函数
    */
   const onRequest = useCallback(async (content?: string) => {
+
     let aiClient = aiClientRef.current;
     try {
       setLoading(true);
@@ -275,7 +383,7 @@ export const WorkspaceChat = ({ workspace, agentKey, workspaceDetails, mcpClient
 
       refresh();
 
-      let mcpTools = getTools(Object.values(mcpClients), currentChat.current.allowMCPs);
+      let mcpTools = getTools(mcpClients, currentChat.current.allowMCPs);
       // console.log("MCP Tools:", mcpTools);
       aiClient.register({
         antdmessage: {
@@ -290,6 +398,7 @@ export const WorkspaceChat = ({ workspace, agentKey, workspaceDetails, mcpClient
         modelKey: config.key,
         allowMCPs: currentChat.current.allowMCPs,
         confirm_call_tool: currentChat.current.confirm_call_tool,
+        confirm_call_tool_cb,
         onUpdate: () => {
           Object.assign(currentChat.current.messages, aiClient.messages);
           refresh();
@@ -434,6 +543,17 @@ export const WorkspaceChat = ({ workspace, agentKey, workspaceDetails, mcpClient
                   <Button
                     size="small"
                     icon={<SettingOutlined />}
+                    onClick={() => {
+                      // 打开设置模态框时，设置当前表单值
+                      settingsForm.setFieldsValue({
+                        modelKey: currentChat.current.modelKey,
+                        temperature: currentChat.current.temperature ?? 1,
+                        attachedDialogueCount: currentChat.current.attachedDialogueCount ?? 10,
+                        confirm_call_tool: currentChat.current.confirm_call_tool ?? false,
+                        allowMCPs: currentChat.current.allowMCPs || [],
+                      });
+                      setIsSettingsShow(true);
+                    }}
                   />
                 </Tooltip>
               </div>
@@ -466,14 +586,14 @@ export const WorkspaceChat = ({ workspace, agentKey, workspaceDetails, mcpClient
                     if (file.type.includes("image")) {
                       let path = await blobToBase64(file);
                       resourceResListRef.current.push({
-                        call_name: "UserUpload",
-                        contents: [
-                          {
-                            uri: path,
-                            blob: path,
-                            mimeType: "image/*",
-                          },
-                        ],
+
+                        // uri: path,
+                        // blob: path,
+                        // mimeType: "image/*",
+                        type: "image_url",
+                        image_url: {
+                          url: path,
+                        },
                         uid: v4(),
                       });
                       refresh();
@@ -488,14 +608,17 @@ export const WorkspaceChat = ({ workspace, agentKey, workspaceDetails, mcpClient
                   if (file.type.includes("image")) {
                     let path = await blobToBase64(file);
                     resourceResListRef.current.push({
-                      call_name: "UserUpload",
-                      contents: [
-                        {
-                          uri: path,
-                          blob: path,
-                          mimeType: "image/*",
-                        },
-                      ],
+                      // contents: [
+                      //   {
+                      //     uri: path,
+                      //     blob: path,
+                      //     mimeType: "image/*",
+                      //   },
+                      // ],
+                      type: "image_url",
+                      image_url: {
+                        url: path,
+                      },
                       uid: v4(),
                     });
                     refresh();
@@ -539,14 +662,18 @@ export const WorkspaceChat = ({ workspace, agentKey, workspaceDetails, mcpClient
                       if (file.type.includes("image")) {
                         let path = await blobToBase64(file);
                         resourceResListRef.current.push({
-                          call_name: "UserUpload",
-                          contents: [
-                            {
-                              uri: path,
-                              blob: await urlToBase64(path),
-                              mimeType: "image/*",
-                            },
-                          ],
+                          // call_name: "UserUpload",
+                          // contents: [
+                          //   {
+                          //     uri: path,
+                          //     blob: await urlToBase64(path),
+                          //     mimeType: "image/*",
+                          //   },
+                          // ],
+                          type: "image_url",
+                          image_url: {
+                            url: await urlToBase64(path),
+                          },
                           uid: v4(),
                         });
                         refresh();
@@ -689,7 +816,7 @@ export const WorkspaceChat = ({ workspace, agentKey, workspaceDetails, mcpClient
             </div>
           </div>
         </div>
-      </XProvider>
+      </XProvider >
 
       <Modal
         width={1000}
@@ -803,7 +930,29 @@ export const WorkspaceChat = ({ workspace, agentKey, workspaceDetails, mcpClient
         />
 
       </Modal>
-    </div>
+
+      {/* HOOK */}
+      {contextHolder}
+
+      {/* 设置模态框 */}
+      <Modal
+        title={t`Chat Settings`}
+        open={isSettingsShow}
+        onCancel={() => setIsSettingsShow(false)}
+        onOk={() => settingsForm.submit()}
+        width={600}
+        destroyOnClose
+      >
+        <Form
+          form={settingsForm}
+          layout="vertical"
+          onFinish={saveSettings}
+          preserve={false}
+        >
+          {AgentCommonFormItems}
+        </Form>
+      </Modal>
+    </div >
   );
 };
 

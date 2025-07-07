@@ -163,7 +163,9 @@ export type Tool_Call = {
   };
 };
 
-type CommonContent = Array<{ text: string; type: "text" } | { type: "image_url", image_url: { url: string } }>;
+export type CommonContentItem = { text: string; type: "text" } | { type: "image_url", image_url: { url: string } };
+
+export type CommonContent = Array<CommonContentItem>;
 
 type UserMessage = {
   role: "user";
@@ -172,7 +174,7 @@ type UserMessage = {
 
 type SystemMessage = {
   role: "system";
-  content: string | CommonContent;
+  content: string;
 };
 
 type AssistantMessage = {
