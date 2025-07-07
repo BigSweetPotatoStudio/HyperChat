@@ -401,11 +401,12 @@ export class AiChannel {
         }
         this.mcpAbortController = new AbortController();
         let call_res: MCPTypes.CallToolResult = await globalThis.ext.call(
-          "mcpCallTool",
+          "mcpCallToolWithWorkspace",
           {
             name: localTool?.clientName || "",
             functionName: localTool.origin_name,
             args: tool.function.args || {},
+            workspacePath: localTool.workspacePath,
           },
           {
             signal: this.mcpAbortController?.signal,

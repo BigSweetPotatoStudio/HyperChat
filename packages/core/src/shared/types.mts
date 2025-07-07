@@ -324,6 +324,7 @@ export type HyperChatCompletionTool = {
       [x: string]: unknown;
     } | undefined;
   };
+  workspacePath: string;
 };
 
 export type IMCPClient = {

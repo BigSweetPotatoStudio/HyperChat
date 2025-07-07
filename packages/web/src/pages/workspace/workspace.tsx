@@ -143,8 +143,35 @@ export function Workspace() {
   const [showHiddenFiles, setShowHiddenFiles] = useState(true);
   const [workspaceHistory, setWorkspaceHistory] = useState(() => getWorkspaceHistory());
   const [form] = Form.useForm();
-  const [chatTabs, setChatTabs] = useState<ChatTab[]>([]);
-  const [activeChatTab, setActiveChatTab] = useState<string>("");
+  // 为每个工作区维护独立的标签页状态
+  const [workspaceTabsMap, setWorkspaceTabsMap] = useState<Record<string, ChatTab[]>>({});
+  const [workspaceActiveTabMap, setWorkspaceActiveTabMap] = useState<Record<string, string>>({});
+
+  // 获取当前工作区的标签页
+  const getCurrentWorkspaceTabs = () => {
+    return workspaceTabsMap[activeWorkspaceKey] || [];
+  };
+
+  // 获取当前工作区的活动标签页
+  const getCurrentActiveTab = () => {
+    return workspaceActiveTabMap[activeWorkspaceKey] || "";
+  };
+
+  // 设置当前工作区的标签页
+  const setCurrentWorkspaceTabs = (tabs: ChatTab[]) => {
+    setWorkspaceTabsMap(prev => ({
+      ...prev,
+      [activeWorkspaceKey]: tabs
+    }));
+  };
+
+  // 设置当前工作区的活动标签页
+  const setCurrentActiveTab = (tabKey: string) => {
+    setWorkspaceActiveTabMap(prev => ({
+      ...prev,
+      [activeWorkspaceKey]: tabKey
+    }));
+  };
 
   // 面板尺寸状态 - 使用数组格式，与Ant Design Splitter兼容
   const [panelSizes, setPanelSizes] = useState<any[]>(() => {
@@ -507,6 +534,14 @@ export function Workspace() {
     return workspaceDetails[activeWorkspaceKey] || { agents: [], mcpClients: {} };
   };
 
+  // 获取当前工作区详情
+  const getGlobalDetails = () => {
+    if (!globalWorkspace?.path) {
+      return { agents: [], mcpClients: {} };
+    }
+    return workspaceDetails[globalWorkspace.path] || { agents: [], mcpClients: {} };
+  };
+
   // 处理标签页切换
   const handleTabChange = async (key: string) => {
     setActiveWorkspaceKey(key);
@@ -531,11 +566,12 @@ export function Workspace() {
     if (!currentWorkspace) return;
 
     const tabKey = `${currentWorkspace.path}-${agent.config.key}`;
-    const existingTab = chatTabs.find(tab => tab.key === tabKey);
+    const currentTabs = getCurrentWorkspaceTabs();
+    const existingTab = currentTabs.find(tab => tab.key === tabKey);
 
     if (existingTab) {
       // 如果已存在，切换到该标签页
-      setActiveChatTab(tabKey);
+      setCurrentActiveTab(tabKey);
     } else {
       // 创建新的聊天标签页
       const newTab: ChatTab = {
@@ -547,8 +583,8 @@ export function Workspace() {
         workspacePath: currentWorkspace.path,
         closable: true,
       };
-      setChatTabs(prev => [...prev, newTab]);
-      setActiveChatTab(tabKey);
+      setCurrentWorkspaceTabs([...currentTabs, newTab]);
+      setCurrentActiveTab(tabKey);
     }
   };
 
@@ -558,11 +594,12 @@ export function Workspace() {
     if (!currentWorkspace) return;
 
     const tabKey = `${currentWorkspace.path}-file-${filePath}`;
-    const existingTab = chatTabs.find(tab => tab.key === tabKey);
+    const currentTabs = getCurrentWorkspaceTabs();
+    const existingTab = currentTabs.find(tab => tab.key === tabKey);
 
     if (existingTab) {
       // 如果已存在，切换到该标签页
-      setActiveChatTab(tabKey);
+      setCurrentActiveTab(tabKey);
     } else {
       // 创建新的文件编辑标签页
       const newTab: ChatTab = {
@@ -574,22 +611,24 @@ export function Workspace() {
         workspacePath: currentWorkspace.path,
         closable: true,
       };
-      setChatTabs(prev => [...prev, newTab]);
-      setActiveChatTab(tabKey);
+      setCurrentWorkspaceTabs([...currentTabs, newTab]);
+      setCurrentActiveTab(tabKey);
     }
   };
 
   // 关闭聊天标签页
   const closeChatTab = (tabKey: string) => {
-    const newTabs = chatTabs.filter(tab => tab.key !== tabKey);
-    setChatTabs(newTabs);
+    const currentTabs = getCurrentWorkspaceTabs();
+    const currentActiveTab = getCurrentActiveTab();
+    const newTabs = currentTabs.filter(tab => tab.key !== tabKey);
+    setCurrentWorkspaceTabs(newTabs);
 
     // 如果关闭的是当前活动标签页，切换到其他标签页
-    if (activeChatTab === tabKey) {
+    if (currentActiveTab === tabKey) {
       if (newTabs.length > 0 && newTabs[newTabs.length - 1]) {
-        setActiveChatTab(newTabs[newTabs.length - 1]!.key);
+        setCurrentActiveTab(newTabs[newTabs.length - 1]!.key);
       } else {
-        setActiveChatTab("");
+        setCurrentActiveTab("");
       }
     }
   };
@@ -597,7 +636,8 @@ export function Workspace() {
   // 初始化默认聊天标签页
   const initDefaultChatTab = (workspace: WorkspaceInfo) => {
     const defaultTabKey = `${workspace.path}-default`;
-    const hasDefaultTab = chatTabs.some(tab => tab.key === defaultTabKey);
+    const currentTabs = getCurrentWorkspaceTabs();
+    const hasDefaultTab = currentTabs.some(tab => tab.key === defaultTabKey);
 
     if (!hasDefaultTab) {
       const defaultTab: ChatTab = {
@@ -607,9 +647,9 @@ export function Workspace() {
         workspacePath: workspace.path,
         closable: false,
       };
-      setChatTabs(prev => [defaultTab, ...prev]);
-      if (!activeChatTab) {
-        setActiveChatTab(defaultTabKey);
+      setCurrentWorkspaceTabs([defaultTab, ...currentTabs]);
+      if (!getCurrentActiveTab()) {
+        setCurrentActiveTab(defaultTabKey);
       }
     }
   };
@@ -668,7 +708,7 @@ export function Workspace() {
   const renderWorkspaceContent = () => {
     const currentWorkspace = getCurrentWorkspace();
     const details = getCurrentDetails();
-
+    const globalDetails = getGlobalDetails();
     if (!currentWorkspace) {
       return (
         <Empty
@@ -711,11 +751,11 @@ export function Workspace() {
               className="h-full"
               bodyStyle={{ padding: '0', height: '100%', overflow: 'hidden' }}
             >
-              {chatTabs.length > 0 ? (
+              {getCurrentWorkspaceTabs().length > 0 ? (
                 <Tabs
                   type="editable-card"
-                  activeKey={activeChatTab}
-                  onChange={setActiveChatTab}
+                  activeKey={getCurrentActiveTab()}
+                  onChange={setCurrentActiveTab}
                   onEdit={(targetKey, action) => {
                     if (action === 'remove' && typeof targetKey === 'string') {
                       closeChatTab(targetKey);
@@ -724,7 +764,7 @@ export function Workspace() {
                   hideAdd
                   size="small"
                   tabBarStyle={{ marginBottom: 0, padding: '0 8px' }}
-                  items={chatTabs.map(tab => ({
+                  items={getCurrentWorkspaceTabs().map(tab => ({
                     key: tab.key,
                     label: (
                       <Space size="small">
@@ -754,6 +794,7 @@ export function Workspace() {
                             agentKey={tab.agentKey}
                             workspaceDetails={workspaceDetails}
                             key={tab.key}
+                            mcpClients={Object.assign({}, globalDetails.mcpClients, details.mcpClients || {})}
                           />
                         )}
                       </div>
@@ -861,7 +902,7 @@ export function Workspace() {
           </div>
 
           {/* 右侧内容 - 操作按钮 */}
-          <AppActions 
+          <AppActions
             onAIProviderClick={() => setLocalIsModelConfigOpen(true)}
             onRefresh={refresh}
           />

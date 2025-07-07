@@ -59,6 +59,7 @@ import { HeaderContext } from "../common/context";
 import { useForceUpdate } from "../hooks/useForceUpdate";
 import { MyAttachR } from "../pages/chat/attachR";
 import { WorkspaceDetails, WorkspaceInfo } from "../pages/workspace/workspace";
+import { HyperChatCompletionTool, IMCPClient } from "@hyperchat/shared/types.mjs";
 
 /**
  * 工作区聊天组件的Props类型定义
@@ -69,12 +70,13 @@ interface WorkspaceChatProps {
   /** 指定的Agent Key，用于Agent聊天 */
   agentKey?: string;
   workspaceDetails: WorkspaceDetails;
+  mcpClients: Record<string, IMCPClient>;
 }
 
 /**
  * 工作区聊天组件
  */
-export const WorkspaceChat = ({ workspace, agentKey, workspaceDetails }: WorkspaceChatProps) => {
+export const WorkspaceChat = ({ workspace, agentKey, workspaceDetails, mcpClients }: WorkspaceChatProps) => {
   // 使用强制刷新 hook
   const refresh = useForceUpdate();
 
@@ -244,11 +246,13 @@ export const WorkspaceChat = ({ workspace, agentKey, workspaceDetails }: Workspa
 
       refresh();
 
+      let mcpTools = getTools(Object.values(mcpClients), currentChat.current.allowMCPs);
+      // console.log("MCP Tools:", mcpTools);
       aiClient.register({
         antdmessage: {
           warning: message.warning,
         },
-        mcpTools: [],
+        mcpTools: mcpTools,
         platform: "web",
         getURL_PRE: getURL_PRE
       })
@@ -384,7 +388,7 @@ export const WorkspaceChat = ({ workspace, agentKey, workspaceDetails }: Workspa
                       //     ? `${currModel?.provider || 'unknown'}:${currModel?.name || 'unknown'}`
                       //     : "Please add a LLM model"
                       // }
-                      className="w-48"
+                      className="w-64"
                       // allowClear
                       value={currentChat.current.modelKey}
                       onChange={(value) => {
@@ -581,3 +585,19 @@ export const WorkspaceChat = ({ workspace, agentKey, workspaceDetails }: Workspa
     </div>
   );
 };
+
+function getTools(mcpClients: IMCPClient[], allowMCPs?: string[]): HyperChatCompletionTool[] {
+  let tools: HyperChatCompletionTool[] = [];
+
+  mcpClients.forEach((v) => {
+    tools = tools.concat(
+      v.tools.filter((t) => {
+        if (!allowMCPs) return true;
+        return (
+          allowMCPs.includes(t.clientName) || allowMCPs.includes(t.restore_name)
+        );
+      }),
+    );
+  });
+  return tools;
+}
