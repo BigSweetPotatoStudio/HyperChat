@@ -78,12 +78,14 @@ interface WorkspaceChatProps {
   agentKey?: string;
   workspaceDetails: WorkspaceDetails;
   mcpClients: IMCPClient[];
+  /** 要加载的特定聊天记录 */
+  chatLogToLoad?: ChatHistoryItem;
 }
 
 /**
  * 工作区聊天组件
  */
-export const WorkspaceChat = ({ workspace, agentKey, workspaceDetails, mcpClients }: WorkspaceChatProps) => {
+export const WorkspaceChat = ({ workspace, agentKey, workspaceDetails, mcpClients, chatLogToLoad }: WorkspaceChatProps) => {
   // 使用强制刷新 hook
   const refresh = useForceUpdate();
 
@@ -146,8 +148,23 @@ export const WorkspaceChat = ({ workspace, agentKey, workspaceDetails, mcpClient
         const defaultModel = getDefaultModelConfigSync(AI_MODELS);
         currentChat.current.modelKey = defaultModel ? defaultModel.key : "";
         const agent = workspaceDetails[workspace.path]?.agents.find(a => a.config.key === agentKey);
-        // 如果指定了agentKey，使用Agent配置
-        if (agentKey && agent) {
+        // 如果有要加载的聊天记录，优先加载聊天记录
+        if (chatLogToLoad) {
+          currentChatReset({
+            key: chatLogToLoad.key,
+            label: chatLogToLoad.label || chatLogToLoad.key,
+            messages: chatLogToLoad.messages || [],
+            modelKey: chatLogToLoad.modelKey || defaultModel?.key || "",
+            agentKey: chatLogToLoad.agentKey || agentKey || "",
+            allowMCPs: chatLogToLoad.allowMCPs || [],
+            dateTime: chatLogToLoad.dateTime || Date.now(),
+            chatType: chatLogToLoad.chatType || "user",
+            confirm_call_tool: chatLogToLoad.confirm_call_tool || false,
+            temperature: chatLogToLoad.temperature,
+          });
+        }
+        // 否则如果指定了agentKey，使用Agent配置
+        else if (agentKey && agent) {
 
           defaultChatValue.current.agentKey = agentKey;
           defaultChatValue.current.messages = [{
@@ -170,7 +187,7 @@ export const WorkspaceChat = ({ workspace, agentKey, workspaceDetails, mcpClient
         console.error("Failed to initialize workspace chat:", error);
       }
     })();
-  }, [workspace, agentKey]);
+  }, [workspace, agentKey, chatLogToLoad]);
 
   /**
    * 重置当前聊天配置

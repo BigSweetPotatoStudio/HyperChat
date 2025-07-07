@@ -41,7 +41,7 @@ import { NumberStep } from "../common/numberStep";
 import EmojiPicker from 'emoji-picker-react';
 import { Editor } from "./editor";
 import { useForceUpdate } from "../hooks/useForceUpdate";
-import { AgentConfig, IMCPClient } from "@hyperchat/shared/types.mjs";
+import { AgentConfig, ChatHistoryItem, IMCPClient } from "@hyperchat/shared/types.mjs";
 const { Title, Text } = Typography;
 
 
@@ -60,7 +60,7 @@ interface AgentManagementProps {
   workspace: WorkspaceInfo;
   agents: Agent[];
   onRefresh: () => Promise<void>;
-  onOpenChat?: (agent: Agent) => void;
+  onOpenChat?: (agent: Agent, chatLog?: ChatHistoryItem) => void;
   mcpClients: IMCPClient[];
 }
 
@@ -71,7 +71,7 @@ export function AgentManagement({ workspace, agents, onRefresh, onOpenChat, mcpC
   const [selectedAgent, setSelectedAgent] = useState<Agent | null>(null);
   const [editingAgent, setEditingAgent] = useState<Agent | null>(null);
   const [chatHistoryAgent, setChatHistoryAgent] = useState<Agent | null>(null);
-  const [chatHistoryList, setChatHistoryList] = useState<any[]>([]);
+  const [chatHistoryList, setChatHistoryList] = useState<ChatHistoryItem[]>([]);
   const [loadingChatHistory, setLoadingChatHistory] = useState(false);
   const [form] = Form.useForm();
   const refresh = useForceUpdate();
@@ -196,6 +196,43 @@ export function AgentManagement({ workspace, agents, onRefresh, onOpenChat, mcpC
     } finally {
       setLoadingChatHistory(false);
     }
+  };
+
+  // 删除聊天记录
+  const deleteChatLog = async (chatLog: ChatHistoryItem) => {
+    Modal.confirm({
+      title: t`Confirm Delete`,
+      content: t`Are you sure you want to delete this chat log?`,
+      okText: t`Delete`,
+      cancelText: t`Cancel`,
+      okButtonProps: { danger: true },
+      onOk: async () => {
+        try {
+          if (!chatHistoryAgent) return;
+          
+          await call('deleteAgentChatLog', {
+            workspacePath: workspace.path,
+            agentKey: chatHistoryAgent.config.key,
+            chatKey: chatLog.key
+          });
+
+          message.success(t`Chat log deleted successfully`);
+          
+          // 重新加载聊天历史列表
+          const result = await call('getAgentChatLogs', {
+            workspacePath: workspace.path,
+            agentKey: chatHistoryAgent.config.key
+          });
+          setChatHistoryList(result.chatLogs || []);
+          
+          // 刷新Agent列表以更新聊天记录数量
+          await onRefresh();
+        } catch (error) {
+          console.error("Failed to delete chat log:", error);
+          message.error(t`Failed to delete chat log`);
+        }
+      }
+    });
   };
 
   return (
@@ -642,14 +679,35 @@ export function AgentManagement({ workspace, agents, onRefresh, onOpenChat, mcpC
           ) : chatHistoryList.length > 0 ? (
             <List
               dataSource={chatHistoryList}
-              renderItem={(chatLog: any, index) => (
+              renderItem={(chatLog: ChatHistoryItem, index) => (
                 <List.Item
                   key={chatLog.key || index}
                   className="hover:bg-gray-50 cursor-pointer"
                   onClick={() => {
-                    // TODO: 可以添加打开具体聊天记录的功能
-                    message.info(t`Open chat record: ${chatLog.label || chatLog.key}`);
+                    // 关闭历史记录模态框
+                    setChatHistoryModal(false);
+                    setChatHistoryAgent(null);
+                    setChatHistoryList([]);
+                    
+                    // 打开聊天并加载历史记录
+                    if (chatHistoryAgent && onOpenChat) {
+                      onOpenChat(chatHistoryAgent, chatLog);
+                    }
                   }}
+                  actions={[
+                    <Button
+                      key="delete"
+                      type="text"
+                      size="small"
+                      icon={<DeleteOutlined />}
+                      danger
+                      onClick={(e) => {
+                        e.stopPropagation(); // 阻止事件冒泡
+                        deleteChatLog(chatLog);
+                      }}
+                      title={t`Delete Chat Log`}
+                    />
+                  ]}
                 >
                   <List.Item.Meta
                     title={
@@ -671,9 +729,6 @@ export function AgentManagement({ workspace, agents, onRefresh, onOpenChat, mcpC
                             ? new Date(chatLog.dateTime).toLocaleString()
                             : 'Unknown time'
                           }
-                        </div>
-                        <div className="text-xs text-gray-400">
-                          Key: {chatLog.key}
                         </div>
                       </div>
                     }

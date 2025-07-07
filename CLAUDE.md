@@ -26,10 +26,13 @@ packages/cli 专注于命令行前端的实现
 
 ## 开发逻辑
 
+
+* 尽量使用 TypeScript 的类型系统来确保代码的类型安全。尽量少使用any类型。
+* packages/core/src/shared/types.mts 定义了常用的类型，包括前端和后端交互的类型，确保前后端的数据结构一致。
 * 前端发送消息给后端，默认通过  packages/core/src/command.mts 实现，前端通过调用 call 的方法来实现与后端的交互。
 * electron提供更多electron接口 packages/electron/src/command.mts， 前端通过调用 callElectron 的方法来实现与electron的交互。
 * 后端发送消息给前端是通过websocket实现的 packages/core/src/message_service.mts，前端通过监听 websocket 的消息来接收后端发送的消息。
-* packages/core/src/shared/types.mts 定义了前端和后端交互的类型，确保前后端的数据结构一致。目前类型是分散的，没有集中到这个文件。
+
 
 ## 记忆
 
@@ -38,13 +41,7 @@ packages/cli 专注于命令行前端的实现
 
 ### 2.0 工作区实现状态
 - [x] 核心工作区管理类 (workspace.mts, workspaceManager.mts)
-- [x] Agent管理器 (agentManager.mts) - 处理agents文件夹管理
-- [x] 文件系统数据存储 (dataList.mts) - 聊天记录存储机制
-- [x] MCP工作区管理 (workspace/mcp/manager.mts, client.mts)
-- [x] 前端工作区组件 (workspace.tsx, WorkspaceSidebar.tsx, FileTreeComponent.tsx)
-- [x] 完整的目录结构支持 - 自动创建和管理.hyperchat目录
-- [x] 类型安全 - 完整的TypeScript类型定义
-- [ ] Agent工作区管理 - 支持对Agent的增删改查未完成
+
 
 2.0 版本的 HyperChat 项目结构如下：
 

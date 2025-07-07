@@ -104,6 +104,7 @@ interface ChatTab {
   fileName?: string;
   workspacePath: string;
   closable?: boolean;
+  chatLogToLoad?: any; // 要加载的聊天记录
 }
 
 export type WorkspaceDetails = {
@@ -563,11 +564,12 @@ export function Workspace() {
   };
 
   // 打开Agent聊天
-  const openAgentChat = (agent: any) => {
+  const openAgentChat = (agent: any, chatLog?: any) => {
     const currentWorkspace = getCurrentWorkspace();
     if (!currentWorkspace) return;
 
-    const tabKey = `${currentWorkspace.path}-${agent.config.key}`;
+    // 如果有聊天记录，使用聊天记录的key确保唯一性
+    const tabKey = chatLog ? `${currentWorkspace.path}-${agent.config.key}-${chatLog.key}` : `${currentWorkspace.path}-${agent.config.key}`;
     const currentTabs = getCurrentWorkspaceTabs();
     const existingTab = currentTabs.find(tab => tab.key === tabKey);
 
@@ -576,14 +578,16 @@ export function Workspace() {
       setCurrentActiveTab(tabKey);
     } else {
       // 创建新的聊天标签页
+      const tabTitle = chatLog ? `${agent.config.name || agent.config.key} - ${chatLog.label || chatLog.key}` : agent.config.name || agent.config.key;
       const newTab: ChatTab = {
         key: tabKey,
-        title: agent.config.name || agent.config.key,
+        title: tabTitle,
         type: 'chat',
         agentKey: agent.config.key,
         agentName: agent.config.name || agent.config.key,
         workspacePath: currentWorkspace.path,
         closable: true,
+        chatLogToLoad: chatLog, // 传递聊天记录数据
       };
       setCurrentWorkspaceTabs([...currentTabs, newTab]);
       setCurrentActiveTab(tabKey);
@@ -795,6 +799,7 @@ export function Workspace() {
                             workspaceDetails={workspaceDetails}
                             key={tab.key}
                             mcpClients={mcpClients}
+                            chatLogToLoad={tab.chatLogToLoad}
                           />
                         )}
                       </div>
