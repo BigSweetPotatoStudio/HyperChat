@@ -30,3 +30,4 @@ dist/
 *.log
 .continuerules
 .continue/
+chatlogs/
