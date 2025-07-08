@@ -530,26 +530,35 @@ export function Workspace() {
   };
 
   // 刷新工作区详情
-  const refreshWorkspaceDetails = async (workspaceKey?: string) => {
+  const refreshWorkspaceDetails = async (workspaceKey?: string, refreshType?: 'agents' | 'mcp' | 'all') => {
     const key = workspaceKey || activeWorkspaceKey;
     const workspace = (globalWorkspace && key === globalWorkspace.path) ? globalWorkspace : workspaces.find(ws => ws.path === key);
+    const type = refreshType || 'all';
 
     if (workspace) {
       try {
-        // 刷新 Agents
-        const agentList = await call("getWorkspaceAgentsSummary", { workspacePath: workspace.path });
+        let agentList: any[] | undefined;
+        let mcpClients: Record<string, IMCPClient> | undefined;
 
-        // 刷新 MCP 客户端
-        const mcpList = await call("getWorkspaceMcpClients", { workspacePath: workspace.path });
+        // 根据刷新类型选择性刷新数据
+        if (type === 'agents' || type === 'all') {
+          // 刷新 Agents
+          agentList = await call("getWorkspaceAgentsSummary", { workspacePath: workspace.path });
+        }
 
-        // 将数组转换为对象格式
-        const mcpClients: Record<string, IMCPClient> = {};
-        if (mcpList && Array.isArray(mcpList)) {
-          mcpList.forEach((client) => {
-            if (client && client.serverName) {
-              mcpClients[client.serverName] = client;
-            }
-          });
+        if (type === 'mcp' || type === 'all') {
+          // 刷新 MCP 客户端
+          const mcpList = await call("getWorkspaceMcpClients", { workspacePath: workspace.path });
+
+          // 将数组转换为对象格式
+          mcpClients = {};
+          if (mcpList && Array.isArray(mcpList)) {
+            mcpList.forEach((client) => {
+              if (client && client.serverName) {
+                mcpClients![client.serverName] = client;
+              }
+            });
+          }
         }
 
         // 更新工作区详情数据
@@ -557,8 +566,8 @@ export function Workspace() {
           ...prev,
           [key]: {
             ...prev[key],
-            agents: agentList || [],
-            mcpClients: mcpClients
+            ...(agentList !== undefined && { agents: agentList }),
+            ...(mcpClients !== undefined && { mcpClients: mcpClients })
           }
         }) as any);
       } catch (error) {
@@ -1034,7 +1043,7 @@ export function Workspace() {
                       <AgentManagement
                         workspace={workspace}
                         agents={details.agents || []}
-                        onRefresh={() => refreshWorkspaceDetails(workspaceKey)}
+                        onRefresh={() => refreshWorkspaceDetails(workspaceKey, 'agents')}
                         onOpenChat={(agent: any, chatLog?: any) => openAgentChat(workspaceKey, agent, chatLog)}
                         mcpClients={mcpClients}
                       />
@@ -1053,7 +1062,7 @@ export function Workspace() {
                       <MCPManagement
                         workspace={workspace}
                         mcpClients={mcpClients}
-                        onRefresh={() => refreshWorkspaceDetails(workspaceKey)}
+                        onRefresh={() => refreshWorkspaceDetails(workspaceKey, 'mcp')}
                       />
                     ) : <Empty description={t`No workspace selected`} />,
                   },

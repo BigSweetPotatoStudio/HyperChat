@@ -14,7 +14,7 @@ import { WorkspaceMCPClientImpl } from "./client.mjs";
 import type { MCPServerConfig } from "../../shared/data.mjs";
 import { Logger } from "../../log.mjs";
 import { CONSTANTS } from "../constants.mjs";
-import { MyServers } from "../../mcp/servers/index.mjs";
+import { MyServers, WorkSpaceServers } from "../../mcp/servers/index.mjs";
 import { Config } from "../../const.mjs";
 
 export class WorkspaceMCPManager {
@@ -43,15 +43,15 @@ export class WorkspaceMCPManager {
   private initializeServerOrders(config: WorkspaceMCPConfig): void {
     // 清空现有的order映射
     this.serverOrderMap.clear();
-    
+
     let orderIndex = 0;
-    
+
     // 首先为内置服务器分配order（按名称排序确保稳定性）
     const sortedBuiltinServers = [...MyServers];
     for (const server of sortedBuiltinServers) {
       this.serverOrderMap.set(server.name, orderIndex++);
     }
-    
+
     // 然后为自定义服务器分配order（按名称排序确保稳定性）
     const sortedCustomServers = Object.keys(config.mcpServers).sort();
     for (const serverName of sortedCustomServers) {
@@ -136,6 +136,53 @@ export class WorkspaceMCPManager {
         client.status = "disabled";
       }
     }
+
+    for (const server of WorkSpaceServers) {
+      // 检查配置文件中是否有对内置服务器的disabled设置
+      const userServerConfig = config.mcpServers[server.name];
+      const isDisabled = userServerConfig?.disabled || false;
+
+      const serverConfig: MCPServerConfig = {
+        type: server.type === "streamableHttp" ? "streamableHttp" : "inMemory",
+        hyperchat: {
+          scope: "built-in",
+          config: {},
+        } as any,
+        disabled: isDisabled,
+      };
+
+      const clientId = this.getClientId(server.name);
+
+      // 如果客户端已存在，跳过
+      if (this.clients.has(clientId)) {
+        clients.push(this.clients.get(clientId)!);
+        continue;
+      }
+
+      const client = new WorkspaceMCPClientImpl(
+        server.name,
+        serverConfig,
+        "workspace",
+        this.getServerOrder(server.name),
+        {
+          mcpType: "builtin",
+          workspacePath: this.workspacePath,
+          createServer: server.createServer
+        }
+      );
+
+      this.clients.set(clientId, client);
+      clients.push(client);
+
+      // 只有非禁用的客户端才启动连接
+      if (!isDisabled) {
+        tasks.push(this.startClient(client, clientId));
+      } else {
+        // 禁用的客户端设置为disabled状态
+        client.status = "disabled";
+      }
+    }
+
 
     // 启动用户配置的服务器
     for (const [name, serverConfig] of Object.entries(config.mcpServers)) {

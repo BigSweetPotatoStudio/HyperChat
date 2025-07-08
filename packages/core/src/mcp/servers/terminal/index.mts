@@ -3,40 +3,39 @@ import { configSchema, NAME } from "./lib.mjs";
 import { CONST } from "../../../const.mjs";
 import { registerTool } from "./terminal.mjs";
 import { Logger } from "../../../log.mjs";
+import { InMemoryTransport } from "@modelcontextprotocol/sdk/inMemory.js";
 
-interface Transport {
-  handlePostMessage(req: unknown, res: unknown): Promise<void>;
-}
 
-let transport: Transport | null = null;
+let server: any | null = null;
 
-async function createServer(_endpoint: string, _response: unknown) {
-  const server = new McpServer({
+async function createServer(workspacePath: string) {
+  console.log(`Creating MCP server for HyperTerminal at workspace path: ${workspacePath}`);
+  if (server) {
+    return server;
+  }
+
+  server = new McpServer({
     name: NAME,
     version: CONST.getVersion,
   });
 
   registerTool(server);
-  
-  Logger.info(`${NAME} MCP server created successfully`);
-  return server;
+
+  const [clientTransport, serverTransport] = InMemoryTransport.createLinkedPair();
+  // 连接服务器传输
+  await server.connect(serverTransport);
+
+  return clientTransport;
 }
 
-async function handlePostMessage(req: unknown, res: unknown): Promise<void> {
-  if (transport) {
-    await transport.handlePostMessage(req, res);
-  } else {
-    Logger.warn("No transport available for handling post message");
-  }
-}
+
+
 
 export const HyperTerminal = {
   createServer,
-  handlePostMessage,
   name: NAME,
-  url: ``,
   configSchema,
-  type: "streamableHttp" as const,
-} as const;
+  type: "inMemory" as const,
+} ;
 
 

@@ -51,6 +51,9 @@ export function MCPManagement({ workspace, mcpClients, onRefresh }: MCPManagemen
   const [addMcpModalOpen, setAddMcpModalOpen] = useState(false);
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [searchText, setSearchText] = useState<string>("");
+  const [toolsModalOpen, setToolsModalOpen] = useState(false);
+  const [selectedClientTools, setSelectedClientTools] = useState<any[]>([]);
+  const [selectedClientName, setSelectedClientName] = useState<string>("");
 
   // 刷新MCP客户端列表
   const refreshMcpClients = async () => {
@@ -94,6 +97,9 @@ export function MCPManagement({ workspace, mcpClients, onRefresh }: MCPManagemen
       });
 
       message.success(t`MCP client restarted successfully`);
+      
+      // 重启成功后刷新前端数据（只刷新MCP数据）
+      await onRefresh();
     } catch (error) {
       console.error(`Failed to restart MCP client ${clientName}:`, error);
       message.error(t`Failed to restart MCP client`);
@@ -110,6 +116,9 @@ export function MCPManagement({ workspace, mcpClients, onRefresh }: MCPManagemen
         action: "disable"
       });
       message.success(t`MCP client disabled successfully`);
+      
+      // 停用成功后刷新前端数据（只刷新MCP数据）
+      await onRefresh();
     } catch (error) {
       console.error(`Failed to disable MCP client ${clientName}:`, error);
       message.error(t`Failed to disable MCP client`);
@@ -125,6 +134,9 @@ export function MCPManagement({ workspace, mcpClients, onRefresh }: MCPManagemen
         clientName
       });
       message.success(t`MCP client enabled successfully`);
+      
+      // 启用成功后刷新前端数据（只刷新MCP数据）
+      await onRefresh();
     } catch (error) {
       console.error(`Failed to enable MCP client ${clientName}:`, error);
       message.error(t`Failed to enable MCP client`);
@@ -141,6 +153,9 @@ export function MCPManagement({ workspace, mcpClients, onRefresh }: MCPManagemen
         action: "delete"
       });
       message.success(t`MCP client deleted successfully`);
+      
+      // 删除成功后刷新前端数据（只刷新MCP数据）
+      await onRefresh();
     } catch (error) {
       console.error(`Failed to delete MCP client ${clientName}:`, error);
       message.error(t`Failed to delete MCP client`);
@@ -151,6 +166,13 @@ export function MCPManagement({ workspace, mcpClients, onRefresh }: MCPManagemen
   const showMcpClientDetails = (client: IMCPClient) => {
     setSelectedMcpClient(client);
     setMcpDetailDrawer(true);
+  };
+
+  // 显示工具列表模态框
+  const showToolsModal = (client: IMCPClient) => {
+    setSelectedClientTools(client.tools || []);
+    setSelectedClientName(client.serverName);
+    setToolsModalOpen(true);
   };
 
   // 过滤MCP客户端
@@ -183,6 +205,31 @@ export function MCPManagement({ workspace, mcpClients, onRefresh }: MCPManagemen
 
     return filteredClients;
   };
+
+  // 渲染工具列表的 Modal 内容
+  const renderToolsModalContent = (tools: any[]) => {
+    return (
+      <div style={{ maxHeight: 400, overflow: 'auto' }}>
+        <List
+          size="small"
+          dataSource={tools}
+          renderItem={(tool: any) => (
+            <List.Item>
+              <List.Item.Meta
+                title={<span style={{ fontSize: '14px', fontWeight: 'bold' }}>{tool.name}</span>}
+                description={
+                  <div style={{ fontSize: '12px', color: '#666', marginTop: 4 }}>
+                    {tool.description || t`No description available`}
+                  </div>
+                }
+              />
+            </List.Item>
+          )}
+        />
+      </div>
+    );
+  };
+
 
   return (
     <>
@@ -337,7 +384,14 @@ export function MCPManagement({ workspace, mcpClients, onRefresh }: MCPManagemen
                             {client.status}
                           </Tag>
                           {client.tools && (
-                            <Tag color="cyan">
+                            <Tag 
+                              color="cyan" 
+                              style={{ cursor: 'pointer' }}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                showToolsModal(client);
+                              }}
+                            >
                               {client.tools.length} {t`tools`}
                             </Tag>
                           )}
@@ -504,6 +558,33 @@ export function MCPManagement({ workspace, mcpClients, onRefresh }: MCPManagemen
           </div>
         )}
       </Drawer>
+
+      {/* 工具列表模态框 */}
+      <Modal
+        title={`${selectedClientName} - ${t`Available Tools`}`}
+        open={toolsModalOpen}
+        onCancel={() => {
+          setToolsModalOpen(false);
+          setSelectedClientTools([]);
+          setSelectedClientName("");
+        }}
+        footer={[
+          <Button key="close" onClick={() => {
+            setToolsModalOpen(false);
+            setSelectedClientTools([]);
+            setSelectedClientName("");
+          }}>
+            {t`Close`}
+          </Button>
+        ]}
+        width={600}
+      >
+        {selectedClientTools.length > 0 ? (
+          renderToolsModalContent(selectedClientTools)
+        ) : (
+          <Empty description={t`No tools available`} />
+        )}
+      </Modal>
     </>
   );
 }

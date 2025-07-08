@@ -285,7 +285,7 @@ export interface MCPServerConfig {
   env?: { [s: string]: string };
   headers?: { [s: string]: string };
   url?: string;
-  type?: "stdio" | "sse" | "streamableHttp";
+  type?: "stdio" | "sse" | "streamableHttp" | "inMemory";
   hyperchat?: {
     config: Record<string, unknown>;
   };

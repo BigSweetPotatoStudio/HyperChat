@@ -7,9 +7,15 @@ import { HyperTerminal } from "./terminal/index.mjs";
 type ServerConfig = {
   name: string;
   type: string;
-  configSchema?: any;
+  configSchema: any;
+  createServer: (workspacePath: string) => Promise<any>;
 };
 
 export const MyServers: ServerConfig[] = [];
 
-MyServers.push(HyperTools,  HyperTerminal);
+MyServers.push(HyperTools);
+
+
+export const WorkSpaceServers: ServerConfig[] = [
+  HyperTerminal
+];

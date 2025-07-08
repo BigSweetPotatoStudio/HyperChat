@@ -5,15 +5,15 @@
 
 import * as MCP from "@modelcontextprotocol/sdk/client/index.js";
 import * as MCPTypes from "@modelcontextprotocol/sdk/types.js";
-import { 
-  SSEClientTransport, 
+import {
+  SSEClientTransport,
   StreamableHTTPClientTransport,
-  StdioClientTransport 
+  StdioClientTransport
 } from "../../es6.mjs";
-import { 
+import {
   CallToolResultSchema,
   CompatibilityCallToolResultSchema,
-  ResourceListChangedNotificationSchema 
+  ResourceListChangedNotificationSchema
 } from "../../es6.mjs";
 import type { MCPServerConfig, HyperChatCompletionTool } from "../../shared/data.mjs";
 import type { MCPPromptSchema, MCPResourceSchema, MCPConfigSchema, ToolCallArgs } from "../../shared/types.mjs";
@@ -45,11 +45,11 @@ export class WorkspaceMCPClientImpl implements WorkspaceMCPClient {
   public mcpType: MCPType;
 
   public workspacePath: string;
-  
+
   public ext: {
     configSchema?: MCPConfigSchema;
   } = {};
-  
+
   private reconnectAttempts = 0;
   private maxReconnectAttempts = DEFAULT_MAX_RECONNECT_ATTEMPTS;
   private reconnectDelay = DEFAULT_RECONNECT_DELAY;
@@ -59,9 +59,10 @@ export class WorkspaceMCPClientImpl implements WorkspaceMCPClient {
     public config: MCPServerConfig,
     scope: "workspace",
     public order: number = 0,
-    options: {
+    private options: {
       mcpType?: MCPType;
       workspacePath: string;
+      createServer?: any; // 传输方式 inMemory
     }
   ) {
     this.scope = scope;
@@ -188,12 +189,20 @@ export class WorkspaceMCPClientImpl implements WorkspaceMCPClient {
   }
 
   toJSON() {
-    const { client, ...out } = this;
     return {
-      ...out,
+      serverName: this.serverName,
+      config: this.config,
+      order: this.order,
+      tools: this.tools,
+      resources: this.resources,
+      prompts: this.prompts,
+      status: this.status,
+      version: this.version,
       scope: this.scope,
       mcpType: this.mcpType,
       workspacePath: this.workspacePath,
+      ext: this.ext,
+      // 排除 client 和 options 以避免循环引用
     };
   }
 
@@ -228,15 +237,17 @@ export class WorkspaceMCPClientImpl implements WorkspaceMCPClient {
     try {
       this.status = "connecting";
       this.notifyStatusChange();
-      
+
       // 添加随机延迟避免同时连接冲突
       await sleep(Math.random() * 1000);
-      
+
       let client: MCP.Client;
       if (this.config?.type === "sse") {
         client = await this.openSse(this.config);
       } else if (this.config?.type === "streamableHttp") {
         client = await this.openStreamableHttp(this.config);
+      } else if (this.config?.type === "inMemory") {
+        client = await this.openInMemory(this.config);
       } else {
         client = await this.openStdio(this.config);
       }
@@ -246,7 +257,7 @@ export class WorkspaceMCPClientImpl implements WorkspaceMCPClient {
         this.logError("listTools error: ", e);
         return { tools: [] };
       });
-      
+
       const resources_res = await client.listResources().catch((_e) => {
         return { resources: [] };
       });
@@ -307,14 +318,14 @@ export class WorkspaceMCPClientImpl implements WorkspaceMCPClient {
 
     const url = config?.url;
     if (!url) throw new Error('URL is required for SSE transport');
-    
+
     const transport = new SSEClientTransport(new URL(url), {
       requestInit: {
         keepalive: true,
         headers: config.headers || {},
       }
     });
-    
+
     await client.connect(transport);
     return client;
   }
@@ -325,9 +336,9 @@ export class WorkspaceMCPClientImpl implements WorkspaceMCPClient {
       version: "1.0.0",
       capabilities: {}
     });
-    
+
     if (!config?.url) throw new Error('URL is required for StreamableHTTP transport');
-    
+
     const transport = new StreamableHTTPClientTransport(new URL(config.url), {
       requestInit: {
         keepalive: true,
@@ -338,12 +349,23 @@ export class WorkspaceMCPClientImpl implements WorkspaceMCPClient {
     await client.connect(transport);
     return client;
   }
+  private async openInMemory(config: MCPServerConfig): Promise<MCP.Client> {
+    const client = new MCP.Client({
+      name: this.serverName,
+      version: "1.0.0",
+      capabilities: {}
+    });
+    console.log("Opening InMemory transport for MCP client:", this.serverName, this.workspacePath, this.options.createServer);
+    const transport = await this.options.createServer(this.workspacePath);
+    await client.connect(transport);
+    return client;
+  }
 
   private async openStdio(config: MCPServerConfig): Promise<MCP.Client> {
     const env = Object.assign(getMyDefaultEnvironment(), config.env);
-    
+
     if (!config.command) throw new Error('Command is required for stdio transport');
-    
+
     const params = {
       command: config.command,
       args: config.args || [],
@@ -378,9 +400,9 @@ export class WorkspaceMCPClientImpl implements WorkspaceMCPClient {
           env: env,
           shell: false,
         });
-        
+
         let output = "";
-        
+
         child.stdout?.on('data', (data) => {
           output += data + "\n";
         });
