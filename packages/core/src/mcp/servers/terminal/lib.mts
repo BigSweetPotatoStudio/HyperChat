@@ -37,16 +37,16 @@ interface McpConfig {
 
 export function getConfig(): TerminalConfig | undefined {
   try {
-    const buildinMcpJSONPath = path.join(appDataDir, "mcpBuiltIn.json");
-    const mcpconfig = fs.readJSONSync(buildinMcpJSONPath) as McpConfig;
+    // const buildinMcpJSONPath = path.join(appDataDir, "mcpBuiltIn.json");
+    // const mcpconfig = fs.readJSONSync(buildinMcpJSONPath) as McpConfig;
 
-    const config = mcpconfig.mcpServers[NAME]?.hyperchat?.config;
-    if (!config) {
-      Logger.warn(`No configuration found for ${NAME}, using defaults`);
-      return configSchema.parse({});
-    }
+    // const config = mcpconfig.mcpServers[NAME]?.hyperchat?.config;
+    // if (!config) {
+    //   Logger.warn(`No configuration found for ${NAME}, using defaults`);
+    //   return configSchema.parse({});
+    // }
 
-    const parsed = configSchema.safeParse(config);
+    const parsed = configSchema.safeParse({});
     if (!parsed.success) {
       Logger.error(`Invalid configuration for ${NAME}:`, parsed.error);
       return configSchema.parse({});

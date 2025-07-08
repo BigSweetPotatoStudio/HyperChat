@@ -70,12 +70,12 @@ export const configSchema = z.object({
 
 // Logger.debug("safeParse : ", configSchema.safeParse({}));
 export function getConfig() {
-  let buildinMcpJSONPath = path.join(appDataDir, "mcpBuiltIn.json");
-  let mcpconfig = fs.readJSONSync(buildinMcpJSONPath);
+  //  let buildinMcpJSONPath = path.join(appDataDir, "mcpBuiltIn.json");
+  //   let mcpconfig = fs.readJSONSync(buildinMcpJSONPath);
 
-  let config = mcpconfig.mcpServers[NAME].hyperchat.config as z.infer<
-    typeof configSchema
-  >;
+  //   let config = mcpconfig.mcpServers[NAME].hyperchat.config as z.infer<
+  //     typeof configSchema
+  //   >;
 
-  return configSchema.safeParse(config).data;
+  return configSchema.safeParse({}).data;
 }
