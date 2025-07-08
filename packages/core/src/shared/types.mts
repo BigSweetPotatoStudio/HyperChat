@@ -120,7 +120,7 @@ export interface ConnectionStatus {
 }
 
 
-export type AgentConfig = {
+export interface AgentConfig {
   type?: "builtin" | "custom";
   key: string;
   name: string;
@@ -149,9 +149,9 @@ export interface DataOptions<T = unknown> {
 }
 
 // 工具调用类型定义
-export type Tool_Call = {
-  origin_name: string;  // 废弃
-  restore_name: string; // 废弃
+export interface Tool_Call {
+  origin_name: string;
+  restore_name: string;
   index: number;
   id: string;
   type: "function";
@@ -220,7 +220,7 @@ export type MyMessage = AllMessage & {
 };
 
 // 聊天历史项类型，包含消息、模型、代理、任务等信息
-export type ChatHistoryItem = {
+export interface ChatHistoryItem {
   label: string;
   key: string;
   messages: Array<MyMessage>;
@@ -263,7 +263,7 @@ export interface ProviderConfig {
   isBuiltIn: boolean; // 是否内置（true=内置，false=自定义）
 }
 
-export type AIModelConfigItem = {
+export interface AIModelConfigItem {
   key: string;
   name: string;
   model: string;
@@ -279,7 +279,7 @@ export type AIModelConfigItem = {
   fullName?: string; // 提供商:模型名称
 }
 
-export type MCPServerConfig = {
+export interface MCPServerConfig {
   command?: string;
   args?: string[];
   env?: { [s: string]: string };
@@ -292,7 +292,7 @@ export type MCPServerConfig = {
   disabled?: boolean;
 };
 
-export type HyperChatCompletionTool = {
+export interface HyperChatCompletionTool {
   name: string;
   origin_name: string;
   restore_name: string;
@@ -308,7 +308,7 @@ export type HyperChatCompletionTool = {
   workspacePath: string;
 };
 
-export type IMCPClient = {
+export interface IMCPClient {
   tools: Array<HyperChatCompletionTool>;
   prompts: Array<MCPPromptSchema & { key: string }>;
   resources: Array<MCPResourceSchema & { key: string }>;
@@ -322,9 +322,10 @@ export type IMCPClient = {
   mcpType: "builtin" | "custom";
   version: string;
   workspacePath: string;
+  scope: "workspace";
 };
 
-export type KnowledgeStore = {
+export interface KnowledgeStore {
   localPath: string;
   key: string;
   resources: KnowledgeResource[];
@@ -333,7 +334,7 @@ export type KnowledgeStore = {
   description: string;
 };
 
-export type KnowledgeResource = {
+export interface KnowledgeResource {
   key: string;
   name: string;
   type: "file" | "text";
@@ -345,14 +346,14 @@ export type KnowledgeResource = {
   loaderType: string;
 };
 
-export type KnowledgeFragment = {
+export interface KnowledgeFragment {
   resourceKey: string;
   date: number;
   text: string;
   vector: number[];
 };
 
-export type Task = {
+export interface Task {
   key: string;
   name: string;
   command: string;
@@ -362,7 +363,7 @@ export type Task = {
   disabled: boolean;
 };
 
-export type Var = {
+export interface Var {
   key: string;
   name: string;
   value?: string;
@@ -373,7 +374,7 @@ export type Var = {
   description?: string;
 };
 
-export type VarScope = {
+export interface VarScope {
   key: string;
   name: string;
   type: "builtin" | "custom";

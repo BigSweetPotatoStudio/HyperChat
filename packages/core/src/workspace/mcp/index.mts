@@ -43,7 +43,7 @@ export function getMCPManager(workspacePath: string): WorkspaceMCPManager {
           Logger.info(`MCP客户端状态变化: ${client.serverName} -> ${client.status}`);
         },
         onConfigUpdate: (config) => {
-          Logger.info(`MCP配置更新: ${config.scope} 范围`);
+          Logger.info(`MCP配置更新: ${config.workspacePath} workspacePath`);
         },
         onError: (error, context) => {
           Logger.error("MCP管理器错误:", error, context);
