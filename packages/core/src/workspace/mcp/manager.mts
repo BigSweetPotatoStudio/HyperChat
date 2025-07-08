@@ -14,7 +14,7 @@ import { WorkspaceMCPClientImpl } from "./client.mjs";
 import type { MCPServerConfig } from "../../shared/data.mjs";
 import { Logger } from "../../log.mjs";
 import { CONSTANTS } from "../constants.mjs";
-import { MyServers, WorkSpaceServers } from "../../mcp/servers/index.mjs";
+import { GlobalServers, WorkSpaceServers } from "../../mcp/servers/index.mjs";
 import { Config } from "../../const.mjs";
 
 export class WorkspaceMCPManager {
@@ -47,7 +47,7 @@ export class WorkspaceMCPManager {
     let orderIndex = 0;
 
     // 首先为内置服务器分配order（按名称排序确保稳定性）
-    const sortedBuiltinServers = [...MyServers];
+    const sortedBuiltinServers = [...GlobalServers];
     for (const server of sortedBuiltinServers) {
       this.serverOrderMap.set(server.name, orderIndex++);
     }
@@ -89,7 +89,7 @@ export class WorkspaceMCPManager {
     const tasks: Promise<void>[] = [];
 
     // 启动内置服务器
-    for (const server of MyServers) {
+    for (const server of GlobalServers) {
       // 检查配置文件中是否有对内置服务器的disabled设置
       const userServerConfig = config.mcpServers[server.name];
       const isDisabled = userServerConfig?.disabled || false;
@@ -446,7 +446,7 @@ export class WorkspaceMCPManager {
       await this.stopClient(name);
 
       // 先检查是否是内置客户端
-      const builtinServer = MyServers.find(server => server.name === name);
+      const builtinServer = GlobalServers.find(server => server.name === name);
 
       if (builtinServer) {
         // 内置客户端：从 MyServers 获取配置

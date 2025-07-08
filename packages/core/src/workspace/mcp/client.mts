@@ -22,7 +22,7 @@ import { Logger } from "../../log.mjs";
 import { getMessageService } from "../../message_service.mjs";
 import { AppSetting } from "../../shared/data.mjs";
 import { getMyDefaultEnvironment } from "../../mcp/utils.mjs";
-import { MyServers } from "../../mcp/servers/index.mjs";
+import { GlobalServers } from "../../mcp/servers/index.mjs";
 import { zodToJsonSchema } from "zod-to-json-schema";
 import spawn from "cross-spawn";
 import { zx } from "../../es6.mjs";
@@ -71,7 +71,7 @@ export class WorkspaceMCPClientImpl implements WorkspaceMCPClient {
 
     // 如果是内置服务器，设置配置模式
     if (this.mcpType === "builtin") {
-      const server = MyServers.find((s) => s.name === serverName);
+      const server = GlobalServers.find((s) => s.name === serverName);
       if (server?.configSchema) {
         this.ext.configSchema = zodToJsonSchema(server.configSchema) as any;
       }

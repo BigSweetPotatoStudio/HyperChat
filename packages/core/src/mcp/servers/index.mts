@@ -11,11 +11,13 @@ type ServerConfig = {
   createServer: (workspacePath: string) => Promise<any>;
 };
 
-export const MyServers: ServerConfig[] = [];
+// 全局工区的内置mcp服务器
+export const GlobalServers: ServerConfig[] = [
+  HyperTools
+];
 
-MyServers.push(HyperTools);
 
-
+// 普通工作区的内置mcp服务器
 export const WorkSpaceServers: ServerConfig[] = [
   HyperTerminal
 ];

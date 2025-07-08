@@ -2,7 +2,7 @@ import App from "express";
 // import { electronData } from "../../../../common/data.mjs";
 import { execFallback } from "../../common/execFallback.mjs";
 // import { Logger } from "src/polyfills/index.mjs";
-import { MyServers } from "./index.mjs";
+import { GlobalServers } from "./index.mjs";
 import { Logger } from "../../log.mjs";
 
 import { Config } from "../../const.mjs";
@@ -102,7 +102,7 @@ export async function initMcpServer() {
         });
       }
     }
-    for (let serve of MyServers) {
+    for (let serve of GlobalServers) {
       await register(serve as any);
     }
     let PORT = Config.mcp_server_port;
