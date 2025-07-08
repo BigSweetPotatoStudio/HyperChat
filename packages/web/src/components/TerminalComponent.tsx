@@ -112,7 +112,7 @@ export function TerminalComponent({
 
     // 监听大小变化
     xterm.onResize((size) => {
-      console.log("Terminal resized:", terminalID, size.cols, size.rows);
+      // console.log("Terminal resized:", terminalID, size.cols, size.rows);
       lastSizes = size;
       if (socket) {
         socket.emit("terminalReceive", {
@@ -128,7 +128,7 @@ export function TerminalComponent({
 
     // 创建ResizeObserver来自动调整大小
     const resizeObserver = new ResizeObserver((e) => {
-      console.log("ResizeObserver triggered for terminal:", e);
+      // console.log("ResizeObserver triggered for terminal:", e);
       if (e.length === 0) { return; }
       if (e[0]!.contentRect.width === 0 || e[0]!.contentRect.height === 0) {
         return; // 忽略无效的尺寸
