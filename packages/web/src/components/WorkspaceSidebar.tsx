@@ -253,7 +253,7 @@ export function WorkspaceSidebar({
   // 渲染终端标签页
   const renderTerminal = () => {
     return (
-      <div className="h-full">
+      <div style={{ height: "100%", overflow: "hidden" }}>
         <TerminalComponent 
           workspacePath={workspace.path}
           className="h-full"
