@@ -119,6 +119,7 @@ export function TerminalComponent({
           terminalID: terminalID,
           type: "resize",
           data: size,
+          workspacePath: workspacePath,
         });
       }
     });
@@ -139,6 +140,7 @@ export function TerminalComponent({
         socket.emit("terminalReceive", {
           terminalID: terminalID,
           data: data,
+          workspacePath: workspacePath,
         });
       }
     });
@@ -157,13 +159,19 @@ export function TerminalComponent({
 
     // 监听新终端打开
     socket.on("open-terminal", (m) => {
-      createTerminalInstance(m.terminalID);
+      if (m.workspacePath === workspacePath) {
+        createTerminalInstance(m.terminalID);
+      }
     });
 
     let sessionObj = {};
 
     // 监听终端数据
     socket.on("terminal-send", async (m) => {
+      if (m.workspacePath !== workspacePath) {
+        return;
+      }
+      
       if (m.type === "execute-status-change") {
         // 可以在这里处理执行状态变化
         return;
@@ -195,6 +203,10 @@ export function TerminalComponent({
 
     // 监听终端关闭
     socket.on("close-terminal", async (m) => {
+      if (m.workspacePath !== workspacePath) {
+        return;
+      }
+      
       let session = data.current.sessions.find((x) => x.id == m.terminalID);
       if (session) {
         data.current.sessions = data.current.sessions.filter(
@@ -207,14 +219,14 @@ export function TerminalComponent({
     // 初始化加载现有终端
     setTimeout(async () => {
       try {
-        const terminalIDs = await call("GetTerminals", { workingDirectory: workspacePath });
+        const terminalIDs = await call("GetTerminals", { workspacePath: workspacePath });
         if (terminalIDs && terminalIDs.length > 0) {
           for (const id of terminalIDs) {
             await createTerminalInstance(id);
           }
         } else {
           // 创建新终端
-          await call("OpenTerminal", { workingDirectory: workspacePath });
+          await call("OpenTerminal", { workspacePath: workspacePath });
         }
       } catch (error) {
         console.error("Failed to load terminals:", error);
@@ -230,7 +242,7 @@ export function TerminalComponent({
     refresh();
 
     try {
-      await call("ActiveAITerminal", { TerminalID: key });
+      await call("ActiveAITerminal", { TerminalID: key, workspacePath: workspacePath });
       const session = data.current.sessions.find((x) => x.id.toString() === key);
       if (session && session.context.fitAddon) {
         setTimeout(() => {
@@ -246,7 +258,7 @@ export function TerminalComponent({
   const handleTabEdit = async (targetKey: string | React.MouseEvent | React.KeyboardEvent, action: "add" | "remove") => {
     if (action === "add") {
       try {
-        await call("OpenTerminal", { workingDirectory: workspacePath });
+        await call("OpenTerminal", { workspacePath: workspacePath });
       } catch (error) {
         message.error(`Failed to create terminal: ${error}`);
       }
@@ -256,7 +268,7 @@ export function TerminalComponent({
           (x) => x.id.toString() !== targetKey,
         );
         refresh();
-        await call("CloseTerminal", { TerminalID: targetKey as string });
+        await call("CloseTerminal", { TerminalID: targetKey as string, workspacePath: workspacePath });
       } catch (error) {
         message.error(`Failed to close terminal: ${error}`);
       }
@@ -303,6 +315,7 @@ export function TerminalComponent({
             socket.emit("terminalReceive", {
               terminalID: terminalId,
               data: txt,
+              workspacePath: workspacePath,
             });
           }
         }).catch(err => {
@@ -315,6 +328,7 @@ export function TerminalComponent({
           socket.emit("terminalReceive", {
             terminalID: terminalId,
             data: "clear\r",
+            workspacePath: workspacePath,
           });
         }
       }

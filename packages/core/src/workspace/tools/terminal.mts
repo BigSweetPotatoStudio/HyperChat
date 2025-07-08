@@ -83,6 +83,7 @@ export class WorkspaceTerminal extends EventEmitter {
       getMessageService().terminalMsg.emit("terminal-send", {
         terminalID: terminalInstance.id,
         data,
+        workspacePath: this.workspacePath,
       });
 
       this.emit("output", {
@@ -105,6 +106,7 @@ export class WorkspaceTerminal extends EventEmitter {
       // 发送关闭消息到前端
       getMessageService().terminalMsg.emit("close-terminal", {
         terminalID: terminalInstance.id,
+        workspacePath: this.workspacePath,
       });
 
       this.emit("exit", {
@@ -124,6 +126,7 @@ export class WorkspaceTerminal extends EventEmitter {
     getMessageService().terminalMsg.emit("open-terminal", {
       terminalID: terminalInstance.id,
       terminals: Array.from(this.terminals.keys()),
+      workspacePath: this.workspacePath,
     });
 
     this.emit("create", {
@@ -226,6 +229,7 @@ export class WorkspaceTerminal extends EventEmitter {
       // 发送关闭消息到前端
       getMessageService().terminalMsg.emit("close-terminal", {
         terminalID: terminalId,
+        workspacePath: this.workspacePath,
       });
 
       Logger.info(`Terminal ${terminalId} closed`);

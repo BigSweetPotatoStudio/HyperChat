@@ -792,28 +792,28 @@ export class CommandFactory {
     fs.writeFileSync(filePath, txt);
     return filename;
   }
-  async OpenTerminal({ workingDirectory }: { workingDirectory: string }) {
-    const terminal = getWorkspaceTerminal(workingDirectory);
-    const terminalInstance = terminal.createTerminal(workingDirectory);
+  async OpenTerminal({ workspacePath }: { workspacePath: string }) {
+    const terminal = getWorkspaceTerminal(workspacePath);
+    const terminalInstance = terminal.createTerminal(workspacePath);
     return terminalInstance.id;
   }
-  async GetTerminals({ workingDirectory }: { workingDirectory: string }) {
-    const terminal = getWorkspaceTerminal(workingDirectory);
+  async GetTerminals({ workspacePath }: { workspacePath: string }) {
+    const terminal = getWorkspaceTerminal(workspacePath);
     const allTerminals = terminal.getAllTerminals();
     // 由于现在每个工作区有独立的终端管理器，直接返回所有终端
     return allTerminals.map(t => t.id);
   }
   async CloseTerminal({
     TerminalID,
-    workingDirectory
+    workspacePath
   }: {
     TerminalID: string;
-    workingDirectory?: string;
+    workspacePath?: string;
   }) {
     // 需要找到对应的工作区终端管理器
-    // 如果没有提供workingDirectory，则遍历所有工作区查找
-    if (workingDirectory) {
-      const terminal = getWorkspaceTerminal(workingDirectory);
+    // 如果没有提供workspacePath，则遍历所有工作区查找
+    if (workspacePath) {
+      const terminal = getWorkspaceTerminal(workspacePath);
       return terminal.closeTerminal(parseInt(TerminalID));
     } else {
       // 遍历所有工作区查找该终端
@@ -826,14 +826,14 @@ export class CommandFactory {
   }
   async ActiveAITerminal({
     TerminalID,
-    workingDirectory
+    workspacePath
   }: {
     TerminalID: string;
-    workingDirectory?: string;
+    workspacePath?: string;
   }) {
     // 需要找到对应的工作区终端管理器
-    if (workingDirectory) {
-      const terminal = getWorkspaceTerminal(workingDirectory);
+    if (workspacePath) {
+      const terminal = getWorkspaceTerminal(workspacePath);
       return terminal.setActiveTerminal(parseInt(TerminalID));
     } else {
       // 遍历所有工作区查找该终端
