@@ -323,15 +323,15 @@ export function Workspace() {
       if (workspaceConfig) {
         // 工作区已存在，直接加载
         await startWorkspaceMcpClients(values.path);
-        
+
         // 添加到历史记录
         const folderName = values.path.split(/[/\\]/).pop() || 'Workspace';
         addToWorkspaceHistory(values.path, folderName);
         setWorkspaceHistory(getWorkspaceHistory());
-        
+
         // 切换到该工作区
         setActiveWorkspaceKey(values.path);
-        
+
         message.success(t`Workspace opened successfully`);
         setOpenModalOpen(false);
         form.resetFields();
@@ -355,7 +355,7 @@ export function Workspace() {
       // 切换到该工作区（这会让它重新出现在标签页中）
       setActiveWorkspaceKey(workspacePath);
       setOpenModalOpen(false);
-      
+
       // 如果工作区在后台运行，直接切换
       if (runningWorkspaces.has(workspacePath)) {
         // 重新加载工作区详情（因为它现在要显示在标签页中）
@@ -366,10 +366,10 @@ export function Workspace() {
         message.success(t`Switched to workspace`);
         return;
       }
-      
+
       // 如果不在运行，启动它
       await startWorkspaceMcpClients(workspacePath);
-      
+
       message.success(t`Workspace opened and switched`);
     } catch (error) {
       console.error("Failed to switch to workspace:", error);
@@ -406,10 +406,10 @@ export function Workspace() {
   const confirmCreateWorkspace = async () => {
     try {
       await createWorkspace(pendingWorkspacePath);
-      
+
       // 切换到新创建的工作区
       setActiveWorkspaceKey(pendingWorkspacePath);
-      
+
       setConfirmCreateModalOpen(false);
       setPendingWorkspacePath("");
     } catch (error) {
@@ -440,28 +440,28 @@ export function Workspace() {
     try {
       // 调用关闭工作区的命令（后端会自动从运行列表中移除）
       await call("closeWorkspace", { workspacePath: workspace.path });
-      
+
       // 更新前端状态
       setRunningWorkspaces(prev => {
         const newSet = new Set(prev);
         newSet.delete(workspace.path);
         return newSet;
       });
-      
+
       message.success(t`Workspace closed successfully`);
-      
+
       // 如果关闭的是当前活动工作区，切换到全局工作区
       if (activeWorkspaceKey === workspace.path) {
         setActiveWorkspaceKey(globalWorkspace?.path || "");
       }
-      
+
       // 清除详情缓存
       setWorkspaceDetails(prev => {
         const newDetails = { ...prev };
         delete newDetails[workspace.path];
         return newDetails;
       });
-      
+
       setCloseConfirmModalOpen(false);
       setPendingCloseWorkspace(null);
     } catch (error) {
@@ -475,14 +475,14 @@ export function Workspace() {
     try {
       // 更新前端状态，不需要调用后端API，因为工作区已经在后端内存中运行
       setRunningWorkspaces(prev => new Set(prev).add(workspace.path));
-      
+
       message.success(t`Workspace is now running in background`);
-      
+
       // 如果隐藏的是当前活动工作区，切换到全局工作区
       if (activeWorkspaceKey === workspace.path) {
         setActiveWorkspaceKey(globalWorkspace?.path || "");
       }
-      
+
       setCloseConfirmModalOpen(false);
       setPendingCloseWorkspace(null);
     } catch (error) {
@@ -490,18 +490,18 @@ export function Workspace() {
       message.error(t`Failed to run workspace in background`);
     }
   };
-  
+
   // 删除工作区
   const deleteWorkspace = async (workspace: WorkspaceInfo) => {
     try {
       // 先关闭工作区
       await closeWorkspace(workspace);
-      
+
       // 然后删除工作区配置
       await call("deleteWorkspace", { workspacePath: workspace.path });
-      
+
       message.success(t`Workspace deleted successfully`);
-      
+
       // 重新加载工作区列表
       loadWorkspaces();
     } catch (error) {
@@ -801,19 +801,19 @@ export function Workspace() {
   // 获取活动显示的工作区列表（全局 + 当前显示的）
   const getActiveWorkspaces = () => {
     const activeList: WorkspaceInfo[] = [];
-    
+
     // 总是显示全局工作区
     if (globalWorkspace) {
       activeList.push(globalWorkspace);
     }
-    
+
     // 只添加当前活动的工作区（不包括后台运行的）
     workspaces.forEach(workspace => {
       if (activeWorkspaceKey === workspace.path) {
         activeList.push(workspace);
       }
     });
-    
+
     return activeList;
   };
 
@@ -824,7 +824,7 @@ export function Workspace() {
 
     activeList.forEach(workspace => {
       const isGlobal = workspace.isGlobal;
-      
+
       items.push({
         key: workspace.path,
         label: (
@@ -1021,8 +1021,8 @@ export function Workspace() {
             <Card
               title={t`Management Panel`}
               size="small"
-            // className="h-full"
-            // bodyStyle={{ padding: 0, height: 'calc(100% - 48px)' }}
+              // className="h-full"
+              bodyStyle={{ padding: 0 }}
             >
               <Tabs
                 className="myTabBodyFull"
@@ -1103,7 +1103,7 @@ export function Workspace() {
             onChange={handleTabChange}
             onEdit={handleTabEdit}
             style={{ height: '100%' }}
-            tabBarStyle={{ 
+            tabBarStyle={{
               marginBottom: 8,
               padding: '0 8px'
             }}

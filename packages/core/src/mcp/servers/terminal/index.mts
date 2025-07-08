@@ -6,20 +6,16 @@ import { Logger } from "../../../log.mjs";
 import { InMemoryTransport } from "@modelcontextprotocol/sdk/inMemory.js";
 
 
-let server: any | null = null;
-
 async function createServer(workspacePath: string) {
-  console.log(`Creating MCP server for HyperTerminal at workspace path: ${workspacePath}`);
-  if (server) {
-    return server;
-  }
+  // console.log(`Creating MCP server for HyperTerminal at workspace path: ${workspacePath}`);
 
-  server = new McpServer({
+
+  let server = new McpServer({
     name: NAME,
     version: CONST.getVersion,
   });
 
-  registerTool(server);
+  registerTool(server, workspacePath);
 
   const [clientTransport, serverTransport] = InMemoryTransport.createLinkedPair();
   // 连接服务器传输
@@ -36,6 +32,6 @@ export const HyperTerminal = {
   name: NAME,
   configSchema,
   type: "inMemory" as const,
-} ;
+};
 
 

@@ -5,15 +5,12 @@ import { Logger } from "../../../log.mjs";
 import { InMemoryTransport } from "@modelcontextprotocol/sdk/inMemory.js";
 
 
-let server: any | null = null;
 
 async function createServer(workspacePath: string) {
-  console.log(`Creating MCP server for HyperTools at workspace path: ${workspacePath}`);
-  if (server) {
-    return server;
-  }
+  // console.log(`Creating MCP server for HyperTools at workspace path: ${workspacePath}`);
 
-  server = new McpServer({
+
+  let server = new McpServer({
     name: NAME,
     version: CONST.getVersion,
   });

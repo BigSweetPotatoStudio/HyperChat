@@ -3,11 +3,11 @@ import { Logger } from "./log.mjs";
 import "./first.mjs";
 import { initHttp } from "./http.mjs";
 import "./workspace/index.mjs";
-import { initMcpServer } from "./mcp/servers/express.mjs";
+// import { initMcpServer } from "./mcp/servers/express.mjs";
 
-await initMcpServer().catch((e) => {
-  Logger.error("initMcpServer", e);
-});
+// await initMcpServer().catch((e) => {
+//   Logger.error("initMcpServer", e);
+// });
 // 主入口文件，负责初始化 HTTP 服务和日志
 
 

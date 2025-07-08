@@ -247,7 +247,7 @@ div[role="system"] .ant-bubble-content-wrapper {
 }
 
 .myTabBodyFull .ant-tabs-content {
-  height: calc(100vh - 130px) !important;
+  height: calc(100vh - 113px) !important;
   overflow-y: auto !important;
 }
 

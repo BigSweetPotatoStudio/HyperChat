@@ -22,7 +22,7 @@ import { Logger } from "../../log.mjs";
 import { getMessageService } from "../../message_service.mjs";
 import { AppSetting } from "../../shared/data.mjs";
 import { getMyDefaultEnvironment } from "../../mcp/utils.mjs";
-import { GlobalServers } from "../../mcp/servers/index.mjs";
+import { GlobalServers, WorkSpaceServers } from "../../mcp/servers/index.mjs";
 import { zodToJsonSchema } from "zod-to-json-schema";
 import spawn from "cross-spawn";
 import { zx } from "../../es6.mjs";
@@ -71,7 +71,9 @@ export class WorkspaceMCPClientImpl implements WorkspaceMCPClient {
 
     // 如果是内置服务器，设置配置模式
     if (this.mcpType === "builtin") {
-      const server = GlobalServers.find((s) => s.name === serverName);
+      // 检查全局服务器和工作区服务器
+      const server = GlobalServers.find((s) => s.name === serverName) || 
+                    WorkSpaceServers.find((s) => s.name === serverName);
       if (server?.configSchema) {
         this.ext.configSchema = zodToJsonSchema(server.configSchema) as any;
       }
@@ -355,8 +357,9 @@ export class WorkspaceMCPClientImpl implements WorkspaceMCPClient {
       version: "1.0.0",
       capabilities: {}
     });
-    console.log("Opening InMemory transport for MCP client:", this.serverName, this.workspacePath, this.options.createServer);
+    // console.log("Opening InMemory transport for MCP client:", this.serverName, this.workspacePath, this.options.createServer);
     const transport = await this.options.createServer(this.workspacePath);
+    console.log("InMemory transport created:", transport);
     await client.connect(transport);
     return client;
   }
@@ -493,8 +496,8 @@ export class WorkspaceMCPClientImpl implements WorkspaceMCPClient {
    * 获取显示名称
    */
   getDisplayName(): string {
-    const typePrefix = this.mcpType === "builtin" ? "[builtin]" : "[custom]";
-    return `${typePrefix} ${this.serverName}`;
+    // const typePrefix = this.mcpType === "builtin" ? "[builtin]" : "[custom]";
+    return `${this.serverName}`;
   }
 
   /**

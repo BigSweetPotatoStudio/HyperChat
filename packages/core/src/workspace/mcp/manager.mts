@@ -47,7 +47,11 @@ export class WorkspaceMCPManager {
     let orderIndex = 0;
 
     // 首先为内置服务器分配order（按名称排序确保稳定性）
-    const sortedBuiltinServers = [...GlobalServers];
+    // 全局工作区使用 GlobalServers + WorkSpaceServers，普通工作区只使用 WorkSpaceServers
+    const builtinServers = this.workspacePath === CONSTANTS.GLOBAL_PATH ?
+      [...GlobalServers, ...WorkSpaceServers] :
+      [...WorkSpaceServers];
+    const sortedBuiltinServers = [...builtinServers];
     for (const server of sortedBuiltinServers) {
       this.serverOrderMap.set(server.name, orderIndex++);
     }
@@ -89,67 +93,34 @@ export class WorkspaceMCPManager {
     const tasks: Promise<void>[] = [];
 
     // 启动内置服务器
-    for (const server of GlobalServers) {
+    // 全局工作区使用 GlobalServers + WorkSpaceServers，普通工作区只使用 WorkSpaceServers
+    const builtinServers = this.workspacePath === CONSTANTS.GLOBAL_PATH ?
+      [...GlobalServers, ...WorkSpaceServers] :
+      [...WorkSpaceServers];
+
+    for (const server of builtinServers) {
       // 检查配置文件中是否有对内置服务器的disabled设置
       const userServerConfig = config.mcpServers[server.name];
       const isDisabled = userServerConfig?.disabled || false;
 
-      const serverConfig: MCPServerConfig = {
-        type: server.type === "streamableHttp" ? "streamableHttp" : "sse",
-        url: server.type === "streamableHttp"
-          ? `http://localhost:${Config.mcp_server_port}/${server.name}/mcp`
-          : `http://localhost:${Config.mcp_server_port}/${server.name}/sse`,
-        hyperchat: {
-          scope: "built-in",
-          config: {},
-        } as any,
-        disabled: isDisabled,
-      };
+      let serverConfig: MCPServerConfig;
 
-      const clientId = this.getClientId(server.name);
+      // 检查是否为全局工作区专用的服务器 (GlobalServers)
+      const isGlobalServer = GlobalServers.find(gs => gs.name === server.name);
 
-      // 如果客户端已存在，跳过
-      if (this.clients.has(clientId)) {
-        clients.push(this.clients.get(clientId)!);
-        continue;
-      }
-
-      const client = new WorkspaceMCPClientImpl(
-        server.name,
-        serverConfig,
-        "workspace",
-        this.getServerOrder(server.name),
-        {
-          mcpType: "builtin",
-          workspacePath: this.workspacePath,
-        }
-      );
-
-      this.clients.set(clientId, client);
-      clients.push(client);
-
-      // 只有非禁用的客户端才启动连接
-      if (!isDisabled) {
-        tasks.push(this.startClient(client, clientId));
+      if (isGlobalServer) {
+        // GlobalServers 中的服务器使用 inMemory 连接
+        serverConfig = {
+          type: "inMemory",
+          disabled: false,
+        };
       } else {
-        // 禁用的客户端设置为disabled状态
-        client.status = "disabled";
+        // WorkSpaceServers 中的服务器使用 inMemory 连接
+        serverConfig = {
+          type: "inMemory",
+          disabled: false,
+        };
       }
-    }
-
-    for (const server of WorkSpaceServers) {
-      // 检查配置文件中是否有对内置服务器的disabled设置
-      const userServerConfig = config.mcpServers[server.name];
-      const isDisabled = userServerConfig?.disabled || false;
-
-      const serverConfig: MCPServerConfig = {
-        type: server.type === "streamableHttp" ? "streamableHttp" : "inMemory",
-        hyperchat: {
-          scope: "built-in",
-          config: {},
-        } as any,
-        disabled: isDisabled,
-      };
 
       const clientId = this.getClientId(server.name);
 
@@ -266,6 +237,12 @@ export class WorkspaceMCPManager {
       await this.stopClient(name);
     }
 
+    // 获取服务器配置
+    const builtinServers = this.workspacePath === CONSTANTS.GLOBAL_PATH ?
+      [...GlobalServers, ...WorkSpaceServers] :
+      [...WorkSpaceServers];
+    const builtinServer = builtinServers.find(server => server.name === name);
+
     // 创建新的内置客户端
     const client = new WorkspaceMCPClientImpl(
       name,
@@ -275,6 +252,7 @@ export class WorkspaceMCPManager {
       {
         mcpType: "builtin",
         workspacePath: this.workspacePath,
+        createServer: builtinServer?.createServer
       }
     );
 
@@ -446,22 +424,33 @@ export class WorkspaceMCPManager {
       await this.stopClient(name);
 
       // 先检查是否是内置客户端
-      const builtinServer = GlobalServers.find(server => server.name === name);
+      const builtinServers = this.workspacePath === CONSTANTS.GLOBAL_PATH ?
+        [...GlobalServers, ...WorkSpaceServers] :
+        [...WorkSpaceServers];
+      const builtinServer = builtinServers.find(server => server.name === name);
 
       if (builtinServer) {
-        // 内置客户端：从 MyServers 获取配置
+        // 内置客户端：根据服务器类型选择配置
         this.logInfo(`重启内置客户端 ${name}`);
-        const serverConfig: MCPServerConfig = {
-          type: builtinServer.type === "streamableHttp" ? "streamableHttp" : "sse",
-          url: builtinServer.type === "streamableHttp"
-            ? `http://localhost:${Config.mcp_server_port}/${builtinServer.name}/mcp`
-            : `http://localhost:${Config.mcp_server_port}/${builtinServer.name}/sse`,
-          hyperchat: {
-            scope: "built-in",
-            config: {},
-          } as any,
-          disabled: false,
-        };
+
+        let serverConfig: MCPServerConfig;
+
+        // 检查是否为全局工作区专用的服务器 (GlobalServers)
+        const isGlobalServer = GlobalServers.find(gs => gs.name === name);
+
+        if (isGlobalServer) {
+          // GlobalServers 中的服务器使用 inMemory 连接
+          serverConfig = {
+            type: "inMemory",
+            disabled: false,
+          };
+        } else {
+          // WorkSpaceServers 中的服务器使用 inMemory 连接
+          serverConfig = {
+            type: "inMemory",
+            disabled: false,
+          };
+        }
 
         // 启动内置客户端
         await this.startSingleBuiltinClient(name, serverConfig);
