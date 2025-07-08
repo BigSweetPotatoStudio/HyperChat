@@ -840,6 +840,7 @@ export function Workspace() {
             // bodyStyle={{ padding: 0, height: 'calc(100% - 48px)' }}
             >
               <Tabs
+                className="myTabBodyFull"
                 animated={true}
                 tabBarStyle={{ marginBottom: 0, padding: '0 8px' }}
                 size="small"
@@ -907,7 +908,7 @@ export function Workspace() {
   return (
     <div className="workspace-page h-full">
       <div className="h-full">
-        <div style={{ height: '100%', padding: '8px' }}>
+        <div style={{ height: '100%', padding: '0px' }}>
           <Tabs
             className="myFullTabs"
             type="editable-card"

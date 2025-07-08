@@ -127,10 +127,15 @@ export function TerminalComponent({
     fitAddon.fit();
 
     // 创建ResizeObserver来自动调整大小
-    const resizeObserver = new ResizeObserver(() => {
-      setTimeout(() => {
-        fitAddon.fit();
-      }, 1000);
+    const resizeObserver = new ResizeObserver((e) => {
+      console.log("ResizeObserver triggered for terminal:", e);
+      if (e.length === 0) { return; }
+      if (e[0]!.contentRect.width === 0 || e[0]!.contentRect.height === 0) {
+        return; // 忽略无效的尺寸
+      }
+      // setTimeout(() => {
+      fitAddon.fit();
+      // }, 1000);
     });
     resizeObserver.observe(terminalRef);
 
@@ -171,7 +176,7 @@ export function TerminalComponent({
       if (m.workspacePath !== workspacePath) {
         return;
       }
-      
+
       if (m.type === "execute-status-change") {
         // 可以在这里处理执行状态变化
         return;
@@ -206,7 +211,7 @@ export function TerminalComponent({
       if (m.workspacePath !== workspacePath) {
         return;
       }
-      
+
       let session = data.current.sessions.find((x) => x.id == m.terminalID);
       if (session) {
         data.current.sessions = data.current.sessions.filter(
@@ -243,12 +248,12 @@ export function TerminalComponent({
 
     try {
       await call("ActiveAITerminal", { TerminalID: key, workspacePath: workspacePath });
-      const session = data.current.sessions.find((x) => x.id.toString() === key);
-      if (session && session.context.fitAddon) {
-        setTimeout(() => {
-          session.context.fitAddon?.fit();
-        }, 100);
-      }
+      // const session = data.current.sessions.find((x) => x.id.toString() === key);
+      // if (session && session.context.fitAddon) {
+      //   setTimeout(() => {
+      //     session.context.fitAddon?.fit();
+      //   }, 100);
+      // }
     } catch (error) {
       message.error(`Failed to switch terminal: ${error}`);
     }
@@ -337,7 +342,7 @@ export function TerminalComponent({
 
   return (
     <div className={`h-full ${className}`}>
-      <div className="flex items-center justify-between p-2 border-b">
+      {/* <div className="flex items-center justify-between p-2 border-b">
         <Space>
           <span>{t`Terminal`}</span>
           <Tag color={isConnected ? "green" : "red"}>
@@ -347,10 +352,23 @@ export function TerminalComponent({
             <Tag color="orange">{t`Disconnected`}</Tag>
           )}
         </Space>
-      </div>
+      </div> */}
 
       <div style={{ height: "calc(100% - 48px)" }}>
         <Tabs
+          tabBarExtraContent={{
+            right: (
+              <Space>
+                <span>{t`Terminal`}</span>
+                <Tag color={isConnected ? "green" : "red"}>
+                  {data.current.sessions.length}
+                </Tag>
+                {!isConnected && (
+                  <Tag color="orange">{t`Disconnected`}</Tag>
+                )}
+              </Space>
+            )
+          }}
           type="editable-card"
           activeKey={data.current.activeKey}
           onChange={handleTabChange}
@@ -368,7 +386,7 @@ export function TerminalComponent({
                 <div
                   id={`terminal-${session.id}`}
                   style={{
-                    height: "calc(100vh - 200px)",
+                    height: "calc(100vh - 150px)",
                     minWidth: "400px",
                     width: "100%"
                   }}

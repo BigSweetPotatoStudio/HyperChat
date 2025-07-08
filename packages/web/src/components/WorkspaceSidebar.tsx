@@ -293,6 +293,7 @@ export function WorkspaceSidebar({
       bodyStyle={{ padding: 0, height: 'calc(100% - 48px)' }}
     >
       <Tabs
+        className="myTabBodyFull"
         activeKey={activeTab}
         onChange={setActiveTab}
         size="small"

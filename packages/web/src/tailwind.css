@@ -246,6 +246,11 @@ div[role="system"] .ant-bubble-content-wrapper {
   height: 100%;
 }
 
+.myTabBodyFull .ant-tabs-content {
+  height: calc(100vh - 130px) !important;
+  overflow-y: auto !important;
+}
+
 @keyframes textColorCycle {
   0% { color: #9ca3af; }
   50% { color: #22c55e; }
