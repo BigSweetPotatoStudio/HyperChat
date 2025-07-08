@@ -310,4 +310,69 @@ export class WorkspaceManager {
     return CONSTANTS.GLOBAL_PATH;
   }
 
+  // ========== 运行中工作区管理 ==========
+
+  /**
+   * 检查工作区是否在运行（已加载到内存中）
+   */
+  isWorkspaceRunning(workspacePath: string): boolean {
+    // 全局工作区总是运行的
+    if (this.isGlobalWorkspace(workspacePath)) {
+      return true;
+    }
+    // 其他工作区如果已加载到内存中就认为是运行的
+    return this.workspaces.has(workspacePath);
+  }
+
+  /**
+   * 获取所有运行中的工作区路径
+   */
+  getRunningWorkspaces(): string[] {
+    const runningPaths: string[] = [];
+    
+    // 添加全局工作区
+    runningPaths.push(this.getGlobalWorkspacePath());
+    
+    // 添加所有已加载的工作区
+    runningPaths.push(...Array.from(this.workspaces.keys()));
+    
+    return runningPaths;
+  }
+
+  /**
+   * 获取运行中工作区的详细信息
+   */
+  async getRunningWorkspacesDetails(): Promise<Array<{path: string, name: string, isGlobal: boolean}>> {
+    const details: Array<{path: string, name: string, isGlobal: boolean}> = [];
+
+    // 添加全局工作区
+    details.push({
+      path: this.getGlobalWorkspacePath(),
+      name: 'Global Workspace',
+      isGlobal: true
+    });
+
+    // 添加所有已加载的工作区
+    for (const [workspacePath, workspace] of this.workspaces) {
+      const config = workspace.getConfig();
+      details.push({
+        path: workspacePath,
+        name: config.name || path.basename(workspacePath),
+        isGlobal: false
+      });
+    }
+
+    return details;
+  }
+
+  /**
+   * 从内存中移除工作区（不删除文件）
+   */
+  removeWorkspaceFromMemory(workspacePath: string): boolean {
+    if (this.isGlobalWorkspace(workspacePath)) {
+      return false; // 不能移除全局工作区
+    }
+    return this.workspaces.delete(workspacePath);
+  }
+
 }

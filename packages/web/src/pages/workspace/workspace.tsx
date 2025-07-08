@@ -143,7 +143,10 @@ export function Workspace() {
   const [loading, setLoading] = useState(false);
   const [openModalOpen, setOpenModalOpen] = useState(false);
   const [confirmCreateModalOpen, setConfirmCreateModalOpen] = useState(false);
+  const [closeConfirmModalOpen, setCloseConfirmModalOpen] = useState(false);
   const [pendingWorkspacePath, setPendingWorkspacePath] = useState<string>("");
+  const [pendingCloseWorkspace, setPendingCloseWorkspace] = useState<WorkspaceInfo | null>(null);
+  const [runningWorkspaces, setRunningWorkspaces] = useState<Set<string>>(new Set());
   const [directoryBrowserOpen, setDirectoryBrowserOpen] = useState(false);
   const [selectedPath, setSelectedPath] = useState<string>("");
   const [showHiddenFiles, setShowHiddenFiles] = useState(true);
@@ -199,6 +202,16 @@ export function Workspace() {
   const loadWorkspaces = async () => {
     try {
       setLoading(true);
+
+      // 加载运行中的工作区列表
+      try {
+        const runningWorkspacesList = await call("getRunningWorkspaces");
+        const runningPaths = new Set(runningWorkspacesList.map((ws: any) => ws.path));
+        setRunningWorkspaces(runningPaths);
+        console.log("Loaded running workspaces:", Array.from(runningPaths));
+      } catch (error) {
+        console.warn("Failed to load running workspaces:", error);
+      }
 
       // 加载全局工作区
       const globalWs = await call("getGlobalWorkspace");
@@ -316,6 +329,9 @@ export function Workspace() {
         addToWorkspaceHistory(values.path, folderName);
         setWorkspaceHistory(getWorkspaceHistory());
         
+        // 切换到该工作区
+        setActiveWorkspaceKey(values.path);
+        
         message.success(t`Workspace opened successfully`);
         setOpenModalOpen(false);
         form.resetFields();
@@ -330,6 +346,34 @@ export function Workspace() {
     } catch (error) {
       console.error("Failed to open workspace:", error);
       message.error(t`Failed to open workspace`);
+    }
+  };
+
+  // 打开已打开的工作区（切换到前端）
+  const switchToWorkspace = async (workspacePath: string) => {
+    try {
+      // 切换到该工作区（这会让它重新出现在标签页中）
+      setActiveWorkspaceKey(workspacePath);
+      setOpenModalOpen(false);
+      
+      // 如果工作区在后台运行，直接切换
+      if (runningWorkspaces.has(workspacePath)) {
+        // 重新加载工作区详情（因为它现在要显示在标签页中）
+        const workspace = workspaces.find(ws => ws.path === workspacePath);
+        if (workspace) {
+          await loadWorkspaceDetails(workspace);
+        }
+        message.success(t`Switched to workspace`);
+        return;
+      }
+      
+      // 如果不在运行，启动它
+      await startWorkspaceMcpClients(workspacePath);
+      
+      message.success(t`Workspace opened and switched`);
+    } catch (error) {
+      console.error("Failed to switch to workspace:", error);
+      message.error(t`Failed to switch to workspace`);
     }
   };
 
@@ -362,6 +406,10 @@ export function Workspace() {
   const confirmCreateWorkspace = async () => {
     try {
       await createWorkspace(pendingWorkspacePath);
+      
+      // 切换到新创建的工作区
+      setActiveWorkspaceKey(pendingWorkspacePath);
+      
       setConfirmCreateModalOpen(false);
       setPendingWorkspacePath("");
     } catch (error) {
@@ -373,17 +421,32 @@ export function Workspace() {
   const startWorkspaceMcpClients = async (workspacePath: string) => {
     try {
       await call("startWorkspaceMcpClients", { workspacePath });
+      // 更新前端运行状态
+      setRunningWorkspaces(prev => new Set(prev).add(workspacePath));
     } catch (mcpError) {
       console.warn("Failed to start workspace MCP clients:", mcpError);
       // 不阻止工作区操作，只是警告
     }
   };
 
-  // 关闭工作区
+  // 显示关闭确认对话框
+  const showCloseConfirm = (workspace: WorkspaceInfo) => {
+    setPendingCloseWorkspace(workspace);
+    setCloseConfirmModalOpen(true);
+  };
+
+  // 关闭工作区（完全关闭）
   const closeWorkspace = async (workspace: WorkspaceInfo) => {
     try {
-      // 调用关闭工作区的命令
+      // 调用关闭工作区的命令（后端会自动从运行列表中移除）
       await call("closeWorkspace", { workspacePath: workspace.path });
+      
+      // 更新前端状态
+      setRunningWorkspaces(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(workspace.path);
+        return newSet;
+      });
       
       message.success(t`Workspace closed successfully`);
       
@@ -399,11 +462,32 @@ export function Workspace() {
         return newDetails;
       });
       
-      // 重新加载工作区列表
-      loadWorkspaces();
+      setCloseConfirmModalOpen(false);
+      setPendingCloseWorkspace(null);
     } catch (error) {
       console.error("Failed to close workspace:", error);
       message.error(t`Failed to close workspace`);
+    }
+  };
+
+  // 后台运行工作区（仅隐藏前端）
+  const runWorkspaceInBackground = async (workspace: WorkspaceInfo) => {
+    try {
+      // 更新前端状态，不需要调用后端API，因为工作区已经在后端内存中运行
+      setRunningWorkspaces(prev => new Set(prev).add(workspace.path));
+      
+      message.success(t`Workspace is now running in background`);
+      
+      // 如果隐藏的是当前活动工作区，切换到全局工作区
+      if (activeWorkspaceKey === workspace.path) {
+        setActiveWorkspaceKey(globalWorkspace?.path || "");
+      }
+      
+      setCloseConfirmModalOpen(false);
+      setPendingCloseWorkspace(null);
+    } catch (error) {
+      console.error("Failed to run workspace in background:", error);
+      message.error(t`Failed to run workspace in background`);
     }
   };
   
@@ -705,64 +789,77 @@ export function Workspace() {
     }
   };
 
+  // 获取活动显示的工作区列表（全局 + 当前显示的）
+  const getActiveWorkspaces = () => {
+    const activeList: WorkspaceInfo[] = [];
+    
+    // 总是显示全局工作区
+    if (globalWorkspace) {
+      activeList.push(globalWorkspace);
+    }
+    
+    // 只添加当前活动的工作区（不包括后台运行的）
+    workspaces.forEach(workspace => {
+      if (activeWorkspaceKey === workspace.path) {
+        activeList.push(workspace);
+      }
+    });
+    
+    return activeList;
+  };
+
   // 生成标签页items
   const getTabItems = () => {
     const items: any[] = [];
+    const activeList = getActiveWorkspaces();
 
-    // 全局工作区标签页（不可关闭）
-    if (globalWorkspace) {
-      items.push({
-        key: globalWorkspace.path,
-        label: (
-          <Space>
-            <GlobalOutlined />
-            <div style={{ textAlign: 'left' }}>
-              <div>{globalWorkspace.name || t`Global Workspace`}</div>
-              <div style={{ fontSize: '11px', color: '#999', lineHeight: '1.2' }}>
-                {globalWorkspace.path}
-              </div>
-            </div>
-            <Tag color="blue" >{t`Global`}</Tag>
-          </Space>
-        ),
-        closable: false, // 全局工作区不可关闭
-      });
-    }
-
-    // 项目工作区标签页（可关闭）
-    workspaces.forEach(workspace => {
+    activeList.forEach(workspace => {
+      const isGlobal = workspace.isGlobal;
+      
       items.push({
         key: workspace.path,
         label: (
           <Space>
-            <FolderOpenOutlined />
+            {isGlobal ? <GlobalOutlined /> : <FolderOpenOutlined />}
             <div style={{ textAlign: 'left' }}>
-              <div>{workspace.name}</div>
+              <div>{workspace.name || (isGlobal ? t`Global Workspace` : workspace.name)}</div>
               <div style={{ fontSize: '11px', color: '#999', lineHeight: '1.2' }}>
                 {workspace.path}
               </div>
             </div>
-            <Dropdown
-              menu={{
-                items: [
-                  {
-                    key: 'delete',
-                    label: t`Delete Workspace`,
-                    danger: true,
-                    icon: <DeleteOutlined />,
-                    onClick: () => {
-                      deleteWorkspace(workspace);
+            {isGlobal ? (
+              <Tag color="blue">{t`Global`}</Tag>
+            ) : (
+              <Dropdown
+                menu={{
+                  items: [
+                    {
+                      key: 'close',
+                      label: t`Close Workspace`,
+                      icon: <CloseOutlined />,
+                      onClick: () => {
+                        showCloseConfirm(workspace);
+                      }
+                    },
+                    {
+                      key: 'delete',
+                      label: t`Delete Workspace`,
+                      danger: true,
+                      icon: <DeleteOutlined />,
+                      onClick: () => {
+                        deleteWorkspace(workspace);
+                      }
                     }
-                  }
-                ]
-              }}
-              trigger={['click']}
-            >
-              <Button type="text" size="small" icon={<MoreOutlined />} onClick={(e) => e.stopPropagation()} />
-            </Dropdown>
+                  ]
+                }}
+                trigger={['click']}
+              >
+                <Button type="text" size="small" icon={<MoreOutlined />} onClick={(e) => e.stopPropagation()} />
+              </Dropdown>
+            )}
           </Space>
         ),
-        closable: true, // 项目工作区可关闭
+        closable: !isGlobal, // 全局工作区不可关闭
       });
     });
 
@@ -969,18 +1066,18 @@ export function Workspace() {
     );
   };
 
-  // 处理标签页关闭（关闭工作区）
+  // 处理标签页关闭（显示关闭确认）
   const handleTabEdit = (targetKey: string | React.MouseEvent<Element, MouseEvent> | React.KeyboardEvent<Element>, action: 'add' | 'remove') => {
     if (action === 'add') {
-      // 显示添加工作区的选项
-      // 这里可以展示下拉菜单或对话框供用户选择“打开”或“创建”
+      // 显示打开工作区对话框
       setOpenModalOpen(true);
     } else if (action === 'remove') {
       // 确保 targetKey 是字符串类型
       if (typeof targetKey === 'string') {
         const workspace = workspaces.find(ws => ws.path === targetKey);
-        if (workspace) {
-          closeWorkspace(workspace);
+        if (workspace && !workspace.isGlobal) {
+          // 显示关闭确认对话框
+          showCloseConfirm(workspace);
         }
       }
     }
@@ -1060,6 +1157,58 @@ export function Workspace() {
             </Space.Compact>
           </Form.Item>
 
+          {/* 已打开的工作区 */}
+          {runningWorkspaces.size > 0 && (
+            <>
+              <Divider orientation="left">
+                <Space>
+                  <PlayCircleOutlined />
+                  <span>{t`Running Workspaces`}</span>
+                </Space>
+              </Divider>
+              <List
+                size="small"
+                dataSource={workspaces.filter(ws => runningWorkspaces.has(ws.path))}
+                renderItem={(workspace) => (
+                  <List.Item
+                    style={{ cursor: 'pointer', padding: '8px 0' }}
+                    onClick={() => {
+                      switchToWorkspace(workspace.path);
+                    }}
+                    actions={[
+                      <Button
+                        key="switch"
+                        type="primary"
+                        size="small"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          switchToWorkspace(workspace.path);
+                        }}
+                      >
+                        {t`Switch`}
+                      </Button>
+                    ]}
+                  >
+                    <List.Item.Meta
+                      avatar={<FolderOpenOutlined />}
+                      title={
+                        <Space>
+                          <span>{workspace.name}</span>
+                          <Tag color="green">{t`Running`}</Tag>
+                        </Space>
+                      }
+                      description={
+                        <Text type="secondary" style={{ fontSize: '12px' }}>
+                          {workspace.path}
+                        </Text>
+                      }
+                    />
+                  </List.Item>
+                )}
+              />
+            </>
+          )}
+
           {/* 历史记录 */}
           {workspaceHistory.length > 0 && (
             <>
@@ -1134,6 +1283,51 @@ export function Workspace() {
       >
         <p>{t`The selected folder is not a workspace. Do you want to create a new workspace here?`}</p>
         <p><strong>{t`Path`}:</strong> {pendingWorkspacePath}</p>
+      </Modal>
+
+      {/* 工作区关闭确认模态框 */}
+      <Modal
+        title={t`Close Workspace`}
+        open={closeConfirmModalOpen}
+        onCancel={() => {
+          setCloseConfirmModalOpen(false);
+          setPendingCloseWorkspace(null);
+        }}
+        footer={[
+          <Button key="cancel" onClick={() => {
+            setCloseConfirmModalOpen(false);
+            setPendingCloseWorkspace(null);
+          }}>
+            {t`Cancel`}
+          </Button>,
+          <Button key="background" type="default" onClick={() => {
+            if (pendingCloseWorkspace) {
+              runWorkspaceInBackground(pendingCloseWorkspace);
+            }
+          }}>
+            {t`Run in Background`}
+          </Button>,
+          <Button key="close" type="primary" danger onClick={() => {
+            if (pendingCloseWorkspace) {
+              closeWorkspace(pendingCloseWorkspace);
+            }
+          }}>
+            {t`Close Completely`}
+          </Button>
+        ]}
+      >
+        <p>{t`How would you like to close this workspace?`}</p>
+        {pendingCloseWorkspace && (
+          <p><strong>{pendingCloseWorkspace.name}</strong> ({pendingCloseWorkspace.path})</p>
+        )}
+        <div style={{ marginTop: 16 }}>
+          <div style={{ marginBottom: 8 }}>
+            <strong>{t`Run in Background`}:</strong> {t`Keep MCP services and terminals running, but hide from tabs`}
+          </div>
+          <div>
+            <strong>{t`Close Completely`}:</strong> {t`Stop all MCP services and terminals for this workspace`}
+          </div>
+        </div>
       </Modal>
 
       {/* 服务器目录浏览器 */}

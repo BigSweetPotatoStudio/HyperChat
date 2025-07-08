@@ -1948,9 +1948,28 @@ export class CommandFactory {
         console.warn(`Failed to close terminals for workspace ${workspacePath}:`, terminalError);
       }
       
+      // 从运行列表中移除（从内存中移除工作区实例）
+      const workspaceManager = getWorkspaceManager();
+      workspaceManager.removeWorkspaceFromMemory(workspacePath);
+      
       return true;
     } catch (error) {
       console.error(`Failed to close workspace ${workspacePath}:`, error);
+      throw error;
+    }
+  }
+
+
+  /**
+   * 获取运行中的工作区列表
+   * @returns 运行中工作区的详细信息
+   */
+  async getRunningWorkspaces(): Promise<Array<{path: string, name: string, isGlobal: boolean}>> {
+    try {
+      const workspaceManager = getWorkspaceManager();
+      return await workspaceManager.getRunningWorkspacesDetails();
+    } catch (error) {
+      console.error("Failed to get running workspaces:", error);
       throw error;
     }
   }
