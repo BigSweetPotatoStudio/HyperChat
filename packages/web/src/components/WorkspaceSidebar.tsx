@@ -7,8 +7,10 @@ import {
   BookOutlined,
   SettingOutlined,
   BellOutlined,
+  CodeOutlined,
 } from "@ant-design/icons";
 import { FileTreeComponent } from "./FileTreeComponent";
+import { TerminalComponent } from "./TerminalComponent";
 import { t } from "../i18n";
 
 interface FileNode {
@@ -248,6 +250,18 @@ export function WorkspaceSidebar({
     );
   };
 
+  // 渲染终端标签页
+  const renderTerminal = () => {
+    return (
+      <div className="h-full">
+        <TerminalComponent 
+          workspacePath={workspace.path}
+          className="h-full"
+        />
+      </div>
+    );
+  };
+
   const tabItems = [
     {
       key: 'files',
@@ -260,37 +274,14 @@ export function WorkspaceSidebar({
       children: renderFileTree(),
     },
     {
-      key: 'todos',
+      key: 'terminal',
       label: (
         <Space>
-          <FileTextOutlined />
-          <span>{t`Todos`}</span>
-          {getActiveTodosCount() > 0 && (
-            <Badge count={getActiveTodosCount()} size="small" />
-          )}
+          <CodeOutlined />
+          <span>{t`Terminal`}</span>
         </Space>
       ),
-      children: renderTodos(),
-    },
-    {
-      key: 'history',
-      label: (
-        <Space>
-          <HistoryOutlined />
-          <span>{t`History`}</span>
-        </Space>
-      ),
-      children: renderHistory(),
-    },
-    {
-      key: 'bookmarks',
-      label: (
-        <Space>
-          <BookOutlined />
-          <span>{t`Bookmarks`}</span>
-        </Space>
-      ),
-      children: renderBookmarks(),
+      children: renderTerminal(),
     },
   ];
 
