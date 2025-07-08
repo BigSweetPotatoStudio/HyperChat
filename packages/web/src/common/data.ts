@@ -37,32 +37,32 @@ Data.prototype["_save"] = async function () {
 /**
  * Listens for messages from the main process (backend) to sync data.
  */
-msg_receive("message-from-main", (msg) => {
-  // Check if the message is for syncing data from Node.js to the web view.
-  if (msg.type == "syncNodeToWeb") {
-    // Find the corresponding data object in the DataList.
-    let c = DataList.find((x) => x.KEY == msg.data.key);
-    if (c) {
-      // The commented-out logic below is an example of special handling for chat history,
-      // where you might want to merge new messages instead of overwriting the whole object.
-      // if (c.KEY == "ChatHistory.json") {
-      //   let newData = msg.data.data;
-      //   for (let x of newData.data) {
-      //     if (c.get().data.find((y) => y.key == x.key) == null) {
-      //       c.get().data.push(x);
-      //     } else {
-      //       break;
-      //     }
-      //   }
-      // } else {
-      // For other data types, simply merge the new data.
-      Object.assign(c.get(), msg.data.data);
-      // }
-    } else {
-      console.error("syncNodeToWeb: data key not found", msg.data.key);
-    }
-  }
-});
+// msg_receive("message-from-main", (msg) => {
+//   // Check if the message is for syncing data from Node.js to the web view.
+//   if (msg.type == "syncNodeToWeb") {
+//     // Find the corresponding data object in the DataList.
+//     let c = DataList.find((x) => x.KEY == msg.data.key);
+//     if (c) {
+//       // The commented-out logic below is an example of special handling for chat history,
+//       // where you might want to merge new messages instead of overwriting the whole object.
+//       // if (c.KEY == "ChatHistory.json") {
+//       //   let newData = msg.data.data;
+//       //   for (let x of newData.data) {
+//       //     if (c.get().data.find((y) => y.key == x.key) == null) {
+//       //       c.get().data.push(x);
+//       //     } else {
+//       //       break;
+//       //     }
+//       //   }
+//       // } else {
+//       // For other data types, simply merge the new data.
+//       Object.assign(c.get(), msg.data.data);
+//       // }
+//     } else {
+//       console.error("syncNodeToWeb: data key not found", msg.data.key);
+//     }
+//   }
+// });
 
 // The following block is an example of a data migration script.
 // It checks for a specific app version and performs necessary updates

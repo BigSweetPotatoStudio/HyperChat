@@ -24,7 +24,7 @@ import { HeaderContext } from "../../common/context";
 
 export function HpyerTools() {
     const context = useContext(HeaderContext);
-    const { globalState, updateGlobalState, mcpClients } = context || {};
+    const { globalState, updateGlobalState } = context || {};
   const [url, setUrl] = useState("");
   return (
     <div className="lg:p-4">

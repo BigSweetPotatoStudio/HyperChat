@@ -53,11 +53,11 @@ export function getPrompts(mcp: string[]): (typeof MCPTypes.PromptSchema._type &
 
   let prompts: (typeof MCPTypes.PromptSchema._type & { key: string })[] = [];
 
-  McpClients
-    .filter((m) => set.has(m.serverName))
-    .forEach((v) => {
-      prompts = prompts.concat(v.prompts);
-    });
+  // McpClients
+  //   .filter((m) => set.has(m.serverName))
+  //   .forEach((v) => {
+  //     prompts = prompts.concat(v.prompts);
+  //   });
   return prompts;
 }
 
@@ -75,11 +75,11 @@ export function getResourses(mcp: string[]): (typeof MCPTypes.ResourceSchema._ty
 
   let resources: (typeof MCPTypes.ResourceSchema._type & { key: string })[] = [];
 
-  McpClients
-    .filter((m) => set.has(m.serverName))
-    .forEach((v) => {
-      resources = resources.concat(v.resources);
-    });
+  // McpClients
+  //   .filter((m) => set.has(m.serverName))
+  //   .forEach((v) => {
+  //     resources = resources.concat(v.resources);
+  //   });
   return resources;
 }
 

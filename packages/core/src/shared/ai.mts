@@ -496,7 +496,7 @@ export class AiChannel {
     this.ext = ext;
   }
 
-  async completionParse(response_format: ResponseFormat): Promise<unknown> {
+  async completionParse(response_format: ResponseFormat): Promise<any> {
     // 使用工具调用来实现结构化输出
     // const tool: CoreTool = {
     //   description: 'Parse response according to schema',

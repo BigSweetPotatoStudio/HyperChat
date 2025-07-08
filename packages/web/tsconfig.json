@@ -21,6 +21,10 @@
     "eval"
   ],
   "exclude": [
-    "node_modules"
+    "node_modules",
+    "src/pages/hyperAgent",
+    "src/pages/chat",
+    "src/pages/market",
+    "src/pages/hypertools"
   ]
 }

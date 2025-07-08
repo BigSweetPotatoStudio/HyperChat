@@ -77,6 +77,11 @@ interface UserContentProps {
     regenerate?: () => void;
     /** 提交回调函数，当用户提交编辑内容时调用 */
     onSubmit: (content: string) => void;
+    contexts: {
+        [key: string]: { edit: boolean }
+    }
+
+    index: number;
 }
 
 /**
@@ -91,24 +96,24 @@ interface UserContentProps {
  * @param props - 组件属性
  * @returns React 组件
  */
-export function UserContent({ x, regenerate = undefined, onSubmit }: UserContentProps) {
+export function UserContent({ x, regenerate = undefined, onSubmit, contexts, index }: UserContentProps) {
     // 状态管理
     /** 是否处于编辑模式 */
     const [isEdit, setIsEdit] = useState<boolean>(false);
     /** 编辑器中的当前值 */
     const [value, setValue] = useState<string>("");
-    
+
     // DOM 引用
     /** 容器元素的引用，用于计算宽度 */
     const container = useRef<HTMLDivElement>(null);
-    
+
     // 布局相关状态
     /** 编辑器的当前宽度 */
     const [width, setWidth] = useState<number>(0);
     /** 编辑器的最大宽度 */
     const [maxWidth, setMaxWidth] = useState<number>(0);
     // console.log(maxWidth)
-    
+
     /**
      * 监听编辑状态变化的副作用
      * 当消息的编辑状态改变时：
@@ -119,11 +124,11 @@ export function UserContent({ x, regenerate = undefined, onSubmit }: UserContent
     useEffect(() => {
         // 计算最大宽度，基于父容器宽度减去边距
         setMaxWidth(container.current ? (container.current.parentElement!.parentElement!.parentElement!.offsetWidth - 60) : 500);
-        
-        if (x.content_context.edit) {
+
+        if (contexts[index]?.edit) {
             // 进入编辑模式
             setWidth(container.current ? Math.min(container.current.offsetWidth + 50, maxWidth) : 500);
-            
+
             // 设置编辑器的初始值
             if (Array.isArray(x.content)) {
                 const firstContent = x.content?.[0];
@@ -138,15 +143,15 @@ export function UserContent({ x, regenerate = undefined, onSubmit }: UserContent
             // 退出编辑模式
             setIsEdit(false);
         }
-    }, [x.content_context.edit, maxWidth]);
-    
+    }, [contexts[index]?.edit, maxWidth]);
+
     /**
      * 处理编辑提交的函数
      * 重置消息状态并调用外部提交回调
      */
     const handleSubmit = useCallback(() => {
         x.content_sended = false;
-        x.content_context.edit = false;
+        contexts[index]!.edit = false;
         setIsEdit(false);
         onSubmit(value);
     }, [value, onSubmit, x]);
@@ -155,7 +160,7 @@ export function UserContent({ x, regenerate = undefined, onSubmit }: UserContent
      * 处理取消编辑的函数
      */
     const handleCancel = useCallback(() => {
-        x.content_context.edit = false;
+        contexts[index]!.edit = false;
         setIsEdit(false);
     }, [x]);
 
@@ -164,16 +169,16 @@ export function UserContent({ x, regenerate = undefined, onSubmit }: UserContent
             {/* 编辑模式：显示编辑器和操作按钮 */}
             {isEdit ? (
                 <div>
-                    <Editor 
-                        autoHeight 
-                        style={{ 
-                            width: width + "px", 
-                            minWidth: 300, 
-                            border: "0px", 
-                            padding: "4px 0" 
-                        }} 
-                        value={x.content_template || x.content.toString()} 
-                        onChange={(e: string) => setValue(e)} 
+                    <Editor
+                        autoHeight
+                        style={{
+                            width: width + "px",
+                            minWidth: 300,
+                            border: "0px",
+                            padding: "4px 0"
+                        }}
+                        value={x.content_template || x.content.toString()}
+                        onChange={(e: string) => setValue(e)}
                         onSubmit={handleSubmit}
                     />
                     <Space.Compact>
@@ -189,18 +194,18 @@ export function UserContent({ x, regenerate = undefined, onSubmit }: UserContent
                 /* 系统消息且未发送：显示实时编辑器 */
                 !x.content_sended && x.role === "system" && maxWidth > 0 ? (
                     <div>
-                        <Editor 
-                            autoHeight 
-                            style={{ 
-                                width: maxWidth + "px", 
-                                minWidth: 300, 
-                                border: "0px", 
-                                padding: "4px 0" 
-                            }} 
-                            value={x.content_template || x.content.toString()} 
+                        <Editor
+                            autoHeight
+                            style={{
+                                width: maxWidth + "px",
+                                minWidth: 300,
+                                border: "0px",
+                                padding: "4px 0"
+                            }}
+                            value={x.content_template || x.content.toString()}
                             onChange={(e: string) => {
                                 x.content_template = e;
-                            }} 
+                            }}
                         />
                     </div>
                 ) : (

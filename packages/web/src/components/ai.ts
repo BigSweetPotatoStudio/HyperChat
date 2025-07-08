@@ -55,7 +55,7 @@ export async function rename(messages: MyMessage[]) {
                 name: z.string({
                     description: "Summarize this chat record"
                 }),
-            }), "test")
+            }), "test") as any // zodTextFormat(z.string(), "test") as any
         )
         // console.log(res);
         return res?.name || "Untitled";
@@ -91,7 +91,7 @@ export async function genCronExpression(message: string) {
                 cron: z.string({
                     description: "This is a cron expression"
                 }),
-            }), "test")
+            }), "test") as any // zodTextFormat(z.string(), "test") as any
         );
         // console.log(res);
         return res?.cron || "0 0 * * *";

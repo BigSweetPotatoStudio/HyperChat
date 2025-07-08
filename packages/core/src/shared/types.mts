@@ -208,7 +208,6 @@ export type MyMessage = AllMessage & {
   }>;
   reasoning_content?: string;
   content_tool_calls?: Tool_Call[]; // openai tool call
-  content_context?: Record<string, unknown>;
   content_attached?: boolean;
   content_date?: number;
   content_usage?: {

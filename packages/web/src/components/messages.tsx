@@ -23,6 +23,8 @@ export const Messages = ({ messages, onSumbit, readOnly, setContainer, status, o
     onClone?: (index) => void;
 }) => {
     const refresh = useForceUpdate();
+
+    const contexts = useRef<{ [key: string]: { edit: boolean } }>({});
     const format = useCallback((x: MyMessage, i, arr) => {
         x.content_attached = x.content_attached == null ? true : x.content_attached;
         let common = {
@@ -72,9 +74,7 @@ export const Messages = ({ messages, onSumbit, readOnly, setContainer, status, o
                     ),
                 };
             }
-            if (x.content_context == null) {
-                x.content_context = {};
-            }
+
             return {
                 ...common,
                 key: i.toString(),
@@ -110,7 +110,13 @@ export const Messages = ({ messages, onSumbit, readOnly, setContainer, status, o
                         {!readOnly && <EditOutlined
                             className="hover:text-cyan-400"
                             onClick={() => {
-                                x.content_context.edit = !x.content_context.edit;
+                                if (contexts.current[i] == null) {
+                                    contexts.current[i] = { edit: false };
+                                }
+
+                                contexts.current[i]!.edit = !contexts.current[i]!.edit
+
+
                                 refresh();
                             }}
                         />}
@@ -143,6 +149,8 @@ export const Messages = ({ messages, onSumbit, readOnly, setContainer, status, o
                 content: (
                     <UserContent
                         x={x}
+                        index={i}
+                        contexts={contexts.current}
                         onSubmit={(content) => {
                             if (x.role == "system") {
                                 x.content_template = content;
