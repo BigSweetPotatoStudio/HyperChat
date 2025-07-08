@@ -925,6 +925,30 @@ export class CommandFactory {
   }
 
   /**
+   * 打开已存在的工作区
+   * 检查指定目录是否已经是工作区，如果是则直接加载
+   * @param workspacePath 工作区根目录的绝对路径
+   * @returns 工作区配置信息，如果不是工作区则返回null
+   */
+  async openWorkspace({
+    workspacePath
+  }: {
+    workspacePath: string;
+  }): Promise<Record<string, unknown> | null> {
+    const workspaceManager = getWorkspaceManager();
+
+    // 检查是否已经是工作区
+    const isWorkspace = await workspaceManager.isWorkspaceDirectory(workspacePath);
+    if (!isWorkspace) {
+      return null;
+    }
+
+    // 加载现有工作区
+    const workspace = await workspaceManager.loadExistingWorkspace(workspacePath);
+    return workspace ? workspace.getConfig() : null;
+  }
+
+  /**
    * 创建或初始化新的工作区
    * 在指定目录中创建 .hyperchat 配置文件夹和必要的配置文件
    * @param workspacePath 工作区根目录的绝对路径
@@ -1886,6 +1910,47 @@ export class CommandFactory {
       console.log(`Successfully wrote file ${filePath} in workspace ${workspacePath}`);
     } catch (error) {
       console.error(`Failed to write workspace file ${filePath} in ${workspacePath}:`, error);
+      throw error;
+    }
+  }
+
+  /**
+   * 关闭工作区
+   * 关闭工作区的MCP客户端和终端实例，但不删除工作区配置
+   * @param workspacePath 工作区路径
+   * @returns 关闭结果
+   */
+  async closeWorkspace({
+    workspacePath
+  }: {
+    workspacePath: string;
+  }): Promise<boolean> {
+    try {
+      console.log(`Closing workspace: ${workspacePath}`);
+      
+      // 关闭工作区的MCP客户端
+      try {
+        await this.stopWorkspaceMcpClients({ workspacePath });
+        console.log(`MCP clients closed for workspace: ${workspacePath}`);
+      } catch (mcpError) {
+        console.warn(`Failed to close MCP clients for workspace ${workspacePath}:`, mcpError);
+      }
+      
+      // 关闭工作区的终端实例
+      try {
+        const terminal = getWorkspaceTerminal(workspacePath);
+        const allTerminals = terminal.getAllTerminals();
+        for (const term of allTerminals) {
+          await terminal.closeTerminal(term.id);
+        }
+        console.log(`All terminals closed for workspace: ${workspacePath}`);
+      } catch (terminalError) {
+        console.warn(`Failed to close terminals for workspace ${workspacePath}:`, terminalError);
+      }
+      
+      return true;
+    } catch (error) {
+      console.error(`Failed to close workspace ${workspacePath}:`, error);
       throw error;
     }
   }

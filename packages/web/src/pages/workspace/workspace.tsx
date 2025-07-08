@@ -141,7 +141,9 @@ export function Workspace() {
   const [workspaceDetails, setWorkspaceDetails] = useState<WorkspaceDetails>({});
 
   const [loading, setLoading] = useState(false);
-  const [createModalOpen, setCreateModalOpen] = useState(false);
+  const [openModalOpen, setOpenModalOpen] = useState(false);
+  const [confirmCreateModalOpen, setConfirmCreateModalOpen] = useState(false);
+  const [pendingWorkspacePath, setPendingWorkspacePath] = useState<string>("");
   const [directoryBrowserOpen, setDirectoryBrowserOpen] = useState(false);
   const [selectedPath, setSelectedPath] = useState<string>("");
   const [showHiddenFiles, setShowHiddenFiles] = useState(true);
@@ -297,67 +299,126 @@ export function Workspace() {
     }
   };
 
-  // 创建或打开工作区
-  const createOrOpenWorkspace = async (values: { path: string }) => {
+  // 打开工作区
+  const openWorkspace = async (values: { path: string }) => {
     try {
-      // 从路径提取文件夹名称作为工作区名称
-      const folderName = values.path.split(/[/\\]/).pop() || 'Workspace';
-
-      await call("createWorkspace", {
+      // 尝试打开已存在的工作区
+      const workspaceConfig = await call("openWorkspace", {
         workspacePath: values.path,
-        name: folderName,
       });
 
-      // 尝试启动工作区的MCP服务
-      try {
-        await call("startWorkspaceMcpClients", { workspacePath: values.path });
-      } catch (mcpError) {
-        console.warn("Failed to start workspace MCP clients, but workspace creation succeeded:", mcpError);
-        // 不阻止工作区创建，只是警告
+      if (workspaceConfig) {
+        // 工作区已存在，直接加载
+        await startWorkspaceMcpClients(values.path);
+        
+        // 添加到历史记录
+        const folderName = values.path.split(/[/\\]/).pop() || 'Workspace';
+        addToWorkspaceHistory(values.path, folderName);
+        setWorkspaceHistory(getWorkspaceHistory());
+        
+        message.success(t`Workspace opened successfully`);
+        setOpenModalOpen(false);
+        form.resetFields();
+        setSelectedPath("");
+        loadWorkspaces();
+      } else {
+        // 工作区不存在，提示用户是否创建
+        setPendingWorkspacePath(values.path);
+        setOpenModalOpen(false);
+        setConfirmCreateModalOpen(true);
       }
-
-      // 添加到历史记录
-      addToWorkspaceHistory(values.path, folderName);
-      setWorkspaceHistory(getWorkspaceHistory());
-
-      message.success(t`Workspace created or opened successfully`);
-      setCreateModalOpen(false);
-      form.resetFields();
-      setSelectedPath("");
-      loadWorkspaces();
     } catch (error) {
-      console.error("Failed to create or open workspace:", error);
-      message.error(t`Failed to create or open workspace`);
+      console.error("Failed to open workspace:", error);
+      message.error(t`Failed to open workspace`);
     }
   };
 
-  // 删除工作区
-  const deleteWorkspace = async (workspace: WorkspaceInfo) => {
+  // 创建工作区
+  const createWorkspace = async (workspacePath: string) => {
     try {
-      // 先停止工作区的MCP服务
-      if (!workspace.isGlobal) {
-        try {
-          await call("stopWorkspaceMcpClients", { workspacePath: workspace.path });
-        } catch (mcpError) {
-          console.warn("Failed to stop workspace MCP clients:", mcpError);
-          // 不阻止工作区删除，只是警告
-        }
-      }
+      // 从路径提取文件夹名称作为工作区名称
+      const folderName = workspacePath.split(/[/\\]/).pop() || 'Workspace';
 
-      await call("deleteWorkspace", { workspacePath: workspace.path });
+      await call("createWorkspace", {
+        workspacePath: workspacePath,
+        name: folderName,
+      });
 
+      await startWorkspaceMcpClients(workspacePath);
 
-      message.success(t`Workspace deleted successfully`);
-      // 如果删除的是当前活动工作区，切换到全局工作区
+      // 添加到历史记录
+      addToWorkspaceHistory(workspacePath, folderName);
+      setWorkspaceHistory(getWorkspaceHistory());
+
+      message.success(t`Workspace created successfully`);
+      loadWorkspaces();
+    } catch (error) {
+      console.error("Failed to create workspace:", error);
+      message.error(t`Failed to create workspace`);
+    }
+  };
+
+  // 确认创建工作区
+  const confirmCreateWorkspace = async () => {
+    try {
+      await createWorkspace(pendingWorkspacePath);
+      setConfirmCreateModalOpen(false);
+      setPendingWorkspacePath("");
+    } catch (error) {
+      console.error("Failed to confirm create workspace:", error);
+    }
+  };
+
+  // 启动工作区MCP服务
+  const startWorkspaceMcpClients = async (workspacePath: string) => {
+    try {
+      await call("startWorkspaceMcpClients", { workspacePath });
+    } catch (mcpError) {
+      console.warn("Failed to start workspace MCP clients:", mcpError);
+      // 不阻止工作区操作，只是警告
+    }
+  };
+
+  // 关闭工作区
+  const closeWorkspace = async (workspace: WorkspaceInfo) => {
+    try {
+      // 调用关闭工作区的命令
+      await call("closeWorkspace", { workspacePath: workspace.path });
+      
+      message.success(t`Workspace closed successfully`);
+      
+      // 如果关闭的是当前活动工作区，切换到全局工作区
       if (activeWorkspaceKey === workspace.path) {
         setActiveWorkspaceKey(globalWorkspace?.path || "");
       }
+      
       // 清除详情缓存
       setWorkspaceDetails(prev => {
         const newDetails = { ...prev };
         delete newDetails[workspace.path];
         return newDetails;
       });
+      
+      // 重新加载工作区列表
+      loadWorkspaces();
+    } catch (error) {
+      console.error("Failed to close workspace:", error);
+      message.error(t`Failed to close workspace`);
+    }
+  };
+  
+  // 删除工作区
+  const deleteWorkspace = async (workspace: WorkspaceInfo) => {
+    try {
+      // 先关闭工作区
+      await closeWorkspace(workspace);
+      
+      // 然后删除工作区配置
+      await call("deleteWorkspace", { workspacePath: workspace.path });
+      
+      message.success(t`Workspace deleted successfully`);
+      
+      // 重新加载工作区列表
       loadWorkspaces();
     } catch (error) {
       console.error("Failed to delete workspace:", error);
@@ -681,6 +742,24 @@ export function Workspace() {
                 {workspace.path}
               </div>
             </div>
+            <Dropdown
+              menu={{
+                items: [
+                  {
+                    key: 'delete',
+                    label: t`Delete Workspace`,
+                    danger: true,
+                    icon: <DeleteOutlined />,
+                    onClick: () => {
+                      deleteWorkspace(workspace);
+                    }
+                  }
+                ]
+              }}
+              trigger={['click']}
+            >
+              <Button type="text" size="small" icon={<MoreOutlined />} onClick={(e) => e.stopPropagation()} />
+            </Dropdown>
           </Space>
         ),
         closable: true, // 项目工作区可关闭
@@ -890,16 +969,18 @@ export function Workspace() {
     );
   };
 
-  // 处理标签页关闭（删除工作区）
+  // 处理标签页关闭（关闭工作区）
   const handleTabEdit = (targetKey: string | React.MouseEvent<Element, MouseEvent> | React.KeyboardEvent<Element>, action: 'add' | 'remove') => {
     if (action === 'add') {
-      setCreateModalOpen(true);
+      // 显示添加工作区的选项
+      // 这里可以展示下拉菜单或对话框供用户选择“打开”或“创建”
+      setOpenModalOpen(true);
     } else if (action === 'remove') {
       // 确保 targetKey 是字符串类型
       if (typeof targetKey === 'string') {
         const workspace = workspaces.find(ws => ws.path === targetKey);
         if (workspace) {
-          deleteWorkspace(workspace);
+          closeWorkspace(workspace);
         }
       }
     }
@@ -938,12 +1019,12 @@ export function Workspace() {
         </div>
       </div>
 
-      {/* 创建或打开工作区模态框 */}
+      {/* 打开工作区模态框 */}
       <Modal
-        title={t`Create or Open Workspace`}
-        open={createModalOpen}
+        title={t`Open or Create Workspace`}
+        open={openModalOpen}
         onCancel={() => {
-          setCreateModalOpen(false);
+          setOpenModalOpen(false);
           form.resetFields();
           setSelectedPath("");
         }}
@@ -955,13 +1036,13 @@ export function Workspace() {
         <Form
           form={form}
           layout="vertical"
-          onFinish={createOrOpenWorkspace}
+          onFinish={openWorkspace}
         >
           <Form.Item
             label={t`Folder Path`}
             name="path"
             rules={[{ required: true, message: t`Please select folder path` }]}
-            extra={t`The workspace name will be automatically set to the folder name`}
+            extra={t`Select a folder to open as workspace or create a new workspace`}
           >
             <Space.Compact style={{ width: "100%" }}>
               <Input
@@ -1036,6 +1117,23 @@ export function Workspace() {
             </>
           )}
         </Form>
+      </Modal>
+
+
+      {/* 确认创建工作区模态框 */}
+      <Modal
+        title={t`Create New Workspace`}
+        open={confirmCreateModalOpen}
+        onCancel={() => {
+          setConfirmCreateModalOpen(false);
+          setPendingWorkspacePath("");
+        }}
+        onOk={confirmCreateWorkspace}
+        okText={t`Create`}
+        cancelText={t`Cancel`}
+      >
+        <p>{t`The selected folder is not a workspace. Do you want to create a new workspace here?`}</p>
+        <p><strong>{t`Path`}:</strong> {pendingWorkspacePath}</p>
       </Modal>
 
       {/* 服务器目录浏览器 */}
