@@ -4,29 +4,29 @@ import { CONST } from "../../../const.mjs";
 import { registerTool } from "./terminal.mjs";
 import { Logger } from "../../../log.mjs";
 
+interface Transport {
+  handlePostMessage(req: unknown, res: unknown): Promise<void>;
+}
 
+let transport: Transport | null = null;
 
-let transport: any;
-async function createServer(_endpoint: string, _response: any) {
-  //   Logger.info("Received connection");
-  // transport = new SSEServerTransport(endpoint, response);
-  // // Logger.debug("==================", getConfig().Web_Tools_Platform);
+async function createServer(_endpoint: string, _response: unknown) {
   const server = new McpServer({
     name: NAME,
     version: CONST.getVersion,
   });
 
   registerTool(server);
-
   
-  // await server.connect(transport);
+  Logger.info(`${NAME} MCP server created successfully`);
   return server;
 }
 
-async function handlePostMessage(req: any, res: any) {
-  //   Logger.info("Received message");
+async function handlePostMessage(req: unknown, res: unknown): Promise<void> {
   if (transport) {
     await transport.handlePostMessage(req, res);
+  } else {
+    Logger.warn("No transport available for handling post message");
   }
 }
 
@@ -35,8 +35,8 @@ export const HyperTerminal = {
   handlePostMessage,
   name: NAME,
   url: ``,
-  configSchema: configSchema,
-  type: "streamableHttp",
-};
+  configSchema,
+  type: "streamableHttp" as const,
+} as const;
 
 

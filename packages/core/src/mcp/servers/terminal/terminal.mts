@@ -1,246 +1,157 @@
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import os from "os";
-// import fs from "fs";
-// import uuid from "uuid";
-
+import path from "path";
 import * as pty from "node-pty";
 import { z } from "zod";
 import { shellPathSync, strip } from "../../../es6.mjs";
 import { getConfig } from "./lib.mjs";
 import { getMessageService } from "../../../message_service.mjs";
 import { Logger } from "../../../log.mjs";
+import type { TerminalMessage } from "../../../shared/types.mjs";
 
 const shell = os.platform() === "win32" ? "powershell.exe" : "bash";
 
-type Context = {
+interface TerminalContext {
   terminal: pty.IPty;
   commamdOutput: string;
-};
-const terminalMap = new Map<number, Context>();
+  workingDirectory: string;
+  createdAt: number;
+}
 
 
+const terminalMap = new Map<number, TerminalContext>();
 let lastTerminalID = 0;
-
-let arr = new Array<string>();
+let outputCheckArray: string[] = [];
 let checkCount = 15;
 
-function checkEnd(str: string) {
-  if (str == "") {
+function checkEnd(str: string): boolean {
+  if (str === "") {
     return false;
   }
-  if (arr.length < checkCount) {
-    arr.push(str);
+  if (outputCheckArray.length < checkCount) {
+    outputCheckArray.push(str);
     return false;
   } else {
-    arr.shift();
-    arr.push(str);
-    if (arr.every((v) => v === str)) {
-      return true;
-    }
-    return false;
+    outputCheckArray.shift();
+    outputCheckArray.push(str);
+    return outputCheckArray.every((v) => v === str);
   }
 }
 
-export async function GetTerminals() {
-  for (let id of terminalMap.keys()) {
+export async function GetTerminals(): Promise<number[]> {
+  for (const id of terminalMap.keys()) {
     lastTerminalID = id;
-    // getMessageService().terminalMsg.emit("open-terminal", {
-    //   terminalID: id,
-    //   terminals: Array.from(terminalMap).map((x) => x[0]),
-    // });
   }
   return Array.from(terminalMap.keys());
 }
-export async function CloseTerminal(TerminalID: any) {
-  let terminal = terminalMap.get(TerminalID);
+
+export async function CloseTerminal(terminalID: number): Promise<void> {
+  const terminal = terminalMap.get(terminalID);
   if (terminal) {
-    Logger.info("Terminal exited with code: ", terminal.terminal.pid);
+    Logger.info(`Terminal ${terminalID} (PID: ${terminal.terminal.pid}) is being closed`);
     terminal.terminal.kill();
+    terminalMap.delete(terminalID);
+  } else {
+    Logger.warn(`Terminal ${terminalID} not found`);
   }
 }
-export async function OpenTerminal() {
 
-  if (os.platform() != "win32") {
+export async function OpenTerminal(workingDirectory?: string): Promise<number> {
+  if (os.platform() !== "win32") {
     process.env.PATH = shellPathSync();
   }
-  let lastTerminal = terminalMap.get(lastTerminalID);
-
+  
+  const config = getConfig();
+  const lastTerminal = terminalMap.get(lastTerminalID);
+  const defaultCwd = config?.Terminal_Working_Directory || process.env.HOME || os.homedir();
+  const cwd = workingDirectory ? path.resolve(workingDirectory) : defaultCwd;
+  
   const terminal = pty.spawn(shell, [], {
     name: "xterm-color",
     cols: lastTerminal?.terminal?.cols || 80,
     rows: lastTerminal?.terminal?.rows || 30,
-    cwd: process.env.HOME || os.homedir(),
+    cwd,
     env: process.env,
-    useConpty: os.platform() == "win32",
+    useConpty: os.platform() === "win32",
   });
 
-  let c = {
-    terminal: terminal,
+  const terminalContext: TerminalContext = {
+    terminal,
     commamdOutput: "",
-    lastIndex: 0,
+    workingDirectory: cwd,
+    createdAt: Date.now(),
   };
-  let callback = (msg: any) => {
-    if (msg.terminalID == terminal.pid) {
-      if (msg.type == "resize") {
-        // Logger.info("resize terminal: ", msg);
-        c.terminal.resize(msg.data.cols, msg.data.rows);
+  
+  const callback = (msg: TerminalMessage) => {
+    if (msg.terminalID === terminal.pid) {
+      if (msg.type === "resize") {
+        const resizeData = msg.data as { cols: number; rows: number };
+        terminalContext.terminal.resize(resizeData.cols, resizeData.rows);
       } else {
-        c.terminal.write(msg.data);
+        terminalContext.terminal.write(msg.data as string);
       }
     }
   };
+
   terminal.onExit((code) => {
-    Logger.info("Terminal exited with code: ", code);
+    Logger.info(`Terminal ${terminal.pid} exited with code: ${code}`);
     terminalMap.delete(terminal.pid);
     getMessageService().terminalMsg.emit("close-terminal", {
       terminalID: terminal.pid,
     });
     getMessageService().removeTerminalMsgListener(callback);
   });
+
   getMessageService().terminalMsg.emit("open-terminal", {
     terminalID: terminal.pid,
     terminals: Array.from(terminalMap).map((x) => x[0]),
   });
 
   terminal.onData((data) => {
-    // Logger.info("terminal onData: ", data);
     getMessageService().terminalMsg.emit("terminal-send", {
       terminalID: terminal.pid,
-      data: data,
+      data,
     });
 
-    c.commamdOutput += data;
-
+    terminalContext.commamdOutput += data;
   });
 
-  // terminal.write(`clear\r`);
-  while (1) {
+  // Wait for terminal to be ready
+  while (true) {
     await new Promise((resolve) => setTimeout(resolve, 100));
-    if (checkEnd(c.commamdOutput)) {
+    if (checkEnd(terminalContext.commamdOutput)) {
       break;
     }
   }
+  
   getMessageService().addTerminalMsgListener(callback);
-
-  terminalMap.set(terminal.pid, c);
+  terminalMap.set(terminal.pid, terminalContext);
   lastTerminalID = terminal.pid;
-
+  
+  Logger.info(`Terminal ${terminal.pid} opened with working directory: ${cwd}`);
   return lastTerminalID;
 }
 
-export async function ActiveAITerminal(TerminalID: any) {
-  lastTerminalID = TerminalID;
-  return lastTerminalID;
+export async function ActiveAITerminal(terminalID: number): Promise<number> {
+  if (terminalMap.has(terminalID)) {
+    lastTerminalID = terminalID;
+    Logger.info(`Activated terminal ${terminalID}`);
+    return lastTerminalID;
+  } else {
+    throw new Error(`Terminal ${terminalID} not found`);
+  }
 }
 
-export function registerTool(server: McpServer) {
+export function registerTool(server: McpServer): void {
   const config = getConfig();
-  // const promptPattern = /\$\s*$|\>\s*$|#\s*$/m;
   checkCount = config?.Terminal_End_CheckCount || 15;
   const maxToken = config?.Terminal_Output_MaxToken || 10000;
-  // Logger.debug("checkCount: ", checkCount);
-
-  // Add an addition tool
-  // server.tool(
-  //   "open-terminal",
-  //   `open-terminal on ${os.platform} OS.`,
-  //   {},
-  //   async ({ }) => {
-  //     if (os.platform() != "win32") {
-  //       process.env.PATH = shellPathSync();
-  //     }
-  //     const terminal = pty.spawn(shell, [], {
-  //       name: "xterm-color",
-  //       cols: 80,
-  //       rows: 30,
-  //       cwd: process.env.HOME,
-  //       env: process.env,
-  //       useConpty: os.platform() == "win32",
-  //     });
-
-  //     let c = {
-  //       terminal: terminal,
-  //       commamdOutput: "",
-  //       stdout: "",
-  //       lastIndex: 0,
-  //       timer: setTimeout(() => {
-  //         try {
-  //           terminal.kill();
-  //         } catch (error) {
-  //           Logger.error("Error killing terminal:", error);
-  //         }
-  //         terminalMap.delete(c.terminal.pid);
-  //       }, timeout),
-  //     };
-  //     let callback = (msg) => {
-  //       if (msg.terminalID == terminal.pid) {
-  //         c.terminal.write(msg.data);
-  //       }
-  //     };
-  //     terminal.onExit((code) => {
-  //       clearTimeout(c.timer);
-  //       terminalMap.delete(terminal.pid);
-  //       getMessageService().terminalMsg.emit("close-terminal", {
-  //         terminalID: terminal.pid,
-  //       });
-  //       getMessageService().removeTerminalMsgListener(callback);
-  //     });
-  //     getMessageService().terminalMsg.emit("open-terminal", {
-  //       terminalID: terminal.pid,
-  //       terminals: Array.from(terminalMap).map((x) => x[0]),
-  //     });
-
-  //     terminal.onData((data) => {
-  //       c.timer && clearTimeout(c.timer);
-  //       c.timer = setTimeout(() => {
-  //         try {
-  //           c.terminal.kill();
-  //         } catch (error) {
-  //           Logger.error("Error killing terminal:", error);
-  //         }
-  //         terminalMap.delete(c.terminal.pid);
-  //       }, timeout);
-
-  //       getMessageService().terminalMsg.emit("terminal-send", {
-  //         terminalID: terminal.pid,
-  //         data: data,
-  //       });
-  //       c.stdout += data;
-  //       c.commamdOutput += data;
-  //       // fs.writeFileSync("terminal.log", c.stdout);
-  //     });
-
-  //     getMessageService().addTerminalMsgListener(callback);
-  //     // terminal.write(`ssh ldh@ubuntu\r`);
-  //     while (1) {
-  //       await new Promise((resolve) => setTimeout(resolve, 100));
-  //       if (checkEnd(c.stdout)) {
-  //         break;
-  //       }
-  //     }
-
-  //     terminalMap.set(terminal.pid, c);
-  //     lastTerminalID = terminal.pid;
-  //     c.lastIndex = c.stdout.length;
-
-  //     return {
-  //       content: [
-  //         {
-  //           type: "text",
-  //           text: `success created terminalID: ${terminal.pid}\n${strip(
-  //             c.stdout
-  //           ).slice(-maxToken)}`,
-  //         },
-  //       ],
-  //     };
-  //   }
-  // );
+  const timeout = config?.Terminal_Timeout || 5 * 60 * 1000;
 
   server.tool(
     "execute-command",
-    `execute-command on terminal.`,
+    `Execute a command in the terminal. If no terminal exists, one will be created automatically using the configured working directory.`,
     {
-      // terminalID: z.number({ description: "terminalID" }),
       command: z.string({
         description: "The command to execute",
       }),
@@ -249,11 +160,12 @@ export function registerTool(server: McpServer) {
       if (lastTerminalID === 0 || !terminalMap.has(lastTerminalID)) {
         await OpenTerminal();
       }
-      let c = terminalMap.get(lastTerminalID);
-      if (c == null) {
-        throw new Error("terminalID not found, please create terminal first");
+      const terminalContext = terminalMap.get(lastTerminalID);
+      if (!terminalContext) {
+        throw new Error("Failed to create or find terminal");
       }
-      Logger.info(`execute-command ${lastTerminalID}: ${command}`);
+
+      Logger.info(`Executing command in terminal ${lastTerminalID}: ${command}`);
       getMessageService().terminalMsg.emit("terminal-send", {
         type: "execute-status-change",
         terminalID: lastTerminalID,
@@ -261,35 +173,33 @@ export function registerTool(server: McpServer) {
           status: 1,
         }
       });
-      c.commamdOutput = "";
-      c.terminal.write(`${command}\r`);
+      terminalContext.commamdOutput = "";
+      terminalContext.terminal.write(`${command}\r`);
 
-      // c.timer && clearTimeout(c.timer);
-      // c.timer = setTimeout(() => {
-      //   try {
-      //     c.terminal.kill();
-      //   } catch (error) {
-      //     Logger.error("Error killing terminal:", error);
-      //   }
-      //   terminalMap.delete(c.terminal.pid);
-      // }, timeout);
-      let a = false;
-
-      while (1) {
-        if (a) {
+      let commandCompleted = false;
+      const startTime = Date.now();
+      
+      while (true) {
+        if (commandCompleted) {
           await new Promise((resolve) => setTimeout(resolve, 500));
-          // Logger.debug(c.commamdOutput)
-          if (strip(c.commamdOutput).match(/(\n|\r)done(\n|\r)/)) {
+          if (strip(terminalContext.commamdOutput).match(/(\n|\r)done(\n|\r)/)) {
             break;
           }
         } else {
           await new Promise((resolve) => setTimeout(resolve, 100));
-          if (checkEnd(c.commamdOutput)) {
-            c.terminal.write(`                  echo done\r`);
-            a = true;
+          if (checkEnd(terminalContext.commamdOutput)) {
+            terminalContext.terminal.write(`                  echo done\r`);
+            commandCompleted = true;
           }
         }
+        
+        // Check for timeout
+        if (Date.now() - startTime > timeout) {
+          Logger.warn(`Command execution timed out after ${timeout}ms`);
+          break;
+        }
       }
+
       getMessageService().terminalMsg.emit("terminal-send", {
         type: "execute-status-change",
         terminalID: lastTerminalID,
@@ -297,68 +207,92 @@ export function registerTool(server: McpServer) {
           status: 0,
         }
       });
-      // fs.writeFileSync("terminal.log", strip(c.commamdOutput));
+      
+      const output = strip(terminalContext.commamdOutput).slice(-maxToken);
+      Logger.info(`Command completed in terminal ${lastTerminalID}`);
+      
       return {
         content: [
-          { type: "text", text: strip(c.commamdOutput).slice(-maxToken) },
+          { type: "text", text: output },
         ],
       };
     }
   );
 
-  // server.tool(
-  //   "view-terminal-latest-output",
-  //   `View the current terminal latest output, after sigint the current command`,
-  //   {
-  //     terminalID: z.number({ description: "terminalID" }),
-  //   },
-  //   async ({ terminalID }) => {
-  //     if (terminalID === -1) {
-  //       terminalID = lastTerminalID;
-  //     }
-  //     let c = terminalMap.get(terminalID);
-  //     if (c == null) {
-  //       throw new Error("terminalID not found, please create terminal first");
-  //     }
-
-  //     return {
-  //       content: [
-  //         {
-  //           type: "text",
-  //           text: strip(c.stdout.slice(c.lastIndex)).slice(-maxToken),
-  //         },
-  //       ],
-  //     };
-  //   }
-  // );
-
-  // server.tool(
-  //   "sigint-current-command",
-  //   `sigint the current command. Ctrl+C`,
-  //   {
-
-  //   },
-  //   async ({ }) => {
-  //     let c = terminalMap.get(lastTerminalID);
-  //     if (c == null) {
-  //       throw new Error("terminalID not found, please create terminal first");
-  //     }
-
-  //     c.commamdOutput = "";
-  //     c.terminal.write(``);
-
-  //     while (1) {
-  //       await new Promise((resolve) => setTimeout(resolve, 100));
-  //       if (checkEnd(c.commamdOutput)) {
-  //         break;
-  //       }
-  //     }
-
-  //     return {
-  //       content: [
-  //         { type: "text", text: strip(c.commamdOutput).slice(-maxToken) },
-  //       ],
-  //     };
-  //   }
-  // );
+  // Add tool to open terminal with specific working directory
+  server.tool(
+    "open-terminal",
+    `Open a new terminal with optional working directory.`,
+    {
+      path: z.string({
+        description: "Working directory for the new terminal (optional)",
+      }).optional(),
+    },
+    async ({ path: workingPath }) => {
+      const terminalID = await OpenTerminal(workingPath);
+      const terminalContext = terminalMap.get(terminalID);
+      
+      return {
+        content: [
+          { 
+            type: "text", 
+            text: `Terminal ${terminalID} opened successfully.\nWorking directory: ${terminalContext?.workingDirectory || 'default'}` 
+          },
+        ],
+      };
+    }
+  );
+  
+  // Add tool to get terminal info
+  server.tool(
+    "get-terminal-info",
+    `Get information about active terminals.`,
+    {},
+    async () => {
+      const terminals = await GetTerminals();
+      const terminalInfos = terminals.map(id => {
+        const context = terminalMap.get(id);
+        return {
+          id,
+          workingDirectory: context?.workingDirectory || 'unknown',
+          createdAt: context?.createdAt || 0,
+          isActive: id === lastTerminalID
+        };
+      });
+      
+      return {
+        content: [
+          { 
+            type: "text", 
+            text: `Active terminals: ${terminals.length}\n` +
+                  `Current terminal: ${lastTerminalID}\n` +
+                  `Terminal details:\n${JSON.stringify(terminalInfos, null, 2)}` 
+          },
+        ],
+      };
+    }
+  );
+  
+  // Add tool to close terminal
+  server.tool(
+    "close-terminal",
+    `Close a specific terminal.`,
+    {
+      terminalID: z.number({
+        description: "ID of the terminal to close",
+      }),
+    },
+    async ({ terminalID }) => {
+      await CloseTerminal(terminalID);
+      
+      return {
+        content: [
+          { 
+            type: "text", 
+            text: `Terminal ${terminalID} closed successfully.` 
+          },
+        ],
+      };
+    }
+  );
 }

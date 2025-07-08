@@ -803,14 +803,14 @@ export class CommandFactory {
   }: {
     TerminalID: string;
   }) {
-    return await CloseTerminal(TerminalID);
+    return await CloseTerminal(parseInt(TerminalID));
   }
   async ActiveAITerminal({
     TerminalID
   }: {
     TerminalID: string;
   }) {
-    return await ActiveAITerminal(TerminalID);
+    return await ActiveAITerminal(parseInt(TerminalID));
   }
   async clearChatHistory({
     day

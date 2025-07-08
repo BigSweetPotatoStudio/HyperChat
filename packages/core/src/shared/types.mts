@@ -446,6 +446,9 @@ export interface TerminalMessageExtended {
   exitCode?: number;
   timestamp?: number;
   workdir?: string;
+  terminalID?: number;
+  type?: string;
+  data?: string | { cols: number; rows: number; status: number };
 }
 
 /**
