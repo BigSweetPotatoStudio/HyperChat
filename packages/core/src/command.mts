@@ -34,7 +34,7 @@ import { store } from "./rag/vectorStore.mjs";
 import { Config } from "./const.mjs";
 import dayjs from "dayjs";
 import * as vm from "node:vm";
-import { ActiveAITerminal, CloseTerminal, GetTerminals, OpenTerminal } from "./mcp/servers/terminal/terminal.mjs";
+import { getWorkspaceTerminal } from "./workspace/tools/index.mjs";
 import { fileURLToPath } from 'node:url';
 import { dirname } from 'node:path';
 import { getWorkspaceManager, workspaceManager } from "./workspace/index.mjs";
@@ -792,25 +792,33 @@ export class CommandFactory {
     fs.writeFileSync(filePath, txt);
     return filename;
   }
-  async OpenTerminal() {
-    return await OpenTerminal();
+  async OpenTerminal({ workingDirectory }: { workingDirectory: string }) {
+    const terminal = getWorkspaceTerminal();
+    const terminalInstance = terminal.createTerminal(workingDirectory);
+    return terminalInstance.id;
   }
-  async GetTerminals() {
-    return await GetTerminals();
+  async GetTerminals({ workingDirectory }: { workingDirectory: string }) {
+    const terminal = getWorkspaceTerminal();
+    const allTerminals = terminal.getAllTerminals();
+    // 过滤出指定工作目录的终端
+    const filteredTerminals = allTerminals.filter(t => t.workingDirectory === workingDirectory);
+    return filteredTerminals.map(t => t.id);
   }
   async CloseTerminal({
     TerminalID
   }: {
     TerminalID: string;
   }) {
-    return await CloseTerminal(parseInt(TerminalID));
+    const terminal = getWorkspaceTerminal();
+    return terminal.closeTerminal(parseInt(TerminalID));
   }
   async ActiveAITerminal({
     TerminalID
   }: {
     TerminalID: string;
   }) {
-    return await ActiveAITerminal(parseInt(TerminalID));
+    const terminal = getWorkspaceTerminal();
+    return terminal.setActiveTerminal(parseInt(TerminalID));
   }
   async clearChatHistory({
     day

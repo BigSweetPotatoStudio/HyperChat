@@ -22,9 +22,9 @@ export function AppActions({ onAIProviderClick, onRefresh }: AppActionsProps) {
 
   // 监听同步状态变化
   useEffect(() => {
-    const unsubscribe = msg_receive("message-from-main", (res: any) => {
+    const unsubscribe = msg_receive("message-from-main", (res) => {
       // 处理同步状态变化
-      if (res.type == "sync") {
+      if (res.type == "syncMsg") {
         setSyncStatus(res.data.status);
         if (res.data.status == 0) {
           // 同步完成后刷新组件

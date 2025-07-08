@@ -172,7 +172,7 @@ export class MessageService {
     this.terminalSocket.on("connection", (socket: Socket) => {
       Logger.info(`Terminal socket connected: ${socket.id}`);
 
-      socket.on("terminal-receive", (msg: TerminalMessage) => {
+      socket.on("terminalReceive", (msg: TerminalMessage) => {
         this.handleTerminalMessage(msg);
       });
 

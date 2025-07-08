@@ -38,7 +38,18 @@ function checkEnd(str: string): boolean {
   }
 }
 
-export async function GetTerminals(): Promise<number[]> {
+export async function GetTerminals(workingDirectory?: string): Promise<number[]> {
+  const terminals = Array.from(terminalMap.entries());
+  
+  if (workingDirectory) {
+    // 过滤出指定工作目录的终端
+    const filteredTerminals = terminals.filter(([id, context]) => 
+      context.workingDirectory === workingDirectory
+    );
+    return filteredTerminals.map(([id]) => id);
+  }
+  
+  // 如果没有指定工作目录，返回所有终端
   for (const id of terminalMap.keys()) {
     lastTerminalID = id;
   }

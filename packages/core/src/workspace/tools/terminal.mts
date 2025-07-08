@@ -3,6 +3,7 @@ import * as pty from "node-pty";
 import { EventEmitter } from "events";
 import { Logger } from "../../log.mjs";
 import type { TerminalMessage, TerminalMessageExtended } from "../../shared/types.mjs";
+import { getMessageService } from "../../message_service.mjs";
 
 const shell = os.platform() === "win32" ? "powershell.exe" : "bash";
 
@@ -23,6 +24,26 @@ export class WorkspaceTerminal extends EventEmitter {
   constructor() {
     super();
     Logger.info("WorkspaceTerminal initialized");
+    this.setupMessageHandling();
+  }
+
+  /**
+   * 设置消息处理
+   */
+  private setupMessageHandling(): void {
+    const messageService = getMessageService();
+    
+    // 监听来自前端的终端消息
+    const handleTerminalMessage = (msg: TerminalMessage) => {
+      if (msg.type === "resize") {
+        const resizeData = msg.data as { cols: number; rows: number };
+        this.resize(msg.terminalID!, resizeData.cols, resizeData.rows);
+      } else if (typeof msg.data === "string") {
+        this.sendInput(msg.terminalID!, msg.data);
+      }
+    };
+
+    messageService.addTerminalMsgListener(handleTerminalMessage);
   }
 
   /**
@@ -52,6 +73,13 @@ export class WorkspaceTerminal extends EventEmitter {
     // 监听终端输出
     terminal.onData((data) => {
       terminalInstance.output += data;
+      
+      // 发送到前端
+      getMessageService().terminalMsg.emit("terminal-send", {
+        terminalID: terminalInstance.id,
+        data,
+      });
+      
       this.emit("output", {
         terminalID: terminalInstance.id,
         type: "output",
@@ -69,6 +97,11 @@ export class WorkspaceTerminal extends EventEmitter {
         this.activeTerminalId = null;
       }
       
+      // 发送关闭消息到前端
+      getMessageService().terminalMsg.emit("close-terminal", {
+        terminalID: terminalInstance.id,
+      });
+      
       this.emit("exit", {
         terminalID: terminalInstance.id,
         type: "exit",
@@ -82,6 +115,12 @@ export class WorkspaceTerminal extends EventEmitter {
     this.nextTerminalId++;
 
     Logger.info(`Terminal ${terminalInstance.id} created with working directory: ${cwd}`);
+    
+    // 发送打开消息到前端
+    getMessageService().terminalMsg.emit("open-terminal", {
+      terminalID: terminalInstance.id,
+      terminals: Array.from(this.terminals.keys()),
+    });
     
     this.emit("create", {
       terminalID: terminalInstance.id,
@@ -177,8 +216,13 @@ export class WorkspaceTerminal extends EventEmitter {
       if (this.activeTerminalId === terminalId) {
         // 如果关闭的是活动终端，选择另一个终端作为活动终端
         const remainingTerminals = Array.from(this.terminals.keys());
-        this.activeTerminalId = remainingTerminals.length > 0 ? remainingTerminals[0] : null;
+        this.activeTerminalId = remainingTerminals.length > 0 ? remainingTerminals[0]! : null;
       }
+      
+      // 发送关闭消息到前端
+      getMessageService().terminalMsg.emit("close-terminal", {
+        terminalID: terminalId,
+      });
       
       Logger.info(`Terminal ${terminalId} closed`);
       return true;

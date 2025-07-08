@@ -72,10 +72,10 @@ export interface UpdateVarListData {
 export type MessageDataMap = {
   TaskResult: TaskResultData;
   UpdateMsg: UpdateMsgData;
-  sync: SyncData;
+  syncMsg: SyncData;
   changeMcpClient: ChangeMcpClientData;
-  "download-progress": DownloadProgressData;
-  "terminal-receive": TerminalReceiveData;
+  downloadProgress: DownloadProgressData;
+  terminalReceive: TerminalReceiveData;
   update_var_list: UpdateVarListData;
 }
 
