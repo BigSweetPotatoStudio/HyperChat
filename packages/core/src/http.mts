@@ -183,9 +183,8 @@ export async function initHttp(): Promise<void> {
 
   // 创建 Socket.IO 命名空间
   const mainNamespace = io.of("/" + LocalSetting.get().password + "/main-message");
-  const terminalNamespace = io.of("/" + LocalSetting.get().password + "/terminal-message");
 
-  getMessageService().init(mainNamespace as any, terminalNamespace as any);
+  getMessageService().init(mainNamespace as any);
 
   Logger.info("HTTP server initialization completed successfully");
 }

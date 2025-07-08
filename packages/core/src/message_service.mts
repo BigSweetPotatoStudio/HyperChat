@@ -1,9 +1,9 @@
 import { Logger } from "./log.mjs";
 import type { Server as SocketIO, Socket } from "socket.io";
 import dayjs from "dayjs";
-import type { 
-  MessageData, 
-  TerminalMessage, 
+import type {
+  MessageData,
+  TerminalMessage,
 } from "./shared/types.mjs";
 
 /**
@@ -44,7 +44,6 @@ let activeUser: string | undefined = undefined;
  */
 export class MessageService {
   private mainSocket: SocketIO | null = null;
-  private terminalSocket: SocketIO | null = null;
   private terminalCallbacks: Set<TerminalCallback> = new Set();
   private isInitialized = false;
 
@@ -54,36 +53,36 @@ export class MessageService {
   private getMainSocket(): SocketIO | null {
     return this.mainSocket;
   }
-  /**
-   * 发送消息到当前活跃用户的渲染进程
-   * @param data 消息数据
-   * @param channel 消息通道，默认为 "message-from-main"
-   */
-  async sendToRenderer(data: MessageData, channel: string = "message-from-main"): Promise<void> {
-    const mainSocket = this.getMainSocket();
-    if (!mainSocket) {
-      Logger.warn("Main socket not initialized, cannot send message to renderer");
-      return;
-    }
+  // /**
+  //  * 发送消息到当前活跃用户的渲染进程
+  //  * @param data 消息数据
+  //  * @param channel 消息通道，默认为 "message-from-main"
+  //  */
+  // async sendToRenderer(data: MessageData, channel: string = "message-from-main"): Promise<void> {
+  //   const mainSocket = this.getMainSocket();
+  //   if (!mainSocket) {
+  //     Logger.warn("Main socket not initialized, cannot send message to renderer");
+  //     return;
+  //   }
 
-    try {
-      const socketId = activeUser ? userSocketMap.get(activeUser) : null;
-      const messageWithTimestamp = {
-        ...data,
-        timestamp: data.timestamp || dayjs().format('YYYY-MM-DD HH:mm:ss')
-      };
+  //   try {
+  //     const socketId = activeUser ? userSocketMap.get(activeUser) : null;
+  //     const messageWithTimestamp = {
+  //       ...data,
+  //       timestamp: data.timestamp || dayjs().format('YYYY-MM-DD HH:mm:ss')
+  //     };
 
-      if (socketId) {
-        mainSocket.to(socketId).emit(channel, messageWithTimestamp);
-        Logger.debug(`Message sent to user ${activeUser} via socket ${socketId}`);
-      } else {
-        mainSocket.emit(channel, messageWithTimestamp);
-        Logger.debug(`Message broadcasted to all connected clients`);
-      }
-    } catch (error) {
-      Logger.error("Failed to send message to renderer:", error);
-    }
-  }
+  //     if (socketId) {
+  //       mainSocket.to(socketId).emit(channel, messageWithTimestamp);
+  //       Logger.debug(`Message sent to user ${activeUser} via socket ${socketId}`);
+  //     } else {
+  //       mainSocket.emit(channel, messageWithTimestamp);
+  //       Logger.debug(`Message broadcasted to all connected clients`);
+  //     }
+  //   } catch (error) {
+  //     Logger.error("Failed to send message to renderer:", error);
+  //   }
+  // }
   /**
    * 群发消息到所有渲染进程
    * @param data 消息数据
@@ -113,29 +112,27 @@ export class MessageService {
    * @param mainSocket 主要的Socket.IO服务器实例
    * @param terminalSocket 终端消息的Socket.IO服务器实例
    */
-  init(mainSocket: SocketIO, terminalSocket: SocketIO): void {
+  init(mainSocket: SocketIO): void {
     if (this.isInitialized) {
       Logger.warn("MessageService already initialized");
       return;
     }
 
     this.mainSocket = mainSocket;
-    this.terminalSocket = terminalSocket;
 
     this.setupMainSocketListeners();
-    this.setupTerminalSocketListeners();
 
     this.isInitialized = true;
     Logger.info("MessageService initialized successfully");
   }
   get terminalMsg() {
-    if (!this.terminalSocket) {
+    if (!this.mainSocket) {
       Logger.warn("Terminal socket not initialized, returning null");
       return {
         emit: () => { }
       };
     }
-    return this.terminalSocket!;
+    return this.mainSocket!;
   }
   /**
    * 设置主Socket监听器
@@ -146,14 +143,13 @@ export class MessageService {
     this.mainSocket.on("connection", (socket: Socket) => {
       Logger.info(`Main socket connected: ${socket.id}`);
 
-      // 监听用户激活事件
-      socket.on("active", (userId: string) => {
-        this.handleUserActive(userId, socket.id);
+      socket.on("terminalReceive", (msg: TerminalMessage) => {
+        this.handleTerminalMessage(msg);
       });
 
       // 监听断开连接事件
       socket.on("disconnect", (reason: string) => {
-        this.handleUserDisconnect(socket.id, reason);
+        Logger.info(`Socket ${socket.id} disconnected (reason: ${reason})`);
       });
 
       // 监听错误事件
@@ -163,60 +159,6 @@ export class MessageService {
     });
   }
 
-  /**
-   * 设置终端Socket监听器
-   */
-  private setupTerminalSocketListeners(): void {
-    if (!this.terminalSocket) return;
-
-    this.terminalSocket.on("connection", (socket: Socket) => {
-      Logger.info(`Terminal socket connected: ${socket.id}`);
-
-      socket.on("terminalReceive", (msg: TerminalMessage) => {
-        this.handleTerminalMessage(msg);
-      });
-
-      socket.on("error", (error: Error) => {
-        Logger.error(`Terminal socket error for ${socket.id}:`, error);
-      });
-    });
-  }
-  /**
-   * 处理用户激活事件
-   */
-  private handleUserActive(userId: string, socketId: string): void {
-    const previousSocketId = userSocketMap.get(userId);
-    if (previousSocketId && previousSocketId !== socketId) {
-      Logger.info(`User ${userId} switched from socket ${previousSocketId} to ${socketId}`);
-    }
-
-    userSocketMap.set(userId, socketId);
-    activeUser = userId;
-    Logger.info(`User ${userId} activated with socket ${socketId}`);
-  }
-
-  /**
-   * 处理用户断开连接事件
-   */
-  private handleUserDisconnect(socketId: string, reason: string): void {
-    let disconnectedUserId: string | null = null;
-
-    // 查找并删除断开连接的socket映射
-    for (const [userId, userSocketId] of userSocketMap.entries()) {
-      if (userSocketId === socketId) {
-        userSocketMap.delete(userId);
-        disconnectedUserId = userId;
-        break;
-      }
-    }
-
-    // 如果断开的是当前活跃用户，清除活跃用户状态
-    if (disconnectedUserId === activeUser) {
-      activeUser = undefined;
-    }
-
-    Logger.info(`Socket ${socketId} disconnected (reason: ${reason})${disconnectedUserId ? `, user: ${disconnectedUserId}` : ''}`);
-  }
 
   /**
    * 处理终端消息
@@ -272,7 +214,7 @@ export class MessageService {
     activeUser = undefined;
     this.terminalCallbacks.clear();
     this.mainSocket = null;
-    this.terminalSocket = null;
+    this.mainSocket = null;
     this.isInitialized = false;
     Logger.info("MessageService cleaned up");
   }

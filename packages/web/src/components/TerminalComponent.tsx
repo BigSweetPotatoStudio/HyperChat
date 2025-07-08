@@ -1,11 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
-import { Card, Input, Button, Space, Select, Tag, Typography, message, Dropdown } from "antd";
-import { 
-  PlayCircleOutlined, 
-  ClearOutlined, 
-  PlusOutlined, 
-  DeleteOutlined,
-  SettingOutlined,
+import { Tabs, Button, Space, Tag, Typography, message, Dropdown } from "antd";
+import {
+  ClearOutlined,
   CopyOutlined,
   SnippetsOutlined
 } from "@ant-design/icons";
@@ -15,27 +11,21 @@ import { WebLinksAddon } from "@xterm/addon-web-links";
 import { ClipboardAddon } from '@xterm/addon-clipboard';
 import { io, Socket } from "socket.io-client";
 import { t } from "../i18n";
-import { call, getURL_PRE } from "../common/call";
+import { call, getURL_PRE, getWebSocket } from "../common/call";
+import { useForceUpdate } from "../hooks/useForceUpdate";
 import "@xterm/xterm/css/xterm.css";
+import { set } from "zod";
 
 const { Text } = Typography;
 
-// 生成唯一ID的函数
-let uniqueIdCounter = 0;
-const generateUniqueId = () => {
-  uniqueIdCounter++;
-  return `${Date.now()}-${uniqueIdCounter}`;
-};
-
-interface TerminalInstance {
+interface TerminalSession {
+  type: "terminal";
   id: number;
-  name: string;
-  workingDirectory: string;
-  createdAt: number;
-  isActive: boolean;
-  xterm?: Terminal;
-  fitAddon?: FitAddon;
-  element?: HTMLDivElement;
+  context: {
+    xterm?: Terminal;
+    fitAddon?: FitAddon;
+    xtermdata?: string;
+  };
 }
 
 interface TerminalComponentProps {
@@ -46,99 +36,47 @@ interface TerminalComponentProps {
 let socket: Socket | null = null;
 let lastSizes = {} as { cols: number; rows: number };
 
-export function TerminalComponent({ 
-  workspacePath, 
-  className = "" 
+export function TerminalComponent({
+  workspacePath,
+  className = ""
 }: TerminalComponentProps) {
-  const [terminals, setTerminals] = useState<TerminalInstance[]>([]);
-  const [activeTerminalId, setActiveTerminalId] = useState<number | null>(null);
   const [isConnected, setIsConnected] = useState<boolean>(false);
-  const terminalsRef = useRef<Map<number, TerminalInstance>>(new Map());
+  const refresh = useForceUpdate();
+
+  const data = useRef({
+    sessions: [] as TerminalSession[],
+    activeKey: "",
+  });
 
   // 初始化Socket连接
   useEffect(() => {
-    if (!socket) {
-      const URL_PRE = getURL_PRE();
-      socket = io(URL_PRE + "/terminal-message");
-      
-      socket.on("connect", () => {
-        console.log("terminal-message-connected");
-        setIsConnected(true);
-      });
+    (async () => {
+      socket = await getWebSocket();
+      setIsConnected(socket.connected);
+    })();
 
-      socket.on("disconnect", () => {
-        console.log("terminal-message-disconnected");
-        setIsConnected(false);
-      });
-
-      // 监听新终端打开
-      socket.on("open-terminal", (m) => {
-        console.log("Received open-terminal:", m.terminalID);
-        createTerminalInstance(m.terminalID);
-      });
-
-      // 监听终端数据
-      socket.on("terminal-send", (m) => {
-        if (m.type === "execute-status-change") {
-          // 可以在这里处理执行状态变化
-          return;
-        }
-        
-        const terminal = terminalsRef.current.get(m.terminalID);
-        if (terminal && terminal.xterm) {
-          terminal.xterm.write(m.data);
-        }
-      });
-
-      // 监听终端关闭
-      socket.on("close-terminal", (m) => {
-        console.log("Received close-terminal:", m.terminalID);
-        handleTerminalClosed(m.terminalID);
-      });
-    }
-
-    return () => {
-      if (socket) {
-        socket.disconnect();
-        socket = null;
-      }
-    };
   }, []);
 
-  // 创建真实的xterm终端实例
-  const createTerminalInstance = async (terminalId: number) => {
-    const newTerminal: TerminalInstance = {
-      id: terminalId,
-      name: `Terminal ${terminals.length + 1}`,
-      workingDirectory: workspacePath,
-      createdAt: Date.now(),
-      isActive: true,
+  // 创建终端实例
+  async function createTerminalInstance(terminalID: number) {
+    console.log("Creating terminal instance:", terminalID);
+
+    const session: TerminalSession = {
+      type: "terminal",
+      id: terminalID,
+      context: {},
     };
 
-    setTerminals(prev => {
-      const updated = [...prev, newTerminal];
-      return updated;
-    });
-    setActiveTerminalId(terminalId);
-    terminalsRef.current.set(terminalId, newTerminal);
+    data.current.sessions.push(session);
+    data.current.activeKey = terminalID.toString();
+    refresh();
 
-    // 等待DOM元素创建
-    setTimeout(() => {
-      initializeXterm(terminalId);
-    }, 100);
-  };
+    // 等待DOM渲染
+    await new Promise(resolve => setTimeout(resolve, 500));
 
-  // 初始化xterm实例
-  const initializeXterm = (terminalId: number) => {
-    const terminalElement = document.getElementById(`terminal-${terminalId}`) as HTMLDivElement;
-    if (!terminalElement) {
-      console.error("Terminal element not found for ID:", terminalId);
-      return;
-    }
-
-    const terminal = terminalsRef.current.get(terminalId);
-    if (!terminal) {
-      console.error("Terminal instance not found for ID:", terminalId);
+    const terminalRef = document.getElementById(`terminal-${terminalID}`) as HTMLDivElement;
+    if (!terminalRef) {
+      console.error("Terminal element not found");
       return;
     }
 
@@ -156,6 +94,10 @@ export function TerminalComponent({
       },
     });
 
+    xterm.attachCustomKeyEventHandler((event) => {
+      return true; // Allow other keys to propagate
+    });
+
     // 加载插件
     const fitAddon = new FitAddon();
     xterm.loadAddon(fitAddon);
@@ -164,104 +106,135 @@ export function TerminalComponent({
     xterm.loadAddon(clipboardAddon);
 
     // 绑定到DOM
-    xterm.open(terminalElement);
+    xterm.open(terminalRef);
 
-    // 设置自动调整大小
-    setTimeout(() => {
-      fitAddon.fit();
-    }, 100);
+    await new Promise(resolve => setTimeout(resolve, 500));
 
     // 监听大小变化
     xterm.onResize((size) => {
-      console.log("Terminal resized:", terminalId, size.cols, size.rows);
+      console.log("Terminal resized:", terminalID, size.cols, size.rows);
       lastSizes = size;
       if (socket) {
         socket.emit("terminalReceive", {
-          terminalID: terminalId,
+          terminalID: terminalID,
           type: "resize",
           data: size,
         });
       }
     });
 
-    // 监听用户输入
-    xterm.onData((data) => {
-      if (socket) {
-        socket.emit("terminalReceive", {
-          terminalID: terminalId,
-          data: data,
-        });
-      }
-    });
+    fitAddon.fit();
 
     // 创建ResizeObserver来自动调整大小
     const resizeObserver = new ResizeObserver(() => {
       setTimeout(() => {
         fitAddon.fit();
-      }, 100);
+      }, 1000);
     });
-    resizeObserver.observe(terminalElement);
+    resizeObserver.observe(terminalRef);
 
-    // 更新终端实例
-    terminal.xterm = xterm;
-    terminal.fitAddon = fitAddon;
-    terminal.element = terminalElement;
-    terminalsRef.current.set(terminalId, terminal);
-
-    console.log("Xterm initialized for terminal:", terminalId);
-  };
-
-  // 创建新终端
-  const createTerminal = async () => {
-    try {
-      await call("OpenTerminal", { workingDirectory: workspacePath });
-      // 终端会通过WebSocket事件自动创建
-    } catch (error) {
-      message.error(`Failed to create terminal: ${error}`);
-    }
-  };
-
-  // 删除终端
-  const deleteTerminal = async (terminalId: number) => {
-    try {
-      await call("CloseTerminal", { TerminalID: terminalId.toString() });
-      // 终端会通过WebSocket事件自动删除
-    } catch (error) {
-      message.error(`Failed to close terminal: ${error}`);
-    }
-  };
-
-  // 处理终端关闭
-  const handleTerminalClosed = (terminalId: number) => {
-    const terminal = terminalsRef.current.get(terminalId);
-    if (terminal && terminal.xterm) {
-      terminal.xterm.dispose();
-    }
-    
-    terminalsRef.current.delete(terminalId);
-    setTerminals(prev => prev.filter(t => t.id !== terminalId));
-    
-    if (activeTerminalId === terminalId) {
-      const remainingTerminals = Array.from(terminalsRef.current.keys());
-      if (remainingTerminals.length > 0) {
-        setActiveTerminalId(remainingTerminals[0]!);
-      } else {
-        setActiveTerminalId(null);
+    // 监听用户输入
+    xterm.onData((data) => {
+      if (socket) {
+        socket.emit("terminalReceive", {
+          terminalID: terminalID,
+          data: data,
+        });
       }
-    }
-  };
+    });
 
-  // 切换活动终端
-  const switchTerminal = async (terminalId: number) => {
+    // 更新session上下文
+    session.context.xterm = xterm;
+    session.context.fitAddon = fitAddon;
+    session.context.xtermdata = "";
+
+    console.log("Xterm initialized for terminal:", terminalID);
+  }
+
+  // 设置事件监听
+  useEffect(() => {
+    if (!socket) return;
+
+    // 监听新终端打开
+    socket.on("open-terminal", (m) => {
+      createTerminalInstance(m.terminalID);
+    });
+
+    let sessionObj = {};
+
+    // 监听终端数据
+    socket.on("terminal-send", async (m) => {
+      if (m.type === "execute-status-change") {
+        // 可以在这里处理执行状态变化
+        return;
+      }
+
+      let session = data.current.sessions.find((x) => x.id == m.terminalID);
+      if (!sessionObj[m.terminalID]) {
+        sessionObj[m.terminalID] = {
+          xtermdata: "",
+          timer: 0
+        };
+      }
+
+      sessionObj[m.terminalID].xtermdata += m.data;
+      clearTimeout(sessionObj[m.terminalID].timer);
+
+      if (session && session.context.xterm) {
+        session.context.xterm.write(sessionObj[m.terminalID].xtermdata);
+        sessionObj[m.terminalID].xtermdata = "";
+      } else {
+        sessionObj[m.terminalID].timer = setTimeout(() => {
+          if (session && session.context.xterm) {
+            session.context.xterm.write(sessionObj[m.terminalID].xtermdata);
+            sessionObj[m.terminalID].xtermdata = "";
+          }
+        }, 1000);
+      }
+    });
+
+    // 监听终端关闭
+    socket.on("close-terminal", async (m) => {
+      let session = data.current.sessions.find((x) => x.id == m.terminalID);
+      if (session) {
+        data.current.sessions = data.current.sessions.filter(
+          (x) => x.id != m.terminalID,
+        );
+        refresh();
+      }
+    });
+
+    // 初始化加载现有终端
+    setTimeout(async () => {
+      try {
+        const terminalIDs = await call("GetTerminals", { workingDirectory: workspacePath });
+        if (terminalIDs && terminalIDs.length > 0) {
+          for (const id of terminalIDs) {
+            await createTerminalInstance(id);
+          }
+        } else {
+          // 创建新终端
+          await call("OpenTerminal", { workingDirectory: workspacePath });
+        }
+      } catch (error) {
+        console.error("Failed to load terminals:", error);
+        message.error(`Failed to load terminals: ${error}`);
+      }
+    }, 1000);
+
+  }, [workspacePath, socket]);
+
+  // 切换终端
+  const handleTabChange = async (key: string) => {
+    data.current.activeKey = key;
+    refresh();
+
     try {
-      await call("ActiveAITerminal", { TerminalID: terminalId.toString() });
-      setActiveTerminalId(terminalId);
-      
-      // 重新调整大小
-      const terminal = terminalsRef.current.get(terminalId);
-      if (terminal && terminal.fitAddon) {
+      await call("ActiveAITerminal", { TerminalID: key });
+      const session = data.current.sessions.find((x) => x.id.toString() === key);
+      if (session && session.context.fitAddon) {
         setTimeout(() => {
-          terminal.fitAddon?.fit();
+          session.context.fitAddon?.fit();
         }, 100);
       }
     } catch (error) {
@@ -269,195 +242,132 @@ export function TerminalComponent({
     }
   };
 
-  // 清空终端
-  const clearTerminal = (terminalId: number) => {
-    if (socket) {
-      socket.emit("terminalReceive", {
-        terminalID: terminalId,
-        data: "clear\r",
-      });
-    }
-  };
-
-  // 复制选中内容
-  const copySelection = (terminalId: number) => {
-    const terminal = terminalsRef.current.get(terminalId);
-    if (terminal && terminal.xterm) {
-      const selection = terminal.xterm.getSelection();
-      if (selection) {
-        navigator.clipboard.writeText(selection).then(() => {
-          message.success(t`Copied to clipboard`);
-        }).catch(err => {
-          message.error(`Failed to copy: ${err}`);
-        });
+  // 处理标签页编辑（添加/删除）
+  const handleTabEdit = async (targetKey: string | React.MouseEvent | React.KeyboardEvent, action: "add" | "remove") => {
+    if (action === "add") {
+      try {
+        await call("OpenTerminal", { workingDirectory: workspacePath });
+      } catch (error) {
+        message.error(`Failed to create terminal: ${error}`);
+      }
+    } else {
+      try {
+        data.current.sessions = data.current.sessions.filter(
+          (x) => x.id.toString() !== targetKey,
+        );
+        refresh();
+        await call("CloseTerminal", { TerminalID: targetKey as string });
+      } catch (error) {
+        message.error(`Failed to close terminal: ${error}`);
       }
     }
   };
 
-  // 粘贴剪贴板内容
-  const pasteFromClipboard = (terminalId: number) => {
-    navigator.clipboard.readText().then((text) => {
-      if (socket) {
-        socket.emit("terminalReceive", {
-          terminalID: terminalId,
-          data: text,
-        });
-      }
-    }).catch(err => {
-      message.error(`Failed to paste: ${err}`);
-    });
-  };
-
-  // 载入现有终端
-  const loadExistingTerminals = async () => {
-    try {
-      const terminalIds = await call("GetTerminals", { workingDirectory: workspacePath });
-      if (terminalIds && terminalIds.length > 0) {
-        for (const id of terminalIds) {
-          await createTerminalInstance(id);
-        }
-      } else {
-        // 如果没有现有终端，创建一个新的
-        await createTerminal();
-      }
-    } catch (error) {
-      console.error("Failed to load existing terminals:", error);
-      // 如果加载失败，创建一个新的终端
-      await createTerminal();
-    }
-  };
-
-  // 初始化
-  useEffect(() => {
-    // 延迟加载，确保Socket连接建立
-    setTimeout(() => {
-      loadExistingTerminals();
-    }, 1000);
-  }, []);
-
-  // 渲染终端右键菜单
+  // 获取右键菜单
   const getContextMenu = (terminalId: number) => ({
     items: [
       {
         label: t`Copy`,
-        key: 'copy',
+        key: 'Copy',
         icon: <CopyOutlined />,
-        onClick: () => copySelection(terminalId),
       },
       {
         label: t`Paste`,
-        key: 'paste',
+        key: 'Parse',
         icon: <SnippetsOutlined />,
-        onClick: () => pasteFromClipboard(terminalId),
       },
       {
         label: t`Clear`,
-        key: 'clear',
+        key: 'Clear',
         icon: <ClearOutlined />,
-        onClick: () => clearTerminal(terminalId),
       },
     ],
+    onClick: (e) => {
+      if (e.key === "Copy") {
+        const session = data.current.sessions.find((x) => x.id === terminalId);
+        if (session && session.context.xterm) {
+          const selection = session.context.xterm.getSelection();
+          if (selection) {
+            navigator.clipboard.writeText(selection).then(() => {
+              message.success(t`Copied to clipboard`);
+            }).catch(err => {
+              message.error(`Failed to copy: ${err}`);
+            });
+          }
+        }
+      }
+
+      if (e.key === "Parse") {
+        navigator.clipboard.readText().then((txt) => {
+          if (socket) {
+            socket.emit("terminalReceive", {
+              terminalID: terminalId,
+              data: txt,
+            });
+          }
+        }).catch(err => {
+          message.error(`Failed to paste: ${err}`);
+        });
+      }
+
+      if (e.key === "Clear") {
+        if (socket) {
+          socket.emit("terminalReceive", {
+            terminalID: terminalId,
+            data: "clear\r",
+          });
+        }
+      }
+    }
   });
 
   return (
     <div className={`h-full ${className}`}>
-      <Card
-        title={
-          <Space>
-            <span>{t`Terminal`}</span>
-            <Tag color={isConnected ? "green" : "red"}>
-              {terminals.length}
-            </Tag>
-            {!isConnected && (
-              <Tag color="orange">{t`Disconnected`}</Tag>
-            )}
-          </Space>
-        }
-        size="small"
-        className="h-full"
-        bodyStyle={{ padding: 0, height: "calc(100% - 48px)" }}
-        extra={
-          <Space>
-            <Button
-              type="text"
-              icon={<PlusOutlined />}
-              size="small"
-              onClick={createTerminal}
-              title={t`New Terminal`}
-              disabled={!isConnected}
-            />
-          </Space>
-        }
-      >
-        <div className="flex flex-col h-full">
-          {/* 终端选择器 */}
-          {terminals.length > 1 && (
-            <div className="p-2 border-b">
-              <Space>
-                <Select
-                  value={activeTerminalId}
-                  onChange={(value) => switchTerminal(value)}
-                  size="small"
-                  style={{ minWidth: 120 }}
-                  placeholder={t`Select Terminal`}
-                >
-                  {terminals.map(terminal => (
-                    <Select.Option key={terminal.id} value={terminal.id}>
-                      {terminal.name}
-                    </Select.Option>
-                  ))}
-                </Select>
-                {activeTerminalId && (
-                  <Button
-                    type="text"
-                    icon={<DeleteOutlined />}
-                    size="small"
-                    onClick={() => deleteTerminal(activeTerminalId)}
-                    disabled={terminals.length <= 1}
-                    title={t`Delete Terminal`}
-                  />
-                )}
-              </Space>
-            </div>
+      <div className="flex items-center justify-between p-2 border-b">
+        <Space>
+          <span>{t`Terminal`}</span>
+          <Tag color={isConnected ? "green" : "red"}>
+            {data.current.sessions.length}
+          </Tag>
+          {!isConnected && (
+            <Tag color="orange">{t`Disconnected`}</Tag>
           )}
+        </Space>
+      </div>
 
-          {/* 终端显示区域 */}
-          <div className="flex-1 relative">
-            {terminals.map(terminal => (
+      <div style={{ height: "calc(100% - 48px)" }}>
+        <Tabs
+          type="editable-card"
+          activeKey={data.current.activeKey}
+          onChange={handleTabChange}
+          onEdit={handleTabEdit}
+          hideAdd={!isConnected}
+          items={data.current.sessions.map((session) => ({
+            label: `${t`Terminal`}-${session.id}`,
+            key: session.id.toString(),
+            closable: data.current.sessions.length > 1,
+            children: (
               <Dropdown
-                key={terminal.id}
-                menu={getContextMenu(terminal.id)}
+                menu={getContextMenu(session.id)}
                 trigger={['contextMenu']}
               >
                 <div
-                  id={`terminal-${terminal.id}`}
+                  id={`terminal-${session.id}`}
                   style={{
-                    height: "100%",
-                    width: "100%",
-                    display: terminal.id === activeTerminalId ? "block" : "none",
+                    height: "calc(100vh - 200px)",
+                    minWidth: "400px",
+                    width: "100%"
                   }}
                 />
               </Dropdown>
-            ))}
-            
-            {terminals.length === 0 && (
-              <div className="flex items-center justify-center h-full text-gray-500">
-                <Space direction="vertical" align="center">
-                  <span>{t`No terminals available`}</span>
-                  <Button 
-                    type="primary" 
-                    icon={<PlusOutlined />}
-                    onClick={createTerminal}
-                    disabled={!isConnected}
-                  >
-                    {t`Create Terminal`}
-                  </Button>
-                </Space>
-              </div>
-            )}
-          </div>
-        </div>
-      </Card>
+            ),
+          }))}
+          tabBarStyle={{
+            margin: '0 8px',
+            borderBottom: '1px solid #f0f0f0'
+          }}
+        />
+      </div>
     </div>
   );
 }
