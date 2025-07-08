@@ -1,4 +1,4 @@
 [中文](ChangeLog.zh.md) | [English](ChangeLog.md)
 
 
-# In Development
+# 2.0 in development
