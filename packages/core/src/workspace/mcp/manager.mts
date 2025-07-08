@@ -47,7 +47,7 @@ export class WorkspaceMCPManager {
     let orderIndex = 0;
     
     // 首先为内置服务器分配order（按名称排序确保稳定性）
-    const sortedBuiltinServers = [...MyServers].sort((a, b) => a.name.localeCompare(b.name));
+    const sortedBuiltinServers = [...MyServers];
     for (const server of sortedBuiltinServers) {
       this.serverOrderMap.set(server.name, orderIndex++);
     }
