@@ -61,9 +61,6 @@ export class Data<T> {
   }
   // 尽量使用异步保存数据
   async save() {
-    if (!this.inited) {
-      await this.init();
-    }
     return this._save();
   }
   async _init(): Promise<T> { // 内部使用
@@ -206,6 +203,13 @@ export class AIModelConfig<T = { data: Array<AIModelConfigItem> }> extends Data<
       item.apiKey = provider?.apiKey || '';
       item.baseURL = provider?.baseURL || '';
       item.fullName = `${item.provider}:${item.name}`;
+      // 确保 supportImage 和 supportTool 字段有默认值
+      if (item.supportImage === undefined || item.supportImage === null) {
+        item.supportImage = true;
+      }
+      if (item.supportTool === undefined || item.supportTool === null) {
+        item.supportTool = true;
+      }
     }
     return res as T;
   }

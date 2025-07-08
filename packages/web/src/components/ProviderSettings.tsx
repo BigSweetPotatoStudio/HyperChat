@@ -283,8 +283,8 @@ export function ProviderSettings() {
       model: model.model,
       type: model.type,
       toolMode: model.toolMode,
-      supportImage: model.supportImage,
-      supportTool: model.supportTool,
+      supportImage: model.supportImage ?? true, // 默认值为 true
+      supportTool: model.supportTool ?? true, // 默认值为 true
       isDefault: model.isDefault || false,
     });
     setIsModelModalOpen(true);
@@ -327,10 +327,10 @@ export function ProviderSettings() {
             isDefault: values.isDefault,
             ...(existingModel.call_tool_step !== undefined ? { call_tool_step: existingModel.call_tool_step } : {}),
           };
-          
+
           // 这些属性不在表单中，保持现有值
           // key, apiKey, baseURL, provider, call_tool_step 从现有模型中保留
-          
+
           AI_MODELS.get().data[index] = updatedModel;
         }
       } else {
@@ -570,11 +570,11 @@ export function ProviderSettings() {
                 </Text>
                 <div className='flex flex-wrap justify-center gap-2'>
                   {
-                  // hasProviderApiKey(provider) && (
-                  //   <Tag color="green" className="mb-2">
-                  //     {t`Active`}
-                  //   </Tag>
-                  // )
+                    // hasProviderApiKey(provider) && (
+                    //   <Tag color="green" className="mb-2">
+                    //     {t`Active`}
+                    //   </Tag>
+                    // )
                   }
                   {provider.isBuiltIn ? (
                     <Tag color="blue" className="mb-2">
@@ -770,21 +770,17 @@ export function ProviderSettings() {
 
           <Row gutter={16}>
             <Col span={8}>
-              <Form.Item name="supportImage" valuePropName="checked">
-                <Switch /> <span className="ml-2">{t`Support Images`}</span>
+              <Form.Item name="supportImage" label={t`Support Images`} valuePropName="checked">
+                <Switch />
               </Form.Item>
             </Col>
             <Col span={8}>
-              <Form.Item name="supportTool" valuePropName="checked">
-                <Switch /> <span className="ml-2">{t`Support Tools`}</span>
-              </Form.Item>
-            </Col>
-            <Col span={8}>
-              <Form.Item name="isDefault" valuePropName="checked">
-                <Switch /> <span className="ml-2">{t`Set as Default`}</span>
+              <Form.Item name="supportTool" label={t`Support Tools`} valuePropName="checked">
+                <Switch />
               </Form.Item>
             </Col>
           </Row>
+
 
           <div className="flex justify-end gap-2">
             <Button onClick={() => setIsModelModalOpen(false)}>
@@ -817,15 +813,15 @@ export function ProviderSettings() {
             help={editingProvider ? t`Provider key cannot be changed` : t`Unique identifier for this provider (letters and numbers only)`}
             rules={[
               { required: true, message: t`Please enter provider key` },
-              { 
-                pattern: /^[a-zA-Z0-9]+$/, 
-                message: t`Only letters and numbers are allowed` 
+              {
+                pattern: /^[a-zA-Z0-9]+$/,
+                message: t`Only letters and numbers are allowed`
               },
               {
                 validator: async (_, value) => {
                   if (!value) return;
                   // 检查key是否唯一（编辑时排除自己）
-                  const existingProvider = providers.find(p => 
+                  const existingProvider = providers.find(p =>
                     p.key === value && (!editingProvider || p.key !== editingProvider.key)
                   );
                   if (existingProvider) {
@@ -835,8 +831,8 @@ export function ProviderSettings() {
               }
             ]}
           >
-            <Input 
-              placeholder={t`e.g., custom-openai`} 
+            <Input
+              placeholder={t`e.g., custom-openai`}
               disabled={!!editingProvider} // 编辑时禁用key修改
             />
           </Form.Item>

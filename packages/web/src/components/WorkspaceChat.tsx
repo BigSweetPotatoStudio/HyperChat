@@ -52,7 +52,6 @@ import { blobToBase64, calcAttachDialogue, urlToBase64 } from "../pages/chat/uti
 import { AiChannel } from "@hyperchat/shared/ai.mjs";
 import {
   AI_MODELS,
-  ChatHistory,
   LocalSetting,
   VarList,
   ChatHistoryItem,
@@ -247,7 +246,6 @@ export const WorkspaceChat = ({ workspace, agentKey, workspaceDetails, mcpClient
       try {
         await Promise.all([
           AI_MODELS.init(),
-          ChatHistory.init(),
           LocalSetting.init(),
           VarList.init(),
         ]);
