@@ -1,2 +1,2 @@
-export { WorkspaceTerminal, getWorkspaceTerminal } from "./terminal.mjs";
+export { WorkspaceTerminal, getWorkspaceTerminal, getAllWorkspaceTerminals, findWorkspaceTerminalByTerminalId } from "./terminal.mjs";
 export type { TerminalInstance } from "./terminal.mjs";

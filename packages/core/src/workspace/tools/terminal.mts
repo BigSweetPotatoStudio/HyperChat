@@ -20,10 +20,12 @@ export class WorkspaceTerminal extends EventEmitter {
   private terminals: Map<number, TerminalInstance> = new Map();
   private nextTerminalId: number = 1;
   private activeTerminalId: number | null = null;
+  private workspacePath: string;
 
-  constructor() {
+  constructor(workspacePath: string) {
     super();
-    Logger.info("WorkspaceTerminal initialized");
+    this.workspacePath = workspacePath;
+    Logger.info(`WorkspaceTerminal initialized for workspace: ${workspacePath}`);
     this.setupMessageHandling();
   }
 
@@ -32,7 +34,7 @@ export class WorkspaceTerminal extends EventEmitter {
    */
   private setupMessageHandling(): void {
     const messageService = getMessageService();
-    
+
     // 监听来自前端的终端消息
     const handleTerminalMessage = (msg: TerminalMessage) => {
       if (msg.type === "resize") {
@@ -51,7 +53,7 @@ export class WorkspaceTerminal extends EventEmitter {
    */
   createTerminal(workingDirectory?: string): TerminalInstance {
     const cwd = workingDirectory || process.env.HOME || os.homedir();
-    
+
     const terminal = pty.spawn(shell, [], {
       name: "xterm-color",
       cols: 80,
@@ -61,8 +63,11 @@ export class WorkspaceTerminal extends EventEmitter {
       useConpty: os.platform() === "win32",
     });
 
+    // 生成唯一的终端ID：时间戳 + 随机数
+    const terminalId = Date.now() + Math.floor(Math.random() * 1000);
+
     const terminalInstance: TerminalInstance = {
-      id: this.nextTerminalId,
+      id: terminalId,
       terminal,
       workingDirectory: cwd,
       createdAt: Date.now(),
@@ -73,13 +78,13 @@ export class WorkspaceTerminal extends EventEmitter {
     // 监听终端输出
     terminal.onData((data) => {
       terminalInstance.output += data;
-      
+
       // 发送到前端
       getMessageService().terminalMsg.emit("terminal-send", {
         terminalID: terminalInstance.id,
         data,
       });
-      
+
       this.emit("output", {
         terminalID: terminalInstance.id,
         type: "output",
@@ -92,16 +97,16 @@ export class WorkspaceTerminal extends EventEmitter {
     terminal.onExit((code) => {
       Logger.info(`Terminal ${terminalInstance.id} exited with code: ${code}`);
       this.terminals.delete(terminalInstance.id);
-      
+
       if (this.activeTerminalId === terminalInstance.id) {
         this.activeTerminalId = null;
       }
-      
+
       // 发送关闭消息到前端
       getMessageService().terminalMsg.emit("close-terminal", {
         terminalID: terminalInstance.id,
       });
-      
+
       this.emit("exit", {
         terminalID: terminalInstance.id,
         type: "exit",
@@ -112,16 +117,15 @@ export class WorkspaceTerminal extends EventEmitter {
 
     this.terminals.set(terminalInstance.id, terminalInstance);
     this.activeTerminalId = terminalInstance.id;
-    this.nextTerminalId++;
 
     Logger.info(`Terminal ${terminalInstance.id} created with working directory: ${cwd}`);
-    
+
     // 发送打开消息到前端
     getMessageService().terminalMsg.emit("open-terminal", {
       terminalID: terminalInstance.id,
       terminals: Array.from(this.terminals.keys()),
     });
-    
+
     this.emit("create", {
       terminalID: terminalInstance.id,
       type: "create",
@@ -212,18 +216,18 @@ export class WorkspaceTerminal extends EventEmitter {
     if (terminal) {
       terminal.terminal.kill();
       this.terminals.delete(terminalId);
-      
+
       if (this.activeTerminalId === terminalId) {
         // 如果关闭的是活动终端，选择另一个终端作为活动终端
         const remainingTerminals = Array.from(this.terminals.keys());
         this.activeTerminalId = remainingTerminals.length > 0 ? remainingTerminals[0]! : null;
       }
-      
+
       // 发送关闭消息到前端
       getMessageService().terminalMsg.emit("close-terminal", {
         terminalID: terminalId,
       });
-      
+
       Logger.info(`Terminal ${terminalId} closed`);
       return true;
     }
@@ -269,12 +273,32 @@ export class WorkspaceTerminal extends EventEmitter {
   }
 }
 
-// 单例实例
-let workspaceTerminal: WorkspaceTerminal | null = null;
+// 按工作区路径存储终端实例
+const workspaceTerminals: Map<string, WorkspaceTerminal> = new Map();
 
-export function getWorkspaceTerminal(): WorkspaceTerminal {
-  if (!workspaceTerminal) {
-    workspaceTerminal = new WorkspaceTerminal();
+export function getWorkspaceTerminal(workspacePath?: string): WorkspaceTerminal {
+  const key = workspacePath || "default";
+
+  if (!workspaceTerminals.has(key)) {
+    const terminal = new WorkspaceTerminal(key);
+    workspaceTerminals.set(key, terminal);
+    Logger.info(`Created new WorkspaceTerminal for workspace: ${key}`);
   }
-  return workspaceTerminal;
+
+  return workspaceTerminals.get(key)!;
+}
+
+// 获取所有工作区终端管理器
+export function getAllWorkspaceTerminals(): WorkspaceTerminal[] {
+  return Array.from(workspaceTerminals.values());
+}
+
+// 根据终端ID查找对应的工作区终端管理器
+export function findWorkspaceTerminalByTerminalId(terminalId: number): WorkspaceTerminal | undefined {
+  for (const terminal of workspaceTerminals.values()) {
+    if (terminal.getTerminal(terminalId)) {
+      return terminal;
+    }
+  }
+  return undefined;
 }

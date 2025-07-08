@@ -34,7 +34,7 @@ import { store } from "./rag/vectorStore.mjs";
 import { Config } from "./const.mjs";
 import dayjs from "dayjs";
 import * as vm from "node:vm";
-import { getWorkspaceTerminal } from "./workspace/tools/index.mjs";
+import { getWorkspaceTerminal, findWorkspaceTerminalByTerminalId } from "./workspace/tools/index.mjs";
 import { fileURLToPath } from 'node:url';
 import { dirname } from 'node:path';
 import { getWorkspaceManager, workspaceManager } from "./workspace/index.mjs";
@@ -793,32 +793,56 @@ export class CommandFactory {
     return filename;
   }
   async OpenTerminal({ workingDirectory }: { workingDirectory: string }) {
-    const terminal = getWorkspaceTerminal();
+    const terminal = getWorkspaceTerminal(workingDirectory);
     const terminalInstance = terminal.createTerminal(workingDirectory);
     return terminalInstance.id;
   }
   async GetTerminals({ workingDirectory }: { workingDirectory: string }) {
-    const terminal = getWorkspaceTerminal();
+    const terminal = getWorkspaceTerminal(workingDirectory);
     const allTerminals = terminal.getAllTerminals();
-    // 过滤出指定工作目录的终端
-    const filteredTerminals = allTerminals.filter(t => t.workingDirectory === workingDirectory);
-    return filteredTerminals.map(t => t.id);
+    // 由于现在每个工作区有独立的终端管理器，直接返回所有终端
+    return allTerminals.map(t => t.id);
   }
   async CloseTerminal({
-    TerminalID
+    TerminalID,
+    workingDirectory
   }: {
     TerminalID: string;
+    workingDirectory?: string;
   }) {
-    const terminal = getWorkspaceTerminal();
-    return terminal.closeTerminal(parseInt(TerminalID));
+    // 需要找到对应的工作区终端管理器
+    // 如果没有提供workingDirectory，则遍历所有工作区查找
+    if (workingDirectory) {
+      const terminal = getWorkspaceTerminal(workingDirectory);
+      return terminal.closeTerminal(parseInt(TerminalID));
+    } else {
+      // 遍历所有工作区查找该终端
+      const terminal = findWorkspaceTerminalByTerminalId(parseInt(TerminalID));
+      if (terminal) {
+        return terminal.closeTerminal(parseInt(TerminalID));
+      }
+      return false;
+    }
   }
   async ActiveAITerminal({
-    TerminalID
+    TerminalID,
+    workingDirectory
   }: {
     TerminalID: string;
+    workingDirectory?: string;
   }) {
-    const terminal = getWorkspaceTerminal();
-    return terminal.setActiveTerminal(parseInt(TerminalID));
+    // 需要找到对应的工作区终端管理器
+    if (workingDirectory) {
+      const terminal = getWorkspaceTerminal(workingDirectory);
+      return terminal.setActiveTerminal(parseInt(TerminalID));
+    } else {
+      // 遍历所有工作区查找该终端
+      const terminal = findWorkspaceTerminalByTerminalId(parseInt(TerminalID));
+      if (terminal) {
+        return terminal.setActiveTerminal(parseInt(TerminalID));
+      }
+      return false;
+    }
   }
   async clearChatHistory({
     day
