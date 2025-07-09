@@ -190,7 +190,13 @@ export function AgentManagement({ workspace, agents, onRefresh, onOpenChat, mcpC
         agentKey: agent.config.key
       });
 
-      setChatHistoryList(result.chatLogs || []);
+      // 按时间倒序排列聊天记录
+      const sortedChatLogs = (result.chatLogs || []).sort((a, b) => {
+        const timeA = a.dateTime || 0;
+        const timeB = b.dateTime || 0;
+        return timeB - timeA; // 倒序：最新的在前
+      });
+      setChatHistoryList(sortedChatLogs);
     } catch (error) {
       console.error("Failed to load chat history:", error);
       message.error(t`Failed to load chat history`);
@@ -224,7 +230,13 @@ export function AgentManagement({ workspace, agents, onRefresh, onOpenChat, mcpC
             workspacePath: workspace.path,
             agentKey: chatHistoryAgent.config.key
           });
-          setChatHistoryList(result.chatLogs || []);
+          // 按时间倒序排列聊天记录
+          const sortedChatLogs = (result.chatLogs || []).sort((a, b) => {
+            const timeA = a.dateTime || 0;
+            const timeB = b.dateTime || 0;
+            return timeB - timeA; // 倒序：最新的在前
+          });
+          setChatHistoryList(sortedChatLogs);
 
           // 刷新Agent列表以更新聊天记录数量
           await onRefresh();

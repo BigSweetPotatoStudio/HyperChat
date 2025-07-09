@@ -210,7 +210,7 @@ export const WorkspaceChat = ({ workspace, agentKey, workspaceDetails, mcpClient
   const handleKeyDown = (e: { key: string }) => {
     const history = sendHistoryRef.current;
     const currentIndex = historyIndexRef.current;
-    
+
     if (e.key === 'ArrowUp') {
       if (history.length > 0) {
         const newIndex = currentIndex === -1 ? history.length - 1 : Math.max(0, currentIndex - 1);
@@ -528,28 +528,50 @@ export const WorkspaceChat = ({ workspace, agentKey, workspaceDetails, mcpClient
   const { token } = theme.useToken();
   const agent = workspaceDetails[workspace.path]?.agents.find(a => a.config.key === agentKey);
 
+  // 提取系统消息
+  const systemMessages = currentChat.current.messages?.filter(m => m.role === "system") || [];
+  // 过滤掉系统消息的其他消息
+  const nonSystemMessages = currentChat.current.messages?.filter(m => m.role !== "system") || [];
+
   return (
     <div className="workspace-chat h-full">
       <XProvider>
         <div className="h-full flex flex-col">
+          {/* 系统提示词显示区域 */}
+          {systemMessages.length > 0 && (
+            <div className="flex-shrink-0 border-b bg-blue-50 p-1">
+              <div className="text-sm font-medium text-blue-300 mb-2 flex items-center">
+                <Icon name="brain" className="mr-2" />
+                <span className="mr-2 text-blue-700">
+                  {agentKey ? (agent?.config.name || t`Agent Chat`) : t`Workspace Chat`}
+                </span>
+              </div>
+              {systemMessages.map((msg, index) => (
+                <div key={index} className="text-sm line-clamp-1 text-gray-700 bg-white p-0 rounded border border-blue-200">
+                  {msg.content_template || msg.content}
+                </div>
+              ))}
+            </div>
+          )}
+
           {/* 聊天消息区域 */}
           <div className="flex-1 overflow-auto p-4">
-            {(currentChat.current.messages == null ||
-              currentChat.current.messages?.length == 0) && (
-                <>
-                  <Welcome
-                    icon={agentKey ? "🤖" : "💬"}
-                    title={agentKey ? (agent?.config.name || t`Agent Chat`) : t`Workspace Chat`}
-                    className="mb-4"
-                    description={agentKey ? t`Chatting with agent` : t`Start chatting in your workspace`}
-                  />
-                </>
-              )}
+            {(nonSystemMessages.length == 0) && (
+              <>
+                <Welcome
+                  icon={agentKey ? "🤖" : "💬"}
+                  title={t`Welcome Chat`}
+                  className="mb-4"
+                  description={agentKey ? t`Chatting with agent` : t`Start chatting in your workspace`}
+                />
+              </>
+            )}
 
             <Messages
-              messages={currentChat.current.messages}
+              messages={nonSystemMessages}
               onSumbit={(messages) => {
-                currentChat.current.messages = messages;
+                // 合并系统消息和用户提交的消息
+                currentChat.current.messages = [...systemMessages, ...messages];
                 refresh();
                 onRequest();
               }}
@@ -683,13 +705,7 @@ export const WorkspaceChat = ({ workspace, agentKey, workspaceDetails, mcpClient
                   if (file.type.includes("image")) {
                     let path = await blobToBase64(file);
                     resourceResListRef.current.push({
-                      // contents: [
-                      //   {
-                      //     uri: path,
-                      //     blob: path,
-                      //     mimeType: "image/*",
-                      //   },
-                      // ],
+
                       type: "image_url",
                       image_url: {
                         url: path,

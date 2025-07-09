@@ -68,7 +68,7 @@ export const WorkspaceWelcome: React.FC<WorkspaceWelcomeProps> = ({
       })
       .filter(Boolean)
       .slice(0, 6); // 只显示最近 6 个
-    
+
     setRecentAgents(matchedRecentAgents);
   }, [workspace.path, agents]);
 
@@ -86,7 +86,7 @@ export const WorkspaceWelcome: React.FC<WorkspaceWelcomeProps> = ({
     const name = agent.config.name || agent.config.key;
     const description = agent.config.description || '';
     return name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-           description.toLowerCase().includes(searchTerm.toLowerCase());
+      description.toLowerCase().includes(searchTerm.toLowerCase());
   });
 
   // 按最近聊天时间排序
@@ -199,13 +199,13 @@ export const WorkspaceWelcome: React.FC<WorkspaceWelcomeProps> = ({
             <HistoryOutlined style={{ marginRight: '8px' }} />
             {t`Recently Used`}
           </Title>
-          <Row gutter={4}>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '16px' }}>
             {recentAgents.map(agent => (
-              <Col span={4} key={agent.config.key}>
+              <div key={agent.config.key} style={{ width: '220px' }}>
                 {renderAgentCard(agent, true)}
-              </Col>
+              </div>
             ))}
-          </Row>
+          </div>
         </div>
       )}
 
@@ -251,13 +251,13 @@ export const WorkspaceWelcome: React.FC<WorkspaceWelcomeProps> = ({
             )}
           </Empty>
         ) : (
-          <Row gutter={4}>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '16px' }}>
             {sortedAgents.map(agent => (
-              <Col span={4} key={agent.config.key}>
+              <div key={agent.config.key} style={{ width: '220px' }}>
                 {renderAgentCard(agent)}
-              </Col>
+              </div>
             ))}
-          </Row>
+          </div>
         )}
       </div>
 

@@ -54,18 +54,34 @@ interface ArtifactProps {
     type: string;
 }
 
+interface HtmlNode {
+    tagName: string;
+    properties?: Record<string, unknown>;
+    children?: HtmlNode[];
+}
+
 interface CodeProps {
     inline?: boolean;
-    children?: any[];
+    children?: React.ReactNode[];
     className?: string;
-    node?: any;
-    [key: string]: any;
+    node?: HtmlNode;
+    [key: string]: unknown;
 }
 
 interface KatexProps {
-    children?: any;
-    node?: any;
-    [key: string]: any;
+    children?: React.ReactNode;
+    node?: HtmlNode;
+    [key: string]: unknown;
+}
+
+interface WebviewElement extends HTMLElement {
+    openDevTools?: () => void;
+    executeJavaScript: (script: string) => Promise<{ width: number; height: number }>;
+}
+
+interface WebviewConsoleEvent extends Event {
+    level: number;
+    message: string;
 }
 
 // Utility functions
@@ -99,8 +115,8 @@ const KatexRenderer: React.FC<KatexProps> = ({ children = [], ...props }) => {
                     throwOnError: false,
                 });
             });
-            return React.createElement(props.node.tagName, {
-                ...props.node.properties,
+            return React.createElement(props.node?.tagName || 'div', {
+                ...props.node?.properties,
                 dangerouslySetInnerHTML: { __html: html },
             });
         } else if (Array.isArray(children)) {
@@ -122,24 +138,24 @@ const KatexRenderer: React.FC<KatexProps> = ({ children = [], ...props }) => {
                     return child;
                 }
             });
-            return React.createElement(props.node.tagName, {
-                ...props.node.properties,
+            return React.createElement(props.node?.tagName || 'div', {
+                ...props.node?.properties,
             }, newChildren);
         }
     }
 
-    return React.createElement(props.node.tagName, {
-        ...props.node.properties,
+    return React.createElement(props.node?.tagName || 'div', {
+        ...props.node?.properties,
     }, children);
 };
 
 // Artifact Component
 const Artifact: React.FC<ArtifactProps> = React.memo(({ url, type }) => {
-    const webviewRef = useRef<any>(null);
+    const webviewRef = useRef<WebviewElement | null>(null);
     const webviewError = useRef("");
     const [webviewXY, setWebviewXY] = useState(DEFAULT_WEBVIEW_SIZE);
 
-    const handleWebviewLoad = async (element: any) => {
+    const handleWebviewLoad = async (element: WebviewElement) => {
         try {
             await sleep(1000);
             const script = `
@@ -183,7 +199,7 @@ const Artifact: React.FC<ArtifactProps> = React.memo(({ url, type }) => {
                     <Space.Compact className="absolute right-0 bottom-8">
                         <Button
                             size="small"
-                            onClick={() => webviewRef.current?.openDevTools()}
+                            onClick={() => webviewRef.current?.openDevTools?.()}
                         >
                             openDevTools
                         </Button>
@@ -191,13 +207,14 @@ const Artifact: React.FC<ArtifactProps> = React.memo(({ url, type }) => {
                     <webview
                         ref={(w) => {
                             if (w) {
-                                webviewRef.current = w;
-                                w.addEventListener("console-message", (e: any) => {
-                                    if (e.level === 3) {
-                                        webviewError.current += e.message + "\n";
+                                webviewRef.current = w as unknown as WebviewElement;
+                                w.addEventListener("console-message", (e: Event) => {
+                                    const consoleEvent = e as WebviewConsoleEvent;
+                                    if (consoleEvent.level === 3) {
+                                        webviewError.current += consoleEvent.message + "\n";
                                     }
                                 });
-                                w.addEventListener("did-finish-load", () => handleWebviewLoad(w));
+                                w.addEventListener("did-finish-load", () => handleWebviewLoad(w as unknown as WebviewElement));
                             }
                         }}
                         src={url}
@@ -229,7 +246,7 @@ const Artifact: React.FC<ArtifactProps> = React.memo(({ url, type }) => {
 // Code Component
 const Code: React.FC<CodeProps> = ({ inline, children = [], className, ...props }) => {
     const demoid = useRef(`dome${v4()}`);
-    const code = props.node?.children ? getCodeString(props.node.children) : children[0] || '';
+    const code = props.node?.children ? getCodeString(props.node.children as any) : (children[0] as string) || '';
     const { isHtml, isSvg, isMermaid, isHigh } = detectCodeLanguage(className, code);
     const [artifact, setArtifact] = useState<JSX.Element | null>(null);
 
@@ -307,8 +324,12 @@ const Code: React.FC<CodeProps> = ({ inline, children = [], className, ...props 
 
 
 // Main Component
-export const AssistantToolContent = ({ contents }: { contents: MyMessage[] }) => {
-    const [render, setRender] = useState("markdown");
+interface AssistantToolContentProps {
+    contents: MyMessage[];
+}
+
+export const AssistantToolContent: React.FC<AssistantToolContentProps> = ({ contents }) => {
+    const [render, setRender] = useState<"markdown" | "text">("markdown");
 
     const renderSegments = [
         {
@@ -324,21 +345,21 @@ export const AssistantToolContent = ({ contents }: { contents: MyMessage[] }) =>
     ];
 
     const katexComponents = {
-        code: Code,
-        p: KatexRenderer,
-        h1: KatexRenderer,
-        h2: KatexRenderer,
-        h3: KatexRenderer,
-        h4: KatexRenderer,
-        h5: KatexRenderer,
-        h6: KatexRenderer,
-        li: KatexRenderer,
-        ol: KatexRenderer,
-        ul: KatexRenderer,
-        menu: KatexRenderer,
+        code: Code as any,
+        p: KatexRenderer as any,
+        h1: KatexRenderer as any,
+        h2: KatexRenderer as any,
+        h3: KatexRenderer as any,
+        h4: KatexRenderer as any,
+        h5: KatexRenderer as any,
+        h6: KatexRenderer as any,
+        li: KatexRenderer as any,
+        ol: KatexRenderer as any,
+        ul: KatexRenderer as any,
+        menu: KatexRenderer as any,
     };
 
-    const renderContent = (content: string, isSmall = false) => {
+    const renderContent = (content: string, isSmall = false): React.ReactNode => {
         if (render === "markdown") {
             return (
                 <MarkdownPreview
@@ -362,7 +383,7 @@ export const AssistantToolContent = ({ contents }: { contents: MyMessage[] }) =>
             <Segmented
                 size="small"
                 value={render}
-                onChange={setRender}
+                onChange={(value) => setRender(value as "markdown" | "text")}
                 options={renderSegments}
             />
 

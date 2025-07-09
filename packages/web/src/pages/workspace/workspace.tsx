@@ -1051,7 +1051,7 @@ export function Workspace() {
                       <Space>
                         <Icon name="bx-bot"></Icon>
                         {t`Agents`}
-                        <Badge count={details.agents?.length || 0} size="small" />
+                        <Tag>{details.agents?.length || 0}</Tag>
                       </Space>
                     ),
                     key: "agents",
@@ -1070,7 +1070,7 @@ export function Workspace() {
                       <Space>
                         <Icon name="mcp"></Icon>
                         {t`MCP`}
-                        <Badge count={mcpClients.filter(x => x.status == "connected").length} size="small" />
+                        <Tag color="green">{mcpClients.filter(x => x.status == "connected").length}</Tag>
                       </Space>
                     ),
                     key: "mcp",
