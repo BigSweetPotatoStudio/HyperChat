@@ -1,4 +1,5 @@
 import { appDataDir } from "../const.mjs";
+import { Logger } from "../log.mjs";
 import { AIModelConfigItem } from "../shared/types.mjs";
 import { AppSettingsManager } from "./managers/appSettingsManager.mjs";
 
@@ -60,3 +61,18 @@ class AiModelData {
 }
 
 export const AI_MODELS = new AiModelData();
+
+try {
+
+  // 初始化应用设置管理器
+  const appSettingsManager = initAppSettingsManager(appDataDir);
+  await appSettingsManager.init();
+
+  // 标记为已完成初始化
+  markAppSettingsManagerAsInitialized();
+
+  Logger.info("App settings manager initialized successfully");
+} catch (error) {
+  Logger.error("Failed to initialize app settings manager:", error);
+  throw error;
+}

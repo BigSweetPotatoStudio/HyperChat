@@ -31,6 +31,7 @@ import { createUploadRouter } from "./http/uploadRouter.mjs";
 import { ParamsDictionary } from "express-serve-static-core";
 import { ParsedQs } from "qs";
 import { createProxyMiddleware } from "./http/aiProxyMiddleware.mjs";
+import { getAppSettingsManager } from "./data/appSettingsService.mjs";
 
 // 常量定义
 const MAX_BODY_SIZE = "1000mb";
@@ -47,7 +48,7 @@ interface MyRouter {
 }
 
 // 初始化全局变量
-const password = "123456";
+const password = getAppSettingsManager().getSystem().password || "123456";
 export const urlPrefix = "/" + encodeURI(password);
 Logger.info("Server password:", password);
 

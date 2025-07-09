@@ -2,7 +2,10 @@ import { appDataDir } from "./const.mjs";
 import { Logger } from "./log.mjs";
 import { zx } from "./es6.mjs";
 const { fs, path } = zx;
-import { initAppSettingsManager, markAppSettingsManagerAsInitialized } from "./data/index.mjs";
+import "./data/index.mjs";
+
+import "./workspace/index.mjs";
+
 
 
 
@@ -47,23 +50,7 @@ Logger.info("appDataDir: ", appDataDir);
 fs.ensureDirSync(path.join(appDataDir, "messages"));
 
 
-// 初始化应用设置管理器
-export const initializationPromise = (async () => {
-  try {
 
-    // 初始化应用设置管理器
-    const appSettingsManager = initAppSettingsManager(appDataDir);
-    await appSettingsManager.init();
-
-    // 标记为已完成初始化
-    markAppSettingsManagerAsInitialized();
-
-    Logger.info("App settings manager initialized successfully");
-  } catch (error) {
-    Logger.error("Failed to initialize app settings manager:", error);
-    throw error;
-  }
-})();
 
 // 捕获未处理的异常
 process.on('uncaughtException', (error) => {
