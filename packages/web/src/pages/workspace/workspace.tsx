@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useContext } from "react";
+import React, { useState, useEffect, useCallback, useContext, useRef } from "react";
 import {
   Card,
   List,
@@ -47,7 +47,7 @@ import { useNavigate } from "react-router-dom";
 import { ServerDirectoryBrowser } from "../../components/ServerDirectoryBrowser";
 import { getClients } from "../../common/mcp";
 import { MCPManagement } from "../../components/MCPManagement";
-import { AgentManagement } from "../../components/AgentManagement";
+import { AgentManagement, AgentManagementRef } from "../../components/AgentManagement";
 import { FileTreeComponent } from "../../components/FileTreeComponent";
 import { WorkspaceSidebar } from "../../components/WorkspaceSidebar";
 import { WorkspaceChat } from "../../components/WorkspaceChat";
@@ -159,8 +159,8 @@ export function Workspace() {
   const [workspaceTabsMap, setWorkspaceTabsMap] = useState<Record<string, ChatTab[]>>({});
   const [workspaceActiveTabMap, setWorkspaceActiveTabMap] = useState<Record<string, string>>({});
   
-  // 存储各个工作区的创建Agent函数引用
-  const [createAgentFunctions, setCreateAgentFunctions] = useState<Record<string, () => void>>({});
+  // 存储各个工作区的 AgentManagement ref
+  const agentManagementRefs = useRef<Record<string, AgentManagementRef | null>>({});
 
 
   // 面板尺寸状态 - 使用数组格式，与Ant Design Splitter兼容
@@ -1068,11 +1068,11 @@ export function Workspace() {
                             onOpenAgentChat={(agent) => openAgentChat(workspaceKey, agent)}
                             onCreateAgent={() => {
                               // 调用对应工作区的创建Agent函数
-                              const createAgentFn = createAgentFunctions[workspaceKey];
-                              if (createAgentFn) {
-                                createAgentFn();
+                              const agentManagementRef = agentManagementRefs.current[workspaceKey];
+                              if (agentManagementRef) {
+                                agentManagementRef.createAgent();
                               } else {
-                                console.warn('Create agent function not available for workspace:', workspaceKey);
+                                console.warn('AgentManagement ref not available for workspace:', workspaceKey);
                               }
                             }}
                           />
@@ -1127,17 +1127,14 @@ export function Workspace() {
                     key: "agents",
                     children: workspace ? (
                       <AgentManagement
+                        ref={(ref) => {
+                          agentManagementRefs.current[workspaceKey] = ref;
+                        }}
                         workspace={workspace}
                         agents={details.agents || []}
                         onRefresh={() => refreshWorkspaceDetails(workspaceKey, 'agents')}
                         onOpenChat={(agent: any, chatLog?: any) => openAgentChat(workspaceKey, agent, chatLog)}
                         mcpClients={mcpClients}
-                        onCreateAgentRef={(createAgentFn) => {
-                          setCreateAgentFunctions(prev => ({
-                            ...prev,
-                            [workspaceKey]: createAgentFn
-                          }));
-                        }}
                       />
                     ) : <Empty description={t`No workspace selected`} />,
                   },
