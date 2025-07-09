@@ -46,7 +46,7 @@ import { t } from "../../i18n";
 import { useNavigate } from "react-router-dom";
 import { ServerDirectoryBrowser } from "../../components/ServerDirectoryBrowser";
 import { getClients } from "../../common/mcp";
-import { MCPManagement } from "../../components/MCPManagement";
+import { MCPManagement, MCPManagementRef } from "../../components/MCPManagement";
 import { AgentManagement, AgentManagementRef } from "../../components/AgentManagement";
 import { FileTreeComponent } from "../../components/FileTreeComponent";
 import { WorkspaceSidebar } from "../../components/WorkspaceSidebar";
@@ -161,6 +161,9 @@ export function Workspace() {
   
   // 存储各个工作区的 AgentManagement ref
   const agentManagementRefs = useRef<Record<string, AgentManagementRef | null>>({});
+  
+  // 存储各个工作区的 MCPManagement ref
+  const mcpManagementRefs = useRef<Record<string, MCPManagementRef | null>>({});
 
 
   // 面板尺寸状态 - 使用数组格式，与Ant Design Splitter兼容
@@ -1149,6 +1152,9 @@ export function Workspace() {
                     key: "mcp",
                     children: workspace ? (
                       <MCPManagement
+                        ref={(ref) => {
+                          mcpManagementRefs.current[workspaceKey] = ref;
+                        }}
                         workspace={workspace}
                         mcpClients={mcpClients}
                         onRefresh={() => refreshWorkspaceDetails(workspaceKey, 'mcp')}

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, forwardRef, useImperativeHandle } from "react";
 import {
   List,
   Button,
@@ -48,7 +48,12 @@ interface MCPManagementProps {
   onRefresh: () => Promise<void>;
 }
 
-export function MCPManagement({ workspace, mcpClients, onRefresh }: MCPManagementProps) {
+export interface MCPManagementRef {
+  addMcpServer: () => void;
+  refreshMcpClients: () => void;
+}
+
+export const MCPManagement = forwardRef<MCPManagementRef, MCPManagementProps>(({ workspace, mcpClients, onRefresh }, ref) => {
   const [mcpRefreshing, setMcpRefreshing] = useState(false);
   const [mcpDetailDrawer, setMcpDetailDrawer] = useState(false);
   const [selectedMcpClient, setSelectedMcpClient] = useState<IMCPClient | null>(null);
@@ -70,6 +75,11 @@ export function MCPManagement({ workspace, mcpClients, onRefresh }: MCPManagemen
   // Monaco编辑器引用
   const monacoRef = useRef<any>(null);
   const editorRef = useRef<any>(null);
+
+  // 添加MCP服务器
+  const addMcpServer = () => {
+    setAddMcpModalOpen(true);
+  };
 
   // 刷新MCP客户端列表
   const refreshMcpClients = async () => {
@@ -101,6 +111,12 @@ export function MCPManagement({ workspace, mcpClients, onRefresh }: MCPManagemen
       setMcpRefreshing(false);
     }
   };
+
+  // 暴露方法给父组件
+  useImperativeHandle(ref, () => ({
+    addMcpServer,
+    refreshMcpClients
+  }), []);
 
   // 重启MCP客户端
   const restartMcpClient = async (clientName: string) => {
@@ -909,4 +925,4 @@ export function MCPManagement({ workspace, mcpClients, onRefresh }: MCPManagemen
       </Modal>
     </>
   );
-}
+});
