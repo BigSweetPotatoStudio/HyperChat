@@ -17,18 +17,18 @@ export {
 
 // 导出设置相关
 export {
-  SettingsManager,
-  SettingsSchema,
-  DEFAULT_SETTINGS
-} from "./settings.mjs";
+  WorkspaceSettingsManager,
+  WorkspaceSettingsSchema,
+  DEFAULT_WORKSPACE_SETTINGS
+} from "../data/workspaceSettingsManager.mjs";
 
 export type {
-  Settings,
-  AppearanceSettings,
-  EditorSettings,
-  AISettings,
-  AdvancedSettings
-} from "./settings.mjs";
+  WorkspaceSettings as WorkspaceDetailedSettings,
+  WorkspaceAppearanceSettings,
+  WorkspaceEditorSettings,
+  WorkspaceAISettings,
+  WorkspaceAdvancedSettings
+} from "../shared/jsonSchemas/workspaceSettingsSchema.mjs";
 
 // 导出数据列表管理类
 export { DataList } from "./dataList.mjs";

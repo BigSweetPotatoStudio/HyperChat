@@ -1003,7 +1003,26 @@ export function Workspace() {
               </div>
             </div>
             {isGlobal ? (
-              <Tag color="blue">{t`Global`}</Tag>
+              <Space>
+                <Tag color="blue">{t`Global`}</Tag>
+                <Dropdown
+                  menu={{
+                    items: [
+                      {
+                        key: 'settings',
+                        label: t`Workspace Settings`,
+                        icon: <SettingOutlined />,
+                        onClick: () => {
+                          handleWorkspaceSettings(workspace);
+                        }
+                      }
+                    ]
+                  }}
+                  trigger={['click']}
+                >
+                  <Button type="text" size="small" icon={<SettingOutlined />} onClick={(e) => e.stopPropagation()} />
+                </Dropdown>
+              </Space>
             ) : (
               <Dropdown
                 menu={{

@@ -1,94 +1,35 @@
-import { z } from "zod";
 import * as fs from "fs";
 import * as path from "path";
-import jsonc from "jsonc-parser";
+import * as jsonc from "jsonc-parser";
 import { zodToJsonSchema } from "zod-to-json-schema";
+import {
+  WorkspaceSettingsSchema,
+  WorkspaceSettings,
+  WorkspaceAppearanceSettings,
+  WorkspaceEditorSettings,
+  WorkspaceAISettings,
+  WorkspaceAdvancedSettings,
+  DEFAULT_WORKSPACE_SETTINGS,
+} from "../shared/jsonSchemas/workspaceSettingsSchema.mjs";
 
-// 外观设置 Schema
-const AppearanceSchema = z.object({
-  isDarkMode: z.boolean().default(false).describe("是否启用夜间模式"),
-  theme: z.enum(["light", "dark", "auto"]).default("auto").describe("主题模式"),
-  fontSize: z.enum(["small", "medium", "large"]).default("medium").describe("字体大小"),
-  language: z.enum(["zh-CN", "en-US"]).default("zh-CN").describe("界面语言"),
-});
-
-// 编辑器设置 Schema
-const EditorSchema = z.object({
-  autoSave: z.boolean().default(true).describe("是否自动保存"),
-  autoSaveDelay: z.number().min(1000).max(60000).default(5000).describe("自动保存延迟（毫秒）"),
-  wordWrap: z.boolean().default(true).describe("是否自动换行"),
-  tabSize: z.number().min(2).max(8).default(2).describe("Tab 大小"),
-});
-
-// AI 设置 Schema
-const AISchema = z.object({
-  defaultModel: z.string().optional().describe("默认 AI 模型"),
-  defaultAgent: z.string().optional().describe("默认 Agent"),
-  temperature: z.number().min(0).max(2).default(0.7).describe("温度参数"),
-  maxTokens: z.number().min(100).max(32000).default(4000).describe("最大 Token 数"),
-  streamResponse: z.boolean().default(true).describe("是否流式响应"),
-});
-
-// 高级设置 Schema
-const AdvancedSchema = z.object({
-  enableTelemetry: z.boolean().default(false).describe("是否启用遥测"),
-  debugMode: z.boolean().default(false).describe("是否启用调试模式"),
-  experimentalFeatures: z.boolean().default(false).describe("是否启用实验性功能"),
-});
-
-// 完整的设置 Schema
-export const SettingsSchema = z.object({
-  appearance: AppearanceSchema.default({}),
-  editor: EditorSchema.default({}),
-  ai: AISchema.default({}),
-  advanced: AdvancedSchema.default({}),
-});
-
-// 导出类型
-export type Settings = z.infer<typeof SettingsSchema>;
-export type AppearanceSettings = z.infer<typeof AppearanceSchema>;
-export type EditorSettings = z.infer<typeof EditorSchema>;
-export type AISettings = z.infer<typeof AISchema>;
-export type AdvancedSettings = z.infer<typeof AdvancedSchema>;
-
-// 默认设置
-export const DEFAULT_SETTINGS: Settings = {
-  appearance: {
-    isDarkMode: false,
-    theme: "auto",
-    fontSize: "medium",
-    language: "zh-CN",
-  },
-  editor: {
-    autoSave: true,
-    autoSaveDelay: 5000,
-    wordWrap: true,
-    tabSize: 2,
-  },
-  ai: {
-    temperature: 0.7,
-    maxTokens: 4000,
-    streamResponse: true,
-  },
-  advanced: {
-    enableTelemetry: false,
-    debugMode: false,
-    experimentalFeatures: false,
-  },
-};
+// 重新导出 schema 和类型，保持向后兼容
+export {
+  WorkspaceSettingsSchema,
+  DEFAULT_WORKSPACE_SETTINGS,
+} from "../shared/jsonSchemas/workspaceSettingsSchema.mjs";
 
 /**
- * 设置管理器类
+ * 工作区设置管理器类
  */
-export class SettingsManager {
-  private settings: Settings;
+export class WorkspaceSettingsManager {
+  private settings: WorkspaceSettings;
   private settingsPath: string;
   private schemaPath: string;
 
   constructor(private workspacePath: string) {
     this.settingsPath = path.join(workspacePath, "settings.jsonc");
     this.schemaPath = path.join(workspacePath, "settings.schema.json");
-    this.settings = DEFAULT_SETTINGS;
+    this.settings = DEFAULT_WORKSPACE_SETTINGS;
   }
 
   /**
@@ -106,8 +47,8 @@ export class SettingsManager {
    * 生成并保存 JSON Schema
    */
   private async generateSchema(): Promise<void> {
-    const jsonSchema = zodToJsonSchema(SettingsSchema, {
-      name: "HyperChatSettings",
+    const jsonSchema = zodToJsonSchema(WorkspaceSettingsSchema, {
+      name: "HyperChatWorkspaceSettings",
       $refStrategy: "none",
     });
 
@@ -134,12 +75,12 @@ export class SettingsManager {
         const parsed = jsonc.parse(content);
         
         // 使用 Zod 验证和解析
-        const result = SettingsSchema.safeParse(parsed);
+        const result = WorkspaceSettingsSchema.safeParse(parsed);
         
         if (result.success) {
           this.settings = result.data;
         } else {
-          console.warn("设置文件验证失败，使用默认设置:", result.error);
+          console.warn("工作区设置文件验证失败，使用默认设置:", result.error);
           // 保存默认设置
           await this.save();
         }
@@ -148,9 +89,9 @@ export class SettingsManager {
         await this.save();
       }
     } catch (error) {
-      console.error("加载设置文件失败:", error);
+      console.error("加载工作区设置文件失败:", error);
       // 使用默认设置
-      this.settings = DEFAULT_SETTINGS;
+      this.settings = DEFAULT_WORKSPACE_SETTINGS;
     }
   }
 
@@ -168,7 +109,7 @@ export class SettingsManager {
       const content = JSON.stringify(settingsWithSchema, null, 2);
       await fs.promises.writeFile(this.settingsPath, content, "utf-8");
     } catch (error) {
-      console.error("保存设置文件失败:", error);
+      console.error("保存工作区设置文件失败:", error);
       throw error;
     }
   }
@@ -176,14 +117,14 @@ export class SettingsManager {
   /**
    * 获取所有设置
    */
-  getSettings(): Settings {
+  getSettings(): WorkspaceSettings {
     return { ...this.settings };
   }
 
   /**
    * 更新设置
    */
-  async updateSettings(updates: Partial<Settings>): Promise<void> {
+  async updateSettings(updates: Partial<WorkspaceSettings>): Promise<void> {
     // 深度合并设置
     this.settings = {
       ...this.settings,
@@ -207,9 +148,9 @@ export class SettingsManager {
     };
 
     // 验证更新后的设置
-    const result = SettingsSchema.safeParse(this.settings);
+    const result = WorkspaceSettingsSchema.safeParse(this.settings);
     if (!result.success) {
-      throw new Error(`设置验证失败: ${result.error.message}`);
+      throw new Error(`工作区设置验证失败: ${result.error.message}`);
     }
 
     await this.save();
@@ -218,14 +159,14 @@ export class SettingsManager {
   /**
    * 获取外观设置
    */
-  getAppearance(): AppearanceSettings {
+  getAppearance(): WorkspaceAppearanceSettings {
     return { ...this.settings.appearance };
   }
 
   /**
    * 更新外观设置
    */
-  async updateAppearance(updates: Partial<AppearanceSettings>): Promise<void> {
+  async updateAppearance(updates: Partial<WorkspaceAppearanceSettings>): Promise<void> {
     await this.updateSettings({
       appearance: {
         ...this.settings.appearance,
@@ -237,14 +178,14 @@ export class SettingsManager {
   /**
    * 获取编辑器设置
    */
-  getEditor(): EditorSettings {
+  getEditor(): WorkspaceEditorSettings {
     return { ...this.settings.editor };
   }
 
   /**
    * 更新编辑器设置
    */
-  async updateEditor(updates: Partial<EditorSettings>): Promise<void> {
+  async updateEditor(updates: Partial<WorkspaceEditorSettings>): Promise<void> {
     await this.updateSettings({
       editor: {
         ...this.settings.editor,
@@ -256,14 +197,14 @@ export class SettingsManager {
   /**
    * 获取 AI 设置
    */
-  getAI(): AISettings {
+  getAI(): WorkspaceAISettings {
     return { ...this.settings.ai };
   }
 
   /**
    * 更新 AI 设置
    */
-  async updateAI(updates: Partial<AISettings>): Promise<void> {
+  async updateAI(updates: Partial<WorkspaceAISettings>): Promise<void> {
     await this.updateSettings({
       ai: {
         ...this.settings.ai,
@@ -275,14 +216,14 @@ export class SettingsManager {
   /**
    * 获取高级设置
    */
-  getAdvanced(): AdvancedSettings {
+  getAdvanced(): WorkspaceAdvancedSettings {
     return { ...this.settings.advanced };
   }
 
   /**
    * 更新高级设置
    */
-  async updateAdvanced(updates: Partial<AdvancedSettings>): Promise<void> {
+  async updateAdvanced(updates: Partial<WorkspaceAdvancedSettings>): Promise<void> {
     await this.updateSettings({
       advanced: {
         ...this.settings.advanced,
@@ -295,7 +236,7 @@ export class SettingsManager {
    * 重置设置为默认值
    */
   async reset(): Promise<void> {
-    this.settings = DEFAULT_SETTINGS;
+    this.settings = DEFAULT_WORKSPACE_SETTINGS;
     await this.save();
   }
 
@@ -312,17 +253,38 @@ export class SettingsManager {
   async import(settingsJson: string): Promise<void> {
     try {
       const parsed = JSON.parse(settingsJson);
-      const result = SettingsSchema.safeParse(parsed);
+      const result = WorkspaceSettingsSchema.safeParse(parsed);
       
       if (result.success) {
         this.settings = result.data;
         await this.save();
       } else {
-        throw new Error(`设置验证失败: ${result.error.message}`);
+        throw new Error(`工作区设置验证失败: ${result.error.message}`);
       }
     } catch (error) {
-      console.error("导入设置失败:", error);
+      console.error("导入工作区设置失败:", error);
       throw error;
     }
+  }
+
+  /**
+   * 获取工作区路径
+   */
+  getWorkspacePath(): string {
+    return this.workspacePath;
+  }
+
+  /**
+   * 获取设置文件路径
+   */
+  getSettingsPath(): string {
+    return this.settingsPath;
+  }
+
+  /**
+   * 获取 Schema 文件路径
+   */
+  getSchemaPath(): string {
+    return this.schemaPath;
   }
 }
