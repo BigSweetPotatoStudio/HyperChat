@@ -212,7 +212,8 @@ export function ProviderSettings() {
       });
       
       message.success(t`Provider and all related models deleted successfully`);
-      await refresh();
+      // Context 会自动更新 aiSettings，只需要更新 providers 状态
+      refresh();
     } catch (error) {
       message.error(t`Failed to delete provider`);
       console.error('Delete provider failed:', error);
@@ -234,13 +235,8 @@ export function ProviderSettings() {
             : p
         );
         
-        await call('updateAppSettings', {
-          updates: {
-            ai: {
-              ...aiSettings,
-              customProviders: updatedCustomProviders
-            }
-          }
+        await updateAISettings({
+          customProviders: updatedCustomProviders
         });
         
         message.success(t`Provider updated successfully`);
@@ -257,19 +253,14 @@ export function ProviderSettings() {
         
         const updatedCustomProviders = [...aiSettings.customProviders, newProvider];
         
-        await call('updateAppSettings', {
-          updates: {
-            ai: {
-              ...aiSettings,
-              customProviders: updatedCustomProviders
-            }
-          }
+        await updateAISettings({
+          customProviders: updatedCustomProviders
         });
         
         message.success(t`Provider added successfully`);
       }
 
-      await refresh();
+      refresh();
       setIsProviderModalOpen(false);
     } catch (error) {
       message.error(t`Failed to save provider`);
@@ -321,13 +312,8 @@ export function ProviderSettings() {
           }
         };
         
-        await call('updateAppSettings', {
-          updates: {
-            ai: {
-              ...aiSettings,
-              builtinApiKeys: updatedBuiltinApiKeys
-            }
-          }
+        await updateAISettings({
+          builtinApiKeys: updatedBuiltinApiKeys
         });
       } else {
         // 自定义提供商，更新提供商配置
@@ -337,18 +323,13 @@ export function ProviderSettings() {
             : p
         );
         
-        await call('updateAppSettings', {
-          updates: {
-            ai: {
-              ...aiSettings,
-              customProviders: updatedCustomProviders
-            }
-          }
+        await updateAISettings({
+          customProviders: updatedCustomProviders
         });
       }
       
       message.success(t`API Key configured successfully!`);
-      await refresh();
+      refresh();
       setIsApiKeyModalOpen(false);
     } catch (error) {
       message.error(t`Failed to save configuration`);
@@ -453,16 +434,11 @@ export function ProviderSettings() {
         updatedModels.push(newModel);
       }
 
-      await call('updateAppSettings', {
-        updates: {
-          ai: {
-            ...aiSettings,
-            models: updatedModels
-          }
-        }
+      await updateAISettings({
+        models: updatedModels
       });
       
-      await refresh();
+      refresh();
       setIsModelModalOpen(false);
       message.success(editingModel ? t`Model updated successfully!` : t`Model added successfully!`);
     } catch (error) {
@@ -480,16 +456,11 @@ export function ProviderSettings() {
       
       const updatedModels = aiSettings.models.filter(m => m.key !== model.key);
       
-      await call('updateAppSettings', {
-        updates: {
-          ai: {
-            ...aiSettings,
-            models: updatedModels
-          }
-        }
+      await updateAISettings({
+        models: updatedModels
       });
       
-      await refresh();
+      refresh();
       message.success(t`Model deleted successfully!`);
     } catch (error) {
       message.error(t`Failed to delete model`);
@@ -508,17 +479,12 @@ export function ProviderSettings() {
         isDefault: m.key === model.key
       }));
 
-      await call('updateAppSettings', {
-        updates: {
-          ai: {
-            ...aiSettings,
-            models: updatedModels,
-            defaultModel: model.key
-          }
-        }
+      await updateAISettings({
+        models: updatedModels,
+        defaultModel: model.key
       });
       
-      await refresh();
+      refresh();
       message.success(t`Default model set successfully!`);
     } catch (error) {
       message.error(t`Failed to set default model`);

@@ -59,14 +59,23 @@ export const AppSettingsProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const updateAppearance = async (appearanceUpdates: Partial<AppSettings['appearance']>) => {
+    if (!appSettings?.appearance) return;
     await updateSettings({ 
-      appearance: { ...appSettings?.appearance, ...appearanceUpdates } 
+      appearance: { ...appSettings.appearance, ...appearanceUpdates } 
     });
   };
 
   const updateSystem = async (systemUpdates: Partial<AppSettings['system']>) => {
+    if (!appSettings?.system) return;
     await updateSettings({ 
-      system: { ...appSettings?.system, ...systemUpdates } 
+      system: { 
+        ...appSettings.system, 
+        ...systemUpdates,
+        windowSize: {
+          ...appSettings.system.windowSize,
+          ...(systemUpdates.windowSize || {})
+        }
+      } 
     });
   };
 
