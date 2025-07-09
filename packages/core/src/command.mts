@@ -38,7 +38,8 @@ import { getWorkspaceTerminal, findWorkspaceTerminalByTerminalId } from "./works
 import { fileURLToPath } from 'node:url';
 import { dirname } from 'node:path';
 import { getWorkspaceManager, workspaceManager } from "./workspace/index.mjs";
-import { getAppSettingsManager, isAppSettingsManagerInitialized } from "./core/appSettingsService.mjs";
+import { getAppSettingsManager, isAppSettingsManagerInitialized } from "./data/appSettingsService.mjs";
+import { AppSettingsManager } from "./data/appSettingsManager.mjs";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -2135,7 +2136,7 @@ export class CommandFactory {
    * @param updates 要更新的设置
    * @returns 更新后的设置
    */
-  async updateAppSettings({ updates }: { updates: Parameters<import('./core/appSettingsManager.mjs').AppSettingsManager['updateSettings']>[0] }) {
+  async updateAppSettings({ updates }: { updates: Parameters<AppSettingsManager['updateSettings']>[0] }) {
     try {
       if (!isAppSettingsManagerInitialized()) {
         throw new Error("应用设置管理器未初始化");

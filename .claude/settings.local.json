@@ -26,7 +26,8 @@
       "Bash(npm run:*)",
       "Bash(git add:*)",
       "Bash(kill:*)",
-      "Bash(ss:*)"
+      "Bash(ss:*)",
+      "Bash(ps:*)"
     ],
     "deny": []
   }

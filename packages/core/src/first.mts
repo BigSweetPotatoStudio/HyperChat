@@ -3,6 +3,7 @@ import { Logger } from "./log.mjs";
 import { zx } from "./es6.mjs";
 const { fs, path } = zx;
 import { LocalSetting } from "./shared/data.mjs";
+import { initAppSettingsManager, markAppSettingsManagerAsInitialized } from "./data/appSettingsService.mjs";
 import "./common/data.mjs";
 
 
@@ -47,8 +48,31 @@ Logger.info("appDataDir: ", appDataDir);
 fs.ensureDirSync(path.join(appDataDir, "messages"));
 LocalSetting.get().appDataDir = appDataDir;
 LocalSetting.get().logFilePath = logFilePath;
-(async () => {
-  await LocalSetting.save();
+
+// 初始化应用设置管理器
+export const initializationPromise = (async () => {
+  try {
+    await LocalSetting.save();
+    
+    // 初始化应用设置管理器
+    const appSettingsManager = initAppSettingsManager(appDataDir);
+    await appSettingsManager.init();
+    
+    // 如果有必要，可以从 LocalSetting 迁移数据
+    const localSettingData = LocalSetting.get();
+    if (localSettingData.firstOpen) {
+      Logger.info("First time open, migrating from LocalSetting...");
+      await appSettingsManager.migrateFromLocalSetting(localSettingData);
+    }
+    
+    // 标记为已完成初始化
+    markAppSettingsManagerAsInitialized();
+    
+    Logger.info("App settings manager initialized successfully");
+  } catch (error) {
+    Logger.error("Failed to initialize app settings manager:", error);
+    throw error;
+  }
 })();
 
 // 捕获未处理的异常
