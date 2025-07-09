@@ -15,6 +15,7 @@ import type { MCPServerConfig } from "../shared/data.mjs";
 import { AgentManager } from "./agentManager.mjs";
 import { getMCPManager } from "./mcp/index.mjs";
 import type { WorkspaceMCPClientImpl } from "./mcp/client.mjs";
+import { SettingsManager } from "./settings.mjs";
 
 /**
  * 工作区类 - 封装单个工作区的所有操作
@@ -23,6 +24,7 @@ export class Workspace {
   private config: WorkspaceConfig;
   private agentManager: AgentManager;
   private mcpManager: ReturnType<typeof getMCPManager>;
+  private settingsManager: SettingsManager;
   private fileTree?: WorkspaceFileNode;
   private lastSync?: number;
   private readonly HYPERCHAT_DIR = CONSTANTS.HYPERCHAT_DIR;
@@ -47,6 +49,9 @@ export class Workspace {
     
     // 使用全局 MCP 管理器
     this.mcpManager = getMCPManager(workspacePath);
+    
+    // 初始化设置管理器
+    this.settingsManager = new SettingsManager(hyperChatPath);
   }
 
   /**
@@ -72,6 +77,9 @@ export class Workspace {
     await this.createDirectories();
 
     // MCP 管理器不需要显式初始化
+
+    // 初始化设置管理器
+    await this.settingsManager.init();
 
     // 加载数据
     await this.load();
@@ -481,6 +489,27 @@ export class Workspace {
    */
   exists(): boolean {
     return fs.existsSync(this.getHyperChatPath());
+  }
+
+  /**
+   * 获取设置管理器
+   */
+  getSettingsManager(): SettingsManager {
+    return this.settingsManager;
+  }
+
+  /**
+   * 获取设置
+   */
+  getSettings() {
+    return this.settingsManager.getSettings();
+  }
+
+  /**
+   * 更新设置
+   */
+  async updateSettings(updates: Parameters<SettingsManager['updateSettings']>[0]) {
+    return this.settingsManager.updateSettings(updates);
   }
 
   /**

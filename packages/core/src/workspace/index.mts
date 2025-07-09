@@ -15,6 +15,21 @@ export {
   validateWorkspaceSettings
 } from "./types.mjs";
 
+// 导出设置相关
+export {
+  SettingsManager,
+  SettingsSchema,
+  DEFAULT_SETTINGS
+} from "./settings.mjs";
+
+export type {
+  Settings,
+  AppearanceSettings,
+  EditorSettings,
+  AISettings,
+  AdvancedSettings
+} from "./settings.mjs";
+
 // 导出数据列表管理类
 export { DataList } from "./dataList.mjs";
 

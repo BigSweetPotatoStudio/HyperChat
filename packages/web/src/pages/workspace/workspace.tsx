@@ -61,6 +61,7 @@ import { AppActions } from "../../components/AppActions";
 
 import { FileEditor } from "../../components/FileEditor";
 import { Icon } from "@/src/components/icon";
+import { WorkspaceSettings } from "../../components/WorkspaceSettings";
 
 const { Title, Text } = Typography;
 
@@ -154,6 +155,9 @@ export function Workspace() {
   const [selectedPath, setSelectedPath] = useState<string>("");
   const [showHiddenFiles, setShowHiddenFiles] = useState(true);
   const [workspaceHistory, setWorkspaceHistory] = useState(() => getWorkspaceHistory());
+  const [settingsDrawerOpen, setSettingsDrawerOpen] = useState(false);
+  const [currentSettingsWorkspace, setCurrentSettingsWorkspace] = useState<WorkspaceInfo | null>(null);
+  const [workspaceSettings, setWorkspaceSettings] = useState<any>(null);
   const [form] = Form.useForm();
   // 为每个工作区维护独立的标签页状态
   const [workspaceTabsMap, setWorkspaceTabsMap] = useState<Record<string, ChatTab[]>>({});
@@ -480,6 +484,51 @@ export function Workspace() {
   const showCloseConfirm = (workspace: WorkspaceInfo) => {
     setPendingCloseWorkspace(workspace);
     setCloseConfirmModalOpen(true);
+  };
+
+  // 处理工作区设置
+  const handleWorkspaceSettings = async (workspace: WorkspaceInfo) => {
+    try {
+      setCurrentSettingsWorkspace(workspace);
+      // 加载工作区设置
+      const settings = await call("getWorkspaceSettings", { workspacePath: workspace.path });
+      setWorkspaceSettings(settings);
+      setSettingsDrawerOpen(true);
+    } catch (error) {
+      console.error("Failed to load workspace settings:", error);
+      message.error(t`Failed to load workspace settings`);
+    }
+  };
+
+  // 更新工作区设置
+  const updateWorkspaceSettings = async (updates: any) => {
+    if (!currentSettingsWorkspace) return;
+    
+    try {
+      const updatedSettings = await call("updateWorkspaceSettings", {
+        workspacePath: currentSettingsWorkspace.path,
+        updates
+      });
+      setWorkspaceSettings(updatedSettings);
+      message.success(t`Settings updated successfully`);
+      
+      // 如果更改了主题设置，应用到界面
+      if (updates.appearance?.isDarkMode !== undefined) {
+        const darkReader = await import('darkreader');
+        if (updates.appearance.isDarkMode) {
+          darkReader.enable({
+            brightness: 100,
+            contrast: 90,
+            sepia: 10,
+          });
+        } else {
+          darkReader.disable();
+        }
+      }
+    } catch (error) {
+      console.error("Failed to update workspace settings:", error);
+      message.error(t`Failed to update workspace settings`);
+    }
   };
 
   // 关闭工作区（完全关闭）
@@ -915,6 +964,17 @@ export function Workspace() {
               <Dropdown
                 menu={{
                   items: [
+                    {
+                      key: 'settings',
+                      label: t`Workspace Settings`,
+                      icon: <SettingOutlined />,
+                      onClick: () => {
+                        handleWorkspaceSettings(workspace);
+                      }
+                    },
+                    {
+                      type: 'divider',
+                    },
                     {
                       key: 'close',
                       label: t`Close Workspace`,
@@ -1443,6 +1503,72 @@ export function Workspace() {
         title={t`Select Workspace Directory`}
         initialPath="~"
       />
+
+      {/* 工作区设置抽屉 */}
+      <Drawer
+        width={800}
+        title={currentSettingsWorkspace ? t`Workspace Settings` + ` - ${currentSettingsWorkspace.name}` : t`Workspace Settings`}
+        open={settingsDrawerOpen}
+        onClose={() => {
+          setSettingsDrawerOpen(false);
+          setCurrentSettingsWorkspace(null);
+          setWorkspaceSettings(null);
+        }}
+        destroyOnClose
+      >
+        {workspaceSettings && (
+          <WorkspaceSettings
+            settings={workspaceSettings}
+            onUpdate={updateWorkspaceSettings}
+            onReset={async () => {
+              if (!currentSettingsWorkspace) return;
+              try {
+                const resetSettings = await call("resetWorkspaceSettings", {
+                  workspacePath: currentSettingsWorkspace.path
+                });
+                setWorkspaceSettings(resetSettings);
+              } catch (error) {
+                console.error("Failed to reset settings:", error);
+                message.error(t`Failed to reset settings`);
+              }
+            }}
+            onExport={async () => {
+              if (!currentSettingsWorkspace) return;
+              try {
+                const settingsJson = await call("exportWorkspaceSettings", {
+                  workspacePath: currentSettingsWorkspace.path
+                });
+                // 创建下载链接
+                const blob = new Blob([settingsJson], { type: "application/json" });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement("a");
+                a.href = url;
+                a.download = `${currentSettingsWorkspace.name}-settings.json`;
+                a.click();
+                URL.revokeObjectURL(url);
+                message.success(t`Settings exported successfully`);
+              } catch (error) {
+                console.error("Failed to export settings:", error);
+                message.error(t`Failed to export settings`);
+              }
+            }}
+            onImport={async (settingsJson: string) => {
+              if (!currentSettingsWorkspace) return;
+              try {
+                const importedSettings = await call("importWorkspaceSettings", {
+                  workspacePath: currentSettingsWorkspace.path,
+                  settingsJson
+                });
+                setWorkspaceSettings(importedSettings);
+                message.success(t`Settings imported successfully`);
+              } catch (error) {
+                console.error("Failed to import settings:", error);
+                message.error(t`Failed to import settings`);
+              }
+            }}
+          />
+        )}
+      </Drawer>
 
       {/* AI 提供商设置抽屉 */}
       <Drawer

@@ -1,0 +1,25 @@
+{
+  "$schema": "./settings.schema.json",
+  "appearance": {
+    "isDarkMode": false,
+    "theme": "auto",
+    "fontSize": "medium",
+    "language": "zh-CN"
+  },
+  "editor": {
+    "autoSave": true,
+    "autoSaveDelay": 5000,
+    "wordWrap": true,
+    "tabSize": 2
+  },
+  "ai": {
+    "temperature": 0.7,
+    "maxTokens": 4000,
+    "streamResponse": true
+  },
+  "advanced": {
+    "enableTelemetry": false,
+    "debugMode": false,
+    "experimentalFeatures": false
+  }
+}

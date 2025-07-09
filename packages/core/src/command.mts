@@ -1974,6 +1974,143 @@ export class CommandFactory {
     }
   }
 
+  /**
+   * 获取工作区设置
+   * @param workspacePath 工作区路径
+   * @returns 工作区设置
+   */
+  async getWorkspaceSettings({
+    workspacePath
+  }: {
+    workspacePath: string;
+  }) {
+    try {
+      const workspaceManager = getWorkspaceManager();
+      const workspace = workspaceManager.getWorkspace(workspacePath);
+      
+      if (!workspace) {
+        throw new Error(`工作区不存在: ${workspacePath}`);
+      }
+      
+      return workspace.getSettings();
+    } catch (error) {
+      console.error(`Failed to get settings for workspace ${workspacePath}:`, error);
+      throw error;
+    }
+  }
+
+  /**
+   * 更新工作区设置
+   * @param workspacePath 工作区路径
+   * @param updates 要更新的设置
+   * @returns 更新后的设置
+   */
+  async updateWorkspaceSettings({
+    workspacePath,
+    updates
+  }: {
+    workspacePath: string;
+    updates: Parameters<import('./workspace/settings.mjs').SettingsManager['updateSettings']>[0];
+  }) {
+    try {
+      const workspaceManager = getWorkspaceManager();
+      const workspace = workspaceManager.getWorkspace(workspacePath);
+      
+      if (!workspace) {
+        throw new Error(`工作区不存在: ${workspacePath}`);
+      }
+      
+      await workspace.updateSettings(updates);
+      return workspace.getSettings();
+    } catch (error) {
+      console.error(`Failed to update settings for workspace ${workspacePath}:`, error);
+      throw error;
+    }
+  }
+
+  /**
+   * 重置工作区设置
+   * @param workspacePath 工作区路径
+   * @returns 重置后的设置
+   */
+  async resetWorkspaceSettings({
+    workspacePath
+  }: {
+    workspacePath: string;
+  }) {
+    try {
+      const workspaceManager = getWorkspaceManager();
+      const workspace = workspaceManager.getWorkspace(workspacePath);
+      
+      if (!workspace) {
+        throw new Error(`工作区不存在: ${workspacePath}`);
+      }
+      
+      const settingsManager = workspace.getSettingsManager();
+      await settingsManager.reset();
+      return settingsManager.getSettings();
+    } catch (error) {
+      console.error(`Failed to reset settings for workspace ${workspacePath}:`, error);
+      throw error;
+    }
+  }
+
+  /**
+   * 导出工作区设置
+   * @param workspacePath 工作区路径
+   * @returns 设置的JSON字符串
+   */
+  async exportWorkspaceSettings({
+    workspacePath
+  }: {
+    workspacePath: string;
+  }): Promise<string> {
+    try {
+      const workspaceManager = getWorkspaceManager();
+      const workspace = workspaceManager.getWorkspace(workspacePath);
+      
+      if (!workspace) {
+        throw new Error(`工作区不存在: ${workspacePath}`);
+      }
+      
+      const settingsManager = workspace.getSettingsManager();
+      return await settingsManager.export();
+    } catch (error) {
+      console.error(`Failed to export settings for workspace ${workspacePath}:`, error);
+      throw error;
+    }
+  }
+
+  /**
+   * 导入工作区设置
+   * @param workspacePath 工作区路径
+   * @param settingsJson 设置的JSON字符串
+   * @returns 导入后的设置
+   */
+  async importWorkspaceSettings({
+    workspacePath,
+    settingsJson
+  }: {
+    workspacePath: string;
+    settingsJson: string;
+  }) {
+    try {
+      const workspaceManager = getWorkspaceManager();
+      const workspace = workspaceManager.getWorkspace(workspacePath);
+      
+      if (!workspace) {
+        throw new Error(`工作区不存在: ${workspacePath}`);
+      }
+      
+      const settingsManager = workspace.getSettingsManager();
+      await settingsManager.import(settingsJson);
+      return settingsManager.getSettings();
+    } catch (error) {
+      console.error(`Failed to import settings for workspace ${workspacePath}:`, error);
+      throw error;
+    }
+  }
+
 }
 // export const Command = CommandFactory.prototype;
 export const Command = new CommandFactory();
