@@ -30,7 +30,7 @@ import { EVENT } from "./common/event.mjs";
 // import { callAgent, runTask, startTask, stopTask } from "./mcp/task.mjs";
 import { getMyDefaultEnvironment } from "./mcp/utils.mjs";
 import * as cron from "node-cron";
-import { store } from "./rag/vectorStore.mjs";
+
 import { Config } from "./const.mjs";
 import dayjs from "dayjs";
 import * as vm from "node:vm";
@@ -675,47 +675,47 @@ export class CommandFactory {
     });
     return await client.getDirectoryContents("/");
   }
-  async vectorStoreAdd({
-    store: s,
-    resource: r,
-    move = false
-  }: {
-    store: KnowledgeStore;
-    resource: KnowledgeResource;
-    move?: boolean;
-  }) {
-    return await store.addResource(s, r, move);
-  }
-  async vectorStoreDelete({
-    store: s
-  }: {
-    store: KnowledgeStore;
-  }) {
+  // async vectorStoreAdd({
+  //   store: s,
+  //   resource: r,
+  //   move = false
+  // }: {
+  //   store: KnowledgeStore;
+  //   resource: KnowledgeResource;
+  //   move?: boolean;
+  // }) {
+  //   return await store.addResource(s, r, move);
+  // }
+  // async vectorStoreDelete({
+  //   store: s
+  // }: {
+  //   store: KnowledgeStore;
+  // }) {
 
-    return await store.delete(s);
-  }
-  async vectorStoreRemoveResource({
-    store: s,
-    resource: r
-  }: {
-    store: KnowledgeStore;
-    resource: KnowledgeResource;
-  }) {
+  //   return await store.delete(s);
+  // }
+  // async vectorStoreRemoveResource({
+  //   store: s,
+  //   resource: r
+  // }: {
+  //   store: KnowledgeStore;
+  //   resource: KnowledgeResource;
+  // }) {
 
-    return await store.removeResource(s, r);
-  }
-  async vectorStoreSearch({
-    store: s,
-    query: q,
-    k
-  }: {
-    store: KnowledgeStore;
-    query: string;
-    k: number;
-  }) {
+  //   return await store.removeResource(s, r);
+  // }
+  // async vectorStoreSearch({
+  //   store: s,
+  //   query: q,
+  //   k
+  // }: {
+  //   store: KnowledgeStore;
+  //   query: string;
+  //   k: number;
+  // }) {
 
-    return await store.search(s, q, k);
-  }
+  //   return await store.search(s, q, k);
+  // }
   async getProgressList() {
     return progressList.getData();
   }

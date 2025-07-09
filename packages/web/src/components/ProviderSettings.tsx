@@ -24,12 +24,10 @@ import {
   DeleteOutlined,
   SettingOutlined,
   ArrowLeftOutlined,
-  EyeInvisibleOutlined
 } from '@ant-design/icons';
 
 import { call } from '../common/call';
 import type { AIModelConfigItem, ProviderConfig, KnownProvider, AISettings } from '../../../core/src/shared/jsonSchemas/appSettingsSchema.mts';
-import { v4 } from 'uuid';
 import { t } from '../i18n';
 
 const { Title, Text } = Typography;
@@ -44,6 +42,9 @@ interface ModelFormData {
   supportImage: boolean;
   supportTool: boolean;
   isDefault: boolean;
+  // Unknown provider specific fields
+  apiKey?: string;
+  baseURL?: string;
 }
 
 // 提供商图标组件
@@ -100,6 +101,12 @@ export function ProviderSettings() {
   // 检查提供商是否有API Key（从Provider数据读取，而非模型数据）
   const hasProviderApiKey = (provider: ProviderConfig): boolean => {
     if (!aiSettings) return false;
+    
+    // Unknown 提供商总是允许进入，因为每个模型单独配置 API Key
+    if (provider.key === 'unknown') {
+      return true;
+    }
+    
     if (provider.isBuiltIn) {
       return !!aiSettings.builtinApiKeys[provider.key]?.apiKey;
     } else {
@@ -141,7 +148,8 @@ export function ProviderSettings() {
       { key: 'doubao', label: 'Doubao', baseURL: 'https://ark.cn-beijing.volces.com/api/v3', icon: 'doubao', description: 'ByteDance Doubao models', hasApiKey: true, isBuiltIn: true },
       { key: 'xai', label: 'xAI', baseURL: 'https://api.x.ai/v1', icon: 'xai', description: 'xAI Grok models', hasApiKey: true, isBuiltIn: true },
       { key: 'glm', label: 'GLM', baseURL: 'https://open.bigmodel.cn/api/paas/v4', icon: 'glm', description: 'Zhipu GLM models', hasApiKey: true, isBuiltIn: true },
-      { key: 'ollama', label: 'Ollama', baseURL: 'http://localhost:11434/v1', icon: 'ollama', description: 'Local Ollama models', hasApiKey: false, isBuiltIn: true }
+      { key: 'ollama', label: 'Ollama', baseURL: 'http://localhost:11434/v1', icon: 'ollama', description: 'Local Ollama models', hasApiKey: false, isBuiltIn: true },
+      { key: 'unknown', label: 'Unknown Provider', baseURL: '', icon: 'custom', description: 'Unknown or unsupported provider, configure apiKey and baseURL per model', hasApiKey: false, isBuiltIn: true }
     ];
   };
 
@@ -371,7 +379,7 @@ export function ProviderSettings() {
   const handleEditModel = (model: AIModelConfigItem) => {
     setEditingModel(model);
     modelForm.resetFields();
-    modelForm.setFieldsValue({
+    const formValues: any = {
       name: model.name,
       model: model.model,
       type: model.type,
@@ -379,7 +387,15 @@ export function ProviderSettings() {
       supportImage: model.supportImage ?? true, // 默认值为 true
       supportTool: model.supportTool ?? true, // 默认值为 true
       isDefault: model.isDefault || false,
-    });
+    };
+    
+    // 对于 unknown 提供商，添加 apiKey 和 baseURL 字段
+    if (model.provider === 'unknown') {
+      formValues.apiKey = model.apiKey || '';
+      formValues.baseURL = model.baseURL || '';
+    }
+    
+    modelForm.setFieldsValue(formValues);
     setIsModelModalOpen(true);
   };
 
@@ -416,6 +432,9 @@ export function ProviderSettings() {
             supportImage: values.supportImage,
             supportTool: values.supportTool,
             isDefault: values.isDefault,
+            // Update apiKey and baseURL for unknown provider
+            apiKey: selectedProvider.key === 'unknown' ? (values.apiKey || '') : existingModel.apiKey,
+            baseURL: selectedProvider.key === 'unknown' ? (values.baseURL || '') : existingModel.baseURL,
           };
 
           updatedModels[index] = updatedModel;
@@ -426,8 +445,8 @@ export function ProviderSettings() {
           key: selectedProvider.key + ':' + values.model, // 使用提供商key和模型id生成唯一key
           name: finalName,
           model: values.model,
-          apiKey: '', // 废弃字段，保留兼容性
-          baseURL: '', // 废弃字段，保留兼容性
+          apiKey: selectedProvider.key === 'unknown' ? (values.apiKey || '') : '', // Unknown provider uses per-model apiKey
+          baseURL: selectedProvider.key === 'unknown' ? (values.baseURL || '') : '', // Unknown provider uses per-model baseURL
           provider: selectedProvider.key as KnownProvider,
           supportImage: values.supportImage,
           supportTool: values.supportTool,
@@ -720,12 +739,15 @@ export function ProviderSettings() {
           </div>
         </div>
         <Space>
-          <Button
-            icon={<SettingOutlined />}
-            onClick={() => handleAddApiKey(selectedProvider!)}
-          >
-            {t`API Key`}
-          </Button>
+          {/* Unknown 提供商不显示 API Key 按钮，因为每个模型单独配置 */}
+          {selectedProvider?.key !== 'unknown' && (
+            <Button
+              icon={<SettingOutlined />}
+              onClick={() => handleAddApiKey(selectedProvider!)}
+            >
+              {t`API Key`}
+            </Button>
+          )}
           <Button
             type="primary"
             icon={<PlusOutlined />}
@@ -880,6 +902,29 @@ export function ProviderSettings() {
               <Option value="compatible">{t`Compatible`}</Option>
             </Select>
           </Form.Item>
+
+          {/* Unknown provider specific fields */}
+          {selectedProvider?.key === 'unknown' && (
+            <>
+              <Form.Item
+                name="apiKey"
+                label={t`API Key`}
+                rules={[{ required: true, message: t`Please enter API Key` }]}
+              >
+                <Input.Password placeholder={t`Enter API Key for this model`} />
+              </Form.Item>
+              <Form.Item
+                name="baseURL"
+                label={t`Base URL`}
+                rules={[
+                  { required: true, message: t`Please enter Base URL` },
+                  { type: 'url', message: t`Please enter a valid URL` }
+                ]}
+              >
+                <Input placeholder={t`e.g., https://api.example.com/v1`} />
+              </Form.Item>
+            </>
+          )}
 
           <Row gutter={16}>
             <Col span={8}>

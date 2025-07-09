@@ -37,7 +37,7 @@ import {
 import { call } from "../common/call";
 import { t } from "../i18n";
 import { HeaderContext } from "../common/context";
-import { AI_MODELS } from "@hyperchat/shared/data.mjs";
+import type { AISettings, AIModelConfigItem } from "@hyperchat/shared/jsonSchemas/appSettingsSchema.mts";
 import { NumberStep } from "../common/numberStep";
 import EmojiPicker from 'emoji-picker-react';
 import { Editor } from "./editor";
@@ -81,11 +81,22 @@ export const AgentManagement = forwardRef<AgentManagementRef, AgentManagementPro
   const [form] = Form.useForm();
   const refresh = useForceUpdate();
   const context = useContext(HeaderContext);
+  const [aiSettings, setAiSettings] = useState<AISettings | null>(null);
 
+  // 获取模型的显示名称
+  const getModelDisplayName = (modelKey: string): string => {
+    if (!aiSettings) return modelKey;
+    const model = aiSettings.models.find(m => m.key === modelKey);
+    return model ? (model.fullName || model.name || modelKey) : modelKey;
+  };
 
   useEffect(() => {
-    AI_MODELS.init().then(() => {
+    // 从 AppSettings 获取 AI 配置
+    call('getAppSettings').then(appSettings => {
+      setAiSettings((appSettings as any).ai);
       refresh();
+    }).catch(error => {
+      console.error('Failed to load AI settings:', error);
     });
   }, []);
 
@@ -363,7 +374,7 @@ export const AgentManagement = forwardRef<AgentManagementRef, AgentManagementPro
                       <Space>
                         <span className="text-sm">{agent.config.name || agent.config.key}</span>
                         {agent.config.modelKey && (
-                          <Tag color="green">{AI_MODELS.get().data.find(x => x.key === agent.config.modelKey)?.fullName || agent.config.modelKey}</Tag>
+                          <Tag color="green">{getModelDisplayName(agent.config.modelKey)}</Tag>
                         )}
                         {agent.chatLogsCount !== undefined && (
                           <Tag color="blue">{agent.chatLogsCount} chats</Tag>
@@ -428,7 +439,7 @@ export const AgentManagement = forwardRef<AgentManagementRef, AgentManagementPro
               </Descriptions.Item>
               <Descriptions.Item label={t`Model`}>
                 {selectedAgent.config.modelKey
-                  ? AI_MODELS.get().data.find(x => x.key === selectedAgent.config.modelKey)?.fullName || selectedAgent.config.modelKey
+                  ? getModelDisplayName(selectedAgent.config.modelKey)
                   : "N/A"}
               </Descriptions.Item>
               <Descriptions.Item label={t`Chat Logs`}>
@@ -577,10 +588,10 @@ export const AgentManagement = forwardRef<AgentManagementRef, AgentManagementPro
               optionFilterProp="label"
               placeholder={t`Choose the AI model for this agent`}
               allowClear
-              options={AI_MODELS.get().data.map((x) => ({
-                label: x.fullName || x.name,
-                value: x.key,
-              }))}
+              options={aiSettings ? aiSettings.models.map((m) => ({
+                label: m.fullName || m.name,
+                value: m.key,
+              })) : []}
             />
           </Form.Item>
 
@@ -627,10 +638,10 @@ export const AgentManagement = forwardRef<AgentManagementRef, AgentManagementPro
                   optionFilterProp="label"
                   placeholder={t`Please select TaskFallbackLLM`}
                   allowClear
-                  options={AI_MODELS.get().data.map((x) => ({
-                    label: x.fullName || x.name,
-                    value: x.key,
-                  }))}
+                  options={aiSettings ? aiSettings.models.map((m) => ({
+                    label: m.fullName || m.name,
+                    value: m.key,
+                  })) : []}
                 />
               </Form.Item>
             </Collapse.Panel>
@@ -705,7 +716,7 @@ export const AgentManagement = forwardRef<AgentManagementRef, AgentManagementPro
                           <Tag color="blue">{chatLog.messages.length} messages</Tag>
                         )}
                         {chatLog.modelKey && (
-                          <Tag color="green">{AI_MODELS.get().data.find(x => x.key === chatLog.modelKey)?.fullName || chatLog.modelKey}</Tag>
+                          <Tag color="green">{getModelDisplayName(chatLog.modelKey)}</Tag>
                         )}
                       </Space>
                     }

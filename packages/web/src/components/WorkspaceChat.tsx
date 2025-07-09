@@ -51,10 +51,10 @@ import { call, getURL_PRE } from "../common/call";
 import { blobToBase64, calcAttachDialogue, urlToBase64 } from "../pages/chat/utils/index";
 import { AiChannel } from "@hyperchat/shared/ai.mjs";
 import {
-  AI_MODELS,
   LocalSetting,
   ChatHistoryItem,
 } from "@hyperchat/shared/data.mjs";
+import type { AISettings, AIModelConfigItem } from "@hyperchat/shared/jsonSchemas/appSettingsSchema.mts";
 import { MyMessage } from "@hyperchat/shared/data.mjs";
 import { Messages } from "./messages";
 import { Icon } from "./icon";
@@ -94,6 +94,40 @@ export const WorkspaceChat = ({ workspace, agentKey, workspaceDetails, mcpClient
   // 从上下文获取全局状态和MCP客户端
   const context = useContext(HeaderContext);
   const { globalState, updateGlobalState } = context || {};
+  
+  // AI设置状态
+  const [aiSettings, setAiSettings] = useState<AISettings | null>(null);
+  
+  // 获取默认模型配置
+  const getDefaultModelFromSettings = (settings: AISettings): AIModelConfigItem | null => {
+    if (!settings || !settings.models.length) return null;
+    // 优先返回标记为默认的模型
+    const defaultModel = settings.models.find(m => m.isDefault);
+    if (defaultModel) return defaultModel;
+    // 否则返回第一个LLM模型
+    return settings.models.find(m => m.type === 'llm') || settings.models[0] || null;
+  };
+  
+  // 获取按提供商分组的模型选项
+  const getGroupedModelOptions = (settings: AISettings) => {
+    if (!settings || !settings.models.length) return [];
+    
+    const groups: Record<string, AIModelConfigItem[]> = {};
+    settings.models.forEach(model => {
+      if (!groups[model.provider]) {
+        groups[model.provider] = [];
+      }
+      groups[model.provider]!.push(model);
+    });
+    
+    return Object.entries(groups).map(([provider, models]) => ({
+      label: provider,
+      options: models.map(model => ({
+        label: model.name,
+        value: model.key,
+      }))
+    }));
+  };
 
   // AI通道客户端引用
   const aiClientRef = useRef<AiChannel>(new AiChannel({}));
@@ -243,12 +277,14 @@ export const WorkspaceChat = ({ workspace, agentKey, workspaceDetails, mcpClient
   useEffect(() => {
     (async () => {
       try {
-        await Promise.all([
-          AI_MODELS.init(),
-          LocalSetting.init(),
-        ]);
+        await LocalSetting.init();
+        
+        // 从 AppSettings 获取 AI 配置
+        const appSettings = await call('getAppSettings');
+        const ai = appSettings.ai;
+        setAiSettings(ai);
 
-        const defaultModel = getDefaultModelConfigSync(AI_MODELS);
+        const defaultModel = getDefaultModelFromSettings(ai);
         currentChat.current.modelKey = defaultModel ? defaultModel.key : "";
         const agent = workspaceDetails[workspace.path]?.agents.find(a => a.config.key === agentKey);
         // 如果有要加载的聊天记录，优先加载聊天记录
@@ -396,14 +432,19 @@ export const WorkspaceChat = ({ workspace, agentKey, workspaceDetails, mcpClient
     try {
       setLoading(true);
 
-      let config = AI_MODELS.get().data.find(
+      if (!aiSettings) {
+        throw new Error("AI settings not loaded");
+      }
+
+      let config = aiSettings.models.find(
         (x) => x.key == currentChat.current.modelKey,
       );
       if (config == null) {
-        if (AI_MODELS.get().data.length == 0) {
+        if (aiSettings.models.length == 0) {
           throw new Error("Please add LLM first");
+        } else {
+          throw new Error(t`Model not found, please select a model`);
         }
-        config = await getDefaultModelConfig();
       }
 
       aiClient.messages = currentChat.current.messages;
@@ -464,11 +505,12 @@ export const WorkspaceChat = ({ workspace, agentKey, workspaceDetails, mcpClient
         },
         mcpTools: mcpTools,
         platform: "web",
-        getURL_PRE: getURL_PRE
+        getURL_PRE: getURL_PRE,
+        aiSettings: aiSettings as any,
       })
 
       await aiClient.completion({
-        modelKey: config.key,
+        modelKey: config!.key,
         allowMCPs: currentChat.current.allowMCPs,
         confirm_call_tool: currentChat.current.confirm_call_tool,
         confirm_call_tool_cb,
@@ -511,13 +553,13 @@ export const WorkspaceChat = ({ workspace, agentKey, workspaceDetails, mcpClient
     } finally {
       setLoading(false);
     }
-  }, [workspace, agentKey]);
+  }, [workspace, agentKey, aiSettings]);
 
   // 获取当前模型配置
-  let currModel = (
-    AI_MODELS.get().data.find((x) => x.key == currentChat.current.modelKey) ||
-    getDefaultModelConfigSync(AI_MODELS)
-  );
+  let currModel = aiSettings ? (
+    aiSettings.models.find((x) => x.key == currentChat.current.modelKey) ||
+    getDefaultModelFromSettings(aiSettings)
+  ) : null;
 
   /** 是否支持图片 */
   let supportImage = currModel?.supportImage;
@@ -615,11 +657,11 @@ export const WorkspaceChat = ({ workspace, agentKey, workspaceDetails, mcpClient
                       size="small"
                       showSearch
                       optionFilterProp="label"
-                      // placeholder={
-                      //   AI_MODELS.get().data.length > 0
-                      //     ? `${currModel?.provider || 'unknown'}:${currModel?.name || 'unknown'}`
-                      //     : "Please add a LLM model"
-                      // }
+                      placeholder={
+                        aiSettings && aiSettings.models.length > 0
+                          ? `${currModel?.provider || 'unknown'}:${currModel?.name || 'unknown'}`
+                          : "Please add a LLM model"
+                      }
                       className="w-64"
                       // allowClear
                       value={currentChat.current.modelKey}
@@ -627,7 +669,7 @@ export const WorkspaceChat = ({ workspace, agentKey, workspaceDetails, mcpClient
                         currentChat.current.modelKey = value;
                         refresh();
                       }}
-                      options={AI_MODELS.getGroupedByProvider()}
+                      options={aiSettings ? getGroupedModelOptions(aiSettings) : []}
                     />
                   </span>
                 </Tooltip>

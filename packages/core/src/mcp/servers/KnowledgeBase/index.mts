@@ -9,7 +9,7 @@
  * - Summarizing all notes via a prompt
  */
 
-import { store } from "../../../rag/vectorStore.mjs";
+import { store } from "../../../rag/vectorStore.mts.bak";
 // import dayjs from "dayjs";
 import { KNOWLEDGE_BASE } from "../../../shared/data.mjs";
 import {

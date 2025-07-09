@@ -21,12 +21,12 @@ export {
     VarScopeList
 } from "./instances/chatInstances.mjs";
 
-// 导出AI相关数据实例
-export {
-    AI_MODELS,
-    AIModelConfig,
-    PROVIDER_CONFIGS
-} from "./instances/aiInstances.mjs";
+// // 导出AI相关数据实例
+// export {
+//     AI_MODELS,
+//     AIModelConfig,
+//     PROVIDER_CONFIGS
+// } from "./instances/aiInstances.mjs";
 
 // 导出MCP相关数据实例
 export {

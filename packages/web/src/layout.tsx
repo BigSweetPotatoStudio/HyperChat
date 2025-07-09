@@ -51,7 +51,6 @@ import { call, callElectron, msg_receive } from "./common/call";
 import {
   AppSetting,
   LocalSetting,
-  AI_MODELS,
   IMCPClient,
 } from "@hyperchat/shared/data.mjs";
 import { InitedClient, setClients } from "./common/mcp";
@@ -276,7 +275,6 @@ export function Layout() {
     (async () => {
       // 并行初始化各种数据源
       await Promise.all([
-        AI_MODELS.init(),
         LocalSetting.init(),
       ]);
       combinedRefresh();
@@ -344,8 +342,7 @@ export function Layout() {
     combinedRefresh();
   };
 
-  // 获取默认模型配置
-  let defaultModel = getDefaultModelConfigSync(AI_MODELS);
+
 
   return (
     <ConfigProvider

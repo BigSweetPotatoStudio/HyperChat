@@ -26,12 +26,27 @@ packages/cli 专注于命令行前端的实现
 
 ## 开发逻辑
 
-
+### 类型安全
 * 尽量使用 TypeScript 的类型系统来确保代码的类型安全。尽量少使用any类型。
 * packages/core/src/shared/types.mts 定义了常用的类型，包括前端和后端交互的类型，确保前后端的数据结构一致。
+* 使用 Zod schema 进行数据验证，通过 zod-to-json-schema 转换为 JSON Schema 用于前端表单生成。
+
+### 前后端通信
 * 前端发送消息给后端，默认通过  packages/core/src/command.mts 实现，前端通过调用 call 的方法来实现与后端的交互。
 * electron提供更多electron接口 packages/electron/src/command.mts， 前端通过调用 callElectron 的方法来实现与electron的交互。
 * 后端发送消息给前端是通过websocket实现的 packages/core/src/message_service.mts，前端通过监听 websocket 的消息来接收后端发送的消息。
+
+### Schema驱动开发
+* 使用 JSON Schema 7 规范定义数据结构和表单验证规则
+* Zod schema 作为数据验证和类型定义的统一来源
+* Schema2Form 组件自动根据 schema 生成对应的表单组件
+* 支持复杂类型：数组、嵌套对象、条件schema(oneOf/anyOf/allOf)、Record类型等
+
+### 组件设计原则
+* 优先使用现有的 Ant Design 组件库
+* 遵循 React Hooks 最佳实践，使用 useCallback、useMemo 等优化性能
+* 表单使用 Ant Design Form 组件，支持 Form.List 处理动态数组
+* 错误处理和用户体验优先，提供清晰的错误提示和加载状态
 
 
 ## 记忆
@@ -39,9 +54,43 @@ packages/cli 专注于命令行前端的实现
 - [x] 我现在要改造这个hyperchat项目，以前都用在web浏览器前端发出llm请求通过OpenAI的库。现在我想改成在code目录下(nodejs环境)中通过ai库发请求，代码在packages/core/src/shared/ai.mts 。前后端共用
 - [x] 工作区概念已经实现，支持在不同工作区之间隔离数据和配置，支持显示当前工作区文件夹（树状），agent等配置作为文件保存在.hyperchat目录下。
 - [x] 核心工作区管理类 (workspace.mts, workspaceManager.mts)
+- [x] Schema2Form组件系统已完成，支持JSON Schema转Ant Design表单，包括双模式编辑（表单/JSON）和Monaco编辑器集成
+- [x] AI配置管理系统已完成，支持多提供商管理、模型配置、API Key管理，集成到应用设置中
+- [x] 应用设置系统采用Schema驱动的UI生成，支持复杂对象、数组、条件schema等
+
+### 核心组件架构
+
+#### Schema2Form 系统
+- **packages/web/src/components/Schema2Form.tsx** - 主组件，支持表单和JSON编辑器双模式切换
+- **packages/web/src/components/Schema2FormItems.tsx** - 表单项渲染组件，支持复杂JSON Schema
+- **packages/web/src/components/AppSettings.tsx** - 应用设置页面，使用Schema2Form渲染配置界面
+
+#### AI配置管理
+- **packages/core/src/shared/jsonSchemas/appSettingsSchema.mts** - 应用设置的Zod schema定义
+
+
+#### 关键设计决策
+- KnownProvider 枚举包含 "unknown" 选项，用于未知提供商
+- 移除联合类型，统一使用枚举类型确保类型安全
+- Schema2FormItems 支持数组、对象、条件schema、Record类型等复杂结构
+- API Keys 采用固定提供商列表展示，避免动态键值对的复杂性
+
+#### 已知问题与解决方案
+- **复杂对象数组显示问题** - 通过检测 itemSchema.type === 'object' 来决定是否使用 Schema2FormItems 递归渲染
+- **Record类型渲染问题** - 为 builtinApiKeys 字段提供专门的固定键列表渲染逻辑
+- **版本号显示问题** - 在 AppSettingsManager 中正确设置 CONST.getVersion 等系统信息
+- **TypeScript类型错误** - 统一使用枚举类型，避免联合类型导致的类型推断问题
+
+#### 测试与验证
+- 确保所有表单字段都能正确显示和编辑
+- 验证 JSON Schema 验证规则正确应用
+- 测试双模式（表单/JSON）数据同步
+- 确保 Monaco 编辑器语法高亮和错误提示正常
 
 ### 2.0 TODO
 - [ ] 减少any使用，多使用这个文件定义的类型 packages/core/src/shared/types.mts
+- [ ] 完善 Schema2Form 组件的单元测试
+- [ ] 优化 AI 配置管理的性能，考虑大量模型时的加载优化
 
 
 2.0 版本的 HyperChat 项目结构如下：

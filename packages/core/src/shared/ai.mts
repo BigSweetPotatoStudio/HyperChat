@@ -17,8 +17,9 @@ globalThis["z"] = z; // 兼容旧版本的 zod
 import { v4 } from "uuid";
 import dayjs from "dayjs";
 // import { isOnBrowser } from "./const";
-import { AI_MODELS } from "./data.mjs";
+
 import { extractTool } from "./prompt";
+import { AISettings, AppSettings } from "./jsonSchemas/appSettingsSchema.mjs";
 
 
 
@@ -136,10 +137,13 @@ export class AiChannel {
     if (this.status == "stop") {
       throw new Error("User Cancel Requesting");
     }
-    await AI_MODELS.init();
-    let modelConfig = AI_MODELS.get().data.find((x) => x.key === params.modelKey);
+    let modelConfig = this.ext.aiSettings.models.find((x) => x.key === params.modelKey);
     if (!modelConfig) {
       throw new Error(`Model not found: ${params.modelKey}`);
+    }
+    if (modelConfig.provider !== "unknown") { 
+      modelConfig.baseURL = this.ext.aiSettings.builtinApiKeys[modelConfig.provider]?.baseURL || modelConfig.baseURL;
+      modelConfig.apiKey = this.ext.aiSettings.builtinApiKeys[modelConfig.provider]?.apiKey || modelConfig.apiKey;
     }
 
     this.abortController = new AbortController();
@@ -475,22 +479,12 @@ export class AiChannel {
       return newMessage.content as string;
     }
   }
-  ext: {
+  ext!: {
     antdmessage: { warning: (string) => void };
     mcpTools: HyperChatCompletionTool[];
     platform: "nodejs" | "web";
     getURL_PRE: () => string;
-  } = {
-    antdmessage: {
-      warning: (msg) => {
-        console.warn(msg);
-      },
-    },
-    mcpTools: [],
-    platform: "nodejs",
-    getURL_PRE: () => {
-      return "";
-    },
+    aiSettings: AISettings
   };
   register(ext: this["ext"]) {
     this.ext = ext;

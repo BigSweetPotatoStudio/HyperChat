@@ -1,3 +1,5 @@
+import { appDataDir } from "../const.mjs";
+import { AIModelConfigItem } from "../shared/types.mjs";
 import { AppSettingsManager } from "./managers/appSettingsManager.mjs";
 
 // 全局应用设置管理器
@@ -37,3 +39,36 @@ export function getAppSettingsManager(): AppSettingsManager {
 export function isAppSettingsManagerInitialized(): boolean {
   return globalAppSettingsManager !== null && isInitialized;
 }
+
+class AiModelData {
+  data: Array<AIModelConfigItem> = []
+  constructor() {
+
+  }
+
+  async init() {
+    await initAppSettingsManager(appDataDir).init();
+    let appSettings = getAppSettingsManager()
+    // let modelConfig = this.ext.appSettings?.ai.models.find((x) => x.key === params.modelKey);
+    // if (!modelConfig) {
+    //   throw new Error(`Model not found: ${params.modelKey}`);
+    // // }
+    // if (modelConfig.provider !== "unknown") {
+    //   modelConfig.baseURL = appSettings?.ai.builtinApiKeys[modelConfig.provider]?.baseURL || modelConfig.baseURL;
+    //   modelConfig.apiKey = appSettings?.ai.builtinApiKeys[modelConfig.provider]?.apiKey || modelConfig.apiKey;
+    // }
+    return appSettings.getAI().models.map((model) => {
+      return {
+        ...model,
+        baseURL: appSettings.getAI().builtinApiKeys[model.provider]?.baseURL || model.baseURL,
+        apiKey: appSettings.getAI().builtinApiKeys[model.provider]?.apiKey || model.apiKey,
+      };
+    });
+  }
+
+  async save() {
+
+  }
+}
+
+export const AI_MODELS = new AiModelData();

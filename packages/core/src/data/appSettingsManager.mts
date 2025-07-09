@@ -4,12 +4,15 @@ import jsonc from "jsonc-parser";
 import { zodToJsonSchema } from "zod-to-json-schema";
 import { v4 } from "uuid";
 import {
+  AIModelConfigItem,
   AppSettingsSchema,
   DEFAULT_APP_SETTINGS,
   type AppSettings,
   type AppearanceSettings,
   type SystemSettings,
 } from "../shared/jsonSchemas/appSettingsSchema.mjs";
+import { Data } from "./compatible.mjs";
+import { initAppSettingsManager } from "./appSettingsService.mjs";
 
 /**
  * 全局应用设置管理器类（仅限 Node.js 环境）
@@ -22,7 +25,7 @@ export class AppSettingsManager {
   constructor(private appDataDir: string) {
     this.settingsPath = path.join(appDataDir, "app-settings.jsonc");
     this.schemaPath = path.join(appDataDir, "app-settings.schema.json");
-    
+
     // 创建完整的默认设置，包含 UUID
     this.settings = {
       ...DEFAULT_APP_SETTINGS,
@@ -41,7 +44,7 @@ export class AppSettingsManager {
 
     // 生成并保存 JSON Schema
     await this.generateSchema();
-    
+
     // 加载设置
     await this.load();
   }
@@ -76,10 +79,10 @@ export class AppSettingsManager {
       if (fs.existsSync(this.settingsPath)) {
         const content = await fs.promises.readFile(this.settingsPath, "utf-8");
         const parsed = jsonc.parse(content);
-        
+
         // 使用 Zod 验证和解析
         const result = AppSettingsSchema.safeParse(parsed);
-        
+
         if (result.success) {
           this.settings = result.data;
         } else {
@@ -214,7 +217,6 @@ export class AppSettingsManager {
       PATH: this.settings.PATH,
       platform: this.settings.platform,
       uuid: this.settings.uuid,
-      lastSyncTime: this.settings.lastSyncTime,
     };
 
     this.settings = {
@@ -238,7 +240,7 @@ export class AppSettingsManager {
     try {
       const parsed = JSON.parse(settingsJson);
       const result = AppSettingsSchema.safeParse(parsed);
-      
+
       if (result.success) {
         // 保留系统信息
         const systemInfo = {
@@ -265,3 +267,5 @@ export class AppSettingsManager {
   }
 
 }
+
+
