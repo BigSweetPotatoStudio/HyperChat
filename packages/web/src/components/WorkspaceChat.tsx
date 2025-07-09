@@ -82,12 +82,14 @@ interface WorkspaceChatProps {
   mcpClients: IMCPClient[];
   /** 要加载的特定聊天记录 */
   chatLogToLoad?: ChatHistoryItem;
+  /** AI 设置 */
+  aiSettings?: AISettings;
 }
 
 /**
  * 工作区聊天组件
  */
-export const WorkspaceChat = ({ workspace, agentKey, workspaceDetails, mcpClients, chatLogToLoad }: WorkspaceChatProps) => {
+export const WorkspaceChat = ({ workspace, agentKey, workspaceDetails, mcpClients, chatLogToLoad, aiSettings: propAiSettings }: WorkspaceChatProps) => {
   // 使用强制刷新 hook
   const refresh = useForceUpdate();
 
@@ -95,10 +97,10 @@ export const WorkspaceChat = ({ workspace, agentKey, workspaceDetails, mcpClient
   const context = useContext(HeaderContext);
   const { globalState, updateGlobalState } = context || {};
   
-  // AI设置状态
-  const [aiSettings, setAiSettings] = useState<AISettings | null>(null);
+  // AI设置状态 - 优先使用从父组件传递的设置，如果没有则自己加载
+  const [aiSettings, setAiSettings] = useState<AISettings | null>(propAiSettings || null);
   // AI设置加载状态
-  const [aiSettingsLoading, setAiSettingsLoading] = useState(true);
+  const [aiSettingsLoading, setAiSettingsLoading] = useState(!propAiSettings);
   
   // 获取默认模型配置
   const getDefaultModelFromSettings = (settings: AISettings): AIModelConfigItem | null => {
@@ -281,11 +283,17 @@ export const WorkspaceChat = ({ workspace, agentKey, workspaceDetails, mcpClient
       try {
         await LocalSetting.init();
         
-        // 从 AppSettings 获取 AI 配置
-        const appSettings = await call('getAppSettings');
-        const ai = appSettings.ai;
-        setAiSettings(ai);
-        setAiSettingsLoading(false);
+        let ai: AISettings;
+        
+        // 如果没有从父组件传递 aiSettings，则自己加载
+        if (!propAiSettings) {
+          const appSettings = await call('getAppSettings');
+          ai = appSettings.ai;
+          setAiSettings(ai);
+          setAiSettingsLoading(false);
+        } else {
+          ai = propAiSettings;
+        }
 
         const defaultModel = getDefaultModelFromSettings(ai);
         currentChat.current.modelKey = defaultModel ? defaultModel.key : "";
@@ -338,7 +346,15 @@ export const WorkspaceChat = ({ workspace, agentKey, workspaceDetails, mcpClient
         setAiSettingsLoading(false);
       }
     })();
-  }, [workspace, agentKey, chatLogToLoad]);
+  }, [workspace, agentKey, chatLogToLoad, propAiSettings]);
+
+  // 监听从父组件传递的 aiSettings 变化
+  useEffect(() => {
+    if (propAiSettings) {
+      setAiSettings(propAiSettings);
+      setAiSettingsLoading(false);
+    }
+  }, [propAiSettings]);
 
   /**
    * 重置当前聊天配置
