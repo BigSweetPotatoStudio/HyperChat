@@ -2,6 +2,7 @@
 
 ## typescript使用指南
 * import .mts 文件时，使用 import { xxx } from './xxx.mjs' 的方式导入。
+* xx.ts.bak ， .bak 文件是老逻辑代码，不用阅读，也不用修改和删除。
 
 ## 项目概述
 
@@ -87,10 +88,40 @@ packages/cli 专注于命令行前端的实现
 - 测试双模式（表单/JSON）数据同步
 - 确保 Monaco 编辑器语法高亮和错误提示正常
 
+### 已完成的架构重构 ✅
+
+#### AppSettings 架构重构 (完成)
+- **DesktopSchema 分离**: 将 `closeAction` 和 `windowSize` 从 `SystemSchema` 分离到新的 `DesktopSchema`
+- **前端支持**: 在 `AppSettings.tsx` 中添加了独立的 "Desktop" 选项卡
+- **Context 更新**: `AppSettingsContext.tsx` 添加了 `desktop` 属性和 `updateDesktop` 函数
+- **类型安全**: 修复了所有 TypeScript 错误，保持完整的类型支持
+
+#### WorkspaceSettings 架构重构 (完成)
+- **Schema 分离**: 创建 `packages/core/src/shared/jsonSchemas/workspaceSettingsSchema.mts`
+  - 包含 `WorkspaceAppearanceSchema`, `WorkspaceEditorSchema`, `WorkspaceAISchema`, `WorkspaceAdvancedSchema`
+  - 提供完整的类型定义和验证函数
+- **实现迁移**: 创建 `packages/core/src/data/workspaceSettingsManager.mts`
+  - `WorkspaceSettingsManager` 类封装所有设置管理逻辑
+  - JSON Schema 生成和文件操作
+- **引用更新**: 更新了所有相关文件的导入和类型引用
+- **命名冲突解决**: 使用 `WorkspaceDetailedSettings` 避免与现有类型冲突
+
+#### Schema2FormItems 组件修复 (完成)
+- **TypeScript 错误修复**: 解决了所有类型断言和 spread 操作的错误
+- **代码清理**: 移除了未使用的导入和变量
+
+### 架构优势
+- **分离关注点**: JSON Schema 与业务逻辑分离
+- **统一管理**: 所有 Schema 集中在 `shared/jsonSchemas` 目录
+- **数据管理**: 所有管理器类集中在 `data` 目录
+- **类型安全**: 保持完整的 TypeScript 类型支持
+- **前端集成**: Schema2Form 自动生成 UI 界面
+
 ### 2.0 TODO
 - [ ] 减少any使用，多使用这个文件定义的类型 packages/core/src/shared/types.mts
 - [ ] 完善 Schema2Form 组件的单元测试
 - [ ] 优化 AI 配置管理的性能，考虑大量模型时的加载优化
+- [ ] 为 WorkspaceSettings 添加前端配置界面
 
 
 2.0 版本的 HyperChat 项目结构如下：

@@ -1,5 +1,5 @@
 import { Router, Request, Response } from "express";
-import { MCP_GateWay } from "./shared/data.mjs";
+// import { MCP_GateWay } from "./shared/data.mjs";
 import { SSEServerTransport, StreamableHTTPServerTransport } from "./es6.mjs";
 import { createServer } from "./mcp/servers/gateway/index.mjs";
 import { Logger } from "./log.mjs";

@@ -17,14 +17,17 @@ import {
   ExportOutlined,
   ImportOutlined,
   RobotOutlined,
+  ApiOutlined,
 } from "@ant-design/icons";
 import { t } from "../i18n";
 import { zodToJsonSchema } from "zod-to-json-schema";
+import { z } from "zod";
 import {
   AppearanceSchema,
   SystemSchema,
   DesktopSchema,
-  AIConfigSchema
+  AIConfigSchema,
+  MCPGatewaySchema
 } from "../../../core/src/shared/jsonSchemas/appSettingsSchema.mjs";
 import Schema2Form from "./schema2Form";
 
@@ -118,6 +121,8 @@ export function AppSettings({
 
   const aiJsonSchema = zodToJsonSchema(AIConfigSchema as any)  as any;
 
+  const mcpGatewaysJsonSchema = zodToJsonSchema(z.array(MCPGatewaySchema) as any) as any;
+
   // 创建外观设置 schema，添加中文标题
   const appearanceSchema = appearanceJsonSchema;
 
@@ -154,6 +159,13 @@ export function AppSettings({
         description: t`Set the default AI model`,
       },
     },
+  };
+
+  // 创建MCP Gateways设置 schema，添加中文标题
+  const mcpGatewaysSchema = {
+    ...mcpGatewaysJsonSchema,
+    title: t`MCP Gateways`,
+    description: t`Configure MCP gateways for model context protocol`,
   };
 
   const tabItems = [
@@ -218,6 +230,22 @@ export function AppSettings({
           schema={aiSchema}
           value={currentValues?.ai}
           onChange={(values) => handleFormChange({ ...currentValues, ai: values })}
+        />
+      ),
+    },
+    {
+      key: "mcpGateways",
+      label: (
+        <span>
+          <ApiOutlined />
+          {t`MCP Gateways`}
+        </span>
+      ),
+      children: (
+        <Schema2Form
+          schema={mcpGatewaysSchema}
+          value={currentValues?.mcpGateWays}
+          onChange={(values) => handleFormChange({ ...currentValues, mcpGateWays: values })}
         />
       ),
     },

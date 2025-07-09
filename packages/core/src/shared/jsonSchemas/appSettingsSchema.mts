@@ -72,6 +72,13 @@ export const DesktopSchema = z.object({
 });
 
 
+// MCP Gateway 配置 Schema
+export const MCPGatewaySchema = z.object({
+  name: z.string().describe("网关名称"),
+  description: z.string().optional().describe("网关描述"),
+  allowMCPs: z.array(z.string()).default([]).describe("允许的MCP列表"),
+}).describe("MCP网关配置");
+
 // 系统设置 Schema
 export const SystemSchema = z.object({
   password: z.string().default("123456").describe("应用密码"),
@@ -94,6 +101,7 @@ export const AppSettingsSchema = z.object({
   system: SystemSchema.default({}),
   desktop: DesktopSchema.default({}),
   ai: AIConfigSchema.default({}),
+  mcpGateWays: z.array(MCPGatewaySchema).default([]).describe("MCP网关配置列表"),
 
 });
 
@@ -106,6 +114,7 @@ export type AISettings = z.infer<typeof AIConfigSchema>;
 export type AIModelConfigItem = z.infer<typeof AIModelConfigItemSchema>;
 export type ProviderConfig = z.infer<typeof ProviderConfigSchema>;
 export type KnownProvider = z.infer<typeof KnownProviderSchema>;
+export type MCPGateway = z.infer<typeof MCPGatewaySchema>;
 
 // 默认设置（不包含 UUID 生成，因为前端不能使用 uuid 库）
 export const DEFAULT_APP_SETTINGS: Omit<AppSettings, 'uuid'> = (() => {
@@ -146,5 +155,9 @@ export function validateAIModelConfigItem(data: any): data is AIModelConfigItem 
 
 export function validateProviderConfig(data: any): data is ProviderConfig {
   return ProviderConfigSchema.safeParse(data).success;
+}
+
+export function validateMCPGateway(data: any): data is MCPGateway {
+  return MCPGatewaySchema.safeParse(data).success;
 }
 

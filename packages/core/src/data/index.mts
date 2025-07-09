@@ -12,5 +12,3 @@ export {
   isAppSettingsManagerInitialized,
   markAppSettingsManagerAsInitialized 
 } from "./appSettingsService.mjs";
-
-export * from "./compatible.mjs";
