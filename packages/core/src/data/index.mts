@@ -1,8 +1,50 @@
 // 导出核心模块（仅限 Node.js 环境）
 
-export { AppSettingsManager } from "./appSettingsManager.mjs";
+// 导出基础数据类
+export { Data, DataList } from "./base/data.mjs";
+
+// 导出应用设置管理器
+export { AppSettingsManager } from "./managers/appSettingsManager.mjs";
+
+// 导出应用设置服务
 export { 
-  initAppSettingsManager,
-  getAppSettingsManager,
-  isAppSettingsManagerInitialized 
+  getAppSettingsManager, 
+  initAppSettingsManager, 
+  isAppSettingsManagerInitialized,
+  markAppSettingsManagerAsInitialized 
 } from "./appSettingsService.mjs";
+
+// 导出应用相关数据实例
+export { 
+  AppSetting, 
+  LocalSetting, 
+  ENV_CONFIG, 
+  TEMP_FILE 
+} from "./instances/appInstances.mjs";
+
+// 导出聊天相关数据实例
+export { 
+  ChatHistory, 
+  Agents, 
+  VarList, 
+  VarScopeList 
+} from "./instances/chatInstances.mjs";
+
+// 导出AI相关数据实例
+export { 
+  AI_MODELS, 
+  AIModelConfig, 
+  PROVIDER_CONFIGS 
+} from "./instances/aiInstances.mjs";
+
+// 导出MCP相关数据实例
+export { 
+  MCP_CONFIG, 
+  MCP_GateWay 
+} from "./instances/mcpInstances.mjs";
+
+// 导出任务相关数据实例
+export { 
+  KNOWLEDGE_BASE, 
+  TaskList 
+} from "./instances/taskInstances.mjs";

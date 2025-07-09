@@ -6,7 +6,7 @@ import path from "path";
 import { progressList } from "./progress.mjs";
 import type { FeatureExtractionPipeline } from "@xenova/transformers";
 
-import { LocalSetting } from "../shared/data.mjs";
+import { LocalSetting } from "../data/index.mjs";
 import { Logger } from "../log.mjs";
 
 export class FeatureExtraction {

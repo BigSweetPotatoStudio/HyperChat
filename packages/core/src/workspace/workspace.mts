@@ -11,7 +11,7 @@ import {
   validateWorkspaceConfig 
 } from "./types.mjs";
 import type { ChatHistoryItem } from "../shared/types.mjs";
-import type { MCPServerConfig } from "../shared/data.mjs";
+import type { MCPServerConfig } from "../data/index.mjs";
 import { AgentManager } from "./agentManager.mjs";
 import { getMCPManager } from "./mcp/index.mjs";
 import type { WorkspaceMCPClientImpl } from "./mcp/client.mjs";

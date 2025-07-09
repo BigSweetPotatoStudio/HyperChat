@@ -1,4 +1,4 @@
-import { AppSettingsManager } from "./appSettingsManager.mjs";
+import { AppSettingsManager } from "./managers/appSettingsManager.mjs";
 
 // 全局应用设置管理器
 let globalAppSettingsManager: AppSettingsManager | null = null;

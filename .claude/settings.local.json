@@ -27,7 +27,8 @@
       "Bash(git add:*)",
       "Bash(kill:*)",
       "Bash(ss:*)",
-      "Bash(ps:*)"
+      "Bash(ps:*)",
+      "mcp__ide__getDiagnostics"
     ],
     "deny": []
   }

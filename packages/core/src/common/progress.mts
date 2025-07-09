@@ -21,7 +21,7 @@
  * - ProgressList: 进度列表管理器，支持多任务跟踪
  */
 
-import { LocalSetting } from "../shared/data.mjs";
+import { LocalSetting } from "../data/index.mjs";
 
 /**
  * 进度项数据模型

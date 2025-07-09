@@ -2,8 +2,7 @@ import { appDataDir } from "./const.mjs";
 import { Logger } from "./log.mjs";
 import { zx } from "./es6.mjs";
 const { fs, path } = zx;
-import { LocalSetting } from "./shared/data.mjs";
-import { initAppSettingsManager, markAppSettingsManagerAsInitialized } from "./data/appSettingsService.mjs";
+import { LocalSetting, initAppSettingsManager, markAppSettingsManagerAsInitialized } from "./data/index.mjs";
 import "./common/data.mjs";
 
 

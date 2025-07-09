@@ -38,8 +38,7 @@ import { getWorkspaceTerminal, findWorkspaceTerminalByTerminalId } from "./works
 import { fileURLToPath } from 'node:url';
 import { dirname } from 'node:path';
 import { getWorkspaceManager, workspaceManager } from "./workspace/index.mjs";
-import { getAppSettingsManager, isAppSettingsManagerInitialized } from "./data/appSettingsService.mjs";
-import { AppSettingsManager } from "./data/appSettingsManager.mjs";
+import { getAppSettingsManager, isAppSettingsManagerInitialized, AppSettingsManager } from "./data/index.mjs";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);

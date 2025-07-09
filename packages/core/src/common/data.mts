@@ -31,7 +31,7 @@ import {
   ENV_CONFIG,
   VarList,
   Data,
-} from "../shared/data.mjs";
+} from "../data/index.mjs";
 
 import { appDataDir } from "../const.mjs";
 
