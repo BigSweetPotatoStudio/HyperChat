@@ -34,12 +34,11 @@
     "outDir": "./js",
     "typeRoots": [
       "./node_modules/@types",
-      "./types",
-      "./src/shared"
+      "./types"
     ],
     "composite": true,
     "incremental": true,
-    "tsBuildInfoFile": "./js/.tsbuildinfo",
+    "tsBuildInfoFile": "./js/.tsbuildinfo"
   },
   "include": [
     "src",

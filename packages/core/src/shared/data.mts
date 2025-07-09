@@ -50,4 +50,4 @@ export {
   VarList,
   VarScopeList,
   MCP_GateWay
-} from "../data/index.mjs";
+} from "../data/compatible.mjs";
