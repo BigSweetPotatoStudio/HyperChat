@@ -15,6 +15,9 @@ import {
   Input,
   Spin,
   Alert,
+  Form,
+  Radio,
+  Popconfirm,
 } from "antd";
 import {
   ReloadOutlined,
@@ -27,12 +30,15 @@ import {
   FilterOutlined,
   SearchOutlined,
   ExperimentOutlined,
+  SettingOutlined,
+  MinusCircleOutlined,
 } from "@ant-design/icons";
 import { call } from "../common/call";
 import { t } from "../i18n";
 import { HyperChatCompletionTool, IMCPClient, MCPServerConfig } from "@hyperchat/shared/data.mjs";
 import Editor from "@monaco-editor/react";
 import { WorkspaceInfo } from "../pages/workspace/workspace";
+import { useForceUpdate } from "../hooks";
 
 const { Title, Text } = Typography;
 
@@ -46,12 +52,28 @@ interface MCPManagementProps {
   onRefresh: () => Promise<void>;
 }
 
+// MCP 配置表单数据结构
+interface MCPFormValues {
+  _type?: 'edit' | 'create';
+  _name?: string;
+  name: string;
+  type: 'stdio' | 'sse' | 'streamableHttp';
+  command?: string;
+  args?: string[];
+  env?: Record<string, string>;
+  _envList?: { name: string; value: string }[];
+  url?: string;
+  headers?: string | Record<string, string>;
+}
+
 export interface MCPManagementRef {
   addMcpServer: () => void;
   refreshMcpClients: () => void;
 }
 
 export const MCPManagement = forwardRef<MCPManagementRef, MCPManagementProps>(({ workspace, mcpClients, onRefresh }, ref) => {
+  let reflesh = useForceUpdate();
+
   const [mcpRefreshing, setMcpRefreshing] = useState(false);
   const [mcpDetailDrawer, setMcpDetailDrawer] = useState(false);
   const [selectedMcpClient, setSelectedMcpClient] = useState<IMCPClient | null>(null);
@@ -70,12 +92,57 @@ export const MCPManagement = forwardRef<MCPManagementRef, MCPManagementProps>(({
   const [testResult, setTestResult] = useState<any>(null);
   const [testError, setTestError] = useState<string | null>(null);
 
+  // MCP 配置表单相关状态
+  const [mcpForm] = Form.useForm<MCPFormValues>();
+  const [loadingOpenMCP, setLoadingOpenMCP] = useState(false);
+  const [mcpConfigResult, setMcpConfigResult] = useState<{ data: any; error: any }>({ data: null, error: null });
+
   // Monaco编辑器引用
   const monacoRef = useRef<any>(null);
   const editorRef = useRef<any>(null);
 
   // 添加MCP服务器
   const addMcpServer = () => {
+    mcpForm.resetFields();
+    setMcpConfigResult({ data: null, error: null });
+    setAddMcpModalOpen(true);
+  };
+
+  // 编辑MCP服务器
+  const editMcpServer = (client: IMCPClient) => {
+    // 准备表单数据进行编辑
+    let formValues = {
+      ...client.config,
+      name: client.serverName,
+    } as any;
+
+    formValues._name = client.serverName;
+    formValues._type = "edit";
+    formValues.command = [
+      formValues.command || "",
+      ...formValues.args || [],
+    ].join("   ");
+    formValues._envList = [];
+
+    // 转换环境变量格式
+    for (let key in (formValues.env || {})) {
+      formValues._envList.push({
+        name: key,
+        value: formValues.env[key],
+      });
+    }
+
+    formValues.type = formValues?.type || formValues?.hyperchat?.type || "stdio";
+    formValues.url = formValues?.url || formValues?.hyperchat?.url || "";
+
+    // 转换 headers 格式
+    formValues.headers = Object.entries(formValues.headers || {})
+      .map(([key, value]) => `${key}=${value}`)
+      .join("\n");
+
+    mcpForm.resetFields();
+    mcpForm.setFieldsValue(formValues);
+    setMcpConfigResult({ data: null, error: null });
     setAddMcpModalOpen(true);
   };
 
@@ -481,6 +548,13 @@ export const MCPManagement = forwardRef<MCPManagementRef, MCPManagementProps>(({
                   label: t`View Details`,
                   onClick: () => showMcpClientDetails(client),
                 },
+                // 只有非内置的MCP客户端才能编辑
+                client.mcpType !== "builtin" ? {
+                  key: "edit",
+                  icon: <SettingOutlined />,
+                  label: t`Edit`,
+                  onClick: () => editMcpServer(client),
+                } : null,
                 {
                   key: "restart",
                   icon: <ReloadOutlined />,
@@ -504,7 +578,8 @@ export const MCPManagement = forwardRef<MCPManagementRef, MCPManagementProps>(({
                 {
                   type: "divider" as const
                 },
-                {
+                // 只有非内置的MCP客户端才能删除
+                client.mcpType !== "builtin" ? {
                   key: "delete",
                   icon: <DeleteOutlined />,
                   label: t`Delete`,
@@ -516,8 +591,8 @@ export const MCPManagement = forwardRef<MCPManagementRef, MCPManagementProps>(({
                       onOk: () => deleteMcpClient(client.serverName),
                     });
                   },
-                },
-              ];
+                } : null,
+              ].filter(item => item !== null);
 
               return (
                 <List.Item
@@ -612,30 +687,261 @@ export const MCPManagement = forwardRef<MCPManagementRef, MCPManagementProps>(({
         )}
       </div>
 
-      {/* 添加MCP服务器模态框 */}
+      {/* 添加/编辑 MCP 配置模态框 */}
       <Modal
+        width={600}
         title={t`Add MCP Server`}
         open={addMcpModalOpen}
-        onCancel={() => setAddMcpModalOpen(false)}
-        footer={[
-          <Button key="cancel" onClick={() => setAddMcpModalOpen(false)}>
-            {t`Cancel`}
-          </Button>,
-          <Button key="submit" type="primary" disabled>
-            {t`Add`}
-          </Button>
-        ]}
+        okButtonProps={{
+          autoFocus: true,
+          htmlType: "submit",
+          loading: loadingOpenMCP,
+        }}
+        okText={t`Install And Run`}
+        maskClosable={false}
+        cancelButtonProps={{ style: { display: "none" } }}
+        onCancel={() => {
+          setAddMcpModalOpen(false);
+          setMcpConfigResult({ data: null, error: null });
+        }}
+        modalRender={(dom) => (
+          <Form
+            initialValues={{
+              type: "stdio",
+            }}
+            form={mcpForm}
+            layout="vertical"
+            name="Configure MCP"
+            clearOnDestroy
+            onFinish={async (values: MCPFormValues) => {
+              try {
+                setLoadingOpenMCP(true);
+
+                // 检查服务名称是否已存在（新建时）
+                if (values._type !== "edit") {
+                  const existingClients = Object.values(mcpClients).filter(x => x.serverName === values.name);
+                  if (existingClients.length > 0) {
+                    message.error(t`MCP Service Name already exists`);
+                    return;
+                  }
+                } else {
+                  // 编辑时，如果名称改变则删除旧服务
+                  if (values._name && values.name !== values._name) {
+                    await call("manageWorkspaceMcpClient", {
+                      workspacePath: workspace.path,
+                      clientName: values._name,
+                      action: "delete"
+                    });
+                  }
+                }
+
+                let mcpServerConfig = {} as MCPServerConfig;
+
+                // 根据服务类型构建配置
+                if (values.type === "sse" || values.type === "streamableHttp") {
+                  let headers: Record<string, string> = {};
+                  const headersString = (values.headers as string) || "";
+                  const lines = headersString.split("\n");
+                  for (let line of lines) {
+                    const [key, value] = line.split("=");
+                    if (key && value) {
+                      headers[key.trim()] = value.trim();
+                    }
+                  }
+                  mcpServerConfig = {
+                    url: values.url!,
+                    type: values.type,
+                    headers: headers,
+                  };
+                } else {
+                  // 处理 stdio 类型的配置
+                  const commands = values.command!
+                    .split(" ")
+                    .filter((x) => x.trim() !== "");
+
+                  const [command, ...args] = commands;
+                  values.command = command?.trim() || '';
+                  values.args = args;
+                  values.env = {};
+
+                  try {
+                    values._envList = values._envList || [];
+                    for (let envItem of values._envList) {
+                      values.env[envItem.name.trim()] = envItem.value.trim();
+                    }
+                  } catch {
+                    message.error("Please enter a valid JSON");
+                    return;
+                  }
+
+                  mcpServerConfig = {
+                    command: values.command,
+                    args: values.args,
+                    env: values.env,
+                  };
+                }
+
+                // 添加工作区特定的MCP配置
+                await call("setWorkspaceMcpServerConfig", {
+                  workspacePath: workspace.path,
+                  serverName: values.name,
+                  serverConfig: mcpServerConfig
+                });
+
+                setMcpConfigResult({
+                  data: "success",
+                  error: null,
+                });
+
+                // 刷新数据
+                await onRefresh();
+                setAddMcpModalOpen(false);
+                message.success(t`MCP server added successfully`);
+              } catch (e: any) {
+                setMcpConfigResult({
+                  data: null,
+                  error: e.message,
+                });
+              } finally {
+                setLoadingOpenMCP(false);
+              }
+            }}
+          >
+            {dom}
+          </Form>
+        )}
       >
-        <div className="text-center py-8">
-          <p className="text-gray-500">
-            {workspace.isGlobal
-              ? t`Global MCP configuration - Coming soon`
-              : t`Workspace MCP configuration - Coming soon`}
-          </p>
-          <p className="text-xs text-gray-400 mt-2">
-            {t`This feature is under development`}
-          </p>
-        </div>
+        {/* 表单隐藏字段 */}
+        <Form.Item className="hidden" name="_type" label="_type">
+          <Input />
+        </Form.Item>
+        <Form.Item
+          name="_name"
+          label={t`Old Name`}
+          className="hidden"
+          rules={[{ message: t`Please enter` }]}
+        >
+          <Input disabled placeholder="Please enter" />
+        </Form.Item>
+
+        {/* 服务名称 */}
+        <Form.Item
+          name="name"
+          label={t`Name`}
+          rules={[{ required: true, message: t`Please enter` }]}
+        >
+          <Input placeholder="Please enter" />
+        </Form.Item>
+
+        {/* 服务类型选择 */}
+        <Form.Item
+          name="type"
+          label={t`type`}
+          rules={[{ required: true, message: t`Please enter` }]}
+        >
+          <Radio.Group onChange={() => { reflesh() }}>
+            <Radio value="stdio">stdio</Radio>
+            <Radio value="sse">sse</Radio>
+            <Radio value="streamableHttp">streamableHttp</Radio>
+          </Radio.Group>
+        </Form.Item>
+
+        {/* 根据服务类型显示不同的配置项 */}
+        {(mcpForm.getFieldValue("type") === "sse" ||
+          mcpForm.getFieldValue("type") === "streamableHttp") ? (
+          <div>
+            {/* HTTP 服务配置 */}
+            <Form.Item
+              name="url"
+              label="url"
+              rules={[{ required: true, message: "Please enter" }]}
+            >
+              <Input placeholder="Please enter url" />
+            </Form.Item>
+            <Form.Item name="headers" label={t`request-headers`}>
+              <Input.TextArea
+                placeholder="Content-Type=application/json&#10;Authorization=Bearer token"
+              />
+            </Form.Item>
+          </div>
+        ) : (
+          <div>
+            {/* 命令行服务配置 */}
+            <Form.Item
+              name="command"
+              label="command"
+              rules={[{ required: true, message: "Please enter" }]}
+            >
+              <Input placeholder="Please enter command" />
+            </Form.Item>
+
+            {/* 环境变量配置 */}
+            <Form.Item label="env">
+              <Form.List name="_envList">
+                {(fields, { add, remove }) => (
+                  <>
+                    {fields.map(({ key, name, ...restField }) => (
+                      <div
+                        key={key}
+                        style={{
+                          display: "flex",
+                          justifyContent: "space-between",
+                        }}
+                      >
+                        <Form.Item
+                          {...restField}
+                          name={[name, "name"]}
+                          rules={[
+                            { required: true, message: "Missing name" },
+                          ]}
+                        >
+                          <Input placeholder="Var Name" />
+                        </Form.Item>
+                        <Form.Item
+                          {...restField}
+                          className="flex-1"
+                          name={[name, "value"]}
+                          rules={[
+                            { required: true, message: "Missing Value" },
+                          ]}
+                        >
+                          <Input placeholder="Var Value" />
+                        </Form.Item>
+                        <Form.Item>
+                          <MinusCircleOutlined onClick={() => remove(name)} />
+                        </Form.Item>
+                      </div>
+                    ))}
+                    <Form.Item>
+                      <Button
+                        type="dashed"
+                        onClick={() => add()}
+                        block
+                        icon={<PlusOutlined />}
+                      >
+                        Add Environment Variables
+                      </Button>
+                    </Form.Item>
+                  </>
+                )}
+              </Form.List>
+            </Form.Item>
+          </div>
+        )}
+
+        {/* 操作结果显示 */}
+        {mcpConfigResult.data && (
+          <div>
+            <div>Result:</div>
+            <div>{mcpConfigResult.data}</div>
+          </div>
+        )}
+        {mcpConfigResult.error && (
+          <div className="text-red-500 max-h-64 overflow-auto">
+            <div>Result:</div>
+            <div>{mcpConfigResult.error.toString()}</div>
+          </div>
+        )}
       </Modal>
 
       {/* MCP客户端详情抽屉 */}

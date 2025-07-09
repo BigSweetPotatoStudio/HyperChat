@@ -53,7 +53,6 @@ import { AiChannel } from "@hyperchat/shared/ai.mjs";
 import {
   AI_MODELS,
   LocalSetting,
-  VarList,
   ChatHistoryItem,
 } from "@hyperchat/shared/data.mjs";
 import { MyMessage } from "@hyperchat/shared/data.mjs";
@@ -247,7 +246,6 @@ export const WorkspaceChat = ({ workspace, agentKey, workspaceDetails, mcpClient
         await Promise.all([
           AI_MODELS.init(),
           LocalSetting.init(),
-          VarList.init(),
         ]);
 
         const defaultModel = getDefaultModelConfigSync(AI_MODELS);

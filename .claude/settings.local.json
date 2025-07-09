@@ -22,7 +22,8 @@
       "Bash(npm test)",
       "Bash(node:*)",
       "Bash(npm run check:*)",
-      "Bash(npm run typecheck:*)"
+      "Bash(npm run typecheck:*)",
+      "Bash(npm run:*)"
     ],
     "deny": []
   }
