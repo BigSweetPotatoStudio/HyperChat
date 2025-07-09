@@ -80,7 +80,7 @@ export interface WorkspaceInfo extends WorkspaceConfig {
   path: string;
   agentsCount: number;
   mcpServersCount: number;
-  isGlobal?: boolean;
+  isGlobal: boolean;
   isActive?: boolean; // 前端活动状态：工作区在标签页列表中（可见/隐藏）
   isRunning?: boolean; // 后端活动状态：标记工作区是否在后台运行
 }
@@ -158,10 +158,10 @@ export function Workspace() {
   // 为每个工作区维护独立的标签页状态
   const [workspaceTabsMap, setWorkspaceTabsMap] = useState<Record<string, ChatTab[]>>({});
   const [workspaceActiveTabMap, setWorkspaceActiveTabMap] = useState<Record<string, string>>({});
-  
+
   // 存储各个工作区的 AgentManagement ref
   const agentManagementRefs = useRef<Record<string, AgentManagementRef | null>>({});
-  
+
   // 存储各个工作区的 MCPManagement ref
   const mcpManagementRefs = useRef<Record<string, MCPManagementRef | null>>({});
 
@@ -262,6 +262,7 @@ export function Workspace() {
               mcpServersCount: summary.mcpServersCount || 0,
               isActive: false, // 默认不在前端显示
               isRunning: runningPaths.has(ws.path), // 使用本地变量而不是状态
+              isGlobal: false, // 标记为项目工作区
             });
           }
         } catch (error) {
@@ -345,7 +346,7 @@ export function Workspace() {
 
         // 切换到该工作区
         setActiveWorkspaceKey(values.path);
-        
+
         // 将新打开的工作区标记为活动和运行中
         await loadWorkspaces(); // 先重新加载工作区列表
         setWorkspaces(prev => prev.map(ws => ({
@@ -379,7 +380,7 @@ export function Workspace() {
         isActive: ws.path === workspacePath || ws.isActive, // 保留其他已激活的工作区
         isRunning: ws.path === workspacePath ? true : ws.isRunning // 确保标记为运行中
       })));
-      
+
       // 切换到该工作区（这会让它重新出现在标签页中）
       setActiveWorkspaceKey(workspacePath);
       setOpenModalOpen(false);
@@ -399,7 +400,7 @@ export function Workspace() {
 
       // 如果不在运行，启动它
       await startWorkspaceMcpClients(workspacePath);
-      
+
       // 更新运行状态
       setRunningWorkspaces(prev => new Set(prev).add(workspacePath));
 
@@ -442,7 +443,7 @@ export function Workspace() {
 
       // 切换到新创建的工作区
       setActiveWorkspaceKey(pendingWorkspacePath);
-      
+
       // 重新加载工作区列表并标记新工作区为活动
       await loadWorkspaces();
       setWorkspaces(prev => prev.map(ws => ({
@@ -463,7 +464,7 @@ export function Workspace() {
       await call("startWorkspaceMcpClients", { workspacePath });
       // 更新前端运行状态
       setRunningWorkspaces(prev => new Set(prev).add(workspacePath));
-      
+
       // 更新工作区的运行状态
       setWorkspaces(prev => prev.map(ws => ({
         ...ws,
@@ -493,7 +494,7 @@ export function Workspace() {
         newSet.delete(workspace.path);
         return newSet;
       });
-      
+
       // 更新工作区状态：既不在前端显示，也不在后台运行
       setWorkspaces(prev => prev.map(ws => ({
         ...ws,
@@ -528,7 +529,7 @@ export function Workspace() {
     try {
       // 确保工作区在运行列表中（表示后台活动状态）
       setRunningWorkspaces(prev => new Set(prev).add(workspace.path));
-      
+
       // 更新工作区状态：后台运行但前端不显示
       setWorkspaces(prev => prev.map(ws => ({
         ...ws,
@@ -738,13 +739,13 @@ export function Workspace() {
   // 处理标签页切换
   const handleTabChange = async (key: string) => {
     setActiveWorkspaceKey(key);
-    
+
     // // 更新工作区的 isActive 状态
     // setWorkspaces(prev => prev.map(ws => ({
     //   ...ws,
     //   isActive: ws.path === key
     // })));
-    
+
     const workspace = (globalWorkspace && key === globalWorkspace.path) ? globalWorkspace : workspaces.find(ws => ws.path === key);
     if (workspace) {
       // 如果是项目工作区，尝试启动其MCP服务
@@ -995,7 +996,7 @@ export function Workspace() {
               title={null}
               size="small"
               className="h-full"
-              bodyStyle={{ padding: '0', height: '100%', overflow: 'hidden' }}
+              styles={{ body: { padding: '0', height: '100%', overflow: 'hidden' } }}
             >
               {workspaceTabsMap[workspaceKey]?.length && workspaceTabsMap[workspaceKey]?.length > 0 ? (
                 <Tabs
@@ -1111,7 +1112,7 @@ export function Workspace() {
               title={t`Management Panel`}
               size="small"
               // className="h-full"
-              bodyStyle={{ padding: 0 }}
+              styles={{ body: { padding: 0 } }}
             >
               <Tabs
                 className="myTabBodyFull"
@@ -1213,7 +1214,7 @@ export function Workspace() {
             }}
             items={getTabItems().map(item => ({
               ...item,
-              children:renderWorkspaceContent(item.key) 
+              children: renderWorkspaceContent(item.key)
             }))}
             addIcon={<PlusOutlined />}
           />

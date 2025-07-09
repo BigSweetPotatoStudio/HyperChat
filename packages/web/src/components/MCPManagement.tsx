@@ -32,15 +32,13 @@ import { call } from "../common/call";
 import { t } from "../i18n";
 import { HyperChatCompletionTool, IMCPClient, MCPServerConfig } from "@hyperchat/shared/data.mjs";
 import Editor from "@monaco-editor/react";
+import { WorkspaceInfo } from "../pages/workspace/workspace";
 
 const { Title, Text } = Typography;
 
 
 
-interface WorkspaceInfo {
-  path: string;
-  isGlobal?: boolean;
-}
+
 
 interface MCPManagementProps {
   workspace: WorkspaceInfo;

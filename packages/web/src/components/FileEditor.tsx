@@ -241,7 +241,7 @@ export function FileEditor({ filePath, workspacePath, fileName, onClose }: FileE
           </Space>
         </div>
       }
-      bodyStyle={{ padding: 0, height: 'calc(100% - 48px)' }}
+      styles={{ body: { padding: 0, height: 'calc(100% - 48px)' } }}
     >
       {loading ? (
         <div className="flex items-center justify-center h-full">

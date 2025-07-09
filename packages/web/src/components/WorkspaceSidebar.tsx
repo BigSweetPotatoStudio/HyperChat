@@ -290,7 +290,7 @@ export function WorkspaceSidebar({
       title={t`Workspace View`}
       size="small"
       className={`h-full ${className}`}
-      bodyStyle={{ padding: 0, height: 'calc(100% - 48px)' }}
+      styles={{ body: { padding: 0, height: 'calc(100% - 48px)' } }}
     >
       <Tabs
         className="myTabBodyFull"

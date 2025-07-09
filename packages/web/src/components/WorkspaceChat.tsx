@@ -683,10 +683,6 @@ export const WorkspaceChat = ({ workspace, agentKey, workspaceDetails, mcpClient
                     if (file.type.includes("image")) {
                       let path = await blobToBase64(file);
                       resourceResListRef.current.push({
-
-                        // uri: path,
-                        // blob: path,
-                        // mimeType: "image/*",
                         type: "image_url",
                         image_url: {
                           url: path,
@@ -733,6 +729,10 @@ export const WorkspaceChat = ({ workspace, agentKey, workspaceDetails, mcpClient
                 onKeyDown={handleKeyDown}
                 onSubmit={(s) => {
                   if (s == "") return;
+                  if (loading) {
+                    message.warning(t`Please wait for the current request to finish`);
+                    return;
+                  }
                   addToSendHistory(s);
                   onRequest(s);
                   setValue("");
@@ -755,14 +755,6 @@ export const WorkspaceChat = ({ workspace, agentKey, workspaceDetails, mcpClient
                       if (file.type.includes("image")) {
                         let path = await blobToBase64(file);
                         resourceResListRef.current.push({
-                          // call_name: "UserUpload",
-                          // contents: [
-                          //   {
-                          //     uri: path,
-                          //     blob: await urlToBase64(path),
-                          //     mimeType: "image/*",
-                          //   },
-                          // ],
                           type: "image_url",
                           image_url: {
                             url: await urlToBase64(path),
@@ -831,20 +823,6 @@ export const WorkspaceChat = ({ workspace, agentKey, workspaceDetails, mcpClient
                                   }),
                                 );
                               });
-
-                              // let set = new Set();
-                              // for (let tool_name of currentChat.current.allowMCPs) {
-                              //   let [name, _] = tool_name.split(" > ");
-                              //   set.add(name);
-                              // }
-
-                              // let curr = mcpClients.filter((v) => {
-                              //   return v.status !== "disabled" && set.has(v.name);
-                              // });
-                              // let toolLen = 0;
-                              // for (let x of curr) {
-                              //   toolLen += x.tools.length;
-                              // }
                               return (
                                 <>
                                   {tools.length}

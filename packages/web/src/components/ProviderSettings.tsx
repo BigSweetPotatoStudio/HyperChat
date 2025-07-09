@@ -508,7 +508,7 @@ export function ProviderSettings() {
               className="h-full"
               hoverable
               size='small'
-              bodyStyle={{ padding: '16px' }}
+              styles={{ body: { padding: '16px' } }}
               extra={
                 <Space>
                   {!provider.isBuiltIn && (
