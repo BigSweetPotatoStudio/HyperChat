@@ -27,8 +27,8 @@ import {
   EyeInvisibleOutlined
 } from '@ant-design/icons';
 
-import { AI_MODELS, AIModelConfigItem, PROVIDER_CONFIGS, ProviderConfig } from '../../../core/src/shared/data.mjs';
-import { ProviderManager } from '../../../core/src/shared/providers.mjs';
+import { call } from '../common/call';
+import type { AIModelConfigItem, ProviderConfig, KnownProvider, AISettings } from '../../../core/src/shared/jsonSchemas/appSettingsSchema.mts';
 import { v4 } from 'uuid';
 import { t } from '../i18n';
 
@@ -78,6 +78,7 @@ export function ProviderSettings() {
 
   const [providers, setProviders] = useState<ProviderConfig[]>([]);
   const [selectedProvider, setSelectedProvider] = useState<ProviderConfig | null>(null);
+  const [aiSettings, setAiSettings] = useState<AISettings | null>(null);
   const [view, setView] = useState<'providers' | 'models'>('providers');
 
   // Modal states
@@ -91,28 +92,57 @@ export function ProviderSettings() {
 
   // 获取提供商的模型数量
   const getProviderModelCount = (provider: ProviderConfig): number => {
-    const models = AI_MODELS.get().data.filter(model => model.provider === provider.key);
+    if (!aiSettings) return 0;
+    const models = aiSettings.models.filter(model => model.provider === provider.key);
     return models.length;
   };
 
   // 检查提供商是否有API Key（从Provider数据读取，而非模型数据）
   const hasProviderApiKey = (provider: ProviderConfig): boolean => {
-    return ProviderManager.hasProviderApiKey(provider.key);
+    if (!aiSettings) return false;
+    if (provider.isBuiltIn) {
+      return !!aiSettings.builtinApiKeys[provider.key]?.apiKey;
+    } else {
+      return !!provider.apiKey;
+    }
   };
 
   // 获取提供商的模型列表
   const getProviderModels = (provider: ProviderConfig): AIModelConfigItem[] => {
-    return AI_MODELS.get().data.filter(model => model.provider === provider.key);
+    if (!aiSettings) return [];
+    return aiSettings.models.filter(model => model.provider === provider.key);
   };
 
   // 刷新数据
   const refresh = async () => {
-    await AI_MODELS.init();
-    await PROVIDER_CONFIGS.init();
+    try {
+      const appSettings = await call('getAppSettings');
+      const ai = appSettings.ai;
+      setAiSettings(ai);
+      
+      // 获取所有提供商（内置 + 自定义）
+      const builtinProviders = getBuiltinProviders();
+      const allProviders = [...builtinProviders, ...ai.customProviders];
+      setProviders(allProviders);
+    } catch (error) {
+      console.error('刷新配置失败:', error);
+    }
+  };
 
-    // 获取所有可用的提供商
-    const allProviders = ProviderManager.getAllProviders();
-    setProviders(allProviders);
+  // 获取内置提供商列表
+  const getBuiltinProviders = (): ProviderConfig[] => {
+    return [
+      { key: 'openai', label: 'OpenAI', baseURL: 'https://api.openai.com/v1', icon: 'openai', description: 'OpenAI GPT models', hasApiKey: true, isBuiltIn: true },
+      { key: 'anthropic', label: 'Anthropic', baseURL: 'https://api.anthropic.com', icon: 'anthropic', description: 'Claude models', hasApiKey: true, isBuiltIn: true },
+      { key: 'openrouter', label: 'OpenRouter', baseURL: 'https://openrouter.ai/api/v1', icon: 'openrouter', description: 'Multi-provider AI gateway', hasApiKey: true, isBuiltIn: true },
+      { key: 'gemini', label: 'Google Gemini', baseURL: 'https://generativelanguage.googleapis.com/v1beta', icon: 'gemini', description: 'Google Gemini models', hasApiKey: true, isBuiltIn: true },
+      { key: 'qwen', label: 'Qwen', baseURL: 'https://dashscope.aliyuncs.com/compatible-mode/v1', icon: 'qwen', description: 'Alibaba Qwen models', hasApiKey: true, isBuiltIn: true },
+      { key: 'deepseek', label: 'DeepSeek', baseURL: 'https://api.deepseek.com', icon: 'deepseek', description: 'DeepSeek models', hasApiKey: true, isBuiltIn: true },
+      { key: 'doubao', label: 'Doubao', baseURL: 'https://ark.cn-beijing.volces.com/api/v3', icon: 'doubao', description: 'ByteDance Doubao models', hasApiKey: true, isBuiltIn: true },
+      { key: 'xai', label: 'xAI', baseURL: 'https://api.x.ai/v1', icon: 'xai', description: 'xAI Grok models', hasApiKey: true, isBuiltIn: true },
+      { key: 'glm', label: 'GLM', baseURL: 'https://open.bigmodel.cn/api/paas/v4', icon: 'glm', description: 'Zhipu GLM models', hasApiKey: true, isBuiltIn: true },
+      { key: 'ollama', label: 'Ollama', baseURL: 'http://localhost:11434/v1', icon: 'ollama', description: 'Local Ollama models', hasApiKey: false, isBuiltIn: true }
+    ];
   };
 
   useEffect(() => {
@@ -160,18 +190,28 @@ export function ProviderSettings() {
       return;
     }
 
-    // 删除自定义提供商及其下所有模型
-    const success = ProviderManager.removeCustomProvider(provider.key);
-    if (success) {
-      // 过滤掉该提供商下的所有模型
-      const currentModels = AI_MODELS.get().data;
-      const filteredModels = currentModels.filter(model => model.provider !== provider.key);
-      AI_MODELS.set({ data: filteredModels });
-      await AI_MODELS.save();
+    try {
+      // 删除自定义提供商及其下所有模型
+      if (!aiSettings) return;
+      
+      const updatedCustomProviders = aiSettings.customProviders.filter(p => p.key !== provider.key);
+      const updatedModels = aiSettings.models.filter(model => model.provider !== provider.key);
+      
+      await call('updateAppSettings', {
+        updates: {
+          ai: {
+            ...aiSettings,
+            customProviders: updatedCustomProviders,
+            models: updatedModels
+          }
+        }
+      });
+      
       message.success(t`Provider and all related models deleted successfully`);
       await refresh();
-    } else {
+    } catch (error) {
       message.error(t`Failed to delete provider`);
+      console.error('Delete provider failed:', error);
     }
   };
 
@@ -180,30 +220,51 @@ export function ProviderSettings() {
   const handleSaveProvider = async (values: any) => {
     setLoading(true);
     try {
+      if (!aiSettings) return;
+      
       if (editingProvider) {
         // 编辑现有提供商
-        const success = ProviderManager.updateCustomProvider(editingProvider.key, {
+        const updatedCustomProviders = aiSettings.customProviders.map(p => 
+          p.key === editingProvider.key
+            ? { ...p, label: values.label, baseURL: values.baseURL, description: values.description }
+            : p
+        );
+        
+        await call('updateAppSettings', {
+          updates: {
+            ai: {
+              ...aiSettings,
+              customProviders: updatedCustomProviders
+            }
+          }
+        });
+        
+        message.success(t`Provider updated successfully`);
+      } else {
+        // 添加新提供商
+        const newProvider: ProviderConfig = {
+          key: values.key as KnownProvider,
           label: values.label,
           baseURL: values.baseURL,
           description: values.description,
+          hasApiKey: true,
+          isBuiltIn: false
+        };
+        
+        const updatedCustomProviders = [...aiSettings.customProviders, newProvider];
+        
+        await call('updateAppSettings', {
+          updates: {
+            ai: {
+              ...aiSettings,
+              customProviders: updatedCustomProviders
+            }
+          }
         });
-        if (success) {
-          message.success(t`Provider updated successfully`);
-        } else {
-          message.error(t`Failed to update provider`);
-        }
-      } else {
-        // 添加新提供商
-        ProviderManager.createOpenAICompatibilityProvider(
-          values.label,
-          values.key, // 使用用户输入的key
-          values.baseURL,
-          values.description
-        );
+        
         message.success(t`Provider added successfully`);
       }
 
-      await PROVIDER_CONFIGS.save();
       await refresh();
       setIsProviderModalOpen(false);
     } catch (error) {
@@ -220,7 +281,14 @@ export function ProviderSettings() {
     apiKeyForm.resetFields();
 
     // 获取已保存的 API Key 信息
-    const apiKeyInfo = ProviderManager.getProviderApiKey(provider.key);
+    let apiKeyInfo: { apiKey?: string; baseURL?: string } | null = null;
+    if (aiSettings) {
+      if (provider.isBuiltIn) {
+        apiKeyInfo = aiSettings.builtinApiKeys[provider.key] || null;
+      } else {
+        apiKeyInfo = { apiKey: provider.apiKey, baseURL: provider.baseURL };
+      }
+    }
 
     apiKeyForm.setFieldsValue({
       provider: provider.key,
@@ -235,22 +303,47 @@ export function ProviderSettings() {
    * @param values 表单提交的API Key和BaseURL
    */
   const handleSaveApiKey = async (values: any) => {
-    if (!selectedProvider) return;
+    if (!selectedProvider || !aiSettings) return;
     setLoading(true);
     try {
-      // 处理 baseURL
-      const finalBaseURL = selectedProvider.isBuiltIn ? values.baseURL : selectedProvider.baseURL;
-      // 更新 provider 的 apiKey 和 baseURL
-      const success = ProviderManager.updateProviderApiKey(selectedProvider.key, {
-        apiKey: values.apiKey,
-        baseURL: finalBaseURL,
-      });
-      if (success) {
-        message.success(t`API Key configured successfully!`);
+      if (selectedProvider.isBuiltIn) {
+        // 内置提供商，保存到 builtinApiKeys
+        const finalBaseURL = values.baseURL || selectedProvider.baseURL;
+        const updatedBuiltinApiKeys = {
+          ...aiSettings.builtinApiKeys,
+          [selectedProvider.key]: {
+            apiKey: values.apiKey,
+            baseURL: finalBaseURL
+          }
+        };
+        
+        await call('updateAppSettings', {
+          updates: {
+            ai: {
+              ...aiSettings,
+              builtinApiKeys: updatedBuiltinApiKeys
+            }
+          }
+        });
       } else {
-        message.error(t`Failed to save API Key`);
+        // 自定义提供商，更新提供商配置
+        const updatedCustomProviders = aiSettings.customProviders.map(p =>
+          p.key === selectedProvider.key
+            ? { ...p, apiKey: values.apiKey }
+            : p
+        );
+        
+        await call('updateAppSettings', {
+          updates: {
+            ai: {
+              ...aiSettings,
+              customProviders: updatedCustomProviders
+            }
+          }
+        });
       }
-      await PROVIDER_CONFIGS.save();
+      
+      message.success(t`API Key configured successfully!`);
       await refresh();
       setIsApiKeyModalOpen(false);
     } catch (error) {
@@ -291,33 +384,31 @@ export function ProviderSettings() {
   };
 
   const handleSaveModel = async (values: ModelFormData) => {
-    if (!selectedProvider) return;
+    if (!selectedProvider || !aiSettings) return;
 
     setLoading(true);
     try {
       // 如果名称为空，使用模型ID作为名称
       const finalName = values.name?.trim() || values.model;
 
+      let updatedModels = [...aiSettings.models];
+      
       // 如果设置为默认模型，需要将其他模型的 isDefault 设为 false
       if (values.isDefault) {
-        AI_MODELS.get().data.forEach(model => {
-          if (model.key !== editingModel?.key) {
-            model.isDefault = false;
-          }
-        });
+        updatedModels = updatedModels.map(model => ({
+          ...model,
+          isDefault: model.key === editingModel?.key
+        }));
       }
 
       if (editingModel) {
         // 编辑现有模型
-        const index = AI_MODELS.get().data.findIndex(m => m.key === editingModel.key);
+        const index = updatedModels.findIndex(m => m.key === editingModel.key);
         if (index >= 0) {
-          const existingModel = AI_MODELS.get().data[index];
+          const existingModel = updatedModels[index];
           if (!existingModel) return;
           const updatedModel: AIModelConfigItem = {
-            key: existingModel.key,
-            apiKey: existingModel.apiKey,
-            baseURL: existingModel.baseURL,
-            provider: existingModel.provider,
+            ...existingModel,
             name: finalName,
             model: values.model,
             type: values.type,
@@ -325,36 +416,38 @@ export function ProviderSettings() {
             supportImage: values.supportImage,
             supportTool: values.supportTool,
             isDefault: values.isDefault,
-            ...(existingModel.call_tool_step !== undefined ? { call_tool_step: existingModel.call_tool_step } : {}),
           };
 
-          // 这些属性不在表单中，保持现有值
-          // key, apiKey, baseURL, provider, call_tool_step 从现有模型中保留
-
-          AI_MODELS.get().data[index] = updatedModel;
+          updatedModels[index] = updatedModel;
         }
       } else {
-        // 添加新模型 - 从 Provider 获取 apiKey 和 baseURL
-        const providerApiInfo = ProviderManager.getProviderApiKey(selectedProvider.key);
+        // 添加新模型
         const newModel: AIModelConfigItem = {
           key: selectedProvider.key + ':' + values.model, // 使用提供商key和模型id生成唯一key
           name: finalName,
           model: values.model,
-          apiKey: providerApiInfo?.apiKey || '',
-          baseURL: providerApiInfo?.baseURL || selectedProvider.baseURL || '',
-          provider: selectedProvider.key || '',
+          apiKey: '', // 废弃字段，保留兼容性
+          baseURL: '', // 废弃字段，保留兼容性
+          provider: selectedProvider.key as KnownProvider,
           supportImage: values.supportImage,
           supportTool: values.supportTool,
           type: values.type,
           toolMode: values.toolMode,
           isDefault: values.isDefault,
         };
-        AI_MODELS.get().data.push(newModel);
+        updatedModels.push(newModel);
       }
 
-      await AI_MODELS.save();
+      await call('updateAppSettings', {
+        updates: {
+          ai: {
+            ...aiSettings,
+            models: updatedModels
+          }
+        }
+      });
+      
       await refresh();
-
       setIsModelModalOpen(false);
       message.success(editingModel ? t`Model updated successfully!` : t`Model added successfully!`);
     } catch (error) {
@@ -368,13 +461,21 @@ export function ProviderSettings() {
   // 删除模型
   const handleDeleteModel = async (model: AIModelConfigItem) => {
     try {
-      const index = AI_MODELS.get().data.findIndex(m => m.key === model.key);
-      if (index >= 0) {
-        AI_MODELS.get().data.splice(index, 1);
-        await AI_MODELS.save();
-        await refresh();
-        message.success(t`Model deleted successfully!`);
-      }
+      if (!aiSettings) return;
+      
+      const updatedModels = aiSettings.models.filter(m => m.key !== model.key);
+      
+      await call('updateAppSettings', {
+        updates: {
+          ai: {
+            ...aiSettings,
+            models: updatedModels
+          }
+        }
+      });
+      
+      await refresh();
+      message.success(t`Model deleted successfully!`);
     } catch (error) {
       message.error(t`Failed to delete model`);
       console.error('Delete failed:', error);
@@ -384,18 +485,24 @@ export function ProviderSettings() {
   // 设置默认模型
   const handleSetDefaultModel = async (model: AIModelConfigItem) => {
     try {
-      // 将所有模型的 isDefault 设为 false
-      AI_MODELS.get().data.forEach(m => {
-        m.isDefault = false;
+      if (!aiSettings) return;
+      
+      // 将所有模型的 isDefault 设为 false，除了选中的模型
+      const updatedModels = aiSettings.models.map(m => ({
+        ...m,
+        isDefault: m.key === model.key
+      }));
+
+      await call('updateAppSettings', {
+        updates: {
+          ai: {
+            ...aiSettings,
+            models: updatedModels,
+            defaultModel: model.key
+          }
+        }
       });
-
-      // 将选中的模型设为默认
-      const targetModel = AI_MODELS.get().data.find(m => m.key === model.key);
-      if (targetModel) {
-        targetModel.isDefault = true;
-      }
-
-      await AI_MODELS.save();
+      
       await refresh();
       message.success(t`Default model set successfully!`);
     } catch (error) {
@@ -673,8 +780,14 @@ export function ProviderSettings() {
             </Form.Item>
 
             {selectedProvider.isBuiltIn && (
-              <Form.Item name="baseURL" >
-                <Input />
+              <Form.Item 
+                name="baseURL" 
+                label={t`Base URL`}
+                rules={[
+                  { type: 'url', message: t`Please enter a valid URL` }
+                ]}
+              >
+                <Input placeholder={t`e.g., https://api.example.com/v1`} />
               </Form.Item>
             )}
 
