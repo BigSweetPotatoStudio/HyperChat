@@ -1,9 +1,5 @@
 import React, { useState, useEffect } from "react";
 import {
-  Form,
-  Switch,
-  Select,
-  InputNumber,
   Tabs,
   Button,
   Space,
@@ -11,7 +7,6 @@ import {
   Typography,
   Alert,
   message,
-  Input,
   Card,
 } from "antd";
 import {
@@ -23,12 +18,13 @@ import {
   ReloadOutlined,
   ExportOutlined,
   ImportOutlined,
-  LockOutlined,
 } from "@ant-design/icons";
 import { t } from "../i18n";
+import { zodToJsonSchema } from "zod-to-json-schema";
+import { AppSettingsSchema } from "../../../core/src/shared/jsonSchemas/appSettingsSchema.mjs";
+import Schema2Form from "./schema2Form";
 
 const { Title, Text } = Typography;
-const { Password } = Input;
 
 interface AppSettingsProps {
   settings: any;
@@ -45,31 +41,33 @@ export function AppSettings({
   onExport,
   onImport,
 }: AppSettingsProps) {
-  const [form] = Form.useForm();
   const [activeTab, setActiveTab] = useState("appearance");
   const [hasChanges, setHasChanges] = useState(false);
+  const [currentValues, setCurrentValues] = useState(settings);
 
   // 监听设置变化
   useEffect(() => {
     if (settings) {
-      form.setFieldsValue(settings);
+      setCurrentValues(settings);
       setHasChanges(false);
     }
-  }, [settings, form]);
+  }, [settings]);
 
   // 处理表单值变化
-  const handleFormChange = () => {
+  const handleFormChange = (values: any) => {
+    setCurrentValues(values);
     setHasChanges(true);
   };
 
   // 保存设置
   const handleSave = async () => {
     try {
-      const values = await form.validateFields();
-      await onUpdate(values);
+      await onUpdate(currentValues);
       setHasChanges(false);
+      message.success(t`Settings saved successfully`);
     } catch (error) {
       console.error("Failed to save settings:", error);
+      message.error(t`Failed to save settings`);
     }
   };
 
@@ -109,6 +107,76 @@ export function AppSettings({
     return null;
   }
 
+
+  // 创建外观设置 schema
+  const appearanceSchema = {
+    type: "object" as const,
+    title: t`Appearance Settings`,
+    properties: {
+      darkTheme: {
+        type: "boolean"  as const,
+        title: t`Dark Theme`,
+        description: t`Enable dark theme`,
+        default: false,
+      },
+      language: {
+        type: "string"  as const,
+        title: t`Language`,
+        description: t`Interface language`,
+        enum: ["zhCN", "enUS"],
+        default: "zhCN",
+      },
+    },
+  };
+
+  // 创建系统设置 schema
+  const systemSchema = {
+    type: "object" as const,
+    title: t`System Settings`,
+    properties: {
+      closeAction: {
+        type: "string" as const,
+        title: t`Close Action`,
+        description: t`What to do when closing the window`,
+        enum: ["minimize", "exit"],
+      },
+      password: {
+        type: "string" as const,
+        title: t`Application Password`,
+        description: t`Password to protect the application`,
+        default: "123456",
+      },
+      isDeveloper: {
+        type: "boolean" as const,
+        title: t`Developer Mode`,
+        description: t`Enable developer mode`,
+        default: false,
+      },
+      windowSize: {
+        type: "object" as const,
+        title: t`Window Size`,
+        properties: {
+          width: {
+            type: "integer" as const,
+            title: t`Width`,
+            description: t`Window width in pixels`,
+            minimum: 800,
+            maximum: 4000,
+            default: 1440,
+          },
+          height: {
+            type: "integer" as const,
+            title: t`Height`,
+            description: t`Window height in pixels`,
+            minimum: 600,
+            maximum: 3000,
+            default: 900,
+          },
+        },
+      },
+    },
+  };
+
   const tabItems = [
     {
       key: "appearance",
@@ -119,129 +187,11 @@ export function AppSettings({
         </span>
       ),
       children: (
-        <>
-          <Form.Item
-            label={t`Dark Theme`}
-            name={["appearance", "darkTheme"]}
-            valuePropName="checked"
-          >
-            <Switch />
-          </Form.Item>
-
-          <Form.Item
-            label={t`Theme Mode`}
-            name={["appearance", "theme"]}
-          >
-            <Select
-              options={[
-                { value: "light", label: t`Light` },
-                { value: "dark", label: t`Dark` },
-                { value: "auto", label: t`Auto` },
-              ]}
-            />
-          </Form.Item>
-
-          <Form.Item
-            label={t`Font Size`}
-            name={["appearance", "fontSize"]}
-          >
-            <Select
-              options={[
-                { value: "small", label: t`Small` },
-                { value: "medium", label: t`Medium` },
-                { value: "large", label: t`Large` },
-              ]}
-            />
-          </Form.Item>
-
-          <Form.Item
-            label={t`Language`}
-            name={["appearance", "language"]}
-          >
-            <Select
-              options={[
-                { value: "zhCN", label: "中文" },
-                { value: "enUS", label: "English" },
-              ]}
-            />
-          </Form.Item>
-
-          <Form.Item
-            label={t`Close Action`}
-            name={["appearance", "closeAction"]}
-          >
-            <Select
-              placeholder={t`Select close action`}
-              allowClear
-              options={[
-                { value: "minimize", label: t`Minimize to tray` },
-                { value: "exit", label: t`Exit application` },
-              ]}
-            />
-          </Form.Item>
-        </>
-      ),
-    },
-    {
-      key: "network",
-      label: (
-        <span>
-          <GlobalOutlined />
-          {t`Network`}
-        </span>
-      ),
-      children: (
-        <>
-          <Form.Item
-            label={t`Browser Network Setting`}
-            name={["network", "browserNetworkSetting"]}
-          >
-            <Select
-              options={[
-                { value: "server-proxy", label: t`Server Proxy` },
-                { value: "direct", label: t`Direct Connection` },
-              ]}
-            />
-          </Form.Item>
-
-          <Form.Item
-            label={t`Auto Sync`}
-            name={["network", "autoSync"]}
-            valuePropName="checked"
-          >
-            <Switch />
-          </Form.Item>
-
-          <Card title={t`WebDAV Settings`} size="small" style={{ marginTop: 16 }}>
-            <Form.Item
-              label={t`WebDAV URL`}
-              name={["network", "webdav", "url"]}
-            >
-              <Input placeholder="https://example.com/webdav" />
-            </Form.Item>
-
-            <Form.Item
-              label={t`Username`}
-              name={["network", "webdav", "username"]}
-            >
-              <Input />
-            </Form.Item>
-
-            <Form.Item
-              label={t`Password`}
-              name={["network", "webdav", "password"]}
-            >
-              <Password />
-            </Form.Item>
-
-            <Form.Item
-              label={t`Base Directory`}
-              name={["network", "webdav", "baseDirName"]}
-            >
-              <Input placeholder="HyperChat" />
-            </Form.Item>
-          </Card>
-        </>
+        <Schema2Form
+          schema={appearanceSchema}
+          value={currentValues?.appearance}
+          onChange={(values) => handleFormChange({ ...currentValues, appearance: values })}
+        />
       ),
     },
     {
@@ -253,145 +203,41 @@ export function AppSettings({
         </span>
       ),
       children: (
-        <>
-          <Form.Item
-            label={t`Application Password`}
-            name={["system", "password"]}
-          >
-            <Password />
-          </Form.Item>
-
-          <Form.Item
-            label={t`Run Task`}
-            name={["system", "runTask"]}
-            valuePropName="checked"
-          >
-            <Switch />
-          </Form.Item>
-
-          <Form.Item
-            label={t`Load Claude Config`}
-            name={["system", "isLoadClaudeConfig"]}
-            valuePropName="checked"
-          >
-            <Switch />
-          </Form.Item>
-
-          <Card title={t`Window Settings`} size="small" style={{ marginTop: 16 }}>
-            <Form.Item
-              label={t`Window Width`}
-              name={["system", "windowSize", "width"]}
-            >
-              <InputNumber
-                min={800}
-                max={4000}
-                step={10}
-                addonAfter="px"
-              />
-            </Form.Item>
-
-            <Form.Item
-              label={t`Window Height`}
-              name={["system", "windowSize", "height"]}
-            >
-              <InputNumber
-                min={600}
-                max={3000}
-                step={10}
-                addonAfter="px"
-              />
-            </Form.Item>
-          </Card>
-        </>
+        <Schema2Form
+          schema={systemSchema}
+          value={currentValues?.system}
+          onChange={(values) => handleFormChange({ ...currentValues, system: values })}
+        />
       ),
     },
     {
-      key: "developer",
+      key: "info",
       label: (
         <span>
           <ExperimentOutlined />
-          {t`Developer`}
+          {t`System Information`}
         </span>
       ),
       children: (
-        <>
-          <Alert
-            message={t`Developer Settings`}
-            description={t`These settings are for developers and advanced users. Use with caution.`}
-            type="warning"
-            showIcon
-            style={{ marginBottom: 16 }}
-          />
-
-          <Form.Item
-            label={t`Developer Mode`}
-            name={["system", "isDeveloper"]}
-            valuePropName="checked"
-          >
-            <Switch />
-          </Form.Item>
-
-          <Form.Item
-            label={t`Enable Debug Mode`}
-            name={["developer", "enableDebugMode"]}
-            valuePropName="checked"
-          >
-            <Switch />
-          </Form.Item>
-
-          <Form.Item
-            label={t`Enable Telemetry`}
-            name={["developer", "enableTelemetry"]}
-            valuePropName="checked"
-          >
-            <Switch />
-          </Form.Item>
-
-          <Form.Item
-            label={t`Experimental Features`}
-            name={["developer", "experimentalFeatures"]}
-            valuePropName="checked"
-          >
-            <Switch />
-          </Form.Item>
-
-          <Form.Item
-            label={t`Show Advanced Options`}
-            name={["developer", "showAdvancedOptions"]}
-            valuePropName="checked"
-          >
-            <Switch />
-          </Form.Item>
-
-          <Divider />
-          
-          <Card title={t`System Information`} size="small">
-            <div style={{ fontSize: '12px', color: '#666' }}>
-              <div><strong>{t`Version`}:</strong> {settings?.version || 'N/A'}</div>
-              <div><strong>{t`Platform`}:</strong> {settings?.platform || 'N/A'}</div>
-              <div><strong>{t`App Data Directory`}:</strong> {settings?.appDataDir || 'N/A'}</div>
-              <div><strong>{t`UUID`}:</strong> {settings?.uuid || 'N/A'}</div>
-            </div>
-          </Card>
-        </>
+        <Card title={t`System Information`} size="small">
+          <div style={{ fontSize: '12px', color: '#666' }}>
+            <div><strong>{t`Version`}:</strong> {settings?.version || 'N/A'}</div>
+            <div><strong>{t`Platform`}:</strong> {settings?.platform || 'N/A'}</div>
+            <div><strong>{t`App Data Directory`}:</strong> {settings?.appDataDir || 'N/A'}</div>
+            <div><strong>{t`UUID`}:</strong> {settings?.uuid || 'N/A'}</div>
+          </div>
+        </Card>
       ),
     },
   ];
 
   return (
     <div className="app-settings">
-      <Form
-        form={form}
-        layout="vertical"
-        initialValues={settings}
-        onValuesChange={handleFormChange}
-      >
-        <Tabs 
-          activeKey={activeTab} 
-          onChange={setActiveTab}
-          items={tabItems}
-        />
-      </Form>
+      <Tabs 
+        activeKey={activeTab} 
+        onChange={setActiveTab}
+        items={tabItems}
+      />
 
       <Divider />
 

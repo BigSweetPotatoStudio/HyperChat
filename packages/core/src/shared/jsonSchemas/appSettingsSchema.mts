@@ -42,26 +42,15 @@ export type AppearanceSettings = z.infer<typeof AppearanceSchema>;
 export type SystemSettings = z.infer<typeof SystemSchema>;
 
 // 默认设置（不包含 UUID 生成，因为前端不能使用 uuid 库）
-export const DEFAULT_APP_SETTINGS: Omit<AppSettings, 'uuid'> = {
-  version: "",
-  appDataDir: "",
-  logFilePath: "",
-  PATH: "",
-  platform: "",
-  lastSyncTime: 0,
-  appearance: {
-    darkTheme: false,
-    language: "zhCN",
-  },
-  system: {
-    password: "123456",
-    isDeveloper: false,
-    windowSize: {
-      width: 1440,
-      height: 900,
-    },
-  },
-};
+export const DEFAULT_APP_SETTINGS: Omit<AppSettings, 'uuid'> = (() => {
+  const result = AppSettingsSchema.safeParse({});
+  if (result.success) {
+    const { uuid, ...rest } = result.data;
+    return rest;
+  }
+  // 如果解析失败，返回基础默认值
+  throw new Error("Failed to generate default app settings from schema");
+})();
 
 // 验证函数
 export function validateAppSettings(data: any): data is AppSettings {
