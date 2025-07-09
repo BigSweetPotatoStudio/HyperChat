@@ -1,8 +1,9 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Form, Input, InputNumber, Select, Switch, Button, Space, Card, Typography, message } from 'antd';
+import { Form, Button, Space, Card, Typography, message } from 'antd';
 import { Editor } from '@monaco-editor/react';
 import { CodeOutlined, FormOutlined } from '@ant-design/icons';
-import type { JSONSchema7 } from 'json-schema';
+import type { JSONSchema7,JSONSchema7Definition } from 'json-schema';
+import Schema2FormItems from './Schema2FormItems';
 
 const { Title } = Typography;
 
@@ -106,40 +107,6 @@ export const Schema2Form: React.FC<Schema2FormProps> = ({
     setMode(newMode);
   }, [mode, form, jsonValue, objectToJson, jsonToObject, validateJsonSchema]);
 
-  const renderFormItem = useCallback((fieldName: string, fieldSchema: JSONSchema7) => {
-    const { type, title, description, enum: enumValues } = fieldSchema;
-    
-    const commonProps = {
-      disabled,
-      placeholder: description || `请输入${title || fieldName}`,
-    };
-
-    switch (type) {
-      case 'string':
-        if (enumValues && Array.isArray(enumValues)) {
-          return (
-            <Select {...commonProps}>
-              {enumValues.map((value) => (
-                <Select.Option key={String(value)} value={value}>
-                  {String(value)}
-                </Select.Option>
-              ))}
-            </Select>
-          );
-        }
-        return <Input {...commonProps} />;
-      
-      case 'number':
-      case 'integer':
-        return <InputNumber {...commonProps} style={{ width: '100%' }} />;
-      
-      case 'boolean':
-        return <Switch {...commonProps} />;
-      
-      default:
-        return <Input {...commonProps} />;
-    }
-  }, [disabled]);
 
   const renderForm = useCallback(() => {
     if (!schema.properties) return null;
@@ -152,27 +119,13 @@ export const Schema2Form: React.FC<Schema2FormProps> = ({
         initialValues={value}
         disabled={disabled}
       >
-        {Object.entries(schema.properties).map(([fieldName, fieldSchema]) => {
-          const typedFieldSchema = fieldSchema as JSONSchema7;
-          const isRequired = schema.required?.includes(fieldName);
-          
-          return (
-            <Form.Item
-              key={fieldName}
-              name={fieldName}
-              label={typedFieldSchema.title || fieldName}
-              rules={[
-                { required: isRequired, message: `请输入${typedFieldSchema.title || fieldName}` }
-              ]}
-              tooltip={typedFieldSchema.description}
-            >
-              {renderFormItem(fieldName, typedFieldSchema)}
-            </Form.Item>
-          );
-        })}
+        <Schema2FormItems
+          schema={schema}
+          disabled={disabled}
+        />
       </Form>
     );
-  }, [schema, form, handleFormChange, value, disabled, renderFormItem]);
+  }, [schema, form, handleFormChange, value, disabled]);
 
   return (
     <div>
@@ -182,7 +135,7 @@ export const Schema2Form: React.FC<Schema2FormProps> = ({
             <Title level={4} style={{ margin: 0 }}>
               {schema.title || '配置表单'}
             </Title>
-            <Button.Group size="small">
+            <Space.Compact>
               <Button
                 type={mode === 'form' ? 'primary' : 'default'}
                 icon={<FormOutlined />}
@@ -197,7 +150,7 @@ export const Schema2Form: React.FC<Schema2FormProps> = ({
               >
                 JSON模式
               </Button>
-            </Button.Group>
+            </Space.Compact>
           </Space>
         </div>
 

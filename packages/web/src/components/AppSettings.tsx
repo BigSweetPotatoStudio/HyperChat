@@ -4,14 +4,12 @@ import {
   Button,
   Space,
   Divider,
-  Typography,
   Alert,
   message,
   Card,
 } from "antd";
 import {
   AppstoreOutlined,
-  GlobalOutlined,
   DesktopOutlined,
   ExperimentOutlined,
   SaveOutlined,
@@ -21,10 +19,12 @@ import {
 } from "@ant-design/icons";
 import { t } from "../i18n";
 import { zodToJsonSchema } from "zod-to-json-schema";
-import { AppSettingsSchema } from "../../../core/src/shared/jsonSchemas/appSettingsSchema.mjs";
+import {
+  AppSettingsSchema,
+  AppearanceSchema,
+  SystemSchema
+} from "../../../core/src/shared/jsonSchemas/appSettingsSchema.mjs";
 import Schema2Form from "./schema2Form";
-
-const { Title, Text } = Typography;
 
 interface AppSettingsProps {
   settings: any;
@@ -107,75 +107,17 @@ export function AppSettings({
     return null;
   }
 
+  // 使用 zodToJsonSchema 转换 Zod Schema 为 JSON Schema
+  const appearanceJsonSchema = zodToJsonSchema(AppearanceSchema as any)  as any;
 
-  // 创建外观设置 schema
-  const appearanceSchema = {
-    type: "object" as const,
-    title: t`Appearance Settings`,
-    properties: {
-      darkTheme: {
-        type: "boolean"  as const,
-        title: t`Dark Theme`,
-        description: t`Enable dark theme`,
-        default: false,
-      },
-      language: {
-        type: "string"  as const,
-        title: t`Language`,
-        description: t`Interface language`,
-        enum: ["zhCN", "enUS"],
-        default: "zhCN",
-      },
-    },
-  };
+  const systemJsonSchema = zodToJsonSchema(SystemSchema as any)  as any;
 
-  // 创建系统设置 schema
-  const systemSchema = {
-    type: "object" as const,
-    title: t`System Settings`,
-    properties: {
-      closeAction: {
-        type: "string" as const,
-        title: t`Close Action`,
-        description: t`What to do when closing the window`,
-        enum: ["minimize", "exit"],
-      },
-      password: {
-        type: "string" as const,
-        title: t`Application Password`,
-        description: t`Password to protect the application`,
-        default: "123456",
-      },
-      isDeveloper: {
-        type: "boolean" as const,
-        title: t`Developer Mode`,
-        description: t`Enable developer mode`,
-        default: false,
-      },
-      windowSize: {
-        type: "object" as const,
-        title: t`Window Size`,
-        properties: {
-          width: {
-            type: "integer" as const,
-            title: t`Width`,
-            description: t`Window width in pixels`,
-            minimum: 800,
-            maximum: 4000,
-            default: 1440,
-          },
-          height: {
-            type: "integer" as const,
-            title: t`Height`,
-            description: t`Window height in pixels`,
-            minimum: 600,
-            maximum: 3000,
-            default: 900,
-          },
-        },
-      },
-    },
-  };
+
+  // 创建外观设置 schema，添加中文标题
+  const appearanceSchema = appearanceJsonSchema;
+
+  // 创建系统设置 schema，添加中文标题
+  const systemSchema = systemJsonSchema;
 
   const tabItems = [
     {
@@ -220,10 +162,12 @@ export function AppSettings({
       ),
       children: (
         <Card title={t`System Information`} size="small">
-          <div style={{ fontSize: '12px', color: '#666' }}>
+          <div style={{ fontSize: '12px', color: '#666', lineHeight: '1.6' }}>
             <div><strong>{t`Version`}:</strong> {settings?.version || 'N/A'}</div>
             <div><strong>{t`Platform`}:</strong> {settings?.platform || 'N/A'}</div>
             <div><strong>{t`App Data Directory`}:</strong> {settings?.appDataDir || 'N/A'}</div>
+            <div><strong>{t`Log File Path`}:</strong> {settings?.logFilePath || 'N/A'}</div>
+            <div><strong>{t`System PATH`}:</strong> {settings?.PATH || 'N/A'}</div>
             <div><strong>{t`UUID`}:</strong> {settings?.uuid || 'N/A'}</div>
           </div>
         </Card>
@@ -233,8 +177,8 @@ export function AppSettings({
 
   return (
     <div className="app-settings">
-      <Tabs 
-        activeKey={activeTab} 
+      <Tabs
+        activeKey={activeTab}
         onChange={setActiveTab}
         items={tabItems}
       />
@@ -251,7 +195,7 @@ export function AppSettings({
         >
           {t`Save`}
         </Button>
-        
+
         {onReset && (
           <Button
             icon={<ReloadOutlined />}

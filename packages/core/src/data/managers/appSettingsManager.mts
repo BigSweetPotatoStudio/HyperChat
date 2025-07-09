@@ -214,7 +214,6 @@ export class AppSettingsManager {
       PATH: this.settings.PATH,
       platform: this.settings.platform,
       uuid: this.settings.uuid,
-      lastSyncTime: this.settings.lastSyncTime,
     };
 
     this.settings = {

@@ -9,7 +9,7 @@ export const AppearanceSchema = z.object({
 
 // 系统设置 Schema
 export const SystemSchema = z.object({
-  closeAction: z.enum(["minimize", "exit"]).optional().describe("关闭窗口行为"),
+  closeAction: z.enum(["minimize", "exit"]).default("exit").optional().describe("关闭窗口行为"),
   password: z.string().default("123456").describe("应用密码"),
   isDeveloper: z.boolean().default(false).describe("是否为开发者模式"),
   windowSize: z.object({
@@ -28,7 +28,6 @@ export const AppSettingsSchema = z.object({
   PATH: z.string().default("").describe("系统 PATH"),
   platform: z.string().default("").describe("操作系统平台"),
   uuid: z.string().default("").describe("应用唯一标识"),
-  lastSyncTime: z.number().default(0).describe("上次同步时间"),
 
   // 用户可配置设置
   appearance: AppearanceSchema.default({}),
