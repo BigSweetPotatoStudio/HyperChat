@@ -8,7 +8,6 @@ import {
   DEFAULT_APP_SETTINGS,
   type AppSettings,
   type AppearanceSettings,
-  type NetworkSettings,
   type SystemSettings,
   type DeveloperSettings,
 } from "../shared/appSettingsSchema.mjs";
@@ -141,14 +140,6 @@ export class AppSettingsManager {
         ...this.settings.appearance,
         ...(updates.appearance || {}),
       },
-      network: {
-        ...this.settings.network,
-        ...(updates.network || {}),
-        webdav: {
-          ...this.settings.network.webdav,
-          ...(updates.network?.webdav || {}),
-        },
-      },
       system: {
         ...this.settings.system,
         ...(updates.system || {}),
@@ -199,28 +190,7 @@ export class AppSettingsManager {
     });
   }
 
-  /**
-   * 获取网络设置
-   */
-  getNetwork(): NetworkSettings {
-    return { ...this.settings.network };
-  }
 
-  /**
-   * 更新网络设置
-   */
-  async updateNetwork(updates: Partial<NetworkSettings>): Promise<void> {
-    await this.updateSettings({
-      network: {
-        ...this.settings.network,
-        ...updates,
-        webdav: {
-          ...this.settings.network.webdav,
-          ...(updates.webdav || {}),
-        },
-      },
-    });
-  }
 
   /**
    * 获取系统设置
@@ -328,60 +298,4 @@ export class AppSettingsManager {
     }
   }
 
-  /**
-   * 从旧的 LocalSetting 迁移数据
-   */
-  async migrateFromLocalSetting(localSettingData: any): Promise<void> {
-    const migratedSettings: Partial<AppSettings> = {
-      version: localSettingData.version || "",
-      appDataDir: localSettingData.appDataDir || "",
-      logFilePath: localSettingData.logFilePath || "",
-      PATH: localSettingData.PATH || "",
-      platform: localSettingData.platform || "",
-      uuid: localSettingData.uuid || v4(),
-      lastSyncTime: localSettingData.lastSyncTime || 0,
-      downloaded: localSettingData.downloaded || {},
-      updated: localSettingData.updated || {},
-      
-      appearance: {
-        darkTheme: localSettingData.darkTheme || false,
-        theme: "auto",
-        fontSize: "medium",
-        language: "zhCN",
-        closeAction: localSettingData.closeAction,
-      },
-      
-      network: {
-        browserNetworkSetting: localSettingData.browserNetworkSetting || "server-proxy",
-        autoSync: localSettingData.autoSync || false,
-        webdav: localSettingData.webdav || {
-          url: "",
-          username: "",
-          password: "",
-          baseDirName: "",
-        },
-      },
-      
-      system: {
-        password: localSettingData.password || "123456",
-        runTask: localSettingData.runTask || false,
-        isDeveloper: localSettingData.isDeveloper || false,
-        isLoadClaudeConfig: localSettingData.isLoadClaudeConfig !== false,
-        firstOpen: localSettingData.firstOpen !== false,
-        windowSize: localSettingData.windowSize || {
-          width: 1440,
-          height: 900,
-        },
-      },
-      
-      developer: {
-        enableDebugMode: false,
-        enableTelemetry: false,
-        experimentalFeatures: false,
-        showAdvancedOptions: false,
-      },
-    };
-
-    await this.updateSettings(migratedSettings);
-  }
 }

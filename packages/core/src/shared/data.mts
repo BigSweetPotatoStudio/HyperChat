@@ -45,7 +45,6 @@ export type {
 export type {
   AppSettings,
   AppearanceSettings,
-  NetworkSettings,
   SystemSettings,
   DeveloperSettings,
 } from "./appSettingsSchema.mjs";

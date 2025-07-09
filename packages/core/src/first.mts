@@ -58,13 +58,6 @@ export const initializationPromise = (async () => {
     const appSettingsManager = initAppSettingsManager(appDataDir);
     await appSettingsManager.init();
     
-    // 如果有必要，可以从 LocalSetting 迁移数据
-    const localSettingData = LocalSetting.get();
-    if (localSettingData.firstOpen) {
-      Logger.info("First time open, migrating from LocalSetting...");
-      await appSettingsManager.migrateFromLocalSetting(localSettingData);
-    }
-    
     // 标记为已完成初始化
     markAppSettingsManagerAsInitialized();
     

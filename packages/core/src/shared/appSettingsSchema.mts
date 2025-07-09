@@ -9,17 +9,6 @@ export const AppearanceSchema = z.object({
   closeAction: z.enum(["minimize", "exit"]).optional().describe("关闭窗口行为"),
 });
 
-// 网络设置 Schema
-export const NetworkSchema = z.object({
-  browserNetworkSetting: z.enum(["server-proxy", "direct"]).default("server-proxy").describe("浏览器网络设置"),
-  autoSync: z.boolean().default(false).describe("是否启用自动同步"),
-  webdav: z.object({
-    url: z.string().default("").describe("WebDAV 服务器地址"),
-    username: z.string().default("").describe("WebDAV 用户名"),
-    password: z.string().default("").describe("WebDAV 密码"),
-    baseDirName: z.string().default("").describe("WebDAV 基础目录名"),
-  }).default({}),
-});
 
 // 系统设置 Schema
 export const SystemSchema = z.object({
@@ -55,7 +44,6 @@ export const AppSettingsSchema = z.object({
   
   // 用户可配置设置
   appearance: AppearanceSchema.default({}),
-  network: NetworkSchema.default({}),
   system: SystemSchema.default({}),
   developer: DeveloperSchema.default({}),
   
@@ -67,7 +55,6 @@ export const AppSettingsSchema = z.object({
 // 导出类型
 export type AppSettings = z.infer<typeof AppSettingsSchema>;
 export type AppearanceSettings = z.infer<typeof AppearanceSchema>;
-export type NetworkSettings = z.infer<typeof NetworkSchema>;
 export type SystemSettings = z.infer<typeof SystemSchema>;
 export type DeveloperSettings = z.infer<typeof DeveloperSchema>;
 
@@ -84,16 +71,6 @@ export const DEFAULT_APP_SETTINGS: Omit<AppSettings, 'uuid'> = {
     theme: "auto",
     fontSize: "medium",
     language: "zhCN",
-  },
-  network: {
-    browserNetworkSetting: "server-proxy",
-    autoSync: false,
-    webdav: {
-      url: "",
-      username: "",
-      password: "",
-      baseDirName: "",
-    },
   },
   system: {
     password: "123456",
@@ -125,9 +102,6 @@ export function validateAppearanceSettings(data: any): data is AppearanceSetting
   return AppearanceSchema.safeParse(data).success;
 }
 
-export function validateNetworkSettings(data: any): data is NetworkSettings {
-  return NetworkSchema.safeParse(data).success;
-}
 
 export function validateSystemSettings(data: any): data is SystemSettings {
   return SystemSchema.safeParse(data).success;

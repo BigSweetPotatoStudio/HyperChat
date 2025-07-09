@@ -48,7 +48,7 @@ const settings: AppSettings = DEFAULT_APP_SETTINGS;
 
 ### 后端使用 (核心模块)
 ```typescript
-import { AppSettingsManager } from '../core/appSettingsManager.mjs';
+import { AppSettingsManager } from '../data/appSettingsManager.mjs';
 import { AppSettingsSchema } from '../shared/appSettingsSchema.mjs';
 
 // 创建管理器实例
