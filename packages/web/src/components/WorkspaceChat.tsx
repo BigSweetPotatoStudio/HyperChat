@@ -97,6 +97,8 @@ export const WorkspaceChat = ({ workspace, agentKey, workspaceDetails, mcpClient
   
   // AI设置状态
   const [aiSettings, setAiSettings] = useState<AISettings | null>(null);
+  // AI设置加载状态
+  const [aiSettingsLoading, setAiSettingsLoading] = useState(true);
   
   // 获取默认模型配置
   const getDefaultModelFromSettings = (settings: AISettings): AIModelConfigItem | null => {
@@ -283,6 +285,7 @@ export const WorkspaceChat = ({ workspace, agentKey, workspaceDetails, mcpClient
         const appSettings = await call('getAppSettings');
         const ai = appSettings.ai;
         setAiSettings(ai);
+        setAiSettingsLoading(false);
 
         const defaultModel = getDefaultModelFromSettings(ai);
         currentChat.current.modelKey = defaultModel ? defaultModel.key : "";
@@ -332,6 +335,7 @@ export const WorkspaceChat = ({ workspace, agentKey, workspaceDetails, mcpClient
         refresh();
       } catch (error) {
         console.error("Failed to initialize workspace chat:", error);
+        setAiSettingsLoading(false);
       }
     })();
   }, [workspace, agentKey, chatLogToLoad]);
@@ -553,7 +557,7 @@ export const WorkspaceChat = ({ workspace, agentKey, workspaceDetails, mcpClient
     } finally {
       setLoading(false);
     }
-  }, [workspace, agentKey, aiSettings]);
+  }, [workspace, agentKey, aiSettings, aiSettingsLoading]);
 
   // 获取当前模型配置
   let currModel = aiSettings ? (
@@ -664,6 +668,7 @@ export const WorkspaceChat = ({ workspace, agentKey, workspaceDetails, mcpClient
                       }
                       className="w-64"
                       // allowClear
+                      disabled={aiSettingsLoading}
                       value={currentChat.current.modelKey}
                       onChange={(value) => {
                         currentChat.current.modelKey = value;
@@ -771,6 +776,10 @@ export const WorkspaceChat = ({ workspace, agentKey, workspaceDetails, mcpClient
                   if (s == "") return;
                   if (loading) {
                     message.warning(t`Please wait for the current request to finish`);
+                    return;
+                  }
+                  if (aiSettingsLoading) {
+                    message.warning(t`AI settings are loading, please wait...`);
                     return;
                   }
                   addToSendHistory(s);
@@ -911,9 +920,13 @@ export const WorkspaceChat = ({ workspace, agentKey, workspaceDetails, mcpClient
                     size="small"
                     icon={loading ? <LoadingOutlined /> : <SendOutlined />}
                     loading={loading}
-                    disabled={!value.trim() || loading}
+                    disabled={!value.trim() || loading || aiSettingsLoading}
                     onClick={() => {
                       if (value.trim()) {
+                        if (aiSettingsLoading) {
+                          message.warning(t`AI settings are loading, please wait...`);
+                          return;
+                        }
                         addToSendHistory(value);
                         onRequest(value);
                         setValue("");
@@ -921,7 +934,7 @@ export const WorkspaceChat = ({ workspace, agentKey, workspaceDetails, mcpClient
                       }
                     }}
                   >
-                    {loading ? t`Sending` : t`Send`}
+                    {aiSettingsLoading ? t`Loading Settings...` : loading ? t`Sending` : t`Send`}
                   </Button>
                 </Flex>
               </div>

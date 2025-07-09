@@ -49,14 +49,6 @@ class AiModelData {
   async init() {
     await initAppSettingsManager(appDataDir).init();
     let appSettings = getAppSettingsManager()
-    // let modelConfig = this.ext.appSettings?.ai.models.find((x) => x.key === params.modelKey);
-    // if (!modelConfig) {
-    //   throw new Error(`Model not found: ${params.modelKey}`);
-    // // }
-    // if (modelConfig.provider !== "unknown") {
-    //   modelConfig.baseURL = appSettings?.ai.builtinApiKeys[modelConfig.provider]?.baseURL || modelConfig.baseURL;
-    //   modelConfig.apiKey = appSettings?.ai.builtinApiKeys[modelConfig.provider]?.apiKey || modelConfig.apiKey;
-    // }
     return appSettings.getAI().models.map((model) => {
       return {
         ...model,
@@ -64,10 +56,6 @@ class AiModelData {
         apiKey: appSettings.getAI().builtinApiKeys[model.provider]?.apiKey || model.apiKey,
       };
     });
-  }
-
-  async save() {
-
   }
 }
 
