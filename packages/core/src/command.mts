@@ -38,6 +38,7 @@ import { getWorkspaceTerminal, findWorkspaceTerminalByTerminalId } from "./works
 import { fileURLToPath } from 'node:url';
 import { dirname } from 'node:path';
 import { getWorkspaceManager, workspaceManager } from "./workspace/index.mjs";
+import { getAppSettingsManager, isAppSettingsManagerInitialized } from "./core/appSettingsService.mjs";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -2107,6 +2108,101 @@ export class CommandFactory {
       return settingsManager.getSettings();
     } catch (error) {
       console.error(`Failed to import settings for workspace ${workspacePath}:`, error);
+      throw error;
+    }
+  }
+
+  /**
+   * 获取应用设置
+   * @returns 应用设置
+   */
+  async getAppSettings() {
+    try {
+      if (!isAppSettingsManagerInitialized()) {
+        throw new Error("应用设置管理器未初始化");
+      }
+      
+      const appSettingsManager = getAppSettingsManager();
+      return appSettingsManager.getSettings();
+    } catch (error) {
+      console.error("Failed to get app settings:", error);
+      throw error;
+    }
+  }
+
+  /**
+   * 更新应用设置
+   * @param updates 要更新的设置
+   * @returns 更新后的设置
+   */
+  async updateAppSettings({ updates }: { updates: Parameters<import('./core/appSettingsManager.mjs').AppSettingsManager['updateSettings']>[0] }) {
+    try {
+      if (!isAppSettingsManagerInitialized()) {
+        throw new Error("应用设置管理器未初始化");
+      }
+      
+      const appSettingsManager = getAppSettingsManager();
+      await appSettingsManager.updateSettings(updates);
+      return appSettingsManager.getSettings();
+    } catch (error) {
+      console.error("Failed to update app settings:", error);
+      throw error;
+    }
+  }
+
+  /**
+   * 重置应用设置
+   * @returns 重置后的设置
+   */
+  async resetAppSettings() {
+    try {
+      if (!isAppSettingsManagerInitialized()) {
+        throw new Error("应用设置管理器未初始化");
+      }
+      
+      const appSettingsManager = getAppSettingsManager();
+      await appSettingsManager.reset();
+      return appSettingsManager.getSettings();
+    } catch (error) {
+      console.error("Failed to reset app settings:", error);
+      throw error;
+    }
+  }
+
+  /**
+   * 导出应用设置
+   * @returns 设置的JSON字符串
+   */
+  async exportAppSettings(): Promise<string> {
+    try {
+      if (!isAppSettingsManagerInitialized()) {
+        throw new Error("应用设置管理器未初始化");
+      }
+      
+      const appSettingsManager = getAppSettingsManager();
+      return await appSettingsManager.export();
+    } catch (error) {
+      console.error("Failed to export app settings:", error);
+      throw error;
+    }
+  }
+
+  /**
+   * 导入应用设置
+   * @param settingsJson 设置的JSON字符串
+   * @returns 导入后的设置
+   */
+  async importAppSettings({ settingsJson }: { settingsJson: string }) {
+    try {
+      if (!isAppSettingsManagerInitialized()) {
+        throw new Error("应用设置管理器未初始化");
+      }
+      
+      const appSettingsManager = getAppSettingsManager();
+      await appSettingsManager.import(settingsJson);
+      return appSettingsManager.getSettings();
+    } catch (error) {
+      console.error("Failed to import app settings:", error);
       throw error;
     }
   }

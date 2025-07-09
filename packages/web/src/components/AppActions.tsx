@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Button, Select, Switch, Space } from 'antd';
-import { GithubFilled, SyncOutlined } from '@ant-design/icons';
+import { GithubFilled, SyncOutlined, SettingOutlined } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
 import { t, currLang, setCurrLang } from '../i18n';
 import { AppSetting } from '@hyperchat/shared/data.mjs';
@@ -14,9 +14,10 @@ import { msg_receive } from '../common/call';
 interface AppActionsProps {
   onAIProviderClick: () => void;
   onRefresh: () => void;
+  onAppSettingsClick?: () => void;
 }
 
-export function AppActions({ onAIProviderClick, onRefresh }: AppActionsProps) {
+export function AppActions({ onAIProviderClick, onRefresh, onAppSettingsClick }: AppActionsProps) {
   const navigate = useNavigate();
   const [syncStatus, setSyncStatus] = useState(0); // 同步状态：0-正常，1-同步中，-1-失败
 
@@ -77,6 +78,16 @@ export function AppActions({ onAIProviderClick, onRefresh }: AppActionsProps) {
       >
         <GithubFilled style={{ fontSize: 20 }} />
       </a>
+
+      {/* 应用设置按钮 */}
+      {onAppSettingsClick && (
+        <Button
+          onClick={onAppSettingsClick}
+          icon={<SettingOutlined />}
+        >
+          {t`App Settings`}
+        </Button>
+      )}
 
       {/* AI 提供商设置按钮 */}
       <Button

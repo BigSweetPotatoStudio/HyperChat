@@ -23,7 +23,10 @@
       "Bash(node:*)",
       "Bash(npm run check:*)",
       "Bash(npm run typecheck:*)",
-      "Bash(npm run:*)"
+      "Bash(npm run:*)",
+      "Bash(git add:*)",
+      "Bash(kill:*)",
+      "Bash(ss:*)"
     ],
     "deny": []
   }

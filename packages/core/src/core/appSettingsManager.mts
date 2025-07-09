@@ -1,0 +1,387 @@
+import * as fs from "fs";
+import * as path from "path";
+import jsonc from "jsonc-parser";
+import { zodToJsonSchema } from "zod-to-json-schema";
+import { v4 } from "uuid";
+import {
+  AppSettingsSchema,
+  DEFAULT_APP_SETTINGS,
+  type AppSettings,
+  type AppearanceSettings,
+  type NetworkSettings,
+  type SystemSettings,
+  type DeveloperSettings,
+} from "../shared/appSettingsSchema.mjs";
+
+/**
+ * 全局应用设置管理器类（仅限 Node.js 环境）
+ */
+export class AppSettingsManager {
+  private settings: AppSettings;
+  private settingsPath: string;
+  private schemaPath: string;
+
+  constructor(private appDataDir: string) {
+    this.settingsPath = path.join(appDataDir, "app-settings.jsonc");
+    this.schemaPath = path.join(appDataDir, "app-settings.schema.json");
+    
+    // 创建完整的默认设置，包含 UUID
+    this.settings = {
+      ...DEFAULT_APP_SETTINGS,
+      uuid: v4(),
+    };
+  }
+
+  /**
+   * 初始化设置
+   */
+  async init(): Promise<void> {
+    // 确保目录存在
+    if (!fs.existsSync(this.appDataDir)) {
+      await fs.promises.mkdir(this.appDataDir, { recursive: true });
+    }
+
+    // 生成并保存 JSON Schema
+    await this.generateSchema();
+    
+    // 加载设置
+    await this.load();
+  }
+
+  /**
+   * 生成并保存 JSON Schema
+   */
+  private async generateSchema(): Promise<void> {
+    const jsonSchema = zodToJsonSchema(AppSettingsSchema, {
+      name: "HyperChatAppSettings",
+      $refStrategy: "none",
+    });
+
+    // 添加 $schema 属性引用
+    const schemaWithReference = {
+      $schema: "http://json-schema.org/draft-07/schema#",
+      ...jsonSchema,
+    };
+
+    await fs.promises.writeFile(
+      this.schemaPath,
+      JSON.stringify(schemaWithReference, null, 2),
+      "utf-8"
+    );
+  }
+
+  /**
+   * 加载设置
+   */
+  async load(): Promise<void> {
+    try {
+      if (fs.existsSync(this.settingsPath)) {
+        const content = await fs.promises.readFile(this.settingsPath, "utf-8");
+        const parsed = jsonc.parse(content);
+        
+        // 使用 Zod 验证和解析
+        const result = AppSettingsSchema.safeParse(parsed);
+        
+        if (result.success) {
+          this.settings = result.data;
+        } else {
+          console.warn("应用设置文件验证失败，使用默认设置:", result.error);
+          // 保存默认设置
+          await this.save();
+        }
+      } else {
+        // 文件不存在，创建默认设置
+        await this.save();
+      }
+    } catch (error) {
+      console.error("加载应用设置文件失败:", error);
+      // 使用默认设置
+      this.settings = {
+        ...DEFAULT_APP_SETTINGS,
+        uuid: v4(),
+      };
+    }
+  }
+
+  /**
+   * 保存设置
+   */
+  async save(): Promise<void> {
+    try {
+      // 创建包含 $schema 引用的设置对象
+      const settingsWithSchema = {
+        $schema: "./app-settings.schema.json",
+        ...this.settings,
+      };
+
+      const content = JSON.stringify(settingsWithSchema, null, 2);
+      await fs.promises.writeFile(this.settingsPath, content, "utf-8");
+    } catch (error) {
+      console.error("保存应用设置文件失败:", error);
+      throw error;
+    }
+  }
+
+  /**
+   * 获取所有设置
+   */
+  getSettings(): AppSettings {
+    return { ...this.settings };
+  }
+
+  /**
+   * 更新设置
+   */
+  async updateSettings(updates: Partial<AppSettings>): Promise<void> {
+    // 深度合并设置
+    this.settings = {
+      ...this.settings,
+      ...updates,
+      appearance: {
+        ...this.settings.appearance,
+        ...(updates.appearance || {}),
+      },
+      network: {
+        ...this.settings.network,
+        ...(updates.network || {}),
+        webdav: {
+          ...this.settings.network.webdav,
+          ...(updates.network?.webdav || {}),
+        },
+      },
+      system: {
+        ...this.settings.system,
+        ...(updates.system || {}),
+        windowSize: {
+          ...this.settings.system.windowSize,
+          ...(updates.system?.windowSize || {}),
+        },
+      },
+      developer: {
+        ...this.settings.developer,
+        ...(updates.developer || {}),
+      },
+      downloaded: {
+        ...this.settings.downloaded,
+        ...(updates.downloaded || {}),
+      },
+      updated: {
+        ...this.settings.updated,
+        ...(updates.updated || {}),
+      },
+    };
+
+    // 验证更新后的设置
+    const result = AppSettingsSchema.safeParse(this.settings);
+    if (!result.success) {
+      throw new Error(`设置验证失败: ${result.error.message}`);
+    }
+
+    await this.save();
+  }
+
+  /**
+   * 获取外观设置
+   */
+  getAppearance(): AppearanceSettings {
+    return { ...this.settings.appearance };
+  }
+
+  /**
+   * 更新外观设置
+   */
+  async updateAppearance(updates: Partial<AppearanceSettings>): Promise<void> {
+    await this.updateSettings({
+      appearance: {
+        ...this.settings.appearance,
+        ...updates,
+      },
+    });
+  }
+
+  /**
+   * 获取网络设置
+   */
+  getNetwork(): NetworkSettings {
+    return { ...this.settings.network };
+  }
+
+  /**
+   * 更新网络设置
+   */
+  async updateNetwork(updates: Partial<NetworkSettings>): Promise<void> {
+    await this.updateSettings({
+      network: {
+        ...this.settings.network,
+        ...updates,
+        webdav: {
+          ...this.settings.network.webdav,
+          ...(updates.webdav || {}),
+        },
+      },
+    });
+  }
+
+  /**
+   * 获取系统设置
+   */
+  getSystem(): SystemSettings {
+    return { ...this.settings.system };
+  }
+
+  /**
+   * 更新系统设置
+   */
+  async updateSystem(updates: Partial<SystemSettings>): Promise<void> {
+    await this.updateSettings({
+      system: {
+        ...this.settings.system,
+        ...updates,
+        windowSize: {
+          ...this.settings.system.windowSize,
+          ...(updates.windowSize || {}),
+        },
+      },
+    });
+  }
+
+  /**
+   * 获取开发者设置
+   */
+  getDeveloper(): DeveloperSettings {
+    return { ...this.settings.developer };
+  }
+
+  /**
+   * 更新开发者设置
+   */
+  async updateDeveloper(updates: Partial<DeveloperSettings>): Promise<void> {
+    await this.updateSettings({
+      developer: {
+        ...this.settings.developer,
+        ...updates,
+      },
+    });
+  }
+
+  /**
+   * 重置设置为默认值
+   */
+  async reset(): Promise<void> {
+    // 保留系统信息
+    const systemInfo = {
+      version: this.settings.version,
+      appDataDir: this.settings.appDataDir,
+      logFilePath: this.settings.logFilePath,
+      PATH: this.settings.PATH,
+      platform: this.settings.platform,
+      uuid: this.settings.uuid,
+      lastSyncTime: this.settings.lastSyncTime,
+      downloaded: this.settings.downloaded,
+      updated: this.settings.updated,
+    };
+
+    this.settings = {
+      ...DEFAULT_APP_SETTINGS,
+      ...systemInfo,
+    };
+    await this.save();
+  }
+
+  /**
+   * 导出设置
+   */
+  async export(): Promise<string> {
+    return JSON.stringify(this.settings, null, 2);
+  }
+
+  /**
+   * 导入设置
+   */
+  async import(settingsJson: string): Promise<void> {
+    try {
+      const parsed = JSON.parse(settingsJson);
+      const result = AppSettingsSchema.safeParse(parsed);
+      
+      if (result.success) {
+        // 保留系统信息
+        const systemInfo = {
+          version: this.settings.version,
+          appDataDir: this.settings.appDataDir,
+          logFilePath: this.settings.logFilePath,
+          PATH: this.settings.PATH,
+          platform: this.settings.platform,
+          uuid: this.settings.uuid,
+        };
+
+        this.settings = {
+          ...result.data,
+          ...systemInfo,
+        };
+        await this.save();
+      } else {
+        throw new Error(`设置验证失败: ${result.error.message}`);
+      }
+    } catch (error) {
+      console.error("导入应用设置失败:", error);
+      throw error;
+    }
+  }
+
+  /**
+   * 从旧的 LocalSetting 迁移数据
+   */
+  async migrateFromLocalSetting(localSettingData: any): Promise<void> {
+    const migratedSettings: Partial<AppSettings> = {
+      version: localSettingData.version || "",
+      appDataDir: localSettingData.appDataDir || "",
+      logFilePath: localSettingData.logFilePath || "",
+      PATH: localSettingData.PATH || "",
+      platform: localSettingData.platform || "",
+      uuid: localSettingData.uuid || v4(),
+      lastSyncTime: localSettingData.lastSyncTime || 0,
+      downloaded: localSettingData.downloaded || {},
+      updated: localSettingData.updated || {},
+      
+      appearance: {
+        darkTheme: localSettingData.darkTheme || false,
+        theme: "auto",
+        fontSize: "medium",
+        language: "zhCN",
+        closeAction: localSettingData.closeAction,
+      },
+      
+      network: {
+        browserNetworkSetting: localSettingData.browserNetworkSetting || "server-proxy",
+        autoSync: localSettingData.autoSync || false,
+        webdav: localSettingData.webdav || {
+          url: "",
+          username: "",
+          password: "",
+          baseDirName: "",
+        },
+      },
+      
+      system: {
+        password: localSettingData.password || "123456",
+        runTask: localSettingData.runTask || false,
+        isDeveloper: localSettingData.isDeveloper || false,
+        isLoadClaudeConfig: localSettingData.isLoadClaudeConfig !== false,
+        firstOpen: localSettingData.firstOpen !== false,
+        windowSize: localSettingData.windowSize || {
+          width: 1440,
+          height: 900,
+        },
+      },
+      
+      developer: {
+        enableDebugMode: false,
+        enableTelemetry: false,
+        experimentalFeatures: false,
+        showAdvancedOptions: false,
+      },
+    };
+
+    await this.updateSettings(migratedSettings);
+  }
+}

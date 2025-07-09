@@ -11,22 +11,26 @@ import {
   Typography,
   Alert,
   message,
+  Input,
+  Card,
 } from "antd";
 import {
   AppstoreOutlined,
-  EditOutlined,
-  CodeOutlined,
+  GlobalOutlined,
+  DesktopOutlined,
   ExperimentOutlined,
   SaveOutlined,
   ReloadOutlined,
   ExportOutlined,
   ImportOutlined,
+  LockOutlined,
 } from "@ant-design/icons";
 import { t } from "../i18n";
 
-const { Text } = Typography;
+const { Title, Text } = Typography;
+const { Password } = Input;
 
-interface WorkspaceSettingsProps {
+interface AppSettingsProps {
   settings: any;
   onUpdate: (updates: any) => Promise<void>;
   onReset?: () => Promise<void>;
@@ -34,13 +38,13 @@ interface WorkspaceSettingsProps {
   onImport?: (settingsJson: string) => Promise<void>;
 }
 
-export function WorkspaceSettings({
+export function AppSettings({
   settings,
   onUpdate,
   onReset,
   onExport,
   onImport,
-}: WorkspaceSettingsProps) {
+}: AppSettingsProps) {
   const [form] = Form.useForm();
   const [activeTab, setActiveTab] = useState("appearance");
   const [hasChanges, setHasChanges] = useState(false);
@@ -117,15 +121,15 @@ export function WorkspaceSettings({
       children: (
         <>
           <Form.Item
-            label={t`Dark Mode`}
-            name={["appearance", "isDarkMode"]}
+            label={t`Dark Theme`}
+            name={["appearance", "darkTheme"]}
             valuePropName="checked"
           >
             <Switch />
           </Form.Item>
 
           <Form.Item
-            label={t`Theme`}
+            label={t`Theme Mode`}
             name={["appearance", "theme"]}
           >
             <Select
@@ -156,8 +160,22 @@ export function WorkspaceSettings({
           >
             <Select
               options={[
-                { value: "zh-CN", label: "中文" },
-                { value: "en-US", label: "English" },
+                { value: "zhCN", label: "中文" },
+                { value: "enUS", label: "English" },
+              ]}
+            />
+          </Form.Item>
+
+          <Form.Item
+            label={t`Close Action`}
+            name={["appearance", "closeAction"]}
+          >
+            <Select
+              placeholder={t`Select close action`}
+              allowClear
+              options={[
+                { value: "minimize", label: t`Minimize to tray` },
+                { value: "exit", label: t`Exit application` },
               ]}
             />
           </Form.Item>
@@ -165,151 +183,165 @@ export function WorkspaceSettings({
       ),
     },
     {
-      key: "editor",
+      key: "network",
       label: (
         <span>
-          <EditOutlined />
-          {t`Editor`}
+          <GlobalOutlined />
+          {t`Network`}
         </span>
       ),
       children: (
         <>
           <Form.Item
-            label={t`Auto Save`}
-            name={["editor", "autoSave"]}
-            valuePropName="checked"
-          >
-            <Switch />
-          </Form.Item>
-
-          <Form.Item
-            label={t`Auto Save Delay (ms)`}
-            name={["editor", "autoSaveDelay"]}
-            dependencies={[["editor", "autoSave"]]}
-          >
-            <InputNumber
-              min={1000}
-              max={60000}
-              step={1000}
-              disabled={!form.getFieldValue(["editor", "autoSave"])}
-            />
-          </Form.Item>
-
-          <Form.Item
-            label={t`Word Wrap`}
-            name={["editor", "wordWrap"]}
-            valuePropName="checked"
-          >
-            <Switch />
-          </Form.Item>
-
-          <Form.Item
-            label={t`Tab Size`}
-            name={["editor", "tabSize"]}
+            label={t`Browser Network Setting`}
+            name={["network", "browserNetworkSetting"]}
           >
             <Select
               options={[
-                { value: 2, label: "2" },
-                { value: 4, label: "4" },
-                { value: 8, label: "8" },
+                { value: "server-proxy", label: t`Server Proxy` },
+                { value: "direct", label: t`Direct Connection` },
               ]}
             />
           </Form.Item>
+
+          <Form.Item
+            label={t`Auto Sync`}
+            name={["network", "autoSync"]}
+            valuePropName="checked"
+          >
+            <Switch />
+          </Form.Item>
+
+          <Card title={t`WebDAV Settings`} size="small" style={{ marginTop: 16 }}>
+            <Form.Item
+              label={t`WebDAV URL`}
+              name={["network", "webdav", "url"]}
+            >
+              <Input placeholder="https://example.com/webdav" />
+            </Form.Item>
+
+            <Form.Item
+              label={t`Username`}
+              name={["network", "webdav", "username"]}
+            >
+              <Input />
+            </Form.Item>
+
+            <Form.Item
+              label={t`Password`}
+              name={["network", "webdav", "password"]}
+            >
+              <Password />
+            </Form.Item>
+
+            <Form.Item
+              label={t`Base Directory`}
+              name={["network", "webdav", "baseDirName"]}
+            >
+              <Input placeholder="HyperChat" />
+            </Form.Item>
+          </Card>
         </>
       ),
     },
     {
-      key: "ai",
+      key: "system",
       label: (
         <span>
-          <CodeOutlined />
-          {t`AI`}
+          <DesktopOutlined />
+          {t`System`}
         </span>
       ),
       children: (
         <>
           <Form.Item
-            label={t`Default Model`}
-            name={["ai", "defaultModel"]}
+            label={t`Application Password`}
+            name={["system", "password"]}
           >
-            <Select
-              placeholder={t`Select default AI model`}
-              allowClear
-            />
+            <Password />
           </Form.Item>
 
           <Form.Item
-            label={t`Default Agent`}
-            name={["ai", "defaultAgent"]}
-          >
-            <Select
-              placeholder={t`Select default agent`}
-              allowClear
-            />
-          </Form.Item>
-
-          <Form.Item
-            label={t`Temperature`}
-            name={["ai", "temperature"]}
-          >
-            <InputNumber
-              min={0}
-              max={2}
-              step={0.1}
-              precision={1}
-            />
-          </Form.Item>
-
-          <Form.Item
-            label={t`Max Tokens`}
-            name={["ai", "maxTokens"]}
-          >
-            <InputNumber
-              min={100}
-              max={32000}
-              step={100}
-            />
-          </Form.Item>
-
-          <Form.Item
-            label={t`Stream Response`}
-            name={["ai", "streamResponse"]}
+            label={t`Run Task`}
+            name={["system", "runTask"]}
             valuePropName="checked"
           >
             <Switch />
           </Form.Item>
+
+          <Form.Item
+            label={t`Load Claude Config`}
+            name={["system", "isLoadClaudeConfig"]}
+            valuePropName="checked"
+          >
+            <Switch />
+          </Form.Item>
+
+          <Card title={t`Window Settings`} size="small" style={{ marginTop: 16 }}>
+            <Form.Item
+              label={t`Window Width`}
+              name={["system", "windowSize", "width"]}
+            >
+              <InputNumber
+                min={800}
+                max={4000}
+                step={10}
+                addonAfter="px"
+              />
+            </Form.Item>
+
+            <Form.Item
+              label={t`Window Height`}
+              name={["system", "windowSize", "height"]}
+            >
+              <InputNumber
+                min={600}
+                max={3000}
+                step={10}
+                addonAfter="px"
+              />
+            </Form.Item>
+          </Card>
         </>
       ),
     },
     {
-      key: "advanced",
+      key: "developer",
       label: (
         <span>
           <ExperimentOutlined />
-          {t`Advanced`}
+          {t`Developer`}
         </span>
       ),
       children: (
         <>
           <Alert
-            message={t`Advanced Settings`}
-            description={t`These settings are for advanced users. Changing them may affect system stability.`}
+            message={t`Developer Settings`}
+            description={t`These settings are for developers and advanced users. Use with caution.`}
             type="warning"
             showIcon
             style={{ marginBottom: 16 }}
           />
 
           <Form.Item
-            label={t`Enable Telemetry`}
-            name={["advanced", "enableTelemetry"]}
+            label={t`Developer Mode`}
+            name={["system", "isDeveloper"]}
             valuePropName="checked"
           >
             <Switch />
           </Form.Item>
 
           <Form.Item
-            label={t`Debug Mode`}
-            name={["advanced", "debugMode"]}
+            label={t`Enable Debug Mode`}
+            name={["developer", "enableDebugMode"]}
+            valuePropName="checked"
+          >
+            <Switch />
+          </Form.Item>
+
+          <Form.Item
+            label={t`Enable Telemetry`}
+            name={["developer", "enableTelemetry"]}
             valuePropName="checked"
           >
             <Switch />
@@ -317,18 +349,37 @@ export function WorkspaceSettings({
 
           <Form.Item
             label={t`Experimental Features`}
-            name={["advanced", "experimentalFeatures"]}
+            name={["developer", "experimentalFeatures"]}
             valuePropName="checked"
           >
             <Switch />
           </Form.Item>
+
+          <Form.Item
+            label={t`Show Advanced Options`}
+            name={["developer", "showAdvancedOptions"]}
+            valuePropName="checked"
+          >
+            <Switch />
+          </Form.Item>
+
+          <Divider />
+          
+          <Card title={t`System Information`} size="small">
+            <div style={{ fontSize: '12px', color: '#666' }}>
+              <div><strong>{t`Version`}:</strong> {settings?.version || 'N/A'}</div>
+              <div><strong>{t`Platform`}:</strong> {settings?.platform || 'N/A'}</div>
+              <div><strong>{t`App Data Directory`}:</strong> {settings?.appDataDir || 'N/A'}</div>
+              <div><strong>{t`UUID`}:</strong> {settings?.uuid || 'N/A'}</div>
+            </div>
+          </Card>
         </>
       ),
     },
   ];
 
   return (
-    <div className="workspace-settings">
+    <div className="app-settings">
       <Form
         form={form}
         layout="vertical"

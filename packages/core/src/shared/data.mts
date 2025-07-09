@@ -41,6 +41,21 @@ export type {
   VarScope,
 } from "./types.mjs";
 
+// 导出应用设置相关类型
+export type {
+  AppSettings,
+  AppearanceSettings,
+  NetworkSettings,
+  SystemSettings,
+  DeveloperSettings,
+} from "./appSettingsSchema.mjs";
+
+export {
+  AppSettingsSchema,
+  DEFAULT_APP_SETTINGS,
+} from "./appSettingsSchema.mjs";
+
+
 
 
 
@@ -166,12 +181,12 @@ export const LocalSetting = new Data(
     },
     browserNetworkSetting: "server-proxy",
     closeAction: undefined as "minimize" | "exit" | undefined,
+    darkTheme: false, // 添加主题设置
   },
   {
     sync: false,
   }
 );
-
 
 export const ChatHistory = new Data("chat_history.json", {
   data: [] as Array<ChatHistoryItem>,

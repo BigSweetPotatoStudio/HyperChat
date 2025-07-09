@@ -62,6 +62,7 @@ import { AppActions } from "../../components/AppActions";
 import { FileEditor } from "../../components/FileEditor";
 import { Icon } from "@/src/components/icon";
 import { WorkspaceSettings } from "../../components/WorkspaceSettings";
+import { AppSettings } from "../../components/AppSettings";
 
 const { Title, Text } = Typography;
 
@@ -158,6 +159,8 @@ export function Workspace() {
   const [settingsDrawerOpen, setSettingsDrawerOpen] = useState(false);
   const [currentSettingsWorkspace, setCurrentSettingsWorkspace] = useState<WorkspaceInfo | null>(null);
   const [workspaceSettings, setWorkspaceSettings] = useState<any>(null);
+  const [appSettingsDrawerOpen, setAppSettingsDrawerOpen] = useState(false);
+  const [appSettings, setAppSettings] = useState<any>(null);
   const [form] = Form.useForm();
   // 为每个工作区维护独立的标签页状态
   const [workspaceTabsMap, setWorkspaceTabsMap] = useState<Record<string, ChatTab[]>>({});
@@ -528,6 +531,47 @@ export function Workspace() {
     } catch (error) {
       console.error("Failed to update workspace settings:", error);
       message.error(t`Failed to update workspace settings`);
+    }
+  };
+
+  // 处理应用设置
+  const handleAppSettings = async () => {
+    try {
+      // 加载应用设置
+      const settings = await call("getAppSettings");
+      setAppSettings(settings);
+      setAppSettingsDrawerOpen(true);
+    } catch (error) {
+      console.error("Failed to load app settings:", error);
+      message.error(t`Failed to load app settings`);
+    }
+  };
+
+  // 更新应用设置
+  const updateAppSettings = async (updates: any) => {
+    try {
+      const updatedSettings = await call("updateAppSettings", {
+        updates
+      });
+      setAppSettings(updatedSettings);
+      message.success(t`App settings updated successfully`);
+      
+      // 如果更改了主题设置，应用到界面
+      if (updates.appearance?.darkTheme !== undefined) {
+        const darkReader = await import('darkreader');
+        if (updates.appearance.darkTheme) {
+          darkReader.enable({
+            brightness: 100,
+            contrast: 90,
+            sepia: 10,
+          });
+        } else {
+          darkReader.disable();
+        }
+      }
+    } catch (error) {
+      console.error("Failed to update app settings:", error);
+      message.error(t`Failed to update app settings`);
     }
   };
 
@@ -1269,6 +1313,7 @@ export function Workspace() {
                 <AppActions
                   onAIProviderClick={() => setLocalIsModelConfigOpen(true)}
                   onRefresh={refresh}
+                  onAppSettingsClick={handleAppSettings}
                 />
               )
             }}
@@ -1503,6 +1548,63 @@ export function Workspace() {
         title={t`Select Workspace Directory`}
         initialPath="~"
       />
+
+      {/* 应用设置抽屉 */}
+      <Drawer
+        width={800}
+        title={t`Application Settings`}
+        open={appSettingsDrawerOpen}
+        onClose={() => {
+          setAppSettingsDrawerOpen(false);
+          setAppSettings(null);
+        }}
+        destroyOnClose
+      >
+        {appSettings && (
+          <AppSettings
+            settings={appSettings}
+            onUpdate={updateAppSettings}
+            onReset={async () => {
+              try {
+                const resetSettings = await call("resetAppSettings");
+                setAppSettings(resetSettings);
+              } catch (error) {
+                console.error("Failed to reset app settings:", error);
+                message.error(t`Failed to reset app settings`);
+              }
+            }}
+            onExport={async () => {
+              try {
+                const settingsJson = await call("exportAppSettings");
+                // 创建下载链接
+                const blob = new Blob([settingsJson], { type: "application/json" });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement("a");
+                a.href = url;
+                a.download = `hyperchat-app-settings.json`;
+                a.click();
+                URL.revokeObjectURL(url);
+                message.success(t`App settings exported successfully`);
+              } catch (error) {
+                console.error("Failed to export app settings:", error);
+                message.error(t`Failed to export app settings`);
+              }
+            }}
+            onImport={async (settingsJson: string) => {
+              try {
+                const importedSettings = await call("importAppSettings", {
+                  settingsJson
+                });
+                setAppSettings(importedSettings);
+                message.success(t`App settings imported successfully`);
+              } catch (error) {
+                console.error("Failed to import app settings:", error);
+                message.error(t`Failed to import app settings`);
+              }
+            }}
+          />
+        )}
+      </Drawer>
 
       {/* 工作区设置抽屉 */}
       <Drawer
