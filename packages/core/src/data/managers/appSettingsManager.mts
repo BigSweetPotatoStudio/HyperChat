@@ -10,6 +10,7 @@ import {
   type AppearanceSettings,
   type SystemSettings,
 } from "../../shared/jsonSchemas/appSettingsSchema.mjs";
+import { CONST } from "../../const.mjs";
 
 /**
  * 全局应用设置管理器类（仅限 Node.js 环境）
@@ -23,10 +24,14 @@ export class AppSettingsManager {
     this.settingsPath = path.join(appDataDir, "app-settings.jsonc");
     this.schemaPath = path.join(appDataDir, "app-settings.schema.json");
     
-    // 创建完整的默认设置，包含 UUID
+    // 创建完整的默认设置，包含 UUID 和版本号
     this.settings = {
       ...DEFAULT_APP_SETTINGS,
       uuid: v4(),
+      version: CONST.getVersion,
+      appDataDir: CONST.appDataDir,
+      platform: process.platform,
+      PATH: process.env.PATH || "",
     };
   }
 
@@ -81,7 +86,14 @@ export class AppSettingsManager {
         const result = AppSettingsSchema.safeParse(parsed);
         
         if (result.success) {
-          this.settings = result.data;
+          this.settings = {
+            ...result.data,
+            // 确保系统信息始终是最新的
+            version: CONST.getVersion,
+            appDataDir: CONST.appDataDir,
+            platform: process.platform,
+            PATH: process.env.PATH || "",
+          };
         } else {
           console.warn("应用设置文件验证失败，使用默认设置:", result.error);
           // 保存默认设置
@@ -206,13 +218,13 @@ export class AppSettingsManager {
    * 重置设置为默认值
    */
   async reset(): Promise<void> {
-    // 保留系统信息
+    // 保留系统信息，但使用最新值
     const systemInfo = {
-      version: this.settings.version,
-      appDataDir: this.settings.appDataDir,
+      version: CONST.getVersion,
+      appDataDir: CONST.appDataDir,
       logFilePath: this.settings.logFilePath,
-      PATH: this.settings.PATH,
-      platform: this.settings.platform,
+      PATH: process.env.PATH || "",
+      platform: process.platform,
       uuid: this.settings.uuid,
     };
 
@@ -239,13 +251,13 @@ export class AppSettingsManager {
       const result = AppSettingsSchema.safeParse(parsed);
       
       if (result.success) {
-        // 保留系统信息
+        // 保留系统信息，但使用最新值
         const systemInfo = {
-          version: this.settings.version,
-          appDataDir: this.settings.appDataDir,
+          version: CONST.getVersion,
+          appDataDir: CONST.appDataDir,
           logFilePath: this.settings.logFilePath,
-          PATH: this.settings.PATH,
-          platform: this.settings.platform,
+          PATH: process.env.PATH || "",
+          platform: process.platform,
           uuid: this.settings.uuid,
         };
 

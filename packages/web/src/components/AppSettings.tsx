@@ -20,7 +20,6 @@ import {
 import { t } from "../i18n";
 import { zodToJsonSchema } from "zod-to-json-schema";
 import {
-  AppSettingsSchema,
   AppearanceSchema,
   SystemSchema
 } from "../../../core/src/shared/jsonSchemas/appSettingsSchema.mjs";
