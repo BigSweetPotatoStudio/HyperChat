@@ -161,7 +161,6 @@ export function Workspace() {
   const [workspaceSettings, setWorkspaceSettings] = useState<any>(null);
   const [appSettingsDrawerOpen, setAppSettingsDrawerOpen] = useState(false);
   const [appSettings, setAppSettings] = useState<any>(null);
-  const [aiSettings, setAiSettings] = useState<any>(null);
   const [form] = Form.useForm();
   // 为每个工作区维护独立的标签页状态
   const [workspaceTabsMap, setWorkspaceTabsMap] = useState<Record<string, ChatTab[]>>({});
@@ -541,7 +540,6 @@ export function Workspace() {
       // 加载应用设置
       const settings = await call("getAppSettings");
       setAppSettings(settings);
-      setAiSettings(settings.ai);
       setAppSettingsDrawerOpen(true);
     } catch (error) {
       console.error("Failed to load app settings:", error);
@@ -556,7 +554,6 @@ export function Workspace() {
         updates
       });
       setAppSettings(updatedSettings);
-      setAiSettings(updatedSettings.ai);
       message.success(t`App settings updated successfully`);
       
       // 如果更改了主题设置，应用到界面
@@ -795,15 +792,6 @@ export function Workspace() {
 
   useEffect(() => {
     loadWorkspaces();
-    // 启动时就加载 AI 设置
-    (async () => {
-      try {
-        const settings = await call("getAppSettings");
-        setAiSettings(settings.ai);
-      } catch (error) {
-        console.error("Failed to load AI settings:", error);
-      }
-    })();
   }, []);
 
   // 当工作区加载完成后，自动加载当前活动工作区的详情
@@ -1204,7 +1192,6 @@ export function Workspace() {
                             key={tab.key}
                             mcpClients={mcpClients}
                             chatLogToLoad={tab.chatLogToLoad}
-                            aiSettings={aiSettings}
                           />
                         )}
                       </div>
@@ -1256,7 +1243,6 @@ export function Workspace() {
                         onRefresh={() => refreshWorkspaceDetails(workspaceKey, 'agents')}
                         onOpenChat={(agent: any, chatLog?: any) => openAgentChat(workspaceKey, agent, chatLog)}
                         mcpClients={mcpClients}
-                        aiSettings={aiSettings}
                       />
                     ) : <Empty description={t`No workspace selected`} />,
                   },

@@ -41,7 +41,8 @@ import { isOnBrowser } from "../common/util";
 import { t } from "../i18n";
 import { HyperChatCompletionTool, MyMessage } from "@hyperchat/shared/data.mjs";
 import { Pre } from "./pre";
-import { DownImage } from "../pages/chat/component";
+import { DownImage } from "./WorkspaceChatComponent/component";
+
 
 // Constants
 const antdMessage = message;

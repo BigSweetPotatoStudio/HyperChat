@@ -38,6 +38,7 @@ import { call } from "../common/call";
 import { t } from "../i18n";
 import { HeaderContext } from "../common/context";
 import type { AISettings, AIModelConfigItem } from "@hyperchat/shared/jsonSchemas/appSettingsSchema.mts";
+import { useAISettings } from "../contexts/AppSettingsContext";
 import { NumberStep } from "../common/numberStep";
 import EmojiPicker from 'emoji-picker-react';
 import { Editor } from "./editor";
@@ -63,14 +64,13 @@ interface AgentManagementProps {
   onRefresh: () => Promise<void>;
   onOpenChat?: (agent: Agent, chatLog?: ChatHistoryItem) => void;
   mcpClients: IMCPClient[];
-  aiSettings?: AISettings;
 }
 
 export interface AgentManagementRef {
   createAgent: () => void;
 }
 
-export const AgentManagement = forwardRef<AgentManagementRef, AgentManagementProps>(({ workspace, agents, onRefresh, onOpenChat, mcpClients, aiSettings: propAiSettings }, ref) => {
+export const AgentManagement = forwardRef<AgentManagementRef, AgentManagementProps>(({ workspace, agents, onRefresh, onOpenChat, mcpClients }, ref) => {
   const [agentDetailDrawer, setAgentDetailDrawer] = useState(false);
   const [agentEditModal, setAgentEditModal] = useState(false);
   const [chatHistoryModal, setChatHistoryModal] = useState(false);
@@ -82,7 +82,8 @@ export const AgentManagement = forwardRef<AgentManagementRef, AgentManagementPro
   const [form] = Form.useForm();
   const refresh = useForceUpdate();
   const context = useContext(HeaderContext);
-  const [aiSettings, setAiSettings] = useState<AISettings | null>(propAiSettings || null);
+  // 从 Context 获取 AI 设置
+  const { aiSettings } = useAISettings();
 
   // 获取模型的显示名称
   const getModelDisplayName = (modelKey: string): string => {
@@ -91,28 +92,10 @@ export const AgentManagement = forwardRef<AgentManagementRef, AgentManagementPro
     return model ? (model.fullName || model.name || modelKey) : modelKey;
   };
 
+  // 当 aiSettings 变化时刷新组件
   useEffect(() => {
-    // 如果没有从父组件传递 aiSettings，则自己加载
-    if (!propAiSettings) {
-      call('getAppSettings').then(appSettings => {
-        setAiSettings((appSettings as any).ai);
-        refresh();
-      }).catch(error => {
-        console.error('Failed to load AI settings:', error);
-      });
-    } else {
-      // 使用传递的 aiSettings 时也要刷新
-      refresh();
-    }
-  }, [propAiSettings]);
-
-  // 监听从父组件传递的 aiSettings 变化
-  useEffect(() => {
-    if (propAiSettings) {
-      setAiSettings(propAiSettings);
-      refresh();
-    }
-  }, [propAiSettings]);
+    refresh();
+  }, [aiSettings]);
 
   // 暴露 createAgent 方法给父组件
   useImperativeHandle(ref, () => ({

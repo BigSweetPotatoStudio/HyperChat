@@ -28,6 +28,7 @@ import {
 
 import { call } from '../common/call';
 import type { AIModelConfigItem, ProviderConfig, KnownProvider, AISettings } from '../../../core/src/shared/jsonSchemas/appSettingsSchema.mts';
+import { useAISettings } from "../contexts/AppSettingsContext";
 import { t } from '../i18n';
 
 const { Title, Text } = Typography;
@@ -77,9 +78,11 @@ export function ProviderSettings() {
   const [modelForm] = Form.useForm();
   const [providerForm] = Form.useForm();
 
+  // 从 Context 获取 AI 设置
+  const { aiSettings, updateAISettings } = useAISettings();
+
   const [providers, setProviders] = useState<ProviderConfig[]>([]);
   const [selectedProvider, setSelectedProvider] = useState<ProviderConfig | null>(null);
-  const [aiSettings, setAiSettings] = useState<AISettings | null>(null);
   const [view, setView] = useState<'providers' | 'models'>('providers');
 
   // Modal states
@@ -123,13 +126,11 @@ export function ProviderSettings() {
   // 刷新数据
   const refresh = async () => {
     try {
-      const appSettings = await call('getAppSettings');
-      const ai = appSettings.ai;
-      setAiSettings(ai);
+      if (!aiSettings) return;
       
       // 获取所有提供商（内置 + 自定义）
       const builtinProviders = getBuiltinProviders();
-      const allProviders = [...builtinProviders, ...ai.customProviders];
+      const allProviders = [...builtinProviders, ...aiSettings.customProviders];
       setProviders(allProviders);
     } catch (error) {
       console.error('刷新配置失败:', error);
@@ -155,7 +156,7 @@ export function ProviderSettings() {
 
   useEffect(() => {
     refresh();
-  }, []);
+  }, [aiSettings]);
 
   // 处理提供商点击 - 如果有API Key则进入模型管理，否则配置API Key
   const handleProviderClick = (provider: ProviderConfig) => {
@@ -205,14 +206,9 @@ export function ProviderSettings() {
       const updatedCustomProviders = aiSettings.customProviders.filter(p => p.key !== provider.key);
       const updatedModels = aiSettings.models.filter(model => model.provider !== provider.key);
       
-      await call('updateAppSettings', {
-        updates: {
-          ai: {
-            ...aiSettings,
-            customProviders: updatedCustomProviders,
-            models: updatedModels
-          }
-        }
+      await updateAISettings({
+        customProviders: updatedCustomProviders,
+        models: updatedModels
       });
       
       message.success(t`Provider and all related models deleted successfully`);

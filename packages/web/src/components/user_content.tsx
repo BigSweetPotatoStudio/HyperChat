@@ -62,7 +62,7 @@ import markdownit from "markdown-it";
 import mk from "@vscode/markdown-it-katex";
 
 // 本地组件和工具
-import { DownImage } from "../pages/chat/component";
+import { DownImage } from "./WorkspaceChatComponent/component";
 import { Editor } from "./editor";
 import { t } from "../i18n";
 import { MyMessage } from "@hyperchat/shared/data.mjs";

@@ -48,20 +48,20 @@ import {
 
 import { v4 } from "uuid";
 import { call, getURL_PRE } from "../common/call";
-import { blobToBase64, calcAttachDialogue, urlToBase64 } from "../pages/chat/utils/index";
+
 import { AiChannel } from "@hyperchat/shared/ai.mjs";
 import {
   LocalSetting,
   ChatHistoryItem,
 } from "@hyperchat/shared/data.mjs";
 import type { AISettings, AIModelConfigItem } from "@hyperchat/shared/jsonSchemas/appSettingsSchema.mts";
+import { useAISettings } from "../contexts/AppSettingsContext";
 import { MyMessage } from "@hyperchat/shared/data.mjs";
 import { Messages } from "./messages";
 import { Icon } from "./icon";
-import { getDefaultModelConfig, getDefaultModelConfigSync } from "./ai";
 import { Editor } from "./editor";
 import { t } from "../i18n";
-import { getMyUuid, JsonSchema2FormItemOrNull } from "../common/util";
+import { blobToBase64, getMyUuid, JsonSchema2FormItemOrNull, urlToBase64 } from "../common/util";
 import { HeaderContext } from "../common/context";
 import { useForceUpdate } from "../hooks/useForceUpdate";
 import { MyAttachR } from "./attachR";
@@ -82,14 +82,12 @@ interface WorkspaceChatProps {
   mcpClients: IMCPClient[];
   /** 要加载的特定聊天记录 */
   chatLogToLoad?: ChatHistoryItem;
-  /** AI 设置 */
-  aiSettings?: AISettings;
 }
 
 /**
  * 工作区聊天组件
  */
-export const WorkspaceChat = ({ workspace, agentKey, workspaceDetails, mcpClients, chatLogToLoad, aiSettings: propAiSettings }: WorkspaceChatProps) => {
+export const WorkspaceChat = ({ workspace, agentKey, workspaceDetails, mcpClients, chatLogToLoad }: WorkspaceChatProps) => {
   // 使用强制刷新 hook
   const refresh = useForceUpdate();
 
@@ -97,10 +95,8 @@ export const WorkspaceChat = ({ workspace, agentKey, workspaceDetails, mcpClient
   const context = useContext(HeaderContext);
   const { globalState, updateGlobalState } = context || {};
   
-  // AI设置状态 - 优先使用从父组件传递的设置，如果没有则自己加载
-  const [aiSettings, setAiSettings] = useState<AISettings | null>(propAiSettings || null);
-  // AI设置加载状态
-  const [aiSettingsLoading, setAiSettingsLoading] = useState(!propAiSettings);
+  // 从 Context 获取 AI 设置
+  const { aiSettings, loading: aiSettingsLoading } = useAISettings();
   
   // 获取默认模型配置
   const getDefaultModelFromSettings = (settings: AISettings): AIModelConfigItem | null => {
@@ -283,19 +279,12 @@ export const WorkspaceChat = ({ workspace, agentKey, workspaceDetails, mcpClient
       try {
         await LocalSetting.init();
         
-        let ai: AISettings;
-        
-        // 如果没有从父组件传递 aiSettings，则自己加载
-        if (!propAiSettings) {
-          const appSettings = await call('getAppSettings');
-          ai = appSettings.ai;
-          setAiSettings(ai);
-          setAiSettingsLoading(false);
-        } else {
-          ai = propAiSettings;
+        // 等待 AI 设置加载完成
+        if (!aiSettings || aiSettingsLoading) {
+          return;
         }
 
-        const defaultModel = getDefaultModelFromSettings(ai);
+        const defaultModel = getDefaultModelFromSettings(aiSettings);
         currentChat.current.modelKey = defaultModel ? defaultModel.key : "";
         const agent = workspaceDetails[workspace.path]?.agents.find(a => a.config.key === agentKey);
         // 如果有要加载的聊天记录，优先加载聊天记录
@@ -343,18 +332,9 @@ export const WorkspaceChat = ({ workspace, agentKey, workspaceDetails, mcpClient
         refresh();
       } catch (error) {
         console.error("Failed to initialize workspace chat:", error);
-        setAiSettingsLoading(false);
       }
     })();
-  }, [workspace, agentKey, chatLogToLoad, propAiSettings]);
-
-  // 监听从父组件传递的 aiSettings 变化
-  useEffect(() => {
-    if (propAiSettings) {
-      setAiSettings(propAiSettings);
-      setAiSettingsLoading(false);
-    }
-  }, [propAiSettings]);
+  }, [workspace, agentKey, chatLogToLoad, aiSettings, aiSettingsLoading]);
 
   /**
    * 重置当前聊天配置

@@ -63,7 +63,6 @@ import {
   isEnabled as isDarkReaderEnabled,
   setFetchMethod as setDarkReaderFetchMethod,
 } from "darkreader";
-import { getDefaultModelConfigSync } from "./components/ai";
 
 // 定义消息类型
 interface TaskResultMessage {

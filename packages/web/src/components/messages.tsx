@@ -8,12 +8,13 @@ import { call } from "../common/call";
 import { setClipboardText } from "../common/util";
 import { t } from "../i18n";
 import dayjs from "dayjs";
-import { DownImage } from "../pages/chat/component";
+
 import { Pre } from "./pre";
 import { AssistantToolContent } from "./assistant_tool_content";
 import { Icon } from "./icon";
 import { UserContent } from "./user_content";
 import { useForceUpdate } from "../hooks/useForceUpdate";
+import { DownImage } from "./WorkspaceChatComponent/component";
 
 export const Messages = ({ messages, onSumbit, readOnly, setContainer, status, onClone }: {
     messages: MyMessage[];

@@ -43,6 +43,7 @@ import { getRoute, getLayoutRoute } from "./router";
 import { LocalSetting, DataList } from "@hyperchat/shared/data.mjs";
 import { call } from "./common/call";
 import { EVENT } from "./common/event";
+import { AppSettingsProvider } from "./contexts/AppSettingsContext";
 
 /**
  * App 组件为 Web 前端的主入口：
@@ -80,7 +81,9 @@ export default function App() {
       >
         {/* AntdApp 提供全局样式和上下文，Routes 渲染所有页面路由 */}
         <AntdApp>
-          <Routes>{getRoute(getLayoutRoute())}</Routes>
+          <AppSettingsProvider>
+            <Routes>{getRoute(getLayoutRoute())}</Routes>
+          </AppSettingsProvider>
         </AntdApp>
       </Spin>
     </div>

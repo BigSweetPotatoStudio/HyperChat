@@ -1,7 +1,7 @@
 //* 检查更新工具类
 import pkg from "electron-updater";
 const { autoUpdater } = pkg;
-import { getMessageService } from "../../../core/src/message_service.mjs";
+
 import { Logger } from "../../../core/src/log.mjs";
 
 
@@ -55,7 +55,7 @@ class CheckUpdate {
     });
 
     // 下载监听
-    autoUpdater.on("downloadProgress", (progressObj) => {
+    autoUpdater.on("downloadProgress" as any, (progressObj) => {
       Logger.info("下载监听", progressObj);
       sendToRender("downloadProgress", progressObj);
     });
