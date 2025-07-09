@@ -8,7 +8,8 @@ import * as MCPTypes from "@modelcontextprotocol/sdk/types.js";
 import {
   SSEClientTransport,
   StreamableHTTPClientTransport,
-  StdioClientTransport
+  StdioClientTransport,
+  shellPathSync
 } from "../../es6.mjs";
 import {
   CallToolResultSchema,
@@ -20,8 +21,7 @@ import type { MCPPromptSchema, MCPResourceSchema, MCPConfigSchema, ToolCallArgs 
 import type { WorkspaceMCPClient, MCPType } from "./types.mjs";
 import { Logger } from "../../log.mjs";
 import { getMessageService } from "../../message_service.mjs";
-import { AppSetting } from "../../shared/data.mjs";
-import { getMyDefaultEnvironment } from "../../mcp/utils.mjs";
+
 import { GlobalServers, WorkSpaceServers } from "../../mcp/servers/index.mjs";
 import { zodToJsonSchema } from "zod-to-json-schema";
 import spawn from "cross-spawn";
@@ -72,8 +72,8 @@ export class WorkspaceMCPClientImpl implements WorkspaceMCPClient {
     // 如果是内置服务器，设置配置模式
     if (this.mcpType === "builtin") {
       // 检查全局服务器和工作区服务器
-      const server = GlobalServers.find((s) => s.name === serverName) || 
-                    WorkSpaceServers.find((s) => s.name === serverName);
+      const server = GlobalServers.find((s) => s.name === serverName) ||
+        WorkSpaceServers.find((s) => s.name === serverName);
       if (server?.configSchema) {
         this.ext.configSchema = zodToJsonSchema(server.configSchema) as any;
       }
@@ -86,7 +86,7 @@ export class WorkspaceMCPClientImpl implements WorkspaceMCPClient {
     }
     await this.ensureConnected();
 
-    const mcpCallToolTimeout = (await AppSetting.init()).mcpCallToolTimeout;
+    const mcpCallToolTimeout = 60; // 默认60秒
     const timeoutMs = mcpCallToolTimeout * 1000;
 
     try {
@@ -365,7 +365,7 @@ export class WorkspaceMCPClientImpl implements WorkspaceMCPClient {
   }
 
   private async openStdio(config: MCPServerConfig): Promise<MCP.Client> {
-    const env = Object.assign(getMyDefaultEnvironment(), config.env);
+    const env = Object.assign({ PATH: shellPathSync() }, config.env);
 
     if (!config.command) throw new Error('Command is required for stdio transport');
 

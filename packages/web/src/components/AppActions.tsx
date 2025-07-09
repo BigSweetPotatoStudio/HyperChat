@@ -3,7 +3,7 @@ import { Button, Select, Switch, Space } from 'antd';
 import { GithubFilled, SyncOutlined, SettingOutlined } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
 import { t, currLang, setCurrLang } from '../i18n';
-import { AppSetting } from '@hyperchat/shared/data.mjs';
+import { useAppearanceSettings } from '../contexts/AppSettingsContext';
 import {
   enable as enableDarkMode,
   disable as disableDarkMode,
@@ -20,6 +20,7 @@ interface AppActionsProps {
 export function AppActions({ onAIProviderClick, onRefresh, onAppSettingsClick }: AppActionsProps) {
   const navigate = useNavigate();
   const [syncStatus, setSyncStatus] = useState(0); // 同步状态：0-正常，1-同步中，-1-失败
+  const { appearance, updateAppearance } = useAppearanceSettings();
 
   // 监听同步状态变化
   useEffect(() => {
@@ -48,8 +49,7 @@ export function AppActions({ onAIProviderClick, onRefresh, onAppSettingsClick }:
   };
 
   const handleThemeChange = async (checked: boolean) => {
-    AppSetting.get().darkTheme = checked;
-    await AppSetting.save();
+    await updateAppearance({ darkTheme: checked });
     onRefresh();
 
     // 应用主题设置
@@ -112,7 +112,7 @@ export function AppActions({ onAIProviderClick, onRefresh, onAppSettingsClick }:
       <Switch
         checkedChildren={"🌙"}
         unCheckedChildren={"☀️"}
-        checked={AppSetting.get().darkTheme}
+        checked={appearance?.darkTheme || false}
         onChange={handleThemeChange}
       />
 

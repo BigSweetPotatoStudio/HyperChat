@@ -2,8 +2,8 @@ import { appDataDir } from "./const.mjs";
 import { Logger } from "./log.mjs";
 import { zx } from "./es6.mjs";
 const { fs, path } = zx;
-import { LocalSetting, initAppSettingsManager, markAppSettingsManagerAsInitialized } from "./data/index.mjs";
-import "./common/data.mjs";
+import { initAppSettingsManager, markAppSettingsManagerAsInitialized } from "./data/index.mjs";
+
 
 
 // global.ext = {
@@ -45,21 +45,19 @@ Logger.info("myEnv: ", process.env.myEnv);
 
 Logger.info("appDataDir: ", appDataDir);
 fs.ensureDirSync(path.join(appDataDir, "messages"));
-LocalSetting.get().appDataDir = appDataDir;
-LocalSetting.get().logFilePath = logFilePath;
+
 
 // 初始化应用设置管理器
 export const initializationPromise = (async () => {
   try {
-    await LocalSetting.save();
-    
+
     // 初始化应用设置管理器
     const appSettingsManager = initAppSettingsManager(appDataDir);
     await appSettingsManager.init();
-    
+
     // 标记为已完成初始化
     markAppSettingsManagerAsInitialized();
-    
+
     Logger.info("App settings manager initialized successfully");
   } catch (error) {
     Logger.error("Failed to initialize app settings manager:", error);

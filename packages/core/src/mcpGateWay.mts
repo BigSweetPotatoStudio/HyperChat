@@ -124,16 +124,16 @@ function register(route: Router, name: string, description: string, allowMCPs: s
 
 export async function registers(prefix: string) {
     let route = Router();
-    (await MCP_GateWay.init()).data.forEach((serve) => {
-        // Provide default values to avoid undefined
-        register(
-            route,
-            serve.name ?? 'default',
-            serve.description ?? '',
-            serve.allowMCPs ?? [],
-            prefix
-        );
-    });
+    // (await MCP_GateWay.init()).data.forEach((serve) => {
+    //     // Provide default values to avoid undefined
+    //     register(
+    //         route,
+    //         serve.name ?? 'default',
+    //         serve.description ?? '',
+    //         serve.allowMCPs ?? [],
+    //         prefix
+    //     );
+    // });
     return route;
 }
 

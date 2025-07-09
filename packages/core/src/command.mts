@@ -5,17 +5,11 @@ const { fs, os, path } = zx;
 import { isPortUse } from "./common/checkport.mjs";
 import { getLocalIP, spawnWithOutput } from "./common/util.mjs";
 import {
-  Agents,
-  ChatHistory,
   ChatHistoryItem,
-  LocalSetting,
   MCPServerConfig,
-  MyMessage,
   Task,
-  KnowledgeResource,
-  KnowledgeStore,
   IMCPClient,
-} from "./shared/data.mjs";
+} from "./shared/types.mjs";
 import { AgentConfig, DirectoryItem } from "./shared/types.mjs";
 import { appDataDir } from "./const.mjs";
 import crypto from "crypto";
@@ -24,11 +18,10 @@ import {
   initMCPManager,
   getWorkspaceMCPClients as getWorkspaceMCPClientsFromManager
 } from "./workspace/mcp/index.mjs";
-import { progressList } from "./common/progress.mjs";
+// import { progressList } from "./common/progress.mts.bak";
 
 import { EVENT } from "./common/event.mjs";
 // import { callAgent, runTask, startTask, stopTask } from "./mcp/task.mjs";
-import { getMyDefaultEnvironment } from "./mcp/utils.mjs";
 import * as cron from "node-cron";
 
 import { Config } from "./const.mjs";
@@ -56,17 +49,6 @@ export const { createRequire } = await import(
 
 // CommandFactory 类封装了 HyperChat 命令行/服务端的主要操作，包括 MCP 客户端管理、文件操作、剪贴板、自动启动等
 export class CommandFactory {
-  // 获取应用配置
-  async getConfig() {
-    return {
-      version: CONST.getVersion,
-      appDataDir: appDataDir,
-      logPath: Logger.path,
-      password: (await LocalSetting.init()).password,
-      ...Config
-    };
-  }
-
 
   /**
    * 强制重新加载全局MCP配置文件
@@ -641,40 +623,6 @@ export class CommandFactory {
     return isPortUse(port);
   }
 
-  async exec({
-    command,
-    args
-  }: {
-    command: string;
-    args?: Array<string>;
-  }): Promise<string> {
-    if ((await LocalSetting.init()).PATH) {
-      process.env.PATH = LocalSetting.get().PATH;
-    } else {
-      if (os.platform() != "win32") {
-        process.env.PATH = shellPathSync();
-      }
-    }
-    let p = await spawnWithOutput(command, args, {
-      env: Object.assign(getMyDefaultEnvironment(), process.env as Record<string, string>),
-    });
-    return p.stdout;
-  }
-  async testWebDav({
-    url,
-    username,
-    password
-  }: {
-    url: string;
-    username: string;
-    password: string;
-  }) {
-    let client = createClient(url, {
-      username: username,
-      password: password,
-    });
-    return await client.getDirectoryContents("/");
-  }
   // async vectorStoreAdd({
   //   store: s,
   //   resource: r,
@@ -715,10 +663,8 @@ export class CommandFactory {
   // }) {
 
   //   return await store.search(s, q, k);
-  // }
-  async getProgressList() {
-    return progressList.getData();
-  }
+  // // }
+
   async call_agent_res({
     uid,
     data,
@@ -844,30 +790,6 @@ export class CommandFactory {
       }
       return false;
     }
-  }
-  async clearChatHistory({
-    day
-  }: {
-    day: number;
-  }) {
-    let time = dayjs().subtract(day, "day").valueOf();
-    await ChatHistory.init()
-    let oldLen = ChatHistory.get().data.length;
-    let f = ChatHistory.get().data.filter((x) => !x.icon);
-    for (let x of f) {
-      if (x.dateTime == null || x.dateTime < time) {
-        x.deleted = true;
-        if (fs.existsSync(path.join(appDataDir, `messages/${x.key}.json`))) {
-          fs.removeSync(path.join(appDataDir, `messages/${x.key}.json`));
-        }
-      }
-    }
-    ChatHistory.get().data = ChatHistory.get().data.filter(
-      (x) => !x.deleted,
-    );
-    let newLen = ChatHistory.get().data.length;
-    await ChatHistory.save();
-    return oldLen - newLen;
   }
   async runCode({ code }: { code: string }) {
     // 1. 构造一个完整的 require（ESM 下使用 import.meta.url）

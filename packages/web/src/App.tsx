@@ -40,7 +40,6 @@ import {
 import { HeaderContext } from "./common/context";
 import { PageContainer, ProCard, ProLayout } from "@ant-design/pro-components";
 import { getRoute, getLayoutRoute } from "./router";
-import { LocalSetting, DataList } from "@hyperchat/shared/data.mjs";
 import { call } from "./common/call";
 import { EVENT } from "./common/event";
 import { AppSettingsProvider } from "./contexts/AppSettingsContext";
@@ -54,23 +53,6 @@ import { AppSettingsProvider } from "./contexts/AppSettingsContext";
  */
 export default function App() {
   const [loading, setLoading] = useState(false); // 控制全局加载状态
-  useEffect(() => {
-    (async () => {
-      // 初始化 electronData，自动同步 WebDAV 数据
-      let st = await LocalSetting.init();
-      if (st.autoSync) {
-        setLoading(true);
-        try {
-          // 触发 WebDAV 同步
-          // await call("webDavSync");
-          setLoading(false);
-        } catch (e) {
-          setLoading(false);
-          console.error(e); // 同步失败时输出错误
-        }
-      }
-    })();
-  }, []);
 
   return (
     <div>

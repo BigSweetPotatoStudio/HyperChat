@@ -20,7 +20,7 @@ import { dirname } from 'node:path';
 
 import { Logger } from "./log.mjs";
 import { execFallback } from "./common/execFallback.mjs";
-import { LocalSetting } from "./shared/data.mjs";
+
 import { Command } from "./command.mjs";
 import { getMessageService } from "./message_service.mjs";
 import { appDataDir, Config } from "./const.mjs";
@@ -47,9 +47,9 @@ interface MyRouter {
 }
 
 // 初始化全局变量
-await LocalSetting.init();
-export const urlPrefix = "/" + encodeURI(LocalSetting.get().password);
-
+const password = "123456";
+export const urlPrefix = "/" + encodeURI(password);
+Logger.info("Server password:", password);
 
 export const callNodejsApiPath = urlPrefix + "/call";
 
@@ -95,7 +95,7 @@ export async function initHttp(): Promise<void> {
     : path.join(__dirname, "../web-build");
 
   Logger.info(`Serving static files from: ${staticPath}`);
-  Logger.info("Server password:", LocalSetting.get().password);
+
 
   const staticOptions = {
     maxAge: 0,
@@ -174,7 +174,6 @@ export async function initHttp(): Promise<void> {
   });
 
   Config.port = PORT;
-  await LocalSetting.save();
 
   // Socket.IO 错误处理
   io.on("error", (error) => {
@@ -182,7 +181,7 @@ export async function initHttp(): Promise<void> {
   });
 
   // 创建 Socket.IO 命名空间
-  const mainNamespace = io.of("/" + LocalSetting.get().password + "/main-message");
+  const mainNamespace = io.of("/" + password + "/main-message");
 
   getMessageService().init(mainNamespace as any);
 

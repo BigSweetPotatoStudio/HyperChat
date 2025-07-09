@@ -11,7 +11,6 @@ import {
   type AppearanceSettings,
   type SystemSettings,
 } from "../shared/jsonSchemas/appSettingsSchema.mjs";
-import { Data } from "./compatible.mjs";
 import { initAppSettingsManager } from "./appSettingsService.mjs";
 
 /**

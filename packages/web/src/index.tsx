@@ -4,7 +4,7 @@ document.documentElement.setAttribute('data-color-mode', 'light');
 import "../public/iconfont.js"
 import "./i18n";
 import "./common/call";
-import "./common/data";
+
 import React from "react";
 import ReactDOM from "react-dom/client";
 
@@ -24,18 +24,18 @@ import {
   exportGeneratedCSS as collectCSS,
   isEnabled as isDarkReaderEnabled,
 } from "darkreader";
-import { AppSetting } from "@hyperchat/shared/data.mjs";
+// import { AppSetting } from "@hyperchat/shared/data.mjs";
 
 // 初始化应用设置，自动切换暗色主题
 (async () => {
-  await AppSetting.init();
-  if (AppSetting.get().darkTheme) {
-    enableDarkMode({
-      brightness: 100,
-      contrast: 90,
-      sepia: 10,
-    });
-  }
+  // await AppSetting.init();
+  // if (AppSetting.get().darkTheme) {
+  //   enableDarkMode({
+  //     brightness: 100,
+  //     contrast: 90,
+  //     sepia: 10,
+  //   });
+  // }
 })(); // 获取是否自动启动
 
 // 设置 vh 单位 CSS 变量，适配移动端

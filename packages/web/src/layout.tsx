@@ -49,9 +49,7 @@ import { HeaderContext } from "./common/context";
 import { currLang, setCurrLang, t } from "./i18n";
 import { call, callElectron, msg_receive } from "./common/call";
 import {
-  AppSetting,
-  LocalSetting,
-  IMCPClient,
+
 } from "@hyperchat/shared/data.mjs";
 import { InitedClient, setClients } from "./common/mcp";
 import { EVENT } from "./common/event";
@@ -272,11 +270,6 @@ export function Layout() {
    */
   useEffect(() => {
     (async () => {
-      // 并行初始化各种数据源
-      await Promise.all([
-        LocalSetting.init(),
-      ]);
-      combinedRefresh();
 
       // 如果在 Electron 环境中，检查更新
       if (process.env.myRuntime == "electron") {
@@ -305,10 +298,7 @@ export function Layout() {
         Clarity.consent();
         Clarity.event("openApp");
         Clarity.setTag("env", process.env.NODE_ENV || "unknown");
-        Clarity.event(
-          `openApp-${process.env.NODE_ENV}-${LocalSetting.get().version}`,
-        );
-        Clarity.setTag("version", LocalSetting.get().version);
+
       } catch (e) {
         console.error("Clarity error:", e);
       }
@@ -321,15 +311,6 @@ export function Layout() {
   const mcpClientsRef = useRef<InitedClient[]>([]); // MCP 客户端列表
   const [syncStatus, setSyncStatus] = useState<number>(0); // 同步状态：0-正常，1-同步中，-1-失败
   const [updateData, setUpdateData] = useState<UpdateMessage["data"]>({} as any); // 更新数据
-  /**
-   * 初始化应用设置
-   */
-  useEffect(() => {
-    (async () => {
-      await AppSetting.init();
-      refresh();
-    })();
-  }, []);
 
   /**
    * 设置语言的函数

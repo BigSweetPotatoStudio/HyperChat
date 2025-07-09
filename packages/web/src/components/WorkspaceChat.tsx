@@ -51,9 +51,8 @@ import { call, getURL_PRE } from "../common/call";
 
 import { AiChannel } from "@hyperchat/shared/ai.mjs";
 import {
-  LocalSetting,
   ChatHistoryItem,
-} from "@hyperchat/shared/data.mjs";
+} from "@hyperchat/shared/types.mjs";
 import type { AISettings, AIModelConfigItem } from "@hyperchat/shared/jsonSchemas/appSettingsSchema.mts";
 import { useAISettings } from "../contexts/AppSettingsContext";
 import { MyMessage } from "@hyperchat/shared/data.mjs";
@@ -94,10 +93,10 @@ export const WorkspaceChat = ({ workspace, agentKey, workspaceDetails, mcpClient
   // 从上下文获取全局状态和MCP客户端
   const context = useContext(HeaderContext);
   const { globalState, updateGlobalState } = context || {};
-  
+
   // 从 Context 获取 AI 设置
   const { aiSettings, loading: aiSettingsLoading } = useAISettings();
-  
+
   // 获取默认模型配置
   const getDefaultModelFromSettings = (settings: AISettings): AIModelConfigItem | null => {
     if (!settings || !settings.models.length) return null;
@@ -107,11 +106,11 @@ export const WorkspaceChat = ({ workspace, agentKey, workspaceDetails, mcpClient
     // 否则返回第一个LLM模型
     return settings.models.find(m => m.type === 'llm') || settings.models[0] || null;
   };
-  
+
   // 获取按提供商分组的模型选项
   const getGroupedModelOptions = (settings: AISettings) => {
     if (!settings || !settings.models.length) return [];
-    
+
     const groups: Record<string, AIModelConfigItem[]> = {};
     settings.models.forEach(model => {
       if (!groups[model.provider]) {
@@ -119,7 +118,7 @@ export const WorkspaceChat = ({ workspace, agentKey, workspaceDetails, mcpClient
       }
       groups[model.provider]!.push(model);
     });
-    
+
     return Object.entries(groups).map(([provider, models]) => ({
       label: provider,
       options: models.map(model => ({
@@ -277,8 +276,7 @@ export const WorkspaceChat = ({ workspace, agentKey, workspaceDetails, mcpClient
   useEffect(() => {
     (async () => {
       try {
-        await LocalSetting.init();
-        
+
         // 等待 AI 设置加载完成
         if (!aiSettings || aiSettingsLoading) {
           return;

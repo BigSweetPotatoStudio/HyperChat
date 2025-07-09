@@ -5,6 +5,3 @@ export { Config } from "../../core/src/const.mjs";
 export { initHttp } from "../../core/src/http.mjs";
 export { getMessageService } from "../../core/src/message_service.mjs";
 
-// Re-export first initialization (side effect)
-import "../../core/src/first.mjs";
-import "../../core/src/common/data.mjs";

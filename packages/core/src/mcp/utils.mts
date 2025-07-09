@@ -1,6 +1,6 @@
 import { getDefaultEnvironment, os, shellPathSync } from "../es6.mjs";
 import {
-  LocalSetting,
+  // LocalSetting,
   // MCP_CONFIG,
   // MCP_CONFIG_TYPE,
 } from "../data/index.mjs";
@@ -23,15 +23,15 @@ import {
 //   return config;
 // }
 
-export function getMyDefaultEnvironment() {
-  let env = Object.assign(getDefaultEnvironment(), process.env);
-  LocalSetting.init();
-  if (LocalSetting.get().PATH) {
-    env.PATH = LocalSetting.get().PATH;
-  } else {
-    if (os.platform() != "win32") {
-      env.PATH = shellPathSync();
-    }
-  }
-  return env;
-}
+// export function getMyDefaultEnvironment() {
+//   let env = Object.assign(getDefaultEnvironment(), process.env);
+//   LocalSetting.init();
+//   if (LocalSetting.get().PATH) {
+//     env.PATH = LocalSetting.get().PATH;
+//   } else {
+//     if (os.platform() != "win32") {
+//       env.PATH = shellPathSync();
+//     }
+//   }
+//   return env;
+// }

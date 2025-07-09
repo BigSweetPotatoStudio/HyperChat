@@ -1,7 +1,7 @@
 
 import React, { forwardRef, useEffect, useImperativeHandle, useRef, useState } from "react";
 import * as monaco from "monaco-editor";
-import { Agents, AppSetting, VarList } from "@hyperchat/shared/data.mjs";
+import { } from "@hyperchat/shared/data.mjs";
 import { v4 } from "uuid";
 import { Button, Space } from "antd";
 import { FullscreenOutlined } from "@ant-design/icons";
@@ -33,182 +33,182 @@ monaco.editor.defineTheme("hyperChatCustomTheme", {
 
 let monacoProviders: monaco.IDisposable[] = [];
 export function enableCompletionItemProvider() {
-    const varList = [...VarList.get().data?.map((v) => {
-        const varName = v.scope + "." + v.name;
-        return {
-            ...v,
-            varName
-        }
-    })];
+    // const varList = [...VarList.get().data?.map((v) => {
+    //     const varName = v.scope + "." + v.name;
+    //     return {
+    //         ...v,
+    //         varName
+    //     }
+    // })];
 
     // Register a completion item provider for the new language
-    monacoProviders.push(monaco.languages.registerCompletionItemProvider("HyperPromptLanguage", {
-        provideCompletionItems: (model, position, context, token) => {
-            const word = model.getWordUntilPosition(position);
-            const range = {
-                startLineNumber: position.lineNumber,
-                endLineNumber: position.lineNumber,
-                startColumn: word.startColumn,
-                endColumn: word.endColumn,
-            };
-            const suggestions = [
-                ...Agents.get().data.map((agent) => {
-                    return {
-                        label: "agent." + agent.name,
-                        kind: monaco.languages.CompletionItemKind.User,
-                        insertText: agent.name,
-                        range: range,
-                        detail: 'Agent',
-                        documentation: `${agent.name} agent`
-                    }
-                }),
-                ...varList.map((x) => {
-                    return {
-                        ...x,
-                        kind: x.variableStrategy == "immediate" ? monaco.languages.CompletionItemKind.Text : monaco.languages.CompletionItemKind.Variable,
-                        range: range,
-                        label: x.varName,
-                        insertText: x.variableStrategy == "immediate" ? (x.value || "") : `{{${x.varName}}}`,
-                        detail: x.description || `${x.name} ${x.variableStrategy} ${x.variableType}`,
-                        value: x.value,
-                    }
-                })
-            ];
-            return { suggestions: suggestions };
-        },
-    }));
+    // monacoProviders.push(monaco.languages.registerCompletionItemProvider("HyperPromptLanguage", {
+    //     provideCompletionItems: (model, position, context, token) => {
+    //         const word = model.getWordUntilPosition(position);
+    //         const range = {
+    //             startLineNumber: position.lineNumber,
+    //             endLineNumber: position.lineNumber,
+    //             startColumn: word.startColumn,
+    //             endColumn: word.endColumn,
+    //         };
+    //         const suggestions = [
+    //             ...Agents.get().data.map((agent) => {
+    //                 return {
+    //                     label: "agent." + agent.name,
+    //                     kind: monaco.languages.CompletionItemKind.User,
+    //                     insertText: agent.name,
+    //                     range: range,
+    //                     detail: 'Agent',
+    //                     documentation: `${agent.name} agent`
+    //                 }
+    //             }),
+    //             ...varList.map((x) => {
+    //                 return {
+    //                     ...x,
+    //                     kind: x.variableStrategy == "immediate" ? monaco.languages.CompletionItemKind.Text : monaco.languages.CompletionItemKind.Variable,
+    //                     range: range,
+    //                     label: x.varName,
+    //                     insertText: x.variableStrategy == "immediate" ? (x.value || "") : `{{${x.varName}}}`,
+    //                     detail: x.description || `${x.name} ${x.variableStrategy} ${x.variableType}`,
+    //                     value: x.value,
+    //                 }
+    //             })
+    //         ];
+    //         return { suggestions: suggestions };
+    //     },
+    // }));
     // Register a completion item provider for the new language
-    monacoProviders.push(monaco.languages.registerCompletionItemProvider("HyperPromptLanguage", {
-        triggerCharacters: ['@'],
-        provideCompletionItems: (model, position, context, token) => {
-            // 获取当前行文本
-            const lineContent = model.getLineContent(position.lineNumber);
-            const wordUntilPosition = model.getWordUntilPosition(position);
+    // monacoProviders.push(monaco.languages.registerCompletionItemProvider("HyperPromptLanguage", {
+    //     triggerCharacters: ['@'],
+    //     provideCompletionItems: (model, position, context, token) => {
+    //         // 获取当前行文本
+    //         const lineContent = model.getLineContent(position.lineNumber);
+    //         const wordUntilPosition = model.getWordUntilPosition(position);
 
-            const isAtTrigger = lineContent.charAt(position.column - 2) === '@';
-            if (isAtTrigger) {
-                const range = {
-                    startLineNumber: position.lineNumber,
-                    endLineNumber: position.lineNumber,
-                    startColumn: wordUntilPosition.startColumn,
-                    endColumn: wordUntilPosition.endColumn,
-                };
+    //         const isAtTrigger = lineContent.charAt(position.column - 2) === '@';
+    //         if (isAtTrigger) {
+    //             const range = {
+    //                 startLineNumber: position.lineNumber,
+    //                 endLineNumber: position.lineNumber,
+    //                 startColumn: wordUntilPosition.startColumn,
+    //                 endColumn: wordUntilPosition.endColumn,
+    //             };
 
-                return {
-                    suggestions: [
-                        ...Agents.get().data.map((agent) => {
-                            return {
-                                label: agent.name,
-                                kind: monaco.languages.CompletionItemKind.User,
-                                insertText: agent.name,
-                                range: range,
-                                detail: 'Agent',
-                                documentation: `${agent.name} agent`
-                            }
-                        }),
-                    ]
-                };
-            }
+    //             return {
+    //                 suggestions: [
+    //                     ...Agents.get().data.map((agent) => {
+    //                         return {
+    //                             label: agent.name,
+    //                             kind: monaco.languages.CompletionItemKind.User,
+    //                             insertText: agent.name,
+    //                             range: range,
+    //                             detail: 'Agent',
+    //                             documentation: `${agent.name} agent`
+    //                         }
+    //                     }),
+    //                 ]
+    //             };
+    //         }
 
-            return { suggestions: [] };
-        },
-
-
-    }));
+    //         return { suggestions: [] };
+    //     },
 
 
-    monacoProviders.push(monaco.languages.registerHoverProvider("HyperPromptLanguage", {
+    // }));
 
-        provideHover: async (model, position, token, context) => {
-            const word = model.getWordAtPosition(position);
-            if (!word) {
-                return;
-            }
-            const lineContent = model.getLineContent(position.lineNumber);
 
-            const wordUntilPosition = model.getWordUntilPosition(position);
+    // monacoProviders.push(monaco.languages.registerHoverProvider("HyperPromptLanguage", {
 
-            // Check if the cursor is on a variable {{...}}
-            const variableMatch = lineContent.match(/{{([^{}]*)}}/g);
-            if (variableMatch) {
-                // Find which variable the cursor is on
-                for (const match of variableMatch) {
-                    const startIndex = lineContent.indexOf(match);
-                    const endIndex = startIndex + match.length;
+    //     provideHover: async (model, position, token, context) => {
+    //         const word = model.getWordAtPosition(position);
+    //         if (!word) {
+    //             return;
+    //         }
+    //         const lineContent = model.getLineContent(position.lineNumber);
 
-                    // Check if cursor position is within this variable
-                    if (position.column > startIndex && position.column <= endIndex) {
-                        const variableName = match.substring(2, match.length - 2);
+    //         const wordUntilPosition = model.getWordUntilPosition(position);
 
-                        const v = varList.find((x) => x.varName == variableName);
+    //         // Check if the cursor is on a variable {{...}}
+    //         const variableMatch = lineContent.match(/{{([^{}]*)}}/g);
+    //         if (variableMatch) {
+    //             // Find which variable the cursor is on
+    //             for (const match of variableMatch) {
+    //                 const startIndex = lineContent.indexOf(match);
+    //                 const endIndex = startIndex + match.length;
 
-                        let value = `**Variable:** ${variableName}\n\nNo found for this variable.`;
+    //                 // Check if cursor position is within this variable
+    //                 if (position.column > startIndex && position.column <= endIndex) {
+    //                     const variableName = match.substring(2, match.length - 2);
 
-                        try {
+    //                     const v = varList.find((x) => x.varName == variableName);
 
-                            if (v) {
-                                if (v.variableType == "js") {
-                                    const result = await call("runCode", { code: v.code || "" });
-                                    value = String(result || "");
-                                } else if (v.variableType == "webjs") {
-                                    let code = `
-                            (async () => {
-                                ${v.code || ""}
-                               return await get()
-                            })()
-                                `;
-                                    const result = await eval(code);
-                                    value = String(result || "");
-                                } else {
-                                    value = `**Variable:** ${v.varName}\n\n${v.value || ""}`;
-                                }
-                            }
+    //                     let value = `**Variable:** ${variableName}\n\nNo found for this variable.`;
 
-                            return {
-                                range: new monaco.Range(
-                                    position.lineNumber,
-                                    startIndex + 1,
-                                    position.lineNumber,
-                                    endIndex + 1
-                                ),
-                                contents: [
-                                    {
-                                        value: value
-                                    }
-                                ]
-                            };
-                        } catch (e) {
+    //                     try {
 
-                            return {
-                                range: new monaco.Range(
-                                    position.lineNumber,
-                                    startIndex + 1,
-                                    position.lineNumber,
-                                    endIndex + 1
-                                ),
-                                contents: [
-                                    {
-                                        value: "error: "
-                                    },
-                                    {
-                                        value: String(e)
-                                    }
-                                ]
-                            };
-                        }
-                    }
-                }
-                const word = model.getWordAtPosition(position);
-                return {
-                    range: new monaco.Range(position.lineNumber, word?.startColumn || 1, position.lineNumber, word?.endColumn || 1),
-                    contents: [
-                        { value: `**${word?.word || 'unknown'}** is a special term.` }
-                    ]
-                };
-            }
-            return undefined;
-        }
-    }));
+    //                         if (v) {
+    //                             if (v.variableType == "js") {
+    //                                 const result = await call("runCode", { code: v.code || "" });
+    //                                 value = String(result || "");
+    //                             } else if (v.variableType == "webjs") {
+    //                                 let code = `
+    //                         (async () => {
+    //                             ${v.code || ""}
+    //                            return await get()
+    //                         })()
+    //                             `;
+    //                                 const result = await eval(code);
+    //                                 value = String(result || "");
+    //                             } else {
+    //                                 value = `**Variable:** ${v.varName}\n\n${v.value || ""}`;
+    //                             }
+    //                         }
+
+    //                         return {
+    //                             range: new monaco.Range(
+    //                                 position.lineNumber,
+    //                                 startIndex + 1,
+    //                                 position.lineNumber,
+    //                                 endIndex + 1
+    //                             ),
+    //                             contents: [
+    //                                 {
+    //                                     value: value
+    //                                 }
+    //                             ]
+    //                         };
+    //                     } catch (e) {
+
+    //                         return {
+    //                             range: new monaco.Range(
+    //                                 position.lineNumber,
+    //                                 startIndex + 1,
+    //                                 position.lineNumber,
+    //                                 endIndex + 1
+    //                             ),
+    //                             contents: [
+    //                                 {
+    //                                     value: "error: "
+    //                                 },
+    //                                 {
+    //                                     value: String(e)
+    //                                 }
+    //                             ]
+    //                         };
+    //                     }
+    //                 }
+    //             }
+    //             const word = model.getWordAtPosition(position);
+    //             return {
+    //                 range: new monaco.Range(position.lineNumber, word?.startColumn || 1, position.lineNumber, word?.endColumn || 1),
+    //                 contents: [
+    //                     { value: `**${word?.word || 'unknown'}** is a special term.` }
+    //                 ]
+    //             };
+    //         }
+    //         return undefined;
+    //     }
+    // }));
 }
 export function disableCompletionItemProvider() {
     monacoProviders.forEach(provider => provider.dispose());
@@ -343,13 +343,15 @@ export const Editor = forwardRef(({
             }
 
             function validate(model: monaco.editor.ITextModel) {
-                let varList = [...VarList.get().data?.map((v) => {
-                    let varName = v.scope + "." + v.name;
-                    return {
-                        ...v,
-                        varName
-                    }
-                })];
+                let varList = [
+                    //     ...VarList.get().data?.map((v) => {
+                    //     let varName = v.scope + "." + v.name;
+                    //     return {
+                    //         ...v,
+                    //         varName
+                    //     }
+                    // })
+                ];
 
                 const markers: monaco.editor.IMarkerData[] = [];
                 // Find all {{...}} variables in the text
@@ -363,7 +365,7 @@ export const Editor = forwardRef(({
                     const endPosition = model.getPositionAt(match.index + match[0].length);
 
                     // Check if the variable exists in AppSetting
-                    const varExists = varList.find((x) => x.varName == variableName);
+                    const varExists = varList.find((x: any) => x.varName == variableName);
 
                     if (!varExists) {
                         markers.push({

@@ -3,7 +3,7 @@ import { Tag, Modal } from 'antd';
 import { ExclamationCircleFilled } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
 import { t } from '../i18n';
-import { LocalSetting } from '@hyperchat/shared/data.mjs';
+import { useAppSettings } from '../contexts/AppSettingsContext';
 import { callElectron, msg_receive } from '../common/call';
 
 interface UpdateData {
@@ -21,6 +21,7 @@ interface AppHeaderProps {
 export function AppHeader({ style }: AppHeaderProps) {
   const navigate = useNavigate();
   const [updateData, setUpdateData] = useState<UpdateData>({});
+  const { appSettings } = useAppSettings();
 
   // 监听更新消息
   useEffect(() => {
@@ -63,7 +64,7 @@ export function AppHeader({ style }: AppHeaderProps) {
       },
       content: (
         <div>
-          <div>current version: {LocalSetting.get().version}</div>
+          <div>current version: {appSettings?.version || 'Unknown'}</div>
           <div>latest version: {updateData.info?.version}</div>
           {updateData.info?.releaseName != updateData.info?.version && (
             <div>title: {updateData.info?.releaseName}</div>
@@ -108,7 +109,7 @@ export function AppHeader({ style }: AppHeaderProps) {
       <span style={{ fontSize: 18, fontWeight: "bold" }}>
         HyperChat
         <span style={{ fontSize: 14, fontWeight: "normal", marginLeft: 8 }}>
-          ({LocalSetting.get().version})
+          ({appSettings?.version || 'Unknown'})
           {/* 有新版本时显示更新标签 */}
           {updateData?.info && (
             <Tag

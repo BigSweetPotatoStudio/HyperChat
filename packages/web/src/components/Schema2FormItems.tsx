@@ -1,5 +1,5 @@
-import React, { useCallback, useMemo } from 'react';
-import { Form, Input, InputNumber, Select, Switch, Card, Button, Space, Typography, Divider } from 'antd';
+import React, { useCallback } from 'react';
+import { Form, Input, InputNumber, Select, Switch, Card, Button, Typography } from 'antd';
 import { PlusOutlined, MinusCircleOutlined } from '@ant-design/icons';
 import type { JSONSchema7, JSONSchema7Definition } from 'json-schema';
 import type { Rule } from 'antd/es/form';
@@ -69,7 +69,7 @@ export const Schema2FormItems: React.FC<Schema2FormItemsProps> = ({
       );
     }
 
-    const itemSchema = resolveSchema(items);
+    const itemSchema = resolveSchema(items as JSONSchema7Definition);
     
     return (
       <Form.Item
@@ -134,7 +134,7 @@ export const Schema2FormItems: React.FC<Schema2FormItemsProps> = ({
                   onClick={() => add()}
                   block
                   icon={<PlusOutlined />}
-                  disabled={disabled || (maxItems && fields.length >= maxItems)}
+                  disabled={disabled || Boolean(maxItems && fields.length >= maxItems)}
                 >
                   添加{itemSchema.title || '项目'}
                 </Button>
@@ -258,7 +258,7 @@ export const Schema2FormItems: React.FC<Schema2FormItemsProps> = ({
 
   // 渲染输入组件
   const renderInputComponent = useCallback((fieldSchema: JSONSchema7, fieldPath: string[]): React.ReactNode => {
-    const { type, enum: enumValues, minimum, maximum, minLength, maxLength, pattern, format } = fieldSchema;
+    const { type, enum: enumValues, minimum, maximum, maxLength, format } = fieldSchema;
     
     // 获取更好的placeholder文本
     const getPlaceholder = () => {
@@ -363,7 +363,7 @@ export const Schema2FormItems: React.FC<Schema2FormItemsProps> = ({
     }
     
     // 复杂条件的处理，使用第一个条件作为默认
-    const defaultCondition = resolveSchema(conditions[0]);
+    const defaultCondition = resolveSchema(conditions[0] as JSONSchema7Definition);
     return renderFormItem(fieldName, defaultCondition, fieldPath);
   }, [disabled, schema.required, resolveSchema]);
 
@@ -377,11 +377,12 @@ export const Schema2FormItems: React.FC<Schema2FormItemsProps> = ({
     
     // 处理allOf - 合并所有条件
     if (allOf) {
-      const mergedSchema = allOf.reduce((acc, condition) => {
-        const conditionSchema = resolveSchema(condition);
-        return { ...acc, ...conditionSchema };
+      const mergedSchema = allOf.reduce((acc: JSONSchema7, condition) => {
+        const conditionSchema = resolveSchema(condition as JSONSchema7Definition);
+        return { ...acc, ...(conditionSchema || {}) };
       }, {} as JSONSchema7);
-      return renderFormItem(fieldName, { ...fieldSchema, ...mergedSchema }, fieldPath);
+      const combinedSchema = Object.assign({}, fieldSchema as JSONSchema7, mergedSchema || {});
+      return renderFormItem(fieldName, combinedSchema, fieldPath);
     }
 
     // 处理Record类型（object with additionalProperties）
