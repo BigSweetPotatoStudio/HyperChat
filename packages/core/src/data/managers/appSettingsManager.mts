@@ -168,10 +168,10 @@ export class AppSettingsManager {
       system: {
         ...this.settings.system,
         ...(updates.system || {}),
-        windowSize: {
-          ...this.settings.system.windowSize,
-          ...(updates.system?.windowSize || {}),
-        },
+      },
+      desktop: {
+        ...this.settings.desktop,
+        ...(updates.desktop || {}),
       },
       ai: {
         ...this.settings.ai,
@@ -230,10 +230,6 @@ export class AppSettingsManager {
       system: {
         ...this.settings.system,
         ...updates,
-        windowSize: {
-          ...this.settings.system.windowSize,
-          ...(updates.windowSize || {}),
-        },
       },
     });
   }

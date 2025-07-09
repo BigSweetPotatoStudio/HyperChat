@@ -23,6 +23,7 @@ import { zodToJsonSchema } from "zod-to-json-schema";
 import {
   AppearanceSchema,
   SystemSchema,
+  DesktopSchema,
   AIConfigSchema
 } from "../../../core/src/shared/jsonSchemas/appSettingsSchema.mjs";
 import Schema2Form from "./schema2Form";
@@ -113,6 +114,8 @@ export function AppSettings({
 
   const systemJsonSchema = zodToJsonSchema(SystemSchema as any)  as any;
 
+  const desktopJsonSchema = zodToJsonSchema(DesktopSchema as any)  as any;
+
   const aiJsonSchema = zodToJsonSchema(AIConfigSchema as any)  as any;
 
   // 创建外观设置 schema，添加中文标题
@@ -120,6 +123,9 @@ export function AppSettings({
 
   // 创建系统设置 schema，添加中文标题
   const systemSchema = systemJsonSchema;
+
+  // 创建桌面设置 schema，添加中文标题
+  const desktopSchema = desktopJsonSchema;
 
   // 创建AI设置 schema，添加中文标题
   const aiSchema = {
@@ -180,6 +186,22 @@ export function AppSettings({
           schema={systemSchema}
           value={currentValues?.system}
           onChange={(values) => handleFormChange({ ...currentValues, system: values })}
+        />
+      ),
+    },
+    {
+      key: "desktop",
+      label: (
+        <span>
+          <DesktopOutlined />
+          {t`Desktop`}
+        </span>
+      ),
+      children: (
+        <Schema2Form
+          schema={desktopSchema}
+          value={currentValues?.desktop}
+          onChange={(values) => handleFormChange({ ...currentValues, desktop: values })}
         />
       ),
     },

@@ -62,16 +62,20 @@ export const AppearanceSchema = z.object({
   language: z.enum(["zhCN", "enUS"]).default("zhCN").describe("界面语言"),
 });
 
-
-// 系统设置 Schema
-export const SystemSchema = z.object({
-  closeAction: z.enum(["minimize", "exit"]).default("exit").optional().describe("关闭窗口行为"),
-  password: z.string().default("123456").describe("应用密码"),
-  isDeveloper: z.boolean().default(false).describe("是否为开发者模式"),
+// 桌面应用设置 Schema
+export const DesktopSchema = z.object({
+  closeAction: z.enum(["minimize", "exit"]).default("exit").describe("关闭窗口行为"),
   windowSize: z.object({
     width: z.number().min(800).max(4000).default(1440).describe("窗口宽度"),
     height: z.number().min(600).max(3000).default(900).describe("窗口高度"),
   }).default({}),
+});
+
+
+// 系统设置 Schema
+export const SystemSchema = z.object({
+  password: z.string().default("123456").describe("应用密码"),
+  isDeveloper: z.boolean().default(false).describe("是否为开发者模式"),
 });
 
 
@@ -88,6 +92,7 @@ export const AppSettingsSchema = z.object({
   // 用户可配置设置
   appearance: AppearanceSchema.default({}),
   system: SystemSchema.default({}),
+  desktop: DesktopSchema.default({}),
   ai: AIConfigSchema.default({}),
 
 });
@@ -96,6 +101,7 @@ export const AppSettingsSchema = z.object({
 export type AppSettings = z.infer<typeof AppSettingsSchema>;
 export type AppearanceSettings = z.infer<typeof AppearanceSchema>;
 export type SystemSettings = z.infer<typeof SystemSchema>;
+export type DesktopSettings = z.infer<typeof DesktopSchema>;
 export type AISettings = z.infer<typeof AIConfigSchema>;
 export type AIModelConfigItem = z.infer<typeof AIModelConfigItemSchema>;
 export type ProviderConfig = z.infer<typeof ProviderConfigSchema>;
@@ -124,6 +130,10 @@ export function validateAppearanceSettings(data: any): data is AppearanceSetting
 
 export function validateSystemSettings(data: any): data is SystemSettings {
   return SystemSchema.safeParse(data).success;
+}
+
+export function validateDesktopSettings(data: any): data is DesktopSettings {
+  return DesktopSchema.safeParse(data).success;
 }
 
 export function validateAISettings(data: any): data is AISettings {

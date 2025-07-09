@@ -9,6 +9,7 @@ interface AppSettingsContextType {
   aiSettings: AISettings | null;
   appearance: AppSettings['appearance'] | null;
   system: AppSettings['system'] | null;
+  desktop: AppSettings['desktop'] | null;
   // 状态
   loading: boolean;
   error: string | null;
@@ -18,6 +19,7 @@ interface AppSettingsContextType {
   updateAISettings: (aiUpdates: Partial<AISettings>) => Promise<void>;
   updateAppearance: (appearanceUpdates: Partial<AppSettings['appearance']>) => Promise<void>;
   updateSystem: (systemUpdates: Partial<AppSettings['system']>) => Promise<void>;
+  updateDesktop: (desktopUpdates: Partial<AppSettings['desktop']>) => Promise<void>;
 }
 
 const AppSettingsContext = createContext<AppSettingsContextType | null>(null);
@@ -70,11 +72,17 @@ export const AppSettingsProvider = ({ children }: { children: ReactNode }) => {
     await updateSettings({ 
       system: { 
         ...appSettings.system, 
-        ...systemUpdates,
-        windowSize: {
-          ...appSettings.system.windowSize,
-          ...(systemUpdates.windowSize || {})
-        }
+        ...systemUpdates
+      } 
+    });
+  };
+
+  const updateDesktop = async (desktopUpdates: Partial<AppSettings['desktop']>) => {
+    if (!appSettings?.desktop) return;
+    await updateSettings({ 
+      desktop: { 
+        ...appSettings.desktop, 
+        ...desktopUpdates
       } 
     });
   };
@@ -89,6 +97,7 @@ export const AppSettingsProvider = ({ children }: { children: ReactNode }) => {
       aiSettings: appSettings?.ai || null,
       appearance: appSettings?.appearance || null,
       system: appSettings?.system || null,
+      desktop: appSettings?.desktop || null,
       loading,
       error,
       refresh: loadSettings,
@@ -96,6 +105,7 @@ export const AppSettingsProvider = ({ children }: { children: ReactNode }) => {
       updateAISettings,
       updateAppearance,
       updateSystem,
+      updateDesktop,
     }}>
       {children}
     </AppSettingsContext.Provider>
@@ -124,4 +134,9 @@ export const useAppearanceSettings = () => {
 export const useSystemSettings = () => {
   const { system, loading, updateSystem } = useAppSettings();
   return { system, loading, updateSystem };
+};
+
+export const useDesktopSettings = () => {
+  const { desktop, loading, updateDesktop } = useAppSettings();
+  return { desktop, loading, updateDesktop };
 };
