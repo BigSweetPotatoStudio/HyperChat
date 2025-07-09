@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import {
   List,
   Button,
@@ -13,6 +13,8 @@ import {
   message,
   Select,
   Input,
+  Spin,
+  Alert,
 } from "antd";
 import {
   ReloadOutlined,
@@ -24,12 +26,14 @@ import {
   PlusOutlined,
   FilterOutlined,
   SearchOutlined,
+  ExperimentOutlined,
 } from "@ant-design/icons";
 import { call } from "../common/call";
 import { t } from "../i18n";
 import { HyperChatCompletionTool, IMCPClient, MCPServerConfig } from "@hyperchat/shared/data.mjs";
+import Editor from "@monaco-editor/react";
 
-const { Title } = Typography;
+const { Title, Text } = Typography;
 
 
 
@@ -54,6 +58,18 @@ export function MCPManagement({ workspace, mcpClients, onRefresh }: MCPManagemen
   const [toolsModalOpen, setToolsModalOpen] = useState(false);
   const [selectedClientTools, setSelectedClientTools] = useState<any[]>([]);
   const [selectedClientName, setSelectedClientName] = useState<string>("");
+
+  // 工具测试相关状态
+  const [testToolModalOpen, setTestToolModalOpen] = useState(false);
+  const [selectedTool, setSelectedTool] = useState<HyperChatCompletionTool | null>(null);
+  const [testParams, setTestParams] = useState<string>("{}");
+  const [testRunning, setTestRunning] = useState(false);
+  const [testResult, setTestResult] = useState<any>(null);
+  const [testError, setTestError] = useState<string | null>(null);
+
+  // Monaco编辑器引用
+  const monacoRef = useRef<any>(null);
+  const editorRef = useRef<any>(null);
 
   // 刷新MCP客户端列表
   const refreshMcpClients = async () => {
@@ -97,7 +113,7 @@ export function MCPManagement({ workspace, mcpClients, onRefresh }: MCPManagemen
       });
 
       message.success(t`MCP client restarted successfully`);
-      
+
       // 重启成功后刷新前端数据（只刷新MCP数据）
       await onRefresh();
     } catch (error) {
@@ -116,7 +132,7 @@ export function MCPManagement({ workspace, mcpClients, onRefresh }: MCPManagemen
         action: "disable"
       });
       message.success(t`MCP client disabled successfully`);
-      
+
       // 停用成功后刷新前端数据（只刷新MCP数据）
       await onRefresh();
     } catch (error) {
@@ -134,7 +150,7 @@ export function MCPManagement({ workspace, mcpClients, onRefresh }: MCPManagemen
         clientName
       });
       message.success(t`MCP client enabled successfully`);
-      
+
       // 启用成功后刷新前端数据（只刷新MCP数据）
       await onRefresh();
     } catch (error) {
@@ -153,7 +169,7 @@ export function MCPManagement({ workspace, mcpClients, onRefresh }: MCPManagemen
         action: "delete"
       });
       message.success(t`MCP client deleted successfully`);
-      
+
       // 删除成功后刷新前端数据（只刷新MCP数据）
       await onRefresh();
     } catch (error) {
@@ -174,6 +190,150 @@ export function MCPManagement({ workspace, mcpClients, onRefresh }: MCPManagemen
     setSelectedClientName(client.serverName);
     setToolsModalOpen(true);
   };
+
+  // 打开工具测试模态框
+  const openTestToolModal = (tool: HyperChatCompletionTool) => {
+    setSelectedTool(tool);
+    setTestParams(generateDefaultParams(tool.inputSchema));
+    setTestResult(null);
+    setTestError(null);
+    setTestToolModalOpen(true);
+  };
+
+  // 生成默认参数
+  const generateDefaultParams = (schema: any): string => {
+    try {
+      const properties = schema.properties || {};
+      const defaultObj: any = {};
+
+      for (const [key, prop] of Object.entries(properties) as [string, any][]) {
+        if (prop.type === 'string') {
+          defaultObj[key] = prop.enum ? prop.enum[0] : '';
+        } else if (prop.type === 'number') {
+          defaultObj[key] = 0;
+        } else if (prop.type === 'boolean') {
+          defaultObj[key] = false;
+        } else if (prop.type === 'array') {
+          defaultObj[key] = [];
+        } else if (prop.type === 'object') {
+          defaultObj[key] = {};
+        }
+      }
+
+      return JSON.stringify(defaultObj, null, 2);
+    } catch (error) {
+      return '{}';
+    }
+  };
+
+  // 验证参数
+  const validateParams = (params: string, schema: any): { valid: boolean; error?: string } => {
+    try {
+      const parsedParams = JSON.parse(params);
+
+      // 检查必需参数
+      if (schema.required) {
+        for (const requiredKey of schema.required) {
+          if (!(requiredKey in parsedParams)) {
+            return { valid: false, error: t`Missing required parameter: ${requiredKey}` };
+          }
+        }
+      }
+
+      // 检查参数类型
+      if (schema.properties) {
+        for (const [key, value] of Object.entries(parsedParams)) {
+          const propSchema = schema.properties[key];
+          if (!propSchema && schema.additionalProperties === false) {
+            return { valid: false, error: t`Unknown parameter: ${key}` };
+          }
+        }
+      }
+
+      return { valid: true };
+    } catch (error) {
+      return { valid: false, error: t`Invalid JSON format` };
+    }
+  };
+
+  // 执行工具测试
+  const runToolTest = async () => {
+    if (!selectedTool) return;
+
+    const validation = validateParams(testParams, selectedTool.inputSchema);
+    if (!validation.valid) {
+      setTestError(validation.error || t`Invalid parameters`);
+      return;
+    }
+
+    setTestRunning(true);
+    setTestResult(null);
+    setTestError(null);
+
+    try {
+      const parsedParams = JSON.parse(testParams);
+
+      const result = await call("mcpCallToolWithWorkspace", {
+        workspacePath: workspace.path,
+        name: selectedTool.clientName,
+        functionName: selectedTool.origin_name,
+        args: parsedParams
+      });
+
+      setTestResult(result);
+    } catch (error: any) {
+      console.error("Tool test error:", error);
+      setTestError(error.message || t`Tool execution failed`);
+    } finally {
+      setTestRunning(false);
+    }
+  };
+
+  // 配置Monaco编辑器
+  const handleEditorBeforeMount = (monaco: any) => {
+    monacoRef.current = monaco;
+  };
+
+  const handleEditorMount = (editor: any, monaco: any) => {
+    editorRef.current = editor;
+
+    // 当选中工具改变时，更新JSON Schema
+    if (selectedTool && selectedTool.inputSchema) {
+      configureMonacoSchema(monaco, selectedTool.inputSchema);
+    }
+  };
+
+  // 配置Monaco的JSON Schema验证
+  const configureMonacoSchema = (monaco: any, inputSchema: any) => {
+    if (!monaco) return;
+
+    // 将inputSchema转换为完整的JSON Schema
+    const schema = {
+      $schema: "http://json-schema.org/draft-07/schema#",
+      ...inputSchema,
+      additionalProperties: inputSchema.additionalProperties !== false
+    };
+
+    // 设置诊断选项
+    monaco.languages.json.jsonDefaults.setDiagnosticsOptions({
+      validate: true,
+      schemas: [{
+        uri: "http://hyperchat/tool-params-schema.json",
+        fileMatch: ["*"],
+        schema: schema
+      }],
+      schemaValidation: "error",
+      allowComments: false,
+      trailingCommas: "error"
+    });
+  };
+
+  // 当选中工具改变时，更新Schema
+  useEffect(() => {
+    if (monacoRef.current && selectedTool && selectedTool.inputSchema) {
+      configureMonacoSchema(monacoRef.current, selectedTool.inputSchema);
+    }
+  }, [selectedTool]);
 
   // 过滤MCP客户端
   const getFilteredMcpClients = () => {
@@ -207,14 +367,26 @@ export function MCPManagement({ workspace, mcpClients, onRefresh }: MCPManagemen
   };
 
   // 渲染工具列表的 Modal 内容
-  const renderToolsModalContent = (tools: any[]) => {
+  const renderToolsModalContent = (tools: HyperChatCompletionTool[]) => {
     return (
       <div style={{ maxHeight: 400, overflow: 'auto' }}>
         <List
           size="small"
           dataSource={tools}
           renderItem={(tool: any) => (
-            <List.Item>
+            <List.Item
+              actions={[
+                <Button
+                  key="test"
+                  type="primary"
+                  size="small"
+                  icon={<ExperimentOutlined />}
+                  onClick={() => openTestToolModal(tool)}
+                >
+                  {t`Test`}
+                </Button>
+              ]}
+            >
               <List.Item.Meta
                 title={<span style={{ fontSize: '14px', fontWeight: 'bold' }}>{tool.name}</span>}
                 description={
@@ -384,8 +556,8 @@ export function MCPManagement({ workspace, mcpClients, onRefresh }: MCPManagemen
                             {client.status}
                           </Tag>
                           {client.tools && (
-                            <Tag 
-                              color="cyan" 
+                            <Tag
+                              color="cyan"
                               style={{ cursor: 'pointer' }}
                               onClick={(e) => {
                                 e.stopPropagation();
@@ -583,6 +755,156 @@ export function MCPManagement({ workspace, mcpClients, onRefresh }: MCPManagemen
           renderToolsModalContent(selectedClientTools)
         ) : (
           <Empty description={t`No tools available`} />
+        )}
+      </Modal>
+
+      {/* 工具测试模态框 */}
+      <Modal
+
+        title={selectedTool ? `${t`Test Tool`}: ${selectedTool.name}` : t`Test Tool`}
+        open={testToolModalOpen}
+        onCancel={() => {
+          setTestToolModalOpen(false);
+          setSelectedTool(null);
+          setTestParams("{}");
+          setTestResult(null);
+          setTestError(null);
+        }}
+        footer={[
+          <Button
+            key="cancel"
+            onClick={() => {
+              setTestToolModalOpen(false);
+              setSelectedTool(null);
+              setTestParams("{}");
+              setTestResult(null);
+              setTestError(null);
+            }}
+          >
+            {t`Cancel`}
+          </Button>,
+          <Button
+            key="run"
+            type="primary"
+            loading={testRunning}
+            onClick={runToolTest}
+          >
+            {t`Run Test`}
+          </Button>
+        ]}
+        width={800}
+      >
+        {selectedTool && (
+          <div>
+            {/* 工具描述 */}
+            <div style={{ marginBottom: 16 }}>
+              <Text strong>{t`Description`}: </Text>
+              <Text>{selectedTool.description || t`No description available`}</Text>
+            </div>
+
+            {/* 参数输入 */}
+            <div style={{ marginBottom: 16 }}>
+              <Text strong style={{ display: 'block', marginBottom: 8 }}>{t`Parameters`}:</Text>
+              <div style={{ border: '1px solid #d9d9d9', borderRadius: 4 }}>
+                <Editor
+                  height="300px"
+                  defaultLanguage="json"
+                  value={testParams}
+                  onChange={(value) => setTestParams(value || "{}")}
+                  beforeMount={handleEditorBeforeMount}
+                  onMount={handleEditorMount}
+                  options={{
+                    minimap: { enabled: false },
+                    fontSize: 14,
+                    wordWrap: "on",
+                    formatOnPaste: true,
+                    formatOnType: true,
+                    automaticLayout: true,
+                    scrollBeyondLastLine: false,
+                    quickSuggestions: {
+                      other: true,
+                      comments: false,
+                      strings: true
+                    },
+                    parameterHints: {
+                      enabled: true
+                    },
+                    suggestOnTriggerCharacters: true,
+                    acceptSuggestionOnCommitCharacter: true,
+                    tabCompletion: 'on',
+                    wordBasedSuggestions: 'currentDocument'
+                  }}
+                />
+              </div>
+              {selectedTool.inputSchema && selectedTool.inputSchema.properties && (
+                <div style={{ marginTop: 12, padding: 12, backgroundColor: '#f5f5f5', borderRadius: 4 }}>
+                  <Text strong style={{ fontSize: 12 }}>{t`Parameter Reference`}:</Text>
+                  <div style={{ marginTop: 8 }}>
+                    {Object.entries(selectedTool.inputSchema.properties).map(([key, prop]: [string, any]) => (
+                      <div key={key} style={{ marginBottom: 8 }}>
+                        <Text code style={{ fontSize: 12 }}>{key}</Text>
+                        <Text style={{ fontSize: 12, marginLeft: 8 }}>
+                          ({prop.type})
+                          {Array.isArray(selectedTool.inputSchema.required) &&
+                            selectedTool.inputSchema.required.includes(key) &&
+                            <Tag color="red" style={{ marginLeft: 4, fontSize: 10 }}>{t`Required`}</Tag>
+                          }
+                        </Text>
+                        {prop.description && (
+                          <div style={{ fontSize: 11, color: '#666', marginTop: 2, marginLeft: 16 }}>
+                            {prop.description}
+                          </div>
+                        )}
+                        {prop.enum && (
+                          <div style={{ fontSize: 11, color: '#666', marginTop: 2, marginLeft: 16 }}>
+                            {t`Options`}: {prop.enum.join(', ')}
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* 错误信息 */}
+            {testError && (
+              <Alert
+                message={t`Error`}
+                description={testError}
+                type="error"
+                showIcon
+                style={{ marginBottom: 16 }}
+              />
+            )}
+
+            {/* 执行结果 */}
+            {testResult !== null && (
+              <div>
+                <Text strong style={{ display: 'block', marginBottom: 8 }}>{t`Result`}:</Text>
+                <div style={{
+                  backgroundColor: '#f5f5f5',
+                  padding: 12,
+                  borderRadius: 4,
+                  maxHeight: 300,
+                  overflow: 'auto'
+                }}>
+                  <pre style={{ margin: 0, fontSize: 12 }}>
+                    {typeof testResult === 'string'
+                      ? testResult
+                      : JSON.stringify(testResult, null, 2)}
+                  </pre>
+                </div>
+              </div>
+            )}
+
+            {/* 加载状态 */}
+            {testRunning && (
+              <div style={{ textAlign: 'center', padding: 20 }}>
+                <Spin tip={t`Running tool test...`} />
+              </div>
+            )}
+          </div>
         )}
       </Modal>
     </>

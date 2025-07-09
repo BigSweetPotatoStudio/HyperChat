@@ -39,7 +39,7 @@ import { setClipboardText } from "../common/util";
 import { sleep } from "../common/sleep";
 import { isOnBrowser } from "../common/util";
 import { t } from "../i18n";
-import { MyMessage } from "@hyperchat/shared/data.mjs";
+import { HyperChatCompletionTool, MyMessage } from "@hyperchat/shared/data.mjs";
 import { Pre } from "./pre";
 import { DownImage } from "../pages/chat/component";
 
@@ -77,21 +77,21 @@ const formatContent = (content: string): string => {
 
 const detectCodeLanguage = (className?: string, code?: string) => {
     if (!className) return { isHtml: false, isSvg: false, isMermaid: false, isHigh: false };
-    
+
     const lower = className.toLowerCase();
     const isHtml = /^language-html/.test(lower);
     const isMermaid = /^language-mermaid/.test(lower);
     let isSvg = /^language-svg/.test(lower);
     isSvg = isSvg || (/^language-xml/.test(lower) && Boolean(code?.includes("<svg")));
     const isHigh = /code-highlight/.test(lower);
-    
+
     return { isHtml, isSvg, isMermaid, isHigh };
 };
 
 // KaTeX Renderer Component
 const KatexRenderer: React.FC<KatexProps> = ({ children = [], ...props }) => {
     const regexs = [/\$(.+?)\$/gs];
-    
+
     for (let regex of regexs) {
         if (typeof children === 'string' && regex.test(children)) {
             const html = (children as string).replace(regex, (s, replacer) => {
@@ -107,8 +107,8 @@ const KatexRenderer: React.FC<KatexProps> = ({ children = [], ...props }) => {
             const newChildren = children.map((child, i) => {
                 if (typeof child === 'string' && regex.test(child)) {
                     return (
-                        <span 
-                            key={i} 
+                        <span
+                            key={i}
                             dangerouslySetInnerHTML={{
                                 __html: child.replace(regex, (s, replacer) => {
                                     return katex.renderToString(replacer, {
@@ -164,8 +164,8 @@ const Artifact: React.FC<ArtifactProps> = React.memo(({ url, type }) => {
 
     const handleIframeLoad = async (iframe: HTMLIFrameElement) => {
         await sleep(1000);
-        const root = iframe.contentWindow?.document.querySelector("html") || 
-                    iframe.contentWindow?.document.querySelector("svg");
+        const root = iframe.contentWindow?.document.querySelector("html") ||
+            iframe.contentWindow?.document.querySelector("svg");
         if (root) {
             const rect = root.getBoundingClientRect();
             console.log("iframe loaded", rect.width, rect.height);
@@ -291,9 +291,9 @@ const Code: React.FC<CodeProps> = ({ inline, children = [], className, ...props 
                     <span>
                         <Button onClick={handlePreview} icon={<IeOutlined />} />
                         <Button onClick={handleDownload} icon={<DownloadOutlined />} />
-                        <Button 
-                            onClick={handleToggleArtifact} 
-                            icon={artifact ? <EyeInvisibleOutlined /> : <EyeOutlined />} 
+                        <Button
+                            onClick={handleToggleArtifact}
+                            icon={artifact ? <EyeInvisibleOutlined /> : <EyeOutlined />}
                         />
                         <Button onClick={handleCopy} icon={<CopyOutlined />} />
                     </span>
@@ -341,7 +341,7 @@ export const AssistantToolContent = ({ contents }: { contents: MyMessage[] }) =>
     const renderContent = (content: string, isSmall = false) => {
         if (render === "markdown") {
             return (
-                <MarkdownPreview 
+                <MarkdownPreview
                     className={`markdown-body ${isSmall ? 'text-sm' : ''}`}
                     source={formatContent(content)}
                     components={katexComponents}
@@ -368,9 +368,9 @@ export const AssistantToolContent = ({ contents }: { contents: MyMessage[] }) =>
 
             {contents.map((x, i) => {
                 if (x.role !== "assistant") return null;
-                
+
                 x.content = x.content || "";
-                
+
                 return (
                     <div key={i}>
                         {/* Reasoning Content */}
@@ -403,9 +403,9 @@ export const AssistantToolContent = ({ contents }: { contents: MyMessage[] }) =>
                                     bordered={false}
                                     size="small"
                                     expandIcon={() => <ToolOutlined />}
-                                    items={x.content_tool_calls.map((tool: any, index) => {
+                                    items={x.content_tool_calls.map((tool, index) => {
                                         const toolResult = contents.find(j => j.tool_call_id === tool.id);
-                                        
+
                                         return {
                                             key: index.toString(),
                                             label: (
@@ -416,7 +416,7 @@ export const AssistantToolContent = ({ contents }: { contents: MyMessage[] }) =>
                                                                 <span className="text-purple-500">
                                                                     {tool.restore_name || tool.function.name}
                                                                 </span>{" "}
-                                                                {tool.function.arguments}
+                                                                {JSON.stringify(tool.function.args)}
                                                             </div>
                                                         </div>
                                                         {toolResult && (
@@ -441,16 +441,16 @@ export const AssistantToolContent = ({ contents }: { contents: MyMessage[] }) =>
                                                 <div className="max-h-80 overflow-auto bg-slate-200">
                                                     <div>
                                                         <Pre>
-                                                            <CopyOutlined 
+                                                            <CopyOutlined
                                                                 onClick={async () => {
-                                                                    await setClipboardText({ text: tool.function.arguments });
+                                                                    await setClipboardText({ text: JSON.stringify(tool.function.args) });
                                                                     message.success(t`Copied to clipboard`);
-                                                                }} 
+                                                                }}
                                                             />
-                                                            {tool.function.arguments}
+                                                            {JSON.stringify(tool.function.args)}
                                                         </Pre>
                                                     </div>
-                                                    
+
                                                     {toolResult && (
                                                         <div>
                                                             <span>
@@ -467,16 +467,16 @@ export const AssistantToolContent = ({ contents }: { contents: MyMessage[] }) =>
                                                                 )}
                                                             </span>
                                                             <span className="text-gray-400">
-                                                                {Array.isArray(toolResult.content) ? 
+                                                                {Array.isArray(toolResult.content) ?
                                                                     toolResult.content.map((c, i) => (
                                                                         <div key={i}>
                                                                             {c.type === "text" ? (
                                                                                 <div>
-                                                                                    <CopyOutlined 
+                                                                                    <CopyOutlined
                                                                                         onClick={async () => {
                                                                                             await setClipboardText({ text: c.text });
                                                                                             message.success(t`Copied to clipboard`);
-                                                                                        }} 
+                                                                                        }}
                                                                                     />
                                                                                     {c.text}
                                                                                 </div>
@@ -486,23 +486,23 @@ export const AssistantToolContent = ({ contents }: { contents: MyMessage[] }) =>
                                                                         </div>
                                                                     )) : (
                                                                         <>
-                                                                            <CopyOutlined 
+                                                                            <CopyOutlined
                                                                                 onClick={async () => {
                                                                                     await setClipboardText({ text: toolResult.content?.toString() });
                                                                                     message.success(t`Copied to clipboard`);
-                                                                                }} 
+                                                                                }}
                                                                             />
                                                                             {toolResult.content?.toString()}
                                                                         </>
                                                                     )
                                                                 }
                                                             </span>
-                                                            {(toolResult.content_attachment?.length || 0) > 0 && 
+                                                            {(toolResult.content_attachment?.length || 0) > 0 &&
                                                                 toolResult.content_attachment?.map((attachment, i) => (
                                                                     attachment.type === "image" ? (
-                                                                        <DownImage 
+                                                                        <DownImage
                                                                             key={i}
-                                                                            src={`data:${attachment.mimeType};base64,${attachment.data}`} 
+                                                                            src={`data:${attachment.mimeType};base64,${attachment.data}`}
                                                                         />
                                                                     ) : attachment.type === "text" ? (
                                                                         <Pre key={i}>{attachment.text}</Pre>
