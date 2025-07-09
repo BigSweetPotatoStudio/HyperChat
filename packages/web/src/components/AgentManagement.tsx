@@ -63,9 +63,10 @@ interface AgentManagementProps {
   onRefresh: () => Promise<void>;
   onOpenChat?: (agent: Agent, chatLog?: ChatHistoryItem) => void;
   mcpClients: IMCPClient[];
+  onCreateAgentRef?: (createAgentFn: () => void) => void; // 新增：传递创建Agent函数的引用
 }
 
-export function AgentManagement({ workspace, agents, onRefresh, onOpenChat, mcpClients }: AgentManagementProps) {
+export function AgentManagement({ workspace, agents, onRefresh, onOpenChat, mcpClients, onCreateAgentRef }: AgentManagementProps) {
   const [agentDetailDrawer, setAgentDetailDrawer] = useState(false);
   const [agentEditModal, setAgentEditModal] = useState(false);
   const [chatHistoryModal, setChatHistoryModal] = useState(false);
@@ -84,6 +85,13 @@ export function AgentManagement({ workspace, agents, onRefresh, onOpenChat, mcpC
       refresh();
     });
   }, []);
+
+  // 将创建Agent函数传递给父组件
+  useEffect(() => {
+    if (onCreateAgentRef) {
+      onCreateAgentRef(createAgent);
+    }
+  }, [onCreateAgentRef]);
 
   // 显示Agent详情
   const showAgentDetails = (agent: Agent) => {

@@ -123,7 +123,7 @@ export const WorkspaceWelcome: React.FC<WorkspaceWelcomeProps> = ({
             <Space>
               <span>{name}</span>
               {chatCount > 0 && (
-                <Badge count={chatCount} size="small" />
+                <Tag color="green">{chatCount}</Tag>
               )}
             </Space>
           }
@@ -226,7 +226,7 @@ export const WorkspaceWelcome: React.FC<WorkspaceWelcomeProps> = ({
           <Space>
             <RobotOutlined />
             {t`All Agents`}
-            <Badge count={sortedAgents.length} size="small" />
+            <Tag color="green" >{sortedAgents.length}</Tag>
           </Space>
         </Title>
 
@@ -261,20 +261,6 @@ export const WorkspaceWelcome: React.FC<WorkspaceWelcomeProps> = ({
         )}
       </div>
 
-      {/* 创建新 Agent 的快捷按钮 */}
-      {/* {agents.length > 0 && onCreateAgent && (
-        <div style={{ marginTop: '24px', textAlign: 'center' }}>
-          <Button
-            type="dashed"
-            icon={<PlusOutlined />}
-            size="large"
-            onClick={onCreateAgent}
-            style={{ minWidth: '200px' }}
-          >
-            {t`Create New Agent`}
-          </Button>
-        </div>
-      )} */}
     </div>
   );
 };

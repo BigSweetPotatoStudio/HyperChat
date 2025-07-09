@@ -81,7 +81,7 @@ export interface WorkspaceInfo extends WorkspaceConfig {
   agentsCount: number;
   mcpServersCount: number;
   isGlobal?: boolean;
-  isActive?: boolean; // 前端活动状态：标记工作区是否在标签页中显示
+  isActive?: boolean; // 前端活动状态：工作区在标签页列表中（可见/隐藏）
   isRunning?: boolean; // 后端活动状态：标记工作区是否在后台运行
 }
 
@@ -158,6 +158,9 @@ export function Workspace() {
   // 为每个工作区维护独立的标签页状态
   const [workspaceTabsMap, setWorkspaceTabsMap] = useState<Record<string, ChatTab[]>>({});
   const [workspaceActiveTabMap, setWorkspaceActiveTabMap] = useState<Record<string, string>>({});
+  
+  // 存储各个工作区的创建Agent函数引用
+  const [createAgentFunctions, setCreateAgentFunctions] = useState<Record<string, () => void>>({});
 
 
   // 面板尺寸状态 - 使用数组格式，与Ant Design Splitter兼容
@@ -1064,8 +1067,13 @@ export function Workspace() {
                             agents={details.agents || []}
                             onOpenAgentChat={(agent) => openAgentChat(workspaceKey, agent)}
                             onCreateAgent={() => {
-                              // 这里可以添加创建 agent 的逻辑，或者传递给 AgentManagement 组件
-                              console.log('Create agent requested');
+                              // 调用对应工作区的创建Agent函数
+                              const createAgentFn = createAgentFunctions[workspaceKey];
+                              if (createAgentFn) {
+                                createAgentFn();
+                              } else {
+                                console.warn('Create agent function not available for workspace:', workspaceKey);
+                              }
                             }}
                           />
                         ) : (
@@ -1124,6 +1132,12 @@ export function Workspace() {
                         onRefresh={() => refreshWorkspaceDetails(workspaceKey, 'agents')}
                         onOpenChat={(agent: any, chatLog?: any) => openAgentChat(workspaceKey, agent, chatLog)}
                         mcpClients={mcpClients}
+                        onCreateAgentRef={(createAgentFn) => {
+                          setCreateAgentFunctions(prev => ({
+                            ...prev,
+                            [workspaceKey]: createAgentFn
+                          }));
+                        }}
                       />
                     ) : <Empty description={t`No workspace selected`} />,
                   },
