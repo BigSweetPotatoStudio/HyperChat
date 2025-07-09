@@ -9,8 +9,7 @@ import {
   type AppSettings,
   type AppearanceSettings,
   type SystemSettings,
-  type DeveloperSettings,
-} from "../shared/appSettingsSchema.mjs";
+} from "../shared/jsonSchemas/appSettingsSchema.mjs";
 
 /**
  * 全局应用设置管理器类（仅限 Node.js 环境）
@@ -148,18 +147,6 @@ export class AppSettingsManager {
           ...(updates.system?.windowSize || {}),
         },
       },
-      developer: {
-        ...this.settings.developer,
-        ...(updates.developer || {}),
-      },
-      downloaded: {
-        ...this.settings.downloaded,
-        ...(updates.downloaded || {}),
-      },
-      updated: {
-        ...this.settings.updated,
-        ...(updates.updated || {}),
-      },
     };
 
     // 验证更新后的设置
@@ -216,25 +203,6 @@ export class AppSettingsManager {
   }
 
   /**
-   * 获取开发者设置
-   */
-  getDeveloper(): DeveloperSettings {
-    return { ...this.settings.developer };
-  }
-
-  /**
-   * 更新开发者设置
-   */
-  async updateDeveloper(updates: Partial<DeveloperSettings>): Promise<void> {
-    await this.updateSettings({
-      developer: {
-        ...this.settings.developer,
-        ...updates,
-      },
-    });
-  }
-
-  /**
    * 重置设置为默认值
    */
   async reset(): Promise<void> {
@@ -247,8 +215,6 @@ export class AppSettingsManager {
       platform: this.settings.platform,
       uuid: this.settings.uuid,
       lastSyncTime: this.settings.lastSyncTime,
-      downloaded: this.settings.downloaded,
-      updated: this.settings.updated,
     };
 
     this.settings = {

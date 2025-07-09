@@ -46,13 +46,12 @@ export type {
   AppSettings,
   AppearanceSettings,
   SystemSettings,
-  DeveloperSettings,
-} from "./appSettingsSchema.mjs";
+} from "./jsonSchemas/appSettingsSchema.mjs";
 
 export {
   AppSettingsSchema,
   DEFAULT_APP_SETTINGS,
-} from "./appSettingsSchema.mjs";
+} from "./jsonSchemas/appSettingsSchema.mjs";
 
 
 
