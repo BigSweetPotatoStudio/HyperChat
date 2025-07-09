@@ -98,6 +98,14 @@ export const BUILTIN_PROVIDERS: ProviderConfig[] = [
         icon: 'ollama',
         isBuiltIn: true,
     },
+    {
+        key: 'unknown',
+        label: 'Unknown Provider',
+        baseURL: 'https://api.example.com/v1',
+        description: '未知或不支持的提供商，需要自己配置baseURL和apiKey',
+        icon: 'unknown',
+        isBuiltIn: true,
+    },
 ];
 
 

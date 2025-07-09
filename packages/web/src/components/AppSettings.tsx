@@ -16,12 +16,14 @@ import {
   ReloadOutlined,
   ExportOutlined,
   ImportOutlined,
+  RobotOutlined,
 } from "@ant-design/icons";
 import { t } from "../i18n";
 import { zodToJsonSchema } from "zod-to-json-schema";
 import {
   AppearanceSchema,
-  SystemSchema
+  SystemSchema,
+  AIConfigSchema
 } from "../../../core/src/shared/jsonSchemas/appSettingsSchema.mjs";
 import Schema2Form from "./schema2Form";
 
@@ -111,12 +113,42 @@ export function AppSettings({
 
   const systemJsonSchema = zodToJsonSchema(SystemSchema as any)  as any;
 
+  const aiJsonSchema = zodToJsonSchema(AIConfigSchema as any)  as any;
 
   // 创建外观设置 schema，添加中文标题
   const appearanceSchema = appearanceJsonSchema;
 
   // 创建系统设置 schema，添加中文标题
   const systemSchema = systemJsonSchema;
+
+  // 创建AI设置 schema，添加中文标题
+  const aiSchema = {
+    ...aiJsonSchema,
+    title: t`AI Settings`,
+    properties: {
+      ...aiJsonSchema.properties,
+      models: {
+        ...aiJsonSchema.properties.models,
+        title: t`AI Models`,
+        description: t`Configure available AI models`,
+      },
+      customProviders: {
+        ...aiJsonSchema.properties.customProviders,
+        title: t`Custom Providers`,
+        description: t`Add custom AI model providers`,
+      },
+      builtinApiKeys: {
+        ...aiJsonSchema.properties.builtinApiKeys,
+        title: t`API Keys`,
+        description: t`Configure API keys for built-in providers`,
+      },
+      defaultModel: {
+        ...aiJsonSchema.properties.defaultModel,
+        title: t`Default Model`,
+        description: t`Set the default AI model`,
+      },
+    },
+  };
 
   const tabItems = [
     {
@@ -148,6 +180,22 @@ export function AppSettings({
           schema={systemSchema}
           value={currentValues?.system}
           onChange={(values) => handleFormChange({ ...currentValues, system: values })}
+        />
+      ),
+    },
+    {
+      key: "ai",
+      label: (
+        <span>
+          <RobotOutlined />
+          {t`AI Settings`}
+        </span>
+      ),
+      children: (
+        <Schema2Form
+          schema={aiSchema}
+          value={currentValues?.ai}
+          onChange={(values) => handleFormChange({ ...currentValues, ai: values })}
         />
       ),
     },

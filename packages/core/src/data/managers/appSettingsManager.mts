@@ -9,6 +9,7 @@ import {
   type AppSettings,
   type AppearanceSettings,
   type SystemSettings,
+  type AISettings,
 } from "../../shared/jsonSchemas/appSettingsSchema.mjs";
 import { CONST } from "../../const.mjs";
 
@@ -32,6 +33,12 @@ export class AppSettingsManager {
       appDataDir: CONST.appDataDir,
       platform: process.platform,
       PATH: process.env.PATH || "",
+      ai: {
+        models: DEFAULT_APP_SETTINGS.ai?.models || [],
+        customProviders: DEFAULT_APP_SETTINGS.ai?.customProviders || [],
+        builtinApiKeys: DEFAULT_APP_SETTINGS.ai?.builtinApiKeys || {},
+        defaultModel: DEFAULT_APP_SETTINGS.ai?.defaultModel,
+      },
     };
   }
 
@@ -93,6 +100,13 @@ export class AppSettingsManager {
             appDataDir: CONST.appDataDir,
             platform: process.platform,
             PATH: process.env.PATH || "",
+            // 确保ai配置有默认值
+            ai: {
+              models: result.data.ai?.models || [],
+              customProviders: result.data.ai?.customProviders || [],
+              builtinApiKeys: result.data.ai?.builtinApiKeys || {},
+              defaultModel: result.data.ai?.defaultModel,
+            },
           };
         } else {
           console.warn("应用设置文件验证失败，使用默认设置:", result.error);
@@ -159,6 +173,16 @@ export class AppSettingsManager {
           ...(updates.system?.windowSize || {}),
         },
       },
+      ai: {
+        ...this.settings.ai,
+        ...(updates.ai || {}),
+        models: updates.ai?.models || this.settings.ai.models,
+        customProviders: updates.ai?.customProviders || this.settings.ai.customProviders,
+        builtinApiKeys: {
+          ...this.settings.ai.builtinApiKeys,
+          ...(updates.ai?.builtinApiKeys || {}),
+        },
+      },
     };
 
     // 验证更新后的设置
@@ -209,6 +233,31 @@ export class AppSettingsManager {
         windowSize: {
           ...this.settings.system.windowSize,
           ...(updates.windowSize || {}),
+        },
+      },
+    });
+  }
+
+  /**
+   * 获取AI设置
+   */
+  getAI(): AISettings {
+    return { ...this.settings.ai };
+  }
+
+  /**
+   * 更新AI设置
+   */
+  async updateAI(updates: Partial<AISettings>): Promise<void> {
+    await this.updateSettings({
+      ai: {
+        ...this.settings.ai,
+        ...updates,
+        models: updates.models || this.settings.ai.models,
+        customProviders: updates.customProviders || this.settings.ai.customProviders,
+        builtinApiKeys: {
+          ...this.settings.ai.builtinApiKeys,
+          ...(updates.builtinApiKeys || {}),
         },
       },
     });

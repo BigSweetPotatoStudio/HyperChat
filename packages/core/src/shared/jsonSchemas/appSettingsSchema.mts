@@ -1,5 +1,61 @@
 import { z } from "zod";
 
+// 已知提供商类型
+export const KnownProviderSchema = z.enum([
+  "openai",
+  "anthropic", 
+  "openrouter",
+  "gemini",
+  "qwen",
+  "deepseek",
+  "doubao",
+  "xai",
+  "glm",
+  "ollama",
+  "unknown", // 用于未知或不支持的提供商，需要自己填baseURL和apiKey
+]).describe("支持的AI模型提供商");
+
+// 提供商配置 Schema
+export const ProviderConfigSchema = z.object({
+  key: KnownProviderSchema.describe("提供商唯一标识"),
+  label: z.string().describe("显示名称"),
+  baseURL: z.string().url().describe("API 基础地址"),
+  icon: z.string().optional().describe("图标"),
+  description: z.string().optional().describe("描述"),
+  hasApiKey: z.boolean().default(true).describe("是否需要API Key"),
+  apiKey: z.string().optional().describe("API Key"),
+  isBuiltIn: z.boolean().default(false).describe("是否内置提供商"),
+}).describe("AI模型提供商配置");
+
+// AI模型配置项 Schema
+export const AIModelConfigItemSchema = z.object({
+  key: z.string().describe("模型唯一标识"),
+  name: z.string().describe("模型名称"),
+  model: z.string().describe("模型标识符"),
+  provider: KnownProviderSchema.describe("提供商"),
+  supportImage: z.boolean().default(true).describe("是否支持图像"),
+  supportTool: z.boolean().default(true).describe("是否支持工具调用"),
+  call_tool_step: z.number().optional().describe("工具调用步数"),
+  type: z.enum(["llm", "embedding"]).default("llm").describe("模型类型"),
+  toolMode: z.enum(["standard", "compatible"]).default("standard").describe("工具模式"),
+  isDefault: z.boolean().default(false).describe("是否为默认模型"),
+  // 废弃字段，保留兼容性
+  apiKey: z.string().default("").describe("API Key (废弃，从提供商获取)"),
+  baseURL: z.string().default("").describe("基础URL (废弃，从提供商获取)"),
+  fullName: z.string().optional().describe("完整名称 (提供商:模型名称)"),
+}).describe("AI模型配置项");
+
+// AI配置 Schema
+export const AIConfigSchema = z.object({
+  models: z.array(AIModelConfigItemSchema).default([]).describe("AI模型列表"),
+  customProviders: z.array(ProviderConfigSchema).default([]).describe("自定义提供商列表"),
+  builtinApiKeys: z.record(z.object({
+    apiKey: z.string().describe("API Key"),
+    baseURL: z.string().describe("基础URL"),
+  })).default({}).describe("内置提供商的API Key配置"),
+  defaultModel: z.string().optional().describe("默认模型"),
+}).describe("AI相关配置");
+
 // 外观设置 Schema
 export const AppearanceSchema = z.object({
   darkTheme: z.boolean().default(false).describe("是否启用夜间模式"),
@@ -32,6 +88,7 @@ export const AppSettingsSchema = z.object({
   // 用户可配置设置
   appearance: AppearanceSchema.default({}),
   system: SystemSchema.default({}),
+  ai: AIConfigSchema.default({}),
 
 });
 
@@ -39,6 +96,10 @@ export const AppSettingsSchema = z.object({
 export type AppSettings = z.infer<typeof AppSettingsSchema>;
 export type AppearanceSettings = z.infer<typeof AppearanceSchema>;
 export type SystemSettings = z.infer<typeof SystemSchema>;
+export type AISettings = z.infer<typeof AIConfigSchema>;
+export type AIModelConfigItem = z.infer<typeof AIModelConfigItemSchema>;
+export type ProviderConfig = z.infer<typeof ProviderConfigSchema>;
+export type KnownProvider = z.infer<typeof KnownProviderSchema>;
 
 // 默认设置（不包含 UUID 生成，因为前端不能使用 uuid 库）
 export const DEFAULT_APP_SETTINGS: Omit<AppSettings, 'uuid'> = (() => {
@@ -63,5 +124,17 @@ export function validateAppearanceSettings(data: any): data is AppearanceSetting
 
 export function validateSystemSettings(data: any): data is SystemSettings {
   return SystemSchema.safeParse(data).success;
+}
+
+export function validateAISettings(data: any): data is AISettings {
+  return AIConfigSchema.safeParse(data).success;
+}
+
+export function validateAIModelConfigItem(data: any): data is AIModelConfigItem {
+  return AIModelConfigItemSchema.safeParse(data).success;
+}
+
+export function validateProviderConfig(data: any): data is ProviderConfig {
+  return ProviderConfigSchema.safeParse(data).success;
 }
 

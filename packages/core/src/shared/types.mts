@@ -249,7 +249,8 @@ export type KnownProvider =
   | "doubao"
   | "xai"
   | "glm"
-  | "ollama";
+  | "ollama"
+  | "unknown";
 
 // 提供商配置接口，描述每个大模型 API 的基本信息
 export interface ProviderConfig {
@@ -269,7 +270,7 @@ export interface AIModelConfigItem {
   model: string;
   apiKey: string; // 废弃 get from provider
   baseURL: string; // 废弃 get from provider
-  provider: KnownProvider | string;
+  provider: KnownProvider;
   supportImage: boolean;
   supportTool: boolean;
   call_tool_step?: number;
