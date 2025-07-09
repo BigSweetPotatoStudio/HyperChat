@@ -190,3 +190,115 @@ export const clearWorkspaceHistory = (): void => {
     console.warn('Failed to clear workspace history:', error);
   }
 };
+
+/**
+ * Agent 最近使用记录管理
+ */
+
+interface AgentRecentUsage {
+  workspacePath: string;
+  agentKey: string;
+  agentName: string;
+  lastUsed: number;
+}
+
+const AGENT_RECENT_USAGE_KEY = 'agent_recent_usage';
+const MAX_RECENT_AGENTS = 20;
+
+/**
+ * 获取 Agent 最近使用记录
+ */
+export const getAgentRecentUsage = (workspacePath?: string): AgentRecentUsage[] => {
+  try {
+    const stored = localStorage.getItem(AGENT_RECENT_USAGE_KEY);
+    if (stored) {
+      const usage = JSON.parse(stored) as AgentRecentUsage[];
+      let filteredUsage = usage;
+      
+      // 如果指定了工作区路径，只返回该工作区的记录
+      if (workspacePath) {
+        filteredUsage = usage.filter(item => item.workspacePath === workspacePath);
+      }
+      
+      // 按最近使用时间排序
+      return filteredUsage.sort((a, b) => b.lastUsed - a.lastUsed);
+    }
+  } catch (error) {
+    console.warn('Failed to get agent recent usage:', error);
+  }
+  return [];
+};
+
+/**
+ * 添加 Agent 使用记录
+ */
+export const addAgentRecentUsage = (workspacePath: string, agentKey: string, agentName: string): void => {
+  try {
+    const usage = getAgentRecentUsage();
+    const now = Date.now();
+    
+    // 检查是否已存在相同的记录
+    const existingIndex = usage.findIndex(item => 
+      item.workspacePath === workspacePath && item.agentKey === agentKey
+    );
+    
+    if (existingIndex >= 0) {
+      // 更新已存在的记录
+      usage[existingIndex] = {
+        workspacePath,
+        agentKey,
+        agentName,
+        lastUsed: now
+      };
+    } else {
+      // 添加新记录
+      usage.unshift({
+        workspacePath,
+        agentKey,
+        agentName,
+        lastUsed: now
+      });
+    }
+    
+    // 限制记录数量
+    const limitedUsage = usage.slice(0, MAX_RECENT_AGENTS);
+    
+    localStorage.setItem(AGENT_RECENT_USAGE_KEY, JSON.stringify(limitedUsage));
+  } catch (error) {
+    console.warn('Failed to add agent recent usage:', error);
+  }
+};
+
+/**
+ * 从最近使用记录中删除 Agent
+ */
+export const removeAgentRecentUsage = (workspacePath: string, agentKey: string): void => {
+  try {
+    const usage = getAgentRecentUsage();
+    const filteredUsage = usage.filter(item => 
+      !(item.workspacePath === workspacePath && item.agentKey === agentKey)
+    );
+    localStorage.setItem(AGENT_RECENT_USAGE_KEY, JSON.stringify(filteredUsage));
+  } catch (error) {
+    console.warn('Failed to remove agent recent usage:', error);
+  }
+};
+
+/**
+ * 清空 Agent 最近使用记录
+ */
+export const clearAgentRecentUsage = (workspacePath?: string): void => {
+  try {
+    if (workspacePath) {
+      // 只清空指定工作区的记录
+      const usage = getAgentRecentUsage();
+      const filteredUsage = usage.filter(item => item.workspacePath !== workspacePath);
+      localStorage.setItem(AGENT_RECENT_USAGE_KEY, JSON.stringify(filteredUsage));
+    } else {
+      // 清空所有记录
+      localStorage.removeItem(AGENT_RECENT_USAGE_KEY);
+    }
+  } catch (error) {
+    console.warn('Failed to clear agent recent usage:', error);
+  }
+};

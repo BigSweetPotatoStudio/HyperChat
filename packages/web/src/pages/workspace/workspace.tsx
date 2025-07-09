@@ -51,7 +51,8 @@ import { AgentManagement } from "../../components/AgentManagement";
 import { FileTreeComponent } from "../../components/FileTreeComponent";
 import { WorkspaceSidebar } from "../../components/WorkspaceSidebar";
 import { WorkspaceChat } from "../../components/WorkspaceChat";
-import { getPanelSizes, savePanelSizes, getWorkspaceHistory, addToWorkspaceHistory, removeFromWorkspaceHistory } from "../../utils/storage";
+import { WorkspaceWelcome } from "../../components/WorkspaceWelcome";
+import { getPanelSizes, savePanelSizes, getWorkspaceHistory, addToWorkspaceHistory, removeFromWorkspaceHistory, addAgentRecentUsage } from "../../utils/storage";
 import { AgentConfig, IMCPClient, MessageData, MessageDataMap } from "@hyperchat/shared/types.mjs";
 import { HeaderContext } from "../../common/context";
 import { ProviderSettings } from "../../components/ProviderSettings";
@@ -98,7 +99,7 @@ interface FileNode {
 interface ChatTab {
   key: string;
   title: string;
-  type: 'chat' | 'file';
+  type: 'chat' | 'file' | 'welcome';
   agentKey?: string;
   agentName?: string;
   filePath?: string;
@@ -698,6 +699,9 @@ export function Workspace() {
     const workspace = (globalWorkspace && workspaceKey === globalWorkspace.path) ? globalWorkspace : workspaces.find(ws => ws.path === workspaceKey);
     if (!workspace) return;
 
+    // 记录 agent 使用
+    addAgentRecentUsage(workspace.path, agent.config.key, agent.config.name || agent.config.key);
+
     // 如果有聊天记录，使用聊天记录的key确保唯一性
     const tabKey = chatLog ? `${workspace.path}-${agent.config.key}-${chatLog.key}` : `${workspace.path}-${agent.config.key}`;
     const currentTabs = workspaceTabsMap[workspaceKey] || [];
@@ -771,17 +775,17 @@ export function Workspace() {
   };
 
 
-  // 初始化默认聊天标签页
+  // 初始化默认欢迎标签页
   const initDefaultChatTab = (workspace: WorkspaceInfo) => {
-    const defaultTabKey = `${workspace.path}-default`;
+    const defaultTabKey = `${workspace.path}-welcome`;
     const currentTabs = workspaceTabsMap[workspace.path] || [];
     const hasDefaultTab = currentTabs.some(tab => tab.key === defaultTabKey);
 
     if (!hasDefaultTab) {
       const defaultTab: ChatTab = {
         key: defaultTabKey,
-        title: t`Workspace Chat`,
-        type: 'chat',
+        title: t`Welcome`,
+        type: 'welcome',
         workspacePath: workspace.path,
         closable: false,
       };
@@ -965,6 +969,8 @@ export function Workspace() {
                       <Space size="small">
                         {tab.type === 'file' ? (
                           <FileTextOutlined />
+                        ) : tab.type === 'welcome' ? (
+                          <Icon name="bx-bot" />
                         ) : tab.agentKey ? (
                           <MessageOutlined />
                         ) : (
@@ -988,6 +994,16 @@ export function Workspace() {
                                 ...prev,
                                 [workspaceKey]: newTabs
                               }));
+                            }}
+                          />
+                        ) : tab.type === 'welcome' ? (
+                          <WorkspaceWelcome
+                            workspace={workspace}
+                            agents={details.agents || []}
+                            onOpenAgentChat={(agent) => openAgentChat(workspaceKey, agent)}
+                            onCreateAgent={() => {
+                              // 这里可以添加创建 agent 的逻辑，或者传递给 AgentManagement 组件
+                              console.log('Create agent requested');
                             }}
                           />
                         ) : (
