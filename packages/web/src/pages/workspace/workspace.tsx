@@ -81,6 +81,8 @@ export interface WorkspaceInfo extends WorkspaceConfig {
   agentsCount: number;
   mcpServersCount: number;
   isGlobal?: boolean;
+  isActive?: boolean; // 前端活动状态：标记工作区是否在标签页中显示
+  isRunning?: boolean; // 后端活动状态：标记工作区是否在后台运行
 }
 
 interface FileNode {
@@ -205,9 +207,10 @@ export function Workspace() {
       setLoading(true);
 
       // 加载运行中的工作区列表
+      let runningPaths = new Set<string>();
       try {
         const runningWorkspacesList = await call("getRunningWorkspaces");
-        const runningPaths = new Set(runningWorkspacesList.map((ws: any) => ws.path));
+        runningPaths = new Set(runningWorkspacesList.map((ws: any) => ws.path));
         setRunningWorkspaces(runningPaths);
         console.log("Loaded running workspaces:", Array.from(runningPaths));
       } catch (error) {
@@ -226,6 +229,8 @@ export function Workspace() {
           agentsCount: 0,
           mcpServersCount: 0,
           isGlobal: true,
+          isActive: true, // 全局工作区默认总是在前端显示
+          isRunning: true, // 全局工作区默认总是在后台运行
           ...globalSummary,
         };
         setGlobalWorkspace(globalWorkspaceInfo);
@@ -249,6 +254,8 @@ export function Workspace() {
               ...ws,
               agentsCount: summary.agentsCount || 0,
               mcpServersCount: summary.mcpServersCount || 0,
+              isActive: false, // 默认不在前端显示
+              isRunning: runningPaths.has(ws.path), // 使用本地变量而不是状态
             });
           }
         } catch (error) {
@@ -332,12 +339,19 @@ export function Workspace() {
 
         // 切换到该工作区
         setActiveWorkspaceKey(values.path);
+        
+        // 将新打开的工作区标记为活动和运行中
+        await loadWorkspaces(); // 先重新加载工作区列表
+        setWorkspaces(prev => prev.map(ws => ({
+          ...ws,
+          isActive: ws.path === values.path || ws.isActive,
+          isRunning: ws.path === values.path ? true : ws.isRunning
+        })));
 
         message.success(t`Workspace opened successfully`);
         setOpenModalOpen(false);
         form.resetFields();
         setSelectedPath("");
-        loadWorkspaces();
       } else {
         // 工作区不存在，提示用户是否创建
         setPendingWorkspacePath(values.path);
@@ -353,6 +367,13 @@ export function Workspace() {
   // 打开已打开的工作区（切换到前端）
   const switchToWorkspace = async (workspacePath: string) => {
     try {
+      // 将工作区标记为前端活动状态
+      setWorkspaces(prev => prev.map(ws => ({
+        ...ws,
+        isActive: ws.path === workspacePath || ws.isActive, // 保留其他已激活的工作区
+        isRunning: ws.path === workspacePath ? true : ws.isRunning // 确保标记为运行中
+      })));
+      
       // 切换到该工作区（这会让它重新出现在标签页中）
       setActiveWorkspaceKey(workspacePath);
       setOpenModalOpen(false);
@@ -363,6 +384,8 @@ export function Workspace() {
         const workspace = workspaces.find(ws => ws.path === workspacePath);
         if (workspace) {
           await loadWorkspaceDetails(workspace);
+          // 确保有默认的欢迎标签页
+          initDefaultChatTab(workspace);
         }
         message.success(t`Switched to workspace`);
         return;
@@ -370,6 +393,9 @@ export function Workspace() {
 
       // 如果不在运行，启动它
       await startWorkspaceMcpClients(workspacePath);
+      
+      // 更新运行状态
+      setRunningWorkspaces(prev => new Set(prev).add(workspacePath));
 
       message.success(t`Workspace opened and switched`);
     } catch (error) {
@@ -410,6 +436,13 @@ export function Workspace() {
 
       // 切换到新创建的工作区
       setActiveWorkspaceKey(pendingWorkspacePath);
+      
+      // 重新加载工作区列表并标记新工作区为活动
+      await loadWorkspaces();
+      setWorkspaces(prev => prev.map(ws => ({
+        ...ws,
+        isActive: ws.path === pendingWorkspacePath || ws.isActive
+      })));
 
       setConfirmCreateModalOpen(false);
       setPendingWorkspacePath("");
@@ -424,6 +457,12 @@ export function Workspace() {
       await call("startWorkspaceMcpClients", { workspacePath });
       // 更新前端运行状态
       setRunningWorkspaces(prev => new Set(prev).add(workspacePath));
+      
+      // 更新工作区的运行状态
+      setWorkspaces(prev => prev.map(ws => ({
+        ...ws,
+        isRunning: ws.path === workspacePath ? true : ws.isRunning
+      })));
     } catch (mcpError) {
       console.warn("Failed to start workspace MCP clients:", mcpError);
       // 不阻止工作区操作，只是警告
@@ -448,6 +487,13 @@ export function Workspace() {
         newSet.delete(workspace.path);
         return newSet;
       });
+      
+      // 更新工作区状态：既不在前端显示，也不在后台运行
+      setWorkspaces(prev => prev.map(ws => ({
+        ...ws,
+        isActive: ws.path === workspace.path ? false : ws.isActive,
+        isRunning: ws.path === workspace.path ? false : ws.isRunning
+      })));
 
       message.success(t`Workspace closed successfully`);
 
@@ -471,15 +517,22 @@ export function Workspace() {
     }
   };
 
-  // 后台运行工作区（仅隐藏前端）
+  // 后台运行工作区（保持后台活动状态，但从前端标签页中隐藏）
   const runWorkspaceInBackground = async (workspace: WorkspaceInfo) => {
     try {
-      // 更新前端状态，不需要调用后端API，因为工作区已经在后端内存中运行
+      // 确保工作区在运行列表中（表示后台活动状态）
       setRunningWorkspaces(prev => new Set(prev).add(workspace.path));
+      
+      // 更新工作区状态：后台运行但前端不显示
+      setWorkspaces(prev => prev.map(ws => ({
+        ...ws,
+        isActive: ws.path === workspace.path ? false : ws.isActive, // 前端不显示
+        isRunning: ws.path === workspace.path ? true : ws.isRunning // 后台保持运行
+      })));
 
       message.success(t`Workspace is now running in background`);
 
-      // 如果隐藏的是当前活动工作区，切换到全局工作区
+      // 如果隐藏的是当前选中的工作区，切换到全局工作区
       if (activeWorkspaceKey === workspace.path) {
         setActiveWorkspaceKey(globalWorkspace?.path || "");
       }
@@ -679,6 +732,13 @@ export function Workspace() {
   // 处理标签页切换
   const handleTabChange = async (key: string) => {
     setActiveWorkspaceKey(key);
+    
+    // // 更新工作区的 isActive 状态
+    // setWorkspaces(prev => prev.map(ws => ({
+    //   ...ws,
+    //   isActive: ws.path === key
+    // })));
+    
     const workspace = (globalWorkspace && key === globalWorkspace.path) ? globalWorkspace : workspaces.find(ws => ws.path === key);
     if (workspace) {
       // 如果是项目工作区，尝试启动其MCP服务
@@ -691,6 +751,8 @@ export function Workspace() {
         }
       }
       await loadWorkspaceDetails(workspace);
+      // 确保有默认的欢迎标签页
+      initDefaultChatTab(workspace);
     }
   };
 
@@ -811,9 +873,9 @@ export function Workspace() {
       activeList.push(globalWorkspace);
     }
 
-    // 只添加当前活动的工作区（不包括后台运行的）
+    // 添加所有标记为活动的工作区
     workspaces.forEach(workspace => {
-      if (activeWorkspaceKey === workspace.path) {
+      if (workspace.isActive) {
         activeList.push(workspace);
       }
     });
@@ -1134,7 +1196,7 @@ export function Workspace() {
             }}
             items={getTabItems().map(item => ({
               ...item,
-              children: item.key ? renderWorkspaceContent(item.key) : null
+              children:renderWorkspaceContent(item.key) 
             }))}
             addIcon={<PlusOutlined />}
           />
@@ -1193,7 +1255,7 @@ export function Workspace() {
               </Divider>
               <List
                 size="small"
-                dataSource={workspaces.filter(ws => runningWorkspaces.has(ws.path))}
+                dataSource={workspaces.filter(ws => ws.isRunning && !ws.isActive)}
                 renderItem={(workspace) => (
                   <List.Item
                     style={{ cursor: 'pointer', padding: '8px 0' }}
