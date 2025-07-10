@@ -1,0 +1,205 @@
+/* 自定义消息列表样式 */
+.custom-message-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 16px;
+  scroll-behavior: smooth;
+}
+
+.message-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  max-width: 100%;
+}
+
+.message-user {
+  flex-direction: row-reverse;
+}
+
+.message-assistant {
+  flex-direction: row;
+}
+
+.message-avatar {
+  flex-shrink: 0;
+  margin-top: 4px;
+}
+
+.message-body {
+  flex: 1;
+  min-width: 0;
+  max-width: 80%;
+}
+
+.message-user .message-body {
+  align-self: flex-end;
+}
+
+.message-assistant .message-body {
+  align-self: flex-start;
+}
+
+.message-card {
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  transition: all 0.2s ease;
+}
+
+.message-card:hover {
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+}
+
+.message-card.user {
+  background: linear-gradient(135deg, #e6f3ff 0%, #f0f8ff 100%);
+  border: 1px solid #91d5ff;
+}
+
+.message-card.system {
+  background: linear-gradient(135deg, #fff7e6 0%, #fffbe6 100%);
+  border: 1px solid #ffd666;
+}
+
+.message-card.assistant {
+  background: linear-gradient(135deg, #f6ffed 0%, #f9ffed 100%);
+  border: 1px solid #b7eb8f;
+}
+
+.message-card.hyper_memory {
+  background: linear-gradient(135deg, #f9f0ff 0%, #f4f0ff 100%);
+  border: 1px solid #d3adf7;
+}
+
+.message-card.tool {
+  background: linear-gradient(135deg, #e6f7ff 0%, #f0fcff 100%);
+  border: 1px solid #91d5ff;
+}
+
+.message-content {
+  word-wrap: break-word;
+  line-height: 1.5;
+  margin-bottom: 8px;
+}
+
+.message-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-top: 8px;
+  border-top: 1px solid #f0f0f0;
+  font-size: 12px;
+}
+
+.message-image {
+  max-width: 100%;
+  height: auto;
+  border-radius: 8px;
+  margin: 8px 0;
+}
+
+.message-not-attached {
+  opacity: 0.6;
+}
+
+.message-not-attached .message-card {
+  border-style: dashed;
+  background: #f5f5f5;
+}
+
+/* 记忆消息特殊样式 */
+.memory-message {
+  padding: 12px;
+  border-radius: 8px;
+  background: linear-gradient(135deg, #f9f0ff 0%, #f4f0ff 100%);
+  border: 1px solid #d3adf7;
+}
+
+.memory-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 600;
+  color: #722ed1;
+  margin-bottom: 8px;
+}
+
+.memory-content {
+  color: #595959;
+  line-height: 1.5;
+  margin-bottom: 8px;
+}
+
+.memory-points {
+  background: rgba(114, 46, 209, 0.05);
+  padding: 8px 12px;
+  border-radius: 6px;
+  border-left: 3px solid #722ed1;
+}
+
+.memory-points-title {
+  font-weight: 600;
+  color: #722ed1;
+  margin-bottom: 4px;
+}
+
+.memory-points ul {
+  margin: 0;
+  padding-left: 16px;
+}
+
+.memory-points li {
+  color: #595959;
+  margin-bottom: 2px;
+}
+
+/* 响应式设计 */
+@media (max-width: 768px) {
+  .message-body {
+    max-width: 90%;
+  }
+  
+  .custom-message-list {
+    padding: 8px;
+    gap: 12px;
+  }
+  
+  .message-item {
+    gap: 8px;
+  }
+}
+
+/* 动画效果 */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.message-item {
+  animation: fadeIn 0.3s ease-out;
+}
+
+/* 滚动条样式 */
+.custom-message-list::-webkit-scrollbar {
+  width: 6px;
+}
+
+.custom-message-list::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 3px;
+}
+
+.custom-message-list::-webkit-scrollbar-thumb {
+  background: #c1c1c1;
+  border-radius: 3px;
+}
+
+.custom-message-list::-webkit-scrollbar-thumb:hover {
+  background: #a8a8a8;
+}
