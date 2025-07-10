@@ -1,8 +1,9 @@
 import { Router, Request, Response } from "express";
-// import { MCP_GateWay } from "./shared/data.mjs";
 import { SSEServerTransport, StreamableHTTPServerTransport } from "./es6.mjs";
 import { createServer } from "./mcp/servers/gateway/index.mjs";
 import { Logger } from "./log.mjs";
+import { getAppSettingsManager } from "./data/appSettingsService.mjs";
+import type { MCPGateway } from "./shared/jsonSchemas/appSettingsSchema.mjs";
 const KEEP_ALIVE_INTERVAL_MS = 25000; // Send keep-alive every 25 seconds
 
 const transports = {
@@ -122,26 +123,54 @@ function register(route: Router, name: string, description: string, allowMCPs: s
 }
 
 
+/**
+ * 从应用设置中获取 MCP 网关配置
+ */
+function getMCPGateways(): MCPGateway[] {
+    try {
+        const appSettingsManager = getAppSettingsManager();
+        if (!appSettingsManager) {
+            Logger.warn('App settings manager not available, returning empty gateways list');
+            return [];
+        }
+        
+        const settings = appSettingsManager.getSettings();
+        const gateways = settings.mcpGateWays || [];
+        
+        Logger.debug(`Retrieved ${gateways.length} MCP gateways from app settings`);
+        return gateways;
+    } catch (error) {
+        Logger.error('Failed to get MCP gateways from app settings:', error);
+        return [];
+    }
+}
+
 export async function registers(prefix: string) {
     let route = Router();
-    // (await MCP_GateWay.init()).data.forEach((serve) => {
-    //     // Provide default values to avoid undefined
-    //     register(
-    //         route,
-    //         serve.name ?? 'default',
-    //         serve.description ?? '',
-    //         serve.allowMCPs ?? [],
-    //         prefix
-    //     );
-    // });
+    
+    // 从应用设置中获取 MCP 网关配置并注册路由
+    const gateways = getMCPGateways();
+    Logger.info(`Loading ${gateways.length} MCP gateways from app settings`);
+    
+    gateways.forEach((gateway) => {
+        // 提供默认值以避免 undefined
+        register(
+            route,
+            gateway.name ?? 'default',
+            gateway.description ?? '',
+            gateway.allowMCPs ?? [],
+            prefix
+        );
+    });
+    
     return route;
 }
 
 /**
- * 刷新路由 - 重新从配置加载并创建一个新的Router实例
+ * 刷新路由 - 重新从应用设置加载并创建一个新的Router实例
  * 
  * 使用方法:
- * 1. 首先更新MCP_GateWay的配置数据
+ * 1. 首先通过前端更新应用设置中的 mcpGateWays 配置
  * 2. 然后调用此函数获取新的路由实例
  * 3. 用新的路由实例替换应用中旧的路由
  * 
@@ -152,8 +181,17 @@ export function refreshRoutes(prefix: string) {
     // 清除现有连接
     clearTransports();
 
+    Logger.info('Refreshing MCP gateway routes from app settings');
 
-    // 创建新的路由实例
+    // 创建新的路由实例，会自动从应用设置中重新加载配置
     return registers(prefix);
+}
+
+/**
+ * 导出函数：获取当前配置的 MCP 网关列表
+ * @returns MCP 网关配置数组
+ */
+export function getCurrentMCPGateways(): MCPGateway[] {
+    return getMCPGateways();
 }
 

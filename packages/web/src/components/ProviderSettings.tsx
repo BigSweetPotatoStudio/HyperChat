@@ -141,7 +141,7 @@ export function ProviderSettings() {
   const getBuiltinProviders = (): ProviderConfig[] => {
     return [
       { key: 'openai', label: 'OpenAI', baseURL: 'https://api.openai.com/v1', icon: 'openai', description: 'OpenAI GPT models', hasApiKey: true, isBuiltIn: true },
-      { key: 'anthropic', label: 'Anthropic', baseURL: 'https://api.anthropic.com', icon: 'anthropic', description: 'Claude models', hasApiKey: true, isBuiltIn: true },
+      { key: 'anthropic', label: 'Anthropic', baseURL: 'https://api.anthropic.com/v1', icon: 'anthropic', description: 'Claude models', hasApiKey: true, isBuiltIn: true },
       { key: 'openrouter', label: 'OpenRouter', baseURL: 'https://openrouter.ai/api/v1', icon: 'openrouter', description: 'Multi-provider AI gateway', hasApiKey: true, isBuiltIn: true },
       { key: 'gemini', label: 'Google Gemini', baseURL: 'https://generativelanguage.googleapis.com/v1beta', icon: 'gemini', description: 'Google Gemini models', hasApiKey: true, isBuiltIn: true },
       { key: 'qwen', label: 'Qwen', baseURL: 'https://dashscope.aliyuncs.com/compatible-mode/v1', icon: 'qwen', description: 'Alibaba Qwen models', hasApiKey: true, isBuiltIn: true },
@@ -150,7 +150,7 @@ export function ProviderSettings() {
       { key: 'xai', label: 'xAI', baseURL: 'https://api.x.ai/v1', icon: 'xai', description: 'xAI Grok models', hasApiKey: true, isBuiltIn: true },
       { key: 'glm', label: 'GLM', baseURL: 'https://open.bigmodel.cn/api/paas/v4', icon: 'glm', description: 'Zhipu GLM models', hasApiKey: true, isBuiltIn: true },
       { key: 'ollama', label: 'Ollama', baseURL: 'http://localhost:11434/v1', icon: 'ollama', description: 'Local Ollama models', hasApiKey: false, isBuiltIn: true },
-      { key: 'unknown', label: 'Unknown Provider', baseURL: '', icon: 'custom', description: 'Unknown or unsupported provider, configure apiKey and baseURL per model', hasApiKey: false, isBuiltIn: true }
+      { key: 'unknown', label: 'Unknown Provider', baseURL: '', icon: 'custom', description: 'OpenAI compatible provider, configure apiKey and baseURL per model', hasApiKey: false, isBuiltIn: true }
     ];
   };
 

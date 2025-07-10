@@ -32,6 +32,7 @@ import { fileURLToPath } from 'node:url';
 import { dirname } from 'node:path';
 import { getWorkspaceManager, workspaceManager } from "./workspace/index.mjs";
 import { getAppSettingsManager, isAppSettingsManagerInitialized, AppSettingsManager } from "./data/index.mjs";
+import { refreshRoutes } from "./mcpGateWay.mjs";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -942,10 +943,10 @@ export class CommandFactory {
     const workspaceManager = getWorkspaceManager();
     const workspace = workspaceManager.getWorkspace(workspacePath);
     if (!workspace) return null;
-    
+
     const config = workspace.getConfig();
     const summary = await workspace.getSummary();
-    
+
     return {
       ...config,
       agentsCount: summary.agentsCount,
@@ -1850,7 +1851,7 @@ export class CommandFactory {
   }): Promise<boolean> {
     try {
       console.log(`Closing workspace: ${workspacePath}`);
-      
+
       // 关闭工作区的MCP客户端
       try {
         await this.stopWorkspaceMcpClients({ workspacePath });
@@ -1858,7 +1859,7 @@ export class CommandFactory {
       } catch (mcpError) {
         console.warn(`Failed to close MCP clients for workspace ${workspacePath}:`, mcpError);
       }
-      
+
       // 关闭工作区的终端实例
       try {
         const terminal = getWorkspaceTerminal(workspacePath);
@@ -1870,11 +1871,11 @@ export class CommandFactory {
       } catch (terminalError) {
         console.warn(`Failed to close terminals for workspace ${workspacePath}:`, terminalError);
       }
-      
+
       // 从运行列表中移除（从内存中移除工作区实例）
       const workspaceManager = getWorkspaceManager();
       workspaceManager.removeWorkspaceFromMemory(workspacePath);
-      
+
       return true;
     } catch (error) {
       console.error(`Failed to close workspace ${workspacePath}:`, error);
@@ -1887,7 +1888,7 @@ export class CommandFactory {
    * 获取运行中的工作区列表
    * @returns 运行中工作区的详细信息
    */
-  async getRunningWorkspaces(): Promise<Array<{path: string, name: string, isGlobal: boolean}>> {
+  async getRunningWorkspaces(): Promise<Array<{ path: string, name: string, isGlobal: boolean }>> {
     try {
       const workspaceManager = getWorkspaceManager();
       return await workspaceManager.getRunningWorkspacesDetails();
@@ -1910,11 +1911,11 @@ export class CommandFactory {
     try {
       const workspaceManager = getWorkspaceManager();
       const workspace = workspaceManager.getWorkspace(workspacePath);
-      
+
       if (!workspace) {
         throw new Error(`工作区不存在: ${workspacePath}`);
       }
-      
+
       return workspace.getSettings();
     } catch (error) {
       console.error(`Failed to get settings for workspace ${workspacePath}:`, error);
@@ -1938,11 +1939,11 @@ export class CommandFactory {
     try {
       const workspaceManager = getWorkspaceManager();
       const workspace = workspaceManager.getWorkspace(workspacePath);
-      
+
       if (!workspace) {
         throw new Error(`工作区不存在: ${workspacePath}`);
       }
-      
+
       await workspace.updateSettings(updates);
       return workspace.getSettings();
     } catch (error) {
@@ -1964,11 +1965,11 @@ export class CommandFactory {
     try {
       const workspaceManager = getWorkspaceManager();
       const workspace = workspaceManager.getWorkspace(workspacePath);
-      
+
       if (!workspace) {
         throw new Error(`工作区不存在: ${workspacePath}`);
       }
-      
+
       const settingsManager = workspace.getSettingsManager();
       await settingsManager.reset();
       return settingsManager.getSettings();
@@ -1991,11 +1992,11 @@ export class CommandFactory {
     try {
       const workspaceManager = getWorkspaceManager();
       const workspace = workspaceManager.getWorkspace(workspacePath);
-      
+
       if (!workspace) {
         throw new Error(`工作区不存在: ${workspacePath}`);
       }
-      
+
       const settingsManager = workspace.getSettingsManager();
       return await settingsManager.export();
     } catch (error) {
@@ -2020,11 +2021,11 @@ export class CommandFactory {
     try {
       const workspaceManager = getWorkspaceManager();
       const workspace = workspaceManager.getWorkspace(workspacePath);
-      
+
       if (!workspace) {
         throw new Error(`工作区不存在: ${workspacePath}`);
       }
-      
+
       const settingsManager = workspace.getSettingsManager();
       await settingsManager.import(settingsJson);
       return settingsManager.getSettings();
@@ -2043,7 +2044,7 @@ export class CommandFactory {
       if (!isAppSettingsManagerInitialized()) {
         throw new Error("应用设置管理器未初始化");
       }
-      
+
       const appSettingsManager = getAppSettingsManager();
       return appSettingsManager.getSettings();
     } catch (error) {
@@ -2062,7 +2063,7 @@ export class CommandFactory {
       if (!isAppSettingsManagerInitialized()) {
         throw new Error("应用设置管理器未初始化");
       }
-      
+
       const appSettingsManager = getAppSettingsManager();
       await appSettingsManager.updateSettings(updates);
       return appSettingsManager.getSettings();
@@ -2081,7 +2082,7 @@ export class CommandFactory {
       if (!isAppSettingsManagerInitialized()) {
         throw new Error("应用设置管理器未初始化");
       }
-      
+
       const appSettingsManager = getAppSettingsManager();
       await appSettingsManager.reset();
       return appSettingsManager.getSettings();
@@ -2100,7 +2101,7 @@ export class CommandFactory {
       if (!isAppSettingsManagerInitialized()) {
         throw new Error("应用设置管理器未初始化");
       }
-      
+
       const appSettingsManager = getAppSettingsManager();
       return await appSettingsManager.export();
     } catch (error) {
@@ -2119,12 +2120,28 @@ export class CommandFactory {
       if (!isAppSettingsManagerInitialized()) {
         throw new Error("应用设置管理器未初始化");
       }
-      
+
       const appSettingsManager = getAppSettingsManager();
       await appSettingsManager.import(settingsJson);
       return appSettingsManager.getSettings();
     } catch (error) {
       console.error("Failed to import app settings:", error);
+      throw error;
+    }
+  }
+
+  /**
+   * 刷新 MCP 网关路由
+   * 通知 HTTP 服务器重新加载 MCP 网关配置
+   */
+  async refreshMcpRoutes(): Promise<void> {
+    try {
+      EVENT.fire('refreshMCPRoutes');
+      // 或者通过事件机制通知 HTTP 服务器
+      // 由于前端通过 call 调用，这个方法会被自动代理到前端
+      Logger.info('MCP routes refresh requested');
+    } catch (error) {
+      Logger.error('Failed to refresh MCP routes:', error);
       throw error;
     }
   }

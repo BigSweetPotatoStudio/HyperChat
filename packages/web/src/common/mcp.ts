@@ -1,7 +1,7 @@
 import { call } from "./call";
 import * as MCPTypes from "@modelcontextprotocol/sdk/types.js";
 
-import { TEMP_FILE } from "@hyperchat/shared/data.mjs";
+// import { TEMP_FILE } from "@hyperchat/shared/data.mjs"; // 已移除
 import type { HyperChatCompletionTool, IMCPClient } from "@hyperchat/shared/data.mjs";
 
 /**
@@ -122,7 +122,7 @@ export async function getMCPExtensionData(): Promise<any> {
     jscode = await fetch(jsUrl).then((res) => res.text());
 
     // Initialize TEMP_FILE for caching.
-    await TEMP_FILE.init();
+    // await TEMP_FILE.init(); // 已移除
 
     // Execute the fetched code using a Promise and a global JSONP callback.
     let res = await new Promise(async (resolve, reject) => {
@@ -141,23 +141,23 @@ export async function getMCPExtensionData(): Promise<any> {
     return res;
   } catch (e: any) {
     // If fetching fails, try to use the cached version.
-    if (TEMP_FILE.get().mcpExtensionDataJS !== "") {
-      jscode = TEMP_FILE.get().mcpExtensionDataJS;
-      return new Promise(async (resolve, reject) => {
-        window["jsonp"] = function (data: any) {
-          resolve(data);
-        };
-        if (jscode) eval(jscode);
-      });
-    } else {
+    // if (TEMP_FILE.get().mcpExtensionDataJS !== "") {
+    //   jscode = TEMP_FILE.get().mcpExtensionDataJS;
+    //   return new Promise(async (resolve, reject) => {
+    //     window["jsonp"] = function (data: any) {
+    //       resolve(data);
+    //     };
+    //     if (jscode) eval(jscode);
+    //   });
+    // } else {
       // If no network and no cache, throw an error.
       throw new Error("The network is not connected and there is no cache.");
-    }
+    // }
   } finally {
     // Cache the fetched JavaScript code if it was successfully obtained.
     if (jscode) {
-      TEMP_FILE.get().mcpExtensionDataJS = jscode;
-      TEMP_FILE.save();
+      // TEMP_FILE.get().mcpExtensionDataJS = jscode;
+      // TEMP_FILE.save();
     }
   }
 }

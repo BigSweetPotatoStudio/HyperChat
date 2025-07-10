@@ -16,8 +16,6 @@ import {
   ReloadOutlined,
   ExportOutlined,
   ImportOutlined,
-  RobotOutlined,
-  ApiOutlined,
 } from "@ant-design/icons";
 import { t } from "../i18n";
 import { zodToJsonSchema } from "zod-to-json-schema";
@@ -25,9 +23,7 @@ import { z } from "zod";
 import {
   AppearanceSchema,
   SystemSchema,
-  DesktopSchema,
-  AIConfigSchema,
-  MCPGatewaySchema
+  DesktopSchema
 } from "../../../core/src/shared/jsonSchemas/appSettingsSchema.mjs";
 import Schema2Form from "./schema2Form";
 
@@ -119,10 +115,6 @@ export function AppSettings({
 
   const desktopJsonSchema = zodToJsonSchema(DesktopSchema as any)  as any;
 
-  const aiJsonSchema = zodToJsonSchema(AIConfigSchema as any)  as any;
-
-  const mcpGatewaysJsonSchema = zodToJsonSchema(z.array(MCPGatewaySchema) as any) as any;
-
   // 创建外观设置 schema，添加中文标题
   const appearanceSchema = appearanceJsonSchema;
 
@@ -131,42 +123,6 @@ export function AppSettings({
 
   // 创建桌面设置 schema，添加中文标题
   const desktopSchema = desktopJsonSchema;
-
-  // 创建AI设置 schema，添加中文标题
-  const aiSchema = {
-    ...aiJsonSchema,
-    title: t`AI Settings`,
-    properties: {
-      ...aiJsonSchema.properties,
-      models: {
-        ...aiJsonSchema.properties.models,
-        title: t`AI Models`,
-        description: t`Configure available AI models`,
-      },
-      customProviders: {
-        ...aiJsonSchema.properties.customProviders,
-        title: t`Custom Providers`,
-        description: t`Add custom AI model providers`,
-      },
-      builtinApiKeys: {
-        ...aiJsonSchema.properties.builtinApiKeys,
-        title: t`API Keys`,
-        description: t`Configure API keys for built-in providers`,
-      },
-      defaultModel: {
-        ...aiJsonSchema.properties.defaultModel,
-        title: t`Default Model`,
-        description: t`Set the default AI model`,
-      },
-    },
-  };
-
-  // 创建MCP Gateways设置 schema，添加中文标题
-  const mcpGatewaysSchema = {
-    ...mcpGatewaysJsonSchema,
-    title: t`MCP Gateways`,
-    description: t`Configure MCP gateways for model context protocol`,
-  };
 
   const tabItems = [
     {
@@ -214,38 +170,6 @@ export function AppSettings({
           schema={desktopSchema}
           value={currentValues?.desktop}
           onChange={(values) => handleFormChange({ ...currentValues, desktop: values })}
-        />
-      ),
-    },
-    {
-      key: "ai",
-      label: (
-        <span>
-          <RobotOutlined />
-          {t`AI Settings`}
-        </span>
-      ),
-      children: (
-        <Schema2Form
-          schema={aiSchema}
-          value={currentValues?.ai}
-          onChange={(values) => handleFormChange({ ...currentValues, ai: values })}
-        />
-      ),
-    },
-    {
-      key: "mcpGateways",
-      label: (
-        <span>
-          <ApiOutlined />
-          {t`MCP Gateways`}
-        </span>
-      ),
-      children: (
-        <Schema2Form
-          schema={mcpGatewaysSchema}
-          value={currentValues?.mcpGateWays}
-          onChange={(values) => handleFormChange({ ...currentValues, mcpGateWays: values })}
         />
       ),
     },

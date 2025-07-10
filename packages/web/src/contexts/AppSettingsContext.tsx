@@ -1,6 +1,10 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import type { AppSettings, AISettings } from '@hyperchat/shared/jsonSchemas/appSettingsSchema.mts';
 import { call } from '../common/call';
+import {
+  enable as enableDarkMode,
+  disable as disableDarkMode,
+} from 'darkreader';
 
 interface AppSettingsContextType {
   // 完整的应用设置
@@ -35,6 +39,9 @@ export const AppSettingsProvider = ({ children }: { children: ReactNode }) => {
       setError(null);
       const settings = await call('getAppSettings');
       setAppSettings(settings);
+      
+      // 自动应用夜间模式设置
+      applyDarkModeSettings(settings);
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to load app settings';
       setError(errorMessage);
@@ -44,10 +51,32 @@ export const AppSettingsProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
+  // 应用夜间模式设置
+  const applyDarkModeSettings = (settings: AppSettings) => {
+    try {
+      if (settings.appearance?.darkTheme) {
+        enableDarkMode({
+          brightness: 100,
+          contrast: 90,
+          sepia: 10,
+        });
+      } else {
+        disableDarkMode();
+      }
+    } catch (error) {
+      console.warn('Failed to apply dark mode settings:', error);
+    }
+  };
+
   const updateSettings = async (updates: Partial<AppSettings>) => {
     try {
       const updatedSettings = await call('updateAppSettings', { updates });
       setAppSettings(updatedSettings);
+      
+      // 如果更新了外观设置，自动应用夜间模式
+      if (updates.appearance) {
+        applyDarkModeSettings(updatedSettings);
+      }
     } catch (err) {
       console.error('Failed to update app settings:', err);
       throw err;
@@ -62,8 +91,9 @@ export const AppSettingsProvider = ({ children }: { children: ReactNode }) => {
 
   const updateAppearance = async (appearanceUpdates: Partial<AppSettings['appearance']>) => {
     if (!appSettings?.appearance) return;
+    const newAppearance = { ...appSettings.appearance, ...appearanceUpdates };
     await updateSettings({ 
-      appearance: { ...appSettings.appearance, ...appearanceUpdates } 
+      appearance: newAppearance
     });
   };
 

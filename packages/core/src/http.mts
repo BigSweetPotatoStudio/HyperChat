@@ -32,6 +32,7 @@ import { ParamsDictionary } from "express-serve-static-core";
 import { ParsedQs } from "qs";
 import { createProxyMiddleware } from "./http/aiProxyMiddleware.mjs";
 import { getAppSettingsManager } from "./data/appSettingsService.mjs";
+import { EVENT } from "./common/event.mjs";
 
 // 常量定义
 const MAX_BODY_SIZE = "1000mb";
@@ -118,7 +119,7 @@ export async function initHttp(): Promise<void> {
   app.use(urlPrefix + "/mcp", mcpRouter);
 
   // MCP 路由刷新端点
-  app.post(urlPrefix + "/api/refreshMcpRoutes", async (_req, res) => {
+  EVENT.on("refreshMCPRoutes", async () => {
     try {
       const newRouter = await refreshRoutes(urlPrefix + "/mcp");
 
@@ -130,16 +131,11 @@ export async function initHttp(): Promise<void> {
       mcpRouter = newRouter;
       app.use(urlPrefix + "/mcp", mcpRouter);
 
-      res.json({ success: true, message: "MCP 路由已刷新" });
     } catch (error) {
       Logger.error("刷新 MCP 路由时出错:", error);
-      res.status(500).json({
-        success: false,
-        message: "刷新 MCP 路由失败",
-        error: error instanceof Error ? error.message : String(error)
-      });
     }
   });
+
 
   // 代理中间件（处理 AI API 请求）
   app.use(createProxyMiddleware());

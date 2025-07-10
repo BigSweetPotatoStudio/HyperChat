@@ -14,12 +14,66 @@ interface Schema2FormProps {
   disabled?: boolean;
 }
 
+// 根据 schema 生成默认值的辅助函数
+const generateDefaultValue = (schema: JSONSchema7): any => {
+  if (schema.default !== undefined) {
+    return schema.default;
+  }
+  
+  switch (schema.type) {
+    case 'object':
+      if (schema.properties) {
+        const defaultObj: any = {};
+        Object.entries(schema.properties).forEach(([key, propSchema]) => {
+          if (typeof propSchema !== 'boolean') {
+            defaultObj[key] = generateDefaultValue(propSchema);
+          }
+        });
+        return defaultObj;
+      }
+      return {};
+    case 'array':
+      return [];
+    case 'string':
+      return '';
+    case 'number':
+    case 'integer':
+      return 0;
+    case 'boolean':
+      return false;
+    default:
+      return undefined;
+  }
+};
+
+// 深度合并对象的辅助函数
+const deepMerge = (target: any, source: any): any => {
+  if (Array.isArray(source)) {
+    return source;
+  }
+  
+  if (source && typeof source === 'object' && target && typeof target === 'object') {
+    const result = { ...target };
+    Object.keys(source).forEach(key => {
+      if (source[key] !== undefined) {
+        result[key] = deepMerge(target[key], source[key]);
+      }
+    });
+    return result;
+  }
+  
+  return source !== undefined ? source : target;
+};
+
 export const Schema2Form: React.FC<Schema2FormProps> = ({
   schema,
-  value = {},
+  value,
   onChange,
   disabled = false
 }) => {
+  // 生成完整的默认值，然后与传入的值深度合并
+  const schemaDefaults = generateDefaultValue(schema);
+  const defaultValue = value ? deepMerge(schemaDefaults, value) : schemaDefaults;
   const [form] = Form.useForm();
   const [mode, setMode] = useState<'form' | 'json'>('form');
   const [jsonValue, setJsonValue] = useState<string>('');
@@ -42,12 +96,17 @@ export const Schema2Form: React.FC<Schema2FormProps> = ({
   }, []);
 
   useEffect(() => {
-    setJsonValue(objectToJson(value));
-  }, [value, objectToJson]);
+    setJsonValue(objectToJson(defaultValue));
+    // 同步表单值
+    form.setFieldsValue(defaultValue);
+  }, [defaultValue, objectToJson, form]);
 
   const validateJsonSchema = useCallback((data: any): string | null => {
     if (schema.type === 'object' && typeof data !== 'object') {
       return '数据类型不匹配，期望对象类型';
+    }
+    if (schema.type === 'array' && !Array.isArray(data)) {
+      return '数据类型不匹配，期望数组类型';
     }
     if (schema.required && Array.isArray(schema.required)) {
       for (const field of schema.required) {
@@ -109,14 +168,15 @@ export const Schema2Form: React.FC<Schema2FormProps> = ({
 
 
   const renderForm = useCallback(() => {
-    if (!schema.properties) return null;
+    // 支持数组类型的 schema 或有 properties 的对象类型
+    if (!schema.properties && schema.type !== 'array') return null;
 
     return (
       <Form
         form={form}
         layout="vertical"
         onValuesChange={handleFormChange}
-        initialValues={value}
+        initialValues={defaultValue}
         disabled={disabled}
       >
         <Schema2FormItems
@@ -125,7 +185,7 @@ export const Schema2Form: React.FC<Schema2FormProps> = ({
         />
       </Form>
     );
-  }, [schema, form, handleFormChange, value, disabled]);
+  }, [schema, form, handleFormChange, defaultValue, disabled]);
 
   return (
     <div>

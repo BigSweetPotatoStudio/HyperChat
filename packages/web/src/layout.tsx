@@ -187,9 +187,9 @@ export function Layout() {
     });
 
     // 注册模型配置打开事件监听器
-    EVENT.on("setIsModelConfigOpenTrue", () => {
-      setIsModelConfigOpen(true);
-    });
+    // EVENT.on("setIsModelConfigOpenTrue", () => {
+    //   setIsModelConfigOpen(true);
+    // });
   }, []);
   /**
    * 监听来自主进程的消息

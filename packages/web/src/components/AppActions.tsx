@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Button, Select, Switch, Space } from 'antd';
-import { GithubFilled, SyncOutlined, SettingOutlined } from '@ant-design/icons';
+import { GithubFilled, SyncOutlined, SettingOutlined, ApiOutlined } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
 import { t, currLang, setCurrLang } from '../i18n';
 import { useAppearanceSettings } from '../contexts/AppSettingsContext';
@@ -15,9 +15,10 @@ interface AppActionsProps {
   onAIProviderClick: () => void;
   onRefresh: () => void;
   onAppSettingsClick?: () => void;
+  onMCPGatewaysClick?: () => void;
 }
 
-export function AppActions({ onAIProviderClick, onRefresh, onAppSettingsClick }: AppActionsProps) {
+export function AppActions({ onAIProviderClick, onRefresh, onAppSettingsClick, onMCPGatewaysClick }: AppActionsProps) {
   const navigate = useNavigate();
   const [syncStatus, setSyncStatus] = useState(0); // 同步状态：0-正常，1-同步中，-1-失败
   const { appearance, updateAppearance } = useAppearanceSettings();
@@ -97,8 +98,18 @@ export function AppActions({ onAIProviderClick, onRefresh, onAppSettingsClick }:
         {t`AI Providers`}
       </Button>
 
+      {/* MCP Gateways 设置按钮 */}
+      {onMCPGatewaysClick && (
+        <Button
+          onClick={onMCPGatewaysClick}
+          icon={<ApiOutlined />}
+        >
+          {t`MCP Gateways`}
+        </Button>
+      )}
+
       {/* 语言切换选择器 */}
-      <Select
+      {/* <Select
         value={currLang}
         style={{ width: 120 }}
         onChange={handleLanguageChange}
@@ -106,15 +117,15 @@ export function AppActions({ onAIProviderClick, onRefresh, onAppSettingsClick }:
           { value: "zhCN", label: "中文" },
           { value: "enUS", label: "English" },
         ]}
-      />
+      /> */}
 
       {/* 主题切换开关 */}
-      <Switch
+      {/* <Switch
         checkedChildren={"🌙"}
         unCheckedChildren={"☀️"}
         checked={appearance?.darkTheme || false}
         onChange={handleThemeChange}
-      />
+      /> */}
 
     </Space>
   );

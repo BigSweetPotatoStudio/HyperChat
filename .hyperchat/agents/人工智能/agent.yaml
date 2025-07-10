@@ -1,11 +1,14 @@
+key: 人工智能
 name: 人工智能
 prompt: 你是谁一个通用人工智能
 allowMCPs:
-  - telegram-send
+  - hyper_tools
+  - hyper_terminal
+  - filesystem
 confirm_call_tool: false
+created: 1751905631370
+lastModified: 1752113438485
 temperature: 1
 callable: true
 attachedDialogueCount: 10
-key: 人工智能
-created: 1751905631370
-lastModified: 1751905631371
+modelKey: xai:grok-3-mini-beta

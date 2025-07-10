@@ -63,6 +63,7 @@ import { FileEditor } from "../../components/FileEditor";
 import { Icon } from "@/src/components/icon";
 import { WorkspaceSettings } from "../../components/WorkspaceSettings";
 import { AppSettings } from "../../components/AppSettings";
+import { MCPGatewaysSettings } from "../../components/MCPGatewaysSettings";
 
 const { Title, Text } = Typography;
 
@@ -161,6 +162,7 @@ export function Workspace() {
   const [workspaceSettings, setWorkspaceSettings] = useState<any>(null);
   const [appSettingsDrawerOpen, setAppSettingsDrawerOpen] = useState(false);
   const [appSettings, setAppSettings] = useState<any>(null);
+  const [mcpGatewaysDrawerOpen, setMCPGatewaysDrawerOpen] = useState(false);
   const [form] = Form.useForm();
   // 为每个工作区维护独立的标签页状态
   const [workspaceTabsMap, setWorkspaceTabsMap] = useState<Record<string, ChatTab[]>>({});
@@ -575,6 +577,67 @@ export function Workspace() {
     }
   };
 
+  // 处理 MCP Gateways 设置
+  const handleMCPGateways = async () => {
+    try {
+      // 加载应用设置以获取当前的 MCP Gateways 配置
+      const settings = await call("getAppSettings");
+      setAppSettings(settings);
+      setMCPGatewaysDrawerOpen(true);
+    } catch (error) {
+      console.error("Failed to load MCP gateways:", error);
+      message.error(t`Failed to load MCP gateways`);
+    }
+  };
+
+  // 获取可用的 MCP 服务列表
+  const getAvailableMCPs = () => {
+    const currentWorkspace = getCurrentWorkspace();
+    const details = workspaceDetails[currentWorkspace?.path || ''] || { mcpClients: {} };
+    const globalDetails = getGlobalDetails();
+    
+    // 合并全局和当前工作区的 MCP 客户端
+    const allMcpClients = Object.values(Object.assign({}, globalDetails.mcpClients, details.mcpClients));
+    
+    // 提取所有可用的 MCP 服务名称
+    const availableMCPs = new Set<string>();
+    allMcpClients.forEach(client => {
+      if (client.status === 'connected') {
+        availableMCPs.add(client.serverName);
+        // 也可以添加工具名称
+        if (client.tools) {
+          client.tools.forEach(tool => {
+            availableMCPs.add(tool.name);
+          });
+        }
+      }
+    });
+    
+    return Array.from(availableMCPs).sort();
+  };
+
+  // 更新 MCP Gateways 配置
+  const updateMCPGateways = async (gateways: any[]) => {
+    try {
+      const updates = { mcpGateWays: gateways };
+      await updateAppSettings(updates);
+      
+      // 刷新 MCP 路由以应用新的网关配置
+      try {
+        await call("refreshMcpRoutes");
+        console.log('MCP routes refreshed successfully');
+      } catch (routeError) {
+        console.warn('Failed to refresh MCP routes, but settings were saved:', routeError);
+        // 不阻止设置保存，只是警告路由刷新失败
+      }
+      
+      message.success(t`MCP Gateways updated successfully`);
+    } catch (error) {
+      console.error("Failed to update MCP gateways:", error);
+      message.error(t`Failed to update MCP gateways`);
+    }
+  };
+
   // 关闭工作区（完全关闭）
   const closeWorkspace = async (workspace: WorkspaceInfo) => {
     try {
@@ -806,7 +869,7 @@ export function Workspace() {
       // 初始化默认聊天标签页
       initDefaultChatTab(currentWorkspace);
     }
-  }, [activeWorkspaceKey, workspaces, globalWorkspace]);
+  }, [activeWorkspaceKey]);
 
   // 获取当前活动工作区
   const getCurrentWorkspace = () => {
@@ -1333,6 +1396,7 @@ export function Workspace() {
                   onAIProviderClick={() => setLocalIsModelConfigOpen(true)}
                   onRefresh={refresh}
                   onAppSettingsClick={handleAppSettings}
+                  onMCPGatewaysClick={handleMCPGateways}
                 />
               )
             }}
@@ -1706,6 +1770,26 @@ export function Workspace() {
         }}
       >
         <ProviderSettings />
+      </Drawer>
+
+      {/* MCP Gateways 设置抽屉 */}
+      <Drawer
+        width={800}
+        title={t`MCP Gateways Settings`}
+        open={mcpGatewaysDrawerOpen}
+        onClose={() => {
+          setMCPGatewaysDrawerOpen(false);
+          setAppSettings(null);
+        }}
+        destroyOnClose
+      >
+        {appSettings && (
+          <MCPGatewaysSettings
+            gateways={appSettings.mcpGateWays || []}
+            onUpdate={updateMCPGateways}
+            availableMCPs={getAvailableMCPs()}
+          />
+        )}
       </Drawer>
 
     </div>

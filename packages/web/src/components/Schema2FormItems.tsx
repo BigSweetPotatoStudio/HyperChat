@@ -48,214 +48,6 @@ export const Schema2FormItems: React.FC<Schema2FormItemsProps> = ({
     }
   }, []);
 
-  // 渲染数组字段
-  const renderArrayField = useCallback((fieldName: string, fieldSchema: JSONSchema7, fieldPath: string[]) => {
-    const { title, description, items, minItems, maxItems } = fieldSchema;
-    
-    if (!items || typeof items === 'boolean') {
-      // 简单数组处理
-      return (
-        <Form.Item
-          key={fieldName}
-          name={fieldPath}
-          label={title || fieldName}
-          tooltip={description}
-          rules={[
-            { required: schema.required?.includes(fieldName), message: `请输入${title || fieldName}` }
-          ]}
-        >
-          <Input.TextArea placeholder="请输入数组，每行一个值" />
-        </Form.Item>
-      );
-    }
-
-    const itemSchema = resolveSchema(items as JSONSchema7Definition);
-    
-    return (
-      <Form.Item
-        key={fieldName}
-        label={title || fieldName}
-        tooltip={description}
-        style={{ marginBottom: 16 }}
-      >
-        <Form.List 
-          name={fieldPath}
-          rules={[
-            {
-              validator: async (_, names) => {
-                if (minItems && names.length < minItems) {
-                  return Promise.reject(new Error(`至少需要${minItems}个项目`));
-                }
-                if (maxItems && names.length > maxItems) {
-                  return Promise.reject(new Error(`最多只能有${maxItems}个项目`));
-                }
-              },
-            },
-          ]}
-        >
-          {(fields, { add, remove }) => (
-            <>
-              {fields.map(({ key, name, ...restField }) => (
-                <Card key={key} size="small" style={{ marginBottom: 8 }}>
-                  <div style={{ display: 'flex', alignItems: 'flex-start', gap: 8 }}>
-                    <div style={{ flex: 1 }}>
-                      {itemSchema.type === 'object' && itemSchema.properties ? (
-                        <Schema2FormItems 
-                          schema={itemSchema} 
-                          disabled={disabled}
-                          prefix={fieldPath.concat(name.toString())}
-                        />
-                      ) : (
-                        <Form.Item
-                          {...restField}
-                          name={[name]}
-                          rules={[
-                            { required: true, message: '请输入值' }
-                          ]}
-                          style={{ margin: 0 }}
-                        >
-                          {renderInputComponent(itemSchema, fieldPath.concat(name.toString()))}
-                        </Form.Item>
-                      )}
-                    </div>
-                    <Button 
-                      type="text" 
-                      danger 
-                      icon={<MinusCircleOutlined />}
-                      onClick={() => remove(name)}
-                      size="small"
-                    />
-                  </div>
-                </Card>
-              ))}
-              <Form.Item>
-                <Button
-                  type="dashed"
-                  onClick={() => add()}
-                  block
-                  icon={<PlusOutlined />}
-                  disabled={disabled || Boolean(maxItems && fields.length >= maxItems)}
-                >
-                  添加{itemSchema.title || '项目'}
-                </Button>
-              </Form.Item>
-            </>
-          )}
-        </Form.List>
-      </Form.Item>
-    );
-  }, [disabled, schema.required, resolveSchema]);
-
-  // 渲染Record类型字段（如API Keys）
-  const renderRecordField = useCallback((fieldName: string, fieldSchema: JSONSchema7, fieldPath: string[]) => {
-    const { title, description, additionalProperties } = fieldSchema;
-    
-    // 处理 Record<string, object> 类型
-    if (additionalProperties && typeof additionalProperties === 'object') {
-      const valueSchema = resolveSchema(additionalProperties);
-      
-      return (
-        <Form.Item
-          key={fieldName}
-          label={title || fieldName}
-          tooltip={description}
-          style={{ marginBottom: 16 }}
-        >
-          <div style={{ border: '1px solid #d9d9d9', borderRadius: 6, padding: 16 }}>
-            <Text strong style={{ marginBottom: 12, display: 'block' }}>
-              {title || fieldName}
-            </Text>
-            
-            {/* 针对内置提供商的API Keys，使用固定的key列表 */}
-            {fieldName === 'builtinApiKeys' ? (
-              <div>
-                {['openai', 'anthropic', 'openrouter', 'gemini', 'qwen', 'deepseek', 'doubao', 'xai', 'glm', 'ollama', 'unknown'].map(providerKey => (
-                  <Card key={providerKey} size="small" style={{ marginBottom: 8 }}>
-                    <div style={{ marginBottom: 8 }}>
-                      <Text strong>{providerKey.toUpperCase()}</Text>
-                    </div>
-                    <Schema2FormItems 
-                      schema={valueSchema} 
-                      disabled={disabled}
-                      prefix={[...fieldPath, providerKey]}
-                    />
-                  </Card>
-                ))}
-              </div>
-            ) : (
-              /* 动态键值对编辑 */
-              <Form.List name={fieldPath}>
-                {(fields, { add, remove }) => (
-                  <>
-                    {fields.map(({ key, name, ...restField }) => (
-                      <Card key={key} size="small" style={{ marginBottom: 8 }}>
-                        <div style={{ display: 'flex', alignItems: 'flex-start', gap: 8 }}>
-                          <Form.Item
-                            {...restField}
-                            name={[name, 'key']}
-                            label="键名"
-                            rules={[{ required: true, message: '请输入键名' }]}
-                            style={{ minWidth: 150 }}
-                          >
-                            <Input placeholder="输入键名" />
-                          </Form.Item>
-                          <div style={{ flex: 1 }}>
-                            <Schema2FormItems
-                              schema={valueSchema}
-                              disabled={disabled}
-                              prefix={[...fieldPath, name.toString()]}
-                            />
-                          </div>
-                          <Button 
-                            type="text" 
-                            danger 
-                            icon={<MinusCircleOutlined />}
-                            onClick={() => remove(name)}
-                            size="small"
-                          />
-                        </div>
-                      </Card>
-                    ))}
-                    <Form.Item>
-                      <Button
-                        type="dashed"
-                        onClick={() => add()}
-                        block
-                        icon={<PlusOutlined />}
-                        disabled={disabled}
-                      >
-                        添加配置项
-                      </Button>
-                    </Form.Item>
-                  </>
-                )}
-              </Form.List>
-            )}
-          </div>
-        </Form.Item>
-      );
-    }
-    
-    // 简单的 Record<string, string> 处理
-    return (
-      <Form.Item
-        key={fieldName}
-        name={fieldPath}
-        label={title || fieldName}
-        tooltip={description}
-        rules={[
-          { required: schema.required?.includes(fieldName), message: `请输入${title || fieldName}` }
-        ]}
-      >
-        <Input.TextArea 
-          placeholder="请输入JSON格式的键值对"
-          disabled={disabled}
-          autoSize={{ minRows: 3, maxRows: 6 }}
-        />
-      </Form.Item>
-    );
-  }, [disabled, schema.required, resolveSchema]);
-
   // 渲染输入组件
   const renderInputComponent = useCallback((fieldSchema: JSONSchema7, fieldPath: string[]): React.ReactNode => {
     const { type, enum: enumValues, minimum, maximum, maxLength, format } = fieldSchema;
@@ -324,6 +116,209 @@ export const Schema2FormItems: React.FC<Schema2FormItemsProps> = ({
         return <Input {...commonProps} />;
     }
   }, [disabled]);
+
+  // 渲染数组字段
+  const renderArrayField = useCallback((fieldName: string, fieldSchema: JSONSchema7, fieldPath: string[]) => {
+    const { title, description, items, minItems, maxItems } = fieldSchema;
+    
+    if (!items || typeof items === 'boolean') {
+      // 简单数组处理
+      return (
+        <Form.Item
+          key={fieldName}
+          name={fieldPath}
+          label={title || fieldName}
+          tooltip={description}
+          rules={[
+            { required: schema.required?.includes(fieldName), message: `请输入${title || fieldName}` }
+          ]}
+        >
+          <Input.TextArea placeholder="请输入数组，每行一个值" />
+        </Form.Item>
+      );
+    }
+
+    const itemSchema = resolveSchema(items as JSONSchema7Definition);
+    
+    return (
+      <Form.Item
+        key={fieldName}
+        label={title || fieldName}
+        tooltip={description}
+        style={{ marginBottom: 16 }}
+      >
+        <Form.List 
+          name={fieldPath}
+          rules={[
+            {
+              validator: async (_, names) => {
+                if (minItems && names.length < minItems) {
+                  return Promise.reject(new Error(`至少需要${minItems}个项目`));
+                }
+                if (maxItems && names.length > maxItems) {
+                  return Promise.reject(new Error(`最多只能有${maxItems}个项目`));
+                }
+              },
+            },
+          ]}
+        >
+          {(fields, { add, remove }) => (
+            <>
+              {fields.map(({ key, name, ...restField }) => (
+                <div key={key}>
+                  {itemSchema.type === 'object' && itemSchema.properties ? (
+                    // 对象数组：每个项目显示为一个卡片
+                    <Card size="small" style={{ marginBottom: 8 }}>
+                      <div style={{ display: 'flex', alignItems: 'flex-start', gap: 8 }}>
+                        <div style={{ flex: 1 }}>
+                          <Schema2FormItems 
+                            schema={itemSchema} 
+                            disabled={disabled}
+                            prefix={fieldPath.concat(name.toString())}
+                          />
+                        </div>
+                        <Button 
+                          type="text" 
+                          danger 
+                          icon={<MinusCircleOutlined />}
+                          onClick={() => remove(name)}
+                          size="small"
+                        />
+                      </div>
+                    </Card>
+                  ) : (
+                    // 简单类型数组：每个项目显示为简单的输入框
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
+                      <Form.Item
+                        {...restField}
+                        name={[name]}
+                        rules={[
+                          { required: true, message: '请输入值' }
+                        ]}
+                        style={{ margin: 0, flex: 1 }}
+                      >
+                        {renderInputComponent(itemSchema, fieldPath.concat(name.toString()))}
+                      </Form.Item>
+                      <Button 
+                        type="text" 
+                        danger 
+                        icon={<MinusCircleOutlined />}
+                        onClick={() => remove(name)}
+                        size="small"
+                      />
+                    </div>
+                  )}
+                </div>
+              ))}
+              <Form.Item style={{ margin: 0 }}>
+                <Button
+                  type="dashed"
+                  onClick={() => add()}
+                  block
+                  icon={<PlusOutlined />}
+                  disabled={disabled || Boolean(maxItems && fields.length >= maxItems)}
+                >
+                  添加{itemSchema.title || '项目'}
+                </Button>
+              </Form.Item>
+            </>
+          )}
+        </Form.List>
+      </Form.Item>
+    );
+  }, [disabled, schema.required, resolveSchema, renderInputComponent]);
+
+  // 渲染Record类型字段（如API Keys）
+  const renderRecordField = useCallback((fieldName: string, fieldSchema: JSONSchema7, fieldPath: string[]) => {
+    const { title, description, additionalProperties } = fieldSchema;
+    
+    // 处理 Record<string, object> 类型
+    if (additionalProperties && typeof additionalProperties === 'object') {
+      const valueSchema = resolveSchema(additionalProperties);
+      
+      return (
+        <Form.Item
+          key={fieldName}
+          label={title || fieldName}
+          tooltip={description}
+          style={{ marginBottom: 16 }}
+        >
+          <div style={{ border: '1px solid #d9d9d9', borderRadius: 6, padding: 16 }}>
+            <Text strong style={{ marginBottom: 12, display: 'block' }}>
+              {title || fieldName}
+            </Text>
+            
+            {/* 动态键值对编辑 */}
+              <Form.List name={fieldPath}>
+                {(fields, { add, remove }) => (
+                  <>
+                    {fields.map(({ key, name, ...restField }) => (
+                      <Card key={key} size="small" style={{ marginBottom: 8 }}>
+                        <div style={{ display: 'flex', alignItems: 'flex-start', gap: 8 }}>
+                          <Form.Item
+                            {...restField}
+                            name={[name, 'key']}
+                            label="键名"
+                            rules={[{ required: true, message: '请输入键名' }]}
+                            style={{ minWidth: 150 }}
+                          >
+                            <Input placeholder="输入键名" />
+                          </Form.Item>
+                          <div style={{ flex: 1 }}>
+                            <Schema2FormItems
+                              schema={valueSchema}
+                              disabled={disabled}
+                              prefix={[...fieldPath, name.toString()]}
+                            />
+                          </div>
+                          <Button 
+                            type="text" 
+                            danger 
+                            icon={<MinusCircleOutlined />}
+                            onClick={() => remove(name)}
+                            size="small"
+                          />
+                        </div>
+                      </Card>
+                    ))}
+                    <Form.Item>
+                      <Button
+                        type="dashed"
+                        onClick={() => add()}
+                        block
+                        icon={<PlusOutlined />}
+                        disabled={disabled}
+                      >
+                        添加配置项
+                      </Button>
+                    </Form.Item>
+                  </>
+                )}
+              </Form.List>
+          </div>
+        </Form.Item>
+      );
+    }
+    
+    // 简单的 Record<string, string> 处理
+    return (
+      <Form.Item
+        key={fieldName}
+        name={fieldPath}
+        label={title || fieldName}
+        tooltip={description}
+        rules={[
+          { required: schema.required?.includes(fieldName), message: `请输入${title || fieldName}` }
+        ]}
+      >
+        <Input.TextArea 
+          placeholder="请输入JSON格式的键值对"
+          disabled={disabled}
+          autoSize={{ minRows: 3, maxRows: 6 }}
+        />
+      </Form.Item>
+    );
+  }, [disabled, schema.required, resolveSchema]);
 
   // 处理oneOf/anyOf条件schema
   const renderConditionalField = useCallback((fieldName: string, fieldSchema: JSONSchema7, fieldPath: string[]) => {
@@ -458,7 +453,6 @@ export const Schema2FormItems: React.FC<Schema2FormItemsProps> = ({
         rules={rules}
         tooltip={description}
         valuePropName={type === 'boolean' ? 'checked' : 'value'}
-        initialValue={getDefaultValue(fieldSchema)}
       >
         {renderInputComponent(fieldSchema, fieldPath)}
       </Form.Item>
@@ -466,6 +460,12 @@ export const Schema2FormItems: React.FC<Schema2FormItemsProps> = ({
   }, [disabled, schema.required, renderConditionalField, renderArrayField, renderInputComponent, getDefaultValue]);
 
   const renderItems = useCallback(() => {
+    // 如果 schema 本身是数组类型，直接渲染数组字段
+    if (schema.type === 'array') {
+      const fieldName = schema.title || 'items';
+      return renderArrayField(fieldName, schema, prefix);
+    }
+
     if (!schema.properties) return null;
 
     return Object.entries(schema.properties).map(([fieldName, fieldSchema]) => {
@@ -474,7 +474,7 @@ export const Schema2FormItems: React.FC<Schema2FormItemsProps> = ({
       
       return renderFormItem(fieldName, typedFieldSchema, fieldPath);
     });
-  }, [schema.properties, prefix, renderFormItem]);
+  }, [schema, prefix, renderFormItem, renderArrayField]);
 
   return (
     <>
