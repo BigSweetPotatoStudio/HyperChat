@@ -150,6 +150,7 @@ export const WorkspaceChat = ({ workspace, agentKey, workspaceDetails, mcpClient
     chatType: "user" as const, // "user" | "task" | "called"
     confirm_call_tool: false,
     temperature: undefined as number | undefined,
+    attachedDialogueCount: 5
   });
 
   // 当前聊天引用
@@ -188,7 +189,9 @@ export const WorkspaceChat = ({ workspace, agentKey, workspaceDetails, mcpClient
       currentChat.current.temperature = values.temperature;
       currentChat.current.attachedDialogueCount = values.attachedDialogueCount;
       currentChat.current.confirm_call_tool = values.confirm_call_tool;
-
+      if (currentChat.current.key == "") {
+        return;
+      }
       // 保存到持久化存储
       if (agentKey && workspace?.path) {
         await call("saveAgentChatLog", {
@@ -297,16 +300,7 @@ export const WorkspaceChat = ({ workspace, agentKey, workspaceDetails, mcpClient
         if (chatLogToLoad) {
           defaultChatValue.current = ({
             ...defaultChatValue.current,
-            key: chatLogToLoad.key,
-            label: chatLogToLoad.label || chatLogToLoad.key,
-            messages: chatLogToLoad.messages.filter(m => m.role === "system") || [],
-            modelKey: chatLogToLoad.modelKey || defaultModel?.key || "",
-            agentKey: chatLogToLoad.agentKey || agentKey || "",
-            allowMCPs: chatLogToLoad.allowMCPs || [],
-            dateTime: chatLogToLoad.dateTime || Date.now(),
-            chatType: chatLogToLoad.chatType as "user" || "user",
-            confirm_call_tool: chatLogToLoad.confirm_call_tool || false,
-            temperature: chatLogToLoad.temperature,
+            ...(chatLogToLoad as any)
           });
           currentChatReset({
             messages: chatLogToLoad.messages || [],
@@ -328,6 +322,7 @@ export const WorkspaceChat = ({ workspace, agentKey, workspaceDetails, mcpClient
             modelKey: agent.config.modelKey || defaultModel?.key || "",
             temperature: agent.config.temperature,
             confirm_call_tool: agent.config.confirm_call_tool || false,
+            attachedDialogueCount: agent.config.attachedDialogueCount || 5,
           });
 
           currentChatReset({});
@@ -514,7 +509,7 @@ export const WorkspaceChat = ({ workspace, agentKey, workspaceDetails, mcpClient
         getURL_PRE: getURL_PRE,
         aiSettings: aiSettings as any,
         compressionConfig: {
-          enabled: true,
+          enabled: currentChat.current.attachedDialogueCount! > 0 ? true : false,
           userMessageThreshold: currentChat.current.attachedDialogueCount || 5,    // 用户消息达到5条时触发压缩
           compressionStrategy: "summary",
         }
@@ -639,7 +634,9 @@ export const WorkspaceChat = ({ workspace, agentKey, workspaceDetails, mcpClient
                     size="small"
                     icon={<ClearOutlined />}
                     onClick={() => {
-                      currentChatReset({});
+                      currentChatReset({
+                        messages: currentChat.current.messages.filter((x => x.role == "system")),
+                      });
                     }}
                   />
                 </Tooltip>

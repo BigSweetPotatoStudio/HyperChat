@@ -756,10 +756,10 @@ export const AgentCommonFormItems = (
     </Form.Item>
     <Form.Item
       name="attachedDialogueCount"
-      label={t`Context History`}
-      tooltip={t`Number of previous conversation messages to include for context (affects memory usage)`}
+      label={t`Memory Compression Threshold`}
+      tooltip={t`Automatically compress memory when the number of context messages exceeds this value. 0 means disabled.`}
     >
-      <InputNumber min={1} max={10} className="w-full" changeOnWheel keyboard step={1} />
+      <InputNumber min={0} max={10} className="w-full" changeOnWheel keyboard step={1} />
     </Form.Item>
 
     <Form.Item
