@@ -185,10 +185,18 @@ export const WorkspaceChat = ({ workspace, agentKey, workspaceDetails, mcpClient
   const saveSettings = async (values: any) => {
     try {
       // 更新当前聊天配置
-
       currentChat.current.temperature = values.temperature;
       currentChat.current.attachedDialogueCount = values.attachedDialogueCount;
       currentChat.current.confirm_call_tool = values.confirm_call_tool;
+
+      // 保存到持久化存储
+      if (agentKey && workspace?.path) {
+        await call("saveAgentChatLog", {
+          workspacePath: workspace.path,
+          agentKey: agentKey,
+          chatLog: currentChat.current
+        });
+      }
 
       setIsSettingsShow(false);
       refresh();
