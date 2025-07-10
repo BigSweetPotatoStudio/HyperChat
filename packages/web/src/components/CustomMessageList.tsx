@@ -1,5 +1,5 @@
 import React, { forwardRef, useImperativeHandle, useRef, useEffect } from 'react';
-import { Avatar, Card, Space, Tooltip, message as antdmessage, Modal, Collapse } from 'antd';
+import { Avatar, Card, Space, Tooltip, message as antdmessage, Modal } from 'antd';
 import {
   CopyOutlined,
   EditOutlined,
@@ -36,6 +36,18 @@ interface CustomMessageListProps {
   onContextUpdate?: () => void;
 }
 
+// 收集的消息数据类型
+interface CollectedMessageData {
+  type: "user" | "system" | "hyper_memory" | "assistant_group";
+  messages: MyMessage[];
+  index: number;
+  usage: {
+    prompt_tokens: number;
+    completion_tokens: number;
+    total_tokens: number;
+  } | null;
+}
+
 export interface CustomMessageListRef {
   nativeElement: HTMLDivElement | null;
   scrollTo: (options: ScrollToOptions) => void;
@@ -47,7 +59,7 @@ export const CustomMessageList = forwardRef<CustomMessageListRef, CustomMessageL
 
     useImperativeHandle(ref, () => ({
       nativeElement: containerRef.current,
-      scrollTo: (options: ScrollToOptions) => {
+      scrollTo: (options: ScrollToOptions): void => {
         containerRef.current?.scrollTo(options);
       }
     }));
@@ -63,10 +75,11 @@ export const CustomMessageList = forwardRef<CustomMessageListRef, CustomMessageL
         }, 100);
         return () => clearInterval(timer);
       }
+      return undefined; // 明确返回undefined
     }, [status]);
 
     // 第一步：收集和整理消息内容
-    const collectMessageContents = (x: MyMessage, i: number, arr: MyMessage[]) => {
+    const collectMessageContents = (x: MyMessage, i: number, arr: MyMessage[]): CollectedMessageData | null => {
       x.content_attached = x.content_attached == null ? true : x.content_attached;
 
       if (x.role === "user" || x.role === "system" || x.role === "hyper_memory") {
@@ -77,7 +90,7 @@ export const CustomMessageList = forwardRef<CustomMessageListRef, CustomMessageL
           index: i,
           usage: null,
         };
-      } else {
+      } else if (x.role === "assistant" || x.role === "tool") {
         // assistant/tool 消息需要收集连续的消息
         // 检查是否是最后一个连续的assistant/tool消息
         if (i + 1 != arr.length && arr[i + 1] && 
@@ -91,8 +104,8 @@ export const CustomMessageList = forwardRef<CustomMessageListRef, CustomMessageL
         let contents: MyMessage[] = [];
         let index = i;
         while (index >= 0) {
-          const currentMsg = arr[index]!;
-          if (currentMsg.role === "user" || currentMsg.role === "system" || currentMsg.role === "hyper_memory") {
+          const currentMsg = arr[index];
+          if (!currentMsg || currentMsg.role === "user" || currentMsg.role === "system" || currentMsg.role === "hyper_memory") {
             break;
           }
           contents.push(currentMsg);
@@ -101,10 +114,10 @@ export const CustomMessageList = forwardRef<CustomMessageListRef, CustomMessageL
         contents = contents.reverse();
 
         // 计算token使用量
-        let usage = {} as {
-          prompt_tokens: number;
-          completion_tokens: number;
-          total_tokens: number;
+        let usage = {
+          prompt_tokens: 0,
+          completion_tokens: 0,
+          total_tokens: 0,
         };
         
         for (let content of contents) {
@@ -128,14 +141,17 @@ export const CustomMessageList = forwardRef<CustomMessageListRef, CustomMessageL
           usage,
         };
       }
+      
+      // 未知角色，返回null
+      return null;
     };
 
     // 第二步：格式化UI消息并渲染
-    const formatAndRenderUIMessage = (collectedData: any) => {
-      if (!collectedData) return null;
-
+    const formatAndRenderUIMessage = (collectedData: CollectedMessageData): React.ReactNode => {
       const { type, messages: msgList, index: i, usage } = collectedData;
       const x = msgList[msgList.length - 1]; // 取最后一个消息作为主消息
+
+      if (!x) return null; // 确保消息存在
 
       const isUser = type === "user" || type === "system";
       const isAttached = x.content_attached !== false;
@@ -177,33 +193,35 @@ export const CustomMessageList = forwardRef<CustomMessageListRef, CustomMessageL
                 if (x.role === "system") {
                   x.content_template = content;
                   x.content_date = Date.now();
-                  let userIndex = messages.findLastIndex((msg) => msg.role === "user");
+                  const userIndex = messages.findLastIndex((msg) => msg.role === "user");
                   if (userIndex > -1) {
-                    onSumbit(messages.filter((msg, index) => index <= userIndex));
+                    onSumbit(messages.filter((_, index) => index <= userIndex));
                   }
                 } else {
                   x.content_template = content;
                   x.content_date = Date.now();
-                  onSumbit(messages.filter((msg, index) => index <= i));
+                  onSumbit(messages.filter((_, index) => index <= i));
                 }
               }}
             />
           );
         }
       } else if (type === "hyper_memory") {
+        // 为记忆消息添加类型检查
+        const memoryMessage = x as MyMessage & { memory_key_points?: string[] };
         messageContent = (
           <div className="memory-message">
             <div className="memory-header">
               <Icon name="memory" /> {t`Memory Summary`}
             </div>
             <div className="memory-content">
-              {x.content}
+              {typeof x.content === 'string' ? x.content : JSON.stringify(x.content)}
             </div>
-            {x.memory_key_points && (
+            {memoryMessage.memory_key_points && (
               <div className="memory-points">
                 <div className="memory-points-title">{t`Key Points`}:</div>
                 <ul>
-                  {x.memory_key_points.map((point, idx) => (
+                  {memoryMessage.memory_key_points.map((point: string, idx: number) => (
                     <li key={idx}>{point}</li>
                   ))}
                 </ul>
@@ -266,7 +284,7 @@ export const CustomMessageList = forwardRef<CustomMessageListRef, CustomMessageL
                 {messageContent}
               </div>
               <div className="message-footer">
-                <div className="flex flex-wrap justify-between text-xs">
+                <div className="flex flex-wrap justify-between text-xs w-full">
                   <Space>
                     {getMessageActions(x, i, { isUser, contents: msgList, usage })}
                   </Space>
@@ -332,7 +350,7 @@ export const CustomMessageList = forwardRef<CustomMessageListRef, CustomMessageL
     };
 
     // 获取消息操作按钮
-    const getMessageActions = (message: MyMessage, index: number, formattedMessage: any) => {
+    const getMessageActions = (message: MyMessage, index: number, _messageData: { isUser: boolean; contents: MyMessage[]; usage: any }) => {
       const actions: any[] = [];
 
       // 复制按钮
@@ -411,7 +429,7 @@ export const CustomMessageList = forwardRef<CustomMessageListRef, CustomMessageL
     };
 
     // 获取Token使用量显示
-    const getTokenUsage = (usage: any) => {
+    const getTokenUsage = (usage: CollectedMessageData['usage']) => {
       if (!usage) return null;
 
       const usageElements: any[] = [];
@@ -444,12 +462,12 @@ export const CustomMessageList = forwardRef<CustomMessageListRef, CustomMessageL
     };
 
     // 第一步：收集所有消息的数据
-    const collectedMessagesData = messages?.map((message, index) => 
+    const collectedMessagesData: CollectedMessageData[] = messages?.map((message, index) => 
       collectMessageContents(message, index, messages)
-    ).filter(Boolean) || [];
+    ).filter(Boolean) as CollectedMessageData[] || [];
 
     // 第二步：格式化并渲染所有UI消息
-    const renderedMessages = collectedMessagesData.map((collectedData) => 
+    const renderedMessages: React.ReactNode[] = collectedMessagesData.map((collectedData) => 
       formatAndRenderUIMessage(collectedData)
     ).filter(Boolean);
 
