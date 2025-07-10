@@ -91,6 +91,23 @@
   font-size: 12px;
 }
 
+.message-status-attachments {
+  display: flex;
+  gap: 8px;
+}
+
+/* 消息状态图标样式 */
+.message-footer .anticon {
+  font-size: 14px;
+  transition: all 0.2s ease;
+  cursor: pointer;
+}
+
+.message-footer .anticon:hover {
+  transform: scale(1.1);
+}
+
+
 .message-image {
   max-width: 100%;
   height: auto;

@@ -13,7 +13,12 @@ import {
   DownloadOutlined,
   StockOutlined,
   DatabaseOutlined,
-  BankOutlined
+  BankOutlined,
+  CheckCircleOutlined,
+  ExclamationCircleOutlined,
+  CloseCircleOutlined,
+  ClockCircleOutlined,
+  StopOutlined
 } from '@ant-design/icons';
 import dayjs from 'dayjs';
 import { MyMessage } from '../../../core/src/shared/types.mjs';
@@ -472,25 +477,49 @@ export const CustomMessageList = forwardRef<CustomMessageListRef, CustomMessageL
 
     // 获取消息状态显示
     const getMessageStatus = useCallback((message: MyMessage) => {
-      if (!message.content_status || message.content_status === "success") {
+      if (!message.content_status) {
         return null;
       }
 
-      // 加载状态
-      if (message.content_status === "loading") {
-        return <SyncOutlined key="loading" className="text-green-500" spin />;
-      }
-      else if (message.content_status === "dataLoading") {
-        return <LoadingOutlined className="text-blue-500" key="dataLoading" />;
-      } else if (message.content_status === "error") {
-        return (
-          <Tooltip key="error" title={message.content_error || t`Error`}>
-            <Icon name="error" className="text-red-500" />
-          </Tooltip>
-        );
-      }
+      // 各种状态的处理
+      switch (message.content_status) {
+        case "loading":
+          return (
+            <Tooltip key="loading" title={t`Processing...`}>
+              <SyncOutlined className="text-blue-400" spin />
+            </Tooltip>
+          );
 
-      return null;
+        case "dataLoading":
+          return (
+            <Tooltip key="dataLoading" title={t`Loading data...`}>
+              <LoadingOutlined className="text-blue-600" />
+            </Tooltip>
+          );
+
+        case "error":
+          return (
+            <Tooltip key="error" title={message.content_error || t`Error occurred`}>
+              <CloseCircleOutlined className="text-red-500" />
+            </Tooltip>
+          );
+
+        case "success":
+          return (
+            <Tooltip key="success" title={t`Completed successfully`}>
+              <CheckCircleOutlined className="text-green-600" />
+            </Tooltip>
+          );
+
+        case "dataLoadComplete": // 数据加载完成
+          return (
+            <Tooltip key="dataLoadComplete" title={t`Data load complete`}>
+              <CheckCircleOutlined className="text-green-600" />
+            </Tooltip>
+          );
+        default:
+          return null;
+      }
     }, []);
 
     // 获取消息附件显示
