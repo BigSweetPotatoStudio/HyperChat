@@ -3,20 +3,18 @@ import type { HyperChatCompletionTool, MyMessage, Tool_Call, AIModelConfigItem, 
 
 import * as MCPTypes from "@modelcontextprotocol/sdk/types.js";
 import type { CoreMessage, LanguageModel, StreamTextResult, ToolChoice, CoreTool, ToolSet, TextPart, FilePart, ToolCallPart, ImagePart } from 'ai';
-import { jsonSchema, streamText } from 'ai';
+import { generateObject, jsonSchema, smoothStream, streamText } from 'ai';
 import { createOpenAI, openai } from '@ai-sdk/openai';
 import { createAnthropic } from '@ai-sdk/anthropic';
 import { createGoogleGenerativeAI } from '@ai-sdk/google';
 import { createOpenRouter } from '@openrouter/ai-sdk-provider';
 import { createOpenAICompatible } from '@ai-sdk/openai-compatible';
 import { jsonSchemaToZod } from "json-schema-to-zod";
-import { z } from "zod";
+import { z, ZodSchema } from "zod";
 globalThis["z"] = z; // 兼容旧版本的 zod
 
 
 import { v4 } from "uuid";
-import dayjs from "dayjs";
-// import { isOnBrowser } from "./const";
 
 import { extractTool } from "./prompt";
 import { AISettings, AppSettings } from "./jsonSchemas/appSettingsSchema.mjs";
@@ -120,6 +118,74 @@ export class AiChannel {
     this.status = "stop";
     return res;
   }
+  async getAI(modelKey: string): Promise<LanguageModel> {
+    let modelConfig = this.ext.aiSettings.models.find((x) => x.key === modelKey);
+    if (!modelConfig) {
+      throw new Error(`Model not found: ${modelKey}`);
+    }
+    if (modelConfig.provider !== "unknown") {
+      modelConfig.baseURL = this.ext.aiSettings.builtinApiKeys[modelConfig.provider]?.baseURL || modelConfig.baseURL;
+      modelConfig.apiKey = this.ext.aiSettings.builtinApiKeys[modelConfig.provider]?.apiKey || modelConfig.apiKey;
+    }
+    let aiProvider: any = null;
+    let ai: LanguageModel | null = null;
+    let fetch: CustomFetch | undefined = undefined;
+    if (this.ext.platform === "web") {
+      let baseURL = modelConfig.baseURL;
+      modelConfig.baseURL = this.ext.getURL_PRE() + "/ai";
+      fetch = async (url: RequestInfo, init?: RequestInit): Promise<Response> => {
+        // If in a browser environment and server proxy is enabled, modify headers for proxying.
+        init = {
+          ...init,
+          headers: {
+            ...(init?.headers || {}),
+            baseURL: encodeURIComponent(baseURL), // Encode base URL for proxy
+          },
+        };
+
+        return globalThis.fetch(url, init);
+      };
+    }
+    if (modelConfig.provider === 'anthropic') {
+      aiProvider = createAnthropic({
+        baseURL: modelConfig.baseURL,
+        apiKey: modelConfig.apiKey,
+        fetch
+      });
+      ai = aiProvider(modelConfig.model);
+    } else if (modelConfig.provider === 'gemini') {
+      aiProvider = createGoogleGenerativeAI({
+        baseURL: modelConfig.baseURL,
+        apiKey: modelConfig.apiKey,
+        fetch
+      });
+      ai = aiProvider(modelConfig.model);
+    } else if (modelConfig.provider === 'openrouter') {
+      // 默认使用 OpenAI 兼容格式
+      aiProvider = createOpenRouter({
+        baseURL: modelConfig.baseURL,
+        apiKey: modelConfig.apiKey,
+        fetch
+      });
+      ai = aiProvider(modelConfig.model);
+    } else if (modelConfig.provider === 'openai') {
+      aiProvider = createOpenAI({
+        baseURL: modelConfig.baseURL,
+        apiKey: modelConfig.apiKey,
+        fetch
+      });
+      ai = aiProvider(modelConfig.model);
+    } else {
+      aiProvider = createOpenAICompatible({
+        name: modelConfig.model,
+        baseURL: modelConfig.baseURL,
+        apiKey: modelConfig.apiKey,
+        fetch
+      });
+      ai = aiProvider(modelConfig.model);
+    }
+    return ai as LanguageModel;
+  }
   async _completion(
     params: {
       modelKey: string;
@@ -136,14 +202,6 @@ export class AiChannel {
 
     if (this.status == "stop") {
       throw new Error("User Cancel Requesting");
-    }
-    let modelConfig = this.ext.aiSettings.models.find((x) => x.key === params.modelKey);
-    if (!modelConfig) {
-      throw new Error(`Model not found: ${params.modelKey}`);
-    }
-    if (modelConfig.provider !== "unknown") { 
-      modelConfig.baseURL = this.ext.aiSettings.builtinApiKeys[modelConfig.provider]?.baseURL || modelConfig.baseURL;
-      modelConfig.apiKey = this.ext.aiSettings.builtinApiKeys[modelConfig.provider]?.apiKey || modelConfig.apiKey;
     }
 
     this.abortController = new AbortController();
@@ -178,65 +236,7 @@ export class AiChannel {
       ...aiTools,
     }
     try {
-
-
-      let aiProvider: any = null;
-      let ai: LanguageModel | null = null;
-      let fetch: CustomFetch | undefined = undefined;
-      if (this.ext.platform === "web") {
-        let baseURL = modelConfig.baseURL;
-        modelConfig.baseURL = this.ext.getURL_PRE() + "/ai";
-        fetch = async (url: RequestInfo, init?: RequestInit): Promise<Response> => {
-          // If in a browser environment and server proxy is enabled, modify headers for proxying.
-          init = {
-            ...init,
-            headers: {
-              ...(init?.headers || {}),
-              baseURL: encodeURIComponent(baseURL), // Encode base URL for proxy
-            },
-          };
-
-          return globalThis.fetch(url, init);
-        };
-      }
-      if (modelConfig.provider === 'anthropic') {
-        aiProvider = createAnthropic({
-          baseURL: modelConfig.baseURL,
-          apiKey: modelConfig.apiKey,
-          fetch
-        });
-        ai = aiProvider(modelConfig.model);
-      } else if (modelConfig.provider === 'gemini') {
-        aiProvider = createGoogleGenerativeAI({
-          baseURL: modelConfig.baseURL,
-          apiKey: modelConfig.apiKey,
-          fetch
-        });
-        ai = aiProvider(modelConfig.model);
-      } else if (modelConfig.provider === 'openrouter') {
-        // 默认使用 OpenAI 兼容格式
-        aiProvider = createOpenRouter({
-          baseURL: modelConfig.baseURL,
-          apiKey: modelConfig.apiKey,
-          fetch
-        });
-        ai = aiProvider(modelConfig.model);
-      } else if (modelConfig.provider === 'openai') {
-        aiProvider = createOpenAI({
-          baseURL: modelConfig.baseURL,
-          apiKey: modelConfig.apiKey,
-          fetch
-        });
-        ai = aiProvider(modelConfig.model);
-      } else {
-        aiProvider = createOpenAICompatible({
-          name: modelConfig.model,
-          baseURL: modelConfig.baseURL,
-          apiKey: modelConfig.apiKey,
-          fetch
-        });
-        ai = aiProvider(modelConfig.model);
-      }
+      let ai = await this.getAI(params.modelKey);
       if (!ai) throw new Error('AI model not initialized');
       let newOptions: Parameters<typeof streamText>[0] = {
         ...options,
@@ -244,6 +244,10 @@ export class AiChannel {
       }
       const result = await streamText({
         ...newOptions,
+        experimental_transform: smoothStream({
+          delayInMs: 20, // optional: defaults to 10ms
+          chunking: 'line', // optional: defaults to 'word'
+        }),
         abortSignal: this.abortController.signal,
       });
 
@@ -490,33 +494,18 @@ export class AiChannel {
     this.ext = ext;
   }
 
-  async completionParse(response_format: ResponseFormat): Promise<any> {
-    // 使用工具调用来实现结构化输出
-    // const tool: CoreTool = {
-    //   description: 'Parse response according to schema',
-    //   parameters: response_format.json_schema?.schema || response_format,
-    // };
+  async completionParse({ modelKey }: { modelKey: string }, schema: ZodSchema, prompt: string): Promise<any> {
+    let ai = await this.getAI(modelKey);
+    if (!ai) throw new Error('AI model not initialized');
 
-    // const result = await this.aiProvider.streamText({
-    //   model: this.aiProvider.model,
-    //   messages: await this.messages_format_ai(this.messages),
-    //   tools: { parse_response: tool },
-    //   toolChoice: { type: 'tool', toolName: 'parse_response' },
-    //   temperature: this.options.temperature,
-    // });
+    const { object } = await generateObject({
+      model: ai,
+      schema: schema,
+      prompt: prompt,
+    });
 
-    // const toolCalls = await result.toolCalls;
-    // if (toolCalls && toolCalls.length > 0) {
-    //   return toolCalls[0].args;
-    // }
-
-    // throw new Error('No structured output received');
-    return null;
+    return object;
   }
-  // clear() {
-  //   this.messages = this.messages.filter((m) => m.role === "system");
-  //   this.totalTokens = 0;
-  // }
   async messages2core(messages: MyMessage[]): Promise<CoreMessage[]> {
     let results: CoreMessage[] = [];
 

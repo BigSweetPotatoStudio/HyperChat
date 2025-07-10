@@ -579,12 +579,14 @@ export const AgentManagement = forwardRef<AgentManagementRef, AgentManagementPro
             <Editor style={{ height: "150px" }} />
           </Form.Item>
 
-          <Form.Item name="modelKey" label={t`Language Model`}>
+          <Form.Item name="modelKey" label={t`Language Model`}
+            rules={[{ required: true, message: t`Please select a language model` }]}
+          >
             <Select
               showSearch
               optionFilterProp="label"
               placeholder={t`Choose the AI model for this agent`}
-              allowClear
+              // allowClear
               options={aiSettings ? aiSettings.models.map((m) => ({
                 label: m.fullName || m.name,
                 value: m.key,
