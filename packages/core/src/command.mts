@@ -1769,6 +1769,44 @@ export class CommandFactory {
   }
 
   /**
+   * 获取单个 Agent 聊天记录
+   * @param workspacePath 工作区路径
+   * @param agentKey Agent 键名
+   * @param chatLogKey 聊天记录键名
+   * @returns 聊天记录详情
+   */
+  async getAgentChatLog({
+    workspacePath,
+    agentKey,
+    chatLogKey
+  }: {
+    workspacePath: string;
+    agentKey: string;
+    chatLogKey: string;
+  }): Promise<ChatHistoryItem | null> {
+    try {
+      const workspaceManager = getWorkspaceManager();
+      const workspace = workspaceManager.getWorkspace(workspacePath);
+      if (!workspace) {
+        throw new Error(`工作区不存在: ${workspacePath}`);
+      }
+      const agentInstance = workspace.getAgentInstance(agentKey);
+      if (!agentInstance) {
+        throw new Error(`Agent 不存在: ${agentKey}`);
+      }
+      
+      // 获取所有聊天记录，然后找到指定的一个
+      const chatLogs = await agentInstance.getChatLogs();
+      const chatLog = chatLogs.find(log => log.key === chatLogKey);
+      
+      return chatLog || null;
+    } catch (error) {
+      console.error(`Failed to get chat log ${chatLogKey} for agent ${agentKey} in ${workspacePath}:`, error);
+      throw error;
+    }
+  }
+
+  /**
    * 读取工作区内指定文件的内容
    */
   async readWorkspaceFile({ workspacePath, filePath }: { workspacePath: string, filePath: string }): Promise<string> {

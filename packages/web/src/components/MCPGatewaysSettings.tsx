@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Space,
   Button,
@@ -8,12 +8,11 @@ import {
   Form,
   Modal,
   Input,
-  Select,
   message,
-  FormInstance,
   Tag,
   Empty,
   Card,
+  TreeSelect,
 } from 'antd';
 import {
   PlusOutlined,
@@ -23,6 +22,8 @@ import {
   CopyOutlined,
 } from '@ant-design/icons';
 import { t } from '../i18n';
+import { getURL_PRE } from '../common/call';
+import { setClipboardText } from '../common/util';
 
 /**
  * MCP Gateway 数据类型
@@ -51,6 +52,25 @@ interface GatewayFormValues {
 }
 
 /**
+ * MCP 客户端工具类型
+ */
+interface MCPTool {
+  name: string;
+  origin_name?: string;
+  restore_name: string;
+  description?: string;
+}
+
+/**
+ * MCP 客户端类型
+ */
+interface MCPClient {
+  serverName: string;
+  status: string;
+  tools: MCPTool[];
+}
+
+/**
  * MCP Gateways 设置组件属性
  */
 interface MCPGatewaysSettingsProps {
@@ -60,6 +80,8 @@ interface MCPGatewaysSettingsProps {
   onUpdate: (gateways: MCPGateway[]) => Promise<void>;
   /** 可用的 MCP 服务列表 */
   availableMCPs?: string[];
+  /** MCP 客户端列表 */
+  mcpClients?: MCPClient[];
 }
 
 /**
@@ -69,10 +91,35 @@ export function MCPGatewaysSettings({
   gateways = [],
   onUpdate,
   availableMCPs = [],
+  mcpClients = [],
 }: MCPGatewaysSettingsProps) {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingGateway, setEditingGateway] = useState<MCPGateway | null>(null);
   const [loading, setLoading] = useState(false);
+
+  /**
+   * 生成网关相关的 URLs
+   */
+  const generateGatewayUrls = (gatewayName: string) => {
+    const baseUrl = getURL_PRE();
+    const gatewayPath = gatewayName;
+    return {
+      sse: `${baseUrl}/mcp/${gatewayPath}/sse`,
+      streamableHttp: `${baseUrl}/mcp/${gatewayPath}/stream`
+    };
+  };
+
+  /**
+   * 复制到剪贴板的处理函数
+   */
+  const handleCopyToClipboard = async (text: string) => {
+    try {
+      await setClipboardText({ text });
+      message.success(t`Copied to clipboard`);
+    } catch (error) {
+      message.error(t`Failed to copy to clipboard`);
+    }
+  };
 
   /**
    * 创建新的网关
@@ -215,7 +262,7 @@ export function MCPGatewaysSettings({
       title: t`Actions`,
       key: 'actions',
       width: 150,
-      render: (_, record: MCPGateway) => (
+      render: (_: any, record: MCPGateway) => (
         <Space size="small">
           <Button
             type="text"
@@ -295,13 +342,17 @@ export function MCPGatewaysSettings({
         open={isModalOpen}
         gateway={editingGateway}
         availableMCPs={availableMCPs}
+        mcpClients={mcpClients}
         onSave={handleSave}
         onCancel={() => setIsModalOpen(false)}
         loading={loading}
+        generateGatewayUrls={generateGatewayUrls}
+        handleCopyToClipboard={handleCopyToClipboard}
       />
     </div>
   );
 }
+
 
 /**
  * 网关表单模态框组件属性
@@ -313,12 +364,18 @@ interface GatewayModalProps {
   gateway: MCPGateway | null;
   /** 可用的 MCP 服务列表 */
   availableMCPs: string[];
+  /** MCP 客户端列表 */
+  mcpClients: MCPClient[];
   /** 保存网关的回调函数 */
   onSave: (values: GatewayFormValues) => Promise<void>;
   /** 取消操作的回调函数 */
   onCancel: () => void;
   /** 加载状态 */
   loading: boolean;
+  /** 生成网关 URLs 的函数 */
+  generateGatewayUrls: (gatewayName?: string) => { sse: string; streamableHttp: string };
+  /** 复制到剪贴板的处理函数 */
+  handleCopyToClipboard: (text: string) => Promise<void>;
 }
 
 /**
@@ -327,24 +384,30 @@ interface GatewayModalProps {
 const GatewayModal: React.FC<GatewayModalProps> = ({
   open,
   gateway,
-  availableMCPs,
+  mcpClients,
   onSave,
   onCancel,
   loading,
+  generateGatewayUrls,
+  handleCopyToClipboard,
 }) => {
   const [form] = Form.useForm<GatewayFormValues>();
+  const [currentGatewayName, setCurrentGatewayName] = useState<string>('');
 
   // 当模态框打开时，设置表单初始值
   useEffect(() => {
     if (open) {
       if (gateway) {
-        form.setFieldsValue({
+        const initialValues = {
           name: gateway.name,
           description: gateway.description || '',
           allowMCPs: gateway.allowMCPs || [],
-        });
+        };
+        form.setFieldsValue(initialValues);
+        setCurrentGatewayName(gateway.name);
       } else {
         form.resetFields();
+        setCurrentGatewayName('');
       }
     }
   }, [open, gateway, form]);
@@ -360,7 +423,6 @@ const GatewayModal: React.FC<GatewayModalProps> = ({
       console.log('Form validation failed:', error);
     }
   };
-
   return (
     <Modal
       title={gateway ? t`Edit Gateway` : t`Create Gateway`}
@@ -394,6 +456,7 @@ const GatewayModal: React.FC<GatewayModalProps> = ({
           <Input
             placeholder={t`Enter gateway name`}
             disabled={!!gateway} // 编辑时不允许修改名称
+            onChange={(e) => setCurrentGatewayName(e.target.value)}
           />
         </Form.Item>
 
@@ -407,23 +470,60 @@ const GatewayModal: React.FC<GatewayModalProps> = ({
           />
         </Form.Item>
 
+        {/* MCP 服务选择 */}
         <Form.Item
           name="allowMCPs"
-          label={t`Allowed MCPs`}
-          rules={[
-            { required: true, message: t`Please select at least one MCP service` },
-          ]}
+          label={t`allowMCPs`}
+          rules={[{ required: true, message: t`Please select allowed MCP` }]}
         >
-          <Select
-            mode="multiple"
-            placeholder={t`Select MCP services`}
-            options={availableMCPs.map(mcp => ({
-              label: mcp,
-              value: mcp,
-            }))}
-            showSearch
-            filterOption={(input, option) =>
-              (option?.label ?? '').toLowerCase().includes(input.toLowerCase())
+          <TreeSelect
+            multiple
+            treeCheckable
+            placeholder={t`Please select allowed MCP`}
+            showCheckedStrategy={TreeSelect.SHOW_PARENT}
+            treeData={mcpClients.filter(x => x.status != "disabled").map((x) => {
+              return {
+                title: x.serverName,
+                key: x.serverName,
+                value: x.serverName,
+                children: x.tools.map((tool) => {
+                  return {
+                    title: (
+                      <Popover title={tool.description}>
+                        <span>{tool.origin_name || tool.name}</span>
+                      </Popover>
+                    ),
+                    key: tool.restore_name,
+                    value: tool.restore_name,
+                  };
+                }),
+              };
+            })}
+          />
+        </Form.Item>
+
+        {/* SSE 连接地址展示和复制 */}
+        <Form.Item label="sse">
+          <Input
+            disabled
+            value={currentGatewayName ? generateGatewayUrls(currentGatewayName).sse : ''}
+            addonAfter={
+              <CopyOutlined
+                onClick={() => currentGatewayName && handleCopyToClipboard(generateGatewayUrls(currentGatewayName).sse)}
+              />
+            }
+          />
+        </Form.Item>
+
+        {/* HTTP 流式连接地址展示和复制 */}
+        <Form.Item label="streamableHttp">
+          <Input
+            disabled
+            value={currentGatewayName ? generateGatewayUrls(currentGatewayName).streamableHttp : ''}
+            addonAfter={
+              <CopyOutlined
+                onClick={() => currentGatewayName && handleCopyToClipboard(generateGatewayUrls(currentGatewayName).streamableHttp)}
+              />
             }
           />
         </Form.Item>

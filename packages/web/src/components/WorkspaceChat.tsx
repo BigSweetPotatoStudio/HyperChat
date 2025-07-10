@@ -28,7 +28,6 @@ import {
   message,
   theme,
   Form,
-  Dropdown,
 } from "antd";
 import {
   Welcome,
@@ -37,17 +36,16 @@ import {
 import {
   LinkOutlined,
   SettingOutlined,
-  PlusCircleOutlined,
   ClearOutlined,
   LoadingOutlined,
   SendOutlined,
   SyncOutlined,
   DisconnectOutlined,
-  ApiOutlined,
 } from "@ant-design/icons";
 
 import { v4 } from "uuid";
 import { call, getURL_PRE } from "../common/call";
+import { addChatRecentUsage } from "../utils/storage";
 
 import { AiChannel } from "@hyperchat/shared/ai.mjs";
 import {
@@ -535,7 +533,6 @@ export const WorkspaceChat = ({ workspace, agentKey, workspaceDetails, mcpClient
       refresh();
 
       // 保存聊天记录
-
       if (agentKey) {
         // 如果是 Agent 聊天，保存到 Agent 的聊天记录中
         await call("saveAgentChatLog", {
@@ -543,6 +540,21 @@ export const WorkspaceChat = ({ workspace, agentKey, workspaceDetails, mcpClient
           agentKey: agentKey,
           chatLog: currentChat.current
         });
+      }
+
+      // 更新最近使用记录
+      if (workspace?.path && agentKey && currentChat.current.key) {
+        const agent = workspaceDetails[workspace.path]?.agents.find(a => a.config.key === agentKey);
+        const agentName = agent?.config.name || agentKey;
+        const chatLabel = currentChat.current.label || 'New Chat';
+        
+        addChatRecentUsage(
+          workspace.path,
+          agentKey,
+          agentName,
+          currentChat.current.key,
+          chatLabel
+        );
       }
 
 
@@ -1037,16 +1049,6 @@ export const WorkspaceChat = ({ workspace, agentKey, workspaceDetails, mcpClient
                       <span
                       >
                         {tool.origin_name || tool.name}
-                        {/* <ApiOutlined onClick={(e) => {
-                          e.stopPropagation();
-                          setCurrTool(tool);
-                          setCurrToolResult({
-                            data: null,
-                            error: null,
-                          });
-                          callToolForm.resetFields();
-                          setCallToolOpen(true);
-                        }} title={t`run`} className=" hover:text-cyan-400 ml-1" /> */}
                       </span>
                     </Tooltip>
                   ),

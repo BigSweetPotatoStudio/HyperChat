@@ -1255,7 +1255,7 @@ export function Workspace() {
                           <WorkspaceWelcome
                             workspace={workspace}
                             agents={details.agents || []}
-                            onOpenAgentChat={(agent) => openAgentChat(workspaceKey, agent)}
+                            onOpenAgentChat={(agent, chatLog) => openAgentChat(workspaceKey, agent, chatLog)}
                             onCreateAgent={() => {
                               // 调用对应工作区的创建Agent函数
                               const agentManagementRef = agentManagementRefs.current[workspaceKey];
@@ -1788,6 +1788,7 @@ export function Workspace() {
             gateways={appSettings.mcpGateWays || []}
             onUpdate={updateMCPGateways}
             availableMCPs={getAvailableMCPs()}
+            mcpClients={Object.values(workspaceDetails[globalWorkspace!.path]?.mcpClients || {})}
           />
         )}
       </Drawer>
