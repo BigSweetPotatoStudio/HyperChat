@@ -65,110 +65,25 @@ export const CustomMessageList = forwardRef<CustomMessageListRef, CustomMessageL
       }
     }, [status]);
 
-    // 格式化消息的函数，基于原有的format逻辑
-    const formatMessage = (x: MyMessage, i: number, arr: MyMessage[]) => {
+    // 第一步：收集和整理消息内容
+    const collectMessageContents = (x: MyMessage, i: number, arr: MyMessage[]) => {
       x.content_attached = x.content_attached == null ? true : x.content_attached;
 
-      let common = {
-        className: {
-          "no-attached": !(x.content_attached == true),
-        } as any,
-        role: x.role,
-      };
-
-      if (x.role == "user" || x.role == "system") {
-        // MCP prompt 处理
-        if (x.content_from) {
-          return {
-            ...common,
-            key: i.toString(),
-            placement: "end" as const,
-            isUser: true,
-            content: (
-              <div
-                className="cursor-pointer"
-                onClick={() => {
-                  Modal.info({
-                    width: "90%",
-                    style: { maxWidth: 1024 },
-                    title: "Tip",
-                    maskClosable: true,
-                    content: <div>{x.content as string}</div>,
-                  });
-                }}
-              >
-                <Attachments.FileCard
-                  item={{
-                    name: x.content_from as string,
-                    uid: x.content_from as string,
-                    size: (x.content as string).length,
-                  }}
-                />
-              </div>
-            ),
-          };
-        }
-
+      if (x.role === "user" || x.role === "system" || x.role === "hyper_memory") {
+        // 用户、系统、记忆消息直接返回单个消息
         return {
-          ...common,
-          key: i.toString(),
-          placement: "end" as const,
-          isUser: true,
-          content: (
-            <UserContent
-              x={x}
-              index={i}
-              contexts={contexts || {}}
-              onSubmit={(content) => {
-                if (x.role == "system") {
-                  x.content_template = content;
-                  x.content_date = Date.now();
-                  let userIndex = messages.findLastIndex((x) => x.role == "user");
-                  if (userIndex > -1) {
-                    onSumbit(messages.filter((x, index) => index <= userIndex));
-                  }
-                } else {
-                  x.content_template = content;
-                  x.content_date = Date.now();
-                  onSumbit(messages.filter((x, index) => index <= i));
-                }
-              }}
-            />
-          ),
-        };
-      } else if (x.role === 'hyper_memory') {
-        // 记忆消息特殊处理
-        return {
-          ...common,
-          key: i.toString(),
-          placement: "start" as const,
-          isUser: false,
-          isMemory: true,
-          content: (
-            <div className="memory-message">
-              <div className="memory-header">
-                <Icon name="memory" /> {t`Memory Summary`}
-              </div>
-              <div className="memory-content">
-                {x.content}
-              </div>
-              {x.memory_key_points && (
-                <div className="memory-points">
-                  <div className="memory-points-title">{t`Key Points`}:</div>
-                  <ul>
-                    {x.memory_key_points.map((point, idx) => (
-                      <li key={idx}>{point}</li>
-                    ))}
-                  </ul>
-                </div>
-              )}
-            </div>
-          ),
+          type: x.role,
+          messages: [x],
+          index: i,
+          usage: null,
         };
       } else {
-        // role == "assistant" || role == "tool"
+        // assistant/tool 消息需要收集连续的消息
         // 检查是否是最后一个连续的assistant/tool消息
-        if (i + 1 != arr.length && arr[i + 1] && arr[i + 1]!.role != "user" && arr[i + 1]!.role != "system" && arr[i + 1]!.role != "hyper_memory") {
+        if (i + 1 != arr.length && arr[i + 1] && 
+            arr[i + 1]!.role !== "user" && 
+            arr[i + 1]!.role !== "system" && 
+            arr[i + 1]!.role !== "hyper_memory") {
           return null; // 不是最后一个，跳过
         }
 
@@ -176,76 +91,199 @@ export const CustomMessageList = forwardRef<CustomMessageListRef, CustomMessageL
         let contents: MyMessage[] = [];
         let index = i;
         while (index >= 0) {
-          if (arr[index]!.role == "user" || arr[index]!.role == "system" || arr[index]!.role == "hyper_memory") {
+          const currentMsg = arr[index]!;
+          if (currentMsg.role === "user" || currentMsg.role === "system" || currentMsg.role === "hyper_memory") {
             break;
           }
-          contents.push(arr[index]!);
+          contents.push(currentMsg);
           index--;
         }
         contents = contents.reverse();
 
         // 计算token使用量
-        let last_content_usage = {} as {
+        let usage = {} as {
           prompt_tokens: number;
           completion_tokens: number;
           total_tokens: number;
         };
-
+        
         for (let content of contents) {
           if (content.content_usage) {
-            if (content.content_usage.prompt_tokens != 0) {
-              last_content_usage.prompt_tokens = content.content_usage.prompt_tokens;
+            if (content.content_usage.prompt_tokens !== 0) {
+              usage.prompt_tokens = content.content_usage.prompt_tokens;
             }
-            if (content.content_usage.completion_tokens != 0) {
-              last_content_usage.completion_tokens = content.content_usage.completion_tokens;
+            if (content.content_usage.completion_tokens !== 0) {
+              usage.completion_tokens = content.content_usage.completion_tokens;
             }
-            if (content.content_usage.total_tokens != 0) {
-              last_content_usage.total_tokens = content.content_usage.total_tokens;
+            if (content.content_usage.total_tokens !== 0) {
+              usage.total_tokens = content.content_usage.total_tokens;
             }
           }
         }
 
         return {
-          ...common,
-          key: i,
-          placement: "start" as const,
-          isUser: false,
-          contents,
-          usage: last_content_usage,
-          content: (
-            <div>
-              <AssistantToolContent contents={contents} />
-
-              {x.content_status == "loading" ? (
-                <SyncOutlined spin />
-              ) : x.content_status == "error" ? (
-                <div className="text-red-500">
-                  {t`Here are the error messages: `}
-                  <div className="text-red-700">{x.content_error}</div>
-                </div>
-              ) : null}
-
-              {x.content_status == "dataLoading" && <LoadingOutlined className="text-blue-400" />}
-
-              {x.content_attachment &&
-                x.content_attachment.length > 0 &&
-                x.content_attachment.map((attachment, idx) => {
-                  if (attachment.type == "image") {
-                    return (
-                      <DownImage
-                        key={idx}
-                        src={`data:${attachment.mimeType};base64,${attachment.data}`}
-                      />
-                    );
-                  } else if (attachment.type == "text") {
-                    return <Pre key={idx}>{attachment.text}</Pre>;
-                  }
-                  return null;
-                })}
-            </div>
-          ),
+          type: "assistant_group",
+          messages: contents,
+          index: i,
+          usage,
         };
       }
+    };
+
+    // 第二步：格式化UI消息并渲染
+    const formatAndRenderUIMessage = (collectedData: any) => {
+      if (!collectedData) return null;
+
+      const { type, messages: msgList, index: i, usage } = collectedData;
+      const x = msgList[msgList.length - 1]; // 取最后一个消息作为主消息
+
+      const isUser = type === "user" || type === "system";
+      const isAttached = x.content_attached !== false;
+
+      let messageContent: React.ReactNode = null;
+
+      if (type === "user" || type === "system") {
+        // MCP prompt 处理
+        if (x.content_from) {
+          messageContent = (
+            <div
+              className="cursor-pointer"
+              onClick={() => {
+                Modal.info({
+                  width: "90%",
+                  style: { maxWidth: 1024 },
+                  title: "Tip",
+                  maskClosable: true,
+                  content: <div>{x.content as string}</div>,
+                });
+              }}
+            >
+              <Attachments.FileCard
+                item={{
+                  name: x.content_from as string,
+                  uid: x.content_from as string,
+                  size: (x.content as string).length,
+                }}
+              />
+            </div>
+          );
+        } else {
+          messageContent = (
+            <UserContent
+              x={x}
+              index={i}
+              contexts={contexts || {}}
+              onSubmit={(content) => {
+                if (x.role === "system") {
+                  x.content_template = content;
+                  x.content_date = Date.now();
+                  let userIndex = messages.findLastIndex((msg) => msg.role === "user");
+                  if (userIndex > -1) {
+                    onSumbit(messages.filter((msg, index) => index <= userIndex));
+                  }
+                } else {
+                  x.content_template = content;
+                  x.content_date = Date.now();
+                  onSumbit(messages.filter((msg, index) => index <= i));
+                }
+              }}
+            />
+          );
+        }
+      } else if (type === "hyper_memory") {
+        messageContent = (
+          <div className="memory-message">
+            <div className="memory-header">
+              <Icon name="memory" /> {t`Memory Summary`}
+            </div>
+            <div className="memory-content">
+              {x.content}
+            </div>
+            {x.memory_key_points && (
+              <div className="memory-points">
+                <div className="memory-points-title">{t`Key Points`}:</div>
+                <ul>
+                  {x.memory_key_points.map((point, idx) => (
+                    <li key={idx}>{point}</li>
+                  ))}
+                </ul>
+              </div>
+            )}
+          </div>
+        );
+      } else if (type === "assistant_group") {
+        messageContent = (
+          <div>
+            <AssistantToolContent contents={msgList} />
+            
+            {x.content_status === "loading" ? (
+              <SyncOutlined spin />
+            ) : x.content_status === "error" ? (
+              <div className="text-red-500">
+                {t`Here are the error messages: `}
+                <div className="text-red-700">{x.content_error}</div>
+              </div>
+            ) : null}
+
+            {x.content_status === "dataLoading" && <LoadingOutlined className="text-blue-400" />}
+            
+            {x.content_attachment &&
+              x.content_attachment.length > 0 &&
+              x.content_attachment.map((attachment, idx) => {
+                if (attachment.type === "image") {
+                  return (
+                    <DownImage
+                      key={idx}
+                      src={`data:${attachment.mimeType};base64,${attachment.data}`}
+                    />
+                  );
+                } else if (attachment.type === "text") {
+                  return <Pre key={idx}>{attachment.text}</Pre>;
+                }
+                return null;
+              })}
+          </div>
+        );
+      }
+
+      if (!messageContent) return null;
+
+      // 直接返回渲染的UI组件
+      return (
+        <div
+          key={i.toString()}
+          className={`message-item ${isUser ? 'message-user' : 'message-assistant'} ${!isAttached ? 'message-not-attached' : ''}`}
+        >
+          <div className="message-avatar">
+            {getMessageAvatar(x.role)}
+          </div>
+          <div className="message-body">
+            <Card
+              size="small"
+              className={`message-card ${x.role}`}
+            >
+              <div className="message-content">
+                {messageContent}
+              </div>
+              <div className="message-footer">
+                <div className="flex flex-wrap justify-between text-xs">
+                  <Space>
+                    {getMessageActions(x, i, { isUser, contents: msgList, usage })}
+                  </Space>
+                  <Space>
+                    {x.content_date && (
+                      <span>
+                        {dayjs(x.content_date).format("YYYY-MM-DD HH:mm:ss")}
+                      </span>
+                    )}
+                    {getTokenUsage(usage)}
+                  </Space>
+                </div>
+              </div>
+            </Card>
+          </div>
+        </div>
+      );
     };
 
     // 获取消息头像
@@ -405,52 +443,15 @@ export const CustomMessageList = forwardRef<CustomMessageListRef, CustomMessageL
       return usageElements.length > 0 ? usageElements : null;
     };
 
-    // 渲染单个消息
-    const renderMessage = (message: MyMessage, index: number) => {
-      const formattedMessage = formatMessage(message, index, messages);
+    // 第一步：收集所有消息的数据
+    const collectedMessagesData = messages?.map((message, index) => 
+      collectMessageContents(message, index, messages)
+    ).filter(Boolean) || [];
 
-      if (!formattedMessage) return null; // 被跳过的消息
-
-      const isUser = formattedMessage.isUser;
-      const isAttached = message.content_attached !== false;
-
-      return (
-        <div
-          key={formattedMessage.key}
-          className={`message-item ${isUser ? 'message-user' : 'message-assistant'} ${!isAttached ? 'message-not-attached' : ''
-            }`}
-        >
-          <div className="message-avatar">
-            {getMessageAvatar(message.role)}
-          </div>
-          <div className="message-body">
-            <Card
-              size="small"
-              className={`message-card ${message.role}`}
-            >
-              <div className="message-content">
-                {formattedMessage.content}
-              </div>
-              <div className="message-footer">
-                <div className="flex flex-wrap justify-between text-xs">
-                  <Space>
-                    {getMessageActions(message, index, formattedMessage)}
-                  </Space>
-                  <Space>
-                    {message.content_date && (
-                      <span>
-                        {dayjs(message.content_date).format("YYYY-MM-DD HH:mm:ss")}
-                      </span>
-                    )}
-                    {getTokenUsage(formattedMessage.usage)}
-                  </Space>
-                </div>
-              </div>
-            </Card>
-          </div>
-        </div>
-      );
-    };
+    // 第二步：格式化并渲染所有UI消息
+    const renderedMessages = collectedMessagesData.map((collectedData) => 
+      formatAndRenderUIMessage(collectedData)
+    ).filter(Boolean);
 
     return (
       <div
@@ -463,7 +464,7 @@ export const CustomMessageList = forwardRef<CustomMessageListRef, CustomMessageL
           ...style,
         }}
       >
-        {messages?.map(renderMessage)}
+        {renderedMessages}
       </div>
     );
   }
