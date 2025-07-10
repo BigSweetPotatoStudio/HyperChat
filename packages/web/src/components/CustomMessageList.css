@@ -135,13 +135,49 @@
   font-weight: 600;
 }
 
-.memory-content {
+/* 折叠样式 */
+.my-collapse.memory-content {
+  margin-bottom: 8px;
+}
+
+.my-collapse.memory-content .ant-collapse {
+  border: none;
+  background: transparent;
+}
+
+.my-collapse.memory-content .ant-collapse-item {
+  border: none;
+  background: rgba(114, 46, 209, 0.05);
+  border-radius: 8px;
+  margin-bottom: 4px;
+}
+
+.my-collapse.memory-content .ant-collapse-header {
+  padding: 8px 12px !important;
+  background: rgba(114, 46, 209, 0.08);
+  border-radius: 8px 8px 0 0;
+  border-bottom: 1px solid rgba(114, 46, 209, 0.1);
+  color: #722ed1;
+  font-weight: 500;
+}
+
+.my-collapse.memory-content .ant-collapse-content {
+  border-top: none;
+  background: rgba(255, 255, 255, 0.6);
+  border-radius: 0 0 8px 8px;
+}
+
+.my-collapse.memory-content .ant-collapse-content-box {
+  padding: 12px;
+}
+
+.memory-content-detail {
   color: #595959;
   line-height: 1.6;
   margin-bottom: 12px;
-  padding: 12px;
-  background: rgba(255, 255, 255, 0.6);
-  border-radius: 8px;
+  padding: 8px;
+  background: rgba(255, 255, 255, 0.8);
+  border-radius: 6px;
   border-left: 3px solid #722ed1;
   font-size: 13px;
 }

@@ -1,5 +1,5 @@
 import React, { forwardRef, useImperativeHandle, useRef, useEffect } from 'react';
-import { Avatar, Card, Space, Tooltip, message as antdmessage, Modal } from 'antd';
+import { Avatar, Card, Space, Tooltip, message as antdmessage, Modal, Collapse } from 'antd';
 import {
   CopyOutlined,
   EditOutlined,
@@ -212,28 +212,43 @@ export const CustomMessageList = forwardRef<CustomMessageListRef, CustomMessageL
       } else if (type === "hyper_memory") {
         // 为记忆消息添加类型检查
         const memoryMessage = x as MyMessage & { memory_key_points?: string[] };
+        const memoryContent = typeof x.content === 'string' ? x.content : JSON.stringify(x.content);
+        
         messageContent = (
-          <div >
-            <div className="memory-header">
-              <DatabaseOutlined style={{ marginRight: 8, color: '#722ed1' }} />
-              <span className="memory-title">{t`Memory Summary`}</span>
-            </div>
-            <div className="memory-content">
-              {typeof x.content === 'string' ? x.content : JSON.stringify(x.content)}
-            </div>
-            {memoryMessage.memory_key_points && memoryMessage.memory_key_points.length > 0 && (
-              <div className="memory-points">
-                <div className="memory-points-title">
-                  <BankOutlined style={{ marginRight: 6, color: '#722ed1' }} />
-                  {t`Key Points`}:
-                </div>
-                <ul className="memory-points-list">
-                  {memoryMessage.memory_key_points.map((point: string, idx: number) => (
-                    <li key={idx} className="memory-point-item">{point}</li>
-                  ))}
-                </ul>
-              </div>
-            )}
+          <div className="my-collapse memory-content">
+            <Collapse
+              expandIcon={() => <DatabaseOutlined />}
+              size="small"
+              defaultActiveKey={[]}
+              items={[{
+                key: "memory_content",
+                label: (
+                  <div className="line-clamp-1">
+                    {t`Memory Summary`}: {memoryContent}
+                  </div>
+                ),
+                children: (
+                  <div>
+                    <div className="memory-content-detail">
+                      {memoryContent}
+                    </div>
+                    {memoryMessage.memory_key_points && memoryMessage.memory_key_points.length > 0 && (
+                      <div className="memory-points">
+                        <div className="memory-points-title">
+                          <BankOutlined style={{ marginRight: 6, color: '#722ed1' }} />
+                          {t`Key Points`}:
+                        </div>
+                        <ul className="memory-points-list">
+                          {memoryMessage.memory_key_points.map((point: string, idx: number) => (
+                            <li key={idx} className="memory-point-item">{point}</li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+                  </div>
+                )
+              }]}
+            />
           </div>
         );
       } else if (type === "assistant_group") {

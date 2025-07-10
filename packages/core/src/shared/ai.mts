@@ -206,7 +206,7 @@ export class AiChannel {
 
     // 在开始请求前检查是否需要压缩记忆
     if (this.shouldCompressMemory()) { // 只在第一步时压缩
-      await this.compressMemory(params.modelKey);
+      await this.compressMemory(params.modelKey, params.onUpdate);
       params.onUpdate && params.onUpdate();
     }
 
@@ -562,7 +562,7 @@ ${conversationText}
   }
 
   // 压缩记忆
-  async compressMemory(modelKey?: string): Promise<void> {
+  async compressMemory(modelKey?: string, onUpdate?: () => void): Promise<void> {
     let lastMemoryMessageIndex = this.messages.findLastIndex(m => m.role === "hyper_memory");
     lastMemoryMessageIndex = lastMemoryMessageIndex === -1 ? 1 : lastMemoryMessageIndex; // 如果没有记忆消息，则从头开始
     let lastUserMessageIndex = this.messages.findLastIndex(m => m.role === "user");
@@ -572,20 +572,26 @@ ${conversationText}
     try {
       // 使用第一个可用的模型Key，或者从配置中获取默认模型
       const useModelKey = modelKey || this.ext.aiSettings.models[0]?.key || "default";
-      const summary = await this.generateMemorySummary(this.messages.slice(lastMemoryMessageIndex, lastUserMessageIndex), useModelKey);
-
       const memoryMessage: MyMessage = {
         role: "hyper_memory",
-        content: summary.summary,
-        memory_key_points: summary.key_points,
+        content: "compressing...",
+        memory_key_points: [],
         memory_original_count: compressMessagesCount,
         content_date: Date.now(),
-        content_status: "success"
+        content_status: "loading",
       };
-
+      onUpdate && onUpdate();
       // 在最后一次user消息之前插入记忆消息
       this.messages.splice(lastUserMessageIndex, 0, memoryMessage);
 
+      const summary = await this.generateMemorySummary(this.messages.slice(lastMemoryMessageIndex, lastUserMessageIndex), useModelKey);
+
+      memoryMessage.content = summary.summary;
+      memoryMessage.memory_key_points = summary.key_points;
+      memoryMessage.memory_original_count = compressMessagesCount;
+      memoryMessage.content_date = Date.now();
+      memoryMessage.content_status = "success";
+      onUpdate && onUpdate();
       console.log(`Memory compressed: ${compressMessagesCount} messages → 1 memory message`);
     } catch (error) {
       console.error("Memory compression failed:", error);
