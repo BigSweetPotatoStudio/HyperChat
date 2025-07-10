@@ -505,6 +505,11 @@ export const WorkspaceChat = ({ workspace, agentKey, workspaceDetails, mcpClient
         platform: "web",
         getURL_PRE: getURL_PRE,
         aiSettings: aiSettings as any,
+        compressionConfig: {
+          enabled: true,
+          userMessageThreshold: 2,    // 用户消息达到2条时触发压缩
+          compressionStrategy: "summary",
+        }
       })
 
       await aiClient.completion({

@@ -186,7 +186,15 @@ type ToolMessage = {
   tool_calls?: Tool_Call[];
 };
 
-export type AllMessage = UserMessage | SystemMessage | AssistantMessage | ToolMessage;
+type HyperMemoryMessage = {
+  role: "hyper_memory";
+  content: string;
+  memory_key_points?: string[];
+  memory_original_count?: number;
+  memory_token_saved?: number;
+};
+
+export type AllMessage = UserMessage | SystemMessage | AssistantMessage | ToolMessage | HyperMemoryMessage;
 
 // 消息类型扩展，支持多种内容状态、附件、推理内容等
 export type MyMessage = AllMessage & {
@@ -217,6 +225,9 @@ export type MyMessage = AllMessage & {
   };
   tool_call_id?: string; // 工具调用的 ID
   tool_call_name?: string; // 工具调用的名称 // 谷歌需要
+
+  // 记忆相关字段（仅当 role === "hyper_memory" 时使用）
+
 };
 
 // 聊天历史项类型，包含消息、模型、代理、任务等信息

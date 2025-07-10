@@ -204,6 +204,12 @@ export class AiChannel {
       throw new Error("User Cancel Requesting");
     }
 
+    // 在开始请求前检查是否需要压缩记忆
+    if (this.shouldCompressMemory()) { // 只在第一步时压缩
+      await this.compressMemory(params.modelKey);
+      params.onUpdate && params.onUpdate();
+    }
+
     this.abortController = new AbortController();
     let newMessage: MyMessage = {
       role: "assistant",
@@ -256,7 +262,7 @@ export class AiChannel {
       params.onUpdate && params.onUpdate();
       let toolIndex = 0;
       for await (const delta of result.fullStream) {
-        console.log("delta", delta);
+        // console.log("delta", delta);
         if (delta.type == "error") {
           throw delta.error;
         }
@@ -488,10 +494,103 @@ export class AiChannel {
     mcpTools: HyperChatCompletionTool[];
     platform: "nodejs" | "web";
     getURL_PRE: () => string;
-    aiSettings: AISettings
+    aiSettings: AISettings;
+    compressionConfig?: {
+      enabled: boolean;
+      userMessageThreshold: number;
+      compressionStrategy: "summary" | "key_points";
+    };
   };
   register(ext: this["ext"]) {
     this.ext = ext;
+  }
+
+  // 检查是否需要压缩记忆
+  private shouldCompressMemory(): boolean {
+    if (!this.ext.compressionConfig?.enabled) return false;
+    let lastMemoryMessage = this.messages.findLastIndex(m => m.role === "hyper_memory");
+    let userMessageCount = 0;
+    for (let i = lastMemoryMessage + 1; i < this.messages.length; i++) {
+      if (this.messages[i]!.role === "user") {
+        userMessageCount++; // 计算最后一个记忆消息之后的用户消息数量，需要-1
+      }
+    }
+    return (userMessageCount - 1) >= this.ext.compressionConfig.userMessageThreshold;
+  }
+
+  // 生成记忆摘要
+  private async generateMemorySummary(messages: MyMessage[], modelKey: string): Promise<{
+    summary: string;
+    key_points: string[];
+    important_context: string;
+  }> {
+    const conversationText = messages.map(m => {
+      if (m.role === "user") return `用户: ${m.content}`;
+      if (m.role === "assistant") return `助手: ${m.content}`;
+      if (m.role === "system") return `系统: ${m.content}`;
+      if (m.role === "tool") return `工具结果: ${m.content}`;
+      return "";
+    }).filter(Boolean).join("\n");
+
+    const memoryPrompt = `请总结以下对话的关键信息，保留重要的上下文和决策点：
+
+${conversationText}
+
+请用JSON格式返回：
+- summary: 对话的简洁摘要
+- key_points: 重要观点和决策的数组
+- important_context: 需要保留的重要上下文信息`;
+
+    try {
+      return await this.completionParse(
+        { modelKey },
+        z.object({
+          summary: z.string(),
+          key_points: z.array(z.string()),
+          important_context: z.string()
+        }),
+        memoryPrompt
+      );
+    } catch (error) {
+      // 如果AI总结失败，使用简单的文本拼接
+      return {
+        summary: `对话摘要: 包含${messages.length}条消息的对话历史`,
+        key_points: ["对话历史已压缩"],
+        important_context: conversationText.slice(0, 500) + "..."
+      };
+    }
+  }
+
+  // 压缩记忆
+  async compressMemory(modelKey?: string): Promise<void> {
+    let lastMemoryMessageIndex = this.messages.findLastIndex(m => m.role === "hyper_memory");
+    lastMemoryMessageIndex = lastMemoryMessageIndex === -1 ? 1 : lastMemoryMessageIndex; // 如果没有记忆消息，则从头开始
+    let lastUserMessageIndex = this.messages.findLastIndex(m => m.role === "user");
+
+    let compressMessagesCount = lastUserMessageIndex - lastMemoryMessageIndex - 1;
+
+    try {
+      // 使用第一个可用的模型Key，或者从配置中获取默认模型
+      const useModelKey = modelKey || this.ext.aiSettings.models[0]?.key || "default";
+      const summary = await this.generateMemorySummary(this.messages.slice(lastMemoryMessageIndex, lastUserMessageIndex), useModelKey);
+
+      const memoryMessage: MyMessage = {
+        role: "hyper_memory",
+        content: summary.summary,
+        memory_key_points: summary.key_points,
+        memory_original_count: compressMessagesCount,
+        content_date: Date.now(),
+        content_status: "success"
+      };
+
+      // 在最后一次user消息之前插入记忆消息
+      this.messages.splice(lastUserMessageIndex, 0, memoryMessage);
+
+      console.log(`Memory compressed: ${compressMessagesCount} messages → 1 memory message`);
+    } catch (error) {
+      console.error("Memory compression failed:", error);
+      this.ext.antdmessage.warning("记忆压缩失败，继续使用完整对话历史");
+    }
   }
 
   async completionParse({ modelKey }: { modelKey: string }, schema: ZodSchema, prompt: string): Promise<any> {
@@ -508,8 +607,14 @@ export class AiChannel {
   }
   async messages2core(messages: MyMessage[]): Promise<CoreMessage[]> {
     let results: CoreMessage[] = [];
+    let lastMemoryMessage = this.messages.findLastIndex(m => m.role === "hyper_memory");
 
-    for (let m of messages) {
+    for (let i = 0; i < messages.length; i++) {
+      if (i > 0 && i < lastMemoryMessage) {
+        // 如果是第一个记忆消息之前的用息，跳过，但是保留系统消息
+        continue;
+      }
+      let m = messages[i]!;
       if (m.role === 'tool') {
         results.push({
           role: 'tool',
@@ -521,6 +626,12 @@ export class AiChannel {
               result: m.content as string,
             },
           ],
+        });
+      } else if (m.role === 'hyper_memory') {
+        // 将记忆消息转换为用户消息
+        results.push({
+          role: 'user',
+          content: `[Memory Summary]: ${m.content}${m.memory_key_points ? '\n[Key Points]: ' + m.memory_key_points.join(', ') : ''}`,
         });
       } else if (m.role === 'system') {
         results.push({
