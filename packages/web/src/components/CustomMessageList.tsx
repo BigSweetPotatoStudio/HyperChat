@@ -1,4 +1,4 @@
-import React, { forwardRef, useImperativeHandle, useRef, useEffect } from 'react';
+import React, { forwardRef, useImperativeHandle, useRef, useEffect, useMemo, useCallback } from 'react';
 import { Avatar, Card, Space, Tooltip, message as antdmessage, Modal, Collapse } from 'antd';
 import {
   CopyOutlined,
@@ -213,7 +213,7 @@ export const CustomMessageList = forwardRef<CustomMessageListRef, CustomMessageL
         // 为记忆消息添加类型检查
         const memoryMessage = x as MyMessage & { memory_key_points?: string[] };
         const memoryContent = typeof x.content === 'string' ? x.content : JSON.stringify(x.content);
-        
+
         messageContent = (
           <div className="my-collapse memory-content">
             <Collapse
@@ -255,33 +255,12 @@ export const CustomMessageList = forwardRef<CustomMessageListRef, CustomMessageL
         messageContent = (
           <div>
             <AssistantToolContent contents={msgList} />
-
-            {x.content_status === "loading" ? (
-              <SyncOutlined spin />
-            ) : x.content_status === "error" ? (
+            {x.content_status === "error" && (
               <div className="text-red-500">
                 {t`Here are the error messages: `}
                 <div className="text-red-700">{x.content_error}</div>
               </div>
-            ) : null}
-
-            {x.content_status === "dataLoading" && <LoadingOutlined className="text-blue-400" />}
-
-            {x.content_attachment &&
-              x.content_attachment.length > 0 &&
-              x.content_attachment.map((attachment, idx) => {
-                if (attachment.type === "image") {
-                  return (
-                    <DownImage
-                      key={idx}
-                      src={`data:${attachment.mimeType};base64,${attachment.data}`}
-                    />
-                  );
-                } else if (attachment.type === "text") {
-                  return <Pre key={idx}>{attachment.text}</Pre>;
-                }
-                return null;
-              })}
+            )}
           </div>
         );
       }
@@ -306,11 +285,16 @@ export const CustomMessageList = forwardRef<CustomMessageListRef, CustomMessageL
                 {messageContent}
               </div>
               <div className="message-footer">
+                {/* 状态和附件显示 */}
+                <div className="message-status-attachments">
+                  {getMessageAttachments(x)}
+                </div>
                 <div className="flex flex-wrap justify-between text-xs w-full">
                   <Space>
                     {getMessageActions(x, i, { isUser, contents: msgList, usage })}
                   </Space>
                   <Space>
+                    {getMessageStatus(x)}
                     {x.content_date && (
                       <span>
                         {dayjs(x.content_date).format("YYYY-MM-DD HH:mm:ss")}
@@ -486,15 +470,64 @@ export const CustomMessageList = forwardRef<CustomMessageListRef, CustomMessageL
       return usageElements.length > 0 ? usageElements : null;
     };
 
+    // 获取消息状态显示
+    const getMessageStatus = useCallback((message: MyMessage) => {
+      if (!message.content_status || message.content_status === "success") {
+        return null;
+      }
+
+      // 加载状态
+      if (message.content_status === "loading") {
+        return <SyncOutlined key="loading" className="text-green-500" spin />;
+      }
+      else if (message.content_status === "dataLoading") {
+        return <LoadingOutlined className="text-blue-500" key="dataLoading" />;
+      } else if (message.content_status === "error") {
+        return (
+          <Tooltip key="error" title={message.content_error || t`Error`}>
+            <Icon name="error" className="text-red-500" />
+          </Tooltip>
+        );
+      }
+
+      return null;
+    }, []);
+
+    // 获取消息附件显示
+    const getMessageAttachments = useCallback((message: MyMessage) => {
+      if (!message.content_attachment || message.content_attachment.length === 0) {
+        return null;
+      }
+
+      return message.content_attachment.map((attachment, idx) => {
+        if (attachment.type === "image") {
+          return (
+            <DownImage
+              key={idx}
+              src={`data:${attachment.mimeType};base64,${attachment.data}`}
+            />
+          );
+        } else if (attachment.type === "text") {
+          return <Pre key={idx}>{attachment.text}</Pre>;
+        }
+        return null;
+      });
+    }, []);
+
     // 第一步：收集所有消息的数据
-    const collectedMessagesData: CollectedMessageData[] = messages?.map((message, index) =>
-      collectMessageContents(message, index, messages)
-    ).filter(Boolean) as CollectedMessageData[] || [];
+    const collectedMessagesData = useMemo(() => {
+      if (!messages) return [];
+      return messages.map((message, index) =>
+        collectMessageContents(message, index, messages)
+      ).filter(Boolean) as CollectedMessageData[];
+    }, [messages]);
 
     // 第二步：格式化并渲染所有UI消息
-    const renderedMessages: React.ReactNode[] = collectedMessagesData.map((collectedData) =>
-      formatAndRenderUIMessage(collectedData)
-    ).filter(Boolean);
+    const renderedMessages = useMemo(() => {
+      return collectedMessagesData.map((collectedData) =>
+        formatAndRenderUIMessage(collectedData)
+      ).filter(Boolean);
+    }, [collectedMessagesData, contexts, readOnly, onSumbit, onClone, onContextUpdate]);
 
     return (
       <div

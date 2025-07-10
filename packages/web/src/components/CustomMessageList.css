@@ -84,8 +84,8 @@
 
 .message-footer {
   display: flex;
-  justify-content: space-between;
-  align-items: center;
+  flex-direction: column;
+  gap: 8px;
   padding-top: 8px;
   border-top: 1px solid #aeadad;
   font-size: 12px;
