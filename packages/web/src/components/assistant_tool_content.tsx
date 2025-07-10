@@ -324,6 +324,46 @@ const Code: React.FC<CodeProps> = ({ inline, children = [], className, ...props 
 
 
 
+// Content Renderer Component
+interface ContentRendererProps {
+    content: string;
+    isSmall?: boolean;
+    renderMode: "markdown" | "text";
+    katexComponents: Record<string, any>;
+}
+
+const ContentRenderer: React.FC<ContentRendererProps> = React.memo(({
+    content,
+    isSmall = false,
+    renderMode,
+    katexComponents
+}) => {
+    const formattedContent = React.useMemo(() => formatContent(content), [content]);
+
+    if (renderMode === "markdown") {
+        return (
+            <div className="compact-markdown">
+                <MarkdownPreview
+                    className={`markdown-body ${isSmall ? 'text-sm' : ''}`}
+                    source={formattedContent}
+                    components={katexComponents}
+                />
+            </div>
+        );
+    } else if (renderMode === "text") {
+        return (
+            <pre style={{ whiteSpace: "pre-wrap", wordWrap: "break-word" }}>
+                {content}
+            </pre>
+        );
+    }
+    return null;
+}, (prevProps, nextProps) => {
+    return prevProps.content === nextProps.content &&
+        prevProps.isSmall === nextProps.isSmall &&
+        prevProps.renderMode === nextProps.renderMode;
+});
+
 // Main Component
 interface AssistantToolContentProps {
     contents: MyMessage[];
@@ -345,7 +385,90 @@ export const AssistantToolContent: React.FC<AssistantToolContentProps> = ({ cont
         }
     ];
 
-    const katexComponents = {
+    // 添加紧凑的 Markdown 样式
+    React.useEffect(() => {
+        const style = document.createElement('style');
+        style.textContent = `
+            .compact-markdown .markdown-body {
+                font-size: 14px !important;
+                line-height: 1.2 !important;
+            }
+            .compact-markdown .markdown-body p {
+                margin-bottom: 0.1em !important;
+                margin-top: 0.1em !important;
+            }
+            .compact-markdown .markdown-body h1 {
+                font-size: 1.5em !important;
+                margin-top: 0.2em !important;
+                margin-bottom: 0.1em !important;
+            }
+            .compact-markdown .markdown-body h2 {
+                font-size: 1.3em !important;
+                margin-top: 0.2em !important;
+                margin-bottom: 0.1em !important;
+            }
+            .compact-markdown .markdown-body h3 {
+                font-size: 1.15em !important;
+                margin-top: 0.2em !important;
+                margin-bottom: 0.1em !important;
+            }
+            .compact-markdown .markdown-body h4,
+            .compact-markdown .markdown-body h5,
+            .compact-markdown .markdown-body h6 {
+                font-size: 1em !important;
+                margin-top: 0.2em !important;
+                margin-bottom: 0.1em !important;
+            }
+            .compact-markdown .markdown-body ul,
+            .compact-markdown .markdown-body ol {
+                margin-top: 0.1em !important;
+                margin-bottom: 0.1em !important;
+                padding-left: 1em !important;
+            }
+            .compact-markdown .markdown-body li {
+                margin-bottom: 0 !important;
+                margin-top: 0 !important;
+            }
+            .compact-markdown .markdown-body pre {
+                margin-top: 0.15em !important;
+                margin-bottom: 0.15em !important;
+                padding: 0.2em !important;
+                font-size: 13px !important;
+            }
+            .compact-markdown .markdown-body blockquote {
+                margin-top: 0.15em !important;
+                margin-bottom: 0.15em !important;
+                padding-left: 0.5em !important;
+            }
+            .compact-markdown .markdown-body > *:first-child {
+                margin-top: 0 !important;
+            }
+            .compact-markdown .markdown-body > *:last-child {
+                margin-bottom: 0 !important;
+            }
+            .compact-markdown .markdown-body code {
+                padding: 0.05em 0.1em !important;
+                font-size: 0.9em !important;
+            }
+            .compact-markdown .markdown-body hr {
+                margin: 0.3em 0 !important;
+            }
+            .compact-markdown .markdown-body table {
+                margin: 0.15em 0 !important;
+            }
+            .compact-markdown .markdown-body br {
+                content: "";
+                display: block !important;
+                margin-bottom: 0.2em !important;
+            }
+        `;
+        document.head.appendChild(style);
+        return () => {
+            document.head.removeChild(style);
+        };
+    }, []);
+
+    const katexComponents = React.useMemo(() => ({
         code: Code as any,
         p: KatexRenderer as any,
         h1: KatexRenderer as any,
@@ -358,26 +481,7 @@ export const AssistantToolContent: React.FC<AssistantToolContentProps> = ({ cont
         ol: KatexRenderer as any,
         ul: KatexRenderer as any,
         menu: KatexRenderer as any,
-    };
-
-    const renderContent = (content: string, isSmall = false): React.ReactNode => {
-        if (render === "markdown") {
-            return (
-                <MarkdownPreview
-                    className={`markdown-body ${isSmall ? 'text-sm' : ''}`}
-                    source={formatContent(content)}
-                    components={katexComponents}
-                />
-            );
-        } else if (render === "text") {
-            return (
-                <pre style={{ whiteSpace: "pre-wrap", wordWrap: "break-word" }}>
-                    {content}
-                </pre>
-            );
-        }
-        return null;
-    };
+    }), []);
 
     return (
         <div className="relative bg-white p-2" style={{ width: "100%", overflowX: "auto" }}>
@@ -409,14 +513,25 @@ export const AssistantToolContent: React.FC<AssistantToolContentProps> = ({ cont
                                                 {t`thinking`}: {x.reasoning_content}
                                             </div>
                                         ),
-                                        children: renderContent(x.reasoning_content.toString(), true)
+                                        children: (
+                                            <ContentRenderer
+                                                content={x.reasoning_content.toString()}
+                                                isSmall={true}
+                                                renderMode={render}
+                                                katexComponents={katexComponents}
+                                            />
+                                        )
                                     }]}
                                 />
                             </div>
                         )}
 
                         {/* Main Content */}
-                        {renderContent(x.content.toString())}
+                        <ContentRenderer
+                            content={x.content.toString()}
+                            renderMode={render}
+                            katexComponents={katexComponents}
+                        />
 
                         {/* Tool Calls */}
                         {x.content_tool_calls && x.content_tool_calls.length > 0 && (

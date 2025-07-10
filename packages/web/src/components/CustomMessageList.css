@@ -87,7 +87,7 @@
   justify-content: space-between;
   align-items: center;
   padding-top: 8px;
-  border-top: 1px solid #f0f0f0;
+  border-top: 1px solid #aeadad;
   font-size: 12px;
 }
 
@@ -109,48 +109,74 @@
 
 /* 记忆消息特殊样式 */
 .memory-message {
-  padding: 12px;
-  border-radius: 8px;
+  padding: 16px;
+  border-radius: 12px;
   background: linear-gradient(135deg, #f9f0ff 0%, #f4f0ff 100%);
   border: 1px solid #d3adf7;
+  box-shadow: 0 2px 8px rgba(114, 46, 209, 0.1);
+  transition: all 0.3s ease;
+}
+
+.memory-message:hover {
+  box-shadow: 0 4px 16px rgba(114, 46, 209, 0.15);
+  transform: translateY(-1px);
 }
 
 .memory-header {
   display: flex;
   align-items: center;
-  gap: 8px;
   font-weight: 600;
   color: #722ed1;
-  margin-bottom: 8px;
+  margin-bottom: 12px;
+  font-size: 14px;
+}
+
+.memory-title {
+  font-weight: 600;
 }
 
 .memory-content {
   color: #595959;
-  line-height: 1.5;
-  margin-bottom: 8px;
+  line-height: 1.6;
+  margin-bottom: 12px;
+  padding: 12px;
+  background: rgba(255, 255, 255, 0.6);
+  border-radius: 8px;
+  border-left: 3px solid #722ed1;
+  font-size: 13px;
 }
 
 .memory-points {
-  background: rgba(114, 46, 209, 0.05);
-  padding: 8px 12px;
-  border-radius: 6px;
-  border-left: 3px solid #722ed1;
+  background: rgba(114, 46, 209, 0.08);
+  padding: 12px 16px;
+  border-radius: 8px;
+  border: 1px solid rgba(114, 46, 209, 0.2);
 }
 
 .memory-points-title {
+  display: flex;
+  align-items: center;
   font-weight: 600;
   color: #722ed1;
-  margin-bottom: 4px;
+  margin-bottom: 8px;
+  font-size: 13px;
 }
 
-.memory-points ul {
+.memory-points-list {
   margin: 0;
-  padding-left: 16px;
+  padding-left: 20px;
+  list-style-type: disc;
 }
 
-.memory-points li {
+.memory-point-item {
   color: #595959;
-  margin-bottom: 2px;
+  margin-bottom: 4px;
+  line-height: 1.4;
+  font-size: 12px;
+}
+
+.memory-point-item:last-child {
+  margin-bottom: 0;
 }
 
 /* 响应式设计 */

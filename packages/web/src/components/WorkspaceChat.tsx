@@ -507,7 +507,7 @@ export const WorkspaceChat = ({ workspace, agentKey, workspaceDetails, mcpClient
         aiSettings: aiSettings as any,
         compressionConfig: {
           enabled: true,
-          userMessageThreshold: 2,    // 用户消息达到2条时触发压缩
+          userMessageThreshold: currentChat.current.attachedDialogueCount || 5,    // 用户消息达到5条时触发压缩
           compressionStrategy: "summary",
         }
       })

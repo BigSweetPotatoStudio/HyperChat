@@ -55,7 +55,7 @@ main {
   padding-inline: 0.5rem;
 }
 
-.markdown-body hr:not(code hr) {
+/* .markdown-body hr:not(code hr) {
   margin: 0.5rem 0 !important;
 }
 .markdown-body p:not(code p) {
@@ -84,9 +84,9 @@ main {
 }
 .markdown-body h6:not(code h6) {
   margin: 0.5rem 0 !important;
-}
+} */
 
-.markdown-body ol,
+/* .markdown-body ol,
 ul,
 menu {
   list-style: revert;
@@ -100,7 +100,7 @@ div[role="user"] .ant-bubble-content-wrapper {
 
 div[role="system"] .ant-bubble-content-wrapper {
   align-items: flex-end;
-}
+} */
 
 .no-attached {
   background: repeating-linear-gradient(

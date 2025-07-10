@@ -5,12 +5,15 @@ import {
   EditOutlined,
   BranchesOutlined,
   SyncOutlined,
+  ReloadOutlined,
   MinusCircleOutlined,
   UserOutlined,
   LoadingOutlined,
   UploadOutlined,
   DownloadOutlined,
-  StockOutlined
+  StockOutlined,
+  DatabaseOutlined,
+  BankOutlined
 } from '@ant-design/icons';
 import dayjs from 'dayjs';
 import { MyMessage } from '../../../core/src/shared/types.mjs';
@@ -93,10 +96,10 @@ export const CustomMessageList = forwardRef<CustomMessageListRef, CustomMessageL
       } else if (x.role === "assistant" || x.role === "tool") {
         // assistant/tool 消息需要收集连续的消息
         // 检查是否是最后一个连续的assistant/tool消息
-        if (i + 1 != arr.length && arr[i + 1] && 
-            arr[i + 1]!.role !== "user" && 
-            arr[i + 1]!.role !== "system" && 
-            arr[i + 1]!.role !== "hyper_memory") {
+        if (i + 1 != arr.length && arr[i + 1] &&
+          arr[i + 1]!.role !== "user" &&
+          arr[i + 1]!.role !== "system" &&
+          arr[i + 1]!.role !== "hyper_memory") {
           return null; // 不是最后一个，跳过
         }
 
@@ -119,7 +122,7 @@ export const CustomMessageList = forwardRef<CustomMessageListRef, CustomMessageL
           completion_tokens: 0,
           total_tokens: 0,
         };
-        
+
         for (let content of contents) {
           if (content.content_usage) {
             if (content.content_usage.prompt_tokens !== 0) {
@@ -141,7 +144,7 @@ export const CustomMessageList = forwardRef<CustomMessageListRef, CustomMessageL
           usage,
         };
       }
-      
+
       // 未知角色，返回null
       return null;
     };
@@ -210,19 +213,23 @@ export const CustomMessageList = forwardRef<CustomMessageListRef, CustomMessageL
         // 为记忆消息添加类型检查
         const memoryMessage = x as MyMessage & { memory_key_points?: string[] };
         messageContent = (
-          <div className="memory-message">
+          <div >
             <div className="memory-header">
-              <Icon name="memory" /> {t`Memory Summary`}
+              <DatabaseOutlined style={{ marginRight: 8, color: '#722ed1' }} />
+              <span className="memory-title">{t`Memory Summary`}</span>
             </div>
             <div className="memory-content">
               {typeof x.content === 'string' ? x.content : JSON.stringify(x.content)}
             </div>
-            {memoryMessage.memory_key_points && (
+            {memoryMessage.memory_key_points && memoryMessage.memory_key_points.length > 0 && (
               <div className="memory-points">
-                <div className="memory-points-title">{t`Key Points`}:</div>
-                <ul>
+                <div className="memory-points-title">
+                  <BankOutlined style={{ marginRight: 6, color: '#722ed1' }} />
+                  {t`Key Points`}:
+                </div>
+                <ul className="memory-points-list">
                   {memoryMessage.memory_key_points.map((point: string, idx: number) => (
-                    <li key={idx}>{point}</li>
+                    <li key={idx} className="memory-point-item">{point}</li>
                   ))}
                 </ul>
               </div>
@@ -233,7 +240,7 @@ export const CustomMessageList = forwardRef<CustomMessageListRef, CustomMessageL
         messageContent = (
           <div>
             <AssistantToolContent contents={msgList} />
-            
+
             {x.content_status === "loading" ? (
               <SyncOutlined spin />
             ) : x.content_status === "error" ? (
@@ -244,7 +251,7 @@ export const CustomMessageList = forwardRef<CustomMessageListRef, CustomMessageL
             ) : null}
 
             {x.content_status === "dataLoading" && <LoadingOutlined className="text-blue-400" />}
-            
+
             {x.content_attachment &&
               x.content_attachment.length > 0 &&
               x.content_attachment.map((attachment, idx) => {
@@ -329,7 +336,7 @@ export const CustomMessageList = forwardRef<CustomMessageListRef, CustomMessageL
       } else if (role === 'hyper_memory') {
         return (
           <Avatar
-            icon={<Icon name="memory" />}
+            icon={<DatabaseOutlined />}
             style={{
               color: '#fff',
               backgroundColor: '#722ed1',
@@ -383,36 +390,39 @@ export const CustomMessageList = forwardRef<CustomMessageListRef, CustomMessageL
       // 编辑按钮
       if (!readOnly && (message.role === 'user' || message.role === 'system')) {
         actions.push(
-          <EditOutlined
-            key="edit"
-            className="hover:text-cyan-400 cursor-pointer"
-            onClick={() => {
-              if (!contexts) return;
-              if (contexts[index] == null) {
-                contexts[index] = { edit: false };
-              }
-              contexts[index]!.edit = !contexts[index]!.edit;
-              onContextUpdate?.();
-            }}
-          />
+          <Tooltip key="edit" title={t`Edit`}>
+            <EditOutlined
+              key="edit"
+              className="hover:text-cyan-400 cursor-pointer"
+              onClick={() => {
+                if (!contexts) return;
+                if (contexts[index] == null) {
+                  contexts[index] = { edit: false };
+                }
+                contexts[index]!.edit = !contexts[index]!.edit;
+                onContextUpdate?.();
+              }}
+            />
+          </Tooltip>
         );
       }
 
-      // 同步按钮
-      if (message.content_attached && !readOnly) {
+      // 重试按钮
+      if (message.content_attached && !readOnly && message.role !== "hyper_memory") {
         actions.push(
-          <SyncOutlined
-            key="sync"
-            className="hover:text-cyan-400 cursor-pointer"
-            onClick={() => {
-              if (message.role === 'user') {
-                message.content_date = Date.now();
-                onSumbit(messages.filter((_, i) => i <= index));
-              } else if (message.role === 'assistant') {
-                onSumbit(messages.filter((_, i) => i < index));
-              }
-            }}
-          />
+          <Tooltip key="retry" title={t`Retry`}>
+            <ReloadOutlined
+              className="hover:text-cyan-400 cursor-pointer"
+              onClick={() => {
+                if (message.role === 'user') {
+                  message.content_date = Date.now();
+                  onSumbit(messages.filter((_, i) => i <= index));
+                } else if (message.role === 'assistant') {
+                  onSumbit(messages.filter((_, i) => i < index));
+                }
+              }}
+            />
+          </Tooltip>
         );
       }
 
@@ -462,12 +472,12 @@ export const CustomMessageList = forwardRef<CustomMessageListRef, CustomMessageL
     };
 
     // 第一步：收集所有消息的数据
-    const collectedMessagesData: CollectedMessageData[] = messages?.map((message, index) => 
+    const collectedMessagesData: CollectedMessageData[] = messages?.map((message, index) =>
       collectMessageContents(message, index, messages)
     ).filter(Boolean) as CollectedMessageData[] || [];
 
     // 第二步：格式化并渲染所有UI消息
-    const renderedMessages: React.ReactNode[] = collectedMessagesData.map((collectedData) => 
+    const renderedMessages: React.ReactNode[] = collectedMessagesData.map((collectedData) =>
       formatAndRenderUIMessage(collectedData)
     ).filter(Boolean);
 
