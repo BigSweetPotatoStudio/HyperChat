@@ -589,7 +589,7 @@ export class CommandFactory {
   }): Promise<boolean> {
     // 拼接完整路径并检查存在性
     p = path.join(root, p);
-    return await fs.exists(p);
+    return await fs.existsSync(p);
   }
 
   /**
@@ -1825,7 +1825,7 @@ export class CommandFactory {
       }
 
       // 检查文件是否存在
-      if (!await fs.exists(fullPath)) {
+      if (!await fs.existsSync(fullPath)) {
         throw new Error(`文件不存在: ${filePath}`);
       }
 

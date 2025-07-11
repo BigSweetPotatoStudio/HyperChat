@@ -58,6 +58,7 @@ packages/cli 专注于命令行前端的实现
 - [x] Schema2Form组件系统已完成，支持JSON Schema转Ant Design表单，包括双模式编辑（表单/JSON）和Monaco编辑器集成
 - [x] AI配置管理系统已完成，支持多提供商管理、模型配置、API Key管理，集成到应用设置中
 - [x] 应用设置系统采用Schema驱动的UI生成，支持复杂对象、数组、条件schema等
+- [x] CLI 架构重构完成，从HTTP API改为直接导入core模块，实现了完整的命令行界面
 
 ### 核心组件架构
 
@@ -117,11 +118,27 @@ packages/cli 专注于命令行前端的实现
 - **类型安全**: 保持完整的 TypeScript 类型支持
 - **前端集成**: Schema2Form 自动生成 UI 界面
 
+#### CLI 架构重构 (完成)
+- **HTTP API 移除**: 从 HTTP API 通信改为直接导入 core 模块，提高性能和可靠性
+- **完整命令支持**: 实现了聊天、服务器管理、工作区、代理、配置等完整功能
+- **服务器管理**: 支持启动 core 服务器，供浏览器访问 Web 界面
+- **命令行体验**: 提供类似 Claude Code 的命令行体验，支持交互式聊天
+- **架构清晰**: CLI 作为独立的前端包，与 core 后端分离，符合 monorepo 最佳实践
+
+#### CLI 功能特性
+- **聊天功能**: `hyperchat "你好"` 或 `hyperchat chat` 进行 AI 对话
+- **服务器管理**: `hyperchat server start/stop/status` 管理后端服务器
+- **工作区管理**: `hyperchat workspace list/create/switch` 管理项目工作区
+- **代理管理**: `hyperchat agent list/create` 管理 AI 代理
+- **配置管理**: `hyperchat config get/set` 管理应用配置
+- **Web 启动**: `hyperchat --web` 启动服务器并提供 Web 界面访问
+
 ### 2.0 TODO
 - [ ] 减少any使用，多使用这个文件定义的类型 packages/core/src/shared/types.mts
 - [ ] 完善 Schema2Form 组件的单元测试
 - [ ] 优化 AI 配置管理的性能，考虑大量模型时的加载优化
 - [ ] 为 WorkspaceSettings 添加前端配置界面
+- [ ] 完善 CLI 与 core 模块的深度集成，实现真正的 AI 对话功能
 
 
 2.0 版本的 HyperChat 项目结构如下：

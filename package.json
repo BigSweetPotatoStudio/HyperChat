@@ -13,12 +13,13 @@
     "dev": "node scripts/build.mjs dev",
     "dev:web": "node scripts/build.mjs dev web",
     "dev:core": "node scripts/build.mjs dev core",
+    "dev:cli": "node scripts/build.mjs dev cli",
     "dev:electron": "node scripts/build.mjs dev electron",
     "dev:all": "node scripts/build.mjs dev all",
     "build": "node scripts/build.mjs buildAll",
     "build:web": "node scripts/build.mjs buildWeb",
     "build:core": "node scripts/build.mjs buildCore",
-    "build:node": "node scripts/build.mjs buildNode",
+    "build:cli": "node scripts/build.mjs buildCli",
     "build:electron": "node scripts/build.mjs buildElectron",
     "build:publish": "node scripts/build.mjs buildCore --publish",
     "clean": "node scripts/build.mjs clean",
@@ -76,7 +77,14 @@
     "webpack-cli": "^5.1.4",
     "zod": "^3.25.76",
     "zod-to-json-schema": "^3.24.6",
-    "zx": "^8.0.1"
+    "zx": "^8.0.1",
+    "commander": "^11.1.0",
+    "inquirer": "^9.2.12",
+    "chalk": "^5.3.0",
+    "ora": "^8.0.1",
+    "boxen": "^7.1.1",
+    "update-notifier": "^7.0.0",
+    "cross-env": "^7.0.3"
   },
   "devDependencies": {
     "@types/js-yaml": "^4.0.9",
@@ -85,6 +93,8 @@
     "@types/react": "^18.3.4",
     "@types/react-dom": "^18.3.0",
     "@types/uuid": "^10.0.0",
+    "@types/inquirer": "^9.0.7",
+    "@types/update-notifier": "^6.0.8",
     "nodemon": "^3.1.4",
     "ts-loader": "^9.5.1"
   }

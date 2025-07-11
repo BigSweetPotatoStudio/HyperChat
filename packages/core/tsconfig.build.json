@@ -9,10 +9,7 @@
     "removeComments": true,
     "noEmit": false,
     "noEmitOnError": false,
-    "skipLibCheck": true,
-    "paths": {
-      "@hyperchat/shared/*": ["./shared/*"]
-    }
+    "skipLibCheck": true
   },
   "include": [
     "src/**/*"

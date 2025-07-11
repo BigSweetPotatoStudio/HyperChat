@@ -48,9 +48,9 @@ const tasks = {
       'packages/web/dist',
       'packages/core/dist',
       'packages/core/web-build',
+      'packages/cli/dist',
       'packages/electron/dist',
-      'packages/electron/web-build',
-      'packages/cli/dist'
+      'packages/electron/web-build'
     ];
 
     dirs.forEach(dir => {
@@ -123,80 +123,11 @@ const tasks = {
     }
   },
 
-  // 构建纯 Node.js 版本（包含 Web 和 Core）
-  async buildNode() {
-    console.log('\n🚀 构建 Node.js 版本...');
 
-    const coreDir = join(rootDir, 'packages/core');
-    const distDir = join(coreDir, 'dist');
-    
-    // 清理目标目录
-    if (existsSync(distDir)) {
-      rmSync(distDir, { recursive: true, force: true });
-    }
-    ensureDir(distDir);
-
-    // 1. 构建 Web 前端
-    console.log('\n📦 步骤 1/3: 构建 Web 前端...');
-    await tasks.buildWeb();
-
-    // 2. 构建 Core
-    console.log('\n📦 步骤 2/3: 构建 Core...');
-    exec('npm run build', { cwd: coreDir });
-
-
-    // 3. 整合文件到 Core 的 dist 目录
-    console.log('\n📦 步骤 3/3: 整合文件...');
-
-    // 复制 Web 构建产物到 web-build 目录
-    const webBuildSrc = join(rootDir, 'packages/web/build');
-    const webBuildDest = join(distDir, 'web-build');
-    ensureDir(webBuildDest);
-    cpSync(webBuildSrc, webBuildDest, { recursive: true });
-
-    // 复制 logo
-    const logoSrc = join(rootDir, 'packages/web/public/logo.png');
-    const logoDest = join(webBuildDest, 'assets/favicon.png');
-    if (existsSync(logoSrc)) {
-      ensureDir(dirname(logoDest));
-      copyFileSync(logoSrc, logoDest);
-    }
-
-    // 准备 package.json
-    const rootPkg = readJSON(join(rootDir, 'package.json'));
-    const corePkg = readJSON(join(coreDir, 'package.json'));
-    const nodePkgPath = join(coreDir, 'package.nodejs.json');
-
-    let finalPkg = { ...corePkg };
-
-    // 合并 nodejs 特定配置
-    if (existsSync(nodePkgPath)) {
-      const nodePkg = readJSON(nodePkgPath);
-      finalPkg = { ...finalPkg, ...nodePkg };
-    }
-
-    // 更新版本和移除 electron 依赖
-    finalPkg.version = rootPkg.version;
-    if (finalPkg.dependencies) {
-      Object.keys(finalPkg.dependencies).forEach(key => {
-        if (key.includes('electron')) {
-          delete finalPkg.dependencies[key];
-        }
-      });
-    }
-
-    // 写入最终的 package.json
-    writeJSON(join(distDir, 'package.json'), finalPkg);
-
-    // 复制 README
-    if (existsSync(join(rootDir, 'README.md'))) {
-      copyFileSync(join(rootDir, 'README.md'), join(distDir, 'README.md'));
-    }
-
-    console.log(`\n✅ Node.js 版本构建完成！`);
-    console.log(`📂 输出目录: ${distDir}`);
-    console.log('\n可以通过以下命令测试:');
-    console.log(`  cd packages/core/dist && npm install --production && node main.js`);
+  // 构建 CLI
+  async buildCli() {
+    console.log('\n⚡ 构建 CLI 包...');
+    exec('npm run build', { cwd: join(rootDir, 'packages/cli') });
   },
 
   // 构建 Electron
@@ -232,6 +163,7 @@ const tasks = {
     // 按顺序构建
     await tasks.buildWeb();
     await tasks.buildCore();
+    await tasks.buildCli();
     await tasks.buildElectron();
 
     console.log('\n✨ 所有构建已完成！');
@@ -249,6 +181,9 @@ const tasks = {
       case 'core':
         exec('npm run start', { cwd: join(rootDir, 'packages/core') });
         break;
+      case 'cli':
+        exec('npm run start', { cwd: join(rootDir, 'packages/cli') });
+        break;
       case 'electron':
         exec('npm run start', { cwd: join(rootDir, 'packages/electron') });
         break;
@@ -258,7 +193,7 @@ const tasks = {
         break;
       default:
         console.error(`❌ 未知的开发目标: ${target}`);
-        console.log('可用选项: web, core, electron, all');
+        console.log('可用选项: web, core, cli, electron, all');
         process.exit(1);
     }
   },
@@ -275,10 +210,10 @@ HyperChat 构建脚本
   clean         清理所有构建产物
   buildWeb      构建 Web 前端
   buildCore     构建 Core 包
-  buildNode     构建纯 Node.js 版本（Web + Core）
+  buildCli      构建 CLI 包
   buildElectron 构建 Electron 应用
   buildAll      构建所有包
-  dev [target]  启动开发模式 (web/core/electron/all)
+  dev [target]  启动开发模式 (web/core/cli/electron/all)
   help          显示此帮助信息
 
 选项:

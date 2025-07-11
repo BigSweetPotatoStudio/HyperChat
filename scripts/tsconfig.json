@@ -19,9 +19,6 @@
       "ESNext",
       "DOM"
     ],
-    "types": [
-      "node",
-    ],
     "target": "ESNext",
     "typeRoots": [
       "./node_modules/@types",
