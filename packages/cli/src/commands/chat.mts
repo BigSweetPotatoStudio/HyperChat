@@ -6,7 +6,7 @@
 
 import process from 'process';
 import { Logger } from '../utils/logger.mjs';
-import { Command } from '../../../core/dist/command.mjs';
+import { Command } from '../../../core/src/command.mjs';
 import { AiChannel } from '@hyperchat/shared/ai';
 import type { MyMessage } from '@hyperchat/shared/types';
 import { createReadline } from '../utils/readline.mjs';
@@ -29,9 +29,23 @@ export async function startChat(initialMessage?: string, options: ChatOptions = 
     // 初始化CLI聊天环境
     logger.info('🔍 初始化 HyperChat CLI...');
     
-    // 获取默认工作区路径
-    const globalWorkspace = await Command.getGlobalWorkspace();
-    const workspacePath = options.workspace || globalWorkspace.path;
+    // 智能工作区选择：优先使用当前目录，如果没有.hyperchat则使用全局工作区
+    let workspacePath = options.workspace;
+    if (!workspacePath) {
+      const currentDir = process.cwd();
+      const { existsSync } = await import('fs');
+      const { join } = await import('path');
+      
+      // 检查当前目录是否有.hyperchat文件夹
+      if (existsSync(join(currentDir, '.hyperchat'))) {
+        workspacePath = currentDir;
+        logger.info(`🎯 使用当前目录工作区: ${workspacePath}`);
+      } else {
+        const globalWorkspace = await Command.getGlobalWorkspace();
+        workspacePath = globalWorkspace.path;
+        logger.info(`🌐 使用全局工作区: ${workspacePath}`);
+      }
+    }
     
     logger.debug(`使用工作区: ${workspacePath}`);
     

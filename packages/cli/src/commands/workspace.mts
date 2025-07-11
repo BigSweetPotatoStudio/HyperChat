@@ -4,13 +4,33 @@
 
 import process from 'process';
 import { Logger } from '../utils/logger.mjs';
-import { Command } from '../../../core/dist/command.mjs';
+import { Command } from "../../../core/src/command.mjs";
+
+/**
+ * 智能获取当前工作区路径
+ */
+async function getCurrentWorkspacePath(): Promise<string> {
+  const currentDir = process.cwd();
+  const { existsSync } = await import('fs');
+  const { join } = await import('path');
+  
+  // 检查当前目录是否有.hyperchat文件夹
+  if (existsSync(join(currentDir, '.hyperchat'))) {
+    return currentDir;
+  } else {
+    const globalWorkspace = await Command.getGlobalWorkspace();
+    return globalWorkspace.path;
+  }
+}
 
 export async function listWorkspaces() {
   const logger = new Logger();
   
   try {
     logger.info('📁 获取工作区列表...');
+    
+    // 获取当前工作区
+    const currentWorkspacePath = await getCurrentWorkspacePath();
     
     // 获取所有工作区
     const workspaces = await Command.getWorkspaceList();
@@ -27,8 +47,9 @@ export async function listWorkspaces() {
       const isRunning = runningWorkspaces.some((rw: any) => rw.path === workspace.path);
       const status = isRunning ? '🟢 运行中' : '⚪ 已停止';
       const type = (workspace as any).isGlobal ? '(全局)' : '';
+      const isCurrent = workspace.path === currentWorkspacePath ? '👉 当前' : '';
       
-      console.log(`  ${status} ${workspace.name} ${type}`);
+      console.log(`  ${status} ${workspace.name} ${type} ${isCurrent}`);
       console.log(`      路径: ${workspace.path}`);
       if (workspace.description) {
         console.log(`      描述: ${workspace.description}`);
@@ -36,6 +57,7 @@ export async function listWorkspaces() {
     }
     
     console.log(`\n💡 总计: ${workspaces.length} 个工作区，${runningWorkspaces.length} 个运行中`);
+    console.log(`🎯 当前工作区: ${currentWorkspacePath}`);
     
   } catch (error) {
     logger.error('获取工作区列表失败:', error instanceof Error ? error.message : String(error));

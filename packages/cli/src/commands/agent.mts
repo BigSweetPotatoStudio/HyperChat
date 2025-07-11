@@ -4,7 +4,24 @@
 
 import process from 'process';
 import { Logger } from '../utils/logger.mjs';
-import { Command } from '../../../core/dist/command.mjs';
+import { Command } from '../../../core/src/command.mjs';
+
+/**
+ * 智能获取当前工作区路径
+ */
+async function getCurrentWorkspacePath(): Promise<string> {
+  const currentDir = process.cwd();
+  const { existsSync } = await import('fs');
+  const { join } = await import('path');
+  
+  // 检查当前目录是否有.hyperchat文件夹
+  if (existsSync(join(currentDir, '.hyperchat'))) {
+    return currentDir;
+  } else {
+    const globalWorkspace = await Command.getGlobalWorkspace();
+    return globalWorkspace.path;
+  }
+}
 
 export async function listAgents() {
   const logger = new Logger();
@@ -12,9 +29,9 @@ export async function listAgents() {
   try {
     logger.info('🤖 获取代理列表...');
     
-    // 获取全局工作区
-    const globalWorkspace = await Command.getGlobalWorkspace();
-    const workspacePath = globalWorkspace.path;
+    // 智能获取当前工作区
+    const workspacePath = await getCurrentWorkspacePath();
+    logger.info(`🎯 使用工作区: ${workspacePath}`);
     
     // 获取代理列表
     const agents = await Command.getWorkspaceAgentsSummary({ workspacePath });
@@ -54,9 +71,9 @@ export async function createAgent(name: string) {
   try {
     logger.info(`🤖 创建代理: ${name}`);
     
-    // 获取全局工作区
-    const globalWorkspace = await Command.getGlobalWorkspace();
-    const workspacePath = globalWorkspace.path;
+    // 智能获取当前工作区
+    const workspacePath = await getCurrentWorkspacePath();
+    logger.info(`🎯 使用工作区: ${workspacePath}`);
     
     // 创建代理配置
     const agentConfig = {
