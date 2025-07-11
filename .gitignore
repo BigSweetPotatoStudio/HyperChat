@@ -31,3 +31,4 @@ dist/
 .continuerules
 .continue/
 chatlogs/
+dist-node/
