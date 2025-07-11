@@ -171,6 +171,7 @@ export const WorkspaceWelcome: React.FC<WorkspaceWelcomeProps> = ({
     const description = agent.config.description || t`No description`;
     const lastChatTime = agent.lastChatTime || agent.lastUsed;
     const chatCount = agent.chatLogsCount || 0;
+    const toolsCount = agent.config.allowMCPs?.length || 0;
 
     return (
       <Card
@@ -192,7 +193,14 @@ export const WorkspaceWelcome: React.FC<WorkspaceWelcomeProps> = ({
             <Space>
               <span>{name}</span>
               {chatCount > 0 && (
-                <Tag color="green">{chatCount}</Tag>
+                <Tooltip title={t`Chat count`}>
+                  <Tag color="blue">{chatCount} 💬</Tag>
+                </Tooltip>
+              )}
+              {toolsCount > 0 && (
+                <Tooltip title={t`Tools count`}>
+                  <Tag color="cyan">{toolsCount} 🔧</Tag>
+                </Tooltip>
               )}
             </Space>
           }

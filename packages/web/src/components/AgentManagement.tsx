@@ -374,7 +374,14 @@ export const AgentManagement = forwardRef<AgentManagementRef, AgentManagementPro
                           <Tag color="green">{getModelDisplayName(agent.config.modelKey)}</Tag>
                         )}
                         {agent.chatLogsCount !== undefined && (
-                          <Tag color="blue">{agent.chatLogsCount} chats</Tag>
+                          <Tooltip title={t`Chat count`}>
+                            <Tag color="blue">{agent.chatLogsCount} 💬</Tag>
+                          </Tooltip>
+                        )}
+                        {agent.config.allowMCPs && agent.config.allowMCPs.length > 0 && (
+                          <Tooltip title={t`Tools count`}>
+                            <Tag color="cyan">{agent.config.allowMCPs.length} 🔧</Tag>
+                          </Tooltip>
                         )}
                       </Space>
                     }
@@ -441,6 +448,9 @@ export const AgentManagement = forwardRef<AgentManagementRef, AgentManagementPro
               </Descriptions.Item>
               <Descriptions.Item label={t`Chat Logs`}>
                 {selectedAgent.chatLogsCount || 0}
+              </Descriptions.Item>
+              <Descriptions.Item label={t`Tools`}>
+                {selectedAgent.config.allowMCPs ? selectedAgent.config.allowMCPs.length : 0}
               </Descriptions.Item>
               <Descriptions.Item label={t`Last Chat`}>
                 {selectedAgent.lastChatTime ? new Date(selectedAgent.lastChatTime).toLocaleString() : 'Never'}
