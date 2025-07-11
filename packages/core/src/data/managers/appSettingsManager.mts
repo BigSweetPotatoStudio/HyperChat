@@ -176,10 +176,10 @@ export class AppSettingsManager {
       ai: {
         ...this.settings.ai,
         ...(updates.ai || {}),
-        models: updates.ai?.models || this.settings.ai.models,
-        customProviders: updates.ai?.customProviders || this.settings.ai.customProviders,
+        models: updates.ai?.models || this.settings.ai?.models || [],
+        customProviders: updates.ai?.customProviders || this.settings.ai?.customProviders || [],
         builtinApiKeys: {
-          ...this.settings.ai.builtinApiKeys,
+          ...(this.settings.ai?.builtinApiKeys || {}),
           ...(updates.ai?.builtinApiKeys || {}),
         },
       },
@@ -249,10 +249,10 @@ export class AppSettingsManager {
       ai: {
         ...this.settings.ai,
         ...updates,
-        models: updates.models || this.settings.ai.models,
-        customProviders: updates.customProviders || this.settings.ai.customProviders,
+        models: updates.models || this.settings.ai?.models || [],
+        customProviders: updates.customProviders || this.settings.ai?.customProviders || [],
         builtinApiKeys: {
-          ...this.settings.ai.builtinApiKeys,
+          ...(this.settings.ai?.builtinApiKeys || {}),
           ...(updates.builtinApiKeys || {}),
         },
       },

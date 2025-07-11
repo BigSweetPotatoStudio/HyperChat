@@ -50,11 +50,19 @@ class AiModelData {
   async init() {
     await initAppSettingsManager(appDataDir).init();
     let appSettings = getAppSettingsManager()
-    return appSettings.getAI().models.map((model) => {
+    if (!appSettings) {
+      throw new Error('AppSettings manager not initialized');
+    }
+    const aiSettings = appSettings.getAI();
+    if (!aiSettings) {
+      throw new Error('AI settings not found');
+    }
+    return (aiSettings.models || []).map((model) => {
+      const providerKey = model.provider as string;
       return {
         ...model,
-        baseURL: appSettings.getAI().builtinApiKeys[model.provider]?.baseURL || model.baseURL,
-        apiKey: appSettings.getAI().builtinApiKeys[model.provider]?.apiKey || model.apiKey,
+        baseURL: aiSettings.builtinApiKeys?.[providerKey]?.baseURL || model.baseURL,
+        apiKey: aiSettings.builtinApiKeys?.[providerKey]?.apiKey || model.apiKey,
       };
     });
   }

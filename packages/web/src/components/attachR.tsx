@@ -23,7 +23,7 @@ import {
 import React, { useContext, useEffect, useRef, useState } from "react";
 import * as MCPTypes from "@modelcontextprotocol/sdk/types.js";
 import { DeleteOutlined } from "@ant-design/icons";
-import { CommonContentItem } from "@hyperchat/shared/types.mjs";
+import { CommonContentItem } from "@hyperchat/shared/types";
 
 // class AttachRItem {
 //   type: "resource" | "prompts";

@@ -29,7 +29,8 @@
       "Bash(ss:*)",
       "Bash(ps:*)",
       "mcp__ide__getDiagnostics",
-      "Bash(timeout:*)"
+      "Bash(timeout:*)",
+      "Bash(cp:*)"
     ],
     "deny": []
   }

@@ -65,7 +65,7 @@ import mk from "@vscode/markdown-it-katex";
 import { DownImage } from "./WorkspaceChatComponent/component";
 import { Editor } from "./editor";
 import { t } from "../i18n";
-import { MyMessage } from "@hyperchat/shared/data.mjs";
+import { MyMessage } from "@hyperchat/shared/data";
 
 /**
  * UserContent 组件的属性接口

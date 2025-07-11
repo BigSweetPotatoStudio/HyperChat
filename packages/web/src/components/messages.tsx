@@ -1,5 +1,5 @@
 import React, { useRef } from "react";
-import { MyMessage } from "../../../core/src/shared/types.mjs";
+import { MyMessage } from "@hyperchat/shared/types";
 import { useForceUpdate } from "../hooks/useForceUpdate";
 import { CustomMessageList, CustomMessageListRef } from "./CustomMessageList";
 

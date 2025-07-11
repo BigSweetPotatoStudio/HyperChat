@@ -37,13 +37,13 @@ import {
 import { call } from "../common/call";
 import { t } from "../i18n";
 import { HeaderContext } from "../common/context";
-import type { AISettings, AIModelConfigItem } from "@hyperchat/shared/jsonSchemas/appSettingsSchema.mts";
+import type { AISettings, AIModelConfigItem } from "@hyperchat/shared/jsonSchemas/appSettingsSchema";
 import { useAISettings } from "../contexts/AppSettingsContext";
 import { NumberStep } from "../common/numberStep";
 import EmojiPicker from 'emoji-picker-react';
 import { Editor } from "./editor";
 import { useForceUpdate } from "../hooks/useForceUpdate";
-import { AgentConfig, ChatHistoryItem, IMCPClient } from "@hyperchat/shared/types.mjs";
+import { AgentConfig, ChatHistoryItem, IMCPClient } from "@hyperchat/shared/types";
 const { Title, Text } = Typography;
 
 

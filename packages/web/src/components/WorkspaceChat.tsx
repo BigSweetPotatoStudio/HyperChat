@@ -47,13 +47,13 @@ import { v4 } from "uuid";
 import { call, getURL_PRE } from "../common/call";
 import { addChatRecentUsage } from "../utils/storage";
 
-import { AiChannel } from "@hyperchat/shared/ai.mjs";
+import { AiChannel } from "@hyperchat/shared/ai";
 import {
   ChatHistoryItem,
-} from "@hyperchat/shared/types.mjs";
-import type { AISettings, AIModelConfigItem } from "@hyperchat/shared/jsonSchemas/appSettingsSchema.mts";
+} from "@hyperchat/shared/types";
+import type { AISettings, AIModelConfigItem } from "@hyperchat/shared/jsonSchemas/appSettingsSchema";
 import { useAISettings } from "../contexts/AppSettingsContext";
-import { MyMessage } from "@hyperchat/shared/data.mjs";
+import { MyMessage } from "@hyperchat/shared/data";
 import { Messages } from "./messages";
 import { Icon } from "./icon";
 import { Editor } from "./editor";
@@ -63,7 +63,7 @@ import { HeaderContext } from "../common/context";
 import { useForceUpdate } from "../hooks/useForceUpdate";
 import { MyAttachR } from "./attachR";
 import { WorkspaceDetails, WorkspaceInfo } from "../pages/workspace/workspace";
-import { AllMessage, CommonContent, CommonContentItem, HyperChatCompletionTool, IMCPClient, Tool_Call } from "@hyperchat/shared/types.mjs";
+import { AllMessage, CommonContent, CommonContentItem, HyperChatCompletionTool, IMCPClient, Tool_Call } from "@hyperchat/shared/types";
 import { NumberStep } from "../common/numberStep";
 import { AgentCommonFormItems } from "./AgentManagement";
 

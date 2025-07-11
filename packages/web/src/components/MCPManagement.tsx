@@ -35,7 +35,7 @@ import {
 } from "@ant-design/icons";
 import { call } from "../common/call";
 import { t } from "../i18n";
-import { HyperChatCompletionTool, IMCPClient, MCPServerConfig } from "@hyperchat/shared/data.mjs";
+import { HyperChatCompletionTool, IMCPClient, MCPServerConfig } from "@hyperchat/shared/data";
 import Editor from "@monaco-editor/react";
 import { WorkspaceInfo } from "../pages/workspace/workspace";
 import { useForceUpdate } from "../hooks";

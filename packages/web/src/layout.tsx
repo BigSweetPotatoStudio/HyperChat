@@ -50,7 +50,7 @@ import { currLang, setCurrLang, t } from "./i18n";
 import { call, callElectron, msg_receive } from "./common/call";
 import {
 
-} from "@hyperchat/shared/data.mjs";
+} from "@hyperchat/shared/data";
 import { InitedClient, setClients } from "./common/mcp";
 import { EVENT } from "./common/event";
 import {

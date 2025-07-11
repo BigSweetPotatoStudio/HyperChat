@@ -27,7 +27,7 @@ import {
 } from '@ant-design/icons';
 
 import { call } from '../common/call';
-import type { AIModelConfigItem, ProviderConfig, KnownProvider, AISettings } from '../../../core/src/shared/jsonSchemas/appSettingsSchema.mts';
+import type { AIModelConfigItem, ProviderConfig, KnownProvider, AISettings } from '@hyperchat/shared/jsonSchemas/appSettingsSchema';
 import { useAISettings } from "../contexts/AppSettingsContext";
 import { t } from '../i18n';
 

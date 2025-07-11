@@ -53,7 +53,7 @@ import { WorkspaceSidebar } from "../../components/WorkspaceSidebar";
 import { WorkspaceChat } from "../../components/WorkspaceChat";
 import { WorkspaceWelcome } from "../../components/WorkspaceWelcome";
 import { getPanelSizes, savePanelSizes, getWorkspaceHistory, addToWorkspaceHistory, removeFromWorkspaceHistory, addAgentRecentUsage } from "../../utils/storage";
-import { AgentConfig, IMCPClient, MessageData, MessageDataMap } from "@hyperchat/shared/types.mjs";
+import { AgentConfig, IMCPClient, MessageData, MessageDataMap } from "@hyperchat/shared/types";
 import { HeaderContext } from "../../common/context";
 import { ProviderSettings } from "../../components/ProviderSettings";
 import { AppHeader } from "../../components/AppHeader";

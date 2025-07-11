@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import type { AppSettings, AISettings } from '@hyperchat/shared/jsonSchemas/appSettingsSchema.mts';
+import type { AppSettings, AISettings } from '@hyperchat/shared/jsonSchemas/appSettingsSchema';
 import { call } from '../common/call';
 import {
   enable as enableDarkMode,

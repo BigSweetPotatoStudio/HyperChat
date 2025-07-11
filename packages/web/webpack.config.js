@@ -164,7 +164,7 @@ module.exports = (env, argv) => {
       },
       alias: {
         "@": path.resolve(__dirname, "."),
-        "@hyperchat/shared": path.resolve(__dirname, "../core/src/shared"),
+        "@hyperchat/shared": path.resolve(__dirname, "../shared/src"),
       },
       fallback: {
         "process/browser": require.resolve("process/browser"),

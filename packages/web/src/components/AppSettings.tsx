@@ -24,7 +24,7 @@ import {
   AppearanceSchema,
   SystemSchema,
   DesktopSchema
-} from "../../../core/src/shared/jsonSchemas/appSettingsSchema.mjs";
+} from "@hyperchat/shared/jsonSchemas/appSettingsSchema";
 import Schema2Form from "./schema2Form";
 
 interface AppSettingsProps {
