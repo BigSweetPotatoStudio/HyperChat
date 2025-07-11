@@ -124,18 +124,17 @@ export async function startChat(initialMessage?: string, options: ChatOptions = 
       
       console.log('\n🤖 AI 回复:');
       
+      // 简化输出，完成后一次性显示
       await aiChannel.completion({
         modelKey: modelKey!,
-        allowMCPs: mcpClients.map((c: any) => c.serverName),
-        onUpdate: () => {
-          // 实时显示AI回复
-          const lastMsg = aiChannel.lastMessage;
-          if (lastMsg.role === 'assistant') {
-            process.stdout.write('\r' + ' '.repeat(100) + '\r'); // 清除当前行
-            process.stdout.write(lastMsg.content as string);
-          }
-        }
+        allowMCPs: mcpClients.map((c: any) => c.serverName)
       });
+      
+      // 显示最终回复
+      const lastMsg = aiChannel.lastMessage;
+      if (lastMsg.role === 'assistant') {
+        console.log(lastMsg.content as string);
+      }
       
       console.log('\n'); // 换行
       return;
@@ -204,18 +203,18 @@ export async function startChat(initialMessage?: string, options: ChatOptions = 
       process.stdout.write('思考中...');
       
       try {
+        // 简化输出，完成后一次性显示
         await aiChannel.completion({
           modelKey: modelKey!,
-          allowMCPs: mcpClients.map((c: any) => c.serverName),
-          onUpdate: () => {
-            const lastMsg = aiChannel.lastMessage;
-            if (lastMsg.role === 'assistant') {
-              // 清除"思考中..."并显示实际回复
-              process.stdout.write('\r' + ' '.repeat(20) + '\r');
-              process.stdout.write(lastMsg.content as string);
-            }
-          }
+          allowMCPs: mcpClients.map((c: any) => c.serverName)
         });
+        
+        // 清除"思考中..."并显示最终回复
+        process.stdout.write('\r' + ' '.repeat(20) + '\r');
+        const lastMsg = aiChannel.lastMessage;
+        if (lastMsg.role === 'assistant') {
+          console.log(lastMsg.content as string);
+        }
         
         console.log('\n'); // 换行
       } catch (error) {
