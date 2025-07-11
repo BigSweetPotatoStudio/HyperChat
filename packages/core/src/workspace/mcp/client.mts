@@ -369,10 +369,13 @@ export class WorkspaceMCPClientImpl implements WorkspaceMCPClient {
 
     if (!config.command) throw new Error('Command is required for stdio transport');
 
-    const params = {
+    const params: any = {
       command: config.command,
       args: config.args || [],
       env: env,
+      // 尝试不同的选项来抑制MCP服务器的输出
+      stderr: 'ignore',
+      stdio: ['pipe', 'pipe', 'ignore']  // stdin, stdout, stderr
     };
 
     try {
