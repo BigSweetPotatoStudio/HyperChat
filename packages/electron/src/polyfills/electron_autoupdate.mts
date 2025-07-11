@@ -55,7 +55,7 @@ class CheckUpdate {
     });
 
     // 下载监听
-    autoUpdater.on("downloadProgress" as any, (progressObj) => {
+    autoUpdater.on("downloadProgress" as any, (progressObj: any) => {
       Logger.info("下载监听", progressObj);
       sendToRender("downloadProgress", progressObj);
     });

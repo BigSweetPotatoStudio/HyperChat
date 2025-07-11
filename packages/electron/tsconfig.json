@@ -1,10 +1,18 @@
 {
-  "extends": "../core/tsconfig.json",
+  "extends": "../../tsconfig.json",
   "compilerOptions": {
-    "baseUrl": ".",
+    "outDir": "./dist",
+    "rootDir": "../",
     "paths": {
-      "@hyperchat/core/*": ["../core/src/*"],
-      "@hyperchat/shared/*": ["../shared/*"]
+      "@hyperchat/core/*": [
+        "../core/src/*"
+      ],
+      "@hyperchat/shared/*": [
+        "../shared/src/*"
+      ],
+      "@hyperchat/shared": [
+        "../shared/src/index.ts"
+      ],
     }
   },
   "include": [

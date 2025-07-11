@@ -107,12 +107,27 @@ async function handleCommand() {
     
     case 'server':
       const subCommand = cleanArgs[1];
+      const { startServer: serverStart, stopServer: serverStop, serverStatus: status } = await import('./commands/server.mjs');
+      
       if (subCommand === 'start') {
-        await startServer(logger);
+        await serverStart({
+          port: globalOptions.port,
+          host: globalOptions.host,
+          verbose: globalOptions.verbose,
+          quiet: globalOptions.quiet
+        });
       } else if (subCommand === 'stop') {
-        await stopServer(logger);
+        await serverStop({
+          verbose: globalOptions.verbose,
+          quiet: globalOptions.quiet
+        });
       } else if (subCommand === 'status') {
-        await serverStatus(logger);
+        await status({
+          port: globalOptions.port,
+          host: globalOptions.host,
+          verbose: globalOptions.verbose,
+          quiet: globalOptions.quiet
+        });
       } else {
         logger.error('未知的服务器命令:', subCommand);
         logger.info('可用命令: start, stop, status');

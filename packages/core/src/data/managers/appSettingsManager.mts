@@ -10,6 +10,7 @@ import {
   type AppearanceSettings,
   type SystemSettings,
   type AISettings,
+  type DesktopSettings,
 } from "@hyperchat/shared/jsonSchemas/appSettingsSchema";
 import { CONST } from "../../const.mjs";
 
@@ -255,6 +256,25 @@ export class AppSettingsManager {
           ...(this.settings.ai?.builtinApiKeys || {}),
           ...(updates.builtinApiKeys || {}),
         },
+      },
+    });
+  }
+
+  /**
+   * 获取桌面应用设置
+   */
+  getDesktop(): DesktopSettings {
+    return { ...this.settings.desktop };
+  }
+
+  /**
+   * 更新桌面应用设置
+   */
+  async updateDesktop(updates: Partial<DesktopSettings>): Promise<void> {
+    await this.updateSettings({
+      desktop: {
+        ...this.settings.desktop,
+        ...updates,
       },
     });
   }

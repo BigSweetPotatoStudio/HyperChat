@@ -9,11 +9,13 @@ import {
   shell,
   Tray,
 } from "electron";
-import { Logger } from "../../../core/src/polyfills/index.mjs";
+import { Logger } from "../../../core/src/log.mjs";
 import path from "path";
 
-import { electronData } from "../../../shared/data.mjs";
-import p from "../../package.json" with { type: "json" };
+import { getAppSettingsManager } from "../../../core/src/data/index.mjs"
+import { createRequire } from 'module';
+const require = createRequire(import.meta.url);
+const p = require("../../package.json");
 import { Config } from "../../../core/src/const.mjs";
 import { fileURLToPath } from 'node:url';
 import { dirname } from 'node:path';
@@ -26,19 +28,18 @@ const __dirname = dirname(__filename);
  * - 设置窗口大小、标题、图标、菜单等
  * - 配置 webview、预加载脚本、沙箱等安全参数
  * - 支持多平台窗口特性和自定义行为
- * - 依赖 electronData 进行窗口状态持久化
+ * - 依赖 appSettings.desktop 进行窗口状态持久化
  */
 let title = `${p.name}-${app.getVersion()} by Dadigua`;
 Logger.info("title   : ", title);
 
-(async () => {
-  await electronData.init();
-})();
-
 export const createWindow = () => {
+  const appSettings = getAppSettingsManager();
+  const desktopSettings = appSettings?.getDesktop();
+  
   const win = new BrowserWindow({
-    width: electronData.get().windowSize.width || 1600,
-    height: electronData.get().windowSize.height || 900,
+    width: desktopSettings?.windowSize?.width || 1600,
+    height: desktopSettings?.windowSize?.height || 900,
     title: title,
     autoHideMenuBar: true,
     // titleBarOverlay: {
@@ -79,7 +80,7 @@ export const createWindow = () => {
   } else {
     win
       .loadURL(
-        `http://localhost:${Config.port}/${electronData.get().password}/#/`
+        `http://localhost:${Config.port}/${appSettings?.getSystem()?.password || ''}/#/`
       )
       .catch((_e) => {
         let indexFile = path.join(__dirname, "../web-build/index.html");
@@ -140,7 +141,7 @@ export const createWindow = () => {
       // }
 
       // 检查是否已有记住的选择
-      const savedCloseAction = (await electronData.init()).closeAction;
+      const savedCloseAction = appSettings?.getDesktop()?.closeAction;
 
       if (savedCloseAction) {
         // 如果用户之前已经选择并记住了选择
@@ -176,8 +177,7 @@ export const createWindow = () => {
           if (response.response === 0) { // 最小化到托盘
             // 如果选择记住
             if (rememberChoice) {
-              electronData.get().closeAction = 'minimize';
-              await electronData.save();
+              await appSettings?.updateDesktop({ closeAction: 'minimize' });
             }
 
             win.hide();
@@ -189,8 +189,7 @@ export const createWindow = () => {
           } else if (response.response === 1) { // 直接退出
             // 如果选择记住
             if (rememberChoice) {
-              electronData.get().closeAction = 'exit';
-              await electronData.save();
+              await appSettings?.updateDesktop({ closeAction: 'exit' });
             }
 
             win.destroy();

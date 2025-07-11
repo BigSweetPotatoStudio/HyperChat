@@ -114,7 +114,8 @@
     "build": "webpack --mode production",
     "dev": "nodemon -w src --exec npx tsx task.mts --dev",
     "start": "npm run dev",
-    "rebuild": "npx tsx task.mts --rebuild"
+    "rebuild": "npx tsx task.mts --rebuild",
+    "typecheck": "npx tsc --noEmit"
   },
   "dependencies": {
     "@hyperchat/core": "file:../core",

@@ -1,6 +1,6 @@
-import { Logger } from "../../core/src/log.mjs";
-import { createBrowser } from "../../core/src/mcp/servers/hyper_tools/web2.mjs";
-import { getConfig } from "../../core/src/mcp/servers/hyper_tools/lib.mjs";
+import { Logger } from "@hyperchat/core/log.mjs"
+// import { createBrowser } from "@hyperchat/core/mcp/servers/hyper_tools/web2";
+// import { getConfig } from "@hyperchat/core /mcp/servers/hyper_tools/lib";
 import { checkUpdate } from "./polyfills/electron_autoupdate.mjs";
 import { autoLauncher } from "./polyfills/electron.mjs";
 
@@ -83,25 +83,25 @@ export class ElectronCommandFactory {
 
   // HyperTool 打开浏览器
   async hyperToolOpenBrowser(url: string, { userAgent }: { userAgent?: string } = {}): Promise<void> {
-    const config = getConfig();
-    if (config?.Web_Tools_Platform === "electron") {
-      const { BrowserWindow } = await import("electron");
-      let win = new BrowserWindow({
-        width: 1280,
-        height: 720,
-        webPreferences: {
-          webSecurity: false,
-        },
-      });
+    // const config = getConfig();
+    // if (config?.Web_Tools_Platform === "electron") {
+    //   const { BrowserWindow } = await import("electron");
+    //   let win = new BrowserWindow({
+    //     width: 1280,
+    //     height: 720,
+    //     webPreferences: {
+    //       webSecurity: false,
+    //     },
+    //   });
 
-      await win.loadURL(url, {
-        userAgent: userAgent || "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36"
-      });
-    } else if (config?.Web_Tools_Platform === "chrome") {
-      await createBrowser(true, url)
-    } else {
-      throw new Error("HyperTool Settings Web_Tools_Platform is none");
-    }
+    //   await win.loadURL(url, {
+    //     userAgent: userAgent || "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36"
+    //   });
+    // } else if (config?.Web_Tools_Platform === "chrome") {
+    //   // await createBrowser(true, url)
+    // } else {
+    //   throw new Error("HyperTool Settings Web_Tools_Platform is none");
+    // }
   }
 
   // 打开浏览器窗口

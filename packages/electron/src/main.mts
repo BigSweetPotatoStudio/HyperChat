@@ -9,7 +9,7 @@
  * - 注册自定义协议处理器
  */
 
-import { Logger } from "../../core/src/polyfills/log.mjs";
+import { Logger } from "../../core/src/log.mjs";
 import {
   app,
   BrowserWindow,
@@ -19,7 +19,7 @@ import {
 } from "electron";
 import "./polyfills/electron_autoupdate.mjs";
 import path from "node:path";
-import { Command, ElectronCommand, initHttp } from "./core.mjs";
+import { initHttp } from "../../core/src/http.mjs";
 import { createWindow } from "./window/mainWindow.mjs";
 
 Logger.info("start main");
@@ -48,19 +48,6 @@ ipcMain.handle("command", async (_event, name: string, args: any) => {
   try {
     const arr = Array.isArray(args) ? args : [];
     let res;
-    
-    // 首先尝试从 ElectronCommand 中查找方法
-    if (ElectronCommand[name as keyof typeof ElectronCommand]) {
-      res = await (ElectronCommand[name as keyof typeof ElectronCommand] as any)(...arr);
-    } 
-    // 如果没有找到，再从 Command 中查找
-    else if (Command[name as keyof typeof Command]) {
-      res = await (Command[name as keyof typeof Command] as any)(...arr);
-    } 
-    // 如果都没有找到，抛出错误
-    else {
-      throw new Error(`Command '${name}' not found`);
-    }
     
     if (name === "getHistory") {
       // getHistory 命令不记录日志，避免日志过多

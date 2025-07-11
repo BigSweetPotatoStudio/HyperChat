@@ -65,8 +65,42 @@
   "module": "dist/main.mjs",
   "type": "module",
   "exports": {
-    ".": "./dist/main.mjs",
-    "./command": "./dist/command.mjs"
+    ".": {
+      "types": "./dist/main.d.mts",
+      "import": "./dist/main.mjs"
+    },
+    "./command": {
+      "types": "./dist/command.d.mts",
+      "import": "./dist/command.mjs"
+    },
+    "./log": {
+      "types": "./dist/log.d.mts",
+      "import": "./dist/log.mjs"
+    },
+    "./const": {
+      "types": "./dist/const.d.mts",
+      "import": "./dist/const.mjs"
+    },
+    "./http": {
+      "types": "./dist/http.d.mts",
+      "import": "./dist/http.mjs"
+    },
+    "./message_service": {
+      "types": "./dist/message_service.d.mts",
+      "import": "./dist/message_service.mjs"
+    },
+    "./mcp/servers/hyper_tools/lib": {
+      "types": "./dist/mcp/servers/hyper_tools/lib.d.mts",
+      "import": "./dist/mcp/servers/hyper_tools/lib.mjs"
+    },
+    "./polyfills/index": {
+      "types": "./dist/polyfills/index.d.mts",
+      "import": "./dist/polyfills/index.mjs"
+    },
+    "./data/appSettingsService": {
+      "types": "./dist/data/appSettingsService.d.mts",
+      "import": "./dist/data/appSettingsService.mjs"
+    }
   },
   "productName": "HyperChat",
   "repository": {
