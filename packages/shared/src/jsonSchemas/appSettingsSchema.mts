@@ -38,8 +38,7 @@ export const AIModelConfigItemSchema = z.object({
   call_tool_step: z.number().optional().describe("工具调用步数"),
   type: z.enum(["llm", "embedding"]).default("llm").describe("模型类型"),
   toolMode: z.enum(["standard", "compatible"]).default("standard").describe("工具模式"),
-  isDefault: z.boolean().default(false).describe("是否为默认模型"),
-  // 废弃字段，保留兼容性
+  // 保留兼容性
   apiKey: z.string().default("").describe("API Key (废弃，从提供商获取)"),
   baseURL: z.string().default("").describe("基础URL (废弃，从提供商获取)"),
   fullName: z.string().optional().describe("完整名称 (提供商:模型名称)"),

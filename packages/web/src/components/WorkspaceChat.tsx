@@ -98,9 +98,11 @@ export const WorkspaceChat = ({ workspace, agentKey, workspaceDetails, mcpClient
   // 获取默认模型配置
   const getDefaultModelFromSettings = (settings: AISettings): AIModelConfigItem | null => {
     if (!settings || !settings.models || !settings.models.length) return null;
-    // 优先返回标记为默认的模型
-    const defaultModel = settings.models.find(m => m.isDefault);
-    if (defaultModel) return defaultModel;
+    // 优先返回设置中指定的默认模型
+    if (settings.defaultModel) {
+      const defaultModel = settings.models.find(m => m.key === settings.defaultModel);
+      if (defaultModel) return defaultModel;
+    }
     // 否则返回第一个LLM模型
     return settings.models.find(m => m.type === 'llm') || settings.models[0] || null;
   };

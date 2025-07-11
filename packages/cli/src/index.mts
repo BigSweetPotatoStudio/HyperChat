@@ -26,7 +26,6 @@ const args = process.argv.slice(2);
 
 // 解析全局选项
 const globalOptions = {
-  web: args.includes('--web'),
   verbose: args.includes('--verbose') || args.includes('-v'),
   quiet: args.includes('--quiet') || args.includes('-q'),
   help: args.includes('--help') || args.includes('-h'),
@@ -54,7 +53,6 @@ function showHelp() {
   hyperchat [message] [options]
 
 全局选项:
-  --web                    启动后端服务器 (供浏览器访问)
   --host <host>            连接到指定服务器 (默认: localhost)
   --port <port>            指定端口 (默认: 16102)
   --password <password>    服务器密码
@@ -76,8 +74,7 @@ function showHelp() {
 示例:
   hyperchat "你好"                    # 直接聊天
   hyperchat chat "帮我写代码"         # 聊天命令
-  hyperchat --web                     # 启动服务器
-  hyperchat --host remote --port 8080 # 连接远程服务器
+  hyperchat server start            # 启动服务器
   hyperchat server status             # 查看服务器状态
 
 欢迎使用 HyperChat CLI! 🎉
@@ -88,11 +85,6 @@ function showHelp() {
 async function handleCommand() {
   const logger = new Logger(globalOptions.verbose, globalOptions.quiet);
   
-  // 如果有 --web 选项，启动服务器
-  if (globalOptions.web) {
-    await startServer(logger);
-    return;
-  }
   
   // 检测是否有非命令的消息 (直接聊天)
   const possibleMessage = cleanArgs.find(arg => !['chat', 'server', 'workspace', 'agent', 'config', 'help'].includes(arg));
@@ -247,24 +239,59 @@ async function startServer(logger: Logger) {
     }
     
     // 启动 Core 服务器
-    const corePackagePath = join(process.cwd(), '..', 'core');
+    // 获取正确的core包路径
+    const corePackagePath = join(__dirname, '..', '..', '..', 'core');
     logger.debug(`Core 包路径: ${corePackagePath}`);
+    
+    // 检查core包是否存在
+    const fs = await import('fs');
+    if (!fs.existsSync(corePackagePath)) {
+      logger.error(`找不到core包目录: ${corePackagePath}`);
+      logger.info('请确保在正确的目录运行此命令');
+      process.exit(1);
+    }
     
     const serverProcess = spawn('npm', ['run', 'dev'], {
       cwd: corePackagePath,
       stdio: globalOptions.verbose ? 'inherit' : 'pipe',
       env: {
         ...process.env,
-        PORT: globalOptions.port.toString()
-      }
+        PORT: globalOptions.port.toString(),
+        myEnv: 'dev'
+      },
+      shell: true
+    });
+    
+    // 监听错误输出
+    if (!globalOptions.verbose && serverProcess.stderr) {
+      serverProcess.stderr.on('data', (data) => {
+        logger.debug('服务器错误:', data.toString());
+      });
+    }
+    
+    // 监听启动错误
+    serverProcess.on('error', (error) => {
+      logger.error('无法启动服务器进程:', error.message);
+      process.exit(1);
     });
 
     // 等待服务器启动
     logger.info('⏳ 等待服务器启动...');
-    await new Promise(resolve => setTimeout(resolve, 3000));
     
-    // 检查服务器是否启动成功
-    const isServerRunning = await checkServerHealth(globalOptions.host, globalOptions.port);
+    // 多次尝试检查服务器状态
+    let attempts = 0;
+    const maxAttempts = 10;
+    let isServerRunning = false;
+    
+    while (attempts < maxAttempts && !isServerRunning) {
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      isServerRunning = await checkServerHealth(globalOptions.host, globalOptions.port);
+      attempts++;
+      if (!isServerRunning && attempts < maxAttempts) {
+        logger.debug(`尝试连接服务器... (${attempts}/${maxAttempts})`);
+      }
+    }
+    
     if (isServerRunning) {
       logger.success('服务器启动成功');
       logger.info(`🌐 Web 界面: http://${globalOptions.host}:${globalOptions.port}`);

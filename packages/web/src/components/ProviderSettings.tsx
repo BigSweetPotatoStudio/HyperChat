@@ -41,7 +41,6 @@ interface ModelFormData {
   toolMode: 'standard' | 'compatible';
   supportImage: boolean;
   supportTool: boolean;
-  isDefault: boolean;
   // Unknown provider specific fields
   apiKey?: string;
   baseURL?: string;
@@ -347,7 +346,6 @@ export function ProviderSettings() {
       toolMode: 'standard',
       supportImage: true,
       supportTool: true,
-      isDefault: false,
     });
     setIsModelModalOpen(true);
   };
@@ -362,7 +360,6 @@ export function ProviderSettings() {
       toolMode: model.toolMode,
       supportImage: model.supportImage ?? true, // 默认值为 true
       supportTool: model.supportTool ?? true, // 默认值为 true
-      isDefault: model.isDefault || false,
     };
     
     // 对于 unknown 提供商，添加 apiKey 和 baseURL 字段
@@ -384,14 +381,6 @@ export function ProviderSettings() {
       const finalName = values.name?.trim() || values.model;
 
       let updatedModels = [...(aiSettings.models || [])];
-      
-      // 如果设置为默认模型，需要将其他模型的 isDefault 设为 false
-      if (values.isDefault) {
-        updatedModels = updatedModels.map(model => ({
-          ...model,
-          isDefault: model.key === editingModel?.key
-        }));
-      }
 
       if (editingModel) {
         // 编辑现有模型
@@ -407,7 +396,6 @@ export function ProviderSettings() {
             toolMode: values.toolMode,
             supportImage: values.supportImage,
             supportTool: values.supportTool,
-            isDefault: values.isDefault,
             // Update apiKey and baseURL for unknown provider
             apiKey: selectedProvider.key === 'unknown' ? (values.apiKey || '') : existingModel.apiKey,
             baseURL: selectedProvider.key === 'unknown' ? (values.baseURL || '') : existingModel.baseURL,
@@ -428,7 +416,6 @@ export function ProviderSettings() {
           supportTool: values.supportTool,
           type: values.type,
           toolMode: values.toolMode,
-          isDefault: values.isDefault,
         };
         updatedModels.push(newModel);
       }
@@ -472,14 +459,7 @@ export function ProviderSettings() {
     try {
       if (!aiSettings) return;
       
-      // 将所有模型的 isDefault 设为 false，除了选中的模型
-      const updatedModels = aiSettings.models?.map(m => ({
-        ...m,
-        isDefault: m.key === model.key
-      })) || [];
-
       await updateAISettings({
-        models: updatedModels,
         defaultModel: model.key
       });
       
@@ -500,7 +480,7 @@ export function ProviderSettings() {
       render: (name: string, record: AIModelConfigItem) => (
         <Space>
           <span>{name}</span>
-          {record.isDefault && <Tag color="gold">{t`Default`}</Tag>}
+          {aiSettings?.defaultModel === record.key && <Tag color="gold">{t`Default`}</Tag>}
         </Space>
       ),
     },
@@ -534,7 +514,7 @@ export function ProviderSettings() {
       key: 'actions',
       render: (_: any, record: AIModelConfigItem) => (
         <Space>
-          {!record.isDefault && record.type === "llm" && (
+          {aiSettings?.defaultModel !== record.key && record.type === "llm" && (
             <Button
               size="small"
               type="link"

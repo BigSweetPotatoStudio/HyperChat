@@ -28,8 +28,6 @@ pnpm add -g @hyperchat/cli
 # 开始聊天（默认命令）
 hyperchat "你好，我需要帮助"
 
-# 启动服务器并打开 Web 界面
-hyperchat --web
 
 # 或者直接运行进入交互模式
 hyperchat
@@ -61,12 +59,6 @@ hyperchat chat -m gpt-4 "你的问题"
 ```bash
 # 启动本地服务器
 hyperchat server start
-
-# 启动服务器并打开 Web 界面
-hyperchat server start --web
-
-# 启动服务器并打开 Web 界面（简化命令）
-hyperchat --web
 
 # 查看服务器状态
 hyperchat server status
@@ -122,17 +114,12 @@ hyperchat config set api-key your-key
 ## 全局选项
 
 ```bash
-# 启动服务器并打开 Web 界面
-hyperchat --web
-
 # 显示详细日志
 hyperchat --verbose server start
 
 # 静默模式
 hyperchat --quiet server status
 
-# 组合使用选项
-hyperchat --web --verbose
 ```
 
 ## 配置文件

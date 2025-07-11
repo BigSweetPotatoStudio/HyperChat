@@ -287,7 +287,6 @@ export interface AIModelConfigItem {
   call_tool_step?: number;
   type?: "llm" | "embedding";
   toolMode?: "standard" | "compatible";
-  isDefault?: boolean;
   fullName?: string; // 提供商:模型名称
 }
 

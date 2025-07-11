@@ -30,24 +30,3 @@ export {
   AppSettingsSchema,
   DEFAULT_APP_SETTINGS,
 } from "./jsonSchemas/appSettingsSchema.mjs";
-
-// 重新导出数据相关模块
-export { 
-  // Data, 
-  // DataList,
-  // AppSetting,
-  // LocalSetting,
-  // ChatHistory,
-  // Agents,
-  // AIModelConfig,
-  // AI_MODELS,
-  // PROVIDER_CONFIGS,
-  // MCP_CONFIG,
-  // ENV_CONFIG,
-  // TEMP_FILE,
-  // KNOWLEDGE_BASE,
-  // TaskList,
-  // VarList,
-  // VarScopeList,
-  // MCP_GateWay
-} from "../data/compatible.mjs";

@@ -146,7 +146,6 @@ packages/cli 专注于命令行前端的实现
 - **工作区管理**: `hyperchat workspace list/create/switch` 管理项目工作区
 - **代理管理**: `hyperchat agent list/create` 管理 AI 代理
 - **配置管理**: `hyperchat config get/set` 管理应用配置
-- **Web 启动**: `hyperchat --web` 启动服务器并提供 Web 界面访问
 
 ### 当前构建命令 🚀
 

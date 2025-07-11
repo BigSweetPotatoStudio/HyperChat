@@ -216,9 +216,7 @@ export async function startChat(initialMessage?: string, options: ChatOptions = 
     logger.error('聊天初始化失败:', error instanceof Error ? error.message : String(error));
     
     if (error instanceof Error && error.message.includes('未找到可用的AI模型配置')) {
-      logger.info('\n💡 请先运行以下命令配置AI模型:');
-      logger.info('  hyperchat --web  # 启动Web界面进行配置');
-    }
+      logger.info('\n💡 请先运行以下命令配置AI模型:');    }
     
     process.exit(1);
   }
