@@ -7,20 +7,12 @@ import { Logger } from '../utils/logger.mjs';
 import { Command } from "../../../core/src/command.mjs";
 
 /**
- * 智能获取当前工作区路径
+ * 获取当前工作区路径（使用新的会话管理器，只读模式）
  */
 async function getCurrentWorkspacePath(): Promise<string> {
-  const currentDir = process.cwd();
-  const { existsSync } = await import('fs');
-  const { join } = await import('path');
-  
-  // 检查当前目录是否有.hyperchat文件夹
-  if (existsSync(join(currentDir, '.hyperchat'))) {
-    return currentDir;
-  } else {
-    const globalWorkspace = await Command.getGlobalWorkspace();
-    return globalWorkspace.path;
-  }
+  const { getCurrentWorkspacePathReadOnly } = await import('../session/cli-session-manager.mjs');
+  const workspaceInfo = await getCurrentWorkspacePathReadOnly();
+  return workspaceInfo.workspacePath;
 }
 
 export async function listWorkspaces() {
@@ -94,40 +86,48 @@ export async function createWorkspace(path: string) {
   }
 }
 
-export async function switchWorkspace(path: string) {
+export async function showWorkspaceInfo(path: string) {
   const logger = new Logger();
   
   try {
-    logger.info(`📁 切换到工作区: ${path}`);
+    logger.info(`📁 查看工作区信息: ${path}`);
     
     // 检查目录是否是工作区
     const isWorkspace = await Command.isWorkspaceDirectory({ directoryPath: path });
     if (!isWorkspace) {
       logger.error('该目录不是一个工作区');
-      logger.info('使用 hyperchat workspace create <path> 先创建工作区');
-      process.exit(1);
+      return;
     }
     
-    // 加载工作区
-    const workspace = await Command.loadWorkspace({ workspacePath: path });
-    if (!workspace) {
-      logger.error('加载工作区失败');
-      process.exit(1);
+    // 获取工作区信息
+    const workspaceConfig = await Command.loadWorkspace({ workspacePath: path });
+    if (!workspaceConfig) {
+      logger.error('无法加载工作区配置');
+      return;
     }
     
-    logger.success(`✅ 已切换到工作区: ${workspace!.name}`);
-    console.log(`路径: ${workspace!.path}`);
+    console.log('\n📋 工作区信息:');
+    console.log(`  名称: ${workspaceConfig.name}`);
+    console.log(`  路径: ${path}`);
+    console.log(`  描述: ${workspaceConfig.description || '无描述'}`);
+    console.log(`  创建时间: ${new Date(workspaceConfig.createdAt).toLocaleString()}`);
+    console.log(`  最后访问: ${new Date(workspaceConfig.lastAccessed).toLocaleString()}`);
     
-    // 启动工作区的MCP客户端
+    // 获取MCP客户端信息
     try {
-      const mcpClients = await Command.startWorkspaceMcpClients({ workspacePath: path });
-      logger.info(`🔧 启动了 ${mcpClients.length} 个MCP客户端`);
-    } catch (mcpError) {
-      logger.warn('启动MCP客户端时出现警告:', mcpError instanceof Error ? mcpError.message : String(mcpError));
+      const mcpClients = await Command.getWorkspaceMcpClients({ workspacePath: path });
+      console.log(`  MCP客户端: ${mcpClients.length} 个`);
+      if (mcpClients.length > 0) {
+        mcpClients.forEach(client => {
+          console.log(`    - ${client.serverName} (${client.status})`);
+        });
+      }
+    } catch (error) {
+      console.log(`  MCP客户端: 获取失败`);
     }
     
   } catch (error) {
-    logger.error('切换工作区失败:', error instanceof Error ? error.message : String(error));
+    logger.error('获取工作区信息失败:', error instanceof Error ? error.message : String(error));
     process.exit(1);
   }
 }

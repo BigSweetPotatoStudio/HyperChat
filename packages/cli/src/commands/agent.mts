@@ -7,20 +7,12 @@ import { Logger } from '../utils/logger.mjs';
 import { Command } from '../../../core/src/command.mjs';
 
 /**
- * 智能获取当前工作区路径
+ * 获取当前工作区路径（使用新的会话管理器，只读模式）
  */
 async function getCurrentWorkspacePath(): Promise<string> {
-  const currentDir = process.cwd();
-  const { existsSync } = await import('fs');
-  const { join } = await import('path');
-  
-  // 检查当前目录是否有.hyperchat文件夹
-  if (existsSync(join(currentDir, '.hyperchat'))) {
-    return currentDir;
-  } else {
-    const globalWorkspace = await Command.getGlobalWorkspace();
-    return globalWorkspace.path;
-  }
+  const { getCurrentWorkspacePathReadOnly } = await import('../session/cli-session-manager.mjs');
+  const workspaceInfo = await getCurrentWorkspacePathReadOnly();
+  return workspaceInfo.workspacePath;
 }
 
 export async function listAgents() {

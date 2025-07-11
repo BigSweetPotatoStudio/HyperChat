@@ -29,37 +29,45 @@ export async function startChat(initialMessage?: string, options: ChatOptions = 
     // 初始化CLI聊天环境
     logger.info('🔍 初始化 HyperChat CLI...');
     
-    // 智能工作区选择：优先使用当前目录，如果没有.hyperchat则使用全局工作区
+    // 使用新的CLI会话管理器
     let workspacePath = options.workspace;
+    let sessionConfig: any;
+    
     if (!workspacePath) {
-      const currentDir = process.cwd();
-      const { existsSync } = await import('fs');
-      const { join } = await import('path');
-      
-      // 检查当前目录是否有.hyperchat文件夹
-      if (existsSync(join(currentDir, '.hyperchat'))) {
-        workspacePath = currentDir;
-        logger.info(`🎯 使用当前目录工作区: ${workspacePath}`);
-      } else {
-        const globalWorkspace = await Command.getGlobalWorkspace();
-        workspacePath = globalWorkspace.path;
-        logger.info(`🌐 使用全局工作区: ${workspacePath}`);
-      }
+      const { ensureCLISessionInitialized } = await import('../session/cli-session-manager.mjs');
+      const sessionInfo = await ensureCLISessionInitialized(
+        options.verbose, 
+        options.quiet, 
+        false, // 需要启动MCP服务
+        options.workspace
+      );
+      workspacePath = sessionInfo.workspacePath || sessionInfo.currentDirectory;
+      sessionConfig = sessionInfo.config;
+      logger.info(`🎯 使用工作区: ${sessionInfo.workspaceName} (${workspacePath})`);
+      logger.info(`📊 会话配置: AI模型${sessionConfig?.aiModels?.length || 0}个, MCP工具${sessionConfig?.mcpClients?.length || 0}个`);
     }
     
     logger.debug(`使用工作区: ${workspacePath}`);
     
-    // 获取应用设置
-    const appSettings = await Command.getAppSettings();
-    const aiSettings = appSettings.ai;
-    
-    // 确定使用的模型
+    // 确定使用的模型（优先使用合并后的配置）
     let modelKey = options.model;
-    if (!modelKey && aiSettings?.models && aiSettings.models.length > 0) {
-      modelKey = aiSettings.models[0].key;
+    
+    if (!modelKey && sessionConfig?.aiModels && sessionConfig.aiModels.length > 0) {
+      // 使用会话合并后的AI模型配置
+      modelKey = sessionConfig.aiModels[0].key;
+      logger.info(`📋 使用会话配置的AI模型: ${modelKey}`);
+    } else if (!modelKey) {
+      // 回退到应用设置
+      const appSettings = await Command.getAppSettings();
+      const aiSettings = appSettings.ai;
+      if (aiSettings?.models && aiSettings.models.length > 0) {
+        modelKey = aiSettings.models[0].key;
+        logger.info(`📋 使用应用设置的AI模型: ${modelKey}`);
+      }
     }
+    
     if (!modelKey) {
-      throw new Error('未找到可用的AI模型配置，请先在Web界面中配置AI模型');
+      throw new Error('未找到可用的AI模型配置，请先配置AI模型');
     }
     
     logger.info(`🤖 使用模型: ${modelKey}`);

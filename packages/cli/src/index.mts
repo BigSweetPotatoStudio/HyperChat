@@ -31,7 +31,8 @@ const globalOptions = {
   help: args.includes('--help') || args.includes('-h'),
   host: getOptionValue(args, '--host') || 'localhost',
   port: parseInt(getOptionValue(args, '--port') || '16102'),
-  password: getOptionValue(args, '--password')
+  password: getOptionValue(args, '--password'),
+  workspace: getOptionValue(args, '--workspace')
 };
 
 // 移除选项，保留命令和参数
@@ -53,6 +54,7 @@ function showHelp() {
   hyperchat [message] [options]
 
 全局选项:
+  --workspace <path>       使用指定工作区（覆盖自动检测）
   --host <host>            连接到指定服务器 (默认: localhost)
   --port <port>            指定端口 (默认: 16102)
   --password <password>    服务器密码
@@ -66,23 +68,27 @@ function showHelp() {
   server stop              停止后端服务器
   server status            查看服务器状态
   workspace list           列出所有工作区
+  workspace current        显示当前工作区信息
+  workspace create <path>  创建新工作区
+  workspace info <path>    查看指定工作区信息
   agent list               列出所有代理
   config get <key>         获取配置值
   config set <key> <value> 设置配置值
   help                     显示帮助信息
 
 示例:
-  hyperchat "你好"                    # 直接聊天
+  hyperchat "你好"                    # 直接聊天（自动检测工作区）
   hyperchat chat "帮我写代码"         # 聊天命令
+  hyperchat chat --workspace /path   # 使用指定工作区聊天
   hyperchat server start            # 启动服务器
-  hyperchat server status             # 查看服务器状态
+  hyperchat workspace current       # 显示当前工作区
 
 欢迎使用 HyperChat CLI! 🎉
 `);
 }
 
 // 处理命令
-async function handleCommand() {
+async function handleCommand(): Promise<{ shouldExit: boolean }> {
   const logger = new Logger(globalOptions.verbose, globalOptions.quiet);
   
   
@@ -94,7 +100,7 @@ async function handleCommand() {
     // 直接聊天模式: hyperchat "你好"
     const message = cleanArgs.join(' ');
     await startChat([message], logger);
-    return;
+    return { shouldExit: true };  // 聊天完成后应该退出
   }
 
   const cmd = cleanArgs[0] || 'help';
@@ -103,7 +109,7 @@ async function handleCommand() {
     case 'chat':
       const messages = cleanArgs.slice(1);
       await startChat(messages, logger);
-      break;
+      return { shouldExit: true };  // 聊天完成后应该退出
     
     case 'server':
       const subCommand = cleanArgs[1];
@@ -116,11 +122,13 @@ async function handleCommand() {
           verbose: globalOptions.verbose,
           quiet: globalOptions.quiet
         });
+        return { shouldExit: false };  // server start 需要保持进程运行
       } else if (subCommand === 'stop') {
         await serverStop({
           verbose: globalOptions.verbose,
           quiet: globalOptions.quiet
         });
+        return { shouldExit: true };   // server stop 执行完应该退出
       } else if (subCommand === 'status') {
         await status({
           port: globalOptions.port,
@@ -128,11 +136,12 @@ async function handleCommand() {
           verbose: globalOptions.verbose,
           quiet: globalOptions.quiet
         });
+        return { shouldExit: true };   // server status 查看完应该退出
       } else {
         logger.error('未知的服务器命令:', subCommand);
         logger.info('可用命令: start, stop, status');
+        return { shouldExit: true };   // 错误信息显示完应该退出
       }
-      break;
     
     case 'workspace':
       const workspaceSubCmd = cleanArgs[1];
@@ -146,19 +155,21 @@ async function handleCommand() {
         } else {
           await createWorkspace(workspacePath, logger);
         }
-      } else if (workspaceSubCmd === 'switch') {
+      } else if (workspaceSubCmd === 'info') {
         const workspacePath = cleanArgs[2];
         if (!workspacePath) {
           logger.error('请提供工作区路径');
-          logger.info('使用方法: hyperchat workspace switch <path>');
+          logger.info('使用方法: hyperchat workspace info <path>');
         } else {
-          await switchWorkspace(workspacePath, logger);
+          await showWorkspaceInfo(workspacePath, logger);
         }
+      } else if (workspaceSubCmd === 'current') {
+        await showCurrentWorkspace(logger);
       } else {
         logger.error('未知的工作区命令:', workspaceSubCmd);
-        logger.info('可用命令: list, create, switch');
+        logger.info('可用命令: list, create, info, current');
       }
-      break;
+      return { shouldExit: true };  // 所有workspace命令执行完都应该退出
     
     case 'agent':
       const agentSubCmd = cleanArgs[1];
@@ -176,7 +187,7 @@ async function handleCommand() {
         logger.error('未知的代理命令:', agentSubCmd);
         logger.info('可用命令: list, create');
       }
-      break;
+      return { shouldExit: true };  // 所有agent命令执行完都应该退出
     
     case 'config':
       const configSubCmd = cleanArgs[1];
@@ -201,12 +212,12 @@ async function handleCommand() {
         logger.error('未知的配置命令:', configSubCmd);
         logger.info('可用命令: get, set');
       }
-      break;
+      return { shouldExit: true };  // 所有config命令执行完都应该退出
     
     case 'help':
     default:
       showHelp();
-      break;
+      return { shouldExit: true };  // 帮助信息显示完应该退出
   }
 }
 
@@ -217,7 +228,8 @@ async function startChat(messages: string[], logger: Logger) {
     
     const options = {
       verbose: globalOptions.verbose,
-      quiet: globalOptions.quiet
+      quiet: globalOptions.quiet,
+      workspace: globalOptions.workspace
     };
     
     if (messages.length > 0) {
@@ -402,9 +414,28 @@ async function createWorkspace(path: string, logger: Logger) {
   await createWs(path);
 }
 
-async function switchWorkspace(path: string, logger: Logger) {
-  const { switchWorkspace: switchWs } = await import('./commands/workspace.mjs');
-  await switchWs(path);
+async function showWorkspaceInfo(path: string, logger: Logger) {
+  const { showWorkspaceInfo: showInfo } = await import('./commands/workspace.mjs');
+  await showInfo(path);
+}
+
+async function showCurrentWorkspace(logger: Logger) {
+  try {
+    const { getCurrentWorkspacePathReadOnly } = await import('./session/cli-session-manager.mjs');
+    
+    // 使用只读模式获取工作区信息，不启动任何服务
+    const workspaceInfo = await getCurrentWorkspacePathReadOnly();
+    
+    console.log('\n📋 当前工作区信息:');
+    console.log(`  名称: ${workspaceInfo.workspaceName}`);
+    console.log(`  路径: ${workspaceInfo.workspacePath}`);
+    console.log(`  类型: ${workspaceInfo.isProjectWorkspace ? '📁 项目工作区' : '🌐 全局工作区'}`);
+    console.log(`  状态: 📖 只读模式（未启动服务）`);
+    console.log(`  MCP: ⚪ 未启动（查看状态不启动服务）`);
+    
+  } catch (error) {
+    logger.error('获取当前工作区信息失败:', error instanceof Error ? error.message : String(error));
+  }
 }
 
 // 代理管理功能
@@ -430,8 +461,41 @@ async function setConfig(key: string, value: string, logger: Logger) {
 }
 
 
+// 全局退出处理
+let isExiting = false;
+
+async function cleanup() {
+  if (isExiting) return;
+  isExiting = true;
+  
+  try {
+    // 清理CLI会话管理器
+    const { getCLISessionManager } = await import('./session/cli-session-manager.mjs');
+    const manager = getCLISessionManager();
+    await manager.cleanup();
+  } catch (error) {
+    console.error('清理过程中出现错误:', error);
+  }
+  
+  process.exit(0);
+}
+
+// 监听进程退出信号
+process.on('SIGINT', cleanup);  // Ctrl+C
+process.on('SIGTERM', cleanup); // 终止信号
+process.on('exit', cleanup);    // 正常退出
+
 // 执行命令
-handleCommand().catch(error => {
+handleCommand().then((result) => {
+  // 根据命令类型决定是否退出
+  if (result.shouldExit) {
+    // 对于需要退出的命令，延迟一点时间确保所有异步操作完成
+    setImmediate(() => {
+      process.exit(0);
+    });
+  }
+  // 对于需要保持运行的命令（如 server start），不执行 process.exit
+}).catch(error => {
   console.error('❌ 命令执行失败:', error);
   process.exit(1);
 });
