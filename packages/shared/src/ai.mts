@@ -1,4 +1,9 @@
 
+// Global type declarations
+declare global {
+  var process: { env: { [key: string]: string | undefined } };
+}
+
 import type { HyperChatCompletionTool, MyMessage, Tool_Call, AIModelConfigItem, CommonContentItem, AIProvider, AIExtension, ResponseFormat, CustomFetch, JSONSchemaObject } from "./types.mjs";
 
 import * as MCPTypes from "@modelcontextprotocol/sdk/types.js";
@@ -11,7 +16,10 @@ import { createOpenRouter } from '@openrouter/ai-sdk-provider';
 import { createOpenAICompatible } from '@ai-sdk/openai-compatible';
 import { jsonSchemaToZod } from "json-schema-to-zod";
 import { z, ZodSchema } from "zod";
-globalThis["z"] = z; // 兼容旧版本的 zod
+// 兼容旧版本的 zod
+if (typeof globalThis !== 'undefined') {
+  (globalThis as any).z = z;
+}
 
 
 import { v4 } from "uuid";
@@ -133,7 +141,7 @@ export class AiChannel {
     if (this.ext.platform === "web") {
       let baseURL = modelConfig.baseURL;
       modelConfig.baseURL = this.ext.getURL_PRE() + "/ai";
-      fetch = async (url: RequestInfo, init?: RequestInit): Promise<Response> => {
+      fetch = async (url: string | URL | Request, init?: RequestInit): Promise<Response> => {
         // If in a browser environment and server proxy is enabled, modify headers for proxying.
         init = {
           ...init,

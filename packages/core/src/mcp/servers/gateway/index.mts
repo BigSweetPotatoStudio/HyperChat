@@ -2,7 +2,7 @@
 
 // import { store } from "../../../rag/vectorStore.mjs";
 // import dayjs from "dayjs";
-import { IMCPClient } from "../../../shared/data.mjs";
+import { IMCPClient } from "@hyperchat/shared/data";
 import {
     Server,
     SSEServerTransport as _SSEServerTransport,

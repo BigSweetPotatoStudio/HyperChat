@@ -44,6 +44,7 @@ const tasks = {
   clean() {
     console.log('🧹 清理构建产物...');
     const dirs = [
+      'packages/shared/dist',
       'packages/web/build',
       'packages/web/dist',
       'packages/core/dist',
@@ -66,6 +67,12 @@ const tasks = {
   async buildWeb() {
     console.log('\n🌐 构建 Web 前端...');
     exec('npm run build', { cwd: join(rootDir, 'packages/web') });
+  },
+
+  // 构建 Shared 包
+  async buildShared() {
+    console.log('\n📦 构建 Shared 包...');
+    exec('npm run build', { cwd: join(rootDir, 'packages/shared') });
   },
 
   // 构建 Core（Node.js 核心）
@@ -160,7 +167,8 @@ const tasks = {
     // 清理
     tasks.clean();
 
-    // 按顺序构建
+    // 按顺序构建 (shared 必须先构建，因为其他包依赖它)
+    await tasks.buildShared();
     await tasks.buildWeb();
     await tasks.buildCore();
     await tasks.buildCli();
@@ -175,6 +183,9 @@ const tasks = {
     console.log(`🔧 启动开发模式: ${target}`);
 
     switch (target) {
+      case 'shared':
+        exec('npm run dev', { cwd: join(rootDir, 'packages/shared') });
+        break;
       case 'web':
         exec('npm run start', { cwd: join(rootDir, 'packages/web') });
         break;
@@ -193,7 +204,7 @@ const tasks = {
         break;
       default:
         console.error(`❌ 未知的开发目标: ${target}`);
-        console.log('可用选项: web, core, cli, electron, all');
+        console.log('可用选项: shared, web, core, cli, electron, all');
         process.exit(1);
     }
   },
@@ -208,12 +219,13 @@ HyperChat 构建脚本
 
 命令:
   clean         清理所有构建产物
+  buildShared   构建 Shared 包
   buildWeb      构建 Web 前端
   buildCore     构建 Core 包
   buildCli      构建 CLI 包
   buildElectron 构建 Electron 应用
   buildAll      构建所有包
-  dev [target]  启动开发模式 (web/core/cli/electron/all)
+  dev [target]  启动开发模式 (shared/web/core/cli/electron/all)
   help          显示此帮助信息
 
 选项:

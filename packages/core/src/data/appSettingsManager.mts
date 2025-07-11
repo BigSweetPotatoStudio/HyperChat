@@ -10,7 +10,7 @@ import {
   type AppSettings,
   type AppearanceSettings,
   type SystemSettings,
-} from "../shared/jsonSchemas/appSettingsSchema.mjs";
+} from "@hyperchat/shared/jsonSchemas/appSettingsSchema";
 import { initAppSettingsManager } from "./appSettingsService.mjs";
 
 /**

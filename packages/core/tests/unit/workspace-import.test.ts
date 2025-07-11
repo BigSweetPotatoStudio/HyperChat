@@ -7,7 +7,7 @@ import { describe, it, expect } from 'vitest';
 describe('工作区模块导入测试', () => {
   it('应该能够导入 workspace 模块', async () => {
     // 动态导入以确保模块加载成功
-    const workspaceModule = await import('../../src/shared/workspace.mjs');
+    const workspaceModule = await import('@hyperchat/shared/workspace');
     
     expect(workspaceModule).toBeDefined();
     expect(typeof workspaceModule).toBe('object');
@@ -21,7 +21,7 @@ describe('工作区模块导入测试', () => {
       Workspace, 
       WorkspaceManager, 
       Data 
-    } = await import('../../src/shared/workspace.mjs');
+    } = await import('@hyperchat/shared/workspace');
     
     // 验证所有主要类都被导出
     expect(DataList).toBeDefined();

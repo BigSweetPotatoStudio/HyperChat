@@ -3,6 +3,7 @@
   "version": "0.0.0",
   "private": true,
   "dependencies": {
+    "@hyperchat/shared": "file:../shared",
     "@babel/plugin-proposal-private-property-in-object": "^7.21.11",
     "@dnd-kit/core": "^6.3.1",
     "@dnd-kit/modifiers": "^9.0.0",

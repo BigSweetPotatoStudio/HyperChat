@@ -11,8 +11,11 @@
         "./*"
       ],
       "@hyperchat/shared/*": [
-        "../core/src/shared/*"
+        "../shared/src/*"
       ],
+      "@hyperchat/shared": [
+        "../shared/src/index.ts"
+      ]
     },
   },
   "include": [

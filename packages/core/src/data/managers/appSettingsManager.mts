@@ -10,7 +10,7 @@ import {
   type AppearanceSettings,
   type SystemSettings,
   type AISettings,
-} from "../../shared/jsonSchemas/appSettingsSchema.mjs";
+} from "@hyperchat/shared/jsonSchemas/appSettingsSchema";
 import { CONST } from "../../const.mjs";
 
 /**

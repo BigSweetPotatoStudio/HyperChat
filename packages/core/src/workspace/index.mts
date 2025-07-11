@@ -28,7 +28,7 @@ export type {
   WorkspaceEditorSettings,
   WorkspaceAISettings,
   WorkspaceAdvancedSettings
-} from "../shared/jsonSchemas/workspaceSettingsSchema.mjs";
+} from "@hyperchat/shared/jsonSchemas/workspaceSettingsSchema";
 
 // 导出数据列表管理类
 export { DataList } from "./dataList.mjs";

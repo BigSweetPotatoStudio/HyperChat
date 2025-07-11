@@ -17,6 +17,7 @@
     "dev:electron": "node scripts/build.mjs dev electron",
     "dev:all": "node scripts/build.mjs dev all",
     "build": "node scripts/build.mjs buildAll",
+    "build:shared": "node scripts/build.mjs buildShared",
     "build:web": "node scripts/build.mjs buildWeb",
     "build:core": "node scripts/build.mjs buildCore",
     "build:cli": "node scripts/build.mjs buildCli",

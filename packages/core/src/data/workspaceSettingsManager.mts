@@ -10,13 +10,13 @@ import {
   WorkspaceAISettings,
   WorkspaceAdvancedSettings,
   DEFAULT_WORKSPACE_SETTINGS,
-} from "../shared/jsonSchemas/workspaceSettingsSchema.mjs";
+} from "@hyperchat/shared/jsonSchemas/workspaceSettingsSchema";
 
 // 重新导出 schema 和类型，保持向后兼容
 export {
   WorkspaceSettingsSchema,
   DEFAULT_WORKSPACE_SETTINGS,
-} from "../shared/jsonSchemas/workspaceSettingsSchema.mjs";
+} from "@hyperchat/shared/jsonSchemas/workspaceSettingsSchema";
 
 /**
  * 工作区设置管理器类

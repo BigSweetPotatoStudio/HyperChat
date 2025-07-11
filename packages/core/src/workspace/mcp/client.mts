@@ -16,8 +16,8 @@ import {
   CompatibilityCallToolResultSchema,
   ResourceListChangedNotificationSchema
 } from "../../es6.mjs";
-import type { MCPServerConfig, HyperChatCompletionTool } from "../../shared/data.mjs";
-import type { MCPPromptSchema, MCPResourceSchema, MCPConfigSchema, ToolCallArgs } from "../../shared/types.mjs";
+import type { MCPServerConfig, HyperChatCompletionTool } from "@hyperchat/shared/data";
+import type { MCPPromptSchema, MCPResourceSchema, MCPConfigSchema, ToolCallArgs } from "@hyperchat/shared/types";
 import type { WorkspaceMCPClient, MCPType } from "./types.mjs";
 import { Logger } from "../../log.mjs";
 import { getMessageService } from "../../message_service.mjs";

@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
-import { DataList } from '../../src/shared/workspace.mjs';
+import { DataList } from '@hyperchat/shared/workspace';
 import * as fs from 'fs';
 import * as path from 'path';
 import * as os from 'os';

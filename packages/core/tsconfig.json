@@ -36,6 +36,14 @@
       "./node_modules/@types",
       "./types"
     ],
+    "paths": {
+      "@hyperchat/shared/*": [
+        "../shared/src/*"
+      ],
+      "@hyperchat/shared": [
+        "../shared/src/index.ts"
+      ]
+    },
     "composite": true,
     "incremental": true,
     "tsBuildInfoFile": "./js/.tsbuildinfo"

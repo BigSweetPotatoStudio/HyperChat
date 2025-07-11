@@ -1,6 +1,6 @@
 import { appDataDir } from "../const.mjs";
 import { Logger } from "../log.mjs";
-import { AIModelConfigItem } from "../shared/types.mjs";
+import { AIModelConfigItem } from "@hyperchat/shared/types";
 import { AppSettingsManager } from "./managers/appSettingsManager.mjs";
 
 // 全局应用设置管理器

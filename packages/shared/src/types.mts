@@ -517,7 +517,7 @@ export interface ResponseFormat {
 /**
  * 自定义 fetch 类型
  */
-export type CustomFetch = (url: RequestInfo, init?: RequestInit) => Promise<Response>;
+export type CustomFetch = (url: string | URL | Request, init?: RequestInit) => Promise<Response>;
 
 /**
  * 事件系统相关类型

@@ -14,10 +14,10 @@ HyperChat 是一个多平台的 AI 聊天应用，该项目拥有完善的 MCP�
 * 支持命令行前端，类似Claude Code。只能聊天，配置通过web前端完成。
 * 支持vscode插件，通过webview访问构建。
 
-packages/core 专注于 Node.js 相关的功能
-packages/core/src/shared 主要包含共享的代码和逻辑
-packages/electron 专门处理 Electron 桌面应用的需求。
+packages/shared 共享代码和类型定义，前后端通用
+packages/core 专注于 Node.js 后端服务
 packages/web 专注于 Web 前端的实现
+packages/electron 专门处理 Electron 桌面应用的需求
 packages/cli 专注于命令行前端的实现
 
 ## i18n Web前端
@@ -29,7 +29,7 @@ packages/cli 专注于命令行前端的实现
 
 ### 类型安全
 * 尽量使用 TypeScript 的类型系统来确保代码的类型安全。尽量少使用any类型。
-* packages/core/src/shared/types.mts 定义了常用的类型，包括前端和后端交互的类型，确保前后端的数据结构一致。
+* packages/shared/src/types.mts 定义了常用的类型，包括前端和后端交互的类型，确保前后端的数据结构一致。
 * 使用 Zod schema 进行数据验证，通过 zod-to-json-schema 转换为 JSON Schema 用于前端表单生成。
 
 ### 前后端通信
@@ -52,13 +52,14 @@ packages/cli 专注于命令行前端的实现
 
 ## 记忆
 
-- [x] 我现在要改造这个hyperchat项目，以前都用在web浏览器前端发出llm请求通过OpenAI的库。现在我想改成在code目录下(nodejs环境)中通过ai库发请求，代码在packages/core/src/shared/ai.mts 。前后端共用
+- [x] 我现在要改造这个hyperchat项目，以前都用在web浏览器前端发出llm请求通过OpenAI的库。现在我想改成在code目录下(nodejs环境)中通过ai库发请求，代码在packages/shared/src/ai.mts 。前后端共用
 - [x] 工作区概念已经实现，支持在不同工作区之间隔离数据和配置，支持显示当前工作区文件夹（树状），agent等配置作为文件保存在.hyperchat目录下。
 - [x] 核心工作区管理类 (workspace.mts, workspaceManager.mts)
 - [x] Schema2Form组件系统已完成，支持JSON Schema转Ant Design表单，包括双模式编辑（表单/JSON）和Monaco编辑器集成
 - [x] AI配置管理系统已完成，支持多提供商管理、模型配置、API Key管理，集成到应用设置中
 - [x] 应用设置系统采用Schema驱动的UI生成，支持复杂对象、数组、条件schema等
 - [x] CLI 架构重构完成，从HTTP API改为直接导入core模块，实现了完整的命令行界面
+- [x] 使用 `to memorize` 作为一个新的备忘录条目
 
 ### 核心组件架构
 
@@ -68,7 +69,7 @@ packages/cli 专注于命令行前端的实现
 - **packages/web/src/components/AppSettings.tsx** - 应用设置页面，使用Schema2Form渲染配置界面
 
 #### AI配置管理
-- **packages/core/src/shared/jsonSchemas/appSettingsSchema.mts** - 应用设置的Zod schema定义
+- **packages/shared/src/jsonSchemas/appSettingsSchema.mts** - 应用设置的Zod schema定义
 
 
 #### 关键设计决策
@@ -98,7 +99,7 @@ packages/cli 专注于命令行前端的实现
 - **类型安全**: 修复了所有 TypeScript 错误，保持完整的类型支持
 
 #### WorkspaceSettings 架构重构 (完成)
-- **Schema 分离**: 创建 `packages/core/src/shared/jsonSchemas/workspaceSettingsSchema.mts`
+- **Schema 分离**: 创建 `packages/shared/src/jsonSchemas/workspaceSettingsSchema.mts`
   - 包含 `WorkspaceAppearanceSchema`, `WorkspaceEditorSchema`, `WorkspaceAISchema`, `WorkspaceAdvancedSchema`
   - 提供完整的类型定义和验证函数
 - **实现迁移**: 创建 `packages/core/src/data/workspaceSettingsManager.mts`
@@ -107,16 +108,30 @@ packages/cli 专注于命令行前端的实现
 - **引用更新**: 更新了所有相关文件的导入和类型引用
 - **命名冲突解决**: 使用 `WorkspaceDetailedSettings` 避免与现有类型冲突
 
+#### Shared 包独立工作区重构 (完成) 🆕
+- **独立包创建**: 将 `packages/core/src/shared` 移动到独立的 `packages/shared` 工作区
+- **包配置**: 创建完整的 `package.json` 和 TypeScript 配置，支持 ES 模块导出
+- **依赖管理**: Core 和 Web 包添加 `@hyperchat/shared` 依赖
+- **引用重构**: 所有相对路径引用更新为模块引用 (如 `'./shared/types.mts'` → `'@hyperchat/shared/types'`)
+- **构建系统**: 更新构建脚本，shared 包优先构建，支持独立开发模式
+
+#### 构建系统现代化重构 (完成) 🆕
+- **npm workspaces**: 配置 npm workspaces 替代分散的包管理
+- **统一构建脚本**: 创建 `scripts/build.mjs` 统一管理所有包的构建
+- **TypeScript 编译**: Core 包使用 tsc 编译，输出正确的 .mjs 文件而非 .mts 文件
+- **构建顺序**: shared → web → core → cli → electron 的依赖顺序构建
+
 #### Schema2FormItems 组件修复 (完成)
 - **TypeScript 错误修复**: 解决了所有类型断言和 spread 操作的错误
 - **代码清理**: 移除了未使用的导入和变量
 
 ### 架构优势
-- **分离关注点**: JSON Schema 与业务逻辑分离
-- **统一管理**: 所有 Schema 集中在 `shared/jsonSchemas` 目录
+- **分离关注点**: JSON Schema 与业务逻辑分离，shared 包独立维护
+- **统一管理**: 所有 Schema 集中在 `packages/shared/src/jsonSchemas` 目录
 - **数据管理**: 所有管理器类集中在 `data` 目录
-- **类型安全**: 保持完整的 TypeScript 类型支持
+- **类型安全**: 保持完整的 TypeScript 类型支持，跨包类型共享
 - **前端集成**: Schema2Form 自动生成 UI 界面
+- **构建效率**: npm workspaces 避免依赖重复，统一的构建管理
 
 #### CLI 架构重构 (完成)
 - **HTTP API 移除**: 从 HTTP API 通信改为直接导入 core 模块，提高性能和可靠性
@@ -133,12 +148,45 @@ packages/cli 专注于命令行前端的实现
 - **配置管理**: `hyperchat config get/set` 管理应用配置
 - **Web 启动**: `hyperchat --web` 启动服务器并提供 Web 界面访问
 
+### 当前构建命令 🚀
+
+#### 可用的构建脚本
+```bash
+# 构建
+npm run build             # 构建所有包（按依赖顺序）
+npm run build:shared      # 构建 shared 包
+npm run build:web         # 构建 Web 前端
+npm run build:core        # 构建 Core 后端
+npm run build:cli         # 构建 CLI 工具
+npm run build:electron    # 构建 Electron 应用
+
+# 开发模式
+npm run dev:shared        # shared 包开发模式（watch）
+npm run dev:web          # Web 开发服务器
+npm run dev:core         # Core 开发模式
+npm run dev:cli          # CLI 开发模式
+npm run dev:electron     # Electron 开发模式
+
+# 工具
+npm run clean            # 清理所有构建产物
+npm run typecheck        # 所有包类型检查
+```
+
+#### 构建顺序
+1. **shared** - 必须最先构建，其他包依赖它
+2. **web** - React 前端构建
+3. **core** - Node.js 后端构建
+4. **cli** - 命令行工具
+5. **electron** - 桌面应用（依赖 web 构建产物）
+
 ### 2.0 TODO
-- [ ] 减少any使用，多使用这个文件定义的类型 packages/core/src/shared/types.mts
+- [ ] 减少any使用，多使用这个文件定义的类型 packages/shared/src/types.mts
 - [ ] 完善 Schema2Form 组件的单元测试
 - [ ] 优化 AI 配置管理的性能，考虑大量模型时的加载优化
 - [ ] 为 WorkspaceSettings 添加前端配置界面
 - [ ] 完善 CLI 与 core 模块的深度集成，实现真正的 AI 对话功能
+- [ ] 修复 shared 包的 TypeScript 类型错误
+- [ ] 优化 shared 包的模块导出配置
 
 
 2.0 版本的 HyperChat 项目结构如下：

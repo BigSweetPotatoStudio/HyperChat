@@ -3,6 +3,7 @@
   "author": "Dadigua <0laopo0@gmail.com>",
   "description": "HyperChat Core - Node.js backend and shared functionality",
   "dependencies": {
+    "@hyperchat/shared": "file:../shared",
     "@types/adm-zip": "^0.5.5",
     "@types/fluent-ffmpeg": "^2.1.27",
     "@types/pdfjs-dist": "^2.10.378",
@@ -68,7 +69,7 @@
     "url": "git+https://github.com/BigSweetPotatoStudio/HyperChat.git"
   },
   "scripts": {
-    "dev": "nodemon -w src --exec npx tsx src/main.mts",
+    "dev": "nodemon -w src --exec cross-env myEnv=dev npx tsx src/main.mts",
     "start": "npm run dev",
     "build": "node build.mjs",
     "build:tsc": "tsc --project tsconfig.build.json",

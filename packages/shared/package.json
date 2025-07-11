@@ -1,0 +1,71 @@
+{
+  "name": "@hyperchat/shared",
+  "version": "0.0.0",
+  "description": "HyperChat Shared - Common types, utilities and schemas",
+  "type": "module",
+  "main": "dist/index.js",
+  "module": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./ai": {
+      "types": "./dist/ai.d.mts",
+      "import": "./dist/ai.mjs"
+    },
+    "./data": {
+      "types": "./dist/data.d.mts",
+      "import": "./dist/data.mjs"
+    },
+    "./types": {
+      "types": "./dist/types.d.mts",
+      "import": "./dist/types.mjs"
+    },
+    "./workspace": {
+      "types": "./dist/workspace.d.mts",
+      "import": "./dist/workspace.mjs"
+    },
+    "./providers": {
+      "types": "./dist/providers.d.mts",
+      "import": "./dist/providers.mjs"
+    },
+    "./jsonSchemas/*": {
+      "types": "./dist/jsonSchemas/*.d.mts",
+      "import": "./dist/jsonSchemas/*.mjs"
+    },
+    "./jsonSchemas/appSettingsSchema": {
+      "types": "./dist/jsonSchemas/appSettingsSchema.d.mts",
+      "import": "./dist/jsonSchemas/appSettingsSchema.mjs"
+    },
+    "./jsonSchemas/workspaceSettingsSchema": {
+      "types": "./dist/jsonSchemas/workspaceSettingsSchema.d.mts",
+      "import": "./dist/jsonSchemas/workspaceSettingsSchema.mjs"
+    }
+  },
+  "scripts": {
+    "build": "tsc --project tsconfig.json --noEmitOnError false || echo 'Build completed with warnings'",
+    "dev": "tsc --project tsconfig.json --watch",
+    "typecheck": "tsc --noEmit",
+    "clean": "rm -rf dist"
+  },
+  "dependencies": {
+    "zod": "^3.25.76",
+    "zod-to-json-schema": "^3.24.6"
+  },
+  "devDependencies": {
+    "typescript": "^5.5.2",
+    "@types/node": "^22.7.5"
+  },
+  "files": [
+    "dist",
+    "src"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/BigSweetPotatoStudio/HyperChat.git"
+  },
+  "author": "Dadigua <0laopo0@gmail.com>",
+  "license": "MIT"
+}

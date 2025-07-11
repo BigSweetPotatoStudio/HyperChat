@@ -9,8 +9,8 @@ import {
   MCPServerConfig,
   Task,
   IMCPClient,
-} from "./shared/types.mjs";
-import { AgentConfig, DirectoryItem } from "./shared/types.mjs";
+} from "@hyperchat/shared/types";
+import { AgentConfig, DirectoryItem } from "@hyperchat/shared/types";
 import { appDataDir } from "./const.mjs";
 import crypto from "crypto";
 import {
