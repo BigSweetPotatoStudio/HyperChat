@@ -17,7 +17,7 @@
     "typecheck": "npx tsc --noEmit"
   },
   "dependencies": {
-    "@hyperchat/core": "file:../core"
+    "@hyperchat/shared": "file:../shared"
   },
   "devDependencies": {
     "@types/inquirer": "^9.0.7",

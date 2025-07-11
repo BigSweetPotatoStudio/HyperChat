@@ -88,7 +88,7 @@ export const AgentManagement = forwardRef<AgentManagementRef, AgentManagementPro
   // 获取模型的显示名称
   const getModelDisplayName = (modelKey: string): string => {
     if (!aiSettings) return modelKey;
-    const model = aiSettings.models.find(m => m.key === modelKey);
+    const model = aiSettings.models?.find(m => m.key === modelKey);
     return model ? (model.fullName || model.name || modelKey) : modelKey;
   };
 
@@ -597,7 +597,7 @@ export const AgentManagement = forwardRef<AgentManagementRef, AgentManagementPro
               optionFilterProp="label"
               placeholder={t`Choose the AI model for this agent`}
               // allowClear
-              options={aiSettings ? aiSettings.models.map((m) => ({
+              options={aiSettings ? (aiSettings.models || []).map((m) => ({
                 label: m.fullName || m.name,
                 value: m.key,
               })) : []}

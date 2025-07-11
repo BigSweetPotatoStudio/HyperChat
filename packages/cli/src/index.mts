@@ -10,6 +10,7 @@
  * - 本地和远程核心服务连接
  */
 
+import process from 'process';
 import { readFileSync } from 'fs';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
@@ -205,68 +206,22 @@ async function handleCommand() {
 // 聊天功能
 async function startChat(messages: string[], logger: Logger) {
   try {
-    logger.info('🔍 初始化 HyperChat...');
+    const { startChat: chatStart } = await import('./commands/chat.mjs');
     
-    // 简化实现，先输出一个占位符消息
-    logger.info('CLI 正在开发中，当前为基础版本');
-    
-    // 如果有初始消息，显示并退出
-    if (messages.length > 0) {
-      const message = messages.join(' ');
-      logger.info(`💬 收到消息: ${message}`);
-      
-      console.log('\\n🤖 AI 回复:');
-      console.log('您好！我是 HyperChat CLI。目前正在开发中，请稍后再试。');
-      console.log();
-      return;
-    }
-    
-    // 交互式聊天模式
-    logger.info('💬 开始交互式聊天...');
-    logger.info('💡 输入 /exit 退出，/help 查看帮助');
-    console.log();
-    
-    const readline = await import('readline');
-    const rl = readline.createInterface({
-      input: process.stdin,
-      output: process.stdout
-    });
-    
-    const askQuestion = (prompt: string): Promise<string> => {
-      return new Promise((resolve) => {
-        rl.question(prompt, resolve);
-      });
+    const options = {
+      verbose: globalOptions.verbose,
+      quiet: globalOptions.quiet
     };
     
-    while (true) {
-      const input = await askQuestion('🧑 你: ');
-      
-      if (input.trim() === '/exit') {
-        logger.info('👋 再见！');
-        break;
-      }
-      
-      if (input.trim() === '/help') {
-        console.log('\\n📋 聊天命令:');
-        console.log('  /exit  - 退出聊天');
-        console.log('  /help  - 显示帮助');
-        console.log();
-        continue;
-      }
-      
-      if (!input.trim()) {
-        continue;
-      }
-      
-      // 简化实现，直接回复一个占位符消息
-      console.log('\\n🤖 AI: 您好！我是 HyperChat CLI。目前正在开发中，请稍后再试。');
-      console.log();
+    if (messages.length > 0) {
+      const message = messages.join(' ');
+      await chatStart(message, options);
+    } else {
+      await chatStart(undefined, options);
     }
     
-    rl.close();
-    
   } catch (error) {
-    logger.error('初始化失败:', error instanceof Error ? error.message : String(error));
+    logger.error('聊天功能失败:', error instanceof Error ? error.message : String(error));
     process.exit(1);
   }
 }
@@ -396,40 +351,40 @@ async function checkServerHealth(host: string, port: number): Promise<boolean> {
 
 // 工作区管理功能
 async function listWorkspaces(logger: Logger) {
-  logger.info('📁 工作区列表:');
-  logger.info('  此功能正在开发中...');
+  const { listWorkspaces: listWs } = await import('./commands/workspace.mjs');
+  await listWs();
 }
 
 async function createWorkspace(path: string, logger: Logger) {
-  logger.info(`📁 创建工作区: ${path}`);
-  logger.info('  此功能正在开发中...');
+  const { createWorkspace: createWs } = await import('./commands/workspace.mjs');
+  await createWs(path);
 }
 
 async function switchWorkspace(path: string, logger: Logger) {
-  logger.info(`📁 切换工作区: ${path}`);
-  logger.info('  此功能正在开发中...');
+  const { switchWorkspace: switchWs } = await import('./commands/workspace.mjs');
+  await switchWs(path);
 }
 
 // 代理管理功能
 async function listAgents(logger: Logger) {
-  logger.info('🤖 代理列表:');
-  logger.info('  此功能正在开发中...');
+  const { listAgents: listAg } = await import('./commands/agent.mjs');
+  await listAg();
 }
 
 async function createAgent(name: string, logger: Logger) {
-  logger.info(`🤖 创建代理: ${name}`);
-  logger.info('  此功能正在开发中...');
+  const { createAgent: createAg } = await import('./commands/agent.mjs');
+  await createAg(name);
 }
 
 // 配置管理功能
 async function getConfig(key: string, logger: Logger) {
-  logger.info(`⚙️ 获取配置: ${key}`);
-  logger.info('  此功能正在开发中...');
+  const { getConfig: getCfg } = await import('./commands/config.mjs');
+  await getCfg(key);
 }
 
 async function setConfig(key: string, value: string, logger: Logger) {
-  logger.info(`⚙️ 设置配置: ${key} = ${value}`);
-  logger.info('  此功能正在开发中...');
+  const { setConfig: setCfg } = await import('./commands/config.mjs');
+  await setCfg(key, value);
 }
 
 

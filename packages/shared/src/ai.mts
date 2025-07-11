@@ -1,8 +1,4 @@
 
-// Global type declarations
-declare global {
-  var process: { env: { [key: string]: string | undefined } };
-}
 
 import type { HyperChatCompletionTool, MyMessage, Tool_Call, AIModelConfigItem, CommonContentItem, AIProvider, AIExtension, ResponseFormat, CustomFetch, JSONSchemaObject } from "./types.mjs";
 
@@ -358,28 +354,25 @@ export class AiChannel {
         } catch {
           tool.function.args = {};
         }
-        if (process.env.runtime !== "node") {
-          if (
-            params.confirm_call_tool &&
-            params.confirm_call_tool_cb
-          ) {
-            try {
-              tool.function.args = (await params.confirm_call_tool_cb(tool)) as any;
-            } catch (e) {
+        if (
+          params.confirm_call_tool &&
+          params.confirm_call_tool_cb
+        ) {
+          try {
+            tool.function.args = (await params.confirm_call_tool_cb(tool)) as any;
+          } catch (e) {
 
-              let message: MyMessage = {
-                role: "tool" as const,
-                tool_call_id: tool.id,
-                content: "this tool call canceled by user.",
-                content_status: "error",
-                content_attachment: [],
-                content_date: Date.now(),
-              };
-              this.messages.push(message);
-              params.onUpdate && params.onUpdate();
-              continue;
-            }
-
+            let message: MyMessage = {
+              role: "tool" as const,
+              tool_call_id: tool.id,
+              content: "this tool call canceled by user.",
+              content_status: "error",
+              content_attachment: [],
+              content_date: Date.now(),
+            };
+            this.messages.push(message);
+            params.onUpdate && params.onUpdate();
+            continue;
           }
         }
 
@@ -406,18 +399,7 @@ export class AiChannel {
         };
         this.messages.push(message);
         params.onUpdate && params.onUpdate();
-        // if (process.env.runtime !== "node") {
-        //   try {
-        //     if (
-        //       clientName === "hyper_agent" &&
-        //       localtool.origin_name == "call_agent"
-        //     ) {
-        //       (await callModule.getWebSocket()).emit("active", deviceId);
-        //     }
-        //   } catch (e) {
-        //     console.error(e);
-        //   }
-        // }
+
         let localTool = this.ext.mcpTools.find(
           (t) => t.name === tool.function.name
         );

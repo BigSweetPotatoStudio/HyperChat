@@ -19,7 +19,6 @@ import {
 } from "@ant-design/icons";
 import { t } from "../i18n";
 import { zodToJsonSchema } from "zod-to-json-schema";
-import { z } from "zod";
 import {
   AppearanceSchema,
   SystemSchema,

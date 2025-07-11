@@ -97,7 +97,7 @@ export const WorkspaceChat = ({ workspace, agentKey, workspaceDetails, mcpClient
 
   // 获取默认模型配置
   const getDefaultModelFromSettings = (settings: AISettings): AIModelConfigItem | null => {
-    if (!settings || !settings.models.length) return null;
+    if (!settings || !settings.models || !settings.models.length) return null;
     // 优先返回标记为默认的模型
     const defaultModel = settings.models.find(m => m.isDefault);
     if (defaultModel) return defaultModel;
@@ -107,14 +107,15 @@ export const WorkspaceChat = ({ workspace, agentKey, workspaceDetails, mcpClient
 
   // 获取按提供商分组的模型选项
   const getGroupedModelOptions = (settings: AISettings) => {
-    if (!settings || !settings.models.length) return [];
+    if (!settings || !settings.models || !settings.models.length) return [];
 
     const groups: Record<string, AIModelConfigItem[]> = {};
     settings.models.forEach(model => {
-      if (!groups[model.provider]) {
-        groups[model.provider] = [];
+      const provider = model.provider || 'unknown';
+      if (!groups[provider]) {
+        groups[provider] = [];
       }
-      groups[model.provider]!.push(model);
+      groups[provider]!.push(model);
     });
 
     return Object.entries(groups).map(([provider, models]) => ({
@@ -292,7 +293,7 @@ export const WorkspaceChat = ({ workspace, agentKey, workspaceDetails, mcpClient
         }
 
         const defaultModel = getDefaultModelFromSettings(aiSettings);
-        currentChat.current.modelKey = defaultModel ? defaultModel.key : "";
+        currentChat.current.modelKey = defaultModel?.key || "";
         const agent = workspaceDetails[workspace.path]?.agents.find(a => a.config.key === agentKey);
         // 如果有要加载的聊天记录，优先加载聊天记录
         if (chatLogToLoad) {
@@ -435,11 +436,11 @@ export const WorkspaceChat = ({ workspace, agentKey, workspaceDetails, mcpClient
         throw new Error("AI settings not loaded");
       }
 
-      let config = aiSettings.models.find(
+      let config = aiSettings.models?.find(
         (x) => x.key == currentChat.current.modelKey,
       );
       if (config == null) {
-        if (aiSettings.models.length == 0) {
+        if (!aiSettings.models || aiSettings.models.length == 0) {
           throw new Error("Please add LLM first");
         } else {
           throw new Error(t`Model not found, please select a model`);
@@ -514,7 +515,7 @@ export const WorkspaceChat = ({ workspace, agentKey, workspaceDetails, mcpClient
       })
 
       await aiClient.completion({
-        modelKey: config!.key,
+        modelKey: config?.key || "",
         allowMCPs: currentChat.current.allowMCPs,
         confirm_call_tool: currentChat.current.confirm_call_tool,
         confirm_call_tool_cb,
@@ -578,7 +579,7 @@ export const WorkspaceChat = ({ workspace, agentKey, workspaceDetails, mcpClient
 
   // 获取当前模型配置
   let currModel = aiSettings ? (
-    aiSettings.models.find((x) => x.key == currentChat.current.modelKey) ||
+    aiSettings.models?.find((x) => x.key == currentChat.current.modelKey) ||
     getDefaultModelFromSettings(aiSettings)
   ) : null;
 
@@ -681,7 +682,7 @@ export const WorkspaceChat = ({ workspace, agentKey, workspaceDetails, mcpClient
                       showSearch
                       optionFilterProp="label"
                       placeholder={
-                        aiSettings && aiSettings.models.length > 0
+                        aiSettings && aiSettings.models && aiSettings.models.length > 0
                           ? `${currModel?.provider || 'unknown'}:${currModel?.name || 'unknown'}`
                           : "Please add a LLM model"
                       }

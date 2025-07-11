@@ -26,8 +26,7 @@ import {
   ArrowLeftOutlined,
 } from '@ant-design/icons';
 
-import { call } from '../common/call';
-import type { AIModelConfigItem, ProviderConfig, KnownProvider, AISettings } from '@hyperchat/shared/jsonSchemas/appSettingsSchema';
+import type { AIModelConfigItem, ProviderConfig, KnownProvider } from '@hyperchat/shared/jsonSchemas/appSettingsSchema';
 import { useAISettings } from "../contexts/AppSettingsContext";
 import { t } from '../i18n';
 
@@ -97,7 +96,7 @@ export function ProviderSettings() {
   // 获取提供商的模型数量
   const getProviderModelCount = (provider: ProviderConfig): number => {
     if (!aiSettings) return 0;
-    const models = aiSettings.models.filter(model => model.provider === provider.key);
+    const models = aiSettings.models?.filter(model => model.provider === provider.key) || [];
     return models.length;
   };
 
@@ -110,8 +109,8 @@ export function ProviderSettings() {
       return true;
     }
     
-    if (provider.isBuiltIn) {
-      return !!aiSettings.builtinApiKeys[provider.key]?.apiKey;
+    if (provider.isBuiltIn && provider.key) {
+      return !!aiSettings.builtinApiKeys?.[provider.key]?.apiKey;
     } else {
       return !!provider.apiKey;
     }
@@ -120,7 +119,7 @@ export function ProviderSettings() {
   // 获取提供商的模型列表
   const getProviderModels = (provider: ProviderConfig): AIModelConfigItem[] => {
     if (!aiSettings) return [];
-    return aiSettings.models.filter(model => model.provider === provider.key);
+    return aiSettings.models?.filter(model => model.provider === provider.key) || [];
   };
 
   // 刷新数据
@@ -130,7 +129,7 @@ export function ProviderSettings() {
       
       // 获取所有提供商（内置 + 自定义）
       const builtinProviders = getBuiltinProviders();
-      const allProviders = [...builtinProviders, ...aiSettings.customProviders];
+      const allProviders = [...builtinProviders, ...(aiSettings.customProviders || [])];
       setProviders(allProviders);
     } catch (error) {
       console.error('刷新配置失败:', error);
@@ -203,8 +202,8 @@ export function ProviderSettings() {
       // 删除自定义提供商及其下所有模型
       if (!aiSettings) return;
       
-      const updatedCustomProviders = aiSettings.customProviders.filter(p => p.key !== provider.key);
-      const updatedModels = aiSettings.models.filter(model => model.provider !== provider.key);
+      const updatedCustomProviders = aiSettings.customProviders?.filter(p => p.key !== provider.key) || [];
+      const updatedModels = aiSettings.models?.filter(model => model.provider !== provider.key) || [];
       
       await updateAISettings({
         customProviders: updatedCustomProviders,
@@ -229,11 +228,11 @@ export function ProviderSettings() {
       
       if (editingProvider) {
         // 编辑现有提供商
-        const updatedCustomProviders = aiSettings.customProviders.map(p => 
+        const updatedCustomProviders = aiSettings.customProviders?.map(p => 
           p.key === editingProvider.key
             ? { ...p, label: values.label, baseURL: values.baseURL, description: values.description }
             : p
-        );
+        ) || [];
         
         await updateAISettings({
           customProviders: updatedCustomProviders
@@ -251,7 +250,7 @@ export function ProviderSettings() {
           isBuiltIn: false
         };
         
-        const updatedCustomProviders = [...aiSettings.customProviders, newProvider];
+        const updatedCustomProviders = [...(aiSettings.customProviders || []), newProvider];
         
         await updateAISettings({
           customProviders: updatedCustomProviders
@@ -278,8 +277,8 @@ export function ProviderSettings() {
     // 获取已保存的 API Key 信息
     let apiKeyInfo: { apiKey?: string; baseURL?: string } | null = null;
     if (aiSettings) {
-      if (provider.isBuiltIn) {
-        apiKeyInfo = aiSettings.builtinApiKeys[provider.key] || null;
+      if (provider.isBuiltIn && provider.key) {
+        apiKeyInfo = aiSettings.builtinApiKeys?.[provider.key] || null;
       } else {
         apiKeyInfo = { apiKey: provider.apiKey, baseURL: provider.baseURL };
       }
@@ -305,8 +304,8 @@ export function ProviderSettings() {
         // 内置提供商，保存到 builtinApiKeys
         const finalBaseURL = values.baseURL || selectedProvider.baseURL;
         const updatedBuiltinApiKeys = {
-          ...aiSettings.builtinApiKeys,
-          [selectedProvider.key]: {
+          ...(aiSettings.builtinApiKeys || {}),
+          [selectedProvider.key!]: {
             apiKey: values.apiKey,
             baseURL: finalBaseURL
           }
@@ -317,11 +316,11 @@ export function ProviderSettings() {
         });
       } else {
         // 自定义提供商，更新提供商配置
-        const updatedCustomProviders = aiSettings.customProviders.map(p =>
+        const updatedCustomProviders = aiSettings.customProviders?.map(p =>
           p.key === selectedProvider.key
             ? { ...p, apiKey: values.apiKey }
             : p
-        );
+        ) || [];
         
         await updateAISettings({
           customProviders: updatedCustomProviders
@@ -384,7 +383,7 @@ export function ProviderSettings() {
       // 如果名称为空，使用模型ID作为名称
       const finalName = values.name?.trim() || values.model;
 
-      let updatedModels = [...aiSettings.models];
+      let updatedModels = [...(aiSettings.models || [])];
       
       // 如果设置为默认模型，需要将其他模型的 isDefault 设为 false
       if (values.isDefault) {
@@ -454,7 +453,7 @@ export function ProviderSettings() {
     try {
       if (!aiSettings) return;
       
-      const updatedModels = aiSettings.models.filter(m => m.key !== model.key);
+      const updatedModels = aiSettings.models?.filter(m => m.key !== model.key) || [];
       
       await updateAISettings({
         models: updatedModels
@@ -474,10 +473,10 @@ export function ProviderSettings() {
       if (!aiSettings) return;
       
       // 将所有模型的 isDefault 设为 false，除了选中的模型
-      const updatedModels = aiSettings.models.map(m => ({
+      const updatedModels = aiSettings.models?.map(m => ({
         ...m,
         isDefault: m.key === model.key
-      }));
+      })) || [];
 
       await updateAISettings({
         models: updatedModels,

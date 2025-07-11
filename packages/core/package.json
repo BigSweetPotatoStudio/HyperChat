@@ -61,8 +61,13 @@
     "README.md"
   ],
   "license": "MIT",
-  "module": "js/core/src/main.mjs",
+  "main": "dist/main.mjs",
+  "module": "dist/main.mjs",
   "type": "module",
+  "exports": {
+    ".": "./dist/main.mjs",
+    "./command": "./dist/command.mjs"
+  },
   "productName": "HyperChat",
   "repository": {
     "type": "git",
