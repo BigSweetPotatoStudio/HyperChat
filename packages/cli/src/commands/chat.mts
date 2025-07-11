@@ -124,17 +124,24 @@ export async function startChat(initialMessage?: string, options: ChatOptions = 
       
       console.log('\n🤖 AI 回复:');
       
-      // 简化输出，完成后一次性显示
+      // 流式输出
+      let displayedLength = 0;
       await aiChannel.completion({
         modelKey: modelKey!,
-        allowMCPs: mcpClients.map((c: any) => c.serverName)
+        allowMCPs: mcpClients.map((c: any) => c.serverName),
+        onUpdate: () => {
+          const lastMsg = aiChannel.lastMessage;
+          if (lastMsg.role === 'assistant') {
+            const content = lastMsg.content as string;
+            // 只输出新增的部分
+            if (content.length > displayedLength) {
+              const newPart = content.slice(displayedLength);
+              process.stdout.write(newPart);
+              displayedLength = content.length;
+            }
+          }
+        }
       });
-      
-      // 显示最终回复
-      const lastMsg = aiChannel.lastMessage;
-      if (lastMsg.role === 'assistant') {
-        console.log(lastMsg.content as string);
-      }
       
       console.log('\n'); // 换行
       return;
@@ -203,18 +210,32 @@ export async function startChat(initialMessage?: string, options: ChatOptions = 
       process.stdout.write('思考中...');
       
       try {
-        // 简化输出，完成后一次性显示
+        // 流式输出
+        let displayedLength = 0;
+        let isFirstUpdate = true;
+        
         await aiChannel.completion({
           modelKey: modelKey!,
-          allowMCPs: mcpClients.map((c: any) => c.serverName)
+          allowMCPs: mcpClients.map((c: any) => c.serverName),
+          onUpdate: () => {
+            const lastMsg = aiChannel.lastMessage;
+            if (lastMsg.role === 'assistant') {
+              // 第一次更新时清除"思考中..."
+              if (isFirstUpdate) {
+                process.stdout.write('\r' + ' '.repeat(20) + '\r');
+                isFirstUpdate = false;
+              }
+              
+              const content = lastMsg.content as string;
+              // 只输出新增的部分
+              if (content.length > displayedLength) {
+                const newPart = content.slice(displayedLength);
+                process.stdout.write(newPart);
+                displayedLength = content.length;
+              }
+            }
+          }
         });
-        
-        // 清除"思考中..."并显示最终回复
-        process.stdout.write('\r' + ' '.repeat(20) + '\r');
-        const lastMsg = aiChannel.lastMessage;
-        if (lastMsg.role === 'assistant') {
-          console.log(lastMsg.content as string);
-        }
         
         console.log('\n'); // 换行
       } catch (error) {
