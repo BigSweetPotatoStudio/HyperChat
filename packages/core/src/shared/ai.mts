@@ -3,7 +3,7 @@ import type { HyperChatCompletionTool, MyMessage, Tool_Call, AIModelConfigItem, 
 
 import * as MCPTypes from "@modelcontextprotocol/sdk/types.js";
 import type { CoreMessage, LanguageModel, StreamTextResult, ToolChoice, CoreTool, ToolSet, TextPart, FilePart, ToolCallPart, ImagePart } from 'ai';
-import { generateObject, jsonSchema, smoothStream, streamText } from 'ai';
+import { generateObject, streamObject, jsonSchema, smoothStream, streamText } from 'ai';
 import { createOpenAI, openai } from '@ai-sdk/openai';
 import { createAnthropic } from '@ai-sdk/anthropic';
 import { createGoogleGenerativeAI } from '@ai-sdk/google';
@@ -97,7 +97,7 @@ export class AiChannel {
     params: {
       modelKey: string;
       allowMCPs: string[],
-      onUpdate?: () => void;
+      onUpdate?: (r?: any) => void;
       call_tool?: boolean;
       confirm_call_tool?: boolean;  // 默认当成false
       confirm_call_tool_cb?: (tool: Tool_Call) => Promise<boolean>;
@@ -177,7 +177,7 @@ export class AiChannel {
       ai = aiProvider(modelConfig.model);
     } else {
       aiProvider = createOpenAICompatible({
-        name: modelConfig.model,
+        name: modelConfig.provider,
         baseURL: modelConfig.baseURL,
         apiKey: modelConfig.apiKey,
         fetch
@@ -190,7 +190,7 @@ export class AiChannel {
     params: {
       modelKey: string;
       allowMCPs: string[],
-      onUpdate?: () => void;
+      onUpdate?: (r?: any) => void;
       call_tool?: boolean;
       step: number;
       context: {},
@@ -508,7 +508,7 @@ export class AiChannel {
   // 检查是否需要压缩记忆
   private shouldCompressMemory(): boolean {
     if (!this.ext.compressionConfig?.enabled) return false;
-    let lastMemoryMessage = this.messages.findLastIndex(m => m.role === "hyper_memory");
+    let lastMemoryMessage = this.messages.findLastIndex(m => m.role === "hyper_memory" && m.content_status === "success");
     let userMessageCount = 0;
     for (let i = lastMemoryMessage + 1; i < this.messages.length; i++) {
       if (this.messages[i]!.role === "user") {
@@ -520,6 +520,7 @@ export class AiChannel {
 
   // 生成记忆摘要
   private async generateMemorySummary(messages: MyMessage[], modelKey: string): Promise<{
+    title: string;
     summary: string;
     key_points: string[];
     important_context: string;
@@ -537,53 +538,51 @@ export class AiChannel {
 ${conversationText}
 
 请用JSON格式返回：
+- title: 对话的简短标题，3-10个字
 - summary: 对话的简洁摘要
 - key_points: 重要观点和决策的数组
 - important_context: 需要保留的重要上下文信息`;
 
-    try {
-      return await this.completionParse(
-        { modelKey },
-        z.object({
-          summary: z.string(),
-          key_points: z.array(z.string()),
-          important_context: z.string()
-        }),
-        memoryPrompt
-      );
-    } catch (error) {
-      // 如果AI总结失败，使用简单的文本拼接
-      return {
-        summary: `对话摘要: 包含${messages.length}条消息的对话历史`,
-        key_points: ["对话历史已压缩"],
-        important_context: conversationText.slice(0, 500) + "..."
-      };
-    }
+
+    return await this.completionParse(
+      { modelKey },
+      z.object({
+        title: z.string(),
+        summary: z.string(),
+        key_points: z.array(z.string()),
+        important_context: z.string()
+      }),
+      memoryPrompt
+    );
+
   }
 
   // 压缩记忆
-  async compressMemory(modelKey?: string, onUpdate?: () => void): Promise<void> {
-    let lastMemoryMessageIndex = this.messages.findLastIndex(m => m.role === "hyper_memory");
+  async compressMemory(modelKey?: string, onUpdate?: (r?: any) => void): Promise<void> {
+    let lastMemoryMessageIndex = this.messages.findLastIndex(m => m.role === "hyper_memory" && m.content_status === "success");
     lastMemoryMessageIndex = lastMemoryMessageIndex === -1 ? 1 : lastMemoryMessageIndex; // 如果没有记忆消息，则从头开始
     let lastUserMessageIndex = this.messages.findLastIndex(m => m.role === "user");
 
     let compressMessagesCount = lastUserMessageIndex - lastMemoryMessageIndex - 1;
+    const memoryMessage: MyMessage = {
+      role: "hyper_memory",
+      content: "compressing...",
+      memory_key_points: [],
+      memory_original_count: compressMessagesCount,
+      content_date: Date.now(),
+      content_status: "loading",
+    };
+    onUpdate && onUpdate();
+    // 在最后一次user消息之前插入记忆消息
+    if (this.messages[lastUserMessageIndex - 1]!.role === "hyper_memory") {
+      this.messages[lastUserMessageIndex - 1] = memoryMessage; // 替换最后一次用户消息
+    } else {
+      this.messages.splice(lastUserMessageIndex, 0, memoryMessage);
+    }
 
     try {
       // 使用第一个可用的模型Key，或者从配置中获取默认模型
       const useModelKey = modelKey || this.ext.aiSettings.models[0]?.key || "default";
-      const memoryMessage: MyMessage = {
-        role: "hyper_memory",
-        content: "compressing...",
-        memory_key_points: [],
-        memory_original_count: compressMessagesCount,
-        content_date: Date.now(),
-        content_status: "loading",
-      };
-      onUpdate && onUpdate();
-      // 在最后一次user消息之前插入记忆消息
-      this.messages.splice(lastUserMessageIndex, 0, memoryMessage);
-
       const summary = await this.generateMemorySummary(this.messages.slice(lastMemoryMessageIndex, lastUserMessageIndex), useModelKey);
 
       memoryMessage.content = summary.summary;
@@ -591,9 +590,13 @@ ${conversationText}
       memoryMessage.memory_original_count = compressMessagesCount;
       memoryMessage.content_date = Date.now();
       memoryMessage.content_status = "success";
-      onUpdate && onUpdate();
+      onUpdate && onUpdate({ type: "compress", data: summary });
       console.log(`Memory compressed: ${compressMessagesCount} messages → 1 memory message`);
     } catch (error) {
+      memoryMessage.content_status = "error";
+      memoryMessage.content = "记忆压缩失败，继续使用完整对话历史";
+      memoryMessage.content_date = Date.now();
+      onUpdate && onUpdate({ type: "compress_error", error });
       console.error("Memory compression failed:", error);
       this.ext.antdmessage.warning("记忆压缩失败，继续使用完整对话历史");
     }
@@ -603,17 +606,51 @@ ${conversationText}
     let ai = await this.getAI(modelKey);
     if (!ai) throw new Error('AI model not initialized');
 
-    const { object } = await generateObject({
-      model: ai,
-      schema: schema,
-      prompt: prompt,
-    });
+    try {
+      const res = await streamObject({
+        model: ai,
+        schema: schema,
+        prompt: prompt,
+        providerOptions: {
+          // 这里可以添加提供者选项
+          "qwen": {
+            enable_thinking: false,
+          }
+        }
+      });
 
-    return object;
+      // 可选：处理流式更新
+      for await (const d of res.fullStream) {
+        // 这里可以添加实时更新逻辑，如果需要的话
+        // console.log('Partial object:', partialObject);
+        if (d.type === 'error') {
+          throw d.error;
+        }
+      }
+
+      return res.object;
+    } catch (error) {
+
+      const res = await generateObject({
+        model: ai,
+        schema: schema,
+        prompt: prompt,
+        providerOptions: {
+          // 这里可以添加提供者选项
+          "qwen": {
+            enable_thinking: false,
+          }
+        }
+      });
+
+
+      return res.object;
+    }
+
   }
   async messages2core(messages: MyMessage[]): Promise<CoreMessage[]> {
     let results: CoreMessage[] = [];
-    let lastMemoryMessage = this.messages.findLastIndex(m => m.role === "hyper_memory");
+    let lastMemoryMessage = this.messages.findLastIndex(m => m.role === "hyper_memory" && m.content_status === "success");
 
     for (let i = 0; i < messages.length; i++) {
       if (i > 0 && i < lastMemoryMessage) {

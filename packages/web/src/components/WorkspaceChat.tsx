@@ -518,7 +518,10 @@ export const WorkspaceChat = ({ workspace, agentKey, workspaceDetails, mcpClient
         allowMCPs: currentChat.current.allowMCPs,
         confirm_call_tool: currentChat.current.confirm_call_tool,
         confirm_call_tool_cb,
-        onUpdate: () => {
+        onUpdate: (r) => {
+          if (r && r.type == "compress") {
+            currentChat.current.label = r.data.title || currentChat.current.label;
+          }
           Object.assign(currentChat.current.messages, aiClient.messages);
           refresh();
         }
@@ -547,7 +550,7 @@ export const WorkspaceChat = ({ workspace, agentKey, workspaceDetails, mcpClient
         const agent = workspaceDetails[workspace.path]?.agents.find(a => a.config.key === agentKey);
         const agentName = agent?.config.name || agentKey;
         const chatLabel = currentChat.current.label || 'New Chat';
-        
+
         addChatRecentUsage(
           workspace.path,
           agentKey,
