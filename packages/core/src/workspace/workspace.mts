@@ -31,13 +31,21 @@ export class Workspace {
   private isGlobal: boolean;
 
   constructor(private workspacePath: string, config?: WorkspaceConfig) {
-    const hyperChatPath = path.join(workspacePath, this.HYPERCHAT_DIR);
-    
     // 检查是否为全局工作区
     this.isGlobal = workspacePath === CONSTANTS.GLOBAL_PATH;
+    
+    // 检查当前目录是否是工作区
+    const isCurrentDirWorkspace = this.isWorkspaceDirectory(workspacePath);
+    
+    // 如果不是工作区且不是全局工作区，则使用全局工作区路径
+    const effectiveWorkspacePath = isCurrentDirWorkspace || this.isGlobal 
+      ? workspacePath 
+      : CONSTANTS.GLOBAL_PATH;
+      
+    const hyperChatPath = path.join(effectiveWorkspacePath, this.HYPERCHAT_DIR);
 
     this.config = config || {
-      name: path.basename(workspacePath),
+      name: this.isGlobal ? 'Global Workspace' : path.basename(workspacePath),
       created: Date.now(),
       lastAccessed: Date.now(),
       settings: {
@@ -47,11 +55,19 @@ export class Workspace {
 
     this.agentManager = new AgentManager(path.join(hyperChatPath, CONSTANTS.DIRECTORIES.AGENTS));
     
-    // 使用全局 MCP 管理器
-    this.mcpManager = getMCPManager(workspacePath);
+    // 使用有效的工作区路径作为MCP管理器的路径
+    this.mcpManager = getMCPManager(effectiveWorkspacePath);
     
     // 初始化设置管理器
     this.settingsManager = new WorkspaceSettingsManager(hyperChatPath);
+  }
+
+  /**
+   * 检查指定路径是否为工作区（是否包含 .hyperchat 文件夹）
+   */
+  private isWorkspaceDirectory(directoryPath: string): boolean {
+    const hyperChatPath = path.join(directoryPath, this.HYPERCHAT_DIR);
+    return fs.existsSync(hyperChatPath) && fs.statSync(hyperChatPath).isDirectory();
   }
 
   /**
@@ -125,8 +141,8 @@ export class Workspace {
   async load(): Promise<void> {
     const hyperChatPath = this.getHyperChatPath();
 
-    // 加载配置文件
-    await this.loadConfig();
+    // 加载配置文件（支持全局+工作区合并）
+    await this.loadMergedConfig();
 
     // 加载 agents
     await this.agentManager.init();
@@ -139,9 +155,47 @@ export class Workspace {
   }
 
   /**
+   * 加载合并的配置（全局 + 工作区）
+   */
+  private async loadMergedConfig(): Promise<void> {
+    // 检查当前目录是否是工作区
+    const isCurrentDirWorkspace = this.isWorkspaceDirectory(this.workspacePath);
+    
+    if (isCurrentDirWorkspace && !this.isGlobal) {
+      // 如果是工作区且不是全局工作区，先加载全局配置，再合并当前工作区配置
+      await this.loadGlobalConfig();
+      await this.loadWorkspaceConfig();
+    } else {
+      // 如果不是工作区或者是全局工作区，直接加载当前配置
+      await this.loadWorkspaceConfig();
+    }
+  }
+
+  /**
+   * 加载全局工作区配置
+   */
+  private async loadGlobalConfig(): Promise<void> {
+    const globalConfigPath = path.join(CONSTANTS.GLOBAL_PATH, this.HYPERCHAT_DIR, CONSTANTS.CONFIG_FILES.WORKSPACE);
+    
+    if (fs.existsSync(globalConfigPath)) {
+      try {
+        const content = await fs.promises.readFile(globalConfigPath, "utf-8");
+        const globalConfig = JSON.parse(content);
+
+        if (validateWorkspaceConfig(globalConfig)) {
+          // 将全局配置作为基础配置
+          this.config = { ...this.config, ...globalConfig };
+        }
+      } catch (error) {
+        console.warn(`加载全局工作区配置失败:`, error);
+      }
+    }
+  }
+
+  /**
    * 加载工作区配置
    */
-  private async loadConfig(): Promise<void> {
+  private async loadWorkspaceConfig(): Promise<void> {
     const configPath = path.join(this.getHyperChatPath(), CONSTANTS.CONFIG_FILES.WORKSPACE);
 
     if (fs.existsSync(configPath)) {
@@ -150,6 +204,7 @@ export class Workspace {
         const config = JSON.parse(content);
 
         if (validateWorkspaceConfig(config)) {
+          // 工作区配置覆盖全局配置
           this.config = { ...this.config, ...config };
         } else {
           console.warn('工作区配置格式无效，使用默认配置');
@@ -186,10 +241,49 @@ export class Workspace {
   // ========== Agent 管理 ==========
 
   /**
-   * 获取所有 agents
+   * 获取所有 agents（支持全局+工作区合并）
    */
   async getAgents(): Promise<AgentConfig[]> {
-    return await this.agentManager.getAllAgents();
+    // 检查当前目录是否是工作区
+    const isCurrentDirWorkspace = this.isWorkspaceDirectory(this.workspacePath);
+    
+    if (isCurrentDirWorkspace && !this.isGlobal) {
+      // 如果是工作区且不是全局工作区，获取合并的Agents
+      return await this.getMergedAgents();
+    } else {
+      // 如果不是工作区或者是全局工作区，直接返回当前AgentManager的Agents
+      return await this.agentManager.getAllAgents();
+    }
+  }
+
+  /**
+   * 获取合并的 agents（全局 + 当前工作区）
+   */
+  async getMergedAgents(): Promise<AgentConfig[]> {
+    // 获取全局Agents
+    const globalAgentManager = new (await import('./agentManager.mjs')).AgentManager(
+      path.join(CONSTANTS.GLOBAL_PATH, this.HYPERCHAT_DIR, CONSTANTS.DIRECTORIES.AGENTS)
+    );
+    await globalAgentManager.init();
+    const globalAgents = await globalAgentManager.getAllAgents();
+    
+    // 获取当前工作区Agents
+    const workspaceAgents = await this.agentManager.getAllAgents();
+
+    // 创建一个 Map 来去重，工作区的配置覆盖全局配置
+    const mergedAgentsMap = new Map<string, AgentConfig>();
+
+    // 先添加全局 agents
+    globalAgents.forEach(agent => {
+      mergedAgentsMap.set(agent.key, { ...agent, type: 'builtin' });
+    });
+
+    // 再添加工作区 agents，会覆盖同名的全局 agents
+    workspaceAgents.forEach(agent => {
+      mergedAgentsMap.set(agent.key, { ...agent, type: 'custom' });
+    });
+
+    return Array.from(mergedAgentsMap.values());
   }
 
   /**
