@@ -189,75 +189,68 @@ export class Workspace {
   }
 
   /**
-   * 加载合并的配置（全局 + 工作区）
+   * 从settings.jsonc加载工作区元数据
    */
   private async loadMergedConfig(): Promise<void> {
-    // 检查当前目录是否是工作区
-    const isCurrentDirWorkspace = this.isWorkspaceDirectory(this.workspacePath);
-
-    if (isCurrentDirWorkspace && !this.isGlobal) {
-      // 如果是工作区且不是全局工作区，先加载全局配置，再合并当前工作区配置
-      await this.loadGlobalConfig();
-      await this.loadWorkspaceConfig();
-    } else {
-      // 如果不是工作区或者是全局工作区，直接加载当前配置
-      await this.loadWorkspaceConfig();
-    }
+    await this.loadWorkspaceMetaFromSettings();
   }
 
   /**
-   * 加载全局工作区配置
+   * 从settingsManager加载工作区元数据
    */
-  private async loadGlobalConfig(): Promise<void> {
-    const globalConfigPath = path.join(CONSTANTS.GLOBAL_PATH, this.HYPERCHAT_DIR, CONSTANTS.CONFIG_FILES.WORKSPACE);
+  private async loadWorkspaceMetaFromSettings(): Promise<void> {
+    try {
+      // 确保工作区元数据已初始化
+      await this.settingsManager.initializeWorkspaceMetadata(
+        this.config.name, 
+        this.config.description
+      );
 
-    if (fs.existsSync(globalConfigPath)) {
-      try {
-        const content = await fs.promises.readFile(globalConfigPath, "utf-8");
-        const globalConfig = JSON.parse(content);
-
-        if (validateWorkspaceConfig(globalConfig)) {
-          // 将全局配置作为基础配置
-          this.config = { ...this.config, ...globalConfig };
-        }
-      } catch (error) {
-        console.warn(`加载全局工作区配置失败:`, error);
+      // 从settingsManager获取工作区元数据
+      const metadata = this.settingsManager.getWorkspaceMetadata();
+      if (metadata) {
+        this.config.name = metadata.name || this.config.name;
+        this.config.description = metadata.description;
+        this.config.created = metadata.created || 0;
+        this.config.lastAccessed = metadata.lastAccessed || 0;
       }
-    }
-  }
 
-  /**
-   * 加载工作区配置
-   */
-  private async loadWorkspaceConfig(): Promise<void> {
-    const configPath = path.join(this.getHyperChatPath(), CONSTANTS.CONFIG_FILES.WORKSPACE);
-
-    if (fs.existsSync(configPath)) {
-      try {
-        const content = await fs.promises.readFile(configPath, "utf-8");
-        const config = JSON.parse(content);
-
-        if (validateWorkspaceConfig(config)) {
-          // 工作区配置覆盖全局配置
-          this.config = { ...this.config, ...config };
-        } else {
-          console.warn('工作区配置格式无效，使用默认配置');
-        }
-      } catch (error) {
-        console.warn(`加载工作区配置失败:`, error);
-      }
+      // 从AI设置映射到WorkspaceSettings
+      const aiSettings = this.settingsManager.getAI();
+      this.config.settings = {
+        defaultModel: aiSettings.defaultModel,
+        defaultAgent: aiSettings.defaultAgent,
+      };
+    } catch (error) {
+      console.warn('从settings加载工作区元数据失败:', error);
     }
   }
 
 
   /**
-   * 保存工作区配置
+   * 保存工作区配置到settings.jsonc
    */
   async saveConfig(): Promise<void> {
-    const configPath = path.join(this.getHyperChatPath(), CONSTANTS.CONFIG_FILES.WORKSPACE);
-
     try {
-      await fs.promises.writeFile(configPath, JSON.stringify(this.config, null, 2), "utf-8");
+      // 更新工作区元数据
+      await this.settingsManager.updateWorkspaceMetadata({
+        name: this.config.name,
+        description: this.config.description,
+        created: this.config.created,
+        lastAccessed: Date.now(),
+      });
+
+      // 同步AI设置
+      if (this.config.settings?.defaultModel || this.config.settings?.defaultAgent) {
+        const aiUpdates: any = {};
+        if (this.config.settings.defaultModel) {
+          aiUpdates.defaultModel = this.config.settings.defaultModel;
+        }
+        if (this.config.settings.defaultAgent) {
+          aiUpdates.defaultAgent = this.config.settings.defaultAgent;
+        }
+        await this.settingsManager.updateAI(aiUpdates);
+      }
     } catch (error) {
       console.warn(`保存工作区配置失败:`, error);
     }
@@ -724,4 +717,5 @@ export class Workspace {
       lastSync: this.lastSync,
     };
   }
+
 }

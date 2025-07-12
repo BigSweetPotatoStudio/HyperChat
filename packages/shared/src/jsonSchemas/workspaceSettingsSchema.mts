@@ -32,8 +32,17 @@ export const WorkspaceAdvancedSchema = z.object({
   experimentalFeatures: z.boolean().default(false).describe("是否启用实验性功能"),
 });
 
+// 工作区元数据 Schema
+export const WorkspaceMetadataSchema = z.object({
+  name: z.string().describe("工作区名称"),
+  description: z.string().optional().describe("工作区描述"),
+  created: z.number().describe("创建时间戳"),
+  lastAccessed: z.number().describe("最后访问时间戳"),
+});
+
 // 完整的工作区设置 Schema
 export const WorkspaceSettingsSchema = z.object({
+  workspace: WorkspaceMetadataSchema.optional().describe("工作区元数据"),
   appearance: WorkspaceAppearanceSchema.default({}),
   editor: WorkspaceEditorSchema.default({}),
   ai: WorkspaceAISchema.default({}),
@@ -42,6 +51,7 @@ export const WorkspaceSettingsSchema = z.object({
 
 // 导出类型
 export type WorkspaceSettings = z.infer<typeof WorkspaceSettingsSchema>;
+export type WorkspaceMetadata = z.infer<typeof WorkspaceMetadataSchema>;
 export type WorkspaceAppearanceSettings = z.infer<typeof WorkspaceAppearanceSchema>;
 export type WorkspaceEditorSettings = z.infer<typeof WorkspaceEditorSchema>;
 export type WorkspaceAISettings = z.infer<typeof WorkspaceAISchema>;

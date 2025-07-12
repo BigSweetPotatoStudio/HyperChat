@@ -5,6 +5,34 @@
     "HyperChatWorkspaceSettings": {
       "type": "object",
       "properties": {
+        "workspace": {
+          "type": "object",
+          "properties": {
+            "name": {
+              "type": "string",
+              "description": "工作区名称"
+            },
+            "description": {
+              "type": "string",
+              "description": "工作区描述"
+            },
+            "created": {
+              "type": "number",
+              "description": "创建时间戳"
+            },
+            "lastAccessed": {
+              "type": "number",
+              "description": "最后访问时间戳"
+            }
+          },
+          "required": [
+            "name",
+            "created",
+            "lastAccessed"
+          ],
+          "additionalProperties": false,
+          "description": "工作区元数据"
+        },
         "appearance": {
           "type": "object",
           "properties": {

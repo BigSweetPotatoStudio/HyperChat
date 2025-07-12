@@ -5,7 +5,7 @@ import * as os from "os";
 export const CONSTANTS = {
   HYPERCHAT_DIR: '.hyperchat',
   CONFIG_FILES: {
-    WORKSPACE: 'workspace.json',
+    SETTINGS: 'settings.jsonc',
     MCP: 'mcp.json',
     AGENT_CONFIG: 'agent.yaml',
   },

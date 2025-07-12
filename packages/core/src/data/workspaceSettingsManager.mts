@@ -9,12 +9,14 @@ import {
   WorkspaceEditorSettings,
   WorkspaceAISettings,
   WorkspaceAdvancedSettings,
+  WorkspaceMetadata,
   DEFAULT_WORKSPACE_SETTINGS,
 } from "@hyperchat/shared/jsonSchemas/workspaceSettingsSchema";
 
 // 重新导出 schema 和类型，保持向后兼容
 export {
   WorkspaceSettingsSchema,
+  WorkspaceMetadataSchema,
   DEFAULT_WORKSPACE_SETTINGS,
 } from "@hyperchat/shared/jsonSchemas/workspaceSettingsSchema";
 
@@ -286,5 +288,48 @@ export class WorkspaceSettingsManager {
    */
   getSchemaPath(): string {
     return this.schemaPath;
+  }
+
+  // ========== 工作区元数据管理方法 ==========
+
+  /**
+   * 获取工作区元数据
+   */
+  getWorkspaceMetadata(): WorkspaceMetadata | undefined {
+    return this.settings.workspace;
+  }
+
+  /**
+   * 更新工作区元数据
+   */
+  async updateWorkspaceMetadata(metadata: Partial<WorkspaceMetadata>): Promise<void> {
+    const currentMetadata: WorkspaceMetadata = this.settings.workspace || {
+      name: 'Workspace',
+      created: Date.now(),
+      lastAccessed: Date.now(),
+    };
+
+    this.settings.workspace = {
+      ...currentMetadata,
+      ...metadata,
+      lastAccessed: Date.now(), // 总是更新访问时间
+    };
+
+    await this.save();
+  }
+
+  /**
+   * 初始化工作区元数据（如果不存在）
+   */
+  async initializeWorkspaceMetadata(name: string, description?: string): Promise<void> {
+    if (!this.settings.workspace) {
+      this.settings.workspace = {
+        name,
+        description,
+        created: Date.now(),
+        lastAccessed: Date.now(),
+      };
+      await this.save();
+    }
   }
 }
