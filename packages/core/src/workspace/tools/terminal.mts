@@ -1,5 +1,5 @@
 import os from "os";
-import * as pty from "node-pty";
+import * as pty from "@homebridge/node-pty-prebuilt-multiarch";
 import { EventEmitter } from "events";
 import { Logger } from "../../log.mjs";
 import type { TerminalMessage, TerminalMessageExtended } from "@hyperchat/shared/types";

@@ -53,6 +53,7 @@ const password = getAppSettingsManager().getSystem().password || "123456";
 export const urlPrefix = "/" + encodeURI(password);
 Logger.info("Server password:", password);
 
+
 export const callNodejsApiPath = urlPrefix + "/call";
 
 
@@ -171,7 +172,7 @@ export async function initHttp(): Promise<void> {
   });
 
   Config.port = PORT;
-
+  console.log(`url: http://localhost:${PORT}${urlPrefix}/`);
   // Socket.IO 错误处理
   io.on("error", (error) => {
     Logger.error("Socket.IO error:", error);

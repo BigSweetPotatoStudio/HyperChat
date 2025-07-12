@@ -3,10 +3,7 @@
 
 export const zx = await import(/* webpackIgnore: true */ "zx");
 
-import fs from "fs-extra";
-export { fs };
-
-export const { $, usePowerShell, os } = zx;
+export const { $, usePowerShell, os, fs } = zx;
 export const { shellPathSync } = await import(
   /* webpackIgnore: true */ "shell-path"
 );
@@ -76,21 +73,7 @@ export const {
   /* webpackIgnore: true */ "@modelcontextprotocol/sdk/types.js"
 );
 
-export const { RAGApplicationBuilder, TextLoader } = await import(
-  /* webpackIgnore: true */ "@llm-tools/embedjs"
-);
 
-export const { OpenAiEmbeddings } = await import(
-  /* webpackIgnore: true */ "@llm-tools/embedjs-openai"
-);
-
-export const { LibSqlDb } = await import(
-  /* webpackIgnore: true */ "@llm-tools/embedjs-libsql"
-);
-
-export const { PdfLoader } = await import(
-  /* webpackIgnore: true */ "@llm-tools/embedjs-loader-pdf"
-);
 
 const stripModule = await import(/* webpackIgnore: true */ "strip-ansi");
 

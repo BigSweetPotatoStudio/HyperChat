@@ -15,7 +15,7 @@ export function genRouter(commandInstance: typeof Command): Router {
 
     // 获取 Command 类的所有方法名（排除构造函数）
     const functionNames = Object.getOwnPropertyNames(commandInstance)
-        .filter(name => name !== "constructor" && typeof commandInstance[name] === "function");
+        .filter(name => name !== "constructor" && typeof (commandInstance as any)[name] === "function");
 
     // 为每个 Command 方法生成对应的 POST 路由
     for (const methodName of functionNames) {

@@ -31,7 +31,8 @@
       "mcp__ide__getDiagnostics",
       "Bash(timeout:*)",
       "Bash(cp:*)",
-      "Bash(tsx:*)"
+      "Bash(tsx:*)",
+      "Bash(npm uninstall:*)"
     ],
     "deny": []
   }

@@ -174,6 +174,10 @@ const tasks = {
 
     const electronDir = join(rootDir, 'packages/electron');
 
+    // 安装 Electron 依赖（独立安装）
+    console.log('  📦 安装 Electron 依赖...');
+    exec('npm install', { cwd: electronDir });
+
     // 复制 Web 构建产物
     const webBuildSrc = join(rootDir, 'packages/web/build');
     const webBuildDest = join(electronDir, 'web-build');
