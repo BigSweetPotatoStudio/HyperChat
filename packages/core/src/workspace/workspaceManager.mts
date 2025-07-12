@@ -50,12 +50,47 @@ export class WorkspaceManager {
   }
 
   /**
+   * 清理工作区管理器，释放资源
+   */
+  async uninit(): Promise<void> {
+    if (!this.isInitialized) {
+      return;
+    }
+
+    try {
+      // 停止当前工作区的MCP客户端
+      if (this.currentWorkspace) {
+        await this.currentWorkspace.stopMcpClients();
+      }
+
+      this.isInitialized = false;
+    } catch (error) {
+      console.warn('清理工作区管理器失败:', error);
+      throw error;
+    }
+  }
+
+  /**
    * 切换工作区
    * @param workspacePath 工作区路径
    */
   async switchWorkspace(workspacePath: string): Promise<void> {
     // 查找工作区或使用全局工作区
     const targetPath = this.findWorkspaceInPath(workspacePath) || CONSTANTS.GLOBAL_PATH;
+
+    // 如果目标路径与当前工作区相同，无需切换
+    if (this.currentWorkspace && this.currentWorkspace['workspacePath'] === targetPath) {
+      return;
+    }
+
+    // 先清理当前工作区的资源
+    if (this.currentWorkspace) {
+      try {
+        await this.currentWorkspace.stopMcpClients();
+      } catch (error) {
+        console.warn('停止当前工作区MCP客户端失败:', error);
+      }
+    }
 
     // 创建新的工作区实例
     this.currentWorkspace = new Workspace(targetPath);
