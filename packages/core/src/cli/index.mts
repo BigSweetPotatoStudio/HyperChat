@@ -16,6 +16,10 @@ import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
 import { Logger } from './utils/logger.mjs';
 import { workspaceManager } from '../workspace/index.mjs';
+import { startChat } from './commands/chat.mjs';
+import { startServer, stopServer, serverStatus } from './commands/server.mjs';
+import { listWorkspaces, createWorkspace, showWorkspaceInfo } from './commands/workspace.mjs';
+import { listAgents, createAgent } from './commands/agent.mjs';
 // 获取包信息
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const packagePath = join(__dirname, '..', '..', 'package.json');
@@ -72,8 +76,6 @@ function showHelp() {
   workspace create <path>  创建新工作区
   workspace info <path>    查看指定工作区信息
   agent list               列出所有代理
-  config get <key>         获取配置值
-  config set <key> <value> 设置配置值
   help                     显示帮助信息
 
 示例:
@@ -93,14 +95,14 @@ async function handleCommand(): Promise<{ shouldExit: boolean }> {
   
   
   // 检测是否有非命令的消息 (直接聊天)
-  const possibleMessage = cleanArgs.find(arg => !['chat', 'server', 'workspace', 'agent', 'config', 'help'].includes(arg));
+  const possibleMessage = cleanArgs.find(arg => !['chat', 'server', 'workspace', 'agent', 'help'].includes(arg));
   const firstArg = cleanArgs[0];
-  const isDirectMessage = cleanArgs.length > 0 && possibleMessage && firstArg && !firstArg.match(/^(chat|server|workspace|agent|config|help)$/);
+  const isDirectMessage = cleanArgs.length > 0 && possibleMessage && firstArg && !firstArg.match(/^(chat|server|workspace|agent|help)$/);
   
   if (isDirectMessage) {
     // 直接聊天模式: hyperchat "你好"
     const message = cleanArgs.join(' ');
-    await startChat([message], logger);
+    await startChatWrapper([message], logger);
     return { shouldExit: true };  // 聊天完成后应该退出
   }
 
@@ -109,15 +111,14 @@ async function handleCommand(): Promise<{ shouldExit: boolean }> {
   switch (cmd) {
     case 'chat':
       const messages = cleanArgs.slice(1);
-      await startChat(messages, logger);
+      await startChatWrapper(messages, logger);
       return { shouldExit: true };  // 聊天完成后应该退出
     
     case 'server':
       const subCommand = cleanArgs[1];
-      const { startServer: serverStart, stopServer: serverStop, serverStatus: status } = await import('./commands/server.mjs');
       
       if (subCommand === 'start') {
-        await serverStart({
+        await startServer({
           port: globalOptions.port,
           host: globalOptions.host,
           verbose: globalOptions.verbose,
@@ -125,13 +126,13 @@ async function handleCommand(): Promise<{ shouldExit: boolean }> {
         });
         return { shouldExit: false };  // server start 需要保持进程运行
       } else if (subCommand === 'stop') {
-        await serverStop({
+        await stopServer({
           verbose: globalOptions.verbose,
           quiet: globalOptions.quiet
         });
         return { shouldExit: true };   // server stop 执行完应该退出
       } else if (subCommand === 'status') {
-        await status({
+        await serverStatus({
           port: globalOptions.port,
           host: globalOptions.host,
           verbose: globalOptions.verbose,
@@ -147,14 +148,14 @@ async function handleCommand(): Promise<{ shouldExit: boolean }> {
     case 'workspace':
       const workspaceSubCmd = cleanArgs[1];
       if (workspaceSubCmd === 'list') {
-        await listWorkspaces(logger);
+        await listWorkspacesWrapper(logger);
       } else if (workspaceSubCmd === 'create') {
         const workspacePath = cleanArgs[2];
         if (!workspacePath) {
           logger.error('请提供工作区路径');
           logger.info('使用方法: hyperchat workspace create <path>');
         } else {
-          await createWorkspace(workspacePath, logger);
+          await createWorkspaceWrapper(workspacePath, logger);
         }
       } else if (workspaceSubCmd === 'info') {
         const workspacePath = cleanArgs[2];
@@ -162,7 +163,7 @@ async function handleCommand(): Promise<{ shouldExit: boolean }> {
           logger.error('请提供工作区路径');
           logger.info('使用方法: hyperchat workspace info <path>');
         } else {
-          await showWorkspaceInfo(workspacePath, logger);
+          await showWorkspaceInfoWrapper(workspacePath, logger);
         }
       } else if (workspaceSubCmd === 'current') {
         await showCurrentWorkspace(logger);
@@ -175,14 +176,14 @@ async function handleCommand(): Promise<{ shouldExit: boolean }> {
     case 'agent':
       const agentSubCmd = cleanArgs[1];
       if (agentSubCmd === 'list') {
-        await listAgents(logger);
+        await listAgentsWrapper(logger);
       } else if (agentSubCmd === 'create') {
         const agentName = cleanArgs[2];
         if (!agentName) {
           logger.error('请提供代理名称');
           logger.info('使用方法: hyperchat agent create <name>');
         } else {
-          await createAgent(agentName, logger);
+          await createAgentWrapper(agentName, logger);
         }
       } else {
         logger.error('未知的代理命令:', agentSubCmd);
@@ -198,10 +199,8 @@ async function handleCommand(): Promise<{ shouldExit: boolean }> {
 }
 
 // 聊天功能
-async function startChat(messages: string[], logger: Logger) {
+async function startChatWrapper(messages: string[], logger: Logger) {
   try {
-    const { startChat: chatStart } = await import('./commands/chat.mjs');
-    
     const options = {
       verbose: globalOptions.verbose,
       quiet: globalOptions.quiet,
@@ -210,9 +209,9 @@ async function startChat(messages: string[], logger: Logger) {
     
     if (messages.length > 0) {
       const message = messages.join(' ');
-      await chatStart(message, options);
+      await startChat(message, options);
     } else {
-      await chatStart(undefined, options);
+      await startChat(undefined, options);
     }
     
   } catch (error) {
@@ -221,172 +220,18 @@ async function startChat(messages: string[], logger: Logger) {
   }
 }
 
-// 启动服务器
-async function startServer(logger: Logger) {
-  logger.info('🚀 启动 HyperChat 服务器...');
-  
-  const { spawn } = await import('child_process');
-  const { join } = await import('path');
-  
-  try {
-    // 检查服务器是否已经在运行
-    try {
-      const isRunning = await checkServerHealth(globalOptions.host, globalOptions.port);
-      if (isRunning) {
-        logger.warn(`服务器已在 ${globalOptions.host}:${globalOptions.port} 上运行`);
-        logger.info(`🌐 Web 界面: http://${globalOptions.host}:${globalOptions.port}`);
-        return;
-      }
-    } catch (error) {
-      // 服务器未运行，继续启动
-    }
-    
-    // 启动 Core 服务器
-    // 获取正确的core包路径（当前就在core包内）
-    const corePackagePath = join(__dirname, '..', '..');
-    logger.debug(`Core 包路径: ${corePackagePath}`);
-    
-    // 现在CLI在core包内，无需检查core包路径
-    
-    const serverProcess = spawn('npm', ['run', 'dev'], {
-      cwd: corePackagePath,
-      stdio: globalOptions.verbose ? 'inherit' : 'pipe',
-      env: {
-        ...process.env,
-        PORT: globalOptions.port.toString(),
-        myEnv: 'dev'
-      },
-      shell: true
-    });
-    
-    // 监听错误输出
-    if (!globalOptions.verbose && serverProcess.stderr) {
-      serverProcess.stderr.on('data', (data) => {
-        logger.debug('服务器错误:', data.toString());
-      });
-    }
-    
-    // 监听启动错误
-    serverProcess.on('error', (error) => {
-      logger.error('无法启动服务器进程:', error.message);
-      process.exit(1);
-    });
-
-    // 等待服务器启动
-    logger.info('⏳ 等待服务器启动...');
-    
-    // 多次尝试检查服务器状态
-    let attempts = 0;
-    const maxAttempts = 10;
-    let isServerRunning = false;
-    
-    while (attempts < maxAttempts && !isServerRunning) {
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      isServerRunning = await checkServerHealth(globalOptions.host, globalOptions.port);
-      attempts++;
-      if (!isServerRunning && attempts < maxAttempts) {
-        logger.debug(`尝试连接服务器... (${attempts}/${maxAttempts})`);
-      }
-    }
-    
-    if (isServerRunning) {
-      logger.success('服务器启动成功');
-      logger.info(`🌐 Web 界面: http://${globalOptions.host}:${globalOptions.port}`);
-      logger.info('📝 按 Ctrl+C 停止服务器');
-      
-      // 监听进程退出
-      process.on('SIGINT', () => {
-        logger.info('\\n🛑 正在停止服务器...');
-        serverProcess.kill('SIGTERM');
-        process.exit(0);
-      });
-      
-      // 等待服务器进程
-      serverProcess.on('exit', (code) => {
-        logger.info(`服务器进程退出，代码: ${code || 0}`);
-        process.exit(code || 0);
-      });
-      
-    } else {
-      logger.error('服务器启动失败');
-      serverProcess.kill('SIGTERM');
-      process.exit(1);
-    }
-    
-  } catch (error) {
-    logger.error('启动失败:', error instanceof Error ? error.message : String(error));
-    process.exit(1);
-  }
-}
-
-// 停止服务器
-async function stopServer(logger: Logger) {
-  logger.info('🛑 停止服务器功能开发中...');
-  logger.info('💡 请使用 Ctrl+C 停止正在运行的服务器');
-}
-
-// 检查服务器状态
-async function serverStatus(logger: Logger) {
-  try {
-    const isServerRunning = await checkServerHealth(globalOptions.host, globalOptions.port);
-    
-    logger.info('📊 服务器状态:');
-    if (isServerRunning) {
-      logger.info(`  状态: 运行中`);
-      logger.info(`  地址: http://${globalOptions.host}:${globalOptions.port}`);
-    } else {
-      logger.info(`  状态: 未运行`);
-    }
-    
-  } catch (error) {
-    logger.info('📊 服务器状态:');
-    logger.info(`  状态: 未知`);
-    logger.debug('错误:', error instanceof Error ? error.message : String(error));
-  }
-}
-
-// 检查服务器健康状态
-async function checkServerHealth(host: string, port: number): Promise<boolean> {
-  const { request } = await import('http');
-  
-  return new Promise((resolve) => {
-    const req = request({
-      hostname: host,
-      port: port,
-      path: '/',
-      method: 'GET',
-      timeout: 2000
-    }, (res) => {
-      resolve(res.statusCode === 200 || res.statusCode === 404); // 404 也算服务器在运行
-    });
-    
-    req.on('error', () => {
-      resolve(false);
-    });
-    
-    req.on('timeout', () => {
-      req.destroy();
-      resolve(false);
-    });
-    
-    req.end();
-  });
-}
 
 // 工作区管理功能
-async function listWorkspaces(logger: Logger) {
-  const { listWorkspaces: listWs } = await import('./commands/workspace.mjs');
-  await listWs();
+async function listWorkspacesWrapper(_logger: Logger) {
+  await listWorkspaces();
 }
 
-async function createWorkspace(path: string, logger: Logger) {
-  const { createWorkspace: createWs } = await import('./commands/workspace.mjs');
-  await createWs(path);
+async function createWorkspaceWrapper(path: string, _logger: Logger) {
+  await createWorkspace(path);
 }
 
-async function showWorkspaceInfo(path: string, logger: Logger) {
-  const { showWorkspaceInfo: showInfo } = await import('./commands/workspace.mjs');
-  await showInfo(path);
+async function showWorkspaceInfoWrapper(path: string, _logger: Logger) {
+  await showWorkspaceInfo(path);
 }
 
 async function showCurrentWorkspace(logger: Logger) {
@@ -413,14 +258,12 @@ async function showCurrentWorkspace(logger: Logger) {
 }
 
 // 代理管理功能
-async function listAgents(logger: Logger) {
-  const { listAgents: listAg } = await import('./commands/agent.mjs');
-  await listAg();
+async function listAgentsWrapper(_logger: Logger) {
+  await listAgents();
 }
 
-async function createAgent(name: string, logger: Logger) {
-  const { createAgent: createAg } = await import('./commands/agent.mjs');
-  await createAg(name);
+async function createAgentWrapper(name: string, _logger: Logger) {
+  await createAgent(name);
 }
 
 

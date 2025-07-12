@@ -35,15 +35,12 @@ export async function startChat(initialMessage?: string, options: ChatOptions = 
     let workspacePath = options.workspace;
     let sessionConfig: any;
 
-    if (!workspacePath) {
-      // 新架构：直接使用工作区管理器
-      // workspaceManager is already imported
-      await workspaceManager.initialize();
-      workspacePath = workspaceManager.getCurrentWorkspacePath();
-      // 新架构下简化配置获取
-      logger.info(`🎯 使用工作区: ${workspacePath}`);
-      // sessionConfig 暂时为空，新架构下不需要
-    }
+
+    await workspaceManager.initialize(workspacePath);
+    workspacePath = workspaceManager.getCurrentWorkspacePath();
+    // 新架构下简化配置获取
+    logger.info(`🎯 使用工作区: ${workspacePath}`);
+
 
     logger.debug(`使用工作区: ${workspacePath}`);
     const appSettings = await Command.getAppSettings();
