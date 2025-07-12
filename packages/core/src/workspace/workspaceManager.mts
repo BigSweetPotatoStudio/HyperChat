@@ -42,7 +42,7 @@ export class WorkspaceManager {
       }
       // 初始化当前工作区
       await this.currentWorkspace.init();
-
+      console.log(`工作区管理器已初始化，当前工作区: ${this.currentWorkspace.workspacePath}`);
       this.isInitialized = true;
     } catch (error) {
       console.warn('初始化工作区管理器失败:', error);
