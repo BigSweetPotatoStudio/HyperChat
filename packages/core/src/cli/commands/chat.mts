@@ -69,6 +69,10 @@ export async function startChat(initialMessage?: string, options: ChatOptions = 
 
     logger.info(`🤖 使用模型: ${modelKey}`);
 
+    // 获取工作区的Agent数量
+    const agentsSummary = await Command.getWorkspaceAgentsSummary({ workspacePath });
+    logger.info(`👥 当前工作区Agent数量: ${agentsSummary.length}`);
+
     // 获取工作区的MCP工具
     const mcpClients = await Command.getWorkspaceMcpClients({ workspacePath });
     const mcpTools = mcpClients.flatMap((client: any) =>
@@ -83,7 +87,7 @@ export async function startChat(initialMessage?: string, options: ChatOptions = 
       })) || []
     );
 
-    logger.debug(`加载了 ${mcpTools.length} 个MCP工具`);
+    logger.info(`🔧 可用MCP工具数量: ${mcpTools.length}`);
 
     // 初始化AI聊天频道
     const aiChannel = new AiChannel();
