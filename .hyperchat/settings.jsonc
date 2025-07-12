@@ -2,7 +2,7 @@
   "$schema": "./settings.schema.json",
   "workspace": {
     "name": "HyperChat",
-    "created": 1752301306586
+    "created": 1752360678627
   },
   "appearance": {
     "isDarkMode": false,

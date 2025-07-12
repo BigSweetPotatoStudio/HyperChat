@@ -894,22 +894,6 @@ export function Workspace() {
     );
   };
 
-  // 处理工作区切换和关闭
-  const handleTabEdit = (targetKey: string | React.MouseEvent<Element, MouseEvent> | React.KeyboardEvent<Element>, action: 'add' | 'remove') => {
-    if (action === 'add') {
-      // 显示工作区切换对话框
-      setOpenModalOpen(true);
-    } else if (action === 'remove') {
-      // 确保 targetKey 是字符串类型
-      if (typeof targetKey === 'string') {
-        const workspace = currentWorkspace;
-        if (workspace && !workspace.isGlobal) {
-          // TODO: 处理工作区关闭
-          message.info(t`Close workspace not implemented yet`);
-        }
-      }
-    }
-  };
 
   return (
     <div className="workspace-page h-full">
@@ -920,7 +904,6 @@ export function Workspace() {
             type="editable-card"
             activeKey={activeWorkspaceKey}
             onChange={handleTabChange}
-            onEdit={handleTabEdit}
             style={{ height: '100%' }}
             tabBarStyle={{
               marginBottom: 8,
@@ -1024,35 +1007,6 @@ export function Workspace() {
                 message.error(t`Failed to reset app settings`);
               }
             }}
-            onExport={async () => {
-              try {
-                const settingsJson = await call("exportAppSettings");
-                // 创建下载链接
-                const blob = new Blob([settingsJson], { type: "application/json" });
-                const url = URL.createObjectURL(blob);
-                const a = document.createElement("a");
-                a.href = url;
-                a.download = `hyperchat-app-settings.json`;
-                a.click();
-                URL.revokeObjectURL(url);
-                message.success(t`App settings exported successfully`);
-              } catch (error) {
-                console.error("Failed to export app settings:", error);
-                message.error(t`Failed to export app settings`);
-              }
-            }}
-            onImport={async (settingsJson: string) => {
-              try {
-                const importedSettings = await call("importAppSettings", {
-                  settingsJson
-                });
-                setAppSettings(importedSettings);
-                message.success(t`App settings imported successfully`);
-              } catch (error) {
-                console.error("Failed to import app settings:", error);
-                message.error(t`Failed to import app settings`);
-              }
-            }}
           />
         )}
       </Drawer>
@@ -1082,40 +1036,6 @@ export function Workspace() {
               } catch (error) {
                 console.error("Failed to reset settings:", error);
                 message.error(t`Failed to reset settings`);
-              }
-            }}
-            onExport={async () => {
-              if (!currentSettingsWorkspace) return;
-              try {
-                const settingsJson = await call("exportWorkspaceSettings", {
-                  workspacePath: currentSettingsWorkspace.path
-                });
-                // 创建下载链接
-                const blob = new Blob([settingsJson], { type: "application/json" });
-                const url = URL.createObjectURL(blob);
-                const a = document.createElement("a");
-                a.href = url;
-                a.download = `${currentSettingsWorkspace.name}-settings.json`;
-                a.click();
-                URL.revokeObjectURL(url);
-                message.success(t`Settings exported successfully`);
-              } catch (error) {
-                console.error("Failed to export settings:", error);
-                message.error(t`Failed to export settings`);
-              }
-            }}
-            onImport={async (settingsJson: string) => {
-              if (!currentSettingsWorkspace) return;
-              try {
-                const importedSettings = await call("importWorkspaceSettings", {
-                  workspacePath: currentSettingsWorkspace.path,
-                  settingsJson
-                });
-                setWorkspaceSettings(importedSettings);
-                message.success(t`Settings imported successfully`);
-              } catch (error) {
-                console.error("Failed to import settings:", error);
-                message.error(t`Failed to import settings`);
               }
             }}
           />

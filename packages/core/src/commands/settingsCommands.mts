@@ -27,7 +27,23 @@ export const settingsCommands = {
         throw new Error(`工作区不存在: ${workspacePath}`);
       }
 
-      return workspace.getSettings();
+      const settings = workspace.getSettings();
+      const settingsManager = workspace.getSettingsManager();
+      
+      // 确保工作区元数据已初始化并包含在设置中
+      if (!settings.workspace) {
+        // 如果没有工作区元数据，从工作区配置中获取并初始化
+        const workspaceConfig = (workspace as any).config;
+        await settingsManager.initializeWorkspaceMetadata(
+          workspaceConfig?.name || 'Workspace',
+          workspaceConfig?.description
+        );
+        
+        // 重新获取更新后的设置
+        return workspace.getSettings();
+      }
+
+      return settings;
     } catch (error) {
       console.error(`Failed to get settings for workspace ${workspacePath}:`, error);
       throw error;
@@ -53,6 +69,17 @@ export const settingsCommands = {
 
       if (!workspace) {
         throw new Error(`工作区不存在: ${workspacePath}`);
+      }
+
+      // 如果更新包含工作区元数据，也要同步更新工作区配置
+      if (updates.workspace) {
+        const workspaceConfig = (workspace as any).config;
+        if (updates.workspace.name && workspaceConfig) {
+          workspaceConfig.name = updates.workspace.name;
+        }
+        if (updates.workspace.description !== undefined && workspaceConfig) {
+          workspaceConfig.description = updates.workspace.description;
+        }
       }
 
       await workspace.updateSettings(updates);

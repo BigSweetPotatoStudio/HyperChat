@@ -14,8 +14,6 @@ import {
   ExperimentOutlined,
   SaveOutlined,
   ReloadOutlined,
-  ExportOutlined,
-  ImportOutlined,
 } from "@ant-design/icons";
 import { t } from "../i18n";
 import { zodToJsonSchema } from "zod-to-json-schema";
@@ -32,16 +30,12 @@ interface AppSettingsProps {
   settings: z.infer<typeof AppSettingsSchema>;
   onUpdate: (updates: Partial<z.infer<typeof AppSettingsSchema>>) => Promise<void>;
   onReset?: () => Promise<void>;
-  onExport?: () => Promise<void>;
-  onImport?: (settingsJson: string) => Promise<void>;
 }
 
 export function AppSettings({
   settings,
   onUpdate,
   onReset,
-  onExport,
-  onImport,
 }: AppSettingsProps) {
   const [activeTab, setActiveTab] = useState("appearance");
   const [hasChanges, setHasChanges] = useState(false);
@@ -81,29 +75,6 @@ export function AppSettings({
     }
   };
 
-  // 导出设置
-  const handleExport = async () => {
-    if (onExport) {
-      await onExport();
-    }
-  };
-
-  // 导入设置
-  const handleImport = async () => {
-    if (onImport) {
-      const input = document.createElement("input");
-      input.type = "file";
-      input.accept = ".json,.jsonc";
-      input.onchange = async (e) => {
-        const file = (e.target as HTMLInputElement).files?.[0];
-        if (file) {
-          const text = await file.text();
-          await onImport(text);
-        }
-      };
-      input.click();
-    }
-  };
 
   if (!settings) {
     return null;
@@ -224,24 +195,6 @@ export function AppSettings({
             onClick={handleReset}
           >
             {t`Reset to Defaults`}
-          </Button>
-        )}
-
-        {onExport && (
-          <Button
-            icon={<ExportOutlined />}
-            onClick={handleExport}
-          >
-            {t`Export`}
-          </Button>
-        )}
-
-        {onImport && (
-          <Button
-            icon={<ImportOutlined />}
-            onClick={handleImport}
-          >
-            {t`Import`}
           </Button>
         )}
       </Space>
