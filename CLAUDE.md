@@ -150,12 +150,37 @@ HyperChat 是一个多平台的 AI 聊天应用，该项目拥有完善的 MCP�
 - **命令行体验**: 提供类似 Claude Code 的命令行体验，支持交互式聊天
 - **架构清晰**: CLI作为core的子模块，符合简化的monorepo最佳实践
 
-#### CLI 功能特性
+#### CLI 功能特性 (2024-07-12 更新) 🆕
 - **聊天功能**: `hyperchat "你好"` 或 `hyperchat chat` 进行 AI 对话
-- **服务器管理**: `hyperchat server start/stop/status` 管理后端服务器
-- **工作区管理**: `hyperchat workspace list/create/switch` 管理项目工作区
+- **服务器管理**: `hyperchat server start` 启动后端服务器 (简化：移除stop/status)
+- **工作区管理**: `hyperchat workspace create` 在当前目录创建工作区 (简化：移除list/info/current/switch)
 - **代理管理**: `hyperchat agent list/create` 管理 AI 代理，支持完整信息显示
-- **修复agent显示**: 修复了agent列表中undefined显示问题，正确显示名称、键名、模型和聊天记录
+
+#### CLI 最新修复 (2024-07-12) ✅
+- **修复agent显示**: 解决agent列表显示"undefined (undefined)"问题
+  - 正确访问`agentSummary.config`获取agent配置信息
+  - 添加AgentConfig类型导入和类型断言
+  - 增强显示：显示模型信息、聊天记录数量
+- **简化命令结构**: 移除不必要的命令，符合新架构理念
+  - 移除`server stop/status`：只保留`server start`
+  - 移除`workspace list/info/current/switch`：只保留`workspace create`
+  - 修复ES模块导入：将`require('path').basename`改为`import { basename }`
+- **代码质量提升**: 
+  - 移除动态导入：避免使用`await import()`
+  - 移除别名导入：避免使用`as`关键字
+  - 添加日志功能：在chat命令中输出工作区agent和MCP工具数量
+
+#### 技术实现细节
+**核心文件修改**:
+- `packages/core/src/cli/commands/agent.mts`: 修复agent数据结构访问
+- `packages/core/src/cli/index.mts`: 简化命令结构和帮助信息
+- `packages/core/src/cli/commands/workspace.mts`: 修复ES模块导入
+- `packages/core/src/cli/commands/chat.mts`: 添加工作区资源统计日志
+
+**问题解决**:
+1. **Agent显示问题**: `getWorkspaceAgentsSummary`返回`{config: AgentConfig, chatLogsCount: number}`格式，需访问`.config`属性
+2. **构建问题**: TypeScript编译需要正确的类型断言和ES模块导入
+3. **架构简化**: 符合"每个目录CLI会话独立"的新架构理念
 
 ### Schema2Form 组件系统 (完成)
 - **packages/web/src/components/Schema2Form.tsx** - 主组件，支持表单和JSON编辑器双模式切换
@@ -316,6 +341,7 @@ HyperChat/
 - [x] CLI架构重构：从HTTP API改为直接导入core模块，并集成到core包中
 - [x] Workspace配置合并逻辑：在workspace.mts中实现了智能工作区检测和配置合并
 - [x] CLI集成到Core包：简化架构，提升性能，统一构建流程
+- [x] CLI bug修复和简化 (2024-07-12)：修复agent显示undefined问题，简化命令结构，提升代码质量
 
 ### 架构优势
 - **分离关注点**: JSON Schema 与业务逻辑分离，shared 包独立维护
@@ -326,11 +352,32 @@ HyperChat/
 - **构建效率**: npm workspaces 避免依赖重复，统一的构建管理
 - **架构简化**: CLI集成到core包，减少包管理复杂性
 
+### 🎯 最新更新日志
+
+#### 2024-07-12 CLI修复和简化
+**问题修复**:
+- ✅ 修复agent列表显示"undefined (undefined)"的bug
+- ✅ 修复ES模块导入问题，避免使用CommonJS require
+- ✅ 修复TypeScript类型错误，添加正确的类型断言
+
+**功能简化**:
+- ✅ 简化server命令：只保留`start`，移除`stop`和`status`
+- ✅ 简化workspace命令：只保留`create`，移除`list/info/current/switch`
+- ✅ 遵循项目TypeScript编码规范：避免动态导入和别名导入
+
+**用户体验提升**:
+- ✅ 增强agent列表显示：显示模型信息和聊天记录数量
+- ✅ 添加工作区资源统计：在chat命令中显示agent和MCP工具数量
+- ✅ 优化帮助文档：更新命令说明，移除废弃功能
+
+这次更新进一步简化了CLI架构，符合"每个目录CLI会话独立"的设计理念，提升了用户体验和代码质量。
+
 ### 待办事项
 - [ ] 减少any使用，多使用packages/shared/src/types.mts定义的类型
 - [ ] 完善 Schema2Form 组件的单元测试
 - [ ] 优化 AI 配置管理的性能，考虑大量模型时的加载优化
 - [ ] 为 WorkspaceSettings 添加前端配置界面
-- [ ] 修复 CLI 中的 TypeScript 类型错误
 - [ ] 考虑在 Electron 中集成 CLI 功能
 - [ ] 优化 MCP 工具性能和错误处理
+- [ ] 添加 CLI 命令的单元测试和集成测试
+- [ ] 优化 workspace create 功能，确保在各种环境下正常工作

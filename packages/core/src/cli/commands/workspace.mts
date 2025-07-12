@@ -3,6 +3,7 @@
  */
 
 import process from 'process';
+import { basename } from 'path';
 import { Logger } from '../utils/logger.mjs';
 import { Command } from '../../command.mjs';
 import { workspaceManager } from '../../workspace/index.mjs';
@@ -68,7 +69,7 @@ export async function createWorkspace(path: string) {
     // 创建工作区
     const workspace = await Command.createWorkspace({
       workspacePath: path,
-      name: require('path').basename(path)
+      name: basename(path)
     });
 
     logger.success(`✅ 工作区创建成功`);
