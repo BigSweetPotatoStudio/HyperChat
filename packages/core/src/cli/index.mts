@@ -94,7 +94,8 @@ async function handleCommand(): Promise<{ shouldExit: boolean }> {
   
   // 检测是否有非命令的消息 (直接聊天)
   const possibleMessage = cleanArgs.find(arg => !['chat', 'server', 'workspace', 'agent', 'config', 'help'].includes(arg));
-  const isDirectMessage = cleanArgs.length > 0 && possibleMessage && !cleanArgs[0].match(/^(chat|server|workspace|agent|config|help)$/);
+  const firstArg = cleanArgs[0];
+  const isDirectMessage = cleanArgs.length > 0 && possibleMessage && firstArg && !firstArg.match(/^(chat|server|workspace|agent|config|help)$/);
   
   if (isDirectMessage) {
     // 直接聊天模式: hyperchat "你好"
@@ -188,31 +189,6 @@ async function handleCommand(): Promise<{ shouldExit: boolean }> {
         logger.info('可用命令: list, create');
       }
       return { shouldExit: true };  // 所有agent命令执行完都应该退出
-    
-    case 'config':
-      const configSubCmd = cleanArgs[1];
-      if (configSubCmd === 'get') {
-        const configKey = cleanArgs[2];
-        if (!configKey) {
-          logger.error('请提供配置键名');
-          logger.info('使用方法: hyperchat config get <key>');
-        } else {
-          await getConfig(configKey, logger);
-        }
-      } else if (configSubCmd === 'set') {
-        const configKey = cleanArgs[2];
-        const configValue = cleanArgs[3];
-        if (!configKey || configValue === undefined) {
-          logger.error('请提供配置键名和值');
-          logger.info('使用方法: hyperchat config set <key> <value>');
-        } else {
-          await setConfig(configKey, configValue, logger);
-        }
-      } else {
-        logger.error('未知的配置命令:', configSubCmd);
-        logger.info('可用命令: get, set');
-      }
-      return { shouldExit: true };  // 所有config命令执行完都应该退出
     
     case 'help':
     default:
@@ -445,17 +421,6 @@ async function listAgents(logger: Logger) {
 async function createAgent(name: string, logger: Logger) {
   const { createAgent: createAg } = await import('./commands/agent.mjs');
   await createAg(name);
-}
-
-// 配置管理功能
-async function getConfig(key: string, logger: Logger) {
-  const { getConfig: getCfg } = await import('./commands/config.mjs');
-  await getCfg(key);
-}
-
-async function setConfig(key: string, value: string, logger: Logger) {
-  const { setConfig: setCfg } = await import('./commands/config.mjs');
-  await setCfg(key, value);
 }
 
 

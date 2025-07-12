@@ -58,8 +58,11 @@ export async function startChat(initialMessage?: string, options: ChatOptions = 
     } else if (!modelKey) {
       // 回退到应用设置
       if (aiSettings?.models && aiSettings.models.length > 0) {
-        modelKey = aiSettings.models[0].key;
-        logger.info(`📋 使用应用设置的AI模型: ${modelKey}`);
+        const firstModel = aiSettings.models[0];
+        if (firstModel) {
+          modelKey = firstModel.key;
+          logger.info(`📋 使用应用设置的AI模型: ${modelKey}`);
+        }
       }
     }
 
@@ -90,7 +93,7 @@ export async function startChat(initialMessage?: string, options: ChatOptions = 
 
     // 创建全局扩展对象，让AI模块可以调用后端命令
     (globalThis as any).ext = {
-      call: async (functionName: string, args: any, options?: any) => {
+      call: async (functionName: string, args: any, _options?: any) => {
         if (functionName === 'mcpCallToolWithWorkspace') {
           return await Command.mcpCallToolWithWorkspace(args);
         }
