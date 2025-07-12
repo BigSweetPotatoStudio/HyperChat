@@ -263,7 +263,6 @@ hyperchat "你好"                    # 直接AI对话
 hyperchat serve                   # 启动Web服务器
 hyperchat workspace current        # 查看当前工作区
 hyperchat agent list              # 列出AI代理
-hyperchat config get ai.models    # 获取AI模型配置
 ```
 
 ## 🗂️ 项目结构 (更新)

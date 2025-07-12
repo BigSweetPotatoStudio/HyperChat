@@ -32,14 +32,12 @@ export class WorkspaceManager {
     }
 
     try {
-      if (workingDirectory == CONSTANTS.GLOBAL_PATH || workingDirectory == null) {
-        this.currentWorkspace = new Workspace(CONSTANTS.GLOBAL_PATH);
-      } else {
-        // 默认工作区是当前目录或全局工作区
-        const initialPath = workingDirectory || process.cwd();
-        const workspacePath = this.findWorkspaceInPath(initialPath) || CONSTANTS.GLOBAL_PATH;
-        this.currentWorkspace = new Workspace(workspacePath);
-      }
+
+      // 默认工作区是当前目录或全局工作区
+      const initialPath = workingDirectory || process.cwd();
+      const workspacePath = this.findWorkspaceInPath(initialPath) || CONSTANTS.GLOBAL_PATH;
+      this.currentWorkspace = new Workspace(workspacePath);
+
       // 初始化当前工作区
       await this.currentWorkspace.init();
       this.isInitialized = true;
@@ -183,7 +181,7 @@ export class WorkspaceManager {
   /**
    * 删除单个 agent（兼容老API）
    */
-  async deleteAgent(workspacePath: string , agentKey?: string): Promise<boolean> {
+  async deleteAgent(workspacePath: string, agentKey?: string): Promise<boolean> {
     // 兼容两种调用方式：
     // 1. deleteAgent(workspacePath, agentKey) - 老API
     // 2. deleteAgent(agentKey) - 新API，直接操作当前工作区
@@ -283,6 +281,6 @@ export class WorkspaceManager {
     return this.currentWorkspace.workspacePath;
   }
 
-  
+
 
 }
