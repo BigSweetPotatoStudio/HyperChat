@@ -5,5 +5,4 @@ export * from './types.mjs';
 
 
 // Export schemas separately to avoid conflicts
-export * from './jsonSchemas/appSettingsSchema.mjs';
-export * from './jsonSchemas/workspaceSettingsSchema.mjs';
+export * from './zodSchemas/index.mjs';

@@ -3,20 +3,6 @@
  */
 
 /**
- * 任务结果消息数据
- */
-export interface TaskResultData {
-  task: {
-    name: string;
-    key: string;
-  };
-  agent: {
-    label: string;
-  };
-  result: string;
-}
-
-/**
  * 应用更新消息数据
  */
 export interface UpdateMsgData {
@@ -70,7 +56,6 @@ export interface UpdateVarListData {
  * 消息类型映射
  */
 export type MessageDataMap = {
-  TaskResult: TaskResultData;
   UpdateMsg: UpdateMsgData;
   syncMsg: SyncData;
   changeMcpClient: ChangeMcpClientData;
@@ -364,15 +349,6 @@ export interface KnowledgeFragment {
   vector: number[];
 };
 
-export interface Task {
-  key: string;
-  name: string;
-  command: string;
-  agentKey: string;
-  description: string;
-  cron: string;
-  disabled: boolean;
-};
 
 export interface Var {
   key: string;

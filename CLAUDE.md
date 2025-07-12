@@ -26,6 +26,7 @@ HyperChat 是一个多平台的 AI 聊天应用，该项目拥有完善的 MCP�
 ### 类型安全
 * 尽量使用 TypeScript 的类型系统来确保代码的类型安全。尽量少使用any类型。
 * packages/shared/src/types.mts 定义了常用的类型，包括前端和后端交互的类型，确保前后端的数据结构一致。
+* packages/shared/src/zodSchemas文件夹 定义了 Zod schema，用于数据验证和前端表单生成。所有的 schema 都是基于 TypeScript 类型定义的，确保类型一致性。
 * 使用 Zod schema 进行数据验证，通过 zod-to-json-schema 转换为 JSON Schema 用于前端表单生成。
 * 不允许 await import()。这样逻辑更加清晰，避免了动态导入带来的复杂性。
 
@@ -33,12 +34,6 @@ HyperChat 是一个多平台的 AI 聊天应用，该项目拥有完善的 MCP�
 * 前端发送消息给后端，默认通过 packages/core/src/command.mts 实现，前端通过调用 call 的方法来实现与后端的交互。
 * electron提供更多electron接口 packages/electron/src/command.mts， 前端通过调用 callElectron 的方法来实现与electron的交互。
 * 后端发送消息给前端是通过websocket实现的 packages/core/src/message_service.mts，前端通过监听 websocket 的消息来接收后端发送的消息。
-
-### Schema驱动开发
-* 使用 JSON Schema 7 规范定义数据结构和表单验证规则
-* Zod schema 作为数据验证和类型定义的统一来源
-* Schema2Form 组件自动根据 schema 生成对应的表单组件
-* 支持复杂类型：数组、嵌套对象、条件schema(oneOf/anyOf/allOf)、Record类型等
 
 ### 组件设计原则
 * 优先使用现有的 Ant Design 组件库
