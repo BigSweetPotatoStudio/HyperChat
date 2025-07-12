@@ -14,7 +14,7 @@ import { WorkspaceMCPClientImpl } from "./client.mjs";
 import type { MCPServerConfig } from "@hyperchat/shared/data";
 import { Logger } from "../../log.mjs";
 import { CONSTANTS } from "../constants.mjs";
-import {  WorkSpaceServers } from "../../mcp/servers/index.mjs";
+import { WorkSpaceServers } from "../../mcp/servers/index.mjs";
 import { Config } from "../../const.mjs";
 
 export class WorkspaceMCPManager {
@@ -114,7 +114,6 @@ export class WorkspaceMCPManager {
         clients.push(this.clients.get(clientId)!);
         continue;
       }
-
       const client = new WorkspaceMCPClientImpl(
         server.name,
         serverConfig,

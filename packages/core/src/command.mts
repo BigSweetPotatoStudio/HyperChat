@@ -120,7 +120,7 @@ export class CommandFactory {
 
       if (clientConfig) {
         // 如果提供了配置，先设置配置再启动
-        await workspace.setMcpServerConfig(clientName, clientConfig);
+        await workspace.setMcpServer(clientName, clientConfig);
       } else {
         // 如果没有配置，尝试重启现有客户端
         await workspace.manageMcpClient(clientName, 'restart');
@@ -1292,7 +1292,7 @@ export class CommandFactory {
         throw new Error('当前没有可用的工作区');
       }
 
-      await workspace.setMcpServerConfig(serverName, serverConfig);
+      await workspace.setMcpServer(serverName, serverConfig);
     } catch (error) {
       console.error('Failed to set MCP server config:', error);
       throw error;
@@ -1315,7 +1315,7 @@ export class CommandFactory {
         throw new Error('当前没有可用的工作区');
       }
 
-      await workspace.deleteMcpServerConfig(serverName);
+      await workspace.deleteMcpServer(serverName);
     } catch (error) {
       console.error('Failed to delete MCP server config:', error);
       throw error;

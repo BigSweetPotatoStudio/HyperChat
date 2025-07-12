@@ -22,7 +22,7 @@ import type { WorkspaceMCPClient, MCPType } from "./types.mjs";
 import { Logger } from "../../log.mjs";
 import { getMessageService } from "../../message_service.mjs";
 
-import { GlobalServers, WorkSpaceServers } from "../../mcp/servers/index.mjs";
+import { WorkSpaceServers } from "../../mcp/servers/index.mjs";
 import { zodToJsonSchema } from "zod-to-json-schema";
 import spawn from "cross-spawn";
 import { zx } from "../../es6.mjs";
@@ -41,7 +41,6 @@ export class WorkspaceMCPClientImpl implements WorkspaceMCPClient {
   public client: MCP.Client | undefined = undefined;
   public status: WorkspaceMCPClient["status"] = "disconnected";
   public version = "";
-  public scope: "workspace";
   public mcpType: MCPType;
 
   public workspacePath: string;
@@ -57,7 +56,7 @@ export class WorkspaceMCPClientImpl implements WorkspaceMCPClient {
   constructor(
     public serverName: string,
     public config: MCPServerConfig,
-    scope: "workspace",
+    public scope: "workspace" | "global",
     public order: number = 0,
     private options: {
       mcpType?: MCPType;
@@ -65,15 +64,13 @@ export class WorkspaceMCPClientImpl implements WorkspaceMCPClient {
       createServer?: any; // 传输方式 inMemory
     }
   ) {
-    this.scope = scope;
     this.mcpType = options.mcpType || "custom";
     this.workspacePath = options.workspacePath;
 
     // 如果是内置服务器，设置配置模式
     if (this.mcpType === "builtin") {
-      // 检查全局服务器和工作区服务器
-      const server = GlobalServers.find((s) => s.name === serverName) ||
-        WorkSpaceServers.find((s) => s.name === serverName);
+      // 工作区服务器
+      const server = WorkSpaceServers.find((s) => s.name === serverName);
       if (server?.configSchema) {
         this.ext.configSchema = zodToJsonSchema(server.configSchema) as any;
       }

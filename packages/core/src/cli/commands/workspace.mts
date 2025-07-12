@@ -114,7 +114,7 @@ export async function showWorkspaceInfo(path: string) {
 
     // 获取MCP客户端信息
     try {
-      const mcpClients = await Command.getWorkspaceMcpClients({ workspacePath: path });
+      const mcpClients = await Command.getWorkspaceMcpClients();
       console.log(`  MCP客户端: ${mcpClients.length} 个`);
       if (mcpClients.length > 0) {
         mcpClients.forEach(client => {

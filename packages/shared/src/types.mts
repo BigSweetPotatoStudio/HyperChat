@@ -333,7 +333,7 @@ export interface IMCPClient {
   mcpType: "builtin" | "custom";
   version: string;
   workspacePath: string;
-  scope: "workspace";
+  scope: "workspace" | "global";
 };
 
 export interface KnowledgeStore {
