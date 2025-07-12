@@ -843,10 +843,7 @@ export class CommandFactory {
    * 包括全局工作区和所有已创建的普通工作区
    * @returns 工作区信息数组，包含路径、名称、描述等
    */
-  async getWorkspaceList() {
-    const workspaceManager = getWorkspaceManager();
-    return workspaceManager.getWorkspaceList();
-  }
+  // getWorkspaceList 已删除 - 新架构下只有一个当前工作区
 
   /**
    * 打开已存在的工作区
@@ -919,22 +916,7 @@ export class CommandFactory {
    * @param workspacePath 工作区根目录路径
    * @returns 工作区配置信息，如果不存在则返回null
    */
-  async loadWorkspace({
-    workspacePath
-  }: {
-    workspacePath: string;
-  }): Promise<Record<string, unknown> | null> {
-    const workspaceManager = getWorkspaceManager();
-    const workspace = await workspaceManager.loadExistingWorkspace(workspacePath);
-    return workspace ? workspace.getConfig() : null;
-  }
-
-  /**
-   * 获取已加载的工作区信息
-   * 从内存缓存中获取工作区配置，不会重新读取文件
-   * @param workspacePath 工作区路径
-   * @returns 工作区配置信息，如果未加载则返回null
-   */
+  // loadWorkspace 已删除 - 新架构下工作区自动加载
   /**
    * 获取当前工作区（无参数版本，新架构）
    * @returns 当前工作区的配置信息
@@ -959,42 +941,9 @@ export class CommandFactory {
     };
   }
 
-  /**
-   * 获取指定工作区（兼容老API）
-   */
-  async getWorkspaceByPath({
-    workspacePath
-  }: {
-    workspacePath: string;
-  }) {
-    const workspaceManager = getWorkspaceManager();
-    const workspace = workspaceManager.getWorkspace(workspacePath);
-    if (!workspace) return null;
+  // getWorkspaceByPath 已删除 - 新架构下使用 getCurrentWorkspace()
 
-    const config = workspace.getConfig();
-    const summary = await workspace.getSummary();
-
-    return {
-      ...config,
-      agentsCount: summary.agentsCount,
-      mcpServersCount: summary.mcpServersCount
-    };
-  }
-
-  /**
-   * 获取全局工作区信息
-   * 全局工作区位于 ~/Documents/HyperChat，用于存储全局配置和数据
-   * @returns 全局工作区的配置信息和路径
-   */
-  async getGlobalWorkspace() {
-    const workspaceManager = getWorkspaceManager();
-    const globalWorkspace = workspaceManager.getGlobalWorkspace();
-    const globalPath = workspaceManager.getGlobalWorkspacePath();
-    return {
-      ...globalWorkspace.getConfig(),
-      path: globalPath
-    };
-  }
+  // getGlobalWorkspace 已删除 - 新架构下使用 getCurrentWorkspace()
 
   /**
    * 获取工作区完整文件树（已废弃，建议使用 getWorkspaceDirectoryList 实现懒加载）
@@ -1130,15 +1079,7 @@ export class CommandFactory {
   /**
    * 从目录获取工作区
    */
-  async getWorkspaceFromDirectory({
-    directoryPath
-  }: {
-    directoryPath: string;
-  }): Promise<Record<string, unknown> | null> {
-    const workspaceManager = getWorkspaceManager();
-    const workspace = await workspaceManager.getWorkspaceFromDirectory(directoryPath);
-    return workspace ? workspace.getConfig() : null;
-  }
+  // getWorkspaceFromDirectory 已删除 - 使用 isWorkspaceDirectory + openWorkspace 替代
 
   /**
    * 获取工作区代理列表
@@ -1909,59 +1850,10 @@ export class CommandFactory {
    * @param workspacePath 工作区路径
    * @returns 关闭结果
    */
-  async closeWorkspace({
-    workspacePath
-  }: {
-    workspacePath: string;
-  }): Promise<boolean> {
-    try {
-      console.log(`Closing workspace: ${workspacePath}`);
-
-      // 关闭工作区的MCP客户端
-      try {
-        await this.stopWorkspaceMcpClients({ workspacePath });
-        console.log(`MCP clients closed for workspace: ${workspacePath}`);
-      } catch (mcpError) {
-        console.warn(`Failed to close MCP clients for workspace ${workspacePath}:`, mcpError);
-      }
-
-      // 关闭工作区的终端实例
-      try {
-        const terminal = getWorkspaceTerminal(workspacePath);
-        const allTerminals = terminal.getAllTerminals();
-        for (const term of allTerminals) {
-          await terminal.closeTerminal(term.id);
-        }
-        console.log(`All terminals closed for workspace: ${workspacePath}`);
-      } catch (terminalError) {
-        console.warn(`Failed to close terminals for workspace ${workspacePath}:`, terminalError);
-      }
-
-      // 从运行列表中移除（从内存中移除工作区实例）
-      const workspaceManager = getWorkspaceManager();
-      workspaceManager.removeWorkspaceFromMemory(workspacePath);
-
-      return true;
-    } catch (error) {
-      console.error(`Failed to close workspace ${workspacePath}:`, error);
-      throw error;
-    }
-  }
+  // closeWorkspace 已删除 - 新架构下不需要关闭工作区
 
 
-  /**
-   * 获取运行中的工作区列表
-   * @returns 运行中工作区的详细信息
-   */
-  async getRunningWorkspaces(): Promise<Array<{ path: string, name: string, isGlobal: boolean }>> {
-    try {
-      const workspaceManager = getWorkspaceManager();
-      return await workspaceManager.getRunningWorkspacesDetails();
-    } catch (error) {
-      console.error("Failed to get running workspaces:", error);
-      throw error;
-    }
-  }
+  // getRunningWorkspaces 已删除 - 新架构下只有一个当前工作区
 
   /**
    * 切换到指定工作区

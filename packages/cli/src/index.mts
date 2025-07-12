@@ -15,7 +15,7 @@ import { readFileSync } from 'fs';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
 import { Logger } from './utils/logger.mjs';
-
+import { getWorkspaceManager } from '../../core/src/workspace/index.mjs';
 // 获取包信息
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const packagePath = join(__dirname, '..', 'package.json');
@@ -421,10 +421,15 @@ async function showWorkspaceInfo(path: string, logger: Logger) {
 
 async function showCurrentWorkspace(logger: Logger) {
   try {
-    const { getCurrentWorkspacePathReadOnly } = await import('./session/cli-session-manager.mjs');
-    
-    // 使用只读模式获取工作区信息，不启动任何服务
-    const workspaceInfo = await getCurrentWorkspacePathReadOnly();
+    // 新架构：直接使用core模块获取当前工作区信息
+    const workspaceManager = getWorkspaceManager();
+    await workspaceManager.initialize(process.cwd());
+    const workspace = workspaceManager.getCurrentWorkspace();
+    const workspaceInfo = {
+      path: workspaceManager.getCurrentWorkspacePath(),
+      isGlobal: workspaceManager.isGlobalWorkspace(workspaceManager.getCurrentWorkspacePath()),
+      config: workspace.getConfig()
+    };
     
     console.log('\n📋 当前工作区信息:');
     console.log(`  名称: ${workspaceInfo.workspaceName}`);
@@ -469,10 +474,8 @@ async function cleanup() {
   isExiting = true;
   
   try {
-    // 清理CLI会话管理器
-    const { getCLISessionManager } = await import('./session/cli-session-manager.mjs');
-    const manager = getCLISessionManager();
-    await manager.cleanup();
+    // 新架构下简化清理逻辑
+    console.log('正在清理资源...');
   } catch (error) {
     console.error('清理过程中出现错误:', error);
   }

@@ -10,6 +10,8 @@ import { Command } from '../../../core/src/command.mjs';
 import { AiChannel } from '@hyperchat/shared/ai';
 import type { MyMessage } from '@hyperchat/shared/types';
 import { createReadline } from '../utils/readline.mjs';
+import { getWorkspaceManager } from '../../../core/src/workspace/index.mjs';
+
 
 export interface ChatOptions {
   agent?: string;
@@ -24,57 +26,52 @@ export interface ChatOptions {
 
 export async function startChat(initialMessage?: string, options: ChatOptions = {}) {
   const logger = new Logger(options.verbose, options.quiet);
-  
+
   try {
     // 初始化CLI聊天环境
     logger.info('🔍 初始化 HyperChat CLI...');
-    
+
     // 使用新的CLI会话管理器
     let workspacePath = options.workspace;
     let sessionConfig: any;
-    
+
     if (!workspacePath) {
-      const { ensureCLISessionInitialized } = await import('../session/cli-session-manager.mjs');
-      const sessionInfo = await ensureCLISessionInitialized(
-        options.verbose, 
-        options.quiet, 
-        false, // 需要启动MCP服务
-        options.workspace
-      );
-      workspacePath = sessionInfo.workspacePath || sessionInfo.currentDirectory;
-      sessionConfig = sessionInfo.config;
-      logger.info(`🎯 使用工作区: ${sessionInfo.workspaceName} (${workspacePath})`);
-      logger.info(`📊 会话配置: AI模型${sessionConfig?.aiModels?.length || 0}个, MCP工具${sessionConfig?.mcpClients?.length || 0}个`);
+      // 新架构：直接使用工作区管理器
+      const workspaceManager = getWorkspaceManager();
+      await workspaceManager.initialize(options.workspace || process.cwd());
+      workspacePath = workspaceManager.getCurrentWorkspacePath();
+      // 新架构下简化配置获取
+      logger.info(`🎯 使用工作区: ${workspacePath}`);
+      // sessionConfig 暂时为空，新架构下不需要
     }
-    
+
     logger.debug(`使用工作区: ${workspacePath}`);
-    
+    const appSettings = await Command.getAppSettings();
+    const aiSettings = appSettings.ai;
     // 确定使用的模型（优先使用合并后的配置）
     let modelKey = options.model;
-    
+
     if (!modelKey && sessionConfig?.aiModels && sessionConfig.aiModels.length > 0) {
       // 使用会话合并后的AI模型配置
       modelKey = sessionConfig.aiModels[0].key;
       logger.info(`📋 使用会话配置的AI模型: ${modelKey}`);
     } else if (!modelKey) {
       // 回退到应用设置
-      const appSettings = await Command.getAppSettings();
-      const aiSettings = appSettings.ai;
       if (aiSettings?.models && aiSettings.models.length > 0) {
         modelKey = aiSettings.models[0].key;
         logger.info(`📋 使用应用设置的AI模型: ${modelKey}`);
       }
     }
-    
+
     if (!modelKey) {
       throw new Error('未找到可用的AI模型配置，请先配置AI模型');
     }
-    
+
     logger.info(`🤖 使用模型: ${modelKey}`);
-    
+
     // 获取工作区的MCP工具
     const mcpClients = await Command.getWorkspaceMcpClients({ workspacePath });
-    const mcpTools = mcpClients.flatMap((client: any) => 
+    const mcpTools = mcpClients.flatMap((client: any) =>
       client.tools?.map((tool: any) => ({
         name: `${client.serverName}_${tool.name}`,
         origin_name: tool.name,
@@ -85,12 +82,12 @@ export async function startChat(initialMessage?: string, options: ChatOptions = 
         inputSchema: tool.inputSchema
       })) || []
     );
-    
+
     logger.debug(`加载了 ${mcpTools.length} 个MCP工具`);
-    
+
     // 初始化AI聊天频道
     const aiChannel = new AiChannel();
-    
+
     // 创建全局扩展对象，让AI模块可以调用后端命令
     (globalThis as any).ext = {
       call: async (functionName: string, args: any, options?: any) => {
@@ -100,7 +97,7 @@ export async function startChat(initialMessage?: string, options: ChatOptions = 
         throw new Error(`未知的命令: ${functionName}`);
       }
     };
-    
+
     aiChannel.register({
       antdmessage: {
         warning: (msg: string) => logger.warn(msg)
@@ -110,7 +107,7 @@ export async function startChat(initialMessage?: string, options: ChatOptions = 
       getURL_PRE: () => '',
       aiSettings: aiSettings || { models: [], customProviders: [], builtinApiKeys: {} }
     });
-    
+
     // 添加系统消息
     const systemMessage: MyMessage = {
       role: 'system',
@@ -118,20 +115,20 @@ export async function startChat(initialMessage?: string, options: ChatOptions = 
       content_date: Date.now()
     };
     aiChannel.addMessage(systemMessage);
-    
+
     // 如果有初始消息，处理并退出
     if (initialMessage) {
       logger.info(`💬 处理消息: ${initialMessage}`);
-      
+
       const userMessage: MyMessage = {
         role: 'user',
         content: initialMessage,
         content_date: Date.now()
       };
       aiChannel.addMessage(userMessage);
-      
+
       console.log('\n🤖 AI 回复:');
-      
+
       // 流式输出
       let displayedLength = 0;
       await aiChannel.completion({
@@ -150,26 +147,26 @@ export async function startChat(initialMessage?: string, options: ChatOptions = 
           }
         }
       });
-      
+
       console.log('\n'); // 换行
       return;
     }
-    
+
     // 交互式聊天模式
     logger.info('💬 开始交互式聊天...');
     logger.info('💡 输入 /exit 退出，/help 查看帮助，/clear 清空对话历史');
     console.log();
-    
+
     const rl = createReadline();
-    
+
     while (true) {
       const input = await rl.question('🧑 你: ');
-      
+
       if (input.trim() === '/exit') {
         logger.info('👋 再见！');
         break;
       }
-      
+
       if (input.trim() === '/help') {
         console.log('\n📋 聊天命令:');
         console.log('  /exit   - 退出聊天');
@@ -180,18 +177,18 @@ export async function startChat(initialMessage?: string, options: ChatOptions = 
         console.log();
         continue;
       }
-      
+
       if (input.trim() === '/clear') {
         aiChannel.messages = [systemMessage]; // 重置为只包含系统消息
         console.log('✅ 对话历史已清空\n');
         continue;
       }
-      
+
       if (input.trim() === '/model') {
         console.log(`\n🤖 当前模型: ${modelKey}\n`);
         continue;
       }
-      
+
       if (input.trim() === '/tools') {
         console.log(`\n🔧 可用工具 (${mcpTools.length}个):`);
         mcpTools.forEach((tool: any) => {
@@ -200,11 +197,11 @@ export async function startChat(initialMessage?: string, options: ChatOptions = 
         console.log();
         continue;
       }
-      
+
       if (!input.trim()) {
         continue;
       }
-      
+
       // 添加用户消息
       const userMessage: MyMessage = {
         role: 'user',
@@ -212,16 +209,16 @@ export async function startChat(initialMessage?: string, options: ChatOptions = 
         content_date: Date.now()
       };
       aiChannel.addMessage(userMessage);
-      
+
       // 显示AI回复
       console.log('\n🤖 AI: ');
       process.stdout.write('思考中...');
-      
+
       try {
         // 流式输出
         let displayedLength = 0;
         let isFirstUpdate = true;
-        
+
         await aiChannel.completion({
           modelKey: modelKey!,
           allowMCPs: mcpClients.map((c: any) => c.serverName),
@@ -233,7 +230,7 @@ export async function startChat(initialMessage?: string, options: ChatOptions = 
                 process.stdout.write('\r' + ' '.repeat(20) + '\r');
                 isFirstUpdate = false;
               }
-              
+
               const content = lastMsg.content as string;
               // 只输出新增的部分
               if (content.length > displayedLength) {
@@ -244,22 +241,23 @@ export async function startChat(initialMessage?: string, options: ChatOptions = 
             }
           }
         });
-        
+
         console.log('\n'); // 换行
       } catch (error) {
         console.log('\n❌ 错误:', error instanceof Error ? error.message : String(error));
         console.log();
       }
     }
-    
+
     rl.close();
-    
+
   } catch (error) {
     logger.error('聊天初始化失败:', error instanceof Error ? error.message : String(error));
-    
+
     if (error instanceof Error && error.message.includes('未找到可用的AI模型配置')) {
-      logger.info('\n💡 请先运行以下命令配置AI模型:');    }
-    
+      logger.info('\n💡 请先运行以下命令配置AI模型:');
+    }
+
     process.exit(1);
   }
 }

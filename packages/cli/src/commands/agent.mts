@@ -5,14 +5,15 @@
 import process from 'process';
 import { Logger } from '../utils/logger.mjs';
 import { Command } from '../../../core/src/command.mjs';
-
+import { getWorkspaceManager } from '../../../core/src/workspace/index.mjs';
 /**
  * 获取当前工作区路径（使用新的会话管理器，只读模式）
  */
 async function getCurrentWorkspacePath(): Promise<string> {
-  const { getCurrentWorkspacePathReadOnly } = await import('../session/cli-session-manager.mjs');
-  const workspaceInfo = await getCurrentWorkspacePathReadOnly();
-  return workspaceInfo.workspacePath;
+
+  const workspaceManager = getWorkspaceManager();
+  await workspaceManager.initialize(process.cwd());
+  return workspaceManager.getCurrentWorkspacePath();
 }
 
 export async function listAgents() {

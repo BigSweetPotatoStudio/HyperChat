@@ -5,14 +5,15 @@
 import process from 'process';
 import { Logger } from '../utils/logger.mjs';
 import { Command } from "../../../core/src/command.mjs";
-
+import { getWorkspaceManager } from '../../../core/src/workspace/index.mjs';
 /**
- * 获取当前工作区路径（使用新的会话管理器，只读模式）
+ * 获取当前工作区路径（新架构）
  */
 async function getCurrentWorkspacePath(): Promise<string> {
-  const { getCurrentWorkspacePathReadOnly } = await import('../session/cli-session-manager.mjs');
-  const workspaceInfo = await getCurrentWorkspacePathReadOnly();
-  return workspaceInfo.workspacePath;
+
+  const workspaceManager = getWorkspaceManager();
+  await workspaceManager.initialize(process.cwd());
+  return workspaceManager.getCurrentWorkspacePath();
 }
 
 export async function listWorkspaces() {
@@ -24,32 +25,26 @@ export async function listWorkspaces() {
     // 获取当前工作区
     const currentWorkspacePath = await getCurrentWorkspacePath();
     
-    // 获取所有工作区
-    const workspaces = await Command.getWorkspaceList();
-    const runningWorkspaces = await Command.getRunningWorkspaces();
+    // 新架构：只显示当前工作区
+    const currentWorkspace = await Command.getCurrentWorkspace();
     
-    console.log('\n📋 工作区列表:');
+    console.log('\n📋 当前工作区:');
     
-    if (workspaces.length === 0) {
-      console.log('  暂无工作区');
+    if (!currentWorkspace) {
+      console.log('  未找到工作区');
       return;
     }
     
-    for (const workspace of workspaces) {
-      const isRunning = runningWorkspaces.some((rw: any) => rw.path === workspace.path);
-      const status = isRunning ? '🟢 运行中' : '⚪ 已停止';
-      const type = (workspace as any).isGlobal ? '(全局)' : '';
-      const isCurrent = workspace.path === currentWorkspacePath ? '👉 当前' : '';
-      
-      console.log(`  ${status} ${workspace.name} ${type} ${isCurrent}`);
-      console.log(`      路径: ${workspace.path}`);
-      if (workspace.description) {
-        console.log(`      描述: ${workspace.description}`);
-      }
+    const type = currentWorkspace.isGlobal ? '(全局)' : '';
+    console.log(`  🟢 ${currentWorkspace.name} ${type} 👉 当前`);
+    console.log(`      路径: ${currentWorkspace.path}`);
+    if (currentWorkspace.description) {
+      console.log(`      描述: ${currentWorkspace.description}`);
     }
+    console.log(`      Agents: ${currentWorkspace.agentsCount}`);
+    console.log(`      MCP 服务: ${currentWorkspace.mcpServersCount}`);
     
-    console.log(`\n💡 总计: ${workspaces.length} 个工作区，${runningWorkspaces.length} 个运行中`);
-    console.log(`🎯 当前工作区: ${currentWorkspacePath}`);
+    console.log(`\n🎯 当前工作区: ${currentWorkspacePath}`);
     
   } catch (error) {
     logger.error('获取工作区列表失败:', error instanceof Error ? error.message : String(error));
@@ -100,7 +95,7 @@ export async function showWorkspaceInfo(path: string) {
     }
     
     // 获取工作区信息
-    const workspaceConfig = await Command.loadWorkspace({ workspacePath: path });
+    // loadWorkspace 已删除，直接使用 openWorkspace\n    const workspaceConfig = await Command.openWorkspace({ workspacePath: path });
     if (!workspaceConfig) {
       logger.error('无法加载工作区配置');
       return;
