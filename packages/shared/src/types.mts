@@ -399,8 +399,48 @@ export interface DirectoryItem {
   size?: number;
   modified: number;
   extension?: string;
-  isLeaf: boolean;
+  isLeaf?: boolean;
   isHidden: boolean;
+}
+
+// 别名，向前兼容
+export type FileSystemItem = DirectoryItem;
+
+export interface DirectoryListResult {
+  items: DirectoryItem[];
+  total: number;
+  hasMore: boolean;
+  path: string;
+}
+
+// 工作区相关类型
+export interface WorkspaceSummary {
+  path: string;
+  name: string;
+  isGlobal: boolean;
+  agentsCount: number;
+  mcpServersCount: number;
+  created: number;
+  lastAccessed: number;
+  description?: string;
+}
+
+export interface WorkspaceConfig {
+  name: string;
+  description?: string;
+  created: number;
+  lastAccessed: number;
+  settings: WorkspaceSettings;
+}
+
+export interface WorkspaceSettings {
+  enableKnowledgeBase?: boolean;
+  theme?: 'light' | 'dark' | 'system';
+  autoSave?: boolean;
+  showHiddenFiles?: boolean;
+  fileWatcher?: boolean;
+  gitIntegration?: boolean;
+  [key: string]: unknown;
 }
 
 /**

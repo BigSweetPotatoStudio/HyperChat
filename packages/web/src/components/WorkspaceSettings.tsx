@@ -23,12 +23,14 @@ import {
   ImportOutlined,
 } from "@ant-design/icons";
 import { t } from "../i18n";
+import { WorkspaceSettingsSchema } from "@hyperchat/shared/jsonSchemas/workspaceSettingsSchema";
+import type { z } from "zod";
 
 const { Text } = Typography;
 
 interface WorkspaceSettingsProps {
-  settings: any;
-  onUpdate: (updates: any) => Promise<void>;
+  settings: z.infer<typeof WorkspaceSettingsSchema>;
+  onUpdate: (updates: Partial<z.infer<typeof WorkspaceSettingsSchema>>) => Promise<void>;
   onReset?: () => Promise<void>;
   onExport?: () => Promise<void>;
   onImport?: (settingsJson: string) => Promise<void>;

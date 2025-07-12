@@ -2,7 +2,7 @@
  * 工作区面板尺寸存储工具
  */
 
-interface PanelSizes {
+export interface PanelSizes {
   left: string;
   middle: string;
   right: string;

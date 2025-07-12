@@ -52,8 +52,11 @@ import { FileTreeComponent } from "../../components/FileTreeComponent";
 import { WorkspaceSidebar } from "../../components/WorkspaceSidebar";
 import { WorkspaceChat } from "../../components/WorkspaceChat";
 import { WorkspaceWelcome } from "../../components/WorkspaceWelcome";
-import { getPanelSizes, savePanelSizes, getWorkspaceHistory, addToWorkspaceHistory, removeFromWorkspaceHistory, addAgentRecentUsage } from "../../utils/storage";
+import { getPanelSizes, savePanelSizes, getWorkspaceHistory, addToWorkspaceHistory, removeFromWorkspaceHistory, addAgentRecentUsage, type PanelSizes } from "../../utils/storage";
 import { AgentConfig, IMCPClient, MessageData, MessageDataMap } from "@hyperchat/shared/types";
+import { WorkspaceSettingsSchema } from "@hyperchat/shared/jsonSchemas/workspaceSettingsSchema";
+import { AppSettingsSchema, MCPGatewaySchema } from "@hyperchat/shared/jsonSchemas/appSettingsSchema";
+import type { z } from "zod";
 import { HeaderContext } from "../../common/context";
 import { ProviderSettings } from "../../components/ProviderSettings";
 import { AppHeader } from "../../components/AppHeader";
@@ -158,9 +161,9 @@ export function Workspace() {
   const [workspaceHistory, setWorkspaceHistory] = useState(() => getWorkspaceHistory());
   const [settingsDrawerOpen, setSettingsDrawerOpen] = useState(false);
   const [currentSettingsWorkspace, setCurrentSettingsWorkspace] = useState<WorkspaceInfo | null>(null);
-  const [workspaceSettings, setWorkspaceSettings] = useState<any>(null);
+  const [workspaceSettings, setWorkspaceSettings] = useState<z.infer<typeof WorkspaceSettingsSchema> | null>(null);
   const [appSettingsDrawerOpen, setAppSettingsDrawerOpen] = useState(false);
-  const [appSettings, setAppSettings] = useState<any>(null);
+  const [appSettings, setAppSettings] = useState<z.infer<typeof AppSettingsSchema> | null>(null);
   const [mcpGatewaysDrawerOpen, setMCPGatewaysDrawerOpen] = useState(false);
   const [globalWorkspacePath, setGlobalWorkspacePath] = useState<string>('unknown'); // 全局工作区路径
   const [form] = Form.useForm();
@@ -176,10 +179,9 @@ export function Workspace() {
 
 
   // 面板尺寸状态 - 使用数组格式，与Ant Design Splitter兼容
-  const [panelSizes, setPanelSizes] = useState<any[]>(() => {
-    // 初始化时使用默认工作区的尺寸，先用默认值
-    const sizes = { left: '25%', middle: '50%', right: '25%' };
-    return [sizes.left, sizes.middle, sizes.right];
+  const [panelSizes, setPanelSizes] = useState<number[]>(() => {
+    // 初始化时使用默认尺寸（Splitter使用数字）
+    return [25, 50, 25]; // 对应25%、50%、25%
   });
 
   // 监听MCP客户端状态变化
@@ -261,7 +263,15 @@ export function Workspace() {
     if (workspaceDetails[key]) return;
 
     try {
-      const details: any = { agents: [], mcpClients: {} };
+      const details: {
+        agents: Array<{
+          config: AgentConfig;
+          chatLogsCount: number;
+          lastChatTime?: number;
+        }>;
+        mcpClients: Record<string, IMCPClient>;
+        fileTreeData?: FileNode[];
+      } = { agents: [], mcpClients: {} };
 
       // 加载根目录文件列表（懒加载）
       console.log("Loading file tree for workspace:", workspace.path, "isGlobal:", workspace.isGlobal);
@@ -273,7 +283,11 @@ export function Workspace() {
 
       // 加载 Agents（获取摘要信息）
       const agentList = await call("getWorkspaceAgentsSummary");
-      details.agents = agentList;
+      details.agents = agentList as Array<{
+        config: AgentConfig;
+        chatLogsCount: number;
+        lastChatTime?: number;
+      }>;
 
       // 加载 MCP 客户端
       let mcpList = await call("getWorkspaceMcpClients");
@@ -417,7 +431,7 @@ export function Workspace() {
   };
 
   // 更新工作区设置
-  const updateWorkspaceSettings = async (updates: any) => {
+  const updateWorkspaceSettings = async (updates: Partial<z.infer<typeof WorkspaceSettingsSchema>>) => {
     if (!currentSettingsWorkspace) return;
 
     try {
@@ -461,7 +475,7 @@ export function Workspace() {
   };
 
   // 更新应用设置
-  const updateAppSettings = async (updates: any) => {
+  const updateAppSettings = async (updates: Partial<z.infer<typeof AppSettingsSchema>>) => {
     try {
       const updatedSettings = await call("updateAppSettings", {
         updates
@@ -528,7 +542,7 @@ export function Workspace() {
   };
 
   // 更新 MCP Gateways 配置
-  const updateMCPGateways = async (gateways: any[]) => {
+  const updateMCPGateways = async (gateways: z.infer<typeof MCPGatewaySchema>[]) => {
     try {
       const updates = { mcpGateWays: gateways };
       await updateAppSettings(updates);
@@ -578,13 +592,22 @@ export function Workspace() {
 
     if (workspace) {
       try {
-        let agentList: any[] | undefined;
+        let agentList: Array<{
+          config: AgentConfig;
+          chatLogsCount: number;
+          lastChatTime?: number;
+        }> | undefined;
         let mcpClients: Record<string, IMCPClient> | undefined;
 
         // 根据刷新类型选择性刷新数据
         if (type === 'agents' || type === 'all') {
           // 刷新 Agents
-          agentList = await call("getWorkspaceAgentsSummary");
+          const rawAgentList = await call("getWorkspaceAgentsSummary");
+          agentList = rawAgentList as Array<{
+            config: AgentConfig;
+            chatLogsCount: number;
+            lastChatTime?: number;
+          }>;
         }
 
         if (type === 'mcp' || type === 'all') {
@@ -627,7 +650,6 @@ export function Workspace() {
       try {
         // 重新加载文件树数据
         const rootItems = await call("getWorkspaceDirectoryList", {
-          workspacePath: currentWorkspace.path,
           directoryPath: ""
         });
 
@@ -655,17 +677,17 @@ export function Workspace() {
   };
 
   // 处理面板尺寸变化
-  const handlePanelSizeChange = (sizes: any[]) => {
+  const handlePanelSizeChange = (sizes: number[]) => {
     const currentWorkspace = getCurrentWorkspace();
     if (currentWorkspace && sizes.length >= 3) {
       // 直接更新状态数组
       setPanelSizes(sizes);
 
       // 构建保存到localStorage的对象格式
-      const sizesToSave = {
-        left: sizes[0],
-        middle: sizes[1],
-        right: sizes[2]
+      const sizesToSave: PanelSizes = {
+        left: `${sizes[0] || 25}%`,
+        middle: `${sizes[1] || 50}%`,
+        right: `${sizes[2] || 25}%`
       };
 
       // 保存到localStorage（使用防抖，避免频繁保存）
@@ -701,7 +723,11 @@ export function Workspace() {
       // 加载当前工作区的面板尺寸
       const workspaceKey = workspace.path;
       const sizes = getPanelSizes(workspaceKey);
-      setPanelSizes([sizes.left, sizes.middle, sizes.right]);
+      // 将百分比字符串转换为数字
+      const leftNum = parseInt(sizes.left) || 25;
+      const middleNum = parseInt(sizes.middle) || 50;
+      const rightNum = parseInt(sizes.right) || 25;
+      setPanelSizes([leftNum, middleNum, rightNum]);
       // 初始化默认聊天标签页
       initDefaultChatTab(workspace);
     }
@@ -732,7 +758,7 @@ export function Workspace() {
   };
 
   // 打开Agent聊天
-  const openAgentChat = (workspaceKey: string, agent: any, chatLog?: any) => {
+  const openAgentChat = (workspaceKey: string, agent: { config: AgentConfig; chatLogsCount: number; lastChatTime?: number }, chatLog?: { key: string; label?: string }) => {
     const workspace = currentWorkspace;
     if (!workspace) return;
 
@@ -846,7 +872,11 @@ export function Workspace() {
 
   // 生成标签页items（新架构：只显示当前工作区）
   const getTabItems = () => {
-    const items: any[] = [];
+    const items: Array<{
+      key: string;
+      label: React.ReactNode;
+      closable: boolean;
+    }> = [];
     const workspaceList = getCurrentWorkspaceForDisplay();
 
     workspaceList.forEach(workspace => {
@@ -950,7 +980,7 @@ export function Workspace() {
         >
           {/* 左侧面板：工作区侧边栏 */}
           <Splitter.Panel
-            size={panelSizes[0] || "25%"}
+            size={panelSizes[0] || 25}
             min="15%"
             max="40%"
           >
@@ -966,7 +996,7 @@ export function Workspace() {
 
           {/* 中间面板：聊天界面 */}
           <Splitter.Panel
-            size={panelSizes[1] || "50%"}
+            size={panelSizes[1] || 50}
             min="30%"
           >
             <Card
@@ -1081,7 +1111,7 @@ export function Workspace() {
 
           {/* 右侧面板：Agents 和 MCP 管理 */}
           <Splitter.Panel
-            size={panelSizes[2] || "25%"}
+            size={panelSizes[2] || 25}
             min="15%"
             max="40%"
           >
@@ -1526,7 +1556,13 @@ export function Workspace() {
       >
         {appSettings && (
           <MCPGatewaysSettings
-            gateways={appSettings.mcpGateWays || []}
+            gateways={(appSettings.mcpGateWays?.filter(gateway => 
+              gateway.name && typeof gateway.name === 'string'
+            ) || []) as Array<{
+              name: string;
+              description?: string;
+              allowMCPs: string[];
+            }>}
             onUpdate={updateMCPGateways}
             availableMCPs={getAvailableMCPs()}
             mcpClients={Object.values(workspaceDetails[currentWorkspace?.path || '']?.mcpClients || {})}

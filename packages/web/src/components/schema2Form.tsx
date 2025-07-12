@@ -9,13 +9,13 @@ const { Title } = Typography;
 
 interface Schema2FormProps {
   schema: JSONSchema7;
-  value?: any;
-  onChange?: (value: any) => void;
+  value?: unknown;
+  onChange?: (value: unknown) => void;
   disabled?: boolean;
 }
 
 // 根据 schema 生成默认值的辅助函数
-const generateDefaultValue = (schema: JSONSchema7): any => {
+const generateDefaultValue = (schema: JSONSchema7): unknown => {
   if (schema.default !== undefined) {
     return schema.default;
   }
@@ -23,7 +23,7 @@ const generateDefaultValue = (schema: JSONSchema7): any => {
   switch (schema.type) {
     case 'object':
       if (schema.properties) {
-        const defaultObj: any = {};
+        const defaultObj: Record<string, unknown> = {};
         Object.entries(schema.properties).forEach(([key, propSchema]) => {
           if (typeof propSchema !== 'boolean') {
             defaultObj[key] = generateDefaultValue(propSchema);
@@ -47,7 +47,7 @@ const generateDefaultValue = (schema: JSONSchema7): any => {
 };
 
 // 深度合并对象的辅助函数
-const deepMerge = (target: any, source: any): any => {
+const deepMerge = (target: unknown, source: unknown): unknown => {
   if (Array.isArray(source)) {
     return source;
   }
@@ -79,7 +79,7 @@ export const Schema2Form: React.FC<Schema2FormProps> = ({
   const [jsonValue, setJsonValue] = useState<string>('');
   const [jsonError, setJsonError] = useState<string | null>(null);
 
-  const objectToJson = useCallback((obj: any) => {
+  const objectToJson = useCallback((obj: unknown) => {
     try {
       return JSON.stringify(obj, null, 2);
     } catch {
@@ -90,8 +90,8 @@ export const Schema2Form: React.FC<Schema2FormProps> = ({
   const jsonToObject = useCallback((jsonStr: string) => {
     try {
       return JSON.parse(jsonStr);
-    } catch (error: any) {
-      throw new Error(`JSON解析错误: ${error.message}`);
+    } catch (error: unknown) {
+      throw new Error(`JSON解析错误: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   }, []);
 
@@ -101,16 +101,16 @@ export const Schema2Form: React.FC<Schema2FormProps> = ({
     form.setFieldsValue(defaultValue);
   }, [defaultValue, objectToJson, form]);
 
-  const validateJsonSchema = useCallback((data: any): string | null => {
-    if (schema.type === 'object' && typeof data !== 'object') {
+  const validateJsonSchema = useCallback((data: unknown): string | null => {
+    if (schema.type === 'object' && (typeof data !== 'object' || data === null)) {
       return '数据类型不匹配，期望对象类型';
     }
     if (schema.type === 'array' && !Array.isArray(data)) {
       return '数据类型不匹配，期望数组类型';
     }
-    if (schema.required && Array.isArray(schema.required)) {
+    if (schema.required && Array.isArray(schema.required) && data && typeof data === 'object') {
       for (const field of schema.required) {
-        if (!(field in data)) {
+        if (!(field in (data as Record<string, unknown>))) {
           return `缺少必需字段: ${field}`;
         }
       }
@@ -118,7 +118,7 @@ export const Schema2Form: React.FC<Schema2FormProps> = ({
     return null;
   }, [schema]);
 
-  const handleFormChange = useCallback((_changedValues: any, allValues: any) => {
+  const handleFormChange = useCallback((_changedValues: unknown, allValues: unknown) => {
     setJsonValue(objectToJson(allValues));
     onChange?.(allValues);
   }, [onChange, objectToJson]);
@@ -138,8 +138,8 @@ export const Schema2Form: React.FC<Schema2FormProps> = ({
       
       form.setFieldsValue(parsedData);
       onChange?.(parsedData);
-    } catch (error: any) {
-      setJsonError(error.message);
+    } catch (error: unknown) {
+      setJsonError(error instanceof Error ? error.message : 'Unknown error');
     }
   }, [jsonToObject, validateJsonSchema, form, onChange]);
 
@@ -158,8 +158,8 @@ export const Schema2Form: React.FC<Schema2FormProps> = ({
         }
         
         form.setFieldsValue(parsedData);
-      } catch (error: any) {
-        message.error(error.message);
+      } catch (error: unknown) {
+        message.error(error instanceof Error ? error.message : 'Unknown error');
         return;
       }
     }
@@ -176,7 +176,7 @@ export const Schema2Form: React.FC<Schema2FormProps> = ({
         form={form}
         layout="vertical"
         onValuesChange={handleFormChange}
-        initialValues={defaultValue}
+        initialValues={defaultValue as any}
         disabled={disabled}
       >
         <Schema2FormItems

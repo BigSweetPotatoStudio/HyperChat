@@ -1,5 +1,5 @@
-import type { Command } from "../../../core/src/command.mts";
-import type { ElectronCommand } from "../../../electron/src/command.mts";
+import type { Command } from "../../../core/src/command.mjs";
+import type { ElectronCommand } from "../../../electron/src/command.mjs";
 import { io, Socket } from "socket.io-client";
 import { sleep } from "./sleep";
 
@@ -22,17 +22,17 @@ interface Ext {
    * @param args The arguments for the command.
    * @param options Optional settings, like an AbortSignal.
    */
-  call: <K extends keyof Command>(
+  call: <K extends keyof typeof Command>(
     command: K,
     args: any,
     options?: { signal?: AbortSignal }
-  ) => Promise<ReturnType<Command[K]>>
+  ) => Promise<ReturnType<(typeof Command)[K]>>
 
-  callElectron: <K extends keyof ElectronCommand>(
+  callElectron: <K extends keyof typeof ElectronCommand>(
     command: K,
     args: any,
     options?: { signal?: AbortSignal }
-  ) => Promise<ReturnType<ElectronCommand[K]>>
+  ) => Promise<ReturnType<(typeof ElectronCommand)[K]>>
 
   /**
    * Registers a listener for messages from the backend.
@@ -122,14 +122,14 @@ export function getURL_PRE() {
  * @returns {Promise<ReturnType<Command[k]>>} A promise that resolves with the command's return value.
  * @throws {Error} If the API call fails or returns an error.
  */
-export async function call<k extends keyof Command>(
+export async function call<k extends keyof typeof Command>(
   command: k,
-  args: Parameters<Command[k]>[0] = {} as any,
+  args: Parameters<(typeof Command)[k]>[0] = {} as any,
   options: { signal?: AbortSignal } = {}
-): Promise<ReturnType<Command[k]>> {
+): Promise<ReturnType<(typeof Command)[k]>> {
   try {
     const { signal } = options;
-    const res = await fetch(`${getURL_PRE()}/call/${command}`, {
+    const res = await fetch(`${getURL_PRE()}/call/${String(command)}`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",

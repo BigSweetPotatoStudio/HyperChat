@@ -22,13 +22,15 @@ import { zodToJsonSchema } from "zod-to-json-schema";
 import {
   AppearanceSchema,
   SystemSchema,
-  DesktopSchema
+  DesktopSchema,
+  AppSettingsSchema
 } from "@hyperchat/shared/jsonSchemas/appSettingsSchema";
+import type { z } from "zod";
 import Schema2Form from "./schema2Form";
 
 interface AppSettingsProps {
-  settings: any;
-  onUpdate: (updates: any) => Promise<void>;
+  settings: z.infer<typeof AppSettingsSchema>;
+  onUpdate: (updates: Partial<z.infer<typeof AppSettingsSchema>>) => Promise<void>;
   onReset?: () => Promise<void>;
   onExport?: () => Promise<void>;
   onImport?: (settingsJson: string) => Promise<void>;
@@ -54,7 +56,7 @@ export function AppSettings({
   }, [settings]);
 
   // 处理表单值变化
-  const handleFormChange = (values: any) => {
+  const handleFormChange = (values: z.infer<typeof AppSettingsSchema>) => {
     setCurrentValues(values);
     setHasChanges(true);
   };
@@ -136,7 +138,7 @@ export function AppSettings({
         <Schema2Form
           schema={appearanceSchema}
           value={currentValues?.appearance}
-          onChange={(values) => handleFormChange({ ...currentValues, appearance: values })}
+          onChange={(values) => handleFormChange({ ...currentValues, appearance: values as z.infer<typeof AppearanceSchema> })}
         />
       ),
     },
@@ -152,7 +154,7 @@ export function AppSettings({
         <Schema2Form
           schema={systemSchema}
           value={currentValues?.system}
-          onChange={(values) => handleFormChange({ ...currentValues, system: values })}
+          onChange={(values) => handleFormChange({ ...currentValues, system: values as z.infer<typeof SystemSchema> })}
         />
       ),
     },
@@ -168,7 +170,7 @@ export function AppSettings({
         <Schema2Form
           schema={desktopSchema}
           value={currentValues?.desktop}
-          onChange={(values) => handleFormChange({ ...currentValues, desktop: values })}
+          onChange={(values) => handleFormChange({ ...currentValues, desktop: values as z.infer<typeof DesktopSchema> })}
         />
       ),
     },
