@@ -1,0 +1,140 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$ref": "#/definitions/HyperChatWorkspaceSettings",
+  "definitions": {
+    "HyperChatWorkspaceSettings": {
+      "type": "object",
+      "properties": {
+        "appearance": {
+          "type": "object",
+          "properties": {
+            "isDarkMode": {
+              "type": "boolean",
+              "default": false,
+              "description": "是否启用夜间模式"
+            },
+            "theme": {
+              "type": "string",
+              "enum": [
+                "light",
+                "dark",
+                "auto"
+              ],
+              "default": "auto",
+              "description": "主题模式"
+            },
+            "fontSize": {
+              "type": "string",
+              "enum": [
+                "small",
+                "medium",
+                "large"
+              ],
+              "default": "medium",
+              "description": "字体大小"
+            },
+            "language": {
+              "type": "string",
+              "enum": [
+                "zh-CN",
+                "en-US"
+              ],
+              "default": "zh-CN",
+              "description": "界面语言"
+            }
+          },
+          "additionalProperties": false,
+          "default": {}
+        },
+        "editor": {
+          "type": "object",
+          "properties": {
+            "autoSave": {
+              "type": "boolean",
+              "default": true,
+              "description": "是否自动保存"
+            },
+            "autoSaveDelay": {
+              "type": "number",
+              "minimum": 1000,
+              "maximum": 60000,
+              "default": 5000,
+              "description": "自动保存延迟（毫秒）"
+            },
+            "wordWrap": {
+              "type": "boolean",
+              "default": true,
+              "description": "是否自动换行"
+            },
+            "tabSize": {
+              "type": "number",
+              "minimum": 2,
+              "maximum": 8,
+              "default": 2,
+              "description": "Tab 大小"
+            }
+          },
+          "additionalProperties": false,
+          "default": {}
+        },
+        "ai": {
+          "type": "object",
+          "properties": {
+            "defaultModel": {
+              "type": "string",
+              "description": "默认 AI 模型"
+            },
+            "defaultAgent": {
+              "type": "string",
+              "description": "默认 Agent"
+            },
+            "temperature": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 2,
+              "default": 0.7,
+              "description": "温度参数"
+            },
+            "maxTokens": {
+              "type": "number",
+              "minimum": 100,
+              "maximum": 32000,
+              "default": 4000,
+              "description": "最大 Token 数"
+            },
+            "streamResponse": {
+              "type": "boolean",
+              "default": true,
+              "description": "是否流式响应"
+            }
+          },
+          "additionalProperties": false,
+          "default": {}
+        },
+        "advanced": {
+          "type": "object",
+          "properties": {
+            "enableTelemetry": {
+              "type": "boolean",
+              "default": false,
+              "description": "是否启用遥测"
+            },
+            "debugMode": {
+              "type": "boolean",
+              "default": false,
+              "description": "是否启用调试模式"
+            },
+            "experimentalFeatures": {
+              "type": "boolean",
+              "default": false,
+              "description": "是否启用实验性功能"
+            }
+          },
+          "additionalProperties": false,
+          "default": {}
+        }
+      },
+      "additionalProperties": false
+    }
+  }
+}

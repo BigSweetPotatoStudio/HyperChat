@@ -13,9 +13,10 @@ import {
 import type { ChatHistoryItem } from "@hyperchat/shared/types";
 import type { MCPServerConfig } from "@hyperchat/shared/types";
 import { AgentManager } from "./agentManager.mjs";
-import { getMCPManager } from "./mcp/index.mjs";
+import { WorkspaceMCPManager } from "./mcp/manager.mjs";
 import type { WorkspaceMCPClientImpl } from "./mcp/client.mjs";
 import { WorkspaceSettingsManager } from "../data/workspaceSettingsManager.mjs";
+import { Logger } from "../log.mjs";
 
 /**
  * 工作区类 - 封装单个工作区的所有操作
@@ -23,7 +24,7 @@ import { WorkspaceSettingsManager } from "../data/workspaceSettingsManager.mjs";
 export class Workspace {
   private config: WorkspaceConfig;
   private agentManager: AgentManager;
-  private mcpManager: ReturnType<typeof getMCPManager>;
+  private mcpManager: WorkspaceMCPManager;
   private settingsManager: WorkspaceSettingsManager;
   private fileTree?: WorkspaceFileNode;
   private lastSync?: number;
@@ -55,8 +56,27 @@ export class Workspace {
 
     this.agentManager = new AgentManager(path.join(hyperChatPath, CONSTANTS.DIRECTORIES.AGENTS));
     
-    // 使用有效的工作区路径作为MCP管理器的路径
-    this.mcpManager = getMCPManager(effectiveWorkspacePath);
+    // 创建MCP管理器
+    this.mcpManager = new WorkspaceMCPManager(
+      effectiveWorkspacePath,
+      {
+        autoReconnect: true,
+        reconnectInterval: 5000,
+        maxReconnectAttempts: 5,
+        enableLogging: true,
+      },
+      {
+        onClientStatusChange: (client) => {
+          Logger.info(`MCP客户端状态变化: ${client.serverName} -> ${client.status}`);
+        },
+        onConfigUpdate: (config) => {
+          Logger.info(`MCP配置更新: ${config.workspacePath} workspacePath`);
+        },
+        onError: (error, context) => {
+          Logger.error("MCP管理器错误:", error, context);
+        },
+      }
+    );
     
     // 初始化设置管理器
     this.settingsManager = new WorkspaceSettingsManager(hyperChatPath);
@@ -443,6 +463,109 @@ export class Workspace {
   }
 
   /**
+   * 启动工作区 MCP 服务
+   */
+  async startMcpClients(): Promise<WorkspaceMCPClientImpl[]> {
+    try {
+      const clients = await this.mcpManager.startClients();
+      Logger.info(`工作区 MCP 服务已启动: ${this.workspacePath}`);
+      return clients;
+    } catch (error) {
+      Logger.error(`启动工作区 MCP 服务失败: ${this.workspacePath}`, error);
+      throw error;
+    }
+  }
+
+  /**
+   * 停止工作区 MCP 服务
+   */
+  async stopMcpClients(): Promise<void> {
+    try {
+      await this.mcpManager.stopClients();
+      Logger.info(`工作区 MCP 服务已停止: ${this.workspacePath}`);
+    } catch (error) {
+      Logger.error(`停止工作区 MCP 服务失败: ${this.workspacePath}`, error);
+      throw error;
+    }
+  }
+
+  /**
+   * 重新加载工作区 MCP 配置
+   */
+  async reloadMcpClients(): Promise<WorkspaceMCPClientImpl[]> {
+    try {
+      await this.stopMcpClients();
+      return await this.startMcpClients();
+    } catch (error) {
+      Logger.error(`重新加载工作区 MCP 配置失败: ${this.workspacePath}`, error);
+      throw error;
+    }
+  }
+
+  /**
+   * 管理单个 MCP 客户端
+   */
+  async manageMcpClient(clientName: string, action: 'restart' | 'disable' | 'delete'): Promise<void> {
+    try {
+      switch (action) {
+        case 'delete':
+          await this.mcpManager.deleteServerConfig(clientName);
+          break;
+        case 'disable':
+          await this.mcpManager.stopClient(clientName);
+          break;
+        case 'restart':
+        default:
+          await this.mcpManager.restartClient(clientName);
+          break;
+      }
+      Logger.info(`MCP客户端 ${clientName} ${action} 操作完成`);
+    } catch (error) {
+      Logger.error(`MCP客户端 ${clientName} ${action} 操作失败:`, error);
+      throw error;
+    }
+  }
+
+  /**
+   * 设置 MCP 服务器配置
+   */
+  async setMcpServerConfig(serverName: string, serverConfig: MCPServerConfig): Promise<void> {
+    try {
+      await this.mcpManager.setServerConfig(serverName, serverConfig);
+      Logger.info(`MCP服务器配置已设置: ${serverName}`);
+    } catch (error) {
+      Logger.error(`设置MCP服务器配置失败: ${serverName}`, error);
+      throw error;
+    }
+  }
+
+  /**
+   * 删除 MCP 服务器配置
+   */
+  async deleteMcpServerConfig(serverName: string): Promise<void> {
+    try {
+      await this.mcpManager.deleteServerConfig(serverName);
+      Logger.info(`MCP服务器配置已删除: ${serverName}`);
+    } catch (error) {
+      Logger.error(`删除MCP服务器配置失败: ${serverName}`, error);
+      throw error;
+    }
+  }
+
+  /**
+   * 销毁工作区时清理 MCP 管理器
+   */
+  async destroy(): Promise<void> {
+    try {
+      await this.mcpManager.destroy();
+      Logger.info(`工作区已销毁: ${this.workspacePath}`);
+    } catch (error) {
+      Logger.error(`销毁工作区失败: ${this.workspacePath}`, error);
+      throw error;
+    }
+  }
+
+  /**
    * 添加或更新单个 MCP 服务器配置
    */
   async setMcpServer(name: string, config: MCPServerConfig): Promise<void> {
@@ -456,26 +579,6 @@ export class Workspace {
     await this.mcpManager.deleteServerConfig(name);
   }
 
-  /**
-   * 启动 MCP 客户端
-   */
-  async startMcpClients(): Promise<void> {
-    await this.mcpManager.startClients();
-  }
-
-  /**
-   * 停止 MCP 客户端
-   */
-  async stopMcpClients(): Promise<void> {
-    await this.mcpManager.stopClients();
-  }
-
-  /**
-   * 重启 MCP 客户端
-   */
-  async restartMcpClient(name: string): Promise<void> {
-    await this.mcpManager.restartClient(name);
-  }
 
   // ========== 文件树管理 ==========
 

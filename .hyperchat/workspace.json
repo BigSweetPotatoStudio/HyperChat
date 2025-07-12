@@ -1,8 +1,10 @@
 {
   "name": "HyperChat",
   "created": 1751838444868,
-  "lastAccessed": 1751990378414,
+  "lastAccessed": 1752293345202,
   "settings": {
     "enableKnowledgeBase": true
-  }
+  },
+  "key": "250705-004552-5c63c128",
+  "path": "/home/laop/Documents/HyperChat"
 }

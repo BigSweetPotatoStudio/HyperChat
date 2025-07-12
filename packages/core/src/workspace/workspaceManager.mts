@@ -88,12 +88,10 @@ export class WorkspaceManager {
     }
 
     // 先清理当前工作区的资源
-    if (this.currentWorkspace) {
-      try {
-        await this.currentWorkspace.uninit();
-      } catch (error) {
-        console.warn('清理当前工作区失败:', error);
-      }
+    try {
+      await this.uninitialize();
+    } catch (error) {
+      console.warn('清理当前工作区失败:', error);
     }
 
     await this.initialize(targetPath);
@@ -120,7 +118,7 @@ export class WorkspaceManager {
    * 获取当前工作区
    */
   getCurrentWorkspace(): Workspace {
-    if(!this.isInitialized) {
+    if (!this.isInitialized) {
       throw new Error("工作区管理器尚未初始化，请先调用 initialize() 方法。");
     }
     // 始终返回当前工作区（默认是全局工作区，workspace.mts中自动处理配置合并）
