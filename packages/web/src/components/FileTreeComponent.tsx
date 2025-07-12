@@ -158,7 +158,6 @@ export function FileTreeComponent({
 
       try {
         const childrenData: FileNode[] = await call("getWorkspaceDirectoryList", {
-          workspacePath: workspace.path,
           directoryPath: key
         });
         

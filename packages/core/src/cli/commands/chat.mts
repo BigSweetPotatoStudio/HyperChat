@@ -37,6 +37,7 @@ export async function startChat(initialMessage?: string, options: ChatOptions = 
 
 
     await workspaceManager.initialize(workspacePath);
+    let workspace = workspaceManager.getCurrentWorkspace();
     workspacePath = workspaceManager.getCurrentWorkspacePath();
     // 新架构下简化配置获取
     logger.info(`🎯 使用工作区: ${workspacePath}`);
@@ -70,11 +71,11 @@ export async function startChat(initialMessage?: string, options: ChatOptions = 
     logger.info(`🤖 使用模型: ${modelKey}`);
 
     // 获取工作区的Agent数量
-    const agentsSummary = await Command.getWorkspaceAgentsSummary({ workspacePath });
+    const agentsSummary = await workspace.getAllAgentsSummary();
     logger.info(`👥 当前工作区Agent数量: ${agentsSummary.length}`);
 
     // 获取工作区的MCP工具
-    const mcpClients = await Command.getWorkspaceMcpClients({ workspacePath });
+    const mcpClients = await workspace.getMcpClients();
     const mcpTools = mcpClients.flatMap((client: any) =>
       client.tools?.map((tool: any) => ({
         name: `${client.serverName}_${tool.name}`,

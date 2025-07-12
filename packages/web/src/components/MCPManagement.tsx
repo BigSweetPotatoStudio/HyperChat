@@ -208,7 +208,6 @@ export const MCPManagement = forwardRef<MCPManagementRef, MCPManagementProps>(({
     try {
       // 使用新的工作区特定的禁用方法
       await call("manageWorkspaceMcpClient", {
-        workspacePath: workspace.path,
         clientName,
         action: "disable"
       });
@@ -227,7 +226,6 @@ export const MCPManagement = forwardRef<MCPManagementRef, MCPManagementProps>(({
     try {
       // 使用新的工作区特定的启动方法
       await call("startWorkspaceMcpClient", {
-        workspacePath: workspace.path,
         clientName
       });
       message.success(t`MCP client enabled successfully`);
@@ -245,7 +243,6 @@ export const MCPManagement = forwardRef<MCPManagementRef, MCPManagementProps>(({
     try {
       // 使用统一的工作区特定的删除方法
       await call("manageWorkspaceMcpClient", {
-        workspacePath: workspace.path,
         clientName,
         action: "delete"
       });

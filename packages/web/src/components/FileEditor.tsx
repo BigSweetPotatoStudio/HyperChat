@@ -110,7 +110,6 @@ export function FileEditor({ filePath, workspacePath, fileName, onClose }: FileE
     try {
       setLoading(true);
       const fileContent = await call('readWorkspaceFile', {
-        workspacePath,
         filePath
       });
       setContent(fileContent || '');
@@ -129,7 +128,6 @@ export function FileEditor({ filePath, workspacePath, fileName, onClose }: FileE
     try {
       setSaving(true);
       await call('writeWorkspaceFile', {
-        workspacePath,
         filePath,
         content
       });

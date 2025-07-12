@@ -196,7 +196,6 @@ export const WorkspaceChat = ({ workspace, agentKey, workspaceDetails, mcpClient
       // 保存到持久化存储
       if (agentKey && workspace?.path) {
         await call("saveAgentChatLog", {
-          workspacePath: workspace.path,
           agentKey: agentKey,
           chatLog: currentChat.current
         });
@@ -542,7 +541,6 @@ export const WorkspaceChat = ({ workspace, agentKey, workspaceDetails, mcpClient
       if (agentKey) {
         // 如果是 Agent 聊天，保存到 Agent 的聊天记录中
         await call("saveAgentChatLog", {
-          workspacePath: workspace.path,
           agentKey: agentKey,
           chatLog: currentChat.current
         });
@@ -1041,7 +1039,7 @@ export const WorkspaceChat = ({ workspace, agentKey, workspaceDetails, mcpClient
                       onClick={async () => {
                         x.status = "connecting";
                         refresh();
-                        await call("startWorkspaceMcpClient", { clientName: x.serverName, workspacePath: workspace.path });
+                        await call("startWorkspaceMcpClient", { clientName: x.serverName });
                       }}
                     >{t`Reload`}</Button> : <DisconnectOutlined className="text-red-400" />
                   )}

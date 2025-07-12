@@ -267,18 +267,17 @@ export function Workspace() {
       // 加载根目录文件列表（懒加载）
       console.log("Loading file tree for workspace:", workspace.path, "isGlobal:", workspace.isGlobal);
       const rootItems = await call("getWorkspaceDirectoryList", {
-        workspacePath: workspace.path,
         directoryPath: ""
       });
       console.log("File tree loaded:", rootItems?.length, "items");
       details.fileTreeData = rootItems;
 
       // 加载 Agents（获取摘要信息）
-      const agentList = await call("getWorkspaceAgentsSummary", { workspacePath: workspace.path });
+      const agentList = await call("getWorkspaceAgentsSummary");
       details.agents = agentList;
 
       // 加载 MCP 客户端
-      let mcpList = await call("getWorkspaceMcpClients", { workspacePath: workspace.path });
+      let mcpList = await call("getWorkspaceMcpClients");
 
       // 将数组转换为对象格式，使用 name 作为 key
       const mcpClients: Record<string, IMCPClient> = {};
@@ -586,12 +585,12 @@ export function Workspace() {
         // 根据刷新类型选择性刷新数据
         if (type === 'agents' || type === 'all') {
           // 刷新 Agents
-          agentList = await call("getWorkspaceAgentsSummary", { workspacePath: workspace.path });
+          agentList = await call("getWorkspaceAgentsSummary");
         }
 
         if (type === 'mcp' || type === 'all') {
           // 刷新 MCP 客户端
-          const mcpList = await call("getWorkspaceMcpClients", { workspacePath: workspace.path });
+          const mcpList = await call("getWorkspaceMcpClients");
 
           // 将数组转换为对象格式
           mcpClients = {};

@@ -224,14 +224,14 @@ export function TerminalComponent({
     // 初始化加载现有终端
     setTimeout(async () => {
       try {
-        const terminalIDs = await call("GetTerminals", { workspacePath: workspacePath });
+        const terminalIDs = await call("GetTerminals");
         if (terminalIDs && terminalIDs.length > 0) {
           for (const id of terminalIDs) {
             await createTerminalInstance(id);
           }
         } else {
           // 创建新终端
-          await call("OpenTerminal", { workspacePath: workspacePath });
+          await call("OpenTerminal");
         }
       } catch (error) {
         console.error("Failed to load terminals:", error);
@@ -247,7 +247,7 @@ export function TerminalComponent({
     refresh();
 
     try {
-      await call("ActiveAITerminal", { TerminalID: key, workspacePath: workspacePath });
+      await call("ActiveAITerminal", { TerminalID: key });
       // const session = data.current.sessions.find((x) => x.id.toString() === key);
       // if (session && session.context.fitAddon) {
       //   setTimeout(() => {
@@ -263,7 +263,7 @@ export function TerminalComponent({
   const handleTabEdit = async (targetKey: string | React.MouseEvent | React.KeyboardEvent, action: "add" | "remove") => {
     if (action === "add") {
       try {
-        await call("OpenTerminal", { workspacePath: workspacePath });
+        await call("OpenTerminal");
       } catch (error) {
         message.error(`Failed to create terminal: ${error}`);
       }
@@ -273,7 +273,7 @@ export function TerminalComponent({
           (x) => x.id.toString() !== targetKey,
         );
         refresh();
-        await call("CloseTerminal", { TerminalID: targetKey as string, workspacePath: workspacePath });
+        await call("CloseTerminal", { TerminalID: targetKey as string });
       } catch (error) {
         message.error(`Failed to close terminal: ${error}`);
       }
