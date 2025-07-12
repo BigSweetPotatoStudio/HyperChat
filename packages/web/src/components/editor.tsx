@@ -1,7 +1,7 @@
 
 import React, { forwardRef, useEffect, useImperativeHandle, useRef, useState } from "react";
 import * as monaco from "monaco-editor";
-import { } from "@hyperchat/shared/data";
+import { } from "@hyperchat/shared/types";
 import { v4 } from "uuid";
 import { Button, Space } from "antd";
 import { FullscreenOutlined } from "@ant-design/icons";

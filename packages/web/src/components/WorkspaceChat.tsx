@@ -53,7 +53,7 @@ import {
 } from "@hyperchat/shared/types";
 import type { AISettings, AIModelConfigItem } from "@hyperchat/shared/jsonSchemas/appSettingsSchema";
 import { useAISettings } from "../contexts/AppSettingsContext";
-import { MyMessage } from "@hyperchat/shared/data";
+import { MyMessage } from "@hyperchat/shared/types";
 import { Messages } from "./messages";
 import { Icon } from "./icon";
 import { Editor } from "./editor";

@@ -1,8 +1,8 @@
 import { call } from "./call";
 import * as MCPTypes from "@modelcontextprotocol/sdk/types.js";
 
-// import { TEMP_FILE } from "@hyperchat/shared/data.mjs"; // 已移除
-import type { HyperChatCompletionTool, IMCPClient } from "@hyperchat/shared/data";
+// import { TEMP_FILE } from "@hyperchat/shared/types.mjs"; // 已移除
+import type { HyperChatCompletionTool, IMCPClient } from "@hyperchat/shared/types";
 
 /**
  * Stores the initialized MCP clients.
