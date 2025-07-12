@@ -12,25 +12,11 @@ import {
 import { FileTreeComponent } from "./FileTreeComponent";
 import { TerminalComponent } from "./TerminalComponent";
 import { t } from "../i18n";
+import { WorkspaceInfo, FileNode } from "../pages/workspace/types";
 
-interface FileNode {
-  name: string;
-  path: string;
-  type: "file" | "directory";
-  children?: FileNode[];
-  size?: number;
-  modified: number;
-  extension?: string;
-  isLeaf?: boolean;
-  loaded?: boolean;
-  isHidden?: boolean;
-}
+// FileNode 类型已移至 ../pages/workspace/types.ts
 
-interface WorkspaceInfo {
-  path: string;
-  name: string;
-  isGlobal?: boolean;
-}
+// WorkspaceInfo 类型已移至 ../pages/workspace/types.ts
 
 interface WorkspaceSidebarProps {
   workspace: WorkspaceInfo;

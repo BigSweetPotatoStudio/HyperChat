@@ -62,7 +62,7 @@ import { blobToBase64, getMyUuid, JsonSchema2FormItemOrNull, urlToBase64 } from 
 import { HeaderContext } from "../common/context";
 import { useForceUpdate } from "../hooks/useForceUpdate";
 import { MyAttachR } from "./attachR";
-import { WorkspaceDetails, WorkspaceInfo } from "../pages/workspace/workspace";
+import { WorkspaceDetails, WorkspaceInfo } from "../pages/workspace/types";
 import { AllMessage, CommonContent, CommonContentItem, HyperChatCompletionTool, IMCPClient, Tool_Call } from "@hyperchat/shared/types";
 import { NumberStep } from "../common/numberStep";
 import { AgentCommonFormItems } from "./AgentManagement";

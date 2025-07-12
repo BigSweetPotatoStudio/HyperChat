@@ -35,6 +35,7 @@ import {
   HistoryOutlined,
 } from "@ant-design/icons";
 import { call } from "../common/call";
+import { WorkspaceInfo } from "../pages/workspace/types";
 import { t } from "../i18n";
 import { HeaderContext } from "../common/context";
 import type { AISettings, AIModelConfigItem } from "@hyperchat/shared/jsonSchemas/appSettingsSchema";
@@ -53,10 +54,7 @@ interface Agent {
   lastChatTime?: number;
 }
 
-interface WorkspaceInfo {
-  path: string;
-  isGlobal?: boolean;
-}
+// WorkspaceInfo 类型已移至 ../pages/workspace/types.ts
 
 interface AgentManagementProps {
   workspace: WorkspaceInfo;

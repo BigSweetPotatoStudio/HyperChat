@@ -37,7 +37,7 @@ import { call } from "../common/call";
 import { t } from "../i18n";
 import { HyperChatCompletionTool, IMCPClient, MCPServerConfig } from "@hyperchat/shared/data";
 import Editor from "@monaco-editor/react";
-import { WorkspaceInfo } from "../pages/workspace/workspace";
+import { WorkspaceInfo } from "../pages/workspace/types";
 import { useForceUpdate } from "../hooks";
 
 const { Title, Text } = Typography;

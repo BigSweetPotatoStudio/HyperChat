@@ -1,7 +1,6 @@
-import React, { useState, useEffect, useCallback, useContext, useRef } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import {
   Card,
-  List,
   Button,
   Modal,
   Form,
@@ -9,126 +8,61 @@ import {
   message,
   Tabs,
   Space,
-  Tag,
   Tooltip,
   Popconfirm,
   Empty,
   Badge,
-  Typography,
+  Tag,
   Splitter,
-  Spin,
   Drawer,
-  Descriptions,
   Dropdown,
-  Divider,
 } from "antd";
 import {
   FolderOpenOutlined,
-  PlusOutlined,
-  DeleteOutlined,
   SettingOutlined,
   GlobalOutlined,
-  AppstoreOutlined,
-  ReloadOutlined,
   SwapOutlined, // 新增切换图标
-  StopOutlined,
-  InfoCircleOutlined,
   MoreOutlined,
-  HistoryOutlined,
-  ClockCircleOutlined,
-  MessageOutlined,
-  CloseOutlined,
-  FileTextOutlined,
 } from "@ant-design/icons";
-import { call, msg_receive, callElectron } from "../../common/call";
+import { call, msg_receive } from "../../common/call";
 import { useForceUpdate } from "../../hooks/useForceUpdate";
 import { t } from "../../i18n";
-import { useNavigate } from "react-router-dom";
 import { ServerDirectoryBrowser } from "../../components/ServerDirectoryBrowser";
-import { getClients } from "../../common/mcp";
-import { MCPManagement, MCPManagementRef } from "../../components/MCPManagement";
-import { AgentManagement, AgentManagementRef } from "../../components/AgentManagement";
-import { FileTreeComponent } from "../../components/FileTreeComponent";
-import { WorkspaceSidebar } from "../../components/WorkspaceSidebar";
-import { WorkspaceChat } from "../../components/WorkspaceChat";
-import { WorkspaceWelcome } from "../../components/WorkspaceWelcome";
-import { getPanelSizes, savePanelSizes, getWorkspaceHistory, addToWorkspaceHistory, removeFromWorkspaceHistory, addAgentRecentUsage, type PanelSizes } from "../../utils/storage";
+import { MCPManagementRef } from "../../components/MCPManagement";
+import { AgentManagementRef } from "../../components/AgentManagement";
+import { WorkspaceLeftPanel } from "./WorkspaceLeftPanel";
+import { WorkspaceMiddlePanel } from "./WorkspaceMiddlePanel";
+import { WorkspaceRightPanel } from "./WorkspaceRightPanel";
+import { WorkspaceOpenModal } from "./WorkspaceOpenForm";
+import {
+  WorkspaceInfo,
+  WorkspaceDetails,
+  FileNode,
+  ChatTab,
+  WorkspaceHistoryItem,
+  type PanelSizes,
+} from "./types";
+import { getPanelSizes, savePanelSizes, getWorkspaceHistory, addToWorkspaceHistory, removeFromWorkspaceHistory, addAgentRecentUsage } from "../../utils/storage";
 import { AgentConfig, IMCPClient, MessageData, MessageDataMap } from "@hyperchat/shared/types";
 import { WorkspaceSettingsSchema } from "@hyperchat/shared/jsonSchemas/workspaceSettingsSchema";
 import { AppSettingsSchema, MCPGatewaySchema } from "@hyperchat/shared/jsonSchemas/appSettingsSchema";
 import type { z } from "zod";
-import { HeaderContext } from "../../common/context";
 import { ProviderSettings } from "../../components/ProviderSettings";
 import { AppHeader } from "../../components/AppHeader";
 import { AppActions } from "../../components/AppActions";
 
-import { FileEditor } from "../../components/FileEditor";
-import { Icon } from "@/src/components/icon";
 import { WorkspaceSettings } from "../../components/WorkspaceSettings";
 import { AppSettings } from "../../components/AppSettings";
 import { MCPGatewaysSettings } from "../../components/MCPGatewaysSettings";
 
-const { Title, Text } = Typography;
 
-interface WorkspaceConfig {
-  name: string;
-  description?: string;
-  created: number;
-  settings: {
-  };
-  agentsCount?: number;
-  mcpServersCount?: number;
-}
+// 类型定义已移至 ./types.ts
 
-export interface WorkspaceInfo extends WorkspaceConfig {
-  path: string;
-  agentsCount: number;
-  mcpServersCount: number;
-  isGlobal: boolean;
-}
-
-interface FileNode {
-  name: string;
-  path: string;
-  type: "file" | "directory";
-  children?: FileNode[];
-  size?: number;
-  modified: number;
-  extension?: string;
-  isLeaf?: boolean;
-  loaded?: boolean;
-  isHidden?: boolean;
-}
-
-interface ChatTab {
-  key: string;
-  title: string;
-  type: 'chat' | 'file' | 'welcome';
-  agentKey?: string;
-  agentName?: string;
-  filePath?: string;
-  fileName?: string;
-  workspacePath: string;
-  closable?: boolean;
-  chatLogToLoad?: any; // 要加载的聊天记录
-}
-
-export type WorkspaceDetails = {
-  [key: string]: {
-    fileTreeData?: FileNode[];
-    agents: {
-      config: AgentConfig;
-      chatLogsCount: number;
-      lastChatTime?: number;
-    }[];
-    mcpClients: Record<string, IMCPClient>;
-  }
-};
+// 重新导出常用类型供其他组件使用
+export type { WorkspaceInfo, WorkspaceDetails, ChatTab } from "./types";
 
 export function Workspace() {
   const refresh = useForceUpdate();
-  const headerContext = useContext(HeaderContext);
-  const navigate = useNavigate();
 
   // 只从context获取真正需要在Layout中管理的状态
 
@@ -145,17 +79,14 @@ export function Workspace() {
   const [currentWorkspace, setCurrentWorkspace] = useState<WorkspaceInfo | null>(null);
   const [workspaceDetails, setWorkspaceDetails] = useState<WorkspaceDetails>({});
 
-  const [loading, setLoading] = useState(false);
   const [openModalOpen, setOpenModalOpen] = useState(false);
   const [confirmCreateModalOpen, setConfirmCreateModalOpen] = useState(false);
-  const [closeConfirmModalOpen, setCloseConfirmModalOpen] = useState(false);
   const [pendingWorkspacePath, setPendingWorkspacePath] = useState<string>("");
-  const [pendingCloseWorkspace, setPendingCloseWorkspace] = useState<WorkspaceInfo | null>(null);
   // 移除了 runningWorkspaces 状态 - 新架构下没有运行工作区概念
   const [directoryBrowserOpen, setDirectoryBrowserOpen] = useState(false);
   const [selectedPath, setSelectedPath] = useState<string>("");
   const [showHiddenFiles, setShowHiddenFiles] = useState(true);
-  const [workspaceHistory, setWorkspaceHistory] = useState(() => getWorkspaceHistory());
+  const [workspaceHistory, setWorkspaceHistory] = useState<WorkspaceHistoryItem[]>(() => getWorkspaceHistory());
   const [settingsDrawerOpen, setSettingsDrawerOpen] = useState(false);
   const [currentSettingsWorkspace, setCurrentSettingsWorkspace] = useState<WorkspaceInfo | null>(null);
   const [workspaceSettings, setWorkspaceSettings] = useState<z.infer<typeof WorkspaceSettingsSchema> | null>(null);
@@ -164,15 +95,13 @@ export function Workspace() {
   const [mcpGatewaysDrawerOpen, setMCPGatewaysDrawerOpen] = useState(false);
   const [globalWorkspacePath, setGlobalWorkspacePath] = useState<string>('unknown'); // 全局工作区路径
   const [form] = Form.useForm();
-  // 为每个工作区维护独立的标签页状态
-  const [workspaceTabsMap, setWorkspaceTabsMap] = useState<Record<string, ChatTab[]>>({});
-  const [workspaceActiveTabMap, setWorkspaceActiveTabMap] = useState<Record<string, string>>({});
+  // 单工作区的标签页状态
+  const [chatTabs, setChatTabs] = useState<ChatTab[]>([]);
+  const [activeTabKey, setActiveTabKey] = useState<string>("");
 
-  // 存储各个工作区的 AgentManagement ref
-  const agentManagementRefs = useRef<Record<string, AgentManagementRef | null>>({});
-
-  // 存储各个工作区的 MCPManagement ref
-  const mcpManagementRefs = useRef<Record<string, MCPManagementRef | null>>({});
+  // 单工作区的管理组件 ref
+  const agentManagementRef = useRef<AgentManagementRef | null>(null);
+  const mcpManagementRef = useRef<MCPManagementRef | null>(null);
 
 
   // 面板尺寸状态 - 使用数组格式，与Ant Design Splitter兼容
@@ -218,7 +147,6 @@ export function Workspace() {
   // 加载当前工作区（新架构：只需要当前工作区）
   const loadCurrentWorkspace = async () => {
     try {
-      setLoading(true);
 
       // 只需要获取当前工作区信息
       const currentWorkspaceData = await call("getCurrentWorkspace");
@@ -244,8 +172,6 @@ export function Workspace() {
     } catch (error) {
       console.error("Failed to load current workspace:", error);
       message.error(t`Failed to load workspace`);
-    } finally {
-      setLoading(false);
     }
   };
 
@@ -404,11 +330,6 @@ export function Workspace() {
   // 创建工作区后的初始化操作（新架构下不需要显式启动MCP）
   // 移除了 startWorkspaceMcpClients 函数 - 新架构下工作区自动管理MCP服务
 
-  // 显示关闭确认对话框
-  const showCloseConfirm = (workspace: WorkspaceInfo) => {
-    setPendingCloseWorkspace(workspace);
-    setCloseConfirmModalOpen(true);
-  };
 
   // 处理工作区设置
   const handleWorkspaceSettings = async (workspace: WorkspaceInfo) => {
@@ -732,10 +653,6 @@ export function Workspace() {
     return currentWorkspace;
   };
 
-  // 获取当前工作区详情
-  const getCurrentDetails = () => {
-    return workspaceDetails[activeWorkspaceKey] || { agents: [], mcpClients: {} };
-  };
 
   // 获取当前工作区详情
   const getGlobalDetails = () => {
@@ -752,7 +669,7 @@ export function Workspace() {
   };
 
   // 打开Agent聊天
-  const openAgentChat = (workspaceKey: string, agent: { config: AgentConfig; chatLogsCount: number; lastChatTime?: number }, chatLog?: { key: string; label?: string }) => {
+  const openAgentChat = (agent: { config: AgentConfig; chatLogsCount: number; lastChatTime?: number }, chatLog?: { key: string; label?: string }) => {
     const workspace = currentWorkspace;
     if (!workspace) return;
 
@@ -761,15 +678,11 @@ export function Workspace() {
 
     // 如果有聊天记录，使用聊天记录的key确保唯一性
     const tabKey = chatLog ? `${workspace.path}-${agent.config.key}-${chatLog.key}` : `${workspace.path}-${agent.config.key}`;
-    const currentTabs = workspaceTabsMap[workspaceKey] || [];
-    const existingTab = currentTabs.find(tab => tab.key === tabKey);
+    const existingTab = chatTabs.find(tab => tab.key === tabKey);
 
     if (existingTab) {
       // 如果已存在，切换到该标签页
-      setWorkspaceActiveTabMap(prev => ({
-        ...prev,
-        [workspaceKey]: tabKey
-      }));
+      setActiveTabKey(tabKey);
     } else {
       // 创建新的聊天标签页
       const tabTitle = chatLog ? `${agent.config.name || agent.config.key} - ${chatLog.label || chatLog.key}` : agent.config.name || agent.config.key;
@@ -783,14 +696,8 @@ export function Workspace() {
         closable: true,
         chatLogToLoad: chatLog, // 传递聊天记录数据
       };
-      setWorkspaceTabsMap(prev => ({
-        ...prev,
-        [workspaceKey]: [...currentTabs, newTab]
-      }));
-      setWorkspaceActiveTabMap(prev => ({
-        ...prev,
-        [workspaceKey]: tabKey
-      }));
+      setChatTabs(prev => [...prev, newTab]);
+      setActiveTabKey(tabKey);
     }
   };
 
@@ -800,15 +707,11 @@ export function Workspace() {
     if (!currentWorkspace) return;
 
     const tabKey = `${currentWorkspace.path}-file-${filePath}`;
-    const currentTabs = workspaceTabsMap[currentWorkspace.path] || [];
-    const existingTab = currentTabs.find(tab => tab.key === tabKey);
+    const existingTab = chatTabs.find(tab => tab.key === tabKey);
 
     if (existingTab) {
       // 如果已存在，切换到该标签页
-      setWorkspaceActiveTabMap(prev => ({
-        ...prev,
-        [currentWorkspace.path]: tabKey
-      }));
+      setActiveTabKey(tabKey);
     } else {
       // 创建新的文件编辑标签页
       const newTab: ChatTab = {
@@ -820,14 +723,8 @@ export function Workspace() {
         workspacePath: currentWorkspace.path,
         closable: true,
       };
-      setWorkspaceTabsMap(prev => ({
-        ...prev,
-        [currentWorkspace.path]: [...currentTabs, newTab]
-      }));
-      setWorkspaceActiveTabMap(prev => ({
-        ...prev,
-        [currentWorkspace.path]: tabKey
-      }));
+      setChatTabs(prev => [...prev, newTab]);
+      setActiveTabKey(tabKey);
     }
   };
 
@@ -835,8 +732,7 @@ export function Workspace() {
   // 初始化默认欢迎标签页
   const initDefaultChatTab = (workspace: WorkspaceInfo) => {
     const defaultTabKey = `${workspace.path}-welcome`;
-    const currentTabs = workspaceTabsMap[workspace.path] || [];
-    const hasDefaultTab = currentTabs.some(tab => tab.key === defaultTabKey);
+    const hasDefaultTab = chatTabs.some(tab => tab.key === defaultTabKey);
 
     if (!hasDefaultTab) {
       const defaultTab: ChatTab = {
@@ -846,15 +742,9 @@ export function Workspace() {
         workspacePath: workspace.path,
         closable: false,
       };
-      setWorkspaceTabsMap(prev => ({
-        ...prev,
-        [workspace.path]: [defaultTab, ...currentTabs]
-      }));
-      if (!workspaceActiveTabMap[workspace.path]) {
-        setWorkspaceActiveTabMap(prev => ({
-          ...prev,
-          [workspace.path]: defaultTabKey
-        }));
+      setChatTabs(prev => [defaultTab, ...prev]);
+      if (!activeTabKey) {
+        setActiveTabKey(defaultTabKey);
       }
     }
   };
@@ -978,7 +868,7 @@ export function Workspace() {
             min="15%"
             max="40%"
           >
-            <WorkspaceSidebar
+            <WorkspaceLeftPanel
               workspace={workspace}
               fileTreeData={details.fileTreeData}
               showHidden={showHiddenFiles}
@@ -993,114 +883,32 @@ export function Workspace() {
             size={panelSizes[1] || 50}
             min="30%"
           >
-            <Card
-              title={null}
-              size="small"
-              className="h-full"
-              styles={{ body: { padding: '0', height: '100%', overflow: 'hidden' } }}
-            >
-              {workspaceTabsMap[workspaceKey]?.length && workspaceTabsMap[workspaceKey]?.length > 0 ? (
-                <Tabs
-                  className="myFullTabs"
-                  type="editable-card"
-                  activeKey={workspaceActiveTabMap[workspaceKey] || ""}
-                  onChange={(tabKey) => {
-                    setWorkspaceActiveTabMap(prev => ({
-                      ...prev,
-                      [workspaceKey]: tabKey
-                    }));
-                  }}
-                  onEdit={(targetKey, action) => {
-                    if (action === 'remove' && typeof targetKey === 'string') {
-                      const tabs = workspaceTabsMap[workspaceKey] || [];
-                      const newTabs = tabs.filter(tab => tab.key !== targetKey);
-                      setWorkspaceTabsMap(prev => ({
-                        ...prev,
-                        [workspaceKey]: newTabs
-                      }));
+            <WorkspaceMiddlePanel
+              workspace={workspace}
+              workspaceDetails={workspaceDetails}
+              chatTabs={chatTabs}
+              activeTabKey={activeTabKey}
+              agents={details.agents || []}
+              mcpClients={mcpClients}
+              agentManagementRef={agentManagementRef}
+              onTabChange={setActiveTabKey}
+              onTabRemove={(targetKey) => {
+                const newTabs = chatTabs.filter(tab => tab.key !== targetKey);
+                setChatTabs(newTabs);
 
-                      // 如果关闭的是当前活动标签页，切换到其他标签页
-                      if (workspaceActiveTabMap[workspaceKey] === targetKey) {
-                        const lastTab = newTabs.length > 0 ? newTabs[newTabs.length - 1] : null;
-                        const newActiveTab = lastTab ? lastTab.key : "";
-                        setWorkspaceActiveTabMap(prev => ({
-                          ...prev,
-                          [workspaceKey]: newActiveTab
-                        }));
-                      }
-                    }
-                  }}
-                  hideAdd
-                  size="small"
-                  tabBarStyle={{ marginBottom: 0, padding: '0 8px' }}
-                  items={(workspaceTabsMap[workspaceKey] || []).map(tab => ({
-                    key: tab.key,
-                    label: (
-                      <Space size="small">
-                        {tab.type === 'file' ? (
-                          <FileTextOutlined />
-                        ) : tab.type === 'welcome' ? (
-                          <Icon name="bx-bot" />
-                        ) : tab.agentKey ? (
-                          <MessageOutlined />
-                        ) : (
-                          <GlobalOutlined />
-                        )}
-                        <span>{tab.title}</span>
-                      </Space>
-                    ),
-                    closable: tab.closable,
-                    children: (
-                      <div style={{ height: '100%', overflow: 'hidden' }}>
-                        {tab.type === 'file' && tab.filePath && tab.fileName ? (
-                          <FileEditor
-                            filePath={tab.filePath}
-                            workspacePath={tab.workspacePath}
-                            fileName={tab.fileName}
-                            onClose={() => {
-                              const tabs = workspaceTabsMap[workspaceKey] || [];
-                              const newTabs = tabs.filter(t => t.key !== tab.key);
-                              setWorkspaceTabsMap(prev => ({
-                                ...prev,
-                                [workspaceKey]: newTabs
-                              }));
-                            }}
-                          />
-                        ) : tab.type === 'welcome' ? (
-                          <WorkspaceWelcome
-                            workspace={workspace}
-                            agents={details.agents || []}
-                            onOpenAgentChat={(agent, chatLog) => openAgentChat(workspaceKey, agent, chatLog)}
-                            onCreateAgent={() => {
-                              // 调用对应工作区的创建Agent函数
-                              const agentManagementRef = agentManagementRefs.current[workspaceKey];
-                              if (agentManagementRef) {
-                                agentManagementRef.createAgent();
-                              } else {
-                                console.warn('AgentManagement ref not available for workspace:', workspaceKey);
-                              }
-                            }}
-                          />
-                        ) : (
-                          <WorkspaceChat
-                            workspace={workspace}
-                            agentKey={tab.agentKey}
-                            workspaceDetails={workspaceDetails}
-                            key={tab.key}
-                            mcpClients={mcpClients}
-                            chatLogToLoad={tab.chatLogToLoad}
-                          />
-                        )}
-                      </div>
-                    ),
-                  }))}
-                />
-              ) : (
-                <div className="h-full flex items-center justify-center">
-                  <Empty description={t`No chat tabs open`} />
-                </div>
-              )}
-            </Card>
+                // 如果关闭的是当前活动标签页，切换到其他标签页
+                if (activeTabKey === targetKey) {
+                  const lastTab = newTabs.length > 0 ? newTabs[newTabs.length - 1] : null;
+                  const newActiveTab = lastTab ? lastTab.key : "";
+                  setActiveTabKey(newActiveTab);
+                }
+              }}
+              onOpenAgentChat={openAgentChat}
+              onFileClose={(tabKey) => {
+                const newTabs = chatTabs.filter(t => t.key !== tabKey);
+                setChatTabs(newTabs);
+              }}
+            />
           </Splitter.Panel>
 
           {/* 右侧面板：Agents 和 MCP 管理 */}
@@ -1109,63 +917,17 @@ export function Workspace() {
             min="15%"
             max="40%"
           >
-            <Card
-              title={t`Management Panel`}
-              size="small"
-              // className="h-full"
-              styles={{ body: { padding: 0 } }}
-            >
-              <Tabs
-                className="myTabBodyFull"
-                animated={true}
-                tabBarStyle={{ marginBottom: 0, padding: '0 8px' }}
-                size="small"
-                items={[
-                  {
-                    label: (
-                      <Space>
-                        <Icon name="bx-bot"></Icon>
-                        {t`Agents`}
-                        <Tag>{details.agents?.length || 0}</Tag>
-                      </Space>
-                    ),
-                    key: "agents",
-                    children: workspace ? (
-                      <AgentManagement
-                        ref={(ref) => {
-                          agentManagementRefs.current[workspaceKey] = ref;
-                        }}
-                        workspace={workspace}
-                        agents={details.agents || []}
-                        onRefresh={() => refreshWorkspaceDetails(workspaceKey, 'agents')}
-                        onOpenChat={(agent: any, chatLog?: any) => openAgentChat(workspaceKey, agent, chatLog)}
-                        mcpClients={mcpClients}
-                      />
-                    ) : <Empty description={t`No workspace selected`} />,
-                  },
-                  {
-                    label: (
-                      <Space>
-                        <Icon name="mcp"></Icon>
-                        {t`MCP`}
-                        <Tag color="green">{mcpClients.filter(x => x.status == "connected").length}</Tag>
-                      </Space>
-                    ),
-                    key: "mcp",
-                    children: workspace ? (
-                      <MCPManagement
-                        ref={(ref) => {
-                          mcpManagementRefs.current[workspaceKey] = ref;
-                        }}
-                        workspace={workspace}
-                        mcpClients={mcpClients}
-                        onRefresh={() => refreshWorkspaceDetails(workspaceKey, 'mcp')}
-                      />
-                    ) : <Empty description={t`No workspace selected`} />,
-                  },
-                ]}
-              />
-            </Card>
+            <WorkspaceRightPanel
+              workspace={workspace}
+              workspaceKey={workspaceKey}
+              agents={details.agents || []}
+              mcpClients={mcpClients}
+              agentManagementRef={agentManagementRef}
+              mcpManagementRef={mcpManagementRef}
+              onRefreshAgents={async () => { await refreshWorkspaceDetails(workspaceKey, 'agents'); }}
+              onRefreshMCP={async () => { await refreshWorkspaceDetails(workspaceKey, 'mcp'); }}
+              onOpenChat={openAgentChat}
+            />
           </Splitter.Panel>
         </Splitter>
       </div>
@@ -1182,8 +944,8 @@ export function Workspace() {
       if (typeof targetKey === 'string') {
         const workspace = currentWorkspace;
         if (workspace && !workspace.isGlobal) {
-          // 显示关闭确认对话框
-          showCloseConfirm(workspace);
+          // TODO: 处理工作区关闭
+          message.info(t`Close workspace not implemented yet`);
         }
       }
     }
@@ -1232,142 +994,24 @@ export function Workspace() {
       </div>
 
       {/* 工作区切换模态框 */}
-      <Modal
-        title={t`Switch Workspace`}
+      <WorkspaceOpenModal
         open={openModalOpen}
+        onCreate={openWorkspace}
         onCancel={() => {
           setOpenModalOpen(false);
           form.resetFields();
           setSelectedPath("");
         }}
-        onOk={() => {
-          form.submit();
+        selectedPath={selectedPath}
+        onDirectoryBrowserOpen={() => setDirectoryBrowserOpen(true)}
+        globalWorkspacePath={globalWorkspacePath}
+        workspaceHistory={workspaceHistory}
+        onPathSelect={setSelectedPath}
+        onHistoryRemove={(path) => {
+          removeFromWorkspaceHistory(path);
+          setWorkspaceHistory(getWorkspaceHistory());
         }}
-        destroyOnClose
-      >
-        <Form
-          form={form}
-          layout="vertical"
-          onFinish={openWorkspace}
-        >
-          <Form.Item
-            label={t`Folder Path`}
-            name="path"
-            rules={[{ required: true, message: t`Please select folder path` }]}
-            extra={t`Choose a project folder to work with. If it's not a workspace, you can create one.`}
-          >
-            <Space.Compact style={{ width: "100%" }}>
-              <Input
-                style={{ width: "calc(100% - 100px)" }}
-                placeholder={t`Choose project folder...`}
-                value={selectedPath || form.getFieldValue('path') || ''}
-                readOnly
-              />
-              <Button
-                icon={<FolderOpenOutlined />}
-                onClick={() => setDirectoryBrowserOpen(true)}
-              >
-                {t`Select Directory`}
-              </Button>
-            </Space.Compact>
-          </Form.Item>
-
-          {/* 全局工作区快速选择 */}
-          <Divider orientation="left">
-            <Space>
-              <GlobalOutlined />
-              <span>{t`Global Workspace`}</span>
-            </Space>
-          </Divider>
-          <Card
-            size="small"
-            style={{ marginBottom: 16, cursor: 'pointer' }}
-            hoverable
-            onClick={() => {
-              if (globalWorkspacePath) {
-                form.setFieldsValue({ path: globalWorkspacePath });
-                setSelectedPath(globalWorkspacePath);
-              }
-            }}
-          >
-            <Card.Meta
-              avatar={<GlobalOutlined style={{ fontSize: 24, color: '#1890ff' }} />}
-              title={
-                <Space>
-                  <span>{t`Global Workspace`}</span>
-                  <Tag color="blue">{t`Default`}</Tag>
-                </Space>
-              }
-              description={
-                <div>
-                  <Text type="secondary">{globalWorkspacePath}</Text>
-                  <br />
-                  <Text type="secondary" style={{ fontSize: '12px' }}>
-                    {t`Contains global agents, MCP tools and configurations`}
-                  </Text>
-                </div>
-              }
-            />
-          </Card>
-
-          {/* 历史记录 */}
-          {workspaceHistory.length > 0 && (
-            <>
-              <Divider orientation="left">
-                <Space>
-                  <HistoryOutlined />
-                  <span>{t`Recent Workspaces`}</span>
-                </Space>
-              </Divider>
-              <List
-                size="small"
-                dataSource={workspaceHistory}
-                renderItem={(item) => (
-                  <List.Item
-                    style={{ cursor: 'pointer', padding: '8px 0' }}
-                    onClick={() => {
-                      form.setFieldsValue({ path: item.path });
-                      setSelectedPath(item.path);
-                    }}
-                    actions={[
-                      <Button
-                        key="remove"
-                        type="text"
-                        size="small"
-                        icon={<DeleteOutlined />}
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          removeFromWorkspaceHistory(item.path);
-                          setWorkspaceHistory(getWorkspaceHistory());
-                        }}
-                        title={t`Remove from history`}
-                      />
-                    ]}
-                  >
-                    <List.Item.Meta
-                      avatar={<FolderOpenOutlined />}
-                      title={
-                        <Space>
-                          <span>{item.name}</span>
-                          <Tag color="blue">
-                            <ClockCircleOutlined />
-                            {new Date(item.lastUsed).toLocaleDateString()}
-                          </Tag>
-                        </Space>
-                      }
-                      description={
-                        <Text type="secondary" style={{ fontSize: '12px' }}>
-                          {item.path}
-                        </Text>
-                      }
-                    />
-                  </List.Item>
-                )}
-              />
-            </>
-          )}
-        </Form>
-      </Modal>
+      />
 
 
       {/* 确认创建工作区模态框 */}
@@ -1406,7 +1050,6 @@ export function Workspace() {
           setAppSettingsDrawerOpen(false);
           setAppSettings(null);
         }}
-        destroyOnClose
       >
         {appSettings && (
           <AppSettings
@@ -1464,7 +1107,6 @@ export function Workspace() {
           setCurrentSettingsWorkspace(null);
           setWorkspaceSettings(null);
         }}
-        destroyOnClose
       >
         {workspaceSettings && (
           <WorkspaceSettings
@@ -1546,7 +1188,6 @@ export function Workspace() {
           setMCPGatewaysDrawerOpen(false);
           setAppSettings(null);
         }}
-        destroyOnClose
       >
         {appSettings && (
           <MCPGatewaysSettings
