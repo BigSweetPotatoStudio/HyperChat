@@ -837,14 +837,6 @@ export class CommandFactory {
   }
 
   // ========== 工作区管理 API ==========
-
-  /**
-   * 获取所有已知的工作区列表
-   * 包括全局工作区和所有已创建的普通工作区
-   * @returns 工作区信息数组，包含路径、名称、描述等
-   */
-  // getWorkspaceList 已删除 - 新架构下只有一个当前工作区
-
   /**
    * 打开已存在的工作区
    * 检查指定目录是否已经是工作区，如果是则直接加载
@@ -894,29 +886,6 @@ export class CommandFactory {
     const workspace = await workspaceManager.createWorkspace(workspacePath, workspaceName, description);
     return workspace.getConfig();
   }
-
-  /**
-   * 删除指定的工作区
-   * 删除 .hyperchat 配置文件夹及其内容，但不删除工作区目录本身
-   * @param workspacePath 要删除的工作区路径
-   * @returns 删除成功返回true，失败返回false
-   */
-  async deleteWorkspace({
-    workspacePath
-  }: {
-    workspacePath: string;
-  }): Promise<boolean> {
-    const workspaceManager = getWorkspaceManager();
-    return await workspaceManager.deleteWorkspace(workspacePath);
-  }
-
-  /**
-   * 加载已存在的工作区配置
-   * 从指定目录的 .hyperchat 文件夹中读取工作区配置
-   * @param workspacePath 工作区根目录路径
-   * @returns 工作区配置信息，如果不存在则返回null
-   */
-  // loadWorkspace 已删除 - 新架构下工作区自动加载
   /**
    * 获取当前工作区（无参数版本，新架构）
    * @returns 当前工作区的配置信息
@@ -924,7 +893,7 @@ export class CommandFactory {
   async getCurrentWorkspace() {
     const workspaceManager = getWorkspaceManager();
     const workspace = workspaceManager.getCurrentWorkspace();
-    
+
     if (!workspace) return null;
 
     const config = workspace.getConfig();
@@ -940,11 +909,6 @@ export class CommandFactory {
       mcpServersCount: summary.mcpServersCount
     };
   }
-
-  // getWorkspaceByPath 已删除 - 新架构下使用 getCurrentWorkspace()
-
-  // getGlobalWorkspace 已删除 - 新架构下使用 getCurrentWorkspace()
-
   /**
    * 获取工作区完整文件树（已废弃，建议使用 getWorkspaceDirectoryList 实现懒加载）
    * 这个方法会一次性加载整个目录树，对于大型项目可能导致性能问题
@@ -1762,11 +1726,11 @@ export class CommandFactory {
       if (!agentInstance) {
         throw new Error(`Agent 不存在: ${agentKey}`);
       }
-      
+
       // 获取所有聊天记录，然后找到指定的一个
       const chatLogs = await agentInstance.getChatLogs();
       const chatLog = chatLogs.find(log => log.key === chatLogKey);
-      
+
       return chatLog || null;
     } catch (error) {
       console.error(`Failed to get chat log ${chatLogKey} for agent ${agentKey} in ${workspacePath}:`, error);

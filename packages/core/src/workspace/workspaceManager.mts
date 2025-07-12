@@ -15,33 +15,30 @@ import { Workspace } from "./workspace.mjs";
  */
 export class WorkspaceManager {
   private readonly GLOBAL_HYPERCHAT_DIR = path.join(CONSTANTS.GLOBAL_PATH, CONSTANTS.HYPERCHAT_DIR);
-  private currentWorkspace: Workspace;
+  private currentWorkspace!: Workspace;
   private isInitialized = false;
 
-  constructor(workingDirectory?: string) {
-    
-    if (workingDirectory == CONSTANTS.GLOBAL_PATH) {
-      this.currentWorkspace = new Workspace(CONSTANTS.GLOBAL_PATH);
-    } else {
-      // 默认工作区是当前目录或全局工作区
-      const initialPath = workingDirectory || process.cwd();
-      const workspacePath = this.findWorkspaceInPath(initialPath) || CONSTANTS.GLOBAL_PATH;
-      this.currentWorkspace = new Workspace(workspacePath);
-    }
-
+  constructor() {
   }
 
   /**
    * 初始化工作区管理器
    * @param workingDirectory 当前工作目录
    */
-  async initialize(): Promise<void> {
+  async initialize(workingDirectory?: string): Promise<void> {
     if (this.isInitialized) {
       return;
     }
 
     try {
-
+      if (workingDirectory == CONSTANTS.GLOBAL_PATH || workingDirectory == null) {
+        this.currentWorkspace = new Workspace(CONSTANTS.GLOBAL_PATH);
+      } else {
+        // 默认工作区是当前目录或全局工作区
+        const initialPath = workingDirectory || process.cwd();
+        const workspacePath = this.findWorkspaceInPath(initialPath) || CONSTANTS.GLOBAL_PATH;
+        this.currentWorkspace = new Workspace(workspacePath);
+      }
       // 初始化当前工作区
       await this.currentWorkspace.init();
 
@@ -150,12 +147,7 @@ export class WorkspaceManager {
    * 获取全局工作区（兼容老API）
    */
   getGlobalWorkspace(): Workspace {
-    // 如果当前工作区是全局工作区，返回当前工作区
-    if (this.isGlobalWorkspace(this.currentWorkspace['workspacePath'])) {
-      return this.currentWorkspace;
-    }
-    // 否则创建一个新的全局工作区实例
-    return new Workspace(CONSTANTS.GLOBAL_PATH);
+    return this.currentWorkspace;
   }
 
   /**
@@ -170,14 +162,6 @@ export class WorkspaceManager {
       path: this.currentWorkspace['workspacePath']
     });
 
-    // 如果当前工作区不是全局工作区，也添加全局工作区到列表
-    if (!this.isGlobalWorkspace(this.currentWorkspace['workspacePath'])) {
-      const globalWorkspace = new Workspace(CONSTANTS.GLOBAL_PATH);
-      list.push({
-        ...globalWorkspace.getConfig(),
-        path: CONSTANTS.GLOBAL_PATH
-      });
-    }
 
     return list;
   }
