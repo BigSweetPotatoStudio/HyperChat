@@ -102,12 +102,12 @@ export function ProviderSettings() {
   // 检查提供商是否有API Key（从Provider数据读取，而非模型数据）
   const hasProviderApiKey = (provider: ProviderConfig): boolean => {
     if (!aiSettings) return false;
-    
+
     // Unknown 提供商总是允许进入，因为每个模型单独配置 API Key
     if (provider.key === 'unknown') {
       return true;
     }
-    
+
     if (provider.isBuiltIn && provider.key) {
       return !!aiSettings.builtinApiKeys?.[provider.key]?.apiKey;
     } else {
@@ -125,7 +125,7 @@ export function ProviderSettings() {
   const refresh = async () => {
     try {
       if (!aiSettings) return;
-      
+
       // 获取所有提供商（内置 + 自定义）
       const builtinProviders = getBuiltinProviders();
       const allProviders = [...builtinProviders, ...(aiSettings.customProviders || [])];
@@ -140,8 +140,9 @@ export function ProviderSettings() {
     return [
       { key: 'openai', label: 'OpenAI', baseURL: 'https://api.openai.com/v1', icon: 'openai', description: 'OpenAI GPT models', hasApiKey: true, isBuiltIn: true },
       { key: 'anthropic', label: 'Anthropic', baseURL: 'https://api.anthropic.com/v1', icon: 'anthropic', description: 'Claude models', hasApiKey: true, isBuiltIn: true },
-      { key: 'openrouter', label: 'OpenRouter', baseURL: 'https://openrouter.ai/api/v1', icon: 'openrouter', description: 'Multi-provider AI gateway', hasApiKey: true, isBuiltIn: true },
       { key: 'gemini', label: 'Google Gemini', baseURL: 'https://generativelanguage.googleapis.com/v1beta', icon: 'gemini', description: 'Google Gemini models', hasApiKey: true, isBuiltIn: true },
+      { key: '302', label: '302', baseURL: 'https://api.302.ai/v1', icon: '302', description: 'Multi-provider AI gateway', hasApiKey: true, isBuiltIn: true },
+      { key: 'openrouter', label: 'OpenRouter', baseURL: 'https://openrouter.ai/api/v1', icon: 'openrouter', description: 'Multi-provider AI gateway', hasApiKey: true, isBuiltIn: true },
       { key: 'qwen', label: 'Qwen', baseURL: 'https://dashscope.aliyuncs.com/compatible-mode/v1', icon: 'qwen', description: 'Alibaba Qwen models', hasApiKey: true, isBuiltIn: true },
       { key: 'deepseek', label: 'DeepSeek', baseURL: 'https://api.deepseek.com', icon: 'deepseek', description: 'DeepSeek models', hasApiKey: true, isBuiltIn: true },
       { key: 'doubao', label: 'Doubao', baseURL: 'https://ark.cn-beijing.volces.com/api/v3', icon: 'doubao', description: 'ByteDance Doubao models', hasApiKey: true, isBuiltIn: true },
@@ -200,15 +201,15 @@ export function ProviderSettings() {
     try {
       // 删除自定义提供商及其下所有模型
       if (!aiSettings) return;
-      
+
       const updatedCustomProviders = aiSettings.customProviders?.filter(p => p.key !== provider.key) || [];
       const updatedModels = aiSettings.models?.filter(model => model.provider !== provider.key) || [];
-      
+
       await updateAISettings({
         customProviders: updatedCustomProviders,
         models: updatedModels
       });
-      
+
       message.success(t`Provider and all related models deleted successfully`);
       // Context 会自动更新 aiSettings，只需要更新 providers 状态
       refresh();
@@ -224,19 +225,19 @@ export function ProviderSettings() {
     setLoading(true);
     try {
       if (!aiSettings) return;
-      
+
       if (editingProvider) {
         // 编辑现有提供商
-        const updatedCustomProviders = aiSettings.customProviders?.map(p => 
+        const updatedCustomProviders = aiSettings.customProviders?.map(p =>
           p.key === editingProvider.key
             ? { ...p, label: values.label, baseURL: values.baseURL, description: values.description }
             : p
         ) || [];
-        
+
         await updateAISettings({
           customProviders: updatedCustomProviders
         });
-        
+
         message.success(t`Provider updated successfully`);
       } else {
         // 添加新提供商
@@ -248,13 +249,13 @@ export function ProviderSettings() {
           hasApiKey: true,
           isBuiltIn: false
         };
-        
+
         const updatedCustomProviders = [...(aiSettings.customProviders || []), newProvider];
-        
+
         await updateAISettings({
           customProviders: updatedCustomProviders
         });
-        
+
         message.success(t`Provider added successfully`);
       }
 
@@ -309,7 +310,7 @@ export function ProviderSettings() {
             baseURL: finalBaseURL
           }
         };
-        
+
         await updateAISettings({
           builtinApiKeys: updatedBuiltinApiKeys
         });
@@ -320,12 +321,12 @@ export function ProviderSettings() {
             ? { ...p, apiKey: values.apiKey }
             : p
         ) || [];
-        
+
         await updateAISettings({
           customProviders: updatedCustomProviders
         });
       }
-      
+
       message.success(t`API Key configured successfully!`);
       refresh();
       setIsApiKeyModalOpen(false);
@@ -361,13 +362,13 @@ export function ProviderSettings() {
       supportImage: model.supportImage ?? true, // 默认值为 true
       supportTool: model.supportTool ?? true, // 默认值为 true
     };
-    
+
     // 对于 unknown 提供商，添加 apiKey 和 baseURL 字段
     if (model.provider === 'unknown') {
       formValues.apiKey = model.apiKey || '';
       formValues.baseURL = model.baseURL || '';
     }
-    
+
     modelForm.setFieldsValue(formValues);
     setIsModelModalOpen(true);
   };
@@ -423,7 +424,7 @@ export function ProviderSettings() {
       await updateAISettings({
         models: updatedModels
       });
-      
+
       refresh();
       setIsModelModalOpen(false);
       message.success(editingModel ? t`Model updated successfully!` : t`Model added successfully!`);
@@ -439,13 +440,13 @@ export function ProviderSettings() {
   const handleDeleteModel = async (model: AIModelConfigItem) => {
     try {
       if (!aiSettings) return;
-      
+
       const updatedModels = aiSettings.models?.filter(m => m.key !== model.key) || [];
-      
+
       await updateAISettings({
         models: updatedModels
       });
-      
+
       refresh();
       message.success(t`Model deleted successfully!`);
     } catch (error) {
@@ -458,11 +459,11 @@ export function ProviderSettings() {
   const handleSetDefaultModel = async (model: AIModelConfigItem) => {
     try {
       if (!aiSettings) return;
-      
+
       await updateAISettings({
         defaultModel: model.key
       });
-      
+
       refresh();
       message.success(t`Default model set successfully!`);
     } catch (error) {
@@ -559,13 +560,13 @@ export function ProviderSettings() {
             {t`Configure API keys for different AI providers. Click a provider to manage its models.`}
           </Text>
         </div>
-        <Button
+        {/* <Button
           type="primary"
           icon={<PlusOutlined />}
           onClick={handleAddProvider}
         >
           {t`Add Provider`}
-        </Button>
+        </Button> */}
       </div>
 
       <Row gutter={[16, 16]}>
@@ -743,8 +744,8 @@ export function ProviderSettings() {
             </Form.Item>
 
             {selectedProvider.isBuiltIn && (
-              <Form.Item 
-                name="baseURL" 
+              <Form.Item
+                name="baseURL"
                 label={t`Base URL`}
                 rules={[
                   { type: 'url', message: t`Please enter a valid URL` }

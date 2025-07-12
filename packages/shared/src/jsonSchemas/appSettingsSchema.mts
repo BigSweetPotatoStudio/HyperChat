@@ -3,9 +3,10 @@ import { z } from "zod";
 // 已知提供商类型
 export const KnownProviderSchema = z.enum([
   "openai",
-  "anthropic", 
-  "openrouter",
+  "anthropic",
   "gemini",
+  "302",
+  "openrouter",
   "qwen",
   "deepseek",
   "doubao",
