@@ -58,30 +58,14 @@ export type WorkspaceAISettings = z.infer<typeof WorkspaceAISchema>;
 export type WorkspaceAdvancedSettings = z.infer<typeof WorkspaceAdvancedSchema>;
 
 // 默认设置
-export const DEFAULT_WORKSPACE_SETTINGS: WorkspaceSettings = {
-  appearance: {
-    isDarkMode: false,
-    theme: "auto",
-    fontSize: "medium",
-    language: "zh-CN",
-  },
-  editor: {
-    autoSave: true,
-    autoSaveDelay: 5000,
-    wordWrap: true,
-    tabSize: 2,
-  },
-  ai: {
-    temperature: 0.7,
-    maxTokens: 4000,
-    streamResponse: true,
-  },
-  advanced: {
-    enableTelemetry: false,
-    debugMode: false,
-    experimentalFeatures: false,
-  },
-};
+export const DEFAULT_WORKSPACE_SETTINGS: WorkspaceSettings = (() => {
+  const result = WorkspaceSettingsSchema.safeParse({});
+  if (result.success) {
+    return result.data;
+  }
+  // 如果解析失败，返回基础默认值
+  throw new Error("Failed to generate default app settings from schema");
+})(); 
 
 // 验证函数
 export function validateWorkspaceSettings(data: any): data is WorkspaceSettings {

@@ -74,6 +74,26 @@ const tasks = {
     exec('npm run build', { cwd: join(rootDir, 'packages/shared') });
   },
 
+  // 构建 Shared 包 (用于发布)
+  async buildSharedForPublish() {
+    console.log('\n📦 构建 Shared 包 (发布版)...');
+    const sharedDir = join(rootDir, 'packages/shared');
+    
+    // 先构建
+    await tasks.buildShared();
+    
+    // 处理 package.json（用于发布）
+    const pkgPath = join(sharedDir, 'package.json');
+    let pkg = readJSON(pkgPath);
+    
+    // 更新版本号
+    const rootPkg = readJSON(join(rootDir, 'package.json'));
+    pkg.version = rootPkg.version;
+    
+    writeJSON(pkgPath, pkg);
+    console.log('  ✅ 已处理 Shared 包发布配置');
+  },
+
   // 构建 Core（Node.js 核心）
   async buildCore() {
     console.log('\n🎯 构建 Core 包...');
@@ -87,7 +107,7 @@ const tasks = {
     exec('npm run build', { cwd: coreDir });
 
     // 复制必要文件
-    const filesToCopy = ['package.json', 'README.md'];
+    const filesToCopy = ['README.md'];
     filesToCopy.forEach(file => {
       const src = join(rootDir, file);
       const dest = join(distDir, file);
@@ -101,40 +121,47 @@ const tasks = {
     if (args.includes('--publish')) {
       const pkgPath = join(distDir, 'package.json');
       const corePkgPath = join(coreDir, 'package.json');
-      const nodePkgPath = join(coreDir, 'package.nodejs.json');
 
       let pkg = readJSON(corePkgPath);
-
-      // 如果存在 nodejs 特定配置，合并它
-      if (existsSync(nodePkgPath)) {
-        const nodePkg = readJSON(nodePkgPath);
-        pkg = { ...pkg, ...nodePkg };
-      }
 
       // 更新版本号
       const rootPkg = readJSON(join(rootDir, 'package.json'));
       pkg.version = rootPkg.version;
 
-      // 移除 electron 相关依赖
-      if (pkg.dependencies) {
-        Object.keys(pkg.dependencies).forEach(key => {
-          if (key.includes('electron')) {
-            delete pkg.dependencies[key];
-          }
-        });
+      // 替换 file: 依赖为实际的包版本
+      if (pkg.dependencies && pkg.dependencies['@dadigua/hyperchat-shared']) {
+        pkg.dependencies['@dadigua/hyperchat-shared'] = `^${rootPkg.version}`;
+        console.log(`  ✅ 更新 @dadigua/hyperchat-shared 依赖版本: ^${rootPkg.version}`);
       }
 
+      // 修复发布相关字段
+      pkg.files = [
+        "**/*",
+        "README.md"
+      ];
+      pkg.main = "main.mjs";
+      pkg.module = "main.mjs";
+      pkg.bin = {
+        "hyperchat": "cli/index.mjs",
+        "hc": "cli/index.mjs"
+      };
+      
+      // 修复 exports 字段的路径
+      Object.keys(pkg.exports).forEach(key => {
+        if (pkg.exports[key].types) {
+          pkg.exports[key].types = pkg.exports[key].types.replace('./dist/', './');
+        }
+        if (pkg.exports[key].import) {
+          pkg.exports[key].import = pkg.exports[key].import.replace('./dist/', './');
+        }
+      });
+
       writeJSON(pkgPath, pkg);
-      console.log('  ✅ 已处理发布用 package.json');
+      console.log('  ✅ 已处理 Core 包发布配置');
     }
   },
 
 
-  // 构建 CLI (现在集成在 Core 包中)
-  async buildCli() {
-    console.log('\n⚡ CLI 已集成到 Core 包中，构建 Core 包...');
-    await tasks.buildCore();
-  },
 
   // 构建 Electron
   async buildElectron() {
@@ -173,6 +200,77 @@ const tasks = {
     await tasks.buildElectron();
 
     console.log('\n✨ 所有构建已完成！');
+  },
+
+  // 发布准备：构建并配置发布用的包
+  async buildForPublish() {
+    console.log('📦 准备发布构建...\n');
+
+    // 清理
+    tasks.clean();
+
+    // 构建 shared 包 (发布版)
+    await tasks.buildSharedForPublish();
+    
+    // 构建 core 包 (发布版) 
+    args.push('--publish'); // 确保传递 --publish 参数
+    await tasks.buildCore();
+
+    console.log('\n✨ 发布构建已完成！');
+    console.log('\n📝 下一步：');
+    console.log('1. 运行: npm run publish:shared');
+    console.log('2. 运行: npm run publish:core');
+  },
+
+  // 发布 shared 包
+  async publishShared() {
+    console.log('📤 发布 Shared 包...');
+    const sharedDir = join(rootDir, 'packages/shared');
+    
+    // 检查是否已经构建
+    if (!existsSync(join(sharedDir, 'dist'))) {
+      console.log('⚠️  检测到 Shared 包未构建，先进行构建...');
+      await tasks.buildSharedForPublish();
+    }
+    
+    exec('npm publish --access public', { cwd: sharedDir });
+    console.log('✅ Shared 包发布完成！');
+  },
+
+  // 发布 core 包  
+  async publishCore() {
+    console.log('📤 发布 Core 包...');
+    const coreDistDir = join(rootDir, 'packages/core/dist');
+    
+    // 检查是否已经构建
+    if (!existsSync(coreDistDir) || !existsSync(join(coreDistDir, 'package.json'))) {
+      console.log('⚠️  检测到 Core 包未构建或配置，先进行构建...');
+      args.push('--publish'); // 确保传递 --publish 参数
+      await tasks.buildCore();
+    }
+    
+    exec('npm publish --access public', { cwd: coreDistDir });
+    console.log('✅ Core 包发布完成！');
+  },
+
+  // 完整发布流程
+  async publishAll() {
+    console.log('🚀 开始完整发布流程...\n');
+    
+    // 1. 构建发布版本
+    await tasks.buildForPublish();
+    
+    // 2. 发布 shared 包
+    await tasks.publishShared();
+    
+    // 等待一段时间确保 npm 同步
+    console.log('⏳ 等待 npm 同步...');
+    await new Promise(resolve => setTimeout(resolve, 5000));
+    
+    // 3. 发布 core 包
+    await tasks.publishCore();
+    
+    console.log('\n🎉 所有包发布完成！');
   },
 
   // 开发模式
@@ -215,24 +313,40 @@ HyperChat 构建脚本
 使用方法:
   node scripts/build.mjs <command> [options]
 
-命令:
-  clean         清理所有构建产物
-  buildShared   构建 Shared 包
-  buildWeb      构建 Web 前端
-  buildCore     构建 Core 包
-  buildCli      构建 CLI (已集成到 Core 包)
-  buildElectron 构建 Electron 应用
-  buildAll      构建所有包
-  dev [target]  启动开发模式 (shared/web/core/cli/electron/all)
-  help          显示此帮助信息
+构建命令:
+  clean              清理所有构建产物
+  buildShared        构建 Shared 包
+  buildSharedForPublish  构建 Shared 包 (发布版)
+  buildWeb           构建 Web 前端
+  buildCore          构建 Core 包
+  buildElectron      构建 Electron 应用
+  buildAll           构建所有包
+  buildForPublish    构建所有包 (发布版)
+
+发布命令:
+  publishShared      发布 Shared 包到 npm
+  publishCore        发布 Core 包到 npm  
+  publishAll         完整发布流程 (推荐)
+
+开发命令:
+  dev [target]       启动开发模式 (shared/web/core/cli/electron/all)
+  help               显示此帮助信息
 
 选项:
-  --publish     为发布准备 Core 包（处理 package.json）
+  --publish          为发布准备 Core 包（处理 package.json）
 
 示例:
   node scripts/build.mjs buildAll
   node scripts/build.mjs dev web
-  node scripts/build.mjs buildCore --publish
+  node scripts/build.mjs buildForPublish
+  node scripts/build.mjs publishAll
+
+发布流程:
+  1. node scripts/build.mjs publishAll  # 推荐：一键发布
+  或者分步执行：
+  2a. node scripts/build.mjs buildForPublish
+  2b. node scripts/build.mjs publishShared
+  2c. node scripts/build.mjs publishCore
 `);
   }
 };

@@ -1,9 +1,9 @@
 {
-  "name": "@hyperchat/core",
+  "name": "@dadigua/hyperchat-core",
   "author": "Dadigua <0laopo0@gmail.com>",
   "description": "HyperChat Core - Node.js backend and shared functionality",
   "dependencies": {
-    "@hyperchat/shared": "file:../shared",
+    "@dadigua/hyperchat-shared": "file:../shared",
     "@types/adm-zip": "^0.5.5",
     "@types/fluent-ffmpeg": "^2.1.27",
     "@types/pdfjs-dist": "^2.10.378",
