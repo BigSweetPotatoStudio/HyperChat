@@ -52,15 +52,15 @@ export class WorkspaceManager {
   /**
    * 清理工作区管理器，释放资源
    */
-  async uninit(): Promise<void> {
+  async uninitialize(): Promise<void> {
     if (!this.isInitialized) {
       return;
     }
 
     try {
-      // 停止当前工作区的MCP客户端
+      // 清理当前工作区
       if (this.currentWorkspace) {
-        await this.currentWorkspace.stopMcpClients();
+        await this.currentWorkspace.uninit();
       }
 
       this.isInitialized = false;
@@ -79,28 +79,20 @@ export class WorkspaceManager {
     const targetPath = this.findWorkspaceInPath(workspacePath) || CONSTANTS.GLOBAL_PATH;
 
     // 如果目标路径与当前工作区相同，无需切换
-    if (this.currentWorkspace && this.currentWorkspace['workspacePath'] === targetPath) {
+    if (this.currentWorkspace && this.currentWorkspace.workspacePath === targetPath) {
       return;
     }
 
     // 先清理当前工作区的资源
     if (this.currentWorkspace) {
       try {
-        await this.currentWorkspace.stopMcpClients();
+        await this.currentWorkspace.uninit();
       } catch (error) {
-        console.warn('停止当前工作区MCP客户端失败:', error);
+        console.warn('清理当前工作区失败:', error);
       }
     }
 
-    // 创建新的工作区实例
-    this.currentWorkspace = new Workspace(targetPath);
-
-    // 初始化工作区（会自动处理配置合并）
-    if (this.currentWorkspace.exists()) {
-      await this.currentWorkspace.load();
-    } else {
-      await this.currentWorkspace.init();
-    }
+    this.initialize(targetPath);
   }
 
   /**

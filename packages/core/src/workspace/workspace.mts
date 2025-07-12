@@ -30,7 +30,7 @@ export class Workspace {
   private readonly HYPERCHAT_DIR = CONSTANTS.HYPERCHAT_DIR;
   private isGlobal: boolean;
 
-  constructor(private workspacePath: string, config?: WorkspaceConfig) {
+  constructor(public workspacePath: string, config?: WorkspaceConfig) {
     // 检查是否为全局工作区
     this.isGlobal = workspacePath === CONSTANTS.GLOBAL_PATH;
     
@@ -102,6 +102,25 @@ export class Workspace {
 
     // 保存配置
     await this.saveConfig();
+  }
+
+  /**
+   * 清理工作区，释放资源
+   */
+  async uninit(): Promise<void> {
+    try {
+      // 停止 MCP 客户端
+      await this.stopMcpClients();
+      
+      // 销毁 MCP 管理器
+      await this.mcpManager.destroy();
+
+      // 保存当前状态
+      await this.save();
+    } catch (error) {
+      console.warn('清理工作区失败:', error);
+      throw error;
+    }
   }
 
   /**

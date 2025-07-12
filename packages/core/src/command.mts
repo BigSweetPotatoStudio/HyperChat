@@ -850,14 +850,9 @@ export class CommandFactory {
   }): Promise<Record<string, unknown> | null> {
     const workspaceManager = getWorkspaceManager();
 
-    // 检查是否已经是工作区
-    const isWorkspace = await workspaceManager.isWorkspaceDirectory(workspacePath);
-    if (!isWorkspace) {
-      return null;
-    }
-
+    await workspaceManager.switchWorkspace(workspacePath)
     // 加载现有工作区
-    const workspace = await workspaceManager.loadExistingWorkspace(workspacePath);
+    const workspace = workspaceManager.getCurrentWorkspace();
     return workspace ? workspace.getConfig() : null;
   }
 
