@@ -14,7 +14,7 @@ import { WorkspaceMCPClientImpl } from "./client.mjs";
 import type { MCPServerConfig } from "@hyperchat/shared/data";
 import { Logger } from "../../log.mjs";
 import { CONSTANTS } from "../constants.mjs";
-import { GlobalServers, WorkSpaceServers } from "../../mcp/servers/index.mjs";
+import {  WorkSpaceServers } from "../../mcp/servers/index.mjs";
 import { Config } from "../../const.mjs";
 
 export class WorkspaceMCPManager {
@@ -47,10 +47,8 @@ export class WorkspaceMCPManager {
     let orderIndex = 0;
 
     // 首先为内置服务器分配order（按名称排序确保稳定性）
-    // 全局工作区使用 GlobalServers + WorkSpaceServers，普通工作区只使用 WorkSpaceServers
-    const builtinServers = this.workspacePath === CONSTANTS.GLOBAL_PATH ?
-      [...GlobalServers, ...WorkSpaceServers] :
-      [...WorkSpaceServers];
+    // WorkSpaceServers
+    const builtinServers = [...WorkSpaceServers];
     const sortedBuiltinServers = [...builtinServers];
     for (const server of sortedBuiltinServers) {
       this.serverOrderMap.set(server.name, orderIndex++);
@@ -93,10 +91,7 @@ export class WorkspaceMCPManager {
     const tasks: Promise<void>[] = [];
 
     // 启动内置服务器
-    // 全局工作区使用 GlobalServers + WorkSpaceServers，普通工作区只使用 WorkSpaceServers
-    const builtinServers = this.workspacePath === CONSTANTS.GLOBAL_PATH ?
-      [...GlobalServers, ...WorkSpaceServers] :
-      [...WorkSpaceServers];
+    const builtinServers = [...WorkSpaceServers];
 
     for (const server of builtinServers) {
       // 检查配置文件中是否有对内置服务器的disabled设置
@@ -105,22 +100,12 @@ export class WorkspaceMCPManager {
 
       let serverConfig: MCPServerConfig;
 
-      // 检查是否为全局工作区专用的服务器 (GlobalServers)
-      const isGlobalServer = GlobalServers.find(gs => gs.name === server.name);
+      // WorkSpaceServers 中的服务器使用 inMemory 连接
+      serverConfig = {
+        type: "inMemory",
+        disabled: false,
+      };
 
-      if (isGlobalServer) {
-        // GlobalServers 中的服务器使用 inMemory 连接
-        serverConfig = {
-          type: "inMemory",
-          disabled: false,
-        };
-      } else {
-        // WorkSpaceServers 中的服务器使用 inMemory 连接
-        serverConfig = {
-          type: "inMemory",
-          disabled: false,
-        };
-      }
 
       const clientId = this.getClientId(server.name);
 
@@ -238,9 +223,7 @@ export class WorkspaceMCPManager {
     }
 
     // 获取服务器配置
-    const builtinServers = this.workspacePath === CONSTANTS.GLOBAL_PATH ?
-      [...GlobalServers, ...WorkSpaceServers] :
-      [...WorkSpaceServers];
+    const builtinServers = [...WorkSpaceServers];
     const builtinServer = builtinServers.find(server => server.name === name);
 
     // 创建新的内置客户端
@@ -304,21 +287,9 @@ export class WorkspaceMCPManager {
   }
 
   /**
-   * 加载工作区配置
+   * 加载工作区配置（支持全局+工作区配置合并）
    */
   async loadWorkspaceConfig(): Promise<WorkspaceMCPConfig> {
-    let configPath: string;
-
-    // 判断是否为全局工作区
-    if (this.workspacePath === CONSTANTS.GLOBAL_PATH) {
-      // 全局工作区使用特定的全局配置路径
-      configPath = path.join(CONSTANTS.GLOBAL_PATH, CONSTANTS.HYPERCHAT_DIR, CONSTANTS.CONFIG_FILES.MCP);
-      this.logInfo(`使用全局配置路径: ${configPath}`);
-    } else {
-      // 普通工作区使用标准路径
-      configPath = path.join(this.workspacePath, CONSTANTS.HYPERCHAT_DIR, CONSTANTS.CONFIG_FILES.MCP);
-    }
-
     let workspaceConfig: WorkspaceMCPConfig = {
       mcpServers: {},
       scope: "workspace",
@@ -327,25 +298,75 @@ export class WorkspaceMCPManager {
       lastModified: Date.now(),
     };
 
-    if (fs.existsSync(configPath)) {
-      try {
-        const content = await fs.promises.readFile(configPath, "utf-8");
-        const data = JSON.parse(content);
-        workspaceConfig.mcpServers = data.mcpServers || {};
-        workspaceConfig.workspacePath = this.workspacePath;
-        this.logInfo(`从工作区 ${this.workspacePath} 加载了 ${Object.keys(workspaceConfig.mcpServers).length} 个服务器`);
-      } catch (error) {
-        this.logError(`加载工作区 ${this.workspacePath} MCP 配置失败:`, error);
-      }
+    // 判断是否为全局工作区
+    if (this.workspacePath === CONSTANTS.GLOBAL_PATH) {
+      // 全局工作区：只加载全局配置
+      const globalConfigPath = path.join(CONSTANTS.GLOBAL_PATH, CONSTANTS.HYPERCHAT_DIR, CONSTANTS.CONFIG_FILES.MCP);
+      this.logInfo(`使用全局配置路径: ${globalConfigPath}`);
+
+      workspaceConfig = await this.loadSingleConfig(globalConfigPath, workspaceConfig);
     } else {
-      // 创建默认配置文件
-      await this.ensureDirectoryExists(path.dirname(configPath));
-      await fs.promises.writeFile(configPath, JSON.stringify({ mcpServers: {} }, null, 2));
-      this.logInfo(`创建默认配置文件: ${configPath}`);
+      // 普通工作区：先加载全局配置作为基础，再加载工作区配置进行覆盖
+      this.logInfo(`普通工作区 ${this.workspacePath}，开始配置合并：全局配置 + 工作区配置覆盖`);
+
+      // 1. 先加载全局配置作为基础
+      const globalConfigPath = path.join(CONSTANTS.GLOBAL_PATH, CONSTANTS.HYPERCHAT_DIR, CONSTANTS.CONFIG_FILES.MCP);
+      workspaceConfig = await this.loadSingleConfig(globalConfigPath, workspaceConfig, "全局配置");
+
+      // 2. 再加载工作区配置进行覆盖
+      const workspaceConfigPath = path.join(this.workspacePath, CONSTANTS.HYPERCHAT_DIR, CONSTANTS.CONFIG_FILES.MCP);
+      workspaceConfig = await this.loadSingleConfig(workspaceConfigPath, workspaceConfig, "工作区配置", true);
+
+      this.logInfo(`配置合并完成，最终加载了 ${Object.keys(workspaceConfig.mcpServers).length} 个服务器配置`);
     }
 
     this.workspaceConfig = workspaceConfig;
     return workspaceConfig;
+  }
+
+  /**
+   * 加载单个配置文件
+   * @param configPath 配置文件路径
+   * @param baseConfig 基础配置对象
+   * @param configType 配置类型描述（用于日志）
+   * @param isOverride 是否为覆盖模式（true=覆盖，false=基础配置）
+   */
+  private async loadSingleConfig(
+    configPath: string,
+    baseConfig: WorkspaceMCPConfig,
+    configType: string = "配置",
+    isOverride: boolean = false
+  ): Promise<WorkspaceMCPConfig> {
+    if (fs.existsSync(configPath)) {
+      try {
+        const content = await fs.promises.readFile(configPath, "utf-8");
+        const data = JSON.parse(content);
+        const loadedServers = data.mcpServers || {};
+
+        if (isOverride) {
+          // 覆盖模式：工作区配置覆盖全局配置
+          baseConfig.mcpServers = { ...baseConfig.mcpServers, ...loadedServers };
+          this.logInfo(`${configType}加载：${Object.keys(loadedServers).length} 个服务器（覆盖模式）`);
+        } else {
+          // 基础模式：直接设置服务器配置
+          baseConfig.mcpServers = loadedServers;
+          this.logInfo(`${configType}加载：${Object.keys(loadedServers).length} 个服务器（基础模式）`);
+        }
+
+        this.logInfo(`从 ${configPath} 成功加载${configType}`);
+      } catch (error) {
+        this.logError(`加载${configType}失败 (${configPath}):`, error);
+      }
+    } else if (!isOverride) {
+      // 只有基础配置文件不存在时才创建默认配置文件
+      await this.ensureDirectoryExists(path.dirname(configPath));
+      await fs.promises.writeFile(configPath, JSON.stringify({ mcpServers: {} }, null, 2));
+      this.logInfo(`创建默认${configType}文件: ${configPath}`);
+    } else {
+      this.logInfo(`${configType}文件不存在，跳过: ${configPath}`);
+    }
+
+    return baseConfig;
   }
 
   /**
@@ -424,9 +445,7 @@ export class WorkspaceMCPManager {
       await this.stopClient(name);
 
       // 先检查是否是内置客户端
-      const builtinServers = this.workspacePath === CONSTANTS.GLOBAL_PATH ?
-        [...GlobalServers, ...WorkSpaceServers] :
-        [...WorkSpaceServers];
+      const builtinServers = [...WorkSpaceServers];
       const builtinServer = builtinServers.find(server => server.name === name);
 
       if (builtinServer) {
@@ -435,22 +454,13 @@ export class WorkspaceMCPManager {
 
         let serverConfig: MCPServerConfig;
 
-        // 检查是否为全局工作区专用的服务器 (GlobalServers)
-        const isGlobalServer = GlobalServers.find(gs => gs.name === name);
 
-        if (isGlobalServer) {
-          // GlobalServers 中的服务器使用 inMemory 连接
-          serverConfig = {
-            type: "inMemory",
-            disabled: false,
-          };
-        } else {
-          // WorkSpaceServers 中的服务器使用 inMemory 连接
-          serverConfig = {
-            type: "inMemory",
-            disabled: false,
-          };
-        }
+        // WorkSpaceServers 中的服务器使用 inMemory 连接
+        serverConfig = {
+          type: "inMemory",
+          disabled: false,
+        };
+
 
         // 启动内置客户端
         await this.startSingleBuiltinClient(name, serverConfig);
