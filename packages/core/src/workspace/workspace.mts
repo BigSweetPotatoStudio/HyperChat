@@ -15,7 +15,7 @@ import type { MCPServerConfig } from "@hyperchat/shared/types";
 import { AgentManager } from "./agentManager.mjs";
 import { WorkspaceMCPManager } from "./mcp/manager.mjs";
 import type { WorkspaceMCPClientImpl } from "./mcp/client.mjs";
-import { WorkspaceSettingsManager } from "../data/workspaceSettingsManager.mjs";
+import { WorkspaceSettingsManager } from "../data/managers/workspaceSettingsManager.mjs";
 import { Logger } from "../log.mjs";
 
 /**
@@ -48,7 +48,6 @@ export class Workspace {
     this.config = config || {
       name: this.isGlobal ? 'Global Workspace' : path.basename(workspacePath),
       created: Date.now(),
-      lastAccessed: Date.now(),
       settings: {
       },
     };
@@ -184,8 +183,6 @@ export class Workspace {
 
     // 启动MCP客户端
     await this.mcpManager.startClients();
-
-    this.config.lastAccessed = Date.now();
   }
 
   /**
@@ -212,7 +209,6 @@ export class Workspace {
         this.config.name = metadata.name || this.config.name;
         this.config.description = metadata.description;
         this.config.created = metadata.created || 0;
-        this.config.lastAccessed = metadata.lastAccessed || 0;
       }
 
       // 从AI设置映射到WorkspaceSettings
@@ -237,7 +233,6 @@ export class Workspace {
         name: this.config.name,
         description: this.config.description,
         created: this.config.created,
-        lastAccessed: Date.now(),
       });
 
       // 同步AI设置

@@ -144,7 +144,6 @@ export class WorkspaceManager {
       name,
       description,
       created: Date.now(),
-      lastAccessed: Date.now(),
       settings: {
       },
     };

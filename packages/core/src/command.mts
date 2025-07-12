@@ -1811,7 +1811,7 @@ export class CommandFactory {
     updates
   }: {
     workspacePath: string;
-    updates: Parameters<import('./data/workspaceSettingsManager.mjs').WorkspaceSettingsManager['updateSettings']>[0];
+    updates: Parameters<import('./data/managers/workspaceSettingsManager.mjs').WorkspaceSettingsManager['updateSettings']>[0];
   }) {
     try {
       const workspaceManager = getWorkspaceManager();

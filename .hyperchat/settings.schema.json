@@ -19,16 +19,11 @@
             "created": {
               "type": "number",
               "description": "创建时间戳"
-            },
-            "lastAccessed": {
-              "type": "number",
-              "description": "最后访问时间戳"
             }
           },
           "required": [
             "name",
-            "created",
-            "lastAccessed"
+            "created"
           ],
           "additionalProperties": false,
           "description": "工作区元数据"

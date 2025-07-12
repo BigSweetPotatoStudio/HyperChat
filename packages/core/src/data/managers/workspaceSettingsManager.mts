@@ -306,13 +306,11 @@ export class WorkspaceSettingsManager {
     const currentMetadata: WorkspaceMetadata = this.settings.workspace || {
       name: 'Workspace',
       created: Date.now(),
-      lastAccessed: Date.now(),
     };
 
     this.settings.workspace = {
       ...currentMetadata,
       ...metadata,
-      lastAccessed: Date.now(), // 总是更新访问时间
     };
 
     await this.save();
@@ -327,7 +325,6 @@ export class WorkspaceSettingsManager {
         name,
         description,
         created: Date.now(),
-        lastAccessed: Date.now(),
       };
       await this.save();
     }

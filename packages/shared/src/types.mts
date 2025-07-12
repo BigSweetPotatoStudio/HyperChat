@@ -421,7 +421,6 @@ export interface WorkspaceSummary {
   agentsCount: number;
   mcpServersCount: number;
   created: number;
-  lastAccessed: number;
   description?: string;
 }
 
@@ -429,7 +428,6 @@ export interface WorkspaceConfig {
   name: string;
   description?: string;
   created: number;
-  lastAccessed: number;
   settings: WorkspaceSettings;
 }
 

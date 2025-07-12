@@ -20,7 +20,7 @@ export {
   WorkspaceSettingsManager,
   WorkspaceSettingsSchema,
   DEFAULT_WORKSPACE_SETTINGS
-} from "../data/workspaceSettingsManager.mjs";
+} from "../data/managers/workspaceSettingsManager.mjs";
 
 export type {
   WorkspaceSettings as WorkspaceDetailedSettings,

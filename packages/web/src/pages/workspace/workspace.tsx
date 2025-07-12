@@ -74,7 +74,6 @@ interface WorkspaceConfig {
   name: string;
   description?: string;
   created: number;
-  lastAccessed: number;
   settings: {
   };
   agentsCount?: number;
@@ -86,8 +85,6 @@ export interface WorkspaceInfo extends WorkspaceConfig {
   agentsCount: number;
   mcpServersCount: number;
   isGlobal: boolean;
-  isActive?: boolean; // 前端活动状态：工作区在标签页列表中（可见/隐藏）
-  isCurrent?: boolean; // 是否为当前工作区
 }
 
 interface FileNode {
@@ -234,13 +231,10 @@ export function Workspace() {
           name: currentWorkspaceData.name || 'Workspace',
           description: currentWorkspaceData.description,
           created: currentWorkspaceData.created || Date.now(),
-          lastAccessed: currentWorkspaceData.lastAccessed || Date.now(),
           settings: currentWorkspaceData.settings || {},
           agentsCount: currentWorkspaceData.agentsCount || 0,
           mcpServersCount: currentWorkspaceData.mcpServersCount || 0,
           isGlobal: currentWorkspaceData.isGlobal || currentWorkspaceData.path?.includes('Documents/HyperChat') || false,
-          isActive: true, // 当前工作区总是激活的
-          isCurrent: true, // 这就是当前工作区
         };
 
         // 设置当前工作区

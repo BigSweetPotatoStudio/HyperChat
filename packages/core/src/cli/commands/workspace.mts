@@ -110,7 +110,6 @@ export async function showWorkspaceInfo(path: string) {
     console.log(`  路径: ${path}`);
     console.log(`  描述: ${workspaceConfig.description || '无描述'}`);
     console.log(`  创建时间: ${new Date(workspaceConfig.created).toLocaleString()}`);
-    console.log(`  最后访问: ${new Date(workspaceConfig.lastAccessed).toLocaleString()}`);
 
     // 获取MCP客户端信息
     try {

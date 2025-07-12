@@ -37,7 +37,6 @@ export const WorkspaceMetadataSchema = z.object({
   name: z.string().describe("工作区名称"),
   description: z.string().optional().describe("工作区描述"),
   created: z.number().describe("创建时间戳"),
-  lastAccessed: z.number().describe("最后访问时间戳"),
 });
 
 // 完整的工作区设置 Schema

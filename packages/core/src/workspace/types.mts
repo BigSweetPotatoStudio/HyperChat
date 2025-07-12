@@ -30,7 +30,6 @@ export type WorkspaceConfig = {
   name: string;
   description?: string;
   created: number;
-  lastAccessed: number;
   settings: WorkspaceSettings;
   agentsCount?: number;
   mcpServersCount?: number;
@@ -63,7 +62,6 @@ export function validateWorkspaceConfig(config: any): config is WorkspaceConfig 
     typeof config === 'object' &&
     typeof config.name === 'string' &&
     typeof config.created === 'number' &&
-    typeof config.lastAccessed === 'number' &&
     config.settings &&
     typeof config.settings === 'object'
   );
