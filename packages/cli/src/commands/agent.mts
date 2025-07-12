@@ -12,7 +12,7 @@ import { getWorkspaceManager } from '../../../core/src/workspace/index.mjs';
 async function getCurrentWorkspacePath(): Promise<string> {
 
   const workspaceManager = getWorkspaceManager();
-  await workspaceManager.initialize(process.cwd());
+  await workspaceManager.initialize();
   return workspaceManager.getCurrentWorkspacePath();
 }
 

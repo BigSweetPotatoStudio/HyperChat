@@ -3,9 +3,9 @@ import * as fs from "fs";
 import dayjs from "dayjs";
 import { v4 } from "uuid";
 import { CONSTANTS } from "./constants.mjs";
-import type { 
-  WorkspaceConfig, 
-  AgentConfig 
+import type {
+  WorkspaceConfig,
+  AgentConfig
 } from "./types.mjs";
 import { Workspace } from "./workspace.mjs";
 
@@ -18,28 +18,32 @@ export class WorkspaceManager {
   private currentWorkspace: Workspace;
   private isInitialized = false;
 
-  constructor() {
-    // 默认使用全局工作区作为当前工作区
-    this.currentWorkspace = new Workspace(CONSTANTS.GLOBAL_PATH);
+  constructor(workingDirectory?: string) {
+    
+    if (workingDirectory == CONSTANTS.GLOBAL_PATH) {
+      this.currentWorkspace = new Workspace(CONSTANTS.GLOBAL_PATH);
+    } else {
+      // 默认工作区是当前目录或全局工作区
+      const initialPath = workingDirectory || process.cwd();
+      const workspacePath = this.findWorkspaceInPath(initialPath) || CONSTANTS.GLOBAL_PATH;
+      this.currentWorkspace = new Workspace(workspacePath);
+    }
+
   }
 
   /**
    * 初始化工作区管理器
    * @param workingDirectory 当前工作目录
    */
-  async initialize(workingDirectory?: string): Promise<void> {
+  async initialize(): Promise<void> {
     if (this.isInitialized) {
       return;
     }
 
     try {
-      // 如果提供了工作目录，切换到该工作区；否则使用默认的全局工作区
-      if (workingDirectory) {
-        await this.switchWorkspace(workingDirectory);
-      } else {
-        // 初始化当前工作区（默认是全局工作区）
-        await this.currentWorkspace.init();
-      }
+
+      // 初始化当前工作区
+      await this.currentWorkspace.init();
 
       this.isInitialized = true;
     } catch (error) {
@@ -55,10 +59,10 @@ export class WorkspaceManager {
   async switchWorkspace(workspacePath: string): Promise<void> {
     // 查找工作区或使用全局工作区
     const targetPath = this.findWorkspaceInPath(workspacePath) || CONSTANTS.GLOBAL_PATH;
-    
+
     // 创建新的工作区实例
     this.currentWorkspace = new Workspace(targetPath);
-    
+
     // 初始化工作区（会自动处理配置合并）
     if (this.currentWorkspace.exists()) {
       await this.currentWorkspace.load();
@@ -159,13 +163,13 @@ export class WorkspaceManager {
    */
   getWorkspaceList(): (WorkspaceConfig & { path: string })[] {
     const list: (WorkspaceConfig & { path: string })[] = [];
-    
+
     // 添加当前工作区
     list.push({
       ...this.currentWorkspace.getConfig(),
       path: this.currentWorkspace['workspacePath']
     });
-    
+
     // 如果当前工作区不是全局工作区，也添加全局工作区到列表
     if (!this.isGlobalWorkspace(this.currentWorkspace['workspacePath'])) {
       const globalWorkspace = new Workspace(CONSTANTS.GLOBAL_PATH);
@@ -174,7 +178,7 @@ export class WorkspaceManager {
         path: CONSTANTS.GLOBAL_PATH
       });
     }
-    
+
     return list;
   }
 
@@ -239,11 +243,11 @@ export class WorkspaceManager {
     if (!workspacePath) {
       return this.getCurrentWorkspace();
     }
-    
+
     if (this.currentWorkspace['workspacePath'] === workspacePath) {
       return this.currentWorkspace;
     }
-    
+
     return null;
   }
 
@@ -256,7 +260,7 @@ export class WorkspaceManager {
     // 2. addOrUpdateAgent(agent) - 新API，直接操作当前工作区
     let targetAgent: Partial<AgentConfig>;
     let workspace: Workspace | null;
-    
+
     if (typeof workspacePath === 'string' && agent) {
       // 老API调用方式
       workspace = this.getWorkspaceInstance(workspacePath);
@@ -266,7 +270,7 @@ export class WorkspaceManager {
       workspace = this.getCurrentWorkspace();
       targetAgent = workspacePath as Partial<AgentConfig>;
     }
-    
+
     if (!workspace) {
       return false;
     }
@@ -282,7 +286,7 @@ export class WorkspaceManager {
     // 2. deleteAgent(agentKey) - 新API，直接操作当前工作区
     let targetAgentKey: string;
     let workspace: Workspace | null;
-    
+
     if (typeof workspacePath === 'string' && agentKey) {
       // 老API调用方式
       workspace = this.getWorkspaceInstance(workspacePath);
@@ -292,7 +296,7 @@ export class WorkspaceManager {
       workspace = this.getCurrentWorkspace();
       targetAgentKey = workspacePath;
     }
-    
+
     if (!workspace) {
       return false;
     }
@@ -319,7 +323,7 @@ export class WorkspaceManager {
     // 2. getWorkspaceAgent(agentKey) - 新API，直接操作当前工作区
     let targetAgentKey: string;
     let workspace: Workspace | null;
-    
+
     if (typeof workspacePath === 'string' && agentKey) {
       // 老API调用方式
       workspace = this.getWorkspaceInstance(workspacePath);
@@ -329,7 +333,7 @@ export class WorkspaceManager {
       workspace = this.getCurrentWorkspace();
       targetAgentKey = workspacePath;
     }
-    
+
     if (!workspace) {
       return null;
     }
@@ -455,23 +459,23 @@ export class WorkspaceManager {
    */
   getRunningWorkspaces(): string[] {
     const runningPaths: string[] = [];
-    
+
     // 添加全局工作区
     runningPaths.push(this.getGlobalWorkspacePath());
-    
+
     // 添加当前工作区（如果不是全局工作区）
     if (!this.isGlobalWorkspace(this.currentWorkspace['workspacePath'])) {
       runningPaths.push(this.currentWorkspace['workspacePath']);
     }
-    
+
     return runningPaths;
   }
 
   /**
    * 获取运行中工作区的详细信息（兼容老API）
    */
-  async getRunningWorkspacesDetails(): Promise<Array<{path: string, name: string, isGlobal: boolean}>> {
-    const details: Array<{path: string, name: string, isGlobal: boolean}> = [];
+  async getRunningWorkspacesDetails(): Promise<Array<{ path: string, name: string, isGlobal: boolean }>> {
+    const details: Array<{ path: string, name: string, isGlobal: boolean }> = [];
 
     // 添加全局工作区
     details.push({
@@ -500,13 +504,13 @@ export class WorkspaceManager {
     if (this.isGlobalWorkspace(workspacePath)) {
       return false; // 不能移除全局工作区
     }
-    
+
     // 如果是当前工作区，切换到全局工作区
     if (this.currentWorkspace['workspacePath'] === workspacePath) {
       this.currentWorkspace = new Workspace(CONSTANTS.GLOBAL_PATH);
       return true;
     }
-    
+
     return false;
   }
 

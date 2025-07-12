@@ -2127,8 +2127,3 @@ export class CommandFactory {
 // export const Command = CommandFactory.prototype;
 export const Command = new CommandFactory();
 // Define interface with all methods from CommandFactory plus the additional method
-export interface Command extends CommandFactory {
-  refreshMcpRoutes: () => Promise<void>;
-}
-
-

@@ -38,7 +38,7 @@ export async function startChat(initialMessage?: string, options: ChatOptions = 
     if (!workspacePath) {
       // 新架构：直接使用工作区管理器
       const workspaceManager = getWorkspaceManager();
-      await workspaceManager.initialize(options.workspace || process.cwd());
+      await workspaceManager.initialize();
       workspacePath = workspaceManager.getCurrentWorkspacePath();
       // 新架构下简化配置获取
       logger.info(`🎯 使用工作区: ${workspacePath}`);

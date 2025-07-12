@@ -423,7 +423,7 @@ async function showCurrentWorkspace(logger: Logger) {
   try {
     // 新架构：直接使用core模块获取当前工作区信息
     const workspaceManager = getWorkspaceManager();
-    await workspaceManager.initialize(process.cwd());
+    await workspaceManager.initialize();
     const workspace = workspaceManager.getCurrentWorkspace();
     const workspaceInfo = {
       path: workspaceManager.getCurrentWorkspacePath(),
@@ -432,9 +432,9 @@ async function showCurrentWorkspace(logger: Logger) {
     };
     
     console.log('\n📋 当前工作区信息:');
-    console.log(`  名称: ${workspaceInfo.workspaceName}`);
-    console.log(`  路径: ${workspaceInfo.workspacePath}`);
-    console.log(`  类型: ${workspaceInfo.isProjectWorkspace ? '📁 项目工作区' : '🌐 全局工作区'}`);
+    console.log(`  名称: ${workspaceInfo.config.name}`);
+    console.log(`  路径: ${workspaceInfo.path}`);
+    console.log(`  类型: ${workspaceInfo.isGlobal ? '📁 项目工作区' : '🌐 全局工作区'}`);
     console.log(`  状态: 📖 只读模式（未启动服务）`);
     console.log(`  MCP: ⚪ 未启动（查看状态不启动服务）`);
     
