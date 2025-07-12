@@ -176,7 +176,7 @@ export async function serverStatus(options: ServerOptions = {}) {
       logger.info(`  地址: http://${host}:${port}`);
     } else {
       logger.info(`  状态: ⚪ 未运行`);
-      logger.info(`  使用 hyperchat server start 启动服务器`);
+      logger.info(`  使用 hyperchat serve 启动服务器`);
     }
     
   } catch (error) {

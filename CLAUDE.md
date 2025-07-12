@@ -152,7 +152,7 @@ HyperChat 是一个多平台的 AI 聊天应用，该项目拥有完善的 MCP�
 
 #### CLI 功能特性 (2024-07-12 更新) 🆕
 - **聊天功能**: `hyperchat "你好"` 或 `hyperchat chat` 进行 AI 对话
-- **服务器管理**: `hyperchat server start` 启动后端服务器 (简化：移除stop/status)
+- **服务器管理**: `hyperchat serve` 启动后端服务器
 - **工作区管理**: `hyperchat workspace create` 在当前目录创建工作区 (简化：移除list/info/current/switch)
 - **代理管理**: `hyperchat agent list/create` 管理 AI 代理，支持完整信息显示
 
@@ -162,7 +162,7 @@ HyperChat 是一个多平台的 AI 聊天应用，该项目拥有完善的 MCP�
   - 添加AgentConfig类型导入和类型断言
   - 增强显示：显示模型信息、聊天记录数量
 - **简化命令结构**: 移除不必要的命令，符合新架构理念
-  - 移除`server stop/status`：只保留`server start`
+  - 简化为`serve`：将`server start`简化为`serve`
   - 移除`workspace list/info/current/switch`：只保留`workspace create`
   - 修复ES模块导入：将`require('path').basename`改为`import { basename }`
 - **代码质量提升**: 
@@ -260,7 +260,7 @@ hc workspace current
 
 # 常用命令
 hyperchat "你好"                    # 直接AI对话
-hyperchat server start             # 启动Web服务器
+hyperchat serve                   # 启动Web服务器
 hyperchat workspace current        # 查看当前工作区
 hyperchat agent list              # 列出AI代理
 hyperchat config get ai.models    # 获取AI模型配置

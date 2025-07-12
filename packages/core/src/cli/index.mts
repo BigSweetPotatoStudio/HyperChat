@@ -68,7 +68,7 @@ function showHelp() {
 
 命令:
   chat [message]           开始 AI 聊天会话 (默认命令)
-  server start             启动后端服务器
+  serve                    启动后端服务器
   workspace create         在当前目录创建工作区
   agent list               列出所有代理
   help                     显示帮助信息
@@ -77,7 +77,7 @@ function showHelp() {
   hyperchat "你好"                    # 直接聊天（自动检测工作区）
   hyperchat chat "帮我写代码"         # 聊天命令
   hyperchat chat --workspace /path   # 使用指定工作区聊天
-  hyperchat server start            # 启动服务器
+  hyperchat serve                   # 启动服务器
   hyperchat workspace create        # 在当前目录创建工作区
 
 欢迎使用 HyperChat CLI! 🎉
@@ -90,9 +90,9 @@ async function handleCommand(): Promise<{ shouldExit: boolean }> {
 
 
   // 检测是否有非命令的消息 (直接聊天)
-  const possibleMessage = cleanArgs.find(arg => !['chat', 'server', 'workspace', 'agent', 'help'].includes(arg));
+  const possibleMessage = cleanArgs.find(arg => !['chat', 'serve', 'workspace', 'agent', 'help'].includes(arg));
   const firstArg = cleanArgs[0];
-  const isDirectMessage = cleanArgs.length > 0 && possibleMessage && firstArg && !firstArg.match(/^(chat|server|workspace|agent|help)$/);
+  const isDirectMessage = cleanArgs.length > 0 && possibleMessage && firstArg && !firstArg.match(/^(chat|serve|workspace|agent|help)$/);
 
   if (isDirectMessage) {
     // 直接聊天模式: hyperchat "你好"
@@ -109,22 +109,14 @@ async function handleCommand(): Promise<{ shouldExit: boolean }> {
       await startChatWrapper(messages, logger);
       return { shouldExit: true };  // 聊天完成后应该退出
 
-    case 'server':
-      const subCommand = cleanArgs[1];
-
-      if (subCommand === 'start') {
-        await startServer({
-          port: globalOptions.port,
-          host: globalOptions.host,
-          verbose: globalOptions.verbose,
-          quiet: globalOptions.quiet
-        });
-        return { shouldExit: false };  // server start 需要保持进程运行
-      } else {
-        logger.error('未知的服务器命令:', subCommand);
-        logger.info('可用命令: start');
-        return { shouldExit: true };   // 错误信息显示完应该退出
-      }
+    case 'serve':
+      await startServer({
+        port: globalOptions.port,
+        host: globalOptions.host,
+        verbose: globalOptions.verbose,
+        quiet: globalOptions.quiet
+      });
+      return { shouldExit: false };  // serve 需要保持进程运行
 
     case 'workspace':
       const workspaceSubCmd = cleanArgs[1];
@@ -227,7 +219,7 @@ handleCommand().then(async (result) => {
   if (result.shouldExit) {
     await workspaceManager.uninitialize(); // 清理工作区管理器
   }
-  // 对于需要保持运行的命令（如 server start），不执行 process.exit
+  // 对于需要保持运行的命令（如 serve），不执行 process.exit
 }).catch(error => {
   console.error('❌ 命令执行失败:', error);
   process.exit(1);
