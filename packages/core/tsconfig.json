@@ -37,11 +37,11 @@
       "./types"
     ],
     "paths": {
-      "@hyperchat/shared/*": [
+      "@dadigua/hyperchat-shared/*": [
         "../shared/src/*"
       ],
-      "@hyperchat/shared": [
-        "../shared/src/index.ts"
+      "@dadigua/hyperchat-shared": [
+        "../shared/src/index.mts"
       ]
     },
     "composite": true,

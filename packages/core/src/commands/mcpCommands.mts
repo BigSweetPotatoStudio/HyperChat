@@ -1,4 +1,4 @@
-import { MCPServerConfig, IMCPClient } from "@hyperchat/shared/types";
+import { MCPServerConfig, IMCPClient } from "@dadigua/hyperchat-shared/types";
 import { getWorkspaceManager, workspaceManager } from "../workspace/index.mjs";
 
 /**

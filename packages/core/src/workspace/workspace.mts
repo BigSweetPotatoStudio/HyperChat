@@ -10,8 +10,8 @@ import {
   AgentConfig,
   validateWorkspaceConfig
 } from "./types.mjs";
-import type { ChatHistoryItem } from "@hyperchat/shared/types";
-import type { MCPServerConfig } from "@hyperchat/shared/types";
+import type { ChatHistoryItem } from "@dadigua/hyperchat-shared/types";
+import type { MCPServerConfig } from "@dadigua/hyperchat-shared/types";
 import { AgentManager } from "./agentManager.mjs";
 import { WorkspaceMCPManager } from "./mcp/manager.mjs";
 import type { WorkspaceMCPClientImpl } from "./mcp/client.mjs";

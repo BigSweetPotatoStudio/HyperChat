@@ -1,5 +1,5 @@
 {
-  "name": "@dadigua/hyperchat-core",
+  "name": "@dadigua/hyperchat",
   "author": "Dadigua <0laopo0@gmail.com>",
   "description": "HyperChat Core - Node.js backend and shared functionality",
   "dependencies": {
@@ -64,8 +64,8 @@
   "module": "dist/main.mjs",
   "type": "module",
   "bin": {
-    "hyperchat": "dist/cli/index.mjs",
-    "hc": "dist/cli/index.mjs"
+    "hyperchat": "dist/src/cli/index.mjs",
+    "hc": "dist/src/cli/index.mjs"
   },
   "exports": {
     ".": {

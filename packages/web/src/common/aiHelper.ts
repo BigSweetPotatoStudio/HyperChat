@@ -1,10 +1,10 @@
 import { z } from "zod";
-import { AIModelConfigItem, MyMessage } from "@hyperchat/shared/types";
+import { AIModelConfigItem, MyMessage } from "@dadigua/hyperchat-shared/types";
 import { EVENT } from "./event";
-import { AiChannel } from "@hyperchat/shared/ai";
+import { AiChannel } from "@dadigua/hyperchat-shared/ai";
 
 import { zodResponseFormat, zodTextFormat } from 'openai/helpers/zod';
-import { AISettings } from "@hyperchat/shared/jsonSchemas/appSettingsSchema";
+import { AISettings } from "@dadigua/hyperchat-shared/jsonSchemas/appSettingsSchema";
 
 
 

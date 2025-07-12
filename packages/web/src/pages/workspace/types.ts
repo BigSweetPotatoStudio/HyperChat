@@ -3,7 +3,7 @@
  * 避免在多个文件中重复定义相同的接口
  */
 
-import { AgentConfig, IMCPClient } from "@hyperchat/shared/types";
+import { AgentConfig, IMCPClient } from "@dadigua/hyperchat-shared/types";
 
 /**
  * 工作区配置基础信息

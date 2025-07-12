@@ -1,6 +1,6 @@
 import { zx } from "../es6.mjs";
 const { fs, path } = zx;
-import { DirectoryItem } from "@hyperchat/shared/types";
+import { DirectoryItem } from "@dadigua/hyperchat-shared/types";
 import { getWorkspaceManager } from "../workspace/index.mjs";
 
 /**

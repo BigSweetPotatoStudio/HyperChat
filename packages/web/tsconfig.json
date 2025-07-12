@@ -13,10 +13,10 @@
       "@hyperchat/core/*": [
         "../core/src/*"
       ],
-      "@hyperchat/shared/*": [
+      "@dadigua/hyperchat-shared/*": [
         "../shared/src/*"
       ],
-      "@hyperchat/shared": [
+      "@dadigua/hyperchat-shared": [
         "../shared/src/index.ts"
       ]
     },

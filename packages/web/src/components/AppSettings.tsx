@@ -24,7 +24,7 @@ import {
   SystemSchema,
   DesktopSchema,
   AppSettingsSchema
-} from "@hyperchat/shared/jsonSchemas/appSettingsSchema";
+} from "@dadigua/hyperchat-shared/jsonSchemas/appSettingsSchema";
 import type { z } from "zod";
 import Schema2Form from "./schema2Form";
 

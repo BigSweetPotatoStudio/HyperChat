@@ -1,5 +1,5 @@
 
-import { IMCPClient } from "@hyperchat/shared/types";
+import { IMCPClient } from "@dadigua/hyperchat-shared/types";
 import type { InitedClient } from "./mcp";
 
 /**

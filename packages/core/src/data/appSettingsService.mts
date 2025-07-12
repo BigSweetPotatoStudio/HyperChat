@@ -1,8 +1,8 @@
 import { appDataDir } from "../const.mjs";
 import { Logger } from "../log.mjs";
-import { AIModelConfigItem } from "@hyperchat/shared/types";
+import { AIModelConfigItem } from "@dadigua/hyperchat-shared";
 import { AppSettingsManager } from "./managers/appSettingsManager.mjs";
-import { AISettings } from "@dadigua/hyperchat-shared/jsonSchemas/appSettingsSchema";
+import { AISettings } from "@dadigua/hyperchat-shared";
 
 // 全局应用设置管理器
 let globalAppSettingsManager: AppSettingsManager | null = null;
@@ -58,7 +58,7 @@ class AiModelData {
     if (!aiSettings) {
       throw new Error('AI settings not found');
     }
-    return (aiSettings.models || []).map((model: AIModelConfigItem) => {
+    return (aiSettings.models || []).map((model) => {
       const providerKey = model.provider as string;
       return {
         ...model,

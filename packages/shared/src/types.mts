@@ -250,45 +250,45 @@ export interface ChatHistoryItem {
   version?: number | string;
 };
 
-export type KnownProvider =
-  | "openai"
-  | "anthropic"
-  | "openrouter"
-  | "gemini"
-  | "qwen"
-  | "deepseek"
-  | "doubao"
-  | "xai"
-  | "glm"
-  | "ollama"
-  | "unknown";
+// export type KnownProvider =
+//   | "openai"
+//   | "anthropic"
+//   | "openrouter"
+//   | "gemini"
+//   | "qwen"
+//   | "deepseek"
+//   | "doubao"
+//   | "xai"
+//   | "glm"
+//   | "ollama"
+//   | "unknown";
 
 // 提供商配置接口，描述每个大模型 API 的基本信息
-export interface ProviderConfig {
-  key: KnownProvider; // 唯一标识
-  label: string; // 显示名称
-  baseURL: string; // API 基础地址
-  icon?: string; // 图标
-  description?: string; // 描述
-  hasApiKey?: boolean;
-  apiKey?: string; // API Key 字段
-  isBuiltIn: boolean; // 是否内置（true=内置，false=自定义）
-}
+// export interface ProviderConfig {
+//   key: KnownProvider; // 唯一标识
+//   label: string; // 显示名称
+//   baseURL: string; // API 基础地址
+//   icon?: string; // 图标
+//   description?: string; // 描述
+//   hasApiKey?: boolean;
+//   apiKey?: string; // API Key 字段
+//   isBuiltIn: boolean; // 是否内置（true=内置，false=自定义）
+// }
 
-export interface AIModelConfigItem {
-  key: string;
-  name: string;
-  model: string;
-  apiKey: string; // 废弃 get from provider
-  baseURL: string; // 废弃 get from provider
-  provider: KnownProvider;
-  supportImage: boolean;
-  supportTool: boolean;
-  call_tool_step?: number;
-  type?: "llm" | "embedding";
-  toolMode?: "standard" | "compatible";
-  fullName?: string; // 提供商:模型名称
-}
+// export interface AIModelConfigItem {
+//   key: string;
+//   name: string;
+//   model: string;
+//   apiKey: string; // 废弃 get from provider
+//   baseURL: string; // 废弃 get from provider
+//   provider: KnownProvider;
+//   supportImage: boolean;
+//   supportTool: boolean;
+//   call_tool_step?: number;
+//   type?: "llm" | "embedding";
+//   toolMode?: "standard" | "compatible";
+//   fullName?: string; // 提供商:模型名称
+// }
 
 export interface MCPServerConfig {
   command?: string;
@@ -424,22 +424,22 @@ export interface WorkspaceSummary {
   description?: string;
 }
 
-export interface WorkspaceConfig {
-  name: string;
-  description?: string;
-  created: number;
-  settings: WorkspaceSettings;
-}
+// export interface WorkspaceConfig {
+//   name: string;
+//   description?: string;
+//   created: number;
+//   settings: WorkspaceSettings;
+// }
 
-export interface WorkspaceSettings {
-  enableKnowledgeBase?: boolean;
-  theme?: 'light' | 'dark' | 'system';
-  autoSave?: boolean;
-  showHiddenFiles?: boolean;
-  fileWatcher?: boolean;
-  gitIntegration?: boolean;
-  [key: string]: unknown;
-}
+// export interface WorkspaceSettings {
+//   enableKnowledgeBase?: boolean;
+//   theme?: 'light' | 'dark' | 'system';
+//   autoSave?: boolean;
+//   showHiddenFiles?: boolean;
+//   fileWatcher?: boolean;
+//   gitIntegration?: boolean;
+//   [key: string]: unknown;
+// }
 
 /**
  * MCP 相关类型定义

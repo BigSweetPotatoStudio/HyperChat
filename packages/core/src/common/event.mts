@@ -24,7 +24,7 @@
  */
 
 import { Logger } from "../log.mjs";
-import type { EventCallback, EventCallbackWithOnce, EventHoldsMap, EventCallbacksMap } from "@hyperchat/shared/types";
+import type { EventCallback, EventCallbackWithOnce, EventHoldsMap, EventCallbacksMap } from "@dadigua/hyperchat-shared/types";
 
 /**
  * 创建类型安全的事件管理器

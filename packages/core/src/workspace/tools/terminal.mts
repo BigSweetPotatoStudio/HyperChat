@@ -2,7 +2,7 @@ import os from "os";
 import * as pty from "@homebridge/node-pty-prebuilt-multiarch";
 import { EventEmitter } from "events";
 import { Logger } from "../../log.mjs";
-import type { TerminalMessage, TerminalMessageExtended } from "@hyperchat/shared/types";
+import type { TerminalMessage, TerminalMessageExtended } from "@dadigua/hyperchat-shared/types";
 import { getMessageService } from "../../message_service.mjs";
 
 const shell = os.platform() === "win32" ? "powershell.exe" : "bash";

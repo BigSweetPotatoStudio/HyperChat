@@ -39,7 +39,7 @@ import { setClipboardText } from "../common/util";
 import { sleep } from "../common/sleep";
 import { isOnBrowser } from "../common/util";
 import { t } from "../i18n";
-import { HyperChatCompletionTool, MyMessage } from "@hyperchat/shared/types";
+import { HyperChatCompletionTool, MyMessage } from "@dadigua/hyperchat-shared/types";
 import { Pre } from "./pre";
 import { DownImage } from "./WorkspaceChatComponent/component";
 

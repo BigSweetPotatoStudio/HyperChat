@@ -11,7 +11,7 @@ import type {
   MCPManagerEvents
 } from "./types.mjs";
 import { WorkspaceMCPClientImpl } from "./client.mjs";
-import type { MCPServerConfig } from "@hyperchat/shared/types";
+import type { MCPServerConfig } from "@dadigua/hyperchat-shared/types";
 import { Logger } from "../../log.mjs";
 import { CONSTANTS } from "../constants.mjs";
 import { WorkSpaceServers } from "../../mcp/servers/index.mjs";

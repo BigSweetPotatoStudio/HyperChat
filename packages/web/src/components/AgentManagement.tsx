@@ -38,13 +38,13 @@ import { call } from "../common/call";
 import { WorkspaceInfo } from "../pages/workspace/types";
 import { t } from "../i18n";
 import { HeaderContext } from "../common/context";
-import type { AISettings, AIModelConfigItem } from "@hyperchat/shared/jsonSchemas/appSettingsSchema";
+import type { AISettings, AIModelConfigItem } from "@dadigua/hyperchat-shared/jsonSchemas/appSettingsSchema";
 import { useAISettings } from "../contexts/AppSettingsContext";
 import { NumberStep } from "../common/numberStep";
 import EmojiPicker from 'emoji-picker-react';
 import { Editor } from "./editor";
 import { useForceUpdate } from "../hooks/useForceUpdate";
-import { AgentConfig, ChatHistoryItem, IMCPClient } from "@hyperchat/shared/types";
+import { AgentConfig, ChatHistoryItem, IMCPClient } from "@dadigua/hyperchat-shared/types";
 const { Title, Text } = Typography;
 
 

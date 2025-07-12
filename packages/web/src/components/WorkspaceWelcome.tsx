@@ -29,7 +29,7 @@ import {
 } from "@ant-design/icons";
 import { t } from "../i18n";
 import { getAgentRecentUsage, addAgentRecentUsage, getChatRecentUsage, addChatRecentUsage } from "../utils/storage";
-import { AgentConfig, ChatHistoryItem } from "@hyperchat/shared/types";
+import { AgentConfig, ChatHistoryItem } from "@dadigua/hyperchat-shared/types";
 import { Icon } from "./icon";
 import { call } from "../common/call";
 

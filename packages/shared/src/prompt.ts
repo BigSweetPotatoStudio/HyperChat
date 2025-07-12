@@ -1,4 +1,4 @@
-import type { HyperChatCompletionTool } from "./data.mjs";
+import type { HyperChatCompletionTool } from "./types.mjs";
 
 export const SYSTEM_PROMPT = `你现在可以使用一系列强大的工具来回答用户问题。这些工具可以帮助你执行各种任务，从信息检索到代码执行再到复杂分析。
 

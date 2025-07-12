@@ -23,7 +23,7 @@ import {
   ImportOutlined,
 } from "@ant-design/icons";
 import { t } from "../i18n";
-import { WorkspaceSettingsSchema } from "@hyperchat/shared/jsonSchemas/workspaceSettingsSchema";
+import { WorkspaceSettingsSchema } from "@dadigua/hyperchat-shared/jsonSchemas/workspaceSettingsSchema";
 import type { z } from "zod";
 
 const { Text } = Typography;

@@ -37,7 +37,7 @@ import {
   AppSettingsSchema, 
   DEFAULT_APP_SETTINGS,
   type AppSettings 
-} from '@hyperchat/shared/appSettingsSchema.mjs';
+} from '@dadigua/hyperchat-shared/appSettingsSchema.mjs';
 
 // 可以使用 schema 进行验证
 const isValid = AppSettingsSchema.safeParse(data).success;
