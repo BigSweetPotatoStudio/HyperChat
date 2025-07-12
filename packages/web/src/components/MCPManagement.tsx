@@ -157,7 +157,7 @@ export const MCPManagement = forwardRef<MCPManagementRef, MCPManagementProps>(({
       } else {
         // 项目工作区：强制重新加载工作区特定的MCP客户端
         try {
-          await call("forceReloadWorkspaceMcpClients", { workspacePath: workspace.path });
+          await call("forceReloadWorkspaceMcpClients");
         } catch (error) {
           // 如果工作区MCP强制重新加载失败，回退到全局强制重新加载
           console.warn("Workspace MCP force reload failed, falling back to global force reload:", error);
@@ -188,7 +188,6 @@ export const MCPManagement = forwardRef<MCPManagementRef, MCPManagementProps>(({
     try {
       // 使用新的工作区特定的重启方法
       await call("manageWorkspaceMcpClient", {
-        workspacePath: workspace.path,
         clientName,
         action: "restart"
       });
@@ -725,7 +724,6 @@ export const MCPManagement = forwardRef<MCPManagementRef, MCPManagementProps>(({
                   // 编辑时，如果名称改变则删除旧服务
                   if (values._name && values.name !== values._name) {
                     await call("manageWorkspaceMcpClient", {
-                      workspacePath: workspace.path,
                       clientName: values._name,
                       action: "delete"
                     });
@@ -780,7 +778,6 @@ export const MCPManagement = forwardRef<MCPManagementRef, MCPManagementProps>(({
 
                 // 添加工作区特定的MCP配置
                 await call("setWorkspaceMcpServerConfig", {
-                  workspacePath: workspace.path,
                   serverName: values.name,
                   serverConfig: mcpServerConfig
                 });
