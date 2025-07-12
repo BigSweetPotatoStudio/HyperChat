@@ -3,7 +3,7 @@
   "author": "Dadigua <0laopo0@gmail.com>",
   "description": "HyperChat Core - Node.js backend and shared functionality",
   "dependencies": {
-    "@dadigua/hyperchat-shared": "file:../shared",
+    "@dadigua/hyperchat-shared": "^2.0.0-alpha.9",
     "@homebridge/node-pty-prebuilt-multiarch": "^0.13.1",
     "@types/adm-zip": "^0.5.5",
     "@types/fluent-ffmpeg": "^2.1.27",
@@ -16,6 +16,7 @@
     "cross-spawn": "^7.0.6",
     "crypto-js": "^4.2.0",
     "eventsource": "^3.0.2",
+    "express": "^5.1.0",
     "fluent-ffmpeg": "^2.1.3",
     "fs-extra": "^11.3.0",
     "image-js": "^0.35.6",
@@ -55,13 +56,13 @@
   },
   "email": "0laopo0@gmail.com",
   "files": [
-    "dist/**/*.mjs",
-    "dist/**/*.d.mts", 
+    "dist/src/**/*.mjs",
+    "dist/src/**/*.d.mts",
     "README.md"
   ],
   "license": "MIT",
-  "main": "dist/src/lib.mjs",
-  "module": "dist/src/lib.mjs",
+  "main": "dist/src/main.mjs",
+  "module": "dist/src/main.mjs",
   "type": "module",
   "bin": {
     "hyperchat": "dist/src/cli/index.mjs",
@@ -92,5 +93,5 @@
     "test:ui": "vitest --ui",
     "test:coverage": "vitest run --coverage"
   },
-  "version": "0.0.0"
+  "version": "2.0.0-alpha.9"
 }

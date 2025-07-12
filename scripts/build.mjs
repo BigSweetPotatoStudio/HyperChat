@@ -119,9 +119,7 @@ const tasks = {
 
     // 处理 package.json（用于发布）
     if (args.includes('--publish')) {
-      const pkgPath = join(distDir, 'package.json');
       const corePkgPath = join(coreDir, 'package.json');
-
       let pkg = readJSON(corePkgPath);
 
       // 更新版本号
@@ -134,10 +132,7 @@ const tasks = {
         console.log(`  ✅ 更新 @dadigua/hyperchat-shared 依赖版本: ^${rootPkg.version}`);
       }
 
-      // 这些配置现在直接在 package.json 中定义了
-
-
-      writeJSON(pkgPath, pkg);
+      writeJSON(corePkgPath, pkg);
       console.log('  ✅ 已处理 Core 包发布配置');
     }
   },
@@ -225,7 +220,7 @@ const tasks = {
   // 发布 core 包  
   async publishCore() {
     console.log('📤 发布 Core 包...');
-    const coreDistDir = join(rootDir, 'packages/core/dist');
+    const coreDir = join(rootDir, 'packages/core');
 
     // 检查是否已经构建，或强制重新构建以应用发布配置
     console.log('⚠️  重新构建 Core 包以应用发布配置...');
@@ -234,7 +229,7 @@ const tasks = {
     }
     await tasks.buildCore();
 
-    exec('npm publish --access public', { cwd: coreDistDir });
+    exec('npm publish --access public', { cwd: coreDir });
     console.log('✅ Core 包发布完成！');
   },
 
