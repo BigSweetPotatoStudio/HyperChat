@@ -1,25 +1,25 @@
 {
   "name": "@dadigua/hyperchat",
-  "version": "2.0.0-alpha.12",
+  "version": "2.0.0-alpha.15",
   "description": "HyperChat Core - Node.js backend and CLI tool with AI chat, MCP support",
   "author": "Dadigua <0laopo0@gmail.com>",
   "license": "MIT",
   "type": "module",
-  "main": "dist/src/main.mjs",
-  "module": "dist/src/main.mjs",
+  "main": "dist/main.mjs",
+  "module": "dist/main.mjs",
   "bin": {
-    "hyperchat": "dist/src/cli/index.mjs",
-    "hc": "dist/src/cli/index.mjs"
+    "hyperchat": "dist/cli/index.mjs",
+    "hc": "dist/cli/index.mjs"
   },
   "files": [
-    "dist/src/**/*.mjs",
-    "dist/src/**/*.d.mts",
+    "dist/**/*.mjs",
+    "dist/**/*.d.mts",
     "README.md"
   ],
   "exports": {
     ".": {
-      "types": "./dist/src/lib.d.mts",
-      "import": "./dist/src/lib.mjs"
+      "types": "./dist/lib.d.mts",
+      "import": "./dist/lib.mjs"
     }
   },
   "repository": {
@@ -27,7 +27,7 @@
     "url": "git+https://github.com/BigSweetPotatoStudio/HyperChat.git"
   },
   "dependencies": {
-    "@dadigua/hyperchat-shared": "^2.0.0-alpha.12",
+    "@dadigua/hyperchat-shared": "^2.0.0-alpha.15",
     "@homebridge/node-pty-prebuilt-multiarch": "^0.13.1",
     "adm-zip": "^0.5.14",
     "bonjour": "^3.5.0",
@@ -47,6 +47,7 @@
     "koa-mount": "^4.0.0",
     "koa-router": "^13.0.1",
     "koa-static": "^5.0.0",
+    "log4js": "^6.9.1",
     "multer": "^1.4.5-lts.2",
     "node-cron": "^3.0.3",
     "opusscript": "^0.1.1",

@@ -1,7 +1,7 @@
 import React from "react";
 
 
-export function Pre(p) {
+export function Pre(p: any) {
     return (
       <div>
         <pre

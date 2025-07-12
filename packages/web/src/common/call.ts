@@ -43,7 +43,7 @@ interface Ext {
 }
 
 const ext: Ext = {} as any;
-globalThis.ext = ext;
+(globalThis as any).ext = ext;
 
 let websocket: Socket | undefined = undefined;
 let URL_PRE: string;

@@ -4,12 +4,12 @@
   "private": true,
   "dependencies": {
     "@babel/plugin-proposal-private-property-in-object": "^7.21.11",
+    "@dadigua/hyperchat-shared": "file:../shared",
     "@dnd-kit/core": "^6.3.1",
     "@dnd-kit/modifiers": "^9.0.0",
     "@dnd-kit/sortable": "^10.0.0",
     "@dnd-kit/utilities": "^3.2.2",
     "@effortlessmotion/html-webpack-inline-source-plugin": "^1.0.3",
-    "@dadigua/hyperchat-shared": "file:../shared",
     "@microsoft/clarity": "^1.0.0",
     "@mozilla/readability": "^0.5.0",
     "@testing-library/jest-dom": "^5.17.0",
@@ -93,5 +93,8 @@
       "last 1 firefox version",
       "last 1 safari version"
     ]
+  },
+  "devDependencies": {
+    "@types/markdown-it": "^14.1.2"
   }
 }

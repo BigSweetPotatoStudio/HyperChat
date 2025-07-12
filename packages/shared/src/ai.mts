@@ -410,7 +410,7 @@ export class AiChannel {
           continue;
         }
         this.mcpAbortController = new AbortController();
-        let call_res: MCPTypes.CallToolResult = await globalThis.ext.call(
+        let call_res: MCPTypes.CallToolResult = await (globalThis as any).ext.call(
           "mcpCallToolWithWorkspace",
           {
             name: localTool?.clientName || "",
@@ -422,7 +422,7 @@ export class AiChannel {
             signal: this.mcpAbortController?.signal,
           },
         )
-          .then((res) => {
+          .then((res: any) => {
             if (res["isError"]) {
               this.lastMessage.content_status = "error";
               params.onUpdate && params.onUpdate();
@@ -433,7 +433,7 @@ export class AiChannel {
               return res;
             }
           })
-          .catch((e) => {
+          .catch((e: any) => {
             this.lastMessage.content_status = "error";
             params.onUpdate && params.onUpdate();
             return {
@@ -480,7 +480,7 @@ export class AiChannel {
     }
   }
   ext!: {
-    antdmessage: { warning: (string) => void };
+    antdmessage: { warning: (string: string) => void };
     mcpTools: HyperChatCompletionTool[];
     platform: "nodejs" | "web";
     getURL_PRE: () => string;

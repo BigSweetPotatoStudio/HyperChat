@@ -60,7 +60,7 @@ function showHelp() {
 全局选项:
   --workspace <path>       使用指定工作区（覆盖自动检测）
   --host <host>            连接到指定服务器 (默认: localhost)
-  --port <port>            指定端口 (默认: 16102)
+  --port <port>            指定端口 (默认: 16100)
   --password <password>    服务器密码
   --verbose, -v            显示详细日志
   --quiet, -q              静默模式

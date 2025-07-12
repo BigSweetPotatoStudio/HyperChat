@@ -51,23 +51,23 @@ if (process.env.NODE_ENV == "development") {
  * @param values 插值的动态部分数组
  * @returns 翻译后的文本
  */
-export function t(strings, ...values) {
+export function t(strings: TemplateStringsArray, ...values: any[]): string {
   // strings: 模板字符串的静态部分
   // values: 插值的动态部分
   
   // 将模板字符串重新组合成完整字符串
   let str = strings.reduce(
-    (result, str, i) => result + str + (values[i] || ""),
+    (result: string, str: string, i: number) => result + str + (values[i] || ""),
     "",
   );
   
   // console.log("str: ", i18nText, str);
   
   // 如果翻译数据中没有这个文本
-  if (i18nText[str] == null) {
+  if ((i18nText as any)[str] == null) {
     // 开发模式下，如果文本包含英文字符，自动添加到翻译数据中
     if (process.env.NODE_ENV == "development" && hasEnglish(str)) {
-      i18nText[str] = {
+      (i18nText as any)[str] = {
         en: str,     // 英文原文
         zh: null,    // 中文翻译（待填充）
       };
@@ -82,7 +82,7 @@ export function t(strings, ...values) {
   } else {
     // 根据当前语言返回对应翻译
     if (currLang == "zhCN") {
-      return i18nText[str].zh || str;  // 返回中文翻译，如果没有则返回原文
+      return (i18nText as any)[str].zh || str;  // 返回中文翻译，如果没有则返回原文
     } else {
       return str;  // 英文环境直接返回原文
     }
@@ -96,7 +96,7 @@ console.log("currLang: ", currLang);
  * 设置当前语言
  * @param lang 语言代码：'zhCN' 或 'enUS'
  */
-const setCurrLang = (lang) => {
+const setCurrLang = (lang: string) => {
   currLang = lang;
   localStorage.setItem("currLang", lang);
 };

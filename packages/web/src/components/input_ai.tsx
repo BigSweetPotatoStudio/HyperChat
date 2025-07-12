@@ -8,7 +8,7 @@ import { Popconfirm } from "antd/lib";
 export const InputAI = ({ value, onChange, aiGen, extInput, ...props }: {
     value?: any,
     onChange?: (value: string) => void
-    aiGen?: (text?) => Promise<string>
+    aiGen?: (text?: any) => Promise<string>
     extInput?: boolean
 } & InputProps) => {
     const [p, setP] = React.useState("");

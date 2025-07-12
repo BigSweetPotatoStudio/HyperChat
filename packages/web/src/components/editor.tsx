@@ -343,7 +343,7 @@ export const Editor = forwardRef(({
             }
 
             function validate(model: monaco.editor.ITextModel) {
-                let varList = [
+                let varList: any[] = [
                     //     ...VarList.get().data?.map((v) => {
                     //     let varName = v.scope + "." + v.name;
                     //     return {

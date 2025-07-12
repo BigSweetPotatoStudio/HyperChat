@@ -111,7 +111,7 @@ console.log("turndown");
 declare function resolve(s: string): string;
 
 try {
-  function isEffectivelyBlock(element) {
+  function isEffectivelyBlock(element: any) {
     // debugger
 
     // Flex 容器的子元素
@@ -153,11 +153,11 @@ try {
     return false;
   }
 
-  window["htmlToMarkdown"] = htmlToMarkdown;
+  (window as any)["htmlToMarkdown"] = htmlToMarkdown;
 
-  function htmlToMarkdown(dom) {
+  function htmlToMarkdown(dom: any) {
     // 递归遍历 DOM 节点
-    function traverse(node, line = false) {
+    function traverse(node: any, line = false) {
       // if (line) {
       //   debugger;
       // }

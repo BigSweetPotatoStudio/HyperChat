@@ -1,5 +1,6 @@
 import { z } from "zod";
-import { AIModelConfigItem, MyMessage } from "@dadigua/hyperchat-shared/types";
+import { MyMessage } from "@dadigua/hyperchat-shared/types";
+import { AIModelConfigItem } from "@dadigua/hyperchat-shared/jsonSchemas/appSettingsSchema";
 import { EVENT } from "./event";
 import { AiChannel } from "@dadigua/hyperchat-shared/ai";
 

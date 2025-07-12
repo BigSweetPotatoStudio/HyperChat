@@ -127,7 +127,7 @@ export async function getMCPExtensionData(): Promise<any> {
     // Execute the fetched code using a Promise and a global JSONP callback.
     let res = await new Promise(async (resolve, reject) => {
       // Define a global JSONP callback function.
-      window["jsonp"] = function (data: any) {
+      (window as any)["jsonp"] = function (data: any) {
         resolve(data);
       };
       // Execute the fetched JavaScript code.

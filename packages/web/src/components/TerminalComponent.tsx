@@ -140,7 +140,7 @@ export function TerminalComponent({
     resizeObserver.observe(terminalRef);
 
     // 监听用户输入
-    xterm.onData((data) => {
+    xterm.onData((data: string) => {
       if (socket) {
         socket.emit("terminalReceive", {
           terminalID: terminalID,
@@ -169,7 +169,7 @@ export function TerminalComponent({
       }
     });
 
-    let sessionObj = {};
+    let sessionObj: Record<number, { xtermdata: string; timer: NodeJS.Timeout }> = {};
 
     // 监听终端数据
     socket.on("terminal-send", async (m) => {
@@ -183,24 +183,24 @@ export function TerminalComponent({
       }
 
       let session = data.current.sessions.find((x) => x.id == m.terminalID);
-      if (!sessionObj[m.terminalID]) {
-        sessionObj[m.terminalID] = {
+      if (!sessionObj[m.terminalID as number]) {
+        sessionObj[m.terminalID as number] = {
           xtermdata: "",
-          timer: 0
+          timer: setTimeout(() => {}, 0) // 临时值
         };
       }
 
-      sessionObj[m.terminalID].xtermdata += m.data;
-      clearTimeout(sessionObj[m.terminalID].timer);
+      sessionObj[m.terminalID as number].xtermdata += m.data;
+      clearTimeout(sessionObj[m.terminalID as number].timer);
 
       if (session && session.context.xterm) {
-        session.context.xterm.write(sessionObj[m.terminalID].xtermdata);
-        sessionObj[m.terminalID].xtermdata = "";
+        session.context.xterm.write(sessionObj[m.terminalID as number].xtermdata);
+        sessionObj[m.terminalID as number].xtermdata = "";
       } else {
-        sessionObj[m.terminalID].timer = setTimeout(() => {
+        sessionObj[m.terminalID as number].timer = setTimeout(() => {
           if (session && session.context.xterm) {
-            session.context.xterm.write(sessionObj[m.terminalID].xtermdata);
-            sessionObj[m.terminalID].xtermdata = "";
+            session.context.xterm.write(sessionObj[m.terminalID as number].xtermdata);
+            sessionObj[m.terminalID as number].xtermdata = "";
           }
         }, 1000);
       }
@@ -299,7 +299,7 @@ export function TerminalComponent({
         icon: <ClearOutlined />,
       },
     ],
-    onClick: (e) => {
+    onClick: (e: any) => {
       if (e.key === "Copy") {
         const session = data.current.sessions.find((x) => x.id === terminalId);
         if (session && session.context.xterm) {

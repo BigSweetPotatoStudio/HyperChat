@@ -120,7 +120,7 @@ export const AgentManagement = forwardRef<AgentManagementRef, AgentManagementPro
   };
 
   // 保存Agent
-  const saveAgent = async (values) => {
+  const saveAgent = async (values: any) => {
     try {
       const agentConfig = {
         name: values.name,

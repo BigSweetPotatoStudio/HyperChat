@@ -118,7 +118,7 @@ export const Schema2FormItems: React.FC<Schema2FormItemsProps> = ({
   }, [disabled]);
 
   // 渲染数组字段
-  const renderArrayField = useCallback((fieldName: string, fieldSchema: JSONSchema7, fieldPath: string[]) => {
+  const renderArrayField = useCallback((fieldName: string, fieldSchema: JSONSchema7, fieldPath: string[]): React.ReactNode => {
     const { title, description, items, minItems, maxItems } = fieldSchema;
     
     if (!items || typeof items === 'boolean') {
@@ -321,7 +321,7 @@ export const Schema2FormItems: React.FC<Schema2FormItemsProps> = ({
   }, [disabled, schema.required, resolveSchema]);
 
   // 处理oneOf/anyOf条件schema
-  const renderConditionalField = useCallback((fieldName: string, fieldSchema: JSONSchema7, fieldPath: string[]) => {
+  const renderConditionalField = useCallback((fieldName: string, fieldSchema: JSONSchema7, fieldPath: string[]): React.ReactNode => {
     const { oneOf, anyOf, title, description } = fieldSchema;
     const conditions = oneOf || anyOf || [];
     

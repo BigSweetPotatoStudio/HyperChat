@@ -1,4 +1,4 @@
-import { Logger } from "@hyperchat/core/log.mjs"
+import { Logger } from  "../../core/src/log.mjs";
 // import { createBrowser } from "@hyperchat/core/mcp/servers/hyper_tools/web2";
 // import { getConfig } from "@hyperchat/core /mcp/servers/hyper_tools/lib";
 import { checkUpdate } from "./polyfills/electron_autoupdate.mjs";

@@ -53,7 +53,7 @@ module.exports = (env, argv) => {
       },
       alias: {
         "@hyperchat/core": path.resolve(__dirname, "../core/src"),
-        "@hyperchat/shared": path.resolve(__dirname, "../shared"),
+        "@dadigua/hyperchat-shared": path.resolve(__dirname, "../shared"),
       },
       plugins: [
         new TsconfigPathsPlugin({

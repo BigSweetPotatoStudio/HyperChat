@@ -55,8 +55,8 @@ const deepMerge = (target: unknown, source: unknown): unknown => {
   if (source && typeof source === 'object' && target && typeof target === 'object') {
     const result = { ...target };
     Object.keys(source).forEach(key => {
-      if (source[key] !== undefined) {
-        result[key] = deepMerge(target[key], source[key]);
+      if ((source as any)[key] !== undefined) {
+        (result as any)[key] = deepMerge((target as any)[key], (source as any)[key]);
       }
     });
     return result;

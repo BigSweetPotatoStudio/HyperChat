@@ -53,7 +53,7 @@ import React, { useCallback, useEffect, useRef, useState } from "react";
 import markdownit from "markdown-it";
 import mk from "@vscode/markdown-it-katex";
 
-export function UserContent({ x, regenerate = undefined, submit }) {
+export function UserContent({ x, regenerate = undefined, submit }: { x: any; regenerate?: any; submit: any }) {
   const [isEdit, setIsEdit] = useState(false);
   const [value, setValue] = useState("");
   useEffect(() => {
@@ -118,7 +118,7 @@ export function UserContent({ x, regenerate = undefined, submit }) {
           </Space.Compact>
         </div>
       ) : Array.isArray(x.content) ? (
-        x.content.map((c, i) => {
+        x.content.map((c: any, i: number) => {
           if (c.type == "text") {
             return (
               <div key={i}>
@@ -538,7 +538,7 @@ import { t } from "../../i18n";
 //   );
 // };
 
-export const DownImage = ({ src, ...p }) => {
+export const DownImage = ({ src, ...p }: { src: any; [key: string]: any }) => {
   return (
     <div className="relative">
       <img src={src} {...p} />

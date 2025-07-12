@@ -32,15 +32,15 @@ export function getLayoutRoute() {
   };
 
   // 简化的路径处理
-  function run(route, prefix) {
+  function run(route: RouteType, prefix: string): RouteType {
     if (Array.isArray(route.routes)) {
       for (let r of route.routes) {
         run(r, prefix + r.path);
       }
     }
     route.path = prefix == "" ? "/" : prefix;
-    route.component = route.component.wait
-      ? route.component.wait(route)
+    route.component = (route.component as any).wait
+      ? (route.component as any).wait(route)
       : route.component;
     return route;
   }
@@ -49,11 +49,11 @@ export function getLayoutRoute() {
 }
 
 export function getRoute(route: RouteType) {
-  function run(route) {
+  function run(route: RouteType): React.ReactElement {
     return (
       <Route key={route.path} path={route.path} element={route.component}>
         {route.routes &&
-          route.routes.map((r) => {
+          route.routes.map((r: RouteType) => {
             return run(r);
           })}
         <Route path="*" element={<div>404</div>} />

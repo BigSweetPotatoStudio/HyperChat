@@ -346,7 +346,7 @@ export function MCPGatewaysSettings({
         onSave={handleSave}
         onCancel={() => setIsModalOpen(false)}
         loading={loading}
-        generateGatewayUrls={generateGatewayUrls}
+        generateGatewayUrls={(gatewayName?: string) => generateGatewayUrls(gatewayName || '')}
         handleCopyToClipboard={handleCopyToClipboard}
       />
     </div>

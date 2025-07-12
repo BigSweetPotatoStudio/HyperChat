@@ -540,7 +540,7 @@ export function JsonSchema2FormItem(schema: any, keys: any[] = []) {
  * @param {any} p - The JSON Schema object to convert.
  * @returns {React.ReactNode[] | null} An array of React nodes representing the form items, or null if no items are generated.
  */
-export function JsonSchema2FormItemOrNull(p) {
+export function JsonSchema2FormItemOrNull(p: any): React.ReactNode[] | null {
   let res = JsonSchema2FormItem(p);
   if (res.length == 0) {
     return null;
@@ -613,8 +613,8 @@ export function getMyUuid() {
 
 
 export const calcAttachDialogue = (
-  messages,
-  attachedDialogueCount,
+  messages: any,
+  attachedDialogueCount: any,
   overwrite = true,
 ) => {
   if (attachedDialogueCount == null) {
