@@ -31,3 +31,5 @@ tests/tmp
 *.mts.bak
 *.ts.bak
 *.tsx.bak
+
+README.md

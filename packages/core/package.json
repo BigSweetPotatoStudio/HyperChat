@@ -1,25 +1,47 @@
 {
   "name": "@dadigua/hyperchat",
+  "version": "2.0.0-alpha.12",
+  "description": "HyperChat Core - Node.js backend and CLI tool with AI chat, MCP support",
   "author": "Dadigua <0laopo0@gmail.com>",
-  "description": "HyperChat Core - Node.js backend and shared functionality",
+  "license": "MIT",
+  "type": "module",
+  "main": "dist/src/main.mjs",
+  "module": "dist/src/main.mjs",
+  "bin": {
+    "hyperchat": "dist/src/cli/index.mjs",
+    "hc": "dist/src/cli/index.mjs"
+  },
+  "files": [
+    "dist/src/**/*.mjs",
+    "dist/src/**/*.d.mts",
+    "README.md"
+  ],
+  "exports": {
+    ".": {
+      "types": "./dist/src/lib.d.mts",
+      "import": "./dist/src/lib.mjs"
+    }
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/BigSweetPotatoStudio/HyperChat.git"
+  },
   "dependencies": {
-    "@dadigua/hyperchat-shared": "^2.0.0-alpha.9",
+    "@dadigua/hyperchat-shared": "^2.0.0-alpha.12",
     "@homebridge/node-pty-prebuilt-multiarch": "^0.13.1",
-    "@types/adm-zip": "^0.5.5",
-    "@types/fluent-ffmpeg": "^2.1.27",
-    "@types/pdfjs-dist": "^2.10.378",
     "adm-zip": "^0.5.14",
     "bonjour": "^3.5.0",
     "bonjour-service": "^1.3.0",
     "chrome-launcher": "^1.2.0",
-    "cross-env": "^7.0.3",
     "cross-spawn": "^7.0.6",
     "crypto-js": "^4.2.0",
+    "dayjs": "^1.11.13",
     "eventsource": "^3.0.2",
     "express": "^5.1.0",
     "fluent-ffmpeg": "^2.1.3",
     "fs-extra": "^11.3.0",
     "image-js": "^0.35.6",
+    "js-yaml": "^4.1.0",
     "jsonc-parser": "^3.3.1",
     "koa-body": "^6.0.1",
     "koa-mount": "^4.0.0",
@@ -31,53 +53,33 @@
     "pdf-parse": "^1.1.1",
     "pdfjs-dist": "^4.10.38",
     "puppeteer-core": "^22.15.0",
-    "raw-loader": "^4.0.2",
     "react-markdown": "^9.0.1",
     "shell-path": "^3.0.0",
-    "tsconfig-paths-webpack-plugin": "^4.2.0",
+    "socket.io": "^4.8.1",
     "wav": "^1.0.2",
     "wav-encoder": "^1.3.0",
     "webdav": "^5.6.0"
   },
   "devDependencies": {
+    "@types/adm-zip": "^0.5.5",
     "@types/cors": "^2.8.18",
     "@types/cross-spawn": "^6.0.6",
     "@types/express": "^5.0.2",
+    "@types/fluent-ffmpeg": "^2.1.27",
     "@types/jest": "^29.5.12",
     "@types/multer": "^1.4.12",
     "@types/node-cron": "^3.0.11",
+    "@types/pdfjs-dist": "^2.10.378",
     "@vitest/coverage-v8": "^3.2.4",
     "@vitest/ui": "^3.2.4",
+    "cross-env": "^7.0.3",
     "happy-dom": "^18.0.1",
     "jest": "^29.7.0",
+    "raw-loader": "^4.0.2",
     "ts-jest": "^29.1.2",
+    "tsconfig-paths-webpack-plugin": "^4.2.0",
     "vitest": "^3.2.4",
     "webpack-node-externals": "^3.0.0"
-  },
-  "email": "0laopo0@gmail.com",
-  "files": [
-    "dist/src/**/*.mjs",
-    "dist/src/**/*.d.mts",
-    "README.md"
-  ],
-  "license": "MIT",
-  "main": "dist/src/main.mjs",
-  "module": "dist/src/main.mjs",
-  "type": "module",
-  "bin": {
-    "hyperchat": "dist/src/cli/index.mjs",
-    "hc": "dist/src/cli/index.mjs"
-  },
-  "exports": {
-    ".": {
-      "types": "./dist/src/lib.d.mts",
-      "import": "./dist/src/lib.mjs"
-    }
-  },
-  "productName": "HyperChat",
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/BigSweetPotatoStudio/HyperChat.git"
   },
   "scripts": {
     "dev": "nodemon -w src --exec cross-env myEnv=dev npx tsx src/main.mts",
@@ -87,11 +89,18 @@
     "typecheck": "npx tsc --noEmit",
     "test": "vitest run",
     "test:unit": "vitest run tests/unit",
-    "clean": "rm -rf dist",
     "test:integration": "vitest run tests/integration",
     "test:watch": "vitest",
     "test:ui": "vitest --ui",
-    "test:coverage": "vitest run --coverage"
+    "test:coverage": "vitest run --coverage",
+    "clean": "rm -rf dist"
   },
-  "version": "2.0.0-alpha.9"
+  "keywords": [
+    "ai",
+    "chat",
+    "cli",
+    "mcp",
+    "nodejs",
+    "typescript"
+  ]
 }
