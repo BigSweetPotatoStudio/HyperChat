@@ -152,19 +152,34 @@ export async function startChat(initialMessage?: string, options: ChatOptions = 
       console.log('\n🤖 AI 回复:');
 
       // 流式输出
-      let displayedLength = 0;
+      let displayedContentLength = 0;
+      let displayedReasoningLength = 0;
+      let reasoningFinished = false;
       await aiChannel.completion({
         modelKey: modelKey!,
         allowMCPs: agentConfig?.allowMCPs || mcpClients.map((c: any) => c.serverName),
         onUpdate: () => {
           const lastMsg = aiChannel.lastMessage;
           if (lastMsg.role === 'assistant') {
+            // 显示reasoning_content（浅灰色）
+            const reasoningContent = lastMsg.reasoning_content as string || '';
+            if (reasoningContent.length > displayedReasoningLength) {
+              const newReasoningPart = reasoningContent.slice(displayedReasoningLength);
+              process.stdout.write('\x1b[90m' + newReasoningPart + '\x1b[0m'); // 浅灰色
+              displayedReasoningLength = reasoningContent.length;
+            }
+
+            // 显示主要content（正常颜色）
             const content = lastMsg.content as string;
-            // 只输出新增的部分
-            if (content.length > displayedLength) {
-              const newPart = content.slice(displayedLength);
-              process.stdout.write(newPart);
-              displayedLength = content.length;
+            if (content.length > displayedContentLength) {
+              // 如果reasoning_content存在且还没有添加分隔符，先添加换行
+              if (reasoningContent.length > 0 && !reasoningFinished) {
+                process.stdout.write('\n');
+                reasoningFinished = true;
+              }
+              const newContentPart = content.slice(displayedContentLength);
+              process.stdout.write(newContentPart);
+              displayedContentLength = content.length;
             }
           }
         }
@@ -238,8 +253,10 @@ export async function startChat(initialMessage?: string, options: ChatOptions = 
 
       try {
         // 流式输出
-        let displayedLength = 0;
+        let displayedContentLength = 0;
+        let displayedReasoningLength = 0;
         let isFirstUpdate = true;
+        let reasoningFinished = false;
 
         await aiChannel.completion({
           modelKey: modelKey!,
@@ -253,12 +270,25 @@ export async function startChat(initialMessage?: string, options: ChatOptions = 
                 isFirstUpdate = false;
               }
 
+              // 显示reasoning_content（浅灰色）
+              const reasoningContent = lastMsg.reasoning_content as string || '';
+              if (reasoningContent.length > displayedReasoningLength) {
+                const newReasoningPart = reasoningContent.slice(displayedReasoningLength);
+                process.stdout.write('\x1b[90m' + newReasoningPart + '\x1b[0m'); // 浅灰色
+                displayedReasoningLength = reasoningContent.length;
+              }
+
+              // 显示主要content（正常颜色）
               const content = lastMsg.content as string;
-              // 只输出新增的部分
-              if (content.length > displayedLength) {
-                const newPart = content.slice(displayedLength);
-                process.stdout.write(newPart);
-                displayedLength = content.length;
+              if (content.length > displayedContentLength) {
+                // 如果reasoning_content存在且还没有添加分隔符，先添加换行
+                if (reasoningContent.length > 0 && !reasoningFinished) {
+                  process.stdout.write('\n');
+                  reasoningFinished = true;
+                }
+                const newContentPart = content.slice(displayedContentLength);
+                process.stdout.write(newContentPart);
+                displayedContentLength = content.length;
               }
             }
           }
