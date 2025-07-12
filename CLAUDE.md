@@ -16,7 +16,7 @@ HyperChat 是一个多平台的 AI 聊天应用，该项目拥有完善的 MCP�
 * **VSCode插件**: 通过webview访问构建
 
 ### 包结构
-* `packages/shared` - @dadigua/hyperchat-shared 共享代码和类型定义，前后端通用
+* `packages/shared` - @dadigua/hyperchat-shared，共享代码和类型定义+zodSchemas，前后端通用
 * `packages/core` - Node.js 后端服务 + CLI命令行工具
 * `packages/web` - Web 前端的实现
 * `packages/electron` - Electron 桌面应用

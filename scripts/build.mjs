@@ -78,18 +78,18 @@ const tasks = {
   async buildSharedForPublish() {
     console.log('\n📦 构建 Shared 包 (发布版)...');
     const sharedDir = join(rootDir, 'packages/shared');
-    
+
     // 先构建
     await tasks.buildShared();
-    
+
     // 处理 package.json（用于发布）
     const pkgPath = join(sharedDir, 'package.json');
     let pkg = readJSON(pkgPath);
-    
+
     // 更新版本号
     const rootPkg = readJSON(join(rootDir, 'package.json'));
     pkg.version = rootPkg.version;
-    
+
     writeJSON(pkgPath, pkg);
     console.log('  ✅ 已处理 Shared 包发布配置');
   },
@@ -134,27 +134,8 @@ const tasks = {
         console.log(`  ✅ 更新 @dadigua/hyperchat-shared 依赖版本: ^${rootPkg.version}`);
       }
 
-      // 修复发布相关字段
-      pkg.files = [
-        "**/*",
-        "README.md"
-      ];
-      pkg.main = "main.mjs";
-      pkg.module = "main.mjs";
-      pkg.bin = {
-        "hyperchat": "cli/index.mjs",
-        "hc": "cli/index.mjs"
-      };
-      
-      // 修复 exports 字段的路径
-      Object.keys(pkg.exports).forEach(key => {
-        if (pkg.exports[key].types) {
-          pkg.exports[key].types = pkg.exports[key].types.replace('./dist/', './');
-        }
-        if (pkg.exports[key].import) {
-          pkg.exports[key].import = pkg.exports[key].import.replace('./dist/', './');
-        }
-      });
+      // 这些配置现在直接在 package.json 中定义了
+
 
       writeJSON(pkgPath, pkg);
       console.log('  ✅ 已处理 Core 包发布配置');
@@ -215,7 +196,7 @@ const tasks = {
 
     // 构建 shared 包 (发布版)
     await tasks.buildSharedForPublish();
-    
+
     // 构建 core 包 (发布版) 
     args.push('--publish'); // 确保传递 --publish 参数
     await tasks.buildCore();
@@ -230,13 +211,13 @@ const tasks = {
   async publishShared() {
     console.log('📤 发布 Shared 包...');
     const sharedDir = join(rootDir, 'packages/shared');
-    
+
     // 检查是否已经构建
     if (!existsSync(join(sharedDir, 'dist'))) {
       console.log('⚠️  检测到 Shared 包未构建，先进行构建...');
       await tasks.buildSharedForPublish();
     }
-    
+
     exec('npm publish --access public', { cwd: sharedDir });
     console.log('✅ Shared 包发布完成！');
   },
@@ -245,14 +226,14 @@ const tasks = {
   async publishCore() {
     console.log('📤 发布 Core 包...');
     const coreDistDir = join(rootDir, 'packages/core/dist');
-    
-    // 检查是否已经构建
-    if (!existsSync(coreDistDir) || !existsSync(join(coreDistDir, 'package.json'))) {
-      console.log('⚠️  检测到 Core 包未构建或配置，先进行构建...');
+
+    // 检查是否已经构建，或强制重新构建以应用发布配置
+    console.log('⚠️  重新构建 Core 包以应用发布配置...');
+    if (!args.includes('--publish')) {
       args.push('--publish'); // 确保传递 --publish 参数
-      await tasks.buildCore();
     }
-    
+    await tasks.buildCore();
+
     exec('npm publish --access public', { cwd: coreDistDir });
     console.log('✅ Core 包发布完成！');
   },
@@ -260,20 +241,20 @@ const tasks = {
   // 完整发布流程
   async publishAll() {
     console.log('🚀 开始完整发布流程...\n');
-    
+
     // 1. 构建发布版本
     await tasks.buildForPublish();
-    
+
     // 2. 发布 shared 包
     await tasks.publishShared();
-    
+
     // 等待一段时间确保 npm 同步
     console.log('⏳ 等待 npm 同步...');
     await new Promise(resolve => setTimeout(resolve, 5000));
-    
+
     // 3. 发布 core 包
     await tasks.publishCore();
-    
+
     console.log('\n🎉 所有包发布完成！');
   },
 
