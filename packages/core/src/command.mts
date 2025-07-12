@@ -280,7 +280,7 @@ export class CommandFactory {
     args: Record<string, unknown>;
   }) {
     // 从指定工作区的MCP客户端中查找指定名称的客户端
-    const workspace = workspaceManager.getWorkspace(workspacePath);
+    const workspace = workspaceManager.getCurrentWorkspace();
     if (!workspace) {
       throw new Error(`Workspace "${workspacePath}" not found`);
     }
@@ -339,7 +339,7 @@ export class CommandFactory {
     uri: string;
   }) {
     // 从指定工作区的MCP客户端中查找指定名称的客户端
-    const workspace = workspaceManager.getWorkspace(workspacePath);
+    const workspace = workspaceManager.getCurrentWorkspace();
     if (!workspace) {
       throw new Error(`Workspace "${workspacePath}" not found`);
     }
@@ -404,7 +404,7 @@ export class CommandFactory {
     args: Record<string, unknown>;
   }) {
     // 从指定工作区的MCP客户端中查找指定名称的客户端
-    const workspace = workspaceManager.getWorkspace(workspacePath);
+    const workspace = workspaceManager.getCurrentWorkspace();
     if (!workspace) {
       throw new Error(`Workspace "${workspacePath}" not found`);
     }
@@ -888,7 +888,7 @@ export class CommandFactory {
   async getCurrentWorkspace() {
     const workspaceManager = getWorkspaceManager();
     const workspace = workspaceManager.getCurrentWorkspace();
-
+    console.log('初始化工作区管理器...', workspace);
     if (!workspace) return null;
 
     const config = workspace.getConfig();
@@ -917,7 +917,7 @@ export class CommandFactory {
     workspacePath: string;
   }) {
     const workspaceManager = getWorkspaceManager();
-    const workspace = workspaceManager.getWorkspace(workspacePath);
+    const workspace = workspaceManager.getCurrentWorkspace();
     if (!workspace) return null;
 
     // 更新文件树，排除常见的构建产物目录
@@ -950,7 +950,7 @@ export class CommandFactory {
       // 检查是否为全局工作区
       const workspace = workspaceManager.isGlobalWorkspace(workspacePath)
         ? workspaceManager.getGlobalWorkspace()
-        : workspaceManager.getWorkspace(workspacePath);
+        : workspaceManager.getCurrentWorkspace();
       if (!workspace) return [];
 
       // 构建完整路径
@@ -1080,7 +1080,7 @@ export class CommandFactory {
         const workspaceManager = getWorkspaceManager();
         const workspace = workspaceManager.isGlobalWorkspace(workspacePath)
           ? workspaceManager.getGlobalWorkspace()
-          : workspaceManager.getWorkspace(workspacePath);
+          : workspaceManager.getCurrentWorkspace();
         if (!workspace) return [];
         return workspace.getMcpClients().map(client => client.toJSON());
       } catch (fallbackError) {
@@ -1381,7 +1381,7 @@ export class CommandFactory {
   }): Promise<AgentConfig> {
     try {
       const workspaceManager = getWorkspaceManager();
-      const workspace = workspaceManager.getWorkspace(workspacePath);
+      const workspace = workspaceManager.getCurrentWorkspace();
 
       if (!workspace) {
         throw new Error(`工作区不存在: ${workspacePath}`);
@@ -1412,7 +1412,7 @@ export class CommandFactory {
   }): Promise<Record<string, unknown>[]> {
     try {
       const workspaceManager = getWorkspaceManager();
-      const workspace = workspaceManager.getWorkspace(workspacePath);
+      const workspace = workspaceManager.getCurrentWorkspace();
 
       if (!workspace) {
         throw new Error(`工作区不存在: ${workspacePath}`);
@@ -1437,7 +1437,7 @@ export class CommandFactory {
   }): Promise<Record<string, unknown>[]> {
     try {
       const workspaceManager = getWorkspaceManager();
-      const workspace = workspaceManager.getWorkspace(workspacePath);
+      const workspace = workspaceManager.getCurrentWorkspace();
 
       if (!workspace) {
         throw new Error(`工作区不存在: ${workspacePath}`);
@@ -1465,7 +1465,7 @@ export class CommandFactory {
   }): Promise<Record<string, unknown> | null> {
     try {
       const workspaceManager = getWorkspaceManager();
-      const workspace = workspaceManager.getWorkspace(workspacePath);
+      const workspace = workspaceManager.getCurrentWorkspace();
 
       if (!workspace) {
         throw new Error(`工作区不存在: ${workspacePath}`);
@@ -1506,7 +1506,7 @@ export class CommandFactory {
   }): Promise<boolean> {
     try {
       const workspaceManager = getWorkspaceManager();
-      const workspace = workspaceManager.getWorkspace(workspacePath);
+      const workspace = workspaceManager.getCurrentWorkspace();
 
       if (!workspace) {
         throw new Error(`工作区不存在: ${workspacePath}`);
@@ -1539,7 +1539,7 @@ export class CommandFactory {
   }): Promise<boolean> {
     try {
       const workspaceManager = getWorkspaceManager();
-      const workspace = workspaceManager.getWorkspace(workspacePath);
+      const workspace = workspaceManager.getCurrentWorkspace();
 
       if (!workspace) {
         throw new Error(`工作区不存在: ${workspacePath}`);
@@ -1567,7 +1567,7 @@ export class CommandFactory {
   }): Promise<{ chatLogs: ChatHistoryItem[] }> {
     try {
       const workspaceManager = getWorkspaceManager();
-      const workspace = workspaceManager.getWorkspace(workspacePath);
+      const workspace = workspaceManager.getCurrentWorkspace();
 
       if (!workspace) {
         throw new Error(`工作区不存在: ${workspacePath}`);
@@ -1604,7 +1604,7 @@ export class CommandFactory {
   }): Promise<boolean> {
     try {
       const workspaceManager = getWorkspaceManager();
-      const workspace = workspaceManager.getWorkspace(workspacePath);
+      const workspace = workspaceManager.getCurrentWorkspace();
 
       if (!workspace) {
         throw new Error(`工作区不存在: ${workspacePath}`);
@@ -1637,7 +1637,7 @@ export class CommandFactory {
   }): Promise<boolean> {
     try {
       const workspaceManager = getWorkspaceManager();
-      const workspace = workspaceManager.getWorkspace(workspacePath);
+      const workspace = workspaceManager.getCurrentWorkspace();
 
       if (!workspace) {
         throw new Error(`工作区不存在: ${workspacePath}`);
@@ -1673,7 +1673,7 @@ export class CommandFactory {
   }): Promise<boolean> {
     try {
       const workspaceManager = getWorkspaceManager();
-      const workspace = workspaceManager.getWorkspace(workspacePath);
+      const workspace = workspaceManager.getCurrentWorkspace();
 
       if (!workspace) {
         throw new Error(`工作区不存在: ${workspacePath}`);
@@ -1713,7 +1713,7 @@ export class CommandFactory {
   }): Promise<ChatHistoryItem | null> {
     try {
       const workspaceManager = getWorkspaceManager();
-      const workspace = workspaceManager.getWorkspace(workspacePath);
+      const workspace = workspaceManager.getCurrentWorkspace();
       if (!workspace) {
         throw new Error(`工作区不存在: ${workspacePath}`);
       }
@@ -1738,7 +1738,7 @@ export class CommandFactory {
    */
   async readWorkspaceFile({ workspacePath, filePath }: { workspacePath: string, filePath: string }): Promise<string> {
     try {
-      const workspace = workspaceManager.getWorkspace(workspacePath);
+      const workspace = workspaceManager.getCurrentWorkspace();
       if (!workspace) {
         throw new Error(`工作区不存在: ${workspacePath}`);
       }
@@ -1776,7 +1776,7 @@ export class CommandFactory {
    */
   async writeWorkspaceFile({ workspacePath, filePath, content }: { workspacePath: string, filePath: string, content: string }): Promise<void> {
     try {
-      const workspace = workspaceManager.getWorkspace(workspacePath);
+      const workspace = workspaceManager.getCurrentWorkspace();
       if (!workspace) {
         throw new Error(`工作区不存在: ${workspacePath}`);
       }
@@ -1846,7 +1846,7 @@ export class CommandFactory {
   }) {
     try {
       const workspaceManager = getWorkspaceManager();
-      const workspace = workspaceManager.getWorkspace(workspacePath);
+      const workspace = workspaceManager.getCurrentWorkspace();
 
       if (!workspace) {
         throw new Error(`工作区不存在: ${workspacePath}`);
@@ -1874,7 +1874,7 @@ export class CommandFactory {
   }) {
     try {
       const workspaceManager = getWorkspaceManager();
-      const workspace = workspaceManager.getWorkspace(workspacePath);
+      const workspace = workspaceManager.getCurrentWorkspace();
 
       if (!workspace) {
         throw new Error(`工作区不存在: ${workspacePath}`);
@@ -1900,7 +1900,7 @@ export class CommandFactory {
   }) {
     try {
       const workspaceManager = getWorkspaceManager();
-      const workspace = workspaceManager.getWorkspace(workspacePath);
+      const workspace = workspaceManager.getCurrentWorkspace();
 
       if (!workspace) {
         throw new Error(`工作区不存在: ${workspacePath}`);
@@ -1927,7 +1927,7 @@ export class CommandFactory {
   }): Promise<string> {
     try {
       const workspaceManager = getWorkspaceManager();
-      const workspace = workspaceManager.getWorkspace(workspacePath);
+      const workspace = workspaceManager.getCurrentWorkspace();
 
       if (!workspace) {
         throw new Error(`工作区不存在: ${workspacePath}`);
@@ -1956,7 +1956,7 @@ export class CommandFactory {
   }) {
     try {
       const workspaceManager = getWorkspaceManager();
-      const workspace = workspaceManager.getWorkspace(workspacePath);
+      const workspace = workspaceManager.getCurrentWorkspace();
 
       if (!workspace) {
         throw new Error(`工作区不存在: ${workspacePath}`);

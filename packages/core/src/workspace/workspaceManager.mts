@@ -26,6 +26,7 @@ export class WorkspaceManager {
    * @param workingDirectory 当前工作目录
    */
   async initialize(workingDirectory?: string): Promise<void> {
+
     if (this.isInitialized) {
       return;
     }
@@ -116,27 +117,14 @@ export class WorkspaceManager {
    * 获取当前工作区
    */
   getCurrentWorkspace(): Workspace {
+    if(!this.isInitialized) {
+      throw new Error("工作区管理器尚未初始化，请先调用 initialize() 方法。");
+    }
     // 始终返回当前工作区（默认是全局工作区，workspace.mts中自动处理配置合并）
     return this.currentWorkspace;
   }
 
-  /**
-   * 获取指定工作区（兼容老API）
-   */
-  getWorkspace(workspacePath?: string): Workspace | null {
-    // 如果没有提供路径，返回当前工作区
-    if (!workspacePath) {
-      return this.getCurrentWorkspace();
-    }
 
-    // 如果是当前工作区路径，返回当前工作区
-    if (this.currentWorkspace['workspacePath'] === workspacePath) {
-      return this.currentWorkspace;
-    }
-
-    // 否则返回null（新架构不支持多工作区）
-    return null;
-  }
 
   /**
    * 创建新工作区
@@ -186,7 +174,7 @@ export class WorkspaceManager {
     // 添加当前工作区
     list.push({
       ...this.currentWorkspace.getConfig(),
-      path: this.currentWorkspace['workspacePath']
+      path: this.currentWorkspace.workspacePath
     });
 
 
@@ -203,7 +191,7 @@ export class WorkspaceManager {
     }
 
     // 如果是当前工作区，先切换到全局工作区
-    if (this.currentWorkspace['workspacePath'] === workspacePath) {
+    if (this.currentWorkspace.workspacePath === workspacePath) {
       await this.switchWorkspace(CONSTANTS.GLOBAL_PATH);
     }
 
@@ -221,7 +209,7 @@ export class WorkspaceManager {
    * 更新工作区文件树（兼容老API）
    */
   async updateWorkspaceFileTree(workspacePath?: string): Promise<boolean> {
-    const workspace = workspacePath ? this.getWorkspace(workspacePath) : this.getCurrentWorkspace();
+    const workspace = this.getCurrentWorkspace();
     if (!workspace) {
       return false;
     }
@@ -255,7 +243,7 @@ export class WorkspaceManager {
       return this.getCurrentWorkspace();
     }
 
-    if (this.currentWorkspace['workspacePath'] === workspacePath) {
+    if (this.currentWorkspace.workspacePath === workspacePath) {
       return this.currentWorkspace;
     }
 
@@ -462,7 +450,7 @@ export class WorkspaceManager {
       return true;
     }
     // 当前工作区如果是指定路径，则认为是运行的
-    return this.currentWorkspace['workspacePath'] === workspacePath;
+    return this.currentWorkspace.workspacePath === workspacePath;
   }
 
   /**
@@ -475,8 +463,8 @@ export class WorkspaceManager {
     runningPaths.push(this.getGlobalWorkspacePath());
 
     // 添加当前工作区（如果不是全局工作区）
-    if (!this.isGlobalWorkspace(this.currentWorkspace['workspacePath'])) {
-      runningPaths.push(this.currentWorkspace['workspacePath']);
+    if (!this.isGlobalWorkspace(this.currentWorkspace.workspacePath)) {
+      runningPaths.push(this.currentWorkspace.workspacePath);
     }
 
     return runningPaths;
@@ -496,11 +484,11 @@ export class WorkspaceManager {
     });
 
     // 添加当前工作区（如果不是全局工作区）
-    if (!this.isGlobalWorkspace(this.currentWorkspace['workspacePath'])) {
+    if (!this.isGlobalWorkspace(this.currentWorkspace.workspacePath)) {
       const config = this.currentWorkspace.getConfig();
       details.push({
-        path: this.currentWorkspace['workspacePath'],
-        name: config.name || path.basename(this.currentWorkspace['workspacePath']),
+        path: this.currentWorkspace.workspacePath,
+        name: config.name || path.basename(this.currentWorkspace.workspacePath),
         isGlobal: false
       });
     }
@@ -517,7 +505,7 @@ export class WorkspaceManager {
     }
 
     // 如果是当前工作区，切换到全局工作区
-    if (this.currentWorkspace['workspacePath'] === workspacePath) {
+    if (this.currentWorkspace.workspacePath === workspacePath) {
       this.currentWorkspace = new Workspace(CONSTANTS.GLOBAL_PATH);
       return true;
     }
@@ -529,14 +517,14 @@ export class WorkspaceManager {
    * 获取当前工作区路径
    */
   getCurrentWorkspacePath(): string {
-    return this.currentWorkspace['workspacePath'];
+    return this.currentWorkspace.workspacePath;
   }
 
   /**
    * 检查是否有当前工作区（非全局工作区）
    */
   hasCurrentWorkspace(): boolean {
-    return !this.isGlobalWorkspace(this.currentWorkspace['workspacePath']);
+    return !this.isGlobalWorkspace(this.currentWorkspace.workspacePath);
   }
 
 }

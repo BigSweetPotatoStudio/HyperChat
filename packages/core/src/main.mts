@@ -3,12 +3,11 @@ import { Logger } from "./log.mjs";
 import "./first.mjs";
 
 import { initHttp } from "./http.mjs";
+import { WorkspaceManager } from "./workspace/workspaceManager.mjs";
 
-// import { initMcpServer } from "./mcp/servers/express.mjs";
+export const workspaceManager = new WorkspaceManager();
 
-// await initMcpServer().catch((e) => {
-//   Logger.error("initMcpServer", e);
-// });
+await workspaceManager.initialize();
 // 主入口文件，负责初始化 HTTP 服务和日志
 
 // 等待初始化完成
