@@ -112,8 +112,6 @@ export class Workspace {
       // 停止 MCP 客户端
       await this.stopMcpClients();
       
-      // 销毁 MCP 管理器
-      await this.mcpManager.destroy();
 
       // 保存当前状态
       await this.save();

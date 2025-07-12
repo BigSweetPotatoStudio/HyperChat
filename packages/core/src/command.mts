@@ -15,8 +15,9 @@ import { appDataDir } from "./const.mjs";
 import crypto from "crypto";
 import {
   getMCPManager,
-  initMCPManager,
-  getWorkspaceMCPClients as getWorkspaceMCPClientsFromManager
+  getWorkspaceMCPClients as getWorkspaceMCPClientsFromManager,
+  startWorkspaceMCP,
+  stopWorkspaceMCP
 } from "./workspace/mcp/index.mjs";
 // import { progressList } from "./common/progress.mts.bak";
 
@@ -140,13 +141,7 @@ export class CommandFactory {
 
   /**
    * 管理全局范围的 MCP 客户端生命周期（兼容性方法）
-   * 支持删除、禁用或重启操作
-   * @param clientName MCP客户端名称
-   * @param isdelete 是否删除：true=从配置文件中删除并停止服务
-   * @param isdisable 是否禁用：true=停止服务但保留配置
-   * @returns 操作结果
-   * @note 如果两个参数都为false或未设置，则执行重启操作
-   * @deprecated 推荐使用 manageWorkspaceMcpClient 方法进行工作区特定的操作
+   * @deprecated 已废弃，请使用 manageWorkspaceMcpClient 方法
    */
   async closeMcpClients({
     clientName,
@@ -157,37 +152,30 @@ export class CommandFactory {
     isdelete?: boolean;
     isdisable?: boolean;
   }) {
-    try {
-      const workspaceManager = getWorkspaceManager();
-      const globalWorkspacePath = workspaceManager.getGlobalWorkspacePath();
-      const manager = getMCPManager(globalWorkspacePath);
-
-      if (isdelete) {
-        // 从全局配置中永久删除客户端配置并停止服务
-        await manager.deleteServerConfig(clientName);
-      } else if (isdisable) {
-        // 仅停止客户端服务，保留配置以便后续重启
-        await manager.stopClient(clientName);
-      } else {
-        // 重启客户端（先停止再启动）
-        await manager.restartClient(clientName);
-      }
-
-      return {
-        success: true,
-      };
-    } catch (error) {
-      console.error(`Failed to manage MCP client ${clientName}:`, error);
-      throw error;
-    }
+    // 委托给新的工作区特定方法
+    const workspaceManager = getWorkspaceManager();
+    const globalWorkspacePath = workspaceManager.getGlobalWorkspacePath();
+    
+    let action: 'restart' | 'stop' | 'delete' = 'restart';
+    if (isdelete) action = 'delete';
+    else if (isdisable) action = 'stop';
+    
+    return await this.manageWorkspaceMcpClient({
+      workspacePath: globalWorkspacePath,
+      clientName,
+      action
+    });
   }
 
   /**
    * 管理指定工作区的 MCP 客户端生命周期
-   * 支持删除、禁用、重启操作，适用于所有工作区（包括全局）
+   * 这是推荐的统一客户端管理方法，支持所有工作区（包括全局）
    * @param workspacePath 工作区路径
    * @param clientName MCP客户端名称
-   * @param action 操作类型：'restart'|重启, 'disable'|禁用, 'delete'|删除
+   * @param action 操作类型：
+   *   - 'restart': 重启客户端（先停止再启动）
+   *   - 'stop': 停止客户端服务，保留配置
+   *   - 'delete': 永久删除客户端配置并停止服务
    * @returns 操作结果
    */
   async manageWorkspaceMcpClient({
@@ -197,7 +185,7 @@ export class CommandFactory {
   }: {
     workspacePath: string;
     clientName: string;
-    action: 'restart' | 'disable' | 'delete';
+    action: 'restart' | 'stop' | 'delete';
   }) {
     try {
       const manager = getMCPManager(workspacePath);
@@ -207,7 +195,7 @@ export class CommandFactory {
           // 从工作区配置中永久删除客户端配置并停止服务
           await manager.deleteServerConfig(clientName);
           break;
-        case 'disable':
+        case 'stop':
           // 仅停止客户端服务，保留配置以便后续重启
           await manager.stopClient(clientName);
           break;
@@ -229,6 +217,23 @@ export class CommandFactory {
       throw error;
     }
   }
+
+  // ========== MCP 客户端管理方法总结 ==========
+  // 
+  // 新架构下的推荐方法：
+  // - manageWorkspaceMcpClient(): 统一的单客户端管理（推荐）
+  // - startWorkspaceMcpClient(): 启动/重启单个客户端
+  // - stopWorkspaceMcpClients(): 停止工作区所有客户端
+  // - startWorkspaceMcpClients(): 启动工作区所有客户端
+  // - forceReloadWorkspaceMcpClients(): 重新加载工作区MCP配置
+  // 
+  // 底层使用新的统一MCP管理器 (packages/core/src/workspace/mcp/index.mts)
+  // 
+  // 废弃的方法（向后兼容）：
+  // - closeMcpClients(): 旧的全局客户端管理（已废弃）
+  // - openMcpClient(): 旧的全局客户端启动（已废弃）
+  //
+  
   /**
    * 调用指定 MCP 客户端的工具函数
    * 用于执行 MCP 服务提供的各种功能（如文件操作、系统调用等）
@@ -904,6 +909,16 @@ export class CommandFactory {
       mcpServersCount: summary.mcpServersCount
     };
   }
+
+  /**
+   * 获取全局工作区路径
+   * @returns 全局工作区路径
+   */
+  async getGlobalWorkspacePath() {
+    const workspaceManager = getWorkspaceManager();
+    return workspaceManager.getGlobalWorkspacePath();
+  }
+
   /**
    * 获取工作区完整文件树（已废弃，建议使用 getWorkspaceDirectoryList 实现懒加载）
    * 这个方法会一次性加载整个目录树，对于大型项目可能导致性能问题
@@ -1259,11 +1274,8 @@ export class CommandFactory {
     workspacePath: string;
   }): Promise<Record<string, unknown>[]> {
     try {
-      const manager = getMCPManager(workspacePath);
-
-      // 启动工作区MCP客户端
-      const clients = await manager.startClients();
-
+      await startWorkspaceMCP(workspacePath);
+      const clients = getWorkspaceMCPClientsFromManager(workspacePath);
       return clients.map(client => client.toJSON());
     } catch (error) {
       console.error(`Failed to start workspace MCP clients for ${workspacePath}:`, error);
@@ -1280,15 +1292,14 @@ export class CommandFactory {
     workspacePath: string;
   }): Promise<Record<string, unknown>[]> {
     try {
-      const manager = getMCPManager(workspacePath);
-
-      // 管理器不需要显式初始化
-
-      // 强制重新加载工作区配置
-      await manager.forceReloadWorkspaceConfig();
-
+      // 停止现有服务
+      await stopWorkspaceMCP(workspacePath);
+      
+      // 重新启动服务（会自动重新加载配置）
+      await startWorkspaceMCP(workspacePath);
+      
       // 获取重新加载后的客户端
-      const clients = manager.getClientsByWorkspace();
+      const clients = getWorkspaceMCPClientsFromManager(workspacePath);
       return clients.map(client => client.toJSON());
     } catch (error) {
       console.error(`Failed to force reload workspace MCP clients for ${workspacePath}:`, error);
@@ -1297,7 +1308,8 @@ export class CommandFactory {
   }
 
   /**
-   * 停止工作区 MCP 服务
+   * 停止工作区所有 MCP 客户端
+   * 注意：这会停止工作区中的所有客户端，如需停止单个客户端请使用 manageWorkspaceMcpClient
    */
   async stopWorkspaceMcpClients({
     workspacePath
@@ -1305,10 +1317,9 @@ export class CommandFactory {
     workspacePath: string;
   }): Promise<void> {
     try {
-      const manager = getMCPManager(workspacePath);
-      await manager.stopClients();
+      await stopWorkspaceMCP(workspacePath);
     } catch (error) {
-      console.error(`Failed to stop workspace MCP clients for ${workspacePath}:`, error);
+      console.error(`Failed to stop all MCP clients for ${workspacePath}:`, error);
       throw error;
     }
   }

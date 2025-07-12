@@ -76,7 +76,11 @@ export class WorkspaceManager {
    */
   async switchWorkspace(workspacePath: string): Promise<void> {
     // 查找工作区或使用全局工作区
-    const targetPath = this.findWorkspaceInPath(workspacePath) || CONSTANTS.GLOBAL_PATH;
+    const targetPath = this.findWorkspaceInPath(workspacePath);
+
+    if (!targetPath) {
+      throw new Error(`未找到工作区: ${workspacePath}`);
+    }
 
     // 如果目标路径与当前工作区相同，无需切换
     if (this.currentWorkspace && this.currentWorkspace.workspacePath === targetPath) {

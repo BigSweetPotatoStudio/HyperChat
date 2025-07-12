@@ -163,6 +163,7 @@ export function Workspace() {
   const [appSettingsDrawerOpen, setAppSettingsDrawerOpen] = useState(false);
   const [appSettings, setAppSettings] = useState<any>(null);
   const [mcpGatewaysDrawerOpen, setMCPGatewaysDrawerOpen] = useState(false);
+  const [globalWorkspacePath, setGlobalWorkspacePath] = useState<string>('unknown'); // 全局工作区路径
   const [form] = Form.useForm();
   // 为每个工作区维护独立的标签页状态
   const [workspaceTabsMap, setWorkspaceTabsMap] = useState<Record<string, ChatTab[]>>({});
@@ -303,33 +304,30 @@ export function Workspace() {
   // 打开工作区
   const openWorkspace = async (values: { path: string }) => {
     try {
-      // 尝试打开已存在的工作区
-      const workspaceConfig = await call("openWorkspace", {
-        workspacePath: values.path,
-      });
 
-      if (workspaceConfig) {
-        // 工作区已存在，切换到该工作区
-        await switchToWorkspace(values.path);
 
-        // 添加到历史记录
-        const folderName = values.path.split(/[/\\]/).pop() || 'Workspace';
-        addToWorkspaceHistory(values.path, folderName);
-        setWorkspaceHistory(getWorkspaceHistory());
+      // if (workspaceConfig) {
+      // 工作区已存在，切换到该工作区
+      await switchToWorkspace(values.path);
 
-        // 重新加载以更新当前工作区标记
-        await loadCurrentWorkspace();
+      // 添加到历史记录
+      const folderName = values.path.split(/[/\\]/).pop() || 'Workspace';
+      addToWorkspaceHistory(values.path, folderName);
+      setWorkspaceHistory(getWorkspaceHistory());
 
-        message.success(t`Workspace opened successfully`);
-        setOpenModalOpen(false);
-        form.resetFields();
-        setSelectedPath("");
-      } else {
-        // 工作区不存在，提示用户是否创建
-        setPendingWorkspacePath(values.path);
-        setOpenModalOpen(false);
-        setConfirmCreateModalOpen(true);
-      }
+      // 重新加载以更新当前工作区标记
+      await loadCurrentWorkspace();
+
+      message.success(t`Workspace opened successfully`);
+      setOpenModalOpen(false);
+      form.resetFields();
+      setSelectedPath("");
+      // } else {
+      //   // 工作区不存在，提示用户是否创建
+      //   setPendingWorkspacePath(values.path);
+      //   setOpenModalOpen(false);
+      //   setConfirmCreateModalOpen(true);
+      // }
     } catch (error) {
       console.error("Failed to open workspace:", error);
       message.error(t`Failed to open workspace`);
@@ -350,6 +348,7 @@ export function Workspace() {
 
       message.success(t`Switched to workspace`);
     } catch (error) {
+      
       console.error("Failed to switch to workspace:", error);
       message.error(t`Failed to switch to workspace`);
     }
@@ -552,54 +551,7 @@ export function Workspace() {
     }
   };
 
-  // 关闭工作区（从前端标签页中隐藏）
-  const closeWorkspace = async (workspace: WorkspaceInfo) => {
-    try {
-      // 新架构下不需要管理工作区列表状态
 
-      message.success(t`Switched away from workspace`);
-
-      // 如果关闭的是当前活动工作区，切换到全局工作区
-      if (activeWorkspaceKey === workspace.path) {
-        const globalWorkspacePath = '/home/laop/Documents/HyperChat';
-        await switchToWorkspace(globalWorkspacePath);
-      }
-
-      // 清除详情缓存
-      setWorkspaceDetails(prev => {
-        const newDetails = { ...prev };
-        delete newDetails[workspace.path];
-        return newDetails;
-      });
-
-      setCloseConfirmModalOpen(false);
-      setPendingCloseWorkspace(null);
-    } catch (error) {
-      console.error("Failed to close workspace:", error);
-      message.error(t`Failed to close workspace`);
-    }
-  };
-
-  // 移除了 runWorkspaceInBackground 函数 - 新架构下没有后台运行概念
-
-  // 删除工作区
-  const deleteWorkspace = async (workspace: WorkspaceInfo) => {
-    try {
-      // 先关闭工作区
-      await closeWorkspace(workspace);
-
-      // 然后删除工作区配置
-      await call("deleteWorkspace", { workspacePath: workspace.path });
-
-      message.success(t`Workspace deleted successfully`);
-
-      // 重新加载当前工作区
-      await loadCurrentWorkspace();
-    } catch (error) {
-      console.error("Failed to delete workspace:", error);
-      message.error(t`Failed to delete workspace`);
-    }
-  };
 
   // 选择服务器目录
   const handleServerDirectorySelect = async (path: string) => {
@@ -727,8 +679,20 @@ export function Workspace() {
     }
   };
 
+  // 加载全局工作区路径
+  const loadGlobalWorkspacePath = async () => {
+    try {
+      const path = await call("getGlobalWorkspacePath");
+      setGlobalWorkspacePath(path);
+    } catch (error) {
+      console.error("Failed to load global workspace path:", error);
+      // 如果获取失败，使用默认路径
+    }
+  };
+
   useEffect(() => {
     loadCurrentWorkspace();
+    loadGlobalWorkspacePath();
   }, []);
 
   // 当工作区加载完成后，自动加载当前活动工作区的详情
@@ -935,25 +899,18 @@ export function Workspace() {
                       }
                     },
                     {
+                      key: 'switchToGlobal',
+                      label: t`Switch to Global Workspace`,
+                      icon: <GlobalOutlined />,
+                      onClick: async () => {
+                        if (globalWorkspacePath) {
+                          await switchToWorkspace(globalWorkspacePath);
+                        }
+                      }
+                    },
+                    {
                       type: 'divider',
                     },
-                    {
-                      key: 'close',
-                      label: t`Close Workspace`,
-                      icon: <CloseOutlined />,
-                      onClick: () => {
-                        showCloseConfirm(workspace);
-                      }
-                    },
-                    {
-                      key: 'delete',
-                      label: t`Delete Workspace`,
-                      danger: true,
-                      icon: <DeleteOutlined />,
-                      onClick: () => {
-                        deleteWorkspace(workspace);
-                      }
-                    }
                   ]
                 }}
                 trigger={['click']}
@@ -1293,7 +1250,43 @@ export function Workspace() {
             </Space.Compact>
           </Form.Item>
 
-          {/* 移除Other Workspaces区域 - 新架构下专注于单工作区模式 */}
+          {/* 全局工作区快速选择 */}
+          <Divider orientation="left">
+            <Space>
+              <GlobalOutlined />
+              <span>{t`Global Workspace`}</span>
+            </Space>
+          </Divider>
+          <Card
+            size="small"
+            style={{ marginBottom: 16, cursor: 'pointer' }}
+            hoverable
+            onClick={() => {
+              if (globalWorkspacePath) {
+                form.setFieldsValue({ path: globalWorkspacePath });
+                setSelectedPath(globalWorkspacePath);
+              }
+            }}
+          >
+            <Card.Meta
+              avatar={<GlobalOutlined style={{ fontSize: 24, color: '#1890ff' }} />}
+              title={
+                <Space>
+                  <span>{t`Global Workspace`}</span>
+                  <Tag color="blue">{t`Default`}</Tag>
+                </Space>
+              }
+              description={
+                <div>
+                  <Text type="secondary">{globalWorkspacePath}</Text>
+                  <br />
+                  <Text type="secondary" style={{ fontSize: '12px' }}>
+                    {t`Contains global agents, MCP tools and configurations`}
+                  </Text>
+                </div>
+              }
+            />
+          </Card>
 
           {/* 历史记录 */}
           {workspaceHistory.length > 0 && (
@@ -1371,28 +1364,7 @@ export function Workspace() {
         <p><strong>{t`Path`}:</strong> {pendingWorkspacePath}</p>
       </Modal>
 
-      {/* 工作区关闭确认模态框 */}
-      <Modal
-        title={t`Close Workspace`}
-        open={closeConfirmModalOpen}
-        onCancel={() => {
-          setCloseConfirmModalOpen(false);
-          setPendingCloseWorkspace(null);
-        }}
-        onOk={() => {
-          if (pendingCloseWorkspace) {
-            closeWorkspace(pendingCloseWorkspace);
-          }
-        }}
-        okText={t`Close`}
-        cancelText={t`Cancel`}
-      >
-        <p>{t`Are you sure you want to close this workspace?`}</p>
-        {pendingCloseWorkspace && (
-          <p><strong>{pendingCloseWorkspace.name}</strong> ({pendingCloseWorkspace.path})</p>
-        )}
-        <p>{t`The workspace will be removed from the current session tabs.`}</p>
-      </Modal>
+
 
       {/* 服务器目录浏览器 */}
       <ServerDirectoryBrowser
