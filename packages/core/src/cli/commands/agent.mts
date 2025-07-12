@@ -96,10 +96,34 @@ export async function createAgent(name: string) {
     console.log(`键名: ${agent.key}`);
     console.log(`描述: ${agent.description}`);
 
-    console.log('\n💡 使用 hyperchat chat --agent ' + agent.key + ' 与该代理对话');
+    console.log('\n💡 使用 hyperchat ' + agent.key + ' "你好" 与该代理对话');
 
   } catch (error) {
     logger.error('创建代理失败:', error instanceof Error ? error.message : String(error));
     process.exit(1);
+  }
+}
+
+/**
+ * 检查指定的agent是否存在
+ */
+export async function checkAgentExists(agentKey: string): Promise<{ exists: boolean; config?: AgentConfig }> {
+  try {
+    // 确保workspaceManager已初始化
+    await workspaceManager.initialize();
+    
+    const agents = await Command.getWorkspaceAgentsSummary();
+    const agentSummary = agents.find(agent => {
+      const config = agent.config as AgentConfig;
+      return config.key === agentKey || config.name === agentKey;
+    });
+    
+    if (agentSummary) {
+      return { exists: true, config: agentSummary.config as AgentConfig };
+    }
+    
+    return { exists: false };
+  } catch (error) {
+    return { exists: false };
   }
 }

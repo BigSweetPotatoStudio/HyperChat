@@ -259,10 +259,13 @@ hyperchat --help
 hc workspace current
 
 # 常用命令
+hyperchat chat                  # 直接AI对话
 hyperchat "你好"                    # 直接AI对话
 hyperchat serve                   # 启动Web服务器
 hyperchat workspace current        # 查看当前工作区
 hyperchat agent list              # 列出AI代理
+hyperchat [agent_name] "你好"          # 使用某个agent直接AI对话
+hyperchat [agent_name] chat          # 使用某个agent进行对话
 ```
 
 ## 🗂️ 项目结构 (更新)

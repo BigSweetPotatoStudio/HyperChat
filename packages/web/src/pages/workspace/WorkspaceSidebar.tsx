@@ -9,10 +9,10 @@ import {
   BellOutlined,
   CodeOutlined,
 } from "@ant-design/icons";
-import { FileTreeComponent } from "./FileTreeComponent";
-import { TerminalComponent } from "./TerminalComponent";
-import { t } from "../i18n";
-import { WorkspaceInfo, FileNode } from "../pages/workspace/types";
+import { FileTreeComponent } from "../../components/FileTreeComponent";
+import { TerminalComponent } from "../../components/TerminalComponent";
+import { t } from "../../i18n";
+import { WorkspaceInfo, FileNode } from "./types";
 
 // FileNode 类型已移至 ../pages/workspace/types.ts
 

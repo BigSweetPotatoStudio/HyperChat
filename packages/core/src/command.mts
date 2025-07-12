@@ -14,7 +14,7 @@
  * 现在只需要从 commands/index.mts 导入合并后的 Command 对象
  */
 
-import { Command as Commands } from "./commands/index.mjs";
+import { Command } from "./commands/index.mjs";
 
 /**
  * 为了保持向后兼容性，保留原有的 CommandFactory 类结构
@@ -23,10 +23,9 @@ import { Command as Commands } from "./commands/index.mjs";
 
 
 // 导出单例实例，保持与原代码的兼容性
-export const Command = Commands;
+export { Command };
 
-// 同时导出分类后的命令对象，供需要按模块使用的代码使用
-export { Commands };
+
 
 // 导出分类的命令模块，便于按需引用
 export {

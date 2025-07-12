@@ -63,19 +63,25 @@ export interface ChatTab {
 }
 
 /**
- * 工作区详细信息
- * 包含工作区的运行时数据
+ * 单工作区详细信息
+ * 包含当前工作区的运行时数据
+ */
+export interface CurrentWorkspaceDetails {
+  fileTreeData?: FileNode[];
+  agents: Array<{
+    config: AgentConfig;
+    chatLogsCount: number;
+    lastChatTime?: number;
+  }>;
+  mcpClients: Record<string, IMCPClient>;
+}
+
+/**
+ * 工作区详细信息 (向后兼容)
+ * @deprecated 使用 CurrentWorkspaceDetails 替代
  */
 export type WorkspaceDetails = {
-  [key: string]: {
-    fileTreeData?: FileNode[];
-    agents: Array<{
-      config: AgentConfig;
-      chatLogsCount: number;
-      lastChatTime?: number;
-    }>;
-    mcpClients: Record<string, IMCPClient>;
-  }
+  [key: string]: CurrentWorkspaceDetails;
 };
 
 /**
@@ -124,12 +130,12 @@ export interface WorkspaceLeftPanelProps {
   onFileSelect: (filePath: string, fileName: string) => void;
 }
 
+
 /**
  * 中间面板 Props (单工作区版本)
  */
 export interface WorkspaceMiddlePanelProps {
   workspace: WorkspaceInfo;
-  workspaceDetails: WorkspaceDetails;
   chatTabs: ChatTab[];
   activeTabKey: string;
   agents: Array<{

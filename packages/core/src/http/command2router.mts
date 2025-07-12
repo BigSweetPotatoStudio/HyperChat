@@ -10,11 +10,11 @@ import { Logger } from "../log.mjs";
  * @param commandInstance - Command 类实例
  * @returns Express Router 实例
  */
-export function genRouter(commandInstance: any): Router {
+export function genRouter(commandInstance: typeof Command): Router {
     const router = Router();
 
     // 获取 Command 类的所有方法名（排除构造函数）
-    const functionNames = Object.getOwnPropertyNames(Object.getPrototypeOf(commandInstance))
+    const functionNames = Object.getOwnPropertyNames(commandInstance)
         .filter(name => name !== "constructor" && typeof commandInstance[name] === "function");
 
     // 为每个 Command 方法生成对应的 POST 路由

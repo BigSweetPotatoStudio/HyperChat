@@ -36,7 +36,7 @@ import { WorkspaceRightPanel } from "./WorkspaceRightPanel";
 import { WorkspaceOpenModal } from "./WorkspaceOpenForm";
 import {
   WorkspaceInfo,
-  WorkspaceDetails,
+  CurrentWorkspaceDetails,
   FileNode,
   ChatTab,
   WorkspaceHistoryItem,
@@ -77,7 +77,7 @@ export function Workspace() {
 
   // 新架构：只需要当前工作区信息
   const [currentWorkspace, setCurrentWorkspace] = useState<WorkspaceInfo | null>(null);
-  const [workspaceDetails, setWorkspaceDetails] = useState<WorkspaceDetails>({});
+  const [currentWorkspaceDetails, setCurrentWorkspaceDetails] = useState<CurrentWorkspaceDetails | null>(null);
 
   const [openModalOpen, setOpenModalOpen] = useState(false);
   const [confirmCreateModalOpen, setConfirmCreateModalOpen] = useState(false);
@@ -117,24 +117,23 @@ export function Workspace() {
       if (res.type === "changeMcpClient") {
         const payload = res.data as MessageDataMap["changeMcpClient"];
 
-        // 更新工作区详情中的MCP客户端数据
-        setWorkspaceDetails(prev => {
-          const newDetails = { ...prev };
-
-          // 更新指定工作区的 MCP 客户端数据
-          const details = newDetails[payload.workspacePath]
-          if (details && details.mcpClients) {
+        // 更新当前工作区的MCP客户端数据
+        if (currentWorkspace && payload.workspacePath === currentWorkspace.path) {
+          setCurrentWorkspaceDetails(prev => {
+            if (!prev) return null;
+            const newDetails = { ...prev };
+            
             if (payload.status === "deleted") {
               // 删除客户端
-              delete details.mcpClients[payload.serverName];
+              delete newDetails.mcpClients[payload.serverName];
             } else {
               // 添加或更新客户端
-              details.mcpClients[payload.serverName] = payload;
+              newDetails.mcpClients[payload.serverName] = payload;
             }
-          }
-
-          return newDetails;
-        });
+            
+            return newDetails;
+          });
+        }
       }
     });
 
@@ -177,21 +176,15 @@ export function Workspace() {
 
   // 加载当前工作区详细信息
   const loadWorkspaceDetails = async (workspace: WorkspaceInfo) => {
-    const key = workspace.path;
-
     // 如果已经加载过，直接返回
-    if (workspaceDetails[key]) return;
+    if (currentWorkspaceDetails) return;
 
     try {
-      const details: {
-        agents: Array<{
-          config: AgentConfig;
-          chatLogsCount: number;
-          lastChatTime?: number;
-        }>;
-        mcpClients: Record<string, IMCPClient>;
-        fileTreeData?: FileNode[];
-      } = { agents: [], mcpClients: {} };
+      const details: CurrentWorkspaceDetails = {
+        agents: [],
+        mcpClients: {},
+        fileTreeData: undefined
+      };
 
       // 加载根目录文件列表（懒加载）
       console.log("Loading file tree for workspace:", workspace.path, "isGlobal:", workspace.isGlobal);
@@ -210,23 +203,18 @@ export function Workspace() {
       }>;
 
       // 加载 MCP 客户端
-      let mcpList = await call("getWorkspaceMcpClients");
+      const mcpList = await call("getWorkspaceMcpClients");
 
       // 将数组转换为对象格式，使用 name 作为 key
-      const mcpClients: Record<string, IMCPClient> = {};
       if (mcpList && Array.isArray(mcpList)) {
         mcpList.forEach((client) => {
           if (client && client.serverName) {
-            mcpClients[client.serverName] = client;
+            details.mcpClients[client.serverName] = client;
           }
         });
       }
-      details.mcpClients = mcpClients;
 
-      setWorkspaceDetails(prev => ({
-        ...prev,
-        [key]: details
-      }));
+      setCurrentWorkspaceDetails(details);
     } catch (error) {
       console.error("Failed to load workspace details:", error);
       message.error(t`Failed to load workspace details`);
@@ -432,15 +420,12 @@ export function Workspace() {
 
   // 获取可用的 MCP 服务列表
   const getAvailableMCPs = () => {
-    const currentWorkspace = getCurrentWorkspace();
-    const details = workspaceDetails[currentWorkspace?.path || ''] || { mcpClients: {} };
-    const globalDetails = getGlobalDetails();
-
-    // 合并全局和当前工作区的 MCP 客户端
-    const allMcpClients = Object.values(Object.assign({}, globalDetails.mcpClients, details.mcpClients));
+    if (!currentWorkspaceDetails) return [];
 
     // 提取所有可用的 MCP 服务名称
     const availableMCPs = new Set<string>();
+    const allMcpClients = Object.values(currentWorkspaceDetails.mcpClients);
+    
     allMcpClients.forEach(client => {
       if (client.status === 'connected') {
         availableMCPs.add(client.serverName);
@@ -501,24 +486,17 @@ export function Workspace() {
 
   // 刷新工作区详情
   const refreshWorkspaceDetails = async (workspaceKey?: string, refreshType?: 'agents' | 'mcp' | 'all') => {
-    const key = workspaceKey || activeWorkspaceKey;
-    const workspace = currentWorkspace;
     const type = refreshType || 'all';
 
-    if (workspace) {
+    if (currentWorkspace && currentWorkspaceDetails) {
       try {
-        let agentList: Array<{
-          config: AgentConfig;
-          chatLogsCount: number;
-          lastChatTime?: number;
-        }> | undefined;
-        let mcpClients: Record<string, IMCPClient> | undefined;
+        const updatedDetails = { ...currentWorkspaceDetails };
 
         // 根据刷新类型选择性刷新数据
         if (type === 'agents' || type === 'all') {
           // 刷新 Agents
           const rawAgentList = await call("getWorkspaceAgentsSummary");
-          agentList = rawAgentList as Array<{
+          updatedDetails.agents = rawAgentList as Array<{
             config: AgentConfig;
             chatLogsCount: number;
             lastChatTime?: number;
@@ -530,25 +508,17 @@ export function Workspace() {
           const mcpList = await call("getWorkspaceMcpClients");
 
           // 将数组转换为对象格式
-          mcpClients = {};
+          updatedDetails.mcpClients = {};
           if (mcpList && Array.isArray(mcpList)) {
             mcpList.forEach((client) => {
               if (client && client.serverName) {
-                mcpClients![client.serverName] = client;
+                updatedDetails.mcpClients[client.serverName] = client;
               }
             });
           }
         }
 
-        // 更新工作区详情数据
-        setWorkspaceDetails(prev => ({
-          ...prev,
-          [key]: {
-            ...prev[key],
-            ...(agentList !== undefined && { agents: agentList }),
-            ...(mcpClients !== undefined && { mcpClients: mcpClients })
-          }
-        }) as any);
+        setCurrentWorkspaceDetails(updatedDetails);
       } catch (error) {
         console.error("Failed to refresh workspace details:", error);
         throw error;
@@ -558,26 +528,21 @@ export function Workspace() {
 
   // 刷新文件树
   const refreshFileTree = async () => {
-    const currentWorkspace = getCurrentWorkspace();
-    if (currentWorkspace) {
-      const key = currentWorkspace.path;
-
+    if (currentWorkspace && currentWorkspaceDetails) {
       try {
         // 重新加载文件树数据
         const rootItems = await call("getWorkspaceDirectoryList", {
           directoryPath: ""
         });
 
-        // 更新工作区详情中的文件树数据
-        setWorkspaceDetails(prev => ({
-          ...prev,
-          [key]: {
-            ...prev[key],
-            fileTreeData: rootItems,
-            agents: prev[key]?.agents ?? [],
-            mcpClients: prev[key]?.mcpClients ?? {}
-          }
-        }));
+        // 更新当前工作区详情中的文件树数据
+        setCurrentWorkspaceDetails(prev => {
+          if (!prev) return null;
+          return {
+            ...prev,
+            fileTreeData: rootItems
+          };
+        });
       } catch (error) {
         console.error("Failed to refresh file tree:", error);
         throw error; // 重新抛出错误，让组件显示错误消息
@@ -655,11 +620,8 @@ export function Workspace() {
 
 
   // 获取当前工作区详情
-  const getGlobalDetails = () => {
-    if (!currentWorkspace?.path) {
-      return { agents: [], mcpClients: {} };
-    }
-    return workspaceDetails[currentWorkspace.path] || { agents: [], mcpClients: {} };
+  const getCurrentDetails = () => {
+    return currentWorkspaceDetails || { agents: [], mcpClients: {} };
   };
 
   // 处理标签页切换（新架构下移除，只有一个工作区）
@@ -842,8 +804,7 @@ export function Workspace() {
   // 渲染工作区内容
   const renderWorkspaceContent = (workspaceKey: string) => {
     const workspace = currentWorkspace;
-    const details = workspaceDetails[workspaceKey] || { agents: [], mcpClients: {} };
-    const globalDetails = getGlobalDetails();
+    const details = getCurrentDetails();
 
     if (!workspace) {
       return (
@@ -854,8 +815,8 @@ export function Workspace() {
       );
     }
 
-    // 普通工作区可以使用全局MCP客户端
-    const mcpClients = Object.values(Object.assign({}, globalDetails.mcpClients, details.mcpClients)).sort((a, b) => a.order - b.order);
+    // 获取MCP客户端列表
+    const mcpClients = Object.values(details.mcpClients).sort((a, b) => a.order - b.order);
     return (
       <div className="h-full">
         <Splitter
@@ -885,7 +846,6 @@ export function Workspace() {
           >
             <WorkspaceMiddlePanel
               workspace={workspace}
-              workspaceDetails={workspaceDetails}
               chatTabs={chatTabs}
               activeTabKey={activeTabKey}
               agents={details.agents || []}
@@ -1200,7 +1160,7 @@ export function Workspace() {
             }>}
             onUpdate={updateMCPGateways}
             availableMCPs={getAvailableMCPs()}
-            mcpClients={Object.values(workspaceDetails[currentWorkspace?.path || '']?.mcpClients || {})}
+            mcpClients={Object.values(currentWorkspaceDetails?.mcpClients || {})}
           />
         )}
       </Drawer>

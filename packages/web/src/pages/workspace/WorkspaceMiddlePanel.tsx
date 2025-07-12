@@ -16,7 +16,6 @@ import { WorkspaceMiddlePanelProps, ChatTab } from "./types";
 
 export const WorkspaceMiddlePanel: React.FC<WorkspaceMiddlePanelProps> = ({
   workspace,
-  workspaceDetails,
   chatTabs,
   activeTabKey,
   agents,
@@ -91,7 +90,7 @@ export const WorkspaceMiddlePanel: React.FC<WorkspaceMiddlePanelProps> = ({
                   <WorkspaceChat
                     workspace={workspace}
                     agentKey={tab.agentKey}
-                    workspaceDetails={workspaceDetails}
+                    workspaceDetails={{}}
                     key={tab.key}
                     mcpClients={mcpClients}
                     chatLogToLoad={tab.chatLogToLoad}

@@ -42,14 +42,34 @@ export async function startChat(initialMessage?: string, options: ChatOptions = 
     // 新架构下简化配置获取
     logger.info(`🎯 使用工作区: ${workspacePath}`);
 
+    // 如果指定了agent，获取agent配置
+    let agentConfig: any = null;
+    if (options.agent) {
+      const agents = await Command.getWorkspaceAgentsSummary();
+      const agentSummary = agents.find(agent => {
+        const config = agent.config as any;
+        return config.key === options.agent || config.name === options.agent;
+      });
+
+      if (agentSummary) {
+        agentConfig = agentSummary.config;
+        logger.info(`🤖 使用Agent: ${agentConfig.name} (${agentConfig.key})`);
+      } else {
+        throw new Error(`未找到Agent: ${options.agent}`);
+      }
+    }
 
     logger.debug(`使用工作区: ${workspacePath}`);
     const appSettings = await Command.getAppSettings();
     const aiSettings = appSettings.ai;
-    // 确定使用的模型（优先使用合并后的配置）
+    // 确定使用的模型（优先使用agent配置的模型）
     let modelKey = options.model;
 
-    if (!modelKey && sessionConfig?.aiModels && sessionConfig.aiModels.length > 0) {
+    if (!modelKey && agentConfig?.modelKey) {
+      // 优先使用agent配置的模型
+      modelKey = agentConfig.modelKey;
+      logger.info(`📋 使用Agent配置的AI模型: ${modelKey}`);
+    } else if (!modelKey && sessionConfig?.aiModels && sessionConfig.aiModels.length > 0) {
       // 使用会话合并后的AI模型配置
       modelKey = sessionConfig.aiModels[0].key;
       logger.info(`📋 使用会话配置的AI模型: ${modelKey}`);
@@ -76,17 +96,7 @@ export async function startChat(initialMessage?: string, options: ChatOptions = 
 
     // 获取工作区的MCP工具
     const mcpClients = await workspace.getMcpClients();
-    const mcpTools = mcpClients.flatMap((client: any) =>
-      client.tools?.map((tool: any) => ({
-        name: `${client.serverName}_${tool.name}`,
-        origin_name: tool.name,
-        restore_name: tool.name,
-        clientName: client.serverName,
-        workspacePath: workspacePath,
-        description: tool.description || '',
-        inputSchema: tool.inputSchema
-      })) || []
-    );
+    const mcpTools = mcpClients.flatMap((client: any) => client.tools || []);
 
     logger.info(`🔧 可用MCP工具数量: ${mcpTools.length}`);
 
@@ -114,9 +124,16 @@ export async function startChat(initialMessage?: string, options: ChatOptions = 
     });
 
     // 添加系统消息
+    let systemContent = `你是HyperChat CLI助手。当前工作区: ${workspacePath}。可用工具: ${mcpTools.length}个MCP工具。请用中文回复。`;
+
+    // 如果使用了agent，添加agent的prompt
+    if (agentConfig?.prompt) {
+      systemContent = `${agentConfig.prompt}\n\n当前工作区: ${workspacePath}。可用工具: ${mcpTools.length}个MCP工具。`;
+    }
+
     const systemMessage: MyMessage = {
       role: 'system',
-      content: `你是HyperChat CLI助手。当前工作区: ${workspacePath}。可用工具: ${mcpTools.length}个MCP工具。请用中文回复。`,
+      content: systemContent,
       content_date: Date.now()
     };
     aiChannel.addMessage(systemMessage);
@@ -138,7 +155,7 @@ export async function startChat(initialMessage?: string, options: ChatOptions = 
       let displayedLength = 0;
       await aiChannel.completion({
         modelKey: modelKey!,
-        allowMCPs: mcpClients.map((c: any) => c.serverName),
+        allowMCPs: agentConfig?.allowMCPs || mcpClients.map((c: any) => c.serverName),
         onUpdate: () => {
           const lastMsg = aiChannel.lastMessage;
           if (lastMsg.role === 'assistant') {
@@ -226,7 +243,7 @@ export async function startChat(initialMessage?: string, options: ChatOptions = 
 
         await aiChannel.completion({
           modelKey: modelKey!,
-          allowMCPs: mcpClients.map((c: any) => c.serverName),
+          allowMCPs: agentConfig?.allowMCPs || mcpClients.map((c: any) => c.serverName),
           onUpdate: () => {
             const lastMsg = aiChannel.lastMessage;
             if (lastMsg.role === 'assistant') {

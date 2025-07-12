@@ -18,7 +18,7 @@ import { Logger } from './utils/logger.mjs';
 import { startChat } from './commands/chat.mjs';
 import { startServer } from './commands/server.mjs';
 import { createWorkspace } from './commands/workspace.mjs';
-import { listAgents, createAgent } from './commands/agent.mjs';
+import { listAgents, createAgent, checkAgentExists } from './commands/agent.mjs';
 import { workspaceManager } from '../workspace/index.mjs';
 // 获取包信息
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -79,6 +79,8 @@ function showHelp() {
   hyperchat chat --workspace /path   # 使用指定工作区聊天
   hyperchat serve                   # 启动服务器
   hyperchat workspace create        # 在当前目录创建工作区
+  hyperchat [agent_name] "你好"       # 使用指定agent直接聊天
+  hyperchat [agent_name] chat        # 使用指定agent交互式聊天
 
 欢迎使用 HyperChat CLI! 🎉
 `);
@@ -88,6 +90,31 @@ function showHelp() {
 async function handleCommand(): Promise<{ shouldExit: boolean }> {
   const logger = new Logger(globalOptions.verbose, globalOptions.quiet);
 
+  // 检测是否使用agent进行聊天: hyperchat [agent_name] "message" 或 hyperchat [agent_name] chat
+  if (cleanArgs.length > 0) {
+    const potentialAgentName = cleanArgs[0];
+    
+    // 检查第一个参数是否是agent名称
+    if (potentialAgentName && !['chat', 'serve', 'workspace', 'agent', 'help'].includes(potentialAgentName)) {
+      const agentCheck = await checkAgentExists(potentialAgentName);
+      
+      if (agentCheck.exists) {
+        // 这是一个agent命令
+        const remainingArgs = cleanArgs.slice(1);
+        
+        if (remainingArgs.length === 0 || remainingArgs[0] === 'chat') {
+          // hyperchat [agent_name] 或 hyperchat [agent_name] chat - 交互式模式
+          await startChatWrapper([], logger, potentialAgentName);
+          return { shouldExit: true };
+        } else if (remainingArgs[0] !== 'chat') {
+          // hyperchat [agent_name] "message" - 直接消息模式
+          const message = remainingArgs.join(' ');
+          await startChatWrapper([message], logger, potentialAgentName);
+          return { shouldExit: true };
+        }
+      }
+    }
+  }
 
   // 检测是否有非命令的消息 (直接聊天)
   const possibleMessage = cleanArgs.find(arg => !['chat', 'serve', 'workspace', 'agent', 'help'].includes(arg));
@@ -157,12 +184,13 @@ async function handleCommand(): Promise<{ shouldExit: boolean }> {
 }
 
 // 聊天功能
-async function startChatWrapper(messages: string[], logger: Logger) {
+async function startChatWrapper(messages: string[], logger: Logger, agentName?: string) {
   try {
     const options = {
       verbose: globalOptions.verbose,
       quiet: globalOptions.quiet,
-      workspace: globalOptions.workspace
+      workspace: globalOptions.workspace,
+      agent: agentName
     };
 
     if (messages.length > 0) {

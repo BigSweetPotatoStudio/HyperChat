@@ -1,5 +1,6 @@
 import React from "react";
-import { WorkspaceSidebar } from "../../components/WorkspaceSidebar";
+import { Card } from "antd";
+import { FileTreeComponent } from "../../components/FileTreeComponent";
 import { WorkspaceLeftPanelProps } from "./types";
 
 export const WorkspaceLeftPanel: React.FC<WorkspaceLeftPanelProps> = ({
@@ -11,13 +12,20 @@ export const WorkspaceLeftPanel: React.FC<WorkspaceLeftPanelProps> = ({
   onFileSelect,
 }) => {
   return (
-    <WorkspaceSidebar
-      workspace={workspace}
-      fileTreeData={fileTreeData}
-      showHidden={showHidden}
-      onShowHiddenChange={onShowHiddenChange}
-      onRefreshFileTree={onRefreshFileTree}
-      onFileSelect={onFileSelect}
-    />
+    <Card
+      title="文件"
+      size="small"
+      className="h-full"
+      styles={{ body: { padding: '8px', height: 'calc(100% - 40px)', overflow: 'auto' } }}
+    >
+      <FileTreeComponent
+        workspace={workspace}
+        initialData={fileTreeData || []}
+        showHidden={showHidden}
+        onShowHiddenChange={onShowHiddenChange}
+        onRefresh={onRefreshFileTree}
+        onFileSelect={onFileSelect}
+      />
+    </Card>
   );
 };
