@@ -6,6 +6,7 @@ import process from 'process';
 import { Logger } from '../utils/logger.mjs';
 import { Command } from '../../command.mjs';
 import { workspaceManager } from '../../workspace/index.mjs';
+import type { AgentConfig } from '@hyperchat/shared/types';
 /**
  * 获取当前工作区路径（使用新的会话管理器，只读模式）
  */
@@ -37,16 +38,23 @@ export async function listAgents() {
       return;
     }
     
-    for (const agent of agents) {
-      console.log(`  📋 ${agent.name} (${agent.key})`);
-      if (agent.description) {
-        console.log(`      描述: ${agent.description}`);
+    for (const agentSummary of agents) {
+      // agent数据结构是 { config: AgentConfig, chatLogsCount: number, lastChatTime?: number }
+      const config = agentSummary.config as AgentConfig;
+      const chatLogsCount = (agentSummary.chatLogsCount as number) || 0;
+      
+      console.log(`  📋 ${config.name} (${config.key})`);
+      if (config.description) {
+        console.log(`      描述: ${config.description}`);
       }
-      if (agent.modelKey) {
-        console.log(`      模型: ${agent.modelKey}`);
+      if (config.modelKey) {
+        console.log(`      模型: ${config.modelKey}`);
       }
-      if ((agent as any).tags && (agent as any).tags.length > 0) {
-        console.log(`      标签: ${(agent as any).tags.join(', ')}`);
+      if (config.tags && config.tags.length > 0) {
+        console.log(`      标签: ${config.tags.join(', ')}`);
+      }
+      if (chatLogsCount > 0) {
+        console.log(`      聊天记录: ${chatLogsCount} 条`);
       }
     }
     

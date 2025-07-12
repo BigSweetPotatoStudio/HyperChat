@@ -154,8 +154,8 @@ HyperChat 是一个多平台的 AI 聊天应用，该项目拥有完善的 MCP�
 - **聊天功能**: `hyperchat "你好"` 或 `hyperchat chat` 进行 AI 对话
 - **服务器管理**: `hyperchat server start/stop/status` 管理后端服务器
 - **工作区管理**: `hyperchat workspace list/create/switch` 管理项目工作区
-- **代理管理**: `hyperchat agent list/create` 管理 AI 代理
-- **配置管理**: `hyperchat config get/set` 管理应用配置
+- **代理管理**: `hyperchat agent list/create` 管理 AI 代理，支持完整信息显示
+- **修复agent显示**: 修复了agent列表中undefined显示问题，正确显示名称、键名、模型和聊天记录
 
 ### Schema2Form 组件系统 (完成)
 - **packages/web/src/components/Schema2Form.tsx** - 主组件，支持表单和JSON编辑器双模式切换
