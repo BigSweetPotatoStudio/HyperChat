@@ -38,7 +38,6 @@ export type WorkspaceConfig = {
 
 // 工作区设置
 export type WorkspaceSettings = {
-  enableKnowledgeBase: boolean;
   defaultModel?: string;
   defaultAgent?: string;
 };
@@ -76,7 +75,6 @@ export function validateWorkspaceConfig(config: any): config is WorkspaceConfig 
 export function validateWorkspaceSettings(settings: any): settings is WorkspaceSettings {
   return (
     settings &&
-    typeof settings === 'object' &&
-    typeof settings.enableKnowledgeBase === 'boolean'
+    typeof settings === 'object'
   );
 }

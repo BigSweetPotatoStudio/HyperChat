@@ -73,7 +73,6 @@ interface WorkspaceConfig {
   created: number;
   lastAccessed: number;
   settings: {
-    enableKnowledgeBase: boolean;
   };
   agentsCount?: number;
   mcpServersCount?: number;
@@ -234,7 +233,7 @@ export function Workspace() {
           description: currentWorkspaceData.description,
           created: currentWorkspaceData.created || Date.now(),
           lastAccessed: currentWorkspaceData.lastAccessed || Date.now(),
-          settings: currentWorkspaceData.settings || { enableKnowledgeBase: true },
+          settings: currentWorkspaceData.settings || {},
           agentsCount: currentWorkspaceData.agentsCount || 0,
           mcpServersCount: currentWorkspaceData.mcpServersCount || 0,
           isGlobal: currentWorkspaceData.isGlobal || currentWorkspaceData.path?.includes('Documents/HyperChat') || false,

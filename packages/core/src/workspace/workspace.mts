@@ -50,7 +50,6 @@ export class Workspace {
       created: Date.now(),
       lastAccessed: Date.now(),
       settings: {
-        enableKnowledgeBase: true,
       },
     };
 

@@ -148,7 +148,6 @@ export class WorkspaceManager {
       created: Date.now(),
       lastAccessed: Date.now(),
       settings: {
-        enableKnowledgeBase: true,
       },
     };
 

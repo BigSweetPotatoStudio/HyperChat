@@ -66,34 +66,7 @@ export class CommandFactory {
       throw error;
     }
   }
-  /**
-   * 添加或启动全局范围的 MCP 客户端（兼容性方法）
-   * 兼容性方法，主要用于支持旧的调用方式
-   * 推荐使用 setWorkspaceMcpServerConfig 方法进行工作区特定的配置
-   * @param clientName MCP客户端名称
-   * @param clientConfig MCP服务器配置（包含连接信息、认证等）
-   * @param options 选项，onlySave=true时仅保存配置不启动服务
-   * @returns 操作结果
-   * @deprecated 推荐使用 setWorkspaceMcpServerConfig 方法
-   */
-  async openMcpClient({
-    clientName,
-    clientConfig,
-    options = {
-      onlySave: false,
-    }
-  }: {
-    clientName: string;
-    clientConfig?: MCPServerConfig;
-    options?: {
-      onlySave: boolean;
-    };
-  }) {
 
-    return {
-      success: true,
-    };
-  }
 
   /**
    * 在指定工作区中启动或重启 MCP 客户端
