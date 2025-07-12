@@ -18,9 +18,9 @@ export interface WorkspaceMCPConfig {
   workspacePath: string;
 
   /**
-   * 配置范围（固定为 workspace）
+   * 配置范围
    */
-  scope: "workspace";
+  scope: "workspace" | "global";
 
 
   /**

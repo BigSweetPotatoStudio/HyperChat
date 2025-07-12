@@ -91,7 +91,7 @@ export class MessageService {
   async sendAllToRenderer(data: MessageData, channel: string = "message-from-main"): Promise<void> {
     const mainSocket = this.getMainSocket();
     if (!mainSocket) {
-      Logger.warn("Main socket not initialized, cannot send message to renderer");
+      // Logger.warn("Main socket not initialized, cannot send message to renderer");
       return;
     }
 

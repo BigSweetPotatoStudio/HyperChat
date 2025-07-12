@@ -19,6 +19,7 @@ import { startChat } from './commands/chat.mjs';
 import { startServer } from './commands/server.mjs';
 import { createWorkspace } from './commands/workspace.mjs';
 import { listAgents, createAgent } from './commands/agent.mjs';
+import { workspaceManager } from '../workspace/index.mjs';
 // 获取包信息
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const packagePath = join(__dirname, '..', '..', 'package.json');
@@ -86,13 +87,13 @@ function showHelp() {
 // 处理命令
 async function handleCommand(): Promise<{ shouldExit: boolean }> {
   const logger = new Logger(globalOptions.verbose, globalOptions.quiet);
-  
-  
+
+
   // 检测是否有非命令的消息 (直接聊天)
   const possibleMessage = cleanArgs.find(arg => !['chat', 'server', 'workspace', 'agent', 'help'].includes(arg));
   const firstArg = cleanArgs[0];
   const isDirectMessage = cleanArgs.length > 0 && possibleMessage && firstArg && !firstArg.match(/^(chat|server|workspace|agent|help)$/);
-  
+
   if (isDirectMessage) {
     // 直接聊天模式: hyperchat "你好"
     const message = cleanArgs.join(' ');
@@ -101,16 +102,16 @@ async function handleCommand(): Promise<{ shouldExit: boolean }> {
   }
 
   const cmd = cleanArgs[0] || 'help';
-  
+
   switch (cmd) {
     case 'chat':
       const messages = cleanArgs.slice(1);
       await startChatWrapper(messages, logger);
       return { shouldExit: true };  // 聊天完成后应该退出
-    
+
     case 'server':
       const subCommand = cleanArgs[1];
-      
+
       if (subCommand === 'start') {
         await startServer({
           port: globalOptions.port,
@@ -124,7 +125,7 @@ async function handleCommand(): Promise<{ shouldExit: boolean }> {
         logger.info('可用命令: start');
         return { shouldExit: true };   // 错误信息显示完应该退出
       }
-    
+
     case 'workspace':
       const workspaceSubCmd = cleanArgs[1];
       if (workspaceSubCmd === 'create') {
@@ -135,7 +136,7 @@ async function handleCommand(): Promise<{ shouldExit: boolean }> {
         logger.info('可用命令: create');
       }
       return { shouldExit: true };  // workspace命令执行完都应该退出
-    
+
     case 'agent':
       const agentSubCmd = cleanArgs[1];
       if (agentSubCmd === 'list') {
@@ -153,12 +154,14 @@ async function handleCommand(): Promise<{ shouldExit: boolean }> {
         logger.info('可用命令: list, create');
       }
       return { shouldExit: true };  // 所有agent命令执行完都应该退出
-    
+
     case 'help':
     default:
       showHelp();
       return { shouldExit: true };  // 帮助信息显示完应该退出
   }
+
+
 }
 
 // 聊天功能
@@ -169,14 +172,14 @@ async function startChatWrapper(messages: string[], logger: Logger) {
       quiet: globalOptions.quiet,
       workspace: globalOptions.workspace
     };
-    
+
     if (messages.length > 0) {
       const message = messages.join(' ');
       await startChat(message, options);
     } else {
       await startChat(undefined, options);
     }
-    
+
   } catch (error) {
     logger.error('聊天功能失败:', error instanceof Error ? error.message : String(error));
     process.exit(1);
@@ -202,14 +205,14 @@ let isExiting = false;
 async function cleanup() {
   if (isExiting) return;
   isExiting = true;
-  
+
   try {
     // 新架构下简化清理逻辑
     console.log('正在清理资源...');
   } catch (error) {
     console.error('清理过程中出现错误:', error);
   }
-  
+
   process.exit(0);
 }
 
@@ -219,13 +222,10 @@ process.on('SIGTERM', cleanup); // 终止信号
 process.on('exit', cleanup);    // 正常退出
 
 // 执行命令
-handleCommand().then((result) => {
+handleCommand().then(async (result) => {
   // 根据命令类型决定是否退出
   if (result.shouldExit) {
-    // 对于需要退出的命令，延迟一点时间确保所有异步操作完成
-    setImmediate(() => {
-      process.exit(0);
-    });
+    await workspaceManager.uninitialize(); // 清理工作区管理器
   }
   // 对于需要保持运行的命令（如 server start），不执行 process.exit
 }).catch(error => {
