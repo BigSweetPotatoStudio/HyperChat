@@ -887,8 +887,8 @@ export class CommandFactory {
    */
   async getCurrentWorkspace() {
     const workspaceManager = getWorkspaceManager();
+    await workspaceManager.initialize();
     const workspace = workspaceManager.getCurrentWorkspace();
-    console.log('初始化工作区管理器...', workspace);
     if (!workspace) return null;
 
     const config = workspace.getConfig();

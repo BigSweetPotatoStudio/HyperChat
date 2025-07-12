@@ -82,9 +82,4 @@ export function getWorkspaceManager(): WorkspaceManager {
   return workspaceManager;
 }
 
-// 工作区配置数据存储（全局工作区列表）
-export const WorkspaceConfigs = new Data("workspace_configs.json", {
-  workspaces: [] as WorkspaceConfig[],
-}, {
-  sync: true,
-});
+

@@ -3,11 +3,9 @@ import { Logger } from "./log.mjs";
 import "./first.mjs";
 
 import { initHttp } from "./http.mjs";
-import { WorkspaceManager } from "./workspace/workspaceManager.mjs";
+import { getWorkspaceManager } from "./workspace/index.mjs";
 
-export const workspaceManager = new WorkspaceManager();
-
-await workspaceManager.initialize();
+await getWorkspaceManager().initialize();
 
 
 // 启动 HTTP 服务，捕获并记录异常
