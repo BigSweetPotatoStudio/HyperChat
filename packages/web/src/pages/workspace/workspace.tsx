@@ -30,7 +30,7 @@ import {
   GlobalOutlined,
   AppstoreOutlined,
   ReloadOutlined,
-  PlayCircleOutlined,
+  SwapOutlined, // 新增切换图标
   StopOutlined,
   InfoCircleOutlined,
   MoreOutlined,
@@ -85,7 +85,7 @@ export interface WorkspaceInfo extends WorkspaceConfig {
   mcpServersCount: number;
   isGlobal: boolean;
   isActive?: boolean; // 前端活动状态：工作区在标签页列表中（可见/隐藏）
-  isRunning?: boolean; // 后端活动状态：标记工作区是否在后台运行
+  isCurrent?: boolean; // 是否为当前工作区
 }
 
 interface FileNode {
@@ -152,7 +152,7 @@ export function Workspace() {
   const [closeConfirmModalOpen, setCloseConfirmModalOpen] = useState(false);
   const [pendingWorkspacePath, setPendingWorkspacePath] = useState<string>("");
   const [pendingCloseWorkspace, setPendingCloseWorkspace] = useState<WorkspaceInfo | null>(null);
-  const [runningWorkspaces, setRunningWorkspaces] = useState<Set<string>>(new Set());
+  // 移除了 runningWorkspaces 状态 - 新架构下没有运行工作区概念
   const [directoryBrowserOpen, setDirectoryBrowserOpen] = useState(false);
   const [selectedPath, setSelectedPath] = useState<string>("");
   const [showHiddenFiles, setShowHiddenFiles] = useState(true);
@@ -221,15 +221,16 @@ export function Workspace() {
     try {
       setLoading(true);
 
-      // 加载运行中的工作区列表
-      let runningPaths = new Set<string>();
+      // 获取当前工作区路径（使用WorkspaceManager API）
+      let currentWorkspacePath: string | null = null;
       try {
-        const runningWorkspacesList = await call("getRunningWorkspaces");
-        runningPaths = new Set(runningWorkspacesList.map((ws: any) => ws.path));
-        setRunningWorkspaces(runningPaths);
-        console.log("Loaded running workspaces:", Array.from(runningPaths));
+        const runningWorkspaces = await call("getRunningWorkspaces");
+        // 找到非全局的当前工作区
+        const currentWs = runningWorkspaces.find((ws: any) => !ws.isGlobal);
+        currentWorkspacePath = currentWs?.path || null;
+        console.log("Current workspace:", currentWorkspacePath);
       } catch (error) {
-        console.warn("Failed to load running workspaces:", error);
+        console.warn("Failed to get current workspace:", error);
       }
 
       // 加载全局工作区
@@ -245,7 +246,7 @@ export function Workspace() {
           mcpServersCount: 0,
           isGlobal: true,
           isActive: true, // 全局工作区默认总是在前端显示
-          isRunning: true, // 全局工作区默认总是在后台运行
+          isCurrent: currentWorkspacePath === globalWs.path, // 是否为当前工作区
           ...globalSummary,
         };
         setGlobalWorkspace(globalWorkspaceInfo);
@@ -270,7 +271,7 @@ export function Workspace() {
               agentsCount: summary.agentsCount || 0,
               mcpServersCount: summary.mcpServersCount || 0,
               isActive: false, // 默认不在前端显示
-              isRunning: runningPaths.has(ws.path), // 使用本地变量而不是状态
+              isCurrent: currentWorkspacePath === ws.path, // 是否为当前工作区
               isGlobal: false, // 标记为项目工作区
             });
           }
@@ -345,24 +346,16 @@ export function Workspace() {
       });
 
       if (workspaceConfig) {
-        // 工作区已存在，直接加载
-        await startWorkspaceMcpClients(values.path);
+        // 工作区已存在，切换到该工作区
+        await switchToWorkspace(values.path);
 
         // 添加到历史记录
         const folderName = values.path.split(/[/\\]/).pop() || 'Workspace';
         addToWorkspaceHistory(values.path, folderName);
         setWorkspaceHistory(getWorkspaceHistory());
 
-        // 切换到该工作区
-        setActiveWorkspaceKey(values.path);
-
-        // 将新打开的工作区标记为活动和运行中
-        await loadWorkspaces(); // 先重新加载工作区列表
-        setWorkspaces(prev => prev.map(ws => ({
-          ...ws,
-          isActive: ws.path === values.path || ws.isActive,
-          isRunning: ws.path === values.path ? true : ws.isRunning
-        })));
+        // 重新加载以更新当前工作区标记
+        await loadWorkspaces();
 
         message.success(t`Workspace opened successfully`);
         setOpenModalOpen(false);
@@ -380,40 +373,37 @@ export function Workspace() {
     }
   };
 
-  // 打开已打开的工作区（切换到前端）
+  // 切换工作区
   const switchToWorkspace = async (workspacePath: string) => {
     try {
+      // 新架构下，"切换工作区"实际上是重新打开工作区
+      await call("openWorkspace", { workspacePath });
+
       // 将工作区标记为前端活动状态
       setWorkspaces(prev => prev.map(ws => ({
         ...ws,
         isActive: ws.path === workspacePath || ws.isActive, // 保留其他已激活的工作区
-        isRunning: ws.path === workspacePath ? true : ws.isRunning // 确保标记为运行中
+        isCurrent: ws.path === workspacePath // 标记为当前工作区
       })));
+
+      // 如果是全局工作区，也要更新
+      if (globalWorkspace && globalWorkspace.path === workspacePath) {
+        setGlobalWorkspace(prev => prev ? { ...prev, isCurrent: true } : null);
+      }
 
       // 切换到该工作区（这会让它重新出现在标签页中）
       setActiveWorkspaceKey(workspacePath);
       setOpenModalOpen(false);
 
-      // 如果工作区在后台运行，直接切换
-      if (runningWorkspaces.has(workspacePath)) {
-        // 重新加载工作区详情（因为它现在要显示在标签页中）
-        const workspace = workspaces.find(ws => ws.path === workspacePath);
-        if (workspace) {
-          await loadWorkspaceDetails(workspace);
-          // 确保有默认的欢迎标签页
-          initDefaultChatTab(workspace);
-        }
-        message.success(t`Switched to workspace`);
-        return;
+      // 重新加载工作区详情
+      const workspace = workspaces.find(ws => ws.path === workspacePath) || globalWorkspace;
+      if (workspace) {
+        await loadWorkspaceDetails(workspace);
+        // 确保有默认的欢迎标签页
+        initDefaultChatTab(workspace);
       }
 
-      // 如果不在运行，启动它
-      await startWorkspaceMcpClients(workspacePath);
-
-      // 更新运行状态
-      setRunningWorkspaces(prev => new Set(prev).add(workspacePath));
-
-      message.success(t`Workspace opened and switched`);
+      message.success(t`Switched to workspace`);
     } catch (error) {
       console.error("Failed to switch to workspace:", error);
       message.error(t`Failed to switch to workspace`);
@@ -431,13 +421,11 @@ export function Workspace() {
         name: folderName,
       });
 
-      await startWorkspaceMcpClients(workspacePath);
-
       // 添加到历史记录
       addToWorkspaceHistory(workspacePath, folderName);
       setWorkspaceHistory(getWorkspaceHistory());
 
-      message.success(t`Workspace created successfully`);
+      message.success(t`Workspace created and switched successfully`);
       loadWorkspaces();
     } catch (error) {
       console.error("Failed to create workspace:", error);
@@ -451,14 +439,10 @@ export function Workspace() {
       await createWorkspace(pendingWorkspacePath);
 
       // 切换到新创建的工作区
-      setActiveWorkspaceKey(pendingWorkspacePath);
+      await switchToWorkspace(pendingWorkspacePath);
 
-      // 重新加载工作区列表并标记新工作区为活动
+      // 重新加载工作区列表
       await loadWorkspaces();
-      setWorkspaces(prev => prev.map(ws => ({
-        ...ws,
-        isActive: ws.path === pendingWorkspacePath || ws.isActive
-      })));
 
       setConfirmCreateModalOpen(false);
       setPendingWorkspacePath("");
@@ -467,23 +451,8 @@ export function Workspace() {
     }
   };
 
-  // 启动工作区MCP服务
-  const startWorkspaceMcpClients = async (workspacePath: string) => {
-    try {
-      await call("startWorkspaceMcpClients", { workspacePath });
-      // 更新前端运行状态
-      setRunningWorkspaces(prev => new Set(prev).add(workspacePath));
-
-      // 更新工作区的运行状态
-      setWorkspaces(prev => prev.map(ws => ({
-        ...ws,
-        isRunning: ws.path === workspacePath ? true : ws.isRunning
-      })));
-    } catch (mcpError) {
-      console.warn("Failed to start workspace MCP clients:", mcpError);
-      // 不阻止工作区操作，只是警告
-    }
-  };
+  // 创建工作区后的初始化操作（新架构下不需要显式启动MCP）
+  // 移除了 startWorkspaceMcpClients 函数 - 新架构下工作区自动管理MCP服务
 
   // 显示关闭确认对话框
   const showCloseConfirm = (workspace: WorkspaceInfo) => {
@@ -638,31 +607,22 @@ export function Workspace() {
     }
   };
 
-  // 关闭工作区（完全关闭）
+  // 关闭工作区（从前端标签页中隐藏）
   const closeWorkspace = async (workspace: WorkspaceInfo) => {
     try {
-      // 调用关闭工作区的命令（后端会自动从运行列表中移除）
-      await call("closeWorkspace", { workspacePath: workspace.path });
-
-      // 更新前端状态
-      setRunningWorkspaces(prev => {
-        const newSet = new Set(prev);
-        newSet.delete(workspace.path);
-        return newSet;
-      });
-
-      // 更新工作区状态：既不在前端显示，也不在后台运行
+      // 更新工作区状态：不在前端显示
       setWorkspaces(prev => prev.map(ws => ({
         ...ws,
         isActive: ws.path === workspace.path ? false : ws.isActive,
-        isRunning: ws.path === workspace.path ? false : ws.isRunning
       })));
 
-      message.success(t`Workspace closed successfully`);
+      message.success(t`Switched away from workspace`);
 
       // 如果关闭的是当前活动工作区，切换到全局工作区
       if (activeWorkspaceKey === workspace.path) {
-        setActiveWorkspaceKey(globalWorkspace?.path || "");
+        if (globalWorkspace) {
+          await switchToWorkspace(globalWorkspace.path);
+        }
       }
 
       // 清除详情缓存
@@ -680,33 +640,7 @@ export function Workspace() {
     }
   };
 
-  // 后台运行工作区（保持后台活动状态，但从前端标签页中隐藏）
-  const runWorkspaceInBackground = async (workspace: WorkspaceInfo) => {
-    try {
-      // 确保工作区在运行列表中（表示后台活动状态）
-      setRunningWorkspaces(prev => new Set(prev).add(workspace.path));
-
-      // 更新工作区状态：后台运行但前端不显示
-      setWorkspaces(prev => prev.map(ws => ({
-        ...ws,
-        isActive: ws.path === workspace.path ? false : ws.isActive, // 前端不显示
-        isRunning: ws.path === workspace.path ? true : ws.isRunning // 后台保持运行
-      })));
-
-      message.success(t`Workspace is now running in background`);
-
-      // 如果隐藏的是当前选中的工作区，切换到全局工作区
-      if (activeWorkspaceKey === workspace.path) {
-        setActiveWorkspaceKey(globalWorkspace?.path || "");
-      }
-
-      setCloseConfirmModalOpen(false);
-      setPendingCloseWorkspace(null);
-    } catch (error) {
-      console.error("Failed to run workspace in background:", error);
-      message.error(t`Failed to run workspace in background`);
-    }
-  };
+  // 移除了 runWorkspaceInBackground 函数 - 新架构下没有后台运行概念
 
   // 删除工作区
   const deleteWorkspace = async (workspace: WorkspaceInfo) => {
@@ -904,15 +838,7 @@ export function Workspace() {
 
     const workspace = (globalWorkspace && key === globalWorkspace.path) ? globalWorkspace : workspaces.find(ws => ws.path === key);
     if (workspace) {
-      // 如果是项目工作区，尝试启动其MCP服务
-      if (!workspace.isGlobal) {
-        try {
-          await call("startWorkspaceMcpClients", { workspacePath: workspace.path });
-        } catch (mcpError) {
-          console.warn("Failed to start workspace MCP clients on switch:", mcpError);
-          // 不阻止工作区切换，只是警告
-        }
-      }
+      // 新架构下不需要显式启动MCP服务 - 工作区自动管理
       await loadWorkspaceDetails(workspace);
       // 确保有默认的欢迎标签页
       initDefaultChatTab(workspace);
@@ -1064,6 +990,11 @@ export function Workspace() {
               <div style={{ fontSize: '11px', color: '#999', lineHeight: '1.2' }}>
                 {workspace.path}
               </div>
+              {workspace.isCurrent && (
+                <div style={{ fontSize: '10px', color: '#1890ff', lineHeight: '1.2' }}>
+                  {t`Current workspace`}
+                </div>
+              )}
             </div>
             {isGlobal ? (
               <Space>
@@ -1357,10 +1288,10 @@ export function Workspace() {
     );
   };
 
-  // 处理标签页关闭（显示关闭确认）
+  // 处理工作区切换和关闭
   const handleTabEdit = (targetKey: string | React.MouseEvent<Element, MouseEvent> | React.KeyboardEvent<Element>, action: 'add' | 'remove') => {
     if (action === 'add') {
-      // 显示打开工作区对话框
+      // 显示工作区切换对话框
       setOpenModalOpen(true);
     } else if (action === 'remove') {
       // 确保 targetKey 是字符串类型
@@ -1389,6 +1320,8 @@ export function Workspace() {
               marginBottom: 8,
               padding: '0 8px'
             }}
+            tabBarGutter={16} // 增加标签页间距
+            centered={true} // 使用Ant Design内置的居中属性
             tabBarExtraContent={{
               left: <AppHeader />,
               right: (
@@ -1404,14 +1337,19 @@ export function Workspace() {
               ...item,
               children: renderWorkspaceContent(item.key)
             }))}
-            addIcon={<PlusOutlined />}
+            addIcon={
+              <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                <SwapOutlined />
+                <span style={{ fontSize: '12px' }}>{t`Switch`}</span>
+              </div>
+            }
           />
         </div>
       </div>
 
-      {/* 打开工作区模态框 */}
+      {/* 工作区切换模态框 */}
       <Modal
-        title={t`Open or Create Workspace`}
+        title={t`Switch Workspace`}
         open={openModalOpen}
         onCancel={() => {
           setOpenModalOpen(false);
@@ -1432,12 +1370,12 @@ export function Workspace() {
             label={t`Folder Path`}
             name="path"
             rules={[{ required: true, message: t`Please select folder path` }]}
-            extra={t`Select a folder to open as workspace or create a new workspace`}
+            extra={t`Choose a project folder to work with. If it's not a workspace, you can create one.`}
           >
             <Space.Compact style={{ width: "100%" }}>
               <Input
                 style={{ width: "calc(100% - 100px)" }}
-                placeholder={t`Select workspace folder`}
+                placeholder={t`Choose project folder...`}
                 value={selectedPath || form.getFieldValue('path') || ''}
                 readOnly
               />
@@ -1450,57 +1388,7 @@ export function Workspace() {
             </Space.Compact>
           </Form.Item>
 
-          {/* 已打开的工作区 */}
-          {runningWorkspaces.size > 0 && (
-            <>
-              <Divider orientation="left">
-                <Space>
-                  <PlayCircleOutlined />
-                  <span>{t`Running Workspaces`}</span>
-                </Space>
-              </Divider>
-              <List
-                size="small"
-                dataSource={workspaces.filter(ws => ws.isRunning && !ws.isActive)}
-                renderItem={(workspace) => (
-                  <List.Item
-                    style={{ cursor: 'pointer', padding: '8px 0' }}
-                    onClick={() => {
-                      switchToWorkspace(workspace.path);
-                    }}
-                    actions={[
-                      <Button
-                        key="switch"
-                        type="primary"
-                        size="small"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          switchToWorkspace(workspace.path);
-                        }}
-                      >
-                        {t`Switch`}
-                      </Button>
-                    ]}
-                  >
-                    <List.Item.Meta
-                      avatar={<FolderOpenOutlined />}
-                      title={
-                        <Space>
-                          <span>{workspace.name}</span>
-                          <Tag color="green">{t`Running`}</Tag>
-                        </Space>
-                      }
-                      description={
-                        <Text type="secondary" style={{ fontSize: '12px' }}>
-                          {workspace.path}
-                        </Text>
-                      }
-                    />
-                  </List.Item>
-                )}
-              />
-            </>
-          )}
+          {/* 移除Other Workspaces区域 - 新架构下专注于单工作区模式 */}
 
           {/* 历史记录 */}
           {workspaceHistory.length > 0 && (
@@ -1571,10 +1459,10 @@ export function Workspace() {
           setPendingWorkspacePath("");
         }}
         onOk={confirmCreateWorkspace}
-        okText={t`Create`}
+        okText={t`Create & Switch`}
         cancelText={t`Cancel`}
       >
-        <p>{t`The selected folder is not a workspace. Do you want to create a new workspace here?`}</p>
+        <p>{t`The selected folder is not a workspace. Do you want to create a new workspace here and switch to it?`}</p>
         <p><strong>{t`Path`}:</strong> {pendingWorkspacePath}</p>
       </Modal>
 
@@ -1586,41 +1474,19 @@ export function Workspace() {
           setCloseConfirmModalOpen(false);
           setPendingCloseWorkspace(null);
         }}
-        footer={[
-          <Button key="cancel" onClick={() => {
-            setCloseConfirmModalOpen(false);
-            setPendingCloseWorkspace(null);
-          }}>
-            {t`Cancel`}
-          </Button>,
-          <Button key="background" type="default" onClick={() => {
-            if (pendingCloseWorkspace) {
-              runWorkspaceInBackground(pendingCloseWorkspace);
-            }
-          }}>
-            {t`Run in Background`}
-          </Button>,
-          <Button key="close" type="primary" danger onClick={() => {
-            if (pendingCloseWorkspace) {
-              closeWorkspace(pendingCloseWorkspace);
-            }
-          }}>
-            {t`Close Completely`}
-          </Button>
-        ]}
+        onOk={() => {
+          if (pendingCloseWorkspace) {
+            closeWorkspace(pendingCloseWorkspace);
+          }
+        }}
+        okText={t`Close`}
+        cancelText={t`Cancel`}
       >
-        <p>{t`How would you like to close this workspace?`}</p>
+        <p>{t`Are you sure you want to close this workspace?`}</p>
         {pendingCloseWorkspace && (
           <p><strong>{pendingCloseWorkspace.name}</strong> ({pendingCloseWorkspace.path})</p>
         )}
-        <div style={{ marginTop: 16 }}>
-          <div style={{ marginBottom: 8 }}>
-            <strong>{t`Run in Background`}:</strong> {t`Keep MCP services and terminals running, but hide from tabs`}
-          </div>
-          <div>
-            <strong>{t`Close Completely`}:</strong> {t`Stop all MCP services and terminals for this workspace`}
-          </div>
-        </div>
+        <p>{t`The workspace will be removed from the current session tabs.`}</p>
       </Modal>
 
       {/* 服务器目录浏览器 */}

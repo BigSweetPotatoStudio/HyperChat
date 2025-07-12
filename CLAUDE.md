@@ -51,7 +51,7 @@ HyperChat 是一个多平台的 AI 聊天应用，该项目拥有完善的 MCP�
 * i18n 相关的代码在 packages/web/src/i18n.ts 中。 软件默认使用英文，然后通过 t`english` 转成中文
 * packages/web/src/i18n.json 不用修改。后续我会提供一个脚本来自动生成 i18n.json 文件。
 
-## 🚀 新架构决策 (2.0版本核心理念)
+## ✅ 新架构决策 (2.0版本 - 已完成实现)
 
 ### 核心理念：进程/会话 = 全局配置 + 工作区配置（覆盖模式）
 **目标**：统一CLI和Web端的架构，实现更简单、一致的用户体验
@@ -93,6 +93,34 @@ HyperChat 是一个多平台的 AI 聊天应用，该项目拥有完善的 MCP�
 - ✅ 新增：简单的项目选择器（Web端）
 - ✅ 新增：自动工作区检测（CLI端）
 - ✅ 新增：统一的配置覆盖机制
+
+#### 实现状态 ✅ 全部完成
+1. **后端配置合并逻辑** ✅：workspace.mts中实现loadMergedConfig()和getMergedAgents()
+2. **WorkspaceManager架构重构** ✅：简化为单工作区模式，完整向后兼容
+3. **前端Web架构重构** ✅：移除"运行工作区"概念，实现简单工作区切换
+4. **API接口完善** ✅：添加switchWorkspace命令，完善前后端通信
+5. **UI组件更新** ✅：更新WorkspaceInfo接口，修改关闭确认对话框，简化用户体验
+
+#### 详细实现记录 (2025-01-12)
+
+**前端架构重构 (packages/web/src/pages/workspace/workspace.tsx)**
+- 移除 `isRunning` 属性，新增 `isCurrent` 属性标记当前工作区
+- 删除 `runningWorkspaces` 状态管理和相关UI逻辑  
+- 简化 `switchToWorkspace()` 函数，使用新的 `switchWorkspace` API
+- 重构关闭工作区确认对话框，移除"后台运行"选项
+- 更新工作区列表显示，从"运行工作区"改为"可切换工作区"
+- 移除 `startWorkspaceMcpClients()` 和 `runWorkspaceInBackground()` 函数
+
+**后端API扩展 (packages/core/src/command.mts)**
+- 新增 `switchWorkspace({ workspacePath })` 命令
+- 利用 WorkspaceManager.switchWorkspace() 实现工作区切换
+- 保持与现有 `getRunningWorkspaces()` API的兼容性
+
+**用户体验改进**
+- 工作区切换更加直观简单
+- 消除了"运行中"和"前端显示"的概念混淆
+- 统一了CLI和Web端的工作区管理模式
+- 自动配置合并，用户无需关心复杂的配置层次
 
 ## ✅ 已完成的架构重构
 

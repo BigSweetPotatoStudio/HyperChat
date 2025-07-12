@@ -1937,6 +1937,26 @@ export class CommandFactory {
   }
 
   /**
+   * 切换到指定工作区
+   * @param workspacePath 工作区路径
+   * @returns 切换结果
+   */
+  async switchWorkspace({
+    workspacePath
+  }: {
+    workspacePath: string;
+  }): Promise<boolean> {
+    try {
+      const workspaceManager = getWorkspaceManager();
+      await workspaceManager.switchWorkspace(workspacePath);
+      return true;
+    } catch (error) {
+      console.error("Failed to switch workspace:", error);
+      throw error;
+    }
+  }
+
+  /**
    * 获取工作区设置
    * @param workspacePath 工作区路径
    * @returns 工作区设置
