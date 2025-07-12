@@ -142,8 +142,8 @@ export function Workspace() {
 
   const [activeWorkspaceKey, setActiveWorkspaceKey] = useState<string>("");
 
-  const [workspaces, setWorkspaces] = useState<WorkspaceInfo[]>([]);
-  const [globalWorkspace, setGlobalWorkspace] = useState<WorkspaceInfo | null>(null);
+  // 新架构：只需要当前工作区信息
+  const [currentWorkspace, setCurrentWorkspace] = useState<WorkspaceInfo | null>(null);
   const [workspaceDetails, setWorkspaceDetails] = useState<WorkspaceDetails>({});
 
   const [loading, setLoading] = useState(false);
@@ -216,81 +216,44 @@ export function Workspace() {
     };
   }, []);
 
-  // 加载工作区列表
-  const loadWorkspaces = async () => {
+  // 加载当前工作区（新架构：只需要当前工作区）
+  const loadCurrentWorkspace = async () => {
     try {
       setLoading(true);
 
-      // 获取当前工作区路径（使用WorkspaceManager API）
-      let currentWorkspacePath: string | null = null;
-      try {
-        const runningWorkspaces = await call("getRunningWorkspaces");
-        // 找到非全局的当前工作区
-        const currentWs = runningWorkspaces.find((ws: any) => !ws.isGlobal);
-        currentWorkspacePath = currentWs?.path || null;
-        console.log("Current workspace:", currentWorkspacePath);
-      } catch (error) {
-        console.warn("Failed to get current workspace:", error);
-      }
+      // 只需要获取当前工作区信息
+      const currentWorkspaceData = await call("getCurrentWorkspace");
+      if (currentWorkspaceData) {
+        console.log("Current workspace:", currentWorkspaceData);
 
-      // 加载全局工作区
-      const globalWs = await call("getGlobalWorkspace");
-      if (globalWs) {
-        console.log("Global workspace path:", globalWs.path);
-        const globalSummary = await call("getCurrentWorkspace", {
-          workspacePath: globalWs.path
-        });
-        const globalWorkspaceInfo = {
-          ...globalWs,
-          agentsCount: 0,
-          mcpServersCount: 0,
-          isGlobal: true,
-          isActive: true, // 全局工作区默认总是在前端显示
-          isCurrent: currentWorkspacePath === globalWs.path, // 是否为当前工作区
-          ...globalSummary,
+        // 创建当前工作区信息
+        const currentWorkspaceInfo: WorkspaceInfo = {
+          path: currentWorkspaceData.path || '',
+          name: currentWorkspaceData.name || 'Workspace',
+          description: currentWorkspaceData.description,
+          created: currentWorkspaceData.created || Date.now(),
+          lastAccessed: currentWorkspaceData.lastAccessed || Date.now(),
+          settings: currentWorkspaceData.settings || { enableKnowledgeBase: true },
+          agentsCount: currentWorkspaceData.agentsCount || 0,
+          mcpServersCount: currentWorkspaceData.mcpServersCount || 0,
+          isGlobal: currentWorkspaceData.isGlobal || currentWorkspaceData.path?.includes('Documents/HyperChat') || false,
+          isActive: true, // 当前工作区总是激活的
+          isCurrent: true, // 这就是当前工作区
         };
-        setGlobalWorkspace(globalWorkspaceInfo);
 
-        // 如果还没有选择工作区，默认选择全局工作区
-        if (!activeWorkspaceKey) {
-          setActiveWorkspaceKey(globalWs.path);
-        }
+        // 设置当前工作区
+        setCurrentWorkspace(currentWorkspaceInfo);
+        setActiveWorkspaceKey(currentWorkspaceInfo.path);
       }
-
-      // 加载项目工作区列表
-      const workspaceList = await call("getWorkspaceList");
-      const workspaceInfos: WorkspaceInfo[] = [];
-
-      for (const ws of workspaceList) {
-        try {
-          // ws 现在已经包含了正确的 path 字段
-          const summary = await call("getCurrentWorkspace", { workspacePath: ws.path });
-          if (summary) {
-            workspaceInfos.push({
-              ...ws,
-              agentsCount: summary.agentsCount || 0,
-              mcpServersCount: summary.mcpServersCount || 0,
-              isActive: false, // 默认不在前端显示
-              isCurrent: currentWorkspacePath === ws.path, // 是否为当前工作区
-              isGlobal: false, // 标记为项目工作区
-            });
-          }
-        } catch (error) {
-          // 工作区可能不存在或损坏，跳过
-          console.warn(`Failed to load workspace ${ws.name}:`, error);
-        }
-      }
-
-      setWorkspaces(workspaceInfos);
     } catch (error) {
-      console.error("Failed to load workspaces:", error);
-      message.error(t`Failed to load workspaces`);
+      console.error("Failed to load current workspace:", error);
+      message.error(t`Failed to load workspace`);
     } finally {
       setLoading(false);
     }
   };
 
-  // 加载工作区详细信息
+  // 加载当前工作区详细信息
   const loadWorkspaceDetails = async (workspace: WorkspaceInfo) => {
     const key = workspace.path;
 
@@ -355,7 +318,7 @@ export function Workspace() {
         setWorkspaceHistory(getWorkspaceHistory());
 
         // 重新加载以更新当前工作区标记
-        await loadWorkspaces();
+        await loadCurrentWorkspace();
 
         message.success(t`Workspace opened successfully`);
         setOpenModalOpen(false);
@@ -373,35 +336,17 @@ export function Workspace() {
     }
   };
 
-  // 切换工作区
+  // 切换工作区（新架构：简化为只需要切换当前工作区）
   const switchToWorkspace = async (workspacePath: string) => {
     try {
-      // 新架构下，"切换工作区"实际上是重新打开工作区
-      await call("openWorkspace", { workspacePath });
+      // 使用switchWorkspace API切换工作区
+      await call("switchWorkspace", { workspacePath });
 
-      // 将工作区标记为前端活动状态
-      setWorkspaces(prev => prev.map(ws => ({
-        ...ws,
-        isActive: ws.path === workspacePath || ws.isActive, // 保留其他已激活的工作区
-        isCurrent: ws.path === workspacePath // 标记为当前工作区
-      })));
-
-      // 如果是全局工作区，也要更新
-      if (globalWorkspace && globalWorkspace.path === workspacePath) {
-        setGlobalWorkspace(prev => prev ? { ...prev, isCurrent: true } : null);
-      }
-
-      // 切换到该工作区（这会让它重新出现在标签页中）
-      setActiveWorkspaceKey(workspacePath);
+      // 关闭对话框
       setOpenModalOpen(false);
 
-      // 重新加载工作区详情
-      const workspace = workspaces.find(ws => ws.path === workspacePath) || globalWorkspace;
-      if (workspace) {
-        await loadWorkspaceDetails(workspace);
-        // 确保有默认的欢迎标签页
-        initDefaultChatTab(workspace);
-      }
+      // 重新加载当前工作区信息
+      await loadCurrentWorkspace();
 
       message.success(t`Switched to workspace`);
     } catch (error) {
@@ -426,7 +371,7 @@ export function Workspace() {
       setWorkspaceHistory(getWorkspaceHistory());
 
       message.success(t`Workspace created and switched successfully`);
-      loadWorkspaces();
+      loadCurrentWorkspace();
     } catch (error) {
       console.error("Failed to create workspace:", error);
       message.error(t`Failed to create workspace`);
@@ -442,7 +387,7 @@ export function Workspace() {
       await switchToWorkspace(pendingWorkspacePath);
 
       // 重新加载工作区列表
-      await loadWorkspaces();
+      await loadCurrentWorkspace();
 
       setConfirmCreateModalOpen(false);
       setPendingWorkspacePath("");
@@ -477,7 +422,7 @@ export function Workspace() {
   // 更新工作区设置
   const updateWorkspaceSettings = async (updates: any) => {
     if (!currentSettingsWorkspace) return;
-    
+
     try {
       const updatedSettings = await call("updateWorkspaceSettings", {
         workspacePath: currentSettingsWorkspace.path,
@@ -485,7 +430,7 @@ export function Workspace() {
       });
       setWorkspaceSettings(updatedSettings);
       message.success(t`Settings updated successfully`);
-      
+
       // 如果更改了主题设置，应用到界面
       if (updates.appearance?.isDarkMode !== undefined) {
         const darkReader = await import('darkreader');
@@ -526,7 +471,7 @@ export function Workspace() {
       });
       setAppSettings(updatedSettings);
       message.success(t`App settings updated successfully`);
-      
+
       // 如果更改了主题设置，应用到界面
       if (updates.appearance?.darkTheme !== undefined) {
         const darkReader = await import('darkreader');
@@ -564,10 +509,10 @@ export function Workspace() {
     const currentWorkspace = getCurrentWorkspace();
     const details = workspaceDetails[currentWorkspace?.path || ''] || { mcpClients: {} };
     const globalDetails = getGlobalDetails();
-    
+
     // 合并全局和当前工作区的 MCP 客户端
     const allMcpClients = Object.values(Object.assign({}, globalDetails.mcpClients, details.mcpClients));
-    
+
     // 提取所有可用的 MCP 服务名称
     const availableMCPs = new Set<string>();
     allMcpClients.forEach(client => {
@@ -581,7 +526,7 @@ export function Workspace() {
         }
       }
     });
-    
+
     return Array.from(availableMCPs).sort();
   };
 
@@ -590,7 +535,7 @@ export function Workspace() {
     try {
       const updates = { mcpGateWays: gateways };
       await updateAppSettings(updates);
-      
+
       // 刷新 MCP 路由以应用新的网关配置
       try {
         await call("refreshMcpRoutes");
@@ -599,7 +544,7 @@ export function Workspace() {
         console.warn('Failed to refresh MCP routes, but settings were saved:', routeError);
         // 不阻止设置保存，只是警告路由刷新失败
       }
-      
+
       message.success(t`MCP Gateways updated successfully`);
     } catch (error) {
       console.error("Failed to update MCP gateways:", error);
@@ -620,8 +565,8 @@ export function Workspace() {
 
       // 如果关闭的是当前活动工作区，切换到全局工作区
       if (activeWorkspaceKey === workspace.path) {
-        if (globalWorkspace) {
-          await switchToWorkspace(globalWorkspace.path);
+        if (currentWorkspace) {
+          await switchToWorkspace(currentWorkspace.path);
         }
       }
 
@@ -654,7 +599,7 @@ export function Workspace() {
       message.success(t`Workspace deleted successfully`);
 
       // 重新加载工作区列表
-      loadWorkspaces();
+      loadCurrentWorkspace();
     } catch (error) {
       console.error("Failed to delete workspace:", error);
       message.error(t`Failed to delete workspace`);
@@ -683,7 +628,7 @@ export function Workspace() {
   // 刷新工作区详情
   const refreshWorkspaceDetails = async (workspaceKey?: string, refreshType?: 'agents' | 'mcp' | 'all') => {
     const key = workspaceKey || activeWorkspaceKey;
-    const workspace = (globalWorkspace && key === globalWorkspace.path) ? globalWorkspace : workspaces.find(ws => ws.path === key);
+    const workspace = currentWorkspace;
     const type = refreshType || 'all';
 
     if (workspace) {
@@ -788,7 +733,7 @@ export function Workspace() {
   };
 
   useEffect(() => {
-    loadWorkspaces();
+    loadCurrentWorkspace();
   }, []);
 
   // 当工作区加载完成后，自动加载当前活动工作区的详情
@@ -805,12 +750,9 @@ export function Workspace() {
     }
   }, [activeWorkspaceKey]);
 
-  // 获取当前活动工作区
+  // 获取当前活动工作区（新架构：直接返回当前工作区）
   const getCurrentWorkspace = () => {
-    if (globalWorkspace && activeWorkspaceKey === globalWorkspace.path) {
-      return globalWorkspace;
-    }
-    return workspaces.find(ws => ws.path === activeWorkspaceKey);
+    return currentWorkspace;
   };
 
   // 获取当前工作区详情
@@ -820,10 +762,10 @@ export function Workspace() {
 
   // 获取当前工作区详情
   const getGlobalDetails = () => {
-    if (!globalWorkspace?.path) {
+    if (!currentWorkspace?.path) {
       return { agents: [], mcpClients: {} };
     }
-    return workspaceDetails[globalWorkspace.path] || { agents: [], mcpClients: {} };
+    return workspaceDetails[currentWorkspace.path] || { agents: [], mcpClients: {} };
   };
 
   // 处理标签页切换
@@ -836,7 +778,7 @@ export function Workspace() {
     //   isActive: ws.path === key
     // })));
 
-    const workspace = (globalWorkspace && key === globalWorkspace.path) ? globalWorkspace : workspaces.find(ws => ws.path === key);
+    const workspace = currentWorkspace;
     if (workspace) {
       // 新架构下不需要显式启动MCP服务 - 工作区自动管理
       await loadWorkspaceDetails(workspace);
@@ -847,7 +789,7 @@ export function Workspace() {
 
   // 打开Agent聊天
   const openAgentChat = (workspaceKey: string, agent: any, chatLog?: any) => {
-    const workspace = (globalWorkspace && workspaceKey === globalWorkspace.path) ? globalWorkspace : workspaces.find(ws => ws.path === workspaceKey);
+    const workspace = currentWorkspace;
     if (!workspace) return;
 
     // 记录 agent 使用
@@ -953,31 +895,17 @@ export function Workspace() {
     }
   };
 
-  // 获取活动显示的工作区列表（全局 + 当前显示的）
-  const getActiveWorkspaces = () => {
-    const activeList: WorkspaceInfo[] = [];
-
-    // 总是显示全局工作区
-    if (globalWorkspace) {
-      activeList.push(globalWorkspace);
-    }
-
-    // 添加所有标记为活动的工作区
-    workspaces.forEach(workspace => {
-      if (workspace.isActive) {
-        activeList.push(workspace);
-      }
-    });
-
-    return activeList;
+  // 获取当前工作区（新架构：只有一个当前工作区）
+  const getCurrentWorkspaceForDisplay = () => {
+    return currentWorkspace ? [currentWorkspace] : [];
   };
 
-  // 生成标签页items
+  // 生成标签页items（新架构：只显示当前工作区）
   const getTabItems = () => {
     const items: any[] = [];
-    const activeList = getActiveWorkspaces();
+    const workspaceList = getCurrentWorkspaceForDisplay();
 
-    activeList.forEach(workspace => {
+    workspaceList.forEach(workspace => {
       const isGlobal = workspace.isGlobal;
 
       items.push({
@@ -1067,7 +995,7 @@ export function Workspace() {
 
   // 渲染工作区内容
   const renderWorkspaceContent = (workspaceKey: string) => {
-    const workspace = (globalWorkspace && workspaceKey === globalWorkspace.path) ? globalWorkspace : workspaces.find(ws => ws.path === workspaceKey);
+    const workspace = currentWorkspace;
     const details = workspaceDetails[workspaceKey] || { agents: [], mcpClients: {} };
     const globalDetails = getGlobalDetails();
 
@@ -1296,7 +1224,7 @@ export function Workspace() {
     } else if (action === 'remove') {
       // 确保 targetKey 是字符串类型
       if (typeof targetKey === 'string') {
-        const workspace = workspaces.find(ws => ws.path === targetKey);
+        const workspace = currentWorkspace;
         if (workspace && !workspace.isGlobal) {
           // 显示关闭确认对话框
           showCloseConfirm(workspace);
@@ -1654,7 +1582,7 @@ export function Workspace() {
             gateways={appSettings.mcpGateWays || []}
             onUpdate={updateMCPGateways}
             availableMCPs={getAvailableMCPs()}
-            mcpClients={Object.values(workspaceDetails[globalWorkspace!.path]?.mcpClients || {})}
+            mcpClients={Object.values(workspaceDetails[currentWorkspace!.path]?.mcpClients || {})}
           />
         )}
       </Drawer>
