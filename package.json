@@ -13,7 +13,7 @@
     "dev": "node scripts/build.mjs dev",
     "dev:web": "node scripts/build.mjs dev web",
     "dev:core": "node scripts/build.mjs dev core",
-    "dev:cli": "node scripts/build.mjs dev cli",
+    "dev:cli": "echo 'CLI 已集成到 Core 包中，请使用 npm run dev:core'",
     "dev:electron": "node scripts/build.mjs dev electron",
     "dev:all": "node scripts/build.mjs dev all",
     "build": "node scripts/build.mjs buildAll",

@@ -6,11 +6,11 @@
 
 import process from 'process';
 import { Logger } from '../utils/logger.mjs';
-import { Command } from '../../../core/src/command.mjs';
+import { Command } from '../../command.mjs';
 import { AiChannel } from '@hyperchat/shared/ai';
 import type { MyMessage } from '@hyperchat/shared/types';
 import { createReadline } from '../utils/readline.mjs';
-import { getWorkspaceManager } from '../../../core/src/workspace/index.mjs';
+import { workspaceManager } from '../../workspace/index.mjs';
 
 
 export interface ChatOptions {
@@ -37,7 +37,7 @@ export async function startChat(initialMessage?: string, options: ChatOptions = 
 
     if (!workspacePath) {
       // 新架构：直接使用工作区管理器
-      const workspaceManager = getWorkspaceManager();
+      // workspaceManager is already imported
       await workspaceManager.initialize();
       workspacePath = workspaceManager.getCurrentWorkspacePath();
       // 新架构下简化配置获取

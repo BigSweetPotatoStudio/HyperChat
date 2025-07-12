@@ -15,10 +15,10 @@ import { readFileSync } from 'fs';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
 import { Logger } from './utils/logger.mjs';
-import { getWorkspaceManager } from '../../core/src/workspace/index.mjs';
+import { workspaceManager } from '../workspace/index.mjs';
 // 获取包信息
 const __dirname = dirname(fileURLToPath(import.meta.url));
-const packagePath = join(__dirname, '..', 'package.json');
+const packagePath = join(__dirname, '..', '..', 'package.json');
 const pkg = JSON.parse(readFileSync(packagePath, 'utf8'));
 
 // 简单的命令行参数解析
@@ -266,17 +266,11 @@ async function startServer(logger: Logger) {
     }
     
     // 启动 Core 服务器
-    // 获取正确的core包路径
-    const corePackagePath = join(__dirname, '..', '..', '..', 'core');
+    // 获取正确的core包路径（当前就在core包内）
+    const corePackagePath = join(__dirname, '..', '..');
     logger.debug(`Core 包路径: ${corePackagePath}`);
     
-    // 检查core包是否存在
-    const fs = await import('fs');
-    if (!fs.existsSync(corePackagePath)) {
-      logger.error(`找不到core包目录: ${corePackagePath}`);
-      logger.info('请确保在正确的目录运行此命令');
-      process.exit(1);
-    }
+    // 现在CLI在core包内，无需检查core包路径
     
     const serverProcess = spawn('npm', ['run', 'dev'], {
       cwd: corePackagePath,
@@ -422,7 +416,6 @@ async function showWorkspaceInfo(path: string, logger: Logger) {
 async function showCurrentWorkspace(logger: Logger) {
   try {
     // 新架构：直接使用core模块获取当前工作区信息
-    const workspaceManager = getWorkspaceManager();
     await workspaceManager.initialize();
     const workspace = workspaceManager.getCurrentWorkspace();
     const workspaceInfo = {

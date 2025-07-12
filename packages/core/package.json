@@ -64,10 +64,14 @@
   "main": "dist/main.mjs",
   "module": "dist/main.mjs",
   "type": "module",
+  "bin": {
+    "hyperchat": "dist/cli/index.mjs",
+    "hc": "dist/cli/index.mjs"
+  },
   "exports": {
     ".": {
-      "types": "./dist/main.d.mts",
-      "import": "./dist/main.mjs"
+      "types": "./dist/lib.d.mts",
+      "import": "./dist/lib.mjs"
     },
     "./command": {
       "types": "./dist/command.d.mts",

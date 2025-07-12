@@ -31,7 +31,7 @@
       "DOM",
     ],
     "target": "ESNext",
-    "outDir": "./js",
+    "outDir": "./dist",
     "typeRoots": [
       "./node_modules/@types",
       "./types"
@@ -46,7 +46,7 @@
     },
     "composite": true,
     "incremental": true,
-    "tsBuildInfoFile": "./js/.tsbuildinfo"
+    "tsBuildInfoFile": "./dist/.tsbuildinfo"
   },
   "include": [
     "src",

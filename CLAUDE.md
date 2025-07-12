@@ -12,15 +12,14 @@ HyperChat 是一个多平台的 AI 聊天应用，该项目拥有完善的 MCP�
 * **核心**: nodejs
 * **Web前端**: 通过浏览器访问，支持h5
 * **Electron**: 桌面应用，自带浏览器
-* **命令行前端**: 类似Claude Code，只能聊天，配置通过web前端完成
+* **命令行前端**: 类似Claude Code，已集成到core包中，配置通过web前端完成
 * **VSCode插件**: 通过webview访问构建
 
 ### 包结构
 * `packages/shared` - 共享代码和类型定义，前后端通用
-* `packages/core` - Node.js 后端服务
+* `packages/core` - Node.js 后端服务 + CLI命令行工具 (已合并)
 * `packages/web` - Web 前端的实现
 * `packages/electron` - Electron 桌面应用
-* `packages/cli` - 命令行前端的实现
 
 ## 开发逻辑
 
@@ -94,6 +93,7 @@ HyperChat 是一个多平台的 AI 聊天应用，该项目拥有完善的 MCP�
 - ✅ 新增：自动工作区检测（CLI端）
 - ✅ 新增：统一的配置覆盖机制
 
+
 #### 实现状态 ✅ 全部完成
 1. **后端配置合并逻辑** ✅：workspace.mts中实现loadMergedConfig()和getMergedAgents()
 2. **WorkspaceManager架构重构** ✅：简化为单工作区模式，完整向后兼容
@@ -143,12 +143,12 @@ HyperChat 是一个多平台的 AI 聊天应用，该项目拥有完善的 MCP�
 - **自动化**: 无需手动管理配置切换
 - **稳定性**: 一次加载，会话期间配置稳定
 
-### CLI 架构重构 (完成)
-- **HTTP API 移除**: 从 HTTP API 通信改为直接导入 core 模块，提高性能和可靠性
+### CLI 架构重构 (完成) ✨
+- **集成到core包**: 将CLI作为core的一部分，简化架构和依赖管理
 - **完整命令支持**: 实现了聊天、服务器管理、工作区、代理、配置等完整功能
 - **服务器管理**: 支持启动 core 服务器，供浏览器访问 Web 界面
 - **命令行体验**: 提供类似 Claude Code 的命令行体验，支持交互式聊天
-- **架构清晰**: CLI 作为独立的前端包，与 core 后端分离，符合 monorepo 最佳实践
+- **架构清晰**: CLI作为core的子模块，符合简化的monorepo最佳实践
 
 #### CLI 功能特性
 - **聊天功能**: `hyperchat "你好"` 或 `hyperchat chat` 进行 AI 对话
@@ -198,21 +198,19 @@ HyperChat 是一个多平台的 AI 聊天应用，该项目拥有完善的 MCP�
 
 ## 当前构建命令 🚀
 
-### 可用的构建脚本
+### 可用的构建脚本 (更新)
 ```bash
 # 构建
 npm run build             # 构建所有包（按依赖顺序）
 npm run build:shared      # 构建 shared 包
 npm run build:web         # 构建 Web 前端
-npm run build:core        # 构建 Core 后端
-npm run build:cli         # 构建 CLI 工具
+npm run build:core        # 构建 Core 后端 + CLI
 npm run build:electron    # 构建 Electron 应用
 
 # 开发模式
 npm run dev:shared        # shared 包开发模式（watch）
 npm run dev:web          # Web 开发服务器
-npm run dev:core         # Core 开发模式
-npm run dev:cli          # CLI 开发模式
+npm run dev:core         # Core + CLI 开发模式
 npm run dev:electron     # Electron 开发模式
 
 # 工具
@@ -220,14 +218,52 @@ npm run clean            # 清理所有构建产物
 npm run typecheck        # 所有包类型检查
 ```
 
-### 构建顺序
+### 构建顺序 (更新)
 1. **shared** - 必须最先构建，其他包依赖它
 2. **web** - React 前端构建
-3. **core** - Node.js 后端构建
-4. **cli** - 命令行工具
-5. **electron** - 桌面应用（依赖 web 构建产物）
+3. **core** - Node.js 后端 + CLI 构建
+4. **electron** - 桌面应用（依赖 web 构建产物）
 
-## 🗂️ 项目结构
+### CLI使用方式 (更新)
+```bash
+# 直接运行
+node packages/core/dist/cli/index.mjs --help
+
+# 安装后使用 (如果全局安装core包)
+hyperchat --help
+hc workspace current
+
+# 常用命令
+hyperchat "你好"                    # 直接AI对话
+hyperchat server start             # 启动Web服务器
+hyperchat workspace current        # 查看当前工作区
+hyperchat agent list              # 列出AI代理
+hyperchat config get ai.models    # 获取AI模型配置
+```
+
+## 🗂️ 项目结构 (更新)
+
+### 当前包结构
+```
+HyperChat/
+├── packages/
+│   ├── shared/          # 共享类型和工具库
+│   ├── web/            # React Web前端
+│   ├── core/           # Node.js后端 + CLI (合并后)
+│   │   ├── src/cli/    # ✨ CLI命令行工具
+│   │   │   ├── index.mts          # CLI主入口
+│   │   │   ├── commands/          # 命令实现
+│   │   │   │   ├── agent.mts     # 代理管理
+│   │   │   │   ├── chat.mts      # AI聊天
+│   │   │   │   ├── config.mts    # 配置管理
+│   │   │   │   ├── server.mts    # 服务器控制
+│   │   │   │   └── workspace.mts # 工作区管理
+│   │   │   └── utils/            # CLI工具函数
+│   │   ├── src/workspace/        # 工作区管理
+│   │   ├── src/command.mts       # API命令层
+│   │   └── src/mcp/              # MCP协议实现
+│   └── electron/       # Electron桌面应用
+```
 
 ### 全局配置目录
 ```
@@ -277,8 +313,9 @@ npm run typecheck        # 所有包类型检查
 - [x] Schema2Form组件系统：支持JSON Schema转Ant Design表单，包括双模式编辑（表单/JSON）和Monaco编辑器集成
 - [x] AI配置管理系统：支持多提供商管理、模型配置、API Key管理，集成到应用设置中
 - [x] 应用设置系统：采用Schema驱动的UI生成，支持复杂对象、数组、条件schema等
-- [x] CLI架构重构：从HTTP API改为直接导入core模块，实现了完整的命令行界面
+- [x] CLI架构重构：从HTTP API改为直接导入core模块，并集成到core包中
 - [x] Workspace配置合并逻辑：在workspace.mts中实现了智能工作区检测和配置合并
+- [x] CLI集成到Core包：简化架构，提升性能，统一构建流程
 
 ### 架构优势
 - **分离关注点**: JSON Schema 与业务逻辑分离，shared 包独立维护
@@ -287,12 +324,13 @@ npm run typecheck        # 所有包类型检查
 - **类型安全**: 保持完整的 TypeScript 类型支持，跨包类型共享
 - **前端集成**: Schema2Form 自动生成 UI 界面
 - **构建效率**: npm workspaces 避免依赖重复，统一的构建管理
+- **架构简化**: CLI集成到core包，减少包管理复杂性
 
 ### 待办事项
 - [ ] 减少any使用，多使用packages/shared/src/types.mts定义的类型
 - [ ] 完善 Schema2Form 组件的单元测试
 - [ ] 优化 AI 配置管理的性能，考虑大量模型时的加载优化
 - [ ] 为 WorkspaceSettings 添加前端配置界面
-- [ ] 完善 CLI 与 core 模块的深度集成，实现真正的 AI 对话功能
-- [ ] 修复 shared 包的 TypeScript 类型错误
-- [ ] 优化 shared 包的模块导出配置
+- [ ] 修复 CLI 中的 TypeScript 类型错误
+- [ ] 考虑在 Electron 中集成 CLI 功能
+- [ ] 优化 MCP 工具性能和错误处理

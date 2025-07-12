@@ -47,9 +47,8 @@ const tasks = {
       'packages/shared/dist',
       'packages/web/build',
       'packages/web/dist',
-      'packages/core/dist',
+      'packages/core/dist', // CLI 现在包含在 Core 中
       'packages/core/web-build',
-      'packages/cli/dist',
       'packages/electron/dist',
       'packages/electron/web-build'
     ];
@@ -131,10 +130,10 @@ const tasks = {
   },
 
 
-  // 构建 CLI
+  // 构建 CLI (现在集成在 Core 包中)
   async buildCli() {
-    console.log('\n⚡ 构建 CLI 包...');
-    exec('npm run build', { cwd: join(rootDir, 'packages/cli') });
+    console.log('\n⚡ CLI 已集成到 Core 包中，构建 Core 包...');
+    await tasks.buildCore();
   },
 
   // 构建 Electron
@@ -170,8 +169,7 @@ const tasks = {
     // 按顺序构建 (shared 必须先构建，因为其他包依赖它)
     await tasks.buildShared();
     await tasks.buildWeb();
-    await tasks.buildCore();
-    await tasks.buildCli();
+    await tasks.buildCore(); // CLI 现在包含在 Core 构建中
     await tasks.buildElectron();
 
     console.log('\n✨ 所有构建已完成！');
@@ -222,7 +220,7 @@ HyperChat 构建脚本
   buildShared   构建 Shared 包
   buildWeb      构建 Web 前端
   buildCore     构建 Core 包
-  buildCli      构建 CLI 包
+  buildCli      构建 CLI (已集成到 Core 包)
   buildElectron 构建 Electron 应用
   buildAll      构建所有包
   dev [target]  启动开发模式 (shared/web/core/cli/electron/all)

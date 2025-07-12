@@ -4,7 +4,7 @@
 
 import process from 'process';
 import { Logger } from '../utils/logger.mjs';
-import { Command } from '../../../core/src/command.mjs';
+import { Command } from '../../command.mjs';
 
 export async function getConfig(key: string) {
   const logger = new Logger();

@@ -4,14 +4,14 @@
 
 import process from 'process';
 import { Logger } from '../utils/logger.mjs';
-import { Command } from '../../../core/src/command.mjs';
-import { getWorkspaceManager } from '../../../core/src/workspace/index.mjs';
+import { Command } from '../../command.mjs';
+import { workspaceManager } from '../../workspace/index.mjs';
 /**
  * 获取当前工作区路径（使用新的会话管理器，只读模式）
  */
 async function getCurrentWorkspacePath(): Promise<string> {
 
-  const workspaceManager = getWorkspaceManager();
+  // workspaceManager is already imported
   await workspaceManager.initialize();
   return workspaceManager.getCurrentWorkspacePath();
 }
