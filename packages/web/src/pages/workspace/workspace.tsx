@@ -371,7 +371,7 @@ export function Workspace() {
       setWorkspaceHistory(getWorkspaceHistory());
 
       message.success(t`Workspace created and switched successfully`);
-      loadCurrentWorkspace();
+      await loadCurrentWorkspace();
     } catch (error) {
       console.error("Failed to create workspace:", error);
       message.error(t`Failed to create workspace`);
@@ -555,19 +555,14 @@ export function Workspace() {
   // 关闭工作区（从前端标签页中隐藏）
   const closeWorkspace = async (workspace: WorkspaceInfo) => {
     try {
-      // 更新工作区状态：不在前端显示
-      setWorkspaces(prev => prev.map(ws => ({
-        ...ws,
-        isActive: ws.path === workspace.path ? false : ws.isActive,
-      })));
+      // 新架构下不需要管理工作区列表状态
 
       message.success(t`Switched away from workspace`);
 
       // 如果关闭的是当前活动工作区，切换到全局工作区
       if (activeWorkspaceKey === workspace.path) {
-        if (currentWorkspace) {
-          await switchToWorkspace(currentWorkspace.path);
-        }
+        const globalWorkspacePath = '/home/laop/Documents/HyperChat';
+        await switchToWorkspace(globalWorkspacePath);
       }
 
       // 清除详情缓存
@@ -598,8 +593,8 @@ export function Workspace() {
 
       message.success(t`Workspace deleted successfully`);
 
-      // 重新加载工作区列表
-      loadCurrentWorkspace();
+      // 重新加载当前工作区
+      await loadCurrentWorkspace();
     } catch (error) {
       console.error("Failed to delete workspace:", error);
       message.error(t`Failed to delete workspace`);
@@ -738,15 +733,15 @@ export function Workspace() {
 
   // 当工作区加载完成后，自动加载当前活动工作区的详情
   useEffect(() => {
-    const currentWorkspace = getCurrentWorkspace();
-    if (currentWorkspace) {
-      loadWorkspaceDetails(currentWorkspace);
+    const workspace = getCurrentWorkspace();
+    if (workspace) {
+      loadWorkspaceDetails(workspace);
       // 加载当前工作区的面板尺寸
-      const workspaceKey = currentWorkspace.path;
+      const workspaceKey = workspace.path;
       const sizes = getPanelSizes(workspaceKey);
       setPanelSizes([sizes.left, sizes.middle, sizes.right]);
       // 初始化默认聊天标签页
-      initDefaultChatTab(currentWorkspace);
+      initDefaultChatTab(workspace);
     }
   }, [activeWorkspaceKey]);
 
@@ -768,23 +763,10 @@ export function Workspace() {
     return workspaceDetails[currentWorkspace.path] || { agents: [], mcpClients: {} };
   };
 
-  // 处理标签页切换
+  // 处理标签页切换（新架构下移除，只有一个工作区）
   const handleTabChange = async (key: string) => {
-    setActiveWorkspaceKey(key);
-
-    // // 更新工作区的 isActive 状态
-    // setWorkspaces(prev => prev.map(ws => ({
-    //   ...ws,
-    //   isActive: ws.path === key
-    // })));
-
-    const workspace = currentWorkspace;
-    if (workspace) {
-      // 新架构下不需要显式启动MCP服务 - 工作区自动管理
-      await loadWorkspaceDetails(workspace);
-      // 确保有默认的欢迎标签页
-      initDefaultChatTab(workspace);
-    }
+    // 新架构下只有一个工作区，这个函数保留以防UI组件调用
+    console.warn('handleTabChange called in new architecture, key:', key);
   };
 
   // 打开Agent聊天
@@ -918,11 +900,6 @@ export function Workspace() {
               <div style={{ fontSize: '11px', color: '#999', lineHeight: '1.2' }}>
                 {workspace.path}
               </div>
-              {workspace.isCurrent && (
-                <div style={{ fontSize: '10px', color: '#1890ff', lineHeight: '1.2' }}>
-                  {t`Current workspace`}
-                </div>
-              )}
             </div>
             {isGlobal ? (
               <Space>
@@ -1582,7 +1559,7 @@ export function Workspace() {
             gateways={appSettings.mcpGateWays || []}
             onUpdate={updateMCPGateways}
             availableMCPs={getAvailableMCPs()}
-            mcpClients={Object.values(workspaceDetails[currentWorkspace!.path]?.mcpClients || {})}
+            mcpClients={Object.values(workspaceDetails[currentWorkspace?.path || '']?.mcpClients || {})}
           />
         )}
       </Drawer>

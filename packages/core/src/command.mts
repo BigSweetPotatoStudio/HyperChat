@@ -935,7 +935,34 @@ export class CommandFactory {
    * @param workspacePath 工作区路径
    * @returns 工作区配置信息，如果未加载则返回null
    */
-  async getCurrentWorkspace({
+  /**
+   * 获取当前工作区（无参数版本，新架构）
+   * @returns 当前工作区的配置信息
+   */
+  async getCurrentWorkspace() {
+    const workspaceManager = getWorkspaceManager();
+    const workspace = workspaceManager.getCurrentWorkspace();
+    
+    if (!workspace) return null;
+
+    const config = workspace.getConfig();
+    const summary = await workspace.getSummary();
+    const workspacePath = workspaceManager.getCurrentWorkspacePath();
+    const isGlobal = workspaceManager.isGlobalWorkspace(workspacePath);
+
+    return {
+      ...config,
+      path: workspacePath,
+      isGlobal,
+      agentsCount: summary.agentsCount,
+      mcpServersCount: summary.mcpServersCount
+    };
+  }
+
+  /**
+   * 获取指定工作区（兼容老API）
+   */
+  async getWorkspaceByPath({
     workspacePath
   }: {
     workspacePath: string;
