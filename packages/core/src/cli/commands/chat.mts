@@ -33,7 +33,6 @@ export async function startChat(initialMessage?: string, options: ChatOptions = 
 
     // 使用新的CLI会话管理器
     let workspacePath = options.workspace;
-    let sessionConfig: any;
 
 
     // Chat需要完整服务（MCP工具、AI聊天）
@@ -41,7 +40,7 @@ export async function startChat(initialMessage?: string, options: ChatOptions = 
     logger.info(`🎯 使用工作区: ${workspaceManager.getCurrentWorkspacePath()}`);
     
     await workspaceManager.start();
-    let workspace = workspaceManager.getCurrentWorkspace();
+    const workspace = workspaceManager.getCurrentWorkspace();
     workspacePath = workspaceManager.getCurrentWorkspacePath();
     logger.info(`✅ 工作区服务已启动`);
 
@@ -65,33 +64,66 @@ export async function startChat(initialMessage?: string, options: ChatOptions = 
     logger.debug(`使用工作区: ${workspacePath}`);
     const appSettings = await Command.getAppSettings();
     const aiSettings = appSettings.ai;
-    // 确定使用的模型（优先使用agent配置的模型）
-    let modelKey = options.model;
-
-    if (!modelKey && agentConfig?.modelKey) {
-      // 优先使用agent配置的模型
-      modelKey = agentConfig.modelKey;
-      logger.info(`📋 使用Agent配置的AI模型: ${modelKey}`);
-    } else if (!modelKey && sessionConfig?.aiModels && sessionConfig.aiModels.length > 0) {
-      // 使用会话合并后的AI模型配置
-      modelKey = sessionConfig.aiModels[0].key;
-      logger.info(`📋 使用会话配置的AI模型: ${modelKey}`);
-    } else if (!modelKey) {
-      // 回退到应用设置
-      if (aiSettings?.models && aiSettings.models.length > 0) {
-        const firstModel = aiSettings.models[0];
-        if (firstModel) {
-          modelKey = firstModel.key;
-          logger.info(`📋 使用应用设置的AI模型: ${modelKey}`);
+    
+    // 获取工作区AI配置
+    const workspaceSettings = workspace.getSettings();
+    const workspaceAIConfig = workspaceSettings?.aiConfig;
+    
+    // 按优先级确定使用的模型：聊天配置 > Agent配置 > 工作区配置 > 模型列表第一个
+    const findValidModelKey = () => {
+      const availableModels = aiSettings?.models || [];
+      const isModelAvailable = (modelKey: string) => 
+        availableModels.some(model => model.key === modelKey);
+      
+      const candidates = [
+        options.model,              // 聊天配置（命令行参数）
+        agentConfig?.modelKey,      // Agent配置
+        workspaceAIConfig?.modelKey, // 工作区配置
+        availableModels[0]?.key     // 模型列表第一个
+      ].filter(Boolean); // 过滤掉空值
+      
+      // 找到第一个存在于模型列表中的候选项
+      for (const modelKey of candidates) {
+        if (modelKey && isModelAvailable(modelKey)) {
+          return modelKey;
         }
       }
-    }
+      
+      // 如果都不可用，返回第一个可用模型
+      return availableModels[0]?.key;
+    };
+
+    const modelKey = findValidModelKey();
 
     if (!modelKey) {
       throw new Error('未找到可用的AI模型配置，请先配置AI模型');
     }
 
+    // 显示模型选择来源
+    if (options.model && modelKey === options.model) {
+      logger.info(`📋 使用命令行指定的AI模型: ${modelKey}`);
+    } else if (agentConfig?.modelKey && modelKey === agentConfig.modelKey) {
+      logger.info(`📋 使用Agent配置的AI模型: ${modelKey}`);
+    } else if (workspaceAIConfig?.modelKey && modelKey === workspaceAIConfig.modelKey) {
+      logger.info(`📋 使用工作区配置的AI模型: ${modelKey}`);
+    } else {
+      logger.info(`📋 使用默认AI模型: ${modelKey}`);
+    }
+
     logger.info(`🤖 使用模型: ${modelKey}`);
+
+    // 获取有效配置的帮助函数（应用配置优先级逻辑）
+    const getEffectiveConfig = () => {
+      return {
+        modelKey: modelKey!,
+        prompt: agentConfig?.prompt || workspaceAIConfig?.prompt || "",
+        allowMCPs: agentConfig?.allowMCPs || mcpClients.map((c: any) => c.serverName),
+        isConfirmCallTool: agentConfig?.isConfirmCallTool ?? workspaceAIConfig?.isConfirmCallTool ?? false,
+        temperature: agentConfig?.temperature ?? workspaceAIConfig?.temperature,
+        maxAttachedDialogs: agentConfig?.maxAttachedDialogs ?? workspaceAIConfig?.maxAttachedDialogs ?? 5,
+        maxTokens: agentConfig?.maxTokens ?? workspaceAIConfig?.maxTokens ?? 4000,
+      };
+    };
 
     // 获取工作区的Agent数量
     const agentsSummary = await workspace.getAllAgentsSummary();
@@ -172,18 +204,20 @@ export async function startChat(initialMessage?: string, options: ChatOptions = 
 
       console.log('\n🤖 AI 回复:');
 
+
       // 流式输出
       let displayedContentLength = 0;
       let displayedReasoningLength = 0;
       let reasoningFinished = false;
+      const effectiveConfig = getEffectiveConfig();
       await aiChannel.completion({
-        modelKey: modelKey!,
-        prompt: agentConfig?.prompt || "",
-        allowMCPs: agentConfig?.allowMCPs || mcpClients.map((c: any) => c.serverName),
-        isConfirmCallTool: agentConfig?.isConfirmCallTool || false,
-        temperature: agentConfig?.temperature,
-        maxAttachedDialogs: agentConfig?.maxAttachedDialogs,
-        maxTokens: agentConfig?.maxTokens || 4000,
+        modelKey: effectiveConfig.modelKey,
+        prompt: effectiveConfig.prompt,
+        allowMCPs: effectiveConfig.allowMCPs,
+        isConfirmCallTool: effectiveConfig.isConfirmCallTool,
+        temperature: effectiveConfig.temperature,
+        maxAttachedDialogs: effectiveConfig.maxAttachedDialogs,
+        maxTokens: effectiveConfig.maxTokens,
         onUpdate: () => {
           const lastMsg = aiChannel.lastMessage;
           if (lastMsg.role === 'assistant') {
@@ -284,14 +318,16 @@ export async function startChat(initialMessage?: string, options: ChatOptions = 
         let isFirstUpdate = true;
         let reasoningFinished = false;
 
+
+        const effectiveConfig = getEffectiveConfig();
         await aiChannel.completion({
-          modelKey: modelKey!,
-          prompt: agentConfig?.prompt || "",
-          allowMCPs: agentConfig?.allowMCPs || mcpClients.map((c: any) => c.serverName),
-          isConfirmCallTool: agentConfig?.isConfirmCallTool || false,
-          temperature: agentConfig?.temperature,
-          maxAttachedDialogs: agentConfig?.maxAttachedDialogs,
-          maxTokens: agentConfig?.maxTokens || 4000,
+          modelKey: effectiveConfig.modelKey,
+          prompt: effectiveConfig.prompt,
+          allowMCPs: effectiveConfig.allowMCPs,
+          isConfirmCallTool: effectiveConfig.isConfirmCallTool,
+          temperature: effectiveConfig.temperature,
+          maxAttachedDialogs: effectiveConfig.maxAttachedDialogs,
+          maxTokens: effectiveConfig.maxTokens,
           onUpdate: () => {
             const lastMsg = aiChannel.lastMessage;
             if (lastMsg.role === 'assistant') {

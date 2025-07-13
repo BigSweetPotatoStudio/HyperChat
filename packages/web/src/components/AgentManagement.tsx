@@ -15,13 +15,13 @@ import {
   Input,
   Select,
   TreeSelect,
-  Checkbox,
   Radio,
-  Collapse,
   InputNumber,
   Tooltip,
   Popover,
   Slider,
+  Row,
+  Col,
 } from "antd";
 import {
   PlusOutlined,
@@ -29,7 +29,6 @@ import {
   EditOutlined,
   DeleteOutlined,
   InfoCircleOutlined,
-  PlayCircleOutlined,
   SmileOutlined,
   MessageOutlined,
   HistoryOutlined,
@@ -37,15 +36,13 @@ import {
 import { call } from "../common/call";
 import { WorkspaceInfo } from "../pages/workspace/types";
 import { t } from "../i18n";
-import { HeaderContext } from "../common/context";
 import type { AISettings, AIModelConfigItem } from "@dadigua/hyperchat-shared";
 import { useAISettings } from "../contexts/AppSettingsContext";
-import { NumberStep } from "../common/numberStep";
 import EmojiPicker from 'emoji-picker-react';
 import { Editor } from "./editor";
 import { useForceUpdate } from "../hooks/useForceUpdate";
 import { AgentConfig, ChatHistoryItem, IMCPClient } from "@dadigua/hyperchat-shared";
-const { Title, Text } = Typography;
+const { Title } = Typography;
 
 
 interface Agent {
@@ -79,7 +76,6 @@ export const AgentManagement = forwardRef<AgentManagementRef, AgentManagementPro
   const [loadingChatHistory, setLoadingChatHistory] = useState(false);
   const [form] = Form.useForm();
   const refresh = useForceUpdate();
-  const context = useContext(HeaderContext);
   // 从 Context 获取 AI 设置
   const { aiSettings } = useAISettings();
 
@@ -130,6 +126,7 @@ export const AgentManagement = forwardRef<AgentManagementRef, AgentManagementPro
         isConfirmCallTool: values.isConfirmCallTool ?? false,
         modelKey: values.modelKey,
         temperature: values.temperature,
+        maxTokens: values.maxTokens,
         maxAttachedDialogs: values.maxAttachedDialogs,
       };
 
@@ -180,16 +177,6 @@ export const AgentManagement = forwardRef<AgentManagementRef, AgentManagementPro
     }
   };
 
-  // 运行Agent
-  const runAgent = async (agent: Agent) => {
-    try {
-      // TODO: 实现运行Agent的逻辑
-      message.success(t`Agent started successfully`);
-    } catch (error) {
-      console.error("Failed to run agent:", error);
-      message.error(t`Failed to run agent`);
-    }
-  };
 
   // 查看聊天历史
   const viewChatHistory = async (agent: Agent) => {
@@ -487,6 +474,9 @@ export const AgentManagement = forwardRef<AgentManagementRef, AgentManagementPro
                 {selectedAgent.config.temperature !== undefined && (
                   <div>Temperature: {selectedAgent.config.temperature}</div>
                 )}
+                {selectedAgent.config.maxTokens !== undefined && (
+                  <div>Max Tokens: {selectedAgent.config.maxTokens}</div>
+                )}
                 {selectedAgent.config.maxAttachedDialogs !== undefined && (
                   <div>Context History: {selectedAgent.config.maxAttachedDialogs}</div>
                 )}
@@ -523,6 +513,7 @@ export const AgentManagement = forwardRef<AgentManagementRef, AgentManagementPro
                 prompt: editingAgent.config.prompt,
                 modelKey: editingAgent.config.modelKey,
                 temperature: editingAgent.config.temperature ?? 1,
+                maxTokens: editingAgent.config.maxTokens,
                 allowMCPs: editingAgent.config.allowMCPs || [],
                 isConfirmCallTool: editingAgent.config.isConfirmCallTool ?? false,
                 maxAttachedDialogs: editingAgent.config.maxAttachedDialogs ?? 10,
@@ -747,34 +738,67 @@ export const AgentManagement = forwardRef<AgentManagementRef, AgentManagementPro
 });
 
 export const AgentCommonFormItems = (
-  <>
-    <Form.Item
-      name="temperature"
-      label={t`temperature`}
-      tooltip={t`What sampling temperature to use, between 0 and 2. Higher values like 0.8 will make the output more random, while lower values like 0.2 will make it more focused and deterministic.`}
-    >
-      <Slider min={0} max={2} step={0.1} />
-    </Form.Item>
-    <Form.Item
-      name="maxAttachedDialogs"
-      label={t`Memory Compression Threshold`}
-      tooltip={t`Automatically compress memory when the number of context messages exceeds this value. 0 means disabled.`}
-    >
-      <InputNumber min={0} max={10} className="w-full" changeOnWheel keyboard step={1} />
-    </Form.Item>
-
-    <Form.Item
-      name="isConfirmCallTool"
-      label={t`Tool Execution`}
-      tooltip={t`Do you want to confirm calling the tool?`}
-    >
-      <Radio.Group>
-        <Radio value={true}>{t`Need Confirm`}</Radio>
-        <Radio value={false}>{t`Direct Call`}</Radio>
-      </Radio.Group>
-    </Form.Item>
-
-
-
-  </>
+  <Row gutter={[16, 16]}>
+    <Col span={12}>
+      <Form.Item
+        name="temperature"
+        label={t`Temperature`}
+        tooltip={t`What sampling temperature to use, between 0 and 2. Higher values like 0.8 will make the output more random, while lower values like 0.2 will make it more focused and deterministic.`}
+      >
+        <Slider 
+          min={0} 
+          max={2} 
+          step={0.1}
+          marks={{
+            0: '0',
+            1: '1',
+            2: '2'
+          }}
+          tooltip={{ formatter: (value) => value?.toFixed(1) }}
+        />
+      </Form.Item>
+    </Col>
+    <Col span={12}>
+      <Form.Item
+        name="maxTokens"
+        label={t`Max Tokens`}
+        tooltip={t`Maximum tokens for AI response (100-32000)`}
+      >
+        <InputNumber
+          min={100}
+          max={32000}
+          step={100}
+          style={{ width: '100%' }}
+          placeholder="4000"
+        />
+      </Form.Item>
+    </Col>
+    <Col span={12}>
+      <Form.Item
+        name="maxAttachedDialogs"
+        label={t`Max Attached Dialogs`}
+        tooltip={t`Maximum number of attached dialog histories (0-100)`}
+      >
+        <InputNumber 
+          min={0} 
+          max={100} 
+          step={1}
+          style={{ width: '100%' }}
+          placeholder="10"
+        />
+      </Form.Item>
+    </Col>
+    <Col span={12}>
+      <Form.Item
+        name="isConfirmCallTool"
+        label={t`Tool Execution`}
+        tooltip={t`Do you want to confirm calling the tool?`}
+      >
+        <Radio.Group>
+          <Radio value={true}>{t`Need Confirm`}</Radio>
+          <Radio value={false}>{t`Direct Call`}</Radio>
+        </Radio.Group>
+      </Form.Item>
+    </Col>
+  </Row>
 )

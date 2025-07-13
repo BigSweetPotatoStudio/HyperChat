@@ -2,7 +2,7 @@
   "$schema": "./settings.schema.json",
   "workspace": {
     "name": "HyperChat",
-    "created": 1752433214985
+    "created": 1752422400000
   },
   "appearance": {
     "isDarkMode": false,
@@ -15,6 +15,9 @@
     "autoSaveDelay": 5000,
     "wordWrap": true,
     "tabSize": 2
+  },
+  "aiConfig": {
+    "modelKey": "openrouter:google/gemini-2.5-flash-preview"
   },
   "defaultAI": {
     "streamResponse": true

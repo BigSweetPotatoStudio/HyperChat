@@ -9,7 +9,6 @@
 import * as MCPTypes from "@modelcontextprotocol/sdk/types.js";
 import React, {
   useCallback,
-  useContext,
   useEffect,
   useRef,
   useState,
@@ -26,7 +25,6 @@ import {
   Tree,
   Upload,
   message,
-  theme,
   Form,
 } from "antd";
 import {
@@ -59,12 +57,10 @@ import { Icon } from "./icon";
 import { Editor } from "./editor";
 import { t } from "../i18n";
 import { blobToBase64, getMyUuid, JsonSchema2FormItemOrNull, urlToBase64 } from "../common/util";
-import { HeaderContext } from "../common/context";
 import { useForceUpdate } from "../hooks/useForceUpdate";
 import { MyAttachR } from "./attachR";
 import { CurrentWorkspaceDetails, WorkspaceInfo } from "../pages/workspace/types";
-import { AllMessage, CommonContent, CommonContentItem, HyperChatCompletionTool, IMCPClient, HyperToolCall } from "@dadigua/hyperchat-shared/types";
-import { NumberStep } from "../common/numberStep";
+import { AllMessage, CommonContentItem, HyperChatCompletionTool, IMCPClient, HyperToolCall } from "@dadigua/hyperchat-shared/types";
 import { AgentCommonFormItems } from "./AgentManagement";
 
 /**
@@ -88,9 +84,6 @@ export const WorkspaceChat = ({ workspace, agentName, workspaceDetails, mcpClien
   // 使用强制刷新 hook
   const refresh = useForceUpdate();
 
-  // 从上下文获取全局状态和MCP客户端
-  const context = useContext(HeaderContext);
-  const { globalState, updateGlobalState } = context || {};
 
   // 从 Context 获取 AI 设置
   const { aiSettings, loading: aiSettingsLoading } = useAISettings();
@@ -161,20 +154,49 @@ export const WorkspaceChat = ({ workspace, agentName, workspaceDetails, mcpClien
   // 当前聊天引用
   const currentChat = useRef<ChatHistoryItem>(defaultChatValue.current);
 
-  // 获取有效配置值的帮助函数（Agent配置 + configOverrides）
+  // 获取有效配置值的帮助函数（聊天配置 > Agent配置 > 工作区配置 > 模型列表第一个）
   const getEffectiveConfig = () => {
     const agent = workspaceDetails.agents.find(a => a.config.name === agentName);
     const agentConfig = agent?.config;
     const overrides = currentChat.current.configOverrides || {};
+    
+    // 获取可用模型列表
+    const availableModels = aiSettings?.models || [];
+    const isModelAvailable = (modelKey: string) => 
+      availableModels.some(model => model.key === modelKey);
+    
+    // 获取工作区默认模型和模型列表第一个作为回退
+    const workspaceAIConfig = workspace?.settings?.aiConfig;
+    const firstAvailableModel = availableModels[0]?.key || "";
+    
+    // 按优先级查找有效的模型
+    const findValidModelKey = () => {
+      const candidates = [
+        overrides.modelKey,
+        agentConfig?.modelKey,
+        workspaceAIConfig?.modelKey,
+        firstAvailableModel
+      ].filter(Boolean); // 过滤掉空值
+      
+      // 找到第一个存在于模型列表中的候选项
+      for (const modelKey of candidates) {
+        if (modelKey && isModelAvailable(modelKey)) {
+          return modelKey;
+        }
+      }
+      
+      // 如果都不可用，返回第一个可用模型
+      return firstAvailableModel;
+    };
 
     return {
-      modelKey: overrides.modelKey || agentConfig?.modelKey || "",
+      modelKey: findValidModelKey(),
       allowMCPs: overrides.allowMCPs || agentConfig?.allowMCPs || [],
       isConfirmCallTool: overrides.isConfirmCallTool ?? agentConfig?.isConfirmCallTool ?? false,
-      temperature: overrides.temperature ?? agentConfig?.temperature,
-      maxAttachedDialogs: overrides.maxAttachedDialogs ?? agentConfig?.maxAttachedDialogs ?? 5,
-      maxTokens: overrides.maxTokens ?? agentConfig?.maxTokens ?? 4000,
-      prompt: overrides.prompt || agentConfig?.prompt || ""
+      temperature: overrides.temperature ?? agentConfig?.temperature ?? workspaceAIConfig?.temperature,
+      maxAttachedDialogs: overrides.maxAttachedDialogs ?? agentConfig?.maxAttachedDialogs ?? workspaceAIConfig?.maxAttachedDialogs ?? 5,
+      maxTokens: overrides.maxTokens ?? agentConfig?.maxTokens ?? workspaceAIConfig?.maxTokens ?? 4000,
+      prompt: overrides.prompt || agentConfig?.prompt || workspaceAIConfig?.prompt || ""
     };
   };
 
@@ -194,8 +216,6 @@ export const WorkspaceChat = ({ workspace, agentName, workspaceDetails, mcpClien
   // 加载状态
   const [loading, setLoading] = useState(false);
 
-  // AI通道缓存对象
-  let cacheOBJ = useRef({} as Record<string, AiChannel>);
 
   // 编辑器引用
   const editorRef = useRef<any>(null);
@@ -225,6 +245,7 @@ export const WorkspaceChat = ({ workspace, agentName, workspaceDetails, mcpClien
         currentChat.current.configOverrides = {};
       }
       currentChat.current.configOverrides.temperature = values.temperature;
+      currentChat.current.configOverrides.maxTokens = values.maxTokens;
       currentChat.current.configOverrides.maxAttachedDialogs = values.maxAttachedDialogs;
       currentChat.current.configOverrides.isConfirmCallTool = values.isConfirmCallTool;
       currentChat.current.configOverrides.allowMCPs = values.allowMCPs;
@@ -332,11 +353,11 @@ export const WorkspaceChat = ({ workspace, agentName, workspaceDetails, mcpClien
           return;
         }
 
-        const defaultModel = getDefaultModelFromSettings(aiSettings);
+        // 初始化默认模型时不设置 configOverrides.modelKey
+        // 让 getEffectiveConfig 处理优先级逻辑
         if (!currentChat.current.configOverrides) {
           currentChat.current.configOverrides = {};
         }
-        currentChat.current.configOverrides.modelKey = defaultModel?.key || "";
         const agent = workspaceDetails.agents.find(a => a.config.name === agentName);
         // 如果有要加载的聊天记录，优先加载聊天记录
         if (chatLogToLoad) {
@@ -357,7 +378,7 @@ export const WorkspaceChat = ({ workspace, agentName, workspaceDetails, mcpClien
             messages: [],
             configOverrides: {
               allowMCPs: agent.config.allowMCPs || [],
-              modelKey: agent.config.modelKey || defaultModel?.key || "",
+              // 不设置 modelKey，让 getEffectiveConfig 处理优先级
               temperature: agent.config.temperature,
               isConfirmCallTool: agent.config.isConfirmCallTool || false,
               maxAttachedDialogs: agent.config.maxAttachedDialogs || 5,
@@ -617,7 +638,6 @@ export const WorkspaceChat = ({ workspace, agentName, workspaceDetails, mcpClien
   let supportImage = currModel?.supportImage;
   /** 是否支持工具 */
   let supportTool = currModel?.supportTool;
-  const { token } = theme.useToken();
   const agent = workspaceDetails.agents.find(a => a.config.name === agentName);
 
   // 提取系统消息
@@ -744,6 +764,7 @@ export const WorkspaceChat = ({ workspace, agentName, workspaceDetails, mcpClien
                       settingsForm.setFieldsValue({
                         modelKey: currentEffectiveConfig.modelKey,
                         temperature: currentEffectiveConfig.temperature ?? 1,
+                        maxTokens: currentEffectiveConfig.maxTokens ?? 4000,
                         maxAttachedDialogs: currentEffectiveConfig.maxAttachedDialogs ?? 10,
                         isConfirmCallTool: currentEffectiveConfig.isConfirmCallTool ?? false,
                         allowMCPs: currentEffectiveConfig.allowMCPs || [],
