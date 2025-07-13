@@ -137,10 +137,9 @@ hyperchat chat                  # 直接AI对话
 hyperchat "你好"                    # 直接AI对话
 hyperchat serve                   # 启动Web服务器 (包含 Web 界面)
 hyperchat run                     # 启动核心服务 (不包含 Web 界面，适合后台运行)
-hyperchat workspace current        # 查看当前工作区
 hyperchat agent list              # 列出AI代理
-hyperchat [agent_name] "你好"          # 使用某个agent直接AI对话
-hyperchat [agent_name] chat          # 使用某个agent进行对话
+hyperchat agent [agent_name] "你好"          # 使用某个agent直接AI对话
+hyperchat agent [agent_name] chat          # 使用某个agent进行对话
 ```
 
 ## 🗂️ 项目结构 (更新)

@@ -38,8 +38,17 @@ HyperChat 2.0 以**工作区（Workspace）**为核心，将 AI 能力与您的�
 ### 🏢 多平台统一体验
 - 🌐 **Web 应用**：浏览器直接访问，支持 H5 移动端
 - 💻 **Electron 桌面**：原生应用体验，完整功能支持
-- ⌨️ **命令行界面**：类似 Claude Code 的终端体验
+- ⌨️ **命令行界面**：类似 Claude Code 的终端体验，具备完整 AI 能力
 - 🔧 **VSCode 插件**：IDE 内 WebView 集成
+
+### ⌨️ 强大的 CLI 功能
+- **直接 AI 对话**：`hyperchat "你的问题"` - 即时 AI 响应
+- **Agent 管理**：创建、列出、删除和与专业化 AI 代理对话
+- **工作区集成**：自动工作区检测和管理
+- **任务自动化**：使用代理安排和触发自动化任务
+- **交互与快速模式**：支持交互式聊天和一次性命令
+- **服务管理**：启动 Web 服务器或运行后台服务
+- **跨平台**：支持 Windows、macOS 和 Linux
 
 ### 🤖 AI 能力矩阵
 - **多模型支持**：OpenAI、Claude、Gemini、Qwen、Deepseek、GLM、Ollama、xAI 等
@@ -62,9 +71,47 @@ HyperChat 2.0 以**工作区（Workspace）**为核心，将 AI 能力与您的�
 
 ### 命令行快速启动
 ```bash
-npx -y @dadigua/hyper-chat
+# 全局安装
+npm install -g @dadigua/hyperchat
+
+# 或直接运行
+npx -y @dadigua/hyperchat
 ```
-默认访问：http://localhost:16100/123456/ (密码: 123456)
+
+#### CLI 使用示例
+```bash
+# 启动 Web 界面
+hyperchat serve                        # 访问: http://localhost:16102
+
+# 运行核心服务（后台）
+hyperchat run                          # 不启动 Web 界面
+
+# 快速 AI 对话
+hyperchat "你好，请帮我写一个Python脚本"    # 直接与默认模型对话
+hyperchat chat "写一个Python脚本"         # 聊天命令
+hyperchat chat                         # 交互式聊天模式
+
+# Agent 管理和对话
+hyperchat agent list                   # 列出所有代理
+hyperchat agent create mybot           # 创建新代理
+hyperchat agent delete mybot           # 删除代理
+hyperchat agent mybot "你好"            # 与指定代理快速对话
+hyperchat agent mybot chat             # 与代理交互式聊天
+
+# 工作区管理
+hyperchat workspace create             # 在当前目录创建工作区
+
+# 任务管理（定时自动化）
+hyperchat task list                    # 列出所有任务
+hyperchat task create "daily-report" --description "生成日报" --agent mybot --cron "0 9 * * *"
+hyperchat task trigger "daily-report"  # 手动触发任务
+hyperchat task stats                   # 显示任务统计
+
+# 全局选项
+hyperchat chat --workspace /path/to/project  # 使用指定工作区
+hyperchat --verbose chat "你好"               # 详细日志
+hyperchat --help                             # 显示帮助
+```
 
 ### Docker 部署
 ```bash
@@ -77,14 +124,14 @@ docker pull dadigua/hyperchat-mini:latest
 ```
 HyperChat/
 ├── packages/
-│   ├── core/              # Node.js 核心服务层
-│   │   ├── src/shared/    # 前后端共享代码
+│   ├── shared/            # 共享代码和类型定义
+│   ├── core/              # Node.js 核心服务 + CLI
 │   │   ├── src/workspace/ # 工作区管理系统
 │   │   ├── src/mcp/       # MCP 服务实现
-│   │   └── src/rag/       # 知识库 RAG 系统
+│   │   ├── src/cli/       # 命令行界面
+│   │   └── src/commands/  # API 命令层
 │   ├── web/               # React Web 前端
-│   ├── electron/          # Electron 桌面应用
-│   └── cli/               # 命令行界面
+│   └── electron/          # Electron 桌面应用
 └── docs/                  # 完整文档
 ```
 

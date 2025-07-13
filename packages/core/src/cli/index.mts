@@ -20,6 +20,7 @@ import { startServer } from './commands/server.mjs';
 import { startRun, showRunStatus } from './commands/run.mjs';
 import { createWorkspace } from './commands/workspace.mjs';
 import { listAgents, createAgent, checkAgentExists } from './commands/agent.mjs';
+import { Command } from '../command.mjs';
 import { 
   listTasks, 
   createTask, 
@@ -80,11 +81,23 @@ function showHelp() {
   --help, -h               显示帮助信息
 
 命令:
+  # 通用聊天
   chat [message]           开始 AI 聊天会话 (默认命令)
+  chat                     交互式聊天
+  
+  # Agent相关
+  agent list               列出所有代理
+  agent create <name>      创建新代理
+  agent delete <name>      删除代理
+  agent <name> "message"    使用指定agent快速对话
+  agent <name> chat        使用指定agent交互式聊天
+  
+  # 系统管理
   serve                    启动后端服务器 (包含 Web 界面)
   run                      启动核心服务 (不包含 Web 界面)
   workspace create         在当前目录创建工作区
-  agent list               列出所有代理
+  
+  # 任务管理
   task list                列出所有任务
   task create <name>       创建新任务
   task show <name>         显示任务详情
@@ -95,18 +108,25 @@ function showHelp() {
   task trigger <name>      手动触发任务执行
   task scheduler           显示调度器状态
   task stats               显示任务统计
+  
   help                     显示帮助信息
 
 示例:
+  # 通用聊天
   hyperchat "你好"                    # 直接聊天（自动检测工作区）
   hyperchat chat "帮我写代码"         # 聊天命令
   hyperchat chat --workspace /path   # 使用指定工作区聊天
+  
+  # Agent聊天
+  hyperchat agent mybot "你好"        # 使用指定agent直接聊天
+  hyperchat agent mybot chat         # 使用指定agent交互式聊天
+  hyperchat agent list              # 列出所有agents
+  hyperchat agent create mybot      # 创建新agent
+  
+  # 系统管理
   hyperchat serve                   # 启动服务器 (包含 Web 界面)
   hyperchat run                     # 启动核心服务 (后台运行任务调度)
-  hyperchat run --workspace /path   # 在指定工作区启动核心服务
   hyperchat workspace create        # 在当前目录创建工作区
-  hyperchat [agent_name] "你好"       # 使用指定agent直接聊天
-  hyperchat [agent_name] chat        # 使用指定agent交互式聊天
 
 欢迎使用 HyperChat CLI! 🎉
 `);
@@ -116,36 +136,11 @@ function showHelp() {
 async function handleCommand(): Promise<{ shouldExit: boolean }> {
   const logger = new Logger(globalOptions.verbose, globalOptions.quiet);
 
-  // 检测是否使用agent进行聊天: hyperchat [agent_name] "message" 或 hyperchat [agent_name] chat
-  if (cleanArgs.length > 0) {
-    const potentialAgentName = cleanArgs[0];
-    
-    // 检查第一个参数是否是agent名称
-    if (potentialAgentName && !['chat', 'serve', 'run', 'workspace', 'agent', 'task', 'help'].includes(potentialAgentName)) {
-      const agentCheck = await checkAgentExists(potentialAgentName);
-      
-      if (agentCheck.exists) {
-        // 这是一个agent命令
-        const remainingArgs = cleanArgs.slice(1);
-        
-        if (remainingArgs.length === 0 || remainingArgs[0] === 'chat') {
-          // hyperchat [agent_name] 或 hyperchat [agent_name] chat - 交互式模式
-          await startChatWrapper([], logger, potentialAgentName);
-          return { shouldExit: true };
-        } else if (remainingArgs[0] !== 'chat') {
-          // hyperchat [agent_name] "message" - 直接消息模式
-          const message = remainingArgs.join(' ');
-          await startChatWrapper([message], logger, potentialAgentName);
-          return { shouldExit: true };
-        }
-      }
-    }
-  }
+  // 新的agent命令不需要特殊检测，统一在agent命令中处理
 
   // 检测是否有非命令的消息 (直接聊天)
-  const possibleMessage = cleanArgs.find(arg => !['chat', 'serve', 'run', 'workspace', 'agent', 'task', 'help'].includes(arg));
   const firstArg = cleanArgs[0];
-  const isDirectMessage = cleanArgs.length > 0 && possibleMessage && firstArg && !firstArg.match(/^(chat|serve|run|workspace|agent|task|help)$/);
+  const isDirectMessage = cleanArgs.length > 0 && firstArg && !firstArg.match(/^(chat|serve|run|workspace|agent|task|help)$/);
 
   if (isDirectMessage) {
     // 直接聊天模式: hyperchat "你好"
@@ -191,21 +186,7 @@ async function handleCommand(): Promise<{ shouldExit: boolean }> {
       return { shouldExit: true };  // workspace命令执行完都应该退出
 
     case 'agent':
-      const agentSubCmd = cleanArgs[1];
-      if (agentSubCmd === 'list') {
-        await listAgentsWrapper(logger);
-      } else if (agentSubCmd === 'create') {
-        const agentName = cleanArgs[2];
-        if (!agentName) {
-          logger.error('请提供代理名称');
-          logger.info('使用方法: hyperchat agent create <name>');
-        } else {
-          await createAgentWrapper(agentName, logger);
-        }
-      } else {
-        logger.error('未知的代理命令:', agentSubCmd);
-        logger.info('可用命令: list, create');
-      }
+      await handleAgentCommand(cleanArgs.slice(1), logger);
       return { shouldExit: true };  // 所有agent命令执行完都应该退出
 
     case 'task':
@@ -255,6 +236,92 @@ async function listAgentsWrapper(_logger: Logger) {
 
 async function createAgentWrapper(name: string, _logger: Logger) {
   await createAgent(name);
+}
+
+async function deleteAgentWrapper(name: string, logger: Logger) {
+  try {
+    // 检查agent是否存在
+    const agentCheck = await checkAgentExists(name);
+    if (!agentCheck.exists) {
+      logger.error(`代理 '${name}' 不存在`);
+      return;
+    }
+
+    // 删除agent
+    const success = await Command.deleteAgent({
+      workspacePath: '', // workspacePath 会被忽略，使用当前工作区
+      agentKey: name
+    });
+
+    if (success) {
+      console.log(`✅ 代理 '${name}' 已删除`);
+    } else {
+      logger.error(`删除代理 '${name}' 失败`);
+    }
+  } catch (error) {
+    logger.error('删除代理失败:', error instanceof Error ? error.message : String(error));
+  }
+}
+
+// Agent命令处理
+async function handleAgentCommand(args: string[], logger: Logger) {
+  if (args.length === 0) {
+    logger.error('请提供agent子命令');
+    logger.info('可用命令: list, create, delete, <name> "message", <name> chat');
+    return;
+  }
+
+  const subCmd = args[0];
+
+  switch (subCmd) {
+    case 'list':
+      await listAgentsWrapper(logger);
+      break;
+
+    case 'create':
+      const createName = args[1];
+      if (!createName) {
+        logger.error('请提供代理名称');
+        logger.info('使用方法: hyperchat agent create <name>');
+      } else {
+        await createAgentWrapper(createName, logger);
+      }
+      break;
+
+    case 'delete':
+      const deleteName = args[1];
+      if (!deleteName) {
+        logger.error('请提供代理名称');
+        logger.info('使用方法: hyperchat agent delete <name>');
+      } else {
+        await deleteAgentWrapper(deleteName, logger);
+      }
+      break;
+
+    default:
+      // 检查是否是 agent <name> "message" 或 agent <name> chat
+      const agentName = subCmd;
+      const agentCheck = await checkAgentExists(agentName);
+      
+      if (!agentCheck.exists) {
+        logger.error(`未知的agent命令或agent不存在: ${subCmd}`);
+        logger.info('可用命令: list, create, delete, <name> "message", <name> chat');
+        return;
+      }
+
+      // 这是一个有效的agent名称
+      const remainingArgs = args.slice(1);
+      
+      if (remainingArgs.length === 0 || remainingArgs[0] === 'chat') {
+        // hyperchat agent <name> 或 hyperchat agent <name> chat - 交互式模式
+        await startChatWrapper([], logger, agentName);
+      } else {
+        // hyperchat agent <name> "message" - 直接消息模式
+        const message = remainingArgs.join(' ');
+        await startChatWrapper([message], logger, agentName);
+      }
+      break;
+  }
 }
 
 // 任务管理功能
@@ -391,9 +458,9 @@ async function cleanup() {
 
   try {
     // 新架构下简化清理逻辑
-    console.log('正在清理资源...');
+    console.log('正在退出...');
   } catch (error) {
-    console.error('清理过程中出现错误:', error);
+    console.error('正在退出过程中出现错误:', error);
   }
 
   process.exit(0);

@@ -41,8 +41,17 @@ As a complete implementation of the MCP protocol, HyperChat has built a robust t
 ### 🏢 Unified Experience Across Platforms
 - 🌐 **Web Application**: Access directly from the browser, supporting H5 mobile
 - 💻 **Electron Desktop**: Native application experience with full functionality support
-- ⌨️ **Command-Line Interface**: Terminal experience similar to Claude Code
+- ⌨️ **Command-Line Interface**: Claude Code-like terminal experience with full AI capabilities
 - 🔧 **VSCode Plugin**: IDE integrated with WebView
+
+### ⌨️ Powerful CLI Features
+- **Direct AI Chat**: `hyperchat "your question"` - Instant AI responses
+- **Agent Management**: Create, list, delete, and chat with specialized AI agents
+- **Workspace Integration**: Automatic workspace detection and management
+- **Task Automation**: Schedule and trigger automated tasks with agents
+- **Interactive & Quick Mode**: Both interactive chat and one-shot commands
+- **Service Management**: Start web server or run background services
+- **Cross-Platform**: Works on Windows, macOS, and Linux
 
 ### 🤖 AI Capability Matrix
 - **Multi-Model Support**: OpenAI, Claude, Gemini, Qwen, Deepseek, GLM, Ollama, xAI, etc.
@@ -65,9 +74,47 @@ As a complete implementation of the MCP protocol, HyperChat has built a robust t
 
 ### Command Line Quick Start
 ```bash
-npx -y @dadigua/hyper-chat
+# Install globally
+npm install -g @dadigua/hyperchat
+
+# Or run directly
+npx -y @dadigua/hyperchat
 ```
-Default access: http://localhost:16100/123456/ (Password: 123456)
+
+#### CLI Usage Examples
+```bash
+# Start web interface
+hyperchat serve                        # Access: http://localhost:16102
+
+# Run core services (background)
+hyperchat run                          # Run without web interface
+
+# Quick AI chat
+hyperchat "Hello, how are you?"        # Direct chat with default model
+hyperchat chat "Write a Python script" # Chat command
+hyperchat chat                         # Interactive chat mode
+
+# Agent management and chat
+hyperchat agent list                   # List all agents
+hyperchat agent create mybot           # Create new agent
+hyperchat agent delete mybot           # Delete agent
+hyperchat agent mybot "Hello"          # Quick chat with specific agent
+hyperchat agent mybot chat             # Interactive chat with agent
+
+# Workspace management
+hyperchat workspace create             # Create workspace in current directory
+
+# Task management (scheduled automation)
+hyperchat task list                    # List all tasks
+hyperchat task create "daily-report" --description "Generate daily report" --agent mybot --cron "0 9 * * *"
+hyperchat task trigger "daily-report"  # Manually trigger task
+hyperchat task stats                   # Show task statistics
+
+# Global options
+hyperchat chat --workspace /path/to/project  # Use specific workspace
+hyperchat --verbose chat "Hello"             # Verbose logging
+hyperchat --help                             # Show help
+```
 
 ### Docker Deployment
 ```bash
@@ -80,14 +127,14 @@ docker pull dadigua/hyperchat-mini:latest
 ```
 HyperChat/
 ├── packages/
-│   ├── core/              # Node.js core service layer
-│   │   ├── src/shared/    # Shared code between front-end and back-end
+│   ├── shared/            # Shared code and type definitions
+│   ├── core/              # Node.js core service + CLI
 │   │   ├── src/workspace/ # Workspace management system
 │   │   ├── src/mcp/       # MCP service implementation
-│   │   └── src/rag/       # Knowledge base RAG system
+│   │   ├── src/cli/       # Command line interface
+│   │   └── src/commands/  # API command layer
 │   ├── web/               # React Web front-end
-│   ├── electron/          # Electron desktop application
-│   └── cli/               # Command line interface
+│   └── electron/          # Electron desktop application
 └── docs/                  # Complete documentation
 ```
 
@@ -109,8 +156,9 @@ Project Directory/
 
 ### 🔄 Communication Architecture
 - **Unified Command Layer**: `packages/core/src/command.mts` handles front-end and back-end communication
-- **AI Service Layer**: `packages/core/src/shared/ai.mts` unifies AI model calls
+- **AI Service Layer**: `packages/shared/src/ai.mts` unifies AI model calls across platforms
 - **Workspace Management**: `packages/core/src/workspace/` provides workspace lifecycle management
+- **CLI Integration**: `packages/core/src/cli/` provides Claude Code-like terminal experience
 - **MCP Integration**: `packages/core/src/mcp/` implements complete MCP protocol support
 - **Real-Time Communication**: WebSocket supports real-time message pushing and status synchronization
 

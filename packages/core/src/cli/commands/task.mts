@@ -18,11 +18,11 @@ async function getCurrentWorkspacePath(): Promise<string> {
 }
 
 /**
- * 获取工作区路径并启动服务 - 执行模式
+ * 获取工作区路径并启动服务 - 仅用于任务触发
  */
 async function initWorkspaceForExecution(): Promise<string> {
   await workspaceManager.initialize();
-  await workspaceManager.start(); // 需要完整服务
+  await workspaceManager.start(); // 需要完整服务（调度器+AI）
   return workspaceManager.getCurrentWorkspacePath();
 }
 
@@ -124,9 +124,8 @@ export async function createTask(taskName: string, options: {
       disabled: options.disabled || false,
     };
 
-    // 创建任务需要调度器服务
-    const workspacePathForExecution = await initWorkspaceForExecution();
-    const task = await Command.createTask({ workspacePath: workspacePathForExecution, taskData });
+    // 创建任务只需要配置，不需要启动调度器
+    const task = await Command.createTask({ workspacePath, taskData });
 
     console.log('✅ 任务创建成功!');
     console.log(`   名称: ${task.name}`);
@@ -181,8 +180,7 @@ export async function enableTask(taskName: string) {
   try {
     logger.info(`📅 启用任务: ${taskName}`);
 
-    // 启用任务需要调度器服务
-    const workspacePath = await initWorkspaceForExecution();
+    const workspacePath = await getCurrentWorkspacePath();
     const task = await Command.enableTask({ workspacePath, taskName });
 
     if (!task) {
@@ -207,8 +205,7 @@ export async function disableTask(taskName: string) {
   try {
     logger.info(`📅 禁用任务: ${taskName}`);
 
-    // 禁用任务需要调度器服务
-    const workspacePath = await initWorkspaceForExecution();
+    const workspacePath = await getCurrentWorkspacePath();
     const task = await Command.disableTask({ workspacePath, taskName });
 
     if (!task) {
@@ -372,9 +369,8 @@ export async function taskStats() {
       }
     }
 
-    // 显示调度状态需要调度器服务
-    const workspacePathForScheduler = await initWorkspaceForExecution();
-    const scheduledTasks = await Command.getScheduledTasks({ workspacePath: workspacePathForScheduler });
+    // 显示调度状态只需要配置
+    const scheduledTasks = await Command.getScheduledTasks({ workspacePath });
     console.log(`\n⏰ 调度状态: ${scheduledTasks.length} 个任务正在调度中`);
     if (scheduledTasks.length > 0) {
       for (const taskName of scheduledTasks) {
@@ -418,8 +414,7 @@ export async function showScheduler() {
   try {
     logger.info('📅 获取调度状态...');
 
-    // 获取调度状态需要调度器服务
-    const workspacePath = await initWorkspaceForExecution();
+    const workspacePath = await getCurrentWorkspacePath();
     const scheduledTasks = await Command.getScheduledTasks({ workspacePath });
 
     console.log('\n⏰ 任务调度器状态:');
