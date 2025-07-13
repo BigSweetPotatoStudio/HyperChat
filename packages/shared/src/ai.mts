@@ -22,6 +22,7 @@ import { v4 } from "uuid";
 
 import { extractTool } from "./prompt";
 import { AISettings, AppSettings } from "./zodSchemas/appSettingsSchema.mjs";
+import { BaseAIConfig } from "zodSchemas/agentConfigSchema.mjs";
 
 
 
@@ -97,31 +98,31 @@ export class AiChannel {
   }
   index = 0;
   status: "runing" | "stop" = "stop";
-  async completion(
-    params: {
-      modelKey: string;
-      allowMCPs: string[],
-      onUpdate?: (r?: any) => void;
-      call_tool?: boolean;
-      isConfirmCallTool?: boolean;  // 默认当成false
-      confirm_call_tool_cb?: (tool: HyperToolCall) => Promise<boolean>;
-    },
-    options: Omit<Parameters<typeof streamText>[0], 'model' | 'prompt'> = {},
-  ): Promise<string> {
-    this.status = "runing";
-    this.index++;
-    let newParams = {
-      ...params,
-      context: { index: this.index },
-      step: 0,
-    }
-    let res = await this._completion(newParams, options).catch((e) => {
-      this.status = "stop";
-      throw e;
-    });
-    this.status = "stop";
-    return res;
-  }
+  // async completion(
+  //   params: {
+  //     modelKey: string;
+  //     allowMCPs: string[],
+  //     onUpdate?: (r?: any) => void;
+  //     call_tool?: boolean;
+  //     isConfirmCallTool?: boolean;  // 默认当成false
+  //     confirm_call_tool_cb?: (tool: HyperToolCall) => Promise<boolean>;
+  //   },
+  //   options: Omit<Parameters<typeof streamText>[0], 'model' | 'prompt'> = {},
+  // ): Promise<string> {
+  //   this.status = "runing";
+  //   this.index++;
+  //   let newParams = {
+  //     ...params,
+  //     context: { index: this.index },
+  //     step: 0,
+  //   }
+  //   let res = await this._completion(newParams, options).catch((e) => {
+  //     this.status = "stop";
+  //     throw e;
+  //   });
+  //   this.status = "stop";
+  //   return res;
+  // }
   async getAI(modelKey: string): Promise<LanguageModel> {
     let modelConfig = this.ext.aiSettings.models.find((x) => x.key === modelKey);
     if (!modelConfig) {
@@ -190,26 +191,18 @@ export class AiChannel {
     }
     return ai as LanguageModel;
   }
-  async _completion(
+  async completion(
     params: {
       modelKey: string;
-      allowMCPs: string[],
       onUpdate?: (r?: any) => void;
-      call_tool?: boolean;
-      step: number;
-      context: {},
-      isConfirmCallTool?: boolean;  // 默认当成false
       confirm_call_tool_cb?: (tool: HyperToolCall) => Promise<boolean>;
-    },
+    } & BaseAIConfig,
     options: Omit<Parameters<typeof streamText>[0], 'model' | 'prompt'> = {},
+    context: { step: number } = { step: 0 },
   ): Promise<string> {
 
-    if (this.status == "stop") {
-      throw new Error("User Cancel Requesting");
-    }
-
     // 在开始请求前检查是否需要压缩记忆
-    if (this.shouldCompressMemory()) { // 只在第一步时压缩
+    if (this.shouldCompressMemory(params)) { // 只在第一步时压缩
       await this.compressMemory(params.modelKey, params.onUpdate);
       params.onUpdate && params.onUpdate();
     }
@@ -237,7 +230,7 @@ export class AiChannel {
     params.onUpdate && params.onUpdate();
 
     let format_message = await this.messages2core(messages);
-    options.messages = format_message;
+    options.messages = [{ role: "system", content: params.prompt }, ...format_message];
 
     let tools: HyperChatCompletionTool[] = this.ext.mcpTools || [];
     const aiTools = this.tools_format_ai(tools || []);
@@ -469,10 +462,9 @@ export class AiChannel {
 
         params.onUpdate && params.onUpdate();
       }
-      params.step++;
-      return await this._completion(
-
-        params, options,
+      context.step++;
+      return await this.completion(
+        params, options, context
       );
     } else {
       // console.log("this.messages", this.messages);
@@ -487,8 +479,6 @@ export class AiChannel {
     aiSettings: AISettings;
     compressionConfig?: {
       enabled: boolean;
-      userMessageThreshold: number;
-      compressionStrategy: "summary" | "key_points";
     };
   };
   register(ext: this["ext"]) {
@@ -496,7 +486,7 @@ export class AiChannel {
   }
 
   // 检查是否需要压缩记忆
-  private shouldCompressMemory(): boolean {
+  private shouldCompressMemory(params: BaseAIConfig): boolean {
     if (!this.ext.compressionConfig?.enabled) return false;
     let lastMemoryMessage = this.messages.findLastIndex(m => m.role === "hyper_memory" && m.content_status === "success");
     let userMessageCount = 0;
@@ -505,7 +495,7 @@ export class AiChannel {
         userMessageCount++; // 计算最后一个记忆消息之后的用户消息数量，需要-1
       }
     }
-    return (userMessageCount - 1) >= this.ext.compressionConfig.userMessageThreshold;
+    return (userMessageCount - 1) >= (params.maxAttachedDialogs || 10);
   }
 
   // 生成记忆摘要

@@ -541,17 +541,14 @@ export const WorkspaceChat = ({ workspace, agentName, workspaceDetails, mcpClien
         aiSettings: aiSettings as any,
         compressionConfig: {
           enabled: effectiveConfig.maxAttachedDialogs! > 0 ? true : false,
-          userMessageThreshold: effectiveConfig.maxAttachedDialogs || 5,    // 用户消息达到5条时触发压缩
-          compressionStrategy: "summary",
         }
       })
 
       await aiClient.completion({
+        ...effectiveConfig,
         modelKey: config?.key || "",
-        allowMCPs: effectiveConfig.allowMCPs,
-        isConfirmCallTool: effectiveConfig.isConfirmCallTool,
         confirm_call_tool_cb,
-        onUpdate: (r) => {
+        onUpdate: (r: any) => {
           if (r && r.type == "compress") {
             currentChat.current.label = r.data.title || currentChat.current.label;
           }
