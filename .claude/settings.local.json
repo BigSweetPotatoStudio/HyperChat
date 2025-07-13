@@ -32,7 +32,8 @@
       "Bash(timeout:*)",
       "Bash(cp:*)",
       "Bash(tsx:*)",
-      "Bash(npm uninstall:*)"
+      "Bash(npm uninstall:*)",
+      "Bash(npm view:*)"
     ],
     "deny": []
   }

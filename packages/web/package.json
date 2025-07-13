@@ -81,7 +81,7 @@
   "scripts": {
     "start": "npx cross-env myEnv=dev webpack serve --config webpack.config.js",
     "dev": "npm start",
-    "build": "npx cross-env NODE_ENV=production webpack --config webpack.config.js",
+    "build": "npx cross-env NODE_ENV=production myEnv=prod webpack --config webpack.config.js",
     "typecheck": "npx tsc --noEmit"
   },
   "eslintConfig": {
