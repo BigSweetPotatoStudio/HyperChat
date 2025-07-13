@@ -10,15 +10,15 @@
           "properties": {
             "name": {
               "type": "string",
-              "description": "工作区名称"
+              "description": "Workspace name"
             },
             "description": {
               "type": "string",
-              "description": "工作区描述"
+              "description": "Workspace description"
             },
             "created": {
               "type": "number",
-              "description": "创建时间戳"
+              "description": "Creation timestamp"
             }
           },
           "required": [
@@ -26,7 +26,7 @@
             "created"
           ],
           "additionalProperties": false,
-          "description": "工作区元数据"
+          "description": "Workspace metadata"
         },
         "appearance": {
           "type": "object",
@@ -34,7 +34,7 @@
             "isDarkMode": {
               "type": "boolean",
               "default": false,
-              "description": "是否启用夜间模式"
+              "description": "Enable dark mode"
             },
             "theme": {
               "type": "string",
@@ -44,7 +44,7 @@
                 "auto"
               ],
               "default": "auto",
-              "description": "主题模式"
+              "description": "Theme mode"
             },
             "fontSize": {
               "type": "string",
@@ -54,7 +54,7 @@
                 "large"
               ],
               "default": "medium",
-              "description": "字体大小"
+              "description": "Font size"
             },
             "language": {
               "type": "string",
@@ -63,7 +63,7 @@
                 "en-US"
               ],
               "default": "zh-CN",
-              "description": "界面语言"
+              "description": "Interface language"
             }
           },
           "additionalProperties": false,
@@ -75,26 +75,26 @@
             "autoSave": {
               "type": "boolean",
               "default": true,
-              "description": "是否自动保存"
+              "description": "Enable auto save"
             },
             "autoSaveDelay": {
               "type": "number",
               "minimum": 1000,
               "maximum": 60000,
               "default": 5000,
-              "description": "自动保存延迟（毫秒）"
+              "description": "Auto save delay (milliseconds)"
             },
             "wordWrap": {
               "type": "boolean",
               "default": true,
-              "description": "是否自动换行"
+              "description": "Enable word wrap"
             },
             "tabSize": {
               "type": "number",
               "minimum": 2,
               "maximum": 8,
               "default": 2,
-              "description": "Tab 大小"
+              "description": "Tab size"
             }
           },
           "additionalProperties": false,
@@ -105,30 +105,30 @@
           "properties": {
             "defaultModel": {
               "type": "string",
-              "description": "默认 AI 模型"
+              "description": "Default AI model"
             },
             "defaultAgent": {
               "type": "string",
-              "description": "默认 Agent"
+              "description": "Default Agent"
             },
             "temperature": {
               "type": "number",
               "minimum": 0,
               "maximum": 2,
               "default": 0.7,
-              "description": "温度参数"
+              "description": "Temperature parameter"
             },
             "maxTokens": {
               "type": "number",
               "minimum": 100,
               "maximum": 32000,
               "default": 4000,
-              "description": "最大 Token 数"
+              "description": "Maximum tokens"
             },
             "streamResponse": {
               "type": "boolean",
               "default": true,
-              "description": "是否流式响应"
+              "description": "Enable streaming response"
             }
           },
           "additionalProperties": false,
@@ -140,17 +140,17 @@
             "enableTelemetry": {
               "type": "boolean",
               "default": false,
-              "description": "是否启用遥测"
+              "description": "Enable telemetry"
             },
             "debugMode": {
               "type": "boolean",
               "default": false,
-              "description": "是否启用调试模式"
+              "description": "Enable debug mode"
             },
             "experimentalFeatures": {
               "type": "boolean",
               "default": false,
-              "description": "是否启用实验性功能"
+              "description": "Enable experimental features"
             }
           },
           "additionalProperties": false,

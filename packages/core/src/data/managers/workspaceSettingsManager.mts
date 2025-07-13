@@ -11,14 +11,14 @@ import {
   WorkspaceAdvancedSettings,
   WorkspaceMetadata,
   DEFAULT_WORKSPACE_SETTINGS,
-} from "@dadigua/hyperchat-shared/jsonSchemas/workspaceSettingsSchema";
+} from "@dadigua/hyperchat-shared";
 
 // 重新导出 schema 和类型，保持向后兼容
 export {
   WorkspaceSettingsSchema,
   WorkspaceMetadataSchema,
   DEFAULT_WORKSPACE_SETTINGS,
-} from "@dadigua/hyperchat-shared/jsonSchemas/workspaceSettingsSchema";
+} from "@dadigua/hyperchat-shared";
 
 /**
  * 工作区设置管理器类
