@@ -39,7 +39,7 @@ import { t } from "../i18n";
 import type { AISettings, AIModelConfigItem } from "@dadigua/hyperchat-shared";
 import { useAISettings } from "../contexts/AppSettingsContext";
 import EmojiPicker from 'emoji-picker-react';
-import { Editor } from "./editor";
+import { HyperChatEditor } from "./HyperChatEditor";
 import { useForceUpdate } from "../hooks/useForceUpdate";
 import { AgentConfig, ChatHistoryItem, IMCPClient } from "@dadigua/hyperchat-shared";
 const { Title } = Typography;
@@ -534,6 +534,7 @@ export const AgentManagement = forwardRef<AgentManagementRef, AgentManagementPro
                   maxTokens: workspaceAIConfig?.maxTokens,
                   maxAttachedDialogs: workspaceAIConfig?.maxAttachedDialogs ?? 5,
                   modelKey: workspaceAIConfig?.modelKey || firstAvailableModel,
+                  prompt: workspaceAIConfig?.prompt || "",
                 };
                 
                 // 使用工作区配置或合理的默认值
@@ -581,7 +582,11 @@ export const AgentManagement = forwardRef<AgentManagementRef, AgentManagementPro
             label={t`System Prompt`}
             rules={[{ required: true, message: t`Please enter System Prompt` }]}
           >
-            <Editor style={{ height: "150px" }} />
+            <HyperChatEditor
+              autoHeight={false}
+              style={{ height: "150px" }}
+              placeholder={t`Enter system prompt for this agent...`}
+            />
           </Form.Item>
 
           <Form.Item name="modelKey" label={t`Language Model`}

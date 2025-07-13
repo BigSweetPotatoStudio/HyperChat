@@ -54,7 +54,7 @@ import { useAISettings } from "../contexts/AppSettingsContext";
 import { MyMessage } from "@dadigua/hyperchat-shared/types";
 import { Messages } from "./messages";
 import { Icon } from "./icon";
-import { Editor } from "./editor";
+import { HyperChatEditor, HyperChatEditorRef } from "./HyperChatEditor";
 import { t } from "../i18n";
 import { blobToBase64, getMyUuid, JsonSchema2FormItemOrNull, urlToBase64 } from "../common/util";
 import { useForceUpdate } from "../hooks/useForceUpdate";
@@ -218,7 +218,7 @@ export const WorkspaceChat = ({ workspace, agentName, workspaceDetails, mcpClien
 
 
   // 编辑器引用
-  const editorRef = useRef<any>(null);
+  const editorRef = useRef<HyperChatEditorRef>(null);
 
   // 资源结果列表引用
   const resourceResListRef = useRef<(CommonContentItem & { uid: string })[]>([]);
@@ -793,12 +793,32 @@ export const WorkspaceChat = ({ workspace, agentName, workspaceDetails, mcpClien
             ></MyAttachR>
             {/* 发送框 */}
             <div className="my-sender-container">
-              <Editor
-                onDragFile={async (file: any) => {
+              <HyperChatEditor
+                ref={editorRef}
+                value={value}
+                onChange={(nextVal) => {
+                  setValue(nextVal);
+                }}
+                onSubmit={(s) => {
+                  if (s == "") return;
+                  if (loading) {
+                    message.warning(t`Please wait for the current request to finish`);
+                    return;
+                  }
+                  if (aiSettingsLoading) {
+                    message.warning(t`AI settings are loading, please wait...`);
+                    return;
+                  }
+                  addToSendHistory(s);
+                  onRequest(s);
+                  setValue("");
+                  editorRef.current?.setValue("");
+                }}
+                onDragFile={async (file: File) => {
                   if (!file) return;
 
-                  if (file.path) {
-                    editorRef.current?.insertTextAtCursor(file.path);
+                  if ((file as any).path) {
+                    editorRef.current?.insertTextAtCursor((file as any).path);
                   } else {
                     if (file.type.includes("image")) {
                       let path = await blobToBase64(file);
@@ -821,7 +841,6 @@ export const WorkspaceChat = ({ workspace, agentName, workspaceDetails, mcpClien
                   if (file.type.includes("image")) {
                     let path = await blobToBase64(file);
                     resourceResListRef.current.push({
-
                       type: "image_url",
                       image_url: {
                         url: path,
@@ -833,38 +852,18 @@ export const WorkspaceChat = ({ workspace, agentName, workspaceDetails, mcpClien
                     message.warning(t`please upload image`);
                   }
                 }}
+                onKeyDown={handleKeyDown}
                 submitType="enter"
-                ref={editorRef}
+                autoHeight
+                rows={1}
+                maxRows={10}
+                fontSize={16}
+                lineHeight={28}
+                placeholder={t`Start inputting...`}
                 style={{
                   border: "0px",
                   padding: "8px 0px 8px",
                 }}
-                autoHeight
-                rows={1}
-                maxRows={10}
-                value={value}
-                onChange={(nextVal) => {
-                  setValue(nextVal);
-                }}
-                onKeyDown={handleKeyDown}
-                onSubmit={(s) => {
-                  if (s == "") return;
-                  if (loading) {
-                    message.warning(t`Please wait for the current request to finish`);
-                    return;
-                  }
-                  if (aiSettingsLoading) {
-                    message.warning(t`AI settings are loading, please wait...`);
-                    return;
-                  }
-                  addToSendHistory(s);
-                  onRequest(s);
-                  setValue("");
-                  editorRef.current?.setValue("");
-                }}
-                fontSize={16}
-                lineHeight={28}
-                placeholder={t`Start inputting...`}
               />
               {/* 发送区域操作栏 */}
               <div className="flex justify-between items-center p-2 border-t bg-gray-50 rounded-b">
