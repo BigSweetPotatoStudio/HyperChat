@@ -17,7 +17,9 @@
     "tabSize": 2
   },
   "aiConfig": {
-    "modelKey": "openrouter:google/gemini-2.5-flash-preview"
+    "prompt": "你是一个通用人工智能",
+    "modelKey": "openrouter:google/gemini-2.5-flash-preview",
+    "maxTokens": 30000
   },
   "defaultAI": {
     "streamResponse": true

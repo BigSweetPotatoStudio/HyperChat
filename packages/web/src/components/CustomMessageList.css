@@ -72,7 +72,8 @@
 }
 
 .message-card.tool {
-  background: linear-gradient(135deg, #e6f7ff 0%, #f0fcff 100%);
+  /* background: linear-gradient(135deg, #e6f7ff 0%, #f0fcff 100%); */
+  background: linear-gradient(135deg, #f6ffed 0%, #f9ffed 100%);
   border: 1px solid #91d5ff;
 }
 

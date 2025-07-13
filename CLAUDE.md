@@ -412,3 +412,8 @@ export class FeatureManager {
 - [ ] 优化 MCP 工具性能和错误处理
 - [ ] 添加 CLI 命令的单元测试和集成测试
 - [ ] 优化 workspace create 功能，确保在各种环境下正常工作
+
+## 开发小技巧
+
+### 构建优化
+* 以后不用build构建，运行typecheck就好了，不然太久了
