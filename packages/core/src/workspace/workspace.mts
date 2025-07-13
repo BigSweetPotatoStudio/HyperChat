@@ -106,7 +106,7 @@ export class Workspace {
     this.settingsManager = new WorkspaceSettingsManager(hyperChatPath);
 
     // 初始化任务管理器
-    this.taskManager = new TaskManager(effectiveWorkspacePath);
+    this.taskManager = new TaskManager(hyperChatPath);
   }
 
   /**
