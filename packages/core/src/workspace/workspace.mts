@@ -21,6 +21,22 @@ import { Logger } from "../log.mjs";
 import * as cron from "node-cron";
 
 /**
+ * 工作区状态枚举
+ */
+export enum WorkspaceState {
+  /** 未初始化 */
+  UNINITIALIZED = 'uninitialized',
+  /** 配置已加载，但服务未启动 */
+  INITIALIZED = 'initialized', 
+  /** 所有服务已启动，完全可用 */
+  STARTED = 'started',
+  /** 正在关闭中 */
+  STOPPING = 'stopping',
+  /** 已关闭 */
+  STOPPED = 'stopped'
+}
+
+/**
  * 工作区类 - 封装单个工作区的所有操作
  */
 export class Workspace {
@@ -33,6 +49,9 @@ export class Workspace {
   private lastSync?: number;
   private readonly HYPERCHAT_DIR = CONSTANTS.HYPERCHAT_DIR;
   private isGlobal: boolean;
+  
+  // 工作区状态管理
+  private state: WorkspaceState = WorkspaceState.UNINITIALIZED;
   
   // 任务调度相关
   private taskJobs: Map<string, cron.ScheduledTask> = new Map();
@@ -114,35 +133,108 @@ export class Workspace {
   }
 
   /**
-   * 初始化工作区
+   * 🚀 第一阶段：快速初始化配置和基本结构
+   * 
+   * 这个阶段只做轻量级操作：
+   * - 创建目录结构
+   * - 加载基本配置  
+   * - 初始化管理器（包括 Agent 管理器，扫描文件较快）
+   */
+  async initialize(): Promise<void> {
+    if (this.state !== WorkspaceState.UNINITIALIZED) {
+      Logger.warn(`工作区已初始化，当前状态: ${this.state}`);
+      return;
+    }
+
+    try {
+      Logger.info('🚀 开始工作区快速初始化...');
+
+      // 创建目录结构
+      await this.createDirectories();
+
+      // 初始化设置管理器
+      await this.settingsManager.init();
+
+      // 初始化任务管理器（仅初始化，不启动调度）
+      await this.taskManager.init();
+
+      // 加载工作区基本配置（不启动服务）
+      await this.loadMergedConfig();
+
+      // 初始化 Agent 管理器（扫描加载 Agent 配置，速度较快）
+      await this.agentManager.init();
+
+      // 保存配置
+      await this.saveConfig();
+
+      this.state = WorkspaceState.INITIALIZED;
+      Logger.info('✅ 工作区配置初始化完成');
+
+    } catch (error) {
+      this.state = WorkspaceState.UNINITIALIZED;
+      Logger.error('❌ 工作区初始化失败:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * 🔥 第二阶段：启动所有服务
+   * 
+   * 这个阶段做重量级操作：
+   * - 启动 MCP 客户端（网络连接，耗时）
+   * - 启动任务调度器
+   */
+  async start(): Promise<void> {
+    if (this.state === WorkspaceState.STARTED) {
+      Logger.warn('工作区服务已启动');
+      return;
+    }
+
+    if (this.state !== WorkspaceState.INITIALIZED) {
+      throw new Error(`工作区状态错误: ${this.state}，请先调用 initialize()`);
+    }
+
+    try {
+      Logger.info('🔥 开始启动工作区服务...');
+
+      // 启动 MCP 客户端（网络连接，真正的重量级操作）
+      await this.mcpManager.startClients();
+
+      // 启动任务调度器
+      await this.startTaskScheduler();
+
+      this.state = WorkspaceState.STARTED;
+      Logger.info('✅ 工作区服务启动完成');
+
+    } catch (error) {
+      Logger.error('❌ 工作区服务启动失败:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * 🔧 完整初始化（向后兼容）
+   * 
+   * @deprecated 建议使用 initialize() + start() 的两阶段方式
    */
   async init(): Promise<void> {
-    // 创建目录结构
-    await this.createDirectories();
-
-    // MCP 管理器不需要显式初始化
-
-    // 初始化设置管理器
-    await this.settingsManager.init();
-
-    // 初始化任务管理器
-    await this.taskManager.init();
-
-    // 加载数据
-    await this.load();
-
-    // 保存配置
-    await this.saveConfig();
-
-    // 启动任务调度器
-    await this.startTaskScheduler();
+    await this.initialize();
+    await this.start();
   }
 
   /**
    * 清理工作区，释放资源
    */
   async uninit(): Promise<void> {
+    if (this.state === WorkspaceState.UNINITIALIZED || this.state === WorkspaceState.STOPPED) {
+      Logger.warn('工作区已停止或未初始化');
+      return;
+    }
+
     try {
+      this.state = WorkspaceState.STOPPING;
+      Logger.info('🛑 开始停止工作区服务...');
+
       // 停止任务调度器
       await this.stopTaskScheduler();
 
@@ -151,11 +243,38 @@ export class Workspace {
 
       // 保存当前状态
       await this.save();
+
+      this.state = WorkspaceState.STOPPED;
+      Logger.info('✅ 工作区已安全停止');
+
     } catch (error) {
-      console.warn('清理工作区失败:', error);
+      Logger.error('❌ 停止工作区失败:', error);
+      this.state = WorkspaceState.STOPPED; // 即使失败也标记为停止
       throw error;
     }
   }
+
+  /**
+   * 获取工作区当前状态
+   */
+  getState(): WorkspaceState {
+    return this.state;
+  }
+
+  /**
+   * 检查工作区是否已初始化（配置已加载）
+   */
+  isInitialized(): boolean {
+    return this.state !== WorkspaceState.UNINITIALIZED;
+  }
+
+  /**
+   * 检查工作区是否已启动（服务已运行）
+   */
+  isStarted(): boolean {
+    return this.state === WorkspaceState.STARTED;
+  }
+
 
   /**
    * 创建工作区目录结构
@@ -188,21 +307,6 @@ export class Workspace {
     }
   }
 
-  /**
-   * 加载工作区数据
-   */
-  async load(): Promise<void> {
-    const hyperChatPath = this.getHyperChatPath();
-
-    // 加载配置文件（支持全局+工作区合并）
-    await this.loadMergedConfig();
-
-    // 加载 agents
-    await this.agentManager.init();
-
-    // 启动MCP客户端
-    await this.mcpManager.startClients();
-  }
 
   /**
    * 从settings.jsonc加载工作区元数据

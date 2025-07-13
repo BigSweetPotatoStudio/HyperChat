@@ -17,34 +17,70 @@ export class WorkspaceManager {
   private readonly GLOBAL_HYPERCHAT_DIR = path.join(CONSTANTS.GLOBAL_PATH, CONSTANTS.HYPERCHAT_DIR);
   private currentWorkspace!: Workspace;
   private isInitialized = false;
+  private isStarted = false;
 
   constructor() {
   }
 
   /**
-   * 初始化工作区管理器
+   * 🚀 第一阶段：初始化工作区管理器（快速配置加载）
    * @param workingDirectory 当前工作目录
+   * @param autoStart 是否自动启动服务（默认 false，保持两阶段分离）
    */
-  async initialize(workingDirectory?: string): Promise<void> {
-
+  async initialize(workingDirectory?: string, autoStart: boolean = false): Promise<void> {
     if (this.isInitialized) {
       return;
     }
 
     try {
-
       // 默认工作区是当前目录或全局工作区
       const initialPath = workingDirectory || process.cwd();
       const workspacePath = this.findWorkspaceInPath(initialPath) || CONSTANTS.GLOBAL_PATH;
       this.currentWorkspace = new Workspace(workspacePath);
 
-      // 初始化当前工作区
-      await this.currentWorkspace.init();
+      // 🚀 第一阶段：只初始化配置，不启动服务
+      await this.currentWorkspace.initialize();
       this.isInitialized = true;
+
+      // 如果需要自动启动服务（向后兼容）
+      if (autoStart) {
+        await this.start();
+      }
     } catch (error) {
       console.warn('初始化工作区管理器失败:', error);
       throw error;
     }
+  }
+
+  /**
+   * 🔥 第二阶段：启动工作区服务（重量级操作）
+   */
+  async start(): Promise<void> {
+    if (!this.isInitialized) {
+      throw new Error('工作区管理器尚未初始化，请先调用 initialize() 方法。');
+    }
+
+    if (this.isStarted) {
+      return;
+    }
+
+    try {
+      // 🔥 第二阶段：启动所有服务
+      await this.currentWorkspace.start();
+      this.isStarted = true;
+    } catch (error) {
+      console.warn('启动工作区服务失败:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * 🔧 完整初始化（向后兼容）
+   * @param workingDirectory 当前工作目录
+   * @deprecated 建议使用 initialize() + start() 的两阶段方式
+   */
+  async init(workingDirectory?: string): Promise<void> {
+    await this.initialize(workingDirectory, true);
   }
 
   /**
@@ -62,6 +98,7 @@ export class WorkspaceManager {
       }
 
       this.isInitialized = false;
+      this.isStarted = false;
     } catch (error) {
       console.warn('清理工作区管理器失败:', error);
       throw error;
@@ -121,6 +158,27 @@ export class WorkspaceManager {
     }
     // 始终返回当前工作区（默认是全局工作区，workspace.mts中自动处理配置合并）
     return this.currentWorkspace;
+  }
+
+  /**
+   * 检查工作区管理器是否已初始化（配置已加载）
+   */
+  isWorkspaceInitialized(): boolean {
+    return this.isInitialized;
+  }
+
+  /**
+   * 检查工作区管理器是否已启动（服务已运行）
+   */
+  isWorkspaceStarted(): boolean {
+    return this.isStarted;
+  }
+
+  /**
+   * 检查工作区管理器是否完全可用（已初始化且已启动）
+   */
+  isWorkspaceReady(): boolean {
+    return this.isInitialized && this.isStarted;
   }
 
 
@@ -228,8 +286,8 @@ export class WorkspaceManager {
     }
 
     try {
-      // 加载工作区数据
-      await workspace.load();
+      // 加载工作区数据（使用完整初始化）
+      await workspace.init();
       return workspace;
     } catch (error) {
       console.warn(`加载工作区失败 ${workspacePath}:`, error);

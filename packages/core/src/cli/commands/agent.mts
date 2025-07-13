@@ -11,8 +11,7 @@ import type { AgentConfig } from '@dadigua/hyperchat-shared/types';
  * 获取当前工作区路径（使用新的会话管理器，只读模式）
  */
 async function getCurrentWorkspacePath(): Promise<string> {
-
-  // workspaceManager is already imported
+  // Agent 查询只需要配置，不需要启动服务
   await workspaceManager.initialize();
   return workspaceManager.getCurrentWorkspacePath();
 }
@@ -109,7 +108,7 @@ export async function createAgent(name: string) {
  */
 export async function checkAgentExists(agentKey: string): Promise<{ exists: boolean; config?: AgentConfig }> {
   try {
-    // 确保workspaceManager已初始化
+    // Agent 检查只需要配置，不需要启动服务
     await workspaceManager.initialize();
     
     const agents = await Command.getWorkspaceAgentsSummary();

@@ -29,20 +29,30 @@ export async function startRun(options: RunOptions = {}) {
     const workspacePath = options.workspace || process.cwd();
     logger.info(`🎯 使用工作区: ${workspacePath}`);
     
-    // 初始化工作区管理器
-    logger.info('⏳ 初始化工作区...');
-    await getWorkspaceManager().initialize(workspacePath);
+    // 第一阶段：快速初始化工作区配置
+    logger.info('⏳ 第一阶段：快速加载工作区配置...');
+    await getWorkspaceManager().initialize(workspacePath, false); // 明确不自动启动
     
     const workspace = getWorkspaceManager().getCurrentWorkspace();
     if (!workspace) {
       throw new Error('无法获取当前工作区');
     }
     
-    // 获取工作区摘要信息
+    // 显示基本信息（此时服务还未启动）
+    logger.info('✅ 工作区配置加载完成');
+    logger.info(`🎯 工作区路径: ${workspace.workspacePath}`);
+    logger.info(`📁 状态: ${workspace.getState()}`);
+    
+    // 第二阶段：启动所有服务
+    logger.info('⏳ 第二阶段：启动工作区服务...');
+    await getWorkspaceManager().start();
+    
+    // 获取完整的工作区摘要信息
     const summary = await workspace.getSummary();
     
     logger.info('✅ 核心服务启动成功');
     logger.info(`📊 工作区状态:`);
+    logger.info(`   - 状态: ${workspace.getState()}`);
     logger.info(`   - Agents: ${summary.agentsCount} 个`);
     logger.info(`   - MCP 服务: ${summary.mcpServersCount} 个`);
     logger.info(`   - 任务: ${summary.tasksCount} 个`);

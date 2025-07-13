@@ -10,10 +10,19 @@ import type { CreateTaskRequest } from '@dadigua/hyperchat-shared';
 import type { AgentConfig } from '@dadigua/hyperchat-shared/types';
 
 /**
- * 获取当前工作区路径
+ * 获取当前工作区路径 - 查询模式
  */
 async function getCurrentWorkspacePath(): Promise<string> {
+  await workspaceManager.initialize(); // 只查询配置
+  return workspaceManager.getCurrentWorkspacePath();
+}
+
+/**
+ * 获取工作区路径并启动服务 - 执行模式
+ */
+async function initWorkspaceForExecution(): Promise<string> {
   await workspaceManager.initialize();
+  await workspaceManager.start(); // 需要完整服务
   return workspaceManager.getCurrentWorkspacePath();
 }
 
@@ -115,8 +124,9 @@ export async function createTask(taskName: string, options: {
       disabled: options.disabled || false,
     };
 
-    // 创建任务
-    const task = await Command.createTask({ workspacePath, taskData });
+    // 创建任务需要调度器服务
+    const workspacePathForExecution = await initWorkspaceForExecution();
+    const task = await Command.createTask({ workspacePath: workspacePathForExecution, taskData });
 
     console.log('✅ 任务创建成功!');
     console.log(`   名称: ${task.name}`);
@@ -171,7 +181,8 @@ export async function enableTask(taskName: string) {
   try {
     logger.info(`📅 启用任务: ${taskName}`);
 
-    const workspacePath = await getCurrentWorkspacePath();
+    // 启用任务需要调度器服务
+    const workspacePath = await initWorkspaceForExecution();
     const task = await Command.enableTask({ workspacePath, taskName });
 
     if (!task) {
@@ -196,7 +207,8 @@ export async function disableTask(taskName: string) {
   try {
     logger.info(`📅 禁用任务: ${taskName}`);
 
-    const workspacePath = await getCurrentWorkspacePath();
+    // 禁用任务需要调度器服务
+    const workspacePath = await initWorkspaceForExecution();
     const task = await Command.disableTask({ workspacePath, taskName });
 
     if (!task) {
@@ -360,8 +372,9 @@ export async function taskStats() {
       }
     }
 
-    // 显示调度状态
-    const scheduledTasks = await Command.getScheduledTasks({ workspacePath });
+    // 显示调度状态需要调度器服务
+    const workspacePathForScheduler = await initWorkspaceForExecution();
+    const scheduledTasks = await Command.getScheduledTasks({ workspacePath: workspacePathForScheduler });
     console.log(`\n⏰ 调度状态: ${scheduledTasks.length} 个任务正在调度中`);
     if (scheduledTasks.length > 0) {
       for (const taskName of scheduledTasks) {
@@ -384,7 +397,8 @@ export async function triggerTask(taskName: string) {
   try {
     logger.info(`⚡ 手动触发任务: ${taskName}`);
 
-    const workspacePath = await getCurrentWorkspacePath();
+    // 触发任务需要完整服务（调度器+AI）
+    const workspacePath = await initWorkspaceForExecution();
     await Command.triggerTask({ workspacePath, taskName });
 
     console.log(`✅ 任务 '${taskName}' 已触发执行`);
@@ -404,7 +418,8 @@ export async function showScheduler() {
   try {
     logger.info('📅 获取调度状态...');
 
-    const workspacePath = await getCurrentWorkspacePath();
+    // 获取调度状态需要调度器服务
+    const workspacePath = await initWorkspaceForExecution();
     const scheduledTasks = await Command.getScheduledTasks({ workspacePath });
 
     console.log('\n⏰ 任务调度器状态:');

@@ -36,11 +36,14 @@ export async function startChat(initialMessage?: string, options: ChatOptions = 
     let sessionConfig: any;
 
 
-    await workspaceManager.initialize(workspacePath);
+    // Chat需要完整服务（MCP工具、AI聊天）
+    await workspaceManager.initialize(workspacePath, false);
+    logger.info(`🎯 使用工作区: ${workspaceManager.getCurrentWorkspacePath()}`);
+    
+    await workspaceManager.start();
     let workspace = workspaceManager.getCurrentWorkspace();
     workspacePath = workspaceManager.getCurrentWorkspacePath();
-    // 新架构下简化配置获取
-    logger.info(`🎯 使用工作区: ${workspacePath}`);
+    logger.info(`✅ 工作区服务已启动`);
 
     // 如果指定了agent，获取agent配置
     let agentConfig: any = null;
