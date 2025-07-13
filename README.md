@@ -3,9 +3,9 @@
 
 # HyperChat
 
-> 🌟 **Next Generation AI Workspace** - An intelligent collaboration platform based on the workspace concept and MCP ecosystem
+> 🌟 **Next Generation AI Workspace** - Pioneering AI as Code Implementation, Configuration-Driven Intelligent Collaboration Platform
 
-HyperChat 2.0 is a revolutionary multi-platform AI workspace designed with the core concept of **Workspace**, fully supporting the **MCP (Model Context Protocol)** ecosystem, allowing AI to deeply integrate with your projects to create a truly intelligent development and working environment.
+HyperChat 2.0 is a revolutionary multi-platform AI workspace that pioneers the **"AI as Code"** concept. Built around **Workspace** and driven by **Configuration Files**, it fully supports the **MCP (Model Context Protocol)** ecosystem. Making AI capabilities **version-controllable, reproducible, and shareable** like infrastructure, creating a truly intelligent development and working environment.
 
 [![Build](https://github.com/BigSweetPotatoStudio/HyperChat/actions/workflows/build.yml/badge.svg)](https://github.com/BigSweetPotatoStudio/HyperChat/actions/workflows/build.yml)
 [![@dadigua/hyper-chat](https://img.shields.io/npm/v/%40dadigua%2Fhyper-chat)](https://www.npmjs.com/package/@dadigua/hyper-chat)
@@ -20,7 +20,16 @@ HyperChat 2.0 is a revolutionary multi-platform AI workspace designed with the c
 
 ## 🎯 Core Philosophy
 
-### 🗂️ Workspace-Driven Intelligent Collaboration
+### 🗂️ AI as Code: Configuration-Driven Intelligence Revolution
+HyperChat 2.0 pioneers the **"AI as Code"** concept, making AI capabilities fully configurable:
+
+- **Complete Configuration**: All AI capabilities defined through YAML/JSON configuration files
+- **Version Control Friendly**: AI configurations can be managed with Git, supporting branching, merging, rollback
+- **Team Collaboration Standardization**: Share Agent configurations, replicate best practices
+- **Project Templating**: Different project types have dedicated AI environment templates
+- **Declarative Management**: Modify configuration files to change AI behavior without programming
+
+### 🔌 Workspace-Driven Intelligent Collaboration
 HyperChat 2.0 centers around the **Workspace**, closely integrating AI capabilities with your projects:
 
 - **Project Workspace**: Each project has its own independent `.hyperchat/` configuration directory
@@ -28,7 +37,7 @@ HyperChat 2.0 centers around the **Workspace**, closely integrating AI capabilit
 - **Workspace Isolation**: Agent, MCP services, and chat logs are independently managed by workspace
 - **Seamless Switching**: Multiple workspace tabs allow one-click switching between different project environments
 
-### 🔌 Deep Integration of MCP Ecosystem
+### 🛠️ Deep Integration of MCP Ecosystem
 As a complete implementation of the MCP protocol, HyperChat has built a robust tools ecosystem:
 
 - **Rich Built-in MCP Services**: File system, terminal, settings management, knowledge base, etc.
@@ -52,6 +61,13 @@ As a complete implementation of the MCP protocol, HyperChat has built a robust t
 - **Interactive & Quick Mode**: Both interactive chat and one-shot commands
 - **Service Management**: Start web server or run background services
 - **Cross-Platform**: Works on Windows, macOS, and Linux
+
+### 📄 Everything as Configuration
+- **Transparent & Controllable**: All AI behaviors have corresponding configuration files, completely visible and controllable
+- **Version Management**: AI configurations support Git version control with traceable change history
+- **Team Sharing**: Agent configurations and workflow templates can be standardized and reused across teams
+- **Template Ecosystem**: Different tech stacks have dedicated AI environment configuration templates
+- **Configuration as Documentation**: YAML configuration files serve as the best documentation and specifications
 
 ### 🤖 AI Capability Matrix
 - **Multi-Model Support**: OpenAI, Claude, Gemini, Qwen, Deepseek, GLM, Ollama, xAI, etc.
@@ -138,29 +154,95 @@ HyperChat/
 └── docs/                  # Complete documentation
 ```
 
-### 🏗️ Workspace Architecture
+### 🏗️ AI as Code Architecture
 ```
 Project Directory/
-├── .hyperchat/
-│   ├── workspace.json     # Workspace configuration
-│   ├── mcp.json           # MCP service configuration
-│   ├── ai_models.json     # AI model configuration
-│   └── agents/            # Agent configurations and chat logs
-│       ├── agent-name/
-│       │   ├── agent.yaml      # Agent configuration
-│       │   ├── memory.md       # Agent memory
-│       │   └── chatlogs/       # Chat logs
-│       └── ...
-└── Global Workspace: ~/Documents/HyperChat/.hyperchat/
+├── .hyperchat/           # AI capabilities configuration (version controllable)
+│   ├── workspace.json    # Workspace configuration
+│   ├── mcp.json         # MCP service configuration (Tools as Code)
+│   ├── ai_models.json   # AI model configuration
+│   ├── tasks/           # Workflow configuration (Workflow as Code)
+│   │   ├── daily-report.yaml  # Automated task definition
+│   │   └── code-review.yaml   # Code review workflow
+│   └── agents/          # AI agent configuration (AI as Code)
+│       ├── frontend-expert/
+│       │   ├── agent.yaml      # Agent capability definition
+│       │   ├── memory.md       # Persistent memory
+│       │   └── chatlogs/       # Conversation history
+│       ├── backend-optimizer/
+│       └── security-scanner/
+├── .git/                # Code version control
+├── .gitignore
+└── README.md
+
+# Global Template Library
+~/Documents/HyperChat/
+├── .hyperchat/          # Global configuration
+└── templates/           # Project templates
+    ├── react-project/   # React project AI environment
+    ├── python-ml/       # Python ML project AI environment
+    └── golang-api/      # Go API project AI environment
 ```
 
-### 🔄 Communication Architecture
+### 🔄 Configuration-Driven Architecture
+- **Configuration Parser**: Automatically parse YAML/JSON configurations with real-time effect
 - **Unified Command Layer**: `packages/core/src/command.mts` handles front-end and back-end communication
 - **AI Service Layer**: `packages/shared/src/ai.mts` unifies AI model calls across platforms
-- **Workspace Management**: `packages/core/src/workspace/` provides workspace lifecycle management
-- **CLI Integration**: `packages/core/src/cli/` provides Claude Code-like terminal experience
+- **Workspace Management**: `packages/core/src/workspace/` provides configuration-driven workspace management
 - **MCP Integration**: `packages/core/src/mcp/` implements complete MCP protocol support
-- **Real-Time Communication**: WebSocket supports real-time message pushing and status synchronization
+- **Real-Time Communication**: WebSocket supports real-time message pushing and configuration hot-reload
+
+## 🌟 Revolutionary Advantages of AI as Code
+
+### 🔄 Manage AI Like Managing Code
+```bash
+# AI configurations are also version controllable
+git add .hyperchat/agents/code-reviewer/
+git commit -m "Add TypeScript-specific code review Agent"
+git push origin feature/new-agent
+
+# Share team AI best practices
+git clone https://github.com/team/ai-templates.git
+cp -r ai-templates/react-expert/.hyperchat ./
+
+# Rollback AI configurations
+git checkout HEAD~1 -- .hyperchat/agents/
+```
+
+### 📋 Configuration as Documentation
+```yaml
+# .hyperchat/agents/frontend-expert/agent.yaml
+name: "Frontend Architecture Expert"
+description: "AI assistant specialized in React, TypeScript, performance optimization"
+modelKey: "claude-3-5-sonnet"
+confirm_call_tool: false
+allowMCPs: ["filesystem", "terminal", "knowledge-base"]
+prompt: |
+  You are a senior frontend architect specializing in:
+  1. React 18+ best practices and performance optimization
+  2. TypeScript type system design
+  3. Modern frontend engineering toolchains
+  4. Responsive design and mobile adaptation
+  
+  Working principles:
+  - Prioritize performance and maintainability
+  - Follow team coding standards
+  - Provide actionable specific recommendations
+tags: ["frontend", "react", "typescript", "performance"]
+```
+
+### 🚀 Project Template Standardization
+```bash
+# Quickly initialize React project AI environment
+hyperchat workspace create
+cp -r ~/.hyperchat/templates/react-enterprise/.hyperchat ./
+
+# Instantly get:
+# ✅ Frontend development expert Agent
+# ✅ Code review automation workflow
+# ✅ Performance monitoring tasks
+# ✅ Documentation generation workflow
+```
 
 ## 🎮 Feature Matrix
 
@@ -253,25 +335,29 @@ Recommended development toolchain:
 - 🔧 **GitHub Copilot** - Real-time code completion
 - 📝 **HyperChat** - AI dialogue with project context
 
-### 🏗️ Workspace Development Model
-1. **Create Project Workspace**: Run HyperChat in the project directory
-2. **Configure MCP Services**: Enable file system, terminal, and other tools as needed
-3. **Set Up Dedicated Agent**: Configure specific AI assistants for the project
-4. **AI Collaborative Coding**: Utilize workspace context for intelligent development
+### 🏗️ AI as Code Development Model
+1. **Initialize Project AI Environment**: `hyperchat workspace create`
+2. **Choose Project Template**: Copy corresponding tech stack AI configuration templates
+3. **Customize Agent Configuration**: Edit YAML files to define dedicated AI assistants
+4. **Version Control AI Configuration**: Include `.hyperchat/` in Git management
+5. **Share Team Best Practices**: Share and synchronize AI workflows through Git
+6. **Continuous Optimization Iteration**: Optimize AI configurations like refactoring code
 
 ## 🌟 Development Roadmap
 
 ### 🎯 Short-Term Goals
-- [ ] **Multi-Agent Collaboration**: Intelligent dialogue and task division among Agents
-- [ ] **Deep Integration with VSCode**: Complete in-IDE development experience
-- [ ] **MCP Plugin Store**: Community discovery and installation of MCP services
-- [ ] **Mobile Adaptation**: Responsive design optimization
+- [ ] **AI Configuration Template Marketplace**: Community-shared Agent and workflow templates
+- [ ] **Intelligent Configuration Recommendations**: Auto-recommend AI configurations based on project characteristics
+- [ ] **Multi-Agent Collaboration Orchestration**: Configuration-based Agent collaboration workflows
+- [ ] **Deep VSCode Integration**: AI as Code development experience within IDE
+- [ ] **Configuration Compliance Checking**: Security and compliance validation for AI configurations
 
 ### 🚀 Long-Term Vision
-- [ ] **AI-Native IDE**: A fully AI and workspace-based development environment
-- [ ] **Team Collaboration Platform**: Shared workspaces and Agents for multiple users
-- [ ] **Ecosystem Building**: An open MCP developer community
-- [ ] **Intelligent Project Management**: AI-driven full lifecycle project management
+- [ ] **AI as Code Standards**: Drive industry AI configuration standardization
+- [ ] **Enterprise-Grade AI Governance**: Auditable, compliant AI configuration management
+- [ ] **AI Capability Marketplace**: Standardized AI capability trading and distribution platform
+- [ ] **Intelligent Configuration Generation**: AI automatically generates and optimizes AI configurations
+- [ ] **Full-Stack AI Development Platform**: Unified platform for Infrastructure as Code + AI as Code
 
 ## 📸 Feature Preview
 
@@ -318,4 +404,27 @@ This project is under an open-source license, please refer to the [LICENSE](LICE
 
 ---
 
-✨ **HyperChat 2.0** - Redefining AI workspaces, making intelligent collaboration a reality ✨
+## 🔥 Why Choose HyperChat 2.0?
+
+### 🎯 Traditional AI Tools vs HyperChat 2.0
+
+| Feature | Traditional AI Tools | HyperChat 2.0 |
+|---------|---------------------|---------------|
+| **AI Configuration** | Online interface setup | Local configuration files (AI as Code) |
+| **Version Control** | ❌ No version control | ✅ Git management, rollback, branching |
+| **Team Collaboration** | ❌ Hard to share configurations | ✅ Standardized team AI environment |
+| **Project Integration** | ❌ Separated from projects | ✅ AI configurations travel with project |
+| **Transparency** | ❌ AI behavior black box | ✅ Completely transparent and controllable |
+| **Reproducibility** | ❌ Hard to replicate configurations | ✅ One-click complete AI environment replication |
+
+### 💡 Core Value Propositions
+
+1. **Manage AI capabilities like code** - Version control, code review, CI/CD
+2. **Team AI standardization** - New employees instantly get team AI best practices
+3. **Project AI integration** - AI configurations coexist with project code
+4. **Complete transparency and control** - Every AI behavior has corresponding configuration file
+5. **Enterprise-grade AI governance** - Auditable AI configuration change history
+
+---
+
+✨ **HyperChat 2.0** - Pioneering AI as Code, redefining how we work with AI ✨

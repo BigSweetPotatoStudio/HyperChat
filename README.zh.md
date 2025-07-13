@@ -1,8 +1,8 @@
 # HyperChat
 
-> 🌟 **下一代 AI 工作空间** - 基于工作区概念和 MCP 生态的智能协作平台
+> 🌟 **下一代 AI 工作空间** - AI as Code 的开创性实践，配置驱动的智能协作平台
 
-HyperChat 2.0 是一个革命性的多平台 AI 工作空间，以**工作区（Workspace）**为核心设计理念，完整支持 **MCP（模型上下文协议）**生态，让 AI 与您的项目深度融合，打造真正智能的开发和工作环境。
+HyperChat 2.0 是一个革命性的多平台 AI 工作空间，首创**「AI as Code」**理念，以**工作区（Workspace）**为核心，**配置文件**为驱动，完整支持 **MCP（模型上下文协议）**生态。让 AI 能力像基础设施一样**可版本控制、可复制、可共享**，打造真正智能的开发和工作环境。
 
 [![Build](https://github.com/BigSweetPotatoStudio/HyperChat/actions/workflows/build.yml/badge.svg)](https://github.com/BigSweetPotatoStudio/HyperChat/actions/workflows/build.yml)
 [![@dadigua/hyper-chat](https://img.shields.io/npm/v/%40dadigua%2Fhyper-chat)](https://www.npmjs.com/package/@dadigua/hyper-chat)
@@ -17,7 +17,16 @@ HyperChat 2.0 是一个革命性的多平台 AI 工作空间，以**工作区（
 
 ## 🎯 核心理念
 
-### 🗂️ 工作区驱动的智能协作
+### 🗂️ AI as Code：配置驱动的智能革命
+HyperChat 2.0 首创**「AI as Code」**理念，将 AI 能力彻底配置化：
+
+- **完全配置化**：所有 AI 能力通过 YAML/JSON 配置文件定义
+- **版本控制友好**：AI 配置可以 git 管理，支持分支、合并、回滚
+- **团队协作标准化**：共享 Agent 配置，复制最佳实践
+- **项目模板化**：不同项目类型有专属的 AI 环境模板
+- **声明式管理**：修改配置文件即可改变 AI 行为，无需编程
+
+### 🔌 工作区驱动的智能协作
 HyperChat 2.0 以**工作区（Workspace）**为核心，将 AI 能力与您的项目紧密结合：
 
 - **项目工作区**：每个项目都有独立的 `.hyperchat/` 配置目录
@@ -25,7 +34,7 @@ HyperChat 2.0 以**工作区（Workspace）**为核心，将 AI 能力与您的�
 - **工作区隔离**：Agent、MCP 服务、聊天记录按工作区独立管理
 - **无缝切换**：多工作区标签页，一键切换不同项目环境
 
-### 🔌 MCP 生态深度集成
+### 🛠️ MCP 生态深度集成
 作为 MCP 协议的完整实现，HyperChat 打造了强大的工具生态：
 
 - **丰富的内置 MCP 服务**：文件系统、终端、设置管理、知识库等
@@ -56,18 +65,19 @@ HyperChat 2.0 以**工作区（Workspace）**为核心，将 AI 能力与您的�
 - **定时任务执行**：指定 Agent 定时完成任务
 - **模型对比聊天**：同时使用多个模型进行对比测试
 
+### 📄 配置即一切（Everything as Configuration）
+- **透明可控**：所有 AI 行为都有对应的配置文件，完全可见可控
+- **版本管理**：AI 配置支持 Git 版本控制，可追溯变更历史
+- **团队共享**：Agent 配置、工作流模板可在团队间标准化复用
+- **模板生态**：不同技术栈的项目有专属 AI 环境配置模板
+- **配置即文档**：YAML 配置文件本身就是最好的文档和说明
+
 ### 🎨 现代化界面
 - **标签页工作区**：直观的多工作区管理
 - **智能渲染**：Artifacts、SVG、HTML、Mermaid、数学公式支持
 - **暗黑模式**：护眼的深色主题
 - **多语言支持**：中英文无缝切换
 
-
-## 🚀 快速体验 1.0
-
-### 在线 Demo 1.0
-- [HyperChat](https://hyperchat.dadigua.men/123456/) - Node.js 版本
-- [Docker Demo](https://htmivlknrjln.ap-northeast-1.clawcloudrun.com/123456/#/Chat) - ClawCloud 部署
 
 ### 命令行快速启动
 ```bash
@@ -81,9 +91,9 @@ npx -y @dadigua/hyperchat
 #### CLI 使用示例
 ```bash
 # 启动 Web 界面
-hyperchat serve                        # 访问: http://localhost:16102
+hyperchat serve                        # 访问: http://localhost:16100
 
-# 运行核心服务（后台）
+# 运行核心服务
 hyperchat run                          # 不启动 Web 界面
 
 # 快速 AI 对话
@@ -135,28 +145,95 @@ HyperChat/
 └── docs/                  # 完整文档
 ```
 
-### 🏗️ 工作区架构
+### 🏗️ AI as Code 架构
 ```
 项目目录/
-├── .hyperchat/
-│   ├── workspace.json     # 工作区配置
-│   ├── mcp.json          # MCP 服务配置
-│   ├── ai_models.json    # AI 模型配置
-│   └── agents/           # Agent 配置和聊天记录
-│       ├── agent-name/
-│       │   ├── agent.yaml      # Agent 配置
-│       │   ├── memory.md       # Agent 记忆
-│       │   └── chatlogs/       # 聊天记录
-│       └── ...
-└── 全局工作区: ~/Documents/HyperChat/.hyperchat/
+├── .hyperchat/           # AI 能力配置目录（可版本控制）
+│   ├── workspace.json    # 工作区配置
+│   ├── mcp.json         # MCP 服务配置（Tools as Code）
+│   ├── ai_models.json   # AI 模型配置
+│   ├── tasks/           # 工作流配置（Workflow as Code）
+│   │   ├── daily-report.yaml  # 自动化任务定义
+│   │   └── code-review.yaml   # 代码审查流程
+│   └── agents/          # AI 智能体配置（AI as Code）
+│       ├── frontend-expert/
+│       │   ├── agent.yaml      # Agent 能力定义
+│       │   ├── memory.md       # 持久化记忆
+│       │   └── chatlogs/       # 对话历史
+│       ├── backend-optimizer/
+│       └── security-scanner/
+├── .git/                # 代码版本控制
+├── .gitignore
+└── README.md
+
+# 全局模板库
+~/Documents/HyperChat/
+├── .hyperchat/          # 全局配置
+└── templates/           # 项目模板
+    ├── react-project/   # React 项目 AI 环境
+    ├── python-ml/       # Python ML 项目 AI 环境
+    └── golang-api/      # Go API 项目 AI 环境
 ```
 
-### 🔄 通信架构
+### 🔄 配置驱动架构
+- **配置解析层**：自动解析 YAML/JSON 配置，实时生效
 - **统一命令层**：`packages/core/src/command.mts` 处理前后端通信
-- **AI 服务层**：`packages/core/src/shared/ai.mts` 统一 AI 模型调用
-- **工作区管理**：`packages/core/src/workspace/` 提供工作区生命周期管理
+- **AI 服务层**：`packages/shared/src/ai.mts` 统一 AI 模型调用
+- **工作区管理**：`packages/core/src/workspace/` 提供配置驱动的工作区管理
 - **MCP 集成**：`packages/core/src/mcp/` 实现完整的 MCP 协议支持
-- **实时通信**：WebSocket 支持实时消息推送和状态同步
+- **实时通信**：WebSocket 支持实时消息推送和配置热重载
+
+## 🌟 AI as Code 的革命性优势
+
+### 🔄 像管理代码一样管理 AI
+```bash
+# AI 配置也能版本控制
+git add .hyperchat/agents/code-reviewer/
+git commit -m "添加 TypeScript 专用代码审查 Agent"
+git push origin feature/new-agent
+
+# 团队共享 AI 最佳实践
+git clone https://github.com/team/ai-templates.git
+cp -r ai-templates/react-expert/.hyperchat ./
+
+# 回滚 AI 配置
+git checkout HEAD~1 -- .hyperchat/agents/
+```
+
+### 📋 配置即文档
+```yaml
+# .hyperchat/agents/frontend-expert/agent.yaml
+name: "前端架构专家"
+description: "专注于 React、TypeScript、性能优化的 AI 助手"
+modelKey: "claude-3-5-sonnet"
+confirm_call_tool: false
+allowMCPs: ["filesystem", "terminal", "knowledge-base"]
+prompt: |
+  你是一位资深的前端架构师，专精于：
+  1. React 18+ 最佳实践和性能优化
+  2. TypeScript 类型系统设计
+  3. 现代前端工程化工具链
+  4. 响应式设计和移动端适配
+  
+  工作原则：
+  - 优先考虑性能和可维护性
+  - 遵循团队编码规范
+  - 提供可执行的具体建议
+tags: ["frontend", "react", "typescript", "performance"]
+```
+
+### 🚀 项目模板标准化
+```bash
+# 快速初始化 React 项目的 AI 环境
+hyperchat workspace create
+cp -r ~/.hyperchat/templates/react-enterprise/.hyperchat ./
+
+# 立即获得：
+# ✅ 前端开发专家 Agent
+# ✅ 代码审查自动化流程
+# ✅ 性能监控任务
+# ✅ 文档生成工作流
+```
 
 ## 🎮 功能矩阵
 
@@ -178,22 +255,12 @@ HyperChat/
 - ✅ **工具调用可视化**：清晰展示 AI 工具使用过程
 - ✅ **参数调试**：支持手动调试 MCP 工具参数
 
-### 🤖 AI 模型矩阵
-| 模型提供商 | 推荐度 | 特色功能 |
-|------------|--------|----------|
-| Claude | ⭐⭐⭐⭐⭐⭐ | 最佳代码理解和生成 |
-| OpenAI | ⭐⭐⭐⭐⭐ | 完美 Function Calling 支持 |
-| Gemini Flash 2.5 | ⭐⭐⭐⭐⭐ | 高性能推理 |
-| Qwen | ⭐⭐⭐⭐ | 中文场景优秀表现 |
-| Deepseek | ⭐⭐⭐⭐ | 代码生成专长 |
-| Doubao | ⭐⭐⭐ | 稳定性良好 |
 
 ### 🎨 高级特性
 - ✅ **HyperPrompt 语法**：支持变量和 JS 代码片段
 - ✅ **智能 Agent 系统**：可配置提示词和工具权限
 - ✅ **定时任务执行**：自动化工作流支持
 - ✅ **多模态渲染**：Artifacts、SVG、HTML、Mermaid、数学公式
-- ✅ **WebDAV 同步**：跨设备配置同步
 - ✅ **模型对比聊天**：并行测试不同模型效果
 
 ## 📦 环境要求
@@ -249,25 +316,29 @@ HyperChat 2.0 本身就是 **AI 协作开发**的最佳实践：
 - 🔧 **GitHub Copilot** - 实时代码补全
 - 📝 **HyperChat** - 项目上下文的 AI 对话
 
-### 🏗️ 工作区开发模式
-1. **创建项目工作区**：在项目目录运行 HyperChat
-2. **配置 MCP 服务**：按需启用文件系统、终端等工具
-3. **设置专属 Agent**：为项目配置特定的 AI 助手
-4. **AI 协作编码**：利用工作区上下文进行智能开发
+### 🏗️ AI as Code 开发模式
+1. **初始化项目 AI 环境**：`hyperchat workspace create`
+2. **选择项目模板**：复制对应技术栈的 AI 配置模板
+3. **自定义 Agent 配置**：编辑 YAML 文件定制专属 AI 助手
+4. **版本控制 AI 配置**：将 `.hyperchat/` 纳入 Git 管理
+5. **团队共享最佳实践**：通过 Git 分享和同步 AI 工作流
+6. **持续优化迭代**：像重构代码一样优化 AI 配置
 
 ## 🌟 发展路线图
 
 ### 🎯 近期目标
-- [ ] **多 Agent 协作**：Agent 间智能对话和任务分工
-- [ ] **VSCode 深度集成**：完整的 IDE 内开发体验
-- [ ] **MCP 插件商店**：社区 MCP 服务发现和安装
-- [ ] **移动端适配**：响应式设计优化
+- [ ] **AI 配置模板市场**：社区共享的 Agent 和工作流模板
+- [ ] **配置智能推荐**：基于项目特征自动推荐 AI 配置
+- [ ] **多 Agent 协作编排**：配置化的 Agent 间协作流程
+- [ ] **VSCode 深度集成**：IDE 内的 AI as Code 开发体验
+- [ ] **配置合规检查**：AI 配置的安全性和合规性验证
 
 ### 🚀 长期愿景
-- [ ] **AI 原生 IDE**：完全基于 AI 和工作区的开发环境
-- [ ] **团队协作平台**：多人共享工作区和 Agent
-- [ ] **生态系统建设**：开放的 MCP 开发者社区
-- [ ] **智能项目管理**：AI 驱动的项目全生命周期管理
+- [ ] **AI as Code 标准制定**：推动行业 AI 配置标准化
+- [ ] **企业级 AI 治理**：可审计、可合规的 AI 配置管理
+- [ ] **AI 能力市场**：标准化的 AI 能力交易和分发平台
+- [ ] **智能配置生成**：AI 自动生成和优化 AI 配置
+- [ ] **全栈 AI 开发平台**：Infrastructure as Code + AI as Code 的统一平台
 
 ## 📸 功能预览
 
@@ -314,4 +385,33 @@ HyperChat 2.0 本身就是 **AI 协作开发**的最佳实践：
 
 ---
 
-✨ **HyperChat 2.0** - 重新定义 AI 工作空间，让智能协作成为现实 ✨
+## 🔥 为什么选择 HyperChat 2.0？
+
+### 🎯 传统 AI 工具 vs HyperChat 2.0
+
+| 特性 | 传统 AI 工具 | HyperChat 2.0 |
+|------|-------------|---------------|
+| **AI 配置方式** | 在线界面设置 | 本地配置文件 (AI as Code) |
+| **版本控制** | ❌ 无法版本控制 | ✅ Git 管理，可回滚可分支 |
+| **团队协作** | ❌ 难以共享配置 | ✅ 标准化的团队 AI 环境 |
+| **项目集成** | ❌ 与项目分离 | ✅ AI 配置随项目走 |
+| **透明度** | ❌ AI 行为黑盒 | ✅ 完全透明可控 |
+| **可复制性** | ❌ 配置难以复制 | ✅ 一键复制完整 AI 环境 |
+
+### 💡 核心价值主张
+
+1. **让 AI 能力像代码一样管理** - 版本控制、代码审查、CI/CD
+2. **团队 AI 标准化** - 新员工秒获团队 AI 最佳实践
+3. **项目 AI 一体化** - AI 配置与项目代码同生共存
+4. **完全的透明可控** - 每个 AI 行为都有对应配置文件
+5. **企业级 AI 治理** - 可审计的 AI 配置变更历史
+
+---
+
+✨ **HyperChat 2.0** - 首创 AI as Code，重新定义 AI 工作方式 ✨
+
+## 🚀 快速体验 1.0
+
+### 在线 Demo 1.0
+- [HyperChat](https://hyperchat.dadigua.men/123456/) - Node.js 版本
+- [Docker Demo](https://htmivlknrjln.ap-northeast-1.clawcloudrun.com/123456/#/Chat) - ClawCloud 部署
