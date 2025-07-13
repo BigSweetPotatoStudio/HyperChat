@@ -62,7 +62,7 @@ import { blobToBase64, getMyUuid, JsonSchema2FormItemOrNull, urlToBase64 } from 
 import { HeaderContext } from "../common/context";
 import { useForceUpdate } from "../hooks/useForceUpdate";
 import { MyAttachR } from "./attachR";
-import { WorkspaceDetails, WorkspaceInfo } from "../pages/workspace/types";
+import { CurrentWorkspaceDetails, WorkspaceInfo } from "../pages/workspace/types";
 import { AllMessage, CommonContent, CommonContentItem, HyperChatCompletionTool, IMCPClient, HyperToolCall } from "@dadigua/hyperchat-shared/types";
 import { NumberStep } from "../common/numberStep";
 import { AgentCommonFormItems } from "./AgentManagement";
@@ -75,7 +75,7 @@ interface WorkspaceChatProps {
   workspace: WorkspaceInfo;
   /** 指定的Agent Key，用于Agent聊天 */
   agentName?: string;
-  workspaceDetails: WorkspaceDetails;
+  workspaceDetails: CurrentWorkspaceDetails;
   mcpClients: IMCPClient[];
   /** 要加载的特定聊天记录 */
   chatLogToLoad?: ChatHistoryItem;
@@ -163,10 +163,10 @@ export const WorkspaceChat = ({ workspace, agentName, workspaceDetails, mcpClien
 
   // 获取有效配置值的帮助函数（Agent配置 + configOverrides）
   const getEffectiveConfig = () => {
-    const agent = workspaceDetails[workspace.path]?.agents.find(a => a.config.name === agentName);
+    const agent = workspaceDetails.agents.find(a => a.config.name === agentName);
     const agentConfig = agent?.config;
     const overrides = currentChat.current.configOverrides || {};
-    
+
     return {
       modelKey: overrides.modelKey || agentConfig?.modelKey || "",
       allowMCPs: overrides.allowMCPs || agentConfig?.allowMCPs || [],
@@ -336,7 +336,7 @@ export const WorkspaceChat = ({ workspace, agentName, workspaceDetails, mcpClien
           currentChat.current.configOverrides = {};
         }
         currentChat.current.configOverrides.modelKey = defaultModel?.key || "";
-        const agent = workspaceDetails[workspace.path]?.agents.find(a => a.config.name === agentName);
+        const agent = workspaceDetails.agents.find(a => a.config.name === agentName);
         // 如果有要加载的聊天记录，优先加载聊天记录
         if (chatLogToLoad) {
           defaultChatValue.current = ({
@@ -353,11 +353,7 @@ export const WorkspaceChat = ({ workspace, agentName, workspaceDetails, mcpClien
           defaultChatValue.current = ({
             ...defaultChatValue.current,
             agentName: agentName,
-            messages: [{
-              role: "system" as const,
-              content: agent.config.prompt || "",
-              content_date: Date.now(),
-            }],
+            messages: [],
             configOverrides: {
               allowMCPs: agent.config.allowMCPs || [],
               modelKey: agent.config.modelKey || defaultModel?.key || "",
@@ -583,7 +579,7 @@ export const WorkspaceChat = ({ workspace, agentName, workspaceDetails, mcpClien
 
       // 更新最近使用记录
       if (workspace?.path && agentName && currentChat.current.key) {
-        const agent = workspaceDetails[workspace.path]?.agents.find(a => a.config.name === agentName);
+        const agent = workspaceDetails.agents.find(a => a.config.name === agentName);
         const agentDisplayName = agent?.config.name || agentName;
         const chatLabel = currentChat.current.label || 'New Chat';
 
@@ -624,10 +620,10 @@ export const WorkspaceChat = ({ workspace, agentName, workspaceDetails, mcpClien
   /** 是否支持工具 */
   let supportTool = currModel?.supportTool;
   const { token } = theme.useToken();
-  const agent = workspaceDetails[workspace.path]?.agents.find(a => a.config.name === agentName);
+  const agent = workspaceDetails.agents.find(a => a.config.name === agentName);
 
   // 提取系统消息
-  const systemMessages = currentChat.current.messages?.filter(m => m.role === "system") || [];
+  const systemMessages = currentChat.current.configOverrides?.prompt!;
   // 过滤掉系统消息的其他消息
   const nonSystemMessages = currentChat.current.messages?.filter(m => m.role !== "system") || [];
 
@@ -644,11 +640,11 @@ export const WorkspaceChat = ({ workspace, agentName, workspaceDetails, mcpClien
                   {agentName ? (agent?.config.name || t`Agent Chat`) : t`Workspace Chat`}
                 </span>
               </div>
-              {systemMessages.map((msg, index) => (
-                <div key={index} className="text-sm line-clamp-1 text-gray-700 bg-white p-0 rounded border border-blue-200">
-                  {msg.content}
-                </div>
-              ))}
+
+              <div className="text-sm line-clamp-1 text-gray-700 bg-white p-0 rounded border border-blue-200">
+                {systemMessages}
+              </div>
+
             </div>
           )}
 
@@ -669,7 +665,7 @@ export const WorkspaceChat = ({ workspace, agentName, workspaceDetails, mcpClien
               messages={nonSystemMessages}
               onSumbit={(messages) => {
                 // 合并系统消息和用户提交的消息
-                currentChat.current.messages = [...systemMessages, ...messages];
+                currentChat.current.messages = [...messages];
                 refresh();
                 onRequest();
               }}
@@ -687,7 +683,7 @@ export const WorkspaceChat = ({ workspace, agentName, workspaceDetails, mcpClien
                     icon={<ClearOutlined />}
                     onClick={() => {
                       currentChatReset({
-                        messages: currentChat.current.messages.filter((x => x.role == "system")),
+                        messages: [],
                       });
                     }}
                   />

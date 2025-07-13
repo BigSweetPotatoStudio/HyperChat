@@ -60,7 +60,7 @@ import { MCPGatewaysSettings } from "../../components/MCPGatewaysSettings";
 // 类型定义已移至 ./types.ts
 
 // 重新导出常用类型供其他组件使用
-export type { WorkspaceInfo, WorkspaceDetails, ChatTab } from "./types";
+export type { WorkspaceInfo, CurrentWorkspaceDetails, ChatTab } from "./types";
 
 export function Workspace() {
   const refresh = useForceUpdate();

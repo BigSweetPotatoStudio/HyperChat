@@ -11,6 +11,7 @@ import { WorkspaceWelcome } from "../../components/WorkspaceWelcome";
 import { FileEditor } from "../../components/FileEditor";
 import { Icon } from "../../components/icon";
 import { WorkspaceMiddlePanelProps, ChatTab } from "./types";
+import { IMCPClient } from "@dadigua/hyperchat-shared";
 
 // ChatTab 已在 types.ts 中定义，通过主 workspace.tsx 导出
 
@@ -90,7 +91,14 @@ export const WorkspaceMiddlePanel: React.FC<WorkspaceMiddlePanelProps> = ({
                   <WorkspaceChat
                     workspace={workspace}
                     agentName={tab.agentName}
-                    workspaceDetails={{}}
+                    workspaceDetails={{
+                      agents,
+                      mcpClients: mcpClients.reduce((acc, client) => {
+                        acc[client.serverName] = client;
+                        return acc;
+                      }, {} as Record<string, IMCPClient>),
+                      tasks: []
+                    }}
                     key={tab.key}
                     mcpClients={mcpClients}
                     chatLogToLoad={tab.chatLogToLoad}
