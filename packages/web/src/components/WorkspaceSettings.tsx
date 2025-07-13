@@ -16,6 +16,7 @@ import {
   Switch,
   InputNumber,
   TreeSelect,
+  DatePicker,
 } from "antd";
 import {
   FolderOutlined,
@@ -27,6 +28,7 @@ import { t } from "../i18n";
 import { WorkspaceSettings, AISettings, IMCPClient } from "@dadigua/hyperchat-shared";
 import type { z } from "zod";
 import { useAISettings } from "../contexts/AppSettingsContext";
+import dayjs from "dayjs";
 
 const { Text } = Typography;
 
@@ -116,11 +118,17 @@ export function WorkspaceSettings({
           <Col span={12}>
             <Form.Item
               label={t`Created Time`}
+              name={["workspace", "created"]}
+              getValueFromEvent={(date) => date ? date.valueOf() : undefined}
+              getValueProps={(value) => ({
+                value: value ? dayjs(value) : undefined
+              })}
             >
-              <Input
-                value={formatCreationTime(settings.workspace?.created)}
-                disabled
-                placeholder={t`Unknown`}
+              <DatePicker
+                showTime
+                format="YYYY-MM-DD HH:mm:ss"
+                placeholder={t`Select creation time`}
+                style={{ width: '100%' }}
               />
             </Form.Item>
           </Col>

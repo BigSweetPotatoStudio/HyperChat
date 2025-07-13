@@ -2,7 +2,11 @@ name: '234'
 prompt: 你是一个通用人工智能
 allowMCPs: []
 isConfirmCallTool: false
-modelKey: xai:grok-3-mini-beta
+maxTokens: 4000
+tags: []
+subAgents: []
+version: 1
+modelKey: openrouter:google/gemini-2.5-flash-preview
 temperature: 1
 callable: true
 maxAttachedDialogs: 5

@@ -22,8 +22,7 @@
             }
           },
           "required": [
-            "name",
-            "created"
+            "name"
           ],
           "additionalProperties": false,
           "description": "Workspace metadata"

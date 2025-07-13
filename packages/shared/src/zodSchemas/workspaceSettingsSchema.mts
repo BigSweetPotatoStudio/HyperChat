@@ -34,7 +34,7 @@ export const WorkspaceAdvancedSchema = z.object({
 export const WorkspaceMetadataSchema = z.object({
   name: z.string().describe("Workspace name"),
   description: z.string().optional().describe("Workspace description"),
-  created: z.number().describe("Creation timestamp"),
+  created: z.number().optional().describe("Creation timestamp"),
 });
 
 // 完整的工作区设置 Schema
