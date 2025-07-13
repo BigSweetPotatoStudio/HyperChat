@@ -135,7 +135,8 @@ hc workspace current
 # 常用命令
 hyperchat chat                  # 直接AI对话
 hyperchat "你好"                    # 直接AI对话
-hyperchat serve                   # 启动Web服务器
+hyperchat serve                   # 启动Web服务器 (包含 Web 界面)
+hyperchat run                     # 启动核心服务 (不包含 Web 界面，适合后台运行)
 hyperchat workspace current        # 查看当前工作区
 hyperchat agent list              # 列出AI代理
 hyperchat [agent_name] "你好"          # 使用某个agent直接AI对话
@@ -237,19 +238,39 @@ HyperChat/
 
 ### 🎯 最新更新日志
 
-#### 2024-07-13 工作区任务管理系统完整实现
+#### 2024-07-13 工作区任务管理系统完整实现 (已完成)
 **核心功能**:
-- ✅ 完整的任务管理系统：支持创建、编辑、启用/禁用、删除、克隆、导入/导出
-- ✅ TaskManager 类：基于YAML文件存储，支持完整的 CRUD 操作
+- ✅ 完整的任务管理系统：支持创建、编辑、启用/禁用、删除、克隆、手动触发
+- ✅ TaskManager 类：基于YAML文件存储，支持完整的 CRUD 操作和统计
 - ✅ 工作区集成：任务管理器集成到 workspace.mts，自动创建 tasks 目录
 - ✅ 前端管理界面：TaskManagement.tsx 组件，支持可视化管理和 Cron 模板选择
-- ✅ CLI 命令支持：丰富的命令行接口（list/create/show/enable/disable/delete/edit/export/stats）
+- ✅ CLI 命令支持：丰富的命令行接口（list/create/show/enable/disable/delete/edit/trigger/scheduler/stats）
+- ✅ 后台任务调度：基于 node-cron 的自动定时执行，支持中国时区
+- ✅ Agent 集成：任务执行通过指定的 Agent，并记录到聊天历史
 
 **架构设计**:
-- ✅ 基于 taskSchema.mts 的完整类型安全
+- ✅ 基于 taskSchema.mts 的完整类型安全，包含 Task/CreateTaskRequest/UpdateTaskRequest 类型
 - ✅ 统一的 Command 系统集成（taskCommands.mts）
 - ✅ 前后端数据同步和状态管理
 - ✅ 工作区级别的任务隔离和统计
+- ✅ 智能调度器管理：任务启用/禁用时自动更新调度状态
+- ✅ TypeScript 完整类型安全：修复所有编译错误，确保类型一致性
+
+#### 2024-07-13 新增 `hyperchat run` 核心服务命令
+**新增功能**:
+- ✅ `hyperchat run` 命令：启动核心服务但不启动 HTTP 服务器
+- ✅ 适用场景：后台运行、定时任务执行、服务器环境中不需要 Web 界面的场景
+- ✅ 完整的资源管理：自动初始化工作区、启动 MCP 客户端、启动任务调度器
+- ✅ 优雅退出处理：支持 SIGINT/SIGTERM/SIGQUIT 信号，自动清理资源
+- ✅ 运行状态显示：启动时显示工作区统计信息和调度状态
+- ✅ 进程保持：通过事件循环保持前台运行，直到收到退出信号
+
+**技术实现**:
+- ✅ 新增 `packages/core/src/cli/commands/run.mts` 实现核心逻辑
+- ✅ 集成到 CLI 主入口和帮助系统
+- ✅ 支持 `--workspace` 参数指定工作区路径
+- ✅ 支持 `--verbose` 和 `--quiet` 日志控制
+- ✅ 异常处理和未捕获异常监听
 
 #### 2024-07-12 CLI修复和简化
 **问题修复**:

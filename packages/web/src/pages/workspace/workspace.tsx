@@ -633,8 +633,13 @@ export function Workspace() {
 
 
   // 获取当前工作区详情
-  const getCurrentDetails = () => {
-    return currentWorkspaceDetails || { agents: [], mcpClients: {} };
+  const getCurrentDetails = (): CurrentWorkspaceDetails => {
+    return currentWorkspaceDetails || { 
+      agents: [], 
+      mcpClients: {},
+      fileTreeData: undefined,
+      tasks: []
+    };
   };
 
   // 处理标签页切换（新架构下移除，只有一个工作区）

@@ -92,7 +92,11 @@ export const agentCommands = {
    * 获取工作区中所有 Agent 的摘要信息
    * @returns Agent 摘要信息列表
    */
-  async getWorkspaceAgentsSummary(): Promise<Record<string, unknown>[]> {
+  async getWorkspaceAgentsSummary(): Promise<Array<{
+    config: AgentConfig;
+    chatLogsCount: number;
+    lastChatTime?: number;
+  }>> {
     try {
       const workspaceManager = getWorkspaceManager();
       const workspace = workspaceManager.getCurrentWorkspace();

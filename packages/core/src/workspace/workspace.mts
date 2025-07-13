@@ -18,6 +18,7 @@ import type { WorkspaceMCPClientImpl } from "./mcp/client.mjs";
 import { WorkspaceSettingsManager } from "../data/managers/workspaceSettingsManager.mjs";
 import { TaskManager } from "../data/managers/taskManager.mjs";
 import { Logger } from "../log.mjs";
+import * as cron from "node-cron";
 
 /**
  * 工作区类 - 封装单个工作区的所有操作
@@ -32,6 +33,10 @@ export class Workspace {
   private lastSync?: number;
   private readonly HYPERCHAT_DIR = CONSTANTS.HYPERCHAT_DIR;
   private isGlobal: boolean;
+  
+  // 任务调度相关
+  private taskJobs: Map<string, cron.ScheduledTask> = new Map();
+  private isTaskSchedulerRunning: boolean = false;
 
   constructor(public workspacePath: string, config?: WorkspaceConfig) {
     // 检查是否为全局工作区
@@ -128,6 +133,9 @@ export class Workspace {
 
     // 保存配置
     await this.saveConfig();
+
+    // 启动任务调度器
+    await this.startTaskScheduler();
   }
 
   /**
@@ -135,9 +143,11 @@ export class Workspace {
    */
   async uninit(): Promise<void> {
     try {
+      // 停止任务调度器
+      await this.stopTaskScheduler();
+
       // 停止 MCP 客户端
       await this.stopMcpClients();
-
 
       // 保存当前状态
       await this.save();
@@ -735,88 +745,336 @@ export class Workspace {
   }
 
   /**
-   * 创建任务
-   */
-  async createTask(taskData: Parameters<TaskManager['createTask']>[0]) {
-    return await this.taskManager.createTask(taskData);
-  }
-
-  /**
-   * 获取单个任务
+   * 获取单个任务（直接委托）
    */
   async getTask(taskName: string) {
     return await this.taskManager.getTask(taskName);
   }
 
   /**
-   * 获取所有任务
+   * 获取所有任务（直接委托）
    */
   async getAllTasks() {
     return await this.taskManager.getAllTasks();
   }
 
   /**
-   * 更新任务
-   */
-  async updateTask(taskName: string, updates: Parameters<TaskManager['updateTask']>[1]) {
-    return await this.taskManager.updateTask(taskName, updates);
-  }
-
-  /**
-   * 删除任务
-   */
-  async deleteTask(taskName: string) {
-    return await this.taskManager.deleteTask(taskName);
-  }
-
-  /**
-   * 启用任务
-   */
-  async enableTask(taskName: string) {
-    return await this.taskManager.enableTask(taskName);
-  }
-
-  /**
-   * 禁用任务
-   */
-  async disableTask(taskName: string) {
-    return await this.taskManager.disableTask(taskName);
-  }
-
-  /**
-   * 获取已启用的任务
+   * 获取已启用的任务（直接委托）
    */
   async getEnabledTasks() {
     return await this.taskManager.getEnabledTasks();
   }
 
   /**
-   * 获取已禁用的任务
+   * 获取已禁用的任务（直接委托）
    */
   async getDisabledTasks() {
     return await this.taskManager.getDisabledTasks();
   }
 
   /**
-   * 根据 agent 获取任务
+   * 根据 agent 获取任务（直接委托）
    */
   async getTasksByAgent(agentKey: string) {
     return await this.taskManager.getTasksByAgent(agentKey);
   }
 
   /**
-   * 复制任务
+   * 复制任务（直接委托）
    */
   async cloneTask(taskName: string, newTaskName: string) {
     return await this.taskManager.cloneTask(taskName, newTaskName);
   }
 
-
   /**
-   * 获取任务统计信息
+   * 获取任务统计信息（直接委托）
    */
   async getTaskStats() {
     return await this.taskManager.getTaskStats();
+  }
+
+  // ========== 任务调度管理 ==========
+
+  /**
+   * 启动任务调度器
+   */
+  async startTaskScheduler(): Promise<void> {
+    if (this.isTaskSchedulerRunning) {
+      Logger.info('任务调度器已在运行中');
+      return;
+    }
+
+    try {
+      Logger.info('启动任务调度器...');
+      
+      // 获取所有已启用的任务
+      const enabledTasks = await this.taskManager.getEnabledTasks();
+      
+      // 为每个任务创建 cron 作业
+      for (const task of enabledTasks) {
+        await this.scheduleTask(task.name, task.cron);
+      }
+      
+      this.isTaskSchedulerRunning = true;
+      Logger.info(`任务调度器已启动，共加载 ${enabledTasks.length} 个任务`);
+      
+    } catch (error) {
+      Logger.error('启动任务调度器失败:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * 停止任务调度器
+   */
+  async stopTaskScheduler(): Promise<void> {
+    if (!this.isTaskSchedulerRunning) {
+      return;
+    }
+
+    try {
+      Logger.info('停止任务调度器...');
+      
+      // 停止所有 cron 作业
+      for (const [taskName, job] of this.taskJobs) {
+        job.stop();
+        Logger.debug(`停止任务调度: ${taskName}`);
+      }
+      
+      this.taskJobs.clear();
+      this.isTaskSchedulerRunning = false;
+      
+      Logger.info('任务调度器已停止');
+      
+    } catch (error) {
+      Logger.error('停止任务调度器失败:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * 重新启动任务调度器
+   */
+  async restartTaskScheduler(): Promise<void> {
+    await this.stopTaskScheduler();
+    await this.startTaskScheduler();
+  }
+
+  /**
+   * 调度单个任务
+   */
+  async scheduleTask(taskName: string, cronExpression: string): Promise<void> {
+    try {
+      // 如果任务已经被调度，先停止它
+      if (this.taskJobs.has(taskName)) {
+        const existingJob = this.taskJobs.get(taskName)!;
+        existingJob.stop();
+        this.taskJobs.delete(taskName);
+      }
+
+      // 验证 cron 表达式
+      if (!cron.validate(cronExpression)) {
+        throw new Error(`无效的 cron 表达式: ${cronExpression}`);
+      }
+
+      // 创建新的 cron 作业
+      const job = cron.schedule(cronExpression, async () => {
+        await this.executeTask(taskName);
+      }, {
+        scheduled: false, // 先不启动，等设置完成后再启动
+        timezone: 'Asia/Shanghai' // 使用中国时区，可以根据需要调整
+      });
+
+      // 启动作业
+      job.start();
+      this.taskJobs.set(taskName, job);
+      
+      Logger.info(`任务 '${taskName}' 已调度，执行时间: ${cronExpression}`);
+      
+    } catch (error) {
+      Logger.error(`调度任务 '${taskName}' 失败:`, error);
+      throw error;
+    }
+  }
+
+  /**
+   * 取消调度单个任务
+   */
+  async unscheduleTask(taskName: string): Promise<void> {
+    const job = this.taskJobs.get(taskName);
+    if (job) {
+      job.stop();
+      this.taskJobs.delete(taskName);
+      Logger.info(`取消调度任务: ${taskName}`);
+    }
+  }
+
+  /**
+   * 执行单个任务
+   */
+  async executeTask(taskName: string): Promise<void> {
+    try {
+      Logger.info(`开始执行任务: ${taskName}`);
+      
+      // 获取任务配置
+      const task = await this.taskManager.getTask(taskName);
+      if (!task) {
+        throw new Error(`任务 '${taskName}' 不存在`);
+      }
+
+      if (task.disabled) {
+        Logger.warn(`任务 '${taskName}' 已被禁用，跳过执行`);
+        return;
+      }
+
+      // 获取对应的 Agent
+      const agentInstance = this.agentManager.getAgent(task.agentKey);
+      if (!agentInstance) {
+        throw new Error(`Agent '${task.agentKey}' 不存在`);
+      }
+
+      // 构造任务执行的消息
+      const taskMessage = `执行定时任务: ${task.name}\n描述: ${task.description}`;
+      
+      // 执行任务 - 通过 Agent 处理
+      Logger.info(`使用 Agent '${task.agentKey}' 执行任务 '${taskName}'`);
+      
+      // 创建任务执行的聊天记录
+      const chatLog: ChatHistoryItem = {
+        key: v4(),
+        agentKey: task.agentKey,
+        label: `定时任务: ${task.name}`,
+        dateTime: Date.now(),
+        modelKey: agentInstance.getConfig().modelKey || 'default',
+        chatType: 'task',
+        allowMCPs: agentInstance.getConfig().allowMCPs,
+        confirm_call_tool: agentInstance.getConfig().confirm_call_tool,
+        messages: [
+          {
+            role: 'user',
+            content: taskMessage
+          }
+        ]
+      };
+      
+      // 保存任务执行记录到 Agent 的聊天历史
+      await agentInstance.setChatLog(chatLog);
+      
+      // TODO: 这里后续可以集成实际的 AI 对话执行
+      // 例如：
+      // 1. 调用 AI 服务生成响应
+      // 2. 更新 chatLog 添加 AI 的回复
+      // 3. 如果任务需要调用 MCP 工具，可以通过 this.mcpManager 来执行
+      
+      Logger.info(`任务 '${taskName}' 执行完成，已记录到 Agent '${task.agentKey}' 的聊天历史`);
+      
+    } catch (error) {
+      Logger.error(`执行任务 '${taskName}' 失败:`, error);
+      // 不抛出错误，避免影响其他任务的调度
+    }
+  }
+
+  /**
+   * 手动触发任务执行
+   */
+  async triggerTask(taskName: string): Promise<void> {
+    Logger.info(`手动触发任务: ${taskName}`);
+    await this.executeTask(taskName);
+  }
+
+  /**
+   * 获取当前调度的任务列表
+   */
+  getScheduledTasks(): string[] {
+    return Array.from(this.taskJobs.keys());
+  }
+
+  /**
+   * 检查任务是否正在调度中
+   */
+  isTaskScheduled(taskName: string): boolean {
+    return this.taskJobs.has(taskName);
+  }
+
+  /**
+   * 重写任务相关方法，添加调度器同步
+   */
+  
+  /**
+   * 创建任务（重写以添加调度）
+   */
+  async createTask(taskData: Parameters<TaskManager['createTask']>[0]) {
+    const task = await this.taskManager.createTask(taskData);
+    
+    // 如果任务已启用且调度器正在运行，立即调度这个任务
+    if (!task.disabled && this.isTaskSchedulerRunning) {
+      await this.scheduleTask(task.name, task.cron);
+    }
+    
+    return task;
+  }
+
+  /**
+   * 更新任务（重写以更新调度）
+   */
+  async updateTask(taskName: string, updates: Parameters<TaskManager['updateTask']>[1]) {
+    const oldTask = await this.taskManager.getTask(taskName);
+    const updatedTask = await this.taskManager.updateTask(taskName, updates);
+    
+    if (updatedTask && this.isTaskSchedulerRunning) {
+      // 如果任务名称改变了，需要处理调度
+      if (oldTask && oldTask.name !== updatedTask.name) {
+        await this.unscheduleTask(oldTask.name);
+      }
+      
+      // 重新调度任务
+      if (!updatedTask.disabled) {
+        await this.scheduleTask(updatedTask.name, updatedTask.cron);
+      } else {
+        await this.unscheduleTask(updatedTask.name);
+      }
+    }
+    
+    return updatedTask;
+  }
+
+  /**
+   * 删除任务（重写以取消调度）
+   */
+  async deleteTask(taskName: string) {
+    const success = await this.taskManager.deleteTask(taskName);
+    
+    if (success && this.isTaskSchedulerRunning) {
+      await this.unscheduleTask(taskName);
+    }
+    
+    return success;
+  }
+
+  /**
+   * 启用任务（重写以添加调度）
+   */
+  async enableTask(taskName: string) {
+    const task = await this.taskManager.enableTask(taskName);
+    
+    if (task && this.isTaskSchedulerRunning) {
+      await this.scheduleTask(task.name, task.cron);
+    }
+    
+    return task;
+  }
+
+  /**
+   * 禁用任务（重写以取消调度）
+   */
+  async disableTask(taskName: string) {
+    const task = await this.taskManager.disableTask(taskName);
+    
+    if (task && this.isTaskSchedulerRunning) {
+      await this.unscheduleTask(task.name);
+    }
+    
+    return task;
   }
 
 }

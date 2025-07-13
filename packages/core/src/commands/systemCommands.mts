@@ -3,7 +3,7 @@ const { fs, os, path } = zx;
 import { getLocalIP } from "../common/util.mjs";
 import { isPortUse } from "../common/checkport.mjs";
 import { EVENT } from "../common/event.mjs";
-import { Task } from "@dadigua/hyperchat-shared/types";
+import type { Task } from "@dadigua/hyperchat-shared";
 import * as cron from "node-cron";
 import * as vm from "node:vm";
 import { createRequire } from "module";

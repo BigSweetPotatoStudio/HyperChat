@@ -4,7 +4,7 @@
  */
 
 import { AgentConfig, IMCPClient } from "@dadigua/hyperchat-shared/types";
-import type { Task } from "@dadigua/hyperchat-shared/zodSchemas/taskSchema";
+import type { Task } from "@dadigua/hyperchat-shared";
 
 /**
  * 工作区配置基础信息

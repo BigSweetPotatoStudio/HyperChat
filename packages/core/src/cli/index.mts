@@ -17,6 +17,7 @@ import { fileURLToPath } from 'url';
 import { Logger } from './utils/logger.mjs';
 import { startChat } from './commands/chat.mjs';
 import { startServer } from './commands/server.mjs';
+import { startRun, showRunStatus } from './commands/run.mjs';
 import { createWorkspace } from './commands/workspace.mjs';
 import { listAgents, createAgent, checkAgentExists } from './commands/agent.mjs';
 import { 
@@ -27,7 +28,9 @@ import {
   disableTask, 
   deleteTask, 
   editTask, 
-  taskStats 
+  taskStats,
+  triggerTask,
+  showScheduler
 } from './commands/task.mjs';
 import { workspaceManager } from '../workspace/index.mjs';
 // 获取包信息
@@ -78,7 +81,8 @@ function showHelp() {
 
 命令:
   chat [message]           开始 AI 聊天会话 (默认命令)
-  serve                    启动后端服务器
+  serve                    启动后端服务器 (包含 Web 界面)
+  run                      启动核心服务 (不包含 Web 界面)
   workspace create         在当前目录创建工作区
   agent list               列出所有代理
   task list                列出所有任务
@@ -88,6 +92,8 @@ function showHelp() {
   task enable <name>       启用任务
   task disable <name>      禁用任务
   task delete <name>       删除任务
+  task trigger <name>      手动触发任务执行
+  task scheduler           显示调度器状态
   task stats               显示任务统计
   help                     显示帮助信息
 
@@ -95,7 +101,9 @@ function showHelp() {
   hyperchat "你好"                    # 直接聊天（自动检测工作区）
   hyperchat chat "帮我写代码"         # 聊天命令
   hyperchat chat --workspace /path   # 使用指定工作区聊天
-  hyperchat serve                   # 启动服务器
+  hyperchat serve                   # 启动服务器 (包含 Web 界面)
+  hyperchat run                     # 启动核心服务 (后台运行任务调度)
+  hyperchat run --workspace /path   # 在指定工作区启动核心服务
   hyperchat workspace create        # 在当前目录创建工作区
   hyperchat [agent_name] "你好"       # 使用指定agent直接聊天
   hyperchat [agent_name] chat        # 使用指定agent交互式聊天
@@ -113,7 +121,7 @@ async function handleCommand(): Promise<{ shouldExit: boolean }> {
     const potentialAgentName = cleanArgs[0];
     
     // 检查第一个参数是否是agent名称
-    if (potentialAgentName && !['chat', 'serve', 'workspace', 'agent', 'task', 'help'].includes(potentialAgentName)) {
+    if (potentialAgentName && !['chat', 'serve', 'run', 'workspace', 'agent', 'task', 'help'].includes(potentialAgentName)) {
       const agentCheck = await checkAgentExists(potentialAgentName);
       
       if (agentCheck.exists) {
@@ -135,9 +143,9 @@ async function handleCommand(): Promise<{ shouldExit: boolean }> {
   }
 
   // 检测是否有非命令的消息 (直接聊天)
-  const possibleMessage = cleanArgs.find(arg => !['chat', 'serve', 'workspace', 'agent', 'task', 'help'].includes(arg));
+  const possibleMessage = cleanArgs.find(arg => !['chat', 'serve', 'run', 'workspace', 'agent', 'task', 'help'].includes(arg));
   const firstArg = cleanArgs[0];
-  const isDirectMessage = cleanArgs.length > 0 && possibleMessage && firstArg && !firstArg.match(/^(chat|serve|workspace|agent|task|help)$/);
+  const isDirectMessage = cleanArgs.length > 0 && possibleMessage && firstArg && !firstArg.match(/^(chat|serve|run|workspace|agent|task|help)$/);
 
   if (isDirectMessage) {
     // 直接聊天模式: hyperchat "你好"
@@ -162,6 +170,14 @@ async function handleCommand(): Promise<{ shouldExit: boolean }> {
         quiet: globalOptions.quiet
       });
       return { shouldExit: false };  // serve 需要保持进程运行
+
+    case 'run':
+      await startRun({
+        verbose: globalOptions.verbose,
+        quiet: globalOptions.quiet,
+        workspace: globalOptions.workspace
+      });
+      return { shouldExit: false };  // run 需要保持进程运行
 
     case 'workspace':
       const workspaceSubCmd = cleanArgs[1];
@@ -340,13 +356,27 @@ async function handleTaskCommand(subCmd: string, args: string[], logger: Logger)
       break;
 
 
+    case 'trigger':
+      const triggerTaskName = positionalArgs[0];
+      if (!triggerTaskName) {
+        logger.error('请提供任务名称');
+        logger.info('使用方法: hyperchat task trigger <name>');
+        break;
+      }
+      await triggerTask(triggerTaskName);
+      break;
+
+    case 'scheduler':
+      await showScheduler();
+      break;
+
     case 'stats':
       await taskStats();
       break;
 
     default:
       logger.error('未知的任务命令:', subCmd);
-      logger.info('可用命令: list, create, show, enable, disable, delete, edit, stats');
+      logger.info('可用命令: list, create, show, enable, disable, delete, edit, trigger, scheduler, stats');
       break;
   }
 }

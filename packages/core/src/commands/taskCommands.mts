@@ -134,6 +134,24 @@ export const taskCommands = {
     const workspace = workspaceManager.getCurrentWorkspace();
     return await workspace.getTaskStats();
   },
+
+  /**
+   * 手动触发任务执行
+   */
+  async triggerTask(params: { workspacePath: string; taskName: string }): Promise<void> {
+    await workspaceManager.initialize();
+    const workspace = workspaceManager.getCurrentWorkspace();
+    return await workspace.triggerTask(params.taskName);
+  },
+
+  /**
+   * 获取调度状态
+   */
+  async getScheduledTasks(params: { workspacePath: string }): Promise<string[]> {
+    await workspaceManager.initialize();
+    const workspace = workspaceManager.getCurrentWorkspace();
+    return workspace.getScheduledTasks();
+  },
 };
 
 export type TaskCommandsType = typeof taskCommands;

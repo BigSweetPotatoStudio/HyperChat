@@ -6,7 +6,8 @@ import process from 'process';
 import { Logger } from '../utils/logger.mjs';
 import { Command } from '../../command.mjs';
 import { workspaceManager } from '../../workspace/index.mjs';
-import type { Task, CreateTaskRequest } from '@dadigua/hyperchat-shared/zodSchemas/taskSchema';
+import type { CreateTaskRequest } from '@dadigua/hyperchat-shared';
+import type { AgentConfig } from '@dadigua/hyperchat-shared/types';
 
 /**
  * 获取当前工作区路径
@@ -359,8 +360,74 @@ export async function taskStats() {
       }
     }
 
+    // 显示调度状态
+    const scheduledTasks = await Command.getScheduledTasks({ workspacePath });
+    console.log(`\n⏰ 调度状态: ${scheduledTasks.length} 个任务正在调度中`);
+    if (scheduledTasks.length > 0) {
+      for (const taskName of scheduledTasks) {
+        console.log(`   🔄 ${taskName}`);
+      }
+    }
+
   } catch (error) {
     logger.error('获取任务统计失败:', error);
+    process.exit(1);
+  }
+}
+
+/**
+ * 手动触发任务执行
+ */
+export async function triggerTask(taskName: string) {
+  const logger = new Logger();
+
+  try {
+    logger.info(`⚡ 手动触发任务: ${taskName}`);
+
+    const workspacePath = await getCurrentWorkspacePath();
+    await Command.triggerTask({ workspacePath, taskName });
+
+    console.log(`✅ 任务 '${taskName}' 已触发执行`);
+
+  } catch (error) {
+    logger.error('触发任务失败:', error);
+    process.exit(1);
+  }
+}
+
+/**
+ * 显示调度状态
+ */
+export async function showScheduler() {
+  const logger = new Logger();
+
+  try {
+    logger.info('📅 获取调度状态...');
+
+    const workspacePath = await getCurrentWorkspacePath();
+    const scheduledTasks = await Command.getScheduledTasks({ workspacePath });
+
+    console.log('\n⏰ 任务调度器状态:');
+    console.log(`   调度中的任务: ${scheduledTasks.length} 个`);
+    
+    if (scheduledTasks.length > 0) {
+      console.log('\n🔄 正在调度的任务:');
+      for (const taskName of scheduledTasks) {
+        const task = await Command.getTask({ workspacePath, taskName });
+        if (task) {
+          console.log(`   📋 ${task.name}`);
+          console.log(`      代理: ${task.agentKey}`);
+          console.log(`      调度: ${task.cron}`);
+          console.log(`      描述: ${task.description}`);
+          console.log('');
+        }
+      }
+    } else {
+      console.log('   暂无任务在调度中');
+    }
+
+  } catch (error) {
+    logger.error('获取调度状态失败:', error);
     process.exit(1);
   }
 }
