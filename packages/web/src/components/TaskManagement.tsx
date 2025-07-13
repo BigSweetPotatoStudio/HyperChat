@@ -37,6 +37,7 @@ import { call } from "../common/call";
 import { WorkspaceInfo } from "../pages/workspace/types";
 import { t } from "../i18n";
 import type { Task, CRON_TEMPLATES, CRON_DESCRIPTIONS } from "@dadigua/hyperchat-shared";
+import { CronSelect } from "./CronSelect";
 import type { AgentConfig } from "@dadigua/hyperchat-shared";
 import { Editor } from "./editor";
 
@@ -233,16 +234,6 @@ export const TaskManagement = forwardRef<TaskManagementRef, TaskManagementProps>
       return commonPatterns[cron] || cron;
     };
 
-    // Cron 模板选项
-    const cronTemplates = [
-      { value: "* * * * *", label: "Every minute" },
-      { value: "0 * * * *", label: "Every hour" },
-      { value: "0 0 * * *", label: "Every day at midnight" },
-      { value: "0 0 * * 0", label: "Every Sunday at midnight" },
-      { value: "0 0 1 * *", label: "On the 1st of every month" },
-      { value: "0 9 * * 1-5", label: "At 9 AM on weekdays" },
-      { value: "0 10 * * 0,6", label: "At 10 AM on weekends" },
-    ];
 
     return (
       <>
@@ -503,22 +494,14 @@ export const TaskManagement = forwardRef<TaskManagementRef, TaskManagementProps>
               rules={[
                 { required: true, message: t`Please enter cron expression` },
                 {
-                  pattern: /^(\*|([0-5]?\d)) (\*|([01]?\d|2[0-3])) (\*|([12]?\d|3[01])) (\*|([1-9]|1[012])) (\*|[0-6])$/,
+                  pattern: /^(@(annually|yearly|monthly|weekly|daily|hourly|reboot))|(@every (\d+(ns|us|µs|ms|s|m|h))+)|((((\d+,)+\d+|(\d+(\/|-)\d+)|\d+|\*) ?){5,7})$/,
                   message: t`Invalid cron expression format`,
                 },
               ]}
             >
-              <Select
+              <CronSelect 
                 placeholder={t`Select a schedule template or enter custom cron expression`}
-                mode="tags"
-                maxTagCount={1}
-              >
-                {cronTemplates.map((template) => (
-                  <Select.Option key={template.value} value={template.value}>
-                    {template.label} ({template.value})
-                  </Select.Option>
-                ))}
-              </Select>
+              />
             </Form.Item>
 
             <Form.Item name="disabled" valuePropName="checked">

@@ -22,7 +22,7 @@ export const TaskSchema = z.object({
   cron: z.string()
     .min(1, "Cron expression cannot be empty")
     .regex(
-      /^(\*|([0-5]?\d)) (\*|([01]?\d|2[0-3])) (\*|([12]?\d|3[01])) (\*|([1-9]|1[012])) (\*|[0-6])$/,
+      /^(@(annually|yearly|monthly|weekly|daily|hourly|reboot))|(@every (\d+(ns|us|µs|ms|s|m|h))+)|((((\d+,)+\d+|(\d+(\/|-)\d+)|\d+|\*) ?){5,7})$/,
       "Invalid cron expression format, please use standard cron format"
     )
     .describe("Cron expression (cron format)"),
