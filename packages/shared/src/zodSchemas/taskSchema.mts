@@ -6,30 +6,30 @@ import { z } from "zod";
  */
 export const TaskSchema = z.object({
   name: z.string()
-    .min(1, "任务名称不能为空")
-    .max(100, "任务名称不能超过100个字符")
-    .describe("任务名称"),
+    .min(1, "Task name cannot be empty")
+    .max(100, "Task name cannot exceed 100 characters")
+    .describe("Task name"),
   
   agentKey: z.string()
-    .min(1, "代理键不能为空")
-    .describe("执行任务的代理键"),
+    .min(1, "Agent key cannot be empty")
+    .describe("Agent key for task execution"),
   
   description: z.string()
-    .min(1, "任务描述不能为空")
-    .max(500, "任务描述不能超过500个字符")
-    .describe("任务描述"),
+    .min(1, "Task description cannot be empty")
+    .max(500, "Task description cannot exceed 500 characters")
+    .describe("Task description"),
   
   cron: z.string()
-    .min(1, "定时表达式不能为空")
+    .min(1, "Cron expression cannot be empty")
     .regex(
       /^(\*|([0-5]?\d)) (\*|([01]?\d|2[0-3])) (\*|([12]?\d|3[01])) (\*|([1-9]|1[012])) (\*|[0-6])$/,
-      "定时表达式格式不正确，请使用标准 cron 格式"
+      "Invalid cron expression format, please use standard cron format"
     )
-    .describe("定时表达式 (cron 格式)"),
+    .describe("Cron expression (cron format)"),
   
   disabled: z.boolean()
     .default(false)
-    .describe("是否禁用任务")
+    .describe("Whether to disable the task")
 });
 
 /**
@@ -59,9 +59,9 @@ export type UpdateTaskRequest = z.infer<typeof UpdateTaskSchema>;
 
 // 默认任务配置
 export const DEFAULT_TASK: Task = {
-  name: "新任务",
+  name: "New Task",
   agentKey: "",
-  description: "任务描述",
+  description: "Task description",
   cron: "0 0 * * *", // 每天午夜执行
   disabled: false
 };
@@ -97,12 +97,12 @@ export const CRON_TEMPLATES = {
 
 // Cron 表达式描述
 export const CRON_DESCRIPTIONS = {
-  [CRON_TEMPLATES.EVERY_MINUTE]: "每分钟执行",
-  [CRON_TEMPLATES.EVERY_HOUR]: "每小时执行",
-  [CRON_TEMPLATES.EVERY_DAY]: "每天午夜执行",
-  [CRON_TEMPLATES.EVERY_WEEK]: "每周日午夜执行",
-  [CRON_TEMPLATES.EVERY_MONTH]: "每月1号午夜执行",
-  [CRON_TEMPLATES.EVERY_YEAR]: "每年1月1号午夜执行",
-  [CRON_TEMPLATES.WORK_DAYS]: "工作日上午9点执行",
-  [CRON_TEMPLATES.WEEKENDS]: "周末上午10点执行",
+  [CRON_TEMPLATES.EVERY_MINUTE]: "Execute every minute",
+  [CRON_TEMPLATES.EVERY_HOUR]: "Execute every hour",
+  [CRON_TEMPLATES.EVERY_DAY]: "Execute every day at midnight",
+  [CRON_TEMPLATES.EVERY_WEEK]: "Execute every Sunday at midnight",
+  [CRON_TEMPLATES.EVERY_MONTH]: "Execute on the 1st of every month at midnight",
+  [CRON_TEMPLATES.EVERY_YEAR]: "Execute on January 1st every year at midnight",
+  [CRON_TEMPLATES.WORK_DAYS]: "Execute at 9 AM on weekdays",
+  [CRON_TEMPLATES.WEEKENDS]: "Execute at 10 AM on weekends",
 } as const;

@@ -2,46 +2,46 @@ import { z } from "zod";
 
 // 外观设置 Schema
 export const WorkspaceAppearanceSchema = z.object({
-  isDarkMode: z.boolean().default(false).describe("是否启用夜间模式"),
-  theme: z.enum(["light", "dark", "auto"]).default("auto").describe("主题模式"),
-  fontSize: z.enum(["small", "medium", "large"]).default("medium").describe("字体大小"),
-  language: z.enum(["zh-CN", "en-US"]).default("zh-CN").describe("界面语言"),
+  isDarkMode: z.boolean().default(false).describe("Enable dark mode"),
+  theme: z.enum(["light", "dark", "auto"]).default("auto").describe("Theme mode"),
+  fontSize: z.enum(["small", "medium", "large"]).default("medium").describe("Font size"),
+  language: z.enum(["zh-CN", "en-US"]).default("zh-CN").describe("Interface language"),
 });
 
 // 编辑器设置 Schema
 export const WorkspaceEditorSchema = z.object({
-  autoSave: z.boolean().default(true).describe("是否自动保存"),
-  autoSaveDelay: z.number().min(1000).max(60000).default(5000).describe("自动保存延迟（毫秒）"),
-  wordWrap: z.boolean().default(true).describe("是否自动换行"),
-  tabSize: z.number().min(2).max(8).default(2).describe("Tab 大小"),
+  autoSave: z.boolean().default(true).describe("Enable auto save"),
+  autoSaveDelay: z.number().min(1000).max(60000).default(5000).describe("Auto save delay (milliseconds)"),
+  wordWrap: z.boolean().default(true).describe("Enable word wrap"),
+  tabSize: z.number().min(2).max(8).default(2).describe("Tab size"),
 });
 
 // AI 设置 Schema
 export const WorkspaceAISchema = z.object({
-  defaultModel: z.string().optional().describe("默认 AI 模型"),
-  defaultAgent: z.string().optional().describe("默认 Agent"),
-  temperature: z.number().min(0).max(2).default(0.7).describe("温度参数"),
-  maxTokens: z.number().min(100).max(32000).default(4000).describe("最大 Token 数"),
-  streamResponse: z.boolean().default(true).describe("是否流式响应"),
+  defaultModel: z.string().optional().describe("Default AI model"),
+  defaultAgent: z.string().optional().describe("Default Agent"),
+  temperature: z.number().min(0).max(2).default(0.7).describe("Temperature parameter"),
+  maxTokens: z.number().min(100).max(32000).default(4000).describe("Maximum tokens"),
+  streamResponse: z.boolean().default(true).describe("Enable streaming response"),
 });
 
 // 高级设置 Schema
 export const WorkspaceAdvancedSchema = z.object({
-  enableTelemetry: z.boolean().default(false).describe("是否启用遥测"),
-  debugMode: z.boolean().default(false).describe("是否启用调试模式"),
-  experimentalFeatures: z.boolean().default(false).describe("是否启用实验性功能"),
+  enableTelemetry: z.boolean().default(false).describe("Enable telemetry"),
+  debugMode: z.boolean().default(false).describe("Enable debug mode"),
+  experimentalFeatures: z.boolean().default(false).describe("Enable experimental features"),
 });
 
 // 工作区元数据 Schema
 export const WorkspaceMetadataSchema = z.object({
-  name: z.string().describe("工作区名称"),
-  description: z.string().optional().describe("工作区描述"),
-  created: z.number().describe("创建时间戳"),
+  name: z.string().describe("Workspace name"),
+  description: z.string().optional().describe("Workspace description"),
+  created: z.number().describe("Creation timestamp"),
 });
 
 // 完整的工作区设置 Schema
 export const WorkspaceSettingsSchema = z.object({
-  workspace: WorkspaceMetadataSchema.optional().describe("工作区元数据"),
+  workspace: WorkspaceMetadataSchema.optional().describe("Workspace metadata"),
   appearance: WorkspaceAppearanceSchema.default({}),
   editor: WorkspaceEditorSchema.default({}),
   ai: WorkspaceAISchema.default({}),

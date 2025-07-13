@@ -28,7 +28,9 @@
     "publish:all": "node scripts/build.mjs publishAll",
     "clean": "node scripts/build.mjs clean",
     "typecheck": "npm run typecheck --workspaces",
-    "lint": "npm run lint --workspaces --if-present"
+    "lint": "npm run lint --workspaces --if-present",
+    "extract-i18n": "node scripts/extract-i18n.mjs",
+    "i18n": "node scripts/extract-i18n.mjs"
   },
   "dependencies": {
     "@ai-sdk/anthropic": "^1.2.12",

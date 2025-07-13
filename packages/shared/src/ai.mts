@@ -21,7 +21,7 @@ if (typeof globalThis !== 'undefined') {
 import { v4 } from "uuid";
 
 import { extractTool } from "./prompt";
-import { AISettings, AppSettings } from "./jsonSchemas/appSettingsSchema.mjs";
+import { AISettings, AppSettings } from "./zodSchemas/appSettingsSchema.mjs";
 
 
 

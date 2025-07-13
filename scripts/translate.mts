@@ -57,7 +57,7 @@ if (argv.test) {
 } else {
 
   try {
-    await translateFile();
+    // await translateFile();
 
     // 检查 i18n.json 文件是否存在
     if (!fs.existsSync(i18nPath)) {
@@ -118,7 +118,7 @@ export async function translateZh(content: string): Promise<string> {
           content: prompt,
         },
       ],
-      model: "gpt-4o-mini",
+      model: "google/gemini-2.5-flash",
     });
 
     const result = chatCompletion.choices?.[0]?.message?.content;

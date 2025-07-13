@@ -31,5 +31,5 @@ tests/tmp
 *.mts.bak
 *.ts.bak
 *.tsx.bak
-
+i18n.json.backup
 README.md

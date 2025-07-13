@@ -14,94 +14,94 @@ export const KnownProviderSchema = z.enum([
   "glm",
   "ollama",
   "unknown", // 用于未知或不支持的提供商，需要自己填baseURL和apiKey
-]).describe("支持的AI模型提供商");
+]).describe("Supported AI model providers");
 
 // 提供商配置 Schema
 export const ProviderConfigSchema = z.object({
-  key: KnownProviderSchema.describe("提供商唯一标识"),
-  label: z.string().describe("显示名称"),
-  baseURL: z.string().url().describe("API 基础地址"),
-  icon: z.string().optional().describe("图标"),
-  description: z.string().optional().describe("描述"),
-  hasApiKey: z.boolean().default(true).describe("是否需要API Key"),
+  key: KnownProviderSchema.describe("Provider unique identifier"),
+  label: z.string().describe("Display name"),
+  baseURL: z.string().url().describe("API base URL"),
+  icon: z.string().optional().describe("Icon"),
+  description: z.string().optional().describe("Description"),
+  hasApiKey: z.boolean().default(true).describe("Requires API Key"),
   apiKey: z.string().optional().describe("API Key"),
-  isBuiltIn: z.boolean().default(false).describe("是否内置提供商"),
-}).describe("AI模型提供商配置");
+  isBuiltIn: z.boolean().default(false).describe("Built-in provider"),
+}).describe("AI model provider configuration");
 
 // AI模型配置项 Schema
 export const AIModelConfigItemSchema = z.object({
-  key: z.string().describe("模型唯一标识"),
-  name: z.string().describe("模型名称"),
-  model: z.string().describe("模型标识符"),
-  provider: KnownProviderSchema.describe("提供商"),
-  supportImage: z.boolean().default(true).describe("是否支持图像"),
-  supportTool: z.boolean().default(true).describe("是否支持工具调用"),
-  call_tool_step: z.number().optional().describe("工具调用步数"),
-  type: z.enum(["llm", "embedding"]).default("llm").describe("模型类型"),
-  toolMode: z.enum(["standard", "compatible"]).default("standard").describe("工具模式"),
+  key: z.string().describe("Model unique identifier"),
+  name: z.string().describe("Model name"),
+  model: z.string().describe("Model identifier"),
+  provider: KnownProviderSchema.describe("Provider"),
+  supportImage: z.boolean().default(true).describe("Supports image"),
+  supportTool: z.boolean().default(true).describe("Supports tool calling"),
+  call_tool_step: z.number().optional().describe("Tool calling steps"),
+  type: z.enum(["llm", "embedding"]).default("llm").describe("Model type"),
+  toolMode: z.enum(["standard", "compatible"]).default("standard").describe("Tool mode"),
   // 保留兼容性
-  apiKey: z.string().default("").describe("API Key (废弃，从提供商获取)"),
-  baseURL: z.string().default("").describe("基础URL (废弃，从提供商获取)"),
-  fullName: z.string().optional().describe("完整名称 (提供商:模型名称)"),
-}).describe("AI模型配置项");
+  apiKey: z.string().default("").describe("API Key (deprecated, get from provider)"),
+  baseURL: z.string().default("").describe("Base URL (deprecated, get from provider)"),
+  fullName: z.string().optional().describe("Full name (provider:model name)"),
+}).describe("AI model configuration item");
 
 // AI配置 Schema
 export const AIConfigSchema = z.object({
-  models: z.array(AIModelConfigItemSchema).default([]).describe("AI模型列表"),
-  customProviders: z.array(ProviderConfigSchema).default([]).describe("自定义提供商列表"),
+  models: z.array(AIModelConfigItemSchema).default([]).describe("AI model list"),
+  customProviders: z.array(ProviderConfigSchema).default([]).describe("Custom provider list"),
   builtinApiKeys: z.record(z.object({
     apiKey: z.string().describe("API Key"),
-    baseURL: z.string().describe("基础URL"),
-  })).default({}).describe("内置提供商的API Key配置"),
-  defaultModel: z.string().optional().describe("默认模型"),
-}).describe("AI相关配置");
+    baseURL: z.string().describe("Base URL"),
+  })).default({}).describe("Built-in provider API Key configuration"),
+  defaultModel: z.string().optional().describe("Default model"),
+}).describe("AI related configuration");
 
 // 外观设置 Schema
 export const AppearanceSchema = z.object({
-  darkTheme: z.boolean().default(false).describe("是否启用夜间模式"),
-  language: z.enum(["zhCN", "enUS"]).default("zhCN").describe("界面语言"),
+  darkTheme: z.boolean().default(false).describe("Enable dark mode"),
+  language: z.enum(["zhCN", "enUS"]).default("zhCN").describe("Interface language"),
 });
 
 // 桌面应用设置 Schema
 export const DesktopSchema = z.object({
-  closeAction: z.enum(["minimize", "exit"]).default("exit").describe("关闭窗口行为"),
+  closeAction: z.enum(["minimize", "exit"]).default("exit").describe("Window close action"),
   windowSize: z.object({
-    width: z.number().min(800).max(4000).default(1440).describe("窗口宽度"),
-    height: z.number().min(600).max(3000).default(900).describe("窗口高度"),
+    width: z.number().min(800).max(4000).default(1440).describe("Window width"),
+    height: z.number().min(600).max(3000).default(900).describe("Window height"),
   }).default({}),
 });
 
 
 // MCP Gateway 配置 Schema
 export const MCPGatewaySchema = z.object({
-  name: z.string().describe("网关名称"),
-  description: z.string().optional().describe("网关描述"),
-  allowMCPs: z.array(z.string()).default([]).describe("允许的MCP列表"),
-}).describe("MCP网关配置");
+  name: z.string().describe("Gateway name"),
+  description: z.string().optional().describe("Gateway description"),
+  allowMCPs: z.array(z.string()).default([]).describe("Allowed MCP list"),
+}).describe("MCP gateway configuration");
 
 // 系统设置 Schema
 export const SystemSchema = z.object({
-  password: z.string().default("123456").describe("应用密码"),
-  isDeveloper: z.boolean().default(false).describe("是否为开发者模式"),
+  password: z.string().default("123456").describe("Application password"),
+  isDeveloper: z.boolean().default(false).describe("Developer mode"),
 });
 
 
 // 完整的应用设置 Schema
 export const AppSettingsSchema = z.object({
   // 系统信息（只读）
-  version: z.string().default("").describe("应用版本"),
-  appDataDir: z.string().default("").describe("应用数据目录"),
-  logFilePath: z.string().default("").describe("日志文件路径"),
-  PATH: z.string().default("").describe("系统 PATH"),
-  platform: z.string().default("").describe("操作系统平台"),
-  uuid: z.string().default("").describe("应用唯一标识"),
+  version: z.string().default("").describe("Application version"),
+  appDataDir: z.string().default("").describe("Application data directory"),
+  logFilePath: z.string().default("").describe("Log file path"),
+  PATH: z.string().default("").describe("System PATH"),
+  platform: z.string().default("").describe("Operating system platform"),
+  uuid: z.string().default("").describe("Application unique identifier"),
 
   // 用户可配置设置
   appearance: AppearanceSchema.default({}),
   system: SystemSchema.default({}),
   desktop: DesktopSchema.default({}),
   ai: AIConfigSchema.default({}),
-  mcpGateWays: z.array(MCPGatewaySchema).default([]).describe("MCP网关配置列表"),
+  mcpGateWays: z.array(MCPGatewaySchema).default([]).describe("MCP gateway configuration list"),
 
 });
 

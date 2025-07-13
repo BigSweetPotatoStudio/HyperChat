@@ -15,14 +15,14 @@ import {
   SaveOutlined,
   ReloadOutlined,
 } from "@ant-design/icons";
-import { t } from "../i18n";
+import { setCurrLang, t } from "../i18n";
 import { zodToJsonSchema } from "zod-to-json-schema";
 import {
   AppearanceSchema,
   SystemSchema,
   DesktopSchema,
   AppSettingsSchema
-} from "@dadigua/hyperchat-shared/jsonSchemas/appSettingsSchema";
+} from "@dadigua/hyperchat-shared";
 import type { z } from "zod";
 import Schema2Form from "./schema2Form";
 
@@ -52,6 +52,7 @@ export function AppSettings({
   // 处理表单值变化
   const handleFormChange = (values: z.infer<typeof AppSettingsSchema>) => {
     setCurrentValues(values);
+    setCurrLang(values.appearance.language); // 更新语言设置
     setHasChanges(true);
   };
 
