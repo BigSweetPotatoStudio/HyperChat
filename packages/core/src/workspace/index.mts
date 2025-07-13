@@ -25,7 +25,7 @@ export type {
   WorkspaceSettings as WorkspaceDetailedSettings,
   WorkspaceAppearanceSettings,
   WorkspaceEditorSettings,
-  WorkspaceAISettings,
+  WorkspaceDefaultAISettings,
   WorkspaceAdvancedSettings
 } from "@dadigua/hyperchat-shared";
 

@@ -173,6 +173,7 @@ export const WorkspaceChat = ({ workspace, agentName, workspaceDetails, mcpClien
       isConfirmCallTool: overrides.isConfirmCallTool ?? agentConfig?.isConfirmCallTool ?? false,
       temperature: overrides.temperature ?? agentConfig?.temperature,
       maxAttachedDialogs: overrides.maxAttachedDialogs ?? agentConfig?.maxAttachedDialogs ?? 5,
+      maxTokens: overrides.maxTokens ?? agentConfig?.maxTokens ?? 4000,
       prompt: overrides.prompt || agentConfig?.prompt || ""
     };
   };

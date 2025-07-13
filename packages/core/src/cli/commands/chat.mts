@@ -183,6 +183,7 @@ export async function startChat(initialMessage?: string, options: ChatOptions = 
         isConfirmCallTool: agentConfig?.isConfirmCallTool || false,
         temperature: agentConfig?.temperature,
         maxAttachedDialogs: agentConfig?.maxAttachedDialogs,
+        maxTokens: agentConfig?.maxTokens || 4000,
         onUpdate: () => {
           const lastMsg = aiChannel.lastMessage;
           if (lastMsg.role === 'assistant') {
@@ -290,6 +291,7 @@ export async function startChat(initialMessage?: string, options: ChatOptions = 
           isConfirmCallTool: agentConfig?.isConfirmCallTool || false,
           temperature: agentConfig?.temperature,
           maxAttachedDialogs: agentConfig?.maxAttachedDialogs,
+          maxTokens: agentConfig?.maxTokens || 4000,
           onUpdate: () => {
             const lastMsg = aiChannel.lastMessage;
             if (lastMsg.role === 'assistant') {

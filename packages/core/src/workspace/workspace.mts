@@ -334,10 +334,9 @@ export class Workspace {
         this.config.created = metadata.created || 0;
       }
 
-      // 从AI设置映射到WorkspaceSettings
-      const aiSettings = this.settingsManager.getAI();
+      // 从DefaultAI设置映射到WorkspaceSettings
+      const aiSettings = this.settingsManager.getDefaultAI();
       this.config.settings = {
-        defaultModel: aiSettings.defaultModel,
         defaultAgent: aiSettings.defaultAgent,
       };
     } catch (error) {
@@ -359,15 +358,12 @@ export class Workspace {
       });
 
       // 同步AI设置
-      if (this.config.settings?.defaultModel || this.config.settings?.defaultAgent) {
+      if (this.config.settings?.defaultAgent) {
         const aiUpdates: any = {};
-        if (this.config.settings.defaultModel) {
-          aiUpdates.defaultModel = this.config.settings.defaultModel;
-        }
         if (this.config.settings.defaultAgent) {
           aiUpdates.defaultAgent = this.config.settings.defaultAgent;
         }
-        await this.settingsManager.updateAI(aiUpdates);
+        await this.settingsManager.updateDefaultAI(aiUpdates);
       }
     } catch (error) {
       console.warn(`保存工作区配置失败:`, error);

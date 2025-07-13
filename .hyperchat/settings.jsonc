@@ -16,9 +16,7 @@
     "wordWrap": true,
     "tabSize": 2
   },
-  "ai": {
-    "temperature": 0.7,
-    "maxTokens": 4000,
+  "defaultAI": {
     "streamResponse": true
   },
   "advanced": {

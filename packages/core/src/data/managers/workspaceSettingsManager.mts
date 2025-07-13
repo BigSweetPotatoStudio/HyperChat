@@ -7,7 +7,7 @@ import {
   WorkspaceSettings,
   WorkspaceAppearanceSettings,
   WorkspaceEditorSettings,
-  WorkspaceAISettings,
+  WorkspaceDefaultAISettings,
   WorkspaceAdvancedSettings,
   WorkspaceMetadata,
   DEFAULT_WORKSPACE_SETTINGS,
@@ -139,9 +139,13 @@ export class WorkspaceSettingsManager {
         ...this.settings.editor,
         ...(updates.editor || {}),
       },
-      ai: {
-        ...this.settings.ai,
-        ...(updates.ai || {}),
+      aiConfig: {
+        ...this.settings.aiConfig,
+        ...(updates.aiConfig || {}),
+      },
+      defaultAI: {
+        ...this.settings.defaultAI,
+        ...(updates.defaultAI || {}),
       },
       advanced: {
         ...this.settings.advanced,
@@ -197,19 +201,19 @@ export class WorkspaceSettingsManager {
   }
 
   /**
-   * 获取 AI 设置
+   * 获取默认 AI 设置
    */
-  getAI(): WorkspaceAISettings {
-    return { ...this.settings.ai };
+  getDefaultAI(): WorkspaceDefaultAISettings {
+    return { ...this.settings.defaultAI };
   }
 
   /**
-   * 更新 AI 设置
+   * 更新默认 AI 设置
    */
-  async updateAI(updates: Partial<WorkspaceAISettings>): Promise<void> {
+  async updateDefaultAI(updates: Partial<WorkspaceDefaultAISettings>): Promise<void> {
     await this.updateSettings({
-      ai: {
-        ...this.settings.ai,
+      defaultAI: {
+        ...this.settings.defaultAI,
         ...updates,
       },
     });

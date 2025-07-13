@@ -27,6 +27,7 @@ export class AgentInstance {
       prompt: '',
       allowMCPs: [],
       isConfirmCallTool: false,
+      maxTokens: 4000,
       tags: [],
       subAgents: [],
       version: 1,
@@ -311,6 +312,7 @@ export class AgentManager {
       prompt: config.prompt || '',
       allowMCPs: config.allowMCPs || [],
       isConfirmCallTool: config.isConfirmCallTool ?? false,
+      maxTokens: config.maxTokens || 4000,
       tags: config.tags || [],
       subAgents: config.subAgents || [],
       version: config.version || 1

@@ -944,6 +944,7 @@ export function Workspace() {
             }}
             items={getTabItems().map(item => ({
               ...item,
+              closable: false, // 工作区不可关闭
               children: renderWorkspaceContent(item.key)
             }))}
             addIcon={
