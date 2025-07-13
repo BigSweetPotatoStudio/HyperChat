@@ -178,7 +178,11 @@ export async function startChat(initialMessage?: string, options: ChatOptions = 
       let reasoningFinished = false;
       await aiChannel.completion({
         modelKey: modelKey!,
+        prompt: agentConfig?.prompt || "",
         allowMCPs: agentConfig?.allowMCPs || mcpClients.map((c: any) => c.serverName),
+        isConfirmCallTool: agentConfig?.isConfirmCallTool || false,
+        temperature: agentConfig?.temperature,
+        maxAttachedDialogs: agentConfig?.maxAttachedDialogs,
         onUpdate: () => {
           const lastMsg = aiChannel.lastMessage;
           if (lastMsg.role === 'assistant') {
@@ -281,7 +285,11 @@ export async function startChat(initialMessage?: string, options: ChatOptions = 
 
         await aiChannel.completion({
           modelKey: modelKey!,
+          prompt: agentConfig?.prompt || "",
           allowMCPs: agentConfig?.allowMCPs || mcpClients.map((c: any) => c.serverName),
+          isConfirmCallTool: agentConfig?.isConfirmCallTool || false,
+          temperature: agentConfig?.temperature,
+          maxAttachedDialogs: agentConfig?.maxAttachedDialogs,
           onUpdate: () => {
             const lastMsg = aiChannel.lastMessage;
             if (lastMsg.role === 'assistant') {

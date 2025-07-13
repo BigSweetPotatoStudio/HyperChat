@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { BaseAIConfigSchema } from "./agentConfigSchema.mjs";
 
 // 外观设置 Schema
 export const WorkspaceAppearanceSchema = z.object({
@@ -16,12 +17,9 @@ export const WorkspaceEditorSchema = z.object({
   tabSize: z.number().min(2).max(8).default(2).describe("Tab size"),
 });
 
-// AI 设置 Schema
-export const WorkspaceAISchema = z.object({
-  defaultModel: z.string().optional().describe("Default AI model"),
+// 工作区默认 AI 设置 Schema - 与 BaseAIConfigSchema 平级
+export const WorkspaceDefaultAISchema = z.object({
   defaultAgent: z.string().optional().describe("Default Agent"),
-  temperature: z.number().min(0).max(2).default(0.7).describe("Temperature parameter"),
-  maxTokens: z.number().min(100).max(32000).default(4000).describe("Maximum tokens"),
   streamResponse: z.boolean().default(true).describe("Enable streaming response"),
 });
 
@@ -44,7 +42,8 @@ export const WorkspaceSettingsSchema = z.object({
   workspace: WorkspaceMetadataSchema.optional().describe("Workspace metadata"),
   appearance: WorkspaceAppearanceSchema.default({}),
   editor: WorkspaceEditorSchema.default({}),
-  ai: WorkspaceAISchema.default({}),
+  aiConfig: BaseAIConfigSchema.partial().optional().describe("Base AI configuration"),
+  defaultAI: WorkspaceDefaultAISchema.default({}),
   advanced: WorkspaceAdvancedSchema.default({}),
 });
 
@@ -53,7 +52,7 @@ export type WorkspaceSettings = z.infer<typeof WorkspaceSettingsSchema>;
 export type WorkspaceMetadata = z.infer<typeof WorkspaceMetadataSchema>;
 export type WorkspaceAppearanceSettings = z.infer<typeof WorkspaceAppearanceSchema>;
 export type WorkspaceEditorSettings = z.infer<typeof WorkspaceEditorSchema>;
-export type WorkspaceAISettings = z.infer<typeof WorkspaceAISchema>;
+export type WorkspaceDefaultAISettings = z.infer<typeof WorkspaceDefaultAISchema>;
 export type WorkspaceAdvancedSettings = z.infer<typeof WorkspaceAdvancedSchema>;
 
 // 默认设置
@@ -79,8 +78,8 @@ export function validateWorkspaceEditorSettings(data: any): data is WorkspaceEdi
   return WorkspaceEditorSchema.safeParse(data).success;
 }
 
-export function validateWorkspaceAISettings(data: any): data is WorkspaceAISettings {
-  return WorkspaceAISchema.safeParse(data).success;
+export function validateWorkspaceDefaultAISettings(data: any): data is WorkspaceDefaultAISettings {
+  return WorkspaceDefaultAISchema.safeParse(data).success;
 }
 
 export function validateWorkspaceAdvancedSettings(data: any): data is WorkspaceAdvancedSettings {

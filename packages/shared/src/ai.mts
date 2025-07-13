@@ -22,7 +22,7 @@ import { v4 } from "uuid";
 
 import { extractTool } from "./prompt";
 import { AISettings, AppSettings } from "./zodSchemas/appSettingsSchema.mjs";
-import { BaseAIConfig } from "zodSchemas/agentConfigSchema.mjs";
+import { BaseAIConfig } from "./zodSchemas/agentConfigSchema.mjs";
 
 
 

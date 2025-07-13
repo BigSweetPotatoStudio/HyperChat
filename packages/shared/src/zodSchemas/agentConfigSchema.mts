@@ -32,7 +32,14 @@ export const BaseAIConfigSchema = z.object({
   
   modelKey: z.string()
     .optional()
-    .describe("AI model key/identifier")
+    .describe("AI model key/identifier"),
+    
+  maxTokens: z.number()
+    .int()
+    .min(100, "Max tokens must be >= 100")
+    .max(32000, "Max tokens must be <= 32000")
+    .default(4000)
+    .describe("Maximum tokens for AI response")
 });
 
 /**
@@ -74,6 +81,7 @@ export function createDefaultBaseAIConfig(prompt: string): BaseAIConfig {
     prompt,
     isConfirmCallTool: false,
     allowMCPs: [],
+    maxTokens: 4000,
   };
 }
 
@@ -84,6 +92,7 @@ export function createDefaultAgentConfig(name: string, prompt: string): AgentCon
     prompt,
     isConfirmCallTool: false,
     allowMCPs: [],
+    maxTokens: 4000,
     tags: [],
     subAgents: [],
     version: 1,
