@@ -1052,7 +1052,7 @@ export class Workspace {
         modelKey: agentInstance.getConfig().modelKey || 'default',
         chatType: 'task',
         allowMCPs: agentInstance.getConfig().allowMCPs,
-        confirm_call_tool: agentInstance.getConfig().confirm_call_tool,
+        isConfirmCallTool: agentInstance.getConfig().isConfirmCallTool,
         messages: [
           {
             role: 'user',

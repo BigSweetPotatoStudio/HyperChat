@@ -34,7 +34,7 @@ describe('基础测试', () => {
       key: 'agent-123',
       prompt: 'You are a test agent.',
       allowMCPs: ['test-mcp'],
-      confirm_call_tool: false,
+      isConfirmCallTool: false,
       created: Date.now(),
       lastModified: Date.now(),
     };

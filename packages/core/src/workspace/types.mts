@@ -8,20 +8,14 @@ export type AgentConfig = {
   callable?: boolean;
   allowMCPs: string[];
   modelKey?: string;
-  attachedDialogueCount?: number;
+  maxAttachedDialogs?: number;
   temperature?: number;
-  confirm_call_tool: boolean;
+  isConfirmCallTool: boolean;
   tags?: string[];
-  subAgents?: string[];
   version?: number;
   created?: number;
   lastModified?: number;
 };
-
-// 兼容旧的 Agent 类型
-export type Agent = AgentConfig;
-
-
 
 
 

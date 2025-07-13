@@ -5,10 +5,10 @@ allowMCPs:
   - hyper_tools
   - hyper_terminal
   - filesystem
-confirm_call_tool: false
+isConfirmCallTool: false
 created: 1751905631370
 lastModified: 1752113438485
 temperature: 1
 callable: true
-attachedDialogueCount: 10
+maxAttachedDialogs: 10
 modelKey: xai:grok-3-mini-beta

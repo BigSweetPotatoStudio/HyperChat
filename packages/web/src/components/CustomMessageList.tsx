@@ -199,14 +199,14 @@ export const CustomMessageList = forwardRef<CustomMessageListRef, CustomMessageL
               contexts={contexts || {}}
               onSubmit={(content) => {
                 if (x.role === "system") {
-                  x.content_template = content;
+                  x.content = content;
                   x.content_date = Date.now();
                   const userIndex = messages.findLastIndex((msg) => msg.role === "user");
                   if (userIndex > -1) {
                     onSumbit(messages.filter((_, index) => index <= userIndex));
                   }
                 } else {
-                  x.content_template = content;
+                  x.content = content;
                   x.content_date = Date.now();
                   onSumbit(messages.filter((_, index) => index <= i));
                 }

@@ -150,7 +150,6 @@ export function UserContent({ x, regenerate = undefined, onSubmit, contexts, ind
      * 重置消息状态并调用外部提交回调
      */
     const handleSubmit = useCallback(() => {
-        x.content_sended = false;
         contexts[index]!.edit = false;
         setIsEdit(false);
         onSubmit(value);
@@ -177,7 +176,7 @@ export function UserContent({ x, regenerate = undefined, onSubmit, contexts, ind
                             border: "0px",
                             padding: "4px 0"
                         }}
-                        value={x.content_template || x.content.toString()}
+                        value={x.content.toString()}
                         onChange={(e: string) => setValue(e)}
                         onSubmit={handleSubmit}
                     />
@@ -192,7 +191,7 @@ export function UserContent({ x, regenerate = undefined, onSubmit, contexts, ind
                 </div>
             ) : (
                 /* 系统消息且未发送：显示实时编辑器 */
-                !x.content_sended && x.role === "system" && maxWidth > 0 ? (
+                x.role === "system" && maxWidth > 0 ? (
                     <div>
                         <Editor
                             autoHeight
@@ -202,9 +201,9 @@ export function UserContent({ x, regenerate = undefined, onSubmit, contexts, ind
                                 border: "0px",
                                 padding: "4px 0"
                             }}
-                            value={x.content_template || x.content.toString()}
+                            value={x.content.toString()}
                             onChange={(e: string) => {
-                                x.content_template = e;
+                                x.content = e;
                             }}
                         />
                     </div>
@@ -222,7 +221,7 @@ export function UserContent({ x, regenerate = undefined, onSubmit, contexts, ind
                                                 wordWrap: "break-word",
                                             }}
                                         >
-                                            {c.text.toString() || x.content_template}
+                                            {c.text.toString() || x.content.toString()}
                                         </pre>
                                         {/* 如果有多个内容项且这是第一个文本项，显示资源分隔符 */}
                                         {x.content.length > 1 && i === 0 && (
@@ -268,7 +267,7 @@ export function UserContent({ x, regenerate = undefined, onSubmit, contexts, ind
                                 wordWrap: "break-word",
                             }}
                         >
-                            {x.content.toString() || x.content_template}
+                            {x.content.toString() || "No Content"}
                         </pre>
                     )
                 )

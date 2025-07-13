@@ -614,11 +614,11 @@ export function getMyUuid() {
 
 export const calcAttachDialogue = (
   messages: any,
-  attachedDialogueCount: any,
+  maxAttachedDialogs: any,
   overwrite = true,
 ) => {
-  if (attachedDialogueCount == null) {
-    attachedDialogueCount = 10;
+  if (maxAttachedDialogs == null) {
+    maxAttachedDialogs = 10;
   }
   let c = 0;
   for (let i = messages.length - 1; i >= 0; i--) {
@@ -629,11 +629,11 @@ export const calcAttachDialogue = (
     }
 
     if (overwrite) {
-      m.content_attached = c < attachedDialogueCount;
+      m.content_attached = c < maxAttachedDialogs;
     } else {
-      if (m.content_attached == false && c < attachedDialogueCount) {
+      if (m.content_attached == false && c < maxAttachedDialogs) {
       } else {
-        m.content_attached = c < attachedDialogueCount;
+        m.content_attached = c < maxAttachedDialogs;
       }
     }
 

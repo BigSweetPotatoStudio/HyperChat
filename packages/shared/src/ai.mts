@@ -1,6 +1,6 @@
 
 
-import type { HyperChatCompletionTool, MyMessage, Tool_Call, CommonContentItem, AIProvider, AIExtension, ResponseFormat, CustomFetch, JSONSchemaObject } from "./types.mjs";
+import type { HyperChatCompletionTool, MyMessage, HyperToolCall, CommonContentItem, AIProvider, AIExtension, ResponseFormat, CustomFetch, JSONSchemaObject } from "./types.mjs";
 
 import * as MCPTypes from "@modelcontextprotocol/sdk/types.js";
 import type { CoreMessage, LanguageModel, StreamTextResult, ToolChoice, CoreTool, ToolSet, TextPart, FilePart, ToolCallPart, ImagePart } from 'ai';
@@ -103,8 +103,8 @@ export class AiChannel {
       allowMCPs: string[],
       onUpdate?: (r?: any) => void;
       call_tool?: boolean;
-      confirm_call_tool?: boolean;  // 默认当成false
-      confirm_call_tool_cb?: (tool: Tool_Call) => Promise<boolean>;
+      isConfirmCallTool?: boolean;  // 默认当成false
+      confirm_call_tool_cb?: (tool: HyperToolCall) => Promise<boolean>;
     },
     options: Omit<Parameters<typeof streamText>[0], 'model' | 'prompt'> = {},
   ): Promise<string> {
@@ -198,8 +198,8 @@ export class AiChannel {
       call_tool?: boolean;
       step: number;
       context: {},
-      confirm_call_tool?: boolean;  // 默认当成false
-      confirm_call_tool_cb?: (tool: Tool_Call) => Promise<boolean>;
+      isConfirmCallTool?: boolean;  // 默认当成false
+      confirm_call_tool_cb?: (tool: HyperToolCall) => Promise<boolean>;
     },
     options: Omit<Parameters<typeof streamText>[0], 'model' | 'prompt'> = {},
   ): Promise<string> {
@@ -355,7 +355,7 @@ export class AiChannel {
           tool.function.args = {};
         }
         if (
-          params.confirm_call_tool &&
+          params.isConfirmCallTool &&
           params.confirm_call_tool_cb
         ) {
           try {

@@ -27,7 +27,7 @@ export class AgentInstance {
       name: path.basename(agentPath),
       prompt: '',
       allowMCPs: [],
-      confirm_call_tool: false,
+      isConfirmCallTool: false,
       created: Date.now(),
       lastModified: Date.now(),
     };
@@ -312,7 +312,7 @@ export class AgentManager {
       name,
       prompt: config.prompt || '',
       allowMCPs: config.allowMCPs || [],
-      confirm_call_tool: config.confirm_call_tool ?? false,
+      isConfirmCallTool: config.isConfirmCallTool ?? false,
       created: Date.now(),
       lastModified: Date.now()
     };

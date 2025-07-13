@@ -127,11 +127,11 @@ export const AgentManagement = forwardRef<AgentManagementRef, AgentManagementPro
         description: values.description,
         prompt: values.prompt,
         allowMCPs: values.allowMCPs || [],
-        confirm_call_tool: values.confirm_call_tool ?? false,
+        isConfirmCallTool: values.isConfirmCallTool ?? false,
         modelKey: values.modelKey,
         temperature: values.temperature,
         callable: values.callable ?? true,
-        attachedDialogueCount: values.attachedDialogueCount,
+        maxAttachedDialogs: values.maxAttachedDialogs,
       };
 
       if (editingAgent) {
@@ -454,7 +454,7 @@ export const AgentManagement = forwardRef<AgentManagementRef, AgentManagementPro
                 {selectedAgent.lastChatTime ? new Date(selectedAgent.lastChatTime).toLocaleString() : 'Never'}
               </Descriptions.Item>
               <Descriptions.Item label={t`Context History`}>
-                {selectedAgent.config.attachedDialogueCount || 'Default'}
+                {selectedAgent.config.maxAttachedDialogs || 'Default'}
               </Descriptions.Item>
               <Descriptions.Item label={t`Created`}>
                 {selectedAgent.config.created ? new Date(selectedAgent.config.created).toLocaleString() : 'Unknown'}
@@ -487,12 +487,12 @@ export const AgentManagement = forwardRef<AgentManagementRef, AgentManagementPro
             <div className="mt-4">
               <Title level={5}>{t`Settings`}</Title>
               <div className="space-y-2">
-                <div>Tool Confirmation: {selectedAgent.config.confirm_call_tool ? 'Enabled' : 'Disabled'}</div>
+                <div>Tool Confirmation: {selectedAgent.config.isConfirmCallTool ? 'Enabled' : 'Disabled'}</div>
                 {selectedAgent.config.temperature !== undefined && (
                   <div>Temperature: {selectedAgent.config.temperature}</div>
                 )}
-                {selectedAgent.config.attachedDialogueCount !== undefined && (
-                  <div>Context History: {selectedAgent.config.attachedDialogueCount}</div>
+                {selectedAgent.config.maxAttachedDialogs !== undefined && (
+                  <div>Context History: {selectedAgent.config.maxAttachedDialogs}</div>
                 )}
               </div>
             </div>
@@ -528,9 +528,9 @@ export const AgentManagement = forwardRef<AgentManagementRef, AgentManagementPro
                 modelKey: editingAgent.config.modelKey,
                 temperature: editingAgent.config.temperature ?? 1,
                 allowMCPs: editingAgent.config.allowMCPs || [],
-                confirm_call_tool: editingAgent.config.confirm_call_tool ?? false,
+                isConfirmCallTool: editingAgent.config.isConfirmCallTool ?? false,
                 callable: editingAgent.config.callable ?? true,
-                attachedDialogueCount: editingAgent.config.attachedDialogueCount ?? 10,
+                maxAttachedDialogs: editingAgent.config.maxAttachedDialogs ?? 10,
               };
               form.resetFields();
               form.setFieldsValue(formValues);
@@ -538,10 +538,10 @@ export const AgentManagement = forwardRef<AgentManagementRef, AgentManagementPro
               // 创建模式：设置默认值
               form.setFieldsValue({
                 allowMCPs: [],
-                confirm_call_tool: false,
+                isConfirmCallTool: false,
                 callable: true,
                 temperature: 1,
-                attachedDialogueCount: 5,
+                maxAttachedDialogs: 5,
               });
             }
           }
@@ -717,7 +717,6 @@ export const AgentManagement = forwardRef<AgentManagementRef, AgentManagementPro
                   <List.Item.Meta
                     title={
                       <Space>
-                        {chatLog.icon && <span>{chatLog.icon}</span>}
                         <span>{chatLog.label || `Chat ${index + 1}`}</span>
                         {chatLog.messages && (
                           <Tag color="blue">{chatLog.messages.length} messages</Tag>
@@ -763,7 +762,7 @@ export const AgentCommonFormItems = (
       <Slider min={0} max={2} step={0.1} />
     </Form.Item>
     <Form.Item
-      name="attachedDialogueCount"
+      name="maxAttachedDialogs"
       label={t`Memory Compression Threshold`}
       tooltip={t`Automatically compress memory when the number of context messages exceeds this value. 0 means disabled.`}
     >
@@ -771,7 +770,7 @@ export const AgentCommonFormItems = (
     </Form.Item>
 
     <Form.Item
-      name="confirm_call_tool"
+      name="isConfirmCallTool"
       label={t`Tool Execution`}
       tooltip={t`Do you want to confirm calling the tool?`}
     >

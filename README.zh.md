@@ -206,7 +206,7 @@ git checkout HEAD~1 -- .hyperchat/agents/
 name: "前端架构专家"
 description: "专注于 React、TypeScript、性能优化的 AI 助手"
 modelKey: "claude-3-5-sonnet"
-confirm_call_tool: false
+isConfirmCallTool: false
 allowMCPs: ["filesystem", "terminal", "knowledge-base"]
 prompt: |
   你是一位资深的前端架构师，专精于：

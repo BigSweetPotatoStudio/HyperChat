@@ -4,7 +4,6 @@ export { CONSTANTS } from "./constants.mjs";
 // 导出类型定义
 export type {
   AgentConfig,
-  Agent,
   WorkspaceConfig,
   WorkspaceSettings,
   WorkspaceFileNode

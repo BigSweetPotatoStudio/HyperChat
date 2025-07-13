@@ -81,7 +81,7 @@ export async function createAgent(name: string) {
       prompt: `你是一个名为 ${name} 的AI助手。请根据用户的需求提供帮助。`,
       description: `${name} 助手`,
       allowMCPs: [] as string[],
-      confirm_call_tool: false,
+      isConfirmCallTool: false,
       tags: ['cli-created']
     };
 

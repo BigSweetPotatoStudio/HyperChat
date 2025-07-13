@@ -63,7 +63,7 @@ import { HeaderContext } from "../common/context";
 import { useForceUpdate } from "../hooks/useForceUpdate";
 import { MyAttachR } from "./attachR";
 import { WorkspaceDetails, WorkspaceInfo } from "../pages/workspace/types";
-import { AllMessage, CommonContent, CommonContentItem, HyperChatCompletionTool, IMCPClient, Tool_Call } from "@dadigua/hyperchat-shared/types";
+import { AllMessage, CommonContent, CommonContentItem, HyperChatCompletionTool, IMCPClient, HyperToolCall } from "@dadigua/hyperchat-shared/types";
 import { NumberStep } from "../common/numberStep";
 import { AgentCommonFormItems } from "./AgentManagement";
 
@@ -149,9 +149,9 @@ export const WorkspaceChat = ({ workspace, agentKey, workspaceDetails, mcpClient
     allowMCPs: [] as string[],
     dateTime: Date.now(),
     chatType: "user" as const, // "user" | "task" | "called"
-    confirm_call_tool: false,
+    isConfirmCallTool: false,
     temperature: undefined as number | undefined,
-    attachedDialogueCount: 5
+    maxAttachedDialogs: 5
   });
 
   // 当前聊天引用
@@ -188,8 +188,8 @@ export const WorkspaceChat = ({ workspace, agentKey, workspaceDetails, mcpClient
     try {
       // 更新当前聊天配置
       currentChat.current.temperature = values.temperature;
-      currentChat.current.attachedDialogueCount = values.attachedDialogueCount;
-      currentChat.current.confirm_call_tool = values.confirm_call_tool;
+      currentChat.current.maxAttachedDialogs = values.maxAttachedDialogs;
+      currentChat.current.isConfirmCallTool = values.isConfirmCallTool;
       if (currentChat.current.key == "") {
         return;
       }
@@ -314,15 +314,14 @@ export const WorkspaceChat = ({ workspace, agentKey, workspaceDetails, mcpClient
             agentKey: agentKey,
             messages: [{
               role: "system" as const,
-              content_template: agent.config.prompt || "",
+              content: agent.config.prompt || "",
               content_date: Date.now(),
-              content: "",
             }],
             allowMCPs: agent.config.allowMCPs || [],
             modelKey: agent.config.modelKey || defaultModel?.key || "",
             temperature: agent.config.temperature,
-            confirm_call_tool: agent.config.confirm_call_tool || false,
-            attachedDialogueCount: agent.config.attachedDialogueCount || 5,
+            isConfirmCallTool: agent.config.isConfirmCallTool || false,
+            maxAttachedDialogs: agent.config.maxAttachedDialogs || 5,
           });
 
           currentChatReset({});
@@ -354,7 +353,7 @@ export const WorkspaceChat = ({ workspace, agentKey, workspaceDetails, mcpClient
 
     refresh();
   };
-  let confirm_call_tool_cb = (tool: Tool_Call): Promise<any> => {
+  let confirm_call_tool_cb = (tool: HyperToolCall): Promise<any> => {
     return new Promise((resolve, reject) => {
       console.log("tool", tool);
       let m = modal.confirm({
@@ -407,7 +406,7 @@ export const WorkspaceChat = ({ workspace, agentKey, workspaceDetails, mcpClient
                       ghost
                       htmlType="submit"
                       onClick={() => {
-                        currentChat.current.confirm_call_tool = false;
+                        currentChat.current.isConfirmCallTool = false;
                       }}
                     >
                       {t`Allow this Chat`}
@@ -454,8 +453,7 @@ export const WorkspaceChat = ({ workspace, agentKey, workspaceDetails, mcpClient
         aiClient.addMessage(
           {
             role: "user",
-            content: "",
-            content_template: content,
+            content: content,
             content_date: new Date().getTime(),
           },
           resourceResListRef.current,
@@ -463,17 +461,6 @@ export const WorkspaceChat = ({ workspace, agentKey, workspaceDetails, mcpClient
         );
       }
 
-      // 处理变量模板
-      for (let m of aiClient.messages) {
-        if (m.role == "user" || m.role == "system") {
-          if (!m.content_sended && m.content_template) {
-            if (typeof m.content == "string") {
-              m.content = m.content_template;
-            }
-            m.content_sended = true;
-          }
-        }
-      }
       function getFirstUserContent() {
         let label = currentChat.current.label.toString();
         let firstUser = aiClient.messages.find(
@@ -509,8 +496,8 @@ export const WorkspaceChat = ({ workspace, agentKey, workspaceDetails, mcpClient
         getURL_PRE: getURL_PRE,
         aiSettings: aiSettings as any,
         compressionConfig: {
-          enabled: currentChat.current.attachedDialogueCount! > 0 ? true : false,
-          userMessageThreshold: currentChat.current.attachedDialogueCount || 5,    // 用户消息达到5条时触发压缩
+          enabled: currentChat.current.maxAttachedDialogs! > 0 ? true : false,
+          userMessageThreshold: currentChat.current.maxAttachedDialogs || 5,    // 用户消息达到5条时触发压缩
           compressionStrategy: "summary",
         }
       })
@@ -518,7 +505,7 @@ export const WorkspaceChat = ({ workspace, agentKey, workspaceDetails, mcpClient
       await aiClient.completion({
         modelKey: config?.key || "",
         allowMCPs: currentChat.current.allowMCPs,
-        confirm_call_tool: currentChat.current.confirm_call_tool,
+        isConfirmCallTool: currentChat.current.isConfirmCallTool,
         confirm_call_tool_cb,
         onUpdate: (r) => {
           if (r && r.type == "compress") {
@@ -610,7 +597,7 @@ export const WorkspaceChat = ({ workspace, agentKey, workspaceDetails, mcpClient
               </div>
               {systemMessages.map((msg, index) => (
                 <div key={index} className="text-sm line-clamp-1 text-gray-700 bg-white p-0 rounded border border-blue-200">
-                  {msg.content_template || msg.content}
+                  {msg.content}
                 </div>
               ))}
             </div>
@@ -710,8 +697,8 @@ export const WorkspaceChat = ({ workspace, agentKey, workspaceDetails, mcpClient
                       settingsForm.setFieldsValue({
                         modelKey: currentChat.current.modelKey,
                         temperature: currentChat.current.temperature ?? 1,
-                        attachedDialogueCount: currentChat.current.attachedDialogueCount ?? 10,
-                        confirm_call_tool: currentChat.current.confirm_call_tool ?? false,
+                        maxAttachedDialogs: currentChat.current.maxAttachedDialogs ?? 10,
+                        isConfirmCallTool: currentChat.current.isConfirmCallTool ?? false,
                         allowMCPs: currentChat.current.allowMCPs || [],
                       });
                       setIsSettingsShow(true);

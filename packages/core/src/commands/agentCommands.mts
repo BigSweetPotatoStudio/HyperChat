@@ -24,7 +24,7 @@ export const agentCommands = {
       prompt: string;
       description?: string;
       allowMCPs: string[];
-      confirm_call_tool: boolean;
+      isConfirmCallTool: boolean;
       modelKey?: string;
       temperature?: number;
       tags?: string[];
@@ -160,7 +160,7 @@ export const agentCommands = {
       prompt: string;
       description?: string;
       allowMCPs: string[];
-      confirm_call_tool: boolean;
+      isConfirmCallTool: boolean;
       modelKey?: string;
       temperature?: number;
       tags?: string[];

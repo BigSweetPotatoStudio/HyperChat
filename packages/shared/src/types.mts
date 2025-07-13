@@ -114,9 +114,9 @@ export interface AgentConfig {
   callable?: boolean;
   allowMCPs: string[];
   modelKey?: string;
-  attachedDialogueCount?: number;
+  maxAttachedDialogs?: number;
   temperature?: number;
-  confirm_call_tool: boolean;
+  isConfirmCallTool: boolean;
   tags?: string[];
   subAgents?: string[];
   version?: number;
@@ -134,7 +134,7 @@ export interface DataOptions<T = unknown> {
 }
 
 // 工具调用类型定义
-export interface Tool_Call {
+export interface HyperToolCall {
   origin_name: string;
   restore_name: string;
   index: number;
@@ -163,12 +163,12 @@ type SystemMessage = {
 type AssistantMessage = {
   role: "assistant";
   content: string | CommonContent;
-}
+};
 
 type ToolMessage = {
   role: "tool";
   content: string | CommonContent;
-  tool_calls?: Tool_Call[];
+  tool_calls?: HyperToolCall[];
 };
 
 type HyperMemoryMessage = {
@@ -189,8 +189,6 @@ export type MyMessage = AllMessage & {
   | "error" // request is error
   | "dataLoading" // stream data is loading
   | "dataLoadComplete"; // stream is load complete
-  content_sended?: boolean;
-  content_template?: string;
   content_error?: string;
   content_from?: string;
   content_attachment?: Array<{
@@ -200,7 +198,7 @@ export type MyMessage = AllMessage & {
     data?: string;
   }>;
   reasoning_content?: string;
-  content_tool_calls?: Tool_Call[]; // openai tool call
+  content_tool_calls?: HyperToolCall[]; // openai tool call
   content_attached?: boolean;
   content_date?: number;
   content_usage?: {
@@ -222,17 +220,14 @@ export interface ChatHistoryItem {
   messages: Array<MyMessage>;
   modelKey: string;
   agentKey: string;
-  icon?: string;
   dateTime: number;
   chatType: "user" | "task" | "called";
   taskKey?: string;
   allowMCPs: string[];
-  attachedDialogueCount?: number;
+  maxAttachedDialogs?: number;
   temperature?: number;
-  deleted?: boolean;
-  confirm_call_tool: boolean;
-  lastMessage?: MyMessage;
-  version?: number | string;
+  isConfirmCallTool: boolean;
+  version?: number;
 };
 
 // export type KnownProvider =
@@ -400,22 +395,6 @@ export interface WorkspaceSummary {
   description?: string;
 }
 
-// export interface WorkspaceConfig {
-//   name: string;
-//   description?: string;
-//   created: number;
-//   settings: WorkspaceSettings;
-// }
-
-// export interface WorkspaceSettings {
-//   enableKnowledgeBase?: boolean;
-//   theme?: 'light' | 'dark' | 'system';
-//   autoSave?: boolean;
-//   showHiddenFiles?: boolean;
-//   fileWatcher?: boolean;
-//   gitIntegration?: boolean;
-//   [key: string]: unknown;
-// }
 
 /**
  * MCP 相关类型定义

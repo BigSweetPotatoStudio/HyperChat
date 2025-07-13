@@ -215,7 +215,7 @@ git checkout HEAD~1 -- .hyperchat/agents/
 name: "Frontend Architecture Expert"
 description: "AI assistant specialized in React, TypeScript, performance optimization"
 modelKey: "claude-3-5-sonnet"
-confirm_call_tool: false
+isConfirmCallTool: false
 allowMCPs: ["filesystem", "terminal", "knowledge-base"]
 prompt: |
   You are a senior frontend architect specializing in:
