@@ -715,8 +715,8 @@ export const AgentManagement = forwardRef<AgentManagementRef, AgentManagementPro
                         {chatLog.messages && (
                           <Tag color="blue">{chatLog.messages.length} messages</Tag>
                         )}
-                        {chatLog.modelKey && (
-                          <Tag color="green">{getModelDisplayName(chatLog.modelKey)}</Tag>
+                        {chatLog.configOverrides?.modelKey && (
+                          <Tag color="green">{getModelDisplayName(chatLog.configOverrides.modelKey)}</Tag>
                         )}
                       </Space>
                     }

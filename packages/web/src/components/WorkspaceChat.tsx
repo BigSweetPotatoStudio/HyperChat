@@ -140,22 +140,55 @@ export const WorkspaceChat = ({ workspace, agentName, workspaceDetails, mcpClien
   const historyIndexRef = useRef<number>(-1);
 
   // 默认聊天配置
-  const defaultChatValue = useRef({
+  const defaultChatValue = useRef<ChatHistoryItem>({
     label: "",
     key: "",
     messages: [] as MyMessage[],
-    modelKey: "",
     agentName: "",
-    allowMCPs: [] as string[],
     dateTime: Date.now(),
     chatType: "user" as const, // "user" | "task" | "called"
-    isConfirmCallTool: false,
-    temperature: undefined as number | undefined,
-    maxAttachedDialogs: 5
+    // 使用新的配置继承系统
+    configOverrides: {
+      modelKey: "",
+      allowMCPs: [] as string[],
+      isConfirmCallTool: false,
+      temperature: undefined as number | undefined,
+      maxAttachedDialogs: 5,
+      prompt: ""
+    }
   });
 
   // 当前聊天引用
   const currentChat = useRef<ChatHistoryItem>(defaultChatValue.current);
+
+  // 获取有效配置值的帮助函数（Agent配置 + configOverrides）
+  const getEffectiveConfig = () => {
+    const agent = workspaceDetails[workspace.path]?.agents.find(a => a.config.name === agentName);
+    const agentConfig = agent?.config;
+    const overrides = currentChat.current.configOverrides || {};
+    
+    return {
+      modelKey: overrides.modelKey || agentConfig?.modelKey || "",
+      allowMCPs: overrides.allowMCPs || agentConfig?.allowMCPs || [],
+      isConfirmCallTool: overrides.isConfirmCallTool ?? agentConfig?.isConfirmCallTool ?? false,
+      temperature: overrides.temperature ?? agentConfig?.temperature,
+      maxAttachedDialogs: overrides.maxAttachedDialogs ?? agentConfig?.maxAttachedDialogs ?? 5,
+      prompt: overrides.prompt || agentConfig?.prompt || ""
+    };
+  };
+
+  // 设置 allowMCPs 的帮助函数
+  const setAllowMCPs = (allowMCPs: string[]) => {
+    if (!currentChat.current.configOverrides) {
+      currentChat.current.configOverrides = {};
+    }
+    currentChat.current.configOverrides.allowMCPs = allowMCPs;
+  };
+
+  // 获取 allowMCPs 的帮助函数
+  const getAllowMCPs = () => {
+    return getEffectiveConfig().allowMCPs;
+  };
 
   // 加载状态
   const [loading, setLoading] = useState(false);
@@ -187,9 +220,14 @@ export const WorkspaceChat = ({ workspace, agentName, workspaceDetails, mcpClien
   const saveSettings = async (values: any) => {
     try {
       // 更新当前聊天配置
-      currentChat.current.temperature = values.temperature;
-      currentChat.current.maxAttachedDialogs = values.maxAttachedDialogs;
-      currentChat.current.isConfirmCallTool = values.isConfirmCallTool;
+      if (!currentChat.current.configOverrides) {
+        currentChat.current.configOverrides = {};
+      }
+      currentChat.current.configOverrides.temperature = values.temperature;
+      currentChat.current.configOverrides.maxAttachedDialogs = values.maxAttachedDialogs;
+      currentChat.current.configOverrides.isConfirmCallTool = values.isConfirmCallTool;
+      currentChat.current.configOverrides.allowMCPs = values.allowMCPs;
+      currentChat.current.configOverrides.modelKey = values.modelKey;
       if (currentChat.current.key == "") {
         return;
       }
@@ -294,7 +332,10 @@ export const WorkspaceChat = ({ workspace, agentName, workspaceDetails, mcpClien
         }
 
         const defaultModel = getDefaultModelFromSettings(aiSettings);
-        currentChat.current.modelKey = defaultModel?.key || "";
+        if (!currentChat.current.configOverrides) {
+          currentChat.current.configOverrides = {};
+        }
+        currentChat.current.configOverrides.modelKey = defaultModel?.key || "";
         const agent = workspaceDetails[workspace.path]?.agents.find(a => a.config.name === agentName);
         // 如果有要加载的聊天记录，优先加载聊天记录
         if (chatLogToLoad) {
@@ -317,11 +358,14 @@ export const WorkspaceChat = ({ workspace, agentName, workspaceDetails, mcpClien
               content: agent.config.prompt || "",
               content_date: Date.now(),
             }],
-            allowMCPs: agent.config.allowMCPs || [],
-            modelKey: agent.config.modelKey || defaultModel?.key || "",
-            temperature: agent.config.temperature,
-            isConfirmCallTool: agent.config.isConfirmCallTool || false,
-            maxAttachedDialogs: agent.config.maxAttachedDialogs || 5,
+            configOverrides: {
+              allowMCPs: agent.config.allowMCPs || [],
+              modelKey: agent.config.modelKey || defaultModel?.key || "",
+              temperature: agent.config.temperature,
+              isConfirmCallTool: agent.config.isConfirmCallTool || false,
+              maxAttachedDialogs: agent.config.maxAttachedDialogs || 5,
+              prompt: agent.config.prompt || ""
+            }
           });
 
           currentChatReset({});
@@ -406,7 +450,10 @@ export const WorkspaceChat = ({ workspace, agentName, workspaceDetails, mcpClien
                       ghost
                       htmlType="submit"
                       onClick={() => {
-                        currentChat.current.isConfirmCallTool = false;
+                        if (!currentChat.current.configOverrides) {
+                          currentChat.current.configOverrides = {};
+                        }
+                        currentChat.current.configOverrides.isConfirmCallTool = false;
                       }}
                     >
                       {t`Allow this Chat`}
@@ -436,8 +483,9 @@ export const WorkspaceChat = ({ workspace, agentName, workspaceDetails, mcpClien
         throw new Error("AI settings not loaded");
       }
 
+      const effectiveConfig = getEffectiveConfig();
       let config = aiSettings.models?.find(
-        (x) => x.key == currentChat.current.modelKey,
+        (x) => x.key == effectiveConfig.modelKey,
       );
       if (config == null) {
         if (!aiSettings.models || aiSettings.models.length == 0) {
@@ -485,7 +533,7 @@ export const WorkspaceChat = ({ workspace, agentName, workspaceDetails, mcpClien
 
       refresh();
 
-      let mcpTools = getTools(mcpClients, currentChat.current.allowMCPs);
+      let mcpTools = getTools(mcpClients, effectiveConfig.allowMCPs);
       // console.log("MCP Tools:", mcpTools);
       aiClient.register({
         antdmessage: {
@@ -496,16 +544,16 @@ export const WorkspaceChat = ({ workspace, agentName, workspaceDetails, mcpClien
         getURL_PRE: getURL_PRE,
         aiSettings: aiSettings as any,
         compressionConfig: {
-          enabled: currentChat.current.maxAttachedDialogs! > 0 ? true : false,
-          userMessageThreshold: currentChat.current.maxAttachedDialogs || 5,    // 用户消息达到5条时触发压缩
+          enabled: effectiveConfig.maxAttachedDialogs! > 0 ? true : false,
+          userMessageThreshold: effectiveConfig.maxAttachedDialogs || 5,    // 用户消息达到5条时触发压缩
           compressionStrategy: "summary",
         }
       })
 
       await aiClient.completion({
         modelKey: config?.key || "",
-        allowMCPs: currentChat.current.allowMCPs,
-        isConfirmCallTool: currentChat.current.isConfirmCallTool,
+        allowMCPs: effectiveConfig.allowMCPs,
+        isConfirmCallTool: effectiveConfig.isConfirmCallTool,
         confirm_call_tool_cb,
         onUpdate: (r) => {
           if (r && r.type == "compress") {
@@ -515,7 +563,7 @@ export const WorkspaceChat = ({ workspace, agentName, workspaceDetails, mcpClien
           refresh();
         }
       }, {
-        ...(currentChat.current.temperature !== undefined ? { temperature: currentChat.current.temperature } : {}),
+        ...(effectiveConfig.temperature !== undefined ? { temperature: effectiveConfig.temperature } : {}),
       });
 
       resourceResListRef.current = [];
@@ -565,8 +613,9 @@ export const WorkspaceChat = ({ workspace, agentName, workspaceDetails, mcpClien
   }, [workspace, agentName, aiSettings, aiSettingsLoading]);
 
   // 获取当前模型配置
+  const effectiveConfigForModel = getEffectiveConfig();
   let currModel = aiSettings ? (
-    aiSettings.models?.find((x) => x.key == currentChat.current.modelKey) ||
+    aiSettings.models?.find((x) => x.key == effectiveConfigForModel.modelKey) ||
     getDefaultModelFromSettings(aiSettings)
   ) : null;
 
@@ -676,9 +725,12 @@ export const WorkspaceChat = ({ workspace, agentName, workspaceDetails, mcpClien
                       className="w-64"
                       // allowClear
                       disabled={aiSettingsLoading}
-                      value={currentChat.current.modelKey}
+                      value={effectiveConfigForModel.modelKey}
                       onChange={(value) => {
-                        currentChat.current.modelKey = value;
+                        if (!currentChat.current.configOverrides) {
+                          currentChat.current.configOverrides = {};
+                        }
+                        currentChat.current.configOverrides.modelKey = value;
                         refresh();
                       }}
                       options={aiSettings ? getGroupedModelOptions(aiSettings) : []}
@@ -694,12 +746,13 @@ export const WorkspaceChat = ({ workspace, agentName, workspaceDetails, mcpClien
                     icon={<SettingOutlined />}
                     onClick={() => {
                       // 打开设置模态框时，设置当前表单值
+                      const currentEffectiveConfig = getEffectiveConfig();
                       settingsForm.setFieldsValue({
-                        modelKey: currentChat.current.modelKey,
-                        temperature: currentChat.current.temperature ?? 1,
-                        maxAttachedDialogs: currentChat.current.maxAttachedDialogs ?? 10,
-                        isConfirmCallTool: currentChat.current.isConfirmCallTool ?? false,
-                        allowMCPs: currentChat.current.allowMCPs || [],
+                        modelKey: currentEffectiveConfig.modelKey,
+                        temperature: currentEffectiveConfig.temperature ?? 1,
+                        maxAttachedDialogs: currentEffectiveConfig.maxAttachedDialogs ?? 10,
+                        isConfirmCallTool: currentEffectiveConfig.isConfirmCallTool ?? false,
+                        allowMCPs: currentEffectiveConfig.allowMCPs || [],
                       });
                       setIsSettingsShow(true);
                     }}
@@ -843,7 +896,7 @@ export const WorkspaceChat = ({ workspace, agentName, workspaceDetails, mcpClien
 
                           {(() => {
                             let set = new Set();
-                            for (let tool_name of currentChat.current.allowMCPs) {
+                            for (let tool_name of getAllowMCPs()) {
                               let [name, _] = tool_name.split(" > ");
                               set.add(name);
                             }
@@ -874,7 +927,7 @@ export const WorkspaceChat = ({ workspace, agentName, workspaceDetails, mcpClien
                                   v.tools.filter((t) => {
 
                                     return (
-                                      currentChat.current.allowMCPs.includes(t.clientName) || currentChat.current.allowMCPs.includes(t.restore_name)
+                                      getAllowMCPs().includes(t.clientName) || getAllowMCPs().includes(t.restore_name)
                                     );
                                   }),
                                 );
@@ -980,25 +1033,29 @@ export const WorkspaceChat = ({ workspace, agentName, workspaceDetails, mcpClien
             if (info.node.isLeaf) {
 
               if (info.node.checked) {
-                currentChat.current.allowMCPs = currentChat.current.allowMCPs.filter(x => x != selectedKeys[0]);
+                const currentAllowMCPs = getAllowMCPs().filter(x => x != selectedKeys[0]);
                 if (clientName) {
-                  currentChat.current.allowMCPs = currentChat.current.allowMCPs.filter(x => x != clientName);
+                  setAllowMCPs(currentAllowMCPs.filter(x => x != clientName));
+                } else {
+                  setAllowMCPs(currentAllowMCPs);
                 }
               } else {
-                currentChat.current.allowMCPs.push(selectedKeys[0] as string);
+                setAllowMCPs([...getAllowMCPs(), selectedKeys[0] as string]);
               }
             } else {
               if (info.node.halfChecked || info.node.checked == false) {
+                let newAllowMCPs = getAllowMCPs();
                 if (clientName) {
-                  currentChat.current.allowMCPs = currentChat.current.allowMCPs.filter(x => !x.startsWith(clientName));
+                  newAllowMCPs = newAllowMCPs.filter((x: string) => !x.startsWith(clientName));
                 }
-                currentChat.current.allowMCPs.push(info.node.key);
-                info.node.children.forEach((x) => {
-                  currentChat.current.allowMCPs.push(x.key as string);
+                newAllowMCPs.push(info.node.key as string);
+                info.node.children?.forEach((x) => {
+                  newAllowMCPs.push(x.key as string);
                 });
+                setAllowMCPs(newAllowMCPs);
               } else {
                 if (clientName) {
-                  currentChat.current.allowMCPs = currentChat.current.allowMCPs.filter(x => !x.startsWith(clientName));
+                  setAllowMCPs(getAllowMCPs().filter((x: string) => !x.startsWith(clientName)));
                 }
               }
             }
@@ -1007,10 +1064,10 @@ export const WorkspaceChat = ({ workspace, agentName, workspaceDetails, mcpClien
           }}
           onCheck={(checkedKeys) => {
             // console.log("onCheck", checkedKeys);
-            currentChat.current.allowMCPs = checkedKeys as string[];
+            setAllowMCPs(checkedKeys as string[]);
             refresh();
           }}
-          checkedKeys={currentChat.current.allowMCPs}
+          checkedKeys={getAllowMCPs()}
           treeData={mcpClients.filter(x => x.status != "disabled").map((x) => {
             return {
               title: (<Tooltip title={x.serverName}>

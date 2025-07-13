@@ -64,7 +64,7 @@ export const AgentConfigSchema = BaseAIConfigSchema.extend({
     .describe("Agent configuration version")
 });
 
-// 导出类型（使用 Schema 后缀避免与 types.mts 中的类型冲突）
+// 导出类型（从 Zod Schema 推导）
 export type BaseAIConfig = z.infer<typeof BaseAIConfigSchema>;
 export type AgentConfig = z.infer<typeof AgentConfigSchema>;
 
@@ -106,5 +106,87 @@ export function mergeBaseAIConfigs(base: BaseAIConfig, override: Partial<BaseAIC
     ...override,
     // 特殊处理数组字段，确保不会意外清空
     allowMCPs: override.allowMCPs !== undefined ? override.allowMCPs : base.allowMCPs,
+  };
+}
+
+/**
+ * 简化的消息 Schema（只包含必要字段）
+ * 完整的 MyMessage 类型过于复杂，这里只定义 ChatHistoryItem 所需的基本结构
+ */
+export const MessageSchema = z.object({
+  role: z.enum(["user", "system", "assistant", "tool", "hyper_memory"]),
+  content: z.union([z.string(), z.array(z.any())]), // CommonContent 类型过于复杂，使用简化版本
+  // 其他字段为可选，保持向后兼容性
+}).passthrough(); // 允许其他字段通过
+
+/**
+ * 聊天历史项 Schema
+ * 支持会话级别的 AI 配置覆盖
+ */
+export const ChatHistoryItemSchema = z.object({
+  label: z.string()
+    .min(1, "Chat label cannot be empty")
+    .describe("Chat session label"),
+  
+  key: z.string()
+    .min(1, "Chat key cannot be empty")
+    .describe("Unique chat session key"),
+  
+  messages: z.array(MessageSchema)
+    .default([])
+    .describe("Chat messages array"),
+  
+  agentName: z.string()
+    .min(1, "Agent name cannot be empty")
+    .describe("Associated agent name"),
+  
+  dateTime: z.number()
+    .int()
+    .positive("DateTime must be positive")
+    .describe("Chat creation timestamp"),
+  
+  chatType: z.enum(["user", "task", "called"])
+    .default("user")
+    .describe("Type of chat session"),
+  
+  taskKey: z.string()
+    .optional()
+    .describe("Associated task key (if chat type is task)"),
+  
+  version: z.number()
+    .int()
+    .min(1)
+    .optional()
+    .describe("Chat history format version"),
+  
+  // 🆕 会话级别的AI配置覆盖
+  configOverrides: BaseAIConfigSchema.partial()
+    .optional()
+    .describe("Session-level AI configuration overrides")
+});
+
+// 导出 ChatHistoryItem 类型
+export type ChatHistoryItemType = z.infer<typeof ChatHistoryItemSchema>;
+
+// ChatHistoryItem 验证函数
+export function validateChatHistoryItem(data: any): data is ChatHistoryItemType {
+  return ChatHistoryItemSchema.safeParse(data).success;
+}
+
+// 创建默认聊天历史项工厂函数
+export function createDefaultChatHistoryItem(
+  label: string,
+  key: string,
+  agentName: string,
+  chatType: "user" | "task" | "called" = "user"
+): ChatHistoryItemType {
+  return {
+    label,
+    key,
+    messages: [],
+    agentName,
+    dateTime: Date.now(),
+    chatType,
+    version: 1,
   };
 }

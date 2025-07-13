@@ -1049,10 +1049,15 @@ export class Workspace {
         agentName: task.agentName,
         label: `定时任务: ${task.name}`,
         dateTime: Date.now(),
-        modelKey: agentInstance.getConfig().modelKey || 'default',
         chatType: 'task',
-        allowMCPs: agentInstance.getConfig().allowMCPs,
-        isConfirmCallTool: agentInstance.getConfig().isConfirmCallTool,
+        configOverrides: {
+          modelKey: agentInstance.getConfig().modelKey || 'default',
+          allowMCPs: agentInstance.getConfig().allowMCPs,
+          isConfirmCallTool: agentInstance.getConfig().isConfirmCallTool,
+          temperature: agentInstance.getConfig().temperature,
+          maxAttachedDialogs: agentInstance.getConfig().maxAttachedDialogs,
+          prompt: agentInstance.getConfig().prompt
+        },
         messages: [
           {
             role: 'user',
