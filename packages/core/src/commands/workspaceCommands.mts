@@ -74,7 +74,9 @@ export const workspaceCommands = {
       path: workspacePath,
       isGlobal,
       agentsCount: summary.agentsCount,
-      mcpServersCount: summary.mcpServersCount
+      mcpServersCount: summary.mcpServersCount,
+      // 使用完整的 settings 而不是 config.settings
+      settings: workspace.getSettings()
     };
   },
 

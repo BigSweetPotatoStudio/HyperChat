@@ -77,7 +77,7 @@ export const AgentManagement = forwardRef<AgentManagementRef, AgentManagementPro
   const [form] = Form.useForm();
   const refresh = useForceUpdate();
   // 从 Context 获取 AI 设置
-  const { aiSettings } = useAISettings();
+  const { aiSettings, loading: aiSettingsLoading } = useAISettings();
 
   // 获取模型的显示名称
   const getModelDisplayName = (modelKey: string): string => {
@@ -521,13 +521,25 @@ export const AgentManagement = forwardRef<AgentManagementRef, AgentManagementPro
               form.resetFields();
               form.setFieldsValue(formValues);
             } else {
-              // 创建模式：设置默认值
-              form.setFieldsValue({
-                allowMCPs: [],
-                isConfirmCallTool: false,
-                temperature: 1,
-                maxAttachedDialogs: 5,
-              });
+              // 创建模式：从工作区设置读取默认值
+              const workspaceAIConfig = workspace?.settings?.aiConfig;
+              const firstAvailableModel = aiSettings?.models?.[0]?.key || "";
+              
+              // 只有在 aiSettings 加载完成后才设置默认值
+              if (aiSettings && !aiSettingsLoading) {
+                const defaultValues = {
+                  allowMCPs: [],
+                  isConfirmCallTool: workspaceAIConfig?.isConfirmCallTool ?? false,
+                  temperature: workspaceAIConfig?.temperature ?? 1,
+                  maxTokens: workspaceAIConfig?.maxTokens,
+                  maxAttachedDialogs: workspaceAIConfig?.maxAttachedDialogs ?? 5,
+                  modelKey: workspaceAIConfig?.modelKey || firstAvailableModel,
+                };
+                
+                // 使用工作区配置或合理的默认值
+                
+                form.setFieldsValue(defaultValues);
+              }
             }
           }
         }}
