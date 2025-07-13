@@ -56,7 +56,7 @@ export async function listTasks() {
       
       console.log(`  ${statusIcon} ${task.name}`);
       console.log(`      描述: ${task.description}`);
-      console.log(`      代理: ${task.agentKey}`);
+      console.log(`      代理: ${task.agentName}`);
       console.log(`      调度: ${task.cron}`);
       console.log(`      状态: ${statusText}`);
       console.log('');
@@ -104,13 +104,13 @@ export async function createTask(taskName: string, options: {
 
     // 验证代理是否存在
     const agents = await Command.getWorkspaceAgentsSummary();
-    const agentExists = agents.some(a => a.config.key === options.agent || a.config.name === options.agent);
+    const agentExists = agents.some(a => a.config.name === options.agent);
     
     if (!agentExists) {
       console.error(`❌ 错误: 代理 '${options.agent}' 不存在`);
       console.log('\n可用代理:');
       for (const agentSummary of agents) {
-        console.log(`  - ${agentSummary.config.name} (${agentSummary.config.key})`);
+        console.log(`  - ${agentSummary.config.name} `);
       }
       process.exit(1);
     }
@@ -119,7 +119,7 @@ export async function createTask(taskName: string, options: {
     const taskData: CreateTaskRequest = {
       name: taskName,
       description: options.description,
-      agentKey: options.agent,
+      agentName: options.agent,
       cron: options.cron || '0 0 * * *', // 默认每天午夜执行
       disabled: options.disabled || false,
     };
@@ -130,7 +130,7 @@ export async function createTask(taskName: string, options: {
     console.log('✅ 任务创建成功!');
     console.log(`   名称: ${task.name}`);
     console.log(`   描述: ${task.description}`);
-    console.log(`   代理: ${task.agentKey}`);
+    console.log(`   代理: ${task.agentName}`);
     console.log(`   调度: ${task.cron}`);
     console.log(`   状态: ${task.disabled ? '已禁用' : '已启用'}`);
 
@@ -161,7 +161,7 @@ export async function showTask(taskName: string) {
     console.log('\n📅 任务详情:');
     console.log(`   名称: ${task.name}`);
     console.log(`   描述: ${task.description}`);
-    console.log(`   代理: ${task.agentKey}`);
+    console.log(`   代理: ${task.agentName}`);
     console.log(`   调度: ${task.cron}`);
     console.log(`   状态: ${task.disabled ? '已禁用' : '已启用'}`);
 
@@ -297,14 +297,14 @@ export async function editTask(taskName: string, options: {
     if (options.agent !== undefined) {
       // 验证代理是否存在
       const agents = await Command.getWorkspaceAgentsSummary();
-      const agentExists = agents.some(a => a.config.key === options.agent || a.config.name === options.agent);
+      const agentExists = agents.some(a => a.config.name === options.agent);
       
       if (!agentExists) {
         console.error(`❌ 错误: 代理 '${options.agent}' 不存在`);
         process.exit(1);
       }
       
-      updates.agentKey = options.agent;
+      updates.agentName = options.agent;
     }
     
     if (options.cron !== undefined) {
@@ -334,7 +334,7 @@ export async function editTask(taskName: string, options: {
     console.log('✅ 任务更新成功!');
     console.log(`   名称: ${updatedTask.name}`);
     console.log(`   描述: ${updatedTask.description}`);
-    console.log(`   代理: ${updatedTask.agentKey}`);
+    console.log(`   代理: ${updatedTask.agentName}`);
     console.log(`   调度: ${updatedTask.cron}`);
     console.log(`   状态: ${updatedTask.disabled ? '已禁用' : '已启用'}`);
 
@@ -364,8 +364,8 @@ export async function taskStats() {
     
     if (Object.keys(stats.agentCounts).length > 0) {
       console.log('\n🤖 按代理分组:');
-      for (const [agentKey, count] of Object.entries(stats.agentCounts)) {
-        console.log(`   ${agentKey}: ${count} 个任务`);
+      for (const [agentName, count] of Object.entries(stats.agentCounts)) {
+        console.log(`   ${agentName}: ${count} 个任务`);
       }
     }
 
@@ -426,7 +426,7 @@ export async function showScheduler() {
         const task = await Command.getTask({ workspacePath, taskName });
         if (task) {
           console.log(`   📋 ${task.name}`);
-          console.log(`      代理: ${task.agentKey}`);
+          console.log(`      代理: ${task.agentName}`);
           console.log(`      调度: ${task.cron}`);
           console.log(`      描述: ${task.description}`);
           console.log('');

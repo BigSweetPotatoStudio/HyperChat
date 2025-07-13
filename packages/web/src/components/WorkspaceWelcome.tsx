@@ -68,7 +68,7 @@ export const WorkspaceWelcome: React.FC<WorkspaceWelcomeProps> = ({
     // 将最近使用的记录与当前的 agents 匹配
     const matchedRecentAgents = recent
       .map(recentItem => {
-        const agent = agents.find(a => a.config.key === recentItem.agentKey);
+        const agent = agents.find(a => a.config.name === recentItem.agentName);
         return agent ? { ...agent, lastUsed: recentItem.lastUsed } : null;
       })
       .filter(Boolean)
@@ -88,20 +88,19 @@ export const WorkspaceWelcome: React.FC<WorkspaceWelcomeProps> = ({
       
       for (const recentItem of limitedRecentUsage) {
         try {
-          const agent = agents.find(a => a.config.key === recentItem.agentKey);
+          const agent = agents.find(a => a.config.name === recentItem.agentName);
           if (!agent) continue;
           
           // 使用新的后端命令获取个别聊天记录
           const chatLog = await call("getAgentChatLog", {
             workspacePath: workspace.path,
-            agentKey: recentItem.agentKey,
+            agentName: recentItem.agentName,
             chatLogKey: recentItem.chatKey
           });
           
           if (chatLog) {
             matchedRecentChats.push({
               workspacePath: recentItem.workspacePath,
-              agentKey: recentItem.agentKey,
               agentName: recentItem.agentName,
               chatKey: recentItem.chatKey,
               chatLabel: recentItem.chatLabel,
@@ -112,7 +111,7 @@ export const WorkspaceWelcome: React.FC<WorkspaceWelcomeProps> = ({
             });
           }
         } catch (error) {
-          console.warn(`Failed to load chat log ${recentItem.chatKey} for agent ${recentItem.agentKey}:`, error);
+          console.warn(`Failed to load chat log ${recentItem.chatKey} for agent ${recentItem.agentName}:`, error);
           // 继续处理其他对话，不因单个失败而中断
         }
       }
@@ -126,7 +125,7 @@ export const WorkspaceWelcome: React.FC<WorkspaceWelcomeProps> = ({
   // 处理 agent 点击
   const handleAgentClick = (agent: any) => {
     // 记录使用
-    addAgentRecentUsage(workspace.path, agent.config.key, agent.config.name || agent.config.key);
+    addAgentRecentUsage(workspace.path, agent.config.name, agent.config.name);
     // 打开聊天
     onOpenAgentChat(agent);
   };
@@ -136,10 +135,10 @@ export const WorkspaceWelcome: React.FC<WorkspaceWelcomeProps> = ({
     const { agent, chatLog, agentName } = recentChatItem;
     
     // 记录使用
-    addAgentRecentUsage(workspace.path, agent.config.key, agentName);
+    addAgentRecentUsage(workspace.path, agent.config.name, agentName);
     addChatRecentUsage(
       workspace.path, 
-      agent.config.key, 
+      agent.config.name, 
       agentName, 
       chatLog.key, 
       chatLog.label || 'Untitled Chat'
@@ -152,7 +151,7 @@ export const WorkspaceWelcome: React.FC<WorkspaceWelcomeProps> = ({
   // 过滤 agents
   const filteredAgents = agents.filter(agent => {
     if (!searchTerm) return true;
-    const name = agent.config.name || agent.config.key;
+    const name = agent.config.name;
     const description = agent.config.description || '';
     return name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       description.toLowerCase().includes(searchTerm.toLowerCase());
@@ -167,7 +166,7 @@ export const WorkspaceWelcome: React.FC<WorkspaceWelcomeProps> = ({
 
   // 渲染 Agent 卡片
   const renderAgentCard = (agent: any, showLastUsed = false) => {
-    const name = agent.config.name || agent.config.key;
+    const name = agent.config.name;
     const description = agent.config.description || t`No description`;
     const lastChatTime = agent.lastChatTime || agent.lastUsed;
     const chatCount = agent.chatLogsCount || 0;
@@ -175,7 +174,7 @@ export const WorkspaceWelcome: React.FC<WorkspaceWelcomeProps> = ({
 
     return (
       <Card
-        key={agent.config.key}
+        key={agent.config.name}
         hoverable
         size="small"
         className="agent-card"
@@ -365,7 +364,7 @@ export const WorkspaceWelcome: React.FC<WorkspaceWelcomeProps> = ({
                 children: recentAgents.length > 0 ? (
                   <div style={{ display: 'flex', flexWrap: 'wrap', gap: '16px' }}>
                     {recentAgents.map(agent => (
-                      <div key={agent.config.key} style={{ width: '220px' }}>
+                      <div key={agent.config.name} style={{ width: '220px' }}>
                         {renderAgentCard(agent, true)}
                       </div>
                     ))}
@@ -426,7 +425,7 @@ export const WorkspaceWelcome: React.FC<WorkspaceWelcomeProps> = ({
         ) : (
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: '16px' }}>
             {sortedAgents.map(agent => (
-              <div key={agent.config.key} style={{ width: '220px' }}>
+              <div key={agent.config.name} style={{ width: '220px' }}>
                 {renderAgentCard(agent)}
               </div>
             ))}

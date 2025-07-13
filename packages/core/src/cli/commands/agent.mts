@@ -42,7 +42,7 @@ export async function listAgents() {
       const config = agentSummary.config as AgentConfig;
       const chatLogsCount = (agentSummary.chatLogsCount as number) || 0;
 
-      console.log(`  📋 ${config.name} (${config.key})`);
+      console.log(`  📋 ${config.name}`);
       if (config.description) {
         console.log(`      描述: ${config.description}`);
       }
@@ -92,10 +92,9 @@ export async function createAgent(name: string) {
 
     logger.success(`✅ 代理创建成功`);
     console.log(`名称: ${agent.name}`);
-    console.log(`键名: ${agent.key}`);
     console.log(`描述: ${agent.description}`);
 
-    console.log('\n💡 使用 hyperchat ' + agent.key + ' "你好" 与该代理对话');
+    console.log('\n💡 使用 hyperchat ' + agent.name + ' "你好" 与该代理对话');
 
   } catch (error) {
     logger.error('创建代理失败:', error instanceof Error ? error.message : String(error));
@@ -106,7 +105,7 @@ export async function createAgent(name: string) {
 /**
  * 检查指定的agent是否存在
  */
-export async function checkAgentExists(agentKey: string): Promise<{ exists: boolean; config?: AgentConfig }> {
+export async function checkAgentExists(agentName: string): Promise<{ exists: boolean; config?: AgentConfig }> {
   try {
     // Agent 检查只需要配置，不需要启动服务
     await workspaceManager.initialize();
@@ -114,7 +113,7 @@ export async function checkAgentExists(agentKey: string): Promise<{ exists: bool
     const agents = await Command.getWorkspaceAgentsSummary();
     const agentSummary = agents.find(agent => {
       const config = agent.config as AgentConfig;
-      return config.key === agentKey || config.name === agentKey;
+      return config.name === agentName;
     });
     
     if (agentSummary) {

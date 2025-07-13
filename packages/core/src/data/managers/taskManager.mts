@@ -257,9 +257,9 @@ export class TaskManager {
   /**
    * 根据 agent 获取任务
    */
-  async getTasksByAgent(agentKey: string): Promise<TaskList> {
+  async getTasksByAgent(agentName: string): Promise<TaskList> {
     const allTasks = await this.getAllTasks();
-    return allTasks.filter(task => task.agentKey === agentKey);
+    return allTasks.filter(task => task.agentName === agentName);
   }
 
   /**
@@ -299,7 +299,7 @@ export class TaskManager {
 
     const agentCounts: Record<string, number> = {};
     for (const task of allTasks) {
-      agentCounts[task.agentKey] = (agentCounts[task.agentKey] || 0) + 1;
+      agentCounts[task.agentName] = (agentCounts[task.agentName] || 0) + 1;
     }
 
     return {

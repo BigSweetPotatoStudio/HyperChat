@@ -10,9 +10,9 @@ export const TaskSchema = z.object({
     .max(100, "Task name cannot exceed 100 characters")
     .describe("Task name"),
   
-  agentKey: z.string()
-    .min(1, "Agent key cannot be empty")
-    .describe("Agent key for task execution"),
+  agentName: z.string()
+    .min(1, "Agent name cannot be empty")
+    .describe("Agent name for task execution"),
   
   description: z.string()
     .min(1, "Task description cannot be empty")
@@ -60,7 +60,7 @@ export type UpdateTaskRequest = z.infer<typeof UpdateTaskSchema>;
 // 默认任务配置
 export const DEFAULT_TASK: Task = {
   name: "New Task",
-  agentKey: "",
+  agentName: "",
   description: "Task description",
   cron: "0 0 * * *", // 每天午夜执行
   disabled: false

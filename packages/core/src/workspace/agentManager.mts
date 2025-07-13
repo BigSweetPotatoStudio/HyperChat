@@ -23,7 +23,6 @@ export class AgentInstance {
     this.configPath = path.join(agentPath, CONSTANTS.CONFIG_FILES.AGENT_CONFIG);
 
     this.config = config || {
-      key: path.basename(agentPath),
       name: path.basename(agentPath),
       prompt: '',
       allowMCPs: [],
@@ -73,15 +72,15 @@ export class AgentInstance {
   private async loadConfig(): Promise<void> {
     // 确保 key 始终与文件夹名称保持一致
     const folderName = path.basename(this.agentPath);
-    this.config.key = folderName;
+    this.config.name = folderName;
 
     if (fs.existsSync(this.configPath)) {
       try {
         const content = await fs.promises.readFile(this.configPath, "utf-8");
         const config = yaml.load(content) as AgentConfig;
 
-        // 合并配置，但强制使用文件夹名称作为 key
-        this.config = { ...this.config, ...config, key: folderName };
+        // 合并配置
+        this.config = { ...this.config, ...config };
 
         // 如果从配置文件读取的 name 为空，使用文件夹名称作为 name
         if (!this.config.name || this.config.name.trim() === '') {
@@ -104,7 +103,7 @@ export class AgentInstance {
       await fs.promises.writeFile(this.configPath, yamlContent, "utf-8");
       return true;
     } catch (error) {
-      console.warn(`保存 Agent 配置失败 ${this.config.key}:`, error);
+      console.warn(`保存 Agent 配置失败 ${this.config.name}:`, error);
       return false;
     }
   }
@@ -143,7 +142,7 @@ export class AgentInstance {
    */
   async setChatLog(chatLog: ChatHistoryItem): Promise<boolean> {
     // 确保聊天记录与当前 Agent 关联
-    chatLog.agentKey = this.config.key;
+    chatLog.agentName = this.config.name;
     return await this.chatLogs.set(chatLog);
   }
 
@@ -185,7 +184,7 @@ export class AgentInstance {
       }
       return true;
     } catch (error) {
-      console.warn(`删除 Agent 失败 ${this.config.key}:`, error);
+      console.warn(`删除 Agent 失败 ${this.config.name}:`, error);
       return false;
     }
   }
@@ -254,8 +253,8 @@ export class AgentManager {
             const config = agent.getConfig();
 
 
-            this.agents.set(config.key, agent);
-            this.nameToKey.set(config.name, config.key);
+            this.agents.set(config.name, agent);
+            this.nameToKey.set(config.name, config.name);
           }
         }
       }
@@ -308,7 +307,6 @@ export class AgentManager {
 
     const agentConfig: AgentConfig = {
       ...config,
-      key,  // 使用文件夹名称作为 key
       name,
       prompt: config.prompt || '',
       allowMCPs: config.allowMCPs || [],

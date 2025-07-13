@@ -74,7 +74,7 @@ interface WorkspaceChatProps {
   /** 工作区信息 */
   workspace: WorkspaceInfo;
   /** 指定的Agent Key，用于Agent聊天 */
-  agentKey?: string;
+  agentName?: string;
   workspaceDetails: WorkspaceDetails;
   mcpClients: IMCPClient[];
   /** 要加载的特定聊天记录 */
@@ -84,7 +84,7 @@ interface WorkspaceChatProps {
 /**
  * 工作区聊天组件
  */
-export const WorkspaceChat = ({ workspace, agentKey, workspaceDetails, mcpClients, chatLogToLoad }: WorkspaceChatProps) => {
+export const WorkspaceChat = ({ workspace, agentName, workspaceDetails, mcpClients, chatLogToLoad }: WorkspaceChatProps) => {
   // 使用强制刷新 hook
   const refresh = useForceUpdate();
 
@@ -145,7 +145,7 @@ export const WorkspaceChat = ({ workspace, agentKey, workspaceDetails, mcpClient
     key: "",
     messages: [] as MyMessage[],
     modelKey: "",
-    agentKey: "",
+    agentName: "",
     allowMCPs: [] as string[],
     dateTime: Date.now(),
     chatType: "user" as const, // "user" | "task" | "called"
@@ -194,9 +194,9 @@ export const WorkspaceChat = ({ workspace, agentKey, workspaceDetails, mcpClient
         return;
       }
       // 保存到持久化存储
-      if (agentKey && workspace?.path) {
+      if (agentName && workspace?.path) {
         await call("saveAgentChatLog", {
-          agentKey: agentKey,
+          agentName: agentName,
           chatLog: currentChat.current
         });
       }
@@ -295,7 +295,7 @@ export const WorkspaceChat = ({ workspace, agentKey, workspaceDetails, mcpClient
 
         const defaultModel = getDefaultModelFromSettings(aiSettings);
         currentChat.current.modelKey = defaultModel?.key || "";
-        const agent = workspaceDetails[workspace.path]?.agents.find(a => a.config.key === agentKey);
+        const agent = workspaceDetails[workspace.path]?.agents.find(a => a.config.name === agentName);
         // 如果有要加载的聊天记录，优先加载聊天记录
         if (chatLogToLoad) {
           defaultChatValue.current = ({
@@ -306,12 +306,12 @@ export const WorkspaceChat = ({ workspace, agentKey, workspaceDetails, mcpClient
             messages: chatLogToLoad.messages || [],
           });
         }
-        // 否则如果指定了agentKey，使用Agent配置
-        else if (agentKey && agent) {
+        // 否则如果指定了agentName，使用Agent配置
+        else if (agentName && agent) {
 
           defaultChatValue.current = ({
             ...defaultChatValue.current,
-            agentKey: agentKey,
+            agentName: agentName,
             messages: [{
               role: "system" as const,
               content: agent.config.prompt || "",
@@ -334,7 +334,7 @@ export const WorkspaceChat = ({ workspace, agentKey, workspaceDetails, mcpClient
         console.error("Failed to initialize workspace chat:", error);
       }
     })();
-  }, [workspace, agentKey, chatLogToLoad, aiSettings, aiSettingsLoading]);
+  }, [workspace, agentName, chatLogToLoad, aiSettings, aiSettingsLoading]);
 
   /**
    * 重置当前聊天配置
@@ -525,24 +525,24 @@ export const WorkspaceChat = ({ workspace, agentKey, workspaceDetails, mcpClient
       refresh();
 
       // 保存聊天记录
-      if (agentKey) {
+      if (agentName) {
         // 如果是 Agent 聊天，保存到 Agent 的聊天记录中
         await call("saveAgentChatLog", {
-          agentKey: agentKey,
+          agentName: agentName,
           chatLog: currentChat.current
         });
       }
 
       // 更新最近使用记录
-      if (workspace?.path && agentKey && currentChat.current.key) {
-        const agent = workspaceDetails[workspace.path]?.agents.find(a => a.config.key === agentKey);
-        const agentName = agent?.config.name || agentKey;
+      if (workspace?.path && agentName && currentChat.current.key) {
+        const agent = workspaceDetails[workspace.path]?.agents.find(a => a.config.name === agentName);
+        const agentDisplayName = agent?.config.name || agentName;
         const chatLabel = currentChat.current.label || 'New Chat';
 
         addChatRecentUsage(
           workspace.path,
-          agentKey,
           agentName,
+          agentDisplayName,
           currentChat.current.key,
           chatLabel
         );
@@ -562,7 +562,7 @@ export const WorkspaceChat = ({ workspace, agentKey, workspaceDetails, mcpClient
     } finally {
       setLoading(false);
     }
-  }, [workspace, agentKey, aiSettings, aiSettingsLoading]);
+  }, [workspace, agentName, aiSettings, aiSettingsLoading]);
 
   // 获取当前模型配置
   let currModel = aiSettings ? (
@@ -575,7 +575,7 @@ export const WorkspaceChat = ({ workspace, agentKey, workspaceDetails, mcpClient
   /** 是否支持工具 */
   let supportTool = currModel?.supportTool;
   const { token } = theme.useToken();
-  const agent = workspaceDetails[workspace.path]?.agents.find(a => a.config.key === agentKey);
+  const agent = workspaceDetails[workspace.path]?.agents.find(a => a.config.name === agentName);
 
   // 提取系统消息
   const systemMessages = currentChat.current.messages?.filter(m => m.role === "system") || [];
@@ -592,7 +592,7 @@ export const WorkspaceChat = ({ workspace, agentKey, workspaceDetails, mcpClient
               <div className="text-sm font-medium text-blue-300 mb-2 flex items-center">
                 <Icon name="brain" className="mr-2" />
                 <span className="mr-2 text-blue-700">
-                  {agentKey ? (agent?.config.name || t`Agent Chat`) : t`Workspace Chat`}
+                  {agentName ? (agent?.config.name || t`Agent Chat`) : t`Workspace Chat`}
                 </span>
               </div>
               {systemMessages.map((msg, index) => (
@@ -608,10 +608,10 @@ export const WorkspaceChat = ({ workspace, agentKey, workspaceDetails, mcpClient
             {(nonSystemMessages.length == 0) && (
               <>
                 <Welcome
-                  icon={agentKey ? "🤖" : "💬"}
+                  icon={agentName ? "🤖" : "💬"}
                   title={t`Welcome Chat`}
                   className="mb-4"
-                  description={agentKey ? t`Chatting with agent` : t`Start chatting in your workspace`}
+                  description={agentName ? t`Chatting with agent` : t`Start chatting in your workspace`}
                 />
               </>
             )}

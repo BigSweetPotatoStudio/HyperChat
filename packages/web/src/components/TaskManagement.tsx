@@ -122,7 +122,7 @@ export const TaskManagement = forwardRef<TaskManagementRef, TaskManagementProps>
         const taskData = {
           name: values.name,
           description: values.description,
-          agentKey: values.agentKey,
+          agentName: values.agentName,
           cron: values.cron,
           disabled: values.disabled ?? false,
         };
@@ -213,9 +213,9 @@ export const TaskManagement = forwardRef<TaskManagementRef, TaskManagementProps>
 
 
     // 获取 Agent 名称
-    const getAgentName = (agentKey: string): string => {
-      const agent = agents.find(a => a.config.key === agentKey);
-      return agent ? (agent.config.name || agent.config.key) : agentKey;
+    const getAgentName = (agentName: string): string => {
+      const agent = agents.find(a => a.config.name === agentName);
+      return agent ? agent.config.name : agentName;
     };
 
     // 格式化 Cron 表达式描述
@@ -362,7 +362,7 @@ export const TaskManagement = forwardRef<TaskManagementRef, TaskManagementProps>
                             {task.name}
                           </span>
                           <Tag color={task.disabled ? "default" : "green"}>
-                            <RobotOutlined /> {getAgentName(task.agentKey)}
+                            <RobotOutlined /> {getAgentName(task.agentName)}
                           </Tag>
                           <Tooltip title={getCronDescription(task.cron)}>
                             <Tag color="blue">
@@ -412,7 +412,7 @@ export const TaskManagement = forwardRef<TaskManagementRef, TaskManagementProps>
               </Descriptions.Item>
               <Descriptions.Item label={t`Agent`}>
                 <Tag color="green">
-                  <RobotOutlined /> {getAgentName(selectedTask.agentKey)}
+                  <RobotOutlined /> {getAgentName(selectedTask.agentName)}
                 </Tag>
               </Descriptions.Item>
               <Descriptions.Item label={t`Schedule`}>
@@ -481,16 +481,16 @@ export const TaskManagement = forwardRef<TaskManagementRef, TaskManagementProps>
             </Form.Item>
 
             <Form.Item
-              name="agentKey"
+              name="agentName"
               label={t`Agent`}
               rules={[{ required: true, message: t`Please select an agent` }]}
             >
               <Select placeholder={t`Select an agent`}>
                 {agents.map((agent) => (
-                  <Select.Option key={agent.config.key} value={agent.config.key}>
+                  <Select.Option key={agent.config.name} value={agent.config.name}>
                     <Space>
                       <RobotOutlined />
-                      {agent.config.name || agent.config.key}
+                      {agent.config.name}
                     </Space>
                   </Select.Option>
                 ))}

@@ -92,9 +92,9 @@ export const taskCommands = {
   /**
    * 根据 agent 获取任务
    */
-  async getTasksByAgent(params: { workspacePath: string; agentKey: string }): Promise<Task[]> {
+  async getTasksByAgent(params: { workspacePath: string; agentName: string }): Promise<Task[]> {
     const workspace = workspaceManager.getCurrentWorkspace();
-    return await workspace.getTasksByAgent(params.agentKey);
+    return await workspace.getTasksByAgent(params.agentName);
   },
 
   /**

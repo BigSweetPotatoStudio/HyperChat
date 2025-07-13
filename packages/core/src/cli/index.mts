@@ -250,7 +250,7 @@ async function deleteAgentWrapper(name: string, logger: Logger) {
     // 删除agent
     const success = await Command.deleteAgent({
       workspacePath: '', // workspacePath 会被忽略，使用当前工作区
-      agentKey: name
+      agentName: name
     });
 
     if (success) {

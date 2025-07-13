@@ -654,10 +654,10 @@ export function Workspace() {
     if (!workspace) return;
 
     // 记录 agent 使用
-    addAgentRecentUsage(workspace.path, agent.config.key, agent.config.name || agent.config.key);
+    addAgentRecentUsage(workspace.path, agent.config.name, agent.config.name);
 
     // 如果有聊天记录，使用聊天记录的key确保唯一性
-    const tabKey = chatLog ? `${workspace.path}-${agent.config.key}-${chatLog.key}` : `${workspace.path}-${agent.config.key}`;
+    const tabKey = chatLog ? `${workspace.path}-${agent.config.name}-${chatLog.key}` : `${workspace.path}-${agent.config.name}`;
     const existingTab = chatTabs.find(tab => tab.key === tabKey);
 
     if (existingTab) {
@@ -665,13 +665,12 @@ export function Workspace() {
       setActiveTabKey(tabKey);
     } else {
       // 创建新的聊天标签页
-      const tabTitle = chatLog ? `${agent.config.name || agent.config.key} - ${chatLog.label || chatLog.key}` : agent.config.name || agent.config.key;
+      const tabTitle = chatLog ? `${agent.config.name} - ${chatLog.label || chatLog.key}` : agent.config.name;
       const newTab: ChatTab = {
         key: tabKey,
         title: tabTitle,
         type: 'chat',
-        agentKey: agent.config.key,
-        agentName: agent.config.name || agent.config.key,
+        agentName: agent.config.name,
         workspacePath: workspace.path,
         closable: true,
         chatLogToLoad: chatLog, // 传递聊天记录数据

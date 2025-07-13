@@ -1,5 +1,5 @@
 name: '123'
-agentKey: 人工智能
+agentName: 人工智能
 description: '123'
 cron: 0 0 * * *
 disabled: false

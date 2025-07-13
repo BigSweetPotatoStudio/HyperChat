@@ -55,7 +55,7 @@ export const WorkspaceMiddlePanel: React.FC<WorkspaceMiddlePanelProps> = ({
                   <FileTextOutlined />
                 ) : tab.type === 'welcome' ? (
                   <Icon name="bx-bot" />
-                ) : tab.agentKey ? (
+                ) : tab.agentName ? (
                   <MessageOutlined />
                 ) : (
                   <GlobalOutlined />
@@ -89,7 +89,7 @@ export const WorkspaceMiddlePanel: React.FC<WorkspaceMiddlePanelProps> = ({
                 ) : (
                   <WorkspaceChat
                     workspace={workspace}
-                    agentKey={tab.agentKey}
+                    agentName={tab.agentName}
                     workspaceDetails={{}}
                     key={tab.key}
                     mcpClients={mcpClients}

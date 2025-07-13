@@ -1,7 +1,6 @@
 // 类型定义
 export type AgentConfig = {
   type?: "builtin" | "custom";
-  key: string;
   name: string;
   prompt: string;
   description?: string;

@@ -107,7 +107,6 @@ export interface ConnectionStatus {
 
 export interface AgentConfig {
   type?: "builtin" | "custom";
-  key: string;
   name: string;
   prompt: string;
   description?: string;
@@ -219,7 +218,7 @@ export interface ChatHistoryItem {
   key: string;
   messages: Array<MyMessage>;
   modelKey: string;
-  agentKey: string;
+  agentName: string;
   dateTime: number;
   chatType: "user" | "task" | "called";
   taskKey?: string;

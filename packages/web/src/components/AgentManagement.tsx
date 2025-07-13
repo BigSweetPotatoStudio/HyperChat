@@ -136,14 +136,14 @@ export const AgentManagement = forwardRef<AgentManagementRef, AgentManagementPro
 
       if (editingAgent) {
         // 更新现有Agent
-        const agentKey = editingAgent?.config.key;
+        const agentKey = editingAgent?.config.name;
 
         if (!agentKey) {
           throw new Error('Agent key is missing');
         }
         await call('updateAgent', {
           workspacePath: workspace.path,
-          agentKey: agentKey,
+          agentName: agentKey,
           updates: agentConfig
         });
         message.success(t`Agent updated successfully`);
@@ -171,7 +171,7 @@ export const AgentManagement = forwardRef<AgentManagementRef, AgentManagementPro
     try {
       await call('deleteAgent', {
         workspacePath: workspace.path,
-        agentKey: agent.config.key
+        agentName: agent.config.name
       });
       message.success(t`Agent deleted successfully`);
       await onRefresh();
@@ -202,7 +202,7 @@ export const AgentManagement = forwardRef<AgentManagementRef, AgentManagementPro
       // 获取Agent的聊天历史记录
       const result = await call('getAgentChatLogs', {
         workspacePath: workspace.path,
-        agentKey: agent.config.key
+        agentName: agent.config.name
       });
 
       // 按时间倒序排列聊天记录
@@ -234,7 +234,7 @@ export const AgentManagement = forwardRef<AgentManagementRef, AgentManagementPro
 
           await call('deleteAgentChatLog', {
             workspacePath: workspace.path,
-            agentKey: chatHistoryAgent.config.key,
+            agentName: chatHistoryAgent.config.name,
             chatKey: chatLog.key
           });
 
@@ -243,7 +243,7 @@ export const AgentManagement = forwardRef<AgentManagementRef, AgentManagementPro
           // 重新加载聊天历史列表
           const result = await call('getAgentChatLogs', {
             workspacePath: workspace.path,
-            agentKey: chatHistoryAgent.config.key
+            agentName: chatHistoryAgent.config.name
           });
           // 按时间倒序排列聊天记录
           const sortedChatLogs = (result.chatLogs || []).sort((a, b) => {
@@ -367,7 +367,7 @@ export const AgentManagement = forwardRef<AgentManagementRef, AgentManagementPro
                   <List.Item.Meta
                     title={
                       <Space>
-                        <span className="text-sm">{agent.config.name || agent.config.key}</span>
+                        <span className="text-sm">{agent.config.name}</span>
                         {agent.config.modelKey && (
                           <Tag color="green">{getModelDisplayName(agent.config.modelKey)}</Tag>
                         )}
@@ -390,7 +390,7 @@ export const AgentManagement = forwardRef<AgentManagementRef, AgentManagementPro
                         </div>
                         {/* <Space size="small">
                           <Tag color="blue">
-                            {agent.config.key}
+                            {agent.config.name}
                           </Tag>
                         </Space> */}
                       </div>
@@ -425,16 +425,16 @@ export const AgentManagement = forwardRef<AgentManagementRef, AgentManagementPro
         {selectedAgent && (
           <div>
             <Descriptions
-              title={selectedAgent.config.name || selectedAgent.config.key}
+              title={selectedAgent.config.name || selectedAgent.config.name}
               bordered
               column={1}
               size="small"
             >
               <Descriptions.Item label={t`Name`}>
-                {selectedAgent.config.name || selectedAgent.config.key}
+                {selectedAgent.config.name || selectedAgent.config.name}
               </Descriptions.Item>
               <Descriptions.Item label={t`Key`}>
-                {selectedAgent.config.key}
+                {selectedAgent.config.name}
               </Descriptions.Item>
               <Descriptions.Item label={t`Description`}>
                 {selectedAgent.config.description || t`No description`}
@@ -521,7 +521,7 @@ export const AgentManagement = forwardRef<AgentManagementRef, AgentManagementPro
             if (editingAgent) {
               // 编辑模式：设置Agent的现有值
               const formValues = {
-                key: editingAgent.config.key,
+                key: editingAgent.config.name,
                 name: editingAgent.config.name,
                 description: editingAgent.config.description,
                 prompt: editingAgent.config.prompt,
@@ -661,7 +661,7 @@ export const AgentManagement = forwardRef<AgentManagementRef, AgentManagementPro
         title={
           <Space>
             <HistoryOutlined />
-            {t`Chat History`} - {chatHistoryAgent?.config.name || chatHistoryAgent?.config.key}
+            {t`Chat History`} - {chatHistoryAgent?.config.name}
           </Space>
         }
         open={chatHistoryModal}

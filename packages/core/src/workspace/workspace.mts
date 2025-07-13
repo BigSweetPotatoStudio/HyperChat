@@ -420,12 +420,12 @@ export class Workspace {
 
     // 先添加全局 agents
     globalAgents.forEach(agent => {
-      mergedAgentsMap.set(agent.key, { ...agent, type: 'builtin' });
+      mergedAgentsMap.set(agent.name, { ...agent, type: 'builtin' });
     });
 
     // 再添加工作区 agents，会覆盖同名的全局 agents
     workspaceAgents.forEach(agent => {
-      mergedAgentsMap.set(agent.key, { ...agent, type: 'custom' });
+      mergedAgentsMap.set(agent.name, { ...agent, type: 'custom' });
     });
 
     return Array.from(mergedAgentsMap.values());
@@ -475,9 +475,9 @@ export class Workspace {
    * 创建或更新 agent
    */
   async setAgent(agent: Partial<AgentConfig>): Promise<boolean> {
-    if (agent.key) {
+    if (agent.name) {
       // 更新现有 agent
-      const instance = this.agentManager.getAgent(agent.key);
+      const instance = this.agentManager.getAgent(agent.name);
       if (instance) {
         return await instance.updateConfig(agent);
       }
@@ -505,52 +505,52 @@ export class Workspace {
   /**
    * 获取 Agent 的聊天记录
    */
-  async getAgentChatLogs(agentKey: string): Promise<ChatHistoryItem[]> {
-    const instance = this.agentManager.getAgent(agentKey);
+  async getAgentChatLogs(agentName: string): Promise<ChatHistoryItem[]> {
+    const instance = this.agentManager.getAgent(agentName);
     return instance ? await instance.getChatLogs() : [];
   }
 
   /**
    * 添加 Agent 聊天记录
    */
-  async addAgentChatLog(agentKey: string, chatLog: ChatHistoryItem): Promise<boolean> {
-    const instance = this.agentManager.getAgent(agentKey);
+  async addAgentChatLog(agentName: string, chatLog: ChatHistoryItem): Promise<boolean> {
+    const instance = this.agentManager.getAgent(agentName);
     return instance ? await instance.setChatLog(chatLog) : false;
   }
 
   /**
    * 删除 Agent 聊天记录
    */
-  async deleteAgentChatLog(agentKey: string, chatKey: string): Promise<boolean> {
-    const instance = this.agentManager.getAgent(agentKey);
+  async deleteAgentChatLog(agentName: string, chatKey: string): Promise<boolean> {
+    const instance = this.agentManager.getAgent(agentName);
     return instance ? await instance.deleteChatLog(chatKey) : false;
   }
 
   /**
    * 清空 Agent 所有聊天记录
    */
-  async clearAgentChatLogs(agentKey: string): Promise<boolean> {
-    const instance = this.agentManager.getAgent(agentKey);
+  async clearAgentChatLogs(agentName: string): Promise<boolean> {
+    const instance = this.agentManager.getAgent(agentName);
     return instance ? await instance.clearChatLogs() : false;
   }
 
   /**
    * 获取 Agent 聊天记录数量
    */
-  async getAgentChatLogsCount(agentKey: string): Promise<number> {
-    const instance = this.agentManager.getAgent(agentKey);
+  async getAgentChatLogsCount(agentName: string): Promise<number> {
+    const instance = this.agentManager.getAgent(agentName);
     return instance ? await instance.getChatLogsCount() : 0;
   }
 
   /**
    * 获取 Agent 摘要信息
    */
-  async getAgentSummary(agentKey: string): Promise<{
+  async getAgentSummary(agentName: string): Promise<{
     config: AgentConfig;
     chatLogsCount: number;
     lastChatTime?: number;
   } | null> {
-    const instance = this.agentManager.getAgent(agentKey);
+    const instance = this.agentManager.getAgent(agentName);
     return instance ? await instance.getSummary() : null;
   }
 
@@ -879,8 +879,8 @@ export class Workspace {
   /**
    * 根据 agent 获取任务（直接委托）
    */
-  async getTasksByAgent(agentKey: string) {
-    return await this.taskManager.getTasksByAgent(agentKey);
+  async getTasksByAgent(agentName: string) {
+    return await this.taskManager.getTasksByAgent(agentName);
   }
 
   /**
@@ -1032,21 +1032,21 @@ export class Workspace {
       }
 
       // 获取对应的 Agent
-      const agentInstance = this.agentManager.getAgent(task.agentKey);
+      const agentInstance = this.agentManager.getAgent(task.agentName);
       if (!agentInstance) {
-        throw new Error(`Agent '${task.agentKey}' 不存在`);
+        throw new Error(`Agent '${task.agentName}' 不存在`);
       }
 
       // 构造任务执行的消息
       const taskMessage = `执行定时任务: ${task.name}\n描述: ${task.description}`;
       
       // 执行任务 - 通过 Agent 处理
-      Logger.info(`使用 Agent '${task.agentKey}' 执行任务 '${taskName}'`);
+      Logger.info(`使用 Agent '${task.agentName}' 执行任务 '${taskName}'`);
       
       // 创建任务执行的聊天记录
       const chatLog: ChatHistoryItem = {
         key: v4(),
-        agentKey: task.agentKey,
+        agentName: task.agentName,
         label: `定时任务: ${task.name}`,
         dateTime: Date.now(),
         modelKey: agentInstance.getConfig().modelKey || 'default',
@@ -1070,7 +1070,7 @@ export class Workspace {
       // 2. 更新 chatLog 添加 AI 的回复
       // 3. 如果任务需要调用 MCP 工具，可以通过 this.mcpManager 来执行
       
-      Logger.info(`任务 '${taskName}' 执行完成，已记录到 Agent '${task.agentKey}' 的聊天历史`);
+      Logger.info(`任务 '${taskName}' 执行完成，已记录到 Agent '${task.agentName}' 的聊天历史`);
       
     } catch (error) {
       Logger.error(`执行任务 '${taskName}' 失败:`, error);
