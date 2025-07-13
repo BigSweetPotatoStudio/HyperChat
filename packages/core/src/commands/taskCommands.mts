@@ -7,7 +7,7 @@ import type {
   Task, 
   CreateTaskRequest, 
   UpdateTaskRequest 
-} from '@dadigua/hyperchat-shared/zodSchemas/taskSchema';
+} from '@dadigua/hyperchat-shared';
 
 /**
  * 任务管理命令集合
@@ -120,27 +120,6 @@ export const taskCommands = {
     return await workspace.cloneTask(params.taskName, params.newTaskName);
   },
 
-  /**
-   * 导出所有任务
-   */
-  async exportTasks(params: { workspacePath: string }): Promise<string> {
-    await workspaceManager.initialize();
-    const workspace = workspaceManager.getCurrentWorkspace();
-    return await workspace.exportTasks();
-  },
-
-  /**
-   * 导入任务
-   */
-  async importTasks(params: { 
-    workspacePath: string; 
-    yamlContent: string; 
-    overwrite?: boolean 
-  }): Promise<{ imported: number; skipped: number; errors: string[] }> {
-    await workspaceManager.initialize();
-    const workspace = workspaceManager.getCurrentWorkspace();
-    return await workspace.importTasks(params.yamlContent, params.overwrite);
-  },
 
   /**
    * 获取任务统计信息

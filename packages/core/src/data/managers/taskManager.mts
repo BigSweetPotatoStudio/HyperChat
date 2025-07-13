@@ -283,62 +283,6 @@ export class TaskManager {
     return await this.createTask(clonedTask);
   }
 
-  /**
-   * 导出所有任务
-   */
-  async exportTasks(): Promise<string> {
-    const tasks = await this.getAllTasks();
-    return yaml.dump({ tasks }, {
-      indent: 2,
-      lineWidth: 100,
-    });
-  }
-
-  /**
-   * 导入任务
-   */
-  async importTasks(yamlContent: string, overwrite: boolean = false): Promise<{ imported: number; skipped: number; errors: string[] }> {
-    try {
-      const parsed: any = yaml.load(yamlContent);
-      const tasks = parsed.tasks || [];
-
-      let imported = 0;
-      let skipped = 0;
-      const errors: string[] = [];
-
-      for (const taskData of tasks) {
-        try {
-          // 验证任务数据
-          const result = TaskSchema.safeParse(taskData);
-          if (!result.success) {
-            errors.push(`Task '${taskData.name}' validation failed: ${result.error.message}`);
-            continue;
-          }
-
-          const task = result.data;
-
-          // 检查是否已存在
-          if (await this.exists(task.name)) {
-            if (overwrite) {
-              await this.updateTask(task.name, task);
-              imported++;
-            } else {
-              skipped++;
-            }
-          } else {
-            await this.createTask(task);
-            imported++;
-          }
-        } catch (error) {
-          errors.push(`Failed to import task '${taskData.name}': ${error}`);
-        }
-      }
-
-      return { imported, skipped, errors };
-    } catch (error) {
-      throw new Error(`Failed to parse import file: ${error}`);
-    }
-  }
 
   /**
    * 获取任务统计信息

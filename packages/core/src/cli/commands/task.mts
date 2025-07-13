@@ -334,34 +334,6 @@ export async function editTask(taskName: string, options: {
   }
 }
 
-/**
- * 导出任务
- */
-export async function exportTasks(outputFile?: string) {
-  const logger = new Logger();
-
-  try {
-    logger.info('📅 导出任务...');
-
-    const workspacePath = await getCurrentWorkspacePath();
-    const yamlContent = await Command.exportTasks({ workspacePath });
-
-    if (outputFile) {
-      // 导出到文件
-      const fs = await import('fs');
-      await fs.promises.writeFile(outputFile, yamlContent, 'utf-8');
-      console.log(`✅ 任务已导出到: ${outputFile}`);
-    } else {
-      // 输出到控制台
-      console.log('\n📅 任务导出 (YAML 格式):');
-      console.log(yamlContent);
-    }
-
-  } catch (error) {
-    logger.error('导出任务失败:', error);
-    process.exit(1);
-  }
-}
 
 /**
  * 获取任务统计信息

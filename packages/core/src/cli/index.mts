@@ -27,7 +27,6 @@ import {
   disableTask, 
   deleteTask, 
   editTask, 
-  exportTasks, 
   taskStats 
 } from './commands/task.mjs';
 import { workspaceManager } from '../workspace/index.mjs';
@@ -85,6 +84,10 @@ function showHelp() {
   task list                列出所有任务
   task create <name>       创建新任务
   task show <name>         显示任务详情
+  task edit <name>         编辑任务
+  task enable <name>       启用任务
+  task disable <name>      禁用任务
+  task delete <name>       删除任务
   task stats               显示任务统计
   help                     显示帮助信息
 
@@ -336,10 +339,6 @@ async function handleTaskCommand(subCmd: string, args: string[], logger: Logger)
       await editTask(editTaskName, editOptions);
       break;
 
-    case 'export':
-      const outputFile = getOption('--output') || getOption('-o');
-      await exportTasks(outputFile);
-      break;
 
     case 'stats':
       await taskStats();
@@ -347,7 +346,7 @@ async function handleTaskCommand(subCmd: string, args: string[], logger: Logger)
 
     default:
       logger.error('未知的任务命令:', subCmd);
-      logger.info('可用命令: list, create, show, enable, disable, delete, edit, export, stats');
+      logger.info('可用命令: list, create, show, enable, disable, delete, edit, stats');
       break;
   }
 }

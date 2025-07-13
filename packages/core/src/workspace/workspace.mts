@@ -811,19 +811,6 @@ export class Workspace {
     return await this.taskManager.cloneTask(taskName, newTaskName);
   }
 
-  /**
-   * 导出所有任务
-   */
-  async exportTasks() {
-    return await this.taskManager.exportTasks();
-  }
-
-  /**
-   * 导入任务
-   */
-  async importTasks(yamlContent: string, overwrite: boolean = false) {
-    return await this.taskManager.importTasks(yamlContent, overwrite);
-  }
 
   /**
    * 获取任务统计信息

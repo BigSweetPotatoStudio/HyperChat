@@ -30,8 +30,6 @@ import {
   PlayCircleOutlined,
   PauseCircleOutlined,
   CopyOutlined,
-  ExportOutlined,
-  ImportOutlined,
   ScheduleOutlined,
   RobotOutlined,
 } from "@ant-design/icons";
@@ -213,28 +211,6 @@ export const TaskManagement = forwardRef<TaskManagementRef, TaskManagementProps>
       }
     };
 
-    // 导出任务
-    const exportTasks = async () => {
-      try {
-        const yamlContent = await call('exportTasks', {
-          workspacePath: workspace.path,
-        });
-        // 创建下载链接
-        const blob = new Blob([yamlContent], { type: 'text/yaml' });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `tasks_${workspace.name}_${new Date().toISOString().slice(0, 10)}.yaml`;
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        URL.revokeObjectURL(url);
-        message.success(t`Tasks exported successfully`);
-      } catch (error) {
-        console.error("Failed to export tasks:", error);
-        message.error(t`Failed to export tasks`);
-      }
-    };
 
     // 获取 Agent 名称
     const getAgentName = (agentKey: string): string => {
@@ -296,23 +272,13 @@ export const TaskManagement = forwardRef<TaskManagementRef, TaskManagementProps>
 
           <div className="flex justify-between items-center mb-2">
             <span className="text-sm font-medium">{`Tasks (${tasks.length})`}</span>
-            <Space>
-              <Button
-                type="text"
-                size="small"
-                icon={<ExportOutlined />}
-                onClick={exportTasks}
-                title={t`Export Tasks`}
-                disabled={tasks.length === 0}
-              />
-              <Button
-                type="text"
-                size="small"
-                icon={<PlusOutlined />}
-                onClick={createTask}
-                title={t`Create Task`}
-              />
-            </Space>
+            <Button
+              type="text"
+              size="small"
+              icon={<PlusOutlined />}
+              onClick={createTask}
+              title={t`Create Task`}
+            />
           </div>
 
           {tasks.length > 0 ? (
