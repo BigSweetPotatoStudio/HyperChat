@@ -44,7 +44,7 @@ import { NumberStep } from "../common/numberStep";
 import EmojiPicker from 'emoji-picker-react';
 import { Editor } from "./editor";
 import { useForceUpdate } from "../hooks/useForceUpdate";
-import { AgentConfig, ChatHistoryItem, IMCPClient } from "@dadigua/hyperchat-shared/types";
+import { AgentConfig, ChatHistoryItem, IMCPClient } from "@dadigua/hyperchat-shared";
 const { Title, Text } = Typography;
 
 
@@ -472,7 +472,7 @@ export const AgentManagement = forwardRef<AgentManagementRef, AgentManagementPro
               <div className="mt-4">
                 <Title level={5}>{t`Allowed MCPs`}</Title>
                 <Space wrap>
-                  {selectedAgent.config.allowMCPs.map(mcp => (
+                  {selectedAgent.config.allowMCPs.map((mcp: string) => (
                     <Tag key={mcp} color="purple">{mcp}</Tag>
                   ))}
                 </Space>

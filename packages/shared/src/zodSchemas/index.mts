@@ -11,3 +11,6 @@ export * from './workspaceSettingsSchema.mjs';
 
 // 任务相关 Schema
 export * from './taskSchema.mjs';
+
+// Agent配置相关 Schema
+export * from './agentConfigSchema.mjs';

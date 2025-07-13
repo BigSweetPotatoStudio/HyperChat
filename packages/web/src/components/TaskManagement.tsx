@@ -37,7 +37,7 @@ import { call } from "../common/call";
 import { WorkspaceInfo } from "../pages/workspace/types";
 import { t } from "../i18n";
 import type { Task, CRON_TEMPLATES, CRON_DESCRIPTIONS } from "@dadigua/hyperchat-shared";
-import type { AgentConfig } from "@dadigua/hyperchat-shared/types";
+import type { AgentConfig } from "@dadigua/hyperchat-shared";
 import { Editor } from "./editor";
 
 const { Title, Text } = Typography;

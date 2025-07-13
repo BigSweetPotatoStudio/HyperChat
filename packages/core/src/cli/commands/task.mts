@@ -7,7 +7,7 @@ import { Logger } from '../utils/logger.mjs';
 import { Command } from '../../command.mjs';
 import { workspaceManager } from '../../workspace/index.mjs';
 import type { CreateTaskRequest } from '@dadigua/hyperchat-shared';
-import type { AgentConfig } from '@dadigua/hyperchat-shared/types';
+import type { AgentConfig } from '@dadigua/hyperchat-shared';
 
 /**
  * 获取当前工作区路径 - 查询模式

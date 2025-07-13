@@ -44,7 +44,7 @@ import {
   type PanelSizes,
 } from "./types";
 import { getPanelSizes, savePanelSizes, getWorkspaceHistory, addToWorkspaceHistory, removeFromWorkspaceHistory, addAgentRecentUsage } from "../../utils/storage";
-import { AgentConfig, IMCPClient, MessageData, MessageDataMap } from "@dadigua/hyperchat-shared/types";
+import { AgentConfig, IMCPClient, MessageData, MessageDataMap } from "@dadigua/hyperchat-shared";
 import { WorkspaceSettingsSchema } from "@dadigua/hyperchat-shared";
 import { AppSettingsSchema, MCPGatewaySchema } from "@dadigua/hyperchat-shared";
 import type { z } from "zod";

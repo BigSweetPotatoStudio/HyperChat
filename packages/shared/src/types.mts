@@ -105,19 +105,30 @@ export interface ConnectionStatus {
 }
 
 
-export interface AgentConfig {
-  name: string;
-  prompt: string;
-  description?: string;
-  allowMCPs: string[];
-  modelKey?: string;
-  maxAttachedDialogs?: number;
-  temperature?: number;
-  isConfirmCallTool: boolean;
-  tags?: string[];
-  subAgents?: string[];
-  version?: number;
-}
+// /**
+//  * 基础AI配置接口
+//  * 定义所有AI相关配置的基础字段，可被 Agent、Chat 等继承使用
+//  */
+// export interface BaseAIConfig {
+//   prompt: string;
+//   temperature?: number;
+//   isConfirmCallTool: boolean;
+//   allowMCPs: string[];
+//   maxAttachedDialogs?: number;
+//   modelKey?: string;
+// }
+
+// /**
+//  * Agent配置接口
+//  * 继承 BaseAIConfig 并添加 Agent 特有的属性
+//  */
+// export interface AgentConfig extends BaseAIConfig {
+//   name: string;
+//   description?: string;
+//   tags?: string[];
+//   subAgents?: string[];
+//   version?: number;
+// }
 
 /**
  * Data类的配置选项类型

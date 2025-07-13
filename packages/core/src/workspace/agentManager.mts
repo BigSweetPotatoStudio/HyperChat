@@ -27,6 +27,9 @@ export class AgentInstance {
       prompt: '',
       allowMCPs: [],
       isConfirmCallTool: false,
+      tags: [],
+      subAgents: [],
+      version: 1,
     };
 
     this.chatLogs = new DataList<ChatHistoryItem>(path.join(agentPath, CONSTANTS.DIRECTORIES.CHAT_LOGS), DataList.FileFormat.YAML,
@@ -307,7 +310,10 @@ export class AgentManager {
       name,
       prompt: config.prompt || '',
       allowMCPs: config.allowMCPs || [],
-      isConfirmCallTool: config.isConfirmCallTool ?? false
+      isConfirmCallTool: config.isConfirmCallTool ?? false,
+      tags: config.tags || [],
+      subAgents: config.subAgents || [],
+      version: config.version || 1
     };
 
     try {

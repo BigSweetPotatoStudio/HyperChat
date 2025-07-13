@@ -1,4 +1,4 @@
-import { AgentConfig, ChatHistoryItem } from "@dadigua/hyperchat-shared/types";
+import { AgentConfig, ChatHistoryItem } from "@dadigua/hyperchat-shared";
 import { getWorkspaceManager } from "../workspace/index.mjs";
 
 /**

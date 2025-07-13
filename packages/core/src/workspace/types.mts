@@ -1,16 +1,5 @@
-// 类型定义
-export type AgentConfig = {
-  name: string;
-  prompt: string;
-  description?: string;
-  allowMCPs: string[];
-  modelKey?: string;
-  maxAttachedDialogs?: number;
-  temperature?: number;
-  isConfirmCallTool: boolean;
-  tags?: string[];
-  version?: number;
-};
+// 从 shared 包导入AI配置类型，避免重复定义
+export type { BaseAIConfig, AgentConfig } from '@dadigua/hyperchat-shared';
 
 
 
