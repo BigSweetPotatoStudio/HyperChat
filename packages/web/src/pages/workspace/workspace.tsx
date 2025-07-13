@@ -1047,6 +1047,7 @@ export function Workspace() {
           <WorkspaceSettings
             settings={workspaceSettings}
             onUpdate={updateWorkspaceSettings}
+            mcpClients={Object.values(currentWorkspaceDetails?.mcpClients || {})}
             onReset={async () => {
               if (!currentSettingsWorkspace) return;
               try {
