@@ -11,7 +11,7 @@ import {
   type SystemSettings,
   type AISettings,
   type DesktopSettings,
-} from "@dadigua/hyperchat-shared/jsonSchemas/appSettingsSchema";
+} from "@dadigua/hyperchat-shared";
 import { CONST } from "../../const.mjs";
 
 /**

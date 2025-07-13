@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import type { AppSettings, AISettings } from '@dadigua/hyperchat-shared/jsonSchemas/appSettingsSchema';
+import type { AppSettings, AISettings } from '@dadigua/hyperchat-shared';
 import { call } from '../common/call';
 import {
   enable as enableDarkMode,

@@ -18,14 +18,14 @@ import {
   ReloadOutlined,
 } from "@ant-design/icons";
 import { t } from "../i18n";
-import { WorkspaceSettingsSchema } from "@dadigua/hyperchat-shared/jsonSchemas/workspaceSettingsSchema";
+import { WorkspaceSettings } from "@dadigua/hyperchat-shared";
 import type { z } from "zod";
 
 const { Text } = Typography;
 
 interface WorkspaceSettingsProps {
-  settings: z.infer<typeof WorkspaceSettingsSchema>;
-  onUpdate: (updates: Partial<z.infer<typeof WorkspaceSettingsSchema>>) => Promise<void>;
+  settings: WorkspaceSettings;
+  onUpdate: (updates: Partial<WorkspaceSettings>) => Promise<void>;
   onReset?: () => Promise<void>;
 }
 

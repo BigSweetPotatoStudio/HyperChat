@@ -192,11 +192,11 @@ module.exports = (env, argv) => {
       port: 8080,
       open: false,
       hot: true,
-      compress: true,
+      // compress: true,
       historyApiFallback: true,
-      devMiddleware: {
-        writeToDisk: true,
-      },
+      // devMiddleware: {
+      //   writeToDisk: true,
+      // },
     },
   };
 };

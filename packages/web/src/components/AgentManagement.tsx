@@ -38,7 +38,7 @@ import { call } from "../common/call";
 import { WorkspaceInfo } from "../pages/workspace/types";
 import { t } from "../i18n";
 import { HeaderContext } from "../common/context";
-import type { AISettings, AIModelConfigItem } from "@dadigua/hyperchat-shared/jsonSchemas/appSettingsSchema";
+import type { AISettings, AIModelConfigItem } from "@dadigua/hyperchat-shared";
 import { useAISettings } from "../contexts/AppSettingsContext";
 import { NumberStep } from "../common/numberStep";
 import EmojiPicker from 'emoji-picker-react';

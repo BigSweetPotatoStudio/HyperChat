@@ -14,6 +14,7 @@
   "files": [
     "dist/**/*.mjs",
     "dist/**/*.d.mts",
+    "web-build/**/*",
     "README.md"
   ],
   "exports": {

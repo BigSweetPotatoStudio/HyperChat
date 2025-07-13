@@ -222,7 +222,20 @@ const tasks = {
     console.log('📤 发布 Core 包...');
     const coreDir = join(rootDir, 'packages/core');
 
-    // 检查是否已经构建，或强制重新构建以应用发布配置
+    // 1. 先构建前端
+    console.log('🌐 构建前端资源...');
+    await tasks.buildWeb();
+
+    // 2. 复制前端构建产物到 core 的 web-build 目录
+    console.log('📋 复制前端构建产物到 Core 包...');
+    const webBuildSrc = join(rootDir, 'packages/web/build');
+    const webBuildDest = join(coreDir, 'web-build');
+    
+    ensureDir(webBuildDest);
+    cpSync(webBuildSrc, webBuildDest, { recursive: true });
+    console.log('  ✅ 已复制前端构建产物到 Core 包');
+
+    // 3. 重新构建 Core 包以应用发布配置
     console.log('⚠️  重新构建 Core 包以应用发布配置...');
     if (!args.includes('--publish')) {
       args.push('--publish'); // 确保传递 --publish 参数

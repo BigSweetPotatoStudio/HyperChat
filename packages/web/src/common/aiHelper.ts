@@ -1,11 +1,11 @@
 import { z } from "zod";
 import { MyMessage } from "@dadigua/hyperchat-shared/types";
-import { AIModelConfigItem } from "@dadigua/hyperchat-shared/jsonSchemas/appSettingsSchema";
+import { AIModelConfigItem } from "@dadigua/hyperchat-shared";
 import { EVENT } from "./event";
 import { AiChannel } from "@dadigua/hyperchat-shared/ai";
 
 import { zodResponseFormat, zodTextFormat } from 'openai/helpers/zod';
-import { AISettings } from "@dadigua/hyperchat-shared/jsonSchemas/appSettingsSchema";
+import { AISettings } from "@dadigua/hyperchat-shared";
 
 
 
@@ -13,12 +13,31 @@ export async function rename(modelKey: string, aiSettings: AISettings) {
 
     try {
         let aiClient = new AiChannel({});
+        
+        // 确保aiSettings符合AISettings类型的要求
+        const normalizedAiSettings = {
+            models: (aiSettings?.models || []).filter(model => 
+                model.type && model.model && model.key && model.name && model.provider &&
+                model.apiKey !== undefined && model.baseURL !== undefined
+            ),
+            customProviders: (aiSettings?.customProviders || []).filter(provider =>
+                provider.key && provider.label && provider.baseURL !== undefined &&
+                provider.hasApiKey !== undefined && provider.isBuiltIn !== undefined
+            ),
+            builtinApiKeys: Object.fromEntries(
+                Object.entries(aiSettings?.builtinApiKeys || {}).filter(([_, value]) =>
+                    value && value.apiKey !== undefined && value.baseURL !== undefined
+                ).map(([key, value]) => [key, { apiKey: value!.apiKey!, baseURL: value!.baseURL! }])
+            ),
+            defaultModel: aiSettings?.defaultModel
+        };
+        
         aiClient.register({
             antdmessage: { warning: (msg) => console.warn(msg) },
             mcpTools: [],
             platform: "web",
             getURL_PRE: () => "",
-            aiSettings
+            aiSettings: normalizedAiSettings as any
         });
         let res = await aiClient.completionParse(
             { modelKey },

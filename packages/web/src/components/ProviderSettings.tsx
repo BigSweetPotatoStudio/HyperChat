@@ -26,7 +26,7 @@ import {
   ArrowLeftOutlined,
 } from '@ant-design/icons';
 
-import type { AIModelConfigItem, ProviderConfig, KnownProvider } from '@dadigua/hyperchat-shared/jsonSchemas/appSettingsSchema';
+import type { AIModelConfigItem, ProviderConfig, KnownProvider } from '@dadigua/hyperchat-shared';
 import { useAISettings } from "../contexts/AppSettingsContext";
 import { t } from '../i18n';
 

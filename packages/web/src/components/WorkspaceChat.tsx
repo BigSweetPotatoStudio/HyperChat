@@ -51,7 +51,7 @@ import { AiChannel } from "@dadigua/hyperchat-shared/ai";
 import {
   ChatHistoryItem,
 } from "@dadigua/hyperchat-shared/types";
-import type { AISettings, AIModelConfigItem } from "@dadigua/hyperchat-shared/jsonSchemas/appSettingsSchema";
+import type { AISettings, AIModelConfigItem } from "@dadigua/hyperchat-shared";
 import { useAISettings } from "../contexts/AppSettingsContext";
 import { MyMessage } from "@dadigua/hyperchat-shared/types";
 import { Messages } from "./messages";

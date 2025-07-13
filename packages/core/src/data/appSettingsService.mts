@@ -54,7 +54,7 @@ class AiModelData {
     if (!appSettings) {
       throw new Error('AppSettings manager not initialized');
     }
-    const aiSettings: AISettings = appSettings.getAI();
+    const aiSettings = appSettings.getAI();
     if (!aiSettings) {
       throw new Error('AI settings not found');
     }

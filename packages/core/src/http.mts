@@ -95,7 +95,7 @@ export async function initHttp(): Promise<void> {
   // 静态文件服务配置
   const staticPath = process.env.myEnv === "dev"
     ? path.join(__dirname, "../../web/build")
-    : path.join(__dirname, "../web-build");
+    : path.join(__dirname, "../../web-build");
 
   Logger.info(`Serving static files from: ${staticPath}`);
 

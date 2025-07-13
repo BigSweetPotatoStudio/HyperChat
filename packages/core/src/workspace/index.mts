@@ -28,7 +28,7 @@ export type {
   WorkspaceEditorSettings,
   WorkspaceAISettings,
   WorkspaceAdvancedSettings
-} from "@dadigua/hyperchat-shared/jsonSchemas/workspaceSettingsSchema";
+} from "@dadigua/hyperchat-shared";
 
 // 导出数据列表管理类
 export { DataList } from "./dataList.mjs";

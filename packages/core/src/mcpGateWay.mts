@@ -3,7 +3,7 @@ import { SSEServerTransport, StreamableHTTPServerTransport } from "./es6.mjs";
 import { createServer } from "./mcp/servers/gateway/index.mjs";
 import { Logger } from "./log.mjs";
 import { getAppSettingsManager } from "./data/appSettingsService.mjs";
-import type { MCPGateway } from "@dadigua/hyperchat-shared/jsonSchemas/appSettingsSchema";
+import type { MCPGateway } from "@dadigua/hyperchat-shared";
 const KEEP_ALIVE_INTERVAL_MS = 25000; // Send keep-alive every 25 seconds
 
 const transports = {

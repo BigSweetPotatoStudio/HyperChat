@@ -116,6 +116,24 @@ export async function startChat(initialMessage?: string, options: ChatOptions = 
       }
     };
 
+    // 确保aiSettings符合AISettings类型的要求
+    const normalizedAiSettings = {
+      models: (aiSettings?.models || []).filter(model => 
+        model.type && model.model && model.key && model.name && model.provider &&
+        model.apiKey !== undefined && model.baseURL !== undefined
+      ),
+      customProviders: (aiSettings?.customProviders || []).filter(provider =>
+        provider.key && provider.label && provider.baseURL !== undefined &&
+        provider.hasApiKey !== undefined && provider.isBuiltIn !== undefined
+      ),
+      builtinApiKeys: Object.fromEntries(
+        Object.entries(aiSettings?.builtinApiKeys || {}).filter(([_, value]) =>
+          value && value.apiKey !== undefined && value.baseURL !== undefined
+        ).map(([key, value]) => [key, { apiKey: value!.apiKey!, baseURL: value!.baseURL! }])
+      ),
+      defaultModel: aiSettings?.defaultModel
+    };
+
     aiChannel.register({
       antdmessage: {
         warning: (msg: string) => logger.warn(msg)
@@ -123,7 +141,7 @@ export async function startChat(initialMessage?: string, options: ChatOptions = 
       mcpTools: mcpTools,
       platform: 'nodejs',
       getURL_PRE: () => '',
-      aiSettings: aiSettings || { models: [], customProviders: [], builtinApiKeys: {} }
+      aiSettings: normalizedAiSettings as any
     });
 
     // 添加系统消息
