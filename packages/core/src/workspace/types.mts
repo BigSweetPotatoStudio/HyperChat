@@ -1,10 +1,8 @@
 // 类型定义
 export type AgentConfig = {
-  type?: "builtin" | "custom";
   name: string;
   prompt: string;
   description?: string;
-  callable?: boolean;
   allowMCPs: string[];
   modelKey?: string;
   maxAttachedDialogs?: number;
@@ -12,8 +10,6 @@ export type AgentConfig = {
   isConfirmCallTool: boolean;
   tags?: string[];
   version?: number;
-  created?: number;
-  lastModified?: number;
 };
 
 

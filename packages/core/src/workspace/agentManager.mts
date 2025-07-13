@@ -27,8 +27,6 @@ export class AgentInstance {
       prompt: '',
       allowMCPs: [],
       isConfirmCallTool: false,
-      created: Date.now(),
-      lastModified: Date.now(),
     };
 
     this.chatLogs = new DataList<ChatHistoryItem>(path.join(agentPath, CONSTANTS.DIRECTORIES.CHAT_LOGS), DataList.FileFormat.YAML,
@@ -98,7 +96,6 @@ export class AgentInstance {
    */
   async saveConfig(): Promise<boolean> {
     try {
-      this.config.lastModified = Date.now();
       const yamlContent = yaml.dump(this.config, { indent: 2 });
       await fs.promises.writeFile(this.configPath, yamlContent, "utf-8");
       return true;
@@ -310,9 +307,7 @@ export class AgentManager {
       name,
       prompt: config.prompt || '',
       allowMCPs: config.allowMCPs || [],
-      isConfirmCallTool: config.isConfirmCallTool ?? false,
-      created: Date.now(),
-      lastModified: Date.now()
+      isConfirmCallTool: config.isConfirmCallTool ?? false
     };
 
     try {

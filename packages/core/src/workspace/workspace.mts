@@ -420,12 +420,12 @@ export class Workspace {
 
     // 先添加全局 agents
     globalAgents.forEach(agent => {
-      mergedAgentsMap.set(agent.name, { ...agent, type: 'builtin' });
+      mergedAgentsMap.set(agent.name, agent);
     });
 
     // 再添加工作区 agents，会覆盖同名的全局 agents
     workspaceAgents.forEach(agent => {
-      mergedAgentsMap.set(agent.name, { ...agent, type: 'custom' });
+      mergedAgentsMap.set(agent.name, agent);
     });
 
     return Array.from(mergedAgentsMap.values());

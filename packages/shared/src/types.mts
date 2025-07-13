@@ -106,11 +106,9 @@ export interface ConnectionStatus {
 
 
 export interface AgentConfig {
-  type?: "builtin" | "custom";
   name: string;
   prompt: string;
   description?: string;
-  callable?: boolean;
   allowMCPs: string[];
   modelKey?: string;
   maxAttachedDialogs?: number;
@@ -119,8 +117,6 @@ export interface AgentConfig {
   tags?: string[];
   subAgents?: string[];
   version?: number;
-  created?: number;
-  lastModified?: number;
 }
 
 /**

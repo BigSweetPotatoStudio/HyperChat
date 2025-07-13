@@ -130,7 +130,6 @@ export const AgentManagement = forwardRef<AgentManagementRef, AgentManagementPro
         isConfirmCallTool: values.isConfirmCallTool ?? false,
         modelKey: values.modelKey,
         temperature: values.temperature,
-        callable: values.callable ?? true,
         maxAttachedDialogs: values.maxAttachedDialogs,
       };
 
@@ -456,9 +455,6 @@ export const AgentManagement = forwardRef<AgentManagementRef, AgentManagementPro
               <Descriptions.Item label={t`Context History`}>
                 {selectedAgent.config.maxAttachedDialogs || 'Default'}
               </Descriptions.Item>
-              <Descriptions.Item label={t`Created`}>
-                {selectedAgent.config.created ? new Date(selectedAgent.config.created).toLocaleString() : 'Unknown'}
-              </Descriptions.Item>
             </Descriptions>
 
             {/* Prompt内容 */}
@@ -529,7 +525,6 @@ export const AgentManagement = forwardRef<AgentManagementRef, AgentManagementPro
                 temperature: editingAgent.config.temperature ?? 1,
                 allowMCPs: editingAgent.config.allowMCPs || [],
                 isConfirmCallTool: editingAgent.config.isConfirmCallTool ?? false,
-                callable: editingAgent.config.callable ?? true,
                 maxAttachedDialogs: editingAgent.config.maxAttachedDialogs ?? 10,
               };
               form.resetFields();
@@ -539,7 +534,6 @@ export const AgentManagement = forwardRef<AgentManagementRef, AgentManagementPro
               form.setFieldsValue({
                 allowMCPs: [],
                 isConfirmCallTool: false,
-                callable: true,
                 temperature: 1,
                 maxAttachedDialogs: 5,
               });

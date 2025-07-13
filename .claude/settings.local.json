@@ -34,7 +34,8 @@
       "Bash(tsx:*)",
       "Bash(npm uninstall:*)",
       "Bash(npm view:*)",
-      "Bash(npx --workspace=@hyperchat/web tsc --noEmit)"
+      "Bash(npx --workspace=@hyperchat/web tsc --noEmit)",
+      "Bash(npx --workspace=@dadigua/hyperchat tsc --noEmit)"
     ],
     "deny": []
   }
