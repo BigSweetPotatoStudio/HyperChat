@@ -16,6 +16,7 @@ import { AgentManager } from "./agentManager.mjs";
 import { WorkspaceMCPManager } from "./mcp/manager.mjs";
 import type { WorkspaceMCPClientImpl } from "./mcp/client.mjs";
 import { WorkspaceSettingsManager } from "../data/managers/workspaceSettingsManager.mjs";
+import { TaskManager } from "../data/managers/taskManager.mjs";
 import { Logger } from "../log.mjs";
 
 /**
@@ -26,6 +27,7 @@ export class Workspace {
   private agentManager: AgentManager;
   private mcpManager: WorkspaceMCPManager;
   private settingsManager: WorkspaceSettingsManager;
+  private taskManager: TaskManager;
   private fileTree?: WorkspaceFileNode;
   private lastSync?: number;
   private readonly HYPERCHAT_DIR = CONSTANTS.HYPERCHAT_DIR;
@@ -78,6 +80,9 @@ export class Workspace {
 
     // 初始化设置管理器
     this.settingsManager = new WorkspaceSettingsManager(hyperChatPath);
+
+    // 初始化任务管理器
+    this.taskManager = new TaskManager(effectiveWorkspacePath);
   }
 
   /**
@@ -115,6 +120,9 @@ export class Workspace {
     // 初始化设置管理器
     await this.settingsManager.init();
 
+    // 初始化任务管理器
+    await this.taskManager.init();
+
     // 加载数据
     await this.load();
 
@@ -149,6 +157,7 @@ export class Workspace {
       path.join(hyperChatPath, CONSTANTS.DIRECTORIES.AGENTS),
       path.join(hyperChatPath, CONSTANTS.DIRECTORIES.KNOWLEDGE),
       path.join(hyperChatPath, CONSTANTS.DIRECTORIES.TEMP),
+      path.join(hyperChatPath, "tasks"),
     ];
 
     for (const dir of directories) {
@@ -704,13 +713,123 @@ export class Workspace {
   async getSummary(): Promise<{
     agentsCount: number;
     mcpServersCount: number;
+    tasksCount: number;
     lastSync?: number;
   }> {
+    const taskStats = await this.taskManager.getTaskStats();
     return {
       agentsCount: await this.getAgentsCount(),
       mcpServersCount: this.getMcpClients().length,
+      tasksCount: taskStats.total,
       lastSync: this.lastSync,
     };
+  }
+
+  // ========== 任务管理 ==========
+
+  /**
+   * 获取任务管理器
+   */
+  getTaskManager(): TaskManager {
+    return this.taskManager;
+  }
+
+  /**
+   * 创建任务
+   */
+  async createTask(taskData: Parameters<TaskManager['createTask']>[0]) {
+    return await this.taskManager.createTask(taskData);
+  }
+
+  /**
+   * 获取单个任务
+   */
+  async getTask(taskName: string) {
+    return await this.taskManager.getTask(taskName);
+  }
+
+  /**
+   * 获取所有任务
+   */
+  async getAllTasks() {
+    return await this.taskManager.getAllTasks();
+  }
+
+  /**
+   * 更新任务
+   */
+  async updateTask(taskName: string, updates: Parameters<TaskManager['updateTask']>[1]) {
+    return await this.taskManager.updateTask(taskName, updates);
+  }
+
+  /**
+   * 删除任务
+   */
+  async deleteTask(taskName: string) {
+    return await this.taskManager.deleteTask(taskName);
+  }
+
+  /**
+   * 启用任务
+   */
+  async enableTask(taskName: string) {
+    return await this.taskManager.enableTask(taskName);
+  }
+
+  /**
+   * 禁用任务
+   */
+  async disableTask(taskName: string) {
+    return await this.taskManager.disableTask(taskName);
+  }
+
+  /**
+   * 获取已启用的任务
+   */
+  async getEnabledTasks() {
+    return await this.taskManager.getEnabledTasks();
+  }
+
+  /**
+   * 获取已禁用的任务
+   */
+  async getDisabledTasks() {
+    return await this.taskManager.getDisabledTasks();
+  }
+
+  /**
+   * 根据 agent 获取任务
+   */
+  async getTasksByAgent(agentKey: string) {
+    return await this.taskManager.getTasksByAgent(agentKey);
+  }
+
+  /**
+   * 复制任务
+   */
+  async cloneTask(taskName: string, newTaskName: string) {
+    return await this.taskManager.cloneTask(taskName, newTaskName);
+  }
+
+  /**
+   * 导出所有任务
+   */
+  async exportTasks() {
+    return await this.taskManager.exportTasks();
+  }
+
+  /**
+   * 导入任务
+   */
+  async importTasks(yamlContent: string, overwrite: boolean = false) {
+    return await this.taskManager.importTasks(yamlContent, overwrite);
+  }
+
+  /**
+   * 获取任务统计信息
+   */
+  async getTaskStats() {
+    return await this.taskManager.getTaskStats();
   }
 
 }

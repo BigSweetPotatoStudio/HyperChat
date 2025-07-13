@@ -2,6 +2,7 @@ import { mcpCommands } from "./mcpCommands.mjs";
 import { fileCommands } from "./fileCommands.mjs";
 import { workspaceCommands } from "./workspaceCommands.mjs";
 import { agentCommands } from "./agentCommands.mjs";
+import { taskCommands } from "./taskCommands.mjs";
 import { terminalCommands } from "./terminalCommands.mjs";
 import { settingsCommands } from "./settingsCommands.mjs";
 import { systemCommands } from "./systemCommands.mjs";
@@ -15,6 +16,7 @@ export const Command = {
   ...fileCommands,
   ...workspaceCommands,
   ...agentCommands,
+  ...taskCommands,
   ...terminalCommands,
   ...settingsCommands,
   ...systemCommands
@@ -31,6 +33,7 @@ export {
   fileCommands,
   workspaceCommands,
   agentCommands,
+  taskCommands,
   terminalCommands,
   settingsCommands,
   systemCommands
@@ -48,6 +51,7 @@ export type MCPCommandsType = typeof mcpCommands;
 export type FileCommandsType = typeof fileCommands;
 export type WorkspaceCommandsType = typeof workspaceCommands;
 export type AgentCommandsType = typeof agentCommands;
+export type TaskCommandsType = typeof taskCommands;
 export type TerminalCommandsType = typeof terminalCommands;
 export type SettingsCommandsType = typeof settingsCommands;
 export type SystemCommandsType = typeof systemCommands;

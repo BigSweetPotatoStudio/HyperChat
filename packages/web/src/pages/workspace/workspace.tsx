@@ -30,6 +30,7 @@ import { t } from "../../i18n";
 import { ServerDirectoryBrowser } from "../../components/ServerDirectoryBrowser";
 import { MCPManagementRef } from "../../components/MCPManagement";
 import { AgentManagementRef } from "../../components/AgentManagement";
+import { TaskManagementRef } from "../../components/TaskManagement";
 import { WorkspaceLeftPanel } from "./WorkspaceLeftPanel";
 import { WorkspaceMiddlePanel } from "./WorkspaceMiddlePanel";
 import { WorkspaceRightPanel } from "./WorkspaceRightPanel";
@@ -102,6 +103,7 @@ export function Workspace() {
   // 单工作区的管理组件 ref
   const agentManagementRef = useRef<AgentManagementRef | null>(null);
   const mcpManagementRef = useRef<MCPManagementRef | null>(null);
+  const taskManagementRef = useRef<TaskManagementRef | null>(null);
 
 
   // 面板尺寸状态 - 使用数组格式，与Ant Design Splitter兼容
@@ -183,7 +185,8 @@ export function Workspace() {
       const details: CurrentWorkspaceDetails = {
         agents: [],
         mcpClients: {},
-        fileTreeData: undefined
+        fileTreeData: undefined,
+        tasks: []
       };
 
       // 加载根目录文件列表（懒加载）
@@ -213,6 +216,10 @@ export function Workspace() {
           }
         });
       }
+
+      // 加载任务
+      const taskList = await call("getAllTasks", { workspacePath: workspace.path });
+      details.tasks = taskList || [];
 
       setCurrentWorkspaceDetails(details);
     } catch (error) {
@@ -485,7 +492,7 @@ export function Workspace() {
   };
 
   // 刷新工作区详情
-  const refreshWorkspaceDetails = async (workspaceKey?: string, refreshType?: 'agents' | 'mcp' | 'all') => {
+  const refreshWorkspaceDetails = async (workspaceKey?: string, refreshType?: 'agents' | 'mcp' | 'tasks' | 'all') => {
     const type = refreshType || 'all';
 
     if (currentWorkspace && currentWorkspaceDetails) {
@@ -516,6 +523,12 @@ export function Workspace() {
               }
             });
           }
+        }
+
+        if (type === 'tasks' || type === 'all') {
+          // 刷新任务
+          const taskList = await call("getAllTasks", { workspacePath: currentWorkspace.path });
+          updatedDetails.tasks = taskList || [];
         }
 
         setCurrentWorkspaceDetails(updatedDetails);
@@ -882,10 +895,13 @@ export function Workspace() {
               workspaceKey={workspaceKey}
               agents={details.agents || []}
               mcpClients={mcpClients}
+              tasks={details.tasks || []}
               agentManagementRef={agentManagementRef}
               mcpManagementRef={mcpManagementRef}
+              taskManagementRef={taskManagementRef}
               onRefreshAgents={async () => { await refreshWorkspaceDetails(workspaceKey, 'agents'); }}
               onRefreshMCP={async () => { await refreshWorkspaceDetails(workspaceKey, 'mcp'); }}
+              onRefreshTasks={async () => { await refreshWorkspaceDetails(workspaceKey, 'tasks'); }}
               onOpenChat={openAgentChat}
             />
           </Splitter.Panel>

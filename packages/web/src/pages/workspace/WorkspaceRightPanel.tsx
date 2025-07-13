@@ -4,6 +4,7 @@ import { t } from "../../i18n";
 import { Icon } from "../../components/icon";
 import { AgentManagement, AgentManagementRef } from "../../components/AgentManagement";
 import { MCPManagement, MCPManagementRef } from "../../components/MCPManagement";
+import { TaskManagement, TaskManagementRef } from "../../components/TaskManagement";
 import { WorkspaceRightPanelProps } from "./types";
 
 export const WorkspaceRightPanel: React.FC<WorkspaceRightPanelProps> = ({
@@ -11,10 +12,13 @@ export const WorkspaceRightPanel: React.FC<WorkspaceRightPanelProps> = ({
   workspaceKey,
   agents,
   mcpClients,
+  tasks,
   agentManagementRef,
   mcpManagementRef,
+  taskManagementRef,
   onRefreshAgents,
   onRefreshMCP,
+  onRefreshTasks,
   onOpenChat,
 }) => {
   const connectedMCPCount = mcpClients.filter(x => x.status === "connected").length;
@@ -70,6 +74,27 @@ export const WorkspaceRightPanel: React.FC<WorkspaceRightPanelProps> = ({
                 workspace={workspace}
                 mcpClients={mcpClients}
                 onRefresh={onRefreshMCP}
+              />
+            ) : <Empty description={t`No workspace selected`} />,
+          },
+          {
+            label: (
+              <Space>
+                <Icon name="bx-time" />
+                {t`Tasks`}
+                <Tag>{tasks.length || 0}</Tag>
+              </Space>
+            ),
+            key: "tasks",
+            children: workspace ? (
+              <TaskManagement
+                ref={(ref) => {
+                  taskManagementRef.current = ref;
+                }}
+                workspace={workspace}
+                tasks={tasks}
+                agents={agents}
+                onRefresh={onRefreshTasks}
               />
             ) : <Empty description={t`No workspace selected`} />,
           },

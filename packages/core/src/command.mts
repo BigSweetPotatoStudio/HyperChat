@@ -33,6 +33,7 @@ export {
   fileCommands,
   workspaceCommands,
   agentCommands,
+  taskCommands,
   terminalCommands,
   settingsCommands,
   systemCommands
@@ -45,6 +46,7 @@ export type {
   FileCommandsType,
   WorkspaceCommandsType,
   AgentCommandsType,
+  TaskCommandsType,
   TerminalCommandsType,
   SettingsCommandsType,
   SystemCommandsType

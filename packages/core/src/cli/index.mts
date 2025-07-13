@@ -19,6 +19,17 @@ import { startChat } from './commands/chat.mjs';
 import { startServer } from './commands/server.mjs';
 import { createWorkspace } from './commands/workspace.mjs';
 import { listAgents, createAgent, checkAgentExists } from './commands/agent.mjs';
+import { 
+  listTasks, 
+  createTask, 
+  showTask, 
+  enableTask, 
+  disableTask, 
+  deleteTask, 
+  editTask, 
+  exportTasks, 
+  taskStats 
+} from './commands/task.mjs';
 import { workspaceManager } from '../workspace/index.mjs';
 // 获取包信息
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -71,6 +82,10 @@ function showHelp() {
   serve                    启动后端服务器
   workspace create         在当前目录创建工作区
   agent list               列出所有代理
+  task list                列出所有任务
+  task create <name>       创建新任务
+  task show <name>         显示任务详情
+  task stats               显示任务统计
   help                     显示帮助信息
 
 示例:
@@ -95,7 +110,7 @@ async function handleCommand(): Promise<{ shouldExit: boolean }> {
     const potentialAgentName = cleanArgs[0];
     
     // 检查第一个参数是否是agent名称
-    if (potentialAgentName && !['chat', 'serve', 'workspace', 'agent', 'help'].includes(potentialAgentName)) {
+    if (potentialAgentName && !['chat', 'serve', 'workspace', 'agent', 'task', 'help'].includes(potentialAgentName)) {
       const agentCheck = await checkAgentExists(potentialAgentName);
       
       if (agentCheck.exists) {
@@ -117,9 +132,9 @@ async function handleCommand(): Promise<{ shouldExit: boolean }> {
   }
 
   // 检测是否有非命令的消息 (直接聊天)
-  const possibleMessage = cleanArgs.find(arg => !['chat', 'serve', 'workspace', 'agent', 'help'].includes(arg));
+  const possibleMessage = cleanArgs.find(arg => !['chat', 'serve', 'workspace', 'agent', 'task', 'help'].includes(arg));
   const firstArg = cleanArgs[0];
-  const isDirectMessage = cleanArgs.length > 0 && possibleMessage && firstArg && !firstArg.match(/^(chat|serve|workspace|agent|help)$/);
+  const isDirectMessage = cleanArgs.length > 0 && possibleMessage && firstArg && !firstArg.match(/^(chat|serve|workspace|agent|task|help)$/);
 
   if (isDirectMessage) {
     // 直接聊天模式: hyperchat "你好"
@@ -174,6 +189,11 @@ async function handleCommand(): Promise<{ shouldExit: boolean }> {
       }
       return { shouldExit: true };  // 所有agent命令执行完都应该退出
 
+    case 'task':
+      const taskSubCmd = cleanArgs[1];
+      await handleTaskCommand(taskSubCmd, cleanArgs.slice(2), logger);
+      return { shouldExit: true };  // 所有task命令执行完都应该退出
+
     case 'help':
     default:
       showHelp();
@@ -216,6 +236,120 @@ async function listAgentsWrapper(_logger: Logger) {
 
 async function createAgentWrapper(name: string, _logger: Logger) {
   await createAgent(name);
+}
+
+// 任务管理功能
+async function handleTaskCommand(subCmd: string, args: string[], logger: Logger) {
+  // 解析选项
+  function getOption(optionName: string): string | undefined {
+    const index = args.indexOf(optionName);
+    return index >= 0 && index + 1 < args.length ? args[index + 1] : undefined;
+  }
+
+  function hasFlag(flagName: string): boolean {
+    return args.includes(flagName);
+  }
+
+  // 移除选项，保留位置参数
+  const positionalArgs = args.filter(arg => !arg.startsWith('-'));
+
+  switch (subCmd) {
+    case 'list':
+    case undefined:
+      await listTasks();
+      break;
+
+    case 'create':
+      const taskName = positionalArgs[0];
+      if (!taskName) {
+        logger.error('请提供任务名称');
+        logger.info('使用方法: hyperchat task create <name> --description "描述" --agent <agent_key> [--cron "0 0 * * *"] [--disabled]');
+        break;
+      }
+
+      const createOptions = {
+        description: getOption('--description'),
+        agent: getOption('--agent'),
+        cron: getOption('--cron'),
+        disabled: hasFlag('--disabled'),
+      };
+
+      await createTask(taskName, createOptions);
+      break;
+
+    case 'show':
+      const showTaskName = positionalArgs[0];
+      if (!showTaskName) {
+        logger.error('请提供任务名称');
+        logger.info('使用方法: hyperchat task show <name>');
+        break;
+      }
+      await showTask(showTaskName);
+      break;
+
+    case 'enable':
+      const enableTaskName = positionalArgs[0];
+      if (!enableTaskName) {
+        logger.error('请提供任务名称');
+        logger.info('使用方法: hyperchat task enable <name>');
+        break;
+      }
+      await enableTask(enableTaskName);
+      break;
+
+    case 'disable':
+      const disableTaskName = positionalArgs[0];
+      if (!disableTaskName) {
+        logger.error('请提供任务名称');
+        logger.info('使用方法: hyperchat task disable <name>');
+        break;
+      }
+      await disableTask(disableTaskName);
+      break;
+
+    case 'delete':
+      const deleteTaskName = positionalArgs[0];
+      if (!deleteTaskName) {
+        logger.error('请提供任务名称');
+        logger.info('使用方法: hyperchat task delete <name> [--force]');
+        break;
+      }
+      await deleteTask(deleteTaskName, { force: hasFlag('--force') });
+      break;
+
+    case 'edit':
+      const editTaskName = positionalArgs[0];
+      if (!editTaskName) {
+        logger.error('请提供任务名称');
+        logger.info('使用方法: hyperchat task edit <name> [--description "新描述"] [--agent <agent_key>] [--cron "新调度"] [--enable|--disable]');
+        break;
+      }
+
+      const editOptions = {
+        description: getOption('--description'),
+        agent: getOption('--agent'),
+        cron: getOption('--cron'),
+        enable: hasFlag('--enable'),
+        disable: hasFlag('--disable'),
+      };
+
+      await editTask(editTaskName, editOptions);
+      break;
+
+    case 'export':
+      const outputFile = getOption('--output') || getOption('-o');
+      await exportTasks(outputFile);
+      break;
+
+    case 'stats':
+      await taskStats();
+      break;
+
+    default:
+      logger.error('未知的任务命令:', subCmd);
+      logger.info('可用命令: list, create, show, enable, disable, delete, edit, export, stats');
+      break;
+  }
 }
 
 
