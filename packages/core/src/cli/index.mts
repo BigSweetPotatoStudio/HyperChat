@@ -34,7 +34,8 @@ import {
   showScheduler
 } from './commands/task.mjs';
 import { workspaceManager } from '../workspace/index.mjs';
-import { initCliI18n, addCliTranslations, t } from '../i18n.mjs';
+import { initCliI18n, t, setCurrLang, getCurrLang } from '../i18n.mjs';
+import type { Language } from '@dadigua/hyperchat-shared';
 // 获取包信息
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const packagePath = join(__dirname, '..', '..', 'package.json');
@@ -51,11 +52,35 @@ const globalOptions = {
   host: getOptionValue(args, '--host') || 'localhost',
   port: parseInt(getOptionValue(args, '--port') || '16102'),
   password: getOptionValue(args, '--password'),
-  workspace: getOptionValue(args, '--workspace')
+  workspace: getOptionValue(args, '--workspace'),
+  language: getOptionValue(args, '--language') || getOptionValue(args, '--lang')
 };
 
-// 移除选项，保留命令和参数
-const cleanArgs = args.filter(arg => !arg.startsWith('--') && !arg.startsWith('-'));
+// 移除选项和选项值，保留命令和参数
+function getCleanArgs(args: string[]): string[] {
+  const cleanArgs: string[] = [];
+  const optionsWithValues = ['--workspace', '--host', '--port', '--password', '--language', '--lang'];
+  
+  for (let i = 0; i < args.length; i++) {
+    const arg = args[i];
+    
+    // 跳过选项
+    if (arg.startsWith('--') || arg.startsWith('-')) {
+      // 如果是有值的选项，也跳过下一个参数（选项值）
+      if (optionsWithValues.includes(arg)) {
+        i++; // 跳过选项值
+      }
+      continue;
+    }
+    
+    // 保留非选项参数
+    cleanArgs.push(arg);
+  }
+  
+  return cleanArgs;
+}
+
+const cleanArgs = getCleanArgs(args);
 
 // 获取选项值
 function getOptionValue(args: string[], option: string): string | undefined {
@@ -74,6 +99,8 @@ ${t`Usage:`}
 
 ${t`Global options:`}
   --workspace <path>       ${t`Use specified workspace (override auto-detection)`}
+  --language <lang>        ${t`Set language (zh/en, highest priority)`}
+  --lang <lang>            ${t`Alias for --language`}
   --host <host>            ${t`Connect to specified server (default: localhost)`}
   --port <port>            ${t`Specify port (default: 16100)`}
   --password <password>    ${t`Server password`}
@@ -97,6 +124,7 @@ ${t`Commands:`}
   serve                    ${t`Start backend server (includes Web UI)`}
   run                      ${t`Start core service (no Web UI)`}
   workspace create         ${t`Create workspace in current directory`}
+  language [lang]          ${t`Show or set interface language`}
   
   # ${t`Task management`}
   task list                ${t`List all tasks`}
@@ -128,6 +156,9 @@ ${t`Examples:`}
   hyperchat serve                   # ${t`Start server (includes Web UI)`}
   hyperchat run                     # ${t`Start core service (background task scheduling)`}
   hyperchat workspace create        # ${t`Create workspace in current directory`}
+  hyperchat language zh             # ${t`Set interface to Chinese`}
+  hyperchat language en             # ${t`Set interface to English`}
+  hyperchat --language zh chat      # ${t`Use Chinese for this command`}
 
 ${t`Welcome to HyperChat CLI! 🎉`}
 `);
@@ -141,7 +172,7 @@ async function handleCommand(): Promise<{ shouldExit: boolean }> {
 
   // 检测是否有非命令的消息 (直接聊天)
   const firstArg = cleanArgs[0];
-  const isDirectMessage = cleanArgs.length > 0 && firstArg && !firstArg.match(/^(chat|serve|run|workspace|agent|task|help)$/);
+  const isDirectMessage = cleanArgs.length > 0 && firstArg && !firstArg.match(/^(chat|serve|run|workspace|agent|task|language|help)$/);
 
   if (isDirectMessage) {
     // 直接聊天模式: hyperchat "你好"
@@ -194,6 +225,11 @@ async function handleCommand(): Promise<{ shouldExit: boolean }> {
       const taskSubCmd = cleanArgs[1];
       await handleTaskCommand(taskSubCmd, cleanArgs.slice(2), logger);
       return { shouldExit: true };  // 所有task命令执行完都应该退出
+
+    case 'language':
+      const langArg = cleanArgs[1];
+      await handleLanguageCommand(langArg, logger);
+      return { shouldExit: true };  // language命令执行完应该退出
 
     case 'help':
     default:
@@ -449,6 +485,73 @@ async function handleTaskCommand(subCmd: string, args: string[], logger: Logger)
   }
 }
 
+// 语言管理功能
+async function handleLanguageCommand(langArg: string | undefined, logger: Logger) {
+  try {
+    // 如果没有提供语言参数，显示当前语言
+    if (!langArg) {
+      const currentLang = getCurrLang();
+      const langName = currentLang === 'zhCN' ? t`Chinese` : t`English`;
+      console.log(`\n🌍 ${t`Current interface language: ${langName} (${currentLang})`}`);
+      console.log(`\n💡 ${t`Available languages:`}`);
+      console.log(`  zh / zhCN  - ${t`Chinese (Simplified)`}`);
+      console.log(`  en / enUS  - ${t`English`}`);
+      console.log(`\n📝 ${t`Usage: hyperchat language <lang>`}`);
+      return;
+    }
+
+    // 标准化语言参数
+    let targetLang: Language;
+    const langInput = langArg.toLowerCase();
+    
+    if (langInput === 'zh' || langInput === 'zhcn' || langInput === 'cn') {
+      targetLang = 'zhCN';
+    } else if (langInput === 'en' || langInput === 'enus' || langInput === 'us') {
+      targetLang = 'enUS';
+    } else {
+      console.error(`❌ ${t`Unsupported language: ${langArg}`}`);
+      console.log(`\n💡 ${t`Available languages:`}`);
+      console.log(`  zh / zhCN  - ${t`Chinese (Simplified)`}`);
+      console.log(`  en / enUS  - ${t`English`}`);
+      return;
+    }
+
+    // 获取当前语言
+    const currentLang = getCurrLang();
+    if (currentLang === targetLang) {
+      const langName = targetLang === 'zhCN' ? t`Chinese` : t`English`;
+      console.log(`✅ ${t`Interface language is already set to ${langName}`}`);
+      return;
+    }
+
+    // 设置新语言
+    setCurrLang(targetLang);
+    
+    // 更新到AppSettings (异步，不阻塞用户体验)
+    try {
+      const currentSettings = await Command.getAppSettings();
+      await Command.updateAppSettings({
+        updates: {
+          appearance: { 
+            ...currentSettings.appearance,
+            language: targetLang 
+          }
+        }
+      });
+    } catch (error) {
+      // 如果更新AppSettings失败，只记录警告，不影响当前会话的语言切换
+      logger.warn(`⚠️  ${t`Failed to save language setting: ${error instanceof Error ? error.message : String(error)}`}`);
+    }
+
+    const newLangName = targetLang === 'zhCN' ? t`Chinese` : t`English`;
+    console.log(`✅ ${t`Interface language changed to ${newLangName}`}`);
+    console.log(`💡 ${t`Language setting has been saved and will persist across sessions`}`);
+    
+  } catch (error) {
+    logger.error(t`Failed to change language: ${error instanceof Error ? error.message : String(error)}`);
+  }
+}
+
 
 // 全局退出处理
 let isExiting = false;
@@ -475,9 +578,8 @@ process.on('exit', cleanup);    // 正常退出
 // 初始化i18n系统然后执行命令
 async function main() {
   try {
-    // 初始化i18n系统
-    await initCliI18n();
-    addCliTranslations();
+    // 初始化i18n系统，命令行语言参数具有最高优先级
+    await initCliI18n(globalOptions.language);
     
     // 执行命令
     const result = await handleCommand();

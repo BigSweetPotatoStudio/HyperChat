@@ -60,27 +60,41 @@ function detectSystemLanguage(): Language {
 /**
  * 初始化CLI i18n系统
  */
-export async function initCliI18n(): Promise<void> {
+export async function initCliI18n(commandLineLanguage?: string): Promise<void> {
   if (isInitialized) {
     return;
   }
 
   let currentLanguage: Language;
 
-  try {
-    // 1. 优先从AppSettings获取语言设置
-    const appSettings = await Command.getAppSettings();
-    currentLanguage = appSettings?.appearance?.language || detectSystemLanguage();
-  } catch (error) {
-    // 2. 如果AppSettings加载失败，使用环境变量或系统检测
-    currentLanguage = getLanguageFromEnv() || detectSystemLanguage();
+  // 优先级: 命令行参数 > AppSettings > 环境变量 > 系统检测
+  if (commandLineLanguage) {
+    // 1. 最高优先级：命令行参数 --language
+    const langInput = commandLineLanguage.toLowerCase();
+    if (langInput === 'zh' || langInput === 'zhcn' || langInput === 'cn') {
+      currentLanguage = 'zhCN';
+    } else if (langInput === 'en' || langInput === 'enus' || langInput === 'us') {
+      currentLanguage = 'enUS';
+    } else {
+      console.warn(`⚠️  Unsupported language from command line: ${commandLineLanguage}, using default`);
+      currentLanguage = detectSystemLanguage();
+    }
+  } else {
+    try {
+      // 2. 从AppSettings获取语言设置
+      const appSettings = await Command.getAppSettings();
+      currentLanguage = appSettings?.appearance?.language || detectSystemLanguage();
+    } catch (error) {
+      // 3. 如果AppSettings加载失败，使用环境变量或系统检测
+      currentLanguage = getLanguageFromEnv() || detectSystemLanguage();
+    }
   }
 
   // 初始化shared i18n系统
   initI18n({
     currentLanguage,
     translations,
-    autoCollect: process.env.NODE_ENV === 'development' || process.env.HYPERCHAT_DEV === 'true',
+    autoCollect: true,
     onLanguageChange: async (lang: Language) => {
       // 异步更新AppSettings
       try {
@@ -103,147 +117,7 @@ export async function initCliI18n(): Promise<void> {
   isInitialized = true;
 }
 
-/**
- * 添加CLI专用的翻译文本
- */
-export function addCliTranslations(): void {
-  const cliTranslations = {
-    // CLI专用翻译
-    "Getting agent list...": {
-      "zh": "获取代理列表..."
-    },
-    "Agent list:": {
-      "zh": "代理列表:"
-    },
-    "No agents available": {
-      "zh": "暂无代理"
-    },
-    "Create a new agent with: hyperchat agent create <name>": {
-      "zh": "使用以下命令创建新代理: hyperchat agent create <name>"
-    },
-    "Agent created successfully": {
-      "zh": "代理创建成功"
-    },
-    "Welcome to HyperChat CLI! 🎉": {
-      "zh": "欢迎使用 HyperChat CLI! 🎉"
-    },
-    "Type your message...": {
-      "zh": "输入您的消息..."
-    },
-    "Exit": {
-      "zh": "退出"
-    },
-    "Workspace created successfully": {
-      "zh": "工作区创建成功"
-    },
-    "This directory is already a workspace": {
-      "zh": "此目录已经是工作区"
-    },
-    // 服务器相关
-    "Starting HyperChat server...": {
-      "zh": "启动 HyperChat 服务器..."
-    },
-    "Press Ctrl+C to stop": {
-      "zh": "按 Ctrl+C 停止服务器"
-    },
-    "Starting core service...": {
-      "zh": "启动核心服务..."
-    },
-    "Core service is running": {
-      "zh": "核心服务正在运行"
-    },
-    "Service stopped": {
-      "zh": "服务已停止"
-    },
-    // 任务相关
-    "Task list:": {
-      "zh": "任务列表:"
-    },
-    "No tasks found": {
-      "zh": "未找到任务"
-    },
-    "Task created successfully": {
-      "zh": "任务创建成功"
-    },
-    "Task updated successfully": {
-      "zh": "任务更新成功"
-    },
-    "Task deleted successfully": {
-      "zh": "任务删除成功"
-    },
-    "Task enabled successfully": {
-      "zh": "任务启用成功"
-    },
-    "Task disabled successfully": {
-      "zh": "任务禁用成功"
-    },
-    "Task triggered successfully": {
-      "zh": "任务触发成功"
-    },
-    // CLI常用消息
-    "Please provide agent subcommand": {
-      "zh": "请提供agent子命令"
-    },
-    "Available commands: list, create, delete, <name> \"message\", <name> chat": {
-      "zh": "可用命令: list, create, delete, <name> \"message\", <name> chat"
-    },
-    "Workspace status:": {
-      "zh": "工作区状态:"
-    },
-    "Agent deleted successfully": {
-      "zh": "代理删除成功"
-    },
-    "Available commands: create": {
-      "zh": "可用命令: create"
-    },
-    // 错误和警告
-    "Error": {
-      "zh": "错误"
-    },
-    "Warning": {
-      "zh": "警告"
-    },
-    // CLI帮助和界面
-    "Powerful AI assistant command line tool": {
-      "zh": "强大的 AI 助手命令行工具"
-    },
-    "Usage:": {
-      "zh": "使用方法:"
-    },
-    "Global options:": {
-      "zh": "全局选项:"
-    },
-    "Commands:": {
-      "zh": "命令:"
-    },
-    "Examples:": {
-      "zh": "示例:"
-    },
-    "General chat": {
-      "zh": "通用聊天"
-    },
-    "System management": {
-      "zh": "系统管理"
-    },
-    "Task management": {
-      "zh": "任务管理"
-    },
-    "Chat function failed: ": {
-      "zh": "聊天功能失败:"
-    },
-    "Exiting...": {
-      "zh": "正在退出..."
-    },
-    "Error occurred during exit: ": {
-      "zh": "退出过程中出现错误:"
-    },
-    "❌ Command execution failed: ": {
-      "zh": "❌ 命令执行失败:"
-    }
-  };
 
-  addTranslations(cliTranslations);
-}
 
 /**
  * 从AppSettings更新语言（当AppSettings在其他地方被更新时调用）
@@ -253,6 +127,7 @@ export function syncLanguageFromAppSettings(language: Language): void {
     updateLanguage(language);
   }
 }
+
 
 // 导出shared包的函数，保持API兼容
 export { t, setCurrLang, getCurrLang };

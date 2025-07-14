@@ -11,14 +11,12 @@
 import type { Language, TranslationData, I18nConfig } from './types.mjs';
 
 // 全局状态
-let currentLanguage: Language = 'zhCN';
+let currentLanguage: Language = 'enUS'; // 默认语言为英文
 let translationData: TranslationData = {};
 let onLanguageChangeCallback: ((lang: Language) => void | Promise<void>) | undefined;
 let autoCollectEnabled = false;
 let isInitialized = false;
 
-// 收集的未翻译文本（开发模式）
-const collectedTexts = new Set<string>();
 
 /**
  * 初始化 i18n 系统
@@ -49,28 +47,13 @@ export function t(strings: TemplateStringsArray, ...values: any[]): string {
     "",
   );
 
-  // 如果翻译数据中没有这个文本
-  if (!translationData[str]) {
-    // 开发模式下，如果文本包含英文字符，自动添加到翻译数据中
-    if (autoCollectEnabled && hasEnglish(str)) {
-      translationData[str] = {
-        en: str,     // 英文原文
-        zh: undefined,    // 中文翻译（待填充）
-      };
-      
-      // 收集未翻译文本
-      collectedTexts.add(str);
-    }
-    // 返回原文本
-    return str;
+  // 根据当前语言返回对应翻译
+  if (currentLanguage === "zhCN") {
+    return translationData[str].zh || str;  // 返回中文翻译，如果没有则返回原文
   } else {
-    // 根据当前语言返回对应翻译
-    if (currentLanguage === "zhCN") {
-      return translationData[str].zh || str;  // 返回中文翻译，如果没有则返回原文
-    } else {
-      return translationData[str].en || str;  // 返回英文原文，如果没有则返回原文
-    }
+    return translationData[str].en || str;  // 返回英文原文，如果没有则返回原文
   }
+
 }
 
 /**
@@ -80,9 +63,9 @@ export async function setCurrLang(lang: Language): Promise<void> {
   if (!isInitialized) {
     throw new Error('i18n system not initialized. Call initI18n() first.');
   }
-  
+
   currentLanguage = lang;
-  
+
   // 调用回调函数（如果有）
   if (onLanguageChangeCallback) {
     try {
@@ -107,19 +90,7 @@ export function getTranslations(): TranslationData {
   return { ...translationData };
 }
 
-/**
- * 获取收集的未翻译文本（开发模式）
- */
-export function getCollectedTexts(): string[] {
-  return Array.from(collectedTexts);
-}
 
-/**
- * 清空收集的文本（开发模式）
- */
-export function clearCollectedTexts(): void {
-  collectedTexts.clear();
-}
 
 /**
  * 添加翻译数据（运行时动态添加）

@@ -14,8 +14,6 @@ export {
   setCurrLang, 
   getCurrLang, 
   getTranslations, 
-  getCollectedTexts, 
-  clearCollectedTexts,
   addTranslations,
   updateLanguage,
   isI18nInitialized,
