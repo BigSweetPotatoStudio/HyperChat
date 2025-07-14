@@ -34,3 +34,4 @@ chatlogs/
 dist-node/
 *.backup
 *.json.backup-*
+learns/

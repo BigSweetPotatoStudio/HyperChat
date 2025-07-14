@@ -43,7 +43,7 @@ HyperChat 是一个多平台的 AI 聊天应用，该项目拥有完善的 MCP�
 * 错误处理和用户体验优先，提供清晰的错误提示和加载状态
 
 ## i18n 国际化
-* i18n 相关的代码在 packages/shared/src/i18n 中。 软件默认使用英文，然后通过 t`english` 转成中文
+* i18n 相关的代码在 packages/shared/src/i18n 中。 软件默认使用英文，然后通过转成 JSON 的方式来支持国际化。t`english`, 里面不应该有${xxx}。
 * packages/shared/src/i18n/i18n.json 不用修改。后续我会提供一个脚本来自动生成 i18n.json 文件。
 
 ## ✅ 新架构决策 (2.0版本 - 已完成实现)
