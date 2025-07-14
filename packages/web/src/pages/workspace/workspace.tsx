@@ -1,28 +1,21 @@
 import React, { useState, useEffect, useRef } from "react";
 import {
-  Card,
   Button,
   Modal,
   Form,
-  Input,
   message,
   Tabs,
   Space,
-  Tooltip,
-  Popconfirm,
   Empty,
-  Badge,
   Tag,
   Splitter,
   Drawer,
-  Dropdown,
 } from "antd";
 import {
   FolderOpenOutlined,
   SettingOutlined,
   GlobalOutlined,
   SwapOutlined, // 新增切换图标
-  MoreOutlined,
 } from "@ant-design/icons";
 import { call, msg_receive } from "../../common/call";
 import { useForceUpdate } from "../../hooks/useForceUpdate";
@@ -38,13 +31,12 @@ import { WorkspaceOpenModal } from "./WorkspaceOpenForm";
 import {
   WorkspaceInfo,
   CurrentWorkspaceDetails,
-  FileNode,
   ChatTab,
   WorkspaceHistoryItem,
   type PanelSizes,
 } from "./types";
 import { getPanelSizes, savePanelSizes, getWorkspaceHistory, addToWorkspaceHistory, removeFromWorkspaceHistory, addAgentRecentUsage } from "../../utils/storage";
-import { AgentConfig, IMCPClient, MessageData, MessageDataMap } from "@dadigua/hyperchat-shared";
+import { AgentConfig, MessageData, MessageDataMap } from "@dadigua/hyperchat-shared";
 import { WorkspaceSettingsSchema } from "@dadigua/hyperchat-shared";
 import { AppSettingsSchema, MCPGatewaySchema } from "@dadigua/hyperchat-shared";
 import type { z } from "zod";
@@ -65,13 +57,22 @@ export type { WorkspaceInfo, CurrentWorkspaceDetails, ChatTab } from "./types";
 export function Workspace() {
   const refresh = useForceUpdate();
 
+  // 通用错误处理函数
+  const handleError = (error: unknown, errorMessage: string) => {
+    console.error(errorMessage, error);
+    message.error(t`${errorMessage}`);
+  };
+
   // 只从context获取真正需要在Layout中管理的状态
 
 
-  // 本地状态管理 - 直接使用从 Layout 传递的状态
-  const [localIsModelConfigOpen, setLocalIsModelConfigOpen] = useState(false);
-
-  // 组合的刷新函数
+  // 抽屉状态管理 - 合并为一个对象
+  const [drawerStates, setDrawerStates] = useState({
+    modelConfig: false,
+    appSettings: false,
+    workspaceSettings: false,
+    mcpGateways: false,
+  });
 
 
   const [activeWorkspaceKey, setActiveWorkspaceKey] = useState<string>("");
@@ -88,12 +89,10 @@ export function Workspace() {
   const [selectedPath, setSelectedPath] = useState<string>("");
   const [showHiddenFiles, setShowHiddenFiles] = useState(true);
   const [workspaceHistory, setWorkspaceHistory] = useState<WorkspaceHistoryItem[]>(() => getWorkspaceHistory());
-  const [settingsDrawerOpen, setSettingsDrawerOpen] = useState(false);
+  // 设置相关状态
   const [currentSettingsWorkspace, setCurrentSettingsWorkspace] = useState<WorkspaceInfo | null>(null);
   const [workspaceSettings, setWorkspaceSettings] = useState<z.infer<typeof WorkspaceSettingsSchema> | null>(null);
-  const [appSettingsDrawerOpen, setAppSettingsDrawerOpen] = useState(false);
   const [appSettings, setAppSettings] = useState<z.infer<typeof AppSettingsSchema> | null>(null);
-  const [mcpGatewaysDrawerOpen, setMCPGatewaysDrawerOpen] = useState(false);
   const [globalWorkspacePath, setGlobalWorkspacePath] = useState<string>('unknown'); // 全局工作区路径
   const [form] = Form.useForm();
   // 单工作区的标签页状态
@@ -104,6 +103,9 @@ export function Workspace() {
   const agentManagementRef = useRef<AgentManagementRef | null>(null);
   const mcpManagementRef = useRef<MCPManagementRef | null>(null);
   const taskManagementRef = useRef<TaskManagementRef | null>(null);
+  
+  // 防抖计时器 ref
+  const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
 
 
   // 面板尺寸状态 - 使用数组格式，与Ant Design Splitter兼容
@@ -171,8 +173,7 @@ export function Workspace() {
         setActiveWorkspaceKey(currentWorkspaceInfo.path);
       }
     } catch (error) {
-      console.error("Failed to load current workspace:", error);
-      message.error(t`Failed to load workspace`);
+      handleError(error, "Failed to load current workspace");
     }
   };
 
@@ -223,8 +224,7 @@ export function Workspace() {
 
       setCurrentWorkspaceDetails(details);
     } catch (error) {
-      console.error("Failed to load workspace details:", error);
-      message.error(t`Failed to load workspace details`);
+      handleError(error, "Failed to load workspace details");
     }
   };
 
@@ -256,8 +256,7 @@ export function Workspace() {
       //   setConfirmCreateModalOpen(true);
       // }
     } catch (error) {
-      console.error("Failed to open workspace:", error);
-      message.error(t`Failed to open workspace`);
+      handleError(error, "Failed to open workspace");
     }
   };
 
@@ -278,8 +277,7 @@ export function Workspace() {
       setConfirmCreateModalOpen(true);
       setPendingWorkspacePath(workspacePath);
 
-      console.error("Failed to switch to workspace:", error);
-      message.error(t`Failed to switch to workspace`);
+      handleError(error, "Failed to switch to workspace");
     }
   };
 
@@ -300,8 +298,7 @@ export function Workspace() {
       message.success(t`Switched to workspace`);
 
     } catch (error) {
-      console.error("Failed to create workspace:", error);
-      message.error(t`Failed to create workspace`);
+      handleError(error, "Failed to create workspace");
     }
   };
 
@@ -316,7 +313,7 @@ export function Workspace() {
       setConfirmCreateModalOpen(false);
       setPendingWorkspacePath("");
     } catch (error) {
-      console.error("Failed to confirm create workspace:", error);
+      handleError(error, "Failed to confirm create workspace");
     }
   };
 
@@ -331,10 +328,9 @@ export function Workspace() {
       // 加载工作区设置
       const settings = await call("getWorkspaceSettings", { workspacePath: workspace.path });
       setWorkspaceSettings(settings);
-      setSettingsDrawerOpen(true);
+      setDrawerStates(prev => ({ ...prev, workspaceSettings: true }));
     } catch (error) {
-      console.error("Failed to load workspace settings:", error);
-      message.error(t`Failed to load workspace settings`);
+      handleError(error, "Failed to load workspace settings");
     }
   };
 
@@ -364,8 +360,7 @@ export function Workspace() {
         }
       }
     } catch (error) {
-      console.error("Failed to update workspace settings:", error);
-      message.error(t`Failed to update workspace settings`);
+      handleError(error, "Failed to update workspace settings");
     }
   };
 
@@ -375,10 +370,9 @@ export function Workspace() {
       // 加载应用设置
       const settings = await call("getAppSettings");
       setAppSettings(settings);
-      setAppSettingsDrawerOpen(true);
+      setDrawerStates(prev => ({ ...prev, appSettings: true }));
     } catch (error) {
-      console.error("Failed to load app settings:", error);
-      message.error(t`Failed to load app settings`);
+      handleError(error, "Failed to load app settings");
     }
   };
 
@@ -405,8 +399,7 @@ export function Workspace() {
         }
       }
     } catch (error) {
-      console.error("Failed to update app settings:", error);
-      message.error(t`Failed to update app settings`);
+      handleError(error, "Failed to update app settings");
     }
   };
 
@@ -416,10 +409,9 @@ export function Workspace() {
       // 加载应用设置以获取当前的 MCP Gateways 配置
       const settings = await call("getAppSettings");
       setAppSettings(settings);
-      setMCPGatewaysDrawerOpen(true);
+      setDrawerStates(prev => ({ ...prev, mcpGateways: true }));
     } catch (error) {
-      console.error("Failed to load MCP gateways:", error);
-      message.error(t`Failed to load MCP gateways`);
+      handleError(error, "Failed to load MCP gateways");
     }
   };
 
@@ -463,8 +455,7 @@ export function Workspace() {
 
       message.success(t`MCP Gateways updated successfully`);
     } catch (error) {
-      console.error("Failed to update MCP gateways:", error);
-      message.error(t`Failed to update MCP gateways`);
+      handleError(error, "Failed to update MCP gateways");
     }
   };
 
@@ -484,13 +475,12 @@ export function Workspace() {
 
       setDirectoryBrowserOpen(false);
     } catch (error) {
-      console.error("Failed to process selected directory:", error);
-      message.error(t`Failed to process selected directory`);
+      handleError(error, "Failed to process selected directory");
     }
   };
 
   // 刷新工作区详情
-  const refreshWorkspaceDetails = async (workspaceKey?: string, refreshType?: 'agents' | 'mcp' | 'tasks' | 'all') => {
+  const refreshWorkspaceDetails = async (refreshType?: 'agents' | 'mcp' | 'tasks' | 'all') => {
     const type = refreshType || 'all';
 
     if (currentWorkspace && currentWorkspaceDetails) {
@@ -583,8 +573,10 @@ export function Workspace() {
 
       // 保存到localStorage（使用防抖，避免频繁保存）
       const workspaceKey = currentWorkspace.path;
-      clearTimeout((handlePanelSizeChange as any).timeoutId);
-      (handlePanelSizeChange as any).timeoutId = setTimeout(() => {
+      if (debounceTimerRef.current) {
+        clearTimeout(debounceTimerRef.current);
+      }
+      debounceTimerRef.current = setTimeout(() => {
         savePanelSizes(workspaceKey, sizesToSave);
       }, 500); // 500ms 防抖
     }
@@ -731,81 +723,42 @@ export function Workspace() {
     return currentWorkspace ? [currentWorkspace] : [];
   };
 
+  // 渲染工作区标签页标签
+  const renderWorkspaceLabel = (workspace: WorkspaceInfo) => {
+    const isGlobal = workspace.isGlobal;
+    
+    return (
+      <Space>
+        {isGlobal ? <GlobalOutlined /> : <FolderOpenOutlined />}
+        <div style={{ textAlign: 'left' }}>
+          <div>{workspace.name || (isGlobal ? t`Global Workspace` : workspace.name)}</div>
+          <div style={{ fontSize: '11px', color: '#999', lineHeight: '1.2' }}>
+            {workspace.path}
+          </div>
+        </div>
+        {isGlobal && <Tag color="blue">{t`Global`}</Tag>}
+        <Button 
+          type="text" 
+          size="small" 
+          icon={<SettingOutlined />} 
+          onClick={(e) => {
+            e.stopPropagation();
+            handleWorkspaceSettings(workspace);
+          }} 
+        />
+      </Space>
+    );
+  };
+
   // 生成标签页items（新架构：只显示当前工作区）
   const getTabItems = () => {
-    const items: Array<{
-      key: string;
-      label: React.ReactNode;
-      closable: boolean;
-    }> = [];
     const workspaceList = getCurrentWorkspaceForDisplay();
 
-    workspaceList.forEach(workspace => {
-      const isGlobal = workspace.isGlobal;
-
-      items.push({
-        key: workspace.path,
-        label: (
-          <Space>
-            {isGlobal ? <GlobalOutlined /> : <FolderOpenOutlined />}
-            <div style={{ textAlign: 'left' }}>
-              <div>{workspace.name || (isGlobal ? t`Global Workspace` : workspace.name)}</div>
-              <div style={{ fontSize: '11px', color: '#999', lineHeight: '1.2' }}>
-                {workspace.path}
-              </div>
-            </div>
-            {isGlobal ? (
-              <Space>
-                <Tag color="blue">{t`Global`}</Tag>
-                <Button type="text" size="small" icon={<SettingOutlined />} onClick={(e) => {
-                  e.stopPropagation();
-                  handleWorkspaceSettings(workspace);
-                }} />
-
-              </Space>
-            ) : (
-              <Button type="text" size="small" icon={<SettingOutlined />} onClick={(e) => {
-                e.stopPropagation();
-                handleWorkspaceSettings(workspace);
-              }} />
-              // <Dropdown
-              //   menu={{
-              //     items: [
-              //       {
-              //         key: 'settings',
-              //         label: t`Workspace Settings`,
-              //         icon: <SettingOutlined />,
-              //         onClick: () => {
-              //           handleWorkspaceSettings(workspace);
-              //         }
-              //       },
-              //       {
-              //         key: 'switchToGlobal',
-              //         label: t`Switch to Global Workspace`,
-              //         icon: <GlobalOutlined />,
-              //         onClick: async () => {
-              //           if (globalWorkspacePath) {
-              //             await switchToWorkspace(globalWorkspacePath);
-              //           }
-              //         }
-              //       },
-              //       {
-              //         type: 'divider',
-              //       },
-              //     ]
-              //   }}
-              //   trigger={['click']}
-              // >
-              //   <Button type="text" size="small" icon={<MoreOutlined />} onClick={(e) => e.stopPropagation()} />
-              // </Dropdown>
-            )}
-          </Space>
-        ),
-        closable: !isGlobal, // 全局工作区不可关闭
-      });
-    });
-
-    return items;
+    return workspaceList.map(workspace => ({
+      key: workspace.path,
+      label: renderWorkspaceLabel(workspace),
+      closable: false, // 工作区不可关闭
+    }));
   };
 
   // 渲染工作区内容
@@ -893,9 +846,9 @@ export function Workspace() {
               agentManagementRef={agentManagementRef}
               mcpManagementRef={mcpManagementRef}
               taskManagementRef={taskManagementRef}
-              onRefreshAgents={async () => { await refreshWorkspaceDetails(workspaceKey, 'agents'); }}
-              onRefreshMCP={async () => { await refreshWorkspaceDetails(workspaceKey, 'mcp'); }}
-              onRefreshTasks={async () => { await refreshWorkspaceDetails(workspaceKey, 'tasks'); }}
+              onRefreshAgents={async () => { await refreshWorkspaceDetails('agents'); }}
+              onRefreshMCP={async () => { await refreshWorkspaceDetails('mcp'); }}
+              onRefreshTasks={async () => { await refreshWorkspaceDetails('tasks'); }}
               onOpenChat={openAgentChat}
             />
           </Splitter.Panel>
@@ -914,7 +867,7 @@ export function Workspace() {
             type="editable-card"
             activeKey={activeWorkspaceKey}
             onChange={handleTabChange}
-            onEdit={(targetKey, action) => {
+            onEdit={(_, action) => {
               if (action === 'add') {
                 // 点击Switch按钮时打开工作区切换模态框
                 setOpenModalOpen(true);
@@ -931,7 +884,7 @@ export function Workspace() {
               left: <AppHeader />,
               right: (
                 <AppActions
-                  onAIProviderClick={() => setLocalIsModelConfigOpen(true)}
+                  onAIProviderClick={() => setDrawerStates(prev => ({ ...prev, modelConfig: true }))}
                   onRefresh={refresh}
                   onAppSettingsClick={handleAppSettings}
                   onMCPGatewaysClick={handleMCPGateways}
@@ -940,7 +893,6 @@ export function Workspace() {
             }}
             items={getTabItems().map(item => ({
               ...item,
-              closable: false, // 工作区不可关闭
               children: renderWorkspaceContent(item.key)
             }))}
             addIcon={
@@ -1005,9 +957,9 @@ export function Workspace() {
       <Drawer
         width={800}
         title={t`Application Settings`}
-        open={appSettingsDrawerOpen}
+        open={drawerStates.appSettings}
         onClose={() => {
-          setAppSettingsDrawerOpen(false);
+          setDrawerStates(prev => ({ ...prev, appSettings: false }));
           setAppSettings(null);
         }}
       >
@@ -1032,9 +984,9 @@ export function Workspace() {
       <Drawer
         width={800}
         title={currentSettingsWorkspace ? `${t`Workspace Settings`} - ${currentSettingsWorkspace.name}` : t`Workspace Settings`}
-        open={settingsDrawerOpen}
+        open={drawerStates.workspaceSettings}
         onClose={() => {
-          setSettingsDrawerOpen(false);
+          setDrawerStates(prev => ({ ...prev, workspaceSettings: false }));
           setCurrentSettingsWorkspace(null);
           setWorkspaceSettings(null);
         }}
@@ -1064,9 +1016,9 @@ export function Workspace() {
       <Drawer
         width={1000}
         title={t`AI Provider Settings`}
-        open={localIsModelConfigOpen}
+        open={drawerStates.modelConfig}
         onClose={() => {
-          setLocalIsModelConfigOpen(false);
+          setDrawerStates(prev => ({ ...prev, modelConfig: false }));
         }}
         styles={{
           body: {
@@ -1081,9 +1033,9 @@ export function Workspace() {
       <Drawer
         width={800}
         title={t`MCP Gateways Settings`}
-        open={mcpGatewaysDrawerOpen}
+        open={drawerStates.mcpGateways}
         onClose={() => {
-          setMCPGatewaysDrawerOpen(false);
+          setDrawerStates(prev => ({ ...prev, mcpGateways: false }));
           setAppSettings(null);
         }}
       >
