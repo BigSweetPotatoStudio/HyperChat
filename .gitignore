@@ -33,3 +33,4 @@ dist/
 chatlogs/
 dist-node/
 *.backup
+*.json.backup-*

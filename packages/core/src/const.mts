@@ -7,7 +7,6 @@
  * 
  * 端口说明：
  * - HTTPPORT (16100): 主 HTTP 服务器端口，用于 Web 前端访问
- * - MCPServerPORT (16110): MCP (Model Context Protocol) 服务器端口
  * 
  * 使用场景：
  * - HTTP 服务器启动时的默认端口配置
@@ -21,8 +20,6 @@ import p from "../package.json" with { type: "json" };
 /** HTTP 服务器默认端口 */
 const HTTPPORT = 16100;
 
-/** MCP 服务器默认端口 */
-const MCPServerPORT = 16110;
 
 /**
  * 应用配置对象
@@ -33,8 +30,6 @@ const MCPServerPORT = 16110;
 export const Config = {
   /** HTTP 服务器端口 */
   port: HTTPPORT,
-  /** MCP 服务器端口 */
-  mcp_server_port: MCPServerPORT,
 };
 
 
