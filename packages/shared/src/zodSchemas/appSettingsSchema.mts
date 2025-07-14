@@ -59,7 +59,7 @@ export const AIConfigSchema = z.object({
 // 外观设置 Schema
 export const AppearanceSchema = z.object({
   darkTheme: z.boolean().default(false).describe("Enable dark mode"),
-  language: z.enum(["zhCN", "enUS"]).default("zhCN").describe("Interface language"),
+  language: z.enum(["zh", "en", "ja", "ko", "fr", "de"]).default("en").describe("Interface language"),
 });
 
 // 桌面应用设置 Schema

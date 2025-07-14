@@ -11,7 +11,7 @@
 import type { Language, TranslationData, I18nConfig } from './types.mjs';
 
 // 全局状态
-let currentLanguage: Language = 'enUS'; // 默认语言为英文
+let currentLanguage: Language = 'en'; // 默认语言为英文
 let translationData: TranslationData = {};
 let onLanguageChangeCallback: ((lang: Language) => void | Promise<void>) | undefined;
 let autoCollectEnabled = false;
@@ -47,12 +47,38 @@ export function t(strings: TemplateStringsArray, ...values: any[]): string {
     "",
   );
   try {
-    // 根据当前语言返回对应翻译
-    if (currentLanguage === "zhCN") {
-      return translationData[str].zh || str;  // 返回中文翻译，如果没有则返回原文
-    } else {
-      return translationData[str].en || str;  // 返回英文原文，如果没有则返回原文
+    const translationEntry = translationData[str];
+    if (!translationEntry) {
+      return str; // 如果没有找到翻译条目，返回原文
     }
+
+    // 根据当前语言返回对应翻译
+    let translation: string | null | undefined;
+    switch (currentLanguage) {
+      case "zh":
+        translation = translationEntry.zh;
+        break;
+      case "ja":
+        translation = translationEntry.ja;
+        break;
+      case "ko":
+        translation = translationEntry.ko;
+        break;
+      case "fr":
+        translation = translationEntry.fr;
+        break;
+      case "de":
+        translation = translationEntry.de;
+        break;
+      case "en":
+      default:
+        // 英文直接返回原文（key）
+        translation = str;
+        break;
+    }
+
+    // 如果当前语言的翻译存在且不为空，返回翻译；否则返回原文
+    return (translation && translation.trim()) ? translation : str;
   } catch (e) { 
     return str; // 如果出错，返回原文
   }

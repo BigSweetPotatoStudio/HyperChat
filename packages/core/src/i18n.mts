@@ -32,13 +32,33 @@ function getLanguageFromEnv(): Language | null {
   // 支持中文的语言环境
   if (envLang.includes('zh_CN') || envLang.includes('zh-CN') || 
       envLang.includes('zh_TW') || envLang.includes('zh-TW')) {
-    return "zhCN";
+    return "zh";
+  }
+  
+  // 支持日语的语言环境
+  if (envLang.includes('ja_JP') || envLang.includes('ja-JP') || envLang.includes('ja')) {
+    return "ja";
+  }
+  
+  // 支持韩语的语言环境
+  if (envLang.includes('ko_KR') || envLang.includes('ko-KR') || envLang.includes('ko')) {
+    return "ko";
+  }
+  
+  // 支持法语的语言环境
+  if (envLang.includes('fr_FR') || envLang.includes('fr-FR') || envLang.includes('fr')) {
+    return "fr";
+  }
+  
+  // 支持德语的语言环境
+  if (envLang.includes('de_DE') || envLang.includes('de-DE') || envLang.includes('de')) {
+    return "de";
   }
   
   // 支持英文的语言环境
   if (envLang.includes('en_US') || envLang.includes('en-US') || 
-      envLang.includes('en_GB') || envLang.includes('en-GB')) {
-    return "enUS";
+      envLang.includes('en_GB') || envLang.includes('en-GB') || envLang.includes('en')) {
+    return "en";
   }
   
   return null;
@@ -54,7 +74,7 @@ function detectSystemLanguage(): Language {
   }
 
   // 默认使用英文
-  return "enUS"; // 可以根据需要调整默认语言
+  return "en"; // 可以根据需要调整默认语言
 }
 
 /**
@@ -72,9 +92,17 @@ export async function initCliI18n(commandLineLanguage?: string): Promise<void> {
     // 1. 最高优先级：命令行参数 --language
     const langInput = commandLineLanguage.toLowerCase();
     if (langInput === 'zh' || langInput === 'zhcn' || langInput === 'cn') {
-      currentLanguage = 'zhCN';
+      currentLanguage = 'zh';
     } else if (langInput === 'en' || langInput === 'enus' || langInput === 'us') {
-      currentLanguage = 'enUS';
+      currentLanguage = 'en';
+    } else if (langInput === 'ja' || langInput === 'jp') {
+      currentLanguage = 'ja';
+    } else if (langInput === 'ko' || langInput === 'kr') {
+      currentLanguage = 'ko';
+    } else if (langInput === 'fr') {
+      currentLanguage = 'fr';
+    } else if (langInput === 'de') {
+      currentLanguage = 'de';
     } else {
       console.warn(`⚠️  Unsupported language from command line: ${commandLineLanguage}, using default`);
       currentLanguage = detectSystemLanguage();

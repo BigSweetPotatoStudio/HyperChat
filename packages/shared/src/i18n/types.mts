@@ -5,13 +5,16 @@
  */
 
 // 支持的语言类型
-export type Language = "zhCN" | "enUS";
+export type Language = "zh" | "en" | "ja" | "ko" | "fr" | "de";
 
 // 翻译数据结构
 export interface TranslationData {
   [key: string]: {
-    zh?: string;  // 中文翻译
-    en?: string;  // 英文原文（可选，默认使用key）
+    zh?: string | null;  // 中文翻译
+    ja?: string | null;  // 日语翻译
+    ko?: string | null;  // 韩语翻译
+    fr?: string | null;  // 法语翻译
+    de?: string | null;  // 德语翻译
   };
 }
 

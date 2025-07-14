@@ -491,11 +491,21 @@ async function handleLanguageCommand(langArg: string | undefined, logger: Logger
     // 如果没有提供语言参数，显示当前语言
     if (!langArg) {
       const currentLang = getCurrLang();
-      const langName = currentLang === 'zhCN' ? t`Chinese` : t`English`;
+      let langName: string;
+      if (currentLang === 'zh') langName = t`Chinese`;
+      else if (currentLang === 'ja') langName = t`Japanese`;
+      else if (currentLang === 'ko') langName = t`Korean`;
+      else if (currentLang === 'fr') langName = t`French`;
+      else if (currentLang === 'de') langName = t`German`;
+      else langName = t`English`;
       console.log(`\n🌍 ${t`Current interface language:`} ${langName} (${currentLang})`);
       console.log(`\n💡 ${t`Available languages:`}`);
-      console.log(`  zh / zhCN  - ${t`Chinese (Simplified)`}`);
-      console.log(`  en / enUS  - ${t`English`}`);
+      console.log(`  zh - ${t`Chinese (Simplified)`}`);
+      console.log(`  en - ${t`English`}`);
+      console.log(`  ja - ${t`Japanese`}`);
+      console.log(`  ko - ${t`Korean`}`);
+      console.log(`  fr - ${t`French`}`);
+      console.log(`  de - ${t`German`}`);
       console.log(`\n📝 ${t`Usage: hyperchat language <lang>`}`);
       return;
     }
@@ -505,21 +515,39 @@ async function handleLanguageCommand(langArg: string | undefined, logger: Logger
     const langInput = langArg.toLowerCase();
     
     if (langInput === 'zh' || langInput === 'zhcn' || langInput === 'cn') {
-      targetLang = 'zhCN';
+      targetLang = 'zh';
     } else if (langInput === 'en' || langInput === 'enus' || langInput === 'us') {
-      targetLang = 'enUS';
+      targetLang = 'en';
+    } else if (langInput === 'ja' || langInput === 'jp') {
+      targetLang = 'ja';
+    } else if (langInput === 'ko' || langInput === 'kr') {
+      targetLang = 'ko';
+    } else if (langInput === 'fr') {
+      targetLang = 'fr';
+    } else if (langInput === 'de') {
+      targetLang = 'de';
     } else {
       console.error(`❌ ${t`Unsupported language:`} ${langArg}`);
       console.log(`\n💡 ${t`Available languages:`}`);
-      console.log(`  zh / zhCN  - ${t`Chinese (Simplified)`}`);
-      console.log(`  en / enUS  - ${t`English`}`);
+      console.log(`  zh - ${t`Chinese (Simplified)`}`);
+      console.log(`  en - ${t`English`}`);
+      console.log(`  ja - ${t`Japanese`}`);
+      console.log(`  ko - ${t`Korean`}`);
+      console.log(`  fr - ${t`French`}`);
+      console.log(`  de - ${t`German`}`);
       return;
     }
 
     // 获取当前语言
     const currentLang = getCurrLang();
     if (currentLang === targetLang) {
-      const langName = targetLang === 'zhCN' ? t`Chinese` : t`English`;
+      let langName: string;
+      if (targetLang === 'zh') langName = t`Chinese`;
+      else if (targetLang === 'ja') langName = t`Japanese`;
+      else if (targetLang === 'ko') langName = t`Korean`;
+      else if (targetLang === 'fr') langName = t`French`;
+      else if (targetLang === 'de') langName = t`German`;
+      else langName = t`English`;
       console.log(`✅ ${t`Interface language is already set to`} ${langName}`);
       return;
     }
@@ -543,7 +571,13 @@ async function handleLanguageCommand(langArg: string | undefined, logger: Logger
       logger.warn(`⚠️  ${t`Failed to save language setting:`} ${error instanceof Error ? error.message : String(error)}`);
     }
 
-    const newLangName = targetLang === 'zhCN' ? t`Chinese` : t`English`;
+    let newLangName: string;
+    if (targetLang === 'zh') newLangName = t`Chinese`;
+    else if (targetLang === 'ja') newLangName = t`Japanese`;
+    else if (targetLang === 'ko') newLangName = t`Korean`;
+    else if (targetLang === 'fr') newLangName = t`French`;
+    else if (targetLang === 'de') newLangName = t`German`;
+    else newLangName = t`English`;
     console.log(`✅ ${t`Interface language changed to`} ${newLangName}`);
     console.log(`💡 ${t`Language setting has been saved and will persist across sessions`}`);
     

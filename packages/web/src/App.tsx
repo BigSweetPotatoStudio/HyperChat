@@ -21,8 +21,6 @@ import {
   Progress, // 进度条
   App as AntdApp, // Antd 应用级容器
 } from "antd";
-import enUS from "antd/locale/en_US";
-import zhCN from "antd/locale/zh_CN";
 import {
   ChromeFilled, // 图标：Chrome
   CrownFilled, // 图标：皇冠

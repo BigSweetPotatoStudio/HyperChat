@@ -23,39 +23,182 @@ const __dirname = path.dirname(__filename);
 const rootDir = path.resolve(__dirname, "../");
 const i18nPath = path.resolve(rootDir, "./packages/shared/src/i18n/i18n.json");
 
-// 🎯 HyperChat 专业术语词典
+// 🎯 HyperChat 多语言专业术语词典
 const TERMINOLOGY_DICT = {
-  "Agent": "代理",
-  "Agents": "代理",
-  "MCP": "MCP",
-  "MCP Server": "MCP 服务器", 
-  "MCP Client": "MCP 客户端",
-  "Workspace": "工作区",
-  "Workspaces": "工作区",
-  "Chat": "聊天",
-  "Model": "模型",
-  "Provider": "提供商",
-  "API Key": "API 密钥",
-  "Task": "任务",
-  "Tasks": "任务",
-  "Schedule": "调度",
-  "Scheduler": "调度器",
-  "CLI": "命令行工具",
-  "Command": "命令",
-  "Template": "模板",
-  "Gateway": "网关",
-  "Token": "令牌",
-  "Prompt": "提示词",
-  "Temperature": "温度",
-  "Tool": "工具",
-  "Tools": "工具",
-  "Resource": "资源",
-  "System Prompt": "系统提示词",
-  "Chat Log": "聊天记录",
-  "History": "历史记录",
-  "Session": "会话",
-  "Configuration": "配置",
-  "Settings": "设置"
+  zh: {
+    "Agent": "代理",
+    "Agents": "代理",
+    "MCP": "MCP",
+    "MCP Server": "MCP 服务器", 
+    "MCP Client": "MCP 客户端",
+    "Workspace": "工作区",
+    "Workspaces": "工作区",
+    "Chat": "聊天",
+    "Model": "模型",
+    "Provider": "提供商",
+    "API Key": "API 密钥",
+    "Task": "任务",
+    "Tasks": "任务",
+    "Schedule": "调度",
+    "Scheduler": "调度器",
+    "CLI": "命令行工具",
+    "Command": "命令",
+    "Template": "模板",
+    "Gateway": "网关",
+    "Token": "令牌",
+    "Prompt": "提示词",
+    "Temperature": "温度",
+    "Tool": "工具",
+    "Tools": "工具",
+    "Resource": "资源",
+    "System Prompt": "系统提示词",
+    "Chat Log": "聊天记录",
+    "History": "历史记录",
+    "Session": "会话",
+    "Configuration": "配置",
+    "Settings": "设置"
+  },
+  ja: {
+    "Agent": "エージェント",
+    "Agents": "エージェント",
+    "MCP": "MCP",
+    "MCP Server": "MCPサーバー",
+    "MCP Client": "MCPクライアント", 
+    "Workspace": "ワークスペース",
+    "Workspaces": "ワークスペース",
+    "Chat": "チャット",
+    "Model": "モデル",
+    "Provider": "プロバイダー",
+    "API Key": "APIキー",
+    "Task": "タスク",
+    "Tasks": "タスク",
+    "Schedule": "スケジュール",
+    "Scheduler": "スケジューラー",
+    "CLI": "コマンドラインツール",
+    "Command": "コマンド",
+    "Template": "テンプレート",
+    "Gateway": "ゲートウェイ",
+    "Token": "トークン",
+    "Prompt": "プロンプト",
+    "Temperature": "温度",
+    "Tool": "ツール",
+    "Tools": "ツール",
+    "Resource": "リソース",
+    "System Prompt": "システムプロンプト",
+    "Chat Log": "チャット履歴",
+    "History": "履歴",
+    "Session": "セッション",
+    "Configuration": "設定",
+    "Settings": "設定"
+  },
+  ko: {
+    "Agent": "에이전트",
+    "Agents": "에이전트",
+    "MCP": "MCP",
+    "MCP Server": "MCP 서버",
+    "MCP Client": "MCP 클라이언트",
+    "Workspace": "워크스페이스",
+    "Workspaces": "워크스페이스", 
+    "Chat": "채팅",
+    "Model": "모델",
+    "Provider": "프로바이더",
+    "API Key": "API 키",
+    "Task": "작업",
+    "Tasks": "작업",
+    "Schedule": "스케줄",
+    "Scheduler": "스케줄러",
+    "CLI": "명령줄 도구",
+    "Command": "명령",
+    "Template": "템플릿",
+    "Gateway": "게이트웨이",
+    "Token": "토큰",
+    "Prompt": "프롬프트",
+    "Temperature": "온도",
+    "Tool": "도구",
+    "Tools": "도구",
+    "Resource": "리소스",
+    "System Prompt": "시스템 프롬프트",
+    "Chat Log": "채팅 기록",
+    "History": "히스토리",
+    "Session": "세션",
+    "Configuration": "구성",
+    "Settings": "설정"
+  },
+  fr: {
+    "Agent": "Agent",
+    "Agents": "Agents",
+    "MCP": "MCP",
+    "MCP Server": "Serveur MCP",
+    "MCP Client": "Client MCP",
+    "Workspace": "Espace de travail",
+    "Workspaces": "Espaces de travail",
+    "Chat": "Chat",
+    "Model": "Modèle",
+    "Provider": "Fournisseur",
+    "API Key": "Clé API",
+    "Task": "Tâche",
+    "Tasks": "Tâches",
+    "Schedule": "Planification",
+    "Scheduler": "Planificateur",
+    "CLI": "Outil en ligne de commande",
+    "Command": "Commande",
+    "Template": "Modèle",
+    "Gateway": "Passerelle",
+    "Token": "Jeton",
+    "Prompt": "Invite",
+    "Temperature": "Température",
+    "Tool": "Outil",
+    "Tools": "Outils",
+    "Resource": "Ressource",
+    "System Prompt": "Invite système",
+    "Chat Log": "Journal de chat",
+    "History": "Historique",
+    "Session": "Session",
+    "Configuration": "Configuration",
+    "Settings": "Paramètres"
+  },
+  de: {
+    "Agent": "Agent",
+    "Agents": "Agenten",
+    "MCP": "MCP",
+    "MCP Server": "MCP-Server",
+    "MCP Client": "MCP-Client",
+    "Workspace": "Arbeitsbereich",
+    "Workspaces": "Arbeitsbereiche",
+    "Chat": "Chat",
+    "Model": "Modell",
+    "Provider": "Anbieter",
+    "API Key": "API-Schlüssel",
+    "Task": "Aufgabe",
+    "Tasks": "Aufgaben",
+    "Schedule": "Zeitplan",
+    "Scheduler": "Planer",
+    "CLI": "Kommandozeilen-Tool",
+    "Command": "Befehl",
+    "Template": "Vorlage",
+    "Gateway": "Gateway",
+    "Token": "Token",
+    "Prompt": "Eingabeaufforderung",
+    "Temperature": "Temperatur",
+    "Tool": "Werkzeug",
+    "Tools": "Werkzeuge",
+    "Resource": "Ressource",
+    "System Prompt": "System-Eingabeaufforderung",
+    "Chat Log": "Chat-Protokoll",
+    "History": "Verlauf",
+    "Session": "Sitzung",
+    "Configuration": "Konfiguration",
+    "Settings": "Einstellungen"
+  }
+};
+
+// 🎯 语言配置映射
+const LANGUAGE_CONFIG = {
+  zh: { name: '中文（简体）', nativeName: '中文', region: '中国大陆' },
+  ja: { name: '日语', nativeName: '日本語', region: '日本' },
+  ko: { name: '韩语', nativeName: '한국어', region: '韩国' },
+  fr: { name: '法语', nativeName: 'Français', region: '法国' },
+  de: { name: '德语', nativeName: 'Deutsch', region: '德国' }
 };
 
 // 🎯 软件背景信息和翻译上下文
@@ -128,14 +271,16 @@ function getAIModel(config: AIConfig) {
 }
 
 // 🎯 创建翻译提示词 - 批量
-function createBatchTranslationPrompt(items: string[]): string {
-  const terminologyList = Object.entries(TERMINOLOGY_DICT)
-    .map(([en, zh]) => `- ${en} → ${zh}`)
+function createBatchTranslationPrompt(items: string[], targetLang: string): string {
+  const langConfig = LANGUAGE_CONFIG[targetLang];
+  const terminologyDict = TERMINOLOGY_DICT[targetLang] || {};
+  const terminologyList = Object.entries(terminologyDict)
+    .map(([en, translated]) => `- ${en} → ${translated}`)
     .join('\n');
 
   const itemsList = items.map((text, index) => `${index + 1}. "${text}"`).join('\n');
 
-  return `作为专业的软件本地化翻译专家，请将以下 HyperChat 软件界面文本从英文翻译成中文。
+  return `作为专业的软件本地化翻译专家，请将以下 HyperChat 软件界面文本从英文翻译成${langConfig.name}。
 
 【软件背景】${HYPERCHAT_CONTEXT}
 
@@ -144,7 +289,7 @@ ${terminologyList}
 
 【翻译原则】
 1. 保持用户界面的简洁性和一致性
-2. 使用中国大陆用户习惯的表达方式
+2. 使用${langConfig.region}用户习惯的表达方式
 3. 技术术语保持准确性，优先使用词典中的对应翻译
 4. 保持原文的格式、标点符号和特殊字符
 5. 错误信息要清晰易懂，帮助用户快速定位问题
@@ -155,16 +300,18 @@ ${terminologyList}
 【待翻译文本列表】
 ${itemsList}
 
-请按照相同的顺序和索引返回结构化的翻译结果。每个翻译都应该准确、自然且符合中文表达习惯。`;
+请按照相同的顺序和索引返回结构化的翻译结果。每个翻译都应该准确、自然且符合${langConfig.nativeName}表达习惯。`;
 }
 
 // 🎯 创建翻译提示词 - 单个
-function createSingleTranslationPrompt(text: string): string {
-  const terminologyList = Object.entries(TERMINOLOGY_DICT)
-    .map(([en, zh]) => `- ${en} → ${zh}`)
+function createSingleTranslationPrompt(text: string, targetLang: string): string {
+  const langConfig = LANGUAGE_CONFIG[targetLang];
+  const terminologyDict = TERMINOLOGY_DICT[targetLang] || {};
+  const terminologyList = Object.entries(terminologyDict)
+    .map(([en, translated]) => `- ${en} → ${translated}`)
     .join('\n');
 
-  return `作为专业的软件本地化翻译专家，请将以下 HyperChat 软件界面文本从英文翻译成中文。
+  return `作为专业的软件本地化翻译专家，请将以下 HyperChat 软件界面文本从英文翻译成${langConfig.name}。
 
 【软件背景】${HYPERCHAT_CONTEXT}
 
@@ -182,16 +329,16 @@ ${terminologyList}
 
 【待翻译文本】"${text}"
 
-请提供高质量的中文翻译，确保准确性和专业性。`;
+请提供高质量的${langConfig.nativeName}翻译，确保准确性和专业性。`;
 }
 
 // 🎯 批量翻译函数
-export async function translateBatch(items: string[], config: AIConfig): Promise<string[]> {
+export async function translateBatch(items: string[], config: AIConfig, targetLang: string = 'zh'): Promise<string[]> {
   if (items.length === 0) return [];
   
   try {
     const model = getAIModel(config);
-    const prompt = createBatchTranslationPrompt(items);
+    const prompt = createBatchTranslationPrompt(items, targetLang);
     
     console.log(`🤖 使用 ${config.provider}/${config.model} 进行批量翻译...`);
     
@@ -209,7 +356,7 @@ export async function translateBatch(items: string[], config: AIConfig): Promise
     
     if (sortedTranslations.length !== items.length) {
       console.warn(`⚠️  翻译数量不匹配，期望 ${items.length}，实际 ${sortedTranslations.length}`);
-      return await translateFallback(items, config);
+      return await translateFallback(items, config, targetLang);
     }
     
     // 质量检查
@@ -228,15 +375,15 @@ export async function translateBatch(items: string[], config: AIConfig): Promise
     return sortedTranslations;
   } catch (error) {
     console.warn('批量翻译失败，回退到单个翻译模式:', error);
-    return await translateFallback(items, config);
+    return await translateFallback(items, config, targetLang);
   }
 }
 
 // 🎯 单个翻译函数
-export async function translateSingle(text: string, config: AIConfig): Promise<string> {
+export async function translateSingle(text: string, config: AIConfig, targetLang: string = 'zh'): Promise<string> {
   try {
     const model = getAIModel(config);
-    const prompt = createSingleTranslationPrompt(text);
+    const prompt = createSingleTranslationPrompt(text, targetLang);
     
     const result = await generateObject({
       model,
@@ -261,12 +408,12 @@ export async function translateSingle(text: string, config: AIConfig): Promise<s
 }
 
 // 🎯 回退翻译方法
-async function translateFallback(items: string[], config: AIConfig): Promise<string[]> {
+async function translateFallback(items: string[], config: AIConfig, targetLang: string = 'zh'): Promise<string[]> {
   console.log('使用单个翻译回退模式...');
   const results: string[] = [];
   for (const item of items) {
     try {
-      const translation = await translateSingle(item, config);
+      const translation = await translateSingle(item, config, targetLang);
       results.push(translation);
       await new Promise(resolve => setTimeout(resolve, 200)); // 增加延迟避免限速
     } catch (error) {
@@ -278,8 +425,9 @@ async function translateFallback(items: string[], config: AIConfig): Promise<str
 }
 
 // 🎯 翻译质量验证
-function validateTranslation(original: string, translation: string): { isValid: boolean; issues: string[] } {
+function validateTranslation(original: string, translation: string, targetLang: string = 'zh'): { isValid: boolean; issues: string[] } {
   const issues: string[] = [];
+  const terminologyDict = TERMINOLOGY_DICT[targetLang] || {};
   
   // 检查是否为空
   if (!translation.trim()) {
@@ -291,8 +439,8 @@ function validateTranslation(original: string, translation: string): { isValid: 
   // 检查是否包含英文（可能翻译不完整）
   if (/[a-zA-Z]{3,}/.test(translation) && translation !== original) {
     // 排除专业术语
-    const hasValidTerminology = Object.values(TERMINOLOGY_DICT).some(term => 
-      translation.includes(term)
+    const hasValidTerminology = Object.values(terminologyDict).some(term => 
+      translation.includes(term as string)
     );
     if (!hasValidTerminology) {
       issues.push("翻译中包含较长英文单词");
@@ -305,8 +453,8 @@ function validateTranslation(original: string, translation: string): { isValid: 
   }
   
   // 检查专业术语使用
-  for (const [en, zh] of Object.entries(TERMINOLOGY_DICT)) {
-    if (original.includes(en) && !translation.includes(zh) && !translation.includes(en)) {
+  for (const [en, translated] of Object.entries(terminologyDict)) {
+    if (original.includes(en) && !translation.includes(translated as string) && !translation.includes(en)) {
       issues.push(`专业术语 "${en}" 可能翻译不准确`);
     }
   }
@@ -318,11 +466,12 @@ function validateTranslation(original: string, translation: string): { isValid: 
 }
 
 // 🎯 解析 AI 配置
-function parseAIConfig(): AIConfig {
-  const provider = (argv.provider || 'openai') as AIConfig['provider'];
-  const model = argv.model || "google/gemini-2.5-flash";
+function parseAIConfig(): { aiConfig: AIConfig; targetLang: string } {
+  const provider = (argv.provider || 'google') as AIConfig['provider'];
+  const model = argv.model || "google/gemini-2.0-flash-exp";
   const apiKey = process.env.apiKey || process.env.OPENAI_API_KEY || process.env.ANTHROPIC_API_KEY || process.env.GOOGLE_API_KEY;
   const baseURL = process.env.baseURL;
+  const targetLang = argv.lang || argv.language || 'zh';
 
   if (!apiKey) {
     console.error("❌ 错误: 缺少 API 密钥");
@@ -330,11 +479,20 @@ function parseAIConfig(): AIConfig {
     process.exit(1);
   }
 
+  if (!LANGUAGE_CONFIG[targetLang]) {
+    console.error(`❌ 错误: 不支持的语言: ${targetLang}`);
+    console.error(`支持的语言: ${Object.keys(LANGUAGE_CONFIG).join(', ')}`);
+    process.exit(1);
+  }
+
   return {
-    provider,
-    model,
-    apiKey,
-    baseURL
+    aiConfig: {
+      provider,
+      model,
+      apiKey,
+      baseURL
+    },
+    targetLang
   };
 }
 
@@ -344,7 +502,7 @@ async function main() {
     console.log(`
 🌐 HyperChat 智能翻译工具 (基于 AI SDK)
 
-用法: npx tsx scripts/translate-ai-sdk.mts [选项]
+用法: npx tsx scripts/translate.mts [选项]
 
 选项:
   --help, -h          显示帮助信息
@@ -352,8 +510,9 @@ async function main() {
   --force            强制重新翻译所有条目（包括已有翻译的）
   --batch-size N     批量翻译大小（默认: 8）
   --validate         仅验证现有翻译质量
-  --provider NAME    AI 提供商 (openai|anthropic|google, 默认: openai)
-  --model MODEL      指定模型 (默认: gpt-4o-mini)
+  --provider NAME    AI 提供商 (openai|anthropic|google, 默认: google)
+  --model MODEL      指定模型 (默认: google/gemini-2.0-flash-exp)
+  --lang, --language 目标语言 (zh|ja|ko|fr|de, 默认: zh)
 
 环境变量:
   apiKey             API 密钥（通用）
@@ -372,18 +531,21 @@ async function main() {
   ✅ 智能回退机制
 
 示例:
-  npx tsx scripts/translate-ai-sdk.mts                           # OpenAI 默认翻译
-  npx tsx scripts/translate-ai-sdk.mts --provider anthropic      # 使用 Claude
-  npx tsx scripts/translate-ai-sdk.mts --provider google         # 使用 Gemini
-  npx tsx scripts/translate-ai-sdk.mts --model gpt-4o           # 指定模型
-  npx tsx scripts/translate-ai-sdk.mts --dry-run                # 预览翻译计划
-  npx tsx scripts/translate-ai-sdk.mts --validate               # 验证翻译质量
+  npx tsx scripts/translate.mts                                 # 翻译为中文
+  npx tsx scripts/translate.mts --lang ja                       # 翻译为日语
+  npx tsx scripts/translate.mts --lang ko                       # 翻译为韩语
+  npx tsx scripts/translate.mts --lang fr                       # 翻译为法语
+  npx tsx scripts/translate.mts --lang de                       # 翻译为德语
+  npx tsx scripts/translate.mts --provider anthropic --lang ja  # 使用 Claude 翻译日语
+  npx tsx scripts/translate.mts --dry-run --lang ko            # 预览韩语翻译计划
+  npx tsx scripts/translate.mts --validate --lang fr          # 验证法语翻译质量
     `);
     process.exit(0);
   }
 
   try {
-    const aiConfig = parseAIConfig();
+    const { aiConfig, targetLang } = parseAIConfig();
+    const langConfig = LANGUAGE_CONFIG[targetLang];
     
     // 检查 i18n.json 文件是否存在
     if (!fs.existsSync(i18nPath)) {
@@ -421,8 +583,9 @@ async function main() {
       if (argv.force) {
         return true;
       }
-      const entry = json[key] as { zh?: string };
-      return entry.zh == null || entry.zh === "";
+      const entry = json[key] as { [key: string]: string | null };
+      const translation = entry[targetLang];
+      return translation == null || translation === "";
     });
     
     if (needTranslation.length === 0) {
@@ -434,10 +597,11 @@ async function main() {
     
     // 如果是 dry-run 模式，只显示需要翻译的条目
     if (argv['dry-run']) {
-      console.log("\n📋 翻译预览:");
+      console.log(`\n📋 ${langConfig.name}翻译预览:`);
       needTranslation.forEach((key, index) => {
-        const entry = json[key] as { zh?: string };
-        const status = entry.zh ? '(重新翻译)' : '(新翻译)';
+        const entry = json[key] as { [key: string]: string | null };
+        const translation = entry[targetLang];
+        const status = translation ? '(重新翻译)' : '(新翻译)';
         console.log(`${index + 1}. ${key} ${status}`);
       });
       console.log(`\n📈 总计: ${needTranslation.length} 个条目`);
@@ -460,18 +624,18 @@ async function main() {
       console.log(`\n🔄 处理批次 ${batchIndex + 1}/${batches.length} (${batch.length} 个条目)`);
       
       try {
-        const translations = await translateBatch(batch, aiConfig);
+        const translations = await translateBatch(batch, aiConfig, targetLang);
         
         // 应用翻译结果并验证质量
         for (let i = 0; i < batch.length; i++) {
           const key = batch[i];
           if (translations[i]) {
-            const entry = json[key] as { zh?: string };
-            entry.zh = translations[i];
+            const entry = json[key] as { [key: string]: string | null };
+            entry[targetLang] = translations[i];
             hasChanges = true;
             
             // 翻译质量验证
-            const validation = validateTranslation(key, translations[i]);
+            const validation = validateTranslation(key, translations[i], targetLang);
             if (validation.isValid) {
               console.log(`✅ ${key}`);
             } else {

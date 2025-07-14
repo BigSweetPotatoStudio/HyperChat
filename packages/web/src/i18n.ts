@@ -49,7 +49,35 @@ function saveLanguageToLocalStorage(lang: Language): void {
  * 检测浏览器默认语言
  */
 function detectBrowserLanguage(): Language {
-  return navigator.language === "zh-CN" ? "zhCN" : "enUS";
+  const browserLang = navigator.language.toLowerCase();
+  
+  // 检测中文
+  if (browserLang.startsWith('zh')) {
+    return "zh";
+  }
+  
+  // 检测日语
+  if (browserLang.startsWith('ja')) {
+    return "ja";
+  }
+  
+  // 检测韩语
+  if (browserLang.startsWith('ko')) {
+    return "ko";
+  }
+  
+  // 检测法语
+  if (browserLang.startsWith('fr')) {
+    return "fr";
+  }
+  
+  // 检测德语
+  if (browserLang.startsWith('de')) {
+    return "de";
+  }
+  
+  // 默认返回英语
+  return "en";
 }
 
 /**
@@ -65,7 +93,7 @@ export async function initWebI18n(): Promise<void> {
   try {
     // 1. 优先从AppSettings获取语言设置
     const appSettings = await call('getAppSettings');
-    currentLanguage = appSettings?.appearance?.language || 'zhCN';
+    currentLanguage = appSettings?.appearance?.language || 'zh';
   } catch (error) {
     // 2. 如果AppSettings加载失败，从localStorage获取
     currentLanguage = getLanguageFromLocalStorage() || detectBrowserLanguage();

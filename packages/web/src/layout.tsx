@@ -40,6 +40,10 @@ import {
 } from "antd";
 import enUS from "antd/locale/en_US";
 import zhCN from "antd/locale/zh_CN";
+import jaJP from "antd/locale/ja_JP";
+import koKR from "antd/locale/ko_KR";
+import frFR from "antd/locale/fr_FR";
+import deDE from "antd/locale/de_DE";
 
 import {
   ExclamationCircleFilled,
@@ -242,17 +246,32 @@ export function Layout() {
     })();
   }, []);
 
+  /**
+   * 语言代码到 Ant Design locale 的映射
+   */
+  const getAntdLocale = (lang: Language) => {
+    switch (lang) {
+      case 'zh': return zhCN;
+      case 'ja': return jaJP;
+      case 'ko': return koKR;
+      case 'fr': return frFR;
+      case 'de': return deDE;
+      case 'en':
+      default: return enUS;
+    }
+  };
+
   // 状态管理
-  const [locale, setLocal] = useState(getCurrLang() === "zhCN" ? zhCN : enUS); // 国际化语言设置
+  const [locale, setLocal] = useState(getAntdLocale(getCurrLang())); // 国际化语言设置
 
   /**
    * 设置语言的函数
-   * @param e 语言代码 ("zhCN" | "enUS")
+   * @param e 语言代码 ("zh" | "en" | "ja" | "ko" | "fr" | "de")
    */
   const setLang = (e: string): void => {
     const lang = e as Language;
     setCurrLang(lang);
-    setLocal(lang === "zhCN" ? zhCN : enUS);
+    setLocal(getAntdLocale(lang));
     combinedRefresh();
   };
 
