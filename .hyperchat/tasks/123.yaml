@@ -2,4 +2,4 @@ name: '123'
 agentName: 人工智能
 description: '123'
 cron: '* * * * *'
-disabled: false
+disabled: true

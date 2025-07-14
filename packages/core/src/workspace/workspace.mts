@@ -1062,16 +1062,96 @@ export class Workspace {
         ]
       };
       
-      // 保存任务执行记录到 Agent 的聊天历史
-      await agentInstance.setChatLog(chatLog);
-      
-      // TODO: 这里后续可以集成实际的 AI 对话执行
-      // 例如：
-      // 1. 调用 AI 服务生成响应
-      // 2. 更新 chatLog 添加 AI 的回复
-      // 3. 如果任务需要调用 MCP 工具，可以通过 this.mcpManager 来执行
-      
-      Logger.info(`任务 '${taskName}' 执行完成，已记录到 Agent '${task.agentName}' 的聊天历史`);
+      // 执行 AI 对话
+      try {
+        // 导入必要的模块
+        const { AiChannel } = await import('@dadigua/hyperchat-shared/ai');
+        const { Command } = await import('../command.mjs');
+        
+        // 初始化 AI 通道
+        const aiChannel = new AiChannel();
+        
+        // 获取应用设置
+        const appSettings = await Command.getAppSettings();
+        const aiSettings = appSettings.ai;
+        
+        // 获取工作区设置
+        const workspaceSettings = this.getSettings();
+        const workspaceAIConfig = workspaceSettings?.aiConfig;
+        
+        // 获取 MCP 工具
+        const mcpClients = await this.getMcpClients();
+        const mcpTools = mcpClients.flatMap((client: any) => client.tools || []);
+        
+        // 创建全局扩展对象
+        (globalThis as any).ext = {
+          call: async (functionName: string, args: any, _options?: any) => {
+            if (functionName === 'mcpCallToolWithWorkspace') {
+              return await Command.mcpCallToolWithWorkspace(args);
+            }
+            throw new Error(`未知的命令: ${functionName}`);
+          }
+        };
+        
+        // 注册 AI 设置
+        aiChannel.register({
+          antdmessage: {
+            warning: (msg: string) => Logger.warn(msg)
+          },
+          mcpTools: mcpTools,
+          platform: 'nodejs',
+          getURL_PRE: () => '',
+          aiSettings: aiSettings as any
+        });
+        
+        // 复制已有的消息到 AI 通道
+        for (const msg of chatLog.messages) {
+          aiChannel.addMessage({
+            ...msg,
+            content_date: msg.content_date || Date.now()
+          } as any);
+        }
+        
+        // 获取有效的配置
+        const agentConfig = agentInstance.getConfig();
+        const effectiveConfig = {
+          modelKey: agentConfig.modelKey || workspaceAIConfig?.modelKey || aiSettings?.models?.[0]?.key || '',
+          prompt: agentConfig.prompt || workspaceAIConfig?.prompt || '',
+          allowMCPs: agentConfig.allowMCPs || mcpClients.map((c: any) => c.serverName),
+          isConfirmCallTool: agentConfig.isConfirmCallTool ?? workspaceAIConfig?.isConfirmCallTool ?? false,
+          temperature: agentConfig.temperature ?? workspaceAIConfig?.temperature,
+          maxAttachedDialogs: agentConfig.maxAttachedDialogs ?? workspaceAIConfig?.maxAttachedDialogs ?? 5,
+          maxTokens: agentConfig.maxTokens ?? workspaceAIConfig?.maxTokens ?? 4000,
+        };
+        
+        // 执行 AI 对话
+        Logger.info(`正在生成 AI 响应...`);
+        await aiChannel.completion({
+          ...effectiveConfig,
+          onUpdate: () => {
+            // 可以在这里添加进度日志
+          }
+        });
+        
+        // 获取 AI 的回复并更新聊天记录
+        const assistantMessage = aiChannel.lastMessage;
+        chatLog.messages.push({
+          role: 'assistant',
+          content: assistantMessage.content as string,
+          content_date: Date.now()
+        } as any);
+        
+        // 保存更新后的聊天记录
+        await agentInstance.setChatLog(chatLog);
+        
+        Logger.info(`任务 '${taskName}' 执行完成，AI 响应: ${(assistantMessage.content as string).substring(0, 100)}...`);
+        
+      } catch (aiError) {
+        Logger.error(`执行任务 AI 对话失败:`, aiError);
+        // 即使 AI 执行失败，也保存聊天记录
+        await agentInstance.setChatLog(chatLog);
+        throw aiError;
+      }
       
     } catch (error) {
       Logger.error(`执行任务 '${taskName}' 失败:`, error);
