@@ -5,7 +5,6 @@ import {
   enable as enableDarkMode,
   disable as disableDarkMode,
 } from 'darkreader';
-import { initWebI18n, syncLanguageFromAppSettings } from '../i18n';
 
 interface AppSettingsContextType {
   // 完整的应用设置
@@ -44,19 +43,11 @@ export const AppSettingsProvider = ({ children }: { children: ReactNode }) => {
       // 自动应用夜间模式设置
       applyDarkModeSettings(settings);
       
-      // 初始化i18n系统
-      await initWebI18n();
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to load app settings';
       setError(errorMessage);
       console.error('Failed to load app settings:', err);
       
-      // 即使AppSettings加载失败，也要初始化i18n（会使用备用方案）
-      try {
-        await initWebI18n();
-      } catch (i18nError) {
-        console.warn('Failed to initialize i18n:', i18nError);
-      }
     } finally {
       setLoading(false);
     }
@@ -88,10 +79,6 @@ export const AppSettingsProvider = ({ children }: { children: ReactNode }) => {
       if (updates.appearance) {
         applyDarkModeSettings(updatedSettings);
         
-        // 如果更新了语言设置，同步到i18n系统
-        if (updates.appearance.language) {
-          syncLanguageFromAppSettings(updates.appearance.language);
-        }
       }
     } catch (err) {
       console.error('Failed to update app settings:', err);

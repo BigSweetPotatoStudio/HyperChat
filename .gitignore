@@ -32,3 +32,4 @@ dist/
 .continue/
 chatlogs/
 dist-node/
+*.backup

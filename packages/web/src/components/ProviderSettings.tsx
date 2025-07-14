@@ -718,7 +718,7 @@ export function ProviderSettings() {
 
       {/* API Key 配置 Modal */}
       <Modal
-        title={selectedProvider ? `${t`Configure`} ${selectedProvider.label} API Key` : ''}
+        title={selectedProvider ? `${t`Configure`} ${selectedProvider.label} ${t`API Key`}` : ''}
         open={isApiKeyModalOpen}
         onCancel={() => setIsApiKeyModalOpen(false)}
         footer={null}

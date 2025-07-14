@@ -41,7 +41,7 @@ export async function startChat(initialMessage?: string, options: ChatOptions = 
 
     // Chat需要完整服务（MCP工具、AI聊天）
     await workspaceManager.initialize(options.workspace, false);
-    logger.info(`🎯 ${t`Using workspace: ${workspaceManager.getCurrentWorkspacePath()}`}`);
+    logger.info(`🎯 ${t`Using workspace:`} ${workspaceManager.getCurrentWorkspacePath()}`);
 
     await workspaceManager.start();
     logger.info(`✅ ${t`Workspace services started`}`);
@@ -60,9 +60,9 @@ export async function startChat(initialMessage?: string, options: ChatOptions = 
 
       if (isModelAvailable) {
         env.effectiveConfig.modelKey = options.model;
-        logger.info(`📋 ${t`Using AI model specified from command line: ${options.model}`}`);
+        logger.info(`📋 ${t`Using AI model specified from command line:`} ${options.model}`);
       } else {
-        logger.warn(`⚠️  ${t`Specified model '${options.model}' is not available, using default model`}`);
+        logger.warn(`⚠️  ${t`Specified model`} '${options.model}' ${t`is not available, using default model`}`);
       }
     }
 
@@ -83,14 +83,14 @@ export async function startChat(initialMessage?: string, options: ChatOptions = 
       };
     };
     const effectiveConfig = getEffectiveConfig();
-    logger.info(`🤖 ${t`Using model: ${effectiveConfig.modelKey}`}`);
+    logger.info(`🤖 ${t`Using model:`} ${effectiveConfig.modelKey}`);
     // 获取工作区的Agent数量
     const agentsSummary = await env.workspace.getAllAgentsSummary();
 
-    logger.info(`👥 ${t`Current workspace Agent count: ${agentsSummary.length}`}`);
-    logger.info(`🔧 ${t`Current workspace available MCP tools count: ${env.workspace.getAllMcpClients().length}`}`);
+    logger.info(`👥 ${t`Current workspace Agent count:`} ${agentsSummary.length}`);
+    logger.info(`🔧 ${t`Current workspace available MCP tools count:`} ${env.workspace.getAllMcpClients().length}`);
     if (env.agentConfig?.name) {
-      logger.info(`🌐 ${t`Current Agent: ${env.agentConfig?.name}`}`);
+      logger.info(`🌐 ${t`Current Agent:`} ${env.agentConfig?.name}`);
     }
     // 创建AI通道
     const aiChannel = createAIChannel(env);
@@ -100,7 +100,7 @@ export async function startChat(initialMessage?: string, options: ChatOptions = 
 
     // 如果有初始消息，处理并退出
     if (initialMessage) {
-      logger.info(`💬 ${t`Processing message: ${initialMessage}`}`);
+      logger.info(`💬 ${t`Processing message:`} ${initialMessage}`);
 
       const userMessage: MyMessage = {
         role: 'user',
@@ -193,12 +193,12 @@ export async function startChat(initialMessage?: string, options: ChatOptions = 
       }
 
       if (input.trim() === '/model') {
-        console.log(`\n🤖 ${t`Current model: ${env.effectiveConfig.modelKey}`}\n`);
+        console.log(`\n🤖 ${t`Current model:`} ${env.effectiveConfig.modelKey}\n`);
         continue;
       }
 
       if (input.trim() === '/tools') {
-        console.log(`\n🔧 ${t`Available tools (${env.mcpTools.length} items):`}`);
+        console.log(`\n🔧 ${t`Available tools`} (${env.mcpTools.length} ${t`items`}):`);
         env.mcpTools.forEach((tool: any) => {
           console.log(`  - ${tool.name}: ${tool.description}`);
         });
@@ -282,7 +282,7 @@ export async function startChat(initialMessage?: string, options: ChatOptions = 
     rl.close();
 
   } catch (error) {
-    logger.error(t`Chat initialization failed: ${error instanceof Error ? error.message : String(error)}`);
+    logger.error(`${t`Chat initialization failed:`} ${error instanceof Error ? error.message : String(error)}`);
 
     if (error instanceof Error && error.message.includes('未找到可用的AI模型配置')) {
       logger.info(`\n💡 ${t`Please run the following command to configure AI model first:`}`);

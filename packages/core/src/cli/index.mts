@@ -212,7 +212,7 @@ async function handleCommand(): Promise<{ shouldExit: boolean }> {
         // 在当前目录创建工作区
         await createWorkspace(process.cwd());
       } else {
-        logger.error(t`Unknown workspace command: ${workspaceSubCmd}`);
+        logger.error(`${t`Unknown workspace command:`} ${workspaceSubCmd}`);
         logger.info(t`Available commands: create`);
       }
       return { shouldExit: true };  // workspace命令执行完都应该退出
@@ -258,7 +258,7 @@ async function startChatWrapper(messages: string[], logger: Logger, agentName?: 
     }
 
   } catch (error) {
-    logger.error(t`Chat function failed: ${error instanceof Error ? error.message : String(error)}`);
+    logger.error(`${t`Chat function failed:`} ${error instanceof Error ? error.message : String(error)}`);
     process.exit(1);
   }
 }
@@ -280,7 +280,7 @@ async function deleteAgentWrapper(name: string, logger: Logger) {
     // 检查agent是否存在
     const agentCheck = await checkAgentExists(name);
     if (!agentCheck.exists) {
-      logger.error(t`Agent '${name}' does not exist`);
+      logger.error(`${t`Agent`} '${name}' ${t`does not exist`}`);
       return;
     }
 
@@ -293,10 +293,10 @@ async function deleteAgentWrapper(name: string, logger: Logger) {
     if (success) {
       console.log(`✅ ${t`Agent deleted successfully`}: '${name}'`);
     } else {
-      logger.error(t`Failed to delete agent: ${name}`);
+      logger.error(`${t`Failed to delete agent:`} ${name}`);
     }
   } catch (error) {
-    logger.error(t`Failed to delete agent: ${error instanceof Error ? error.message : String(error)}`);
+    logger.error(`${t`Failed to delete agent:`} ${error instanceof Error ? error.message : String(error)}`);
   }
 }
 
@@ -341,7 +341,7 @@ async function handleAgentCommand(args: string[], logger: Logger) {
       const agentCheck = await checkAgentExists(agentName);
       
       if (!agentCheck.exists) {
-        logger.error(t`Unknown agent command or agent does not exist: ${subCmd}`);
+        logger.error(`${t`Unknown agent command or agent does not exist:`} ${subCmd}`);
         logger.info(t`Available commands: list, create, delete, <name> "message", <name> chat`);
         return;
       }
@@ -479,7 +479,7 @@ async function handleTaskCommand(subCmd: string, args: string[], logger: Logger)
       break;
 
     default:
-      logger.error(t`Unknown task command: ${subCmd}`);
+      logger.error(`${t`Unknown task command:`} ${subCmd}`);
       logger.info(t`Available commands: list, create, show, enable, disable, delete, edit, trigger, scheduler, stats`);
       break;
   }
@@ -492,7 +492,7 @@ async function handleLanguageCommand(langArg: string | undefined, logger: Logger
     if (!langArg) {
       const currentLang = getCurrLang();
       const langName = currentLang === 'zhCN' ? t`Chinese` : t`English`;
-      console.log(`\n🌍 ${t`Current interface language: ${langName} (${currentLang})`}`);
+      console.log(`\n🌍 ${t`Current interface language:`} ${langName} (${currentLang})`);
       console.log(`\n💡 ${t`Available languages:`}`);
       console.log(`  zh / zhCN  - ${t`Chinese (Simplified)`}`);
       console.log(`  en / enUS  - ${t`English`}`);
@@ -509,7 +509,7 @@ async function handleLanguageCommand(langArg: string | undefined, logger: Logger
     } else if (langInput === 'en' || langInput === 'enus' || langInput === 'us') {
       targetLang = 'enUS';
     } else {
-      console.error(`❌ ${t`Unsupported language: ${langArg}`}`);
+      console.error(`❌ ${t`Unsupported language:`} ${langArg}`);
       console.log(`\n💡 ${t`Available languages:`}`);
       console.log(`  zh / zhCN  - ${t`Chinese (Simplified)`}`);
       console.log(`  en / enUS  - ${t`English`}`);
@@ -520,7 +520,7 @@ async function handleLanguageCommand(langArg: string | undefined, logger: Logger
     const currentLang = getCurrLang();
     if (currentLang === targetLang) {
       const langName = targetLang === 'zhCN' ? t`Chinese` : t`English`;
-      console.log(`✅ ${t`Interface language is already set to ${langName}`}`);
+      console.log(`✅ ${t`Interface language is already set to`} ${langName}`);
       return;
     }
 
@@ -540,15 +540,15 @@ async function handleLanguageCommand(langArg: string | undefined, logger: Logger
       });
     } catch (error) {
       // 如果更新AppSettings失败，只记录警告，不影响当前会话的语言切换
-      logger.warn(`⚠️  ${t`Failed to save language setting: ${error instanceof Error ? error.message : String(error)}`}`);
+      logger.warn(`⚠️  ${t`Failed to save language setting:`} ${error instanceof Error ? error.message : String(error)}`);
     }
 
     const newLangName = targetLang === 'zhCN' ? t`Chinese` : t`English`;
-    console.log(`✅ ${t`Interface language changed to ${newLangName}`}`);
+    console.log(`✅ ${t`Interface language changed to`} ${newLangName}`);
     console.log(`💡 ${t`Language setting has been saved and will persist across sessions`}`);
     
   } catch (error) {
-    logger.error(t`Failed to change language: ${error instanceof Error ? error.message : String(error)}`);
+    logger.error(`${t`Failed to change language:`} ${error instanceof Error ? error.message : String(error)}`);
   }
 }
 
@@ -564,7 +564,7 @@ async function cleanup() {
     // 新架构下简化清理逻辑
     console.log(t`Exiting...`);
   } catch (error) {
-    console.error(t`Error occurred during exit: ${error}`);
+    console.error(`${t`Error occurred during exit:`} ${error}`);
   }
 
   process.exit(0);
@@ -589,7 +589,7 @@ async function main() {
       await workspaceManager.uninitialize(); // 清理工作区管理器
     }
   } catch (error) {
-    console.error(t`❌ Command execution failed: ${error}`);
+    console.error(`❌ ${t`Command execution failed:`} ${error}`);
     process.exit(1);
   }
 }

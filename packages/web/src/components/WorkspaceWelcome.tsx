@@ -279,7 +279,7 @@ export const WorkspaceWelcome: React.FC<WorkspaceWelcomeProps> = ({
       <div style={{ textAlign: 'center', marginBottom: '32px' }}>
         <Icon name="bx-bot" style={{ fontSize: '48px', color: '#1890ff', marginBottom: '16px' }} />
         <Title level={2} style={{ margin: 0 }}>
-          {workspace.isGlobal ? t`Welcome to Global Workspace` : t`Welcome to ${workspace.name}`}
+          {workspace.isGlobal ? t`Welcome to Global Workspace` : `${t`Welcome to`} ${workspace.name}`}
         </Title>
         <Paragraph type="secondary" style={{ fontSize: '16px', marginTop: '8px' }}>
           {t`Select an agent to start a conversation`}

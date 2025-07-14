@@ -6,6 +6,6 @@
  */
 
 import type { TranslationData } from './types.mjs';
-import i18nJson from './i18n.json' assert { type: 'json' };
+import i18nJson from './i18n.json' with { type: 'json' };
 
 export const translations: TranslationData = i18nJson as TranslationData;

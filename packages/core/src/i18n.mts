@@ -52,9 +52,9 @@ function detectSystemLanguage(): Language {
   if (envLang) {
     return envLang;
   }
-  
-  // 默认使用中文（符合项目特性）
-  return "zhCN";
+
+  // 默认使用英文
+  return "enUS"; // 可以根据需要调整默认语言
 }
 
 /**

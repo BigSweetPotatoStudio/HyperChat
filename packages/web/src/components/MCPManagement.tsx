@@ -312,7 +312,7 @@ export const MCPManagement = forwardRef<MCPManagementRef, MCPManagementProps>(({
       if (schema.required) {
         for (const requiredKey of schema.required) {
           if (!(requiredKey in parsedParams)) {
-            return { valid: false, error: t`Missing required parameter: ${requiredKey}` };
+            return { valid: false, error: `${t`Missing required parameter:`} ${requiredKey}` };
           }
         }
       }
@@ -322,7 +322,7 @@ export const MCPManagement = forwardRef<MCPManagementRef, MCPManagementProps>(({
         for (const [key, value] of Object.entries(parsedParams)) {
           const propSchema = schema.properties[key];
           if (!propSchema && schema.additionalProperties === false) {
-            return { valid: false, error: t`Unknown parameter: ${key}` };
+            return { valid: false, error: `${t`Unknown parameter:`} ${key}` };
           }
         }
       }

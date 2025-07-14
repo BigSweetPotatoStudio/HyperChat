@@ -25,7 +25,7 @@ export async function listAgents() {
 
     // 智能获取当前工作区
     const workspacePath = await getCurrentWorkspacePath();
-    logger.info(`🎯 ${t`Using workspace: ${workspacePath}`}`);
+    logger.info(`🎯 ${t`Using workspace:`} ${workspacePath}`);
 
     // 获取代理列表
     const agents = await Command.getWorkspaceAgentsSummary();
@@ -45,23 +45,23 @@ export async function listAgents() {
 
       console.log(`  📋 ${config.name}`);
       if (config.description) {
-        console.log(`      ${t`Description: ${config.description}`}`);
+        console.log(`      ${t`Description:`} ${config.description}`);
       }
       if (config.modelKey) {
-        console.log(`      ${t`Model: ${config.modelKey}`}`);
+        console.log(`      ${t`Model:`} ${config.modelKey}`);
       }
       if (config.tags && config.tags.length > 0) {
-        console.log(`      ${t`Tags: ${config.tags.join(', ')}`}`);
+        console.log(`      ${t`Tags:`} ${config.tags.join(', ')}`);
       }
       if (chatLogsCount > 0) {
-        console.log(`      ${t`Chat logs: ${chatLogsCount} entries`}`);
+        console.log(`      ${t`Chat logs:`} ${chatLogsCount} ${t`entries`}`);
       }
     }
 
-    console.log(`\n💡 ${t`Total: ${agents.length} agents`}`);
+    console.log(`\n💡 ${t`Total:`} ${agents.length} ${t`agents`}`);
 
   } catch (error) {
-    logger.error(t`Failed to get agent list: ${error instanceof Error ? error.message : String(error)}`);
+    logger.error(`${t`Failed to get agent list:`} ${error instanceof Error ? error.message : String(error)}`);
     process.exit(1);
   }
 }
@@ -70,11 +70,11 @@ export async function createAgent(name: string) {
   const logger = new Logger();
 
   try {
-    logger.info(`🤖 ${t`Creating agent: ${name}`}`);
+    logger.info(`🤖 ${t`Creating agent:`} ${name}`);
 
     // 智能获取当前工作区
     const workspacePath = await getCurrentWorkspacePath();
-    logger.info(`🎯 ${t`Using workspace: ${workspacePath}`}`);
+    logger.info(`🎯 ${t`Using workspace:`} ${workspacePath}`);
 
     // 创建代理配置
     const agentConfig = {
@@ -92,13 +92,13 @@ export async function createAgent(name: string) {
     });
 
     logger.success(`✅ ${t`Agent created successfully`}`);
-    console.log(`${t`Name: ${agent.name}`}`);
-    console.log(`${t`Description: ${agent.description}`}`);
+    console.log(`${t`Name:`} ${agent.name}`);
+    console.log(`${t`Description:`} ${agent.description}`);
 
-    console.log(`\n💡 ${t`Use hyperchat ${agent.name} "hello" to chat with this agent`}`);
+    console.log(`\n💡 ${t`Use hyperchat`} ${agent.name} ${t`"hello" to chat with this agent`}`);
 
   } catch (error) {
-    logger.error(t`Failed to create agent: ${error instanceof Error ? error.message : String(error)}`);
+    logger.error(`${t`Failed to create agent:`} ${error instanceof Error ? error.message : String(error)}`);
     process.exit(1);
   }
 }

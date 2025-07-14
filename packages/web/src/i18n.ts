@@ -102,15 +102,6 @@ export async function initWebI18n(): Promise<void> {
   isInitialized = true;
 }
 
-/**
- * 从AppSettings更新语言（当AppSettings在其他地方被更新时调用）
- */
-export function syncLanguageFromAppSettings(language: Language): void {
-  if (getCurrLang() !== language) {
-    updateLanguage(language);
-    saveLanguageToLocalStorage(language);
-  }
-}
 
 // 导出shared包的函数，保持API兼容
 export { t, setCurrLang, getCurrLang };

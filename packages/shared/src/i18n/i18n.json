@@ -1,9 +1,13 @@
 {
-  "(Global)": {},
+  "(Global)": {
+    "zh": "(全球)"
+  },
   "A new version is available": {
     "zh": "有新的版本可用"
   },
-  "AI Config": {},
+  "AI Config": {
+    "zh": "AI 配置"
+  },
   "AI Generate": {
     "zh": "AI 生成"
   },
@@ -13,21 +17,30 @@
   "AI Providers": {
     "zh": "AI 提供商"
   },
-  "AI model key/identifier": {},
-  "AI reply:": {},
-  "AI response temperature (0-2, higher values make output more random)": {},
+  "AI model key/identifier": {
+    "zh": "AI 模型 密钥/标识符"
+  },
+  "AI reply:": {
+    "zh": "AI回复:"
+  },
+  "AI response temperature (0-2, higher values make output more random)": {
+    "zh": "AI响应温度（0-2，值越高输出越随机）"
+  },
   "AI settings are loading, please wait...": {
     "zh": "AI 设置正在加载，请稍候..."
   },
-  "AI system prompt for this workspace": {},
-  "AI:": {},
+  "AI system prompt for this workspace": {
+    "zh": "AI系统提示此工作区"
+  },
+  "AI:": {
+    "zh": "人工智能："
+  },
   "API Key": {
     "zh": "API 密钥"
   },
   "API Key configured successfully!": {
     "zh": "API Key 配置成功！"
   },
-  "About to delete task: ${task.name}": {},
   "Actions": {
     "zh": "行动"
   },
@@ -55,8 +68,9 @@
   "Add Provider": {
     "zh": "添加提供商"
   },
-  "Agent": {},
-  "Agent '${name}' does not exist": {},
+  "Agent": {
+    "zh": "代理"
+  },
   "Agent Chat": {
     "zh": "AI智能客服"
   },
@@ -69,19 +83,18 @@
   "Agent deleted successfully": {
     "zh": "代理已成功删除"
   },
-  "Agent list:": {},
+  "Agent list:": {
+    "zh": "代理人列表:"
+  },
   "Agent updated successfully": {
     "zh": "代理更新成功"
   },
-  "Agent: ${task.agentName}": {},
-  "Agent: ${updatedTask.agentName}": {},
   "Agents": {
     "zh": "代理"
   },
-  "Agents: ${currentWorkspace.agentsCount}": {},
-  "Agents: ${summary.agentsCount}": {},
-  "Agents: ${summary.agentsCount} items": {},
-  "Alias for --language": {},
+  "Alias for --language": {
+    "zh": "--language 的别名"
+  },
   "All": {
     "zh": "所有"
   },
@@ -94,7 +107,9 @@
   "Allow this Chat": {
     "zh": "允许此聊天"
   },
-  "Allowed MCP Servers": {},
+  "Allowed MCP Servers": {
+    "zh": "允许的MCP服务器"
+  },
   "Allowed MCPs": {
     "zh": "允许的主机控制处理器"
   },
@@ -131,19 +146,30 @@
   "Are you sure you want to delete this chat log?": {
     "zh": "您确定要删除此聊天记录吗？"
   },
-  "Are you sure you want to delete this task?": {},
+  "Are you sure you want to delete this task?": {
+    "zh": "您确定要删除此任务吗？"
+  },
   "Available Resources": {
     "zh": "可用资源"
   },
   "Available Tools": {
     "zh": "可用工具"
   },
-  "Available agents:": {},
-  "Available commands: create": {},
-  "Available commands: list, create, delete, <name> \"message\", <name> chat": {},
-  "Available commands: list, create, show, enable, disable, delete, edit, trigger, scheduler, stats": {},
-  "Available languages:": {},
-  "Available tools (${env.mcpTools.length} items):": {},
+  "Available agents:": {
+    "zh": "可用代理："
+  },
+  "Available commands: create": {
+    "zh": "可用命令: create"
+  },
+  "Available commands: list, create, delete, <name> \"message\", <name> chat": {
+    "zh": "可用命令：list, create, delete, <name> \"message\", <name> chat"
+  },
+  "Available commands: list, create, show, enable, disable, delete, edit, trigger, scheduler, stats": {
+    "zh": "可用命令行：list, create, show, enable, disable, delete, edit, trigger, scheduler, stats"
+  },
+  "Available languages:": {
+    "zh": "可选语言："
+  },
   "Base URL": {
     "zh": "基本URL"
   },
@@ -159,8 +185,12 @@
   "Cancel": {
     "zh": "取消"
   },
-  "Cannot get current workspace": {},
-  "Cannot load workspace configuration": {},
+  "Cannot get current workspace": {
+    "zh": "无法获取当前工作区"
+  },
+  "Cannot load workspace configuration": {
+    "zh": "无法加载工作区配置"
+  },
   "Chat History": {
     "zh": "聊天记录"
   },
@@ -170,23 +200,33 @@
   "Chat Settings": {
     "zh": "聊天设置"
   },
-  "Chat command": {},
-  "Chat commands:": {},
+  "Chat command": {
+    "zh": "聊天命令"
+  },
+  "Chat commands:": {
+    "zh": "聊天指令："
+  },
   "Chat count": {
     "zh": "聊天计数"
   },
-  "Chat history cleared": {},
-  "Chat initialization failed: ${error instanceof Error ? error.message : String(error)}": {},
+  "Chat history cleared": {
+    "zh": "聊天记录已清除"
+  },
   "Chat log deleted successfully": {
     "zh": "聊天记录删除成功"
   },
-  "Chat logs: ${chatLogsCount} entries": {},
-  "Chat with specified workspace": {},
+  "Chat with specified workspace": {
+    "zh": "与指定工作区聊天"
+  },
   "Chatting with agent": {
     "zh": "与座席聊天"
   },
-  "Chinese": {},
-  "Chinese (Simplified)": {},
+  "Chinese": {
+    "zh": "中文"
+  },
+  "Chinese (Simplified)": {
+    "zh": "简体中文"
+  },
   "Choose a project folder to work with. If it's not a workspace, you can create one.": {
     "zh": "选择一个项目文件夹进行操作。如果它不是工作区，您可以创建一个。"
   },
@@ -202,15 +242,21 @@
   "Clear Context": {
     "zh": "清晰的上下文"
   },
-  "Clear chat history": {},
-  "Clone": {},
+  "Clear chat history": {
+    "zh": "清空聊天记录"
+  },
+  "Clone": {
+    "zh": "克隆"
+  },
   "Close": {
     "zh": "关闭"
   },
   "Comfirm Call Tool": {
     "zh": "确认呼叫工具"
   },
-  "Commands:": {},
+  "Commands:": {
+    "zh": "命令："
+  },
   "Compatible": {
     "zh": "兼容"
   },
@@ -235,8 +281,12 @@
   "Confirm Delete": {
     "zh": "确认删除"
   },
-  "Confirm Tool Calls": {},
-  "Connect to specified server (default: localhost)": {},
+  "Confirm Tool Calls": {
+    "zh": "确认工具调用"
+  },
+  "Connect to specified server (default: localhost)": {
+    "zh": "连接到指定服务器 (默认: localhost)"
+  },
   "Connected": {
     "zh": "已连接"
   },
@@ -252,8 +302,12 @@
   "Copy": {
     "zh": "复制"
   },
-  "Core service is running": {},
-  "Create": {},
+  "Core service is running": {
+    "zh": "核心服务正在运行"
+  },
+  "Create": {
+    "zh": "创建\n"
+  },
   "Create & Switch": {
     "zh": "创建和切换"
   },
@@ -269,29 +323,33 @@
   "Create New Workspace": {
     "zh": "创建新工作区"
   },
-  "Create Task": {},
-  "Create a new agent with: hyperchat agent create <name>": {},
-  "Create new agent": {},
-  "Create new task": {},
-  "Create workspace in current directory": {},
+  "Create Task": {
+    "zh": "创建任务"
+  },
+  "Create a new agent with: hyperchat agent create <name>": {
+    "zh": "创建一个新 Agent: hyperchat agent create <name>"
+  },
+  "Create new agent": {
+    "zh": "创建新代理"
+  },
+  "Create new task": {
+    "zh": "创建新任务"
+  },
+  "Create workspace in current directory": {
+    "zh": "在当前目录中创建工作区"
+  },
   "Create your first agent to get started": {
     "zh": "创建你的第一个智能体以开始使用"
   },
   "Created Time": {
     "zh": "创建时间"
   },
-  "Created: ${new Date(workspaceConfig.created).toLocaleString()}": {},
-  "Creating agent: ${name}": {},
-  "Creating task: ${taskName}": {},
-  "Creating workspace: ${path}": {},
-  "Current": {},
-  "Current Agent: ${env.agentConfig?.name}": {},
-  "Current interface language: ${langName} (${currentLang})": {},
-  "Current model: ${env.effectiveConfig.modelKey}": {},
-  "Current workspace Agent count: ${agentsSummary.length}": {},
-  "Current workspace available MCP tools count: ${env.workspace.getAllMcpClients().length}": {},
-  "Current workspace:": {},
-  "Current workspace: ${currentWorkspacePath}": {},
+  "Current": {
+    "zh": "当前"
+  },
+  "Current workspace:": {
+    "zh": "当前工作区："
+  },
   "Custom": {
     "zh": "自定义"
   },
@@ -316,47 +374,54 @@
   "Delete Success": {
     "zh": "删除成功"
   },
-  "Delete Task": {},
-  "Delete agent": {},
+  "Delete Task": {
+    "zh": "删除任务"
+  },
+  "Delete agent": {
+    "zh": "删除代理"
+  },
   "Delete failed: ": {
     "zh": "删除失败:"
   },
-  "Delete task": {},
+  "Delete task": {
+    "zh": "删除任务"
+  },
   "Delete this provider?": {
     "zh": "删除此提供商？"
   },
-  "Deleting task: ${taskName}": {},
   "Describe what this agent does and its capabilities...": {
     "zh": "描述这个智能体的作用及其功能..."
   },
   "Description": {
     "zh": "描述"
   },
-  "Description: ${agent.description}": {},
-  "Description: ${config.description}": {},
-  "Description: ${currentWorkspace.description}": {},
-  "Description: ${task.description}": {},
-  "Description: ${updatedTask.description}": {},
-  "Description: ${workspaceConfig.description || t": {},
   "Desktop": {
     "zh": "桌面"
   },
   "Direct Call": {
     "zh": "直接调用"
   },
-  "Direct chat (auto-detect workspace)": {},
-  "Direct chat with specified agent": {},
+  "Direct chat (auto-detect workspace)": {
+    "zh": "直接聊天 (自动检测工作区)"
+  },
+  "Direct chat with specified agent": {
+    "zh": "与指定客服直接对话"
+  },
   "Disable": {
     "zh": "禁用"
   },
-  "Disable Task": {},
-  "Disable task": {},
-  "Disable this task": {},
+  "Disable Task": {
+    "zh": "禁用任务"
+  },
+  "Disable task": {
+    "zh": "禁用任务"
+  },
+  "Disable this task": {
+    "zh": "禁用此任务"
+  },
   "Disabled": {
     "zh": "已禁用"
   },
-  "Disabled: ${stats.disabled}": {},
-  "Disabling task: ${taskName}": {},
   "Disconnected": {
     "zh": "已断开连接"
   },
@@ -381,34 +446,51 @@
   "Edit Provider": {
     "zh": "编辑提供方"
   },
-  "Edit Task": {},
-  "Edit task": {},
-  "Editing task: ${taskName}": {},
+  "Edit Task": {
+    "zh": "编辑任务"
+  },
+  "Edit task": {
+    "zh": "编辑任务"
+  },
   "Enable": {
     "zh": "启用"
   },
-  "Enable Task": {},
-  "Enable task": {},
+  "Enable Task": {
+    "zh": "启用任务"
+  },
+  "Enable task": {
+    "zh": "启用任务"
+  },
   "Enabled": {
     "zh": "已启用"
   },
-  "Enabled: ${stats.enabled}": {},
-  "Enabling task: ${taskName}": {},
-  "English": {},
-  "Enter AI system prompt (optional)": {},
+  "English": {
+    "zh": "英文"
+  },
+  "Enter AI system prompt (optional)": {
+    "zh": "输入AI系统提示（可选）"
+  },
   "Enter API Key for this model": {
     "zh": "为此模型输入API密钥"
   },
-  "Enter cron expression": {},
+  "Enter cron expression": {
+    "zh": "输入cron表达式"
+  },
   "Enter gateway description (optional)": {
     "zh": "请输入网关描述 (可选)"
   },
   "Enter gateway name": {
     "zh": "输入网关名称"
   },
-  "Enter system prompt for this agent...": {},
-  "Enter task description": {},
-  "Enter task name": {},
+  "Enter system prompt for this agent...": {
+    "zh": "为该代理输入系统提示..."
+  },
+  "Enter task description": {
+    "zh": "输入任务描述"
+  },
+  "Enter task name": {
+    "zh": "输入任务名称"
+  },
   "Enter workspace description (optional)": {
     "zh": "输入工作区描述（可选）"
   },
@@ -424,511 +506,1573 @@
   "Error occurred": {
     "zh": "发生错误"
   },
-  "Error occurred during exit: ${error}": {},
-  "Error shutting down service: ${error}": {},
-  "Error:": {},
-  "Error: Agent '${options.agent}' does not exist": {},
-  "Error: Agent must be specified (--agent)": {},
-  "Error: No fields provided for update": {},
-  "Error: Task '${taskName}' does not exist": {},
-  "Error: Task description is required (--description)": {},
-  "Every 15 minutes": {},
-  "Every 2 hours": {},
-  "Every 30 minutes": {},
-  "Every 5 minutes": {},
-  "Every 6 hours": {},
-  "Every Monday at midnight": {},
-  "Every Sunday at midnight": {},
-  "Every day at 6:00 PM": {},
-  "Every day at 8:00 AM": {},
-  "Every day at midnight": {},
-  "Every day at noon": {},
-  "Every hour": {},
-  "Every minute": {},
-  "Examples:": {},
-  "Exit chat": {},
-  "Exiting...": {},
-  "Failed to change language: ${error instanceof Error ? error.message : String(error)}": {},
-  "Failed to clone task": {},
-  "Failed to copy configuration": {},
-  "Failed to copy to clipboard": {},
-  "Failed to create agent: ${error instanceof Error ? error.message : String(error)}": {},
-  "Failed to create task: ${error}": {},
-  "Failed to create workspace": {},
-  "Failed to create workspace: ${error instanceof Error ? error.message : String(error)}": {},
-  "Failed to delete MCP client": {},
-  "Failed to delete agent": {},
-  "Failed to delete agent: ${error instanceof Error ? error.message : String(error)}": {},
-  "Failed to delete agent: ${name}": {},
-  "Failed to delete chat log": {},
-  "Failed to delete model": {},
-  "Failed to delete provider": {},
-  "Failed to delete task": {},
-  "Failed to delete task '${taskName}'": {},
-  "Failed to delete task: ${error}": {},
-  "Failed to disable MCP client": {},
-  "Failed to disable task: ${error}": {},
-  "Failed to edit task: ${error}": {},
-  "Failed to enable MCP client": {},
-  "Failed to enable task: ${error}": {},
-  "Failed to get agent list: ${error instanceof Error ? error.message : String(error)}": {},
-  "Failed to get scheduler status: ${error}": {},
-  "Failed to get status: ${error instanceof Error ? error.message : String(error)}": {},
-  "Failed to get task details: ${error}": {},
-  "Failed to get task list: ${error}": {},
-  "Failed to get task statistics: ${error}": {},
-  "Failed to get workspace information: ${error instanceof Error ? error.message : String(error)}": {},
-  "Failed to get workspace list: ${error instanceof Error ? error.message : String(error)}": {},
-  "Failed to load MCP gateways": {},
-  "Failed to load app settings": {},
-  "Failed to load chat history": {},
-  "Failed to load directory contents": {},
-  "Failed to load file": {},
-  "Failed to load workspace": {},
-  "Failed to load workspace details": {},
-  "Failed to load workspace settings": {},
-  "Failed to open workspace": {},
-  "Failed to process selected directory": {},
-  "Failed to refresh file tree": {},
-  "Failed to reload MCP clients": {},
-  "Failed to reset app settings": {},
-  "Failed to reset settings": {},
-  "Failed to restart MCP client": {},
-  "Failed to save agent": {},
-  "Failed to save configuration": {},
-  "Failed to save file": {},
-  "Failed to save language setting: ${error instanceof Error ? error.message : String(error)}": {},
-  "Failed to save model": {},
-  "Failed to save provider": {},
-  "Failed to save settings": {},
-  "Failed to save task": {},
-  "Failed to set default model": {},
-  "Failed to switch to workspace": {},
-  "Failed to toggle task status": {},
-  "Failed to trigger task: ${error}": {},
-  "Failed to update MCP gateways": {},
-  "Failed to update app settings": {},
-  "Failed to update task": {},
-  "Failed to update workspace settings": {},
-  "Features": {},
-  "File saved successfully": {},
-  "File tree refreshed successfully": {},
-  "Files": {},
-  "Folder Path": {},
-  "Gateway Name": {},
-  "Gateway created successfully": {},
-  "Gateway deleted successfully": {},
-  "Gateway name already exists": {},
-  "Gateway updated successfully": {},
-  "General chat": {},
-  "Getting agent list...": {},
-  "Getting scheduler status...": {},
-  "Getting task details: ${taskName}": {},
-  "Getting task list...": {},
-  "Getting task statistics...": {},
-  "Getting workspace list...": {},
-  "Global": {},
-  "Global Workspace": {},
-  "Global options:": {},
-  "Goodbye!": {},
-  "Grouped by agent:": {},
-  "Hello": {},
-  "Help me write code": {},
-  "Here are the error messages: ": {},
-  "Hide hidden files": {},
-  "High": {},
-  "HyperChat runtime status:": {},
-  "Image": {},
-  "In scheduling: ${scheduledTasks.length} tasks": {},
-  "Initializing HyperChat CLI...": {},
-  "Install And Run": {},
-  "Interactive chat": {},
-  "Interactive chat with specified agent": {},
-  "Interface language changed to ${newLangName}": {},
-  "Interface language is already set to ${langName}": {},
-  "Invalid JSON format": {},
-  "Invalid cron expression format": {},
-  "Invalid parameters": {},
-  "Key": {},
-  "Key Points": {},
-  "LLM not support": {},
-  "Language Model": {},
-  "Language setting has been saved and will persist across sessions": {},
-  "Last Chat": {},
-  "Last chat": {},
-  "Last used": {},
-  "List all agents": {},
-  "List all tasks": {},
-  "List of allowed MCP server names": {},
-  "Loading Settings...": {},
-  "Loading chat history...": {},
-  "Loading data...": {},
-  "Log File Path": {},
-  "Low": {},
-  "MCP": {},
-  "MCP Client Details": {},
-  "MCP Gateways": {},
-  "MCP Gateways Management": {},
-  "MCP Gateways Settings": {},
-  "MCP Gateways updated successfully": {},
-  "MCP Service Name already exists": {},
-  "MCP Tool": {},
-  "MCP and Tools": {},
-  "MCP client deleted successfully": {},
-  "MCP client disabled successfully": {},
-  "MCP client enabled successfully": {},
-  "MCP client restarted successfully": {},
-  "MCP clients reloaded successfully": {},
-  "MCP clients: ${mcpClients.length} items": {},
-  "MCP clients: Failed to get": {},
-  "MCP server added successfully": {},
-  "MCP services: ${currentWorkspace.mcpServersCount}": {},
-  "MCP services: ${summary.mcpServersCount}": {},
-  "MCP services: ${summary.mcpServersCount} items": {},
-  "Management Panel": {},
-  "Manually trigger task execution": {},
-  "Manually triggering task: ${taskName}": {},
-  "Max Attached Dialogs": {},
-  "Max Tokens": {},
-  "Maximum number of attached dialog histories (0-100)": {},
-  "Maximum tokens for AI response (100-32000)": {},
-  "Medium": {},
-  "Memory Summary": {},
-  "Missing required parameter: ${requiredKey}": {},
-  "Model": {},
-  "Model ID": {},
-  "Model Key": {},
-  "Model Name": {},
-  "Model Type": {},
-  "Model added successfully!": {},
-  "Model deleted successfully!": {},
-  "Model not found, please select a model": {},
-  "Model updated successfully!": {},
-  "Model: ${config.modelKey}": {},
-  "Models": {},
-  "More Settings": {},
-  "Name": {},
-  "Name: ${agent.name}": {},
-  "Name: ${task.name}": {},
-  "Name: ${updatedTask.name}": {},
-  "Name: ${workspace.name}": {},
-  "Name: ${workspaceConfig.name}": {},
-  "Need Confirm": {},
-  "New Chat": {},
-  "No": {},
-  "No Agents": {},
-  "No MCP clients": {},
-  "No MCP configured": {},
-  "No agents available": {},
-  "No agents match your search": {},
-  "No available workspace": {},
-  "No bookmarks yet": {},
-  "No chat history found": {},
-  "No chat tabs open": {},
-  "No description": {},
-  "No description available": {},
-  "No disabled MCP clients": {},
-  "No enabled MCP clients": {},
-  "No file tree data": {},
-  "No gateways configured": {},
-  "No history yet": {},
-  "No matching MCP clients found": {},
-  "No models configured. Click \"Add Model\" to create one.": {},
-  "No parameters": {},
-  "No recent agents": {},
-  "No recent chats": {},
-  "No tasks found": {},
-  "No tasks in scheduling": {},
-  "No tasks yet": {},
-  "No todos yet": {},
-  "No tools available": {},
-  "No workspace found": {},
-  "No workspace selected": {},
-  "OK": {},
-  "Old Name": {},
-  "On the 15th of every month": {},
-  "On the 1st of every month": {},
-  "Only letters and numbers are allowed": {},
-  "Only letters, numbers, underscore and dash are allowed": {},
-  "Open Chat": {},
-  "Operation failed: ": {},
-  "Optional, will use Model ID if empty": {},
-  "Options": {},
-  "Parameter Reference": {},
-  "Parameters": {},
-  "Paste": {},
-  "Path": {},
-  "Path: ${currentWorkspace.path}": {},
-  "Path: ${path}": {},
-  "Path: ${workspace.path}": {},
-  "Phase 1: Quickly loading workspace configuration...": {},
-  "Phase 2: Starting workspace services...": {},
-  "Platform": {},
-  "Please enter": {},
-  "Please enter API Key": {},
-  "Please enter Base URL": {},
-  "Please enter System Prompt": {},
-  "Please enter a valid URL": {},
-  "Please enter cron expression": {},
-  "Please enter gateway name": {},
-  "Please enter model ID": {},
-  "Please enter provider key": {},
-  "Please enter provider name": {},
-  "Please enter task description": {},
-  "Please enter task name": {},
-  "Please enter the name": {},
-  "Please enter workspace name": {},
-  "Please provide agent name": {},
-  "Please provide agent subcommand": {},
-  "Please provide task name": {},
-  "Please run the following command to configure AI model first:": {},
-  "Please select TaskFallbackLLM": {},
-  "Please select a language model": {},
-  "Please select a workspace to view details": {},
-  "Please select allowed MCP": {},
-  "Please select an agent": {},
-  "Please select folder path": {},
-  "Please wait for the current request to finish": {},
-  "Powerful AI assistant command line tool": {},
-  "Processing message: ${initialMessage}": {},
-  "Processing...": {},
-  "Prompt": {},
-  "Prompts Count": {},
-  "Provider Key": {},
-  "Provider Name": {},
-  "Provider added successfully": {},
-  "Provider and all related models deleted successfully": {},
-  "Provider key already exists": {},
-  "Provider key cannot be changed": {},
-  "Provider updated successfully": {},
-  "Quick chat with specified agent": {},
-  "Recent Agents": {},
-  "Recent Chats": {},
-  "Recent Workspaces": {},
-  "Recently Used": {},
-  "Refresh MCP clients": {},
-  "Refresh file tree": {},
-  "Reload": {},
-  "Reload file": {},
-  "Remove from history": {},
-  "Required": {},
-  "Reset to Defaults": {},
-  "Resources Count": {},
-  "Restart": {},
-  "Result": {},
-  "Retry": {},
-  "Run Test": {},
-  "Running tool test...": {},
-  "Save": {},
-  "Schedule": {},
-  "Schedule (Cron Expression)": {},
-  "Schedule: ${task.cron}": {},
-  "Schedule: ${updatedTask.cron}": {},
-  "Scheduler status: ${scheduledTasks.length} tasks in scheduling": {},
-  "Search MCP clients...": {},
-  "Search agents...": {},
-  "Select AI model (optional)": {},
-  "Select Directory": {},
-  "Select LLM": {},
-  "Select Workspace Directory": {},
-  "Select a schedule template or enter custom cron expression": {},
-  "Select allowed MCP servers": {},
-  "Select an agent": {},
-  "Select an agent to start a conversation": {},
-  "Select creation time": {},
-  "Select tools and capabilities for this agent": {},
-  "Send": {},
-  "Sending": {},
-  "Server Name": {},
-  "Server password": {},
-  "Server started successfully...": {},
-  "Service is running": {},
-  "Service not running or not initialized": {},
-  "Service started, press Ctrl+C to stop...": {},
-  "Set Default": {},
-  "Set interface to Chinese": {},
-  "Set interface to English": {},
-  "Set language (zh/en, highest priority)": {},
-  "Settings": {},
-  "Settings reset to defaults": {},
-  "Settings saved successfully": {},
-  "Settings updated successfully": {},
-  "Show available MCP tools": {},
-  "Show current model": {},
-  "Show help": {},
-  "Show help information": {},
-  "Show hidden files": {},
-  "Show or set interface language": {},
-  "Show scheduler status": {},
-  "Show task details": {},
-  "Show task statistics": {},
-  "Show verbose logs": {},
-  "Silent mode": {},
-  "Source": {},
-  "Specified model '${options.model}' is not available, using default model": {},
-  "Specify port (default: 16100)": {},
-  "Standard": {},
-  "Start AI chat session (default command)": {},
-  "Start backend server (includes Web UI)": {},
-  "Start chatting in your workspace": {},
-  "Start core service (background task scheduling)": {},
-  "Start core service (no Web UI)": {},
-  "Start inputting...": {},
-  "Start server (includes Web UI)": {},
-  "Starting HyperChat server...": {},
-  "Starting core service...": {},
-  "Starting interactive chat...": {},
-  "Startup failed: ${error instanceof Error ? error.message : String(error)}": {},
-  "Statistics: Total ${tasks.length} tasks (${enabledCount} enabled, ${disabledCount} disabled)": {},
-  "Status": {},
-  "Status:": {},
-  "Status: ${task.disabled ? t": {},
-  "Status: ${updatedTask.disabled ? t": {},
-  "Status: ${workspace.getState()}": {},
-  "Submit": {},
-  "Support Images": {},
-  "Support Tools": {},
-  "Switch": {},
-  "Switch Workspace": {},
-  "Switch to Global Workspace": {},
-  "Switched to workspace": {},
-  "System": {},
-  "System Information": {},
-  "System PATH": {},
-  "System Prompt": {},
-  "System management": {},
-  "Tags: ${config.tags.join(', ')}": {},
-  "Task '${taskName}' deleted": {},
-  "Task '${taskName}' disabled": {},
-  "Task '${taskName}' enabled": {},
-  "Task '${taskName}' triggered for execution": {},
-  "Task Details": {},
-  "Task Name": {},
-  "Task cloned successfully": {},
-  "Task created successfully": {},
-  "Task created successfully!": {},
-  "Task deleted successfully": {},
-  "Task description cannot exceed 500 characters": {},
-  "Task details:": {},
-  "Task disabled successfully": {},
-  "Task enabled successfully": {},
-  "Task list:": {},
-  "Task management": {},
-  "Task name cannot exceed 100 characters": {},
-  "Task scheduler status:": {},
-  "Task statistics:": {},
-  "Task updated successfully": {},
-  "Task updated successfully!": {},
-  "TaskFallbackLLM": {},
-  "Tasks": {},
-  "Tasks being scheduled:": {},
-  "Tasks in scheduling:": {},
-  "Tasks in scheduling: ${scheduledTasks.length} items": {},
-  "Tasks: ${summary.tasksCount}": {},
-  "Tasks: ${summary.tasksCount} items": {},
-  "Temperature": {},
-  "Terminal": {},
-  "Test": {},
-  "Test Tool": {},
-  "Thinking...": {},
-  "This directory is already a workspace": {},
-  "This directory is not a workspace": {},
-  "This operation cannot be undone!": {},
-  "This will permanently delete the provider and all its models": {},
-  "Tool Execution": {},
-  "Tool Mode": {},
-  "Tool execution failed": {},
-  "Tools": {},
-  "Tools Count": {},
-  "Tools count": {},
-  "Total Agents": {},
-  "Total Conversations": {},
-  "Total tasks: ${stats.total}": {},
-  "Total: ${agents.length} agents": {},
-  "Type": {},
-  "Type /exit to exit, /help for help, /clear to clear chat history": {},
-  "UUID": {},
-  "Uncaught exception: ${error}": {},
-  "Unhandled Promise rejection: ${reason}": {},
-  "Unique identifier for this provider (letters and numbers only)": {},
-  "Unknown": {},
-  "Unknown agent command or agent does not exist: ${subCmd}": {},
-  "Unknown parameter: ${key}": {},
-  "Unknown task command: ${subCmd}": {},
-  "Unknown workspace command: ${workspaceSubCmd}": {},
-  "Unsaved Changes": {},
-  "Unsupported language: ${langArg}": {},
-  "Update": {},
-  "Upload Image": {},
-  "Usage:": {},
-  "Usage: hyperchat agent create <name>": {},
-  "Usage: hyperchat agent delete <name>": {},
-  "Usage: hyperchat language <lang>": {},
-  "Usage: hyperchat task delete <name> [--force]": {},
-  "Usage: hyperchat task disable <name>": {},
-  "Usage: hyperchat task enable <name>": {},
-  "Usage: hyperchat task show <name>": {},
-  "Usage: hyperchat task trigger <name>": {},
-  "Use --force parameter to skip confirmation": {},
-  "Use Chinese for this command": {},
-  "Use hyperchat ${agent.name} \"hello\" to chat with this agent": {},
-  "Use hyperchat task create <name> to create a new task": {},
-  "Use specified workspace (override auto-detection)": {},
-  "User Cancel": {},
-  "Using AI model specified from command line: ${options.model}": {},
-  "Using model: ${effectiveConfig.modelKey}": {},
-  "Using workspace: ${workspaceManager.getCurrentWorkspacePath()}": {},
-  "Using workspace: ${workspacePath}": {},
-  "Version": {},
-  "View Details": {},
-  "Viewing workspace info: ${path}": {},
-  "Waiting for server to start...": {},
-  "Welcome": {},
-  "Welcome Chat": {},
-  "Welcome to ${workspace.name}": {},
-  "Welcome to Global Workspace": {},
-  "Welcome to HyperChat CLI! 🎉": {},
-  "Whether to confirm before calling tools": {},
-  "Workspace": {},
-  "Workspace Chat": {},
-  "Workspace Name": {},
-  "Workspace Settings": {},
-  "Workspace View": {},
-  "Workspace configuration loaded": {},
-  "Workspace created and switched successfully": {},
-  "Workspace information:": {},
-  "Workspace opened successfully": {},
-  "Workspace path: ${workspace.workspacePath}": {},
-  "Workspace services started": {},
-  "Workspace status:": {},
-  "Workspace: ${workspace.workspacePath}": {},
-  "Yes": {},
-  "You have unsaved changes": {},
-  "You have unsaved changes. Are you sure you want to close the file?": {},
-  "You have unsaved changes. Are you sure you want to reload the file?": {},
-  "You:": {},
-  "allowMCPs": {},
-  "attachments": {},
-  "built-in": {},
-  "chat": {},
-  "e.g., Custom OpenAI": {},
-  "e.g., My custom OpenAI provider": {},
-  "e.g., custom-openai": {},
-  "e.g., gpt-4.1": {},
-  "e.g., https://api.example.com/v1": {},
-  "hours ago": {},
-  "minutes ago": {},
-  "models": {},
-  "please select emoji!": {},
-  "please upload image": {},
-  "related": {},
-  "request-headers": {},
-  "resources": {},
-  "tasks": {},
-  "thinking": {},
-  "tools": {},
-  "type": {},
-  "✅ Service shut down safely": {},
-  "✅ Workspace created successfully": {},
-  "❌ Command execution failed: ${error}": {}
+  "Error:": {
+    "zh": "错误："
+  },
+  "Error: Agent must be specified (--agent)": {
+    "zh": "错误：必须指定代理 (--agent)"
+  },
+  "Error: No fields provided for update": {
+    "zh": "错误：没有为更新提供任何字段"
+  },
+  "Error: Task description is required (--description)": {
+    "zh": "错误：需要提供任务描述 (--description)"
+  },
+  "Every 15 minutes": {
+    "zh": "每15分钟"
+  },
+  "Every 2 hours": {
+    "zh": "每2小时"
+  },
+  "Every 30 minutes": {
+    "zh": "每30分钟"
+  },
+  "Every 5 minutes": {
+    "zh": "每5分钟"
+  },
+  "Every 6 hours": {
+    "zh": "每6小时"
+  },
+  "Every Monday at midnight": {
+    "zh": "每周一午夜"
+  },
+  "Every Sunday at midnight": {
+    "zh": "每周日午夜"
+  },
+  "Every day at 6:00 PM": {
+    "zh": "每天下午 6:00"
+  },
+  "Every day at 8:00 AM": {
+    "zh": "每天上午 8:00"
+  },
+  "Every day at midnight": {
+    "zh": "每天午夜"
+  },
+  "Every day at noon": {
+    "zh": "每天中午"
+  },
+  "Every hour": {
+    "zh": "每小时"
+  },
+  "Every minute": {
+    "zh": "每分钟"
+  },
+  "Examples:": {
+    "zh": "示例："
+  },
+  "Exit chat": {
+    "zh": "退出聊天"
+  },
+  "Exiting...": {
+    "zh": "退出中..."
+  },
+  "Failed to clone task": {
+    "zh": "克隆任务失败"
+  },
+  "Failed to copy configuration": {
+    "zh": "未能复制配置"
+  },
+  "Failed to copy to clipboard": {
+    "zh": "复制到剪贴板失败"
+  },
+  "Failed to create workspace": {
+    "zh": "创建工作区失败"
+  },
+  "Failed to delete MCP client": {
+    "zh": "删除MCP客户端失败"
+  },
+  "Failed to delete agent": {
+    "zh": "删除代理失败"
+  },
+  "Failed to delete chat log": {
+    "zh": "删除聊天记录失败"
+  },
+  "Failed to delete model": {
+    "zh": "删除模型失败"
+  },
+  "Failed to delete provider": {
+    "zh": "删除提供商失败"
+  },
+  "Failed to delete task": {
+    "zh": "删除任务失败"
+  },
+  "Failed to disable MCP client": {
+    "zh": "无法禁用MCP客户端"
+  },
+  "Failed to enable MCP client": {
+    "zh": "未能启用MCP客户端"
+  },
+  "Failed to load MCP gateways": {
+    "zh": "加载MCP网关失败"
+  },
+  "Failed to load app settings": {
+    "zh": "加载应用设置失败"
+  },
+  "Failed to load chat history": {
+    "zh": "无法加载聊天记录"
+  },
+  "Failed to load directory contents": {
+    "zh": "无法加载目录内容"
+  },
+  "Failed to load file": {
+    "zh": "加载文件失败"
+  },
+  "Failed to load workspace": {
+    "zh": "加载工作区失败"
+  },
+  "Failed to load workspace details": {
+    "zh": "无法加载工作区详细信息"
+  },
+  "Failed to load workspace settings": {
+    "zh": "加载工作区设置失败"
+  },
+  "Failed to open workspace": {
+    "zh": "无法打开工作区"
+  },
+  "Failed to process selected directory": {
+    "zh": "无法处理所选目录"
+  },
+  "Failed to refresh file tree": {
+    "zh": "无法刷新文件树"
+  },
+  "Failed to reload MCP clients": {
+    "zh": "无法重新加载MCP客户端"
+  },
+  "Failed to reset app settings": {
+    "zh": "重置应用设置失败"
+  },
+  "Failed to reset settings": {
+    "zh": "无法重置设置"
+  },
+  "Failed to restart MCP client": {
+    "zh": "无法重启MCP客户端"
+  },
+  "Failed to save agent": {
+    "zh": "保存代理失败"
+  },
+  "Failed to save configuration": {
+    "zh": "保存配置失败"
+  },
+  "Failed to save file": {
+    "zh": "保存文件失败"
+  },
+  "Failed to save model": {
+    "zh": "保存模型失败"
+  },
+  "Failed to save provider": {
+    "zh": "无法保存提供商"
+  },
+  "Failed to save settings": {
+    "zh": "保存设置失败"
+  },
+  "Failed to save task": {
+    "zh": "保存任务失败"
+  },
+  "Failed to set default model": {
+    "zh": "设置默认模型失败"
+  },
+  "Failed to switch to workspace": {
+    "zh": "无法切换到工作区"
+  },
+  "Failed to toggle task status": {
+    "zh": "未能切换任务状态"
+  },
+  "Failed to update MCP gateways": {
+    "zh": "未能更新MCP网关"
+  },
+  "Failed to update app settings": {
+    "zh": "未能更新应用设置"
+  },
+  "Failed to update task": {
+    "zh": "更新任务失败"
+  },
+  "Failed to update workspace settings": {
+    "zh": "更新工作区设置失败"
+  },
+  "Features": {
+    "zh": "特点"
+  },
+  "File saved successfully": {
+    "zh": "文件保存成功"
+  },
+  "File tree refreshed successfully": {
+    "zh": "文件树刷新成功"
+  },
+  "Files": {
+    "zh": "文件"
+  },
+  "Folder Path": {
+    "zh": "文件夹路径"
+  },
+  "Gateway Name": {
+    "zh": "网关名称"
+  },
+  "Gateway created successfully": {
+    "zh": "网关创建成功"
+  },
+  "Gateway deleted successfully": {
+    "zh": "网关删除成功"
+  },
+  "Gateway name already exists": {
+    "zh": "网关名称已存在"
+  },
+  "Gateway updated successfully": {
+    "zh": "网关更新成功"
+  },
+  "General chat": {
+    "zh": "通用聊天"
+  },
+  "Getting agent list...": {
+    "zh": "正在获取代理列表..."
+  },
+  "Getting scheduler status...": {
+    "zh": "获取调度器状态..."
+  },
+  "Getting task list...": {
+    "zh": "获取任务列表..."
+  },
+  "Getting task statistics...": {
+    "zh": "获取任务统计..."
+  },
+  "Getting workspace list...": {
+    "zh": "获取工作区列表..."
+  },
+  "Global": {
+    "zh": "全球"
+  },
+  "Global Workspace": {
+    "zh": "全局工作空间"
+  },
+  "Global options:": {
+    "zh": "全局选项:"
+  },
+  "Goodbye!": {
+    "zh": "再见！"
+  },
+  "Grouped by agent:": {
+    "zh": "按代理分组:"
+  },
+  "Hello": {
+    "zh": "你好"
+  },
+  "Help me write code": {
+    "zh": "请帮我写代码"
+  },
+  "Here are the error messages: ": {
+    "zh": "以下是错误消息："
+  },
+  "Hide hidden files": {
+    "zh": "隐藏隐藏文件"
+  },
+  "High": {
+    "zh": "高"
+  },
+  "HyperChat runtime status:": {
+    "zh": "HyperChat 运行时状态："
+  },
+  "Image": {
+    "zh": "图片"
+  },
+  "Initializing HyperChat CLI...": {
+    "zh": "正在初始化 HyperChat CLI..."
+  },
+  "Install And Run": {
+    "zh": "安装并运行"
+  },
+  "Interactive chat": {
+    "zh": "互动聊天"
+  },
+  "Interactive chat with specified agent": {
+    "zh": "与指定代理进行交互式聊天"
+  },
+  "Invalid JSON format": {
+    "zh": "无效的JSON格式"
+  },
+  "Invalid cron expression format": {
+    "zh": "无效的 cron 表达式格式"
+  },
+  "Invalid parameters": {
+    "zh": "无效参数"
+  },
+  "Key": {
+    "zh": "键"
+  },
+  "Key Points": {
+    "zh": "要点"
+  },
+  "LLM not support": {
+    "zh": "法学硕士不支持"
+  },
+  "Language Model": {
+    "zh": "语言模型"
+  },
+  "Language setting has been saved and will persist across sessions": {
+    "zh": "语言设置已保存，并且会话之间保持不变"
+  },
+  "Last Chat": {
+    "zh": "上次聊天"
+  },
+  "Last chat": {
+    "zh": "最后一次聊天"
+  },
+  "Last used": {
+    "zh": "上次使用"
+  },
+  "List all agents": {
+    "zh": "列出所有代理"
+  },
+  "List all tasks": {
+    "zh": "列出所有任务"
+  },
+  "List of allowed MCP server names": {
+    "zh": "允许的MCP服务器名称列表"
+  },
+  "Loading Settings...": {
+    "zh": "正在加载设置..."
+  },
+  "Loading chat history...": {
+    "zh": "正在加载聊天记录..."
+  },
+  "Loading data...": {
+    "zh": "正在加载数据..."
+  },
+  "Log File Path": {
+    "zh": "日志文件路径"
+  },
+  "Low": {
+    "zh": "低"
+  },
+  "MCP": {
+    "zh": "微控制器编程器"
+  },
+  "MCP Client Details": {
+    "zh": "MCP 客户端详情"
+  },
+  "MCP Gateways": {
+    "zh": "多通道控制器网关"
+  },
+  "MCP Gateways Management": {
+    "zh": "MCP 网关管理"
+  },
+  "MCP Gateways Settings": {
+    "zh": "MCP 网关设置"
+  },
+  "MCP Gateways updated successfully": {
+    "zh": "MCP 网关更新成功"
+  },
+  "MCP Service Name already exists": {
+    "zh": "MCP 服务名称已存在"
+  },
+  "MCP Tool": {
+    "zh": "MCP 工具"
+  },
+  "MCP and Tools": {
+    "zh": "MCP与工具"
+  },
+  "MCP client deleted successfully": {
+    "zh": "MCP 客户端删除成功"
+  },
+  "MCP client disabled successfully": {
+    "zh": "MCP 客户端已成功禁用"
+  },
+  "MCP client enabled successfully": {
+    "zh": "MCP 客户端已成功启用"
+  },
+  "MCP client restarted successfully": {
+    "zh": "MCP 客户端成功重启"
+  },
+  "MCP clients reloaded successfully": {
+    "zh": "MCP 客户端已成功重新加载"
+  },
+  "MCP clients: Failed to get": {
+    "zh": "MCP 客户端：未能获取"
+  },
+  "MCP server added successfully": {
+    "zh": "MCP 服务器添加成功"
+  },
+  "Management Panel": {
+    "zh": "管理面板"
+  },
+  "Manually trigger task execution": {
+    "zh": "手动触发表单执行"
+  },
+  "Max Attached Dialogs": {
+    "zh": "最大附加对话数"
+  },
+  "Max Tokens": {
+    "zh": "最大令牌"
+  },
+  "Maximum number of attached dialog histories (0-100)": {
+    "zh": "附加对话历史的最大数量 (0-100)"
+  },
+  "Maximum tokens for AI response (100-32000)": {
+    "zh": "AI回复的最大令牌数（100-32000）"
+  },
+  "Medium": {
+    "zh": "中等"
+  },
+  "Memory Summary": {
+    "zh": "内存摘要"
+  },
+  "Model": {
+    "zh": "模型"
+  },
+  "Model ID": {
+    "zh": "模型 ID"
+  },
+  "Model Key": {
+    "zh": "模型键"
+  },
+  "Model Name": {
+    "zh": "型号名称"
+  },
+  "Model Type": {
+    "zh": "模型类型"
+  },
+  "Model added successfully!": {
+    "zh": "模型已成功添加！"
+  },
+  "Model deleted successfully!": {
+    "zh": "模型删除成功！"
+  },
+  "Model not found, please select a model": {
+    "zh": "模型未找到，请选择一个模型"
+  },
+  "Model updated successfully!": {
+    "zh": "模型更新成功！"
+  },
+  "Models": {
+    "zh": "模型"
+  },
+  "More Settings": {
+    "zh": "更多设置"
+  },
+  "Name": {
+    "zh": "姓名"
+  },
+  "Need Confirm": {
+    "zh": "需要确认"
+  },
+  "New Chat": {
+    "zh": "新对话"
+  },
+  "No": {
+    "zh": "不"
+  },
+  "No Agents": {
+    "zh": "无代理"
+  },
+  "No MCP clients": {
+    "zh": "无 MCP 客户端"
+  },
+  "No MCP configured": {
+    "zh": "未配置MCP"
+  },
+  "No agents available": {
+    "zh": "目前没有代理可用"
+  },
+  "No agents match your search": {
+    "zh": "无代理匹配您的搜索"
+  },
+  "No available workspace": {
+    "zh": "暂无可用工作区"
+  },
+  "No bookmarks yet": {
+    "zh": "暂无书签"
+  },
+  "No chat history found": {
+    "zh": "未找到聊天记录"
+  },
+  "No chat tabs open": {
+    "zh": "没有聊天标签页打开"
+  },
+  "No description": {
+    "zh": "无描述"
+  },
+  "No description available": {
+    "zh": "无可用描述"
+  },
+  "No disabled MCP clients": {
+    "zh": "无禁用 MCP 客户端"
+  },
+  "No enabled MCP clients": {
+    "zh": "无启用的MCP客户端"
+  },
+  "No file tree data": {
+    "zh": "无文件树数据"
+  },
+  "No gateways configured": {
+    "zh": "未配置网关"
+  },
+  "No history yet": {
+    "zh": "暂无历史记录"
+  },
+  "No matching MCP clients found": {
+    "zh": "未找到匹配的MCP客户端"
+  },
+  "No models configured. Click \"Add Model\" to create one.": {
+    "zh": "未配置模型。点击“添加模型”创建。"
+  },
+  "No parameters": {
+    "zh": "无参数"
+  },
+  "No recent agents": {
+    "zh": "无近期活动代理"
+  },
+  "No recent chats": {
+    "zh": "无近期聊天"
+  },
+  "No tasks found": {
+    "zh": "未找到任务"
+  },
+  "No tasks in scheduling": {
+    "zh": "没有任务安排"
+  },
+  "No tasks yet": {
+    "zh": "暂无任务"
+  },
+  "No todos yet": {
+    "zh": "所有用户尚未注册"
+  },
+  "No tools available": {
+    "zh": "没有可用工具"
+  },
+  "No workspace found": {
+    "zh": "未找到工作区"
+  },
+  "No workspace selected": {
+    "zh": "未选择工作区"
+  },
+  "OK": {
+    "zh": "好的"
+  },
+  "Old Name": {
+    "zh": "旧名称"
+  },
+  "On the 15th of every month": {
+    "zh": "每月15日"
+  },
+  "On the 1st of every month": {
+    "zh": "每个月的第一天"
+  },
+  "Only letters and numbers are allowed": {
+    "zh": "只允许字母和数字"
+  },
+  "Only letters, numbers, underscore and dash are allowed": {
+    "zh": "只允许字母、数字、下划线和破折号"
+  },
+  "Open Chat": {
+    "zh": "开放聊天"
+  },
+  "Operation failed: ": {
+    "zh": "操作失败："
+  },
+  "Optional, will use Model ID if empty": {
+    "zh": "可选，如果为空则将使用模型ID"
+  },
+  "Options": {
+    "zh": "选项"
+  },
+  "Parameter Reference": {
+    "zh": "参数参考"
+  },
+  "Parameters": {
+    "zh": "参数"
+  },
+  "Paste": {
+    "zh": "粘贴"
+  },
+  "Path": {
+    "zh": "路径"
+  },
+  "Phase 1: Quickly loading workspace configuration...": {
+    "zh": "第一阶段：快速加载工作区配置..."
+  },
+  "Phase 2: Starting workspace services...": {
+    "zh": "第二阶段：启动工作区服务……"
+  },
+  "Platform": {
+    "zh": "平台"
+  },
+  "Please enter": {
+    "zh": "请输入"
+  },
+  "Please enter API Key": {
+    "zh": "请输入API密钥"
+  },
+  "Please enter Base URL": {
+    "zh": "请输入基础网址"
+  },
+  "Please enter System Prompt": {
+    "zh": "请输入系统提示词"
+  },
+  "Please enter a valid URL": {
+    "zh": "请输入一个合法的URL"
+  },
+  "Please enter cron expression": {
+    "zh": "请输入 cron 表达式"
+  },
+  "Please enter gateway name": {
+    "zh": "请输入网关名称"
+  },
+  "Please enter model ID": {
+    "zh": "请输入模型ID"
+  },
+  "Please enter provider key": {
+    "zh": "请输入商家密钥"
+  },
+  "Please enter provider name": {
+    "zh": "请输入供应商名称"
+  },
+  "Please enter task description": {
+    "zh": "请输入任务描述"
+  },
+  "Please enter task name": {
+    "zh": "请输入任务名称"
+  },
+  "Please enter the name": {
+    "zh": "请输入名称"
+  },
+  "Please enter workspace name": {
+    "zh": "请输入工作区名称"
+  },
+  "Please provide agent name": {
+    "zh": "请提供代理人姓名"
+  },
+  "Please provide agent subcommand": {
+    "zh": "请提供代理子命令"
+  },
+  "Please provide task name": {
+    "zh": "请提供任务名称"
+  },
+  "Please run the following command to configure AI model first:": {
+    "zh": "请运行以下命令来配置AI模型："
+  },
+  "Please select TaskFallbackLLM": {
+    "zh": "请选择 TaskFallbackLLM"
+  },
+  "Please select a language model": {
+    "zh": "请选择语言模型"
+  },
+  "Please select a workspace to view details": {
+    "zh": "请选择一个工作区以查看详细信息"
+  },
+  "Please select allowed MCP": {
+    "zh": "请选择允许的MCP"
+  },
+  "Please select an agent": {
+    "zh": "请选择代理"
+  },
+  "Please select folder path": {
+    "zh": "请选择文件夹路径"
+  },
+  "Please wait for the current request to finish": {
+    "zh": "请等待当前请求完成"
+  },
+  "Powerful AI assistant command line tool": {
+    "zh": "强大的AI助手命令行工具"
+  },
+  "Processing...": {
+    "zh": "处理中..."
+  },
+  "Prompt": {
+    "zh": "提示"
+  },
+  "Prompts Count": {
+    "zh": "指令数量"
+  },
+  "Provider Key": {
+    "zh": "供应商密钥"
+  },
+  "Provider Name": {
+    "zh": "供应商名称"
+  },
+  "Provider added successfully": {
+    "zh": "提供方添加成功"
+  },
+  "Provider and all related models deleted successfully": {
+    "zh": "提供者及所有相关模型删除成功"
+  },
+  "Provider key already exists": {
+    "zh": "源密钥已存在"
+  },
+  "Provider key cannot be changed": {
+    "zh": "提供者密钥无法更改"
+  },
+  "Provider updated successfully": {
+    "zh": "提供商更新成功"
+  },
+  "Quick chat with specified agent": {
+    "zh": "与指定座席快速沟通"
+  },
+  "Recent Agents": {
+    "zh": "近期智能体"
+  },
+  "Recent Chats": {
+    "zh": "近期聊天"
+  },
+  "Recent Workspaces": {
+    "zh": "近期工作区"
+  },
+  "Recently Used": {
+    "zh": "最近使用"
+  },
+  "Refresh MCP clients": {
+    "zh": "刷新 MCP 客户端"
+  },
+  "Refresh file tree": {
+    "zh": "刷新文件树"
+  },
+  "Reload": {
+    "zh": "重新加载"
+  },
+  "Reload file": {
+    "zh": "重新加载文件"
+  },
+  "Remove from history": {
+    "zh": "从历史记录删除"
+  },
+  "Required": {
+    "zh": "必填"
+  },
+  "Reset to Defaults": {
+    "zh": "恢复默认设置"
+  },
+  "Resources Count": {
+    "zh": "资源计数"
+  },
+  "Restart": {
+    "zh": "重启"
+  },
+  "Result": {
+    "zh": "结果"
+  },
+  "Retry": {
+    "zh": "重试"
+  },
+  "Run Test": {
+    "zh": "运行测试"
+  },
+  "Running tool test...": {
+    "zh": "正在运行工具测试..."
+  },
+  "Save": {
+    "zh": "保存"
+  },
+  "Schedule": {
+    "zh": "日程"
+  },
+  "Schedule (Cron Expression)": {
+    "zh": "调度 (Cron 表达式)"
+  },
+  "Search MCP clients...": {
+    "zh": "搜索MCP客户端..."
+  },
+  "Search agents...": {
+    "zh": "搜索智能体..."
+  },
+  "Select AI model (optional)": {
+    "zh": "选择AI模型（可选）"
+  },
+  "Select Directory": {
+    "zh": "选择目录"
+  },
+  "Select LLM": {
+    "zh": "选择大型语言模型"
+  },
+  "Select Workspace Directory": {
+    "zh": "选择工作空间目录"
+  },
+  "Select a schedule template or enter custom cron expression": {
+    "zh": "选择日程安排模板或输入自定义cron表达式"
+  },
+  "Select allowed MCP servers": {
+    "zh": "选择允许的MCP服务器"
+  },
+  "Select an agent": {
+    "zh": "选择一位客服代表"
+  },
+  "Select an agent to start a conversation": {
+    "zh": "选择一个代理以开始对话"
+  },
+  "Select creation time": {
+    "zh": "选择创建时间"
+  },
+  "Select tools and capabilities for this agent": {
+    "zh": "为此代理选择工具和功能"
+  },
+  "Send": {
+    "zh": "发送"
+  },
+  "Sending": {
+    "zh": "正在发送"
+  },
+  "Server Name": {
+    "zh": "服务器名称"
+  },
+  "Server password": {
+    "zh": "服务器密码"
+  },
+  "Server started successfully...": {
+    "zh": "服务器启动成功..."
+  },
+  "Service is running": {
+    "zh": "服务正在运行"
+  },
+  "Service not running or not initialized": {
+    "zh": "服务未运行或未初始化"
+  },
+  "Service started, press Ctrl+C to stop...": {
+    "zh": "服务已启动，按 Ctrl+C 可停止..."
+  },
+  "Set Default": {
+    "zh": "设置默认值"
+  },
+  "Set interface to Chinese": {
+    "zh": "将界面语言设置为中文"
+  },
+  "Set interface to English": {
+    "zh": "将界面语言设置为英语"
+  },
+  "Set language (zh/en, highest priority)": {
+    "zh": "设置语言 (zh/en, 最高优先级)"
+  },
+  "Settings": {
+    "zh": "设置"
+  },
+  "Settings reset to defaults": {
+    "zh": "设置已重置为默认值"
+  },
+  "Settings saved successfully": {
+    "zh": "设置已成功保存"
+  },
+  "Settings updated successfully": {
+    "zh": "设置更新成功"
+  },
+  "Show available MCP tools": {
+    "zh": "展示可用的MCP工具"
+  },
+  "Show current model": {
+    "zh": "显示当前模型"
+  },
+  "Show help": {
+    "zh": "显示帮助"
+  },
+  "Show help information": {
+    "zh": "显示帮助信息"
+  },
+  "Show hidden files": {
+    "zh": "显示隐藏文件"
+  },
+  "Show or set interface language": {
+    "zh": "显示或设置界面语言"
+  },
+  "Show scheduler status": {
+    "zh": "显示调度程序状态"
+  },
+  "Show task details": {
+    "zh": "显示任务详情"
+  },
+  "Show task statistics": {
+    "zh": "显示任务统计"
+  },
+  "Show verbose logs": {
+    "zh": "显示详细日志"
+  },
+  "Silent mode": {
+    "zh": "静音模式"
+  },
+  "Source": {
+    "zh": "来源"
+  },
+  "Specify port (default: 16100)": {
+    "zh": "指定端口（默认：16100）"
+  },
+  "Standard": {
+    "zh": "标准"
+  },
+  "Start AI chat session (default command)": {
+    "zh": "开始AI聊天会话（默认命令）"
+  },
+  "Start backend server (includes Web UI)": {
+    "zh": "启动后端服务器（包括Web界面）"
+  },
+  "Start chatting in your workspace": {
+    "zh": "开始在您的工作区中聊天"
+  },
+  "Start core service (background task scheduling)": {
+    "zh": "启动核心服务（后台任务调度）"
+  },
+  "Start core service (no Web UI)": {
+    "zh": "启动核心服务（无 Web UI）"
+  },
+  "Start inputting...": {
+    "zh": "开始输入…"
+  },
+  "Start server (includes Web UI)": {
+    "zh": "启动服务器（包括Web UI）"
+  },
+  "Starting HyperChat server...": {
+    "zh": "正在启动 HyperChat 服务器..."
+  },
+  "Starting core service...": {
+    "zh": "启动核心服务中..."
+  },
+  "Starting interactive chat...": {
+    "zh": "开始交互式聊天..."
+  },
+  "Status": {
+    "zh": "Status"
+  },
+  "Status:": {
+    "zh": "状态："
+  },
+  "Submit": {
+    "zh": "提交"
+  },
+  "Support Images": {
+    "zh": "支持图片"
+  },
+  "Support Tools": {
+    "zh": "支持工具"
+  },
+  "Switch": {
+    "zh": "开关"
+  },
+  "Switch Workspace": {
+    "zh": "切换工作区"
+  },
+  "Switch to Global Workspace": {
+    "zh": "切换到全局工作区"
+  },
+  "Switched to workspace": {
+    "zh": "已切换到工作区"
+  },
+  "System": {
+    "zh": "系统"
+  },
+  "System Information": {
+    "zh": "系统信息"
+  },
+  "System PATH": {
+    "zh": "系统路径"
+  },
+  "System Prompt": {
+    "zh": "System Prompt"
+  },
+  "System management": {
+    "zh": "系统管理"
+  },
+  "Task Details": {
+    "zh": "任务详情"
+  },
+  "Task Name": {
+    "zh": "任务名称"
+  },
+  "Task cloned successfully": {
+    "zh": "任务克隆成功"
+  },
+  "Task created successfully": {
+    "zh": "任务创建成功"
+  },
+  "Task created successfully!": {
+    "zh": "任务创建成功！"
+  },
+  "Task deleted successfully": {
+    "zh": "任务已成功删除"
+  },
+  "Task description cannot exceed 500 characters": {
+    "zh": "任务描述不能超过500个字符"
+  },
+  "Task details:": {
+    "zh": "任务详情:"
+  },
+  "Task disabled successfully": {
+    "zh": "任务禁用成功"
+  },
+  "Task enabled successfully": {
+    "zh": "任务成功启用"
+  },
+  "Task list:": {
+    "zh": "任务列表:"
+  },
+  "Task management": {
+    "zh": "任务管理"
+  },
+  "Task name cannot exceed 100 characters": {
+    "zh": "任务名称不能超过100个字符"
+  },
+  "Task scheduler status:": {
+    "zh": "任务计划程序状态："
+  },
+  "Task statistics:": {
+    "zh": "任务统计："
+  },
+  "Task updated successfully": {
+    "zh": "任务更新成功"
+  },
+  "Task updated successfully!": {
+    "zh": "任务更新成功！"
+  },
+  "TaskFallbackLLM": {
+    "zh": "任务回退大模型"
+  },
+  "Tasks": {
+    "zh": "任务"
+  },
+  "Tasks being scheduled:": {
+    "zh": "任务正在调度中："
+  },
+  "Tasks in scheduling:": {
+    "zh": "任务调度中涉及的："
+  },
+  "Temperature": {
+    "zh": "温度"
+  },
+  "Terminal": {
+    "zh": "终端"
+  },
+  "Test": {
+    "zh": "测试"
+  },
+  "Test Tool": {
+    "zh": "测试工具"
+  },
+  "Thinking...": {
+    "zh": "正在思考..."
+  },
+  "This directory is already a workspace": {
+    "zh": "此目录已是工作区"
+  },
+  "This directory is not a workspace": {
+    "zh": "这个目录不是一个工作区"
+  },
+  "This operation cannot be undone!": {
+    "zh": "此操作无法撤消！"
+  },
+  "This will permanently delete the provider and all its models": {
+    "zh": "这会永久删除这个提供商以及它的所有模型"
+  },
+  "Tool Execution": {
+    "zh": "工具执行"
+  },
+  "Tool Mode": {
+    "zh": "工具模式"
+  },
+  "Tool execution failed": {
+    "zh": "工具执行失败"
+  },
+  "Tools": {
+    "zh": "工具"
+  },
+  "Tools Count": {
+    "zh": "工具数量"
+  },
+  "Tools count": {
+    "zh": "工具计数"
+  },
+  "Total Agents": {
+    "zh": "全员代理"
+  },
+  "Total Conversations": {
+    "zh": "对话总数"
+  },
+  "Type": {
+    "zh": "类型"
+  },
+  "Type /exit to exit, /help for help, /clear to clear chat history": {
+    "zh": "输入/exit退出，/help获取帮助，/clear清除聊天记录"
+  },
+  "UUID": {
+    "zh": "UUID"
+  },
+  "Unique identifier for this provider (letters and numbers only)": {
+    "zh": "此提供商的唯一标识符（仅限字母和数字）"
+  },
+  "Unknown": {
+    "zh": "未知"
+  },
+  "Unsaved Changes": {
+    "zh": "未保存的更改"
+  },
+  "Update": {
+    "zh": "更新"
+  },
+  "Upload Image": {
+    "zh": "上传图片"
+  },
+  "Usage:": {
+    "zh": "用法："
+  },
+  "Usage: hyperchat agent create <name>": {
+    "zh": "使用：hyperchat agent create <name>"
+  },
+  "Usage: hyperchat agent delete <name>": {
+    "zh": "使用: hyperchat agent delete <名称>"
+  },
+  "Usage: hyperchat language <lang>": {
+    "zh": "用法：hyperchat language <语言>"
+  },
+  "Usage: hyperchat task delete <name> [--force]": {
+    "zh": "用法：hyperchat task delete <名称> [--force]"
+  },
+  "Usage: hyperchat task disable <name>": {
+    "zh": "用法：hyperchat task disable <名称>"
+  },
+  "Usage: hyperchat task enable <name>": {
+    "zh": "用法：hyperchat task enable <名称>"
+  },
+  "Usage: hyperchat task show <name>": {
+    "zh": "用法: hyperchat task show <名称>"
+  },
+  "Usage: hyperchat task trigger <name>": {
+    "zh": "用法: hyperchat 任务触发器 <名称>"
+  },
+  "Use --force parameter to skip confirmation": {
+    "zh": "使用 --force 参数跳过确认"
+  },
+  "Use Chinese for this command": {
+    "zh": "此命令使用中文"
+  },
+  "Use hyperchat task create <name> to create a new task": {
+    "zh": "使用 hyperchat task create <名称> 创建新任务"
+  },
+  "Use specified workspace (override auto-detection)": {
+    "zh": "使用指定的工作区（覆盖自动检测）"
+  },
+  "User Cancel": {
+    "zh": "用户取消"
+  },
+  "Version": {
+    "zh": "版本"
+  },
+  "View Details": {
+    "zh": "查看详情"
+  },
+  "Waiting for server to start...": {
+    "zh": "等待服务器启动..."
+  },
+  "Welcome": {
+    "zh": "欢迎"
+  },
+  "Welcome Chat": {
+    "zh": "欢迎聊天"
+  },
+  "Welcome to Global Workspace": {
+    "zh": "欢迎来到全球工作空间"
+  },
+  "Welcome to HyperChat CLI! 🎉": {
+    "zh": "欢迎使用 HyperChat CLI！🎉"
+  },
+  "Whether to confirm before calling tools": {
+    "zh": "调用工具前是否需要确认"
+  },
+  "Workspace": {
+    "zh": "工作区"
+  },
+  "Workspace Chat": {
+    "zh": "工作区聊天"
+  },
+  "Workspace Name": {
+    "zh": "工作区名称"
+  },
+  "Workspace Settings": {
+    "zh": "工作区设置"
+  },
+  "Workspace View": {
+    "zh": "工作区视图"
+  },
+  "Workspace configuration loaded": {
+    "zh": "工作区配置已加载"
+  },
+  "Workspace created and switched successfully": {
+    "zh": "工作区创建并成功切换"
+  },
+  "Workspace information:": {
+    "zh": "工作区信息："
+  },
+  "Workspace opened successfully": {
+    "zh": "工作区打开成功"
+  },
+  "Workspace services started": {
+    "zh": "工作区服务已启动"
+  },
+  "Workspace status:": {
+    "zh": "工作区状态:"
+  },
+  "Yes": {
+    "zh": "是的"
+  },
+  "You have unsaved changes": {
+    "zh": "你有未保存的更改"
+  },
+  "You have unsaved changes. Are you sure you want to close the file?": {
+    "zh": "您有未保存的更改。确定要关闭文件吗？"
+  },
+  "You have unsaved changes. Are you sure you want to reload the file?": {
+    "zh": "你有未保存的更改。你确定要重新加载文件吗？"
+  },
+  "You:": {
+    "zh": "你："
+  },
+  "allowMCPs": {
+    "zh": "允许MCP"
+  },
+  "attachments": {
+    "zh": "附件"
+  },
+  "built-in": {
+    "zh": "内置的"
+  },
+  "chat": {
+    "zh": "聊天"
+  },
+  "e.g., Custom OpenAI": {
+    "zh": "例如，自定义 OpenAI"
+  },
+  "e.g., My custom OpenAI provider": {
+    "zh": "例如，我是自定义的 OpenAI 提供程序"
+  },
+  "e.g., custom-openai": {
+    "zh": "例如，custom-openai"
+  },
+  "e.g., gpt-4.1": {
+    "zh": "例如，gpt-4.1"
+  },
+  "e.g., https://api.example.com/v1": {
+    "zh": "例如，https://api.example.com/v1"
+  },
+  "hours ago": {
+    "zh": "几小时前"
+  },
+  "minutes ago": {
+    "zh": "几分钟前"
+  },
+  "models": {
+    "zh": "模型"
+  },
+  "please select emoji!": {
+    "zh": "请选择表情！"
+  },
+  "please upload image": {
+    "zh": "请上传图片"
+  },
+  "related": {
+    "zh": "相关"
+  },
+  "request-headers": {
+    "zh": "请求头"
+  },
+  "resources": {
+    "zh": "资源"
+  },
+  "tasks": {
+    "zh": "任务"
+  },
+  "thinking": {
+    "zh": "沉思"
+  },
+  "tools": {
+    "zh": "工具"
+  },
+  "type": {
+    "zh": "类型"
+  },
+  "✅ Service shut down safely": {
+    "zh": "✅ 服务已安全关闭"
+  },
+  "✅ Workspace created successfully": {
+    "zh": "✅ 工作区创建成功"
+  },
+  "\"hello\" to chat with this agent": {
+    "zh": "你好\" 与此代理聊天"
+  },
+  "About to delete task:": {
+    "zh": "即将删除任务："
+  },
+  "Agent:": {
+    "zh": "Agent:"
+  },
+  "Agents:": {
+    "zh": "智能体："
+  },
+  "Available tools": {
+    "zh": "可用工具"
+  },
+  "Chat initialization failed:": {
+    "zh": "聊天初始化失败:"
+  },
+  "Chat logs:": {
+    "zh": "聊天记录："
+  },
+  "Command execution failed:": {
+    "zh": "命令执行失败："
+  },
+  "Created:": {
+    "zh": "创建时间："
+  },
+  "Creating agent:": {
+    "zh": "创建代理："
+  },
+  "Creating task:": {
+    "zh": "创建任务:"
+  },
+  "Creating workspace:": {
+    "zh": "创建工作区："
+  },
+  "Current Agent:": {
+    "zh": "当前代理:"
+  },
+  "Current interface language:": {
+    "zh": "当前界面语言："
+  },
+  "Current model:": {
+    "zh": "当前模型："
+  },
+  "Current workspace Agent count:": {
+    "zh": "当前工作空间中代理程序的数量："
+  },
+  "Current workspace available MCP tools count:": {
+    "zh": "当前工作区可用 MCP 工具计数:"
+  },
+  "Deleting task:": {
+    "zh": "删除任务："
+  },
+  "Description:": {
+    "zh": "描述:"
+  },
+  "Disabled:": {
+    "zh": "禁用:"
+  },
+  "Disabling task:": {
+    "zh": "禁用任务:"
+  },
+  "Editing task:": {
+    "zh": "编辑任务："
+  },
+  "Enabled:": {
+    "zh": "已启用:"
+  },
+  "Enabling task:": {
+    "zh": "启用任务："
+  },
+  "Error occurred during exit:": {
+    "zh": "退出时发生错误:"
+  },
+  "Error shutting down service:": {
+    "zh": "关闭服务时出错:"
+  },
+  "Error: Agent": {
+    "zh": "错误：代理"
+  },
+  "Error: Task": {
+    "zh": "错误：任务"
+  },
+  "Failed to change language:": {
+    "zh": "修改语言失败:"
+  },
+  "Failed to create agent:": {
+    "zh": "创建代理失败:"
+  },
+  "Failed to create task:": {
+    "zh": "创建任务失败:"
+  },
+  "Failed to create workspace:": {
+    "zh": "无法创建工作空间:"
+  },
+  "Failed to delete agent:": {
+    "zh": "删除主体失败:"
+  },
+  "Failed to delete task:": {
+    "zh": "删除任务失败:"
+  },
+  "Failed to disable task:": {
+    "zh": "禁用任务失败:"
+  },
+  "Failed to edit task:": {
+    "zh": "无法编辑任务："
+  },
+  "Failed to enable task:": {
+    "zh": "无法启用任务："
+  },
+  "Failed to get agent list:": {
+    "zh": "获取代理列表失败:"
+  },
+  "Failed to get scheduler status:": {
+    "zh": "获取调度器状态失败:"
+  },
+  "Failed to get status:": {
+    "zh": "未能获取状态:"
+  },
+  "Failed to get task details:": {
+    "zh": "获取任务详情失败:"
+  },
+  "Failed to get task list:": {
+    "zh": "获取任务列表失败:"
+  },
+  "Failed to get task statistics:": {
+    "zh": "未能获取任务统计数据:"
+  },
+  "Failed to get workspace information:": {
+    "zh": "获取工作区信息失败:"
+  },
+  "Failed to get workspace list:": {
+    "zh": "获取工作区列表失败:"
+  },
+  "Failed to save language setting:": {
+    "zh": "保存语言设置失败："
+  },
+  "Failed to trigger task:": {
+    "zh": "未能触发任务:"
+  },
+  "Getting task details:": {
+    "zh": "获取任务详情："
+  },
+  "In scheduling:": {
+    "zh": "在调度时："
+  },
+  "Interface language changed to": {
+    "zh": "界面语言已更改为"
+  },
+  "Interface language is already set to": {
+    "zh": "界面语言已设置为"
+  },
+  "MCP clients:": {
+    "zh": "MCP 客户端:"
+  },
+  "MCP services:": {
+    "zh": "MCP 服务："
+  },
+  "Manually triggering task:": {
+    "zh": "手动触发任务："
+  },
+  "Missing required parameter:": {
+    "zh": "缺少必要的参数："
+  },
+  "Model:": {
+    "zh": "模型："
+  },
+  "Name:": {
+    "zh": "名称："
+  },
+  "Path:": {
+    "zh": "路径:"
+  },
+  "Processing message:": {
+    "zh": "正在处理消息:"
+  },
+  "Received exit signal": {
+    "zh": "收到退出信号"
+  },
+  "Schedule:": {
+    "zh": "日程："
+  },
+  "Scheduler status:": {
+    "zh": "调度器状态："
+  },
+  "Specified model": {
+    "zh": "指定模型"
+  },
+  "Startup failed:": {
+    "zh": "创业失败："
+  },
+  "Statistics:": {
+    "zh": "统计："
+  },
+  "Tags:": {
+    "zh": "标签："
+  },
+  "Task": {
+    "zh": "任务"
+  },
+  "Tasks:": {
+    "zh": "任务："
+  },
+  "Total": {
+    "zh": "总计"
+  },
+  "Total tasks:": {
+    "zh": "总任务数："
+  },
+  "Total:": {
+    "zh": "总计："
+  },
+  "Uncaught exception:": {
+    "zh": "未捕获的异常:"
+  },
+  "Unhandled Promise rejection:": {
+    "zh": "未处理的 Promise 拒绝："
+  },
+  "Unknown agent command or agent does not exist:": {
+    "zh": "未知代理指令或代理不存在:"
+  },
+  "Unknown parameter:": {
+    "zh": "未知参数:"
+  },
+  "Unknown task command:": {
+    "zh": "未知任务命令:"
+  },
+  "Unknown workspace command:": {
+    "zh": "未知工作区命令:"
+  },
+  "Unsupported language:": {
+    "zh": "不支持的语言:"
+  },
+  "Use hyperchat": {
+    "zh": "使用hyperchat"
+  },
+  "Using AI model specified from command line:": {
+    "zh": "使用命令行中指定的AI模型："
+  },
+  "Using model:": {
+    "zh": "使用模型中："
+  },
+  "Using workspace:": {
+    "zh": "使用工作区："
+  },
+  "Viewing workspace info:": {
+    "zh": "正在查看工作区信息："
+  },
+  "Welcome to": {
+    "zh": "欢迎来到"
+  },
+  "Workspace path:": {
+    "zh": "工作区路径:"
+  },
+  "Workspace:": {
+    "zh": "工作区："
+  },
+  "agents": {
+    "zh": "代理"
+  },
+  "deleted": {
+    "zh": "删除"
+  },
+  "disabled": {
+    "zh": "禁用"
+  },
+  "does not exist": {
+    "zh": "不存在"
+  },
+  "enabled": {
+    "zh": "已启用"
+  },
+  "entries": {
+    "zh": "条目"
+  },
+  "is not available, using default model": {
+    "zh": "不可用，使用默认模型"
+  },
+  "items": {
+    "zh": "项目"
+  },
+  "shutting down service...": {
+    "zh": "关闭服务..."
+  },
+  "tasks in scheduling": {
+    "zh": "调度任务"
+  },
+  "triggered for execution": {
+    "zh": "触发执行"
+  }
 }

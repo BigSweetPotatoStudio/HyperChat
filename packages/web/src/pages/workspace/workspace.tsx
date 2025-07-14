@@ -1035,7 +1035,7 @@ export function Workspace() {
       {/* 工作区设置抽屉 */}
       <Drawer
         width={800}
-        title={currentSettingsWorkspace ? t`Workspace Settings` + ` - ${currentSettingsWorkspace.name}` : t`Workspace Settings`}
+        title={currentSettingsWorkspace ? `${t`Workspace Settings`} - ${currentSettingsWorkspace.name}` : t`Workspace Settings`}
         open={settingsDrawerOpen}
         onClose={() => {
           setSettingsDrawerOpen(false);

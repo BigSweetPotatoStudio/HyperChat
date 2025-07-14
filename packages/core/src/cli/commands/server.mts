@@ -58,7 +58,7 @@ export async function startServer(options: ServerOptions = {}) {
 
 
   } catch (error) {
-    logger.error(t`Startup failed: ${error instanceof Error ? error.message : String(error)}`);
+    logger.error(`${t`Startup failed:`} ${error instanceof Error ? error.message : String(error)}`);
     process.exit(1);
   }
 }
