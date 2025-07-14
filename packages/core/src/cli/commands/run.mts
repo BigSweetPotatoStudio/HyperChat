@@ -31,21 +31,21 @@ export async function startRun(options: RunOptions = {}) {
     logger.info(`🎯 ${t`Using workspace: ${workspacePath}`}`);
     
     // 第一阶段：快速初始化工作区配置
-    logger.info('⏳ 第一阶段：快速加载工作区配置...');
+    logger.info(`⏳ ${t`Phase 1: Quickly loading workspace configuration...`}`);
     await getWorkspaceManager().initialize(workspacePath, false); // 明确不自动启动
     
     const workspace = getWorkspaceManager().getCurrentWorkspace();
     if (!workspace) {
-      throw new Error('无法获取当前工作区');
+      throw new Error(t`Cannot get current workspace`);
     }
     
     // 显示基本信息（此时服务还未启动）
-    logger.info('✅ 工作区配置加载完成');
-    logger.info(`🎯 工作区路径: ${workspace.workspacePath}`);
-    logger.info(`📁 状态: ${workspace.getState()}`);
+    logger.info(`✅ ${t`Workspace configuration loaded`}`);
+    logger.info(`🎯 ${t`Workspace path: ${workspace.workspacePath}`}`);
+    logger.info(`📁 ${t`Status: ${workspace.getState()}`}`);
     
     // 第二阶段：启动所有服务
-    logger.info('⏳ 第二阶段：启动工作区服务...');
+    logger.info(`⏳ ${t`Phase 2: Starting workspace services...`}`);
     await getWorkspaceManager().start();
     
     // 获取完整的工作区摘要信息
@@ -61,21 +61,21 @@ export async function startRun(options: RunOptions = {}) {
     // 显示正在调度的任务
     const scheduledTasks = workspace.getScheduledTasks();
     if (scheduledTasks.length > 0) {
-      logger.info(`⏰ 调度中的任务: ${scheduledTasks.length} 个`);
+      logger.info(`⏰ ${t`Tasks in scheduling: ${scheduledTasks.length} items`}`);
       for (const taskName of scheduledTasks) {
         logger.info(`   🔄 ${taskName}`);
       }
     } else {
-      logger.info('⏰ 暂无调度中的任务');
+      logger.info(`⏰ ${t`No tasks in scheduling`}`);
     }
     
-    logger.info('🔄 服务已启动，按 Ctrl+C 停止...');
+    logger.info(`🔄 ${t`Service started, press Ctrl+C to stop...`}`);
     
     // 保持进程运行
     await keepAlive();
     
   } catch (error) {
-    logger.error('启动失败:', error instanceof Error ? error.message : String(error));
+    logger.error(t`Startup failed: ${error instanceof Error ? error.message : String(error)}`);
     process.exit(1);
   }
 }
@@ -88,17 +88,17 @@ async function keepAlive(): Promise<void> {
   
   // 优雅退出处理
   const gracefulExit = async (signal: string) => {
-    logger.info(`\n📥 收到退出信号 ${signal}，正在关闭服务...`);
+    logger.info(t`\n📥 Received exit signal ${signal}, shutting down service...`);
     
     try {
       // 清理工作区资源
       const workspaceManager = getWorkspaceManager();
       await workspaceManager.uninitialize();
       
-      logger.info('✅ 服务已安全关闭');
+      logger.info(t`✅ Service shut down safely`);
       process.exit(0);
     } catch (error) {
-      logger.error('关闭服务时出错:', error);
+      logger.error(t`Error shutting down service: ${error}`);
       process.exit(1);
     }
   };
@@ -110,12 +110,12 @@ async function keepAlive(): Promise<void> {
   
   // 监听未捕获的异常
   process.on('uncaughtException', (error) => {
-    logger.error('未捕获的异常:', error);
+    logger.error(t`Uncaught exception: ${error}`);
     gracefulExit('UNCAUGHT_EXCEPTION');
   });
   
   process.on('unhandledRejection', (reason, promise) => {
-    logger.error('未处理的 Promise 拒绝:', reason);
+    logger.error(t`Unhandled Promise rejection: ${reason}`);
     gracefulExit('UNHANDLED_REJECTION');
   });
   
@@ -133,41 +133,41 @@ export async function showRunStatus() {
   const logger = new Logger();
   
   try {
-    logger.info('📊 HyperChat 运行状态:');
+    logger.info(`📊 ${t`HyperChat runtime status:`}`);
     
     const workspaceManager = getWorkspaceManager();
     
     try {
       const workspace = workspaceManager.getCurrentWorkspace();
       if (!workspace) {
-        logger.info('❌ 无可用工作区');
+        logger.info(`❌ ${t`No available workspace`}`);
         return;
       }
       
       const summary = await workspace.getSummary();
       const scheduledTasks = workspace.getScheduledTasks();
       
-      logger.info('✅ 服务正在运行');
-      logger.info(`🎯 工作区: ${workspace.workspacePath}`);
-      logger.info(`📊 状态:`);
-      logger.info(`   - Agents: ${summary.agentsCount} 个`);
-      logger.info(`   - MCP 服务: ${summary.mcpServersCount} 个`);
-      logger.info(`   - 任务: ${summary.tasksCount} 个`);
-      logger.info(`   - 调度中: ${scheduledTasks.length} 个任务`);
+      logger.info(`✅ ${t`Service is running`}`);
+      logger.info(`🎯 ${t`Workspace: ${workspace.workspacePath}`}`);
+      logger.info(`📊 ${t`Status:`}`);
+      logger.info(`   - ${t`Agents: ${summary.agentsCount} items`}`);
+      logger.info(`   - ${t`MCP services: ${summary.mcpServersCount} items`}`);
+      logger.info(`   - ${t`Tasks: ${summary.tasksCount} items`}`);
+      logger.info(`   - ${t`In scheduling: ${scheduledTasks.length} tasks`}`);
       
       if (scheduledTasks.length > 0) {
-        logger.info('⏰ 调度中的任务:');
+        logger.info(`⏰ ${t`Tasks in scheduling:`}`);
         for (const taskName of scheduledTasks) {
           logger.info(`   🔄 ${taskName}`);
         }
       }
     } catch (initError) {
-      logger.info('❌ 服务未运行或未初始化');
+      logger.info(`❌ ${t`Service not running or not initialized`}`);
       return;
     }
     
   } catch (error) {
-    logger.error('获取状态失败:', error instanceof Error ? error.message : String(error));
+    logger.error(t`Failed to get status: ${error instanceof Error ? error.message : String(error)}`);
     process.exit(1);
   }
 }

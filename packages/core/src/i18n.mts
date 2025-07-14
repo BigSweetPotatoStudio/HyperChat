@@ -202,6 +202,43 @@ export function addCliTranslations(): void {
     },
     "Warning": {
       "zh": "警告"
+    },
+    // CLI帮助和界面
+    "Powerful AI assistant command line tool": {
+      "zh": "强大的 AI 助手命令行工具"
+    },
+    "Usage:": {
+      "zh": "使用方法:"
+    },
+    "Global options:": {
+      "zh": "全局选项:"
+    },
+    "Commands:": {
+      "zh": "命令:"
+    },
+    "Examples:": {
+      "zh": "示例:"
+    },
+    "General chat": {
+      "zh": "通用聊天"
+    },
+    "System management": {
+      "zh": "系统管理"
+    },
+    "Task management": {
+      "zh": "任务管理"
+    },
+    "Chat function failed: ": {
+      "zh": "聊天功能失败:"
+    },
+    "Exiting...": {
+      "zh": "正在退出..."
+    },
+    "Error occurred during exit: ": {
+      "zh": "退出过程中出现错误:"
+    },
+    "❌ Command execution failed: ": {
+      "zh": "❌ 命令执行失败:"
     }
   };
 

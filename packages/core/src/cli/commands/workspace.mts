@@ -7,6 +7,7 @@ import { basename } from 'path';
 import { Logger } from '../utils/logger.mjs';
 import { Command } from '../../command.mjs';
 import { workspaceManager } from '../../workspace/index.mjs';
+import { t } from '../../i18n.mjs';
 /**
  * 获取当前工作区路径（新架构）
  */
@@ -21,7 +22,7 @@ export async function listWorkspaces() {
   const logger = new Logger();
 
   try {
-    logger.info('📁 获取工作区列表...');
+    logger.info(`📁 ${t`Getting workspace list...`}`);
 
     // 获取当前工作区
     const currentWorkspacePath = await getCurrentWorkspacePath();
@@ -29,26 +30,26 @@ export async function listWorkspaces() {
     // 新架构：只显示当前工作区
     const currentWorkspace = await Command.getCurrentWorkspace();
 
-    console.log('\n📋 当前工作区:');
+    console.log(`\n📋 ${t`Current workspace:`}`);
 
     if (!currentWorkspace) {
-      console.log('  未找到工作区');
+      console.log(`  ${t`No workspace found`}`);
       return;
     }
 
-    const type = currentWorkspace.isGlobal ? '(全局)' : '';
-    console.log(`  🟢 ${currentWorkspace.name} ${type} 👉 当前`);
-    console.log(`      路径: ${currentWorkspace.path}`);
+    const type = currentWorkspace.isGlobal ? t`(Global)` : '';
+    console.log(`  🟢 ${currentWorkspace.name} ${type} 👉 ${t`Current`}`);
+    console.log(`      ${t`Path: ${currentWorkspace.path}`}`);
     if (currentWorkspace.description) {
-      console.log(`      描述: ${currentWorkspace.description}`);
+      console.log(`      ${t`Description: ${currentWorkspace.description}`}`);
     }
-    console.log(`      Agents: ${currentWorkspace.agentsCount}`);
-    console.log(`      MCP 服务: ${currentWorkspace.mcpServersCount}`);
+    console.log(`      ${t`Agents: ${currentWorkspace.agentsCount}`}`);
+    console.log(`      ${t`MCP services: ${currentWorkspace.mcpServersCount}`}`);
 
-    console.log(`\n🎯 当前工作区: ${currentWorkspacePath}`);
+    console.log(`\n🎯 ${t`Current workspace: ${currentWorkspacePath}`}`);
 
   } catch (error) {
-    logger.error('获取工作区列表失败:', error instanceof Error ? error.message : String(error));
+    logger.error(t`Failed to get workspace list: ${error instanceof Error ? error.message : String(error)}`);
     process.exit(1);
   }
 }
@@ -57,12 +58,12 @@ export async function createWorkspace(path: string) {
   const logger = new Logger();
 
   try {
-    logger.info(`📁 创建工作区: ${path}`);
+    logger.info(`📁 ${t`Creating workspace: ${path}`}`);
 
     // 检查目录是否已经是工作区
     const isWorkspace = await Command.isWorkspaceDirectory({ directoryPath: path });
     if (isWorkspace) {
-      logger.warn('该目录已经是一个工作区');
+      logger.warn(t`This directory is already a workspace`);
       return;
     }
 
@@ -72,12 +73,12 @@ export async function createWorkspace(path: string) {
       name: basename(path)
     });
 
-    logger.success(`✅ 工作区创建成功`);
-    console.log(`名称: ${workspace.name}`);
-    console.log(`路径: ${workspace.path}`);
+    logger.success(t`✅ Workspace created successfully`);
+    console.log(t`Name: ${workspace.name}`);
+    console.log(t`Path: ${workspace.path}`);
 
   } catch (error) {
-    logger.error('创建工作区失败:', error instanceof Error ? error.message : String(error));
+    logger.error(t`Failed to create workspace: ${error instanceof Error ? error.message : String(error)}`);
     process.exit(1);
   }
 }
@@ -86,12 +87,12 @@ export async function showWorkspaceInfo(path: string) {
   const logger = new Logger();
 
   try {
-    logger.info(`📁 查看工作区信息: ${path}`);
+    logger.info(`📁 ${t`Viewing workspace info: ${path}`}`);
 
     // 检查目录是否是工作区
     const isWorkspace = await Command.isWorkspaceDirectory({ directoryPath: path });
     if (!isWorkspace) {
-      logger.error('该目录不是一个工作区');
+      logger.error(t`This directory is not a workspace`);
       return;
     }
 
@@ -101,31 +102,31 @@ export async function showWorkspaceInfo(path: string) {
     
     let workspaceConfig= workspace?.getConfig();
     if (!workspaceConfig) {
-      logger.error('无法加载工作区配置');
+      logger.error(t`Cannot load workspace configuration`);
       return;
     }
 
-    console.log('\n📋 工作区信息:');
-    console.log(`  名称: ${workspaceConfig.name}`);
-    console.log(`  路径: ${path}`);
-    console.log(`  描述: ${workspaceConfig.description || '无描述'}`);
-    console.log(`  创建时间: ${new Date(workspaceConfig.created).toLocaleString()}`);
+    console.log(`\n📋 ${t`Workspace information:`}`);
+    console.log(`  ${t`Name: ${workspaceConfig.name}`}`);
+    console.log(`  ${t`Path: ${path}`}`);
+    console.log(`  ${t`Description: ${workspaceConfig.description || t`No description`}`}`);
+    console.log(`  ${t`Created: ${new Date(workspaceConfig.created).toLocaleString()}`}`);
 
     // 获取MCP客户端信息
     try {
       const mcpClients = await Command.getWorkspaceMcpClients();
-      console.log(`  MCP客户端: ${mcpClients.length} 个`);
+      console.log(`  ${t`MCP clients: ${mcpClients.length} items`}`);
       if (mcpClients.length > 0) {
         mcpClients.forEach(client => {
           console.log(`    - ${client.serverName} (${client.status})`);
         });
       }
     } catch (error) {
-      console.log(`  MCP客户端: 获取失败`);
+      console.log(`  ${t`MCP clients: Failed to get`}`);
     }
 
   } catch (error) {
-    logger.error('获取工作区信息失败:', error instanceof Error ? error.message : String(error));
+    logger.error(t`Failed to get workspace information: ${error instanceof Error ? error.message : String(error)}`);
     process.exit(1);
   }
 }

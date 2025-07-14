@@ -18,6 +18,7 @@ import {
   addSystemMessage,
   logAIConfig
 } from '../../utils/aiConfigHelper.mjs';
+import { t } from '../../i18n.mjs';
 
 
 export interface ChatOptions {
@@ -36,14 +37,14 @@ export async function startChat(initialMessage?: string, options: ChatOptions = 
 
   try {
     // 初始化CLI聊天环境
-    logger.info('🔍 初始化 HyperChat CLI...');
+    logger.info(`🔍 ${t`Initializing HyperChat CLI...`}`);
 
     // Chat需要完整服务（MCP工具、AI聊天）
     await workspaceManager.initialize(options.workspace, false);
-    logger.info(`🎯 使用工作区: ${workspaceManager.getCurrentWorkspacePath()}`);
+    logger.info(`🎯 ${t`Using workspace: ${workspaceManager.getCurrentWorkspacePath()}`}`);
 
     await workspaceManager.start();
-    logger.info(`✅ 工作区服务已启动`);
+    logger.info(`✅ ${t`Workspace services started`}`);
 
     // 初始化 AI 环境
     const env = await initializeAIEnvironment({
@@ -59,9 +60,9 @@ export async function startChat(initialMessage?: string, options: ChatOptions = 
 
       if (isModelAvailable) {
         env.effectiveConfig.modelKey = options.model;
-        logger.info(`📋 使用命令行指定的AI模型: ${options.model}`);
+        logger.info(`📋 ${t`Using AI model specified from command line: ${options.model}`}`);
       } else {
-        logger.warn(`⚠️  指定的模型 '${options.model}' 不可用，使用默认模型`);
+        logger.warn(`⚠️  ${t`Specified model '${options.model}' is not available, using default model`}`);
       }
     }
 
@@ -82,14 +83,14 @@ export async function startChat(initialMessage?: string, options: ChatOptions = 
       };
     };
     const effectiveConfig = getEffectiveConfig();
-    logger.info(`🤖 使用模型: ${effectiveConfig.modelKey}`);
+    logger.info(`🤖 ${t`Using model: ${effectiveConfig.modelKey}`}`);
     // 获取工作区的Agent数量
     const agentsSummary = await env.workspace.getAllAgentsSummary();
 
-    logger.info(`👥 当前工作区Agent数量: ${agentsSummary.length}`);
-    logger.info(`🔧 当前工作区可用MCP工具数量: ${env.workspace.getAllMcpClients().length}`);
+    logger.info(`👥 ${t`Current workspace Agent count: ${agentsSummary.length}`}`);
+    logger.info(`🔧 ${t`Current workspace available MCP tools count: ${env.workspace.getAllMcpClients().length}`}`);
     if (env.agentConfig?.name) {
-      logger.info(`🌐 当前Agent: ${env.agentConfig?.name}`);
+      logger.info(`🌐 ${t`Current Agent: ${env.agentConfig?.name}`}`);
     }
     // 创建AI通道
     const aiChannel = createAIChannel(env);
@@ -99,7 +100,7 @@ export async function startChat(initialMessage?: string, options: ChatOptions = 
 
     // 如果有初始消息，处理并退出
     if (initialMessage) {
-      logger.info(`💬 处理消息: ${initialMessage}`);
+      logger.info(`💬 ${t`Processing message: ${initialMessage}`}`);
 
       const userMessage: MyMessage = {
         role: 'user',
@@ -108,7 +109,7 @@ export async function startChat(initialMessage?: string, options: ChatOptions = 
       };
       aiChannel.addMessage(userMessage);
 
-      console.log('\n🤖 AI 回复:');
+      console.log(`\n🤖 ${t`AI reply:`}`);
 
 
       // 流式输出
@@ -156,27 +157,27 @@ export async function startChat(initialMessage?: string, options: ChatOptions = 
     }
 
     // 交互式聊天模式
-    logger.info('💬 开始交互式聊天...');
-    logger.info('💡 输入 /exit 退出，/help 查看帮助，/clear 清空对话历史');
+    logger.info(`💬 ${t`Starting interactive chat...`}`);
+    logger.info(`💡 ${t`Type /exit to exit, /help for help, /clear to clear chat history`}`);
     console.log();
 
     const rl = createReadline();
 
     while (true) {
-      const input = await rl.question('🧑 你: ');
+      const input = await rl.question(`🧑 ${t`You:`} `);
 
       if (input.trim() === '/exit') {
-        logger.info('👋 再见！');
+        logger.info(`👋 ${t`Goodbye!`}`);
         break;
       }
 
       if (input.trim() === '/help') {
-        console.log('\n📋 聊天命令:');
-        console.log('  /exit   - 退出聊天');
-        console.log('  /help   - 显示帮助');
-        console.log('  /clear  - 清空对话历史');
-        console.log('  /model  - 显示当前使用的模型');
-        console.log('  /tools  - 显示可用的MCP工具');
+        console.log(`\n📋 ${t`Chat commands:`}`);
+        console.log(`  /exit   - ${t`Exit chat`}`);
+        console.log(`  /help   - ${t`Show help`}`);
+        console.log(`  /clear  - ${t`Clear chat history`}`);
+        console.log(`  /model  - ${t`Show current model`}`);
+        console.log(`  /tools  - ${t`Show available MCP tools`}`);
         console.log();
         continue;
       }
@@ -187,17 +188,17 @@ export async function startChat(initialMessage?: string, options: ChatOptions = 
         addSystemMessage(newAiChannel, env, `你是HyperChat CLI助手。当前工作区: ${env.workspace.workspacePath}。可用工具: ${env.mcpTools.length}个MCP工具。请用中文回复。`);
         // 替换当前通道
         Object.assign(aiChannel, newAiChannel);
-        console.log('✅ 对话历史已清空\n');
+        console.log(`✅ ${t`Chat history cleared`}\n`);
         continue;
       }
 
       if (input.trim() === '/model') {
-        console.log(`\n🤖 当前模型: ${env.effectiveConfig.modelKey}\n`);
+        console.log(`\n🤖 ${t`Current model: ${env.effectiveConfig.modelKey}`}\n`);
         continue;
       }
 
       if (input.trim() === '/tools') {
-        console.log(`\n🔧 可用工具 (${env.mcpTools.length}个):`);
+        console.log(`\n🔧 ${t`Available tools (${env.mcpTools.length} items):`}`);
         env.mcpTools.forEach((tool: any) => {
           console.log(`  - ${tool.name}: ${tool.description}`);
         });
@@ -218,8 +219,8 @@ export async function startChat(initialMessage?: string, options: ChatOptions = 
       aiChannel.addMessage(userMessage);
 
       // 显示AI回复
-      console.log('\n🤖 AI: ');
-      process.stdout.write('思考中...');
+      console.log(`\n🤖 ${t`AI:`} `);
+      process.stdout.write(t`Thinking...`);
 
       try {
         // 流式输出
@@ -273,7 +274,7 @@ export async function startChat(initialMessage?: string, options: ChatOptions = 
 
         console.log('\n'); // 换行
       } catch (error) {
-        console.log('\n❌ 错误:', error instanceof Error ? error.message : String(error));
+        console.log(`\n❌ ${t`Error:`}`, error instanceof Error ? error.message : String(error));
         console.log();
       }
     }
@@ -281,10 +282,10 @@ export async function startChat(initialMessage?: string, options: ChatOptions = 
     rl.close();
 
   } catch (error) {
-    logger.error('聊天初始化失败:', error instanceof Error ? error.message : String(error));
+    logger.error(t`Chat initialization failed: ${error instanceof Error ? error.message : String(error)}`);
 
     if (error instanceof Error && error.message.includes('未找到可用的AI模型配置')) {
-      logger.info('\n💡 请先运行以下命令配置AI模型:');
+      logger.info(`\n💡 ${t`Please run the following command to configure AI model first:`}`);
     }
 
     process.exit(1);

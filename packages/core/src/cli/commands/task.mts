@@ -6,6 +6,7 @@ import process from 'process';
 import { Logger } from '../utils/logger.mjs';
 import { Command } from '../../command.mjs';
 import { workspaceManager } from '../../workspace/index.mjs';
+import { t } from '../../i18n.mjs';
 import type { CreateTaskRequest } from '@dadigua/hyperchat-shared';
 import type { AgentConfig } from '@dadigua/hyperchat-shared';
 
@@ -33,42 +34,42 @@ export async function listTasks() {
   const logger = new Logger();
 
   try {
-    logger.info('📅 获取任务列表...');
+    logger.info(`📅 ${t`Getting task list...`}`);
 
     // 智能获取当前工作区
     const workspacePath = await getCurrentWorkspacePath();
-    logger.info(`🎯 使用工作区: ${workspacePath}`);
+    logger.info(`🎯 ${t`Using workspace: ${workspacePath}`}`);
 
     // 获取任务列表
     const tasks = await Command.getAllTasks({ workspacePath });
 
-    console.log('\n📅 任务列表:');
+    console.log(`\n📅 ${t`Task list:`}`);
 
     if (tasks.length === 0) {
-      console.log('  暂无任务');
-      console.log('\n💡 使用 hyperchat task create <name> 创建新任务');
+      console.log(`  ${t`No tasks found`}`);
+      console.log(`\n💡 ${t`Use hyperchat task create <name> to create a new task`}`);
       return;
     }
 
     for (const task of tasks) {
       const statusIcon = task.disabled ? '⏸️' : '▶️';
-      const statusText = task.disabled ? '已禁用' : '已启用';
+      const statusText = task.disabled ? t`Disabled` : t`Enabled`;
       
       console.log(`  ${statusIcon} ${task.name}`);
-      console.log(`      描述: ${task.description}`);
-      console.log(`      代理: ${task.agentName}`);
-      console.log(`      调度: ${task.cron}`);
-      console.log(`      状态: ${statusText}`);
+      console.log(`      ${t`Description`}: ${task.description}`);
+      console.log(`      ${t`Agent`}: ${task.agentName}`);
+      console.log(`      ${t`Schedule`}: ${task.cron}`);
+      console.log(`      ${t`Status`}: ${statusText}`);
       console.log('');
     }
 
     // 显示统计信息
     const enabledCount = tasks.filter(t => !t.disabled).length;
     const disabledCount = tasks.filter(t => t.disabled).length;
-    console.log(`📊 统计: 总计 ${tasks.length} 个任务 (${enabledCount} 个已启用, ${disabledCount} 个已禁用)`);
+    console.log(`📊 ${t`Statistics: Total ${tasks.length} tasks (${enabledCount} enabled, ${disabledCount} disabled)`}`);
 
   } catch (error) {
-    logger.error('获取任务列表失败:', error);
+    logger.error(t`Failed to get task list: ${error}`);
     process.exit(1);
   }
 }
@@ -85,20 +86,20 @@ export async function createTask(taskName: string, options: {
   const logger = new Logger();
 
   try {
-    logger.info(`📅 创建任务: ${taskName}`);
+    logger.info(`📅 ${t`Creating task: ${taskName}`}`);
 
     // 获取当前工作区
     const workspacePath = await getCurrentWorkspacePath();
-    logger.info(`🎯 使用工作区: ${workspacePath}`);
+    logger.info(`🎯 ${t`Using workspace: ${workspacePath}`}`);
 
     // 验证参数
     if (!options.description) {
-      console.error('❌ 错误: 必须提供任务描述 (--description)');
+      console.error(`❌ ${t`Error: Task description is required (--description)`}`);
       process.exit(1);
     }
 
     if (!options.agent) {
-      console.error('❌ 错误: 必须指定代理 (--agent)');
+      console.error(`❌ ${t`Error: Agent must be specified (--agent)`}`);
       process.exit(1);
     }
 
@@ -107,8 +108,8 @@ export async function createTask(taskName: string, options: {
     const agentExists = agents.some(a => a.config.name === options.agent);
     
     if (!agentExists) {
-      console.error(`❌ 错误: 代理 '${options.agent}' 不存在`);
-      console.log('\n可用代理:');
+      console.error(`❌ ${t`Error: Agent '${options.agent}' does not exist`}`);
+      console.log(`\n${t`Available agents:`}`);
       for (const agentSummary of agents) {
         console.log(`  - ${agentSummary.config.name} `);
       }
@@ -127,15 +128,15 @@ export async function createTask(taskName: string, options: {
     // 创建任务只需要配置，不需要启动调度器
     const task = await Command.createTask({ workspacePath, taskData });
 
-    console.log('✅ 任务创建成功!');
-    console.log(`   名称: ${task.name}`);
-    console.log(`   描述: ${task.description}`);
-    console.log(`   代理: ${task.agentName}`);
-    console.log(`   调度: ${task.cron}`);
-    console.log(`   状态: ${task.disabled ? '已禁用' : '已启用'}`);
+    console.log(`✅ ${t`Task created successfully!`}`);
+    console.log(`   ${t`Name: ${task.name}`}`);
+    console.log(`   ${t`Description: ${task.description}`}`);
+    console.log(`   ${t`Agent: ${task.agentName}`}`);
+    console.log(`   ${t`Schedule: ${task.cron}`}`);
+    console.log(`   ${t`Status: ${task.disabled ? t`Disabled` : t`Enabled`}`}`);
 
   } catch (error) {
-    logger.error('创建任务失败:', error);
+    logger.error(t`Failed to create task: ${error}`);
     process.exit(1);
   }
 }
@@ -147,26 +148,26 @@ export async function showTask(taskName: string) {
   const logger = new Logger();
 
   try {
-    logger.info(`📅 获取任务详情: ${taskName}`);
+    logger.info(`📅 ${t`Getting task details: ${taskName}`}`);
 
     // 获取当前工作区
     const workspacePath = await getCurrentWorkspacePath();
     const task = await Command.getTask({ workspacePath, taskName });
 
     if (!task) {
-      console.error(`❌ 错误: 任务 '${taskName}' 不存在`);
+      console.error(`❌ ${t`Error: Task '${taskName}' does not exist`}`);
       process.exit(1);
     }
 
-    console.log('\n📅 任务详情:');
-    console.log(`   名称: ${task.name}`);
-    console.log(`   描述: ${task.description}`);
-    console.log(`   代理: ${task.agentName}`);
-    console.log(`   调度: ${task.cron}`);
-    console.log(`   状态: ${task.disabled ? '已禁用' : '已启用'}`);
+    console.log(`\n📅 ${t`Task details:`}`);
+    console.log(`   ${t`Name: ${task.name}`}`);
+    console.log(`   ${t`Description: ${task.description}`}`);
+    console.log(`   ${t`Agent: ${task.agentName}`}`);
+    console.log(`   ${t`Schedule: ${task.cron}`}`);
+    console.log(`   ${t`Status: ${task.disabled ? t`Disabled` : t`Enabled`}`}`);
 
   } catch (error) {
-    logger.error('获取任务详情失败:', error);
+    logger.error(t`Failed to get task details: ${error}`);
     process.exit(1);
   }
 }
@@ -178,20 +179,20 @@ export async function enableTask(taskName: string) {
   const logger = new Logger();
 
   try {
-    logger.info(`📅 启用任务: ${taskName}`);
+    logger.info(`📅 ${t`Enabling task: ${taskName}`}`);
 
     const workspacePath = await getCurrentWorkspacePath();
     const task = await Command.enableTask({ workspacePath, taskName });
 
     if (!task) {
-      console.error(`❌ 错误: 任务 '${taskName}' 不存在`);
+      console.error(`❌ ${t`Error: Task '${taskName}' does not exist`}`);
       process.exit(1);
     }
 
-    console.log(`✅ 任务 '${taskName}' 已启用`);
+    console.log(`✅ ${t`Task '${taskName}' enabled`}`);
 
   } catch (error) {
-    logger.error('启用任务失败:', error);
+    logger.error(t`Failed to enable task: ${error}`);
     process.exit(1);
   }
 }
@@ -203,20 +204,20 @@ export async function disableTask(taskName: string) {
   const logger = new Logger();
 
   try {
-    logger.info(`📅 禁用任务: ${taskName}`);
+    logger.info(`📅 ${t`Disabling task: ${taskName}`}`);
 
     const workspacePath = await getCurrentWorkspacePath();
     const task = await Command.disableTask({ workspacePath, taskName });
 
     if (!task) {
-      console.error(`❌ 错误: 任务 '${taskName}' 不存在`);
+      console.error(`❌ ${t`Error: Task '${taskName}' does not exist`}`);
       process.exit(1);
     }
 
-    console.log(`✅ 任务 '${taskName}' 已禁用`);
+    console.log(`✅ ${t`Task '${taskName}' disabled`}`);
 
   } catch (error) {
-    logger.error('禁用任务失败:', error);
+    logger.error(t`Failed to disable task: ${error}`);
     process.exit(1);
   }
 }
@@ -228,37 +229,37 @@ export async function deleteTask(taskName: string, options: { force?: boolean } 
   const logger = new Logger();
 
   try {
-    logger.info(`📅 删除任务: ${taskName}`);
+    logger.info(`📅 ${t`Deleting task: ${taskName}`}`);
 
     const workspacePath = await getCurrentWorkspacePath();
     
     // 检查任务是否存在
     const task = await Command.getTask({ workspacePath, taskName });
     if (!task) {
-      console.error(`❌ 错误: 任务 '${taskName}' 不存在`);
+      console.error(`❌ ${t`Error: Task '${taskName}' does not exist`}`);
       process.exit(1);
     }
 
     // 确认删除（除非使用 --force）
     if (!options.force) {
-      console.log(`⚠️  即将删除任务: ${task.name}`);
-      console.log(`   描述: ${task.description}`);
-      console.log('   此操作不可撤销!');
-      console.log('\n   使用 --force 参数跳过确认');
+      console.log(`⚠️  ${t`About to delete task: ${task.name}`}`);
+      console.log(`   ${t`Description: ${task.description}`}`);
+      console.log(`   ${t`This operation cannot be undone!`}`);
+      console.log(`\n   ${t`Use --force parameter to skip confirmation`}`);
       process.exit(1);
     }
 
     const success = await Command.deleteTask({ workspacePath, taskName });
 
     if (success) {
-      console.log(`✅ 任务 '${taskName}' 已删除`);
+      console.log(`✅ ${t`Task '${taskName}' deleted`}`);
     } else {
-      console.error(`❌ 删除任务 '${taskName}' 失败`);
+      console.error(`❌ ${t`Failed to delete task '${taskName}'`}`);
       process.exit(1);
     }
 
   } catch (error) {
-    logger.error('删除任务失败:', error);
+    logger.error(t`Failed to delete task: ${error}`);
     process.exit(1);
   }
 }
@@ -276,14 +277,14 @@ export async function editTask(taskName: string, options: {
   const logger = new Logger();
 
   try {
-    logger.info(`📅 编辑任务: ${taskName}`);
+    logger.info(`📅 ${t`Editing task: ${taskName}`}`);
 
     const workspacePath = await getCurrentWorkspacePath();
     
     // 检查任务是否存在
     const existingTask = await Command.getTask({ workspacePath, taskName });
     if (!existingTask) {
-      console.error(`❌ 错误: 任务 '${taskName}' 不存在`);
+      console.error(`❌ ${t`Error: Task '${taskName}' does not exist`}`);
       process.exit(1);
     }
 
@@ -300,7 +301,7 @@ export async function editTask(taskName: string, options: {
       const agentExists = agents.some(a => a.config.name === options.agent);
       
       if (!agentExists) {
-        console.error(`❌ 错误: 代理 '${options.agent}' 不存在`);
+        console.error(`❌ ${t`Error: Agent '${options.agent}' does not exist`}`);
         process.exit(1);
       }
       
@@ -319,7 +320,7 @@ export async function editTask(taskName: string, options: {
 
     // 检查是否有更新
     if (Object.keys(updates).length === 0) {
-      console.log('❌ 错误: 没有提供要更新的字段');
+      console.log(`❌ ${t`Error: No fields provided for update`}`);
       process.exit(1);
     }
 
@@ -327,19 +328,19 @@ export async function editTask(taskName: string, options: {
     const updatedTask = await Command.updateTask({ workspacePath, taskName, updates });
 
     if (!updatedTask) {
-      console.error('❌ 更新任务失败');
+      console.error(`❌ ${t`Failed to update task`}`);
       process.exit(1);
     }
 
-    console.log('✅ 任务更新成功!');
-    console.log(`   名称: ${updatedTask.name}`);
-    console.log(`   描述: ${updatedTask.description}`);
-    console.log(`   代理: ${updatedTask.agentName}`);
-    console.log(`   调度: ${updatedTask.cron}`);
-    console.log(`   状态: ${updatedTask.disabled ? '已禁用' : '已启用'}`);
+    console.log(`✅ ${t`Task updated successfully!`}`);
+    console.log(`   ${t`Name: ${updatedTask.name}`}`);
+    console.log(`   ${t`Description: ${updatedTask.description}`}`);
+    console.log(`   ${t`Agent: ${updatedTask.agentName}`}`);
+    console.log(`   ${t`Schedule: ${updatedTask.cron}`}`);
+    console.log(`   ${t`Status: ${updatedTask.disabled ? t`Disabled` : t`Enabled`}`}`);
 
   } catch (error) {
-    logger.error('编辑任务失败:', error);
+    logger.error(t`Failed to edit task: ${error}`);
     process.exit(1);
   }
 }
@@ -352,26 +353,26 @@ export async function taskStats() {
   const logger = new Logger();
 
   try {
-    logger.info('📅 获取任务统计...');
+    logger.info(`📅 ${t`Getting task statistics...`}`);
 
     const workspacePath = await getCurrentWorkspacePath();
     const stats = await Command.getTaskStats({ workspacePath });
 
-    console.log('\n📊 任务统计:');
-    console.log(`   总任务数: ${stats.total}`);
-    console.log(`   已启用: ${stats.enabled}`);
-    console.log(`   已禁用: ${stats.disabled}`);
+    console.log(`\n📊 ${t`Task statistics:`}`);
+    console.log(`   ${t`Total tasks: ${stats.total}`}`);
+    console.log(`   ${t`Enabled: ${stats.enabled}`}`);
+    console.log(`   ${t`Disabled: ${stats.disabled}`}`);
     
     if (Object.keys(stats.agentCounts).length > 0) {
-      console.log('\n🤖 按代理分组:');
+      console.log(`\n🤖 ${t`Grouped by agent:`}`);
       for (const [agentName, count] of Object.entries(stats.agentCounts)) {
-        console.log(`   ${agentName}: ${count} 个任务`);
+        console.log(`   ${agentName}: ${t`${count} tasks`}`);
       }
     }
 
     // 显示调度状态只需要配置
     const scheduledTasks = await Command.getScheduledTasks({ workspacePath });
-    console.log(`\n⏰ 调度状态: ${scheduledTasks.length} 个任务正在调度中`);
+    console.log(`\n⏰ ${t`Scheduler status: ${scheduledTasks.length} tasks in scheduling`}`);
     if (scheduledTasks.length > 0) {
       for (const taskName of scheduledTasks) {
         console.log(`   🔄 ${taskName}`);
@@ -379,7 +380,7 @@ export async function taskStats() {
     }
 
   } catch (error) {
-    logger.error('获取任务统计失败:', error);
+    logger.error(t`Failed to get task statistics: ${error}`);
     process.exit(1);
   }
 }
@@ -391,16 +392,16 @@ export async function triggerTask(taskName: string) {
   const logger = new Logger();
 
   try {
-    logger.info(`⚡ 手动触发任务: ${taskName}`);
+    logger.info(`⚡ ${t`Manually triggering task: ${taskName}`}`);
 
     // 触发任务需要完整服务（调度器+AI）
     const workspacePath = await initWorkspaceForExecution();
     await Command.triggerTask({ workspacePath, taskName });
 
-    console.log(`✅ 任务 '${taskName}' 已触发执行`);
+    console.log(`✅ ${t`Task '${taskName}' triggered for execution`}`);
 
   } catch (error) {
-    logger.error('触发任务失败:', error);
+    logger.error(t`Failed to trigger task: ${error}`);
     process.exit(1);
   }
 }
@@ -412,32 +413,32 @@ export async function showScheduler() {
   const logger = new Logger();
 
   try {
-    logger.info('📅 获取调度状态...');
+    logger.info(`📅 ${t`Getting scheduler status...`}`);
 
     const workspacePath = await getCurrentWorkspacePath();
     const scheduledTasks = await Command.getScheduledTasks({ workspacePath });
 
-    console.log('\n⏰ 任务调度器状态:');
-    console.log(`   调度中的任务: ${scheduledTasks.length} 个`);
+    console.log(`\n⏰ ${t`Task scheduler status:`}`);
+    console.log(`   ${t`Tasks in scheduling: ${scheduledTasks.length} items`}`);
     
     if (scheduledTasks.length > 0) {
-      console.log('\n🔄 正在调度的任务:');
+      console.log(`\n🔄 ${t`Tasks being scheduled:`}`);
       for (const taskName of scheduledTasks) {
         const task = await Command.getTask({ workspacePath, taskName });
         if (task) {
           console.log(`   📋 ${task.name}`);
-          console.log(`      代理: ${task.agentName}`);
-          console.log(`      调度: ${task.cron}`);
-          console.log(`      描述: ${task.description}`);
+          console.log(`      ${t`Agent: ${task.agentName}`}`);
+          console.log(`      ${t`Schedule: ${task.cron}`}`);
+          console.log(`      ${t`Description: ${task.description}`}`);
           console.log('');
         }
       }
     } else {
-      console.log('   暂无任务在调度中');
+      console.log(`   ${t`No tasks in scheduling`}`);
     }
 
   } catch (error) {
-    logger.error('获取调度状态失败:', error);
+    logger.error(t`Failed to get scheduler status: ${error}`);
     process.exit(1);
   }
 }

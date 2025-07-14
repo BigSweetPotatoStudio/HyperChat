@@ -67,67 +67,67 @@ function getOptionValue(args: string[], option: string): string | undefined {
 function showHelp() {
   console.log(`
 🚀 HyperChat CLI v${pkg.version}
-强大的 AI 助手命令行工具
+${t`Powerful AI assistant command line tool`}
 
-使用方法:
+${t`Usage:`}
   hyperchat [message] [options]
 
-全局选项:
-  --workspace <path>       使用指定工作区（覆盖自动检测）
-  --host <host>            连接到指定服务器 (默认: localhost)
-  --port <port>            指定端口 (默认: 16100)
-  --password <password>    服务器密码
-  --verbose, -v            显示详细日志
-  --quiet, -q              静默模式
-  --help, -h               显示帮助信息
+${t`Global options:`}
+  --workspace <path>       ${t`Use specified workspace (override auto-detection)`}
+  --host <host>            ${t`Connect to specified server (default: localhost)`}
+  --port <port>            ${t`Specify port (default: 16100)`}
+  --password <password>    ${t`Server password`}
+  --verbose, -v            ${t`Show verbose logs`}
+  --quiet, -q              ${t`Silent mode`}
+  --help, -h               ${t`Show help information`}
 
-命令:
-  # 通用聊天
-  chat [message]           开始 AI 聊天会话 (默认命令)
-  chat                     交互式聊天
+${t`Commands:`}
+  # ${t`General chat`}
+  chat [message]           ${t`Start AI chat session (default command)`}
+  chat                     ${t`Interactive chat`}
   
-  # Agent相关
-  agent list               列出所有代理
-  agent create <name>      创建新代理
-  agent delete <name>      删除代理
-  agent <name> "message"    使用指定agent快速对话
-  agent <name> chat        使用指定agent交互式聊天
+  # Agent${t`related`}
+  agent list               ${t`List all agents`}
+  agent create <name>      ${t`Create new agent`}
+  agent delete <name>      ${t`Delete agent`}
+  agent <name> "message"    ${t`Quick chat with specified agent`}
+  agent <name> chat        ${t`Interactive chat with specified agent`}
   
-  # 系统管理
-  serve                    启动后端服务器 (包含 Web 界面)
-  run                      启动核心服务 (不包含 Web 界面)
-  workspace create         在当前目录创建工作区
+  # ${t`System management`}
+  serve                    ${t`Start backend server (includes Web UI)`}
+  run                      ${t`Start core service (no Web UI)`}
+  workspace create         ${t`Create workspace in current directory`}
   
-  # 任务管理
-  task list                列出所有任务
-  task create <name>       创建新任务
-  task show <name>         显示任务详情
-  task edit <name>         编辑任务
-  task enable <name>       启用任务
-  task disable <name>      禁用任务
-  task delete <name>       删除任务
-  task trigger <name>      手动触发任务执行
-  task scheduler           显示调度器状态
-  task stats               显示任务统计
+  # ${t`Task management`}
+  task list                ${t`List all tasks`}
+  task create <name>       ${t`Create new task`}
+  task show <name>         ${t`Show task details`}
+  task edit <name>         ${t`Edit task`}
+  task enable <name>       ${t`Enable task`}
+  task disable <name>      ${t`Disable task`}
+  task delete <name>       ${t`Delete task`}
+  task trigger <name>      ${t`Manually trigger task execution`}
+  task scheduler           ${t`Show scheduler status`}
+  task stats               ${t`Show task statistics`}
   
-  help                     显示帮助信息
+  help                     ${t`Show help information`}
 
-示例:
-  # 通用聊天
-  hyperchat "你好"                    # 直接聊天（自动检测工作区）
-  hyperchat chat "帮我写代码"         # 聊天命令
-  hyperchat chat --workspace /path   # 使用指定工作区聊天
+${t`Examples:`}
+  # ${t`General chat`}
+  hyperchat "${t`Hello`}"                    # ${t`Direct chat (auto-detect workspace)`}
+  hyperchat chat "${t`Help me write code`}"         # ${t`Chat command`}
+  hyperchat chat --workspace /path   # ${t`Chat with specified workspace`}
   
-  # Agent聊天
-  hyperchat agent mybot "你好"        # 使用指定agent直接聊天
-  hyperchat agent mybot chat         # 使用指定agent交互式聊天
-  hyperchat agent list              # 列出所有agents
-  hyperchat agent create mybot      # 创建新agent
+  # Agent${t`chat`}
+  hyperchat agent mybot "${t`Hello`}"        # ${t`Direct chat with specified agent`}
+  hyperchat agent mybot chat         # ${t`Interactive chat with specified agent`}
+  hyperchat agent list              # ${t`List all agents`}
+  hyperchat agent create mybot      # ${t`Create new agent`}
   
-  # 系统管理
-  hyperchat serve                   # 启动服务器 (包含 Web 界面)
-  hyperchat run                     # 启动核心服务 (后台运行任务调度)
-  hyperchat workspace create        # 在当前目录创建工作区
+  # ${t`System management`}
+  hyperchat serve                   # ${t`Start server (includes Web UI)`}
+  hyperchat run                     # ${t`Start core service (background task scheduling)`}
+  hyperchat workspace create        # ${t`Create workspace in current directory`}
 
 ${t`Welcome to HyperChat CLI! 🎉`}
 `);
@@ -222,7 +222,7 @@ async function startChatWrapper(messages: string[], logger: Logger, agentName?: 
     }
 
   } catch (error) {
-    logger.error('聊天功能失败:', error instanceof Error ? error.message : String(error));
+    logger.error(t`Chat function failed: ${error instanceof Error ? error.message : String(error)}`);
     process.exit(1);
   }
 }
@@ -244,7 +244,7 @@ async function deleteAgentWrapper(name: string, logger: Logger) {
     // 检查agent是否存在
     const agentCheck = await checkAgentExists(name);
     if (!agentCheck.exists) {
-      logger.error(`代理 '${name}' 不存在`);
+      logger.error(t`Agent '${name}' does not exist`);
       return;
     }
 
@@ -282,8 +282,8 @@ async function handleAgentCommand(args: string[], logger: Logger) {
     case 'create':
       const createName = args[1];
       if (!createName) {
-        logger.error('请提供代理名称');
-        logger.info('使用方法: hyperchat agent create <name>');
+        logger.error(t`Please provide agent name`);
+        logger.info(t`Usage: hyperchat agent create <name>`);
       } else {
         await createAgentWrapper(createName, logger);
       }
@@ -292,8 +292,8 @@ async function handleAgentCommand(args: string[], logger: Logger) {
     case 'delete':
       const deleteName = args[1];
       if (!deleteName) {
-        logger.error('请提供代理名称');
-        logger.info('使用方法: hyperchat agent delete <name>');
+        logger.error(t`Please provide agent name`);
+        logger.info(t`Usage: hyperchat agent delete <name>`);
       } else {
         await deleteAgentWrapper(deleteName, logger);
       }
@@ -305,8 +305,8 @@ async function handleAgentCommand(args: string[], logger: Logger) {
       const agentCheck = await checkAgentExists(agentName);
       
       if (!agentCheck.exists) {
-        logger.error(`未知的agent命令或agent不存在: ${subCmd}`);
-        logger.info('可用命令: list, create, delete, <name> "message", <name> chat');
+        logger.error(t`Unknown agent command or agent does not exist: ${subCmd}`);
+        logger.info(t`Available commands: list, create, delete, <name> "message", <name> chat`);
         return;
       }
 
@@ -349,8 +349,8 @@ async function handleTaskCommand(subCmd: string, args: string[], logger: Logger)
     case 'create':
       const taskName = positionalArgs[0];
       if (!taskName) {
-        logger.error('请提供任务名称');
-        logger.info('使用方法: hyperchat task create <name> --description "描述" --agent <agent_key> [--cron "0 0 * * *"] [--disabled]');
+        logger.error(t`Please provide task name`);
+        logger.info(t`Usage: hyperchat task create <name> --description "description" --agent <agent_key> [--cron "0 0 * * *"] [--disabled]`);
         break;
       }
 
@@ -367,8 +367,8 @@ async function handleTaskCommand(subCmd: string, args: string[], logger: Logger)
     case 'show':
       const showTaskName = positionalArgs[0];
       if (!showTaskName) {
-        logger.error('请提供任务名称');
-        logger.info('使用方法: hyperchat task show <name>');
+        logger.error(t`Please provide task name`);
+        logger.info(t`Usage: hyperchat task show <name>`);
         break;
       }
       await showTask(showTaskName);
@@ -377,8 +377,8 @@ async function handleTaskCommand(subCmd: string, args: string[], logger: Logger)
     case 'enable':
       const enableTaskName = positionalArgs[0];
       if (!enableTaskName) {
-        logger.error('请提供任务名称');
-        logger.info('使用方法: hyperchat task enable <name>');
+        logger.error(t`Please provide task name`);
+        logger.info(t`Usage: hyperchat task enable <name>`);
         break;
       }
       await enableTask(enableTaskName);
@@ -387,8 +387,8 @@ async function handleTaskCommand(subCmd: string, args: string[], logger: Logger)
     case 'disable':
       const disableTaskName = positionalArgs[0];
       if (!disableTaskName) {
-        logger.error('请提供任务名称');
-        logger.info('使用方法: hyperchat task disable <name>');
+        logger.error(t`Please provide task name`);
+        logger.info(t`Usage: hyperchat task disable <name>`);
         break;
       }
       await disableTask(disableTaskName);
@@ -397,8 +397,8 @@ async function handleTaskCommand(subCmd: string, args: string[], logger: Logger)
     case 'delete':
       const deleteTaskName = positionalArgs[0];
       if (!deleteTaskName) {
-        logger.error('请提供任务名称');
-        logger.info('使用方法: hyperchat task delete <name> [--force]');
+        logger.error(t`Please provide task name`);
+        logger.info(t`Usage: hyperchat task delete <name> [--force]`);
         break;
       }
       await deleteTask(deleteTaskName, { force: hasFlag('--force') });
@@ -407,8 +407,8 @@ async function handleTaskCommand(subCmd: string, args: string[], logger: Logger)
     case 'edit':
       const editTaskName = positionalArgs[0];
       if (!editTaskName) {
-        logger.error('请提供任务名称');
-        logger.info('使用方法: hyperchat task edit <name> [--description "新描述"] [--agent <agent_key>] [--cron "新调度"] [--enable|--disable]');
+        logger.error(t`Please provide task name`);
+        logger.info(t`Usage: hyperchat task edit <name> [--description "new description"] [--agent <agent_key>] [--cron "new schedule"] [--enable|--disable]`);
         break;
       }
 
@@ -427,8 +427,8 @@ async function handleTaskCommand(subCmd: string, args: string[], logger: Logger)
     case 'trigger':
       const triggerTaskName = positionalArgs[0];
       if (!triggerTaskName) {
-        logger.error('请提供任务名称');
-        logger.info('使用方法: hyperchat task trigger <name>');
+        logger.error(t`Please provide task name`);
+        logger.info(t`Usage: hyperchat task trigger <name>`);
         break;
       }
       await triggerTask(triggerTaskName);
@@ -443,8 +443,8 @@ async function handleTaskCommand(subCmd: string, args: string[], logger: Logger)
       break;
 
     default:
-      logger.error('未知的任务命令:', subCmd);
-      logger.info('可用命令: list, create, show, enable, disable, delete, edit, trigger, scheduler, stats');
+      logger.error(t`Unknown task command: ${subCmd}`);
+      logger.info(t`Available commands: list, create, show, enable, disable, delete, edit, trigger, scheduler, stats`);
       break;
   }
 }
@@ -459,9 +459,9 @@ async function cleanup() {
 
   try {
     // 新架构下简化清理逻辑
-    console.log('正在退出...');
+    console.log(t`Exiting...`);
   } catch (error) {
-    console.error('正在退出过程中出现错误:', error);
+    console.error(t`Error occurred during exit: ${error}`);
   }
 
   process.exit(0);
@@ -487,7 +487,7 @@ async function main() {
       await workspaceManager.uninitialize(); // 清理工作区管理器
     }
   } catch (error) {
-    console.error('❌ 命令执行失败:', error);
+    console.error(t`❌ Command execution failed: ${error}`);
     process.exit(1);
   }
 }

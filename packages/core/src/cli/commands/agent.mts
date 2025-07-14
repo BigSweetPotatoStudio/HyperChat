@@ -95,7 +95,7 @@ export async function createAgent(name: string) {
     console.log(`${t`Name: ${agent.name}`}`);
     console.log(`${t`Description: ${agent.description}`}`);
 
-    console.log('\n💡 使用 hyperchat ' + agent.name + ' "你好" 与该代理对话');
+    console.log(`\n💡 ${t`Use hyperchat ${agent.name} "hello" to chat with this agent`}`);
 
   } catch (error) {
     logger.error(t`Failed to create agent: ${error instanceof Error ? error.message : String(error)}`);

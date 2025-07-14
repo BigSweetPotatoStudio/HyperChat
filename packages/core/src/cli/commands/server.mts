@@ -13,6 +13,7 @@ import { Logger } from '../utils/logger.mjs';
 import "../../first.mjs";
 import { initHttp } from "../../http.mjs";
 import { getWorkspaceManager } from "../../workspace/index.mjs";
+import { t } from '../../i18n.mjs';
 
 
 
@@ -35,7 +36,7 @@ export async function startServer(options: ServerOptions = {}) {
   const host = options.host || 'localhost';
 
   try {
-    logger.info('🚀 启动 HyperChat 服务器...');
+    logger.info(`🚀 ${t`Starting HyperChat server...`}`);
 
     // // 检查服务器是否已经在运行
     // const isRunning = await checkServerHealth(host, port);
@@ -45,19 +46,19 @@ export async function startServer(options: ServerOptions = {}) {
     //   return;
     // }
 
-    logger.info('⏳ 等待服务器启动...');
+    logger.info(`⏳ ${t`Waiting for server to start...`}`);
     // HTTP 服务器只需要基本配置，不需要完整服务
     await getWorkspaceManager().initialize(process.cwd(), false);
     await getWorkspaceManager().start();
     // 启动 HTTP 服务，捕获并记录异常
     await initHttp();
 
-    logger.info('🚀 服务器启动成功...');
+    logger.info(`🚀 ${t`Server started successfully...`}`);
 
 
 
   } catch (error) {
-    logger.error('启动失败:', error instanceof Error ? error.message : String(error));
+    logger.error(t`Startup failed: ${error instanceof Error ? error.message : String(error)}`);
     process.exit(1);
   }
 }
