@@ -498,7 +498,7 @@ export const AgentManagement = forwardRef<AgentManagementRef, AgentManagementPro
         onOk={() => {
           form.submit();
         }}
-        destroyOnClose
+        destroyOnHidden
         width={800}
         okButtonProps={{ autoFocus: true }}
         afterOpenChange={(open) => {
@@ -590,13 +590,13 @@ export const AgentManagement = forwardRef<AgentManagementRef, AgentManagementPro
           </Form.Item>
 
           <Form.Item name="modelKey" label={t`Language Model`}
-            rules={[{ required: true, message: t`Please select a language model` }]}
+            // rules={[{ required: true, message: t`Please select a language model` }]}
           >
             <Select
               showSearch
               optionFilterProp="label"
               placeholder={t`Choose the AI model for this agent`}
-              // allowClear
+              allowClear
               options={aiSettings ? (aiSettings.models || []).map((m) => ({
                 label: m.fullName || m.name,
                 value: m.key,
@@ -674,7 +674,7 @@ export const AgentManagement = forwardRef<AgentManagementRef, AgentManagementPro
         }}
         footer={null}
         width={800}
-        destroyOnClose
+        destroyOnHidden
       >
         <div style={{ maxHeight: '60vh', overflowY: 'auto' }}>
           {loadingChatHistory ? (

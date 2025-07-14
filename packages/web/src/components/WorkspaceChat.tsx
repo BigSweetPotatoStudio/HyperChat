@@ -1134,7 +1134,7 @@ export const WorkspaceChat = ({ workspace, agentName, workspaceDetails, mcpClien
         onCancel={() => setIsSettingsShow(false)}
         onOk={() => settingsForm.submit()}
         width={600}
-        destroyOnClose
+        destroyOnHidden
       >
         <Form
           form={settingsForm}

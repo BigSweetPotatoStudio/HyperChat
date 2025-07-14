@@ -130,6 +130,7 @@ export class WorkspaceManager {
     }
 
     await this.initialize(targetPath);
+    await this.start();
   }
 
   /**

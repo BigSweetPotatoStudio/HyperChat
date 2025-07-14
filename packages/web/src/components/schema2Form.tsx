@@ -4,6 +4,7 @@ import { Editor } from '@monaco-editor/react';
 import { CodeOutlined, FormOutlined } from '@ant-design/icons';
 import type { JSONSchema7,JSONSchema7Definition } from 'json-schema';
 import Schema2FormItems from './Schema2FormItems';
+import { t } from '../i18n';
 
 const { Title } = Typography;
 
@@ -193,7 +194,7 @@ export const Schema2Form: React.FC<Schema2FormProps> = ({
         <div style={{ marginBottom: 16 }}>
           <Space>
             <Title level={4} style={{ margin: 0 }}>
-              {schema.title || '配置表单'}
+              {schema.title || t`Configuration form`}
             </Title>
             <Space.Compact>
               <Button
@@ -201,14 +202,14 @@ export const Schema2Form: React.FC<Schema2FormProps> = ({
                 icon={<FormOutlined />}
                 onClick={() => handleModeChange('form')}
               >
-                表单模式
+                {t`Form Mode`}
               </Button>
               <Button
                 type={mode === 'json' ? 'primary' : 'default'}
                 icon={<CodeOutlined />}
                 onClick={() => handleModeChange('json')}
               >
-                JSON模式
+                {t`JSON Mode`}
               </Button>
             </Space.Compact>
           </Space>

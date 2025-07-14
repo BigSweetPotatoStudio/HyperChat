@@ -124,7 +124,7 @@ export function Workspace() {
           setCurrentWorkspaceDetails(prev => {
             if (!prev) return null;
             const newDetails = { ...prev };
-            
+
             if (payload.status === "deleted") {
               // 删除客户端
               delete newDetails.mcpClients[payload.serverName];
@@ -132,7 +132,7 @@ export function Workspace() {
               // 添加或更新客户端
               newDetails.mcpClients[payload.serverName] = payload;
             }
-            
+
             return newDetails;
           });
         }
@@ -275,7 +275,7 @@ export function Workspace() {
 
       message.success(t`Switched to workspace`);
     } catch (error) {
-      
+
       console.error("Failed to switch to workspace:", error);
       message.error(t`Failed to switch to workspace`);
     }
@@ -432,7 +432,7 @@ export function Workspace() {
     // 提取所有可用的 MCP 服务名称
     const availableMCPs = new Set<string>();
     const allMcpClients = Object.values(currentWorkspaceDetails.mcpClients);
-    
+
     allMcpClients.forEach(client => {
       if (client.status === 'connected') {
         availableMCPs.add(client.serverName);
@@ -634,8 +634,8 @@ export function Workspace() {
 
   // 获取当前工作区详情
   const getCurrentDetails = (): CurrentWorkspaceDetails => {
-    return currentWorkspaceDetails || { 
-      agents: [], 
+    return currentWorkspaceDetails || {
+      agents: [],
       mcpClients: {},
       fileTreeData: undefined,
       tasks: []
@@ -759,55 +759,47 @@ export function Workspace() {
             {isGlobal ? (
               <Space>
                 <Tag color="blue">{t`Global`}</Tag>
-                <Dropdown
-                  menu={{
-                    items: [
-                      {
-                        key: 'settings',
-                        label: t`Workspace Settings`,
-                        icon: <SettingOutlined />,
-                        onClick: () => {
-                          handleWorkspaceSettings(workspace);
-                        }
-                      }
-                    ]
-                  }}
-                  trigger={['click']}
-                >
-                  <Button type="text" size="small" icon={<SettingOutlined />} onClick={(e) => e.stopPropagation()} />
-                </Dropdown>
+                <Button type="text" size="small" icon={<SettingOutlined />} onClick={(e) => {
+                  e.stopPropagation();
+                  handleWorkspaceSettings(workspace);
+                }} />
+
               </Space>
             ) : (
-              <Dropdown
-                menu={{
-                  items: [
-                    {
-                      key: 'settings',
-                      label: t`Workspace Settings`,
-                      icon: <SettingOutlined />,
-                      onClick: () => {
-                        handleWorkspaceSettings(workspace);
-                      }
-                    },
-                    {
-                      key: 'switchToGlobal',
-                      label: t`Switch to Global Workspace`,
-                      icon: <GlobalOutlined />,
-                      onClick: async () => {
-                        if (globalWorkspacePath) {
-                          await switchToWorkspace(globalWorkspacePath);
-                        }
-                      }
-                    },
-                    {
-                      type: 'divider',
-                    },
-                  ]
-                }}
-                trigger={['click']}
-              >
-                <Button type="text" size="small" icon={<MoreOutlined />} onClick={(e) => e.stopPropagation()} />
-              </Dropdown>
+              <Button type="text" size="small" icon={<SettingOutlined />} onClick={(e) => {
+                e.stopPropagation();
+                handleWorkspaceSettings(workspace);
+              }} />
+              // <Dropdown
+              //   menu={{
+              //     items: [
+              //       {
+              //         key: 'settings',
+              //         label: t`Workspace Settings`,
+              //         icon: <SettingOutlined />,
+              //         onClick: () => {
+              //           handleWorkspaceSettings(workspace);
+              //         }
+              //       },
+              //       {
+              //         key: 'switchToGlobal',
+              //         label: t`Switch to Global Workspace`,
+              //         icon: <GlobalOutlined />,
+              //         onClick: async () => {
+              //           if (globalWorkspacePath) {
+              //             await switchToWorkspace(globalWorkspacePath);
+              //           }
+              //         }
+              //       },
+              //       {
+              //         type: 'divider',
+              //       },
+              //     ]
+              //   }}
+              //   trigger={['click']}
+              // >
+              //   <Button type="text" size="small" icon={<MoreOutlined />} onClick={(e) => e.stopPropagation()} />
+              // </Dropdown>
             )}
           </Space>
         ),
@@ -924,6 +916,12 @@ export function Workspace() {
             type="editable-card"
             activeKey={activeWorkspaceKey}
             onChange={handleTabChange}
+            onEdit={(targetKey, action) => {
+              if (action === 'add') {
+                // 点击Switch按钮时打开工作区切换模态框
+                setOpenModalOpen(true);
+              }
+            }}
             style={{ height: '100%' }}
             tabBarStyle={{
               marginBottom: 8,
@@ -1093,7 +1091,7 @@ export function Workspace() {
       >
         {appSettings && (
           <MCPGatewaysSettings
-            gateways={(appSettings.mcpGateWays?.filter(gateway => 
+            gateways={(appSettings.mcpGateWays?.filter(gateway =>
               gateway.name && typeof gateway.name === 'string'
             ) || []) as Array<{
               name: string;

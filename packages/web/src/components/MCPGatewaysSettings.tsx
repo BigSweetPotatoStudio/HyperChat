@@ -430,7 +430,7 @@ const GatewayModal: React.FC<GatewayModalProps> = ({
       onOk={handleSubmit}
       onCancel={onCancel}
       confirmLoading={loading}
-      destroyOnClose
+      destroyOnHidden
       width={600}
     >
       <Form
