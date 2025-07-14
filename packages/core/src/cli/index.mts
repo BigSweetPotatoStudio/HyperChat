@@ -34,6 +34,7 @@ import {
   showScheduler
 } from './commands/task.mjs';
 import { workspaceManager } from '../workspace/index.mjs';
+import { initCliI18n, addCliTranslations, t } from '../i18n.mjs';
 // 获取包信息
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const packagePath = join(__dirname, '..', '..', 'package.json');
@@ -128,7 +129,7 @@ function showHelp() {
   hyperchat run                     # 启动核心服务 (后台运行任务调度)
   hyperchat workspace create        # 在当前目录创建工作区
 
-欢迎使用 HyperChat CLI! 🎉
+${t`Welcome to HyperChat CLI! 🎉`}
 `);
 }
 
@@ -180,8 +181,8 @@ async function handleCommand(): Promise<{ shouldExit: boolean }> {
         // 在当前目录创建工作区
         await createWorkspace(process.cwd());
       } else {
-        logger.error('未知的工作区命令:', workspaceSubCmd);
-        logger.info('可用命令: create');
+        logger.error(t`Unknown workspace command: ${workspaceSubCmd}`);
+        logger.info(t`Available commands: create`);
       }
       return { shouldExit: true };  // workspace命令执行完都应该退出
 
@@ -254,20 +255,20 @@ async function deleteAgentWrapper(name: string, logger: Logger) {
     });
 
     if (success) {
-      console.log(`✅ 代理 '${name}' 已删除`);
+      console.log(`✅ ${t`Agent deleted successfully`}: '${name}'`);
     } else {
-      logger.error(`删除代理 '${name}' 失败`);
+      logger.error(t`Failed to delete agent: ${name}`);
     }
   } catch (error) {
-    logger.error('删除代理失败:', error instanceof Error ? error.message : String(error));
+    logger.error(t`Failed to delete agent: ${error instanceof Error ? error.message : String(error)}`);
   }
 }
 
 // Agent命令处理
 async function handleAgentCommand(args: string[], logger: Logger) {
   if (args.length === 0) {
-    logger.error('请提供agent子命令');
-    logger.info('可用命令: list, create, delete, <name> "message", <name> chat');
+    logger.error(t`Please provide agent subcommand`);
+    logger.info(t`Available commands: list, create, delete, <name> "message", <name> chat`);
     return;
   }
 
@@ -471,14 +472,25 @@ process.on('SIGINT', cleanup);  // Ctrl+C
 process.on('SIGTERM', cleanup); // 终止信号
 process.on('exit', cleanup);    // 正常退出
 
-// 执行命令
-handleCommand().then(async (result) => {
-  // 根据命令类型决定是否退出
-  if (result.shouldExit) {
-    await workspaceManager.uninitialize(); // 清理工作区管理器
+// 初始化i18n系统然后执行命令
+async function main() {
+  try {
+    // 初始化i18n系统
+    await initCliI18n();
+    addCliTranslations();
+    
+    // 执行命令
+    const result = await handleCommand();
+    
+    // 根据命令类型决定是否退出
+    if (result.shouldExit) {
+      await workspaceManager.uninitialize(); // 清理工作区管理器
+    }
+  } catch (error) {
+    console.error('❌ 命令执行失败:', error);
+    process.exit(1);
   }
-  // 对于需要保持运行的命令（如 serve），不执行 process.exit
-}).catch(error => {
-  console.error('❌ 命令执行失败:', error);
-  process.exit(1);
-});
+}
+
+// 执行主函数
+main();

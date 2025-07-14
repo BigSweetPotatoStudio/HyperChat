@@ -46,7 +46,8 @@ import {
 } from "@ant-design/icons";
 
 import { HeaderContext } from "./common/context";
-import { currLang, setCurrLang, t } from "./i18n";
+import { getCurrLang, setCurrLang, t } from "./i18n";
+import type { Language } from "@dadigua/hyperchat-shared";
 import { call, callElectron, msg_receive } from "./common/call";
 import {
 
@@ -306,7 +307,7 @@ export function Layout() {
   }, []);
 
   // 状态管理
-  const [locale, setLocal] = useState(currLang == "zhCN" ? zhCN : enUS); // 国际化语言设置
+  const [locale, setLocal] = useState(getCurrLang() === "zhCN" ? zhCN : enUS); // 国际化语言设置
   const [isModelConfigOpen, setIsModelConfigOpen] = useState<boolean>(false); // AI 提供商设置抽屉是否打开
   const mcpClientsRef = useRef<InitedClient[]>([]); // MCP 客户端列表
   const [syncStatus, setSyncStatus] = useState<number>(0); // 同步状态：0-正常，1-同步中，-1-失败
@@ -317,8 +318,9 @@ export function Layout() {
    * @param e 语言代码 ("zhCN" | "enUS")
    */
   const setLang = (e: string): void => {
-    setCurrLang(e);
-    setLocal(e == "zhCN" ? zhCN : enUS);
+    const lang = e as Language;
+    setCurrLang(lang);
+    setLocal(lang === "zhCN" ? zhCN : enUS);
     combinedRefresh();
   };
 

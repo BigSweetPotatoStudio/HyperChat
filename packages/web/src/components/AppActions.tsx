@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { Button, Select, Switch, Space } from 'antd';
 import { GithubFilled, SyncOutlined, SettingOutlined, ApiOutlined } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
-import { t, currLang, setCurrLang } from '../i18n';
 import { useAppearanceSettings } from '../contexts/AppSettingsContext';
 import {
   enable as enableDarkMode,
@@ -10,6 +9,7 @@ import {
 } from 'darkreader';
 import { Icon } from './icon';
 import { msg_receive } from '../common/call';
+import { t } from '../i18n';
 
 interface AppActionsProps {
   onAIProviderClick: () => void;
@@ -44,30 +44,7 @@ export function AppActions({ onAIProviderClick, onRefresh, onAppSettingsClick, o
     };
   }, [onRefresh]);
 
-  const handleLanguageChange = (lang: string) => {
-    setCurrLang(lang);
-    onRefresh();
-  };
 
-  const handleThemeChange = async (checked: boolean) => {
-    await updateAppearance({ darkTheme: checked });
-    onRefresh();
-
-    // 应用主题设置
-    if (checked) {
-      enableDarkMode({
-        brightness: 100,
-        contrast: 90,
-        sepia: 10,
-      });
-    } else {
-      disableDarkMode();
-    }
-  };
-
-  const handleSyncClick = () => {
-    navigate("/Setting/WebdavSetting");
-  };
 
   return (
     <Space>
@@ -108,24 +85,6 @@ export function AppActions({ onAIProviderClick, onRefresh, onAppSettingsClick, o
         </Button>
       )}
 
-      {/* 语言切换选择器 */}
-      {/* <Select
-        value={currLang}
-        style={{ width: 120 }}
-        onChange={handleLanguageChange}
-        options={[
-          { value: "zhCN", label: "中文" },
-          { value: "enUS", label: "English" },
-        ]}
-      /> */}
-
-      {/* 主题切换开关 */}
-      {/* <Switch
-        checkedChildren={"🌙"}
-        unCheckedChildren={"☀️"}
-        checked={appearance?.darkTheme || false}
-        onChange={handleThemeChange}
-      /> */}
 
     </Space>
   );

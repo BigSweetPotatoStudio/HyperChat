@@ -6,6 +6,7 @@ import process from 'process';
 import { Logger } from '../utils/logger.mjs';
 import { Command } from '../../command.mjs';
 import { workspaceManager } from '../../workspace/index.mjs';
+import { t } from '../../i18n.mjs';
 import type { AgentConfig } from '@dadigua/hyperchat-shared';
 /**
  * 获取当前工作区路径（使用新的会话管理器，只读模式）
@@ -20,20 +21,20 @@ export async function listAgents() {
   const logger = new Logger();
 
   try {
-    logger.info('🤖 获取代理列表...');
+    logger.info(`🤖 ${t`Getting agent list...`}`);
 
     // 智能获取当前工作区
     const workspacePath = await getCurrentWorkspacePath();
-    logger.info(`🎯 使用工作区: ${workspacePath}`);
+    logger.info(`🎯 ${t`Using workspace: ${workspacePath}`}`);
 
     // 获取代理列表
     const agents = await Command.getWorkspaceAgentsSummary();
 
-    console.log('\n🤖 代理列表:');
+    console.log(`\n🤖 ${t`Agent list:`}`);
 
     if (agents.length === 0) {
-      console.log('  暂无代理');
-      console.log('\n💡 使用 hyperchat agent create <name> 创建新代理');
+      console.log(`  ${t`No agents available`}`);
+      console.log(`\n💡 ${t`Create a new agent with: hyperchat agent create <name>`}`);
       return;
     }
 
@@ -44,23 +45,23 @@ export async function listAgents() {
 
       console.log(`  📋 ${config.name}`);
       if (config.description) {
-        console.log(`      描述: ${config.description}`);
+        console.log(`      ${t`Description: ${config.description}`}`);
       }
       if (config.modelKey) {
-        console.log(`      模型: ${config.modelKey}`);
+        console.log(`      ${t`Model: ${config.modelKey}`}`);
       }
       if (config.tags && config.tags.length > 0) {
-        console.log(`      标签: ${config.tags.join(', ')}`);
+        console.log(`      ${t`Tags: ${config.tags.join(', ')}`}`);
       }
       if (chatLogsCount > 0) {
-        console.log(`      聊天记录: ${chatLogsCount} 条`);
+        console.log(`      ${t`Chat logs: ${chatLogsCount} entries`}`);
       }
     }
 
-    console.log(`\n💡 总计: ${agents.length} 个代理`);
+    console.log(`\n💡 ${t`Total: ${agents.length} agents`}`);
 
   } catch (error) {
-    logger.error('获取代理列表失败:', error instanceof Error ? error.message : String(error));
+    logger.error(t`Failed to get agent list: ${error instanceof Error ? error.message : String(error)}`);
     process.exit(1);
   }
 }
@@ -69,11 +70,11 @@ export async function createAgent(name: string) {
   const logger = new Logger();
 
   try {
-    logger.info(`🤖 创建代理: ${name}`);
+    logger.info(`🤖 ${t`Creating agent: ${name}`}`);
 
     // 智能获取当前工作区
     const workspacePath = await getCurrentWorkspacePath();
-    logger.info(`🎯 使用工作区: ${workspacePath}`);
+    logger.info(`🎯 ${t`Using workspace: ${workspacePath}`}`);
 
     // 创建代理配置
     const agentConfig = {
@@ -90,14 +91,14 @@ export async function createAgent(name: string) {
       config: agentConfig
     });
 
-    logger.success(`✅ 代理创建成功`);
-    console.log(`名称: ${agent.name}`);
-    console.log(`描述: ${agent.description}`);
+    logger.success(`✅ ${t`Agent created successfully`}`);
+    console.log(`${t`Name: ${agent.name}`}`);
+    console.log(`${t`Description: ${agent.description}`}`);
 
     console.log('\n💡 使用 hyperchat ' + agent.name + ' "你好" 与该代理对话');
 
   } catch (error) {
-    logger.error('创建代理失败:', error instanceof Error ? error.message : String(error));
+    logger.error(t`Failed to create agent: ${error instanceof Error ? error.message : String(error)}`);
     process.exit(1);
   }
 }

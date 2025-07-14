@@ -9,6 +9,7 @@ import process from 'process';
 import { Logger } from '../utils/logger.mjs';
 import "../../first.mjs";
 import { getWorkspaceManager } from "../../workspace/index.mjs";
+import { t } from '../../i18n.mjs';
 
 export interface RunOptions {
   verbose?: boolean;
@@ -23,11 +24,11 @@ export async function startRun(options: RunOptions = {}) {
   const logger = new Logger(options.verbose, options.quiet);
   
   try {
-    logger.info('🚀 启动 HyperChat 核心服务...');
+    logger.info(`🚀 ${t`Starting core service...`}`);
     
     // 确定工作区路径
     const workspacePath = options.workspace || process.cwd();
-    logger.info(`🎯 使用工作区: ${workspacePath}`);
+    logger.info(`🎯 ${t`Using workspace: ${workspacePath}`}`);
     
     // 第一阶段：快速初始化工作区配置
     logger.info('⏳ 第一阶段：快速加载工作区配置...');
@@ -50,12 +51,12 @@ export async function startRun(options: RunOptions = {}) {
     // 获取完整的工作区摘要信息
     const summary = await workspace.getSummary();
     
-    logger.info('✅ 核心服务启动成功');
-    logger.info(`📊 工作区状态:`);
-    logger.info(`   - 状态: ${workspace.getState()}`);
-    logger.info(`   - Agents: ${summary.agentsCount} 个`);
-    logger.info(`   - MCP 服务: ${summary.mcpServersCount} 个`);
-    logger.info(`   - 任务: ${summary.tasksCount} 个`);
+    logger.info(`✅ ${t`Core service is running`}`);
+    logger.info(`📊 ${t`Workspace status:`}`);
+    logger.info(`   - ${t`Status: ${workspace.getState()}`}`);
+    logger.info(`   - ${t`Agents: ${summary.agentsCount}`}`);
+    logger.info(`   - ${t`MCP services: ${summary.mcpServersCount}`}`);
+    logger.info(`   - ${t`Tasks: ${summary.tasksCount}`}`);
     
     // 显示正在调度的任务
     const scheduledTasks = workspace.getScheduledTasks();
