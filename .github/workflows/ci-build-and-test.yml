@@ -1,0 +1,142 @@
+name: ci-build-and-test
+
+# on: [push, pull_request]
+on:
+  workflow_dispatch: {}
+  push:
+    branches-ignore:
+      - doc
+      - alpha
+      - stable
+      - main
+
+jobs:
+  install:
+    name: install-dependencies
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [windows-latest]
+
+    runs-on: ${{ matrix.os }}
+
+    steps:
+      - name: Check out git repository
+        uses: actions/checkout@v4
+
+      - name: Install Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Install global dependencies
+        run: npm install -g cross-env zx tsx
+
+      - name: Install python-setuptools
+        if: matrix.os == 'macos-latest'
+        run: brew install python-setuptools
+
+      # 统一的依赖缓存 - 包含 workspace 和 scripts 的 node_modules
+      - name: Cache workspace dependencies
+        uses: actions/cache@v4
+        id: cache-workspace-deps
+        with:
+          path: |
+            node_modules
+            scripts/node_modules
+            packages/shared/node_modules
+            packages/core/node_modules
+            packages/web/node_modules
+          key: ${{ matrix.os }}-node-workspace-${{ hashFiles('package-lock.json', 'scripts/package-lock.json', 'packages/shared/package-lock.json', 'packages/core/package-lock.json', 'packages/web/package-lock.json') }}
+          restore-keys: |
+            ${{ matrix.os }}-node-workspace-
+
+      # 统一安装 workspace 依赖（如果缓存未命中）
+      - name: Install workspace dependencies
+        if: steps.cache-workspace-deps.outputs.cache-hit != 'true'
+        run: |
+          npm install
+          cd scripts && npm install
+
+      # packages/electron 目录的依赖缓存（独立安装）
+      - name: Cache electron dependencies
+        uses: actions/cache@v4
+        id: cache-electron
+        with:
+          path: packages/electron/node_modules
+          key: ${{ matrix.os }}-node-electron-${{ hashFiles('packages/electron/package-lock.json') }}
+          restore-keys: |
+            ${{ matrix.os }}-node-electron-
+
+      # 安装 electron 目录依赖（如果缓存未命中）
+      - name: Install electron dependencies
+        if: steps.cache-electron.outputs.cache-hit != 'true'
+        run: npm install
+        working-directory: ./packages/electron
+
+  build-and-test:
+    name: build-and-test
+    needs: install
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [windows-latest]
+
+    runs-on: ${{ matrix.os }}
+
+    steps:
+      - name: Check out git repository
+        uses: actions/checkout@v4
+
+      - name: Install Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Install global dependencies
+        run: npm install -g cross-env zx tsx
+
+      # 恢复 workspace 依赖缓存
+      - name: Restore workspace dependencies
+        uses: actions/cache@v4
+        with:
+          path: |
+            node_modules
+            scripts/node_modules
+            packages/shared/node_modules
+            packages/core/node_modules
+            packages/web/node_modules
+          key: ${{ matrix.os }}-node-workspace-${{ hashFiles('package-lock.json', 'scripts/package-lock.json', 'packages/shared/package-lock.json', 'packages/core/package-lock.json', 'packages/web/package-lock.json') }}
+          restore-keys: |
+            ${{ matrix.os }}-node-workspace-
+          fail-on-cache-miss: true
+
+      # 恢复 electron 依赖缓存
+      - name: Restore electron dependencies
+        uses: actions/cache@v4
+        with:
+          path: packages/electron/node_modules
+          key: ${{ matrix.os }}-node-electron-${{ hashFiles('packages/electron/package-lock.json') }}
+          restore-keys: |
+            ${{ matrix.os }}-node-electron-
+          fail-on-cache-miss: true
+
+      # 检查 shared 目录ts 类型
+      - name: check shared types
+        run: npx tsc --noEmit
+        working-directory: ./packages/shared
+
+      # 检查 core 目录ts 类型
+      - name: check core types
+        run: npx tsc --noEmit
+        working-directory: ./packages/core
+
+      # 检查 web 目录ts 类型
+      - name: check web types
+        run: npx tsc --noEmit
+        working-directory: ./packages/web
+
+      # 检查 electron 目录ts 类型
+      - name: check electron types
+        run: npx tsc --noEmit
+        working-directory: ./packages/electron
