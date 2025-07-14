@@ -42,10 +42,15 @@
     "./jsonSchemas/workspaceSettingsSchema": {
       "types": "./dist/jsonSchemas/workspaceSettingsSchema.d.mts",
       "import": "./dist/jsonSchemas/workspaceSettingsSchema.mjs"
+    },
+    "./i18n": {
+      "types": "./dist/i18n/index.d.mts",
+      "import": "./dist/i18n/index.mjs"
     }
   },
   "scripts": {
-    "build": "tsc --project tsconfig.json --noEmitOnError false || echo 'Build completed with warnings'",
+    "build": "tsc --project tsconfig.json --noEmitOnError false || echo 'Build completed with warnings' && npm run copy-assets",
+    "copy-assets": "cp -r src/i18n/i18n.json dist/i18n/",
     "dev": "tsc --project tsconfig.json --watch",
     "typecheck": "tsc --noEmit",
     "clean": "rm -rf dist"

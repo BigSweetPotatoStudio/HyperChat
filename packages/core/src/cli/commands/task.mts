@@ -366,7 +366,7 @@ export async function taskStats() {
     if (Object.keys(stats.agentCounts).length > 0) {
       console.log(`\n🤖 ${t`Grouped by agent:`}`);
       for (const [agentName, count] of Object.entries(stats.agentCounts)) {
-        console.log(`   ${agentName}: ${t`${count} tasks`}`);
+        console.log(`   ${agentName}: ${count} ${t`tasks`}`);
       }
     }
 

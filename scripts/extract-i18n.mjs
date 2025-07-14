@@ -125,7 +125,7 @@ function processFile(filePath) {
  * 更新 i18n.json 文件
  */
 function updateI18nFile() {
-  const i18nPath = join(rootDir, 'packages/web/src/i18n.json');
+  const i18nPath = join(rootDir, 'packages/shared/src/i18n/i18n.json');
   let existingTranslations = {};
   
   // 读取现有翻译
@@ -232,7 +232,7 @@ function main() {
   
   // 提供下一步建议
   console.log(`\n📋 下一步建议:`);
-  console.log(`   1. 检查生成的 packages/web/src/i18n.json 文件`);
+  console.log(`   1. 检查生成的 packages/shared/src/i18n/i18n.json 文件`);
   console.log(`   2. 手动添加需要的翻译到每个条目中`);
   console.log(`   3. 格式: { "English Text": { "zh": "中文翻译" } }`);
   console.log(`   4. 测试前端界面的国际化效果`);

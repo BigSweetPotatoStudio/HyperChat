@@ -15,7 +15,6 @@ import {
   getCurrLang, 
   updateLanguage,
   translations,
-  getCollectedTexts,
   type Language 
 } from '@dadigua/hyperchat-shared';
 import { call } from "./common/call";
@@ -99,20 +98,6 @@ export async function initWebI18n(): Promise<void> {
     }
   });
 
-  // 开发模式下，将翻译数据存储到localStorage方便调试
-  if (process.env.NODE_ENV === 'development') {
-    // 延迟保存，避免阻塞初始化
-    setTimeout(() => {
-      try {
-        const collectedTexts = getCollectedTexts();
-        if (collectedTexts.length > 0) {
-          window.localStorage.setItem("i18nCollectedTexts", JSON.stringify(collectedTexts, null, 2));
-        }
-      } catch (error) {
-        console.warn('Failed to save collected texts:', error);
-      }
-    }, 1000);
-  }
 
   isInitialized = true;
 }

@@ -46,14 +46,16 @@ export function t(strings: TemplateStringsArray, ...values: any[]): string {
     (result: string, str: string, i: number) => result + str + (values[i] || ""),
     "",
   );
-
-  // 根据当前语言返回对应翻译
-  if (currentLanguage === "zhCN") {
-    return translationData[str].zh || str;  // 返回中文翻译，如果没有则返回原文
-  } else {
-    return translationData[str].en || str;  // 返回英文原文，如果没有则返回原文
+  try {
+    // 根据当前语言返回对应翻译
+    if (currentLanguage === "zhCN") {
+      return translationData[str].zh || str;  // 返回中文翻译，如果没有则返回原文
+    } else {
+      return translationData[str].en || str;  // 返回英文原文，如果没有则返回原文
+    }
+  } catch (e) { 
+    return str; // 如果出错，返回原文
   }
-
 }
 
 /**
