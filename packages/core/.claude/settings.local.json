@@ -4,7 +4,9 @@
       "Bash(rg:*)",
       "Bash(grep:*)",
       "Bash(npx tsc:*)",
-      "Bash(lsof:*)"
+      "Bash(lsof:*)",
+      "Bash(find:*)",
+      "Bash(ls:*)"
     ],
     "deny": []
   }

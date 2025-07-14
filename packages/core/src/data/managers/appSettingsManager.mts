@@ -3,6 +3,7 @@ import * as path from "path";
 import jsonc from "jsonc-parser";
 import { zodToJsonSchema } from "zod-to-json-schema";
 import { v4 } from "uuid";
+import { z } from "zod";
 import {
   AppSettingsSchema,
   DEFAULT_APP_SETTINGS,
@@ -11,6 +12,13 @@ import {
   type SystemSettings,
   type AISettings,
   type DesktopSettings,
+  AppearanceSchema,
+  SystemSchema,
+  DesktopSchema,
+  AIConfigSchema,
+  AIModelConfigItemSchema,
+  ProviderConfigSchema,
+  MCPGatewaySchema,
 } from "@dadigua/hyperchat-shared";
 import { CONST } from "../../const.mjs";
 
@@ -26,6 +34,7 @@ export class AppSettingsManager {
     this.settingsPath = path.join(appDataDir, "app-settings.jsonc");
     this.schemaPath = path.join(appDataDir, "app-settings.schema.json");
     
+    // 初始化为空，在 load() 时才设置默认值
     // 创建完整的默认设置，包含 UUID 和版本号
     this.settings = {
       ...DEFAULT_APP_SETTINGS,
@@ -94,38 +103,251 @@ export class AppSettingsManager {
         const result = AppSettingsSchema.safeParse(parsed);
         
         if (result.success) {
+          // 只更新系统相关的字段，保留用户设置
           this.settings = {
             ...result.data,
-            // 确保系统信息始终是最新的
+            // 只更新动态系统信息
             version: CONST.getVersion,
             appDataDir: CONST.appDataDir,
             platform: process.platform,
             PATH: process.env.PATH || "",
-            // 确保ai配置有默认值
-            ai: {
-              models: result.data.ai?.models || [],
-              customProviders: result.data.ai?.customProviders || [],
-              builtinApiKeys: result.data.ai?.builtinApiKeys || {},
-              defaultModel: result.data.ai?.defaultModel,
-            },
           };
         } else {
-          console.warn("应用设置文件验证失败，使用默认设置:", result.error);
-          // 保存默认设置
-          await this.save();
+          console.warn("应用设置文件验证失败，尝试部分修复:", result.error);
+          // 智能修复：保留有效部分，只重置有问题的字段
+          await this.smartRepair(parsed, result.error);
         }
       } else {
         // 文件不存在，创建默认设置
+        this.createDefaultSettings();
         await this.save();
       }
     } catch (error) {
       console.error("加载应用设置文件失败:", error);
       // 使用默认设置
-      this.settings = {
-        ...DEFAULT_APP_SETTINGS,
-        uuid: v4(),
-      };
+      this.createDefaultSettings();
     }
+  }
+
+  /**
+   * 智能修复配置：只重置有问题的字段，保留有效的用户配置
+   */
+  private async smartRepair(parsed: any, error: any): Promise<void> {
+    console.log("开始智能修复配置...");
+    
+    // 先创建默认配置作为基础
+    this.createDefaultSettings();
+    
+    // 逐个字段尝试保留
+    const repairResults: string[] = [];
+    
+    // 保留基础系统信息
+    if (parsed.uuid && typeof parsed.uuid === 'string') {
+      this.settings.uuid = parsed.uuid;
+      repairResults.push("✓ 保留 UUID");
+    }
+    
+    // 保留外观设置（修复无效值）
+    if (parsed.appearance && typeof parsed.appearance === 'object') {
+      try {
+        const appearanceResult = AppearanceSchema.safeParse(parsed.appearance);
+        if (appearanceResult.success) {
+          this.settings.appearance = appearanceResult.data;
+          repairResults.push("✓ 保留外观设置");
+        } else {
+          // 部分修复外观设置
+          const appearance = { ...this.settings.appearance };
+          if (typeof parsed.appearance.darkTheme === 'boolean') {
+            appearance.darkTheme = parsed.appearance.darkTheme;
+            repairResults.push("✓ 保留深色主题设置");
+          }
+          // 修复无效的语言设置
+          const validLanguages = ["zh", "en", "ja", "ko", "fr", "de"];
+          if (typeof parsed.appearance.language === 'string') {
+            if (validLanguages.includes(parsed.appearance.language)) {
+              appearance.language = parsed.appearance.language as any;
+              repairResults.push("✓ 保留语言设置");
+            } else {
+              // 尝试修复常见的语言代码错误
+              const langMap: Record<string, string> = {
+                'enUS': 'en', 'en-US': 'en', 'en_US': 'en',
+                'zhCN': 'zh', 'zh-CN': 'zh', 'zh_CN': 'zh',
+                'jaJP': 'ja', 'ja-JP': 'ja', 'ja_JP': 'ja',
+              };
+              const fixedLang = langMap[parsed.appearance.language];
+              if (fixedLang) {
+                appearance.language = fixedLang as any;
+                repairResults.push(`✓ 修复语言设置: ${parsed.appearance.language} -> ${fixedLang}`);
+              } else {
+                repairResults.push(`✗ 语言设置无效，使用默认值: ${parsed.appearance.language}`);
+              }
+            }
+          }
+          this.settings.appearance = appearance;
+        }
+      } catch (e) {
+        repairResults.push("✗ 外观设置损坏，使用默认值");
+      }
+    }
+    
+    // 保留系统设置
+    if (parsed.system && typeof parsed.system === 'object') {
+      try {
+        const systemResult = SystemSchema.safeParse(parsed.system);
+        if (systemResult.success) {
+          this.settings.system = systemResult.data;
+          repairResults.push("✓ 保留系统设置");
+        } else {
+          // 部分保留系统设置
+          const system = { ...this.settings.system };
+          if (typeof parsed.system.password === 'string') {
+            system.password = parsed.system.password;
+            repairResults.push("✓ 保留密码设置");
+          }
+          if (typeof parsed.system.isDeveloper === 'boolean') {
+            system.isDeveloper = parsed.system.isDeveloper;
+            repairResults.push("✓ 保留开发者模式设置");
+          }
+          this.settings.system = system;
+        }
+      } catch (e) {
+        repairResults.push("✗ 系统设置损坏，使用默认值");
+      }
+    }
+    
+    // 保留桌面设置
+    if (parsed.desktop && typeof parsed.desktop === 'object') {
+      try {
+        const desktopResult = DesktopSchema.safeParse(parsed.desktop);
+        if (desktopResult.success) {
+          this.settings.desktop = desktopResult.data;
+          repairResults.push("✓ 保留桌面设置");
+        }
+      } catch (e) {
+        repairResults.push("✗ 桌面设置损坏，使用默认值");
+      }
+    }
+    
+    // 保留 AI 设置（最重要的部分）
+    if (parsed.ai && typeof parsed.ai === 'object') {
+      try {
+        const aiResult = AIConfigSchema.safeParse(parsed.ai);
+        if (aiResult.success) {
+          this.settings.ai = aiResult.data;
+          repairResults.push("✓ 保留完整 AI 配置");
+        } else {
+          // 逐项保留 AI 配置
+          const ai = { ...this.settings.ai };
+          
+          // 保留模型列表
+          if (Array.isArray(parsed.ai.models)) {
+            const validModels: any[] = [];
+            parsed.ai.models.forEach((model: any, index: number) => {
+              try {
+                const modelResult = AIModelConfigItemSchema.safeParse(model);
+                if (modelResult.success) {
+                  validModels.push(modelResult.data);
+                } else {
+                  repairResults.push(`✗ 模型 ${index} 配置无效，已跳过`);
+                }
+              } catch (e) {
+                repairResults.push(`✗ 模型 ${index} 解析失败，已跳过`);
+              }
+            });
+            if (validModels.length > 0) {
+              ai.models = validModels;
+              repairResults.push(`✓ 保留 ${validModels.length} 个有效的 AI 模型配置`);
+            } else {
+              repairResults.push("✗ 所有 AI 模型配置无效，使用默认值");
+            }
+          }
+          
+          // 保留自定义提供商
+          if (Array.isArray(parsed.ai.customProviders)) {
+            try {
+              const providersResult = z.array(ProviderConfigSchema).safeParse(parsed.ai.customProviders);
+              if (providersResult.success) {
+                ai.customProviders = providersResult.data;
+                repairResults.push("✓ 保留自定义提供商配置");
+              }
+            } catch (e) {
+              repairResults.push("✗ 自定义提供商配置无效，使用默认值");
+            }
+          }
+          
+          // 保留内置 API Keys
+          if (parsed.ai.builtinApiKeys && typeof parsed.ai.builtinApiKeys === 'object') {
+            try {
+              const validKeys: Record<string, any> = {};
+              Object.entries(parsed.ai.builtinApiKeys).forEach(([key, value]: [string, any]) => {
+                if (value && typeof value === 'object' && 
+                    typeof value.apiKey === 'string' && 
+                    typeof value.baseURL === 'string') {
+                  validKeys[key] = value;
+                }
+              });
+              if (Object.keys(validKeys).length > 0) {
+                ai.builtinApiKeys = validKeys;
+                repairResults.push(`✓ 保留 ${Object.keys(validKeys).length} 个内置 API Key 配置`);
+              }
+            } catch (e) {
+              repairResults.push("✗ 内置 API Keys 配置无效，使用默认值");
+            }
+          }
+          
+          // 保留默认模型
+          if (typeof parsed.ai.defaultModel === 'string') {
+            ai.defaultModel = parsed.ai.defaultModel;
+            repairResults.push("✓ 保留默认模型设置");
+          }
+          
+          this.settings.ai = ai;
+        }
+      } catch (e) {
+        repairResults.push("✗ AI 配置严重损坏，使用默认值");
+      }
+    }
+    
+    // 保留 MCP 网关配置
+    if (Array.isArray(parsed.mcpGateWays)) {
+      try {
+        const mcpResult = z.array(MCPGatewaySchema).safeParse(parsed.mcpGateWays);
+        if (mcpResult.success) {
+          this.settings.mcpGateWays = mcpResult.data;
+          repairResults.push("✓ 保留 MCP 网关配置");
+        }
+      } catch (e) {
+        repairResults.push("✗ MCP 网关配置无效，使用默认值");
+      }
+    }
+    
+    // 输出修复结果
+    console.log("智能修复完成:");
+    repairResults.forEach(result => console.log(`  ${result}`));
+    
+    // 保存修复后的配置
+    await this.save();
+    console.log("已保存修复后的配置文件");
+  }
+
+  /**
+   * 创建默认设置
+   */
+  private createDefaultSettings(): void {
+    this.settings = {
+      ...DEFAULT_APP_SETTINGS,
+      uuid: v4(),
+      version: CONST.getVersion,
+      appDataDir: CONST.appDataDir,
+      platform: process.platform,
+      PATH: process.env.PATH || "",
+      ai: {
+        models: DEFAULT_APP_SETTINGS.ai?.models || [],
+        customProviders: DEFAULT_APP_SETTINGS.ai?.customProviders || [],
+        builtinApiKeys: DEFAULT_APP_SETTINGS.ai?.builtinApiKeys || {},
+        defaultModel: DEFAULT_APP_SETTINGS.ai?.defaultModel,
+      },
+    };
   }
 
   /**

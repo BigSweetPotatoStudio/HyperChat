@@ -49,7 +49,13 @@ class AiModelData {
   }
 
   async init() {
-    await initAppSettingsManager(appDataDir).init();
+    // 确保应用设置管理器已初始化，但不重复调用init()
+    if (!isAppSettingsManagerInitialized()) {
+      const appSettingsManager = initAppSettingsManager(appDataDir);
+      await appSettingsManager.init();
+      markAppSettingsManagerAsInitialized();
+    }
+    
     let appSettings = getAppSettingsManager()
     if (!appSettings) {
       throw new Error('AppSettings manager not initialized');
