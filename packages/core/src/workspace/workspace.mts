@@ -19,6 +19,12 @@ import { WorkspaceSettingsManager } from "../data/managers/workspaceSettingsMana
 import { TaskManager } from "../data/managers/taskManager.mjs";
 import { Logger } from "../log.mjs";
 import * as cron from "node-cron";
+import { 
+  initializeAIEnvironment, 
+  createAIChannel, 
+  addSystemMessage,
+  executeAICompletion 
+} from "../utils/aiConfigHelper.mjs";
 
 /**
  * 工作区状态枚举
@@ -1034,7 +1040,7 @@ export class Workspace {
       }
 
       // 构造任务执行的消息
-      const taskMessage = `执行定时任务: ${task.name}\n描述: ${task.description}`;
+      const taskMessage = `${task.description}`;
       
       // 执行任务 - 通过 Agent 处理
       Logger.info(`使用 Agent '${task.agentName}' 执行任务 '${taskName}'`);
@@ -1064,45 +1070,15 @@ export class Workspace {
       
       // 执行 AI 对话
       try {
-        // 导入必要的模块
-        const { AiChannel } = await import('@dadigua/hyperchat-shared/ai');
-        const { Command } = await import('../command.mjs');
-        
-        // 初始化 AI 通道
-        const aiChannel = new AiChannel();
-        
-        // 获取应用设置
-        const appSettings = await Command.getAppSettings();
-        const aiSettings = appSettings.ai;
-        
-        // 获取工作区设置
-        const workspaceSettings = this.getSettings();
-        const workspaceAIConfig = workspaceSettings?.aiConfig;
-        
-        // 获取 MCP 工具
-        const mcpClients = await this.getMcpClients();
-        const mcpTools = mcpClients.flatMap((client: any) => client.tools || []);
-        
-        // 创建全局扩展对象
-        (globalThis as any).ext = {
-          call: async (functionName: string, args: any, _options?: any) => {
-            if (functionName === 'mcpCallToolWithWorkspace') {
-              return await Command.mcpCallToolWithWorkspace(args);
-            }
-            throw new Error(`未知的命令: ${functionName}`);
-          }
-        };
-        
-        // 注册 AI 设置
-        aiChannel.register({
-          antdmessage: {
-            warning: (msg: string) => Logger.warn(msg)
-          },
-          mcpTools: mcpTools,
-          platform: 'nodejs',
-          getURL_PRE: () => '',
-          aiSettings: aiSettings as any
+        // 使用共享的 AI 环境初始化工具
+        const env = await initializeAIEnvironment({
+          agentName: task.agentName,
+          workspacePath: this.workspacePath,
+          needMCP: true
         });
+        
+        // 创建 AI 通道
+        const aiChannel = createAIChannel(env);
         
         // 复制已有的消息到 AI 通道
         for (const msg of chatLog.messages) {
@@ -1112,29 +1088,15 @@ export class Workspace {
           } as any);
         }
         
-        // 获取有效的配置
-        const agentConfig = agentInstance.getConfig();
-        const effectiveConfig = {
-          modelKey: agentConfig.modelKey || workspaceAIConfig?.modelKey || aiSettings?.models?.[0]?.key || '',
-          prompt: agentConfig.prompt || workspaceAIConfig?.prompt || '',
-          allowMCPs: agentConfig.allowMCPs || mcpClients.map((c: any) => c.serverName),
-          isConfirmCallTool: agentConfig.isConfirmCallTool ?? workspaceAIConfig?.isConfirmCallTool ?? false,
-          temperature: agentConfig.temperature ?? workspaceAIConfig?.temperature,
-          maxAttachedDialogs: agentConfig.maxAttachedDialogs ?? workspaceAIConfig?.maxAttachedDialogs ?? 5,
-          maxTokens: agentConfig.maxTokens ?? workspaceAIConfig?.maxTokens ?? 4000,
-        };
-        
         // 执行 AI 对话
         Logger.info(`正在生成 AI 响应...`);
-        await aiChannel.completion({
-          ...effectiveConfig,
+        const assistantMessage = await executeAICompletion(aiChannel, env.effectiveConfig, {
           onUpdate: () => {
             // 可以在这里添加进度日志
           }
         });
         
-        // 获取 AI 的回复并更新聊天记录
-        const assistantMessage = aiChannel.lastMessage;
+        // 更新聊天记录
         chatLog.messages.push({
           role: 'assistant',
           content: assistantMessage.content as string,

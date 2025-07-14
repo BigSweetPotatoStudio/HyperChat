@@ -6,11 +6,18 @@
 
 import process from 'process';
 import { Logger } from '../utils/logger.mjs';
+import { Logger as LoggerClass } from '../../log.mjs';
 import { Command } from '../../command.mjs';
 import { AiChannel } from '@dadigua/hyperchat-shared/ai';
 import type { MyMessage } from '@dadigua/hyperchat-shared/types';
 import { createReadline } from '../utils/readline.mjs';
 import { workspaceManager } from '../../workspace/index.mjs';
+import {
+  initializeAIEnvironment,
+  createAIChannel,
+  addSystemMessage,
+  logAIConfig
+} from '../../utils/aiConfigHelper.mjs';
 
 
 export interface ChatOptions {
@@ -31,165 +38,64 @@ export async function startChat(initialMessage?: string, options: ChatOptions = 
     // 初始化CLI聊天环境
     logger.info('🔍 初始化 HyperChat CLI...');
 
-    // 使用新的CLI会话管理器
-    let workspacePath = options.workspace;
-
-
     // Chat需要完整服务（MCP工具、AI聊天）
-    await workspaceManager.initialize(workspacePath, false);
+    await workspaceManager.initialize(options.workspace, false);
     logger.info(`🎯 使用工作区: ${workspaceManager.getCurrentWorkspacePath()}`);
-    
+
     await workspaceManager.start();
-    const workspace = workspaceManager.getCurrentWorkspace();
-    workspacePath = workspaceManager.getCurrentWorkspacePath();
     logger.info(`✅ 工作区服务已启动`);
 
-    // 如果指定了agent，获取agent配置
-    let agentConfig: any = null;
-    if (options.agent) {
-      const agents = await Command.getWorkspaceAgentsSummary();
-      const agentSummary = agents.find(agent => {
-        const config = agent.config as any;
-        return config.key === options.agent || config.name === options.agent;
-      });
-
-      if (agentSummary) {
-        agentConfig = agentSummary.config;
-        logger.info(`🤖 使用Agent: ${agentConfig.name} (${agentConfig.key})`);
-      } else {
-        throw new Error(`未找到Agent: ${options.agent}`);
-      }
-    }
-
-    logger.debug(`使用工作区: ${workspacePath}`);
-    const appSettings = await Command.getAppSettings();
-    const aiSettings = appSettings.ai;
-    
-    // 获取工作区AI配置
-    const workspaceSettings = workspace.getSettings();
-    const workspaceAIConfig = workspaceSettings?.aiConfig;
-    
-    // 按优先级确定使用的模型：聊天配置 > Agent配置 > 工作区配置 > 模型列表第一个
-    const findValidModelKey = () => {
-      const availableModels = aiSettings?.models || [];
-      const isModelAvailable = (modelKey: string) => 
-        availableModels.some(model => model.key === modelKey);
-      
-      const candidates = [
-        options.model,              // 聊天配置（命令行参数）
-        agentConfig?.modelKey,      // Agent配置
-        workspaceAIConfig?.modelKey, // 工作区配置
-        availableModels[0]?.key     // 模型列表第一个
-      ].filter(Boolean); // 过滤掉空值
-      
-      // 找到第一个存在于模型列表中的候选项
-      for (const modelKey of candidates) {
-        if (modelKey && isModelAvailable(modelKey)) {
-          return modelKey;
-        }
-      }
-      
-      // 如果都不可用，返回第一个可用模型
-      return availableModels[0]?.key;
-    };
-
-    const modelKey = findValidModelKey();
-
-    if (!modelKey) {
-      throw new Error('未找到可用的AI模型配置，请先配置AI模型');
-    }
-
-    // 显示模型选择来源
-    if (options.model && modelKey === options.model) {
-      logger.info(`📋 使用命令行指定的AI模型: ${modelKey}`);
-    } else if (agentConfig?.modelKey && modelKey === agentConfig.modelKey) {
-      logger.info(`📋 使用Agent配置的AI模型: ${modelKey}`);
-    } else if (workspaceAIConfig?.modelKey && modelKey === workspaceAIConfig.modelKey) {
-      logger.info(`📋 使用工作区配置的AI模型: ${modelKey}`);
-    } else {
-      logger.info(`📋 使用默认AI模型: ${modelKey}`);
-    }
-
-    logger.info(`🤖 使用模型: ${modelKey}`);
-
-    // 获取有效配置的帮助函数（应用配置优先级逻辑）
-    const getEffectiveConfig = () => {
-      return {
-        modelKey: modelKey!,
-        prompt: agentConfig?.prompt || workspaceAIConfig?.prompt || "",
-        allowMCPs: agentConfig?.allowMCPs || mcpClients.map((c: any) => c.serverName),
-        isConfirmCallTool: agentConfig?.isConfirmCallTool ?? workspaceAIConfig?.isConfirmCallTool ?? false,
-        temperature: agentConfig?.temperature ?? workspaceAIConfig?.temperature,
-        maxAttachedDialogs: agentConfig?.maxAttachedDialogs ?? workspaceAIConfig?.maxAttachedDialogs ?? 5,
-        maxTokens: agentConfig?.maxTokens ?? workspaceAIConfig?.maxTokens ?? 4000,
-      };
-    };
-
-    // 获取工作区的Agent数量
-    const agentsSummary = await workspace.getAllAgentsSummary();
-    logger.info(`👥 当前工作区Agent数量: ${agentsSummary.length}`);
-
-    // 获取工作区的MCP工具
-    const mcpClients = await workspace.getMcpClients();
-    const mcpTools = mcpClients.flatMap((client: any) => client.tools || []);
-
-    logger.info(`🔧 可用MCP工具数量: ${mcpTools.length}`);
-
-    // 初始化AI聊天频道
-    const aiChannel = new AiChannel();
-
-    // 创建全局扩展对象，让AI模块可以调用后端命令
-    (globalThis as any).ext = {
-      call: async (functionName: string, args: any, _options?: any) => {
-        if (functionName === 'mcpCallToolWithWorkspace') {
-          return await Command.mcpCallToolWithWorkspace(args);
-        }
-        throw new Error(`未知的命令: ${functionName}`);
-      }
-    };
-
-    // 确保aiSettings符合AISettings类型的要求
-    const normalizedAiSettings = {
-      models: (aiSettings?.models || []).filter(model => 
-        model.type && model.model && model.key && model.name && model.provider &&
-        model.apiKey !== undefined && model.baseURL !== undefined
-      ),
-      customProviders: (aiSettings?.customProviders || []).filter(provider =>
-        provider.key && provider.label && provider.baseURL !== undefined &&
-        provider.hasApiKey !== undefined && provider.isBuiltIn !== undefined
-      ),
-      builtinApiKeys: Object.fromEntries(
-        Object.entries(aiSettings?.builtinApiKeys || {}).filter(([_, value]) =>
-          value && value.apiKey !== undefined && value.baseURL !== undefined
-        ).map(([key, value]) => [key, { apiKey: value!.apiKey!, baseURL: value!.baseURL! }])
-      ),
-      defaultModel: aiSettings?.defaultModel
-    };
-
-    aiChannel.register({
-      antdmessage: {
-        warning: (msg: string) => logger.warn(msg)
-      },
-      mcpTools: mcpTools,
-      platform: 'nodejs',
-      getURL_PRE: () => '',
-      aiSettings: normalizedAiSettings as any
+    // 初始化 AI 环境
+    const env = await initializeAIEnvironment({
+      agentName: options.agent,
+      workspacePath: workspaceManager.getCurrentWorkspacePath(),
+      needMCP: true
     });
 
-    // 添加系统消息
-    let systemContent = `你是HyperChat CLI助手。当前工作区: ${workspacePath}。可用工具: ${mcpTools.length}个MCP工具。请用中文回复。`;
+    // 如果命令行指定了模型，覆盖配置
+    if (options.model) {
+      const availableModels = env.aiSettings?.models || [];
+      const isModelAvailable = availableModels.some(m => m.key === options.model);
 
-    // 如果使用了agent，添加agent的prompt
-    if (agentConfig?.prompt) {
-      systemContent = `${agentConfig.prompt}\n\n当前工作区: ${workspacePath}。可用工具: ${mcpTools.length}个MCP工具。`;
+      if (isModelAvailable) {
+        env.effectiveConfig.modelKey = options.model;
+        logger.info(`📋 使用命令行指定的AI模型: ${options.model}`);
+      } else {
+        logger.warn(`⚠️  指定的模型 '${options.model}' 不可用，使用默认模型`);
+      }
     }
 
-    const systemMessage: MyMessage = {
-      role: 'system',
-      content: systemContent,
-      content_date: Date.now()
+    // 记录配置信息  
+    logAIConfig(LoggerClass, env, 'CLI Chat');
+
+    // 获取有效配置的帮助函数
+    const getEffectiveConfig = () => {
+      // 如果命令行指定了模型，需要更新 allowMCPs
+      let allowMCPs = env.effectiveConfig.allowMCPs;
+      if (allowMCPs.length === 0) {
+        allowMCPs = env.mcpClients.map((c: any) => c.serverName);
+      }
+
+      return {
+        ...env.effectiveConfig,
+        allowMCPs
+      };
     };
-    aiChannel.addMessage(systemMessage);
+    const effectiveConfig = getEffectiveConfig();
+    logger.info(`🤖 使用模型: ${effectiveConfig.modelKey}`);
+    // 获取工作区的Agent数量
+    const agentsSummary = await env.workspace.getAllAgentsSummary();
+
+    logger.info(`👥 当前工作区Agent数量: ${agentsSummary.length}`);
+    logger.info(`🔧 当前工作区可用MCP工具数量: ${env.workspace.getAllMcpClients().length}`);
+    if (env.agentConfig?.name) {
+      logger.info(`🌐 当前Agent: ${env.agentConfig?.name}`);
+    }
+    // 创建AI通道
+    const aiChannel = createAIChannel(env);
+
+    // 添加系统消息
+    addSystemMessage(aiChannel, env, `你是HyperChat CLI助手。当前工作区: ${env.workspace.workspacePath}。可用工具: ${env.mcpTools.length}个MCP工具。请用中文回复。`);
 
     // 如果有初始消息，处理并退出
     if (initialMessage) {
@@ -209,7 +115,7 @@ export async function startChat(initialMessage?: string, options: ChatOptions = 
       let displayedContentLength = 0;
       let displayedReasoningLength = 0;
       let reasoningFinished = false;
-      const effectiveConfig = getEffectiveConfig();
+
       await aiChannel.completion({
         modelKey: effectiveConfig.modelKey,
         prompt: effectiveConfig.prompt,
@@ -276,19 +182,23 @@ export async function startChat(initialMessage?: string, options: ChatOptions = 
       }
 
       if (input.trim() === '/clear') {
-        aiChannel.messages = [systemMessage]; // 重置为只包含系统消息
+        // 重新创建AI通道并添加系统消息
+        const newAiChannel = createAIChannel(env);
+        addSystemMessage(newAiChannel, env, `你是HyperChat CLI助手。当前工作区: ${env.workspace.workspacePath}。可用工具: ${env.mcpTools.length}个MCP工具。请用中文回复。`);
+        // 替换当前通道
+        Object.assign(aiChannel, newAiChannel);
         console.log('✅ 对话历史已清空\n');
         continue;
       }
 
       if (input.trim() === '/model') {
-        console.log(`\n🤖 当前模型: ${modelKey}\n`);
+        console.log(`\n🤖 当前模型: ${env.effectiveConfig.modelKey}\n`);
         continue;
       }
 
       if (input.trim() === '/tools') {
-        console.log(`\n🔧 可用工具 (${mcpTools.length}个):`);
-        mcpTools.forEach((tool: any) => {
+        console.log(`\n🔧 可用工具 (${env.mcpTools.length}个):`);
+        env.mcpTools.forEach((tool: any) => {
           console.log(`  - ${tool.name}: ${tool.description}`);
         });
         console.log();

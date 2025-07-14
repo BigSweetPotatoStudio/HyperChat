@@ -1,5 +1,5 @@
 name: '123'
 agentName: 人工智能
-description: '123'
-cron: '* * * * *'
+description: 你好
+cron: '1 * * * *'
 disabled: true
