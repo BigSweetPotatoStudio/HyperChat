@@ -85,7 +85,7 @@
     "webpack-node-externals": "^3.0.0"
   },
   "scripts": {
-    "dev": "nodemon -w src --exec cross-env myEnv=dev npx tsx src/main.mts",
+    "dev": "nodemon -w src --exec cross-env myEnv=dev npx tsx --inspect=19999 src/main.mts",
     "start": "npm run dev",
     "build": "node build.mjs",
     "build:tsc": "tsc --project tsconfig.build.json",

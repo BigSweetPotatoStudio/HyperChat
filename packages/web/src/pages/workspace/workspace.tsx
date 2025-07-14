@@ -180,7 +180,7 @@ export function Workspace() {
   // 加载当前工作区详细信息
   const loadWorkspaceDetails = async (workspace: WorkspaceInfo) => {
     // 如果已经加载过，直接返回
-    if (currentWorkspaceDetails) return;
+    // if (currentWorkspaceDetails) return;
 
     try {
       const details: CurrentWorkspaceDetails = {

@@ -22,26 +22,17 @@ export class WorkspaceManager {
   constructor() {
   }
 
-  /**
-   * 🚀 第一阶段：初始化工作区管理器（快速配置加载）
-   * @param currentWorkingDirectory 当前工作目录
-   * @param findSpace 是否向上查找工作区
-   * @param force 如果当前目录不是工作区，是否强制初始化（回退到全局工作区）
-   */
-  async initialize(currentWorkingDirectory: string, workspacePath?: string): Promise<void> {
+
+  async initialize(workspacePath: string, currentWorkingDirectory?: string,): Promise<void> {
     if (this.isInitialized) {
       return;
     }
 
     try {
-      if (workspacePath == null) {
-        let path = this.findWorkspace(process.cwd());
-        this.currentWorkspace = new Workspace(path, currentWorkingDirectory);
-      } else {
-        this.currentWorkspace = new Workspace(workspacePath, currentWorkingDirectory);
+      if (currentWorkingDirectory == null) {
+        currentWorkingDirectory = workspacePath;
       }
-
-
+      this.currentWorkspace = new Workspace(workspacePath, currentWorkingDirectory);
 
       // 🚀 第一阶段：只初始化配置，不启动服务
       await this.currentWorkspace.initialize();
