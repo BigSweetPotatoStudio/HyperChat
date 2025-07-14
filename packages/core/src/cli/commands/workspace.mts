@@ -27,7 +27,7 @@ export async function listWorkspaces() {
 
     // 获取当前工作路径（命令运行的目录）
     const currentWorkingDirectory = process.cwd();
-    
+
     // 获取当前工作区路径（配置所在的目录）
     const currentWorkspacePath = await getCurrentWorkspacePath();
 
@@ -36,7 +36,7 @@ export async function listWorkspaces() {
 
     console.log(`\n📍 ${t`Current working directory:`} ${currentWorkingDirectory}`);
     console.log(`📁 ${t`Current workspace:`} ${currentWorkspacePath}`);
-    
+
     if (currentWorkingDirectory !== currentWorkspacePath) {
       console.log(`   ${t`(Configuration loaded from workspace above)`}`);
     } else {
@@ -77,7 +77,7 @@ export async function showCurrentWorkspace() {
     console.log(`\n🎯 ${t`Current Status:`}`);
     console.log(`📍 ${t`Working Directory:`} ${workspace.getCurrentWorkingDirectory()}`);
     console.log(`📁 ${t`Workspace:`} ${workspace.workspacePath}`);
-    
+
     if (!workspace.isRunningInWorkspaceRoot()) {
       console.log(`\n💡 ${t`You are running in a subdirectory of the workspace.`}`);
       console.log(`   ${t`Configuration is loaded from:`} ${workspace.workspacePath}`);
@@ -108,21 +108,20 @@ export async function createWorkspace(path: string) {
     logger.info(`📁 ${t`Creating workspace:`} ${path}`);
 
     // 检查目录是否已经是工作区
-    const isWorkspace = await Command.isWorkspaceDirectory({ directoryPath: path });
+    const isWorkspace = await workspaceManager.isWorkspaceDirectory(path);
     if (isWorkspace) {
       logger.warn(t`This directory is already a workspace`);
       return;
     }
 
     // 创建工作区
-    const workspace = await Command.createWorkspace({
-      workspacePath: path,
-      name: basename(path)
-    });
-
+    await workspaceManager.switchWorkspace(
+      path,
+      true
+    );
+    const workspace = workspaceManager.getCurrentWorkspace();
     logger.success(t`✅ Workspace created successfully`);
-    console.log(`${t`Name:`} ${workspace.name}`);
-    console.log(`${t`Path:`} ${workspace.path}`);
+    console.log(`${t`Path:`} ${workspace.workspacePath}`);
 
   } catch (error) {
     logger.error(`${t`Failed to create workspace:`} ${error instanceof Error ? error.message : String(error)}`);
@@ -144,10 +143,10 @@ export async function showWorkspaceInfo(path: string) {
     }
 
     // workspaceManager is already imported
-    await workspaceManager.initialize();
+    await workspaceManager.initialize(process.cwd());
     const workspace = workspaceManager.getCurrentWorkspace();
-    
-    let workspaceConfig= workspace?.getConfig();
+
+    let workspaceConfig = workspace?.getConfig();
     if (!workspaceConfig) {
       logger.error(t`Cannot load workspace configuration`);
       return;

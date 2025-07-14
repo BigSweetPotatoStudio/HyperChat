@@ -9,24 +9,28 @@ import type { Task } from "@dadigua/hyperchat-shared";
 /**
  * 工作区配置基础信息
  */
-export interface WorkspaceConfig {
-  name: string;
-  description?: string;
-  created: number;
-  settings: Record<string, any>;
-  agentsCount?: number;
-  mcpServersCount?: number;
-}
+// export interface WorkspaceConfig {
+//   name: string;
+//   description?: string;
+//   created: number;
+//   settings: Record<string, any>;
+//   agentsCount?: number;
+//   mcpServersCount?: number;
+// }
 
 /**
  * 完整的工作区信息
  * 扩展了基础配置，包含路径和状态信息
  */
-export interface WorkspaceInfo extends WorkspaceConfig {
+export interface WorkspaceInfo {
   path: string;
   agentsCount: number;
   mcpServersCount: number;
   isGlobal: boolean;
+  name: string;
+  description?: string;
+  created: number;
+  settings: Record<string, any>;
 }
 
 /**

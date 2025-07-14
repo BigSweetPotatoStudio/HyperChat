@@ -25,18 +25,23 @@ export class WorkspaceManager {
   /**
    * 🚀 第一阶段：初始化工作区管理器（快速配置加载）
    * @param currentWorkingDirectory 当前工作目录
+   * @param findSpace 是否向上查找工作区
+   * @param force 如果当前目录不是工作区，是否强制初始化（回退到全局工作区）
    */
-  async initialize(currentWorkingDirectory?: string): Promise<void> {
+  async initialize(currentWorkingDirectory: string, workspacePath?: string): Promise<void> {
     if (this.isInitialized) {
       return;
     }
 
     try {
-      // 默认工作区是当前目录或全局工作区
-      const initialPath = currentWorkingDirectory || process.cwd();
-      const effectiveCurrentWorkingDirectory = initialPath;
-      const workspacePath = this.findWorkspaceInPath(initialPath) || CONSTANTS.GLOBAL_PATH;
-      this.currentWorkspace = new Workspace(workspacePath, effectiveCurrentWorkingDirectory);
+      if (workspacePath == null) {
+        let path = this.findWorkspace(process.cwd());
+        this.currentWorkspace = new Workspace(path, currentWorkingDirectory);
+      } else {
+        this.currentWorkspace = new Workspace(workspacePath, currentWorkingDirectory);
+      }
+
+
 
       // 🚀 第一阶段：只初始化配置，不启动服务
       await this.currentWorkspace.initialize();
@@ -69,15 +74,6 @@ export class WorkspaceManager {
     }
   }
 
-  /**
-   * 🔧 完整初始化（向后兼容）
-   * @param workingDirectory 当前工作目录
-   * @deprecated 建议使用 initialize() + start() 的两阶段方式
-   */
-  async init(workingDirectory?: string): Promise<void> {
-    await this.initialize(workingDirectory);
-    await this.start();
-  }
 
   /**
    * 清理工作区管理器，释放资源
@@ -105,16 +101,17 @@ export class WorkspaceManager {
    * 切换工作区
    * @param workspacePath 工作区路径
    */
-  async switchWorkspace(workspacePath: string): Promise<void> {
-    // 查找工作区或使用全局工作区
-    const targetPath = this.findWorkspaceInPath(workspacePath);
+  async switchWorkspace(workspacePath: string, force: boolean = false): Promise<void> {
+    if (!force) {
+      // 查找工作区或使用全局工作区
+      const isWork = this.isWorkspaceDirectory(workspacePath);
 
-    if (!targetPath) {
-      throw new Error(`未找到工作区: ${workspacePath}`);
+      if (!isWork) {
+        throw new Error(`当前文件没有工作区: ${workspacePath}`);
+      }
     }
-
     // 如果目标路径与当前工作区相同，无需切换
-    if (this.currentWorkspace && this.currentWorkspace.workspacePath === targetPath) {
+    if (this.currentWorkspace && this.currentWorkspace.workspacePath === workspacePath) {
       return;
     }
 
@@ -125,7 +122,7 @@ export class WorkspaceManager {
       console.warn('清理当前工作区失败:', error);
     }
 
-    await this.initialize(targetPath);
+    await this.initialize(workspacePath);
     await this.start();
   }
 
@@ -145,7 +142,21 @@ export class WorkspaceManager {
 
     return null;
   }
+  /**
+   * 从指定路径向上查找工作区 or 返回全局工作区路径
+   */
+  public findWorkspace(startPath: string): string {
+    let currentPath = path.resolve(startPath);
+    const rootPath = path.parse(currentPath).root;
 
+    while (currentPath !== rootPath) {
+      if (this.isWorkspaceDirectory(currentPath)) {
+        return currentPath;
+      }
+      currentPath = path.dirname(currentPath);
+    }
+    return CONSTANTS.GLOBAL_PATH;
+  }
   /**
    * 获取当前工作区
    */

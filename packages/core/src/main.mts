@@ -5,7 +5,9 @@ import "./first.mjs";
 import { initHttp } from "./http.mjs";
 import { getWorkspaceManager } from "./workspace/index.mjs";
 
-await getWorkspaceManager().initialize();
+let path = getWorkspaceManager().findWorkspace(process.cwd());
+
+await getWorkspaceManager().initialize(path);
 await getWorkspaceManager().start();
 
 // 启动 HTTP 服务，捕获并记录异常

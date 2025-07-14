@@ -9,50 +9,52 @@ import { getWorkspaceManager } from "../workspace/index.mjs";
  */
 export const workspaceCommands = {
 
-  /**
-   * 打开已存在的工作区
-   * 检查指定目录是否已经是工作区，如果是则直接加载
-   * @param workspacePath 工作区根目录的绝对路径
-   * @returns 工作区配置信息，如果不是工作区则返回null
-   */
-  async openWorkspace({
-    workspacePath
-  }: {
-    workspacePath: string;
-  }): Promise<Record<string, unknown> | null> {
-    const workspaceManager = getWorkspaceManager();
+  // /**
+  //  * 打开已存在的工作区
+  //  * 检查指定目录是否已经是工作区，如果是则直接加载
+  //  * @param workspacePath 工作区根目录的绝对路径
+  //  * @returns 工作区配置信息，如果不是工作区则返回null
+  //  */
+  // async openWorkspace({
+  //   workspacePath,
+  //   force
+  // }: {
+  //   workspacePath: string;
+  //   force: boolean; // 是否强制打开工作区，即使不是工作区目录
+  // }): Promise<Record<string, unknown> | null> {
+  //   const workspaceManager = getWorkspaceManager();
 
-    await workspaceManager.switchWorkspace(workspacePath)
-    // 加载现有工作区
-    const workspace = workspaceManager.getCurrentWorkspace();
-    return workspace ? workspace.getConfig() : null;
-  },
+  //   await workspaceManager.switchWorkspace(workspacePath, force);
+  //   // 加载现有工作区
+  //   const workspace = workspaceManager.getCurrentWorkspace();
+  //   return workspace ? workspace.getConfig() : null;
+  // },
 
-  /**
-   * 创建或初始化新的工作区
-   * 在指定目录中创建 .hyperchat 配置文件夹和必要的配置文件
-   * @param workspacePath 工作区根目录的绝对路径
-   * @param name 工作区显示名称，默认使用目录名
-   * @param description 工作区描述信息
-   * @returns 新创建的工作区配置信息
-   */
-  async createWorkspace({
-    workspacePath,
-    name,
-    description
-  }: {
-    workspacePath: string;
-    name?: string;
-    description?: string;
-  }): Promise<Record<string, unknown>> {
-    const workspaceManager = getWorkspaceManager();
+  // /**
+  //  * 创建或初始化新的工作区
+  //  * 在指定目录中创建 .hyperchat 配置文件夹和必要的配置文件
+  //  * @param workspacePath 工作区根目录的绝对路径
+  //  * @param name 工作区显示名称，默认使用目录名
+  //  * @param description 工作区描述信息
+  //  * @returns 新创建的工作区配置信息
+  //  */
+  // async createWorkspace({
+  //   workspacePath,
+  //   name,
+  //   description
+  // }: {
+  //   workspacePath: string;
+  //   name?: string;
+  //   description?: string;
+  // }): Promise<Record<string, unknown>> {
+  //   const workspaceManager = getWorkspaceManager();
 
-    // 如果没有提供名称，从路径提取文件夹名称作为默认名称
-    const workspaceName = name || path.basename(workspacePath) || 'Workspace';
+  //   // 如果没有提供名称，从路径提取文件夹名称作为默认名称
+  //   const workspaceName = name || path.basename(workspacePath) || 'Workspace';
 
-    const workspace = await workspaceManager.createWorkspace(workspacePath, workspaceName, description);
-    return workspace.getConfig();
-  },
+  //   const workspace = await workspaceManager.createWorkspace(workspacePath, workspaceName, description);
+  //   return workspace.getConfig();
+  // },
 
   /**
    * 获取当前工作区（无参数版本，新架构）
@@ -60,7 +62,7 @@ export const workspaceCommands = {
    */
   async getCurrentWorkspace() {
     const workspaceManager = getWorkspaceManager();
-    await workspaceManager.initialize();
+    await workspaceManager.initialize(process.cwd());
     const workspace = workspaceManager.getCurrentWorkspace();
     if (!workspace) return null;
 
@@ -216,13 +218,15 @@ export const workspaceCommands = {
    * @returns 切换结果
    */
   async switchWorkspace({
-    workspacePath
+    workspacePath,
+    force
   }: {
     workspacePath: string;
+    force: boolean; // 是否强制切换工作区，即使当前工作区有未保存的更改
   }): Promise<boolean> {
     try {
       const workspaceManager = getWorkspaceManager();
-      await workspaceManager.switchWorkspace(workspacePath);
+      await workspaceManager.switchWorkspace(workspacePath, force);
       return true;
     } catch (error) {
       console.error("Failed to switch workspace:", error);
@@ -241,15 +245,15 @@ export const workspaceCommands = {
         throw new Error('当前没有可用的工作区');
       }
 
-      // 获取当前工作区路径
-      const workspacePath = workspaceManager.getCurrentWorkspacePath();
+      // 获取当前工作目录
+      const currentWorkingDirectory = workspaceManager.getCurrentWorkingDirectory();
 
       // 构建完整的文件路径，确保安全性
-      const fullPath = path.resolve(workspacePath, filePath);
+      const fullPath = path.resolve(currentWorkingDirectory, filePath);
 
-      // 检查文件路径是否在工作区范围内（防止路径遍历攻击）
-      if (!fullPath.startsWith(path.resolve(workspacePath))) {
-        throw new Error(`文件路径超出工作区范围: ${filePath}`);
+      // 检查文件路径是否在当前工作目录范围内（防止路径遍历攻击）
+      if (!fullPath.startsWith(path.resolve(currentWorkingDirectory))) {
+        throw new Error(`文件路径超出当前工作目录范围: ${filePath}`);
       }
 
       // 检查文件是否存在
@@ -283,15 +287,15 @@ export const workspaceCommands = {
         throw new Error('当前没有可用的工作区');
       }
 
-      // 获取当前工作区路径
-      const workspacePath = workspaceManager.getCurrentWorkspacePath();
+      // 获取当前工作目录
+      const currentWorkingDirectory = workspaceManager.getCurrentWorkingDirectory();
 
       // 构建完整的文件路径，确保安全性
-      const fullPath = path.resolve(workspacePath, filePath);
+      const fullPath = path.resolve(currentWorkingDirectory, filePath);
 
-      // 检查文件路径是否在工作区范围内（防止路径遍历攻击）
-      if (!fullPath.startsWith(path.resolve(workspacePath))) {
-        throw new Error(`文件路径超出工作区范围: ${filePath}`);
+      // 检查文件路径是否在当前工作目录范围内（防止路径遍历攻击）
+      if (!fullPath.startsWith(path.resolve(currentWorkingDirectory))) {
+        throw new Error(`文件路径超出当前工作目录范围: ${filePath}`);
       }
 
       // 确保目录存在

@@ -245,7 +245,7 @@ export function Workspace() {
       // 重新加载以更新当前工作区标记
       await loadCurrentWorkspace();
 
-      message.success(t`Workspace opened successfully`);
+
       setOpenModalOpen(false);
       form.resetFields();
       setSelectedPath("");
@@ -265,7 +265,7 @@ export function Workspace() {
   const switchToWorkspace = async (workspacePath: string) => {
     try {
       // 使用switchWorkspace API切换工作区
-      await call("switchWorkspace", { workspacePath });
+      await call("switchWorkspace", { workspacePath, force: false });
 
       // 关闭对话框
       setOpenModalOpen(false);
@@ -275,6 +275,8 @@ export function Workspace() {
 
       message.success(t`Switched to workspace`);
     } catch (error) {
+      setConfirmCreateModalOpen(true);
+      setPendingWorkspacePath(workspacePath);
 
       console.error("Failed to switch to workspace:", error);
       message.error(t`Failed to switch to workspace`);
@@ -282,22 +284,21 @@ export function Workspace() {
   };
 
   // 创建工作区
-  const createWorkspace = async (workspacePath: string) => {
+  const createAndSwitchWorkspace = async (workspacePath: string) => {
     try {
       // 从路径提取文件夹名称作为工作区名称
-      const folderName = workspacePath.split(/[/\\]/).pop() || 'Workspace';
 
-      await call("createWorkspace", {
+      await call("switchWorkspace", {
         workspacePath: workspacePath,
-        name: folderName,
+        force: true // 强制切换工作区
       });
-
+      const folderName = workspacePath.split(/[/\\]/).pop() || 'Workspace';
       // 添加到历史记录
       addToWorkspaceHistory(workspacePath, folderName);
       setWorkspaceHistory(getWorkspaceHistory());
 
-      message.success(t`Workspace created and switched successfully`);
-      await loadCurrentWorkspace();
+      message.success(t`Switched to workspace`);
+
     } catch (error) {
       console.error("Failed to create workspace:", error);
       message.error(t`Failed to create workspace`);
@@ -307,10 +308,7 @@ export function Workspace() {
   // 确认创建工作区
   const confirmCreateWorkspace = async () => {
     try {
-      await createWorkspace(pendingWorkspacePath);
-
-      // 切换到新创建的工作区
-      await switchToWorkspace(pendingWorkspacePath);
+      await createAndSwitchWorkspace(pendingWorkspacePath);
 
       // 重新加载工作区列表
       await loadCurrentWorkspace();

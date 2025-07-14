@@ -40,8 +40,8 @@ export async function startChat(initialMessage?: string, options: ChatOptions = 
     logger.info(`🔍 ${t`Initializing HyperChat CLI...`}`);
 
     // Chat需要完整服务（MCP工具、AI聊天）
-    const currentWorkingDirectory = process.cwd();
-    await workspaceManager.initialize(options.workspace, currentWorkingDirectory);
+    const currentWorkingDirectory = options.workspace || process.cwd();
+    await workspaceManager.initialize(currentWorkingDirectory);
     
     const currentWorkspacePath = workspaceManager.getCurrentWorkspacePath();
     

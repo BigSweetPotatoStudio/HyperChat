@@ -722,7 +722,7 @@ export class Workspace {
     excludePatterns?: string[];
   } = {}): Promise<boolean> {
     try {
-      this.fileTree = await this.scanFiles(this.workspacePath, options);
+      this.fileTree = await this.scanFiles(this.currentWorkingDirectory, options);
       return true;
     } catch (error) {
       console.error('更新文件树失败:', error);
@@ -740,7 +740,7 @@ export class Workspace {
   /**
    * 扫描文件
    */
-  private async scanFiles(workspacePath: string, options: {
+  private async scanFiles(targetPath: string, options: {
     includeHidden?: boolean;
     maxDepth?: number;
     excludePatterns?: string[];
@@ -802,7 +802,7 @@ export class Workspace {
       return node;
     };
 
-    return await scanDirectory(workspacePath);
+    return await scanDirectory(targetPath);
   }
 
   // ========== 工具方法 ==========
