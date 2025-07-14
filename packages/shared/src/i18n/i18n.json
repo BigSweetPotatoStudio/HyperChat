@@ -1,4844 +1,4844 @@
 {
   "(Global)": {
     "zh": "(全局)",
-    "ja": null,
+    "ja": "（グローバル）",
     "ko": null,
     "fr": null,
     "de": null
   },
   "A new version is available": {
     "zh": "有新版本可用",
-    "ja": null,
+    "ja": "新しいバージョンが利用可能です",
     "ko": null,
     "fr": null,
     "de": null
   },
   "AI Config": {
     "zh": "AI 配置",
-    "ja": null,
+    "ja": "AI設定",
     "ko": null,
     "fr": null,
     "de": null
   },
   "AI Generate": {
     "zh": "AI 生成",
-    "ja": null,
+    "ja": "AI生成",
     "ko": null,
     "fr": null,
     "de": null
   },
   "AI Provider Settings": {
     "zh": "AI 提供商设置",
-    "ja": null,
+    "ja": "AIプロバイダー設定",
     "ko": null,
     "fr": null,
     "de": null
   },
   "AI Providers": {
     "zh": "AI 提供商",
-    "ja": null,
+    "ja": "AIプロバイダー",
     "ko": null,
     "fr": null,
     "de": null
   },
   "AI model key/identifier": {
     "zh": "AI 模型密钥/标识符",
-    "ja": null,
+    "ja": "AIモデルキー/識別子",
     "ko": null,
     "fr": null,
     "de": null
   },
   "AI reply:": {
     "zh": "AI 回复:",
-    "ja": null,
+    "ja": "AI応答：",
     "ko": null,
     "fr": null,
     "de": null
   },
   "AI response temperature (0-2, higher values make output more random)": {
     "zh": "AI 响应温度 (0-2，值越高输出越随机)",
-    "ja": null,
+    "ja": "AI応答の温度（0-2、値が高いほど出力はランダムになります）",
     "ko": null,
     "fr": null,
     "de": null
   },
   "AI settings are loading, please wait...": {
     "zh": "AI 设置加载中，请稍候...",
-    "ja": null,
+    "ja": "AI設定を読み込み中です。しばらくお待ちください...",
     "ko": null,
     "fr": null,
     "de": null
   },
   "AI system prompt for this workspace": {
     "zh": "此工作区的 AI 系统提示词",
-    "ja": null,
+    "ja": "このワークスペースのAIシステムプロンプト",
     "ko": null,
     "fr": null,
     "de": null
   },
   "AI:": {
     "zh": "AI:",
-    "ja": null,
+    "ja": "AI：",
     "ko": null,
     "fr": null,
     "de": null
   },
   "API Key": {
     "zh": "API 密钥",
-    "ja": null,
+    "ja": "APIキー",
     "ko": null,
     "fr": null,
     "de": null
   },
   "API Key configured successfully!": {
     "zh": "API 密钥配置成功！",
-    "ja": null,
+    "ja": "APIキーが正常に設定されました！",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Actions": {
     "zh": "操作",
-    "ja": null,
+    "ja": "アクション",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Active Agents": {
     "zh": "活跃代理",
-    "ja": null,
+    "ja": "アクティブなエージェント",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Add": {
     "zh": "添加",
-    "ja": null,
+    "ja": "追加",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Add API Key": {
     "zh": "添加 API 密钥",
-    "ja": null,
+    "ja": "APIキーを追加",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Add Bookmark": {
     "zh": "添加书签",
-    "ja": null,
+    "ja": "ブックマークを追加",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Add MCP Server": {
     "zh": "添加 MCP 服务器",
-    "ja": null,
+    "ja": "MCPサーバーを追加",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Add MCP server": {
     "zh": "添加 MCP 服务器",
-    "ja": null,
+    "ja": "MCPサーバーを追加",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Add Model": {
     "zh": "添加模型",
-    "ja": null,
+    "ja": "モデルを追加",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Add Provider": {
     "zh": "添加提供商",
-    "ja": null,
+    "ja": "プロバイダーを追加",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Agent": {
     "zh": "代理",
-    "ja": null,
+    "ja": "エージェント",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Agent Chat": {
     "zh": "代理聊天",
-    "ja": null,
+    "ja": "エージェントチャット",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Agent Details": {
     "zh": "代理详情",
-    "ja": null,
+    "ja": "エージェント詳細",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Agent created successfully": {
     "zh": "代理创建成功",
-    "ja": null,
+    "ja": "エージェントが正常に作成されました",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Agent deleted successfully": {
     "zh": "代理删除成功",
-    "ja": null,
+    "ja": "エージェントが正常に削除されました",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Agent list:": {
     "zh": "代理列表:",
-    "ja": null,
+    "ja": "エージェントリスト:",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Agent updated successfully": {
     "zh": "代理更新成功",
-    "ja": null,
+    "ja": "エージェントが正常に更新されました",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Agents": {
     "zh": "代理",
-    "ja": null,
+    "ja": "エージェント",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Alias for --language": {
     "zh": "--language 的别名",
-    "ja": null,
+    "ja": "--language のエイリアス",
     "ko": null,
     "fr": null,
     "de": null
   },
   "All": {
     "zh": "全部",
-    "ja": null,
+    "ja": "すべて",
     "ko": null,
     "fr": null,
     "de": null
   },
   "All Agents": {
     "zh": "所有代理",
-    "ja": null,
+    "ja": "すべてのエージェント",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Allow Once": {
     "zh": "允许一次",
-    "ja": null,
+    "ja": "一度だけ許可",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Allow this Chat": {
     "zh": "允许此聊天",
-    "ja": null,
+    "ja": "このチャットを許可",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Allowed MCP Servers": {
     "zh": "允许的 MCP 服务器",
-    "ja": null,
+    "ja": "許可されたMCPサーバー",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Allowed MCPs": {
     "zh": "允许的 MCP",
-    "ja": null,
+    "ja": "許可されたMCP",
     "ko": null,
     "fr": null,
     "de": null
   },
   "An error occurred, please try again later": {
     "zh": "发生错误，请稍后再试",
-    "ja": null,
+    "ja": "エラーが発生しました。後でもう一度お試しください",
     "ko": null,
     "fr": null,
     "de": null
   },
   "App Data Directory": {
     "zh": "应用数据目录",
-    "ja": null,
+    "ja": "アプリデータディレクトリ",
     "ko": null,
     "fr": null,
     "de": null
   },
   "App Settings": {
     "zh": "应用设置",
-    "ja": null,
+    "ja": "アプリ設定",
     "ko": null,
     "fr": null,
     "de": null
   },
   "App settings updated successfully": {
     "zh": "应用设置更新成功",
-    "ja": null,
+    "ja": "アプリ設定を更新しました",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Appearance": {
     "zh": "外观",
-    "ja": null,
+    "ja": "外観",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Application Settings": {
     "zh": "应用设置",
-    "ja": null,
+    "ja": "アプリケーション設定",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Are you sure to delete this gateway?": {
     "zh": "确定要删除此网关吗？",
-    "ja": null,
+    "ja": "このゲートウェイを削除してもよろしいですか？",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Are you sure to delete this model?": {
     "zh": "确定要删除此模型吗？",
-    "ja": null,
+    "ja": "このモデルを削除してもよろしいですか？",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Are you sure you want to delete this MCP client?": {
     "zh": "确定要删除此 MCP 客户端吗？",
-    "ja": null,
+    "ja": "このMCPクライアントを削除してもよろしいですか？",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Are you sure you want to delete this agent?": {
     "zh": "确定要删除此代理吗？",
-    "ja": null,
+    "ja": "このエージェントを削除してもよろしいですか？",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Are you sure you want to delete this chat log?": {
     "zh": "您确定要删除此聊天记录吗？",
-    "ja": null,
+    "ja": "このチャット履歴を削除してもよろしいですか？",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Are you sure you want to delete this task?": {
     "zh": "您确定要删除此任务吗？",
-    "ja": null,
+    "ja": "このタスクを削除してもよろしいですか？",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Available Resources": {
     "zh": "可用资源",
-    "ja": null,
+    "ja": "利用可能なリソース",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Available Tools": {
     "zh": "可用工具",
-    "ja": null,
+    "ja": "利用可能なツール",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Available agents:": {
     "zh": "可用代理：",
-    "ja": null,
+    "ja": "利用可能なエージェント：",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Available commands: create": {
     "zh": "可用命令：create",
-    "ja": null,
+    "ja": "利用可能なコマンド：create",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Available commands: list, create, delete, <name> \"message\", <name> chat": {
     "zh": "可用命令：list, create, delete, <name> \"message\", <name> chat",
-    "ja": null,
+    "ja": "利用可能なコマンド：list, create, delete, <name> \"message\", <name> chat",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Available commands: list, create, show, enable, disable, delete, edit, trigger, scheduler, stats": {
     "zh": "可用命令：list, create, show, enable, disable, delete, edit, trigger, scheduler, stats",
-    "ja": null,
+    "ja": "利用可能なコマンド：list, create, show, enable, disable, delete, edit, trigger, scheduler, stats",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Available languages:": {
     "zh": "可用语言：",
-    "ja": null,
+    "ja": "利用可能な言語:",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Base URL": {
     "zh": "基础 URL",
-    "ja": null,
+    "ja": "ベースURL",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Built-in": {
     "zh": "内置",
-    "ja": null,
+    "ja": "組み込み",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Built-in providers cannot be deleted": {
     "zh": "内置提供商无法删除",
-    "ja": null,
+    "ja": "組み込みプロバイダーは削除できません",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Built-in providers cannot be edited": {
     "zh": "内置提供商无法编辑",
-    "ja": null,
+    "ja": "組み込みプロバイダーは編集できません",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Cancel": {
     "zh": "取消",
-    "ja": null,
+    "ja": "キャンセル",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Cannot get current workspace": {
     "zh": "无法获取当前工作区",
-    "ja": null,
+    "ja": "現在のワークスペースを取得できません",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Cannot load workspace configuration": {
     "zh": "无法加载工作区配置",
-    "ja": null,
+    "ja": "ワークスペース構成を読み込めません",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Chat History": {
     "zh": "聊天历史",
-    "ja": null,
+    "ja": "チャット履歴",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Chat Logs": {
     "zh": "聊天记录",
-    "ja": null,
+    "ja": "チャット履歴",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Chat Settings": {
     "zh": "聊天设置",
-    "ja": null,
+    "ja": "チャット設定",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Chat command": {
     "zh": "聊天命令",
-    "ja": null,
+    "ja": "チャットコマンド",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Chat commands:": {
     "zh": "聊天命令：",
-    "ja": null,
+    "ja": "チャットコマンド:",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Chat count": {
     "zh": "聊天计数",
-    "ja": null,
+    "ja": "チャット数",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Chat history cleared": {
     "zh": "聊天历史已清除",
-    "ja": null,
+    "ja": "チャット履歴をクリアしました",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Chat log deleted successfully": {
     "zh": "聊天记录删除成功",
-    "ja": null,
+    "ja": "チャット履歴を正常に削除しました",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Chat with specified workspace": {
     "zh": "与指定工作区聊天",
-    "ja": null,
+    "ja": "指定したワークスペースとチャット",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Chatting with agent": {
     "zh": "正在与代理聊天",
-    "ja": null,
+    "ja": "エージェントとチャット中",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Chinese": {
     "zh": "中文",
-    "ja": null,
+    "ja": "中国語",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Chinese (Simplified)": {
     "zh": "简体中文",
-    "ja": null,
+    "ja": "中国語（簡体字）",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Choose a project folder to work with. If it's not a workspace, you can create one.": {
     "zh": "选择一个项目文件夹。如果不是工作区，您可以创建一个。",
-    "ja": null,
+    "ja": "作業するプロジェクトフォルダーを選択してください。ワークスペースでない場合は、新しく作成できます。",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Choose project folder...": {
     "zh": "选择项目文件夹...",
-    "ja": null,
+    "ja": "プロジェクトフォルダーを選択...",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Choose the AI model for this agent": {
     "zh": "为该代理选择AI模型",
-    "ja": null,
+    "ja": "このエージェントのAIモデルを選択",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Clear": {
     "zh": "清除",
-    "ja": null,
+    "ja": "クリア",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Clear Context": {
     "zh": "清除上下文",
-    "ja": null,
+    "ja": "コンテキストをクリア",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Clear chat history": {
     "zh": "清除聊天记录",
-    "ja": null,
+    "ja": "チャット履歴をクリア",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Clone": {
     "zh": "克隆",
-    "ja": null,
+    "ja": "複製",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Close": {
     "zh": "关闭",
-    "ja": null,
+    "ja": "閉じる",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Comfirm Call Tool": {
     "zh": "确认调用工具",
-    "ja": null,
+    "ja": "ツール呼び出しを確認",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Commands:": {
     "zh": "命令：",
-    "ja": null,
+    "ja": "コマンド:",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Compatible": {
     "zh": "兼容",
-    "ja": null,
+    "ja": "互換性あり",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Completed": {
     "zh": "已完成",
-    "ja": null,
+    "ja": "完了",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Completed successfully": {
     "zh": "成功完成",
-    "ja": null,
+    "ja": "正常に完了しました",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Configuration": {
     "zh": "配置",
-    "ja": null,
+    "ja": "設定",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Configuration copied to clipboard": {
     "zh": "配置已复制到剪贴板",
-    "ja": null,
+    "ja": "設定をクリップボードにコピーしました",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Configure": {
     "zh": "配置",
-    "ja": null,
+    "ja": "設定",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Configure API keys for different AI providers. Click a provider to manage its models.": {
     "zh": "配置不同 AI 提供商的 API 密钥。点击提供商以管理其模型。",
-    "ja": null,
+    "ja": "異なるAIプロバイダーのAPIキーを設定します。プロバイダーをクリックしてモデルを管理します。",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Confirm Delete": {
     "zh": "确认删除",
-    "ja": null,
+    "ja": "削除の確認",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Confirm Tool Calls": {
     "zh": "确认工具调用",
-    "ja": null,
+    "ja": "ツール呼び出しの確認",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Connect to specified server (default: localhost)": {
     "zh": "连接到指定服务器（默认：localhost）",
-    "ja": null,
+    "ja": "指定されたサーバーに接続します（デフォルト：localhost）",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Connected": {
     "zh": "已连接",
-    "ja": null,
+    "ja": "接続済み",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Contains global agents, MCP tools and configurations": {
     "zh": "包含全局代理、MCP 工具和配置",
-    "ja": null,
+    "ja": "グローバルエージェント、MCPツール、設定が含まれます",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Context History": {
     "zh": "上下文历史",
-    "ja": null,
+    "ja": "コンテキスト履歴",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Copied to clipboard": {
     "zh": "已复制到剪贴板",
-    "ja": null,
+    "ja": "クリップボードにコピーしました",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Copy": {
     "zh": "复制",
-    "ja": null,
+    "ja": "コピー",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Core service is running": {
     "zh": "核心服务正在运行",
-    "ja": null,
+    "ja": "コアサービスは実行中です",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Create": {
     "zh": "创建",
-    "ja": null,
+    "ja": "作成",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Create & Switch": {
     "zh": "创建并切换",
-    "ja": null,
+    "ja": "作成して切り替え",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Create Agent": {
     "zh": "创建代理",
-    "ja": null,
+    "ja": "エージェントを作成",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Create First Gateway": {
     "zh": "创建首个网关",
-    "ja": null,
+    "ja": "最初のゲートウェイを作成",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Create Gateway": {
     "zh": "创建网关",
-    "ja": null,
+    "ja": "ゲートウェイを作成",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Create New Workspace": {
     "zh": "创建新工作区",
-    "ja": null,
+    "ja": "新しいワークスペースを作成",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Create Task": {
     "zh": "创建任务",
-    "ja": null,
+    "ja": "タスクを作成",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Create a new agent with: hyperchat agent create <name>": {
     "zh": "使用以下命令创建新代理：hyperchat agent create <name>",
-    "ja": null,
+    "ja": "新しいエージェントを作成: hyperchat agent create <name>",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Create new agent": {
     "zh": "创建新代理",
-    "ja": null,
+    "ja": "新しいエージェントを作成",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Create new task": {
     "zh": "创建新任务",
-    "ja": null,
+    "ja": "新しいタスクを作成",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Create workspace in current directory": {
     "zh": "在当前目录创建工作区",
-    "ja": null,
+    "ja": "現在のディレクトリにワークスペースを作成",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Create your first agent to get started": {
     "zh": "创建您的第一个代理以开始使用",
-    "ja": null,
+    "ja": "開始するには、最初のエージェントを作成してください",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Created Time": {
     "zh": "创建时间",
-    "ja": null,
+    "ja": "作成日時",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Current": {
     "zh": "当前",
-    "ja": null,
+    "ja": "現在",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Current workspace:": {
     "zh": "当前工作区：",
-    "ja": null,
+    "ja": "現在のワークスペース:",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Custom": {
     "zh": "自定义",
-    "ja": null,
+    "ja": "カスタム",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Data load complete": {
     "zh": "数据加载完成",
-    "ja": null,
+    "ja": "データ読み込み完了",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Default": {
     "zh": "默认",
-    "ja": null,
+    "ja": "デフォルト",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Default model set successfully!": {
     "zh": "默认模型设置成功！",
-    "ja": null,
+    "ja": "デフォルトモデルが正常に設定されました！",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Delete": {
     "zh": "删除",
-    "ja": null,
+    "ja": "削除",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Delete Chat Log": {
     "zh": "删除聊天记录",
-    "ja": null,
+    "ja": "チャット履歴を削除",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Delete Provider": {
     "zh": "删除提供商",
-    "ja": null,
+    "ja": "プロバイダーを削除",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Delete Success": {
     "zh": "删除成功",
-    "ja": null,
+    "ja": "削除成功",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Delete Task": {
     "zh": "删除任务",
-    "ja": null,
+    "ja": "タスクを削除",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Delete agent": {
     "zh": "删除代理",
-    "ja": null,
+    "ja": "エージェントを削除",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Delete failed: ": {
     "zh": "删除失败：",
-    "ja": null,
+    "ja": "削除失敗: ",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Delete task": {
     "zh": "删除任务",
-    "ja": null,
+    "ja": "タスクを削除",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Delete this provider?": {
     "zh": "删除此提供商？",
-    "ja": null,
+    "ja": "このプロバイダーを削除しますか？",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Describe what this agent does and its capabilities...": {
     "zh": "描述此代理的功能和用途...",
-    "ja": null,
+    "ja": "このエージェントの機能と能力を記述します...",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Description": {
     "zh": "描述",
-    "ja": null,
+    "ja": "説明",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Desktop": {
     "zh": "桌面",
-    "ja": null,
+    "ja": "デスクトップ",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Direct Call": {
     "zh": "直接调用",
-    "ja": null,
+    "ja": "直接呼び出し",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Direct chat (auto-detect workspace)": {
     "zh": "直接聊天（自动检测工作区）",
-    "ja": null,
+    "ja": "直接チャット（ワークスペースを自動検出）",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Direct chat with specified agent": {
     "zh": "与指定代理直接聊天",
-    "ja": null,
+    "ja": "指定されたエージェントと直接チャット",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Disable": {
     "zh": "禁用",
-    "ja": null,
+    "ja": "無効にする",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Disable Task": {
     "zh": "禁用任务",
-    "ja": null,
+    "ja": "タスクを無効にする",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Disable task": {
     "zh": "禁用任务",
-    "ja": null,
+    "ja": "タスクを無効にする",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Disable this task": {
     "zh": "禁用此任务",
-    "ja": null,
+    "ja": "このタスクを無効にする",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Disabled": {
     "zh": "已禁用",
-    "ja": null,
+    "ja": "無効",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Disconnected": {
     "zh": "已断开连接",
-    "ja": null,
+    "ja": "切断されました",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Do you want to confirm calling the tool?": {
     "zh": "是否确认调用工具？",
-    "ja": null,
+    "ja": "ツール呼び出しを確定しますか？",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Download And Update": {
     "zh": "下载并更新",
-    "ja": null,
+    "ja": "ダウンロードと更新",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Edit": {
     "zh": "编辑",
-    "ja": null,
+    "ja": "編集",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Edit Agent": {
     "zh": "编辑代理",
-    "ja": null,
+    "ja": "エージェントを編集",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Edit Gateway": {
     "zh": "编辑网关",
-    "ja": null,
+    "ja": "ゲートウェイを編集",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Edit Model": {
     "zh": "编辑模型",
-    "ja": null,
+    "ja": "モデルを編集",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Edit Provider": {
     "zh": "编辑提供商",
-    "ja": null,
+    "ja": "プロバイダーを編集",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Edit Task": {
     "zh": "编辑任务",
-    "ja": null,
+    "ja": "タスクを編集",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Edit task": {
     "zh": "编辑任务",
-    "ja": null,
+    "ja": "タスクを編集",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Enable": {
     "zh": "启用",
-    "ja": null,
+    "ja": "有効にする",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Enable Task": {
     "zh": "启用任务",
-    "ja": null,
+    "ja": "タスクを有効にする",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Enable task": {
     "zh": "启用任务",
-    "ja": null,
+    "ja": "タスクを有効にする",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Enabled": {
     "zh": "已启用",
-    "ja": null,
+    "ja": "有効",
     "ko": null,
     "fr": null,
     "de": null
   },
   "English": {
     "zh": "英文",
-    "ja": null,
+    "ja": "英語",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Enter AI system prompt (optional)": {
     "zh": "输入 AI 系统提示词（可选）",
-    "ja": null,
+    "ja": "AIシステムプロンプトを入力（オプション）",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Enter API Key for this model": {
     "zh": "输入此模型的 API 密钥",
-    "ja": null,
+    "ja": "このモデルのAPIキーを入力",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Enter cron expression": {
     "zh": "输入 cron 表达式",
-    "ja": null,
+    "ja": "cron式を入力",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Enter gateway description (optional)": {
     "zh": "输入网关描述（可选）",
-    "ja": null,
+    "ja": "ゲートウェイの説明を入力（オプション）",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Enter gateway name": {
     "zh": "输入网关名称",
-    "ja": null,
+    "ja": "ゲートウェイ名を入力",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Enter system prompt for this agent...": {
     "zh": "输入此代理的系统提示词...",
-    "ja": null,
+    "ja": "このエージェントのシステムプロンプトを入力...",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Enter task description": {
     "zh": "输入任务描述",
-    "ja": null,
+    "ja": "タスクの説明を入力",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Enter task name": {
     "zh": "输入任务名称",
-    "ja": null,
+    "ja": "タスク名を入力",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Enter workspace description (optional)": {
     "zh": "输入工作区描述（可选）",
-    "ja": null,
+    "ja": "ワークスペースの説明を入力（オプション）",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Enter workspace name": {
     "zh": "输入工作区名称",
-    "ja": null,
+    "ja": "ワークスペース名を入力",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Enter your API Key": {
     "zh": "输入您的 API 密钥",
-    "ja": null,
+    "ja": "APIキーを入力",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Error": {
     "zh": "错误",
-    "ja": null,
+    "ja": "エラー",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Error occurred": {
     "zh": "发生错误",
-    "ja": null,
+    "ja": "エラーが発生しました",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Error:": {
     "zh": "错误：",
-    "ja": null,
+    "ja": "エラー:",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Error: Agent must be specified (--agent)": {
     "zh": "错误：必须指定代理 (--agent)",
-    "ja": null,
+    "ja": "エラー: エージェントを指定する必要があります (--agent)",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Error: No fields provided for update": {
     "zh": "错误：未提供更新字段",
-    "ja": null,
+    "ja": "エラー: 更新するフィールドが指定されていません",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Error: Task description is required (--description)": {
     "zh": "错误：任务描述为必填项 (--description)",
-    "ja": null,
+    "ja": "エラー: タスクの説明が必要です (--description)",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Every 15 minutes": {
     "zh": "每15分钟",
-    "ja": null,
+    "ja": "15分ごと",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Every 2 hours": {
     "zh": "每2小时",
-    "ja": null,
+    "ja": "2時間ごと",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Every 30 minutes": {
     "zh": "每30分钟",
-    "ja": null,
+    "ja": "30分ごと",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Every 5 minutes": {
     "zh": "每5分钟",
-    "ja": null,
+    "ja": "5分ごと",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Every 6 hours": {
     "zh": "每6小时",
-    "ja": null,
+    "ja": "6時間ごと",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Every Monday at midnight": {
     "zh": "每周一午夜",
-    "ja": null,
+    "ja": "毎週月曜日の深夜",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Every Sunday at midnight": {
     "zh": "每周日午夜",
-    "ja": null,
+    "ja": "毎週日曜日の深夜",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Every day at 6:00 PM": {
     "zh": "每天下午6:00",
-    "ja": null,
+    "ja": "毎日午後6時",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Every day at 8:00 AM": {
     "zh": "每天上午8:00",
-    "ja": null,
+    "ja": "毎日午前8時",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Every day at midnight": {
     "zh": "每天午夜",
-    "ja": null,
+    "ja": "毎日深夜",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Every day at noon": {
     "zh": "每天中午",
-    "ja": null,
+    "ja": "毎日正午",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Every hour": {
     "zh": "每小时",
-    "ja": null,
+    "ja": "1時間ごと",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Every minute": {
     "zh": "每分钟",
-    "ja": null,
+    "ja": "1分ごと",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Examples:": {
     "zh": "示例：",
-    "ja": null,
+    "ja": "例:",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Exit chat": {
     "zh": "退出聊天",
-    "ja": null,
+    "ja": "チャットを終了",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Exiting...": {
     "zh": "正在退出...",
-    "ja": null,
+    "ja": "終了中...",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Failed to clone task": {
     "zh": "克隆任务失败",
-    "ja": null,
+    "ja": "タスクの複製に失敗しました",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Failed to copy configuration": {
     "zh": "复制配置失败",
-    "ja": null,
+    "ja": "設定のコピーに失敗しました",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Failed to copy to clipboard": {
     "zh": "复制到剪贴板失败",
-    "ja": null,
+    "ja": "クリップボードへのコピーに失敗しました",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Failed to create workspace": {
     "zh": "创建工作区失败",
-    "ja": null,
+    "ja": "ワークスペースの作成に失敗しました",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Failed to delete MCP client": {
     "zh": "删除 MCP 客户端失败",
-    "ja": null,
+    "ja": "MCPクライアントの削除に失敗しました",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Failed to delete agent": {
     "zh": "删除代理失败",
-    "ja": null,
+    "ja": "エージェントの削除に失敗しました",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Failed to delete chat log": {
     "zh": "删除聊天记录失败",
-    "ja": null,
+    "ja": "チャット履歴の削除に失敗しました",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Failed to delete model": {
     "zh": "删除模型失败",
-    "ja": null,
+    "ja": "モデルの削除に失敗しました",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Failed to delete provider": {
     "zh": "删除提供商失败",
-    "ja": null,
+    "ja": "プロバイダーの削除に失敗しました",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Failed to delete task": {
     "zh": "删除任务失败",
-    "ja": null,
+    "ja": "タスクの削除に失敗しました",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Failed to disable MCP client": {
     "zh": "禁用 MCP 客户端失败",
-    "ja": null,
+    "ja": "MCPクライアントの無効化に失敗しました",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Failed to enable MCP client": {
     "zh": "启用 MCP 客户端失败",
-    "ja": null,
+    "ja": "MCPクライアントの有効化に失敗しました",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Failed to load MCP gateways": {
     "zh": "加载 MCP 网关失败",
-    "ja": null,
+    "ja": "MCPゲートウェイの読み込みに失敗しました",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Failed to load app settings": {
     "zh": "加载应用设置失败",
-    "ja": null,
+    "ja": "アプリ設定の読み込みに失敗しました",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Failed to load chat history": {
     "zh": "加载聊天记录失败",
-    "ja": null,
+    "ja": "チャット履歴の読み込みに失敗しました",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Failed to load directory contents": {
     "zh": "加载目录内容失败",
-    "ja": null,
+    "ja": "ディレクトリコンテンツの読み込みに失敗しました",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Failed to load file": {
     "zh": "加载文件失败",
-    "ja": null,
+    "ja": "ファイルの読み込みに失敗しました",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Failed to load workspace": {
     "zh": "加载工作区失败",
-    "ja": null,
+    "ja": "ワークスペースの読み込みに失敗しました",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Failed to load workspace details": {
     "zh": "加载工作区详情失败",
-    "ja": null,
+    "ja": "ワークスペース詳細の読み込みに失敗しました",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Failed to load workspace settings": {
     "zh": "加载工作区设置失败",
-    "ja": null,
+    "ja": "ワークスペース設定の読み込みに失敗しました",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Failed to open workspace": {
     "zh": "打开工作区失败",
-    "ja": null,
+    "ja": "ワークスペースを開けませんでした",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Failed to process selected directory": {
     "zh": "处理所选目录失败",
-    "ja": null,
+    "ja": "選択されたディレクトリの処理に失敗しました",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Failed to refresh file tree": {
     "zh": "刷新文件树失败",
-    "ja": null,
+    "ja": "ファイルツリーの更新に失敗しました",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Failed to reload MCP clients": {
     "zh": "重新加载 MCP 客户端失败",
-    "ja": null,
+    "ja": "MCPクライアントの再読み込みに失敗しました",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Failed to reset app settings": {
     "zh": "重置应用设置失败",
-    "ja": null,
+    "ja": "アプリ設定のリセットに失敗しました",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Failed to reset settings": {
     "zh": "重置设置失败",
-    "ja": null,
+    "ja": "設定のリセットに失敗しました",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Failed to restart MCP client": {
     "zh": "重启 MCP 客户端失败",
-    "ja": null,
+    "ja": "MCPクライアントの再起動に失敗しました",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Failed to save agent": {
     "zh": "保存代理失败",
-    "ja": null,
+    "ja": "エージェントの保存に失敗しました",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Failed to save configuration": {
     "zh": "保存配置失败",
-    "ja": null,
+    "ja": "設定の保存に失敗しました",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Failed to save file": {
     "zh": "保存文件失败",
-    "ja": null,
+    "ja": "ファイルの保存に失敗しました",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Failed to save model": {
     "zh": "保存模型失败",
-    "ja": null,
+    "ja": "モデルの保存に失敗しました",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Failed to save provider": {
     "zh": "保存提供商失败",
-    "ja": null,
+    "ja": "プロバイダーの保存に失敗しました",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Failed to save settings": {
     "zh": "保存设置失败",
-    "ja": null,
+    "ja": "設定の保存に失敗しました",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Failed to save task": {
     "zh": "保存任务失败",
-    "ja": null,
+    "ja": "タスクの保存に失敗しました",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Failed to set default model": {
     "zh": "设置默认模型失败",
-    "ja": null,
+    "ja": "デフォルトモデルの設定に失敗しました",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Failed to switch to workspace": {
     "zh": "切换工作区失败",
-    "ja": null,
+    "ja": "ワークスペースの切り替えに失敗しました",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Failed to toggle task status": {
     "zh": "切换任务状态失败",
-    "ja": null,
+    "ja": "タスクステータスの切り替えに失敗しました",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Failed to update MCP gateways": {
     "zh": "更新 MCP 网关失败",
-    "ja": null,
+    "ja": "MCPゲートウェイの更新に失敗しました",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Failed to update app settings": {
     "zh": "更新应用设置失败",
-    "ja": null,
+    "ja": "アプリ設定の更新に失敗しました",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Failed to update task": {
     "zh": "更新任务失败",
-    "ja": null,
+    "ja": "タスクの更新に失敗しました",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Failed to update workspace settings": {
     "zh": "更新工作区设置失败",
-    "ja": null,
+    "ja": "ワークスペース設定の更新に失敗しました",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Features": {
     "zh": "功能",
-    "ja": null,
+    "ja": "機能",
     "ko": null,
     "fr": null,
     "de": null
   },
   "File saved successfully": {
     "zh": "文件保存成功",
-    "ja": null,
+    "ja": "ファイルを保存しました",
     "ko": null,
     "fr": null,
     "de": null
   },
   "File tree refreshed successfully": {
     "zh": "文件树刷新成功",
-    "ja": null,
+    "ja": "ファイルツリーを正常に更新しました",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Files": {
     "zh": "文件",
-    "ja": null,
+    "ja": "ファイル",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Folder Path": {
     "zh": "文件夹路径",
-    "ja": null,
+    "ja": "フォルダーパス",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Gateway Name": {
     "zh": "网关名称",
-    "ja": null,
+    "ja": "ゲートウェイ名",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Gateway created successfully": {
     "zh": "网关创建成功",
-    "ja": null,
+    "ja": "ゲートウェイを正常に作成しました",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Gateway deleted successfully": {
     "zh": "网关删除成功",
-    "ja": null,
+    "ja": "ゲートウェイを正常に削除しました",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Gateway name already exists": {
     "zh": "网关名称已存在",
-    "ja": null,
+    "ja": "ゲートウェイ名はすでに存在します",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Gateway updated successfully": {
     "zh": "网关更新成功",
-    "ja": null,
+    "ja": "ゲートウェイを正常に更新しました",
     "ko": null,
     "fr": null,
     "de": null
   },
   "General chat": {
     "zh": "通用聊天",
-    "ja": null,
+    "ja": "一般チャット",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Getting agent list...": {
     "zh": "正在获取代理列表...",
-    "ja": null,
+    "ja": "エージェントリストを取得中...",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Getting scheduler status...": {
     "zh": "正在获取调度器状态...",
-    "ja": null,
+    "ja": "スケジューラーステータスを取得中...",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Getting task list...": {
     "zh": "正在获取任务列表...",
-    "ja": null,
+    "ja": "タスクリストを取得中...",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Getting task statistics...": {
     "zh": "正在获取任务统计...",
-    "ja": null,
+    "ja": "タスク統計を取得中...",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Getting workspace list...": {
     "zh": "正在获取工作区列表...",
-    "ja": null,
+    "ja": "ワークスペースリストを取得中...",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Global": {
     "zh": "全局",
-    "ja": null,
+    "ja": "グローバル",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Global Workspace": {
     "zh": "全局工作区",
-    "ja": null,
+    "ja": "グローバルワークスペース",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Global options:": {
     "zh": "全局选项：",
-    "ja": null,
+    "ja": "グローバルオプション：",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Goodbye!": {
     "zh": "再见！",
-    "ja": null,
+    "ja": "さようなら！",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Grouped by agent:": {
     "zh": "按代理分组：",
-    "ja": null,
+    "ja": "エージェント別：",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Hello": {
     "zh": "你好",
-    "ja": null,
+    "ja": "こんにちは",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Help me write code": {
     "zh": "帮我写代码",
-    "ja": null,
+    "ja": "コード作成を支援",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Here are the error messages: ": {
     "zh": "错误信息如下：",
-    "ja": null,
+    "ja": "エラーメッセージは以下の通りです：",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Hide hidden files": {
     "zh": "隐藏隐藏文件",
-    "ja": null,
+    "ja": "隠しファイルを非表示",
     "ko": null,
     "fr": null,
     "de": null
   },
   "High": {
     "zh": "高",
-    "ja": null,
+    "ja": "高",
     "ko": null,
     "fr": null,
     "de": null
   },
   "HyperChat runtime status:": {
     "zh": "HyperChat 运行时状态：",
-    "ja": null,
+    "ja": "HyperChat実行ステータス:",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Image": {
     "zh": "镜像",
-    "ja": null,
+    "ja": "イメージ",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Initializing HyperChat CLI...": {
     "zh": "正在初始化 HyperChat 命令行工具...",
-    "ja": null,
+    "ja": "HyperChatコマンドラインツールを初期化中...",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Install And Run": {
     "zh": "安装并运行",
-    "ja": null,
+    "ja": "インストールして実行",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Interactive chat": {
     "zh": "交互式聊天",
-    "ja": null,
+    "ja": "インタラクティブチャット",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Interactive chat with specified agent": {
     "zh": "与指定代理进行交互式聊天",
-    "ja": null,
+    "ja": "指定されたエージェントとのインタラクティブチャット",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Invalid JSON format": {
     "zh": "JSON 格式无效",
-    "ja": null,
+    "ja": "無効なJSON形式",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Invalid cron expression format": {
     "zh": "Cron 表达式格式无效",
-    "ja": null,
+    "ja": "無効なcron式形式",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Invalid parameters": {
     "zh": "参数无效",
-    "ja": null,
+    "ja": "無効なパラメータ",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Key": {
     "zh": "键",
-    "ja": null,
+    "ja": "キー",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Key Points": {
     "zh": "要点",
-    "ja": null,
+    "ja": "要点",
     "ko": null,
     "fr": null,
     "de": null
   },
   "LLM not support": {
     "zh": "不支持大型语言模型",
-    "ja": null,
+    "ja": "LLMはサポートされていません",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Language Model": {
     "zh": "语言模型",
-    "ja": null,
+    "ja": "言語モデル",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Language setting has been saved and will persist across sessions": {
     "zh": "语言设置已保存，并将在会话之间保持不变",
-    "ja": null,
+    "ja": "言語設定は保存され、セッション間で維持されます",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Last Chat": {
     "zh": "上次聊天",
-    "ja": null,
+    "ja": "最終チャット",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Last chat": {
     "zh": "上次聊天",
-    "ja": null,
+    "ja": "最終チャット",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Last used": {
     "zh": "上次使用",
-    "ja": null,
+    "ja": "最終使用",
     "ko": null,
     "fr": null,
     "de": null
   },
   "List all agents": {
     "zh": "列出所有代理",
-    "ja": null,
+    "ja": "全エージェントをリスト表示",
     "ko": null,
     "fr": null,
     "de": null
   },
   "List all tasks": {
     "zh": "列出所有任务",
-    "ja": null,
+    "ja": "全タスクをリスト表示",
     "ko": null,
     "fr": null,
     "de": null
   },
   "List of allowed MCP server names": {
     "zh": "允许的 MCP 服务器名称列表",
-    "ja": null,
+    "ja": "許可されたMCPサーバー名リスト",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Loading Settings...": {
     "zh": "正在加载设置...",
-    "ja": null,
+    "ja": "設定を読み込み中...",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Loading chat history...": {
     "zh": "正在加载聊天记录...",
-    "ja": null,
+    "ja": "チャット履歴を読み込み中...",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Loading data...": {
     "zh": "正在加载数据...",
-    "ja": null,
+    "ja": "データを読み込み中...",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Log File Path": {
     "zh": "日志文件路径",
-    "ja": null,
+    "ja": "ログファイルのパス",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Low": {
     "zh": "低",
-    "ja": null,
+    "ja": "低",
     "ko": null,
     "fr": null,
     "de": null
   },
   "MCP": {
     "zh": "MCP",
-    "ja": null,
+    "ja": "MCP",
     "ko": null,
     "fr": null,
     "de": null
   },
   "MCP Client Details": {
     "zh": "MCP 客户端详情",
-    "ja": null,
+    "ja": "MCPクライアント詳細",
     "ko": null,
     "fr": null,
     "de": null
   },
   "MCP Gateways": {
     "zh": "MCP 网关",
-    "ja": null,
+    "ja": "MCPゲートウェイ",
     "ko": null,
     "fr": null,
     "de": null
   },
   "MCP Gateways Management": {
     "zh": "MCP 网关管理",
-    "ja": null,
+    "ja": "MCPゲートウェイ管理",
     "ko": null,
     "fr": null,
     "de": null
   },
   "MCP Gateways Settings": {
     "zh": "MCP 网关设置",
-    "ja": null,
+    "ja": "MCPゲートウェイ設定",
     "ko": null,
     "fr": null,
     "de": null
   },
   "MCP Gateways updated successfully": {
     "zh": "MCP 网关更新成功",
-    "ja": null,
+    "ja": "MCPゲートウェイが正常に更新されました",
     "ko": null,
     "fr": null,
     "de": null
   },
   "MCP Service Name already exists": {
     "zh": "MCP 服务名称已存在",
-    "ja": null,
+    "ja": "MCPサービス名はすでに存在します",
     "ko": null,
     "fr": null,
     "de": null
   },
   "MCP Tool": {
     "zh": "MCP 工具",
-    "ja": null,
+    "ja": "MCPツール",
     "ko": null,
     "fr": null,
     "de": null
   },
   "MCP and Tools": {
     "zh": "MCP 与工具",
-    "ja": null,
+    "ja": "MCPとツール",
     "ko": null,
     "fr": null,
     "de": null
   },
   "MCP client deleted successfully": {
     "zh": "MCP 客户端删除成功",
-    "ja": null,
+    "ja": "MCPクライアントは正常に削除されました",
     "ko": null,
     "fr": null,
     "de": null
   },
   "MCP client disabled successfully": {
     "zh": "MCP 客户端禁用成功",
-    "ja": null,
+    "ja": "MCPクライアントは正常に無効化されました",
     "ko": null,
     "fr": null,
     "de": null
   },
   "MCP client enabled successfully": {
     "zh": "MCP 客户端启用成功",
-    "ja": null,
+    "ja": "MCPクライアントは正常に有効化されました",
     "ko": null,
     "fr": null,
     "de": null
   },
   "MCP client restarted successfully": {
     "zh": "MCP 客户端重启成功",
-    "ja": null,
+    "ja": "MCPクライアントは正常に再起動されました",
     "ko": null,
     "fr": null,
     "de": null
   },
   "MCP clients reloaded successfully": {
     "zh": "MCP 客户端重新加载成功",
-    "ja": null,
+    "ja": "MCPクライアントは正常にリロードされました",
     "ko": null,
     "fr": null,
     "de": null
   },
   "MCP clients: Failed to get": {
     "zh": "MCP 客户端：获取失败",
-    "ja": null,
+    "ja": "MCPクライアント：取得に失敗しました",
     "ko": null,
     "fr": null,
     "de": null
   },
   "MCP server added successfully": {
     "zh": "MCP 服务器添加成功",
-    "ja": null,
+    "ja": "MCPサーバーが正常に追加されました",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Management Panel": {
     "zh": "管理面板",
-    "ja": null,
+    "ja": "管理パネル",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Manually trigger task execution": {
     "zh": "手动触发任务执行",
-    "ja": null,
+    "ja": "タスクの手動実行",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Max Attached Dialogs": {
     "zh": "最大附加对话数",
-    "ja": null,
+    "ja": "最大添付ダイアログ数",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Max Tokens": {
     "zh": "最大令牌数",
-    "ja": null,
+    "ja": "最大トークン数",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Maximum number of attached dialog histories (0-100)": {
     "zh": "最大附加对话历史记录数 (0-100)",
-    "ja": null,
+    "ja": "添付するダイアログ履歴の最大数（0-100）",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Maximum tokens for AI response (100-32000)": {
     "zh": "AI 响应的最大令牌数 (100-32000)",
-    "ja": null,
+    "ja": "AI応答の最大トークン数（100-32000）",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Medium": {
     "zh": "中等",
-    "ja": null,
+    "ja": "中",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Memory Summary": {
     "zh": "记忆摘要",
-    "ja": null,
+    "ja": "メモリ要約",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Model": {
     "zh": "模型",
-    "ja": null,
+    "ja": "モデル",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Model ID": {
     "zh": "模型 ID",
-    "ja": null,
+    "ja": "モデルID",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Model Key": {
     "zh": "模型密钥",
-    "ja": null,
+    "ja": "モデルキー",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Model Name": {
     "zh": "模型名称",
-    "ja": null,
+    "ja": "モデル名",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Model Type": {
     "zh": "模型类型",
-    "ja": null,
+    "ja": "モデルタイプ",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Model added successfully!": {
     "zh": "模型添加成功！",
-    "ja": null,
+    "ja": "モデルが正常に追加されました！",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Model deleted successfully!": {
     "zh": "模型删除成功！",
-    "ja": null,
+    "ja": "モデルが正常に削除されました！",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Model not found, please select a model": {
     "zh": "未找到模型，请选择一个模型",
-    "ja": null,
+    "ja": "モデルが見つかりません。モデルを選択してください",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Model updated successfully!": {
     "zh": "模型更新成功！",
-    "ja": null,
+    "ja": "モデルが正常に更新されました！",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Models": {
     "zh": "模型",
-    "ja": null,
+    "ja": "モデル",
     "ko": null,
     "fr": null,
     "de": null
   },
   "More Settings": {
     "zh": "更多设置",
-    "ja": null,
+    "ja": "その他の設定",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Name": {
     "zh": "名称",
-    "ja": null,
+    "ja": "名前",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Need Confirm": {
     "zh": "需要确认",
-    "ja": null,
+    "ja": "確認が必要",
     "ko": null,
     "fr": null,
     "de": null
   },
   "New Chat": {
     "zh": "新建聊天",
-    "ja": null,
+    "ja": "新しいチャット",
     "ko": null,
     "fr": null,
     "de": null
   },
   "No": {
     "zh": "否",
-    "ja": null,
+    "ja": "いいえ",
     "ko": null,
     "fr": null,
     "de": null
   },
   "No Agents": {
     "zh": "无代理",
-    "ja": null,
+    "ja": "エージェントなし",
     "ko": null,
     "fr": null,
     "de": null
   },
   "No MCP clients": {
     "zh": "无 MCP 客户端",
-    "ja": null,
+    "ja": "MCPクライアントなし",
     "ko": null,
     "fr": null,
     "de": null
   },
   "No MCP configured": {
     "zh": "未配置 MCP",
-    "ja": null,
+    "ja": "MCPが設定されていません",
     "ko": null,
     "fr": null,
     "de": null
   },
   "No agents available": {
     "zh": "无可用代理",
-    "ja": null,
+    "ja": "利用可能なエージェントがありません",
     "ko": null,
     "fr": null,
     "de": null
   },
   "No agents match your search": {
     "zh": "无匹配代理",
-    "ja": null,
+    "ja": "検索条件に一致するエージェントがありません",
     "ko": null,
     "fr": null,
     "de": null
   },
   "No available workspace": {
     "zh": "无可用工作区",
-    "ja": null,
+    "ja": "利用可能なワークスペースがありません",
     "ko": null,
     "fr": null,
     "de": null
   },
   "No bookmarks yet": {
     "zh": "暂无书签",
-    "ja": null,
+    "ja": "まだブックマークがありません",
     "ko": null,
     "fr": null,
     "de": null
   },
   "No chat history found": {
     "zh": "未找到聊天记录",
-    "ja": null,
+    "ja": "チャット履歴が見つかりません",
     "ko": null,
     "fr": null,
     "de": null
   },
   "No chat tabs open": {
     "zh": "没有打开的聊天标签页",
-    "ja": null,
+    "ja": "チャットタブが開いていません",
     "ko": null,
     "fr": null,
     "de": null
   },
   "No description": {
     "zh": "无描述",
-    "ja": null,
+    "ja": "説明なし",
     "ko": null,
     "fr": null,
     "de": null
   },
   "No description available": {
     "zh": "暂无描述",
-    "ja": null,
+    "ja": "説明はありません",
     "ko": null,
     "fr": null,
     "de": null
   },
   "No disabled MCP clients": {
     "zh": "没有禁用的 MCP 客户端",
-    "ja": null,
+    "ja": "無効なMCPクライアントはありません",
     "ko": null,
     "fr": null,
     "de": null
   },
   "No enabled MCP clients": {
     "zh": "没有启用的 MCP 客户端",
-    "ja": null,
+    "ja": "有効なMCPクライアントはありません",
     "ko": null,
     "fr": null,
     "de": null
   },
   "No file tree data": {
     "zh": "没有文件树数据",
-    "ja": null,
+    "ja": "ファイルツリーデータがありません",
     "ko": null,
     "fr": null,
     "de": null
   },
   "No gateways configured": {
     "zh": "没有配置网关",
-    "ja": null,
+    "ja": "ゲートウェイが設定されていません",
     "ko": null,
     "fr": null,
     "de": null
   },
   "No history yet": {
     "zh": "暂无历史记录",
-    "ja": null,
+    "ja": "まだ履歴がありません",
     "ko": null,
     "fr": null,
     "de": null
   },
   "No matching MCP clients found": {
     "zh": "未找到匹配的 MCP 客户端",
-    "ja": null,
+    "ja": "一致するMCPクライアントが見つかりません",
     "ko": null,
     "fr": null,
     "de": null
   },
   "No models configured. Click \"Add Model\" to create one.": {
     "zh": "未配置模型。点击“添加模型”创建一个。",
-    "ja": null,
+    "ja": "モデルが設定されていません。「モデルを追加」をクリックして作成してください。",
     "ko": null,
     "fr": null,
     "de": null
   },
   "No parameters": {
     "zh": "无参数",
-    "ja": null,
+    "ja": "パラメーターなし",
     "ko": null,
     "fr": null,
     "de": null
   },
   "No recent agents": {
     "zh": "无近期代理",
-    "ja": null,
+    "ja": "最近のエージェントなし",
     "ko": null,
     "fr": null,
     "de": null
   },
   "No recent chats": {
     "zh": "无近期聊天",
-    "ja": null,
+    "ja": "最近のチャットなし",
     "ko": null,
     "fr": null,
     "de": null
   },
   "No tasks found": {
     "zh": "未找到任务",
-    "ja": null,
+    "ja": "タスクが見つかりません",
     "ko": null,
     "fr": null,
     "de": null
   },
   "No tasks in scheduling": {
     "zh": "调度中无任务",
-    "ja": null,
+    "ja": "スケジュール中のタスクなし",
     "ko": null,
     "fr": null,
     "de": null
   },
   "No tasks yet": {
     "zh": "暂无任务",
-    "ja": null,
+    "ja": "まだタスクがありません",
     "ko": null,
     "fr": null,
     "de": null
   },
   "No todos yet": {
     "zh": "暂无待办",
-    "ja": null,
+    "ja": "まだToDoはありません",
     "ko": null,
     "fr": null,
     "de": null
   },
   "No tools available": {
     "zh": "暂无可用工具",
-    "ja": null,
+    "ja": "利用可能なツールはありません",
     "ko": null,
     "fr": null,
     "de": null
   },
   "No workspace found": {
     "zh": "未找到工作区",
-    "ja": null,
+    "ja": "ワークスペースが見つかりません",
     "ko": null,
     "fr": null,
     "de": null
   },
   "No workspace selected": {
     "zh": "未选择工作区",
-    "ja": null,
+    "ja": "ワークスペースが選択されていません",
     "ko": null,
     "fr": null,
     "de": null
   },
   "OK": {
     "zh": "确定",
-    "ja": null,
+    "ja": "OK",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Old Name": {
     "zh": "旧名称",
-    "ja": null,
+    "ja": "古い名前",
     "ko": null,
     "fr": null,
     "de": null
   },
   "On the 15th of every month": {
     "zh": "每月15日",
-    "ja": null,
+    "ja": "毎月15日",
     "ko": null,
     "fr": null,
     "de": null
   },
   "On the 1st of every month": {
     "zh": "每月1日",
-    "ja": null,
+    "ja": "毎月1日",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Only letters and numbers are allowed": {
     "zh": "只允许字母和数字",
-    "ja": null,
+    "ja": "半角英数字のみ使用できます",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Only letters, numbers, underscore and dash are allowed": {
     "zh": "只允许字母、数字、下划线和破折号",
-    "ja": null,
+    "ja": "半角英数字、アンダースコア、ハイフンのみ使用できます",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Open Chat": {
     "zh": "打开聊天",
-    "ja": null,
+    "ja": "チャットを開く",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Operation failed: ": {
     "zh": "操作失败：",
-    "ja": null,
+    "ja": "操作に失敗しました: ",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Optional, will use Model ID if empty": {
     "zh": "可选，如果为空将使用模型ID",
-    "ja": null,
+    "ja": "オプション。空の場合、モデルIDが使用されます",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Options": {
     "zh": "选项",
-    "ja": null,
+    "ja": "オプション",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Parameter Reference": {
     "zh": "参数参考",
-    "ja": null,
+    "ja": "パラメータ参照",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Parameters": {
     "zh": "参数",
-    "ja": null,
+    "ja": "パラメータ",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Paste": {
     "zh": "粘贴",
-    "ja": null,
+    "ja": "貼り付け",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Path": {
     "zh": "路径",
-    "ja": null,
+    "ja": "パス",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Phase 1: Quickly loading workspace configuration...": {
     "zh": "阶段 1: 快速加载工作区配置...",
-    "ja": null,
+    "ja": "フェーズ1：ワークスペース設定を迅速に読み込み中...",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Phase 2: Starting workspace services...": {
     "zh": "阶段 2: 启动工作区服务...",
-    "ja": null,
+    "ja": "フェーズ2：ワークスペースサービスを開始中...",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Platform": {
     "zh": "平台",
-    "ja": null,
+    "ja": "プラットフォーム",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Please enter": {
     "zh": "请输入",
-    "ja": null,
+    "ja": "入力してください",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Please enter API Key": {
     "zh": "请输入 API 密钥",
-    "ja": null,
+    "ja": "APIキーを入力してください",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Please enter Base URL": {
     "zh": "请输入基础 URL",
-    "ja": null,
+    "ja": "ベースURLを入力してください",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Please enter System Prompt": {
     "zh": "请输入系统提示词",
-    "ja": null,
+    "ja": "システムプロンプトを入力してください",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Please enter a valid URL": {
     "zh": "请输入有效的URL",
-    "ja": null,
+    "ja": "有効なURLを入力してください",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Please enter cron expression": {
     "zh": "请输入cron表达式",
-    "ja": null,
+    "ja": "cron式を入力してください",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Please enter gateway name": {
     "zh": "请输入网关名称",
-    "ja": null,
+    "ja": "ゲートウェイ名を入力してください",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Please enter model ID": {
     "zh": "请输入模型ID",
-    "ja": null,
+    "ja": "モデルIDを入力してください",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Please enter provider key": {
     "zh": "请输入提供商密钥",
-    "ja": null,
+    "ja": "プロバイダーキーを入力してください",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Please enter provider name": {
     "zh": "请输入提供商名称",
-    "ja": null,
+    "ja": "プロバイダー名を入力してください",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Please enter task description": {
     "zh": "请输入任务描述",
-    "ja": null,
+    "ja": "タスクの説明を入力してください",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Please enter task name": {
     "zh": "请输入任务名称",
-    "ja": null,
+    "ja": "タスク名を入力してください",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Please enter the name": {
     "zh": "请输入名称",
-    "ja": null,
+    "ja": "名前を入力してください",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Please enter workspace name": {
     "zh": "请输入工作区名称",
-    "ja": null,
+    "ja": "ワークスペース名を入力してください",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Please provide agent name": {
     "zh": "请输入代理名称",
-    "ja": null,
+    "ja": "エージェント名を入力してください",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Please provide agent subcommand": {
     "zh": "请输入代理子命令",
-    "ja": null,
+    "ja": "エージェントのサブコマンドを入力してください",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Please provide task name": {
     "zh": "请输入任务名称",
-    "ja": null,
+    "ja": "タスク名を入力してください",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Please run the following command to configure AI model first:": {
     "zh": "请先运行以下命令配置 AI 模型：",
-    "ja": null,
+    "ja": "まず、AIモデルを設定するために以下のコマンドを実行してください：",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Please select TaskFallbackLLM": {
     "zh": "请选择任务备用大语言模型",
-    "ja": null,
+    "ja": "TaskFallbackLLMを選択してください",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Please select a language model": {
     "zh": "请选择一个语言模型",
-    "ja": null,
+    "ja": "言語モデルを選択してください",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Please select a workspace to view details": {
     "zh": "请选择一个工作区以查看详情",
-    "ja": null,
+    "ja": "詳細を表示するワークスペースを選択してください",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Please select allowed MCP": {
     "zh": "请选择允许的 MCP",
-    "ja": null,
+    "ja": "許可されたMCPを選択してください",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Please select an agent": {
     "zh": "请选择一个代理",
-    "ja": null,
+    "ja": "エージェントを選択してください",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Please select folder path": {
     "zh": "请选择文件夹路径",
-    "ja": null,
+    "ja": "フォルダーパスを選択してください",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Please wait for the current request to finish": {
     "zh": "请等待当前请求完成",
-    "ja": null,
+    "ja": "現在のリクエストが完了するまでお待ちください",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Powerful AI assistant command line tool": {
     "zh": "强大的 AI 助手命令行工具",
-    "ja": null,
+    "ja": "強力なAIアシスタントコマンドラインツール",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Processing...": {
     "zh": "处理中...",
-    "ja": null,
+    "ja": "処理中...",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Prompt": {
     "zh": "提示词",
-    "ja": null,
+    "ja": "プロンプト",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Prompts Count": {
     "zh": "提示词数量",
-    "ja": null,
+    "ja": "プロンプト数",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Provider Key": {
     "zh": "提供商密钥",
-    "ja": null,
+    "ja": "プロバイダーキー",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Provider Name": {
     "zh": "提供商名称",
-    "ja": null,
+    "ja": "プロバイダー名",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Provider added successfully": {
     "zh": "提供商添加成功",
-    "ja": null,
+    "ja": "プロバイダーが正常に追加されました",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Provider and all related models deleted successfully": {
     "zh": "提供商及所有相关模型删除成功",
-    "ja": null,
+    "ja": "プロバイダーと関連するすべてのモデルが正常に削除されました",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Provider key already exists": {
     "zh": "提供商密钥已存在",
-    "ja": null,
+    "ja": "プロバイダーキーはすでに存在します",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Provider key cannot be changed": {
     "zh": "提供商密钥无法更改",
-    "ja": null,
+    "ja": "プロバイダーキーは変更できません",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Provider updated successfully": {
     "zh": "提供商更新成功",
-    "ja": null,
+    "ja": "プロバイダーを正常に更新しました",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Quick chat with specified agent": {
     "zh": "与指定代理快速聊天",
-    "ja": null,
+    "ja": "指定したエージェントとクイックチャット",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Recent Agents": {
     "zh": "最近使用的代理",
-    "ja": null,
+    "ja": "最近使用したエージェント",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Recent Chats": {
     "zh": "最近聊天",
-    "ja": null,
+    "ja": "最近のチャット",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Recent Workspaces": {
     "zh": "最近使用工作区",
-    "ja": null,
+    "ja": "最近のワークスペース",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Recently Used": {
     "zh": "最近使用",
-    "ja": null,
+    "ja": "最近使用",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Refresh MCP clients": {
     "zh": "刷新 MCP 客户端",
-    "ja": null,
+    "ja": "MCPクライアントを更新",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Refresh file tree": {
     "zh": "刷新文件树",
-    "ja": null,
+    "ja": "ファイルツリーを更新",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Reload": {
     "zh": "重新加载",
-    "ja": null,
+    "ja": "再読み込み",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Reload file": {
     "zh": "重新加载文件",
-    "ja": null,
+    "ja": "ファイルを再読み込み",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Remove from history": {
     "zh": "从历史记录中移除",
-    "ja": null,
+    "ja": "履歴から削除",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Required": {
     "zh": "必填",
-    "ja": null,
+    "ja": "必須",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Reset to Defaults": {
     "zh": "重置为默认值",
-    "ja": null,
+    "ja": "デフォルトにリセット",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Resources Count": {
     "zh": "资源数量",
-    "ja": null,
+    "ja": "リソース数",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Restart": {
     "zh": "重启",
-    "ja": null,
+    "ja": "再起動",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Result": {
     "zh": "结果",
-    "ja": null,
+    "ja": "結果",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Retry": {
     "zh": "重试",
-    "ja": null,
+    "ja": "再試行",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Run Test": {
     "zh": "运行测试",
-    "ja": null,
+    "ja": "テスト実行",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Running tool test...": {
     "zh": "正在运行工具测试...",
-    "ja": null,
+    "ja": "ツールテストを実行中...",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Save": {
     "zh": "保存",
-    "ja": null,
+    "ja": "保存",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Schedule": {
     "zh": "调度",
-    "ja": null,
+    "ja": "スケジュール",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Schedule (Cron Expression)": {
     "zh": "调度 (Cron 表达式)",
-    "ja": null,
+    "ja": "スケジュール (Cron式)",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Search MCP clients...": {
     "zh": "搜索 MCP 客户端...",
-    "ja": null,
+    "ja": "MCPクライアントを検索...",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Search agents...": {
     "zh": "搜索代理...",
-    "ja": null,
+    "ja": "エージェントを検索...",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Select AI model (optional)": {
     "zh": "选择 AI 模型（可选）",
-    "ja": null,
+    "ja": "AIモデルを選択（オプション）",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Select Directory": {
     "zh": "选择目录",
-    "ja": null,
+    "ja": "ディレクトリを選択",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Select LLM": {
     "zh": "选择大型语言模型",
-    "ja": null,
+    "ja": "LLMを選択",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Select Workspace Directory": {
     "zh": "选择工作区目录",
-    "ja": null,
+    "ja": "ワークスペースディレクトリを選択",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Select a schedule template or enter custom cron expression": {
     "zh": "选择调度模板或输入自定义 Cron 表达式",
-    "ja": null,
+    "ja": "スケジュールテンプレートを選択するか、カスタムcron式を入力",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Select allowed MCP servers": {
     "zh": "选择允许的 MCP 服务器",
-    "ja": null,
+    "ja": "許可されたMCPサーバーを選択",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Select an agent": {
     "zh": "选择代理",
-    "ja": null,
+    "ja": "エージェントを選択",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Select an agent to start a conversation": {
     "zh": "选择一个代理开始对话",
-    "ja": null,
+    "ja": "会話を開始するエージェントを選択",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Select creation time": {
     "zh": "选择创建时间",
-    "ja": null,
+    "ja": "作成時間を選択",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Select tools and capabilities for this agent": {
     "zh": "选择此代理的工具和功能",
-    "ja": null,
+    "ja": "このエージェントのツールと機能を選択",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Send": {
     "zh": "发送",
-    "ja": null,
+    "ja": "送信",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Sending": {
     "zh": "正在发送",
-    "ja": null,
+    "ja": "送信中",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Server Name": {
     "zh": "服务器名称",
-    "ja": null,
+    "ja": "サーバー名",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Server password": {
     "zh": "服务器密码",
-    "ja": null,
+    "ja": "サーバーパスワード",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Server started successfully...": {
     "zh": "服务器启动成功...",
-    "ja": null,
+    "ja": "サーバーが正常に起動しました...",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Service is running": {
     "zh": "服务正在运行",
-    "ja": null,
+    "ja": "サービス稼働中",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Service not running or not initialized": {
     "zh": "服务未运行或未初始化",
-    "ja": null,
+    "ja": "サービスが実行されていないか、初期化されていません",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Service started, press Ctrl+C to stop...": {
     "zh": "服务已启动，按 Ctrl+C 停止...",
-    "ja": null,
+    "ja": "サービスを開始しました。停止するにはCtrl+Cを押してください...",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Set Default": {
     "zh": "设为默认",
-    "ja": null,
+    "ja": "デフォルトに設定",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Set interface to Chinese": {
     "zh": "界面设为中文",
-    "ja": null,
+    "ja": "インターフェースを中国語に設定",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Set interface to English": {
     "zh": "界面设为英文",
-    "ja": null,
+    "ja": "インターフェースを英語に設定",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Set language (zh/en, highest priority)": {
     "zh": "设置语言（zh/en，最高优先级）",
-    "ja": null,
+    "ja": "言語を設定（zh/en、最優先）",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Settings": {
     "zh": "设置",
-    "ja": null,
+    "ja": "設定",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Settings reset to defaults": {
     "zh": "设置已重置为默认值",
-    "ja": null,
+    "ja": "設定をデフォルトにリセットしました",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Settings saved successfully": {
     "zh": "设置保存成功",
-    "ja": null,
+    "ja": "設定を保存しました",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Settings updated successfully": {
     "zh": "设置更新成功",
-    "ja": null,
+    "ja": "設定を更新しました",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Show available MCP tools": {
     "zh": "显示可用 MCP 工具",
-    "ja": null,
+    "ja": "利用可能なMCPツールを表示",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Show current model": {
     "zh": "显示当前模型",
-    "ja": null,
+    "ja": "現在のモデルを表示",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Show help": {
     "zh": "显示帮助",
-    "ja": null,
+    "ja": "ヘルプを表示",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Show help information": {
     "zh": "显示帮助信息",
-    "ja": null,
+    "ja": "ヘルプ情報を表示",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Show hidden files": {
     "zh": "显示隐藏文件",
-    "ja": null,
+    "ja": "隠しファイルを表示",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Show or set interface language": {
     "zh": "显示或设置界面语言",
-    "ja": null,
+    "ja": "インターフェース言語の表示または設定",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Show scheduler status": {
     "zh": "显示调度器状态",
-    "ja": null,
+    "ja": "スケジューラーのステータスを表示",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Show task details": {
     "zh": "显示任务详情",
-    "ja": null,
+    "ja": "タスクの詳細を表示",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Show task statistics": {
     "zh": "显示任务统计",
-    "ja": null,
+    "ja": "タスクの統計を表示",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Show verbose logs": {
     "zh": "显示详细日志",
-    "ja": null,
+    "ja": "詳細ログを表示",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Silent mode": {
     "zh": "静默模式",
-    "ja": null,
+    "ja": "サイレントモード",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Source": {
     "zh": "来源",
-    "ja": null,
+    "ja": "ソース",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Specify port (default: 16100)": {
     "zh": "指定端口（默认: 16100）",
-    "ja": null,
+    "ja": "ポートを指定 (デフォルト: 16100)",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Standard": {
     "zh": "标准",
-    "ja": null,
+    "ja": "標準",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Start AI chat session (default command)": {
     "zh": "开始 AI 聊天会话（默认命令）",
-    "ja": null,
+    "ja": "AIチャットセッションを開始（デフォルトコマンド）",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Start backend server (includes Web UI)": {
     "zh": "启动后端服务器（含 Web 界面）",
-    "ja": null,
+    "ja": "バックエンドサーバーを起動（Web UIを含む）",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Start chatting in your workspace": {
     "zh": "在工作区中开始聊天",
-    "ja": null,
+    "ja": "ワークスペースでチャットを開始",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Start core service (background task scheduling)": {
     "zh": "启动核心服务（后台任务调度）",
-    "ja": null,
+    "ja": "コアサービスを開始（バックグラウンドタスクスケジューリング）",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Start core service (no Web UI)": {
     "zh": "启动核心服务（无 Web 界面）",
-    "ja": null,
+    "ja": "コアサービスを開始（Web UIなし）",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Start inputting...": {
     "zh": "开始输入...",
-    "ja": null,
+    "ja": "入力を開始...",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Start server (includes Web UI)": {
     "zh": "启动服务器（含 Web 界面）",
-    "ja": null,
+    "ja": "サーバーを起動（Web UIを含む）",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Starting HyperChat server...": {
     "zh": "正在启动 HyperChat 服务器...",
-    "ja": null,
+    "ja": "HyperChatサーバーを起動中...",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Starting core service...": {
     "zh": "正在启动核心服务...",
-    "ja": null,
+    "ja": "コアサービスを起動中...",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Starting interactive chat...": {
     "zh": "正在启动交互式聊天...",
-    "ja": null,
+    "ja": "インタラクティブチャットを開始中...",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Status": {
     "zh": "状态",
-    "ja": null,
+    "ja": "ステータス",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Status:": {
     "zh": "状态：",
-    "ja": null,
+    "ja": "ステータス:",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Submit": {
     "zh": "提交",
-    "ja": null,
+    "ja": "送信",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Support Images": {
     "zh": "支持图像",
-    "ja": null,
+    "ja": "画像サポート",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Support Tools": {
     "zh": "支持工具",
-    "ja": null,
+    "ja": "ツールサポート",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Switch": {
     "zh": "切换",
-    "ja": null,
+    "ja": "切り替え",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Switch Workspace": {
     "zh": "切换工作区",
-    "ja": null,
+    "ja": "ワークスペースを切り替える",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Switch to Global Workspace": {
     "zh": "切换到全局工作区",
-    "ja": null,
+    "ja": "グローバルワークスペースに切り替える",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Switched to workspace": {
     "zh": "已切换到工作区",
-    "ja": null,
+    "ja": "ワークスペースに切り替えました",
     "ko": null,
     "fr": null,
     "de": null
   },
   "System": {
     "zh": "系统",
-    "ja": null,
+    "ja": "システム",
     "ko": null,
     "fr": null,
     "de": null
   },
   "System Information": {
     "zh": "系统信息",
-    "ja": null,
+    "ja": "システム情報",
     "ko": null,
     "fr": null,
     "de": null
   },
   "System PATH": {
     "zh": "系统路径",
-    "ja": null,
+    "ja": "システムパス",
     "ko": null,
     "fr": null,
     "de": null
   },
   "System Prompt": {
     "zh": "系统提示词",
-    "ja": null,
+    "ja": "システムプロンプト",
     "ko": null,
     "fr": null,
     "de": null
   },
   "System management": {
     "zh": "系统管理",
-    "ja": null,
+    "ja": "システム管理",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Task Details": {
     "zh": "任务详情",
-    "ja": null,
+    "ja": "タスク詳細",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Task Name": {
     "zh": "任务名称",
-    "ja": null,
+    "ja": "タスク名",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Task cloned successfully": {
     "zh": "任务克隆成功",
-    "ja": null,
+    "ja": "タスクが正常に複製されました",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Task created successfully": {
     "zh": "任务创建成功",
-    "ja": null,
+    "ja": "タスクが正常に作成されました",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Task created successfully!": {
     "zh": "任务创建成功！",
-    "ja": null,
+    "ja": "タスクが正常に作成されました！",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Task deleted successfully": {
     "zh": "任务删除成功",
-    "ja": null,
+    "ja": "タスクが正常に削除されました",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Task description cannot exceed 500 characters": {
     "zh": "任务描述不能超过500个字符",
-    "ja": null,
+    "ja": "タスクの説明は500文字を超えることはできません",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Task details:": {
     "zh": "任务详情：",
-    "ja": null,
+    "ja": "タスク詳細：",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Task disabled successfully": {
     "zh": "任务已成功禁用",
-    "ja": null,
+    "ja": "タスクを正常に無効にしました",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Task enabled successfully": {
     "zh": "任务已成功启用",
-    "ja": null,
+    "ja": "タスクを正常に有効にしました",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Task list:": {
     "zh": "任务列表：",
-    "ja": null,
+    "ja": "タスクリスト:",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Task management": {
     "zh": "任务管理",
-    "ja": null,
+    "ja": "タスク管理",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Task name cannot exceed 100 characters": {
     "zh": "任务名称不能超过100个字符",
-    "ja": null,
+    "ja": "タスク名は100文字を超えることはできません",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Task scheduler status:": {
     "zh": "任务调度器状态：",
-    "ja": null,
+    "ja": "タスクスケジューラのステータス:",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Task statistics:": {
     "zh": "任务统计：",
-    "ja": null,
+    "ja": "タスク統計:",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Task updated successfully": {
     "zh": "任务已成功更新",
-    "ja": null,
+    "ja": "タスクを正常に更新しました",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Task updated successfully!": {
     "zh": "任务更新成功！",
-    "ja": null,
+    "ja": "タスクが正常に更新されました！",
     "ko": null,
     "fr": null,
     "de": null
   },
   "TaskFallbackLLM": {
     "zh": "任务回退大型语言模型",
-    "ja": null,
+    "ja": "タスクフォールバックLLM",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Tasks": {
     "zh": "任务",
-    "ja": null,
+    "ja": "タスク",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Tasks being scheduled:": {
     "zh": "正在调度的任务：",
-    "ja": null,
+    "ja": "スケジュール中のタスク：",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Tasks in scheduling:": {
     "zh": "调度中的任务：",
-    "ja": null,
+    "ja": "スケジュール中のタスク：",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Temperature": {
     "zh": "温度",
-    "ja": null,
+    "ja": "温度",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Terminal": {
     "zh": "终端",
-    "ja": null,
+    "ja": "ターミナル",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Test": {
     "zh": "测试",
-    "ja": null,
+    "ja": "テスト",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Test Tool": {
     "zh": "测试工具",
-    "ja": null,
+    "ja": "ツールテスト",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Thinking...": {
     "zh": "思考中...",
-    "ja": null,
+    "ja": "思考中...",
     "ko": null,
     "fr": null,
     "de": null
   },
   "This directory is already a workspace": {
     "zh": "此目录已是一个工作区",
-    "ja": null,
+    "ja": "このディレクトリはすでにワークスペースです",
     "ko": null,
     "fr": null,
     "de": null
   },
   "This directory is not a workspace": {
     "zh": "此目录不是一个工作区",
-    "ja": null,
+    "ja": "このディレクトリはワークスペースではありません",
     "ko": null,
     "fr": null,
     "de": null
   },
   "This operation cannot be undone!": {
     "zh": "此操作无法撤销！",
-    "ja": null,
+    "ja": "この操作は元に戻せません！",
     "ko": null,
     "fr": null,
     "de": null
   },
   "This will permanently delete the provider and all its models": {
     "zh": "这将永久删除此提供商及其所有模型",
-    "ja": null,
+    "ja": "これにより、プロバイダーとすべてのモデルが完全に削除されます",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Tool Execution": {
     "zh": "工具执行",
-    "ja": null,
+    "ja": "ツール実行",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Tool Mode": {
     "zh": "工具模式",
-    "ja": null,
+    "ja": "ツールモード",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Tool execution failed": {
     "zh": "工具执行失败",
-    "ja": null,
+    "ja": "ツール実行に失敗しました",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Tools": {
     "zh": "工具",
-    "ja": null,
+    "ja": "ツール",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Tools Count": {
     "zh": "工具数量",
-    "ja": null,
+    "ja": "ツール数",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Tools count": {
     "zh": "工具数量",
-    "ja": null,
+    "ja": "ツール数",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Total Agents": {
     "zh": "代理总数",
-    "ja": null,
+    "ja": "合計エージェント数",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Total Conversations": {
     "zh": "会话总数",
-    "ja": null,
+    "ja": "合計会話数",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Type": {
     "zh": "类型",
-    "ja": null,
+    "ja": "タイプ",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Type /exit to exit, /help for help, /clear to clear chat history": {
     "zh": "输入 /exit 退出，/help 获取帮助，/clear 清除聊天记录",
-    "ja": null,
+    "ja": "/exit で終了、/help でヘルプ、/clear でチャット履歴をクリア",
     "ko": null,
     "fr": null,
     "de": null
   },
   "UUID": {
     "zh": "UUID",
-    "ja": null,
+    "ja": "UUID",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Unique identifier for this provider (letters and numbers only)": {
     "zh": "此提供商的唯一标识符（仅限字母和数字）",
-    "ja": null,
+    "ja": "このプロバイダーの一意の識別子（英数字のみ）",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Unknown": {
     "zh": "未知",
-    "ja": null,
+    "ja": "不明",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Unsaved Changes": {
     "zh": "未保存的更改",
-    "ja": null,
+    "ja": "未保存の変更",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Update": {
     "zh": "更新",
-    "ja": null,
+    "ja": "更新",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Upload Image": {
     "zh": "上传图片",
-    "ja": null,
+    "ja": "画像をアップロード",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Usage:": {
     "zh": "用法：",
-    "ja": null,
+    "ja": "使用法：",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Usage: hyperchat agent create <name>": {
     "zh": "用法：hyperchat agent create <名称>",
-    "ja": null,
+    "ja": "使用法: hyperchat agent create <name>",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Usage: hyperchat agent delete <name>": {
     "zh": "用法: hyperchat 代理 删除 <名称>",
-    "ja": null,
+    "ja": "使用法: hyperchat agent delete <name>",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Usage: hyperchat language <lang>": {
     "zh": "用法: hyperchat 语言 <语言>",
-    "ja": null,
+    "ja": "使用法: hyperchat language <lang>",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Usage: hyperchat task delete <name> [--force]": {
     "zh": "用法: hyperchat 任务 删除 <名称> [--force]",
-    "ja": null,
+    "ja": "使用法: hyperchat task delete <name> [--force]",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Usage: hyperchat task disable <name>": {
     "zh": "用法: hyperchat 任务 禁用 <名称>",
-    "ja": null,
+    "ja": "使用法: hyperchat task disable <name>",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Usage: hyperchat task enable <name>": {
     "zh": "用法: hyperchat 任务 启用 <名称>",
-    "ja": null,
+    "ja": "使用法: hyperchat task enable <name>",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Usage: hyperchat task show <name>": {
     "zh": "用法: hyperchat 任务 显示 <名称>",
-    "ja": null,
+    "ja": "使用法: hyperchat task show <name>",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Usage: hyperchat task trigger <name>": {
     "zh": "用法: hyperchat 任务 触发 <名称>",
-    "ja": null,
+    "ja": "使用法: hyperchat task trigger <name>",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Use --force parameter to skip confirmation": {
     "zh": "使用 --force 参数跳过确认",
-    "ja": null,
+    "ja": "--force パラメータを使用して確認をスキップします",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Use Chinese for this command": {
     "zh": "此命令使用中文",
-    "ja": null,
+    "ja": "このコマンドでは中国語を使用",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Use hyperchat task create <name> to create a new task": {
     "zh": "使用 hyperchat task create <name> 创建新任务",
-    "ja": null,
+    "ja": "hyperchat task create <name> を使用して新しいタスクを作成",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Use specified workspace (override auto-detection)": {
     "zh": "使用指定工作区（覆盖自动检测）",
-    "ja": null,
+    "ja": "指定されたワークスペースを使用（自動検出を上書き）",
     "ko": null,
     "fr": null,
     "de": null
   },
   "User Cancel": {
     "zh": "用户取消",
-    "ja": null,
+    "ja": "ユーザーキャンセル",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Version": {
     "zh": "版本",
-    "ja": null,
+    "ja": "バージョン",
     "ko": null,
     "fr": null,
     "de": null
   },
   "View Details": {
     "zh": "查看详情",
-    "ja": null,
+    "ja": "詳細を表示",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Waiting for server to start...": {
     "zh": "等待服务器启动中...",
-    "ja": null,
+    "ja": "サーバーの起動を待機中...",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Welcome": {
     "zh": "欢迎",
-    "ja": null,
+    "ja": "ようこそ",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Welcome Chat": {
     "zh": "欢迎聊天",
-    "ja": null,
+    "ja": "ようこそチャット",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Welcome to Global Workspace": {
     "zh": "欢迎来到全局工作区",
-    "ja": null,
+    "ja": "グローバルワークスペースへようこそ",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Welcome to HyperChat CLI! 🎉": {
     "zh": "欢迎使用 HyperChat 命令行工具！🎉",
-    "ja": null,
+    "ja": "HyperChat CLIへようこそ！🎉",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Whether to confirm before calling tools": {
     "zh": "调用工具前是否确认",
-    "ja": null,
+    "ja": "ツール呼び出し前に確認するか",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Workspace": {
     "zh": "工作区",
-    "ja": null,
+    "ja": "ワークスペース",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Workspace Chat": {
     "zh": "工作区聊天",
-    "ja": null,
+    "ja": "ワークスペースチャット",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Workspace Name": {
     "zh": "工作区名称",
-    "ja": null,
+    "ja": "ワークスペース名",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Workspace Settings": {
     "zh": "工作区设置",
-    "ja": null,
+    "ja": "ワークスペース設定",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Workspace View": {
     "zh": "工作区视图",
-    "ja": null,
+    "ja": "ワークスペースビュー",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Workspace configuration loaded": {
     "zh": "工作区配置已加载",
-    "ja": null,
+    "ja": "ワークスペース設定を読み込みました",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Workspace created and switched successfully": {
     "zh": "工作区创建并切换成功",
-    "ja": null,
+    "ja": "ワークスペースが作成され、正常に切り替わりました",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Workspace information:": {
     "zh": "工作区信息：",
-    "ja": null,
+    "ja": "ワークスペース情報:",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Workspace opened successfully": {
     "zh": "工作区打开成功",
-    "ja": null,
+    "ja": "ワークスペースが正常に開かれました",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Workspace services started": {
     "zh": "工作区服务已启动",
-    "ja": null,
+    "ja": "ワークスペースサービスを開始しました",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Workspace status:": {
     "zh": "工作区状态：",
-    "ja": null,
+    "ja": "ワークスペースステータス:",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Yes": {
     "zh": "是",
-    "ja": null,
+    "ja": "はい",
     "ko": null,
     "fr": null,
     "de": null
   },
   "You have unsaved changes": {
     "zh": "您有未保存的更改",
-    "ja": null,
+    "ja": "未保存の変更があります",
     "ko": null,
     "fr": null,
     "de": null
   },
   "You have unsaved changes. Are you sure you want to close the file?": {
     "zh": "您有未保存的更改。确定要关闭文件吗？",
-    "ja": null,
+    "ja": "未保存の変更があります。ファイルを閉じてもよろしいですか？",
     "ko": null,
     "fr": null,
     "de": null
   },
   "You have unsaved changes. Are you sure you want to reload the file?": {
     "zh": "您有未保存的更改。确定要重新加载文件吗？",
-    "ja": null,
+    "ja": "未保存の変更があります。ファイルをリロードしてもよろしいですか？",
     "ko": null,
     "fr": null,
     "de": null
   },
   "You:": {
     "zh": "您：",
-    "ja": null,
+    "ja": "あなた:",
     "ko": null,
     "fr": null,
     "de": null
   },
   "allowMCPs": {
     "zh": "允许 MCP",
-    "ja": null,
+    "ja": "MCPを許可",
     "ko": null,
     "fr": null,
     "de": null
   },
   "attachments": {
     "zh": "附件",
-    "ja": null,
+    "ja": "添付ファイル",
     "ko": null,
     "fr": null,
     "de": null
   },
   "built-in": {
     "zh": "内置",
-    "ja": null,
+    "ja": "組み込み",
     "ko": null,
     "fr": null,
     "de": null
   },
   "chat": {
     "zh": "聊天",
-    "ja": null,
+    "ja": "チャット",
     "ko": null,
     "fr": null,
     "de": null
   },
   "e.g., Custom OpenAI": {
     "zh": "例如：自定义 OpenAI",
-    "ja": null,
+    "ja": "例: カスタムOpenAI",
     "ko": null,
     "fr": null,
     "de": null
   },
   "e.g., My custom OpenAI provider": {
     "zh": "例如：我的自定义 OpenAI 提供商",
-    "ja": null,
+    "ja": "例: マイカスタムOpenAIプロバイダー",
     "ko": null,
     "fr": null,
     "de": null
   },
   "e.g., custom-openai": {
     "zh": "例如：custom-openai",
-    "ja": null,
+    "ja": "例: custom-openai",
     "ko": null,
     "fr": null,
     "de": null
   },
   "e.g., gpt-4.1": {
     "zh": "例如：gpt-4.1",
-    "ja": null,
+    "ja": "例: gpt-4.1",
     "ko": null,
     "fr": null,
     "de": null
   },
   "e.g., https://api.example.com/v1": {
     "zh": "例如：https://api.example.com/v1",
-    "ja": null,
+    "ja": "例: https://api.example.com/v1",
     "ko": null,
     "fr": null,
     "de": null
   },
   "hours ago": {
     "zh": "小时前",
-    "ja": null,
+    "ja": "時間前",
     "ko": null,
     "fr": null,
     "de": null
   },
   "minutes ago": {
     "zh": "分钟前",
-    "ja": null,
+    "ja": "分前",
     "ko": null,
     "fr": null,
     "de": null
   },
   "models": {
     "zh": "模型",
-    "ja": null,
+    "ja": "モデル",
     "ko": null,
     "fr": null,
     "de": null
   },
   "please select emoji!": {
     "zh": "请选择表情！",
-    "ja": null,
+    "ja": "絵文字を選択してください！",
     "ko": null,
     "fr": null,
     "de": null
   },
   "please upload image": {
     "zh": "请上传图片",
-    "ja": null,
+    "ja": "画像をアップロードしてください",
     "ko": null,
     "fr": null,
     "de": null
   },
   "related": {
     "zh": "相关",
-    "ja": null,
+    "ja": "関連",
     "ko": null,
     "fr": null,
     "de": null
   },
   "request-headers": {
     "zh": "请求头",
-    "ja": null,
+    "ja": "リクエストヘッダー",
     "ko": null,
     "fr": null,
     "de": null
   },
   "resources": {
     "zh": "资源",
-    "ja": null,
+    "ja": "リソース",
     "ko": null,
     "fr": null,
     "de": null
   },
   "tasks": {
     "zh": "任务",
-    "ja": null,
+    "ja": "タスク",
     "ko": null,
     "fr": null,
     "de": null
   },
   "thinking": {
     "zh": "思考中",
-    "ja": null,
+    "ja": "思考中",
     "ko": null,
     "fr": null,
     "de": null
   },
   "tools": {
     "zh": "工具",
-    "ja": null,
+    "ja": "ツール",
     "ko": null,
     "fr": null,
     "de": null
   },
   "type": {
     "zh": "类型",
-    "ja": null,
+    "ja": "タイプ",
     "ko": null,
     "fr": null,
     "de": null
   },
   "✅ Service shut down safely": {
     "zh": "✅ 服务已安全关闭",
-    "ja": null,
+    "ja": "✅ サービスは安全にシャットダウンされました",
     "ko": null,
     "fr": null,
     "de": null
   },
   "✅ Workspace created successfully": {
     "zh": "✅ 工作区创建成功",
-    "ja": null,
+    "ja": "✅ ワークスペースが正常に作成されました",
     "ko": null,
     "fr": null,
     "de": null
   },
   "\"hello\" to chat with this agent": {
     "zh": "输入“hello”与此代理聊天",
-    "ja": null,
+    "ja": "このエージェントとチャットするには「hello」と入力してください",
     "ko": null,
     "fr": null,
     "de": null
   },
   "About to delete task:": {
     "zh": "即将删除任务：",
-    "ja": null,
+    "ja": "タスクを削除しようとしています:",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Agent:": {
     "zh": "代理：",
-    "ja": null,
+    "ja": "エージェント:",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Agents:": {
     "zh": "代理：",
-    "ja": null,
+    "ja": "エージェント:",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Available tools": {
     "zh": "可用工具",
-    "ja": null,
+    "ja": "利用可能なツール",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Chat initialization failed:": {
     "zh": "聊天初始化失败：",
-    "ja": null,
+    "ja": "チャットの初期化に失敗しました:",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Chat logs:": {
     "zh": "聊天记录：",
-    "ja": null,
+    "ja": "チャット履歴:",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Command execution failed:": {
     "zh": "命令执行失败：",
-    "ja": null,
+    "ja": "コマンドの実行に失敗しました:",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Created:": {
     "zh": "已创建：",
-    "ja": null,
+    "ja": "作成日時:",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Creating agent:": {
     "zh": "正在创建代理：",
-    "ja": null,
+    "ja": "エージェントを作成中:",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Creating task:": {
     "zh": "正在创建任务：",
-    "ja": null,
+    "ja": "タスクを作成中:",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Creating workspace:": {
     "zh": "正在创建工作区：",
-    "ja": null,
+    "ja": "ワークスペースを作成中:",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Current Agent:": {
     "zh": "当前代理：",
-    "ja": null,
+    "ja": "現在のエージェント:",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Current interface language:": {
     "zh": "当前界面语言：",
-    "ja": null,
+    "ja": "現在のインターフェース言語:",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Current model:": {
     "zh": "当前模型：",
-    "ja": null,
+    "ja": "現在のモデル:",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Current workspace Agent count:": {
     "zh": "当前工作区代理数量：",
-    "ja": null,
+    "ja": "現在のワークスペースのエージェント数:",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Current workspace available MCP tools count:": {
     "zh": "当前工作区可用 MCP 工具数量：",
-    "ja": null,
+    "ja": "現在のワークスペースで利用可能なMCPツール数:",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Deleting task:": {
     "zh": "正在删除任务：",
-    "ja": null,
+    "ja": "タスクを削除中:",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Description:": {
     "zh": "描述：",
-    "ja": null,
+    "ja": "説明:",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Disabled:": {
     "zh": "已禁用：",
-    "ja": null,
+    "ja": "無効:",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Disabling task:": {
     "zh": "正在禁用任务：",
-    "ja": null,
+    "ja": "タスクを無効化中:",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Editing task:": {
     "zh": "编辑任务:",
-    "ja": null,
+    "ja": "タスクを編集:",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Enabled:": {
     "zh": "已启用:",
-    "ja": null,
+    "ja": "有効:",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Enabling task:": {
     "zh": "正在启用任务:",
-    "ja": null,
+    "ja": "タスクを有効化中:",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Error occurred during exit:": {
     "zh": "退出时发生错误:",
-    "ja": null,
+    "ja": "終了中にエラーが発生しました:",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Error shutting down service:": {
     "zh": "关闭服务时发生错误:",
-    "ja": null,
+    "ja": "サービスのシャットダウン中にエラーが発生しました:",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Error: Agent": {
     "zh": "错误: 代理",
-    "ja": null,
+    "ja": "エラー: エージェント",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Error: Task": {
     "zh": "错误: 任务",
-    "ja": null,
+    "ja": "エラー: タスク",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Failed to change language:": {
     "zh": "更改语言失败:",
-    "ja": null,
+    "ja": "言語の変更に失敗しました:",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Failed to create agent:": {
     "zh": "创建代理失败:",
-    "ja": null,
+    "ja": "エージェントの作成に失敗しました:",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Failed to create task:": {
     "zh": "创建任务失败:",
-    "ja": null,
+    "ja": "タスクの作成に失敗しました:",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Failed to create workspace:": {
     "zh": "创建工作区失败:",
-    "ja": null,
+    "ja": "ワークスペースの作成に失敗しました:",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Failed to delete agent:": {
     "zh": "删除代理失败:",
-    "ja": null,
+    "ja": "エージェントの削除に失敗しました:",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Failed to delete task:": {
     "zh": "删除任务失败:",
-    "ja": null,
+    "ja": "タスクの削除に失敗しました:",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Failed to disable task:": {
     "zh": "禁用任务失败:",
-    "ja": null,
+    "ja": "タスクの無効化に失敗しました:",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Failed to edit task:": {
     "zh": "编辑任务失败:",
-    "ja": null,
+    "ja": "タスクの編集に失敗しました:",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Failed to enable task:": {
     "zh": "启用任务失败:",
-    "ja": null,
+    "ja": "タスクの有効化に失敗しました:",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Failed to get agent list:": {
     "zh": "获取代理列表失败:",
-    "ja": null,
+    "ja": "エージェントリストの取得に失敗しました:",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Failed to get scheduler status:": {
     "zh": "获取调度器状态失败:",
-    "ja": null,
+    "ja": "スケジューラーステータスの取得に失敗しました:",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Failed to get status:": {
     "zh": "获取状态失败:",
-    "ja": null,
+    "ja": "ステータスの取得に失敗しました:",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Failed to get task details:": {
     "zh": "获取任务详情失败:",
-    "ja": null,
+    "ja": "タスク詳細の取得に失敗しました:",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Failed to get task list:": {
     "zh": "获取任务列表失败:",
-    "ja": null,
+    "ja": "タスクリストの取得に失敗しました:",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Failed to get task statistics:": {
     "zh": "获取任务统计失败:",
-    "ja": null,
+    "ja": "タスク統計の取得に失敗しました:",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Failed to get workspace information:": {
     "zh": "获取工作区信息失败:",
-    "ja": null,
+    "ja": "ワークスペース情報の取得に失敗しました:",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Failed to get workspace list:": {
     "zh": "获取工作区列表失败:",
-    "ja": null,
+    "ja": "ワークスペースリストの取得に失敗しました:",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Failed to save language setting:": {
     "zh": "保存语言设置失败：",
-    "ja": null,
+    "ja": "言語設定の保存に失敗しました:",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Failed to trigger task:": {
     "zh": "触发任务失败：",
-    "ja": null,
+    "ja": "タスクのトリガーに失敗しました:",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Getting task details:": {
     "zh": "正在获取任务详情：",
-    "ja": null,
+    "ja": "タスクの詳細を取得中:",
     "ko": null,
     "fr": null,
     "de": null
   },
   "In scheduling:": {
     "zh": "调度中：",
-    "ja": null,
+    "ja": "スケジュール中:",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Interface language changed to": {
     "zh": "界面语言已更改为",
-    "ja": null,
+    "ja": "インターフェース言語を以下に変更しました",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Interface language is already set to": {
     "zh": "界面语言已设置为",
-    "ja": null,
+    "ja": "インターフェース言語はすでに以下に設定されています",
     "ko": null,
     "fr": null,
     "de": null
   },
   "MCP clients:": {
     "zh": "MCP 客户端：",
-    "ja": null,
+    "ja": "MCPクライアント:",
     "ko": null,
     "fr": null,
     "de": null
   },
   "MCP services:": {
     "zh": "MCP 服务：",
-    "ja": null,
+    "ja": "MCPサービス:",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Manually triggering task:": {
     "zh": "手动触发任务:",
-    "ja": null,
+    "ja": "タスクを手動でトリガー中:",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Missing required parameter:": {
     "zh": "缺少必填参数:",
-    "ja": null,
+    "ja": "必須パラメーターがありません:",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Model:": {
     "zh": "模型:",
-    "ja": null,
+    "ja": "モデル:",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Name:": {
     "zh": "名称:",
-    "ja": null,
+    "ja": "名前:",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Path:": {
     "zh": "路径:",
-    "ja": null,
+    "ja": "パス:",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Processing message:": {
     "zh": "正在处理消息:",
-    "ja": null,
+    "ja": "メッセージを処理中:",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Received exit signal": {
     "zh": "收到退出信号",
-    "ja": null,
+    "ja": "終了シグナルを受信しました",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Schedule:": {
     "zh": "调度:",
-    "ja": null,
+    "ja": "スケジュール:",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Scheduler status:": {
     "zh": "调度器状态：",
-    "ja": null,
+    "ja": "スケジューラーのステータス:",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Specified model": {
     "zh": "指定模型",
-    "ja": null,
+    "ja": "指定されたモデル",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Startup failed:": {
     "zh": "启动失败：",
-    "ja": null,
+    "ja": "起動に失敗しました:",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Statistics:": {
     "zh": "统计：",
-    "ja": null,
+    "ja": "統計:",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Tags:": {
     "zh": "标签：",
-    "ja": null,
+    "ja": "タグ:",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Task": {
     "zh": "任务",
-    "ja": null,
+    "ja": "タスク",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Tasks:": {
     "zh": "任务：",
-    "ja": null,
+    "ja": "タスク:",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Total": {
     "zh": "总计",
-    "ja": null,
+    "ja": "合計",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Total tasks:": {
     "zh": "任务总数：",
-    "ja": null,
+    "ja": "合計タスク数:",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Total:": {
     "zh": "总计：",
-    "ja": null,
+    "ja": "合計:",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Uncaught exception:": {
     "zh": "未捕获异常：",
-    "ja": null,
+    "ja": "捕捉されていない例外:",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Unhandled Promise rejection:": {
     "zh": "未处理的 Promise 拒绝：",
-    "ja": null,
+    "ja": "処理されていないPromiseの拒否:",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Unknown agent command or agent does not exist:": {
     "zh": "未知代理命令或代理不存在：",
-    "ja": null,
+    "ja": "不明なエージェントコマンド、またはエージェントが存在しません:",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Unknown parameter:": {
     "zh": "未知参数：",
-    "ja": null,
+    "ja": "不明なパラメーター:",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Unknown task command:": {
     "zh": "未知任务命令：",
-    "ja": null,
+    "ja": "不明なタスクコマンド:",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Unknown workspace command:": {
     "zh": "未知工作区命令：",
-    "ja": null,
+    "ja": "不明なワークスペースコマンド:",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Unsupported language:": {
     "zh": "不支持的语言：",
-    "ja": null,
+    "ja": "サポートされていない言語:",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Use hyperchat": {
     "zh": "使用 HyperChat",
-    "ja": null,
+    "ja": "HyperChatを使用",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Using AI model specified from command line:": {
     "zh": "使用命令行指定的 AI 模型：",
-    "ja": null,
+    "ja": "コマンドラインで指定されたAIモデルを使用中:",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Using model:": {
     "zh": "使用模型：",
-    "ja": null,
+    "ja": "使用モデル:",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Using workspace:": {
     "zh": "使用工作区：",
-    "ja": null,
+    "ja": "使用ワークスペース:",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Viewing workspace info:": {
     "zh": "查看工作区信息：",
-    "ja": null,
+    "ja": "ワークスペース情報を表示中:",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Welcome to": {
     "zh": "欢迎使用",
-    "ja": null,
+    "ja": "ようこそ",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Workspace path:": {
     "zh": "工作区路径：",
-    "ja": null,
+    "ja": "ワークスペースパス:",
     "ko": null,
     "fr": null,
     "de": null
   },
   "Workspace:": {
     "zh": "工作区:",
-    "ja": null,
+    "ja": "ワークスペース:",
     "ko": null,
     "fr": null,
     "de": null
   },
   "agents": {
     "zh": "代理",
-    "ja": null,
+    "ja": "エージェント",
     "ko": null,
     "fr": null,
     "de": null
   },
   "deleted": {
     "zh": "已删除",
-    "ja": null,
+    "ja": "削除済み",
     "ko": null,
     "fr": null,
     "de": null
   },
   "disabled": {
     "zh": "已禁用",
-    "ja": null,
+    "ja": "無効",
     "ko": null,
     "fr": null,
     "de": null
   },
   "does not exist": {
     "zh": "不存在",
-    "ja": null,
+    "ja": "存在しません",
     "ko": null,
     "fr": null,
     "de": null
   },
   "enabled": {
     "zh": "已启用",
-    "ja": null,
+    "ja": "有効",
     "ko": null,
     "fr": null,
     "de": null
   },
   "entries": {
     "zh": "条目",
-    "ja": null,
+    "ja": "エントリ",
     "ko": null,
     "fr": null,
     "de": null
   },
   "is not available, using default model": {
     "zh": "不可用，正在使用默认模型",
-    "ja": null,
+    "ja": "が利用できません。デフォルトモデルを使用します",
     "ko": null,
     "fr": null,
     "de": null
   },
   "items": {
     "zh": "项",
-    "ja": null,
+    "ja": "項目",
     "ko": null,
     "fr": null,
     "de": null
   },
   "shutting down service...": {
     "zh": "正在关闭服务...",
-    "ja": null,
+    "ja": "サービスをシャットダウンしています...",
     "ko": null,
     "fr": null,
     "de": null
   },
   "tasks in scheduling": {
     "zh": "调度中的任务",
-    "ja": null,
+    "ja": "スケジュール中のタスク",
     "ko": null,
     "fr": null,
     "de": null
   },
   "triggered for execution": {
     "zh": "已触发执行",
-    "ja": null,
+    "ja": "実行がトリガーされました",
     "ko": null,
     "fr": null,
     "de": null

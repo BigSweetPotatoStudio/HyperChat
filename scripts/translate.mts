@@ -243,6 +243,15 @@ interface AIConfig {
 
 // 🎯 获取 AI 模型
 function getAIModel(config: AIConfig) {
+  // 如果使用 OpenRouter，统一使用 OpenAI 兼容接口
+  if (config.baseURL && config.baseURL.includes('openrouter.ai')) {
+    const openai = createOpenAI({
+      apiKey: config.apiKey,
+      baseURL: config.baseURL
+    });
+    return openai(config.model);
+  }
+  
   switch (config.provider) {
     case 'openai':
       const openai = createOpenAI({
@@ -467,10 +476,21 @@ function validateTranslation(original: string, translation: string, targetLang: 
 
 // 🎯 解析 AI 配置
 function parseAIConfig(): { aiConfig: AIConfig; targetLang: string } {
-  const provider = (argv.provider || 'google') as AIConfig['provider'];
-  const model = argv.model || "google/gemini-2.0-flash-exp";
-  const apiKey = process.env.apiKey || process.env.OPENAI_API_KEY || process.env.ANTHROPIC_API_KEY || process.env.GOOGLE_API_KEY;
   const baseURL = process.env.baseURL;
+  
+  // 如果使用 OpenRouter，默认使用 OpenAI 兼容模式
+  let provider: AIConfig['provider'];
+  let model: string;
+  
+  if (baseURL && baseURL.includes('openrouter.ai')) {
+    provider = 'openai';
+    model = argv.model || "google/gemini-2.5-flash";
+  } else {
+    provider = (argv.provider || 'google') as AIConfig['provider'];
+    model = argv.model || "google/gemini-2.5-flash";
+  }
+  
+  const apiKey = process.env.apiKey || process.env.OPENAI_API_KEY || process.env.ANTHROPIC_API_KEY || process.env.GOOGLE_API_KEY;
   const targetLang = argv.lang || argv.language || 'zh';
 
   if (!apiKey) {
