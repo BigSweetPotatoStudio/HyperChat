@@ -46,7 +46,7 @@ Logger.info("NODE_ENV: ", process.env.NODE_ENV);
 Logger.info("myEnv: ", process.env.myEnv);
 
 
-Logger.info("appDataDir: ", appDataDir);
+Logger.info("GlobalDir: ", appDataDir);
 fs.ensureDirSync(path.join(appDataDir, "messages"));
 
 

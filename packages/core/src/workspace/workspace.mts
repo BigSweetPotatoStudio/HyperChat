@@ -19,11 +19,11 @@ import { WorkspaceSettingsManager } from "../data/managers/workspaceSettingsMana
 import { TaskManager } from "../data/managers/taskManager.mjs";
 import { Logger } from "../log.mjs";
 import * as cron from "node-cron";
-import { 
-  initializeAIEnvironment, 
-  createAIChannel, 
+import {
+  initializeAIEnvironment,
+  createAIChannel,
   addSystemMessage,
-  executeAICompletion 
+  executeAICompletion
 } from "../utils/aiConfigHelper.mjs";
 
 /**
@@ -33,7 +33,7 @@ export enum WorkspaceState {
   /** 未初始化 */
   UNINITIALIZED = 'uninitialized',
   /** 配置已加载，但服务未启动 */
-  INITIALIZED = 'initialized', 
+  INITIALIZED = 'initialized',
   /** 所有服务已启动，完全可用 */
   STARTED = 'started',
   /** 正在关闭中 */
@@ -55,17 +55,19 @@ export class Workspace {
   private lastSync?: number;
   private readonly HYPERCHAT_DIR = CONSTANTS.HYPERCHAT_DIR;
   private isGlobal: boolean;
-  
+
   // 工作区状态管理
   private state: WorkspaceState = WorkspaceState.UNINITIALIZED;
-  
+
   // 任务调度相关
   private taskJobs: Map<string, cron.ScheduledTask> = new Map();
   private isTaskSchedulerRunning: boolean = false;
 
-  constructor(public workspacePath: string, config?: WorkspaceConfig) {
+  constructor(public workspacePath: string, private currentWorkingDirectory: string) {
+
     // 检查是否为全局工作区
     this.isGlobal = workspacePath === CONSTANTS.GLOBAL_PATH;
+
 
     // 检查当前目录是否是工作区
     const isCurrentDirWorkspace = this.isWorkspaceDirectory(workspacePath);
@@ -77,7 +79,7 @@ export class Workspace {
 
     const hyperChatPath = path.join(effectiveWorkspacePath, this.HYPERCHAT_DIR);
 
-    this.config = config || {
+    this.config = {
       name: this.isGlobal ? 'Global Workspace' : path.basename(workspacePath),
       created: Date.now(),
       settings: {
@@ -139,12 +141,42 @@ export class Workspace {
   }
 
   /**
+   * 获取当前工作目录
+   */
+  getCurrentWorkingDirectory(): string {
+    return this.currentWorkingDirectory;
+  }
+
+  /**
+   * 设置当前工作目录
+   */
+  setCurrentWorkingDirectory(directory: string): void {
+    this.currentWorkingDirectory = directory;
+  }
+
+  /**
+   * 检查当前工作目录是否在工作区内
+   */
+  isWorkingDirectoryInWorkspace(): boolean {
+    return this.currentWorkingDirectory.startsWith(this.workspacePath);
+  }
+
+  /**
+   * 检查是否在工作区根目录运行
+   */
+  isRunningInWorkspaceRoot(): boolean {
+    return this.currentWorkingDirectory === this.workspacePath;
+  }
+
+  /**
    * 🚀 第一阶段：快速初始化配置和基本结构
    * 
    * 这个阶段只做轻量级操作：
    * - 创建目录结构
    * - 加载基本配置  
    * - 初始化管理器（包括 Agent 管理器，扫描文件较快）
+   * 
+   * @param currentWorkingDirectory 当前工作目录，如果不传则默认为工作区路径
    */
   async initialize(): Promise<void> {
     if (this.state !== WorkspaceState.UNINITIALIZED) {
@@ -154,6 +186,8 @@ export class Workspace {
 
     try {
       Logger.info('🚀 开始工作区快速初始化...');
+
+
 
       // 创建目录结构
       await this.createDirectories();
@@ -174,7 +208,7 @@ export class Workspace {
       await this.saveConfig();
 
       this.state = WorkspaceState.INITIALIZED;
-      Logger.info('✅ 工作区配置初始化完成');
+      Logger.info('✅ 工作区配置初始化完成', this.workspacePath, ", 当前工作目录", this.currentWorkingDirectory);
 
     } catch (error) {
       this.state = WorkspaceState.UNINITIALIZED;
@@ -328,7 +362,7 @@ export class Workspace {
     try {
       // 确保工作区元数据已初始化
       await this.settingsManager.initializeWorkspaceMetadata(
-        this.config.name, 
+        this.config.name,
         this.config.description
       );
 
@@ -912,18 +946,18 @@ export class Workspace {
 
     try {
       Logger.info('启动任务调度器...');
-      
+
       // 获取所有已启用的任务
       const enabledTasks = await this.taskManager.getEnabledTasks();
-      
+
       // 为每个任务创建 cron 作业
       for (const task of enabledTasks) {
         await this.scheduleTask(task.name, task.cron);
       }
-      
+
       this.isTaskSchedulerRunning = true;
       Logger.info(`任务调度器已启动，共加载 ${enabledTasks.length} 个任务`);
-      
+
     } catch (error) {
       Logger.error('启动任务调度器失败:', error);
       throw error;
@@ -940,18 +974,18 @@ export class Workspace {
 
     try {
       Logger.info('停止任务调度器...');
-      
+
       // 停止所有 cron 作业
       for (const [taskName, job] of this.taskJobs) {
         job.stop();
         Logger.debug(`停止任务调度: ${taskName}`);
       }
-      
+
       this.taskJobs.clear();
       this.isTaskSchedulerRunning = false;
-      
+
       Logger.info('任务调度器已停止');
-      
+
     } catch (error) {
       Logger.error('停止任务调度器失败:', error);
       throw error;
@@ -994,9 +1028,9 @@ export class Workspace {
       // 启动作业
       job.start();
       this.taskJobs.set(taskName, job);
-      
+
       Logger.info(`任务 '${taskName}' 已调度，执行时间: ${cronExpression}`);
-      
+
     } catch (error) {
       Logger.error(`调度任务 '${taskName}' 失败:`, error);
       throw error;
@@ -1021,7 +1055,7 @@ export class Workspace {
   async executeTask(taskName: string): Promise<void> {
     try {
       Logger.info(`开始执行任务: ${taskName}`);
-      
+
       // 获取任务配置
       const task = await this.taskManager.getTask(taskName);
       if (!task) {
@@ -1041,10 +1075,10 @@ export class Workspace {
 
       // 构造任务执行的消息
       const taskMessage = `${task.description}`;
-      
+
       // 执行任务 - 通过 Agent 处理
       Logger.info(`使用 Agent '${task.agentName}' 执行任务 '${taskName}'`);
-      
+
       // 创建任务执行的聊天记录
       const chatLog: ChatHistoryItem = {
         key: v4(),
@@ -1067,7 +1101,7 @@ export class Workspace {
           }
         ]
       };
-      
+
       // 执行 AI 对话
       try {
         // 使用共享的 AI 环境初始化工具
@@ -1076,10 +1110,10 @@ export class Workspace {
           workspacePath: this.workspacePath,
           needMCP: true
         });
-        
+
         // 创建 AI 通道
         const aiChannel = createAIChannel(env);
-        
+
         // 复制已有的消息到 AI 通道
         for (const msg of chatLog.messages) {
           aiChannel.addMessage({
@@ -1087,7 +1121,7 @@ export class Workspace {
             content_date: msg.content_date || Date.now()
           } as any);
         }
-        
+
         // 执行 AI 对话
         Logger.info(`正在生成 AI 响应...`);
         const assistantMessage = await executeAICompletion(aiChannel, env.effectiveConfig, {
@@ -1095,26 +1129,26 @@ export class Workspace {
             // 可以在这里添加进度日志
           }
         });
-        
+
         // 更新聊天记录
         chatLog.messages.push({
           role: 'assistant',
           content: assistantMessage.content as string,
           content_date: Date.now()
         } as any);
-        
+
         // 保存更新后的聊天记录
         await agentInstance.setChatLog(chatLog);
-        
+
         Logger.info(`任务 '${taskName}' 执行完成，AI 响应: ${(assistantMessage.content as string).substring(0, 100)}...`);
-        
+
       } catch (aiError) {
         Logger.error(`执行任务 AI 对话失败:`, aiError);
         // 即使 AI 执行失败，也保存聊天记录
         await agentInstance.setChatLog(chatLog);
         throw aiError;
       }
-      
+
     } catch (error) {
       Logger.error(`执行任务 '${taskName}' 失败:`, error);
       // 不抛出错误，避免影响其他任务的调度
@@ -1146,18 +1180,18 @@ export class Workspace {
   /**
    * 重写任务相关方法，添加调度器同步
    */
-  
+
   /**
    * 创建任务（重写以添加调度）
    */
   async createTask(taskData: Parameters<TaskManager['createTask']>[0]) {
     const task = await this.taskManager.createTask(taskData);
-    
+
     // 如果任务已启用且调度器正在运行，立即调度这个任务
     if (!task.disabled && this.isTaskSchedulerRunning) {
       await this.scheduleTask(task.name, task.cron);
     }
-    
+
     return task;
   }
 
@@ -1167,13 +1201,13 @@ export class Workspace {
   async updateTask(taskName: string, updates: Parameters<TaskManager['updateTask']>[1]) {
     const oldTask = await this.taskManager.getTask(taskName);
     const updatedTask = await this.taskManager.updateTask(taskName, updates);
-    
+
     if (updatedTask && this.isTaskSchedulerRunning) {
       // 如果任务名称改变了，需要处理调度
       if (oldTask && oldTask.name !== updatedTask.name) {
         await this.unscheduleTask(oldTask.name);
       }
-      
+
       // 重新调度任务
       if (!updatedTask.disabled) {
         await this.scheduleTask(updatedTask.name, updatedTask.cron);
@@ -1181,7 +1215,7 @@ export class Workspace {
         await this.unscheduleTask(updatedTask.name);
       }
     }
-    
+
     return updatedTask;
   }
 
@@ -1190,11 +1224,11 @@ export class Workspace {
    */
   async deleteTask(taskName: string) {
     const success = await this.taskManager.deleteTask(taskName);
-    
+
     if (success && this.isTaskSchedulerRunning) {
       await this.unscheduleTask(taskName);
     }
-    
+
     return success;
   }
 
@@ -1203,11 +1237,11 @@ export class Workspace {
    */
   async enableTask(taskName: string) {
     const task = await this.taskManager.enableTask(taskName);
-    
+
     if (task && this.isTaskSchedulerRunning) {
       await this.scheduleTask(task.name, task.cron);
     }
-    
+
     return task;
   }
 
@@ -1216,11 +1250,11 @@ export class Workspace {
    */
   async disableTask(taskName: string) {
     const task = await this.taskManager.disableTask(taskName);
-    
+
     if (task && this.isTaskSchedulerRunning) {
       await this.unscheduleTask(task.name);
     }
-    
+
     return task;
   }
 

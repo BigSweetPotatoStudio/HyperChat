@@ -32,7 +32,8 @@ export async function startRun(options: RunOptions = {}) {
     
     // 第一阶段：快速初始化工作区配置
     logger.info(`⏳ ${t`Phase 1: Quickly loading workspace configuration...`}`);
-    await getWorkspaceManager().initialize(workspacePath, false); // 明确不自动启动
+    const currentWorkingDirectory = process.cwd();
+    await getWorkspaceManager().initialize(workspacePath, currentWorkingDirectory);
     
     const workspace = getWorkspaceManager().getCurrentWorkspace();
     if (!workspace) {

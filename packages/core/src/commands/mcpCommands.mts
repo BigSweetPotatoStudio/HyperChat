@@ -151,7 +151,7 @@ export const mcpCommands = {
     args: Record<string, unknown>;
   }) {
     // 从所有活跃的MCP客户端中查找指定名称的客户端
-    const allClients = workspaceManager.getGlobalWorkspace().getMcpClients();
+    const allClients = workspaceManager.getCurrentWorkspace().getMcpClients();
     let client = allClients.find((x) => x.serverName === name);
 
     if (!client) {
@@ -215,7 +215,7 @@ export const mcpCommands = {
     uri: string;
   }) {
     // 从所有活跃的MCP客户端中查找指定名称的客户端
-    const allClients = workspaceManager.getGlobalWorkspace().getMcpClients();
+    const allClients = workspaceManager.getCurrentWorkspace().getMcpClients();
     let client = allClients.find((x) => x.serverName === name);
 
     if (!client) {
@@ -279,7 +279,7 @@ export const mcpCommands = {
     args: Record<string, unknown>;
   }) {
     // 从所有活跃的MCP客户端中查找指定名称的客户端
-    const allClients = workspaceManager.getGlobalWorkspace().getMcpClients();
+    const allClients = workspaceManager.getCurrentWorkspace().getMcpClients();
     let client = allClients.find((x) => x.serverName === name);
 
     if (!client) {

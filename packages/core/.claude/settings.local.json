@@ -6,7 +6,10 @@
       "Bash(npx tsc:*)",
       "Bash(lsof:*)",
       "Bash(find:*)",
-      "Bash(ls:*)"
+      "Bash(ls:*)",
+      "Bash(npm run build:*)",
+      "Bash(node:*)",
+      "Bash(mkdir:*)"
     ],
     "deny": []
   }

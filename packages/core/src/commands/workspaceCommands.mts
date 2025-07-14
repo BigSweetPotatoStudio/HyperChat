@@ -128,12 +128,12 @@ export const workspaceCommands = {
       if (!workspace) return [];
 
       // 获取当前工作区路径
-      const workspacePath = workspaceManager.getCurrentWorkspacePath();
+      const workingDir = workspaceManager.getCurrentWorkingDirectory();
 
       // 构建完整路径
       const fullPath = directoryPath
-        ? path.join(workspacePath, directoryPath)
-        : workspacePath;
+        ? path.join(workingDir, directoryPath)
+        : workingDir;
 
       // 检查路径是否存在且是目录
       if (!fs.existsSync(fullPath)) {

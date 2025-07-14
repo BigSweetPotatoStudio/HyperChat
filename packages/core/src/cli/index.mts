@@ -18,7 +18,7 @@ import { Logger } from './utils/logger.mjs';
 import { startChat } from './commands/chat.mjs';
 import { startServer } from './commands/server.mjs';
 import { startRun, showRunStatus } from './commands/run.mjs';
-import { createWorkspace } from './commands/workspace.mjs';
+import { createWorkspace, listWorkspaces, showCurrentWorkspace } from './commands/workspace.mjs';
 import { listAgents, createAgent, checkAgentExists } from './commands/agent.mjs';
 import { Command } from '../command.mjs';
 import { 
@@ -123,6 +123,8 @@ ${t`Commands:`}
   # ${t`System management`}
   serve                    ${t`Start backend server (includes Web UI)`}
   run                      ${t`Start core service (no Web UI)`}
+  workspace list           ${t`Show workspace information`}
+  workspace current        ${t`Show current working directory and workspace`}
   workspace create         ${t`Create workspace in current directory`}
   language [lang]          ${t`Show or set interface language`}
   
@@ -155,6 +157,8 @@ ${t`Examples:`}
   # ${t`System management`}
   hyperchat serve                   # ${t`Start server (includes Web UI)`}
   hyperchat run                     # ${t`Start core service (background task scheduling)`}
+  hyperchat workspace list          # ${t`Show workspace information`}
+  hyperchat workspace current       # ${t`Show current status`}
   hyperchat workspace create        # ${t`Create workspace in current directory`}
   hyperchat language zh             # ${t`Set interface to Chinese`}
   hyperchat language en             # ${t`Set interface to English`}
@@ -211,9 +215,15 @@ async function handleCommand(): Promise<{ shouldExit: boolean }> {
       if (workspaceSubCmd === 'create') {
         // 在当前目录创建工作区
         await createWorkspace(process.cwd());
+      } else if (workspaceSubCmd === 'list') {
+        // 显示工作区信息
+        await listWorkspaces();
+      } else if (workspaceSubCmd === 'current') {
+        // 显示当前状态
+        await showCurrentWorkspace();
       } else {
         logger.error(`${t`Unknown workspace command:`} ${workspaceSubCmd}`);
-        logger.info(t`Available commands: create`);
+        logger.info(t`Available commands: list, current, create`);
       }
       return { shouldExit: true };  // workspace命令执行完都应该退出
 

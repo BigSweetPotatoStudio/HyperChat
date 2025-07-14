@@ -14,7 +14,8 @@ import { t } from '../../i18n.mjs';
 async function getCurrentWorkspacePath(): Promise<string> {
 
   // workspaceManager is already imported
-  await workspaceManager.initialize();
+  const currentWorkingDirectory = process.cwd();
+  await workspaceManager.initialize(currentWorkingDirectory);
   return workspaceManager.getCurrentWorkspacePath();
 }
 
@@ -22,34 +23,80 @@ export async function listWorkspaces() {
   const logger = new Logger();
 
   try {
-    logger.info(`📁 ${t`Getting workspace list...`}`);
+    logger.info(`📁 ${t`Getting workspace information...`}`);
 
-    // 获取当前工作区
+    // 获取当前工作路径（命令运行的目录）
+    const currentWorkingDirectory = process.cwd();
+    
+    // 获取当前工作区路径（配置所在的目录）
     const currentWorkspacePath = await getCurrentWorkspacePath();
 
     // 新架构：只显示当前工作区
     const currentWorkspace = await Command.getCurrentWorkspace();
 
-    console.log(`\n📋 ${t`Current workspace:`}`);
+    console.log(`\n📍 ${t`Current working directory:`} ${currentWorkingDirectory}`);
+    console.log(`📁 ${t`Current workspace:`} ${currentWorkspacePath}`);
+    
+    if (currentWorkingDirectory !== currentWorkspacePath) {
+      console.log(`   ${t`(Configuration loaded from workspace above)`}`);
+    } else {
+      console.log(`   ${t`(Running in workspace root)`}`);
+    }
+
+    console.log(`\n📋 ${t`Workspace details:`}`);
 
     if (!currentWorkspace) {
       console.log(`  ${t`No workspace found`}`);
       return;
     }
 
-    const type = currentWorkspace.isGlobal ? t`(Global)` : '';
-    console.log(`  🟢 ${currentWorkspace.name} ${type} 👉 ${t`Current`}`);
-    console.log(`      ${t`Path:`} ${currentWorkspace.path}`);
+    const type = currentWorkspace.isGlobal ? t`(Global)` : t`(Project)`;
+    console.log(`  🏷️  ${t`Name:`} ${currentWorkspace.name} ${type}`);
+    console.log(`  📂 ${t`Config path:`} ${currentWorkspace.path}`);
     if (currentWorkspace.description) {
-      console.log(`      ${t`Description:`} ${currentWorkspace.description}`);
+      console.log(`  📝 ${t`Description:`} ${currentWorkspace.description}`);
     }
-    console.log(`      ${t`Agents:`} ${currentWorkspace.agentsCount}`);
-    console.log(`      ${t`MCP services:`} ${currentWorkspace.mcpServersCount}`);
-
-    console.log(`\n🎯 ${t`Current workspace:`} ${currentWorkspacePath}`);
+    console.log(`  🤖 ${t`Agents:`} ${currentWorkspace.agentsCount}`);
+    console.log(`  🔧 ${t`MCP services:`} ${currentWorkspace.mcpServersCount}`);
 
   } catch (error) {
-    logger.error(`${t`Failed to get workspace list:`} ${error instanceof Error ? error.message : String(error)}`);
+    logger.error(`${t`Failed to get workspace information:`} ${error instanceof Error ? error.message : String(error)}`);
+    process.exit(1);
+  }
+}
+
+export async function showCurrentWorkspace() {
+  const logger = new Logger();
+
+  try {
+    // 初始化工作区管理器
+    const currentWorkingDirectory = process.cwd();
+    await workspaceManager.initialize(currentWorkingDirectory);
+    const workspace = workspaceManager.getCurrentWorkspace();
+
+    console.log(`\n🎯 ${t`Current Status:`}`);
+    console.log(`📍 ${t`Working Directory:`} ${workspace.getCurrentWorkingDirectory()}`);
+    console.log(`📁 ${t`Workspace:`} ${workspace.workspacePath}`);
+    
+    if (!workspace.isRunningInWorkspaceRoot()) {
+      console.log(`\n💡 ${t`You are running in a subdirectory of the workspace.`}`);
+      console.log(`   ${t`Configuration is loaded from:`} ${workspace.workspacePath}`);
+    } else {
+      console.log(`\n✅ ${t`You are running in the workspace root directory.`}`);
+    }
+
+    const config = workspace.getConfig();
+    if (config) {
+      const type = workspace.workspacePath.includes('Documents/HyperChat') ? t`Global Workspace` : t`Project Workspace`;
+      console.log(`\n📋 ${t`Workspace Type:`} ${type}`);
+      console.log(`🏷️  ${t`Name:`} ${config.name}`);
+      if (config.description) {
+        console.log(`📝 ${t`Description:`} ${config.description}`);
+      }
+    }
+
+  } catch (error) {
+    logger.error(`${t`Failed to get current workspace status:`} ${error instanceof Error ? error.message : String(error)}`);
     process.exit(1);
   }
 }

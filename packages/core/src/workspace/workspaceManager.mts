@@ -24,28 +24,23 @@ export class WorkspaceManager {
 
   /**
    * 🚀 第一阶段：初始化工作区管理器（快速配置加载）
-   * @param workingDirectory 当前工作目录
-   * @param autoStart 是否自动启动服务（默认 false，保持两阶段分离）
+   * @param currentWorkingDirectory 当前工作目录
    */
-  async initialize(workingDirectory?: string, autoStart: boolean = false): Promise<void> {
+  async initialize(currentWorkingDirectory?: string): Promise<void> {
     if (this.isInitialized) {
       return;
     }
 
     try {
       // 默认工作区是当前目录或全局工作区
-      const initialPath = workingDirectory || process.cwd();
+      const initialPath = currentWorkingDirectory || process.cwd();
+      const effectiveCurrentWorkingDirectory = initialPath;
       const workspacePath = this.findWorkspaceInPath(initialPath) || CONSTANTS.GLOBAL_PATH;
-      this.currentWorkspace = new Workspace(workspacePath);
+      this.currentWorkspace = new Workspace(workspacePath, effectiveCurrentWorkingDirectory);
 
       // 🚀 第一阶段：只初始化配置，不启动服务
       await this.currentWorkspace.initialize();
       this.isInitialized = true;
-
-      // 如果需要自动启动服务（向后兼容）
-      if (autoStart) {
-        await this.start();
-      }
     } catch (error) {
       console.warn('初始化工作区管理器失败:', error);
       throw error;
@@ -80,7 +75,8 @@ export class WorkspaceManager {
    * @deprecated 建议使用 initialize() + start() 的两阶段方式
    */
   async init(workingDirectory?: string): Promise<void> {
-    await this.initialize(workingDirectory, true);
+    await this.initialize(workingDirectory);
+    await this.start();
   }
 
   /**
@@ -198,27 +194,12 @@ export class WorkspaceManager {
       throw new Error(`工作区已存在: ${workspacePath}`);
     }
 
-    // 创建工作区配置
-    const config: WorkspaceConfig = {
-      name,
-      description,
-      created: Date.now(),
-      settings: {
-      },
-    };
 
     // 创建工作区实例
-    const workspace = new Workspace(workspacePath, config);
-    await workspace.init();
+    const workspace = new Workspace(workspacePath, workspacePath);
+    await workspace.initialize();
 
     return workspace;
-  }
-
-  /**
-   * 获取全局工作区（兼容老API）
-   */
-  getGlobalWorkspace(): Workspace {
-    return this.currentWorkspace;
   }
 
   /**
@@ -275,26 +256,26 @@ export class WorkspaceManager {
 
 
 
-  /**
-   * 加载现有工作区（兼容老API）
-   */
-  async loadExistingWorkspace(workspacePath: string): Promise<Workspace | null> {
-    const workspace = new Workspace(workspacePath);
+  // /**
+  //  * 加载现有工作区（兼容老API）
+  //  */
+  // async loadExistingWorkspace(workspacePath: string): Promise<Workspace | null> {
+  //   const workspace = new Workspace(workspacePath);
 
-    // 检查工作区是否存在
-    if (!workspace.exists()) {
-      return null;
-    }
+  //   // 检查工作区是否存在
+  //   if (!workspace.exists()) {
+  //     return null;
+  //   }
 
-    try {
-      // 加载工作区数据（使用完整初始化）
-      await workspace.init();
-      return workspace;
-    } catch (error) {
-      console.warn(`加载工作区失败 ${workspacePath}:`, error);
-      return null;
-    }
-  }
+  //   try {
+  //     // 加载工作区数据（使用完整初始化）
+  //     await workspace.init();
+  //     return workspace;
+  //   } catch (error) {
+  //     console.warn(`加载工作区失败 ${workspacePath}:`, error);
+  //     return null;
+  //   }
+  // }
 
   /**
    * 检查指定路径是否为工作区（是否包含 .hyperchat 文件夹）
@@ -339,6 +320,8 @@ export class WorkspaceManager {
     return this.currentWorkspace.workspacePath;
   }
 
-
+  getCurrentWorkingDirectory(): string {
+    return this.currentWorkspace.getCurrentWorkingDirectory();
+  }
 
 }

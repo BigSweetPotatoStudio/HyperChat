@@ -55,7 +55,7 @@ async function createServer(name: string, description: string, allowMCPs: string
         // Logger.debug("gateway allowMCPs", allowMCPs);
         let getTools =  (allowMCPs: any) => {
             let tools: IMCPClient["tools"] = [];
-            workspaceManager.getGlobalWorkspace().getMcpClients().forEach((v) => {
+            workspaceManager.getCurrentWorkspace().getMcpClients().forEach((v) => {
                 tools = tools.concat(
                     v.tools.filter((t) => {
                         if (!allowMCPs) return true;
@@ -84,7 +84,7 @@ async function createServer(name: string, description: string, allowMCPs: string
         let getTools = (allowMCPs: any) => {
             let tools: IMCPClient["tools"] = [];
 
-            workspaceManager.getGlobalWorkspace().getMcpClients().forEach((v) => {
+            workspaceManager.getCurrentWorkspace().getMcpClients().forEach((v) => {
                 tools = tools.concat(
                     v.tools.filter((t) => {
                         if (!allowMCPs) return true;

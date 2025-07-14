@@ -48,7 +48,8 @@ export async function startServer(options: ServerOptions = {}) {
 
     logger.info(`⏳ ${t`Waiting for server to start...`}`);
     // HTTP 服务器只需要基本配置，不需要完整服务
-    await getWorkspaceManager().initialize(process.cwd(), false);
+    const currentWorkingDirectory = process.cwd();
+    await getWorkspaceManager().initialize(process.cwd(), currentWorkingDirectory);
     await getWorkspaceManager().start();
     // 启动 HTTP 服务，捕获并记录异常
     await initHttp();

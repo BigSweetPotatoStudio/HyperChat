@@ -13,7 +13,8 @@ import type { AgentConfig } from '@dadigua/hyperchat-shared';
  */
 async function getCurrentWorkspacePath(): Promise<string> {
   // Agent 查询只需要配置，不需要启动服务
-  await workspaceManager.initialize();
+  const currentWorkingDirectory = process.cwd();
+  await workspaceManager.initialize(currentWorkingDirectory);
   return workspaceManager.getCurrentWorkspacePath();
 }
 
@@ -24,8 +25,14 @@ export async function listAgents() {
     logger.info(`🤖 ${t`Getting agent list...`}`);
 
     // 智能获取当前工作区
+    const currentWorkingDirectory = process.cwd();
     const workspacePath = await getCurrentWorkspacePath();
+
+    logger.info(`📍 ${t`Working directory:`} ${currentWorkingDirectory}`);
     logger.info(`🎯 ${t`Using workspace:`} ${workspacePath}`);
+    if (currentWorkingDirectory !== workspacePath) {
+      logger.info(`💡 ${t`Configuration loaded from workspace above`}`);
+    }
 
     // 获取代理列表
     const agents = await Command.getWorkspaceAgentsSummary();
@@ -73,8 +80,14 @@ export async function createAgent(name: string) {
     logger.info(`🤖 ${t`Creating agent:`} ${name}`);
 
     // 智能获取当前工作区
+    const currentWorkingDirectory = process.cwd();
     const workspacePath = await getCurrentWorkspacePath();
+
+    logger.info(`📍 ${t`Working directory:`} ${currentWorkingDirectory}`);
     logger.info(`🎯 ${t`Using workspace:`} ${workspacePath}`);
+    if (currentWorkingDirectory !== workspacePath) {
+      logger.info(`💡 ${t`Configuration loaded from workspace above`}`);
+    }
 
     // 创建代理配置
     const agentConfig = {
@@ -109,18 +122,19 @@ export async function createAgent(name: string) {
 export async function checkAgentExists(agentName: string): Promise<{ exists: boolean; config?: AgentConfig }> {
   try {
     // Agent 检查只需要配置，不需要启动服务
-    await workspaceManager.initialize();
-    
+    const currentWorkingDirectory = process.cwd();
+    await workspaceManager.initialize(currentWorkingDirectory);
+
     const agents = await Command.getWorkspaceAgentsSummary();
     const agentSummary = agents.find(agent => {
       const config = agent.config as AgentConfig;
       return config.name === agentName;
     });
-    
+
     if (agentSummary) {
       return { exists: true, config: agentSummary.config as AgentConfig };
     }
-    
+
     return { exists: false };
   } catch (error) {
     return { exists: false };
