@@ -3,7 +3,8 @@
     "allow": [
       "Bash(rg:*)",
       "Bash(grep:*)",
-      "Bash(npx tsc:*)"
+      "Bash(npx tsc:*)",
+      "Bash(lsof:*)"
     ],
     "deny": []
   }
