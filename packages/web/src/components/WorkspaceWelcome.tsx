@@ -42,7 +42,7 @@ interface WorkspaceWelcomeProps {
     isGlobal?: boolean;
   };
   agents: {
-    config: AgentConfig;
+    config: AgentConfig & { scope?: "global" | "workspace" };
     chatLogsCount: number;
     lastChatTime?: number;
     chatLogs?: ChatHistoryItem[];
@@ -94,7 +94,8 @@ export const WorkspaceWelcome: React.FC<WorkspaceWelcomeProps> = ({
           // 使用新的后端命令获取个别聊天记录
           const chatLog = await call("getAgentChatLog", {
             agentName: recentItem.agentName,
-            chatLogKey: recentItem.chatKey
+            chatLogKey: recentItem.chatKey,
+            scope: agent.config.scope // 传递 agent 的 scope 信息
           });
           
           if (chatLog) {

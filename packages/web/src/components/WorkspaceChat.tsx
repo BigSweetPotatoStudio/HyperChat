@@ -257,7 +257,8 @@ export const WorkspaceChat = ({ workspace, agentName, workspaceDetails, mcpClien
       if (agentName && workspace?.path) {
         await call("saveAgentChatLog", {
           agentName: agentName,
-          chatLog: currentChat.current
+          chatLog: currentChat.current,
+          scope: agent?.config.scope // 传递 agent 的 scope 信息
         });
       }
 
@@ -593,7 +594,8 @@ export const WorkspaceChat = ({ workspace, agentName, workspaceDetails, mcpClien
         // 如果是 Agent 聊天，保存到 Agent 的聊天记录中
         await call("saveAgentChatLog", {
           agentName: agentName,
-          chatLog: currentChat.current
+          chatLog: currentChat.current,
+          scope: agent?.config.scope // 传递 agent 的 scope 信息
         });
       }
 

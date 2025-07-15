@@ -15,10 +15,6 @@ export const mcpCommands = {
    */
   async forceReloadMcpClients() {
     try {
-      // 获取全局工作区路径（~/Documents/HyperChat）
-      const workspaceManager = getWorkspaceManager();
-      const globalWorkspacePath = workspaceManager.getGlobalWorkspacePath();
-
       // 委托给工作区特定的重新加载方法
       return await this.forceReloadWorkspaceMcpClients();
     } catch (error) {
@@ -81,9 +77,6 @@ export const mcpCommands = {
     isdisable?: boolean;
   }) {
     // 委托给新的工作区特定方法
-    const workspaceManager = getWorkspaceManager();
-    const globalWorkspacePath = workspaceManager.getGlobalWorkspacePath();
-    
     let action: 'restart' | 'disable' | 'delete' = 'restart';
     if (isdelete) action = 'delete';
     else if (isdisable) action = 'disable';
@@ -389,51 +382,96 @@ export const mcpCommands = {
   },
 
   /**
-   * 添加或更新工作区 MCP 服务器配置
+   * 添加或更新 MCP 服务器配置（支持全局和工作区）
    */
   async setWorkspaceMcpServerConfig({
+    serverName,
+    serverConfig,
+    scope = "workspace"
+  }: {
+    serverName: string;
+    serverConfig: MCPServerConfig;
+    scope?: "workspace" | "global";
+  }): Promise<void> {
+    try {
+      const workspaceManager = getWorkspaceManager();
+      const workspace = workspaceManager.getCurrentWorkspace();
+
+      if (!workspace) {
+        throw new Error('当前没有可用的工作区');
+      }
+
+      if (scope === "global") {
+        await workspace.setGlobalMcpServer(serverName, serverConfig);
+      } else {
+        await workspace.setMcpServer(serverName, serverConfig);
+      }
+    } catch (error) {
+      console.error(`Failed to set ${scope} MCP server config:`, error);
+      throw error;
+    }
+  },
+
+  /**
+   * 删除 MCP 服务器配置（支持全局和工作区）
+   */
+  async deleteWorkspaceMcpServerConfig({
+    serverName,
+    scope = "workspace"
+  }: {
+    serverName: string;
+    scope?: "workspace" | "global";
+  }): Promise<void> {
+    try {
+      const workspaceManager = getWorkspaceManager();
+      const workspace = workspaceManager.getCurrentWorkspace();
+
+      if (!workspace) {
+        throw new Error('当前没有可用的工作区');
+      }
+
+      if (scope === "global") {
+        await workspace.deleteGlobalMcpServer(serverName);
+      } else {
+        await workspace.deleteMcpServer(serverName);
+      }
+    } catch (error) {
+      console.error(`Failed to delete ${scope} MCP server config:`, error);
+      throw error;
+    }
+  },
+
+  /**
+   * 添加或更新全局 MCP 服务器配置
+   * @deprecated 请使用 setWorkspaceMcpServerConfig({serverName, serverConfig, scope: "global"})
+   */
+  async setGlobalMcpServerConfig({
     serverName,
     serverConfig
   }: {
     serverName: string;
     serverConfig: MCPServerConfig;
   }): Promise<void> {
-    try {
-      const workspaceManager = getWorkspaceManager();
-      const workspace = workspaceManager.getCurrentWorkspace();
-
-      if (!workspace) {
-        throw new Error('当前没有可用的工作区');
-      }
-
-      await workspace.setMcpServer(serverName, serverConfig);
-    } catch (error) {
-      console.error('Failed to set MCP server config:', error);
-      throw error;
-    }
+    return this.setWorkspaceMcpServerConfig({
+      serverName,
+      serverConfig,
+      scope: "global"
+    });
   },
 
   /**
-   * 删除工作区 MCP 服务器配置
+   * 删除全局 MCP 服务器配置
+   * @deprecated 请使用 deleteWorkspaceMcpServerConfig({serverName, scope: "global"})
    */
-  async deleteWorkspaceMcpServerConfig({
+  async deleteGlobalMcpServerConfig({
     serverName
   }: {
     serverName: string;
   }): Promise<void> {
-    try {
-      const workspaceManager = getWorkspaceManager();
-      const workspace = workspaceManager.getCurrentWorkspace();
-
-      if (!workspace) {
-        throw new Error('当前没有可用的工作区');
-      }
-
-      await workspace.deleteMcpServer(serverName);
-    } catch (error) {
-      console.error('Failed to delete MCP server config:', error);
-      throw error;
-    }
+    return this.deleteWorkspaceMcpServerConfig({
+      serverName,
+      scope: "global"
+    });
   },
 
   /**

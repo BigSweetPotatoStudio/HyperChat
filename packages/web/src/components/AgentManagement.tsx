@@ -22,6 +22,8 @@ import {
   Slider,
   Row,
   Col,
+  Alert,
+  Divider,
 } from "antd";
 import {
   PlusOutlined,
@@ -74,6 +76,8 @@ export const AgentManagement = forwardRef<AgentManagementRef, AgentManagementPro
   const [chatHistoryList, setChatHistoryList] = useState<ChatHistoryItem[]>([]);
   const [loadingChatHistory, setLoadingChatHistory] = useState(false);
   const [form] = Form.useForm();
+  const [scopeFilter, setScopeFilter] = useState<'all' | 'workspace' | 'global'>('all');
+  const [createScope, setCreateScope] = useState<'workspace' | 'global'>('workspace');
   const refresh = useForceUpdate();
   // 从 Context 获取 AI 设置
   const { aiSettings, loading: aiSettingsLoading } = useAISettings();
@@ -138,13 +142,15 @@ export const AgentManagement = forwardRef<AgentManagementRef, AgentManagementPro
         }
         await call('updateAgent', {
           agentName: agentKey,
-          updates: agentConfig
+          updates: agentConfig,
+          scope: editingAgent.config.scope // 使用原有的 scope
         });
         message.success(t`Agent updated successfully`);
       } else {
         // 创建新Agent
         await call('createAgent', {
-          config: agentConfig
+          config: agentConfig,
+          scope: createScope // 使用用户选择的 scope
         });
         message.success(t`Agent created successfully`);
       }
@@ -163,7 +169,8 @@ export const AgentManagement = forwardRef<AgentManagementRef, AgentManagementPro
   const deleteAgent = async (agent: Agent) => {
     try {
       await call('deleteAgent', {
-        agentName: agent.config.name
+        agentName: agent.config.name,
+        scope: agent.config.scope // 明确指定要删除的 Agent scope
       });
       message.success(t`Agent deleted successfully`);
       await onRefresh();
@@ -242,11 +249,29 @@ export const AgentManagement = forwardRef<AgentManagementRef, AgentManagementPro
     });
   };
 
+  // 过滤和排序 agents
+  const filteredAgents = agents
+    .filter(agent => {
+      if (scopeFilter === 'all') return true;
+      return agent.config.scope === scopeFilter;
+    })
+    .sort((a, b) => {
+      // 本地（workspace）Agent 排在前面，全局（global）Agent 排在后面
+      const scopeA = a.config.scope || 'workspace';
+      const scopeB = b.config.scope || 'workspace';
+      
+      if (scopeA === 'workspace' && scopeB === 'global') return -1;
+      if (scopeA === 'global' && scopeB === 'workspace') return 1;
+      
+      // 相同 scope 内按名称排序
+      return a.config.name.localeCompare(b.config.name);
+    });
+
   return (
     <>
       <div className="p-2 overflow-auto" >
         <div className="flex justify-between items-center mb-2">
-          <span className="text-sm font-medium">{`Agents (${agents.length})`}</span>
+          <span className="text-sm font-medium">{`Agents (${filteredAgents.length}/${agents.length})`}</span>
           <Button
             type="text"
             size="small"
@@ -256,10 +281,23 @@ export const AgentManagement = forwardRef<AgentManagementRef, AgentManagementPro
           />
         </div>
 
-        {agents.length > 0 ? (
+        {/* Scope 过滤器 */}
+        <div className="mb-3">
+          <Radio.Group 
+            value={scopeFilter} 
+            onChange={(e) => setScopeFilter(e.target.value)}
+            size="small"
+          >
+            <Radio.Button value="all">{t`All`}</Radio.Button>
+            <Radio.Button value="workspace">{t`Workspace`}</Radio.Button>
+            <Radio.Button value="global">{t`Global`}</Radio.Button>
+          </Radio.Group>
+        </div>
+
+        {filteredAgents.length > 0 ? (
           <List
             size="small"
-            dataSource={agents}
+            dataSource={filteredAgents}
             renderItem={(agent) => {
               const isGlobalAgent = agent.config.scope === "global";
               const menuItems = [
@@ -281,30 +319,44 @@ export const AgentManagement = forwardRef<AgentManagementRef, AgentManagementPro
                   label: t`View Details`,
                   onClick: () => showAgentDetails(agent),
                 },
-                ...(isGlobalAgent ? [] : [
-                  {
-                    key: "edit",
-                    icon: <EditOutlined />,
-                    label: t`Edit`,
-                    onClick: () => editAgent(agent),
+                // 编辑功能 - 所有 Agent 都可以编辑
+                {
+                  key: "edit",
+                  icon: <EditOutlined />,
+                  label: t`Edit`,
+                  onClick: () => editAgent(agent),
+                },
+                {
+                  type: "divider" as const
+                },
+                // 删除功能 - 所有 Agent 都可以删除，但全局 Agent 会有警告
+                {
+                  key: "delete",
+                  icon: <DeleteOutlined />,
+                  label: t`Delete`,
+                  danger: true,
+                  onClick: () => {
+                    const scopeWarning = agent.config.scope === 'global' 
+                      ? t`Warning: Deleting a global agent will affect all projects using this agent!`
+                      : t`This will only delete the agent from current workspace.`;
+                    
+                    Modal.confirm({
+                      title: t`Confirm Delete`,
+                      content: (
+                        <div>
+                          <p>{t`Are you sure you want to delete this agent?`}</p>
+                          <Alert 
+                            message={scopeWarning}
+                            type={agent.config.scope === 'global' ? 'warning' : 'info'}
+                            style={{ marginTop: 8 }}
+                          />
+                        </div>
+                      ),
+                      onOk: () => deleteAgent(agent),
+                      okButtonProps: { danger: true },
+                    });
                   },
-                  {
-                    type: "divider" as const // 修正 divider 类型
-                  },
-                  {
-                    key: "delete",
-                    icon: <DeleteOutlined />,
-                    label: t`Delete`,
-                    danger: true,
-                    onClick: () => {
-                      Modal.confirm({
-                        title: t`Confirm Delete`,
-                        content: t`Are you sure you want to delete this agent?`,
-                        onOk: () => deleteAgent(agent),
-                      });
-                    },
-                  },
-                ])
+                }
               ];
 
               return (
@@ -389,12 +441,20 @@ export const AgentManagement = forwardRef<AgentManagementRef, AgentManagementPro
           />
         ) : (
           <Empty
-            description={t`No Agents`}
+            description={
+              agents.length === 0 
+                ? t`No Agents` 
+                : scopeFilter === 'all' 
+                  ? t`No Agents` 
+                  : t`No ${scopeFilter} agents`
+            }
             image={Empty.PRESENTED_IMAGE_SIMPLE}
           >
-            <Button type="primary" size="small" onClick={createAgent}>
-              {t`Create Agent`}
-            </Button>
+            {agents.length === 0 && (
+              <Button type="primary" size="small" onClick={createAgent}>
+                {t`Create Agent`}
+              </Button>
+            )}
           </Empty>
         )}
       </div>
@@ -543,10 +603,10 @@ export const AgentManagement = forwardRef<AgentManagementRef, AgentManagementPro
                   prompt: workspaceAIConfig?.prompt || "",
                 };
                 
-                // 使用工作区配置或合理的默认值
-                
                 form.setFieldsValue(defaultValues);
               }
+              // 重置 scope 选择为默认值
+              setCreateScope('workspace');
             }
           }
         }}
@@ -557,6 +617,55 @@ export const AgentManagement = forwardRef<AgentManagementRef, AgentManagementPro
           onFinish={saveAgent}
           preserve={false}
         >
+          {/* Scope 选择 - 只在创建模式显示 */}
+          {!editingAgent && (
+            <>
+              <Alert
+                message={
+                  createScope === 'global' 
+                    ? t`Creating a global agent that will be available in all workspaces`
+                    : t`Creating a workspace agent that will only be available in current workspace`
+                }
+                type={createScope === 'global' ? 'warning' : 'info'}
+                style={{ marginBottom: 16 }}
+              />
+              <Form.Item label={t`Agent Scope`}>
+                <Radio.Group 
+                  value={createScope} 
+                  onChange={(e) => setCreateScope(e.target.value)}
+                >
+                  <Radio value="workspace">
+                    <Space>
+                      <Tag color="purple">{t`Workspace`}</Tag>
+                      <span>{t`Current project only`}</span>
+                    </Space>
+                  </Radio>
+                  <Radio value="global">
+                    <Space>
+                      <Tag color="orange">{t`Global`}</Tag>
+                      <span>{t`All projects shared`}</span>
+                    </Space>
+                  </Radio>
+                </Radio.Group>
+              </Form.Item>
+              <Divider />
+            </>
+          )}
+
+          {/* 编辑模式显示当前 scope */}
+          {editingAgent && (
+            <>
+              <Alert
+                message={
+                  editingAgent.config.scope === 'global'
+                    ? t`Editing a global agent - changes will affect all projects using this agent`
+                    : `${t`Current agent scope:`} ${t`Workspace`}`
+                }
+                type={editingAgent.config.scope === 'global' ? 'warning' : 'info'}
+                style={{ marginBottom: 16 }}
+              />
+            </>
+          )}
 
           <Form.Item
             name="name"

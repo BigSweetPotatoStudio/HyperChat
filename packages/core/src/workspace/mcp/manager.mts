@@ -379,7 +379,7 @@ export class WorkspaceMCPManager {
   }
 
   /**
-   * 添加或更新服务器配置（不允许修改全局配置）
+   * 添加或更新工作区服务器配置
    */
   async setServerConfig(
     name: string,
@@ -389,13 +389,8 @@ export class WorkspaceMCPManager {
       this.workspaceConfig = await this.loadWorkspaceConfig();
     }
 
-    // 检查是否是全局配置
-    const existingConfig = this.workspaceConfig.mcpServers[name];
-    if (existingConfig && (existingConfig as any)._scope === "global") {
-      throw new Error(`不允许修改全局配置的服务器: ${name}`);
-    }
-
-    // 新增的配置默认为 workspace scope
+    // 直接设置为工作区配置，不检查是否存在全局配置
+    // 这样可以创建工作区级别的配置来覆盖全局配置
     this.workspaceConfig.mcpServers[name] = {
       ...config,
       _scope: "workspace"
@@ -430,6 +425,65 @@ export class WorkspaceMCPManager {
 
     // 保存配置
     await this.saveConfig();
+
+    // 停止客户端
+    await this.stopClient(name);
+
+    this.events.onConfigUpdate?.(this.workspaceConfig);
+  }
+
+  /**
+   * 添加或更新全局服务器配置
+   */
+  async setGlobalServerConfig(
+    name: string,
+    config: MCPServerConfig
+  ): Promise<void> {
+    // 移除权限检查，允许在任何工作区中添加全局配置
+    // 这样可以在普通项目工作区中直接管理全局MCP配置
+
+    if (!this.workspaceConfig) {
+      this.workspaceConfig = await this.loadWorkspaceConfig();
+    }
+
+    // 添加全局配置
+    this.workspaceConfig.mcpServers[name] = {
+      ...config,
+      _scope: "global"
+    } as any;
+    this.workspaceConfig.lastModified = Date.now();
+
+    // 保存全局配置
+    await this.saveGlobalConfig();
+
+    // 重启客户端
+    await this.restartClient(name);
+
+    this.events.onConfigUpdate?.(this.workspaceConfig);
+  }
+
+  /**
+   * 删除全局服务器配置
+   */
+  async deleteGlobalServerConfig(name: string): Promise<void> {
+    // 移除权限检查，允许在任何工作区中删除全局配置
+    // 这样可以在普通项目工作区中直接管理全局MCP配置
+
+    if (!this.workspaceConfig) {
+      return;
+    }
+
+    // 检查是否存在该全局配置
+    const serverConfig = this.workspaceConfig.mcpServers[name];
+    if (!serverConfig || (serverConfig as any)._scope !== "global") {
+      throw new Error(`全局配置中不存在服务器: ${name}`);
+    }
+
+    delete this.workspaceConfig.mcpServers[name];
+    this.workspaceConfig.lastModified = Date.now();
+
+    // 保存全局配置
+    await this.saveGlobalConfig();
 
     // 停止客户端
     await this.stopClient(name);
@@ -552,6 +606,40 @@ export class WorkspaceMCPManager {
       this.logInfo(`保存配置到 ${configPath}，共保存 ${Object.keys(workspaceServers).length} 个工作区服务器`);
     } catch (error) {
       this.logError(`保存配置失败:`, error);
+      throw error;
+    }
+  }
+
+  /**
+   * 保存全局配置（只保存全局配置）
+   */
+  private async saveGlobalConfig(): Promise<void> {
+    if (!this.workspaceConfig) {
+      return;
+    }
+
+    const configPath = path.join(this.globalPath, CONSTANTS.CONFIG_FILES.MCP);
+
+    // 过滤出全局配置，只保存全局配置
+    const globalServers: Record<string, MCPServerConfig> = {};
+    for (const [name, config] of Object.entries(this.workspaceConfig.mcpServers)) {
+      const serverConfig = config as any;
+      if (serverConfig._scope === "global") {
+        // 移除内部属性再保存
+        const { _scope, ...cleanConfig } = serverConfig;
+        globalServers[name] = cleanConfig;
+      }
+    }
+
+    try {
+      await this.ensureDirectoryExists(path.dirname(configPath));
+      await fs.promises.writeFile(
+        configPath,
+        JSON.stringify({ mcpServers: globalServers }, null, 2)
+      );
+      this.logInfo(`保存全局配置到 ${configPath}，共保存 ${Object.keys(globalServers).length} 个全局服务器`);
+    } catch (error) {
+      this.logError(`保存全局配置失败:`, error);
       throw error;
     }
   }

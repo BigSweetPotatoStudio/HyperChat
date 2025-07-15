@@ -435,24 +435,24 @@ export class Workspace {
   }
 
   /**
-   * 创建新的 agent
+   * 创建新的 agent（支持 scope 参数，默认在工作区创建）
    */
-  async createAgent(config: Partial<AgentConfig>): Promise<import("./agentManager.mjs").AgentInstance | null> {
-    return await this.agentManager.createAgent(config);
+  async createAgent(config: Partial<AgentConfig>, scope?: "global" | "workspace"): Promise<import("./agentManager.mjs").AgentInstance | null> {
+    return await this.agentManager.createAgent(config, scope);
   }
 
   /**
-   * 获取单个 agent 实例（自动检测全局/工作区）
+   * 获取单个 agent 实例（支持 scope 参数，默认智能查找）
    */
-  getAgentInstance(key: string): import("./agentManager.mjs").AgentInstance | null {
-    return this.agentManager.getAgent(key);
+  getAgentInstance(key: string, scope?: "global" | "workspace"): import("./agentManager.mjs").AgentInstance | null {
+    return this.agentManager.getAgent(key, scope);
   }
 
   /**
-   * 获取单个 agent 配置（自动检测全局/工作区）
+   * 获取单个 agent 配置（支持 scope 参数，默认智能查找）
    */
-  async getAgent(key: string): Promise<AgentConfig | null> {
-    const instance = this.agentManager.getAgent(key);
+  async getAgent(key: string, scope?: "global" | "workspace"): Promise<AgentConfig | null> {
+    const instance = this.agentManager.getAgent(key, scope);
     return instance ? instance.getConfig() : null;
   }
 
@@ -474,10 +474,10 @@ export class Workspace {
   }
 
   /**
-   * 删除 agent（自动检测全局/工作区，不允许删除全局 Agent）
+   * 删除 agent（支持 scope 参数，默认智能查找）
    */
-  async deleteAgent(key: string): Promise<boolean> {
-    return await this.agentManager.deleteAgentByName(key);
+  async deleteAgent(key: string, scope?: "global" | "workspace"): Promise<boolean> {
+    return await this.agentManager.deleteAgent(key, scope);
   }
 
   /**
@@ -488,84 +488,66 @@ export class Workspace {
   }
 
   /**
-   * 获取 Agent 的聊天记录（支持全局 Agent）
+   * 获取 Agent 的聊天记录（支持 scope 参数，默认智能查找）
    */
-  async getAgentChatLogs(agentName: string): Promise<ChatHistoryItem[]> {
-    const instance = this.agentManager.getAgent(agentName);
+  async getAgentChatLogs(agentName: string, scope?: "global" | "workspace"): Promise<ChatHistoryItem[]> {
+    const instance = this.agentManager.getAgent(agentName, scope);
     return instance ? await instance.getChatLogs() : [];
   }
 
   /**
-   * 添加 Agent 聊天记录（支持全局 Agent，但不允许修改全局 Agent 的记录）
+   * 添加 Agent 聊天记录（支持 scope 参数，允许修改全局 Agent）
    */
-  async addAgentChatLog(agentName: string, chatLog: ChatHistoryItem): Promise<boolean> {
-    const instance = this.agentManager.getAgent(agentName);
+  async addAgentChatLog(agentName: string, chatLog: ChatHistoryItem, scope?: "global" | "workspace"): Promise<boolean> {
+    const instance = this.agentManager.getAgent(agentName, scope);
     if (!instance) {
       return false;
-    }
-    
-    // 检查是否为全局 Agent，如果是，不允许修改记录
-    const agentScope = this.agentManager.getAgentScope(agentName);
-    if (agentScope === "global") {
-      throw new Error(`不允许修改全局 Agent 的聊天记录: ${agentName}`);
     }
     
     return await instance.setChatLog(chatLog);
   }
 
   /**
-   * 删除 Agent 聊天记录（支持全局 Agent，但不允许修改全局 Agent 的记录）
+   * 删除 Agent 聊天记录（支持 scope 参数，允许修改全局 Agent）
    */
-  async deleteAgentChatLog(agentName: string, chatKey: string): Promise<boolean> {
-    const instance = this.agentManager.getAgent(agentName);
+  async deleteAgentChatLog(agentName: string, chatKey: string, scope?: "global" | "workspace"): Promise<boolean> {
+    const instance = this.agentManager.getAgent(agentName, scope);
     if (!instance) {
       return false;
-    }
-    
-    // 检查是否为全局 Agent，如果是，不允许修改记录
-    const agentScope = this.agentManager.getAgentScope(agentName);
-    if (agentScope === "global") {
-      throw new Error(`不允许修改全局 Agent 的聊天记录: ${agentName}`);
     }
     
     return await instance.deleteChatLog(chatKey);
   }
 
   /**
-   * 清空 Agent 所有聊天记录（支持全局 Agent，但不允许修改全局 Agent 的记录）
+   * 清空 Agent 所有聊天记录（支持 scope 参数，允许修改全局 Agent）
    */
-  async clearAgentChatLogs(agentName: string): Promise<boolean> {
-    const instance = this.agentManager.getAgent(agentName);
+  async clearAgentChatLogs(agentName: string, scope?: "global" | "workspace"): Promise<boolean> {
+    const instance = this.agentManager.getAgent(agentName, scope);
     if (!instance) {
       return false;
-    }
-    
-    // 检查是否为全局 Agent，如果是，不允许修改记录
-    const agentScope = this.agentManager.getAgentScope(agentName);
-    if (agentScope === "global") {
-      throw new Error(`不允许修改全局 Agent 的聊天记录: ${agentName}`);
     }
     
     return await instance.clearChatLogs();
   }
 
   /**
-   * 获取 Agent 聊天记录数量（支持全局 Agent）
+   * 获取 Agent 聊天记录数量（支持 scope 参数，默认智能查找）
    */
-  async getAgentChatLogsCount(agentName: string): Promise<number> {
-    const instance = this.agentManager.getAgent(agentName);
+  async getAgentChatLogsCount(agentName: string, scope?: "global" | "workspace"): Promise<number> {
+    const instance = this.agentManager.getAgent(agentName, scope);
     return instance ? await instance.getChatLogsCount() : 0;
   }
 
   /**
-   * 获取 Agent 摘要信息（支持全局 Agent）
+   * 获取 Agent 摘要信息（支持 scope 参数，默认智能查找）
    */
-  async getAgentSummary(agentName: string): Promise<{
+  async getAgentSummary(agentName: string, scope?: "global" | "workspace"): Promise<{
     config: AgentConfig;
     chatLogsCount: number;
     lastChatTime?: number;
   } | null> {
-    const instance = this.agentManager.getAgent(agentName);
+    const instance = this.agentManager.getAgent(agentName, scope);
     return instance ? await instance.getSummary() : null;
   }
 
@@ -686,6 +668,32 @@ export class Workspace {
       Logger.info(`MCP服务器配置已删除: ${name}`);
     } catch (error) {
       Logger.error(`删除MCP服务器配置失败: ${name}`, error);
+      throw error;
+    }
+  }
+
+  /**
+   * 添加或更新全局 MCP 服务器配置
+   */
+  async setGlobalMcpServer(name: string, config: MCPServerConfig): Promise<void> {
+    try {
+      await this.mcpManager.setGlobalServerConfig(name, config);
+      Logger.info(`全局MCP服务器配置已设置: ${name}`);
+    } catch (error) {
+      Logger.error(`设置全局MCP服务器配置失败: ${name}`, error);
+      throw error;
+    }
+  }
+
+  /**
+   * 删除全局 MCP 服务器配置
+   */
+  async deleteGlobalMcpServer(name: string): Promise<void> {
+    try {
+      await this.mcpManager.deleteGlobalServerConfig(name);
+      Logger.info(`全局MCP服务器配置已删除: ${name}`);
+    } catch (error) {
+      Logger.error(`删除全局MCP服务器配置失败: ${name}`, error);
       throw error;
     }
   }

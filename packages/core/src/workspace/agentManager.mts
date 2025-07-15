@@ -287,13 +287,21 @@ export class AgentManager {
   }
 
   /**
-   * 生成唯一的文件夹名称
+   * 生成唯一的文件夹名称（工作区专用，保持向后兼容）
    */
   private async generateUniqueFolderName(baseName: string): Promise<string> {
+    return this.generateUniqueAgentFolderName(baseName, "workspace");
+  }
+
+  /**
+   * 生成唯一的Agent文件夹名称（支持指定scope）
+   */
+  private async generateUniqueAgentFolderName(baseName: string, scope: "global" | "workspace"): Promise<string> {
+    const targetPath = scope === "global" ? this.globalPath : this.localPath;
     let folderName = this.createSafeFolderName(baseName);
     let counter = 1;
 
-    while (fs.existsSync(path.join(this.localPath, folderName))) {
+    while (fs.existsSync(path.join(targetPath, folderName))) {
       folderName = `${this.createSafeFolderName(baseName)}_${counter}`;
       counter++;
     }
@@ -326,22 +334,26 @@ export class AgentManager {
   }
 
   /**
-   * 创建新的 Agent（只在工作区创建，不在全局创建）
+   * 创建新的 Agent（支持在工作区或全局创建）
    */
-  async createAgent(config: Partial<AgentConfig>): Promise<AgentInstance | null> {
-    // 确保本地 agents 目录存在（懒加载模式）
-    if (!fs.existsSync(this.localPath)) {
-      await fs.promises.mkdir(this.localPath, { recursive: true });
+  async createAgent(config: Partial<AgentConfig>, scope?: "global" | "workspace"): Promise<AgentInstance | null> {
+    const actualScope = scope || "workspace";
+    
+    // 确定目标路径：全局或工作区
+    const targetPath = actualScope === "global" ? this.globalPath : this.localPath;
+    
+    // 确保目标 agents 目录存在（懒加载模式）
+    if (!fs.existsSync(targetPath)) {
+      await fs.promises.mkdir(targetPath, { recursive: true });
     }
 
     const name = config.name || `${dayjs().format("YYMMDD-HHmmss")}-${v4().slice(0, 8)}`;
 
-    // 使用 name 作为文件夹名称
-    const folderName = await this.generateUniqueFolderName(name);
-    const agentPath = path.join(this.localPath, folderName);
+    // 使用 name 作为文件夹名称，在对应的scope中生成唯一名称
+    const folderName = await this.generateUniqueAgentFolderName(name, actualScope);
+    const agentPath = path.join(targetPath, folderName);
 
-    // 新创建的 Agent 始终是 workspace scope
-    const agentId = this.getAgentId(name, "workspace");
+    const agentId = this.getAgentId(name, actualScope);
 
     if (this.agents.has(agentId)) {
       console.warn(`Agent ${agentId} 已存在`);
@@ -426,18 +438,13 @@ export class AgentManager {
   }
 
   /**
-   * 删除 Agent（不允许删除全局 Agent）
+   * 删除 Agent（支持删除全局和工作区 Agent）
    */
   async deleteAgent(key: string, scope?: "global" | "workspace"): Promise<boolean> {
     const agentId = key.includes(':') ? key : this.getAgentId(key, scope);
     const agent = this.agents.get(agentId);
     if (!agent) {
       return false;
-    }
-
-    // 检查是否是全局 Agent
-    if (agentId.startsWith('global:')) {
-      throw new Error(`不允许删除全局 Agent: ${key}`);
     }
 
     const config = agent.getConfig();
@@ -453,19 +460,19 @@ export class AgentManager {
   }
 
   /**
-   * 通过 name 删除 Agent（优先删除工作区 Agent）
+   * 通过 name 删除 Agent（智能查找，支持删除全局 Agent）
    */
   async deleteAgentByName(name: string): Promise<boolean> {
-    // 优先删除工作区 Agent
+    // 智能查找：优先删除工作区 Agent，如果没有再删除全局 Agent
     const workspaceAgentId = this.getAgentId(name, "workspace");
     if (this.agents.has(workspaceAgentId)) {
       return await this.deleteAgent(workspaceAgentId);
     }
     
-    // 如果工作区没有，不允许删除全局 Agent
+    // 如果工作区没有，删除全局 Agent
     const globalAgentId = this.getAgentId(name, "global");
     if (this.agents.has(globalAgentId)) {
-      throw new Error(`不允许删除全局 Agent: ${name}`);
+      return await this.deleteAgent(globalAgentId);
     }
     
     return false;

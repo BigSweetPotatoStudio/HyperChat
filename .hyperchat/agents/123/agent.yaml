@@ -1,0 +1,11 @@
+name: '123'
+prompt: '123'
+allowMCPs: []
+isConfirmCallTool: false
+modelKey: openrouter:google/gemini-2.5-flash-preview
+temperature: 1
+maxAttachedDialogs: 5
+maxTokens: 4000
+tags: []
+subAgents: []
+version: 1

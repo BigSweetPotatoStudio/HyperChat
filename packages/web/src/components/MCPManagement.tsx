@@ -18,6 +18,7 @@ import {
   Form,
   Radio,
   Popconfirm,
+  Divider,
 } from "antd";
 import {
   ReloadOutlined,
@@ -80,6 +81,8 @@ export const MCPManagement = forwardRef<MCPManagementRef, MCPManagementProps>(({
   const [addMcpModalOpen, setAddMcpModalOpen] = useState(false);
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [searchText, setSearchText] = useState<string>("");
+  const [scopeFilter, setScopeFilter] = useState<'all' | 'workspace' | 'global'>('all');
+  const [createScope, setCreateScope] = useState<'workspace' | 'global'>('workspace');
   const [toolsModalOpen, setToolsModalOpen] = useState(false);
   const [selectedClientTools, setSelectedClientTools] = useState<any[]>([]);
   const [selectedClientName, setSelectedClientName] = useState<string>("");
@@ -238,19 +241,19 @@ export const MCPManagement = forwardRef<MCPManagementRef, MCPManagementProps>(({
   };
 
   // 删除MCP客户端
-  const deleteMcpClient = async (clientName: string) => {
+  const deleteMcpClient = async (client: IMCPClient) => {
     try {
-      // 使用统一的工作区特定的删除方法
-      await call("manageWorkspaceMcpClient", {
-        clientName,
-        action: "delete"
+      // 使用新的删除方法支持 scope 参数
+      await call("deleteWorkspaceMcpServerConfig", {
+        serverName: client.serverName,
+        scope: (client as any).scope // 传递 scope 信息
       });
       message.success(t`MCP client deleted successfully`);
 
       // 删除成功后刷新前端数据（只刷新MCP数据）
       await onRefresh();
     } catch (error) {
-      console.error(`Failed to delete MCP client ${clientName}:`, error);
+      console.error(`Failed to delete MCP client ${client.serverName}:`, error);
       message.error(t`Failed to delete MCP client`);
     }
   };
@@ -412,10 +415,30 @@ export const MCPManagement = forwardRef<MCPManagementRef, MCPManagementProps>(({
     }
   }, [selectedTool]);
 
-  // 过滤MCP客户端
+  // 过滤和排序MCP客户端
   const getFilteredMcpClients = () => {
-    // 将对象转换为数组
-    let filteredClients = Object.values(mcpClients).sort((a, b) => a.order - b.order);
+    // 将对象转换为数组并按 scope 优先级排序
+    let filteredClients = Object.values(mcpClients)
+      .sort((a, b) => {
+        // 首先按 scope 排序：本地（workspace）排在前面，全局（global）排在后面
+        const scopeA = (a as any).scope || 'workspace';
+        const scopeB = (b as any).scope || 'workspace';
+        
+        if (scopeA === 'workspace' && scopeB === 'global') return -1;
+        if (scopeA === 'global' && scopeB === 'workspace') return 1;
+        
+        // 相同 scope 内按原有的 order 排序
+        return a.order - b.order;
+      });
+
+    // 按 scope 过滤
+    if (scopeFilter !== 'all') {
+      filteredClients = filteredClients.filter(client => {
+        // 假设 client 对象有 scope 属性，如果没有则视为 workspace
+        const clientScope = (client as any).scope || 'workspace';
+        return clientScope === scopeFilter;
+      });
+    }
 
     // 按状态过滤
     if (statusFilter === "enabled") {
@@ -504,6 +527,19 @@ export const MCPManagement = forwardRef<MCPManagementRef, MCPManagementProps>(({
           </div>
         </div>
 
+        {/* Scope 过滤器 */}
+        <div className="mb-3">
+          <Radio.Group 
+            value={scopeFilter} 
+            onChange={(e) => setScopeFilter(e.target.value)}
+            size="small"
+          >
+            <Radio.Button value="all">{t`All`}</Radio.Button>
+            <Radio.Button value="workspace">{t`Workspace`}</Radio.Button>
+            <Radio.Button value="global">{t`Global`}</Radio.Button>
+          </Radio.Group>
+        </div>
+
         {/* 搜索和过滤 */}
         <div className="mb-2">
           <Space.Compact style={{ width: "100%" }}>
@@ -581,10 +617,24 @@ export const MCPManagement = forwardRef<MCPManagementRef, MCPManagementProps>(({
                   label: t`Delete`,
                   danger: true,
                   onClick: () => {
+                    const scopeWarning = (client as any).scope === 'global' 
+                      ? t`Warning: Deleting a global MCP server will affect all projects using this server!`
+                      : t`This will only delete the MCP server from current workspace.`;
+                    
                     Modal.confirm({
                       title: t`Confirm Delete`,
-                      content: t`Are you sure you want to delete this MCP client?`,
-                      onOk: () => deleteMcpClient(client.serverName),
+                      content: (
+                        <div>
+                          <p>{t`Are you sure you want to delete this MCP client?`}</p>
+                          <Alert 
+                            message={scopeWarning}
+                            type={(client as any).scope === 'global' ? 'warning' : 'info'}
+                            style={{ marginTop: 8 }}
+                          />
+                        </div>
+                      ),
+                      onOk: () => deleteMcpClient(client),
+                      okButtonProps: { danger: true },
                     });
                   },
                 } : null,
@@ -611,13 +661,14 @@ export const MCPManagement = forwardRef<MCPManagementRef, MCPManagementProps>(({
                     title={
                       <Space>
                         <span className="text-sm">{client.serverName}</span>
+                        {/* Scope 标签 */}
+                        {(client as any).scope && (
+                          <Tag color={(client as any).scope === "global" ? "orange" : "purple"}>
+                            {(client as any).scope === "global" ? t`Global` : t`Workspace`}
+                          </Tag>
+                        )}
                         {client.mcpType === "builtin" ? (
                           <Tag color="blue">{t`Built-in`}</Tag>
-                        ) : (
-                          null
-                        )}
-                        {client.scope == "global" ? (
-                          <Tag color="red">{t`Global`}</Tag>
                         ) : (
                           null
                         )}
@@ -715,17 +766,25 @@ export const MCPManagement = forwardRef<MCPManagementRef, MCPManagementProps>(({
 
                 // 检查服务名称是否已存在（新建时）
                 if (values._type !== "edit") {
-                  const existingClients = Object.values(mcpClients).filter(x => x.serverName === values.name);
+                  // 在相同 scope 内检查名称是否重复
+                  const existingClients = Object.values(mcpClients).filter(x => {
+                    const clientScope = (x as any).scope || 'workspace';
+                    return x.serverName === values.name && clientScope === createScope;
+                  });
                   if (existingClients.length > 0) {
-                    message.error(t`MCP Service Name already exists`);
+                    message.error(t`MCP Service Name already exists in ${createScope === 'global' ? 'global' : 'workspace'} scope`);
                     return;
                   }
                 } else {
                   // 编辑时，如果名称改变则删除旧服务
                   if (values._name && values.name !== values._name) {
-                    await call("manageWorkspaceMcpClient", {
-                      clientName: values._name,
-                      action: "delete"
+                    // 编辑时需要传递正确的 scope 参数
+                    const editingClient = Object.values(mcpClients).find(x => x.serverName === values._name);
+                    const editingScope = (editingClient as any)?.scope || 'workspace';
+                    
+                    await call("deleteWorkspaceMcpServerConfig", {
+                      serverName: values._name,
+                      scope: editingScope
                     });
                   }
                 }
@@ -776,10 +835,11 @@ export const MCPManagement = forwardRef<MCPManagementRef, MCPManagementProps>(({
                   };
                 }
 
-                // 添加工作区特定的MCP配置
+                // 添加MCP配置（支持全局/工作区）
                 await call("setWorkspaceMcpServerConfig", {
                   serverName: values.name,
-                  serverConfig: mcpServerConfig
+                  serverConfig: mcpServerConfig,
+                  scope: createScope // 使用用户选择的 scope
                 });
 
                 setMcpConfigResult({
@@ -817,6 +877,52 @@ export const MCPManagement = forwardRef<MCPManagementRef, MCPManagementProps>(({
         >
           <Input disabled placeholder="Please enter" />
         </Form.Item>
+
+        {/* Scope 选择 - 只在创建模式显示 */}
+        {mcpForm.getFieldValue("_type") !== "edit" && (
+          <>
+            <Alert
+              message={
+                createScope === 'global' 
+                  ? t`Creating a global MCP server that will be available in all workspaces`
+                  : t`Creating a workspace MCP server that will only be available in current workspace`
+              }
+              type={createScope === 'global' ? 'warning' : 'info'}
+              style={{ marginBottom: 16 }}
+            />
+            <Form.Item label={t`MCP Server Scope`}>
+              <Radio.Group 
+                value={createScope} 
+                onChange={(e) => setCreateScope(e.target.value)}
+              >
+                <Radio value="workspace">
+                  <Space>
+                    <Tag color="purple">{t`Workspace`}</Tag>
+                    <span>{t`Current project only`}</span>
+                  </Space>
+                </Radio>
+                <Radio value="global">
+                  <Space>
+                    <Tag color="orange">{t`Global`}</Tag>
+                    <span>{t`All projects shared`}</span>
+                  </Space>
+                </Radio>
+              </Radio.Group>
+            </Form.Item>
+            <Divider />
+          </>
+        )}
+
+        {/* 编辑模式显示当前 scope */}
+        {mcpForm.getFieldValue("_type") === "edit" && (
+          <>
+            <Alert
+              message={`${t`Current MCP server scope:`} ${t`Workspace`}`}
+              type="info"
+              style={{ marginBottom: 16 }}
+            />
+          </>
+        )}
 
         {/* 服务名称 */}
         <Form.Item
