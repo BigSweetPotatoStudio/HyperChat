@@ -7,7 +7,7 @@ import { getWorkspaceManager } from "./workspace/index.mjs";
 
 let path = getWorkspaceManager().findWorkspace(process.cwd());
 
-await getWorkspaceManager().initialize(path);
+await getWorkspaceManager().initialize(path, process.cwd());
 await getWorkspaceManager().start();
 
 // 启动 HTTP 服务，捕获并记录异常

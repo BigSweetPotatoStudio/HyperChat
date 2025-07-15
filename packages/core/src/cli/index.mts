@@ -19,7 +19,7 @@ import { startChat } from './commands/chat.mjs';
 import { startServer } from './commands/server.mjs';
 import { startRun, showRunStatus } from './commands/run.mjs';
 import { createWorkspace, listWorkspaces, showCurrentWorkspace } from './commands/workspace.mjs';
-import { listAgents, createAgent, checkAgentExists } from './commands/agent.mjs';
+import { listAgents, createAgent, checkAgentExists, showAgentMemory } from './commands/agent.mjs';
 import { Command } from '../command.mjs';
 import { 
   listTasks, 
@@ -117,6 +117,7 @@ ${t`Commands:`}
   agent list               ${t`List all agents`}
   agent create <name>      ${t`Create new agent`}
   agent delete <name>      ${t`Delete agent`}
+  agent memory <name>      ${t`Show agent memory`}
   agent <name> "message"    ${t`Quick chat with specified agent`}
   agent <name> chat        ${t`Interactive chat with specified agent`}
   
@@ -153,6 +154,7 @@ ${t`Examples:`}
   hyperchat agent mybot chat         # ${t`Interactive chat with specified agent`}
   hyperchat agent list              # ${t`List all agents`}
   hyperchat agent create mybot      # ${t`Create new agent`}
+  hyperchat agent memory mybot      # ${t`Show agent memory`}
   
   # ${t`System management`}
   hyperchat serve                   # ${t`Start server (includes Web UI)`}
@@ -310,11 +312,19 @@ async function deleteAgentWrapper(name: string, logger: Logger) {
   }
 }
 
+async function showAgentMemoryWrapper(name: string, logger: Logger) {
+  try {
+    await showAgentMemory(name);
+  } catch (error) {
+    logger.error(`${t`Failed to show agent memory:`} ${error instanceof Error ? error.message : String(error)}`);
+  }
+}
+
 // Agent命令处理
 async function handleAgentCommand(args: string[], logger: Logger) {
   if (args.length === 0) {
     logger.error(t`Please provide agent subcommand`);
-    logger.info(t`Available commands: list, create, delete, <name> "message", <name> chat`);
+    logger.info(t`Available commands: list, create, delete, memory, <name> "message", <name> chat`);
     return;
   }
 
@@ -345,6 +355,16 @@ async function handleAgentCommand(args: string[], logger: Logger) {
       }
       break;
 
+    case 'memory':
+      const memoryName = args[1];
+      if (!memoryName) {
+        logger.error(t`Please provide agent name`);
+        logger.info(t`Usage: hyperchat agent memory <name>`);
+      } else {
+        await showAgentMemoryWrapper(memoryName, logger);
+      }
+      break;
+
     default:
       // 检查是否是 agent <name> "message" 或 agent <name> chat
       const agentName = subCmd;
@@ -352,7 +372,7 @@ async function handleAgentCommand(args: string[], logger: Logger) {
       
       if (!agentCheck.exists) {
         logger.error(`${t`Unknown agent command or agent does not exist:`} ${subCmd}`);
-        logger.info(t`Available commands: list, create, delete, <name> "message", <name> chat`);
+        logger.info(t`Available commands: list, create, delete, memory, <name> "message", <name> chat`);
         return;
       }
 
