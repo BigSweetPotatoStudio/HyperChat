@@ -54,8 +54,6 @@ export class Workspace {
   private fileTree?: WorkspaceFileNode;
   private lastSync?: number;
   private readonly HYPERCHAT_DIR = CONSTANTS.HYPERCHAT_DIR;
-  private isGlobalWorkspace: boolean;  // 是否传入的是全局工作区路径
-  private useOnlyGlobalConfig: boolean;  // 是否只使用全局配置（不合并）
   private effectiveConfigPath: string;
 
   // 工作区状态管理
@@ -66,31 +64,18 @@ export class Workspace {
   private isTaskSchedulerRunning: boolean = false;
 
   constructor(public workspacePath: string) {
-    // 检查是否传入的是全局工作区路径
-    this.isGlobalWorkspace = workspacePath === CONSTANTS.GLOBAL_PATH;
-
     // 检查当前目录是否是工作区（包含 .hyperchat 目录）
     const hasHyperChatDir = this.isWorkspaceDirectory(workspacePath);
 
-    // 确定有效的配置路径和配置使用模式
-    if (hasHyperChatDir && !this.isGlobalWorkspace) {
-      // 本地工作区：使用本地路径，会合并全局配置
-      this.effectiveConfigPath = workspacePath;
-      this.useOnlyGlobalConfig = false;
-    } else if (this.isGlobalWorkspace) {
-      // 全局工作区：使用全局路径，只用全局配置
-      this.effectiveConfigPath = CONSTANTS.GLOBAL_PATH;
-      this.useOnlyGlobalConfig = true;
-    } else {
-      // 非工作区目录：使用全局路径，只用全局配置
-      this.effectiveConfigPath = CONSTANTS.GLOBAL_PATH;
-      this.useOnlyGlobalConfig = true;
-    }
+    // 确定有效的配置路径
+    // 如果有 .hyperchat 目录，使用当前路径
+    // 否则使用全局路径
+    this.effectiveConfigPath = hasHyperChatDir ? workspacePath : CONSTANTS.GLOBAL_PATH;
 
     const hyperChatPath = path.join(this.effectiveConfigPath, this.HYPERCHAT_DIR);
 
     this.config = {
-      name: this.isGlobalWorkspace ? 'Global Workspace' : path.basename(workspacePath),
+      name: path.basename(workspacePath),
       created: Date.now(),
       settings: {},
     };
@@ -120,7 +105,16 @@ export class Workspace {
     );
 
     // 初始化设置管理器
-    this.settingsManager = new WorkspaceSettingsManager(hyperChatPath);
+    // 如果是本地工作区，传入本地和全局路径数组，实现配置叠加
+    // 如果是全局工作区或没有.hyperchat的目录，只传入全局路径
+    const settingsPaths = this.isLocalWorkspace()
+      ? [
+        path.join(this.workspacePath, this.HYPERCHAT_DIR),
+        path.join(CONSTANTS.GLOBAL_PATH, this.HYPERCHAT_DIR)
+      ] : [
+        path.join(this.workspacePath, this.HYPERCHAT_DIR)
+      ];
+    this.settingsManager = new WorkspaceSettingsManager(settingsPaths);
 
     // 初始化任务管理器
     this.taskManager = new TaskManager(hyperChatPath);
@@ -157,31 +151,17 @@ export class Workspace {
   }
 
   /**
-   * 检查是否只使用全局配置（不合并本地配置）
-   */
-  isUsingOnlyGlobalConfig(): boolean {
-    return this.useOnlyGlobalConfig;
-  }
-
-  /**
    * 检查是否是全局工作区
    */
   isGlobal(): boolean {
-    return this.isGlobalWorkspace;
+    return this.workspacePath === CONSTANTS.GLOBAL_PATH;
   }
 
   /**
    * 检查是否为本地工作区（有 .hyperchat 目录）
    */
   isLocalWorkspace(): boolean {
-    return !this.isGlobalWorkspace && this.effectiveConfigPath === this.workspacePath;
-  }
-
-  /**
-   * 检查是否需要合并全局配置
-   */
-  needMergeGlobalConfig(): boolean {
-    return this.isLocalWorkspace();
+    return this.isWorkspaceDirectory(this.workspacePath) && this.workspacePath !== CONSTANTS.GLOBAL_PATH;
   }
 
   /**
@@ -227,8 +207,7 @@ export class Workspace {
       Logger.info('✅ 工作区配置初始化完成', {
         workspacePath: this.workspacePath,
         effectiveConfigPath: this.effectiveConfigPath,
-        isGlobalWorkspace: this.isGlobalWorkspace,
-        useOnlyGlobalConfig: this.useOnlyGlobalConfig,
+        isGlobal: this.isGlobal(),
         isLocal: this.isLocalWorkspace()
       });
 
@@ -375,25 +354,6 @@ export class Workspace {
    */
   private async loadMergedConfig(): Promise<void> {
     await this.loadWorkspaceMetaFromSettings();
-    
-    // 如果需要合并全局配置
-    if (this.needMergeGlobalConfig()) {
-      await this.mergeGlobalConfig();
-    }
-  }
-
-  /**
-   * 合并全局工作区配置
-   */
-  private async mergeGlobalConfig(): Promise<void> {
-    try {
-      // 这里可以添加全局配置合并逻辑
-      // 例如：合并全局的默认设置、MCP配置等
-      // 目前暂时保留接口，后续根据需要实现具体的合并逻辑
-      Logger.debug('合并全局工作区配置到本地工作区');
-    } catch (error) {
-      Logger.warn('合并全局配置失败:', error);
-    }
   }
 
   /**
@@ -466,8 +426,8 @@ export class Workspace {
    * 获取所有 agents（支持全局+工作区合并）
    */
   async getAgents(): Promise<AgentConfig[]> {
-    // 如果需要合并配置（本地工作区）
-    if (this.needMergeGlobalConfig()) {
+    // 如果是本地工作区，需要合并全局 agents
+    if (this.isLocalWorkspace()) {
       // 如果是工作区且不是全局工作区，获取合并的Agents
       return await this.getMergedAgents();
     } else {

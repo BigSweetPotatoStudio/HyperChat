@@ -16,6 +16,7 @@
     "wordWrap": true,
     "tabSize": 2
   },
+  "aiConfig": {},
   "defaultAI": {
     "streamResponse": true
   },

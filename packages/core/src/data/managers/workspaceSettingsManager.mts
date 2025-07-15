@@ -25,12 +25,18 @@ export {
  */
 export class WorkspaceSettingsManager {
   private settings: WorkspaceSettings;
+  private workspacePaths: string[];
+  private primaryPath: string;
   private settingsPath: string;
   private schemaPath: string;
 
-  constructor(private workspacePath: string) {
-    this.settingsPath = path.join(workspacePath, "settings.jsonc");
-    this.schemaPath = path.join(workspacePath, "settings.schema.json");
+  constructor(workspacePaths: string[]) {
+    // 如果传入单个路径，转换为数组
+    this.workspacePaths =  workspacePaths;
+    // 主路径是第一个路径（通常是本地工作区）
+    this.primaryPath = this.workspacePaths[0];
+    this.settingsPath = path.join(this.primaryPath, "settings.jsonc");
+    this.schemaPath = path.join(this.primaryPath, "settings.schema.json");
     this.settings = DEFAULT_WORKSPACE_SETTINGS;
   }
 
@@ -72,22 +78,38 @@ export class WorkspaceSettingsManager {
    */
   async load(): Promise<void> {
     try {
-      if (fs.existsSync(this.settingsPath)) {
-        const content = await fs.promises.readFile(this.settingsPath, "utf-8");
-        const parsed = jsonc.parse(content);
+      // 先使用默认设置作为基础
+      let mergedSettings = { ...DEFAULT_WORKSPACE_SETTINGS };
+      
+      // 从后往前遍历路径（通常是：全局 -> 本地）
+      for (let i = this.workspacePaths.length - 1; i >= 0; i--) {
+        const workspacePath = this.workspacePaths[i];
+        const settingsPath = path.join(workspacePath, "settings.jsonc");
         
-        // 使用 Zod 验证和解析
-        const result = WorkspaceSettingsSchema.safeParse(parsed);
-        
-        if (result.success) {
-          this.settings = result.data;
-        } else {
-          console.warn("工作区设置文件验证失败，使用默认设置:", result.error);
-          // 保存默认设置
-          await this.save();
+        if (fs.existsSync(settingsPath)) {
+          try {
+            const content = await fs.promises.readFile(settingsPath, "utf-8");
+            const parsed = jsonc.parse(content);
+            
+            // 使用 Zod 验证和解析
+            const result = WorkspaceSettingsSchema.safeParse(parsed);
+            
+            if (result.success) {
+              // 合并设置：后加载的覆盖先加载的
+              mergedSettings = this.deepMergeSettings(mergedSettings, result.data);
+            } else {
+              console.warn(`设置文件验证失败 ${settingsPath}:`, result.error);
+            }
+          } catch (error) {
+            console.warn(`加载设置文件失败 ${settingsPath}:`, error);
+          }
         }
-      } else {
-        // 文件不存在，创建默认设置
+      }
+      
+      this.settings = mergedSettings;
+      
+      // 如果主路径的设置文件不存在，创建它
+      if (!fs.existsSync(this.settingsPath)) {
         await this.save();
       }
     } catch (error) {
@@ -277,7 +299,14 @@ export class WorkspaceSettingsManager {
    * 获取工作区路径
    */
   getWorkspacePath(): string {
-    return this.workspacePath;
+    return this.primaryPath;
+  }
+  
+  /**
+   * 获取所有工作区路径
+   */
+  getWorkspacePaths(): string[] {
+    return this.workspacePaths;
   }
 
   /**
@@ -292,6 +321,39 @@ export class WorkspaceSettingsManager {
    */
   getSchemaPath(): string {
     return this.schemaPath;
+  }
+
+
+  /**
+   * 深度合并设置对象
+   * @param defaults 默认设置（全局）
+   * @param overrides 覆盖设置（本地）
+   * @returns 合并后的设置
+   */
+  private deepMergeSettings(defaults: WorkspaceSettings, overrides: WorkspaceSettings): WorkspaceSettings {
+    return {
+      workspace: overrides.workspace || defaults.workspace,
+      appearance: {
+        ...defaults.appearance,
+        ...overrides.appearance,
+      },
+      editor: {
+        ...defaults.editor,
+        ...overrides.editor,
+      },
+      aiConfig: {
+        ...defaults.aiConfig,
+        ...overrides.aiConfig,
+      },
+      defaultAI: {
+        ...defaults.defaultAI,
+        ...overrides.defaultAI,
+      },
+      advanced: {
+        ...defaults.advanced,
+        ...overrides.advanced,
+      },
+    };
   }
 
   // ========== 工作区元数据管理方法 ==========

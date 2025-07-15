@@ -79,10 +79,10 @@ export async function showCurrentWorkspace() {
     console.log(`📁 ${t`Workspace:`} ${workspace.workspacePath}`);
     console.log(`📂 ${t`Effective Config Path:`} ${workspace.getEffectiveConfigPath()}`);
 
-    if (workspace.isUsingOnlyGlobalConfig() && !workspace.isGlobal()) {
-      console.log(`\n💡 ${t`No local workspace found, using global configuration only.`}`);
+    if (!workspace.isLocalWorkspace() && !workspace.isGlobal()) {
+      console.log(`\n💡 ${t`No local workspace found, using global configuration.`}`);
     } else if (workspace.isLocalWorkspace()) {
-      console.log(`\n✅ ${t`Using local workspace with .hyperchat directory (will merge global config).`}`);
+      console.log(`\n✅ ${t`Using local workspace with .hyperchat directory (merging with global config).`}`);
     } else if (workspace.isGlobal()) {
       console.log(`\n🌐 ${t`Using global workspace.`}`);
     }

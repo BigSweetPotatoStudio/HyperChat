@@ -55,6 +55,7 @@ export function validateFileSize(filePath: string): void {
  * 验证并规范化文件路径
  */
 export function validateAndNormalizePath(filePath: string, workspacePath: string): string {
+  console.log(`Validating and normalizing path: ${filePath} within workspace: ${workspacePath}`);
   // 规范化路径
   const normalizedPath = path.resolve(filePath);
   
