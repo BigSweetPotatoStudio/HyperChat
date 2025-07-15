@@ -25,18 +25,16 @@ export {
  */
 export class WorkspaceSettingsManager {
   private settings: WorkspaceSettings;
-  private workspacePaths: string[];
-  private primaryPath: string;
+  private localPath: string;
+  private globalPath: string;
   private settingsPath: string;
   private schemaPath: string;
 
-  constructor(workspacePaths: string[]) {
-    // 如果传入单个路径，转换为数组
-    this.workspacePaths =  workspacePaths;
-    // 主路径是第一个路径（通常是本地工作区）
-    this.primaryPath = this.workspacePaths[0];
-    this.settingsPath = path.join(this.primaryPath, "settings.jsonc");
-    this.schemaPath = path.join(this.primaryPath, "settings.schema.json");
+  constructor(localPath: string, globalPath?: string) {
+    this.localPath = localPath;
+    this.globalPath = globalPath || localPath;
+    this.settingsPath = path.join(this.localPath, "settings.jsonc");
+    this.schemaPath = path.join(this.localPath, "settings.schema.json");
     this.settings = DEFAULT_WORKSPACE_SETTINGS;
   }
 
@@ -81,9 +79,10 @@ export class WorkspaceSettingsManager {
       // 先使用默认设置作为基础
       let mergedSettings = { ...DEFAULT_WORKSPACE_SETTINGS };
       
-      // 从后往前遍历路径（通常是：全局 -> 本地）
-      for (let i = this.workspacePaths.length - 1; i >= 0; i--) {
-        const workspacePath = this.workspacePaths[i];
+      // 先加载全局路径，再加载本地路径（本地覆盖全局）
+      // 如果本地路径和全局路径相同，则只加载一次
+      const paths = this.localPath === this.globalPath ? [this.localPath] : [this.globalPath, this.localPath];
+      for (const workspacePath of paths) {
         const settingsPath = path.join(workspacePath, "settings.jsonc");
         
         if (fs.existsSync(settingsPath)) {
@@ -299,14 +298,21 @@ export class WorkspaceSettingsManager {
    * 获取工作区路径
    */
   getWorkspacePath(): string {
-    return this.primaryPath;
+    return this.localPath;
   }
   
   /**
-   * 获取所有工作区路径
+   * 获取本地路径
    */
-  getWorkspacePaths(): string[] {
-    return this.workspacePaths;
+  getLocalPath(): string {
+    return this.localPath;
+  }
+
+  /**
+   * 获取全局路径
+   */
+  getGlobalPath(): string {
+    return this.globalPath;
   }
 
   /**

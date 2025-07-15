@@ -74,14 +74,16 @@ export class Workspace {
     this.agentManager = new AgentManager(path.join(hyperChatPath, CONSTANTS.DIRECTORIES.AGENTS));
 
     // 创建MCP管理器
-    // 如果是本地工作区，传入本地和全局路径数组，实现配置叠加
-    // 如果是全局工作区或没有.hyperchat的目录，只传入当前路径
-    const mcpPaths = this.isLocalWorkspace() 
-      ? [hyperChatPath, path.join(CONSTANTS.GLOBAL_PATH, this.HYPERCHAT_DIR)]
-      : [hyperChatPath];
+    // 如果是本地工作区，传入本地和全局路径，实现配置叠加
+    // 如果是全局工作区，只传入本地路径
+    const localPath = hyperChatPath;
+    const globalPath = this.isLocalWorkspace() 
+      ? path.join(CONSTANTS.GLOBAL_PATH, this.HYPERCHAT_DIR)
+      : undefined;
     
     this.mcpManager = new WorkspaceMCPManager(
-      mcpPaths,
+      localPath,
+      globalPath,
       {
         autoReconnect: true,
         reconnectInterval: 5000,
@@ -102,12 +104,13 @@ export class Workspace {
     );
 
     // 初始化设置管理器
-    // 如果是本地工作区，传入本地和全局路径数组，实现配置叠加
-    // 如果是全局工作区或没有.hyperchat的目录，只传入全局路径
-    const settingsPaths = this.isLocalWorkspace()
-      ? [hyperChatPath, path.join(CONSTANTS.GLOBAL_PATH, this.HYPERCHAT_DIR)]
-      : [hyperChatPath];
-    this.settingsManager = new WorkspaceSettingsManager(settingsPaths);
+    // 如果是本地工作区，传入本地和全局路径，实现配置叠加
+    // 如果是全局工作区，只传入本地路径
+    const settingsLocalPath = hyperChatPath;
+    const settingsGlobalPath = this.isLocalWorkspace()
+      ? path.join(CONSTANTS.GLOBAL_PATH, this.HYPERCHAT_DIR)
+      : undefined;
+    this.settingsManager = new WorkspaceSettingsManager(settingsLocalPath, settingsGlobalPath);
 
     // 初始化任务管理器
     this.taskManager = new TaskManager(hyperChatPath);
