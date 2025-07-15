@@ -215,12 +215,14 @@ export class AgentInstance {
  * Agent 管理器类 - 管理所有 Agent 实例
  */
 export class AgentManager {
-  private agentsPath: string;
+  private localPath: string;
+  private globalPath: string;
   private agents: Map<string, AgentInstance> = new Map(); // key -> AgentInstance
   private nameToKey: Map<string, string> = new Map(); // name -> key
 
-  constructor(agentsPath: string) {
-    this.agentsPath = agentsPath;
+  constructor(localPath: string, globalPath?: string) {
+    this.localPath = localPath;
+    this.globalPath = globalPath || localPath;
   }
 
   /**
@@ -228,40 +230,50 @@ export class AgentManager {
    */
   async init(): Promise<void> {
     // 不自动创建 agents 目录，采用懒加载模式：只有需要时才创建
-    // if (!fs.existsSync(this.agentsPath)) {
-    //   await fs.promises.mkdir(this.agentsPath, { recursive: true });
+    // if (!fs.existsSync(this.localPath)) {
+    //   await fs.promises.mkdir(this.localPath, { recursive: true });
     // }
     await this.loadAllAgents();
   }
 
   /**
-   * 加载所有 Agent
+   * 加载所有 Agent（支持全局+工作区配置合并）
    */
   private async loadAllAgents(): Promise<void> {
-    if (!fs.existsSync(this.agentsPath)) {
-      return;
-    }
+    // 先加载全局 Agents，再加载本地 Agents（本地覆盖全局）
+    // 如果本地路径和全局路径相同，则只加载一次
+    const paths = this.localPath === this.globalPath ? [this.localPath] : [this.globalPath, this.localPath];
+    
+    for (let i = 0; i < paths.length; i++) {
+      const agentsPath = paths[i];
+      const scope = (this.localPath !== this.globalPath && agentsPath === this.globalPath) ? "global" : "workspace";
+      
+      if (!fs.existsSync(agentsPath)) {
+        continue;
+      }
 
-    try {
-      const entries = await fs.promises.readdir(this.agentsPath, { withFileTypes: true });
+      try {
+        const entries = await fs.promises.readdir(agentsPath, { withFileTypes: true });
 
-      for (const entry of entries) {
-        if (entry.isDirectory() && !entry.name.startsWith('.')) {
-          const agentPath = path.join(this.agentsPath, entry.name);
-          const agent = new AgentInstance(agentPath);
+        for (const entry of entries) {
+          if (entry.isDirectory() && !entry.name.startsWith('.')) {
+            const agentPath = path.join(agentsPath, entry.name);
+            const agent = new AgentInstance(agentPath);
 
-          if (agent.exists()) {
-            await agent.init();
-            const config = agent.getConfig();
-
-
-            this.agents.set(config.name, agent);
-            this.nameToKey.set(config.name, config.name);
+            if (agent.exists()) {
+              await agent.init();
+              const config = agent.getConfig();
+              
+              // 使用 scope:name 作为唯一标识，支持同名 Agent 的全局/工作区区分
+              const agentId = this.getAgentId(config.name, scope);
+              this.agents.set(agentId, agent);
+              this.nameToKey.set(config.name, agentId);
+            }
           }
         }
+      } catch (error) {
+        console.warn(`加载 Agent 列表失败 ${agentsPath}:`, error);
       }
-    } catch (error) {
-      console.warn('加载 Agent 列表失败:', error);
     }
   }
 
@@ -281,7 +293,7 @@ export class AgentManager {
     let folderName = this.createSafeFolderName(baseName);
     let counter = 1;
 
-    while (fs.existsSync(path.join(this.agentsPath, folderName))) {
+    while (fs.existsSync(path.join(this.localPath, folderName))) {
       folderName = `${this.createSafeFolderName(baseName)}_${counter}`;
       counter++;
     }
@@ -290,25 +302,49 @@ export class AgentManager {
   }
 
   /**
-   * 创建新的 Agent
+   * 获取 Agent ID（基于 scope 和 name）
+   */
+  private getAgentId(name: string, scope?: "global" | "workspace"): string {
+    const actualScope = scope || "workspace";
+    return `${actualScope}:${name}`;
+  }
+
+  /**
+   * 检测 Agent 的实际 scope
+   */
+  getAgentScope(name: string): "global" | "workspace" | null {
+    const workspaceAgentId = this.getAgentId(name, "workspace");
+    const globalAgentId = this.getAgentId(name, "global");
+    
+    if (this.agents.has(workspaceAgentId)) {
+      return "workspace";
+    } else if (this.agents.has(globalAgentId)) {
+      return "global";
+    } else {
+      return null;
+    }
+  }
+
+  /**
+   * 创建新的 Agent（只在工作区创建，不在全局创建）
    */
   async createAgent(config: Partial<AgentConfig>): Promise<AgentInstance | null> {
-    // 确保 agents 目录存在（懒加载模式）
-    if (!fs.existsSync(this.agentsPath)) {
-      await fs.promises.mkdir(this.agentsPath, { recursive: true });
+    // 确保本地 agents 目录存在（懒加载模式）
+    if (!fs.existsSync(this.localPath)) {
+      await fs.promises.mkdir(this.localPath, { recursive: true });
     }
 
     const name = config.name || `${dayjs().format("YYMMDD-HHmmss")}-${v4().slice(0, 8)}`;
 
     // 使用 name 作为文件夹名称
     const folderName = await this.generateUniqueFolderName(name);
-    const agentPath = path.join(this.agentsPath, folderName);
+    const agentPath = path.join(this.localPath, folderName);
 
-    // key 与文件夹名称保持一致
-    const key = folderName;
+    // 新创建的 Agent 始终是 workspace scope
+    const agentId = this.getAgentId(name, "workspace");
 
-    if (this.agents.has(key)) {
-      console.warn(`Agent ${key} 已存在`);
+    if (this.agents.has(agentId)) {
+      console.warn(`Agent ${agentId} 已存在`);
       return null;
     }
 
@@ -329,20 +365,40 @@ export class AgentManager {
       await agent.init();
       await agent.saveConfig();
 
-      this.agents.set(key, agent);
-      this.nameToKey.set(name, key);
+      this.agents.set(agentId, agent);
+      this.nameToKey.set(name, agentId);
       return agent;
     } catch (error) {
-      console.warn(`创建 Agent 失败 ${key}:`, error);
+      console.warn(`创建 Agent 失败 ${agentId}:`, error);
       return null;
     }
   }
 
   /**
-   * 获取 Agent 实例 (通过 key)
+   * 获取 Agent 实例 (通过 key，智能查找)
+   * 优先查找工作区 Agent，如果没有找到再查找全局 Agent
    */
-  getAgent(key: string): AgentInstance | null {
-    return this.agents.get(key) || null;
+  getAgent(key: string, scope?: "global" | "workspace"): AgentInstance | null {
+    // 如果 key 已经包含 scope，直接使用
+    if (key.includes(':')) {
+      return this.agents.get(key) || null;
+    }
+    
+    // 如果指定了 scope，使用指定的 scope
+    if (scope) {
+      const agentId = this.getAgentId(key, scope);
+      return this.agents.get(agentId) || null;
+    }
+    
+    // 智能查找：优先查找工作区 Agent，如果没有找到再查找全局 Agent
+    const workspaceAgentId = this.getAgentId(key, "workspace");
+    const workspaceAgent = this.agents.get(workspaceAgentId);
+    if (workspaceAgent) {
+      return workspaceAgent;
+    }
+    
+    const globalAgentId = this.getAgentId(key, "global");
+    return this.agents.get(globalAgentId) || null;
   }
 
   /**
@@ -354,43 +410,65 @@ export class AgentManager {
   }
 
   /**
-   * 获取所有 Agent 配置
+   * 获取所有 Agent 配置（包含 scope 信息）
    */
-  async getAllAgents(): Promise<AgentConfig[]> {
-    const configs: AgentConfig[] = [];
-    for (const agent of this.agents.values()) {
-      configs.push(agent.getConfig());
+  async getAllAgents(): Promise<(AgentConfig & { scope?: "global" | "workspace" })[]> {
+    const configs: (AgentConfig & { scope?: "global" | "workspace" })[] = [];
+    for (const [agentId, agent] of this.agents.entries()) {
+      const config = agent.getConfig();
+      const scope = agentId.startsWith('global:') ? 'global' : 'workspace';
+      configs.push({
+        ...config,
+        scope: scope
+      });
     }
     return configs;
   }
 
   /**
-   * 删除 Agent
+   * 删除 Agent（不允许删除全局 Agent）
    */
-  async deleteAgent(key: string): Promise<boolean> {
-    const agent = this.agents.get(key);
+  async deleteAgent(key: string, scope?: "global" | "workspace"): Promise<boolean> {
+    const agentId = key.includes(':') ? key : this.getAgentId(key, scope);
+    const agent = this.agents.get(agentId);
     if (!agent) {
       return false;
+    }
+
+    // 检查是否是全局 Agent
+    if (agentId.startsWith('global:')) {
+      throw new Error(`不允许删除全局 Agent: ${key}`);
     }
 
     const config = agent.getConfig();
     const success = await agent.delete();
     if (success) {
-      this.agents.delete(key);
-      this.nameToKey.delete(config.name);
+      this.agents.delete(agentId);
+      // 更新 nameToKey 映射
+      if (this.nameToKey.get(config.name) === agentId) {
+        this.nameToKey.delete(config.name);
+      }
     }
     return success;
   }
 
   /**
-   * 通过 name 删除 Agent
+   * 通过 name 删除 Agent（优先删除工作区 Agent）
    */
   async deleteAgentByName(name: string): Promise<boolean> {
-    const key = this.nameToKey.get(name);
-    if (!key) {
-      return false;
+    // 优先删除工作区 Agent
+    const workspaceAgentId = this.getAgentId(name, "workspace");
+    if (this.agents.has(workspaceAgentId)) {
+      return await this.deleteAgent(workspaceAgentId);
     }
-    return await this.deleteAgent(key);
+    
+    // 如果工作区没有，不允许删除全局 Agent
+    const globalAgentId = this.getAgentId(name, "global");
+    if (this.agents.has(globalAgentId)) {
+      throw new Error(`不允许删除全局 Agent: ${name}`);
+    }
+    
+    return false;
   }
 
   /**
@@ -401,20 +479,28 @@ export class AgentManager {
   }
 
   /**
-   * 获取所有 Agent 的摘要信息
+   * 获取所有 Agent 的摘要信息（包含 scope 信息）
    */
   async getAllAgentsSummary(): Promise<Array<{
-    config: AgentConfig;
+    config: AgentConfig & { scope?: "global" | "workspace" };
     chatLogsCount: number;
     lastChatTime?: number;
   }>> {
     const summaries: Array<{
-      config: AgentConfig;
+      config: AgentConfig & { scope?: "global" | "workspace" };
       chatLogsCount: number;
       lastChatTime?: number;
     }> = [];
-    for (const agent of this.agents.values()) {
-      summaries.push(await agent.getSummary());
+    for (const [agentId, agent] of this.agents.entries()) {
+      const summary = await agent.getSummary();
+      const scope = agentId.startsWith('global:') ? 'global' : 'workspace';
+      summaries.push({
+        ...summary,
+        config: {
+          ...summary.config,
+          scope: scope
+        }
+      });
     }
     return summaries;
   }

@@ -201,7 +201,7 @@ export function Workspace() {
       // 加载 Agents（获取摘要信息）
       const agentList = await call("getWorkspaceAgentsSummary");
       details.agents = agentList as Array<{
-        config: AgentConfig;
+        config: AgentConfig & { scope?: "global" | "workspace" };
         chatLogsCount: number;
         lastChatTime?: number;
       }>;
@@ -492,7 +492,7 @@ export function Workspace() {
           // 刷新 Agents
           const rawAgentList = await call("getWorkspaceAgentsSummary");
           updatedDetails.agents = rawAgentList as Array<{
-            config: AgentConfig;
+            config: AgentConfig & { scope?: "global" | "workspace" };
             chatLogsCount: number;
             lastChatTime?: number;
           }>;

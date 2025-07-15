@@ -71,14 +71,22 @@ export class Workspace {
       settings: {},
     };
 
-    this.agentManager = new AgentManager(path.join(hyperChatPath, CONSTANTS.DIRECTORIES.AGENTS));
+    // 创建Agent管理器
+    // 如果是本地工作区，传入本地和全局路径，实现配置叠加
+    // 如果是全局工作区，只传入本地路径
+    const agentLocalPath = path.join(hyperChatPath, CONSTANTS.DIRECTORIES.AGENTS);
+    const agentGlobalPath = this.isLocalWorkspace()
+      ? path.join(CONSTANTS.GLOBAL_PATH, this.HYPERCHAT_DIR, CONSTANTS.DIRECTORIES.AGENTS)
+      : undefined;
+
+    this.agentManager = new AgentManager(agentLocalPath, agentGlobalPath);
 
     // 创建MCP管理器
     // 如果是本地工作区，传入本地和全局路径，实现配置叠加
     // 如果是全局工作区，只传入本地路径
     const localPath = hyperChatPath;
     const globalPath = path.join(CONSTANTS.GLOBAL_PATH, this.HYPERCHAT_DIR);
-    
+
     this.mcpManager = new WorkspaceMCPManager(
       localPath,
       globalPath,
@@ -393,38 +401,25 @@ export class Workspace {
 
   /**
    * 获取合并的 agents（全局 + 当前工作区）
+   * 
+   * @deprecated 新的 AgentManager 已经内置了全局+工作区合并功能，直接使用 getAgents() 即可
    */
   async getMergedAgents(): Promise<AgentConfig[]> {
-    // 获取全局Agents
-    const globalAgentManager = new (await import('./agentManager.mjs')).AgentManager(
-      path.join(CONSTANTS.GLOBAL_PATH, this.HYPERCHAT_DIR, CONSTANTS.DIRECTORIES.AGENTS)
-    );
-    await globalAgentManager.init();
-    const globalAgents = await globalAgentManager.getAllAgents();
+    // 新的 AgentManager 已经在初始化时自动合并了全局和工作区的 Agents
+    // 直接返回当前管理器的所有 Agents 即可
+    const allAgents = await this.agentManager.getAllAgents();
 
-    // 获取当前工作区Agents
-    const workspaceAgents = await this.agentManager.getAllAgents();
-
-    // 创建一个 Map 来去重，工作区的配置覆盖全局配置
-    const mergedAgentsMap = new Map<string, AgentConfig>();
-
-    // 先添加全局 agents
-    globalAgents.forEach(agent => {
-      mergedAgentsMap.set(agent.name, agent);
+    // 移除内部的 scope 属性，保持向后兼容
+    return allAgents.map(agent => {
+      const { scope, ...cleanAgent } = agent;
+      return cleanAgent;
     });
-
-    // 再添加工作区 agents，会覆盖同名的全局 agents
-    workspaceAgents.forEach(agent => {
-      mergedAgentsMap.set(agent.name, agent);
-    });
-
-    return Array.from(mergedAgentsMap.values());
   }
 
   /**
    * 获取所有 agents (别名，为了兼容性)
    */
-  async getAllAgents(): Promise<AgentConfig[]> {
+  async getAllAgents(): Promise<(AgentConfig & { scope?: "global" | "workspace" })[]> {
     return await this.agentManager.getAllAgents();
   }
 
@@ -432,7 +427,7 @@ export class Workspace {
    * 获取所有 agents 摘要信息
    */
   async getAllAgentsSummary(): Promise<Array<{
-    config: AgentConfig;
+    config: AgentConfig & { scope?: "global" | "workspace" };
     chatLogsCount: number;
     lastChatTime?: number;
   }>> {
@@ -447,14 +442,14 @@ export class Workspace {
   }
 
   /**
-   * 获取单个 agent 实例
+   * 获取单个 agent 实例（自动检测全局/工作区）
    */
   getAgentInstance(key: string): import("./agentManager.mjs").AgentInstance | null {
     return this.agentManager.getAgent(key);
   }
 
   /**
-   * 获取单个 agent 配置
+   * 获取单个 agent 配置（自动检测全局/工作区）
    */
   async getAgent(key: string): Promise<AgentConfig | null> {
     const instance = this.agentManager.getAgent(key);
@@ -479,10 +474,10 @@ export class Workspace {
   }
 
   /**
-   * 删除 agent
+   * 删除 agent（自动检测全局/工作区，不允许删除全局 Agent）
    */
   async deleteAgent(key: string): Promise<boolean> {
-    return await this.agentManager.deleteAgent(key);
+    return await this.agentManager.deleteAgentByName(key);
   }
 
   /**
@@ -493,7 +488,7 @@ export class Workspace {
   }
 
   /**
-   * 获取 Agent 的聊天记录
+   * 获取 Agent 的聊天记录（支持全局 Agent）
    */
   async getAgentChatLogs(agentName: string): Promise<ChatHistoryItem[]> {
     const instance = this.agentManager.getAgent(agentName);
@@ -501,31 +496,61 @@ export class Workspace {
   }
 
   /**
-   * 添加 Agent 聊天记录
+   * 添加 Agent 聊天记录（支持全局 Agent，但不允许修改全局 Agent 的记录）
    */
   async addAgentChatLog(agentName: string, chatLog: ChatHistoryItem): Promise<boolean> {
     const instance = this.agentManager.getAgent(agentName);
-    return instance ? await instance.setChatLog(chatLog) : false;
+    if (!instance) {
+      return false;
+    }
+    
+    // 检查是否为全局 Agent，如果是，不允许修改记录
+    const agentScope = this.agentManager.getAgentScope(agentName);
+    if (agentScope === "global") {
+      throw new Error(`不允许修改全局 Agent 的聊天记录: ${agentName}`);
+    }
+    
+    return await instance.setChatLog(chatLog);
   }
 
   /**
-   * 删除 Agent 聊天记录
+   * 删除 Agent 聊天记录（支持全局 Agent，但不允许修改全局 Agent 的记录）
    */
   async deleteAgentChatLog(agentName: string, chatKey: string): Promise<boolean> {
     const instance = this.agentManager.getAgent(agentName);
-    return instance ? await instance.deleteChatLog(chatKey) : false;
+    if (!instance) {
+      return false;
+    }
+    
+    // 检查是否为全局 Agent，如果是，不允许修改记录
+    const agentScope = this.agentManager.getAgentScope(agentName);
+    if (agentScope === "global") {
+      throw new Error(`不允许修改全局 Agent 的聊天记录: ${agentName}`);
+    }
+    
+    return await instance.deleteChatLog(chatKey);
   }
 
   /**
-   * 清空 Agent 所有聊天记录
+   * 清空 Agent 所有聊天记录（支持全局 Agent，但不允许修改全局 Agent 的记录）
    */
   async clearAgentChatLogs(agentName: string): Promise<boolean> {
     const instance = this.agentManager.getAgent(agentName);
-    return instance ? await instance.clearChatLogs() : false;
+    if (!instance) {
+      return false;
+    }
+    
+    // 检查是否为全局 Agent，如果是，不允许修改记录
+    const agentScope = this.agentManager.getAgentScope(agentName);
+    if (agentScope === "global") {
+      throw new Error(`不允许修改全局 Agent 的聊天记录: ${agentName}`);
+    }
+    
+    return await instance.clearChatLogs();
   }
 
   /**
-   * 获取 Agent 聊天记录数量
+   * 获取 Agent 聊天记录数量（支持全局 Agent）
    */
   async getAgentChatLogsCount(agentName: string): Promise<number> {
     const instance = this.agentManager.getAgent(agentName);
@@ -533,7 +558,7 @@ export class Workspace {
   }
 
   /**
-   * 获取 Agent 摘要信息
+   * 获取 Agent 摘要信息（支持全局 Agent）
    */
   async getAgentSummary(agentName: string): Promise<{
     config: AgentConfig;
@@ -544,21 +569,22 @@ export class Workspace {
     return instance ? await instance.getSummary() : null;
   }
 
+  /**
+   * 获取 Agent 的 scope（全局或工作区）
+   */
+  getAgentScope(agentName: string): "global" | "workspace" | null {
+    return this.agentManager.getAgentScope(agentName);
+  }
+
   // ========== MCP 管理 ==========
 
   /**
    * 获取 MCP 客户端
    */
   getMcpClients(): WorkspaceMCPClientImpl[] {
-    return this.mcpManager.getClientsByWorkspace();
-  }
-
-  /**
-   * 获取所有 MCP 客户端（包含全局的）
-   */
-  getAllMcpClients(): WorkspaceMCPClientImpl[] {
     return this.mcpManager.getAllClients();
   }
+
 
   /**
    * 启动工作区 MCP 服务

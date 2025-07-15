@@ -96,7 +96,7 @@ export async function startChat(initialMessage?: string, options: ChatOptions = 
     const agentsSummary = await env.workspace.getAllAgentsSummary();
 
     logger.info(`👥 ${t`Current workspace Agent count:`} ${agentsSummary.length}`);
-    logger.info(`🔧 ${t`Current workspace available MCP tools count:`} ${env.workspace.getAllMcpClients().length}`);
+    logger.info(`🔧 ${t`Current workspace available MCP tools count:`} ${env.workspace.getMcpClients().length}`);
     if (env.agentConfig?.name) {
       logger.info(`🌐 ${t`Current Agent:`} ${env.agentConfig?.name}`);
     }

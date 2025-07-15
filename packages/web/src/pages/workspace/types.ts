@@ -74,7 +74,7 @@ export interface ChatTab {
 export interface CurrentWorkspaceDetails {
   fileTreeData?: FileNode[];
   agents: Array<{
-    config: AgentConfig;
+    config: AgentConfig & { scope?: "global" | "workspace" };
     chatLogsCount: number;
     lastChatTime?: number;
   }>;
@@ -145,7 +145,7 @@ export interface WorkspaceMiddlePanelProps {
   chatTabs: ChatTab[];
   activeTabKey: string;
   agents: Array<{
-    config: AgentConfig;
+    config: AgentConfig & { scope?: "global" | "workspace" };
     chatLogsCount: number;
     lastChatTime?: number;
   }>;
@@ -154,7 +154,7 @@ export interface WorkspaceMiddlePanelProps {
   onTabChange: (tabKey: string) => void;
   onTabRemove: (targetKey: string) => void;
   onOpenAgentChat: (
-    agent: { config: AgentConfig; chatLogsCount: number; lastChatTime?: number },
+    agent: { config: AgentConfig & { scope?: "global" | "workspace" }; chatLogsCount: number; lastChatTime?: number },
     chatLog?: { key: string; label?: string }
   ) => void;
   onFileClose: (tabKey: string) => void;
@@ -167,7 +167,7 @@ export interface WorkspaceRightPanelProps {
   workspace: WorkspaceInfo;
   workspaceKey: string;
   agents: Array<{
-    config: AgentConfig;
+    config: AgentConfig & { scope?: "global" | "workspace" };
     chatLogsCount: number;
     lastChatTime?: number;
   }>;
@@ -180,7 +180,7 @@ export interface WorkspaceRightPanelProps {
   onRefreshMCP: () => Promise<void>;
   onRefreshTasks: () => Promise<void>;
   onOpenChat: (
-    agent: { config: AgentConfig; chatLogsCount: number; lastChatTime?: number },
+    agent: { config: AgentConfig & { scope?: "global" | "workspace" }; chatLogsCount: number; lastChatTime?: number },
     chatLog?: any
   ) => void;
 }

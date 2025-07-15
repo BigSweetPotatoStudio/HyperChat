@@ -355,6 +355,7 @@ export class WorkspaceMCPManager {
     workspaceConfig.mcpServers = mergedServers;
 
     this.logInfo(`配置合并完成，最终加载了 ${Object.keys(workspaceConfig.mcpServers).length} 个服务器配置`);
+
     this.workspaceConfig = workspaceConfig;
     return workspaceConfig;
   }
@@ -367,12 +368,7 @@ export class WorkspaceMCPManager {
     return Array.from(this.clients.values());
   }
 
-  /**
-   * 获取工作区的客户端
-   */
-  getClientsByWorkspace(): WorkspaceMCPClientImpl[] {
-    return this.getAllClients();
-  }
+
 
   /**
    * 获取单个客户端

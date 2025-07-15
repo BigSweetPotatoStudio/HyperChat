@@ -11,15 +11,12 @@ export const agentCommands = {
 
   /**
    * 创建新的 Agent
-   * @param workspacePath 工作区路径
    * @param config Agent 配置
    * @returns 创建的 Agent 配置
    */
   async createAgent({
-    workspacePath,
     config
   }: {
-    workspacePath: string;
     config: Partial<{
       key: string;
       name: string;
@@ -37,7 +34,7 @@ export const agentCommands = {
       const workspace = workspaceManager.getCurrentWorkspace();
 
       if (!workspace) {
-        throw new Error(`工作区不存在: ${workspacePath}`);
+        throw new Error('当前没有可用的工作区');
       }
 
       const agentInstance = await workspace.createAgent(config);
@@ -48,7 +45,7 @@ export const agentCommands = {
 
       return agentInstance.getConfig();
     } catch (error) {
-      console.error(`Failed to create agent for ${workspacePath}:`, error);
+      console.error('Failed to create agent:', error);
       throw error;
     }
   },
@@ -67,25 +64,20 @@ export const agentCommands = {
 
   /**
    * 获取工作区中的所有 Agent
-   * @param workspacePath 工作区路径
    * @returns Agent 配置列表
    */
-  async getWorkspaceAgentList({
-    workspacePath
-  }: {
-    workspacePath: string;
-  }): Promise<Record<string, unknown>[]> {
+  async getWorkspaceAgentList(): Promise<Record<string, unknown>[]> {
     try {
       const workspaceManager = getWorkspaceManager();
       const workspace = workspaceManager.getCurrentWorkspace();
 
       if (!workspace) {
-        throw new Error(`工作区不存在: ${workspacePath}`);
+        throw new Error('当前没有可用的工作区');
       }
 
       return await workspace.getAllAgents();
     } catch (error) {
-      console.error(`Failed to get agents for ${workspacePath}:`, error);
+      console.error('Failed to get agents:', error);
       throw error;
     }
   },
@@ -95,7 +87,7 @@ export const agentCommands = {
    * @returns Agent 摘要信息列表
    */
   async getWorkspaceAgentsSummary(): Promise<Array<{
-    config: AgentConfig;
+    config: AgentConfig & { scope?: "global" | "workspace" };
     chatLogsCount: number;
     lastChatTime?: number;
   }>> {
@@ -116,15 +108,12 @@ export const agentCommands = {
 
   /**
    * 获取指定 Agent 的配置
-   * @param workspacePath 工作区路径
    * @param agentName Agent 名称
    * @returns Agent 配置
    */
   async getAgent({
-    workspacePath,
     agentName
   }: {
-    workspacePath: string;
     agentName: string;
   }): Promise<Record<string, unknown> | null> {
     try {
@@ -132,30 +121,27 @@ export const agentCommands = {
       const workspace = workspaceManager.getCurrentWorkspace();
 
       if (!workspace) {
-        throw new Error(`工作区不存在: ${workspacePath}`);
+        throw new Error('当前没有可用的工作区');
       }
 
       const agentConfig = await workspace.getAgent(agentName);
       return agentConfig;
     } catch (error) {
-      console.error(`Failed to get agent ${agentName} for ${workspacePath}:`, error);
+      console.error(`Failed to get agent ${agentName}:`, error);
       throw error;
     }
   },
 
   /**
    * 更新 Agent 配置
-   * @param workspacePath 工作区路径
    * @param agentName Agent 名称
    * @param updates 更新的配置
    * @returns 更新结果
    */
   async updateAgent({
-    workspacePath,
     agentName,
     updates
   }: {
-    workspacePath: string;
     agentName: string;
     updates: Partial<{
       name: string;
@@ -173,7 +159,7 @@ export const agentCommands = {
       const workspace = workspaceManager.getCurrentWorkspace();
 
       if (!workspace) {
-        throw new Error(`工作区不存在: ${workspacePath}`);
+        throw new Error('当前没有可用的工作区');
       }
 
       const agentInstance = workspace.getAgentInstance(agentName);
@@ -183,22 +169,19 @@ export const agentCommands = {
 
       return await agentInstance.updateConfig(updates);
     } catch (error) {
-      console.error(`Failed to update agent ${agentName} for ${workspacePath}:`, error);
+      console.error(`Failed to update agent ${agentName}:`, error);
       throw error;
     }
   },
 
   /**
    * 删除 Agent
-   * @param workspacePath 工作区路径
    * @param agentName Agent 名称
    * @returns 删除结果
    */
   async deleteAgent({
-    workspacePath,
     agentName
   }: {
-    workspacePath: string;
     agentName: string;
   }): Promise<boolean> {
     try {
@@ -206,27 +189,24 @@ export const agentCommands = {
       const workspace = workspaceManager.getCurrentWorkspace();
 
       if (!workspace) {
-        throw new Error(`工作区不存在: ${workspacePath}`);
+        throw new Error('当前没有可用的工作区');
       }
 
       return await workspace.deleteAgent(agentName);
     } catch (error) {
-      console.error(`Failed to delete agent ${agentName} for ${workspacePath}:`, error);
+      console.error(`Failed to delete agent ${agentName}:`, error);
       throw error;
     }
   },
 
   /**
-   * 获取 Agent 的聊天记录
-   * @param workspacePath 工作区路径
+   * 获取 Agent 的聊天记录（支持全局 Agent）
    * @param agentName Agent 名称
    * @returns 聊天记录列表
    */
   async getAgentChatLogs({
-    workspacePath,
     agentName
   }: {
-    workspacePath: string;
     agentName: string;
   }): Promise<{ chatLogs: ChatHistoryItem[] }> {
     try {
@@ -234,35 +214,27 @@ export const agentCommands = {
       const workspace = workspaceManager.getCurrentWorkspace();
 
       if (!workspace) {
-        throw new Error(`工作区不存在: ${workspacePath}`);
+        throw new Error('当前没有可用的工作区');
       }
 
-      const agentInstance = workspace.getAgentInstance(agentName);
-      if (!agentInstance) {
-        throw new Error(`Agent 不存在: ${agentName}`);
-      }
-
-      const chatLogs = await agentInstance.getChatLogs();
+      const chatLogs = await workspace.getAgentChatLogs(agentName);
       return { chatLogs };
     } catch (error) {
-      console.error(`Failed to get chat logs for agent ${agentName} in ${workspacePath}:`, error);
+      console.error(`Failed to get chat logs for agent ${agentName}:`, error);
       throw error;
     }
   },
 
   /**
-   * 删除 Agent 的聊天记录
-   * @param workspacePath 工作区路径
+   * 删除 Agent 的聊天记录（不允许删除全局 Agent 的记录）
    * @param agentName Agent 名称
    * @param chatKey 聊天记录键名
    * @returns 删除结果
    */
   async deleteAgentChatLog({
-    workspacePath,
     agentName,
     chatKey
   }: {
-    workspacePath: string;
     agentName: string;
     chatKey: string;
   }): Promise<boolean> {
@@ -271,32 +243,24 @@ export const agentCommands = {
       const workspace = workspaceManager.getCurrentWorkspace();
 
       if (!workspace) {
-        throw new Error(`工作区不存在: ${workspacePath}`);
+        throw new Error('当前没有可用的工作区');
       }
 
-      const agentInstance = workspace.getAgentInstance(agentName);
-      if (!agentInstance) {
-        throw new Error(`Agent 不存在: ${agentName}`);
-      }
-
-      return await agentInstance.deleteChatLog(chatKey);
+      return await workspace.deleteAgentChatLog(agentName, chatKey);
     } catch (error) {
-      console.error(`Failed to delete chat log ${chatKey} for agent ${agentName} in ${workspacePath}:`, error);
+      console.error(`Failed to delete chat log ${chatKey} for agent ${agentName}:`, error);
       throw error;
     }
   },
 
   /**
-   * 清空 Agent 的所有聊天记录
-   * @param workspacePath 工作区路径
+   * 清空 Agent 的所有聊天记录（不允许清空全局 Agent 的记录）
    * @param agentName Agent 名称
    * @returns 清空结果
    */
   async clearAgentChatLogs({
-    workspacePath,
     agentName
   }: {
-    workspacePath: string;
     agentName: string;
   }): Promise<boolean> {
     try {
@@ -304,17 +268,12 @@ export const agentCommands = {
       const workspace = workspaceManager.getCurrentWorkspace();
 
       if (!workspace) {
-        throw new Error(`工作区不存在: ${workspacePath}`);
+        throw new Error('当前没有可用的工作区');
       }
 
-      const agentInstance = workspace.getAgentInstance(agentName);
-      if (!agentInstance) {
-        throw new Error(`Agent 不存在: ${agentName}`);
-      }
-
-      return await agentInstance.clearChatLogs();
+      return await workspace.clearAgentChatLogs(agentName);
     } catch (error) {
-      console.error(`Failed to clear chat logs for agent ${agentName} in ${workspacePath}:`, error);
+      console.error(`Failed to clear chat logs for agent ${agentName}:`, error);
       throw error;
     }
   },
@@ -357,18 +316,15 @@ export const agentCommands = {
   },
 
   /**
-   * 获取单个 Agent 聊天记录
-   * @param workspacePath 工作区路径
+   * 获取单个 Agent 聊天记录（支持全局 Agent）
    * @param agentName Agent 名称
    * @param chatLogKey 聊天记录键名
    * @returns 聊天记录详情
    */
   async getAgentChatLog({
-    workspacePath,
     agentName,
     chatLogKey
   }: {
-    workspacePath: string;
     agentName: string;
     chatLogKey: string;
   }): Promise<ChatHistoryItem | null> {
@@ -376,7 +332,7 @@ export const agentCommands = {
       const workspaceManager = getWorkspaceManager();
       const workspace = workspaceManager.getCurrentWorkspace();
       if (!workspace) {
-        throw new Error(`工作区不存在: ${workspacePath}`);
+        throw new Error('当前没有可用的工作区');
       }
       const agentInstance = workspace.getAgentInstance(agentName);
       if (!agentInstance) {
@@ -389,13 +345,13 @@ export const agentCommands = {
 
       return chatLog || null;
     } catch (error) {
-      console.error(`Failed to get chat log ${chatLogKey} for agent ${agentName} in ${workspacePath}:`, error);
+      console.error(`Failed to get chat log ${chatLogKey} for agent ${agentName}:`, error);
       throw error;
     }
   },
 
   /**
-   * 获取 Agent 记忆文件内容
+   * 获取 Agent 记忆文件内容（支持全局 Agent）
    * @param agentName Agent 名称
    * @returns 记忆文件内容，如果文件不存在则返回空字符串
    */
@@ -412,8 +368,25 @@ export const agentCommands = {
         throw new Error('当前没有可用的工作区');
       }
 
-      // 构建agent memory.md文件路径
-      const memoryFilePath = path.join(workspace.workspacePath, '.hyperchat', 'agents', agentName, 'memory.md');
+      // 先检查Agent是否存在，并获取其实际路径
+      const agentInstance = workspace.getAgentInstance(agentName);
+      if (!agentInstance) {
+        return ''; // Agent不存在，返回空字符串
+      }
+
+      // 获取Agent的实际路径，支持全局和工作区Agent
+      const agentScope = workspace.getAgentScope(agentName);
+      
+      let memoryFilePath: string;
+      if (agentScope === 'global') {
+        // 全局Agent的路径 - 使用 CONSTANTS.GLOBAL_PATH
+        const { CONSTANTS } = await import('../workspace/constants.mjs');
+        const globalAgentsPath = path.join(CONSTANTS.GLOBAL_PATH, '.hyperchat', 'agents');
+        memoryFilePath = path.join(globalAgentsPath, agentName, 'memory.md');
+      } else {
+        // 工作区Agent的路径
+        memoryFilePath = path.join(workspace.workspacePath, '.hyperchat', 'agents', agentName, 'memory.md');
+      }
 
       // 检查文件是否存在
       if (!fs.existsSync(memoryFilePath)) {

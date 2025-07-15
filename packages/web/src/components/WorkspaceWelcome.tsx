@@ -93,7 +93,6 @@ export const WorkspaceWelcome: React.FC<WorkspaceWelcomeProps> = ({
           
           // 使用新的后端命令获取个别聊天记录
           const chatLog = await call("getAgentChatLog", {
-            workspacePath: workspace.path,
             agentName: recentItem.agentName,
             chatLogKey: recentItem.chatKey
           });

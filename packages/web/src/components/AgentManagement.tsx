@@ -1,4 +1,4 @@
-import React, { useState, useContext, useEffect, forwardRef, useImperativeHandle } from "react";
+import React, { useState, useEffect, forwardRef, useImperativeHandle } from "react";
 import {
   List,
   Button,
@@ -36,7 +36,6 @@ import {
 import { call } from "../common/call";
 import { WorkspaceInfo } from "../pages/workspace/types";
 import { t } from "../i18n";
-import type { AISettings, AIModelConfigItem } from "@dadigua/hyperchat-shared";
 import { useAISettings } from "../contexts/AppSettingsContext";
 import EmojiPicker from 'emoji-picker-react';
 import { HyperChatEditor } from "./HyperChatEditor";
@@ -46,7 +45,7 @@ const { Title } = Typography;
 
 
 interface Agent {
-  config: AgentConfig;
+  config: AgentConfig & { scope?: "global" | "workspace" };
   chatLogsCount: number;
   lastChatTime?: number;
 }
@@ -138,7 +137,6 @@ export const AgentManagement = forwardRef<AgentManagementRef, AgentManagementPro
           throw new Error('Agent key is missing');
         }
         await call('updateAgent', {
-          workspacePath: workspace.path,
           agentName: agentKey,
           updates: agentConfig
         });
@@ -146,7 +144,6 @@ export const AgentManagement = forwardRef<AgentManagementRef, AgentManagementPro
       } else {
         // 创建新Agent
         await call('createAgent', {
-          workspacePath: workspace.path,
           config: agentConfig
         });
         message.success(t`Agent created successfully`);
@@ -166,7 +163,6 @@ export const AgentManagement = forwardRef<AgentManagementRef, AgentManagementPro
   const deleteAgent = async (agent: Agent) => {
     try {
       await call('deleteAgent', {
-        workspacePath: workspace.path,
         agentName: agent.config.name
       });
       message.success(t`Agent deleted successfully`);
@@ -187,7 +183,6 @@ export const AgentManagement = forwardRef<AgentManagementRef, AgentManagementPro
 
       // 获取Agent的聊天历史记录
       const result = await call('getAgentChatLogs', {
-        workspacePath: workspace.path,
         agentName: agent.config.name
       });
 
@@ -219,7 +214,6 @@ export const AgentManagement = forwardRef<AgentManagementRef, AgentManagementPro
           if (!chatHistoryAgent) return;
 
           await call('deleteAgentChatLog', {
-            workspacePath: workspace.path,
             agentName: chatHistoryAgent.config.name,
             chatKey: chatLog.key
           });
@@ -228,7 +222,6 @@ export const AgentManagement = forwardRef<AgentManagementRef, AgentManagementPro
 
           // 重新加载聊天历史列表
           const result = await call('getAgentChatLogs', {
-            workspacePath: workspace.path,
             agentName: chatHistoryAgent.config.name
           });
           // 按时间倒序排列聊天记录
@@ -268,6 +261,7 @@ export const AgentManagement = forwardRef<AgentManagementRef, AgentManagementPro
             size="small"
             dataSource={agents}
             renderItem={(agent) => {
+              const isGlobalAgent = agent.config.scope === "global";
               const menuItems = [
                 {
                   key: "chat",
@@ -287,28 +281,30 @@ export const AgentManagement = forwardRef<AgentManagementRef, AgentManagementPro
                   label: t`View Details`,
                   onClick: () => showAgentDetails(agent),
                 },
-                {
-                  key: "edit",
-                  icon: <EditOutlined />,
-                  label: t`Edit`,
-                  onClick: () => editAgent(agent),
-                },
-                {
-                  type: "divider" as const // 修正 divider 类型
-                },
-                {
-                  key: "delete",
-                  icon: <DeleteOutlined />,
-                  label: t`Delete`,
-                  danger: true,
-                  onClick: () => {
-                    Modal.confirm({
-                      title: t`Confirm Delete`,
-                      content: t`Are you sure you want to delete this agent?`,
-                      onOk: () => deleteAgent(agent),
-                    });
+                ...(isGlobalAgent ? [] : [
+                  {
+                    key: "edit",
+                    icon: <EditOutlined />,
+                    label: t`Edit`,
+                    onClick: () => editAgent(agent),
                   },
-                },
+                  {
+                    type: "divider" as const // 修正 divider 类型
+                  },
+                  {
+                    key: "delete",
+                    icon: <DeleteOutlined />,
+                    label: t`Delete`,
+                    danger: true,
+                    onClick: () => {
+                      Modal.confirm({
+                        title: t`Confirm Delete`,
+                        content: t`Are you sure you want to delete this agent?`,
+                        onOk: () => deleteAgent(agent),
+                      });
+                    },
+                  },
+                ])
               ];
 
               return (
@@ -354,6 +350,11 @@ export const AgentManagement = forwardRef<AgentManagementRef, AgentManagementPro
                     title={
                       <Space>
                         <span className="text-sm">{agent.config.name}</span>
+                        {agent.config.scope && (
+                          <Tag color={agent.config.scope === "global" ? "orange" : "purple"}>
+                            {agent.config.scope === "global" ? t`Global` : t`Workspace`}
+                          </Tag>
+                        )}
                         {agent.config.modelKey && (
                           <Tag color="green">{getModelDisplayName(agent.config.modelKey)}</Tag>
                         )}
@@ -421,6 +422,11 @@ export const AgentManagement = forwardRef<AgentManagementRef, AgentManagementPro
               </Descriptions.Item>
               <Descriptions.Item label={t`Key`}>
                 {selectedAgent.config.name}
+              </Descriptions.Item>
+              <Descriptions.Item label={t`Scope`}>
+                <Tag color={selectedAgent.config.scope === "global" ? "orange" : "purple"}>
+                  {selectedAgent.config.scope === "global" ? t`Global` : t`Workspace`}
+                </Tag>
               </Descriptions.Item>
               <Descriptions.Item label={t`Description`}>
                 {selectedAgent.config.description || t`No description`}
@@ -560,7 +566,6 @@ export const AgentManagement = forwardRef<AgentManagementRef, AgentManagementPro
             <Input
               addonBefore={
                 <Popover
-                  destroyTooltipOnHide={false}
                   trigger="click"
                   title={t`please select emoji!`}
                   content={

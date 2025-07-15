@@ -162,7 +162,6 @@ export async function createAgent(name: string) {
     };
 
     const agent = await Command.createAgent({
-      workspacePath,
       config: agentConfig
     });
 

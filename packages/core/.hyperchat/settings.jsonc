@@ -1,0 +1,28 @@
+{
+  "$schema": "./settings.schema.json",
+  "workspace": {
+    "name": "Global Workspace",
+    "created": 1752300920412
+  },
+  "appearance": {
+    "isDarkMode": false,
+    "theme": "auto",
+    "fontSize": "medium",
+    "language": "zh-CN"
+  },
+  "editor": {
+    "autoSave": true,
+    "autoSaveDelay": 5000,
+    "wordWrap": true,
+    "tabSize": 2
+  },
+  "aiConfig": {},
+  "defaultAI": {
+    "streamResponse": true
+  },
+  "advanced": {
+    "enableTelemetry": false,
+    "debugMode": false,
+    "experimentalFeatures": false
+  }
+}
