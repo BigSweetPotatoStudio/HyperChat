@@ -461,6 +461,9 @@ export const AssistantToolContent: React.FC<AssistantToolContentProps> = ({ cont
                 display: block !important;
                 margin-bottom: 0.2em !important;
             }
+            .compact-markdown .markdown-body hr {
+                height: 0 !important;
+            } 
         `;
         document.head.appendChild(style);
         return () => {

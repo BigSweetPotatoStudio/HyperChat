@@ -169,3 +169,159 @@ export async function withTimeout<T>(
       });
   });
 }
+
+/**
+ * 检查路径是否在 git 仓库中
+ */
+export function isInGitRepository(dirPath: string): boolean {
+  let currentPath = path.resolve(dirPath);
+  
+  while (currentPath !== path.dirname(currentPath)) {
+    if (fs.existsSync(path.join(currentPath, '.git'))) {
+      return true;
+    }
+    currentPath = path.dirname(currentPath);
+  }
+  
+  return false;
+}
+
+/**
+ * 找到 git 仓库根目录
+ */
+export function findGitRoot(dirPath: string): string | null {
+  let currentPath = path.resolve(dirPath);
+  
+  while (currentPath !== path.dirname(currentPath)) {
+    if (fs.existsSync(path.join(currentPath, '.git'))) {
+      return currentPath;
+    }
+    currentPath = path.dirname(currentPath);
+  }
+  
+  return null;
+}
+
+/**
+ * 解析 gitignore 规则
+ */
+function parseGitignoreRules(content: string): string[] {
+  return content
+    .split('\n')
+    .map(line => line.trim())
+    .filter(line => line && !line.startsWith('#'))
+    .map(line => {
+      // 处理否定规则（以 ! 开头）
+      if (line.startsWith('!')) {
+        return line;
+      }
+      
+      // 处理目录规则（以 / 结尾）
+      if (line.endsWith('/')) {
+        return line;
+      }
+      
+      return line;
+    });
+}
+
+/**
+ * 检查路径是否匹配 gitignore 规则
+ */
+function matchesGitignoreRule(filePath: string, rule: string, gitRoot: string): boolean {
+  // 获取相对于 git 根目录的路径
+  const relativePath = path.relative(gitRoot, filePath);
+  
+  // 处理否定规则
+  if (rule.startsWith('!')) {
+    return false; // 否定规则需要特殊处理，这里简化处理
+  }
+  
+  // 处理目录规则
+  if (rule.endsWith('/')) {
+    const dirRule = rule.slice(0, -1);
+    return relativePath.startsWith(dirRule + '/') || relativePath === dirRule;
+  }
+  
+  // 简单的通配符匹配
+  if (rule.includes('*')) {
+    const regexPattern = rule
+      .replace(/\./g, '\\.')
+      .replace(/\*\*/g, '.*')
+      .replace(/\*/g, '[^/]*');
+    
+    const regex = new RegExp(`^${regexPattern}$`);
+    return regex.test(relativePath) || relativePath.split('/').some(segment => regex.test(segment));
+  }
+  
+  // 精确匹配或路径包含匹配
+  return relativePath === rule || 
+         relativePath.startsWith(rule + '/') || 
+         relativePath.split('/').includes(rule);
+}
+
+/**
+ * 加载指定目录的 gitignore 规则
+ */
+export function loadGitignoreRulesFromDir(dirPath: string): string[] {
+  const gitignorePath = path.join(dirPath, '.gitignore');
+  
+  if (!fs.existsSync(gitignorePath)) {
+    return [];
+  }
+  
+  try {
+    const content = fs.readFileSync(gitignorePath, 'utf8');
+    return parseGitignoreRules(content);
+  } catch (error) {
+    console.warn(`Cannot read .gitignore file at ${gitignorePath}: ${error}`);
+    return [];
+  }
+}
+
+/**
+ * 加载从当前目录到 git 根目录的所有 gitignore 规则
+ */
+export function loadAllGitignoreRules(currentPath: string, gitRoot: string): { rules: string[], sources: string[] } {
+  const allRules: string[] = [];
+  const sources: string[] = [];
+  let currentDir = path.resolve(currentPath);
+  const rootDir = path.resolve(gitRoot);
+  
+  // 从当前目录向上遍历到 git 根目录
+  while (currentDir.startsWith(rootDir)) {
+    const rules = loadGitignoreRulesFromDir(currentDir);
+    if (rules.length > 0) {
+      allRules.push(...rules);
+      sources.push(path.join(currentDir, '.gitignore'));
+    }
+    
+    // 如果已经到达 git 根目录，停止
+    if (currentDir === rootDir) {
+      break;
+    }
+    
+    currentDir = path.dirname(currentDir);
+  }
+  
+  return { rules: allRules, sources };
+}
+
+/**
+ * 检查文件是否应该被 gitignore 忽略
+ */
+export function shouldIgnoreFile(filePath: string, gitRoot: string, gitignoreRules: string[]): boolean {
+  // 总是忽略 .git 目录
+  if (filePath.includes('/.git/') || filePath.endsWith('/.git')) {
+    return true;
+  }
+  
+  // 检查 gitignore 规则
+  for (const rule of gitignoreRules) {
+    if (matchesGitignoreRule(filePath, rule, gitRoot)) {
+      return true;
+    }
+  }
+  
+  return false;
+}

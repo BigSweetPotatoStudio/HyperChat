@@ -1,0 +1,11 @@
+name: 代码
+prompt: 帮我智能完成任务，不要询问我。
+allowMCPs: []
+isConfirmCallTool: false
+modelKey: openrouter:moonshotai/kimi-k2
+temperature: 1
+maxTokens: 32000
+maxAttachedDialogs: 10
+tags: []
+subAgents: []
+version: 1

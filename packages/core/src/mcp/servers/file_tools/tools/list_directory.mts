@@ -5,7 +5,11 @@ import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { 
   validateAndNormalizePath, 
   getRelativePathDisplay,
-  withTimeout
+  withTimeout,
+  isInGitRepository,
+  findGitRoot,
+  loadAllGitignoreRules,
+  shouldIgnoreFile
 } from '../utils.mjs';
 import { FileToolError, ERROR_CODES, getConfig } from '../lib.mjs';
 
@@ -14,6 +18,7 @@ const listDirectorySchema = z.object({
   recursive: z.boolean().default(false).describe('Whether to list files recursively'),
   include_hidden: z.boolean().default(false).describe('Whether to include hidden files and directories'),
   max_depth: z.number().int().min(1).max(10).default(3).describe('Maximum depth for recursive listing'),
+  respect_git_ignore: z.boolean().default(true).describe('Whether to respect .gitignore patterns when listing files. Only available in git repositories. Defaults to true.'),
 });
 
 interface FileInfo {
@@ -52,12 +57,21 @@ function listDirectory(
   recursive: boolean, 
   includeHidden: boolean,
   maxDepth: number,
+  respectGitIgnore: boolean,
+  gitRoot: string | null = null,
   currentDepth: number = 0
 ): FileInfo[] {
   const files: FileInfo[] = [];
   
   if (currentDepth >= maxDepth) {
     return files;
+  }
+  
+  // 为当前目录加载 gitignore 规则
+  let currentGitignoreRules: string[] = [];
+  if (respectGitIgnore && gitRoot) {
+    const { rules } = loadAllGitignoreRules(dirPath, gitRoot);
+    currentGitignoreRules = rules;
   }
   
   const entries = fs.readdirSync(dirPath);
@@ -69,6 +83,13 @@ function listDirectory(
     }
     
     const fullPath = path.join(dirPath, entry);
+    
+    // 检查 gitignore 规则
+    if (respectGitIgnore && gitRoot && currentGitignoreRules.length > 0) {
+      if (shouldIgnoreFile(fullPath, gitRoot, currentGitignoreRules)) {
+        continue;
+      }
+    }
     
     try {
       const stats = fs.statSync(fullPath);
@@ -93,6 +114,8 @@ function listDirectory(
           recursive, 
           includeHidden, 
           maxDepth, 
+          respectGitIgnore,
+          gitRoot,
           currentDepth + 1
         );
         files.push(...subFiles);
@@ -111,7 +134,7 @@ export function registerListDirectoryTool(server: McpServer, workspacePath: stri
     'list_directory',
     'Lists files and directories in a specified directory. Supports recursive listing and hidden file inclusion.',
     listDirectorySchema.shape,
-    async ({ absolute_path, recursive, include_hidden, max_depth }) => {
+    async ({ absolute_path, recursive, include_hidden, max_depth, respect_git_ignore }) => {
       const config = getConfig();
       
       try {
@@ -135,6 +158,21 @@ export function registerListDirectoryTool(server: McpServer, workspacePath: stri
           );
         }
         
+        // 初始化 gitignore 相关变量
+        let gitRoot: string | null = null;
+        let gitignoreRules: string[] = [];
+        let gitignoreSources: string[] = [];
+        
+        // 如果启用了 gitignore 支持，加载规则
+        if (respect_git_ignore && isInGitRepository(normalizedPath)) {
+          gitRoot = findGitRoot(normalizedPath);
+          if (gitRoot) {
+            const { rules, sources } = loadAllGitignoreRules(normalizedPath, gitRoot);
+            gitignoreRules = rules;
+            gitignoreSources = sources;
+          }
+        }
+        
         // 列出目录内容（带超时控制）
         const files = await withTimeout(
           () => Promise.resolve(listDirectory(
@@ -142,7 +180,9 @@ export function registerListDirectoryTool(server: McpServer, workspacePath: stri
             workspacePath, 
             recursive, 
             include_hidden, 
-            max_depth
+            max_depth,
+            respect_git_ignore,
+            gitRoot
           )),
           config.fileOperationTimeout,
           `Directory listing operation timed out for: ${absolute_path}`
@@ -169,7 +209,10 @@ export function registerListDirectoryTool(server: McpServer, workspacePath: stri
           return `${file.permissions} ${type.padEnd(4)} ${size} ${file.modified} ${file.path}`;
         }).join('\n');
         
-        const summary = `Listed directory: ${relativePath} (${fileCount} files, ${dirCount} directories)`;
+        let summary = `Listed directory: ${relativePath} (${fileCount} files, ${dirCount} directories)`;
+        if (respect_git_ignore && gitignoreSources.length > 0) {
+          summary += ` - Applied gitignore rules from ${gitignoreSources.length} file(s)`;
+        }
         
         return {
           content: [

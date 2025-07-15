@@ -14,7 +14,7 @@ import type { AgentConfig } from '@dadigua/hyperchat-shared';
  * 获取当前工作区路径 - 查询模式
  */
 async function getCurrentWorkspacePath(): Promise<string> {
-  await workspaceManager.initialize(); // 只查询配置
+  await workspaceManager.initialize(process.cwd(), process.cwd()); // 只查询配置
   return workspaceManager.getCurrentWorkspacePath();
 }
 
@@ -22,7 +22,7 @@ async function getCurrentWorkspacePath(): Promise<string> {
  * 获取工作区路径并启动服务 - 仅用于任务触发
  */
 async function initWorkspaceForExecution(): Promise<string> {
-  await workspaceManager.initialize();
+  await workspaceManager.initialize(process.cwd(), process.cwd());
   await workspaceManager.start(); // 需要完整服务（调度器+AI）
   return workspaceManager.getCurrentWorkspacePath();
 }
@@ -54,7 +54,7 @@ export async function listTasks() {
     for (const task of tasks) {
       const statusIcon = task.disabled ? '⏸️' : '▶️';
       const statusText = task.disabled ? t`Disabled` : t`Enabled`;
-      
+
       console.log(`  ${statusIcon} ${task.name}`);
       console.log(`      ${t`Description:`} ${task.description}`);
       console.log(`      ${t`Agent:`} ${task.agentName}`);
@@ -106,7 +106,7 @@ export async function createTask(taskName: string, options: {
     // 验证代理是否存在
     const agents = await Command.getWorkspaceAgentsSummary();
     const agentExists = agents.some(a => a.config.name === options.agent);
-    
+
     if (!agentExists) {
       console.error(`❌ ${t`Error: Agent`} '${options.agent}' ${t`does not exist`}`);
       console.log(`\n${t`Available agents:`}`);
@@ -232,7 +232,7 @@ export async function deleteTask(taskName: string, options: { force?: boolean } 
     logger.info(`📅 ${t`Deleting task:`} ${taskName}`);
 
     const workspacePath = await getCurrentWorkspacePath();
-    
+
     // 检查任务是否存在
     const task = await Command.getTask({ workspacePath, taskName });
     if (!task) {
@@ -280,7 +280,7 @@ export async function editTask(taskName: string, options: {
     logger.info(`📅 ${t`Editing task:`} ${taskName}`);
 
     const workspacePath = await getCurrentWorkspacePath();
-    
+
     // 检查任务是否存在
     const existingTask = await Command.getTask({ workspacePath, taskName });
     if (!existingTask) {
@@ -290,28 +290,28 @@ export async function editTask(taskName: string, options: {
 
     // 构建更新数据
     const updates: any = {};
-    
+
     if (options.description !== undefined) {
       updates.description = options.description;
     }
-    
+
     if (options.agent !== undefined) {
       // 验证代理是否存在
       const agents = await Command.getWorkspaceAgentsSummary();
       const agentExists = agents.some(a => a.config.name === options.agent);
-      
+
       if (!agentExists) {
         console.error(`❌ ${t`Error: Agent`} '${options.agent}' ${t`does not exist`}`);
         process.exit(1);
       }
-      
+
       updates.agentName = options.agent;
     }
-    
+
     if (options.cron !== undefined) {
       updates.cron = options.cron;
     }
-    
+
     if (options.enable) {
       updates.disabled = false;
     } else if (options.disable) {
@@ -362,7 +362,7 @@ export async function taskStats() {
     console.log(`   ${t`Total tasks:`} ${stats.total}`);
     console.log(`   ${t`Enabled:`} ${stats.enabled}`);
     console.log(`   ${t`Disabled:`} ${stats.disabled}`);
-    
+
     if (Object.keys(stats.agentCounts).length > 0) {
       console.log(`\n🤖 ${t`Grouped by agent:`}`);
       for (const [agentName, count] of Object.entries(stats.agentCounts)) {
@@ -420,7 +420,7 @@ export async function showScheduler() {
 
     console.log(`\n⏰ ${t`Task scheduler status:`}`);
     console.log(`   ${t`Tasks in scheduling:`} ${scheduledTasks.length} ${t`items`}`);
-    
+
     if (scheduledTasks.length > 0) {
       console.log(`\n🔄 ${t`Tasks being scheduled:`}`);
       for (const taskName of scheduledTasks) {

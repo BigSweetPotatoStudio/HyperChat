@@ -1,5 +1,5 @@
-import React, { forwardRef, useImperativeHandle, useRef, useEffect, useMemo, useCallback } from 'react';
-import { Avatar, Card, Space, Tooltip, message as antdmessage, Modal, Collapse } from 'antd';
+import React, { forwardRef, useImperativeHandle, useRef, useEffect, useMemo, useCallback, useState } from 'react';
+import { Avatar, Card, Space, Tooltip, message as antdmessage, Modal, Collapse, FloatButton, Button } from 'antd';
 import {
   CopyOutlined,
   EditOutlined,
@@ -18,7 +18,8 @@ import {
   ExclamationCircleOutlined,
   CloseCircleOutlined,
   ClockCircleOutlined,
-  StopOutlined
+  StopOutlined,
+  VerticalAlignBottomOutlined
 } from '@ant-design/icons';
 import dayjs from 'dayjs';
 import { MyMessage } from '@dadigua/hyperchat-shared/types';
@@ -64,6 +65,9 @@ export interface CustomMessageListRef {
 export const CustomMessageList = forwardRef<CustomMessageListRef, CustomMessageListProps>(
   ({ messages, onSumbit, readOnly, status, onClone, style, className, contexts, onContextUpdate }, ref) => {
     const containerRef = useRef<HTMLDivElement>(null);
+    const autoScrollEnabledRef = useRef(true);
+    const [showScrollButton, setShowScrollButton] = useState(false);
+    const scrollIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
     useImperativeHandle(ref, () => ({
       nativeElement: containerRef.current,
@@ -72,19 +76,66 @@ export const CustomMessageList = forwardRef<CustomMessageListRef, CustomMessageL
       }
     }));
 
+    // 检测是否是AI回复开始，重新启用自动滚动
+    useEffect(() => {
+      if (status === "runing" && !autoScrollEnabledRef.current) {
+        autoScrollEnabledRef.current = true;
+      }
+    }, [status]);
+
     // 自动滚动逻辑
     useEffect(() => {
-      if (status === "runing" && containerRef.current) {
+      if (status === "runing" && autoScrollEnabledRef.current && containerRef.current) {
+        // 显示取消滚动按钮
+        setShowScrollButton(true);
+
         const timer = setInterval(() => {
-          containerRef.current?.scrollTo({
-            top: containerRef.current.scrollHeight,
-            behavior: 'smooth'
-          });
+          if (containerRef.current && autoScrollEnabledRef.current) {
+            containerRef.current.scrollTo({
+              top: containerRef.current.scrollHeight,
+              behavior: 'smooth'
+            });
+          }
         }, 100);
-        return () => clearInterval(timer);
+
+        scrollIntervalRef.current = timer;
+        return () => {
+          clearInterval(timer);
+          scrollIntervalRef.current = null;
+        };
+      } else {
+        // 隐藏取消滚动按钮
+        if (status !== "runing") {
+          setShowScrollButton(false);
+        }
+
+        if (scrollIntervalRef.current) {
+          clearInterval(scrollIntervalRef.current);
+          scrollIntervalRef.current = null;
+        }
       }
-      return undefined; // 明确返回undefined
+      return undefined;
     }, [status]);
+
+    // 取消自动滚动
+    const handleCancelAutoScroll = useCallback(() => {
+      autoScrollEnabledRef.current = false;
+      setShowScrollButton(false);
+      if (scrollIntervalRef.current) {
+        clearInterval(scrollIntervalRef.current);
+        scrollIntervalRef.current = null;
+      }
+    }, []);
+
+
+    // 清理函数：当组件卸载时清理定时器
+    useEffect(() => {
+      return () => {
+        if (scrollIntervalRef.current) {
+          clearInterval(scrollIntervalRef.current);
+        }
+      };
+    }, []);
 
     // 第一步：收集和整理消息内容
     const collectMessageContents = (x: MyMessage, i: number, arr: MyMessage[]): CollectedMessageData | null => {
@@ -563,13 +614,35 @@ export const CustomMessageList = forwardRef<CustomMessageListRef, CustomMessageL
         ref={containerRef}
         className={`custom-message-list ${className || ''}`}
         style={{
-          height: messages?.length > 0 ? '100%' : 0,
+          height: '100%',
           paddingRight: 4,
           overflowY: 'auto',
+          position: 'relative',
           ...style,
         }}
       >
         {renderedMessages}
+        <div className='w-full flex justify-end' style={{
+          visibility: showScrollButton ? 'visible' : 'hidden',
+          position: 'sticky',
+          bottom: 0,
+          right: 0,
+          zIndex: 1000,
+        }}>
+          <Button
+            icon={<StopOutlined />}
+            title={t`Cancel auto scroll`}
+            // style={{
+            //   display: showScrollButton ? 'block' : 'none',
+            //   position: 'sticky',
+            //   bottom: 16,
+            //   right: 16,
+            //   zIndex: 1000,
+            // }}
+            onClick={handleCancelAutoScroll}
+          />
+        </div>
+
       </div>
     );
   }

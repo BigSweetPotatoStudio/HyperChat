@@ -129,15 +129,20 @@ export class AiChannel {
       throw new Error(`Model not found: ${modelKey}`);
     }
     if (modelConfig.provider !== "unknown") {
-      modelConfig.baseURL = this.ext.aiSettings.builtinApiKeys[modelConfig.provider]?.baseURL || modelConfig.baseURL;
-      modelConfig.apiKey = this.ext.aiSettings.builtinApiKeys[modelConfig.provider]?.apiKey || modelConfig.apiKey;
+      modelConfig = {
+        ...modelConfig,
+        baseURL: this.ext.aiSettings.builtinApiKeys[modelConfig.provider]?.baseURL || modelConfig.baseURL,
+        apiKey: this.ext.aiSettings.builtinApiKeys[modelConfig.provider]?.apiKey || modelConfig.apiKey,
+      }
+      // modelConfig.baseURL = this.ext.aiSettings.builtinApiKeys[modelConfig.provider]?.baseURL || modelConfig.baseURL;
+      // modelConfig.apiKey = this.ext.aiSettings.builtinApiKeys[modelConfig.provider]?.apiKey || modelConfig.apiKey;
     }
     let aiProvider: any = null;
     let ai: LanguageModel | null = null;
     let fetch: CustomFetch | undefined = undefined;
     if (this.ext.platform === "web") {
       let baseURL = modelConfig.baseURL;
-      modelConfig.baseURL = this.ext.getURL_PRE() + "/ai";
+      modelConfig = { ...modelConfig, baseURL: this.ext.getURL_PRE() + "/ai" };
       fetch = async (url: string | URL | Request, init?: RequestInit): Promise<Response> => {
         // If in a browser environment and server proxy is enabled, modify headers for proxying.
         init = {

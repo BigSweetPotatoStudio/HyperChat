@@ -49,7 +49,7 @@ import { AiChannel } from "@dadigua/hyperchat-shared/ai";
 import {
   ChatHistoryItem,
 } from "@dadigua/hyperchat-shared/types";
-import type { AISettings, AIModelConfigItem } from "@dadigua/hyperchat-shared";
+import { type AISettings, type AIModelConfigItem, getBuiltinPrompts } from "@dadigua/hyperchat-shared";
 import { useAISettings } from "../contexts/AppSettingsContext";
 import { MyMessage } from "@dadigua/hyperchat-shared/types";
 import { Messages } from "./messages";
@@ -84,7 +84,7 @@ export const WorkspaceChat = ({ workspace, agentName, workspaceDetails, mcpClien
   // 使用强制刷新 hook
   const refresh = useForceUpdate();
 
-
+  const [requestStatus, setRquestStatus] = useState(false);
   // 从 Context 获取 AI 设置
   const { aiSettings, loading: aiSettingsLoading } = useAISettings();
 
@@ -159,16 +159,16 @@ export const WorkspaceChat = ({ workspace, agentName, workspaceDetails, mcpClien
     const agent = workspaceDetails.agents.find(a => a.config.name === agentName);
     const agentConfig = agent?.config;
     const overrides = currentChat.current.configOverrides || {};
-    
+
     // 获取可用模型列表
     const availableModels = aiSettings?.models || [];
-    const isModelAvailable = (modelKey: string) => 
+    const isModelAvailable = (modelKey: string) =>
       availableModels.some(model => model.key === modelKey);
-    
+
     // 获取工作区默认模型和模型列表第一个作为回退
     const workspaceAIConfig = workspace?.settings?.aiConfig;
     const firstAvailableModel = availableModels[0]?.key || "";
-    
+
     // 按优先级查找有效的模型
     const findValidModelKey = () => {
       const candidates = [
@@ -177,14 +177,14 @@ export const WorkspaceChat = ({ workspace, agentName, workspaceDetails, mcpClien
         workspaceAIConfig?.modelKey,
         firstAvailableModel
       ].filter(Boolean); // 过滤掉空值
-      
+
       // 找到第一个存在于模型列表中的候选项
       for (const modelKey of candidates) {
         if (modelKey && isModelAvailable(modelKey)) {
           return modelKey;
         }
       }
-      
+
       // 如果都不可用，返回第一个可用模型
       return firstAvailableModel;
     };
@@ -563,11 +563,12 @@ export const WorkspaceChat = ({ workspace, agentName, workspaceDetails, mcpClien
         aiSettings: aiSettings as any,
         compressionConfig: {
           enabled: effectiveConfig.maxAttachedDialogs! > 0 ? true : false,
-        }
+        },
       })
 
       await aiClient.completion({
         ...effectiveConfig,
+        prompt: getBuiltinPrompts(workspace.path, effectiveConfig.prompt).prompt,
         modelKey: config?.key || "",
         confirm_call_tool_cb,
         onUpdate: (r: any) => {
@@ -667,7 +668,7 @@ export const WorkspaceChat = ({ workspace, agentName, workspaceDetails, mcpClien
           )}
 
           {/* 聊天消息区域 */}
-          <div className="flex-1 overflow-auto p-4">
+          <div className="flex-1 overflow-auto p-0">
             {(nonSystemMessages.length == 0) && (
               <>
                 <Welcome
@@ -687,7 +688,7 @@ export const WorkspaceChat = ({ workspace, agentName, workspaceDetails, mcpClien
                 refresh();
                 onRequest();
               }}
-              {...(aiClientRef.current?.status ? { status: aiClientRef.current.status } : {})}
+              status={loading ? "runing" : "stop"}
             />
           </div>
 

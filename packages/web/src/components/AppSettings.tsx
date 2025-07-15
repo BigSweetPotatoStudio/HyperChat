@@ -52,7 +52,10 @@ export function AppSettings({
   // 处理表单值变化
   const handleFormChange = (values: z.infer<typeof AppSettingsSchema>) => {
     setCurrentValues(values);
-    setCurrLang(values.appearance.language); // 更新语言设置
+    if (values.appearance.language != null) {
+      setCurrLang(values.appearance.language); // 更新语言设置
+    }
+
     setHasChanges(true);
   };
 
@@ -82,11 +85,11 @@ export function AppSettings({
   }
 
   // 使用 zodToJsonSchema 转换 Zod Schema 为 JSON Schema
-  const appearanceJsonSchema = zodToJsonSchema(AppearanceSchema as any)  as any;
+  const appearanceJsonSchema = zodToJsonSchema(AppearanceSchema as any) as any;
 
-  const systemJsonSchema = zodToJsonSchema(SystemSchema as any)  as any;
+  const systemJsonSchema = zodToJsonSchema(SystemSchema as any) as any;
 
-  const desktopJsonSchema = zodToJsonSchema(DesktopSchema as any)  as any;
+  const desktopJsonSchema = zodToJsonSchema(DesktopSchema as any) as any;
 
   // 创建外观设置 schema，添加中文标题
   const appearanceSchema = appearanceJsonSchema;

@@ -2,8 +2,8 @@
 .custom-message-list {
   display: flex;
   flex-direction: column;
-  gap: 16px;
-  padding: 16px;
+  gap: 4px;
+  padding: 4px;
   scroll-behavior: smooth;
 }
 
@@ -240,8 +240,8 @@
   }
   
   .custom-message-list {
-    padding: 8px;
-    gap: 12px;
+    padding: 4px;
+    gap: 4px;
   }
   
   .message-item {
@@ -282,4 +282,28 @@
 
 .custom-message-list::-webkit-scrollbar-thumb:hover {
   background: #a8a8a8;
+}
+
+/* 自动滚动取消按钮样式 */
+.custom-message-list .ant-float-btn {
+  background: rgba(255, 255, 255, 0.9);
+  border: 1px solid #d9d9d9;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  backdrop-filter: blur(8px);
+  transition: all 0.3s ease;
+}
+
+.custom-message-list .ant-float-btn:hover {
+  background: #ff4d4f;
+  border-color: #ff4d4f;
+  color: white;
+  transform: scale(1.05);
+}
+
+.custom-message-list .ant-float-btn .anticon {
+  transition: all 0.3s ease;
+}
+
+.custom-message-list .ant-float-btn:hover .anticon {
+  color: white;
 }

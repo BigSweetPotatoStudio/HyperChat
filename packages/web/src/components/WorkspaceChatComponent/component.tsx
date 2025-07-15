@@ -1,50 +1,14 @@
 import {
-  CopyOutlined,
   DownloadOutlined,
-  FileMarkdownOutlined,
-  FileTextOutlined,
-  FundViewOutlined,
-  UploadOutlined,
 } from "@ant-design/icons";
 import {
-  Avatar,
   Button,
-  Card,
-  Checkbox,
   Divider,
-  Dropdown,
-  Flex,
-  Form,
   Input,
   message,
   Modal,
-  Popconfirm,
-  Radio,
-  Result,
-  Segmented,
-  Select,
   Space,
-  Spin,
-  Table,
-  Tag,
-  Tooltip,
-  Typography,
 } from "antd";
-import {
-  Attachments,
-  Bubble,
-  BubbleProps,
-  Conversations,
-  ConversationsProps,
-  Prompts,
-  Sender,
-  Suggestion,
-  ThoughtChain,
-  Welcome,
-  XProvider,
-  useXAgent,
-  useXChat,
-} from "@ant-design/x";
 const antdMessage = message;
 import React, { useCallback, useEffect, useRef, useState } from "react";
 // import "github-markdown-css/github-markdown-light.css";
