@@ -294,11 +294,5 @@ export class WorkspaceManager {
     return this.currentWorkspace.workspacePath;
   }
 
-  /**
-   * 获取有效的配置路径
-   */
-  getEffectiveConfigPath(): string {
-    return this.currentWorkspace.getEffectiveConfigPath();
-  }
 
 }

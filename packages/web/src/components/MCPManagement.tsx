@@ -616,7 +616,7 @@ export const MCPManagement = forwardRef<MCPManagementRef, MCPManagementProps>(({
                         ) : (
                           null
                         )}
-                        {client.workspacePath !== workspace.path ? (
+                        {client.scope == "global" ? (
                           <Tag color="red">{t`Global`}</Tag>
                         ) : (
                           null

@@ -1,0 +1,192 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$ref": "#/definitions/HyperChatWorkspaceSettings",
+  "definitions": {
+    "HyperChatWorkspaceSettings": {
+      "type": "object",
+      "properties": {
+        "workspace": {
+          "type": "object",
+          "properties": {
+            "name": {
+              "type": "string",
+              "description": "Workspace name"
+            },
+            "description": {
+              "type": "string",
+              "description": "Workspace description"
+            },
+            "created": {
+              "type": "number",
+              "description": "Creation timestamp"
+            }
+          },
+          "required": [
+            "name"
+          ],
+          "additionalProperties": false,
+          "description": "Workspace metadata"
+        },
+        "appearance": {
+          "type": "object",
+          "properties": {
+            "isDarkMode": {
+              "type": "boolean",
+              "default": false,
+              "description": "Enable dark mode"
+            },
+            "theme": {
+              "type": "string",
+              "enum": [
+                "light",
+                "dark",
+                "auto"
+              ],
+              "default": "auto",
+              "description": "Theme mode"
+            },
+            "fontSize": {
+              "type": "string",
+              "enum": [
+                "small",
+                "medium",
+                "large"
+              ],
+              "default": "medium",
+              "description": "Font size"
+            },
+            "language": {
+              "type": "string",
+              "enum": [
+                "zh-CN",
+                "en-US"
+              ],
+              "default": "zh-CN",
+              "description": "Interface language"
+            }
+          },
+          "additionalProperties": false,
+          "default": {}
+        },
+        "editor": {
+          "type": "object",
+          "properties": {
+            "autoSave": {
+              "type": "boolean",
+              "default": true,
+              "description": "Enable auto save"
+            },
+            "autoSaveDelay": {
+              "type": "number",
+              "minimum": 1000,
+              "maximum": 60000,
+              "default": 5000,
+              "description": "Auto save delay (milliseconds)"
+            },
+            "wordWrap": {
+              "type": "boolean",
+              "default": true,
+              "description": "Enable word wrap"
+            },
+            "tabSize": {
+              "type": "number",
+              "minimum": 2,
+              "maximum": 8,
+              "default": 2,
+              "description": "Tab size"
+            }
+          },
+          "additionalProperties": false,
+          "default": {}
+        },
+        "aiConfig": {
+          "type": "object",
+          "properties": {
+            "prompt": {
+              "type": "string",
+              "minLength": 1,
+              "description": "AI system prompt"
+            },
+            "temperature": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 2,
+              "description": "AI response temperature (0-2)"
+            },
+            "isConfirmCallTool": {
+              "type": "boolean",
+              "default": false,
+              "description": "Whether to confirm before calling tools"
+            },
+            "allowMCPs": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "default": [],
+              "description": "List of allowed MCP server names"
+            },
+            "maxAttachedDialogs": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 100,
+              "description": "Maximum number of attached dialog histories"
+            },
+            "modelKey": {
+              "type": "string",
+              "description": "AI model key/identifier"
+            },
+            "maxTokens": {
+              "type": "integer",
+              "minimum": 100,
+              "maximum": 32000,
+              "default": 4000,
+              "description": "Maximum tokens for AI response"
+            }
+          },
+          "additionalProperties": false,
+          "description": "Base AI configuration"
+        },
+        "defaultAI": {
+          "type": "object",
+          "properties": {
+            "defaultAgent": {
+              "type": "string",
+              "description": "Default Agent"
+            },
+            "streamResponse": {
+              "type": "boolean",
+              "default": true,
+              "description": "Enable streaming response"
+            }
+          },
+          "additionalProperties": false,
+          "default": {}
+        },
+        "advanced": {
+          "type": "object",
+          "properties": {
+            "enableTelemetry": {
+              "type": "boolean",
+              "default": false,
+              "description": "Enable telemetry"
+            },
+            "debugMode": {
+              "type": "boolean",
+              "default": false,
+              "description": "Enable debug mode"
+            },
+            "experimentalFeatures": {
+              "type": "boolean",
+              "default": false,
+              "description": "Enable experimental features"
+            }
+          },
+          "additionalProperties": false,
+          "default": {}
+        }
+      },
+      "additionalProperties": false
+    }
+  }
+}

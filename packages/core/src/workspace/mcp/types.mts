@@ -6,22 +6,29 @@ import type { MCPServerConfig, IMCPClient } from "@dadigua/hyperchat-shared/type
 
 export type MCPType = "builtin" | "custom";
 
+/**
+ * 带作用域信息的 MCP 服务器配置
+ * 用于标识配置来源（全局或本地）
+ */
+export interface MCPServerConfigWithScope extends MCPServerConfig {
+  /**
+   * 配置来源作用域
+   * - "global": 来自全局配置
+   * - "workspace": 来自本地工作区配置
+   */
+  scope?: "global" | "workspace";
+}
+
 export interface WorkspaceMCPConfig {
   /**
    * MCP 服务器配置
    */
-  mcpServers: Record<string, MCPServerConfig>;
+  mcpServers: Record<string, MCPServerConfigWithScope>;
 
   /**
    * 工作区路径
    */
   workspacePath: string;
-
-  /**
-   * 配置范围
-   */
-  scope: "workspace" | "global";
-
 
   /**
    * 配置创建时间

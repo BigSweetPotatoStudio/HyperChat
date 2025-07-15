@@ -54,7 +54,6 @@ export class Workspace {
   private fileTree?: WorkspaceFileNode;
   private lastSync?: number;
   private readonly HYPERCHAT_DIR = CONSTANTS.HYPERCHAT_DIR;
-  private effectiveConfigPath: string;
 
   // 工作区状态管理
   private state: WorkspaceState = WorkspaceState.UNINITIALIZED;
@@ -64,15 +63,7 @@ export class Workspace {
   private isTaskSchedulerRunning: boolean = false;
 
   constructor(public workspacePath: string) {
-    // 检查当前目录是否是工作区（包含 .hyperchat 目录）
-    const hasHyperChatDir = this.isWorkspaceDirectory(workspacePath);
-
-    // 确定有效的配置路径
-    // 如果有 .hyperchat 目录，使用当前路径
-    // 否则使用全局路径
-    this.effectiveConfigPath = hasHyperChatDir ? workspacePath : CONSTANTS.GLOBAL_PATH;
-
-    const hyperChatPath = path.join(this.effectiveConfigPath, this.HYPERCHAT_DIR);
+    const hyperChatPath = path.join(this.workspacePath, this.HYPERCHAT_DIR);
 
     this.config = {
       name: path.basename(workspacePath),
@@ -83,8 +74,14 @@ export class Workspace {
     this.agentManager = new AgentManager(path.join(hyperChatPath, CONSTANTS.DIRECTORIES.AGENTS));
 
     // 创建MCP管理器
+    // 如果是本地工作区，传入本地和全局路径数组，实现配置叠加
+    // 如果是全局工作区或没有.hyperchat的目录，只传入当前路径
+    const mcpPaths = this.isLocalWorkspace() 
+      ? [hyperChatPath, path.join(CONSTANTS.GLOBAL_PATH, this.HYPERCHAT_DIR)]
+      : [hyperChatPath];
+    
     this.mcpManager = new WorkspaceMCPManager(
-      this.effectiveConfigPath,
+      mcpPaths,
       {
         autoReconnect: true,
         reconnectInterval: 5000,
@@ -108,12 +105,8 @@ export class Workspace {
     // 如果是本地工作区，传入本地和全局路径数组，实现配置叠加
     // 如果是全局工作区或没有.hyperchat的目录，只传入全局路径
     const settingsPaths = this.isLocalWorkspace()
-      ? [
-        path.join(this.workspacePath, this.HYPERCHAT_DIR),
-        path.join(CONSTANTS.GLOBAL_PATH, this.HYPERCHAT_DIR)
-      ] : [
-        path.join(this.workspacePath, this.HYPERCHAT_DIR)
-      ];
+      ? [hyperChatPath, path.join(CONSTANTS.GLOBAL_PATH, this.HYPERCHAT_DIR)]
+      : [hyperChatPath];
     this.settingsManager = new WorkspaceSettingsManager(settingsPaths);
 
     // 初始化任务管理器
@@ -140,15 +133,9 @@ export class Workspace {
    * 获取 .hyperchat 目录路径
    */
   getHyperChatPath(): string {
-    return path.join(this.effectiveConfigPath, this.HYPERCHAT_DIR);
+    return path.join(this.workspacePath, this.HYPERCHAT_DIR);
   }
 
-  /**
-   * 获取有效的配置路径
-   */
-  getEffectiveConfigPath(): string {
-    return this.effectiveConfigPath;
-  }
 
   /**
    * 检查是否是全局工作区
@@ -206,7 +193,6 @@ export class Workspace {
       this.state = WorkspaceState.INITIALIZED;
       Logger.info('✅ 工作区配置初始化完成', {
         workspacePath: this.workspacePath,
-        effectiveConfigPath: this.effectiveConfigPath,
         isGlobal: this.isGlobal(),
         isLocal: this.isLocalWorkspace()
       });

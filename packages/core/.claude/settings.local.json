@@ -9,7 +9,8 @@
       "Bash(ls:*)",
       "Bash(npm run build:*)",
       "Bash(node:*)",
-      "Bash(mkdir:*)"
+      "Bash(mkdir:*)",
+      "mcp__ide__getDiagnostics"
     ],
     "deny": []
   }

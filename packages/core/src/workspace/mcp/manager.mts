@@ -7,6 +7,7 @@ import * as path from "path";
 import * as fs from "fs";
 import type {
   WorkspaceMCPConfig,
+  MCPServerConfigWithScope,
   MCPManagerOptions,
   MCPManagerEvents
 } from "./types.mjs";
@@ -15,18 +16,21 @@ import type { MCPServerConfig } from "@dadigua/hyperchat-shared/types";
 import { Logger } from "../../log.mjs";
 import { CONSTANTS } from "../constants.mjs";
 import { WorkSpaceServers } from "../../mcp/servers/index.mjs";
-import { Config } from "../../const.mjs";
 
 export class WorkspaceMCPManager {
   private clients: Map<string, WorkspaceMCPClientImpl> = new Map();
   private workspaceConfig: WorkspaceMCPConfig | null = null;
   private options: MCPManagerOptions;
   private events: MCPManagerEvents;
-  private workspacePath: string;
+  private workspacePaths: string[];
+  private primaryPath: string;
   private serverOrderMap: Map<string, number> = new Map();
 
-  constructor(workspacePath: string, options: MCPManagerOptions = {}, events: MCPManagerEvents = {}) {
-    this.workspacePath = workspacePath;
+  constructor(workspacePaths: string | string[], options: MCPManagerOptions = {}, events: MCPManagerEvents = {}) {
+    // 如果传入单个路径，转换为数组
+    this.workspacePaths = Array.isArray(workspacePaths) ? workspacePaths : [workspacePaths];
+    // 主路径是第一个路径（通常是本地工作区）
+    this.primaryPath = this.workspacePaths[0];
     this.options = {
       autoReconnect: true,
       reconnectInterval: 5000,
@@ -79,7 +83,7 @@ export class WorkspaceMCPManager {
    * 启动工作区的 MCP 客户端
    */
   async startClients(): Promise<WorkspaceMCPClientImpl[]> {
-    this.logInfo(`启动工作区 MCP 客户端: ${this.workspacePath}`);
+    this.logInfo(`启动工作区 MCP 客户端: ${this.primaryPath}`);
 
     // 加载工作区配置
     const config = await this.loadWorkspaceConfig();
@@ -121,7 +125,7 @@ export class WorkspaceMCPManager {
         this.getServerOrder(server.name),
         {
           mcpType: "builtin",
-          workspacePath: this.workspacePath,
+          workspacePath: this.primaryPath,
           createServer: server.createServer
         }
       );
@@ -152,11 +156,11 @@ export class WorkspaceMCPManager {
       const client = new WorkspaceMCPClientImpl(
         name,
         serverConfig,
-        "workspace",
+        serverConfig.scope || "workspace",
         this.getServerOrder(name),
         {
           mcpType: "custom",
-          workspacePath: this.workspacePath,
+          workspacePath: this.primaryPath,
         }
       );
 
@@ -175,7 +179,7 @@ export class WorkspaceMCPManager {
     // 等待所有客户端启动完成
     await Promise.allSettled(tasks);
 
-    this.logInfo(`工作区 ${this.workspacePath} 启动了 ${clients.length} 个客户端`);
+    this.logInfo(`工作区 ${this.primaryPath} 启动了 ${clients.length} 个客户端`);
     return clients;
   }
 
@@ -194,11 +198,11 @@ export class WorkspaceMCPManager {
     const client = new WorkspaceMCPClientImpl(
       name,
       serverConfig,
-      "workspace",
+      this.primaryPath === CONSTANTS.GLOBAL_PATH ? "global" : "workspace",
       this.getServerOrder(name),
       {
         mcpType: "custom",
-        workspacePath: this.workspacePath,
+        workspacePath: this.primaryPath,
       }
     );
 
@@ -229,11 +233,11 @@ export class WorkspaceMCPManager {
     const client = new WorkspaceMCPClientImpl(
       name,
       serverConfig,
-      "workspace",
+      this.primaryPath === CONSTANTS.GLOBAL_PATH ? "global" : "workspace",
       this.getServerOrder(name),
       {
         mcpType: "builtin",
-        workspacePath: this.workspacePath,
+        workspacePath: this.primaryPath,
         createServer: builtinServer?.createServer
       }
     );
@@ -282,7 +286,7 @@ export class WorkspaceMCPManager {
     });
 
     await Promise.allSettled(tasks);
-    this.logInfo(`工作区 ${this.workspacePath} 停止了 ${clientsToStop.length} 个客户端`);
+    this.logInfo(`工作区 ${this.primaryPath} 停止了 ${clientsToStop.length} 个客户端`);
   }
 
   /**
@@ -291,33 +295,23 @@ export class WorkspaceMCPManager {
   async loadWorkspaceConfig(): Promise<WorkspaceMCPConfig> {
     let workspaceConfig: WorkspaceMCPConfig = {
       mcpServers: {},
-      scope: "workspace",
-      workspacePath: this.workspacePath,
+      workspacePath: this.primaryPath,
       created: Date.now(),
       lastModified: Date.now(),
     };
 
-    // 判断是否为全局工作区
-    if (this.workspacePath === CONSTANTS.GLOBAL_PATH) {
-      // 全局工作区：只加载全局配置
-      const globalConfigPath = path.join(CONSTANTS.GLOBAL_PATH, CONSTANTS.HYPERCHAT_DIR, CONSTANTS.CONFIG_FILES.MCP);
-      this.logInfo(`使用全局配置路径: ${globalConfigPath}`);
+    // 从后往前遍历路径（通常是：全局 -> 本地）
+    // 后加载的配置会覆盖先加载的配置
+    for (let i = this.workspacePaths.length - 1; i >= 0; i--) {
+      const workspacePath = this.workspacePaths[i];
+      const configPath = path.join(workspacePath, CONSTANTS.CONFIG_FILES.MCP);
+      const configName = i === 0 ? "本地配置" : i === this.workspacePaths.length - 1 ? "全局配置" : `配置${i}`;
 
-      workspaceConfig = await this.loadSingleConfig(globalConfigPath, workspaceConfig);
-    } else {
-      // 普通工作区：先加载全局配置作为基础，再加载工作区配置进行覆盖
-      this.logInfo(`普通工作区 ${this.workspacePath}，开始配置合并：全局配置 + 工作区配置覆盖`);
-
-      // 1. 先加载全局配置作为基础
-      const globalConfigPath = path.join(CONSTANTS.GLOBAL_PATH, CONSTANTS.HYPERCHAT_DIR, CONSTANTS.CONFIG_FILES.MCP);
-      workspaceConfig = await this.loadSingleConfig(globalConfigPath, workspaceConfig, "全局配置");
-
-      // 2. 再加载工作区配置进行覆盖
-      const workspaceConfigPath = path.join(this.workspacePath, CONSTANTS.HYPERCHAT_DIR, CONSTANTS.CONFIG_FILES.MCP);
-      workspaceConfig = await this.loadSingleConfig(workspaceConfigPath, workspaceConfig, "工作区配置", true);
-
-      this.logInfo(`配置合并完成，最终加载了 ${Object.keys(workspaceConfig.mcpServers).length} 个服务器配置`);
+      this.logInfo(`加载${configName}: ${configPath}`);
+      workspaceConfig = await this.loadSingleConfig(configPath, workspaceConfig, configName, i !== this.workspacePaths.length - 1);
     }
+
+    this.logInfo(`配置合并完成，最终加载了 ${Object.keys(workspaceConfig.mcpServers).length} 个服务器配置`);
 
     this.workspaceConfig = workspaceConfig;
     return workspaceConfig;
@@ -342,13 +336,24 @@ export class WorkspaceMCPManager {
         const data = JSON.parse(content);
         const loadedServers = data.mcpServers || {};
 
+        // 为每个服务器配置添加 scope 信息
+        const serversWithScope: Record<string, MCPServerConfigWithScope> = {};
+        const scope = configPath.includes(CONSTANTS.GLOBAL_PATH) ? "global" : "workspace";
+
+        for (const [name, config] of Object.entries(loadedServers)) {
+          serversWithScope[name] = {
+            ...(config as MCPServerConfig),
+            scope: scope
+          };
+        }
+
         if (isOverride) {
           // 覆盖模式：工作区配置覆盖全局配置
-          baseConfig.mcpServers = { ...baseConfig.mcpServers, ...loadedServers };
+          baseConfig.mcpServers = { ...baseConfig.mcpServers, ...serversWithScope };
           this.logInfo(`${configType}加载：${Object.keys(loadedServers).length} 个服务器（覆盖模式）`);
         } else {
           // 基础模式：直接设置服务器配置
-          baseConfig.mcpServers = loadedServers;
+          baseConfig.mcpServers = serversWithScope;
           this.logInfo(`${configType}加载：${Object.keys(loadedServers).length} 个服务器（基础模式）`);
         }
 
@@ -438,7 +443,7 @@ export class WorkspaceMCPManager {
    */
   async restartClient(name: string): Promise<void> {
     try {
-      this.logInfo(`开始重启客户端 ${name} (工作区: ${this.workspacePath})`);
+      this.logInfo(`开始重启客户端 ${name} (工作区: ${this.primaryPath})`);
 
       // 停止客户端
       await this.stopClient(name);
@@ -466,7 +471,7 @@ export class WorkspaceMCPManager {
       } else {
         // 自定义客户端：从配置文件中获取配置
         if (!this.workspaceConfig) {
-          throw new Error(`工作区 ${this.workspacePath} 的配置不存在`);
+          throw new Error(`工作区 ${this.primaryPath} 的配置不存在`);
         }
 
         if (!this.workspaceConfig.mcpServers[name]) {
@@ -485,7 +490,7 @@ export class WorkspaceMCPManager {
       const clientId = this.getClientId(name);
       this.events.onError?.(error as Error, {
         clientId,
-        workspacePath: this.workspacePath,
+        workspacePath: this.primaryPath,
         operation: 'restart'
       });
 
@@ -521,14 +526,9 @@ export class WorkspaceMCPManager {
 
     let configPath: string;
 
-    // 判断是否为全局工作区
-    if (this.workspacePath === CONSTANTS.GLOBAL_PATH) {
-      // 全局工作区使用特定的全局配置路径
-      configPath = path.join(CONSTANTS.GLOBAL_PATH, CONSTANTS.HYPERCHAT_DIR, CONSTANTS.CONFIG_FILES.MCP);
-    } else {
-      // 普通工作区使用标准路径
-      configPath = path.join(this.workspacePath, CONSTANTS.HYPERCHAT_DIR, CONSTANTS.CONFIG_FILES.MCP);
-    }
+
+    configPath = path.join(this.primaryPath, CONSTANTS.CONFIG_FILES.MCP);
+
 
     try {
       await this.ensureDirectoryExists(path.dirname(configPath));
@@ -547,7 +547,7 @@ export class WorkspaceMCPManager {
    * 获取客户端ID
    */
   private getClientId(name: string): string {
-    return `${this.workspacePath}:${name}`;
+    return `${this.primaryPath}:${name}`;
   }
 
   /**
@@ -581,7 +581,7 @@ export class WorkspaceMCPManager {
    * 强制重新加载工作区配置
    */
   async forceReloadWorkspaceConfig(): Promise<void> {
-    this.logInfo(`强制重新加载工作区配置: ${this.workspacePath}`);
+    this.logInfo(`强制重新加载工作区配置: ${this.primaryPath}`);
 
     // 1. 停止该工作区的所有客户端
     await this.stopClients();
@@ -592,7 +592,7 @@ export class WorkspaceMCPManager {
     // 3. 重新加载并启动
     await this.startClients();
 
-    this.logInfo(`工作区配置重新加载完成: ${this.workspacePath}`);
+    this.logInfo(`工作区配置重新加载完成: ${this.primaryPath}`);
   }
 
   /**
