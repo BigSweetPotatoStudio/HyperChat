@@ -70,7 +70,7 @@ interface WorkspaceChatProps {
   /** 工作区信息 */
   workspace: WorkspaceInfo;
   /** 指定的Agent Key，用于Agent聊天 */
-  agentName?: string;
+  agentName: string;
   workspaceDetails: CurrentWorkspaceDetails;
   mcpClients: IMCPClient[];
   /** 要加载的特定聊天记录 */
@@ -565,10 +565,10 @@ export const WorkspaceChat = ({ workspace, agentName, workspaceDetails, mcpClien
           enabled: effectiveConfig.maxAttachedDialogs! > 0 ? true : false,
         },
       })
-
+      let agentMemory = await call("getAgentMemory", { agentName });
       await aiClient.completion({
         ...effectiveConfig,
-        prompt: getBuiltinPrompts(workspace.path, effectiveConfig.prompt).prompt,
+        prompt: getBuiltinPrompts(workspace.path, effectiveConfig.prompt, agentName, agentMemory).prompt,
         modelKey: config?.key || "",
         confirm_call_tool_cb,
         onUpdate: (r: any) => {

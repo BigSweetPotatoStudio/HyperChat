@@ -196,7 +196,7 @@ HyperChat/
       ├── mcp.json                  // 全局主控程序 (MCP) 配置文件
       ├── ai_models.json            // AI 模型配置文件，包含所有可用的 AI 模型信息
       ├── agents/
-      │   ├── agent1-key/
+      │   ├── agent1-name/
       │   │   ├── memory.md         # Agent记忆
       │   │   ├── sub_agents/       # 子代理文件夹（类似 agents 文件夹）
       │   │   ├── agent.yaml        # Agent配置

@@ -7,18 +7,30 @@
 /**
  * 获取所有可用的内置提示词
  */
-export function getBuiltinPrompts(workspacePath: string, systemPrompt: string): {
-  name: string,
-  description: string,
+export function getBuiltinPrompts(workspacePath: string, systemPrompt: string, agentName: string, memory: string): { prompt: string }
+export function getBuiltinPrompts(workspacePath: string, systemPrompt: string): { prompt: string }
+export function getBuiltinPrompts(workspacePath: string, systemPrompt: string, agentName?: string, memory?: string): {
   prompt: string,
 } {
+
+  let memoryStr = ""
+  if (agentName) {
+    memoryStr = `
+当前记忆文件路径: ${workspacePath}/.hyperchat/agents/${agentName}/memory.md
+
+# 记忆 --${workspacePath}/.hyperchat/agents/${agentName}/memory.md--
+${memory}    
+`;
+  }
+
+
   return {
-    name: "HyperChat AI Assistant",
-    description: "具备完整本地开发能力的AI助手，能够在当前工作环境中编写代码、操作系统、使用网络工具完成各种任务",
     prompt: `
 你是一个功能强大的本地AI助手，运行在用户的本地环境中，具备完整的系统访问权限和开发能力。
 
-# 当前工作区路径: ${workspacePath}
+# 当前工作区路径: ${workspacePath}  
+
+${memoryStr}
 
 ## 🌍 本地环境认知
 
@@ -166,9 +178,9 @@ export function getBuiltinPrompts(workspacePath: string, systemPrompt: string): 
 
 *提示：你可以直接说"在当前目录中..."或"帮我在项目根目录..."，我会自动理解和适应你的工作环境。*
 
-# 更多提示词
-
+# 用户自定义提示词
 ${systemPrompt}
+
 `,
   };
 }

@@ -1,5 +1,7 @@
 import { AgentConfig, ChatHistoryItem } from "@dadigua/hyperchat-shared";
 import { getWorkspaceManager } from "../workspace/index.mjs";
+import fs from 'fs';
+import path from 'path';
 
 /**
  * Agent 管理相关命令
@@ -388,6 +390,41 @@ export const agentCommands = {
       return chatLog || null;
     } catch (error) {
       console.error(`Failed to get chat log ${chatLogKey} for agent ${agentName} in ${workspacePath}:`, error);
+      throw error;
+    }
+  },
+
+  /**
+   * 获取 Agent 记忆文件内容
+   * @param agentName Agent 名称
+   * @returns 记忆文件内容，如果文件不存在则返回空字符串
+   */
+  async getAgentMemory({
+    agentName
+  }: {
+    agentName: string;
+  }): Promise<string> {
+    try {
+      const workspaceManager = getWorkspaceManager();
+      const workspace = workspaceManager.getCurrentWorkspace();
+      
+      if (!workspace) {
+        throw new Error('当前没有可用的工作区');
+      }
+
+      // 构建agent memory.md文件路径
+      const memoryFilePath = path.join(workspace.workspacePath, '.hyperchat', 'agents', agentName, 'memory.md');
+
+      // 检查文件是否存在
+      if (!fs.existsSync(memoryFilePath)) {
+        return '';
+      }
+
+      // 读取文件内容
+      const content = fs.readFileSync(memoryFilePath, 'utf8');
+      return content;
+    } catch (error) {
+      console.error(`Failed to get memory for agent ${agentName}:`, error);
       throw error;
     }
   }
