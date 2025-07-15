@@ -77,9 +77,7 @@ export class Workspace {
     // 如果是本地工作区，传入本地和全局路径，实现配置叠加
     // 如果是全局工作区，只传入本地路径
     const localPath = hyperChatPath;
-    const globalPath = this.isLocalWorkspace() 
-      ? path.join(CONSTANTS.GLOBAL_PATH, this.HYPERCHAT_DIR)
-      : undefined;
+    const globalPath = path.join(CONSTANTS.GLOBAL_PATH, this.HYPERCHAT_DIR);
     
     this.mcpManager = new WorkspaceMCPManager(
       localPath,
@@ -173,25 +171,23 @@ export class Workspace {
     try {
       Logger.info('🚀 开始工作区快速初始化...');
 
+      // 不创建目录结构，采用懒加载模式：只有需要时才创建
+      // await this.createDirectories();
 
-
-      // 创建目录结构
-      await this.createDirectories();
-
-      // 初始化设置管理器
+      // 初始化设置管理器（不自动创建配置文件）
       await this.settingsManager.init();
 
-      // 初始化任务管理器（仅初始化，不启动调度）
+      // 初始化任务管理器（不自动创建目录，仅初始化内存状态）
       await this.taskManager.init();
 
       // 加载工作区基本配置（不启动服务）
       await this.loadMergedConfig();
 
-      // 初始化 Agent 管理器（扫描加载 Agent 配置，速度较快）
+      // 初始化 Agent 管理器（扫描加载 Agent 配置，但不创建目录）
       await this.agentManager.init();
 
-      // 保存配置
-      await this.saveConfig();
+      // 不保存配置，采用懒加载模式：只有用户修改时才保存
+      // await this.saveConfig();
 
       this.state = WorkspaceState.INITIALIZED;
       Logger.info('✅ 工作区配置初始化完成', {
@@ -306,36 +302,6 @@ export class Workspace {
   }
 
 
-  /**
-   * 创建工作区目录结构
-   */
-  private async createDirectories(): Promise<void> {
-    const hyperChatPath = this.getHyperChatPath();
-    const directories = [
-      hyperChatPath,
-      path.join(hyperChatPath, CONSTANTS.DIRECTORIES.AGENTS),
-      path.join(hyperChatPath, CONSTANTS.DIRECTORIES.KNOWLEDGE),
-      path.join(hyperChatPath, CONSTANTS.DIRECTORIES.TEMP),
-      path.join(hyperChatPath, "tasks"),
-    ];
-
-    for (const dir of directories) {
-      if (!fs.existsSync(dir)) {
-        await fs.promises.mkdir(dir, { recursive: true });
-      }
-    }
-    // 创建默认配置文件
-    const defaultFiles = [
-      { name: CONSTANTS.CONFIG_FILES.MCP, content: JSON.stringify({ mcpServers: {} }, null, 2) },
-    ];
-
-    for (const file of defaultFiles) {
-      const filePath = path.join(hyperChatPath, file.name);
-      if (!fs.existsSync(filePath)) {
-        await fs.promises.writeFile(filePath, file.content, "utf-8");
-      }
-    }
-  }
 
 
   /**

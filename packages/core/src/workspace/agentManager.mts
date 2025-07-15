@@ -224,12 +224,13 @@ export class AgentManager {
   }
 
   /**
-   * 初始化 Agent 管理器
+   * 初始化 Agent 管理器（不自动创建目录，采用懒加载模式）
    */
   async init(): Promise<void> {
-    if (!fs.existsSync(this.agentsPath)) {
-      await fs.promises.mkdir(this.agentsPath, { recursive: true });
-    }
+    // 不自动创建 agents 目录，采用懒加载模式：只有需要时才创建
+    // if (!fs.existsSync(this.agentsPath)) {
+    //   await fs.promises.mkdir(this.agentsPath, { recursive: true });
+    // }
     await this.loadAllAgents();
   }
 
@@ -292,6 +293,11 @@ export class AgentManager {
    * 创建新的 Agent
    */
   async createAgent(config: Partial<AgentConfig>): Promise<AgentInstance | null> {
+    // 确保 agents 目录存在（懒加载模式）
+    if (!fs.existsSync(this.agentsPath)) {
+      await fs.promises.mkdir(this.agentsPath, { recursive: true });
+    }
+
     const name = config.name || `${dayjs().format("YYMMDD-HHmmss")}-${v4().slice(0, 8)}`;
 
     // 使用 name 作为文件夹名称

@@ -23,13 +23,13 @@ export class TaskManager {
   }
 
   /**
-   * 初始化任务管理器
+   * 初始化任务管理器（不自动创建目录，采用懒加载模式）
    */
   async init(): Promise<void> {
-    // 确保 tasks 目录存在
-    if (!fs.existsSync(this.tasksPath)) {
-      await fs.promises.mkdir(this.tasksPath, { recursive: true });
-    }
+    // 不自动创建 tasks 目录，采用懒加载模式：只有需要时才创建
+    // if (!fs.existsSync(this.tasksPath)) {
+    //   await fs.promises.mkdir(this.tasksPath, { recursive: true });
+    // }
   }
 
   /**
@@ -71,6 +71,11 @@ export class TaskManager {
 
     const task: Task = result.data;
     const filePath = this.getTaskFilePath(task.name);
+
+    // 确保 tasks 目录存在（懒加载模式）
+    if (!fs.existsSync(this.tasksPath)) {
+      await fs.promises.mkdir(this.tasksPath, { recursive: true });
+    }
 
     // 保存任务文件
     const yamlContent = yaml.dump(task, {

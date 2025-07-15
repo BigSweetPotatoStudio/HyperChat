@@ -39,13 +39,13 @@ export class WorkspaceSettingsManager {
   }
 
   /**
-   * 初始化设置
+   * 初始化设置（不自动创建配置文件，采用懒加载模式）
    */
   async init(): Promise<void> {
-    // 生成并保存 JSON Schema
-    await this.generateSchema();
+    // 不自动生成并保存 JSON Schema，采用懒加载模式
+    // await this.generateSchema();
     
-    // 加载设置
+    // 加载设置（如果存在）
     await this.load();
   }
 
@@ -107,10 +107,10 @@ export class WorkspaceSettingsManager {
       
       this.settings = mergedSettings;
       
-      // 如果主路径的设置文件不存在，创建它
-      if (!fs.existsSync(this.settingsPath)) {
-        await this.save();
-      }
+      // 不自动创建配置文件，采用懒加载模式：只有用户修改时才保存
+      // if (!fs.existsSync(this.settingsPath)) {
+      //   await this.save();
+      // }
     } catch (error) {
       console.error("加载工作区设置文件失败:", error);
       // 使用默认设置
@@ -119,10 +119,19 @@ export class WorkspaceSettingsManager {
   }
 
   /**
-   * 保存设置
+   * 保存设置（懒加载模式：保存时才创建目录和 schema）
    */
   async save(): Promise<void> {
     try {
+      // 确保目录存在（懒加载模式）
+      const dir = path.dirname(this.settingsPath);
+      if (!fs.existsSync(dir)) {
+        await fs.promises.mkdir(dir, { recursive: true });
+      }
+
+      // 生成并保存 JSON Schema（懒加载模式）
+      await this.generateSchema();
+
       // 创建包含 $schema 引用的设置对象
       const settingsWithSchema = {
         $schema: "./settings.schema.json",
@@ -389,7 +398,7 @@ export class WorkspaceSettingsManager {
   }
 
   /**
-   * 初始化工作区元数据（如果不存在）
+   * 初始化工作区元数据（如果不存在）- 懒加载模式，不自动保存
    */
   async initializeWorkspaceMetadata(name: string, description?: string): Promise<void> {
     if (!this.settings.workspace) {
@@ -398,7 +407,8 @@ export class WorkspaceSettingsManager {
         description,
         created: Date.now(),
       };
-      await this.save();
+      // 不自动保存，采用懒加载模式：只有用户主动修改时才保存
+      // await this.save();
     }
   }
 }
