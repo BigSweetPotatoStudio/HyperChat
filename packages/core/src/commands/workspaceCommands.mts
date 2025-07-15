@@ -130,7 +130,7 @@ export const workspaceCommands = {
       if (!workspace) return [];
 
       // 获取当前工作区路径
-      const workingDir = workspaceManager.getCurrentWorkingDirectory();
+      const workingDir = workspace.workspacePath;
 
       // 构建完整路径
       const fullPath = directoryPath
@@ -246,7 +246,7 @@ export const workspaceCommands = {
       }
 
       // 获取当前工作目录
-      const currentWorkingDirectory = workspaceManager.getCurrentWorkingDirectory();
+      const currentWorkingDirectory = workspace.workspacePath;
 
       // 构建完整的文件路径，确保安全性
       const fullPath = path.resolve(currentWorkingDirectory, filePath);
@@ -288,7 +288,7 @@ export const workspaceCommands = {
       }
 
       // 获取当前工作目录
-      const currentWorkingDirectory = workspaceManager.getCurrentWorkingDirectory();
+      const currentWorkingDirectory = workspace.workspacePath;
 
       // 构建完整的文件路径，确保安全性
       const fullPath = path.resolve(currentWorkingDirectory, filePath);

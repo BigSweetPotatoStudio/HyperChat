@@ -75,14 +75,16 @@ export async function showCurrentWorkspace() {
     const workspace = workspaceManager.getCurrentWorkspace();
 
     console.log(`\n🎯 ${t`Current Status:`}`);
-    console.log(`📍 ${t`Working Directory:`} ${workspace.getCurrentWorkingDirectory()}`);
+    console.log(`📍 ${t`Working Directory:`} ${currentWorkingDirectory}`);
     console.log(`📁 ${t`Workspace:`} ${workspace.workspacePath}`);
+    console.log(`📂 ${t`Effective Config Path:`} ${workspace.getEffectiveConfigPath()}`);
 
-    if (!workspace.isRunningInWorkspaceRoot()) {
-      console.log(`\n💡 ${t`You are running in a subdirectory of the workspace.`}`);
-      console.log(`   ${t`Configuration is loaded from:`} ${workspace.workspacePath}`);
-    } else {
-      console.log(`\n✅ ${t`You are running in the workspace root directory.`}`);
+    if (workspace.isUsingOnlyGlobalConfig() && !workspace.isGlobal()) {
+      console.log(`\n💡 ${t`No local workspace found, using global configuration only.`}`);
+    } else if (workspace.isLocalWorkspace()) {
+      console.log(`\n✅ ${t`Using local workspace with .hyperchat directory (will merge global config).`}`);
+    } else if (workspace.isGlobal()) {
+      console.log(`\n🌐 ${t`Using global workspace.`}`);
     }
 
     const config = workspace.getConfig();

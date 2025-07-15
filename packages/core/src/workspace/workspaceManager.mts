@@ -23,16 +23,18 @@ export class WorkspaceManager {
   }
 
 
-  async initialize(workspacePath: string, currentWorkingDirectory?: string,): Promise<void> {
+  /**
+   * 🚀 第一阶段：初始化工作区管理器（快速配置加载）
+   * 
+   * @param workspacePath 工作区路径
+   */
+  async initialize(workspacePath: string): Promise<void> {
     if (this.isInitialized) {
       return;
     }
 
     try {
-      if (currentWorkingDirectory == null) {
-        currentWorkingDirectory = workspacePath;
-      }
-      this.currentWorkspace = new Workspace(workspacePath, currentWorkingDirectory);
+      this.currentWorkspace = new Workspace(workspacePath);
 
       // 🚀 第一阶段：只初始化配置，不启动服务
       await this.currentWorkspace.initialize();
@@ -117,37 +119,7 @@ export class WorkspaceManager {
     await this.start();
   }
 
-  /**
-   * 从指定路径向上查找工作区
-   */
-  private findWorkspaceInPath(startPath: string): string | null {
-    let currentPath = path.resolve(startPath);
-    const rootPath = path.parse(currentPath).root;
 
-    while (currentPath !== rootPath) {
-      if (this.isWorkspaceDirectory(currentPath)) {
-        return currentPath;
-      }
-      currentPath = path.dirname(currentPath);
-    }
-
-    return null;
-  }
-  /**
-   * 从指定路径向上查找工作区 or 返回全局工作区路径
-   */
-  public findWorkspace(startPath: string): string {
-    let currentPath = path.resolve(startPath);
-    const rootPath = path.parse(currentPath).root;
-
-    while (currentPath !== rootPath) {
-      if (this.isWorkspaceDirectory(currentPath)) {
-        return currentPath;
-      }
-      currentPath = path.dirname(currentPath);
-    }
-    return CONSTANTS.GLOBAL_PATH;
-  }
   /**
    * 获取当前工作区
    */
@@ -198,7 +170,7 @@ export class WorkspaceManager {
 
 
     // 创建工作区实例
-    const workspace = new Workspace(workspacePath, workspacePath);
+    const workspace = new Workspace(workspacePath);
     await workspace.initialize();
 
     return workspace;
@@ -322,8 +294,11 @@ export class WorkspaceManager {
     return this.currentWorkspace.workspacePath;
   }
 
-  getCurrentWorkingDirectory(): string {
-    return this.currentWorkspace.getCurrentWorkingDirectory();
+  /**
+   * 获取有效的配置路径
+   */
+  getEffectiveConfigPath(): string {
+    return this.currentWorkspace.getEffectiveConfigPath();
   }
 
 }

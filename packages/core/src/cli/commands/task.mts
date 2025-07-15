@@ -14,7 +14,7 @@ import type { AgentConfig } from '@dadigua/hyperchat-shared';
  * 获取当前工作区路径 - 查询模式
  */
 async function getCurrentWorkspacePath(): Promise<string> {
-  await workspaceManager.initialize(process.cwd(), process.cwd()); // 只查询配置
+  await workspaceManager.initialize(process.cwd()); // 只查询配置
   return workspaceManager.getCurrentWorkspacePath();
 }
 
@@ -22,7 +22,7 @@ async function getCurrentWorkspacePath(): Promise<string> {
  * 获取工作区路径并启动服务 - 仅用于任务触发
  */
 async function initWorkspaceForExecution(): Promise<string> {
-  await workspaceManager.initialize(process.cwd(), process.cwd());
+  await workspaceManager.initialize(process.cwd());
   await workspaceManager.start(); // 需要完整服务（调度器+AI）
   return workspaceManager.getCurrentWorkspacePath();
 }
