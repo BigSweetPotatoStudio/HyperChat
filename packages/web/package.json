@@ -1,6 +1,6 @@
 {
   "name": "@hyperchat/web",
-  "version": "2.0.0",
+  "version": "2.0.0-alpha.19",
   "private": true,
   "dependencies": {
     "@babel/plugin-proposal-private-property-in-object": "^7.21.11",

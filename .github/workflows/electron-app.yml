@@ -123,6 +123,11 @@ jobs:
           cd ../web && npm install --include=optional && npm install favicons
           cd ../electron && npm install --include=optional
 
+
+      # 构建Sync Version脚本
+      - name: Build Sync Version Script
+        run: npm run version:sync
+
       # 构建共享库
       - name: Build shared package
         run: cd packages/shared && npm run build
