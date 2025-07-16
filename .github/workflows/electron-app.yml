@@ -29,6 +29,7 @@ jobs:
 
       - name: Get event details
         id: details
+        shell: bash
         run: |
           if [ "${{ github.event_name }}" = "push" ]; then
             echo "::set-output name=type::推送"
@@ -51,6 +52,7 @@ jobs:
       - name: Get changed files
         id: files
         if: github.event_name == 'push' || github.event_name == 'pull_request'
+        shell: bash
         run: |
           if [ "${{ github.event_name }}" = "push" ]; then
             echo "::set-output name=changed::$(git diff --name-only HEAD^1 HEAD | tr '\n' ', ')"
