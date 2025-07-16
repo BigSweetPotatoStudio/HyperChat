@@ -10,7 +10,7 @@ import { FileToolError, ERROR_CODES, getConfig } from '../lib.mjs';
 
 const saveMemorySchema = z.object({
   fact: z.string().describe('The specific fact or piece of information to remember. Should be a clear, self-contained statement.'),
-  memoryPath: z.string().optional().describe('Custom path to the memory file. If not provided, uses default workspace memory file.'),
+  memoryPath: z.string().describe('Custom path to the memory file. If not provided, uses default workspace memory file.'),
 });
 
 const DEFAULT_MEMORY_FILENAME = 'HYPERCHAT.md';
@@ -97,7 +97,7 @@ async function performAddMemoryEntry(
   }
 }
 
-export function registerSaveMemoryTool(server: McpServer, workspacePath: string): void {
+export function registerSaveMemoryTool(server: McpServer, workspacePath: string, globalPath?: string): void {
   server.tool(
     'save_memory',
     'Saves a specific piece of information or fact to your long-term memory. Use this when the user explicitly asks you to remember something, or when they state a clear, concise fact that seems important to retain for future interactions.',
@@ -130,12 +130,12 @@ export function registerSaveMemoryTool(server: McpServer, workspacePath: string)
           'Memory save operation timed out'
         );
         
-        const relativePath = getRelativePathDisplay(memoryFilePath, workspacePath);
+        // const relativePath = getRelativePathDisplay(memoryFilePath, workspacePath, globalPath);
         const successMessage = `Okay, I've remembered that: "${fact}"`;
         
         return {
           content: [
-            { type: 'text', text: `${successMessage}\n\nSaved to: ${relativePath}` }
+            { type: 'text', text: `${successMessage}\n\nSaved to: ${memoryPath}` }
           ],
           summary: `Saved memory: "${fact.length > 50 ? fact.substring(0, 50) + '...' : fact}"`
         };

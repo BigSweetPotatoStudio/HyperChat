@@ -1,6 +1,7 @@
-name: '234'
-prompt: 你是一个通用人工智能
-allowMCPs: []
+name: '123'
+prompt: '123'
+allowMCPs:
+  - hyper_tools
 isConfirmCallTool: false
 maxTokens: 4000
 tags: []
@@ -8,8 +9,4 @@ subAgents: []
 version: 1
 modelKey: openrouter:google/gemini-2.5-flash-preview
 temperature: 1
-callable: true
 maxAttachedDialogs: 5
-key: '234'
-created: 1752114733279
-lastModified: 1752114733283

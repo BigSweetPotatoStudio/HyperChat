@@ -18,7 +18,7 @@ const replaceSchema = z.object({
   replace_all: z.boolean().default(false).describe('Whether to replace all occurrences (true) or just the first one (false)'),
 });
 
-export function registerReplaceTool(server: McpServer, workspacePath: string): void {
+export function registerReplaceTool(server: McpServer, workspacePath: string, globalPath?: string): void {
   server.tool(
     'replace',
     'Replaces text in a specified file. Can replace first occurrence or all occurrences.',
@@ -28,7 +28,7 @@ export function registerReplaceTool(server: McpServer, workspacePath: string): v
       
       try {
         // 验证和规范化路径
-        const normalizedPath = validateAndNormalizePath(absolute_path, workspacePath);
+        const normalizedPath = validateAndNormalizePath(absolute_path, workspacePath, globalPath);
         
         // 检查文件是否存在
         if (!fs.existsSync(normalizedPath)) {

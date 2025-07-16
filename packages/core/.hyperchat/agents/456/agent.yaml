@@ -1,5 +1,5 @@
-name: '123'
-prompt: '123'
+name: '456'
+prompt: '456'
 allowMCPs: []
 isConfirmCallTool: false
 modelKey: openrouter:google/gemini-2.5-flash-preview

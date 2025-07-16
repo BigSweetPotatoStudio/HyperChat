@@ -415,10 +415,10 @@ export const agentCommands = {
   },
 
   /**
-   * 获取 Agent 记忆文件内容（支持全局 Agent）
+   * 获取 Agent 记忆文件内容和路径（支持全局 Agent）
    * @param agentName Agent 名称
    * @param scope 查找范围（全局或工作区，默认智能查找）
-   * @returns 记忆文件内容，如果文件不存在则返回空字符串
+   * @returns 记忆文件内容和文件路径，如果文件不存在则返回空字符串和路径
    */
   async getAgentMemory({
     agentName,
@@ -426,7 +426,7 @@ export const agentCommands = {
   }: {
     agentName: string;
     scope?: "global" | "workspace";
-  }): Promise<string> {
+  }): Promise<{ content: string; filePath: string }> {
     try {
       const workspaceManager = getWorkspaceManager();
       const workspace = workspaceManager.getCurrentWorkspace();
@@ -435,14 +435,17 @@ export const agentCommands = {
         throw new Error('当前没有可用的工作区');
       }
 
-      // 先检查Agent是否存在，并获取其实际路径
+      // 智能查找Agent：如果没有指定scope，则自动查找
       const agentInstance = workspace.getAgentInstance(agentName, scope);
       if (!agentInstance) {
-        return ''; // Agent不存在，返回空字符串
+        return { content: '', filePath: '' }; // Agent不存在，返回空字符串
       }
 
-      // 获取Agent的实际scope（如果没有传入scope参数，需要查询实际scope）
+      // 获取Agent的实际scope
       const agentScope = scope || workspace.getAgentScope(agentName);
+      if (!agentScope) {
+        return { content: '', filePath: '' }; // Agent不存在
+      }
       
       let memoryFilePath: string;
       if (agentScope === 'global') {
@@ -457,12 +460,12 @@ export const agentCommands = {
 
       // 检查文件是否存在
       if (!fs.existsSync(memoryFilePath)) {
-        return '';
+        return { content: '', filePath: memoryFilePath };
       }
 
       // 读取文件内容
       const content = fs.readFileSync(memoryFilePath, 'utf8');
-      return content;
+      return { content, filePath: memoryFilePath };
     } catch (error) {
       console.error(`Failed to get memory for agent ${agentName}:`, error);
       throw error;

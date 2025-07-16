@@ -117,6 +117,7 @@ export class WorkspaceMCPManager {
         clients.push(this.clients.get(clientId)!);
         continue;
       }
+      console.log(`创建内置服务器客户端: ${this.localPath}, ${this.globalPath} scope: workspace`);
       const client = new WorkspaceMCPClientImpl(
         server.name,
         serverConfig,
@@ -124,7 +125,8 @@ export class WorkspaceMCPManager {
         this.getServerOrder(server.name),
         {
           mcpType: "builtin",
-          workspacePath: this.localPath,
+          workspacePath: this.localPath.replace(/\.hyperchat$/g, ""), // 确保路径格式正确
+          globalPath: this.globalPath.replace(/\.hyperchat$/g, ""), // 确保路径格式正确,
           createServer: server.createServer
         }
       );
@@ -164,6 +166,7 @@ export class WorkspaceMCPManager {
         {
           mcpType: "custom",
           workspacePath: this.localPath,
+          globalPath: this.globalPath,
         }
       );
 
@@ -210,6 +213,7 @@ export class WorkspaceMCPManager {
       {
         mcpType: "custom",
         workspacePath: this.localPath,
+        globalPath: this.globalPath,
       }
     );
 
@@ -245,6 +249,7 @@ export class WorkspaceMCPManager {
       {
         mcpType: "builtin",
         workspacePath: this.localPath,
+        globalPath: this.globalPath,
         createServer: builtinServer?.createServer
       }
     );

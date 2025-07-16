@@ -6,7 +6,7 @@ import { Logger } from "../../../log.mjs";
 import { InMemoryTransport } from "@modelcontextprotocol/sdk/inMemory.js";
 
 
-async function createServer(workspacePath: string) {
+async function createServer(workspacePath: string, globalPath?: string) {
   // console.log(`Creating MCP server for HyperTerminal at workspace path: ${workspacePath}`);
 
 

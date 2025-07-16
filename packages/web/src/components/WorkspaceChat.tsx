@@ -71,6 +71,8 @@ interface WorkspaceChatProps {
   workspace: WorkspaceInfo;
   /** 指定的Agent Key，用于Agent聊天 */
   agentName: string;
+  /** Agent的作用域 */
+  agentScope: "global" | "workspace";
   workspaceDetails: CurrentWorkspaceDetails;
   mcpClients: IMCPClient[];
   /** 要加载的特定聊天记录 */
@@ -80,7 +82,7 @@ interface WorkspaceChatProps {
 /**
  * 工作区聊天组件
  */
-export const WorkspaceChat = ({ workspace, agentName, workspaceDetails, mcpClients, chatLogToLoad }: WorkspaceChatProps) => {
+export const WorkspaceChat = ({ workspace, agentName, agentScope, workspaceDetails, mcpClients, chatLogToLoad }: WorkspaceChatProps) => {
   // 使用强制刷新 hook
   const refresh = useForceUpdate();
 
@@ -156,7 +158,7 @@ export const WorkspaceChat = ({ workspace, agentName, workspaceDetails, mcpClien
 
   // 获取有效配置值的帮助函数（聊天配置 > Agent配置 > 工作区配置 > 模型列表第一个）
   const getEffectiveConfig = () => {
-    const agent = workspaceDetails.agents.find(a => a.config.name === agentName);
+    const agent = workspaceDetails.agents.find(a => a.config.name === agentName && a.config.scope === agentScope);
     const agentConfig = agent?.config;
     const overrides = currentChat.current.configOverrides || {};
 
@@ -359,7 +361,7 @@ export const WorkspaceChat = ({ workspace, agentName, workspaceDetails, mcpClien
         if (!currentChat.current.configOverrides) {
           currentChat.current.configOverrides = {};
         }
-        const agent = workspaceDetails.agents.find(a => a.config.name === agentName);
+        const agent = workspaceDetails.agents.find(a => a.config.name === agentName && a.config.scope === agentScope);
         // 如果有要加载的聊天记录，优先加载聊天记录
         if (chatLogToLoad) {
           defaultChatValue.current = ({
@@ -566,10 +568,11 @@ export const WorkspaceChat = ({ workspace, agentName, workspaceDetails, mcpClien
           enabled: effectiveConfig.maxAttachedDialogs! > 0 ? true : false,
         },
       })
-      let agentMemory = await call("getAgentMemory", { agentName });
+
+      let agentMemory = await call("getAgentMemory", { agentName, scope: agentScope });
       await aiClient.completion({
         ...effectiveConfig,
-        prompt: getBuiltinPrompts(workspace.path, effectiveConfig.prompt, agentName, agentMemory).prompt,
+        prompt: getBuiltinPrompts(workspace.path, effectiveConfig.prompt, agentName, agentMemory.content, agentMemory.filePath).prompt,
         modelKey: config?.key || "",
         confirm_call_tool_cb,
         onUpdate: (r: any) => {
@@ -601,7 +604,7 @@ export const WorkspaceChat = ({ workspace, agentName, workspaceDetails, mcpClien
 
       // 更新最近使用记录
       if (workspace?.path && agentName && currentChat.current.key) {
-        const agent = workspaceDetails.agents.find(a => a.config.name === agentName);
+        const agent = workspaceDetails.agents.find(a => a.config.name === agentName && a.config.scope === agentScope);
         const agentDisplayName = agent?.config.name || agentName;
         const chatLabel = currentChat.current.label || 'New Chat';
 
@@ -641,7 +644,7 @@ export const WorkspaceChat = ({ workspace, agentName, workspaceDetails, mcpClien
   let supportImage = currModel?.supportImage;
   /** 是否支持工具 */
   let supportTool = currModel?.supportTool;
-  const agent = workspaceDetails.agents.find(a => a.config.name === agentName);
+  const agent = workspaceDetails.agents.find(a => a.config.name === agentName && a.config.scope === agentScope);
 
   // 提取系统消息
   const systemMessages = currentChat.current.configOverrides?.prompt!;

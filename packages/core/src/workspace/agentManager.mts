@@ -87,6 +87,10 @@ export class AgentInstance {
         // 如果从配置文件读取的 name 为空，使用文件夹名称作为 name
         if (!this.config.name || this.config.name.trim() === '') {
           this.config.name = folderName;
+        } else {
+          // 清理名称中的scope前缀，确保名称与文件夹名称一致
+          const cleanName = this.config.name.replace(/^(global|workspace):/, '');
+          this.config.name = cleanName || folderName;
         }
       } catch (error) {
         console.warn(`加载 Agent 配置失败 ${folderName}:`, error);

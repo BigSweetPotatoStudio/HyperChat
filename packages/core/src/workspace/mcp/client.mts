@@ -61,6 +61,7 @@ export class WorkspaceMCPClientImpl implements WorkspaceMCPClient {
     private options: {
       mcpType?: MCPType;
       workspacePath: string;
+      globalPath?: string;
       createServer?: any; // 传输方式 inMemory
     }
   ) {
@@ -355,7 +356,7 @@ export class WorkspaceMCPClientImpl implements WorkspaceMCPClient {
       capabilities: {}
     });
     // console.log("Opening InMemory transport for MCP client:", this.serverName, this.workspacePath, this.options.createServer);
-    const transport = await this.options.createServer(this.workspacePath);
+    const transport = await this.options.createServer(this.workspacePath, this.options.globalPath);
     // console.log("InMemory transport created:", transport);
     await client.connect(transport);
     return client;

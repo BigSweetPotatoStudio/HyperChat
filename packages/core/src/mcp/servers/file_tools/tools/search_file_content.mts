@@ -68,7 +68,7 @@ async function searchInFile(
   return matches;
 }
 
-export function registerSearchFileContentTool(server: McpServer, workspacePath: string): void {
+export function registerSearchFileContentTool(server: McpServer, workspacePath: string, globalPath?: string): void {
   server.tool(
     'search_file_content',
     'Searches for a pattern in file contents using regular expressions. Can search in specific directories and file types.',

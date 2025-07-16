@@ -29,26 +29,42 @@ export async function showAgentMemory(agentName: string) {
   try {
     logger.info(`🧠 ${t`Getting memory for agent:`} ${agentName}`);
 
-    // 检查Agent是否存在
-    const { exists } = await checkAgentExists(agentName);
-    if (!exists) {
+    // 智能获取当前工作区
+    const currentWorkingDirectory = process.cwd();
+    await workspaceManager.initialize(currentWorkingDirectory);
+    const workspace = workspaceManager.getCurrentWorkspace();
+    
+    if (!workspace) {
+      logger.error('当前没有可用的工作区');
+      process.exit(1);
+    }
+
+    // 获取Agent记忆内容 (智能查找)
+    const memoryResult = await agentCommands.getAgentMemory({ 
+      agentName
+    });
+
+    // 如果没有找到Agent，显示错误
+    if (!memoryResult.filePath) {
       logger.error(`❌ ${t`Agent not found:`} ${agentName}`);
       process.exit(1);
     }
 
-    // 获取Agent记忆内容
-    const memoryContent = await agentCommands.getAgentMemory({ agentName });
+    // 获取Agent的实际scope用于显示
+    const agentScope = workspace.getAgentScope(agentName);
 
-    if (!memoryContent.trim()) {
+    if (!memoryResult.content.trim()) {
       console.log(`📝 ${t`No memory found for agent:`} ${agentName}`);
       console.log(`💡 ${t`The agent will start with a fresh memory`}`);
+      console.log(`📁 ${t`Memory file path:`} ${memoryResult.filePath}`);
       return;
     }
 
-    console.log(`\n🧠 ${t`Memory for agent:`} ${agentName}`);
+    console.log(`\n🧠 ${t`Memory for agent:`} ${agentName} (${agentScope === 'global' ? '🌍' : '📁'})`);
     console.log('─'.repeat(50));
-    console.log(memoryContent);
+    console.log(memoryResult.content);
     console.log('─'.repeat(50));
+    console.log(`📁 ${t`Memory file:`} ${memoryResult.filePath}`);
 
   } catch (error) {
     logger.error(`${t`Failed to get memory for agent:`} ${error instanceof Error ? error.message : String(error)}`);
@@ -104,9 +120,18 @@ export async function listAgents() {
       
       // 检查是否有记忆文件
       try {
-        const memoryContent = await agentCommands.getAgentMemory({ agentName: config.name });
-        if (memoryContent.trim()) {
-          console.log(`      🧠 ${t`Has memory data`}`);
+        // 确定Agent的实际scope
+        const workspace = workspaceManager.getCurrentWorkspace();
+        const agentScope = workspace ? workspace.getAgentScope(config.name) : null;
+        
+        if (agentScope) {
+          const memoryResult = await agentCommands.getAgentMemory({ 
+            agentName: config.name, 
+            scope: agentScope
+          });
+          if (memoryResult.content.trim()) {
+            console.log(`      🧠 ${t`Has memory data`}`);
+          }
         }
       } catch (error) {
         // 忽略记忆文件读取错误
@@ -140,16 +165,29 @@ export async function createAgent(name: string) {
 
     // 获取Agent记忆内容（可能为空）
     let agentMemory = '';
+    let memoryFilePath = '';
     try {
-      agentMemory = await agentCommands.getAgentMemory({ agentName: name });
+      // 检查Agent是否已存在，如果存在则获取其scope
+      const workspace = workspaceManager.getCurrentWorkspace();
+      const agentScope = workspace ? workspace.getAgentScope(name) : null;
+      
+      if (agentScope) {
+        const memoryResult = await agentCommands.getAgentMemory({ 
+          agentName: name, 
+          scope: agentScope
+        });
+        agentMemory = memoryResult.content;
+        memoryFilePath = memoryResult.filePath;
+      }
     } catch (error) {
       // 记忆文件不存在或读取失败，使用空字符串
       agentMemory = '';
+      memoryFilePath = '';
     }
 
     // 使用getBuiltinPrompts生成增强的系统提示词
     const basePrompt = `你是一个名为 ${name} 的AI助手。请根据用户的需求提供帮助。`;
-    const enhancedPrompt = getBuiltinPrompts(workspacePath, basePrompt, name, agentMemory);
+    const enhancedPrompt = getBuiltinPrompts(workspacePath, basePrompt, name, agentMemory, memoryFilePath);
 
     // 创建代理配置
     const agentConfig = {
@@ -213,15 +251,30 @@ export async function getEnhancedAgentPrompt(agentName: string, userPrompt: stri
 
     // 获取Agent记忆内容
     let agentMemory = '';
+    let memoryFilePath = '';
     try {
-      agentMemory = await agentCommands.getAgentMemory({ agentName });
+      // 智能获取当前工作区
+      const currentWorkingDirectory = process.cwd();
+      await workspaceManager.initialize(currentWorkingDirectory);
+      const workspace = workspaceManager.getCurrentWorkspace();
+      const agentScope = workspace ? workspace.getAgentScope(agentName) : null;
+      
+      if (agentScope) {
+        const memoryResult = await agentCommands.getAgentMemory({ 
+          agentName, 
+          scope: agentScope
+        });
+        agentMemory = memoryResult.content;
+        memoryFilePath = memoryResult.filePath;
+      }
     } catch (error) {
       // 记忆文件不存在或读取失败，使用空字符串
       agentMemory = '';
+      memoryFilePath = '';
     }
 
     // 使用getBuiltinPrompts生成增强的系统提示词
-    const enhancedPrompt = getBuiltinPrompts(workspacePath, userPrompt, agentName, agentMemory);
+    const enhancedPrompt = getBuiltinPrompts(workspacePath, userPrompt, agentName, agentMemory, memoryFilePath);
     
     return enhancedPrompt.prompt;
   } catch (error) {

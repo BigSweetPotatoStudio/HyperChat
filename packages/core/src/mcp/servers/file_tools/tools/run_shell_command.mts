@@ -125,7 +125,7 @@ async function executeCommand(
   });
 }
 
-export function registerRunShellCommandTool(server: McpServer, workspacePath: string): void {
+export function registerRunShellCommandTool(server: McpServer, workspacePath: string, globalPath?: string): void {
   server.tool(
     'run_shell_command',
     'Executes a shell command in the specified working directory. Supports timeout and output capture.',

@@ -54,15 +54,21 @@ export function validateFileSize(filePath: string): void {
 /**
  * 验证并规范化文件路径
  */
-export function validateAndNormalizePath(filePath: string, workspacePath: string): string {
-  console.log(`Validating and normalizing path: ${filePath} within workspace: ${workspacePath}`);
+export function validateAndNormalizePath(filePath: string, workspacePath: string, globalPath?: string): string {
+  console.log(`Validating and normalizing path: ${filePath} within workspace: ${workspacePath}${globalPath ? `, global: ${globalPath}` : ''}`);
   // 规范化路径
   const normalizedPath = path.resolve(filePath);
   
   // 检查路径是否在工作区内
-  if (!isWithinWorkspace(normalizedPath, workspacePath)) {
+  const isInWorkspace = isWithinWorkspace(normalizedPath, workspacePath);
+  
+  // 如果提供了全局路径，也检查是否在全局路径内
+  const isInGlobal = globalPath ? isWithinWorkspace(normalizedPath, globalPath) : false;
+  
+  if (!isInWorkspace && !isInGlobal) {
+    const allowedPaths = globalPath ? `workspace (${workspacePath}) or global (${globalPath})` : `workspace (${workspacePath})`;
     throw new FileToolError(
-      `Path '${filePath}' is outside the workspace directory`,
+      `Path '${filePath}' is outside the allowed directories: ${allowedPaths}`,
       ERROR_CODES.INVALID_PATH
     );
   }
@@ -74,8 +80,14 @@ export function validateAndNormalizePath(filePath: string, workspacePath: string
  * 生成相对路径显示
  */
 export function getRelativePathDisplay(filePath: string, workspacePath: string): string {
-  const relativePath = path.relative(workspacePath, filePath);
-  return relativePath.startsWith('.') ? relativePath : './' + relativePath;
+  // 首先尝试相对于工作区的路径
+  if (isWithinWorkspace(filePath, workspacePath)) {
+    const relativePath = path.relative(workspacePath, filePath);
+    return relativePath.startsWith('.') ? relativePath : './' + relativePath;
+  }
+  
+  // 如果都不在范围内，返回绝对路径（这种情况不应该发生）
+  return filePath;
 }
 
 /**

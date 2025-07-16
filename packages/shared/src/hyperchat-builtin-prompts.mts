@@ -3,22 +3,24 @@
  * 全面的本地AI助手，具备完整的开发和系统操作能力
  */
 
+import { string } from "zod";
+
 
 /**
  * 获取所有可用的内置提示词
  */
-export function getBuiltinPrompts(workspacePath: string, systemPrompt: string, agentName: string, memory: string): { prompt: string }
+export function getBuiltinPrompts(workspacePath: string, systemPrompt: string, agentName: string, memory: string, memoryPath: string): { prompt: string }
 export function getBuiltinPrompts(workspacePath: string, systemPrompt: string): { prompt: string }
-export function getBuiltinPrompts(workspacePath: string, systemPrompt: string, agentName?: string, memory?: string): {
+export function getBuiltinPrompts(workspacePath: string, systemPrompt: string, agentName?: string, memory?: string, memoryPath?: string): {
   prompt: string,
 } {
 
   let memoryStr = ""
   if (agentName) {
     memoryStr = `
-当前记忆文件路径: ${workspacePath}/.hyperchat/agents/${agentName}/memory.md
+当前记忆文件路径: ${memoryPath}
 
-# 记忆 --${workspacePath}/.hyperchat/agents/${agentName}/memory.md--
+# 记忆:
 ${memory}    
 `;
   }

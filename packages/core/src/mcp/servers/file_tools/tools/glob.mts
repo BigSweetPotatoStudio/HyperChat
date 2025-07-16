@@ -18,7 +18,7 @@ const globSchema = z.object({
   max_results: z.number().int().min(1).max(1000).default(100).describe('Maximum number of results to return'),
 });
 
-export function registerGlobTool(server: McpServer, workspacePath: string): void {
+export function registerGlobTool(server: McpServer, workspacePath: string, globalPath?: string): void {
   server.tool(
     'glob',
     'Finds files and directories matching a glob pattern. Supports advanced patterns like wildcards, character classes, and brace expansion.',

@@ -16,7 +16,7 @@ const writeFileSchema = z.object({
   create_directories: z.boolean().default(true).describe('Whether to create parent directories if they don\'t exist'),
 });
 
-export function registerWriteFileTool(server: McpServer, workspacePath: string): void {
+export function registerWriteFileTool(server: McpServer, workspacePath: string, globalPath?: string): void {
   server.tool(
     'write_file',
     'Writes content to a specified file in the local filesystem. Can create parent directories if needed.',
@@ -26,7 +26,7 @@ export function registerWriteFileTool(server: McpServer, workspacePath: string):
       
       try {
         // 验证和规范化路径
-        const normalizedPath = validateAndNormalizePath(absolute_path, workspacePath);
+        const normalizedPath = validateAndNormalizePath(absolute_path, workspacePath, globalPath);
         
         // 验证文件扩展名
         validateFileExtension(normalizedPath);
@@ -62,7 +62,7 @@ export function registerWriteFileTool(server: McpServer, workspacePath: string):
         );
         
         // 生成显示信息
-        const relativePath = getRelativePathDisplay(normalizedPath, workspacePath);
+        const relativePath = getRelativePathDisplay(normalizedPath, workspacePath, globalPath);
         const stats = fs.statSync(normalizedPath);
         const action = fileExists ? 'Updated' : 'Created';
         

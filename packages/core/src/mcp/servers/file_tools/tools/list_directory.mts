@@ -54,6 +54,7 @@ function formatPermissions(mode: number): string {
 function listDirectory(
   dirPath: string, 
   workspacePath: string, 
+  globalPath: string | undefined,
   recursive: boolean, 
   includeHidden: boolean,
   maxDepth: number,
@@ -111,6 +112,7 @@ function listDirectory(
         const subFiles = listDirectory(
           fullPath, 
           workspacePath, 
+          globalPath,
           recursive, 
           includeHidden, 
           maxDepth, 
@@ -129,7 +131,7 @@ function listDirectory(
   return files;
 }
 
-export function registerListDirectoryTool(server: McpServer, workspacePath: string): void {
+export function registerListDirectoryTool(server: McpServer, workspacePath: string, globalPath?: string): void {
   server.tool(
     'list_directory',
     'Lists files and directories in a specified directory. Supports recursive listing and hidden file inclusion.',
@@ -139,7 +141,7 @@ export function registerListDirectoryTool(server: McpServer, workspacePath: stri
       
       try {
         // 验证和规范化路径
-        const normalizedPath = validateAndNormalizePath(absolute_path, workspacePath);
+        const normalizedPath = validateAndNormalizePath(absolute_path, workspacePath, globalPath);
         
         // 检查目录是否存在
         if (!fs.existsSync(normalizedPath)) {
@@ -178,6 +180,7 @@ export function registerListDirectoryTool(server: McpServer, workspacePath: stri
           () => Promise.resolve(listDirectory(
             normalizedPath, 
             workspacePath, 
+            globalPath,
             recursive, 
             include_hidden, 
             max_depth,

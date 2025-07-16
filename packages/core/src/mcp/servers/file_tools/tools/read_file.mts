@@ -18,7 +18,7 @@ const readFileSchema = z.object({
   limit: z.number().int().min(1).optional().describe('Optional: Maximum number of lines to read'),
 });
 
-export function registerReadFileTool(server: McpServer, workspacePath: string): void {
+export function registerReadFileTool(server: McpServer, workspacePath: string, globalPath?: string): void {
   server.tool(
     'read_file',
     'Reads and returns the content of a specified file from the local filesystem. Supports text files with optional line range specification.',
@@ -28,7 +28,7 @@ export function registerReadFileTool(server: McpServer, workspacePath: string): 
       
       try {
         // 验证和规范化路径
-        const normalizedPath = validateAndNormalizePath(absolute_path, workspacePath);
+        const normalizedPath = validateAndNormalizePath(absolute_path, workspacePath, globalPath);
         
         // 检查文件是否存在
         if (!fs.existsSync(normalizedPath)) {
@@ -55,10 +55,9 @@ export function registerReadFileTool(server: McpServer, workspacePath: string): 
         const limitedContent = limitOutputLines(content);
         
         // 生成显示信息
-        const relativePath = getRelativePathDisplay(normalizedPath, workspacePath);
         const stats = fs.statSync(normalizedPath);
         
-        let summary = `Read file: ${relativePath}`;
+        let summary = `Read file: ${absolute_path}`;
         if (offset !== undefined || limit !== undefined) {
           const endLine = limit ? (offset || 0) + limit : 'end';
           summary += ` (lines ${offset || 0}-${endLine})`;

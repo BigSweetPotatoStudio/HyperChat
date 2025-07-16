@@ -60,6 +60,7 @@ export interface ChatTab {
   type: 'chat' | 'file' | 'welcome';
   agentKey?: string;
   agentName?: string;
+  agentScope?: "global" | "workspace";
   filePath?: string;
   fileName?: string;
   workspacePath: string;
