@@ -6,10 +6,12 @@ on:
     branches:
       - dev2          # 开发分支发布 alpha
       - stable        # 稳定分支发布 release
+      - new_code_tool # 临时测试分支
   pull_request:
     branches:
       - dev2
       - stable
+      - new_code_tool # 临时测试分支
 
 jobs:
   release:
