@@ -143,10 +143,17 @@ jobs:
           restore-keys: |
             ${{ matrix.os }}-build-
 
-      # 根据分支决定发布类型
-      - name: Publish Alpha (dev2 branch)
-        if: github.ref == 'refs/heads/dev2' && matrix.os == 'macos-latest'
-        run: cd packages/electron && npm run publish:alpha
+      # 根据分支设置发布类型
+      - name: Set release type for stable
+        if: github.ref == 'refs/heads/stable'
+        run: |
+          cd packages/electron
+          sed -i 's/"releaseType": "prerelease"/"releaseType": "release"/' package.json
+
+      # 发布应用
+      - name: Publish App (macOS)
+        if: (github.ref == 'refs/heads/dev2' || github.ref == 'refs/heads/stable') && matrix.os == 'macos-latest'
+        run: cd packages/electron && npm run publish
         env:
           APPLE_ID: ${{ secrets.APPLE_ID }}
           APPLE_APP_SPECIFIC_PASSWORD: ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}
@@ -156,27 +163,9 @@ jobs:
           GH_TOKEN: ${{ secrets.GH_TOKEN }}
           USE_HARD_LINKS: false
 
-      - name: Publish Release (stable branch)
-        if: github.ref == 'refs/heads/stable' && matrix.os == 'macos-latest'
-        run: cd packages/electron && npm run publish:release
-        env:
-          APPLE_ID: ${{ secrets.APPLE_ID }}
-          APPLE_APP_SPECIFIC_PASSWORD: ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}
-          CSC_LINK: ${{ secrets.CSC_LINK }}
-          CSC_KEY_PASSWORD: ${{ secrets.CSC_KEY_PASSWORD }}
-          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
-          GH_TOKEN: ${{ secrets.GH_TOKEN }}
-          USE_HARD_LINKS: false
-
-      - name: Publish Alpha (dev2 branch) - Windows/Linux
-        if: github.ref == 'refs/heads/dev2' && (matrix.os == 'windows-latest' || matrix.os == 'ubuntu-latest')
-        run: cd packages/electron && npm run publish:alpha
-        env:
-          GH_TOKEN: ${{ secrets.GH_TOKEN }}
-
-      - name: Publish Release (stable branch) - Windows/Linux
-        if: github.ref == 'refs/heads/stable' && (matrix.os == 'windows-latest' || matrix.os == 'ubuntu-latest')
-        run: cd packages/electron && npm run publish:release
+      - name: Publish App (Windows/Linux)
+        if: (github.ref == 'refs/heads/dev2' || github.ref == 'refs/heads/stable') && (matrix.os == 'windows-latest' || matrix.os == 'ubuntu-latest')
+        run: cd packages/electron && npm run publish
         env:
           GH_TOKEN: ${{ secrets.GH_TOKEN }}
 

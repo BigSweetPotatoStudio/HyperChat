@@ -112,7 +112,7 @@
       ]
     }
   },
-  "version": "1.0.0",
+  "version": "2.0.0",
   "description": "HyperChat Electron main process and related functionality",
   "main": "dist/electron/src/main.mjs",
   "type": "module",
@@ -128,10 +128,6 @@
     "publish:linux": "npm run build && npm run build:web && npm run move:web && electron-builder --linux --publish always",
     "publish:draft": "npm run build && npm run build:web && npm run move:web && electron-builder --publish onTagOrDraft",
     "publish:never": "npm run build && npm run build:web && npm run move:web && electron-builder --publish never",
-    "publish:alpha": "npm run build && npm run build:web && npm run move:web && electron-builder --publish always --prerelease",
-    "publish:beta": "npm run build && npm run build:web && npm run move:web && electron-builder --publish always --prerelease",
-    "publish:release": "npm run build && npm run build:web && npm run move:web && electron-builder --publish always",
-    "prerelease": "npm run publish:alpha",
     "build:web": "cd ../web && npm run build",
     "move:web": "mkdir -p dist/core/web-build && cp -r ../web/build/* dist/core/web-build/",
     "dev": "tsc && cross-env myEnv=dev electron dist/electron/src/main.mjs",
@@ -143,8 +139,7 @@
     "version:patch": "npm version patch --no-git-tag-version",
     "version:minor": "npm version minor --no-git-tag-version",
     "version:major": "npm version major --no-git-tag-version",
-    "release": "npm run version:patch && npm run publish:alpha",
-    "release:stable": "npm run version:patch && npm run publish:release"
+    "release": "npm run publish"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.39.0",

@@ -4,7 +4,7 @@
     "name": "Dadigua",
     "email": "0laopo0@gmail.com"
   },
-  "version": "2.0.0",
+  "version": "2.0.0-alpha.19",
   "private": true,
   "workspaces": [
     "packages/shared",
@@ -30,7 +30,11 @@
     "typecheck": "npm run typecheck --workspaces",
     "lint": "npm run lint --workspaces --if-present",
     "extract-i18n": "node scripts/extract-i18n.mjs",
-    "i18n": "node scripts/extract-i18n.mjs"
+    "i18n": "node scripts/extract-i18n.mjs",
+    "version:sync": "node scripts/sync-version.mjs",
+    "version:patch": "npm version patch --no-git-tag-version && npm run version:sync",
+    "version:minor": "npm version minor --no-git-tag-version && npm run version:sync",
+    "version:major": "npm version major --no-git-tag-version && npm run version:sync"
   },
   "dependencies": {
     "@ai-sdk/anthropic": "^1.2.12",
