@@ -28,7 +28,7 @@
     "url": "git+https://github.com/BigSweetPotatoStudio/HyperChat.git"
   },
   "dependencies": {
-    "@hyperchat/shared": "2.0.0",
+    "@hyperchat/shared": "file:../shared",
     "@homebridge/node-pty-prebuilt-multiarch": "^0.13.1",
     "adm-zip": "^0.5.14",
     "bonjour": "^3.5.0",
