@@ -21,13 +21,46 @@ jobs:
     runs-on: ${{ matrix.os }}
 
     steps:
-      - name: Check out git repository
+      - name: Checkout code
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # 获取完整的 git 历史
+
+      - name: Get event details
+        id: details
+        run: |
+          if [ "${{ github.event_name }}" = "push" ]; then
+            echo "::set-output name=type::推送"
+            echo "::set-output name=message::$(git log -1 --pretty=format:%s)"
+            echo "::set-output name=author::$(git log -1 --pretty=format:%an)"
+            echo "::set-output name=sha::$(git log -1 --pretty=format:%h)"
+            echo "::set-output name=url::${{ github.event.head_commit.url }}"
+          elif [ "${{ github.event_name }}" = "pull_request" ]; then
+            echo "::set-output name=type::拉取请求"
+            echo "::set-output name=message::${{ github.event.pull_request.title }}"
+            echo "::set-output name=author::${{ github.event.pull_request.user.login }}"
+            echo "::set-output name=url::${{ github.event.pull_request.html_url }}"
+          elif [ "${{ github.event_name }}" = "issues" ]; then
+            echo "::set-output name=type::议题${{ github.event.action }}"
+            echo "::set-output name=message::${{ github.event.issue.title }}"
+            echo "::set-output name=author::${{ github.event.issue.user.login }}"
+            echo "::set-output name=url::${{ github.event.issue.html_url }}"
+          fi
+
+      - name: Get changed files
+        id: files
+        if: github.event_name == 'push' || github.event_name == 'pull_request'
+        run: |
+          if [ "${{ github.event_name }}" = "push" ]; then
+            echo "::set-output name=changed::$(git diff --name-only HEAD^1 HEAD | tr '\n' ', ')"
+          elif [ "${{ github.event_name }}" = "pull_request" ]; then
+            echo "::set-output name=changed::$(git diff --name-only ${{ github.event.pull_request.base.sha }} ${{ github.event.pull_request.head.sha }} | tr '\n' ', ')"
+          fi
 
       - name: Install Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: "20"
+          node-version: "22.16.0"
 
       - name: Install global dependencies
         run: npm install -g cross-env zx tsx
@@ -91,7 +124,7 @@ jobs:
       - name: Install Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: "20"
+          node-version: "22.16.0"
 
       - name: Install global dependencies
         run: npm install -g cross-env zx tsx
@@ -143,3 +176,45 @@ jobs:
       - name: check electron types
         run: npx tsc --noEmit
         working-directory: ./packages/electron
+
+      - name: Send Telegram Message
+        uses: appleboy/telegram-action@master
+        with:
+          to: ${{ secrets.TELEGRAM_CHAT_ID }}
+          token: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          format: html
+          message: |
+            🔔 <b>CI构建测试 ${{ steps.details.outputs.type }}通知</b>
+
+            📂 <b>仓库:</b> ${{ github.repository }}
+            👤 <b>作者:</b> ${{ steps.details.outputs.author }}
+            🔍 <b>提交:</b> <code>${{ steps.details.outputs.sha }}</code>
+
+            📝 <b>标题:</b> ${{ steps.details.outputs.message }}
+            📄 <b>修改的文件:</b>
+            <code>${{ steps.files.outputs.changed }}</code>
+
+            ✅ <b>状态:</b> TypeScript类型检查通过
+            🔗 <b>详情链接:</b> ${{ steps.details.outputs.url }}
+            ⏰ <b>时间:</b> ${{ github.event.head_commit.timestamp || github.event.pull_request.updated_at || github.event.issue.updated_at }}
+
+            #GitHub #CI #TypeScript
+
+      - name: Send Error Notification
+        if: failure()
+        uses: appleboy/telegram-action@master
+        with:
+          to: ${{ secrets.TELEGRAM_CHAT_ID }}
+          token: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          format: html
+          message: |
+            ❌ <b>CI构建测试失败</b>
+
+            📂 <b>仓库:</b> ${{ github.repository }}
+            👤 <b>作者:</b> ${{ steps.details.outputs.author }}
+            🔍 <b>工作流:</b> ${{ github.workflow }}
+
+            💥 <b>失败原因:</b> TypeScript类型检查或依赖安装失败
+            🔗 <b>详情链接:</b> ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+
+            请检查 GitHub Actions 日志以获取更多详情。
