@@ -61,16 +61,15 @@ export function registerWriteFileTool(server: McpServer, workspacePath: string, 
           `File write operation timed out for: ${absolute_path}`
         );
         
-        // 生成显示信息
-        const relativePath = getRelativePathDisplay(normalizedPath, workspacePath, globalPath);
+
         const stats = fs.statSync(normalizedPath);
         const action = fileExists ? 'Updated' : 'Created';
         
-        const summary = `${action} file: ${relativePath} (${stats.size} bytes, ${content.split('\n').length} lines)`;
+        const summary = `${action} file: ${absolute_path} (${stats.size} bytes, ${content.split('\n').length} lines)`;
         
         return {
           content: [
-            { type: 'text', text: `Successfully ${action.toLowerCase()} file: ${relativePath}` }
+            { type: 'text', text: `Successfully ${action.toLowerCase()} file: ${absolute_path}` }
           ],
           summary
         };

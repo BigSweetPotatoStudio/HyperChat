@@ -117,7 +117,6 @@ export class WorkspaceMCPManager {
         clients.push(this.clients.get(clientId)!);
         continue;
       }
-      console.log(`创建内置服务器客户端: ${this.localPath}, ${this.globalPath} scope: workspace`);
       const client = new WorkspaceMCPClientImpl(
         server.name,
         serverConfig,

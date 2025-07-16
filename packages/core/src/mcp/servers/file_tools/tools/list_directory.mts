@@ -60,19 +60,13 @@ function listDirectory(
   maxDepth: number,
   respectGitIgnore: boolean,
   gitRoot: string | null = null,
+  gitignoreRules: string[] = [],
   currentDepth: number = 0
 ): FileInfo[] {
   const files: FileInfo[] = [];
   
   if (currentDepth >= maxDepth) {
     return files;
-  }
-  
-  // 为当前目录加载 gitignore 规则
-  let currentGitignoreRules: string[] = [];
-  if (respectGitIgnore && gitRoot) {
-    const { rules } = loadAllGitignoreRules(dirPath, gitRoot);
-    currentGitignoreRules = rules;
   }
   
   const entries = fs.readdirSync(dirPath);
@@ -86,8 +80,8 @@ function listDirectory(
     const fullPath = path.join(dirPath, entry);
     
     // 检查 gitignore 规则
-    if (respectGitIgnore && gitRoot && currentGitignoreRules.length > 0) {
-      if (shouldIgnoreFile(fullPath, gitRoot, currentGitignoreRules)) {
+    if (respectGitIgnore && gitRoot && gitignoreRules.length > 0) {
+      if (shouldIgnoreFile(fullPath, gitRoot, gitignoreRules)) {
         continue;
       }
     }
@@ -118,6 +112,7 @@ function listDirectory(
           maxDepth, 
           respectGitIgnore,
           gitRoot,
+          gitignoreRules,
           currentDepth + 1
         );
         files.push(...subFiles);
@@ -185,7 +180,8 @@ export function registerListDirectoryTool(server: McpServer, workspacePath: stri
             include_hidden, 
             max_depth,
             respect_git_ignore,
-            gitRoot
+            gitRoot,
+            gitignoreRules
           )),
           config.fileOperationTimeout,
           `Directory listing operation timed out for: ${absolute_path}`
