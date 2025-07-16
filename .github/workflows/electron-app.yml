@@ -13,6 +13,10 @@ on:
       - stable
       - new_code_tool # 临时测试分支
 
+permissions:
+  contents: write
+  discussions: write
+
 jobs:
   release:
     name: electron app

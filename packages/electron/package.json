@@ -90,7 +90,7 @@
     "publish": [
       {
         "provider": "github",
-        "owner": "Dadigua",
+        "owner": "BigSweetPotatoStudio",
         "repo": "HyperChat",
         "releaseType": "prerelease"
       }
