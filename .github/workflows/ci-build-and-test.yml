@@ -123,18 +123,21 @@ jobs:
 
       # 检查 shared 目录ts 类型
       - name: check shared types
-        run: npx tsc --noEmit
+        run: |
+          npx tsc --noEmit
+          npm run build
         working-directory: ./packages/shared
+        
+      # 检查 web 目录ts 类型
+      - name: check web types
+        run: npx tsc --noEmit
+        working-directory: ./packages/web
 
       # 检查 core 目录ts 类型
       - name: check core types
         run: npx tsc --noEmit
         working-directory: ./packages/core
 
-      # 检查 web 目录ts 类型
-      - name: check web types
-        run: npx tsc --noEmit
-        working-directory: ./packages/web
 
       # 检查 electron 目录ts 类型
       - name: check electron types

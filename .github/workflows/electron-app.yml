@@ -1,4 +1,4 @@
-name: HyperChat
+name: HyperChat electron app
 
 on:
   workflow_dispatch: {}
@@ -13,7 +13,7 @@ on:
 
 jobs:
   release:
-    name: build and release electron app
+    name: electron app
     strategy:
       fail-fast: false
       matrix:
