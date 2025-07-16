@@ -11,7 +11,7 @@ on:
       - dev2
       - stable
 
-
+jobs:
   release:
     name: build and release electron app
     strategy:
