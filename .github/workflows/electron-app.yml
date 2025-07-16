@@ -22,8 +22,41 @@ jobs:
     runs-on: ${{ matrix.os }}
 
     steps:
-      - name: Check out git repository
-        uses: actions/checkout@v3.0.0
+      - name: Checkout code
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0 # 获取完整的 git 历史
+
+      - name: Get event details
+        id: details
+        run: |
+          if [ "${{ github.event_name }}" = "push" ]; then
+            echo "::set-output name=type::推送"
+            echo "::set-output name=message::$(git log -1 --pretty=format:%s)"
+            echo "::set-output name=author::$(git log -1 --pretty=format:%an)"
+            echo "::set-output name=sha::$(git log -1 --pretty=format:%h)"
+            echo "::set-output name=url::${{ github.event.head_commit.url }}"
+          elif [ "${{ github.event_name }}" = "pull_request" ]; then
+            echo "::set-output name=type::拉取请求"
+            echo "::set-output name=message::${{ github.event.pull_request.title }}"
+            echo "::set-output name=author::${{ github.event.pull_request.user.login }}"
+            echo "::set-output name=url::${{ github.event.pull_request.html_url }}"
+          elif [ "${{ github.event_name }}" = "issues" ]; then
+            echo "::set-output name=type::议题${{ github.event.action }}"
+            echo "::set-output name=message::${{ github.event.issue.title }}"
+            echo "::set-output name=author::${{ github.event.issue.user.login }}"
+            echo "::set-output name=url::${{ github.event.issue.html_url }}"
+          fi
+
+      - name: Get changed files
+        id: files
+        if: github.event_name == 'push' || github.event_name == 'pull_request'
+        run: |
+          if [ "${{ github.event_name }}" = "push" ]; then
+            echo "::set-output name=changed::$(git diff --name-only HEAD^1 HEAD | tr '\n' ', ')"
+          elif [ "${{ github.event_name }}" = "pull_request" ]; then
+            echo "::set-output name=changed::$(git diff --name-only ${{ github.event.pull_request.base.sha }} ${{ github.event.pull_request.head.sha }} | tr '\n' ', ')"
+          fi
 
       - name: Install Node.js
         uses: actions/setup-node@v4.0.0
@@ -77,10 +110,10 @@ jobs:
       - name: Install packages dependencies
         if: steps.cache-packages.outputs.cache-hit != 'true'
         run: |
-          cd packages/shared && npm install
-          cd ../core && npm install
-          cd ../web && npm install
-          cd ../electron && npm install
+          cd packages/shared && npm install --include=optional
+          cd ../core && npm install --include=optional
+          cd ../web && npm install --include=optional && npm install favicons
+          cd ../electron && npm install --include=optional
 
       # 构建共享库
       - name: Build shared package
@@ -149,3 +182,40 @@ jobs:
         run: cd packages/electron && npm run build:electron
         env:
           GH_TOKEN: ${{ secrets.GH_TOKEN }}
+
+      - name: Send Telegram Message
+        uses: appleboy/telegram-action@master
+        with:
+          to: ${{ secrets.TELEGRAM_CHAT_ID }}
+          token: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          format: html
+          message: |
+            🔔 <b>GitHub ${{ steps.details.outputs.type }}通知</b>
+
+            📂 <b>仓库:</b> ${{ github.repository }}
+            👤 <b>作者:</b> ${{ steps.details.outputs.author }}
+            🔍 <b>提交:</b> <code>${{ steps.details.outputs.sha }}</code>
+
+            📝 <b>标题:</b> ${{ steps.details.outputs.message }}
+            📄 <b>修改的文件:</b>
+            <code>${{ steps.files.outputs.changed }}</code>
+
+            🔗 <b>详情链接:</b> ${{ steps.details.outputs.url }}
+            ⏰ <b>时间:</b> ${{ github.event.head_commit.timestamp || github.event.pull_request.updated_at || github.event.issue.updated_at }}
+
+            #GitHub #${{ steps.details.outputs.type }}
+
+      - name: Send Error Notification
+        if: failure()
+        uses: appleboy/telegram-action@master
+        with:
+          to: ${{ secrets.TELEGRAM_CHAT_ID }}
+          token: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          format: html
+          message: |
+            ❌ <b>GitHub Action 失败</b>
+
+            📂 <b>仓库:</b> ${{ github.repository }}
+            🔍 <b>工作流:</b> ${{ github.workflow }}
+
+            请检查 GitHub Actions 日志以获取更多详情。
