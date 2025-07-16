@@ -188,9 +188,10 @@ jobs:
           token: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           format: html
           message: |
-            🔔 <b>GitHub ${{ steps.details.outputs.type }}通知</b>
+            🔔 <b>Electron App ${{ steps.details.outputs.type }}通知</b>
 
             📂 <b>仓库:</b> ${{ github.repository }}
+            🌿 <b>分支:</b> <code>${{ github.ref_name }}</code>
             👤 <b>作者:</b> ${{ steps.details.outputs.author }}
             🔍 <b>提交:</b> <code>${{ steps.details.outputs.sha }}</code>
 
