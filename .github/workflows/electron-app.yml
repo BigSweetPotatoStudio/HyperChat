@@ -188,6 +188,7 @@ jobs:
           GH_TOKEN: ${{ secrets.GH_TOKEN }}
 
       - name: Send Telegram Message
+        if: matrix.os == 'ubuntu-latest'
         uses: appleboy/telegram-action@master
         with:
           to: ${{ secrets.TELEGRAM_CHAT_ID }}
@@ -210,7 +211,7 @@ jobs:
             #GitHub #${{ steps.details.outputs.type }}
 
       - name: Send Error Notification
-        if: failure()
+        if: failure() && matrix.os == 'ubuntu-latest'
         uses: appleboy/telegram-action@master
         with:
           to: ${{ secrets.TELEGRAM_CHAT_ID }}

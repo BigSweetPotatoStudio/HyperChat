@@ -16,7 +16,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [windows-latest]
+        os: [windows-latest, ubuntu-latest]
 
     runs-on: ${{ matrix.os }}
 
@@ -115,7 +115,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [windows-latest]
+        os: [windows-latest, ubuntu-latest]
 
     runs-on: ${{ matrix.os }}
 
@@ -180,6 +180,7 @@ jobs:
         working-directory: ./packages/electron
 
       - name: Send Telegram Message
+        if: matrix.os == 'ubuntu-latest'
         uses: appleboy/telegram-action@master
         with:
           to: ${{ secrets.TELEGRAM_CHAT_ID }}
@@ -203,7 +204,7 @@ jobs:
             #GitHub #CI #TypeScript
 
       - name: Send Error Notification
-        if: failure()
+        if: failure() && matrix.os == 'ubuntu-latest'
         uses: appleboy/telegram-action@master
         with:
           to: ${{ secrets.TELEGRAM_CHAT_ID }}
