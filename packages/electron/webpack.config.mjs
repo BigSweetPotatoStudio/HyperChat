@@ -1,9 +1,12 @@
-const path = require("path");
-const webpack = require("webpack");
-const nodeExternals = require("webpack-node-externals");
-const TsconfigPathsPlugin = require("tsconfig-paths-webpack-plugin");
+import path from "path";
+import webpack from "webpack";
+import nodeExternals from "webpack-node-externals";
+import TsconfigPathsPlugin from "tsconfig-paths-webpack-plugin";
+import { fileURLToPath } from "url";
 
-module.exports = (env, argv) => {
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+
+export default (env, argv) => {
   console.log("ENV:", process.env.NODE_ENV); // 打印出传入的环境变量
 
   const isDev = process.env.NODE_ENV !== "production" ? true : false;
@@ -53,7 +56,7 @@ module.exports = (env, argv) => {
       },
       alias: {
         "@hyperchat/core": path.resolve(__dirname, "../core/src"),
-        "@dadigua/hyperchat-shared": path.resolve(__dirname, "../shared"),
+        "@dadigua/hyperchat-shared": path.resolve(__dirname, "../shared/dist"),
       },
       plugins: [
         new TsconfigPathsPlugin({

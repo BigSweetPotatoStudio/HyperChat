@@ -1,6 +1,6 @@
 {
   "name": "@dadigua/hyperchat",
-  "version": "2.0.0-alpha.19",
+  "version": "2.0.0",
   "description": "HyperChat Core - Node.js backend and CLI tool with AI chat, MCP support",
   "author": "Dadigua <0laopo0@gmail.com>",
   "license": "MIT",
@@ -28,7 +28,7 @@
     "url": "git+https://github.com/BigSweetPotatoStudio/HyperChat.git"
   },
   "dependencies": {
-    "@dadigua/hyperchat-shared": "^2.0.0-alpha.19",
+    "@dadigua/hyperchat-shared": "^2.0.0",
     "@homebridge/node-pty-prebuilt-multiarch": "^0.13.1",
     "adm-zip": "^0.5.14",
     "bonjour": "^3.5.0",

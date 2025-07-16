@@ -6,7 +6,7 @@
 import { Logger } from '../log.mjs';
 import { Command } from '../command.mjs';
 import { AgentInstance, Workspace, workspaceManager } from '../workspace/index.mjs';
-import { AiChannel } from '@dadigua/hyperchat-shared/ai';
+import { AiChannel } from '@dadigua/hyperchat-shared';
 import type {
   MyMessage,
   AgentConfig,
