@@ -2,14 +2,17 @@
   "name": "@hyperchat/electron",
   "author": "Dadigua <0laopo0@gmail.com>",
   "build": {
-    "afterSign": "./build/notarize.js",
     "appId": "men.dadigua.hpyerchat",
     "artifactName": "${productName}-${version}-${os}-${arch}.${ext}",
     "asar": true,
     "copyright": "Copyright © 2024 ${author}",
+    "directories": {
+      "output": "electron-dist"
+    },
     "extraFiles": [],
     "extraResources": [],
     "files": [
+      "dist/**",
       "!src/**",
       "!*.mts",
       "!python/**",
@@ -23,7 +26,7 @@
       "!tsconfig.json",
       "!webpack.config.js"
     ],
-    "icon": "./web-build/assets/favicon.png",
+    "icon": "./dist/core/web-build/assets/favicon.png",
     "linux": {
       "target": [
         {
@@ -86,7 +89,10 @@
     "productName": "HyperChat",
     "publish": [
       {
-        "provider": "github"
+        "provider": "github",
+        "owner": "Dadigua",
+        "repo": "HyperChat",
+        "releaseType": "prerelease"
       }
     ],
     "win": {
@@ -108,19 +114,37 @@
   },
   "version": "1.0.0",
   "description": "HyperChat Electron main process and related functionality",
-  "main": "js/electron/src/main.mjs",
+  "main": "dist/electron/src/main.mjs",
   "type": "module",
   "scripts": {
-    "build": "webpack --mode production",
-    "build:electron": "electron-builder",
-    "build:electron:win": "electron-builder --win",
-    "build:electron:mac": "electron-builder --mac",
-    "build:electron:linux": "electron-builder --linux",
-    "dev": "nodemon -w src --exec npx tsx task.mts --dev",
+    "build": "tsc",
+    "build:electron": "npm run build && npm run build:web && npm run move:web && electron-builder",
+    "build:electron:win": "npm run build && npm run build:web && npm run move:web && electron-builder --win",
+    "build:electron:mac": "npm run build && npm run build:web && npm run move:web && electron-builder --mac",
+    "build:electron:linux": "npm run build && npm run build:web && npm run move:web && electron-builder --linux",
+    "publish": "npm run build && npm run build:web && npm run move:web && electron-builder --publish always",
+    "publish:win": "npm run build && npm run build:web && npm run move:web && electron-builder --win --publish always",
+    "publish:mac": "npm run build && npm run build:web && npm run move:web && electron-builder --mac --publish always",
+    "publish:linux": "npm run build && npm run build:web && npm run move:web && electron-builder --linux --publish always",
+    "publish:draft": "npm run build && npm run build:web && npm run move:web && electron-builder --publish onTagOrDraft",
+    "publish:never": "npm run build && npm run build:web && npm run move:web && electron-builder --publish never",
+    "publish:alpha": "npm run build && npm run build:web && npm run move:web && electron-builder --publish always --prerelease",
+    "publish:beta": "npm run build && npm run build:web && npm run move:web && electron-builder --publish always --prerelease",
+    "publish:release": "npm run build && npm run build:web && npm run move:web && electron-builder --publish always",
+    "prerelease": "npm run publish:alpha",
+    "build:web": "cd ../web && npm run build",
+    "move:web": "mkdir -p dist/core/web-build && cp -r ../web/build/* dist/core/web-build/",
+    "dev": "tsc && cross-env myEnv=dev electron dist/electron/src/main.mjs",
+    "dev:full": "npm run build && npm run build:web && npm run move:web && cross-env myEnv=dev electron dist/electron/src/main.mjs",
+    "dev:watch": "tsc -w",
     "start": "npm run dev",
-    "rebuild": "npx tsx task.mts --rebuild",
     "typecheck": "npx tsc --noEmit",
-    "postinstall": "electron-rebuild"
+    "postinstall": "electron-rebuild",
+    "version:patch": "npm version patch --no-git-tag-version",
+    "version:minor": "npm version minor --no-git-tag-version",
+    "version:major": "npm version major --no-git-tag-version",
+    "release": "npm run version:patch && npm run publish:alpha",
+    "release:stable": "npm run version:patch && npm run publish:release"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.39.0",
@@ -146,7 +170,9 @@
     "eventsource": "^3.0.2",
     "express": "^4.21.2",
     "fluent-ffmpeg": "^2.1.3",
+    "glob": "^11.0.3",
     "image-js": "^0.35.6",
+    "jsonc-parser": "^3.3.1",
     "koa": "^2.15.3",
     "koa-body": "^6.0.1",
     "koa-mount": "^4.0.0",
@@ -189,5 +215,9 @@
     "ts-loader": "^9.5.1",
     "typescript": "^5.5.2",
     "webpack-node-externals": "^3.0.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/BigSweetPotatoStudio/HyperChat.git"
   }
 }

@@ -26,7 +26,7 @@ export class WorkspaceMCPManager {
   private serverOrderMap: Map<string, number> = new Map();
 
   constructor(localPath: string, globalPath: string, options: MCPManagerOptions = {}, events: MCPManagerEvents = {}) {
-    console.log(`初始化工作区 MCP 管理器: ${localPath} ${globalPath || "无全局路径"}`);
+    // console.log(`初始化工作区 MCP 管理器: ${localPath} ${globalPath || "无全局路径"}`);
     this.localPath = localPath;
     this.globalPath = globalPath;
     this.options = {

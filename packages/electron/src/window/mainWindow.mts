@@ -15,7 +15,7 @@ import path from "path";
 import { getAppSettingsManager } from "../../../core/src/data/index.mjs"
 import { createRequire } from 'module';
 const require = createRequire(import.meta.url);
-const p = require("../../package.json");
+
 import { Config } from "../../../core/src/const.mjs";
 import { fileURLToPath } from 'node:url';
 import { dirname } from 'node:path';
@@ -30,7 +30,7 @@ const __dirname = dirname(__filename);
  * - 支持多平台窗口特性和自定义行为
  * - 依赖 appSettings.desktop 进行窗口状态持久化
  */
-let title = `${p.name}-${app.getVersion()} by Dadigua`;
+let title = `HyerChat-${app.getVersion()} by Dadigua`;
 Logger.info("title   : ", title);
 
 export const createWindow = () => {

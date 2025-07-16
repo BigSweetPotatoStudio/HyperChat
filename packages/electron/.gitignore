@@ -45,3 +45,4 @@ tests/
 js/
 data/
 uploads/
+electron-dist/

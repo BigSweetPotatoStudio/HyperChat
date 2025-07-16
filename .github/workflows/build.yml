@@ -1,29 +1,18 @@
 name: HyperChat
 
-# on: [push, pull_request]
 on:
   workflow_dispatch: {}
   push:
-    # tags:
-    #   - "v*"
     branches:
+      - dev2          # 开发分支发布 alpha
+      - stable        # 稳定分支发布 release
+  pull_request:
+    branches:
+      - dev2
       - stable
-    # branches:
-    #   - alpha
 
-jobs:
-  build-mac-x64:
-    uses: ./.github/workflows/build-mac-x64.yml
-    secrets:
-      APPLE_ID: ${{ secrets.APPLE_ID }}
-      APPLE_APP_SPECIFIC_PASSWORD: ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}
-      CSC_LINK: ${{ secrets.CSC_LINK }}
-      CSC_KEY_PASSWORD: ${{ secrets.CSC_KEY_PASSWORD }}
-      APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
-      GH_TOKEN: ${{ secrets.GH_TOKEN }}
 
   release:
-    needs: build-mac-x64
     name: build and release electron app
     strategy:
       fail-fast: false
@@ -39,7 +28,7 @@ jobs:
       - name: Install Node.js
         uses: actions/setup-node@v4.0.0
         with:
-          node-version: "20"
+          node-version: "22.16.0"
 
       - name: Install -g
         run: npm install -g cross-env zx
@@ -64,52 +53,63 @@ jobs:
         if: steps.cache-root.outputs.cache-hit != 'true'
         run: npm install
 
-      # web 目录的依赖缓存
-      - name: Cache web dependencies
+      # packages 目录的依赖缓存
+      - name: Cache packages dependencies
         uses: actions/cache@v3
-        id: cache-web
-        with:
-          path: web/node_modules
-          key: ${{ matrix.os }}-node-web-${{ hashFiles('web/package-lock.json') }}
-          restore-keys: |
-            ${{ matrix.os }}-node-web-
-
-      # 安装 web 目录依赖（如果缓存未命中）
-      - name: Install web dependencies
-        if: steps.cache-web.outputs.cache-hit != 'true'
-        run: npm install
-        working-directory: ./web
-
-      # electron 目录的依赖缓存
-      - name: Cache electron dependencies
-        uses: actions/cache@v3
-        id: cache-electron
+        id: cache-packages
         with:
           path: |
-            electron/node_modules
-            ${{ github.workspace }}/node_modules/electron
-            ${{ github.workspace }}/electron/node_modules/electron
+            packages/shared/node_modules
+            packages/core/node_modules
+            packages/web/node_modules
+            packages/electron/node_modules
             ~/.cache/electron
             ~/.cache/electron-builder
             ~/Library/Caches/electron
             ~/Library/Caches/electron-builder
             ~/AppData/Local/electron/Cache
             ~/AppData/Local/electron-builder/Cache
-          key: ${{ matrix.os }}-node-electron-${{ hashFiles('electron/package-lock.json') }}
+          key: ${{ matrix.os }}-node-packages-${{ hashFiles('packages/*/package-lock.json') }}
           restore-keys: |
-            ${{ matrix.os }}-node-electron-
+            ${{ matrix.os }}-node-packages-
 
-      # 安装 electron 目录依赖（如果缓存未命中）
-      - name: Install electron dependencies
-        if: steps.cache-electron.outputs.cache-hit != 'true'
-        run: npm install
-        working-directory: ./electron
+      # 安装所有 packages 依赖（如果缓存未命中）
+      - name: Install packages dependencies
+        if: steps.cache-packages.outputs.cache-hit != 'true'
+        run: |
+          cd packages/shared && npm install
+          cd ../core && npm install
+          cd ../web && npm install
+          cd ../electron && npm install
 
-      - run: npm run updateVersion
+      # 构建共享库
+      - name: Build shared package
+        run: cd packages/shared && npm run build
 
-      - name: Build Electron App (macOS only)
-        if: matrix.os == 'macos-latest' || matrix.os == 'macos-13'
-        run: npm run prod
+      # 构建核心包
+      - name: Build core package
+        run: cd packages/core && npm run build
+
+      # 构建Web包
+      - name: Build web package
+        run: cd packages/web && npm run build
+
+      # 缓存构建产物
+      - name: Cache build outputs
+        uses: actions/cache@v3
+        with:
+          path: |
+            packages/shared/dist
+            packages/core/dist
+            packages/web/build
+          key: ${{ matrix.os }}-build-${{ github.sha }}
+          restore-keys: |
+            ${{ matrix.os }}-build-
+
+      # 根据分支决定发布类型
+      - name: Publish Alpha (dev2 branch)
+        if: github.ref == 'refs/heads/dev2' && matrix.os == 'macos-latest'
+        run: cd packages/electron && npm run publish:alpha
         env:
           APPLE_ID: ${{ secrets.APPLE_ID }}
           APPLE_APP_SPECIFIC_PASSWORD: ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}
@@ -118,26 +118,34 @@ jobs:
           APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
           GH_TOKEN: ${{ secrets.GH_TOKEN }}
           USE_HARD_LINKS: false
-          MYRUNENV: github
 
-      - name: Build Electron App (widnows+linux)
-        if: matrix.os == 'windows-latest' || matrix.os == 'ubuntu-latest'
-        run: npm run prod
+      - name: Publish Release (stable branch)
+        if: github.ref == 'refs/heads/stable' && matrix.os == 'macos-latest'
+        run: cd packages/electron && npm run publish:release
+        env:
+          APPLE_ID: ${{ secrets.APPLE_ID }}
+          APPLE_APP_SPECIFIC_PASSWORD: ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}
+          CSC_LINK: ${{ secrets.CSC_LINK }}
+          CSC_KEY_PASSWORD: ${{ secrets.CSC_KEY_PASSWORD }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+          GH_TOKEN: ${{ secrets.GH_TOKEN }}
+          USE_HARD_LINKS: false
+
+      - name: Publish Alpha (dev2 branch) - Windows/Linux
+        if: github.ref == 'refs/heads/dev2' && (matrix.os == 'windows-latest' || matrix.os == 'ubuntu-latest')
+        run: cd packages/electron && npm run publish:alpha
         env:
           GH_TOKEN: ${{ secrets.GH_TOKEN }}
-          MYRUNENV: github
 
-      # - name: upload artifacts
-      #   uses: actions/upload-artifact@v4
-      #   with:
-      #     name: ${{ matrix.os }}
-      #     path: dist
+      - name: Publish Release (stable branch) - Windows/Linux
+        if: github.ref == 'refs/heads/stable' && (matrix.os == 'windows-latest' || matrix.os == 'ubuntu-latest')
+        run: cd packages/electron && npm run publish:release
+        env:
+          GH_TOKEN: ${{ secrets.GH_TOKEN }}
 
-      # - name: Publish Release
-      #   uses: softprops/action-gh-release@v2
-      #   if: startsWith(github.ref, 'refs/tags/')
-      #   with:
-      #     files: |
-      #       dist/*
-      #   env:
-      #     GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
+      # Pull Request 时只构建不发布
+      - name: Build only (Pull Request)
+        if: github.event_name == 'pull_request'
+        run: cd packages/electron && npm run build:electron
+        env:
+          GH_TOKEN: ${{ secrets.GH_TOKEN }}
