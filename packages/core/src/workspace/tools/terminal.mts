@@ -1,15 +1,19 @@
-import os from "os";
-import * as pty from "@homebridge/node-pty-prebuilt-multiarch";
 import { EventEmitter } from "events";
 import { Logger } from "../../log.mjs";
-import type { TerminalMessage, TerminalMessageExtended } from "@dadigua/hyperchat-shared/types";
-import { getMessageService } from "../../message_service.mjs";
 
-const shell = os.platform() === "win32" ? "powershell.exe" : "bash";
+/**
+ * 禁用的终端实现 - 保持接口兼容但不执行实际操作
+ * 
+ * 原始文件已重命名为 terminal.mts.disabled
+ * 如需启用终端功能，请：
+ * 1. 删除此文件
+ * 2. 将 terminal.mts.disabled 重命名为 terminal.mts
+ * 3. 在 package.json 中添加 node-pty 依赖
+ */
 
 export interface TerminalInstance {
   id: number;
-  terminal: pty.IPty;
+  terminal: any; // 空对象
   workingDirectory: string;
   createdAt: number;
   isActive: boolean;
@@ -17,292 +21,83 @@ export interface TerminalInstance {
 }
 
 export class WorkspaceTerminal extends EventEmitter {
-  private terminals: Map<number, TerminalInstance> = new Map();
-  private nextTerminalId: number = 1;
-  private activeTerminalId: number | null = null;
-  private workspacePath: string;
-
   constructor(workspacePath: string) {
     super();
-    this.workspacePath = workspacePath;
-    Logger.info(`WorkspaceTerminal initialized for workspace: ${workspacePath}`);
-    this.setupMessageHandling();
+    Logger.warn(`WorkspaceTerminal DISABLED for workspace: ${workspacePath}`);
   }
 
-  /**
-   * 设置消息处理
-   */
-  private setupMessageHandling(): void {
-    const messageService = getMessageService();
-
-    // 监听来自前端的终端消息
-    const handleTerminalMessage = (msg: TerminalMessage) => {
-      if (msg.type === "resize") {
-        const resizeData = msg.data as { cols: number; rows: number };
-        this.resize(msg.terminalID!, resizeData.cols, resizeData.rows);
-      } else if (typeof msg.data === "string") {
-        this.sendInput(msg.terminalID!, msg.data);
-      }
-    };
-
-    messageService.addTerminalMsgListener(handleTerminalMessage);
-  }
-
-  /**
-   * 创建新的终端实例
-   */
-  createTerminal(workingDirectory?: string): TerminalInstance {
-    const cwd = workingDirectory || process.env.HOME || os.homedir();
-
-    const terminal = pty.spawn(shell, [], {
-      name: "xterm-color",
-      cols: 80,
-      rows: 30,
-      cwd,
-      env: process.env,
-      useConpty: os.platform() === "win32",
-    });
-
-    // 生成唯一的终端ID：时间戳 + 随机数
-    const terminalId = Date.now() + Math.floor(Math.random() * 1000);
-
-    const terminalInstance: TerminalInstance = {
-      id: terminalId,
-      terminal,
-      workingDirectory: cwd,
+  createTerminal(_workingDirectory?: string): TerminalInstance {
+    const mockId = Date.now() + Math.floor(Math.random() * 1000);
+    Logger.warn(`Terminal creation DISABLED, returning mock terminal ${mockId}`);
+    return {
+      id: mockId,
+      terminal: {},
+      workingDirectory: _workingDirectory || process.cwd(),
       createdAt: Date.now(),
-      isActive: true,
+      isActive: false,
       output: "",
     };
-
-    // 监听终端输出
-    terminal.onData((data) => {
-      terminalInstance.output += data;
-
-      // 发送到前端
-      getMessageService().terminalMsg.emit("terminal-send", {
-        terminalID: terminalInstance.id,
-        data,
-        workspacePath: this.workspacePath,
-      });
-
-      this.emit("output", {
-        terminalID: terminalInstance.id,
-        type: "output",
-        data,
-        timestamp: Date.now(),
-      });
-    });
-
-    // 监听终端退出
-    terminal.onExit((code) => {
-      Logger.info(`Terminal ${terminalInstance.id} exited with code: ${code}`);
-      this.terminals.delete(terminalInstance.id);
-
-      if (this.activeTerminalId === terminalInstance.id) {
-        this.activeTerminalId = null;
-      }
-
-      // 发送关闭消息到前端
-      getMessageService().terminalMsg.emit("close-terminal", {
-        terminalID: terminalInstance.id,
-        workspacePath: this.workspacePath,
-      });
-
-      this.emit("exit", {
-        terminalID: terminalInstance.id,
-        type: "exit",
-        data: code,
-        timestamp: Date.now(),
-      });
-    });
-
-    this.terminals.set(terminalInstance.id, terminalInstance);
-    this.activeTerminalId = terminalInstance.id;
-
-    Logger.info(`Terminal ${terminalInstance.id} created with working directory: ${cwd}`);
-
-    // 发送打开消息到前端
-    getMessageService().terminalMsg.emit("open-terminal", {
-      terminalID: terminalInstance.id,
-      terminals: Array.from(this.terminals.keys()),
-      workspacePath: this.workspacePath,
-    });
-
-    this.emit("create", {
-      terminalID: terminalInstance.id,
-      type: "create",
-      data: {
-        workingDirectory: cwd,
-        id: terminalInstance.id,
-      },
-      timestamp: Date.now(),
-    });
-
-    return terminalInstance;
   }
 
-  /**
-   * 获取终端实例
-   */
-  getTerminal(terminalId: number): TerminalInstance | undefined {
-    return this.terminals.get(terminalId);
+  getTerminal(_terminalId: number): TerminalInstance | undefined {
+    return undefined;
   }
 
-  /**
-   * 获取所有终端实例
-   */
   getAllTerminals(): TerminalInstance[] {
-    return Array.from(this.terminals.values());
+    return [];
   }
 
-  /**
-   * 获取活动终端
-   */
   getActiveTerminal(): TerminalInstance | undefined {
-    return this.activeTerminalId ? this.terminals.get(this.activeTerminalId) : undefined;
+    return undefined;
   }
 
-  /**
-   * 设置活动终端
-   */
-  setActiveTerminal(terminalId: number): boolean {
-    if (this.terminals.has(terminalId)) {
-      this.activeTerminalId = terminalId;
-      Logger.info(`Active terminal set to ${terminalId}`);
-      return true;
-    }
+  setActiveTerminal(_terminalId: number): boolean {
     return false;
   }
 
-  /**
-   * 向终端发送输入
-   */
-  sendInput(terminalId: number, input: string): boolean {
-    const terminal = this.terminals.get(terminalId);
-    if (terminal) {
-      terminal.terminal.write(input);
-      Logger.info(`Input sent to terminal ${terminalId}: ${input.trim()}`);
-      return true;
-    }
+  sendInput(_terminalId: number, _input: string): boolean {
     return false;
   }
 
-  /**
-   * 向活动终端发送输入
-   */
-  sendInputToActive(input: string): boolean {
-    if (this.activeTerminalId) {
-      return this.sendInput(this.activeTerminalId, input);
-    }
+  sendInputToActive(_input: string): boolean {
     return false;
   }
 
-  /**
-   * 调整终端大小
-   */
-  resize(terminalId: number, cols: number, rows: number): boolean {
-    const terminal = this.terminals.get(terminalId);
-    if (terminal) {
-      terminal.terminal.resize(cols, rows);
-      Logger.info(`Terminal ${terminalId} resized to ${cols}x${rows}`);
-      return true;
-    }
+  resize(_terminalId: number, _cols: number, _rows: number): boolean {
     return false;
   }
 
-  /**
-   * 关闭终端
-   */
-  closeTerminal(terminalId: number): boolean {
-    const terminal = this.terminals.get(terminalId);
-    if (terminal) {
-      terminal.terminal.kill();
-      this.terminals.delete(terminalId);
-
-      if (this.activeTerminalId === terminalId) {
-        // 如果关闭的是活动终端，选择另一个终端作为活动终端
-        const remainingTerminals = Array.from(this.terminals.keys());
-        this.activeTerminalId = remainingTerminals.length > 0 ? remainingTerminals[0]! : null;
-      }
-
-      // 发送关闭消息到前端
-      getMessageService().terminalMsg.emit("close-terminal", {
-        terminalID: terminalId,
-        workspacePath: this.workspacePath,
-      });
-
-      Logger.info(`Terminal ${terminalId} closed`);
-      return true;
-    }
+  closeTerminal(_terminalId: number): boolean {
     return false;
   }
 
-  /**
-   * 清理所有终端
-   */
   cleanup(): void {
-    for (const [terminalId, terminal] of this.terminals) {
-      terminal.terminal.kill();
-      Logger.info(`Terminal ${terminalId} killed during cleanup`);
-    }
-    this.terminals.clear();
-    this.activeTerminalId = null;
-    Logger.info("All terminals cleaned up");
+    // 无操作
   }
 
-  /**
-   * 获取终端状态信息
-   */
-  getStatus(): {
-    totalTerminals: number;
-    activeTerminalId: number | null;
-    terminals: {
-      id: number;
-      workingDirectory: string;
-      createdAt: number;
-      isActive: boolean;
-    }[];
-  } {
+  getStatus() {
     return {
-      totalTerminals: this.terminals.size,
-      activeTerminalId: this.activeTerminalId,
-      terminals: Array.from(this.terminals.values()).map(terminal => ({
-        id: terminal.id,
-        workingDirectory: terminal.workingDirectory,
-        createdAt: terminal.createdAt,
-        isActive: terminal.id === this.activeTerminalId,
-      })),
+      totalTerminals: 0,
+      activeTerminalId: null,
+      terminals: [],
     };
   }
 }
 
-// 按工作区路径存储终端实例
 const workspaceTerminals: Map<string, WorkspaceTerminal> = new Map();
 
 export function getWorkspaceTerminal(workspacePath?: string): WorkspaceTerminal {
   const key = workspacePath || "default";
-
   if (!workspaceTerminals.has(key)) {
-    const terminal = new WorkspaceTerminal(key);
-    workspaceTerminals.set(key, terminal);
-    Logger.info(`Created new WorkspaceTerminal for workspace: ${key}`);
+    workspaceTerminals.set(key, new WorkspaceTerminal(key));
   }
-
   return workspaceTerminals.get(key)!;
 }
 
-// 获取所有工作区终端管理器
 export function getAllWorkspaceTerminals(): WorkspaceTerminal[] {
   return Array.from(workspaceTerminals.values());
 }
 
-// 根据终端ID查找对应的工作区终端管理器
-export function findWorkspaceTerminalByTerminalId(terminalId: number): WorkspaceTerminal | undefined {
-  for (const terminal of workspaceTerminals.values()) {
-    if (terminal.getTerminal(terminalId)) {
-      return terminal;
-    }
-  }
+export function findWorkspaceTerminalByTerminalId(_terminalId: number): WorkspaceTerminal | undefined {
   return undefined;
 }
