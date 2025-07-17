@@ -118,7 +118,7 @@
   "type": "module",
   "scripts": {
     "build": "tsc",
-    "setup:deps": "cd ../shared && npm run build && cd ../core && npm run build && cd ../electron && node scripts/setup-local-deps.js",
+    "setup:deps": "cd ../shared && npm run build && cd ../electron && node scripts/setup-local-deps.js",
     "cleanup:deps": "node scripts/cleanup-local-deps.js",
     "build:electron": "npm run setup:deps && npm run build && npm run build:web && npm run move:web && electron-builder && npm run cleanup:deps",
     "build:electron:win": "npm run setup:deps && npm run build && npm run build:web && npm run move:web && electron-builder --win && npm run cleanup:deps",
@@ -137,13 +137,14 @@
     "dev:watch": "tsc -w",
     "start": "npm run dev",
     "typecheck": "npx tsc --noEmit",
-    "postinstall": "electron-rebuild",
+    "postinstall": "electron-builder install-app-deps",
     "version:patch": "npm version patch --no-git-tag-version",
     "version:minor": "npm version minor --no-git-tag-version",
     "version:major": "npm version major --no-git-tag-version",
     "release": "npm run publish"
   },
   "dependencies": {
+    "@dadigua/hyperchat-shared": "2.0.0-alpha.19",
     "@anthropic-ai/sdk": "^0.39.0",
     "@homebridge/ciao": "^1.3.1",
     "@homebridge/node-pty-prebuilt-multiarch": "^0.13.1",

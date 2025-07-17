@@ -26,9 +26,7 @@ function cleanupLocalDependencies() {
   // 要清理的本地包路径
   const localPackagePaths = [
     path.join(nodeModulesDir, '@dadigua', 'hyperchat-shared'),
-    path.join(nodeModulesDir, '@hyperchat', 'core'),
-    path.join(nodeModulesDir, '@dadigua'),  // 如果目录空了也删除
-    path.join(nodeModulesDir, '@hyperchat')  // 如果目录空了也删除
+    path.join(nodeModulesDir, '@dadigua')  // 如果目录空了也删除
   ];
   
   for (const packagePath of localPackagePaths) {
@@ -40,8 +38,7 @@ function cleanupLocalDependencies() {
   
   // 清理空的作用域目录
   const scopeDirs = [
-    path.join(nodeModulesDir, '@dadigua'),
-    path.join(nodeModulesDir, '@hyperchat')
+    path.join(nodeModulesDir, '@dadigua')
   ];
   
   for (const scopeDir of scopeDirs) {
