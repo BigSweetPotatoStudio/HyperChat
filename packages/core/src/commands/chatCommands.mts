@@ -118,12 +118,13 @@ export async function streamChatCompletion(params: ChatCompletionRequest): Promi
     // 开始流式完成
     const messageService = getMessageService();
 
-    // 发送开始事件
+    // 发送用户消息创建事件
     messageService.sendMessage({
-      type: "chat_stream_start",
+      type: "chat_message_create",
       data: {
         chatKey,
-        messages: aiChannel.messages,
+        messageId: userMessage.messageId!,
+        message: userMessage,
       },
     });
 
@@ -133,13 +134,13 @@ export async function streamChatCompletion(params: ChatCompletionRequest): Promi
         ...effectiveConfig,
         prompt: systemPrompt,
         modelKey: effectiveConfig.modelKey || "",
-        sendMessage: (d) => {
+        sendMessage: (eventData) => {
           // 发送消息到前端
           messageService.sendMessage({
-            type: "chat_stream_delta",
+            type: eventData.type,
             data: {
               chatKey,
-              delta: d.delta,
+              ...eventData.data,
             },
           });
         },
@@ -175,40 +176,23 @@ export async function streamChatCompletion(params: ChatCompletionRequest): Promi
         // }, agentScope);
       }
 
-      // 发送完成事件
-      messageService.sendMessage({
-        type: "chat_stream_complete",
-        data: {
-          chatKey,
-          messages: aiChannel.messages,
-          result,
-        },
-      });
+      // 新的消息事件架构中，完成事件已经在 AiChannel 中处理
     }).catch((error) => {
       Logger.error("Chat completion error:", error);
 
-      // 发送错误事件
-      messageService.sendMessage({
-        type: "chat_stream_error",
-        data: {
-          chatKey,
-          messages: aiChannel.messages,
-          error: error.message,
-        },
-      });
+      // 新的消息事件架构中，错误事件已经在 AiChannel 中处理
     });
 
     return { chatKey };
   } catch (error) {
     Logger.error("Stream chat completion error:", error);
 
-    // 发送错误事件
+    // 发送初始化错误事件
     const messageService = getMessageService();
     messageService.sendMessage({
-      type: "chat_stream_error",
+      type: "chat_message_error",
       data: {
         chatKey,
-        messages: [],
         error: error instanceof Error ? error.message : String(error),
       },
     });
@@ -225,9 +209,10 @@ export async function cancelChatCompletion(params: { chatKey: string }): Promise
   // 可以通过存储 AiChannel 实例来实现取消
   const messageService = getMessageService();
   messageService.sendMessage({
-    type: "chat_stream_cancelled",
+    type: "chat_message_error",
     data: {
       chatKey: params.chatKey,
+      error: "Chat cancelled by user",
     },
   });
 }
@@ -294,21 +279,6 @@ function getMCPTools(mcpClients: any[], allowMCPs?: string[]): any[] {
   return tools;
 }
 
-/**
- * 获取第一个用户内容
- */
-function getFirstUserContent(messages: MyMessage[]): string {
-  const firstUser = messages.find(m => m.content_attached !== false && m.role === "user");
-  const firstUserContent = firstUser?.content;
-
-  if (typeof firstUserContent === "string") {
-    return firstUserContent;
-  } else if (Array.isArray(firstUserContent)) {
-    return firstUserContent.find(x => x.type === "text")?.text || "";
-  }
-
-  return "New Chat";
-}
 
 /**
  * 创建工具确认回调

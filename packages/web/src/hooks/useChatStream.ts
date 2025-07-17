@@ -70,103 +70,90 @@ export function useChatStream(params: ChatStreamParams) {
         const socket = await getWebSocket();
         socketRef.current = socket;
 
-        // 监听聊天流事件
-        socket.on('chat_stream_start', (data: any) => {
-          // 对于 start 事件，允许设置新的 chatKey
-          setState(prev => ({
-            ...prev,
-            messages: data.messages || [],
-            loading: true,
-            error: null,
-            chatKey: data.chatKey,
-          }));
-        });
-
-        socket.on('chat_stream_delta', (r: {
-
-          chatKey: string,
-          delta: TextStreamPart<ToolSet>,
-
-        }) => {
-          // 验证 chatKey 匹配
-          if (!validateChatKey(r.chatKey, 'chat_stream_delta')) {
+        // 监听消息创建事件
+        socket.on('chat_message_create', (data: any) => {
+          if (!validateChatKey(data.chatKey, 'chat_message_create')) {
             return;
           }
 
           setState(prev => {
-            // 再次验证 chatKey 匹配
-            if (!validateChatKeyInState(prev, r.chatKey, 'delta update')) {
+            if (!validateChatKeyInState(prev, data.chatKey, 'message_create')) {
               return prev;
             }
 
-            // 处理不同类型的流式响应
-            if (r.delta.type === 'text-delta') {
-              // 更新最后一条助手消息的内容
-              const textDelta = (r.delta).textDelta || '';
+            // 检查消息是否已存在
+            const existingIndex = prev.messages.findIndex(m => m.messageId === data.messageId);
+            if (existingIndex !== -1) {
+              // 更新现有消息
               const newMessages = [...prev.messages];
-              const lastMessage = newMessages[newMessages.length - 1];
-
-              if (lastMessage && lastMessage.role === 'assistant') {
-                // 更新现有助手消息
-                lastMessage.content = (lastMessage.content || '') + textDelta;
-                lastMessage.content_date = Date.now();
-              } else {
-                // 创建新的助手消息
-                newMessages.push({
-                  role: 'assistant',
-                  content: textDelta,
-                  content_date: Date.now(),
-                  content_status: 'loading',
-                  content_tool_calls: [],
-                  content_attachment: [],
-                  content_usage: {
-                    prompt_tokens: 0,
-                    completion_tokens: 0,
-                    total_tokens: 0,
-                  },
-                } as MyMessage);
-              }
-
+              newMessages[existingIndex] = data.message;
               return {
                 ...prev,
                 messages: newMessages,
+                loading: data.message.role === 'assistant',
+                error: null,
+              };
+            } else {
+              // 添加新消息
+              return {
+                ...prev,
+                messages: [...prev.messages, data.message],
+                loading: data.message.role === 'assistant',
+                error: null,
               };
             }
-
-            return prev;
           });
         });
 
-        socket.on('chat_stream_complete', (data: any) => {
-          // 验证 chatKey 匹配
-          if (!validateChatKey(data.chatKey, 'chat_stream_complete')) {
+        socket.on('chat_message_update', (data: any) => {
+          if (!validateChatKey(data.chatKey, 'chat_message_update')) {
             return;
           }
 
           setState(prev => {
-            // 再次验证 chatKey 匹配
-            if (!validateChatKeyInState(prev, data.chatKey, 'complete')) {
+            if (!validateChatKeyInState(prev, data.chatKey, 'message_update')) {
               return prev;
             }
 
-            return {
-              ...prev,
-              messages: data.messages || prev.messages,
-              loading: false,
-            };
-          });
-
-          // 确保最后一条助手消息标记为完成
-          setState(prev => {
-            if (!validateChatKeyInState(prev, data.chatKey, 'complete status update')) {
+            // 找到要更新的消息
+            const messageIndex = prev.messages.findIndex(m => m.messageId === data.messageId);
+            if (messageIndex === -1) {
+              console.warn(`Message with ID ${data.messageId} not found for update`);
               return prev;
             }
 
             const newMessages = [...prev.messages];
-            const lastMessage = newMessages[newMessages.length - 1];
-            if (lastMessage && lastMessage.role === 'assistant') {
-              lastMessage.content_status = 'success';
+            const message = newMessages[messageIndex];
+            const delta = data.delta;
+
+            // 处理不同类型的流式响应
+            if (delta.type === 'text-delta') {
+              // 更新文本内容
+              const textDelta = delta.textDelta || '';
+              message.content = (message.content || '') + textDelta;
+              message.content_date = Date.now();
+            } else if (delta.type === 'reasoning') {
+              // 更新推理内容
+              message.reasoning_content = (message.reasoning_content || '') + (delta.textDelta || '');
+              message.content_date = Date.now();
+            } else if (delta.type === 'tool-call') {
+              // 处理工具调用
+              if (!message.content_tool_calls) {
+                message.content_tool_calls = [];
+              }
+              // 这里需要根据具体的工具调用逻辑进行处理
+              // 由于这是增量更新，可能需要更复杂的逻辑
+            } else if (delta.type === 'step-finish') {
+              // 处理步骤完成
+              if (delta.usage) {
+                message.content_usage = {
+                  prompt_tokens: delta.usage.promptTokens || 0,
+                  completion_tokens: delta.usage.completionTokens || 0,
+                  total_tokens: delta.usage.totalTokens || 0,
+                };
+              }
             }
+
             return {
               ...prev,
               messages: newMessages,
@@ -174,20 +161,60 @@ export function useChatStream(params: ChatStreamParams) {
           });
         });
 
-        socket.on('chat_stream_error', (data: any) => {
-          // 验证 chatKey 匹配
-          if (!validateChatKey(data.chatKey, 'chat_stream_error')) {
+        socket.on('chat_message_complete', (data: any) => {
+          if (!validateChatKey(data.chatKey, 'chat_message_complete')) {
             return;
           }
 
           setState(prev => {
-            // 再次验证 chatKey 匹配
-            if (!validateChatKeyInState(prev, data.chatKey, 'error')) {
+            if (!validateChatKeyInState(prev, data.chatKey, 'message_complete')) {
               return prev;
+            }
+
+            // 找到最后一条助手消息并标记为完成
+            const newMessages = [...prev.messages];
+            const lastAssistantIndex = newMessages.findLastIndex(m => m.role === 'assistant');
+            
+            if (lastAssistantIndex !== -1) {
+              newMessages[lastAssistantIndex] = {
+                ...newMessages[lastAssistantIndex],
+                content_status: 'success',
+              };
             }
 
             return {
               ...prev,
+              messages: newMessages,
+              loading: false,
+            };
+          });
+        });
+
+        socket.on('chat_message_error', (data: any) => {
+          if (!validateChatKey(data.chatKey, 'chat_message_error')) {
+            return;
+          }
+
+          setState(prev => {
+            if (!validateChatKeyInState(prev, data.chatKey, 'message_error')) {
+              return prev;
+            }
+
+            // 找到最后一条助手消息并标记为错误
+            const newMessages = [...prev.messages];
+            const lastAssistantIndex = newMessages.findLastIndex(m => m.role === 'assistant');
+            
+            if (lastAssistantIndex !== -1) {
+              newMessages[lastAssistantIndex] = {
+                ...newMessages[lastAssistantIndex],
+                content_status: 'error',
+                content_error: data.error,
+              };
+            }
+
+            return {
+              ...prev,
+              messages: newMessages,
               error: data.error,
               loading: false,
             };
@@ -196,24 +223,6 @@ export function useChatStream(params: ChatStreamParams) {
           message.error(data.error || t`An error occurred, please try again later`);
         });
 
-        socket.on('chat_stream_cancelled', (data: any) => {
-          // 验证 chatKey 匹配
-          if (!validateChatKey(data.chatKey, 'chat_stream_cancelled')) {
-            return;
-          }
-
-          setState(prev => {
-            // 再次验证 chatKey 匹配
-            if (!validateChatKeyInState(prev, data.chatKey, 'cancelled')) {
-              return prev;
-            }
-
-            return {
-              ...prev,
-              loading: false,
-            };
-          });
-        });
 
         // 监听工具确认请求
         socket.on('tool_confirm_request', (data: any) => {
@@ -250,11 +259,10 @@ export function useChatStream(params: ChatStreamParams) {
 
     return () => {
       if (socketRef.current) {
-        socketRef.current.off('chat_stream_start');
-        socketRef.current.off('chat_stream_delta');
-        socketRef.current.off('chat_stream_complete');
-        socketRef.current.off('chat_stream_error');
-        socketRef.current.off('chat_stream_cancelled');
+        socketRef.current.off('chat_message_create');
+        socketRef.current.off('chat_message_update');
+        socketRef.current.off('chat_message_complete');
+        socketRef.current.off('chat_message_error');
         socketRef.current.off('tool_confirm_request');
       }
     };
@@ -267,6 +275,11 @@ export function useChatStream(params: ChatStreamParams) {
     chatKey: string
   ) => {
     try {
+      // 确保用户消息有 messageId
+      if (!userMessage.messageId) {
+        userMessage.messageId = `user_${Date.now()}_${Math.random().toString(36).substring(2, 11)}`;
+      }
+
       setState(prev => ({
         ...prev,
         loading: true,

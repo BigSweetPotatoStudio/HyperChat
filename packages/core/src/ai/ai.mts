@@ -51,6 +51,10 @@ export class AiChannel {
     resourceResList: Array<CommonContentItem> = [],
     promptResList: Array<MCPTypes.GetPromptResult> = [],
   ) {
+    // 如果消息没有 messageId，生成一个
+    if (!message.messageId) {
+      message.messageId = v4();
+    }
     if (resourceResList.length > 0) {
       if (message.content == "" || message.content == null) {
         message.content = [];
@@ -201,7 +205,7 @@ export class AiChannel {
       modelKey: string;
       onUpdate?: (r?: any) => void;
       confirm_call_tool_cb?: (tool: HyperToolCall) => Promise<boolean>;
-      sendMessage?: (p: { delta: TextStreamPart<ToolSet> }) => void; // 是否发送消息
+      sendMessage?: (p: { type: string, data: any }) => void; // 发送消息回调
     } & BaseAIConfig,
     options: Omit<Parameters<typeof streamText>[0], 'model' | 'prompt'> = {},
     context: { step: number } = { step: 0 },
@@ -214,6 +218,10 @@ export class AiChannel {
     }
 
     this.abortController = new AbortController();
+    
+    // 生成唯一的消息ID
+    const messageId = v4();
+    
     let newMessage: MyMessage = {
       role: "assistant",
       content: "",
@@ -227,12 +235,25 @@ export class AiChannel {
         total_tokens: 0,
       },
       content_date: Date.now(),
+      messageId: messageId,
     };
 
     let messages = this.messages.filter(
       (m) => m.content_attached == null || m.content_attached == true,
     );
     this.messages.push(newMessage);
+    
+    // 发送消息创建事件
+    if (params.sendMessage) {
+      params.sendMessage({
+        type: "chat_message_create",
+        data: {
+          messageId: messageId,
+          message: newMessage,
+        },
+      });
+    }
+    
     params.onUpdate && params.onUpdate();
 
     let format_message = await this.messages2core(messages);
@@ -266,7 +287,13 @@ export class AiChannel {
       let toolIndex = 0;
       for await (const delta of result.fullStream) {
         if (params.sendMessage) {
-          params.sendMessage({ delta })
+          params.sendMessage({
+            type: "chat_message_update",
+            data: {
+              messageId: messageId,
+              delta: delta,
+            },
+          });
         }
         // console.log("delta", delta);
         if (delta.type == "error") {
@@ -320,11 +347,32 @@ export class AiChannel {
 
     } catch (e) {
       this.lastMessage.content_status = "error";
+      
+      // 发送聊天错误事件
+      if (params.sendMessage) {
+        params.sendMessage({
+          type: "chat_message_error",
+          data: {
+            error: e instanceof Error ? e.message : String(e),
+          },
+        });
+      }
+      
       params.onUpdate && params.onUpdate();
       throw e;
     }
     this.lastMessage.content_status = "dataLoadComplete";
     this.lastMessage.content_date = Date.now();
+
+    // 发送聊天完成事件
+    if (params.sendMessage) {
+      params.sendMessage({
+        type: "chat_message_complete",
+        data: {
+          result: this.lastMessage.content,
+        },
+      });
+    }
 
     params.onUpdate && params.onUpdate();
 

@@ -195,7 +195,9 @@ export type MyMessage = AllMessage & {
   tool_call_name?: string; // 工具调用的名称 // 谷歌需要
 
   // 记忆相关字段（仅当 role === "hyper_memory" 时使用）
-
+  
+  // 消息唯一标识符
+  messageId?: string;
 };
 
 // 聊天历史项类型，包含消息、模型、代理、任务等信息
@@ -436,6 +438,32 @@ export interface TerminalMessageExtended {
   terminalID?: number;
   type?: string;
   data?: string | { cols: number; rows: number; status: number };
+}
+
+/**
+ * 聊天消息事件类型定义
+ */
+export interface ChatMessageEvent {
+  chatKey: string;
+  messageId: string;
+}
+
+export interface ChatMessageCreateEvent extends ChatMessageEvent {
+  message: MyMessage;
+}
+
+export interface ChatMessageUpdateEvent extends ChatMessageEvent {
+  delta: any; // TextStreamPart<ToolSet> 类型
+}
+
+export interface ChatMessageCompleteEvent {
+  chatKey: string;
+  result: string;
+}
+
+export interface ChatMessageErrorEvent {
+  chatKey: string;
+  error: string;
 }
 
 /**
