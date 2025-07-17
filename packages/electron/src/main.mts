@@ -10,6 +10,7 @@
  */
 
 import { Logger } from "../../core/src/log.mjs";
+import "../../core/src/first.mjs"; // 确保 core 模块的初始化逻辑先执行
 import {
   app,
   BrowserWindow,
@@ -21,6 +22,9 @@ import "./polyfills/electron_autoupdate.mjs";
 import path from "node:path";
 import { initHttp } from "../../core/src/http.mjs";
 import { createWindow } from "./window/mainWindow.mjs";
+
+import { getWorkspaceManager } from "../../core/src/workspace/index.mjs";
+import { appDataDir } from "../../core/src/const.mjs";
 
 Logger.info("start main");
 
@@ -48,7 +52,7 @@ ipcMain.handle("command", async (_event, name: string, args: any) => {
   try {
     const arr = Array.isArray(args) ? args : [];
     let res;
-    
+
     if (name === "getHistory") {
       // getHistory 命令不记录日志，避免日志过多
     } else {
@@ -101,12 +105,14 @@ app.whenReady().then(async () => {
   // if (process.platform == "darwin") {
   //   app.dock.hide();
   // }
-  
+  // 初始化工作区
+  await getWorkspaceManager().initialize(appDataDir);
+  await getWorkspaceManager().start();
   // 初始化 HTTP 服务器，处理 Web 请求和 MCP 连接
   await initHttp().catch((e) => {
     Logger.info("initHttp error: ", e);
   });
-  
+
   try {
     createWindow();
   } catch (e) {

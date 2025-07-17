@@ -61,19 +61,7 @@ export const createWindow = () => {
     },
     icon: path.join(__dirname, "../web-build/assets/favicon.png"),
   });
-  // const menu = new Menu()
-  // menu.append(new MenuItem({
-  //   label: 'DevTools',
-  //   submenu: [{
-  //     role: 'help',
-  //     accelerator: process.platform === 'darwin' ? 'Alt+Cmd+I' : 'Ctrl+Shift+I',
-  //     click: () => { win.webContents.openDevTools(); }
-  //   }]
-  // }))
 
-  // Menu.setApplicationMenu(menu)
-
-  // win.maximize()
   win.show();
   if (process.env.myEnv == "dev") {
     win.loadURL("http://localhost:8080/#/");
@@ -202,7 +190,7 @@ export const createWindow = () => {
   });
   // 创建原始图标
   const icon = nativeImage.createFromPath(
-    path.join(__dirname, "../web-build/assets/favicon.png")
+    path.join(__dirname, "../../../core/web-build/icons/icon_512x512.png")
   );
 
   // 调整图标大小

@@ -26,7 +26,7 @@
       "!tsconfig.json",
       "!webpack.config.js"
     ],
-    "icon": "./dist/core/web-build/assets/favicon.png",
+    "icon": "./dist/core/web-build/icons/icon_512x512.png",
     "linux": {
       "target": [
         {

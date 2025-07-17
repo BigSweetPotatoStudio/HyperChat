@@ -45,6 +45,8 @@ module.exports = (env, argv) => {
         theme_color: '#333333',
         display: 'standalone',
         start_url: './index.html',
+        inject: true, // 是否自动注入到 HTML
+        fingerprints: false, // 禁用文件名哈希
         icons: [
           {
             src: path.resolve(__dirname, 'public/logo.png'),
