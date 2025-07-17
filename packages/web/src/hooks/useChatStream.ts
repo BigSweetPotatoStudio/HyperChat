@@ -45,6 +45,24 @@ export function useChatStream(params: ChatStreamParams) {
   const socketRef = useRef<any>(null);
   // const toolConfirmCallbacksRef = useRef<Map<string, { resolve: (value: any) => void; reject: (reason?: any) => void }>>(new Map());
 
+  // 验证 chatKey 匹配的辅助函数
+  const validateChatKey = useCallback((receivedChatKey: string, eventType: string) => {
+    if (!state.chatKey || state.chatKey !== receivedChatKey) {
+      console.warn(`Received ${eventType} with mismatched chatKey:`, receivedChatKey, 'expected:', state.chatKey);
+      return false;
+    }
+    return true;
+  }, [state.chatKey]);
+
+  // 在 setState 中验证 chatKey 的辅助函数
+  const validateChatKeyInState = useCallback((prevState: ChatStreamState, receivedChatKey: string, eventType: string) => {
+    if (!prevState.chatKey || prevState.chatKey !== receivedChatKey) {
+      console.warn(`State chatKey mismatch during ${eventType}:`, receivedChatKey, 'expected:', prevState.chatKey);
+      return false;
+    }
+    return true;
+  }, []);
+
   // 初始化 WebSocket 连接
   useEffect(() => {
     const initSocket = async () => {
@@ -54,6 +72,7 @@ export function useChatStream(params: ChatStreamParams) {
 
         // 监听聊天流事件
         socket.on('chat_stream_start', (data: any) => {
+          // 对于 start 事件，允许设置新的 chatKey
           setState(prev => ({
             ...prev,
             messages: data.messages || [],
@@ -64,50 +83,145 @@ export function useChatStream(params: ChatStreamParams) {
         });
 
         socket.on('chat_stream_delta', (r: {
-          type: "chat_stream_delta",
-          data: {
-            chatKey: string,
-            delta: TextStreamPart<ToolSet>,
-          }
+
+          chatKey: string,
+          delta: TextStreamPart<ToolSet>,
+
         }) => {
-          if (state.chatKey == r.data.chatKey) {
-            let revMessages = {
-              role: 'assistant',
-              content: r.data.delta.content,
-            }
-            setState(prev => ({
-              ...prev,
-              messages: [...prev.messages, revMessages],
-            }));
+          // 验证 chatKey 匹配
+          if (!validateChatKey(r.chatKey, 'chat_stream_delta')) {
+            return;
           }
+
+          setState(prev => {
+            // 再次验证 chatKey 匹配
+            if (!validateChatKeyInState(prev, r.chatKey, 'delta update')) {
+              return prev;
+            }
+
+            // 处理不同类型的流式响应
+            if (r.delta.type === 'text-delta') {
+              // 更新最后一条助手消息的内容
+              const textDelta = (r.delta).textDelta || '';
+              const newMessages = [...prev.messages];
+              const lastMessage = newMessages[newMessages.length - 1];
+
+              if (lastMessage && lastMessage.role === 'assistant') {
+                // 更新现有助手消息
+                lastMessage.content = (lastMessage.content || '') + textDelta;
+                lastMessage.content_date = Date.now();
+              } else {
+                // 创建新的助手消息
+                newMessages.push({
+                  role: 'assistant',
+                  content: textDelta,
+                  content_date: Date.now(),
+                  content_status: 'loading',
+                  content_tool_calls: [],
+                  content_attachment: [],
+                  content_usage: {
+                    prompt_tokens: 0,
+                    completion_tokens: 0,
+                    total_tokens: 0,
+                  },
+                } as MyMessage);
+              }
+
+              return {
+                ...prev,
+                messages: newMessages,
+              };
+            }
+
+            return prev;
+          });
         });
 
         socket.on('chat_stream_complete', (data: any) => {
-          setState(prev => ({
-            ...prev,
-            messages: data.messages || prev.messages,
-            loading: false,
-          }));
+          // 验证 chatKey 匹配
+          if (!validateChatKey(data.chatKey, 'chat_stream_complete')) {
+            return;
+          }
+
+          setState(prev => {
+            // 再次验证 chatKey 匹配
+            if (!validateChatKeyInState(prev, data.chatKey, 'complete')) {
+              return prev;
+            }
+
+            return {
+              ...prev,
+              messages: data.messages || prev.messages,
+              loading: false,
+            };
+          });
+
+          // 确保最后一条助手消息标记为完成
+          setState(prev => {
+            if (!validateChatKeyInState(prev, data.chatKey, 'complete status update')) {
+              return prev;
+            }
+
+            const newMessages = [...prev.messages];
+            const lastMessage = newMessages[newMessages.length - 1];
+            if (lastMessage && lastMessage.role === 'assistant') {
+              lastMessage.content_status = 'success';
+            }
+            return {
+              ...prev,
+              messages: newMessages,
+            };
+          });
         });
 
         socket.on('chat_stream_error', (data: any) => {
-          setState(prev => ({
-            ...prev,
-            error: data.error,
-            loading: false,
-          }));
+          // 验证 chatKey 匹配
+          if (!validateChatKey(data.chatKey, 'chat_stream_error')) {
+            return;
+          }
+
+          setState(prev => {
+            // 再次验证 chatKey 匹配
+            if (!validateChatKeyInState(prev, data.chatKey, 'error')) {
+              return prev;
+            }
+
+            return {
+              ...prev,
+              error: data.error,
+              loading: false,
+            };
+          });
+
           message.error(data.error || t`An error occurred, please try again later`);
         });
 
         socket.on('chat_stream_cancelled', (data: any) => {
-          setState(prev => ({
-            ...prev,
-            loading: false,
-          }));
+          // 验证 chatKey 匹配
+          if (!validateChatKey(data.chatKey, 'chat_stream_cancelled')) {
+            return;
+          }
+
+          setState(prev => {
+            // 再次验证 chatKey 匹配
+            if (!validateChatKeyInState(prev, data.chatKey, 'cancelled')) {
+              return prev;
+            }
+
+            return {
+              ...prev,
+              loading: false,
+            };
+          });
         });
 
         // 监听工具确认请求
         socket.on('tool_confirm_request', (data: any) => {
+          // 验证 chatKey 匹配
+          if (!validateChatKey(data.chatKey, 'tool_confirm_request')) {
+            return;
+          }
+
           if (params.onToolConfirm) {
             params.onToolConfirm(data.tool).then((result) => {
               // 发送确认响应

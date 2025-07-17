@@ -535,7 +535,8 @@ export const WorkspaceChat = ({ workspace, agentName, agentScope, workspaceDetai
         {
           role: "user",
           content: content || value,
-        },
+          content_date: Date.now(),
+        } as MyMessage,
         currentChat.current.key,
         // resourceResListRef.current,
         // promptResList.current,

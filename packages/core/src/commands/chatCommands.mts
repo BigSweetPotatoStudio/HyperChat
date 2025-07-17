@@ -4,15 +4,12 @@
  */
 
 import { AiChannel } from "../ai/ai.mjs";
-import { MyMessage, HyperToolCall, CommonContentItem } from "@dadigua/hyperchat-shared/types";
+import { MyMessage, HyperToolCall } from "@dadigua/hyperchat-shared/types";
 import { BaseAIConfig } from "@dadigua/hyperchat-shared";
 import { getBuiltinPrompts } from "@dadigua/hyperchat-shared";
-import { WorkspaceManager } from "../workspace/workspaceManager.mjs";
 import { getAppSettingsManager } from "../data/appSettingsService.mjs";
 import { getMessageService } from "../message_service.mjs";
-import * as MCPTypes from "@modelcontextprotocol/sdk/types.js";
 import { Logger } from "../log.mjs";
-import { v4 } from "uuid";
 import { getWorkspaceManager } from "../workspace/index.mjs";
 /**
  * 聊天完成请求参数
@@ -147,7 +144,7 @@ export async function streamChatCompletion(params: ChatCompletionRequest): Promi
           });
         },
         confirm_call_tool_cb: confirmCallToolCb,
-        onUpdate: (updateData?: any) => {
+        onUpdate: (_updateData?: any) => {
           // 发送更新事件
           // messageService.sendMessage({
           //   type: "chat_stream_update",
