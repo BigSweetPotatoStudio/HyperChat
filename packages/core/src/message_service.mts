@@ -107,6 +107,24 @@ export class MessageService {
       Logger.error("Failed to broadcast message to all renderers:", error);
     }
   }
+
+  /**
+   * 发送消息到前端 (简化版，支持聊天流事件)
+   * @param eventData 事件数据
+   */
+  async sendMessage(eventData: { type: string; data: any }): Promise<void> {
+    const mainSocket = this.getMainSocket();
+    if (!mainSocket) {
+      return;
+    }
+
+    try {
+      mainSocket.emit(eventData.type, eventData.data);
+      // Logger.debug(`Event sent: ${eventData.type}`);
+    } catch (error) {
+      Logger.error("Failed to send event:", error);
+    }
+  }
   /**
    * 初始化消息服务，设置Socket监听器
    * @param mainSocket 主要的Socket.IO服务器实例

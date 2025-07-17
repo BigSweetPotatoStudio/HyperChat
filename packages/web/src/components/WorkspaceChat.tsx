@@ -45,7 +45,6 @@ import { v4 } from "uuid";
 import { call, getURL_PRE } from "../common/call";
 import { addChatRecentUsage } from "../utils/storage";
 
-import { AiChannel } from "@dadigua/hyperchat-shared/ai";
 import {
   ChatHistoryItem,
 } from "@dadigua/hyperchat-shared/types";
@@ -62,6 +61,7 @@ import { MyAttachR } from "./attachR";
 import { CurrentWorkspaceDetails, WorkspaceInfo } from "../pages/workspace/types";
 import { AllMessage, CommonContentItem, HyperChatCompletionTool, IMCPClient, HyperToolCall } from "@dadigua/hyperchat-shared/types";
 import { AgentCommonFormItems } from "./AgentManagement";
+import { useChatStream } from "../hooks/useChatStream";
 
 /**
  * 工作区聊天组件的Props类型定义
@@ -124,16 +124,6 @@ export const WorkspaceChat = ({ workspace, agentName, agentScope, workspaceDetai
     }));
   };
 
-  // AI通道客户端引用
-  const aiClientRef = useRef<AiChannel>(new AiChannel({}));
-
-  // 输入框的值
-  const [value, setValue] = useState("");
-
-  // 发送历史记录管理
-  const sendHistoryRef = useRef<string[]>([]);
-  const historyIndexRef = useRef<number>(-1);
-
   // 默认聊天配置
   const defaultChatValue = useRef<ChatHistoryItem>({
     label: "",
@@ -155,6 +145,95 @@ export const WorkspaceChat = ({ workspace, agentName, agentScope, workspaceDetai
 
   // 当前聊天引用
   const currentChat = useRef<ChatHistoryItem>(defaultChatValue.current);
+
+  // 输入框的值
+  const [value, setValue] = useState("");
+
+  // 发送历史记录管理
+  const sendHistoryRef = useRef<string[]>([]);
+  const historyIndexRef = useRef<number>(-1);
+
+  let confirm_call_tool_cb = (tool: HyperToolCall): Promise<any> => {
+    return new Promise((resolve, reject) => {
+      console.log("tool", tool);
+      let m = modal.confirm({
+        title: t`Comfirm Call Tool`,
+        width: "90%",
+        style: { maxWidth: 1024 },
+        footer: [],
+        content: (
+          <div>
+            <Form
+              initialValues={tool.function.args}
+              name="control-hooks"
+              onFinish={(e) => {
+                // console.log(e);
+                resolve(e);
+                m.destroy();
+              }}
+            >
+              <pre
+                style={{
+                  whiteSpace: "pre-wrap",
+                  wordWrap: "break-word",
+                  padding: "8px 0",
+                  textAlign: "center",
+                }}
+              >
+                <span>Tool Name: </span>
+                <span className="text-purple-500">
+                  {getTools(mcpClients).find(
+                    (x) => x.name == tool.function.name,
+                  )?.restore_name || tool.function.name}
+                </span>
+              </pre>
+              {JsonSchema2FormItemOrNull(
+                getTools(mcpClients).find(
+                  (x) => x.name == tool.function.name,
+                )?.inputSchema,
+              ) || t`No parameters`}
+              <Form.Item>
+                <div className="flex flex-wrap justify-between">
+                  <Button
+                    onClick={() => {
+                      m.destroy();
+                      reject(new Error(t`User Cancel`));
+                    }}
+                  >{t`Cancel`}</Button>
+                  <Space>
+                    <Button
+                      type="primary"
+                      ghost
+                      htmlType="submit"
+                      onClick={() => {
+                        if (!currentChat.current.configOverrides) {
+                          currentChat.current.configOverrides = {};
+                        }
+                        currentChat.current.configOverrides.isConfirmCallTool = false;
+                      }}
+                    >
+                      {t`Allow this Chat`}
+                    </Button>
+                    <Button type="primary" htmlType="submit">
+                      {t`Allow Once`}
+                    </Button>
+                  </Space>
+                </div>
+              </Form.Item>
+            </Form>
+          </div>
+        ),
+      });
+    });
+  }
+
+  // 使用新的聊天流 Hook
+  const chatStream = useChatStream({
+    agentName,
+    agentScope,
+    configOverrides: currentChat.current.configOverrides,
+    onToolConfirm: confirm_call_tool_cb,
+  });
 
   // 获取有效配置值的帮助函数（聊天配置 > Agent配置 > 工作区配置 > 模型列表第一个）
   const getEffectiveConfig = () => {
@@ -215,8 +294,8 @@ export const WorkspaceChat = ({ workspace, agentName, agentScope, workspaceDetai
     return getEffectiveConfig().allowMCPs;
   };
 
-  // 加载状态
-  const [loading, setLoading] = useState(false);
+  // 加载状态从 chatStream 获取
+  const loading = chatStream.loading;
 
 
   // 编辑器引用
@@ -346,6 +425,14 @@ export const WorkspaceChat = ({ workspace, agentName, agentScope, workspaceDetai
     }
   };
 
+  // 同步 chatStream 消息到 currentChat
+  useEffect(() => {
+    if (chatStream.messages.length > 0) {
+      currentChat.current.messages = chatStream.messages;
+      refresh();
+    }
+  }, [chatStream.messages]);
+
   // 初始化
   useEffect(() => {
     (async () => {
@@ -413,100 +500,26 @@ export const WorkspaceChat = ({ workspace, agentName, agentScope, workspaceDetai
       ...newConfig,
     };
 
+    // 同步到 chatStream
+    chatStream.setMessages(currentChat.current.messages || []);
+    
     resourceResListRef.current = [];
     promptResList.current = [];
 
     refresh();
   };
-  let confirm_call_tool_cb = (tool: HyperToolCall): Promise<any> => {
-    return new Promise((resolve, reject) => {
-      console.log("tool", tool);
-      let m = modal.confirm({
-        title: t`Comfirm Call Tool`,
-        width: "90%",
-        style: { maxWidth: 1024 },
-        footer: [],
-        content: (
-          <div>
-            <Form
-              initialValues={tool.function.args}
-              name="control-hooks"
-              onFinish={(e) => {
-                // console.log(e);
-                resolve(e);
-                m.destroy();
-              }}
-            >
-              <pre
-                style={{
-                  whiteSpace: "pre-wrap",
-                  wordWrap: "break-word",
-                  padding: "8px 0",
-                  textAlign: "center",
-                }}
-              >
-                <span>Tool Name: </span>
-                <span className="text-purple-500">
-                  {getTools(mcpClients).find(
-                    (x) => x.name == tool.function.name,
-                  )?.restore_name || tool.function.name}
-                </span>
-              </pre>
-              {JsonSchema2FormItemOrNull(
-                getTools(mcpClients).find(
-                  (x) => x.name == tool.function.name,
-                )?.inputSchema,
-              ) || t`No parameters`}
-              <Form.Item>
-                <div className="flex flex-wrap justify-between">
-                  <Button
-                    onClick={() => {
-                      m.destroy();
-                      reject(new Error(t`User Cancel`));
-                    }}
-                  >{t`Cancel`}</Button>
-                  <Space>
-                    <Button
-                      type="primary"
-                      ghost
-                      htmlType="submit"
-                      onClick={() => {
-                        if (!currentChat.current.configOverrides) {
-                          currentChat.current.configOverrides = {};
-                        }
-                        currentChat.current.configOverrides.isConfirmCallTool = false;
-                      }}
-                    >
-                      {t`Allow this Chat`}
-                    </Button>
-                    <Button type="primary" htmlType="submit">
-                      {t`Allow Once`}
-                    </Button>
-                  </Space>
-                </div>
-              </Form.Item>
-            </Form>
-          </div>
-        ),
-      });
-    });
-  }
   /**
    * 处理用户请求的核心函数
    */
   const onRequest = useCallback(async (content?: string) => {
-
-    let aiClient = aiClientRef.current;
     try {
-      setLoading(true);
-
       if (!aiSettings) {
         throw new Error("AI settings not loaded");
       }
 
       const effectiveConfig = getEffectiveConfig();
       let config = aiSettings.models?.find(
-        (x) => x.key == effectiveConfig.modelKey,
+        (x: any) => x.key == effectiveConfig.modelKey,
       );
       if (config == null) {
         if (!aiSettings.models || aiSettings.models.length == 0) {
@@ -516,122 +529,36 @@ export const WorkspaceChat = ({ workspace, agentName, agentScope, workspaceDetai
         }
       }
 
-      aiClient.messages = currentChat.current.messages;
+      // 使用 chatStream 开始流式聊天
+      await chatStream.startChatStream(
+        currentChat.current.messages,
+        {
+          role: "user",
+          content: content || value,
+        },
+        currentChat.current.key,
+        // resourceResListRef.current,
+        // promptResList.current,
+      );
 
-      if (content) {
-        aiClient.addMessage(
-          {
-            role: "user",
-            content: content,
-            content_date: new Date().getTime(),
-          },
-          resourceResListRef.current,
-          promptResList.current,
-        );
+      // 生成新的聊天 key
+      if (!currentChat.current.key) {
+        currentChat.current.key = getMyUuid();
       }
 
-      function getFirstUserContent() {
-        let label = currentChat.current.label.toString();
-        let firstUser = aiClient.messages.find(
-          (x) => x.content_attached != false && x.role == "user",
-        );
-        let firstUserContent = (firstUser as AllMessage)?.content;
-        if (typeof firstUserContent == "string") {
-          label = firstUserContent;
-        } else if (Array.isArray(firstUserContent)) {
-          label = firstUserContent.find((x) => x.type == "text")?.text || "";
-        } else {
-          label = (firstUserContent as any).toString() || "New Chat";
-        }
-        return label;
-      }
-
-      currentChat.current.key = currentChat.current.key || getMyUuid();
-      currentChat.current.label = currentChat.current.label || getFirstUserContent() || "New Chat";
-      currentChat.current.messages = aiClient.messages;
-      currentChat.current.dateTime = Date.now();
-
-
-      refresh();
-
-      let mcpTools = getTools(mcpClients, effectiveConfig.allowMCPs);
-      // console.log("MCP Tools:", mcpTools);
-      aiClient.register({
-        antdmessage: {
-          warning: message.warning,
-        },
-        mcpTools: mcpTools,
-        platform: "web",
-        getURL_PRE: getURL_PRE,
-        aiSettings: aiSettings as any,
-        compressionConfig: {
-          enabled: effectiveConfig.maxAttachedDialogs! > 0 ? true : false,
-        },
-      })
-
-      let agentMemory = await call("getAgentMemory", { agentName, scope: agentScope });
-      await aiClient.completion({
-        ...effectiveConfig,
-        prompt: getBuiltinPrompts(workspace.path, effectiveConfig.prompt, agentName, agentMemory.content, agentMemory.filePath).prompt,
-        modelKey: config?.key || "",
-        confirm_call_tool_cb,
-        onUpdate: (r: any) => {
-          if (r && r.type == "compress") {
-            currentChat.current.label = r.data.title || currentChat.current.label;
-          }
-          Object.assign(currentChat.current.messages, aiClient.messages);
-          refresh();
-        }
-      }, {
-        ...(effectiveConfig.temperature !== undefined ? { temperature: effectiveConfig.temperature } : {}),
-      });
-
+      // 清空资源列表
       resourceResListRef.current = [];
       promptResList.current = [];
 
-      Object.assign(currentChat.current.messages, aiClient.messages)
       refresh();
-
-      // 保存聊天记录
-      if (agentName) {
-        // 如果是 Agent 聊天，保存到 Agent 的聊天记录中
-        await call("saveAgentChatLog", {
-          agentName: agentName,
-          chatLog: currentChat.current,
-          scope: agent?.config.scope // 传递 agent 的 scope 信息
-        });
-      }
-
-      // 更新最近使用记录
-      if (workspace?.path && agentName && currentChat.current.key) {
-        const agent = workspaceDetails.agents.find(a => a.config.name === agentName && a.config.scope === agentScope);
-        const agentDisplayName = agent?.config.name || agentName;
-        const chatLabel = currentChat.current.label || 'New Chat';
-
-        addChatRecentUsage(
-          workspace.path,
-          agentName,
-          agentDisplayName,
-          currentChat.current.key,
-          chatLabel
-        );
-      }
-
 
     } catch (e) {
       console.error(e);
-      if (aiClient && aiClient.lastMessage) {
-        aiClient.lastMessage.content_error = e instanceof Error ? e.message : String(e);
-        Object.assign(currentChat.current.messages, aiClient.messages);
-        refresh();
-      }
       message.error(
         e instanceof Error ? e.message : t`An error occurred, please try again later`,
       );
-    } finally {
-      setLoading(false);
     }
-  }, [workspace, agentName, aiSettings, aiSettingsLoading]);
+  }, [workspace, agentName, aiSettings, aiSettingsLoading, chatStream]);
 
   // 获取当前模型配置
   const effectiveConfigForModel = getEffectiveConfig();
@@ -648,8 +575,10 @@ export const WorkspaceChat = ({ workspace, agentName, agentScope, workspaceDetai
 
   // 提取系统消息
   const systemMessages = currentChat.current.configOverrides?.prompt!;
+  // 使用 chatStream 的消息或当前聊天的消息
+  const allMessages = chatStream.messages.length > 0 ? chatStream.messages : currentChat.current.messages;
   // 过滤掉系统消息的其他消息
-  const nonSystemMessages = currentChat.current.messages?.filter(m => m.role !== "system") || [];
+  const nonSystemMessages = allMessages?.filter(m => m.role !== "system") || [];
 
   return (
     <div className="workspace-chat h-full">
@@ -690,6 +619,8 @@ export const WorkspaceChat = ({ workspace, agentName, agentScope, workspaceDetai
               onSumbit={(messages) => {
                 // 合并系统消息和用户提交的消息
                 currentChat.current.messages = [...messages];
+                // 同步到 chatStream
+                chatStream.setMessages([...messages]);
                 refresh();
                 onRequest();
               }}
@@ -987,8 +918,7 @@ export const WorkspaceChat = ({ workspace, agentName, agentScope, workspaceDetai
                       size="small"
                       type="text"
                       onClick={() => {
-                        setLoading(false);
-                        aiClientRef.current?.cancel();
+                        chatStream.cancelChatStream();
                       }}
                     >
                       {t`Cancel`}

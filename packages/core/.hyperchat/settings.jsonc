@@ -16,7 +16,9 @@
     "wordWrap": true,
     "tabSize": 2
   },
-  "aiConfig": {},
+  "aiConfig": {
+    "modelKey": "openrouter:google/gemini-2.5-flash-preview"
+  },
   "defaultAI": {
     "streamResponse": true
   },

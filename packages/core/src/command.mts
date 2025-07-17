@@ -36,7 +36,8 @@ export {
   taskCommands,
   terminalCommands,
   settingsCommands,
-  systemCommands
+  systemCommands,
+  chatCommands
 } from "./commands/index.mjs";
 
 // 导出类型定义
@@ -49,5 +50,6 @@ export type {
   TaskCommandsType,
   TerminalCommandsType,
   SettingsCommandsType,
-  SystemCommandsType
+  SystemCommandsType,
+  ChatCommandsType
 } from "./commands/index.mjs";
