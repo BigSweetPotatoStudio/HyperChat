@@ -144,7 +144,7 @@
     "release": "npm run publish"
   },
   "dependencies": {
-    "@hyperchat/shared": "file:../shared",
+    "@dadigua/hyperchat-shared": "file:../shared",
     "@anthropic-ai/sdk": "^0.39.0",
     "@homebridge/ciao": "^1.3.1",
     "@modelcontextprotocol/sdk": "1.10.2",
