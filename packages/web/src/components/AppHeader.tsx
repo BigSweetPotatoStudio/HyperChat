@@ -102,7 +102,7 @@ export function AppHeader({ style }: AppHeaderProps) {
     <div style={{ display: "flex", alignItems: "center", ...style }}>
       <img
         onClick={handleLogoClick}
-        src="./assets/favicon.png"
+        src="./assets/favicon.ico"
         style={{ width: 32, height: 32, marginRight: 16, cursor: "pointer" }}
         alt="HyperChat Logo"
       />
