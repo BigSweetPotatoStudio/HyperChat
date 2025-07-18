@@ -12,6 +12,12 @@ import { getMessageService } from "../message_service.mjs";
 import { Logger } from "../log.mjs";
 import { getWorkspaceManager } from "../workspace/index.mjs";
 import { SSEWriter } from "../sse/SSEWriter.mjs";
+import { EventEmitter } from "events";
+import { v4 as uuidv4 } from 'uuid';
+
+// 全局工具确认事件发射器
+const toolConfirmEmitter = new EventEmitter();
+
 /**
  * 聊天完成请求参数
  */
@@ -112,11 +118,9 @@ export async function streamChatCompletion(params: ChatCompletionRequest): Promi
       agentMemory.filePath
     ).prompt;
 
-    // 创建工具确认回调
-    const confirmCallToolCb = configOverrides.isConfirmCallTool ? createConfirmCallToolCallback() : undefined;
+    // 调用工具确认回调
+    const confirmCallToolCb = configOverrides.isConfirmCallTool ? createConfirmCallToolCallback(sseWriter, chatKey) : undefined;
 
-    // 开始流式完成
-    const messageService = getMessageService();
     // 添加用户消息
     if (userMessage) {
       aiChannel.addMessage(userMessage);
@@ -274,35 +278,67 @@ function getMCPTools(mcpClients: any[], allowMCPs?: string[]): any[] {
 /**
  * 创建工具确认回调
  */
-function createConfirmCallToolCallback() {
+function createConfirmCallToolCallback(sseWriter?: SSEWriter, chatKey?: string) {
   return (tool: HyperToolCall): Promise<any> => {
-    return new Promise((resolve, _reject) => {
-      const messageService = getMessageService();
+    return new Promise((resolve, reject) => {
+      // 生成唯一确认 ID
+      const confirmId = uuidv4();
+      
+      Logger.debug(`Tool confirmation requested for ${tool.function.name}, confirmId: ${confirmId}`);
 
-      // 发送工具确认请求
-      // 工具确认现在通过 SSE 连接处理
-
-      // 监听确认响应
-      // const handleConfirmResponse = (data: any) => {
-      //   if (data.confirmed) {
-      //     resolve(data.args || tool.function.args);
-      //   } else {
-      //     reject(new Error("User cancelled tool call"));
-      //   }
-      // };
+      // 通过 SSE 发送工具确认请求
+      if (sseWriter && !sseWriter.isClosed()) {
+        sseWriter.write({
+          type: "tool_confirm_request",
+          data: {
+            confirmId,
+            chatKey,
+            tool,
+          },
+        });
+      } else {
+        // 如果没有 SSE 连接，直接返回工具参数（跳过确认）
+        Logger.warn(`No SSE connection available for tool confirmation, auto-confirming tool: ${tool.function.name}`);
+        resolve(tool.function.args);
+        return;
+      }
 
       // 设置超时
-      // const timeout = setTimeout(() => {
-      //   reject(new Error("Tool confirmation timeout"));
-      // }, 60000); // 60秒超时
+      const timeout = setTimeout(() => {
+        toolConfirmEmitter.off(`confirm_${confirmId}`, handleConfirmResponse);
+        reject(new Error("Tool confirmation timeout"));
+      }, 60000); // 60秒超时
 
-      // 这里需要实现消息监听逻辑
-      // 可以使用 EventEmitter 或类似机制
+      // 监听确认响应
+      const handleConfirmResponse = (data: any) => {
+        clearTimeout(timeout);
+        
+        if (data.confirmed) {
+          Logger.debug(`Tool confirmed: ${tool.function.name}`);
+          resolve(data.args || tool.function.args);
+        } else {
+          Logger.debug(`Tool cancelled: ${tool.function.name}`);
+          reject(new Error("User cancelled tool call"));
+        }
+      };
 
-      // 暂时直接返回工具参数
-      resolve(tool.function.args);
+      // 监听确认事件
+      toolConfirmEmitter.once(`confirm_${confirmId}`, handleConfirmResponse);
     });
   };
+}
+
+/**
+ * 处理工具确认响应
+ */
+export function handleToolConfirmResponse(confirmId: string, confirmed: boolean, args?: any) {
+  Logger.debug(`Tool confirmation response received: ${confirmId}, confirmed: ${confirmed}`);
+  
+  // 触发确认事件
+  toolConfirmEmitter.emit(`confirm_${confirmId}`, {
+    confirmed,
+    args,
+  });
 }
 
 /**

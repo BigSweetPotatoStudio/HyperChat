@@ -5,7 +5,7 @@
 import { Router, Request, Response } from 'express';
 import { SSEWriter } from '../sse/SSEWriter.mjs';
 import { Logger } from '../log.mjs';
-import { streamChatCompletion } from '../commands/chatCommands.mjs';
+import { streamChatCompletion, handleToolConfirmResponse } from '../commands/chatCommands.mjs';
 import { MyMessage } from '@dadigua/hyperchat-shared/types';
 import { BaseAIConfig } from '@dadigua/hyperchat-shared';
 
@@ -150,6 +150,33 @@ router.post('/cancel', async (req: Request, res: Response) => {
     res.json({ success: true });
   } catch (error) {
     Logger.error('Cancel chat error:', error);
+    res.status(500).json({ 
+      error: 'Internal server error',
+      details: error instanceof Error ? error.message : String(error)
+    });
+  }
+});
+
+/**
+ * 工具确认响应端点
+ */
+router.post('/tool-confirm', async (req: Request, res: Response) => {
+  try {
+    const { confirmId, confirmed, args } = req.body;
+
+    if (!confirmId) {
+      res.status(400).json({ error: 'confirmId is required' });
+      return;
+    }
+
+    Logger.debug(`Received tool confirmation: ${confirmId}, confirmed: ${confirmed}`);
+
+    // 处理工具确认响应
+    handleToolConfirmResponse(confirmId, confirmed, args);
+
+    res.json({ success: true });
+  } catch (error) {
+    Logger.error('Tool confirm error:', error);
     res.status(500).json({ 
       error: 'Internal server error',
       details: error instanceof Error ? error.message : String(error)

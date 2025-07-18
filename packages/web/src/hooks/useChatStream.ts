@@ -217,7 +217,7 @@ export function useChatStream(params: ChatStreamParams) {
               'Content-Type': 'application/json',
             },
             body: JSON.stringify({
-              chatKey: chatKey,
+              confirmId: data.confirmId,
               confirmed: true,
               args: result,
             }),
@@ -231,7 +231,7 @@ export function useChatStream(params: ChatStreamParams) {
               'Content-Type': 'application/json',
             },
             body: JSON.stringify({
-              chatKey: chatKey,
+              confirmId: data.confirmId,
               confirmed: false,
               error: error instanceof Error ? error.message : String(error),
             }),
