@@ -121,22 +121,6 @@ export async function streamChatCompletion(params: ChatCompletionRequest): Promi
     // 调用工具确认回调
     const confirmCallToolCb = configOverrides.isConfirmCallTool ? createConfirmCallToolCallback(sseWriter, sessionId) : undefined;
 
-    // 添加用户消息
-    if (userMessage) {
-      aiChannel.addMessage(userMessage);
-
-      // 发送用户消息创建事件
-      if (sseWriter) {
-        sseWriter.write({
-          type: "chat_message_create",
-          data: {
-            messageId: userMessage.messageId!,
-            message: userMessage,
-          },
-        });
-      }
-    }
-
     // 执行流式完成（不等待，异步处理）
     aiChannel.completion(
       {
@@ -145,6 +129,7 @@ export async function streamChatCompletion(params: ChatCompletionRequest): Promi
         modelKey: effectiveConfig.modelKey || "",
         sseWriter: sseWriter, // 传递 SSE 写入器
         confirm_call_tool_cb: confirmCallToolCb,
+        userMessage: userMessage, // 传递用户消息
         onUpdate: (_updateData?: any) => {
           // 发送更新事件
           // messageService.sendMessage({
