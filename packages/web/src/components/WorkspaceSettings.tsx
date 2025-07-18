@@ -202,7 +202,39 @@ export function WorkspaceSettings({
               />
             </Form.Item>
           </Col>
-          <Col span={12}>
+          <Col span={8}>
+            <Form.Item
+              label={t`Compression Strategy`}
+              name={["aiConfig", "compressionStrategy"]}
+              tooltip={t`Strategy for memory compression: dialogs (轮数), tokens (token数量), auto (优先使用token压缩，没有配置时使用默认值)`}
+            >
+              <Select
+                placeholder={t`Select compression strategy`}
+                allowClear
+                options={[
+                  { value: 'dialogs', label: t`Dialogs Count` },
+                  { value: 'tokens', label: t`Token Count` },
+                  { value: 'auto', label: t`Auto` }
+                ]}
+              />
+            </Form.Item>
+          </Col>
+          <Col span={8}>
+            <Form.Item
+              label={t`Max Context Tokens`}
+              name={["aiConfig", "maxContextTokens"]}
+              tooltip={t`Maximum context tokens before compression (1000-128000). Only effective when compression strategy is 'tokens' or 'auto'`}
+            >
+              <InputNumber
+                min={1000}
+                max={128000}
+                step={1000}
+                style={{ width: '100%' }}
+                placeholder="Auto (based on model)"
+              />
+            </Form.Item>
+          </Col>
+          <Col span={8}>
             <Form.Item
               label={t`Max Attached Dialogs`}
               name={["aiConfig", "maxAttachedDialogs"]}

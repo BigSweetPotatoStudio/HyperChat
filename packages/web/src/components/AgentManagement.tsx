@@ -131,6 +131,8 @@ export const AgentManagement = forwardRef<AgentManagementRef, AgentManagementPro
         temperature: values.temperature,
         maxTokens: values.maxTokens,
         maxAttachedDialogs: values.maxAttachedDialogs,
+        compressionStrategy: values.compressionStrategy,
+        maxContextTokens: values.maxContextTokens,
       };
 
       if (editingAgent) {
@@ -508,6 +510,14 @@ export const AgentManagement = forwardRef<AgentManagementRef, AgentManagementPro
               <Descriptions.Item label={t`Context History`}>
                 {selectedAgent.config.maxAttachedDialogs || 'Default'}
               </Descriptions.Item>
+              <Descriptions.Item label={t`Compression Strategy`}>
+                {selectedAgent.config.compressionStrategy || 'dialogs'}
+              </Descriptions.Item>
+              {selectedAgent.config.maxContextTokens && (
+                <Descriptions.Item label={t`Max Context Tokens`}>
+                  {selectedAgent.config.maxContextTokens}
+                </Descriptions.Item>
+              )}
             </Descriptions>
 
             {/* Prompt内容 */}
@@ -546,6 +556,12 @@ export const AgentManagement = forwardRef<AgentManagementRef, AgentManagementPro
                 {selectedAgent.config.maxAttachedDialogs !== undefined && (
                   <div>Context History: {selectedAgent.config.maxAttachedDialogs}</div>
                 )}
+                {selectedAgent.config.compressionStrategy && (
+                  <div>Compression Strategy: {selectedAgent.config.compressionStrategy}</div>
+                )}
+                {selectedAgent.config.maxContextTokens !== undefined && (
+                  <div>Max Context Tokens: {selectedAgent.config.maxContextTokens}</div>
+                )}
               </div>
             </div>
           </div>
@@ -583,6 +599,8 @@ export const AgentManagement = forwardRef<AgentManagementRef, AgentManagementPro
                 allowMCPs: editingAgent.config.allowMCPs || [],
                 isConfirmCallTool: editingAgent.config.isConfirmCallTool ?? false,
                 maxAttachedDialogs: editingAgent.config.maxAttachedDialogs ?? 10,
+                compressionStrategy: editingAgent.config.compressionStrategy || 'auto',
+                maxContextTokens: editingAgent.config.maxContextTokens,
               };
               form.resetFields();
               form.setFieldsValue(formValues);
@@ -904,7 +922,39 @@ export const AgentCommonFormItems = (
         />
       </Form.Item>
     </Col>
-    <Col span={12}>
+    <Col span={8}>
+      <Form.Item
+        name="compressionStrategy"
+        label={t`Compression Strategy`}
+        tooltip={t`Strategy for memory compression: dialogs (轮数), tokens (token数量), auto (优先使用token压缩，没有配置时使用默认值)`}
+      >
+        <Select
+          style={{ width: '100%' }}
+          placeholder="Select strategy"
+          options={[
+            { value: 'dialogs', label: t`Dialogs Count` },
+            { value: 'tokens', label: t`Token Count` },
+            { value: 'auto', label: t`Auto` }
+          ]}
+        />
+      </Form.Item>
+    </Col>
+    <Col span={8}>
+      <Form.Item
+        name="maxContextTokens"
+        label={t`Max Context Tokens`}
+        tooltip={t`Maximum context tokens before compression (1000-128000). Only effective when compression strategy is 'tokens' or 'auto'`}
+      >
+        <InputNumber 
+          min={1000} 
+          max={128000} 
+          step={1000}
+          style={{ width: '100%' }}
+          placeholder="Auto (based on model)"
+        />
+      </Form.Item>
+    </Col>
+    <Col span={8}>
       <Form.Item
         name="maxAttachedDialogs"
         label={t`Max Attached Dialogs`}

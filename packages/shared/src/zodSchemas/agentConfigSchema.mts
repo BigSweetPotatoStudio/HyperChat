@@ -39,7 +39,19 @@ export const BaseAIConfigSchema = z.object({
     .min(100, "Max tokens must be >= 100")
     .max(32000, "Max tokens must be <= 32000")
     .default(4000)
-    .describe("Maximum tokens for AI response")
+    .describe("Maximum tokens for AI response"),
+  
+  maxContextTokens: z.number()
+    .int()
+    .min(1000, "Max context tokens must be >= 1000")
+    .max(128000, "Max context tokens must be <= 128000")
+    .optional()
+    .describe("Maximum context tokens before compression (overrides maxAttachedDialogs)"),
+  
+  compressionStrategy: z.enum(["dialogs", "tokens", "auto"])
+    .default("auto")
+    .optional()
+    .describe("Compression strategy: dialogs (轮数), tokens (token数量), auto (优先使用token压缩，没有配置时使用默认值)")
 });
 
 /**
@@ -82,6 +94,7 @@ export function createDefaultBaseAIConfig(prompt: string): BaseAIConfig {
     isConfirmCallTool: false,
     allowMCPs: [],
     maxTokens: 4000,
+    // compressionStrategy 和 maxContextTokens 保持可选，让用户根据需要配置
   };
 }
 
@@ -198,4 +211,60 @@ export function createDefaultChatHistoryItem(
     chatType,
     version: 1,
   };
+}
+
+// 根据模型类型获取推荐的最大上下文token数量
+export function getRecommendedMaxContextTokens(modelKey: string): number {
+  const modelLower = modelKey.toLowerCase();
+  
+  // OpenAI 模型
+  if (modelLower.includes('gpt-4o') || modelLower.includes('gpt-4-turbo')) {
+    return 32000;
+  }
+  if (modelLower.includes('gpt-4')) {
+    return 16000;
+  }
+  if (modelLower.includes('gpt-3.5') || modelLower.includes('gpt-35')) {
+    return 8000;
+  }
+  
+  // Claude 模型
+  if (modelLower.includes('claude-3.5') || modelLower.includes('claude-3')) {
+    return 32000;
+  }
+  if (modelLower.includes('claude-2')) {
+    return 16000;
+  }
+  
+  // Gemini 模型
+  if (modelLower.includes('gemini-pro') || modelLower.includes('gemini-1.5')) {
+    return 24000;
+  }
+  if (modelLower.includes('gemini')) {
+    return 16000;
+  }
+  
+  // 其他模型
+  if (modelLower.includes('qwen') || modelLower.includes('deepseek')) {
+    return 16000;
+  }
+  
+  // 默认值
+  return 8000;
+}
+
+// 创建智能配置的基础AI配置
+export function createSmartBaseAIConfig(
+  prompt: string,
+  modelKey?: string,
+  strategy: "dialogs" | "tokens" | "auto" = "auto"
+): BaseAIConfig {
+  const config = createDefaultBaseAIConfig(prompt);
+  
+  if (modelKey && strategy !== "dialogs") {
+    config.maxContextTokens = getRecommendedMaxContextTokens(modelKey);
+    config.compressionStrategy = strategy;
+  }
+  
+  return config;
 }

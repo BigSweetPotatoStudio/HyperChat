@@ -142,6 +142,22 @@
               "maximum": 32000,
               "default": 4000,
               "description": "Maximum tokens for AI response"
+            },
+            "maxContextTokens": {
+              "type": "integer",
+              "minimum": 1000,
+              "maximum": 128000,
+              "description": "Maximum context tokens before compression (overrides maxAttachedDialogs)"
+            },
+            "compressionStrategy": {
+              "type": "string",
+              "enum": [
+                "dialogs",
+                "tokens",
+                "auto"
+              ],
+              "default": "auto",
+              "description": "Compression strategy: dialogs (轮数), tokens (token数量), auto (优先使用token压缩，没有配置时使用默认值)"
             }
           },
           "additionalProperties": false,

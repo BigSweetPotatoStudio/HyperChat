@@ -139,6 +139,8 @@ export const WorkspaceChat = ({ workspace, agentName, agentScope, workspaceDetai
       isConfirmCallTool: false,
       temperature: undefined as number | undefined,
       maxAttachedDialogs: 5,
+      compressionStrategy: undefined as "dialogs" | "tokens" | "auto" | undefined,
+      maxContextTokens: undefined as number | undefined,
       prompt: ""
     }
   });
@@ -276,6 +278,8 @@ export const WorkspaceChat = ({ workspace, agentName, agentScope, workspaceDetai
       temperature: overrides.temperature ?? agentConfig?.temperature ?? workspaceAIConfig?.temperature,
       maxAttachedDialogs: overrides.maxAttachedDialogs ?? agentConfig?.maxAttachedDialogs ?? workspaceAIConfig?.maxAttachedDialogs ?? 5,
       maxTokens: overrides.maxTokens ?? agentConfig?.maxTokens ?? workspaceAIConfig?.maxTokens ?? 4000,
+      compressionStrategy: overrides.compressionStrategy ?? agentConfig?.compressionStrategy ?? workspaceAIConfig?.compressionStrategy ?? "auto",
+      maxContextTokens: overrides.maxContextTokens ?? agentConfig?.maxContextTokens ?? workspaceAIConfig?.maxContextTokens,
       prompt: overrides.prompt || agentConfig?.prompt || workspaceAIConfig?.prompt || ""
     };
   };
@@ -330,6 +334,8 @@ export const WorkspaceChat = ({ workspace, agentName, agentScope, workspaceDetai
       currentChat.current.configOverrides.isConfirmCallTool = values.isConfirmCallTool;
       currentChat.current.configOverrides.allowMCPs = values.allowMCPs;
       currentChat.current.configOverrides.modelKey = values.modelKey;
+      currentChat.current.configOverrides.compressionStrategy = values.compressionStrategy;
+      currentChat.current.configOverrides.maxContextTokens = values.maxContextTokens;
       if (currentChat.current.key == "") {
         return;
       }
@@ -471,6 +477,8 @@ export const WorkspaceChat = ({ workspace, agentName, agentScope, workspaceDetai
               temperature: agent.config.temperature,
               isConfirmCallTool: agent.config.isConfirmCallTool || false,
               maxAttachedDialogs: agent.config.maxAttachedDialogs || 5,
+              compressionStrategy: agent.config.compressionStrategy,
+              maxContextTokens: agent.config.maxContextTokens,
               prompt: agent.config.prompt || ""
             }
           });
@@ -686,6 +694,8 @@ export const WorkspaceChat = ({ workspace, agentName, agentScope, workspaceDetai
                         maxAttachedDialogs: currentEffectiveConfig.maxAttachedDialogs ?? 10,
                         isConfirmCallTool: currentEffectiveConfig.isConfirmCallTool ?? false,
                         allowMCPs: currentEffectiveConfig.allowMCPs || [],
+                        compressionStrategy: currentEffectiveConfig.compressionStrategy ?? "auto",
+                        maxContextTokens: currentEffectiveConfig.maxContextTokens,
                       });
                       setIsSettingsShow(true);
                     }}
