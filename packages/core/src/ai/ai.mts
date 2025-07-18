@@ -60,7 +60,7 @@ export class AiChannel {
     // 如果消息没有 messageId，生成一个基于数组索引和时间的ID
     if (!message.messageId) {
       const timestamp = Math.floor(Date.now() / 1000); // 精确到秒
-      message.messageId = `${this.messages.length}_${timestamp}`;
+      message.messageId = `user_${this.messages.length}_${timestamp}`;
     }
     if (resourceResList.length > 0) {
       if (message.content == "" || message.content == null) {
@@ -107,7 +107,6 @@ export class AiChannel {
     }
     this.status = "stop";
   }
-  index = 0;
   status: "runing" | "stop" = "stop";
   // async completion(
   //   params: {
@@ -250,6 +249,12 @@ export class AiChannel {
     context: { step: number } = { step: 0 },
   ): Promise<string> {
 
+    // 在开始请求前检查是否需要压缩记忆
+    if (this.lastMessage.role === "assistant" && this.shouldCompressMemory(params)) { // 只在第一步时压缩
+      await this.compressMemory(params.modelKey, params.onUpdate, params.sseWriter);
+      params.onUpdate && params.onUpdate();
+    }
+
     // 处理用户消息
     if (params.userMessage) {
       this.addMessage(params.userMessage);
@@ -268,17 +273,11 @@ export class AiChannel {
       }
     }
 
-    // 在开始请求前检查是否需要压缩记忆
-    if (this.shouldCompressMemory(params)) { // 只在第一步时压缩
-      await this.compressMemory(params.modelKey, params.onUpdate, params.sseWriter);
-      params.onUpdate && params.onUpdate();
-    }
-
     this.abortController = new AbortController();
 
     // 生成基于时间和数组索引的消息ID
     const timestamp = Math.floor(Date.now() / 1000); // 精确到秒
-    const messageId = `${this.messages.length}_${timestamp}`;
+    const messageId = `assistant_${this.messages.length}_${timestamp}`;
 
     let newMessage: MyMessage = {
       role: "assistant",
@@ -296,26 +295,12 @@ export class AiChannel {
       messageId: messageId,
     };
 
-    let messages = this.messages.filter(
-      (m) => m.content_attached == null || m.content_attached == true,
-    );
-    this.messages.push(newMessage);
+    // this.messages = this.messages.filter(
+    //   (m) => m.content_attached == null || m.content_attached == true,
+    // );
 
-    // 发送消息创建事件
-    if (params.sseWriter) {
-      Logger.debug(`Sending chat_message_create via SSE for messageId: ${messageId}`);
-      params.sseWriter.write({
-        type: "chat_message_create",
-        data: {
-          messageId: messageId,
-          message: newMessage,
-        },
-      });
-    }
 
-    params.onUpdate && params.onUpdate();
-
-    let format_message = await this.messages2core(messages);
+    let format_message = await this.messages2core();
     options.messages = [{ role: "system", content: params.prompt }, ...format_message];
 
     let tools: HyperChatCompletionTool[] = this.ext.mcpTools || [];
@@ -339,10 +324,23 @@ export class AiChannel {
         }),
         abortSignal: this.abortController.signal,
       });
-
-      this.lastMessage.content_status = "success";
       this.lastMessage.content_status = "dataLoading";
+      this.messages.push(newMessage);
+
+      // 发送消息创建事件
+      if (params.sseWriter) {
+        Logger.debug(`Sending chat_message_create via SSE for messageId: ${messageId}`);
+        params.sseWriter.write({
+          type: "chat_message_create",
+          data: {
+            messageId: messageId,
+            message: newMessage,
+          },
+        });
+      }
+
       params.onUpdate && params.onUpdate();
+
       let toolIndex = 0;
       for await (const delta of result.fullStream) {
         // 发送 delta 更新
@@ -499,7 +497,7 @@ export class AiChannel {
 
         // 生成工具消息的 messageId
         const toolTimestamp = Math.floor(Date.now() / 1000);
-        const toolMessageId = `${this.messages.length}_${toolTimestamp}`;
+        const toolMessageId = `tool_${this.messages.length}_${toolTimestamp}`;
 
         let message: MyMessage = {
           role: "tool" as const,
@@ -649,10 +647,10 @@ export class AiChannel {
     let userMessageCount = 0;
     for (let i = lastMemoryMessage + 1; i < this.messages.length; i++) {
       if (this.messages[i]!.role === "user") {
-        userMessageCount++; // 计算最后一个记忆消息之后的用户消息数量，需要-1
+        userMessageCount++; // 计算最后一个记忆消息之后的用户消息数量
       }
     }
-    return (userMessageCount - 1) >= (params.maxAttachedDialogs || 10);
+    return userMessageCount >= (params.maxAttachedDialogs || 10);
   }
 
   // 生成记忆摘要
@@ -697,7 +695,7 @@ ${conversationText}
   // 压缩记忆
   async compressMemory(modelKey?: string, onUpdate?: (r?: any) => void, sseWriter?: SSEWriter): Promise<void> {
     let lastMemoryMessageIndex = this.messages.findLastIndex(m => m.role === "hyper_memory" && m.content_status === "success");
-    lastMemoryMessageIndex = lastMemoryMessageIndex === -1 ? 1 : lastMemoryMessageIndex; // 如果没有记忆消息，则从头开始
+    lastMemoryMessageIndex = lastMemoryMessageIndex === -1 ? 0 : lastMemoryMessageIndex; // 如果没有记忆消息，则从头开始
     let lastUserMessageIndex = this.messages.findLastIndex(m => m.role === "user");
 
     let compressMessagesCount = lastUserMessageIndex - lastMemoryMessageIndex - 1;
@@ -716,12 +714,9 @@ ${conversationText}
       messageId: messageId,
     };
 
-    // 在最后一次user消息之前插入记忆消息
-    if (this.messages[lastUserMessageIndex - 1]!.role === "hyper_memory") {
-      this.messages[lastUserMessageIndex - 1] = memoryMessage; // 替换最后一次用户消息
-    } else {
-      this.messages.splice(lastUserMessageIndex, 0, memoryMessage);
-    }
+
+    this.messages.push(memoryMessage);
+
 
     // 发送内存消息创建事件
     if (sseWriter && !sseWriter.isClosed()) {
@@ -828,16 +823,15 @@ ${conversationText}
     }
 
   }
-  async messages2core(messages: MyMessage[]): Promise<CoreMessage[]> {
+  async messages2core(): Promise<CoreMessage[]> {
     let results: CoreMessage[] = [];
     let lastMemoryMessage = this.messages.findLastIndex(m => m.role === "hyper_memory" && m.content_status === "success");
 
-    for (let i = 0; i < messages.length; i++) {
-      if (i > 0 && i < lastMemoryMessage) {
-        // 如果是第一个记忆消息之前的用息，跳过，但是保留系统消息
+    for (let i = 0; i < this.messages.length; i++) {
+      if (i < lastMemoryMessage) {
         continue;
       }
-      let m = messages[i]!;
+      let m = this.messages[i]!;
       if (m.role === 'tool') {
         results.push({
           role: 'tool',
