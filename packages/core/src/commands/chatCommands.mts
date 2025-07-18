@@ -11,6 +11,7 @@ import { getAppSettingsManager } from "../data/appSettingsService.mjs";
 import { getMessageService } from "../message_service.mjs";
 import { Logger } from "../log.mjs";
 import { getWorkspaceManager } from "../workspace/index.mjs";
+import { SSEWriter } from "../sse/SSEWriter.mjs";
 /**
  * 聊天完成请求参数
  */
@@ -26,6 +27,8 @@ interface ChatCompletionRequest {
   configOverrides?: Partial<BaseAIConfig>;
   /** 聊天记录 Key */
   chatKey: string;
+  /** SSE 写入器 */
+  sseWriter?: SSEWriter;
 }
 
 
@@ -40,6 +43,7 @@ export async function streamChatCompletion(params: ChatCompletionRequest): Promi
     userMessage,
     configOverrides = {},
     chatKey,
+    sseWriter,
   } = params;
 
   try {
@@ -118,14 +122,25 @@ export async function streamChatCompletion(params: ChatCompletionRequest): Promi
       aiChannel.addMessage(userMessage);
 
       // 发送用户消息创建事件
-      messageService.sendMessage({
-        type: "chat_message_create",
-        data: {
-          chatKey,
-          messageId: userMessage.messageId,
-          message: userMessage,
-        },
-      });
+      if (sseWriter) {
+        sseWriter.write({
+          type: "chat_message_create",
+          data: {
+            messageId: userMessage.messageId!,
+            message: userMessage,
+          },
+        });
+      } else {
+        // 兼容旧版本 WebSocket
+        messageService.sendMessage({
+          type: "chat_message_create",
+          data: {
+            chatKey,
+            messageId: userMessage.messageId,
+            message: userMessage,
+          },
+        });
+      }
     }
 
     // 执行流式完成（不等待，异步处理）
@@ -134,7 +149,10 @@ export async function streamChatCompletion(params: ChatCompletionRequest): Promi
         ...effectiveConfig,
         prompt: systemPrompt,
         modelKey: effectiveConfig.modelKey || "",
-        sendMessage: (eventData) => {
+        sseWriter: sseWriter, // 传递 SSE 写入器
+        chatKey: chatKey, // 传递 chatKey
+        sendMessage: sseWriter ? undefined : (eventData) => {
+          // 如果有 SSE 写入器，则不使用 WebSocket 发送
           // 发送消息到前端
           messageService.sendMessage({
             type: eventData.type,

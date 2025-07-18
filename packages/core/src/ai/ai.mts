@@ -28,6 +28,7 @@ import { BaseAIConfig } from "@dadigua/hyperchat-shared";
 import { getMessageService } from "../message_service.mjs";
 import { Command } from "../command.mjs";
 import { Logger } from "../log.mjs";
+import { SSEWriter } from "../sse/SSEWriter.mjs";
 
 
 
@@ -240,7 +241,9 @@ export class AiChannel {
       modelKey: string;
       onUpdate?: (r?: any) => void;
       confirm_call_tool_cb?: (tool: HyperToolCall) => Promise<boolean>;
-      sendMessage?: (p: { type: string, data: any }) => void; // 发送消息回调
+      sendMessage?: (p: { type: string, data: any }) => void; // 发送消息回调（兼容旧版本）
+      sseWriter?: SSEWriter; // SSE 写入器
+      chatKey?: string; // 聊天 Key
     } & BaseAIConfig,
     options: Omit<Parameters<typeof streamText>[0], 'model' | 'prompt'> = {},
     context: { step: number } = { step: 0 },
@@ -280,7 +283,18 @@ export class AiChannel {
     this.messages.push(newMessage);
 
     // 发送消息创建事件
-    if (params.sendMessage) {
+    if (params.sseWriter) {
+      Logger.debug(`Sending chat_message_create via SSE for messageId: ${messageId}`);
+      params.sseWriter.write({
+        type: "chat_message_create",
+        data: {
+          messageId: messageId,
+          message: newMessage,
+        },
+      });
+    } else if (params.sendMessage) {
+      // 兼容旧版本 WebSocket
+      Logger.debug(`Sending chat_message_create via WebSocket for messageId: ${messageId}`);
       params.sendMessage({
         type: "chat_message_create",
         data: {
@@ -322,7 +336,17 @@ export class AiChannel {
       params.onUpdate && params.onUpdate();
       let toolIndex = 0;
       for await (const delta of result.fullStream) {
-        if (params.sendMessage) {
+        // 发送 delta 更新
+        if (params.sseWriter) {
+          params.sseWriter.write({
+            type: "chat_message_update",
+            data: {
+              messageId: messageId,
+              delta: delta,
+            },
+          });
+        } else if (params.sendMessage) {
+          // 兼容旧版本 WebSocket
           params.sendMessage({
             type: "chat_message_update",
             data: {
@@ -386,7 +410,15 @@ export class AiChannel {
       this.lastMessage.content_status = "error";
 
       // 发送聊天错误事件
-      if (params.sendMessage) {
+      if (params.sseWriter) {
+        params.sseWriter.write({
+          type: "chat_message_error",
+          data: {
+            error: e instanceof Error ? e.message : String(e),
+          },
+        });
+      } else if (params.sendMessage) {
+        // 兼容旧版本 WebSocket
         params.sendMessage({
           type: "chat_message_error",
           data: {
@@ -402,7 +434,15 @@ export class AiChannel {
     this.lastMessage.content_date = Date.now();
 
     // 发送聊天完成事件
-    if (params.sendMessage) {
+    if (params.sseWriter) {
+      params.sseWriter.write({
+        type: "chat_message_complete",
+        data: {
+          result: this.lastMessage.content,
+        },
+      });
+    } else if (params.sendMessage) {
+      // 兼容旧版本 WebSocket
       params.sendMessage({
         type: "chat_message_complete",
         data: {
@@ -492,7 +532,16 @@ export class AiChannel {
         this.messages.push(message);
 
         // 发送工具消息创建事件
-        if (params.sendMessage) {
+        if (params.sseWriter) {
+          params.sseWriter.write({
+            type: "chat_message_create",
+            data: {
+              messageId: toolMessageId,
+              message: message,
+            },
+          });
+        } else if (params.sendMessage) {
+          // 兼容旧版本 WebSocket
           params.sendMessage({
             type: "chat_message_create",
             data: {
@@ -575,7 +624,16 @@ export class AiChannel {
         message.content_date = Date.now();
 
         // 发送工具消息替换事件
-        if (params.sendMessage) {
+        if (params.sseWriter) {
+          params.sseWriter.write({
+            type: "chat_message_replace",
+            data: {
+              messageId: toolMessageId,
+              message: message,
+            },
+          });
+        } else if (params.sendMessage) {
+          // 兼容旧版本 WebSocket
           params.sendMessage({
             type: "chat_message_replace",
             data: {

@@ -33,6 +33,7 @@ import { ParsedQs } from "qs";
 import { createProxyMiddleware } from "./http/aiProxyMiddleware.mjs";
 import { getAppSettingsManager } from "./data/appSettingsService.mjs";
 import { EVENT } from "./common/event.mjs";
+import chatSSERouter from "./routes/chatSSE.mjs";
 
 // 常量定义
 const MAX_BODY_SIZE = "1000mb";
@@ -83,6 +84,12 @@ export async function initHttp(): Promise<void> {
   routers.push({
     prefix: callNodejsApiPath,
     router: createUploadRouter()
+  });
+  
+  // 注册 SSE 聊天路由
+  routers.push({
+    prefix: urlPrefix + '/api/chat',
+    router: chatSSERouter
   });
 
 
