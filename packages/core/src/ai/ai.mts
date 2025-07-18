@@ -250,7 +250,7 @@ export class AiChannel {
 
     // 在开始请求前检查是否需要压缩记忆
     if (this.shouldCompressMemory(params)) { // 只在第一步时压缩
-      await this.compressMemory(params.modelKey, params.onUpdate);
+      await this.compressMemory(params.modelKey, params.onUpdate, params.sseWriter);
       params.onUpdate && params.onUpdate();
     }
 
@@ -667,12 +667,17 @@ ${conversationText}
   }
 
   // 压缩记忆
-  async compressMemory(modelKey?: string, onUpdate?: (r?: any) => void): Promise<void> {
+  async compressMemory(modelKey?: string, onUpdate?: (r?: any) => void, sseWriter?: SSEWriter): Promise<void> {
     let lastMemoryMessageIndex = this.messages.findLastIndex(m => m.role === "hyper_memory" && m.content_status === "success");
     lastMemoryMessageIndex = lastMemoryMessageIndex === -1 ? 1 : lastMemoryMessageIndex; // 如果没有记忆消息，则从头开始
     let lastUserMessageIndex = this.messages.findLastIndex(m => m.role === "user");
 
     let compressMessagesCount = lastUserMessageIndex - lastMemoryMessageIndex - 1;
+    
+    // 生成内存消息的 messageId
+    const timestamp = Math.floor(Date.now() / 1000);
+    const messageId = `memory_${this.messages.length}_${timestamp}`;
+    
     const memoryMessage: MyMessage = {
       role: "hyper_memory",
       content: "compressing...",
@@ -680,14 +685,28 @@ ${conversationText}
       memory_original_count: compressMessagesCount,
       content_date: Date.now(),
       content_status: "loading",
+      messageId: messageId,
     };
-    onUpdate && onUpdate();
+    
     // 在最后一次user消息之前插入记忆消息
     if (this.messages[lastUserMessageIndex - 1]!.role === "hyper_memory") {
       this.messages[lastUserMessageIndex - 1] = memoryMessage; // 替换最后一次用户消息
     } else {
       this.messages.splice(lastUserMessageIndex, 0, memoryMessage);
     }
+
+    // 发送内存消息创建事件
+    if (sseWriter && !sseWriter.isClosed()) {
+      sseWriter.write({
+        type: "chat_message_create",
+        data: {
+          messageId: messageId,
+          message: memoryMessage,
+        },
+      });
+    }
+
+    onUpdate && onUpdate();
 
     try {
       // 使用第一个可用的模型Key，或者从配置中获取默认模型
@@ -699,12 +718,36 @@ ${conversationText}
       memoryMessage.memory_original_count = compressMessagesCount;
       memoryMessage.content_date = Date.now();
       memoryMessage.content_status = "success";
+      
+      // 发送内存消息更新事件
+      if (sseWriter && !sseWriter.isClosed()) {
+        sseWriter.write({
+          type: "chat_message_replace",
+          data: {
+            messageId: messageId,
+            message: memoryMessage,
+          },
+        });
+      }
+      
       onUpdate && onUpdate({ type: "compress", data: summary });
       console.log(`Memory compressed: ${compressMessagesCount} messages → 1 memory message`);
     } catch (error) {
       memoryMessage.content_status = "error";
       memoryMessage.content = "记忆压缩失败，继续使用完整对话历史";
       memoryMessage.content_date = Date.now();
+      
+      // 发送内存消息错误事件
+      if (sseWriter && !sseWriter.isClosed()) {
+        sseWriter.write({
+          type: "chat_message_replace",
+          data: {
+            messageId: messageId,
+            message: memoryMessage,
+          },
+        });
+      }
+      
       onUpdate && onUpdate({ type: "compress_error", error });
       console.error("Memory compression failed:", error);
       this.ext.antdmessage.warning("记忆压缩失败，继续使用完整对话历史");

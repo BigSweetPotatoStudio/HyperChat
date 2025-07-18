@@ -417,3 +417,8 @@ export class FeatureManager {
 
 ### 构建优化
 * 以后不用build构建，运行typecheck就好了，不然太久了
+
+
+  1. 前端先调用 POST /api/chat/stream 获取 sessionId
+  2. 前端用 sessionId 建立 SSE 连接 GET /api/chat/stream/:sessionId
+  3. 前端再次调用 POST /api/chat/stream 开始聊天
