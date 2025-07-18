@@ -608,7 +608,7 @@ export const showText = async ({ path }: { path: string }) => {
 
 export function getMyUuid() {
   // Generate a UUID using the built-in crypto API
-  return dayjs().format('YYYYMMDD') + '-' + v4().slice(0, 8);
+  return dayjs().format('YYMMDD-HHmmss') + '-' + v4().slice(0, 8);
 }
 
 

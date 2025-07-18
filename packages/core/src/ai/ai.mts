@@ -35,11 +35,7 @@ import { SSEWriter } from "../sse/SSEWriter.mjs";
 
 export class AiChannel {
   get lastMessage(): MyMessage {
-    if (!this.messages || this.messages.length === 0) {
-      throw new Error("No messages found");
-    } else {
-      return this.messages[this.messages.length - 1]!;
-    }
+    return this.messages[this.messages.length - 1]!;
   }
   private abortController: AbortController | null = null;
   private mcpAbortController: AbortController | null = null;
@@ -250,7 +246,7 @@ export class AiChannel {
   ): Promise<string> {
 
     // 在开始请求前检查是否需要压缩记忆
-    if (this.lastMessage.role === "assistant" && this.shouldCompressMemory(params)) { // 只在第一步时压缩
+    if (this.lastMessage && this.lastMessage.role === "assistant" && this.shouldCompressMemory(params)) { // 只在第一步时压缩
       await this.compressMemory(params.modelKey, params.onUpdate, params.sseWriter);
       params.onUpdate && params.onUpdate();
     }
