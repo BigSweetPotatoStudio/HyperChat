@@ -527,17 +527,17 @@ export const WorkspaceChat = ({ workspace, agentName, agentScope, workspaceDetai
           throw new Error(t`Model not found, please select a model`);
         }
       }
-
+      let userMessage: MyMessage = {
+        role: "user",
+        content: content || value,
+        content_date: Date.now(),
+      }
       // 使用 chatStream 开始流式聊天
       await chatStream.startChatStream(
-        currentChat.current.messages,
-        {
-          role: "user",
-          content: content || value,
-          content_date: Date.now(),
-        } as MyMessage,
         currentChat.current.key,
-        currentChat.current.configOverrides
+        currentChat.current.messages,
+        currentChat.current.configOverrides,
+        userMessage.content ? userMessage : undefined,
         // resourceResListRef.current,
         // promptResList.current,
       );

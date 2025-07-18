@@ -3,7 +3,7 @@
  * 用于处理后端 WebSocket 流式聊天响应
  */
 
-import { useEffect, useRef, useState, useCallback } from 'react';
+import { useEffect, useRef, useCallback, useReducer } from 'react';
 import { MyMessage, CommonContentItem, HyperToolCall } from "@dadigua/hyperchat-shared/types";
 import { BaseAIConfig } from "@dadigua/hyperchat-shared";
 import { call, getWebSocket } from '../common/call';
@@ -33,29 +33,33 @@ interface ChatStreamState {
 }
 
 export function useChatStream(params: ChatStreamParams) {
-  const [state, setState] = useState<ChatStreamState>({
+  // 使用 ref 存储状态，避免 setState 的异步问题
+  const stateRef = useRef<ChatStreamState>({
     messages: [],
     loading: false,
     error: null,
     chatKey: null,
   });
 
+  // 强制更新 hook
+  const [, forceUpdate] = useReducer((x: number) => x + 1, 0);
+  const useForceUpdate = useCallback(() => forceUpdate(), []);
+
   const socketRef = useRef<any>(null);
-  // const toolConfirmCallbacksRef = useRef<Map<string, { resolve: (value: any) => void; reject: (reason?: any) => void }>>(new Map());
 
   // 验证 chatKey 匹配的辅助函数
   const validateChatKey = useCallback((receivedChatKey: string, eventType: string) => {
-    if (!state.chatKey || state.chatKey !== receivedChatKey) {
-      console.warn(`Received ${eventType} with mismatched chatKey:`, receivedChatKey, 'expected:', state.chatKey);
+    if (!stateRef.current.chatKey || stateRef.current.chatKey !== receivedChatKey) {
+      console.warn(`Received ${eventType} with mismatched chatKey:`, receivedChatKey, 'expected:', stateRef.current.chatKey);
       return false;
     }
     return true;
-  }, [state.chatKey]);
+  }, []);
 
-  // 在 setState 中验证 chatKey 的辅助函数
-  const validateChatKeyInState = useCallback((prevState: ChatStreamState, receivedChatKey: string, eventType: string) => {
-    if (!prevState.chatKey || prevState.chatKey !== receivedChatKey) {
-      console.warn(`State chatKey mismatch during ${eventType}:`, receivedChatKey, 'expected:', prevState.chatKey);
+  // 验证 chatKey 的辅助函数（ref 版本）
+  const validateChatKeyInRef = useCallback((receivedChatKey: string, eventType: string) => {
+    if (!stateRef.current.chatKey || stateRef.current.chatKey !== receivedChatKey) {
+      console.warn(`State chatKey mismatch during ${eventType}:`, receivedChatKey, 'expected:', stateRef.current.chatKey);
       return false;
     }
     return true;
@@ -74,33 +78,24 @@ export function useChatStream(params: ChatStreamParams) {
             return;
           }
 
-          setState(prev => {
-            if (!validateChatKeyInState(prev, data.chatKey, 'message_create')) {
-              return prev;
-            }
+          if (!validateChatKeyInRef(data.chatKey, 'message_create')) {
+            return;
+          }
 
-            // 检查消息是否已存在
-            const existingIndex = prev.messages.findIndex(m => m.messageId === data.messageId);
-            if (existingIndex !== -1) {
-              // 更新现有消息
-              const newMessages = [...prev.messages];
-              newMessages[existingIndex] = data.message;
-              return {
-                ...prev,
-                messages: newMessages,
-                loading: data.message.role === 'assistant',
-                error: null,
-              };
-            } else {
-              // 添加新消息
-              return {
-                ...prev,
-                messages: [...prev.messages, data.message],
-                loading: data.message.role === 'assistant',
-                error: null,
-              };
-            }
-          });
+          // 直接操作 ref
+          const existingIndex = stateRef.current.messages.findIndex(m => m.messageId === data.messageId);
+          if (existingIndex !== -1) {
+            // 更新现有消息
+            stateRef.current.messages[existingIndex] = data.message;
+          } else {
+            // 添加新消息
+            stateRef.current.messages.push(data.message);
+          }
+
+          stateRef.current.loading = data.message.role === 'assistant';
+          stateRef.current.error = null;
+
+          useForceUpdate();
         });
 
         socket.on('chat_message_replace', (data: any) => {
@@ -108,26 +103,19 @@ export function useChatStream(params: ChatStreamParams) {
             return;
           }
 
-          setState(prev => {
-            if (!validateChatKeyInState(prev, data.chatKey, 'message_replace')) {
-              return prev;
-            }
+          if (!validateChatKeyInRef(data.chatKey, 'message_replace')) {
+            return;
+          }
 
-            // 找到要替换的消息
-            const messageIndex = prev.messages.findIndex(m => m.messageId === data.messageId);
-            if (messageIndex === -1) {
-              console.warn(`Message with ID ${data.messageId} not found for replace`);
-              return prev;
-            }
+          // 找到要更换的消息
+          const messageIndex = stateRef.current.messages.findIndex(m => m.messageId === data.messageId);
+          if (messageIndex === -1) {
+            console.warn(`Message with ID ${data.messageId} not found for replace`);
+            return;
+          }
 
-            const newMessages = [...prev.messages];
-            newMessages[messageIndex] = data.message;
-
-            return {
-              ...prev,
-              messages: newMessages,
-            };
-          });
+          stateRef.current.messages[messageIndex] = data.message;
+          useForceUpdate();
         });
 
         socket.on('chat_message_update', (data: any) => {
@@ -135,72 +123,58 @@ export function useChatStream(params: ChatStreamParams) {
             return;
           }
 
-          setState(prev => {
-            if (!validateChatKeyInState(prev, data.chatKey, 'message_update')) {
-              return prev;
+          if (!validateChatKeyInRef(data.chatKey, 'message_update')) {
+            return;
+          }
+
+          // 直接处理 delta，实时更新
+          const messageIndex = stateRef.current.messages.findIndex(m => m.messageId === data.messageId);
+          if (messageIndex === -1) {
+            console.warn(`Message with ID ${data.messageId} not found for update`);
+            return;
+          }
+
+          const message = stateRef.current.messages[messageIndex];
+          const delta = data.delta;
+
+          // 处理不同类型的流式响应
+          if (delta.type === 'text-delta') {
+            const textDelta = delta.textDelta || '';
+            message.content = (message.content || '') + textDelta;
+            message.content_date = Date.now();
+          } else if (delta.type === 'reasoning') {
+            message.reasoning_content = (message.reasoning_content || '') + (delta.textDelta || '');
+            message.content_date = Date.now();
+          } else if (delta.type === 'tool-call') {
+            if (!message.content_tool_calls) {
+              message.content_tool_calls = [];
             }
 
-            // 找到要更新的消息
-            const messageIndex = prev.messages.findIndex(m => m.messageId === data.messageId);
-            if (messageIndex === -1) {
-              console.warn(`Message with ID ${data.messageId} not found for update`);
-              return prev;
+            const toolIndex = message.content_tool_calls.length;
+            message.content_tool_calls.push({
+              index: toolIndex,
+              id: delta.toolCallId,
+              type: "function",
+              function: {
+                name: delta.toolName,
+                args: delta.args || {},
+              },
+              origin_name: delta.toolName,
+              restore_name: delta.toolName,
+            });
+
+            message.content_date = Date.now();
+          } else if (delta.type === 'step-finish') {
+            if (delta.usage) {
+              message.content_usage = {
+                prompt_tokens: delta.usage.promptTokens || 0,
+                completion_tokens: delta.usage.completionTokens || 0,
+                total_tokens: delta.usage.totalTokens || 0,
+              };
             }
+          }
 
-            const newMessages = [...prev.messages];
-            const message = newMessages[messageIndex];
-            const delta = data.delta;
-
-            // 处理不同类型的流式响应
-            if (delta.type === 'text-delta') {
-              // 更新文本内容
-              const textDelta = delta.textDelta || '';
-              message.content = (message.content || '') + textDelta;
-              message.content_date = Date.now();
-            } else if (delta.type === 'reasoning') {
-              // 更新推理内容
-              message.reasoning_content = (message.reasoning_content || '') + (delta.textDelta || '');
-              message.content_date = Date.now();
-            } else if (delta.type === 'tool-call') {
-              // 处理工具调用，根据后端逻辑
-              if (!message.content_tool_calls) {
-                message.content_tool_calls = [];
-              }
-
-              // 查找工具索引，模拟后端的 toolIndex
-              const toolIndex = message.content_tool_calls.length;
-
-              // 添加工具调用，按照后端逻辑结构
-              message.content_tool_calls.push({
-                index: toolIndex,
-                id: delta.toolCallId,
-                type: "function",
-                function: {
-                  name: delta.toolName,
-                  args: delta.args || {},
-                },
-                // 注意：前端可能没有 localTool 信息，使用 toolName 作为默认值
-                origin_name: delta.toolName,
-                restore_name: delta.toolName,
-              });
-
-              message.content_date = Date.now();
-            } else if (delta.type === 'step-finish') {
-              // 处理步骤完成
-              if (delta.usage) {
-                message.content_usage = {
-                  prompt_tokens: delta.usage.promptTokens || 0,
-                  completion_tokens: delta.usage.completionTokens || 0,
-                  total_tokens: delta.usage.totalTokens || 0,
-                };
-              }
-            }
-
-            return {
-              ...prev,
-              messages: newMessages,
-            };
-          });
+          useForceUpdate();
         });
 
         socket.on('chat_message_complete', (data: any) => {
@@ -208,28 +182,22 @@ export function useChatStream(params: ChatStreamParams) {
             return;
           }
 
-          setState(prev => {
-            if (!validateChatKeyInState(prev, data.chatKey, 'message_complete')) {
-              return prev;
-            }
+          if (!validateChatKeyInRef(data.chatKey, 'message_complete')) {
+            return;
+          }
 
-            // 找到最后一条助手消息并标记为完成
-            const newMessages = [...prev.messages];
-            const lastAssistantIndex = newMessages.findLastIndex(m => m.role === 'assistant');
+          // 找到最后一条助手消息并标记为完成
+          const lastAssistantIndex = stateRef.current.messages.findLastIndex(m => m.role === 'assistant');
 
-            if (lastAssistantIndex !== -1) {
-              newMessages[lastAssistantIndex] = {
-                ...newMessages[lastAssistantIndex],
-                content_status: 'success',
-              };
-            }
-
-            return {
-              ...prev,
-              messages: newMessages,
-              loading: false,
+          if (lastAssistantIndex !== -1) {
+            stateRef.current.messages[lastAssistantIndex] = {
+              ...stateRef.current.messages[lastAssistantIndex],
+              content_status: 'success',
             };
-          });
+          }
+
+          stateRef.current.loading = false;
+          useForceUpdate();
         });
 
         socket.on('chat_message_error', (data: any) => {
@@ -237,34 +205,27 @@ export function useChatStream(params: ChatStreamParams) {
             return;
           }
 
-          setState(prev => {
-            if (!validateChatKeyInState(prev, data.chatKey, 'message_error')) {
-              return prev;
-            }
+          if (!validateChatKeyInRef(data.chatKey, 'message_error')) {
+            return;
+          }
 
-            // 找到最后一条助手消息并标记为错误
-            const newMessages = [...prev.messages];
-            const lastAssistantIndex = newMessages.findLastIndex(m => m.role === 'assistant');
+          // 找到最后一条助手消息并标记为错误
+          const lastAssistantIndex = stateRef.current.messages.findLastIndex(m => m.role === 'assistant');
 
-            if (lastAssistantIndex !== -1) {
-              newMessages[lastAssistantIndex] = {
-                ...newMessages[lastAssistantIndex],
-                content_status: 'error',
-                content_error: data.error,
-              };
-            }
-
-            return {
-              ...prev,
-              messages: newMessages,
-              error: data.error,
-              loading: false,
+          if (lastAssistantIndex !== -1) {
+            stateRef.current.messages[lastAssistantIndex] = {
+              ...stateRef.current.messages[lastAssistantIndex],
+              content_status: 'error',
+              content_error: data.error,
             };
-          });
+          }
 
+          stateRef.current.error = data.error;
+          stateRef.current.loading = false;
+
+          useForceUpdate();
           message.error(data.error || t`An error occurred, please try again later`);
         });
-
 
         // 监听工具确认请求
         socket.on('tool_confirm_request', (data: any) => {
@@ -309,25 +270,23 @@ export function useChatStream(params: ChatStreamParams) {
         socketRef.current.off('tool_confirm_request');
       }
     };
-  }, [params.onToolConfirm]);
+  }, [params.onToolConfirm, validateChatKey, validateChatKeyInRef, useForceUpdate]);
 
   // 开始聊天流
   const startChatStream = useCallback(async (
-    messages: MyMessage[],
-    userMessage: MyMessage,
     chatKey: string,
+    messages: MyMessage[],
     /** 配置覆盖 */
-    configOverrides: Partial<BaseAIConfig>
+    configOverrides: Partial<BaseAIConfig>,
+    userMessage?: MyMessage,
   ) => {
     try {
       // messageId 由后端生成，前端不需要设置
 
-      setState(prev => ({
-        ...prev,
-        loading: true,
-        error: null,
-        chatKey: chatKey,
-      }));
+      stateRef.current.loading = true;
+      stateRef.current.error = null;
+      stateRef.current.chatKey = chatKey;
+      useForceUpdate();
 
       const result = await call('streamChatCompletion', {
         ...params,
@@ -342,53 +301,46 @@ export function useChatStream(params: ChatStreamParams) {
       // 不需要手动设置 chatKey，WebSocket 事件会处理
       return result;
     } catch (error) {
-      setState(prev => ({
-        ...prev,
-        loading: false,
-        error: error instanceof Error ? error.message : String(error),
-      }));
+      stateRef.current.loading = false;
+      stateRef.current.error = error instanceof Error ? error.message : String(error);
+      useForceUpdate();
       throw error;
     }
-  }, [params]);
+  }, [params, useForceUpdate]);
 
   // 取消聊天流
   const cancelChatStream = useCallback(async () => {
-    if (state.chatKey) {
+    if (stateRef.current.chatKey) {
       try {
         await call('cancelChatCompletion', {
-          chatKey: state.chatKey,
+          chatKey: stateRef.current.chatKey,
         });
       } catch (error) {
         console.error('Failed to cancel chat stream:', error);
       }
     }
 
-    setState(prev => ({
-      ...prev,
-      loading: false,
-    }));
-  }, [state.chatKey]);
+    stateRef.current.loading = false;
+    useForceUpdate();
+  }, [useForceUpdate]);
 
   // 重置聊天状态
   const resetChatStream = useCallback(() => {
-    setState({
-      messages: [],
-      loading: false,
-      error: null,
-      chatKey: null,
-    });
-  }, []);
+    stateRef.current.messages = [];
+    stateRef.current.loading = false;
+    stateRef.current.error = null;
+    stateRef.current.chatKey = null;
+    useForceUpdate();
+  }, [useForceUpdate]);
 
   // 设置消息
   const setMessages = useCallback((messages: MyMessage[]) => {
-    setState(prev => ({
-      ...prev,
-      messages,
-    }));
-  }, []);
+    stateRef.current.messages = messages;
+    useForceUpdate();
+  }, [useForceUpdate]);
 
   return {
-    ...state,
+    ...stateRef.current, // 展开当前状态
     startChatStream,
     cancelChatStream,
     resetChatStream,

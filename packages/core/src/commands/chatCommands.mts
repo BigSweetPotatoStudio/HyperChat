@@ -21,7 +21,7 @@ interface ChatCompletionRequest {
   /** 聊天历史消息 */
   messages: MyMessage[];
   /** 用户输入内容 */
-  userMessage: MyMessage;
+  userMessage?: MyMessage;
   /** 配置覆盖 */
   configOverrides?: Partial<BaseAIConfig>;
   /** 聊天记录 Key */
@@ -74,10 +74,7 @@ export async function streamChatCompletion(params: ChatCompletionRequest): Promi
     // 创建 AI 通道
     const aiChannel = new AiChannel({}, [...messages]);
 
-    // 添加用户消息
-    if (userMessage) {
-      aiChannel.addMessage(userMessage);
-    }
+
 
     // 获取 MCP 工具
     const mcpClients = workspace.getMcpClients();
@@ -116,16 +113,20 @@ export async function streamChatCompletion(params: ChatCompletionRequest): Promi
 
     // 开始流式完成
     const messageService = getMessageService();
+    // 添加用户消息
+    if (userMessage) {
+      aiChannel.addMessage(userMessage);
 
-    // 发送用户消息创建事件
-    messageService.sendMessage({
-      type: "chat_message_create",
-      data: {
-        chatKey,
-        messageId: userMessage.messageId!,
-        message: userMessage,
-      },
-    });
+      // 发送用户消息创建事件
+      messageService.sendMessage({
+        type: "chat_message_create",
+        data: {
+          chatKey,
+          messageId: userMessage.messageId,
+          message: userMessage,
+        },
+      });
+    }
 
     // 执行流式完成（不等待，异步处理）
     aiChannel.completion(
@@ -164,15 +165,26 @@ export async function streamChatCompletion(params: ChatCompletionRequest): Promi
     ).then(async () => {
       // 完成后保存聊天记录
       if (agentName && agent) {
-        // await workspace.saveAgentChatLog(agentName, {
-        //   key: chatKey,
-        //   label: getFirstUserContent(aiChannel.messages) || "New Chat",
-        //   messages: aiChannel.messages,
-        //   agentName,
-        //   dateTime: Date.now(),
-        //   chatType: "user",
-        //   configOverrides,
-        // }, agentScope);
+        const agentInstance = workspace.getAgentInstance(agentName, agentScope);
+        if (!agentInstance) {
+          throw new Error(`Agent 不存在: ${agentName}`);
+        }
+
+        // // 设置 agentName 确保关联正确
+        // chatLog.agentName = agentName;
+        // chatLog.dateTime = Date.now();
+
+        // return await agentInstance.setChatLog(chatLog);
+
+        await agentInstance.setChatLog({
+          key: chatKey,
+          label: "New Chat",
+          messages: aiChannel.messages,
+          agentName,
+          dateTime: Date.now(),
+          chatType: "user",
+          configOverrides,
+        });
       }
 
       // 新的消息事件架构中，完成事件已经在 AiChannel 中处理

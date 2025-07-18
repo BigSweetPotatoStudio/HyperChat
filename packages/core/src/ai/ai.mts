@@ -157,15 +157,8 @@ export class AiChannel {
     if (proxyUrl) {
       // 强制禁用 SSL 验证（仅用于抓包调试）
       process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
-      
-      const allowInsecure = process.env.NODE_TLS_REJECT_UNAUTHORIZED === '0' ||
-        process.env.HYPERCHAT_ALLOW_INSECURE_PROXY === 'true';
 
-      console.log(`🔗 HTTP代理已配置: ${proxyUrl}`);
-      if (allowInsecure) {
-        console.log(`⚠️  SSL证书验证已禁用 (允许抓包工具)`);
-      }
-
+      // Logger.debug(`🔗 HTTP代理已配置: ${proxyUrl}`);
 
 
       fetch = async (url: string | URL | Request, init?: RequestInit): Promise<Response> => {
