@@ -250,12 +250,6 @@ export class AiChannel {
     context: { step: number } = { step: 0 },
   ): Promise<string> {
 
-    // 在开始请求前检查是否需要压缩记忆
-    if (this.shouldCompressMemory(params)) { // 只在第一步时压缩
-      await this.compressMemory(params.modelKey, params.onUpdate, params.sseWriter);
-      params.onUpdate && params.onUpdate();
-    }
-
     // 处理用户消息
     if (params.userMessage) {
       this.addMessage(params.userMessage);
@@ -272,6 +266,12 @@ export class AiChannel {
           params.sseWriter
         );
       }
+    }
+
+    // 在开始请求前检查是否需要压缩记忆
+    if (this.shouldCompressMemory(params)) { // 只在第一步时压缩
+      await this.compressMemory(params.modelKey, params.onUpdate, params.sseWriter);
+      params.onUpdate && params.onUpdate();
     }
 
     this.abortController = new AbortController();
