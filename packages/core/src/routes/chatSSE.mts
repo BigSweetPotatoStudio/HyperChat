@@ -11,40 +11,40 @@ import { BaseAIConfig } from '@dadigua/hyperchat-shared';
 
 const router = Router();
 
-// 存储活动的 SSE 连接，使用 chatKey 作为 key
+// 存储活动的 SSE 连接，使用 sessionId 作为 key
 const activeConnections = new Map<string, SSEWriter>();
 
 /**
  * 建立 SSE 连接端点
  * GET 请求用于建立 SSE 连接
  */
-router.get('/stream/:chatKey', async (req: Request, res: Response) => {
-  const { chatKey } = req.params;
+router.get('/stream/:sessionId', async (req: Request, res: Response) => {
+  const { sessionId } = req.params;
   
-  if (!chatKey) {
-    res.status(400).json({ error: 'chatKey is required' });
+  if (!sessionId) {
+    res.status(400).json({ error: 'sessionId is required' });
     return;
   }
 
-  Logger.info(`New SSE connection for chatKey: ${chatKey}`);
+  Logger.info(`New SSE connection for sessionId: ${sessionId}`);
 
   // 创建 SSE 写入器
   const sseWriter = new SSEWriter(res);
   
   // 存储连接
-  activeConnections.set(chatKey, sseWriter);
+  activeConnections.set(sessionId, sseWriter);
 
   // 监听客户端断开连接
   req.on('close', () => {
-    Logger.info(`SSE connection closed for chatKey: ${chatKey}`);
-    activeConnections.delete(chatKey);
+    Logger.info(`SSE connection closed for sessionId: ${sessionId}`);
+    activeConnections.delete(sessionId);
     sseWriter.close();
   });
 
   // 监听连接错误
   req.on('error', (error) => {
-    Logger.error(`SSE connection error for chatKey ${chatKey}:`, error);
-    activeConnections.delete(chatKey);
+    Logger.error(`SSE connection error for sessionId ${sessionId}:`, error);
+    activeConnections.delete(sessionId);
     sseWriter.close();
   });
 });
@@ -56,14 +56,14 @@ router.get('/stream/:chatKey', async (req: Request, res: Response) => {
 router.post('/stream', async (req: Request, res: Response) => {
   try {
     const {
-      chatKey,
+      sessionId,
       messages,
       userMessage,
       agentName,
       agentScope = 'workspace',
       configOverrides = {}
     }: {
-      chatKey: string;
+      sessionId: string;
       messages: MyMessage[];
       userMessage?: MyMessage;
       agentName: string;
@@ -76,26 +76,26 @@ router.post('/stream', async (req: Request, res: Response) => {
       return;
     }
 
-    if (!chatKey) {
-      res.status(400).json({ error: 'chatKey is required' });
+    if (!sessionId) {
+      res.status(400).json({ error: 'sessionId is required' });
       return;
     }
 
     // 获取对应的 SSE 连接
-    const sseWriter = activeConnections.get(chatKey);
+    const sseWriter = activeConnections.get(sessionId);
     if (!sseWriter) {
       res.status(404).json({ error: 'SSE connection not found. Please connect with GET request first.' });
       return;
     }
 
     // 响应请求已接收
-    res.json({ success: true, chatKey });
+    res.json({ success: true, sessionId });
 
     // 异步处理聊天完成
-    Logger.info(`Starting chat completion for chatKey: ${chatKey}, agent: ${agentName}`);
+    Logger.info(`Starting chat completion for sessionId: ${sessionId}, agent: ${agentName}`);
     
     streamChatCompletion({
-      chatKey,
+      sessionId,
       messages,
       userMessage,
       agentName,
@@ -103,7 +103,7 @@ router.post('/stream', async (req: Request, res: Response) => {
       configOverrides,
       sseWriter, // 传递 SSE 写入器
     }).catch((error) => {
-      Logger.error(`Chat completion error for chatKey ${chatKey}:`, error);
+      Logger.error(`Chat completion error for sessionId ${sessionId}:`, error);
       
       // 发送错误到客户端
       if (!sseWriter.isClosed()) {
@@ -130,14 +130,14 @@ router.post('/stream', async (req: Request, res: Response) => {
  */
 router.post('/cancel', async (req: Request, res: Response) => {
   try {
-    const { chatKey } = req.body;
+    const { sessionId } = req.body;
 
-    if (!chatKey) {
-      res.status(400).json({ error: 'chatKey is required' });
+    if (!sessionId) {
+      res.status(400).json({ error: 'sessionId is required' });
       return;
     }
 
-    const sseWriter = activeConnections.get(chatKey);
+    const sseWriter = activeConnections.get(sessionId);
     if (sseWriter && !sseWriter.isClosed()) {
       sseWriter.write({
         type: 'chat_message_error',

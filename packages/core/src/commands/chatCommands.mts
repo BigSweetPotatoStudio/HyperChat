@@ -22,8 +22,8 @@ const toolConfirmEmitter = new EventEmitter();
  * 聊天完成请求参数
  */
 interface ChatCompletionRequest {
-  /** 聊天记录 Key */
-  chatKey: string;
+  /** 会话 ID */
+  sessionId: string;
   agentName: string;
   /** Agent 作用域 */
   agentScope: "global" | "workspace";
@@ -43,7 +43,7 @@ interface ChatCompletionRequest {
  */
 export async function streamChatCompletion(params: ChatCompletionRequest): Promise<void> {
   const {
-    chatKey,
+    sessionId,
     agentName,
     agentScope = "workspace",
     messages,
@@ -119,7 +119,7 @@ export async function streamChatCompletion(params: ChatCompletionRequest): Promi
     ).prompt;
 
     // 调用工具确认回调
-    const confirmCallToolCb = configOverrides.isConfirmCallTool ? createConfirmCallToolCallback(sseWriter, chatKey) : undefined;
+    const confirmCallToolCb = configOverrides.isConfirmCallTool ? createConfirmCallToolCallback(sseWriter, sessionId) : undefined;
 
     // 添加用户消息
     if (userMessage) {
@@ -170,7 +170,7 @@ export async function streamChatCompletion(params: ChatCompletionRequest): Promi
         }
 
         await agentInstance.setChatLog({
-          key: chatKey,
+          key: sessionId,
           label: "New Chat",
           messages: aiChannel.messages,
           agentName,
@@ -278,7 +278,7 @@ function getMCPTools(mcpClients: any[], allowMCPs?: string[]): any[] {
 /**
  * 创建工具确认回调
  */
-function createConfirmCallToolCallback(sseWriter?: SSEWriter, chatKey?: string) {
+function createConfirmCallToolCallback(sseWriter?: SSEWriter, sessionId?: string) {
   return (tool: HyperToolCall): Promise<any> => {
     return new Promise((resolve, reject) => {
       // 生成唯一确认 ID
@@ -292,7 +292,7 @@ function createConfirmCallToolCallback(sseWriter?: SSEWriter, chatKey?: string) 
           type: "tool_confirm_request",
           data: {
             confirmId,
-            chatKey,
+            sessionId,
             tool,
           },
         });

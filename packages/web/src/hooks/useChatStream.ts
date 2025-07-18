@@ -43,7 +43,7 @@ export function useChatStream(params: ChatStreamParams) {
   const eventSourceRef = useRef<EventSource | null>(null);
 
   // 连接 SSE
-  const connectSSE = useCallback((chatKey: string): Promise<void> => {
+  const connectSSE = useCallback((sessionId: string): Promise<void> => {
     return new Promise((resolve, reject) => {
       // 关闭现有连接
       if (eventSourceRef.current) {
@@ -51,10 +51,10 @@ export function useChatStream(params: ChatStreamParams) {
         eventSourceRef.current = null;
       }
 
-      console.log(`Connecting to SSE for chatKey: ${chatKey}`);
+      console.log(`Connecting to SSE for sessionId: ${sessionId}`);
       
       const urlPrefix = getURL_PRE();
-      const eventSource = new EventSource(`${urlPrefix}/api/chat/stream/${chatKey}`);
+      const eventSource = new EventSource(`${urlPrefix}/api/chat/stream/${sessionId}`);
       eventSourceRef.current = eventSource;
 
       // 设置连接超时
@@ -276,7 +276,7 @@ export function useChatStream(params: ChatStreamParams) {
 
   // 开始聊天流
   const startChatStream = useCallback(async (
-    chatKey: string,
+    sessionId: string,
     messages: MyMessage[],
     configOverrides: Partial<BaseAIConfig>,
     userMessage?: MyMessage,
@@ -288,7 +288,7 @@ export function useChatStream(params: ChatStreamParams) {
       useForceUpdate();
 
       // 2. 连接 SSE，等待连接完成
-      await connectSSE(chatKey);
+      await connectSSE(sessionId);
 
       // 3. 发送开始聊天请求
       const urlPrefix = getURL_PRE();
@@ -298,7 +298,7 @@ export function useChatStream(params: ChatStreamParams) {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          chatKey,
+          sessionId,
           messages,
           userMessage,
           agentName: params.agentName || 'default',
@@ -323,7 +323,7 @@ export function useChatStream(params: ChatStreamParams) {
 
 
   // 取消聊天流
-  const cancelChatStream = useCallback(async (chatKey: string) => {
+  const cancelChatStream = useCallback(async (sessionId: string) => {
     try {
       const urlPrefix = getURL_PRE();
       await fetch(`${urlPrefix}/api/chat/cancel`, {
@@ -331,7 +331,7 @@ export function useChatStream(params: ChatStreamParams) {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ chatKey }),
+        body: JSON.stringify({ sessionId }),
       });
     } catch (error) {
       console.error('Failed to cancel chat stream:', error);
