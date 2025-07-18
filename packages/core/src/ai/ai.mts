@@ -29,6 +29,8 @@ import { getMessageService } from "../message_service.mjs";
 import { Command } from "../command.mjs";
 import { Logger } from "../log.mjs";
 import { SSEWriter } from "../sse/SSEWriter.mjs";
+import { MemoryCompressor, TokenCalculator, createDefaultMemorySummaryGenerator } from "./memory-compressor.mjs";
+import { workspaceManager } from "../workspace/index.mjs";
 
 
 
@@ -101,47 +103,27 @@ export class AiChannel {
       this.mcpAbortController.abort();
       this.mcpAbortController = null;
     }
-    this.status = "stop";
   }
-  status: "runing" | "stop" = "stop";
-  // async completion(
-  //   params: {
-  //     modelKey: string;
-  //     allowMCPs: string[],
-  //     onUpdate?: (r?: any) => void;
-  //     call_tool?: boolean;
-  //     isConfirmCallTool?: boolean;  // 默认当成false
-  //     confirm_call_tool_cb?: (tool: HyperToolCall) => Promise<boolean>;
-  //   },
-  //   options: Omit<Parameters<typeof streamText>[0], 'model' | 'prompt'> = {},
-  // ): Promise<string> {
-  //   this.status = "runing";
-  //   this.index++;
-  //   let newParams = {
-  //     ...params,
-  //     context: { index: this.index },
-  //     step: 0,
-  //   }
-  //   let res = await this._completion(newParams, options).catch((e) => {
-  //     this.status = "stop";
-  //     throw e;
-  //   });
-  //   this.status = "stop";
-  //   return res;
-  // }
+
   async getAI(modelKey: string): Promise<LanguageModel> {
-    let modelConfig = this.ext.aiSettings.models.find((x) => x.key === modelKey);
+    // 直接读取AI配置
+    const appSettings = await Command.getAppSettings();
+    const aiSettings = appSettings.ai;
+
+    if (!aiSettings) {
+      throw new Error('AI配置未找到');
+    }
+
+    let modelConfig = aiSettings.models.find((x) => x.key === modelKey);
     if (!modelConfig) {
       throw new Error(`Model not found: ${modelKey}`);
     }
     if (modelConfig.provider !== "unknown") {
       modelConfig = {
         ...modelConfig,
-        baseURL: this.ext.aiSettings.builtinApiKeys[modelConfig.provider]?.baseURL || modelConfig.baseURL,
-        apiKey: this.ext.aiSettings.builtinApiKeys[modelConfig.provider]?.apiKey || modelConfig.apiKey,
+        baseURL: aiSettings.builtinApiKeys[modelConfig.provider]?.baseURL || modelConfig.baseURL,
+        apiKey: aiSettings.builtinApiKeys[modelConfig.provider]?.apiKey || modelConfig.apiKey,
       }
-      // modelConfig.baseURL = this.ext.aiSettings.builtinApiKeys[modelConfig.provider]?.baseURL || modelConfig.baseURL;
-      // modelConfig.apiKey = this.ext.aiSettings.builtinApiKeys[modelConfig.provider]?.apiKey || modelConfig.apiKey;
     }
     let aiProvider: any = null;
     let ai: LanguageModel | null = null;
@@ -299,7 +281,7 @@ export class AiChannel {
     let format_message = await this.messages2core();
     options.messages = [{ role: "system", content: params.prompt }, ...format_message];
 
-    let tools: HyperChatCompletionTool[] = this.ext.mcpTools || [];
+    let tools: HyperChatCompletionTool[] = this.getMcpTools(params.allowMCPs);
     const aiTools = this.tools_format_ai(tools || []);
     options.tools = {
       ...options.tools,
@@ -364,7 +346,7 @@ export class AiChannel {
         }
         if (delta.type == "tool-call") {
           newMessage.content_tool_calls = newMessage.content_tool_calls || [];
-          let localTool = this.ext.mcpTools.find(
+          let localTool = this.getMcpTools().find(
             (t) => t.name === delta.toolName
           );
           if (!localTool) {
@@ -520,7 +502,7 @@ export class AiChannel {
 
         params.onUpdate && params.onUpdate();
 
-        let localTool = this.ext.mcpTools.find(
+        let localTool = this.getMcpTools().find(
           (t) => t.name === tool.function.name
         );
         if (!localTool) {
@@ -611,13 +593,7 @@ export class AiChannel {
     }
   }
   ext!: {
-    mcpTools: HyperChatCompletionTool[];
-    platform: "nodejs" | "web";
-    getURL_PRE: () => string;
-    aiSettings: AISettings;
-    compressionConfig?: {
-      enabled: boolean;
-    };
+    memoryCompressor?: MemoryCompressor;
   };
 
   // 添加工具方法
@@ -626,223 +602,67 @@ export class AiChannel {
     return `${this.messages.length}_${timestamp}`;
   }
 
+  // 获取 MCP 工具
+  private getMcpTools(allowMCPs?: string[]): HyperChatCompletionTool[] {
+    const workspace = workspaceManager.getCurrentWorkspace();
+    if (!workspace) {
+      return [];
+    }
+
+    const mcpClients = workspace.getMcpClients();
+
+
+    let tools = mcpClients.flatMap((client) => client.tools || []);
+
+    // 如果指定了允许的 MCP 工具，进行过滤
+    if (allowMCPs && allowMCPs.length > 0) {
+      tools = tools.filter((tool: HyperChatCompletionTool) =>
+        allowMCPs.includes(tool.name) || allowMCPs.includes(tool.clientName)
+      );
+    }
+
+    return tools;
+  }
+
   private handleSSEMessage(type: string, data: any, messageId?: string, sseWriter?: SSEWriter) {
     const writer = sseWriter || this.sseWriter;
     if (writer && !writer.isClosed()) {
       writer.write({ type, data: { ...data, messageId } });
     }
   }
-  register(ext: this["ext"]) {
-    this.ext = ext;
-  }
+  register(ext?: Partial<this["ext"]>) {
+    this.ext = { ...this.ext, ...ext };
 
-  // 估算消息token数量
-  private estimateTokenCount(message: MyMessage): number {
-    let content = '';
-    if (typeof message.content === 'string') {
-      content = message.content;
-    } else if (Array.isArray(message.content)) {
-      content = message.content.map(c => {
-        if (c.type === 'text') return c.text;
-        if (c.type === 'image_url') return '[image]';
-        return '';
-      }).join('');
+    // 初始化记忆压缩器
+    if (!this.ext.memoryCompressor) {
+      const summaryGenerator = createDefaultMemorySummaryGenerator(
+        this.completionParse.bind(this)
+      );
+      this.ext.memoryCompressor = new MemoryCompressor(summaryGenerator);
     }
-    
-    // 如果消息有实际的token使用统计，优先使用
-    if (message.content_usage?.total_tokens) {
-      return message.content_usage.total_tokens;
-    }
-    
-    // 简单估算：1 token ≈ 4 字符（对英文），1 token ≈ 1.5 字符（对中文）
-    // 取平均值：1 token ≈ 2.5 字符
-    return Math.ceil(content.length / 2.5);
-  }
-
-  // 计算从指定索引到最后的消息token总数
-  private calculateMessagesTokenCount(fromIndex: number = 0): number {
-    let totalTokens = 0;
-    for (let i = fromIndex; i < this.messages.length; i++) {
-      const message = this.messages[i]!;
-      totalTokens += this.estimateTokenCount(message);
-    }
-    return totalTokens;
-  }
-
-  // 估算prompt的token数量
-  private estimatePromptTokenCount(prompt: string): number {
-    return Math.ceil(prompt.length / 2.5);
   }
 
   // 检查是否需要压缩记忆
   private shouldCompressMemory(params: BaseAIConfig): boolean {
-    if (!this.ext.compressionConfig?.enabled) return false;
-    
-    const strategy = params.compressionStrategy || "auto";
-    const lastMemoryIndex = this.messages.findLastIndex(m => m.role === "hyper_memory" && m.content_status === "success");
-    const startIndex = lastMemoryIndex === -1 ? 0 : lastMemoryIndex + 1;
-    
-    // 基于token数量的压缩策略
-    if (strategy === "tokens") {
-      // 如果没有配置maxContextTokens，使用默认值8000
-      const maxTokens = params.maxContextTokens || 8000;
-      const promptTokens = this.estimatePromptTokenCount(params.prompt);
-      const messageTokens = this.calculateMessagesTokenCount(startIndex);
-      const totalTokens = promptTokens + messageTokens;
-      
-      Logger.debug(`Token usage: prompt=${promptTokens}, messages=${messageTokens}, total=${totalTokens}, limit=${maxTokens}`);
-      return totalTokens >= maxTokens;
-    }
-    
-    // auto策略：优先使用token压缩，没有配置时使用默认值
-    if (strategy === "auto") {
-      // 如果没有配置maxContextTokens，使用默认值36000
-      const maxTokens = params.maxContextTokens || 36000;
-      const promptTokens = this.estimatePromptTokenCount(params.prompt);
-      const messageTokens = this.calculateMessagesTokenCount(startIndex);
-      const totalTokens = promptTokens + messageTokens;
-      
-      Logger.debug(`Auto strategy - Token usage: prompt=${promptTokens}, messages=${messageTokens}, total=${totalTokens}, limit=${maxTokens}`);
-      return totalTokens >= maxTokens;
-    }
-    
-    // 基于对话轮数的压缩策略（原有逻辑）
-    return this.shouldCompressMemoryByDialogs(params, startIndex);
-  }
-
-  // 基于对话轮数的压缩逻辑（拆分出来保持向后兼容）
-  private shouldCompressMemoryByDialogs(params: BaseAIConfig, startIndex: number = 0): boolean {
-    let userMessageCount = 0;
-    for (let i = startIndex; i < this.messages.length; i++) {
-      if (this.messages[i]!.role === "user") {
-        userMessageCount++;
-      }
-    }
-    return userMessageCount >= (params.maxAttachedDialogs || 10);
-  }
-
-  // 生成记忆摘要
-  private async generateMemorySummary(messages: MyMessage[], modelKey: string): Promise<{
-    title: string;
-    summary: string;
-    key_points: string[];
-    important_context: string;
-  }> {
-    const conversationText = messages.map(m => {
-      if (m.role === "user") return `用户: ${m.content}`;
-      if (m.role === "assistant") return `助手: ${m.content}`;
-      if (m.role === "system") return `系统: ${m.content}`;
-      if (m.role === "tool") return `工具结果: ${m.content}`;
-      return "";
-    }).filter(Boolean).join("\n");
-
-    const memoryPrompt = `请总结以下对话的关键信息，保留重要的上下文和决策点：
-
-${conversationText}
-
-请用JSON格式返回：
-- title: 对话的简短标题，3-10个字
-- summary: 对话的简洁摘要
-- key_points: 重要观点和决策的数组
-- important_context: 需要保留的重要上下文信息`;
-
-
-    return await this.completionParse(
-      { modelKey },
-      z.object({
-        title: z.string(),
-        summary: z.string(),
-        key_points: z.array(z.string()),
-        important_context: z.string()
-      }),
-      memoryPrompt
-    );
-
+    if (!this.ext.memoryCompressor) return false;
+    return this.ext.memoryCompressor.shouldCompressMemory(this.messages, params);
   }
 
   // 压缩记忆
-  async compressMemory(modelKey?: string, onUpdate?: (r?: any) => void, sseWriter?: SSEWriter): Promise<void> {
-    let lastMemoryMessageIndex = this.messages.findLastIndex(m => m.role === "hyper_memory" && m.content_status === "success");
-    lastMemoryMessageIndex = lastMemoryMessageIndex === -1 ? 0 : lastMemoryMessageIndex; // 如果没有记忆消息，则从头开始
-    let lastUserMessageIndex = this.messages.findLastIndex(m => m.role === "user");
-
-    let compressMessagesCount = lastUserMessageIndex - lastMemoryMessageIndex - 1;
-
-    // 生成内存消息的 messageId
-    const timestamp = Math.floor(Date.now() / 1000);
-    const messageId = `memory_${this.messages.length}_${timestamp}`;
-
-    const memoryMessage: MyMessage = {
-      role: "hyper_memory",
-      content: "compressing...",
-      memory_key_points: [],
-      memory_original_count: compressMessagesCount,
-      content_date: Date.now(),
-      content_status: "loading",
-      messageId: messageId,
-    };
-
-
-    this.messages.push(memoryMessage);
-
-
-    // 发送内存消息创建事件
-    if (sseWriter && !sseWriter.isClosed()) {
-      sseWriter.write({
-        type: "chat_message_create",
-        data: {
-          messageId: messageId,
-          message: memoryMessage,
-        },
-      });
+  async compressMemory(modelKey?: string, onUpdate?: (r?: any) => void, sseWriter?: SSEWriter): Promise<MyMessage> {
+    if (!this.ext.memoryCompressor) {
+      throw new Error('Memory compressor not initialized');
     }
 
-    onUpdate && onUpdate();
+    // 使用第一个可用的模型Key，或者从配置中获取默认模型
+    const useModelKey = modelKey;
 
-    try {
-      // 使用第一个可用的模型Key，或者从配置中获取默认模型
-      const useModelKey = modelKey || this.ext.aiSettings.models[0]?.key || "default";
-      const summary = await this.generateMemorySummary(this.messages.slice(lastMemoryMessageIndex, lastUserMessageIndex), useModelKey);
-
-      memoryMessage.content = summary.summary;
-      memoryMessage.memory_key_points = summary.key_points;
-      memoryMessage.memory_original_count = compressMessagesCount;
-      memoryMessage.content_date = Date.now();
-      memoryMessage.content_status = "success";
-
-      // 发送内存消息更新事件
-      if (sseWriter && !sseWriter.isClosed()) {
-        sseWriter.write({
-          type: "chat_message_replace",
-          data: {
-            messageId: messageId,
-            message: memoryMessage,
-          },
-        });
-      }
-
-      onUpdate && onUpdate({ type: "compress", data: summary });
-      console.log(`Memory compressed: ${compressMessagesCount} messages → 1 memory message`);
-    } catch (error) {
-      memoryMessage.content_status = "error";
-      memoryMessage.content = "记忆压缩失败，继续使用完整对话历史";
-      memoryMessage.content_date = Date.now();
-
-      // 发送内存消息错误事件
-      if (sseWriter && !sseWriter.isClosed()) {
-        sseWriter.write({
-          type: "chat_message_replace",
-          data: {
-            messageId: messageId,
-            message: memoryMessage,
-          },
-        });
-      }
-
-      onUpdate && onUpdate({ type: "compress_error", error });
-      console.error("Memory compression failed:", error);
-      Logger.warn("记忆压缩失败，继续使用完整对话历史");
-    }
+    return await this.ext.memoryCompressor.compressMemory(
+      this.messages,
+      useModelKey,
+      onUpdate,
+      sseWriter
+    );
   }
 
   async completionParse({ modelKey }: { modelKey: string }, schema: ZodSchema, prompt: string): Promise<any> {

@@ -26,7 +26,6 @@ export interface AIEnvironment {
   agent?: AgentInstance | undefined;
   agentConfig?: AgentConfig;
   mcpClients: any[];
-  mcpTools: HyperChatCompletionTool[];
   effectiveConfig: BaseAIConfig & { modelKey: string };
 }
 
@@ -118,11 +117,9 @@ export async function initializeAIEnvironment(options: {
 
   // 获取 MCP 工具
   let mcpClients: any[] = [];
-  let mcpTools: HyperChatCompletionTool[] = [];
 
   if (options.needMCP !== false) {
     mcpClients = await workspace.getMcpClients();
-    mcpTools = mcpClients.flatMap((client: any) => client.tools || []);
   }
 
   // 构建有效配置
@@ -140,7 +137,6 @@ export async function initializeAIEnvironment(options: {
     agent,
     agentConfig,
     mcpClients,
-    mcpTools,
     effectiveConfig
   };
 }
@@ -163,31 +159,8 @@ export function createAIChannel(env: AIEnvironment): AiChannel {
     };
   }
 
-  // 规范化 AI 设置（确保符合类型要求）
-  const normalizedAiSettings = {
-    models: (env.aiSettings?.models || []).filter(model =>
-      model.type && model.model && model.key && model.name && model.provider &&
-      model.apiKey !== undefined && model.baseURL !== undefined
-    ),
-    customProviders: (env.aiSettings?.customProviders || []).filter(provider =>
-      provider.key && provider.label && provider.baseURL !== undefined &&
-      provider.hasApiKey !== undefined && provider.isBuiltIn !== undefined
-    ),
-    builtinApiKeys: Object.fromEntries(
-      Object.entries(env.aiSettings?.builtinApiKeys || {}).filter(([_, value]) =>
-        value && value.apiKey !== undefined && value.baseURL !== undefined
-      ).map(([key, value]) => [key, { apiKey: value!.apiKey!, baseURL: value!.baseURL! }])
-    ),
-    defaultModel: env.aiSettings?.defaultModel
-  };
-
-  // 注册 AI 设置
-  aiChannel.register({
-    mcpTools: env.mcpTools,
-    platform: 'nodejs',
-    getURL_PRE: () => '',
-    aiSettings: normalizedAiSettings as any
-  });
+  // 注册 AI 设置（现在不需要传入任何参数）
+  aiChannel.register();
 
   return aiChannel;
 }
@@ -201,7 +174,7 @@ export function addSystemMessage(
   customPrompt?: string
 ): void {
   const workspacePath = env.workspace.workspacePath;
-  const mcpToolCount = env.mcpTools.length;
+  const mcpToolCount = env.mcpClients.flatMap((client: any) => client.tools || []).length;
 
   let systemContent = customPrompt ||
     `你是HyperChat AI助手。当前工作区: ${workspacePath}。可用工具: ${mcpToolCount}个MCP工具。请用中文回复。`;
@@ -256,5 +229,6 @@ export function logAIConfig(logger: typeof Logger, env: AIEnvironment, source: s
     logger.info(`🤖 使用Agent: ${env.agentConfig!.name}`);
   }
 
-  logger.info(`🔧 可用MCP工具数量: ${env.mcpTools.length}`);
+  const mcpToolCount = env.mcpClients.flatMap((client: any) => client.tools || []).length;
+  logger.info(`🔧 可用MCP工具数量: ${mcpToolCount}`);
 }

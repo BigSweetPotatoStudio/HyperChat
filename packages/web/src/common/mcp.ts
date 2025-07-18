@@ -17,27 +17,6 @@ export {
 
 
 
-/**
- * Retrieves a filtered list of tools from the initialized MCP clients.
- * @param {string[] | undefined | false} [allowMCPs=undefined] - An optional array of MCP client names to filter by.
- *   If `undefined` or `false`, all tools are returned. Otherwise, only tools from the specified MCP clients are included.
- * @returns {HyperChatCompletionTool[]} An array of filtered tools.
- */
-export function getTools(allowMCPs: string[] | undefined | false = undefined): HyperChatCompletionTool[] {
-  let tools: HyperChatCompletionTool[] = [];
-
-  McpClients.forEach((v) => {
-    tools = tools.concat(
-      v.tools.filter((t) => {
-        if (!allowMCPs) return true;
-        return (
-          allowMCPs.includes(t.clientName) || allowMCPs.includes(t.restore_name)
-        );
-      }),
-    );
-  });
-  return tools;
-}
 
 /**
  * Retrieves a filtered list of prompts from the initialized MCP clients.

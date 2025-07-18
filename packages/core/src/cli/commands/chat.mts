@@ -104,7 +104,8 @@ export async function startChat(initialMessage?: string, options: ChatOptions = 
     const aiChannel = createAIChannel(env);
 
     // 添加系统消息
-    addSystemMessage(aiChannel, env, `你是HyperChat CLI助手。当前工作区: ${env.workspace.workspacePath}。可用工具: ${env.mcpTools.length}个MCP工具。请用中文回复。`);
+    const mcpToolCount = env.mcpClients.flatMap((client: any) => client.tools || []).length;
+    addSystemMessage(aiChannel, env, `你是HyperChat CLI助手。当前工作区: ${env.workspace.workspacePath}。可用工具: ${mcpToolCount}个MCP工具。请用中文回复。`);
 
     // 如果有初始消息，处理并退出
     if (initialMessage) {
@@ -193,7 +194,8 @@ export async function startChat(initialMessage?: string, options: ChatOptions = 
       if (input.trim() === '/clear') {
         // 重新创建AI通道并添加系统消息
         const newAiChannel = createAIChannel(env);
-        addSystemMessage(newAiChannel, env, `你是HyperChat CLI助手。当前工作区: ${env.workspace.workspacePath}。可用工具: ${env.mcpTools.length}个MCP工具。请用中文回复。`);
+        const mcpToolCount = env.mcpClients.flatMap((client: any) => client.tools || []).length;
+        addSystemMessage(newAiChannel, env, `你是HyperChat CLI助手。当前工作区: ${env.workspace.workspacePath}。可用工具: ${mcpToolCount}个MCP工具。请用中文回复。`);
         // 替换当前通道
         Object.assign(aiChannel, newAiChannel);
         console.log(`✅ ${t`Chat history cleared`}\n`);
@@ -206,8 +208,9 @@ export async function startChat(initialMessage?: string, options: ChatOptions = 
       }
 
       if (input.trim() === '/tools') {
-        console.log(`\n🔧 ${t`Available tools`} (${env.mcpTools.length} ${t`items`}):`);
-        env.mcpTools.forEach((tool: any) => {
+        const mcpTools = env.mcpClients.flatMap((client: any) => client.tools || []);
+        console.log(`\n🔧 ${t`Available tools`} (${mcpTools.length} ${t`items`}):`);
+        mcpTools.forEach((tool: any) => {
           console.log(`  - ${tool.name}: ${tool.description}`);
         });
         console.log();

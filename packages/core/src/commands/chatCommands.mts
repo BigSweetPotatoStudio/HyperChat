@@ -90,19 +90,8 @@ export async function streamChatCompletion(params: ChatCompletionRequest): Promi
 
 
 
-    // 获取 MCP 工具
-    const mcpClients = workspace.getMcpClients();
-    const mcpTools = getMCPTools(mcpClients, effectiveConfig.allowMCPs);
-    // 注册扩展
-    aiChannel.register({
-      mcpTools,
-      platform: "nodejs",
-      getURL_PRE: () => "",
-      aiSettings,
-      compressionConfig: {
-        enabled: (effectiveConfig.maxAttachedDialogs || 0) > 0,
-      },
-    });
+    // 注册扩展（现在不需要传入任何参数）
+    aiChannel.register();
 
     // 获取 Agent 记忆
     let agentMemory = { content: "", filePath: "" };
@@ -238,12 +227,7 @@ export async function aiCompletionParse(params: AICompletionParseRequest): Promi
     const aiChannel = new AiChannel({}, []);
     
     // 注册扩展
-    aiChannel.register({
-      mcpTools: [],
-      platform: "nodejs",
-      getURL_PRE: () => "",
-      aiSettings,
-    });
+    aiChannel.register();
 
     // 将 JSON Schema 转换为 Zod Schema
     const zodSchema = createZodSchemaFromJsonSchema(schema);
@@ -334,24 +318,6 @@ function getEffectiveConfig(
     maxTokens: overrides.maxTokens ?? agentConfig?.maxTokens ?? workspaceConfig?.maxTokens ?? 4000,
     prompt: overrides.prompt || agentConfig?.prompt || workspaceConfig?.prompt || ""
   };
-}
-
-/**
- * 获取 MCP 工具
- */
-function getMCPTools(mcpClients: any[], allowMCPs?: string[]): any[] {
-  let tools: any[] = [];
-
-  mcpClients.forEach((client) => {
-    tools = tools.concat(
-      client.tools.filter((tool: any) => {
-        if (!allowMCPs) return true;
-        return allowMCPs.includes(tool.clientName) || allowMCPs.includes(tool.restore_name);
-      })
-    );
-  });
-
-  return tools;
 }
 
 
