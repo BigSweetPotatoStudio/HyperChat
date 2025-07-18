@@ -94,9 +94,6 @@ export async function streamChatCompletion(params: ChatCompletionRequest): Promi
     const mcpTools = getMCPTools(mcpClients, effectiveConfig.allowMCPs);
     // 注册扩展
     aiChannel.register({
-      antdmessage: {
-        warning: (msg: string) => Logger.warn(msg),
-      },
       mcpTools,
       platform: "nodejs",
       getURL_PRE: () => "",

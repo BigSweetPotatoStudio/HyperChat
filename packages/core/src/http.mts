@@ -85,7 +85,7 @@ export async function initHttp(): Promise<void> {
     prefix: callNodejsApiPath,
     router: createUploadRouter()
   });
-  
+
   // 注册 SSE 聊天路由
   routers.push({
     prefix: urlPrefix + '/api/chat',
@@ -169,15 +169,24 @@ export async function initHttp(): Promise<void> {
     maxHttpBufferSize: 1e10,
   });
 
-  // 启动服务器
-  const PORT = await execFallback(Config.port, (port) => {
-    server.listen(port, () => {
-      Logger.info(`HTTP server listening on port: ${port}`);
+  if (process.env.myEnv === "dev") {
+    server.listen(Config.port, () => {
+      Logger.info(`HTTP server listening on port: ${Config.port}`);
     });
-  });
+    console.log(`url: http://localhost:${Config.port}${urlPrefix}/`);
+  } else {
+    // 启动服务器
+    const PORT = await execFallback(Config.port, (port) => {
+      server.listen(port, () => {
+        Logger.info(`HTTP server listening on port: ${port}`);
+      });
+    });
 
-  Config.port = PORT;
-  console.log(`url: http://localhost:${PORT}${urlPrefix}/`);
+    Config.port = PORT;
+    console.log(`url: http://localhost:${PORT}${urlPrefix}/`);
+  }
+
+
   // Socket.IO 错误处理
   io.on("error", (error) => {
     Logger.error("Socket.IO error:", error);

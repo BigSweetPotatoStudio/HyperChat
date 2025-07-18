@@ -43,6 +43,7 @@ export class AiChannel {
   }
   private abortController: AbortController | null = null;
   private mcpAbortController: AbortController | null = null;
+  private sseWriter?: SSEWriter;
 
   constructor(
     public options?: {
@@ -85,7 +86,7 @@ export class AiChannel {
             image_url: { url: content.image_url.url },
           });
         } else {
-          this.ext.antdmessage.warning("resource only supports text + images.");
+          Logger.warn("resource only supports text + images.");
         }
 
       }
@@ -354,9 +355,7 @@ export class AiChannel {
             (t) => t.name === delta.toolName
           );
           if (!localTool) {
-            this.ext.antdmessage.warning(
-              `Tool ${delta.toolName} not found in MCP tools.`,
-            );
+            Logger.warn(`Tool ${delta.toolName} not found in MCP tools.`);
             continue;
           }
 
@@ -512,9 +511,7 @@ export class AiChannel {
           (t) => t.name === tool.function.name
         );
         if (!localTool) {
-          this.ext.antdmessage.warning(
-            `Tool ${tool.function.name} not found in MCP tools.`,
-          );
+          Logger.warn(`Tool ${tool.function.name} not found in MCP tools.`);
           continue;
         }
         this.mcpAbortController = new AbortController();
@@ -567,7 +564,7 @@ export class AiChannel {
                 image_url: { url: `data:${c.mimeType};base64,${c.data}` },
               })
             } else {
-              this.ext.antdmessage.warning("tool 返回类型只支持 text image");
+              Logger.warn("tool 返回类型只支持 text image");
             }
           }
         } else {
@@ -601,7 +598,6 @@ export class AiChannel {
     }
   }
   ext!: {
-    antdmessage: { warning: (string: string) => void };
     mcpTools: HyperChatCompletionTool[];
     platform: "nodejs" | "web";
     getURL_PRE: () => string;
@@ -610,6 +606,19 @@ export class AiChannel {
       enabled: boolean;
     };
   };
+
+  // 添加工具方法
+  private generateMessageId(): string {
+    const timestamp = Math.floor(Date.now() / 1000);
+    return `${this.messages.length}_${timestamp}`;
+  }
+
+  private handleSSEMessage(type: string, data: any, messageId?: string, sseWriter?: SSEWriter) {
+    const writer = sseWriter || this.sseWriter;
+    if (writer && !writer.isClosed()) {
+      writer.write({ type, data: { ...data, messageId } });
+    }
+  }
   register(ext: this["ext"]) {
     this.ext = ext;
   }
@@ -750,7 +759,7 @@ ${conversationText}
       
       onUpdate && onUpdate({ type: "compress_error", error });
       console.error("Memory compression failed:", error);
-      this.ext.antdmessage.warning("记忆压缩失败，继续使用完整对话历史");
+      Logger.warn("记忆压缩失败，继续使用完整对话历史");
     }
   }
 
