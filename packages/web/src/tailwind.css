@@ -322,3 +322,11 @@ div[role="system"] .ant-bubble-content-wrapper {
 .my-spin .ant-spin-container {
   height: 100%;
 }
+
+.text-end-ellipsis {
+  direction: rtl;
+  text-align: left;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}

@@ -512,7 +512,7 @@ export const AssistantToolContent: React.FC<AssistantToolContentProps> = ({ cont
                                     items={[{
                                         key: "reasoning_content",
                                         label: (
-                                            <div className="line-clamp-1">
+                                            <div className="line-clamp-1 break-all" >
                                                 {t`thinking`}: {x.reasoning_content}
                                             </div>
                                         ),
@@ -552,7 +552,7 @@ export const AssistantToolContent: React.FC<AssistantToolContentProps> = ({ cont
                                                 <Spin spinning={x.content_status === "loading"}>
                                                     <div className="flex items-center">
                                                         <div className="cursor-pointer">
-                                                            <div className="line-clamp-1 text-blue-500">
+                                                            <div className="line-clamp-1 text-blue-500 break-all">
                                                                 <span className="text-purple-500">
                                                                     {tool.restore_name || tool.function.name}
                                                                 </span>{" "}
