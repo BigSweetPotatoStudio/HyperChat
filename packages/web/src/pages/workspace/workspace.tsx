@@ -80,6 +80,7 @@ export function Workspace() {
   // 新架构：只需要当前工作区信息
   const [currentWorkspace, setCurrentWorkspace] = useState<WorkspaceInfo | null>(null);
   const [currentWorkspaceDetails, setCurrentWorkspaceDetails] = useState<CurrentWorkspaceDetails | null>(null);
+  const [switchingWorkspace, setSwitchingWorkspace] = useState(false);
 
   const [openModalOpen, setOpenModalOpen] = useState(false);
   const [confirmCreateModalOpen, setConfirmCreateModalOpen] = useState(false);
@@ -230,6 +231,7 @@ export function Workspace() {
 
   // 打开工作区
   const openWorkspace = async (values: { path: string }) => {
+    setSwitchingWorkspace(true);
     try {
 
 
@@ -257,6 +259,8 @@ export function Workspace() {
       // }
     } catch (error) {
       handleError(error, "Failed to open workspace");
+    } finally {
+      setSwitchingWorkspace(false);
     }
   };
 
@@ -304,6 +308,7 @@ export function Workspace() {
 
   // 确认创建工作区
   const confirmCreateWorkspace = async () => {
+    setSwitchingWorkspace(true);
     try {
       await createAndSwitchWorkspace(pendingWorkspacePath);
 
@@ -314,6 +319,8 @@ export function Workspace() {
       setPendingWorkspacePath("");
     } catch (error) {
       handleError(error, "Failed to confirm create workspace");
+    } finally {
+      setSwitchingWorkspace(false);
     }
   };
 
@@ -924,6 +931,7 @@ export function Workspace() {
           removeFromWorkspaceHistory(path);
           setWorkspaceHistory(getWorkspaceHistory());
         }}
+        switching={switchingWorkspace}
       />
 
 
@@ -938,6 +946,7 @@ export function Workspace() {
         onOk={confirmCreateWorkspace}
         okText={t`Create & Switch`}
         cancelText={t`Cancel`}
+        confirmLoading={switchingWorkspace}
       >
         <p>{t`The selected folder is not a workspace. Do you want to create a new workspace here and switch to it?`}</p>
         <p><strong>{t`Path`}:</strong> {pendingWorkspacePath}</p>

@@ -194,6 +194,7 @@ interface CollectionCreateFormModalProps {
   }>;
   onPathSelect: (path: string) => void;
   onHistoryRemove: (path: string) => void;
+  switching?: boolean;
 }
 
 export const WorkspaceOpenModal: React.FC<CollectionCreateFormModalProps> = ({
@@ -207,6 +208,7 @@ export const WorkspaceOpenModal: React.FC<CollectionCreateFormModalProps> = ({
   workspaceHistory,
   onPathSelect,
   onHistoryRemove,
+  switching = false,
 }) => {
   const [formInstance, setFormInstance] = useState<FormInstance>();
 
@@ -215,6 +217,7 @@ export const WorkspaceOpenModal: React.FC<CollectionCreateFormModalProps> = ({
       title={t`Switch Workspace`}
       open={open}
       onCancel={onCancel}
+      confirmLoading={switching}
       onOk={async () => {
         try {
           const values = await formInstance?.validateFields();
