@@ -209,22 +209,33 @@ export function useChatStream(params: ChatStreamParams) {
       
       if (params.onToolConfirm) {
         params.onToolConfirm(data.tool).then((result) => {
-          // 通过 /api/chat/stream 端点发送确认响应
+          // 发送确认响应
           const urlPrefix = getURL_PRE();
-          fetch(`${urlPrefix}/api/chat/stream`, {
+          fetch(`${urlPrefix}/api/chat/tool-confirm`, {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
             },
             body: JSON.stringify({
-              chatKey: data.chatKey,
-              toolConfirmId: data.confirmId,
-              toolConfirmArgs: result,
+              confirmId: data.confirmId,
+              confirmed: true,
+              args: result,
             }),
           });
         }).catch((error) => {
-          // 工具确认被取消或失败时，不发送请求，让工具确认超时处理
-          console.warn('Tool confirmation cancelled:', error);
+          // 发送取消响应
+          const urlPrefix = getURL_PRE();
+          fetch(`${urlPrefix}/api/chat/tool-confirm`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              confirmId: data.confirmId,
+              confirmed: false,
+              error: error instanceof Error ? error.message : String(error),
+            }),
+          });
         });
       }
     });

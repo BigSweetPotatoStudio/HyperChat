@@ -61,9 +61,7 @@ router.post('/stream', async (req: Request, res: Response) => {
       userMessage,
       agentName,
       agentScope = 'workspace',
-      configOverrides = {},
-      toolConfirmId,
-      toolConfirmArgs
+      configOverrides = {}
     }: {
       chatKey: string;
       messages: MyMessage[];
@@ -71,25 +69,15 @@ router.post('/stream', async (req: Request, res: Response) => {
       agentName: string;
       agentScope?: 'global' | 'workspace';
       configOverrides?: Partial<BaseAIConfig>;
-      toolConfirmId?: string;
-      toolConfirmArgs?: any;
     } = req.body;
-
-    if (!chatKey) {
-      res.status(400).json({ error: 'chatKey is required' });
-      return;
-    }
-
-    // 如果是工具确认请求，直接处理
-    if (toolConfirmId) {
-      Logger.debug(`Processing tool confirmation via stream: ${toolConfirmId}`);
-      handleToolConfirmResponse(toolConfirmId, true, toolConfirmArgs);
-      res.json({ success: true, toolConfirmId });
-      return;
-    }
 
     if (!agentName) {
       res.status(400).json({ error: 'agentName is required' });
+      return;
+    }
+
+    if (!chatKey) {
+      res.status(400).json({ error: 'chatKey is required' });
       return;
     }
 
@@ -169,5 +157,31 @@ router.post('/cancel', async (req: Request, res: Response) => {
   }
 });
 
+/**
+ * 工具确认响应端点
+ */
+router.post('/tool-confirm', async (req: Request, res: Response) => {
+  try {
+    const { confirmId, confirmed, args } = req.body;
+
+    if (!confirmId) {
+      res.status(400).json({ error: 'confirmId is required' });
+      return;
+    }
+
+    Logger.debug(`Received tool confirmation: ${confirmId}, confirmed: ${confirmed}`);
+
+    // 处理工具确认响应
+    handleToolConfirmResponse(confirmId, confirmed, args);
+
+    res.json({ success: true });
+  } catch (error) {
+    Logger.error('Tool confirm error:', error);
+    res.status(500).json({ 
+      error: 'Internal server error',
+      details: error instanceof Error ? error.message : String(error)
+    });
+  }
+});
 
 export default router;
