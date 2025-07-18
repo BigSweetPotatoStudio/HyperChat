@@ -75,11 +75,6 @@ router.post('/stream', async (req: Request, res: Response) => {
       toolConfirmArgs?: any;
     } = req.body;
 
-    if (!agentName) {
-      res.status(400).json({ error: 'agentName is required' });
-      return;
-    }
-
     if (!chatKey) {
       res.status(400).json({ error: 'chatKey is required' });
       return;
@@ -90,6 +85,11 @@ router.post('/stream', async (req: Request, res: Response) => {
       Logger.debug(`Processing tool confirmation via stream: ${toolConfirmId}`);
       handleToolConfirmResponse(toolConfirmId, true, toolConfirmArgs);
       res.json({ success: true, toolConfirmId });
+      return;
+    }
+
+    if (!agentName) {
+      res.status(400).json({ error: 'agentName is required' });
       return;
     }
 

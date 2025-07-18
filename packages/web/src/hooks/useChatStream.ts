@@ -220,7 +220,6 @@ export function useChatStream(params: ChatStreamParams) {
               chatKey: data.chatKey,
               toolConfirmId: data.confirmId,
               toolConfirmArgs: result,
-              agentName: 'dummy', // 必需参数，但工具确认时不使用
             }),
           });
         }).catch((error) => {
