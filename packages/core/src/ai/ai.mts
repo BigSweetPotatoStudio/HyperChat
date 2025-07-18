@@ -317,8 +317,8 @@ export class AiChannel {
       const result = await streamText({
         ...newOptions,
         experimental_transform: smoothStream({
-          delayInMs: 20, // optional: defaults to 10ms
-          chunking: 'line', // optional: defaults to 'word'
+          delayInMs: 50, // 增加延迟，使流式显示更明显
+          chunking: 'word', // 按单词分块，更细致的流式效果
         }),
         abortSignal: this.abortController.signal,
       });

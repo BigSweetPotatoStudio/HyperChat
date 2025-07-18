@@ -103,33 +103,6 @@ export function useChatStream(params: ChatStreamParams) {
           });
         });
 
-        socket.on('chat_message_replace', (data: any) => {
-          if (!validateChatKey(data.chatKey, 'chat_message_replace')) {
-            return;
-          }
-
-          setState(prev => {
-            if (!validateChatKeyInState(prev, data.chatKey, 'message_replace')) {
-              return prev;
-            }
-
-            // 找到要替换的消息
-            const messageIndex = prev.messages.findIndex(m => m.messageId === data.messageId);
-            if (messageIndex === -1) {
-              console.warn(`Message with ID ${data.messageId} not found for replace`);
-              return prev;
-            }
-
-            const newMessages = [...prev.messages];
-            newMessages[messageIndex] = data.message;
-
-            return {
-              ...prev,
-              messages: newMessages,
-            };
-          });
-        });
-
         socket.on('chat_message_update', (data: any) => {
           if (!validateChatKey(data.chatKey, 'chat_message_update')) {
             return;
@@ -302,7 +275,6 @@ export function useChatStream(params: ChatStreamParams) {
     return () => {
       if (socketRef.current) {
         socketRef.current.off('chat_message_create');
-        socketRef.current.off('chat_message_replace');
         socketRef.current.off('chat_message_update');
         socketRef.current.off('chat_message_complete');
         socketRef.current.off('chat_message_error');

@@ -640,22 +640,6 @@ export const WorkspaceChat = ({ workspace, agentName, agentScope, workspaceDetai
                     }}
                   />
                 </Tooltip>
-                {/* 
-                <Tooltip title={t`Clear Context`}>
-                  <Button
-                    size="small"
-                    icon={<ClearOutlined />}
-                    onClick={() => {
-                      calcAttachDialogue(
-                        currentChat.current.messages,
-                        0,
-                        true,
-                      );
-                      refresh();
-                    }}
-                  />
-                </Tooltip> */}
-
                 <Divider type="vertical" />
 
                 <Tooltip title={t`Select LLM`}>
@@ -834,71 +818,71 @@ export const WorkspaceChat = ({ workspace, agentName, agentScope, workspaceDetai
                     </Tooltip>
                   </Upload>
                   <Tooltip title={t`MCP and Tools`} placement="bottom">
+                    <div>
+                      {supportTool == null || supportTool == true ? (
+                        <Space.Compact>
+                          <Button onClick={() => {
+                            setIsToolsShow(true);
+                          }} type="dashed" icon={<Icon name="mcp" ></Icon>}>
 
-                    {supportTool == null || supportTool == true ? (
-                      <Space.Compact>
-                        <Button onClick={() => {
-                          setIsToolsShow(true);
-                        }} type="dashed" icon={<Icon name="mcp" ></Icon>}>
 
+                            {(() => {
+                              let set = new Set();
+                              for (let tool_name of getAllowMCPs()) {
+                                let [name, _] = tool_name.split(" > ");
+                                set.add(name);
+                              }
+                              let loading = mcpClients.filter((v) => v.status == "connecting").length > 0;
+                              let load = mcpClients.filter(
+                                (v) => v.status == "connected",
+                              ).length;
+                              let all = mcpClients.filter(x => x.status !== "disabled").length;
+                              let curr = mcpClients.filter((v) => {
+                                return v.status !== "disabled" && set.has(v.serverName);
+                              }).length;
 
-                          {(() => {
-                            let set = new Set();
-                            for (let tool_name of getAllowMCPs()) {
-                              let [name, _] = tool_name.split(" > ");
-                              set.add(name);
-                            }
-                            let loading = mcpClients.filter((v) => v.status == "connecting").length > 0;
-                            let load = mcpClients.filter(
-                              (v) => v.status == "connected",
-                            ).length;
-                            let all = mcpClients.filter(x => x.status !== "disabled").length;
-                            let curr = mcpClients.filter((v) => {
-                              return v.status !== "disabled" && set.has(v.serverName);
-                            }).length;
-
-                            return loading ? (
-                              <>
-                                {`${curr} `}
-                                <SyncOutlined spin />
-                                {`(${load}/${all})`}
-                              </>
-                            ) : curr
-                          })()}
-                          <Icon name="chuizi-copy" ></Icon>{
-
-                            (() => {
-                              let tools: IMCPClient["tools"] = [];
-
-                              mcpClients.forEach((v) => {
-                                tools = tools.concat(
-                                  v.tools.filter((t) => {
-
-                                    return (
-                                      getAllowMCPs().includes(t.clientName) || getAllowMCPs().includes(t.restore_name)
-                                    );
-                                  }),
-                                );
-                              });
-                              return (
+                              return loading ? (
                                 <>
-                                  {tools.length}
+                                  {`${curr} `}
+                                  <SyncOutlined spin />
+                                  {`(${load}/${all})`}
                                 </>
-                              )
-                            })()
-                          }
-                        </Button>
+                              ) : curr
+                            })()}
+                            <Icon name="chuizi-copy" ></Icon>{
 
-                      </Space.Compact>
-                    ) : (
-                      <>  <Button
-                        size="small"
-                        type="text"
-                        icon={<Icon name="mcp"></Icon>}
-                        onClick={() => { }}
-                      >{t`LLM not support`}</Button>  </>
-                    )}
+                              (() => {
+                                let tools: IMCPClient["tools"] = [];
 
+                                mcpClients.forEach((v) => {
+                                  tools = tools.concat(
+                                    v.tools.filter((t) => {
+
+                                      return (
+                                        getAllowMCPs().includes(t.clientName) || getAllowMCPs().includes(t.restore_name)
+                                      );
+                                    }),
+                                  );
+                                });
+                                return (
+                                  <>
+                                    {tools.length}
+                                  </>
+                                )
+                              })()
+                            }
+                          </Button>
+
+                        </Space.Compact>
+                      ) : (
+                        <>  <Button
+                          size="small"
+                          type="text"
+                          icon={<Icon name="mcp"></Icon>}
+                          onClick={() => { }}
+                        >{t`LLM not support`}</Button>  </>
+                      )}
+                    </div>
                   </Tooltip>
 
                   {/* 附件显示区域
