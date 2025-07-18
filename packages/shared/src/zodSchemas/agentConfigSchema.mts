@@ -44,14 +44,13 @@ export const BaseAIConfigSchema = z.object({
   maxContextTokens: z.number()
     .int()
     .min(1000, "Max context tokens must be >= 1000")
-    .max(128000, "Max context tokens must be <= 128000")
     .optional()
     .describe("Maximum context tokens before compression (overrides maxAttachedDialogs)"),
   
-  compressionStrategy: z.enum(["dialogs", "tokens", "auto"])
-    .default("auto")
+  compressionStrategy: z.enum(["dialogs", "tokens"])
+    .default("tokens")
     .optional()
-    .describe("Compression strategy: dialogs (轮数), tokens (token数量), auto (优先使用token压缩，没有配置时使用默认值)")
+    .describe("Compression strategy: dialogs (轮数), tokens (token数量)")
 });
 
 /**
@@ -257,7 +256,7 @@ export function getRecommendedMaxContextTokens(modelKey: string): number {
 export function createSmartBaseAIConfig(
   prompt: string,
   modelKey?: string,
-  strategy: "dialogs" | "tokens" | "auto" = "auto"
+  strategy: "dialogs" | "tokens" = "tokens"
 ): BaseAIConfig {
   const config = createDefaultBaseAIConfig(prompt);
   

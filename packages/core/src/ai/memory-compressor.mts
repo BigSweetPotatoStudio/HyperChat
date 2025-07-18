@@ -82,7 +82,7 @@ export class MemoryCompressor {
    * 检查是否需要压缩记忆
    */
   shouldCompressMemory(messages: MyMessage[], params: BaseAIConfig): boolean {
-    const strategy = params.compressionStrategy || "auto";
+    const strategy = params.compressionStrategy || "tokens";
     const lastMemoryIndex = messages.findLastIndex(m => m.role === "hyper_memory" && m.content_status === "success");
     const startIndex = lastMemoryIndex === -1 ? 0 : lastMemoryIndex + 1;
     
@@ -91,10 +91,6 @@ export class MemoryCompressor {
       return this.shouldCompressMemoryByTokens(messages, params, startIndex);
     }
     
-    // auto策略：优先使用token压缩
-    if (strategy === "auto") {
-      return this.shouldCompressMemoryByTokens(messages, params, startIndex);
-    }
     
     // 基于对话轮数的压缩策略（原有逻辑）
     return this.shouldCompressMemoryByDialogs(messages, params, startIndex);
@@ -104,8 +100,7 @@ export class MemoryCompressor {
    * 基于token数量的压缩判断
    */
   private shouldCompressMemoryByTokens(messages: MyMessage[], params: BaseAIConfig, startIndex: number): boolean {
-    const maxTokens = params.maxContextTokens || 
-      (params.compressionStrategy === "auto" ? 36000 : 8000);
+    const maxTokens = params.maxContextTokens || 36000;
     
     const promptTokens = TokenCalculator.estimatePromptTokenCount(params.prompt);
     const messageTokens = TokenCalculator.calculateMessagesTokenCount(messages, startIndex);

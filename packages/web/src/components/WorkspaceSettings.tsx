@@ -206,7 +206,7 @@ export function WorkspaceSettings({
             <Form.Item
               label={t`Compression Strategy`}
               name={["aiConfig", "compressionStrategy"]}
-              tooltip={t`Strategy for memory compression: dialogs (轮数), tokens (token数量), auto (优先使用token压缩，没有配置时使用默认值)`}
+              tooltip={t`Strategy for memory compression: tokens (token数量), dialogs (轮数)`}
             >
               <Select
                 placeholder={t`Select compression strategy`}
@@ -214,7 +214,6 @@ export function WorkspaceSettings({
                 options={[
                   { value: 'dialogs', label: t`Dialogs Count` },
                   { value: 'tokens', label: t`Token Count` },
-                  { value: 'auto', label: t`Auto` }
                 ]}
               />
             </Form.Item>
@@ -313,8 +312,8 @@ export function WorkspaceSettings({
         initialValues={settings}
         onValuesChange={handleFormChange}
       >
-        <Tabs 
-          activeKey={activeTab} 
+        <Tabs
+          activeKey={activeTab}
           onChange={setActiveTab}
           items={tabItems}
         />
@@ -332,7 +331,7 @@ export function WorkspaceSettings({
         >
           {t`Save`}
         </Button>
-        
+
         {onReset && (
           <Button
             icon={<ReloadOutlined />}

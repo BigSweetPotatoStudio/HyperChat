@@ -598,8 +598,8 @@ export const AgentManagement = forwardRef<AgentManagementRef, AgentManagementPro
                 maxTokens: editingAgent.config.maxTokens,
                 allowMCPs: editingAgent.config.allowMCPs || [],
                 isConfirmCallTool: editingAgent.config.isConfirmCallTool ?? false,
-                maxAttachedDialogs: editingAgent.config.maxAttachedDialogs ?? 5,
-                compressionStrategy: editingAgent.config.compressionStrategy || 'auto',
+                maxAttachedDialogs: editingAgent.config.maxAttachedDialogs,
+                compressionStrategy: editingAgent.config.compressionStrategy || 'tokens',
                 maxContextTokens: editingAgent.config.maxContextTokens,
               };
               form.resetFields();
@@ -926,7 +926,7 @@ export const AgentCommonFormItems = (
       <Form.Item
         name="compressionStrategy"
         label={t`Compression Strategy`}
-        tooltip={t`Strategy for memory compression: dialogs (轮数), tokens (token数量), auto (优先使用token压缩，没有配置时使用默认值)`}
+        tooltip={t`Strategy for memory compression: tokens (token数量), dialogs (轮数)`}
       >
         <Select
           style={{ width: '100%' }}
@@ -934,7 +934,6 @@ export const AgentCommonFormItems = (
           options={[
             { value: 'dialogs', label: t`Dialogs Count` },
             { value: 'tokens', label: t`Token Count` },
-            { value: 'auto', label: t`Auto` }
           ]}
         />
       </Form.Item>
@@ -965,7 +964,7 @@ export const AgentCommonFormItems = (
           max={100} 
           step={1}
           style={{ width: '100%' }}
-          placeholder="10"
+          placeholder="Maximum number of attached dialog histories (0-100)"
         />
       </Form.Item>
     </Col>
