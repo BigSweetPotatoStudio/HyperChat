@@ -611,38 +611,6 @@ export function getMyUuid() {
   return dayjs().format('YYMMDD-HHmmss') + '-' + v4().slice(0, 8);
 }
 
-
-export const calcAttachDialogue = (
-  messages: any,
-  maxAttachedDialogs: any,
-  overwrite = true,
-) => {
-  if (maxAttachedDialogs == null) {
-    maxAttachedDialogs = 10;
-  }
-  let c = 0;
-  for (let i = messages.length - 1; i >= 0; i--) {
-    let m = messages[i];
-    if (m.role == "system") {
-      m.content_attached = true;
-      continue;
-    }
-
-    if (overwrite) {
-      m.content_attached = c < maxAttachedDialogs;
-    } else {
-      if (m.content_attached == false && c < maxAttachedDialogs) {
-      } else {
-        m.content_attached = c < maxAttachedDialogs;
-      }
-    }
-
-    if (m.role == "user") {
-      c++;
-    }
-  }
-};
-
 /**
  * Pre组件的Props类型定义
  */

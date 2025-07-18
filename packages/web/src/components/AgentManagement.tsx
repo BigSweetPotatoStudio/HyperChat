@@ -508,10 +508,10 @@ export const AgentManagement = forwardRef<AgentManagementRef, AgentManagementPro
                 {selectedAgent.lastChatTime ? new Date(selectedAgent.lastChatTime).toLocaleString() : 'Never'}
               </Descriptions.Item>
               <Descriptions.Item label={t`Context History`}>
-                {selectedAgent.config.maxAttachedDialogs || 'Default'}
+                {selectedAgent.config.maxAttachedDialogs || 5}
               </Descriptions.Item>
               <Descriptions.Item label={t`Compression Strategy`}>
-                {selectedAgent.config.compressionStrategy || 'dialogs'}
+                {selectedAgent.config.compressionStrategy || 'tokens'}
               </Descriptions.Item>
               {selectedAgent.config.maxContextTokens && (
                 <Descriptions.Item label={t`Max Context Tokens`}>
@@ -598,7 +598,7 @@ export const AgentManagement = forwardRef<AgentManagementRef, AgentManagementPro
                 maxTokens: editingAgent.config.maxTokens,
                 allowMCPs: editingAgent.config.allowMCPs || [],
                 isConfirmCallTool: editingAgent.config.isConfirmCallTool ?? false,
-                maxAttachedDialogs: editingAgent.config.maxAttachedDialogs ?? 10,
+                maxAttachedDialogs: editingAgent.config.maxAttachedDialogs ?? 5,
                 compressionStrategy: editingAgent.config.compressionStrategy || 'auto',
                 maxContextTokens: editingAgent.config.maxContextTokens,
               };
@@ -616,7 +616,7 @@ export const AgentManagement = forwardRef<AgentManagementRef, AgentManagementPro
                   isConfirmCallTool: workspaceAIConfig?.isConfirmCallTool ?? false,
                   temperature: workspaceAIConfig?.temperature ?? 1,
                   maxTokens: workspaceAIConfig?.maxTokens,
-                  maxAttachedDialogs: workspaceAIConfig?.maxAttachedDialogs ?? 5,
+                  maxAttachedDialogs: workspaceAIConfig?.maxAttachedDialogs,
                   modelKey: workspaceAIConfig?.modelKey || firstAvailableModel,
                   prompt: workspaceAIConfig?.prompt || "",
                 };

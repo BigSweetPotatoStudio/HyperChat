@@ -691,7 +691,7 @@ export const WorkspaceChat = ({ workspace, agentName, agentScope, workspaceDetai
                         modelKey: currentEffectiveConfig.modelKey,
                         temperature: currentEffectiveConfig.temperature ?? 1,
                         maxTokens: currentEffectiveConfig.maxTokens ?? 4000,
-                        maxAttachedDialogs: currentEffectiveConfig.maxAttachedDialogs ?? 10,
+                        maxAttachedDialogs: currentEffectiveConfig.maxAttachedDialogs ?? 5,
                         isConfirmCallTool: currentEffectiveConfig.isConfirmCallTool ?? false,
                         allowMCPs: currentEffectiveConfig.allowMCPs || [],
                         compressionStrategy: currentEffectiveConfig.compressionStrategy ?? "auto",

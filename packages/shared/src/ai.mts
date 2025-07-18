@@ -576,7 +576,7 @@ class AiChannel {
         userMessageCount++;
       }
     }
-    return userMessageCount >= (params.maxAttachedDialogs || 10);
+    return userMessageCount >= (params.maxAttachedDialogs || 5);
   }
 
   // 生成记忆摘要

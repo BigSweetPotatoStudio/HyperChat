@@ -125,7 +125,7 @@ export class MemoryCompressor {
         userMessageCount++;
       }
     }
-    const maxDialogs = params.maxAttachedDialogs || 10;
+    const maxDialogs = params.maxAttachedDialogs || 5;
     return userMessageCount >= maxDialogs;
   }
 
