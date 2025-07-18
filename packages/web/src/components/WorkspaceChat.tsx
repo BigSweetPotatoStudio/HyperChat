@@ -536,7 +536,7 @@ export const WorkspaceChat = ({ workspace, agentName, agentScope, workspaceDetai
       await chatStream.startChatStream(
         currentChat.current.key,
         currentChat.current.messages,
-        currentChat.current.configOverrides,
+        currentChat.current.configOverrides || {},
         userMessage.content ? userMessage : undefined,
         // resourceResListRef.current,
         // promptResList.current,
@@ -899,7 +899,7 @@ export const WorkspaceChat = ({ workspace, agentName, agentScope, workspaceDetai
                       size="small"
                       type="text"
                       onClick={() => {
-                        chatStream.cancelChatStream();
+                        chatStream.cancelChatStream(currentChat.current.key);
                       }}
                     >
                       {t`Cancel`}

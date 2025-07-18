@@ -11,20 +11,14 @@ import { BaseAIConfig } from '@dadigua/hyperchat-shared';
 
 const router = Router();
 
-// 存储活动的 SSE 连接
+// 存储活动的 SSE 连接，使用 chatKey 作为 key
 const activeConnections = new Map<string, SSEWriter>();
 
 /**
- * 获取指定 chatKey 的 SSE 连接
+ * 建立 SSE 连接端点
+ * GET 请求用于建立 SSE 连接
  */
-export function getSSEConnection(chatKey: string): SSEWriter | null {
-  return activeConnections.get(chatKey) || null;
-}
-
-/**
- * SSE 流式连接端点
- */
-router.get('/stream/:chatKey', (req: Request, res: Response) => {
+router.get('/stream/:chatKey', async (req: Request, res: Response) => {
   const { chatKey } = req.params;
   
   if (!chatKey) {
@@ -35,7 +29,7 @@ router.get('/stream/:chatKey', (req: Request, res: Response) => {
   Logger.info(`New SSE connection for chatKey: ${chatKey}`);
 
   // 创建 SSE 写入器
-  const sseWriter = new SSEWriter(res, chatKey);
+  const sseWriter = new SSEWriter(res);
   
   // 存储连接
   activeConnections.set(chatKey, sseWriter);
@@ -56,9 +50,10 @@ router.get('/stream/:chatKey', (req: Request, res: Response) => {
 });
 
 /**
- * 开始聊天流式响应
+ * 开始聊天端点
+ * POST 请求用于开始聊天流式响应
  */
-router.post('/start', async (req: Request, res: Response) => {
+router.post('/stream', async (req: Request, res: Response) => {
   try {
     const {
       chatKey,
@@ -76,20 +71,20 @@ router.post('/start', async (req: Request, res: Response) => {
       configOverrides?: Partial<BaseAIConfig>;
     } = req.body;
 
-    if (!chatKey) {
-      res.status(400).json({ error: 'chatKey is required' });
-      return;
-    }
-
     if (!agentName) {
       res.status(400).json({ error: 'agentName is required' });
       return;
     }
 
+    if (!chatKey) {
+      res.status(400).json({ error: 'chatKey is required' });
+      return;
+    }
+
     // 获取对应的 SSE 连接
-    const sseWriter = getSSEConnection(chatKey);
+    const sseWriter = activeConnections.get(chatKey);
     if (!sseWriter) {
-      res.status(404).json({ error: 'SSE connection not found. Please connect to /stream/:chatKey first.' });
+      res.status(404).json({ error: 'SSE connection not found. Please connect with GET request first.' });
       return;
     }
 
@@ -142,7 +137,7 @@ router.post('/cancel', async (req: Request, res: Response) => {
       return;
     }
 
-    const sseWriter = getSSEConnection(chatKey);
+    const sseWriter = activeConnections.get(chatKey);
     if (sseWriter && !sseWriter.isClosed()) {
       sseWriter.write({
         type: 'chat_message_error',

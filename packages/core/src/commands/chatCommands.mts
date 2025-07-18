@@ -16,6 +16,8 @@ import { SSEWriter } from "../sse/SSEWriter.mjs";
  * 聊天完成请求参数
  */
 interface ChatCompletionRequest {
+  /** 聊天记录 Key */
+  chatKey: string;
   agentName: string;
   /** Agent 作用域 */
   agentScope: "global" | "workspace";
@@ -25,8 +27,6 @@ interface ChatCompletionRequest {
   userMessage?: MyMessage;
   /** 配置覆盖 */
   configOverrides?: Partial<BaseAIConfig>;
-  /** 聊天记录 Key */
-  chatKey: string;
   /** SSE 写入器 */
   sseWriter?: SSEWriter;
 }
@@ -35,14 +35,14 @@ interface ChatCompletionRequest {
 /**
  * 流式聊天完成
  */
-export async function streamChatCompletion(params: ChatCompletionRequest): Promise<{ chatKey: string }> {
+export async function streamChatCompletion(params: ChatCompletionRequest): Promise<void> {
   const {
+    chatKey,
     agentName,
     agentScope = "workspace",
     messages,
     userMessage,
     configOverrides = {},
-    chatKey,
     sseWriter,
   } = params;
 
@@ -113,7 +113,7 @@ export async function streamChatCompletion(params: ChatCompletionRequest): Promi
     ).prompt;
 
     // 创建工具确认回调
-    const confirmCallToolCb = configOverrides.isConfirmCallTool ? createConfirmCallToolCallback(chatKey) : undefined;
+    const confirmCallToolCb = configOverrides.isConfirmCallTool ? createConfirmCallToolCallback() : undefined;
 
     // 开始流式完成
     const messageService = getMessageService();
@@ -135,7 +135,6 @@ export async function streamChatCompletion(params: ChatCompletionRequest): Promi
         messageService.sendMessage({
           type: "chat_message_create",
           data: {
-            chatKey,
             messageId: userMessage.messageId,
             message: userMessage,
           },
@@ -150,14 +149,12 @@ export async function streamChatCompletion(params: ChatCompletionRequest): Promi
         prompt: systemPrompt,
         modelKey: effectiveConfig.modelKey || "",
         sseWriter: sseWriter, // 传递 SSE 写入器
-        chatKey: chatKey, // 传递 chatKey
         sendMessage: sseWriter ? undefined : (eventData) => {
           // 如果有 SSE 写入器，则不使用 WebSocket 发送
           // 发送消息到前端
           messageService.sendMessage({
             type: eventData.type,
             data: {
-              chatKey,
               ...eventData.data,
             },
           });
@@ -168,7 +165,6 @@ export async function streamChatCompletion(params: ChatCompletionRequest): Promi
           // messageService.sendMessage({
           //   type: "chat_stream_update",
           //   data: {
-          //     chatKey,
           //     messages: aiChannel.messages,
           //     update: updateData,
           //   },
@@ -188,12 +184,6 @@ export async function streamChatCompletion(params: ChatCompletionRequest): Promi
           throw new Error(`Agent 不存在: ${agentName}`);
         }
 
-        // // 设置 agentName 确保关联正确
-        // chatLog.agentName = agentName;
-        // chatLog.dateTime = Date.now();
-
-        // return await agentInstance.setChatLog(chatLog);
-
         await agentInstance.setChatLog({
           key: chatKey,
           label: "New Chat",
@@ -211,20 +201,26 @@ export async function streamChatCompletion(params: ChatCompletionRequest): Promi
 
       // 新的消息事件架构中，错误事件已经在 AiChannel 中处理
     });
-
-    return { chatKey };
   } catch (error) {
     Logger.error("Stream chat completion error:", error);
 
     // 发送初始化错误事件
-    const messageService = getMessageService();
-    messageService.sendMessage({
-      type: "chat_message_error",
-      data: {
-        chatKey,
-        error: error instanceof Error ? error.message : String(error),
-      },
-    });
+    if (sseWriter) {
+      sseWriter.write({
+        type: "chat_message_error",
+        data: {
+          error: error instanceof Error ? error.message : String(error),
+        },
+      });
+    } else {
+      const messageService = getMessageService();
+      messageService.sendMessage({
+        type: "chat_message_error",
+        data: {
+          error: error instanceof Error ? error.message : String(error),
+        },
+      });
+    }
 
     throw error;
   }
@@ -233,14 +229,13 @@ export async function streamChatCompletion(params: ChatCompletionRequest): Promi
 /**
  * 取消聊天完成
  */
-export async function cancelChatCompletion(params: { chatKey: string }): Promise<void> {
+export async function cancelChatCompletion(): Promise<void> {
   // 这里需要实现取消逻辑
   // 可以通过存储 AiChannel 实例来实现取消
   const messageService = getMessageService();
   messageService.sendMessage({
     type: "chat_message_error",
     data: {
-      chatKey: params.chatKey,
       error: "Chat cancelled by user",
     },
   });
@@ -312,7 +307,7 @@ function getMCPTools(mcpClients: any[], allowMCPs?: string[]): any[] {
 /**
  * 创建工具确认回调
  */
-function createConfirmCallToolCallback(chatKey: string) {
+function createConfirmCallToolCallback() {
   return (tool: HyperToolCall): Promise<any> => {
     return new Promise((resolve, _reject) => {
       const messageService = getMessageService();
@@ -321,19 +316,16 @@ function createConfirmCallToolCallback(chatKey: string) {
       messageService.sendMessage({
         type: "tool_confirm_request",
         data: {
-          chatKey,
           tool,
         },
       });
 
       // 监听确认响应
       // const handleConfirmResponse = (data: any) => {
-      //   if (data.chatKey === chatKey) {
-      //     if (data.confirmed) {
-      //       resolve(data.args || tool.function.args);
-      //     } else {
-      //       reject(new Error("User cancelled tool call"));
-      //     }
+      //   if (data.confirmed) {
+      //     resolve(data.args || tool.function.args);
+      //   } else {
+      //     reject(new Error("User cancelled tool call"));
       //   }
       // };
 

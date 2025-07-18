@@ -10,8 +10,7 @@ export class SSEWriter {
   private heartbeatInterval?: NodeJS.Timeout;
 
   constructor(
-    private response: Response,
-    private chatKey: string
+    private response: Response
   ) {
     this.setupSSEHeaders();
     this.startHeartbeat();
@@ -29,7 +28,7 @@ export class SSEWriter {
     // 发送初始连接确认
     this.write({
       type: 'connected',
-      data: { chatKey: this.chatKey }
+      data: { timestamp: Date.now() }
     });
   }
 
@@ -56,7 +55,6 @@ export class SSEWriter {
     try {
       const sseData = `event: ${event.type}\n` +
                      `data: ${JSON.stringify({
-                       chatKey: this.chatKey,
                        timestamp: Date.now(),
                        ...event.data
                      })}\n\n`;

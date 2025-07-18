@@ -3,11 +3,11 @@
  * 使用 Server-Sent Events 处理 AI 流式响应
  */
 
-import { useEffect, useRef, useCallback, useReducer } from 'react';
+import { useRef, useCallback, useReducer, useEffect } from 'react';
 import { MyMessage, HyperToolCall } from "@dadigua/hyperchat-shared/types";
 import { BaseAIConfig } from "@dadigua/hyperchat-shared";
-import { message } from 'antd';
-import { t } from '../i18n';
+// import { message } from 'antd';
+// import { t } from '../i18n';
 import { getURL_PRE } from '../common/call';
 
 interface ChatStreamParams {
@@ -26,8 +26,6 @@ interface ChatStreamState {
   loading: boolean;
   /** 错误信息 */
   error: string | null;
-  /** 当前聊天 Key */
-  chatKey: string | null;
 }
 
 export function useChatStream(params: ChatStreamParams) {
@@ -36,7 +34,6 @@ export function useChatStream(params: ChatStreamParams) {
     messages: [],
     loading: false,
     error: null,
-    chatKey: null,
   });
 
   // 强制更新 hook
@@ -45,34 +42,33 @@ export function useChatStream(params: ChatStreamParams) {
 
   const eventSourceRef = useRef<EventSource | null>(null);
 
-  // 验证 chatKey 匹配的辅助函数
-  const validateChatKey = useCallback((receivedChatKey: string, eventType: string) => {
-    if (!stateRef.current.chatKey || stateRef.current.chatKey !== receivedChatKey) {
-      console.warn(`Received ${eventType} with mismatched chatKey:`, receivedChatKey, 'expected:', stateRef.current.chatKey);
-      return false;
-    }
-    return true;
-  }, []);
-
   // 连接 SSE
-  const connectSSE = useCallback((chatKey: string) => {
-    // 关闭现有连接
-    if (eventSourceRef.current) {
-      eventSourceRef.current.close();
-      eventSourceRef.current = null;
-    }
+  const connectSSE = useCallback((chatKey: string): Promise<void> => {
+    return new Promise((resolve, reject) => {
+      // 关闭现有连接
+      if (eventSourceRef.current) {
+        eventSourceRef.current.close();
+        eventSourceRef.current = null;
+      }
 
-    console.log(`Connecting to SSE for chatKey: ${chatKey}`);
-    
-    const urlPrefix = getURL_PRE();
-    const eventSource = new EventSource(`${urlPrefix}/api/chat/stream/${chatKey}`);
-    eventSourceRef.current = eventSource;
+      console.log(`Connecting to SSE for chatKey: ${chatKey}`);
+      
+      const urlPrefix = getURL_PRE();
+      const eventSource = new EventSource(`${urlPrefix}/api/chat/stream/${chatKey}`);
+      eventSourceRef.current = eventSource;
 
-    // 连接成功
-    eventSource.addEventListener('connected', (event) => {
-      const data = JSON.parse(event.data);
-      console.log('SSE connected:', data);
-    });
+      // 设置连接超时
+      const timeout = setTimeout(() => {
+        reject(new Error('SSE connection timeout'));
+      }, 5000); // 5秒超时
+
+      // 连接成功
+      eventSource.addEventListener('connected', (event) => {
+        const data = JSON.parse(event.data);
+        console.log('SSE connected:', data);
+        clearTimeout(timeout);
+        resolve(); // 连接成功，解析 Promise
+      });
 
     // 心跳检测
     eventSource.addEventListener('ping', (event) => {
@@ -83,10 +79,6 @@ export function useChatStream(params: ChatStreamParams) {
     eventSource.addEventListener('chat_message_create', (event) => {
       const data = JSON.parse(event.data);
       
-      if (!validateChatKey(data.chatKey, 'chat_message_create')) {
-        return;
-      }
-
       // 直接操作 ref
       const existingIndex = stateRef.current.messages.findIndex(m => m.messageId === data.messageId);
       if (existingIndex !== -1) {
@@ -107,10 +99,6 @@ export function useChatStream(params: ChatStreamParams) {
     eventSource.addEventListener('chat_message_replace', (event) => {
       const data = JSON.parse(event.data);
       
-      if (!validateChatKey(data.chatKey, 'chat_message_replace')) {
-        return;
-      }
-
       // 找到要更换的消息
       const messageIndex = stateRef.current.messages.findIndex(m => m.messageId === data.messageId);
       if (messageIndex === -1) {
@@ -126,10 +114,6 @@ export function useChatStream(params: ChatStreamParams) {
     eventSource.addEventListener('chat_message_update', (event) => {
       const data = JSON.parse(event.data);
       
-      if (!validateChatKey(data.chatKey, 'chat_message_update')) {
-        return;
-      }
-
       // 直接处理 delta，实时更新
       const messageIndex = stateRef.current.messages.findIndex(m => m.messageId === data.messageId);
       if (messageIndex === -1) {
@@ -184,10 +168,6 @@ export function useChatStream(params: ChatStreamParams) {
     eventSource.addEventListener('chat_message_complete', (event) => {
       const data = JSON.parse(event.data);
       
-      if (!validateChatKey(data.chatKey, 'chat_message_complete')) {
-        return;
-      }
-
       // 找到最后一条助手消息并标记为完成
       const lastAssistantIndex = stateRef.current.messages.findLastIndex(m => m.role === 'assistant');
 
@@ -206,10 +186,6 @@ export function useChatStream(params: ChatStreamParams) {
     eventSource.addEventListener('chat_message_error', (event) => {
       const data = JSON.parse(event.data);
       
-      if (!validateChatKey(data.chatKey, 'chat_message_error')) {
-        return;
-      }
-
       // 找到最后一条助手消息并标记为错误
       const lastAssistantIndex = stateRef.current.messages.findLastIndex(m => m.role === 'assistant');
 
@@ -225,18 +201,12 @@ export function useChatStream(params: ChatStreamParams) {
       stateRef.current.loading = false;
 
       useForceUpdate();
-      message.error(data.error || t`An error occurred, please try again later`);
     });
 
     // 监听工具确认请求
     eventSource.addEventListener('tool_confirm_request', (event) => {
       const data = JSON.parse(event.data);
       
-      // 验证 chatKey 匹配
-      if (!validateChatKey(data.chatKey, 'tool_confirm_request')) {
-        return;
-      }
-
       if (params.onToolConfirm) {
         params.onToolConfirm(data.tool).then((result) => {
           // 发送确认响应 (需要通过 HTTP 请求发送)
@@ -247,7 +217,7 @@ export function useChatStream(params: ChatStreamParams) {
               'Content-Type': 'application/json',
             },
             body: JSON.stringify({
-              chatKey: data.chatKey,
+              chatKey: chatKey,
               confirmed: true,
               args: result,
             }),
@@ -261,36 +231,39 @@ export function useChatStream(params: ChatStreamParams) {
               'Content-Type': 'application/json',
             },
             body: JSON.stringify({
-              chatKey: data.chatKey,
+              chatKey: chatKey,
               confirmed: false,
-              error: error.message,
+              error: error instanceof Error ? error.message : String(error),
             }),
           });
         });
       }
     });
 
-    // 处理连接错误
-    eventSource.onerror = (error) => {
-      console.error('SSE connection error:', error);
-      
-      // 设置错误状态
-      stateRef.current.error = 'Connection lost';
-      stateRef.current.loading = false;
-      useForceUpdate();
-      
-      // 尝试重连 (浏览器会自动重连，这里只是记录)
-      console.log('SSE will automatically reconnect...');
-    };
+      // 处理连接错误
+      eventSource.onerror = (error) => {
+        console.error('SSE connection error:', error);
+        clearTimeout(timeout);
+        reject(new Error('SSE connection failed'));
+        
+        // 设置错误状态
+        stateRef.current.error = 'Connection lost';
+        stateRef.current.loading = false;
+        useForceUpdate();
+        
+        // 尝试重连 (浏览器会自动重连，这里只是记录)
+        console.log('SSE will automatically reconnect...');
+      };
 
-    // 监听连接状态变化
-    eventSource.addEventListener('open', () => {
-      console.log('SSE connection opened');
-      stateRef.current.error = null;
-      useForceUpdate();
+      // 监听连接状态变化
+      eventSource.addEventListener('open', () => {
+        console.log('SSE connection opened');
+        stateRef.current.error = null;
+        useForceUpdate();
+      });
     });
 
-  }, [validateChatKey, useForceUpdate, params.onToolConfirm]);
+  }, [useForceUpdate, params.onToolConfirm]);
 
   // 清理 SSE 连接
   const disconnectSSE = useCallback(() => {
@@ -312,15 +285,14 @@ export function useChatStream(params: ChatStreamParams) {
       // 1. 设置状态
       stateRef.current.loading = true;
       stateRef.current.error = null;
-      stateRef.current.chatKey = chatKey;
       useForceUpdate();
 
-      // 2. 连接 SSE
-      connectSSE(chatKey);
+      // 2. 连接 SSE，等待连接完成
+      await connectSSE(chatKey);
 
       // 3. 发送开始聊天请求
       const urlPrefix = getURL_PRE();
-      const response = await fetch(`${urlPrefix}/api/chat/start`, {
+      const response = await fetch(`${urlPrefix}/api/chat/stream`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -349,23 +321,20 @@ export function useChatStream(params: ChatStreamParams) {
     }
   }, [connectSSE, params.agentName, params.agentScope, useForceUpdate]);
 
+
   // 取消聊天流
-  const cancelChatStream = useCallback(async () => {
-    if (stateRef.current.chatKey) {
-      try {
-        const urlPrefix = getURL_PRE();
-        await fetch(`${urlPrefix}/api/chat/cancel`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            chatKey: stateRef.current.chatKey,
-          }),
-        });
-      } catch (error) {
-        console.error('Failed to cancel chat stream:', error);
-      }
+  const cancelChatStream = useCallback(async (chatKey: string) => {
+    try {
+      const urlPrefix = getURL_PRE();
+      await fetch(`${urlPrefix}/api/chat/cancel`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ chatKey }),
+      });
+    } catch (error) {
+      console.error('Failed to cancel chat stream:', error);
     }
 
     stateRef.current.loading = false;
@@ -378,7 +347,6 @@ export function useChatStream(params: ChatStreamParams) {
     stateRef.current.messages = [];
     stateRef.current.loading = false;
     stateRef.current.error = null;
-    stateRef.current.chatKey = null;
     useForceUpdate();
   }, [disconnectSSE, useForceUpdate]);
 
