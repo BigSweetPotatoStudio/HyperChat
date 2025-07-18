@@ -20,6 +20,7 @@ import {
     Button,
     Collapse,
     message,
+    Modal,
     Segmented,
     Space,
     Spin,
@@ -32,6 +33,7 @@ import mermaid from "mermaid";
 import katex from 'katex';
 import 'katex/dist/katex.css';
 import { v4 } from "uuid";
+import Editor from '@monaco-editor/react';
 
 // Local imports
 import { call, getURL_PRE } from "../common/call";
@@ -364,6 +366,251 @@ const ContentRenderer: React.FC<ContentRendererProps> = React.memo(({
         prevProps.renderMode === nextProps.renderMode;
 });
 
+// Content Item Renderer Component
+interface ContentItemProps {
+    content: any;
+    index: number;
+}
+
+const ContentItemRenderer: React.FC<ContentItemProps> = ({ content, index }) => {
+    if (typeof content === 'string') {
+        return (
+            <div key={index} style={{ marginBottom: '16px' }}>
+                <div style={{ marginBottom: '8px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <strong>{t`Text Content`} #{index + 1}:</strong>
+                    <Button 
+                        type="primary" 
+                        size="small" 
+                        icon={<CopyOutlined />}
+                        onClick={async () => {
+                            await setClipboardText({ text: content });
+                            message.success(t`Copied to clipboard`);
+                        }}
+                    >
+                        {t`Copy`}
+                    </Button>
+                </div>
+                <div style={{ height: '200px', border: '1px solid #d9d9d9' }}>
+                    <Editor
+                        defaultLanguage="text"
+                        value={content}
+                        options={{
+                            readOnly: true,
+                            minimap: { enabled: false },
+                            fontSize: 12,
+                            lineNumbers: 'on',
+                            scrollBeyondLastLine: false,
+                            wordWrap: 'on',
+                        }}
+                    />
+                </div>
+            </div>
+        );
+    }
+    
+    if (typeof content === 'object' && content !== null) {
+        if (content.type === 'text') {
+            return (
+                <div key={index} style={{ marginBottom: '16px' }}>
+                    <div style={{ marginBottom: '8px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <strong>{t`Text Content`} #{index + 1}:</strong>
+                        <Button 
+                            type="primary" 
+                            size="small" 
+                            icon={<CopyOutlined />}
+                            onClick={async () => {
+                                await setClipboardText({ text: content.text });
+                                message.success(t`Copied to clipboard`);
+                            }}
+                        >
+                            {t`Copy`}
+                        </Button>
+                    </div>
+                    <div style={{ height: '200px', border: '1px solid #d9d9d9' }}>
+                        <Editor
+                            defaultLanguage="text"
+                            value={content.text}
+                            options={{
+                                readOnly: true,
+                                minimap: { enabled: false },
+                                fontSize: 12,
+                                lineNumbers: 'on',
+                                scrollBeyondLastLine: false,
+                                wordWrap: 'on',
+                            }}
+                        />
+                    </div>
+                </div>
+            );
+        } else if (content.type === 'image_url') {
+            return (
+                <div key={index} style={{ marginBottom: '16px' }}>
+                    <div style={{ marginBottom: '8px' }}>
+                        <strong>{t`Image Content`} #{index + 1}:</strong>
+                    </div>
+                    <div style={{ border: '1px solid #d9d9d9', padding: '8px', textAlign: 'center' }}>
+                        <img 
+                            src={`data:${content.image_url.url}`} 
+                            alt={`Tool result image ${index + 1}`}
+                            style={{ maxWidth: '100%', maxHeight: '300px', objectFit: 'contain' }}
+                        />
+                    </div>
+                </div>
+            );
+        } else {
+            // Other object types, show as JSON
+            const jsonContent = JSON.stringify(content, null, 2);
+            return (
+                <div key={index} style={{ marginBottom: '16px' }}>
+                    <div style={{ marginBottom: '8px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <strong>{t`Object Content`} #{index + 1}:</strong>
+                        <Button 
+                            type="primary" 
+                            size="small" 
+                            icon={<CopyOutlined />}
+                            onClick={async () => {
+                                await setClipboardText({ text: jsonContent });
+                                message.success(t`Copied to clipboard`);
+                            }}
+                        >
+                            {t`Copy`}
+                        </Button>
+                    </div>
+                    <div style={{ height: '200px', border: '1px solid #d9d9d9' }}>
+                        <Editor
+                            defaultLanguage="json"
+                            value={jsonContent}
+                            options={{
+                                readOnly: true,
+                                minimap: { enabled: false },
+                                fontSize: 12,
+                                lineNumbers: 'on',
+                                scrollBeyondLastLine: false,
+                            }}
+                        />
+                    </div>
+                </div>
+            );
+        }
+    }
+    
+    // Fallback for other types
+    const stringContent = String(content);
+    return (
+        <div key={index} style={{ marginBottom: '16px' }}>
+            <div style={{ marginBottom: '8px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <strong>{t`Content`} #{index + 1}:</strong>
+                <Button 
+                    type="primary" 
+                    size="small" 
+                    icon={<CopyOutlined />}
+                    onClick={async () => {
+                        await setClipboardText({ text: stringContent });
+                        message.success(t`Copied to clipboard`);
+                    }}
+                >
+                    {t`Copy`}
+                </Button>
+            </div>
+            <div style={{ height: '200px', border: '1px solid #d9d9d9' }}>
+                <Editor
+                    defaultLanguage="text"
+                    value={stringContent}
+                    options={{
+                        readOnly: true,
+                        minimap: { enabled: false },
+                        fontSize: 12,
+                        lineNumbers: 'on',
+                        scrollBeyondLastLine: false,
+                        wordWrap: 'on',
+                    }}
+                />
+            </div>
+        </div>
+    );
+};
+
+// Tool Data Modal Component
+interface ToolDataModalProps {
+    visible: boolean;
+    onClose: () => void;
+    toolArgs: any;
+    toolResult: any;
+    toolName: string;
+}
+
+const ToolDataModal: React.FC<ToolDataModalProps> = ({ 
+    visible, 
+    onClose, 
+    toolArgs, 
+    toolResult, 
+    toolName 
+}) => {
+    const handleCopyArgs = async () => {
+        await setClipboardText({ text: JSON.stringify(toolArgs, null, 2) });
+        message.success(t`Copied arguments to clipboard`);
+    };
+
+    const renderResult = () => {
+        if (Array.isArray(toolResult)) {
+            return toolResult.map((item, index) => (
+                <ContentItemRenderer key={index} content={item} index={index} />
+            ));
+        } else {
+            return <ContentItemRenderer content={toolResult} index={0} />;
+        }
+    };
+
+    return (
+        <Modal
+            title={t`Tool Details: ${toolName}`}
+            open={visible}
+            onCancel={onClose}
+            footer={null}
+            width={900}
+            height={600}
+        >
+            <div style={{ height: '70vh', overflowY: 'auto' }}>
+                {/* Arguments Section */}
+                <div style={{ marginBottom: '24px' }}>
+                    <div style={{ marginBottom: '8px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <strong>{t`Arguments`}:</strong>
+                        <Button 
+                            type="primary" 
+                            size="small" 
+                            icon={<CopyOutlined />}
+                            onClick={handleCopyArgs}
+                        >
+                            {t`Copy`}
+                        </Button>
+                    </div>
+                    <div style={{ height: '200px', border: '1px solid #d9d9d9' }}>
+                        <Editor
+                            defaultLanguage="json"
+                            value={JSON.stringify(toolArgs, null, 2)}
+                            options={{
+                                readOnly: true,
+                                minimap: { enabled: false },
+                                fontSize: 12,
+                                lineNumbers: 'on',
+                                scrollBeyondLastLine: false,
+                            }}
+                        />
+                    </div>
+                </div>
+
+                {/* Result Section */}
+                <div>
+                    <div style={{ marginBottom: '16px' }}>
+                        <strong>{t`Result`}:</strong>
+                    </div>
+                    {renderResult()}
+                </div>
+            </div>
+        </Modal>
+    );
+};
+
 // Main Component
 interface AssistantToolContentProps {
     contents: MyMessage[];
@@ -371,6 +618,12 @@ interface AssistantToolContentProps {
 
 export const AssistantToolContent: React.FC<AssistantToolContentProps> = ({ contents }) => {
     const [render, setRender] = useState<"markdown" | "text">("markdown");
+    const [modalVisible, setModalVisible] = useState(false);
+    const [selectedTool, setSelectedTool] = useState<{
+        args: any;
+        result: any;
+        name: string;
+    } | null>(null);
 
     const renderSegments = [
         {
@@ -581,10 +834,14 @@ export const AssistantToolContent: React.FC<AssistantToolContentProps> = ({ cont
                                                 <div className="max-h-80 overflow-auto bg-slate-200">
                                                     <div>
                                                         <Pre>
-                                                            <CopyOutlined
-                                                                onClick={async () => {
-                                                                    await setClipboardText({ text: JSON.stringify(tool.function.args) });
-                                                                    message.success(t`Copied to clipboard`);
+                                                            <EyeOutlined
+                                                                onClick={() => {
+                                                                    setSelectedTool({
+                                                                        args: tool.function.args,
+                                                                        result: toolResult?.content || '',
+                                                                        name: tool.restore_name || tool.function.name
+                                                                    });
+                                                                    setModalVisible(true);
                                                                 }}
                                                             />
                                                             {JSON.stringify(tool.function.args)}
@@ -661,6 +918,17 @@ export const AssistantToolContent: React.FC<AssistantToolContentProps> = ({ cont
                     </div>
                 );
             })}
+            
+            {/* Tool Data Modal */}
+            {selectedTool && (
+                <ToolDataModal
+                    visible={modalVisible}
+                    onClose={() => setModalVisible(false)}
+                    toolArgs={selectedTool.args}
+                    toolResult={selectedTool.result}
+                    toolName={selectedTool.name}
+                />
+            )}
         </div>
     );
 };

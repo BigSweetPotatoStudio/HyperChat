@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-export const NAME = "file_tools";
+export const NAME = "hyper_system";
 
 // 配置 Schema
 export const configSchema = z.object({

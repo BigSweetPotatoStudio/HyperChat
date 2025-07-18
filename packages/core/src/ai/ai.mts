@@ -273,11 +273,6 @@ export class AiChannel {
       messageId: messageId,
     };
 
-    // this.messages = this.messages.filter(
-    //   (m) => m.content_attached == null || m.content_attached == true,
-    // );
-
-
     let format_message = await this.messages2core();
     options.messages = [{ role: "system", content: params.prompt }, ...format_message];
 
@@ -302,9 +297,8 @@ export class AiChannel {
         }),
         abortSignal: this.abortController.signal,
       });
-      this.lastMessage.content_status = "dataLoading";
       this.messages.push(newMessage);
-
+      newMessage.content_status = "dataLoading";
       // 发送消息创建事件
       if (params.sseWriter) {
         Logger.debug(`Sending chat_message_create via SSE for messageId: ${messageId}`);

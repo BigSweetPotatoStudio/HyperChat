@@ -1,8 +1,8 @@
 name: '123'
 prompt: '123'
 allowMCPs:
-  - hyper_tools
-  - file_tools
+  - hyper_browser
+  - hyper_system
 isConfirmCallTool: false
 maxTokens: 4000
 tags: []
@@ -11,3 +11,5 @@ version: 1
 modelKey: openrouter:google/gemini-2.5-flash-preview
 temperature: 1
 maxAttachedDialogs: 5
+compressionStrategy: tokens
+maxContextTokens: 1000

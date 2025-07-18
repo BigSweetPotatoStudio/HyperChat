@@ -373,8 +373,8 @@ export const CustomMessageList = forwardRef<CustomMessageListRef, CustomMessageL
           <Avatar
             icon={<UserOutlined />}
             style={{
-              color: '#f56a00',
-              backgroundColor: '#fde3cf',
+              color: '#1890ff',
+              backgroundColor: '#e6f7ff',
             }}
           />
         );
@@ -383,8 +383,8 @@ export const CustomMessageList = forwardRef<CustomMessageListRef, CustomMessageL
           <Avatar
             icon={<Icon name="system-copy" />}
             style={{
-              color: '#f56a00',
-              backgroundColor: '#fde3cf',
+              color: '#1890ff',
+              backgroundColor: '#e6f7ff',
             }}
           />
         );
