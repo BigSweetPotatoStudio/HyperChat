@@ -130,15 +130,6 @@ export async function streamChatCompletion(params: ChatCompletionRequest): Promi
             message: userMessage,
           },
         });
-      } else {
-        // 兼容旧版本 WebSocket
-        messageService.sendMessage({
-          type: "chat_message_create",
-          data: {
-            messageId: userMessage.messageId,
-            message: userMessage,
-          },
-        });
       }
     }
 
@@ -149,16 +140,6 @@ export async function streamChatCompletion(params: ChatCompletionRequest): Promi
         prompt: systemPrompt,
         modelKey: effectiveConfig.modelKey || "",
         sseWriter: sseWriter, // 传递 SSE 写入器
-        sendMessage: sseWriter ? undefined : (eventData) => {
-          // 如果有 SSE 写入器，则不使用 WebSocket 发送
-          // 发送消息到前端
-          messageService.sendMessage({
-            type: eventData.type,
-            data: {
-              ...eventData.data,
-            },
-          });
-        },
         confirm_call_tool_cb: confirmCallToolCb,
         onUpdate: (_updateData?: any) => {
           // 发送更新事件
@@ -212,14 +193,6 @@ export async function streamChatCompletion(params: ChatCompletionRequest): Promi
           error: error instanceof Error ? error.message : String(error),
         },
       });
-    } else {
-      const messageService = getMessageService();
-      messageService.sendMessage({
-        type: "chat_message_error",
-        data: {
-          error: error instanceof Error ? error.message : String(error),
-        },
-      });
     }
 
     throw error;
@@ -232,13 +205,7 @@ export async function streamChatCompletion(params: ChatCompletionRequest): Promi
 export async function cancelChatCompletion(): Promise<void> {
   // 这里需要实现取消逻辑
   // 可以通过存储 AiChannel 实例来实现取消
-  const messageService = getMessageService();
-  messageService.sendMessage({
-    type: "chat_message_error",
-    data: {
-      error: "Chat cancelled by user",
-    },
-  });
+  // 取消逻辑现在通过 SSE 连接处理
 }
 
 /**
@@ -313,12 +280,7 @@ function createConfirmCallToolCallback() {
       const messageService = getMessageService();
 
       // 发送工具确认请求
-      messageService.sendMessage({
-        type: "tool_confirm_request",
-        data: {
-          tool,
-        },
-      });
+      // 工具确认现在通过 SSE 连接处理
 
       // 监听确认响应
       // const handleConfirmResponse = (data: any) => {

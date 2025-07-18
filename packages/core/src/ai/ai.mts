@@ -241,7 +241,6 @@ export class AiChannel {
       modelKey: string;
       onUpdate?: (r?: any) => void;
       confirm_call_tool_cb?: (tool: HyperToolCall) => Promise<boolean>;
-      sendMessage?: (p: { type: string, data: any }) => void; // 发送消息回调（兼容旧版本）
       sseWriter?: SSEWriter; // SSE 写入器
       chatKey?: string; // 聊天 Key
     } & BaseAIConfig,
@@ -292,16 +291,6 @@ export class AiChannel {
           message: newMessage,
         },
       });
-    } else if (params.sendMessage) {
-      // 兼容旧版本 WebSocket
-      Logger.debug(`Sending chat_message_create via WebSocket for messageId: ${messageId}`);
-      params.sendMessage({
-        type: "chat_message_create",
-        data: {
-          messageId: messageId,
-          message: newMessage,
-        },
-      });
     }
 
     params.onUpdate && params.onUpdate();
@@ -339,15 +328,6 @@ export class AiChannel {
         // 发送 delta 更新
         if (params.sseWriter) {
           params.sseWriter.write({
-            type: "chat_message_update",
-            data: {
-              messageId: messageId,
-              delta: delta,
-            },
-          });
-        } else if (params.sendMessage) {
-          // 兼容旧版本 WebSocket
-          params.sendMessage({
             type: "chat_message_update",
             data: {
               messageId: messageId,
@@ -417,14 +397,6 @@ export class AiChannel {
             error: e instanceof Error ? e.message : String(e),
           },
         });
-      } else if (params.sendMessage) {
-        // 兼容旧版本 WebSocket
-        params.sendMessage({
-          type: "chat_message_error",
-          data: {
-            error: e instanceof Error ? e.message : String(e),
-          },
-        });
       }
 
       params.onUpdate && params.onUpdate();
@@ -436,14 +408,6 @@ export class AiChannel {
     // 发送聊天完成事件
     if (params.sseWriter) {
       params.sseWriter.write({
-        type: "chat_message_complete",
-        data: {
-          result: this.lastMessage.content,
-        },
-      });
-    } else if (params.sendMessage) {
-      // 兼容旧版本 WebSocket
-      params.sendMessage({
         type: "chat_message_complete",
         data: {
           result: this.lastMessage.content,
@@ -540,15 +504,6 @@ export class AiChannel {
               message: message,
             },
           });
-        } else if (params.sendMessage) {
-          // 兼容旧版本 WebSocket
-          params.sendMessage({
-            type: "chat_message_create",
-            data: {
-              messageId: toolMessageId,
-              message: message,
-            },
-          });
         }
 
         params.onUpdate && params.onUpdate();
@@ -626,15 +581,6 @@ export class AiChannel {
         // 发送工具消息替换事件
         if (params.sseWriter) {
           params.sseWriter.write({
-            type: "chat_message_replace",
-            data: {
-              messageId: toolMessageId,
-              message: message,
-            },
-          });
-        } else if (params.sendMessage) {
-          // 兼容旧版本 WebSocket
-          params.sendMessage({
             type: "chat_message_replace",
             data: {
               messageId: toolMessageId,
