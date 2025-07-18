@@ -15,7 +15,7 @@ export const terminalCommands = {
     const workspaceManager = getWorkspaceManager();
     const workspacePath = workspaceManager.getCurrentWorkspacePath();
     const terminal = getWorkspaceTerminal(workspacePath);
-    const terminalInstance = terminal.createTerminal(workspacePath);
+    const terminalInstance = await terminal.createTerminal(workspacePath);
     return terminalInstance.id;
   },
 

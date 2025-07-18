@@ -45,7 +45,7 @@ export function registerTool(server: McpServer, workspacePath: string): void {
       // 获取活动终端，如果没有则创建一个
       let activeTerminal = workspaceTerminal.getActiveTerminal();
       if (!activeTerminal) {
-        activeTerminal = workspaceTerminal.createTerminal(workspacePath);
+        activeTerminal = await workspaceTerminal.createTerminal(workspacePath);
       }
 
       Logger.info(`Executing command in terminal ${activeTerminal.id}: ${command}`);

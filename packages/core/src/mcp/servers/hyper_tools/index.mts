@@ -15,9 +15,9 @@ async function createServer(workspacePath: string, globalPath?: string) {
     version: CONST.getVersion,
   });
 
-  // Core only supports no_electron mode
-  let { registerNoElectronTool } = await import("./no_electron.mjs");
-  registerNoElectronTool(server);
+  // // Core only supports no_electron mode
+  let { registerTool } = await import("./registerTool.mjs");
+  registerTool(server);
 
   const [clientTransport, serverTransport] = InMemoryTransport.createLinkedPair();
   // 连接服务器传输

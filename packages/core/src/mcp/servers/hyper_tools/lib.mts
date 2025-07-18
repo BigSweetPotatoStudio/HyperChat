@@ -7,25 +7,13 @@ import { z } from "zod";
 import path from "path";
 import { Logger } from "../../../log.mjs";
 
-export const NAME = "hyper_tools";
+export const NAME = "hyper_browser";
 
 
 
-let e = ["chrome", "none"]
-if (process.env.use_electron == "1") {
-  e = ["electron", "chrome", "none"]
-}
-let d = "none"
-if (process.env.use_electron == "1") {
-  d = "electron"
-}
+
 
 export const configSchema = z.object({
-  Web_Tools_Platform: z
-    .enum(e as any, {
-      description: "Platform using web tools",
-    })
-    .default(d),
   SearchEngine: z
     .enum(["google", "bing"], {
       description: "search engine",
