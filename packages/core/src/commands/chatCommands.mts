@@ -22,8 +22,10 @@ const toolConfirmEmitter = new EventEmitter();
  * 聊天完成请求参数
  */
 interface ChatCompletionRequest {
-  /** 会话 ID */
+  /** 会话 ID (SSE 连接标识) */
   sessionId: string;
+  /** 聊天记录 Key (保存聊天历史的标识) */
+  chatKey: string;
   agentName: string;
   /** Agent 作用域 */
   agentScope: "global" | "workspace";
@@ -44,6 +46,7 @@ interface ChatCompletionRequest {
 export async function streamChatCompletion(params: ChatCompletionRequest): Promise<void> {
   const {
     sessionId,
+    chatKey,
     agentName,
     agentScope = "workspace",
     messages,
@@ -170,7 +173,7 @@ export async function streamChatCompletion(params: ChatCompletionRequest): Promi
         }
 
         await agentInstance.setChatLog({
-          key: sessionId,
+          key: chatKey,
           label: "New Chat",
           messages: aiChannel.messages,
           agentName,

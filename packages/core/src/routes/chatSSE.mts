@@ -57,6 +57,7 @@ router.post('/stream', async (req: Request, res: Response) => {
   try {
     const {
       sessionId,
+      chatKey,
       messages,
       userMessage,
       agentName,
@@ -64,6 +65,7 @@ router.post('/stream', async (req: Request, res: Response) => {
       configOverrides = {}
     }: {
       sessionId: string;
+      chatKey: string;
       messages: MyMessage[];
       userMessage?: MyMessage;
       agentName: string;
@@ -81,6 +83,11 @@ router.post('/stream', async (req: Request, res: Response) => {
       return;
     }
 
+    if (!chatKey) {
+      res.status(400).json({ error: 'chatKey is required' });
+      return;
+    }
+
     // 获取对应的 SSE 连接
     const sseWriter = activeConnections.get(sessionId);
     if (!sseWriter) {
@@ -89,13 +96,14 @@ router.post('/stream', async (req: Request, res: Response) => {
     }
 
     // 响应请求已接收
-    res.json({ success: true, sessionId });
+    res.json({ success: true, sessionId, chatKey });
 
     // 异步处理聊天完成
-    Logger.info(`Starting chat completion for sessionId: ${sessionId}, agent: ${agentName}`);
+    Logger.info(`Starting chat completion for sessionId: ${sessionId}, chatKey: ${chatKey}, agent: ${agentName}`);
     
     streamChatCompletion({
       sessionId,
+      chatKey,
       messages,
       userMessage,
       agentName,
@@ -103,7 +111,7 @@ router.post('/stream', async (req: Request, res: Response) => {
       configOverrides,
       sseWriter, // 传递 SSE 写入器
     }).catch((error) => {
-      Logger.error(`Chat completion error for sessionId ${sessionId}:`, error);
+      Logger.error(`Chat completion error for sessionId ${sessionId}, chatKey ${chatKey}:`, error);
       
       // 发送错误到客户端
       if (!sseWriter.isClosed()) {

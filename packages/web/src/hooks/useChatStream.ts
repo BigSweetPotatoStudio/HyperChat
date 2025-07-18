@@ -276,7 +276,7 @@ export function useChatStream(params: ChatStreamParams) {
 
   // 开始聊天流
   const startChatStream = useCallback(async (
-    sessionId: string,
+    chatKey: string,
     messages: MyMessage[],
     configOverrides: Partial<BaseAIConfig>,
     userMessage?: MyMessage,
@@ -287,10 +287,13 @@ export function useChatStream(params: ChatStreamParams) {
       stateRef.current.error = null;
       useForceUpdate();
 
-      // 2. 连接 SSE，等待连接完成
+      // 2. 生成 sessionId
+      const sessionId = `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+
+      // 3. 连接 SSE，等待连接完成
       await connectSSE(sessionId);
 
-      // 3. 发送开始聊天请求
+      // 4. 发送开始聊天请求
       const urlPrefix = getURL_PRE();
       const response = await fetch(`${urlPrefix}/api/chat/stream`, {
         method: 'POST',
@@ -299,6 +302,7 @@ export function useChatStream(params: ChatStreamParams) {
         },
         body: JSON.stringify({
           sessionId,
+          chatKey,
           messages,
           userMessage,
           agentName: params.agentName || 'default',
