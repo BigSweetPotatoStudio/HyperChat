@@ -1,4 +1,8 @@
 
+/**
+ * @deprecated 此文件已废弃，请使用 packages/core/src/ai/ai.mts
+ * This file is deprecated, please use packages/core/src/ai/ai.mts instead
+ */
 
 import type { HyperChatCompletionTool, MyMessage, HyperToolCall, CommonContentItem, AIProvider, AIExtension, ResponseFormat, CustomFetch, JSONSchemaObject } from "./types.mjs";
 
@@ -28,7 +32,7 @@ import { BaseAIConfig } from "./zodSchemas/agentConfigSchema.mjs";
 
 
 const deviceId = v4();
-export class AiChannel {
+class AiChannel {
   get lastMessage(): MyMessage {
     if (!this.messages || this.messages.length === 0) {
       throw new Error("No messages found");

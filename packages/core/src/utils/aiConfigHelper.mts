@@ -6,7 +6,7 @@
 import { Logger } from '../log.mjs';
 import { Command } from '../command.mjs';
 import { AgentInstance, Workspace, workspaceManager } from '../workspace/index.mjs';
-import { AiChannel } from '@dadigua/hyperchat-shared';
+import { AiChannel } from '../ai/ai.mjs';
 import type {
   MyMessage,
   AgentConfig,
@@ -183,9 +183,6 @@ export function createAIChannel(env: AIEnvironment): AiChannel {
 
   // 注册 AI 设置
   aiChannel.register({
-    antdmessage: {
-      warning: (msg: string) => Logger.warn(msg)
-    },
     mcpTools: env.mcpTools,
     platform: 'nodejs',
     getURL_PRE: () => '',

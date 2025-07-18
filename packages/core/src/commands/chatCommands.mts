@@ -14,6 +14,7 @@ import { getWorkspaceManager } from "../workspace/index.mjs";
 import { SSEWriter } from "../sse/SSEWriter.mjs";
 import { EventEmitter } from "events";
 import { v4 as uuidv4 } from 'uuid';
+import { z, ZodSchema } from "zod";
 
 // 全局工具确认事件发射器
 const toolConfirmEmitter = new EventEmitter();
@@ -198,6 +199,100 @@ export async function cancelChatCompletion(): Promise<void> {
 }
 
 /**
+ * AI 结构化解析接口
+ */
+interface AICompletionParseRequest {
+  modelKey: string;
+  schema: any; // JSON Schema
+  prompt: string;
+}
+
+/**
+ * AI 结构化解析
+ */
+export async function aiCompletionParse(params: AICompletionParseRequest): Promise<any> {
+  const { modelKey, schema, prompt } = params;
+
+  try {
+    const workspaceManager = getWorkspaceManager();
+    const workspace = workspaceManager.getCurrentWorkspace();
+    
+    if (!workspace) {
+      throw new Error("No workspace available");
+    }
+
+    // 获取 AI 设置
+    const aiSettings = getAppSettingsManager().getAI();
+    if (!aiSettings || !aiSettings.models || aiSettings.models.length === 0) {
+      throw new Error("No AI models configured");
+    }
+
+    // 检查模型是否可用
+    const availableModels = aiSettings.models;
+    const modelExists = availableModels.some((m: any) => m.key === modelKey);
+    if (!modelExists) {
+      throw new Error(`Model not found: ${modelKey}`);
+    }
+
+    // 创建 AI 通道
+    const aiChannel = new AiChannel({}, []);
+    
+    // 注册扩展
+    aiChannel.register({
+      mcpTools: [],
+      platform: "nodejs",
+      getURL_PRE: () => "",
+      aiSettings,
+    });
+
+    // 将 JSON Schema 转换为 Zod Schema
+    const zodSchema = createZodSchemaFromJsonSchema(schema);
+    
+    // 调用结构化解析
+    const result = await aiChannel.completionParse(
+      { modelKey },
+      zodSchema,
+      prompt
+    );
+
+    return result;
+  } catch (error) {
+    Logger.error("AI completion parse error:", error);
+    throw error;
+  }
+}
+
+/**
+ * 将 JSON Schema 转换为简单的 Zod Schema
+ */
+function createZodSchemaFromJsonSchema(jsonSchema: any): ZodSchema {
+  if (jsonSchema.type === "object" && jsonSchema.properties) {
+    const shape: Record<string, any> = {};
+    
+    for (const [key, prop] of Object.entries(jsonSchema.properties)) {
+      const propSchema = prop as any;
+      
+      if (propSchema.type === "string") {
+        shape[key] = z.string();
+      } else if (propSchema.type === "number") {
+        shape[key] = z.number();
+      } else if (propSchema.type === "boolean") {
+        shape[key] = z.boolean();
+      } else if (propSchema.type === "array") {
+        shape[key] = z.array(z.string()); // 简化处理，默认字符串数组
+      } else {
+        shape[key] = z.any();
+      }
+    }
+    
+    return z.object(shape);
+  }
+  
+  // 默认返回 any schema
+  return z.any();
+}
+
+/**
  * 获取有效配置
  */
 function getEffectiveConfig(
@@ -335,6 +430,9 @@ export const chatCommands = {
 
   // 取消聊天完成  
   cancelChatCompletion,
+  
+  // AI 结构化解析
+  aiCompletionParse,
 };
 
 export default chatCommands;

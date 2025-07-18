@@ -8,7 +8,7 @@ import process from 'process';
 import { Logger } from '../utils/logger.mjs';
 import { Logger as LoggerClass } from '../../log.mjs';
 import { Command } from '../../command.mjs';
-import { AiChannel } from '@dadigua/hyperchat-shared/ai';
+import { AiChannel } from '../../ai/ai.mjs';
 import type { MyMessage } from '@dadigua/hyperchat-shared/types';
 import { createReadline } from '../utils/readline.mjs';
 import { workspaceManager } from '../../workspace/index.mjs';
