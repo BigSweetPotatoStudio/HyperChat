@@ -456,6 +456,10 @@ export interface ChatMessageUpdateEvent extends ChatMessageEvent {
   delta: any; // TextStreamPart<ToolSet> 类型
 }
 
+export interface ChatMessageReplaceEvent extends ChatMessageEvent {
+  message: MyMessage;
+}
+
 export interface ChatMessageCompleteEvent {
   chatKey: string;
   result: string;

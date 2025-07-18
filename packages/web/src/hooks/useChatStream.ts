@@ -17,8 +17,6 @@ interface ChatStreamParams {
   agentName?: string;
   /** Agent 作用域 */
   agentScope?: "global" | "workspace";
-  /** 配置覆盖 */
-  configOverrides?: Partial<BaseAIConfig>;
   /** 工具确认回调 */
   onToolConfirm?: (tool: HyperToolCall) => Promise<any>;
 }
@@ -105,6 +103,33 @@ export function useChatStream(params: ChatStreamParams) {
           });
         });
 
+        socket.on('chat_message_replace', (data: any) => {
+          if (!validateChatKey(data.chatKey, 'chat_message_replace')) {
+            return;
+          }
+
+          setState(prev => {
+            if (!validateChatKeyInState(prev, data.chatKey, 'message_replace')) {
+              return prev;
+            }
+
+            // 找到要替换的消息
+            const messageIndex = prev.messages.findIndex(m => m.messageId === data.messageId);
+            if (messageIndex === -1) {
+              console.warn(`Message with ID ${data.messageId} not found for replace`);
+              return prev;
+            }
+
+            const newMessages = [...prev.messages];
+            newMessages[messageIndex] = data.message;
+
+            return {
+              ...prev,
+              messages: newMessages,
+            };
+          });
+        });
+
         socket.on('chat_message_update', (data: any) => {
           if (!validateChatKey(data.chatKey, 'chat_message_update')) {
             return;
@@ -137,12 +162,29 @@ export function useChatStream(params: ChatStreamParams) {
               message.reasoning_content = (message.reasoning_content || '') + (delta.textDelta || '');
               message.content_date = Date.now();
             } else if (delta.type === 'tool-call') {
-              // 处理工具调用
+              // 处理工具调用，根据后端逻辑
               if (!message.content_tool_calls) {
                 message.content_tool_calls = [];
               }
-              // 这里需要根据具体的工具调用逻辑进行处理
-              // 由于这是增量更新，可能需要更复杂的逻辑
+              
+              // 查找工具索引，模拟后端的 toolIndex
+              const toolIndex = message.content_tool_calls.length;
+              
+              // 添加工具调用，按照后端逻辑结构
+              message.content_tool_calls.push({
+                index: toolIndex,
+                id: delta.toolCallId,
+                type: "function",
+                function: {
+                  name: delta.toolName,
+                  args: delta.args || {},
+                },
+                // 注意：前端可能没有 localTool 信息，使用 toolName 作为默认值
+                origin_name: delta.toolName,
+                restore_name: delta.toolName,
+              });
+              
+              message.content_date = Date.now();
             } else if (delta.type === 'step-finish') {
               // 处理步骤完成
               if (delta.usage) {
@@ -174,7 +216,7 @@ export function useChatStream(params: ChatStreamParams) {
             // 找到最后一条助手消息并标记为完成
             const newMessages = [...prev.messages];
             const lastAssistantIndex = newMessages.findLastIndex(m => m.role === 'assistant');
-            
+
             if (lastAssistantIndex !== -1) {
               newMessages[lastAssistantIndex] = {
                 ...newMessages[lastAssistantIndex],
@@ -203,7 +245,7 @@ export function useChatStream(params: ChatStreamParams) {
             // 找到最后一条助手消息并标记为错误
             const newMessages = [...prev.messages];
             const lastAssistantIndex = newMessages.findLastIndex(m => m.role === 'assistant');
-            
+
             if (lastAssistantIndex !== -1) {
               newMessages[lastAssistantIndex] = {
                 ...newMessages[lastAssistantIndex],
@@ -260,6 +302,7 @@ export function useChatStream(params: ChatStreamParams) {
     return () => {
       if (socketRef.current) {
         socketRef.current.off('chat_message_create');
+        socketRef.current.off('chat_message_replace');
         socketRef.current.off('chat_message_update');
         socketRef.current.off('chat_message_complete');
         socketRef.current.off('chat_message_error');
@@ -272,13 +315,12 @@ export function useChatStream(params: ChatStreamParams) {
   const startChatStream = useCallback(async (
     messages: MyMessage[],
     userMessage: MyMessage,
-    chatKey: string
+    chatKey: string,
+    /** 配置覆盖 */
+    configOverrides: Partial<BaseAIConfig>
   ) => {
     try {
-      // 确保用户消息有 messageId
-      if (!userMessage.messageId) {
-        userMessage.messageId = `user_${Date.now()}_${Math.random().toString(36).substring(2, 11)}`;
-      }
+      // messageId 由后端生成，前端不需要设置
 
       setState(prev => ({
         ...prev,
@@ -294,6 +336,7 @@ export function useChatStream(params: ChatStreamParams) {
         chatKey,
         agentName: params.agentName || 'default',
         agentScope: params.agentScope || 'workspace',
+        configOverrides
       });
 
       // 不需要手动设置 chatKey，WebSocket 事件会处理

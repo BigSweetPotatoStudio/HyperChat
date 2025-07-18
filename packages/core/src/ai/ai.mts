@@ -19,15 +19,18 @@ if (typeof globalThis !== 'undefined') {
 
 
 import { v4 } from "uuid";
+import nodeFetch from "node-fetch";
+import { HttpsProxyAgent } from "https-proxy-agent";
+import { HttpProxyAgent } from "http-proxy-agent";
 
 import { AISettings, AppSettings } from "@dadigua/hyperchat-shared";
 import { BaseAIConfig } from "@dadigua/hyperchat-shared";
 import { getMessageService } from "../message_service.mjs";
+import { Command } from "../command.mjs";
 
 
 
 
-const deviceId = v4();
 export class AiChannel {
   get lastMessage(): MyMessage {
     if (!this.messages || this.messages.length === 0) {
@@ -51,9 +54,10 @@ export class AiChannel {
     resourceResList: Array<CommonContentItem> = [],
     promptResList: Array<MCPTypes.GetPromptResult> = [],
   ) {
-    // 如果消息没有 messageId，生成一个
+    // 如果消息没有 messageId，生成一个基于数组索引和时间的ID
     if (!message.messageId) {
-      message.messageId = v4();
+      const timestamp = Math.floor(Date.now() / 1000); // 精确到秒
+      message.messageId = `${this.messages.length}_${timestamp}`;
     }
     if (resourceResList.length > 0) {
       if (message.content == "" || message.content == null) {
@@ -144,22 +148,59 @@ export class AiChannel {
     let aiProvider: any = null;
     let ai: LanguageModel | null = null;
     let fetch: CustomFetch | undefined = undefined;
-    if (this.ext.platform === "web") {
-      let baseURL = modelConfig.baseURL;
-      modelConfig = { ...modelConfig, baseURL: this.ext.getURL_PRE() + "/ai" };
+
+    // Node.js environment - support HTTP proxy
+    const proxyUrl = process.env.HTTP_PROXY || process.env.http_proxy ||
+      process.env.HTTPS_PROXY || process.env.https_proxy || "http://127.0.0.1:8899";
+
+    if (proxyUrl) {
+      // 强制禁用 SSL 验证（仅用于抓包调试）
+      process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
+      
+      const allowInsecure = process.env.NODE_TLS_REJECT_UNAUTHORIZED === '0' ||
+        process.env.HYPERCHAT_ALLOW_INSECURE_PROXY === 'true';
+
+      console.log(`🔗 HTTP代理已配置: ${proxyUrl}`);
+      if (allowInsecure) {
+        console.log(`⚠️  SSL证书验证已禁用 (允许抓包工具)`);
+      }
+
+
+
       fetch = async (url: string | URL | Request, init?: RequestInit): Promise<Response> => {
-        // If in a browser environment and server proxy is enabled, modify headers for proxying.
-        init = {
-          ...init,
-          headers: {
-            ...(init?.headers || {}),
-            baseURL: encodeURIComponent(baseURL), // Encode base URL for proxy
-          },
+        const targetUrl = typeof url === 'string' ? url : url.toString();
+        const isHttps = targetUrl.startsWith('https:');
+
+        // 创建代理 agent，配置为支持抓包工具
+        const httpsOptions = {
+          rejectUnauthorized: false,  // 允许自签名证书
+          checkServerIdentity: () => undefined, // 跳过服务器身份验证
+          secureProtocol: 'TLSv1_2_method', // 强制使用 TLS 1.2
         };
 
-        return globalThis.fetch(url, init);
+        const agent = isHttps
+          ? new HttpsProxyAgent(proxyUrl, httpsOptions)
+          : new HttpProxyAgent(proxyUrl);
+
+        // 使用 node-fetch，它对代理支持更好
+        const response = await nodeFetch(targetUrl, {
+          ...init,
+          agent: agent,
+          // 额外的 TLS 选项，确保忽略证书错误
+          rejectUnauthorized: false,
+          checkServerIdentity: () => undefined,
+        } as any);
+
+        // 将 node-fetch 的 Response 转换为标准 Response
+        const body = await (response as any).buffer();
+        return new Response(body, {
+          status: response.status,
+          statusText: response.statusText,
+          headers: response.headers as any,
+        }) as Response;
       };
     }
+
     if (modelConfig.provider === 'anthropic') {
       aiProvider = createAnthropic({
         baseURL: modelConfig.baseURL,
@@ -218,10 +259,11 @@ export class AiChannel {
     }
 
     this.abortController = new AbortController();
-    
-    // 生成唯一的消息ID
-    const messageId = v4();
-    
+
+    // 生成基于时间和数组索引的消息ID
+    const timestamp = Math.floor(Date.now() / 1000); // 精确到秒
+    const messageId = `${this.messages.length}_${timestamp}`;
+
     let newMessage: MyMessage = {
       role: "assistant",
       content: "",
@@ -242,7 +284,7 @@ export class AiChannel {
       (m) => m.content_attached == null || m.content_attached == true,
     );
     this.messages.push(newMessage);
-    
+
     // 发送消息创建事件
     if (params.sendMessage) {
       params.sendMessage({
@@ -253,7 +295,7 @@ export class AiChannel {
         },
       });
     }
-    
+
     params.onUpdate && params.onUpdate();
 
     let format_message = await this.messages2core(messages);
@@ -347,7 +389,7 @@ export class AiChannel {
 
     } catch (e) {
       this.lastMessage.content_status = "error";
-      
+
       // 发送聊天错误事件
       if (params.sendMessage) {
         params.sendMessage({
@@ -357,7 +399,7 @@ export class AiChannel {
           },
         });
       }
-      
+
       params.onUpdate && params.onUpdate();
       throw e;
     }
@@ -438,6 +480,10 @@ export class AiChannel {
         //   throw new Error("client not found");
         // }
 
+        // 生成工具消息的 messageId
+        const toolTimestamp = Math.floor(Date.now() / 1000);
+        const toolMessageId = `${this.messages.length}_${toolTimestamp}`;
+
         let message: MyMessage = {
           role: "tool" as const,
           tool_call_id: tool.id,
@@ -446,8 +492,21 @@ export class AiChannel {
           content_status: "loading",
           content_attachment: [],
           content_date: Date.now(),
+          messageId: toolMessageId,
         };
         this.messages.push(message);
+
+        // 发送工具消息创建事件
+        if (params.sendMessage) {
+          params.sendMessage({
+            type: "chat_message_create",
+            data: {
+              messageId: toolMessageId,
+              message: message,
+            },
+          });
+        }
+
         params.onUpdate && params.onUpdate();
 
         let localTool = this.ext.mcpTools.find(
@@ -460,18 +519,16 @@ export class AiChannel {
           continue;
         }
         this.mcpAbortController = new AbortController();
-        let call_res: MCPTypes.CallToolResult = await (globalThis as any).ext.call(
-          "mcpCallToolWithWorkspace",
-          {
-            name: localTool?.clientName || "",
-            functionName: localTool.origin_name,
-            args: tool.function.args || {},
-            workspacePath: localTool.workspacePath,
-          },
-          {
-            signal: this.mcpAbortController?.signal,
-          },
-        )
+        let call_res: MCPTypes.CallToolResult = await Command.mcpCallToolWithWorkspace
+          (
+            {
+              name: localTool?.clientName || "",
+              functionName: localTool.origin_name,
+              args: tool.function.args || {},
+              workspacePath: localTool.workspacePath,
+            }
+
+          )
           .then((res: any) => {
             if (res["isError"]) {
               this.lastMessage.content_status = "error";
@@ -492,20 +549,21 @@ export class AiChannel {
           });
         // console.log("call_response: ", call_res);
 
+        // 更新工具消息内容
         if (call_res.content == null) {
-          this.lastMessage.content = JSON.stringify(call_res);
+          message.content = JSON.stringify(call_res);
         } else if (typeof call_res.content == "string") {
-          this.lastMessage.content = call_res.content;
+          message.content = call_res.content;
         } else if (Array.isArray(call_res.content)) {
-          this.lastMessage.content = [];
+          message.content = [];
           for (let c of call_res.content) {
             if (c.type == "text") {
-              this.lastMessage.content.push({
+              message.content.push({
                 type: "text",
                 text: c.text,
               })
             } else if (c.type == "image") {
-              this.lastMessage.content.push({
+              message.content.push({
                 type: "image_url",
                 image_url: { url: `data:${c.mimeType};base64,${c.data}` },
               })
@@ -514,7 +572,22 @@ export class AiChannel {
             }
           }
         } else {
-          this.lastMessage.content = "error: tool call return type not supported";
+          message.content = "error: tool call return type not supported";
+        }
+
+        // 设置工具消息状态为成功
+        message.content_status = call_res["isError"] ? "error" : "success";
+        message.content_date = Date.now();
+
+        // 发送工具消息替换事件
+        if (params.sendMessage) {
+          params.sendMessage({
+            type: "chat_message_replace",
+            data: {
+              messageId: toolMessageId,
+              message: message,
+            },
+          });
         }
 
         params.onUpdate && params.onUpdate();

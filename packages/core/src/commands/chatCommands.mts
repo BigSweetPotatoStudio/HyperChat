@@ -67,7 +67,7 @@ export async function streamChatCompletion(params: ChatCompletionRequest): Promi
         throw new Error(`Agent not found: ${agentName}`);
       }
     }
-
+    console.log("Using Agent:", agentName, "agent:", agent);
     // 合并配置
     const effectiveConfig = getEffectiveConfig(configOverrides, agent!, workspace.getSettings().aiConfig, aiSettings);
     console.log("Effective AI Config:", effectiveConfig);
@@ -82,7 +82,6 @@ export async function streamChatCompletion(params: ChatCompletionRequest): Promi
     // 获取 MCP 工具
     const mcpClients = workspace.getMcpClients();
     const mcpTools = getMCPTools(mcpClients, effectiveConfig.allowMCPs);
-
     // 注册扩展
     aiChannel.register({
       antdmessage: {
@@ -162,7 +161,7 @@ export async function streamChatCompletion(params: ChatCompletionRequest): Promi
         ...(effectiveConfig.temperature !== undefined ? { temperature: effectiveConfig.temperature } : {}),
         ...(effectiveConfig.maxTokens !== undefined ? { max_tokens: effectiveConfig.maxTokens } : {}),
       }
-    ).then(async (result) => {
+    ).then(async () => {
       // 完成后保存聊天记录
       if (agentName && agent) {
         // await workspace.saveAgentChatLog(agentName, {

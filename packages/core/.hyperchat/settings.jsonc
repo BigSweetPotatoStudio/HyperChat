@@ -17,7 +17,7 @@
     "tabSize": 2
   },
   "aiConfig": {
-    "modelKey": "openrouter:google/gemini-2.5-flash-preview"
+    "modelKey": "unknown:moonshot-v2"
   },
   "defaultAI": {
     "streamResponse": true

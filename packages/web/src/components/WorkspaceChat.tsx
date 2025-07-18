@@ -127,7 +127,7 @@ export const WorkspaceChat = ({ workspace, agentName, agentScope, workspaceDetai
   // 默认聊天配置
   const defaultChatValue = useRef<ChatHistoryItem>({
     label: "",
-    key: "",
+    key: getMyUuid(),
     messages: [] as MyMessage[],
     agentName: "",
     dateTime: Date.now(),
@@ -231,7 +231,6 @@ export const WorkspaceChat = ({ workspace, agentName, agentScope, workspaceDetai
   const chatStream = useChatStream({
     agentName,
     agentScope,
-    configOverrides: currentChat.current.configOverrides,
     onToolConfirm: confirm_call_tool_cb,
   });
 
@@ -502,7 +501,7 @@ export const WorkspaceChat = ({ workspace, agentName, agentScope, workspaceDetai
 
     // 同步到 chatStream
     chatStream.setMessages(currentChat.current.messages || []);
-    
+
     resourceResListRef.current = [];
     promptResList.current = [];
 
@@ -538,14 +537,11 @@ export const WorkspaceChat = ({ workspace, agentName, agentScope, workspaceDetai
           content_date: Date.now(),
         } as MyMessage,
         currentChat.current.key,
+        currentChat.current.configOverrides
         // resourceResListRef.current,
         // promptResList.current,
       );
 
-      // 生成新的聊天 key
-      if (!currentChat.current.key) {
-        currentChat.current.key = getMyUuid();
-      }
 
       // 清空资源列表
       resourceResListRef.current = [];
