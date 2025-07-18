@@ -103,6 +103,33 @@ export function useChatStream(params: ChatStreamParams) {
           });
         });
 
+        socket.on('chat_message_replace', (data: any) => {
+          if (!validateChatKey(data.chatKey, 'chat_message_replace')) {
+            return;
+          }
+
+          setState(prev => {
+            if (!validateChatKeyInState(prev, data.chatKey, 'message_replace')) {
+              return prev;
+            }
+
+            // 找到要替换的消息
+            const messageIndex = prev.messages.findIndex(m => m.messageId === data.messageId);
+            if (messageIndex === -1) {
+              console.warn(`Message with ID ${data.messageId} not found for replace`);
+              return prev;
+            }
+
+            const newMessages = [...prev.messages];
+            newMessages[messageIndex] = data.message;
+
+            return {
+              ...prev,
+              messages: newMessages,
+            };
+          });
+        });
+
         socket.on('chat_message_update', (data: any) => {
           if (!validateChatKey(data.chatKey, 'chat_message_update')) {
             return;
@@ -139,10 +166,10 @@ export function useChatStream(params: ChatStreamParams) {
               if (!message.content_tool_calls) {
                 message.content_tool_calls = [];
               }
-              
+
               // 查找工具索引，模拟后端的 toolIndex
               const toolIndex = message.content_tool_calls.length;
-              
+
               // 添加工具调用，按照后端逻辑结构
               message.content_tool_calls.push({
                 index: toolIndex,
@@ -156,7 +183,7 @@ export function useChatStream(params: ChatStreamParams) {
                 origin_name: delta.toolName,
                 restore_name: delta.toolName,
               });
-              
+
               message.content_date = Date.now();
             } else if (delta.type === 'step-finish') {
               // 处理步骤完成
@@ -275,6 +302,7 @@ export function useChatStream(params: ChatStreamParams) {
     return () => {
       if (socketRef.current) {
         socketRef.current.off('chat_message_create');
+        socketRef.current.off('chat_message_replace');
         socketRef.current.off('chat_message_update');
         socketRef.current.off('chat_message_complete');
         socketRef.current.off('chat_message_error');

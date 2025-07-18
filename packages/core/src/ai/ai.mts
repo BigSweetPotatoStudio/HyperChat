@@ -27,6 +27,7 @@ import { AISettings, AppSettings } from "@dadigua/hyperchat-shared";
 import { BaseAIConfig } from "@dadigua/hyperchat-shared";
 import { getMessageService } from "../message_service.mjs";
 import { Command } from "../command.mjs";
+import { Logger } from "../log.mjs";
 
 
 
@@ -151,7 +152,7 @@ export class AiChannel {
 
     // Node.js environment - support HTTP proxy
     const proxyUrl = process.env.HTTP_PROXY || process.env.http_proxy ||
-      process.env.HTTPS_PROXY || process.env.https_proxy || "http://127.0.0.1:8899";
+      process.env.HTTPS_PROXY || process.env.https_proxy;
 
     if (proxyUrl) {
       // 强制禁用 SSL 验证（仅用于抓包调试）
@@ -346,6 +347,7 @@ export class AiChannel {
           newMessage.content_date = Date.now();
         }
         if (delta.type == "reasoning") {
+          // Logger.debug("reasoning", delta);
           newMessage.reasoning_content += (delta.textDelta || "");
           newMessage.content_date = Date.now();
         }
