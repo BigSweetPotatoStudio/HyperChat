@@ -336,17 +336,6 @@ export const WorkspaceChat = ({ workspace, agentName, agentScope, workspaceDetai
       currentChat.current.configOverrides.modelKey = values.modelKey;
       currentChat.current.configOverrides.compressionStrategy = values.compressionStrategy;
       currentChat.current.configOverrides.maxContextTokens = values.maxContextTokens;
-      if (currentChat.current.key == "") {
-        return;
-      }
-      // 保存到持久化存储
-      if (agentName && workspace?.path) {
-        await call("saveAgentChatLog", {
-          agentName: agentName,
-          chatLog: currentChat.current,
-          scope: agent?.config.scope // 传递 agent 的 scope 信息
-        });
-      }
 
       setIsSettingsShow(false);
       refresh();
@@ -687,6 +676,7 @@ export const WorkspaceChat = ({ workspace, agentName, agentScope, workspaceDetai
                     onClick={() => {
                       // 打开设置模态框时，设置当前表单值
                       const currentEffectiveConfig = getEffectiveConfig();
+                      settingsForm.resetFields();
                       settingsForm.setFieldsValue({
                         modelKey: currentEffectiveConfig.modelKey,
                         temperature: currentEffectiveConfig.temperature ?? 1,
@@ -1059,15 +1049,13 @@ export const WorkspaceChat = ({ workspace, agentName, agentScope, workspaceDetai
         title={t`Chat Settings`}
         open={isSettingsShow}
         onCancel={() => setIsSettingsShow(false)}
-        onOk={() => settingsForm.submit()}
+        onOk={() => { settingsForm.submit() }}
         width={600}
-        destroyOnHidden
       >
         <Form
           form={settingsForm}
           layout="vertical"
           onFinish={saveSettings}
-          preserve={false}
         >
           {AgentCommonFormItems}
         </Form>

@@ -86,7 +86,7 @@ export const AgentManagement = forwardRef<AgentManagementRef, AgentManagementPro
   const getModelDisplayName = (modelKey: string): string => {
     if (!aiSettings) return modelKey;
     const model = aiSettings.models?.find(m => m.key === modelKey);
-    return model ? (model.fullName || model.name || modelKey) : modelKey;
+    return model ? (model.fullName || model.name || modelKey) : "Default";
   };
 
   // 当 aiSettings 变化时刷新组件
@@ -261,10 +261,10 @@ export const AgentManagement = forwardRef<AgentManagementRef, AgentManagementPro
       // 本地（workspace）Agent 排在前面，全局（global）Agent 排在后面
       const scopeA = a.config.scope || 'workspace';
       const scopeB = b.config.scope || 'workspace';
-      
+
       if (scopeA === 'workspace' && scopeB === 'global') return -1;
       if (scopeA === 'global' && scopeB === 'workspace') return 1;
-      
+
       // 相同 scope 内按名称排序
       return a.config.name.localeCompare(b.config.name);
     });
@@ -285,8 +285,8 @@ export const AgentManagement = forwardRef<AgentManagementRef, AgentManagementPro
 
         {/* Scope 过滤器 */}
         <div className="mb-3">
-          <Radio.Group 
-            value={scopeFilter} 
+          <Radio.Group
+            value={scopeFilter}
             onChange={(e) => setScopeFilter(e.target.value)}
             size="small"
           >
@@ -338,16 +338,16 @@ export const AgentManagement = forwardRef<AgentManagementRef, AgentManagementPro
                   label: t`Delete`,
                   danger: true,
                   onClick: () => {
-                    const scopeWarning = agent.config.scope === 'global' 
+                    const scopeWarning = agent.config.scope === 'global'
                       ? t`Warning: Deleting a global agent will affect all projects using this agent!`
                       : t`This will only delete the agent from current workspace.`;
-                    
+
                     Modal.confirm({
                       title: t`Confirm Delete`,
                       content: (
                         <div>
                           <p>{t`Are you sure you want to delete this agent?`}</p>
-                          <Alert 
+                          <Alert
                             message={scopeWarning}
                             type={agent.config.scope === 'global' ? 'warning' : 'info'}
                             style={{ marginTop: 8 }}
@@ -409,9 +409,7 @@ export const AgentManagement = forwardRef<AgentManagementRef, AgentManagementPro
                             {agent.config.scope === "global" ? t`Global` : t`Workspace`}
                           </Tag>
                         )}
-                        {agent.config.modelKey && (
-                          <Tag color="green">{getModelDisplayName(agent.config.modelKey)}</Tag>
-                        )}
+
                         {agent.chatLogsCount !== undefined && (
                           <Tooltip title={t`Chat count`}>
                             <Tag color="blue">{agent.chatLogsCount} 💬</Tag>
@@ -427,6 +425,9 @@ export const AgentManagement = forwardRef<AgentManagementRef, AgentManagementPro
                     description={
                       <div className="text-xs">
                         <div className="text-gray-500 mb-1">
+                          {agent.config.modelKey && (
+                            <Tag color="green">{getModelDisplayName(agent.config.modelKey)}</Tag>
+                          )}
                           {agent.config.description || agent.config.prompt?.slice(0, 50) || t`No description`}
                         </div>
                         {/* <Space size="small">
@@ -444,10 +445,10 @@ export const AgentManagement = forwardRef<AgentManagementRef, AgentManagementPro
         ) : (
           <Empty
             description={
-              agents.length === 0 
-                ? t`No Agents` 
-                : scopeFilter === 'all' 
-                  ? t`No Agents` 
+              agents.length === 0
+                ? t`No Agents`
+                : scopeFilter === 'all'
+                  ? t`No Agents`
                   : t`No ${scopeFilter} agents`
             }
             image={Empty.PRESENTED_IMAGE_SIMPLE}
@@ -608,7 +609,7 @@ export const AgentManagement = forwardRef<AgentManagementRef, AgentManagementPro
               // 创建模式：从工作区设置读取默认值
               const workspaceAIConfig = workspace?.settings?.aiConfig;
               const firstAvailableModel = aiSettings?.models?.[0]?.key || "";
-              
+
               // 只有在 aiSettings 加载完成后才设置默认值
               if (aiSettings && !aiSettingsLoading) {
                 const defaultValues = {
@@ -619,8 +620,9 @@ export const AgentManagement = forwardRef<AgentManagementRef, AgentManagementPro
                   maxAttachedDialogs: workspaceAIConfig?.maxAttachedDialogs,
                   modelKey: workspaceAIConfig?.modelKey || firstAvailableModel,
                   prompt: workspaceAIConfig?.prompt || "",
+                  compressionStrategy: 'tokens',
                 };
-                
+
                 form.setFieldsValue(defaultValues);
               }
               // 重置 scope 选择为默认值
@@ -640,7 +642,7 @@ export const AgentManagement = forwardRef<AgentManagementRef, AgentManagementPro
             <>
               <Alert
                 message={
-                  createScope === 'global' 
+                  createScope === 'global'
                     ? t`Creating a global agent that will be available in all workspaces`
                     : t`Creating a workspace agent that will only be available in current workspace`
                 }
@@ -648,8 +650,8 @@ export const AgentManagement = forwardRef<AgentManagementRef, AgentManagementPro
                 style={{ marginBottom: 16 }}
               />
               <Form.Item label={t`Agent Scope`}>
-                <Radio.Group 
-                  value={createScope} 
+                <Radio.Group
+                  value={createScope}
                   onChange={(e) => setCreateScope(e.target.value)}
                 >
                   <Radio value="workspace">
@@ -722,7 +724,7 @@ export const AgentManagement = forwardRef<AgentManagementRef, AgentManagementPro
           </Form.Item>
 
           <Form.Item name="modelKey" label={t`Language Model`}
-            // rules={[{ required: true, message: t`Please select a language model` }]}
+          // rules={[{ required: true, message: t`Please select a language model` }]}
           >
             <Select
               showSearch
@@ -894,9 +896,9 @@ export const AgentCommonFormItems = (
         label={t`Temperature`}
         tooltip={t`What sampling temperature to use, between 0 and 2. Higher values like 0.8 will make the output more random, while lower values like 0.2 will make it more focused and deterministic.`}
       >
-        <Slider 
-          min={0} 
-          max={2} 
+        <Slider
+          min={0}
+          max={2}
           step={0.1}
           marks={{
             0: '0',
@@ -944,12 +946,12 @@ export const AgentCommonFormItems = (
         label={t`Max Context Tokens`}
         tooltip={t`Maximum context tokens before compression (1000-128000). Only effective when compression strategy is 'tokens' or 'auto'`}
       >
-        <InputNumber 
-          min={1000} 
-          max={128000} 
+        <InputNumber
+          min={1000}
+          max={128000}
           step={1000}
           style={{ width: '100%' }}
-          placeholder="Auto (based on model)"
+          placeholder="Max Context Tokens"
         />
       </Form.Item>
     </Col>
@@ -959,9 +961,9 @@ export const AgentCommonFormItems = (
         label={t`Max Attached Dialogs`}
         tooltip={t`Maximum number of attached dialog histories (0-100)`}
       >
-        <InputNumber 
-          min={0} 
-          max={100} 
+        <InputNumber
+          min={0}
+          max={100}
           step={1}
           style={{ width: '100%' }}
           placeholder="Maximum number of attached dialog histories (0-100)"

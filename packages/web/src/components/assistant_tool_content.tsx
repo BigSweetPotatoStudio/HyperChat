@@ -42,8 +42,6 @@ import { sleep } from "../common/sleep";
 import { isOnBrowser } from "../common/util";
 import { t } from "../i18n";
 import { HyperChatCompletionTool, MyMessage } from "@dadigua/hyperchat-shared/types";
-import { Pre } from "./pre";
-import { DownImage } from "./WorkspaceChatComponent/component";
 
 
 // Constants
@@ -378,9 +376,9 @@ const ContentItemRenderer: React.FC<ContentItemProps> = ({ content, index }) => 
             <div key={index} style={{ marginBottom: '16px' }}>
                 <div style={{ marginBottom: '8px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                     <strong>{t`Text Content`} #{index + 1}:</strong>
-                    <Button 
-                        type="primary" 
-                        size="small" 
+                    <Button
+                        type="primary"
+                        size="small"
                         icon={<CopyOutlined />}
                         onClick={async () => {
                             await setClipboardText({ text: content });
@@ -407,16 +405,16 @@ const ContentItemRenderer: React.FC<ContentItemProps> = ({ content, index }) => 
             </div>
         );
     }
-    
+
     if (typeof content === 'object' && content !== null) {
         if (content.type === 'text') {
             return (
                 <div key={index} style={{ marginBottom: '16px' }}>
                     <div style={{ marginBottom: '8px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                         <strong>{t`Text Content`} #{index + 1}:</strong>
-                        <Button 
-                            type="primary" 
-                            size="small" 
+                        <Button
+                            type="primary"
+                            size="small"
                             icon={<CopyOutlined />}
                             onClick={async () => {
                                 await setClipboardText({ text: content.text });
@@ -449,8 +447,8 @@ const ContentItemRenderer: React.FC<ContentItemProps> = ({ content, index }) => 
                         <strong>{t`Image Content`} #{index + 1}:</strong>
                     </div>
                     <div style={{ border: '1px solid #d9d9d9', padding: '8px', textAlign: 'center' }}>
-                        <img 
-                            src={`data:${content.image_url.url}`} 
+                        <img
+                            src={`data:${content.image_url.url}`}
                             alt={`Tool result image ${index + 1}`}
                             style={{ maxWidth: '100%', maxHeight: '300px', objectFit: 'contain' }}
                         />
@@ -464,9 +462,9 @@ const ContentItemRenderer: React.FC<ContentItemProps> = ({ content, index }) => 
                 <div key={index} style={{ marginBottom: '16px' }}>
                     <div style={{ marginBottom: '8px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                         <strong>{t`Object Content`} #{index + 1}:</strong>
-                        <Button 
-                            type="primary" 
-                            size="small" 
+                        <Button
+                            type="primary"
+                            size="small"
                             icon={<CopyOutlined />}
                             onClick={async () => {
                                 await setClipboardText({ text: jsonContent });
@@ -493,16 +491,16 @@ const ContentItemRenderer: React.FC<ContentItemProps> = ({ content, index }) => 
             );
         }
     }
-    
+
     // Fallback for other types
     const stringContent = String(content);
     return (
         <div key={index} style={{ marginBottom: '16px' }}>
             <div style={{ marginBottom: '8px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <strong>{t`Content`} #{index + 1}:</strong>
-                <Button 
-                    type="primary" 
-                    size="small" 
+                <Button
+                    type="primary"
+                    size="small"
                     icon={<CopyOutlined />}
                     onClick={async () => {
                         await setClipboardText({ text: stringContent });
@@ -539,12 +537,12 @@ interface ToolDataModalProps {
     toolName: string;
 }
 
-const ToolDataModal: React.FC<ToolDataModalProps> = ({ 
-    visible, 
-    onClose, 
-    toolArgs, 
-    toolResult, 
-    toolName 
+const ToolDataModal: React.FC<ToolDataModalProps> = ({
+    visible,
+    onClose,
+    toolArgs,
+    toolResult,
+    toolName
 }) => {
     const handleCopyArgs = async () => {
         await setClipboardText({ text: JSON.stringify(toolArgs, null, 2) });
@@ -575,9 +573,9 @@ const ToolDataModal: React.FC<ToolDataModalProps> = ({
                 <div style={{ marginBottom: '24px' }}>
                     <div style={{ marginBottom: '8px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                         <strong>{t`Arguments`}:</strong>
-                        <Button 
-                            type="primary" 
-                            size="small" 
+                        <Button
+                            type="primary"
+                            size="small"
                             icon={<CopyOutlined />}
                             onClick={handleCopyArgs}
                         >
@@ -791,134 +789,58 @@ export const AssistantToolContent: React.FC<AssistantToolContentProps> = ({ cont
 
                         {/* Tool Calls */}
                         {x.content_tool_calls && x.content_tool_calls.length > 0 && (
-                            <div className="my-collapse">
-                                <Collapse
-                                    bordered={false}
-                                    size="small"
-                                    expandIcon={() => <ToolOutlined />}
-                                    items={x.content_tool_calls.map((tool, index) => {
-                                        const toolResult = contents.find(j => j.tool_call_id === tool.id);
+                            <div className="my-4">
+                                {x.content_tool_calls.map((tool, index) => {
+                                    const toolResult = contents.find(j => j.tool_call_id === tool.id);
 
-                                        return {
-                                            key: index.toString(),
-                                            label: (
-                                                <Spin spinning={x.content_status === "loading"}>
-                                                    <div className="flex items-center">
-                                                        <div className="cursor-pointer">
-                                                            <div className="line-clamp-1 text-blue-500 break-all">
-                                                                <span className="text-purple-500">
-                                                                    {tool.restore_name || tool.function.name}
-                                                                </span>{" "}
-                                                                {JSON.stringify(tool.function.args)}
-                                                            </div>
-                                                        </div>
-                                                        {toolResult && (
-                                                            <div className="ml-2">
-                                                                {toolResult.content_status === "loading" ? (
-                                                                    <SyncOutlined spin />
-                                                                ) : toolResult.content_status === "error" ? (
-                                                                    <div className="line-clamp-1 text-red-500">
-                                                                        <CloseSquareOutlined />
-                                                                    </div>
-                                                                ) : (
-                                                                    <div className="line-clamp-1 text-green-600">
-                                                                        <CheckSquareOutlined />
-                                                                    </div>
-                                                                )}
-                                                            </div>
-                                                        )}
-                                                    </div>
-                                                </Spin>
-                                            ),
-                                            children: (
-                                                <div className="max-h-80 overflow-auto bg-slate-200">
-                                                    <div>
-                                                        <Pre>
-                                                            <EyeOutlined
-                                                                onClick={() => {
-                                                                    setSelectedTool({
-                                                                        args: tool.function.args,
-                                                                        result: toolResult?.content || '',
-                                                                        name: tool.restore_name || tool.function.name
-                                                                    });
-                                                                    setModalVisible(true);
-                                                                }}
-                                                            />
+                                    return (
+                                        <div key={index} className="mb-2 p-2 bg-gray-50 rounded flex items-center justify-between">
+                                            <Spin spinning={x.content_status === "loading"}>
+                                                <div className="flex items-center flex-1" onClick={() => {
+                                                    setSelectedTool({
+                                                        args: tool.function.args,
+                                                        result: toolResult?.content || '',
+                                                        name: tool.restore_name || tool.function.name
+                                                    });
+                                                    setModalVisible(true);
+                                                }}>
+                                                    <ToolOutlined className="mr-2 text-gray-500" />
+                                                    <div className="cursor-pointer flex-1">
+                                                        <div className="line-clamp-1 text-blue-500 break-all">
+                                                            <span className="text-purple-500">
+                                                                {tool.restore_name || tool.function.name}
+                                                            </span>{" "}
                                                             {JSON.stringify(tool.function.args)}
-                                                        </Pre>
+                                                        </div>
                                                     </div>
-
                                                     {toolResult && (
-                                                        <div>
-                                                            <span>
-                                                                {toolResult.content_status === "loading" ? (
-                                                                    <SyncOutlined spin />
-                                                                ) : toolResult.content_status === "error" ? (
-                                                                    <div className="line-clamp-1 text-red-500">
-                                                                        <CloseSquareOutlined />{t`Error`}
-                                                                    </div>
-                                                                ) : (
-                                                                    <div className="line-clamp-1 text-green-600">
-                                                                        <CheckSquareOutlined />{t`Completed`}
-                                                                    </div>
-                                                                )}
-                                                            </span>
-                                                            <span className="text-gray-400">
-                                                                {Array.isArray(toolResult.content) ?
-                                                                    toolResult.content.map((c, i) => (
-                                                                        <div key={i}>
-                                                                            {c.type === "text" ? (
-                                                                                <div>
-                                                                                    <CopyOutlined
-                                                                                        onClick={async () => {
-                                                                                            await setClipboardText({ text: c.text });
-                                                                                            message.success(t`Copied to clipboard`);
-                                                                                        }}
-                                                                                    />
-                                                                                    {c.text}
-                                                                                </div>
-                                                                            ) : c.type === "image_url" ? (
-                                                                                <DownImage src={`data:${c.image_url.url}`} />
-                                                                            ) : null}
-                                                                        </div>
-                                                                    )) : (
-                                                                        <>
-                                                                            <CopyOutlined
-                                                                                onClick={async () => {
-                                                                                    await setClipboardText({ text: toolResult.content?.toString() });
-                                                                                    message.success(t`Copied to clipboard`);
-                                                                                }}
-                                                                            />
-                                                                            {toolResult.content?.toString()}
-                                                                        </>
-                                                                    )
-                                                                }
-                                                            </span>
-                                                            {(toolResult.content_attachment?.length || 0) > 0 &&
-                                                                toolResult.content_attachment?.map((attachment, i) => (
-                                                                    attachment.type === "image" ? (
-                                                                        <DownImage
-                                                                            key={i}
-                                                                            src={`data:${attachment.mimeType};base64,${attachment.data}`}
-                                                                        />
-                                                                    ) : attachment.type === "text" ? (
-                                                                        <Pre key={i}>{attachment.text}</Pre>
-                                                                    ) : null
-                                                                ))
-                                                            }
+                                                        <div className="ml-2 flex gap-1">
+
+                                                            {toolResult.content_status === "loading" ? (
+                                                                <SyncOutlined spin />
+                                                            ) : toolResult.content_status === "error" ? (
+                                                                <div className="line-clamp-1 text-red-500">
+                                                                    <CloseSquareOutlined />
+                                                                </div>
+                                                            ) : (
+                                                                <div className="line-clamp-1 text-green-600">
+                                                                    <CheckSquareOutlined />
+                                                                </div>
+                                                            )}
                                                         </div>
                                                     )}
                                                 </div>
-                                            )
-                                        };
-                                    })}
-                                />
+                                            </Spin>
+
+                                        </div>
+                                    );
+                                })}
                             </div>
                         )}
                     </div>
                 );
             })}
-            
+
             {/* Tool Data Modal */}
             {selectedTool && (
                 <ToolDataModal

@@ -229,7 +229,7 @@ export function WorkspaceSettings({
                 max={128000}
                 step={1000}
                 style={{ width: '100%' }}
-                placeholder="Auto (based on model)"
+                placeholder="Max Context Tokens"
               />
             </Form.Item>
           </Col>

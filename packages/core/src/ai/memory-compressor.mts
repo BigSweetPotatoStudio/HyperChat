@@ -129,7 +129,7 @@ export class MemoryCompressor {
    */
   async compressMemory(
     messages: MyMessage[], 
-    modelKey?: string, 
+    modelKey: string, 
     onUpdate?: (r?: any) => void, 
     sseWriter?: SSEWriter
   ): Promise<MyMessage> {
@@ -151,7 +151,7 @@ export class MemoryCompressor {
       content_status: "loading",
       messageId: messageId,
     };
-
+    messages.push(memoryMessage);
     // 发送内存消息创建事件
     this.sendSSEMessage(sseWriter, "chat_message_create", {
       messageId: messageId,
@@ -161,9 +161,7 @@ export class MemoryCompressor {
     onUpdate && onUpdate();
 
     try {
-      // 获取AI设置并确定使用的模型
-      const aiSettings = await this.getAISettings();
-      const useModelKey = modelKey || aiSettings.models[0]?.key;
+      const useModelKey = modelKey;
       
       if (!useModelKey) {
         throw new Error('未找到可用的AI模型');

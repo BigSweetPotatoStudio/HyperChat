@@ -316,7 +316,8 @@ function getEffectiveConfig(
     temperature: overrides.temperature ?? agentConfig?.temperature ?? workspaceConfig?.temperature,
     maxAttachedDialogs: overrides.maxAttachedDialogs ?? agentConfig?.maxAttachedDialogs ?? workspaceConfig?.maxAttachedDialogs ?? 5,
     maxTokens: overrides.maxTokens ?? agentConfig?.maxTokens ?? workspaceConfig?.maxTokens ?? 4000,
-    prompt: overrides.prompt || agentConfig?.prompt || workspaceConfig?.prompt || ""
+    prompt: overrides.prompt || agentConfig?.prompt || workspaceConfig?.prompt || "",
+    maxContextTokens: overrides.maxContextTokens ?? agentConfig?.maxContextTokens ?? workspaceConfig?.maxContextTokens,
   };
 }
 

@@ -228,9 +228,15 @@ export class AiChannel {
   ): Promise<string> {
 
     // 在开始请求前检查是否需要压缩记忆
-    if (this.lastMessage && this.lastMessage.role === "assistant" && this.shouldCompressMemory(params)) { // 只在第一步时压缩
-      await this.compressMemory(params.modelKey, params.onUpdate, params.sseWriter);
-      params.onUpdate && params.onUpdate();
+    if (this.lastMessage) { // 只在第一步时压缩
+      if (this.lastMessage.role === "assistant" && this.shouldCompressMemory(params)) {
+        await this.compressMemory(params.modelKey, params.onUpdate, params.sseWriter);
+        params.onUpdate && params.onUpdate();
+      }
+      if (this.lastMessage.role === "user") {
+        params.userMessage = this.lastMessage;
+        this.messages.pop(); // 移除最后一条用户消息
+      }
     }
 
     // 处理用户消息
@@ -590,12 +596,6 @@ export class AiChannel {
     memoryCompressor?: MemoryCompressor;
   };
 
-  // 添加工具方法
-  private generateMessageId(): string {
-    const timestamp = Math.floor(Date.now() / 1000);
-    return `${this.messages.length}_${timestamp}`;
-  }
-
   // 获取 MCP 工具
   private getMcpTools(allowMCPs?: string[]): HyperChatCompletionTool[] {
     const workspace = workspaceManager.getCurrentWorkspace();
@@ -643,7 +643,7 @@ export class AiChannel {
   }
 
   // 压缩记忆
-  async compressMemory(modelKey?: string, onUpdate?: (r?: any) => void, sseWriter?: SSEWriter): Promise<MyMessage> {
+  async compressMemory(modelKey: string, onUpdate?: (r?: any) => void, sseWriter?: SSEWriter): Promise<MyMessage> {
     if (!this.ext.memoryCompressor) {
       throw new Error('Memory compressor not initialized');
     }
