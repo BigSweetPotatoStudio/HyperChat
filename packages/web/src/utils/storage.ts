@@ -197,7 +197,6 @@ export const clearWorkspaceHistory = (): void => {
 
 interface AgentRecentUsage {
   workspacePath: string;
-  agentKey: string;
   agentName: string;
   lastUsed: number;
 }
@@ -232,21 +231,20 @@ export const getAgentRecentUsage = (workspacePath?: string): AgentRecentUsage[] 
 /**
  * 添加 Agent 使用记录
  */
-export const addAgentRecentUsage = (workspacePath: string, agentKey: string, agentName: string): void => {
+export const addAgentRecentUsage = (workspacePath: string, agentName: string): void => {
   try {
     const usage = getAgentRecentUsage();
     const now = Date.now();
     
     // 检查是否已存在相同的记录
     const existingIndex = usage.findIndex(item => 
-      item.workspacePath === workspacePath && item.agentKey === agentKey
+      item.workspacePath === workspacePath && item.agentName === agentName
     );
     
     if (existingIndex >= 0) {
       // 更新已存在的记录
       usage[existingIndex] = {
         workspacePath,
-        agentKey,
         agentName,
         lastUsed: now
       };
@@ -254,7 +252,6 @@ export const addAgentRecentUsage = (workspacePath: string, agentKey: string, age
       // 添加新记录
       usage.unshift({
         workspacePath,
-        agentKey,
         agentName,
         lastUsed: now
       });
@@ -272,11 +269,11 @@ export const addAgentRecentUsage = (workspacePath: string, agentKey: string, age
 /**
  * 从最近使用记录中删除 Agent
  */
-export const removeAgentRecentUsage = (workspacePath: string, agentKey: string): void => {
+export const removeAgentRecentUsage = (workspacePath: string, agentName: string): void => {
   try {
     const usage = getAgentRecentUsage();
     const filteredUsage = usage.filter(item => 
-      !(item.workspacePath === workspacePath && item.agentKey === agentKey)
+      !(item.workspacePath === workspacePath && item.agentName === agentName)
     );
     localStorage.setItem(AGENT_RECENT_USAGE_KEY, JSON.stringify(filteredUsage));
   } catch (error) {
@@ -309,7 +306,6 @@ export const clearAgentRecentUsage = (workspacePath?: string): void => {
 
 interface ChatRecentUsage {
   workspacePath: string;
-  agentKey: string;
   agentName: string;
   chatKey: string;
   chatLabel: string;
@@ -323,7 +319,7 @@ const MAX_RECENT_CHATS = 50;
 /**
  * 获取聊天对话最近使用记录
  */
-export const getChatRecentUsage = (workspacePath?: string, agentKey?: string): ChatRecentUsage[] => {
+export const getChatRecentUsage = (workspacePath?: string, agentName?: string): ChatRecentUsage[] => {
   try {
     const stored = localStorage.getItem(CHAT_RECENT_USAGE_KEY);
     if (stored) {
@@ -335,9 +331,9 @@ export const getChatRecentUsage = (workspacePath?: string, agentKey?: string): C
         filteredUsage = usage.filter(item => item.workspacePath === workspacePath);
       }
       
-      // 如果指定了agentKey，进一步过滤
-      if (agentKey) {
-        filteredUsage = filteredUsage.filter(item => item.agentKey === agentKey);
+      // 如果指定了agentName，进一步过滤
+      if (agentName) {
+        filteredUsage = filteredUsage.filter(item => item.agentName === agentName);
       }
       
       // 按最近使用时间排序
@@ -354,7 +350,6 @@ export const getChatRecentUsage = (workspacePath?: string, agentKey?: string): C
  */
 export const addChatRecentUsage = (
   workspacePath: string, 
-  agentKey: string, 
   agentName: string,
   chatKey: string,
   chatLabel: string
@@ -366,7 +361,7 @@ export const addChatRecentUsage = (
     // 检查是否已存在相同的记录
     const existingIndex = usage.findIndex(item => 
       item.workspacePath === workspacePath && 
-      item.agentKey === agentKey && 
+      item.agentName === agentName && 
       item.chatKey === chatKey
     );
     
@@ -376,7 +371,6 @@ export const addChatRecentUsage = (
       if (existing) {
         usage[existingIndex] = {
           ...existing,
-          agentName,
           chatLabel,
           lastUsed: now,
           usageCount: existing.usageCount + 1
@@ -386,7 +380,6 @@ export const addChatRecentUsage = (
       // 添加新记录
       usage.unshift({
         workspacePath,
-        agentKey,
         agentName,
         chatKey,
         chatLabel,
@@ -407,11 +400,11 @@ export const addChatRecentUsage = (
 /**
  * 从最近使用记录中删除聊天对话
  */
-export const removeChatRecentUsage = (workspacePath: string, agentKey: string, chatKey: string): void => {
+export const removeChatRecentUsage = (workspacePath: string, agentName: string, chatKey: string): void => {
   try {
     const usage = getChatRecentUsage();
     const filteredUsage = usage.filter(item => 
-      !(item.workspacePath === workspacePath && item.agentKey === agentKey && item.chatKey === chatKey)
+      !(item.workspacePath === workspacePath && item.agentName === agentName && item.chatKey === chatKey)
     );
     localStorage.setItem(CHAT_RECENT_USAGE_KEY, JSON.stringify(filteredUsage));
   } catch (error) {
@@ -422,14 +415,14 @@ export const removeChatRecentUsage = (workspacePath: string, agentKey: string, c
 /**
  * 清空聊天对话最近使用记录
  */
-export const clearChatRecentUsage = (workspacePath?: string, agentKey?: string): void => {
+export const clearChatRecentUsage = (workspacePath?: string, agentName?: string): void => {
   try {
-    if (workspacePath || agentKey) {
+    if (workspacePath || agentName) {
       // 只清空指定条件的记录
       const usage = getChatRecentUsage();
       const filteredUsage = usage.filter(item => {
         if (workspacePath && item.workspacePath !== workspacePath) return true;
-        if (agentKey && item.agentKey !== agentKey) return true;
+        if (agentName && item.agentName !== agentName) return true;
         return false;
       });
       localStorage.setItem(CHAT_RECENT_USAGE_KEY, JSON.stringify(filteredUsage));

@@ -529,16 +529,25 @@ export const WorkspaceChat = ({ workspace, agentName, agentScope, workspaceDetai
         content: content || value,
         content_date: Date.now(),
       }
+
       // 使用 chatStream 开始流式聊天
       await chatStream.startChatStream(
         currentChat.current.key,
         currentChat.current.messages,
         currentChat.current.configOverrides || {},
         userMessage.content ? userMessage : undefined,
-        // resourceResListRef.current,
-        // promptResList.current,
       );
 
+      currentChat.current.label = currentChat.current.label || getLabelByFirstUserContent([...currentChat.current.messages, userMessage]) || t`Untitled Chat`;
+
+      if (agent) {
+        addChatRecentUsage(
+          workspace.path,
+          agentName,
+          currentChat.current.key,
+          currentChat.current.label || 'Untitled Chat'
+        );
+      }
 
       // 清空资源列表
       resourceResListRef.current = [];
@@ -1078,4 +1087,18 @@ function getTools(mcpClients: IMCPClient[], allowMCPs?: string[]): HyperChatComp
     );
   });
   return tools;
+}
+
+function getLabelByFirstUserContent(messages: Array<MyMessage>): string {
+  let label = "";
+  let firstUser = messages.find(
+    (x) => x.role == "user",
+  );
+  let firstUserContent = (firstUser as any)?.content;
+  if (typeof firstUserContent == "string") {
+    label = firstUserContent;
+  } else if (Array.isArray(firstUserContent)) {
+    label = firstUserContent.find((x) => x.type == "text")?.text || "";
+  }
+  return label;
 }

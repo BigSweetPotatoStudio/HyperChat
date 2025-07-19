@@ -651,7 +651,7 @@ export function Workspace() {
     if (!workspace) return;
 
     // 记录 agent 使用
-    addAgentRecentUsage(workspace.path, agent.config.name, agent.config.name);
+    addAgentRecentUsage(workspace.path, agent.config.name);
 
     // 如果有聊天记录，使用聊天记录的key确保唯一性
     const tabKey = chatLog ? `${workspace.path}-${agent.config.name}-${chatLog.key}` : `${workspace.path}-${agent.config.name}`;

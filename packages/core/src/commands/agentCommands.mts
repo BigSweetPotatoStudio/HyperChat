@@ -278,6 +278,56 @@ export const agentCommands = {
   },
 
   /**
+   * 批量获取多个 Agent 的聊天记录
+   * @param agentNames Agent 名称数组
+   * @param scope 查找范围（全局或工作区，默认智能查找）
+   * @returns 包含每个 Agent 聊天记录的数组
+   */
+  async getMultipleAgentChatLogs({
+    agentNames,
+    scope
+  }: {
+    agentNames: string[];
+    scope?: "global" | "workspace";
+  }): Promise<{ results: Array<{ agentName: string; chatLogs: ChatHistoryItem[]; error?: string }> }> {
+    try {
+      const workspaceManager = getWorkspaceManager();
+      const workspace = workspaceManager.getCurrentWorkspace();
+
+      if (!workspace) {
+        throw new Error('当前没有可用的工作区');
+      }
+
+      const results = await Promise.allSettled(
+        agentNames.map(async (agentName) => {
+          try {
+            const chatLogs = await workspace.getAgentChatLogs(agentName, scope);
+            return { agentName, chatLogs };
+          } catch (error) {
+            console.error(`Failed to get chat logs for agent ${agentName}:`, error);
+            return { 
+              agentName, 
+              chatLogs: [], 
+              error: error instanceof Error ? error.message : String(error) 
+            };
+          }
+        })
+      );
+
+      return {
+        results: results.map(result => 
+          result.status === 'fulfilled' 
+            ? result.value 
+            : { agentName: '', chatLogs: [], error: result.reason }
+        )
+      };
+    } catch (error) {
+      console.error('Failed to get multiple agent chat logs:', error);
+      throw error;
+    }
+  },
+
+  /**
    * 删除 Agent 的聊天记录（支持全局 Agent）
    * @param agentName Agent 名称
    * @param chatKey 聊天记录键名
@@ -410,6 +460,70 @@ export const agentCommands = {
       return chatLog || null;
     } catch (error) {
       console.error(`Failed to get chat log ${chatLogKey} for agent ${agentName}:`, error);
+      throw error;
+    }
+  },
+
+  /**
+   * 批量获取多个特定的聊天记录
+   * @param requests 包含 agentName, chatLogKey, scope 的请求数组
+   * @returns 包含每个聊天记录的数组
+   */
+  async getBatchChatLogs({
+    requests
+  }: {
+    requests: Array<{
+      agentName: string;
+      chatLogKey: string;
+      scope?: "global" | "workspace";
+    }>;
+  }): Promise<{ results: Array<{ agentName: string; chatLogKey: string; chatLog: ChatHistoryItem | null; error?: string }> }> {
+    try {
+      const workspaceManager = getWorkspaceManager();
+      const workspace = workspaceManager.getCurrentWorkspace();
+
+      if (!workspace) {
+        throw new Error('当前没有可用的工作区');
+      }
+
+      const results = await Promise.allSettled(
+        requests.map(async (request) => {
+          try {
+            const agentInstance = workspace.getAgentInstance(request.agentName, request.scope);
+            if (!agentInstance) {
+              throw new Error(`Agent 不存在: ${request.agentName}`);
+            }
+
+            // 获取所有聊天记录，然后找到指定的一个
+            const chatLogs = await agentInstance.getChatLogs();
+            const chatLog = chatLogs.find(log => log.key === request.chatLogKey);
+
+            return {
+              agentName: request.agentName,
+              chatLogKey: request.chatLogKey,
+              chatLog: chatLog || null
+            };
+          } catch (error) {
+            console.error(`Failed to get chat log ${request.chatLogKey} for agent ${request.agentName}:`, error);
+            return {
+              agentName: request.agentName,
+              chatLogKey: request.chatLogKey,
+              chatLog: null,
+              error: error instanceof Error ? error.message : String(error)
+            };
+          }
+        })
+      );
+
+      return {
+        results: results.map(result => 
+          result.status === 'fulfilled' 
+            ? result.value 
+            : { agentName: '', chatLogKey: '', chatLog: null, error: result.reason }
+        )
+      };
+    } catch (error) {
+      console.error('Failed to get multiple agent chat logs:', error);
       throw error;
     }
   },

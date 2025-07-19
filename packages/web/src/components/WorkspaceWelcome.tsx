@@ -26,9 +26,10 @@ import {
   PlusOutlined,
   HistoryOutlined,
   StarOutlined,
+  DeleteOutlined,
 } from "@ant-design/icons";
 import { t } from "../i18n";
-import { getAgentRecentUsage, addAgentRecentUsage, getChatRecentUsage, addChatRecentUsage } from "../utils/storage";
+import { getAgentRecentUsage, addAgentRecentUsage, getChatRecentUsage, addChatRecentUsage, removeAgentRecentUsage, removeChatRecentUsage } from "../utils/storage";
 import { AgentConfig, ChatHistoryItem } from "@dadigua/hyperchat-shared";
 import { Icon } from "./icon";
 import { call } from "../common/call";
@@ -81,25 +82,52 @@ export const WorkspaceWelcome: React.FC<WorkspaceWelcomeProps> = ({
   useEffect(() => {
     const loadRecentChats = async () => {
       const recentChatUsage = getChatRecentUsage(workspace.path);
-      const matchedRecentChats: any[] = [];
       
       // 限制并发请求数量，只获取最近 8 个对话
       const limitedRecentUsage = recentChatUsage.slice(0, 8);
       
-      for (const recentItem of limitedRecentUsage) {
-        try {
+      // 准备批量请求的数据
+      const requests = limitedRecentUsage
+        .map(recentItem => {
           const agent = agents.find(a => a.config.name === recentItem.agentName);
-          if (!agent) continue;
+          if (!agent) return null;
           
-          // 使用新的后端命令获取个别聊天记录
-          const chatLog = await call("getAgentChatLog", {
+          return {
             agentName: recentItem.agentName,
             chatLogKey: recentItem.chatKey,
-            scope: agent.config.scope // 传递 agent 的 scope 信息
-          });
-          
-          if (chatLog) {
-            matchedRecentChats.push({
+            scope: agent.config.scope as "global" | "workspace"
+          };
+        })
+        .filter(Boolean) as Array<{
+          agentName: string;
+          chatLogKey: string;
+          scope: "global" | "workspace";
+        }>;
+      
+      if (requests.length === 0) {
+        setRecentChats([]);
+        return;
+      }
+      
+      try {
+        // 使用批量接口获取所有聊天记录
+        const result = await call("getBatchChatLogs", { requests });
+        
+        const matchedRecentChats = result.results
+          .map(chatResult => {
+            if (!chatResult.chatLog || chatResult.error) {
+              console.warn(`Failed to load chat log ${chatResult.chatLogKey} for agent ${chatResult.agentName}:`, chatResult.error);
+              return null;
+            }
+            
+            const recentItem = limitedRecentUsage.find(
+              item => item.agentName === chatResult.agentName && item.chatKey === chatResult.chatLogKey
+            );
+            const agent = agents.find(a => a.config.name === chatResult.agentName);
+            
+            if (!recentItem || !agent) return null;
+            
+            return {
               workspacePath: recentItem.workspacePath,
               agentName: recentItem.agentName,
               chatKey: recentItem.chatKey,
@@ -107,16 +135,16 @@ export const WorkspaceWelcome: React.FC<WorkspaceWelcomeProps> = ({
               lastUsed: recentItem.lastUsed,
               usageCount: recentItem.usageCount,
               agent,
-              chatLog
-            });
-          }
-        } catch (error) {
-          console.warn(`Failed to load chat log ${recentItem.chatKey} for agent ${recentItem.agentName}:`, error);
-          // 继续处理其他对话，不因单个失败而中断
-        }
+              chatLog: chatResult.chatLog
+            };
+          })
+          .filter(Boolean);
+        
+        setRecentChats(matchedRecentChats);
+      } catch (error) {
+        console.error('Failed to load recent chats:', error);
+        setRecentChats([]);
       }
-      
-      setRecentChats(matchedRecentChats);
     };
     
     loadRecentChats();
@@ -125,7 +153,7 @@ export const WorkspaceWelcome: React.FC<WorkspaceWelcomeProps> = ({
   // 处理 agent 点击
   const handleAgentClick = (agent: any) => {
     // 记录使用
-    addAgentRecentUsage(workspace.path, agent.config.name, agent.config.name);
+    addAgentRecentUsage(workspace.path, agent.config.name);
     // 打开聊天
     onOpenAgentChat(agent);
   };
@@ -135,10 +163,9 @@ export const WorkspaceWelcome: React.FC<WorkspaceWelcomeProps> = ({
     const { agent, chatLog, agentName } = recentChatItem;
     
     // 记录使用
-    addAgentRecentUsage(workspace.path, agent.config.name, agentName);
+    addAgentRecentUsage(workspace.path, agentName);
     addChatRecentUsage(
       workspace.path, 
-      agent.config.name, 
       agentName, 
       chatLog.key, 
       chatLog.label || 'Untitled Chat'
@@ -146,6 +173,33 @@ export const WorkspaceWelcome: React.FC<WorkspaceWelcomeProps> = ({
     
     // 打开特定的聊天对话
     onOpenAgentChat(agent, chatLog);
+  };
+
+  // 处理删除最近使用的Agent
+  const handleDeleteRecentAgent = (e: any, agentName: string) => {
+    e.stopPropagation(); // 阻止事件冒泡
+    removeAgentRecentUsage(workspace.path, agentName);
+    // 重新加载最近使用的 agents
+    const recent = getAgentRecentUsage(workspace.path);
+    const matchedRecentAgents = recent
+      .map(recentItem => {
+        const agent = agents.find(a => a.config.name === recentItem.agentName);
+        return agent ? { ...agent, lastUsed: recentItem.lastUsed } : null;
+      })
+      .filter(Boolean)
+      .slice(0, 6);
+    setRecentAgents(matchedRecentAgents);
+  };
+
+  // 处理删除最近使用的聊天对话
+  const handleDeleteRecentChat = (e: any, recentChatItem: any) => {
+    e.stopPropagation(); // 阻止事件冒泡
+    const { agentName, chatKey } = recentChatItem;
+    removeChatRecentUsage(workspace.path, agentName, chatKey);
+    // 重新加载最近使用的对话
+    setRecentChats(prev => prev.filter(item => 
+      !(item.agentName === agentName && item.chatKey === chatKey)
+    ));
   };
 
   // 过滤 agents
@@ -165,7 +219,7 @@ export const WorkspaceWelcome: React.FC<WorkspaceWelcomeProps> = ({
   });
 
   // 渲染 Agent 卡片
-  const renderAgentCard = (agent: any, showLastUsed = false) => {
+  const renderAgentCard = (agent: any, showLastUsed = false, showDeleteButton = false) => {
     const name = agent.config.name;
     const description = agent.config.description || t`No description`;
     const lastChatTime = agent.lastChatTime || agent.lastUsed;
@@ -179,8 +233,28 @@ export const WorkspaceWelcome: React.FC<WorkspaceWelcomeProps> = ({
         size="small"
         className="agent-card"
         onClick={() => handleAgentClick(agent)}
-        style={{ marginBottom: 8 }}
+        style={{ marginBottom: 8, position: 'relative' }}
       >
+        {showDeleteButton && (
+          <Tooltip title={t`Remove from recent list`}>
+            <Button
+              type="text"
+              size="small"
+              icon={<DeleteOutlined />}
+              onClick={(e) => handleDeleteRecentAgent(e, agent.config.name)}
+              style={{
+                position: 'absolute',
+                top: 8,
+                right: 8,
+                color: '#ff4d4f',
+                opacity: 0,
+                transition: 'opacity 0.2s',
+                zIndex: 1,
+              }}
+              className="delete-button"
+            />
+          </Tooltip>
+        )}
         <Card.Meta
           avatar={
             <Avatar
@@ -231,13 +305,31 @@ export const WorkspaceWelcome: React.FC<WorkspaceWelcomeProps> = ({
 
     return (
       <Card
-        key={`${recentChatItem.agentKey}-${recentChatItem.chatKey}`}
+        key={`${recentChatItem.agentName}-${recentChatItem.chatKey}`}
         hoverable
         size="small"
         className="chat-card"
         onClick={() => handleChatClick(recentChatItem)}
-        style={{ marginBottom: 8 }}
+        style={{ marginBottom: 8, position: 'relative' }}
       >
+        <Tooltip title={t`Remove from recent list`}>
+          <Button
+            type="text"
+            size="small"
+            icon={<DeleteOutlined />}
+            onClick={(e) => handleDeleteRecentChat(e, recentChatItem)}
+            style={{
+              position: 'absolute',
+              top: 8,
+              right: 8,
+              color: '#ff4d4f',
+              opacity: 0,
+              transition: 'opacity 0.2s',
+              zIndex: 1,
+            }}
+            className="delete-button"
+          />
+        </Tooltip>
         <Card.Meta
           avatar={
             <Avatar
@@ -274,7 +366,16 @@ export const WorkspaceWelcome: React.FC<WorkspaceWelcomeProps> = ({
   };
 
   return (
-    <div style={{ padding: '24px', height: '100%', overflowY: 'auto' }}>
+    <>
+      <style>
+        {`
+          .agent-card:hover .delete-button,
+          .chat-card:hover .delete-button {
+            opacity: 1 !important;
+          }
+        `}
+      </style>
+      <div style={{ padding: '24px', height: '100%', overflowY: 'auto' }}>
       {/* 欢迎标题 */}
       <div style={{ textAlign: 'center', marginBottom: '32px' }}>
         <Icon name="bx-bot" style={{ fontSize: '48px', color: '#1890ff', marginBottom: '16px' }} />
@@ -340,7 +441,7 @@ export const WorkspaceWelcome: React.FC<WorkspaceWelcomeProps> = ({
                 children: recentChats.length > 0 ? (
                   <div style={{ display: 'flex', flexWrap: 'wrap', gap: '16px' }}>
                     {recentChats.map(chatItem => (
-                      <div key={`${chatItem.agentKey}-${chatItem.chatKey}`} style={{ width: '220px' }}>
+                      <div key={`${chatItem.agentName}-${chatItem.chatKey}`} style={{ width: '220px' }}>
                         {renderChatCard(chatItem)}
                       </div>
                     ))}
@@ -365,7 +466,7 @@ export const WorkspaceWelcome: React.FC<WorkspaceWelcomeProps> = ({
                   <div style={{ display: 'flex', flexWrap: 'wrap', gap: '16px' }}>
                     {recentAgents.map(agent => (
                       <div key={agent.config.name} style={{ width: '220px' }}>
-                        {renderAgentCard(agent, true)}
+                        {renderAgentCard(agent, true, true)}
                       </div>
                     ))}
                   </div>
@@ -434,5 +535,6 @@ export const WorkspaceWelcome: React.FC<WorkspaceWelcomeProps> = ({
       </div>
 
     </div>
+    </>
   );
 };

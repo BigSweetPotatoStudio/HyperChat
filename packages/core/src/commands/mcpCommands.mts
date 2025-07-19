@@ -63,29 +63,6 @@ export const mcpCommands = {
     }
   },
 
-  /**
-   * 管理全局范围的 MCP 客户端生命周期（兼容性方法）
-   * @deprecated 已废弃，请使用 manageWorkspaceMcpClient 方法
-   */
-  async closeMcpClients({
-    clientName,
-    isdelete,
-    isdisable
-  }: {
-    clientName: string;
-    isdelete?: boolean;
-    isdisable?: boolean;
-  }) {
-    // 委托给新的工作区特定方法
-    let action: 'restart' | 'disable' | 'delete' = 'restart';
-    if (isdelete) action = 'delete';
-    else if (isdisable) action = 'disable';
-
-    return await this.manageWorkspaceMcpClient({
-      clientName,
-      action
-    });
-  },
 
   /**
    * 管理指定工作区的 MCP 客户端生命周期
@@ -368,25 +345,6 @@ export const mcpCommands = {
     }
   },
 
-  /**
-   * 停止工作区所有 MCP 客户端
-   * 注意：这会停止工作区中的所有客户端，如需停止单个客户端请使用 manageWorkspaceMcpClient
-   */
-  async stopWorkspaceMcpClients(): Promise<void> {
-    try {
-      const workspaceManager = getWorkspaceManager();
-      const workspace = workspaceManager.getCurrentWorkspace();
-
-      if (!workspace) {
-        throw new Error('当前没有可用的工作区');
-      }
-
-      await workspace.stopMcpClients();
-    } catch (error) {
-      console.error('Failed to stop all MCP clients:', error);
-      throw error;
-    }
-  },
 
   /**
    * 添加或更新 MCP 服务器配置（支持全局和工作区）
@@ -448,38 +406,7 @@ export const mcpCommands = {
     }
   },
 
-  /**
-   * 添加或更新全局 MCP 服务器配置
-   * @deprecated 请使用 setWorkspaceMcpServerConfig({serverName, serverConfig, scope: "global"})
-   */
-  async setGlobalMcpServerConfig({
-    serverName,
-    serverConfig
-  }: {
-    serverName: string;
-    serverConfig: MCPServerConfig;
-  }): Promise<void> {
-    return this.setWorkspaceMcpServerConfig({
-      serverName,
-      serverConfig,
-      scope: "global"
-    });
-  },
 
-  /**
-   * 删除全局 MCP 服务器配置
-   * @deprecated 请使用 deleteWorkspaceMcpServerConfig({serverName, scope: "global"})
-   */
-  async deleteGlobalMcpServerConfig({
-    serverName
-  }: {
-    serverName: string;
-  }): Promise<void> {
-    return this.deleteWorkspaceMcpServerConfig({
-      serverName,
-      scope: "global"
-    });
-  },
 
   /**
    * 获取工作区 MCP 客户端
