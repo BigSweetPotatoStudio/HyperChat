@@ -187,12 +187,13 @@ export const MCPManagement = forwardRef<MCPManagementRef, MCPManagementProps>(({
   }), []);
 
   // 重启MCP客户端
-  const restartMcpClient = async (clientName: string) => {
+  const restartMcpClient = async (client: IMCPClient) => {
     try {
       // 使用新的工作区特定的重启方法
       await call("manageWorkspaceMcpClient", {
-        clientName,
-        action: "restart"
+        clientName: client.serverName,
+        action: "restart",
+        scope: client.scope // 传递 scope 信息
       });
 
       message.success(t`MCP client restarted successfully`);
@@ -200,42 +201,45 @@ export const MCPManagement = forwardRef<MCPManagementRef, MCPManagementProps>(({
       // 重启成功后刷新前端数据（只刷新MCP数据）
       await onRefresh();
     } catch (error) {
-      console.error(`Failed to restart MCP client ${clientName}:`, error);
+      console.error(`Failed to restart MCP client ${client.serverName}:`, error);
       message.error(t`Failed to restart MCP client`);
     }
   };
 
   // 停用MCP客户端
-  const disableMcpClient = async (clientName: string) => {
+  const disableMcpClient = async (client: IMCPClient) => {
     try {
       // 使用新的工作区特定的禁用方法
       await call("manageWorkspaceMcpClient", {
-        clientName,
-        action: "disable"
+        clientName: client.serverName,
+        action: "disable",
+        scope: client.scope // 传递 scope 信息
       });
       message.success(t`MCP client disabled successfully`);
 
       // 停用成功后刷新前端数据（只刷新MCP数据）
       await onRefresh();
     } catch (error) {
-      console.error(`Failed to disable MCP client ${clientName}:`, error);
+      console.error(`Failed to disable MCP client ${client.serverName}:`, error);
       message.error(t`Failed to disable MCP client`);
     }
   };
 
   // 启用MCP客户端
-  const enableMcpClient = async (clientName: string) => {
+  const enableMcpClient = async (client: IMCPClient) => {
     try {
-      // 使用新的工作区特定的启动方法
-      await call("startWorkspaceMcpClient", {
-        clientName
+      // 使用新的工作区特定的启用方法
+      await call("manageWorkspaceMcpClient", {
+        clientName: client.serverName,
+        action: "enable",
+        scope: client.scope // 传递 scope 信息
       });
       message.success(t`MCP client enabled successfully`);
 
       // 启用成功后刷新前端数据（只刷新MCP数据）
       await onRefresh();
     } catch (error) {
-      console.error(`Failed to enable MCP client ${clientName}:`, error);
+      console.error(`Failed to enable MCP client ${client.serverName}:`, error);
       message.error(t`Failed to enable MCP client`);
     }
   };
@@ -246,7 +250,7 @@ export const MCPManagement = forwardRef<MCPManagementRef, MCPManagementProps>(({
       // 使用新的删除方法支持 scope 参数
       await call("deleteWorkspaceMcpServerConfig", {
         serverName: client.serverName,
-        scope: (client as any).scope // 传递 scope 信息
+        scope: client.scope // 传递 scope 信息
       });
       message.success(t`MCP client deleted successfully`);
 
@@ -591,22 +595,25 @@ export const MCPManagement = forwardRef<MCPManagementRef, MCPManagementProps>(({
                   key: "restart",
                   icon: <ReloadOutlined />,
                   label: t`Restart`,
-                  onClick: () => restartMcpClient(client.serverName),
+                  onClick: () => restartMcpClient(client),
                 },
                 {
                   type: "divider" as const
                 },
-                client.status === "disabled" ? {
-                  key: "enable",
-                  icon: <PlayCircleOutlined />,
-                  label: t`Enable`,
-                  onClick: () => enableMcpClient(client.serverName),
-                } : {
-                  key: "disable",
-                  icon: <StopOutlined />,
-                  label: t`Disable`,
-                  onClick: () => disableMcpClient(client.serverName),
-                },
+                // 只有非内置的MCP客户端才能禁用/启用
+                client.mcpType !== "builtin" ? (
+                  client.status === "disabled" ? {
+                    key: "enable",
+                    icon: <PlayCircleOutlined />,
+                    label: t`Enable`,
+                    onClick: () => enableMcpClient(client),
+                  } : {
+                    key: "disable",
+                    icon: <StopOutlined />,
+                    label: t`Disable`,
+                    onClick: () => disableMcpClient(client),
+                  }
+                ) : null,
                 {
                   type: "divider" as const
                 },

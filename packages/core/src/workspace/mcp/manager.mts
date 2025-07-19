@@ -411,27 +411,39 @@ export class WorkspaceMCPManager {
   }
 
   /**
-   * 删除服务器配置（不允许删除全局配置）
+   * 删除服务器配置
    */
-  async deleteServerConfig(name: string): Promise<void> {
+  async deleteServerConfig(name: string, scope: 'global' | 'workspace' = 'workspace'): Promise<void> {
     if (!this.workspaceConfig) {
       return;
     }
 
-    // 检查是否是全局配置
     const serverConfig = this.workspaceConfig.mcpServers[name];
-    if (serverConfig && (serverConfig as any)._scope === "global") {
-      throw new Error(`不允许删除全局配置的服务器: ${name}`);
+    
+    if (scope === 'global') {
+      // 删除全局配置
+      if (!serverConfig || (serverConfig as any)._scope !== "global") {
+        throw new Error(`全局配置中不存在服务器: ${name}`);
+      }
+    } else {
+      // 删除工作区配置
+      if (serverConfig && (serverConfig as any)._scope === "global") {
+        throw new Error(`不允许删除全局配置的服务器: ${name}，请使用 scope='global'`);
+      }
     }
 
     delete this.workspaceConfig.mcpServers[name];
     this.workspaceConfig.lastModified = Date.now();
 
-    // 保存配置
-    await this.saveConfig();
+    // 根据 scope 保存对应的配置文件
+    if (scope === 'global') {
+      await this.saveGlobalConfig();
+    } else {
+      await this.saveConfig();
+    }
 
     // 停止客户端
-    await this.stopClient(name);
+    await this.stopClient(name, scope);
 
     this.events.onConfigUpdate?.(this.workspaceConfig);
   }
@@ -466,44 +478,17 @@ export class WorkspaceMCPManager {
     this.events.onConfigUpdate?.(this.workspaceConfig);
   }
 
-  /**
-   * 删除全局服务器配置
-   */
-  async deleteGlobalServerConfig(name: string): Promise<void> {
-    // 移除权限检查，允许在任何工作区中删除全局配置
-    // 这样可以在普通项目工作区中直接管理全局MCP配置
-
-    if (!this.workspaceConfig) {
-      return;
-    }
-
-    // 检查是否存在该全局配置
-    const serverConfig = this.workspaceConfig.mcpServers[name];
-    if (!serverConfig || (serverConfig as any)._scope !== "global") {
-      throw new Error(`全局配置中不存在服务器: ${name}`);
-    }
-
-    delete this.workspaceConfig.mcpServers[name];
-    this.workspaceConfig.lastModified = Date.now();
-
-    // 保存全局配置
-    await this.saveGlobalConfig();
-
-    // 停止客户端
-    await this.stopClient(name);
-
-    this.events.onConfigUpdate?.(this.workspaceConfig);
-  }
 
   /**
    * 重启客户端
    */
-  async restartClient(name: string): Promise<void> {
+  async restartClient(name: string, scope?: 'global' | 'workspace'): Promise<void> {
     try {
-      this.logInfo(`开始重启客户端 ${name} (工作区: ${this.localPath})`);
+      const scopeText = scope ? `(${scope === 'global' ? '全局' : '工作区'})` : '';
+      this.logInfo(`开始重启客户端 ${name} ${scopeText} (工作区: ${this.localPath})`);
 
       // 停止客户端
-      await this.stopClient(name);
+      await this.stopClient(name, scope);
 
       // 先检查是否是内置客户端
       const builtinServers = [...WorkSpaceServers];
@@ -531,12 +516,18 @@ export class WorkspaceMCPManager {
           throw new Error(`工作区 ${this.localPath} 的配置不存在`);
         }
 
-        if (!this.workspaceConfig.mcpServers[name]) {
+        const serverConfig = this.workspaceConfig.mcpServers[name];
+        if (!serverConfig) {
           throw new Error(`客户端 ${name} 的配置不存在`);
         }
 
+        // 检查 scope 匹配
+        if (scope && (serverConfig as any)._scope !== scope) {
+          throw new Error(`客户端 ${name} 不存在于 ${scope === 'global' ? '全局' : '工作区'} 配置中`);
+        }
+
         // 只重启指定的客户端，而不是所有客户端
-        await this.startSingleClient(name, this.workspaceConfig.mcpServers[name]);
+        await this.startSingleClient(name, serverConfig);
       }
 
       this.logInfo(`客户端 ${name} 重启成功`);
@@ -558,18 +549,23 @@ export class WorkspaceMCPManager {
   /**
    * 停止单个客户端（全局客户端不允许停止，只允许重启）
    */
-  async stopClient(name: string): Promise<void> {
-    // 查找所有匹配名称的客户端（可能有多个scope）
-    const clientsToStop = Array.from(this.clients.values()).filter(client => client.serverName === name);
-
-    for (const client of clientsToStop) {
-      // 全局客户端不允许停止
-      if (client.scope === "global") {
-        this.logInfo(`跳过全局客户端 ${client.serverName}，全局客户端不允许停止`);
-        continue;
+  async stopClient(name: string, scope?: 'global' | 'workspace'): Promise<void> {
+    if (scope) {
+      // 停止指定 scope 的客户端
+      const clientId = this.getClientId(name, scope);
+      const client = this.clients.get(clientId);
+      
+      if (!client) {
+        this.logInfo(`客户端 ${clientId} 不存在，跳过停止操作`);
+        return;
       }
 
-      const clientId = this.getClientId(client.serverName, client.scope);
+      // 全局客户端不允许停止
+      if (scope === "global") {
+        this.logInfo(`跳过全局客户端 ${name}，全局客户端不允许停止`);
+        return;
+      }
+
       try {
         await client.close();
         this.clients.delete(clientId);
@@ -577,7 +573,113 @@ export class WorkspaceMCPManager {
       } catch (error) {
         this.logError(`停止客户端 ${clientId} 失败:`, error);
       }
+    } else {
+      // 兼容模式：查找所有匹配名称的客户端（可能有多个scope）
+      const clientsToStop = Array.from(this.clients.values()).filter(client => client.serverName === name);
+
+      for (const client of clientsToStop) {
+        // 全局客户端不允许停止
+        if (client.scope === "global") {
+          this.logInfo(`跳过全局客户端 ${client.serverName}，全局客户端不允许停止`);
+          continue;
+        }
+
+        const clientId = this.getClientId(client.serverName, client.scope);
+        try {
+          await client.close();
+          this.clients.delete(clientId);
+          this.logInfo(`客户端 ${clientId} 已停止`);
+        } catch (error) {
+          this.logError(`停止客户端 ${clientId} 失败:`, error);
+        }
+      }
     }
+  }
+
+  /**
+   * 禁用客户端（停止客户端并在配置中标记为 disabled）
+   */
+  async disableClient(name: string, scope: 'global' | 'workspace' = 'workspace'): Promise<void> {
+    if (!this.workspaceConfig) {
+      return;
+    }
+
+    // 检查是否为内置客户端，内置客户端不允许禁用
+    const builtinServers = [...WorkSpaceServers];
+    const isBuiltinServer = builtinServers.find(server => server.name === name);
+    if (isBuiltinServer) {
+      throw new Error(`内置客户端 ${name} 不允许禁用`);
+    }
+
+    const serverConfig = this.workspaceConfig.mcpServers[name];
+    if (!serverConfig) {
+      throw new Error(`客户端 ${name} 的配置不存在`);
+    }
+
+    // 检查 scope 匹配
+    if ((serverConfig as any)._scope !== scope) {
+      throw new Error(`客户端 ${name} 不存在于 ${scope === 'global' ? '全局' : '工作区'} 配置中`);
+    }
+
+    // 先停止客户端
+    await this.stopClient(name, scope);
+
+    // 在配置中标记为 disabled
+    serverConfig.disabled = true;
+    this.workspaceConfig.lastModified = Date.now();
+
+    // 根据 scope 保存对应的配置文件
+    if (scope === 'global') {
+      await this.saveGlobalConfig();
+    } else {
+      await this.saveConfig();
+    }
+
+    this.logInfo(`客户端 ${name} (${scope === 'global' ? '全局' : '工作区'}) 已禁用`);
+    this.events.onConfigUpdate?.(this.workspaceConfig);
+  }
+
+  /**
+   * 启用客户端（删除配置中的 disabled 属性并启动客户端）
+   */
+  async enableClient(name: string, scope: 'global' | 'workspace' = 'workspace'): Promise<void> {
+    if (!this.workspaceConfig) {
+      return;
+    }
+
+    // 检查是否为内置客户端，内置客户端不需要启用操作（它们默认启用）
+    const builtinServers = [...WorkSpaceServers];
+    const isBuiltinServer = builtinServers.find(server => server.name === name);
+    if (isBuiltinServer) {
+      throw new Error(`内置客户端 ${name} 默认启用，无需手动启用`);
+    }
+
+    const serverConfig = this.workspaceConfig.mcpServers[name];
+    if (!serverConfig) {
+      throw new Error(`客户端 ${name} 的配置不存在`);
+    }
+
+    // 检查 scope 匹配
+    if ((serverConfig as any)._scope !== scope) {
+      throw new Error(`客户端 ${name} 不存在于 ${scope === 'global' ? '全局' : '工作区'} 配置中`);
+    }
+
+    // 在配置中删除 disabled 属性（与 disable 操作相反）
+    delete serverConfig.disabled;
+    this.workspaceConfig.lastModified = Date.now();
+
+    // 根据 scope 保存对应的配置文件
+    if (scope === 'global') {
+      await this.saveGlobalConfig();
+    } else {
+      await this.saveConfig();
+    }
+
+    // 启动客户端
+    await this.restartClient(name, scope);
+
+    this.logInfo(`客户端 ${name} (${scope === 'global' ? '全局' : '工作区'}) 已启用`);
+    this.events.onConfigUpdate?.(this.workspaceConfig);
   }
 
   /**

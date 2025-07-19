@@ -1,7 +1,7 @@
 {
   "$schema": "./settings.schema.json",
   "workspace": {
-    "name": "Global Workspace",
+    "name": "Workspace",
     "created": 1752300920412
   },
   "appearance": {

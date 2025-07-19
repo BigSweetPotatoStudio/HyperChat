@@ -93,16 +93,22 @@ export const mcpCommands = {
    * @param clientName MCP客户端名称
    * @param action 操作类型：
    *   - 'restart': 重启客户端（先停止再启动）
-   *   - 'disable': 停止客户端服务，保留配置
+   *   - 'disable': 停止客户端服务并标记为禁用，保留配置
+   *   - 'enable': 删除禁用标记并启动客户端
    *   - 'delete': 永久删除客户端配置并停止服务
+   * @param scope 操作范围：
+   *   - 'workspace': 操作工作区配置（默认）
+   *   - 'global': 操作全局配置
    * @returns 操作结果
    */
   async manageWorkspaceMcpClient({
     clientName,
-    action
+    action,
+    scope = "workspace"
   }: {
     clientName: string;
-    action: 'restart' | 'disable' | 'delete';
+    action: 'restart' | 'disable' | 'enable' | 'delete';
+    scope?: "workspace" | "global";
   }) {
     try {
       const workspaceManager = getWorkspaceManager();
@@ -112,15 +118,16 @@ export const mcpCommands = {
         throw new Error('当前没有可用的工作区');
       }
 
-      await workspace.manageMcpClient(clientName, action);
+      await workspace.manageMcpClient(clientName, action, scope);
 
       return {
         success: true,
         action,
-        clientName
+        clientName,
+        scope
       };
     } catch (error) {
-      console.error(`Failed to ${action} MCP client ${clientName}:`, error);
+      console.error(`Failed to ${action} MCP client ${clientName} in ${scope}:`, error);
       throw error;
     }
   },

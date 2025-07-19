@@ -611,23 +611,31 @@ export class Workspace {
   /**
    * 管理单个 MCP 客户端
    */
-  async manageMcpClient(clientName: string, action: 'restart' | 'disable' | 'delete'): Promise<void> {
+  async manageMcpClient(clientName: string, action: 'restart' | 'disable' | 'enable' | 'delete', scope: 'global' | 'workspace' = 'workspace'): Promise<void> {
     try {
       switch (action) {
         case 'delete':
-          await this.mcpManager.deleteServerConfig(clientName);
+          await this.mcpManager.deleteServerConfig(clientName, scope);
           break;
         case 'disable':
-          await this.mcpManager.stopClient(clientName);
+          // disable 操作：停止客户端并在配置中标记为 disabled
+          await this.mcpManager.disableClient(clientName, scope);
+          break;
+        case 'enable':
+          // enable 操作：移除 disabled 标记并启动客户端
+          await this.mcpManager.enableClient(clientName, scope);
           break;
         case 'restart':
         default:
-          await this.mcpManager.restartClient(clientName);
+          // restart 操作根据 scope 重启对应配置的客户端
+          await this.mcpManager.restartClient(clientName, scope);
           break;
       }
-      Logger.info(`MCP客户端 ${clientName} ${action} 操作完成`);
+      const scopeText = scope === 'global' ? '全局' : '工作区';
+      Logger.info(`${scopeText}MCP客户端 ${clientName} ${action} 操作完成`);
     } catch (error) {
-      Logger.error(`MCP客户端 ${clientName} ${action} 操作失败:`, error);
+      const scopeText = scope === 'global' ? '全局' : '工作区';
+      Logger.error(`${scopeText}MCP客户端 ${clientName} ${action} 操作失败:`, error);
       throw error;
     }
   }
@@ -690,7 +698,7 @@ export class Workspace {
    */
   async deleteGlobalMcpServer(name: string): Promise<void> {
     try {
-      await this.mcpManager.deleteGlobalServerConfig(name);
+      await this.mcpManager.deleteServerConfig(name, 'global');
       Logger.info(`全局MCP服务器配置已删除: ${name}`);
     } catch (error) {
       Logger.error(`删除全局MCP服务器配置失败: ${name}`, error);
