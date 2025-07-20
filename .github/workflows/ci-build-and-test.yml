@@ -31,21 +31,21 @@ jobs:
         shell: bash
         run: |
           if [ "${{ github.event_name }}" = "push" ]; then
-            echo "::set-output name=type::推送"
-            echo "::set-output name=message::$(git log -1 --pretty=format:%s)"
-            echo "::set-output name=author::$(git log -1 --pretty=format:%an)"
-            echo "::set-output name=sha::$(git log -1 --pretty=format:%h)"
-            echo "::set-output name=url::${{ github.event.head_commit.url }}"
+            echo "type=推送" >> $GITHUB_OUTPUT
+            echo "message=$(git log -1 --pretty=format:%s)" >> $GITHUB_OUTPUT
+            echo "author=$(git log -1 --pretty=format:%an)" >> $GITHUB_OUTPUT
+            echo "sha=$(git log -1 --pretty=format:%h)" >> $GITHUB_OUTPUT
+            echo "url=${{ github.event.head_commit.url }}" >> $GITHUB_OUTPUT
           elif [ "${{ github.event_name }}" = "pull_request" ]; then
-            echo "::set-output name=type::拉取请求"
-            echo "::set-output name=message::${{ github.event.pull_request.title }}"
-            echo "::set-output name=author::${{ github.event.pull_request.user.login }}"
-            echo "::set-output name=url::${{ github.event.pull_request.html_url }}"
+            echo "type=拉取请求" >> $GITHUB_OUTPUT
+            echo "message=${{ github.event.pull_request.title }}" >> $GITHUB_OUTPUT
+            echo "author=${{ github.event.pull_request.user.login }}" >> $GITHUB_OUTPUT
+            echo "url=${{ github.event.pull_request.html_url }}" >> $GITHUB_OUTPUT
           elif [ "${{ github.event_name }}" = "issues" ]; then
-            echo "::set-output name=type::议题${{ github.event.action }}"
-            echo "::set-output name=message::${{ github.event.issue.title }}"
-            echo "::set-output name=author::${{ github.event.issue.user.login }}"
-            echo "::set-output name=url::${{ github.event.issue.html_url }}"
+            echo "type=议题${{ github.event.action }}" >> $GITHUB_OUTPUT
+            echo "message=${{ github.event.issue.title }}" >> $GITHUB_OUTPUT
+            echo "author=${{ github.event.issue.user.login }}" >> $GITHUB_OUTPUT
+            echo "url=${{ github.event.issue.html_url }}" >> $GITHUB_OUTPUT
           fi
 
       - name: Get changed files
@@ -54,9 +54,9 @@ jobs:
         shell: bash
         run: |
           if [ "${{ github.event_name }}" = "push" ]; then
-            echo "::set-output name=changed::$(git diff --name-only HEAD^1 HEAD | tr '\n' ', ')"
+            echo "changed=$(git diff --name-only HEAD^1 HEAD | tr '\n' ', ')" >> $GITHUB_OUTPUT
           elif [ "${{ github.event_name }}" = "pull_request" ]; then
-            echo "::set-output name=changed::$(git diff --name-only ${{ github.event.pull_request.base.sha }} ${{ github.event.pull_request.head.sha }} | tr '\n' ', ')"
+            echo "changed=$(git diff --name-only ${{ github.event.pull_request.base.sha }} ${{ github.event.pull_request.head.sha }} | tr '\n' ', ')" >> $GITHUB_OUTPUT
           fi
 
       - name: Setup Node.js and Dependencies

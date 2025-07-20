@@ -32,17 +32,17 @@ jobs:
         shell: bash
         run: |
           if [ "${{ github.event_name }}" = "push" ]; then
-            echo "::set-output name=type::推送"
-            echo "::set-output name=message::$(git log -1 --pretty=format:%s)"
-            echo "::set-output name=author::$(git log -1 --pretty=format:%an)"
-            echo "::set-output name=sha::$(git log -1 --pretty=format:%h)"
-            echo "::set-output name=url::${{ github.event.head_commit.url }}"
+            echo "type=推送" >> $GITHUB_OUTPUT
+            echo "message=$(git log -1 --pretty=format:%s)" >> $GITHUB_OUTPUT
+            echo "author=$(git log -1 --pretty=format:%an)" >> $GITHUB_OUTPUT
+            echo "sha=$(git log -1 --pretty=format:%h)" >> $GITHUB_OUTPUT
+            echo "url=${{ github.event.head_commit.url }}" >> $GITHUB_OUTPUT
           elif [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
-            echo "::set-output name=type::手动触发"
-            echo "::set-output name=message::$(git log -1 --pretty=format:%s)"
-            echo "::set-output name=author::${{ github.actor }}"
-            echo "::set-output name=sha::$(git log -1 --pretty=format:%h)"
-            echo "::set-output name=url::${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+            echo "type=手动触发" >> $GITHUB_OUTPUT
+            echo "message=$(git log -1 --pretty=format:%s)" >> $GITHUB_OUTPUT
+            echo "author=${{ github.actor }}" >> $GITHUB_OUTPUT
+            echo "sha=$(git log -1 --pretty=format:%h)" >> $GITHUB_OUTPUT
+            echo "url=${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}" >> $GITHUB_OUTPUT
           fi
 
       - name: Get changed files
@@ -50,7 +50,7 @@ jobs:
         if: github.event_name == 'push'
         shell: bash
         run: |
-          echo "::set-output name=changed::$(git diff --name-only HEAD^1 HEAD | tr '\n' ', ')"
+          echo "changed=$(git diff --name-only HEAD^1 HEAD | tr '\n' ', ')" >> $GITHUB_OUTPUT
 
       - name: Setup Node.js and Dependencies
         uses: ./.github/actions/setup-node-deps
