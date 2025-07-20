@@ -1,0 +1,78 @@
+name: 'Setup Node.js and Dependencies'
+description: '安装 Node.js 和项目依赖，支持缓存优化'
+inputs:
+  node-version:
+    description: 'Node.js 版本'
+    required: false
+    default: '20'
+  registry-url:
+    description: 'NPM registry URL'
+    required: false
+    default: 'https://registry.npmjs.org/'
+  install-global:
+    description: '要安装的全局依赖包 (如: "cross-env zx" 或 "cross-env zx tsx")'
+    required: false
+    default: 'cross-env zx'
+  install-python-setuptools:
+    description: '是否在 macOS 上安装 python-setuptools'
+    required: false
+    default: 'false'
+  install-scripts:
+    description: '是否安装 scripts 目录下的依赖'
+    required: false
+    default: 'false'
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Install Node.js
+      uses: actions/setup-node@v4.0.0
+      with:
+        node-version: ${{ inputs.node-version }}
+        registry-url: ${{ inputs.registry-url }}
+
+    - name: Install global dependencies
+      if: inputs.install-global != ''
+      shell: bash
+      run: npm install -g ${{ inputs.install-global }}
+
+    - name: Install python-setuptools (macOS)
+      if: inputs.install-python-setuptools == 'true' && runner.os == 'macOS'
+      shell: bash
+      run: brew install python-setuptools
+
+    # 缓存所有依赖（统一策略）
+    - name: Cache workspace dependencies
+      uses: actions/cache@v4
+      id: cache-workspace-deps
+      with:
+        path: |
+          node_modules
+          scripts/node_modules
+          packages/shared/node_modules
+          packages/core/node_modules
+          packages/web/node_modules
+          packages/electron/node_modules
+          ~/.cache/electron
+          ~/.cache/electron-builder
+          ~/Library/Caches/electron
+          ~/Library/Caches/electron-builder
+          ~/AppData/Local/electron/Cache
+          ~/AppData/Local/electron-builder/Cache
+        key: ${{ runner.os }}-node-workspace-${{ hashFiles('package-lock.json', 'scripts/package-lock.json', 'packages/*/package-lock.json') }}
+        restore-keys: |
+          ${{ runner.os }}-node-workspace-
+
+    # 安装所有依赖
+    - name: Install workspace dependencies
+      if: steps.cache-workspace-deps.outputs.cache-hit != 'true'
+      shell: bash
+      run: |
+        npm install
+        if [ "${{ inputs.install-scripts }}" = "true" ]; then
+          cd scripts && npm install
+        fi
+        cd packages/shared && npm install --include=optional
+        cd ../core && npm install --include=optional
+        cd ../web && npm install --include=optional && npm install favicons
+        cd ../electron && npm install --include=optional

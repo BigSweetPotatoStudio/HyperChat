@@ -37,7 +37,7 @@ jobs:
       - name: Install Node.js
         uses: actions/setup-node@v3.0.0
         with:
-          node-version: "20"
+          node-version: "22.16.0"
           registry-url: https://registry.npmjs.org/
 
       - uses: pnpm/action-setup@v4

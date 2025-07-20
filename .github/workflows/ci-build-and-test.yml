@@ -59,39 +59,13 @@ jobs:
             echo "::set-output name=changed::$(git diff --name-only ${{ github.event.pull_request.base.sha }} ${{ github.event.pull_request.head.sha }} | tr '\n' ', ')"
           fi
 
-      - name: Install Node.js
-        uses: actions/setup-node@v4
+      - name: Setup Node.js and Dependencies
+        uses: ./.github/actions/setup-node-deps
         with:
-          node-version: "22.16.0"
-
-      - name: Install global dependencies
-        run: npm install -g cross-env zx tsx
-
-      - name: Install python-setuptools
-        if: matrix.os == 'macos-latest'
-        run: brew install python-setuptools
-
-      # 统一的依赖缓存 - 包含 workspace 和 scripts 的 node_modules
-      - name: Cache workspace dependencies
-        uses: actions/cache@v4
-        id: cache-workspace-deps
-        with:
-          path: |
-            node_modules
-            scripts/node_modules
-            packages/shared/node_modules
-            packages/core/node_modules
-            packages/web/node_modules
-          key: ${{ matrix.os }}-node-workspace-${{ hashFiles('package-lock.json', 'scripts/package-lock.json', 'packages/shared/package-lock.json', 'packages/core/package-lock.json', 'packages/web/package-lock.json') }}
-          restore-keys: |
-            ${{ matrix.os }}-node-workspace-
-
-      # 统一安装 workspace 依赖（如果缓存未命中）
-      - name: Install workspace dependencies
-        if: steps.cache-workspace-deps.outputs.cache-hit != 'true'
-        run: |
-          npm install
-          cd scripts && npm install
+          node-version: '22.16.0'
+          install-global: 'cross-env zx tsx'
+          install-scripts: 'true'
+          install-python-setuptools: 'true'
 
       # packages/electron 目录的依赖缓存（独立安装）
       - name: Cache electron dependencies

@@ -213,7 +213,10 @@ const tasks = {
       await tasks.buildSharedForPublish();
     }
 
-    exec('npm publish --access public', { cwd: sharedDir });
+    const publishTag = process.env.NPM_PUBLISH_TAG || 'latest';
+    const tagFlag = publishTag === 'latest' ? '' : ` --tag ${publishTag}`;
+    console.log(`📦 发布标签: ${publishTag}`);
+    exec(`npm publish --access public${tagFlag}`, { cwd: sharedDir });
     console.log('✅ Shared 包发布完成！');
   },
 
@@ -242,7 +245,10 @@ const tasks = {
     }
     await tasks.buildCore();
 
-    exec('npm publish --access public', { cwd: coreDir });
+    const publishTag = process.env.NPM_PUBLISH_TAG || 'latest';
+    const tagFlag = publishTag === 'latest' ? '' : ` --tag ${publishTag}`;
+    console.log(`📦 发布标签: ${publishTag}`);
+    exec(`npm publish --access public${tagFlag}`, { cwd: coreDir });
     console.log('✅ Core 包发布完成！');
   },
 

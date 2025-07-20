@@ -66,62 +66,11 @@ jobs:
             echo "::set-output name=changed::$(git diff --name-only ${{ github.event.pull_request.base.sha }} ${{ github.event.pull_request.head.sha }} | tr '\n' ', ')"
           fi
 
-      - name: Install Node.js
-        uses: actions/setup-node@v4.0.0
+      - name: Setup Node.js and Dependencies
+        uses: ./.github/actions/setup-node-deps
         with:
-          node-version: "22.16.0"
-
-      - name: Install -g
-        run: npm install -g cross-env zx
-
-      - name: Install python-setuptools
-        if: matrix.os == 'macos-latest'
-        run:
-          brew install python-setuptools
-
-          # 根目录的依赖缓存
-      - name: Cache root dependencies
-        uses: actions/cache@v3
-        id: cache-root
-        with:
-          path: node_modules
-          key: ${{ matrix.os }}-node-${{ hashFiles('**/package-lock.json') }}
-          restore-keys: |
-            ${{ matrix.os }}-node-
-
-      # 安装根目录依赖（如果缓存未命中）
-      - name: Install root dependencies
-        if: steps.cache-root.outputs.cache-hit != 'true'
-        run: npm install
-
-      # packages 目录的依赖缓存
-      - name: Cache packages dependencies
-        uses: actions/cache@v3
-        id: cache-packages
-        with:
-          path: |
-            packages/shared/node_modules
-            packages/core/node_modules
-            packages/web/node_modules
-            packages/electron/node_modules
-            ~/.cache/electron
-            ~/.cache/electron-builder
-            ~/Library/Caches/electron
-            ~/Library/Caches/electron-builder
-            ~/AppData/Local/electron/Cache
-            ~/AppData/Local/electron-builder/Cache
-          key: ${{ matrix.os }}-node-packages-${{ hashFiles('packages/*/package-lock.json') }}
-          restore-keys: |
-            ${{ matrix.os }}-node-packages-
-
-      # 安装所有 packages 依赖（如果缓存未命中）
-      - name: Install packages dependencies
-        if: steps.cache-packages.outputs.cache-hit != 'true'
-        run: |
-          cd packages/shared && npm install --include=optional
-          cd ../core && npm install --include=optional
-          cd ../web && npm install --include=optional && npm install favicons
-          cd ../electron && npm install --include=optional
+          node-version: '22.16.0'
+          install-python-setuptools: 'true'
 
 
       # 构建Sync Version脚本
