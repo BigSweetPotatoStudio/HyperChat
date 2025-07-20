@@ -81,10 +81,9 @@ runs:
         
         npm install $INSTALL_FLAGS
         if [ "${{ inputs.install-scripts }}" = "true" ]; then
-          cd scripts && npm install $INSTALL_FLAGS
-          cd ..
+          (cd scripts && npm install $INSTALL_FLAGS)
         fi
-        cd packages/shared && npm install --include=optional $INSTALL_FLAGS
-        cd ../core && npm install --include=optional $INSTALL_FLAGS
-        cd ../web && npm install --include=optional $INSTALL_FLAGS && npm install favicons $INSTALL_FLAGS
-        cd ../electron && npm install --include=optional $INSTALL_FLAGS
+        (cd packages/shared && npm install --include=optional $INSTALL_FLAGS)
+        (cd packages/core && npm install --include=optional $INSTALL_FLAGS)
+        (cd packages/web && npm install --include=optional $INSTALL_FLAGS && npm install favicons $INSTALL_FLAGS)
+        (cd packages/electron && npm install --include=optional $INSTALL_FLAGS)
