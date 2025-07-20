@@ -36,6 +36,14 @@ runs:
       shell: bash
       run: npm install -g ${{ inputs.install-global }}
 
+    # Windows 特定设置：避免长路径问题
+    - name: Configure Windows npm settings
+      if: runner.os == 'Windows'
+      shell: bash
+      run: |
+        npm config set fund false
+        npm config set audit false
+
     - name: Install python-setuptools (macOS)
       if: inputs.install-python-setuptools == 'true' && runner.os == 'macOS'
       shell: bash
@@ -68,11 +76,15 @@ runs:
       if: steps.cache-workspace-deps.outputs.cache-hit != 'true'
       shell: bash
       run: |
-        npm install
+        # 使用统一的安装参数
+        INSTALL_FLAGS="--no-audit --no-fund"
+        
+        npm install $INSTALL_FLAGS
         if [ "${{ inputs.install-scripts }}" = "true" ]; then
-          cd scripts && npm install
+          cd scripts && npm install $INSTALL_FLAGS
+          cd ..
         fi
-        cd packages/shared && npm install --include=optional
-        cd ../core && npm install --include=optional
-        cd ../web && npm install --include=optional && npm install favicons
-        cd ../electron && npm install --include=optional
+        cd packages/shared && npm install --include=optional $INSTALL_FLAGS
+        cd ../core && npm install --include=optional $INSTALL_FLAGS
+        cd ../web && npm install --include=optional $INSTALL_FLAGS && npm install favicons $INSTALL_FLAGS
+        cd ../electron && npm install --include=optional $INSTALL_FLAGS
