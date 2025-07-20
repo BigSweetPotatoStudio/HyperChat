@@ -561,7 +561,7 @@ const ToolDataModal: React.FC<ToolDataModalProps> = ({
 
     return (
         <Modal
-            title={t`Tool Details: ${toolName}`}
+            title={t`Tool Details:` + toolName}
             open={visible}
             onCancel={onClose}
             footer={null}

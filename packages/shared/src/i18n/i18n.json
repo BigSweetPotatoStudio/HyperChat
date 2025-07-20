@@ -4891,5 +4891,495 @@
     "ko": "한국어",
     "fr": "Coréen",
     "de": "Koreanisch"
+  },
+  "(Configuration loaded from workspace above)": {
+    "zh": "(配置已从上方工作区加载)",
+    "ja": "（設定は上記のワークスペースから読み込まれました）",
+    "ko": "(상위 워크스페이스에서 로드된 구성)",
+    "fr": "(Configuration chargée depuis l'espace de travail ci-dessus)",
+    "de": "(Konfiguration aus dem übergeordneten Arbeitsbereich geladen)"
+  },
+  "(Project)": {
+    "zh": "(项目)",
+    "ja": "（プロジェクト）",
+    "ko": "(프로젝트)",
+    "fr": "(Projet)",
+    "de": "(Projekt)"
+  },
+  "(Running in workspace root)": {
+    "zh": "(在工作区根目录运行)",
+    "ja": "（ワークスペースルートで実行中）",
+    "ko": "(워크스페이스 루트에서 실행 중)",
+    "fr": "(Exécution dans la racine de l'espace de travail)",
+    "de": "(Wird im Arbeitsbereich-Stammverzeichnis ausgeführt)"
+  },
+  "Agent Scope": {
+    "zh": "代理范围",
+    "ja": "エージェントスコープ",
+    "ko": "에이전트 범위",
+    "fr": "Portée de l'Agent",
+    "de": "Agentenbereich"
+  },
+  "Agent not found:": {
+    "zh": "未找到代理：",
+    "ja": "エージェントが見つかりません：",
+    "ko": "에이전트를 찾을 수 없습니다:",
+    "fr": "Agent introuvable :",
+    "de": "Agent nicht gefunden:"
+  },
+  "All projects shared": {
+    "zh": "所有项目已共享",
+    "ja": "すべてのプロジェクトが共有されました",
+    "ko": "모든 프로젝트 공유됨",
+    "fr": "Tous les projets partagés",
+    "de": "Alle Projekte geteilt"
+  },
+  "Arguments": {
+    "zh": "参数",
+    "ja": "引数",
+    "ko": "인수",
+    "fr": "Arguments",
+    "de": "Argumente"
+  },
+  "Available commands: list, create, delete, memory, <name> \"message\", <name> chat": {
+    "zh": "可用命令：list, create, delete, memory, <名称> \"消息\", <名称> chat",
+    "ja": "利用可能なコマンド：list, create, delete, memory, <name> \"message\", <name> chat",
+    "ko": "사용 가능한 명령: list, create, delete, memory, <이름> \"메시지\", <이름> 채팅",
+    "fr": "Commandes disponibles : list, create, delete, memory, <name> \"message\", <name> chat",
+    "de": "Verfügbare Befehle: list, create, delete, memory, <name> \"message\", <name> chat"
+  },
+  "Available commands: list, current, create": {
+    "zh": "可用命令：list, current, create",
+    "ja": "利用可能なコマンド: list, current, create",
+    "ko": "사용 가능한 명령: list, current, create",
+    "fr": "Commandes disponibles : list, current, create",
+    "de": "Verfügbare Befehle: list, current, create"
+  },
+  "Cancel auto scroll": {
+    "zh": "取消自动滚动",
+    "ja": "自動スクロールをキャンセル",
+    "ko": "자동 스크롤 취소",
+    "fr": "Annuler le défilement automatique",
+    "de": "Automatisches Scrollen abbrechen"
+  },
+  "Compression Strategy": {
+    "zh": "压缩策略",
+    "ja": "圧縮戦略",
+    "ko": "압축 전략",
+    "fr": "Stratégie de compression",
+    "de": "Komprimierungsstrategie"
+  },
+  "Config path:": {
+    "zh": "配置路径：",
+    "ja": "設定パス:",
+    "ko": "구성 경로:",
+    "fr": "Chemin de configuration :",
+    "de": "Konfigurationspfad:"
+  },
+  "Configuration loaded from workspace above": {
+    "zh": "配置已从上方工作区加载",
+    "ja": "上記ワークスペースから設定を読み込みました",
+    "ko": "위 워크스페이스에서 구성 로드됨",
+    "fr": "Configuration chargée depuis l'espace de travail ci-dessus",
+    "de": "Konfiguration aus dem oben genannten Arbeitsbereich geladen"
+  },
+  "Content": {
+    "zh": "内容",
+    "ja": "コンテンツ",
+    "ko": "콘텐츠",
+    "fr": "Contenu",
+    "de": "Inhalt"
+  },
+  "Copied arguments to clipboard": {
+    "zh": "参数已复制到剪贴板",
+    "ja": "引数をクリップボードにコピーしました",
+    "ko": "인수가 클립보드에 복사되었습니다",
+    "fr": "Arguments copiés dans le presse-papiers",
+    "de": "Argumente in Zwischenablage kopiert"
+  },
+  "Creating a global MCP server that will be available in all workspaces": {
+    "zh": "正在创建全局 MCP 服务器，所有工作区均可使用",
+    "ja": "すべてのワークスペースで利用可能なグローバルMCPサーバーを作成中",
+    "ko": "모든 워크스페이스에서 사용 가능한 전역 MCP 서버 생성 중",
+    "fr": "Création d'un serveur MCP global qui sera disponible dans tous les espaces de travail",
+    "de": "Erstelle einen globalen MCP-Server, der in allen Arbeitsbereichen verfügbar sein wird"
+  },
+  "Creating a global agent that will be available in all workspaces": {
+    "zh": "创建可在所有工作区中使用的全局代理",
+    "ja": "すべてのワークスペースで利用可能なグローバルエージェントを作成しています",
+    "ko": "모든 워크스페이스에서 사용 가능한 전역 에이전트 생성 중",
+    "fr": "Création d'un agent global qui sera disponible dans tous les espaces de travail",
+    "de": "Erstelle einen globalen Agenten, der in allen Arbeitsbereichen verfügbar ist"
+  },
+  "Creating a workspace MCP server that will only be available in current workspace": {
+    "zh": "创建仅在当前工作区中可用的工作区 MCP 服务器",
+    "ja": "現在のワークスペースでのみ利用可能なワークスペースMCPサーバーを作成しています",
+    "ko": "현재 워크스페이스에서만 사용 가능한 워크스페이스 MCP 서버 생성 중",
+    "fr": "Création d'un serveur MCP d'espace de travail qui ne sera disponible que dans l'espace de travail actuel",
+    "de": "Erstelle einen Arbeitsbereichs-MCP-Server, der nur im aktuellen Arbeitsbereich verfügbar ist"
+  },
+  "Creating a workspace agent that will only be available in current workspace": {
+    "zh": "创建仅在当前工作区中可用的工作区代理",
+    "ja": "現在のワークスペースでのみ利用可能なワークスペースエージェントを作成しています",
+    "ko": "현재 워크스페이스에서만 사용 가능한 워크스페이스 에이전트 생성 중",
+    "fr": "Création d'un agent d'espace de travail qui ne sera disponible que dans l'espace de travail actuel",
+    "de": "Erstelle einen Arbeitsbereichs-Agenten, der nur im aktuellen Arbeitsbereich verfügbar ist"
+  },
+  "Current MCP server scope:": {
+    "zh": "当前 MCP 服务器范围：",
+    "ja": "現在のMCPサーバーのスコープ:",
+    "ko": "현재 MCP 서버 범위:",
+    "fr": "Portée actuelle du serveur MCP :",
+    "de": "Aktueller MCP-Server-Geltungsbereich:"
+  },
+  "Current Status:": {
+    "zh": "当前状态：",
+    "ja": "現在のステータス:",
+    "ko": "현재 상태:",
+    "fr": "Statut actuel :",
+    "de": "Aktueller Status:"
+  },
+  "Current agent scope:": {
+    "zh": "当前代理范围：",
+    "ja": "現在のエージェントのスコープ:",
+    "ko": "현재 에이전트 범위:",
+    "fr": "Portée actuelle de l'agent :",
+    "de": "Aktueller Agenten-Geltungsbereich:"
+  },
+  "Current project only": {
+    "zh": "仅当前项目",
+    "ja": "現在のプロジェクトのみ",
+    "ko": "현재 프로젝트만",
+    "fr": "Projet actuel uniquement",
+    "de": "Nur aktuelles Projekt"
+  },
+  "Current working directory:": {
+    "zh": "当前工作目录：",
+    "ja": "現在の作業ディレクトリ:",
+    "ko": "현재 작업 디렉터리:",
+    "fr": "Répertoire de travail actuel :",
+    "de": "Aktuelles Arbeitsverzeichnis:"
+  },
+  "Dialogs Count": {
+    "zh": "对话数量",
+    "ja": "ダイアログ数",
+    "ko": "대화 수",
+    "fr": "Nombre de dialogues",
+    "de": "Anzahl der Dialoge"
+  },
+  "Editing a global agent - changes will affect all projects using this agent": {
+    "zh": "正在编辑全局代理 - 更改将影响所有使用此代理的项目",
+    "ja": "グローバルエージェントを編集しています - 変更はこのエージェントを使用するすべてのプロジェクトに影響します",
+    "ko": "글로벌 에이전트 편집 중 - 변경 사항은 이 에이전트를 사용하는 모든 프로젝트에 영향을 미칩니다",
+    "fr": "Modification d'un agent global - les changements affecteront tous les projets utilisant cet agent",
+    "de": "Bearbeitung eines globalen Agenten – Änderungen wirken sich auf alle Projekte aus, die diesen Agenten verwenden"
+  },
+  "Enhanced with builtin prompts and memory support": {
+    "zh": "内置提示词和记忆支持增强",
+    "ja": "組み込みプロンプトとメモリサポートで強化",
+    "ko": "내장 프롬프트 및 메모리 지원으로 향상됨",
+    "fr": "Amélioré avec des invites intégrées et la prise en charge de la mémoire",
+    "de": "Erweitert mit integrierten Eingabeaufforderungen und Speicherunterstützung"
+  },
+  "Failed to get current workspace status:": {
+    "zh": "获取当前工作区状态失败：",
+    "ja": "現在のワークスペースステータスの取得に失敗しました:",
+    "ko": "현재 워크스페이스 상태를 가져오지 못했습니다:",
+    "fr": "Échec de l'obtention du statut de l'espace de travail actuel :",
+    "de": "Fehler beim Abrufen des aktuellen Arbeitsbereichsstatus:"
+  },
+  "Failed to get memory for agent:": {
+    "zh": "获取代理记忆失败：",
+    "ja": "エージェントのメモリ取得に失敗しました:",
+    "ko": "에이전트 메모리를 가져오지 못했습니다:",
+    "fr": "Échec de l'obtention de la mémoire pour l'agent :",
+    "de": "Fehler beim Abrufen des Speichers für Agent:"
+  },
+  "Failed to show agent memory:": {
+    "zh": "显示代理记忆失败：",
+    "ja": "エージェントメモリの表示に失敗しました:",
+    "ko": "에이전트 메모리를 표시하지 못했습니다:",
+    "fr": "Échec de l'affichage de la mémoire de l'agent :",
+    "de": "Fehler beim Anzeigen des Agentenspeichers:"
+  },
+  "Getting memory for agent:": {
+    "zh": "正在获取代理记忆：",
+    "ja": "エージェントのメモリを取得中:",
+    "ko": "에이전트 메모리 가져오는 중:",
+    "fr": "Obtention de la mémoire pour l'agent :",
+    "de": "Speicher für Agent wird abgerufen:"
+  },
+  "Getting workspace information...": {
+    "zh": "正在获取工作区信息...",
+    "ja": "ワークスペース情報を取得中...",
+    "ko": "워크스페이스 정보 가져오는 중...",
+    "fr": "Obtention des informations de l'espace de travail...",
+    "de": "Arbeitsbereichsinformationen werden abgerufen..."
+  },
+  "Has memory data": {
+    "zh": "包含记忆数据",
+    "ja": "記憶データあり",
+    "ko": "메모리 데이터 있음",
+    "fr": "Contient des données de mémoire",
+    "de": "Hat Speicherdaten"
+  },
+  "Image Content": {
+    "zh": "图像内容",
+    "ja": "画像コンテンツ",
+    "ko": "이미지 콘텐츠",
+    "fr": "Contenu de l'image",
+    "de": "Bildinhalt"
+  },
+  "MCP Server Scope": {
+    "zh": "MCP 服务器范围",
+    "ja": "MCPサーバー スコープ",
+    "ko": "MCP 서버 범위",
+    "fr": "Portée du Serveur MCP",
+    "de": "MCP-Server-Geltungsbereich"
+  },
+  "MCP Service Name already exists in ${createScope === 'global' ? 'global' : 'workspace'} scope": {
+    "zh": "MCP 服务名称在 ${createScope === 'global' ? '全局' : '工作区'} 范围中已存在",
+    "ja": "MCPサービス名が${createScope === 'global' ? 'グローバル' : 'ワークスペース'}スコープに既に存在します",
+    "ko": "MCP 서비스 이름이 ${createScope === 'global' ? '글로벌' : '워크스페이스'} 범위에 이미 존재합니다",
+    "fr": "Le nom du service MCP existe déjà dans la portée ${createScope === 'global' ? 'globale' : 'de l'espace de travail'}",
+    "de": "MCP-Dienstname existiert bereits im ${createScope === 'global' ? 'globalen' : 'Arbeitsbereichs'}-Geltungsbereich"
+  },
+  "Max Context Tokens": {
+    "zh": "最大上下文令牌数",
+    "ja": "最大コンテキストトークン",
+    "ko": "최대 컨텍스트 토큰",
+    "fr": "Jetons de contexte maximum",
+    "de": "Max. Kontext-Token"
+  },
+  "Memory file path:": {
+    "zh": "记忆文件路径：",
+    "ja": "メモリファイルパス:",
+    "ko": "메모리 파일 경로:",
+    "fr": "Chemin du fichier de mémoire :",
+    "de": "Speicherdateipfad:"
+  },
+  "Memory file:": {
+    "zh": "记忆文件：",
+    "ja": "メモリファイル:",
+    "ko": "메모리 파일:",
+    "fr": "Fichier de mémoire :",
+    "de": "Speicherdatei:"
+  },
+  "Memory for agent:": {
+    "zh": "代理记忆：",
+    "ja": "エージェントのメモリ:",
+    "ko": "에이전트 메모리:",
+    "fr": "Mémoire pour l'Agent :",
+    "de": "Speicher für Agent:"
+  },
+  "No ${scopeFilter} agents": {
+    "zh": "没有 ${scopeFilter} 代理",
+    "ja": "エージェントが見つかりません: ${scopeFilter}",
+    "ko": "선택된 ${scopeFilter} 에이전트 없음",
+    "fr": "Aucun agent ${scopeFilter}",
+    "de": "Keine ${scopeFilter} Agenten"
+  },
+  "No .hyperchat directory found in current path.": {
+    "zh": "当前路径中未找到 .hyperchat 目录。",
+    "ja": "現在のパスに.hyperchatディレクトリが見つかりません。",
+    "ko": "현재 경로에 .hyperchat 디렉토리가 없습니다.",
+    "fr": "Aucun répertoire .hyperchat trouvé dans le chemin actuel.",
+    "de": "Kein .hyperchat-Verzeichnis im aktuellen Pfad gefunden."
+  },
+  "No memory found for agent:": {
+    "zh": "未找到代理的记忆：",
+    "ja": "エージェントのメモリが見つかりません:",
+    "ko": "에이전트에 대한 메모리를 찾을 수 없습니다:",
+    "fr": "Aucune mémoire trouvée pour l'agent :",
+    "de": "Kein Speicher für Agent gefunden:"
+  },
+  "Object Content": {
+    "zh": "对象内容",
+    "ja": "オブジェクトの内容",
+    "ko": "객체 내용",
+    "fr": "Contenu de l'objet",
+    "de": "Objektinhalt"
+  },
+  "Project Workspace": {
+    "zh": "项目工作区",
+    "ja": "プロジェクトワークスペース",
+    "ko": "프로젝트 워크스페이스",
+    "fr": "Espace de travail du projet",
+    "de": "Projekt-Arbeitsbereich"
+  },
+  "Remove from recent list": {
+    "zh": "从最近列表中移除",
+    "ja": "最近のリストから削除",
+    "ko": "최근 목록에서 제거",
+    "fr": "Supprimer de la liste récente",
+    "de": "Aus der Liste der letzten Elemente entfernen"
+  },
+  "Scope": {
+    "zh": "范围",
+    "ja": "スコープ",
+    "ko": "범위",
+    "fr": "Portée",
+    "de": "Umfang"
+  },
+  "Select compression strategy": {
+    "zh": "选择压缩策略",
+    "ja": "圧縮戦略を選択",
+    "ko": "압축 전략 선택",
+    "fr": "Sélectionner la stratégie de compression",
+    "de": "Komprimierungsstrategie auswählen"
+  },
+  "Show agent memory": {
+    "zh": "显示代理内存",
+    "ja": "エージェントのメモリを表示",
+    "ko": "에이전트 메모리 보기",
+    "fr": "Afficher la mémoire de l'agent",
+    "de": "Agenten-Speicher anzeigen"
+  },
+  "Show current status": {
+    "zh": "显示当前状态",
+    "ja": "現在のステータスを表示",
+    "ko": "현재 상태 보기",
+    "fr": "Afficher le statut actuel",
+    "de": "Aktuellen Status anzeigen"
+  },
+  "Show current working directory and workspace": {
+    "zh": "显示当前工作目录和工作区",
+    "ja": "現在の作業ディレクトリとワークスペースを表示",
+    "ko": "현재 작업 디렉토리 및 워크스페이스 보기",
+    "fr": "Afficher le répertoire de travail actuel et l'espace de travail",
+    "de": "Aktuelles Arbeitsverzeichnis und Arbeitsbereich anzeigen"
+  },
+  "Show workspace information": {
+    "zh": "显示工作区信息",
+    "ja": "ワークスペース情報を表示",
+    "ko": "워크스페이스 정보 보기",
+    "fr": "Afficher les informations de l'espace de travail",
+    "de": "Arbeitsbereichsinformationen anzeigen"
+  },
+  "Strategy for memory compression: tokens (token数量), dialogs (轮数)": {
+    "zh": "内存压缩策略：令牌（token数量），对话（轮数）",
+    "ja": "メモリ圧縮戦略：トークン数、ダイアログ数",
+    "ko": "메모리 압축 전략: 토큰, 대화",
+    "fr": "Stratégie de compression de la mémoire : jetons (nombre de jetons), dialogues (nombre de tours)",
+    "de": "Strategie zur Speicherkomprimierung: Tokens (Anzahl der Tokens), Dialoge (Anzahl der Runden)"
+  },
+  "Text Content": {
+    "zh": "文本内容",
+    "ja": "テキストコンテンツ",
+    "ko": "텍스트 내용",
+    "fr": "Contenu textuel",
+    "de": "Textinhalt"
+  },
+  "The agent will start with a fresh memory": {
+    "zh": "代理将从全新内存开始",
+    "ja": "エージェントは新しいメモリで開始します",
+    "ko": "에이전트가 새로운 메모리로 시작됩니다.",
+    "fr": "L'agent démarrera avec une mémoire vierge",
+    "de": "Der Agent startet mit einem leeren Speicher"
+  },
+  "This will only delete the MCP server from current workspace.": {
+    "zh": "这只会从当前工作区删除 MCP 服务器。",
+    "ja": "これにより、現在のワークスペースからMCPサーバーのみが削除されます。",
+    "ko": "현재 워크스페이스에서 MCP 서버만 삭제됩니다.",
+    "fr": "Cela supprimera uniquement le serveur MCP de l'espace de travail actuel.",
+    "de": "Dadurch wird nur der MCP-Server aus dem aktuellen Arbeitsbereich gelöscht."
+  },
+  "This will only delete the agent from current workspace.": {
+    "zh": "这只会从当前工作区删除此代理。",
+    "ja": "これにより、現在のワークスペースからエージェントが削除されます。",
+    "ko": "현재 워크스페이스에서만 에이전트를 삭제합니다.",
+    "fr": "Cela ne fera que supprimer l'agent de l'espace de travail actuel.",
+    "de": "Dadurch wird der Agent nur aus dem aktuellen Arbeitsbereich gelöscht."
+  },
+  "Token Count": {
+    "zh": "令牌计数",
+    "ja": "トークン数",
+    "ko": "토큰 수",
+    "fr": "Nombre de jetons",
+    "de": "Token-Anzahl"
+  },
+  "Untitled Chat": {
+    "zh": "无标题聊天",
+    "ja": "無題のチャット",
+    "ko": "제목 없는 채팅",
+    "fr": "Chat sans titre",
+    "de": "Unbenannter Chat"
+  },
+  "Usage: hyperchat agent memory <name>": {
+    "zh": "用法：hyperchat agent memory <名称>",
+    "ja": "使用法: hyperchat agent memory <name>",
+    "ko": "사용법: hyperchat agent memory <이름>",
+    "fr": "Utilisation: hyperchat agent memory <nom>",
+    "de": "Verwendung: hyperchat agent memory <name>"
+  },
+  "Use 'hyperchat agent memory <name>' to view agent memory": {
+    "zh": "使用 'hyperchat agent memory <名称>' 查看代理内存",
+    "ja": "エージェントのメモリを表示するには、「hyperchat agent memory <name>」を使用してください",
+    "ko": "'hyperchat agent memory <이름>'을 사용하여 에이전트 메모리를 확인하세요.",
+    "fr": "Utilisez 'hyperchat agent memory <nom>' pour afficher la mémoire de l'agent",
+    "de": "Verwenden Sie 'hyperchat agent memory <name>', um den Agenten-Speicher anzuzeigen"
+  },
+  "Using global workspace.": {
+    "zh": "正在使用全局工作区。",
+    "ja": "グローバルワークスペースを使用しています。",
+    "ko": "글로벌 워크스페이스를 사용 중입니다.",
+    "fr": "Utilisation de l'espace de travail global.",
+    "de": "Globalen Arbeitsbereich verwenden."
+  },
+  "Using local workspace with .hyperchat directory (merging with global config).": {
+    "zh": "正在使用带 .hyperchat 目录的本地工作区（与全局配置合并）。",
+    "ja": ".hyperchat ディレクトリを持つローカルワークスペースを使用しています（グローバル設定とマージされます）。",
+    "ko": ".hyperchat 디렉토리와 함께 로컬 워크스페이스를 사용 중입니다 (글로벌 구성과 병합).",
+    "fr": "Utilisation de l'espace de travail local avec le répertoire .hyperchat (fusion avec la configuration globale).",
+    "de": "Lokalen Arbeitsbereich mit .hyperchat-Verzeichnis verwenden (Zusammenführung mit globaler Konfiguration)."
+  },
+  "Warning: Deleting a global MCP server will affect all projects using this server!": {
+    "zh": "警告：删除全局 MCP 服务器将影响所有使用此服务器的项目！",
+    "ja": "警告: グローバルMCPサーバーを削除すると、このサーバーを使用しているすべてのプロジェクトに影響します！",
+    "ko": "경고: 글로벌 MCP 서버를 삭제하면 이 서버를 사용하는 모든 프로젝트에 영향을 미칩니다!",
+    "fr": "Attention: La suppression d'un serveur MCP global affectera tous les projets utilisant ce serveur!",
+    "de": "Warnung: Das Löschen eines globalen MCP-Servers wirkt sich auf alle Projekte aus, die diesen Server verwenden!"
+  },
+  "Warning: Deleting a global agent will affect all projects using this agent!": {
+    "zh": "警告：删除全局代理将影响所有使用此代理的项目！",
+    "ja": "警告：グローバルエージェントを削除すると、このエージェントを使用しているすべてのプロジェクトに影響します！",
+    "ko": "경고: 전역 에이전트를 삭제하면 이 에이전트를 사용하는 모든 프로젝트에 영향을 미칩니다!",
+    "fr": "Attention : La suppression d'un agent global affectera tous les projets utilisant cet agent !",
+    "de": "Warnung: Das Löschen eines globalen Agenten wirkt sich auf alle Projekte aus, die diesen Agenten verwenden!"
+  },
+  "Working Directory:": {
+    "zh": "工作目录：",
+    "ja": "作業ディレクトリ：",
+    "ko": "작업 디렉터리:",
+    "fr": "Répertoire de travail :",
+    "de": "Arbeitsverzeichnis:"
+  },
+  "Working directory:": {
+    "zh": "工作目录：",
+    "ja": "作業ディレクトリ：",
+    "ko": "작업 디렉터리:",
+    "fr": "Répertoire de travail :",
+    "de": "Arbeitsverzeichnis:"
+  },
+  "Workspace Type:": {
+    "zh": "工作区类型：",
+    "ja": "ワークスペースタイプ：",
+    "ko": "워크스페이스 유형:",
+    "fr": "Type d'espace de travail :",
+    "de": "Arbeitsbereichstyp:"
+  },
+  "Workspace details:": {
+    "zh": "工作区详情：",
+    "ja": "ワークスペースの詳細：",
+    "ko": "워크스페이스 세부 정보:",
+    "fr": "Détails de l'espace de travail :",
+    "de": "Arbeitsbereichsdetails:"
+  },
+  "Tool Details:": {
+    "zh": "工具详情：",
+    "ja": "ツールの詳細：",
+    "ko": "도구 세부 정보:",
+    "fr": "Détails de l'outil :",
+    "de": "Werkzeugdetails:"
   }
 }

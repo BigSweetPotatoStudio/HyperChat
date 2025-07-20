@@ -60,7 +60,7 @@ export function Workspace() {
   // 通用错误处理函数
   const handleError = (error: unknown, errorMessage: string) => {
     console.error(errorMessage, error);
-    message.error(t`${errorMessage}`);
+    message.error(errorMessage);
   };
 
   // 只从context获取真正需要在Layout中管理的状态

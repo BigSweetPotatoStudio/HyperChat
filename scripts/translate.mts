@@ -474,6 +474,107 @@ function validateTranslation(original: string, translation: string, targetLang: 
   };
 }
 
+// 🎯 处理单个语言的翻译
+async function processLanguage(json: any, aiConfig: AIConfig, targetLang: string): Promise<boolean> {
+  const langConfig = LANGUAGE_CONFIG[targetLang];
+  let hasChanges = false;
+  
+  // 仅验证模式
+  if (argv.validate) {
+    console.log(`🔍 验证 ${langConfig.name} 翻译质量...`);
+    let issues = 0;
+    for (const [key, value] of Object.entries(json)) {
+      const entry = value as { [key: string]: string };
+      if (entry[targetLang]) {
+        const validation = validateTranslation(key, entry[targetLang], targetLang);
+        if (!validation.isValid) {
+          console.warn(`⚠️  [${key}]: ${validation.issues.join(', ')}`);
+          issues++;
+        }
+      }
+    }
+    console.log(issues === 0 ? `✅ ${langConfig.name} 所有翻译质量良好` : `⚠️  ${langConfig.name} 发现 ${issues} 个质量问题`);
+    return false;
+  }
+  
+  // 统计需要翻译的条目
+  const needTranslation = Object.keys(json).filter(key => {
+    if (argv.force) {
+      return true;
+    }
+    const entry = json[key] as { [key: string]: string | null };
+    const translation = entry[targetLang];
+    return translation == null || translation === "";
+  });
+  
+  if (needTranslation.length === 0) {
+    console.log(`✅ ${langConfig.name} 所有条目都已翻译，无需处理`);
+    return false;
+  }
+  
+  console.log(`📊 ${langConfig.name} 找到 ${needTranslation.length} 个需要翻译的条目`);
+  
+  // 如果是 dry-run 模式，只显示需要翻译的条目
+  if (argv['dry-run']) {
+    console.log(`\n📋 ${langConfig.name}翻译预览:`);
+    needTranslation.forEach((key, index) => {
+      const entry = json[key] as { [key: string]: string | null };
+      const translation = entry[targetLang];
+      const status = translation ? '(重新翻译)' : '(新翻译)';
+      console.log(`${index + 1}. ${key} ${status}`);
+    });
+    console.log(`\n📈 ${langConfig.name} 总计: ${needTranslation.length} 个条目`);
+    return false;
+  }
+
+  // 🚀 批量翻译处理
+  const batchSize = parseInt(argv['batch-size']) || 8;
+  const batches = [];
+  for (let i = 0; i < needTranslation.length; i += batchSize) {
+    batches.push(needTranslation.slice(i, i + batchSize));
+  }
+
+  console.log(`⚡ ${langConfig.name} 使用批量翻译模式，${batches.length} 个批次，每批 ${batchSize} 个条目`);
+
+  for (let batchIndex = 0; batchIndex < batches.length; batchIndex++) {
+    const batch = batches[batchIndex];
+    console.log(`\n🔄 ${langConfig.name} 处理批次 ${batchIndex + 1}/${batches.length} (${batch.length} 个条目)`);
+    
+    try {
+      const translations = await translateBatch(batch, aiConfig, targetLang);
+      
+      // 应用翻译结果并验证质量
+      for (let i = 0; i < batch.length; i++) {
+        const key = batch[i];
+        if (translations[i]) {
+          const entry = json[key] as { [key: string]: string | null };
+          entry[targetLang] = translations[i];
+          hasChanges = true;
+          
+          // 翻译质量验证
+          const validation = validateTranslation(key, translations[i], targetLang);
+          if (validation.isValid) {
+            console.log(`✅ ${key}`);
+          } else {
+            console.warn(`⚠️  ${key} (质量警告: ${validation.issues.join(', ')})`);
+          }
+        }
+      }
+      
+      // 批次间延迟，避免 API 限速
+      if (batchIndex < batches.length - 1) {
+        console.log('⏳ 等待 1 秒避免 API 限速...');
+        await new Promise(resolve => setTimeout(resolve, 1000));
+      }
+    } catch (error) {
+      console.error(`❌ ${langConfig.name} 批次 ${batchIndex + 1} 翻译失败:`, error);
+      console.log('继续处理下一批次...');
+    }
+  }
+
+  return hasChanges;
+}
+
 // 🎯 解析 AI 配置
 function parseAIConfig(): { aiConfig: AIConfig; targetLang: string } {
   const baseURL = process.env.baseURL;
@@ -491,7 +592,7 @@ function parseAIConfig(): { aiConfig: AIConfig; targetLang: string } {
   }
   
   const apiKey = process.env.apiKey || process.env.OPENAI_API_KEY || process.env.ANTHROPIC_API_KEY || process.env.GOOGLE_API_KEY;
-  const targetLang = argv.lang || argv.language || 'zh';
+  const targetLang = argv.lang || argv.language || 'all';
 
   if (!apiKey) {
     console.error("❌ 错误: 缺少 API 密钥");
@@ -499,9 +600,9 @@ function parseAIConfig(): { aiConfig: AIConfig; targetLang: string } {
     process.exit(1);
   }
 
-  if (!LANGUAGE_CONFIG[targetLang]) {
+  if (targetLang !== 'all' && !LANGUAGE_CONFIG[targetLang]) {
     console.error(`❌ 错误: 不支持的语言: ${targetLang}`);
-    console.error(`支持的语言: ${Object.keys(LANGUAGE_CONFIG).join(', ')}`);
+    console.error(`支持的语言: ${Object.keys(LANGUAGE_CONFIG).join(', ')}, all`);
     process.exit(1);
   }
 
@@ -532,7 +633,7 @@ async function main() {
   --validate         仅验证现有翻译质量
   --provider NAME    AI 提供商 (openai|anthropic|google, 默认: google)
   --model MODEL      指定模型 (默认: google/gemini-2.0-flash-exp)
-  --lang, --language 目标语言 (zh|ja|ko|fr|de, 默认: zh)
+  --lang, --language 目标语言 (zh|ja|ko|fr|de|all, 默认: all)
 
 环境变量:
   apiKey             API 密钥（通用）
@@ -551,7 +652,8 @@ async function main() {
   ✅ 智能回退机制
 
 示例:
-  npx tsx scripts/translate.mts                                 # 翻译为中文
+  npx tsx scripts/translate.mts                                 # 翻译所有语言
+  npx tsx scripts/translate.mts --lang zh                       # 仅翻译中文
   npx tsx scripts/translate.mts --lang ja                       # 翻译为日语
   npx tsx scripts/translate.mts --lang ko                       # 翻译为韩语
   npx tsx scripts/translate.mts --lang fr                       # 翻译为法语
@@ -559,13 +661,13 @@ async function main() {
   npx tsx scripts/translate.mts --provider anthropic --lang ja  # 使用 Claude 翻译日语
   npx tsx scripts/translate.mts --dry-run --lang ko            # 预览韩语翻译计划
   npx tsx scripts/translate.mts --validate --lang fr          # 验证法语翻译质量
+  npx tsx scripts/translate.mts --dry-run                      # 预览所有语言翻译计划
     `);
     process.exit(0);
   }
 
   try {
     const { aiConfig, targetLang } = parseAIConfig();
-    const langConfig = LANGUAGE_CONFIG[targetLang];
     
     // 检查 i18n.json 文件是否存在
     if (!fs.existsSync(i18nPath)) {
@@ -579,100 +681,29 @@ async function main() {
     
     const json = JSON.parse(fs.readFileSync(i18nPath).toString());
     let hasChanges = false;
-    
-    // 仅验证模式
-    if (argv.validate) {
-      console.log("🔍 验证现有翻译质量...");
-      let issues = 0;
-      for (const [key, value] of Object.entries(json)) {
-        const entry = value as { zh?: string };
-        if (entry.zh) {
-          const validation = validateTranslation(key, entry.zh);
-          if (!validation.isValid) {
-            console.warn(`⚠️  [${key}]: ${validation.issues.join(', ')}`);
-            issues++;
-          }
-        }
+
+    // 如果选择翻译所有语言
+    if (targetLang === 'all') {
+      console.log("🌍 翻译所有支持的语言...");
+      for (const lang of Object.keys(LANGUAGE_CONFIG)) {
+        console.log(`\n📍 开始翻译 ${LANGUAGE_CONFIG[lang].name} (${lang})...`);
+        const result = await processLanguage(json, aiConfig, lang);
+        if (result) hasChanges = true;
       }
-      console.log(issues === 0 ? "✅ 所有翻译质量良好" : `⚠️  发现 ${issues} 个质量问题`);
-      return;
-    }
-    
-    // 统计需要翻译的条目
-    const needTranslation = Object.keys(json).filter(key => {
-      if (argv.force) {
-        return true;
-      }
-      const entry = json[key] as { [key: string]: string | null };
-      const translation = entry[targetLang];
-      return translation == null || translation === "";
-    });
-    
-    if (needTranslation.length === 0) {
-      console.log("✅ 所有条目都已有中文翻译，无需处理");
-      return;
-    }
-    
-    console.log(`📊 找到 ${needTranslation.length} 个需要翻译的条目`);
-    
-    // 如果是 dry-run 模式，只显示需要翻译的条目
-    if (argv['dry-run']) {
-      console.log(`\n📋 ${langConfig.name}翻译预览:`);
-      needTranslation.forEach((key, index) => {
-        const entry = json[key] as { [key: string]: string | null };
-        const translation = entry[targetLang];
-        const status = translation ? '(重新翻译)' : '(新翻译)';
-        console.log(`${index + 1}. ${key} ${status}`);
-      });
-      console.log(`\n📈 总计: ${needTranslation.length} 个条目`);
-      console.log(`⚡ 预计使用批量翻译，减少 API 调用约 ${Math.ceil(needTranslation.length * 0.85)} 次`);
-      console.log(`🤖 使用模型: ${aiConfig.provider}/${aiConfig.model}`);
-      return;
+    } else {
+      const langConfig = LANGUAGE_CONFIG[targetLang];
+      console.log(`📍 翻译目标语言: ${langConfig.name}`);
+      const result = await processLanguage(json, aiConfig, targetLang);
+      if (result) hasChanges = true;
     }
 
-    // 🚀 批量翻译处理
-    const batchSize = parseInt(argv['batch-size']) || 8; // 降低批次大小提高成功率
-    const batches = [];
-    for (let i = 0; i < needTranslation.length; i += batchSize) {
-      batches.push(needTranslation.slice(i, i + batchSize));
-    }
-
-    console.log(`⚡ 使用批量翻译模式，${batches.length} 个批次，每批 ${batchSize} 个条目`);
-
-    for (let batchIndex = 0; batchIndex < batches.length; batchIndex++) {
-      const batch = batches[batchIndex];
-      console.log(`\n🔄 处理批次 ${batchIndex + 1}/${batches.length} (${batch.length} 个条目)`);
-      
-      try {
-        const translations = await translateBatch(batch, aiConfig, targetLang);
-        
-        // 应用翻译结果并验证质量
-        for (let i = 0; i < batch.length; i++) {
-          const key = batch[i];
-          if (translations[i]) {
-            const entry = json[key] as { [key: string]: string | null };
-            entry[targetLang] = translations[i];
-            hasChanges = true;
-            
-            // 翻译质量验证
-            const validation = validateTranslation(key, translations[i], targetLang);
-            if (validation.isValid) {
-              console.log(`✅ ${key}`);
-            } else {
-              console.warn(`⚠️  ${key} (质量警告: ${validation.issues.join(', ')})`);
-            }
-          }
-        }
-        
-        // 批次间延迟，避免 API 限速
-        if (batchIndex < batches.length - 1) {
-          console.log('⏳ 等待 1 秒避免 API 限速...');
-          await new Promise(resolve => setTimeout(resolve, 1000));
-        }
-      } catch (error) {
-        console.error(`❌ 批次 ${batchIndex + 1} 翻译失败:`, error);
-        console.log('继续处理下一批次...');
+    // 如果是 dry-run 或 validate 模式，提前返回
+    if (argv['dry-run'] || argv.validate) {
+      if (argv['dry-run'] && targetLang === 'all') {
+        console.log(`⚡ 预计使用批量翻译，减少 API 调用`);
+        console.log(`🤖 使用模型: ${aiConfig.provider}/${aiConfig.model}`);
       }
+      return;
     }
 
     if (hasChanges) {
