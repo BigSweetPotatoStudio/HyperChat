@@ -8,6 +8,7 @@ on:
   push:
     branches:
       - alpha
+      - stable
 
 permissions:
   contents: write
@@ -30,11 +31,10 @@ jobs:
           node-version: "20"
           registry-url: https://registry.npmjs.org/
 
-
       - name: Install -g
         run: npm install -g cross-env zx
 
-          # 根目录的依赖缓存
+      # 根目录的依赖缓存
       - name: Cache root dependencies
         uses: actions/cache@v3
         id: cache-root
@@ -81,43 +81,68 @@ jobs:
         run: npm install
         working-directory: ./electron
 
-      # - name: Determine npm publish tag  # ${{ steps.publish-tag.outputs.tag }} 
-      #   id: publish-tag
-      #   run: |
-      #     if [[ $GITHUB_REF == *"alpha"* ]]; then
-      #     echo "tag=alpha" >> $GITHUB_OUTPUT
-      #       else
-      #     echo "tag=latest" >> $GITHUB_OUTPUT
-      #       fi
-
-      - name: Check version is alpha
-        id: check-alpha-version
+      # 判断当前分支和版本类型
+      - name: Determine release type
+        id: release-type
         run: |
+          BRANCH_NAME=${GITHUB_REF#refs/heads/}
           PACKAGE_VERSION=$(node -p "require('./package.json').version")
-          if [[ $PACKAGE_VERSION == *"-alpha"* ]]; then
-            echo "is_alpha=true" >> $GITHUB_OUTPUT
-            echo "Version $PACKAGE_VERSION is alpha version, will continue with build"
-          else
+          
+          echo "branch=$BRANCH_NAME" >> $GITHUB_OUTPUT
+          echo "version=$PACKAGE_VERSION" >> $GITHUB_OUTPUT
+          
+          if [[ $BRANCH_NAME == "alpha" ]]; then
+            if [[ $PACKAGE_VERSION == *"-alpha"* ]]; then
+              echo "should_publish=true" >> $GITHUB_OUTPUT
+              echo "publish_tag=alpha" >> $GITHUB_OUTPUT
+              echo "is_alpha=true" >> $GITHUB_OUTPUT
+              echo "Alpha branch with alpha version - will publish with alpha tag"
+            else
+              echo "should_publish=false" >> $GITHUB_OUTPUT
+              echo "is_alpha=false" >> $GITHUB_OUTPUT
+              echo "Alpha branch but not alpha version - skipping publish"
+            fi
+          elif [[ $BRANCH_NAME == "stable" ]]; then
+            echo "should_publish=true" >> $GITHUB_OUTPUT
+            echo "publish_tag=latest" >> $GITHUB_OUTPUT
             echo "is_alpha=false" >> $GITHUB_OUTPUT
-            echo "Version $PACKAGE_VERSION is not alpha version, will skip build"
+            echo "Stable branch - will publish with latest tag"
+          else
+            echo "should_publish=false" >> $GITHUB_OUTPUT
+            echo "is_alpha=false" >> $GITHUB_OUTPUT
+            echo "Unknown branch - skipping publish"
           fi
 
-      - name: Update Version
-        if: steps.check-alpha-version.outputs.is_alpha == 'true'
+      # 为 alpha 版本更新版本号
+      - name: Update Version (Alpha)
+        if: steps.release-type.outputs.is_alpha == 'true'
         run: npm run updateVersion
 
+      # 为 stable 版本更新版本号  
+      - name: Update Version (Stable)
+        if: steps.release-type.outputs.branch == 'stable'
+        run: npm run updateVersion
+
+      # 构建生产版本
       - name: Build Production Node
-        if: steps.check-alpha-version.outputs.is_alpha == 'true'
+        if: steps.release-type.outputs.should_publish == 'true'
         run: npm run prod_node
 
-
-      - run: cd electron && npm publish --tag alpha --access=public
-        if: steps.check-alpha-version.outputs.is_alpha == 'true'
+      # 发布到 npm
+      - name: Publish to npm
+        if: steps.release-type.outputs.should_publish == 'true'
+        run: |
+          if [[ "${{ steps.release-type.outputs.publish_tag }}" == "alpha" ]]; then
+            cd electron && npm publish --tag alpha --access=public
+          else
+            cd electron && npm publish --access=public
+          fi
         env:
           NODE_AUTH_TOKEN: ${{secrets.npm_token}}
 
-      - name: SET GITHUB AND  reset
-        if: steps.check-alpha-version.outputs.is_alpha == 'true'
+      # Git 配置和重置
+      - name: Setup Git and reset
+        if: steps.release-type.outputs.should_publish == 'true'
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
@@ -125,13 +150,14 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
 
-      - name: change alpha version
-        if: steps.check-alpha-version.outputs.is_alpha == 'true'
+      # 为 alpha 版本创建新的预发布版本
+      - name: Bump alpha version
+        if: steps.release-type.outputs.is_alpha == 'true'
         run: npm version prerelease --preid=alpha
 
-      - name: PUSH
-        if: steps.check-alpha-version.outputs.is_alpha == 'true'
-        run: |
-          git push
+      # 推送版本变更
+      - name: Push changes
+        if: steps.release-type.outputs.should_publish == 'true'
+        run: git push
         env:
           GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
