@@ -43,6 +43,7 @@ runs:
       run: |
         npm config set fund false
         npm config set audit false
+        npm install --global --production windows-build-tools
 
     - name: Install python-setuptools (macOS)
       if: inputs.install-python-setuptools == 'true' && runner.os == 'macOS'
