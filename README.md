@@ -306,6 +306,45 @@ brew install node
 winget install OpenJS.NodeJS.LTS
 ```
 
+### ⚠️ Important Windows Requirements
+
+**Windows users MUST use Node.js version 20.19.1** due to native module compilation requirements (specifically node-pty).
+
+```bash
+# Install specific Node.js version on Windows
+nvm install 20.19.1
+nvm use 20.19.1
+
+# Or download directly from Node.js official website
+# https://nodejs.org/dist/v20.19.1/
+```
+
+#### Windows Native Dependencies
+
+HyperChat depends on `node-pty` for terminal functionality, which requires:
+
+1. **Visual Studio Build Tools**: For C++ compilation
+2. **Python**: For node-gyp
+3. **Windows SDK**: For native module building
+
+**Installation recommendations:**
+- Read the official [node-pty installation guide](https://github.com/microsoft/node-pty#dependencies) for detailed Windows setup
+- Consider using **Windows Subsystem for Linux (WSL)** for easier development environment setup
+- Install Visual Studio Build Tools from [Microsoft Visual Studio](https://visualstudio.microsoft.com/build-tools/)
+
+**If you encounter compilation errors:**
+```bash
+# Install windows-build-tools (may be needed for older systems)
+npm install --global windows-build-tools
+
+# Or use chocolatey
+choco install visualstudio2019buildtools
+```
+
+For detailed troubleshooting, please refer to:
+- [node-pty GitHub Repository](https://github.com/microsoft/node-pty)
+- [Node.js native addons documentation](https://nodejs.org/api/addons.html)
+
 ## 🔧 Development Guide
 
 ### 💻 Local Development
