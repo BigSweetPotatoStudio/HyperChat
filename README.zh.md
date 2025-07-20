@@ -1,3 +1,5 @@
+[中文](README.zh.md) | [English](README.md)
+
 # HyperChat
 
 > 🌟 **下一代 AI 工作空间** - AI as Code 的开创性实践，配置驱动的智能协作平台
@@ -8,12 +10,11 @@ HyperChat 2.0 是一个革命性的多平台 AI 工作空间，首创**「AI as 
 [![@dadigua/hyper-chat](https://img.shields.io/npm/v/%40dadigua%2Fhyper-chat)](https://www.npmjs.com/package/@dadigua/hyper-chat)
 [![npm downloads](https://img.shields.io/npm/dm/@dadigua/hyper-chat)](https://npm-stat.com/charts.html?package=@dadigua/hyper-chat)
 
-
 ## 🎯 项目愿景
 
 **[HyperChat 1.0](./archive/README.1.md)** 是一个完全手工编写的项目，正在迁移到2.0。
 
-**HyperChat 2.0** 大家一起 **Vibe Coding**，欢迎使用 Claude Code 和 GitHub Copilot 等 AI 工具一起开发。下面是项目介绍：
+**HyperChat 2.0** 大家一起 **Vibe Coding**，欢迎使用 Claude Code 和 GitHub Copilot 等 AI 工具一起开发。
 
 ## 🎯 核心理念
 
@@ -44,31 +45,11 @@ HyperChat 2.0 以**工作区（Workspace）**为核心，将 AI 能力与您的�
 
 ## ✨ 核心特性
 
-### 🏢 原生级多平台体验 - 相同 API 不同表面
-- **真·跨平台一致性**：
-  ```typescript
-  // 同一份业务逻辑，四种展示方式
-  interface ChatSurface {
-    executeCommand(cmd: HyperCommand): Promise<HyperResponse>
-  }
-  ```
-
-- **技术栈清晰分层**：
-  | 平台表面 | 主要场景 | 技术特性 | 特有能力 |
-  |:---------|:---------|:---------|:---------|
-  | **Web 应用** | 快速协作、演示示范 | PWA 可安装、离线缓存 | H5 响应式、地址栏操作 |
-  | **Electron 桌面** | 本地开发、深度集成 | 进程隔离架构、原生菜单 | 文件系统直接访问、托盘闪动通知 |
-  | **CLI 终端** | CI/CD 集成、批处理 | Node.js 原生执行 | 无头运行模式、标准输出管道 |
-  | **VSCode 扩展** | IDE 内开发 | WebView 嵌入 | 访问 VSCode API、工作区感知 |
-
-- **参数级别的跨平台行为一致性**：
-  ```yaml
-  # .hyperchat/platform.yaml - 统一配置平台差异
-  web: {clipboard: "browser-api", notifications: "push"}
-  electron: {clipboard: "native-api", notifications: "system"}
-  cli: {clipboard: "stdout", notifications: "console"}
-  vscode: {clipboard: "workspace-api", notifications: "statusbar"}
-  ```
+### 🏢 多平台统一体验
+- 🌐 **Web 应用**：浏览器直接访问，支持 H5 移动端
+- 💻 **Electron 桌面**：原生应用体验，完整功能支持
+- ⌨️ **命令行界面**：类似 Claude Code 的终端体验，具备完整 AI 能力
+- 🔧 **VSCode 插件**：IDE 集成，通过 WebView 访问
 
 ### ⌨️ 强大的 CLI 功能
 - **直接 AI 对话**：`hyperchat "你的问题"` - 即时 AI 响应
@@ -79,52 +60,18 @@ HyperChat 2.0 以**工作区（Workspace）**为核心，将 AI 能力与您的�
 - **服务管理**：启动 Web 服务器或运行后台服务
 - **跨平台**：支持 Windows、macOS 和 Linux
 
-### 🤖 AI 能力矩阵 - 工程级精度实现
-- **细粒度模型路由**：根据任务类型、成本、安全性要求自动选择最佳模型
-  ```yaml
-  routing:
-    code_generation: {model: "claude-3-5-sonnet", priority: "quality"}
-    code_review: {model: "gpt-4", priority: "consistency"}
-    documentation: {model: "qwen-turbo", priority: "cost"}
-  ```
-- **Agent 生命周期管理**：从创建、进化到退役的完整平台能力
-  - **版本化 Prompt**：每个 Agent 可维护多个提示词版本并热切换
-  - **能力演进跟踪**：自动记录 Agent 能力的改进历史和效果评估
-  - **灰度发布**：新 Agent 配置可按比例逐步推送给用户
-- **企业级任务调度**：
-  - **DAG 工作流**：支持复杂的任务依赖关系和失败重试
-  - **资源感知调度**：根据模型速率限制和成本预算智能调度
-  - **审计日志**：完整的操作日志和效果追踪
-- **科学对比实验**：
-  - **双盲测试**：模型输出隐式标识，消除人工偏见
-  - **统计显著性检验**：内置 A/B 测试框架，计算置信区间
-  - **成本效益分析**：自动计算每个模型的 ROI 指标
+### 📄 一切皆配置
+- **透明可控**：所有 AI 行为都有对应配置文件，完全可见可控
+- **版本管理**：AI 配置支持 Git 版本控制，变更历史可追溯
+- **团队共享**：Agent 配置和工作流模板可标准化并在团队中复用
+- **模板生态**：不同技术栈有专属的 AI 环境配置模板
+- **配置即文档**：YAML 配置文件本身就是最好的文档和规范
 
-### 📄 配置即完整系统 - IaC 范式在 AI 领域的深度应用
-- **类型安全的配置系统**：
-  - **JSON Schema 验证**：每个配置文件都有详细的 JSON Schema 保证格式正确
-  - **IDE 智能提示**：VSCode 的 YAML 插件自动补全配置字段
-  - **配置审计 API**：暴露 `/api/v1/config/validate` 用于 CI/CD 集成
-  
-- **分层配置架构**：
-  ```
-  系统全局配置  <-  用户默认配置  <-  项目配置  <-  临时覆盖
-  ~/.hyperchat/global/
-                 └─ ~/.hyperchat/templates/
-                                   └─ ./project/.hyperchat/
-                                                     └─ ./local-override/
-  ```
-  
-- **配置变更的战术级控制**：
-  - **原子化更新**：配置变更可包裹在事务中，失败自动回滚
-  - **健康检查**：配置生效前会执行预定义的验证检查
-  - **零停机热重载**：修改配置无需重启服务即可生效
-  - **金丝雀发布**：新配置可先对 5% 用户生效观察效果
-
-- **合规性强制注入**：
-  - **敏感信息自动脱敏**：配置中的密码、API Key 自动加密存储
-  - **权限边界检查**：跨项目访问时强制执行 RBAC 权限控制
-  - **操作留痕**：每个配置的读取者、修改者、使用场景均有记录
+### 🤖 AI 能力矩阵
+- **多模型支持**：OpenAI、Claude、Gemini、Qwen、Deepseek、GLM、Ollama、xAI 等
+- **智能 Agent 系统**：配置预设提示词，选择允许的 MCP 工具
+- **定时任务执行**：指定 Agent 按计划完成任务
+- **模型对比聊天**：同时使用多个模型进行对比测试
 
 ### 🎨 现代化界面
 - **标签页工作区**：直观的多工作区管理
@@ -132,6 +79,11 @@ HyperChat 2.0 以**工作区（Workspace）**为核心，将 AI 能力与您的�
 - **暗黑模式**：护眼的深色主题
 - **多语言支持**：中英文无缝切换
 
+## 🚀 快速体验
+
+### 在线 Demo
+- [HyperChat](https://hyperchat.dadigua.men/123456/) - Node.js 版本
+- [Docker Demo](https://htmivlknrjln.ap-northeast-1.clawcloudrun.com/123456/#/Chat) - ClawCloud 部署
 
 ### 命令行快速启动
 ```bash
@@ -142,200 +94,45 @@ npm install -g @dadigua/hyperchat
 npx -y @dadigua/hyperchat
 ```
 
-#### CLI 使用示例 - 面向管线的编程模式
+#### CLI 使用示例
 ```bash
-# 📊 工作流视角 - 将 CLI 视为 API 的管线
+# 启动 Web 界面
+hyperchat serve                        # 访问: http://localhost:16102
 
-# 🔍 案例：从需求文档到可测试代码的完整工作流
-# 1. 创建领域专用工作区 + 智能初始化
-hyperchat workspace init --type "django-api" --name "user-service"
+# 运行核心服务（后台）
+hyperchat run                          # 不包含 Web 界面运行
 
-# 2. 配置多模型路由策略（质量+成本平衡）
-cat > .hyperchat/routing.yaml <<EOF
-code_gen: {model: "claude-3-5-sonnet", cost_limit: 0.01}
-tests: {model: "gpt-4-turbo", quality_threshold: 0.95}
-docs: {model: "qwen-turbo", cost_priority: "high"}
-EOF
+# 快速 AI 聊天
+hyperchat "你好，今天怎么样？"           # 直接与默认模型聊天
+hyperchat chat "写一个 Python 脚本"     # 聊天命令
+hyperchat chat                         # 交互式聊天模式
 
-# 3. 需求分析 -> 技术设计 -> 代码生成 -> 测试验证（管线化）
-cat requirement.md | 
-  hyperchat exec "analyze-requirements" | 
-  hyperchat exec "generate-apidesign" |
-  tee api-design.yaml |
-  hyperchat exec "implement-from-design" > api.py |
-  hyperchat test "generate-unit-tests" > test_api.py
+# Agent 管理和聊天
+hyperchat agent list                   # 列出所有代理
+hyperchat agent create mybot           # 创建新代理
+hyperchat agent delete mybot           # 删除代理
+hyperchat agent mybot "你好"           # 与特定代理快速聊天
+hyperchat agent mybot chat             # 与代理交互式聊天
 
-# 4. 评估指标收集自动统计
-hyperchat metrics collect                        # API调用统计
-hyperchat metrics cost --since yesterday        # 成本分析
-hyperchat report generate > quality-report.html  # 质量报告
+# 工作区管理
+hyperchat workspace create             # 在当前目录创建工作区
 
-# 5. 代码审查会话化（保留完整上下文）
-hyperchat review session start --target PR#123
-hyperchat review comment --line 45 "检查SQL注入风险"
-hyperchat review session complete --publish
+# 任务管理（定时自动化）
+hyperchat task list                    # 列出所有任务
+hyperchat task create "daily-report" --description "生成日报" --agent mybot --cron "0 9 * * *"
+hyperchat task trigger "daily-report"  # 手动触发任务
+hyperchat task stats                   # 显示任务统计
 
-# 🔧 高级工作流：数据迁移任务的依赖管理
-echo '{
-  "steps":[
-    {"step":"download-dataset","depends":[],"agent":"data-expert"},
-    {"step":"validate-schema","depends":["download"],"agent":"analyst"},
-    {"step":"transform-data","depends":["validate"],"agent":"engineer"}
-  ]
-}' | hyperchat dag execute --max-jobs 3 --retry 2
-
-# 🎯 面向 CI 的验证模式
-hyperchat validate --config .hyperchat/ci.yaml --format github-actions
+# 全局选项
+hyperchat chat --workspace /path/to/project  # 使用特定工作区
+hyperchat --verbose chat "你好"             # 详细日志
+hyperchat --help                             # 显示帮助
 ```
 
 ### Docker 部署
 ```bash
 docker pull dadigua/hyperchat-mini:latest
 ```
-
-## 🛠️ 技术架构
-
-### 📂 项目结构
-```
-HyperChat/
-├── packages/
-│   ├── shared/            # 共享代码和类型定义
-│   ├── core/              # Node.js 核心服务 + CLI
-│   │   ├── src/workspace/ # 工作区管理系统
-│   │   ├── src/mcp/       # MCP 服务实现
-│   │   ├── src/cli/       # 命令行界面
-│   │   └── src/commands/  # API 命令层
-│   ├── web/               # React Web 前端
-│   └── electron/          # Electron 桌面应用
-└── docs/                  # 完整文档
-```
-
-### 🏗️ AI as Code 架构
-```
-项目目录/
-├── .hyperchat/           # AI 能力配置目录（可版本控制）
-│   ├── workspace.json    # 工作区配置
-│   ├── mcp.json         # MCP 服务配置（Tools as Code）
-│   ├── ai_models.json   # AI 模型配置
-│   ├── tasks/           # 工作流配置（Workflow as Code）
-│   │   ├── daily-report.yaml  # 自动化任务定义
-│   │   └── code-review.yaml   # 代码审查流程
-│   └── agents/          # AI 智能体配置（AI as Code）
-│       ├── frontend-expert/
-│       │   ├── agent.yaml      # Agent 能力定义
-│       │   ├── memory.md       # 持久化记忆
-│       │   └── chatlogs/       # 对话历史
-│       ├── backend-optimizer/
-│       └── security-scanner/
-├── .git/                # 代码版本控制
-├── .gitignore
-└── README.md
-
-# 全局模板库
-~/Documents/HyperChat/
-├── .hyperchat/          # 全局配置
-└── templates/           # 项目模板
-    ├── react-project/   # React 项目 AI 环境
-    ├── python-ml/       # Python ML 项目 AI 环境
-    └── golang-api/      # Go API 项目 AI 环境
-```
-
-### 🔄 配置驱动架构
-- **配置解析层**：自动解析 YAML/JSON 配置，实时生效
-- **统一命令层**：`packages/core/src/command.mts` 处理前后端通信
-- **AI 服务层**：`packages/shared/src/ai.mts` 统一 AI 模型调用
-- **工作区管理**：`packages/core/src/workspace/` 提供配置驱动的工作区管理
-- **MCP 集成**：`packages/core/src/mcp/` 实现完整的 MCP 协议支持
-- **实时通信**：WebSocket 支持实时消息推送和配置热重载
-
-## 🌟 AI as Code 的革命性优势 - 架构级革新
-
-### 🎯 完整的 Git 集成能力 - 真正的 DevOps for AI
-```bash
-# 不仅仅是版本控制，而是完整的 AI 开发生命周期
-# 1. 功能开发：添加新的 AI 能力
-hyperchat workspace prime-checker      # 创建专用工作区
-git add .hyperchat/agents/prime-checker/agent.yaml
-git commit -m "feat: add prime number validation agent for crypto trading"
-
-# 2. A/B 测试：并行部署多个 AI 配置版本
-hyperchat workspace test-v2            # 创建测试工作区
-git checkout testing .hyperchat/
-hyperchat agent run-comparison         # 对比测试结果
-
-# 3. 配置继承：子项目特化父项目 AI 能力
-cp ../base-project/.hyperchat ./       # 基础模板继承
-echo "custom_prompt: '专注高频交易策略'" >> ./.hyperchat/agents/trader/agent.yaml
-
-# 4. 热修复：临时的 AI 行为补丁
-echo "override_context: '今日市场特殊处理'" > ./.hyperchat/today.yaml
-hyperchat workspace reload             # 无需重启即时生效
-
-git tag v2.1.0-ai-stable               # 记录稳定 AI 配置版本
-```
-
-### 📋 配置即文档
-```yaml
-# .hyperchat/agents/frontend-expert/agent.yaml
-name: "前端架构专家"
-description: "专注于 React、TypeScript、性能优化的 AI 助手"
-modelKey: "claude-3-5-sonnet"
-isConfirmCallTool: false
-allowMCPs: ["filesystem", "terminal", "knowledge-base"]
-prompt: |
-  你是一位资深的前端架构师，专精于：
-  1. React 18+ 最佳实践和性能优化
-  2. TypeScript 类型系统设计
-  3. 现代前端工程化工具链
-  4. 响应式设计和移动端适配
-  
-  工作原则：
-  - 优先考虑性能和可维护性
-  - 遵循团队编码规范
-  - 提供可执行的具体建议
-tags: ["frontend", "react", "typescript", "performance"]
-```
-
-### 🚀 项目模板标准化
-```bash
-# 快速初始化 React 项目的 AI 环境
-hyperchat workspace create
-cp -r ~/.hyperchat/templates/react-enterprise/.hyperchat ./
-
-# 立即获得：
-# ✅ 前端开发专家 Agent
-# ✅ 代码审查自动化流程
-# ✅ 性能监控任务
-# ✅ 文档生成工作流
-```
-
-## 🎮 功能矩阵
-
-### 🗂️ 工作区功能
-- ✅ **多工作区标签页**：一个界面管理多个项目
-- ✅ **工作区隔离**：配置、Agent、聊天记录完全隔离
-- ✅ **文件树集成**：直接在工作区内浏览和编辑项目文件
-- ✅ **工作区历史**：快速访问最近使用的工作区
-- ✅ **全局/项目配置**：灵活的配置继承机制
-
-### 🔌 MCP 生态系统
-- ✅ **内置 MCP 服务**：
-  - 🗃️ **KnowledgeBase**：智能知识库管理
-  - 💾 **Settings**：系统设置管理
-  - 🖥️ **Terminal**：终端命令执行
-  - 🔗 **Gateway**：MCP 服务网关
-  - 🛠️ **HyperTools**：超级工具集
-- ✅ **动态服务管理**：实时启动/停止 MCP 服务
-- ✅ **工具调用可视化**：清晰展示 AI 工具使用过程
-- ✅ **参数调试**：支持手动调试 MCP 工具参数
-
-
-### 🎨 高级特性
-- ✅ **HyperPrompt 语法**：支持变量和 JS 代码片段
-- ✅ **智能 Agent 系统**：可配置提示词和工具权限
-- ✅ **定时任务执行**：自动化工作流支持
-- ✅ **多模态渲染**：Artifacts、SVG、HTML、Mermaid、数学公式
-- ✅ **模型对比聊天**：并行测试不同模型效果
 
 ## 📦 环境要求
 
@@ -399,6 +196,151 @@ choco install visualstudio2019buildtools
 详细故障排除请参考：
 - [node-pty GitHub 仓库](https://github.com/microsoft/node-pty)
 - [Node.js 原生插件文档](https://nodejs.org/api/addons.html)
+
+## 🛠️ 技术架构
+
+### 📂 项目结构
+```
+HyperChat/
+├── packages/
+│   ├── shared/            # 共享代码和类型定义
+│   ├── core/              # Node.js 核心服务 + CLI
+│   │   ├── src/workspace/ # 工作区管理系统
+│   │   ├── src/mcp/       # MCP 服务实现
+│   │   ├── src/cli/       # 命令行界面
+│   │   └── src/commands/  # API 命令层
+│   ├── web/               # React Web 前端
+│   └── electron/          # Electron 桌面应用
+└── docs/                  # 完整文档
+```
+
+### 🏗️ AI as Code 架构
+```
+项目目录/
+├── .hyperchat/           # AI 能力配置目录（可版本控制）
+│   ├── workspace.json    # 工作区配置
+│   ├── mcp.json         # MCP 服务配置（Tools as Code）
+│   ├── ai_models.json   # AI 模型配置
+│   ├── tasks/           # 工作流配置（Workflow as Code）
+│   │   ├── daily-report.yaml  # 自动化任务定义
+│   │   └── code-review.yaml   # 代码审查流程
+│   └── agents/          # AI 智能体配置（AI as Code）
+│       ├── frontend-expert/
+│       │   ├── agent.yaml      # Agent 能力定义
+│       │   ├── memory.md       # 持久化记忆
+│       │   └── chatlogs/       # 对话历史
+│       ├── backend-optimizer/
+│       └── security-scanner/
+├── .git/                # 代码版本控制
+├── .gitignore
+└── README.md
+
+# 全局模板库
+~/Documents/HyperChat/
+├── .hyperchat/          # 全局配置
+└── templates/           # 项目模板
+    ├── react-project/   # React 项目 AI 环境
+    ├── python-ml/       # Python ML 项目 AI 环境
+    └── golang-api/      # Go API 项目 AI 环境
+```
+
+### 🔄 配置驱动架构
+- **配置解析层**：自动解析 YAML/JSON 配置，实时生效
+- **统一命令层**：`packages/core/src/command.mts` 处理前后端通信
+- **AI 服务层**：`packages/shared/src/ai.mts` 统一 AI 模型调用
+- **工作区管理**：`packages/core/src/workspace/` 提供配置驱动的工作区管理
+- **MCP 集成**：`packages/core/src/mcp/` 实现完整的 MCP 协议支持
+- **实时通信**：WebSocket 支持实时消息推送和配置热重载
+
+## 🌟 AI as Code 的革命性优势
+
+### 🔄 像管理代码一样管理 AI
+```bash
+# AI 配置也可以版本控制
+git add .hyperchat/agents/code-reviewer/
+git commit -m "添加 TypeScript 专用代码审查 Agent"
+git push origin feature/new-agent
+
+# 分享团队 AI 最佳实践
+git clone https://github.com/team/ai-templates.git
+cp -r ai-templates/react-expert/.hyperchat ./
+
+# 回滚 AI 配置
+git checkout HEAD~1 -- .hyperchat/agents/
+```
+
+### 📋 配置即文档
+```yaml
+# .hyperchat/agents/frontend-expert/agent.yaml
+name: "前端架构专家"
+description: "专注于 React、TypeScript、性能优化的 AI 助手"
+modelKey: "claude-3-5-sonnet"
+isConfirmCallTool: false
+allowMCPs: ["filesystem", "terminal", "knowledge-base"]
+prompt: |
+  你是一位资深的前端架构师，专精于：
+  1. React 18+ 最佳实践和性能优化
+  2. TypeScript 类型系统设计
+  3. 现代前端工程化工具链
+  4. 响应式设计和移动端适配
+  
+  工作原则：
+  - 优先考虑性能和可维护性
+  - 遵循团队编码规范
+  - 提供可执行的具体建议
+tags: ["frontend", "react", "typescript", "performance"]
+```
+
+### 🚀 项目模板标准化
+```bash
+# 快速初始化 React 项目的 AI 环境
+hyperchat workspace create
+cp -r ~/.hyperchat/templates/react-enterprise/.hyperchat ./
+
+# 立即获得：
+# ✅ 前端开发专家 Agent
+# ✅ 代码审查自动化流程
+# ✅ 性能监控任务
+# ✅ 文档生成工作流
+```
+
+## 🎮 功能矩阵
+
+### 🗂️ 工作区功能
+- ✅ **多工作区标签页**：一个界面管理多个项目
+- ✅ **工作区隔离**：配置、Agent、聊天记录完全隔离
+- ✅ **文件树集成**：直接在工作区内浏览和编辑项目文件
+- ✅ **工作区历史**：快速访问最近使用的工作区
+- ✅ **全局/项目配置**：灵活的配置继承机制
+
+### 🔌 MCP 生态系统
+- ✅ **内置 MCP 服务**：
+  - 🗃️ **KnowledgeBase**：智能知识库管理
+  - 💾 **Settings**：系统设置管理
+  - 🖥️ **Terminal**：终端命令执行
+  - 🔗 **Gateway**：MCP 服务网关
+  - 🛠️ **HyperTools**：超级工具集
+- ✅ **动态服务管理**：实时启动/停止 MCP 服务
+- ✅ **工具调用可视化**：清晰展示 AI 工具使用过程
+- ✅ **参数调试**：支持手动调试 MCP 工具参数
+
+### 🤖 AI 模型矩阵
+| 模型提供商 | 推荐程度 | 特色功能 |
+|------------|----------|----------|
+| Claude | ⭐⭐⭐⭐⭐⭐ | 最佳代码理解和生成 |
+| OpenAI | ⭐⭐⭐⭐⭐ | 完美的 Function Calling 支持 |
+| Gemini Flash 2.5 | ⭐⭐⭐⭐⭐ | 高性能推理 |
+| Qwen | ⭐⭐⭐⭐ | 中文场景表现优异 |
+| Deepseek | ⭐⭐⭐⭐ | 代码生成专长 |
+| 豆包 | ⭐⭐⭐ | 稳定性良好 |
+
+### 🎨 高级特性
+- ✅ **HyperPrompt 语法**：支持变量和 JS 代码片段
+- ✅ **智能 Agent 系统**：可配置提示词和工具权限
+- ✅ **定时任务执行**：自动化工作流支持
+- ✅ **多模态渲染**：Artifacts、SVG、HTML、Mermaid、数学公式
+- ✅ **WebDAV 同步**：跨设备配置同步
+- ✅ **模型对比聊天**：并行测试不同模型效果
 
 ## 🔧 开发指南
 
@@ -522,9 +464,3 @@ HyperChat 2.0 本身就是 **AI 协作开发**的最佳实践：
 ---
 
 ✨ **HyperChat 2.0** - 首创 AI as Code，重新定义 AI 工作方式 ✨
-
-## 🚀 快速体验 1.0
-
-### 在线 Demo 1.0
-- [HyperChat](https://hyperchat.dadigua.men/123456/) - Node.js 版本
-- [Docker Demo](https://htmivlknrjln.ap-northeast-1.clawcloudrun.com/123456/#/Chat) - ClawCloud 部署
