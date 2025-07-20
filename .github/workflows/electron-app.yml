@@ -69,7 +69,7 @@ jobs:
       - name: Setup Node.js and Dependencies
         uses: ./.github/actions/setup-node-deps
         with:
-          node-version: '22.16.0'
+          node-version: '20.19.1'
           install-python-setuptools: 'true'
 
 

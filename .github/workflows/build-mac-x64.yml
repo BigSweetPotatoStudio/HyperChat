@@ -39,7 +39,7 @@ jobs:
       - name: Install Node.js
         uses: actions/setup-node@v4.0.0
         with:
-          node-version: "22.16.0"
+          node-version: "20.19.1"
 
       - name: Install -g
         run: npm install -g cross-env zx

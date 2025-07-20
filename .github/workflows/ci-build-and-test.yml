@@ -62,7 +62,7 @@ jobs:
       - name: Setup Node.js and Dependencies
         uses: ./.github/actions/setup-node-deps
         with:
-          node-version: '22.16.0'
+          node-version: '20.19.1'
           install-global: 'cross-env zx tsx'
           install-scripts: 'true'
           install-python-setuptools: 'true'
@@ -100,7 +100,7 @@ jobs:
       - name: Install Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: "22.16.0"
+          node-version: "20.19.1"
 
       - name: Install global dependencies
         run: npm install -g cross-env zx tsx
