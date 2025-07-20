@@ -7,7 +7,7 @@ on:
   workflow_dispatch: {}
   push:
     branches:
-      - alpha
+      - dev2
       - stable
 
 permissions:
@@ -24,6 +24,33 @@ jobs:
     steps:
       - name: Check out git repository
         uses: actions/checkout@v3.0.0
+        with:
+          fetch-depth: 0 # 获取完整的 git 历史
+
+      - name: Get event details
+        id: details
+        shell: bash
+        run: |
+          if [ "${{ github.event_name }}" = "push" ]; then
+            echo "::set-output name=type::推送"
+            echo "::set-output name=message::$(git log -1 --pretty=format:%s)"
+            echo "::set-output name=author::$(git log -1 --pretty=format:%an)"
+            echo "::set-output name=sha::$(git log -1 --pretty=format:%h)"
+            echo "::set-output name=url::${{ github.event.head_commit.url }}"
+          elif [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "::set-output name=type::手动触发"
+            echo "::set-output name=message::$(git log -1 --pretty=format:%s)"
+            echo "::set-output name=author::${{ github.actor }}"
+            echo "::set-output name=sha::$(git log -1 --pretty=format:%h)"
+            echo "::set-output name=url::${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+          fi
+
+      - name: Get changed files
+        id: files
+        if: github.event_name == 'push'
+        shell: bash
+        run: |
+          echo "::set-output name=changed::$(git diff --name-only HEAD^1 HEAD | tr '\n' ', ')"
 
       - name: Setup Node.js and Dependencies
         uses: ./.github/actions/setup-node-deps
@@ -43,16 +70,16 @@ jobs:
           echo "branch=$BRANCH_NAME" >> $GITHUB_OUTPUT
           echo "version=$PACKAGE_VERSION" >> $GITHUB_OUTPUT
           
-          if [[ $BRANCH_NAME == "alpha" ]]; then
+          if [[ $BRANCH_NAME == "dev2" ]]; then
             if [[ $PACKAGE_VERSION == *"-alpha"* ]]; then
               echo "should_publish=true" >> $GITHUB_OUTPUT
               echo "publish_tag=alpha" >> $GITHUB_OUTPUT
               echo "is_alpha=true" >> $GITHUB_OUTPUT
-              echo "Alpha branch with alpha version - will publish with alpha tag"
+              echo "Dev2 branch with alpha version - will publish with alpha tag"
             else
               echo "should_publish=false" >> $GITHUB_OUTPUT
               echo "is_alpha=false" >> $GITHUB_OUTPUT
-              echo "Alpha branch but not alpha version - skipping publish"
+              echo "Dev2 branch but not alpha version - skipping publish"
             fi
           elif [[ $BRANCH_NAME == "stable" ]]; then
             echo "should_publish=true" >> $GITHUB_OUTPUT
@@ -70,9 +97,54 @@ jobs:
         if: steps.release-type.outputs.should_publish == 'true'
         run: npm run version:sync
 
+      # 检查 npm 上是否已存在当前版本
+      - name: Check if version exists on npm
+        if: steps.release-type.outputs.should_publish == 'true'
+        id: check-npm-version
+        run: |
+          SHARED_VERSION=$(node -p "require('./packages/shared/package.json').version")
+          CORE_VERSION=$(node -p "require('./packages/core/package.json').version")
+          
+          echo "Checking shared package version: $SHARED_VERSION"
+          echo "Checking core package version: $CORE_VERSION"
+          
+          # 检查 shared 包是否已存在
+          if npm view @dadigua/hyperchat-shared@$SHARED_VERSION version >/dev/null 2>&1; then
+            echo "shared_exists=true" >> $GITHUB_OUTPUT
+            echo "❌ @dadigua/hyperchat-shared@$SHARED_VERSION already exists on npm"
+          else
+            echo "shared_exists=false" >> $GITHUB_OUTPUT
+            echo "✅ @dadigua/hyperchat-shared@$SHARED_VERSION does not exist on npm"
+          fi
+          
+          # 检查 core 包是否已存在
+          if npm view @dadigua/hyperchat@$CORE_VERSION version >/dev/null 2>&1; then
+            echo "core_exists=true" >> $GITHUB_OUTPUT
+            echo "❌ @dadigua/hyperchat@$CORE_VERSION already exists on npm"
+          else
+            echo "core_exists=false" >> $GITHUB_OUTPUT
+            echo "✅ @dadigua/hyperchat@$CORE_VERSION does not exist on npm"
+          fi
+          
+          # 如果任一包已存在，则跳过发布
+          if [[ $(npm view @dadigua/hyperchat-shared@$SHARED_VERSION version >/dev/null 2>&1 && echo "true" || echo "false") == "true" ]] || [[ $(npm view @dadigua/hyperchat@$CORE_VERSION version >/dev/null 2>&1 && echo "true" || echo "false") == "true" ]]; then
+            echo "should_skip=true" >> $GITHUB_OUTPUT
+            echo "🚫 Skipping publish - one or more packages already exist on npm"
+          else
+            echo "should_skip=false" >> $GITHUB_OUTPUT
+            echo "🚀 All packages are ready for publishing"
+          fi
+
+      # 显示跳过发布的消息
+      - name: Skip publish message
+        if: steps.release-type.outputs.should_publish == 'true' && steps.check-npm-version.outputs.should_skip == 'true'
+        run: |
+          echo "🚫 发布已跳过：当前版本已存在于 npm 上"
+          echo "如需强制发布，请先更新版本号"
+
       # 发布所有包到 npm
       - name: Publish all packages to npm
-        if: steps.release-type.outputs.should_publish == 'true'
+        if: steps.release-type.outputs.should_publish == 'true' && steps.check-npm-version.outputs.should_skip == 'false'
         run: npm run publish:all
         env:
           NODE_AUTH_TOKEN: ${{secrets.npm_token}}
@@ -80,7 +152,7 @@ jobs:
 
       # Git 配置和重置
       - name: Setup Git and reset
-        if: steps.release-type.outputs.should_publish == 'true'
+        if: steps.release-type.outputs.should_publish == 'true' && steps.check-npm-version.outputs.should_skip == 'false'
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
@@ -90,12 +162,90 @@ jobs:
 
       # 为 alpha 版本创建新的预发布版本
       - name: Bump alpha version
-        if: steps.release-type.outputs.is_alpha == 'true'
+        if: steps.release-type.outputs.is_alpha == 'true' && steps.check-npm-version.outputs.should_skip == 'false'
         run: npm version prerelease --preid=alpha
 
       # 推送版本变更
       - name: Push changes
-        if: steps.release-type.outputs.should_publish == 'true'
+        if: steps.release-type.outputs.should_publish == 'true' && steps.check-npm-version.outputs.should_skip == 'false'
         run: git push
         env:
           GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
+
+      # 发送成功通知
+      - name: Send Success Notification
+        if: steps.release-type.outputs.should_publish == 'true' && steps.check-npm-version.outputs.should_skip == 'false'
+        uses: appleboy/telegram-action@master
+        with:
+          to: ${{ secrets.TELEGRAM_CHAT_ID }}
+          token: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          format: html
+          message: |
+            🚀 <b>NPM包发布成功</b>
+
+            📂 <b>仓库:</b> ${{ github.repository }}
+            🌿 <b>分支:</b> <code>${{ github.ref_name }}</code>
+            👤 <b>作者:</b> ${{ steps.details.outputs.author }}
+            🔍 <b>提交:</b> <code>${{ steps.details.outputs.sha }}</code>
+
+            📝 <b>标题:</b> ${{ steps.details.outputs.message }}
+            📦 <b>发布标签:</b> <code>${{ steps.release-type.outputs.publish_tag }}</code>
+            📄 <b>修改的文件:</b>
+            <code>${{ steps.files.outputs.changed }}</code>
+
+            ✅ <b>状态:</b> 包已成功发布到 npm
+            🔗 <b>详情链接:</b> ${{ steps.details.outputs.url }}
+            ⏰ <b>时间:</b> ${{ github.event.head_commit.timestamp || github.event.workflow_run.updated_at }}
+
+            #GitHub #NPM #发布
+
+      # 发送跳过通知
+      - name: Send Skip Notification
+        if: steps.release-type.outputs.should_publish == 'true' && steps.check-npm-version.outputs.should_skip == 'true'
+        uses: appleboy/telegram-action@master
+        with:
+          to: ${{ secrets.TELEGRAM_CHAT_ID }}
+          token: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          format: html
+          message: |
+            ⏭️ <b>NPM包发布已跳过</b>
+
+            📂 <b>仓库:</b> ${{ github.repository }}
+            🌿 <b>分支:</b> <code>${{ github.ref_name }}</code>
+            👤 <b>作者:</b> ${{ steps.details.outputs.author }}
+            🔍 <b>提交:</b> <code>${{ steps.details.outputs.sha }}</code>
+
+            📝 <b>标题:</b> ${{ steps.details.outputs.message }}
+            📦 <b>预期标签:</b> <code>${{ steps.release-type.outputs.publish_tag }}</code>
+            📄 <b>修改的文件:</b>
+            <code>${{ steps.files.outputs.changed }}</code>
+
+            🚫 <b>原因:</b> 当前版本已存在于 npm 上
+            💡 <b>解决方案:</b> 请更新版本号后重试
+            🔗 <b>详情链接:</b> ${{ steps.details.outputs.url }}
+            ⏰ <b>时间:</b> ${{ github.event.head_commit.timestamp || github.event.workflow_run.updated_at }}
+
+            #GitHub #NPM #跳过
+
+      # 发送失败通知
+      - name: Send Error Notification
+        if: failure()
+        uses: appleboy/telegram-action@master
+        with:
+          to: ${{ secrets.TELEGRAM_CHAT_ID }}
+          token: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          format: html
+          message: |
+            ❌ <b>NPM包发布失败</b>
+
+            📂 <b>仓库:</b> ${{ github.repository }}
+            🌿 <b>分支:</b> <code>${{ github.ref_name }}</code>
+            👤 <b>作者:</b> ${{ steps.details.outputs.author }}
+            🔍 <b>工作流:</b> ${{ github.workflow }}
+
+            💥 <b>失败阶段:</b> NPM包发布或版本管理
+            🔗 <b>详情链接:</b> ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+
+            请检查 GitHub Actions 日志以获取更多详情。
+
+            #GitHub #NPM #失败
