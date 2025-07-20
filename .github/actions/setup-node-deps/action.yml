@@ -48,26 +48,30 @@ runs:
       run: |
         Write-Host "Configuring Windows build environment for node-pty..."
         
-        # 设置 npm 全局配置
-        npm config set target_platform win32
-        npm config set target_arch x64
-        npm config set msvs_version 2022
-        npm config set node_gyp_cache "$env:TEMP\.node-gyp"
-        
-        # 创建 node-gyp 缓存目录
+        # 创建必要的缓存目录
         New-Item -ItemType Directory -Force -Path "$env:TEMP\.node-gyp" | Out-Null
+        New-Item -ItemType Directory -Force -Path "$env:TEMP\.npm-cache" | Out-Null
         
-        # 设置环境变量以优化构建
+        # 设置环境变量以优化构建 (node-gyp 相关)
         echo "npm_config_target_platform=win32" >> $env:GITHUB_ENV
         echo "npm_config_target_arch=x64" >> $env:GITHUB_ENV
         echo "npm_config_msvs_version=2022" >> $env:GITHUB_ENV
         echo "npm_config_node_gyp_cache=$env:TEMP\.node-gyp" >> $env:GITHUB_ENV
+        echo "npm_config_cache=$env:TEMP\.npm-cache" >> $env:GITHUB_ENV
+        
+        # 设置 Python 路径
+        echo "npm_config_python=$env:pythonLocation\python.exe" >> $env:GITHUB_ENV
+        echo "PYTHON=$env:pythonLocation\python.exe" >> $env:GITHUB_ENV
+        
+        # 其他优化设置
         echo "npm_config_cache_lock_stale=60000" >> $env:GITHUB_ENV
         echo "npm_config_cache_lock_wait=10000" >> $env:GITHUB_ENV
+        echo "npm_config_build_from_source=false" >> $env:GITHUB_ENV
         
-        # 对于 node-pty 的特殊设置
-        echo "npm_config_python=$env:pythonLocation\python.exe" >> $env:GITHUB_ENV
-        
+        # 显示配置信息用于调试
+        Write-Host "Python location: $env:pythonLocation\python.exe"
+        Write-Host "Node-gyp cache: $env:TEMP\.node-gyp"
+        Write-Host "NPM cache: $env:TEMP\.npm-cache"
         Write-Host "Windows build environment configured successfully"
 
     # 缓存所有依赖（统一策略）
@@ -136,25 +140,30 @@ runs:
           else
             echo "❌ Standard installation failed, trying alternatives..."
             
-            # 方法2: 使用 node-gyp 缓存清理后重试
+            # 方法2: 清理缓存并设置更多环境变量后重试
             npm cache clean --force
             export npm_config_node_gyp_cache="$TEMP/.node-gyp"
+            export npm_config_build_from_source=false
             
             if npm install --include=optional --force $INSTALL_ARGS; then
-              echo "✅ Force installation succeeded"
+              echo "✅ Force installation with cache clean succeeded"
             else
-              echo "❌ Force installation failed, trying without build tools..."
+              echo "❌ Force installation failed, trying with legacy peer deps..."
               
-              # 方法3: 设置环境变量尝试使用预编译版本
-              export npm_config_build_from_source=false
-              export npm_config_node_pty_prebuilt=true
-              
-              if npm install --include=optional --force --verbose $INSTALL_ARGS; then
-                echo "✅ Prebuilt installation succeeded"
+              # 方法3: 使用 legacy peer deps 解决依赖冲突
+              if npm install --include=optional --legacy-peer-deps --force $INSTALL_ARGS; then
+                echo "✅ Legacy peer deps installation succeeded"
               else
-                echo "⚠️ All installation methods failed, but continuing..."
-                # 不让这个失败阻止整个工作流
-                npm install --ignore-optional --force $INSTALL_ARGS || true
+                echo "❌ Legacy installation failed, trying minimal install..."
+                
+                # 方法4: 最后尝试 - 跳过可选依赖但保留基本功能
+                if npm install --ignore-optional --force $INSTALL_ARGS; then
+                  echo "⚠️ Minimal installation succeeded (some features may be limited)"
+                else
+                  echo "❌ All installation methods failed, but continuing..."
+                  # 不让这个失败阻止整个工作流
+                  true
+                fi
               fi
             fi
           fi
