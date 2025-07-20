@@ -12,7 +12,7 @@ inputs:
   install-global:
     description: '要安装的全局依赖包 (如: "cross-env zx" 或 "cross-env zx tsx")'
     required: false
-    default: 'cross-env zx'
+    default: 'cross-env zx tsx'
   install-python-setuptools:
     description: '是否在 macOS 上安装 python-setuptools'
     required: false
@@ -79,11 +79,31 @@ runs:
         # 使用统一的安装参数
         INSTALL_FLAGS="--no-audit --no-fund"
         
-        npm install $INSTALL_FLAGS
+        # Windows特殊处理：使用legacy-peer-deps避免依赖冲突
+        if [ "${{ runner.os }}" = "Windows" ]; then
+          INSTALL_FLAGS="$INSTALL_FLAGS --legacy-peer-deps"
+        fi
+        
+        # 根目录安装时排除problematic native packages
+        if [ "${{ runner.os }}" = "Windows" ]; then
+          # Windows上先安装基础依赖，排除node-pty等原生包
+          npm install $INSTALL_FLAGS --ignore-scripts
+        else
+          npm install $INSTALL_FLAGS
+        fi
         if [ "${{ inputs.install-scripts }}" = "true" ]; then
           (cd scripts && npm install $INSTALL_FLAGS)
         fi
         (cd packages/shared && npm install --include=optional $INSTALL_FLAGS)
-        (cd packages/core && npm install --include=optional $INSTALL_FLAGS)
         (cd packages/web && npm install --include=optional $INSTALL_FLAGS && npm install favicons $INSTALL_FLAGS)
-        (cd packages/electron && npm install --include=optional $INSTALL_FLAGS)
+        
+        # 根据平台处理包含原生依赖的包
+        if [ "${{ runner.os }}" = "Windows" ]; then
+          # Windows上单独安装原生依赖包，避免工作区冲突
+          (cd packages/core && npm install --include=optional $INSTALL_FLAGS --no-workspaces)
+          (cd packages/electron && npm install --include=optional $INSTALL_FLAGS --no-workspaces)
+        else
+          # 其他平台正常安装
+          (cd packages/core && npm install --include=optional $INSTALL_FLAGS)
+          (cd packages/electron && npm install --include=optional $INSTALL_FLAGS)
+        fi
