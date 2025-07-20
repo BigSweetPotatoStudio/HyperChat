@@ -6,9 +6,8 @@
 import { AiChannel } from "../ai/ai.mjs";
 import { MyMessage, HyperToolCall } from "@dadigua/hyperchat-shared/types";
 import { BaseAIConfig } from "@dadigua/hyperchat-shared";
-import { getBuiltinPrompts } from "@dadigua/hyperchat-shared";
+import { getBuiltinPrompts } from "../ai/hyperchat-builtin-prompts.mjs";
 import { getAppSettingsManager } from "../data/appSettingsService.mjs";
-import { getMessageService } from "../message_service.mjs";
 import { Logger } from "../log.mjs";
 import { getWorkspaceManager } from "../workspace/index.mjs";
 import { SSEWriter } from "../sse/SSEWriter.mjs";
@@ -81,10 +80,10 @@ export async function streamChatCompletion(params: ChatCompletionRequest): Promi
         throw new Error(`Agent not found: ${agentName}`);
       }
     }
-    console.log("Using Agent:", agentName, "agent:", agent);
+    // console.log("Using Agent:", agentName, "agent:", agent);
     // 合并配置
     const effectiveConfig = getEffectiveConfig(configOverrides, agent!, workspace.getSettings().aiConfig, aiSettings);
-    console.log("Effective AI Config:", effectiveConfig);
+    // console.log("Effective AI Config:", effectiveConfig);
     // 创建 AI 通道
     const aiChannel = new AiChannel({}, [...messages]);
 
@@ -93,19 +92,12 @@ export async function streamChatCompletion(params: ChatCompletionRequest): Promi
     // 注册扩展（现在不需要传入任何参数）
     aiChannel.register();
 
-    // 获取 Agent 记忆
-    let agentMemory = { content: "", filePath: "" };
-    // if (agentName) {
-    //   agentMemory = await workspace.getAgentMemory(agentName, agentScope);
-    // }
-
-    // 构建系统提示词
+    // 构建系统提示词（现在记忆获取逻辑在 getBuiltinPrompts 内部）
     const systemPrompt = getBuiltinPrompts(
       workspace.workspacePath,
       effectiveConfig.prompt,
       agentName || "",
-      agentMemory.content,
-      agentMemory.filePath
+      agentScope
     ).prompt;
 
     // 调用工具确认回调

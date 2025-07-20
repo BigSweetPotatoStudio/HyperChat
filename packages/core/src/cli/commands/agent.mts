@@ -7,7 +7,7 @@ import { Logger } from '../utils/logger.mjs';
 import { Command } from '../../command.mjs';
 import { workspaceManager } from '../../workspace/index.mjs';
 import { t } from '../../i18n.mjs';
-import { getBuiltinPrompts } from '@dadigua/hyperchat-shared';
+import { getBuiltinPrompts } from '../../ai/hyperchat-builtin-prompts.mjs';
 import { agentCommands } from '../../commands/agentCommands.mjs';
 import type { AgentConfig } from '@dadigua/hyperchat-shared';
 /**
@@ -163,31 +163,11 @@ export async function createAgent(name: string) {
       logger.info(`💡 ${t`Configuration loaded from workspace above`}`);
     }
 
-    // 获取Agent记忆内容（可能为空）
-    let agentMemory = '';
-    let memoryFilePath = '';
-    try {
-      // 检查Agent是否已存在，如果存在则获取其scope
-      const workspace = workspaceManager.getCurrentWorkspace();
-      const agentScope = workspace ? workspace.getAgentScope(name) : null;
-      
-      if (agentScope) {
-        const memoryResult = await agentCommands.getAgentMemory({ 
-          agentName: name, 
-          scope: agentScope
-        });
-        agentMemory = memoryResult.content;
-        memoryFilePath = memoryResult.filePath;
-      }
-    } catch (error) {
-      // 记忆文件不存在或读取失败，使用空字符串
-      agentMemory = '';
-      memoryFilePath = '';
-    }
+    // 记忆获取逻辑现在在 getBuiltinPrompts 内部处理
 
     // 使用getBuiltinPrompts生成增强的系统提示词
     const basePrompt = `你是一个名为 ${name} 的AI助手。请根据用户的需求提供帮助。`;
-    const enhancedPrompt = getBuiltinPrompts(workspacePath, basePrompt, name, agentMemory, memoryFilePath);
+    const enhancedPrompt = getBuiltinPrompts(workspacePath, basePrompt, name, "workspace");
 
     // 创建代理配置
     const agentConfig = {
@@ -249,32 +229,13 @@ export async function getEnhancedAgentPrompt(agentName: string, userPrompt: stri
     // 获取当前工作区路径
     const workspacePath = await getCurrentWorkspacePath();
 
-    // 获取Agent记忆内容
-    let agentMemory = '';
-    let memoryFilePath = '';
-    try {
-      // 智能获取当前工作区
-      const currentWorkingDirectory = process.cwd();
-      await workspaceManager.initialize(currentWorkingDirectory);
-      const workspace = workspaceManager.getCurrentWorkspace();
-      const agentScope = workspace ? workspace.getAgentScope(agentName) : null;
-      
-      if (agentScope) {
-        const memoryResult = await agentCommands.getAgentMemory({ 
-          agentName, 
-          scope: agentScope
-        });
-        agentMemory = memoryResult.content;
-        memoryFilePath = memoryResult.filePath;
-      }
-    } catch (error) {
-      // 记忆文件不存在或读取失败，使用空字符串
-      agentMemory = '';
-      memoryFilePath = '';
-    }
+    // 记忆获取逻辑现在在 getBuiltinPrompts 内部处理
+    // 智能获取当前工作区
+    const currentWorkingDirectory = process.cwd();
+    await workspaceManager.initialize(currentWorkingDirectory);
 
     // 使用getBuiltinPrompts生成增强的系统提示词
-    const enhancedPrompt = getBuiltinPrompts(workspacePath, userPrompt, agentName, agentMemory, memoryFilePath);
+    const enhancedPrompt = getBuiltinPrompts(workspacePath, userPrompt, agentName, "workspace");
     
     return enhancedPrompt.prompt;
   } catch (error) {

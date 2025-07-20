@@ -584,8 +584,9 @@ export class AiChannel {
         params.onUpdate && params.onUpdate();
       }
       context.step++;
+      let { userMessage, ...newParams } = params;
       return await this.completion(
-        params, options, context
+        newParams, options, context
       );
     } else {
       // console.log("this.messages", this.messages);

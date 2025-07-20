@@ -1,5 +1,6 @@
 import * as path from "path";
 import * as os from "os";
+import { appDataDir } from "../const.mjs";
 
 // 常量定义
 export const CONSTANTS = {
@@ -15,5 +16,6 @@ export const CONSTANTS = {
     KNOWLEDGE: 'knowledge',
     TEMP: 'temp',
   },
-  GLOBAL_PATH: path.join(os.homedir(), 'Documents', 'HyperChat'),
+  GLOBAL_PATH: appDataDir,
+  GLOBAL_HYPERCHAT_DIR_PATH: path.join(appDataDir, '.hyperchat'),
 } as const;

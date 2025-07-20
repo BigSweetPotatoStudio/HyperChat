@@ -6,7 +6,6 @@
  * 2. 操作栏（模型选择、设置等）
  * 3. 发送框
  */
-import * as MCPTypes from "@modelcontextprotocol/sdk/types.js";
 import React, {
   useCallback,
   useEffect,
@@ -42,13 +41,13 @@ import {
 } from "@ant-design/icons";
 
 import { v4 } from "uuid";
-import { call, getURL_PRE } from "../common/call";
+import { call } from "../common/call";
 import { addChatRecentUsage } from "../utils/storage";
 
 import {
   ChatHistoryItem,
 } from "@dadigua/hyperchat-shared/types";
-import { type AISettings, type AIModelConfigItem, getBuiltinPrompts } from "@dadigua/hyperchat-shared";
+import { type AISettings, type AIModelConfigItem } from "@dadigua/hyperchat-shared";
 import { useAISettings } from "../contexts/AppSettingsContext";
 import { MyMessage } from "@dadigua/hyperchat-shared/types";
 import { Messages } from "./messages";
@@ -59,7 +58,7 @@ import { blobToBase64, getMyUuid, JsonSchema2FormItemOrNull, urlToBase64 } from 
 import { useForceUpdate } from "../hooks/useForceUpdate";
 import { MyAttachR } from "./attachR";
 import { CurrentWorkspaceDetails, WorkspaceInfo } from "../pages/workspace/types";
-import { AllMessage, CommonContentItem, HyperChatCompletionTool, IMCPClient, HyperToolCall } from "@dadigua/hyperchat-shared/types";
+import { CommonContentItem, HyperChatCompletionTool, IMCPClient, HyperToolCall } from "@dadigua/hyperchat-shared/types";
 import { AgentCommonFormItems } from "./AgentManagement";
 import { useChatStream } from "../hooks/useChatStream";
 
@@ -86,7 +85,7 @@ export const WorkspaceChat = ({ workspace, agentName, agentScope, workspaceDetai
   // 使用强制刷新 hook
   const refresh = useForceUpdate();
 
-  const [requestStatus, setRquestStatus] = useState(false);
+  // 移除未使用的状态
   // 从 Context 获取 AI 设置
   const { aiSettings, loading: aiSettingsLoading } = useAISettings();
 

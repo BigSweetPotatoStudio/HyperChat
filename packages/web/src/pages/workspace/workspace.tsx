@@ -104,7 +104,7 @@ export function Workspace() {
   const agentManagementRef = useRef<AgentManagementRef | null>(null);
   const mcpManagementRef = useRef<MCPManagementRef | null>(null);
   const taskManagementRef = useRef<TaskManagementRef | null>(null);
-  
+
   // 防抖计时器 ref
   const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
 
@@ -166,7 +166,7 @@ export function Workspace() {
           settings: currentWorkspaceData.settings || {},
           agentsCount: currentWorkspaceData.agentsCount || 0,
           mcpServersCount: currentWorkspaceData.mcpServersCount || 0,
-          isGlobal: currentWorkspaceData.isGlobal || currentWorkspaceData.path?.includes('Documents/HyperChat') || false,
+          isGlobal: currentWorkspaceData.isGlobal || false,
         };
 
         // 设置当前工作区
@@ -734,7 +734,7 @@ export function Workspace() {
   // 渲染工作区标签页标签
   const renderWorkspaceLabel = (workspace: WorkspaceInfo) => {
     const isGlobal = workspace.isGlobal;
-    
+
     return (
       <Space>
         {isGlobal ? <GlobalOutlined /> : <FolderOpenOutlined />}
@@ -745,14 +745,14 @@ export function Workspace() {
           </div>
         </div>
         {isGlobal && <Tag color="blue">{t`Global`}</Tag>}
-        <Button 
-          type="text" 
-          size="small" 
-          icon={<SettingOutlined />} 
+        <Button
+          type="text"
+          size="small"
+          icon={<SettingOutlined />}
           onClick={(e) => {
             e.stopPropagation();
             handleWorkspaceSettings(workspace);
-          }} 
+          }}
         />
       </Space>
     );

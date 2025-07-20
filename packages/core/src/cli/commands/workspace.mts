@@ -8,6 +8,7 @@ import { Logger } from '../utils/logger.mjs';
 import { Command } from '../../command.mjs';
 import { workspaceManager } from '../../workspace/index.mjs';
 import { t } from '../../i18n.mjs';
+import { appDataDir } from '../../const.mjs';
 /**
  * 获取当前工作区路径（新架构）
  */
@@ -88,7 +89,7 @@ export async function showCurrentWorkspace() {
 
     const config = workspace.getConfig();
     if (config) {
-      const type = workspace.workspacePath.includes('Documents/HyperChat') ? t`Global Workspace` : t`Project Workspace`;
+      const type = workspace.workspacePath === appDataDir ? t`Global Workspace` : t`Project Workspace`;
       console.log(`\n📋 ${t`Workspace Type:`} ${type}`);
       console.log(`🏷️  ${t`Name:`} ${config.name}`);
       if (config.description) {
