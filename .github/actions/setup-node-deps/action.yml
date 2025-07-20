@@ -41,39 +41,6 @@ runs:
       shell: bash
       run: brew install python-setuptools
 
-    # Windows 特定配置：优化 node-pty 和原生模块编译
-    - name: Setup Windows build environment
-      if: runner.os == 'Windows'
-      shell: powershell
-      run: |
-        Write-Host "Configuring Windows build environment for node-pty..."
-        
-        # 创建必要的缓存目录
-        New-Item -ItemType Directory -Force -Path "$env:TEMP\.node-gyp" | Out-Null
-        New-Item -ItemType Directory -Force -Path "$env:TEMP\.npm-cache" | Out-Null
-        
-        # 设置环境变量以优化构建 (node-gyp 相关)
-        echo "npm_config_target_platform=win32" >> $env:GITHUB_ENV
-        echo "npm_config_target_arch=x64" >> $env:GITHUB_ENV
-        echo "npm_config_msvs_version=2022" >> $env:GITHUB_ENV
-        echo "npm_config_node_gyp_cache=$env:TEMP\.node-gyp" >> $env:GITHUB_ENV
-        echo "npm_config_cache=$env:TEMP\.npm-cache" >> $env:GITHUB_ENV
-        
-        # 设置 Python 路径
-        echo "npm_config_python=$env:pythonLocation\python.exe" >> $env:GITHUB_ENV
-        echo "PYTHON=$env:pythonLocation\python.exe" >> $env:GITHUB_ENV
-        
-        # 其他优化设置
-        echo "npm_config_cache_lock_stale=60000" >> $env:GITHUB_ENV
-        echo "npm_config_cache_lock_wait=10000" >> $env:GITHUB_ENV
-        echo "npm_config_build_from_source=false" >> $env:GITHUB_ENV
-        
-        # 显示配置信息用于调试
-        Write-Host "Python location: $env:pythonLocation\python.exe"
-        Write-Host "Node-gyp cache: $env:TEMP\.node-gyp"
-        Write-Host "NPM cache: $env:TEMP\.npm-cache"
-        Write-Host "Windows build environment configured successfully"
-
     # 缓存所有依赖（统一策略）
     - name: Cache workspace dependencies
       uses: actions/cache@v4
@@ -101,72 +68,11 @@ runs:
       if: steps.cache-workspace-deps.outputs.cache-hit != 'true'
       shell: bash
       run: |
-        # 设置通用的安装参数
-        INSTALL_ARGS="--no-audit --no-fund"
-        if [ "${{ runner.os }}" = "Windows" ]; then
-          # Windows 特殊处理：保持 optional 依赖但增加错误处理
-          echo "Installing root dependencies on Windows..."
-          if ! npm install $INSTALL_ARGS; then
-            echo "First attempt failed, trying with --force..."
-            npm install --force $INSTALL_ARGS || {
-              echo "Force install failed, trying legacy peer deps..."
-              npm install --legacy-peer-deps $INSTALL_ARGS
-            }
-          fi
-        else
-          npm install $INSTALL_ARGS
-        fi
-        
-        # 安装 scripts 依赖
+        npm install
         if [ "${{ inputs.install-scripts }}" = "true" ]; then
-          cd scripts && npm install $INSTALL_ARGS
-          cd ..
+          cd scripts && npm install
         fi
-        
-        # 安装各个 package 的依赖
-        cd packages/shared && npm install --include=optional $INSTALL_ARGS
-        cd ../core && npm install --include=optional $INSTALL_ARGS
-        cd ../web && npm install --include=optional $INSTALL_ARGS && npm install favicons $INSTALL_ARGS
-        
-        # electron 包特殊处理 - node-pty 是必需的
-        cd ../electron
-        if [ "${{ runner.os }}" = "Windows" ]; then
-          # Windows 上尝试多种方法安装 node-pty
-          echo "Installing electron dependencies on Windows..."
-          
-          # 方法1: 尝试正常安装
-          if npm install --include=optional $INSTALL_ARGS; then
-            echo "✅ Standard installation succeeded"
-          else
-            echo "❌ Standard installation failed, trying alternatives..."
-            
-            # 方法2: 清理缓存并设置更多环境变量后重试
-            npm cache clean --force
-            export npm_config_node_gyp_cache="$TEMP/.node-gyp"
-            export npm_config_build_from_source=false
-            
-            if npm install --include=optional --force $INSTALL_ARGS; then
-              echo "✅ Force installation with cache clean succeeded"
-            else
-              echo "❌ Force installation failed, trying with legacy peer deps..."
-              
-              # 方法3: 使用 legacy peer deps 解决依赖冲突
-              if npm install --include=optional --legacy-peer-deps --force $INSTALL_ARGS; then
-                echo "✅ Legacy peer deps installation succeeded"
-              else
-                echo "❌ Legacy installation failed, trying minimal install..."
-                
-                # 方法4: 最后尝试 - 跳过可选依赖但保留基本功能
-                if npm install --ignore-optional --force $INSTALL_ARGS; then
-                  echo "⚠️ Minimal installation succeeded (some features may be limited)"
-                else
-                  echo "❌ All installation methods failed, but continuing..."
-                  # 不让这个失败阻止整个工作流
-                  true
-                fi
-              fi
-            fi
-          fi
-        else
-          npm install --include=optional $INSTALL_ARGS
-        fi
+        cd packages/shared && npm install --include=optional
+        cd ../core && npm install --include=optional
+        cd ../web && npm install --include=optional && npm install favicons
+        cd ../electron && npm install --include=optional
