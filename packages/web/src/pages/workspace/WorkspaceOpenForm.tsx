@@ -58,6 +58,13 @@ const ModalForm: React.FC<CollectionCreateFormProps> = ({
     onFormInstanceReady(form);
   }, [form, onFormInstanceReady]);
 
+  // 当 selectedPath 改变时，同步更新表单字段
+  useEffect(() => {
+    if (selectedPath) {
+      form.setFieldsValue({ path: selectedPath });
+    }
+  }, [selectedPath, form]);
+
   return (
     <Form form={form} name="workspace_open_form" layout="vertical" initialValues={initialValues}>
       <Form.Item

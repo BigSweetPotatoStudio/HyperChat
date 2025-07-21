@@ -95,14 +95,14 @@ export class WorkspaceManager {
    * @param workspacePath 工作区路径
    */
   async switchWorkspace(workspacePath: string, force: boolean = false): Promise<void> {
-    if (!force) {
-      // 查找工作区或使用全局工作区
-      const isWork = this.isWorkspaceDirectory(workspacePath);
+    // if (!force) {
+    //   // 查找工作区或使用全局工作区
+    //   const isWork = this.isWorkspaceDirectory(workspacePath);
 
-      if (!isWork) {
-        throw new Error(`当前文件没有工作区: ${workspacePath}`);
-      }
-    }
+    //   if (!isWork) {
+    //     throw new Error(`当前文件没有工作区: ${workspacePath}`);
+    //   }
+    // }
     // 如果目标路径与当前工作区相同，无需切换
     if (this.currentWorkspace && this.currentWorkspace.workspacePath === workspacePath) {
       return;
