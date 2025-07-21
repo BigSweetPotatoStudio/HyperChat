@@ -1159,11 +1159,7 @@ export class Workspace {
         });
 
         // 更新聊天记录
-        chatLog.messages.push({
-          role: 'assistant',
-          content: assistantMessage.content as string,
-          content_date: Date.now()
-        } as any);
+        chatLog.messages = aiChannel.messages;
 
         // 保存更新后的聊天记录
         await agentInstance.setChatLog(chatLog);

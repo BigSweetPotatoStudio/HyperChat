@@ -60,35 +60,35 @@ export class AiChannel {
       const timestamp = Math.floor(Date.now() / 1000); // 精确到秒
       message.messageId = `user_${this.messages.length}_${timestamp}`;
     }
-    if (resourceResList.length > 0) {
-      if (message.content == "" || message.content == null) {
-        message.content = [];
-      } else {
-        message.content = [
-          {
-            type: "text",
-            text: message.content.toString() as string,
-          },
-        ];
-      }
-      for (let content of resourceResList) {
+    // if (resourceResList.length > 0) {
+    //   if (message.content == "" || message.content == null) {
+    //     message.content = [];
+    //   } else {
+    //     message.content = [
+    //       {
+    //         type: "text",
+    //         text: message.content.toString() as string,
+    //       },
+    //     ];
+    //   }
+    //   for (let content of resourceResList) {
 
-        if (content.type == "text") {
-          message.content.push({
-            type: "text",
-            text: content.text.toString() as string,
-          });
-        } else if (content.type == "image_url") {
-          message.content.push({
-            type: "image_url",
-            image_url: { url: content.image_url.url },
-          });
-        } else {
-          Logger.warn("resource only supports text + images.");
-        }
+    //     if (content.type == "text") {
+    //       message.content.push({
+    //         type: "text",
+    //         text: content.text.toString() as string,
+    //       });
+    //     } else if (content.type == "image_url") {
+    //       message.content.push({
+    //         type: "image_url",
+    //         image_url: { url: content.image_url.url },
+    //       });
+    //     } else {
+    //       Logger.warn("resource only supports text + images.");
+    //     }
 
-      }
-    }
+    //   }
+    // }
     this.messages.push(message);
 
     return this;
@@ -233,10 +233,10 @@ export class AiChannel {
         await this.compressMemory(params.modelKey, params.onUpdate, params.sseWriter);
         params.onUpdate && params.onUpdate();
       }
-      if (this.lastMessage.role === "user") {
-        params.userMessage = this.lastMessage;
-        this.messages.pop(); // 移除最后一条用户消息
-      }
+      // if (this.lastMessage.role === "user") {
+      //   params.userMessage = this.lastMessage;
+      //   this.messages.pop(); // 移除最后一条用户消息
+      // }
     }
 
     // 处理用户消息
@@ -321,16 +321,6 @@ export class AiChannel {
 
       let toolIndex = 0;
       for await (const delta of result.fullStream) {
-        // 发送 delta 更新
-        if (params.sseWriter) {
-          params.sseWriter.write({
-            type: "chat_message_update",
-            data: {
-              messageId: messageId,
-              delta: delta,
-            },
-          });
-        }
         // console.log("delta", delta);
         if (delta.type == "error") {
           throw delta.error;
@@ -353,18 +343,19 @@ export class AiChannel {
             Logger.warn(`Tool ${delta.toolName} not found in MCP tools.`);
             continue;
           }
-
-          newMessage.content_tool_calls.push({
+          let hypertool = {
             index: toolIndex++,
             id: delta.toolCallId,
-            type: "function",
+            type: "function" as const,
             function: {
               name: delta.toolName,
               args: delta.args || {},
             },
             origin_name: localTool.origin_name,
             restore_name: localTool.restore_name,
-          });
+          };
+          (delta as any).hypertool = hypertool;
+          newMessage.content_tool_calls.push(hypertool);
         }
         if (delta.type == "step-finish") {
           if (delta.usage) {
@@ -376,6 +367,16 @@ export class AiChannel {
           }
         }
         params.onUpdate && params.onUpdate();
+        // 发送 delta 更新
+        if (params.sseWriter) {
+          params.sseWriter.write({
+            type: "chat_message_update",
+            data: {
+              messageId: messageId,
+              delta: delta,
+            },
+          });
+        }
       }
 
       params.onUpdate && params.onUpdate();
@@ -610,7 +611,7 @@ export class AiChannel {
     let tools = mcpClients.flatMap((client) => client.tools || []);
 
     // 如果指定了允许的 MCP 工具，进行过滤
-    if (allowMCPs && allowMCPs.length > 0) {
+    if (allowMCPs != null) {
       tools = tools.filter((tool: HyperChatCompletionTool) =>
         allowMCPs.includes(tool.name) || allowMCPs.includes(tool.clientName)
       );

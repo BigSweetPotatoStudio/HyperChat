@@ -6,7 +6,7 @@ maxTokens: 4000
 tags: []
 subAgents: []
 version: 1
-modelKey: openrouter:google/gemini-2.5-flash-preview
+modelKey: unknown:moonshot-v2
 temperature: 1
 maxAttachedDialogs: 5
 compressionStrategy: tokens

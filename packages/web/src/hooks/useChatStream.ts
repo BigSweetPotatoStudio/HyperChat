@@ -136,20 +136,8 @@ export function useChatStream(params: ChatStreamParams) {
         if (!message.content_tool_calls) {
           message.content_tool_calls = [];
         }
-
-        const toolIndex = message.content_tool_calls.length;
-        message.content_tool_calls.push({
-          index: toolIndex,
-          id: delta.toolCallId,
-          type: "function",
-          function: {
-            name: delta.toolName,
-            args: delta.args || {},
-          },
-          origin_name: delta.toolName,
-          restore_name: delta.toolName,
-        });
-
+        // const toolIndex = message.content_tool_calls.length;
+        message.content_tool_calls.push(delta.hypertool);
         message.content_date = Date.now();
       } else if (delta.type === 'step-finish') {
         if (delta.usage) {
