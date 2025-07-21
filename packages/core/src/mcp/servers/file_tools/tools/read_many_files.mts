@@ -38,7 +38,7 @@ async function readSingleFile(
   maxLines?: number,
   includeMetadata: boolean = true
 ): Promise<FileReadResult> {
-  const relativePath = getRelativePathDisplay(filePath);
+  const relativePath = getRelativePathDisplay(filePath, process.cwd());
   
   try {
     // 验证文件存在

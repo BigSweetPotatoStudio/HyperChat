@@ -52,9 +52,8 @@ export function normalizePath(filePath: string): string {
 /**
  * 生成相对路径显示，优先显示相对于当前工作目录的路径
  */
-export function getRelativePathDisplay(filePath: string, basePath?: string): string {
-  const base = basePath || process.cwd();
-  const relativePath = path.relative(base, filePath);
+export function getRelativePathDisplay(filePath: string, basePath: string): string {
+  const relativePath = path.relative(basePath, filePath);
 
   // 如果相对路径太长（包含很多 ../），则显示绝对路径
   if (relativePath.split('../').length > 3) {
@@ -378,10 +377,4 @@ export function shouldIgnoreFile(filePath: string, gitRoot: string, gitignoreRul
   }
 
   return false;
-}
-
-
-export function getWorkSpace() {
-  let workspace = workspaceManager.getCurrentWorkspace();
-  return workspace;
 }

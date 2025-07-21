@@ -6,14 +6,13 @@ import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import {
   normalizePath,
   getRelativePathDisplay,
-  withTimeout,
-  getWorkSpace
+  withTimeout
 } from '../utils.mjs';
 import { FileToolError, ERROR_CODES, getConfig } from '../lib.mjs';
 
 const globSchema = z.object({
   pattern: z.string().describe('Glob pattern to match files (e.g., "*.js", "**/*.ts", "src/**/*.{js,ts}")'),
-  base_path: z.string().optional().describe('Base directory to search from (defaults to workspace root)'),
+  base_path: z.string().describe('Base directory to search from. This parameter is required.'),
   include_hidden: z.boolean().default(false).describe('Whether to include hidden files and directories'),
   max_results: z.number().int().min(1).max(1000).default(100).describe('Maximum number of results to return'),
 });
@@ -27,10 +26,16 @@ export function registerGlobTool(server: McpServer): void {
       const config = getConfig();
 
       try {
+        // 验证必需参数
+        if (!base_path || typeof base_path !== 'string' || base_path.trim() === '') {
+          throw new FileToolError(
+            'Parameter "base_path" is required and must be a non-empty string',
+            ERROR_CODES.INVALID_PATH
+          );
+        }
+
         // 确定搜索基础路径
-        const basePath = base_path
-          ? normalizePath(base_path)
-          : getWorkSpace().workspacePath;
+        const basePath = normalizePath(base_path);
 
         // 检查基础路径是否存在
         if (!fs.existsSync(basePath)) {
@@ -79,7 +84,7 @@ export function registerGlobTool(server: McpServer): void {
         for (const match of limitedMatches) {
           try {
             const stats = fs.statSync(match);
-            const relativePath = getRelativePathDisplay(match);
+            const relativePath = getRelativePathDisplay(match, basePath);
 
             results.push({
               path: match,
@@ -105,7 +110,7 @@ export function registerGlobTool(server: McpServer): void {
 
         // 生成显示信息
         const basePathDisplay = base_path
-          ? getRelativePathDisplay(basePath)
+          ? getRelativePathDisplay(basePath, process.cwd())
           : '(current directory)';
 
         const fileCount = results.filter(r => r.type === 'file').length;

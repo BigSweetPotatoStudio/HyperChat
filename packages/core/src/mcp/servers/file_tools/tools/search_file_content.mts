@@ -7,14 +7,13 @@ import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import {
   normalizePath,
   getRelativePathDisplay,
-  withTimeout,
-  getWorkSpace
+  withTimeout
 } from '../utils.mjs';
 import { FileToolError, ERROR_CODES, getConfig } from '../lib.mjs';
 
 const searchFileContentSchema = z.object({
   pattern: z.string().describe('Regular expression pattern to search for in file contents'),
-  path: z.string().optional().describe('Directory to search in (defaults to workspace root)'),
+  path: z.string().describe('Directory to search in. This parameter is required.'),
   include: z.string().optional().describe('File pattern to include in the search (e.g., "*.js", "*.{ts,tsx}")'),
   exclude: z.string().optional().describe('File pattern to exclude from the search (e.g., "*.min.js", "node_modules/**")'),
   case_sensitive: z.boolean().default(false).describe('Whether the search should be case sensitive'),
@@ -78,10 +77,16 @@ export function registerSearchFileContentTool(server: McpServer): void {
       const config = getConfig();
 
       try {
+        // 验证必需参数
+        if (!searchPath || typeof searchPath !== 'string' || searchPath.trim() === '') {
+          throw new FileToolError(
+            'Parameter "path" is required and must be a non-empty string',
+            ERROR_CODES.INVALID_PATH
+          );
+        }
+
         // 确定搜索路径
-        const basePath = searchPath
-          ? normalizePath(searchPath)
-          : getWorkSpace().workspacePath;
+        const basePath = normalizePath(searchPath);
 
         // 检查搜索路径是否存在
         if (!fs.existsSync(basePath)) {
@@ -174,14 +179,14 @@ export function registerSearchFileContentTool(server: McpServer): void {
 
         // 生成显示信息
         const searchPathDisplay = searchPath
-          ? getRelativePathDisplay(basePath)
+          ? getRelativePathDisplay(basePath, process.cwd())
           : '(current directory)';
 
         const fileCount = new Set(limitedMatches.map(m => m.filePath)).size;
 
         // 格式化输出
         const output = limitedMatches.map(match => {
-          const relativePath = getRelativePathDisplay(match.filePath);
+          const relativePath = getRelativePathDisplay(match.filePath, basePath);
           const lines = [
             `${relativePath}:${match.lineNumber}: ${match.line}`,
           ];

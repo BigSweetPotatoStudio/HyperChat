@@ -97,7 +97,7 @@ export function registerReplaceTool(server: McpServer): void {
         );
         
         // 生成显示信息
-        const relativePath = getRelativePathDisplay(normalizedPath);
+        const relativePath = getRelativePathDisplay(normalizedPath, process.cwd());
         const stats = fs.statSync(normalizedPath);
         
         // 计算变化的统计信息

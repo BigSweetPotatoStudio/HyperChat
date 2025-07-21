@@ -4,7 +4,6 @@ import { z } from 'zod';
 import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import {
   getRelativePathDisplay,
-  getWorkSpace,
   withTimeout
 } from '../utils.mjs';
 import { FileToolError, ERROR_CODES, getConfig } from '../lib.mjs';
@@ -12,7 +11,7 @@ import { FileToolError, ERROR_CODES, getConfig } from '../lib.mjs';
 
 const saveMemorySchema = z.object({
   fact: z.string().describe('The specific fact or piece of information to remember. Should be a clear, self-contained statement.'),
-  memoryPath: z.string().describe('Custom path to the memory file. If not provided, uses default workspace memory file.'),
+  memoryPath: z.string().describe('Path to the memory file. This parameter is required.'),
 });
 
 const DEFAULT_MEMORY_FILENAME = 'HYPERCHAT.md';
@@ -116,10 +115,15 @@ export function registerSaveMemoryTool(server: McpServer): void {
           );
         }
 
+        if (!memoryPath || typeof memoryPath !== 'string' || memoryPath.trim() === '') {
+          throw new FileToolError(
+            'Parameter "memoryPath" is required and must be a non-empty string',
+            ERROR_CODES.INVALID_PATH
+          );
+        }
+
         // 确定内存文件路径
-        const memoryFilePath = memoryPath
-          ? path.resolve(memoryPath)
-          : getDefaultMemoryFilePath(getWorkSpace().workspacePath);
+        const memoryFilePath = path.resolve(memoryPath);
 
         // 添加内存条目
         await withTimeout(

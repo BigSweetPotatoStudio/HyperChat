@@ -59,7 +59,8 @@ function listDirectory(
   respectGitIgnore: boolean,
   gitRoot: string | null = null,
   gitignoreRules: string[] = [],
-  currentDepth: number = 0
+  currentDepth: number = 0,
+  basePath: string = dirPath
 ): FileInfo[] {
   const files: FileInfo[] = [];
   
@@ -86,7 +87,7 @@ function listDirectory(
     
     try {
       const stats = fs.statSync(fullPath);
-      const relativePath = getRelativePathDisplay(fullPath);
+      const relativePath = getRelativePathDisplay(fullPath, basePath);
       
       const fileInfo: FileInfo = {
         name: entry,
@@ -109,7 +110,8 @@ function listDirectory(
           respectGitIgnore,
           gitRoot,
           gitignoreRules,
-          currentDepth + 1
+          currentDepth + 1,
+          basePath
         );
         files.push(...subFiles);
       }
@@ -175,7 +177,9 @@ export function registerListDirectoryTool(server: McpServer): void {
             max_depth,
             respect_git_ignore,
             gitRoot,
-            gitignoreRules
+            gitignoreRules,
+            0,
+            normalizedPath
           )),
           config.fileOperationTimeout,
           `Directory listing operation timed out for: ${absolute_path}`
@@ -191,7 +195,7 @@ export function registerListDirectoryTool(server: McpServer): void {
         });
         
         // 生成显示信息
-        const relativePath = getRelativePathDisplay(normalizedPath);
+        const relativePath = getRelativePathDisplay(normalizedPath, process.cwd());
         const fileCount = files.filter(f => f.type === 'file').length;
         const dirCount = files.filter(f => f.type === 'directory').length;
         

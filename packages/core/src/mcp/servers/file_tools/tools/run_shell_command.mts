@@ -6,14 +6,13 @@ import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { 
   normalizePath, 
   validateCommand,
-  getRelativePathDisplay,
-  getWorkSpace
+  getRelativePathDisplay
 } from '../utils.mjs';
 import { FileToolError, ERROR_CODES } from '../lib.mjs';
 
 const runShellCommandSchema = z.object({
   command: z.string().describe('The shell command to execute'),
-  working_directory: z.string().optional().describe('Working directory for the command (relative to workspace root)'),
+  working_directory: z.string().describe('Working directory for the command. This parameter is required.'),
   timeout: z.number().int().min(1000).max(300000).default(30000).describe('Command timeout in milliseconds (1s to 5min)'),
   capture_output: z.boolean().default(true).describe('Whether to capture and return command output'),
 });
@@ -139,10 +138,16 @@ export function registerRunShellCommandTool(server: McpServer): void {
         // 验证命令
         validateCommand(command);
         
+        // 验证必需参数
+        if (!working_directory || typeof working_directory !== 'string' || working_directory.trim() === '') {
+          throw new FileToolError(
+            'Parameter "working_directory" is required and must be a non-empty string',
+            ERROR_CODES.INVALID_PATH
+          );
+        }
+        
         // 确定工作目录
-        const workingDir = working_directory 
-          ? normalizePath(working_directory)
-          : getWorkSpace().workspacePath;
+        const workingDir = normalizePath(working_directory);
         
         // 检查工作目录是否存在
         if (!fs.existsSync(workingDir)) {
@@ -166,7 +171,7 @@ export function registerRunShellCommandTool(server: McpServer): void {
         
         // 生成显示信息
         const workingDirDisplay = working_directory 
-          ? getRelativePathDisplay(workingDir)
+          ? getRelativePathDisplay(workingDir, process.cwd())
           : '(current directory)';
         
         const output = [];
