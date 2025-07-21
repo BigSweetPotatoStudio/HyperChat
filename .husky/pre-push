@@ -58,7 +58,7 @@ if [ "$SHOULD_RELEASE" = "true" ] && { [ "$BRANCH_NAME" = "dev2" ] || [ "$BRANCH
   # Dev2 分支使用 prerelease，stable 分支使用语义化版本
   if [ "$BRANCH_NAME" = "dev2" ]; then
     echo "🔢 Dev2 分支 - 升级 alpha 版本..."
-    if [[ $CURRENT_VERSION == *"-alpha"* ]]; then
+    if echo "$CURRENT_VERSION" | grep -q "alpha"; then
       npm version prerelease --preid=alpha --no-git-tag-version
     else
       npm version prerelease --preid=alpha --no-git-tag-version
