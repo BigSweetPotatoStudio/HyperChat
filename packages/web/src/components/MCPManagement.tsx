@@ -360,7 +360,7 @@ export const MCPManagement = forwardRef<MCPManagementRef, MCPManagementProps>(({
       const result = await call("mcpCallToolWithWorkspace", {
         workspacePath: workspace.path,
         name: selectedTool.clientName,
-        functionName: selectedTool.origin_name,
+        functionName: selectedTool.originalName,
         args: parsedParams
       });
 

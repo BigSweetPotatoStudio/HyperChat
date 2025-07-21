@@ -300,8 +300,8 @@
 //               name: delta.toolName,
 //               args: delta.args || {},
 //             },
-//             origin_name: localTool.origin_name,
-//             restore_name: localTool.restore_name,
+//             originalName: localTool.originalName,
+//             displayName: localTool.displayName,
 //           });
 //         }
 //         if (delta.type == "step-finish") {
@@ -416,7 +416,7 @@
 //           "mcpCallToolWithWorkspace",
 //           {
 //             name: localTool?.clientName || "",
-//             functionName: localTool.origin_name,
+//             functionName: localTool.originalName,
 //             args: tool.function.args || {},
 //             workspacePath: localTool.workspacePath,
 //           },

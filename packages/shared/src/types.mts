@@ -120,8 +120,8 @@ export interface DataOptions<T = unknown> {
 
 // 工具调用类型定义
 export interface HyperToolCall {
-  origin_name: string;
-  restore_name: string;
+  originalName: string;
+  displayName: string;
   index: number;
   id: string;
   type: "function";
@@ -270,8 +270,8 @@ export interface MCPServerConfig {
 
 export interface HyperChatCompletionTool {
   name: string;
-  origin_name: string;
-  restore_name: string;
+  originalName: string;
+  displayName: string;
   clientName: string;
   description: string;
   inputSchema: {

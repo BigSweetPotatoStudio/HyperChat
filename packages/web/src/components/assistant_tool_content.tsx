@@ -800,7 +800,7 @@ export const AssistantToolContent: React.FC<AssistantToolContentProps> = ({ cont
                                                     setSelectedTool({
                                                         args: tool.function.args,
                                                         result: toolResult?.content || '',
-                                                        name: tool.restore_name || tool.function.name
+                                                        name: tool.displayName || tool.function.name
                                                     });
                                                     setModalVisible(true);
                                                 }}>
@@ -808,7 +808,7 @@ export const AssistantToolContent: React.FC<AssistantToolContentProps> = ({ cont
                                                     <div className="cursor-pointer flex-1">
                                                         <div className="line-clamp-1 text-blue-500 break-all">
                                                             <span className="text-purple-500">
-                                                                {tool.restore_name || tool.function.name}
+                                                                {tool.displayName || tool.function.name}
                                                             </span>{" "}
                                                             {JSON.stringify(tool.function.args)}
                                                         </div>

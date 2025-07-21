@@ -754,11 +754,11 @@ export const AgentManagement = forwardRef<AgentManagementRef, AgentManagementPro
                 children: x.tools.map((t) => ({
                   title: (
                     <Tooltip title={t.description}>
-                      <span>{t.origin_name || t.name}</span>
+                      <span>{t.originalName || t.name}</span>
                     </Tooltip>
                   ),
-                  key: t.restore_name,
-                  value: t.restore_name,
+                  key: t.displayName,
+                  value: t.displayName,
                 })),
               }))}
             />

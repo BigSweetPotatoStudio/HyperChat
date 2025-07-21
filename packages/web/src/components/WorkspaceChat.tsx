@@ -185,7 +185,7 @@ export const WorkspaceChat = ({ workspace, agentName, agentScope, workspaceDetai
                 <span className="text-purple-500">
                   {getTools(mcpClients).find(
                     (x) => x.name == tool.function.name,
-                  )?.restore_name || tool.function.name}
+                  )?.displayName || tool.function.name}
                 </span>
               </pre>
               {JsonSchema2FormItemOrNull(
@@ -867,7 +867,7 @@ export const WorkspaceChat = ({ workspace, agentName, agentScope, workspaceDetai
                                     v.tools.filter((t) => {
 
                                       return (
-                                        getAllowMCPs().includes(t.clientName) || getAllowMCPs().includes(t.restore_name)
+                                        getAllowMCPs().includes(t.clientName) || getAllowMCPs().includes(t.displayName)
                                       );
                                     }),
                                   );
@@ -1035,11 +1035,11 @@ export const WorkspaceChat = ({ workspace, agentName, agentScope, workspaceDetai
                     <Tooltip title={tool.description}>
                       <span
                       >
-                        {tool.origin_name || tool.name}
+                        {tool.originalName || tool.name}
                       </span>
                     </Tooltip>
                   ),
-                  key: tool.restore_name,
+                  key: tool.displayName,
                   isLeaf: true,
                 };
               }),
@@ -1080,7 +1080,7 @@ function getTools(mcpClients: IMCPClient[], allowMCPs?: string[]): HyperChatComp
       v.tools.filter((t) => {
         if (!allowMCPs) return true;
         return (
-          allowMCPs.includes(t.clientName) || allowMCPs.includes(t.restore_name)
+          allowMCPs.includes(t.clientName) || allowMCPs.includes(t.displayName)
         );
       }),
     );

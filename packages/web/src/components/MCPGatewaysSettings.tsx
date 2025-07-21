@@ -56,8 +56,8 @@ interface GatewayFormValues {
  */
 interface MCPTool {
   name: string;
-  origin_name?: string;
-  restore_name: string;
+  originalName?: string;
+  displayName: string;
   description?: string;
 }
 
@@ -490,11 +490,11 @@ const GatewayModal: React.FC<GatewayModalProps> = ({
                   return {
                     title: (
                       <Popover title={tool.description}>
-                        <span>{tool.origin_name || tool.name}</span>
+                        <span>{tool.originalName || tool.name}</span>
                       </Popover>
                     ),
-                    key: tool.restore_name,
-                    value: tool.restore_name,
+                    key: tool.displayName,
+                    value: tool.displayName,
                   };
                 }),
               };

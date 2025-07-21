@@ -60,7 +60,7 @@ async function createServer(name: string, description: string, allowMCPs: string
                     v.tools.filter((t) => {
                         if (!allowMCPs) return true;
                         return (
-                            allowMCPs.includes(t.clientName) || allowMCPs.includes(t.restore_name)
+                            allowMCPs.includes(t.clientName) || allowMCPs.includes(t.displayName)
                         );
                     }),
                 );
@@ -89,7 +89,7 @@ async function createServer(name: string, description: string, allowMCPs: string
                     v.tools.filter((t) => {
                         if (!allowMCPs) return true;
                         return (
-                            allowMCPs.includes(t.clientName) || allowMCPs.includes(t.restore_name)
+                            allowMCPs.includes(t.clientName) || allowMCPs.includes(t.displayName)
                         );
                     }),
                 );
@@ -108,7 +108,7 @@ async function createServer(name: string, description: string, allowMCPs: string
 
             return await Command.mcpCallTool({
                 name: find.clientName || '',
-                functionName: find.origin_name || '',
+                functionName: find.originalName || '',
                 args: request.params.arguments || {}
             });
         } catch (error) {
