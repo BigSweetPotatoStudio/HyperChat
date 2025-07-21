@@ -10,6 +10,7 @@ import {
   validateCreateTaskRequest,
   validateUpdateTaskRequest,
 } from "@dadigua/hyperchat-shared";
+import { sanitizeFileName } from "../../common/util.mjs";
 
 /**
  * 任务管理器类
@@ -36,8 +37,8 @@ export class TaskManager {
    * 获取任务文件路径
    */
   private getTaskFilePath(taskName: string): string {
-    // 使用任务名称作为文件名，去除特殊字符
-    const fileName = taskName.replace(/[^a-zA-Z0-9_-]/g, "_") + ".yaml";
+    // 使用安全文件名生成，支持中文字符
+    const fileName = sanitizeFileName(taskName, 50) + ".yaml";
     return path.join(this.tasksPath, fileName);
   }
 
@@ -185,28 +186,44 @@ export class TaskManager {
 
     const updatedTask = result.data;
 
-    // 如果任务名称改变了，需要重命名文件
-    if (taskName !== updatedTask.name) {
-      const oldFilePath = this.getTaskFilePath(taskName);
-      const newFilePath = this.getTaskFilePath(updatedTask.name);
+    const oldFilePath = this.getTaskFilePath(taskName);
+    const newFilePath = this.getTaskFilePath(updatedTask.name);
 
-      // 检查新名称是否已存在
-      if (fs.existsSync(newFilePath)) {
-        throw new Error(`Task '${updatedTask.name}' already exists`);
-      }
-
-      // 删除旧文件
-      await fs.promises.unlink(oldFilePath);
-    }
-
-    // 保存更新后的任务
-    const filePath = this.getTaskFilePath(updatedTask.name);
+    // 准备要保存的内容
     const yamlContent = yaml.dump(updatedTask, {
       indent: 2,
       lineWidth: 100,
     });
 
-    await fs.promises.writeFile(filePath, yamlContent, "utf-8");
+    // 如果任务名称改变了，需要重命名文件
+    if (taskName !== updatedTask.name) {
+      // 检查新名称是否已存在
+      if (fs.existsSync(newFilePath)) {
+        throw new Error(`Task '${updatedTask.name}' already exists`);
+      }
+
+      try {
+        // 先保存新文件
+        await fs.promises.writeFile(newFilePath, yamlContent, "utf-8");
+        
+        // 新文件保存成功后，再删除旧文件
+        await fs.promises.unlink(oldFilePath);
+      } catch (error) {
+        // 如果新文件已创建但删除旧文件失败，尝试清理新文件
+        if (fs.existsSync(newFilePath)) {
+          try {
+            await fs.promises.unlink(newFilePath);
+          } catch (cleanupError) {
+            console.warn(`Failed to cleanup new file '${newFilePath}':`, cleanupError);
+          }
+        }
+        throw new Error(`Failed to rename task file: ${error instanceof Error ? error.message : String(error)}`);
+      }
+    } else {
+      // 名称未变更，直接保存到原位置
+      await fs.promises.writeFile(oldFilePath, yamlContent, "utf-8");
+    }
+
     return updatedTask;
   }
 
