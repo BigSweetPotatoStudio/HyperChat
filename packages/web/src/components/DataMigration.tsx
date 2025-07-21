@@ -13,21 +13,18 @@ import {
   Typography,
   Divider,
   Spin,
-  Result,
-  Progress
+  Result
 } from 'antd';
 import { 
   DatabaseOutlined, 
-  CheckCircleOutlined, 
-  ExclamationCircleOutlined,
-  InfoCircleOutlined,
   SyncOutlined
 } from '@ant-design/icons';
 import { call } from '../common/call';
 import { t } from '../i18n';
 
-const { Title, Text, Paragraph } = Typography;
+const { Title, Text } = Typography;
 const { Option } = Select;
+
 
 interface MigrationResult {
   success: boolean;
@@ -139,44 +136,6 @@ export function DataMigration({ visible, onClose }: DataMigrationProps) {
     }
   };
 
-  const handleIndividualMigration = async (type: 'aiModels' | 'agents' | 'mcpConfig') => {
-    setLoading(true);
-    try {
-      let result: MigrationResult;
-      
-      switch (type) {
-        case 'aiModels':
-          result = await call('migration.migrateAIModels', {
-            sourcePath: customPaths.model || undefined,
-            dryRun,
-            force
-          });
-          break;
-        case 'agents':
-          result = await call('migration.migrateAgents', {
-            sourcePath: customPaths.agent || undefined,
-            targetScope,
-            dryRun,
-            force
-          });
-          break;
-        case 'mcpConfig':
-          result = await call('migration.migrateMCPConfig', {
-            sourcePath: customPaths.mcp || undefined,
-            targetScope,
-            dryRun,
-            force
-          });
-          break;
-      }
-
-      setMigrationResults(prev => ({ ...prev, [type]: result }));
-    } catch (error) {
-      console.error(`${type} migration failed:`, error);
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const renderConfigStep = () => (
     <Card title={t`Migration Configuration`}>
@@ -292,7 +251,9 @@ export function DataMigration({ visible, onClose }: DataMigrationProps) {
             title={result.message}
             subTitle={
               <Space direction="vertical">
-                <Text>{t`Total migrated: ${totalMigrated}, Skipped: ${totalSkipped}, Errors: ${totalErrors}`}</Text>
+                <Text>
+                  {`${t`Total migrated`}: ${totalMigrated}, ${t`Skipped`}: ${totalSkipped}, ${t`Errors`}: ${totalErrors}`}
+                </Text>
                 {dryRun && <Text type="secondary">{t`This is a preview. Enable "Real Migration" to perform actual changes.`}</Text>}
               </Space>
             }
@@ -304,23 +265,23 @@ export function DataMigration({ visible, onClose }: DataMigrationProps) {
             <Descriptions bordered size="small">
               <Descriptions.Item label={t`AI Models`} span={1}>
                 <Space>
-                  <Text type="success">{t`Migrated: ${result.aiModels.migrated}`}</Text>
-                  <Text type="warning">{t`Skipped: ${result.aiModels.skipped}`}</Text>
-                  <Text type="danger">{t`Errors: ${result.aiModels.errors}`}</Text>
+                  <Text type="success">{`${t`Migrated`}: ${result.aiModels.migrated}`}</Text>
+                  <Text type="warning">{`${t`Skipped`}: ${result.aiModels.skipped}`}</Text>
+                  <Text type="danger">{`${t`Errors`}: ${result.aiModels.errors}`}</Text>
                 </Space>
               </Descriptions.Item>
               <Descriptions.Item label={t`MCP Config`} span={1}>
                 <Space>
-                  <Text type="success">{t`Migrated: ${result.mcpConfig.migrated}`}</Text>
-                  <Text type="warning">{t`Skipped: ${result.mcpConfig.skipped}`}</Text>
-                  <Text type="danger">{t`Errors: ${result.mcpConfig.errors}`}</Text>
+                  <Text type="success">{`${t`Migrated`}: ${result.mcpConfig.migrated}`}</Text>
+                  <Text type="warning">{`${t`Skipped`}: ${result.mcpConfig.skipped}`}</Text>
+                  <Text type="danger">{`${t`Errors`}: ${result.mcpConfig.errors}`}</Text>
                 </Space>
               </Descriptions.Item>
               <Descriptions.Item label={t`Agents`} span={1}>
                 <Space>
-                  <Text type="success">{t`Migrated: ${result.agents.migrated}`}</Text>
-                  <Text type="warning">{t`Skipped: ${result.agents.skipped}`}</Text>
-                  <Text type="danger">{t`Errors: ${result.agents.errors}`}</Text>
+                  <Text type="success">{`${t`Migrated`}: ${result.agents.migrated}`}</Text>
+                  <Text type="warning">{`${t`Skipped`}: ${result.agents.skipped}`}</Text>
+                  <Text type="danger">{`${t`Errors`}: ${result.agents.errors}`}</Text>
                 </Space>
               </Descriptions.Item>
             </Descriptions>
@@ -333,13 +294,19 @@ export function DataMigration({ visible, onClose }: DataMigrationProps) {
               description={
                 <div>
                   {result.details.aiModels.errors.map((error, idx) => (
-                    <div key={`ai-${idx}`}>{t`AI Model "${error.name}": ${error.error}`}</div>
+                    <div key={`ai-${idx}`}>
+                      {`${t`AI Model Error`}: ${error.name} - ${error.error}`}
+                    </div>
                   ))}
                   {result.details.mcpConfig.errors.map((error, idx) => (
-                    <div key={`mcp-${idx}`}>{t`MCP "${error.name}": ${error.error}`}</div>
+                    <div key={`mcp-${idx}`}>
+                      {`${t`MCP Error`}: ${error.name} - ${error.error}`}
+                    </div>
                   ))}
                   {result.details.agents.errors.map((error, idx) => (
-                    <div key={`agent-${idx}`}>{t`Agent "${error.name}": ${error.error}`}</div>
+                    <div key={`agent-${idx}`}>
+                      {`${t`Agent Error`}: ${error.name} - ${error.error}`}
+                    </div>
                   ))}
                 </div>
               }
