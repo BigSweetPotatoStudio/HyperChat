@@ -4,7 +4,7 @@
     "name": "Dadigua",
     "email": "0laopo0@gmail.com"
   },
-  "version": "2.0.0-alpha.30",
+  "version": "2.0.0-alpha.31",
   "private": true,
   "workspaces": [
     "packages/shared",
