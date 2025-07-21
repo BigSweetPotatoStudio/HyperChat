@@ -732,7 +732,7 @@ export const AgentManagement = forwardRef<AgentManagementRef, AgentManagementPro
               placeholder={t`Choose the AI model for this agent`}
               allowClear
               options={aiSettings ? (aiSettings.models || []).map((m) => ({
-                label: m.fullName || m.name,
+                label: m.provider + ":" + m.name,
                 value: m.key,
               })) : []}
             />
@@ -773,22 +773,6 @@ export const AgentManagement = forwardRef<AgentManagementRef, AgentManagementPro
             />
           </Form.Item>
 
-          {/* <Collapse>
-            <Collapse.Panel key="1" header={t`More Settings`}>
-              <Form.Item name="fallbackModelKey" label={t`TaskFallbackLLM`}>
-                <Select
-                  showSearch
-                  optionFilterProp="label"
-                  placeholder={t`Please select TaskFallbackLLM`}
-                  allowClear
-                  options={aiSettings ? aiSettings.models.map((m) => ({
-                    label: m.fullName || m.name,
-                    value: m.key,
-                  })) : []}
-                />
-              </Form.Item>
-            </Collapse.Panel>
-          </Collapse> */}
         </Form>
       </Modal>
 

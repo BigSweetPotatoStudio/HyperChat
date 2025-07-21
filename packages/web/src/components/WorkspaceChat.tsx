@@ -117,7 +117,7 @@ export const WorkspaceChat = ({ workspace, agentName, agentScope, workspaceDetai
     return Object.entries(groups).map(([provider, models]) => ({
       label: provider,
       options: models.map(model => ({
-        label: model.name,
+        label: model.provider + ":" + model.name,
         value: model.key,
       }))
     }));
