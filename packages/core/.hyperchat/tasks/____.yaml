@@ -1,0 +1,5 @@
+name: 天气预报
+agentName: 天气预报
+description: 今天长沙的天气，发消息给我
+cron: '*/5 * * * *'
+disabled: false

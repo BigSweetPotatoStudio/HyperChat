@@ -457,6 +457,35 @@ export class Workspace {
   }
 
   /**
+   * 更新 agent 配置（支持名称变更）
+   */
+  async updateAgent(agentName: string, updates: Partial<AgentConfig>, scope?: "global" | "workspace"): Promise<boolean> {
+    const agentInstance = this.agentManager.getAgent(agentName, scope);
+    if (!agentInstance) {
+      throw new Error(`Agent 不存在: ${agentName}`);
+    }
+
+    // 如果名称发生变更，需要更新 AgentManager 的映射关系
+    const oldName = agentInstance.getConfig().name;
+    const newName = updates.name;
+
+    try {
+      // 先更新 agent 实例配置（包括文件夹重命名）
+      const result = await agentInstance.updateConfig(updates);
+      
+      // 如果名称发生变更且更新成功，需要更新 AgentManager 的内部映射
+      if (result && newName && newName !== oldName) {
+        await this.agentManager.updateAgentMapping(oldName, newName, scope);
+      }
+      
+      return result;
+    } catch (error) {
+      console.error(`Failed to update agent ${agentName}:`, error);
+      throw error;
+    }
+  }
+
+  /**
    * 创建或更新 agent
    */
   async setAgent(agent: Partial<AgentConfig>): Promise<boolean> {
@@ -464,7 +493,7 @@ export class Workspace {
       // 更新现有 agent
       const instance = this.agentManager.getAgent(agent.name);
       if (instance) {
-        return await instance.updateConfig(agent);
+        return await this.updateAgent(agent.name, agent);
       }
     }
 

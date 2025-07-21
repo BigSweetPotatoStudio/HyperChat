@@ -1,5 +1,5 @@
-name: '123'
-prompt: '123'
+name: 天气预报
+prompt: 天气预报
 allowMCPs:
   - hyper_browser
   - hyper_system

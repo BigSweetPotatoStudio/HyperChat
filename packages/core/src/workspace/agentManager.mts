@@ -124,6 +124,42 @@ export class AgentInstance {
    * 更新 Agent 配置
    */
   async updateConfig(updates: Partial<AgentConfig>): Promise<boolean> {
+    const oldName = this.config.name;
+    const newName = updates.name;
+    
+    // 如果名称发生变更，需要重命名文件夹
+    if (newName && newName !== oldName) {
+      const oldPath = this.agentPath;
+      const parentPath = path.dirname(oldPath);
+      const newPath = path.join(parentPath, sanitizeFileName(newName));
+      
+      // 检查新路径是否已存在
+      if (fs.existsSync(newPath)) {
+        throw new Error(`Agent 名称 "${newName}" 已存在，无法重命名`);
+      }
+      
+      try {
+        // 重命名文件夹
+        await fs.promises.rename(oldPath, newPath);
+        
+        // 更新实例路径
+        this.agentPath = newPath;
+        this.configPath = path.join(newPath, CONSTANTS.CONFIG_FILES.AGENT_CONFIG);
+        
+        // 更新 chatLogs 路径
+        this.chatLogs = new DataList<ChatHistoryItem>(
+          path.join(newPath, CONSTANTS.DIRECTORIES.CHAT_LOGS), 
+          DataList.FileFormat.YAML
+        );
+        await this.chatLogs.load();
+        
+      } catch (error) {
+        console.error(`重命名 Agent 文件夹失败: ${oldName} -> ${newName}:`, error);
+        throw new Error(`重命名 Agent 文件夹失败: ${error instanceof Error ? error.message : String(error)}`);
+      }
+    }
+    
+    // 更新配置
     this.config = { ...this.config, ...updates };
     return await this.saveConfig();
   }
@@ -514,5 +550,30 @@ export class AgentManager {
       });
     }
     return summaries;
+  }
+
+  /**
+   * 更新 Agent 的内部映射关系（当名称变更时）
+   */
+  async updateAgentMapping(oldName: string, newName: string, scope?: "global" | "workspace"): Promise<void> {
+    const oldAgentId = this.getAgentId(oldName, scope);
+    const newAgentId = this.getAgentId(newName, scope);
+    
+    // 获取原有的 agent 实例
+    const agentInstance = this.agents.get(oldAgentId);
+    if (!agentInstance) {
+      console.warn(`尝试更新不存在的 Agent 映射: ${oldName} -> ${newName}`);
+      return;
+    }
+    
+    // 更新 agents Map：删除旧的，添加新的
+    this.agents.delete(oldAgentId);
+    this.agents.set(newAgentId, agentInstance);
+    
+    // 更新 nameToKey Map：删除旧的名称映射，添加新的
+    this.nameToKey.delete(oldName);
+    this.nameToKey.set(newName, newAgentId);
+    
+    console.log(`已更新 Agent 映射关系: ${oldName} (${oldAgentId}) -> ${newName} (${newAgentId})`);
   }
 }

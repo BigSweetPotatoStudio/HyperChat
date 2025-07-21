@@ -208,12 +208,7 @@ export const agentCommands = {
         throw new Error('当前没有可用的工作区');
       }
 
-      const agentInstance = workspace.getAgentInstance(agentName, scope);
-      if (!agentInstance) {
-        throw new Error(`Agent 不存在: ${agentName}`);
-      }
-
-      return await agentInstance.updateConfig(updates);
+      return await workspace.updateAgent(agentName, updates, scope);
     } catch (error) {
       console.error(`Failed to update agent ${agentName}:`, error);
       throw error;

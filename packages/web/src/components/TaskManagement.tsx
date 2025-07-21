@@ -343,7 +343,6 @@ export const TaskManagement = forwardRef<TaskManagementRef, TaskManagementProps>
                         />
                       </Dropdown>
                     ]}
-                    onClick={() => showTaskDetails(task)}
                     className="cursor-pointer hover:bg-gray-50"
                   >
                     <List.Item.Meta
@@ -481,7 +480,7 @@ export const TaskManagement = forwardRef<TaskManagementRef, TaskManagementProps>
                   <Select.Option key={agent.config.name} value={agent.config.name}>
                     <Space>
                       <RobotOutlined />
-                      {agent.config.name}
+                      {agent.config.name + "  -  " + (agent as any).config.scope}
                     </Space>
                   </Select.Option>
                 ))}
