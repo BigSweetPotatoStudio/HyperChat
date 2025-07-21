@@ -55,7 +55,6 @@ export default (env, argv) => {
         ".mjs": [".mjs", ".mts"],
       },
       alias: {
-        "@hyperchat/core": path.resolve(__dirname, "../core/src"),
         "@dadigua/hyperchat-shared": path.resolve(__dirname, "../shared/dist"),
       },
       plugins: [

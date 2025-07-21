@@ -4,12 +4,6 @@
     "outDir": "./dist",
     "baseUrl": "./src",
     "paths": {
-      "@hyperchat/shared/*": [
-        "./src/*"
-      ],
-      "@hyperchat/shared": [
-        "./src/index.ts"
-      ]
     },
     "typeRoots": [
       "./node_modules/@types",
