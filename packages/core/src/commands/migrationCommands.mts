@@ -451,8 +451,8 @@ export async function createMigrationCommands(workspaceManager: WorkspaceManager
         }
 
         // 获取现有的 Agent 列表（用于重复检查）
-        const existingAgents = await workspace.getAgents();
-        const existingNames = new Set(existingAgents.map((agent: AgentConfig) => agent.name));
+        const existingAgents = await workspace.getAllAgents();
+        const existingNames = new Set(existingAgents.map((agent: AgentConfig & { scope?: "global" | "workspace" }) => agent.name));
 
         if (dryRun) {
           result.message = "试运行模式 - 不会实际创建 Agent";

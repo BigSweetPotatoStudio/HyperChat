@@ -85,7 +85,7 @@ interface DataMigrationProps {
 export function DataMigration({ visible, onClose }: DataMigrationProps) {
   const [currentStep, setCurrentStep] = useState(0);
   const [loading, setLoading] = useState(false);
-  const [dryRun, setDryRun] = useState(true);
+  const [dryRun, setDryRun] = useState(false);
   const [force, setForce] = useState(false);
   const [targetScope, setTargetScope] = useState<'global' | 'workspace'>('global');
   const [customPaths, setCustomPaths] = useState({
@@ -140,6 +140,21 @@ export function DataMigration({ visible, onClose }: DataMigrationProps) {
   const renderConfigStep = () => (
     <Card title={t`Migration Configuration`}>
       <Space direction="vertical" style={{ width: '100%' }} size="large">
+        {/* 版本警告 */}
+        <Alert
+          message={t`⚠️ Important: This migration tool is only for HyperChat versions below 2.0`}
+          description={
+            <div>
+              <p>• {t`If you are upgrading from HyperChat 1.x to 2.0+, please use this migration tool`}</p>
+              <p>• {t`If you are already using HyperChat 2.0+, do not use this tool as it may cause data conflicts`}</p>
+              <p>• {t`Please backup your data before migration`}</p>
+            </div>
+          }
+          type="error"
+          showIcon
+          style={{ marginBottom: 16 }}
+        />
+        
         {/* 基本设置 */}
         <div>
           <Title level={5}>{t`Basic Settings`}</Title>
