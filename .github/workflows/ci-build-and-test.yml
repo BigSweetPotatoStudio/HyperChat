@@ -71,42 +71,6 @@ jobs:
     runs-on: ${{ matrix.os }}
 
     steps:
-      - name: Check out git repository
-        uses: actions/checkout@v4
-
-      - name: Install Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: "20.19.1"
-
-      - name: Install global dependencies
-        run: npm install -g cross-env zx tsx
-
-      # 恢复 workspace 依赖缓存
-      - name: Restore workspace dependencies
-        uses: actions/cache@v4
-        with:
-          path: |
-            node_modules
-            scripts/node_modules
-            packages/shared/node_modules
-            packages/core/node_modules
-            packages/web/node_modules
-          key: ${{ matrix.os }}-node-workspace-${{ hashFiles('package-lock.json', 'scripts/package-lock.json', 'packages/shared/package-lock.json', 'packages/core/package-lock.json', 'packages/web/package-lock.json') }}
-          restore-keys: |
-            ${{ matrix.os }}-node-workspace-
-          fail-on-cache-miss: true
-
-      # 恢复 electron 依赖缓存
-      - name: Restore electron dependencies
-        uses: actions/cache@v4
-        with:
-          path: packages/electron/node_modules
-          key: ${{ matrix.os }}-node-electron-${{ hashFiles('packages/electron/package-lock.json') }}
-          restore-keys: |
-            ${{ matrix.os }}-node-electron-
-          fail-on-cache-miss: true
-
       # 检查 shared 目录ts 类型
       - name: check shared types
         run: |
