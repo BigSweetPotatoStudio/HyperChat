@@ -1,6 +1,6 @@
 {
   "name": "@dadigua/hyperchat-web",
-  "version": "2.0.0-alpha.35",
+  "version": "2.0.0-alpha.36",
   "private": true,
   "dependencies": {
     "@babel/plugin-proposal-private-property-in-object": "^7.21.11",
