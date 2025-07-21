@@ -1,21 +1,107 @@
 {
-    "version": "2.0.0",
-    "tasks": [
-        {
-            "type": "npm",
-            "script": "dev",
-            "path": "packages/core",
-            "problemMatcher": [],
-            "label": "dev core",
-            "detail": "dev core(nodejs)"
-        },
-        {
-            "type": "npm",
-            "script": "dev",
-            "path": "packages/web",
-            "problemMatcher": [],
-            "label": "dev web",
-            "detail": "dev web(react)"
-        }
-    ]
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "🚀 Release Version",
+      "type": "shell",
+      "command": "node",
+      "args": ["scripts/release.mjs"],
+      "group": {
+        "kind": "build",
+        "isDefault": false
+      },
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": false,
+        "panel": "new",
+        "showReuseMessage": true,
+        "clear": false
+      },
+      "problemMatcher": [],
+      "detail": "发布新的 alpha 版本"
+    },
+    {
+      "label": "📝 TypeCheck",
+      "type": "shell",
+      "command": "npm", 
+      "args": ["run", "typecheck"],
+      "group": {
+        "kind": "test",
+        "isDefault": false
+      },
+      "presentation": {
+        "echo": true,
+        "reveal": "always", 
+        "focus": false,
+        "panel": "shared",
+        "showReuseMessage": true,
+        "clear": false
+      },
+      "problemMatcher": ["$tsc"],
+      "detail": "运行 TypeScript 类型检查"
+    },
+    {
+      "label": "🌐 Dev Web",
+      "type": "shell",
+      "command": "npm",
+      "args": ["run", "dev:web"],
+      "group": {
+        "kind": "build",
+        "isDefault": false
+      },
+      "isBackground": true,
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": false,
+        "panel": "new",
+        "showReuseMessage": true,
+        "clear": false
+      },
+      "problemMatcher": [],
+      "detail": "启动 Web 开发服务器"
+    },
+    {
+      "label": "⚡ Dev Core",
+      "type": "shell",
+      "command": "npm",
+      "args": ["run", "dev:core"],
+      "group": {
+        "kind": "build", 
+        "isDefault": false
+      },
+      "isBackground": true,
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": false,
+        "panel": "new",
+        "showReuseMessage": true,
+        "clear": false
+      },
+      "problemMatcher": [],
+      "detail": "启动 Core 开发模式"
+    },
+    {
+      "label": "🧹 Clean",
+      "type": "shell",
+      "command": "npm",
+      "args": ["run", "clean"],
+      "group": {
+        "kind": "build",
+        "isDefault": false
+      },
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": false,
+        "panel": "shared",
+        "showReuseMessage": true,
+        "clear": false
+      },
+      "problemMatcher": [],
+      "detail": "清理所有构建产物"
+    }
+  ]
 }
