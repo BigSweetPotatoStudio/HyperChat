@@ -154,6 +154,14 @@ jobs:
           NODE_AUTH_TOKEN: ${{secrets.npm_token}}
           NPM_PUBLISH_TAG: ${{ steps.release-type.outputs.publish_tag }}
 
+      # NPM 发布成功后触发 Electron 构建
+      - name: Trigger Electron App Build
+        if: steps.release-type.outputs.should_publish == 'true' && steps.check-npm-version.outputs.should_skip == 'false'
+        uses: ./.github/workflows/electron-app.yml
+        with:
+          publish_tag: ${{ steps.release-type.outputs.publish_tag }}
+          branch_name: ${{ github.ref_name }}
+
 
       # 发送成功通知
       - name: Send Success Notification

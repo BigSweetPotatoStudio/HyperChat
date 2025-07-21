@@ -2,16 +2,17 @@ name: HyperChat electron app
 
 on:
   workflow_dispatch: {}
-  push:
-    branches:
-      - dev2          # 开发分支发布 alpha
-      - stable        # 稳定分支发布 release
-      - new_code_tool # 临时测试分支
-  pull_request:
-    branches:
-      - dev2
-      - stable
-      - new_code_tool # 临时测试分支
+  workflow_call:
+    inputs:
+      publish_tag:
+        description: 'NPM publish tag (alpha/latest)'
+        required: true
+        type: string
+      branch_name:
+        description: 'Branch name that triggered the npm publish'
+        required: true
+        type: string
+
 
 permissions:
   contents: write
@@ -103,14 +104,18 @@ jobs:
 
       # 根据分支设置发布类型
       - name: Set release type for stable
-        if: github.ref == 'refs/heads/stable'
+        if: github.ref == 'refs/heads/stable' || (github.event_name == 'workflow_call' && inputs.branch_name == 'stable')
         run: |
           cd packages/electron
           sed -i 's/"releaseType": "prerelease"/"releaseType": "release"/' package.json
 
       # 发布应用
       - name: Publish App (macOS)
-        if: (github.ref == 'refs/heads/dev2' || github.ref == 'refs/heads/stable') && matrix.os == 'macos-latest'
+        if: |
+          (
+            (github.ref == 'refs/heads/dev2' || github.ref == 'refs/heads/stable') ||
+            (github.event_name == 'workflow_call' && (inputs.branch_name == 'dev2' || inputs.branch_name == 'stable'))
+          ) && matrix.os == 'macos-latest'
         run: cd packages/electron && npm run publish
         env:
           APPLE_ID: ${{ secrets.APPLE_ID }}
@@ -122,7 +127,11 @@ jobs:
           USE_HARD_LINKS: false
 
       - name: Publish App (Windows/Linux)
-        if: (github.ref == 'refs/heads/dev2' || github.ref == 'refs/heads/stable') && (matrix.os == 'windows-latest' || matrix.os == 'ubuntu-latest')
+        if: |
+          (
+            (github.ref == 'refs/heads/dev2' || github.ref == 'refs/heads/stable') ||
+            (github.event_name == 'workflow_call' && (inputs.branch_name == 'dev2' || inputs.branch_name == 'stable'))
+          ) && (matrix.os == 'windows-latest' || matrix.os == 'ubuntu-latest')
         run: cd packages/electron && npm run publish
         env:
           GH_TOKEN: ${{ secrets.GH_TOKEN }}
