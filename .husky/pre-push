@@ -7,53 +7,106 @@ echo "🚀 Running pre-push checks..."
 BRANCH_NAME=$(git rev-parse --abbrev-ref HEAD)
 echo "📍 Current branch: $BRANCH_NAME"
 
-# 版本管理逻辑
-if [ "$BRANCH_NAME" = "dev2" ]; then
-  echo "🔢 Dev2 branch detected - bumping alpha version..."
+# 获取最新的提交消息
+LAST_COMMIT_MSG=$(git log -1 --pretty=format:%s)
+echo "📝 Last commit: $LAST_COMMIT_MSG"
+
+# 检查是否有未提交的变更（检测版本文件修改）
+if ! git diff --quiet || ! git diff --cached --quiet; then
+  echo "⚠️  You have uncommitted changes. Please commit or stash them first."
+  exit 1
+fi
+
+# 检查最新提交是否应该触发版本发布
+SHOULD_RELEASE=false
+VERSION_TYPE="patch"
+
+# 检查提交消息是否包含发布关键词
+if echo "$LAST_COMMIT_MSG" | grep -qiE '\[release\]|\[publish\]|\[version\]'; then
+  SHOULD_RELEASE=true
+  echo "🚀 Release keyword detected in latest commit"
+elif echo "$LAST_COMMIT_MSG" | grep -qiE '^(feat|fix|perf)(\(.+\))?!:'; then
+  SHOULD_RELEASE=true  
+  VERSION_TYPE="major"
+  echo "🚀 Breaking change detected in latest commit"
+elif echo "$LAST_COMMIT_MSG" | grep -qiE 'BREAKING CHANGE:'; then
+  SHOULD_RELEASE=true
+  VERSION_TYPE="major"
+  echo "🚀 BREAKING CHANGE detected in latest commit"
+elif echo "$LAST_COMMIT_MSG" | grep -qiE '^feat(\(.+\))?:'; then
+  # 如果在 stable 分支，feat 提交自动触发 minor 版本
+  if [ "$BRANCH_NAME" = "stable" ]; then
+    SHOULD_RELEASE=true
+    VERSION_TYPE="minor"
+    echo "🚀 New feature detected in stable branch"
+  fi
+fi
+
+# 只有在需要发布且在正确分支时才处理版本
+if [ "$SHOULD_RELEASE" = "true" ] && { [ "$BRANCH_NAME" = "dev2" ] || [ "$BRANCH_NAME" = "stable" ]; }; then
   
-  # 检查当前版本是否已经是 alpha
+  echo ""
+  echo "🎯 准备发布新版本..."
+  echo "   分支: $BRANCH_NAME"
+  echo "   提交: $LAST_COMMIT_MSG"
+  echo ""
+  
+  # 获取当前版本
   CURRENT_VERSION=$(node -p "require('./package.json').version")
-  if [[ $CURRENT_VERSION == *"-alpha"* ]]; then
-    echo "📈 Bumping prerelease version..."
-    npm version prerelease --preid=alpha --no-git-tag-version
+  echo "📦 当前版本: $CURRENT_VERSION"
+  
+  # Dev2 分支使用 prerelease，stable 分支使用语义化版本
+  if [ "$BRANCH_NAME" = "dev2" ]; then
+    echo "🔢 Dev2 分支 - 升级 alpha 版本..."
+    if [[ $CURRENT_VERSION == *"-alpha"* ]]; then
+      npm version prerelease --preid=alpha --no-git-tag-version
+    else
+      npm version prerelease --preid=alpha --no-git-tag-version
+    fi
   else
-    echo "📈 Converting to alpha version..."
-    npm version prerelease --preid=alpha --no-git-tag-version
+    echo "🔢 Stable 分支 - 升级 $VERSION_TYPE 版本..."
+    npm version $VERSION_TYPE --no-git-tag-version
   fi
   
   # 同步版本到所有包
   npm run version:sync
   
-  # 添加版本文件到 staging area
+  NEW_VERSION=$(node -p "require('./package.json').version")
+  echo "✅ 版本已更新: $CURRENT_VERSION → $NEW_VERSION"
+  
+  # 同步 electron 依赖（确保依赖是最新的）
+  echo "🔄 Syncing electron dependencies..."
+  npm run --prefix packages/electron sync-core-dependencies
+  
+  # 检查是否有依赖变更需要提交
+  if ! git diff --quiet packages/electron/package.json; then
+    echo "📦 检测到 electron 依赖变更，将一同提交"
+    git add packages/electron/package.json
+  fi
+  
+  # 提交版本变更（和可能的依赖变更）
   git add package.json packages/*/package.json
+  git commit -m "chore: bump version to $NEW_VERSION [skip ci]"
   
-  echo "✅ Version bumped to $(node -p "require('./package.json').version")"
-
-elif [ "$BRANCH_NAME" = "stable" ]; then
-  echo "🔢 Stable branch detected - bumping patch version..."
-  npm version patch --no-git-tag-version
-  npm run version:sync
+  echo ""
+  echo "🎉 版本更新完成！版本文件和依赖已自动提交。"
+  echo "💡 请重新执行 push 命令来推送包含新版本的提交。"
+  echo ""
+  echo "   git push origin $BRANCH_NAME"
+  echo ""
   
-  # 添加版本文件到 staging area
-  git add package.json packages/*/package.json
-  
-  echo "✅ Version bumped to $(node -p "require('./package.json').version")"
-else
-  echo "ℹ️ Branch '$BRANCH_NAME' - no version bump needed"
+  # 中止当前推送，让用户重新推送
+  exit 1
 fi
 
 # 运行构建检查
-# echo "🔨 Running build check..."
-# npm run build
+echo "🔨 Running build check..."
+npm run build
 
 # 如果构建失败，退出
-# if [ $? -ne 0 ]; then
-#   echo "❌ Build failed!"
-#   exit 1
-# fi
-
-# 运行 electron 依赖同步（确保依赖是最新的）
-echo "🔄 Syncing electron dependencies..."
-npm run --prefix packages/electron sync-core-dependencies
+if [ $? -ne 0 ]; then
+  echo "❌ Build failed!"
+  exit 1
+fi
 
 echo "✅ Pre-push checks passed!"

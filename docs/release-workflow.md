@@ -1,35 +1,71 @@
 # 🚀 发布工作流程
 
-## 📋 新的发布流程
+## 📋 智能版本管理 - Pre-push 策略
 
-### 🔄 自动版本管理
-现在版本管理完全通过 Husky pre-push 钩子自动处理，无需手动操作。
+### 🎯 推送时智能检测版本发布
 
-#### Dev2 分支（Alpha 版本）
+版本管理现在通过 **Pre-push 钩子** 实现，在推送前检测最新提交是否需要发布版本。
+
+#### 🔄 普通开发流程（不改版本）
 ```bash
 git add .
-git commit -m "feat: 新功能"
-git push origin dev2  # 🚀 自动 bump alpha 版本并发布到 npm
+git commit -m "feat: 添加新功能"        # ✅ 普通提交
+git commit -m "fix: 修复bug"           # ✅ 普通提交  
+git commit -m "docs: 更新文档"         # ✅ 普通提交
+git push origin dev2                  # ✅ 正常推送，不触发版本变更
 ```
 
-#### Stable 分支（正式版本）
+#### 🚀 发布流程（自动版本管理）
+
+**步骤1: 提交发布代码**
 ```bash
 git add .
-git commit -m "feat: 稳定版本"
-git push origin stable  # 🚀 自动 bump patch 版本并发布到 npm
+git commit -m "feat: 重要新功能 [release]"  # 📝 包含发布关键词
 ```
 
-### ⚡ Pre-push 钩子自动执行：
+**步骤2: 推送触发版本管理**
+```bash
+git push origin dev2
+# 🎯 Pre-push 钩子检测到发布关键词
+# 📦 自动升级版本 (alpha.34 → alpha.35)
+# 🔄 同步所有包版本
+# 💾 自动创建版本提交
+# ⚠️  中止推送，提示重新推送
+```
 
-1. **检测分支**：根据当前分支决定版本策略
-2. **版本管理**：
-   - `dev2` → 自动 bump alpha 版本
-   - `stable` → 自动 bump patch 版本
-   - 其他分支 → 无版本操作
-3. **同步版本**：运行 `npm run version:sync`
-4. **构建检查**：运行完整构建验证
-5. **依赖同步**：同步 electron 依赖
-6. **推送代码**：包含更新后的版本文件
+**步骤3: 重新推送完成发布**
+```bash
+git push origin dev2
+# ✅ 推送成功（包含版本提交）
+# 🚀 GitHub Actions 自动发布到 npm
+```
+
+### 🎯 发布触发方式
+
+| 触发方式 | 示例 | 版本类型 |
+|----------|------|----------|
+| **发布关键词** | `feat: 新功能 [release]` | 根据分支决定 |
+| **发布关键词** | `fix: 重要修复 [publish]` | 根据分支决定 |
+| **发布关键词** | `perf: 优化 [version]` | 根据分支决定 |
+| **Breaking Changes** | `feat!: 重大更新` | Major (stable) / Alpha (dev2) |
+| **BREAKING CHANGE** | 包含 `BREAKING CHANGE:` | Major (stable) / Alpha (dev2) |
+| **Stable 分支新功能** | `feat: 新功能` (仅 stable) | Minor |
+
+### ⚡ 版本规则
+
+#### Dev2 分支
+- 所有触发 → `prerelease` 版本
+- `2.0.0-alpha.34` → `2.0.0-alpha.35`
+
+#### Stable 分支  
+- `feat!:` / `BREAKING CHANGE:` → **Major** (1.0.0 → 2.0.0)
+- `feat:` → **Minor** (1.0.0 → 1.1.0)
+- `[release]` 等关键词 → **Patch** (1.0.0 → 1.0.1)
+
+### ⚡ Pre-push 钩子执行：
+
+1. **构建检查**：运行完整构建验证
+2. **依赖同步**：同步 electron 依赖
 
 ### 🎯 GitHub Actions 自动发布：
 
