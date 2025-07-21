@@ -59,25 +59,21 @@ jobs:
             echo "changed=$(git diff --name-only ${{ github.event.pull_request.base.sha }} ${{ github.event.pull_request.head.sha }} | tr '\n' ', ')" >> $GITHUB_OUTPUT
           fi
 
+      - name: Setup Node.js and Dependencies
+        uses: ./.github/actions/setup-node-deps
+        with:
+          node-version: "20.19.1"
+          install-global: "cross-env zx tsx"
+          install-scripts: "true"
+          install-python-setuptools: "true"
 
-  build-and-test:
-    name: build-and-test
-    needs: install
-    strategy:
-      fail-fast: false
-      matrix:
-        os: [ubuntu-latest]
-
-    runs-on: ${{ matrix.os }}
-
-    steps:
       # 检查 shared 目录ts 类型
       - name: check shared types
         run: |
           npx tsc --noEmit
           npm run build
         working-directory: ./packages/shared
-        
+
       # 检查 web 目录ts 类型
       - name: check web types
         run: npx tsc --noEmit
@@ -87,7 +83,6 @@ jobs:
       - name: check core types
         run: npx tsc --noEmit
         working-directory: ./packages/core
-
 
       # 检查 electron 目录ts 类型
       - name: check electron types
