@@ -5,8 +5,7 @@ import { z } from 'zod';
 import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { 
   normalizePath, 
-  validateCommand,
-  getRelativePathDisplay
+  validateCommand
 } from '../utils.mjs';
 import { FileToolError, ERROR_CODES } from '../lib.mjs';
 
@@ -170,9 +169,7 @@ export function registerRunShellCommandTool(server: McpServer): void {
         const result = await executeCommand(command, workingDir, timeout, capture_output);
         
         // 生成显示信息
-        const workingDirDisplay = working_directory 
-          ? getRelativePathDisplay(workingDir, process.cwd())
-          : '(current directory)';
+        const workingDirDisplay = working_directory || '(current directory)';
         
         const output = [];
         

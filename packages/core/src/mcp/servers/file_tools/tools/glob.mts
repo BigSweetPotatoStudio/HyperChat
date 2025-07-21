@@ -1,11 +1,11 @@
 import fs from 'fs';
+import path from 'path';
 import { z } from 'zod';
 import { glob } from 'glob';
 
 import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import {
   normalizePath,
-  getRelativePathDisplay,
   withTimeout
 } from '../utils.mjs';
 import { FileToolError, ERROR_CODES, getConfig } from '../lib.mjs';
@@ -84,7 +84,7 @@ export function registerGlobTool(server: McpServer): void {
         for (const match of limitedMatches) {
           try {
             const stats = fs.statSync(match);
-            const relativePath = getRelativePathDisplay(match, basePath);
+            const relativePath = path.relative(basePath, match);
 
             results.push({
               path: match,
@@ -109,9 +109,7 @@ export function registerGlobTool(server: McpServer): void {
         });
 
         // 生成显示信息
-        const basePathDisplay = base_path
-          ? getRelativePathDisplay(basePath, process.cwd())
-          : '(current directory)';
+        const basePathDisplay = base_path || '(current directory)';
 
         const fileCount = results.filter(r => r.type === 'file').length;
         const dirCount = results.filter(r => r.type === 'directory').length;

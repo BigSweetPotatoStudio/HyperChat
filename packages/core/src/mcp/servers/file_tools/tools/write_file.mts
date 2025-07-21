@@ -5,7 +5,6 @@ import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { 
   normalizePath, 
   validateFileExtension, 
-  getRelativePathDisplay,
   withTimeout
 } from '../utils.mjs';
 import { FileToolError, ERROR_CODES, getConfig } from '../lib.mjs';

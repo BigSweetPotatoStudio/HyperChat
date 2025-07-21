@@ -4,7 +4,6 @@ import { z } from 'zod';
 import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { 
   normalizePath, 
-  getRelativePathDisplay,
   withTimeout,
   isInGitRepository,
   findGitRoot,
@@ -87,7 +86,7 @@ function listDirectory(
     
     try {
       const stats = fs.statSync(fullPath);
-      const relativePath = getRelativePathDisplay(fullPath, basePath);
+      const relativePath = path.relative(basePath, fullPath);
       
       const fileInfo: FileInfo = {
         name: entry,
@@ -195,7 +194,7 @@ export function registerListDirectoryTool(server: McpServer): void {
         });
         
         // 生成显示信息
-        const relativePath = getRelativePathDisplay(normalizedPath, process.cwd());
+        const relativePath = normalizedPath;
         const fileCount = files.filter(f => f.type === 'file').length;
         const dirCount = files.filter(f => f.type === 'directory').length;
         

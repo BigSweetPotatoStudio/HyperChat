@@ -1,13 +1,12 @@
 import fs from 'fs';
 import { z } from 'zod';
 import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
-import { 
-  normalizePath, 
-  validateFileExtension, 
+import {
+  normalizePath,
+  validateFileExtension,
   validateFileSize,
   readFileContent,
   limitOutputLines,
-  getRelativePathDisplay,
   withTimeout
 } from '../utils.mjs';
 import { FileToolError, ERROR_CODES, getConfig } from '../lib.mjs';
@@ -38,7 +37,7 @@ async function readSingleFile(
   maxLines?: number,
   includeMetadata: boolean = true
 ): Promise<FileReadResult> {
-  const relativePath = getRelativePathDisplay(filePath, process.cwd());
+  const relativePath = filePath;
   
   try {
     // 验证文件存在

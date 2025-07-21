@@ -1,11 +1,10 @@
 import fs from 'fs';
 import { z } from 'zod';
 import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
-import { 
-  normalizePath, 
-  validateFileExtension, 
+import {
+  normalizePath,
+  validateFileExtension,
   validateFileSize,
-  getRelativePathDisplay,
   readFileContent,
   withTimeout
 } from '../utils.mjs';
@@ -97,7 +96,7 @@ export function registerReplaceTool(server: McpServer): void {
         );
         
         // 生成显示信息
-        const relativePath = getRelativePathDisplay(normalizedPath, process.cwd());
+        const relativePath = normalizedPath;
         const stats = fs.statSync(normalizedPath);
         
         // 计算变化的统计信息
