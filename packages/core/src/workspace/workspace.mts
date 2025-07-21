@@ -1109,7 +1109,7 @@ export class Workspace {
 
       // 创建任务执行的聊天记录
       const chatLog: ChatHistoryItem = {
-        key: v4(),
+        key: `task-` + dayjs().format('YYMMDD-HHmmss') + '-' + v4().slice(0, 8),
         agentName: task.agentName,
         label: `定时任务: ${task.name}`,
         dateTime: Date.now(),
