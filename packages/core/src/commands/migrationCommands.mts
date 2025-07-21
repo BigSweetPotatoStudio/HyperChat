@@ -3,7 +3,7 @@ import * as path from "path";
 import * as os from "os";
 import { v4 as uuidv4 } from "uuid";
 import { WorkspaceManager } from "../workspace/workspaceManager.mjs";
-import { AgentConfig, AIModelConfigItem, KnownProvider } from "@dadigua/hyperchat-shared";
+import { AgentConfig, AIModelConfigItem, KnownProvider, MCPServerConfig } from "@dadigua/hyperchat-shared";
 import { getAppSettingsManager } from "../data/appSettingsService.mjs";
 
 // 老版本 Agent 数据格式
@@ -46,6 +46,13 @@ interface LegacyAIModel {
 
 interface LegacyAIModelData {
   data: LegacyAIModel[];
+}
+
+// 老版本 MCP 配置数据格式
+interface LegacyMCPData {
+  mcpServers: {
+    [serverName: string]: MCPServerConfig;
+  };
 }
 
 /**
@@ -184,10 +191,30 @@ export interface MigrationCommands {
     modelKeyMapping: Map<string, string>; // 返回老 key -> 新 key 的映射
   }>;
 
-  // 完整迁移：先迁移 AI 模型，再迁移 Agent（并更新模型引用）
+  // 迁移老版本 mcp.json 数据到新的工作区 MCP 配置
+  migrateMCPConfig: (params: {
+    sourcePath?: string; // 源文件路径，默认为 ~/Documents/HyperChat/mcp.json
+    targetScope?: "global" | "workspace"; // 目标范围，默认为 global
+    dryRun?: boolean; // 是否为试运行模式
+    force?: boolean; // 是否强制覆盖已存在的同名配置
+  }) => Promise<{
+    success: boolean;
+    message: string;
+    migrated: number;
+    skipped: number;
+    errors: number;
+    details: {
+      migrated: string[];
+      skipped: { name: string; reason: string }[];
+      errors: { name: string; error: string }[];
+    };
+  }>;
+
+  // 完整迁移：先迁移 AI 模型，再迁移 MCP 配置，最后迁移 Agent（并更新模型引用）
   migrateAll: (params: {
     agentSourcePath?: string;
     modelSourcePath?: string;
+    mcpSourcePath?: string;
     targetScope?: "global" | "workspace";
     dryRun?: boolean;
     force?: boolean;
@@ -199,6 +226,11 @@ export interface MigrationCommands {
       skipped: number;
       errors: number;
     };
+    mcpConfig: {
+      migrated: number;
+      skipped: number;
+      errors: number;
+    };
     agents: {
       migrated: number;
       skipped: number;
@@ -206,6 +238,11 @@ export interface MigrationCommands {
     };
     details: {
       aiModels: {
+        migrated: string[];
+        skipped: { name: string; reason: string }[];
+        errors: { name: string; error: string }[];
+      };
+      mcpConfig: {
         migrated: string[];
         skipped: { name: string; reason: string }[];
         errors: { name: string; error: string }[];
@@ -499,10 +536,127 @@ export async function createMigrationCommands(workspaceManager: WorkspaceManager
       }
     },
 
+    async migrateMCPConfig(params) {
+      const {
+        sourcePath = path.join(os.homedir(), "Documents", "HyperChat", "mcp.json"),
+        targetScope = "global",
+        dryRun = false,
+        force = false
+      } = params;
+
+      const result = {
+        success: false,
+        message: "",
+        migrated: 0,
+        skipped: 0,
+        errors: 0,
+        details: {
+          migrated: [] as string[],
+          skipped: [] as { name: string; reason: string }[],
+          errors: [] as { name: string; error: string }[]
+        }
+      };
+
+      try {
+        // 检查源文件是否存在
+        if (!fs.existsSync(sourcePath)) {
+          result.message = `MCP配置源文件不存在: ${sourcePath}`;
+          result.success = true; // 没有文件不算错误，只是没有需要迁移的内容
+          return result;
+        }
+
+        // 读取老版本数据
+        const fileContent = await fs.promises.readFile(sourcePath, 'utf-8');
+        let legacyData: LegacyMCPData;
+        
+        try {
+          legacyData = JSON.parse(fileContent);
+        } catch (error) {
+          result.message = `无法解析MCP配置源文件 JSON: ${error instanceof Error ? error.message : String(error)}`;
+          return result;
+        }
+
+        if (!legacyData.mcpServers || typeof legacyData.mcpServers !== 'object') {
+          result.message = "MCP配置源文件格式不正确，缺少 mcpServers 对象";
+          return result;
+        }
+
+        // 确保工作区已初始化
+        const workspace = workspaceManager.getCurrentWorkspace();
+        if (!workspace) {
+          result.message = "未找到当前工作区";
+          return result;
+        }
+
+        // 获取现有的 MCP 客户端（用于重复检查）
+        const existingClients = await workspace.getMcpClients();
+        const existingNames = new Set(existingClients.map((client: any) => client.serverName));
+
+        if (dryRun) {
+          result.message = "试运行模式 - 不会实际创建 MCP 配置";
+        }
+
+        // 处理每个老版本 MCP 服务器配置
+        for (const [serverName, serverConfig] of Object.entries(legacyData.mcpServers)) {
+          try {
+            // 检查重复
+            if (existingNames.has(serverName)) {
+              if (!force) {
+                result.details.skipped.push({
+                  name: serverName,
+                  reason: "同名MCP服务器已存在"
+                });
+                result.skipped++;
+                continue;
+              } else {
+                // 强制模式下删除现有的配置
+                if (!dryRun) {
+                  await workspace.deleteMcpServer(serverName);
+                }
+              }
+            }
+
+            // 添加新的 MCP 配置
+            if (!dryRun) {
+              await workspace.setMcpServer(serverName, serverConfig);
+              result.details.migrated.push(serverName);
+              result.migrated++;
+            } else {
+              // 试运行模式
+              result.details.migrated.push(serverName);
+              result.migrated++;
+            }
+
+          } catch (error) {
+            result.details.errors.push({
+              name: serverName,
+              error: error instanceof Error ? error.message : String(error)
+            });
+            result.errors++;
+          }
+        }
+
+        // 生成结果消息
+        if (dryRun) {
+          result.message = `MCP配置试运行完成: 可迁移 ${result.migrated} 个服务器, 跳过 ${result.skipped} 个, 错误 ${result.errors} 个`;
+        } else {
+          result.message = `MCP配置迁移完成: 成功迁移 ${result.migrated} 个服务器, 跳过 ${result.skipped} 个, 错误 ${result.errors} 个`;
+        }
+        
+        result.success = result.errors === 0;
+        return result;
+
+      } catch (error) {
+        result.message = `MCP配置迁移过程中发生错误: ${error instanceof Error ? error.message : String(error)}`;
+        return result;
+      }
+    },
+
     async migrateAll(params) {
       const {
         agentSourcePath = path.join(os.homedir(), "Documents", "HyperChat", "gpts_list.json"),
         modelSourcePath = path.join(os.homedir(), "Documents", "HyperChat", "gpt_models.json"),
+        mcpSourcePath = path.join(os.homedir(), "Documents", "HyperChat", "mcp.json"),
         targetScope = "global",
         dryRun = false,
         force = false
@@ -516,6 +670,11 @@ export async function createMigrationCommands(workspaceManager: WorkspaceManager
           skipped: 0,
           errors: 0
         },
+        mcpConfig: {
+          migrated: 0,
+          skipped: 0,
+          errors: 0
+        },
         agents: {
           migrated: 0,
           skipped: 0,
@@ -523,6 +682,11 @@ export async function createMigrationCommands(workspaceManager: WorkspaceManager
         },
         details: {
           aiModels: {
+            migrated: [] as string[],
+            skipped: [] as { name: string; reason: string }[],
+            errors: [] as { name: string; error: string }[]
+          },
+          mcpConfig: {
             migrated: [] as string[],
             skipped: [] as { name: string; reason: string }[],
             errors: [] as { name: string; error: string }[]
@@ -557,7 +721,26 @@ export async function createMigrationCommands(workspaceManager: WorkspaceManager
           return result;
         }
 
-        // 第二步：使用模型映射迁移 Agent
+        // 第二步：迁移 MCP 配置
+        const mcpResult = await migrationCommands.migrateMCPConfig({
+          sourcePath: mcpSourcePath,
+          targetScope,
+          dryRun,
+          force
+        });
+
+        result.mcpConfig.migrated = mcpResult.migrated;
+        result.mcpConfig.skipped = mcpResult.skipped;
+        result.mcpConfig.errors = mcpResult.errors;
+        result.details.mcpConfig = mcpResult.details;
+
+        // 如果 MCP 配置迁移失败，停止后续操作
+        if (!mcpResult.success && mcpResult.errors > 0) {
+          result.message = `MCP配置迁移失败: ${mcpResult.message}`;
+          return result;
+        }
+
+        // 第三步：使用模型映射迁移 Agent
         const agentResult = await migrationCommands.migrateAgents({
           sourcePath: agentSourcePath,
           targetScope,
@@ -572,14 +755,14 @@ export async function createMigrationCommands(workspaceManager: WorkspaceManager
         result.details.agents = agentResult.details;
 
         // 生成总结消息
-        const totalMigrated = result.aiModels.migrated + result.agents.migrated;
-        const totalSkipped = result.aiModels.skipped + result.agents.skipped;
-        const totalErrors = result.aiModels.errors + result.agents.errors;
+        const totalMigrated = result.aiModels.migrated + result.mcpConfig.migrated + result.agents.migrated;
+        const totalSkipped = result.aiModels.skipped + result.mcpConfig.skipped + result.agents.skipped;
+        const totalErrors = result.aiModels.errors + result.mcpConfig.errors + result.agents.errors;
 
         if (dryRun) {
-          result.message = `完整迁移试运行完成: 可迁移 ${totalMigrated} 项 (AI模型: ${result.aiModels.migrated}, Agent: ${result.agents.migrated}), 跳过 ${totalSkipped} 项, 错误 ${totalErrors} 项`;
+          result.message = `完整迁移试运行完成: 可迁移 ${totalMigrated} 项 (AI模型: ${result.aiModels.migrated}, MCP配置: ${result.mcpConfig.migrated}, Agent: ${result.agents.migrated}), 跳过 ${totalSkipped} 项, 错误 ${totalErrors} 项`;
         } else {
-          result.message = `完整迁移完成: 成功迁移 ${totalMigrated} 项 (AI模型: ${result.aiModels.migrated}, Agent: ${result.agents.migrated}), 跳过 ${totalSkipped} 项, 错误 ${totalErrors} 项`;
+          result.message = `完整迁移完成: 成功迁移 ${totalMigrated} 项 (AI模型: ${result.aiModels.migrated}, MCP配置: ${result.mcpConfig.migrated}, Agent: ${result.agents.migrated}), 跳过 ${totalSkipped} 项, 错误 ${totalErrors} 项`;
         }
 
         result.success = totalErrors === 0;
