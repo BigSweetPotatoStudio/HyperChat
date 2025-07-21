@@ -6,6 +6,8 @@ const HtmlWebpackPlugin = require("html-webpack-plugin");
 const FaviconsWebpackPlugin = require("favicons-webpack-plugin");
 const { CleanWebpackPlugin } = require("clean-webpack-plugin");
 const { GenerateSW } = require('workbox-webpack-plugin');
+const MonacoWebpackPlugin = require('monaco-editor-webpack-plugin');
+
 
 module.exports = (env, argv) => {
   // 环境变量设置
@@ -99,6 +101,8 @@ module.exports = (env, argv) => {
       new webpack.ProvidePlugin({
         process: "process/browser",
       }),
+
+      new MonacoWebpackPlugin()
     ],
 
     module: {

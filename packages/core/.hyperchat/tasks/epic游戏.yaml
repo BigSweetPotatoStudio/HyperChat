@@ -1,0 +1,9 @@
+name: epic游戏
+agentName: Hyper
+description: |-
+  # 完成任务 https://store.epicgames.com/zh-CN/ 有什么 限时 的免费游戏
+
+  * 请访问网址总结结果 和 记忆对比，如果有新游戏，就发送消息给我
+  * 把你发现的新游戏作为记忆 写入
+cron: 0 0 * * *
+disabled: false

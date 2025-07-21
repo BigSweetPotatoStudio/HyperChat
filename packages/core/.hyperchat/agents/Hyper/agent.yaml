@@ -1,0 +1,12 @@
+name: Hyper
+prompt: 你是一个超级AI。
+allowMCPs: []
+isConfirmCallTool: false
+maxTokens: 4000
+tags: []
+subAgents: []
+version: 1
+modelKey: openrouter:google/gemini-2.5-flash-preview
+temperature: 1
+maxAttachedDialogs: 5
+compressionStrategy: tokens

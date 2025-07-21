@@ -32,6 +32,7 @@ import {
   CopyOutlined,
   ScheduleOutlined,
   RobotOutlined,
+  ThunderboltOutlined,
 } from "@ant-design/icons";
 import { call } from "../common/call";
 import { WorkspaceInfo } from "../pages/workspace/types";
@@ -195,6 +196,20 @@ export const TaskManagement = forwardRef<TaskManagementRef, TaskManagementProps>
       }
     };
 
+    // 手动触发任务
+    const triggerTask = async (task: Task) => {
+      try {
+        await call('triggerTask', {
+          workspacePath: workspace.path,
+          taskName: task.name,
+        });
+        message.success(t`Task triggered successfully`);
+      } catch (error) {
+        console.error("Failed to trigger task:", error);
+        message.error(t`Failed to trigger task`);
+      }
+    };
+
     // 复制任务
     const cloneTask = async (task: Task) => {
       const newTaskName = `${task.name}_copy_${Date.now()}`;
@@ -285,6 +300,24 @@ export const TaskManagement = forwardRef<TaskManagementRef, TaskManagementProps>
                     onClick: () => showTaskDetails(task),
                   },
                   {
+                    key: "trigger",
+                    icon: <ThunderboltOutlined />,
+                    label: t`Trigger Now`,
+                    disabled: task.disabled,
+                    onClick: () => {
+                      Modal.confirm({
+                        title: t`Trigger Task`,
+                        content: t`Are you sure you want to manually trigger this task now?`,
+                        okText: t`Trigger`,
+                        cancelText: t`Cancel`,
+                        onOk: () => triggerTask(task),
+                      });
+                    },
+                  },
+                  {
+                    type: "divider" as const,
+                  },
+                  {
                     key: "edit",
                     icon: <EditOutlined />,
                     label: t`Edit`,
@@ -323,6 +356,24 @@ export const TaskManagement = forwardRef<TaskManagementRef, TaskManagementProps>
                 return (
                   <List.Item
                     actions={[
+                      <Button
+                        key="trigger"
+                        type="text"
+                        size="small"
+                        icon={<ThunderboltOutlined />}
+                        disabled={task.disabled}
+                        title={task.disabled ? t`Task is disabled` : t`Trigger Now`}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          Modal.confirm({
+                            title: t`Trigger Task`,
+                            content: t`Are you sure you want to manually trigger this task now?`,
+                            okText: t`Trigger`,
+                            cancelText: t`Cancel`,
+                            onOk: () => triggerTask(task),
+                          });
+                        }}
+                      />,
                       <Switch
                         key="status"
                         checked={!task.disabled}
@@ -391,6 +442,26 @@ export const TaskManagement = forwardRef<TaskManagementRef, TaskManagementProps>
           width={400}
           open={taskDetailDrawer}
           onClose={() => setTaskDetailDrawer(false)}
+          extra={
+            selectedTask && (
+              <Button
+                type="primary"
+                icon={<ThunderboltOutlined />}
+                disabled={selectedTask.disabled}
+                onClick={() => {
+                  Modal.confirm({
+                    title: t`Trigger Task`,
+                    content: t`Are you sure you want to manually trigger this task now?`,
+                    okText: t`Trigger`,
+                    cancelText: t`Cancel`,
+                    onOk: () => triggerTask(selectedTask),
+                  });
+                }}
+              >
+                {t`Trigger Now`}
+              </Button>
+            )
+          }
         >
           {selectedTask && (
             <Descriptions column={1} size="small">
