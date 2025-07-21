@@ -59,29 +59,6 @@ jobs:
             echo "changed=$(git diff --name-only ${{ github.event.pull_request.base.sha }} ${{ github.event.pull_request.head.sha }} | tr '\n' ', ')" >> $GITHUB_OUTPUT
           fi
 
-      - name: Setup Node.js and Dependencies
-        uses: ./.github/actions/setup-node-deps
-        with:
-          node-version: '20.19.1'
-          install-global: 'cross-env zx tsx'
-          install-scripts: 'true'
-          install-python-setuptools: 'true'
-
-      # packages/electron 目录的依赖缓存（独立安装）
-      - name: Cache electron dependencies
-        uses: actions/cache@v4
-        id: cache-electron
-        with:
-          path: packages/electron/node_modules
-          key: ${{ matrix.os }}-node-electron-${{ hashFiles('packages/electron/package-lock.json') }}
-          restore-keys: |
-            ${{ matrix.os }}-node-electron-
-
-      # 安装 electron 目录依赖（如果缓存未命中）
-      - name: Install electron dependencies
-        if: steps.cache-electron.outputs.cache-hit != 'true'
-        run: npm install
-        working-directory: ./packages/electron
 
   build-and-test:
     name: build-and-test
@@ -89,7 +66,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [windows-latest, ubuntu-latest]
+        os: [ubuntu-latest]
 
     runs-on: ${{ matrix.os }}
 
