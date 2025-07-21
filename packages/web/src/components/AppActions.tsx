@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Button, Select, Switch, Space } from 'antd';
-import { GithubFilled, SyncOutlined, SettingOutlined, ApiOutlined } from '@ant-design/icons';
+import { GithubFilled, SyncOutlined, SettingOutlined, ApiOutlined, DatabaseOutlined } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
 import { useAppearanceSettings } from '../contexts/AppSettingsContext';
 import {
@@ -10,6 +10,7 @@ import {
 import { Icon } from './icon';
 import { msg_receive } from '../common/call';
 import { t } from '../i18n';
+import { DataMigration } from './DataMigration';
 
 interface AppActionsProps {
   onAIProviderClick: () => void;
@@ -22,6 +23,7 @@ export function AppActions({ onAIProviderClick, onRefresh, onAppSettingsClick, o
   const navigate = useNavigate();
   const [syncStatus, setSyncStatus] = useState(0); // 同步状态：0-正常，1-同步中，-1-失败
   const { appearance, updateAppearance } = useAppearanceSettings();
+  const [migrationVisible, setMigrationVisible] = useState(false);
 
   // 监听同步状态变化
   useEffect(() => {
@@ -67,6 +69,15 @@ export function AppActions({ onAIProviderClick, onRefresh, onAppSettingsClick, o
         </Button>
       )}
 
+      {/* 数据迁移按钮 */}
+      <Button
+        onClick={() => setMigrationVisible(true)}
+        icon={<DatabaseOutlined />}
+        type="dashed"
+      >
+        {t`Data Migration`}
+      </Button>
+
       {/* AI 提供商设置按钮 */}
       <Button
         onClick={onAIProviderClick}
@@ -85,7 +96,11 @@ export function AppActions({ onAIProviderClick, onRefresh, onAppSettingsClick, o
         </Button>
       )}
 
-
+      {/* 数据迁移弹窗 */}
+      <DataMigration
+        visible={migrationVisible}
+        onClose={() => setMigrationVisible(false)}
+      />
     </Space>
   );
 }

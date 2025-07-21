@@ -7,6 +7,7 @@ import { terminalCommands } from "./terminalCommands.mjs";
 import { settingsCommands } from "./settingsCommands.mjs";
 import { systemCommands } from "./systemCommands.mjs";
 import { chatCommands } from "./chatCommands.mjs";
+import { migrationCommands } from "./migration.mjs";
 
 /**
  * 合并所有命令模块
@@ -21,7 +22,8 @@ export const Command = {
   ...terminalCommands,
   ...settingsCommands,
   ...systemCommands,
-  ...chatCommands
+  ...chatCommands,
+  ...migrationCommands
 };
 
 // 默认导出
@@ -39,7 +41,8 @@ export {
   terminalCommands,
   settingsCommands,
   systemCommands,
-  chatCommands
+  chatCommands,
+  migrationCommands
 };
 
 /**
@@ -59,3 +62,4 @@ export type TerminalCommandsType = typeof terminalCommands;
 export type SettingsCommandsType = typeof settingsCommands;
 export type SystemCommandsType = typeof systemCommands;
 export type ChatCommandsType = typeof chatCommands;
+export type MigrationCommandsType = typeof migrationCommands;

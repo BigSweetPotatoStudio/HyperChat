@@ -5137,13 +5137,6 @@
     "fr": "Portée du Serveur MCP",
     "de": "MCP-Server-Geltungsbereich"
   },
-  "MCP Service Name already exists in ${createScope === 'global' ? 'global' : 'workspace'} scope": {
-    "zh": "MCP 服务名称在 ${createScope === 'global' ? '全局' : '工作区'} 范围中已存在",
-    "ja": "MCPサービス名が${createScope === 'global' ? 'グローバル' : 'ワークスペース'}スコープに既に存在します",
-    "ko": "MCP 서비스 이름이 ${createScope === 'global' ? '글로벌' : '워크스페이스'} 범위에 이미 존재합니다",
-    "fr": "Le nom du service MCP existe déjà dans la portée ${createScope === 'global' ? 'globale' : 'de l'espace de travail'}",
-    "de": "MCP-Dienstname existiert bereits im ${createScope === 'global' ? 'globalen' : 'Arbeitsbereichs'}-Geltungsbereich"
-  },
   "Max Context Tokens": {
     "zh": "最大上下文令牌数",
     "ja": "最大コンテキストトークン",
@@ -5171,13 +5164,6 @@
     "ko": "에이전트 메모리:",
     "fr": "Mémoire pour l'Agent :",
     "de": "Speicher für Agent:"
-  },
-  "No ${scopeFilter} agents": {
-    "zh": "没有 ${scopeFilter} 代理",
-    "ja": "エージェントが見つかりません: ${scopeFilter}",
-    "ko": "선택된 ${scopeFilter} 에이전트 없음",
-    "fr": "Aucun agent ${scopeFilter}",
-    "de": "Keine ${scopeFilter} Agenten"
   },
   "No .hyperchat directory found in current path.": {
     "zh": "当前路径中未找到 .hyperchat 目录。",
@@ -5381,5 +5367,306 @@
     "ko": "도구 세부 정보:",
     "fr": "Détails de l'outil :",
     "de": "Werkzeugdetails:"
+  },
+  "AI Models": {
+    "zh": "AI 模型",
+    "ja": "AIモデル",
+    "ko": "AI 모델",
+    "fr": "Modèles d'IA",
+    "de": "KI-Modelle"
+  },
+  "AI Models Data": {
+    "zh": "AI 模型数据",
+    "ja": "AIモデルデータ",
+    "ko": "AI 모델 데이터",
+    "fr": "Données des modèles d'IA",
+    "de": "KI-Modelldaten"
+  },
+  "Agent Data": {
+    "zh": "代理数据",
+    "ja": "エージェントデータ",
+    "ko": "에이전트 데이터",
+    "fr": "Données de l'Agent",
+    "de": "Agenten-Daten"
+  },
+  "Back to Configure": {
+    "zh": "返回配置",
+    "ja": "設定に戻る",
+    "ko": "구성으로 돌아가기",
+    "fr": "Retour à la configuration",
+    "de": "Zurück zur Konfiguration"
+  },
+  "Basic Settings": {
+    "zh": "基本设置",
+    "ja": "基本設定",
+    "ko": "기본 설정",
+    "fr": "Paramètres de base",
+    "de": "Grundeinstellungen"
+  },
+  "Complete": {
+    "zh": "完成",
+    "ja": "完了",
+    "ko": "완료",
+    "fr": "Terminé",
+    "de": "Fertig"
+  },
+  "Data Migration": {
+    "zh": "数据迁移",
+    "ja": "データ移行",
+    "ko": "데이터 마이그레이션",
+    "fr": "Migration des données",
+    "de": "Datenmigration"
+  },
+  "Dry Run": {
+    "zh": "试运行",
+    "ja": "ドライラン",
+    "ko": "시험 실행",
+    "fr": "Exécution à blanc",
+    "de": "Testlauf"
+  },
+  "Execute Migration": {
+    "zh": "执行迁移",
+    "ja": "移行を実行",
+    "ko": "마이그레이션 실행",
+    "fr": "Exécuter la migration",
+    "de": "Migration ausführen"
+  },
+  "Force Override": {
+    "zh": "强制覆盖",
+    "ja": "強制上書き",
+    "ko": "강제 덮어쓰기",
+    "fr": "Forcer l'écrasement",
+    "de": "Überschreibung erzwingen"
+  },
+  "MCP Config": {
+    "zh": "MCP 配置",
+    "ja": "MCP設定",
+    "ko": "MCP 구성",
+    "fr": "Configuration MCP",
+    "de": "MCP-Konfiguration"
+  },
+  "MCP Config Data": {
+    "zh": "MCP 配置数据",
+    "ja": "MCP設定データ",
+    "ko": "MCP 구성 데이터",
+    "fr": "Données de configuration MCP",
+    "de": "MCP-Konfigurationsdaten"
+  },
+  "Migration Configuration": {
+    "zh": "迁移配置",
+    "ja": "移行設定",
+    "ko": "마이그레이션 구성",
+    "fr": "Configuration de la migration",
+    "de": "Migrationskonfiguration"
+  },
+  "Migration Details": {
+    "zh": "迁移详情",
+    "ja": "移行詳細",
+    "ko": "마이그레이션 세부 정보",
+    "fr": "Détails de la migration",
+    "de": "Migrationsdetails"
+  },
+  "Migration Errors": {
+    "zh": "迁移错误",
+    "ja": "移行エラー",
+    "ko": "마이그레이션 오류",
+    "fr": "Erreurs de migration",
+    "de": "Migrationsfehler"
+  },
+  "Migration Information": {
+    "zh": "迁移信息",
+    "ja": "移行情報",
+    "ko": "마이그레이션 정보",
+    "fr": "Informations sur la migration",
+    "de": "Migrationsinformationen"
+  },
+  "Migration Preview": {
+    "zh": "迁移预览",
+    "ja": "移行プレビュー",
+    "ko": "마이그레이션 미리보기",
+    "fr": "Aperçu de la migration",
+    "de": "Migrationsvorschau"
+  },
+  "Migration Results": {
+    "zh": "迁移结果",
+    "ja": "移行結果",
+    "ko": "마이그레이션 결과",
+    "fr": "Résultats de la migration",
+    "de": "Migrationsergebnisse"
+  },
+  "Mode": {
+    "zh": "模式",
+    "ja": "モード",
+    "ko": "모드",
+    "fr": "Mode",
+    "de": "Modus"
+  },
+  "Override existing items with same name": {
+    "zh": "覆盖同名现有项",
+    "ja": "同名の既存項目を上書き",
+    "ko": "동일한 이름의 기존 항목 덮어쓰기",
+    "fr": "Écraser les éléments existants portant le même nom",
+    "de": "Bestehende Elemente mit gleichem Namen überschreiben"
+  },
+  "Perform actual migration": {
+    "zh": "执行实际迁移",
+    "ja": "実際の移行を実行",
+    "ko": "실제 마이그레이션 수행",
+    "fr": "Effectuer la migration réelle",
+    "de": "Tatsächliche Migration durchführen"
+  },
+  "Preview": {
+    "zh": "预览",
+    "ja": "プレビュー",
+    "ko": "미리보기",
+    "fr": "Aperçu",
+    "de": "Vorschau"
+  },
+  "Preview Migration": {
+    "zh": "预览迁移",
+    "ja": "移行をプレビュー",
+    "ko": "마이그레이션 미리보기",
+    "fr": "Aperçu de la migration",
+    "de": "Migrationsvorschau"
+  },
+  "Preview only, no actual changes": {
+    "zh": "仅预览，不实际更改",
+    "ja": "プレビューのみ、実際の変更なし",
+    "ko": "미리보기 전용, 실제 변경 없음",
+    "fr": "Aperçu seulement, pas de modifications réelles",
+    "de": "Nur Vorschau, keine tatsächlichen Änderungen"
+  },
+  "Real Migration": {
+    "zh": "实际迁移",
+    "ja": "実際の移行",
+    "ko": "실제 마이그레이션",
+    "fr": "Migration réelle",
+    "de": "Echte Migration"
+  },
+  "Source File Paths": {
+    "zh": "源文件路径",
+    "ja": "ソースファイルパス",
+    "ko": "소스 파일 경로",
+    "fr": "Chemins des fichiers source",
+    "de": "Quelldateipfade"
+  },
+  "Start Migration": {
+    "zh": "开始迁移",
+    "ja": "移行開始",
+    "ko": "마이그레이션 시작",
+    "fr": "Démarrer la migration",
+    "de": "Migration starten"
+  },
+  "Start New Migration": {
+    "zh": "开始新迁移",
+    "ja": "新規移行開始",
+    "ko": "새 마이그레이션 시작",
+    "fr": "Démarrer une nouvelle migration",
+    "de": "Neue Migration starten"
+  },
+  "Target Scope": {
+    "zh": "目标范围",
+    "ja": "ターゲットスコープ",
+    "ko": "대상 범위",
+    "fr": "Portée cible",
+    "de": "Zielbereich"
+  },
+  "This is a preview. Enable \"Real Migration\" to perform actual changes.": {
+    "zh": "这是一个预览。启用“实际迁移”以执行实际更改。",
+    "ja": "これはプレビューです。「実際の移行」を有効にすると、実際の変更が実行されます。",
+    "ko": "이것은 미리보기입니다. 실제 변경을 수행하려면 \"실제 마이그레이션\"을 활성화하십시오.",
+    "fr": "Ceci est un aperçu. Activez la « Migration réelle » pour effectuer les modifications.",
+    "de": "Dies ist eine Vorschau. Aktivieren Sie „Echte Migration“, um tatsächliche Änderungen vorzunehmen."
+  },
+  "AI Model Error": {
+    "zh": "AI 模型错误",
+    "ja": "AIモデルエラー",
+    "ko": "AI 모델 오류",
+    "fr": "Erreur du modèle d'IA",
+    "de": "KI-Modellfehler"
+  },
+  "Agent Error": {
+    "zh": "代理错误",
+    "ja": "エージェントエラー",
+    "ko": "에이전트 오류",
+    "fr": "Erreur de l'Agent",
+    "de": "Agentenfehler"
+  },
+  "Errors": {
+    "zh": "错误",
+    "ja": "エラー",
+    "ko": "오류",
+    "fr": "Erreurs",
+    "de": "Fehler"
+  },
+  "MCP Error": {
+    "zh": "MCP 错误",
+    "ja": "MCPエラー",
+    "ko": "MCP 오류",
+    "fr": "Erreur MCP",
+    "de": "MCP-Fehler"
+  },
+  "Migrated": {
+    "zh": "已迁移",
+    "ja": "移行済み",
+    "ko": "마이그레이션됨",
+    "fr": "Migré",
+    "de": "Migriert"
+  },
+  "Skipped": {
+    "zh": "已跳过",
+    "ja": "スキップ済み",
+    "ko": "건너뜀",
+    "fr": "Ignoré",
+    "de": "Übersprungen"
+  },
+  "Total migrated": {
+    "zh": "总计迁移",
+    "ja": "合計移行数",
+    "ko": "총 마이그레이션 수",
+    "fr": "Total migré",
+    "de": "Gesamt migriert"
+  },
+  "MCP Service Name already exists in": {
+    "zh": "MCP 服务名称已存在于",
+    "ja": "MCPサービス名は既に存在します：",
+    "ko": "MCP 서비스 이름이 이미 존재합니다:",
+    "fr": "Le nom du service MCP existe déjà dans",
+    "de": "MCP-Dienstname existiert bereits in"
+  },
+  "scope": {
+    "zh": "范围",
+    "ja": "スコープ",
+    "ko": "범위",
+    "fr": "portée",
+    "de": "Bereich"
+  },
+  "If you are already using HyperChat 2.0+, do not use this tool as it may cause data conflicts": {
+    "zh": "如果您已在使用 HyperChat 2.0+，请勿使用此工具，因为它可能导致数据冲突",
+    "ja": "HyperChat 2.0+ を既にご利用の場合、データ競合の原因となる可能性があるため、このツールを使用しないでください。",
+    "ko": "이미 HyperChat 2.0 이상을 사용 중인 경우, 데이터 충돌이 발생할 수 있으므로 이 도구를 사용하지 마십시오.",
+    "fr": "Si vous utilisez déjà HyperChat 2.0+, n'utilisez pas cet outil car cela pourrait entraîner des conflits de données",
+    "de": "Wenn Sie bereits HyperChat 2.0+ verwenden, nutzen Sie dieses Tool nicht, da es zu Datenkonflikten führen kann"
+  },
+  "If you are upgrading from HyperChat 1.x to 2.0+, please use this migration tool": {
+    "zh": "如果您正在从 HyperChat 1.x 升级到 2.0+，请使用此迁移工具",
+    "ja": "HyperChat 1.x から 2.0 以降にアップグレードする場合は、この移行ツールを使用してください",
+    "ko": "HyperChat 1.x에서 2.0 이상으로 업그레이드하는 경우, 이 마이그레이션 도구를 사용하십시오.",
+    "fr": "Si vous effectuez une mise à niveau de HyperChat 1.x vers 2.0+, veuillez utiliser cet outil de migration",
+    "de": "Wenn Sie von HyperChat 1.x auf 2.0+ aktualisieren, verwenden Sie bitte dieses Migrationstool"
+  },
+  "Please backup your data before migration": {
+    "zh": "请在迁移前备份您的数据",
+    "ja": "移行前にデータをバックアップしてください",
+    "ko": "마이그레이션 전에 데이터를 백업하십시오.",
+    "fr": "Veuillez sauvegarder vos données avant la migration",
+    "de": "Bitte sichern Sie Ihre Daten vor der Migration"
+  },
+  "⚠️ Important: This migration tool is only for HyperChat versions below 2.0": {
+    "zh": "⚠️ 重要提示：此迁移工具仅适用于 HyperChat 2.0 以下版本",
+    "ja": "⚠️ 重要: この移行ツールは HyperChat 2.0 未満のバージョン専用です",
+    "ko": "⚠️ 중요: 이 마이그레이션 도구는 HyperChat 2.0 미만 버전에만 해당됩니다.",
+    "fr": "⚠️ Important : Cet outil de migration est uniquement destiné aux versions de HyperChat antérieures à 2.0",
+    "de": "⚠️ Wichtig: Dieses Migrationstool ist nur für HyperChat-Versionen unter 2.0"
   }
 }

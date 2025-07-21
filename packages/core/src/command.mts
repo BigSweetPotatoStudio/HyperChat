@@ -37,7 +37,8 @@ export {
   terminalCommands,
   settingsCommands,
   systemCommands,
-  chatCommands
+  chatCommands,
+  migrationCommands
 } from "./commands/index.mjs";
 
 // 导出类型定义
@@ -51,5 +52,6 @@ export type {
   TerminalCommandsType,
   SettingsCommandsType,
   SystemCommandsType,
-  ChatCommandsType
+  ChatCommandsType,
+  MigrationCommandsType
 } from "./commands/index.mjs";
