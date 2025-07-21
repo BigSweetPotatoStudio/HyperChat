@@ -779,7 +779,7 @@ export const MCPManagement = forwardRef<MCPManagementRef, MCPManagementProps>(({
                     return x.serverName === values.name && clientScope === createScope;
                   });
                   if (existingClients.length > 0) {
-                    message.error(t`MCP Service Name already exists in ${createScope === 'global' ? 'global' : 'workspace'} scope`);
+                    message.error(`${t`MCP Service Name already exists in`} ${createScope === 'global' ? 'global' : 'workspace'} ${t`scope`}`);
                     return;
                   }
                 } else {

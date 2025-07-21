@@ -19,8 +19,14 @@ const FILE_EXTENSIONS = ['.ts', '.tsx', '.mts', '.js', '.jsx'];
 // 提取 t`...` 的正则表达式
 const T_REGEX = /\bt`([^`]*)`/g;
 
+// 检测 t`...` 中包含 ${} 的正则表达式
+const TEMPLATE_LITERAL_IN_T_REGEX = /\bt`([^`]*\$\{[^}]*\}[^`]*)`/g;
+
 // 存储所有找到的文本
 const foundTexts = new Set();
+
+// 存储发现的问题
+const i18nIssues = [];
 
 /**
  * 递归扫描目录获取所有文件
@@ -53,6 +59,44 @@ function getAllFiles(dir, fileList = []) {
   });
   
   return fileList;
+}
+
+/**
+ * 检测 t`...` 中的国际化问题
+ */
+function detectI18nIssues(content, filePath) {
+  const issues = [];
+  const lines = content.split('\n');
+  
+  lines.forEach((line, lineNumber) => {
+    // 跳过注释行
+    const trimmedLine = line.trim();
+    if (trimmedLine.startsWith('//') || trimmedLine.startsWith('/*') || trimmedLine.startsWith('*')) {
+      return;
+    }
+    
+    // 检测 t`...` 中包含 ${} 的情况
+    let match;
+    const regex = new RegExp(TEMPLATE_LITERAL_IN_T_REGEX.source, TEMPLATE_LITERAL_IN_T_REGEX.flags);
+    
+    while ((match = regex.exec(line)) !== null) {
+      const text = match[1];
+      const fullMatch = match[0];
+      
+      issues.push({
+        type: 'template-literal-in-t',
+        message: 'Found template literal inside t`...`. Use template literal outside instead.',
+        suggestion: 'Move variables outside: `${t`Text`}: ${variable}`',
+        text: text,
+        fullMatch: fullMatch,
+        file: filePath,
+        line: lineNumber + 1,
+        lineContent: line.trim()
+      });
+    }
+  });
+  
+  return issues;
 }
 
 /**
@@ -105,7 +149,12 @@ function processFile(filePath) {
   try {
     const fullPath = join(rootDir, filePath);
     const content = readFileSync(fullPath, 'utf-8');
+    
+    // 提取正常的 i18n 文本
     const matches = extractTextsFromContent(content, filePath);
+    
+    // 检测 i18n 问题
+    const issues = detectI18nIssues(content, filePath);
     
     if (matches.length > 0) {
       console.log(`📄 ${filePath}: 找到 ${matches.length} 个文本`);
@@ -114,10 +163,13 @@ function processFile(filePath) {
       });
     }
     
-    return matches;
+    // 添加发现的问题到全局列表
+    i18nIssues.push(...issues);
+    
+    return { matches, issues };
   } catch (error) {
     console.error(`❌ 处理文件失败 ${filePath}:`, error.message);
-    return [];
+    return { matches: [], issues: [] };
   }
 }
 
@@ -170,6 +222,44 @@ function updateI18nFile() {
 }
 
 /**
+ * 报告发现的 i18n 问题
+ */
+function reportI18nIssues() {
+  if (i18nIssues.length === 0) {
+    console.log(`\n✅ 未发现 i18n 问题`);
+    return;
+  }
+
+  console.log(`\n⚠️  发现 ${i18nIssues.length} 个 i18n 问题:`);
+  console.log(`=`.repeat(60));
+  
+  // 按文件分组显示问题
+  const issuesByFile = {};
+  i18nIssues.forEach(issue => {
+    if (!issuesByFile[issue.file]) {
+      issuesByFile[issue.file] = [];
+    }
+    issuesByFile[issue.file].push(issue);
+  });
+  
+  Object.entries(issuesByFile).forEach(([file, issues]) => {
+    console.log(`\n📁 ${file}:`);
+    issues.forEach(issue => {
+      console.log(`   🚫 第${issue.line}行: ${issue.fullMatch}`);
+      console.log(`      ✨ ${issue.suggestion}`);
+      console.log(`      📝 ${issue.message}`);
+      console.log(`      📄 ${issue.lineContent}`);
+      console.log('');
+    });
+  });
+  
+  console.log(`\n💡 修复建议:`);
+  console.log(`   - 模板字符串应该在 t\`...\` 外面使用`);
+  console.log(`   - 错误写法: t\`Hello \${name}\``);
+  console.log(`   - 正确写法: \`\${t\`Hello\`} \${name}\``);
+}
+
+/**
  * 生成提取报告
  */
 function generateReport(allMatches) {
@@ -217,12 +307,15 @@ function main() {
   // 处理所有文件
   const allMatches = [];
   allFiles.forEach(file => {
-    const matches = processFile(file);
-    allMatches.push(...matches);
+    const result = processFile(file);
+    allMatches.push(...result.matches);
   });
   
   console.log(`\n🔍 扫描完成! 找到 ${allMatches.length} 个 t\`...\` 用法`);
   console.log(`📝 唯一文本: ${foundTexts.size} 个`);
+  
+  // 报告发现的 i18n 问题
+  reportI18nIssues();
   
   // 更新翻译文件
   updateI18nFile();

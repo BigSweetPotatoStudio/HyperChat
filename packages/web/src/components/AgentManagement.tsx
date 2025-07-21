@@ -449,7 +449,7 @@ export const AgentManagement = forwardRef<AgentManagementRef, AgentManagementPro
                 ? t`No Agents`
                 : scopeFilter === 'all'
                   ? t`No Agents`
-                  : t`No ${scopeFilter} agents`
+                  : `${t`No`} ${scopeFilter} ${t`agents`}`
             }
             image={Empty.PRESENTED_IMAGE_SIMPLE}
           >

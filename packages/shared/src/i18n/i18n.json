@@ -5137,13 +5137,6 @@
     "fr": "Portée du Serveur MCP",
     "de": "MCP-Server-Geltungsbereich"
   },
-  "MCP Service Name already exists in ${createScope === 'global' ? 'global' : 'workspace'} scope": {
-    "zh": "MCP 服务名称在 ${createScope === 'global' ? '全局' : '工作区'} 范围中已存在",
-    "ja": "MCPサービス名が${createScope === 'global' ? 'グローバル' : 'ワークスペース'}スコープに既に存在します",
-    "ko": "MCP 서비스 이름이 ${createScope === 'global' ? '글로벌' : '워크스페이스'} 범위에 이미 존재합니다",
-    "fr": "Le nom du service MCP existe déjà dans la portée ${createScope === 'global' ? 'globale' : 'de l'espace de travail'}",
-    "de": "MCP-Dienstname existiert bereits im ${createScope === 'global' ? 'globalen' : 'Arbeitsbereichs'}-Geltungsbereich"
-  },
   "Max Context Tokens": {
     "zh": "最大上下文令牌数",
     "ja": "最大コンテキストトークン",
@@ -5171,13 +5164,6 @@
     "ko": "에이전트 메모리:",
     "fr": "Mémoire pour l'Agent :",
     "de": "Speicher für Agent:"
-  },
-  "No ${scopeFilter} agents": {
-    "zh": "没有 ${scopeFilter} 代理",
-    "ja": "エージェントが見つかりません: ${scopeFilter}",
-    "ko": "선택된 ${scopeFilter} 에이전트 없음",
-    "fr": "Aucun agent ${scopeFilter}",
-    "de": "Keine ${scopeFilter} Agenten"
   },
   "No .hyperchat directory found in current path.": {
     "zh": "当前路径中未找到 .hyperchat 目录。",
@@ -5381,5 +5367,44 @@
     "ko": "도구 세부 정보:",
     "fr": "Détails de l'outil :",
     "de": "Werkzeugdetails:"
-  }
+  },
+  "AI Models": {},
+  "AI Models Data": {},
+  "Agent Data": {},
+  "Back to Configure": {},
+  "Basic Settings": {},
+  "Complete": {},
+  "Data Migration": {},
+  "Dry Run": {},
+  "Execute Migration": {},
+  "Force Override": {},
+  "MCP Config": {},
+  "MCP Config Data": {},
+  "Migration Configuration": {},
+  "Migration Details": {},
+  "Migration Errors": {},
+  "Migration Information": {},
+  "Migration Preview": {},
+  "Migration Results": {},
+  "Mode": {},
+  "Override existing items with same name": {},
+  "Perform actual migration": {},
+  "Preview": {},
+  "Preview Migration": {},
+  "Preview only, no actual changes": {},
+  "Real Migration": {},
+  "Source File Paths": {},
+  "Start Migration": {},
+  "Start New Migration": {},
+  "Target Scope": {},
+  "This is a preview. Enable \"Real Migration\" to perform actual changes.": {},
+  "AI Model Error": {},
+  "Agent Error": {},
+  "Errors": {},
+  "MCP Error": {},
+  "Migrated": {},
+  "Skipped": {},
+  "Total migrated": {},
+  "MCP Service Name already exists in": {},
+  "scope": {}
 }
