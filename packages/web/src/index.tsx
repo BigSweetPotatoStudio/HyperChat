@@ -3,6 +3,7 @@ console.log("process.env.myEnv", process.env.myEnv);
 document.documentElement.setAttribute('data-color-mode', 'light');
 
 
+
 import "../public/iconfont.js"
 import "./i18n";
 import "./common/call";
@@ -21,7 +22,10 @@ import { StyleProvider, px2remTransformer } from "@ant-design/cssinjs";
 import { initWebI18n } from "./i18n";
 await initWebI18n().catch(console.error);
 
+import * as monaco from 'monaco-editor';
+import { loader } from '@monaco-editor/react';
 
+loader.config({ monaco });
 
 // 设置 vh 单位 CSS 变量，适配移动端
 function setVhCssVar() {
