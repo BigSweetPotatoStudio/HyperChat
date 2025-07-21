@@ -36,6 +36,8 @@ import { call } from "../common/call";
 
 const { Title, Text, Paragraph } = Typography;
 
+
+
 interface WorkspaceWelcomeProps {
   workspace: {
     path: string;
@@ -82,16 +84,16 @@ export const WorkspaceWelcome: React.FC<WorkspaceWelcomeProps> = ({
   useEffect(() => {
     const loadRecentChats = async () => {
       const recentChatUsage = getChatRecentUsage(workspace.path);
-      
+
       // 限制并发请求数量，只获取最近 8 个对话
       const limitedRecentUsage = recentChatUsage.slice(0, 8);
-      
+
       // 准备批量请求的数据
       const requests = limitedRecentUsage
         .map(recentItem => {
           const agent = agents.find(a => a.config.name === recentItem.agentName);
           if (!agent) return null;
-          
+
           return {
             agentName: recentItem.agentName,
             chatLogKey: recentItem.chatKey,
@@ -103,30 +105,30 @@ export const WorkspaceWelcome: React.FC<WorkspaceWelcomeProps> = ({
           chatLogKey: string;
           scope: "global" | "workspace";
         }>;
-      
+
       if (requests.length === 0) {
         setRecentChats([]);
         return;
       }
-      
+
       try {
         // 使用批量接口获取所有聊天记录
         const result = await call("getBatchChatLogs", { requests });
-        
+
         const matchedRecentChats = result.results
           .map(chatResult => {
             if (!chatResult.chatLog || chatResult.error) {
               console.warn(`Failed to load chat log ${chatResult.chatLogKey} for agent ${chatResult.agentName}:`, chatResult.error);
               return null;
             }
-            
+
             const recentItem = limitedRecentUsage.find(
               item => item.agentName === chatResult.agentName && item.chatKey === chatResult.chatLogKey
             );
             const agent = agents.find(a => a.config.name === chatResult.agentName);
-            
+
             if (!recentItem || !agent) return null;
-            
+
             return {
               workspacePath: recentItem.workspacePath,
               agentName: recentItem.agentName,
@@ -139,14 +141,14 @@ export const WorkspaceWelcome: React.FC<WorkspaceWelcomeProps> = ({
             };
           })
           .filter(Boolean);
-        
+
         setRecentChats(matchedRecentChats);
       } catch (error) {
         console.error('Failed to load recent chats:', error);
         setRecentChats([]);
       }
     };
-    
+
     loadRecentChats();
   }, [workspace.path, agents]);
 
@@ -161,16 +163,16 @@ export const WorkspaceWelcome: React.FC<WorkspaceWelcomeProps> = ({
   // 处理聊天对话点击
   const handleChatClick = (recentChatItem: any) => {
     const { agent, chatLog, agentName } = recentChatItem;
-    
+
     // 记录使用
     addAgentRecentUsage(workspace.path, agentName);
     addChatRecentUsage(
-      workspace.path, 
-      agentName, 
-      chatLog.key, 
+      workspace.path,
+      agentName,
+      chatLog.key,
       chatLog.label || 'Untitled Chat'
     );
-    
+
     // 打开特定的聊天对话
     onOpenAgentChat(agent, chatLog);
   };
@@ -197,7 +199,7 @@ export const WorkspaceWelcome: React.FC<WorkspaceWelcomeProps> = ({
     const { agentName, chatKey } = recentChatItem;
     removeChatRecentUsage(workspace.path, agentName, chatKey);
     // 重新加载最近使用的对话
-    setRecentChats(prev => prev.filter(item => 
+    setRecentChats(prev => prev.filter(item =>
       !(item.agentName === agentName && item.chatKey === chatKey)
     ));
   };
@@ -228,7 +230,7 @@ export const WorkspaceWelcome: React.FC<WorkspaceWelcomeProps> = ({
 
     return (
       <Card
-        key={agent.config.name}
+        key={agent.config.name + agent.config.scope}
         hoverable
         size="small"
         className="agent-card"
@@ -376,38 +378,38 @@ export const WorkspaceWelcome: React.FC<WorkspaceWelcomeProps> = ({
         `}
       </style>
       <div style={{ padding: '24px', height: '100%', overflowY: 'auto' }}>
-      {/* 欢迎标题 */}
-      <div style={{ textAlign: 'center', marginBottom: '32px' }}>
-        <Icon name="bx-bot" style={{ fontSize: '48px', color: '#1890ff', marginBottom: '16px' }} />
-        <Title level={2} style={{ margin: 0 }}>
-          {workspace.isGlobal ? t`Welcome to Global Workspace` : `${t`Welcome to`} ${workspace.name}`}
-        </Title>
-        <Paragraph type="secondary" style={{ fontSize: '16px', marginTop: '8px' }}>
-          {t`Select an agent to start a conversation`}
-        </Paragraph>
-      </div>
+        {/* 欢迎标题 */}
+        <div style={{ textAlign: 'center', marginBottom: '32px' }}>
+          <Icon name="bx-bot" style={{ fontSize: '48px', color: '#1890ff', marginBottom: '16px' }} />
+          <Title level={2} style={{ margin: 0 }}>
+            {workspace.isGlobal ? t`Welcome to Global Workspace` : `${t`Welcome to`} ${workspace.name}`}
+          </Title>
+          <Paragraph type="secondary" style={{ fontSize: '16px', marginTop: '8px' }}>
+            {t`Select an agent to start a conversation`}
+          </Paragraph>
+        </div>
 
-      {/* 统计信息 */}
-      <Row gutter={16} style={{ marginBottom: '24px' }}>
-        <Col span={8}>
-          <Card>
-            <Statistic
-              title={t`Total Agents`}
-              value={agents.length}
-              prefix={<RobotOutlined />}
-            />
-          </Card>
-        </Col>
-        <Col span={8}>
-          <Card>
-            <Statistic
-              title={t`Total Conversations`}
-              value={agents.reduce((sum, agent) => sum + (agent.chatLogsCount || 0), 0)}
-              prefix={<MessageOutlined />}
-            />
-          </Card>
-        </Col>
-        {/* <Col span={8}>
+        {/* 统计信息 */}
+        <Row gutter={16} style={{ marginBottom: '24px' }}>
+          <Col span={8}>
+            <Card>
+              <Statistic
+                title={t`Total Agents`}
+                value={agents.length}
+                prefix={<RobotOutlined />}
+              />
+            </Card>
+          </Col>
+          <Col span={8}>
+            <Card>
+              <Statistic
+                title={t`Total Conversations`}
+                value={agents.reduce((sum, agent) => sum + (agent.chatLogsCount || 0), 0)}
+                prefix={<MessageOutlined />}
+              />
+            </Card>
+          </Col>
+          {/* <Col span={8}>
           <Card>
             <Statistic
               title={t`Active Agents`}
@@ -416,125 +418,125 @@ export const WorkspaceWelcome: React.FC<WorkspaceWelcomeProps> = ({
             />
           </Card>
         </Col> */}
-      </Row>
+        </Row>
 
-      {/* 最近使用区域 */}
-      {(recentChats.length > 0 || recentAgents.length > 0) && (
-        <div style={{ marginBottom: '24px' }}>
-          <Title level={4}>
-            <HistoryOutlined style={{ marginRight: '8px' }} />
-            {t`Recently Used`}
-          </Title>
-          <Tabs
-            activeKey={activeTab}
-            onChange={(key) => setActiveTab(key as 'agents' | 'chats')}
-            items={[
-              {
-                key: 'chats',
-                label: (
-                  <Space>
-                    <MessageOutlined />
-                    {t`Recent Chats`}
-                    {recentChats.length > 0 && <Badge count={recentChats.length} />}
-                  </Space>
-                ),
-                children: recentChats.length > 0 ? (
-                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '16px' }}>
-                    {recentChats.map(chatItem => (
-                      <div key={`${chatItem.agentName}-${chatItem.chatKey}`} style={{ width: '220px' }}>
-                        {renderChatCard(chatItem)}
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <Empty 
-                    image={Empty.PRESENTED_IMAGE_SIMPLE}
-                    description={t`No recent chats`}
-                  />
-                )
-              },
-              {
-                key: 'agents',
-                label: (
-                  <Space>
-                    <RobotOutlined />
-                    {t`Recent Agents`}
-                    {recentAgents.length > 0 && <Badge count={recentAgents.length} />}
-                  </Space>
-                ),
-                children: recentAgents.length > 0 ? (
-                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '16px' }}>
-                    {recentAgents.map(agent => (
-                      <div key={agent.config.name} style={{ width: '220px' }}>
-                        {renderAgentCard(agent, true, true)}
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <Empty 
-                    image={Empty.PRESENTED_IMAGE_SIMPLE}
-                    description={t`No recent agents`}
-                  />
-                )
-              }
-            ]}
-          />
-        </div>
-      )}
-
-      {/* 搜索栏 */}
-      <div style={{ marginBottom: '16px' }}>
-        <Input
-          prefix={<SearchOutlined />}
-          placeholder={t`Search agents...`}
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          style={{ width: '300px' }}
-        />
-      </div>
-
-      {/* 所有 Agents 列表 */}
-      <div>
-        <Title level={4} style={{ marginBottom: '16px' }}>
-          <Space>
-            <RobotOutlined />
-            {t`All Agents`}
-            <Tag color="green" >{sortedAgents.length}</Tag>
-          </Space>
-        </Title>
-
-        {sortedAgents.length === 0 ? (
-          <Empty
-            image={Empty.PRESENTED_IMAGE_SIMPLE}
-            description={
-              agents.length === 0 ? (
-                <div>
-                  <p>{t`No agents available`}</p>
-                  <p>{t`Create your first agent to get started`}</p>
-                </div>
-              ) : (
-                <p>{t`No agents match your search`}</p>
-              )
-            }
-          >
-            {agents.length === 0 && onCreateAgent && (
-              <Button type="primary" icon={<PlusOutlined />} onClick={onCreateAgent}>
-                {t`Create Agent`}
-              </Button>
-            )}
-          </Empty>
-        ) : (
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '16px' }}>
-            {sortedAgents.map(agent => (
-              <div key={agent.config.name} style={{ width: '220px' }}>
-                {renderAgentCard(agent)}
-              </div>
-            ))}
+        {/* 最近使用区域 */}
+        {(recentChats.length > 0 || recentAgents.length > 0) && (
+          <div style={{ marginBottom: '24px' }}>
+            <Title level={4}>
+              <HistoryOutlined style={{ marginRight: '8px' }} />
+              {t`Recently Used`}
+            </Title>
+            <Tabs
+              activeKey={activeTab}
+              onChange={(key) => setActiveTab(key as 'agents' | 'chats')}
+              items={[
+                {
+                  key: 'chats',
+                  label: (
+                    <Space>
+                      <MessageOutlined />
+                      {t`Recent Chats`}
+                      {recentChats.length > 0 && <Badge count={recentChats.length} />}
+                    </Space>
+                  ),
+                  children: recentChats.length > 0 ? (
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '16px' }}>
+                      {recentChats.map(chatItem => (
+                        <div key={`${chatItem.agentName}-${chatItem.chatKey}`} style={{ width: '220px' }}>
+                          {renderChatCard(chatItem)}
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <Empty
+                      image={Empty.PRESENTED_IMAGE_SIMPLE}
+                      description={t`No recent chats`}
+                    />
+                  )
+                },
+                {
+                  key: 'agents',
+                  label: (
+                    <Space>
+                      <RobotOutlined />
+                      {t`Recent Agents`}
+                      {recentAgents.length > 0 && <Badge count={recentAgents.length} />}
+                    </Space>
+                  ),
+                  children: recentAgents.length > 0 ? (
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '16px' }}>
+                      {recentAgents.map(agent => (
+                        <div key={agent.config.name + agent.config.scope} style={{ width: '220px' }}>
+                          {renderAgentCard(agent, true, true)}
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <Empty
+                      image={Empty.PRESENTED_IMAGE_SIMPLE}
+                      description={t`No recent agents`}
+                    />
+                  )
+                }
+              ]}
+            />
           </div>
         )}
-      </div>
 
-    </div>
+        {/* 搜索栏 */}
+        <div style={{ marginBottom: '16px' }}>
+          <Input
+            prefix={<SearchOutlined />}
+            placeholder={t`Search agents...`}
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            style={{ width: '300px' }}
+          />
+        </div>
+
+        {/* 所有 Agents 列表 */}
+        <div>
+          <Title level={4} style={{ marginBottom: '16px' }}>
+            <Space>
+              <RobotOutlined />
+              {t`All Agents`}
+              <Tag color="green" >{sortedAgents.length}</Tag>
+            </Space>
+          </Title>
+
+          {sortedAgents.length === 0 ? (
+            <Empty
+              image={Empty.PRESENTED_IMAGE_SIMPLE}
+              description={
+                agents.length === 0 ? (
+                  <div>
+                    <p>{t`No agents available`}</p>
+                    <p>{t`Create your first agent to get started`}</p>
+                  </div>
+                ) : (
+                  <p>{t`No agents match your search`}</p>
+                )
+              }
+            >
+              {agents.length === 0 && onCreateAgent && (
+                <Button type="primary" icon={<PlusOutlined />} onClick={onCreateAgent}>
+                  {t`Create Agent`}
+                </Button>
+              )}
+            </Empty>
+          ) : (
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '16px' }}>
+              {sortedAgents.map(agent => (
+                <div key={agent.config.name + agent.config.scope} style={{ width: '220px' }}>
+                  {renderAgentCard(agent)}
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+      </div>
     </>
   );
 };
