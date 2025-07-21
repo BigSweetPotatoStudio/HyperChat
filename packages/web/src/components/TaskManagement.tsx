@@ -494,7 +494,7 @@ export const TaskManagement = forwardRef<TaskManagementRef, TaskManagementProps>
               rules={[
                 { required: true, message: t`Please enter cron expression` },
                 {
-                  pattern: /^(@(annually|yearly|monthly|weekly|daily|hourly|reboot))|(@every (\d+(ns|us|µs|ms|s|m|h))+)|((((\d+,)+\d+|(\d+(\/|-)\d+)|\d+|\*) ?){5,7})$/,
+                  pattern: /^(@(annually|yearly|monthly|weekly|daily|hourly|reboot))|(@every (\d+(ns|us|µs|ms|s|m|h))+)|([\*\d,\/-]+\s+){4}[\*\d,\/-]+(\s+[\*\d,\/-]+)?(\s+[\*\d,\/-]+)?$/,
                   message: t`Invalid cron expression format`,
                 },
               ]}
