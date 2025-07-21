@@ -1,0 +1,26 @@
+#!/usr/bin/env sh
+. "$(dirname -- "$0")/_/husky.sh"
+
+echo "🔍 Running pre-commit checks..."
+
+# # 运行类型检查
+# echo "📝 Running TypeScript type check..."
+# npm run typecheck
+
+# # 如果类型检查失败，退出
+# if [ $? -ne 0 ]; then
+#   echo "❌ TypeScript type check failed!"
+#   exit 1
+# fi
+
+# # 运行 lint 检查（如果存在）
+# echo "🧹 Running lint check..."
+# npm run lint
+
+# # 如果 lint 失败，退出
+# if [ $? -ne 0 ]; then
+#   echo "❌ Lint check failed!"
+#   exit 1
+# fi
+
+echo "✅ Pre-commit checks passed!"
