@@ -3,6 +3,45 @@
 
 echo "🚀 Running pre-push checks..."
 
+# 获取当前分支
+BRANCH_NAME=$(git rev-parse --abbrev-ref HEAD)
+echo "📍 Current branch: $BRANCH_NAME"
+
+# 版本管理逻辑
+if [ "$BRANCH_NAME" = "dev2" ]; then
+  echo "🔢 Dev2 branch detected - bumping alpha version..."
+  
+  # 检查当前版本是否已经是 alpha
+  CURRENT_VERSION=$(node -p "require('./package.json').version")
+  if [[ $CURRENT_VERSION == *"-alpha"* ]]; then
+    echo "📈 Bumping prerelease version..."
+    npm version prerelease --preid=alpha --no-git-tag-version
+  else
+    echo "📈 Converting to alpha version..."
+    npm version prerelease --preid=alpha --no-git-tag-version
+  fi
+  
+  # 同步版本到所有包
+  npm run version:sync
+  
+  # 添加版本文件到 staging area
+  git add package.json packages/*/package.json
+  
+  echo "✅ Version bumped to $(node -p "require('./package.json').version")"
+
+elif [ "$BRANCH_NAME" = "stable" ]; then
+  echo "🔢 Stable branch detected - bumping patch version..."
+  npm version patch --no-git-tag-version
+  npm run version:sync
+  
+  # 添加版本文件到 staging area
+  git add package.json packages/*/package.json
+  
+  echo "✅ Version bumped to $(node -p "require('./package.json').version")"
+else
+  echo "ℹ️ Branch '$BRANCH_NAME' - no version bump needed"
+fi
+
 # 运行构建检查
 echo "🔨 Running build check..."
 npm run build

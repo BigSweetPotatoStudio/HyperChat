@@ -9,9 +9,13 @@ on:
     branches:
       - dev2
       - stable
+    paths-ignore:
+      - 'package.json'
+      - 'packages/*/package.json'
+      - '**/*.md'
 
 permissions:
-  contents: write
+  contents: read
 
 jobs:
   build:
@@ -150,27 +154,6 @@ jobs:
           NODE_AUTH_TOKEN: ${{secrets.npm_token}}
           NPM_PUBLISH_TAG: ${{ steps.release-type.outputs.publish_tag }}
 
-      # Git 配置和重置
-      - name: Setup Git and reset
-        if: steps.release-type.outputs.should_publish == 'true' && steps.check-npm-version.outputs.should_skip == 'false'
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git reset --hard HEAD 
-        env:
-          GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
-
-      # 为 alpha 版本创建新的预发布版本
-      - name: Bump alpha version
-        if: steps.release-type.outputs.is_alpha == 'true' && steps.check-npm-version.outputs.should_skip == 'false'
-        run: npm version prerelease --preid=alpha
-
-      # 推送版本变更
-      - name: Push changes
-        if: steps.release-type.outputs.should_publish == 'true' && steps.check-npm-version.outputs.should_skip == 'false'
-        run: git push
-        env:
-          GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
 
       # 发送成功通知
       - name: Send Success Notification
@@ -190,14 +173,15 @@ jobs:
 
             📝 <b>标题:</b> ${{ steps.details.outputs.message }}
             📦 <b>发布标签:</b> <code>${{ steps.release-type.outputs.publish_tag }}</code>
+            📦 <b>版本:</b> <code>${{ steps.release-type.outputs.version }}</code>
             📄 <b>修改的文件:</b>
             <code>${{ steps.files.outputs.changed }}</code>
 
-            ✅ <b>状态:</b> 包已成功发布到 npm
+            ✅ <b>状态:</b> 包已成功发布到 npm（版本通过 pre-push 钩子自动管理）
             🔗 <b>详情链接:</b> ${{ steps.details.outputs.url }}
             ⏰ <b>时间:</b> ${{ github.event.head_commit.timestamp || github.event.workflow_run.updated_at }}
 
-            #GitHub #NPM #发布
+            #GitHub #NPM #发布 #Husky
 
       # 发送跳过通知
       - name: Send Skip Notification
