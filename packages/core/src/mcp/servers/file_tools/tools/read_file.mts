@@ -2,7 +2,7 @@ import fs from 'fs';
 import { z } from 'zod';
 import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { 
-  validateAndNormalizePath, 
+  normalizePath, 
   validateFileExtension, 
   validateFileSize, 
   readFileContent, 
@@ -18,7 +18,7 @@ const readFileSchema = z.object({
   limit: z.number().int().min(1).optional().describe('Optional: Maximum number of lines to read'),
 });
 
-export function registerReadFileTool(server: McpServer, workspacePath: string, globalPath?: string): void {
+export function registerReadFileTool(server: McpServer): void {
   server.tool(
     'read_file',
     'Reads and returns the content of a specified file from the local filesystem. Supports text files with optional line range specification.',
@@ -27,8 +27,9 @@ export function registerReadFileTool(server: McpServer, workspacePath: string, g
       const config = getConfig();
       
       try {
-        // 验证和规范化路径
-        const normalizedPath = validateAndNormalizePath(absolute_path, workspacePath, globalPath);
+        // 规范化路径
+        const normalizedPath = normalizePath(absolute_path);
+        
         
         // 检查文件是否存在
         if (!fs.existsSync(normalizedPath)) {

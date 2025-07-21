@@ -2,7 +2,7 @@ import fs from 'fs';
 import { z } from 'zod';
 import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { 
-  validateAndNormalizePath, 
+  normalizePath, 
   validateFileExtension, 
   validateFileSize,
   getRelativePathDisplay,
@@ -18,7 +18,7 @@ const replaceSchema = z.object({
   replace_all: z.boolean().default(false).describe('Whether to replace all occurrences (true) or just the first one (false)'),
 });
 
-export function registerReplaceTool(server: McpServer, workspacePath: string, globalPath?: string): void {
+export function registerReplaceTool(server: McpServer): void {
   server.tool(
     'replace',
     'Replaces text in a specified file. Can replace first occurrence or all occurrences.',
@@ -27,8 +27,8 @@ export function registerReplaceTool(server: McpServer, workspacePath: string, gl
       const config = getConfig();
       
       try {
-        // 验证和规范化路径
-        const normalizedPath = validateAndNormalizePath(absolute_path, workspacePath, globalPath);
+        // 规范化路径
+        const normalizedPath = normalizePath(absolute_path);
         
         // 检查文件是否存在
         if (!fs.existsSync(normalizedPath)) {
@@ -97,7 +97,7 @@ export function registerReplaceTool(server: McpServer, workspacePath: string, gl
         );
         
         // 生成显示信息
-        const relativePath = getRelativePathDisplay(normalizedPath, workspacePath);
+        const relativePath = getRelativePathDisplay(normalizedPath);
         const stats = fs.statSync(normalizedPath);
         
         // 计算变化的统计信息

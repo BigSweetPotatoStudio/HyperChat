@@ -4,8 +4,10 @@ import { spawn } from 'child_process';
 import { z } from 'zod';
 import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { 
-  validateAndNormalizePath, 
-  validateCommand
+  normalizePath, 
+  validateCommand,
+  getRelativePathDisplay,
+  getWorkSpace
 } from '../utils.mjs';
 import { FileToolError, ERROR_CODES } from '../lib.mjs';
 
@@ -125,7 +127,7 @@ async function executeCommand(
   });
 }
 
-export function registerRunShellCommandTool(server: McpServer, workspacePath: string, globalPath?: string): void {
+export function registerRunShellCommandTool(server: McpServer): void {
   server.tool(
     'run_shell_command',
     'Executes a shell command in the specified working directory. Supports timeout and output capture.',
@@ -139,8 +141,8 @@ export function registerRunShellCommandTool(server: McpServer, workspacePath: st
         
         // 确定工作目录
         const workingDir = working_directory 
-          ? validateAndNormalizePath(working_directory, workspacePath)
-          : workspacePath;
+          ? normalizePath(working_directory)
+          : getWorkSpace().workspacePath;
         
         // 检查工作目录是否存在
         if (!fs.existsSync(workingDir)) {
@@ -164,8 +166,8 @@ export function registerRunShellCommandTool(server: McpServer, workspacePath: st
         
         // 生成显示信息
         const workingDirDisplay = working_directory 
-          ? path.relative(workspacePath, workingDir) || '.'
-          : '(workspace root)';
+          ? getRelativePathDisplay(workingDir)
+          : '(current directory)';
         
         const output = [];
         

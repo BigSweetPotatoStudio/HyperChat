@@ -6,7 +6,7 @@ import { Logger } from "../../../log.mjs";
 import { InMemoryTransport } from "@modelcontextprotocol/sdk/inMemory.js";
 
 
-async function createServer(workspacePath: string, globalPath?: string) {
+async function createServer() {
   // console.log(`Creating MCP server for HyperTerminal at workspace path: ${workspacePath}`);
 
 
@@ -15,7 +15,7 @@ async function createServer(workspacePath: string, globalPath?: string) {
     version: CONST.getVersion,
   });
 
-  registerTool(server, workspacePath);
+  registerTool(server);
 
   const [clientTransport, serverTransport] = InMemoryTransport.createLinkedPair();
   // 连接服务器传输

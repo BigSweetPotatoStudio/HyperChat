@@ -2,11 +2,13 @@ import fs from 'fs';
 import path from 'path';
 import { z } from 'zod';
 import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
-import { 
+import {
   getRelativePathDisplay,
+  getWorkSpace,
   withTimeout
 } from '../utils.mjs';
 import { FileToolError, ERROR_CODES, getConfig } from '../lib.mjs';
+
 
 const saveMemorySchema = z.object({
   fact: z.string().describe('The specific fact or piece of information to remember. Should be a clear, self-contained statement.'),
@@ -97,14 +99,14 @@ async function performAddMemoryEntry(
   }
 }
 
-export function registerSaveMemoryTool(server: McpServer, workspacePath: string, globalPath?: string): void {
+export function registerSaveMemoryTool(server: McpServer): void {
   server.tool(
     'save_memory',
     'Saves a specific piece of information or fact to your long-term memory. Use this when the user explicitly asks you to remember something, or when they state a clear, concise fact that seems important to retain for future interactions.',
     saveMemorySchema.shape,
     async ({ fact, memoryPath }) => {
       const config = getConfig();
-      
+
       try {
         // 验证输入
         if (!fact || typeof fact !== 'string' || fact.trim() === '') {
@@ -113,12 +115,12 @@ export function registerSaveMemoryTool(server: McpServer, workspacePath: string,
             ERROR_CODES.INVALID_PATH
           );
         }
-        
+
         // 确定内存文件路径
-        const memoryFilePath = memoryPath 
+        const memoryFilePath = memoryPath
           ? path.resolve(memoryPath)
-          : getDefaultMemoryFilePath(workspacePath);
-        
+          : getDefaultMemoryFilePath(getWorkSpace().workspacePath);
+
         // 添加内存条目
         await withTimeout(
           () => performAddMemoryEntry(fact, memoryFilePath, {
@@ -129,22 +131,21 @@ export function registerSaveMemoryTool(server: McpServer, workspacePath: string,
           config.fileOperationTimeout,
           'Memory save operation timed out'
         );
-        
-        // const relativePath = getRelativePathDisplay(memoryFilePath, workspacePath, globalPath);
+
         const successMessage = `Okay, I've remembered that: "${fact}"`;
-        
+
         return {
           content: [
             { type: 'text', text: `${successMessage}\n\nSaved to: ${memoryPath}` }
           ],
           summary: `Saved memory: "${fact.length > 50 ? fact.substring(0, 50) + '...' : fact}"`
         };
-        
+
       } catch (error) {
-        const errorMessage = error instanceof FileToolError 
-          ? error.message 
+        const errorMessage = error instanceof FileToolError
+          ? error.message
           : `Failed to save memory: ${error}`;
-          
+
         return {
           content: [
             { type: 'text', text: `Error: ${errorMessage}` }

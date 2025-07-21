@@ -3,7 +3,7 @@ import path from 'path';
 import { z } from 'zod';
 import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { 
-  validateAndNormalizePath, 
+  normalizePath, 
   getRelativePathDisplay,
   withTimeout,
   isInGitRepository,
@@ -53,8 +53,6 @@ function formatPermissions(mode: number): string {
 
 function listDirectory(
   dirPath: string, 
-  workspacePath: string, 
-  globalPath: string | undefined,
   recursive: boolean, 
   includeHidden: boolean,
   maxDepth: number,
@@ -88,7 +86,7 @@ function listDirectory(
     
     try {
       const stats = fs.statSync(fullPath);
-      const relativePath = getRelativePathDisplay(fullPath, workspacePath);
+      const relativePath = getRelativePathDisplay(fullPath);
       
       const fileInfo: FileInfo = {
         name: entry,
@@ -105,8 +103,6 @@ function listDirectory(
       if (recursive && stats.isDirectory()) {
         const subFiles = listDirectory(
           fullPath, 
-          workspacePath, 
-          globalPath,
           recursive, 
           includeHidden, 
           maxDepth, 
@@ -126,7 +122,7 @@ function listDirectory(
   return files;
 }
 
-export function registerListDirectoryTool(server: McpServer, workspacePath: string, globalPath?: string): void {
+export function registerListDirectoryTool(server: McpServer): void {
   server.tool(
     'list_directory',
     'Lists files and directories in a specified directory. Supports recursive listing and hidden file inclusion.',
@@ -135,8 +131,8 @@ export function registerListDirectoryTool(server: McpServer, workspacePath: stri
       const config = getConfig();
       
       try {
-        // 验证和规范化路径
-        const normalizedPath = validateAndNormalizePath(absolute_path, workspacePath, globalPath);
+        // 规范化路径
+        const normalizedPath = normalizePath(absolute_path);
         
         // 检查目录是否存在
         if (!fs.existsSync(normalizedPath)) {
@@ -174,8 +170,6 @@ export function registerListDirectoryTool(server: McpServer, workspacePath: stri
         const files = await withTimeout(
           () => Promise.resolve(listDirectory(
             normalizedPath, 
-            workspacePath, 
-            globalPath,
             recursive, 
             include_hidden, 
             max_depth,
@@ -197,7 +191,7 @@ export function registerListDirectoryTool(server: McpServer, workspacePath: stri
         });
         
         // 生成显示信息
-        const relativePath = getRelativePathDisplay(normalizedPath, workspacePath);
+        const relativePath = getRelativePathDisplay(normalizedPath);
         const fileCount = files.filter(f => f.type === 'file').length;
         const dirCount = files.filter(f => f.type === 'directory').length;
         

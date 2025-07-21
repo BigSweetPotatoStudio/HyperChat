@@ -9,7 +9,7 @@ type ServerConfig = {
   name: string;
   type: string;
   configSchema: any;
-  createServer: (workspacePath: string, globalPath?: string) => Promise<any>;
+  createServer: () => Promise<any>;
 };
 
 

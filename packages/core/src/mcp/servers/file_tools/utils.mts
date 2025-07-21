@@ -1,16 +1,7 @@
 import fs from 'fs';
 import path from 'path';
 import { FileToolError, ERROR_CODES, getConfig } from './lib.mjs';
-
-/**
- * 检查文件路径是否在工作区范围内
- */
-export function isWithinWorkspace(filePath: string, workspacePath: string): boolean {
-  const resolvedFilePath = path.resolve(filePath);
-  const resolvedWorkspacePath = path.resolve(workspacePath);
-  
-  return resolvedFilePath.startsWith(resolvedWorkspacePath);
-}
+import { workspaceManager } from '../../../lib.mjs';
 
 /**
  * 验证文件扩展名是否允许
@@ -18,7 +9,7 @@ export function isWithinWorkspace(filePath: string, workspacePath: string): bool
 export function validateFileExtension(filePath: string): void {
   const config = getConfig();
   const ext = path.extname(filePath).toLowerCase();
-  
+
   // 检查是否在禁止列表中
   if (config.blockedExtensions.includes(ext)) {
     throw new FileToolError(
@@ -26,7 +17,7 @@ export function validateFileExtension(filePath: string): void {
       ERROR_CODES.EXTENSION_BLOCKED
     );
   }
-  
+
   // 如果有允许列表，检查是否在允许列表中
   if (config.allowedExtensions.length > 0 && !config.allowedExtensions.includes(ext)) {
     throw new FileToolError(
@@ -42,7 +33,7 @@ export function validateFileExtension(filePath: string): void {
 export function validateFileSize(filePath: string): void {
   const config = getConfig();
   const stats = fs.statSync(filePath);
-  
+
   if (stats.size > config.maxFileSize) {
     throw new FileToolError(
       `File size (${stats.size}) exceeds maximum allowed size (${config.maxFileSize})`,
@@ -52,42 +43,25 @@ export function validateFileSize(filePath: string): void {
 }
 
 /**
- * 验证并规范化文件路径
+ * 规范化文件路径
  */
-export function validateAndNormalizePath(filePath: string, workspacePath: string, globalPath?: string): string {
-  console.log(`Validating and normalizing path: ${filePath} within workspace: ${workspacePath}${globalPath ? `, global: ${globalPath}` : ''}`);
-  // 规范化路径
-  const normalizedPath = path.resolve(filePath);
-  
-  // 检查路径是否在工作区内
-  const isInWorkspace = isWithinWorkspace(normalizedPath, workspacePath);
-  
-  // 如果提供了全局路径，也检查是否在全局路径内
-  const isInGlobal = globalPath ? isWithinWorkspace(normalizedPath, globalPath) : false;
-  
-  if (!isInWorkspace && !isInGlobal) {
-    const allowedPaths = globalPath ? `workspace (${workspacePath}) or global (${globalPath})` : `workspace (${workspacePath})`;
-    throw new FileToolError(
-      `Path '${filePath}' is outside the allowed directories: ${allowedPaths}`,
-      ERROR_CODES.INVALID_PATH
-    );
-  }
-  
-  return normalizedPath;
+export function normalizePath(filePath: string): string {
+  return path.resolve(filePath);
 }
 
 /**
- * 生成相对路径显示
+ * 生成相对路径显示，优先显示相对于当前工作目录的路径
  */
-export function getRelativePathDisplay(filePath: string, workspacePath: string): string {
-  // 首先尝试相对于工作区的路径
-  if (isWithinWorkspace(filePath, workspacePath)) {
-    const relativePath = path.relative(workspacePath, filePath);
-    return relativePath.startsWith('.') ? relativePath : './' + relativePath;
+export function getRelativePathDisplay(filePath: string, basePath?: string): string {
+  const base = basePath || process.cwd();
+  const relativePath = path.relative(base, filePath);
+
+  // 如果相对路径太长（包含很多 ../），则显示绝对路径
+  if (relativePath.split('../').length > 3) {
+    return filePath;
   }
-  
-  // 如果都不在范围内，返回绝对路径（这种情况不应该发生）
-  return filePath;
+
+  return relativePath.startsWith('.') ? relativePath : './' + relativePath;
 }
 
 /**
@@ -95,15 +69,15 @@ export function getRelativePathDisplay(filePath: string, workspacePath: string):
  */
 export function readFileContent(filePath: string, offset?: number, limit?: number): string {
   const content = fs.readFileSync(filePath, 'utf8');
-  
+
   if (offset !== undefined || limit !== undefined) {
     const lines = content.split('\n');
     const startLine = offset || 0;
     const endLine = limit ? startLine + limit : lines.length;
-    
+
     return lines.slice(startLine, endLine).join('\n');
   }
-  
+
   return content;
 }
 
@@ -113,25 +87,16 @@ export function readFileContent(filePath: string, offset?: number, limit?: numbe
 export function limitOutputLines(content: string, maxLines?: number): string {
   const config = getConfig();
   const actualMaxLines = maxLines || config.maxOutputLines;
-  
+
   const lines = content.split('\n');
   if (lines.length > actualMaxLines) {
-    return lines.slice(0, actualMaxLines).join('\n') + 
-           `\n... (truncated, showing first ${actualMaxLines} lines of ${lines.length})`;
+    return lines.slice(0, actualMaxLines).join('\n') +
+      `\n... (truncated, showing first ${actualMaxLines} lines of ${lines.length})`;
   }
-  
+
   return content;
 }
 
-/**
- * 格式化文件信息
- */
-export function formatFileInfo(filePath: string, workspacePath: string): string {
-  const stats = fs.statSync(filePath);
-  const relativePath = getRelativePathDisplay(filePath, workspacePath);
-  
-  return `${relativePath} (${stats.size} bytes, modified: ${stats.mtime.toISOString()})`;
-}
 
 /**
  * 检查命令是否被允许
@@ -139,7 +104,7 @@ export function formatFileInfo(filePath: string, workspacePath: string): string 
 export function validateCommand(command: string): void {
   const config = getConfig();
   const commandRoot = command.trim().split(/\s+/)[0];
-  
+
   // 检查是否在禁止列表中
   if (config.blockedCommands.some(blocked => commandRoot.includes(blocked))) {
     throw new FileToolError(
@@ -147,10 +112,10 @@ export function validateCommand(command: string): void {
       ERROR_CODES.COMMAND_BLOCKED
     );
   }
-  
+
   // 如果有允许列表，检查是否在允许列表中
-  if (config.allowedCommands.length > 0 && 
-      !config.allowedCommands.some(allowed => commandRoot.includes(allowed))) {
+  if (config.allowedCommands.length > 0 &&
+    !config.allowedCommands.some(allowed => commandRoot.includes(allowed))) {
     throw new FileToolError(
       `Command '${commandRoot}' is not in the allowed list`,
       ERROR_CODES.COMMAND_BLOCKED
@@ -170,7 +135,7 @@ export async function withTimeout<T>(
     const timer = setTimeout(() => {
       reject(new FileToolError(errorMessage, ERROR_CODES.OPERATION_TIMEOUT));
     }, timeoutMs);
-    
+
     operation()
       .then(result => {
         clearTimeout(timer);
@@ -188,14 +153,14 @@ export async function withTimeout<T>(
  */
 export function isInGitRepository(dirPath: string): boolean {
   let currentPath = path.resolve(dirPath);
-  
+
   while (currentPath !== path.dirname(currentPath)) {
     if (fs.existsSync(path.join(currentPath, '.git'))) {
       return true;
     }
     currentPath = path.dirname(currentPath);
   }
-  
+
   return false;
 }
 
@@ -204,14 +169,14 @@ export function isInGitRepository(dirPath: string): boolean {
  */
 export function findGitRoot(dirPath: string): string | null {
   let currentPath = path.resolve(dirPath);
-  
+
   while (currentPath !== path.dirname(currentPath)) {
     if (fs.existsSync(path.join(currentPath, '.git'))) {
       return currentPath;
     }
     currentPath = path.dirname(currentPath);
   }
-  
+
   return null;
 }
 
@@ -228,12 +193,12 @@ function parseGitignoreRules(content: string): string[] {
       if (line.startsWith('!')) {
         return line;
       }
-      
+
       // 处理目录规则（以 / 结尾）
       if (line.endsWith('/')) {
         return line;
       }
-      
+
       return line;
     });
 }
@@ -244,15 +209,15 @@ function parseGitignoreRules(content: string): string[] {
 function matchesGitignoreRule(filePath: string, rule: string, gitRoot: string): boolean {
   // 获取相对于 git 根目录的路径，并标准化为 Unix 风格路径
   const relativePath = path.relative(gitRoot, filePath).replace(/\\/g, '/');
-  
+
   // 处理否定规则
   if (rule.startsWith('!')) {
     return false; // 否定规则需要特殊处理，这里简化处理
   }
-  
+
   // 标准化规则为 Unix 风格路径
   const normalizedRule = rule.replace(/\\/g, '/');
-  
+
   // 处理以 / 开头的规则（根目录相对规则）
   if (normalizedRule.startsWith('/')) {
     const rootRule = normalizedRule.slice(1);
@@ -262,16 +227,16 @@ function matchesGitignoreRule(filePath: string, rule: string, gitRoot: string): 
     }
     return relativePath === rootRule || relativePath.startsWith(rootRule + '/');
   }
-  
+
   // 处理目录规则
   if (normalizedRule.endsWith('/')) {
     const dirRule = normalizedRule.slice(0, -1);
-    
+
     // 检查完整路径匹配
     if (relativePath === dirRule || relativePath.startsWith(dirRule + '/')) {
       return true;
     }
-    
+
     // 检查路径段匹配（对于不以 / 开头的规则）
     const pathSegments = relativePath.split('/');
     for (let i = 0; i < pathSegments.length; i++) {
@@ -279,31 +244,31 @@ function matchesGitignoreRule(filePath: string, rule: string, gitRoot: string): 
         return true;
       }
     }
-    
+
     return false;
   }
-  
+
   // 处理通配符匹配
   if (normalizedRule.includes('*')) {
     const regexPattern = normalizedRule
       .replace(/\./g, '\\.')
       .replace(/\*\*/g, '.*')
       .replace(/\*/g, '[^/]*');
-    
+
     const regex = new RegExp(`^${regexPattern}$`);
-    
+
     // 检查完整路径匹配
     if (regex.test(relativePath)) {
       return true;
     }
-    
+
     // 检查文件名匹配
     const fileName = path.basename(filePath);
     const fileNameRegex = new RegExp(`^${normalizedRule.replace(/\./g, '\\.').replace(/\*/g, '[^/]*')}$`);
     if (fileNameRegex.test(fileName)) {
       return true;
     }
-    
+
     // 检查路径段匹配
     const pathSegments = relativePath.split('/');
     for (const segment of pathSegments) {
@@ -311,10 +276,10 @@ function matchesGitignoreRule(filePath: string, rule: string, gitRoot: string): 
         return true;
       }
     }
-    
+
     return false;
   }
-  
+
   // 对于普通规则，检查是否是路径中的任何一个段
   const pathSegments = relativePath.split('/');
   for (const segment of pathSegments) {
@@ -322,11 +287,11 @@ function matchesGitignoreRule(filePath: string, rule: string, gitRoot: string): 
       return true;
     }
   }
-  
+
   // 精确匹配或路径包含匹配
-  return relativePath === normalizedRule || 
-         relativePath.startsWith(normalizedRule + '/') ||
-         path.basename(filePath) === normalizedRule;
+  return relativePath === normalizedRule ||
+    relativePath.startsWith(normalizedRule + '/') ||
+    path.basename(filePath) === normalizedRule;
 }
 
 /**
@@ -334,11 +299,11 @@ function matchesGitignoreRule(filePath: string, rule: string, gitRoot: string): 
  */
 export function loadGitignoreRulesFromDir(dirPath: string): string[] {
   const gitignorePath = path.join(dirPath, '.gitignore');
-  
+
   if (!fs.existsSync(gitignorePath)) {
     return [];
   }
-  
+
   try {
     const content = fs.readFileSync(gitignorePath, 'utf8');
     return parseGitignoreRules(content);
@@ -356,7 +321,7 @@ export function loadAllGitignoreRules(currentPath: string, gitRoot: string): { r
   const sources: string[] = [];
   let currentDir = path.resolve(currentPath);
   const rootDir = path.resolve(gitRoot);
-  
+
   // 从当前目录向上遍历到 git 根目录
   while (currentDir.startsWith(rootDir)) {
     const rules = loadGitignoreRulesFromDir(currentDir);
@@ -367,16 +332,16 @@ export function loadAllGitignoreRules(currentPath: string, gitRoot: string): { r
       });
       sources.push(path.join(currentDir, '.gitignore'));
     }
-    
+
     // 如果已经到达 git 根目录，停止
     if (currentDir === rootDir) {
       break;
     }
-    
+
     currentDir = path.dirname(currentDir);
   }
-  
-  return { 
+
+  return {
     rules: allRules.map(({ rule, baseDir }) => {
       // 如果规则以 / 开头，它是相对于包含 .gitignore 的目录的
       if (rule.startsWith('/')) {
@@ -389,7 +354,7 @@ export function loadAllGitignoreRules(currentPath: string, gitRoot: string): { r
       }
       return rule; // 不以 / 开头的规则保持原样
     }),
-    sources 
+    sources
   };
 }
 
@@ -401,7 +366,7 @@ export function shouldIgnoreFile(filePath: string, gitRoot: string, gitignoreRul
   if (filePath.includes('/.git/') || filePath.endsWith('/.git')) {
     return true;
   }
-  
+
   // 检查 gitignore 规则
   for (const rule of gitignoreRules) {
     if (matchesGitignoreRule(filePath, rule, gitRoot)) {
@@ -411,6 +376,12 @@ export function shouldIgnoreFile(filePath: string, gitRoot: string, gitignoreRul
       return true;
     }
   }
-  
+
   return false;
+}
+
+
+export function getWorkSpace() {
+  let workspace = workspaceManager.getCurrentWorkspace();
+  return workspace;
 }

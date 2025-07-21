@@ -356,7 +356,7 @@ export class WorkspaceMCPClientImpl implements WorkspaceMCPClient {
       capabilities: {}
     });
     // console.log("Opening InMemory transport for MCP client:", this.serverName, this.workspacePath, this.options.createServer);
-    const transport = await this.options.createServer(this.workspacePath, this.options.globalPath);
+    const transport = await this.options.createServer();
     // console.log("InMemory transport created:", transport);
     await client.connect(transport);
     return client;

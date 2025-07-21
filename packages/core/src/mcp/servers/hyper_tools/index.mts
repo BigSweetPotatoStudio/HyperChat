@@ -3,12 +3,12 @@ import { configSchema, NAME } from "./lib.mjs";
 import { CONST } from "../../../const.mjs";
 import { Logger } from "../../../log.mjs";
 import { InMemoryTransport } from "@modelcontextprotocol/sdk/inMemory.js";
+import { workspaceManager } from "../../../lib.mjs";
 
 
 
-async function createServer(workspacePath: string, globalPath?: string) {
-  // console.log(`Creating MCP server for HyperTools at workspace path: ${workspacePath}`);
-
+async function createServer() {
+ 
 
   let server = new McpServer({
     name: NAME,

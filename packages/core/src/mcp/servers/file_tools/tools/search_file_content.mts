@@ -5,9 +5,10 @@ import { glob } from 'glob';
 
 import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import {
-  validateAndNormalizePath,
+  normalizePath,
   getRelativePathDisplay,
-  withTimeout
+  withTimeout,
+  getWorkSpace
 } from '../utils.mjs';
 import { FileToolError, ERROR_CODES, getConfig } from '../lib.mjs';
 
@@ -68,7 +69,7 @@ async function searchInFile(
   return matches;
 }
 
-export function registerSearchFileContentTool(server: McpServer, workspacePath: string, globalPath?: string): void {
+export function registerSearchFileContentTool(server: McpServer): void {
   server.tool(
     'search_file_content',
     'Searches for a pattern in file contents using regular expressions. Can search in specific directories and file types.',
@@ -79,8 +80,8 @@ export function registerSearchFileContentTool(server: McpServer, workspacePath: 
       try {
         // 确定搜索路径
         const basePath = searchPath
-          ? validateAndNormalizePath(searchPath, workspacePath)
-          : workspacePath;
+          ? normalizePath(searchPath)
+          : getWorkSpace().workspacePath;
 
         // 检查搜索路径是否存在
         if (!fs.existsSync(basePath)) {
@@ -173,14 +174,14 @@ export function registerSearchFileContentTool(server: McpServer, workspacePath: 
 
         // 生成显示信息
         const searchPathDisplay = searchPath
-          ? getRelativePathDisplay(basePath, workspacePath)
-          : '(workspace root)';
+          ? getRelativePathDisplay(basePath)
+          : '(current directory)';
 
         const fileCount = new Set(limitedMatches.map(m => m.filePath)).size;
 
         // 格式化输出
         const output = limitedMatches.map(match => {
-          const relativePath = getRelativePathDisplay(match.filePath, workspacePath);
+          const relativePath = getRelativePathDisplay(match.filePath);
           const lines = [
             `${relativePath}:${match.lineNumber}: ${match.line}`,
           ];

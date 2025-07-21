@@ -3,7 +3,7 @@ import path from 'path';
 import { z } from 'zod';
 import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { 
-  validateAndNormalizePath, 
+  normalizePath, 
   validateFileExtension, 
   getRelativePathDisplay,
   withTimeout
@@ -16,7 +16,7 @@ const writeFileSchema = z.object({
   create_directories: z.boolean().default(true).describe('Whether to create parent directories if they don\'t exist'),
 });
 
-export function registerWriteFileTool(server: McpServer, workspacePath: string, globalPath?: string): void {
+export function registerWriteFileTool(server: McpServer): void {
   server.tool(
     'write_file',
     'Writes content to a specified file in the local filesystem. Can create parent directories if needed.',
@@ -25,8 +25,8 @@ export function registerWriteFileTool(server: McpServer, workspacePath: string, 
       const config = getConfig();
       
       try {
-        // 验证和规范化路径
-        const normalizedPath = validateAndNormalizePath(absolute_path, workspacePath, globalPath);
+        // 规范化路径
+        const normalizedPath = normalizePath(absolute_path);
         
         // 验证文件扩展名
         validateFileExtension(normalizedPath);

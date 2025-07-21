@@ -1,9 +1,8 @@
 import fs from 'fs';
-import path from 'path';
 import { z } from 'zod';
 import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { 
-  validateAndNormalizePath, 
+  normalizePath, 
   validateFileExtension, 
   validateFileSize,
   readFileContent,
@@ -36,12 +35,10 @@ interface FileReadResult {
 
 async function readSingleFile(
   filePath: string,
-  workspacePath: string,
-  globalPath?: string,
   maxLines?: number,
   includeMetadata: boolean = true
 ): Promise<FileReadResult> {
-  const relativePath = getRelativePathDisplay(filePath, workspacePath);
+  const relativePath = getRelativePathDisplay(filePath);
   
   try {
     // 验证文件存在
@@ -96,7 +93,7 @@ async function readSingleFile(
   }
 }
 
-export function registerReadManyFilesTool(server: McpServer, workspacePath: string, globalPath?: string): void {
+export function registerReadManyFilesTool(server: McpServer): void {
   server.tool(
     'read_many_files',
     'Reads multiple files at once. Useful for batch operations or when you need to analyze multiple files together.',
@@ -122,12 +119,12 @@ export function registerReadManyFilesTool(server: McpServer, workspacePath: stri
         
         // 验证和规范化所有路径
         const normalizedPaths = absolute_paths.map(filePath => 
-          validateAndNormalizePath(filePath, workspacePath, globalPath)
+          normalizePath(filePath)
         );
         
         // 并行读取所有文件
         const readPromises = normalizedPaths.map(filePath => 
-          readSingleFile(filePath, workspacePath, globalPath, max_lines_per_file, include_metadata)
+          readSingleFile(filePath, max_lines_per_file, include_metadata)
         );
         
         const results = await withTimeout(

@@ -5,6 +5,7 @@ import { getConfig } from "./lib.mjs";
 import { getMessageService } from "../../../message_service.mjs";
 import { Logger } from "../../../log.mjs";
 import { getWorkspaceTerminal } from "../../../workspace/tools/terminal.mjs";
+import { workspaceManager } from "../../../lib.mjs";
 
 let outputCheckArray: string[] = [];
 let checkCount = 15;
@@ -24,7 +25,7 @@ function checkEnd(str: string): boolean {
 }
 
 
-export function registerTool(server: McpServer, workspacePath: string): void {
+export function registerTool(server: McpServer): void {
   const config = getConfig();
   checkCount = config?.Terminal_End_CheckCount || 15;
   const maxToken = config?.Terminal_Output_MaxToken || 10000;
@@ -39,9 +40,11 @@ export function registerTool(server: McpServer, workspacePath: string): void {
       }),
     },
     async ({ command }) => {
+      let workspace = workspaceManager.getCurrentWorkspace();
+      let workspacePath = workspace.workspacePath;
       // 获取工作区终端管理器
       const workspaceTerminal = getWorkspaceTerminal(workspacePath);
-      
+
       // 获取活动终端，如果没有则创建一个
       let activeTerminal = workspaceTerminal.getActiveTerminal();
       if (!activeTerminal) {
@@ -49,7 +52,7 @@ export function registerTool(server: McpServer, workspacePath: string): void {
       }
 
       Logger.info(`Executing command in terminal ${activeTerminal.id}: ${command}`);
-      
+
       // 发送执行状态变更消息
       getMessageService().terminalMsg.emit("terminal-send", {
         type: "execute-status-change",
@@ -69,7 +72,7 @@ export function registerTool(server: McpServer, workspacePath: string): void {
       while (true) {
         // 获取新的输出
         const currentOutput = activeTerminal.output.slice(initialOutputLength);
-        
+
         if (commandCompleted) {
           await new Promise((resolve) => setTimeout(resolve, 500));
           if (strip(currentOutput).match(/(\n|\r)done(\n|\r)/)) {

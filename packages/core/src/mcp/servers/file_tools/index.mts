@@ -15,24 +15,24 @@ import {
   registerSaveMemoryTool
 } from "./tools/index.mjs";
 
-async function createServer(workspacePath: string, globalPath?: string) {
-  Logger.info(`Creating MCP server for FileTools at workspace path: ${workspacePath}${globalPath ? `, global path: ${globalPath}` : ''}`);
+async function createServer() {
+  Logger.info(`Creating MCP server for FileTools`);
 
   const server = new McpServer({
     name: NAME,
     version: CONST.getVersion,
   });
 
-  // 注册所有工具，传入工作区路径和全局路径
-  registerReadFileTool(server, workspacePath, globalPath);
-  registerWriteFileTool(server, workspacePath, globalPath);
-  registerListDirectoryTool(server, workspacePath, globalPath);
-  registerReplaceTool(server, workspacePath, globalPath);
-  registerGlobTool(server, workspacePath, globalPath);
-  registerSearchFileContentTool(server, workspacePath, globalPath);
-  registerReadManyFilesTool(server, workspacePath, globalPath);
-  registerRunShellCommandTool(server, workspacePath, globalPath);
-  registerSaveMemoryTool(server, workspacePath, globalPath);
+  // 注册所有工具
+  registerReadFileTool(server);
+  registerWriteFileTool(server);
+  registerListDirectoryTool(server);
+  registerReplaceTool(server);
+  registerGlobTool(server);
+  registerSearchFileContentTool(server);
+  registerReadManyFilesTool(server);
+  registerRunShellCommandTool(server);
+  registerSaveMemoryTool(server);
 
   const [clientTransport, serverTransport] = InMemoryTransport.createLinkedPair();
   

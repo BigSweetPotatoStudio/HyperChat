@@ -1,13 +1,13 @@
 import fs from 'fs';
-import path from 'path';
 import { z } from 'zod';
 import { glob } from 'glob';
 
 import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import {
-  validateAndNormalizePath,
+  normalizePath,
   getRelativePathDisplay,
-  withTimeout
+  withTimeout,
+  getWorkSpace
 } from '../utils.mjs';
 import { FileToolError, ERROR_CODES, getConfig } from '../lib.mjs';
 
@@ -18,7 +18,7 @@ const globSchema = z.object({
   max_results: z.number().int().min(1).max(1000).default(100).describe('Maximum number of results to return'),
 });
 
-export function registerGlobTool(server: McpServer, workspacePath: string, globalPath?: string): void {
+export function registerGlobTool(server: McpServer): void {
   server.tool(
     'glob',
     'Finds files and directories matching a glob pattern. Supports advanced patterns like wildcards, character classes, and brace expansion.',
@@ -29,8 +29,8 @@ export function registerGlobTool(server: McpServer, workspacePath: string, globa
       try {
         // 确定搜索基础路径
         const basePath = base_path
-          ? validateAndNormalizePath(base_path, workspacePath)
-          : workspacePath;
+          ? normalizePath(base_path)
+          : getWorkSpace().workspacePath;
 
         // 检查基础路径是否存在
         if (!fs.existsSync(basePath)) {
@@ -79,7 +79,7 @@ export function registerGlobTool(server: McpServer, workspacePath: string, globa
         for (const match of limitedMatches) {
           try {
             const stats = fs.statSync(match);
-            const relativePath = getRelativePathDisplay(match, workspacePath);
+            const relativePath = getRelativePathDisplay(match);
 
             results.push({
               path: match,
@@ -105,8 +105,8 @@ export function registerGlobTool(server: McpServer, workspacePath: string, globa
 
         // 生成显示信息
         const basePathDisplay = base_path
-          ? getRelativePathDisplay(basePath, workspacePath)
-          : '(workspace root)';
+          ? getRelativePathDisplay(basePath)
+          : '(current directory)';
 
         const fileCount = results.filter(r => r.type === 'file').length;
         const dirCount = results.filter(r => r.type === 'directory').length;
