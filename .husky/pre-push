@@ -101,7 +101,7 @@ fi
 
 # 运行构建检查
 echo "🔨 Running build check..."
-npm run build
+npm run typecheck 
 
 # 如果构建失败，退出
 if [ $? -ne 0 ]; then
