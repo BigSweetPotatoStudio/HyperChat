@@ -67,7 +67,7 @@ export function getURL_PRE() {
 
   // Override URL for local development environment.
   if (process.env.myEnv === "dev") {
-    URL_PRE = "http://localhost:16100/123456";
+    URL_PRE = `http://${location.hostname}:16100/123456`;
   }
 
   // Define the 'invert' method for making API calls via fetch.

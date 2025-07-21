@@ -13,6 +13,7 @@ export const KnownProviderSchema = z.enum([
   "xai",
   "glm",
   "ollama",
+  "kimi",
   "unknown", // 用于未知或不支持的提供商，需要自己填baseURL和apiKey
 ]).describe("Supported AI model providers");
 

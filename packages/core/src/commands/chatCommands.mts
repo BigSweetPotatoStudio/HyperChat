@@ -138,7 +138,7 @@ export async function streamChatCompletion(params: ChatCompletionRequest): Promi
 
         await agentInstance.setChatLog({
           key: chatKey,
-          label: "New Chat",
+          label: getLabelByFirstUserContent(aiChannel.messages),
           messages: aiChannel.messages,
           agentName,
           dateTime: Date.now(),
@@ -197,7 +197,7 @@ export async function aiCompletionParse(params: AICompletionParseRequest): Promi
   try {
     const workspaceManager = getWorkspaceManager();
     const workspace = workspaceManager.getCurrentWorkspace();
-    
+
     if (!workspace) {
       throw new Error("No workspace available");
     }
@@ -217,13 +217,13 @@ export async function aiCompletionParse(params: AICompletionParseRequest): Promi
 
     // 创建 AI 通道
     const aiChannel = new AiChannel({}, []);
-    
+
     // 注册扩展
     aiChannel.register();
 
     // 将 JSON Schema 转换为 Zod Schema
     const zodSchema = createZodSchemaFromJsonSchema(schema);
-    
+
     // 调用结构化解析
     const result = await aiChannel.completionParse(
       { modelKey },
@@ -244,10 +244,10 @@ export async function aiCompletionParse(params: AICompletionParseRequest): Promi
 function createZodSchemaFromJsonSchema(jsonSchema: any): ZodSchema {
   if (jsonSchema.type === "object" && jsonSchema.properties) {
     const shape: Record<string, any> = {};
-    
+
     for (const [key, prop] of Object.entries(jsonSchema.properties)) {
       const propSchema = prop as any;
-      
+
       if (propSchema.type === "string") {
         shape[key] = z.string();
       } else if (propSchema.type === "number") {
@@ -260,10 +260,10 @@ function createZodSchemaFromJsonSchema(jsonSchema: any): ZodSchema {
         shape[key] = z.any();
       }
     }
-    
+
     return z.object(shape);
   }
-  
+
   // 默认返回 any schema
   return z.any();
 }
@@ -322,7 +322,7 @@ function createConfirmCallToolCallback(sseWriter?: SSEWriter, sessionId?: string
     return new Promise((resolve, reject) => {
       // 生成唯一确认 ID
       const confirmId = uuidv4();
-      
+
       Logger.debug(`Tool confirmation requested for ${tool.function.name}, confirmId: ${confirmId}`);
 
       // 通过 SSE 发送工具确认请求
@@ -351,7 +351,7 @@ function createConfirmCallToolCallback(sseWriter?: SSEWriter, sessionId?: string
       // 监听确认响应
       const handleConfirmResponse = (data: any) => {
         clearTimeout(timeout);
-        
+
         if (data.confirmed) {
           Logger.debug(`Tool confirmed: ${tool.function.name}`);
           resolve(data.args || tool.function.args);
@@ -372,7 +372,7 @@ function createConfirmCallToolCallback(sseWriter?: SSEWriter, sessionId?: string
  */
 export function handleToolConfirmResponse(confirmId: string, confirmed: boolean, args?: any) {
   Logger.debug(`Tool confirmation response received: ${confirmId}, confirmed: ${confirmed}`);
-  
+
   // 触发确认事件
   toolConfirmEmitter.emit(`confirm_${confirmId}`, {
     confirmed,
@@ -389,9 +389,24 @@ export const chatCommands = {
 
   // 取消聊天完成  
   cancelChatCompletion,
-  
+
   // AI 结构化解析
   aiCompletionParse,
 };
 
 export default chatCommands;
+
+
+function getLabelByFirstUserContent(messages: Array<MyMessage>): string {
+  let label = "";
+  let firstUser = messages.find(
+    (x) => x.role == "user",
+  );
+  let firstUserContent = (firstUser as any)?.content;
+  if (typeof firstUserContent == "string") {
+    label = firstUserContent;
+  } else if (Array.isArray(firstUserContent)) {
+    label = firstUserContent.find((x) => x.type == "text")?.text || "";
+  }
+  return label;
+}

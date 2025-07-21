@@ -59,6 +59,8 @@ const ProviderIcon: React.FC<{ iconType: string; className?: string }> = ({ icon
     xai: { bg: 'bg-[#1da1f2]', text: 'text-white', content: 'X' },
     glm: { bg: 'bg-[#2c5aa0]', text: 'text-white', content: '智' },
     ollama: { bg: 'bg-[#4ade80]', text: 'text-white', content: '🦙' },
+    302: { bg: 'bg-[#6b7280]', text: 'text-white', content: '3' },
+    kimi: { bg: 'bg-[#00d4aa]', text: 'text-white', content: 'K' },
     custom: { bg: 'bg-[#6b7280]', text: 'text-white', content: '其' },
   };
 
@@ -149,6 +151,7 @@ export function ProviderSettings() {
       { key: 'xai', label: 'xAI', baseURL: 'https://api.x.ai/v1', icon: 'xai', description: 'xAI Grok models', hasApiKey: true, isBuiltIn: true },
       { key: 'glm', label: 'GLM', baseURL: 'https://open.bigmodel.cn/api/paas/v4', icon: 'glm', description: 'Zhipu GLM models', hasApiKey: true, isBuiltIn: true },
       { key: 'ollama', label: 'Ollama', baseURL: 'http://localhost:11434/v1', icon: 'ollama', description: 'Local Ollama models', hasApiKey: false, isBuiltIn: true },
+      { key: 'kimi', label: 'Kimi', baseURL: 'https://api.moonshot.cn/v1', icon: 'kimi', description: 'Moonshot Kimi models', hasApiKey: true, isBuiltIn: true },
       { key: 'unknown', label: 'Unknown Provider', baseURL: '', icon: 'custom', description: 'OpenAI compatible provider, configure apiKey and baseURL per model', hasApiKey: false, isBuiltIn: true }
     ];
   };
