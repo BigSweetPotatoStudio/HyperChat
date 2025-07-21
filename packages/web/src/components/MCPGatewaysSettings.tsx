@@ -105,7 +105,7 @@ export function MCPGatewaysSettings({
     const gatewayPath = gatewayName;
     return {
       sse: `${baseUrl}/mcp/${gatewayPath}/sse`,
-      streamableHttp: `${baseUrl}/mcp/${gatewayPath}/stream`
+      streamableHttp: `${baseUrl}/mcp/${gatewayPath}/mcp`
     };
   };
 
