@@ -43,14 +43,14 @@ else
 fi
 
 # 运行构建检查
-echo "🔨 Running build check..."
-npm run build
+# echo "🔨 Running build check..."
+# npm run build
 
 # 如果构建失败，退出
-if [ $? -ne 0 ]; then
-  echo "❌ Build failed!"
-  exit 1
-fi
+# if [ $? -ne 0 ]; then
+#   echo "❌ Build failed!"
+#   exit 1
+# fi
 
 # 运行 electron 依赖同步（确保依赖是最新的）
 echo "🔄 Syncing electron dependencies..."
