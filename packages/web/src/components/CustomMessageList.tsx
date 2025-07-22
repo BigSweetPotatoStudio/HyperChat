@@ -469,12 +469,13 @@ export const CustomMessageList = forwardRef<CustomMessageListRef, CustomMessageL
             <ReloadOutlined
               className="hover:text-cyan-400 cursor-pointer"
               onClick={() => {
-                if (message.role === 'user') {
-                  message.content_date = Date.now();
-                  onSumbit(messages.filter((_, i) => i <= index));
-                } else if (message.role === 'assistant') {
-                  onSumbit(messages.filter((_, i) => i < index));
-                }
+                // if (message.role === 'user') {
+                //   message.content_date = Date.now();
+                //   onSumbit(messages.filter((_, i) => i <= index));
+                // } else if (message.role === 'assistant') {
+                let lastUserToolIndex = messages.findLastIndex((msg) => msg.role === 'user' || msg.role === 'tool');
+                onSumbit(messages.filter((_, i) => i <= lastUserToolIndex));
+                // }
               }}
             />
           </Tooltip>

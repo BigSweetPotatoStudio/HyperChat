@@ -5,7 +5,7 @@
 
 import { AiChannel } from "../ai/ai.mjs";
 import { MyMessage, HyperToolCall } from "@dadigua/hyperchat-shared/types";
-import { BaseAIConfig } from "@dadigua/hyperchat-shared";
+import { AgentConfig, BaseAIConfig } from "@dadigua/hyperchat-shared";
 import { getBuiltinPrompts } from "../ai/hyperchat-builtin-prompts.mjs";
 import { getAppSettingsManager } from "../data/appSettingsService.mjs";
 import { Logger } from "../log.mjs";
@@ -72,17 +72,15 @@ export async function streamChatCompletion(params: ChatCompletionRequest): Promi
     }
 
     // 获取 Agent 配置
-    let agent = null;
-    if (agentName) {
-      const agents = await workspace.getAllAgents();
-      agent = agents.find((a) => a.name === agentName && a.scope === agentScope);
-      if (!agent) {
-        throw new Error(`Agent not found: ${agentName}`);
-      }
+    let agent = workspace.getAgentInstance(agentName, agentScope);
+
+    if (!agent) {
+      throw new Error(`Agent not found: ${agentName}`);
     }
+
     // console.log("Using Agent:", agentName, "agent:", agent);
     // 合并配置
-    const effectiveConfig = getEffectiveConfig(configOverrides, agent!, workspace.getSettings().aiConfig, aiSettings);
+    const effectiveConfig = getEffectiveConfig(configOverrides, agent?.getConfig(), workspace.getSettings().aiConfig, aiSettings);
     // console.log("Effective AI Config:", effectiveConfig);
     // 创建 AI 通道
     const aiChannel = new AiChannel({}, [...messages]);
@@ -112,15 +110,16 @@ export async function streamChatCompletion(params: ChatCompletionRequest): Promi
         sseWriter: sseWriter, // 传递 SSE 写入器
         confirm_call_tool_cb: confirmCallToolCb,
         userMessage: userMessage, // 传递用户消息
-        onUpdate: (_updateData?: any) => {
-          // 发送更新事件
-          // messageService.sendMessage({
-          //   type: "chat_stream_update",
-          //   data: {
-          //     messages: aiChannel.messages,
-          //     update: updateData,
-          //   },
-          // });
+        onUpdate: async (_updateData?: any) => {
+          await agent.setChatLog({
+            key: chatKey,
+            label: getLabelByFirstUserContent(aiChannel.messages),
+            messages: aiChannel.messages,
+            agentName,
+            dateTime: Date.now(),
+            chatType: "user",
+            configOverrides: effectiveConfig,
+          });
         },
       },
       {
@@ -130,28 +129,8 @@ export async function streamChatCompletion(params: ChatCompletionRequest): Promi
       }
     ).then(async () => {
       // 完成后保存聊天记录
-      if (agentName && agent) {
-        const agentInstance = workspace.getAgentInstance(agentName, agentScope);
-        if (!agentInstance) {
-          throw new Error(`Agent 不存在: ${agentName}`);
-        }
-
-        await agentInstance.setChatLog({
-          key: chatKey,
-          label: getLabelByFirstUserContent(aiChannel.messages),
-          messages: aiChannel.messages,
-          agentName,
-          dateTime: Date.now(),
-          chatType: "user",
-          configOverrides,
-        });
-      }
-
-      // 新的消息事件架构中，完成事件已经在 AiChannel 中处理
-    }).catch((error) => {
+    }).catch(async (error) => {
       Logger.error("Chat completion error:", error);
-
-      // 新的消息事件架构中，错误事件已经在 AiChannel 中处理
     });
   } catch (error) {
     Logger.error("Stream chat completion error:", error);
