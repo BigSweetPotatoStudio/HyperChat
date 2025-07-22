@@ -1,11 +1,12 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { render, Box, Text, Newline } from 'ink';
+import { render, Box, Text } from 'ink';
 import TextInput from 'ink-text-input';
 import Spinner from 'ink-spinner';
 import { marked } from 'marked';
 import TerminalRenderer from 'marked-terminal';
 import { t } from '../../i18n.mjs';
 import type { MyMessage, CommonContent } from '@dadigua/hyperchat-shared/types';
+import chalk from 'chalk';
 
 // 收集的消息数据类型（模仿前端逻辑）
 interface CollectedMessageData {
@@ -17,15 +18,16 @@ interface CollectedMessageData {
 // 配置 marked 以使用终端渲染器
 marked.setOptions({
   // @ts-ignore - marked-terminal 类型定义问题
-  renderer: new TerminalRenderer()
+  renderer: new TerminalRenderer({})
 });
 
 // 辅助函数：渲染 Markdown 内容
 const renderMarkdown = (content: string): string => {
   try {
     const result = marked(content);
-    // 确保返回字符串类型
-    return typeof result === 'string' ? result : content;
+    // 确保返回字符串类型，并移除末尾的换行符
+    const markdown = typeof result === 'string' ? result : content;
+    return markdown.replace(/\n+$/, ''); // 移除末尾的换行符
   } catch (error) {
     // 如果 Markdown 解析失败，返回原始文本
     return content;
@@ -70,7 +72,7 @@ const renderContent = (content: string | CommonContent): string => {
 export const ChatUI: React.FC<ChatUIProps> = ({ onUserInput, onExit, messages: externalMessages, workspaceInfo }) => {
   const [internalMessages, setInternalMessages] = useState<MyMessage[]>([]); // 内部消息状态
   const [forceUpdate, setForceUpdate] = useState(0); // 强制更新计数器
-  
+
   // 优先使用外部传入的消息，如果没有则使用内部状态
   const messages = externalMessages || internalMessages;
   const [input, setInput] = useState('');
@@ -200,11 +202,11 @@ export const ChatUI: React.FC<ChatUIProps> = ({ onUserInput, onExit, messages: e
   // 将消息数组转换为收集的消息数据
   const messages2collectMessages = (messageList: MyMessage[]): CollectedMessageData[] => {
     if (!messageList?.length) return [];
-    
+
     const result: CollectedMessageData[] = [];
     const isUserLikeRole = (role: string) => role === "user" || role === "system" || role === "hyper_memory";
     const isAssistantLikeRole = (role: string) => role === "assistant" || role === "tool";
-    
+
     for (let i = 0; i < messageList.length; i++) {
       const message = messageList[i];
       // 确保 content_attached 有默认值
@@ -237,7 +239,7 @@ export const ChatUI: React.FC<ChatUIProps> = ({ onUserInput, onExit, messages: e
         });
       }
     }
-    
+
     return result;
   };
 
@@ -270,23 +272,23 @@ export const ChatUI: React.FC<ChatUIProps> = ({ onUserInput, onExit, messages: e
   // 渲染消息组（模仿前端 CustomMessageList）
   const renderMessageGroup = (collectedData: CollectedMessageData) => {
     const { type, messages: msgList, index } = collectedData;
-    
+
     if (type === "user" || type === "system" || type === "hyper_memory") {
       const message = msgList[0];
       if (!message) return null;
-      
+
       const iconMap = {
         user: '🧑',
         system: '💻',
         hyper_memory: '🧠'
       };
-      
+
       const colorMap = {
         user: 'blue' as const,
         system: 'yellow' as const,
         hyper_memory: 'magenta' as const
       };
-      
+
       return (
         <Box key={`${type}-${index}`} flexDirection="column" marginBottom={1}>
           <Text color={colorMap[type]}>
@@ -297,23 +299,30 @@ export const ChatUI: React.FC<ChatUIProps> = ({ onUserInput, onExit, messages: e
     } else if (type === "assistant_group") {
       // 处理 assistant 和 tool 消息组
       return (
-        <Box key={`assistant-group-${index}`} flexDirection="column" marginBottom={1}>
+        <Box key={`assistant-group-${index}`} flexDirection="column" marginBottom={1} borderStyle="single" borderBottom={true}>
           {/* 只显示一次 AI 标签 */}
           <Text color="green">🤖 {t`AI:`}</Text>
-          
+
           {msgList.map((message, msgIndex) => {
             if (message.role === 'assistant') {
               return (
                 <Box key={`assistant-${msgIndex}`} flexDirection="column">
                   {/* 移除了重复的 AI: 标签 */}
-                  
+
                   {/* 推理内容 */}
                   {message.reasoning_content && (
-                    <Box marginLeft={2} marginBottom={1}>
+                    <Box marginLeft={2} marginBottom={0}>
                       <Text color="gray">💭 {t`thinking`}: {message.reasoning_content}</Text>
                     </Box>
                   )}
-                  
+
+                  {/* 主要内容 */}
+                  {message.content && (
+                    <Box marginLeft={2}>
+                      <Text>{renderMarkdown(renderContent(message.content))}</Text>
+                    </Box>
+                  )}
+
                   {/* 工具调用 */}
                   {message.content_tool_calls && message.content_tool_calls.map((tool, toolIndex) => {
                     // 根据消息状态显示不同的工具调用状态
@@ -333,14 +342,9 @@ export const ChatUI: React.FC<ChatUIProps> = ({ onUserInput, onExit, messages: e
                     };
 
                     const toolDisplay = getToolCallDisplay();
-                    
-                    // 查找对应的工具结果
-                    const toolResult = msgList.find(msg => 
-                      msg.role === 'tool' && msg.tool_call_id === tool.id
-                    );
-                    
+
                     return (
-                      <Box key={`tool-call-${toolIndex}`} marginLeft={2} flexDirection="column">
+                      <Box key={`tool-call-${toolIndex}`} marginLeft={2} flexDirection="column" marginTop={0} marginBottom={0}>
                         <Text color={toolDisplay.color}>
                           {toolDisplay.icon} {toolDisplay.text} {tool.displayName || tool.originalName || tool.function.name}
                         </Text>
@@ -351,7 +355,7 @@ export const ChatUI: React.FC<ChatUIProps> = ({ onUserInput, onExit, messages: e
                             return argsStr.length > 100 ? argsStr.substring(0, 100) + '...' : argsStr;
                           })()})</Text>
                         )}
-                        
+
                         {/* 工具结果状态 */}
                         {/* {toolResult && (
                           <Box marginLeft={2}>
@@ -367,19 +371,9 @@ export const ChatUI: React.FC<ChatUIProps> = ({ onUserInput, onExit, messages: e
                       </Box>
                     );
                   })}
-                  
-                  {/* 工具调用和主要内容之间添加换行 */}
-                  {message.content_tool_calls && message.content_tool_calls.length > 0 && message.content && (
-                    <Newline />
-                  )}
-                  
-                  {/* 主要内容 */}
-                  {message.content && (
-                    <Box marginLeft={2}>
-                      <Text>{renderMarkdown(renderContent(message.content))}</Text>
-                    </Box>
-                  )}
-                  
+
+
+
                   {/* 错误信息 */}
                   {message.content_status === 'error' && message.content_error && (
                     <Box marginLeft={2}>
@@ -408,9 +402,9 @@ export const ChatUI: React.FC<ChatUIProps> = ({ onUserInput, onExit, messages: e
               };
 
               const statusDisplay = getToolStatusDisplay();
-              
+
               return (
-                <Box key={`tool-result-${msgIndex}`} marginLeft={2} marginBottom={1} flexDirection="column">
+                <Box key={`tool-result-${msgIndex}`} marginLeft={2} flexDirection="column">
                   <Text color={statusDisplay.color}>
                     {statusDisplay.icon} {statusDisplay.text} {message.tool_call_name || 'Tool'}
                   </Text>
@@ -432,7 +426,7 @@ export const ChatUI: React.FC<ChatUIProps> = ({ onUserInput, onExit, messages: e
         </Box>
       );
     }
-    
+
     return null;
   };
 
