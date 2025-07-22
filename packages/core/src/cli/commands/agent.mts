@@ -83,7 +83,7 @@ export async function listAgents() {
     const workspacePath = await getCurrentWorkspacePath();
 
     logger.info(`📍 ${t`Working directory:`} ${currentWorkingDirectory}`);
-    logger.info(`🎯 ${t`Using workspace:`} ${workspacePath}`);
+    
     if (currentWorkingDirectory !== workspacePath) {
       logger.info(`💡 ${t`Configuration loaded from workspace above`}`);
     }
@@ -158,7 +158,7 @@ export async function createAgent(name: string) {
     const workspacePath = await getCurrentWorkspacePath();
 
     logger.info(`📍 ${t`Working directory:`} ${currentWorkingDirectory}`);
-    logger.info(`🎯 ${t`Using workspace:`} ${workspacePath}`);
+    
     if (currentWorkingDirectory !== workspacePath) {
       logger.info(`💡 ${t`Configuration loaded from workspace above`}`);
     }

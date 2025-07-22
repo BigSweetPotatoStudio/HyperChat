@@ -38,7 +38,7 @@ export async function listTasks() {
 
     // 智能获取当前工作区
     const workspacePath = await getCurrentWorkspacePath();
-    logger.info(`🎯 ${t`Using workspace:`} ${workspacePath}`);
+    
 
     // 获取任务列表
     const tasks = await Command.getAllTasks({ workspacePath });
@@ -90,7 +90,7 @@ export async function createTask(taskName: string, options: {
 
     // 获取当前工作区
     const workspacePath = await getCurrentWorkspacePath();
-    logger.info(`🎯 ${t`Using workspace:`} ${workspacePath}`);
+    
 
     // 验证参数
     if (!options.description) {

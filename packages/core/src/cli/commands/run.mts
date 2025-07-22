@@ -28,7 +28,7 @@ export async function startRun(options: RunOptions = {}) {
     
     // 确定工作区路径
     const workspacePath = options.workspace || process.cwd();
-    logger.info(`🎯 ${t`Using workspace:`} ${workspacePath}`);
+    
     
     // 第一阶段：快速初始化工作区配置
     logger.info(`⏳ ${t`Phase 1: Quickly loading workspace configuration...`}`);

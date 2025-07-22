@@ -61,7 +61,7 @@ export async function startChat(initialMessage?: string, options: ChatOptions = 
     const currentWorkspacePath = workspaceManager.getCurrentWorkspacePath();
     
     logger.info(`📍 ${t`Working directory:`} ${currentWorkingDirectory}`);
-    logger.info(`🎯 ${t`Using workspace:`} ${currentWorkspacePath}`);
+    
     if (currentWorkingDirectory !== currentWorkspacePath) {
       logger.info(`💡 ${t`Configuration loaded from workspace above`}`);
     }
