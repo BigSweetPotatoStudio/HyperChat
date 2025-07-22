@@ -28,6 +28,7 @@
     "url": "git+https://github.com/BigSweetPotatoStudio/HyperChat.git"
   },
   "dependencies": {
+    "@ai-sdk/openai-compatible": "0.2.16",
     "@dadigua/hyperchat-shared": "file:../shared",
     "adm-zip": "^0.5.14",
     "bonjour": "^3.5.0",

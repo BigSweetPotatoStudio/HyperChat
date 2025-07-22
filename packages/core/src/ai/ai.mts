@@ -9,7 +9,7 @@ import { createOpenAI, openai } from '@ai-sdk/openai';
 import { createAnthropic } from '@ai-sdk/anthropic';
 import { createGoogleGenerativeAI } from '@ai-sdk/google';
 import { createOpenRouter } from '@openrouter/ai-sdk-provider';
-import { createOpenAICompatible } from '@ai-sdk/openai-compatible';
+import { createOpenAICompatible, MetadataExtractor } from '@ai-sdk/openai-compatible';
 import { jsonSchemaToZod } from "json-schema-to-zod";
 import { z, ZodSchema } from "zod";
 // 兼容旧版本的 zod
@@ -189,7 +189,6 @@ export class AiChannel {
       });
       ai = aiProvider(modelConfig.model);
     } else if (modelConfig.provider === 'openrouter') {
-      // 默认使用 OpenAI 兼容格式
       aiProvider = createOpenRouter({
         baseURL: modelConfig.baseURL,
         apiKey: modelConfig.apiKey,
@@ -200,6 +199,7 @@ export class AiChannel {
       aiProvider = createOpenAI({
         baseURL: modelConfig.baseURL,
         apiKey: modelConfig.apiKey,
+        compatibility: "strict",
         fetch
       });
       ai = aiProvider(modelConfig.model);
@@ -323,6 +323,15 @@ export class AiChannel {
       for await (const delta of result.fullStream) {
         // console.log("delta", delta);
         if (delta.type == "error") {
+          if (params.sseWriter) {
+            params.sseWriter.write({
+              type: "chat_message_update",
+              data: {
+                messageId: messageId,
+                delta: delta,
+              },
+            });
+          }
           throw delta.error;
         }
         if (delta.type == "text-delta") {
