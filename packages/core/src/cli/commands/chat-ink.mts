@@ -142,7 +142,6 @@ export async function startChatInk(initialMessage?: string, options: ChatOptions
       totalToolsCount: totalTools,
       currentAgent: agentConfig.name,
       currentModel: env.effectiveConfig.modelKey,
-      agentModelSource: (agentConfig.modelKey && agentConfig.modelKey === env.effectiveConfig.modelKey) ? 'agent' as const : 'inherited' as const,
       agentAllowedMCPs: agentAllowedMCPs,
       agentAvailableTools,
       agentToolNames

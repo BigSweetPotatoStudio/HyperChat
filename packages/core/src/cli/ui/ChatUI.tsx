@@ -25,7 +25,6 @@ interface ChatUIProps {
     totalToolsCount: number;
     currentAgent?: string;
     currentModel?: string;
-    agentModelSource?: 'agent' | 'inherited';
     agentAllowedMCPs?: number;
     agentAvailableTools?: number;
     agentToolNames?: string[];
@@ -428,7 +427,7 @@ export const ChatUI: React.FC<ChatUIProps> = ({ onUserInput, onExit, messages: e
                 <Text>🌐 {t`Current Agent:`} {workspaceInfo.currentAgent}</Text>
               )}
               {workspaceInfo.currentModel && (
-                <Text>🤖 {t`Model:`} {workspaceInfo.currentModel}{workspaceInfo.agentModelSource === 'agent' ? ` (${t`from agent config`})` : ''}</Text>
+                <Text>🤖 {t`Model:`} {workspaceInfo.currentModel}</Text>
               )}
               {workspaceInfo.agentAllowedMCPs !== undefined && (
                 <Text>🛠️ {t`Agent allowed tools:`} {workspaceInfo.agentAllowedMCPs === 0 ? t`All available tools` : `${workspaceInfo.agentAllowedMCPs} configured, ${workspaceInfo.agentAvailableTools || 0} available`}</Text>
