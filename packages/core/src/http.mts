@@ -119,23 +119,22 @@ export async function initHttp(): Promise<void> {
   // 静态资源路由
   app.use(urlPrefix, express.static(staticPath, staticOptions));
   app.use(urlPrefix + "/temp", express.static(path.join(appDataDir, "temp")));
-
+  const mcpRouterPrefix = urlPrefix + "/mcpGateWay";
   // MCP 路由注册
-  let mcpRouter = await registers(urlPrefix + "/mcp");
-  app.use(urlPrefix + "/mcp", mcpRouter);
+  let mcpRouter = await registers(mcpRouterPrefix);
+  app.use(mcpRouterPrefix, mcpRouter);
 
   // MCP 路由刷新端点
   EVENT.on("refreshMCPRoutes", async () => {
     try {
-      const newRouter = await refreshRoutes(urlPrefix + "/mcp");
-
+      const newRouter = await refreshRoutes(mcpRouterPrefix);
       // 安全地移除旧路由
-      app._router.stack = app._router.stack.filter((layer: any) => {
+      app.router.stack = app.router.stack.filter((layer: any) => {
         return layer.handle !== mcpRouter;
       });
 
       mcpRouter = newRouter;
-      app.use(urlPrefix + "/mcp", mcpRouter);
+      app.use(mcpRouterPrefix, mcpRouter);
 
     } catch (error) {
       Logger.error("刷新 MCP 路由时出错:", error);
