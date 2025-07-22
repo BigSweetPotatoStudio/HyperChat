@@ -13,7 +13,8 @@ import type {
   AISettings,
   HyperChatCompletionTool,
   BaseAIConfig,
-  AppSettings
+  AppSettings,
+  IMCPClient
 } from '@dadigua/hyperchat-shared';
 
 /**
@@ -25,7 +26,7 @@ export interface AIEnvironment {
   aiSettings: AISettings;
   agent?: AgentInstance | undefined;
   agentConfig?: AgentConfig;
-  mcpClients: any[];
+  mcpClients: IMCPClient[];
   effectiveConfig: BaseAIConfig & { modelKey: string };
 }
 
