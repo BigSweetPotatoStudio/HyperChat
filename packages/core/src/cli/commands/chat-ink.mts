@@ -9,6 +9,7 @@ import { render } from 'ink';
 import process from 'process';
 import { Logger } from '../utils/logger.mjs';
 import { Logger as LoggerClass } from '../../log.mjs';
+import { Command } from '../../command.mjs';
 import { workspaceManager } from '../../workspace/index.mjs';
 import {
   initializeAIEnvironment,
@@ -85,8 +86,9 @@ export async function startChatInk(initialMessage?: string, options: ChatOptions
 
     // 如果命令行指定了模型，覆盖配置
     if (options.model) {
-      const availableModels = env.aiSettings?.models || [];
-      const isModelAvailable = availableModels.some(m => m.key === options.model);
+      const appSettings = await Command.getAppSettings();
+      const availableModels = appSettings.ai?.models || [];
+      const isModelAvailable = availableModels.some((m: any) => m.key === options.model);
 
       if (isModelAvailable) {
         env.effectiveConfig.modelKey = options.model;
@@ -123,9 +125,9 @@ export async function startChatInk(initialMessage?: string, options: ChatOptions
 
     logger.info(`👥 ${t`Current workspace Agent count:`} ${agentsSummary.length}`);
     logger.info(`🔧 ${t`Current workspace available MCP clients:`} ${mcpClients.length}`);
-    logger.info(`🛠️  ${t`Total available MCP tools:`} ${totalTools}`);
-    if (env.agentConfig?.name) {
-      logger.info(`🌐 ${t`Current Agent:`} ${env.agentConfig?.name}`);
+    const agentConfig = env.agent.getConfig();
+    if (agentConfig.name) {
+      logger.info(`🌐 ${t`Current Agent:`} ${agentConfig.name}`);
     }
 
     // 准备工作区信息
@@ -134,7 +136,7 @@ export async function startChatInk(initialMessage?: string, options: ChatOptions
       agentCount: agentsSummary.length,
       mcpClientsCount: mcpClients.length,
       totalToolsCount: totalTools,
-      currentAgent: env.agentConfig?.name,
+      currentAgent: env.agent.getConfig().name,
       currentModel: effectiveConfig.modelKey
     };
 
@@ -170,7 +172,7 @@ export async function startChatInk(initialMessage?: string, options: ChatOptions
 
       try {
         // 构建系统提示词
-        const agentName = env.agentConfig?.name || "";
+        const agentName = env.agent.getConfig().name || "";
         const systemPrompt = getBuiltinPrompts(
           env.workspace.workspacePath,
           effectiveConfig.prompt,
@@ -202,7 +204,7 @@ export async function startChatInk(initialMessage?: string, options: ChatOptions
                   key: chatKey,
                   label: getLabelByFirstUserContent(aiChannel.messages),
                   messages: aiChannel.messages,
-                  agentName: env.agentConfig?.name || 'default',
+                  agentName: env.agent.getConfig().name || 'default',
                   dateTime: Date.now(),
                   chatType: "user",
                   configOverrides: effectiveConfig,

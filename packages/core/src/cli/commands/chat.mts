@@ -79,8 +79,9 @@ export async function startChat(initialMessage?: string, options: ChatOptions = 
 
     // 如果命令行指定了模型，覆盖配置
     if (options.model) {
-      const availableModels = env.aiSettings?.models || [];
-      const isModelAvailable = availableModels.some(m => m.key === options.model);
+      const appSettings = await Command.getAppSettings();
+      const availableModels = appSettings.ai?.models || [];
+      const isModelAvailable = availableModels.some((m: any) => m.key === options.model);
 
       if (isModelAvailable) {
         env.effectiveConfig.modelKey = options.model;
@@ -117,10 +118,10 @@ export async function startChat(initialMessage?: string, options: ChatOptions = 
     const mcpClients = env.workspace.getMcpClients();
     const totalTools = mcpClients.flatMap((client: any) => client.tools || []).length;
     logger.info(`🔧 ${t`Current workspace available MCP clients:`} ${mcpClients.length}`);
-    logger.info(`🛠️  ${t`Total available MCP tools:`} ${totalTools}`);
     
-    if (env.agentConfig?.name) {
-      logger.info(`🌐 ${t`Current Agent:`} ${env.agentConfig?.name}`);
+    const agentConfig = env.agent.getConfig();
+    if (agentConfig.name) {
+      logger.info(`🌐 ${t`Current Agent:`} ${agentConfig.name}`);
     }
     // 创建AI通道
     const aiChannel = createAIChannel();
@@ -147,7 +148,7 @@ export async function startChat(initialMessage?: string, options: ChatOptions = 
 
 
       // 构建系统提示词
-      const agentName = env.agentConfig?.name || "";
+      const agentName = env.agent.getConfig().name || "";
       const systemPrompt = getBuiltinPrompts(
         env.workspace.workspacePath,
         effectiveConfig.prompt,
@@ -179,7 +180,7 @@ export async function startChat(initialMessage?: string, options: ChatOptions = 
                 key: chatKey,
                 label: getLabelByFirstUserContent(aiChannel.messages),
                 messages: aiChannel.messages,
-                agentName: env.agentConfig?.name || 'default',
+                agentName: env.agent.getConfig().name || 'default',
                 dateTime: Date.now(),
                 chatType: "user",
                 configOverrides: effectiveConfig,
@@ -450,7 +451,7 @@ export async function startChat(initialMessage?: string, options: ChatOptions = 
         const effectiveConfig = getEffectiveConfig();
         
         // 构建系统提示词
-        const agentName = env.agentConfig?.name || "";
+        const agentName = env.agent.getConfig().name || "";
         const systemPrompt = getBuiltinPrompts(
           env.workspace.workspacePath,
           effectiveConfig.prompt,
@@ -474,7 +475,7 @@ export async function startChat(initialMessage?: string, options: ChatOptions = 
                   key: interactiveChatKey,
                   label: getLabelByFirstUserContent(aiChannel.messages),
                   messages: aiChannel.messages,
-                  agentName: env.agentConfig?.name || 'default',
+                  agentName: env.agent.getConfig().name || 'default',
                   dateTime: Date.now(),
                   chatType: "user",
                   configOverrides: effectiveConfig,
