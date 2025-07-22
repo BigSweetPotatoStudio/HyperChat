@@ -32,7 +32,7 @@ async function createServer() {
   registerSearchFileContentTool(server);
   registerReadManyFilesTool(server);
   registerRunShellCommandTool(server);
-  registerSaveMemoryTool(server);
+  // registerSaveMemoryTool(server);
 
   const [clientTransport, serverTransport] = InMemoryTransport.createLinkedPair();
   

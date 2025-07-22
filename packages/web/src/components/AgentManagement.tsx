@@ -77,7 +77,7 @@ export const AgentManagement = forwardRef<AgentManagementRef, AgentManagementPro
   const [loadingChatHistory, setLoadingChatHistory] = useState(false);
   const [form] = Form.useForm();
   const [scopeFilter, setScopeFilter] = useState<'all' | 'workspace' | 'global'>('all');
-  const [createScope, setCreateScope] = useState<'workspace' | 'global'>('workspace');
+  const [createScope, setCreateScope] = useState<'workspace' | 'global'>('global');
   const refresh = useForceUpdate();
   // 从 Context 获取 AI 设置
   const { aiSettings, loading: aiSettingsLoading } = useAISettings();
@@ -613,7 +613,7 @@ export const AgentManagement = forwardRef<AgentManagementRef, AgentManagementPro
               // 只有在 aiSettings 加载完成后才设置默认值
               if (aiSettings && !aiSettingsLoading) {
                 const defaultValues = {
-                  allowMCPs: [],
+                  allowMCPs: ["hyper_system", "hyper_browser"],
                   isConfirmCallTool: workspaceAIConfig?.isConfirmCallTool ?? false,
                   temperature: workspaceAIConfig?.temperature ?? 1,
                   maxTokens: workspaceAIConfig?.maxTokens,
@@ -626,7 +626,7 @@ export const AgentManagement = forwardRef<AgentManagementRef, AgentManagementPro
                 form.setFieldsValue(defaultValues);
               }
               // 重置 scope 选择为默认值
-              setCreateScope('workspace');
+              setCreateScope('global');
             }
           }
         }}
@@ -692,23 +692,7 @@ export const AgentManagement = forwardRef<AgentManagementRef, AgentManagementPro
             label={t`Name`}
             rules={[{ required: true, message: t`Please enter the name` }]}
           >
-            <Input
-              addonBefore={
-                <Popover
-                  trigger="click"
-                  title={t`please select emoji!`}
-                  content={
-                    <EmojiPicker
-                      onEmojiClick={(emoji) =>
-                        form.setFieldValue("label", emoji.emoji + form.getFieldValue("label"))
-                      }
-                    />
-                  }
-                >
-                  <SmileOutlined className=" cursor-pointer" />
-                </Popover>
-              }
-            />
+            <Input />
           </Form.Item>
 
           <Form.Item

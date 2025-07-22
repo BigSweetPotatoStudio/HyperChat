@@ -20,12 +20,12 @@ export class TokenCalculator {
         return '';
       }).join('');
     }
-    
+
     // 如果消息有实际的token使用统计，优先使用
     if (message.content_usage?.total_tokens) {
       return message.content_usage.total_tokens;
     }
-    
+
     // 简单估算：1 token ≈ 4 字符（对英文），1 token ≈ 1.5 字符（对中文）
     // 取平均值：1 token ≈ 2.5 字符
     return Math.ceil(content.length / 2.5);
@@ -65,7 +65,7 @@ export interface MemorySummary {
 export class MemoryCompressor {
   constructor(
     private generateSummaryFn: (messages: MyMessage[], modelKey: string) => Promise<MemorySummary>
-  ) {}
+  ) { }
 
   /**
    * 获取当前AI设置配置
@@ -85,13 +85,13 @@ export class MemoryCompressor {
     const strategy = params.compressionStrategy || "tokens";
     const lastMemoryIndex = messages.findLastIndex(m => m.role === "hyper_memory" && m.content_status === "success");
     const startIndex = lastMemoryIndex === -1 ? 0 : lastMemoryIndex + 1;
-    
+
     // 基于token数量的压缩策略
     if (strategy === "tokens") {
       return this.shouldCompressMemoryByTokens(messages, params, startIndex);
     }
-    
-    
+
+
     // 基于对话轮数的压缩策略（原有逻辑）
     return this.shouldCompressMemoryByDialogs(messages, params, startIndex);
   }
@@ -101,11 +101,11 @@ export class MemoryCompressor {
    */
   private shouldCompressMemoryByTokens(messages: MyMessage[], params: BaseAIConfig, startIndex: number): boolean {
     const maxTokens = params.maxContextTokens || 36000;
-    
+
     const promptTokens = TokenCalculator.estimatePromptTokenCount(params.prompt);
     const messageTokens = TokenCalculator.calculateMessagesTokenCount(messages, startIndex);
     const totalTokens = promptTokens + messageTokens;
-    
+
     Logger.debug(`Token usage: prompt=${promptTokens}, messages=${messageTokens}, total=${totalTokens}, limit=${maxTokens}`);
     return totalTokens >= maxTokens;
   }
@@ -128,15 +128,18 @@ export class MemoryCompressor {
    * 执行记忆压缩
    */
   async compressMemory(
-    messages: MyMessage[], 
-    modelKey: string, 
-    onUpdate?: (r?: any) => void, 
+    messages: MyMessage[],
+    modelKey: string,
+    onUpdate?: (r?: any) => void,
     sseWriter?: SSEWriter
   ): Promise<MyMessage> {
     const lastMemoryMessageIndex = messages.findLastIndex(m => m.role === "hyper_memory" && m.content_status === "success");
     const startIndex = lastMemoryMessageIndex === -1 ? 0 : lastMemoryMessageIndex;
-    const lastUserMessageIndex = messages.findLastIndex(m => m.role === "user");
-    const compressMessagesCount = lastUserMessageIndex - lastMemoryMessageIndex - 1;
+    let lastMessageIndex = messages.length;
+    if (messages.length > 0 && messages[messages.length - 1].role === "user") { 
+      lastMessageIndex -= 1; // 如果最后一条消息是用户消息，则不参与压缩
+    }
+    const compressMessagesCount = lastMessageIndex - lastMemoryMessageIndex - 1;
 
     // 生成内存消息的 messageId
     const timestamp = Math.floor(Date.now() / 1000);
@@ -162,13 +165,13 @@ export class MemoryCompressor {
 
     try {
       const useModelKey = modelKey;
-      
+
       if (!useModelKey) {
         throw new Error('未找到可用的AI模型');
       }
 
       const summary = await this.generateSummaryFn(
-        messages.slice(startIndex, lastUserMessageIndex), 
+        messages.slice(startIndex, lastMessageIndex),
         useModelKey
       );
 
@@ -186,7 +189,7 @@ export class MemoryCompressor {
 
       onUpdate && onUpdate({ type: "compress", data: summary });
       Logger.info(`Memory compressed: ${compressMessagesCount} messages → 1 memory message`);
-      
+
       return memoryMessage;
     } catch (error) {
       memoryMessage.content_status = "error";
@@ -202,7 +205,7 @@ export class MemoryCompressor {
       onUpdate && onUpdate({ type: "compress_error", error });
       Logger.error("Memory compression failed:", error);
       Logger.warn("记忆压缩失败，继续使用完整对话历史");
-      
+
       return memoryMessage;
     }
   }
@@ -228,8 +231,8 @@ export function createDefaultMemorySummaryGenerator(
     const conversationText = messages.map(m => {
       if (m.role === "user") return `用户: ${m.content}`;
       if (m.role === "assistant") return `助手: ${m.content}`;
-      if (m.role === "system") return `系统: ${m.content}`;
-      if (m.role === "tool") return `工具结果: ${m.content}`;
+      // if (m.role === "system") return `系统: ${m.content}`;
+      // if (m.role === "tool") return `工具结果: ${m.content}`;
       return "";
     }).filter(Boolean).join("\n");
 
