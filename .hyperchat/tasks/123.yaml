@@ -1,5 +1,0 @@
-name: '123'
-agentName: 人工智能
-description: 你好
-cron: 1 * * * *
-disabled: false

@@ -115,38 +115,38 @@ export function Workspace() {
     return [25, 50, 25]; // 对应25%、50%、25%
   });
 
-  // 监听MCP客户端状态变化
-  useEffect(() => {
-    // 监听传统的 MCP 变化消息（兼容性）
-    const unsubscribeChangeMcp = msg_receive("message-from-main", (res: MessageData) => {
-      if (res.type === "changeMcpClient") {
-        const payload = res.data as MessageDataMap["changeMcpClient"];
+  // // 监听MCP客户端状态变化
+  // useEffect(() => {
+  //   // 监听传统的 MCP 变化消息（兼容性）
+  //   const unsubscribeChangeMcp = msg_receive("message-from-main", (res: MessageData) => {
+  //     if (res.type === "changeMcpClient") {
+  //       const payload = res.data as MessageDataMap["changeMcpClient"];
 
-        // 更新当前工作区的MCP客户端数据
-        if (currentWorkspace && payload.workspacePath === currentWorkspace.path) {
-          setCurrentWorkspaceDetails(prev => {
-            if (!prev) return null;
-            const newDetails = { ...prev };
+  //       // 更新当前工作区的MCP客户端数据
+  //       if (currentWorkspace && payload.workspacePath === currentWorkspace.path) {
+  //         setCurrentWorkspaceDetails(prev => {
+  //           if (!prev) return null;
+  //           const newDetails = { ...prev };
 
-            if (payload.status === "deleted") {
-              // 删除客户端
-              delete newDetails.mcpClients[payload.serverName];
-            } else {
-              // 添加或更新客户端
-              newDetails.mcpClients[payload.serverName] = payload;
-            }
+  //           if (payload.status === "deleted") {
+  //             // 删除客户端
+  //             delete newDetails.mcpClients[payload.serverName];
+  //           } else {
+  //             // 添加或更新客户端
+  //             newDetails.mcpClients[payload.serverName] = payload;
+  //           }
 
-            return newDetails;
-          });
-        }
-      }
-    });
+  //           return newDetails;
+  //         });
+  //       }
+  //     }
+  //   });
 
-    // 返回清理函数
-    return () => {
-      if (unsubscribeChangeMcp) unsubscribeChangeMcp();
-    };
-  }, []);
+  //   // 返回清理函数
+  //   return () => {
+  //     if (unsubscribeChangeMcp) unsubscribeChangeMcp();
+  //   };
+  // }, []);
 
   // 加载当前工作区（新架构：只需要当前工作区）
   const loadCurrentWorkspace = async () => {
@@ -234,8 +234,6 @@ export function Workspace() {
     setSwitchingWorkspace(true);
     try {
 
-
-      // if (workspaceConfig) {
       // 工作区已存在，切换到该工作区
       await switchToWorkspace(values.path);
 
@@ -251,12 +249,7 @@ export function Workspace() {
       setOpenModalOpen(false);
       form.resetFields();
       setSelectedPath("");
-      // } else {
-      //   // 工作区不存在，提示用户是否创建
-      //   setPendingWorkspacePath(values.path);
-      //   setOpenModalOpen(false);
-      //   setConfirmCreateModalOpen(true);
-      // }
+
     } catch (error) {
       handleError(error, "Failed to open workspace");
     } finally {
@@ -662,7 +655,7 @@ export function Workspace() {
       setActiveTabKey(tabKey);
     } else {
       // 创建新的聊天标签页
-      const tabTitle = chatLog ? `${agent.config.name} - ${chatLog.label || chatLog.key}` : agent.config.name;
+      const tabTitle = chatLog ? `${agent.config.name} - ${chatLog.label?.slice(0, 10) || chatLog.key}` : agent.config.name;
       const newTab: ChatTab = {
         key: tabKey,
         title: tabTitle,
@@ -719,8 +712,8 @@ export function Workspace() {
         workspacePath: workspace.path,
         closable: false,
       };
-      setChatTabs(prev => [defaultTab, ...prev]);
-      if (!activeTabKey) {
+      setChatTabs(prev => [defaultTab]);
+      if (!chatTabs.find(tab => tab.key === activeTabKey)) {
         setActiveTabKey(defaultTabKey);
       }
     }
