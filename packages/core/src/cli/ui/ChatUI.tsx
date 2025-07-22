@@ -25,6 +25,10 @@ interface ChatUIProps {
     totalToolsCount: number;
     currentAgent?: string;
     currentModel?: string;
+    agentModelSource?: 'agent' | 'inherited';
+    agentAllowedMCPs?: number;
+    agentAvailableTools?: number;
+    agentToolNames?: string[];
   };
 }
 
@@ -420,12 +424,21 @@ export const ChatUI: React.FC<ChatUIProps> = ({ onUserInput, onExit, messages: e
           {workspaceInfo && (
             <>
               <Text>📍 {t`Workspace:`} {workspaceInfo.path}</Text>
-              <Text>👥 {t`Agents:`} {workspaceInfo.agentCount} | 🔧 {t`MCP Clients:`} {workspaceInfo.mcpClientsCount} | 🛠️ {t`Tools:`} {workspaceInfo.totalToolsCount}</Text>
               {workspaceInfo.currentAgent && (
                 <Text>🌐 {t`Current Agent:`} {workspaceInfo.currentAgent}</Text>
               )}
               {workspaceInfo.currentModel && (
-                <Text>🤖 {t`Model:`} {workspaceInfo.currentModel}</Text>
+                <Text>🤖 {t`Model:`} {workspaceInfo.currentModel}{workspaceInfo.agentModelSource === 'agent' ? ` (${t`from agent config`})` : ''}</Text>
+              )}
+              {workspaceInfo.agentAllowedMCPs !== undefined && (
+                <Text>🛠️ {t`Agent allowed tools:`} {workspaceInfo.agentAllowedMCPs === 0 ? t`All available tools` : `${workspaceInfo.agentAllowedMCPs} configured, ${workspaceInfo.agentAvailableTools || 0} available`}</Text>
+              )}
+              {workspaceInfo.agentToolNames && workspaceInfo.agentToolNames.length > 0 && (
+                <Text color="gray">    📋 {(() => {
+                  const toolNames = workspaceInfo.agentToolNames!.slice(0, 3);
+                  const more = workspaceInfo.agentToolNames!.length > 3 ? ` (+${workspaceInfo.agentToolNames!.length - 3} more)` : '';
+                  return toolNames.join(', ') + more;
+                })()}</Text>
               )}
             </>
           )}

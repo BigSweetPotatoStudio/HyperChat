@@ -69,7 +69,7 @@ export async function startChatInk(initialMessage?: string, options: ChatOptions
     const currentWorkspacePath = workspaceManager.getCurrentWorkspacePath();
 
     logger.info(`📍 ${t`Working directory:`} ${currentWorkingDirectory}`);
-    
+
     if (currentWorkingDirectory !== currentWorkspacePath) {
       logger.info(`💡 ${t`Configuration loaded from workspace above`}`);
     }
@@ -101,22 +101,7 @@ export async function startChatInk(initialMessage?: string, options: ChatOptions
     // 记录配置信息  
     logAIConfig(LoggerClass, env);
 
-    // 获取有效配置的帮助函数
-    const getEffectiveConfig = () => {
-      // 如果命令行指定了模型，需要更新 allowMCPs
-      let allowMCPs = env.effectiveConfig.allowMCPs;
-      if (allowMCPs.length === 0) {
-        allowMCPs = env.mcpClients.map((c: any) => c.serverName);
-      }
-
-      return {
-        ...env.effectiveConfig,
-        allowMCPs
-      };
-    };
-
-    const effectiveConfig = getEffectiveConfig();
-    logger.info(`🤖 ${t`Using model:`} ${effectiveConfig.modelKey}`);
+    logger.info(`🤖 ${t`Using model:`} ${env.effectiveConfig.modelKey}`);
 
     // 获取工作区的Agent数量
     const agentsSummary = await env.workspace.getAllAgentsSummary();
@@ -126,18 +111,41 @@ export async function startChatInk(initialMessage?: string, options: ChatOptions
     logger.info(`👥 ${t`Current workspace Agent count:`} ${agentsSummary.length}`);
     logger.info(`🔧 ${t`Current workspace available MCP clients:`} ${mcpClients.length}`);
     const agentConfig = env.agent.getConfig();
-    if (agentConfig.name) {
-      logger.info(`🌐 ${t`Current Agent:`} ${agentConfig.name}`);
+
+    logger.info(`🌐 ${t`Current Agent:`} ${agentConfig.name}`)
+    logger.info(`🤖 ${t`Using model:`} ${env.effectiveConfig.modelKey}`);
+
+    // 计算 agent 允许的工具信息
+    let agentAllowedMCPs = 0;
+    let agentAvailableTools = 0;
+    let agentToolNames: string[] = [];
+
+    if (agentConfig.allowMCPs && agentConfig.allowMCPs.length > 0) {
+      agentAllowedMCPs = new Set(agentConfig.allowMCPs.map(x => x.split(" > ")[0])).size;
+      const availableTools = env.mcpClients.flatMap((client: any) => client.tools || []);
+      const matchedTools = availableTools.filter((tool: any) =>
+        agentConfig.allowMCPs!.some(allowed =>
+          tool.name === allowed ||
+          tool.displayName === allowed ||
+          tool.originalName === allowed ||
+          tool.clientName === allowed
+        )
+      );
+      agentAvailableTools = matchedTools.length;
+      agentToolNames = matchedTools.map((tool: any) => tool.displayName || tool.name);
     }
 
-    // 准备工作区信息
     const workspaceInfo = {
       path: env.workspace.workspacePath,
       agentCount: agentsSummary.length,
       mcpClientsCount: mcpClients.length,
       totalToolsCount: totalTools,
-      currentAgent: env.agent.getConfig().name,
-      currentModel: effectiveConfig.modelKey
+      currentAgent: agentConfig.name,
+      currentModel: env.effectiveConfig.modelKey,
+      agentModelSource: (agentConfig.modelKey && agentConfig.modelKey === env.effectiveConfig.modelKey) ? 'agent' as const : 'inherited' as const,
+      agentAllowedMCPs: agentAllowedMCPs,
+      agentAvailableTools,
+      agentToolNames
     };
 
     // 创建AI通道（提升到外部作用域）
@@ -150,10 +158,6 @@ export async function startChatInk(initialMessage?: string, options: ChatOptions
 
       // 生成聊天Key
       const chatKey = uuidv4();
-
-      // 添加系统消息
-      const mcpToolCount = env.mcpClients.flatMap((client: any) => client.tools || []).length;
-      // addSystemMessage(aiChannel, env, `你是HyperChat CLI助手。当前工作区: ${env.workspace.workspacePath}。可用工具: ${mcpToolCount}个MCP工具。请用中文回复。`);
 
       // 添加用户消息
       const userMessage: MyMessage = {
@@ -175,19 +179,14 @@ export async function startChatInk(initialMessage?: string, options: ChatOptions
         const agentName = env.agent.getConfig().name || "";
         const systemPrompt = getBuiltinPrompts(
           env.workspace.workspacePath,
-          effectiveConfig.prompt,
+          env.effectiveConfig.prompt,
           agentName,
-          "workspace"
+          env.workspace.getAgentScope(agentName) || "workspace",
         ).prompt;
-        
+
         await aiChannel.completion({
-          modelKey: effectiveConfig.modelKey,
+          ...env.effectiveConfig,
           prompt: systemPrompt,
-          allowMCPs: effectiveConfig.allowMCPs,
-          isConfirmCallTool: effectiveConfig.isConfirmCallTool,
-          temperature: effectiveConfig.temperature,
-          maxAttachedDialogs: effectiveConfig.maxAttachedDialogs,
-          maxTokens: effectiveConfig.maxTokens,
           onUpdate: async () => {
             // 显示新的工具结果
 
@@ -204,10 +203,10 @@ export async function startChatInk(initialMessage?: string, options: ChatOptions
                   key: chatKey,
                   label: getLabelByFirstUserContent(aiChannel.messages),
                   messages: aiChannel.messages,
-                  agentName: env.agent.getConfig().name || 'default',
+                  agentName: env.agent.getConfig().name,
                   dateTime: Date.now(),
                   chatType: "user",
-                  configOverrides: effectiveConfig,
+                  configOverrides: env.effectiveConfig,
                 });
               }
             } catch (error) {
