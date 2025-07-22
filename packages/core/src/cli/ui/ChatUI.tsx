@@ -4,7 +4,6 @@ import TextInput from 'ink-text-input';
 import Spinner from 'ink-spinner';
 import { t } from '../../i18n.mjs';
 import type { MyMessage, CommonContent } from '@dadigua/hyperchat-shared/types';
-import { fs } from 'zx';
 
 // 收集的消息数据类型（模仿前端逻辑）
 interface CollectedMessageData {
@@ -18,6 +17,7 @@ interface CollectedMessageData {
 interface ChatUIProps {
   onUserInput: (input: string) => Promise<void>;
   onExit: () => void;
+  messages?: MyMessage[]; // 外部传入的消息数据，优先使用
   workspaceInfo?: {
     path: string;
     agentCount: number;
@@ -46,12 +46,15 @@ const renderContent = (content: string | CommonContent): string => {
   return String(content);
 };
 
-export const ChatUI: React.FC<ChatUIProps> = ({ onUserInput, onExit, workspaceInfo }) => {
-  const [messages, setMessages] = useState<MyMessage[]>([]); // 使用 MyMessage 类型
+export const ChatUI: React.FC<ChatUIProps> = ({ onUserInput, onExit, messages: externalMessages, workspaceInfo }) => {
+  const [internalMessages, setInternalMessages] = useState<MyMessage[]>([]); // 内部消息状态
+  const [forceUpdate, setForceUpdate] = useState(0); // 强制更新计数器
+  
+  // 优先使用外部传入的消息，如果没有则使用内部状态
+  const messages = externalMessages || internalMessages;
   const [input, setInput] = useState('');
   const [isThinking, setIsThinking] = useState(false);
   const [showInput, setShowInput] = useState(true);
-  const messageIdRef = useRef(0);
 
   // 添加消息的方法（直接使用 MyMessage）
   const addMessage = (message: any) => {
@@ -60,22 +63,27 @@ export const ChatUI: React.FC<ChatUIProps> = ({ onUserInput, onExit, workspaceIn
       content: message.content || '',
       content_date: Date.now()
     };
-    setMessages(prev => [...prev, fullMessage]);
+    if (!externalMessages) {
+      setInternalMessages(prev => [...prev, fullMessage]);
+    }
     return fullMessage.content_date?.toString() || Date.now().toString();
   };
 
   // 更新最后一条消息
   const updateLastMessage = (updates: Partial<MyMessage>) => {
-    setMessages(prev => {
-      const newMessages = [...prev];
-      if (newMessages.length > 0) {
-        newMessages[newMessages.length - 1] = {
-          ...newMessages[newMessages.length - 1],
-          ...updates
-        };
-      }
-      return newMessages;
-    });
+    if (!externalMessages) {
+      setInternalMessages(prev => {
+        const newMessages = [...prev];
+        if (newMessages.length > 0) {
+          const lastMessage = newMessages[newMessages.length - 1];
+          newMessages[newMessages.length - 1] = {
+            ...lastMessage,
+            ...updates
+          } as MyMessage;
+        }
+        return newMessages;
+      });
+    }
   };
 
   // 处理用户输入
@@ -100,18 +108,22 @@ export const ChatUI: React.FC<ChatUIProps> = ({ onUserInput, onExit, workspaceIn
   /toolinfo <name>  - ${t`Show detailed info for a specific tool`}`,
         content_date: Date.now()
       };
-      setMessages(prev => [...prev, helpMessage]);
+      if (!externalMessages) {
+        setInternalMessages(prev => [...prev, helpMessage]);
+      }
       return;
     }
 
     if (trimmedInput === '/clear') {
-      setMessages([]);
-      const clearMessage: MyMessage = {
-        role: 'system',
-        content: `✅ ${t`Chat history cleared`}`,
-        content_date: Date.now()
-      };
-      setMessages([clearMessage]);
+      if (!externalMessages) {
+        setInternalMessages([]);
+        const clearMessage: MyMessage = {
+          role: 'system',
+          content: `✅ ${t`Chat history cleared`}`,
+          content_date: Date.now()
+        };
+        setInternalMessages([clearMessage]);
+      }
       return;
     }
 
@@ -121,7 +133,9 @@ export const ChatUI: React.FC<ChatUIProps> = ({ onUserInput, onExit, workspaceIn
         content: `🤖 ${t`Current model:`} ${workspaceInfo?.currentModel || 'N/A'}`,
         content_date: Date.now()
       };
-      setMessages(prev => [...prev, modelMessage]);
+      if (!externalMessages) {
+        setInternalMessages(prev => [...prev, modelMessage]);
+      }
       return;
     }
 
@@ -136,7 +150,9 @@ export const ChatUI: React.FC<ChatUIProps> = ({ onUserInput, onExit, workspaceIn
       content_status: 'success',
       content_date: Date.now()
     };
-    setMessages(prev => [...prev, userMessage]);
+    if (!externalMessages) {
+      setInternalMessages(prev => [...prev, userMessage]);
+    }
 
     // 开始思考状态
     setIsThinking(true);
@@ -151,68 +167,84 @@ export const ChatUI: React.FC<ChatUIProps> = ({ onUserInput, onExit, workspaceIn
         content: `❌ ${t`Error:`} ${error instanceof Error ? error.message : String(error)}`,
         content_date: Date.now()
       };
-      setMessages(prev => [...prev, errorMessage]);
+      if (!externalMessages) {
+        setInternalMessages(prev => [...prev, errorMessage]);
+      }
     } finally {
       setIsThinking(false);
       setShowInput(true);
     }
   };
 
-  // 消息收集逻辑（模仿前端）
-  const collectMessageContents = (x: MyMessage, i: number, arr: MyMessage[]): CollectedMessageData | null => {
-    x.content_attached = x.content_attached == null ? true : x.content_attached;
+  // 将消息数组转换为收集的消息数据
+  const messages2collectMessages = (messageList: MyMessage[]): CollectedMessageData[] => {
+    if (!messageList?.length) return [];
+    
+    const result: CollectedMessageData[] = [];
+    const isUserLikeRole = (role: string) => role === "user" || role === "system" || role === "hyper_memory";
+    const isAssistantLikeRole = (role: string) => role === "assistant" || role === "tool";
+    
+    for (let i = 0; i < messageList.length; i++) {
+      const message = messageList[i];
+      // 确保 content_attached 有默认值
+      message.content_attached = message.content_attached ?? true;
 
-    if (x.role === "user" || x.role === "system" || x.role === "hyper_memory") {
-      // 用户、系统、记忆消息直接返回单个消息
-      return {
-        type: x.role,
-        messages: [x],
-        index: i,
-      };
-    } else if (x.role === "assistant" || x.role === "tool") {
-      // assistant/tool 消息需要收集连续的消息
-      // 检查是否是最后一个连续的assistant/tool消息
-      if (i + 1 != arr.length && arr[i + 1] &&
-        arr[i + 1]!.role !== "user" &&
-        arr[i + 1]!.role !== "system" &&
-        arr[i + 1]!.role !== "hyper_memory") {
-        return null; // 不是最后一个，跳过
-      }
-
-      // 收集连续的assistant/tool消息
-      let contents: MyMessage[] = [];
-      let index = i;
-      while (index >= 0) {
-        const currentMsg = arr[index];
-        if (!currentMsg || currentMsg.role === "user" || currentMsg.role === "system" || currentMsg.role === "hyper_memory") {
-          break;
+      if (isUserLikeRole(message.role)) {
+        // 用户类消息直接添加
+        result.push({
+          type: message.role as "user" | "system" | "hyper_memory",
+          messages: [message],
+          index: i,
+        });
+      } else if (isAssistantLikeRole(message.role)) {
+        // 检查是否是连续assistant/tool消息组的最后一个
+        const nextMessage = messageList[i + 1];
+        if (nextMessage && isAssistantLikeRole(nextMessage.role)) {
+          continue; // 不是最后一个，跳过
         }
-        contents.push(currentMsg);
-        index--;
+
+        // 向前收集连续的assistant/tool消息
+        const contents: MyMessage[] = [];
+        for (let j = i; j >= 0 && isAssistantLikeRole(messageList[j].role); j--) {
+          contents.unshift(messageList[j]); // 使用unshift避免后续reverse
+        }
+
+        result.push({
+          type: "assistant_group",
+          messages: contents,
+          index: i,
+        });
       }
-      contents = contents.reverse();
-
-      return {
-        type: "assistant_group",
-        messages: contents,
-        index: i,
-      };
     }
-
-    // 未知角色，返回null
-    return null;
+    
+    return result;
   };
 
-  // 对外暴露的方法，用于从外部更新消息
+  // 强制刷新函数
+  const forceRefresh = () => {
+    setForceUpdate(prev => prev + 1);
+  };
+
+  // 如果使用外部消息，对外暴露控制方法
   useEffect(() => {
-    // 这里可以通过 ref 或其他方式暴露方法给父组件
-    (globalThis as any).__chatUI = {
-      addMessage,
-      updateLastMessage,
-      setThinking: setIsThinking,
-      setShowInput
-    };
-  }, []);
+    if (externalMessages) {
+      // 只暴露状态控制方法，消息管理由外部处理
+      (globalThis as any).__chatUI = {
+        setThinking: setIsThinking,
+        setShowInput,
+        forceRefresh // 暴露强制刷新方法
+      };
+    } else {
+      // 内部消息管理模式，暴露所有方法
+      (globalThis as any).__chatUI = {
+        addMessage,
+        updateLastMessage,
+        setThinking: setIsThinking,
+        setShowInput,
+        forceRefresh
+      };
+    }
+  }, [externalMessages]);
 
   // 渲染消息组（模仿前端 CustomMessageList）
   const renderMessageGroup = (collectedData: CollectedMessageData) => {
@@ -287,7 +319,7 @@ export const ChatUI: React.FC<ChatUIProps> = ({ onUserInput, onExit, workspaceIn
                     );
                     
                     return (
-                      <Box key={`tool-call-${toolIndex}`} marginLeft={2} marginBottom={1}>
+                      <Box key={`tool-call-${toolIndex}`} marginLeft={2}>
                         <Text color={toolDisplay.color}>
                           {toolDisplay.icon} {toolDisplay.text} {tool.displayName || tool.originalName || tool.function.name}
                         </Text>
@@ -405,15 +437,12 @@ export const ChatUI: React.FC<ChatUIProps> = ({ onUserInput, onExit, workspaceIn
       <Box flexDirection="column" flexGrow={1} paddingX={1}>
         {React.useMemo(() => {
           // 收集消息数据
-          const collectedMessagesData = messages.map((message, index) =>
-            collectMessageContents(message, index, messages)
-          ).filter(Boolean) as CollectedMessageData[];
-          fs.writeFileSync('messages.json', JSON.stringify(collectedMessagesData, null, 2));
+          const collectedMessagesData = messages2collectMessages(messages);
           // 渲染消息组
           return collectedMessagesData.map((collectedData) =>
             renderMessageGroup(collectedData)
           ).filter(Boolean);
-        }, [messages])}
+        }, [messages, forceUpdate])}
 
         {/* Thinking indicator */}
         {isThinking && (

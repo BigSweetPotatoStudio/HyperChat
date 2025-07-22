@@ -137,73 +137,6 @@ export const CustomMessageList = forwardRef<CustomMessageListRef, CustomMessageL
       };
     }, []);
 
-    // 第一步：收集和整理消息内容
-    const collectMessageContents = (x: MyMessage, i: number, arr: MyMessage[]): CollectedMessageData | null => {
-      x.content_attached = x.content_attached == null ? true : x.content_attached;
-
-      if (x.role === "user" || x.role === "system" || x.role === "hyper_memory") {
-        // 用户、系统、记忆消息直接返回单个消息
-        return {
-          type: x.role,
-          messages: [x],
-          index: i,
-          usage: null,
-        };
-      } else if (x.role === "assistant" || x.role === "tool") {
-        // assistant/tool 消息需要收集连续的消息
-        // 检查是否是最后一个连续的assistant/tool消息
-        if (i + 1 != arr.length && arr[i + 1] &&
-          arr[i + 1]!.role !== "user" &&
-          arr[i + 1]!.role !== "system" &&
-          arr[i + 1]!.role !== "hyper_memory") {
-          return null; // 不是最后一个，跳过
-        }
-
-        // 收集连续的assistant/tool消息
-        let contents: MyMessage[] = [];
-        let index = i;
-        while (index >= 0) {
-          const currentMsg = arr[index];
-          if (!currentMsg || currentMsg.role === "user" || currentMsg.role === "system" || currentMsg.role === "hyper_memory") {
-            break;
-          }
-          contents.push(currentMsg);
-          index--;
-        }
-        contents = contents.reverse();
-
-        // 计算token使用量
-        let usage = {
-          prompt_tokens: 0,
-          completion_tokens: 0,
-          total_tokens: 0,
-        };
-
-        for (let content of contents) {
-          if (content.content_usage) {
-            if (content.content_usage.prompt_tokens !== 0) {
-              usage.prompt_tokens = content.content_usage.prompt_tokens;
-            }
-            if (content.content_usage.completion_tokens !== 0) {
-              usage.completion_tokens = content.content_usage.completion_tokens;
-            }
-            if (content.content_usage.total_tokens !== 0) {
-              usage.total_tokens = content.content_usage.total_tokens;
-            }
-          }
-        }
-
-        return {
-          type: "assistant_group",
-          messages: contents,
-          index: i,
-          usage,
-        };
-      }
-
-      // 未知角色，返回null
-      return null;
-    };
 
     // 第二步：格式化UI消息并渲染
     const formatAndRenderUIMessage = (collectedData: CollectedMessageData): React.ReactNode => {
@@ -595,16 +528,72 @@ export const CustomMessageList = forwardRef<CustomMessageListRef, CustomMessageL
       });
     }, []);
 
+    // 将消息数组转换为收集的消息数据
+    const messages2collectMessages = (messageList: MyMessage[]): CollectedMessageData[] => {
+      if (!messageList?.length) return [];
+      
+      const result: CollectedMessageData[] = [];
+      const isUserLikeRole = (role: string) => role === "user" || role === "system" || role === "hyper_memory";
+      const isAssistantLikeRole = (role: string) => role === "assistant" || role === "tool";
+      
+      for (let i = 0; i < messageList.length; i++) {
+        const message = messageList[i];
+        // 确保 content_attached 有默认值
+        message.content_attached = message.content_attached ?? true;
+
+        if (isUserLikeRole(message.role)) {
+          // 用户类消息直接添加
+          result.push({
+            type: message.role as "user" | "system" | "hyper_memory",
+            messages: [message],
+            index: i,
+            usage: null,
+          });
+        } else if (isAssistantLikeRole(message.role)) {
+          // 检查是否是连续assistant/tool消息组的最后一个
+          const nextMessage = messageList[i + 1];
+          if (nextMessage && isAssistantLikeRole(nextMessage.role)) {
+            continue; // 不是最后一个，跳过
+          }
+
+          // 向前收集连续的assistant/tool消息
+          const contents: MyMessage[] = [];
+          for (let j = i; j >= 0 && isAssistantLikeRole(messageList[j].role); j--) {
+            contents.unshift(messageList[j]); // 使用unshift避免后续reverse
+          }
+
+          // 计算总token使用量
+          const usage = contents.reduce((acc, msg) => {
+            if (msg.content_usage) {
+              return {
+                prompt_tokens: msg.content_usage.prompt_tokens || acc.prompt_tokens,
+                completion_tokens: msg.content_usage.completion_tokens || acc.completion_tokens, 
+                total_tokens: msg.content_usage.total_tokens || acc.total_tokens,
+              };
+            }
+            return acc;
+          }, { prompt_tokens: 0, completion_tokens: 0, total_tokens: 0 });
+
+          result.push({
+            type: "assistant_group",
+            messages: contents,
+            index: i,
+            usage,
+          });
+        }
+      }
+      
+      return result;
+    };
+
     // 第一步：收集所有消息的数据
     const collectedMessagesData = useMemo(() => {
-      if (!messages) return [];
-      return messages.map((message, index) =>
-        collectMessageContents(message, index, messages)
-      ).filter(Boolean) as CollectedMessageData[];
+      return messages2collectMessages(messages);
     }, [messages]);
 
     // 第二步：格式化并渲染所有UI消息
     const renderedMessages = useMemo(() => {
+      console.log(collectedMessagesData, 'collectedMessagesData');
       return collectedMessagesData.map((collectedData) =>
         formatAndRenderUIMessage(collectedData)
       ).filter(Boolean);

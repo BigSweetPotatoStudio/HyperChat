@@ -166,33 +166,7 @@ export function createAIChannel(env: AIEnvironment): AiChannel {
   return aiChannel;
 }
 
-/**
- * 添加系统消息到 AI 通道
- */
-export function addSystemMessage(
-  aiChannel: AiChannel,
-  env: AIEnvironment,
-  customPrompt?: string
-): void {
-  const workspacePath = env.workspace.workspacePath;
-  const mcpToolCount = env.mcpClients.flatMap((client: any) => client.tools || []).length;
 
-  let systemContent = customPrompt ||
-    `你是HyperChat AI助手。当前工作区: ${workspacePath}。可用工具: ${mcpToolCount}个MCP工具。请用中文回复。`;
-
-  // 如果使用了agent，添加agent的prompt
-  if (env.agentConfig?.prompt) {
-    systemContent = `${env.agentConfig.prompt}\n\n当前工作区: ${workspacePath}。可用工具: ${mcpToolCount}个MCP工具。`;
-  }
-
-  const systemMessage: MyMessage = {
-    role: 'system',
-    content: systemContent,
-    content_date: Date.now()
-  };
-
-  aiChannel.addMessage(systemMessage);
-}
 
 /**
  * 执行单次 AI 对话（非流式）

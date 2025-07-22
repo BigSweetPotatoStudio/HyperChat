@@ -22,7 +22,6 @@ import * as cron from "node-cron";
 import {
   initializeAIEnvironment,
   createAIChannel,
-  addSystemMessage,
   executeAICompletion
 } from "../utils/aiConfigHelper.mjs";
 

@@ -15,11 +15,26 @@ import { workspaceManager } from '../../workspace/index.mjs';
 import {
   initializeAIEnvironment,
   createAIChannel,
-  addSystemMessage,
+  // addSystemMessage,
   logAIConfig
 } from '../../utils/aiConfigHelper.mjs';
 import { t } from '../../i18n.mjs';
+import { v4 as uuidv4 } from 'uuid';
 
+// 获取聊天标签（基于第一个用户消息）
+function getLabelByFirstUserContent(messages: Array<MyMessage>): string {
+  let label = "";
+  let firstUser = messages.find(
+    (x) => x.role == "user",
+  );
+  let firstUserContent = (firstUser as any)?.content;
+  if (typeof firstUserContent == "string") {
+    label = firstUserContent;
+  } else if (Array.isArray(firstUserContent)) {
+    label = firstUserContent.find((x) => x.type == "text")?.text || "";
+  }
+  return label;
+}
 
 export interface ChatOptions {
   agent?: string;
@@ -111,7 +126,7 @@ export async function startChat(initialMessage?: string, options: ChatOptions = 
 
     // 添加系统消息
     const mcpToolCount = env.mcpClients.flatMap((client: any) => client.tools || []).length;
-    addSystemMessage(aiChannel, env, `你是HyperChat CLI助手。当前工作区: ${env.workspace.workspacePath}。可用工具: ${mcpToolCount}个MCP工具。请用中文回复。`);
+    // addSystemMessage(aiChannel, env, `你是HyperChat CLI助手。当前工作区: ${env.workspace.workspacePath}。可用工具: ${mcpToolCount}个MCP工具。请用中文回复。`);
 
     // 如果有初始消息，处理并退出
     if (initialMessage) {
@@ -123,6 +138,9 @@ export async function startChat(initialMessage?: string, options: ChatOptions = 
         content_date: Date.now()
       };
       aiChannel.addMessage(userMessage);
+      
+      // 生成聊天Key
+      const chatKey = uuidv4();
 
       console.log(`\n🤖 ${t`AI reply:`}`);
 
@@ -143,7 +161,24 @@ export async function startChat(initialMessage?: string, options: ChatOptions = 
         temperature: effectiveConfig.temperature,
         maxAttachedDialogs: effectiveConfig.maxAttachedDialogs,
         maxTokens: effectiveConfig.maxTokens,
-        onUpdate: () => {
+        onUpdate: async () => {
+          // 每次更新时保存聊天历史（学习Web版模式）
+          try {
+            if (env.agent) {
+              await env.agent.setChatLog({
+                key: chatKey,
+                label: getLabelByFirstUserContent(aiChannel.messages),
+                messages: aiChannel.messages,
+                agentName: env.agentConfig?.name || 'default',
+                dateTime: Date.now(),
+                chatType: "user",
+                configOverrides: effectiveConfig,
+              });
+            }
+          } catch (error) {
+            // 静默处理聊天历史保存错误，不影响主要聊天流程
+          }
+          
           // 检查是否有新的工具结果消息需要显示
           const allMessages = aiChannel.messages || [];
           const toolMessages = allMessages.filter(msg => msg.role === 'tool');
@@ -239,6 +274,9 @@ export async function startChat(initialMessage?: string, options: ChatOptions = 
     console.log();
 
     const rl = createReadline();
+    
+    // 为交互式聊天生成chatKey
+    let interactiveChatKey = uuidv4();
 
     while (true) {
       const input = await rl.question(`🧑 ${t`You:`} `);
@@ -264,9 +302,11 @@ export async function startChat(initialMessage?: string, options: ChatOptions = 
         // 重新创建AI通道并添加系统消息
         const newAiChannel = createAIChannel(env);
         const mcpToolCount = env.mcpClients.flatMap((client: any) => client.tools || []).length;
-        addSystemMessage(newAiChannel, env, `你是HyperChat CLI助手。当前工作区: ${env.workspace.workspacePath}。可用工具: ${mcpToolCount}个MCP工具。请用中文回复。`);
+        // addSystemMessage(newAiChannel, env, `你是HyperChat CLI助手。当前工作区: ${env.workspace.workspacePath}。可用工具: ${mcpToolCount}个MCP工具。请用中文回复。`);
         // 替换当前通道
         Object.assign(aiChannel, newAiChannel);
+        // 重新生成chatKey用于新的对话
+        interactiveChatKey = uuidv4();
         console.log(`✅ ${t`Chat history cleared`}\n`);
         continue;
       }
@@ -399,7 +439,24 @@ export async function startChat(initialMessage?: string, options: ChatOptions = 
           temperature: effectiveConfig.temperature,
           maxAttachedDialogs: effectiveConfig.maxAttachedDialogs,
           maxTokens: effectiveConfig.maxTokens,
-          onUpdate: () => {
+          onUpdate: async () => {
+            // 每次更新时保存聊天历史（学习Web版模式）
+            try {
+              if (env.agent) {
+                await env.agent.setChatLog({
+                  key: interactiveChatKey,
+                  label: getLabelByFirstUserContent(aiChannel.messages),
+                  messages: aiChannel.messages,
+                  agentName: env.agentConfig?.name || 'default',
+                  dateTime: Date.now(),
+                  chatType: "user",
+                  configOverrides: effectiveConfig,
+                });
+              }
+            } catch (error) {
+              // 静默处理聊天历史保存错误，不影响主要聊天流程
+            }
+            
             // 检查是否有新的工具结果消息需要显示
             const allMessages = aiChannel.messages || [];
             const toolMessages = allMessages.filter(msg => msg.role === 'tool');

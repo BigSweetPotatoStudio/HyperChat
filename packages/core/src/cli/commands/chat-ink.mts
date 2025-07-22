@@ -13,12 +13,27 @@ import { workspaceManager } from '../../workspace/index.mjs';
 import {
   initializeAIEnvironment,
   createAIChannel,
-  addSystemMessage,
   logAIConfig
 } from '../../utils/aiConfigHelper.mjs';
 import { t } from '../../i18n.mjs';
 import ChatUI from '../ui/ChatUI.js';
 import type { MyMessage, HyperToolCall } from '@dadigua/hyperchat-shared/types';
+import { v4 as uuidv4 } from 'uuid';
+
+// 获取聊天标签（基于第一个用户消息）
+function getLabelByFirstUserContent(messages: Array<MyMessage>): string {
+  let label = "";
+  let firstUser = messages.find(
+    (x) => x.role == "user",
+  );
+  let firstUserContent = (firstUser as any)?.content;
+  if (typeof firstUserContent == "string") {
+    label = firstUserContent;
+  } else if (Array.isArray(firstUserContent)) {
+    label = firstUserContent.find((x) => x.type == "text")?.text || "";
+  }
+  return label;
+}
 
 export interface ChatOptions {
   agent?: string;
@@ -48,9 +63,9 @@ export async function startChatInk(initialMessage?: string, options: ChatOptions
     // Chat需要完整服务（MCP工具、AI聊天）
     const currentWorkingDirectory = options.workspace || process.cwd();
     await workspaceManager.initialize(currentWorkingDirectory);
-    
+
     const currentWorkspacePath = workspaceManager.getCurrentWorkspacePath();
-    
+
     logger.info(`📍 ${t`Working directory:`} ${currentWorkingDirectory}`);
     logger.info(`🎯 ${t`Using workspace:`} ${currentWorkspacePath}`);
     if (currentWorkingDirectory !== currentWorkspacePath) {
@@ -99,7 +114,7 @@ export async function startChatInk(initialMessage?: string, options: ChatOptions
 
     const effectiveConfig = getEffectiveConfig();
     logger.info(`🤖 ${t`Using model:`} ${effectiveConfig.modelKey}`);
-    
+
     // 获取工作区的Agent数量
     const agentsSummary = await env.workspace.getAllAgentsSummary();
     const mcpClients = env.workspace.getMcpClients();
@@ -122,17 +137,20 @@ export async function startChatInk(initialMessage?: string, options: ChatOptions
       currentModel: effectiveConfig.modelKey
     };
 
+    // 创建AI通道（提升到外部作用域）
+    const aiChannel = createAIChannel(env);
+
     // 处理用户输入的函数
     const handleUserInput = async (userInput: string): Promise<void> => {
       const chatUI = (globalThis as any).__chatUI;
       if (!chatUI) return;
 
-      // 创建AI通道
-      const aiChannel = createAIChannel(env);
-      
+      // 生成聊天Key
+      const chatKey = uuidv4();
+
       // 添加系统消息
       const mcpToolCount = env.mcpClients.flatMap((client: any) => client.tools || []).length;
-      addSystemMessage(aiChannel, env, `你是HyperChat CLI助手。当前工作区: ${env.workspace.workspacePath}。可用工具: ${mcpToolCount}个MCP工具。请用中文回复。`);
+      // addSystemMessage(aiChannel, env, `你是HyperChat CLI助手。当前工作区: ${env.workspace.workspacePath}。可用工具: ${mcpToolCount}个MCP工具。请用中文回复。`);
 
       // 添加用户消息
       const userMessage: MyMessage = {
@@ -142,22 +160,12 @@ export async function startChatInk(initialMessage?: string, options: ChatOptions
       };
       aiChannel.addMessage(userMessage);
 
-      // 添加 AI 响应消息
-      const aiMessage = {
-        role: 'assistant' as const,
-        content: '',
-        reasoning_content: '',
-        content_tool_calls: [],
-        content_status: 'dataLoading' as const,
-        content_date: Date.now()
-      };
-      chatUI.addMessage(aiMessage);
 
-      // 流式更新状态
-      let displayedReasoningLength = 0;
-      let displayedContentLength = 0;
-      let displayedToolCallsCount = 0;
-      let displayedToolResultsCount = 0;
+
+      // 强制刷新UI显示新消息
+      if (chatUI && chatUI.forceRefresh) {
+        chatUI.forceRefresh();
+      }
 
       try {
         await aiChannel.completion({
@@ -168,68 +176,82 @@ export async function startChatInk(initialMessage?: string, options: ChatOptions
           temperature: effectiveConfig.temperature,
           maxAttachedDialogs: effectiveConfig.maxAttachedDialogs,
           maxTokens: effectiveConfig.maxTokens,
-          onUpdate: () => {
+          onUpdate: async () => {
             // 显示新的工具结果
-            const allMessages = aiChannel.messages || [];
-            const toolMessages = allMessages.filter(msg => msg.role === 'tool');
-            
-            if (toolMessages.length > displayedToolResultsCount) {
-              for (let i = displayedToolResultsCount; i < toolMessages.length; i++) {
-                const toolMsg = toolMessages[i];
-                let contentStr = '';
-                if (typeof toolMsg.content === 'string') {
-                  contentStr = toolMsg.content;
-                } else if (Array.isArray(toolMsg.content)) {
-                  contentStr = toolMsg.content.map(item => 
-                    item.type === 'text' ? item.text : '[' + item.type + ']'
-                  ).join(' ');
-                }
-                
-                const toolMessage = {
-                  role: 'tool' as const,
-                  content: contentStr,
-                  tool_call_name: toolMsg.tool_call_name,
-                  content_status: toolMsg.content_status || 'success' as const,
-                  tool_call_id: toolMsg.tool_call_id,
-                  content_date: Date.now()
-                };
-                chatUI.addMessage(toolMessage);
-              }
-              displayedToolResultsCount = toolMessages.length;
+
+            // 强制刷新UI显示
+            if (chatUI && chatUI.forceRefresh) {
+              chatUI.forceRefresh();
             }
 
-            const lastMsg = aiChannel.lastMessage;
-            if (lastMsg.role === 'assistant') {
-              // 更新推理内容
-              const reasoningContent = lastMsg.reasoning_content as string || '';
-              
-              // 更新工具调用
-              const toolCalls = lastMsg.content_tool_calls || [];
-              
-              // 更新主要内容
-              const content = lastMsg.content as string || '';
-              
-              // 更新 AI 消息
-              chatUI.updateLastMessage({
-                content,
-                reasoning_content: reasoningContent,
-                content_tool_calls: toolCalls.slice(displayedToolCallsCount),
-                content_status: lastMsg.content_status || 'dataLoading'
-              });
-              
-              displayedToolCallsCount = toolCalls.length;
-              displayedReasoningLength = reasoningContent.length;
-              displayedContentLength = content.length;
+
+            // 每次更新时保存聊天历史（学习Web版模式）
+            try {
+              if (env.agent) {
+                await env.agent.setChatLog({
+                  key: chatKey,
+                  label: getLabelByFirstUserContent(aiChannel.messages),
+                  messages: aiChannel.messages,
+                  agentName: env.agentConfig?.name || 'default',
+                  dateTime: Date.now(),
+                  chatType: "user",
+                  configOverrides: effectiveConfig,
+                });
+              }
+            } catch (error) {
+              // 静默处理聊天历史保存错误，不影响主要聊天流程
             }
           }
         });
+
+        // 在completion完成后，添加最终的assistant消息（如果有最终内容的话）
+        const finalMessage = aiChannel.lastMessage;
+        if (finalMessage && finalMessage.role === 'assistant' && finalMessage.content) {
+          // 如果最后一条消息有内容又有工具调用，说明需要添加独立的最终回复消息
+          const hasToolCalls = finalMessage.content_tool_calls && finalMessage.content_tool_calls.length > 0;
+          const hasContent = finalMessage.content && (finalMessage.content as string).trim();
+
+          if (hasContent && hasToolCalls) {
+            // 如果有工具调用又有最终内容，添加一个纯内容的assistant消息
+            const finalContentMessage = {
+              role: 'assistant' as const,
+              content: finalMessage.content,
+              reasoning_content: '',
+              content_tool_calls: [],
+              content_status: 'success' as const,
+              content_attachment: [],
+              content_usage: finalMessage.content_usage || {
+                prompt_tokens: 0,
+                completion_tokens: 0,
+                total_tokens: 0,
+              },
+              content_date: Date.now(),
+              content_attached: true
+            };
+
+            // 只添加到aiChannel中
+            aiChannel.addMessage(finalContentMessage);
+
+            // 强制刷新UI显示最终消息
+            if (chatUI && chatUI.forceRefresh) {
+              chatUI.forceRefresh();
+            }
+          }
+        }
+
       } catch (error) {
         const errorMessage = {
           role: 'system' as const,
           content: `❌ ${t`Error:`} ${error instanceof Error ? error.message : String(error)}`,
           content_date: Date.now()
         };
-        chatUI.addMessage(errorMessage);
+        // 错误消息添加到aiChannel
+        aiChannel.addMessage(errorMessage);
+
+        // 强制刷新UI显示错误消息
+        if (chatUI && chatUI.forceRefresh) {
+          chatUI.forceRefresh();
+        }
       }
     };
 
@@ -242,12 +264,13 @@ export async function startChatInk(initialMessage?: string, options: ChatOptions
     // 如果有初始消息，直接处理
     if (initialMessage) {
       logger.info(`💬 ${t`Processing message:`} ${initialMessage}`);
-      
+
       // 渲染 UI 并处理初始消息
       const { waitUntilExit } = render(
         React.createElement(ChatUI, {
           onUserInput: handleUserInput,
           onExit: handleExit,
+          messages: aiChannel.messages, // 传入aiChannel的消息
           workspaceInfo
         })
       );
@@ -272,6 +295,7 @@ export async function startChatInk(initialMessage?: string, options: ChatOptions
       React.createElement(ChatUI, {
         onUserInput: handleUserInput,
         onExit: handleExit,
+        messages: aiChannel.messages, // 传入aiChannel的消息
         workspaceInfo
       })
     );
