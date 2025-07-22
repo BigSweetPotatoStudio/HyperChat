@@ -18,6 +18,7 @@ import {
   // addSystemMessage,
   logAIConfig
 } from '../../utils/aiConfigHelper.mjs';
+import { getBuiltinPrompts } from '../../ai/hyperchat-builtin-prompts.mjs';
 import { t } from '../../i18n.mjs';
 import { v4 as uuidv4 } from 'uuid';
 
@@ -90,7 +91,7 @@ export async function startChat(initialMessage?: string, options: ChatOptions = 
     }
 
     // 记录配置信息  
-    logAIConfig(LoggerClass, env, 'CLI Chat');
+    logAIConfig(LoggerClass, env);
 
     // 获取有效配置的帮助函数
     const getEffectiveConfig = () => {
@@ -122,7 +123,7 @@ export async function startChat(initialMessage?: string, options: ChatOptions = 
       logger.info(`🌐 ${t`Current Agent:`} ${env.agentConfig?.name}`);
     }
     // 创建AI通道
-    const aiChannel = createAIChannel(env);
+    const aiChannel = createAIChannel();
 
     // 添加系统消息
     const mcpToolCount = env.mcpClients.flatMap((client: any) => client.tools || []).length;
@@ -145,6 +146,15 @@ export async function startChat(initialMessage?: string, options: ChatOptions = 
       console.log(`\n🤖 ${t`AI reply:`}`);
 
 
+      // 构建系统提示词
+      const agentName = env.agentConfig?.name || "";
+      const systemPrompt = getBuiltinPrompts(
+        env.workspace.workspacePath,
+        effectiveConfig.prompt,
+        agentName,
+        "workspace"
+      ).prompt;
+
       // 流式输出
       let displayedContentLength = 0;
       let displayedReasoningLength = 0;
@@ -155,7 +165,7 @@ export async function startChat(initialMessage?: string, options: ChatOptions = 
 
       await aiChannel.completion({
         modelKey: effectiveConfig.modelKey,
-        prompt: effectiveConfig.prompt,
+        prompt: systemPrompt,
         allowMCPs: effectiveConfig.allowMCPs,
         isConfirmCallTool: effectiveConfig.isConfirmCallTool,
         temperature: effectiveConfig.temperature,
@@ -268,6 +278,12 @@ export async function startChat(initialMessage?: string, options: ChatOptions = 
       return;
     }
 
+    // 检查是否为管道输入或非交互式环境
+    if (!process.stdin.isTTY) {
+      logger.info(`💡 ${t`Non-interactive environment detected, exiting after processing`}`);
+      return;
+    }
+
     // 交互式聊天模式
     logger.info(`💬 ${t`Starting interactive chat...`}`);
     logger.info(`💡 ${t`Type /exit to exit, /help for help, /clear to clear chat history`}`);
@@ -278,47 +294,48 @@ export async function startChat(initialMessage?: string, options: ChatOptions = 
     // 为交互式聊天生成chatKey
     let interactiveChatKey = uuidv4();
 
-    while (true) {
-      const input = await rl.question(`🧑 ${t`You:`} `);
+    try {
+      while (true) {
+        const input = await rl.question(`🧑 ${t`You:`} `);
 
-      if (input.trim() === '/exit') {
-        logger.info(`👋 ${t`Goodbye!`}`);
-        break;
-      }
+        if (input.trim() === '/exit') {
+          logger.info(`👋 ${t`Goodbye!`}`);
+          break;
+        }
 
-      if (input.trim() === '/help') {
-        console.log(`\n📋 ${t`Chat commands:`}`);
-        console.log(`  /exit             - ${t`Exit chat`}`);
-        console.log(`  /help             - ${t`Show help`}`);
-        console.log(`  /clear            - ${t`Clear chat history`}`);
-        console.log(`  /model            - ${t`Show current model`}`);
-        console.log(`  /tools            - ${t`Show available MCP tools`}`);
-        console.log(`  /toolinfo <name>  - ${t`Show detailed info for a specific tool`}`);
-        console.log();
-        continue;
-      }
+        if (input.trim() === '/help') {
+          console.log(`\n📋 ${t`Chat commands:`}`);
+          console.log(`  /exit             - ${t`Exit chat`}`);
+          console.log(`  /help             - ${t`Show help`}`);
+          console.log(`  /clear            - ${t`Clear chat history`}`);
+          console.log(`  /model            - ${t`Show current model`}`);
+          console.log(`  /tools            - ${t`Show available MCP tools`}`);
+          console.log(`  /toolinfo <name>  - ${t`Show detailed info for a specific tool`}`);
+          console.log();
+          continue;
+        }
 
-      if (input.trim() === '/clear') {
-        // 重新创建AI通道并添加系统消息
-        const newAiChannel = createAIChannel(env);
-        const mcpToolCount = env.mcpClients.flatMap((client: any) => client.tools || []).length;
-        // addSystemMessage(newAiChannel, env, `你是HyperChat CLI助手。当前工作区: ${env.workspace.workspacePath}。可用工具: ${mcpToolCount}个MCP工具。请用中文回复。`);
-        // 替换当前通道
-        Object.assign(aiChannel, newAiChannel);
-        // 重新生成chatKey用于新的对话
-        interactiveChatKey = uuidv4();
-        console.log(`✅ ${t`Chat history cleared`}\n`);
-        continue;
-      }
+        if (input.trim() === '/clear') {
+          // 重新创建AI通道并添加系统消息
+          const newAiChannel = createAIChannel();
+          const mcpToolCount = env.mcpClients.flatMap((client: any) => client.tools || []).length;
+          // addSystemMessage(newAiChannel, env, `你是HyperChat CLI助手。当前工作区: ${env.workspace.workspacePath}。可用工具: ${mcpToolCount}个MCP工具。请用中文回复。`);
+          // 替换当前通道
+          Object.assign(aiChannel, newAiChannel);
+          // 重新生成chatKey用于新的对话
+          interactiveChatKey = uuidv4();
+          console.log(`✅ ${t`Chat history cleared`}\n`);
+          continue;
+        }
 
-      if (input.trim() === '/model') {
-        console.log(`\n🤖 ${t`Current model:`} ${env.effectiveConfig.modelKey}\n`);
-        continue;
-      }
+        if (input.trim() === '/model') {
+          console.log(`\n🤖 ${t`Current model:`} ${env.effectiveConfig.modelKey}\n`);
+          continue;
+        }
 
-      if (input.trim() === '/tools') {
-        const mcpTools = env.mcpClients.flatMap((client: any) => client.tools || []);
-        console.log(`\n🔧 ${t`Available tools`} (${mcpTools.length} ${t`items`}):`);
+        if (input.trim() === '/tools') {
+          const mcpTools = env.mcpClients.flatMap((client: any) => client.tools || []);
+          console.log(`\n🔧 ${t`Available tools`} (${mcpTools.length} ${t`items`}):`);
         
         if (mcpTools.length === 0) {
           console.log(`  ${t`No tools available`}`);
@@ -431,9 +448,19 @@ export async function startChat(initialMessage?: string, options: ChatOptions = 
         let toolCallsDisplayed = false;
 
         const effectiveConfig = getEffectiveConfig();
+        
+        // 构建系统提示词
+        const agentName = env.agentConfig?.name || "";
+        const systemPrompt = getBuiltinPrompts(
+          env.workspace.workspacePath,
+          effectiveConfig.prompt,
+          agentName,
+          "workspace"
+        ).prompt;
+        
         await aiChannel.completion({
           modelKey: effectiveConfig.modelKey,
-          prompt: effectiveConfig.prompt,
+          prompt: systemPrompt,
           allowMCPs: effectiveConfig.allowMCPs,
           isConfirmCallTool: effectiveConfig.isConfirmCallTool,
           temperature: effectiveConfig.temperature,
@@ -549,9 +576,17 @@ export async function startChat(initialMessage?: string, options: ChatOptions = 
         });
 
         console.log('\n'); // 换行
-      } catch (error) {
-        console.log(`\n❌ ${t`Error:`}`, error instanceof Error ? error.message : String(error));
-        console.log();
+        } catch (error) {
+          console.log(`\n❌ ${t`Error:`}`, error instanceof Error ? error.message : String(error));
+          console.log();
+        }
+      }
+    } catch (readlineError) {
+      // 处理 readline 相关错误
+      if (readlineError instanceof Error && readlineError.message.includes('closed')) {
+        logger.info(`💡 ${t`Input stream closed, exiting chat`}`);
+      } else {
+        logger.error(`${t`Chat input error:`} ${readlineError instanceof Error ? readlineError.message : String(readlineError)}`);
       }
     }
 

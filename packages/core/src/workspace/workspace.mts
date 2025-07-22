@@ -1139,7 +1139,7 @@ export class Workspace {
         });
 
         // 创建 AI 通道
-        const aiChannel = createAIChannel(env);
+        const aiChannel = createAIChannel();
 
         // 复制已有的消息到 AI 通道
         for (const msg of chatLog.messages) {
@@ -1151,10 +1151,11 @@ export class Workspace {
 
         // 执行 AI 对话
         Logger.info(`正在生成 AI 响应...`);
-        const assistantMessage = await executeAICompletion(aiChannel, env.effectiveConfig, {
+        const assistantMessage = await executeAICompletion(aiChannel, env, {
           onUpdate: () => {
             // 可以在这里添加进度日志
-          }
+          },
+          agentName: task.agentName
         });
 
         // 更新聊天记录

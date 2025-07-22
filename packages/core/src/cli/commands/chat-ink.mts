@@ -15,6 +15,7 @@ import {
   createAIChannel,
   logAIConfig
 } from '../../utils/aiConfigHelper.mjs';
+import { getBuiltinPrompts } from '../../ai/hyperchat-builtin-prompts.mjs';
 import { t } from '../../i18n.mjs';
 import ChatUI from '../ui/ChatUI.js';
 import type { MyMessage, HyperToolCall } from '@dadigua/hyperchat-shared/types';
@@ -96,7 +97,7 @@ export async function startChatInk(initialMessage?: string, options: ChatOptions
     }
 
     // 记录配置信息  
-    logAIConfig(LoggerClass, env, 'CLI Chat');
+    logAIConfig(LoggerClass, env);
 
     // 获取有效配置的帮助函数
     const getEffectiveConfig = () => {
@@ -138,7 +139,7 @@ export async function startChatInk(initialMessage?: string, options: ChatOptions
     };
 
     // 创建AI通道（提升到外部作用域）
-    const aiChannel = createAIChannel(env);
+    const aiChannel = createAIChannel();
 
     // 处理用户输入的函数
     const handleUserInput = async (userInput: string): Promise<void> => {
@@ -168,9 +169,18 @@ export async function startChatInk(initialMessage?: string, options: ChatOptions
       }
 
       try {
+        // 构建系统提示词
+        const agentName = env.agentConfig?.name || "";
+        const systemPrompt = getBuiltinPrompts(
+          env.workspace.workspacePath,
+          effectiveConfig.prompt,
+          agentName,
+          "workspace"
+        ).prompt;
+        
         await aiChannel.completion({
           modelKey: effectiveConfig.modelKey,
-          prompt: effectiveConfig.prompt,
+          prompt: systemPrompt,
           allowMCPs: effectiveConfig.allowMCPs,
           isConfirmCallTool: effectiveConfig.isConfirmCallTool,
           temperature: effectiveConfig.temperature,

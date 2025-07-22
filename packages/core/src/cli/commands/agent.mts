@@ -7,7 +7,6 @@ import { Logger } from '../utils/logger.mjs';
 import { Command } from '../../command.mjs';
 import { workspaceManager } from '../../workspace/index.mjs';
 import { t } from '../../i18n.mjs';
-import { getBuiltinPrompts } from '../../ai/hyperchat-builtin-prompts.mjs';
 import { agentCommands } from '../../commands/agentCommands.mjs';
 import type { AgentConfig } from '@dadigua/hyperchat-shared';
 /**
@@ -163,16 +162,14 @@ export async function createAgent(name: string) {
       logger.info(`💡 ${t`Configuration loaded from workspace above`}`);
     }
 
-    // 记忆获取逻辑现在在 getBuiltinPrompts 内部处理
-
-    // 使用getBuiltinPrompts生成增强的系统提示词
+    // 创建基础 prompt，不包含动态记忆内容
+    // 记忆获取逻辑应该在请求时通过 getBuiltinPrompts 动态处理
     const basePrompt = `你是一个名为 ${name} 的AI助手。请根据用户的需求提供帮助。`;
-    const enhancedPrompt = getBuiltinPrompts(workspacePath, basePrompt, name, "workspace");
 
     // 创建代理配置
     const agentConfig = {
       name: name,
-      prompt: enhancedPrompt.prompt,
+      prompt: basePrompt, // 只保存基础 prompt，不预先调用 getBuiltinPrompts
       description: `${name} 助手`,
       allowMCPs: [] as string[],
       isConfirmCallTool: false,
@@ -221,26 +218,3 @@ export async function checkAgentExists(agentName: string): Promise<{ exists: boo
   }
 }
 
-/**
- * 获取Agent的增强提示词（包含记忆和内置提示词）
- */
-export async function getEnhancedAgentPrompt(agentName: string, userPrompt: string): Promise<string> {
-  try {
-    // 获取当前工作区路径
-    const workspacePath = await getCurrentWorkspacePath();
-
-    // 记忆获取逻辑现在在 getBuiltinPrompts 内部处理
-    // 智能获取当前工作区
-    const currentWorkingDirectory = process.cwd();
-    await workspaceManager.initialize(currentWorkingDirectory);
-
-    // 使用getBuiltinPrompts生成增强的系统提示词
-    const enhancedPrompt = getBuiltinPrompts(workspacePath, userPrompt, agentName, "workspace");
-    
-    return enhancedPrompt.prompt;
-  } catch (error) {
-    console.error(`Failed to get enhanced prompt for agent ${agentName}:`, error);
-    // 如果出错，返回原始提示词
-    return userPrompt;
-  }
-}

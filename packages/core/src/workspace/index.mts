@@ -58,6 +58,7 @@ export type {
 import { WorkspaceManager } from "./workspaceManager.mjs";
 import { Data } from "./data.mjs";
 import { WorkspaceConfig } from "./types.mjs";
+import { Command } from "../command.mjs";
 
 // 全局工作区管理器实例
 export const workspaceManager = new WorkspaceManager();
@@ -65,6 +66,88 @@ export const workspaceManager = new WorkspaceManager();
 // 获取工作区管理器实例的函数
 export function getWorkspaceManager(): WorkspaceManager {
   return workspaceManager;
+}
+
+/**
+ * 获取或创建默认 Agent
+ * 如果工作区中没有名为 "default" 的 Agent，则自动创建一个
+ */
+export async function getDefaultAgent(): Promise<{ agentName: string; agentInstance: any; agentConfig: any } | null> {
+  try {
+    const workspace = workspaceManager.getCurrentWorkspace();
+    if (!workspace) {
+      return null;
+    }
+
+    const defaultAgentName = 'default';
+
+    // 首先检查是否已经存在默认 Agent
+    const agents = await workspace.getAllAgentsSummary();
+    const existingDefaultAgent = agents.find(a => a.config.name === defaultAgentName);
+
+    if (existingDefaultAgent) {
+      // 如果已经存在，直接返回
+      const agentInstance = workspace.getAgentInstance(defaultAgentName);
+      if (agentInstance) {
+        return {
+          agentName: defaultAgentName,
+          agentInstance: agentInstance,
+          agentConfig: existingDefaultAgent.config
+        };
+      }
+    }
+
+    // 如果不存在默认 Agent，创建一个
+    await createDefaultAgent(workspace);
+
+    // 重新获取创建后的默认 Agent
+    const updatedAgents = await workspace.getAllAgentsSummary();
+    const newDefaultAgent = updatedAgents.find(a => a.config.name === defaultAgentName);
+
+    if (newDefaultAgent) {
+      const agentInstance = workspace.getAgentInstance(defaultAgentName);
+      if (agentInstance) {
+        return {
+          agentName: defaultAgentName,
+          agentInstance: agentInstance,
+          agentConfig: newDefaultAgent.config
+        };
+      }
+    }
+
+    return null;
+  } catch (error) {
+    console.error('Error getting/creating default agent:', error);
+    return null;
+  }
+}
+
+/**
+ * 创建默认 Agent
+ * 内部辅助函数，用于创建一个标准的默认 Agent
+ */
+async function createDefaultAgent(workspace: any): Promise<void> {
+  const defaultAgentName = 'default';
+  const workspacePath = workspace.workspacePath;
+
+  // 使用内置提示词生成增强的系统提示词
+  const basePrompt = `You are a helpful AI assistant. You can assist with various tasks including file operations, coding, research, and general questions.`;
+
+  // 创建默认 Agent 配置
+  const agentConfig = {
+    name: defaultAgentName,
+    prompt: basePrompt,
+    description: `Default AI assistant`,
+    allowMCPs: ["hyper_system", "hyper_browser"] as string[],
+    isConfirmCallTool: false,
+    tags: ['default', 'auto-created']
+  };
+
+  // 使用 Command API 创建 Agent
+  await Command.createAgent({
+    config: agentConfig,
+    scope: "global",
+  });
 }
 
 

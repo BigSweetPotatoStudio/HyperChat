@@ -19,9 +19,31 @@ export function createReadline(): ReadlineInterface {
     terminal: true
   });
 
+  // 添加错误处理
+  let isClosed = false;
+  
+  rl.on('close', () => {
+    isClosed = true;
+  });
+
+  rl.on('SIGINT', () => {
+    isClosed = true;
+    rl.close();
+  });
+
   const question = (prompt: string): Promise<string> => {
-    return new Promise((resolve) => {
-      rl.question(prompt, resolve);
+    return new Promise((resolve, reject) => {
+      // 检查是否已经关闭
+      if (isClosed) {
+        reject(new Error('Readline interface is closed'));
+        return;
+      }
+
+      try {
+        rl.question(prompt, resolve);
+      } catch (error) {
+        reject(error);
+      }
     });
   };
 

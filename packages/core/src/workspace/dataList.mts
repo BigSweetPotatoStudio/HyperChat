@@ -3,6 +3,7 @@ import * as fs from "fs";
 import dayjs from "dayjs";
 import { v4 } from "uuid";
 import * as yaml from "js-yaml";
+import { Logger } from "../log.mjs";
 
 /**
  * 文件格式枚举
@@ -23,6 +24,7 @@ export class DataList<T extends { key: string }> {
   private loaded = false;
   private lastModified = 0;
   private loadPromise?: Promise<void>;
+  private logger = Logger;
 
   constructor(
     private dirPath: string,
@@ -126,7 +128,7 @@ export class DataList<T extends { key: string }> {
             // 检查文件是否为普通文件（不是目录、符号链接等）
             const fileStat = await fs.promises.stat(filePath);
             if (!fileStat.isFile()) {
-              console.warn(`跳过非文件项: ${file}`);
+              this.logger.warn(`跳过非文件项: ${file}`);
               return null;
             }
 
@@ -134,7 +136,7 @@ export class DataList<T extends { key: string }> {
             const format = this.detectFileFormat(file);
 
             if (!format) {
-              console.warn(`不支持的文件格式: ${file}`);
+              this.logger.warn(`不支持的文件格式: ${file}`);
               return null;
             }
 
@@ -142,13 +144,13 @@ export class DataList<T extends { key: string }> {
             try {
               item = this.parseFileContent(content, format);
             } catch (parseError) {
-              console.warn(`${file} 解析失败 (${format}):`, parseError);
+              this.logger.warn(`${file} 解析失败 (${format}):`, parseError);
               return null;
             }
 
             // 验证解析结果
             if (!item || typeof item !== 'object') {
-              console.warn(`文件 ${file} 解析结果不是对象`);
+              this.logger.warn(`文件 ${file} 解析结果不是对象`);
               return null;
             }
 
@@ -157,7 +159,7 @@ export class DataList<T extends { key: string }> {
 
             // 确保对象的 key 与文件名保持一致
             if (item.key && item.key !== fileKey) {
-              console.warn(`文件 ${file} 中的 key (${item.key}) 与文件名不匹配，使用文件名作为 key: ${fileKey}`);
+              this.logger.warn(`文件 ${file} 中的 key (${item.key}) 与文件名不匹配，使用文件名作为 key: ${fileKey}`);
             }
             item.key = fileKey;
 
@@ -166,14 +168,14 @@ export class DataList<T extends { key: string }> {
             // 提供更详细的文件处理错误信息
             if (error instanceof Error) {
               if (error.message.includes('ENOENT')) {
-                console.warn(`文件不存在: ${file}`);
+                this.logger.warn(`文件不存在: ${file}`);
               } else if (error.message.includes('EACCES')) {
-                console.warn(`无权限访问文件: ${file}`);
+                this.logger.warn(`无权限访问文件: ${file}`);
               } else {
-                console.warn(`加载文件 ${file} 失败: ${error.message}`);
+                this.logger.warn(`加载文件 ${file} 失败: ${error.message}`);
               }
             } else {
-              console.warn(`加载文件 ${file} 失败:`, error);
+              this.logger.warn(`加载文件 ${file} 失败:`, error);
             }
             return null;
           }
@@ -189,7 +191,7 @@ export class DataList<T extends { key: string }> {
 
       this.lastModified = currentModified;
     } catch (error) {
-      console.warn(`读取目录 ${this.dirPath} 失败:`, error);
+      this.logger.warn(`读取目录 ${this.dirPath} 失败:`, error);
     }
 
     this.loaded = true;
@@ -264,7 +266,7 @@ export class DataList<T extends { key: string }> {
       return true;
     } catch (error) {
       const errorMsg = error instanceof Error ? error.message : String(error);
-      console.warn(`保存文件 ${this.getFileName(this.getItemKey(item))} 失败:`, errorMsg);
+      this.logger.warn(`保存文件 ${this.getFileName(this.getItemKey(item))} 失败:`, errorMsg);
       return false;
     }
   }
@@ -288,7 +290,7 @@ export class DataList<T extends { key: string }> {
         }
       } catch (error) {
         const errorMsg = error instanceof Error ? error.message : String(error);
-        console.warn(`删除文件 ${filename} 失败: ${errorMsg}`);
+        this.logger.warn(`删除文件 ${filename} 失败: ${errorMsg}`);
       }
     }
 
@@ -321,7 +323,7 @@ export class DataList<T extends { key: string }> {
         }
       }
     } catch (error) {
-      console.warn(`读取目录失败:`, error);
+      this.logger.warn(`读取目录失败:`, error);
     }
 
     // 为没有 key 的项目生成 key
@@ -345,7 +347,7 @@ export class DataList<T extends { key: string }> {
         await fs.promises.writeFile(filePath, content, "utf-8");
         return { success: true, filename };
       } catch (error) {
-        console.warn(`保存文件 ${filename} 失败:`, error);
+        this.logger.warn(`保存文件 ${filename} 失败:`, error);
         return { success: false, filename, error };
       }
     });
@@ -361,7 +363,7 @@ export class DataList<T extends { key: string }> {
         try {
           await fs.promises.unlink(filePath);
         } catch (error) {
-          console.warn(`删除旧文件 ${existingFile} 失败:`, error);
+          this.logger.warn(`删除旧文件 ${existingFile} 失败:`, error);
         }
       });
 
@@ -410,7 +412,7 @@ export class DataList<T extends { key: string }> {
       return true;
     } catch (error) {
       const errorMsg = error instanceof Error ? error.message : String(error);
-      console.warn(`清空目录失败: ${errorMsg}`);
+      this.logger.warn(`清空目录失败: ${errorMsg}`);
       return false;
     }
   }
@@ -454,7 +456,7 @@ export class DataList<T extends { key: string }> {
         }
       }
     } catch (error) {
-      console.warn('读取现有文件失败:', error);
+      this.logger.warn('读取现有文件失败:', error);
       return false;
     }
 
@@ -473,7 +475,7 @@ export class DataList<T extends { key: string }> {
           try {
             await fs.promises.unlink(filePath);
           } catch (error) {
-            console.warn(`删除旧文件 ${file} 失败:`, error);
+            this.logger.warn(`删除旧文件 ${file} 失败:`, error);
           }
         });
 
