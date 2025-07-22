@@ -2,6 +2,8 @@ import React, { useState, useEffect, useRef } from 'react';
 import { render, Box, Text, Newline } from 'ink';
 import TextInput from 'ink-text-input';
 import Spinner from 'ink-spinner';
+import { marked } from 'marked';
+import TerminalRenderer from 'marked-terminal';
 import { t } from '../../i18n.mjs';
 import type { MyMessage, CommonContent } from '@dadigua/hyperchat-shared/types';
 
@@ -12,7 +14,23 @@ interface CollectedMessageData {
   index: number;
 }
 
-// 移除 ChatMessage 接口，直接使用 MyMessage
+// 配置 marked 以使用终端渲染器
+marked.setOptions({
+  // @ts-ignore - marked-terminal 类型定义问题
+  renderer: new TerminalRenderer()
+});
+
+// 辅助函数：渲染 Markdown 内容
+const renderMarkdown = (content: string): string => {
+  try {
+    const result = marked(content);
+    // 确保返回字符串类型
+    return typeof result === 'string' ? result : content;
+  } catch (error) {
+    // 如果 Markdown 解析失败，返回原始文本
+    return content;
+  }
+};
 
 interface ChatUIProps {
   onUserInput: (input: string) => Promise<void>;
@@ -322,16 +340,20 @@ export const ChatUI: React.FC<ChatUIProps> = ({ onUserInput, onExit, messages: e
                     );
                     
                     return (
-                      <Box key={`tool-call-${toolIndex}`} marginLeft={2}>
+                      <Box key={`tool-call-${toolIndex}`} marginLeft={2} flexDirection="column">
                         <Text color={toolDisplay.color}>
                           {toolDisplay.icon} {toolDisplay.text} {tool.displayName || tool.originalName || tool.function.name}
                         </Text>
                         {tool.function.args && Object.keys(tool.function.args).length > 0 && (
-                          <Text color="gray"> ({JSON.stringify(tool.function.args, null, 0).replace(/\n\s*/g, ' ')})</Text>
+                          <Text color="gray">  ({(() => {
+                            const argsStr = JSON.stringify(tool.function.args, null, 0).replace(/\n\s*/g, ' ');
+                            // 如果参数太长，截断显示
+                            return argsStr.length > 100 ? argsStr.substring(0, 100) + '...' : argsStr;
+                          })()})</Text>
                         )}
                         
                         {/* 工具结果状态 */}
-                        {toolResult && (
+                        {/* {toolResult && (
                           <Box marginLeft={2}>
                             {toolResult.content_status === 'loading' ? (
                               <Text color="blue">⏳ {t`Tool executing...`}</Text>
@@ -341,7 +363,7 @@ export const ChatUI: React.FC<ChatUIProps> = ({ onUserInput, onExit, messages: e
                               <Text color="green">✅ {t`Tool completed`}</Text>
                             )}
                           </Box>
-                        )}
+                        )} */}
                       </Box>
                     );
                   })}
@@ -354,7 +376,7 @@ export const ChatUI: React.FC<ChatUIProps> = ({ onUserInput, onExit, messages: e
                   {/* 主要内容 */}
                   {message.content && (
                     <Box marginLeft={2}>
-                      <Text>{renderContent(message.content)}</Text>
+                      <Text>{renderMarkdown(renderContent(message.content))}</Text>
                     </Box>
                   )}
                   

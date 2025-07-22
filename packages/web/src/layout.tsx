@@ -284,7 +284,7 @@ export function Layout() {
         algorithm: theme.compactAlgorithm, // 紧凑主题
         token: {
           // 主要品牌色
-          colorPrimary: "#91bcf8",
+          colorPrimary: "rgb(38, 139, 210)",
           // 成功色
           colorSuccess: '#52c41a',
           // 警告色  
