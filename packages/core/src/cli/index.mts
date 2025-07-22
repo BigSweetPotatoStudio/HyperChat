@@ -15,7 +15,7 @@ import { readFileSync } from 'fs';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
 import { Logger } from './utils/logger.mjs';
-import { startChat } from './commands/chat.mjs';
+// startChat 现在通过动态导入加载
 import { startServer } from './commands/server.mjs';
 import { startRun, showRunStatus } from './commands/run.mjs';
 import { createWorkspace, listWorkspaces, showCurrentWorkspace } from './commands/workspace.mjs';
@@ -53,13 +53,14 @@ const globalOptions = {
   port: parseInt(getOptionValue(args, '--port') || '16102'),
   password: getOptionValue(args, '--password'),
   workspace: getOptionValue(args, '--workspace'),
-  language: getOptionValue(args, '--language') || getOptionValue(args, '--lang')
+  language: getOptionValue(args, '--language') || getOptionValue(args, '--lang'),
+  ui: getOptionValue(args, '--ui') || 'ink' // 默认使用 ink UI
 };
 
 // 移除选项和选项值，保留命令和参数
 function getCleanArgs(args: string[]): string[] {
   const cleanArgs: string[] = [];
-  const optionsWithValues = ['--workspace', '--host', '--port', '--password', '--language', '--lang'];
+  const optionsWithValues = ['--workspace', '--host', '--port', '--password', '--language', '--lang', '--ui'];
   
   for (let i = 0; i < args.length; i++) {
     const arg = args[i];
@@ -106,6 +107,7 @@ ${t`Global options:`}
   --password <password>    ${t`Server password`}
   --verbose, -v            ${t`Show verbose logs`}
   --quiet, -q              ${t`Silent mode`}
+  --ui <style>             ${t`UI style: legacy|ink (default: ink)`}
   --help, -h               ${t`Show help information`}
 
 ${t`Commands:`}
@@ -262,11 +264,16 @@ async function startChatWrapper(messages: string[], logger: Logger, agentName?: 
       agent: agentName
     };
 
-    if (messages.length > 0) {
-      const message = messages.join(' ');
-      await startChat(message, options);
+    const message = messages.length > 0 ? messages.join(' ') : undefined;
+
+    // 根据 UI 选项选择不同的聊天实现
+    if (globalOptions.ui === 'ink') {
+      const { startChatInk } = await import('./commands/chat-ink.mjs');
+      await startChatInk(message, options);
     } else {
-      await startChat(undefined, options);
+      // 默认使用传统 UI（为了向后兼容）
+      const { startChat } = await import('./commands/chat.mjs');
+      await startChat(message, options);
     }
 
   } catch (error) {

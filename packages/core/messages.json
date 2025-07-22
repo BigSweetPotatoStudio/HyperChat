@@ -1,0 +1,41 @@
+[
+  {
+    "type": "user",
+    "messages": [
+      {
+        "role": "user",
+        "content": "当前时间",
+        "content_status": "success",
+        "content_date": 1753172926151,
+        "content_attached": true
+      }
+    ],
+    "index": 0
+  },
+  {
+    "type": "assistant_group",
+    "messages": [
+      {
+        "role": "assistant",
+        "content": "我来为您查询当前时间。",
+        "reasoning_content": "",
+        "content_tool_calls": [],
+        "content_status": "dataLoadComplete",
+        "content_date": 1753172926151,
+        "content_attached": true
+      },
+      {
+        "role": "tool",
+        "content": "当前时间是：**2025年7月22日 星期二 16:28:49 (中国标准时间 CST)**",
+        "tool_call_name": "hyper_system_run_shell_command",
+        "content_status": "dataLoadComplete",
+        "tool_call_id": "hyper_system_run_shell_command:0",
+        "content_date": 1753172929771,
+        "content_attached": true,
+        "reasoning_content": "",
+        "content_tool_calls": []
+      }
+    ],
+    "index": 2
+  }
+]

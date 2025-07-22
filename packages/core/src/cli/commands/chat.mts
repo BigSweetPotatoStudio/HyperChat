@@ -218,7 +218,7 @@ export async function startChat(initialMessage?: string, options: ChatOptions = 
             if (content.length > displayedContentLength) {
               // 如果reasoning_content或工具调用存在且还没有添加分隔符，先添加换行
               if ((reasoningContent.length > 0 || toolCalls.length > 0) && !reasoningFinished) {
-                if (!toolCallsDisplayed) process.stdout.write('\n');
+                process.stdout.write('\n'); // 移除了 !toolCallsDisplayed 条件，确保工具调用后总是添加换行
                 reasoningFinished = true;
               }
               const newContentPart = content.slice(displayedContentLength);
@@ -480,7 +480,7 @@ export async function startChat(initialMessage?: string, options: ChatOptions = 
               if (content.length > displayedContentLength) {
                 // 如果reasoning_content或工具调用存在且还没有添加分隔符，先添加换行
                 if ((reasoningContent.length > 0 || toolCalls.length > 0) && !reasoningFinished) {
-                  if (!toolCallsDisplayed) process.stdout.write('\n');
+                  process.stdout.write('\n'); // 移除了 !toolCallsDisplayed 条件，确保工具调用后总是添加换行
                   reasoningFinished = true;
                 }
                 const newContentPart = content.slice(displayedContentLength);
