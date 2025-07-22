@@ -1,11 +1,15 @@
 import React, { useState, useEffect } from "react";
-import { Tree, Button, message } from "antd";
+import { Tree, Button, message, Dropdown, MenuProps } from "antd";
 import {
   FolderOutlined,
   FileOutlined,
   EyeOutlined,
   EyeInvisibleOutlined,
   ReloadOutlined,
+  CopyOutlined,
+  EditOutlined,
+  DeleteOutlined,
+  FolderOpenOutlined,
 } from "@ant-design/icons";
 import { call } from "../common/call";
 import { t } from "../i18n";
@@ -31,17 +35,6 @@ const filterHiddenFiles = (items: FileNode[], showHidden: boolean): FileNode[] =
   return items.filter(item => !item.isHidden);
 };
 
-// 将文件节点转换为树节点的函数
-const mapFileNodeToTreeNode = (item: FileNode) => ({
-  title: (
-    <span style={{ opacity: item.isHidden ? 0.6 : 1 }}>
-      {item.name}
-    </span>
-  ),
-  key: item.path,
-  icon: item.type === "directory" ? <FolderOutlined /> : <FileOutlined />,
-  isLeaf: item.type === "file",
-});
 
 // 更新树数据的工具函数（按照官方示例）
 const updateTreeData = (list: any[], key: React.Key, children: any[]): any[] =>
@@ -73,6 +66,9 @@ export function FileTreeComponent({
   const [refreshing, setRefreshing] = useState(false);
   // 存储路径到文件节点的映射
   const [nodeMap, setNodeMap] = useState<Map<string, FileNode>>(new Map());
+  // 右键菜单状态
+  const [contextMenuVisible, setContextMenuVisible] = useState(false);
+  const [rightClickedNode, setRightClickedNode] = useState<FileNode | null>(null);
 
   // 创建节点映射的辅助函数
   const createNodeMap = (nodes: FileNode[]): Map<string, FileNode> => {
@@ -90,15 +86,12 @@ export function FileTreeComponent({
   };
 
   // 初始化树数据（过滤隐藏文件）
-  const [treeData, setTreeData] = useState(() => {
-    const filteredData = filterHiddenFiles(initialData, showHidden);
-    return filteredData.map(mapFileNodeToTreeNode);
-  });
+  const [treeData, setTreeData] = useState<any[]>([]);
 
   // 当初始数据或showHidden变化时更新组件状态
   useEffect(() => {
     const filteredData = filterHiddenFiles(initialData, showHidden);
-    const newTreeData = filteredData.map(mapFileNodeToTreeNode);
+    const newTreeData = filteredData.map(mapFileNodeToTreeNodeWithMenu);
     setTreeData(newTreeData);
     setNodeMap(createNodeMap(initialData)); // 使用原始数据创建映射
   }, [initialData, showHidden]);
@@ -136,6 +129,88 @@ export function FileTreeComponent({
     }
   };
 
+  // 右键菜单项点击处理
+  const handleMenuClick = (action: string) => {
+    if (!rightClickedNode) return;
+    
+    setContextMenuVisible(false);
+    
+    switch (action) {
+      case 'copy-path':
+        navigator.clipboard.writeText(rightClickedNode.path);
+        message.success(t`Path copied to clipboard`);
+        break;
+      case 'copy-name':
+        navigator.clipboard.writeText(rightClickedNode.name);
+        message.success(t`File name copied to clipboard`);
+        break;
+      case 'open':
+        if (rightClickedNode.type === 'file' && onFileSelect) {
+          onFileSelect(rightClickedNode.path, rightClickedNode.name);
+        }
+        break;
+      case 'reveal':
+        // 可以在这里添加在文件管理器中显示的逻辑
+        message.info(t`Reveal in file manager: ${rightClickedNode.path}`);
+        break;
+      default:
+        break;
+    }
+  };
+
+  // 创建右键菜单项
+  const createContextMenu = (): MenuProps['items'] => {
+    if (!rightClickedNode) return [];
+
+    const isFile = rightClickedNode.type === 'file';
+    const isDirectory = rightClickedNode.type === 'directory';
+
+    return [
+      {
+        key: 'copy-path',
+        icon: <CopyOutlined />,
+        label: t`Copy Path`,
+      },
+      {
+        key: 'copy-name',
+        icon: <CopyOutlined />,
+        label: t`Copy Name`,
+      },
+      ...(isFile ? [{
+        key: 'open',
+        icon: <FileOutlined />,
+        label: t`Open File`,
+      }] : []),
+      ...(isDirectory ? [{
+        key: 'reveal',
+        icon: <FolderOpenOutlined />,
+        label: t`Open in File Manager`,
+      }] : []),
+    ];
+  };
+
+  // 处理右键点击事件
+  const handleRightClick = (e: React.MouseEvent, node: FileNode) => {
+    e.preventDefault();
+    setRightClickedNode(node);
+    setContextMenuVisible(true);
+  };
+
+  // 将文件节点转换为树节点的函数（组件内部版本）
+  const mapFileNodeToTreeNodeWithMenu = (item: FileNode) => ({
+    title: (
+      <span 
+        style={{ opacity: item.isHidden ? 0.6 : 1 }}
+        onContextMenu={(e) => handleRightClick(e, item)}
+      >
+        {item.name}
+      </span>
+    ),
+    key: item.path,
+    icon: item.type === "directory" ? <FolderOutlined /> : <FileOutlined />,
+    isLeaf: item.type === "file",
+  });
+
   const onLoadData = ({ key, children }: any) =>
     new Promise<void>(async (resolve) => {
       if (children) {
@@ -149,7 +224,7 @@ export function FileTreeComponent({
         });
         
         const filteredChildren = filterHiddenFiles(childrenData, showHidden);
-        const treeChildren = filteredChildren.map(mapFileNodeToTreeNode);
+        const treeChildren = filteredChildren.map(mapFileNodeToTreeNodeWithMenu);
 
         // 更新nodeMap
         setNodeMap(prevMap => {
@@ -170,36 +245,51 @@ export function FileTreeComponent({
     });
 
   return (
-    <div>
-      <div className="flex justify-between items-center mb-2 px-1">
-        <span className="text-xs text-gray-500">{t`Files`}</span>
-        <div className="flex items-center gap-1">
-          <Button
-            type="text"
-            size="small"
-            icon={<ReloadOutlined spin={refreshing} />}
-            onClick={handleRefresh}
-            loading={refreshing}
-            disabled={!onRefresh}
-            title={t`Refresh file tree`}
-            className="text-xs"
-          />
-          <Button
-            type="text"
-            size="small"
-            icon={showHidden ? <EyeOutlined /> : <EyeInvisibleOutlined />}
-            onClick={() => onShowHiddenChange(!showHidden)}
-            title={showHidden ? t`Hide hidden files` : t`Show hidden files`}
-            className="text-xs"
-          />
+    <Dropdown
+      menu={{
+        items: createContextMenu(),
+        onClick: ({ key }) => handleMenuClick(key),
+      }}
+      trigger={['contextMenu']}
+      open={contextMenuVisible}
+      onOpenChange={(visible) => {
+        if (!visible) {
+          setContextMenuVisible(false);
+          setRightClickedNode(null);
+        }
+      }}
+    >
+      <div>
+        <div className="flex justify-between items-center mb-2 px-1">
+          <span className="text-xs text-gray-500">{t`Files`}</span>
+          <div className="flex items-center gap-1">
+            <Button
+              type="text"
+              size="small"
+              icon={<ReloadOutlined spin={refreshing} />}
+              onClick={handleRefresh}
+              loading={refreshing}
+              disabled={!onRefresh}
+              title={t`Refresh file tree`}
+              className="text-xs"
+            />
+            <Button
+              type="text"
+              size="small"
+              icon={showHidden ? <EyeOutlined /> : <EyeInvisibleOutlined />}
+              onClick={() => onShowHiddenChange(!showHidden)}
+              title={showHidden ? t`Hide hidden files` : t`Show hidden files`}
+              className="text-xs"
+            />
+          </div>
         </div>
+        <Tree
+          showIcon
+          loadData={onLoadData}
+          treeData={treeData}
+          onSelect={handleSelect}
+        />
       </div>
-      <Tree
-        showIcon
-        loadData={onLoadData}
-        treeData={treeData}
-        onSelect={handleSelect}
-      />
-    </div>
+    </Dropdown>
   );
 }
