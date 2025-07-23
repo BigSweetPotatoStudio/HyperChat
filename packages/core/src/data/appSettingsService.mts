@@ -1,4 +1,4 @@
-import { appDataDir } from "../const.mjs";
+import { getAppDataDir } from "../const.mjs";
 import { Logger } from "../log.mjs";
 import { AIModelConfigItem } from "@dadigua/hyperchat-shared";
 import { AppSettingsManager } from "./managers/appSettingsManager.mjs";
@@ -51,7 +51,7 @@ class AiModelData {
   async init() {
     // 确保应用设置管理器已初始化，但不重复调用init()
     if (!isAppSettingsManagerInitialized()) {
-      const appSettingsManager = initAppSettingsManager(appDataDir);
+      const appSettingsManager = initAppSettingsManager(getAppDataDir());
       await appSettingsManager.init();
       markAppSettingsManagerAsInitialized();
     }
@@ -80,7 +80,7 @@ export const AI_MODELS = new AiModelData();
 try {
 
   // 初始化应用设置管理器
-  const appSettingsManager = initAppSettingsManager(appDataDir);
+  const appSettingsManager = initAppSettingsManager(getAppDataDir());
   await appSettingsManager.init();
 
   // 标记为已完成初始化

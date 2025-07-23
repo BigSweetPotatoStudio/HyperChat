@@ -20,7 +20,7 @@ import {
   ProviderConfigSchema,
   MCPGatewaySchema,
 } from "@dadigua/hyperchat-shared";
-import { CONST } from "../../const.mjs";
+import { CONST, getAppDataDir } from "../../const.mjs";
 
 /**
  * 全局应用设置管理器类（仅限 Node.js 环境）
@@ -40,7 +40,7 @@ export class AppSettingsManager {
       ...DEFAULT_APP_SETTINGS,
       uuid: v4(),
       version: CONST.getVersion,
-      appDataDir: CONST.appDataDir,
+      appDataDir: getAppDataDir(),
       platform: process.platform,
       PATH: process.env.PATH || "",
       ai: {
@@ -108,7 +108,7 @@ export class AppSettingsManager {
             ...result.data,
             // 只更新动态系统信息
             version: CONST.getVersion,
-            appDataDir: CONST.appDataDir,
+            appDataDir: getAppDataDir(),
             platform: process.platform,
             PATH: process.env.PATH || "",
           };
@@ -320,7 +320,7 @@ export class AppSettingsManager {
       ...DEFAULT_APP_SETTINGS,
       uuid: v4(),
       version: CONST.getVersion,
-      appDataDir: CONST.appDataDir,
+      appDataDir: getAppDataDir(),
       platform: process.platform,
       PATH: process.env.PATH || "",
       ai: {
@@ -490,7 +490,7 @@ export class AppSettingsManager {
     // 保留系统信息，但使用最新值
     const systemInfo = {
       version: CONST.getVersion,
-      appDataDir: CONST.appDataDir,
+      appDataDir: getAppDataDir(),
       logFilePath: this.settings.logFilePath,
       PATH: process.env.PATH || "",
       platform: process.platform,
@@ -523,7 +523,7 @@ export class AppSettingsManager {
         // 保留系统信息，但使用最新值
         const systemInfo = {
           version: CONST.getVersion,
-          appDataDir: CONST.appDataDir,
+          appDataDir: getAppDataDir(),
           logFilePath: this.settings.logFilePath,
           PATH: process.env.PATH || "",
           platform: process.platform,
