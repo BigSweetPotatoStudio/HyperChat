@@ -68,7 +68,7 @@ export const createWindow = () => {
   } else {
     win
       .loadURL(
-        `http://localhost:${Config.port}/${appSettings?.getSystem()?.password || ''}/#/`
+        `http://localhost:${Config.port}/${'123456'}/#/`
       )
       .catch((_e) => {
         let indexFile = path.join(__dirname, "../web-build/index.html");
