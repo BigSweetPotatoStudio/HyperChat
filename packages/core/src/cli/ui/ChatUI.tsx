@@ -204,7 +204,10 @@ export const ChatUI: React.FC<ChatUIProps> = ({ onUserInput, onExit, onCancel, o
   const selectSuggestion = () => {
     if (showSuggestions && filteredCommands[suggestionIndex]) {
       const selectedCommand = filteredCommands[suggestionIndex].command;
-      setInput(selectedCommand);
+      // 为需要参数的命令添加空格，光标自然会在末尾
+      const needsSpace = selectedCommand === '/toolinfo';
+      const finalInput = needsSpace ? selectedCommand + ' ' : selectedCommand;
+      setInput(finalInput);
       setShowSuggestions(false);
       return true;
     }
@@ -242,8 +245,8 @@ export const ChatUI: React.FC<ChatUIProps> = ({ onUserInput, onExit, onCancel, o
     }
   };
 
-  // 处理自定义键盘交互的输入状态
-  const [customInputMode, setCustomInputMode] = useState(false);
+  // 处理自定义键盘交互的输入状态（预留功能）
+  // const [customInputMode, setCustomInputMode] = useState(false);
   
   // 处理输入变化时的自动补全提示
   const handleInputChange = (newInput: string) => {
@@ -299,8 +302,13 @@ export const ChatUI: React.FC<ChatUIProps> = ({ onUserInput, onExit, onCancel, o
       
       if (key.tab) {
         const completed = handleAutoComplete(input);
-        setInput(completed);
-        updateSuggestions(completed);
+        if (completed !== input) {
+          // 如果完成了补全，为需要参数的命令添加空格
+          const needsSpace = completed === '/toolinfo';
+          const finalInput = needsSpace ? completed + ' ' : completed;
+          setInput(finalInput);
+          updateSuggestions(finalInput);
+        }
         return;
       }
       
