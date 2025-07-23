@@ -8,47 +8,70 @@ import { fs } from "zx";
 import path from "path";
 import dayjs from "dayjs";
 import log4js from "log4js";
-import { CONST } from "./const.mjs";
+import { os } from "zx";
 
-const logDir = path.join(CONST.appDataDir, ".logs");
-fs.ensureDirSync(logDir);
-let logpath = path.join(logDir, `${dayjs().format("YYYY-MM-DD")}.log`);
+// 延迟初始化日志目录，避免循环依赖
+let logDir: string | undefined;
+let logpath: string | undefined;
+
+function ensureLogDir(): string {
+  if (!logDir) {
+    // 使用默认路径，避免依赖 CONST
+    const defaultAppDataDir = path.join(os.homedir(), "Documents", "HyperChat");
+    logDir = path.join(defaultAppDataDir, ".logs");
+    fs.ensureDirSync(logDir);
+    logpath = path.join(logDir, `${dayjs().format("YYYY-MM-DD")}.log`);
+  }
+  return logDir;
+}
 
 // 根据环境变量设置日志级别
 const isDevMode = process.env.myEnv === 'dev';
 const logLevel = isDevMode ? 'debug' : 'info';
 
-log4js.configure({
-  appenders: {
-    file: {
-      type: "file",
-      filename: logpath,
-    },
-    console: {
-      type: "console",
-    },
-  },
-  categories: {
-    default: {
-      appenders: isDevMode ? ["file", "console"] : ["file"],
-      level: logLevel
-    }
-  },
-});
-const logger = log4js.getLogger();
+// 延迟初始化 log4js
+let logger: log4js.Logger | undefined;
+
+function getLogger(): log4js.Logger {
+  if (!logger) {
+    ensureLogDir(); // 确保日志目录存在
+    
+    log4js.configure({
+      appenders: {
+        file: {
+          type: "file",
+          filename: logpath!,
+        },
+        console: {
+          type: "console",
+        },
+      },
+      categories: {
+        default: {
+          appenders: isDevMode ? ["file", "console"] : ["file"],
+          level: logLevel
+        }
+      },
+    });
+    
+    logger = log4js.getLogger();
+  }
+  
+  return logger;
+}
 
 export class LoggerLog4 {
   debug(...args: unknown[]) {
     let [msg, ...rest] = args;
-    logger.debug(msg, ...rest);
+    getLogger().debug(msg, ...rest);
   }
   info(...args: unknown[]) {
     let [msg, ...rest] = args;
-    logger.info(msg, ...rest);
+    getLogger().info(msg, ...rest);
   }
   warn(...args: unknown[]) {
     let [msg, ...rest] = args;
-    logger.warn(msg, ...rest);
+    getLogger().warn(msg, ...rest);
   }
   error(...args: unknown[]) {
     let [msg, ...rest] = args;
@@ -58,7 +81,7 @@ export class LoggerLog4 {
       console.error(`[ERROR] ${msg}`, ...rest);
     } else {
       // 在生产模式下，记录简洁的错误信息
-      logger.error(msg);
+      getLogger().error(msg);
     }
   }
 

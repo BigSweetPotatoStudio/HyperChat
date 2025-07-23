@@ -181,7 +181,6 @@ export async function initHttp(): Promise<void> {
       });
     });
 
-    Config.port = PORT;
     console.log(`url: http://localhost:${PORT}${urlPrefix}/`);
   }
 
