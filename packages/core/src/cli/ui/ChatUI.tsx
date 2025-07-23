@@ -472,6 +472,7 @@ export const ChatUI: React.FC<ChatUIProps> = ({ onUserInput, onExit, onCancel, o
     return null;
   };
 
+
   // 条件渲染，不使用提前返回
   let content;
 
@@ -530,14 +531,14 @@ export const ChatUI: React.FC<ChatUIProps> = ({ onUserInput, onExit, onCancel, o
 
       {/* Messages */}
       <Box flexDirection="column" flexGrow={1} paddingX={1}>
-        {React.useMemo(() => {
+        {(() => {
           // 收集消息数据
           const collectedMessagesData = messages2collectMessages(allMessages);
           // 渲染消息组
           return collectedMessagesData.map((collectedData) =>
             renderMessageGroup(collectedData)
           ).filter(Boolean);
-        }, [allMessages, forceUpdate])}
+        })()}
 
         {/* Thinking indicator */}
         {isThinking && (
