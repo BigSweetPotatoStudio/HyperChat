@@ -20,7 +20,7 @@ import { getBuiltinPrompts } from '../../ai/hyperchat-builtin-prompts.mjs';
 import { t } from '../../i18n.mjs';
 import ChatUI from '../ui/ChatUI.js';
 import type { MyMessage, HyperToolCall } from '@dadigua/hyperchat-shared/types';
-import { v4 as uuidv4 } from 'uuid';
+import { getMyUuid } from '../utils/util.mjs';
 
 // 获取聊天标签（基于第一个用户消息）
 function getLabelByFirstUserContent(messages: Array<MyMessage>): string {
@@ -156,7 +156,7 @@ export async function startChatInk(initialMessage?: string, options: ChatOptions
       if (!chatUI) return;
 
       // 生成聊天Key
-      const chatKey = uuidv4();
+      const chatKey = getMyUuid();
 
       // 添加用户消息
       const userMessage: MyMessage = {

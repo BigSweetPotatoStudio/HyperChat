@@ -299,7 +299,7 @@ export const ChatUI: React.FC<ChatUIProps> = ({ onUserInput, onExit, messages: e
     } else if (type === "assistant_group") {
       // 处理 assistant 和 tool 消息组
       return (
-        <Box key={`assistant-group-${index}`} flexDirection="column" marginBottom={1} borderStyle="single" borderBottom={true}>
+        <Box key={`assistant-group-${index}`} flexDirection="column" marginBottom={1} borderStyle="single" borderColor="blue" borderBottom={true}>
           {/* 只显示一次 AI 标签 */}
           <Text color="green">🤖 {t`AI:`}</Text>
 
@@ -433,7 +433,7 @@ export const ChatUI: React.FC<ChatUIProps> = ({ onUserInput, onExit, messages: e
   return (
     <Box flexDirection="column" height="100%">
       {/* Header */}
-      <Box borderStyle="single" borderColor="blue" padding={1} marginBottom={1}>
+      <Box borderStyle="single"  padding={1} marginBottom={1}>
         <Box flexDirection="column">
           <Text color="blue" bold>🚀 HyperChat CLI</Text>
           {workspaceInfo && (

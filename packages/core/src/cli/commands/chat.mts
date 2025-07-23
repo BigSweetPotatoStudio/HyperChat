@@ -21,7 +21,8 @@ import {
 } from '../../utils/aiConfigHelper.mjs';
 import { getBuiltinPrompts } from '../../ai/hyperchat-builtin-prompts.mjs';
 import { t } from '../../i18n.mjs';
-import { v4 as uuidv4 } from 'uuid';
+import { getMyUuid } from '../utils/util.mjs';
+
 
 // 获取聊天标签（基于第一个用户消息）
 function getLabelByFirstUserContent(messages: Array<MyMessage>): string {
@@ -46,6 +47,7 @@ class StreamChatHandler {
   private lastDisplayedToolCallsCount = 0;
   private lastDisplayedToolResultsCount = 0;
   private isFirstUpdate = true;
+  private lastAssistantMessageId: string | undefined = undefined;
 
   constructor(private isInteractive: boolean = false) {}
 
@@ -56,6 +58,23 @@ class StreamChatHandler {
     this.lastDisplayedToolCallsCount = 0;
     this.lastDisplayedToolResultsCount = 0;
     this.isFirstUpdate = true;
+    this.lastAssistantMessageId = undefined;
+  }
+
+  // 重置当前assistant消息的显示状态
+  private resetCurrentMessage() {
+    this.displayedContentLength = 0;
+    this.displayedReasoningLength = 0;
+    this.reasoningFinished = false;
+    this.isFirstUpdate = true;
+  }
+
+  // 重置新的对话轮次（工具计数器也重置）
+  resetForNewRound() {
+    this.resetCurrentMessage();
+    this.lastDisplayedToolCallsCount = 0;
+    this.lastDisplayedToolResultsCount = 0;
+    this.lastAssistantMessageId = undefined;
   }
 
   async handleUpdate(aiChannel: AiChannel, env: any, chatKey: string) {
@@ -88,90 +107,97 @@ class StreamChatHandler {
   }
 
   private handleToolUpdates(aiChannel: AiChannel) {
-    const allMessages = aiChannel.messages || [];
-    const assistantMessages = allMessages.filter(msg => msg.role === 'assistant');
+    const lastMsg = aiChannel.lastMessage;
     
-    // 获取所有工具调用
-    const allToolCalls: any[] = [];
-    assistantMessages.forEach(msg => {
-      const toolCalls = msg.content_tool_calls || [];
-      allToolCalls.push(...toolCalls);
-    });
-
-    // 显示新的工具调用
-    const pendingToolCalls = allToolCalls.filter(tool => !tool.result && !tool.error);
-    if (pendingToolCalls.length > this.lastDisplayedToolCallsCount) {
-      for (let i = this.lastDisplayedToolCallsCount; i < pendingToolCalls.length; i++) {
-        const tool = pendingToolCalls[i];
-        if (tool) {
-          process.stdout.write('\n' + chalk.cyan(`🔧 ${t`Calling tool:`} ${tool.displayName || tool.originalName}`));
-          
-          // 显示工具参数
-          const args = tool.function.args;
-          if (args && Object.keys(args).length > 0) {
-            const argsStr = JSON.stringify(args, null, 2);
-            const shortArgsStr = argsStr.length > 100 ? argsStr.substring(0, 100) + '...' : argsStr;
-            process.stdout.write(chalk.gray(` (${shortArgsStr.replace(/\n\s*/g, ' ')})`));
+    // 只处理当前assistant消息的工具调用
+    if (lastMsg.role === 'assistant') {
+      const currentToolCalls = lastMsg.content_tool_calls || [];
+      
+      // 显示新的工具调用（所有工具调用都应该被显示）
+      const pendingToolCalls = currentToolCalls;
+      if (pendingToolCalls.length > this.lastDisplayedToolCallsCount) {
+        for (let i = this.lastDisplayedToolCallsCount; i < pendingToolCalls.length; i++) {
+          const tool = pendingToolCalls[i];
+          if (tool) {
+            process.stdout.write('\n' + chalk.cyan(`🔧 ${t`Calling tool:`} ${tool.displayName || tool.originalName}`));
+            
+            // 显示工具参数
+            const args = tool.function.args;
+            if (args && Object.keys(args).length > 0) {
+              const argsStr = JSON.stringify(args, null, 2);
+              const shortArgsStr = argsStr.length > 100 ? argsStr.substring(0, 100) + '...' : argsStr;
+              process.stdout.write(chalk.gray(` (${shortArgsStr.replace(/\n\s*/g, ' ')})`));
+            }
+            process.stdout.write('\n');
           }
-          process.stdout.write('\n');
         }
+        this.lastDisplayedToolCallsCount = pendingToolCalls.length;
       }
-      this.lastDisplayedToolCallsCount = pendingToolCalls.length;
     }
 
-    // 显示新的工具结果
-    const toolMessages = allMessages.filter(msg => msg.role === 'tool');
-    const completedToolMessages = toolMessages.filter(msg => 
-      ((msg as any).content_status === 'success' || 
-       (msg as any).content_status === 'error' ||
-       (!(msg as any).content_status && (msg.content && (msg.content as any).length > 0))) &&
-      (msg.content && Array.isArray(msg.content) && msg.content.length > 0)
+    // 查找与当前助手消息相关的工具结果
+    // 我们需要找到messageId大于lastAssistantMessageId的tool消息
+    const allMessages = aiChannel.messages || [];
+    const currentAssistantIndex = allMessages.findLastIndex(msg => 
+      msg.role === 'assistant' && msg.messageId === this.lastAssistantMessageId
     );
     
-    if (completedToolMessages.length > this.lastDisplayedToolResultsCount) {
-      for (let i = this.lastDisplayedToolResultsCount; i < completedToolMessages.length; i++) {
-        const toolMsg = completedToolMessages[i];
-        
-        // 找到对应的工具调用信息
-        const correspondingTool = allToolCalls.find(tool => 
-          tool.id === toolMsg.tool_call_id || 
-          tool.function?.name === toolMsg.tool_call_name
-        );
-        
-        const toolName = correspondingTool?.displayName || 
-                         correspondingTool?.originalName || 
-                         toolMsg.tool_call_name || 
-                         'Unknown Tool';
-        
-        if ((toolMsg as any).content_status === 'error') {
-          process.stdout.write(chalk.red(`❌ ${t`Tool error:`} ${toolName}\n`));
-        } else {
-          process.stdout.write(chalk.green(`✅ ${t`Tool result:`} ${toolName}\n`));
-        }
-        
-        // 显示工具结果内容
-        const content = toolMsg.content;
-        let contentStr = '';
-        if (typeof content === 'string') {
-          contentStr = content;
-        } else if (Array.isArray(content)) {
-          contentStr = content.map(item =>
-            item.type === 'text' ? item.text : '[' + item.type + ']'
-          ).join(' ');
-        } else if (content && typeof content === 'object') {
-          if ((content as any).text) {
-            contentStr = (content as any).text;
+    if (currentAssistantIndex >= 0) {
+      // 只处理当前assistant消息之后的tool消息
+      const recentToolMessages = allMessages.slice(currentAssistantIndex + 1).filter(msg => msg.role === 'tool');
+      const completedToolMessages = recentToolMessages.filter(msg => 
+        ((msg as any).content_status === 'success' || 
+         (msg as any).content_status === 'error' ||
+         (!(msg as any).content_status && (msg.content && (msg.content as any).length > 0))) &&
+        (msg.content && Array.isArray(msg.content) && msg.content.length > 0)
+      );
+      
+      if (completedToolMessages.length > this.lastDisplayedToolResultsCount) {
+        for (let i = this.lastDisplayedToolResultsCount; i < completedToolMessages.length; i++) {
+          const toolMsg = completedToolMessages[i];
+          
+          // 找到对应的工具调用信息
+          const currentToolCalls = lastMsg.role === 'assistant' ? (lastMsg.content_tool_calls || []) : [];
+          const correspondingTool = currentToolCalls.find(tool => 
+            tool.id === toolMsg.tool_call_id || 
+            tool.function?.name === toolMsg.tool_call_name
+          );
+          
+          const toolName = correspondingTool?.displayName || 
+                           correspondingTool?.originalName || 
+                           toolMsg.tool_call_name || 
+                           'Unknown Tool';
+          
+          if ((toolMsg as any).content_status === 'error') {
+            process.stdout.write(chalk.red(`❌ ${t`Tool error:`} ${toolName}\n`));
           } else {
-            contentStr = JSON.stringify(content);
+            process.stdout.write(chalk.green(`✅ ${t`Tool result:`} ${toolName}\n`));
+          }
+          
+          // 显示工具结果内容
+          const content = toolMsg.content;
+          let contentStr = '';
+          if (typeof content === 'string') {
+            contentStr = content;
+          } else if (Array.isArray(content)) {
+            contentStr = content.map(item =>
+              item.type === 'text' ? item.text : '[' + item.type + ']'
+            ).join(' ');
+          } else if (content && typeof content === 'object') {
+            if ((content as any).text) {
+              contentStr = (content as any).text;
+            } else {
+              contentStr = JSON.stringify(content);
+            }
+          }
+
+          if (contentStr && contentStr.length > 0) {
+            const shortContent = contentStr.length > 200 ? contentStr.substring(0, 200) + '...' : contentStr;
+            process.stdout.write(chalk.gray(shortContent.replace(/\n/g, ' ')) + '\n');
           }
         }
-
-        if (contentStr && contentStr.length > 0) {
-          const shortContent = contentStr.length > 200 ? contentStr.substring(0, 200) + '...' : contentStr;
-          process.stdout.write(chalk.gray(shortContent.replace(/\n/g, ' ')) + '\n');
-        }
+        this.lastDisplayedToolResultsCount = completedToolMessages.length;
       }
-      this.lastDisplayedToolResultsCount = completedToolMessages.length;
     }
   }
 
@@ -179,6 +205,12 @@ class StreamChatHandler {
     const lastMsg = aiChannel.lastMessage;
 
     if (lastMsg.role === 'assistant') {
+      // 检测是否是新的assistant消息，如果是则重置显示状态
+      if (lastMsg.messageId !== this.lastAssistantMessageId) {
+        this.resetCurrentMessage();
+        this.lastAssistantMessageId = lastMsg.messageId;
+      }
+
       // 交互式模式：第一次更新时清除"思考中..."
       if (this.isInteractive && this.isFirstUpdate) {
         process.stdout.write('\r' + ' '.repeat(20) + '\r');
@@ -335,7 +367,7 @@ export async function startChat(initialMessage?: string, options: ChatOptions = 
       aiChannel.addMessage(userMessage);
 
       // 生成聊天Key
-      const chatKey = uuidv4();
+      const chatKey = getMyUuid();
 
       console.log(`\n🤖 ${t`AI reply:`}`);
 
@@ -383,7 +415,7 @@ export async function startChat(initialMessage?: string, options: ChatOptions = 
     const rl = createReadline();
 
     // 为交互式聊天生成chatKey
-    let interactiveChatKey = uuidv4();
+    let interactiveChatKey = getMyUuid();
 
     try {
       while (true) {
@@ -412,7 +444,7 @@ export async function startChat(initialMessage?: string, options: ChatOptions = 
           // 替换当前通道
           Object.assign(aiChannel, newAiChannel);
           // 重新生成chatKey用于新的对话
-          interactiveChatKey = uuidv4();
+          interactiveChatKey = getMyUuid();
           console.log(`✅ ${t`Chat history cleared`}\n`);
           continue;
         }
