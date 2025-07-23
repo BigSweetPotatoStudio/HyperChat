@@ -472,9 +472,11 @@ export const ChatUI: React.FC<ChatUIProps> = ({ onUserInput, onExit, onCancel, o
     return null;
   };
 
-  // 如果显示聊天记录选择器，渲染选择器界面
+  // 条件渲染，不使用提前返回
+  let content;
+
   if (showChatLogSelector) {
-    return (
+    content = (
       <Box flexDirection="column" height="100%">
         <ChatLogSelector
           chatLogs={chatLogs}
@@ -483,11 +485,8 @@ export const ChatUI: React.FC<ChatUIProps> = ({ onUserInput, onExit, onCancel, o
         />
       </Box>
     );
-  }
-
-  // 如果正在加载聊天记录，显示加载界面
-  if (loadingChatLogs) {
-    return (
+  } else if (loadingChatLogs) {
+    content = (
       <Box flexDirection="column" height="100%" justifyContent="center" alignItems="center">
         <Box borderStyle="single" borderColor="blue" padding={2}>
           <Text color="blue">
@@ -497,9 +496,8 @@ export const ChatUI: React.FC<ChatUIProps> = ({ onUserInput, onExit, onCancel, o
         </Box>
       </Box>
     );
-  }
-
-  return (
+  } else {
+    content = (
     <Box flexDirection="column" height="100%">
       {/* Header */}
       <Box borderStyle="single"  padding={1} marginBottom={1}>
@@ -568,7 +566,10 @@ export const ChatUI: React.FC<ChatUIProps> = ({ onUserInput, onExit, onCancel, o
         </Box>
       )}
     </Box>
-  );
+    );
+  }
+
+  return content;
 };
 
 export default ChatUI;
