@@ -1,4 +1,4 @@
-[中文](README.zh.md) | [English](README.md)
+# HyperChat 中文文档
 
 # HyperChat
 
@@ -97,6 +97,18 @@ npm install -g @dadigua/hyperchat
 npx -y @dadigua/hyperchat
 ```
 
+**快速配置环境变量**：
+```bash
+# 基础配置 - 设置默认 AI 模型
+export HyperChat_API_KEY=your-api-key           # API 密钥
+export HyperChat_API_URL=your-api-url           # API 端点 URL
+export HyperChat_AI_Provider=openai             # AI 提供商 (openai/claude/gemini/kimi/qwen等)
+export HyperChat_AI_Model=gpt-4o                # 默认模型名称
+
+# 然后直接使用
+hyperchat "你好，世界！"                        # 使用配置的默认模型
+```
+
 #### CLI 使用示例
 ```bash
 # 启动 Web 界面
@@ -165,14 +177,16 @@ HyperChat 2.0 实现了强大的**5层优先级环境变量系统**，让配置�
 
 **支持的核心环境变量**：
 ```bash
-# AI 模型配置
-HYPERCHAT_OPENAI_API_KEY=your-openai-key
-HYPERCHAT_CLAUDE_API_KEY=your-claude-key
-HYPERCHAT_GEMINI_API_KEY=your-gemini-key
+# 快速配置 - 默认 AI 模型
+HyperChat_API_KEY=your-api-key              # 默认 API 密钥
+HyperChat_API_URL=your-api-url              # 默认 API 端点
+HyperChat_AI_Provider=openai                # 默认 AI 提供商
+HyperChat_AI_Model=gpt-4o                   # 默认模型名称
+
 
 # 服务配置
 HYPERCHAT_WEB_PASSWORD=your-web-password    # Web 界面访问密码
-HYPERCHAT_PORT=16102                        # Web 服务端口
+HYPERCHAT_PORT=16100                        # Web 服务端口
 HYPERCHAT_HOST=localhost                    # 服务绑定地址
 
 # 界面配置
@@ -186,19 +200,27 @@ HYPERCHAT_CLAUDE_BASE_URL=https://api.anthropic.com
 
 **使用示例**：
 ```bash
-# 方式1：系统环境变量
+# 方式1：快速配置默认模型
+export HyperChat_API_KEY=sk-1234567890
+export HyperChat_AI_Provider=openai
+export HyperChat_AI_Model=gpt-4o
+hyperchat "你好"                            # 直接使用默认配置
+
+# 方式2：Web 服务配置
 export HYPERCHAT_WEB_PASSWORD=mypassword
 hyperchat serve
 
-# 方式2：项目 .env 文件
-echo "HYPERCHAT_WEB_PASSWORD=projectpass" > .env
-hyperchat serve
+# 方式3：项目 .env 文件
+echo "HyperChat_API_KEY=your-key" > .env
+echo "HyperChat_AI_Provider=claude" >> .env
+hyperchat chat
 
-# 方式3：CLI 参数（最高优先级）
+# 方式4：CLI 参数（最高优先级）
 hyperchat serve --password=clipass
 
-# 方式4：全局配置文件
-echo "HYPERCHAT_WEB_PASSWORD=globalpass" > ~/Documents/HyperChat/.env
+# 方式5：全局配置文件
+echo "HyperChat_API_KEY=global-key" > ~/Documents/HyperChat/.env
+echo "HyperChat_AI_Provider=gemini" >> ~/Documents/HyperChat/.env
 ```
 
 ### 安装 uv
@@ -386,23 +408,12 @@ cp -r ~/.hyperchat/templates/react-enterprise/.hyperchat ./
 - ✅ **工具调用可视化**：清晰展示 AI 工具使用过程
 - ✅ **参数调试**：支持手动调试 MCP 工具参数
 
-### 🤖 AI 模型矩阵
+### 🤖 AI 模型推荐
 | 模型提供商 | 推荐程度 | 特色功能 |
 |------------|----------|----------|
-| Claude | ⭐⭐⭐⭐⭐⭐ | 最佳代码理解和生成 |
-| OpenAI | ⭐⭐⭐⭐⭐ | 完美的 Function Calling 支持 |
-| Gemini Flash 2.5 | ⭐⭐⭐⭐⭐ | 高性能推理 |
-| Qwen | ⭐⭐⭐⭐ | 中文场景表现优异 |
-| Deepseek | ⭐⭐⭐⭐ | 代码生成专长 |
-| 豆包 | ⭐⭐⭐ | 稳定性良好 |
+| Claude | ⭐⭐⭐⭐⭐⭐ | 最强 |
+| Kimi k2 | ⭐⭐⭐⭐⭐ | 很不错 |
 
-### 🎨 高级特性
-- ✅ **HyperPrompt 语法**：支持变量和 JS 代码片段
-- ✅ **智能 Agent 系统**：可配置提示词和工具权限
-- ✅ **定时任务执行**：自动化工作流支持
-- ✅ **多模态渲染**：Artifacts、SVG、HTML、Mermaid、数学公式
-- ✅ **WebDAV 同步**：跨设备配置同步
-- ✅ **模型对比聊天**：并行测试不同模型效果
 
 ## 🔧 开发指南
 
@@ -491,7 +502,6 @@ HyperChat 2.0 本身就是 **AI 协作开发**的最佳实践：
 - **Artifacts**：交互式代码和界面预览
 - **数学公式**：KaTeX 渲染支持
 - **图表支持**：Mermaid、SVG、HTML 等
-
 
 ## 🤝 社区交流
 
