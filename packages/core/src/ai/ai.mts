@@ -13,7 +13,6 @@ if (typeof globalThis !== 'undefined') {
 
 import { v4 } from "uuid";
 
-import { AISettings, AppSettings } from "@dadigua/hyperchat-shared";
 import { BaseAIConfig } from "@dadigua/hyperchat-shared";
 import { getMessageService } from "../message_service.mjs";
 import { Command } from "../command.mjs";
@@ -26,6 +25,7 @@ import { ProxyUtils } from "./utils/ProxyUtils.mjs";
 import { MessageConverter } from "./utils/MessageConverter.mjs";
 import { ToolFormatter } from "./utils/ToolFormatter.mjs";
 import { EnvManager } from "../data/managers/envManager.mjs";
+import { buildEffectiveConfig } from "../utils/aiConfigHelper.mjs";
 
 
 
@@ -111,36 +111,43 @@ export class AiChannel {
     const envApiKey = envManager.get('HyperChat_API_KEY');
     const envApiUrl = envManager.get('HyperChat_API_URL');
     const envProvider = envManager.get('HyperChat_AI_Provider');
-    const envModel = envManager.get('HyperChat_AI_Model');
-    
-    // 如果没有提供modelKey，尝试从环境变量获取
-    const finalModelKey = modelKey || envModel || 'default-model';
-    
-    let modelConfig: any = null;
     
     // 尝试从应用设置获取配置
+    let appSettings, aiSettings;
     try {
-      const appSettings = await Command.getAppSettings();
-      const aiSettings = appSettings.ai;
+      appSettings = await Command.getAppSettings();
+      aiSettings = appSettings.ai;
+    } catch (error) {
+      Logger.debug(`Failed to load app settings: ${error}`);
+    }
+
+    // 使用 buildEffectiveConfig 获取有效配置（包括modelKey选择）
+    const effectiveConfig = buildEffectiveConfig(
+      { modelKey }, // 传入的 modelKey 作为覆盖参数
+      undefined,   // 没有 agent 配置
+      undefined,   // 没有工作区配置
+      aiSettings   // 应用设置
+    );
+
+    const finalModelKey = effectiveConfig.modelKey;
+    let modelConfig: any = null;
+    
+    // 从应用设置中查找模型配置
+    if (aiSettings && aiSettings.models && aiSettings.models.length > 0) {
+      modelConfig = aiSettings.models.find((x) => x.key === finalModelKey);
       
-      if (aiSettings && aiSettings.models && aiSettings.models.length > 0) {
-        modelConfig = aiSettings.models.find((x) => x.key === finalModelKey);
+      if (modelConfig) {
+        Logger.debug(`Found model config from app settings: ${finalModelKey}`);
         
-        if (modelConfig) {
-          Logger.debug(`Found model config from app settings: ${finalModelKey}`);
-          
-          // 合并内置API配置
-          if (modelConfig.provider !== "unknown") {
-            modelConfig = {
-              ...modelConfig,
-              baseURL: aiSettings.builtinApiKeys[modelConfig.provider]?.baseURL || modelConfig.baseURL,
-              apiKey: aiSettings.builtinApiKeys[modelConfig.provider]?.apiKey || modelConfig.apiKey,
-            }
+        // 合并内置API配置
+        if (modelConfig.provider !== "unknown") {
+          modelConfig = {
+            ...modelConfig,
+            baseURL: aiSettings.builtinApiKeys[modelConfig.provider]?.baseURL || modelConfig.baseURL,
+            apiKey: aiSettings.builtinApiKeys[modelConfig.provider]?.apiKey || modelConfig.apiKey,
           }
         }
       }
-    } catch (error) {
-      Logger.debug(`Failed to load app settings: ${error}`);
     }
     
     // 如果应用设置中没有找到配置，尝试从环境变量创建基础配置
@@ -155,8 +162,8 @@ export class AiChannel {
       // 从环境变量创建基础模型配置
       modelConfig = {
         key: finalModelKey,
-        name: envModel || finalModelKey,
-        model: envModel || finalModelKey,
+        name: finalModelKey,
+        model: finalModelKey,
         provider: envProvider || "unknown",
         baseURL: envApiUrl,
         apiKey: envApiKey,
@@ -185,10 +192,6 @@ export class AiChannel {
       } else {
         Logger.debug(`Provider from environment variable (${envProvider}) ignored because model has explicit provider: ${modelConfig.provider}`);
       }
-    }
-    
-    if (envModel && envModel !== finalModelKey) {
-      Logger.debug(`Environment variable specifies different model: ${envModel}, but using requested: ${finalModelKey}`);
     }
 
     // 验证最终配置

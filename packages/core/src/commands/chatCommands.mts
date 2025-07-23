@@ -14,6 +14,7 @@ import { SSEWriter } from "../sse/SSEWriter.mjs";
 import { EventEmitter } from "events";
 import { v4 as uuidv4 } from 'uuid';
 import { z, ZodSchema } from "zod";
+import { buildEffectiveConfig } from "../utils/aiConfigHelper.mjs";
 
 // 全局工具确认事件发射器
 const toolConfirmEmitter = new EventEmitter();
@@ -80,7 +81,7 @@ export async function streamChatCompletion(params: ChatCompletionRequest): Promi
 
     // console.log("Using Agent:", agentName, "agent:", agent);
     // 合并配置
-    const effectiveConfig = getEffectiveConfig(configOverrides, agent?.getConfig(), workspace.getSettings().aiConfig, aiSettings);
+    const effectiveConfig = buildEffectiveConfig(configOverrides, agent?.getConfig(), workspace.getSettings().aiConfig, aiSettings);
     // console.log("Effective AI Config:", effectiveConfig);
     // 创建 AI 通道
     const aiChannel = new AiChannel({}, [...messages]);
@@ -247,50 +248,6 @@ function createZodSchemaFromJsonSchema(jsonSchema: any): ZodSchema {
   return z.any();
 }
 
-/**
- * 获取有效配置
- */
-function getEffectiveConfig(
-  overrides: Partial<BaseAIConfig>,
-  agentConfig?: Partial<BaseAIConfig>,
-  workspaceConfig?: Partial<BaseAIConfig>,
-  aiSettings?: any
-): BaseAIConfig {
-  const availableModels = aiSettings?.models || [];
-  const isModelAvailable = (modelKey: string) =>
-    availableModels.some((model: any) => model.key === modelKey);
-
-  const firstAvailableModel = availableModels[0]?.key || "";
-
-  // 按优先级查找有效的模型
-  const findValidModelKey = () => {
-    const candidates = [
-      overrides.modelKey,
-      agentConfig?.modelKey,
-      workspaceConfig?.modelKey,
-      firstAvailableModel
-    ].filter(Boolean);
-
-    for (const modelKey of candidates) {
-      if (modelKey && isModelAvailable(modelKey)) {
-        return modelKey;
-      }
-    }
-
-    return firstAvailableModel;
-  };
-
-  return {
-    modelKey: findValidModelKey(),
-    allowMCPs: overrides.allowMCPs || agentConfig?.allowMCPs || [],
-    isConfirmCallTool: overrides.isConfirmCallTool ?? agentConfig?.isConfirmCallTool ?? false,
-    temperature: overrides.temperature ?? agentConfig?.temperature ?? workspaceConfig?.temperature,
-    maxAttachedDialogs: overrides.maxAttachedDialogs ?? agentConfig?.maxAttachedDialogs ?? workspaceConfig?.maxAttachedDialogs ?? 5,
-    maxTokens: overrides.maxTokens ?? agentConfig?.maxTokens ?? workspaceConfig?.maxTokens ?? 4000,
-    prompt: overrides.prompt || agentConfig?.prompt || workspaceConfig?.prompt || "",
-    maxContextTokens: overrides.maxContextTokens ?? agentConfig?.maxContextTokens ?? workspaceConfig?.maxContextTokens,
-  };
-}
 
 
 /**
