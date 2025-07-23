@@ -60,7 +60,6 @@ export const AIConfigSchema = z.object({
 // 外观设置 Schema
 export const AppearanceSchema = z.object({
   darkTheme: z.boolean().default(false).describe("Enable dark mode"),
-  language: z.enum(["zh", "en", "ja", "ko", "fr", "de"]).optional().describe("Interface language"),
 });
 
 // 桌面应用设置 Schema
@@ -80,9 +79,8 @@ export const MCPGatewaySchema = z.object({
   allowMCPs: z.array(z.string()).default([]).describe("Allowed MCP list"),
 }).describe("MCP gateway configuration");
 
-// 系统设置 Schema
+// 系统设置 Schema  
 export const SystemSchema = z.object({
-  password: z.string().default("123456").describe("Application password"),
   isDeveloper: z.boolean().default(false).describe("Developer mode"),
 });
 

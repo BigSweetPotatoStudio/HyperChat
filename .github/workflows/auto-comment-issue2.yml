@@ -1,0 +1,127 @@
+name: HyperChat Auto Comment Issue 2.0
+
+on:
+  issues:
+    types: [opened]
+
+jobs:
+  hyperchat-auto-comment:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      issues: write
+      pull-requests: read
+      
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install GitHub CLI
+        run: |
+          # 安装 GitHub CLI
+          curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg | sudo dd of=/usr/share/keyrings/githubcli-archive-keyring.gpg
+          echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/githubcli-archive-keyring.gpg] https://cli.github.com/packages stable main" | sudo tee /etc/apt/sources.list.d/github-cli.list > /dev/null
+          sudo apt update
+          sudo apt install gh -y
+
+      - name: Authenticate GitHub CLI
+        run: |
+          echo "${{ secrets.GITHUB_TOKEN }}" | gh auth login --with-token
+
+      - name: Get Issue Information
+        id: issue_info
+        run: |
+          # 获取Issue详细信息
+          ISSUE_INFO=$(gh issue view ${{ github.event.issue.number }} --json title,body,author,labels,url --repo ${{ github.repository }})
+          echo "ISSUE_DATA<<EOF" >> $GITHUB_OUTPUT
+          echo "$ISSUE_INFO" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+
+      - name: Run HyperChat Analysis and Comment
+        run: |
+          # 创建分析提示
+          ANALYSIS_PROMPT="你是 HyperChat 项目的专业 Issue 分析助手。请使用 gh 命令帮我分析并回复下面的 GitHub Issue。
+
+          ## Issue 信息
+          - **Repository**: ${{ github.repository }}
+          - **Issue Number**: ${{ github.event.issue.number }}
+          - **Issue Title**: ${{ github.event.issue.title }}
+          - **Issue Author**: ${{ github.event.issue.user.login }}
+          - **Issue URL**: ${{ github.event.issue.html_url }}
+
+          **Issue 内容**:
+          ${{ github.event.issue.body }}
+
+          ## 项目背景
+          - HyperChat 是一个多平台 AI 聊天应用
+          - 支持 Web、CLI、Electron 三个平台
+          - 使用 TypeScript + React + Ant Design 开发
+          - 集成多种 AI 模型：OpenAI、Claude、Gemini、Qwen、DeepSeek
+          - 支持工作区概念和 MCP（模型上下文协议）
+          - 采用 monorepo 架构：packages/shared、packages/core、packages/web、packages/electron
+
+          ## 任务要求
+          1. 分析这个 Issue 的类型（Bug报告/功能请求/使用问题/文档问题等）
+          2. 评估问题的严重程度和影响范围
+          3. 基于项目知识提供专业建议
+          4. 使用以下命令格式回复Issue：
+             \`gh issue comment ${{ github.event.issue.number }} --repo ${{ github.repository }} --body \"你的回复内容\"\`
+
+          ## 回复格式模板
+          🤖 **HyperChat AI 助手自动回复**
+
+          感谢你提交这个 Issue！我已经分析了你的问题：
+
+          **问题类型**：[具体类型]
+          **影响范围**：[具体范围]  
+          **严重程度**：[严重程度]
+
+          **分析结果**：
+          [详细分析]
+
+          **建议方案**：
+          [具体建议]
+
+          **相关资源**：
+          - 📖 [项目文档](https://github.com/${{ github.repository }}/blob/main/README.md)
+          - 🛠️ [开发指南](https://github.com/${{ github.repository }}/blob/main/CLAUDE.md)
+
+          如果需要进一步帮助，请提供更多详细信息！
+
+          ---
+          *此回复由 HyperChat AI 助手自动生成*
+
+          请现在执行分析并使用 gh 命令回复这个 Issue。"
+
+          # 使用 HyperChat 进行分析和回复
+          npx @dadigua/hyperchat@latest "$ANALYSIS_PROMPT"
+        env:
+          # GitHub Token for gh CLI (already authenticated above)
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          
+          # HyperChat 配置
+          HyperChat_API_URL: ${{ secrets.HyperChat_API_URL }}
+          HyperChat_API_KEY: ${{ secrets.HyperChat_API_KEY }}
+          HyperChat_AI_Provider: ${{ secrets.HyperChat_AI_Provider }}
+          HyperChat_AI_Model: ${{ secrets.HyperChat_AI_Model }}
+          
+
+      - name: Fallback Comment on Failure
+        if: failure()
+        run: |
+          gh issue comment ${{ github.event.issue.number }} --repo ${{ github.repository }} --body "🤖 **HyperChat AI 助手**
+
+          抱歉，自动分析系统遇到了问题，无法生成智能回复。
+
+          请耐心等待项目维护者的人工回复，或者在 [讨论区](https://github.com/${{ github.repository }}/discussions) 寻求帮助。
+
+          ---
+          *此消息由自动化系统生成*"

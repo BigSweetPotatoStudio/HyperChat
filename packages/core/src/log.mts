@@ -8,9 +8,28 @@ import { fs } from "zx";
 import path from "path";
 import dayjs from "dayjs";
 import log4js from "log4js";
-import { CONST } from "./const.mjs";
+import { os } from "zx";
 
-const logDir = path.join(CONST.appDataDir, ".logs");
+/**
+ * 根据运行环境获取日志目录
+ * - nodejs: 当前工作目录的 .hyperchat/logs
+ * - electron: 全局路径的 .hyperchat/logs
+ */
+function getLogDir(): string {
+  const runtime = process.env.HyperChat_Runtime || "nodejs";
+  
+  if (runtime === "electron") {
+    // Electron环境：使用全局路径
+    const globalAppDataDir = process.env.HyperChat_AppDataDir || 
+      path.join(os.homedir(), "Documents", "HyperChat");
+    return path.join(globalAppDataDir, ".hyperchat", "logs");
+  } else {
+    // Node.js环境：使用当前工作目录
+    return path.join(process.cwd(), ".hyperchat", "logs");
+  }
+}
+
+const logDir = getLogDir();
 fs.ensureDirSync(logDir);
 let logpath = path.join(logDir, `${dayjs().format("YYYY-MM-DD")}.log`);
 

@@ -14,10 +14,14 @@ import { Workspace } from "./workspace.mjs";
  * 核心理念：进程/会话 = 当前工作区（内部自动处理全局配置合并）
  */
 export class WorkspaceManager {
-  private readonly GLOBAL_HYPERCHAT_DIR = path.join(CONSTANTS.GLOBAL_PATH, CONSTANTS.HYPERCHAT_DIR);
   private currentWorkspace!: Workspace;
   private isInitialized = false;
   private isStarted = false;
+
+  // 动态获取全局配置目录
+  private get GLOBAL_HYPERCHAT_DIR(): string {
+    return path.join(CONSTANTS.GLOBAL_PATH, CONSTANTS.HYPERCHAT_DIR);
+  }
 
   constructor() {
   }

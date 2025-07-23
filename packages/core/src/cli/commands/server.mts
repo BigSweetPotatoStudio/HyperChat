@@ -14,6 +14,8 @@ import "../../first.mjs";
 import { initHttp } from "../../http.mjs";
 import { getWorkspaceManager } from "../../workspace/index.mjs";
 import { t } from '../../i18n.mjs';
+import { EnvManager } from '../../data/managers/envManager.mjs';
+import { parseOptionsToEnv } from '../../utils/cliArgsParser.mjs';
 
 
 
@@ -32,7 +34,15 @@ export interface ServerOptions {
  */
 export async function startServer(options: ServerOptions = {}) {
   const logger = new Logger(options.verbose, options.quiet);
-  const port = options.port || 16100;
+  
+  // 解析 CLI 参数为环境配置
+  const cliArgs = parseOptionsToEnv(options);
+  
+  // 获取环境管理器（包含 CLI 参数覆盖）
+  const envManager = EnvManager.getInstance(process.cwd(), cliArgs);
+  const config = envManager.getConfig();
+  
+  const port = config.HyperChat_HTTP_PORT;
   const host = options.host || 'localhost';
 
   try {

@@ -1,6 +1,5 @@
 import * as path from "path";
-import * as os from "os";
-import { appDataDir } from "../const.mjs";
+import { getAppDataDir } from "../const.mjs";
 
 // 常量定义
 export const CONSTANTS = {
@@ -16,6 +15,11 @@ export const CONSTANTS = {
     KNOWLEDGE: 'knowledge',
     TEMP: 'temp',
   },
-  GLOBAL_PATH: appDataDir,
-  GLOBAL_HYPERCHAT_DIR_PATH: path.join(appDataDir, '.hyperchat'),
+  // 使用getter动态获取全局路径
+  get GLOBAL_PATH(): string {
+    return getAppDataDir();
+  },
+  get GLOBAL_HYPERCHAT_DIR_PATH(): string {
+    return path.join(getAppDataDir(), '.hyperchat');
+  },
 } as const;

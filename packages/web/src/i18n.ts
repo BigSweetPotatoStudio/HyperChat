@@ -90,14 +90,9 @@ export async function initWebI18n(): Promise<void> {
 
   let currentLanguage: Language;
 
-  try {
-    // 1. 优先从AppSettings获取语言设置
-    const appSettings = await call('getAppSettings');
-    currentLanguage = appSettings?.appearance?.language || 'zh';
-  } catch (error) {
-    // 2. 如果AppSettings加载失败，从localStorage获取
-    currentLanguage = getLanguageFromLocalStorage() || detectBrowserLanguage();
-  }
+  // 语言设置已移动到环境变量系统，Web端从localStorage或浏览器检测获取
+  // TODO: 后续可以考虑从后端环境变量系统获取语言设置
+  currentLanguage = getLanguageFromLocalStorage() || detectBrowserLanguage();
 
   // 初始化shared i18n系统
   initI18n({
@@ -108,21 +103,9 @@ export async function initWebI18n(): Promise<void> {
       // 保存到localStorage（立即生效）
       saveLanguageToLocalStorage(lang);
       
-      // 异步更新AppSettings
-      try {
-        // 获取当前设置，只更新language字段
-        const currentSettings = await call('getAppSettings');
-        await call('updateAppSettings', {
-          updates: {
-            appearance: { 
-              ...currentSettings.appearance,
-              language: lang 
-            }
-          }
-        });
-      } catch (error) {
-        console.error('Failed to update language in AppSettings:', error);
-      }
+      // 语言设置已移动到环境变量系统，Web端暂时只保存到localStorage
+      // TODO: 后续可以考虑通过API将语言设置保存到后端环境变量系统
+      console.debug(`Language changed to: ${lang} (saved to localStorage)`);
     }
   });
 

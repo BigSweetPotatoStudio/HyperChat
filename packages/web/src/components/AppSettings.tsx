@@ -52,10 +52,7 @@ export function AppSettings({
   // 处理表单值变化
   const handleFormChange = (values: z.infer<typeof AppSettingsSchema>) => {
     setCurrentValues(values);
-    if (values.appearance.language != null) {
-      setCurrLang(values.appearance.language); // 更新语言设置
-    }
-
+    // 语言设置已移动到环境变量系统，这里不再处理
     setHasChanges(true);
   };
 

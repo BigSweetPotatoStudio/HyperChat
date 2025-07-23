@@ -13,7 +13,6 @@ if (typeof globalThis !== 'undefined') {
 
 import { v4 } from "uuid";
 
-import { AISettings, AppSettings } from "@dadigua/hyperchat-shared";
 import { BaseAIConfig } from "@dadigua/hyperchat-shared";
 import { getMessageService } from "../message_service.mjs";
 import { Command } from "../command.mjs";
@@ -25,6 +24,8 @@ import { AiProviderFactory, type ModelConfig } from "./providers/AiProviderFacto
 import { ProxyUtils } from "./utils/ProxyUtils.mjs";
 import { MessageConverter } from "./utils/MessageConverter.mjs";
 import { ToolFormatter } from "./utils/ToolFormatter.mjs";
+import { EnvManager } from "../data/managers/envManager.mjs";
+import { buildEffectiveConfig } from "../utils/aiConfigHelper.mjs";
 
 
 
@@ -99,37 +100,125 @@ export class AiChannel {
     }
   }
 
-  async getAI(modelKey: string): Promise<LanguageModel> {
-    // 获取AI配置
-    const appSettings = await Command.getAppSettings();
-    const aiSettings = appSettings.ai;
-
-    if (!aiSettings) {
-      throw new Error('AI配置未找到');
+  async getAIOptions(modelKey?: string): Promise<{
+    model: LanguageModel;
+    modelConfig: ModelConfig;
+  }> {
+    // 获取环境变量管理器
+    const envManager = EnvManager.getInstance();
+    
+    // 从环境变量获取配置
+    const envApiKey = envManager.get('HyperChat_API_KEY');
+    const envApiUrl = envManager.get('HyperChat_API_URL');
+    const envProvider = envManager.get('HyperChat_AI_Provider');
+    
+    // 尝试从应用设置获取配置
+    let appSettings, aiSettings;
+    try {
+      appSettings = await Command.getAppSettings();
+      aiSettings = appSettings.ai;
+    } catch (error) {
+      Logger.debug(`Failed to load app settings: ${error}`);
     }
 
-    let modelConfig = aiSettings.models.find((x) => x.key === modelKey);
-    if (!modelConfig) {
-      throw new Error(`Model not found: ${modelKey}`);
+    // 使用 buildEffectiveConfig 获取有效配置（包括modelKey选择）
+    const effectiveConfig = buildEffectiveConfig(
+      { modelKey }, // 传入的 modelKey 作为覆盖参数
+      undefined,   // 没有 agent 配置
+      undefined,   // 没有工作区配置
+      aiSettings   // 应用设置
+    );
+
+    const finalModelKey = effectiveConfig.modelKey;
+    let modelConfig: any = null;
+    
+    // 从应用设置中查找模型配置
+    if (aiSettings && aiSettings.models && aiSettings.models.length > 0) {
+      modelConfig = aiSettings.models.find((x) => x.key === finalModelKey);
+      
+      if (modelConfig) {
+        Logger.debug(`Found model config from app settings: ${finalModelKey}`);
+        
+        // 合并内置API配置
+        if (modelConfig.provider !== "unknown") {
+          modelConfig = {
+            ...modelConfig,
+            baseURL: aiSettings.builtinApiKeys[modelConfig.provider]?.baseURL || modelConfig.baseURL,
+            apiKey: aiSettings.builtinApiKeys[modelConfig.provider]?.apiKey || modelConfig.apiKey,
+          }
+        }
+      }
     }
     
-    // 合并内置API配置
-    if (modelConfig.provider !== "unknown") {
+    // 如果应用设置中没有找到配置，尝试从环境变量创建基础配置
+    if (!modelConfig) {
+      // 检查是否有足够的环境变量来创建基础配置
+      if (!envApiKey || !envApiUrl) {
+        throw new Error(`Model not found: ${finalModelKey}. Please configure it in app settings or provide HyperChat_API_KEY and HyperChat_API_URL environment variables.`);
+      }
+      
+      Logger.info(`Creating model config from environment variables for: ${finalModelKey}`);
+      
+      // 从环境变量创建基础模型配置
       modelConfig = {
-        ...modelConfig,
-        baseURL: aiSettings.builtinApiKeys[modelConfig.provider]?.baseURL || modelConfig.baseURL,
-        apiKey: aiSettings.builtinApiKeys[modelConfig.provider]?.apiKey || modelConfig.apiKey,
+        key: finalModelKey,
+        name: finalModelKey,
+        model: finalModelKey,
+        provider: envProvider || "unknown",
+        baseURL: envApiUrl,
+        apiKey: envApiKey,
+        supportImage: true,
+        supportTool: true,
+        type: "llm",
+        toolMode: "standard"
+      };
+    }
+    
+    // 应用环境变量覆盖（无论配置来源如何，环境变量都有最高优先级）
+    if (envApiKey) {
+      modelConfig.apiKey = envApiKey;
+      Logger.debug('Using API key from environment variable');
+    }
+    
+    if (envApiUrl) {
+      modelConfig.baseURL = envApiUrl;
+      Logger.debug('Using API URL from environment variable');
+    }
+    
+    if (envProvider) {
+      if (modelConfig.provider === "unknown" || !modelConfig.provider) {
+        modelConfig.provider = envProvider;
+        Logger.debug(`Using provider from environment variable: ${envProvider}`);
+      } else {
+        Logger.debug(`Provider from environment variable (${envProvider}) ignored because model has explicit provider: ${modelConfig.provider}`);
       }
     }
 
-    // 验证配置
-    AiProviderFactory.validateModelConfig(modelConfig as ModelConfig);
+    // 验证最终配置
+    if (!modelConfig.apiKey) {
+      throw new Error(`API key not found for model: ${finalModelKey}. Please configure it in app settings or set HyperChat_API_KEY environment variable.`);
+    }
+    
+    if (!modelConfig.baseURL) {
+      throw new Error(`Base URL not found for model: ${finalModelKey}. Please configure it in app settings or set HyperChat_API_URL environment variable.`);
+    }
 
     // 创建自定义fetch（如果需要代理）
     const customFetch = ProxyUtils.createFetch();
 
     // 使用工厂创建模型
-    return await AiProviderFactory.createModel(modelConfig as ModelConfig, customFetch);
+    const model = await AiProviderFactory.createModel(modelConfig as ModelConfig, customFetch);
+    
+    // 构建完整的AI选项
+    const aiOptions = {
+      model,
+      modelConfig: modelConfig as ModelConfig,
+      temperature: modelConfig.temperature,
+      maxTokens: modelConfig.maxTokens,
+      maxRetries: 3, // 默认重试3次
+    };
+    
+    return aiOptions;
   }
   async completion(
     params: {
@@ -205,11 +294,13 @@ export class AiChannel {
       ...aiTools,
     }
     try {
-      let ai = await this.getAI(params.modelKey);
-      if (!ai) throw new Error('AI model not initialized');
+      let aiOptions = await this.getAIOptions(params.modelKey);
+      if (!aiOptions || !aiOptions.model) throw new Error('AI model not initialized');
       let newOptions: Parameters<typeof streamText>[0] = {
         ...options,
-        model: ai,
+        model: aiOptions.model,
+        temperature: params.temperature,
+        maxTokens: params.maxTokens,
       }
       const result = await streamText({
         ...newOptions,
@@ -587,12 +678,12 @@ export class AiChannel {
   }
 
   async completionParse({ modelKey }: { modelKey: string }, schema: ZodSchema, prompt: string): Promise<any> {
-    let ai = await this.getAI(modelKey);
-    if (!ai) throw new Error('AI model not initialized');
+    let aiOptions = await this.getAIOptions(modelKey);
+    if (!aiOptions || !aiOptions.model) throw new Error('AI model not initialized');
 
     try {
       const res = await streamObject({
-        model: ai,
+        model: aiOptions.model,
         schema: schema,
         prompt: prompt,
         providerOptions: {
@@ -616,7 +707,7 @@ export class AiChannel {
     } catch (error) {
 
       const res = await generateObject({
-        model: ai,
+        model: aiOptions.model,
         schema: schema,
         prompt: prompt,
         providerOptions: {

@@ -179,10 +179,6 @@ export const settingsCommands = {
    */
   async getAppSettings() {
     try {
-      if (!isAppSettingsManagerInitialized()) {
-        throw new Error("应用设置管理器未初始化");
-      }
-
       const appSettingsManager = getAppSettingsManager();
       return appSettingsManager.getSettings();
     } catch (error) {
@@ -198,10 +194,6 @@ export const settingsCommands = {
    */
   async updateAppSettings({ updates }: { updates: Parameters<AppSettingsManager['updateSettings']>[0] }) {
     try {
-      if (!isAppSettingsManagerInitialized()) {
-        throw new Error("应用设置管理器未初始化");
-      }
-
       const appSettingsManager = getAppSettingsManager();
       await appSettingsManager.updateSettings(updates);
       return appSettingsManager.getSettings();
@@ -217,10 +209,6 @@ export const settingsCommands = {
    */
   async resetAppSettings() {
     try {
-      if (!isAppSettingsManagerInitialized()) {
-        throw new Error("应用设置管理器未初始化");
-      }
-
       const appSettingsManager = getAppSettingsManager();
       await appSettingsManager.reset();
       return appSettingsManager.getSettings();
@@ -236,10 +224,6 @@ export const settingsCommands = {
    */
   async exportAppSettings(): Promise<string> {
     try {
-      if (!isAppSettingsManagerInitialized()) {
-        throw new Error("应用设置管理器未初始化");
-      }
-
       const appSettingsManager = getAppSettingsManager();
       return await appSettingsManager.export();
     } catch (error) {
@@ -255,10 +239,6 @@ export const settingsCommands = {
    */
   async importAppSettings({ settingsJson }: { settingsJson: string }) {
     try {
-      if (!isAppSettingsManagerInitialized()) {
-        throw new Error("应用设置管理器未初始化");
-      }
-
       const appSettingsManager = getAppSettingsManager();
       await appSettingsManager.import(settingsJson);
       return appSettingsManager.getSettings();

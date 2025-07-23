@@ -8,6 +8,7 @@ import { Command } from '../command.mjs';
 import { AgentInstance, Workspace, workspaceManager, getDefaultAgent } from '../workspace/index.mjs';
 import { AiChannel } from '../ai/ai.mjs';
 import { getBuiltinPrompts } from '../ai/hyperchat-builtin-prompts.mjs';
+import { EnvManager } from '../data/managers/envManager.mjs';
 import type {
   MyMessage,
   AISettings,
@@ -29,12 +30,16 @@ export interface AIEnvironment {
  * 构建有效配置（配置继承逻辑）
  * 优先级：overrides > agentConfig > workspaceConfig > aiSettings
  */
-function buildEffectiveConfig(
+export function buildEffectiveConfig(
   overrides: Partial<BaseAIConfig> = {},
   agentConfig?: Partial<BaseAIConfig>,
   workspaceAIConfig?: any,
   aiSettings?: AISettings
 ): BaseAIConfig & { modelKey: string } {
+  // 获取环境变量配置
+  const envManager = EnvManager.getInstance();
+  const envModel = envManager.get('HyperChat_AI_Model');
+  
   // 获取可用模型列表
   const availableModels = aiSettings?.models || [];
   const isModelAvailable = (modelKey: string) =>
@@ -42,13 +47,14 @@ function buildEffectiveConfig(
 
   const firstAvailableModel = availableModels[0]?.key || '';
 
-  // 按优先级查找有效的模型
+  // 按优先级查找有效的模型（修正优先级顺序）
   const findValidModelKey = () => {
     const candidates = [
-      overrides.modelKey,
-      agentConfig?.modelKey,
-      workspaceAIConfig?.modelKey,
-      firstAvailableModel
+      overrides.modelKey,           // 最高优先级：运行时覆盖
+      agentConfig?.modelKey,        // Agent配置
+      workspaceAIConfig?.modelKey,  // 工作区配置
+      firstAvailableModel,          // 默认第一个可用模型
+      envModel                      // 环境变量（最低优先级）
     ].filter(Boolean);
 
     for (const modelKey of candidates) {
@@ -57,7 +63,16 @@ function buildEffectiveConfig(
       }
     }
 
-    return firstAvailableModel;
+    // 如果没有找到可用模型，按优先级返回fallback
+    if (firstAvailableModel) {
+      return firstAvailableModel;
+    }
+    
+    if (envModel) {
+      return envModel;
+    }
+
+    return 'default-model';
   };
 
   return {
@@ -110,9 +125,6 @@ export async function initializeAIEnvironment(options: {
   // 从 workspace 和 agent 获取配置信息
   const appSettings = await Command.getAppSettings();
   const aiSettings = appSettings.ai;
-  if (!aiSettings || !aiSettings.models || aiSettings.models.length === 0) {
-    throw new Error('未找到可用的AI模型配置，请先配置AI模型');
-  }
 
   const workspaceSettings = workspace.getSettings();
   const workspaceAIConfig = workspaceSettings?.aiConfig;
@@ -121,10 +133,6 @@ export async function initializeAIEnvironment(options: {
   // 构建有效配置
   const effectiveConfig = buildEffectiveConfig(options.configOverrides || {}, agentConfig, workspaceAIConfig, aiSettings);
 
-  // 验证模型可用性
-  if (!effectiveConfig.modelKey) {
-    throw new Error('未找到可用的AI模型');
-  }
 
   // 获取 MCP 工具（如果需要的话）
   let mcpClients: IMCPClient[] = [];

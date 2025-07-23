@@ -1,6 +1,6 @@
 {
   "name": "@dadigua/hyperchat",
-  "version": "2.0.0-alpha.43",
+  "version": "2.0.0-alpha.44",
   "description": "HyperChat Core - Node.js backend and CLI tool with AI chat, MCP support",
   "author": "Dadigua <0laopo0@gmail.com>",
   "license": "MIT",
@@ -100,7 +100,7 @@
     "webpack-node-externals": "^3.0.0"
   },
   "scripts": {
-    "dev": "nodemon -w src --exec cross-env myEnv=dev npx tsx --inspect=19999 src/main.mts",
+    "dev": "nodemon -w src --exec cross-env myEnv=dev npx tsx --inspect=19999 src/cli/index.mts serve",
     "dev:proxy": "nodemon -w src --exec cross-env myEnv=dev HTTP_PROXY=http://localhost:8899 HYPERCHAT_SKIP_SSL_VERIFICATION=true npx tsx --inspect=19999 src/main.mts",
     "start": "npx tsx --inspect=19999 src/main.mts",
     "build": "node build.mjs",

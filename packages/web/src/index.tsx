@@ -14,7 +14,6 @@ import ReactDOM from "react-dom/client";
 import { HashRouter } from "react-router-dom";
 import App from "./App";
 import { call } from "./common/call";
-import { config } from "./common/config";
 import "./tailwind.css";
 import { ConfigProvider } from "antd";
 import { StyleProvider, px2remTransformer } from "@ant-design/cssinjs";

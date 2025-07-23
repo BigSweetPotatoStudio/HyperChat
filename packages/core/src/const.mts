@@ -4,9 +4,10 @@
  * 核心功能：
  * - 定义 HyperChat 应用的网络端口配置
  * - 提供 HTTP 服务器和 MCP 服务器的默认端口
+ * - 集成环境变量管理系统
  * 
  * 端口说明：
- * - HTTPPORT (16100): 主 HTTP 服务器端口，用于 Web 前端访问
+ * - HyperChat_HTTP_PORT: 主 HTTP 服务器端口，用于 Web 前端访问
  * 
  * 使用场景：
  * - HTTP 服务器启动时的默认端口配置
@@ -16,10 +17,7 @@
 
 import { argv, fs, os, path } from "zx";
 import p from "../package.json" with { type: "json" };
-
-/** HTTP 服务器默认端口 */
-const HTTPPORT = 16100;
-
+import { EnvManager } from "./data/managers/envManager.mjs";
 
 /**
  * 应用配置对象
@@ -28,31 +26,43 @@ const HTTPPORT = 16100;
  * 主要用于服务器启动和网络连接配置
  */
 export const Config = {
-  /** HTTP 服务器端口 */
-  port: HTTPPORT,
+  /** HTTP 服务器端口（从环境变量获取） */
+  get port() {
+    return EnvManager.getInstance().get('HyperChat_HTTP_PORT');
+  },
 };
 
 
 export const dirName = "HyperChat";
-let appDataDir = path.join(os.homedir(), "Documents", dirName);
 
-try {
-  if (argv.appDataDir && typeof argv.appDataDir === "string") {
-    // 如果命令行参数中指定了 appDataDir，则使用该路径
-    appDataDir = argv.appDataDir
+/**
+ * 获取应用数据目录的函数
+ * 支持动态环境变量配置
+ */
+export function getAppDataDir(): string {
+  // 使用动态获取的环境管理器实例
+  const envManager = EnvManager.getInstance();
+  const config = envManager.getConfig();
+
+  if (config.HyperChat_AppDataDir) {
+    return config.HyperChat_AppDataDir;
   }
-} catch (e) {
-  console.error("appDataDir set failed", e);
+
+  // 默认路径
+  return path.join(os.homedir(), "Documents", dirName);
 }
 
+// 为了向后兼容，提供常量形式的导出
+// 但实际上每次调用都会动态获取最新值
+export const appDataDir = getAppDataDir();
 
+// 确保目录存在
 fs.ensureDirSync(appDataDir);
 
-export {
-  appDataDir
-}
 export const CONST = {
   getVersion: p.version,
-  appDataDir: appDataDir,
+  get appDataDir() {
+    return getAppDataDir();
+  },
   dirName: dirName,
 };

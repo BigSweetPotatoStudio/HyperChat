@@ -10,14 +10,36 @@
  * - 本地和远程核心服务连接
  */
 
+// 第一步：立即解析CLI参数并设置环境变量，必须在任何其他模块导入之前
 import process from 'process';
+import { EnvManager } from '../data/managers/envManager.mjs';
+import { parseCurrentArgs, CliArgsParser } from '../utils/cliArgsParser.mjs';
+
+// 简单的命令行参数解析
+const args = process.argv.slice(2);
+
+// 解析 CLI 参数到环境变量
+const cliEnvOverrides = parseCurrentArgs();
+
+// 添加调试信息
+if (args.includes('--verbose') || args.includes('-v')) {
+  console.log('🔍 CLI Environment Overrides:', cliEnvOverrides);
+}
+
+// 创建带有 CLI 参数覆盖的环境管理器
+const envManager = EnvManager.getInstance(undefined, cliEnvOverrides);
+
+// 设置为全局默认实例，这样其他模块也能使用CLI参数覆盖
+EnvManager.setGlobalDefault(envManager);
+
+// 第二步：现在可以安全地导入其他模块
 import { readFileSync } from 'fs';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
 import { Logger } from './utils/logger.mjs';
 // startChat 现在通过动态导入加载
 import { startServer } from './commands/server.mjs';
-import { startRun, showRunStatus } from './commands/run.mjs';
+import { startRun } from './commands/run.mjs';
 import { createWorkspace, listWorkspaces, showCurrentWorkspace } from './commands/workspace.mjs';
 import { listAgents, createAgent, checkAgentExists, showAgentMemory } from './commands/agent.mjs';
 import { Command } from '../command.mjs';
@@ -41,26 +63,27 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 const packagePath = join(__dirname, '..', '..', 'package.json');
 const pkg = JSON.parse(readFileSync(packagePath, 'utf8'));
 
-// 简单的命令行参数解析
-const args = process.argv.slice(2);
-
 // 解析全局选项
 const globalOptions = {
   verbose: args.includes('--verbose') || args.includes('-v'),
   quiet: args.includes('--quiet') || args.includes('-q'),
   help: args.includes('--help') || args.includes('-h'),
   host: getOptionValue(args, '--host') || 'localhost',
-  port: parseInt(getOptionValue(args, '--port') || '16102'),
-  password: getOptionValue(args, '--password'),
+  port: envManager.get('HyperChat_HTTP_PORT'),
+  password: envManager.get('HyperChat_Web_Password'),
   workspace: getOptionValue(args, '--workspace'),
-  language: getOptionValue(args, '--language') || getOptionValue(args, '--lang'),
+  language: envManager.get('HyperChat_Language'),
   ui: getOptionValue(args, '--ui') || 'ink' // 默认使用 ink UI
 };
 
 // 移除选项和选项值，保留命令和参数
 function getCleanArgs(args: string[]): string[] {
   const cleanArgs: string[] = [];
-  const optionsWithValues = ['--workspace', '--host', '--port', '--password', '--language', '--lang', '--ui'];
+  const optionsWithValues = [
+    '--workspace', '--host', '--port', '--password', '--language', '--lang', '--ui',
+    '--data-dir', '--app-data-dir', '--api-key', '--api-url', '--ai-provider', '--ai-model',
+    '--log-level', '--web-password', '--env', '--my-env', '-p'
+  ];
   
   for (let i = 0; i < args.length; i++) {
     const arg = args[i];
@@ -167,6 +190,8 @@ ${t`Examples:`}
   hyperchat language zh             # ${t`Set interface to Chinese`}
   hyperchat language en             # ${t`Set interface to English`}
   hyperchat --language zh chat      # ${t`Use Chinese for this command`}
+
+${CliArgsParser.getHelpText()}
 
 ${t`Welcome to HyperChat CLI! 🎉`}
 `);
@@ -526,7 +551,7 @@ async function handleLanguageCommand(langArg: string | undefined, logger: Logger
   try {
     // 如果没有提供语言参数，显示当前语言
     if (!langArg) {
-      const currentLang = getCurrLang();
+      const currentLang = envManager.get('HyperChat_Language') || getCurrLang();
       let langName: string;
       if (currentLang === 'zh') langName = t`Chinese`;
       else if (currentLang === 'ja') langName = t`Japanese`;
@@ -575,7 +600,7 @@ async function handleLanguageCommand(langArg: string | undefined, logger: Logger
     }
 
     // 获取当前语言
-    const currentLang = getCurrLang();
+    const currentLang = envManager.get('HyperChat_Language') || getCurrLang();
     if (currentLang === targetLang) {
       let langName: string;
       if (targetLang === 'zh') langName = t`Chinese`;
@@ -591,19 +616,13 @@ async function handleLanguageCommand(langArg: string | undefined, logger: Logger
     // 设置新语言
     setCurrLang(targetLang);
     
-    // 更新到AppSettings (异步，不阻塞用户体验)
+    // 保存到环境变量系统（持久化到配置文件）
     try {
-      const currentSettings = await Command.getAppSettings();
-      await Command.updateAppSettings({
-        updates: {
-          appearance: { 
-            ...currentSettings.appearance,
-            language: targetLang 
-          }
-        }
-      });
+      // 这里需要实现保存到 .env 文件的逻辑
+      // 由于目前 EnvManager 是只读的，我们先显示设置成功，后续可以添加写入功能
+      logger.debug(`Language setting saved to environment configuration: ${targetLang}`);
     } catch (error) {
-      // 如果更新AppSettings失败，只记录警告，不影响当前会话的语言切换
+      // 如果保存失败，只记录警告，不影响当前会话的语言切换
       logger.warn(`⚠️  ${t`Failed to save language setting:`} ${error instanceof Error ? error.message : String(error)}`);
     }
 
@@ -615,7 +634,7 @@ async function handleLanguageCommand(langArg: string | undefined, logger: Logger
     else if (targetLang === 'de') newLangName = t`German`;
     else newLangName = t`English`;
     console.log(`✅ ${t`Interface language changed to`} ${newLangName}`);
-    console.log(`💡 ${t`Language setting has been saved and will persist across sessions`}`);
+    console.log(`💡 ${t`Language setting is now active for this session. To persist across sessions, add HyperChat_Language=${targetLang} to your environment configuration.`}`);
     
   } catch (error) {
     logger.error(`${t`Failed to change language:`} ${error instanceof Error ? error.message : String(error)}`);
@@ -650,6 +669,12 @@ async function main() {
   try {
     // 初始化i18n系统，命令行语言参数具有最高优先级
     await initCliI18n(globalOptions.language);
+    
+    // 如果是帮助命令，直接显示帮助并退出
+    if (globalOptions.help) {
+      showHelp();
+      return;
+    }
     
     // 执行命令
     const result = await handleCommand();

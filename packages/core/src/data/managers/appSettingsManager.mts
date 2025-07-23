@@ -20,7 +20,7 @@ import {
   ProviderConfigSchema,
   MCPGatewaySchema,
 } from "@dadigua/hyperchat-shared";
-import { CONST } from "../../const.mjs";
+import { CONST, getAppDataDir } from "../../const.mjs";
 
 /**
  * 全局应用设置管理器类（仅限 Node.js 环境）
@@ -40,7 +40,7 @@ export class AppSettingsManager {
       ...DEFAULT_APP_SETTINGS,
       uuid: v4(),
       version: CONST.getVersion,
-      appDataDir: CONST.appDataDir,
+      appDataDir: getAppDataDir(),
       platform: process.platform,
       PATH: process.env.PATH || "",
       ai: {
@@ -66,6 +66,19 @@ export class AppSettingsManager {
     
     // 加载设置
     await this.load();
+  }
+
+  /**
+   * 同步初始化（用于懒加载场景）
+   */
+  initSync(): void {
+    // 确保目录存在
+    if (!fs.existsSync(this.appDataDir)) {
+      fs.mkdirSync(this.appDataDir, { recursive: true });
+    }
+
+    // 同步加载设置
+    this.loadSync();
   }
 
   /**
@@ -108,7 +121,7 @@ export class AppSettingsManager {
             ...result.data,
             // 只更新动态系统信息
             version: CONST.getVersion,
-            appDataDir: CONST.appDataDir,
+            appDataDir: getAppDataDir(),
             platform: process.platform,
             PATH: process.env.PATH || "",
           };
@@ -124,6 +137,46 @@ export class AppSettingsManager {
       }
     } catch (error) {
       console.error("加载应用设置文件失败:", error);
+      // 使用默认设置
+      this.createDefaultSettings();
+    }
+  }
+
+  /**
+   * 同步加载设置
+   */
+  loadSync(): void {
+    try {
+      if (fs.existsSync(this.settingsPath)) {
+        const content = fs.readFileSync(this.settingsPath, "utf-8");
+        const parsed = jsonc.parse(content);
+        
+        // 使用 Zod 验证和解析
+        const result = AppSettingsSchema.safeParse(parsed);
+        
+        if (result.success) {
+          // 只更新系统相关的字段，保留用户设置
+          this.settings = {
+            ...result.data,
+            // 只更新动态系统信息
+            version: CONST.getVersion,
+            appDataDir: getAppDataDir(),
+            platform: process.platform,
+            PATH: process.env.PATH || "",
+          };
+        } else {
+          console.warn("应用设置文件验证失败，使用默认配置:", result.error);
+          // 同步模式下不进行复杂修复，直接使用默认配置
+          this.createDefaultSettings();
+        }
+      } else {
+        // 文件不存在，创建默认设置
+        this.createDefaultSettings();
+        // 同步保存
+        this.saveSync();
+      }
+    } catch (error) {
+      console.error("同步加载应用设置文件失败:", error);
       // 使用默认设置
       this.createDefaultSettings();
     }
@@ -161,27 +214,9 @@ export class AppSettingsManager {
             appearance.darkTheme = parsed.appearance.darkTheme;
             repairResults.push("✓ 保留深色主题设置");
           }
-          // 修复无效的语言设置
-          const validLanguages = ["zh", "en", "ja", "ko", "fr", "de"];
-          if (typeof parsed.appearance.language === 'string') {
-            if (validLanguages.includes(parsed.appearance.language)) {
-              appearance.language = parsed.appearance.language as any;
-              repairResults.push("✓ 保留语言设置");
-            } else {
-              // 尝试修复常见的语言代码错误
-              const langMap: Record<string, string> = {
-                'enUS': 'en', 'en-US': 'en', 'en_US': 'en',
-                'zhCN': 'zh', 'zh-CN': 'zh', 'zh_CN': 'zh',
-                'jaJP': 'ja', 'ja-JP': 'ja', 'ja_JP': 'ja',
-              };
-              const fixedLang = langMap[parsed.appearance.language];
-              if (fixedLang) {
-                appearance.language = fixedLang as any;
-                repairResults.push(`✓ 修复语言设置: ${parsed.appearance.language} -> ${fixedLang}`);
-              } else {
-                repairResults.push(`✗ 语言设置无效，使用默认值: ${parsed.appearance.language}`);
-              }
-            }
+          // 语言设置已移动到环境变量系统，这里不再处理
+          if ('language' in parsed.appearance) {
+            repairResults.push("ℹ️ 语言设置已迁移到环境变量系统 (HyperChat_Language)");
           }
           this.settings.appearance = appearance;
         }
@@ -200,9 +235,9 @@ export class AppSettingsManager {
         } else {
           // 部分保留系统设置
           const system = { ...this.settings.system };
-          if (typeof parsed.system.password === 'string') {
-            system.password = parsed.system.password;
-            repairResults.push("✓ 保留密码设置");
+          // 密码设置已移动到环境变量系统，这里不再处理
+          if ('password' in parsed.system) {
+            repairResults.push("ℹ️ 密码设置已迁移到环境变量系统 (HyperChat_Web_Password)");
           }
           if (typeof parsed.system.isDeveloper === 'boolean') {
             system.isDeveloper = parsed.system.isDeveloper;
@@ -338,7 +373,7 @@ export class AppSettingsManager {
       ...DEFAULT_APP_SETTINGS,
       uuid: v4(),
       version: CONST.getVersion,
-      appDataDir: CONST.appDataDir,
+      appDataDir: getAppDataDir(),
       platform: process.platform,
       PATH: process.env.PATH || "",
       ai: {
@@ -365,6 +400,25 @@ export class AppSettingsManager {
       await fs.promises.writeFile(this.settingsPath, content, "utf-8");
     } catch (error) {
       console.error("保存应用设置文件失败:", error);
+      throw error;
+    }
+  }
+
+  /**
+   * 同步保存设置
+   */
+  saveSync(): void {
+    try {
+      // 创建包含 $schema 引用的设置对象
+      const settingsWithSchema = {
+        $schema: "./app-settings.schema.json",
+        ...this.settings,
+      };
+
+      const content = JSON.stringify(settingsWithSchema, null, 2);
+      fs.writeFileSync(this.settingsPath, content, "utf-8");
+    } catch (error) {
+      console.error("同步保存应用设置文件失败:", error);
       throw error;
     }
   }
@@ -508,7 +562,7 @@ export class AppSettingsManager {
     // 保留系统信息，但使用最新值
     const systemInfo = {
       version: CONST.getVersion,
-      appDataDir: CONST.appDataDir,
+      appDataDir: getAppDataDir(),
       logFilePath: this.settings.logFilePath,
       PATH: process.env.PATH || "",
       platform: process.platform,
@@ -541,7 +595,7 @@ export class AppSettingsManager {
         // 保留系统信息，但使用最新值
         const systemInfo = {
           version: CONST.getVersion,
-          appDataDir: CONST.appDataDir,
+          appDataDir: getAppDataDir(),
           logFilePath: this.settings.logFilePath,
           PATH: process.env.PATH || "",
           platform: process.platform,
