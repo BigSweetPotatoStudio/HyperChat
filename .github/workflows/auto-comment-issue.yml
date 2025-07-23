@@ -1,0 +1,58 @@
+name: Claude Auto Comment Issue
+
+on:
+  issues:
+    types: [opened]
+
+jobs:
+  claude-auto-comment:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      issues: write
+      pull-requests: read
+      id-token: write
+      actions: read
+      
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: Run Claude Code Analysis
+        id: claude
+        uses: anthropics/claude-code-action@beta
+        with:
+          claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          
+          # HyperChat 项目特定指令
+          custom_instructions: |
+            ## 自动回复 Issue 任务
+            你是 HyperChat 项目的自动回复机器人。请分析这个新创建的 issue，然后回复一条有用的评论。
+            
+            ### 项目背景
+            - HyperChat 是一个多平台 AI 聊天应用，包含 Web、CLI、Electron 版本
+            - 使用 TypeScript 开发，基于 Ant Design 组件库
+            - 支持多种 AI 模型（OpenAI、Claude、Gemini、Qwen、Deepseek 等）
+            - 采用工作区概念，支持 MCP（模型上下文协议）
+            
+            ### 回复要求
+            1. 用中文回复
+            2. 态度友好、专业
+            3. 根据 issue 内容分析问题类型（Bug、功能请求、问题咨询等）
+            4. 提供具体的帮助建议或下一步指导
+            5. 如果是技术问题，可以基于代码库给出初步分析
+            6. 提醒这是 Claude Code 的自动回复
+
+            
+            ### 回复格式
+            ```
+            🤖 **Claude Code 自动回复**
+            
+            你好！我是 Claude Code，HyperChat 项目的 AI 助手。我已经分析了你的 issue。
+            
+            [基于issue内容的具体分析和建议]
+            
+            
+            请现在分析当前的 issue 并回复。
