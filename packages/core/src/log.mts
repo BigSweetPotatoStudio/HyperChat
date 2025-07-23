@@ -10,68 +10,64 @@ import dayjs from "dayjs";
 import log4js from "log4js";
 import { os } from "zx";
 
-// 延迟初始化日志目录，避免循环依赖
-let logDir: string | undefined;
-let logpath: string | undefined;
-
-function ensureLogDir(): string {
-  if (!logDir) {
-    // 使用默认路径，避免依赖 CONST
-    const defaultAppDataDir = path.join(os.homedir(), "Documents", "HyperChat");
-    logDir = path.join(defaultAppDataDir, ".logs");
-    fs.ensureDirSync(logDir);
-    logpath = path.join(logDir, `${dayjs().format("YYYY-MM-DD")}.log`);
+/**
+ * 根据运行环境获取日志目录
+ * - nodejs: 当前工作目录的 .hyperchat/logs
+ * - electron: 全局路径的 .hyperchat/logs
+ */
+function getLogDir(): string {
+  const runtime = process.env.HyperChat_Runtime || "nodejs";
+  
+  if (runtime === "electron") {
+    // Electron环境：使用全局路径
+    const globalAppDataDir = process.env.HyperChat_AppDataDir || 
+      path.join(os.homedir(), "Documents", "HyperChat");
+    return path.join(globalAppDataDir, ".hyperchat", "logs");
+  } else {
+    // Node.js环境：使用当前工作目录
+    return path.join(process.cwd(), ".hyperchat", "logs");
   }
-  return logDir;
 }
+
+const logDir = getLogDir();
+fs.ensureDirSync(logDir);
+let logpath = path.join(logDir, `${dayjs().format("YYYY-MM-DD")}.log`);
 
 // 根据环境变量设置日志级别
 const isDevMode = process.env.myEnv === 'dev';
 const logLevel = isDevMode ? 'debug' : 'info';
 
-// 延迟初始化 log4js
-let logger: log4js.Logger | undefined;
-
-function getLogger(): log4js.Logger {
-  if (!logger) {
-    ensureLogDir(); // 确保日志目录存在
-    
-    log4js.configure({
-      appenders: {
-        file: {
-          type: "file",
-          filename: logpath!,
-        },
-        console: {
-          type: "console",
-        },
-      },
-      categories: {
-        default: {
-          appenders: isDevMode ? ["file", "console"] : ["file"],
-          level: logLevel
-        }
-      },
-    });
-    
-    logger = log4js.getLogger();
-  }
-  
-  return logger;
-}
+log4js.configure({
+  appenders: {
+    file: {
+      type: "file",
+      filename: logpath,
+    },
+    console: {
+      type: "console",
+    },
+  },
+  categories: {
+    default: {
+      appenders: isDevMode ? ["file", "console"] : ["file"],
+      level: logLevel
+    }
+  },
+});
+const logger = log4js.getLogger();
 
 export class LoggerLog4 {
   debug(...args: unknown[]) {
     let [msg, ...rest] = args;
-    getLogger().debug(msg, ...rest);
+    logger.debug(msg, ...rest);
   }
   info(...args: unknown[]) {
     let [msg, ...rest] = args;
-    getLogger().info(msg, ...rest);
+    logger.info(msg, ...rest);
   }
   warn(...args: unknown[]) {
     let [msg, ...rest] = args;
-    getLogger().warn(msg, ...rest);
+    logger.warn(msg, ...rest);
   }
   error(...args: unknown[]) {
     let [msg, ...rest] = args;
@@ -81,7 +77,7 @@ export class LoggerLog4 {
       console.error(`[ERROR] ${msg}`, ...rest);
     } else {
       // 在生产模式下，记录简洁的错误信息
-      getLogger().error(msg);
+      logger.error(msg);
     }
   }
 

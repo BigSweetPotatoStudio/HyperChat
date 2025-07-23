@@ -31,9 +31,9 @@ import { createUploadRouter } from "./http/uploadRouter.mjs";
 import { ParamsDictionary } from "express-serve-static-core";
 import { ParsedQs } from "qs";
 import { createProxyMiddleware } from "./http/aiProxyMiddleware.mjs";
-import { getAppSettingsManager } from "./data/appSettingsService.mjs";
 import { EVENT } from "./common/event.mjs";
 import chatSSERouter from "./routes/chatSSE.mjs";
+import { EnvManager } from "./data/managers/envManager.mjs";
 
 // 常量定义
 const MAX_BODY_SIZE = "1000mb";
@@ -50,7 +50,8 @@ interface MyRouter {
 }
 
 // 初始化全局变量
-const password = getAppSettingsManager().getSystem().password || "123456";
+const envManager = EnvManager.getInstance();
+const password = envManager.get('HyperChat_Web_Password');
 export const urlPrefix = "/" + encodeURI(password);
 Logger.info("Server password:", password);
 

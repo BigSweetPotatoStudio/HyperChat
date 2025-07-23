@@ -80,9 +80,8 @@ export const MCPGatewaySchema = z.object({
   allowMCPs: z.array(z.string()).default([]).describe("Allowed MCP list"),
 }).describe("MCP gateway configuration");
 
-// 系统设置 Schema
+// 系统设置 Schema  
 export const SystemSchema = z.object({
-  password: z.string().default("123456").describe("Application password"),
   isDeveloper: z.boolean().default(false).describe("Developer mode"),
 });
 

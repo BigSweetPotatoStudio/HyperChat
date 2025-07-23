@@ -31,6 +31,9 @@ HyperChat 是一个多平台的 AI 聊天应用，该项目拥有完善的 MCP�
 * 使用 Zod schema 进行数据验证，通过 zod-to-json-schema 转换为 JSON Schema 用于前端表单生成。
 * 不允许 await import()。这样逻辑更加清晰，避免了动态导入带来的复杂性。
 
+### 环境变量系统
+* 实现了5层优先级的环境变量系统（默认值 < process.env < 全局.env < 工作区.env < CLI参数）
+
 ### 前后端通信
 * 前端发送消息给后端，默认通过 packages/core/src/command.mts 实现，前端通过调用 call 的方法来实现与后端的交互。
 * electron提供更多electron接口 packages/electron/src/command.mts， 前端通过调用 callElectron 的方法来实现与electron的交互。

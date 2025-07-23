@@ -24,7 +24,9 @@ export class CliArgsParser {
     '--verbose': 'LOG_LEVEL', // 特殊处理
     '-v': 'LOG_LEVEL',
     '--quiet': 'LOG_LEVEL', // 特殊处理
-    '-q': 'LOG_LEVEL'
+    '-q': 'LOG_LEVEL',
+    '--web-password': 'HyperChat_Web_Password',
+    '--password': 'HyperChat_Web_Password'
   };
 
   /**
@@ -92,6 +94,7 @@ export class CliArgsParser {
       
       case 'LOG_LEVEL':
         return ['trace', 'debug', 'info', 'warn', 'error', 'fatal'].includes(value) ? value : undefined;
+        
       
       default:
         return value;
@@ -119,7 +122,9 @@ export class CliArgsParser {
       aiModel: 'HyperChat_AI_Model',
       logLevel: 'LOG_LEVEL',
       verbose: 'LOG_LEVEL',
-      quiet: 'LOG_LEVEL'
+      quiet: 'LOG_LEVEL',
+      webPassword: 'HyperChat_Web_Password',
+      password: 'HyperChat_Web_Password'
     };
 
     for (const [optionKey, envKey] of Object.entries(optionMapping)) {
@@ -166,6 +171,8 @@ export class CliArgsParser {
   --log-level <level>        Log level: trace|debug|info|warn|error|fatal (default: info)
   -v, --verbose              Enable verbose logging (sets log-level to debug)
   -q, --quiet                Enable quiet mode (sets log-level to warn)
+  --web-password <password>  Web interface access password (default: 123456)
+  --password <password>      Alias for --web-password
 
 Example:
   hyperchat serve --port 8080 --verbose --env development

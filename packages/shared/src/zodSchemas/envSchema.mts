@@ -16,17 +16,25 @@ export const LogLevelSchema = z.enum([
   "fatal"
 ]).describe("Log level");
 
+// 运行环境类型枚举
+export const RuntimeEnvSchema = z.enum([
+  "nodejs",
+  "electron"
+]).describe("Application runtime environment");
+
 // 环境变量 Schema
 export const EnvSchema = z.object({
   // 基础环境配置
   NODE_ENV: EnvTypeSchema.default("production"),
   HyperChat_MY_ENV: z.string().default("prod").describe("Custom environment flag"),
+  HyperChat_Runtime: RuntimeEnvSchema.default("nodejs").describe("Runtime environment type"),
 
   // 路径配置
   HyperChat_AppDataDir: z.string().optional().describe("Global application data directory path"),
 
   // 服务配置
   HyperChat_HTTP_PORT: z.coerce.number().min(1000).max(65535).default(16100).describe("HTTP server port"),
+  HyperChat_Web_Password: z.string().default("123456").describe("Web interface access password"),
 
   // API Keys (可选，通过工作区配置管理)
   HyperChat_API_KEY: z.string().optional().describe("HyperChat API key"),
@@ -43,6 +51,7 @@ export const EnvSchema = z.object({
 export type EnvConfig = z.infer<typeof EnvSchema>;
 export type EnvType = z.infer<typeof EnvTypeSchema>;
 export type LogLevel = z.infer<typeof LogLevelSchema>;
+export type RuntimeEnv = z.infer<typeof RuntimeEnvSchema>;
 
 // 验证函数
 export function validateEnvConfig(data: any): data is EnvConfig {
