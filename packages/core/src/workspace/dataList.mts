@@ -229,6 +229,52 @@ export class DataList<T extends { key: string }> {
   }
 
   /**
+   * 获取轻量级统计信息（避免加载完整内容）
+   */
+  async getStats(): Promise<{ count: number; lastModified?: number }> {
+    if (!fs.existsSync(this.dirPath)) {
+      return { count: 0 };
+    }
+
+    try {
+      const files = await fs.promises.readdir(this.dirPath);
+      const validFiles = files.filter(file => {
+        const format = this.detectFileFormat(file);
+        return format !== null;
+      });
+
+      if (validFiles.length === 0) {
+        return { count: 0 };
+      }
+
+      // 获取最新的文件修改时间
+      let lastModified: number | undefined;
+      for (const file of validFiles) {
+        const filePath = path.join(this.dirPath, file);
+        try {
+          const fileStat = await fs.promises.stat(filePath);
+          if (fileStat.isFile()) {
+            const mtime = fileStat.mtime.getTime();
+            if (!lastModified || mtime > lastModified) {
+              lastModified = mtime;
+            }
+          }
+        } catch (error) {
+          // 忽略单个文件的错误
+        }
+      }
+
+      return {
+        count: validFiles.length,
+        lastModified
+      };
+    } catch (error) {
+      this.logger.warn(`获取统计信息失败:`, error);
+      return { count: 0 };
+    }
+  }
+
+  /**
    * 获取单个项目
    */
   async get(key: string): Promise<T | null> {

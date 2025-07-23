@@ -238,15 +238,13 @@ export class AgentInstance {
     chatLogsCount: number;
     lastChatTime?: number;
   }> {
-    const chatLogs = await this.getChatLogs();
-    const lastChatTime = chatLogs.length > 0
-      ? Math.max(...chatLogs.map(log => log.dateTime))
-      : undefined;
+    // 使用轻量级统计避免加载所有聊天记录内容
+    const stats = await this.chatLogs.getStats();
 
     return {
       config: this.config,
-      chatLogsCount: chatLogs.length,
-      lastChatTime,
+      chatLogsCount: stats.count,
+      lastChatTime: stats.lastModified,
     };
   }
 }
