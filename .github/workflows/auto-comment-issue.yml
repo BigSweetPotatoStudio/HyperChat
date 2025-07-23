@@ -1,8 +1,8 @@
 name: Claude Auto Comment Issue
 
 on:
-  issues:
-    types: [opened]
+  # issues:
+  #   types: [opened]
 
 jobs:
   claude-auto-comment:

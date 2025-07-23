@@ -137,7 +137,7 @@ async function createDefaultAgent(workspace: any): Promise<void> {
     name: defaultAgentName,
     prompt: basePrompt,
     description: `Default AI assistant`,
-    allowMCPs: ["hyper_system", "hyper_browser"] as string[],
+    allowMCPs: ["hyper_system"] as string[],
     isConfirmCallTool: false,
     tags: ['default', 'auto-created']
   };
