@@ -16,7 +16,7 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
-          fetch-depth: 0
+          fetch-depth: 1
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -48,9 +48,20 @@ jobs:
       - name: Run HyperChat Analysis and Comment
         run: |
           # 创建分析提示
-          ANALYSIS_PROMPT="你是 HyperChat 项目的专业 Issue 分析助手。请使用 gh 命令帮我分析并回复下面的 GitHub Issue。
+          ANALYSIS_PROMPT="你是 HyperChat 项目的专业 Issue 分析助手。请先仔细阅读项目的 CLAUDE.md 文件，学习项目的详细信息，然后使用 gh 命令分析并回复下面的 GitHub Issue。
 
-          ## Issue 信息
+          ## 第一步：学习项目信息
+          请先使用以下命令读取项目文档：
+          \`cat CLAUDE.md\`
+
+          仔细学习文档中的：
+          - 项目概述和架构
+          - 开发逻辑和最佳实践
+          - 包结构和构建命令
+          - 已完成功能和待办事项
+          - 常见问题解决方案
+
+          ## 第二步：分析Issue信息
           - **Repository**: ${{ github.repository }}
           - **Issue Number**: ${{ github.event.issue.number }}
           - **Issue Title**: ${{ github.event.issue.title }}
@@ -60,46 +71,84 @@ jobs:
           **Issue 内容**:
           ${{ github.event.issue.body }}
 
-          ## 项目背景
-          - HyperChat 是一个多平台 AI 聊天应用
-          - 支持 Web、CLI、Electron 三个平台
-          - 使用 TypeScript + React + Ant Design 开发
-          - 集成多种 AI 模型：OpenAI、Claude、Gemini、Qwen、DeepSeek
-          - 支持工作区概念和 MCP（模型上下文协议）
-          - 采用 monorepo 架构：packages/shared、packages/core、packages/web、packages/electron
+          ## 第三步：深度分析任务
+          基于 CLAUDE.md 中学到的项目知识，完成以下分析：
+          1. **问题分类**：确定Issue类型（Bug报告/功能请求/使用问题/文档问题/开发指导等）
+          2. **影响评估**：评估问题的严重程度和影响范围（参考项目架构）
+          3. **技术分析**：基于项目的技术栈和架构提供专业判断
+          4. **解决建议**：参考项目的开发最佳实践和已有功能提供具体建议
+          5. **资源指引**：指向相关的文档、代码文件或构建命令
 
-          ## 任务要求
-          1. 分析这个 Issue 的类型（Bug报告/功能请求/使用问题/文档问题等）
-          2. 评估问题的严重程度和影响范围
-          3. 基于项目知识提供专业建议
-          4. 使用以下命令格式回复Issue：
-             \`gh issue comment ${{ github.event.issue.number }} --repo ${{ github.repository }} --body \"你的回复内容\"\`
+          ## 第四步：执行回复和标签
+          使用以下命令完成任务：
+          - 首先回复Issue：\`gh issue comment ${{ github.event.issue.number }} --repo ${{ github.repository }} --body \"你的专业回复内容\"\`
+          - 然后添加相关标签：\`gh issue edit ${{ github.event.issue.number }} --repo ${{ github.repository }} --add-label \"标签1,标签2,标签3\"\`
 
-          ## 回复格式模板
+          ## 增强回复格式模板
           🤖 **HyperChat AI 助手自动回复**
 
-          感谢你提交这个 Issue！我已经分析了你的问题：
+          感谢你提交这个 Issue！我已经基于项目文档深入分析了你的问题：
 
-          **问题类型**：[具体类型]
-          **影响范围**：[具体范围]  
-          **严重程度**：[严重程度]
+          **📋 问题分析**
+          - **类型**：[具体类型]
+          - **影响范围**：[基于项目架构的具体范围]  
+          - **严重程度**：[评估等级]
 
-          **分析结果**：
-          [详细分析]
+          **🔍 技术分析**
+          [基于CLAUDE.md中的技术栈、架构和开发逻辑的深度分析]
 
-          **建议方案**：
-          [具体建议]
+          **💡 解决建议**
+          [参考项目最佳实践和已有功能的具体建议]
 
-          **相关资源**：
-          - 📖 [项目文档](https://github.com/${{ github.repository }}/blob/main/README.md)
-          - 🛠️ [开发指南](https://github.com/${{ github.repository }}/blob/main/CLAUDE.md)
+          **📚 相关资源**
+          - 🛠️ [开发指南](https://github.com/${{ github.repository }}/blob/dev2/CLAUDE.md)
+          - 📖 [项目文档](https://github.com/${{ github.repository }}/blob/dev2/README.md)
+          - [其他相关文件或命令，基于分析结果]
 
-          如果需要进一步帮助，请提供更多详细信息！
+          **🚀 下一步行动**
+          [基于项目当前状态和开发流程的具体指导]
+
+          如需进一步帮助，请提供更多技术细节！
 
           ---
-          *此回复由 HyperChat AI 助手自动生成*
+          *此回复基于项目文档智能生成，由 HyperChat AI 助手提供*
 
-          请现在执行分析并使用 gh 命令回复这个 Issue。"
+          ## 可用标签参考
+          **问题类型标签**：
+          - bug：Bug报告
+          - enhancement：功能请求  
+          - question：使用问题
+          - documentation：文档问题
+          - help wanted：需要帮助
+          - good first issue：适合新手
+
+          **影响范围标签**：
+          - frontend：前端相关
+          - backend：后端相关
+          - cli：CLI工具相关
+          - electron：桌面应用相关
+          - web：Web应用相关
+          - shared：共享代码相关
+
+          **严重程度标签**：
+          - priority:low：低优先级
+          - priority:medium：中优先级
+          - priority:high：高优先级
+          - priority:critical：紧急
+
+          **其他标签**：
+          - duplicate：重复问题
+          - wontfix：不会修复
+          - invalid：无效问题
+          - auto-analyzed：自动分析
+
+          ## 执行要求
+          **重要**：请严格按照以下步骤执行：
+          1. **第一步**：先执行 \`cat CLAUDE.md\` 学习项目详细信息
+          2. **第二步**：基于学到的知识分析Issue
+          3. **第三步**：执行 \`gh issue comment\` 命令发布专业回复
+          4. **第四步**：执行 \`gh issue edit --add-label\` 命令添加2-4个最相关标签
+          5. **必须**：确保所有命令都能成功执行，回复内容要体现对项目的深度理解
 
           # 使用 HyperChat 进行分析和回复
           npx @dadigua/hyperchat@latest "$ANALYSIS_PROMPT"

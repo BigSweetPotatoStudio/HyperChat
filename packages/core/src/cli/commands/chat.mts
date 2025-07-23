@@ -50,7 +50,7 @@ class StreamChatHandler {
   private isFirstUpdate = true;
   private lastAssistantMessageId: string | undefined = undefined;
 
-  constructor(private isInteractive: boolean = false) {}
+  constructor(private isInteractive: boolean = false) { }
 
   reset() {
     this.displayedContentLength = 0;
@@ -102,18 +102,18 @@ class StreamChatHandler {
 
     // 处理工具状态变化
     this.handleToolUpdates(aiChannel);
-    
+
     // 处理AI消息流式显示
     this.handleAssistantMessage(aiChannel);
   }
 
   private handleToolUpdates(aiChannel: AiChannel) {
     const lastMsg = aiChannel.lastMessage;
-    
+
     // 只处理当前assistant消息的工具调用
     if (lastMsg.role === 'assistant') {
       const currentToolCalls = lastMsg.content_tool_calls || [];
-      
+
       // 显示新的工具调用（所有工具调用都应该被显示）
       const pendingToolCalls = currentToolCalls;
       if (pendingToolCalls.length > this.lastDisplayedToolCallsCount) {
@@ -121,13 +121,13 @@ class StreamChatHandler {
           const tool = pendingToolCalls[i];
           if (tool) {
             process.stdout.write('\n' + chalk.cyan(`🔧 ${t`Calling tool:`} ${tool.displayName || tool.originalName}`));
-            
+            process.stdout.write('\n');
             // 显示工具参数
             const args = tool.function.args;
             if (args && Object.keys(args).length > 0) {
               const argsStr = JSON.stringify(args, null, 2);
-              const shortArgsStr = argsStr.length > 100 ? argsStr.substring(0, 100) + '...' : argsStr;
-              process.stdout.write(chalk.gray(` (${shortArgsStr.replace(/\n\s*/g, ' ')})`));
+              // const shortArgsStr = argsStr.length > 100 ? argsStr.substring(0, 100) + '...' : argsStr;
+              process.stdout.write(chalk.gray(`${argsStr}`));
             }
             process.stdout.write('\n');
           }
@@ -139,42 +139,42 @@ class StreamChatHandler {
     // 查找与当前助手消息相关的工具结果
     // 我们需要找到messageId大于lastAssistantMessageId的tool消息
     const allMessages = aiChannel.messages || [];
-    const currentAssistantIndex = allMessages.findLastIndex(msg => 
+    const currentAssistantIndex = allMessages.findLastIndex(msg =>
       msg.role === 'assistant' && msg.messageId === this.lastAssistantMessageId
     );
-    
+
     if (currentAssistantIndex >= 0) {
       // 只处理当前assistant消息之后的tool消息
       const recentToolMessages = allMessages.slice(currentAssistantIndex + 1).filter(msg => msg.role === 'tool');
-      const completedToolMessages = recentToolMessages.filter(msg => 
-        ((msg as any).content_status === 'success' || 
-         (msg as any).content_status === 'error' ||
-         (!(msg as any).content_status && (msg.content && (msg.content as any).length > 0))) &&
+      const completedToolMessages = recentToolMessages.filter(msg =>
+        ((msg as any).content_status === 'success' ||
+          (msg as any).content_status === 'error' ||
+          (!(msg as any).content_status && (msg.content && (msg.content as any).length > 0))) &&
         (msg.content && Array.isArray(msg.content) && msg.content.length > 0)
       );
-      
+
       if (completedToolMessages.length > this.lastDisplayedToolResultsCount) {
         for (let i = this.lastDisplayedToolResultsCount; i < completedToolMessages.length; i++) {
           const toolMsg = completedToolMessages[i];
-          
+
           // 找到对应的工具调用信息
           const currentToolCalls = lastMsg.role === 'assistant' ? (lastMsg.content_tool_calls || []) : [];
-          const correspondingTool = currentToolCalls.find(tool => 
-            tool.id === toolMsg.tool_call_id || 
+          const correspondingTool = currentToolCalls.find(tool =>
+            tool.id === toolMsg.tool_call_id ||
             tool.function?.name === toolMsg.tool_call_name
           );
-          
-          const toolName = correspondingTool?.displayName || 
-                           correspondingTool?.originalName || 
-                           toolMsg.tool_call_name || 
-                           'Unknown Tool';
-          
+
+          const toolName = correspondingTool?.displayName ||
+            correspondingTool?.originalName ||
+            toolMsg.tool_call_name ||
+            'Unknown Tool';
+
           if ((toolMsg as any).content_status === 'error') {
             process.stdout.write(chalk.red(`❌ ${t`Tool error:`} ${toolName}\n`));
           } else {
             process.stdout.write(chalk.green(`✅ ${t`Tool result:`} ${toolName}\n`));
           }
-          
+
           // 显示工具结果内容
           const content = toolMsg.content;
           let contentStr = '';
@@ -193,8 +193,8 @@ class StreamChatHandler {
           }
 
           if (contentStr && contentStr.length > 0) {
-            const shortContent = contentStr.length > 200 ? contentStr.substring(0, 200) + '...' : contentStr;
-            process.stdout.write(chalk.gray(shortContent.replace(/\n/g, ' ')) + '\n');
+            // const shortContent = contentStr.length > 200 ? contentStr.substring(0, 200) + '...' : contentStr;
+            process.stdout.write(chalk.gray(contentStr) + '\n');
           }
         }
         this.lastDisplayedToolResultsCount = completedToolMessages.length;
@@ -237,7 +237,7 @@ class StreamChatHandler {
           const toolCalls = msg.content_tool_calls || [];
           allToolCalls.push(...toolCalls);
         });
-        
+
         const hasTools = allToolCalls.length > 0;
         if ((reasoningContent.length > 0 || hasTools) && !this.reasoningFinished) {
           process.stdout.write('\n\n');
