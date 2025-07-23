@@ -100,7 +100,7 @@ export class AiChannel {
     }
   }
 
-  async getAIOptions(modelKey: string): Promise<{
+  async getAIOptions(modelKey?: string): Promise<{
     model: LanguageModel;
     modelConfig: ModelConfig;
   }> {
@@ -113,6 +113,9 @@ export class AiChannel {
     const envProvider = envManager.get('HyperChat_AI_Provider');
     const envModel = envManager.get('HyperChat_AI_Model');
     
+    // 如果没有提供modelKey，尝试从环境变量获取
+    const finalModelKey = modelKey || envModel || 'default-model';
+    
     let modelConfig: any = null;
     
     // 尝试从应用设置获取配置
@@ -121,10 +124,10 @@ export class AiChannel {
       const aiSettings = appSettings.ai;
       
       if (aiSettings && aiSettings.models && aiSettings.models.length > 0) {
-        modelConfig = aiSettings.models.find((x) => x.key === modelKey);
+        modelConfig = aiSettings.models.find((x) => x.key === finalModelKey);
         
         if (modelConfig) {
-          Logger.debug(`Found model config from app settings: ${modelKey}`);
+          Logger.debug(`Found model config from app settings: ${finalModelKey}`);
           
           // 合并内置API配置
           if (modelConfig.provider !== "unknown") {
@@ -144,16 +147,16 @@ export class AiChannel {
     if (!modelConfig) {
       // 检查是否有足够的环境变量来创建基础配置
       if (!envApiKey || !envApiUrl) {
-        throw new Error(`Model not found: ${modelKey}. Please configure it in app settings or provide HyperChat_API_KEY and HyperChat_API_URL environment variables.`);
+        throw new Error(`Model not found: ${finalModelKey}. Please configure it in app settings or provide HyperChat_API_KEY and HyperChat_API_URL environment variables.`);
       }
       
-      Logger.info(`Creating model config from environment variables for: ${modelKey}`);
+      Logger.info(`Creating model config from environment variables for: ${finalModelKey}`);
       
       // 从环境变量创建基础模型配置
       modelConfig = {
-        key: modelKey,
-        name: envModel || modelKey,
-        model: envModel || modelKey,
+        key: finalModelKey,
+        name: envModel || finalModelKey,
+        model: envModel || finalModelKey,
         provider: envProvider || "unknown",
         baseURL: envApiUrl,
         apiKey: envApiKey,
@@ -184,21 +187,18 @@ export class AiChannel {
       }
     }
     
-    if (envModel && envModel !== modelKey) {
-      Logger.debug(`Environment variable specifies different model: ${envModel}, but using requested: ${modelKey}`);
+    if (envModel && envModel !== finalModelKey) {
+      Logger.debug(`Environment variable specifies different model: ${envModel}, but using requested: ${finalModelKey}`);
     }
 
     // 验证最终配置
     if (!modelConfig.apiKey) {
-      throw new Error(`API key not found for model: ${modelKey}. Please configure it in app settings or set HyperChat_API_KEY environment variable.`);
+      throw new Error(`API key not found for model: ${finalModelKey}. Please configure it in app settings or set HyperChat_API_KEY environment variable.`);
     }
     
     if (!modelConfig.baseURL) {
-      throw new Error(`Base URL not found for model: ${modelKey}. Please configure it in app settings or set HyperChat_API_URL environment variable.`);
+      throw new Error(`Base URL not found for model: ${finalModelKey}. Please configure it in app settings or set HyperChat_API_URL environment variable.`);
     }
-
-    // 验证配置
-    AiProviderFactory.validateModelConfig(modelConfig as ModelConfig);
 
     // 创建自定义fetch（如果需要代理）
     const customFetch = ProxyUtils.createFetch();
