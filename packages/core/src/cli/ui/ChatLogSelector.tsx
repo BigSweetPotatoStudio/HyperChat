@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Box, Text, useInput } from 'ink';
+import { Box, Text, useInput, useStdout } from 'ink';
 import { t } from '../../i18n.mjs';
 import type { ChatHistoryItem } from '@dadigua/hyperchat-shared/types';
 
@@ -11,6 +11,21 @@ interface ChatLogSelectorProps {
 
 export const ChatLogSelector: React.FC<ChatLogSelectorProps> = ({ chatLogs, onSelect, onCancel }) => {
   const [selectedIndex, setSelectedIndex] = useState(0);
+  const [scrollOffset, setScrollOffset] = useState(0);
+  const { stdout } = useStdout();
+  
+  // 计算可显示的聊天记录数量
+  // 减去边框(2行) + 标题(2行) + 底部提示(1行) + 一些缓冲(2行)
+  const maxVisibleItems = Math.max(3, (stdout?.rows || 20) - 7);
+
+  // 更新滚动位置以确保选中项可见
+  useEffect(() => {
+    if (selectedIndex < scrollOffset) {
+      setScrollOffset(selectedIndex);
+    } else if (selectedIndex >= scrollOffset + maxVisibleItems) {
+      setScrollOffset(selectedIndex - maxVisibleItems + 1);
+    }
+  }, [selectedIndex, maxVisibleItems]);
 
   // 键盘导航
   useInput((input, key) => {
@@ -86,8 +101,9 @@ export const ChatLogSelector: React.FC<ChatLogSelectorProps> = ({ chatLogs, onSe
       </Text>
 
       <Box flexDirection="column">
-        {chatLogs.map((chatLog, index) => {
-          const isSelected = index === selectedIndex;
+        {chatLogs.slice(scrollOffset, scrollOffset + maxVisibleItems).map((chatLog, index) => {
+          const actualIndex = scrollOffset + index;
+          const isSelected = actualIndex === selectedIndex;
           const typeIcon = formatChatType(chatLog.chatType);
           const timeStr = formatDateTime(chatLog.dateTime);
           const messageCount = chatLog.messages?.length || 0;
@@ -109,6 +125,18 @@ export const ChatLogSelector: React.FC<ChatLogSelectorProps> = ({ chatLogs, onSe
           );
         })}
       </Box>
+
+      {/* 滚动指示器 */}
+      {chatLogs.length > maxVisibleItems && (
+        <Box justifyContent="space-between">
+          <Text color="gray">
+            {scrollOffset > 0 ? '↑ 更多' : ''}
+          </Text>
+          <Text color="gray">
+            {scrollOffset + maxVisibleItems < chatLogs.length ? '↓ 更多' : ''}
+          </Text>
+        </Box>
+      )}
 
       <Text color="gray">
         💡 {t`Total messages in selected:`} {chatLogs[selectedIndex]?.messages?.length || 0}
