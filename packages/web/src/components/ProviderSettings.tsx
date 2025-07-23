@@ -143,7 +143,7 @@ export function ProviderSettings() {
       { key: 'openai', label: 'OpenAI', baseURL: 'https://api.openai.com/v1', icon: 'openai', description: 'OpenAI GPT models', hasApiKey: true, isBuiltIn: true },
       { key: 'anthropic', label: 'Anthropic', baseURL: 'https://api.anthropic.com/v1', icon: 'anthropic', description: 'Claude models', hasApiKey: true, isBuiltIn: true },
       { key: 'gemini', label: 'Google Gemini', baseURL: 'https://generativelanguage.googleapis.com/v1beta', icon: 'gemini', description: 'Google Gemini models', hasApiKey: true, isBuiltIn: true },
-      { key: '302', label: '302', baseURL: 'https://api.302.ai/v1', icon: '302', description: 'Multi-provider AI gateway', hasApiKey: true, isBuiltIn: true },
+      { key: '302.AI', label: '302.AI', baseURL: 'https://api.302.ai/v1', icon: '302', description: 'Multi-provider AI gateway', hasApiKey: true, isBuiltIn: true },
       { key: 'openrouter', label: 'OpenRouter', baseURL: 'https://openrouter.ai/api/v1', icon: 'openrouter', description: 'Multi-provider AI gateway', hasApiKey: true, isBuiltIn: true },
       { key: 'qwen', label: 'Qwen', baseURL: 'https://dashscope.aliyuncs.com/compatible-mode/v1', icon: 'qwen', description: 'Alibaba Qwen models', hasApiKey: true, isBuiltIn: true },
       { key: 'deepseek', label: 'DeepSeek', baseURL: 'https://api.deepseek.com', icon: 'deepseek', description: 'DeepSeek models', hasApiKey: true, isBuiltIn: true },

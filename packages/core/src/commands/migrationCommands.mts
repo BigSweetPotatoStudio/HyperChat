@@ -94,7 +94,7 @@ function convertLegacyAIModelToNewFormat(legacyModel: LegacyAIModel): AIModelCon
   if (providerLower === "openai") provider = "openai";
   else if (providerLower === "anthropic") provider = "anthropic";
   else if (providerLower === "gemini") provider = "gemini";
-  else if (providerLower === "302") provider = "302";
+  else if (providerLower === "302") provider = "302.AI";
   else if (providerLower === "openrouter") provider = "openrouter";
   else if (providerLower === "qwen") provider = "qwen";
   else if (providerLower === "deepseek") provider = "deepseek";
