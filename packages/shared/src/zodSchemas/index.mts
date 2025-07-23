@@ -14,3 +14,6 @@ export * from './taskSchema.mjs';
 
 // Agent配置相关 Schema
 export * from './agentConfigSchema.mjs';
+
+// 环境变量相关 Schema
+export * from './envSchema.mjs';
