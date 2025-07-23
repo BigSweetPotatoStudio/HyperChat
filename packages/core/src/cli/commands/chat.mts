@@ -38,6 +38,186 @@ function getLabelByFirstUserContent(messages: Array<MyMessage>): string {
   return label;
 }
 
+// 流式聊天处理器类
+class StreamChatHandler {
+  private displayedContentLength = 0;
+  private displayedReasoningLength = 0;
+  private reasoningFinished = false;
+  private lastDisplayedToolCallsCount = 0;
+  private lastDisplayedToolResultsCount = 0;
+  private isFirstUpdate = true;
+
+  constructor(private isInteractive: boolean = false) {}
+
+  reset() {
+    this.displayedContentLength = 0;
+    this.displayedReasoningLength = 0;
+    this.reasoningFinished = false;
+    this.lastDisplayedToolCallsCount = 0;
+    this.lastDisplayedToolResultsCount = 0;
+    this.isFirstUpdate = true;
+  }
+
+  async handleUpdate(aiChannel: AiChannel, env: any, chatKey: string) {
+    // 保存聊天历史
+    try {
+      if (env.agent) {
+        const saveAction = env.agent.setChatLog({
+          key: chatKey,
+          label: getLabelByFirstUserContent(aiChannel.messages),
+          messages: aiChannel.messages,
+          agentName: env.agent.getConfig().name || 'default',
+          dateTime: Date.now(),
+          chatType: "user",
+          configOverrides: env.effectiveConfig,
+        });
+        // 非交互式模式使用await，交互式模式不await
+        if (!this.isInteractive) {
+          await saveAction;
+        }
+      }
+    } catch (error) {
+      // 静默处理聊天历史保存错误
+    }
+
+    // 处理工具状态变化
+    this.handleToolUpdates(aiChannel);
+    
+    // 处理AI消息流式显示
+    this.handleAssistantMessage(aiChannel);
+  }
+
+  private handleToolUpdates(aiChannel: AiChannel) {
+    const allMessages = aiChannel.messages || [];
+    const assistantMessages = allMessages.filter(msg => msg.role === 'assistant');
+    
+    // 获取所有工具调用
+    const allToolCalls: any[] = [];
+    assistantMessages.forEach(msg => {
+      const toolCalls = msg.content_tool_calls || [];
+      allToolCalls.push(...toolCalls);
+    });
+
+    // 显示新的工具调用
+    const pendingToolCalls = allToolCalls.filter(tool => !tool.result && !tool.error);
+    if (pendingToolCalls.length > this.lastDisplayedToolCallsCount) {
+      for (let i = this.lastDisplayedToolCallsCount; i < pendingToolCalls.length; i++) {
+        const tool = pendingToolCalls[i];
+        if (tool) {
+          process.stdout.write('\n' + chalk.cyan(`🔧 ${t`Calling tool:`} ${tool.displayName || tool.originalName}`));
+          
+          // 显示工具参数
+          const args = tool.function.args;
+          if (args && Object.keys(args).length > 0) {
+            const argsStr = JSON.stringify(args, null, 2);
+            const shortArgsStr = argsStr.length > 100 ? argsStr.substring(0, 100) + '...' : argsStr;
+            process.stdout.write(chalk.gray(` (${shortArgsStr.replace(/\n\s*/g, ' ')})`));
+          }
+          process.stdout.write('\n');
+        }
+      }
+      this.lastDisplayedToolCallsCount = pendingToolCalls.length;
+    }
+
+    // 显示新的工具结果
+    const toolMessages = allMessages.filter(msg => msg.role === 'tool');
+    const completedToolMessages = toolMessages.filter(msg => 
+      ((msg as any).content_status === 'success' || 
+       (msg as any).content_status === 'error' ||
+       (!(msg as any).content_status && (msg.content && (msg.content as any).length > 0))) &&
+      (msg.content && Array.isArray(msg.content) && msg.content.length > 0)
+    );
+    
+    if (completedToolMessages.length > this.lastDisplayedToolResultsCount) {
+      for (let i = this.lastDisplayedToolResultsCount; i < completedToolMessages.length; i++) {
+        const toolMsg = completedToolMessages[i];
+        
+        // 找到对应的工具调用信息
+        const correspondingTool = allToolCalls.find(tool => 
+          tool.id === toolMsg.tool_call_id || 
+          tool.function?.name === toolMsg.tool_call_name
+        );
+        
+        const toolName = correspondingTool?.displayName || 
+                         correspondingTool?.originalName || 
+                         toolMsg.tool_call_name || 
+                         'Unknown Tool';
+        
+        if ((toolMsg as any).content_status === 'error') {
+          process.stdout.write(chalk.red(`❌ ${t`Tool error:`} ${toolName}\n`));
+        } else {
+          process.stdout.write(chalk.green(`✅ ${t`Tool result:`} ${toolName}\n`));
+        }
+        
+        // 显示工具结果内容
+        const content = toolMsg.content;
+        let contentStr = '';
+        if (typeof content === 'string') {
+          contentStr = content;
+        } else if (Array.isArray(content)) {
+          contentStr = content.map(item =>
+            item.type === 'text' ? item.text : '[' + item.type + ']'
+          ).join(' ');
+        } else if (content && typeof content === 'object') {
+          if ((content as any).text) {
+            contentStr = (content as any).text;
+          } else {
+            contentStr = JSON.stringify(content);
+          }
+        }
+
+        if (contentStr && contentStr.length > 0) {
+          const shortContent = contentStr.length > 200 ? contentStr.substring(0, 200) + '...' : contentStr;
+          process.stdout.write(chalk.gray(shortContent.replace(/\n/g, ' ')) + '\n');
+        }
+      }
+      this.lastDisplayedToolResultsCount = completedToolMessages.length;
+    }
+  }
+
+  private handleAssistantMessage(aiChannel: AiChannel) {
+    const lastMsg = aiChannel.lastMessage;
+
+    if (lastMsg.role === 'assistant') {
+      // 交互式模式：第一次更新时清除"思考中..."
+      if (this.isInteractive && this.isFirstUpdate) {
+        process.stdout.write('\r' + ' '.repeat(20) + '\r');
+        this.isFirstUpdate = false;
+      }
+
+      // 流式显示thinking过程
+      const reasoningContent = lastMsg.reasoning_content as string || '';
+      if (reasoningContent.length > this.displayedReasoningLength) {
+        const newReasoningPart = reasoningContent.slice(this.displayedReasoningLength);
+        process.stdout.write(chalk.gray(newReasoningPart));
+        this.displayedReasoningLength = reasoningContent.length;
+      }
+
+      // 流式显示主要回复内容
+      const content = lastMsg.content as string;
+      if (content.length > this.displayedContentLength) {
+        // 计算是否有工具操作
+        const allMessages = aiChannel.messages || [];
+        const assistantMessages = allMessages.filter(msg => msg.role === 'assistant');
+        const allToolCalls: any[] = [];
+        assistantMessages.forEach(msg => {
+          const toolCalls = msg.content_tool_calls || [];
+          allToolCalls.push(...toolCalls);
+        });
+        
+        const hasTools = allToolCalls.length > 0;
+        if ((reasoningContent.length > 0 || hasTools) && !this.reasoningFinished) {
+          process.stdout.write('\n\n');
+          this.reasoningFinished = true;
+        }
+        const newContentPart = content.slice(this.displayedContentLength);
+        process.stdout.write(newContentPart);
+        this.displayedContentLength = content.length;
+      }
+    }
+  }
+}
+
 export interface ChatOptions {
   agent?: string;
   workspace?: string;
@@ -169,14 +349,8 @@ export async function startChat(initialMessage?: string, options: ChatOptions = 
         env.workspace.getAgentScope(agentName) || "workspace",
       ).prompt;
 
-      // 流式输出状态跟踪
-      let displayedContentLength = 0;
-      let displayedReasoningLength = 0;
-      let reasoningFinished = false;
-
-      // 记录已显示的状态性消息，避免重复显示
-      let lastDisplayedToolCallsCount = 0;
-      let lastDisplayedToolResultsCount = 0;
+      // 创建流式聊天处理器
+      const chatHandler = new StreamChatHandler(false); // 非交互式模式
 
       await aiChannel.completion({
         modelKey: env.effectiveConfig.modelKey,
@@ -187,136 +361,7 @@ export async function startChat(initialMessage?: string, options: ChatOptions = 
         maxAttachedDialogs: env.effectiveConfig.maxAttachedDialogs,
         maxTokens: env.effectiveConfig.maxTokens,
         onUpdate: () => {
-          // 每次更新时保存聊天历史
-          try {
-            if (env.agent) {
-              env.agent.setChatLog({
-                key: chatKey,
-                label: getLabelByFirstUserContent(aiChannel.messages),
-                messages: aiChannel.messages,
-                agentName: env.agent.getConfig().name || 'default',
-                dateTime: Date.now(),
-                chatType: "user",
-                configOverrides: env.effectiveConfig,
-              });
-            }
-          } catch (error) {
-            // 静默处理聊天历史保存错误，不影响主要聊天流程
-          }
-
-          // 检测并显示工具状态变化
-          const allMessages = aiChannel.messages || [];
-          const assistantMessages = allMessages.filter(msg => msg.role === 'assistant');
-          
-          // 获取所有工具调用（包括状态信息）
-          const allToolCalls: any[] = [];
-          assistantMessages.forEach(msg => {
-            const toolCalls = msg.content_tool_calls || [];
-            allToolCalls.push(...toolCalls);
-          });
-
-          // 显示新的工具调用（当工具开始调用时）
-          const pendingToolCalls = allToolCalls.filter(tool => !tool.result && !tool.error);
-          if (pendingToolCalls.length > lastDisplayedToolCallsCount) {
-            for (let i = lastDisplayedToolCallsCount; i < pendingToolCalls.length; i++) {
-              const tool = pendingToolCalls[i];
-              if (tool) {
-                process.stdout.write('\n' + chalk.cyan(`🔧 ${t`Calling tool:`} ${tool.displayName || tool.originalName}`));
-                
-                // 显示工具参数（如果不为空）
-                const args = tool.function.args;
-                if (args && Object.keys(args).length > 0) {
-                  const argsStr = JSON.stringify(args, null, 2);
-                  const shortArgsStr = argsStr.length > 100 ? argsStr.substring(0, 100) + '...' : argsStr;
-                  process.stdout.write(chalk.gray(` (${shortArgsStr.replace(/\n\s*/g, ' ')})`));
-                }
-                process.stdout.write('\n');
-              }
-            }
-            lastDisplayedToolCallsCount = pendingToolCalls.length;
-          }
-
-          // 检测并显示新的工具结果（通过tool消息）
-          const toolMessages = allMessages.filter(msg => msg.role === 'tool');
-          
-          const completedToolMessages = toolMessages.filter(msg => 
-            ((msg as any).content_status === 'success' || 
-             (msg as any).content_status === 'error' ||
-             (!(msg as any).content_status && (msg.content && (msg.content as any).length > 0))) &&
-            (msg.content && Array.isArray(msg.content) && msg.content.length > 0) // 确保有内容
-          );
-          
-          if (completedToolMessages.length > lastDisplayedToolResultsCount) {
-            for (let i = lastDisplayedToolResultsCount; i < completedToolMessages.length; i++) {
-              const toolMsg = completedToolMessages[i];
-              
-              // 找到对应的工具调用信息
-              const correspondingTool = allToolCalls.find(tool => 
-                tool.id === toolMsg.tool_call_id || 
-                tool.function?.name === toolMsg.tool_call_name
-              );
-              
-              const toolName = correspondingTool?.displayName || 
-                               correspondingTool?.originalName || 
-                               toolMsg.tool_call_name || 
-                               'Unknown Tool';
-              
-              if ((toolMsg as any).content_status === 'error') {
-                process.stdout.write(chalk.red(`❌ ${t`Tool error:`} ${toolName}\n`));
-              } else {
-                process.stdout.write(chalk.green(`✅ ${t`Tool result:`} ${toolName}\n`));
-              }
-              
-              // 显示工具结果内容
-              const content = toolMsg.content;
-              let contentStr = '';
-              if (typeof content === 'string') {
-                contentStr = content;
-              } else if (Array.isArray(content)) {
-                contentStr = content.map(item =>
-                  item.type === 'text' ? item.text : '[' + item.type + ']'
-                ).join(' ');
-              } else if (content && typeof content === 'object') {
-                if ((content as any).text) {
-                  contentStr = (content as any).text;
-                } else {
-                  contentStr = JSON.stringify(content);
-                }
-              }
-
-              if (contentStr && contentStr.length > 0) {
-                const shortContent = contentStr.length > 200 ? contentStr.substring(0, 200) + '...' : contentStr;
-                process.stdout.write(chalk.gray(shortContent.replace(/\n/g, ' ')) + '\n');
-              }
-            }
-            lastDisplayedToolResultsCount = completedToolMessages.length;
-          }
-
-          const lastMsg = aiChannel.lastMessage;
-
-          if (lastMsg.role === 'assistant') {
-            // 只流式显示reasoning_content（思考过程）
-            const reasoningContent = lastMsg.reasoning_content as string || '';
-            if (reasoningContent.length > displayedReasoningLength) {
-              const newReasoningPart = reasoningContent.slice(displayedReasoningLength);
-              process.stdout.write(chalk.gray(newReasoningPart));
-              displayedReasoningLength = reasoningContent.length;
-            }
-
-            // 只流式显示主要content（回复内容）
-            const content = lastMsg.content as string;
-            if (content.length > displayedContentLength) {
-              // 如果之前有thinking内容或工具操作，在正式回复前添加换行分隔
-              const hasTools = allToolCalls.length > 0;
-              if ((reasoningContent.length > 0 || hasTools) && !reasoningFinished) {
-                process.stdout.write('\n\n'); // 双换行确保清晰分隔
-                reasoningFinished = true;
-              }
-              const newContentPart = content.slice(displayedContentLength);
-              process.stdout.write(newContentPart);
-              displayedContentLength = content.length;
-            }
-          }
+          chatHandler.handleUpdate(aiChannel, env, chatKey);
         }
       });
 
@@ -482,16 +527,6 @@ export async function startChat(initialMessage?: string, options: ChatOptions = 
         process.stdout.write(t`Thinking...`);
 
         try {
-          // 流式输出状态跟踪
-          let displayedContentLength = 0;
-          let displayedReasoningLength = 0;
-          let isFirstUpdate = true;
-          let reasoningFinished = false;
-
-          // 记录已显示的状态性消息，避免重复显示
-          let lastDisplayedToolCallsCount = 0;
-          let lastDisplayedToolResultsCount = 0;
-
           // 构建系统提示词
           const agentName = env.agent.getConfig().name || "";
           const systemPrompt = getBuiltinPrompts(
@@ -501,145 +536,14 @@ export async function startChat(initialMessage?: string, options: ChatOptions = 
             env.workspace.getAgentScope(agentName) || "workspace"
           ).prompt;
 
+          // 创建交互式聊天处理器
+          const chatHandler = new StreamChatHandler(true); // 交互式模式
+
           await aiChannel.completion({
             ...env.effectiveConfig,
             prompt: systemPrompt,
             onUpdate: () => {
-              // 每次更新时保存聊天历史
-              try {
-                if (env.agent) {
-                  env.agent.setChatLog({
-                    key: interactiveChatKey,
-                    label: getLabelByFirstUserContent(aiChannel.messages),
-                    messages: aiChannel.messages,
-                    agentName: env.agent.getConfig().name || 'default',
-                    dateTime: Date.now(),
-                    chatType: "user",
-                    configOverrides: env.effectiveConfig,
-                  });
-                }
-              } catch (error) {
-                // 静默处理聊天历史保存错误，不影响主要聊天流程
-              }
-
-              // 检测并显示工具状态变化
-              const allMessages = aiChannel.messages || [];
-              const assistantMessages = allMessages.filter(msg => msg.role === 'assistant');
-              
-              // 获取所有工具调用（包括状态信息）
-              const allToolCalls: any[] = [];
-              assistantMessages.forEach(msg => {
-                const toolCalls = msg.content_tool_calls || [];
-                allToolCalls.push(...toolCalls);
-              });
-
-              // 显示新的工具调用（当工具开始调用时）
-              const pendingToolCalls = allToolCalls.filter(tool => !tool.result && !tool.error);
-              if (pendingToolCalls.length > lastDisplayedToolCallsCount) {
-                for (let i = lastDisplayedToolCallsCount; i < pendingToolCalls.length; i++) {
-                  const tool = pendingToolCalls[i];
-                  if (tool) {
-                    process.stdout.write('\n' + chalk.cyan(`🔧 ${t`Calling tool:`} ${tool.displayName || tool.originalName}`));
-                    
-                    // 显示工具参数（如果不为空）
-                    const args = tool.function.args;
-                    if (args && Object.keys(args).length > 0) {
-                      const argsStr = JSON.stringify(args, null, 2);
-                      const shortArgsStr = argsStr.length > 100 ? argsStr.substring(0, 100) + '...' : argsStr;
-                      process.stdout.write(chalk.gray(` (${shortArgsStr.replace(/\n\s*/g, ' ')})`));
-                    }
-                    process.stdout.write('\n');
-                  }
-                }
-                lastDisplayedToolCallsCount = pendingToolCalls.length;
-              }
-
-              // 检测并显示新的工具结果（通过tool消息，只显示已完成的）
-              const toolMessages = allMessages.filter(msg => msg.role === 'tool');
-              const completedToolMessages = toolMessages.filter(msg => 
-                ((msg as any).content_status === 'success' || 
-                 (msg as any).content_status === 'error' ||
-                 (!(msg as any).content_status && (msg.content && (msg.content as any).length > 0))) &&
-                (msg.content && Array.isArray(msg.content) && msg.content.length > 0) // 确保有内容
-              );
-              
-              if (completedToolMessages.length > lastDisplayedToolResultsCount) {
-                for (let i = lastDisplayedToolResultsCount; i < completedToolMessages.length; i++) {
-                  const toolMsg = completedToolMessages[i];
-                  
-                  // 找到对应的工具调用信息
-                  const correspondingTool = allToolCalls.find(tool => 
-                    tool.id === toolMsg.tool_call_id || 
-                    tool.function?.name === toolMsg.tool_call_name
-                  );
-                  
-                  const toolName = correspondingTool?.displayName || 
-                                   correspondingTool?.originalName || 
-                                   toolMsg.tool_call_name || 
-                                   'Unknown Tool';
-                  
-                  if ((toolMsg as any).content_status === 'error') {
-                    process.stdout.write(chalk.red(`❌ ${t`Tool error:`} ${toolName}\n`));
-                  } else {
-                    process.stdout.write(chalk.green(`✅ ${t`Tool result:`} ${toolName}\n`));
-                  }
-                  
-                  // 显示工具结果内容
-                  const content = toolMsg.content;
-                  let contentStr = '';
-                  if (typeof content === 'string') {
-                    contentStr = content;
-                  } else if (Array.isArray(content)) {
-                    contentStr = content.map(item =>
-                      item.type === 'text' ? item.text : '[' + item.type + ']'
-                    ).join(' ');
-                  } else if (content && typeof content === 'object') {
-                    if ((content as any).text) {
-                      contentStr = (content as any).text;
-                    } else {
-                      contentStr = JSON.stringify(content);
-                    }
-                  }
-
-                  if (contentStr && contentStr.length > 0) {
-                    const shortContent = contentStr.length > 200 ? contentStr.substring(0, 200) + '...' : contentStr;
-                    process.stdout.write(chalk.gray(shortContent.replace(/\n/g, ' ')) + '\n');
-                  }
-                }
-                lastDisplayedToolResultsCount = completedToolMessages.length;
-              }
-
-              const lastMsg = aiChannel.lastMessage;
-
-              if (lastMsg.role === 'assistant') {
-                // 第一次更新时清除"思考中..."
-                if (isFirstUpdate) {
-                  process.stdout.write('\r' + ' '.repeat(20) + '\r');
-                  isFirstUpdate = false;
-                }
-
-                // 只流式显示reasoning_content（思考过程）
-                const reasoningContent = lastMsg.reasoning_content as string || '';
-                if (reasoningContent.length > displayedReasoningLength) {
-                  const newReasoningPart = reasoningContent.slice(displayedReasoningLength);
-                  process.stdout.write(chalk.gray(newReasoningPart));
-                  displayedReasoningLength = reasoningContent.length;
-                }
-
-                // 只流式显示主要content（回复内容）
-                const content = lastMsg.content as string;
-                if (content.length > displayedContentLength) {
-                  // 如果之前有thinking内容或工具操作，在正式回复前添加换行分隔
-                  const hasTools = allToolCalls.length > 0;
-                  if ((reasoningContent.length > 0 || hasTools) && !reasoningFinished) {
-                    process.stdout.write('\n\n'); // 双换行确保清晰分隔
-                    reasoningFinished = true;
-                  }
-                  const newContentPart = content.slice(displayedContentLength);
-                  process.stdout.write(newContentPart);
-                  displayedContentLength = content.length;
-                }
-              }
+              chatHandler.handleUpdate(aiChannel, env, interactiveChatKey);
             }
           });
 
