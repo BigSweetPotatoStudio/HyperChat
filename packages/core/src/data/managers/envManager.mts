@@ -96,10 +96,12 @@ export class EnvManager {
     mergedEnv = { ...defaultValues };
     this.logConfigSource(ConfigSource.DEFAULT, Object.keys(defaultValues));
 
-    // 2. 叠加系统环境变量（包括可能的 AppDataDir）
+    // 2. 叠加系统环境变量（检查所有schema中定义的环境变量）
     const processEnvKeys: string[] = [];
+    // 获取schema中定义的所有环境变量key
+    const schemaKeys = Object.keys(EnvSchema.shape);
     for (const [key, value] of Object.entries(process.env)) {
-      if (key in defaultValues && value !== undefined) {
+      if (schemaKeys.includes(key) && value !== undefined) {
         mergedEnv[key] = value;
         processEnvKeys.push(key);
       }
