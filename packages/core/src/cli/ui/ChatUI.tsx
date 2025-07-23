@@ -302,10 +302,17 @@ export const ChatUI: React.FC<ChatUIProps> = ({ onUserInput, onExit, onCancel, o
       
       if (key.tab) {
         const completed = handleAutoComplete(input);
-        if (completed !== input) {
-          // 如果完成了补全，为需要参数的命令添加空格
-          const needsSpace = completed === '/toolinfo';
-          const finalInput = needsSpace ? completed + ' ' : completed;
+        
+        // 确定最终输入值
+        let finalInput = completed;
+        
+        // 如果补全了完整命令，为需要参数的命令添加空格
+        if (completed === '/toolinfo' && !completed.endsWith(' ')) {
+          finalInput = completed + ' ';
+        }
+        
+        // 只有当有变化时才更新
+        if (finalInput !== input) {
           setInput(finalInput);
           updateSuggestions(finalInput);
         }
