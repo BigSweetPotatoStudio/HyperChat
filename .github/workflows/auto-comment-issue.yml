@@ -26,8 +26,12 @@ jobs:
         with:
           claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
           
-          # HyperChat 项目特定指令
-          custom_instructions: |
+          # 强制触发 Claude，跳过默认的触发条件检查
+          trigger_phrase: ""
+          assignee_trigger: ""
+          
+          # 使用 direct_prompt 直接执行任务
+          direct_prompt: |
             ## 自动回复 Issue 任务
             你是 HyperChat 项目的自动回复机器人。请分析这个新创建的 issue，然后回复一条有用的评论。
             
@@ -44,10 +48,8 @@ jobs:
             4. 提供具体的帮助建议或下一步指导
             5. 如果是技术问题，可以基于代码库给出初步分析
             6. 提醒这是 Claude Code 的自动回复
-
             
             ### 回复格式
-            ```
             🤖 **Claude Code 自动回复**
             
             你好！我是 Claude Code，HyperChat 项目的 AI 助手。我已经分析了你的 issue。
