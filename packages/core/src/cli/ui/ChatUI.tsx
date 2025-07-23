@@ -5,8 +5,9 @@ import Spinner from 'ink-spinner';
 import { marked } from 'marked';
 import TerminalRenderer from 'marked-terminal';
 import { t } from '../../i18n.mjs';
-import type { MyMessage, CommonContent } from '@dadigua/hyperchat-shared/types';
+import type { MyMessage, CommonContent, ChatHistoryItem } from '@dadigua/hyperchat-shared/types';
 import chalk from 'chalk';
+import ChatLogSelector from './ChatLogSelector.js';
 
 // 收集的消息数据类型（模仿前端逻辑）
 interface CollectedMessageData {
@@ -38,6 +39,7 @@ interface ChatUIProps {
   onUserInput: (input: string) => Promise<void>;
   onExit: () => void;
   onCancel?: () => void; // 新增取消回调
+  onChatLogSelect?: (chatLogKey: string) => Promise<void>; // 聊天记录选择回调
   messages?: MyMessage[]; // 外部传入的消息数据，优先使用
   workspaceInfo?: {
     path: string;
@@ -70,16 +72,22 @@ const renderContent = (content: string | CommonContent): string => {
   return String(content);
 };
 
-export const ChatUI: React.FC<ChatUIProps> = ({ onUserInput, onExit, onCancel, messages: externalMessages, workspaceInfo }) => {
+export const ChatUI: React.FC<ChatUIProps> = ({ onUserInput, onExit, onCancel, onChatLogSelect, messages: externalMessages, workspaceInfo }) => {
+  // 所有 hooks 必须在组件顶部，在任何条件返回之前
   const [forceUpdate, setForceUpdate] = useState(0); // 强制更新计数器
   const [systemMessages, setSystemMessages] = useState<MyMessage[]>([]); // UI系统消息
-
-  // AI消息来自外部，UI系统消息来自内部状态
-  const messages = externalMessages || [];
   const [input, setInput] = useState('');
   const [isThinking, setIsThinking] = useState(false);
   const [showInput, setShowInput] = useState(true);
   const [isCancelling, setIsCancelling] = useState(false); // 取消状态
+  
+  // 聊天记录选择状态
+  const [showChatLogSelector, setShowChatLogSelector] = useState(false);
+  const [chatLogs, setChatLogs] = useState<ChatHistoryItem[]>([]);
+  const [loadingChatLogs, setLoadingChatLogs] = useState(false);
+
+  // AI消息来自外部，UI系统消息来自内部状态
+  const messages = externalMessages || [];
 
   // 处理取消请求
   const handleCancel = async () => {
@@ -121,6 +129,59 @@ export const ChatUI: React.FC<ChatUIProps> = ({ onUserInput, onExit, onCancel, m
     setSystemMessages(prev => [...prev, systemMessage]);
   };
 
+  // 获取当前 agent 的聊天记录
+  const loadChatLogs = async () => {
+    if (!workspaceInfo?.currentAgent) {
+      addSystemMessage(`❌ ${t`No current agent available`}`);
+      return;
+    }
+
+    setLoadingChatLogs(true);
+    try {
+      // 通过全局对象获取聊天记录（由外部提供）
+      const chatLogsFetcher = (globalThis as any).__getChatLogs;
+      if (!chatLogsFetcher) {
+        addSystemMessage(`❌ ${t`Chat logs fetcher not available`}`);
+        return;
+      }
+
+      const result = await chatLogsFetcher(workspaceInfo.currentAgent);
+      if (result && result.chatLogs) {
+        setChatLogs(result.chatLogs);
+        setShowChatLogSelector(true);
+        setShowInput(false);
+      } else {
+        addSystemMessage(`📝 ${t`No chat logs found for agent`} ${workspaceInfo.currentAgent}`);
+      }
+    } catch (error) {
+      addSystemMessage(`❌ ${t`Failed to load chat logs:`} ${error instanceof Error ? error.message : String(error)}`);
+    } finally {
+      setLoadingChatLogs(false);
+    }
+  };
+
+  // 处理聊天记录选择
+  const handleChatLogSelect = async (chatLog: ChatHistoryItem) => {
+    setShowChatLogSelector(false);
+    setShowInput(true);
+    
+    if (onChatLogSelect) {
+      try {
+        await onChatLogSelect(chatLog.key);
+        addSystemMessage(`✅ ${t`Resumed chat:`} ${chatLog.label}`);
+      } catch (error) {
+        addSystemMessage(`❌ ${t`Failed to resume chat:`} ${error instanceof Error ? error.message : String(error)}`);
+      }
+    }
+  };
+
+  // 取消聊天记录选择
+  const handleChatLogCancel = () => {
+    setShowChatLogSelector(false);
+    setShowInput(true);
+    addSystemMessage(`🚫 ${t`Chat log selection cancelled`}`);
+  };
+
   // 处理用户输入
   const handleSubmit = async (userInput: string) => {
     const trimmedInput = userInput.trim();
@@ -137,6 +198,7 @@ export const ChatUI: React.FC<ChatUIProps> = ({ onUserInput, onExit, onCancel, m
   /help             - ${t`Show help`}
   /clear            - ${t`Clear chat history`}
   /model            - ${t`Show current model`}
+  /resume           - ${t`Resume previous chat log`}
   /tools            - ${t`Show available MCP tools`}
   /toolinfo <name>  - ${t`Show detailed info for a specific tool`}
 
@@ -155,6 +217,15 @@ export const ChatUI: React.FC<ChatUIProps> = ({ onUserInput, onExit, onCancel, m
 
     if (trimmedInput === '/model') {
       addSystemMessage(`🤖 ${t`Current model:`} ${workspaceInfo?.currentModel || 'N/A'}`);
+      return;
+    }
+
+    if (trimmedInput === '/resume') {
+      if (loadingChatLogs) {
+        addSystemMessage(`⏳ ${t`Loading chat logs, please wait...`}`);
+        return;
+      }
+      await loadChatLogs();
       return;
     }
 
@@ -181,6 +252,20 @@ export const ChatUI: React.FC<ChatUIProps> = ({ onUserInput, onExit, onCancel, m
 
   // 合并AI消息和系统消息
   const allMessages = [...messages, ...systemMessages].sort((a, b) => (a.content_date || 0) - (b.content_date || 0));
+
+  // 强制刷新函数
+  const forceRefresh = () => {
+    setForceUpdate(prev => prev + 1);
+  };
+
+  // 暴露控制方法给外部
+  useEffect(() => {
+    (globalThis as any).__chatUI = {
+      setThinking: setIsThinking,
+      setShowInput,
+      forceRefresh
+    };
+  }, []);
 
   // 将消息数组转换为收集的消息数据
   const messages2collectMessages = (messageList: MyMessage[]): CollectedMessageData[] => {
@@ -225,20 +310,6 @@ export const ChatUI: React.FC<ChatUIProps> = ({ onUserInput, onExit, onCancel, m
 
     return result;
   };
-
-  // 强制刷新函数
-  const forceRefresh = () => {
-    setForceUpdate(prev => prev + 1);
-  };
-
-  // 暴露控制方法给外部
-  useEffect(() => {
-    (globalThis as any).__chatUI = {
-      setThinking: setIsThinking,
-      setShowInput,
-      forceRefresh
-    };
-  }, []);
 
   // 渲染消息组（模仿前端 CustomMessageList）
   const renderMessageGroup = (collectedData: CollectedMessageData) => {
@@ -401,6 +472,33 @@ export const ChatUI: React.FC<ChatUIProps> = ({ onUserInput, onExit, onCancel, m
     return null;
   };
 
+  // 如果显示聊天记录选择器，渲染选择器界面
+  if (showChatLogSelector) {
+    return (
+      <Box flexDirection="column" height="100%">
+        <ChatLogSelector
+          chatLogs={chatLogs}
+          onSelect={handleChatLogSelect}
+          onCancel={handleChatLogCancel}
+        />
+      </Box>
+    );
+  }
+
+  // 如果正在加载聊天记录，显示加载界面
+  if (loadingChatLogs) {
+    return (
+      <Box flexDirection="column" height="100%" justifyContent="center" alignItems="center">
+        <Box borderStyle="single" borderColor="blue" padding={2}>
+          <Text color="blue">
+            <Spinner type="dots" />
+            {' '}{t`Loading chat logs...`}
+          </Text>
+        </Box>
+      </Box>
+    );
+  }
+
   return (
     <Box flexDirection="column" height="100%">
       {/* Header */}
@@ -428,7 +526,7 @@ export const ChatUI: React.FC<ChatUIProps> = ({ onUserInput, onExit, onCancel, m
               )}
             </>
           )}
-          <Text color="gray">💡 {t`Type /exit to exit, /help for help, Press Esc to cancel AI request`}</Text>
+          <Text color="gray">💡 {t`Type /exit to exit, /help for help, /resume for chat logs, Press Esc to cancel AI request`}</Text>
         </Box>
       </Box>
 

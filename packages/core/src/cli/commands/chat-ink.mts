@@ -283,6 +283,48 @@ export async function startChatInk(initialMessage?: string, options: ChatOptions
       }
     };
 
+    // 获取聊天记录
+    const getChatLogs = async (agentName: string) => {
+      try {
+        const { agentCommands } = await import('../../commands/agentCommands.mjs');
+        return await agentCommands.getAgentChatLogs({ agentName });
+      } catch (error) {
+        throw new Error(`${t`Failed to get chat logs:`} ${error instanceof Error ? error.message : String(error)}`);
+      }
+    };
+
+    // 处理聊天记录选择
+    const handleChatLogSelect = async (chatLogKey: string) => {
+      try {
+        const { agentCommands } = await import('../../commands/agentCommands.mjs');
+        const chatLog = await agentCommands.getAgentChatLog({
+          agentName: env.agent.getConfig().name,
+          chatLogKey
+        });
+
+        if (chatLog) {
+          // 清空当前消息
+          aiChannel.messages = [];
+          
+          // 加载聊天记录中的消息
+          if (chatLog.messages && chatLog.messages.length > 0) {
+            chatLog.messages.forEach((message: any) => {
+              aiChannel.addMessage(message);
+            });
+          }
+          
+          logger.info(`✅ ${t`Loaded chat log:`} ${chatLog.label} (${chatLog.messages?.length || 0} ${t`messages`})`);
+        } else {
+          throw new Error(`${t`Chat log not found:`} ${chatLogKey}`);
+        }
+      } catch (error) {
+        throw new Error(`${t`Failed to load chat log:`} ${error instanceof Error ? error.message : String(error)}`);
+      }
+    };
+
+    // 暴露获取聊天记录的方法给UI组件
+    (globalThis as any).__getChatLogs = getChatLogs;
+
     // 如果有初始消息，直接处理
     if (initialMessage) {
       logger.info(`💬 ${t`Processing message:`} ${initialMessage}`);
@@ -293,6 +335,7 @@ export async function startChatInk(initialMessage?: string, options: ChatOptions
           onUserInput: handleUserInput,
           onExit: handleExit,
           onCancel: handleCancel,
+          onChatLogSelect: handleChatLogSelect,
           messages: aiChannel.messages, // 传入aiChannel的消息
           workspaceInfo
         })
@@ -319,6 +362,7 @@ export async function startChatInk(initialMessage?: string, options: ChatOptions
         onUserInput: handleUserInput,
         onExit: handleExit,
         onCancel: handleCancel,
+        onChatLogSelect: handleChatLogSelect,
         messages: aiChannel.messages, // 传入aiChannel的消息
         workspaceInfo
       })
