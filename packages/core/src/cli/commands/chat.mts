@@ -22,6 +22,7 @@ import {
 import { getBuiltinPrompts } from '../../ai/hyperchat-builtin-prompts.mjs';
 import { t } from '../../i18n.mjs';
 import { getMyUuid } from '../utils/util.mjs';
+import { CONST } from '../../const.mjs';
 
 
 // 获取聊天标签（基于第一个用户消息）
@@ -266,7 +267,7 @@ export async function startChat(initialMessage?: string, options: ChatOptions = 
 
   try {
     // 初始化CLI聊天环境
-    logger.info(`🔍 ${t`Initializing HyperChat CLI...`}`);
+    logger.info(`🔍 ${t`Initializing HyperChat CLI...`} ${CONST.getVersion}`);
 
     // Chat需要完整服务（MCP工具、AI聊天）
     const currentWorkingDirectory = options.workspace || process.cwd();
