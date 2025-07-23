@@ -204,9 +204,8 @@ export const ChatUI: React.FC<ChatUIProps> = ({ onUserInput, onExit, onCancel, o
   const selectSuggestion = () => {
     if (showSuggestions && filteredCommands[suggestionIndex]) {
       const selectedCommand = filteredCommands[suggestionIndex].command;
-      // 为需要参数的命令添加空格，光标自然会在末尾
-      const needsSpace = selectedCommand === '/toolinfo';
-      const finalInput = needsSpace ? selectedCommand + ' ' : selectedCommand;
+      // 为所有命令添加空格，简化逻辑，光标自然会在末尾
+      const finalInput = selectedCommand + ' ';
       setInput(finalInput);
       setShowSuggestions(false);
       return true;
@@ -303,11 +302,9 @@ export const ChatUI: React.FC<ChatUIProps> = ({ onUserInput, onExit, onCancel, o
       if (key.tab) {
         const completed = handleAutoComplete(input);
         
-        // 确定最终输入值
+        // 为所有补全的命令添加空格，简化逻辑
         let finalInput = completed;
-        
-        // 如果补全了完整命令，为需要参数的命令添加空格
-        if (completed === '/toolinfo' && !completed.endsWith(' ')) {
+        if (completed !== input && completed.startsWith('/') && !completed.endsWith(' ')) {
           finalInput = completed + ' ';
         }
         
