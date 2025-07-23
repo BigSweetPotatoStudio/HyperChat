@@ -399,7 +399,7 @@ export class AiChannel {
 
     } catch (e) {
       this.lastMessage.content_status = "error";
-
+      this.lastMessage.content_error = e instanceof Error ? e.message : String(e);
       // 发送聊天错误事件
       if (params.sseWriter) {
         params.sseWriter.write({
@@ -413,7 +413,7 @@ export class AiChannel {
       params.onUpdate && params.onUpdate();
       throw e;
     }
-    this.lastMessage.content_status = "dataLoadComplete";
+    this.lastMessage.content_status = "success";
     this.lastMessage.content_date = Date.now();
 
     // 发送聊天完成事件

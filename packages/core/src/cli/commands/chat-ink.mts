@@ -250,13 +250,13 @@ export async function startChatInk(initialMessage?: string, options: ChatOptions
         }
 
       } catch (error) {
-        const errorMessage = {
-          role: 'system' as const,
-          content: `❌ ${t`Error:`} ${error instanceof Error ? error.message : String(error)}`,
-          content_date: Date.now()
-        };
-        // 错误消息添加到aiChannel
-        aiChannel.addMessage(errorMessage);
+        // const errorMessage = {
+        //   role: 'system' as const,
+        //   content: `❌ ${t`Error:`} ${error instanceof Error ? error.message : String(error)}`,
+        //   content_date: Date.now()
+        // };
+        // // 错误消息添加到aiChannel
+        // aiChannel.addMessage(errorMessage);
 
         // 强制刷新UI显示错误消息
         if (chatUI && chatUI.forceRefresh) {
@@ -271,6 +271,18 @@ export async function startChatInk(initialMessage?: string, options: ChatOptions
       process.exit(0);
     };
 
+    // 处理取消 AI 请求
+    const handleCancel = async () => {
+      try {
+        if (aiChannel && aiChannel.cancel) {
+          await aiChannel.cancel();
+          logger.info(`🚫 ${t`AI request cancelled by user`}`);
+        }
+      } catch (error) {
+        // 取消操作失败也不需要显示错误，因为可能请求已经完成
+      }
+    };
+
     // 如果有初始消息，直接处理
     if (initialMessage) {
       logger.info(`💬 ${t`Processing message:`} ${initialMessage}`);
@@ -280,6 +292,7 @@ export async function startChatInk(initialMessage?: string, options: ChatOptions
         React.createElement(ChatUI, {
           onUserInput: handleUserInput,
           onExit: handleExit,
+          onCancel: handleCancel,
           messages: aiChannel.messages, // 传入aiChannel的消息
           workspaceInfo
         })
@@ -305,6 +318,7 @@ export async function startChatInk(initialMessage?: string, options: ChatOptions
       React.createElement(ChatUI, {
         onUserInput: handleUserInput,
         onExit: handleExit,
+        onCancel: handleCancel,
         messages: aiChannel.messages, // 传入aiChannel的消息
         workspaceInfo
       })

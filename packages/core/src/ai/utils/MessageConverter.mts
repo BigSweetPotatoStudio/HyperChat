@@ -13,7 +13,7 @@ export class MessageConverter {
    */
   static convertToCoreMessages(messages: MyMessage[]): CoreMessage[] {
     const results: CoreMessage[] = [];
-    
+
     // 查找最后一个成功的记忆消息索引
     const lastMemoryIndex = messages.findLastIndex(m => m.role === "hyper_memory" && m.content_status === "success");
 
@@ -24,6 +24,9 @@ export class MessageConverter {
       }
 
       const message = messages[i]!;
+      if (message.content_status != "success" && (message.role === "assistant" || message.role === "tool")) {
+        continue;
+      }
       const convertedMessage = this.convertSingleMessage(message);
       if (convertedMessage) {
         results.push(convertedMessage);
@@ -76,10 +79,9 @@ export class MessageConverter {
    */
   private static convertMemoryMessage(message: MyMessage): CoreMessage {
     const memoryMessage = message as MyMessage & { memory_key_points?: string[] };
-    const memoryContent = `[Memory Summary]: ${message.content}${
-      memoryMessage.memory_key_points ? '\n[Key Points]: ' + memoryMessage.memory_key_points.join(', ') : ''
-    }`;
-    
+    const memoryContent = `[Memory Summary]: ${message.content}${memoryMessage.memory_key_points ? '\n[Key Points]: ' + memoryMessage.memory_key_points.join(', ') : ''
+      }`;
+
     return {
       role: 'user',
       content: memoryContent,

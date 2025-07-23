@@ -173,7 +173,7 @@ export type MyMessage = AllMessage & {
   | "success" // request is success
   | "error" // request is error
   | "dataLoading" // stream data is loading
-  | "dataLoadComplete"; // stream is load complete
+  | "dataLoadComplete"; // stream is load complete  // 废弃，直接使用success
   content_error?: string;
   content_from?: string;
   content_attachment?: Array<{

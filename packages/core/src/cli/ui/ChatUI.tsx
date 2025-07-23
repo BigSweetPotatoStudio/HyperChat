@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { render, Box, Text } from 'ink';
+import { render, Box, Text, useInput } from 'ink';
 import TextInput from 'ink-text-input';
 import Spinner from 'ink-spinner';
 import { marked } from 'marked';
@@ -37,6 +37,7 @@ const renderMarkdown = (content: string): string => {
 interface ChatUIProps {
   onUserInput: (input: string) => Promise<void>;
   onExit: () => void;
+  onCancel?: () => void; // 新增取消回调
   messages?: MyMessage[]; // 外部传入的消息数据，优先使用
   workspaceInfo?: {
     path: string;
@@ -69,44 +70,55 @@ const renderContent = (content: string | CommonContent): string => {
   return String(content);
 };
 
-export const ChatUI: React.FC<ChatUIProps> = ({ onUserInput, onExit, messages: externalMessages, workspaceInfo }) => {
-  const [internalMessages, setInternalMessages] = useState<MyMessage[]>([]); // 内部消息状态
+export const ChatUI: React.FC<ChatUIProps> = ({ onUserInput, onExit, onCancel, messages: externalMessages, workspaceInfo }) => {
   const [forceUpdate, setForceUpdate] = useState(0); // 强制更新计数器
+  const [systemMessages, setSystemMessages] = useState<MyMessage[]>([]); // UI系统消息
 
-  // 优先使用外部传入的消息，如果没有则使用内部状态
-  const messages = externalMessages || internalMessages;
+  // AI消息来自外部，UI系统消息来自内部状态
+  const messages = externalMessages || [];
   const [input, setInput] = useState('');
   const [isThinking, setIsThinking] = useState(false);
   const [showInput, setShowInput] = useState(true);
+  const [isCancelling, setIsCancelling] = useState(false); // 取消状态
 
-  // 添加消息的方法（直接使用 MyMessage）
-  const addMessage = (message: any) => {
-    const fullMessage: MyMessage = {
-      ...message,
-      content: message.content || '',
-      content_date: Date.now()
-    };
-    if (!externalMessages) {
-      setInternalMessages(prev => [...prev, fullMessage]);
+  // 处理取消请求
+  const handleCancel = async () => {
+    if (!isThinking || isCancelling || !onCancel) return;
+    
+    setIsCancelling(true);
+    try {
+      await onCancel();
+      // 添加取消消息到系统消息
+      const cancelMessage: MyMessage = {
+        role: 'system',
+        content: `🚫 ${t`AI request cancelled by user`}`,
+        content_date: Date.now()
+      };
+      setSystemMessages(prev => [...prev, cancelMessage]);
+    } catch (error) {
+      // 取消可能失败，但不需要显示错误
+    } finally {
+      setIsCancelling(false);
+      setIsThinking(false);
+      setShowInput(true);
     }
-    return fullMessage.content_date?.toString() || Date.now().toString();
   };
 
-  // 更新最后一条消息
-  const updateLastMessage = (updates: Partial<MyMessage>) => {
-    if (!externalMessages) {
-      setInternalMessages(prev => {
-        const newMessages = [...prev];
-        if (newMessages.length > 0) {
-          const lastMessage = newMessages[newMessages.length - 1];
-          newMessages[newMessages.length - 1] = {
-            ...lastMessage,
-            ...updates
-          } as MyMessage;
-        }
-        return newMessages;
-      });
+  // 监听键盘输入
+  useInput((_, key) => {
+    if (key.escape) {
+      handleCancel();
     }
+  });
+
+  // 添加系统消息的方法
+  const addSystemMessage = (content: string) => {
+    const systemMessage: MyMessage = {
+      role: 'system',
+      content,
+      content_date: Date.now()
+    };
+    setSystemMessages(prev => [...prev, systemMessage]);
   };
 
   // 处理用户输入
@@ -120,45 +132,29 @@ export const ChatUI: React.FC<ChatUIProps> = ({ onUserInput, onExit, messages: e
     }
 
     if (trimmedInput === '/help') {
-      const helpMessage: MyMessage = {
-        role: 'system',
-        content: `📋 ${t`Chat commands:`}
+      const helpContent = `📋 ${t`Chat commands:`}
   /exit             - ${t`Exit chat`}
   /help             - ${t`Show help`}
   /clear            - ${t`Clear chat history`}
   /model            - ${t`Show current model`}
   /tools            - ${t`Show available MCP tools`}
-  /toolinfo <name>  - ${t`Show detailed info for a specific tool`}`,
-        content_date: Date.now()
-      };
-      if (!externalMessages) {
-        setInternalMessages(prev => [...prev, helpMessage]);
-      }
+  /toolinfo <name>  - ${t`Show detailed info for a specific tool`}
+
+⌨️  ${t`Keyboard shortcuts:`}
+  Esc               - ${t`Cancel current AI request`}`;
+      addSystemMessage(helpContent);
       return;
     }
 
     if (trimmedInput === '/clear') {
-      if (!externalMessages) {
-        setInternalMessages([]);
-        const clearMessage: MyMessage = {
-          role: 'system',
-          content: `✅ ${t`Chat history cleared`}`,
-          content_date: Date.now()
-        };
-        setInternalMessages([clearMessage]);
-      }
+      // 清空系统消息（AI消息由外部管理，这里不清理）
+      setSystemMessages([]);
+      addSystemMessage(`✅ ${t`Chat history cleared`}`);
       return;
     }
 
     if (trimmedInput === '/model') {
-      const modelMessage: MyMessage = {
-        role: 'system',
-        content: `🤖 ${t`Current model:`} ${workspaceInfo?.currentModel || 'N/A'}`,
-        content_date: Date.now()
-      };
-      if (!externalMessages) {
-        setInternalMessages(prev => [...prev, modelMessage]);
-      }
+      addSystemMessage(`🤖 ${t`Current model:`} ${workspaceInfo?.currentModel || 'N/A'}`);
       return;
     }
 
@@ -166,16 +162,7 @@ export const ChatUI: React.FC<ChatUIProps> = ({ onUserInput, onExit, messages: e
       return;
     }
 
-    // 添加用户消息
-    const userMessage: MyMessage = {
-      role: 'user',
-      content: trimmedInput,
-      content_status: 'success',
-      content_date: Date.now()
-    };
-    if (!externalMessages) {
-      setInternalMessages(prev => [...prev, userMessage]);
-    }
+    // 用户消息不在这里添加，由外部的 handleUserInput 处理
 
     // 开始思考状态
     setIsThinking(true);
@@ -185,19 +172,15 @@ export const ChatUI: React.FC<ChatUIProps> = ({ onUserInput, onExit, messages: e
     try {
       await onUserInput(trimmedInput);
     } catch (error) {
-      const errorMessage: MyMessage = {
-        role: 'system',
-        content: `❌ ${t`Error:`} ${error instanceof Error ? error.message : String(error)}`,
-        content_date: Date.now()
-      };
-      if (!externalMessages) {
-        setInternalMessages(prev => [...prev, errorMessage]);
-      }
+      // addSystemMessage(`❌ ${t`Error:`} ${error instanceof Error ? error.message : String(error)}`);
     } finally {
       setIsThinking(false);
       setShowInput(true);
     }
   };
+
+  // 合并AI消息和系统消息
+  const allMessages = [...messages, ...systemMessages].sort((a, b) => (a.content_date || 0) - (b.content_date || 0));
 
   // 将消息数组转换为收集的消息数据
   const messages2collectMessages = (messageList: MyMessage[]): CollectedMessageData[] => {
@@ -248,26 +231,14 @@ export const ChatUI: React.FC<ChatUIProps> = ({ onUserInput, onExit, messages: e
     setForceUpdate(prev => prev + 1);
   };
 
-  // 如果使用外部消息，对外暴露控制方法
+  // 暴露控制方法给外部
   useEffect(() => {
-    if (externalMessages) {
-      // 只暴露状态控制方法，消息管理由外部处理
-      (globalThis as any).__chatUI = {
-        setThinking: setIsThinking,
-        setShowInput,
-        forceRefresh // 暴露强制刷新方法
-      };
-    } else {
-      // 内部消息管理模式，暴露所有方法
-      (globalThis as any).__chatUI = {
-        addMessage,
-        updateLastMessage,
-        setThinking: setIsThinking,
-        setShowInput,
-        forceRefresh
-      };
-    }
-  }, [externalMessages]);
+    (globalThis as any).__chatUI = {
+      setThinking: setIsThinking,
+      setShowInput,
+      forceRefresh
+    };
+  }, []);
 
   // 渲染消息组（模仿前端 CustomMessageList）
   const renderMessageGroup = (collectedData: CollectedMessageData) => {
@@ -457,7 +428,7 @@ export const ChatUI: React.FC<ChatUIProps> = ({ onUserInput, onExit, messages: e
               )}
             </>
           )}
-          <Text color="gray">💡 {t`Type /exit to exit, /help for help`}</Text>
+          <Text color="gray">💡 {t`Type /exit to exit, /help for help, Press Esc to cancel AI request`}</Text>
         </Box>
       </Box>
 
@@ -465,19 +436,22 @@ export const ChatUI: React.FC<ChatUIProps> = ({ onUserInput, onExit, messages: e
       <Box flexDirection="column" flexGrow={1} paddingX={1}>
         {React.useMemo(() => {
           // 收集消息数据
-          const collectedMessagesData = messages2collectMessages(messages);
+          const collectedMessagesData = messages2collectMessages(allMessages);
           // 渲染消息组
           return collectedMessagesData.map((collectedData) =>
             renderMessageGroup(collectedData)
           ).filter(Boolean);
-        }, [messages, forceUpdate])}
+        }, [allMessages, forceUpdate])}
 
         {/* Thinking indicator */}
         {isThinking && (
           <Box>
-            <Text color="gray">
+            <Text color={isCancelling ? "yellow" : "gray"}>
               <Spinner type="dots" />
-              {' '}{t`AI is thinking...`}
+              {' '}{isCancelling ? t`Cancelling AI request...` : t`AI is thinking...`}
+              {isThinking && !isCancelling && (
+                <Text color="gray" dimColor> {t`(Press Esc to cancel)`}</Text>
+              )}
             </Text>
           </Box>
         )}
