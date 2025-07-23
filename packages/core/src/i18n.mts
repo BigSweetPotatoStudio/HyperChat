@@ -3,8 +3,8 @@
  * 
  * 功能：
  * 1. 集成shared包的i18n系统
- * 2. 从AppSettings读取语言设置
- * 3. 支持环境变量语言设置
+ * 2. 从环境变量系统读取语言设置
+ * 3. 支持命令行参数语言设置
  * 4. CLI专用的语言检测
  */
 
@@ -15,10 +15,8 @@ import {
   getCurrLang, 
   updateLanguage,
   translations,
-  addTranslations,
   type Language 
 } from '@dadigua/hyperchat-shared';
-import { Command } from './command.mjs';
 
 // i18n系统初始化状态
 let isInitialized = false;
@@ -27,6 +25,13 @@ let isInitialized = false;
  * 从环境变量获取语言设置
  */
 function getLanguageFromEnv(): Language | null {
+  // 首先检查 HyperChat 特定的语言环境变量
+  const hyperChatLang = process.env.HyperChat_Language;
+  if (hyperChatLang && ['zh', 'en', 'ja', 'ko', 'fr', 'de'].includes(hyperChatLang)) {
+    return hyperChatLang as Language;
+  }
+  
+  // 然后检查系统环境变量
   const envLang = process.env.HYPERCHAT_LANG || process.env.LANG || process.env.LANGUAGE || '';
   
   // 支持中文的语言环境
@@ -87,7 +92,7 @@ export async function initCliI18n(commandLineLanguage?: string): Promise<void> {
 
   let currentLanguage: Language;
 
-  // 优先级: 命令行参数 > AppSettings > 环境变量 > 系统检测
+  // 优先级: 命令行参数 > 环境变量系统 > 系统检测
   if (commandLineLanguage) {
     // 1. 最高优先级：命令行参数 --language
     const langInput = commandLineLanguage.toLowerCase();
@@ -108,14 +113,8 @@ export async function initCliI18n(commandLineLanguage?: string): Promise<void> {
       currentLanguage = detectSystemLanguage();
     }
   } else {
-    try {
-      // 2. 从AppSettings获取语言设置
-      const appSettings = await Command.getAppSettings();
-      currentLanguage = appSettings?.appearance?.language || detectSystemLanguage();
-    } catch (error) {
-      // 3. 如果AppSettings加载失败，使用环境变量或系统检测
-      currentLanguage = getLanguageFromEnv() || detectSystemLanguage();
-    }
+    // 2. 从环境变量系统获取语言设置，如果没有则使用系统检测
+    currentLanguage = getLanguageFromEnv() || detectSystemLanguage();
   }
 
   // 初始化shared i18n系统
@@ -124,21 +123,9 @@ export async function initCliI18n(commandLineLanguage?: string): Promise<void> {
     translations,
     autoCollect: true,
     onLanguageChange: async (lang: Language) => {
-      // 异步更新AppSettings
-      try {
-        // 获取当前设置，只更新language字段
-        const currentSettings = await Command.getAppSettings();
-        await Command.updateAppSettings({
-          updates: {
-            appearance: { 
-              ...currentSettings.appearance,
-              language: lang 
-            }
-          }
-        });
-      } catch (error) {
-        console.error('Failed to update language in AppSettings:', error);
-      }
+      // 语言更改时的回调（现在由环境变量系统管理）
+      // TODO: 可以在这里添加保存到环境变量文件的逻辑
+      console.debug(`Language changed to: ${lang}`);
     }
   });
 
@@ -148,9 +135,9 @@ export async function initCliI18n(commandLineLanguage?: string): Promise<void> {
 
 
 /**
- * 从AppSettings更新语言（当AppSettings在其他地方被更新时调用）
+ * 从环境变量系统更新语言（当环境变量在其他地方被更新时调用）
  */
-export function syncLanguageFromAppSettings(language: Language): void {
+export function syncLanguageFromEnv(language: Language): void {
   if (getCurrLang() !== language) {
     updateLanguage(language);
   }
