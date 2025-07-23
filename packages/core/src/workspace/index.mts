@@ -68,6 +68,8 @@ export function getWorkspaceManager(): WorkspaceManager {
   return workspaceManager;
 }
 
+
+const defaultAgentName = 'Hyper';
 /**
  * 获取或创建默认 Agent
  * 如果工作区中没有名为 "default" 的 Agent，则自动创建一个
@@ -79,7 +81,6 @@ export async function getDefaultAgent(): Promise<{ agentName: string; agentInsta
       return null;
     }
 
-    const defaultAgentName = 'default';
 
     // 首先检查是否已经存在默认 Agent
     const agents = await workspace.getAllAgentsSummary();
@@ -127,8 +128,6 @@ export async function getDefaultAgent(): Promise<{ agentName: string; agentInsta
  * 内部辅助函数，用于创建一个标准的默认 Agent
  */
 async function createDefaultAgent(workspace: any): Promise<void> {
-  const defaultAgentName = 'default';
-  const workspacePath = workspace.workspacePath;
 
   // 使用内置提示词生成增强的系统提示词
   const basePrompt = `You are a helpful AI assistant. You can assist with various tasks including file operations, coding, research, and general questions.`;
