@@ -161,27 +161,9 @@ export class AppSettingsManager {
             appearance.darkTheme = parsed.appearance.darkTheme;
             repairResults.push("✓ 保留深色主题设置");
           }
-          // 修复无效的语言设置
-          const validLanguages = ["zh", "en", "ja", "ko", "fr", "de"];
-          if (typeof parsed.appearance.language === 'string') {
-            if (validLanguages.includes(parsed.appearance.language)) {
-              appearance.language = parsed.appearance.language as any;
-              repairResults.push("✓ 保留语言设置");
-            } else {
-              // 尝试修复常见的语言代码错误
-              const langMap: Record<string, string> = {
-                'enUS': 'en', 'en-US': 'en', 'en_US': 'en',
-                'zhCN': 'zh', 'zh-CN': 'zh', 'zh_CN': 'zh',
-                'jaJP': 'ja', 'ja-JP': 'ja', 'ja_JP': 'ja',
-              };
-              const fixedLang = langMap[parsed.appearance.language];
-              if (fixedLang) {
-                appearance.language = fixedLang as any;
-                repairResults.push(`✓ 修复语言设置: ${parsed.appearance.language} -> ${fixedLang}`);
-              } else {
-                repairResults.push(`✗ 语言设置无效，使用默认值: ${parsed.appearance.language}`);
-              }
-            }
+          // 语言设置已移动到环境变量系统，这里不再处理
+          if ('language' in parsed.appearance) {
+            repairResults.push("ℹ️ 语言设置已迁移到环境变量系统 (HyperChat_Language)");
           }
           this.settings.appearance = appearance;
         }
@@ -200,9 +182,9 @@ export class AppSettingsManager {
         } else {
           // 部分保留系统设置
           const system = { ...this.settings.system };
-          if (typeof parsed.system.password === 'string') {
-            system.password = parsed.system.password;
-            repairResults.push("✓ 保留密码设置");
+          // 密码设置已移动到环境变量系统，这里不再处理
+          if ('password' in parsed.system) {
+            repairResults.push("ℹ️ 密码设置已迁移到环境变量系统 (HyperChat_Web_Password)");
           }
           if (typeof parsed.system.isDeveloper === 'boolean') {
             system.isDeveloper = parsed.system.isDeveloper;
