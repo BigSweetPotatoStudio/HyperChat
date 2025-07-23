@@ -17,7 +17,7 @@
 
 import { argv, fs, os, path } from "zx";
 import p from "../package.json" with { type: "json" };
-import { envManager } from "./data/managers/envManager.mjs";
+import { EnvManager } from "./data/managers/envManager.mjs";
 
 /**
  * 应用配置对象
@@ -28,7 +28,7 @@ import { envManager } from "./data/managers/envManager.mjs";
 export const Config = {
   /** HTTP 服务器端口（从环境变量获取） */
   get port() {
-    return envManager.get('HyperChat_HTTP_PORT');
+    return EnvManager.getInstance().get('HyperChat_HTTP_PORT');
   },
 };
 
@@ -36,21 +36,24 @@ export const Config = {
 export const dirName = "HyperChat";
 
 /**
- * 获取应用数据目录
- * 优先使用环境变量配置，fallback 到默认路径
+ * 获取应用数据目录的函数
+ * 支持动态环境变量配置
  */
-function getAppDataDir(): string {
+export function getAppDataDir(): string {
+  // 使用动态获取的环境管理器实例
+  const envManager = EnvManager.getInstance();
   const config = envManager.getConfig();
-  
+
   if (config.HyperChat_AppDataDir) {
     return config.HyperChat_AppDataDir;
   }
-  
+
   // 默认路径
   return path.join(os.homedir(), "Documents", dirName);
 }
 
-// 动态获取应用数据目录
+// 为了向后兼容，提供常量形式的导出
+// 但实际上每次调用都会动态获取最新值
 export const appDataDir = getAppDataDir();
 
 // 确保目录存在

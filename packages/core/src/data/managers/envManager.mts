@@ -45,6 +45,18 @@ export class EnvManager {
   }
 
   /**
+   * 全局默认实例，可以被CLI覆盖
+   */
+  private static globalDefault?: EnvManager;
+
+  /**
+   * 设置全局默认环境管理器实例（用于CLI参数覆盖）
+   */
+  public static setGlobalDefault(instance: EnvManager): void {
+    EnvManager.globalDefault = instance;
+  }
+
+  /**
    * 获取环境变量管理器实例
    * @param workspacePath 工作区路径，用于加载工作区特定的环境配置
    * @param cliArgs CLI 参数覆盖（最高优先级）
@@ -53,6 +65,11 @@ export class EnvManager {
     // 如果有 CLI 参数，创建新的实例而不使用缓存
     if (cliArgs && Object.keys(cliArgs).length > 0) {
       return new EnvManager(workspacePath, cliArgs);
+    }
+
+    // 如果没有指定参数且存在全局默认实例，使用全局默认实例
+    if (!workspacePath && EnvManager.globalDefault) {
+      return EnvManager.globalDefault;
     }
 
     const key = workspacePath || 'global';

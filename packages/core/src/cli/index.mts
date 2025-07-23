@@ -10,14 +10,36 @@
  * - 本地和远程核心服务连接
  */
 
+// 第一步：立即解析CLI参数并设置环境变量，必须在任何其他模块导入之前
 import process from 'process';
+import { EnvManager } from '../data/managers/envManager.mjs';
+import { parseCurrentArgs, CliArgsParser } from '../utils/cliArgsParser.mjs';
+
+// 简单的命令行参数解析
+const args = process.argv.slice(2);
+
+// 解析 CLI 参数到环境变量
+const cliEnvOverrides = parseCurrentArgs();
+
+// 添加调试信息
+if (args.includes('--verbose') || args.includes('-v')) {
+  console.log('🔍 CLI Environment Overrides:', cliEnvOverrides);
+}
+
+// 创建带有 CLI 参数覆盖的环境管理器
+const envManager = EnvManager.getInstance(undefined, cliEnvOverrides);
+
+// 设置为全局默认实例，这样其他模块也能使用CLI参数覆盖
+EnvManager.setGlobalDefault(envManager);
+
+// 第二步：现在可以安全地导入其他模块
 import { readFileSync } from 'fs';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
 import { Logger } from './utils/logger.mjs';
 // startChat 现在通过动态导入加载
 import { startServer } from './commands/server.mjs';
-import { startRun, showRunStatus } from './commands/run.mjs';
+import { startRun } from './commands/run.mjs';
 import { createWorkspace, listWorkspaces, showCurrentWorkspace } from './commands/workspace.mjs';
 import { listAgents, createAgent, checkAgentExists, showAgentMemory } from './commands/agent.mjs';
 import { Command } from '../command.mjs';
@@ -36,21 +58,10 @@ import {
 import { workspaceManager } from '../workspace/index.mjs';
 import { initCliI18n, t, setCurrLang, getCurrLang } from '../i18n.mjs';
 import type { Language } from '@dadigua/hyperchat-shared';
-import { EnvManager } from '../data/managers/envManager.mjs';
-import { parseCurrentArgs } from '../utils/cliArgsParser.mjs';
 // 获取包信息
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const packagePath = join(__dirname, '..', '..', 'package.json');
 const pkg = JSON.parse(readFileSync(packagePath, 'utf8'));
-
-// 简单的命令行参数解析
-const args = process.argv.slice(2);
-
-// 解析 CLI 参数到环境变量
-const cliEnvOverrides = parseCurrentArgs();
-
-// 创建带有 CLI 参数覆盖的环境管理器
-const envManager = EnvManager.getInstance(undefined, cliEnvOverrides);
 
 // 解析全局选项
 const globalOptions = {
@@ -68,7 +79,11 @@ const globalOptions = {
 // 移除选项和选项值，保留命令和参数
 function getCleanArgs(args: string[]): string[] {
   const cleanArgs: string[] = [];
-  const optionsWithValues = ['--workspace', '--host', '--port', '--password', '--language', '--lang', '--ui'];
+  const optionsWithValues = [
+    '--workspace', '--host', '--port', '--password', '--language', '--lang', '--ui',
+    '--data-dir', '--app-data-dir', '--api-key', '--api-url', '--ai-provider', '--ai-model',
+    '--log-level', '--web-password', '--env', '--my-env', '-p'
+  ];
   
   for (let i = 0; i < args.length; i++) {
     const arg = args[i];
@@ -175,6 +190,8 @@ ${t`Examples:`}
   hyperchat language zh             # ${t`Set interface to Chinese`}
   hyperchat language en             # ${t`Set interface to English`}
   hyperchat --language zh chat      # ${t`Use Chinese for this command`}
+
+${CliArgsParser.getHelpText()}
 
 ${t`Welcome to HyperChat CLI! 🎉`}
 `);
@@ -601,12 +618,6 @@ async function handleLanguageCommand(langArg: string | undefined, logger: Logger
     
     // 保存到环境变量系统（持久化到配置文件）
     try {
-      // 尝试保存到工作区环境文件，如果没有工作区则保存到全局环境文件
-      const workspacePath = globalOptions.workspace;
-      const targetEnvManager = workspacePath 
-        ? EnvManager.getInstance(workspacePath)
-        : EnvManager.getInstance();
-      
       // 这里需要实现保存到 .env 文件的逻辑
       // 由于目前 EnvManager 是只读的，我们先显示设置成功，后续可以添加写入功能
       logger.debug(`Language setting saved to environment configuration: ${targetLang}`);
@@ -658,6 +669,12 @@ async function main() {
   try {
     // 初始化i18n系统，命令行语言参数具有最高优先级
     await initCliI18n(globalOptions.language);
+    
+    // 如果是帮助命令，直接显示帮助并退出
+    if (globalOptions.help) {
+      showHelp();
+      return;
+    }
     
     // 执行命令
     const result = await handleCommand();

@@ -183,7 +183,14 @@ export class CliArgsParser {
   --language <lang>          Interface language: zh|en|ja|ko|fr|de
   --lang <lang>              Alias for --language
 
-Example:
+Configuration Priority (highest to lowest):
+  1. CLI arguments (these options)
+  2. Workspace .env file (./.hyperchat/.env)  
+  3. Global .env file (~/Documents/HyperChat/.env)
+  4. System environment variables (process.env)
+  5. Default values
+
+Examples:
   hyperchat serve --port 8080 --verbose --env development
   hyperchat chat --ai-provider openai --ai-model gpt-4
   hyperchat run --data-dir /custom/path --quiet`;
