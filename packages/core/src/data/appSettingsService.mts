@@ -1,5 +1,4 @@
 import { getAppDataDir } from "../const.mjs";
-import { Logger } from "../log.mjs";
 import { AIModelConfigItem } from "@dadigua/hyperchat-shared";
 import { AppSettingsManager } from "./managers/appSettingsManager.mjs";
 import { AISettings } from "@dadigua/hyperchat-shared";
@@ -26,13 +25,17 @@ export function markAppSettingsManagerAsInitialized(): void {
 }
 
 /**
- * 获取全局应用设置管理器
+ * 获取全局应用设置管理器（支持自动同步初始化）
  */
 export function getAppSettingsManager(): AppSettingsManager {
   if (!globalAppSettingsManager || !isInitialized) {
-    throw new Error("应用设置管理器未初始化，请先调用 initAppSettingsManager 并完成初始化");
+    // 自动同步初始化
+    const appSettingsManager = initAppSettingsManager(getAppDataDir());
+    // 同步初始化，如果配置文件不存在会创建默认配置
+    appSettingsManager.initSync();
+    markAppSettingsManagerAsInitialized();
   }
-  return globalAppSettingsManager;
+  return globalAppSettingsManager!;
 }
 
 /**
@@ -75,19 +78,20 @@ class AiModelData {
   }
 }
 
-export const AI_MODELS = new AiModelData();
+// 懒加载的AI_MODELS实例
+let aiModelsInstance: AiModelData | null = null;
 
-try {
-
-  // 初始化应用设置管理器
-  const appSettingsManager = initAppSettingsManager(getAppDataDir());
-  await appSettingsManager.init();
-
-  // 标记为已完成初始化
-  markAppSettingsManagerAsInitialized();
-
-  Logger.info("App settings manager initialized successfully");
-} catch (error) {
-  Logger.error("Failed to initialize app settings manager:", error);
-  throw error;
+/**
+ * 获取AI_MODELS实例，支持懒加载
+ */
+export function getAiModels(): AiModelData {
+  if (!aiModelsInstance) {
+    aiModelsInstance = new AiModelData();
+  }
+  return aiModelsInstance;
 }
+
+// 向后兼容的导出
+export const AI_MODELS = {
+  get init() { return getAiModels().init.bind(getAiModels()); }
+};

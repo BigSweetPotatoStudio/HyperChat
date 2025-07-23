@@ -69,6 +69,19 @@ export class AppSettingsManager {
   }
 
   /**
+   * 同步初始化（用于懒加载场景）
+   */
+  initSync(): void {
+    // 确保目录存在
+    if (!fs.existsSync(this.appDataDir)) {
+      fs.mkdirSync(this.appDataDir, { recursive: true });
+    }
+
+    // 同步加载设置
+    this.loadSync();
+  }
+
+  /**
    * 生成并保存 JSON Schema
    */
   private async generateSchema(): Promise<void> {
@@ -124,6 +137,46 @@ export class AppSettingsManager {
       }
     } catch (error) {
       console.error("加载应用设置文件失败:", error);
+      // 使用默认设置
+      this.createDefaultSettings();
+    }
+  }
+
+  /**
+   * 同步加载设置
+   */
+  loadSync(): void {
+    try {
+      if (fs.existsSync(this.settingsPath)) {
+        const content = fs.readFileSync(this.settingsPath, "utf-8");
+        const parsed = jsonc.parse(content);
+        
+        // 使用 Zod 验证和解析
+        const result = AppSettingsSchema.safeParse(parsed);
+        
+        if (result.success) {
+          // 只更新系统相关的字段，保留用户设置
+          this.settings = {
+            ...result.data,
+            // 只更新动态系统信息
+            version: CONST.getVersion,
+            appDataDir: getAppDataDir(),
+            platform: process.platform,
+            PATH: process.env.PATH || "",
+          };
+        } else {
+          console.warn("应用设置文件验证失败，使用默认配置:", result.error);
+          // 同步模式下不进行复杂修复，直接使用默认配置
+          this.createDefaultSettings();
+        }
+      } else {
+        // 文件不存在，创建默认设置
+        this.createDefaultSettings();
+        // 同步保存
+        this.saveSync();
+      }
+    } catch (error) {
+      console.error("同步加载应用设置文件失败:", error);
       // 使用默认设置
       this.createDefaultSettings();
     }
@@ -347,6 +400,25 @@ export class AppSettingsManager {
       await fs.promises.writeFile(this.settingsPath, content, "utf-8");
     } catch (error) {
       console.error("保存应用设置文件失败:", error);
+      throw error;
+    }
+  }
+
+  /**
+   * 同步保存设置
+   */
+  saveSync(): void {
+    try {
+      // 创建包含 $schema 引用的设置对象
+      const settingsWithSchema = {
+        $schema: "./app-settings.schema.json",
+        ...this.settings,
+      };
+
+      const content = JSON.stringify(settingsWithSchema, null, 2);
+      fs.writeFileSync(this.settingsPath, content, "utf-8");
+    } catch (error) {
+      console.error("同步保存应用设置文件失败:", error);
       throw error;
     }
   }
