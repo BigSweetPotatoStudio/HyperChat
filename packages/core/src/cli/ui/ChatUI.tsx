@@ -104,9 +104,12 @@ export const ChatUI: React.FC<ChatUIProps> = ({ onUserInput, onExit, onCancel, o
   
   // 自动补全功能
   const handleAutoComplete = (currentInput: string): string => {
-    if (!currentInput.startsWith('/')) return currentInput;
+    // 移除末尾空格进行匹配
+    const trimmedInput = currentInput.trimEnd();
     
-    const matches = availableCommands.filter(cmd => cmd.command.startsWith(currentInput));
+    if (!trimmedInput.startsWith('/')) return currentInput;
+    
+    const matches = availableCommands.filter(cmd => cmd.command.startsWith(trimmedInput));
     if (matches.length === 1) {
       return matches[0].command;
     } else if (matches.length > 1) {
@@ -171,9 +174,12 @@ export const ChatUI: React.FC<ChatUIProps> = ({ onUserInput, onExit, onCancel, o
   
   // 更新候选框
   const updateSuggestions = (inputValue: string) => {
-    if (inputValue.startsWith('/')) {
+    // 移除末尾空格进行匹配
+    const trimmedInput = inputValue.trimEnd();
+    
+    if (trimmedInput.startsWith('/')) {
       const filtered = availableCommands.filter(cmd => 
-        cmd.command.startsWith(inputValue)
+        cmd.command.startsWith(trimmedInput)
       ).slice(0, 8); // 默认显示8条
       
       setFilteredCommands(filtered);
