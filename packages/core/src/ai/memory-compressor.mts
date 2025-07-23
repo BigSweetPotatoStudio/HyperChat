@@ -8,8 +8,44 @@ import { Command } from "../command.mjs";
  * Token 计算工具类
  */
 export class TokenCalculator {
+  private static tokenCache = new Map<string, number>();
+  private static readonly CACHE_MAX_SIZE = 1000;
+
+  // 清空缓存
+  static clearCache(): void {
+    this.tokenCache.clear();
+  }
+
+  // 获取缓存大小
+  static getCacheSize(): number {
+    return this.tokenCache.size;
+  }
+
+  // 生成消息的缓存键
+  private static generateCacheKey(message: MyMessage): string {
+    let content = '';
+    if (typeof message.content === 'string') {
+      content = message.content;
+    } else if (Array.isArray(message.content)) {
+      content = JSON.stringify(message.content);
+    }
+    return `${message.role}:${content.substring(0, 100)}:${message.content_usage?.total_tokens || 0}`;
+  }
+
   // 估算消息token数量
   static estimateTokenCount(message: MyMessage): number {
+    // 如果消息有实际的token使用统计，优先使用
+    if (message.content_usage?.total_tokens) {
+      return message.content_usage.total_tokens;
+    }
+
+    // 检查缓存
+    const cacheKey = this.generateCacheKey(message);
+    const cachedCount = this.tokenCache.get(cacheKey);
+    if (cachedCount !== undefined) {
+      return cachedCount;
+    }
+
     let content = '';
     if (typeof message.content === 'string') {
       content = message.content;
@@ -21,14 +57,21 @@ export class TokenCalculator {
       }).join('');
     }
 
-    // 如果消息有实际的token使用统计，优先使用
-    if (message.content_usage?.total_tokens) {
-      return message.content_usage.total_tokens;
-    }
-
     // 简单估算：1 token ≈ 4 字符（对英文），1 token ≈ 1.5 字符（对中文）
     // 取平均值：1 token ≈ 2.5 字符
-    return Math.ceil(content.length / 2.5);
+    const tokenCount = Math.ceil(content.length / 2.5);
+
+    // 缓存结果，但限制缓存大小
+    if (this.tokenCache.size >= this.CACHE_MAX_SIZE) {
+      // 删除最早的缓存条目（简单的LRU策略）
+      const firstKey = this.tokenCache.keys().next().value;
+      if (firstKey) {
+        this.tokenCache.delete(firstKey);
+      }
+    }
+    this.tokenCache.set(cacheKey, tokenCount);
+
+    return tokenCount;
   }
 
   // 计算从指定索引到最后的消息token总数
@@ -43,7 +86,24 @@ export class TokenCalculator {
 
   // 估算prompt的token数量
   static estimatePromptTokenCount(prompt: string): number {
-    return Math.ceil(prompt.length / 2.5);
+    const cacheKey = `prompt:${prompt.substring(0, 100)}`;
+    const cachedCount = this.tokenCache.get(cacheKey);
+    if (cachedCount !== undefined) {
+      return cachedCount;
+    }
+
+    const tokenCount = Math.ceil(prompt.length / 2.5);
+
+    // 缓存结果
+    if (this.tokenCache.size >= this.CACHE_MAX_SIZE) {
+      const firstKey = this.tokenCache.keys().next().value;
+      if (firstKey) {
+        this.tokenCache.delete(firstKey);
+      }
+    }
+    this.tokenCache.set(cacheKey, tokenCount);
+
+    return tokenCount;
   }
 }
 

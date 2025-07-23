@@ -52,11 +52,18 @@ jobs:
           # Optional: Allow Claude to run specific commands
           # allowed_tools: "Bash(npm install),Bash(npm run build),Bash(npm run test:*),Bash(npm run lint:*)"
           
-          # Optional: Add custom instructions for Claude to customize its behavior for your project
-          # custom_instructions: |
-          #   Follow our coding standards
-          #   Ensure all new code has tests
-          #   Use TypeScript for new files
+          # HyperChat 项目特定指令
+          custom_instructions: |
+            ## HyperChat 开发指南
+            - 这是一个多平台 AI 聊天应用，包含 Web、CLI、Electron 版本
+            - 严格遵循 TypeScript 类型安全，避免使用 any 类型
+            - 包构建顺序：shared -> web -> core -> electron
+            - 使用 Zod Schema 进行数据验证，所有 schema 在 packages/shared/src/zodSchemas
+            - 遵循现有的中文注释和开发规范
+            - 优先使用 Ant Design 组件库
+            - 所有新功能需要集成到工作区系统 (workspace.mts)
+            - 使用 Schema2Form 组件系统生成表单界面
+            - 请用中文回复用户
           
           # Optional: Custom environment variables for Claude
           # claude_env: |

@@ -5,23 +5,13 @@ import type { HyperChatCompletionTool, MyMessage, HyperToolCall, CommonContentIt
 import * as MCPTypes from "@modelcontextprotocol/sdk/types.js";
 import type { CoreMessage, LanguageModel, StreamTextResult, ToolChoice, CoreTool, ToolSet, TextPart, FilePart, ToolCallPart, ImagePart, TextStreamPart } from 'ai';
 import { generateObject, streamObject, jsonSchema, smoothStream, streamText } from 'ai';
-import { createOpenAI, openai } from '@ai-sdk/openai';
-import { createAnthropic } from '@ai-sdk/anthropic';
-import { createGoogleGenerativeAI } from '@ai-sdk/google';
-import { createOpenRouter } from '@openrouter/ai-sdk-provider';
-import { createOpenAICompatible, MetadataExtractor } from '@ai-sdk/openai-compatible';
-import { jsonSchemaToZod } from "json-schema-to-zod";
 import { z, ZodSchema } from "zod";
 // 兼容旧版本的 zod
 if (typeof globalThis !== 'undefined') {
   (globalThis as any).z = z;
 }
 
-
 import { v4 } from "uuid";
-import nodeFetch from "node-fetch";
-import { HttpsProxyAgent } from "https-proxy-agent";
-import { HttpProxyAgent } from "http-proxy-agent";
 
 import { AISettings, AppSettings } from "@dadigua/hyperchat-shared";
 import { BaseAIConfig } from "@dadigua/hyperchat-shared";
@@ -31,6 +21,10 @@ import { Logger } from "../log.mjs";
 import { SSEWriter } from "../sse/SSEWriter.mjs";
 import { MemoryCompressor, TokenCalculator, createDefaultMemorySummaryGenerator } from "./memory-compressor.mjs";
 import { workspaceManager } from "../workspace/index.mjs";
+import { AiProviderFactory, type ModelConfig } from "./providers/AiProviderFactory.mjs";
+import { ProxyUtils } from "./utils/ProxyUtils.mjs";
+import { MessageConverter } from "./utils/MessageConverter.mjs";
+import { ToolFormatter } from "./utils/ToolFormatter.mjs";
 
 
 
@@ -106,7 +100,7 @@ export class AiChannel {
   }
 
   async getAI(modelKey: string): Promise<LanguageModel> {
-    // 直接读取AI配置
+    // 获取AI配置
     const appSettings = await Command.getAppSettings();
     const aiSettings = appSettings.ai;
 
@@ -118,6 +112,8 @@ export class AiChannel {
     if (!modelConfig) {
       throw new Error(`Model not found: ${modelKey}`);
     }
+    
+    // 合并内置API配置
     if (modelConfig.provider !== "unknown") {
       modelConfig = {
         ...modelConfig,
@@ -125,94 +121,15 @@ export class AiChannel {
         apiKey: aiSettings.builtinApiKeys[modelConfig.provider]?.apiKey || modelConfig.apiKey,
       }
     }
-    let aiProvider: any = null;
-    let ai: LanguageModel | null = null;
-    let fetch: CustomFetch | undefined = undefined;
 
-    // Node.js environment - support HTTP proxy
-    const proxyUrl = process.env.HTTP_PROXY || process.env.http_proxy ||
-      process.env.HTTPS_PROXY || process.env.https_proxy;
+    // 验证配置
+    AiProviderFactory.validateModelConfig(modelConfig as ModelConfig);
 
-    if (proxyUrl) {
-      // 强制禁用 SSL 验证（仅用于抓包调试）
-      process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
+    // 创建自定义fetch（如果需要代理）
+    const customFetch = ProxyUtils.createFetch();
 
-      // Logger.debug(`🔗 HTTP代理已配置: ${proxyUrl}`);
-
-
-      fetch = async (url: string | URL | Request, init?: RequestInit): Promise<Response> => {
-        const targetUrl = typeof url === 'string' ? url : url.toString();
-        const isHttps = targetUrl.startsWith('https:');
-
-        // 创建代理 agent，配置为支持抓包工具
-        const httpsOptions = {
-          rejectUnauthorized: false,  // 允许自签名证书
-          checkServerIdentity: () => undefined, // 跳过服务器身份验证
-          secureProtocol: 'TLSv1_2_method', // 强制使用 TLS 1.2
-        };
-
-        const agent = isHttps
-          ? new HttpsProxyAgent(proxyUrl, httpsOptions)
-          : new HttpProxyAgent(proxyUrl);
-
-        // 使用 node-fetch，它对代理支持更好
-        const response = await nodeFetch(targetUrl, {
-          ...init,
-          agent: agent,
-          // 额外的 TLS 选项，确保忽略证书错误
-          rejectUnauthorized: false,
-          checkServerIdentity: () => undefined,
-        } as any);
-
-        // 将 node-fetch 的 Response 转换为标准 Response
-        const body = await (response as any).buffer();
-        return new Response(body, {
-          status: response.status,
-          statusText: response.statusText,
-          headers: response.headers as any,
-        }) as Response;
-      };
-    }
-
-    if (modelConfig.provider === 'anthropic') {
-      aiProvider = createAnthropic({
-        baseURL: modelConfig.baseURL,
-        apiKey: modelConfig.apiKey,
-        fetch
-      });
-      ai = aiProvider(modelConfig.model);
-    } else if (modelConfig.provider === 'gemini') {
-      aiProvider = createGoogleGenerativeAI({
-        baseURL: modelConfig.baseURL,
-        apiKey: modelConfig.apiKey,
-        fetch
-      });
-      ai = aiProvider(modelConfig.model);
-    } else if (modelConfig.provider === 'openrouter') {
-      aiProvider = createOpenRouter({
-        baseURL: modelConfig.baseURL,
-        apiKey: modelConfig.apiKey,
-        fetch
-      });
-      ai = aiProvider(modelConfig.model);
-    } else if (modelConfig.provider === 'openai') {
-      aiProvider = createOpenAI({
-        baseURL: modelConfig.baseURL,
-        apiKey: modelConfig.apiKey,
-        compatibility: "strict",
-        fetch
-      });
-      ai = aiProvider(modelConfig.model);
-    } else {
-      aiProvider = createOpenAICompatible({
-        name: modelConfig.provider,
-        baseURL: modelConfig.baseURL,
-        apiKey: modelConfig.apiKey,
-        fetch
-      });
-      ai = aiProvider(modelConfig.model);
-    }
-    return ai as LanguageModel;
+    // 使用工厂创建模型
+    return await AiProviderFactory.createModel(modelConfig as ModelConfig, customFetch);
   }
   async completion(
     params: {
@@ -260,8 +177,7 @@ export class AiChannel {
     this.abortController = new AbortController();
 
     // 生成基于时间和数组索引的消息ID
-    const timestamp = Math.floor(Date.now() / 1000); // 精确到秒
-    const messageId = `assistant_${this.messages.length}_${timestamp}`;
+    const messageId = MessageConverter.generateMessageId("assistant", this.messages.length);
 
     let newMessage: MyMessage = {
       role: "assistant",
@@ -279,11 +195,11 @@ export class AiChannel {
       messageId: messageId,
     };
 
-    let format_message = await this.messages2core();
+    let format_message = MessageConverter.convertToCoreMessages(this.messages);
     options.messages = [{ role: "system", content: params.prompt }, ...format_message];
 
     let tools: HyperChatCompletionTool[] = this.getMcpTools(params.allowMCPs);
-    const aiTools = this.tools_format_ai(tools || []);
+    const aiTools = ToolFormatter.formatTools(tools || []);
     options.tools = {
       ...options.tools,
       ...aiTools,
@@ -363,7 +279,7 @@ export class AiChannel {
             originalName: localTool.originalName,
             displayName: localTool.displayName,
           };
-          (delta as any).hypertool = hypertool;
+          (delta as typeof delta & { hypertool: typeof hypertool }).hypertool = hypertool;
           newMessage.content_tool_calls.push(hypertool);
         }
         if (delta.type == "step-finish") {
@@ -454,7 +370,8 @@ export class AiChannel {
           params.confirm_call_tool_cb
         ) {
           try {
-            tool.function.args = (await params.confirm_call_tool_cb(tool)) as any;
+            const confirmedArgs = await params.confirm_call_tool_cb(tool);
+            tool.function.args = typeof confirmedArgs === 'boolean' ? {} : confirmedArgs as Record<string, unknown>;
           } catch (e) {
 
             let message: MyMessage = {
@@ -484,8 +401,7 @@ export class AiChannel {
         // }
 
         // 生成工具消息的 messageId
-        const toolTimestamp = Math.floor(Date.now() / 1000);
-        const toolMessageId = `tool_${this.messages.length}_${toolTimestamp}`;
+        const toolMessageId = MessageConverter.generateToolMessageId(this.messages.length);
 
         let message: MyMessage = {
           role: "tool" as const,
@@ -530,7 +446,7 @@ export class AiChannel {
             }
 
           )
-          .then((res: any) => {
+          .then((res: MCPTypes.CallToolResult & { isError?: boolean }) => {
             if (res["isError"]) {
               this.lastMessage.content_status = "error";
               params.onUpdate && params.onUpdate();
@@ -541,12 +457,12 @@ export class AiChannel {
               return res;
             }
           })
-          .catch((e: any) => {
+          .catch((e: Error) => {
             this.lastMessage.content_status = "error";
             params.onUpdate && params.onUpdate();
             return {
-              content: { error: e.message },
-            };
+              content: [{ type: "text", text: `Error: ${e.message}` }],
+            } as MCPTypes.CallToolResult;
           });
         // console.log("call_response: ", call_res);
 
@@ -715,110 +631,6 @@ export class AiChannel {
       return res.object;
     }
 
-  }
-  async messages2core(): Promise<CoreMessage[]> {
-    let results: CoreMessage[] = [];
-    let lastMemoryMessage = this.messages.findLastIndex(m => m.role === "hyper_memory" && m.content_status === "success");
-
-    for (let i = 0; i < this.messages.length; i++) {
-      if (i < lastMemoryMessage) {
-        continue;
-      }
-      let m = this.messages[i]!;
-      if (m.role === 'tool') {
-        results.push({
-          role: 'tool',
-          content: [
-            {
-              type: 'tool-result',
-              toolCallId: m.tool_call_id || "",
-              toolName: m.tool_call_name || "", // 需要从工具调用历史中获取
-              result: m.content as string,
-            },
-          ],
-        });
-      } else if (m.role === 'hyper_memory') {
-        // 将记忆消息转换为用户消息
-        results.push({
-          role: 'user',
-          content: `[Memory Summary]: ${m.content}${m.memory_key_points ? '\n[Key Points]: ' + m.memory_key_points.join(', ') : ''}`,
-        });
-      } else if (m.role === 'system') {
-        results.push({
-          role: 'system',
-          content: m.content,
-        });
-      } else if (m.role === 'user') {
-        let content: Array<TextPart | ImagePart> = []
-        if (typeof m.content === 'string') {
-          content.push({ type: 'text', text: m.content });
-        } else if (Array.isArray(m.content)) {
-          for (let c of m.content) {
-            if (c.type === 'text') {
-              content.push({ type: 'text', text: c.text });
-            } else if (c.type === 'image_url') {
-              content.push({
-                type: 'image',
-                image: c.image_url.url,
-              });
-            } else {
-              console.error(new Error(`Unsupported content type: ${c}`));
-            }
-          }
-        } else {
-          throw new Error(`Unsupported content type: ${typeof m.content}`);
-        }
-
-        results.push({
-          role: m.role as "user",
-          content: content,
-        });
-      } else if (m.role === 'assistant') {
-        let content: Array<TextPart | ToolCallPart> = []
-        if (typeof m.content === 'string') {
-          content.push({ type: 'text', text: m.content });
-        } else if (Array.isArray(m.content)) {
-          for (let c of m.content) {
-            if (c.type === 'text') {
-              content.push({ type: 'text', text: c.text });
-            } else {
-              console.error(new Error(`Unsupported content type: ${c}`));
-            }
-          }
-        } else {
-          throw new Error(`Unsupported content type: ${typeof m.content}`);
-        }
-        if (m.content_tool_calls && m.content_tool_calls.length > 0) {
-          for (let toolCall of m.content_tool_calls) {
-            let toolCallId = toolCall.id || v4();
-            content.push({
-              args: toolCall.function.args || {},
-              toolCallId: toolCallId,
-              toolName: toolCall.function.name,
-              type: "tool-call",
-            });
-          }
-        }
-        results.push({
-          role: m.role as "assistant",
-          content: content
-        });
-      }
-    }
-    return results;
-  }
-
-  tools_format_ai(tools: HyperChatCompletionTool[]): ToolSet {
-    const result: ToolSet = {};
-
-    for (const tool of tools) {
-      result[tool.name] = {
-        description: tool.description || '',
-        parameters: tool.inputSchema == null ? undefined : eval(jsonSchemaToZod(tool.inputSchema as any)),
-      };
-    }
-
-    return result;
   }
 
 }

@@ -146,7 +146,19 @@ export function registerSearchFileContentTool(server: McpServer): void {
             '.dockerfile', '.gitignore', '.gitattributes', '.editorconfig', '.env',
           ];
 
-          return ext === '' || textExtensions.includes(ext);
+          // 有扩展名的文件按白名单过滤
+          if (ext !== '') {
+            return textExtensions.includes(ext);
+          }
+
+          // 没有扩展名的文件：检查文件大小，小于256KB才包含
+          try {
+            const stats = fs.statSync(file);
+            return stats.size < 256 * 1024; // 256KB
+          } catch (error) {
+            // 无法获取文件信息则跳过
+            return false;
+          }
         });
 
         // 在文件中搜索
