@@ -625,17 +625,27 @@ export class AiChannel {
     memoryCompressor?: MemoryCompressor;
   };
 
-  // 获取 MCP 工具
-  private getMcpTools(allowMCPs?: string[]): HyperChatCompletionTool[] {
+  // 获取 MCP 工具 - Agent-centered版本
+  private getMcpTools(allowMCPs?: string[], agentName?: string): HyperChatCompletionTool[] {
     const workspace = workspaceManager.getCurrentWorkspace();
     if (!workspace) {
       return [];
     }
 
-    const mcpClients = workspace.getMcpClients();
+    let tools: HyperChatCompletionTool[] = [];
 
-
-    let tools = mcpClients.flatMap((client) => client.tools || []);
+    if (agentName) {
+      // 如果指定了Agent，只获取该Agent的MCP工具
+      const agentInstance = workspace.getAgentInstance(agentName);
+      if (agentInstance) {
+        const mcpClients = agentInstance.getMCPClients();
+        tools = mcpClients.flatMap((client) => client.tools || []);
+      }
+    } else {
+      // 如果没有指定Agent，返回空数组（Agent-centered架构要求必须指定Agent）
+      console.warn('Agent-centered架构要求指定agentName来获取MCP工具');
+      return [];
+    }
 
     // 如果指定了允许的 MCP 工具，进行过滤
     if (allowMCPs != null) {
