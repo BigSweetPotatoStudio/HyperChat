@@ -101,18 +101,18 @@ export async function startChatInk(initialMessage?: string, options: ChatOptions
     // 记录配置信息  
     logAIConfig(LoggerClass, env);
 
-    // 获取工作区的Agent数量
-    const agentsSummary = await env.workspace?.getAllAgentsSummary() || [];
-    // 从Agent获取MCP客户端
+    // 以Agent为中心的信息显示
+    const agentConfig = env.agent.getConfig();
     const mcpClients = env.mcpClients;
     const totalTools = mcpClients.flatMap((client: any) => client.tools || []).length;
 
-    logger.info(`👥 ${t`Current workspace Agent count:`} ${agentsSummary.length}`);
-    logger.info(`🔧 ${t`Current workspace available MCP clients:`} ${mcpClients.length}`);
-    const agentConfig = env.agent.getConfig();
-
-    logger.info(`🌐 ${t`Current Agent:`} ${agentConfig.name}`)
+    logger.info(`🤖 ${t`Current Agent:`} ${agentConfig.name}`)
     logger.info(`🤖 ${t`Using model:`} ${env.effectiveConfig.modelKey}`);
+    
+    // 显示Agent专属的MCP工具信息
+    if (mcpClients.length > 0) {
+      logger.info(`🔧 ${t`Agent MCP clients:`} ${mcpClients.length} (${totalTools} ${t`tools`})`);
+    }
 
     // 计算 agent 允许的工具信息
     let agentAllowedMCPs = 0;
@@ -136,7 +136,7 @@ export async function startChatInk(initialMessage?: string, options: ChatOptions
 
     const workspaceInfo = {
       path: env.workspace?.workspacePath || '',
-      agentCount: agentsSummary.length,
+      agentCount: 1, // 当前Agent
       mcpClientsCount: mcpClients.length,
       totalToolsCount: totalTools,
       currentAgent: agentConfig.name,

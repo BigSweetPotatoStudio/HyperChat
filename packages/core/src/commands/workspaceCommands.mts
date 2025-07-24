@@ -76,7 +76,7 @@ export const workspaceCommands = {
       path: workspacePath,
       isGlobal,
       agentsCount: summary.agentsCount,
-      mcpServersCount: summary.mcpServersCount,
+      // 在Agent-centered架构中不再有工作区级别的MCP服务器数量
       // 使用完整的 settings 而不是 config.settings
       settings: workspace.getSettings()
     };

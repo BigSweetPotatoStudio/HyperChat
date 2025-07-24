@@ -308,19 +308,16 @@ export async function startChat(initialMessage?: string, options: ChatOptions = 
     // 记录配置信息  
     logAIConfig(LoggerClass, env);
 
-    // 获取工作区的Agent数量
-    if (env.workspace) {
-      const agentsSummary = await env.workspace.getAllAgentsSummary();
-      logger.info(`👥 ${t`Current workspace Agent count:`} ${agentsSummary.length}`);
-    }
-
-    // 显示详细的 MCP 工具统计 - 现在从Agent获取
-    logger.info(`🔧 ${t`Current agent available MCP clients:`} ${env.mcpClients.length}`);
-
     const agentConfig = env.agent.getConfig();
 
-    // 显示详细的 Agent 信息
-    logger.info(`🌐 ${t`Current Agent:`} ${agentConfig.name}`);
+    // 显示详细的 Agent 信息 - 以Agent为中心
+    logger.info(`🤖 ${t`Current Agent:`} ${agentConfig.name}`);
+    
+    // 显示Agent专属的MCP工具统计
+    const mcpToolCount = env.mcpClients.flatMap((client: any) => client.tools || []).length;
+    if (env.mcpClients.length > 0) {
+      logger.info(`🔧 ${t`Agent MCP clients:`} ${env.mcpClients.length} (${mcpToolCount} ${t`tools`})`);
+    }
 
     // 显示 Agent 使用的模型（区分是 Agent 配置的还是继承的）
     if (agentConfig.modelKey && agentConfig.modelKey === env.effectiveConfig.modelKey) {

@@ -54,19 +54,21 @@ export async function startRun(options: RunOptions = {}) {
     const summary = await workspace.getSummary();
     
     logger.info(`✅ ${t`Core service is running`}`);
-    logger.info(`📊 ${t`Workspace status:`}`);
-    logger.info(`   - ${t`Status:`} ${workspace.getState()}`);
-    logger.info(`   - ${t`Agents:`} ${summary.agentsCount}`);
+    logger.info(`📊 ${t`Agent-centered system status:`}`);
+    logger.info(`   - ${t`Workspace status:`} ${workspace.getState()}`);
+    logger.info(`   - ${t`Available agents:`} ${summary.agentsCount}`);
     
-    // 在Agent-centered架构下，统计所有Agent的MCP和任务信息
+    // 在Agent-centered架构下，统计所有Agent的资源信息
     const agents = await workspace.getAllAgents();
     let totalMcpClients = 0;
     let totalTasks = 0;
     let scheduledTasks: string[] = [];
+    let activeAgents = 0;
     
     for (const agentConfig of agents) {
       const agentInstance = workspace.getAgentInstance(agentConfig.name);
       if (agentInstance) {
+        activeAgents++;
         const mcpClients = agentInstance.getMCPClients();
         totalMcpClients += mcpClients.length;
         
@@ -78,8 +80,9 @@ export async function startRun(options: RunOptions = {}) {
       }
     }
     
-    logger.info(`   - ${t`MCP services:`} ${totalMcpClients}`);
-    logger.info(`   - ${t`Tasks:`} ${totalTasks}`);
+    logger.info(`   - ${t`Active agents:`} ${activeAgents}`);
+    logger.info(`   - ${t`Total MCP clients:`} ${totalMcpClients}`);
+    logger.info(`   - ${t`Total tasks:`} ${totalTasks}`);
     
     // 显示正在调度的任务
     if (scheduledTasks.length > 0) {
@@ -188,13 +191,13 @@ export async function showRunStatus() {
         }
       }
       
-      logger.info(`✅ ${t`Service is running`}`);
-      logger.info(`🎯 ${t`Workspace:`} ${workspace.workspacePath}`);
-      logger.info(`📊 ${t`Status:`}`);
-      logger.info(`   - ${t`Agents:`} ${summary.agentsCount} ${t`items`}`);
-      logger.info(`   - ${t`MCP services:`} ${totalMcpClients} ${t`items`}`);
-      logger.info(`   - ${t`Tasks:`} ${totalTasks} ${t`items`}`);
-      logger.info(`   - ${t`In scheduling:`} ${scheduledTasks.length} ${t`tasks`}`);
+      logger.info(`✅ ${t`Agent-centered service is running`}`);
+      logger.info(`🎯 ${t`Workspace:`} ${workspace.workspacePath} (${t`for agent discovery`})`);
+      logger.info(`📊 ${t`System status:`}`);
+      logger.info(`   - ${t`Available agents:`} ${summary.agentsCount} ${t`items`}`);
+      logger.info(`   - ${t`Total MCP clients:`} ${totalMcpClients} ${t`items`}`);
+      logger.info(`   - ${t`Total tasks:`} ${totalTasks} ${t`items`}`);
+      logger.info(`   - ${t`Tasks in scheduling:`} ${scheduledTasks.length} ${t`items`}`);
       
       if (scheduledTasks.length > 0) {
         logger.info(`⏰ ${t`Tasks in scheduling:`}`);
