@@ -634,7 +634,7 @@ async function handleLanguageCommand(langArg: string | undefined, logger: Logger
     else if (targetLang === 'de') newLangName = t`German`;
     else newLangName = t`English`;
     console.log(`✅ ${t`Interface language changed to`} ${newLangName}`);
-    console.log(`💡 ${t`Language setting is now active for this session. To persist across sessions, add HyperChat_Language=${targetLang} to your environment configuration.`}`);
+    console.log(`💡 ${t`Language setting is now active for this session. To persist across sessions, add HyperChat_Language=`}${targetLang}${t` to your environment configuration.`}`);
     
   } catch (error) {
     logger.error(`${t`Failed to change language:`} ${error instanceof Error ? error.message : String(error)}`);

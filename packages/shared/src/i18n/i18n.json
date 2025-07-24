@@ -5668,5 +5668,670 @@
     "ko": "⚠️ 중요: 이 마이그레이션 도구는 HyperChat 2.0 미만 버전에만 해당됩니다.",
     "fr": "⚠️ Important : Cet outil de migration est uniquement destiné aux versions de HyperChat antérieures à 2.0",
     "de": "⚠️ Wichtig: Dieses Migrationstool ist nur für HyperChat-Versionen unter 2.0"
+  },
+  "(Press Esc to cancel)": {
+    "zh": "（按 Esc 键取消）",
+    "ja": "（Escでキャンセル）",
+    "ko": "(취소하려면 Esc 키를 누르세요)",
+    "fr": "(Appuyez sur Échap pour annuler)",
+    "de": "(Esc drücken zum Abbrechen)"
+  },
+  "AI is thinking...": {
+    "zh": "AI 正在思考...",
+    "ja": "AIが考えています...",
+    "ko": "AI가 생각 중입니다...",
+    "fr": "L'IA réfléchit...",
+    "de": "KI denkt nach..."
+  },
+  "AI request cancelled by user": {
+    "zh": "AI 请求已被用户取消",
+    "ja": "AIリクエストはユーザーによってキャンセルされました",
+    "ko": "사용자에 의해 AI 요청이 취소되었습니다",
+    "fr": "Requête IA annulée par l'utilisateur",
+    "de": "KI-Anfrage vom Benutzer abgebrochen"
+  },
+  "Agent allowed tools:": {
+    "zh": "代理允许的工具：",
+    "ja": "エージェントが許可するツール：",
+    "ko": "에이전트 허용 도구:",
+    "fr": "Outils autorisés par l'Agent :",
+    "de": "Vom Agenten erlaubte Werkzeuge:"
+  },
+  "All available tools": {
+    "zh": "所有可用工具",
+    "ja": "利用可能なすべてのツール",
+    "ko": "사용 가능한 모든 도구",
+    "fr": "Tous les outils disponibles",
+    "de": "Alle verfügbaren Werkzeuge"
+  },
+  "Are you sure you want to manually trigger this task now?": {
+    "zh": "确定要立即手动触发此任务吗？",
+    "ja": "このタスクを今すぐ手動でトリガーしてもよろしいですか？",
+    "ko": "지금 이 작업을 수동으로 트리거하시겠습니까?",
+    "fr": "Voulez-vous vraiment déclencher cette tâche manuellement maintenant ?",
+    "de": "Möchten Sie diese Aufgabe wirklich jetzt manuell auslösen?"
+  },
+  "Auto-complete and select suggestions": {
+    "zh": "自动完成并选择建议",
+    "ja": "オートコンプリートと候補の選択",
+    "ko": "자동 완성 및 제안 선택",
+    "fr": "Compléter automatiquement et sélectionner les suggestions",
+    "de": "Vervollständigen und Vorschläge auswählen"
+  },
+  "Called tool:": {
+    "zh": "调用的工具：",
+    "ja": "呼び出されたツール：",
+    "ko": "호출된 도구:",
+    "fr": "Outil appelé :",
+    "de": "Aufgerufenes Werkzeug:"
+  },
+  "Calling tool:": {
+    "zh": "正在调用工具：",
+    "ja": "ツールを呼び出し中:",
+    "ko": "도구 호출 중:",
+    "fr": "Appel de l'outil :",
+    "de": "Werkzeug aufrufen:"
+  },
+  "Cancel current AI request": {
+    "zh": "取消当前 AI 请求",
+    "ja": "現在のAIリクエストをキャンセル",
+    "ko": "현재 AI 요청 취소",
+    "fr": "Annuler la requête IA actuelle",
+    "de": "Aktuelle KI-Anfrage abbrechen"
+  },
+  "Cancelling AI request...": {
+    "zh": "正在取消 AI 请求...",
+    "ja": "AIリクエストをキャンセル中...",
+    "ko": "AI 요청 취소 중...",
+    "fr": "Annulation de la requête IA...",
+    "de": "KI-Anfrage wird abgebrochen..."
+  },
+  "Chat input error:": {
+    "zh": "聊天输入错误：",
+    "ja": "チャット入力エラー:",
+    "ko": "채팅 입력 오류:",
+    "fr": "Erreur de saisie du chat :",
+    "de": "Chat-Eingabefehler:"
+  },
+  "Chat log not found:": {
+    "zh": "未找到聊天记录：",
+    "ja": "チャット履歴が見つかりません:",
+    "ko": "채팅 기록을 찾을 수 없음:",
+    "fr": "Journal de chat introuvable :",
+    "de": "Chat-Protokoll nicht gefunden:"
+  },
+  "Chat log selection cancelled": {
+    "zh": "聊天记录选择已取消",
+    "ja": "チャット履歴の選択がキャンセルされました",
+    "ko": "채팅 기록 선택 취소됨",
+    "fr": "Sélection du journal de chat annulée",
+    "de": "Auswahl des Chat-Protokolls abgebrochen"
+  },
+  "Chat logs fetcher not available": {
+    "zh": "聊天记录获取器不可用",
+    "ja": "チャット履歴フェッチャーが利用できません",
+    "ko": "채팅 기록 가져오기 도구를 사용할 수 없음",
+    "fr": "Récupérateur de journaux de chat non disponible",
+    "de": "Abrufer für Chat-Protokolle nicht verfügbar"
+  },
+  "Clear current input": {
+    "zh": "清除当前输入",
+    "ja": "現在の入力をクリア",
+    "ko": "현재 입력 지우기",
+    "fr": "Effacer la saisie actuelle",
+    "de": "Aktuelle Eingabe löschen"
+  },
+  "Client:": {
+    "zh": "客户端：",
+    "ja": "クライアント:",
+    "ko": "클라이언트:",
+    "fr": "Client :",
+    "de": "Client:"
+  },
+  "Command suggestions appear when typing \"/\"": {
+    "zh": "输入“/”时显示命令建议",
+    "ja": "\"/\" 入力時にコマンド候補を表示",
+    "ko": "\"/\" 입력 시 명령 제안 표시",
+    "fr": "Les suggestions de commande apparaissent lorsque vous tapez \"/\"",
+    "de": "Befehlsvorschläge erscheinen bei Eingabe von „/“"
+  },
+  "Command suggestions:": {
+    "zh": "命令建议：",
+    "ja": "コマンド候補:",
+    "ko": "명령 제안:",
+    "fr": "Suggestions de commande :",
+    "de": "Befehlsvorschläge:"
+  },
+  "Copy Name": {
+    "zh": "复制名称",
+    "ja": "名前をコピー",
+    "ko": "이름 복사",
+    "fr": "Copier le nom",
+    "de": "Namen kopieren"
+  },
+  "Copy Path": {
+    "zh": "复制路径",
+    "ja": "パスをコピー",
+    "ko": "경로 복사",
+    "fr": "Copier le chemin",
+    "de": "Pfad kopieren"
+  },
+  "Current workspace available MCP clients:": {
+    "zh": "当前工作区可用 MCP 客户端：",
+    "ja": "現在のワークスペースで利用可能なMCPクライアント:",
+    "ko": "현재 워크스페이스에서 사용 가능한 MCP 클라이언트:",
+    "fr": "Clients MCP disponibles dans l'espace de travail actuel :",
+    "de": "Verfügbare MCP-Clients im aktuellen Arbeitsbereich:"
+  },
+  "Enhanced suggestion system:": {
+    "zh": "增强建议系统：",
+    "ja": "強化された候補システム:",
+    "ko": "향상된 제안 시스템:",
+    "fr": "Système de suggestion amélioré :",
+    "de": "Verbessertes Vorschlagssystem:"
+  },
+  "Enter key: Select suggestion with cursor at end": {
+    "zh": "回车键：光标在末尾时选择建议",
+    "ja": "Enterキー: カーソルが末尾にある状態で候補を選択",
+    "ko": "Enter 키: 커서가 끝에 있을 때 제안 선택",
+    "fr": "Touche Entrée : Sélectionner la suggestion avec le curseur à la fin",
+    "de": "Eingabetaste: Vorschlag mit Cursor am Ende auswählen"
+  },
+  "Failed to get chat logs:": {
+    "zh": "获取聊天记录失败：",
+    "ja": "チャット履歴の取得に失敗しました:",
+    "ko": "채팅 기록을 가져오지 못했습니다:",
+    "fr": "Échec de l'obtention des journaux de chat :",
+    "de": "Chat-Protokolle konnten nicht abgerufen werden:"
+  },
+  "Failed to load chat log:": {
+    "zh": "加载聊天记录失败：",
+    "ja": "チャット履歴の読み込みに失敗しました:",
+    "ko": "채팅 기록을 불러오지 못했습니다:",
+    "fr": "Échec du chargement du journal de chat :",
+    "de": "Chat-Protokoll konnte nicht geladen werden:"
+  },
+  "Failed to load chat logs:": {
+    "zh": "加载聊天记录失败：",
+    "ja": "チャット履歴の読み込みに失敗しました:",
+    "ko": "채팅 기록을 불러오지 못했습니다:",
+    "fr": "Échec du chargement des journaux de chat :",
+    "de": "Chat-Protokolle konnten nicht geladen werden:"
+  },
+  "Failed to resume chat:": {
+    "zh": "恢复聊天失败：",
+    "ja": "チャットの再開に失敗しました:",
+    "ko": "채팅을 재개하지 못했습니다:",
+    "fr": "Échec de la reprise du chat :",
+    "de": "Chat konnte nicht fortgesetzt werden:"
+  },
+  "Failed to trigger task": {
+    "zh": "触发任务失败",
+    "ja": "タスクのトリガーに失敗しました",
+    "ko": "작업을 트리거하지 못했습니다",
+    "fr": "Échec du déclenchement de la tâche",
+    "de": "Aufgabe konnte nicht ausgelöst werden"
+  },
+  "File name copied to clipboard": {
+    "zh": "文件名已复制到剪贴板",
+    "ja": "ファイル名をクリップボードにコピーしました",
+    "ko": "파일 이름이 클립보드에 복사되었습니다",
+    "fr": "Nom du fichier copié dans le presse-papiers",
+    "de": "Dateiname in Zwischenablage kopiert"
+  },
+  "File path suggestions:": {
+    "zh": "文件路径建议：",
+    "ja": "ファイルパスの候補:",
+    "ko": "파일 경로 제안:",
+    "fr": "Suggestions de chemin de fichier :",
+    "de": "Vorschläge für Dateipfade:"
+  },
+  "Full Name:": {
+    "zh": "全名：",
+    "ja": "フルネーム:",
+    "ko": "전체 이름:",
+    "fr": "Nom complet :",
+    "de": "Vollständiger Name:"
+  },
+  "Input Schema:": {
+    "zh": "输入 Schema:",
+    "ja": "入力スキーマ:",
+    "ko": "입력 스키마:",
+    "fr": "Schéma d'entrée :",
+    "de": "Eingabeschema:"
+  },
+  "Input history stores up to 50 recent commands": {
+    "zh": "输入历史记录最多存储 50 条最近命令",
+    "ja": "入力履歴には、最新のコマンドが50件まで保存されます",
+    "ko": "입력 기록은 최근 50개 명령을 저장합니다",
+    "fr": "L'historique des entrées conserve jusqu'à 50 commandes récentes",
+    "de": "Die Eingabehistorie speichert bis zu 50 aktuelle Befehle"
+  },
+  "Input stream closed, exiting chat": {
+    "zh": "输入流已关闭，正在退出聊天",
+    "ja": "入力ストリームが閉じられました。チャットを終了します",
+    "ko": "입력 스트림이 닫혔습니다. 채팅을 종료합니다",
+    "fr": "Flux d'entrée fermé, sortie du chat",
+    "de": "Eingabestream geschlossen, Chat wird beendet"
+  },
+  "Keyboard shortcuts:": {
+    "zh": "键盘快捷键:",
+    "ja": "キーボードショートカット:",
+    "ko": "키보드 단축키:",
+    "fr": "Raccourcis clavier :",
+    "de": "Tastaturkürzel:"
+  },
+  "Loaded chat log:": {
+    "zh": "已加载聊天记录:",
+    "ja": "読み込まれたチャット履歴:",
+    "ko": "로드된 채팅 기록:",
+    "fr": "Journal de chat chargé :",
+    "de": "Geladenes Chat-Protokoll:"
+  },
+  "Loading chat logs, please wait...": {
+    "zh": "正在加载聊天记录，请稍候...",
+    "ja": "チャット履歴を読み込み中、お待ちください...",
+    "ko": "채팅 기록을 로드 중입니다. 잠시 기다려 주십시오...",
+    "fr": "Chargement des journaux de chat, veuillez patienter...",
+    "de": "Chat-Protokolle werden geladen, bitte warten Sie..."
+  },
+  "Loading chat logs...": {
+    "zh": "正在加载聊天记录...",
+    "ja": "チャット履歴を読み込み中...",
+    "ko": "채팅 기록 로드 중...",
+    "fr": "Chargement des journaux de chat...",
+    "de": "Chat-Protokolle werden geladen..."
+  },
+  "Memory:": {
+    "zh": "内存:",
+    "ja": "メモリ:",
+    "ko": "메모리:",
+    "fr": "Mémoire :",
+    "de": "Speicher:"
+  },
+  "Navigate input history or suggestions": {
+    "zh": "浏览输入历史或建议",
+    "ja": "入力履歴または候補を操作",
+    "ko": "입력 기록 또는 제안 탐색",
+    "fr": "Naviguer dans l'historique des saisies ou les suggestions",
+    "de": "Eingabeverlauf oder Vorschläge navigieren"
+  },
+  "No chat logs found": {
+    "zh": "未找到聊天记录",
+    "ja": "チャット履歴が見つかりません",
+    "ko": "채팅 기록을 찾을 수 없습니다.",
+    "fr": "Aucun journal de chat trouvé",
+    "de": "Keine Chat-Protokolle gefunden"
+  },
+  "No chat logs found for agent": {
+    "zh": "未找到该代理的聊天记录",
+    "ja": "エージェントのチャット履歴が見つかりません",
+    "ko": "에이전트에 대한 채팅 기록을 찾을 수 없습니다.",
+    "fr": "Aucun journal de chat trouvé pour l'agent",
+    "de": "Keine Chat-Protokolle für Agent gefunden"
+  },
+  "No current agent available": {
+    "zh": "当前没有可用代理",
+    "ja": "現在利用可能なエージェントはありません",
+    "ko": "현재 사용 가능한 에이전트가 없습니다.",
+    "fr": "Aucun agent disponible actuellement",
+    "de": "Kein Agent verfügbar"
+  },
+  "Non-interactive environment detected, exiting after processing": {
+    "zh": "检测到非交互环境，处理后退出",
+    "ja": "非対話型環境が検出されました。処理後に終了します",
+    "ko": "비대화형 환경이 감지되었습니다. 처리 후 종료합니다.",
+    "fr": "Environnement non interactif détecté, sortie après traitement",
+    "de": "Nicht-interaktive Umgebung erkannt, Beenden nach Verarbeitung"
+  },
+  "Open File": {
+    "zh": "打开文件",
+    "ja": "ファイルを開く",
+    "ko": "파일 열기",
+    "fr": "Ouvrir le fichier",
+    "de": "Datei öffnen"
+  },
+  "Open in File Manager": {
+    "zh": "在文件管理器中打开",
+    "ja": "ファイルマネージャーで開く",
+    "ko": "파일 관리자에서 열기",
+    "fr": "Ouvrir dans le gestionnaire de fichiers",
+    "de": "Im Dateimanager öffnen"
+  },
+  "Parameters:": {
+    "zh": "参数：",
+    "ja": "パラメーター:",
+    "ko": "매개변수:",
+    "fr": "Paramètres :",
+    "de": "Parameter:"
+  },
+  "Path copied to clipboard": {
+    "zh": "路径已复制到剪贴板",
+    "ja": "パスをクリップボードにコピーしました",
+    "ko": "경로가 클립보드에 복사되었습니다",
+    "fr": "Chemin copié dans le presse-papiers",
+    "de": "Pfad in Zwischenablage kopiert"
+  },
+  "Please specify tool name:": {
+    "zh": "请指定工具名称：",
+    "ja": "ツール名を指定してください:",
+    "ko": "도구 이름을 지정하십시오:",
+    "fr": "Veuillez spécifier le nom de l'outil :",
+    "de": "Bitte Werkzeugnamen angeben:"
+  },
+  "Raw mode not supported (non-TTY input), falling back to legacy UI": {
+    "zh": "不支持原始模式（非 TTY 输入），回退到传统界面",
+    "ja": "Rawモードはサポートされていません（非TTY入力）。レガシーUIにフォールバックします",
+    "ko": "원시 모드가 지원되지 않습니다 (비-TTY 입력), 레거시 UI로 대체됩니다",
+    "fr": "Mode brut non pris en charge (entrée non-TTY), retour à l'interface utilisateur héritée",
+    "de": "Raw-Modus nicht unterstützt (keine TTY-Eingabe), Rückfall auf ältere Benutzeroberfläche"
+  },
+  "Resume chat log": {
+    "zh": "恢复聊天记录",
+    "ja": "チャット履歴を再開",
+    "ko": "채팅 기록 재개",
+    "fr": "Reprendre le journal de chat",
+    "de": "Chat-Protokoll fortsetzen"
+  },
+  "Resume previous chat log": {
+    "zh": "恢复上一个聊天记录",
+    "ja": "前回のチャット履歴を再開",
+    "ko": "이전 채팅 기록 재개",
+    "fr": "Reprendre le journal de chat précédent",
+    "de": "Vorheriges Chat-Protokoll fortsetzen"
+  },
+  "Resumed chat:": {
+    "zh": "已恢复聊天：",
+    "ja": "再開されたチャット:",
+    "ko": "재개된 채팅:",
+    "fr": "Chat repris :",
+    "de": "Fortgesetzter Chat:"
+  },
+  "Reveal in file manager: ${rightClickedNode.path}": {
+    "zh": "在文件管理器中显示：${rightClickedNode.path}",
+    "ja": "ファイルマネージャーで表示: ${rightClickedNode.path}",
+    "ko": "파일 관리자에서 보기: ${rightClickedNode.path}",
+    "fr": "Révéler dans le gestionnaire de fichiers : ${rightClickedNode.path}",
+    "de": "Im Dateimanager anzeigen: ${rightClickedNode.path}"
+  },
+  "Select Chat Log to Resume": {
+    "zh": "选择要恢复的聊天记录",
+    "ja": "再開するチャット履歴を選択",
+    "ko": "재개할 채팅 기록 선택",
+    "fr": "Sélectionner le journal de chat à reprendre",
+    "de": "Chat-Protokoll zum Fortsetzen auswählen"
+  },
+  "Show detailed info for a specific tool": {
+    "zh": "显示特定工具的详细信息",
+    "ja": "特定のツールの詳細情報を表示",
+    "ko": "특정 도구에 대한 상세 정보 표시",
+    "fr": "Afficher les informations détaillées d'un outil spécifique",
+    "de": "Detaillierte Informationen für ein bestimmtes Werkzeug anzeigen"
+  },
+  "Start a conversation to create chat logs": {
+    "zh": "开始对话以创建聊天记录",
+    "ja": "チャット履歴を作成するために会話を開始",
+    "ko": "채팅 기록을 생성하려면 대화 시작",
+    "fr": "Démarrer une conversation pour créer des journaux de chat",
+    "de": "Eine Unterhaltung starten, um Chat-Protokolle zu erstellen"
+  },
+  "Submit input or select suggestion": {
+    "zh": "提交输入或选择建议",
+    "ja": "入力を送信または候補を選択",
+    "ko": "입력 제출 또는 제안 선택",
+    "fr": "Soumettre l'entrée ou sélectionner une suggestion",
+    "de": "Eingabe senden oder Vorschlag auswählen"
+  },
+  "Suggestions automatically add space for parameters": {
+    "zh": "建议自动为参数添加空格",
+    "ja": "候補は自動的にパラメータのスペースを追加します",
+    "ko": "제안은 자동으로 매개변수 공간을 추가합니다",
+    "fr": "Les suggestions ajoutent automatiquement un espace pour les paramètres",
+    "de": "Vorschläge fügen automatisch Leerzeichen für Parameter hinzu"
+  },
+  "System:": {
+    "zh": "系统：",
+    "ja": "システム:",
+    "ko": "시스템:",
+    "fr": "Système :",
+    "de": "System:"
+  },
+  "Tab key: Auto-complete and select with cursor at end": {
+    "zh": "Tab 键：自动补全并在末尾选择光标",
+    "ja": "Tabキー: オートコンプリートとカーソルを末尾に置いて選択",
+    "ko": "Tab 키: 자동 완성 및 커서를 끝에 두고 선택",
+    "fr": "Touche Tab : Complétion automatique et sélection avec le curseur à la fin",
+    "de": "Tab-Taste: Automatisch vervollständigen und auswählen, Cursor am Ende"
+  },
+  "Task is disabled": {
+    "zh": "任务已禁用",
+    "ja": "タスクは無効です",
+    "ko": "작업이 비활성화됨",
+    "fr": "La tâche est désactivée",
+    "de": "Aufgabe ist deaktiviert"
+  },
+  "Task triggered successfully": {
+    "zh": "任务触发成功",
+    "ja": "タスクが正常にトリガーされました",
+    "ko": "작업이 성공적으로 트리거됨",
+    "fr": "Tâche déclenchée avec succès",
+    "de": "Aufgabe erfolgreich ausgelöst"
+  },
+  "Tool call failed:": {
+    "zh": "工具调用失败：",
+    "ja": "ツール呼び出し失敗:",
+    "ko": "도구 호출 실패:",
+    "fr": "Échec de l'appel de l'outil :",
+    "de": "Werkzeugaufruf fehlgeschlagen:"
+  },
+  "Tool completed": {
+    "zh": "工具已完成",
+    "ja": "ツール完了",
+    "ko": "도구 완료됨",
+    "fr": "Outil terminé",
+    "de": "Werkzeug abgeschlossen"
+  },
+  "Tool completed:": {
+    "zh": "工具已完成：",
+    "ja": "ツール完了:",
+    "ko": "도구 완료됨:",
+    "fr": "Outil terminé :",
+    "de": "Werkzeug abgeschlossen:"
+  },
+  "Tool error:": {
+    "zh": "工具错误：",
+    "ja": "ツールエラー:",
+    "ko": "도구 오류:",
+    "fr": "Erreur de l'outil :",
+    "de": "Werkzeugfehler:"
+  },
+  "Tool executing...": {
+    "zh": "工具执行中...",
+    "ja": "ツール実行中...",
+    "ko": "도구 실행 중...",
+    "fr": "Exécution de l'outil...",
+    "de": "Werkzeug wird ausgeführt..."
+  },
+  "Tool executing:": {
+    "zh": "工具执行中：",
+    "ja": "ツール実行中:",
+    "ko": "도구 실행 중:",
+    "fr": "Exécution de l'outil :",
+    "de": "Werkzeug wird ausgeführt:"
+  },
+  "Tool failed": {
+    "zh": "工具失败",
+    "ja": "ツール失敗",
+    "ko": "도구 실패",
+    "fr": "Échec de l'outil",
+    "de": "Werkzeug fehlgeschlagen"
+  },
+  "Tool loading:": {
+    "zh": "工具加载中：",
+    "ja": "ツール読み込み中:",
+    "ko": "도구 로드 중:",
+    "fr": "Chargement de l'outil :",
+    "de": "Werkzeug wird geladen:"
+  },
+  "Tool not found:": {
+    "zh": "未找到工具：",
+    "ja": "ツールが見つかりません:",
+    "ko": "도구를 찾을 수 없음:",
+    "fr": "Outil introuvable :",
+    "de": "Werkzeug nicht gefunden:"
+  },
+  "Tool result:": {
+    "zh": "工具结果：",
+    "ja": "ツールの結果:",
+    "ko": "도구 결과:",
+    "fr": "Résultat de l'outil :",
+    "de": "Werkzeugergebnis:"
+  },
+  "Tool:": {
+    "zh": "工具：",
+    "ja": "ツール:",
+    "ko": "도구:",
+    "fr": "Outil :",
+    "de": "Werkzeug:"
+  },
+  "Total messages in selected:": {
+    "zh": "已选消息总数：",
+    "ja": "選択中のメッセージ合計:",
+    "ko": "선택된 총 메시지 수:",
+    "fr": "Messages totaux sélectionnés :",
+    "de": "Nachrichten insgesamt ausgewählt:"
+  },
+  "Trigger": {
+    "zh": "触发",
+    "ja": "トリガー",
+    "ko": "트리거",
+    "fr": "Déclencher",
+    "de": "Auslösen"
+  },
+  "Trigger Now": {
+    "zh": "立即触发",
+    "ja": "今すぐトリガー",
+    "ko": "지금 트리거",
+    "fr": "Déclencher maintenant",
+    "de": "Jetzt auslösen"
+  },
+  "Trigger Task": {
+    "zh": "触发任务",
+    "ja": "タスクをトリガー",
+    "ko": "작업 트리거",
+    "fr": "Déclencher la tâche",
+    "de": "Aufgabe auslösen"
+  },
+  "Type your message... (↑↓: history, Tab: complete)": {
+    "zh": "输入您的消息... (↑↓: 历史记录, Tab: 补全)",
+    "ja": "メッセージを入力... (↑↓: 履歴, Tab: 補完)",
+    "ko": "메시지를 입력하세요... (↑↓: 기록, Tab: 자동 완성)",
+    "fr": "Tapez votre message... (↑↓: historique, Tab: compléter)",
+    "de": "Nachricht eingeben... (↑↓: Verlauf, Tab: vervollständigen)"
+  },
+  "UI style: legacy|ink (default: ink)": {
+    "zh": "UI 样式：传统|水墨 (默认：水墨)",
+    "ja": "UIスタイル: legacy|ink (デフォルト: ink)",
+    "ko": "UI 스타일: 레거시|잉크 (기본값: 잉크)",
+    "fr": "Style d'interface utilisateur : legacy|ink (par défaut : ink)",
+    "de": "UI-Stil: legacy|ink (Standard: ink)"
+  },
+  "Use /tools to see all available tools": {
+    "zh": "使用 /tools 查看所有可用工具",
+    "ja": "/tools を使用して利用可能なすべてのツールを表示します",
+    "ko": "/tools를 사용하여 사용 가능한 모든 도구를 확인하세요",
+    "fr": "Utilisez /tools pour voir tous les outils disponibles",
+    "de": "Verwenden Sie /tools, um alle verfügbaren Werkzeuge anzuzeigen"
+  },
+  "Use ↑↓ to navigate, Enter to select, Esc to cancel": {
+    "zh": "使用 ↑↓ 导航，Enter 键选择，Esc 键取消",
+    "ja": "↑↓で移動、Enterで選択、Escでキャンセル",
+    "ko": "↑↓로 이동, Enter로 선택, Esc로 취소",
+    "fr": "Utilisez ↑↓ pour naviguer, Entrée pour sélectionner, Échap pour annuler",
+    "de": "Verwenden Sie ↑↓ zum Navigieren, Enter zum Auswählen, Esc zum Abbrechen"
+  },
+  "Use ↑↓ to navigate, Tab/Enter to select file/folder, Esc to close": {
+    "zh": "使用 ↑↓ 导航，Tab/Enter 键选择文件/文件夹，Esc 键关闭",
+    "ja": "↑↓で移動、Tab/Enterでファイル/フォルダーを選択、Escで閉じる",
+    "ko": "↑↓로 이동, Tab/Enter로 파일/폴더 선택, Esc로 닫기",
+    "fr": "Utilisez ↑↓ pour naviguer, Tab/Entrée pour sélectionner un fichier/dossier, Échap pour fermer",
+    "de": "Verwenden Sie ↑↓ zum Navigieren, Tab/Enter zum Auswählen von Datei/Ordner, Esc zum Schließen"
+  },
+  "Use ↑↓ to navigate, Tab/Enter to select with space, Esc to close": {
+    "zh": "使用 ↑↓ 导航，Tab/Enter 键选择（带空格），Esc 键关闭",
+    "ja": "↑↓で移動、Tab/Enterでスペースを選択、Escで閉じる",
+    "ko": "↑↓로 이동, Tab/Enter로 공백과 함께 선택, Esc로 닫기",
+    "fr": "Utilisez ↑↓ pour naviguer, Tab/Entrée pour sélectionner avec espace, Échap pour fermer",
+    "de": "Verwenden Sie ↑↓ zum Navigieren, Tab/Enter zum Auswählen mit Leerzeichen, Esc zum Schließen"
+  },
+  "Yesterday": {
+    "zh": "昨天",
+    "ja": "昨日",
+    "ko": "어제",
+    "fr": "Hier",
+    "de": "Gestern"
+  },
+  "agent default:": {
+    "zh": "代理默认：",
+    "ja": "エージェントのデフォルト:",
+    "ko": "에이전트 기본값:",
+    "fr": "agent par défaut :",
+    "de": "Agent Standard:"
+  },
+  "available": {
+    "zh": "可用",
+    "ja": "利用可能",
+    "ko": "사용 가능",
+    "fr": "disponible",
+    "de": "verfügbar"
+  },
+  "configured": {
+    "zh": "已配置",
+    "ja": "設定済み",
+    "ko": "구성됨",
+    "fr": "configuré",
+    "de": "konfiguriert"
+  },
+  "from agent config": {
+    "zh": "来自代理配置",
+    "ja": "エージェント設定から",
+    "ko": "에이전트 구성에서",
+    "fr": "depuis la configuration de l'agent",
+    "de": "aus Agentenkonfiguration"
+  },
+  "messages": {
+    "zh": "消息",
+    "ja": "メッセージ",
+    "ko": "메시지",
+    "fr": "messages",
+    "de": "Nachrichten"
+  },
+  "total": {
+    "zh": "总计",
+    "ja": "合計",
+    "ko": "총계",
+    "fr": "total",
+    "de": "Gesamt"
+  },
+  "↑↓ keys: Navigate suggestions or input history": {
+    "zh": "↑↓ 键：导航建议或输入历史",
+    "ja": "↑↓キー: 候補または入力履歴を移動",
+    "ko": "↑↓ 키: 제안 또는 입력 기록 탐색",
+    "fr": "Touches ↑↓ : Naviguer dans les suggestions ou l'historique de saisie",
+    "de": "↑↓ Tasten: Vorschläge oder Eingabeverlauf navigieren"
+  },
+  " to your environment configuration.": {
+    "zh": " 到您的环境配置。",
+    "ja": "を環境設定に追加します。",
+    "ko": " 환경 구성에.",
+    "fr": " à la configuration de votre environnement.",
+    "de": " zu Ihrer Umgebungskonfiguration."
+  },
+  "Reveal in file manager:": {
+    "zh": "在文件管理器中显示：",
+    "ja": "ファイルマネージャーで表示:",
+    "ko": "파일 관리자에서 보기:",
+    "fr": "Afficher dans le gestionnaire de fichiers :",
+    "de": "Im Dateimanager anzeigen:"
   }
 }

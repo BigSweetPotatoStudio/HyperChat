@@ -151,7 +151,7 @@ export function FileTreeComponent({
         break;
       case 'reveal':
         // 可以在这里添加在文件管理器中显示的逻辑
-        message.info(t`Reveal in file manager: ${rightClickedNode.path}`);
+        message.info(`${t`Reveal in file manager:`} ${rightClickedNode.path}`);
         break;
       default:
         break;
