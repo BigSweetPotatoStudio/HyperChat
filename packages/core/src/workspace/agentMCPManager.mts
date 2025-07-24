@@ -14,6 +14,7 @@ import { WorkspaceMCPClientImpl } from "./mcp/client.mjs";
 import type { MCPServerConfig } from "@dadigua/hyperchat-shared/types";
 import { Logger } from "../log.mjs";
 import { CONSTANTS } from "./constants.mjs";
+import { WorkSpaceServers } from "../mcp/servers/index.mjs";
 
 /**
  * 扩展MCP配置，添加来源路径信息
@@ -64,22 +65,79 @@ export class AgentMCPManager {
       // 加载Agent的MCP配置
       await this.loadAgentConfig();
 
-      if (!this.agentConfig || !this.agentConfig.mcpServers) {
-        Logger.info(`Agent ${path.basename(this.agentPath)} 没有MCP配置`);
-        return [];
+      const clients: WorkspaceMCPClientImpl[] = [];
+      const tasks: Promise<void>[] = [];
+
+      // 1. 启动内置服务器
+      const builtinServers = [...WorkSpaceServers];
+      Logger.info(`Agent ${path.basename(this.agentPath)} 准备启动 ${builtinServers.length} 个内置服务器`);
+
+      for (const server of builtinServers) {
+        // 检查配置文件中是否有对内置服务器的disabled设置
+        const userServerConfig = this.agentConfig?.mcpServers[server.name];
+        const isDisabled = userServerConfig?.disabled || false;
+
+        // 内置服务器配置
+        const serverConfig: MCPServerConfig = {
+          type: "inMemory",
+          disabled: false,
+        };
+
+        const clientId = server.name;
+
+        // 如果客户端已存在，跳过
+        if (this.clients.has(clientId)) {
+          clients.push(this.clients.get(clientId)!);
+          continue;
+        }
+
+        const client = new WorkspaceMCPClientImpl(
+          server.name,
+          serverConfig,
+          "workspace", // 内置服务器始终是 workspace scope
+          0, // order简化为0
+          {
+            mcpType: "builtin",
+            workspacePath: this.agentPath,
+            globalPath: this.agentPath,
+            createServer: server.createServer
+          }
+        );
+
+        this.clients.set(clientId, client);
+        clients.push(client);
+
+        // 只有非禁用的客户端才启动连接
+        if (!isDisabled) {
+          tasks.push(this.startClient(client, clientId));
+        } else {
+          // 禁用的客户端设置为disabled状态
+          client.status = "disabled";
+        }
       }
 
-      // 启动所有未禁用的服务器
-      const startPromises = Object.entries(this.agentConfig.mcpServers).map(async ([name, serverConfig]) => {
-        if (!serverConfig.disabled) {
-          await this.startSingleClient(name, serverConfig);
-        }
-      });
+      // 2. 启动自定义服务器
+      if (this.agentConfig && this.agentConfig.mcpServers) {
+        const customStartPromises = Object.entries(this.agentConfig.mcpServers).map(async ([name, serverConfig]) => {
+          // 跳过内置服务器（已在上面处理）
+          const isBuiltinServer = builtinServers.some(builtin => builtin.name === name);
+          if (isBuiltinServer) {
+            return;
+          }
 
-      await Promise.all(startPromises);
+          if (!serverConfig.disabled) {
+            await this.startSingleClient(name, serverConfig);
+            clients.push(this.clients.get(name)!);
+          }
+        });
 
-      const clients = Array.from(this.clients.values());
-      Logger.info(`Agent ${path.basename(this.agentPath)} 启动了 ${clients.length} 个MCP客户端`);
+        tasks.push(...customStartPromises);
+      }
+
+      // 等待所有客户端启动完成
+      await Promise.allSettled(tasks);
+
+      Logger.info(`Agent ${path.basename(this.agentPath)} 启动了 ${clients.length} 个MCP客户端（${builtinServers.length} 个内置 + ${clients.length - builtinServers.length} 个自定义）`);
       return clients;
     } catch (error) {
       Logger.error(`Agent ${path.basename(this.agentPath)} 启动MCP客户端失败:`, error);
@@ -115,6 +173,52 @@ export class AgentMCPManager {
     }
   }
 
+
+  /**
+   * 启动单个内置MCP客户端
+   */
+  private async startSingleBuiltinClient(name: string, serverConfig: MCPServerConfig): Promise<void> {
+    try {
+      const clientId = name;
+
+      // 如果客户端已存在，先停止它
+      if (this.clients.has(clientId)) {
+        await this.stopClient(name);
+      }
+
+      // 获取服务器配置
+      const builtinServers = [...WorkSpaceServers];
+      const builtinServer = builtinServers.find(server => server.name === name);
+
+      if (!builtinServer) {
+        throw new Error(`未找到内置服务器: ${name}`);
+      }
+
+      // 创建新的内置客户端
+      const client = new WorkspaceMCPClientImpl(
+        name,
+        serverConfig,
+        "workspace", // 内置服务器始终是 workspace scope
+        0, // order简化为0
+        {
+          mcpType: "builtin",
+          workspacePath: this.agentPath,
+          globalPath: this.agentPath,
+          createServer: builtinServer.createServer
+        }
+      );
+
+      this.clients.set(clientId, client);
+
+      // 启动客户端
+      await this.startClient(client, clientId);
+
+      Logger.info(`Agent 内置客户端 ${clientId} 重启完成`);
+    } catch (error) {
+      Logger.error(`启动Agent 内置MCP客户端失败 [${name}]:`, error);
+      throw error;
+    }
+  }
 
   /**
    * 启动MCP客户端
@@ -333,10 +437,33 @@ export class AgentMCPManager {
   async restartClient(name: string): Promise<void> {
     await this.stopClient(name);
 
-    if (this.agentConfig && this.agentConfig.mcpServers[name]) {
-      const serverConfig = this.agentConfig.mcpServers[name];
-      if (!serverConfig.disabled) {
-        await this.startSingleClient(name, serverConfig);
+    // 检查是否是内置服务器
+    const builtinServers = [...WorkSpaceServers];
+    const builtinServer = builtinServers.find(server => server.name === name);
+
+    if (builtinServer) {
+      // 内置服务器：使用内置服务器配置
+      Logger.info(`重启Agent内置客户端 ${name}`);
+
+      // 检查配置文件中是否有对内置服务器的disabled设置
+      const userServerConfig = this.agentConfig?.mcpServers[name];
+      const isDisabled = userServerConfig?.disabled || false;
+
+      if (!isDisabled) {
+        const serverConfig: MCPServerConfig = {
+          type: "inMemory",
+          disabled: false,
+        };
+
+        await this.startSingleBuiltinClient(name, serverConfig);
+      }
+    } else {
+      // 自定义服务器：从配置文件中获取配置
+      if (this.agentConfig && this.agentConfig.mcpServers[name]) {
+        const serverConfig = this.agentConfig.mcpServers[name];
+        if (!serverConfig.disabled) {
+          await this.startSingleClient(name, serverConfig);
+        }
       }
     }
   }
