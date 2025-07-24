@@ -80,8 +80,8 @@ export async function streamChatCompletion(params: ChatCompletionRequest): Promi
     }
 
     // console.log("Using Agent:", agentName, "agent:", agent);
-    // 合并配置
-    const effectiveConfig = buildEffectiveConfig(configOverrides, agent?.getConfig(), workspace.getSettings().aiConfig, aiSettings);
+    // 合并配置（移除工作区AI配置）
+    const effectiveConfig = buildEffectiveConfig(configOverrides, agent?.getConfig(), undefined, aiSettings);
     // console.log("Effective AI Config:", effectiveConfig);
     // 创建 AI 通道
     const aiChannel = new AiChannel({}, [...messages]);

@@ -14,20 +14,6 @@ export {
   validateWorkspaceSettings
 } from "./types.mjs";
 
-// 导出设置相关
-export {
-  WorkspaceSettingsManager,
-  WorkspaceSettingsSchema,
-  DEFAULT_WORKSPACE_SETTINGS
-} from "../data/managers/workspaceSettingsManager.mjs";
-
-export type {
-  WorkspaceSettings as WorkspaceDetailedSettings,
-  WorkspaceAppearanceSettings,
-  WorkspaceEditorSettings,
-  WorkspaceDefaultAISettings,
-  WorkspaceAdvancedSettings
-} from "@dadigua/hyperchat-shared";
 
 // 导出数据列表管理类
 export { DataList } from "./dataList.mjs";

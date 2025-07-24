@@ -37,14 +37,12 @@ import {
 } from "./types";
 import { getPanelSizes, savePanelSizes, getWorkspaceHistory, addToWorkspaceHistory, removeFromWorkspaceHistory, addAgentRecentUsage } from "../../utils/storage";
 import { AgentConfig, MessageData, MessageDataMap } from "@dadigua/hyperchat-shared";
-import { WorkspaceSettingsSchema } from "@dadigua/hyperchat-shared";
 import { AppSettingsSchema, MCPGatewaySchema } from "@dadigua/hyperchat-shared";
 import type { z } from "zod";
 import { ProviderSettings } from "../../components/ProviderSettings";
 import { AppHeader } from "../../components/AppHeader";
 import { AppActions } from "../../components/AppActions";
 
-import { WorkspaceSettings } from "../../components/WorkspaceSettings";
 import { AppSettings } from "../../components/AppSettings";
 import { MCPGatewaysSettings } from "../../components/MCPGatewaysSettings";
 
@@ -70,7 +68,6 @@ export function Workspace() {
   const [drawerStates, setDrawerStates] = useState({
     modelConfig: false,
     appSettings: false,
-    workspaceSettings: false,
     mcpGateways: false,
   });
 
@@ -91,8 +88,6 @@ export function Workspace() {
   const [showHiddenFiles, setShowHiddenFiles] = useState(true);
   const [workspaceHistory, setWorkspaceHistory] = useState<WorkspaceHistoryItem[]>(() => getWorkspaceHistory());
   // 设置相关状态
-  const [currentSettingsWorkspace, setCurrentSettingsWorkspace] = useState<WorkspaceInfo | null>(null);
-  const [workspaceSettings, setWorkspaceSettings] = useState<z.infer<typeof WorkspaceSettingsSchema> | null>(null);
   const [appSettings, setAppSettings] = useState<z.infer<typeof AppSettingsSchema> | null>(null);
   const [globalWorkspacePath, setGlobalWorkspacePath] = useState<string>('unknown'); // 全局工作区路径
   const [form] = Form.useForm();

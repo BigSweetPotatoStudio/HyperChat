@@ -39,10 +39,6 @@
       "types": "./dist/jsonSchemas/appSettingsSchema.d.mts",
       "import": "./dist/jsonSchemas/appSettingsSchema.mjs"
     },
-    "./jsonSchemas/workspaceSettingsSchema": {
-      "types": "./dist/jsonSchemas/workspaceSettingsSchema.d.mts",
-      "import": "./dist/jsonSchemas/workspaceSettingsSchema.mjs"
-    },
     "./i18n": {
       "types": "./dist/i18n/index.d.mts",
       "import": "./dist/i18n/index.mjs"

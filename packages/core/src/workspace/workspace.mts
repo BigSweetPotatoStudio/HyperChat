@@ -11,7 +11,6 @@ import {
 import type { ChatHistoryItem } from "@dadigua/hyperchat-shared/types";
 import { AgentManager } from "./agentManager.mjs";
 import { AgentInstance } from "./agentInstance.mjs";
-import { WorkspaceSettingsManager } from "../data/managers/workspaceSettingsManager.mjs";
 import { Logger } from "../log.mjs";
 
 /**
@@ -36,7 +35,6 @@ export enum WorkspaceState {
 export class Workspace {
   private config: WorkspaceConfig;
   private agentManager: AgentManager;
-  private settingsManager: WorkspaceSettingsManager;
   private fileTree?: WorkspaceFileNode;
   private lastSync?: number;
   private readonly HYPERCHAT_DIR = CONSTANTS.HYPERCHAT_DIR;
@@ -67,14 +65,6 @@ export class Workspace {
 
     this.agentManager = new AgentManager(agentPaths);
 
-    // 初始化设置管理器
-    // 如果是本地工作区，传入本地和全局路径，实现配置叠加
-    // 如果是全局工作区，只传入本地路径
-    const settingsLocalPath = hyperChatPath;
-    const settingsGlobalPath = this.isLocalWorkspace()
-      ? path.join(CONSTANTS.GLOBAL_PATH, this.HYPERCHAT_DIR)
-      : undefined;
-    this.settingsManager = new WorkspaceSettingsManager(settingsLocalPath, settingsGlobalPath);
   }
 
   /**
@@ -137,8 +127,6 @@ export class Workspace {
       // 不创建目录结构，采用懒加载模式：只有需要时才创建
       // await this.createDirectories();
 
-      // 初始化设置管理器（不自动创建配置文件）
-      await this.settingsManager.init();
 
       // 加载工作区基本配置（不启动服务）
       await this.loadMergedConfig();
@@ -256,62 +244,19 @@ export class Workspace {
    * 从settings.jsonc加载工作区元数据
    */
   private async loadMergedConfig(): Promise<void> {
-    await this.loadWorkspaceMetaFromSettings();
+    // 简化配置加载，使用默认配置
+    this.config.settings = {
+      defaultAgent: undefined,
+    };
   }
 
   /**
-   * 从settingsManager加载工作区元数据
-   */
-  private async loadWorkspaceMetaFromSettings(): Promise<void> {
-    try {
-      // 确保工作区元数据已初始化
-      await this.settingsManager.initializeWorkspaceMetadata(
-        this.config.name,
-        this.config.description
-      );
-
-      // 从settingsManager获取工作区元数据
-      const metadata = this.settingsManager.getWorkspaceMetadata();
-      if (metadata) {
-        this.config.name = metadata.name || this.config.name;
-        this.config.description = metadata.description;
-        this.config.created = metadata.created || 0;
-      }
-
-      // 从DefaultAI设置映射到WorkspaceSettings
-      const aiSettings = this.settingsManager.getDefaultAI();
-      this.config.settings = {
-        defaultAgent: aiSettings.defaultAgent,
-      };
-    } catch (error) {
-      console.warn('从settings加载工作区元数据失败:', error);
-    }
-  }
-
-
-  /**
-   * 保存工作区配置到settings.jsonc
+   * 保存工作区配置（简化版，不再使用settings.jsonc）
    */
   async saveConfig(): Promise<void> {
-    try {
-      // 更新工作区元数据
-      await this.settingsManager.updateWorkspaceMetadata({
-        name: this.config.name,
-        description: this.config.description,
-        created: this.config.created,
-      });
-
-      // 同步AI设置
-      if (this.config.settings?.defaultAgent) {
-        const aiUpdates: any = {};
-        if (this.config.settings.defaultAgent) {
-          aiUpdates.defaultAgent = this.config.settings.defaultAgent;
-        }
-        await this.settingsManager.updateDefaultAI(aiUpdates);
-      }
-    } catch (error) {
-      console.warn(`保存工作区配置失败:`, error);
-    }
+    // 由于移除了工作区设置系统，这里保持空实现
+    // 工作区配置现在主要通过envManage来管理
+    Logger.info("工作区配置保存已简化，使用envManage进行环境变量管理");
   }
 
 
@@ -663,26 +608,6 @@ export class Workspace {
     return fs.existsSync(this.getHyperChatPath());
   }
 
-  /**
-   * 获取设置管理器
-   */
-  getSettingsManager(): WorkspaceSettingsManager {
-    return this.settingsManager;
-  }
-
-  /**
-   * 获取设置
-   */
-  getSettings() {
-    return this.settingsManager.getSettings();
-  }
-
-  /**
-   * 更新设置
-   */
-  async updateSettings(updates: Parameters<WorkspaceSettingsManager['updateSettings']>[0]) {
-    return this.settingsManager.updateSettings(updates);
-  }
 
   /**
    * 获取工作区信息摘要

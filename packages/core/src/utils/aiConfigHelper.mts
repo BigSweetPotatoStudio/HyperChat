@@ -125,12 +125,11 @@ export async function initializeAIEnvironment(options: {
   const appSettings = await Command.getAppSettings();
   const aiSettings = appSettings.ai;
 
-  const workspaceSettings = workspace.getSettings();
-  const workspaceAIConfig = workspaceSettings?.aiConfig;
+  // 工作区设置已移除，现在使用envManage进行环境变量管理
   const agentConfig = agent.getConfig();
 
-  // 构建有效配置
-  const effectiveConfig = buildEffectiveConfig(options.configOverrides || {}, agentConfig, workspaceAIConfig, aiSettings);
+  // 构建有效配置（移除工作区AI配置）
+  const effectiveConfig = buildEffectiveConfig(options.configOverrides || {}, agentConfig, undefined, aiSettings);
 
 
   // 获取 MCP 工具（如果需要的话） - Agent-centered版本
@@ -207,8 +206,6 @@ export function logAIConfig(logger: typeof Logger, env: AIEnvironment): void {
   
   if (agentConfig && env.effectiveConfig.modelKey === agentConfig.modelKey) {
     logger.info(`📋 使用Agent配置的AI模型: ${env.effectiveConfig.modelKey}`);
-  } else if (env.workspace?.getSettings()?.aiConfig?.modelKey === env.effectiveConfig.modelKey) {
-    logger.info(`📋 使用工作区配置的AI模型: ${env.effectiveConfig.modelKey}`);
   } else {
     logger.info(`📋 使用默认AI模型: ${env.effectiveConfig.modelKey}`);
   }
