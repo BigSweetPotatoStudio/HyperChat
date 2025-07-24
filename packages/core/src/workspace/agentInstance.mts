@@ -11,6 +11,7 @@ import { AgentConfig, ChatHistoryItem } from "@dadigua/hyperchat-shared";
 import type { MCPServerConfig } from "@dadigua/hyperchat-shared/types";
 import type { Task } from "@dadigua/hyperchat-shared";
 import type { WorkspaceMCPConfig } from "./mcp/types.mjs";
+import { AgentMCPManager } from "./agentMCPManager.mjs";
 
 /**
  * Agent 类 - 管理单个 Agent 的配置和聊天记录
@@ -23,6 +24,7 @@ export class AgentInstance {
   private mcpConfigPath: string;
   private tasksPath: string;
   private initialized: boolean = false;
+  private mcpManager: AgentMCPManager | null = null; // Agent专属MCP管理器
 
   constructor(agentPath: string, config?: AgentConfig) {
     this.agentPath = agentPath;
@@ -270,6 +272,15 @@ export class AgentInstance {
    */
   async delete(): Promise<boolean> {
     try {
+      // 先停止MCP客户端
+      await this.stopMCPClients();
+      
+      // 清理MCP管理器
+      if (this.mcpManager) {
+        await this.mcpManager.destroy();
+        this.mcpManager = null;
+      }
+      
       if (fs.existsSync(this.agentPath)) {
         // 递归删除整个Agent目录，包括:
         // - agent.yaml (Agent配置)
@@ -383,6 +394,92 @@ export class AgentInstance {
       console.warn(`删除Agent MCP配置失败 ${this.config.name}:`, error);
       return false;
     }
+  }
+
+  // ==================== Agent专属MCP客户端管理 ====================
+
+  /**
+   * 获取或创建Agent专属MCP管理器
+   */
+  private getMCPManager(): AgentMCPManager {
+    if (!this.mcpManager) {
+      this.mcpManager = new AgentMCPManager(
+        this.agentPath,
+        {
+          autoReconnect: true,
+          reconnectInterval: 5000,
+          maxReconnectAttempts: 3,
+          enableLogging: true,
+        },
+        {
+          onClientStatusChange: (client) => {
+            console.log(`Agent ${this.config.name} MCP客户端状态变化: ${client.serverName} -> ${client.status}`);
+          },
+          onConfigUpdate: (config) => {
+            console.log(`Agent ${this.config.name} MCP配置更新`);
+          },
+          onError: (error, context) => {
+            console.error(`Agent ${this.config.name} MCP错误:`, error, context);
+          },
+        }
+      );
+    }
+    return this.mcpManager;
+  }
+
+  /**
+   * 启动Agent专属MCP客户端
+   */
+  async startMCPClients(): Promise<void> {
+    const mcpManager = this.getMCPManager();
+    await mcpManager.startClients();
+  }
+
+  /**
+   * 停止Agent专属MCP客户端
+   */
+  async stopMCPClients(): Promise<void> {
+    if (this.mcpManager) {
+      await this.mcpManager.stopClients();
+    }
+  }
+
+  /**
+   * 获取Agent的MCP客户端列表
+   */
+  getMCPClients() {
+    return this.mcpManager ? this.mcpManager.getClients() : [];
+  }
+
+  /**
+   * 获取指定MCP客户端
+   */
+  getMCPClient(name: string) {
+    return this.mcpManager ? this.mcpManager.getClient(name) : undefined;
+  }
+
+  /**
+   * 重启指定MCP客户端
+   */
+  async restartMCPClient(name: string): Promise<void> {
+    const mcpManager = this.getMCPManager();
+    await mcpManager.restartClient(name);
+  }
+
+  /**
+   * 设置MCP服务器配置
+   */
+  async setMCPServerConfig(name: string, serverConfig: MCPServerConfig): Promise<void> {
+    const mcpManager = this.getMCPManager();
+    await mcpManager.setServerConfig(name, serverConfig);
+  }
+
+  /**
+   * 删除MCP服务器配置
+   */
+  async deleteMCPServerConfig(name: string): Promise<void> {
+    const mcpManager = this.getMCPManager();
+    await mcpManager.deleteServerConfig(name);
   }
 
   // ==================== Agent专属任务管理 ====================
@@ -564,5 +661,46 @@ export class AgentInstance {
   async getTasksCount(): Promise<number> {
     const tasks = await this.getTasks();
     return tasks.length;
+  }
+
+  // ==================== Agent专属任务调度 ====================
+
+  /**
+   * 启动Agent专属任务调度器
+   */
+  async startTaskScheduler(): Promise<void> {
+    const tasks = await this.getTasks();
+    const enabledTasks = tasks.filter(task => !task.disabled);
+    
+    if (enabledTasks.length === 0) {
+      return; // 没有启用的任务，跳过
+    }
+
+    // TODO: 实现Agent级别的任务调度逻辑
+    // 这里需要基于tasks启动对应的定时任务
+    // 参考workspace中的任务调度器实现
+    console.log(`启动Agent ${this.config.name} 的任务调度器:`, enabledTasks.map(t => t.name));
+  }
+
+  /**
+   * 停止Agent专属任务调度器
+   */
+  async stopTaskScheduler(): Promise<void> {
+    // TODO: 实现Agent级别的任务调度器停止逻辑
+    console.log(`停止Agent ${this.config.name} 的任务调度器`);
+  }
+
+  /**
+   * 执行单个任务
+   */
+  async executeTask(taskName: string): Promise<void> {
+    const task = await this.getTask(taskName);
+    if (!task) {
+      throw new Error(`任务不存在: ${taskName}`);
+    }
+
+    // TODO: 实现Agent级别的任务执行逻辑
+    // 这里需要基于task.prompt执行对应的AI对话
+    console.log(`执行Agent ${this.config.name} 的任务:`, task.name, task.description);
   }
 }
