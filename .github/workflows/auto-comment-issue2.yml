@@ -148,7 +148,7 @@ jobs:
           2. **第二步**：基于学到的知识分析Issue
           3. **第三步**：执行 \`gh issue comment\` 命令发布专业回复
           4. **第四步**：执行 \`gh issue edit --add-label\` 命令添加2-4个最相关标签
-          5. **必须**：确保所有命令都能成功执行，回复内容要体现对项目的深度理解
+          5. **必须**：确保所有命令都能成功执行，回复内容要体现对项目的深度理解"
 
           # 使用 HyperChat 进行分析和回复
           npx @dadigua/hyperchat@latest "$ANALYSIS_PROMPT"
