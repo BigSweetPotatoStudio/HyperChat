@@ -29,6 +29,7 @@
   "dependencies": {
     "@ai-sdk/openai-compatible": "0.2.16",
     "@dadigua/hyperchat-shared": "file:../shared",
+    "@inkjs/ui": "2.0.0",
     "@types/marked": "5.0.2",
     "@types/react": "19.1.8",
     "adm-zip": "^0.5.14",

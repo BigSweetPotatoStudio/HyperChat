@@ -80,6 +80,7 @@ export const ChatUI: React.FC<ChatUIProps> = ({ onUserInput, onExit, onCancel, o
   const [isThinking, setIsThinking] = useState(false);
   const [showInput, setShowInput] = useState(true);
   const [isCancelling, setIsCancelling] = useState(false); // 取消状态
+  const [inputKey, setInputKey] = useState(0); // 用于强制重新渲染TextInput
   
   // 输入历史相关状态
   const [inputHistory, setInputHistory] = useState<string[]>([]);
@@ -210,11 +211,40 @@ export const ChatUI: React.FC<ChatUIProps> = ({ onUserInput, onExit, onCancel, o
   const selectSuggestion = () => {
     if (showSuggestions && filteredCommands[suggestionIndex]) {
       const selectedCommand = filteredCommands[suggestionIndex].command;
-      // 为所有命令添加空格，简化逻辑，光标自然会在末尾
+      // Tab键选择：为所有命令添加空格，强制光标在末尾
       const finalInput = selectedCommand + ' ';
-      setInput(finalInput);
       setShowSuggestions(false);
+      // 强制重新渲染TextInput以确保光标在末尾
+      setInput(finalInput);
+      setInputKey(prev => prev + 1);
       return true;
+    }
+    return false;
+  };
+
+  // Tab键建议补全功能
+  const handleTabSuggestion = () => {
+    if (showSuggestions && filteredCommands.length > 0) {
+      // 如果有候选框，选择当前高亮的命令
+      return selectSuggestion();
+    } else {
+      // 如果没有候选框，尝试自动补全
+      const completed = handleAutoComplete(input);
+      let finalInput = completed;
+      
+      // 为补全的命令添加空格
+      if (completed !== input && completed.startsWith('/') && !completed.endsWith(' ')) {
+        finalInput = completed + ' ';
+      }
+      
+      // 只有当有变化时才更新
+      if (finalInput !== input) {
+        // 强制重新渲染TextInput以确保光标在末尾
+        setInput(finalInput);
+        setInputKey(prev => prev + 1);
+        updateSuggestions(finalInput);
+        return true;
+      }
     }
     return false;
   };
@@ -306,19 +336,8 @@ export const ChatUI: React.FC<ChatUIProps> = ({ onUserInput, onExit, onCancel, o
       }
       
       if (key.tab) {
-        const completed = handleAutoComplete(input);
-        
-        // 为所有补全的命令添加空格，简化逻辑
-        let finalInput = completed;
-        if (completed !== input && completed.startsWith('/') && !completed.endsWith(' ')) {
-          finalInput = completed + ' ';
-        }
-        
-        // 只有当有变化时才更新
-        if (finalInput !== input) {
-          setInput(finalInput);
-          updateSuggestions(finalInput);
-        }
+        // 使用新的Tab键建议补全功能
+        handleTabSuggestion();
         return;
       }
       
@@ -415,9 +434,15 @@ export const ChatUI: React.FC<ChatUIProps> = ({ onUserInput, onExit, onCancel, o
 
   // 处理用户输入
   const handleSubmit = async (userInput: string) => {
-    // 如果候选框正在显示，则选择当前候选项而不是提交
+    // 如果候选框正在显示，Enter键选择建议并确保光标在末尾
     if (showSuggestions && filteredCommands.length > 0) {
-      selectSuggestion();
+      const selectedCommand = filteredCommands[suggestionIndex].command;
+      // Enter键选择：添加空格后光标自动在末尾
+      const finalInput = selectedCommand + ' ';
+      setShowSuggestions(false);
+      // 强制重新渲染TextInput以确保光标在末尾
+      setInput(finalInput);
+      setInputKey(prev => prev + 1);
       return; // 不提交，只是选择候选项
     }
     
@@ -449,21 +474,22 @@ export const ChatUI: React.FC<ChatUIProps> = ({ onUserInput, onExit, onCancel, o
 
 ⌨️  ${t`Keyboard shortcuts:`}
   Esc               - ${t`Cancel current AI request`}
-  ↑/↓               - ${t`Navigate input history`}
-  Tab               - ${t`Auto-complete commands`}
+  ↑/↓               - ${t`Navigate input history or suggestions`}
+  Tab               - ${t`Auto-complete and select suggestions`}
+  Enter             - ${t`Submit input or select suggestion`}
   Ctrl+H            - ${t`Show help`}
   Ctrl+C            - ${t`Clear current input`}
   Ctrl+R            - ${t`Resume chat log`}
   Ctrl+L            - ${t`Clear chat history`}
   Ctrl+M            - ${t`Show current model`}
 
-🚀 ${t`Quick input features:`}
+🚀 ${t`Enhanced suggestion system:`}
   • ${t`Command suggestions appear when typing "/"`}
-  • ${t`Navigate suggestions with ↑↓, select with Enter`}
-  • ${t`Command auto-completion with Tab key`}
-  • ${t`Input history navigation with arrow keys`}
-  • ${t`History stores up to 50 recent commands`}
-  • ${t`Quick access shortcuts for common commands`}`;
+  • ${t`Tab key: Auto-complete and select with cursor at end`}
+  • ${t`Enter key: Select suggestion with cursor at end`}
+  • ${t`↑↓ keys: Navigate suggestions or input history`}
+  • ${t`Suggestions automatically add space for parameters`}
+  • ${t`Input history stores up to 50 recent commands`}`;
       addSystemMessage(helpContent);
       return;
     }
@@ -785,7 +811,7 @@ export const ChatUI: React.FC<ChatUIProps> = ({ onUserInput, onExit, onCancel, o
               )}
             </>
           )}
-          <Text color="gray">💡 {t`Type "/" for commands, Ctrl+H for help | ↑↓: navigate, Tab: complete, Enter: select, Esc: cancel`}</Text>
+          <Text color="gray">💡 {t`Type "/" for commands, Ctrl+H for help | Tab: smart complete, Enter: select with cursor at end, ↑↓: navigate, Esc: cancel`}</Text>
         </Box>
       </Box>
 
@@ -820,6 +846,7 @@ export const ChatUI: React.FC<ChatUIProps> = ({ onUserInput, onExit, onCancel, o
           <Box borderStyle="single" borderColor="green" paddingX={1}>
             <Text color="green">🧑 {t`You:`} </Text>
             <TextInput
+              key={inputKey}
               value={input}
               onChange={handleInputChange}
               onSubmit={handleSubmit}
