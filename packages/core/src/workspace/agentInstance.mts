@@ -17,11 +17,12 @@ import type { WorkspaceMCPConfig } from "./mcp/types.mjs";
  */
 export class AgentInstance {
   private config: AgentConfig;
-  private chatLogs: DataList<ChatHistoryItem>;
+  private chatLogs: DataList<ChatHistoryItem> | null = null; // 延迟初始化
   private agentPath: string;
   private configPath: string;
   private mcpConfigPath: string;
   private tasksPath: string;
+  private initialized: boolean = false;
 
   constructor(agentPath: string, config?: AgentConfig) {
     this.agentPath = agentPath;
@@ -40,22 +41,30 @@ export class AgentInstance {
       version: 1,
     };
 
-    this.chatLogs = new DataList<ChatHistoryItem>(path.join(agentPath, CONSTANTS.DIRECTORIES.CHAT_LOGS), DataList.FileFormat.YAML,
-      // (item) => `${dayjs().format("YYMMDD-HHmmss")}-${sanitizeFileName(item.label, 50, v4().slice(0, 8))}`
-    );
+    // chatLogs 延迟初始化
   }
 
   /**
-   * 初始化 Agent
+   * 初始化Agent（只在需要时才调用）
    */
   async init(): Promise<void> {
+    if (this.initialized) {
+      return; // 已初始化，直接返回
+    }
+
     // 创建目录结构
     await this.createDirectories();
 
     // 加载配置
     await this.loadConfig();
 
-    // 聊天记录采用懒加载，无需预加载
+    // 初始化聊天记录管理器
+    this.chatLogs = new DataList<ChatHistoryItem>(
+      path.join(this.agentPath, CONSTANTS.DIRECTORIES.CHAT_LOGS),
+      DataList.FileFormat.YAML
+    );
+
+    this.initialized = true;
   }
 
   /**
@@ -121,7 +130,16 @@ export class AgentInstance {
   }
 
   /**
-   * 获取 Agent 配置
+   * 确保初始化（内部使用）
+   */
+  private async ensureInitialized(): Promise<void> {
+    if (!this.initialized) {
+      await this.init();
+    }
+  }
+
+  /**
+   * 获取Agent配置（无需初始化）
    */
   getConfig(): AgentConfig {
     return this.config;
@@ -153,12 +171,17 @@ export class AgentInstance {
         this.agentPath = newPath;
         this.configPath = path.join(newPath, CONSTANTS.CONFIG_FILES.AGENT_CONFIG);
 
-        // 更新 chatLogs 路径
-        this.chatLogs = new DataList<ChatHistoryItem>(
-          path.join(newPath, CONSTANTS.DIRECTORIES.CHAT_LOGS),
-          DataList.FileFormat.YAML
-        );
-        // 聊天记录采用懒加载，无需预加载
+        // 更新MCP和任务路径
+        this.mcpConfigPath = path.join(newPath, CONSTANTS.CONFIG_FILES.MCP);
+        this.tasksPath = path.join(newPath, "tasks");
+        
+        // 重置chatLogs（如果已初始化）
+        if (this.initialized && this.chatLogs) {
+          this.chatLogs = new DataList<ChatHistoryItem>(
+            path.join(newPath, CONSTANTS.DIRECTORIES.CHAT_LOGS),
+            DataList.FileFormat.YAML
+          );
+        }
 
       } catch (error) {
         console.error(`重命名 Agent 文件夹失败: ${oldName} -> ${newName}:`, error);
@@ -175,56 +198,64 @@ export class AgentInstance {
    * 获取所有聊天记录（使用分页，避免内存压力）
    */
   async getChatLogs(limit: number = 10): Promise<ChatHistoryItem[]> {
+    await this.ensureInitialized();
+    
     if (limit) {
-      const result = await this.chatLogs.getPage(0, limit);
+      const result = await this.chatLogs!.getPage(0, limit);
       return result.items;
     }
     // 使用deprecated方法，会显示警告提示
-    return await this.chatLogs.getAll();
+    return await this.chatLogs!.getAll();
   }
 
   /**
    * 分页获取聊天记录
    */
   async getChatLogsPage(offset: number = 0, limit: number = 10): Promise<{ items: ChatHistoryItem[]; total: number; hasMore: boolean }> {
-    return await this.chatLogs.getPage(offset, limit);
+    await this.ensureInitialized();
+    return await this.chatLogs!.getPage(offset, limit);
   }
 
   /**
    * 获取单个聊天记录
    */
   async getChatLog(key: string): Promise<ChatHistoryItem | null> {
-    return await this.chatLogs.get(key);
+    await this.ensureInitialized();
+    return await this.chatLogs!.get(key);
   }
 
   /**
    * 添加或更新聊天记录
    */
   async setChatLog(chatLog: ChatHistoryItem): Promise<boolean> {
-    // 确保聊天记录与当前 Agent 关联
+    await this.ensureInitialized();
+    // 确保聊天记录与当前Agent关联
     chatLog.agentName = this.config.name;
-    return await this.chatLogs.set(chatLog);
+    return await this.chatLogs!.set(chatLog);
   }
 
   /**
    * 删除聊天记录
    */
   async deleteChatLog(key: string): Promise<boolean> {
-    return await this.chatLogs.delete(key);
+    await this.ensureInitialized();
+    return await this.chatLogs!.delete(key);
   }
 
   /**
    * 清空所有聊天记录
    */
   async clearChatLogs(): Promise<boolean> {
-    return await this.chatLogs.clear();
+    await this.ensureInitialized();
+    return await this.chatLogs!.clear();
   }
 
   /**
    * 获取聊天记录数量
    */
   async getChatLogsCount(): Promise<number> {
-    return await this.chatLogs.size();
+    await this.ensureInitialized();
+    return await this.chatLogs!.size();
   }
 
   /**
@@ -266,7 +297,8 @@ export class AgentInstance {
     tasksCount: number;
   }> {
     // 使用轻量级统计避免加载所有聊天记录内容
-    const stats = await this.chatLogs.getStats();
+    await this.ensureInitialized();
+    const stats = await this.chatLogs!.getStats();
 
     return {
       config: this.config,

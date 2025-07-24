@@ -10,12 +10,13 @@ import { AgentInstance } from "./agentInstance.mjs";
 // AgentInstance 已迁移到单独的文件 agentInstance.mts
 
 /**
- * Agent 管理器类 - 基于路径数组管理所有 Agent 实例
+ * Agent管理器类 - 基于路径数组管理所有Agent实例（延迟加载）
  */
 export class AgentManager {
   private agentPaths: string[];
-  private agents: Map<string, AgentInstance> = new Map(); // agentPath -> AgentInstance
-  private nameToPath: Map<string, string> = new Map(); // name -> agentPath
+  private agents: Map<string, AgentInstance> = new Map(); // agentPath -> AgentInstance (缓存已加载的)
+  private nameToPath: Map<string, string> = new Map(); // name -> agentPath (路径索引)
+  private availableAgents: Map<string, string> = new Map(); // name -> agentPath (可用Agent目录)
 
   constructor(agentPaths: string | string[]) {
     // 支持单个路径或路径数组
@@ -23,22 +24,23 @@ export class AgentManager {
   }
 
   /**
-   * 初始化 Agent 管理器（不自动创建目录，采用懒加载模式）
+   * 初始化Agent管理器（延迟加载模式：只扫描目录，不加载Agent实例）
    */
   async init(): Promise<void> {
-    // 不自动创建 agents 目录，采用懒加载模式：只有需要时才创建
-    await this.loadAllAgents();
+    // 只扫描可用的Agent目录，不创建实例
+    await this.scanAvailableAgents();
   }
 
   /**
-   * 加载所有 Agent（从配置的路径数组中扫描）
+   * 扫描可用的Agent目录（不加载实例，只记录路径）
    */
-  private async loadAllAgents(): Promise<void> {
+  private async scanAvailableAgents(): Promise<void> {
     // 清空现有数据
-    this.agents.clear();
+    this.availableAgents.clear();
     this.nameToPath.clear();
+    // 保留已加载的Agent缓存
 
-    // 从所有配置的路径中加载Agent，后加载的同名Agent会覆盖先加载的
+    // 从所有配置的路径中扫描Agent目录
     for (const agentsBasePath of this.agentPaths) {
       if (!fs.existsSync(agentsBasePath)) {
         continue;
@@ -50,21 +52,20 @@ export class AgentManager {
         for (const entry of entries) {
           if (entry.isDirectory() && !entry.name.startsWith('.')) {
             const agentPath = path.join(agentsBasePath, entry.name);
-            const agent = new AgentInstance(agentPath);
-
-            if (agent.exists()) {
-              await agent.init();
-              const config = agent.getConfig();
-
-              // 使用完整的agentPath作为唯一标识
-              this.agents.set(agentPath, agent);
-              // 同名Agent会被后加载的覆盖（通常是工作区覆盖全局）
-              this.nameToPath.set(config.name, agentPath);
+            
+            // 检查是否为有效的Agent目录（存在agent.yaml）
+            const configPath = path.join(agentPath, 'agent.yaml');
+            if (fs.existsSync(configPath)) {
+              // 只记录路径，不创建实例
+              const agentName = path.basename(agentPath);
+              this.availableAgents.set(agentName, agentPath);
+              // 后加载的同名Agent会覆盖先加载的（通常是工作区覆盖全局）
+              this.nameToPath.set(agentName, agentPath);
             }
           }
         }
       } catch (error) {
-        console.warn(`加载 Agent 列表失败 ${agentsBasePath}:`, error);
+        console.warn(`扫描Agent目录失败 ${agentsBasePath}:`, error);
       }
     }
   }
@@ -141,8 +142,10 @@ export class AgentManager {
       await agent.init();
       await agent.saveConfig();
 
+      // 更新所有映射
       this.agents.set(agentPath, agent);
       this.nameToPath.set(name, agentPath);
+      this.availableAgents.set(name, agentPath);
       return agent;
     } catch (error) {
       console.warn(`创建 Agent 失败 ${name}:`, error);
@@ -151,43 +154,77 @@ export class AgentManager {
   }
 
   /**
-   * 获取 Agent 实例（通过名称或路径）
+   * 获取Agent实例（延迟加载）
    */
   getAgent(nameOrPath: string): AgentInstance | null {
-    // 如果是完整路径，直接查找
+    // 先从缓存中查找
     if (this.agents.has(nameOrPath)) {
       return this.agents.get(nameOrPath)!;
     }
 
-    // 否则当作名称查找
-    const agentPath = this.nameToPath.get(nameOrPath);
-    if (agentPath) {
-      return this.agents.get(agentPath) || null;
+    // 通过名称查找路径
+    let agentPath = nameOrPath;
+    if (!nameOrPath.includes('/')) {
+      // 是名称，需要转换为路径
+      const foundPath = this.nameToPath.get(nameOrPath);
+      if (!foundPath) {
+        return null; // Agent不存在
+      }
+      agentPath = foundPath;
+    }
+
+    // 延迟加载Agent实例
+    return this.loadAgentInstance(agentPath);
+  }
+
+  /**
+   * 延迟加载Agent实例（返回未初始化的实例，在使用时才初始化）
+   */
+  private loadAgentInstance(agentPath: string): AgentInstance | null {
+    // 检查缓存
+    if (this.agents.has(agentPath)) {
+      return this.agents.get(agentPath)!;
+    }
+
+    try {
+      const agent = new AgentInstance(agentPath);
+      if (agent.exists()) {
+        // 缓存Agent实例（还未初始化）
+        this.agents.set(agentPath, agent);
+        return agent;
+      }
+    } catch (error) {
+      console.warn(`加载Agent实例失败 ${agentPath}:`, error);
     }
 
     return null;
   }
 
   /**
-   * 获取 Agent 实例 (通过名称，保持向后兼容)
+   * 获取Agent实例(通过名称，保持向后兼容)
    */
   getAgentByName(name: string): AgentInstance | null {
-    const agentPath = this.nameToPath.get(name);
-    return agentPath ? this.agents.get(agentPath) || null : null;
+    return this.getAgent(name);
   }
 
   /**
-   * 获取所有 Agent 配置（包含路径信息）
+   * 获取所有Agent配置（延迟加载所有Agent）
    */
   async getAllAgents(): Promise<(AgentConfig & { agentPath?: string })[]> {
     const configs: (AgentConfig & { agentPath?: string })[] = [];
-    for (const [agentPath, agent] of this.agents.entries()) {
-      const config = agent.getConfig();
-      configs.push({
-        ...config,
-        agentPath: agentPath
-      });
+    
+    // 遍历所有可用的Agent
+    for (const [name, agentPath] of this.availableAgents.entries()) {
+      const agent = this.getAgent(name);
+      if (agent) {
+        const config = agent.getConfig();
+        configs.push({
+          ...config,
+          agentPath: agentPath
+        });
+      }
     }
+    
     return configs;
   }
 
@@ -215,10 +252,13 @@ export class AgentManager {
     const config = agent.getConfig();
     const success = await agent.delete();
     if (success) {
+      // 更新所有映射
       this.agents.delete(agentPath);
-      // 更新 nameToPath 映射
       if (this.nameToPath.get(config.name) === agentPath) {
         this.nameToPath.delete(config.name);
+      }
+      if (this.availableAgents.get(config.name) === agentPath) {
+        this.availableAgents.delete(config.name);
       }
     }
     return success;
@@ -232,14 +272,14 @@ export class AgentManager {
   }
 
   /**
-   * 获取 Agent 数量
+   * 获取Agent数量（基于可用Agent目录）
    */
   getAgentsCount(): number {
-    return this.agents.size;
+    return this.availableAgents.size;
   }
 
   /**
-   * 获取所有 Agent 的摘要信息（包含路径信息）
+   * 获取所有Agent的摘要信息（延迟加载）
    */
   async getAllAgentsSummary(): Promise<Array<{
     config: AgentConfig & { agentPath?: string };
@@ -255,16 +295,22 @@ export class AgentManager {
       hasMCPConfig: boolean;
       tasksCount: number;
     }> = [];
-    for (const [agentPath, agent] of this.agents.entries()) {
-      const summary = await agent.getSummary();
-      summaries.push({
-        ...summary,
-        config: {
-          ...summary.config,
-          agentPath: agentPath
-        }
-      });
+    
+    // 遍历所有可用的Agent
+    for (const [name, agentPath] of this.availableAgents.entries()) {
+      const agent = this.getAgent(name);
+      if (agent) {
+        const summary = await agent.getSummary();
+        summaries.push({
+          ...summary,
+          config: {
+            ...summary.config,
+            agentPath: agentPath
+          }
+        });
+      }
     }
+    
     return summaries;
   }
 
