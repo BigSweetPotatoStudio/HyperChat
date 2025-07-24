@@ -80,7 +80,7 @@ async function fetchWithTimeout(url: string, timeoutMs: number): Promise<Respons
 }
 
 const webFetchSchema = z.object({
-  url: z.string().url().describe('The URL to fetch content from'),
+  url: z.string().describe('The URL to fetch content from'),
 });
 
 export function registerWebFetchTool(server: McpServer): void {

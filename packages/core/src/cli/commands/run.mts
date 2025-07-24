@@ -6,6 +6,7 @@
  */
 
 import process from 'process';
+import path from 'path';
 import { Logger } from '../utils/logger.mjs';
 import "../../first.mjs";
 import { getWorkspaceManager } from "../../workspace/index.mjs";
@@ -27,12 +28,12 @@ export async function startRun(options: RunOptions = {}) {
     logger.info(`🚀 ${t`Starting core service...`}`);
     
     // 确定工作区路径
-    const workspacePath = options.workspace || process.cwd();
+    const workspacePath = options.workspace ? path.resolve(options.workspace) : process.cwd();
     
     
     // 第一阶段：快速初始化工作区配置
     logger.info(`⏳ ${t`Phase 1: Quickly loading workspace configuration...`}`);
-    const currentWorkingDirectory = workspacePath || process.cwd();
+    const currentWorkingDirectory = workspacePath;
     await getWorkspaceManager().initialize(currentWorkingDirectory);
     
     const workspace = getWorkspaceManager().getCurrentWorkspace();

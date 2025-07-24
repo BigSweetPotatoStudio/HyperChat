@@ -5,6 +5,7 @@
  */
 
 import process from 'process';
+import path from 'path';
 import chalk from 'chalk';
 import { Logger } from '../utils/logger.mjs';
 import { Logger as LoggerClass } from '../../log.mjs';
@@ -270,7 +271,7 @@ export async function startChat(initialMessage?: string, options: ChatOptions = 
     logger.info(`🔍 ${t`Initializing HyperChat CLI...`} ${CONST.getVersion}`);
 
     // Chat需要完整服务（MCP工具、AI聊天）
-    const currentWorkingDirectory = options.workspace || process.cwd();
+    const currentWorkingDirectory = options.workspace ? path.resolve(options.workspace) : process.cwd();
     await workspaceManager.initialize(currentWorkingDirectory);
 
     const currentWorkspacePath = workspaceManager.getCurrentWorkspacePath();
@@ -288,7 +289,6 @@ export async function startChat(initialMessage?: string, options: ChatOptions = 
     const env = await initializeAIEnvironment({
       agentName: options.agent,
       workspacePath: workspaceManager.getCurrentWorkspacePath(),
-      needMCP: true
     });
 
     // 如果命令行指定了模型，覆盖配置

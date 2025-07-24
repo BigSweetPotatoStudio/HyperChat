@@ -7,6 +7,7 @@
 import React from 'react';
 import { render } from 'ink';
 import process from 'process';
+import path from 'path';
 import { Logger } from '../utils/logger.mjs';
 import { Logger as LoggerClass } from '../../log.mjs';
 import { Command } from '../../command.mjs';
@@ -63,7 +64,7 @@ export async function startChatInk(initialMessage?: string, options: ChatOptions
     logger.info(`🔍 ${t`Initializing HyperChat CLI...`}`);
 
     // Chat需要完整服务（MCP工具、AI聊天）
-    const currentWorkingDirectory = options.workspace || process.cwd();
+    const currentWorkingDirectory = options.workspace ? path.resolve(options.workspace) : process.cwd();
     await workspaceManager.initialize(currentWorkingDirectory);
 
     const currentWorkspacePath = workspaceManager.getCurrentWorkspacePath();
@@ -81,7 +82,6 @@ export async function startChatInk(initialMessage?: string, options: ChatOptions
     const env = await initializeAIEnvironment({
       agentName: options.agent,
       workspacePath: workspaceManager.getCurrentWorkspacePath(),
-      needMCP: true
     });
 
     // 如果命令行指定了模型，覆盖配置
@@ -100,8 +100,6 @@ export async function startChatInk(initialMessage?: string, options: ChatOptions
 
     // 记录配置信息  
     logAIConfig(LoggerClass, env);
-
-    logger.info(`🤖 ${t`Using model:`} ${env.effectiveConfig.modelKey}`);
 
     // 获取工作区的Agent数量
     const agentsSummary = await env.workspace.getAllAgentsSummary();

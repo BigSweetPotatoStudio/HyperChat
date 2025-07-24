@@ -471,12 +471,12 @@ export class Workspace {
     try {
       // 先更新 agent 实例配置（包括文件夹重命名）
       const result = await agentInstance.updateConfig(updates);
-      
+
       // 如果名称发生变更且更新成功，需要更新 AgentManager 的内部映射
       if (result && newName && newName !== oldName) {
         await this.agentManager.updateAgentMapping(oldName, newName, scope);
       }
-      
+
       return result;
     } catch (error) {
       console.error(`Failed to update agent ${agentName}:`, error);
@@ -531,7 +531,7 @@ export class Workspace {
     if (!instance) {
       return false;
     }
-    
+
     return await instance.setChatLog(chatLog);
   }
 
@@ -543,7 +543,7 @@ export class Workspace {
     if (!instance) {
       return false;
     }
-    
+
     return await instance.deleteChatLog(chatKey);
   }
 
@@ -555,7 +555,7 @@ export class Workspace {
     if (!instance) {
       return false;
     }
-    
+
     return await instance.clearChatLogs();
   }
 
@@ -1135,7 +1135,6 @@ export class Workspace {
         const env = await initializeAIEnvironment({
           agentName: task.agentName,
           workspacePath: this.workspacePath,
-          needMCP: true
         });
 
         // 创建 AI 通道

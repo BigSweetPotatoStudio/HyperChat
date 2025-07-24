@@ -54,7 +54,7 @@ export function buildEffectiveConfig(
       agentConfig?.modelKey,        // Agent配置
       workspaceAIConfig?.modelKey,  // 工作区配置
       firstAvailableModel,          // 默认第一个可用模型
-      envModel                      // 环境变量（最低优先级）
+      envModel                      // 环境变量（最低优先级，配置找不到时才使用）
     ].filter(Boolean);
 
     for (const modelKey of candidates) {
@@ -94,7 +94,6 @@ export function buildEffectiveConfig(
 export async function initializeAIEnvironment(options: {
   agentName?: string;
   workspacePath?: string;
-  needMCP?: boolean;  // 是否需要 MCP 工具
   configOverrides?: Partial<BaseAIConfig>;  // 配置覆盖
 }): Promise<AIEnvironment> {
   // 获取工作区
@@ -136,9 +135,9 @@ export async function initializeAIEnvironment(options: {
 
   // 获取 MCP 工具（如果需要的话）
   let mcpClients: IMCPClient[] = [];
-  if (options.needMCP !== false) {
+
     mcpClients = workspace.getMcpClients();
-  }
+  
 
   return {
     workspace,

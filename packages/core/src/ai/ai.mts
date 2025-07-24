@@ -1,6 +1,7 @@
 
 
-import type { HyperChatCompletionTool, MyMessage, HyperToolCall, CommonContentItem, AIProvider, AIExtension, ResponseFormat, CustomFetch, JSONSchemaObject } from "@dadigua/hyperchat-shared";
+import type { HyperChatCompletionTool, MyMessage, HyperToolCall, CommonContentItem, AIProvider, AIExtension, ResponseFormat, CustomFetch, JSONSchemaObject, AIModelConfigItem } from "@dadigua/hyperchat-shared";
+
 
 import * as MCPTypes from "@modelcontextprotocol/sdk/types.js";
 import type { CoreMessage, LanguageModel, StreamTextResult, ToolChoice, CoreTool, ToolSet, TextPart, FilePart, ToolCallPart, ImagePart, TextStreamPart } from 'ai';
@@ -129,11 +130,11 @@ export class AiChannel {
     );
 
     const finalModelKey = effectiveConfig.modelKey;
-    let modelConfig: any = null;
+    let modelConfig: AIModelConfigItem | null = null;
     
     // 从应用设置中查找模型配置
     if (aiSettings && aiSettings.models && aiSettings.models.length > 0) {
-      modelConfig = aiSettings.models.find((x) => x.key === finalModelKey);
+      modelConfig = aiSettings.models.find((x) => x.key === finalModelKey) || null;
       
       if (modelConfig) {
         Logger.debug(`Found model config from app settings: ${finalModelKey}`);
@@ -163,7 +164,7 @@ export class AiChannel {
         key: finalModelKey,
         name: finalModelKey,
         model: finalModelKey,
-        provider: envProvider || "unknown",
+        provider: (envProvider as any) || "unknown",
         baseURL: envApiUrl,
         apiKey: envApiKey,
         supportImage: true,
@@ -171,29 +172,29 @@ export class AiChannel {
         type: "llm",
         toolMode: "standard"
       };
-    }
-    
-    // 应用环境变量覆盖（无论配置来源如何，环境变量都有最高优先级）
-    if (envApiKey) {
-      modelConfig.apiKey = envApiKey;
-      Logger.debug('Using API key from environment variable');
-    }
-    
-    if (envApiUrl) {
-      modelConfig.baseURL = envApiUrl;
-      Logger.debug('Using API URL from environment variable');
-    }
-    
-    if (envProvider) {
-      if (modelConfig.provider === "unknown" || !modelConfig.provider) {
-        modelConfig.provider = envProvider;
+    } else {
+      // 对现有配置应用环境变量作为fallback（当配置未设置时，使用环境变量）
+      if (!modelConfig.apiKey && envApiKey) {
+        modelConfig.apiKey = envApiKey;
+        Logger.debug('Using API key from environment variable');
+      }
+      
+      if (!modelConfig.baseURL && envApiUrl) {
+        modelConfig.baseURL = envApiUrl;
+        Logger.debug('Using API URL from environment variable');
+      }
+      
+      if ((!modelConfig.provider || modelConfig.provider === "unknown") && envProvider) {
+        modelConfig.provider = envProvider as any;
         Logger.debug(`Using provider from environment variable: ${envProvider}`);
-      } else {
-        Logger.debug(`Provider from environment variable (${envProvider}) ignored because model has explicit provider: ${modelConfig.provider}`);
       }
     }
 
     // 验证最终配置
+    if (!modelConfig) {
+      throw new Error(`Model configuration not found: ${finalModelKey}. Please configure it in app settings or provide environment variables.`);
+    }
+    
     if (!modelConfig.apiKey) {
       throw new Error(`API key not found for model: ${finalModelKey}. Please configure it in app settings or set HyperChat_API_KEY environment variable.`);
     }
@@ -212,8 +213,8 @@ export class AiChannel {
     const aiOptions = {
       model,
       modelConfig: modelConfig as ModelConfig,
-      temperature: modelConfig.temperature,
-      maxTokens: modelConfig.maxTokens,
+      temperature: effectiveConfig.temperature,
+      maxTokens: effectiveConfig.maxTokens,
       maxRetries: 3, // 默认重试3次
     };
     
@@ -222,7 +223,7 @@ export class AiChannel {
   async completion(
     params: {
       modelKey: string;
-      onUpdate?: (r?: any) => void;
+      onUpdate?: (r?: unknown) => void;
       confirm_call_tool_cb?: (tool: HyperToolCall) => Promise<boolean>;
       sseWriter?: SSEWriter; // SSE 写入器
       chatKey?: string; // 聊天 Key
@@ -646,10 +647,10 @@ export class AiChannel {
     return tools;
   }
 
-  private handleSSEMessage(type: string, data: any, messageId?: string, sseWriter?: SSEWriter) {
+  private handleSSEMessage(type: string, data: unknown, messageId?: string, sseWriter?: SSEWriter) {
     const writer = sseWriter || this.sseWriter;
     if (writer && !writer.isClosed()) {
-      writer.write({ type, data: { ...data, messageId } });
+      writer.write({ type, data: { ...(data as object), messageId } });
     }
   }
   register(ext?: Partial<this["ext"]>) {
@@ -671,7 +672,7 @@ export class AiChannel {
   }
 
   // 压缩记忆
-  async compressMemory(modelKey: string, onUpdate?: (r?: any) => void, sseWriter?: SSEWriter): Promise<MyMessage> {
+  async compressMemory(modelKey: string, onUpdate?: (r?: unknown) => void, sseWriter?: SSEWriter): Promise<MyMessage> {
     if (!this.ext.memoryCompressor) {
       throw new Error('Memory compressor not initialized');
     }
@@ -687,7 +688,7 @@ export class AiChannel {
     );
   }
 
-  async completionParse({ modelKey }: { modelKey: string }, schema: ZodSchema, prompt: string): Promise<any> {
+  async completionParse({ modelKey }: { modelKey: string }, schema: ZodSchema, prompt: string): Promise<unknown> {
     let aiOptions = await this.getAIOptions(modelKey);
     if (!aiOptions || !aiOptions.model) throw new Error('AI model not initialized');
 
