@@ -8,7 +8,7 @@ import {
   normalizePath,
   withTimeout
 } from '../utils.mjs';
-import { FileToolError, ERROR_CODES, getConfig } from '../lib.mjs';
+import { HyperSystemToolError, ERROR_CODES, getConfig } from '../lib.mjs';
 
 const searchFileContentSchema = z.object({
   pattern: z.string().describe('Regular expression pattern to search for in file contents'),
@@ -78,7 +78,7 @@ export function registerSearchFileContentTool(server: McpServer): void {
       try {
         // 验证必需参数
         if (!searchPath || typeof searchPath !== 'string' || searchPath.trim() === '') {
-          throw new FileToolError(
+          throw new HyperSystemToolError(
             'Parameter "path" is required and must be a non-empty string',
             ERROR_CODES.INVALID_PATH
           );
@@ -89,7 +89,7 @@ export function registerSearchFileContentTool(server: McpServer): void {
 
         // 检查搜索路径是否存在
         if (!fs.existsSync(basePath)) {
-          throw new FileToolError(
+          throw new HyperSystemToolError(
             `Search path not found: ${searchPath || 'workspace root'}`,
             ERROR_CODES.FILE_NOT_FOUND
           );
@@ -101,7 +101,7 @@ export function registerSearchFileContentTool(server: McpServer): void {
         try {
           regex = new RegExp(pattern, regexFlags);
         } catch (error) {
-          throw new FileToolError(
+          throw new HyperSystemToolError(
             `Invalid regular expression pattern: ${pattern}`,
             ERROR_CODES.INVALID_PATH
           );
@@ -239,7 +239,7 @@ export function registerSearchFileContentTool(server: McpServer): void {
         };
 
       } catch (error) {
-        const errorMessage = error instanceof FileToolError
+        const errorMessage = error instanceof HyperSystemToolError
           ? error.message
           : `Failed to search file content: ${error}`;
 

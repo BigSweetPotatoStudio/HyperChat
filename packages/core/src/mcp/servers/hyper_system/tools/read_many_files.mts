@@ -9,7 +9,7 @@ import {
   limitOutputLines,
   withTimeout
 } from '../utils.mjs';
-import { FileToolError, ERROR_CODES, getConfig } from '../lib.mjs';
+import { HyperSystemToolError, ERROR_CODES, getConfig } from '../lib.mjs';
 
 const readManyFilesSchema = z.object({
   absolute_paths: z.array(z.string()).max(50).describe('Array of absolute paths to files to read'),
@@ -42,7 +42,7 @@ async function readSingleFile(
   try {
     // 验证文件存在
     if (!fs.existsSync(filePath)) {
-      throw new FileToolError(
+      throw new HyperSystemToolError(
         `File not found: ${filePath}`,
         ERROR_CODES.FILE_NOT_FOUND
       );
@@ -87,7 +87,7 @@ async function readSingleFile(
       path: filePath,
       relativePath,
       success: false,
-      error: error instanceof FileToolError ? error.message : `${error}`,
+      error: error instanceof HyperSystemToolError ? error.message : `${error}`,
     };
   }
 }
@@ -103,14 +103,14 @@ export function registerReadManyFilesTool(server: McpServer): void {
       try {
         // 验证文件数量
         if (absolute_paths.length === 0) {
-          throw new FileToolError(
+          throw new HyperSystemToolError(
             'No file paths provided',
             ERROR_CODES.INVALID_PATH
           );
         }
         
         if (absolute_paths.length > config.maxBatchFiles) {
-          throw new FileToolError(
+          throw new HyperSystemToolError(
             `Too many files requested. Maximum allowed: ${config.maxBatchFiles}`,
             ERROR_CODES.INVALID_PATH
           );
@@ -138,7 +138,7 @@ export function registerReadManyFilesTool(server: McpServer): void {
         
         // 如果有错误且不跳过错误，则抛出异常
         if (errorResults.length > 0 && !skip_errors) {
-          throw new FileToolError(
+          throw new HyperSystemToolError(
             `Failed to read ${errorResults.length} files: ${errorResults.map(r => r.error).join(', ')}`,
             ERROR_CODES.PERMISSION_DENIED
           );
@@ -194,7 +194,7 @@ export function registerReadManyFilesTool(server: McpServer): void {
         };
         
       } catch (error) {
-        const errorMessage = error instanceof FileToolError 
+        const errorMessage = error instanceof HyperSystemToolError 
           ? error.message 
           : `Failed to read multiple files: ${error}`;
           

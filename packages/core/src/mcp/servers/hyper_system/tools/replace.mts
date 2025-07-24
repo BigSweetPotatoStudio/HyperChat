@@ -8,7 +8,7 @@ import {
   readFileContent,
   withTimeout
 } from '../utils.mjs';
-import { FileToolError, ERROR_CODES, getConfig } from '../lib.mjs';
+import { HyperSystemToolError, ERROR_CODES, getConfig } from '../lib.mjs';
 
 const replaceSchema = z.object({
   absolute_path: z.string().describe('The absolute path to the file to edit'),
@@ -31,7 +31,7 @@ export function registerReplaceTool(server: McpServer): void {
         
         // 检查文件是否存在
         if (!fs.existsSync(normalizedPath)) {
-          throw new FileToolError(
+          throw new HyperSystemToolError(
             `File not found: ${absolute_path}`,
             ERROR_CODES.FILE_NOT_FOUND
           );
@@ -52,7 +52,7 @@ export function registerReplaceTool(server: McpServer): void {
         
         // 检查是否包含要替换的文本
         if (!originalContent.includes(old_text)) {
-          throw new FileToolError(
+          throw new HyperSystemToolError(
             `Text not found in file: "${old_text}"`,
             ERROR_CODES.FILE_NOT_FOUND
           );
@@ -75,7 +75,7 @@ export function registerReplaceTool(server: McpServer): void {
         
         // 如果内容没有变化，说明替换没有生效
         if (newContent === originalContent) {
-          throw new FileToolError(
+          throw new HyperSystemToolError(
             `No replacements made. Text "${old_text}" not found or replacement is identical`,
             ERROR_CODES.FILE_NOT_FOUND
           );
@@ -126,7 +126,7 @@ export function registerReplaceTool(server: McpServer): void {
         };
         
       } catch (error) {
-        const errorMessage = error instanceof FileToolError 
+        const errorMessage = error instanceof HyperSystemToolError 
           ? error.message 
           : `Failed to replace text in file: ${error}`;
           

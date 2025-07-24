@@ -10,7 +10,7 @@ import {
   loadAllGitignoreRules,
   shouldIgnoreFile
 } from '../utils.mjs';
-import { FileToolError, ERROR_CODES, getConfig } from '../lib.mjs';
+import { HyperSystemToolError, ERROR_CODES, getConfig } from '../lib.mjs';
 
 const listDirectorySchema = z.object({
   absolute_path: z.string().describe('The absolute path to the directory to list'),
@@ -137,7 +137,7 @@ export function registerListDirectoryTool(server: McpServer): void {
         
         // 检查目录是否存在
         if (!fs.existsSync(normalizedPath)) {
-          throw new FileToolError(
+          throw new HyperSystemToolError(
             `Directory not found: ${absolute_path}`,
             ERROR_CODES.FILE_NOT_FOUND
           );
@@ -146,7 +146,7 @@ export function registerListDirectoryTool(server: McpServer): void {
         // 检查是否是目录
         const stats = fs.statSync(normalizedPath);
         if (!stats.isDirectory()) {
-          throw new FileToolError(
+          throw new HyperSystemToolError(
             `Path is not a directory: ${absolute_path}`,
             ERROR_CODES.INVALID_PATH
           );
@@ -218,7 +218,7 @@ export function registerListDirectoryTool(server: McpServer): void {
         };
         
       } catch (error) {
-        const errorMessage = error instanceof FileToolError 
+        const errorMessage = error instanceof HyperSystemToolError 
           ? error.message 
           : `Failed to list directory: ${error}`;
           

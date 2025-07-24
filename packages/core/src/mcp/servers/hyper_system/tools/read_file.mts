@@ -9,7 +9,7 @@ import {
   limitOutputLines,
   withTimeout
 } from '../utils.mjs';
-import { FileToolError, ERROR_CODES, getConfig } from '../lib.mjs';
+import { HyperSystemToolError, ERROR_CODES, getConfig } from '../lib.mjs';
 
 const readFileSchema = z.object({
   absolute_path: z.string().describe('The absolute path to the file to read'),
@@ -32,7 +32,7 @@ export function registerReadFileTool(server: McpServer): void {
         
         // 检查文件是否存在
         if (!fs.existsSync(normalizedPath)) {
-          throw new FileToolError(
+          throw new HyperSystemToolError(
             `File not found: ${absolute_path}`,
             ERROR_CODES.FILE_NOT_FOUND
           );
@@ -72,7 +72,7 @@ export function registerReadFileTool(server: McpServer): void {
         };
         
       } catch (error) {
-        const errorMessage = error instanceof FileToolError 
+        const errorMessage = error instanceof HyperSystemToolError 
           ? error.message 
           : `Failed to read file: ${error}`;
           

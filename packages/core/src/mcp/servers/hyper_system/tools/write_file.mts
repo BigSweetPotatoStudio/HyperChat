@@ -7,7 +7,7 @@ import {
   validateFileExtension, 
   withTimeout
 } from '../utils.mjs';
-import { FileToolError, ERROR_CODES, getConfig } from '../lib.mjs';
+import { HyperSystemToolError, ERROR_CODES, getConfig } from '../lib.mjs';
 
 const writeFileSchema = z.object({
   absolute_path: z.string().describe('The absolute path to the file to write'),
@@ -36,7 +36,7 @@ export function registerWriteFileTool(server: McpServer): void {
           if (create_directories) {
             fs.mkdirSync(parentDir, { recursive: true });
           } else {
-            throw new FileToolError(
+            throw new HyperSystemToolError(
               `Parent directory does not exist: ${parentDir}`,
               ERROR_CODES.FILE_NOT_FOUND
             );
@@ -74,7 +74,7 @@ export function registerWriteFileTool(server: McpServer): void {
         };
         
       } catch (error) {
-        const errorMessage = error instanceof FileToolError 
+        const errorMessage = error instanceof HyperSystemToolError 
           ? error.message 
           : `Failed to write file: ${error}`;
           

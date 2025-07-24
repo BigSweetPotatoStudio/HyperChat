@@ -8,7 +8,7 @@ import {
   normalizePath,
   withTimeout
 } from '../utils.mjs';
-import { FileToolError, ERROR_CODES, getConfig } from '../lib.mjs';
+import { HyperSystemToolError, ERROR_CODES, getConfig } from '../lib.mjs';
 
 const globSchema = z.object({
   pattern: z.string().describe('Glob pattern to match files (e.g., "*.js", "**/*.ts", "src/**/*.{js,ts}")'),
@@ -28,7 +28,7 @@ export function registerGlobTool(server: McpServer): void {
       try {
         // 验证必需参数
         if (!base_path || typeof base_path !== 'string' || base_path.trim() === '') {
-          throw new FileToolError(
+          throw new HyperSystemToolError(
             'Parameter "base_path" is required and must be a non-empty string',
             ERROR_CODES.INVALID_PATH
           );
@@ -39,7 +39,7 @@ export function registerGlobTool(server: McpServer): void {
 
         // 检查基础路径是否存在
         if (!fs.existsSync(basePath)) {
-          throw new FileToolError(
+          throw new HyperSystemToolError(
             `Base path not found: ${base_path || 'workspace root'}`,
             ERROR_CODES.FILE_NOT_FOUND
           );
@@ -142,7 +142,7 @@ export function registerGlobTool(server: McpServer): void {
         };
 
       } catch (error) {
-        const errorMessage = error instanceof FileToolError
+        const errorMessage = error instanceof HyperSystemToolError
           ? error.message
           : `Failed to search files with glob pattern: ${error}`;
 

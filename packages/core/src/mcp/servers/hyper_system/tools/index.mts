@@ -7,4 +7,5 @@ export { registerGlobTool } from './glob.mjs';
 export { registerSearchFileContentTool } from './search_file_content.mjs';
 export { registerReadManyFilesTool } from './read_many_files.mjs';
 export { registerRunShellCommandTool } from './run_shell_command.mjs';
-export { registerSaveMemoryTool } from './save_memory.mjs';
+export { registerWebFetchTool } from './web_fetch.mjs';
+// export { registerSaveMemoryTool } from './save_memory.mjs'; // 已注释，未实现

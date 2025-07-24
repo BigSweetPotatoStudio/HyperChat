@@ -1,6 +1,6 @@
 import fs from 'fs';
 import path from 'path';
-import { FileToolError, ERROR_CODES, getConfig } from './lib.mjs';
+import { HyperSystemToolError, ERROR_CODES, getConfig } from './lib.mjs';
 import { workspaceManager } from '../../../lib.mjs';
 
 /**
@@ -12,7 +12,7 @@ export function validateFileExtension(filePath: string): void {
 
   // 检查是否在禁止列表中
   if (config.blockedExtensions.includes(ext)) {
-    throw new FileToolError(
+    throw new HyperSystemToolError(
       `File extension '${ext}' is not allowed`,
       ERROR_CODES.EXTENSION_BLOCKED
     );
@@ -20,7 +20,7 @@ export function validateFileExtension(filePath: string): void {
 
   // 如果有允许列表，检查是否在允许列表中
   if (config.allowedExtensions.length > 0 && !config.allowedExtensions.includes(ext)) {
-    throw new FileToolError(
+    throw new HyperSystemToolError(
       `File extension '${ext}' is not in the allowed list`,
       ERROR_CODES.EXTENSION_BLOCKED
     );
@@ -35,7 +35,7 @@ export function validateFileSize(filePath: string): void {
   const stats = fs.statSync(filePath);
 
   if (stats.size > config.maxFileSize) {
-    throw new FileToolError(
+    throw new HyperSystemToolError(
       `File size (${stats.size}) exceeds maximum allowed size (${config.maxFileSize})`,
       ERROR_CODES.FILE_TOO_LARGE
     );
@@ -92,7 +92,7 @@ export function validateCommand(command: string): void {
 
   // 检查是否在禁止列表中
   if (config.blockedCommands.some(blocked => commandRoot.includes(blocked))) {
-    throw new FileToolError(
+    throw new HyperSystemToolError(
       `Command '${commandRoot}' is not allowed`,
       ERROR_CODES.COMMAND_BLOCKED
     );
@@ -101,7 +101,7 @@ export function validateCommand(command: string): void {
   // 如果有允许列表，检查是否在允许列表中
   if (config.allowedCommands.length > 0 &&
     !config.allowedCommands.some(allowed => commandRoot.includes(allowed))) {
-    throw new FileToolError(
+    throw new HyperSystemToolError(
       `Command '${commandRoot}' is not in the allowed list`,
       ERROR_CODES.COMMAND_BLOCKED
     );
@@ -118,7 +118,7 @@ export async function withTimeout<T>(
 ): Promise<T> {
   return new Promise((resolve, reject) => {
     const timer = setTimeout(() => {
-      reject(new FileToolError(errorMessage, ERROR_CODES.OPERATION_TIMEOUT));
+      reject(new HyperSystemToolError(errorMessage, ERROR_CODES.OPERATION_TIMEOUT));
     }, timeoutMs);
 
     operation()

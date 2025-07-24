@@ -20,10 +20,10 @@ export const configSchema = z.object({
   fileOperationTimeout: z.number().default(10000), // 文件操作超时时间 (ms)
 });
 
-export type FileToolsConfig = z.infer<typeof configSchema>;
+export type HyperSystemConfig = z.infer<typeof configSchema>;
 
 // 默认配置
-export const defaultConfig: FileToolsConfig = {
+export const defaultConfig: HyperSystemConfig = {
   maxFileSize: 10 * 1024 * 1024,
   maxOutputLines: 10000,
   maxBatchFiles: 50,
@@ -36,13 +36,13 @@ export const defaultConfig: FileToolsConfig = {
 };
 
 // 获取配置的函数
-export function getConfig(): FileToolsConfig {
+export function getConfig(): HyperSystemConfig {
   // TODO: 从工作区配置中读取，现在先返回默认配置
   return defaultConfig;
 }
 
 // 工具错误类型
-export class FileToolError extends Error {
+export class HyperSystemToolError extends Error {
   constructor(message: string, public code: string) {
     super(message);
     this.name = 'FileToolError';
@@ -58,4 +58,7 @@ export const ERROR_CODES = {
   OPERATION_TIMEOUT: 'OPERATION_TIMEOUT',
   COMMAND_BLOCKED: 'COMMAND_BLOCKED',
   EXTENSION_BLOCKED: 'EXTENSION_BLOCKED',
+  NETWORK_ERROR: 'NETWORK_ERROR',
+  INVALID_INPUT: 'INVALID_INPUT',
+  FILE_READ_ERROR: 'FILE_READ_ERROR',
 } as const;

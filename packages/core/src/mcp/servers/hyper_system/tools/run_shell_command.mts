@@ -9,7 +9,7 @@ import {
   normalizePath,
   validateCommand
 } from '../utils.mjs';
-import { FileToolError, ERROR_CODES } from '../lib.mjs';
+import { HyperSystemToolError, ERROR_CODES } from '../lib.mjs';
 
 const runShellCommandSchema = z.object({
   command: z.string().describe('The shell command to execute'),
@@ -293,7 +293,7 @@ export function registerRunShellCommandTool(server: McpServer): void {
 
         // 验证必需参数
         if (!working_directory || typeof working_directory !== 'string' || working_directory.trim() === '') {
-          throw new FileToolError(
+          throw new HyperSystemToolError(
             'Parameter "working_directory" is required and must be a non-empty string',
             ERROR_CODES.INVALID_PATH
           );
@@ -304,7 +304,7 @@ export function registerRunShellCommandTool(server: McpServer): void {
 
         // 检查工作目录是否存在
         if (!fs.existsSync(workingDir)) {
-          throw new FileToolError(
+          throw new HyperSystemToolError(
             `Working directory not found: ${working_directory || 'workspace root'}`,
             ERROR_CODES.FILE_NOT_FOUND
           );
@@ -313,7 +313,7 @@ export function registerRunShellCommandTool(server: McpServer): void {
         // 检查是否是目录
         const stats = fs.statSync(workingDir);
         if (!stats.isDirectory()) {
-          throw new FileToolError(
+          throw new HyperSystemToolError(
             `Working directory path is not a directory: ${working_directory}`,
             ERROR_CODES.INVALID_PATH
           );
@@ -414,7 +414,7 @@ export function registerRunShellCommandTool(server: McpServer): void {
         };
 
       } catch (error) {
-        const errorMessage = error instanceof FileToolError
+        const errorMessage = error instanceof HyperSystemToolError
           ? error.message
           : `Failed to execute command: ${error}`;
 

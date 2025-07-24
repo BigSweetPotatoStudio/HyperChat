@@ -12,11 +12,11 @@ import {
   registerSearchFileContentTool,
   registerReadManyFilesTool,
   registerRunShellCommandTool,
-  registerSaveMemoryTool
+  registerWebFetchTool
 } from "./tools/index.mjs";
 
 async function createServer() {
-  Logger.info(`Creating MCP server for FileTools`);
+  Logger.info(`Creating MCP server for HyperSystem`);
 
   const server = new McpServer({
     name: NAME,
@@ -32,6 +32,7 @@ async function createServer() {
   registerSearchFileContentTool(server);
   registerReadManyFilesTool(server);
   registerRunShellCommandTool(server);
+  registerWebFetchTool(server);
   // registerSaveMemoryTool(server);
 
   const [clientTransport, serverTransport] = InMemoryTransport.createLinkedPair();
@@ -39,12 +40,12 @@ async function createServer() {
   // 连接服务器传输
   await server.connect(serverTransport);
   
-  Logger.info(`FileTools MCP server started successfully with ${9} tools`);
+  Logger.info(`HyperSystem MCP server started successfully with ${10} tools`);
   
   return clientTransport;
 }
 
-export const FileTools = {
+export const HyperSystem = {
   createServer,
   name: NAME,
   configSchema,
