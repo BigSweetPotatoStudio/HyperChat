@@ -1,7 +1,5 @@
 import * as path from "path";
 import * as fs from "fs";
-import dayjs from "dayjs";
-import { v4 } from "uuid";
 import { CONSTANTS } from "./constants.mjs";
 import {
   WorkspaceConfig,
@@ -11,20 +9,10 @@ import {
   validateWorkspaceConfig
 } from "./types.mjs";
 import type { ChatHistoryItem } from "@dadigua/hyperchat-shared/types";
-import type { MCPServerConfig } from "@dadigua/hyperchat-shared/types";
 import { AgentManager } from "./agentManager.mjs";
 import { AgentInstance } from "./agentInstance.mjs";
-import { WorkspaceMCPManager } from "./mcp/manager.mjs";
-import type { WorkspaceMCPClientImpl } from "./mcp/client.mjs";
 import { WorkspaceSettingsManager } from "../data/managers/workspaceSettingsManager.mjs";
-import { TaskManager } from "../data/managers/taskManager.mjs";
 import { Logger } from "../log.mjs";
-import * as cron from "node-cron";
-import {
-  initializeAIEnvironment,
-  createAIChannel,
-  executeAICompletion
-} from "../utils/aiConfigHelper.mjs";
 
 /**
  * 工作区状态枚举
@@ -48,9 +36,7 @@ export enum WorkspaceState {
 export class Workspace {
   private config: WorkspaceConfig;
   private agentManager: AgentManager;
-  private mcpManager: WorkspaceMCPManager;
   private settingsManager: WorkspaceSettingsManager;
-  private taskManager: TaskManager;
   private fileTree?: WorkspaceFileNode;
   private lastSync?: number;
   private readonly HYPERCHAT_DIR = CONSTANTS.HYPERCHAT_DIR;
@@ -58,9 +44,6 @@ export class Workspace {
   // 工作区状态管理
   private state: WorkspaceState = WorkspaceState.UNINITIALIZED;
 
-  // 任务调度相关
-  private taskJobs: Map<string, cron.ScheduledTask> = new Map();
-  private isTaskSchedulerRunning: boolean = false;
 
   constructor(public workspacePath: string) {
     const hyperChatPath = path.join(this.workspacePath, this.HYPERCHAT_DIR);
@@ -84,34 +67,6 @@ export class Workspace {
 
     this.agentManager = new AgentManager(agentPaths);
 
-    // 创建MCP管理器
-    // 如果是本地工作区，传入本地和全局路径，实现配置叠加
-    // 如果是全局工作区，只传入本地路径
-    const localPath = hyperChatPath;
-    const globalPath = path.join(CONSTANTS.GLOBAL_PATH, this.HYPERCHAT_DIR);
-
-    this.mcpManager = new WorkspaceMCPManager(
-      localPath,
-      globalPath,
-      {
-        autoReconnect: true,
-        reconnectInterval: 5000,
-        maxReconnectAttempts: 5,
-        enableLogging: true,
-      },
-      {
-        onClientStatusChange: (client) => {
-          Logger.info(`MCP客户端状态变化: ${client.serverName} -> ${client.status}`);
-        },
-        onConfigUpdate: (config) => {
-          Logger.info(`MCP配置更新: ${config.workspacePath}`);
-        },
-        onError: (error, context) => {
-          Logger.error("MCP管理器错误:", error, context);
-        },
-      }
-    );
-
     // 初始化设置管理器
     // 如果是本地工作区，传入本地和全局路径，实现配置叠加
     // 如果是全局工作区，只传入本地路径
@@ -120,9 +75,6 @@ export class Workspace {
       ? path.join(CONSTANTS.GLOBAL_PATH, this.HYPERCHAT_DIR)
       : undefined;
     this.settingsManager = new WorkspaceSettingsManager(settingsLocalPath, settingsGlobalPath);
-
-    // 初始化任务管理器
-    this.taskManager = new TaskManager(hyperChatPath);
   }
 
   /**
@@ -188,9 +140,6 @@ export class Workspace {
       // 初始化设置管理器（不自动创建配置文件）
       await this.settingsManager.init();
 
-      // 初始化任务管理器（不自动创建目录，仅初始化内存状态）
-      await this.taskManager.init();
-
       // 加载工作区基本配置（不启动服务）
       await this.loadMergedConfig();
 
@@ -234,12 +183,6 @@ export class Workspace {
     try {
       Logger.info('🔥 开始启动工作区服务...');
 
-      // 启动 MCP 客户端（网络连接，真正的重量级操作）
-      await this.mcpManager.startClients();
-
-      // 启动任务调度器
-      await this.startTaskScheduler();
-
       this.state = WorkspaceState.STARTED;
       Logger.info('✅ 工作区服务启动完成');
 
@@ -271,12 +214,6 @@ export class Workspace {
     try {
       this.state = WorkspaceState.STOPPING;
       Logger.info('🛑 开始停止工作区服务...');
-
-      // 停止任务调度器
-      await this.stopTaskScheduler();
-
-      // 停止 MCP 客户端
-      await this.stopMcpClients();
 
       // 保存当前状态
       await this.save();
@@ -602,153 +539,6 @@ export class Workspace {
   }
 
 
-  // ========== MCP 管理 ==========
-
-  /**
-   * 获取 MCP 客户端
-   */
-  getMcpClients(): WorkspaceMCPClientImpl[] {
-    return this.mcpManager.getAllClients();
-  }
-
-
-  /**
-   * 启动工作区 MCP 服务
-   */
-  async startMcpClients(): Promise<WorkspaceMCPClientImpl[]> {
-    try {
-      const clients = await this.mcpManager.startClients();
-      Logger.info(`工作区 MCP 服务已启动: ${this.workspacePath}`);
-      return clients;
-    } catch (error) {
-      Logger.error(`启动工作区 MCP 服务失败: ${this.workspacePath}`, error);
-      throw error;
-    }
-  }
-
-  /**
-   * 停止工作区 MCP 服务
-   */
-  async stopMcpClients(): Promise<void> {
-    try {
-      await this.mcpManager.stopClients();
-      Logger.info(`工作区 MCP 服务已停止: ${this.workspacePath}`);
-    } catch (error) {
-      Logger.error(`停止工作区 MCP 服务失败: ${this.workspacePath}`, error);
-      throw error;
-    }
-  }
-
-  /**
-   * 重新加载工作区 MCP 配置
-   */
-  async reloadMcpClients(): Promise<WorkspaceMCPClientImpl[]> {
-    try {
-      await this.stopMcpClients();
-      return await this.startMcpClients();
-    } catch (error) {
-      Logger.error(`重新加载工作区 MCP 配置失败: ${this.workspacePath}`, error);
-      throw error;
-    }
-  }
-
-  /**
-   * 管理单个 MCP 客户端
-   */
-  async manageMcpClient(clientName: string, action: 'restart' | 'disable' | 'enable' | 'delete', scope: 'global' | 'workspace' = 'workspace'): Promise<void> {
-    try {
-      switch (action) {
-        case 'delete':
-          await this.mcpManager.deleteServerConfig(clientName, scope);
-          break;
-        case 'disable':
-          // disable 操作：停止客户端并在配置中标记为 disabled
-          await this.mcpManager.disableClient(clientName, scope);
-          break;
-        case 'enable':
-          // enable 操作：移除 disabled 标记并启动客户端
-          await this.mcpManager.enableClient(clientName, scope);
-          break;
-        case 'restart':
-        default:
-          // restart 操作根据 scope 重启对应配置的客户端
-          await this.mcpManager.restartClient(clientName, scope);
-          break;
-      }
-      const scopeText = scope === 'global' ? '全局' : '工作区';
-      Logger.info(`${scopeText}MCP客户端 ${clientName} ${action} 操作完成`);
-    } catch (error) {
-      const scopeText = scope === 'global' ? '全局' : '工作区';
-      Logger.error(`${scopeText}MCP客户端 ${clientName} ${action} 操作失败:`, error);
-      throw error;
-    }
-  }
-
-
-  /**
-   * 销毁工作区时清理 MCP 管理器
-   */
-  async destroy(): Promise<void> {
-    try {
-      await this.mcpManager.destroy();
-      Logger.info(`工作区已销毁: ${this.workspacePath}`);
-    } catch (error) {
-      Logger.error(`销毁工作区失败: ${this.workspacePath}`, error);
-      throw error;
-    }
-  }
-
-  /**
-   * 添加或更新单个 MCP 服务器配置
-   */
-  async setMcpServer(name: string, config: MCPServerConfig): Promise<void> {
-    try {
-      await this.mcpManager.setServerConfig(name, config);
-      Logger.info(`MCP服务器配置已设置: ${name}`);
-    } catch (error) {
-      Logger.error(`设置MCP服务器配置失败: ${name}`, error);
-      throw error;
-    }
-  }
-
-  /**
-   * 删除 MCP 服务器配置
-   */
-  async deleteMcpServer(name: string): Promise<void> {
-    try {
-      await this.mcpManager.deleteServerConfig(name);
-      Logger.info(`MCP服务器配置已删除: ${name}`);
-    } catch (error) {
-      Logger.error(`删除MCP服务器配置失败: ${name}`, error);
-      throw error;
-    }
-  }
-
-  /**
-   * 添加或更新全局 MCP 服务器配置
-   */
-  async setGlobalMcpServer(name: string, config: MCPServerConfig): Promise<void> {
-    try {
-      await this.mcpManager.setGlobalServerConfig(name, config);
-      Logger.info(`全局MCP服务器配置已设置: ${name}`);
-    } catch (error) {
-      Logger.error(`设置全局MCP服务器配置失败: ${name}`, error);
-      throw error;
-    }
-  }
-
-  /**
-   * 删除全局 MCP 服务器配置
-   */
-  async deleteGlobalMcpServer(name: string): Promise<void> {
-    try {
-      await this.mcpManager.deleteServerConfig(name, 'global');
-      Logger.info(`全局MCP服务器配置已删除: ${name}`);
-    } catch (error) {
-      Logger.error(`删除全局MCP服务器配置失败: ${name}`, error);
-      throw error;
-    }
-  }
 
 
   // ========== 文件树管理 ==========
@@ -855,12 +645,6 @@ export class Workspace {
    */
   async delete(): Promise<boolean> {
     try {
-      // 停止 MCP 客户端
-      await this.stopMcpClients();
-
-      // 销毁 MCP 管理器
-      await this.mcpManager.destroy();
-
       const hyperChatPath = this.getHyperChatPath();
       if (fs.existsSync(hyperChatPath)) {
         await fs.promises.rm(hyperChatPath, { recursive: true, force: true });
@@ -905,396 +689,12 @@ export class Workspace {
    */
   async getSummary(): Promise<{
     agentsCount: number;
-    mcpServersCount: number;
-    tasksCount: number;
     lastSync?: number;
   }> {
-    const taskStats = await this.taskManager.getTaskStats();
     return {
       agentsCount: await this.getAgentsCount(),
-      mcpServersCount: this.getMcpClients().length,
-      tasksCount: taskStats.total,
       lastSync: this.lastSync,
     };
-  }
-
-  // ========== 任务管理 ==========
-
-  /**
-   * 获取任务管理器
-   */
-  getTaskManager(): TaskManager {
-    return this.taskManager;
-  }
-
-  /**
-   * 获取单个任务（直接委托）
-   */
-  async getTask(taskName: string) {
-    return await this.taskManager.getTask(taskName);
-  }
-
-  /**
-   * 获取所有任务（直接委托）
-   */
-  async getAllTasks() {
-    return await this.taskManager.getAllTasks();
-  }
-
-  /**
-   * 获取已启用的任务（直接委托）
-   */
-  async getEnabledTasks() {
-    return await this.taskManager.getEnabledTasks();
-  }
-
-  /**
-   * 获取已禁用的任务（直接委托）
-   */
-  async getDisabledTasks() {
-    return await this.taskManager.getDisabledTasks();
-  }
-
-  /**
-   * 根据 agent 获取任务（直接委托）
-   */
-  async getTasksByAgent(agentName: string) {
-    return await this.taskManager.getTasksByAgent(agentName);
-  }
-
-  /**
-   * 复制任务（直接委托）
-   */
-  async cloneTask(taskName: string, newTaskName: string) {
-    return await this.taskManager.cloneTask(taskName, newTaskName);
-  }
-
-  /**
-   * 获取任务统计信息（直接委托）
-   */
-  async getTaskStats() {
-    return await this.taskManager.getTaskStats();
-  }
-
-  // ========== 任务调度管理 ==========
-
-  /**
-   * 启动任务调度器
-   */
-  async startTaskScheduler(): Promise<void> {
-    if (this.isTaskSchedulerRunning) {
-      Logger.info('任务调度器已在运行中');
-      return;
-    }
-
-    try {
-      Logger.info('启动任务调度器...');
-
-      // 获取所有已启用的任务
-      const enabledTasks = await this.taskManager.getEnabledTasks();
-
-      // 为每个任务创建 cron 作业
-      for (const task of enabledTasks) {
-        await this.scheduleTask(task.name, task.cron);
-      }
-
-      this.isTaskSchedulerRunning = true;
-      Logger.info(`任务调度器已启动，共加载 ${enabledTasks.length} 个任务`);
-
-    } catch (error) {
-      Logger.error('启动任务调度器失败:', error);
-      throw error;
-    }
-  }
-
-  /**
-   * 停止任务调度器
-   */
-  async stopTaskScheduler(): Promise<void> {
-    if (!this.isTaskSchedulerRunning) {
-      return;
-    }
-
-    try {
-      Logger.info('停止任务调度器...');
-
-      // 停止所有 cron 作业
-      for (const [taskName, job] of this.taskJobs) {
-        job.stop();
-        Logger.debug(`停止任务调度: ${taskName}`);
-      }
-
-      this.taskJobs.clear();
-      this.isTaskSchedulerRunning = false;
-
-      Logger.info('任务调度器已停止');
-
-    } catch (error) {
-      Logger.error('停止任务调度器失败:', error);
-      throw error;
-    }
-  }
-
-  /**
-   * 重新启动任务调度器
-   */
-  async restartTaskScheduler(): Promise<void> {
-    await this.stopTaskScheduler();
-    await this.startTaskScheduler();
-  }
-
-  /**
-   * 调度单个任务
-   */
-  async scheduleTask(taskName: string, cronExpression: string): Promise<void> {
-    try {
-      // 如果任务已经被调度，先停止它
-      if (this.taskJobs.has(taskName)) {
-        const existingJob = this.taskJobs.get(taskName)!;
-        existingJob.stop();
-        this.taskJobs.delete(taskName);
-      }
-
-      // 验证 cron 表达式
-      if (!cron.validate(cronExpression)) {
-        throw new Error(`无效的 cron 表达式: ${cronExpression}`);
-      }
-
-      // 创建新的 cron 作业
-      const job = cron.schedule(cronExpression, async () => {
-        await this.executeTask(taskName);
-      }, {
-        scheduled: false, // 先不启动，等设置完成后再启动
-        timezone: 'Asia/Shanghai' // 使用中国时区，可以根据需要调整
-      });
-
-      // 启动作业
-      job.start();
-      this.taskJobs.set(taskName, job);
-
-      Logger.info(`任务 '${taskName}' 已调度，执行时间: ${cronExpression}`);
-
-    } catch (error) {
-      Logger.error(`调度任务 '${taskName}' 失败:`, error);
-      throw error;
-    }
-  }
-
-  /**
-   * 取消调度单个任务
-   */
-  async unscheduleTask(taskName: string): Promise<void> {
-    const job = this.taskJobs.get(taskName);
-    if (job) {
-      job.stop();
-      this.taskJobs.delete(taskName);
-      Logger.info(`取消调度任务: ${taskName}`);
-    }
-  }
-
-  /**
-   * 执行单个任务
-   */
-  async executeTask(taskName: string): Promise<void> {
-    try {
-      Logger.info(`开始执行任务: ${taskName}`);
-
-      // 获取任务配置
-      const task = await this.taskManager.getTask(taskName);
-      if (!task) {
-        throw new Error(`任务 '${taskName}' 不存在`);
-      }
-
-      if (task.disabled) {
-        Logger.warn(`任务 '${taskName}' 已被禁用，跳过执行`);
-        return;
-      }
-
-      // 获取对应的 Agent
-      const agentInstance = this.agentManager.getAgent(task.agentName);
-      if (!agentInstance) {
-        throw new Error(`Agent '${task.agentName}' 不存在`);
-      }
-
-      // 构造任务执行的消息
-      const taskMessage = `${task.description}`;
-
-      // 执行任务 - 通过 Agent 处理
-      Logger.info(`使用 Agent '${task.agentName}' 执行任务 '${taskName}'`);
-
-      // 创建任务执行的聊天记录
-      const chatLog: ChatHistoryItem = {
-        key: `task-` + dayjs().format('YYMMDD-HHmmss') + '-' + v4().slice(0, 8),
-        agentName: task.agentName,
-        label: `定时任务: ${task.name}`,
-        dateTime: Date.now(),
-        chatType: 'task',
-        configOverrides: {
-          modelKey: agentInstance.getConfig().modelKey || 'default',
-          allowMCPs: agentInstance.getConfig().allowMCPs,
-          isConfirmCallTool: agentInstance.getConfig().isConfirmCallTool,
-          temperature: agentInstance.getConfig().temperature,
-          maxAttachedDialogs: agentInstance.getConfig().maxAttachedDialogs,
-          prompt: agentInstance.getConfig().prompt
-        },
-        messages: [
-          {
-            role: 'user',
-            content: taskMessage
-          }
-        ]
-      };
-
-      // 执行 AI 对话
-      try {
-        // 使用共享的 AI 环境初始化工具
-        const env = await initializeAIEnvironment({
-          agentName: task.agentName,
-          workspacePath: this.workspacePath,
-        });
-
-        // 创建 AI 通道
-        const aiChannel = createAIChannel();
-
-        // 复制已有的消息到 AI 通道
-        for (const msg of chatLog.messages) {
-          aiChannel.addMessage({
-            ...msg,
-            content_date: msg.content_date || Date.now()
-          } as any);
-        }
-
-        // 执行 AI 对话
-        Logger.info(`正在生成 AI 响应...`);
-        const assistantMessage = await executeAICompletion(aiChannel, env, {
-          onUpdate: () => {
-            // 可以在这里添加进度日志
-          },
-          agentName: task.agentName
-        });
-
-        // 更新聊天记录
-        chatLog.messages = aiChannel.messages;
-
-        // 保存更新后的聊天记录
-        await agentInstance.setChatLog(chatLog);
-
-        Logger.info(`任务 '${taskName}' 执行完成，AI 响应: ${(assistantMessage.content as string).substring(0, 100)}...`);
-
-      } catch (aiError) {
-        Logger.error(`执行任务 AI 对话失败:`, aiError);
-        // 即使 AI 执行失败，也保存聊天记录
-        await agentInstance.setChatLog(chatLog);
-        throw aiError;
-      }
-
-    } catch (error) {
-      Logger.error(`执行任务 '${taskName}' 失败:`, error);
-      // 不抛出错误，避免影响其他任务的调度
-    }
-  }
-
-  /**
-   * 手动触发任务执行
-   */
-  async triggerTask(taskName: string): Promise<void> {
-    Logger.info(`手动触发任务: ${taskName}`);
-    await this.executeTask(taskName);
-  }
-
-  /**
-   * 获取当前调度的任务列表
-   */
-  getScheduledTasks(): string[] {
-    return Array.from(this.taskJobs.keys());
-  }
-
-  /**
-   * 检查任务是否正在调度中
-   */
-  isTaskScheduled(taskName: string): boolean {
-    return this.taskJobs.has(taskName);
-  }
-
-  /**
-   * 重写任务相关方法，添加调度器同步
-   */
-
-  /**
-   * 创建任务（重写以添加调度）
-   */
-  async createTask(taskData: Parameters<TaskManager['createTask']>[0]) {
-    const task = await this.taskManager.createTask(taskData);
-
-    // 如果任务已启用且调度器正在运行，立即调度这个任务
-    if (!task.disabled && this.isTaskSchedulerRunning) {
-      await this.scheduleTask(task.name, task.cron);
-    }
-
-    return task;
-  }
-
-  /**
-   * 更新任务（重写以更新调度）
-   */
-  async updateTask(taskName: string, updates: Parameters<TaskManager['updateTask']>[1]) {
-    const oldTask = await this.taskManager.getTask(taskName);
-    const updatedTask = await this.taskManager.updateTask(taskName, updates);
-
-    if (updatedTask && this.isTaskSchedulerRunning) {
-      // 如果任务名称改变了，需要处理调度
-      if (oldTask && oldTask.name !== updatedTask.name) {
-        await this.unscheduleTask(oldTask.name);
-      }
-
-      // 重新调度任务
-      if (!updatedTask.disabled) {
-        await this.scheduleTask(updatedTask.name, updatedTask.cron);
-      } else {
-        await this.unscheduleTask(updatedTask.name);
-      }
-    }
-
-    return updatedTask;
-  }
-
-  /**
-   * 删除任务（重写以取消调度）
-   */
-  async deleteTask(taskName: string) {
-    const success = await this.taskManager.deleteTask(taskName);
-
-    if (success && this.isTaskSchedulerRunning) {
-      await this.unscheduleTask(taskName);
-    }
-
-    return success;
-  }
-
-  /**
-   * 启用任务（重写以添加调度）
-   */
-  async enableTask(taskName: string) {
-    const task = await this.taskManager.enableTask(taskName);
-
-    if (task && this.isTaskSchedulerRunning) {
-      await this.scheduleTask(task.name, task.cron);
-    }
-
-    return task;
-  }
-
-  /**
-   * 禁用任务（重写以取消调度）
-   */
-  async disableTask(taskName: string) {
-    const task = await this.taskManager.disableTask(taskName);
-
-    if (task && this.isTaskSchedulerRunning) {
-      await this.unscheduleTask(task.name);
-    }
-
-    return task;
   }
 
 }
