@@ -8,6 +8,9 @@ import { CONSTANTS } from "./constants.mjs";
 import { DataList } from "./dataList.mjs";
 import { sanitizeFileName } from "../common/util.mjs";
 import { AgentConfig, ChatHistoryItem } from "@dadigua/hyperchat-shared";
+import type { MCPServerConfig } from "@dadigua/hyperchat-shared/types";
+import type { Task } from "@dadigua/hyperchat-shared";
+import type { WorkspaceMCPConfig } from "./mcp/types.mjs";
 
 /**
  * Agent 类 - 管理单个 Agent 的配置和聊天记录
@@ -17,10 +20,14 @@ export class AgentInstance {
   private chatLogs: DataList<ChatHistoryItem>;
   private agentPath: string;
   private configPath: string;
+  private mcpConfigPath: string;
+  private tasksPath: string;
 
   constructor(agentPath: string, config?: AgentConfig) {
     this.agentPath = agentPath;
     this.configPath = path.join(agentPath, CONSTANTS.CONFIG_FILES.AGENT_CONFIG);
+    this.mcpConfigPath = path.join(agentPath, CONSTANTS.CONFIG_FILES.MCP);
+    this.tasksPath = path.join(agentPath, "tasks");
 
     this.config = config || {
       name: path.basename(agentPath),
@@ -58,6 +65,7 @@ export class AgentInstance {
     const directories = [
       this.agentPath,
       path.join(this.agentPath, CONSTANTS.DIRECTORIES.CHAT_LOGS),
+      this.tasksPath, // Agent专属tasks目录
     ];
 
     for (const dir of directories) {
@@ -227,11 +235,17 @@ export class AgentInstance {
   }
 
   /**
-   * 删除整个 Agent
+   * 删除整个 Agent（包括专属的MCP和任务配置）
    */
   async delete(): Promise<boolean> {
     try {
       if (fs.existsSync(this.agentPath)) {
+        // 递归删除整个Agent目录，包括:
+        // - agent.yaml (Agent配置)
+        // - memory.md (Agent记忆)
+        // - chatlogs/ (聊天记录)
+        // - mcp.json (Agent专属MCP配置)
+        // - tasks/ (Agent专属任务目录)
         await fs.promises.rm(this.agentPath, { recursive: true, force: true });
       }
       return true;
@@ -242,12 +256,14 @@ export class AgentInstance {
   }
 
   /**
-   * 获取 Agent 摘要信息
+   * 获取 Agent 摘要信息（包含MCP和任务统计）
    */
   async getSummary(): Promise<{
     config: AgentConfig;
     chatLogsCount: number;
     lastChatTime?: number;
+    hasMCPConfig: boolean;
+    tasksCount: number;
   }> {
     // 使用轻量级统计避免加载所有聊天记录内容
     const stats = await this.chatLogs.getStats();
@@ -256,7 +272,266 @@ export class AgentInstance {
       config: this.config,
       chatLogsCount: stats.count,
       lastChatTime: stats.lastModified,
+      hasMCPConfig: await this.hasMCPConfig(),
+      tasksCount: await this.getTasksCount(),
     };
+  }
+
+  // ==================== Agent专属MCP管理 ====================
+
+  /**
+   * 获取Agent专属MCP配置路径
+   */
+  getMCPConfigPath(): string {
+    return this.mcpConfigPath;
+  }
+
+  /**
+   * 检查Agent是否有MCP配置
+   */
+  async hasMCPConfig(): Promise<boolean> {
+    return fs.existsSync(this.mcpConfigPath);
+  }
+
+  /**
+   * 获取Agent专属MCP配置
+   */
+  async getMCPConfig(): Promise<WorkspaceMCPConfig | null> {
+    if (!await this.hasMCPConfig()) {
+      return null;
+    }
+
+    try {
+      const content = await fs.promises.readFile(this.mcpConfigPath, "utf-8");
+      const config = JSON.parse(content) as WorkspaceMCPConfig;
+      return config;
+    } catch (error) {
+      console.warn(`读取Agent MCP配置失败 ${this.config.name}:`, error);
+      return null;
+    }
+  }
+
+  /**
+   * 更新Agent专属MCP配置
+   */
+  async updateMCPConfig(config: WorkspaceMCPConfig): Promise<boolean> {
+    try {
+      // 确保Agent目录存在
+      if (!fs.existsSync(this.agentPath)) {
+        await fs.promises.mkdir(this.agentPath, { recursive: true });
+      }
+
+      // 更新配置的基本信息
+      const updatedConfig: WorkspaceMCPConfig = {
+        ...config,
+        workspacePath: this.agentPath,
+        lastModified: Date.now(),
+        created: config.created || Date.now(),
+      };
+
+      const content = JSON.stringify(updatedConfig, null, 2);
+      await fs.promises.writeFile(this.mcpConfigPath, content, "utf-8");
+      return true;
+    } catch (error) {
+      console.warn(`保存Agent MCP配置失败 ${this.config.name}:`, error);
+      return false;
+    }
+  }
+
+  /**
+   * 删除Agent专属MCP配置
+   */
+  async deleteMCPConfig(): Promise<boolean> {
+    try {
+      if (await this.hasMCPConfig()) {
+        await fs.promises.unlink(this.mcpConfigPath);
+      }
+      return true;
+    } catch (error) {
+      console.warn(`删除Agent MCP配置失败 ${this.config.name}:`, error);
+      return false;
+    }
+  }
+
+  // ==================== Agent专属任务管理 ====================
+
+  /**
+   * 获取Agent专属任务目录路径
+   */
+  getTasksPath(): string {
+    return this.tasksPath;
+  }
+
+  /**
+   * 检查Agent是否有任务目录
+   */
+  async hasTasksDirectory(): Promise<boolean> {
+    return fs.existsSync(this.tasksPath) && fs.statSync(this.tasksPath).isDirectory();
+  }
+
+  /**
+   * 获取Agent专属任务列表
+   */
+  async getTasks(): Promise<Task[]> {
+    if (!await this.hasTasksDirectory()) {
+      return [];
+    }
+
+    try {
+      const files = await fs.promises.readdir(this.tasksPath);
+      const taskFiles = files.filter(file => file.endsWith('.yaml') || file.endsWith('.yml'));
+      const tasks: Task[] = [];
+
+      for (const file of taskFiles) {
+        try {
+          const filePath = path.join(this.tasksPath, file);
+          const content = await fs.promises.readFile(filePath, "utf-8");
+          const task = yaml.load(content) as Task;
+          
+          // 确保任务的agentName与当前Agent一致
+          if (task && typeof task === 'object') {
+            task.agentName = this.config.name;
+            tasks.push(task);
+          }
+        } catch (error) {
+          console.warn(`读取任务文件失败 ${file}:`, error);
+        }
+      }
+
+      return tasks;
+    } catch (error) {
+      console.warn(`读取Agent任务列表失败 ${this.config.name}:`, error);
+      return [];
+    }
+  }
+
+  /**
+   * 获取单个任务
+   */
+  async getTask(taskName: string): Promise<Task | null> {
+    const taskPath = path.join(this.tasksPath, `${sanitizeFileName(taskName)}.yaml`);
+    
+    if (!fs.existsSync(taskPath)) {
+      return null;
+    }
+
+    try {
+      const content = await fs.promises.readFile(taskPath, "utf-8");
+      const task = yaml.load(content) as Task;
+      
+      if (task && typeof task === 'object') {
+        // 确保任务的agentName与当前Agent一致
+        task.agentName = this.config.name;
+        return task;
+      }
+      
+      return null;
+    } catch (error) {
+      console.warn(`读取任务失败 ${taskName}:`, error);
+      return null;
+    }
+  }
+
+  /**
+   * 添加Agent专属任务
+   */
+  async addTask(task: Task): Promise<boolean> {
+    try {
+      // 确保tasks目录存在
+      if (!await this.hasTasksDirectory()) {
+        await fs.promises.mkdir(this.tasksPath, { recursive: true });
+      }
+
+      // 确保任务的agentName与当前Agent一致
+      const agentTask: Task = {
+        ...task,
+        agentName: this.config.name,
+      };
+
+      const taskPath = path.join(this.tasksPath, `${sanitizeFileName(task.name)}.yaml`);
+      const yamlContent = yaml.dump(agentTask, { indent: 2 });
+      await fs.promises.writeFile(taskPath, yamlContent, "utf-8");
+      return true;
+    } catch (error) {
+      console.warn(`添加Agent任务失败 ${task.name}:`, error);
+      return false;
+    }
+  }
+
+  /**
+   * 更新Agent专属任务
+   */
+  async updateTask(taskName: string, task: Task): Promise<boolean> {
+    try {
+      const oldTaskPath = path.join(this.tasksPath, `${sanitizeFileName(taskName)}.yaml`);
+      const newTaskPath = path.join(this.tasksPath, `${sanitizeFileName(task.name)}.yaml`);
+
+      // 确保任务的agentName与当前Agent一致
+      const agentTask: Task = {
+        ...task,
+        agentName: this.config.name,
+      };
+
+      const yamlContent = yaml.dump(agentTask, { indent: 2 });
+
+      // 如果任务名称发生变化，需要删除旧文件
+      if (oldTaskPath !== newTaskPath && fs.existsSync(oldTaskPath)) {
+        await fs.promises.unlink(oldTaskPath);
+      }
+
+      await fs.promises.writeFile(newTaskPath, yamlContent, "utf-8");
+      return true;
+    } catch (error) {
+      console.warn(`更新Agent任务失败 ${taskName}:`, error);
+      return false;
+    }
+  }
+
+  /**
+   * 删除Agent专属任务
+   */
+  async deleteTask(taskName: string): Promise<boolean> {
+    try {
+      const taskPath = path.join(this.tasksPath, `${sanitizeFileName(taskName)}.yaml`);
+      
+      if (fs.existsSync(taskPath)) {
+        await fs.promises.unlink(taskPath);
+      }
+      
+      return true;
+    } catch (error) {
+      console.warn(`删除Agent任务失败 ${taskName}:`, error);
+      return false;
+    }
+  }
+
+  /**
+   * 清空Agent的所有任务
+   */
+  async clearTasks(): Promise<boolean> {
+    try {
+      if (await this.hasTasksDirectory()) {
+        const files = await fs.promises.readdir(this.tasksPath);
+        const taskFiles = files.filter(file => file.endsWith('.yaml') || file.endsWith('.yml'));
+
+        for (const file of taskFiles) {
+          const filePath = path.join(this.tasksPath, file);
+          await fs.promises.unlink(filePath);
+        }
+      }
+      return true;
+    } catch (error) {
+      console.warn(`清空Agent任务失败 ${this.config.name}:`, error);
+      return false;
+    }
+  }
+
+  /**
+   * 获取Agent任务数量
+   */
+  async getTasksCount(): Promise<number> {
+    const tasks = await this.getTasks();
+    return tasks.length;
   }
 }
 
@@ -541,11 +816,15 @@ export class AgentManager {
     config: AgentConfig & { scope?: "global" | "workspace" };
     chatLogsCount: number;
     lastChatTime?: number;
+    hasMCPConfig: boolean;
+    tasksCount: number;
   }>> {
     const summaries: Array<{
       config: AgentConfig & { scope?: "global" | "workspace" };
       chatLogsCount: number;
       lastChatTime?: number;
+      hasMCPConfig: boolean;
+      tasksCount: number;
     }> = [];
     for (const [agentId, agent] of this.agents.entries()) {
       const summary = await agent.getSummary();

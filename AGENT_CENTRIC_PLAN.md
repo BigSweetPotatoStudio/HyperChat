@@ -47,22 +47,36 @@
 
 ## 📋 实施计划
 
-### Phase 1: 扩展Agent内部资源管理 (1-2周)
+### ✅ Phase 1: 扩展Agent内部资源管理 (已完成)
 
-#### 1.1 扩展AgentConfig Schema
-- 文件: `packages/shared/src/zodSchemas/agentConfigSchema.mts`
-- 更新Agent目录结构，支持mcp.json和tasks/目录
-- 保持向后兼容
+#### ✅ 1.1 扩展AgentInstance类
+- **文件**: `packages/core/src/workspace/agentManager.mts`
+- **完成内容**:
+  - ✅ 新增Agent专属MCP配置管理方法 (getMCPConfig, updateMCPConfig, deleteMCPConfig等)
+  - ✅ 新增Agent专属任务管理方法 (getTasks, addTask, updateTask, deleteTask等)
+  - ✅ 支持Agent内部资源文件读写操作
+  - ✅ 更新Agent摘要信息，包含MCP和任务统计
 
-#### 1.2 扩展AgentInstance类
-- 文件: `packages/core/src/data/managers/agentManager.mts`
-- 新增MCP配置管理方法
-- 新增任务管理方法
-- 支持Agent内部资源文件读写
+#### ✅ 1.2 更新Agent目录结构  
+- **完成内容**:
+  - ✅ 支持Agent目录下的`mcp.json`文件存储Agent专属MCP配置
+  - ✅ 支持Agent目录下的`tasks/`目录存储Agent专属任务
+  - ✅ 实现懒加载和按需创建目录结构
+  - ✅ 更新createDirectories方法自动创建tasks目录
 
-#### 1.3 更新Agent目录结构
-- 支持Agent目录下的`mcp.json`和`tasks/`目录
-- 实现懒加载和按需创建
+#### ✅ 1.3 Agent专属资源管理API
+- **完成内容**:
+  - ✅ MCP管理: `getMCPConfigPath()`, `hasMCPConfig()`, `getMCPConfig()`, `updateMCPConfig()`, `deleteMCPConfig()`
+  - ✅ 任务管理: `getTasksPath()`, `getTasks()`, `getTask()`, `addTask()`, `updateTask()`, `deleteTask()`, `clearTasks()`, `getTasksCount()`
+  - ✅ 完整的错误处理和文件操作安全性
+  - ✅ 与现有Agent配置系统的完美集成
+
+#### ✅ 1.4 测试验证
+- **测试结果**: 所有功能测试通过
+  - ✅ Agent MCP管理功能: 创建、读取、更新、删除
+  - ✅ Agent任务管理功能: 添加、获取、更新、删除、清空
+  - ✅ Agent摘要信息: 包含MCP和任务统计
+  - ✅ 类型检查通过，无编译错误
 
 ### Phase 2: 调整工作区管理逻辑 (1周)
 
