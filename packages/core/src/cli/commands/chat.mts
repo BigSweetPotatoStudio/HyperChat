@@ -309,13 +309,13 @@ export async function startChat(initialMessage?: string, options: ChatOptions = 
     logAIConfig(LoggerClass, env);
 
     // 获取工作区的Agent数量
-    const agentsSummary = await env.workspace.getAllAgentsSummary();
+    if (env.workspace) {
+      const agentsSummary = await env.workspace.getAllAgentsSummary();
+      logger.info(`👥 ${t`Current workspace Agent count:`} ${agentsSummary.length}`);
+    }
 
-    logger.info(`👥 ${t`Current workspace Agent count:`} ${agentsSummary.length}`);
-
-    // 显示详细的 MCP 工具统计
-    const mcpClients = env.workspace.getMcpClients();
-    logger.info(`🔧 ${t`Current workspace available MCP clients:`} ${mcpClients.length}`);
+    // 显示详细的 MCP 工具统计 - 现在从Agent获取
+    logger.info(`🔧 ${t`Current agent available MCP clients:`} ${env.mcpClients.length}`);
 
     const agentConfig = env.agent.getConfig();
 
@@ -376,7 +376,7 @@ export async function startChat(initialMessage?: string, options: ChatOptions = 
       // 构建系统提示词
       const agentName = env.agent.getConfig().name || "";
       const systemPrompt = getBuiltinPrompts(
-        env.workspace.workspacePath,
+        env.workspace?.workspacePath || '',
         env.effectiveConfig.prompt,
         agentName,
         "workspace",
@@ -563,7 +563,7 @@ export async function startChat(initialMessage?: string, options: ChatOptions = 
           // 构建系统提示词
           const agentName = env.agent.getConfig().name || "";
           const systemPrompt = getBuiltinPrompts(
-            env.workspace.workspacePath,
+            env.workspace?.workspacePath || '',
             env.effectiveConfig.prompt,
             agentName,
             "workspace"

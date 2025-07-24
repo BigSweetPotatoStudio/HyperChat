@@ -57,11 +57,31 @@ export async function startRun(options: RunOptions = {}) {
     logger.info(`📊 ${t`Workspace status:`}`);
     logger.info(`   - ${t`Status:`} ${workspace.getState()}`);
     logger.info(`   - ${t`Agents:`} ${summary.agentsCount}`);
-    logger.info(`   - ${t`MCP services:`} ${summary.mcpServersCount}`);
-    logger.info(`   - ${t`Tasks:`} ${summary.tasksCount}`);
+    
+    // 在Agent-centered架构下，统计所有Agent的MCP和任务信息
+    const agents = await workspace.getAllAgents();
+    let totalMcpClients = 0;
+    let totalTasks = 0;
+    let scheduledTasks: string[] = [];
+    
+    for (const agentConfig of agents) {
+      const agentInstance = workspace.getAgentInstance(agentConfig.name);
+      if (agentInstance) {
+        const mcpClients = agentInstance.getMCPClients();
+        totalMcpClients += mcpClients.length;
+        
+        const tasks = await agentInstance.getTasks();
+        totalTasks += tasks.length;
+        
+        const schedulerStats = agentInstance.getTaskSchedulerStats();
+        scheduledTasks.push(...schedulerStats.scheduledTasks);
+      }
+    }
+    
+    logger.info(`   - ${t`MCP services:`} ${totalMcpClients}`);
+    logger.info(`   - ${t`Tasks:`} ${totalTasks}`);
     
     // 显示正在调度的任务
-    const scheduledTasks = workspace.getScheduledTasks();
     if (scheduledTasks.length > 0) {
       logger.info(`⏰ ${t`Tasks in scheduling:`} ${scheduledTasks.length} ${t`items`}`);
       for (const taskName of scheduledTasks) {
@@ -147,14 +167,33 @@ export async function showRunStatus() {
       }
       
       const summary = await workspace.getSummary();
-      const scheduledTasks = workspace.getScheduledTasks();
+      
+      // 在Agent-centered架构下，统计所有Agent的MCP和任务信息
+      const agents = await workspace.getAllAgents();
+      let totalMcpClients = 0;
+      let totalTasks = 0;
+      let scheduledTasks: string[] = [];
+      
+      for (const agentConfig of agents) {
+        const agentInstance = workspace.getAgentInstance(agentConfig.name);
+        if (agentInstance) {
+          const mcpClients = agentInstance.getMCPClients();
+          totalMcpClients += mcpClients.length;
+          
+          const tasks = await agentInstance.getTasks();
+          totalTasks += tasks.length;
+          
+          const schedulerStats = agentInstance.getTaskSchedulerStats();
+          scheduledTasks.push(...schedulerStats.scheduledTasks);
+        }
+      }
       
       logger.info(`✅ ${t`Service is running`}`);
       logger.info(`🎯 ${t`Workspace:`} ${workspace.workspacePath}`);
       logger.info(`📊 ${t`Status:`}`);
       logger.info(`   - ${t`Agents:`} ${summary.agentsCount} ${t`items`}`);
-      logger.info(`   - ${t`MCP services:`} ${summary.mcpServersCount} ${t`items`}`);
-      logger.info(`   - ${t`Tasks:`} ${summary.tasksCount} ${t`items`}`);
+      logger.info(`   - ${t`MCP services:`} ${totalMcpClients} ${t`items`}`);
+      logger.info(`   - ${t`Tasks:`} ${totalTasks} ${t`items`}`);
       logger.info(`   - ${t`In scheduling:`} ${scheduledTasks.length} ${t`tasks`}`);
       
       if (scheduledTasks.length > 0) {
