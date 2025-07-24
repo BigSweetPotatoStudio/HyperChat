@@ -379,7 +379,7 @@ export async function startChat(initialMessage?: string, options: ChatOptions = 
         env.workspace.workspacePath,
         env.effectiveConfig.prompt,
         agentName,
-        env.workspace.getAgentScope(agentName) || "workspace",
+        "workspace",
       ).prompt;
 
       // 创建流式聊天处理器
@@ -566,7 +566,7 @@ export async function startChat(initialMessage?: string, options: ChatOptions = 
             env.workspace.workspacePath,
             env.effectiveConfig.prompt,
             agentName,
-            env.workspace.getAgentScope(agentName) || "workspace"
+            "workspace"
           ).prompt;
 
           // 创建交互式聊天处理器

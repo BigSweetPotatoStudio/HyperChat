@@ -13,6 +13,7 @@ import {
 import type { ChatHistoryItem } from "@dadigua/hyperchat-shared/types";
 import type { MCPServerConfig } from "@dadigua/hyperchat-shared/types";
 import { AgentManager } from "./agentManager.mjs";
+import { AgentInstance } from "./agentInstance.mjs";
 import { WorkspaceMCPManager } from "./mcp/manager.mjs";
 import type { WorkspaceMCPClientImpl } from "./mcp/client.mjs";
 import { WorkspaceSettingsManager } from "../data/managers/workspaceSettingsManager.mjs";
@@ -70,15 +71,18 @@ export class Workspace {
       settings: {},
     };
 
-    // 创建Agent管理器
-    // 如果是本地工作区，传入本地和全局路径，实现配置叠加
+    // 创建Agent管理器 - 使用路径数组
+    // 如果是本地工作区，传入全局路径和本地路径（本地覆盖全局）
     // 如果是全局工作区，只传入本地路径
     const agentLocalPath = path.join(hyperChatPath, CONSTANTS.DIRECTORIES.AGENTS);
-    const agentGlobalPath = this.isLocalWorkspace()
-      ? path.join(CONSTANTS.GLOBAL_PATH, this.HYPERCHAT_DIR, CONSTANTS.DIRECTORIES.AGENTS)
-      : undefined;
+    const agentPaths = this.isLocalWorkspace()
+      ? [
+          path.join(CONSTANTS.GLOBAL_PATH, this.HYPERCHAT_DIR, CONSTANTS.DIRECTORIES.AGENTS), // 全局路径
+          agentLocalPath // 本地路径（覆盖全局同名Agent）
+        ]
+      : [agentLocalPath]; // 仅本地路径
 
-    this.agentManager = new AgentManager(agentLocalPath, agentGlobalPath);
+    this.agentManager = new AgentManager(agentPaths);
 
     // 创建MCP管理器
     // 如果是本地工作区，传入本地和全局路径，实现配置叠加
@@ -408,11 +412,8 @@ export class Workspace {
     // 直接返回当前管理器的所有 Agents 即可
     const allAgents = await this.agentManager.getAllAgents();
 
-    // 移除内部的 scope 属性，保持向后兼容
-    return allAgents.map(agent => {
-      const { scope, ...cleanAgent } = agent;
-      return cleanAgent;
-    });
+    // 返回所有Agent配置
+    return allAgents;
   }
 
   /**
@@ -434,32 +435,32 @@ export class Workspace {
   }
 
   /**
-   * 创建新的 agent（支持 scope 参数，默认在工作区创建）
+   * 创建新的 agent（在指定的基础路径下创建，默认使用第一个路径）
    */
-  async createAgent(config: Partial<AgentConfig>, scope?: "global" | "workspace"): Promise<import("./agentManager.mjs").AgentInstance | null> {
-    return await this.agentManager.createAgent(config, scope);
+  async createAgent(config: Partial<AgentConfig>, targetBasePath?: string): Promise<AgentInstance | null> {
+    return await this.agentManager.createAgent(config, targetBasePath);
   }
 
   /**
-   * 获取单个 agent 实例（支持 scope 参数，默认智能查找）
+   * 获取单个 agent 实例（通过名称或路径）
    */
-  getAgentInstance(key: string, scope?: "global" | "workspace"): import("./agentManager.mjs").AgentInstance | null {
-    return this.agentManager.getAgent(key, scope);
+  getAgentInstance(nameOrPath: string): AgentInstance | null {
+    return this.agentManager.getAgent(nameOrPath);
   }
 
   /**
-   * 获取单个 agent 配置（支持 scope 参数，默认智能查找）
+   * 获取单个 agent 配置（通过名称或路径）
    */
-  async getAgent(key: string, scope?: "global" | "workspace"): Promise<AgentConfig | null> {
-    const instance = this.agentManager.getAgent(key, scope);
+  async getAgent(nameOrPath: string): Promise<AgentConfig | null> {
+    const instance = this.agentManager.getAgent(nameOrPath);
     return instance ? instance.getConfig() : null;
   }
 
   /**
    * 更新 agent 配置（支持名称变更）
    */
-  async updateAgent(agentName: string, updates: Partial<AgentConfig>, scope?: "global" | "workspace"): Promise<boolean> {
-    const agentInstance = this.agentManager.getAgent(agentName, scope);
+  async updateAgent(agentName: string, updates: Partial<AgentConfig>): Promise<boolean> {
+    const agentInstance = this.agentManager.getAgent(agentName);
     if (!agentInstance) {
       throw new Error(`Agent 不存在: ${agentName}`);
     }
@@ -474,7 +475,7 @@ export class Workspace {
 
       // 如果名称发生变更且更新成功，需要更新 AgentManager 的内部映射
       if (result && newName && newName !== oldName) {
-        await this.agentManager.updateAgentMapping(oldName, newName, scope);
+        await this.agentManager.updateAgentMapping(oldName, newName);
       }
 
       return result;
@@ -502,10 +503,10 @@ export class Workspace {
   }
 
   /**
-   * 删除 agent（支持 scope 参数，默认智能查找）
+   * 删除 agent（通过名称或路径）
    */
-  async deleteAgent(key: string, scope?: "global" | "workspace"): Promise<boolean> {
-    return await this.agentManager.deleteAgent(key, scope);
+  async deleteAgent(nameOrPath: string): Promise<boolean> {
+    return await this.agentManager.deleteAgent(nameOrPath);
   }
 
   /**
@@ -516,18 +517,18 @@ export class Workspace {
   }
 
   /**
-   * 获取 Agent 的聊天记录（支持 scope 参数，默认智能查找）
+   * 获取 Agent 的聊天记录（通过名称或路径）
    */
-  async getAgentChatLogs(agentName: string, scope?: "global" | "workspace"): Promise<ChatHistoryItem[]> {
-    const instance = this.agentManager.getAgent(agentName, scope);
+  async getAgentChatLogs(nameOrPath: string): Promise<ChatHistoryItem[]> {
+    const instance = this.agentManager.getAgent(nameOrPath);
     return instance ? await instance.getChatLogs() : [];
   }
 
   /**
-   * 添加 Agent 聊天记录（支持 scope 参数，允许修改全局 Agent）
+   * 添加 Agent 聊天记录（通过名称或路径）
    */
-  async addAgentChatLog(agentName: string, chatLog: ChatHistoryItem, scope?: "global" | "workspace"): Promise<boolean> {
-    const instance = this.agentManager.getAgent(agentName, scope);
+  async addAgentChatLog(nameOrPath: string, chatLog: ChatHistoryItem): Promise<boolean> {
+    const instance = this.agentManager.getAgent(nameOrPath);
     if (!instance) {
       return false;
     }
@@ -538,8 +539,8 @@ export class Workspace {
   /**
    * 删除 Agent 聊天记录（支持 scope 参数，允许修改全局 Agent）
    */
-  async deleteAgentChatLog(agentName: string, chatKey: string, scope?: "global" | "workspace"): Promise<boolean> {
-    const instance = this.agentManager.getAgent(agentName, scope);
+  async deleteAgentChatLog(agentName: string, chatKey: string): Promise<boolean> {
+    const instance = this.agentManager.getAgent(agentName);
     if (!instance) {
       return false;
     }
@@ -550,8 +551,8 @@ export class Workspace {
   /**
    * 清空 Agent 所有聊天记录（支持 scope 参数，允许修改全局 Agent）
    */
-  async clearAgentChatLogs(agentName: string, scope?: "global" | "workspace"): Promise<boolean> {
-    const instance = this.agentManager.getAgent(agentName, scope);
+  async clearAgentChatLogs(agentName: string): Promise<boolean> {
+    const instance = this.agentManager.getAgent(agentName);
     if (!instance) {
       return false;
     }
@@ -562,29 +563,44 @@ export class Workspace {
   /**
    * 获取 Agent 聊天记录数量（支持 scope 参数，默认智能查找）
    */
-  async getAgentChatLogsCount(agentName: string, scope?: "global" | "workspace"): Promise<number> {
-    const instance = this.agentManager.getAgent(agentName, scope);
+  async getAgentChatLogsCount(agentName: string): Promise<number> {
+    const instance = this.agentManager.getAgent(agentName);
     return instance ? await instance.getChatLogsCount() : 0;
   }
 
   /**
    * 获取 Agent 摘要信息（支持 scope 参数，默认智能查找）
    */
-  async getAgentSummary(agentName: string, scope?: "global" | "workspace"): Promise<{
+  async getAgentSummary(agentName: string): Promise<{
     config: AgentConfig;
     chatLogsCount: number;
     lastChatTime?: number;
   } | null> {
-    const instance = this.agentManager.getAgent(agentName, scope);
+    const instance = this.agentManager.getAgent(agentName);
     return instance ? await instance.getSummary() : null;
   }
 
   /**
-   * 获取 Agent 的 scope（全局或工作区）
+   * 获取 Agent 记忆文件内容和路径
    */
-  getAgentScope(agentName: string): "global" | "workspace" | null {
-    return this.agentManager.getAgentScope(agentName);
+  async getAgentMemory(agentName: string): Promise<{ content: string; filePath: string }> {
+    const agentPath = this.agentManager.getAgentPath(agentName);
+    if (!agentPath) {
+      return { content: '', filePath: '' }; // Agent不存在
+    }
+
+    const memoryFilePath = path.join(agentPath, 'memory.md');
+
+    // 检查文件是否存在
+    if (!fs.existsSync(memoryFilePath)) {
+      return { content: '', filePath: memoryFilePath };
+    }
+
+    // 读取文件内容
+    const content = fs.readFileSync(memoryFilePath, 'utf8');
+    return { content, filePath: memoryFilePath };
   }
+
 
   // ========== MCP 管理 ==========
 

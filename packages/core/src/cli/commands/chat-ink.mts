@@ -178,7 +178,7 @@ export async function startChatInk(initialMessage?: string, options: ChatOptions
           env.workspace.workspacePath,
           env.effectiveConfig.prompt,
           agentName,
-          env.workspace.getAgentScope(agentName) || "workspace",
+          "workspace",
         ).prompt;
 
         await aiChannel.completion({
@@ -285,7 +285,7 @@ export async function startChatInk(initialMessage?: string, options: ChatOptions
     const getChatLogs = async (agentName: string) => {
       try {
         const { agentCommands } = await import('../../commands/agentCommands.mjs');
-        return await agentCommands.getAgentChatLogs({ agentName, scope: env.workspace.getAgentScope(agentName) || "workspace" });
+        return await agentCommands.getAgentChatLogs({ agentName });
       } catch (error) {
         throw new Error(`${t`Failed to get chat logs:`} ${error instanceof Error ? error.message : String(error)}`);
       }

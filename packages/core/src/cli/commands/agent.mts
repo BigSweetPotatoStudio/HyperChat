@@ -49,9 +49,6 @@ export async function showAgentMemory(agentName: string) {
       process.exit(1);
     }
 
-    // 获取Agent的实际scope用于显示
-    const agentScope = workspace.getAgentScope(agentName);
-
     if (!memoryResult.content.trim()) {
       console.log(`📝 ${t`No memory found for agent:`} ${agentName}`);
       console.log(`💡 ${t`The agent will start with a fresh memory`}`);
@@ -59,7 +56,7 @@ export async function showAgentMemory(agentName: string) {
       return;
     }
 
-    console.log(`\n🧠 ${t`Memory for agent:`} ${agentName} (${agentScope === 'global' ? '🌍' : '📁'})`);
+    console.log(`\n🧠 ${t`Memory for agent:`} ${agentName}`);
     console.log('─'.repeat(50));
     console.log(memoryResult.content);
     console.log('─'.repeat(50));
@@ -119,18 +116,11 @@ export async function listAgents() {
       
       // 检查是否有记忆文件
       try {
-        // 确定Agent的实际scope
-        const workspace = workspaceManager.getCurrentWorkspace();
-        const agentScope = workspace ? workspace.getAgentScope(config.name) : null;
-        
-        if (agentScope) {
-          const memoryResult = await agentCommands.getAgentMemory({ 
-            agentName: config.name, 
-            scope: agentScope
-          });
-          if (memoryResult.content.trim()) {
-            console.log(`      🧠 ${t`Has memory data`}`);
-          }
+        const memoryResult = await agentCommands.getAgentMemory({ 
+          agentName: config.name
+        });
+        if (memoryResult.content.trim()) {
+          console.log(`      🧠 ${t`Has memory data`}`);
         }
       } catch (error) {
         // 忽略记忆文件读取错误

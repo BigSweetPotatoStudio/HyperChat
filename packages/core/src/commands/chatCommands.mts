@@ -73,7 +73,7 @@ export async function streamChatCompletion(params: ChatCompletionRequest): Promi
     }
 
     // 获取 Agent 配置
-    let agent = workspace.getAgentInstance(agentName, agentScope);
+    let agent = workspace.getAgentInstance(agentName);
 
     if (!agent) {
       throw new Error(`Agent not found: ${agentName}`);

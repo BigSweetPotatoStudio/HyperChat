@@ -33,7 +33,8 @@ export type {
 export { DataList } from "./dataList.mjs";
 
 // 导出 Agent 管理相关类
-export { AgentInstance, AgentManager } from "./agentManager.mjs";
+export { AgentInstance } from "./agentInstance.mjs";
+export { AgentManager } from "./agentManager.mjs";
 
 // 导出工作区类
 export { Workspace } from "./workspace.mjs";
@@ -145,7 +146,6 @@ async function createDefaultAgent(workspace: any): Promise<void> {
   // 使用 Command API 创建 Agent
   await Command.createAgent({
     config: agentConfig,
-    scope: "global",
   });
 }
 

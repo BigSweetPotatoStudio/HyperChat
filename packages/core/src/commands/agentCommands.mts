@@ -1,7 +1,5 @@
 import { AgentConfig, ChatHistoryItem } from "@dadigua/hyperchat-shared";
 import { getWorkspaceManager } from "../workspace/index.mjs";
-import fs from 'fs';
-import path from 'path';
 
 /**
  * Agent 管理相关命令
@@ -16,8 +14,7 @@ export const agentCommands = {
    * @returns 创建的 Agent 配置
    */
   async createAgent({
-    config,
-    scope
+    config
   }: {
     config: Partial<{
       key: string;
@@ -30,7 +27,6 @@ export const agentCommands = {
       temperature?: number;
       tags?: string[];
     }>;
-    scope?: "global" | "workspace";
   }): Promise<AgentConfig> {
     try {
       const workspaceManager = getWorkspaceManager();
@@ -40,7 +36,7 @@ export const agentCommands = {
         throw new Error('当前没有可用的工作区');
       }
 
-      const agentInstance = await workspace.createAgent(config, scope);
+      const agentInstance = await workspace.createAgent(config);
 
       if (!agentInstance) {
         throw new Error('创建 Agent 失败');
@@ -57,25 +53,14 @@ export const agentCommands = {
    * 获取工作区代理列表
    * @param scope 过滤范围（可选）
    */
-  async getWorkspaceAgents({
-    scope
-  }: {
-    scope?: "global" | "workspace";
-  } = {}): Promise<Record<string, unknown>[]> {
+  async getWorkspaceAgents(): Promise<Record<string, unknown>[]> {
     const workspaceManager = getWorkspaceManager();
     const workspace = workspaceManager.getCurrentWorkspace();
     if (!workspace) {
       return [];
     }
     
-    const allAgents = await workspace.getAgents();
-    
-    // 如果指定了scope，则过滤结果
-    if (scope) {
-      return allAgents.filter((agent: any) => agent.scope === scope);
-    }
-    
-    return allAgents;
+    return await workspace.getAgents();
   },
 
   /**
@@ -83,11 +68,7 @@ export const agentCommands = {
    * @param scope 过滤范围（可选）
    * @returns Agent 配置列表
    */
-  async getWorkspaceAgentList({
-    scope
-  }: {
-    scope?: "global" | "workspace";
-  } = {}): Promise<Record<string, unknown>[]> {
+  async getWorkspaceAgentList(): Promise<Record<string, unknown>[]> {
     try {
       const workspaceManager = getWorkspaceManager();
       const workspace = workspaceManager.getCurrentWorkspace();
@@ -96,14 +77,7 @@ export const agentCommands = {
         throw new Error('当前没有可用的工作区');
       }
 
-      const allAgents = await workspace.getAllAgents();
-      
-      // 如果指定了scope，则过滤结果
-      if (scope) {
-        return allAgents.filter((agent: any) => agent.scope === scope);
-      }
-      
-      return allAgents;
+      return await workspace.getAllAgents();
     } catch (error) {
       console.error('Failed to get agents:', error);
       throw error;
@@ -115,12 +89,8 @@ export const agentCommands = {
    * @param scope 过滤范围（可选）
    * @returns Agent 摘要信息列表
    */
-  async getWorkspaceAgentsSummary({
-    scope
-  }: {
-    scope?: "global" | "workspace";
-  } = {}): Promise<Array<{
-    config: AgentConfig & { scope?: "global" | "workspace" };
+  async getWorkspaceAgentsSummary(): Promise<Array<{
+    config: AgentConfig;
     chatLogsCount: number;
     lastChatTime?: number;
   }>> {
@@ -132,14 +102,7 @@ export const agentCommands = {
         throw new Error('当前没有可用的工作区');
       }
 
-      const allAgentsSummary = await workspace.getAllAgentsSummary();
-      
-      // 如果指定了scope，则过滤结果
-      if (scope) {
-        return allAgentsSummary.filter(agentSummary => agentSummary.config.scope === scope);
-      }
-      
-      return allAgentsSummary;
+      return await workspace.getAllAgentsSummary();
     } catch (error) {
       console.error('Failed to get agent summaries:', error);
       throw error;
@@ -153,11 +116,9 @@ export const agentCommands = {
    * @returns Agent 配置
    */
   async getAgent({
-    agentName,
-    scope
+    agentName
   }: {
     agentName: string;
-    scope?: "global" | "workspace";
   }): Promise<Record<string, unknown> | null> {
     try {
       const workspaceManager = getWorkspaceManager();
@@ -167,7 +128,7 @@ export const agentCommands = {
         throw new Error('当前没有可用的工作区');
       }
 
-      const agentConfig = await workspace.getAgent(agentName, scope);
+      const agentConfig = await workspace.getAgent(agentName);
       return agentConfig;
     } catch (error) {
       console.error(`Failed to get agent ${agentName}:`, error);
@@ -184,8 +145,7 @@ export const agentCommands = {
    */
   async updateAgent({
     agentName,
-    updates,
-    scope
+    updates
   }: {
     agentName: string;
     updates: Partial<{
@@ -198,7 +158,6 @@ export const agentCommands = {
       temperature?: number;
       tags?: string[];
     }>;
-    scope?: "global" | "workspace";
   }): Promise<boolean> {
     try {
       const workspaceManager = getWorkspaceManager();
@@ -208,7 +167,7 @@ export const agentCommands = {
         throw new Error('当前没有可用的工作区');
       }
 
-      return await workspace.updateAgent(agentName, updates, scope);
+      return await workspace.updateAgent(agentName, updates);
     } catch (error) {
       console.error(`Failed to update agent ${agentName}:`, error);
       throw error;
@@ -222,11 +181,9 @@ export const agentCommands = {
    * @returns 删除结果
    */
   async deleteAgent({
-    agentName,
-    scope
+    agentName
   }: {
     agentName: string;
-    scope?: "global" | "workspace";
   }): Promise<boolean> {
     try {
       const workspaceManager = getWorkspaceManager();
@@ -236,7 +193,7 @@ export const agentCommands = {
         throw new Error('当前没有可用的工作区');
       }
 
-      return await workspace.deleteAgent(agentName, scope);
+      return await workspace.deleteAgent(agentName);
     } catch (error) {
       console.error(`Failed to delete agent ${agentName}:`, error);
       throw error;
@@ -244,17 +201,14 @@ export const agentCommands = {
   },
 
   /**
-   * 获取 Agent 的聊天记录（支持全局 Agent）
+   * 获取 Agent 的聊天记录
    * @param agentName Agent 名称
-   * @param scope 查找范围（全局或工作区，默认智能查找）
    * @returns 聊天记录列表
    */
   async getAgentChatLogs({
-    agentName,
-    scope
+    agentName
   }: {
     agentName: string;
-    scope: "global" | "workspace";
   }): Promise<{ chatLogs: ChatHistoryItem[] }> {
     try {
       const workspaceManager = getWorkspaceManager();
@@ -264,7 +218,7 @@ export const agentCommands = {
         throw new Error('当前没有可用的工作区');
       }
 
-      const chatLogs = await workspace.getAgentChatLogs(agentName, scope);
+      const chatLogs = await workspace.getAgentChatLogs(agentName);
       return { chatLogs };
     } catch (error) {
       console.error(`Failed to get chat logs for agent ${agentName}:`, error);
@@ -279,11 +233,9 @@ export const agentCommands = {
    * @returns 包含每个 Agent 聊天记录的数组
    */
   async getMultipleAgentChatLogs({
-    agentNames,
-    scope
+    agentNames
   }: {
     agentNames: string[];
-    scope?: "global" | "workspace";
   }): Promise<{ results: Array<{ agentName: string; chatLogs: ChatHistoryItem[]; error?: string }> }> {
     try {
       const workspaceManager = getWorkspaceManager();
@@ -296,7 +248,7 @@ export const agentCommands = {
       const results = await Promise.allSettled(
         agentNames.map(async (agentName) => {
           try {
-            const chatLogs = await workspace.getAgentChatLogs(agentName, scope);
+            const chatLogs = await workspace.getAgentChatLogs(agentName);
             return { agentName, chatLogs };
           } catch (error) {
             console.error(`Failed to get chat logs for agent ${agentName}:`, error);
@@ -331,12 +283,10 @@ export const agentCommands = {
    */
   async deleteAgentChatLog({
     agentName,
-    chatKey,
-    scope
+    chatKey
   }: {
     agentName: string;
     chatKey: string;
-    scope?: "global" | "workspace";
   }): Promise<boolean> {
     try {
       const workspaceManager = getWorkspaceManager();
@@ -346,7 +296,7 @@ export const agentCommands = {
         throw new Error('当前没有可用的工作区');
       }
 
-      return await workspace.deleteAgentChatLog(agentName, chatKey, scope);
+      return await workspace.deleteAgentChatLog(agentName, chatKey);
     } catch (error) {
       console.error(`Failed to delete chat log ${chatKey} for agent ${agentName}:`, error);
       throw error;
@@ -374,7 +324,7 @@ export const agentCommands = {
         throw new Error('当前没有可用的工作区');
       }
 
-      return await workspace.clearAgentChatLogs(agentName, scope);
+      return await workspace.clearAgentChatLogs(agentName);
     } catch (error) {
       console.error(`Failed to clear chat logs for agent ${agentName}:`, error);
       throw error;
@@ -405,7 +355,7 @@ export const agentCommands = {
         throw new Error('当前没有可用的工作区');
       }
 
-      const agentInstance = workspace.getAgentInstance(agentName, scope);
+      const agentInstance = workspace.getAgentInstance(agentName);
       if (!agentInstance) {
         throw new Error(`Agent 不存在: ${agentName}`);
       }
@@ -443,7 +393,7 @@ export const agentCommands = {
       if (!workspace) {
         throw new Error('当前没有可用的工作区');
       }
-      const agentInstance = workspace.getAgentInstance(agentName, scope);
+      const agentInstance = workspace.getAgentInstance(agentName);
       if (!agentInstance) {
         throw new Error(`Agent 不存在: ${agentName}`);
       }
@@ -484,7 +434,7 @@ export const agentCommands = {
       const results = await Promise.allSettled(
         requests.map(async (request) => {
           try {
-            const agentInstance = workspace.getAgentInstance(request.agentName, request.scope);
+            const agentInstance = workspace.getAgentInstance(request.agentName);
             if (!agentInstance) {
               throw new Error(`Agent 不存在: ${request.agentName}`);
             }
@@ -524,17 +474,14 @@ export const agentCommands = {
   },
 
   /**
-   * 获取 Agent 记忆文件内容和路径（支持全局 Agent）
+   * 获取 Agent 记忆文件内容和路径
    * @param agentName Agent 名称
-   * @param scope 查找范围（全局或工作区，默认智能查找）
    * @returns 记忆文件内容和文件路径，如果文件不存在则返回空字符串和路径
    */
   async getAgentMemory({
-    agentName,
-    scope
+    agentName
   }: {
     agentName: string;
-    scope?: "global" | "workspace";
   }): Promise<{ content: string; filePath: string }> {
     try {
       const workspaceManager = getWorkspaceManager();
@@ -544,37 +491,7 @@ export const agentCommands = {
         throw new Error('当前没有可用的工作区');
       }
 
-      // 智能查找Agent：如果没有指定scope，则自动查找
-      const agentInstance = workspace.getAgentInstance(agentName, scope);
-      if (!agentInstance) {
-        return { content: '', filePath: '' }; // Agent不存在，返回空字符串
-      }
-
-      // 获取Agent的实际scope
-      const agentScope = scope || workspace.getAgentScope(agentName);
-      if (!agentScope) {
-        return { content: '', filePath: '' }; // Agent不存在
-      }
-      
-      let memoryFilePath: string;
-      if (agentScope === 'global') {
-        // 全局Agent的路径 - 使用 CONSTANTS.GLOBAL_PATH
-        const { CONSTANTS } = await import('../workspace/constants.mjs');
-        const globalAgentsPath = path.join(CONSTANTS.GLOBAL_PATH, '.hyperchat', 'agents');
-        memoryFilePath = path.join(globalAgentsPath, agentName, 'memory.md');
-      } else {
-        // 工作区Agent的路径
-        memoryFilePath = path.join(workspace.workspacePath, '.hyperchat', 'agents', agentName, 'memory.md');
-      }
-
-      // 检查文件是否存在
-      if (!fs.existsSync(memoryFilePath)) {
-        return { content: '', filePath: memoryFilePath };
-      }
-
-      // 读取文件内容
-      const content = fs.readFileSync(memoryFilePath, 'utf8');
-      return { content, filePath: memoryFilePath };
+      return await workspace.getAgentMemory(agentName);
     } catch (error) {
       console.error(`Failed to get memory for agent ${agentName}:`, error);
       throw error;
