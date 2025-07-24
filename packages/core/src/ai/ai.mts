@@ -233,6 +233,11 @@ export class AiChannel {
     context: { step: number } = { step: 0 },
   ): Promise<string> {
 
+    // 🚫 检查是否已被取消 - 递归调用的优雅中断点
+    if (this.abortController?.signal?.aborted) {
+      throw new Error('Request was cancelled by user');
+    }
+
     // 在开始请求前检查是否需要压缩记忆
     if (this.lastMessage) { // 只在第一步时压缩
       if (this.lastMessage.role === "assistant" && this.shouldCompressMemory(params)) {
@@ -263,7 +268,10 @@ export class AiChannel {
       }
     }
 
-    this.abortController = new AbortController();
+    // 🔄 只在首次调用时创建 AbortController，递归调用时复用
+    if (!this.abortController || this.abortController.signal.aborted) {
+      this.abortController = new AbortController();
+    }
 
     // 生成基于时间和数组索引的消息ID
     const messageId = MessageConverter.generateMessageId("assistant", this.messages.length);
@@ -601,6 +609,12 @@ export class AiChannel {
 
         params.onUpdate && params.onUpdate();
       }
+      
+      // 🚫 在递归调用前再次检查取消状态
+      if (this.abortController?.signal?.aborted) {
+        throw new Error('Request was cancelled by user during tool execution');
+      }
+      
       context.step++;
       let { userMessage, ...newParams } = params;
       return await this.completion(
