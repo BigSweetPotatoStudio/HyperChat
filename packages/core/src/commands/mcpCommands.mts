@@ -146,6 +146,7 @@ export const mcpCommands = {
    * @param name MCP客户端名称（如 hyper_tools、knowledge_base 等）
    * @param functionName 要调用的工具函数名称
    * @param args 传递给工具函数的参数对象
+   * @param abortController 可选的中断控制器，用于取消工具调用
    * @returns 工具函数的执行结果
    * @throws 如果指定的MCP客户端不存在或工具调用失败
    */
@@ -153,12 +154,14 @@ export const mcpCommands = {
     workspacePath,
     name,
     functionName,
-    args
+    args,
+    abortController
   }: {
     workspacePath: string;
     name: string;
     functionName: string;
     args: Record<string, unknown>;
+    abortController?: AbortController;
   }) {
     // 从指定工作区的MCP客户端中查找指定名称的客户端
     const workspace = workspaceManager.getCurrentWorkspace();
@@ -173,7 +176,7 @@ export const mcpCommands = {
     }
 
     // 执行工具调用并返回结果
-    return await client.callTool(functionName, args);
+    return await client.callTool(functionName, args, abortController);
   },
 
   /**

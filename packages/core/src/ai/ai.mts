@@ -534,6 +534,7 @@ export class AiChannel {
               functionName: localTool.originalName,
               args: tool.function.args || {},
               workspacePath: localTool.workspacePath,
+              abortController: this.mcpAbortController,
             }
 
           )

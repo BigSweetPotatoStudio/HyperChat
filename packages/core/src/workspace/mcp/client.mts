@@ -78,7 +78,7 @@ export class WorkspaceMCPClientImpl implements WorkspaceMCPClient {
     }
   }
 
-  async callTool(functionName: string, args: ToolCallArgs): Promise<MCPTypes.CallToolResult> {
+  async callTool(functionName: string, args: ToolCallArgs, abortController?: AbortController): Promise<MCPTypes.CallToolResult> {
     if (!this.client) {
       throw new Error("MCP Client is not initialized");
     }
@@ -87,35 +87,71 @@ export class WorkspaceMCPClientImpl implements WorkspaceMCPClient {
     const mcpCallToolTimeout = 60; // 默认60秒
     const timeoutMs = mcpCallToolTimeout * 1000;
 
+    // 创建组合的中断信号
+    const abortSignals = [abortController?.signal].filter(Boolean) as AbortSignal[];
+    let combinedSignal: AbortSignal | undefined;
+    
+    if (abortSignals.length > 0) {
+      const controller = new AbortController();
+      combinedSignal = controller.signal;
+      
+      // 监听所有中断信号
+      abortSignals.forEach(signal => {
+        if (signal.aborted) {
+          controller.abort();
+        } else {
+          signal.addEventListener('abort', () => controller.abort());
+        }
+      });
+    }
+
     try {
+      const options: any = { timeout: timeoutMs };
+      if (combinedSignal) {
+        options.signal = combinedSignal;
+      }
+      
       return await this.client.callTool(
         { name: functionName, arguments: args as any },
         CallToolResultSchema,
-        { timeout: timeoutMs }
+        options
       ) as any;
     } catch (error) {
+      // 检查是否是中断错误
+      if (abortController?.signal?.aborted) {
+        throw new Error('MCP tool call was aborted');
+      }
       this.logInfo("MCP CallTool Error, trying compatibility mode:", functionName, args, error);
-      return await this.callToolCompatibility(functionName, args, timeoutMs);
+      return await this.callToolCompatibility(functionName, args, timeoutMs, abortController);
     }
   }
 
-  private async callToolCompatibility(functionName: string, args: ToolCallArgs, timeoutMs: number): Promise<MCPTypes.CallToolResult> {
+  private async callToolCompatibility(functionName: string, args: ToolCallArgs, timeoutMs: number, abortController?: AbortController): Promise<MCPTypes.CallToolResult> {
     if (!this.client) {
       throw new Error("MCP Client is not initialized");
     }
     try {
+      const options: any = { timeout: timeoutMs };
+      if (abortController?.signal) {
+        options.signal = abortController.signal;
+      }
+      
       const res = await this.client.request(
         {
           method: "tools/call",
           params: { name: functionName, arguments: args as any },
         },
         CompatibilityCallToolResultSchema,
-        { timeout: timeoutMs }
+        options
       );
 
       this.logInfo("CompatibilityCallToolResultSchema success:", res);
       return (res as any).toolResult || res;
     } catch (error) {
+      // 检查是否是中断错误
+      if (abortController?.signal?.aborted) {
+        throw new Error('MCP tool call compatibility mode was aborted');
+      }
       this.logError("MCP CallTool Compatibility Error:", functionName, args, error);
       throw error;
     }
