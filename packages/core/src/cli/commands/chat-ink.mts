@@ -22,6 +22,107 @@ import { t } from '../../i18n.mjs';
 import ChatUI from '../ui/ChatUI.js';
 import type { MyMessage, HyperToolCall } from '@dadigua/hyperchat-shared/types';
 import { getMyUuid } from '../utils/util.mjs';
+import type { AgentInstance } from '../../workspace/index.mjs';
+
+/**
+ * 显示Agent启动详细信息 (Ink版本)
+ */
+async function showAgentStartupInfo(agent: AgentInstance, logger: Logger): Promise<void> {
+  const config = agent.getConfig();
+  
+  // 显示Agent基本配置信息
+  logger.info(`  📋 ${t`Agent configuration:`}`);
+  logger.info(`    ├─ ${t`Model:`} ${config.modelKey || t`inherit from workspace`}`);
+  logger.info(`    ├─ ${t`Temperature:`} ${config.temperature !== undefined ? config.temperature : t`default`}`);
+  logger.info(`    ├─ ${t`Max tokens:`} ${config.maxTokens || t`default`}`);
+  logger.info(`    └─ ${t`Prompt length:`} ${config.prompt ? config.prompt.length : 0} ${t`characters`}`);
+
+  // 启动Agent的MCP客户端
+  logger.info(`  🔧 ${t`Starting MCP clients...`}`);
+  try {
+    // 启动Agent MCP客户端
+    await agent.startMCPClients();
+    const clients = agent.getMCPClients();
+    
+    if (clients.length === 0) {
+      logger.info(`    └─ ${t`No MCP clients configured`}`);
+    } else {
+      logger.info(`    ├─ ${t`Total clients:`} ${clients.length}`);
+      
+      // 显示每个MCP客户端的详细状态
+      for (let i = 0; i < clients.length; i++) {
+        const client = clients[i];
+        const isLast = i === clients.length - 1;
+        const prefix = isLast ? '    └─' : '    ├─';
+        
+        const statusEmoji = client.status === 'connected' ? '✅' : 
+                          client.status === 'connecting' ? '🔄' : 
+                          client.status === 'disabled' ? '⏸️' : '❌';
+        
+        const toolCount = client.tools?.length || 0;
+        
+        // 判断配置来源
+        let sourceLabel = '';
+        const config = (client as any).config;
+        if (config && config._sourcePath) {
+          if (config._sourcePath.includes('global')) {
+            sourceLabel = ' (全局)';
+          } else if (config._sourcePath.includes('.hyperchat') && !config._sourcePath.includes('agents')) {
+            sourceLabel = ' (工作区)';
+          } else if (config._sourcePath.includes('agents')) {
+            sourceLabel = ' (Agent)';
+          }
+        }
+        
+        logger.info(`${prefix} ${statusEmoji} ${client.serverName}: ${client.status} (${toolCount} ${t`tools`})${sourceLabel}`);
+        
+        // 显示版本信息（如果已连接）
+        if (client.status === 'connected' && client.version) {
+          logger.info(`${isLast ? '      ' : '    │   '}└─ ${t`Version:`} ${client.version}`);
+        }
+        
+        // 显示错误信息（如果连接失败）
+        if (client.status === 'disconnected' && (client as any).lastError) {
+          logger.info(`${isLast ? '      ' : '    │   '}└─ ${t`Error:`} ${(client as any).lastError}`);
+        }
+      }
+    }
+  } catch (error) {
+    logger.warn(`    └─ ${t`MCP startup error:`} ${error instanceof Error ? error.message : String(error)}`);
+  }
+
+  // 启动Agent的任务调度器
+  logger.info(`  ⏰ ${t`Starting task scheduler...`}`);
+  try {
+    await agent.startTaskScheduler();
+    const taskStats = agent.getTaskSchedulerStats();
+    
+    if (taskStats.running) {
+      logger.info(`    ├─ ✅ ${t`Scheduler running`}`);
+      logger.info(`    └─ 📋 ${t`Scheduled tasks:`} ${taskStats.scheduledTasksCount}`);
+      
+      if (taskStats.scheduledTasks.length > 0) {
+        const taskNames = taskStats.scheduledTasks.slice(0, 3);
+        const more = taskStats.scheduledTasks.length > 3 ? ` (+${taskStats.scheduledTasks.length - 3} more)` : '';
+        logger.info(`        └─ ${taskNames.join(', ')}${more}`);
+      }
+    } else {
+      logger.info(`    └─ ⏸️ ${t`Scheduler stopped`}`);
+    }
+  } catch (error) {
+    logger.warn(`    └─ ${t`Task scheduler error:`} ${error instanceof Error ? error.message : String(error)}`);
+  }
+
+  // 显示聊天记录统计
+  try {
+    const summary = await agent.getSummary();
+    if (summary.chatLogsCount > 0) {
+      logger.info(`  💬 ${t`Chat history:`} ${summary.chatLogsCount} ${t`conversations`}`);
+    }
+  } catch (error) {
+    // 静默处理聊天记录统计错误
+  }
+}
 
 // 获取聊天标签（基于第一个用户消息）
 function getLabelByFirstUserContent(messages: Array<MyMessage>): string {
@@ -79,10 +180,16 @@ export async function startChatInk(initialMessage?: string, options: ChatOptions
     logger.info(`✅ ${t`Workspace services started`}`);
 
     // 初始化 AI 环境
+    logger.info(`🚀 ${t`Initializing Agent environment...`}`);
     const env = await initializeAIEnvironment({
       agentName: options.agent,
-      workspacePath: workspaceManager.getCurrentWorkspacePath(),
     });
+
+    const agentConfig = env.agent.getConfig();
+    logger.info(`✅ ${t`Agent loaded:`} ${agentConfig.name}`);
+
+    // 显示Agent启动详细信息
+    await showAgentStartupInfo(env.agent, logger);
 
     // 如果命令行指定了模型，覆盖配置
     if (options.model) {
@@ -98,29 +205,42 @@ export async function startChatInk(initialMessage?: string, options: ChatOptions
       }
     }
 
-    // 记录配置信息  
-    logAIConfig(LoggerClass, env);
+    // 显示最终使用的模型信息
+    logger.info(`🤖 ${t`Model:`} ${env.effectiveConfig.modelKey}${agentConfig.modelKey && agentConfig.modelKey !== env.effectiveConfig.modelKey ? ` (${t`agent default:`} ${agentConfig.modelKey})` : ''}`);
 
-    // 以Agent为中心的信息显示
-    const agentConfig = env.agent.getConfig();
-    const mcpClients = env.mcpClients;
-    const totalTools = mcpClients.flatMap((client: any) => client.tools || []).length;
-
-    logger.info(`🤖 ${t`Current Agent:`} ${agentConfig.name}`)
-    logger.info(`🤖 ${t`Using model:`} ${env.effectiveConfig.modelKey}`);
-    
-    // 显示Agent专属的MCP工具信息
-    if (mcpClients.length > 0) {
-      logger.info(`🔧 ${t`Agent MCP clients:`} ${mcpClients.length} (${totalTools} ${t`tools`})`);
+    // 显示 Agent 允许的 MCP 工具
+    let agentAllowedMCPs = new Set(agentConfig.allowMCPs.map(x => x.split(" > ")[0])).size;
+    if (agentConfig.allowMCPs && agentConfig.allowMCPs.length > 0) {
+      const allowedMCPs = agentConfig.allowMCPs;
+      const availableTools = env.mcpClients.flatMap((client: any) => client.tools || []);
+      const matchedTools = availableTools.filter((tool: any) =>
+        allowedMCPs.some(allowed =>
+          tool.name === allowed ||
+          tool.displayName === allowed ||
+          tool.originalName === allowed ||
+          tool.clientName === allowed
+        )
+      );
+      logger.info(`🛠️ ${t`Agent allowed tools:`} ${agentAllowedMCPs} ${t`configured`}, ${matchedTools.length} ${t`available`}`);
+      if (matchedTools.length > 0) {
+        const toolNames = matchedTools.map((tool: any) => tool.displayName || tool.name).slice(0, 3);
+        const more = matchedTools.length > 3 ? ` (+${matchedTools.length - 3} more)` : '';
+        logger.info(`    📋 ${toolNames.join(', ')}${more}`);
+      }
+    } else {
+      const totalTools = env.mcpClients.flatMap((client) => client.tools || []).length;
+      logger.info(`🛠️ ${t`Agent allowed tools:`} ${t`All available tools`} (${totalTools})`);
     }
 
-    // 计算 agent 允许的工具信息
-    let agentAllowedMCPs = 0;
+    // 以Agent为中心的信息显示 (用于UI)
+    const mcpClients = env.mcpClients;
+    const totalTools = mcpClients.flatMap((client) => client.tools || []).length;
+
+    // 计算 agent 允许的工具信息 (用于UI)
     let agentAvailableTools = 0;
     let agentToolNames: string[] = [];
 
     if (agentConfig.allowMCPs && agentConfig.allowMCPs.length > 0) {
-      agentAllowedMCPs = new Set(agentConfig.allowMCPs.map(x => x.split(" > ")[0])).size;
       const availableTools = env.mcpClients.flatMap((client: any) => client.tools || []);
       const matchedTools = availableTools.filter((tool: any) =>
         agentConfig.allowMCPs!.some(allowed =>

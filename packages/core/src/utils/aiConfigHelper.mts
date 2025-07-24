@@ -94,7 +94,6 @@ export function buildEffectiveConfig(
  */
 export async function initializeAIEnvironment(options: {
   agentName?: string;
-  workspacePath?: string;
   configOverrides?: Partial<BaseAIConfig>;  // 配置覆盖
 }): Promise<AIEnvironment> {
   // 获取工作区

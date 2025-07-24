@@ -423,12 +423,6 @@ export class AgentInstance {
       this.mcpManager = new AgentMCPManager(
         this.agentPath,
         {
-          autoReconnect: true,
-          reconnectInterval: 5000,
-          maxReconnectAttempts: 3,
-          enableLogging: true,
-        },
-        {
           onClientStatusChange: (client) => {
             console.log(`Agent ${this.config.name} MCP客户端状态变化: ${client.serverName} -> ${client.status}`);
           },

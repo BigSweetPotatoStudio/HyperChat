@@ -15,22 +15,45 @@ import type { MCPServerConfig } from "@dadigua/hyperchat-shared/types";
 import { Logger } from "../log.mjs";
 import { CONSTANTS } from "./constants.mjs";
 
+/**
+ * 扩展MCP配置，添加来源路径信息
+ */
+export interface AgentMCPServerConfig extends MCPServerConfig {
+  /**
+   * 配置文件来源路径
+   */
+  _sourcePath: string;
+}
+
+/**
+ * Agent专属MCP配置
+ */
+export interface AgentMCPConfig extends Omit<WorkspaceMCPConfig, 'mcpServers'> {
+  mcpServers: Record<string, AgentMCPServerConfig>;
+}
+
 export class AgentMCPManager {
   private clients: Map<string, WorkspaceMCPClientImpl> = new Map();
-  private agentConfig: WorkspaceMCPConfig | null = null;
-  private options: MCPManagerOptions;
+  private agentConfig: AgentMCPConfig | null = null;
   private events: MCPManagerEvents;
   private agentPath: string;
-  constructor(agentPath: string, options: MCPManagerOptions = {}, events: MCPManagerEvents = {}) {
+
+  constructor(agentPath: string, events: MCPManagerEvents = {}) {
     this.agentPath = agentPath;
-    this.options = {
-      autoReconnect: true,
-      reconnectInterval: 5000,
-      maxReconnectAttempts: 5,
-      enableLogging: true,
-      ...options,
-    };
     this.events = events;
+  }
+
+  /**
+   * 从Agent路径推导工作区路径
+   * 例如: /path/to/workspace/.hyperchat/agents/agentName -> /path/to/workspace
+   */
+  private getWorkspacePath(): string | undefined {
+    // Agent路径结构: workspacePath/.hyperchat/agents/agentName
+    const agentsDirIndex = this.agentPath.indexOf(path.join(CONSTANTS.HYPERCHAT_DIR, CONSTANTS.DIRECTORIES.AGENTS));
+    if (agentsDirIndex === -1) {
+      return undefined;
+    }
+    return this.agentPath.substring(0, agentsDirIndex);
   }
 
   /**
@@ -40,7 +63,7 @@ export class AgentMCPManager {
     try {
       // 加载Agent的MCP配置
       await this.loadAgentConfig();
-      
+
       if (!this.agentConfig || !this.agentConfig.mcpServers) {
         Logger.info(`Agent ${path.basename(this.agentPath)} 没有MCP配置`);
         return [];
@@ -54,7 +77,7 @@ export class AgentMCPManager {
       });
 
       await Promise.all(startPromises);
-      
+
       const clients = Array.from(this.clients.values());
       Logger.info(`Agent ${path.basename(this.agentPath)} 启动了 ${clients.length} 个MCP客户端`);
       return clients;
@@ -67,12 +90,16 @@ export class AgentMCPManager {
   /**
    * 启动单个自定义MCP客户端
    */
-  private async startSingleClient(name: string, serverConfig: MCPServerConfig): Promise<void> {
+  private async startSingleClient(name: string, serverConfig: AgentMCPServerConfig): Promise<void> {
     try {
+      // 根据来源路径判断scope
+      const isGlobal = serverConfig._sourcePath.includes(CONSTANTS.GLOBAL_HYPERCHAT_DIR_PATH);
+      const scope = isGlobal ? "global" : "workspace";
+
       const client = new WorkspaceMCPClientImpl(
         name,
         serverConfig,
-        "workspace", // Agent作为工作区级别处理
+        scope,
         0, // order简化为0
         {
           mcpType: "custom",
@@ -108,7 +135,7 @@ export class AgentMCPManager {
    */
   async stopClients(): Promise<void> {
     const clientsToStop = Array.from(this.clients.values());
-    
+
     const tasks = clientsToStop.map(async (client) => {
       try {
         await client.close();
@@ -124,31 +151,85 @@ export class AgentMCPManager {
   }
 
   /**
-   * 加载Agent的MCP配置
+   * 加载并合并层次化MCP配置
+   * 优先级: 全局 < 工作区 < Agent专属 (高优先级覆盖低优先级)
    */
-  async loadAgentConfig(): Promise<WorkspaceMCPConfig> {
-    const configPath = path.join(this.agentPath, CONSTANTS.CONFIG_FILES.MCP);
-    
+  async loadAgentConfig(): Promise<AgentMCPConfig> {
     try {
-      if (fs.existsSync(configPath)) {
-        const content = await fs.promises.readFile(configPath, "utf-8");
-        this.agentConfig = JSON.parse(content) as WorkspaceMCPConfig;
-      } else {
-        // 没有配置文件，创建空配置
-        this.agentConfig = {
-          mcpServers: {},
-          workspacePath: this.agentPath,
-          created: Date.now(),
-          lastModified: Date.now(),
-        };
-      }
+      const mergedServers: Record<string, AgentMCPServerConfig> = {};
 
-      // 确保路径正确
-      this.agentConfig.workspacePath = this.agentPath;
+      // 1. 加载全局MCP配置
+      await this.loadConfigFromPath(
+        path.join(CONSTANTS.GLOBAL_HYPERCHAT_DIR_PATH, CONSTANTS.CONFIG_FILES.MCP),
+        "全局配置",
+        mergedServers
+      );
+
+
+
+      await this.loadConfigFromPath(
+        path.join(this.agentPath, "../../", CONSTANTS.CONFIG_FILES.MCP),
+        "工作区配置",
+        mergedServers
+      );
+
+
+      // 3. 加载Agent专属MCP配置 (最高优先级)
+      await this.loadConfigFromPath(
+        path.join(this.agentPath, CONSTANTS.CONFIG_FILES.MCP),
+        "Agent配置",
+        mergedServers
+      );
+
+      // 构建最终配置
+      this.agentConfig = {
+        mcpServers: mergedServers,
+        workspacePath: this.agentPath,
+        created: Date.now(),
+        lastModified: Date.now(),
+      };
+
+      Logger.info(`Agent ${path.basename(this.agentPath)} 合并MCP配置: ${Object.keys(mergedServers).length} 个服务器`);
       return this.agentConfig;
     } catch (error) {
-      Logger.error(`加载Agent MCP配置失败: ${configPath}`, error);
+      Logger.error(`加载Agent MCP配置失败:`, error);
       throw error;
+    }
+  }
+
+  /**
+   * 从指定路径加载MCP配置并合并到目标对象
+   */
+  private async loadConfigFromPath(
+    configPath: string,
+    sourceLabel: string,
+    mergedServers: Record<string, AgentMCPServerConfig>
+  ): Promise<void> {
+    try {
+      if (!fs.existsSync(configPath)) {
+        Logger.debug(`MCP配置文件不存在: ${configPath}`);
+        return;
+      }
+
+      const content = await fs.promises.readFile(configPath, "utf-8");
+      const config = JSON.parse(content) as WorkspaceMCPConfig;
+
+      if (config.mcpServers) {
+        // 遍历配置中的每个服务器，添加来源路径信息
+        for (const [name, serverConfig] of Object.entries(config.mcpServers)) {
+          const enhancedConfig: AgentMCPServerConfig = {
+            ...serverConfig,
+            _sourcePath: configPath
+          };
+
+          // 高优先级配置覆盖低优先级配置
+          mergedServers[name] = enhancedConfig;
+        }
+
+        Logger.debug(`从 ${sourceLabel} 加载了 ${Object.keys(config.mcpServers).length} 个MCP服务器配置: ${configPath}`);
+      }
+    } catch (error) {
+      Logger.warn(`读取MCP配置文件失败 [${sourceLabel}]: ${configPath}`, error);
     }
   }
 
@@ -161,18 +242,29 @@ export class AgentMCPManager {
     }
 
     const configPath = path.join(this.agentPath, CONSTANTS.CONFIG_FILES.MCP);
-    
+
     try {
       // 确保目录存在
       await this.ensureDirectoryExists(path.dirname(configPath));
-      
-      // 更新修改时间
-      this.agentConfig.lastModified = Date.now();
-      
+
+      // 创建不包含_sourcePath的干净配置用于保存
+      const cleanConfig: WorkspaceMCPConfig = {
+        mcpServers: {},
+        workspacePath: this.agentConfig.workspacePath,
+        created: this.agentConfig.created,
+        lastModified: Date.now(),
+      };
+
+      // 移除_sourcePath属性，只保存基础配置
+      for (const [name, serverConfig] of Object.entries(this.agentConfig.mcpServers)) {
+        const { _sourcePath, ...cleanServerConfig } = serverConfig;
+        cleanConfig.mcpServers[name] = cleanServerConfig;
+      }
+
       // 保存配置
-      const content = JSON.stringify(this.agentConfig, null, 2);
+      const content = JSON.stringify(cleanConfig, null, 2);
       await fs.promises.writeFile(configPath, content, "utf-8");
-      
+
       Logger.info(`Agent MCP配置已保存: ${configPath}`);
     } catch (error) {
       Logger.error(`保存Agent MCP配置失败: ${configPath}`, error);
@@ -185,7 +277,7 @@ export class AgentMCPManager {
    */
   async setServerConfig(name: string, serverConfig: MCPServerConfig): Promise<void> {
     await this.loadAgentConfig();
-    
+
     if (!this.agentConfig) {
       this.agentConfig = {
         mcpServers: {},
@@ -195,12 +287,16 @@ export class AgentMCPManager {
       };
     }
 
-    // 如果是新服务器，分配order
-    // Agent简化版本，不需要order管理
+    // 将基础配置转换为带来源路径的配置
+    const agentMcpPath = path.join(this.agentPath, CONSTANTS.CONFIG_FILES.MCP);
+    const enhancedConfig: AgentMCPServerConfig = {
+      ...serverConfig,
+      _sourcePath: agentMcpPath
+    };
 
-    this.agentConfig.mcpServers[name] = serverConfig;
+    this.agentConfig.mcpServers[name] = enhancedConfig;
     await this.saveConfig();
-    
+
     // 触发配置更新事件
     if (this.events.onConfigUpdate) {
       this.events.onConfigUpdate(this.agentConfig);
@@ -212,18 +308,18 @@ export class AgentMCPManager {
    */
   async deleteServerConfig(name: string): Promise<void> {
     await this.loadAgentConfig();
-    
+
     if (this.agentConfig && this.agentConfig.mcpServers[name]) {
       delete this.agentConfig.mcpServers[name];
       await this.saveConfig();
-      
+
       // 停止对应的客户端
       const client = this.clients.get(name);
       if (client) {
         await client.close();
         this.clients.delete(name);
       }
-      
+
       // 触发配置更新事件
       if (this.events.onConfigUpdate) {
         this.events.onConfigUpdate(this.agentConfig);
@@ -236,7 +332,7 @@ export class AgentMCPManager {
    */
   async restartClient(name: string): Promise<void> {
     await this.stopClient(name);
-    
+
     if (this.agentConfig && this.agentConfig.mcpServers[name]) {
       const serverConfig = this.agentConfig.mcpServers[name];
       if (!serverConfig.disabled) {
