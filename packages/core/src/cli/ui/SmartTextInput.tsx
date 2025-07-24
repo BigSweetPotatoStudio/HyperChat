@@ -1,0 +1,413 @@
+import React, { useState, useCallback, useEffect } from 'react';
+import { Box, Text, useInput } from 'ink';
+import TextInput from 'ink-text-input';
+import { t } from '../../i18n.mjs';
+import { 
+  getFilePathSuggestions, 
+  extractFilePathFromInput, 
+  buildInputWithFilePath,
+  type FileSuggestion 
+} from './FilePathUtils.js';
+
+// 命令定义接口
+export interface Command {
+  command: string;
+  description: string;
+}
+
+// 建议类型枚举
+export type SuggestionType = 'command' | 'file';
+
+// 统一建议接口
+export interface Suggestion {
+  type: SuggestionType;
+  displayText: string;
+  value: string;
+  description?: string;
+}
+
+// SmartTextInput组件属性
+export interface SmartTextInputProps {
+  value: string;
+  onChange: (value: string) => void;
+  onSubmit: (value: string) => void;
+  placeholder?: string;
+  availableCommands?: Command[];
+  maxHistorySize?: number;
+  disabled?: boolean;
+}
+
+export const SmartTextInput: React.FC<SmartTextInputProps> = ({
+  value,
+  onChange,
+  onSubmit,
+  placeholder = '',
+  availableCommands = [],
+  maxHistorySize = 50,
+  disabled = false
+}) => {
+  // 输入历史相关状态
+  const [inputHistory, setInputHistory] = useState<string[]>([]);
+  const [historyIndex, setHistoryIndex] = useState(-1);
+  const [originalInput, setOriginalInput] = useState(''); // 保存用户正在输入的内容
+  const [inputKey, setInputKey] = useState(0); // 用于强制重新渲染TextInput
+  
+  // 候选框相关状态
+  const [showSuggestions, setShowSuggestions] = useState(false);
+  const [suggestionIndex, setSuggestionIndex] = useState(0);
+  const [suggestions, setSuggestions] = useState<Suggestion[]>([]);
+  const [currentSuggestionType, setCurrentSuggestionType] = useState<SuggestionType>('command');
+  
+  // 自动补全功能
+  const handleAutoComplete = useCallback((currentInput: string): string => {
+    // 移除末尾空格进行匹配
+    const trimmedInput = currentInput.trimEnd();
+    
+    if (!trimmedInput.startsWith('/')) return currentInput;
+    
+    const matches = availableCommands.filter(cmd => cmd.command.startsWith(trimmedInput));
+    if (matches.length === 1) {
+      return matches[0].command;
+    } else if (matches.length > 1) {
+      // 找到最长公共前缀
+      let commonPrefix = matches[0].command;
+      for (const match of matches.slice(1)) {
+        let i = 0;
+        while (i < commonPrefix.length && i < match.command.length && commonPrefix[i] === match.command[i]) {
+          i++;
+        }
+        commonPrefix = commonPrefix.slice(0, i);
+      }
+      return commonPrefix;
+    }
+    return currentInput;
+  }, [availableCommands]);
+  
+  // 历史记录导航
+  const navigateHistory = useCallback((direction: 'up' | 'down') => {
+    if (inputHistory.length === 0) return;
+    
+    if (direction === 'up') {
+      if (historyIndex === -1) {
+        // 第一次按上箭头，保存当前输入并显示最新历史
+        setOriginalInput(value);
+        setHistoryIndex(inputHistory.length - 1);
+        onChange(inputHistory[inputHistory.length - 1]);
+      } else if (historyIndex > 0) {
+        // 继续向上浏览历史
+        setHistoryIndex(historyIndex - 1);
+        onChange(inputHistory[historyIndex - 1]);
+      }
+    } else { // down
+      if (historyIndex !== -1) {
+        if (historyIndex < inputHistory.length - 1) {
+          // 向下浏览历史
+          setHistoryIndex(historyIndex + 1);
+          onChange(inputHistory[historyIndex + 1]);
+        } else {
+          // 回到原始输入
+          setHistoryIndex(-1);
+          onChange(originalInput);
+        }
+      }
+    }
+  }, [inputHistory, historyIndex, originalInput, value, onChange]);
+  
+  // 添加到历史记录
+  const addToHistory = useCallback((inputText: string) => {
+    if (inputText.trim() && !inputHistory.includes(inputText)) {
+      const newHistory = [...inputHistory, inputText];
+      // 保持历史记录在合理数量内
+      if (newHistory.length > maxHistorySize) {
+        newHistory.shift();
+      }
+      setInputHistory(newHistory);
+    }
+    // 重置历史导航状态
+    setHistoryIndex(-1);
+    setOriginalInput('');
+  }, [inputHistory, maxHistorySize]);
+  
+  // 更新候选框
+  const updateSuggestions = useCallback(async (inputValue: string) => {
+    const trimmedInput = inputValue.trimEnd();
+    
+    // 检查是否是文件路径建议（包含@符号）
+    const filePathPart = extractFilePathFromInput(trimmedInput);
+    
+    if (filePathPart !== null) {
+      // 文件路径建议
+      try {
+        const fileSuggestions = await getFilePathSuggestions(filePathPart);
+        const suggestions: Suggestion[] = fileSuggestions.map(fs => ({
+          type: 'file' as SuggestionType,
+          displayText: fs.displayName,
+          value: fs.relativePath,
+          description: fs.type === 'directory' ? 'Folder' : 'File'
+        }));
+        
+        setSuggestions(suggestions);
+        setCurrentSuggestionType('file');
+        setShowSuggestions(suggestions.length > 0);
+        setSuggestionIndex(0);
+      } catch (error) {
+        setShowSuggestions(false);
+        setSuggestions([]);
+      }
+    } else if (trimmedInput.startsWith('/')) {
+      // 命令建议
+      const filtered = availableCommands.filter(cmd => 
+        cmd.command.startsWith(trimmedInput)
+      ).slice(0, 8);
+      
+      const suggestions: Suggestion[] = filtered.map(cmd => ({
+        type: 'command' as SuggestionType,
+        displayText: cmd.command,
+        value: cmd.command,
+        description: cmd.description
+      }));
+      
+      setSuggestions(suggestions);
+      setCurrentSuggestionType('command');
+      setShowSuggestions(suggestions.length > 0);
+      setSuggestionIndex(0);
+    } else {
+      setShowSuggestions(false);
+      setSuggestions([]);
+    }
+  }, [availableCommands]);
+  
+  // 候选框导航
+  const navigateSuggestions = useCallback((direction: 'up' | 'down') => {
+    if (!showSuggestions || suggestions.length === 0) return;
+    
+    if (direction === 'up') {
+      setSuggestionIndex(prev => 
+        prev > 0 ? prev - 1 : suggestions.length - 1
+      );
+    } else {
+      setSuggestionIndex(prev => 
+        prev < suggestions.length - 1 ? prev + 1 : 0
+      );
+    }
+  }, [showSuggestions, suggestions.length]);
+  
+  // 选择候选建议
+  const selectSuggestion = useCallback(async () => {
+    if (showSuggestions && suggestions[suggestionIndex]) {
+      const selectedSuggestion = suggestions[suggestionIndex];
+      
+      if (selectedSuggestion.type === 'command') {
+        // 命令建议：添加空格
+        const finalInput = selectedSuggestion.value + ' ';
+        setShowSuggestions(false);
+        onChange(finalInput);
+        setInputKey(prev => prev + 1);
+      } else if (selectedSuggestion.type === 'file') {
+        // 文件路径建议
+        const currentInput = value;
+        const newInput = buildInputWithFilePath(currentInput, selectedSuggestion.value);
+        
+        // 检查是否是文件夹
+        if (selectedSuggestion.description === 'Folder') {
+          // 文件夹：添加 / 并继续提示
+          const folderInput = newInput.endsWith('/') ? newInput : newInput + '/';
+          onChange(folderInput);
+          setInputKey(prev => prev + 1);
+          // 继续更新建议
+          setTimeout(() => updateSuggestions(folderInput), 50);
+        } else {
+          // 文件：直接完成，不添加空格
+          setShowSuggestions(false);
+          onChange(newInput);
+          setInputKey(prev => prev + 1);
+        }
+      }
+      
+      return true;
+    }
+    return false;
+  }, [showSuggestions, suggestions, suggestionIndex, onChange, value, updateSuggestions]);
+
+  // Tab键建议补全功能
+  const handleTabSuggestion = useCallback(async () => {
+    if (showSuggestions && suggestions.length > 0) {
+      // 如果有候选框，选择当前高亮的建议
+      return await selectSuggestion();
+    } else {
+      // 如果没有候选框，尝试自动补全
+      const filePathPart = extractFilePathFromInput(value);
+      
+      if (filePathPart !== null) {
+        // 文件路径自动补全 - 暂时触发建议显示
+        await updateSuggestions(value);
+        return true;
+      } else {
+        // 命令自动补全
+        const completed = handleAutoComplete(value);
+        let finalInput = completed;
+        
+        // 为补全的命令添加空格
+        if (completed !== value && completed.startsWith('/') && !completed.endsWith(' ')) {
+          finalInput = completed + ' ';
+        }
+        
+        // 只有当有变化时才更新
+        if (finalInput !== value) {
+          // 强制重新渲染TextInput以确保光标在末尾
+          onChange(finalInput);
+          setInputKey(prev => prev + 1);
+          await updateSuggestions(finalInput);
+          return true;
+        }
+      }
+    }
+    return false;
+  }, [showSuggestions, suggestions, selectSuggestion, handleAutoComplete, value, onChange, updateSuggestions]);
+  
+  // 处理输入变化时的自动补全提示
+  const handleInputChange = useCallback(async (newInput: string) => {
+    onChange(newInput);
+    // 如果用户正在浏览历史，则重置历史状态
+    if (historyIndex !== -1) {
+      setHistoryIndex(-1);
+      setOriginalInput('');
+    }
+    // 更新候选框
+    await updateSuggestions(newInput);
+  }, [onChange, historyIndex, updateSuggestions]);
+  
+  // 处理提交
+  const handleSubmit = useCallback(async (userInput: string) => {
+    // 如果候选框正在显示，Enter键选择建议
+    if (showSuggestions && suggestions.length > 0) {
+      await selectSuggestion();
+      return; // 不提交，只是选择候选项
+    }
+    
+    const trimmedInput = userInput.trim();
+    
+    // 关闭候选框
+    setShowSuggestions(false);
+    
+    // 添加到历史记录（除了空输入）
+    if (trimmedInput) {
+      addToHistory(trimmedInput);
+    }
+
+    // 提交输入
+    onSubmit(trimmedInput);
+  }, [showSuggestions, suggestions, selectSuggestion, addToHistory, onSubmit]);
+  
+  // 监听键盘输入
+  useInput((inputChar, key) => {
+    if (disabled) return;
+    
+    // 只处理特定的快捷键，其他键让TextInput处理
+    if (key.delete || key.backspace || 
+        (inputChar && inputChar.length === 1 && !key.ctrl && !key.meta)) {
+      // 不处理这些键，让TextInput组件自己处理
+      return;
+    }
+    
+    // 候选框优先处理
+    if (showSuggestions) {
+      if (key.upArrow) {
+        navigateSuggestions('up');
+        return;
+      }
+      
+      if (key.downArrow) {
+        navigateSuggestions('down');
+        return;
+      }
+      
+      if (key.escape) {
+        setShowSuggestions(false);
+        return;
+      }
+    } else {
+      // 历史记录导航（只在没有候选框时）
+      if (key.upArrow) {
+        navigateHistory('up');
+        return;
+      }
+      
+      if (key.downArrow) {
+        navigateHistory('down');
+        return;
+      }
+    }
+    
+    if (key.tab) {
+      // 使用Tab键建议补全功能（异步）
+      handleTabSuggestion();
+      return;
+    }
+    
+    // 快捷键支持
+    if (key.ctrl) {
+      switch (inputChar) {
+        case 'c': // Ctrl+C: 清空输入
+          onChange('');
+          setHistoryIndex(-1);
+          setOriginalInput('');
+          return;
+      }
+    }
+  }, { isActive: !disabled });
+
+  return (
+    <Box flexDirection="column">
+      {/* 输入框 */}
+      <Box borderStyle="single" borderColor="green" paddingX={1}>
+        <Text color="green">🧑 {t`You:`} </Text>
+        <TextInput
+          key={inputKey}
+          value={value}
+          onChange={handleInputChange}
+          onSubmit={handleSubmit}
+          placeholder={placeholder}
+        />
+      </Box>
+      
+      {/* 候选框 */}
+      {showSuggestions && suggestions.length > 0 && (
+        <Box 
+          borderStyle="single" 
+          borderColor="cyan" 
+          marginTop={0}
+          paddingX={1}
+          flexDirection="column"
+        >
+          <Text color="cyan" bold>
+            {currentSuggestionType === 'command' ? '📋 ' + t`Command suggestions:` : '📁 ' + t`File path suggestions:`}
+          </Text>
+          {suggestions.map((suggestion, index) => (
+            <Box key={`${suggestion.type}-${suggestion.value}-${index}`} marginY={0}>
+              <Text 
+                color={index === suggestionIndex ? "black" : "white"}
+                backgroundColor={index === suggestionIndex ? "cyan" : undefined}
+                bold={index === suggestionIndex}
+              >
+                {index === suggestionIndex ? '► ' : '  '}
+                {suggestion.displayText}
+                {suggestion.description && (
+                  <Text color={index === suggestionIndex ? "black" : "gray"}>
+                    {' '}- {suggestion.description}
+                  </Text>
+                )}
+              </Text>
+            </Box>
+          ))}
+          <Text color="gray" dimColor>
+            💡 {currentSuggestionType === 'command' 
+              ? t`Use ↑↓ to navigate, Tab/Enter to select with space, Esc to close`
+              : t`Use ↑↓ to navigate, Tab/Enter to select file/folder, Esc to close`
+            }
+          </Text>
+        </Box>
+      )}
+    </Box>
+  );
+};

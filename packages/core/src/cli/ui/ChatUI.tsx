@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { render, Box, Text, useInput } from 'ink';
-import TextInput from 'ink-text-input';
 import Spinner from 'ink-spinner';
 import { marked } from 'marked';
 import TerminalRenderer from 'marked-terminal';
@@ -8,6 +7,7 @@ import { t } from '../../i18n.mjs';
 import type { MyMessage, CommonContent, ChatHistoryItem } from '@dadigua/hyperchat-shared/types';
 import chalk from 'chalk';
 import ChatLogSelector from './ChatLogSelector.js';
+import { SmartTextInput, type Command } from './SmartTextInput.js';
 
 // 收集的消息数据类型（模仿前端逻辑）
 interface CollectedMessageData {
@@ -80,15 +80,9 @@ export const ChatUI: React.FC<ChatUIProps> = ({ onUserInput, onExit, onCancel, o
   const [isThinking, setIsThinking] = useState(false);
   const [showInput, setShowInput] = useState(true);
   const [isCancelling, setIsCancelling] = useState(false); // 取消状态
-  const [inputKey, setInputKey] = useState(0); // 用于强制重新渲染TextInput
-  
-  // 输入历史相关状态
-  const [inputHistory, setInputHistory] = useState<string[]>([]);
-  const [historyIndex, setHistoryIndex] = useState(-1);
-  const [originalInput, setOriginalInput] = useState(''); // 保存用户正在输入的内容
   
   // 可用命令列表（包含描述）
-  const availableCommands = [
+  const availableCommands: Command[] = [
     { command: '/resume', description: t`Resume previous chat log` },
     { command: '/help', description: t`Show help` },
     { command: '/clear', description: t`Clear chat history` },
@@ -98,156 +92,6 @@ export const ChatUI: React.FC<ChatUIProps> = ({ onUserInput, onExit, onCancel, o
     { command: '/exit', description: t`Exit chat` },
   ];
   
-  // 候选框相关状态
-  const [showSuggestions, setShowSuggestions] = useState(false);
-  const [suggestionIndex, setSuggestionIndex] = useState(0);
-  const [filteredCommands, setFilteredCommands] = useState(availableCommands);
-  
-  // 自动补全功能
-  const handleAutoComplete = (currentInput: string): string => {
-    // 移除末尾空格进行匹配
-    const trimmedInput = currentInput.trimEnd();
-    
-    if (!trimmedInput.startsWith('/')) return currentInput;
-    
-    const matches = availableCommands.filter(cmd => cmd.command.startsWith(trimmedInput));
-    if (matches.length === 1) {
-      return matches[0].command;
-    } else if (matches.length > 1) {
-      // 找到最长公共前缀
-      let commonPrefix = matches[0].command;
-      for (const match of matches.slice(1)) {
-        let i = 0;
-        while (i < commonPrefix.length && i < match.command.length && commonPrefix[i] === match.command[i]) {
-          i++;
-        }
-        commonPrefix = commonPrefix.slice(0, i);
-      }
-      return commonPrefix;
-    }
-    return currentInput;
-  };
-  
-  // 历史记录导航
-  const navigateHistory = (direction: 'up' | 'down') => {
-    if (inputHistory.length === 0) return;
-    
-    if (direction === 'up') {
-      if (historyIndex === -1) {
-        // 第一次按上箭头，保存当前输入并显示最新历史
-        setOriginalInput(input);
-        setHistoryIndex(inputHistory.length - 1);
-        setInput(inputHistory[inputHistory.length - 1]);
-      } else if (historyIndex > 0) {
-        // 继续向上浏览历史
-        setHistoryIndex(historyIndex - 1);
-        setInput(inputHistory[historyIndex - 1]);
-      }
-    } else { // down
-      if (historyIndex !== -1) {
-        if (historyIndex < inputHistory.length - 1) {
-          // 向下浏览历史
-          setHistoryIndex(historyIndex + 1);
-          setInput(inputHistory[historyIndex + 1]);
-        } else {
-          // 回到原始输入
-          setHistoryIndex(-1);
-          setInput(originalInput);
-        }
-      }
-    }
-  };
-  
-  // 添加到历史记录
-  const addToHistory = (inputText: string) => {
-    if (inputText.trim() && !inputHistory.includes(inputText)) {
-      const newHistory = [...inputHistory, inputText];
-      // 保持历史记录在合理数量内
-      if (newHistory.length > 50) {
-        newHistory.shift();
-      }
-      setInputHistory(newHistory);
-    }
-    // 重置历史导航状态
-    setHistoryIndex(-1);
-    setOriginalInput('');
-  };
-  
-  // 更新候选框
-  const updateSuggestions = (inputValue: string) => {
-    // 移除末尾空格进行匹配
-    const trimmedInput = inputValue.trimEnd();
-    
-    if (trimmedInput.startsWith('/')) {
-      const filtered = availableCommands.filter(cmd => 
-        cmd.command.startsWith(trimmedInput)
-      ).slice(0, 8); // 默认显示8条
-      
-      setFilteredCommands(filtered);
-      setShowSuggestions(filtered.length > 0);
-      setSuggestionIndex(0);
-    } else {
-      setShowSuggestions(false);
-      setFilteredCommands([]);
-    }
-  };
-  
-  // 候选框导航
-  const navigateSuggestions = (direction: 'up' | 'down') => {
-    if (!showSuggestions || filteredCommands.length === 0) return;
-    
-    if (direction === 'up') {
-      setSuggestionIndex(prev => 
-        prev > 0 ? prev - 1 : filteredCommands.length - 1
-      );
-    } else {
-      setSuggestionIndex(prev => 
-        prev < filteredCommands.length - 1 ? prev + 1 : 0
-      );
-    }
-  };
-  
-  // 选择候选命令
-  const selectSuggestion = () => {
-    if (showSuggestions && filteredCommands[suggestionIndex]) {
-      const selectedCommand = filteredCommands[suggestionIndex].command;
-      // Tab键选择：为所有命令添加空格，强制光标在末尾
-      const finalInput = selectedCommand + ' ';
-      setShowSuggestions(false);
-      // 强制重新渲染TextInput以确保光标在末尾
-      setInput(finalInput);
-      setInputKey(prev => prev + 1);
-      return true;
-    }
-    return false;
-  };
-
-  // Tab键建议补全功能
-  const handleTabSuggestion = () => {
-    if (showSuggestions && filteredCommands.length > 0) {
-      // 如果有候选框，选择当前高亮的命令
-      return selectSuggestion();
-    } else {
-      // 如果没有候选框，尝试自动补全
-      const completed = handleAutoComplete(input);
-      let finalInput = completed;
-      
-      // 为补全的命令添加空格
-      if (completed !== input && completed.startsWith('/') && !completed.endsWith(' ')) {
-        finalInput = completed + ' ';
-      }
-      
-      // 只有当有变化时才更新
-      if (finalInput !== input) {
-        // 强制重新渲染TextInput以确保光标在末尾
-        setInput(finalInput);
-        setInputKey(prev => prev + 1);
-        updateSuggestions(finalInput);
-        return true;
-      }
-    }
-    return false;
-  };
   
   // 聊天记录选择状态
   const [showChatLogSelector, setShowChatLogSelector] = useState(false);
@@ -280,92 +124,11 @@ export const ChatUI: React.FC<ChatUIProps> = ({ onUserInput, onExit, onCancel, o
     }
   };
 
-  // 处理自定义键盘交互的输入状态（预留功能）
-  // const [customInputMode, setCustomInputMode] = useState(false);
-  
-  // 处理输入变化时的自动补全提示
-  const handleInputChange = (newInput: string) => {
-    setInput(newInput);
-    // 如果用户正在浏览历史，则重置历史状态
-    if (historyIndex !== -1) {
-      setHistoryIndex(-1);
-      setOriginalInput('');
-    }
-    // 更新候选框
-    updateSuggestions(newInput);
-  };
-  
-  // 监听键盘输入
+  // 监听键盘输入 - 只处理Escape键取消AI请求
   useInput((inputChar, key) => {
     if (key.escape) {
       handleCancel();
       return;
-    }
-    
-    // 只在显示输入框且不在其他模式时处理快速输入
-    if (showInput && !showChatLogSelector && !isThinking) {
-      // 候选框优先处理
-      if (showSuggestions) {
-        if (key.upArrow) {
-          navigateSuggestions('up');
-          return;
-        }
-        
-        if (key.downArrow) {
-          navigateSuggestions('down');
-          return;
-        }
-        
-        // Enter 键处理移到 handleSubmit 中
-        
-        if (key.escape) {
-          setShowSuggestions(false);
-          return;
-        }
-      } else {
-        // 历史记录导航（只在没有候选框时）
-        if (key.upArrow) {
-          navigateHistory('up');
-          return;
-        }
-        
-        if (key.downArrow) {
-          navigateHistory('down');
-          return;
-        }
-      }
-      
-      if (key.tab) {
-        // 使用新的Tab键建议补全功能
-        handleTabSuggestion();
-        return;
-      }
-      
-      // 快捷键支持
-      if (key.ctrl) {
-        switch (inputChar) {
-          case 'h': // Ctrl+H: 显示帮助
-            handleSubmit('/help');
-            return;
-          case 'c': // Ctrl+C: 清空输入
-            setInput('');
-            setHistoryIndex(-1);
-            setOriginalInput('');
-            return;
-          case 'r': // Ctrl+R: 恢复聊天记录
-            handleSubmit('/resume');
-            return;
-          case 'l': // Ctrl+L: 清空聊天历史
-            handleSubmit('/clear');
-            return;
-        }
-      }
-      
-      // 更多Ctrl快捷键
-      if (key.ctrl && inputChar === 'm') { // Ctrl+M: 显示模型信息
-        handleSubmit('/model');
-        return;
-      }
     }
   });
 
@@ -434,27 +197,7 @@ export const ChatUI: React.FC<ChatUIProps> = ({ onUserInput, onExit, onCancel, o
 
   // 处理用户输入
   const handleSubmit = async (userInput: string) => {
-    // 如果候选框正在显示，Enter键选择建议并确保光标在末尾
-    if (showSuggestions && filteredCommands.length > 0) {
-      const selectedCommand = filteredCommands[suggestionIndex].command;
-      // Enter键选择：添加空格后光标自动在末尾
-      const finalInput = selectedCommand + ' ';
-      setShowSuggestions(false);
-      // 强制重新渲染TextInput以确保光标在末尾
-      setInput(finalInput);
-      setInputKey(prev => prev + 1);
-      return; // 不提交，只是选择候选项
-    }
-    
     const trimmedInput = userInput.trim();
-    
-    // 关闭候选框
-    setShowSuggestions(false);
-    
-    // 添加到历史记录（除了空输入）
-    if (trimmedInput) {
-      addToHistory(trimmedInput);
-    }
 
     // 处理特殊命令
     if (trimmedInput === '/exit') {
@@ -840,51 +583,16 @@ export const ChatUI: React.FC<ChatUIProps> = ({ onUserInput, onExit, onCancel, o
         )}
       </Box>
 
-      {/* Input */}
+      {/* Smart Input */}
       {showInput && (
-        <Box flexDirection="column">
-          <Box borderStyle="single" borderColor="green" paddingX={1}>
-            <Text color="green">🧑 {t`You:`} </Text>
-            <TextInput
-              key={inputKey}
-              value={input}
-              onChange={handleInputChange}
-              onSubmit={handleSubmit}
-              placeholder={t`Type your message... (↑↓: history, Tab: complete)`}
-            />
-          </Box>
-          
-          {/* 候选框 */}
-          {showSuggestions && filteredCommands.length > 0 && (
-            <Box 
-              borderStyle="single" 
-              borderColor="cyan" 
-              marginTop={0}
-              paddingX={1}
-              flexDirection="column"
-            >
-              <Text color="cyan" bold>📋 {t`Command suggestions:`}</Text>
-              {filteredCommands.map((cmd, index) => (
-                <Box key={cmd.command} marginY={0}>
-                  <Text 
-                    color={index === suggestionIndex ? "black" : "white"}
-                    backgroundColor={index === suggestionIndex ? "cyan" : undefined}
-                    bold={index === suggestionIndex}
-                  >
-                    {index === suggestionIndex ? '► ' : '  '}
-                    {cmd.command}
-                    <Text color={index === suggestionIndex ? "black" : "gray"}>
-                      {' '}- {cmd.description}
-                    </Text>
-                  </Text>
-                </Box>
-              ))}
-              <Text color="gray" dimColor>
-                💡 {t`Use ↑↓ to navigate, Enter to select command, Esc to close`}
-              </Text>
-            </Box>
-          )}
-        </Box>
+        <SmartTextInput
+          value={input}
+          onChange={setInput}
+          onSubmit={handleSubmit}
+          placeholder={t`Type your message... (↑↓: history, Tab: complete)`}
+          availableCommands={availableCommands}
+          disabled={isThinking}
+        />
       )}
     </Box>
     );
