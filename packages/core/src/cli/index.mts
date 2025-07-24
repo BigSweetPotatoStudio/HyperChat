@@ -82,7 +82,8 @@ function getCleanArgs(args: string[]): string[] {
   const optionsWithValues = [
     '--workspace', '--host', '--port', '--password', '--language', '--lang', '--ui',
     '--data-dir', '--app-data-dir', '--api-key', '--api-url', '--ai-provider', '--ai-model',
-    '--log-level', '--web-password', '--env', '--my-env', '-p'
+    '--log-level', '--web-password', '--env', '--my-env', '-p',
+    '--agent', '-a', '--agent-path', '-A'
   ];
   
   for (let i = 0; i < args.length; i++) {
@@ -148,7 +149,10 @@ ${t`Commands:`}
   
   # ${t`System management`}
   serve                    ${t`Start backend server (includes Web UI)`}
-  run                      ${t`Start core service (no Web UI)`}
+  run                      ${t`Start core service (no Web UI, Agent-centered)`}
+  run --list-agents        ${t`List all available agents`}
+  run --agent <name>       ${t`Start specific agent only`}
+  run --agent-path <path>  ${t`Start agent from specific path`}
   workspace list           ${t`Show workspace information`}
   workspace current        ${t`Show current working directory and workspace`}
   workspace create         ${t`Create workspace in current directory`}
@@ -183,7 +187,10 @@ ${t`Examples:`}
   
   # ${t`System management`}
   hyperchat serve                   # ${t`Start server (includes Web UI)`}
-  hyperchat run                     # ${t`Start core service (background task scheduling)`}
+  hyperchat run                     # ${t`Start all agents (Agent-centered service)`}
+  hyperchat run --list-agents       # ${t`List all available agents`}
+  hyperchat run --agent mybot       # ${t`Start specific agent only`}
+  hyperchat run --agent-path /path  # ${t`Start agent from specific path`}
   hyperchat workspace list          # ${t`Show workspace information`}
   hyperchat workspace current       # ${t`Show current status`}
   hyperchat workspace create        # ${t`Create workspace in current directory`}
@@ -232,10 +239,21 @@ async function handleCommand(): Promise<{ shouldExit: boolean }> {
       return { shouldExit: false };  // serve 需要保持进程运行
 
     case 'run':
+      // 解析run命令的特殊选项
+      const allArgs = process.argv.slice(2); // 获取完整的参数列表
+      const runOptions = CliArgsParser.parseArgs(allArgs, [
+        { long: 'agent', short: 'a', hasValue: true },
+        { long: 'agent-path', short: 'A', hasValue: true },
+        { long: 'list-agents', short: 'l', hasValue: false },
+      ]);
+      
       await startRun({
         verbose: globalOptions.verbose,
         quiet: globalOptions.quiet,
-        workspace: globalOptions.workspace
+        workspace: globalOptions.workspace,
+        agent: runOptions.agent,
+        agentPath: runOptions['agent-path'],
+        listAgents: runOptions['list-agents']
       });
       return { shouldExit: false };  // run 需要保持进程运行
 
