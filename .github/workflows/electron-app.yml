@@ -12,6 +12,31 @@ on:
         description: 'Branch name that triggered the npm publish'
         required: true
         type: string
+    secrets:
+      APPLE_ID:
+        description: 'Apple ID for notarization'
+        required: true
+      APPLE_APP_SPECIFIC_PASSWORD:
+        description: 'Apple app-specific password'
+        required: true
+      CSC_LINK:
+        description: 'Code signing certificate'
+        required: true
+      CSC_KEY_PASSWORD:
+        description: 'Code signing certificate password'
+        required: true
+      APPLE_TEAM_ID:
+        description: 'Apple Team ID'
+        required: true
+      GH_TOKEN:
+        description: 'GitHub token for releases'
+        required: true
+      TELEGRAM_CHAT_ID:
+        description: 'Telegram chat ID for notifications'
+        required: true
+      TELEGRAM_BOT_TOKEN:
+        description: 'Telegram bot token'
+        required: true
 
 
 permissions:
