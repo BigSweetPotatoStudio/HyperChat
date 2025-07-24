@@ -18,12 +18,31 @@ export enum FileFormat {
  * 专门处理一个文件夹中全部是同一种类型文件的情况
  * 支持 JSON 和 YAML 格式
  */
+/**
+ * LRU 缓存项
+ */
+interface CacheItem<T> {
+  value: T;
+  lastAccessed: number;
+}
+
 export class DataList<T extends { key: string }> {
   static FileFormat = FileFormat;
-  private items: Map<string, T> = new Map();
-  private loaded = false;
+  
+  // LRU 缓存，不再全量加载
+  private cache: Map<string, CacheItem<T>> = new Map();
+  private maxCacheSize: number = 100; // 默认最多缓存100个项目
+  
+  // 轻量级元数据
+  private countLoaded = false;
+  private count = 0;
+  private keys: string[] = [];
+  private keysLoaded = false;
   private lastModified = 0;
-  private loadPromise?: Promise<void>;
+  
+  // 并发控制
+  private countLoadPromise?: Promise<void>;
+  private keysLoadPromise?: Promise<void>;
   private logger = Logger;
 
   constructor(
@@ -31,7 +50,64 @@ export class DataList<T extends { key: string }> {
     private defaultFormat: FileFormat = FileFormat.JSON,
     private generateKey: (item: T) => string = () => `${dayjs().format("YYMMDD-HHmmss")}-${v4().slice(0, 8)}`,
     private getItemKey: (item: T) => string = (item) => item.key,
-  ) { }
+    maxCacheSize: number = 100
+  ) { 
+    this.maxCacheSize = maxCacheSize;
+  }
+
+  /**
+   * LRU 缓存管理：添加项目到缓存
+   */
+  private addToCache(key: string, value: T): void {
+    // 如果已存在，更新访问时间
+    if (this.cache.has(key)) {
+      const item = this.cache.get(key)!;
+      item.lastAccessed = Date.now();
+      return;
+    }
+
+    // 如果缓存已满，移除最久未访问的项目
+    if (this.cache.size >= this.maxCacheSize) {
+      this.evictLeastRecentlyUsed();
+    }
+
+    // 添加新项目
+    this.cache.set(key, {
+      value,
+      lastAccessed: Date.now()
+    });
+  }
+
+  /**
+   * LRU 缓存管理：移除最久未访问的项目
+   */
+  private evictLeastRecentlyUsed(): void {
+    let oldestKey: string | null = null;
+    let oldestTime = Date.now();
+
+    for (const [key, item] of this.cache.entries()) {
+      if (item.lastAccessed < oldestTime) {
+        oldestTime = item.lastAccessed;
+        oldestKey = key;
+      }
+    }
+
+    if (oldestKey) {
+      this.cache.delete(oldestKey);
+    }
+  }
+
+  /**
+   * LRU 缓存管理：从缓存获取项目
+   */
+  private getFromCache(key: string): T | null {
+    const item = this.cache.get(key);
+    if (item) {
+      item.lastAccessed = Date.now();
+      return item.value;
+    }
+    return null;
+  }
 
   /**
    * 获取文件名（基于 key 和格式）
@@ -81,27 +157,26 @@ export class DataList<T extends { key: string }> {
   }
 
   /**
-   * 加载所有文件
+   * 仅加载数量（懒加载第一阶段）
    */
-  async load(): Promise<void> {
+  async loadCount(): Promise<void> {
     // 避免并发加载
-    if (this.loadPromise) {
-      return this.loadPromise;
+    if (this.countLoadPromise) {
+      return this.countLoadPromise;
     }
 
-    this.loadPromise = this._doLoad();
-    await this.loadPromise;
-    this.loadPromise = undefined;
+    this.countLoadPromise = this._doLoadCount();
+    await this.countLoadPromise;
+    this.countLoadPromise = undefined;
   }
 
   /**
-   * 实际执行加载的方法
+   * 实际执行数量加载的方法
    */
-  private async _doLoad(): Promise<void> {
-    this.items.clear();
-
+  private async _doLoadCount(): Promise<void> {
     if (!fs.existsSync(this.dirPath)) {
-      this.loaded = true;
+      this.count = 0;
+      this.countLoaded = true;
       this.lastModified = Date.now();
       return;
     }
@@ -110,99 +185,202 @@ export class DataList<T extends { key: string }> {
       const dirStat = await fs.promises.stat(this.dirPath);
       const currentModified = dirStat.mtime.getTime();
 
-      // 如果目录没有修改且已加载，跳过
-      if (this.loaded && currentModified <= this.lastModified) {
+      // 如果数量已加载且目录没有修改，跳过
+      if (this.countLoaded && currentModified <= this.lastModified) {
         return;
       }
 
       const files = await fs.promises.readdir(this.dirPath);
-      const loadPromises = files
-        .filter(file => {
-          // 支持 JSON 和 YAML 文件
-          const format = this.detectFileFormat(file);
-          return format !== null;
-        })
-        .map(async (file) => {
-          const filePath = path.join(this.dirPath, file);
-          try {
-            // 检查文件是否为普通文件（不是目录、符号链接等）
-            const fileStat = await fs.promises.stat(filePath);
-            if (!fileStat.isFile()) {
-              this.logger.warn(`跳过非文件项: ${file}`);
-              return null;
-            }
-
-            const content = await fs.promises.readFile(filePath, "utf-8");
-            const format = this.detectFileFormat(file);
-
-            if (!format) {
-              this.logger.warn(`不支持的文件格式: ${file}`);
-              return null;
-            }
-
-            let item: T;
-            try {
-              item = this.parseFileContent(content, format);
-            } catch (parseError) {
-              this.logger.warn(`${file} 解析失败 (${format}):`, parseError);
-              return null;
-            }
-
-            // 验证解析结果
-            if (!item || typeof item !== 'object') {
-              this.logger.warn(`文件 ${file} 解析结果不是对象`);
-              return null;
-            }
-
-            // 从文件名获取 key（去掉扩展名）
-            const fileKey = path.basename(file, path.extname(file));
-
-            // 确保对象的 key 与文件名保持一致
-            if (item.key && item.key !== fileKey) {
-              this.logger.warn(`文件 ${file} 中的 key (${item.key}) 与文件名不匹配，使用文件名作为 key: ${fileKey}`);
-            }
-            item.key = fileKey;
-
-            return { key: fileKey, item };
-          } catch (error) {
-            // 提供更详细的文件处理错误信息
-            if (error instanceof Error) {
-              if (error.message.includes('ENOENT')) {
-                this.logger.warn(`文件不存在: ${file}`);
-              } else if (error.message.includes('EACCES')) {
-                this.logger.warn(`无权限访问文件: ${file}`);
-              } else {
-                this.logger.warn(`加载文件 ${file} 失败: ${error.message}`);
-              }
-            } else {
-              this.logger.warn(`加载文件 ${file} 失败:`, error);
-            }
-            return null;
-          }
-        });
-
-      const results = await Promise.all(loadPromises);
-
-      results.filter(x => x != null).forEach(result => {
-        if (result) {
-          this.items.set(result.key, result.item);
-        }
+      const validFiles = files.filter(file => {
+        const format = this.detectFileFormat(file);
+        return format !== null;
       });
 
+      // 只统计有效文件数量，不读取内容
+      let validCount = 0;
+      for (const file of validFiles) {
+        const filePath = path.join(this.dirPath, file);
+        try {
+          const fileStat = await fs.promises.stat(filePath);
+          if (fileStat.isFile()) {
+            validCount++;
+          }
+        } catch (error) {
+          // 忽略无法访问的文件
+        }
+      }
+
+      this.count = validCount;
       this.lastModified = currentModified;
+      this.countLoaded = true;
     } catch (error) {
       this.logger.warn(`读取目录 ${this.dirPath} 失败:`, error);
+      this.count = 0;
+      this.countLoaded = true;
     }
+  }
 
-    this.loaded = true;
+
+  /**
+   * @deprecated 废弃方法，请使用 getPage() 或 getMany() 替代
+   * 获取所有项目（废弃：性能问题）
+   */
+  async getAll(): Promise<T[]> {
+    this.logger.warn('getAll() 方法已废弃，请使用 getPage() 或 getMany() 替代');
+    await this.ensureKeysLoaded();
+    return await this.getMany(this.keys);
   }
 
   /**
-   * 确保已加载数据
+   * 分页获取项目
    */
-  private async ensureLoaded(): Promise<void> {
-    if (!this.loaded) {
-      await this.load();
+  async getPage(offset: number = 0, limit: number = 10): Promise<{ items: T[]; total: number; hasMore: boolean }> {
+    await this.ensureKeysLoaded();
+    
+    const startIndex = Math.max(0, offset);
+    const endIndex = Math.min(startIndex + limit, this.keys.length);
+    const pageKeys = this.keys.slice(startIndex, endIndex);
+    
+    const items = await this.getMany(pageKeys);
+    
+    return {
+      items,
+      total: this.count,
+      hasMore: endIndex < this.keys.length
+    };
+  }
+
+  /**
+   * 批量获取指定键的项目
+   */
+  async getMany(keys: string[]): Promise<T[]> {
+    const results: T[] = [];
+    
+    for (const key of keys) {
+      const item = await this.get(key);
+      if (item) {
+        results.push(item);
+      }
+    }
+    
+    return results;
+  }
+
+  /**
+   * 迭代器模式：逐个处理每个项目（避免内存压力）
+   */
+  async forEach(callback: (item: T, key: string, index: number) => Promise<void> | void): Promise<void> {
+    await this.ensureKeysLoaded();
+    
+    for (let i = 0; i < this.keys.length; i++) {
+      const key = this.keys[i];
+      const item = await this.get(key);
+      if (item) {
+        await callback(item, key, i);
+      }
+    }
+  }
+
+  /**
+   * 异步生成器：流式处理项目
+   */
+  async* stream(): AsyncGenerator<T, void, unknown> {
+    await this.ensureKeysLoaded();
+    
+    for (const key of this.keys) {
+      const item = await this.get(key);
+      if (item) {
+        yield item;
+      }
+    }
+  }
+
+  /**
+   * 获取轻量级统计信息（避免加载完整内容）
+   */
+  async getStats(): Promise<{ count: number; lastModified?: number }> {
+    await this.ensureKeysLoaded();
+    return {
+      count: this.count,
+      lastModified: this.lastModified > 0 ? this.lastModified : undefined
+    };
+  }
+
+  /**
+   * 加载键列表（不加载内容）
+   */
+  async loadKeys(): Promise<void> {
+    // 避免并发加载
+    if (this.keysLoadPromise) {
+      return this.keysLoadPromise;
+    }
+
+    this.keysLoadPromise = this._doLoadKeys();
+    await this.keysLoadPromise;
+    this.keysLoadPromise = undefined;
+  }
+
+  /**
+   * 实际执行键列表加载的方法
+   */
+  private async _doLoadKeys(): Promise<void> {
+    if (!fs.existsSync(this.dirPath)) {
+      this.keys = [];
+      this.count = 0;
+      this.keysLoaded = true;
+      this.countLoaded = true;
+      this.lastModified = Date.now();
+      return;
+    }
+
+    try {
+      const dirStat = await fs.promises.stat(this.dirPath);
+      const currentModified = dirStat.mtime.getTime();
+
+      // 如果键列表已加载且目录没有修改，跳过
+      if (this.keysLoaded && currentModified <= this.lastModified) {
+        return;
+      }
+
+      const files = await fs.promises.readdir(this.dirPath);
+      const keys: string[] = [];
+      
+      for (const file of files) {
+        const format = this.detectFileFormat(file);
+        if (format !== null) {
+          const filePath = path.join(this.dirPath, file);
+          try {
+            const fileStat = await fs.promises.stat(filePath);
+            if (fileStat.isFile()) {
+              const key = path.basename(file, path.extname(file));
+              keys.push(key);
+            }
+          } catch (error) {
+            // 忽略无法访问的文件
+          }
+        }
+      }
+
+      this.keys = keys.sort();
+      this.count = keys.length;
+      this.lastModified = currentModified;
+      this.keysLoaded = true;
+      this.countLoaded = true;
+    } catch (error) {
+      this.logger.warn(`读取目录 ${this.dirPath} 失败:`, error);
+      this.keys = [];
+      this.count = 0;
+      this.keysLoaded = true;
+      this.countLoaded = true;
+    }
+  }
+
+  /**
+   * 确保已加载键列表
+   */
+  private async ensureKeysLoaded(): Promise<void> {
+    if (!this.keysLoaded) {
+      await this.loadKeys();
       return;
     }
 
@@ -211,75 +389,74 @@ export class DataList<T extends { key: string }> {
       try {
         const dirStat = await fs.promises.stat(this.dirPath);
         if (dirStat.mtime.getTime() > this.lastModified) {
-          await this.load();
+          await this.loadKeys();
         }
       } catch (error) {
         // 如果无法获取状态，重新加载
-        await this.load();
+        await this.loadKeys();
       }
     }
   }
 
   /**
-   * 获取所有项目
+   * 获取文件键列表（不加载内容）
    */
-  async getAll(): Promise<T[]> {
-    await this.ensureLoaded();
-    return Array.from(this.items.values());
+  async getKeys(): Promise<string[]> {
+    await this.ensureKeysLoaded();
+    return [...this.keys];
   }
 
   /**
-   * 获取轻量级统计信息（避免加载完整内容）
-   */
-  async getStats(): Promise<{ count: number; lastModified?: number }> {
-    if (!fs.existsSync(this.dirPath)) {
-      return { count: 0 };
-    }
-
-    try {
-      const files = await fs.promises.readdir(this.dirPath);
-      const validFiles = files.filter(file => {
-        const format = this.detectFileFormat(file);
-        return format !== null;
-      });
-
-      if (validFiles.length === 0) {
-        return { count: 0 };
-      }
-
-      // 获取最新的文件修改时间
-      let lastModified: number | undefined;
-      for (const file of validFiles) {
-        const filePath = path.join(this.dirPath, file);
-        try {
-          const fileStat = await fs.promises.stat(filePath);
-          if (fileStat.isFile()) {
-            const mtime = fileStat.mtime.getTime();
-            if (!lastModified || mtime > lastModified) {
-              lastModified = mtime;
-            }
-          }
-        } catch (error) {
-          // 忽略单个文件的错误
-        }
-      }
-
-      return {
-        count: validFiles.length,
-        lastModified
-      };
-    } catch (error) {
-      this.logger.warn(`获取统计信息失败:`, error);
-      return { count: 0 };
-    }
-  }
-
-  /**
-   * 获取单个项目
+   * 获取单个项目（使用 LRU 缓存）
    */
   async get(key: string): Promise<T | null> {
-    await this.ensureLoaded();
-    return this.items.get(key) || null;
+    // 先检查缓存
+    const cached = this.getFromCache(key);
+    if (cached) {
+      return cached;
+    }
+
+    // 检查键是否存在
+    await this.ensureKeysLoaded();
+    if (!this.keys.includes(key)) {
+      return null;
+    }
+
+    // 从文件加载
+    const item = await this.loadSingleItem(key);
+    if (item) {
+      this.addToCache(key, item);
+    }
+    
+    return item;
+  }
+
+  /**
+   * 从文件加载单个项目
+   */
+  private async loadSingleItem(key: string): Promise<T | null> {
+    const formats = [this.defaultFormat, ...Object.values(FileFormat).filter(f => f !== this.defaultFormat)];
+    
+    for (const format of formats) {
+      const filename = this.getFileName(key, format);
+      const filePath = path.join(this.dirPath, filename);
+      
+      try {
+        if (fs.existsSync(filePath)) {
+          const content = await fs.promises.readFile(filePath, "utf-8");
+          let item = this.parseFileContent(content, format);
+          
+          // 确保对象的 key 与文件名保持一致
+          item.key = key;
+          
+          return item;
+        }
+      } catch (error) {
+        this.logger.warn(`加载文件 ${filename} 失败:`, error);
+      }
+    }
+    
+    return null;
   }
 
   /**
@@ -305,9 +482,12 @@ export class DataList<T extends { key: string }> {
 
       await fs.promises.writeFile(filePath, content, "utf-8");
 
-      // 更新内存中的数据
-      await this.ensureLoaded();
-      this.items.set(key, item);
+      // 更新缓存
+      this.addToCache(key, item);
+
+      // 重置状态，强制重新加载
+      this.keysLoaded = false;
+      this.countLoaded = false;
 
       return true;
     } catch (error) {
@@ -340,9 +520,14 @@ export class DataList<T extends { key: string }> {
       }
     }
 
-    // 从内存中删除
-    await this.ensureLoaded();
-    this.items.delete(key);
+    if (deleted) {
+      // 从缓存中删除
+      this.cache.delete(key);
+
+      // 重置状态，强制重新加载
+      this.keysLoaded = false;
+      this.countLoaded = false;
+    }
 
     return deleted;
   }
@@ -415,8 +600,10 @@ export class DataList<T extends { key: string }> {
 
     await Promise.all(deletePromises);
 
-    // 重新加载数据到内存
-    await this.load();
+    // 清空缓存，重置状态
+    this.cache.clear();
+    this.keysLoaded = false;
+    this.countLoaded = false;
 
     return success;
   }
@@ -425,16 +612,16 @@ export class DataList<T extends { key: string }> {
    * 检查项目是否存在
    */
   async has(key: string): Promise<boolean> {
-    await this.ensureLoaded();
-    return this.items.has(key);
+    await this.ensureKeysLoaded();
+    return this.keys.includes(key);
   }
 
   /**
-   * 获取项目数量
+   * 获取项目数量（使用轻量级加载）
    */
   async size(): Promise<number> {
-    await this.ensureLoaded();
-    return this.items.size;
+    await this.ensureKeysLoaded();
+    return this.count;
   }
 
   /**
@@ -454,7 +641,11 @@ export class DataList<T extends { key: string }> {
         await Promise.all(deletePromises);
       }
 
-      this.items.clear();
+      // 清空缓存，重置状态
+      this.cache.clear();
+      this.keysLoaded = false;
+      this.countLoaded = false;
+      
       return true;
     } catch (error) {
       const errorMsg = error instanceof Error ? error.message : String(error);
@@ -481,15 +672,21 @@ export class DataList<T extends { key: string }> {
    * 将所有文件迁移到指定格式
    */
   async migrateToFormat(targetFormat: FileFormat): Promise<boolean> {
-    await this.ensureLoaded();
+    await this.ensureKeysLoaded();
 
-    const allItems = Array.from(this.items.values());
+    if (this.keys.length === 0) {
+      this.defaultFormat = targetFormat;
+      return true;
+    }
+
+    // 获取所有现有数据
+    const allItems = await this.getMany(this.keys);
     if (allItems.length === 0) {
       this.defaultFormat = targetFormat;
       return true;
     }
 
-    // 读取所有现有文件并删除
+    // 读取所有现有文件
     const existingFiles: string[] = [];
     try {
       if (fs.existsSync(this.dirPath)) {

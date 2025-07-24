@@ -48,8 +48,7 @@ export class AgentInstance {
     // 加载配置
     await this.loadConfig();
 
-    // 加载聊天记录
-    await this.chatLogs.load();
+    // 聊天记录采用懒加载，无需预加载
   }
 
   /**
@@ -126,49 +125,61 @@ export class AgentInstance {
   async updateConfig(updates: Partial<AgentConfig>): Promise<boolean> {
     const oldName = this.config.name;
     const newName = updates.name;
-    
+
     // 如果名称发生变更，需要重命名文件夹
     if (newName && newName !== oldName) {
       const oldPath = this.agentPath;
       const parentPath = path.dirname(oldPath);
       const newPath = path.join(parentPath, sanitizeFileName(newName));
-      
+
       // 检查新路径是否已存在
       if (fs.existsSync(newPath)) {
         throw new Error(`Agent 名称 "${newName}" 已存在，无法重命名`);
       }
-      
+
       try {
         // 重命名文件夹
         await fs.promises.rename(oldPath, newPath);
-        
+
         // 更新实例路径
         this.agentPath = newPath;
         this.configPath = path.join(newPath, CONSTANTS.CONFIG_FILES.AGENT_CONFIG);
-        
+
         // 更新 chatLogs 路径
         this.chatLogs = new DataList<ChatHistoryItem>(
-          path.join(newPath, CONSTANTS.DIRECTORIES.CHAT_LOGS), 
+          path.join(newPath, CONSTANTS.DIRECTORIES.CHAT_LOGS),
           DataList.FileFormat.YAML
         );
-        await this.chatLogs.load();
-        
+        // 聊天记录采用懒加载，无需预加载
+
       } catch (error) {
         console.error(`重命名 Agent 文件夹失败: ${oldName} -> ${newName}:`, error);
         throw new Error(`重命名 Agent 文件夹失败: ${error instanceof Error ? error.message : String(error)}`);
       }
     }
-    
+
     // 更新配置
     this.config = { ...this.config, ...updates };
     return await this.saveConfig();
   }
 
   /**
-   * 获取所有聊天记录
+   * 获取所有聊天记录（使用分页，避免内存压力）
    */
-  async getChatLogs(): Promise<ChatHistoryItem[]> {
+  async getChatLogs(limit: number = 10): Promise<ChatHistoryItem[]> {
+    if (limit) {
+      const result = await this.chatLogs.getPage(0, limit);
+      return result.items;
+    }
+    // 使用deprecated方法，会显示警告提示
     return await this.chatLogs.getAll();
+  }
+
+  /**
+   * 分页获取聊天记录
+   */
+  async getChatLogsPage(offset: number = 0, limit: number = 10): Promise<{ items: ChatHistoryItem[]; total: number; hasMore: boolean }> {
+    return await this.chatLogs.getPage(offset, limit);
   }
 
   /**
@@ -281,11 +292,11 @@ export class AgentManager {
     // 先加载全局 Agents，再加载本地 Agents（本地覆盖全局）
     // 如果本地路径和全局路径相同，则只加载一次
     const paths = this.localPath === this.globalPath ? [this.localPath] : [this.globalPath, this.localPath];
-    
+
     for (let i = 0; i < paths.length; i++) {
       const agentsPath = paths[i];
       const scope = (this.localPath !== this.globalPath && agentsPath === this.globalPath) ? "global" : "workspace";
-      
+
       if (!fs.existsSync(agentsPath)) {
         continue;
       }
@@ -301,7 +312,7 @@ export class AgentManager {
             if (agent.exists()) {
               await agent.init();
               const config = agent.getConfig();
-              
+
               // 使用 scope:name 作为唯一标识，支持同名 Agent 的全局/工作区区分
               const agentId = this.getAgentId(config.name, scope);
               this.agents.set(agentId, agent);
@@ -361,7 +372,7 @@ export class AgentManager {
   getAgentScope(name: string): "global" | "workspace" | null {
     const workspaceAgentId = this.getAgentId(name, "workspace");
     const globalAgentId = this.getAgentId(name, "global");
-    
+
     if (this.agents.has(workspaceAgentId)) {
       return "workspace";
     } else if (this.agents.has(globalAgentId)) {
@@ -376,10 +387,10 @@ export class AgentManager {
    */
   async createAgent(config: Partial<AgentConfig>, scope?: "global" | "workspace"): Promise<AgentInstance | null> {
     const actualScope = scope || "workspace";
-    
+
     // 确定目标路径：全局或工作区
     const targetPath = actualScope === "global" ? this.globalPath : this.localPath;
-    
+
     // 确保目标 agents 目录存在（懒加载模式）
     if (!fs.existsSync(targetPath)) {
       await fs.promises.mkdir(targetPath, { recursive: true });
@@ -433,20 +444,20 @@ export class AgentManager {
     if (key.includes(':')) {
       return this.agents.get(key) || null;
     }
-    
+
     // 如果指定了 scope，使用指定的 scope
     if (scope) {
       const agentId = this.getAgentId(key, scope);
       return this.agents.get(agentId) || null;
     }
-    
+
     // 智能查找：优先查找工作区 Agent，如果没有找到再查找全局 Agent
     const workspaceAgentId = this.getAgentId(key, "workspace");
     const workspaceAgent = this.agents.get(workspaceAgentId);
     if (workspaceAgent) {
       return workspaceAgent;
     }
-    
+
     const globalAgentId = this.getAgentId(key, "global");
     return this.agents.get(globalAgentId) || null;
   }
@@ -506,13 +517,13 @@ export class AgentManager {
     if (this.agents.has(workspaceAgentId)) {
       return await this.deleteAgent(workspaceAgentId);
     }
-    
+
     // 如果工作区没有，删除全局 Agent
     const globalAgentId = this.getAgentId(name, "global");
     if (this.agents.has(globalAgentId)) {
       return await this.deleteAgent(globalAgentId);
     }
-    
+
     return false;
   }
 
@@ -556,22 +567,22 @@ export class AgentManager {
   async updateAgentMapping(oldName: string, newName: string, scope?: "global" | "workspace"): Promise<void> {
     const oldAgentId = this.getAgentId(oldName, scope);
     const newAgentId = this.getAgentId(newName, scope);
-    
+
     // 获取原有的 agent 实例
     const agentInstance = this.agents.get(oldAgentId);
     if (!agentInstance) {
       console.warn(`尝试更新不存在的 Agent 映射: ${oldName} -> ${newName}`);
       return;
     }
-    
+
     // 更新 agents Map：删除旧的，添加新的
     this.agents.delete(oldAgentId);
     this.agents.set(newAgentId, agentInstance);
-    
+
     // 更新 nameToKey Map：删除旧的名称映射，添加新的
     this.nameToKey.delete(oldName);
     this.nameToKey.set(newName, newAgentId);
-    
+
     console.log(`已更新 Agent 映射关系: ${oldName} (${oldAgentId}) -> ${newName} (${newAgentId})`);
   }
 }
