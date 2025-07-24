@@ -264,7 +264,7 @@ async function executeCommand(
       }
 
       resolve({
-        success: exitCode === 0 && !timedOut && !cancelled && !error,
+        success: !timedOut && !cancelled && !error, // 只关心命令是否正常执行完毕
         exitCode,
         signal,
         stdout: stdout.trim(),

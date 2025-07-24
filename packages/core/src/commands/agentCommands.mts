@@ -254,7 +254,7 @@ export const agentCommands = {
     scope
   }: {
     agentName: string;
-    scope?: "global" | "workspace";
+    scope: "global" | "workspace";
   }): Promise<{ chatLogs: ChatHistoryItem[] }> {
     try {
       const workspaceManager = getWorkspaceManager();

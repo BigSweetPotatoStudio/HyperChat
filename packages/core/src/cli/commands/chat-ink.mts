@@ -285,7 +285,7 @@ export async function startChatInk(initialMessage?: string, options: ChatOptions
     const getChatLogs = async (agentName: string) => {
       try {
         const { agentCommands } = await import('../../commands/agentCommands.mjs');
-        return await agentCommands.getAgentChatLogs({ agentName });
+        return await agentCommands.getAgentChatLogs({ agentName, scope: env.workspace.getAgentScope(agentName) || "workspace" });
       } catch (error) {
         throw new Error(`${t`Failed to get chat logs:`} ${error instanceof Error ? error.message : String(error)}`);
       }

@@ -192,7 +192,8 @@ export const AgentManagement = forwardRef<AgentManagementRef, AgentManagementPro
 
       // 获取Agent的聊天历史记录
       const result = await call('getAgentChatLogs', {
-        agentName: agent.config.name
+        agentName: agent.config.name,
+        scope: agent.config.scope || 'workspace' // 默认使用 workspace scope
       });
 
       // 按时间倒序排列聊天记录
@@ -231,7 +232,8 @@ export const AgentManagement = forwardRef<AgentManagementRef, AgentManagementPro
 
           // 重新加载聊天历史列表
           const result = await call('getAgentChatLogs', {
-            agentName: chatHistoryAgent.config.name
+            agentName: chatHistoryAgent.config.name,
+            scope: chatHistoryAgent.config.scope || 'workspace' // 默认使用 workspace scope
           });
           // 按时间倒序排列聊天记录
           const sortedChatLogs = (result.chatLogs || []).sort((a, b) => {
