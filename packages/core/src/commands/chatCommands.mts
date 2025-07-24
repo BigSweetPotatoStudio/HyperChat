@@ -111,6 +111,7 @@ export async function streamChatCompletion(params: ChatCompletionRequest): Promi
         sseWriter: sseWriter, // 传递 SSE 写入器
         confirm_call_tool_cb: confirmCallToolCb,
         userMessage: userMessage, // 传递用户消息
+        agentName: agentName, // 传递Agent名称，用于获取MCP工具
         onUpdate: async (_updateData?: any) => {
           await agent.setChatLog({
             key: chatKey,

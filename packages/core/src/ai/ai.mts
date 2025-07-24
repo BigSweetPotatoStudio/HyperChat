@@ -228,6 +228,7 @@ export class AiChannel {
       sseWriter?: SSEWriter; // SSE 写入器
       chatKey?: string; // 聊天 Key
       userMessage?: MyMessage; // 用户消息
+      agentName?: string; // Agent名称，用于获取MCP工具
     } & BaseAIConfig,
     options: Omit<Parameters<typeof streamText>[0], 'model' | 'prompt'> = {},
     context: { step: number } = { step: 0 },
@@ -291,7 +292,7 @@ export class AiChannel {
     let format_message = MessageConverter.convertToCoreMessages(this.messages);
     options.messages = [{ role: "system", content: params.prompt }, ...format_message];
 
-    let tools: HyperChatCompletionTool[] = this.getMcpTools(params.allowMCPs);
+    let tools: HyperChatCompletionTool[] = this.getMcpTools(params.allowMCPs, params.agentName);
     const aiTools = ToolFormatter.formatTools(tools || []);
     options.tools = {
       ...options.tools,
@@ -356,7 +357,7 @@ export class AiChannel {
         }
         if (delta.type == "tool-call") {
           newMessage.content_tool_calls = newMessage.content_tool_calls || [];
-          let localTool = this.getMcpTools().find(
+          let localTool = this.getMcpTools(params.allowMCPs, params.agentName).find(
             (t) => t.name === delta.toolName
           );
           if (!localTool) {
@@ -523,7 +524,7 @@ export class AiChannel {
 
         params.onUpdate && params.onUpdate();
 
-        let localTool = this.getMcpTools().find(
+        let localTool = this.getMcpTools(params.allowMCPs, params.agentName).find(
           (t) => t.name === tool.function.name
         );
         if (!localTool) {
@@ -539,6 +540,7 @@ export class AiChannel {
               args: tool.function.args || {},
               workspacePath: localTool.workspacePath,
               abortController: this.mcpAbortController,
+              agentName: params.agentName,
             }
 
           )

@@ -17,13 +17,14 @@ import type {
 } from '@dadigua/hyperchat-shared';
 
 /**
- * AI 环境配置
+ * AI 环境配置 - Agent-centered版本
+ * 现在以Agent为中心，workspace仅作为可选的上下文信息
  */
 export interface AIEnvironment {
-  workspace: Workspace;
-  agent: AgentInstance; // 现在总是有默认 agent，不需要 optional
-  mcpClients: IMCPClient[];
+  agent: AgentInstance; // Agent是核心，包含所有必要的配置和功能
+  mcpClients: IMCPClient[]; // 从Agent获取的MCP客户端
   effectiveConfig: BaseAIConfig & { modelKey: string };
+  workspace?: Workspace; // 可选的workspace上下文，主要用于向后兼容
 }
 
 /**
@@ -133,17 +134,21 @@ export async function initializeAIEnvironment(options: {
   const effectiveConfig = buildEffectiveConfig(options.configOverrides || {}, agentConfig, workspaceAIConfig, aiSettings);
 
 
-  // 获取 MCP 工具（如果需要的话）
+  // 获取 MCP 工具（如果需要的话） - Agent-centered版本
   let mcpClients: IMCPClient[] = [];
 
-    mcpClients = workspace.getMcpClients();
+  // 从对应的Agent获取MCP客户端，而不是从workspace
+  if (agent) {
+    const agentMcpClients = agent.getMCPClients();
+    mcpClients = agentMcpClients.map(client => client.toJSON() as IMCPClient);
+  }
   
 
   return {
-    workspace,
     agent,
     mcpClients,
-    effectiveConfig
+    effectiveConfig,
+    workspace // 保留workspace作为可选的上下文信息
   };
 }
 
@@ -177,8 +182,9 @@ export async function executeAICompletion(
   const agentScope = options?.agentScope || "workspace";
   
   // 构建系统提示词（现在记忆获取逻辑在 getBuiltinPrompts 内部）
+  const workspacePath = env.workspace?.workspacePath || '';
   const systemPrompt = getBuiltinPrompts(
-    env.workspace.workspacePath,
+    workspacePath,
     env.effectiveConfig.prompt,
     agentName,
     agentScope
@@ -187,7 +193,8 @@ export async function executeAICompletion(
   await aiChannel.completion({
     ...env.effectiveConfig,
     prompt: systemPrompt,
-    onUpdate: options?.onUpdate
+    onUpdate: options?.onUpdate,
+    agentName: agentName // 传递Agent名称用于获取MCP工具
   });
 
   return aiChannel.lastMessage;
@@ -201,7 +208,7 @@ export function logAIConfig(logger: typeof Logger, env: AIEnvironment): void {
   
   if (agentConfig && env.effectiveConfig.modelKey === agentConfig.modelKey) {
     logger.info(`📋 使用Agent配置的AI模型: ${env.effectiveConfig.modelKey}`);
-  } else if (env.workspace.getSettings()?.aiConfig?.modelKey === env.effectiveConfig.modelKey) {
+  } else if (env.workspace?.getSettings()?.aiConfig?.modelKey === env.effectiveConfig.modelKey) {
     logger.info(`📋 使用工作区配置的AI模型: ${env.effectiveConfig.modelKey}`);
   } else {
     logger.info(`📋 使用默认AI模型: ${env.effectiveConfig.modelKey}`);
