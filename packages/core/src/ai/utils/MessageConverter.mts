@@ -24,7 +24,7 @@ export class MessageConverter {
       }
 
       const message = messages[i]!;
-      if (message.content_status != "success" && (message.role === "assistant" || message.role === "tool")) {
+      if (message.content_status != "success" && message.role === "assistant") {
         continue;
       }
       const convertedMessage = this.convertSingleMessage(message);
