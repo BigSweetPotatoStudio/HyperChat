@@ -1,6 +1,6 @@
 import { Router, Request, Response } from "express";
 import { SSEServerTransport, StreamableHTTPServerTransport } from "./es6.mjs";
-import { createServer } from "./mcp/servers/gateway/index.mjs";
+// import { createServer } from "./mcp/servers/gateway/index.mjs"; // 暂时禁用MCP网关
 import { Logger } from "./log.mjs";
 import { getAppSettingsManager } from "./data/appSettingsService.mjs";
 import type { MCPGateway } from "@dadigua/hyperchat-shared";
@@ -43,35 +43,15 @@ function register(route: Router, name: string, description: string, allowMCPs: s
         // let server = await serve.createServer();
         // await server.connect(transport);
         route.post(`/${name}/mcp`, async (req: Request, res: Response) => {
-            // Logger.debug('Received MCP request:', req.body);
-            try {
-                const server = await createServer(name, description, allowMCPs);
-                const transport = new StreamableHTTPServerTransport({
-                    sessionIdGenerator: undefined, // 由 MCP_GateWay 提供
-                });
-                await server.connect(transport as any);
-                res.on('close', () => {
-                    // Logger.debug('Request closed');
-                    transport.close();
-                    server.close();
-                });
-                await transport.handleRequest(req, res, req.body);
-            } catch (error) {
-                Logger.error('Error handling MCP request:', error);
-                if (!res.headersSent) {
-                    res.status(500).json({
-                        jsonrpc: '2.0',
-                        error: {
-                            code: -32603,
-                            message: 'Internal server error',
-                        },
-                        id: null,
-                    });
-                }
-            }
-
-
-
+            // 暂时禁用MCP网关功能
+            res.status(503).json({
+                jsonrpc: '2.0',
+                error: {
+                    code: -32000,
+                    message: 'MCP Gateway temporarily disabled',
+                },
+                id: null,
+            });
         });
 
         // Reusable handler for GET and DELETE requests
@@ -94,20 +74,15 @@ function register(route: Router, name: string, description: string, allowMCPs: s
     // type == "see"
     {
         route.get(`/${name}/sse`, async (_req: Request, res: Response) => {
-            let transport = new SSEServerTransport(prefix + `/${name}/message`, res);
-            transports.sse[transport.sessionId] = transport;
-
-            // Start keep-alive ping
-            const intervalId = setInterval(() => {
-                if (!res.writableEnded) {
-                    res.write(': keepalive\n\n');
-                } else {
-                    // Should not happen if close handler is working, but clear just in case
-                    clearInterval(intervalId);
-                }
-            }, KEEP_ALIVE_INTERVAL_MS);
-            let server = await createServer(name, description, allowMCPs);
-            await server.connect(transport);
+            // 暂时禁用MCP网关功能
+            res.status(503).json({
+                jsonrpc: '2.0',
+                error: {
+                    code: -32000,
+                    message: 'MCP Gateway temporarily disabled',
+                },
+                id: null,
+            });
         });
         route.post(`/${name}/message`, async (req: Request, res: Response) => {
             // await transport.handlePostMessage(req, res);
