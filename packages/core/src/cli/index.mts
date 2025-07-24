@@ -13,7 +13,7 @@
 // 第一步：立即解析CLI参数并设置环境变量，必须在任何其他模块导入之前
 import process from 'process';
 import { EnvManager } from '../data/managers/envManager.mjs';
-import { parseCurrentArgs, CliArgsParser } from '../utils/cliArgsParser.mjs';
+import { parseCurrentArgs, GenericCliParser, CliArgsParser } from '../utils/cliArgsParser.mjs';
 
 // 简单的命令行参数解析
 const args = process.argv.slice(2);
@@ -241,7 +241,7 @@ async function handleCommand(): Promise<{ shouldExit: boolean }> {
     case 'run':
       // 解析run命令的特殊选项
       const allArgs = process.argv.slice(2); // 获取完整的参数列表
-      const runOptions = CliArgsParser.parseArgs(allArgs, [
+      const runOptions = GenericCliParser.parseArgs(allArgs, [
         { long: 'agent', short: 'a', hasValue: true },
         { long: 'agent-path', short: 'A', hasValue: true },
         { long: 'list-agents', short: 'l', hasValue: false },
@@ -251,9 +251,9 @@ async function handleCommand(): Promise<{ shouldExit: boolean }> {
         verbose: globalOptions.verbose,
         quiet: globalOptions.quiet,
         workspace: globalOptions.workspace,
-        agent: runOptions.agent,
-        agentPath: runOptions['agent-path'],
-        listAgents: runOptions['list-agents']
+        agent: runOptions.agent as string | undefined,
+        agentPath: runOptions['agent-path'] as string | undefined,
+        listAgents: runOptions['list-agents'] as boolean | undefined
       });
       return { shouldExit: false };  // run 需要保持进程运行
 

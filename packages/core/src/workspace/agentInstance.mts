@@ -696,7 +696,7 @@ export class AgentInstance {
   /**
    * 获取或创建Agent专属任务调度器
    */
-  private getTaskScheduler(): AgentTaskScheduler {
+  getTaskScheduler(): AgentTaskScheduler {
     if (!this.taskScheduler) {
       this.taskScheduler = new AgentTaskScheduler(
         this.config.name,
