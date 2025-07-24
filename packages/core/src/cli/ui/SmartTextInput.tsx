@@ -8,6 +8,42 @@ import {
   buildInputWithFilePath,
   type FileSuggestion 
 } from './FilePathUtils.js';
+import path from 'path';
+import fs from 'fs/promises';
+import { getAppDataDir } from '../../const.mjs';
+
+// 历史记录持久化工具函数
+const getHistoryFilePath = (): string => {
+  return path.join(getAppDataDir(), 'cli_history.json');
+};
+
+const loadHistoryFromFile = async (): Promise<string[]> => {
+  try {
+    const historyPath = getHistoryFilePath();
+    const data = await fs.readFile(historyPath, 'utf-8');
+    const history = JSON.parse(data);
+    return Array.isArray(history) ? history : [];
+  } catch (error) {
+    // 文件不存在或读取失败，返回空数组
+    return [];
+  }
+};
+
+const saveHistoryToFile = async (history: string[]): Promise<void> => {
+  try {
+    const historyPath = getHistoryFilePath();
+    const appDataDir = path.dirname(historyPath);
+    
+    // 确保目录存在
+    await fs.mkdir(appDataDir, { recursive: true });
+    
+    // 保存历史记录
+    await fs.writeFile(historyPath, JSON.stringify(history, null, 2), 'utf-8');
+  } catch (error) {
+    // 静默失败，不影响用户体验
+    console.error('Failed to save CLI history:', error);
+  }
+};
 
 // 命令定义接口
 export interface Command {
@@ -51,12 +87,25 @@ export const SmartTextInput: React.FC<SmartTextInputProps> = ({
   const [historyIndex, setHistoryIndex] = useState(-1);
   const [originalInput, setOriginalInput] = useState(''); // 保存用户正在输入的内容
   const [inputKey, setInputKey] = useState(0); // 用于强制重新渲染TextInput
+  const [isHistoryLoaded, setIsHistoryLoaded] = useState(false);
   
   // 候选框相关状态
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [suggestionIndex, setSuggestionIndex] = useState(0);
   const [suggestions, setSuggestions] = useState<Suggestion[]>([]);
   const [currentSuggestionType, setCurrentSuggestionType] = useState<SuggestionType>('command');
+
+  // 初始化历史记录
+  useEffect(() => {
+    const initHistory = async () => {
+      if (!isHistoryLoaded) {
+        const history = await loadHistoryFromFile();
+        setInputHistory(history);
+        setIsHistoryLoaded(true);
+      }
+    };
+    initHistory();
+  }, [isHistoryLoaded]);
   
   // 自动补全功能
   const handleAutoComplete = useCallback((currentInput: string): string => {
@@ -114,7 +163,7 @@ export const SmartTextInput: React.FC<SmartTextInputProps> = ({
   }, [inputHistory, historyIndex, originalInput, value, onChange]);
   
   // 添加到历史记录
-  const addToHistory = useCallback((inputText: string) => {
+  const addToHistory = useCallback(async (inputText: string) => {
     if (inputText.trim() && !inputHistory.includes(inputText)) {
       const newHistory = [...inputHistory, inputText];
       // 保持历史记录在合理数量内
@@ -122,6 +171,8 @@ export const SmartTextInput: React.FC<SmartTextInputProps> = ({
         newHistory.shift();
       }
       setInputHistory(newHistory);
+      // 异步保存到文件
+      await saveHistoryToFile(newHistory);
     }
     // 重置历史导航状态
     setHistoryIndex(-1);
@@ -292,7 +343,7 @@ export const SmartTextInput: React.FC<SmartTextInputProps> = ({
     
     // 添加到历史记录（除了空输入）
     if (trimmedInput) {
-      addToHistory(trimmedInput);
+      await addToHistory(trimmedInput);
     }
 
     // 提交输入
@@ -310,33 +361,32 @@ export const SmartTextInput: React.FC<SmartTextInputProps> = ({
       return;
     }
     
-    // 候选框优先处理
-    if (showSuggestions) {
-      if (key.upArrow) {
+    // 优先处理上下箭头键 - 区分候选框和历史记录
+    if (key.upArrow) {
+      if (showSuggestions && suggestions.length > 0) {
+        // 有候选框时，用于候选框导航
         navigateSuggestions('up');
-        return;
-      }
-      
-      if (key.downArrow) {
-        navigateSuggestions('down');
-        return;
-      }
-      
-      if (key.escape) {
-        setShowSuggestions(false);
-        return;
-      }
-    } else {
-      // 历史记录导航（只在没有候选框时）
-      if (key.upArrow) {
+      } else {
+        // 没有候选框时，用于历史记录导航
         navigateHistory('up');
-        return;
       }
-      
-      if (key.downArrow) {
+      return;
+    }
+    
+    if (key.downArrow) {
+      if (showSuggestions && suggestions.length > 0) {
+        // 有候选框时，用于候选框导航
+        navigateSuggestions('down');
+      } else {
+        // 没有候选框时，用于历史记录导航
         navigateHistory('down');
-        return;
       }
+      return;
+    }
+    
+    if (key.escape && showSuggestions) {
+      setShowSuggestions(false);
+      return;
     }
     
     if (key.tab) {
