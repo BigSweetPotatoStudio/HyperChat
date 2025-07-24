@@ -3,9 +3,9 @@
 
 echo "🔍 Running pre-commit checks..."
 
-# # 运行类型检查
-# echo "📝 Running TypeScript type check..."
-# npm run typecheck
+# 运行类型检查
+echo "📝 Running TypeScript type check..."
+npm run typecheck
 
 # # 如果类型检查失败，退出
 # if [ $? -ne 0 ]; then
