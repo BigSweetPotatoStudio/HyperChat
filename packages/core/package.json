@@ -102,8 +102,8 @@
   },
   "scripts": {
     "dev": "nodemon -w src --exec cross-env myEnv=dev npx tsx --inspect=19999 src/cli/index.mts serve",
-    "dev:proxy": "nodemon -w src --exec cross-env myEnv=dev HTTP_PROXY=http://localhost:8899 HYPERCHAT_SKIP_SSL_VERIFICATION=true npx tsx --inspect=19999 src/main.mts",
-    "start": "npx tsx --inspect=19999 src/main.mts",
+    "dev:proxy": "nodemon -w src --exec cross-env myEnv=dev HTTP_PROXY=http://localhost:8899 HYPERCHAT_SKIP_SSL_VERIFICATION=true npx tsx --inspect=19999 src/cli/index.mts serve",
+    "start": "npx tsx src/cli/index.mts serve",
     "build": "node build.mjs",
     "build:tsc": "tsc --project tsconfig.build.json",
     "typecheck": "npx tsc --noEmit",

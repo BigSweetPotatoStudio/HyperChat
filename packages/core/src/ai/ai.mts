@@ -92,7 +92,6 @@ export class AiChannel {
   cancel() {
     if (this.abortController) {
       this.abortController.abort();
-      this.abortController = null;
     }
     if (this.mcpAbortController) {
       this.mcpAbortController.abort();
@@ -233,10 +232,6 @@ export class AiChannel {
     context: { step: number } = { step: 0 },
   ): Promise<string> {
 
-    // 🚫 检查是否已被取消 - 递归调用的优雅中断点
-    if (this.abortController?.signal?.aborted) {
-      throw new Error('Request was cancelled by user');
-    }
 
     // 在开始请求前检查是否需要压缩记忆
     if (this.lastMessage) { // 只在第一步时压缩
@@ -614,7 +609,7 @@ export class AiChannel {
       if (this.abortController?.signal?.aborted) {
         throw new Error('Request was cancelled by user during tool execution');
       }
-      
+      this.abortController = null; // 重置 abortController 以便下次调用
       context.step++;
       let { userMessage, ...newParams } = params;
       return await this.completion(
