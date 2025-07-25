@@ -1,6 +1,6 @@
 import * as path from "path";
 import * as fs from "fs";
-import { CONSTANTS } from "./constants.mjs";
+import { CONSTANTS } from "../agent/constants.mjs";
 import {
   WorkspaceConfig,
   WorkspaceSettings,
@@ -10,7 +10,7 @@ import {
 } from "./types.mjs";
 import type { ChatHistoryItem } from "@dadigua/hyperchat-shared/types";
 import { AgentManager } from "./agentManager.mjs";
-import { AgentInstance } from "./agentInstance.mjs";
+import { AgentInstance } from "../agent/agentInstance.mjs";
 import { Logger } from "../log.mjs";
 
 /**

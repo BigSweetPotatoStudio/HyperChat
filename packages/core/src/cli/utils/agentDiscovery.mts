@@ -5,7 +5,7 @@
 
 import * as path from 'path';
 import * as fs from 'fs';
-import { CONSTANTS } from '../../workspace/constants.mjs';
+import { CONSTANTS } from '../../agent/constants.mjs';
 import { t } from '../../i18n.mjs';
 
 /**

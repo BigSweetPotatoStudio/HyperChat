@@ -2,7 +2,7 @@ import * as path from "path";
 import * as fs from "fs";
 import dayjs from "dayjs";
 import { v4 } from "uuid";
-import { CONSTANTS } from "./constants.mjs";
+import { CONSTANTS } from "../agent/constants.mjs";
 import type {
   WorkspaceConfig,
   AgentConfig

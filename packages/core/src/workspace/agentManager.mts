@@ -5,7 +5,7 @@ import { v4 } from "uuid";
 
 import { sanitizeFileName } from "../common/util.mjs";
 import { AgentConfig } from "@dadigua/hyperchat-shared";
-import { AgentInstance } from "./agentInstance.mjs";
+import { AgentInstance } from "../agent/agentInstance.mjs";
 
 // AgentInstance 已迁移到单独的文件 agentInstance.mts
 

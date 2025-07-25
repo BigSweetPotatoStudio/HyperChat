@@ -1,5 +1,5 @@
 // 导出常量
-export { CONSTANTS } from "./constants.mjs";
+export { CONSTANTS } from "../agent/constants.mjs";
 
 // 导出类型定义
 export type {
@@ -16,10 +16,10 @@ export {
 
 
 // 导出数据列表管理类
-export { DataList } from "./dataList.mjs";
+export { DataList } from "../agent/dataList.mjs";
 
 // 导出 Agent 管理相关类
-export { AgentInstance } from "./agentInstance.mjs";
+export { AgentInstance } from "../agent/agentInstance.mjs";
 export { AgentManager } from "./agentManager.mjs";
 
 // 导出工作区类
@@ -33,13 +33,7 @@ export { Data } from "./data.mjs";
 
 
 
-export type {
-  WorkspaceMCPConfig,
-  WorkspaceMCPClient,
-  MCPType,
-  MCPManagerOptions,
-  MCPManagerEvents,
-} from "./mcp/types.mjs";
+
 
 // 导出全局实例
 import { WorkspaceManager } from "./workspaceManager.mjs";
