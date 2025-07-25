@@ -465,28 +465,18 @@ export async function startChat(initialMessage?: string, options: ChatOptions = 
     // 获取Agent的MCP客户端
     const mcpClients = agent.getMCPClients();
 
-    // 显示 Agent 允许的 MCP 工具
-    let agentAllowedMCPs = new Set(agentConfig.allowMCPs.map(x => x.split(" > ")[0])).size;
+    // 显示 Agent 允许的 MCP 工具（使用封装的方法）
+    const mcpToolsInfo = agent.getMCPTools();
+    
     if (agentConfig.allowMCPs && agentConfig.allowMCPs.length > 0) {
-      const allowedMCPs = agentConfig.allowMCPs;
-      const availableTools = mcpClients.flatMap((client: any) => client.tools || []);
-      const matchedTools = availableTools.filter((tool: any) =>
-        allowedMCPs.some(allowed =>
-          tool.name === allowed ||
-          tool.displayName === allowed ||
-          tool.originalName === allowed ||
-          tool.clientName === allowed
-        )
-      );
-      logger.info(`🛠️ ${t`Agent allowed tools:`} ${agentAllowedMCPs} ${t`configured`}, ${matchedTools.length} ${t`available`}`);
-      if (matchedTools.length > 0) {
-        const toolNames = matchedTools.map((tool: any) => tool.displayName || tool.name).slice(0, 3);
-        const more = matchedTools.length > 3 ? ` (+${matchedTools.length - 3} more)` : '';
+      logger.info(`🛠️ ${t`Agent allowed tools:`} ${mcpToolsInfo.allowedMCPsCount} ${t`configured`}, ${mcpToolsInfo.matchedTools.length} ${t`available`}`);
+      if (mcpToolsInfo.matchedTools.length > 0) {
+        const toolNames = mcpToolsInfo.matchedTools.map((tool: any) => tool.displayName || tool.name).slice(0, 3);
+        const more = mcpToolsInfo.matchedTools.length > 3 ? ` (+${mcpToolsInfo.matchedTools.length - 3} more)` : '';
         logger.info(`    📋 ${toolNames.join(', ')}${more}`);
       }
     } else {
-      const totalTools = mcpClients.flatMap((client: any) => client.tools || []).length;
-      logger.info(`🛠️ ${t`Agent allowed tools:`} ${t`All available tools`} (${totalTools})`);
+      logger.info(`🛠️ ${t`Agent allowed tools:`} ${t`All available tools`} (${mcpToolsInfo.totalTools})`);
     }
 
     // 创建AI通道

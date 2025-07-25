@@ -202,61 +202,33 @@ export async function startChatInk(initialMessage?: string, options: ChatOptions
     // 显示最终使用的模型信息
     logger.info(`🤖 ${t`Model:`} ${env.effectiveConfig.modelKey}${agentConfig.modelKey && agentConfig.modelKey !== env.effectiveConfig.modelKey ? ` (${t`agent default:`} ${agentConfig.modelKey})` : ''}`);
 
-    // 显示 Agent 允许的 MCP 工具
-    let agentAllowedMCPs = new Set(agentConfig.allowMCPs.map(x => x.split(" > ")[0])).size;
+    // 显示 Agent 允许的 MCP 工具（使用封装的方法）
+    const mcpToolsInfo = env.agent.getMCPTools();
+    
     if (agentConfig.allowMCPs && agentConfig.allowMCPs.length > 0) {
-      const allowedMCPs = agentConfig.allowMCPs;
-      const availableTools = env.mcpClients.flatMap((client: any) => client.tools || []);
-      const matchedTools = availableTools.filter((tool: any) =>
-        allowedMCPs.some(allowed =>
-          tool.name === allowed ||
-          tool.displayName === allowed ||
-          tool.originalName === allowed ||
-          tool.clientName === allowed
-        )
-      );
-      logger.info(`🛠️ ${t`Agent allowed tools:`} ${agentAllowedMCPs} ${t`configured`}, ${matchedTools.length} ${t`available`}`);
-      if (matchedTools.length > 0) {
-        const toolNames = matchedTools.map((tool: any) => tool.displayName || tool.name).slice(0, 3);
-        const more = matchedTools.length > 3 ? ` (+${matchedTools.length - 3} more)` : '';
+      logger.info(`🛠️ ${t`Agent allowed tools:`} ${mcpToolsInfo.allowedMCPsCount} ${t`configured`}, ${mcpToolsInfo.matchedTools.length} ${t`available`}`);
+      if (mcpToolsInfo.matchedTools.length > 0) {
+        const toolNames = mcpToolsInfo.matchedTools.map((tool: any) => tool.displayName || tool.name).slice(0, 3);
+        const more = mcpToolsInfo.matchedTools.length > 3 ? ` (+${mcpToolsInfo.matchedTools.length - 3} more)` : '';
         logger.info(`    📋 ${toolNames.join(', ')}${more}`);
       }
     } else {
-      const totalTools = env.mcpClients.flatMap((client) => client.tools || []).length;
-      logger.info(`🛠️ ${t`Agent allowed tools:`} ${t`All available tools`} (${totalTools})`);
+      logger.info(`🛠️ ${t`Agent allowed tools:`} ${t`All available tools`} (${mcpToolsInfo.totalTools})`);
     }
 
-    // 以Agent为中心的信息显示 (用于UI)
+    // 以Agent为中心的信息显示 (用于UI) - 使用封装的方法
     const mcpClients = env.mcpClients;
-    const totalTools = mcpClients.flatMap((client) => client.tools || []).length;
-
-    // 计算 agent 允许的工具信息 (用于UI)
-    let agentAvailableTools = 0;
-    let agentToolNames: string[] = [];
-
-    if (agentConfig.allowMCPs && agentConfig.allowMCPs.length > 0) {
-      const availableTools = env.mcpClients.flatMap((client: any) => client.tools || []);
-      const matchedTools = availableTools.filter((tool: any) =>
-        agentConfig.allowMCPs!.some(allowed =>
-          tool.name === allowed ||
-          tool.displayName === allowed ||
-          tool.originalName === allowed ||
-          tool.clientName === allowed
-        )
-      );
-      agentAvailableTools = matchedTools.length;
-      agentToolNames = matchedTools.map((tool: any) => tool.displayName || tool.name);
-    }
+    const agentToolNames = mcpToolsInfo.matchedTools.map((tool: any) => tool.displayName || tool.name);
 
     const workspaceInfo = {
       path: env.workspace?.workspacePath || '',
       agentCount: 1, // 当前Agent
       mcpClientsCount: mcpClients.length,
-      totalToolsCount: totalTools,
+      totalToolsCount: mcpToolsInfo.totalTools,
       currentAgent: agentConfig.name,
       currentModel: env.effectiveConfig.modelKey,
-      agentAllowedMCPs: agentAllowedMCPs,
-      agentAvailableTools,
+      agentAllowedMCPs: mcpToolsInfo.allowedMCPsCount,
+      agentAvailableTools: mcpToolsInfo.matchedTools.length,
       agentToolNames
     };
 

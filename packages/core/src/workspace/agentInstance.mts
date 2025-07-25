@@ -493,6 +493,51 @@ export class AgentInstance {
     await mcpManager.deleteServerConfig(name);
   }
 
+  /**
+   * 获取Agent允许的MCP工具
+   * 封装了过滤逻辑，返回Agent配置中允许的工具列表
+   */
+  getMCPTools(): {
+    allowedMCPsCount: number;
+    availableTools: any[];
+    matchedTools: any[];
+    totalTools: number;
+  } {
+    const mcpClients = this.getMCPClients();
+    const agentConfig = this.getConfig();
+    
+    // 获取所有可用工具
+    const availableTools = mcpClients.flatMap((client: any) => client.tools || []);
+    const totalTools = availableTools.length;
+    
+    // 计算允许的MCP配置数量（去重）
+    const allowedMCPsCount = new Set(agentConfig.allowMCPs.map(x => x.split(" > ")[0])).size;
+    
+    // 如果Agent有特定的allowMCPs配置，过滤工具
+    let matchedTools: any[] = [];
+    if (agentConfig.allowMCPs && agentConfig.allowMCPs.length > 0) {
+      const allowedMCPs = agentConfig.allowMCPs;
+      matchedTools = availableTools.filter((tool: any) =>
+        allowedMCPs.some(allowed =>
+          tool.name === allowed ||
+          tool.displayName === allowed ||
+          tool.originalName === allowed ||
+          tool.clientName === allowed
+        )
+      );
+    } else {
+      // 如果没有特定配置，则所有工具都可用
+      matchedTools = availableTools;
+    }
+    
+    return {
+      allowedMCPsCount,
+      availableTools,
+      matchedTools,
+      totalTools,
+    };
+  }
+
   // ==================== Agent专属任务管理 ====================
 
   /**
