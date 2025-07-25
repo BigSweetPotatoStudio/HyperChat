@@ -144,15 +144,15 @@ export const AgentManagement = forwardRef<AgentManagementRef, AgentManagementPro
         }
         await call('updateAgent', {
           agentName: agentKey,
-          updates: agentConfig,
-          scope: editingAgent.config.scope // 使用原有的 scope
+          updates: agentConfig
+          // scope: editingAgent.config.scope // 使用原有的 scope
         });
         message.success(t`Agent updated successfully`);
       } else {
         // 创建新Agent
         await call('createAgent', {
-          config: agentConfig,
-          scope: createScope // 使用用户选择的 scope
+          config: agentConfig
+          // scope: createScope // 使用用户选择的 scope
         });
         message.success(t`Agent created successfully`);
       }
@@ -171,8 +171,8 @@ export const AgentManagement = forwardRef<AgentManagementRef, AgentManagementPro
   const deleteAgent = async (agent: Agent) => {
     try {
       await call('deleteAgent', {
-        agentName: agent.config.name,
-        scope: agent.config.scope // 明确指定要删除的 Agent scope
+        agentName: agent.config.name
+        // scope: agent.config.scope // 明确指定要删除的 Agent scope
       });
       message.success(t`Agent deleted successfully`);
       await onRefresh();
@@ -192,8 +192,8 @@ export const AgentManagement = forwardRef<AgentManagementRef, AgentManagementPro
 
       // 获取Agent的聊天历史记录
       const result = await call('getAgentChatLogs', {
-        agentName: agent.config.name,
-        scope: agent.config.scope || 'workspace' // 默认使用 workspace scope
+        agentName: agent.config.name
+        // scope: agent.config.scope || 'workspace' // 默认使用 workspace scope
       });
 
       // 按时间倒序排列聊天记录
@@ -232,8 +232,8 @@ export const AgentManagement = forwardRef<AgentManagementRef, AgentManagementPro
 
           // 重新加载聊天历史列表
           const result = await call('getAgentChatLogs', {
-            agentName: chatHistoryAgent.config.name,
-            scope: chatHistoryAgent.config.scope || 'workspace' // 默认使用 workspace scope
+            agentName: chatHistoryAgent.config.name
+            // scope: chatHistoryAgent.config.scope || 'workspace' // 默认使用 workspace scope
           });
           // 按时间倒序排列聊天记录
           const sortedChatLogs = (result.chatLogs || []).sort((a, b) => {

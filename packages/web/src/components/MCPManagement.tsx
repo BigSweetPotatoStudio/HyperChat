@@ -192,8 +192,8 @@ export const MCPManagement = forwardRef<MCPManagementRef, MCPManagementProps>(({
       // 使用新的工作区特定的重启方法
       await call("manageWorkspaceMcpClient", {
         clientName: client.serverName,
-        action: "restart",
-        scope: client.scope // 传递 scope 信息
+        action: "restart"
+        // scope: client.scope // 传递 scope 信息
       });
 
       message.success(t`MCP client restarted successfully`);
@@ -212,8 +212,8 @@ export const MCPManagement = forwardRef<MCPManagementRef, MCPManagementProps>(({
       // 使用新的工作区特定的禁用方法
       await call("manageWorkspaceMcpClient", {
         clientName: client.serverName,
-        action: "disable",
-        scope: client.scope // 传递 scope 信息
+        action: "disable"
+        // scope: client.scope // 传递 scope 信息
       });
       message.success(t`MCP client disabled successfully`);
 
@@ -231,8 +231,8 @@ export const MCPManagement = forwardRef<MCPManagementRef, MCPManagementProps>(({
       // 使用新的工作区特定的启用方法
       await call("manageWorkspaceMcpClient", {
         clientName: client.serverName,
-        action: "enable",
-        scope: client.scope // 传递 scope 信息
+        action: "enable"
+        // scope: client.scope // 传递 scope 信息
       });
       message.success(t`MCP client enabled successfully`);
 
@@ -249,8 +249,8 @@ export const MCPManagement = forwardRef<MCPManagementRef, MCPManagementProps>(({
     try {
       // 使用新的删除方法支持 scope 参数
       await call("deleteWorkspaceMcpServerConfig", {
-        serverName: client.serverName,
-        scope: client.scope // 传递 scope 信息
+        serverName: client.serverName
+        // scope: client.scope // 传递 scope 信息
       });
       message.success(t`MCP client deleted successfully`);
 
@@ -790,8 +790,8 @@ export const MCPManagement = forwardRef<MCPManagementRef, MCPManagementProps>(({
                     const editingScope = (editingClient as any)?.scope || 'workspace';
                     
                     await call("deleteWorkspaceMcpServerConfig", {
-                      serverName: values._name,
-                      scope: editingScope
+                      serverName: values._name
+                      // scope: editingScope
                     });
                   }
                 }
@@ -845,8 +845,8 @@ export const MCPManagement = forwardRef<MCPManagementRef, MCPManagementProps>(({
                 // 添加MCP配置（支持全局/工作区）
                 await call("setWorkspaceMcpServerConfig", {
                   serverName: values.name,
-                  serverConfig: mcpServerConfig,
-                  scope: createScope // 使用用户选择的 scope
+                  serverConfig: mcpServerConfig
+                  // scope: createScope // 使用用户选择的 scope
                 });
 
                 setMcpConfigResult({
