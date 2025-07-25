@@ -10,6 +10,7 @@ import path from 'path';
 import { Logger } from '../utils/logger.mjs';
 import "../../first.mjs";
 import { getWorkspaceManager, AgentInstance } from "../../workspace/index.mjs";
+import { getAgent } from '../agentManager.mjs';
 import { t } from '../../i18n.mjs';
 import { 
   discoverAgents, 
@@ -75,64 +76,35 @@ export async function startRun(options: RunOptions = {}) {
       return;
     }
     
-    // 确定要启动的Agent（单Agent模式）
-    const agentName = options.agent || DEFAULT_AGENT_NAME;
-    const targetAgent = await findAgent(agentName, {
-      workspace: options.workspace,
-      agentPath: options.agentPath
-    });
-    
-    if (!targetAgent) {
-      logger.error(`❌ ${t`Agent not found:`} ${agentName}`);
-      if (discoveredAgents.length > 0) {
-        logger.info(`💡 ${t`Available agents:`} ${discoveredAgents.map(a => a.name).join(', ')}`);
-        logger.info(`💡 ${t`Use:`} hyperchat run --agent <name>`);
-      } else {
-        logger.info(`💡 ${t`Create an agent first using:`} hyperchat agent create ${agentName}`);
-      }
-      return;
-    }
-    
-    logger.info(`✅ ${t`Found agent:`} ${targetAgent.name} (${targetAgent.source})`);
-    
-    // 第三阶段：启动单个Agent
-    logger.info(`⏳ ${t`Step 3: Starting agent...`}`);
+    // 第三阶段：使用CliAgentManager启动单个Agent
+    logger.info(`⏳ ${t`Step 3: Starting agent with CliAgentManager...`}`);
     
     try {
-      logger.info(`🤖 ${t`Starting agent:`} ${targetAgent.name} (${targetAgent.source})`);
+      // 使用CliAgentManager获取和初始化Agent
+      const agentInstance = await getAgent({
+        agentName: options.agent,
+        agentPath: options.agentPath,
+        workspace: options.workspace,
+        enableTaskScheduler: true // run命令默认启用任务调度器
+      });
       
-      // 创建Agent实例，使用Agent-centered环境配置
-      const agentInstance = new AgentInstance(targetAgent.path);
-      
-      // 为Agent加载独立的环境配置
-      const { EnvManager } = await import('../../data/managers/envManager.mjs');
-      const agentEnvManager = EnvManager.getInstance(targetAgent.path);
-      
-      if (options.verbose) {
-        logger.info(`     🔧 ${t`Loading Agent environment:`} ${targetAgent.path}`);
-        agentEnvManager.logDetailedConfig();
-      }
-      
-      await agentInstance.init();
-      
-      // 启动Agent的服务
-      await agentInstance.startMCPClients();
-      await agentInstance.startTaskScheduler();
+      const config = agentInstance.getConfig();
+      logger.info(`🤖 ${t`Agent started:`} ${config.name}`);
       
       // 显示Agent启动信息
       const mcpClients = agentInstance.getMCPClients();
       const taskStats = agentInstance.getTaskSchedulerStats();
       
-      logger.info(`  ✅ ${t`Agent started:`} ${targetAgent.name}`);
-      logger.info(`     📍 ${t`Path:`} ${targetAgent.path}`);
+      logger.info(`  ✅ ${t`Agent initialized successfully`}`);
+      logger.info(`     📍 ${t`Path:`} ${agentInstance.getAgentPath()}`);
       logger.info(`     🔧 ${t`MCP clients:`} ${mcpClients.length}`);
       logger.info(`     ⏰ ${t`Scheduled tasks:`} ${taskStats.scheduledTasksCount}`);
       
       // 显示系统运行状态
       logger.info(`✅ ${t`Agent-centered service is running`}`);
       logger.info(`📊 ${t`Agent status:`}`);
-      logger.info(`   - ${t`Agent name:`} ${targetAgent.name}`);
-      logger.info(`   - ${t`Agent source:`} ${targetAgent.source}`);
+      logger.info(`   - ${t`Agent name:`} ${config.name}`);
+      logger.info(`   - ${t`Agent path:`} ${agentInstance.getAgentPath()}`);
       logger.info(`   - ${t`MCP clients:`} ${mcpClients.length}`);
       
       const tasks = await agentInstance.getTasks();
@@ -153,7 +125,7 @@ export async function startRun(options: RunOptions = {}) {
       await keepAlive([agentInstance]);
       
     } catch (error) {
-      logger.error(`❌ ${t`Failed to start agent`} ${targetAgent.name}: ${error instanceof Error ? error.message : String(error)}`);
+      logger.error(`❌ ${t`Failed to start agent:`} ${error instanceof Error ? error.message : String(error)}`);
       return;
     }
     

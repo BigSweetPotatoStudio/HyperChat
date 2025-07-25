@@ -151,6 +151,13 @@ export class AgentInstance {
   }
 
   /**
+   * 获取Agent路径
+   */
+  getAgentPath(): string {
+    return this.agentPath;
+  }
+
+  /**
    * 更新 Agent 配置
    */
   async updateConfig(updates: Partial<AgentConfig>): Promise<boolean> {

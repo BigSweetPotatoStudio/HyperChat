@@ -37,7 +37,8 @@ import { readFileSync } from 'fs';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
 import { Logger } from './utils/logger.mjs';
-// startChat 现在通过动态导入加载
+import { startChat } from './commands/chat.mjs';
+import { startChatInk } from './commands/chat-ink.mjs';
 import { startServer } from './commands/server.mjs';
 import { startRun } from './commands/run.mjs';
 import { createWorkspace, listWorkspaces, showCurrentWorkspace } from './commands/workspace.mjs';
@@ -59,6 +60,7 @@ import { workspaceManager } from '../workspace/index.mjs';
 import { initCliI18n, t, setCurrLang, getCurrLang } from '../i18n.mjs';
 import type { Language } from '@dadigua/hyperchat-shared';
 import type { ChatOptions } from './commands/chat.mjs';
+import { cleanupAgent } from './agentManager.mjs';
 // 获取包信息
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const packagePath = join(__dirname, '..', '..', 'package.json');
@@ -339,11 +341,9 @@ async function startChatWrapper(messages: string[], logger: Logger, agentName?: 
 
     // 根据 UI 选项选择不同的聊天实现
     if (globalOptions.ui === 'ink') {
-      const { startChatInk } = await import('./commands/chat-ink.mjs');
       await startChatInk(message, options);
     } else {
       // 默认使用传统 UI（为了向后兼容）
-      const { startChat } = await import('./commands/chat.mjs');
       await startChat(message, options);
     }
 
@@ -696,10 +696,11 @@ async function cleanup() {
   isExiting = true;
 
   try {
-    // 新架构下简化清理逻辑
-    console.log(t`Exiting...`);
+    // Agent-centered架构下，卸载当前Agent
+    await cleanupAgent();
+    console.log(t`Agent unloaded, exiting...`);
   } catch (error) {
-    console.error(`${t`Error occurred during exit:`} ${error}`);
+    console.error(`${t`Error occurred during agent cleanup:`} ${error}`);
   }
 
   process.exit(0);
@@ -725,10 +726,8 @@ async function main() {
     // 执行命令
     const result = await handleCommand();
     
-    // 根据命令类型决定是否退出
-    if (result.shouldExit) {
-      await workspaceManager.uninitialize(); // 清理工作区管理器
-    }
+    // Agent-centered架构下，Agent资源按需创建和自动清理
+    // 不需要显式的全局清理逻辑
   } catch (error) {
     console.error(`❌ ${t`Command execution failed:`} ${error}`);
     process.exit(1);

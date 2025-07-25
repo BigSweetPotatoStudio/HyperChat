@@ -14,7 +14,7 @@ import { Command } from '../../command.mjs';
 import { AiChannel } from '../../ai/ai.mjs';
 import type { MyMessage } from '@dadigua/hyperchat-shared/types';
 import { createReadline } from '../utils/readline.mjs';
-import { workspaceManager, AgentInstance } from '../../workspace/index.mjs';
+import { AgentInstance } from '../../workspace/index.mjs';
 import {
   initializeAIEnvironment,
   createAIChannel,
@@ -26,6 +26,7 @@ import {
   DEFAULT_AGENT_NAME,
   type DiscoveredAgent
 } from '../utils/agentDiscovery.mjs';
+import { getAgent } from '../agentManager.mjs';
 import { getBuiltinPrompts } from '../../ai/hyperchat-builtin-prompts.mjs';
 import { t } from '../../i18n.mjs';
 import { getMyUuid } from '../utils/util.mjs';
@@ -34,28 +35,23 @@ import type { Logger as CLILogger } from '../utils/logger.mjs';
 
 
 /**
- * 选择Agent（Agent-centered架构）
+ * 选择Agent（Agent-centered架构 - 使用CliAgentManager）
  * 优先级：agentPath > workspace + agentName
  */
 async function selectAgent(options: ChatOptions): Promise<AgentInstance> {
-  let targetAgent: DiscoveredAgent | null = null;
-  let agentName: string;
-
-  // 最高优先级：如果指定了agentPath，直接使用该路径
-  if (options.agentPath) {
-    agentName = path.basename(options.agentPath); // 从路径推导Agent名称
-    targetAgent = await findAgent(agentName, {
-      agentPath: options.agentPath
+  // 使用新的CliAgentManager来获取Agent
+  try {
+    const agent = await getAgent({
+      agentName: options.agent,
+      agentPath: options.agentPath,
+      workspace: options.workspace,
+      enableTaskScheduler: options.enableTaskScheduler ?? false // chat命令默认禁用任务调度器
     });
-  } else {
-    // 次优先级：在workspace中查找指定的agentName
-    agentName = options.agent || DEFAULT_AGENT_NAME;
-    targetAgent = await findAgent(agentName, {
-      workspace: options.workspace
-    });
-  }
-
-  if (!targetAgent) {
+    return agent;
+  } catch (error) {
+    // 如果Agent未找到，提供友好的错误信息
+    const agentName = options.agent || DEFAULT_AGENT_NAME;
+    
     // 获取所有可用的Agent列表
     const { discoverAgents } = await import('../utils/agentDiscovery.mjs');
     const availableAgents = await discoverAgents({
@@ -69,17 +65,12 @@ async function selectAgent(options: ChatOptions): Promise<AgentInstance> {
       throw new Error(`${t`Agent not found:`} ${agentName}\n${t`Available agents:`} ${availableNames}\n${t`Use:`} hyperchat agent <name> chat`);
     }
   }
-
-  // 直接从Agent路径创建实例
-  const agentInstance = new AgentInstance(targetAgent.path);
-  await agentInstance.init();
-  return agentInstance;
 }
 
 /**
  * 显示Agent启动详细信息
  */
-async function showAgentStartupInfo(agent: AgentInstance, logger: CLILogger): Promise<void> {
+async function showAgentStartupInfo(agent: AgentInstance, logger: CLILogger, enableTaskScheduler: boolean = true): Promise<void> {
   const config = agent.getConfig();
 
   // 显示Agent基本配置信息
@@ -89,11 +80,9 @@ async function showAgentStartupInfo(agent: AgentInstance, logger: CLILogger): Pr
   logger.info(`    ├─ ${t`Max tokens:`} ${config.maxTokens || t`default`}`);
   logger.info(`    └─ ${t`Prompt length:`} ${config.prompt ? config.prompt.length : 0} ${t`characters`}`);
 
-  // 启动Agent的MCP客户端
-  logger.info(`  🔧 ${t`Starting MCP clients...`}`);
+  // 显示MCP客户端状态（已由CliAgentManager启动）
+  logger.info(`  🔧 ${t`MCP clients status:`}`);
   try {
-    // 启动Agent MCP客户端
-    await agent.startMCPClients();
     const clients = agent.getMCPClients();
 
     if (clients.length === 0) {
@@ -134,13 +123,12 @@ async function showAgentStartupInfo(agent: AgentInstance, logger: CLILogger): Pr
       }
     }
   } catch (error) {
-    logger.warn(`    └─ ${t`MCP startup error:`} ${error instanceof Error ? error.message : String(error)}`);
+    logger.warn(`    └─ ${t`MCP status error:`} ${error instanceof Error ? error.message : String(error)}`);
   }
 
-  // 启动Agent的任务调度器
-  logger.info(`  ⏰ ${t`Starting task scheduler...`}`);
+  // 显示任务调度器状态（已由CliAgentManager管理）
+  logger.info(`  ⏰ ${t`Task scheduler status:`}`);
   try {
-    await agent.startTaskScheduler();
     const taskStats = agent.getTaskSchedulerStats();
 
     if (taskStats.running) {
@@ -153,7 +141,11 @@ async function showAgentStartupInfo(agent: AgentInstance, logger: CLILogger): Pr
         logger.info(`        └─ ${taskNames.join(', ')}${more}`);
       }
     } else {
-      logger.info(`    └─ ⏸️ ${t`Scheduler stopped`}`);
+      if (enableTaskScheduler) {
+        logger.info(`    └─ ⏸️ ${t`Scheduler stopped`}`);
+      } else {
+        logger.info(`    └─ ⏸️ ${t`Scheduler disabled for this session`}`);
+      }
     }
   } catch (error) {
     logger.warn(`    └─ ${t`Task scheduler error:`} ${error instanceof Error ? error.message : String(error)}`);
@@ -406,6 +398,7 @@ export interface ChatOptions {
   host?: string;
   port?: string;
   password?: string;
+  enableTaskScheduler?: boolean; // 是否启用任务调度器，默认true
 }
 
 export async function startChat(initialMessage?: string, options: ChatOptions = {}) {
@@ -428,7 +421,8 @@ export async function startChat(initialMessage?: string, options: ChatOptions = 
     logger.info(`✅ ${t`Agent selected:`} ${agentConfig.name}`);
 
     // 显示Agent启动详细信息
-    await showAgentStartupInfo(agent, logger);
+    const enableTaskScheduler = options.enableTaskScheduler ?? false; // chat命令默认为false
+    await showAgentStartupInfo(agent, logger, enableTaskScheduler);
 
     // 创建AI环境对象（Agent-centered版本）
     const appSettings = await Command.getAppSettings();

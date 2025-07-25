@@ -17,6 +17,7 @@ import {
   createAIChannel,
   logAIConfig
 } from '../../utils/aiConfigHelper.mjs';
+import { getAgent } from '../agentManager.mjs';
 import { getBuiltinPrompts } from '../../ai/hyperchat-builtin-prompts.mjs';
 import { t } from '../../i18n.mjs';
 import ChatUI from '../ui/ChatUI.js';
@@ -136,12 +137,14 @@ function getLabelByFirstUserContent(messages: Array<MyMessage>): string {
 export interface ChatOptions {
   agent?: string;
   workspace?: string;
+  agentPath?: string;  // Agent路径，最高优先级
   model?: string;
   verbose?: boolean;
   quiet?: boolean;
   host?: string;
   port?: string;
   password?: string;
+  enableTaskScheduler?: boolean; // 是否启用任务调度器，默认true
 }
 
 export async function startChatInk(initialMessage?: string, options: ChatOptions = {}) {
