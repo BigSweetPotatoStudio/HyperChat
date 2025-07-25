@@ -531,7 +531,7 @@ export async function startChat(initialMessage?: string, options: ChatOptions = 
         temperature: env.effectiveConfig.temperature,
         maxAttachedDialogs: env.effectiveConfig.maxAttachedDialogs,
         maxTokens: env.effectiveConfig.maxTokens,
-        agentName: env.agent.getConfig().name, // 添加agentName参数
+        agentInstance: env.agent, // 直接传递AgentInstance对象
         onUpdate: () => {
           chatHandler.handleUpdate(aiChannel, env, chatKey);
         }
@@ -716,7 +716,7 @@ export async function startChat(initialMessage?: string, options: ChatOptions = 
           await aiChannel.completion({
             ...env.effectiveConfig,
             prompt: systemPrompt,
-            agentName: env.agent.getConfig().name, // 添加agentName参数
+            agentInstance: env.agent, // 直接传递AgentInstance对象
             onUpdate: () => {
               chatHandler.handleUpdate(aiChannel, env, interactiveChatKey);
             }

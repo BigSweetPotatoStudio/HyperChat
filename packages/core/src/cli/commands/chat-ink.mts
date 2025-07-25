@@ -271,7 +271,7 @@ export async function startChatInk(initialMessage?: string, options: ChatOptions
         await aiChannel.completion({
           ...env.effectiveConfig,
           prompt: systemPrompt,
-          agentName: env.agent.getConfig().name, // 添加agentName参数
+          agentInstance: env.agent, // 直接传递AgentInstance对象
           onUpdate: async () => {
             // 显示新的工具结果
 

@@ -538,6 +538,43 @@ export class AgentInstance {
     };
   }
 
+  /**
+   * 调用MCP工具
+   * 替代废弃的Command.mcpCallToolWithWorkspace方法
+   */
+  async callTool(
+    toolName: string,
+    functionName: string,
+    args: any = {},
+    abortController?: AbortController
+  ): Promise<any> {
+    // 获取对应的MCP客户端
+    const mcpClients = this.getMCPClients();
+    const client = mcpClients.find(client => client.serverName === toolName);
+    
+    if (!client) {
+      throw new Error(`MCP client "${toolName}" not found in agent "${this.config.name}"`);
+    }
+
+    if (client.status !== 'connected') {
+      throw new Error(`MCP client "${toolName}" is not connected (status: ${client.status})`);
+    }
+
+    try {
+      // 调用MCP客户端的工具
+      const result = await client.callTool(
+        functionName,
+        args,
+        abortController
+      );
+
+      return result;
+    } catch (error) {
+      console.error(`Agent ${this.config.name} MCP工具调用失败 [${toolName}:${functionName}]:`, error);
+      throw error;
+    }
+  }
+
   // ==================== Agent专属任务管理 ====================
 
   /**

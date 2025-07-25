@@ -192,7 +192,7 @@ export async function executeAICompletion(
     ...env.effectiveConfig,
     prompt: systemPrompt,
     onUpdate: options?.onUpdate,
-    agentName: agentName // 传递Agent名称用于获取MCP工具
+    agentInstance: env.agent // 直接传递AgentInstance对象
   });
 
   return aiChannel.lastMessage;

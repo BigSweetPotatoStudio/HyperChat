@@ -20,7 +20,7 @@ import { Command } from "../command.mjs";
 import { Logger } from "../log.mjs";
 import { SSEWriter } from "../sse/SSEWriter.mjs";
 import { MemoryCompressor, TokenCalculator, createDefaultMemorySummaryGenerator } from "./memory-compressor.mjs";
-import { workspaceManager } from "../workspace/index.mjs";
+import { workspaceManager, AgentInstance } from "../workspace/index.mjs";
 import { AiProviderFactory, type ModelConfig } from "./providers/AiProviderFactory.mjs";
 import { ProxyUtils } from "./utils/ProxyUtils.mjs";
 import { MessageConverter } from "./utils/MessageConverter.mjs";
@@ -228,7 +228,7 @@ export class AiChannel {
       sseWriter?: SSEWriter; // SSE 写入器
       chatKey?: string; // 聊天 Key
       userMessage?: MyMessage; // 用户消息
-      agentName?: string; // Agent名称，用于获取MCP工具
+      agentInstance: AgentInstance; // Agent实例，用于获取MCP工具（必填）
     } & BaseAIConfig,
     options: Omit<Parameters<typeof streamText>[0], 'model' | 'prompt'> = {},
     context: { step: number } = { step: 0 },
@@ -292,7 +292,7 @@ export class AiChannel {
     let format_message = MessageConverter.convertToCoreMessages(this.messages);
     options.messages = [{ role: "system", content: params.prompt }, ...format_message];
 
-    let tools: HyperChatCompletionTool[] = this.getMcpTools(params.allowMCPs, params.agentName);
+    let tools: HyperChatCompletionTool[] = this.getMcpTools(params.agentInstance, params.allowMCPs);
     const aiTools = ToolFormatter.formatTools(tools || []);
     options.tools = {
       ...options.tools,
@@ -357,7 +357,7 @@ export class AiChannel {
         }
         if (delta.type == "tool-call") {
           newMessage.content_tool_calls = newMessage.content_tool_calls || [];
-          let localTool = this.getMcpTools(params.allowMCPs, params.agentName).find(
+          let localTool = this.getMcpTools(params.agentInstance, params.allowMCPs).find(
             (t) => t.name === delta.toolName
           );
           if (!localTool) {
@@ -524,7 +524,7 @@ export class AiChannel {
 
         params.onUpdate && params.onUpdate();
 
-        let localTool = this.getMcpTools(params.allowMCPs, params.agentName).find(
+        let localTool = this.getMcpTools(params.agentInstance, params.allowMCPs).find(
           (t) => t.name === tool.function.name
         );
         if (!localTool) {
@@ -532,18 +532,12 @@ export class AiChannel {
           continue;
         }
         this.mcpAbortController = new AbortController();
-        let call_res: MCPTypes.CallToolResult = await Command.mcpCallToolWithWorkspace
-          (
-            {
-              name: localTool?.clientName || "",
-              functionName: localTool.originalName,
-              args: tool.function.args || {},
-              workspacePath: localTool.workspacePath,
-              abortController: this.mcpAbortController,
-              agentName: params.agentName,
-            }
-
-          )
+        let call_res: MCPTypes.CallToolResult = await params.agentInstance.callTool(
+          localTool?.clientName || "",
+          localTool.originalName,
+          tool.function.args || {},
+          this.mcpAbortController
+        )
           .then((res: MCPTypes.CallToolResult & { isError?: boolean }) => {
             if (res["isError"]) {
               this.lastMessage.content_status = "error";
@@ -628,24 +622,7 @@ export class AiChannel {
   };
 
   // 获取 MCP 工具 - Agent-centered版本（使用封装的getMCPTools方法）
-  private getMcpTools(allowMCPs?: string[], agentName?: string): HyperChatCompletionTool[] {
-    const workspace = workspaceManager.getCurrentWorkspace();
-    if (!workspace) {
-      return [];
-    }
-
-    if (!agentName) {
-      // Agent-centered架构要求必须指定Agent
-      console.warn('Agent-centered架构要求指定agentName来获取MCP工具');
-      return [];
-    }
-
-    const agentInstance = workspace.getAgentInstance(agentName);
-    if (!agentInstance) {
-      console.warn(`未找到Agent: ${agentName}`);
-      return [];
-    }
-
+  private getMcpTools(agentInstance: AgentInstance, allowMCPs?: string[]): HyperChatCompletionTool[] {
     // 使用封装的getMCPTools方法获取工具信息
     const mcpToolsInfo = agentInstance.getMCPTools();
     let tools = mcpToolsInfo.availableTools;
