@@ -22,6 +22,9 @@ export { DataList } from "../agent/dataList.mjs";
 export { AgentInstance } from "../agent/agentInstance.mjs";
 export { AgentManager } from "./agentManager.mjs";
 
+// 导出 Web Agent 管理器
+export { WebAgentManager, getWebAgentManager } from "../cli/webAgentManager.mjs";
+
 // 导出工作区类
 export { Workspace } from "./workspace.mjs";
 
