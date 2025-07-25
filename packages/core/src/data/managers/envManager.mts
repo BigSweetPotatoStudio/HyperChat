@@ -33,18 +33,16 @@ export interface ConfigLoadInfo {
  * 支持多层配置叠加：默认值 < process.env < 全局.env < 工作区.env < Agent目录/.env < CLI参数
  */
 export class EnvManager {
-  private static instances: Map<string, EnvManager> = new Map();
   private envConfig: EnvConfig;
   private workspacePath?: string;
   private agentPath?: string;
   private cliArgs?: Partial<EnvConfig>;
   private loadInfo: ConfigLoadInfo[] = [];
 
-  private constructor(agentPath?: string, cliArgs?: Partial<EnvConfig>) {
-    this.agentPath = agentPath;
-    this.workspacePath = this.deriveWorkspaceFromAgent(agentPath);
-    this.cliArgs = cliArgs;
-    this.envConfig = this.parseEnvConfig();
+  private constructor() {
+    // 默认只加载最基础的配置
+    this.envConfig = DEFAULT_ENV_CONFIG;
+    this.loadInfo = [];
   }
 
   /**
@@ -66,40 +64,61 @@ export class EnvManager {
   }
 
   /**
-   * 全局默认实例，可以被CLI覆盖
+   * 全局单例实例
    */
-  private static globalDefault?: EnvManager;
+  private static instance?: EnvManager;
 
   /**
-   * 设置全局默认环境管理器实例（用于CLI参数覆盖）
+   * 获取单例实例
    */
-  public static setGlobalDefault(instance: EnvManager): void {
-    EnvManager.globalDefault = instance;
+  public static getInstance(): EnvManager {
+    if (!EnvManager.instance) {
+      EnvManager.instance = new EnvManager();
+    }
+    return EnvManager.instance;
   }
 
   /**
-   * 获取环境变量管理器实例
-   * @param agentPath Agent路径，用于加载Agent和工作区特定的环境配置（可选，如果不传则使用工作区模式）
-   * @param cliArgs CLI 参数覆盖（最高优先级）
+   * 基础环境初始化（用于Agent发现阶段，避免循环依赖）
+   * 加载：默认值 + process.env + 全局.env + 工作区.env（可选）
    */
-  public static getInstance(agentPath?: string, cliArgs?: Partial<EnvConfig>): EnvManager {
-    // 如果有 CLI 参数，创建新的实例而不使用缓存
-    if (cliArgs && Object.keys(cliArgs).length > 0) {
-      return new EnvManager(agentPath, cliArgs);
-    }
+  public initBase(workspacePath?: string, cliArgs?: Partial<EnvConfig>): void {
+    this.workspacePath = workspacePath;
+    this.cliArgs = cliArgs;
+    this.agentPath = undefined; // 基础模式不设置agentPath
+    this.envConfig = this.parseEnvConfig();
+  }
 
-    // 如果没有指定参数且存在全局默认实例，使用全局默认实例
-    if (!agentPath && EnvManager.globalDefault) {
-      return EnvManager.globalDefault;
-    }
+  /**
+   * Agent环境初始化
+   * 加载：默认值 + process.env + 全局.env + 工作区.env + agent/.env
+   */
+  public initAgent(agentPath: string, cliArgs?: Partial<EnvConfig>): void {
+    this.agentPath = agentPath;
+    this.workspacePath = this.deriveWorkspaceFromAgent(agentPath);
+    this.cliArgs = cliArgs;
+    this.envConfig = this.parseEnvConfig();
+  }
 
-    const key = agentPath || 'global';
+  /**
+   * 获取环境变量值
+   */
+  public getENV<K extends keyof EnvConfig>(key: K): EnvConfig[K] {
+    return this.envConfig[key];
+  }
 
-    if (!EnvManager.instances.has(key)) {
-      EnvManager.instances.set(key, new EnvManager(agentPath));
-    }
+  /**
+   * 获取完整环境配置
+   */
+  public getConfig(): EnvConfig {
+    return this.envConfig;
+  }
 
-    return EnvManager.instances.get(key)!;
+  /**
+   * 获取环境变量值（向后兼容的别名）
+   */
+  public get<K extends keyof EnvConfig>(key: K): EnvConfig[K] {
+    return this.getENV(key);
   }
 
 
@@ -176,12 +195,18 @@ export class EnvManager {
 
     // 7. 叠加 CLI 参数 (最高优先级)
     if (this.cliArgs) {
-      const cliKeys = Object.keys(this.cliArgs).filter(key => (this.cliArgs as any)![key] !== undefined);
+      const filteredCliArgs: Record<string, any> = {};
+      const cliKeys: string[] = [];
+      
+      // 类型安全的方式处理 CLI 参数
+      for (const [key, value] of Object.entries(this.cliArgs)) {
+        if (value !== undefined) {
+          filteredCliArgs[key] = value;
+          cliKeys.push(key);
+        }
+      }
+      
       if (cliKeys.length > 0) {
-        // 只复制非 undefined 的值
-        const filteredCliArgs = Object.fromEntries(
-          cliKeys.map(key => [key, (this.cliArgs as any)![key]])
-        );
         mergedEnv = { ...mergedEnv, ...filteredCliArgs };
         this.logConfigSource(ConfigSource.CLI_ARGS, cliKeys);
       }
@@ -252,19 +277,6 @@ export class EnvManager {
     return path.join(this.agentPath, '.env');
   }
 
-  /**
-   * 获取环境配置
-   */
-  public getConfig(): EnvConfig {
-    return this.envConfig;
-  }
-
-  /**
-   * 获取特定的环境变量值
-   */
-  public get<K extends keyof EnvConfig>(key: K): EnvConfig[K] {
-    return this.envConfig[key];
-  }
 
   /**
    * 检查是否为开发环境
@@ -302,6 +314,20 @@ export class EnvManager {
   }
 
   /**
+   * 创建安全的配置对象（隐藏敏感信息）
+   */
+  private createSafeConfig(): EnvConfig {
+    const safeConfig = { ...this.envConfig };
+    
+    // 隐藏敏感的 API Keys
+    if (safeConfig.HyperChat_API_KEY) {
+      (safeConfig as any).HyperChat_API_KEY = '***';
+    }
+    
+    return safeConfig;
+  }
+
+  /**
    * 重新加载环境变量配置
    */
   public reload(): void {
@@ -323,14 +349,7 @@ export class EnvManager {
     });
 
     // 打印最终配置（隐藏敏感信息）
-    const safeConfig = { ...this.envConfig };
-
-    // 隐藏敏感的 API Keys
-    if (safeConfig.HyperChat_API_KEY) {
-      (safeConfig).HyperChat_API_KEY = '***';
-    }
-
-    Logger.info("Final merged configuration:", safeConfig);
+    Logger.info("Final merged configuration:", this.createSafeConfig());
     Logger.info("==========================================");
   }
 
@@ -338,14 +357,7 @@ export class EnvManager {
    * 打印简化的配置信息
    */
   public logConfig(): void {
-    const safeConfig = { ...this.envConfig };
-
-    // 隐藏敏感的 API Keys
-    if (safeConfig.HyperChat_API_KEY) {
-      (safeConfig).HyperChat_API_KEY = '***';
-    }
-
-    Logger.info("Current environment configuration:", safeConfig);
+    Logger.info("Current environment configuration:", this.createSafeConfig());
   }
 
   /**
@@ -407,8 +419,10 @@ export class EnvManager {
   }
 }
 
-// 导出默认的全局环境管理器实例（向后兼容）
+// 导出默认的全局环境管理器实例
 export const envManager = EnvManager.getInstance();
 
-// 导出全局环境配置（向后兼容）
-export const ENV = envManager.getConfig();
+// 便捷函数，向后兼容
+export function getENV<K extends keyof EnvConfig>(key: K): EnvConfig[K] {
+  return envManager.getENV(key);
+}

@@ -7,6 +7,7 @@ import * as path from 'path';
 import * as fs from 'fs';
 import { CONSTANTS } from '../../agent/constants.mjs';
 import { t } from '../../i18n.mjs';
+import { EnvManager } from '../../data/managers/envManager.mjs';
 
 /**
  * Agent发现结果
@@ -32,9 +33,9 @@ export async function discoverAgents(options: {
 }): Promise<DiscoveredAgent[]> {
   const agents: DiscoveredAgent[] = [];
   
-  // 获取环境管理器来获取正确的全局路径
-  const { EnvManager } = await import('../../data/managers/envManager.mjs');
-  const envManager = EnvManager.getInstance(options.agentPath);
+  // 获取环境管理器来获取正确的全局路径（避免循环依赖）
+  const envManager = EnvManager.getInstance();
+  envManager.initBase(options.workspace);
   
   // 1. 如果指定了具体的Agent路径
   if (options.agentPath && fs.existsSync(options.agentPath)) {

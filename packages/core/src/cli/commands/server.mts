@@ -39,7 +39,8 @@ export async function startServer(options: ServerOptions = {}) {
   const cliArgs = parseOptionsToEnv(options);
   
   // 获取环境管理器（包含 CLI 参数覆盖）
-  const envManager = EnvManager.getInstance(process.cwd(), cliArgs);
+  const envManager = EnvManager.getInstance();
+  envManager.initBase(process.cwd(), cliArgs);
   const config = envManager.getConfig();
   
   const port = config.HyperChat_HTTP_PORT;

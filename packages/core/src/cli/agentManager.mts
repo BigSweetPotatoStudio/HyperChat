@@ -38,6 +38,7 @@ export class CliAgentManager {
     workspace?: string;
     enableTaskScheduler?: boolean; // 是否启用任务调度器，默认true
   } = {}): Promise<AgentInstance> {
+
     // 如果已经有Agent实例，直接返回
     if (this.currentAgent && this.isInitialized) {
       return this.currentAgent;

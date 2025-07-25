@@ -26,11 +26,9 @@ if (args.includes('--verbose') || args.includes('-v')) {
   console.log('🔍 CLI Environment Overrides:', cliEnvOverrides);
 }
 
-// 创建带有 CLI 参数覆盖的环境管理器
-const envManager = EnvManager.getInstance(undefined, cliEnvOverrides);
-
-// 设置为全局默认实例，这样其他模块也能使用CLI参数覆盖
-EnvManager.setGlobalDefault(envManager);
+// 初始化环境管理器（基础模式，避免Agent循环依赖）
+const envManager = EnvManager.getInstance();
+envManager.initBase(undefined, cliEnvOverrides);
 
 // 第二步：现在可以安全地导入其他模块
 import { readFileSync } from 'fs';
@@ -72,10 +70,10 @@ const globalOptions = {
   quiet: args.includes('--quiet') || args.includes('-q'),
   help: args.includes('--help') || args.includes('-h'),
   host: getOptionValue(args, '--host') || 'localhost',
-  port: envManager.get('HyperChat_HTTP_PORT'),
-  password: envManager.get('HyperChat_Web_Password'),
+  port: envManager.getENV('HyperChat_HTTP_PORT'),
+  password: envManager.getENV('HyperChat_Web_Password'),
   workspace: getOptionValue(args, '--workspace'),
-  language: envManager.get('HyperChat_Language'),
+  language: envManager.getENV('HyperChat_Language'),
   ui: getOptionValue(args, '--ui') || 'ink' // 默认使用 ink UI
 };
 
@@ -597,7 +595,7 @@ async function handleLanguageCommand(langArg: string | undefined, logger: Logger
   try {
     // 如果没有提供语言参数，显示当前语言
     if (!langArg) {
-      const currentLang = envManager.get('HyperChat_Language') || getCurrLang();
+      const currentLang = envManager.getENV('HyperChat_Language') || getCurrLang();
       let langName: string;
       if (currentLang === 'zh') langName = t`Chinese`;
       else if (currentLang === 'ja') langName = t`Japanese`;
@@ -646,7 +644,7 @@ async function handleLanguageCommand(langArg: string | undefined, logger: Logger
     }
 
     // 获取当前语言
-    const currentLang = envManager.get('HyperChat_Language') || getCurrLang();
+    const currentLang = envManager.getENV('HyperChat_Language') || getCurrLang();
     if (currentLang === targetLang) {
       let langName: string;
       if (targetLang === 'zh') langName = t`Chinese`;

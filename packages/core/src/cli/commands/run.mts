@@ -45,7 +45,8 @@ export async function startRun(options: RunOptions = {}) {
     if (options.agentPath) {
       // 如果指定了Agent路径，使用Agent-centered配置
       const { EnvManager } = await import('../../data/managers/envManager.mjs');
-      envManager = EnvManager.getInstance(options.agentPath);
+      envManager = EnvManager.getInstance();
+      envManager.initAgent(options.agentPath);
       logger.info(`🔧 ${t`Using Agent-centered environment:`} ${options.agentPath}`);
       if (options.verbose) {
         envManager.logDetailedConfig();
