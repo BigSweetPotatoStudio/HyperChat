@@ -6,7 +6,7 @@
  */
 
 import { AgentInstance } from '../agent/agentInstance.mjs';
-import { findAgent } from './utils/agentDiscovery.mjs';
+import { findAgent, discoverAgents, type DiscoveredAgent } from './utils/agentDiscovery.mjs';
 
 /**
  * Web环境下的多Agent管理器
@@ -214,6 +214,85 @@ export class WebAgentManager {
     
     await Promise.allSettled(removePromises);
     console.log(`🔥 已卸载所有Agent (${paths.length}个)`);
+  }
+
+  /**
+   * 发现指定路径下的可用Agent
+   * @param searchPath 搜索路径（可选，默认为当前工作目录）
+   * @param options 发现选项
+   */
+  async discoverAgents(searchPath?: string, options?: {
+    includeGlobal?: boolean;
+  }): Promise<DiscoveredAgent[]> {
+    const includeGlobal = options?.includeGlobal !== false; // 默认包含全局Agent
+    
+    console.log(`🔍 发现Agent: ${searchPath || process.cwd()}`);
+    
+    try {
+      // 复用现有的Agent发现逻辑
+      const discoveredAgents = await discoverAgents({
+        workspace: searchPath,
+      });
+      
+      // 如果不需要全局Agent，过滤掉全局Agent
+      const filteredAgents = includeGlobal 
+        ? discoveredAgents 
+        : discoveredAgents.filter(agent => agent.source !== 'global');
+      
+      console.log(`✅ 发现${filteredAgents.length}个Agent:`);
+      filteredAgents.forEach(agent => {
+        const sourceEmoji = agent.source === 'global' ? '🌍' : 
+                           agent.source === 'local' ? '📁' : '🎯';
+        console.log(`  ${sourceEmoji} ${agent.name} (${agent.path})`);
+      });
+      
+      return filteredAgents;
+    } catch (error) {
+      console.error(`❌ Agent发现失败: ${error instanceof Error ? error.message : String(error)}`);
+      return [];
+    }
+  }
+
+  /**
+   * 发现并启动指定路径下的所有Agent
+   * @param searchPath 搜索路径
+   * @param options 启动选项
+   */
+  async discoverAndStartAgents(searchPath?: string, options?: {
+    includeGlobal?: boolean;
+    enableMCP?: boolean;
+    enableTaskScheduler?: boolean;
+    maxAgents?: number;
+  }): Promise<AgentInstance[]> {
+    const discoveredAgents = await this.discoverAgents(searchPath, {
+      includeGlobal: options?.includeGlobal
+    });
+    
+    const maxAgents = options?.maxAgents || 10; // 默认最多启动10个Agent
+    const agentsToStart = discoveredAgents.slice(0, maxAgents);
+    
+    console.log(`🚀 批量启动${agentsToStart.length}个Agent...`);
+    
+    const startedAgents: AgentInstance[] = [];
+    const startPromises = agentsToStart.map(async (discoveredAgent) => {
+      try {
+        const agent = await this.startAgent(discoveredAgent.path, {
+          enableMCP: options?.enableMCP,
+          enableTaskScheduler: options?.enableTaskScheduler,
+        });
+        startedAgents.push(agent);
+        return agent;
+      } catch (error) {
+        console.error(`❌ 启动Agent失败: ${discoveredAgent.name} - ${error instanceof Error ? error.message : String(error)}`);
+        return null;
+      }
+    });
+    
+    // 等待所有Agent启动完成
+    await Promise.allSettled(startPromises);
+    
+    console.log(`✅ 成功启动${startedAgents.length}/${agentsToStart.length}个Agent`);
+    return startedAgents;
   }
 
   /**

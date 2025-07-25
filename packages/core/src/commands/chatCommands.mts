@@ -403,6 +403,66 @@ export async function unloadAllAgents(): Promise<{ success: boolean; message: st
 }
 
 /**
+ * 发现指定路径下的可用Agent
+ */
+export async function discoverAgents(searchPath?: string, options?: {
+  includeGlobal?: boolean;
+}): Promise<Array<{
+  name: string;
+  path: string;
+  source: 'global' | 'local' | 'specified';
+  workspacePath?: string;
+}>> {
+  try {
+    const webAgentManager = getWebAgentManager();
+    return await webAgentManager.discoverAgents(searchPath, options);
+  } catch (error) {
+    console.error('发现Agent失败:', error);
+    return [];
+  }
+}
+
+/**
+ * 发现并启动指定路径下的所有Agent
+ */
+export async function discoverAndStartAgents(searchPath?: string, options?: {
+  includeGlobal?: boolean;
+  enableMCP?: boolean;
+  enableTaskScheduler?: boolean;
+  maxAgents?: number;
+}): Promise<{ 
+  success: boolean; 
+  message: string; 
+  startedCount: number;
+  discoveredCount: number;
+  agents: Array<{ name: string; path: string }>;
+}> {
+  try {
+    const webAgentManager = getWebAgentManager();
+    const startedAgents = await webAgentManager.discoverAndStartAgents(searchPath, options);
+    
+    return {
+      success: true,
+      message: `成功启动${startedAgents.length}个Agent`,
+      startedCount: startedAgents.length,
+      discoveredCount: startedAgents.length, // 简化统计
+      agents: startedAgents.map(agent => ({
+        name: agent.getConfig().name,
+        path: agent.getAgentPath()
+      }))
+    };
+  } catch (error) {
+    return {
+      success: false,
+      message: `批量启动Agent失败: ${error instanceof Error ? error.message : String(error)}`,
+      startedCount: 0,
+      discoveredCount: 0,
+      agents: []
+    };
+  }
+}
+
+/**
  * 获取Agent管理器状态
  */
 export async function getAgentManagerStats(): Promise<{
@@ -434,6 +494,8 @@ export const chatCommands = {
   getLoadedAgents,
   unloadAgent,
   unloadAllAgents,
+  discoverAgents,
+  discoverAndStartAgents,
   getAgentManagerStats,
 };
 
