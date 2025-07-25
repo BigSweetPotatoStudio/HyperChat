@@ -627,33 +627,37 @@ export class AiChannel {
     memoryCompressor?: MemoryCompressor;
   };
 
-  // 获取 MCP 工具 - Agent-centered版本
+  // 获取 MCP 工具 - Agent-centered版本（使用封装的getMCPTools方法）
   private getMcpTools(allowMCPs?: string[], agentName?: string): HyperChatCompletionTool[] {
     const workspace = workspaceManager.getCurrentWorkspace();
     if (!workspace) {
       return [];
     }
 
-    let tools: HyperChatCompletionTool[] = [];
-
-    if (agentName) {
-      // 如果指定了Agent，只获取该Agent的MCP工具
-      const agentInstance = workspace.getAgentInstance(agentName);
-      if (agentInstance) {
-        const mcpClients = agentInstance.getMCPClients();
-        tools = mcpClients.flatMap((client) => client.tools || []);
-      }
-    } else {
-      // 如果没有指定Agent，返回空数组（Agent-centered架构要求必须指定Agent）
+    if (!agentName) {
+      // Agent-centered架构要求必须指定Agent
       console.warn('Agent-centered架构要求指定agentName来获取MCP工具');
       return [];
     }
 
-    // 如果指定了允许的 MCP 工具，进行过滤
+    const agentInstance = workspace.getAgentInstance(agentName);
+    if (!agentInstance) {
+      console.warn(`未找到Agent: ${agentName}`);
+      return [];
+    }
+
+    // 使用封装的getMCPTools方法获取工具信息
+    const mcpToolsInfo = agentInstance.getMCPTools();
+    let tools = mcpToolsInfo.availableTools;
+
+    // 如果指定了允许的 MCP 工具，进行额外过滤（在Agent配置基础上再过滤）
     if (allowMCPs != null) {
       tools = tools.filter((tool: HyperChatCompletionTool) =>
         allowMCPs.includes(tool.name) || allowMCPs.includes(tool.clientName)
       );
+    } else {
+      // 如果没有指定额外的allowMCPs，使用Agent配置的匹配工具
+      tools = mcpToolsInfo.matchedTools;
     }
 
     return tools;
