@@ -15,6 +15,7 @@ import type { MCPServerConfig } from "@dadigua/hyperchat-shared/types";
 import { Logger } from "../log.mjs";
 import { CONSTANTS } from "./constants.mjs";
 import { WorkSpaceServers } from "../mcp/servers/index.mjs";
+import { deriveWorkspaceFromAgent } from "../cli/utils/agentDiscovery.mjs";
 
 /**
  * 扩展MCP配置，添加来源路径信息
@@ -269,13 +270,16 @@ export class AgentMCPManager {
         mergedServers
       );
 
+      let workspacePath = deriveWorkspaceFromAgent(this.agentPath);
+      if (workspacePath) {
+        await this.loadConfigFromPath(
+          path.join(workspacePath, CONSTANTS.HYPERCHAT_DIR, CONSTANTS.CONFIG_FILES.MCP),
+          "工作区配置",
+          mergedServers
+        );
+      }
 
 
-      await this.loadConfigFromPath(
-        path.join(this.agentPath, "../../", CONSTANTS.CONFIG_FILES.MCP),
-        "工作区配置",
-        mergedServers
-      );
 
 
       // 3. 加载Agent专属MCP配置 (最高优先级)

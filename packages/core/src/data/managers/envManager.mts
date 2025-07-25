@@ -15,6 +15,7 @@ export enum ConfigSource {
   PROCESS_ENV = 'process.env',
   GLOBAL_ENV = 'global/.hyperchat/.env',
   WORKSPACE_ENV = 'workspace/.hyperchat/.env',
+  AGENT_ENV = 'agent/.env',
   CLI_ARGS = 'cli.args'
 }
 
@@ -29,19 +30,39 @@ export interface ConfigLoadInfo {
 
 /**
  * 环境变量管理器
- * 支持多层配置叠加：默认值 < 环境变量 < 全局.env < 工作区.env < CLI参数
+ * 支持多层配置叠加：默认值 < process.env < 全局.env < 工作区.env < Agent目录/.env < CLI参数
  */
 export class EnvManager {
   private static instances: Map<string, EnvManager> = new Map();
   private envConfig: EnvConfig;
   private workspacePath?: string;
+  private agentPath?: string;
   private cliArgs?: Partial<EnvConfig>;
   private loadInfo: ConfigLoadInfo[] = [];
 
-  private constructor(workspacePath?: string, cliArgs?: Partial<EnvConfig>) {
-    this.workspacePath = workspacePath;
+  private constructor(agentPath?: string, cliArgs?: Partial<EnvConfig>) {
+    this.agentPath = agentPath;
+    this.workspacePath = this.deriveWorkspaceFromAgent(agentPath);
     this.cliArgs = cliArgs;
     this.envConfig = this.parseEnvConfig();
+  }
+
+  /**
+   * 从Agent路径推导工作区路径
+   * Agent路径结构: workspacePath/.hyperchat/agents/agentName
+   */
+  private deriveWorkspaceFromAgent(agentPath?: string): string | undefined {
+    if (!agentPath) return undefined;
+    
+    // 查找 .hyperchat/agents 的位置
+    const agentsDirPattern = path.join('.hyperchat', 'agents');
+    const agentsDirIndex = agentPath.indexOf(agentsDirPattern);
+    
+    if (agentsDirIndex === -1) {
+      return undefined;
+    }
+    
+    return agentPath.substring(0, agentsDirIndex);
   }
 
   /**
@@ -58,32 +79,33 @@ export class EnvManager {
 
   /**
    * 获取环境变量管理器实例
-   * @param workspacePath 工作区路径，用于加载工作区特定的环境配置
+   * @param agentPath Agent路径，用于加载Agent和工作区特定的环境配置（可选，如果不传则使用工作区模式）
    * @param cliArgs CLI 参数覆盖（最高优先级）
    */
-  public static getInstance(workspacePath?: string, cliArgs?: Partial<EnvConfig>): EnvManager {
+  public static getInstance(agentPath?: string, cliArgs?: Partial<EnvConfig>): EnvManager {
     // 如果有 CLI 参数，创建新的实例而不使用缓存
     if (cliArgs && Object.keys(cliArgs).length > 0) {
-      return new EnvManager(workspacePath, cliArgs);
+      return new EnvManager(agentPath, cliArgs);
     }
 
     // 如果没有指定参数且存在全局默认实例，使用全局默认实例
-    if (!workspacePath && EnvManager.globalDefault) {
+    if (!agentPath && EnvManager.globalDefault) {
       return EnvManager.globalDefault;
     }
 
-    const key = workspacePath || 'global';
+    const key = agentPath || 'global';
 
     if (!EnvManager.instances.has(key)) {
-      EnvManager.instances.set(key, new EnvManager(workspacePath));
+      EnvManager.instances.set(key, new EnvManager(agentPath));
     }
 
     return EnvManager.instances.get(key)!;
   }
 
+
   /**
    * 复杂的环境变量解析逻辑
-   * 优先级：默认值 < process.env < 全局.env < 工作区.env < CLI参数
+   * 优先级：默认值 < process.env < 全局.env < 工作区.env < Agent目录/.env < CLI参数
    * 
    * 特殊处理：HyperChat_AppDataDir 会影响全局配置文件的加载路径
    */
@@ -141,7 +163,18 @@ export class EnvManager {
       }
     }
 
-    // 6. 叠加 CLI 参数 (最高优先级)
+    // 6. 叠加Agent目录 .env (Agent-centered架构新增)
+    if (this.agentPath) {
+      const agentEnvPath = this.getAgentEnvPath();
+      const agentEnv = DotenvLoader.loadEnvFile(agentEnvPath);
+      const agentKeys = Object.keys(agentEnv);
+      if (agentKeys.length > 0) {
+        mergedEnv = { ...mergedEnv, ...agentEnv };
+        this.logConfigSource(ConfigSource.AGENT_ENV, agentKeys, agentEnvPath);
+      }
+    }
+
+    // 7. 叠加 CLI 参数 (最高优先级)
     if (this.cliArgs) {
       const cliKeys = Object.keys(this.cliArgs).filter(key => (this.cliArgs as any)![key] !== undefined);
       if (cliKeys.length > 0) {
@@ -154,7 +187,7 @@ export class EnvManager {
       }
     }
 
-    // 7. 验证最终配置
+    // 8. 验证最终配置
     const result = EnvSchema.safeParse(mergedEnv);
 
     if (result.success) {
@@ -210,6 +243,16 @@ export class EnvManager {
   }
 
   /**
+   * 获取Agent环境文件路径
+   */
+  private getAgentEnvPath(): string {
+    if (!this.agentPath) {
+      throw new Error('Agent path not set');
+    }
+    return path.join(this.agentPath, '.env');
+  }
+
+  /**
    * 获取环境配置
    */
   public getConfig(): EnvConfig {
@@ -249,6 +292,13 @@ export class EnvManager {
    */
   public getWorkspacePath(): string | undefined {
     return this.workspacePath;
+  }
+
+  /**
+   * 获取Agent路径
+   */
+  public getAgentPath(): string | undefined {
+    return this.agentPath;
   }
 
   /**

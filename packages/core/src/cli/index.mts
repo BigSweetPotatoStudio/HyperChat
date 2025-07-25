@@ -58,6 +58,7 @@ import {
 import { workspaceManager } from '../workspace/index.mjs';
 import { initCliI18n, t, setCurrLang, getCurrLang } from '../i18n.mjs';
 import type { Language } from '@dadigua/hyperchat-shared';
+import type { ChatOptions } from './commands/chat.mjs';
 // 获取包信息
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const packagePath = join(__dirname, '..', '..', 'package.json');
@@ -137,6 +138,8 @@ ${t`Global options:`}
 ${t`Commands:`}
   # ${t`General chat`}
   chat [message]           ${t`Start AI chat session (default command)`}
+  chat --agent <name>      ${t`Chat with specific agent`}
+  chat --agent-path <path> ${t`Chat with agent from specific path`}
   chat                     ${t`Interactive chat`}
   
   # Agent${t`related`}
@@ -216,8 +219,20 @@ async function handleCommand(): Promise<{ shouldExit: boolean }> {
 
   if (isDirectMessage) {
     // 直接聊天模式: hyperchat "你好"
+    // 解析全局选项中的agent相关参数
+    const directChatArgs = process.argv.slice(2);
+    const directChatOptions = GenericCliParser.parseArgs(directChatArgs, [
+      { long: 'agent', short: 'a', hasValue: true },
+      { long: 'agent-path', short: 'A', hasValue: true },
+      { long: 'model', short: 'm', hasValue: true },
+    ]);
+    
     const message = cleanArgs.join(' ');
-    await startChatWrapper([message], logger);
+    await startChatWrapper([message], logger, undefined, {
+      agent: directChatOptions.agent as string | undefined,
+      agentPath: directChatOptions['agent-path'] as string | undefined,
+      model: directChatOptions.model as string | undefined
+    });
     return { shouldExit: true };  // 聊天完成后应该退出
   }
 
@@ -225,8 +240,20 @@ async function handleCommand(): Promise<{ shouldExit: boolean }> {
 
   switch (cmd) {
     case 'chat':
+      // 解析chat命令的特殊选项
+      const chatArgs = process.argv.slice(2); // 获取完整的参数列表
+      const chatOptions = GenericCliParser.parseArgs(chatArgs, [
+        { long: 'agent', short: 'a', hasValue: true },
+        { long: 'agent-path', short: 'A', hasValue: true },
+        { long: 'model', short: 'm', hasValue: true },
+      ]);
+      
       const messages = cleanArgs.slice(1);
-      await startChatWrapper(messages, logger);
+      await startChatWrapper(messages, logger, undefined, {
+        agent: chatOptions.agent as string | undefined,
+        agentPath: chatOptions['agent-path'] as string | undefined,
+        model: chatOptions.model as string | undefined
+      });
       return { shouldExit: true };  // 聊天完成后应该退出
 
     case 'serve':
@@ -298,13 +325,14 @@ async function handleCommand(): Promise<{ shouldExit: boolean }> {
 }
 
 // 聊天功能
-async function startChatWrapper(messages: string[], logger: Logger, agentName?: string) {
+async function startChatWrapper(messages: string[], logger: Logger, agentName?: string, extraOptions?: Partial<ChatOptions>) {
   try {
     const options = {
       verbose: globalOptions.verbose,
       quiet: globalOptions.quiet,
       workspace: globalOptions.workspace,
-      agent: agentName
+      agent: agentName,
+      ...extraOptions  // 合并额外的选项
     };
 
     const message = messages.length > 0 ? messages.join(' ') : undefined;

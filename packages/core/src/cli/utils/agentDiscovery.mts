@@ -19,6 +19,11 @@ export interface DiscoveredAgent {
 }
 
 /**
+ * 默认Agent名称
+ */
+export const DEFAULT_AGENT_NAME = 'Hyper';
+
+/**
  * 发现系统中所有可用的Agent
  */
 export async function discoverAgents(options: {
@@ -26,6 +31,10 @@ export async function discoverAgents(options: {
   agentPath?: string;
 }): Promise<DiscoveredAgent[]> {
   const agents: DiscoveredAgent[] = [];
+  
+  // 获取环境管理器来获取正确的全局路径
+  const { EnvManager } = await import('../../data/managers/envManager.mjs');
+  const envManager = EnvManager.getInstance(options.agentPath);
   
   // 1. 如果指定了具体的Agent路径
   if (options.agentPath && fs.existsSync(options.agentPath)) {
@@ -40,19 +49,20 @@ export async function discoverAgents(options: {
     }
   }
   
-  // 2. 从全局路径发现Agent
-  const globalAgentsPath = path.join(CONSTANTS.GLOBAL_HYPERCHAT_DIR_PATH, CONSTANTS.DIRECTORIES.AGENTS);
-  if (fs.existsSync(globalAgentsPath)) {
-    const globalAgents = await scanAgentsInDirectory(globalAgentsPath, 'global');
-    agents.push(...globalAgents);
-  }
-  
-  // 3. 从当前工作区路径发现Agent
+  // 2. 从当前工作区路径发现Agent（本地优先）
   const workspacePath = options.workspace ? path.resolve(options.workspace) : process.cwd();
   const localAgentsPath = path.join(workspacePath, CONSTANTS.HYPERCHAT_DIR, CONSTANTS.DIRECTORIES.AGENTS);
   if (fs.existsSync(localAgentsPath)) {
     const localAgents = await scanAgentsInDirectory(localAgentsPath, 'local', workspacePath);
     agents.push(...localAgents);
+  }
+  
+  // 3. 从全局路径发现Agent（全局次优先）
+  const globalDataDir = envManager.getActualGlobalDataDir();
+  const globalAgentsPath = path.join(globalDataDir, CONSTANTS.HYPERCHAT_DIR, CONSTANTS.DIRECTORIES.AGENTS);
+  if (fs.existsSync(globalAgentsPath)) {
+    const globalAgents = await scanAgentsInDirectory(globalAgentsPath, 'global');
+    agents.push(...globalAgents);
   }
   
   return agents;
@@ -149,7 +159,42 @@ export async function listDiscoveredAgents(agents: DiscoveredAgent[], logger: an
   }
   
   logger.info(`\n💡 ${t`Usage examples:`}`);
-  logger.info(`   hyperchat run --agent ${agents[0].name}    # ${t`Start specific agent`}`);
-  logger.info(`   hyperchat run                               # ${t`Start all agents`}`);
-  logger.info(`   hyperchat chat --agent ${agents[0].name}   # ${t`Chat with specific agent`}`);
+  logger.info(`   hyperchat chat                              # ${t`Chat with default agent (Hyper)`}`);
+  logger.info(`   hyperchat agent ${agents[0].name} chat      # ${t`Chat with specific agent`}`);
+  logger.info(`   hyperchat run --agent ${agents[0].name}     # ${t`Start specific agent service`}`);
+}
+
+/**
+ * 查找指定名称的Agent
+ * @param agentName Agent名称，如果不提供则使用默认名称"Hyper"
+ * @param options 搜索选项
+ */
+export async function findAgent(
+  agentName: string = DEFAULT_AGENT_NAME,
+  options: {
+    workspace?: string;
+    agentPath?: string;
+  } = {}
+): Promise<DiscoveredAgent | null> {
+  // 如果指定了agentPath，直接检查该路径
+  if (options.agentPath) {
+    if (fs.existsSync(options.agentPath)) {
+      const agentConfigPath = path.join(options.agentPath, CONSTANTS.CONFIG_FILES.AGENT_CONFIG);
+      if (fs.existsSync(agentConfigPath)) {
+        return {
+          name: path.basename(options.agentPath),
+          path: options.agentPath,
+          source: 'specified',
+          workspacePath: deriveWorkspaceFromAgent(options.agentPath)
+        };
+      }
+    }
+    return null;
+  }
+
+  // 发现所有可用的Agent
+  const allAgents = await discoverAgents(options);
+  
+  // 查找指定名称的Agent
+  return allAgents.find(agent => agent.name === agentName) || null;
 }

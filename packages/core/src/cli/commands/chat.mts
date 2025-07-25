@@ -5,7 +5,7 @@
  */
 
 import process from 'process';
-import path from 'path';
+import * as path from 'path';
 import * as fs from 'fs';
 import chalk from 'chalk';
 import { Logger } from '../utils/logger.mjs';
@@ -21,10 +21,10 @@ import {
   // addSystemMessage,
   logAIConfig
 } from '../../utils/aiConfigHelper.mjs';
-import { 
-  discoverAgents, 
-  deriveWorkspaceFromAgent,
-  type DiscoveredAgent 
+import {
+  findAgent,
+  DEFAULT_AGENT_NAME,
+  type DiscoveredAgent
 } from '../utils/agentDiscovery.mjs';
 import { getBuiltinPrompts } from '../../ai/hyperchat-builtin-prompts.mjs';
 import { t } from '../../i18n.mjs';
@@ -34,37 +34,46 @@ import type { Logger as CLILogger } from '../utils/logger.mjs';
 
 
 /**
- * 智能选择Agent
+ * 选择Agent（Agent-centered架构）
+ * 优先级：agentPath > workspace + agentName
  */
 async function selectAgent(options: ChatOptions): Promise<AgentInstance> {
-  // 如果指定了具体的Agent，优先使用
-  if (options.agent) {
-    // 发现所有可用Agent
-    const discoveredAgents = await discoverAgents({
+  let targetAgent: DiscoveredAgent | null = null;
+  let agentName: string;
+
+  // 最高优先级：如果指定了agentPath，直接使用该路径
+  if (options.agentPath) {
+    agentName = path.basename(options.agentPath); // 从路径推导Agent名称
+    targetAgent = await findAgent(agentName, {
+      agentPath: options.agentPath
+    });
+  } else {
+    // 次优先级：在workspace中查找指定的agentName
+    agentName = options.agent || DEFAULT_AGENT_NAME;
+    targetAgent = await findAgent(agentName, {
       workspace: options.workspace
     });
-    
-    const targetAgent = discoveredAgents.find(a => a.name === options.agent);
-    if (!targetAgent) {
-      const availableNames = discoveredAgents.map(a => a.name).join(', ');
-      throw new Error(`${t`Agent not found:`} ${options.agent}${availableNames ? `\n${t`Available agents:`} ${availableNames}` : ''}`);
-    }
-    
-    // 直接从Agent路径创建实例
-    const agentInstance = new AgentInstance(targetAgent.path);
-    await agentInstance.init();
-    return agentInstance;
   }
-  
-  // 如果没有指定Agent，使用传统的workspace方式（向后兼容）
-  const currentWorkingDirectory = options.workspace ? path.resolve(options.workspace) : process.cwd();
-  await workspaceManager.initialize(currentWorkingDirectory);
-  
-  const env = await initializeAIEnvironment({
-    agentName: options.agent,
-  });
-  
-  return env.agent;
+
+  if (!targetAgent) {
+    // 获取所有可用的Agent列表
+    const { discoverAgents } = await import('../utils/agentDiscovery.mjs');
+    const availableAgents = await discoverAgents({
+      workspace: options.workspace
+    });
+
+    if (availableAgents.length === 0) {
+      throw new Error(`${t`No agents found in the system`}\n${t`Create an agent first using:`} hyperchat agent create ${agentName}`);
+    } else {
+      const availableNames = availableAgents.map(a => a.name).join(', ');
+      throw new Error(`${t`Agent not found:`} ${agentName}\n${t`Available agents:`} ${availableNames}\n${t`Use:`} hyperchat agent <name> chat`);
+    }
+  }
+
+  // 直接从Agent路径创建实例
+  const agentInstance = new AgentInstance(targetAgent.path);
+  await agentInstance.init();
+  return agentInstance;
 }
 
 /**
@@ -72,7 +81,7 @@ async function selectAgent(options: ChatOptions): Promise<AgentInstance> {
  */
 async function showAgentStartupInfo(agent: AgentInstance, logger: CLILogger): Promise<void> {
   const config = agent.getConfig();
-  
+
   // 显示Agent基本配置信息
   logger.info(`  📋 ${t`Agent configuration:`}`);
   logger.info(`    ├─ ${t`Model:`} ${config.modelKey || t`inherit from workspace`}`);
@@ -86,44 +95,38 @@ async function showAgentStartupInfo(agent: AgentInstance, logger: CLILogger): Pr
     // 启动Agent MCP客户端
     await agent.startMCPClients();
     const clients = agent.getMCPClients();
-    
+
     if (clients.length === 0) {
       logger.info(`    └─ ${t`No MCP clients configured`}`);
     } else {
       logger.info(`    ├─ ${t`Total clients:`} ${clients.length}`);
-      
+
       // 显示每个MCP客户端的详细状态
       for (let i = 0; i < clients.length; i++) {
         const client = clients[i];
         const isLast = i === clients.length - 1;
         const prefix = isLast ? '    └─' : '    ├─';
-        
-        const statusEmoji = client.status === 'connected' ? '✅' : 
-                          client.status === 'connecting' ? '🔄' : 
-                          client.status === 'disabled' ? '⏸️' : '❌';
-        
+
+        const statusEmoji = client.status === 'connected' ? '✅' :
+          client.status === 'connecting' ? '🔄' :
+            client.status === 'disabled' ? '⏸️' : '❌';
+
         const toolCount = client.tools?.length || 0;
-        
-        // 判断配置来源
+
+        // 显示具体的配置来源路径
         let sourceLabel = '';
         const config = (client as any).config;
         if (config && config._sourcePath) {
-          if (config._sourcePath.includes('global')) {
-            sourceLabel = ' (全局)';
-          } else if (config._sourcePath.includes('.hyperchat') && !config._sourcePath.includes('agents')) {
-            sourceLabel = ' (工作区)';
-          } else if (config._sourcePath.includes('agents')) {
-            sourceLabel = ' (Agent)';
-          }
+          sourceLabel = ` (${config._sourcePath})`;
         }
-        
+
         logger.info(`${prefix} ${statusEmoji} ${client.serverName}: ${client.status} (${toolCount} ${t`tools`})${sourceLabel}`);
-        
+
         // 显示版本信息（如果已连接）
         if (client.status === 'connected' && client.version) {
           logger.info(`${isLast ? '      ' : '    │   '}└─ ${t`Version:`} ${client.version}`);
         }
-        
+
         // 显示错误信息（如果连接失败）
         if (client.status === 'disconnected' && (client as any).lastError) {
           logger.info(`${isLast ? '      ' : '    │   '}└─ ${t`Error:`} ${(client as any).lastError}`);
@@ -139,11 +142,11 @@ async function showAgentStartupInfo(agent: AgentInstance, logger: CLILogger): Pr
   try {
     await agent.startTaskScheduler();
     const taskStats = agent.getTaskSchedulerStats();
-    
+
     if (taskStats.running) {
       logger.info(`    ├─ ✅ ${t`Scheduler running`}`);
       logger.info(`    └─ 📋 ${t`Scheduled tasks:`} ${taskStats.scheduledTasksCount}`);
-      
+
       if (taskStats.scheduledTasks.length > 0) {
         const taskNames = taskStats.scheduledTasks.slice(0, 3);
         const more = taskStats.scheduledTasks.length > 3 ? ` (+${taskStats.scheduledTasks.length - 3} more)` : '';
@@ -396,6 +399,7 @@ class StreamChatHandler {
 export interface ChatOptions {
   agent?: string;
   workspace?: string;
+  agentPath?: string;  // Agent路径，最高优先级
   model?: string;
   verbose?: boolean;
   quiet?: boolean;
@@ -413,14 +417,14 @@ export async function startChat(initialMessage?: string, options: ChatOptions = 
 
     // Agent-centered架构：智能选择和启动Agent
     logger.info(`🚀 ${t`Initializing Agent-centered chat environment...`}`);
-    
+
     const currentWorkingDirectory = options.workspace ? path.resolve(options.workspace) : process.cwd();
     logger.info(`📍 ${t`Working directory:`} ${currentWorkingDirectory}`);
 
     // 智能选择Agent
     const agent = await selectAgent(options);
     const agentConfig = agent.getConfig();
-    
+
     logger.info(`✅ ${t`Agent selected:`} ${agentConfig.name}`);
 
     // 显示Agent启动详细信息
@@ -429,7 +433,7 @@ export async function startChat(initialMessage?: string, options: ChatOptions = 
     // 创建AI环境对象（Agent-centered版本）
     const appSettings = await Command.getAppSettings();
     const aiSettings = appSettings.ai;
-    
+
     // 构建有效配置
     let effectiveConfig = {
       modelKey: agentConfig.modelKey || aiSettings?.models?.[0]?.key || 'default-model',
@@ -460,7 +464,7 @@ export async function startChat(initialMessage?: string, options: ChatOptions = 
 
     // 获取Agent的MCP客户端
     const mcpClients = agent.getMCPClients();
-    
+
     // 显示 Agent 允许的 MCP 工具
     let agentAllowedMCPs = new Set(agentConfig.allowMCPs.map(x => x.split(" > ")[0])).size;
     if (agentConfig.allowMCPs && agentConfig.allowMCPs.length > 0) {
@@ -484,10 +488,10 @@ export async function startChat(initialMessage?: string, options: ChatOptions = 
       const totalTools = mcpClients.flatMap((client: any) => client.tools || []).length;
       logger.info(`🛠️ ${t`Agent allowed tools:`} ${t`All available tools`} (${totalTools})`);
     }
-    
+
     // 创建AI通道
     const aiChannel = createAIChannel();
-    
+
     // 创建环境对象（模拟AIEnvironment）
     const env = {
       agent,

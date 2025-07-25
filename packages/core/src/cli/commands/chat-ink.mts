@@ -61,17 +61,11 @@ async function showAgentStartupInfo(agent: AgentInstance, logger: Logger): Promi
         
         const toolCount = client.tools?.length || 0;
         
-        // 判断配置来源
+        // 显示具体的配置来源路径
         let sourceLabel = '';
         const config = (client as any).config;
         if (config && config._sourcePath) {
-          if (config._sourcePath.includes('global')) {
-            sourceLabel = ' (全局)';
-          } else if (config._sourcePath.includes('.hyperchat') && !config._sourcePath.includes('agents')) {
-            sourceLabel = ' (工作区)';
-          } else if (config._sourcePath.includes('agents')) {
-            sourceLabel = ' (Agent)';
-          }
+          sourceLabel = ` (${config._sourcePath})`;
         }
         
         logger.info(`${prefix} ${statusEmoji} ${client.serverName}: ${client.status} (${toolCount} ${t`tools`})${sourceLabel}`);
