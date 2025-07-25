@@ -11,24 +11,62 @@ import path from 'path';
 import { Logger } from '../utils/logger.mjs';
 import { Logger as LoggerClass } from '../../log.mjs';
 import { Command } from '../../command.mjs';
-import { workspaceManager } from '../../workspace/index.mjs';
+import { AgentInstance } from '../../workspace/index.mjs';
 import {
   initializeAIEnvironment,
   createAIChannel,
   logAIConfig
 } from '../../utils/aiConfigHelper.mjs';
 import { getAgent } from '../agentManager.mjs';
+import {
+  findAgent,
+  DEFAULT_AGENT_NAME,
+  type DiscoveredAgent
+} from '../utils/agentDiscovery.mjs';
 import { getBuiltinPrompts } from '../../ai/hyperchat-builtin-prompts.mjs';
 import { t } from '../../i18n.mjs';
 import ChatUI from '../ui/ChatUI.js';
 import type { MyMessage, HyperToolCall } from '@dadigua/hyperchat-shared/types';
 import { getMyUuid } from '../utils/util.mjs';
-import type { AgentInstance } from '../../workspace/index.mjs';
+import { CONST } from '../../const.mjs';
+
+/**
+ * 选择Agent（Agent-centered架构 - 使用CliAgentManager）
+ * 优先级：agentPath > workspace + agentName
+ */
+async function selectAgent(options: ChatOptions): Promise<AgentInstance> {
+  // 使用新的CliAgentManager来获取Agent
+  try {
+    const agent = await getAgent({
+      agentName: options.agent,
+      agentPath: options.agentPath,
+      workspace: options.workspace,
+      enableTaskScheduler: options.enableTaskScheduler ?? false // chat-ink命令默认禁用任务调度器
+    });
+    return agent;
+  } catch (error) {
+    // 如果Agent未找到，提供友好的错误信息
+    const agentName = options.agent || DEFAULT_AGENT_NAME;
+    
+    // 获取所有可用的Agent列表
+    const { discoverAgents } = await import('../utils/agentDiscovery.mjs');
+    const availableAgents = await discoverAgents({
+      workspace: options.workspace
+    });
+
+    if (availableAgents.length === 0) {
+      throw new Error(`${t`No agents found in the system`}\n${t`Create an agent first using:`} hyperchat agent create ${agentName}`);
+    } else {
+      const availableNames = availableAgents.map(a => a.name).join(', ');
+      throw new Error(`${t`Agent not found:`} ${agentName}\n${t`Available agents:`} ${availableNames}\n${t`Use:`} hyperchat agent <name> chat`);
+    }
+  }
+}
 
 /**
  * 显示Agent启动详细信息 (Ink版本)
  */
-async function showAgentStartupInfo(agent: AgentInstance, logger: Logger): Promise<void> {
+async function showAgentStartupInfo(agent: AgentInstance, logger: Logger, enableTaskScheduler: boolean = true): Promise<void> {
   const config = agent.getConfig();
   
   // 显示Agent基本配置信息
@@ -38,11 +76,9 @@ async function showAgentStartupInfo(agent: AgentInstance, logger: Logger): Promi
   logger.info(`    ├─ ${t`Max tokens:`} ${config.maxTokens || t`default`}`);
   logger.info(`    └─ ${t`Prompt length:`} ${config.prompt ? config.prompt.length : 0} ${t`characters`}`);
 
-  // 启动Agent的MCP客户端
-  logger.info(`  🔧 ${t`Starting MCP clients...`}`);
+  // 显示MCP客户端状态（已由CliAgentManager启动）
+  logger.info(`  🔧 ${t`MCP clients status:`}`);
   try {
-    // 启动Agent MCP客户端
-    await agent.startMCPClients();
     const clients = agent.getMCPClients();
     
     if (clients.length === 0) {
@@ -83,13 +119,12 @@ async function showAgentStartupInfo(agent: AgentInstance, logger: Logger): Promi
       }
     }
   } catch (error) {
-    logger.warn(`    └─ ${t`MCP startup error:`} ${error instanceof Error ? error.message : String(error)}`);
+    logger.warn(`    └─ ${t`MCP status error:`} ${error instanceof Error ? error.message : String(error)}`);
   }
 
-  // 启动Agent的任务调度器
-  logger.info(`  ⏰ ${t`Starting task scheduler...`}`);
+  // 显示任务调度器状态（已由CliAgentManager管理）
+  logger.info(`  ⏰ ${t`Task scheduler status:`}`);
   try {
-    await agent.startTaskScheduler();
     const taskStats = agent.getTaskSchedulerStats();
     
     if (taskStats.running) {
@@ -102,7 +137,11 @@ async function showAgentStartupInfo(agent: AgentInstance, logger: Logger): Promi
         logger.info(`        └─ ${taskNames.join(', ')}${more}`);
       }
     } else {
-      logger.info(`    └─ ⏸️ ${t`Scheduler stopped`}`);
+      if (enableTaskScheduler) {
+        logger.info(`    └─ ⏸️ ${t`Scheduler stopped`}`);
+      } else {
+        logger.info(`    └─ ⏸️ ${t`Scheduler disabled for this session`}`);
+      }
     }
   } catch (error) {
     logger.warn(`    └─ ${t`Task scheduler error:`} ${error instanceof Error ? error.message : String(error)}`);
@@ -153,49 +192,54 @@ export async function startChatInk(initialMessage?: string, options: ChatOptions
   // 检查是否支持 raw mode（检测 stdin 是否是 TTY）
   if (!process.stdin.isTTY) {
     logger.info(`💡 ${t`Raw mode not supported (non-TTY input), falling back to legacy UI`}`);
+    // 使用静态导入方式调用legacy chat
     const { startChat } = await import('./chat.mjs');
     return await startChat(initialMessage, options);
   }
 
   try {
     // 初始化CLI聊天环境
-    logger.info(`🔍 ${t`Initializing HyperChat CLI...`}`);
+    logger.info(`🔍 ${t`Initializing HyperChat CLI...`} ${CONST.getVersion}`);
 
-    // Chat需要完整服务（MCP工具、AI聊天）
+    // Agent-centered架构：智能选择和启动Agent
+    logger.info(`🚀 ${t`Initializing Agent-centered chat environment...`}`);
+
     const currentWorkingDirectory = options.workspace ? path.resolve(options.workspace) : process.cwd();
-    await workspaceManager.initialize(currentWorkingDirectory);
-
-    const currentWorkspacePath = workspaceManager.getCurrentWorkspacePath();
-
     logger.info(`📍 ${t`Working directory:`} ${currentWorkingDirectory}`);
 
-    if (currentWorkingDirectory !== currentWorkspacePath) {
-      logger.info(`💡 ${t`Configuration loaded from workspace above`}`);
-    }
+    // 智能选择Agent
+    const agent = await selectAgent(options);
+    const agentConfig = agent.getConfig();
 
-    await workspaceManager.start();
-    logger.info(`✅ ${t`Workspace services started`}`);
-
-    // 初始化 AI 环境
-    logger.info(`🚀 ${t`Initializing Agent environment...`}`);
-    const env = await initializeAIEnvironment({
-      agentName: options.agent,
-    });
-
-    const agentConfig = env.agent.getConfig();
-    logger.info(`✅ ${t`Agent loaded:`} ${agentConfig.name}`);
+    logger.info(`✅ ${t`Agent selected:`} ${agentConfig.name}`);
 
     // 显示Agent启动详细信息
-    await showAgentStartupInfo(env.agent, logger);
+    const enableTaskScheduler = options.enableTaskScheduler ?? false; // chat-ink命令默认为false
+    await showAgentStartupInfo(agent, logger, enableTaskScheduler);
+
+    // 创建AI环境对象（Agent-centered版本）
+    const appSettings = await Command.getAppSettings();
+    const aiSettings = appSettings.ai;
+
+    // 构建有效配置
+    let effectiveConfig = {
+      modelKey: agentConfig.modelKey || aiSettings?.models?.[0]?.key || 'default-model',
+      allowMCPs: agentConfig.allowMCPs || [],
+      isConfirmCallTool: agentConfig.isConfirmCallTool ?? false,
+      temperature: agentConfig.temperature,
+      maxAttachedDialogs: agentConfig.maxAttachedDialogs ?? 5,
+      maxTokens: agentConfig.maxTokens ?? 4000,
+      prompt: agentConfig.prompt || '',
+      maxContextTokens: agentConfig.maxContextTokens,
+    };
 
     // 如果命令行指定了模型，覆盖配置
     if (options.model) {
-      const appSettings = await Command.getAppSettings();
-      const availableModels = appSettings.ai?.models || [];
+      const availableModels = aiSettings?.models || [];
       const isModelAvailable = availableModels.some((m: any) => m.key === options.model);
 
       if (isModelAvailable) {
-        env.effectiveConfig.modelKey = options.model;
+        effectiveConfig.modelKey = options.model;
         logger.info(`📋 ${t`Using AI model specified from command line:`} ${options.model}`);
       } else {
         logger.warn(`⚠️  ${t`Specified model`} '${options.model}' ${t`is not available, using default model`}`);
@@ -203,10 +247,13 @@ export async function startChatInk(initialMessage?: string, options: ChatOptions
     }
 
     // 显示最终使用的模型信息
-    logger.info(`🤖 ${t`Model:`} ${env.effectiveConfig.modelKey}${agentConfig.modelKey && agentConfig.modelKey !== env.effectiveConfig.modelKey ? ` (${t`agent default:`} ${agentConfig.modelKey})` : ''}`);
+    logger.info(`🤖 ${t`Model:`} ${effectiveConfig.modelKey}${agentConfig.modelKey && agentConfig.modelKey !== effectiveConfig.modelKey ? ` (${t`agent default:`} ${agentConfig.modelKey})` : ''}`);
+
+    // 获取Agent的MCP客户端
+    const mcpClients = agent.getMCPClients();
 
     // 显示 Agent 允许的 MCP 工具（使用封装的方法）
-    const mcpToolsInfo = env.agent.getMCPTools();
+    const mcpToolsInfo = agent.getMCPTools();
     
     if (agentConfig.allowMCPs && agentConfig.allowMCPs.length > 0) {
       logger.info(`🛠️ ${t`Agent allowed tools:`} ${mcpToolsInfo.allowedMCPsCount} ${t`configured`}, ${mcpToolsInfo.matchedTools.length} ${t`available`}`);
@@ -219,17 +266,16 @@ export async function startChatInk(initialMessage?: string, options: ChatOptions
       logger.info(`🛠️ ${t`Agent allowed tools:`} ${t`All available tools`} (${mcpToolsInfo.totalTools})`);
     }
 
-    // 以Agent为中心的信息显示 (用于UI) - 使用封装的方法
-    const mcpClients = env.mcpClients;
+    // 以Agent为中心的信息显示 (用于UI)
     const agentToolNames = mcpToolsInfo.matchedTools.map((tool: any) => tool.displayName || tool.name);
 
     const workspaceInfo = {
-      path: env.workspace?.workspacePath || '',
+      path: currentWorkingDirectory,
       agentCount: 1, // 当前Agent
       mcpClientsCount: mcpClients.length,
       totalToolsCount: mcpToolsInfo.totalTools,
       currentAgent: agentConfig.name,
-      currentModel: env.effectiveConfig.modelKey,
+      currentModel: effectiveConfig.modelKey,
       agentAllowedMCPs: mcpToolsInfo.allowedMCPsCount,
       agentAvailableTools: mcpToolsInfo.matchedTools.length,
       agentToolNames
@@ -263,18 +309,18 @@ export async function startChatInk(initialMessage?: string, options: ChatOptions
 
       try {
         // 构建系统提示词
-        const agentName = env.agent.getConfig().name || "";
+        const agentName = agent.getConfig().name || "";
         const systemPrompt = getBuiltinPrompts(
-          env.workspace?.workspacePath || '',
-          env.effectiveConfig.prompt,
+          currentWorkingDirectory,
+          effectiveConfig.prompt,
           agentName,
           "workspace",
         ).prompt;
 
         await aiChannel.completion({
-          ...env.effectiveConfig,
+          ...effectiveConfig,
           prompt: systemPrompt,
-          agentInstance: env.agent, // 直接传递AgentInstance对象
+          agentInstance: agent, // 直接传递AgentInstance对象
           onUpdate: async () => {
             // 显示新的工具结果
 
@@ -286,17 +332,15 @@ export async function startChatInk(initialMessage?: string, options: ChatOptions
 
             // 每次更新时保存聊天历史（学习Web版模式）
             try {
-              if (env.agent) {
-                await env.agent.setChatLog({
-                  key: chatKey,
-                  label: getLabelByFirstUserContent(aiChannel.messages),
-                  messages: aiChannel.messages,
-                  agentName: env.agent.getConfig().name,
-                  dateTime: Date.now(),
-                  chatType: "user",
-                  configOverrides: env.effectiveConfig,
-                });
-              }
+              await agent.setChatLog({
+                key: chatKey,
+                label: getLabelByFirstUserContent(aiChannel.messages),
+                messages: aiChannel.messages,
+                agentName: agent.getConfig().name,
+                dateTime: Date.now(),
+                chatType: "user",
+                configOverrides: effectiveConfig,
+              });
             } catch (error) {
               // 静默处理聊天历史保存错误，不影响主要聊天流程
             }
@@ -387,7 +431,7 @@ export async function startChatInk(initialMessage?: string, options: ChatOptions
       try {
         const { agentCommands } = await import('../../commands/agentCommands.mjs');
         const chatLog = await agentCommands.getAgentChatLog({
-          agentName: env.agent.getConfig().name,
+          agentName: agent.getConfig().name,
           chatLogKey
         });
 
