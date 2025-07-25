@@ -206,6 +206,19 @@ export class WebAgentManager {
   }
 
   /**
+   * 获取Agent管理器统计信息
+   */
+  async getAgentManagerStats(): Promise<{
+    totalAgents: number;
+    agentPaths: string[];
+  }> {
+    return {
+      totalAgents: this.agents.size,
+      agentPaths: Array.from(this.agents.keys()),
+    };
+  }
+
+  /**
    * 卸载所有Agent
    */
   async removeAllAgents(): Promise<void> {

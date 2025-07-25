@@ -13,6 +13,8 @@ import { Logger } from '../utils/logger.mjs';
 import "../../first.mjs";
 import { initHttp } from "../../http.mjs";
 import { getWorkspaceManager } from "../../workspace/index.mjs";
+import { getWebAgentManager } from "../webAgentManager.mjs";
+import { findAgent, DEFAULT_AGENT_NAME } from "../utils/agentDiscovery.mjs";
 import { t } from '../../i18n.mjs';
 import { EnvManager } from '../../data/managers/envManager.mjs';
 import { parseOptionsToEnv } from '../../utils/cliArgsParser.mjs';
@@ -58,14 +60,62 @@ export async function startServer(options: ServerOptions = {}) {
     // }
 
     logger.info(`⏳ ${t`Waiting for server to start...`}`);
-    // HTTP 服务器只需要基本配置，不需要完整服务
+    
+    // 1. 初始化工作区管理器
     const currentWorkingDirectory = process.cwd();
     await getWorkspaceManager().initialize(currentWorkingDirectory);
     await getWorkspaceManager().start();
-    // 启动 HTTP 服务，捕获并记录异常
+    
+    // 2. 启动默认的全局Hyper Agent
+    logger.info(`🤖 ${t`Starting default global agent...`}`);
+    try {
+      const webAgentManager = getWebAgentManager();
+      
+      // 查找全局Hyper Agent
+      const foundAgent = await findAgent(DEFAULT_AGENT_NAME);
+      if (foundAgent) {
+        await webAgentManager.startAgent(foundAgent.path, {
+          enableMCP: true,           // Web环境启用MCP
+          enableTaskScheduler: false // Web环境默认不启用任务调度器
+        });
+        logger.info(`✅ ${t`Default agent started successfully:`} ${foundAgent.name}`);
+      } else {
+        logger.warn(`⚠️  ${t`Default agent not found:`} ${DEFAULT_AGENT_NAME}`);
+        logger.info(`💡 ${t`Create it using:`} hyperchat agent create ${DEFAULT_AGENT_NAME}`);
+      }
+    } catch (error) {
+      logger.warn(`⚠️  ${t`Failed to start default agent:`} ${error instanceof Error ? error.message : String(error)}`);
+      logger.info(`💡 ${t`Server will continue without default agent`}`);
+    }
+    
+    // 3. 启动 HTTP 服务
     await initHttp();
 
     logger.info(`🚀 ${t`Server started successfully...`}`);
+    
+    // 4. 显示启动状态信息
+    const webAgentManager = getWebAgentManager();
+    const stats = await webAgentManager.getAgentManagerStats();
+    
+    logger.info(`\n📊 ${t`Service Status:`}`);
+    logger.info(`   🌐 Web Interface: http://${host}:${port}`);
+    logger.info(`   🤖 Loaded Agents: ${stats.totalAgents}`);
+    
+    if (stats.totalAgents > 0) {
+      const summaries = await webAgentManager.getAgentSummaries();
+      logger.info(`\n🤖 ${t`Active Agents:`}`);
+      for (const summary of summaries) {
+        const mcpStatus = summary.hasMCPConfig ? '🔌' : '❌';
+        const tasksStatus = summary.tasksCount > 0 ? `📋${summary.tasksCount}` : '❌';
+        logger.info(`   • ${summary.config.name} ${mcpStatus} ${tasksStatus}`);
+        logger.info(`     📍 ${summary.path}`);
+      }
+    }
+    
+    logger.info(`\n💡 ${t`Usage:`}`);
+    logger.info(`   ${t`Open your browser and visit:`}`);
+    logger.info(`   ${t`→`} http://${host}:${port}`);
+    logger.info(``);
 
 
 
