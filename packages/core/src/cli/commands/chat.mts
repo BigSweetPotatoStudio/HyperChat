@@ -26,6 +26,7 @@ import {
   DEFAULT_AGENT_NAME,
   type DiscoveredAgent
 } from '../utils/agentDiscovery.mjs';
+import { findOrCreateDefaultAgent } from '../utils/createDefaultAgent.mjs';
 import { getAgent } from '../agentManager.mjs';
 import { getBuiltinPrompts } from '../../ai/hyperchat-builtin-prompts.mjs';
 import { t } from '../../i18n.mjs';
@@ -36,10 +37,33 @@ import type { Logger as CLILogger } from '../utils/logger.mjs';
 
 /**
  * 选择Agent（Agent-centered架构 - 使用CliAgentManager）
- * 优先级：agentPath > workspace + agentName
+ * 优先级：agentPath > workspace + agentName > 默认Agent（自动创建）
  */
 async function selectAgent(options: ChatOptions): Promise<AgentInstance> {
-  // 使用新的CliAgentManager来获取Agent
+  const logger = new Logger(options.verbose, options.quiet);
+  
+  // 如果没有指定Agent，使用默认的Hyper Agent
+  if (!options.agent && !options.agentPath) {
+    logger.debug(`${t`No agent specified, using default agent:`} ${DEFAULT_AGENT_NAME}`);
+    
+    // 查找或创建默认Agent
+    const defaultAgent = await findOrCreateDefaultAgent({
+      workspacePath: options.workspace,
+      logger
+    });
+    
+    // 使用CliAgentManager加载默认Agent
+    const agent = await getAgent({
+      agentName: DEFAULT_AGENT_NAME,
+      agentPath: defaultAgent.path,
+      workspace: options.workspace,
+      enableTaskScheduler: options.enableTaskScheduler ?? false
+    });
+    
+    return agent;
+  }
+  
+  // 使用指定的Agent
   try {
     const agent = await getAgent({
       agentName: options.agent,
@@ -49,7 +73,7 @@ async function selectAgent(options: ChatOptions): Promise<AgentInstance> {
     });
     return agent;
   } catch (error) {
-    // 如果Agent未找到，提供友好的错误信息
+    // 如果指定的Agent未找到，提供友好的错误信息
     const agentName = options.agent || DEFAULT_AGENT_NAME;
     
     // 获取所有可用的Agent列表
