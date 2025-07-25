@@ -9,7 +9,7 @@ import { AgentConfig, BaseAIConfig } from "@dadigua/hyperchat-shared";
 import { getBuiltinPrompts } from "../ai/hyperchat-builtin-prompts.mjs";
 import { getAppSettingsManager } from "../data/appSettingsService.mjs";
 import { Logger } from "../log.mjs";
-import { getWorkspaceManager } from "../workspace/index.mjs";
+import { getWorkspaceManager, AgentInstance } from "../workspace/index.mjs";
 import { SSEWriter } from "../sse/SSEWriter.mjs";
 import { EventEmitter } from "events";
 import { v4 as uuidv4 } from 'uuid';
@@ -72,12 +72,19 @@ export async function streamChatCompletion(params: ChatCompletionRequest): Promi
       throw new Error("No AI models configured");
     }
 
-    // 获取 Agent 配置
-    let agent = workspace.getAgentInstance(agentName);
-
-    if (!agent) {
+    // 使用Agent发现机制获取Agent配置
+    const { findAgent } = await import('../cli/utils/agentDiscovery.mjs');
+    const foundAgent = await findAgent(agentName, {
+      workspace: workspace?.workspacePath
+    });
+    
+    if (!foundAgent) {
       throw new Error(`Agent not found: ${agentName}`);
     }
+    
+    // 直接从Agent路径创建实例
+    const agent = new AgentInstance(foundAgent.path);
+    await agent.init();
 
     // console.log("Using Agent:", agentName, "agent:", agent);
     // 合并配置（移除工作区AI配置）

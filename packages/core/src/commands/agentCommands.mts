@@ -1,5 +1,5 @@
 import { AgentConfig, ChatHistoryItem } from "@dadigua/hyperchat-shared";
-import { getWorkspaceManager } from "../workspace/index.mjs";
+import { getWorkspaceManager, AgentInstance } from "../workspace/index.mjs";
 
 /**
  * Agent 管理相关命令
@@ -348,17 +348,17 @@ export const agentCommands = {
     scope?: "global" | "workspace";
   }): Promise<boolean> {
     try {
-      const workspaceManager = getWorkspaceManager();
-      const workspace = workspaceManager.getCurrentWorkspace();
-
-      if (!workspace) {
-        throw new Error('当前没有可用的工作区');
-      }
-
-      const agentInstance = workspace.getAgentInstance(agentName);
-      if (!agentInstance) {
+      // 使用Agent发现机制获取Agent
+      const { findAgent } = await import('../cli/utils/agentDiscovery.mjs');
+      const foundAgent = await findAgent(agentName);
+      
+      if (!foundAgent) {
         throw new Error(`Agent 不存在: ${agentName}`);
       }
+      
+      // 直接从Agent路径创建实例
+      const agentInstance = new AgentInstance(foundAgent.path);
+      await agentInstance.init();
 
       // 设置 agentName 确保关联正确
       chatLog.agentName = agentName;
@@ -388,15 +388,17 @@ export const agentCommands = {
     scope?: "global" | "workspace";
   }): Promise<ChatHistoryItem | null> {
     try {
-      const workspaceManager = getWorkspaceManager();
-      const workspace = workspaceManager.getCurrentWorkspace();
-      if (!workspace) {
-        throw new Error('当前没有可用的工作区');
-      }
-      const agentInstance = workspace.getAgentInstance(agentName);
-      if (!agentInstance) {
+      // 使用Agent发现机制获取Agent
+      const { findAgent } = await import('../cli/utils/agentDiscovery.mjs');
+      const foundAgent = await findAgent(agentName);
+      
+      if (!foundAgent) {
         throw new Error(`Agent 不存在: ${agentName}`);
       }
+      
+      // 直接从Agent路径创建实例
+      const agentInstance = new AgentInstance(foundAgent.path);
+      await agentInstance.init();
 
       // 获取所有聊天记录，然后找到指定的一个
       const chatLogs = await agentInstance.getChatLogs();
@@ -434,10 +436,17 @@ export const agentCommands = {
       const results = await Promise.allSettled(
         requests.map(async (request) => {
           try {
-            const agentInstance = workspace.getAgentInstance(request.agentName);
-            if (!agentInstance) {
+            // 使用Agent发现机制获取Agent
+            const { findAgent } = await import('../cli/utils/agentDiscovery.mjs');
+            const foundAgent = await findAgent(request.agentName);
+            
+            if (!foundAgent) {
               throw new Error(`Agent 不存在: ${request.agentName}`);
             }
+            
+            // 直接从Agent路径创建实例
+            const agentInstance = new AgentInstance(foundAgent.path);
+            await agentInstance.init();
 
             // 获取所有聊天记录，然后找到指定的一个
             const chatLogs = await agentInstance.getChatLogs();

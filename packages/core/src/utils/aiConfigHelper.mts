@@ -106,12 +106,17 @@ export async function initializeAIEnvironment(options: {
   let agent: AgentInstance;
 
   if (options.agentName) {
-    // 使用指定的 agent
-    const foundAgent = workspace.getAgentInstance(options.agentName);
+    // 使用Agent发现机制获取指定的agent
+    const { findAgent } = await import('../cli/utils/agentDiscovery.mjs');
+    const foundAgent = await findAgent(options.agentName, {
+      workspace: workspace?.workspacePath
+    });
     if (!foundAgent) {
       throw new Error(`未找到Agent: ${options.agentName}`);
     }
-    agent = foundAgent;
+    // 直接从Agent路径创建实例
+    agent = new AgentInstance(foundAgent.path);
+    await agent.init();
   } else {
     // 没有指定 agent 时，使用全局 getDefaultAgent 函数
     const defaultAgentInfo = await getDefaultAgent();
