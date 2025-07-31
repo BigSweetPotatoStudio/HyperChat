@@ -456,18 +456,18 @@ export function Workspace() {
     // 不需要重新加载数据，文件树组件会自动通过useEffect重新过滤和渲染
   };
 
-  // 处理面板尺寸变化
+  // 处理面板尺寸变化（2栏布局）
   const handlePanelSizeChange = (sizes: number[]) => {
     const currentWorkspace = getCurrentWorkspace();
-    if (currentWorkspace && sizes.length >= 3) {
+    if (currentWorkspace && sizes.length >= 2) {
       // 直接更新状态数组
       setPanelSizes(sizes);
 
-      // 构建保存到localStorage的对象格式
+      // 构建保存到localStorage的对象格式（保持兼容性）
       const sizesToSave: PanelSizes = {
-        left: `${sizes[0] || 25}%`,
-        middle: `${sizes[1] || 50}%`,
-        right: `${sizes[2] || 25}%`
+        left: '0%',                      // 左侧面板已移除
+        middle: `${sizes[0] || 75}%`,    // 中间面板（聊天区域）
+        right: `${sizes[1] || 25}%`      // 右侧面板（管理区域）
       };
 
       // 保存到localStorage（使用防抖，避免频繁保存）
@@ -502,14 +502,13 @@ export function Workspace() {
     const workspace = getCurrentWorkspace();
     if (workspace) {
       loadWorkspaceDetails(workspace);
-      // 加载当前工作区的面板尺寸
+      // 加载当前工作区的面板尺寸（2栏布局）
       const workspaceKey = workspace.path;
       const sizes = getPanelSizes(workspaceKey);
-      // 将百分比字符串转换为数字
-      const leftNum = parseInt(sizes.left) || 25;
-      const middleNum = parseInt(sizes.middle) || 50;
-      const rightNum = parseInt(sizes.right) || 25;
-      setPanelSizes([leftNum, middleNum, rightNum]);
+      // 将百分比字符串转换为数字，适配2栏布局
+      const middleNum = parseInt(sizes.middle) || 75; // 中间面板默认75%
+      const rightNum = parseInt(sizes.right) || 25;   // 右侧面板默认25%
+      setPanelSizes([middleNum, rightNum]);
       // 初始化默认聊天标签页
       initDefaultChatTab(workspace);
     }
