@@ -237,7 +237,7 @@ export const WorkspaceChat = ({ workspace, agentName, agentScope, workspaceDetai
 
   // 获取有效配置值的帮助函数（聊天配置 > Agent配置 > 工作区配置 > 模型列表第一个）
   const getEffectiveConfig = () => {
-    const agent = workspaceDetails.agents.find(a => a.config.name === agentName && a.config.scope === agentScope);
+    const agent = workspaceDetails.agents.find(a => a.config.name === agentName);
     const agentConfig = agent?.config;
     const overrides = currentChat.current.configOverrides || {};
 
@@ -441,7 +441,7 @@ export const WorkspaceChat = ({ workspace, agentName, agentScope, workspaceDetai
         if (!currentChat.current.configOverrides) {
           currentChat.current.configOverrides = {};
         }
-        const agent = workspaceDetails.agents.find(a => a.config.name === agentName && a.config.scope === agentScope);
+        const agent = workspaceDetails.agents.find(a => a.config.name === agentName);
         // 如果有要加载的聊天记录，优先加载聊天记录
         if (chatLogToLoad) {
           defaultChatValue.current = ({
@@ -573,7 +573,7 @@ export const WorkspaceChat = ({ workspace, agentName, agentScope, workspaceDetai
   let supportImage = currModel?.supportImage;
   /** 是否支持工具 */
   let supportTool = currModel?.supportTool;
-  const agent = workspaceDetails.agents.find(a => a.config.name === agentName && a.config.scope === agentScope);
+  const agent = workspaceDetails.agents.find(a => a.config.name === agentName);
 
   // 提取系统消息
   const systemMessages = currentChat.current.configOverrides?.prompt!;

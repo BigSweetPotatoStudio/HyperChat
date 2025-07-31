@@ -545,7 +545,7 @@ export function Workspace() {
         title: tabTitle,
         type: 'chat',
         agentName: agent.config.name,
-        agentScope: (agent.config as any).scope || "workspace",
+        agentScope: "workspace", // Fixed scope in Agent-centered architecture
         workspacePath: workspace.path,
         closable: true,
         chatLogToLoad: chatLog, // 传递聊天记录数据
