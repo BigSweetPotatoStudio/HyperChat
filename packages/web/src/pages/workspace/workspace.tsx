@@ -171,7 +171,7 @@ export function Workspace() {
       if (mcpList && Array.isArray(mcpList)) {
         mcpList.forEach((client) => {
           if (client && client.serverName) {
-            (details.mcpClients as any)[client.serverName] = client;
+            (details.mcpClients as Record<string, any>)[client.serverName as string] = client;
           }
         });
       }
@@ -406,7 +406,7 @@ export function Workspace() {
           if (mcpList && Array.isArray(mcpList)) {
             mcpList.forEach((client) => {
               if (client && client.serverName) {
-                (updatedDetails.mcpClients as any)[client.serverName] = client;
+                (updatedDetails.mcpClients as Record<string, any>)[client.serverName as string] = client;
               }
             });
           }
