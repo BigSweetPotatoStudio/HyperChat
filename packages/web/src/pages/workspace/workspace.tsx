@@ -24,7 +24,7 @@ import { ServerDirectoryBrowser } from "../../components/ServerDirectoryBrowser"
 import { MCPManagementRef } from "../../components/MCPManagement";
 import { AgentManagementRef } from "../../components/AgentManagement";
 import { TaskManagementRef } from "../../components/TaskManagement";
-import { WorkspaceLeftPanel } from "./WorkspaceLeftPanel";
+// WorkspaceLeftPanel removed in simplified layout
 import { WorkspaceMiddlePanel } from "./WorkspaceMiddlePanel";
 import { WorkspaceRightPanel } from "./WorkspaceRightPanel";
 import { WorkspaceOpenModal } from "./WorkspaceOpenForm";
@@ -106,10 +106,10 @@ export function Workspace() {
   const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
 
 
-  // 面板尺寸状态 - 使用数组格式，与Ant Design Splitter兼容
+  // 面板尺寸状态 - 两列布局：中间面板和右侧面板
   const [panelSizes, setPanelSizes] = useState<number[]>(() => {
-    // 初始化时使用默认尺寸（Splitter使用数字）
-    return [25, 50, 25]; // 对应25%、50%、25%
+    // 初始化时使用默认尺寸（移除左侧面板后调整）
+    return [75, 25]; // 对应75%、25%（中间面板，右侧面板）
   });
 
 
@@ -674,26 +674,10 @@ export function Workspace() {
           style={{ height: '100%' }}
           onResize={handlePanelSizeChange}
         >
-          {/* 左侧面板：工作区侧边栏 */}
-          <Splitter.Panel
-            size={panelSizes[0] || 25}
-            min="15%"
-            max="40%"
-          >
-            <WorkspaceLeftPanel
-              workspace={workspace}
-              fileTreeData={details.fileTreeData}
-              showHidden={showHiddenFiles}
-              onShowHiddenChange={handleShowHiddenChange}
-              onRefreshFileTree={refreshFileTree}
-              onFileSelect={openFileEditor}
-            />
-          </Splitter.Panel>
-
           {/* 中间面板：聊天界面 */}
           <Splitter.Panel
-            size={panelSizes[1] || 50}
-            min="30%"
+            size={panelSizes[0] || 75}
+            min="50%"
           >
             <WorkspaceMiddlePanel
               workspace={workspace}
@@ -724,9 +708,9 @@ export function Workspace() {
 
           {/* 右侧面板：Agents 和 MCP 管理 */}
           <Splitter.Panel
-            size={panelSizes[2] || 25}
-            min="15%"
-            max="40%"
+            size={panelSizes[1] || 25}
+            min="20%"
+            max="50%"
           >
             <WorkspaceRightPanel
               workspace={workspace}
