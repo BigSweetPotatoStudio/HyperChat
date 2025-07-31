@@ -144,42 +144,42 @@ export class WorkspaceManager {
   }
 
 
-  /**
-   * 删除单个 agent（兼容老API）
-   */
-  async deleteAgent(workspacePath: string, agentName?: string): Promise<boolean> {
-    // 兼容两种调用方式：
-    // 1. deleteAgent(workspacePath, agentName) - 老API
-    // 2. deleteAgent(agentName) - 新API，直接操作当前工作区
-    let targetAgentKey: string;
-    let workspace: Workspace | null;
+  // /**
+  //  * 删除单个 agent（兼容老API）
+  //  */
+  // async deleteAgent(workspacePath: string, agentName?: string): Promise<boolean> {
+  //   // 兼容两种调用方式：
+  //   // 1. deleteAgent(workspacePath, agentName) - 老API
+  //   // 2. deleteAgent(agentName) - 新API，直接操作当前工作区
+  //   let targetAgentKey: string;
+  //   let workspace: Workspace | null;
 
-    if (typeof workspacePath === 'string' && agentName) {
-      // 老API调用方式
-      workspace = this.getCurrentWorkspace();
-      targetAgentKey = agentName;
-    } else {
-      // 新API调用方式
-      workspace = this.getCurrentWorkspace();
-      targetAgentKey = workspacePath;
-    }
+  //   if (typeof workspacePath === 'string' && agentName) {
+  //     // 老API调用方式
+  //     workspace = this.getCurrentWorkspace();
+  //     targetAgentKey = agentName;
+  //   } else {
+  //     // 新API调用方式
+  //     workspace = this.getCurrentWorkspace();
+  //     targetAgentKey = workspacePath;
+  //   }
 
-    if (!workspace) {
-      return false;
-    }
-    return await workspace.deleteAgent(targetAgentKey);
-  }
+  //   if (!workspace) {
+  //     return false;
+  //   }
+  //   return await workspace.deleteAgent(targetAgentKey);
+  // }
 
-  /**
-   * 获取指定工作区的所有 agents（兼容老API）
-   */
-  async getWorkspaceAgents(workspacePath?: string): Promise<AgentConfig[]> {
-    const workspace = this.getCurrentWorkspace();
-    if (!workspace) {
-      return [];
-    }
-    return await workspace.getAgents();
-  }
+  // /**
+  //  * 获取指定工作区的所有 agents（兼容老API）
+  //  */
+  // async getWorkspaceAgents(workspacePath?: string): Promise<AgentConfig[]> {
+  //   const workspace = this.getCurrentWorkspace();
+  //   if (!workspace) {
+  //     return [];
+  //   }
+  //   return await workspace.getAgents();
+  // }
 
 
 

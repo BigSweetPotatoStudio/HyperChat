@@ -76,13 +76,18 @@ export async function streamChatCompletion(params: ChatCompletionRequest): Promi
     }
 
     // 使用WebAgentManager获取或创建Agent实例
-    const webAgentManager = getWebAgentManager();
-    const agent = await webAgentManager.getOrCreateAgent(`${workspace?.workspacePath}/.hyperchat/agents/${agentName}`, {
-      agentName,
-      workspace: workspace?.workspacePath,
-      enableMCP: true,
-      enableTaskScheduler: false, // Web环境下默认不启用任务调度器
-    });
+    // const webAgentManager = getWebAgentManager();
+    // const agent = await webAgentManager.getOrCreateAgent(`${workspace?.workspacePath}/.hyperchat/agents/${agentName}`, {
+    //   agentName,
+    //   workspace: workspace?.workspacePath,
+    //   enableMCP: true,
+    //   enableTaskScheduler: false, // Web环境下默认不启用任务调度器
+    // });
+
+    let agent = await workspace.getAgentInstance(agentName);
+    if (!agent) {
+      throw new Error(`Agent not found: ${agentName}`);
+    }
 
     // console.log("Using Agent:", agentName, "agent:", agent);
     // 合并配置（移除工作区AI配置）
