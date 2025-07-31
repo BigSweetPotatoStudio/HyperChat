@@ -15,5 +15,5 @@ type ServerConfig = {
 
 // 工作区的内置mcp服务器
 export const WorkSpaceServers: ServerConfig[] = [
-  HyperSystem, HyperTools, HyperTerminal,
+  HyperSystem, HyperTools
 ];

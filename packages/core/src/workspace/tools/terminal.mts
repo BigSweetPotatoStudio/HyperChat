@@ -51,6 +51,7 @@ export class WorkspaceTerminal extends EventEmitter {
    * 创建新的终端实例
    */
   async createTerminal(workingDirectory?: string): Promise<TerminalInstance> {
+    throw new Error("This method is not implemented ");
     const cwd = workingDirectory || process.env.HOME || os.homedir();
 
     const pty = await import("node-pty");
