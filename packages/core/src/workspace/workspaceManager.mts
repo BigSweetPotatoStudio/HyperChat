@@ -1,12 +1,6 @@
 import * as path from "path";
 import * as fs from "fs";
-import dayjs from "dayjs";
-import { v4 } from "uuid";
 import { CONSTANTS } from "../agent/constants.mjs";
-import type {
-  WorkspaceConfig,
-  AgentConfig
-} from "./types.mjs";
 import { Workspace } from "./workspace.mjs";
 
 /**
@@ -129,80 +123,8 @@ export class WorkspaceManager {
     return workspace;
   }
 
-  /**
-   * 生成新的 agent key
-   */
-  generateAgentKey(): string {
-    return `${dayjs().format("YYMMDD-HHmmss")}-${v4().slice(0, 8)}`;
-  }
-
-  /**
-   * 生成新的工作区 key
-   */
-  generateWorkspaceKey(): string {
-    return `${dayjs().format("YYMMDD-HHmmss")}-${v4().slice(0, 8)}`;
-  }
 
 
-  // /**
-  //  * 删除单个 agent（兼容老API）
-  //  */
-  // async deleteAgent(workspacePath: string, agentName?: string): Promise<boolean> {
-  //   // 兼容两种调用方式：
-  //   // 1. deleteAgent(workspacePath, agentName) - 老API
-  //   // 2. deleteAgent(agentName) - 新API，直接操作当前工作区
-  //   let targetAgentKey: string;
-  //   let workspace: Workspace | null;
-
-  //   if (typeof workspacePath === 'string' && agentName) {
-  //     // 老API调用方式
-  //     workspace = this.getCurrentWorkspace();
-  //     targetAgentKey = agentName;
-  //   } else {
-  //     // 新API调用方式
-  //     workspace = this.getCurrentWorkspace();
-  //     targetAgentKey = workspacePath;
-  //   }
-
-  //   if (!workspace) {
-  //     return false;
-  //   }
-  //   return await workspace.deleteAgent(targetAgentKey);
-  // }
-
-  // /**
-  //  * 获取指定工作区的所有 agents（兼容老API）
-  //  */
-  // async getWorkspaceAgents(workspacePath?: string): Promise<AgentConfig[]> {
-  //   const workspace = this.getCurrentWorkspace();
-  //   if (!workspace) {
-  //     return [];
-  //   }
-  //   return await workspace.getAgents();
-  // }
-
-
-
-  // /**
-  //  * 加载现有工作区（兼容老API）
-  //  */
-  // async loadExistingWorkspace(workspacePath: string): Promise<Workspace | null> {
-  //   const workspace = new Workspace(workspacePath);
-
-  //   // 检查工作区是否存在
-  //   if (!workspace.exists()) {
-  //     return null;
-  //   }
-
-  //   try {
-  //     // 加载工作区数据（使用完整初始化）
-  //     await workspace.init();
-  //     return workspace;
-  //   } catch (error) {
-  //     console.warn(`加载工作区失败 ${workspacePath}:`, error);
-  //     return null;
-  //   }
-  // }
 
   /**
    * 检查指定路径是否为工作区（是否包含 .hyperchat 文件夹）
