@@ -23,7 +23,6 @@ async function getCurrentWorkspacePath(): Promise<string> {
  */
 async function initWorkspaceForExecution(): Promise<string> {
   await workspaceManager.initialize(process.cwd());
-  await workspaceManager.start(); // 需要完整服务（调度器+AI）
   return workspaceManager.getCurrentWorkspacePath();
 }
 

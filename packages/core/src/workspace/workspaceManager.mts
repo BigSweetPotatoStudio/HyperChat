@@ -10,26 +10,18 @@ import type {
 import { Workspace } from "./workspace.mjs";
 
 /**
- * 工作区管理器类 - 新架构：单个当前工作区 + 兼容老API
- * 核心理念：进程/会话 = 当前工作区（内部自动处理全局配置合并）
+ * 工作区管理器类 - 简化版：直接加载指定目录的工作区
+ * 核心理念：每个工作区独立管理自己的配置和数据
  */
 export class WorkspaceManager {
   private currentWorkspace!: Workspace;
   private isInitialized = false;
-  private isStarted = false;
-
-  // 动态获取全局配置目录
-  private get GLOBAL_HYPERCHAT_DIR(): string {
-    return path.join(CONSTANTS.GLOBAL_PATH, CONSTANTS.HYPERCHAT_DIR);
-  }
 
   constructor() {
   }
 
-
   /**
-   * 🚀 第一阶段：初始化工作区管理器（快速配置加载）
-   * 
+   * 初始化工作区管理器（简化版）
    * @param workspacePath 工作区路径
    */
   async initialize(workspacePath: string): Promise<void> {
@@ -39,34 +31,10 @@ export class WorkspaceManager {
 
     try {
       this.currentWorkspace = new Workspace(workspacePath);
-
-      // 🚀 第一阶段：只初始化配置，不启动服务
       await this.currentWorkspace.initialize();
       this.isInitialized = true;
     } catch (error) {
       console.warn('初始化工作区管理器失败:', error);
-      throw error;
-    }
-  }
-
-  /**
-   * 🔥 第二阶段：启动工作区服务（重量级操作）
-   */
-  async start(): Promise<void> {
-    if (!this.isInitialized) {
-      throw new Error('工作区管理器尚未初始化，请先调用 initialize() 方法。');
-    }
-
-    if (this.isStarted) {
-      return;
-    }
-
-    try {
-      // 🔥 第二阶段：启动所有服务
-      await this.currentWorkspace.start();
-      this.isStarted = true;
-    } catch (error) {
-      console.warn('启动工作区服务失败:', error);
       throw error;
     }
   }
@@ -87,7 +55,6 @@ export class WorkspaceManager {
       }
 
       this.isInitialized = false;
-      this.isStarted = false;
     } catch (error) {
       console.warn('清理工作区管理器失败:', error);
       throw error;
@@ -95,18 +62,16 @@ export class WorkspaceManager {
   }
 
   /**
-   * 切换工作区
+   * 切换工作区（简化版）
    * @param workspacePath 工作区路径
+   * @param force 是否强制创建工作区
    */
   async switchWorkspace(workspacePath: string, force: boolean = false): Promise<void> {
-    // if (!force) {
-    //   // 查找工作区或使用全局工作区
-    //   const isWork = this.isWorkspaceDirectory(workspacePath);
+    // 检查目标工作区是否存在
+    if (!force && !this.isWorkspaceDirectory(workspacePath)) {
+      throw new Error(`工作区不存在: ${workspacePath}`);
+    }
 
-    //   if (!isWork) {
-    //     throw new Error(`当前文件没有工作区: ${workspacePath}`);
-    //   }
-    // }
     // 如果目标路径与当前工作区相同，无需切换
     if (this.currentWorkspace && this.currentWorkspace.workspacePath === workspacePath) {
       return;
@@ -119,8 +84,8 @@ export class WorkspaceManager {
       console.warn('清理当前工作区失败:', error);
     }
 
+    // 初始化新工作区
     await this.initialize(workspacePath);
-    await this.start();
   }
 
 
@@ -131,37 +96,22 @@ export class WorkspaceManager {
     if (!this.isInitialized) {
       throw new Error("工作区管理器尚未初始化，请先调用 initialize() 方法。");
     }
-    // 始终返回当前工作区（默认是全局工作区，workspace.mts中自动处理配置合并）
     return this.currentWorkspace;
   }
 
   /**
-   * 检查工作区管理器是否已初始化（配置已加载）
+   * 检查工作区管理器是否已初始化
    */
   isWorkspaceInitialized(): boolean {
     return this.isInitialized;
   }
 
-  /**
-   * 检查工作区管理器是否已启动（服务已运行）
-   */
-  isWorkspaceStarted(): boolean {
-    return this.isStarted;
-  }
-
-  /**
-   * 检查工作区管理器是否完全可用（已初始化且已启动）
-   */
-  isWorkspaceReady(): boolean {
-    return this.isInitialized && this.isStarted;
-  }
-
 
 
   /**
-   * 创建新工作区
+   * 创建新工作区（简化版）
    */
-  async createWorkspace(workspacePath: string, name: string, description?: string): Promise<Workspace> {
+  async createWorkspace(workspacePath: string): Promise<Workspace> {
     // 检查目录是否存在
     if (!fs.existsSync(workspacePath)) {
       throw new Error(`工作区路径不存在: ${workspacePath}`);
@@ -172,8 +122,7 @@ export class WorkspaceManager {
       throw new Error(`工作区已存在: ${workspacePath}`);
     }
 
-
-    // 创建工作区实例
+    // 创建工作区实例并初始化
     const workspace = new Workspace(workspacePath);
     await workspace.initialize();
 
@@ -265,18 +214,9 @@ export class WorkspaceManager {
 
 
   /**
-   * 获取全局配置目录路径
-   */
-  getGlobalConfigPath(): string {
-    return this.GLOBAL_HYPERCHAT_DIR;
-  }
-
-
-  /**
    * 检查是否为全局工作区
    */
   isGlobalWorkspace(workspacePath: string): boolean {
-    // 规范化路径以防止路径分隔符问题
     const normalizedWorkspacePath = path.resolve(workspacePath);
     const normalizedGlobalPath = path.resolve(CONSTANTS.GLOBAL_PATH);
     return normalizedWorkspacePath === normalizedGlobalPath;

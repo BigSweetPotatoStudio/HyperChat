@@ -500,12 +500,19 @@ export const mcpCommands = {
 
 
   /**
-   * 获取工作区 MCP 客户端 - Agent-centered版本
-   * 聚合所有Agent的MCP客户端
+   * 获取工作区 MCP 客户端 - 使用工作区级别的MCP管理器
+   * 直接从工作区的MCP管理器获取客户端，不再从Agent聚合
    */
   async getWorkspaceMcpClients(): Promise<Record<string, unknown>[]> {
     try {
-      return await getAllMcpClients();
+      const workspace = workspaceManager.getCurrentWorkspace();
+      if (!workspace) {
+        console.warn("当前没有可用的工作区");
+        return [];
+      }
+
+      // 直接从工作区的MCP管理器获取客户端
+      return workspace.getMcpClients();
     } catch (error) {
       console.error("Failed to get workspace MCP clients:", error);
       return [];

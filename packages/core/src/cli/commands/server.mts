@@ -64,29 +64,28 @@ export async function startServer(options: ServerOptions = {}) {
     // 1. 初始化工作区管理器
     const currentWorkingDirectory = process.cwd();
     await getWorkspaceManager().initialize(currentWorkingDirectory);
-    await getWorkspaceManager().start();
     
     // 2. 启动默认的全局Hyper Agent
-    logger.info(`🤖 ${t`Starting default global agent...`}`);
-    try {
-      const webAgentManager = getWebAgentManager();
+    // logger.info(`🤖 ${t`Starting default global agent...`}`);
+    // try {
+    //   const webAgentManager = getWebAgentManager();
       
-      // 查找全局Hyper Agent
-      const foundAgent = await findAgent(DEFAULT_AGENT_NAME);
-      if (foundAgent) {
-        await webAgentManager.startAgent(foundAgent.path, {
-          enableMCP: true,           // Web环境启用MCP
-          enableTaskScheduler: false // Web环境默认不启用任务调度器
-        });
-        logger.info(`✅ ${t`Default agent started successfully:`} ${foundAgent.name}`);
-      } else {
-        logger.warn(`⚠️  ${t`Default agent not found:`} ${DEFAULT_AGENT_NAME}`);
-        logger.info(`💡 ${t`Create it using:`} hyperchat agent create ${DEFAULT_AGENT_NAME}`);
-      }
-    } catch (error) {
-      logger.warn(`⚠️  ${t`Failed to start default agent:`} ${error instanceof Error ? error.message : String(error)}`);
-      logger.info(`💡 ${t`Server will continue without default agent`}`);
-    }
+    //   // 查找全局Hyper Agent
+    //   const foundAgent = await findAgent(DEFAULT_AGENT_NAME);
+    //   if (foundAgent) {
+    //     await webAgentManager.startAgent(foundAgent.path, {
+    //       enableMCP: true,           // Web环境启用MCP
+    //       enableTaskScheduler: false // Web环境默认不启用任务调度器
+    //     });
+    //     logger.info(`✅ ${t`Default agent started successfully:`} ${foundAgent.name}`);
+    //   } else {
+    //     logger.warn(`⚠️  ${t`Default agent not found:`} ${DEFAULT_AGENT_NAME}`);
+    //     logger.info(`💡 ${t`Create it using:`} hyperchat agent create ${DEFAULT_AGENT_NAME}`);
+    //   }
+    // } catch (error) {
+    //   logger.warn(`⚠️  ${t`Failed to start default agent:`} ${error instanceof Error ? error.message : String(error)}`);
+    //   logger.info(`💡 ${t`Server will continue without default agent`}`);
+    // }
     
     // 3. 启动 HTTP 服务
     await initHttp();

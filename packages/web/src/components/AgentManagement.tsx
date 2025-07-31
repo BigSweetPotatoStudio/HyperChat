@@ -47,7 +47,7 @@ const { Title } = Typography;
 
 
 interface Agent {
-  config: AgentConfig & { scope?: "global" | "workspace" };
+  config: AgentConfig; // Removed scope in Agent-centered architecture
   chatLogsCount: number;
   lastChatTime?: number;
 }
@@ -76,8 +76,7 @@ export const AgentManagement = forwardRef<AgentManagementRef, AgentManagementPro
   const [chatHistoryList, setChatHistoryList] = useState<ChatHistoryItem[]>([]);
   const [loadingChatHistory, setLoadingChatHistory] = useState(false);
   const [form] = Form.useForm();
-  const [scopeFilter, setScopeFilter] = useState<'all' | 'workspace' | 'global'>('all');
-  const [createScope, setCreateScope] = useState<'workspace' | 'global'>('global');
+  // Scope filters removed in Agent-centered architecture
   const refresh = useForceUpdate();
   // 从 Context 获取 AI 设置
   const { aiSettings, loading: aiSettingsLoading } = useAISettings();
@@ -145,14 +144,13 @@ export const AgentManagement = forwardRef<AgentManagementRef, AgentManagementPro
         await call('updateAgent', {
           agentName: agentKey,
           updates: agentConfig
-          // scope: editingAgent.config.scope // 使用原有的 scope
+          // Scope parameter removed in Agent-centered architecture
         });
         message.success(t`Agent updated successfully`);
       } else {
-        // 创建新Agent
+        // 创建新Agent（Agent-centered架构，无需scope参数）
         await call('createAgent', {
           config: agentConfig
-          // scope: createScope // 使用用户选择的 scope
         });
         message.success(t`Agent created successfully`);
       }
@@ -172,7 +170,7 @@ export const AgentManagement = forwardRef<AgentManagementRef, AgentManagementPro
     try {
       await call('deleteAgent', {
         agentName: agent.config.name
-        // scope: agent.config.scope // 明确指定要删除的 Agent scope
+        // Scope parameter removed in Agent-centered architecture
       });
       message.success(t`Agent deleted successfully`);
       await onRefresh();
@@ -190,10 +188,9 @@ export const AgentManagement = forwardRef<AgentManagementRef, AgentManagementPro
       setChatHistoryAgent(agent);
       setChatHistoryModal(true);
 
-      // 获取Agent的聊天历史记录
+      // 获取Agent的聊天历史记录（Agent-centered架构，无需scope参数）
       const result = await call('getAgentChatLogs', {
         agentName: agent.config.name
-        // scope: agent.config.scope || 'workspace' // 默认使用 workspace scope
       });
 
       // 按时间倒序排列聊天记录
@@ -230,10 +227,9 @@ export const AgentManagement = forwardRef<AgentManagementRef, AgentManagementPro
 
           message.success(t`Chat log deleted successfully`);
 
-          // 重新加载聊天历史列表
+          // 重新加载聊天历史列表（Agent-centered架构，无需scope参数）
           const result = await call('getAgentChatLogs', {
             agentName: chatHistoryAgent.config.name
-            // scope: chatHistoryAgent.config.scope || 'workspace' // 默认使用 workspace scope
           });
           // 按时间倒序排列聊天记录
           const sortedChatLogs = (result.chatLogs || []).sort((a, b) => {
@@ -253,23 +249,9 @@ export const AgentManagement = forwardRef<AgentManagementRef, AgentManagementPro
     });
   };
 
-  // 过滤和排序 agents
+  // Agent-centered架构：简单按名称排序
   const filteredAgents = agents
-    .filter(agent => {
-      if (scopeFilter === 'all') return true;
-      return agent.config.scope === scopeFilter;
-    })
-    .sort((a, b) => {
-      // 本地（workspace）Agent 排在前面，全局（global）Agent 排在后面
-      const scopeA = a.config.scope || 'workspace';
-      const scopeB = b.config.scope || 'workspace';
-
-      if (scopeA === 'workspace' && scopeB === 'global') return -1;
-      if (scopeA === 'global' && scopeB === 'workspace') return 1;
-
-      // 相同 scope 内按名称排序
-      return a.config.name.localeCompare(b.config.name);
-    });
+    .sort((a, b) => a.config.name.localeCompare(b.config.name));
 
   return (
     <>
@@ -285,25 +267,14 @@ export const AgentManagement = forwardRef<AgentManagementRef, AgentManagementPro
           />
         </div>
 
-        {/* Scope 过滤器 */}
-        <div className="mb-3">
-          <Radio.Group
-            value={scopeFilter}
-            onChange={(e) => setScopeFilter(e.target.value)}
-            size="small"
-          >
-            <Radio.Button value="all">{t`All`}</Radio.Button>
-            <Radio.Button value="workspace">{t`Workspace`}</Radio.Button>
-            <Radio.Button value="global">{t`Global`}</Radio.Button>
-          </Radio.Group>
-        </div>
+        {/* Scope filters removed in Agent-centered architecture */}
 
         {filteredAgents.length > 0 ? (
           <List
             size="small"
             dataSource={filteredAgents}
             renderItem={(agent) => {
-              const isGlobalAgent = agent.config.scope === "global";
+              // Removed isGlobalAgent logic in Agent-centered architecture
               const menuItems = [
                 {
                   key: "chat",
@@ -340,22 +311,10 @@ export const AgentManagement = forwardRef<AgentManagementRef, AgentManagementPro
                   label: t`Delete`,
                   danger: true,
                   onClick: () => {
-                    const scopeWarning = agent.config.scope === 'global'
-                      ? t`Warning: Deleting a global agent will affect all projects using this agent!`
-                      : t`This will only delete the agent from current workspace.`;
-
+                    // Simplified delete confirmation in Agent-centered architecture
                     Modal.confirm({
                       title: t`Confirm Delete`,
-                      content: (
-                        <div>
-                          <p>{t`Are you sure you want to delete this agent?`}</p>
-                          <Alert
-                            message={scopeWarning}
-                            type={agent.config.scope === 'global' ? 'warning' : 'info'}
-                            style={{ marginTop: 8 }}
-                          />
-                        </div>
-                      ),
+                      content: t`Are you sure you want to delete this agent?`,
                       onOk: () => deleteAgent(agent),
                       okButtonProps: { danger: true },
                     });
@@ -406,11 +365,7 @@ export const AgentManagement = forwardRef<AgentManagementRef, AgentManagementPro
                     title={
                       <Space>
                         <span className="text-sm">{agent.config.name}</span>
-                        {agent.config.scope && (
-                          <Tag color={agent.config.scope === "global" ? "orange" : "purple"}>
-                            {agent.config.scope === "global" ? t`Global` : t`Workspace`}
-                          </Tag>
-                        )}
+                        {/* Scope tags removed in Agent-centered architecture */}
 
                         {agent.chatLogsCount !== undefined && (
                           <Tooltip title={t`Chat count`}>
@@ -446,13 +401,7 @@ export const AgentManagement = forwardRef<AgentManagementRef, AgentManagementPro
           />
         ) : (
           <Empty
-            description={
-              agents.length === 0
-                ? t`No Agents`
-                : scopeFilter === 'all'
-                  ? t`No Agents`
-                  : `${t`No`} ${scopeFilter} ${t`agents`}`
-            }
+            description={t`No Agents`}
             image={Empty.PRESENTED_IMAGE_SIMPLE}
           >
             {agents.length === 0 && (
@@ -488,11 +437,7 @@ export const AgentManagement = forwardRef<AgentManagementRef, AgentManagementPro
               <Descriptions.Item label={t`Key`}>
                 {selectedAgent.config.name}
               </Descriptions.Item>
-              <Descriptions.Item label={t`Scope`}>
-                <Tag color={selectedAgent.config.scope === "global" ? "orange" : "purple"}>
-                  {selectedAgent.config.scope === "global" ? t`Global` : t`Workspace`}
-                </Tag>
-              </Descriptions.Item>
+              {/* Scope information removed in Agent-centered architecture */}
               <Descriptions.Item label={t`Description`}>
                 {selectedAgent.config.description || t`No description`}
               </Descriptions.Item>
@@ -627,8 +572,7 @@ export const AgentManagement = forwardRef<AgentManagementRef, AgentManagementPro
 
                 form.setFieldsValue(defaultValues);
               }
-              // 重置 scope 选择为默认值
-              setCreateScope('global');
+              // Scope reset removed in Agent-centered architecture
             }
           }
         }}
@@ -639,55 +583,9 @@ export const AgentManagement = forwardRef<AgentManagementRef, AgentManagementPro
           onFinish={saveAgent}
           preserve={false}
         >
-          {/* Scope 选择 - 只在创建模式显示 */}
-          {!editingAgent && (
-            <>
-              <Alert
-                message={
-                  createScope === 'global'
-                    ? t`Creating a global agent that will be available in all workspaces`
-                    : t`Creating a workspace agent that will only be available in current workspace`
-                }
-                type={createScope === 'global' ? 'warning' : 'info'}
-                style={{ marginBottom: 16 }}
-              />
-              <Form.Item label={t`Agent Scope`}>
-                <Radio.Group
-                  value={createScope}
-                  onChange={(e) => setCreateScope(e.target.value)}
-                >
-                  <Radio value="workspace">
-                    <Space>
-                      <Tag color="purple">{t`Workspace`}</Tag>
-                      <span>{t`Current project only`}</span>
-                    </Space>
-                  </Radio>
-                  <Radio value="global">
-                    <Space>
-                      <Tag color="orange">{t`Global`}</Tag>
-                      <span>{t`All projects shared`}</span>
-                    </Space>
-                  </Radio>
-                </Radio.Group>
-              </Form.Item>
-              <Divider />
-            </>
-          )}
+          {/* Scope selection removed in Agent-centered architecture */}
 
-          {/* 编辑模式显示当前 scope */}
-          {editingAgent && (
-            <>
-              <Alert
-                message={
-                  editingAgent.config.scope === 'global'
-                    ? t`Editing a global agent - changes will affect all projects using this agent`
-                    : `${t`Current agent scope:`} ${t`Workspace`}`
-                }
-                type={editingAgent.config.scope === 'global' ? 'warning' : 'info'}
-                style={{ marginBottom: 16 }}
-              />
-            </>
-          )}
+          {/* Scope display removed in Agent-centered architecture */}
 
           <Form.Item
             name="name"

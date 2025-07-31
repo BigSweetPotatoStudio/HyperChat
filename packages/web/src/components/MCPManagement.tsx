@@ -81,8 +81,7 @@ export const MCPManagement = forwardRef<MCPManagementRef, MCPManagementProps>(({
   const [addMcpModalOpen, setAddMcpModalOpen] = useState(false);
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [searchText, setSearchText] = useState<string>("");
-  const [scopeFilter, setScopeFilter] = useState<'all' | 'workspace' | 'global'>('all');
-  const [createScope, setCreateScope] = useState<'workspace' | 'global'>('global');
+  // Scope filters removed in Agent-centered architecture
   const [toolsModalOpen, setToolsModalOpen] = useState(false);
   const [selectedClientTools, setSelectedClientTools] = useState<any[]>([]);
   const [selectedClientName, setSelectedClientName] = useState<string>("");
@@ -435,14 +434,7 @@ export const MCPManagement = forwardRef<MCPManagementRef, MCPManagementProps>(({
         return a.order - b.order;
       });
 
-    // 按 scope 过滤
-    if (scopeFilter !== 'all') {
-      filteredClients = filteredClients.filter(client => {
-        // 假设 client 对象有 scope 属性，如果没有则视为 workspace
-        const clientScope = (client as any).scope || 'workspace';
-        return clientScope === scopeFilter;
-      });
-    }
+    // Scope filtering removed in Agent-centered architecture
 
     // 按状态过滤
     if (statusFilter === "enabled") {
@@ -531,18 +523,7 @@ export const MCPManagement = forwardRef<MCPManagementRef, MCPManagementProps>(({
           </div>
         </div>
 
-        {/* Scope 过滤器 */}
-        <div className="mb-3">
-          <Radio.Group 
-            value={scopeFilter} 
-            onChange={(e) => setScopeFilter(e.target.value)}
-            size="small"
-          >
-            <Radio.Button value="all">{t`All`}</Radio.Button>
-            <Radio.Button value="workspace">{t`Workspace`}</Radio.Button>
-            <Radio.Button value="global">{t`Global`}</Radio.Button>
-          </Radio.Group>
-        </div>
+        {/* Scope filters removed in Agent-centered architecture */}
 
         {/* 搜索和过滤 */}
         <div className="mb-2">
@@ -773,13 +754,10 @@ export const MCPManagement = forwardRef<MCPManagementRef, MCPManagementProps>(({
 
                 // 检查服务名称是否已存在（新建时）
                 if (values._type !== "edit") {
-                  // 在相同 scope 内检查名称是否重复
-                  const existingClients = Object.values(mcpClients).filter(x => {
-                    const clientScope = (x as any).scope || 'workspace';
-                    return x.serverName === values.name && clientScope === createScope;
-                  });
+                  // 检查名称是否重复（简化：只在当前工作区检查）
+                  const existingClients = Object.values(mcpClients).filter(x => x.serverName === values.name);
                   if (existingClients.length > 0) {
-                    message.error(`${t`MCP Service Name already exists in`} ${createScope === 'global' ? 'global' : 'workspace'} ${t`scope`}`);
+                    message.error(t`MCP Service Name already exists`);
                     return;
                   }
                 } else {
@@ -846,7 +824,7 @@ export const MCPManagement = forwardRef<MCPManagementRef, MCPManagementProps>(({
                 await call("setWorkspaceMcpServerConfig", {
                   serverName: values.name,
                   serverConfig: mcpServerConfig
-                  // scope: createScope // 使用用户选择的 scope
+                  // scope parameter removed in Agent-centered architecture
                 });
 
                 setMcpConfigResult({
@@ -885,51 +863,9 @@ export const MCPManagement = forwardRef<MCPManagementRef, MCPManagementProps>(({
           <Input disabled placeholder="Please enter" />
         </Form.Item>
 
-        {/* Scope 选择 - 只在创建模式显示 */}
-        {mcpForm.getFieldValue("_type") !== "edit" && (
-          <>
-            <Alert
-              message={
-                createScope === 'global' 
-                  ? t`Creating a global MCP server that will be available in all workspaces`
-                  : t`Creating a workspace MCP server that will only be available in current workspace`
-              }
-              type={createScope === 'global' ? 'warning' : 'info'}
-              style={{ marginBottom: 16 }}
-            />
-            <Form.Item label={t`MCP Server Scope`}>
-              <Radio.Group 
-                value={createScope} 
-                onChange={(e) => setCreateScope(e.target.value)}
-              >
-                <Radio value="workspace">
-                  <Space>
-                    <Tag color="purple">{t`Workspace`}</Tag>
-                    <span>{t`Current project only`}</span>
-                  </Space>
-                </Radio>
-                <Radio value="global">
-                  <Space>
-                    <Tag color="orange">{t`Global`}</Tag>
-                    <span>{t`All projects shared`}</span>
-                  </Space>
-                </Radio>
-              </Radio.Group>
-            </Form.Item>
-            <Divider />
-          </>
-        )}
+        {/* Scope selection removed in Agent-centered architecture */}
 
-        {/* 编辑模式显示当前 scope */}
-        {mcpForm.getFieldValue("_type") === "edit" && (
-          <>
-            <Alert
-              message={`${t`Current MCP server scope:`} ${t`Workspace`}`}
-              type="info"
-              style={{ marginBottom: 16 }}
-            />
-          </>
-        )}
+        {/* Scope display removed in Agent-centered architecture */}
 
         {/* 服务名称 */}
         <Form.Item

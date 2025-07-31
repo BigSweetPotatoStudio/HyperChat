@@ -117,36 +117,42 @@ const AgentMCPPanel = forwardRef<any, AgentMCPPanelProps>(({
         });
       }
 
-      const clientData = {
-        serverName: values.name,
-        config: {
-          command: values.serverPath,
-          args: values.args ? values.args.split(' ').filter(Boolean) : [],
-          env,
-          disabled: !values.enabled
-        }
+      const serverConfig = {
+        type: 'stdio' as const,
+        command: values.serverPath,
+        args: values.args ? values.args.split(' ').filter(Boolean) : [],
+        env,
+        disabled: !values.enabled
       };
 
-      // 注意：Agent中心架构暂不支持这些API，这里模拟响应
-      const response = { 
-        success: true, 
-        message: editingClient ? 'MCP client updated' : 'MCP client added'
-      };
-
-      if (response.success) {
-        message.success(editingClient ? t`MCP client updated` : t`MCP client added`);
-        setModalVisible(false);
-        await onRefresh();
+      // 调用Agent级别的MCP管理API
+      if (editingClient) {
+        // 更新现有客户端
+        await call('setAgentMcpServerConfig', {
+          agentName,
+          serverName: values.name,
+          serverConfig
+        });
+        message.success(t`MCP client updated`);
       } else {
-        message.error(response.message || t`Failed to save MCP client`);
+        // 添加新客户端
+        await call('setAgentMcpServerConfig', {
+          agentName,
+          serverName: values.name,
+          serverConfig
+        });
+        message.success(t`MCP client added`);
       }
+
+      setModalVisible(false);
+      await onRefresh();
     } catch (error) {
       console.error('Save MCP client error:', error);
       message.error(t`Failed to save MCP client`);
     } finally {
       setActionLoading('save', false);
     }
-  }, [form, editingClient, agentPath, onRefresh, setActionLoading]);
+  }, [form, editingClient, agentName, onRefresh, setActionLoading]);
 
   /**
    * 删除MCP客户端
@@ -154,25 +160,22 @@ const AgentMCPPanel = forwardRef<any, AgentMCPPanelProps>(({
   const deleteMCPClient = useCallback(async (clientId: string) => {
     try {
       setActionLoading(`delete_${clientId}`, true);
-      // 注意：Agent中心架构暂不支持这些API，这里模拟响应
-      const response = { 
-        success: true, 
-        message: 'MCP client deleted' 
-      };
+      
+      // 调用Agent级别的MCP删除API
+      await call('deleteAgentMcpServerConfig', {
+        agentName,
+        serverName: clientId
+      });
 
-      if (response.success) {
-        message.success(t`MCP client deleted`);
-        await onRefresh();
-      } else {
-        message.error(response.message || t`Failed to delete MCP client`);
-      }
+      message.success(t`MCP client deleted`);
+      await onRefresh();
     } catch (error) {
       console.error('Delete MCP client error:', error);
       message.error(t`Failed to delete MCP client`);
     } finally {
       setActionLoading(`delete_${clientId}`, false);
     }
-  }, [agentPath, onRefresh, setActionLoading]);
+  }, [agentName, onRefresh, setActionLoading]);
 
   /**
    * 启动/停止MCP客户端
@@ -180,25 +183,22 @@ const AgentMCPPanel = forwardRef<any, AgentMCPPanelProps>(({
   const toggleMCPClient = useCallback(async (clientId: string, enabled: boolean) => {
     try {
       setActionLoading(`toggle_${clientId}`, true);
-      // 注意：Agent中心架构暂不支持这些API，这里模拟响应
-      const response = { 
-        success: true, 
-        message: enabled ? 'MCP client started' : 'MCP client stopped'
-      };
+      
+      // 调用Agent级别的MCP重启API
+      await call('restartAgentMcpClient', {
+        agentName,
+        clientName: clientId
+      });
 
-      if (response.success) {
-        message.success(enabled ? t`MCP client started` : t`MCP client stopped`);
-        await onRefresh();
-      } else {
-        message.error(response.message || t`Failed to toggle MCP client`);
-      }
+      message.success(enabled ? t`MCP client started` : t`MCP client stopped`);
+      await onRefresh();
     } catch (error) {
       console.error('Toggle MCP client error:', error);
       message.error(t`Failed to toggle MCP client`);
     } finally {
       setActionLoading(`toggle_${clientId}`, false);
     }
-  }, [agentPath, onRefresh, setActionLoading]);
+  }, [agentName, onRefresh, setActionLoading]);
 
   /**
    * 渲染MCP客户端列表项

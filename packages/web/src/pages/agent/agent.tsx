@@ -72,7 +72,22 @@ const AgentPage: React.FC = () => {
       const response = await call('getWorkspaceAgentsSummary');
 
       if (response && Array.isArray(response)) {
-        // 模拟Agent详情数据结构
+        // 同时加载MCP客户端数据
+        let mcpClientsObj: Record<string, any> = {};
+        try {
+          const mcpClientsData = await call('getMcpClientsByAgent', actualAgentName);
+          if (Array.isArray(mcpClientsData)) {
+            mcpClientsData.forEach((client: any) => {
+              if (client.serverName) {
+                mcpClientsObj[client.serverName] = client;
+              }
+            });
+          }
+        } catch (error) {
+          console.warn('Failed to load MCP clients:', error);
+        }
+
+        // 构建Agent详情数据结构
         const mockAgentDetails: AgentDetails = {
           instanceInfo: {
             path: agentPath || '/mock/agent/path',
@@ -90,11 +105,11 @@ const AgentPage: React.FC = () => {
             isRunning: true,
             chatLogsCount: response[0]?.chatLogsCount || 0,
             lastChatTime: response[0]?.lastChatTime,
-            hasMCPConfig: false,
+            hasMCPConfig: Object.keys(mcpClientsObj).length > 0,
             tasksCount: 0
           },
           fileTreeData: [],
-          mcpClients: {},
+          mcpClients: mcpClientsObj,
           tasks: [],
           chatLogs: []
         };
@@ -160,13 +175,30 @@ const AgentPage: React.FC = () => {
     if (!agentDetails) return;
     
     try {
-      // 模拟MCP客户端刷新
-      console.log('刷新MCP客户端:', agentDetails.instanceInfo.path);
+      // 使用Agent级别的MCP API获取客户端数据
+      const mcpClientsData = await call('getMcpClientsByAgent', actualAgentName);
+      
+      // 将数组转换为对象格式以保持向后兼容
+      const mcpClientsObj: Record<string, any> = {};
+      if (Array.isArray(mcpClientsData)) {
+        mcpClientsData.forEach((client: any) => {
+          if (client.serverName) {
+            mcpClientsObj[client.serverName] = client;
+          }
+        });
+      }
+      
+      // 更新agentDetails中的MCP客户端数据
+      setAgentDetails(prev => prev ? {
+        ...prev,
+        mcpClients: mcpClientsObj
+      } : prev);
+      
     } catch (error) {
       console.error('Refresh MCP error:', error);
       message.error(t`Failed to refresh MCP clients`);
     }
-  }, [agentDetails]);
+  }, [agentDetails, actualAgentName]);
 
   /**
    * 刷新任务列表

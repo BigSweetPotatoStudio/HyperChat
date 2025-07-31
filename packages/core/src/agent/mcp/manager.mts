@@ -21,14 +21,11 @@ export class WorkspaceMCPManager {
   private workspaceConfig: WorkspaceMCPConfig | null = null;
   private options: MCPManagerOptions;
   private events: MCPManagerEvents;
-  private localPath: string;
-  private globalPath: string;
+  private workspacePath: string;
   private serverOrderMap: Map<string, number> = new Map();
 
-  constructor(localPath: string, globalPath: string, options: MCPManagerOptions = {}, events: MCPManagerEvents = {}) {
-    // console.log(`初始化工作区 MCP 管理器: ${localPath} ${globalPath || "无全局路径"}`);
-    this.localPath = localPath;
-    this.globalPath = globalPath;
+  constructor(workspacePath: string, options: MCPManagerOptions = {}, events: MCPManagerEvents = {}) {
+    this.workspacePath = workspacePath;
     this.options = {
       autoReconnect: true,
       reconnectInterval: 5000,
@@ -81,7 +78,7 @@ export class WorkspaceMCPManager {
    * 启动工作区的 MCP 客户端
    */
   async startClients(): Promise<WorkspaceMCPClientImpl[]> {
-    this.logInfo(`启动工作区 MCP 客户端: ${this.localPath}`);
+    this.logInfo(`启动工作区 MCP 客户端: ${this.workspacePath}`);
 
     // 加载工作区配置
     const config = await this.loadWorkspaceConfig();
@@ -110,7 +107,7 @@ export class WorkspaceMCPManager {
       };
 
 
-      const clientId = this.getClientId(server.name, "workspace"); // 内置服务器始终是 workspace scope
+      const clientId = this.getClientId(server.name);
 
       // 如果客户端已存在，跳过
       if (this.clients.has(clientId)) {
@@ -124,8 +121,8 @@ export class WorkspaceMCPManager {
         this.getServerOrder(server.name),
         {
           mcpType: "builtin",
-          workspacePath: this.localPath.replace(/\.hyperchat$/g, ""), // 确保路径格式正确
-          globalPath: this.globalPath.replace(/\.hyperchat$/g, ""), // 确保路径格式正确,
+          workspacePath: this.workspacePath,
+          globalPath: this.workspacePath,
           createServer: server.createServer
         }
       );
@@ -145,27 +142,23 @@ export class WorkspaceMCPManager {
 
     // 启动用户配置的服务器
     for (const [name, serverConfig] of Object.entries(config.mcpServers)) {
-      // 获取配置的 scope 信息
-      const scope = (serverConfig as any)._scope || "workspace";
-      const clientId = this.getClientId(name, scope);
+      const clientId = this.getClientId(name);
 
       // 如果客户端已存在，跳过
       if (this.clients.has(clientId)) {
         clients.push(this.clients.get(clientId)!);
         continue;
       }
-      // 移除内部属性
-      const { _scope, ...cleanServerConfig } = serverConfig as any;
 
       const client = new WorkspaceMCPClientImpl(
         name,
-        cleanServerConfig,
-        scope,
+        serverConfig,
+        "workspace", // 工作区级别的MCP客户端都是workspace scope
         this.getServerOrder(name),
         {
           mcpType: "custom",
-          workspacePath: this.localPath,
-          globalPath: this.globalPath,
+          workspacePath: this.workspacePath,
+          globalPath: this.workspacePath,
         }
       );
 
@@ -184,7 +177,7 @@ export class WorkspaceMCPManager {
     // 等待所有客户端启动完成
     await Promise.allSettled(tasks);
 
-    this.logInfo(`工作区 ${this.localPath} 启动了 ${clients.length} 个客户端`);
+    this.logInfo(`工作区 ${this.workspacePath} 启动了 ${clients.length} 个客户端`);
     return clients;
   }
 
@@ -194,7 +187,7 @@ export class WorkspaceMCPManager {
   private async startSingleClient(name: string, serverConfig: MCPServerConfig): Promise<void> {
     // 获取配置的 scope 信息
     const scope = (serverConfig as any)._scope || "workspace";
-    const clientId = this.getClientId(name, scope);
+    const clientId = this.getClientId(name);
 
     // 如果客户端已存在，先停止它
     if (this.clients.has(clientId)) {
@@ -211,8 +204,8 @@ export class WorkspaceMCPManager {
       this.getServerOrder(name),
       {
         mcpType: "custom",
-        workspacePath: this.localPath,
-        globalPath: this.globalPath,
+        workspacePath: this.workspacePath,
+        globalPath: this.workspacePath,
       }
     );
 
@@ -228,7 +221,7 @@ export class WorkspaceMCPManager {
    * 启动单个内置客户端
    */
   private async startSingleBuiltinClient(name: string, serverConfig: MCPServerConfig): Promise<void> {
-    const clientId = this.getClientId(name, "workspace"); // 内置服务器始终是 workspace scope
+    const clientId = this.getClientId(name);
 
     // 如果客户端已存在，先停止它
     if (this.clients.has(clientId)) {
@@ -247,8 +240,8 @@ export class WorkspaceMCPManager {
       this.getServerOrder(name),
       {
         mcpType: "builtin",
-        workspacePath: this.localPath,
-        globalPath: this.globalPath,
+        workspacePath: this.workspacePath,
+        globalPath: this.workspacePath,
         createServer: builtinServer?.createServer
       }
     );
@@ -286,7 +279,7 @@ export class WorkspaceMCPManager {
     const clientsToStop = Array.from(this.clients.values());
 
     const tasks = clientsToStop.map(async (client) => {
-      const clientId = this.getClientId(client.serverName, client.scope);
+      const clientId = this.getClientId(client.serverName);
       try {
         await client.close();
         this.clients.delete(clientId);
@@ -297,68 +290,42 @@ export class WorkspaceMCPManager {
     });
 
     await Promise.allSettled(tasks);
-    this.logInfo(`工作区 ${this.localPath} 停止了 ${clientsToStop.length} 个客户端`);
+    this.logInfo(`工作区 ${this.workspacePath} 停止了 ${clientsToStop.length} 个客户端`);
   }
 
   /**
-   * 加载工作区配置（支持全局+工作区配置合并）
+   * 加载工作区配置（简化版 - 只加载当前工作区的配置）
    */
   async loadWorkspaceConfig(): Promise<WorkspaceMCPConfig> {
     let workspaceConfig: WorkspaceMCPConfig = {
       mcpServers: {},
-      workspacePath: this.localPath,
+      workspacePath: this.workspacePath,
       created: Date.now(),
       lastModified: Date.now(),
     };
 
-    // 先加载全局配置，再加载本地配置（本地覆盖全局）
-    // 如果本地路径和全局路径相同，则只加载一次
-    const paths = this.localPath == this.globalPath ? [this.localPath] : [this.globalPath, this.localPath];
+    // 只加载当前工作区的配置文件
+    const configPath = path.join(this.workspacePath, CONSTANTS.CONFIG_FILES.MCP);
+    this.logInfo(`加载工作区配置: ${configPath}`);
 
-    // 先合并所有配置
-    const mergedServers: Record<string, MCPServerConfig & { _scope: "global" | "workspace" }> = {};
+    if (fs.existsSync(configPath)) {
+      try {
+        const content = await fs.promises.readFile(configPath, "utf-8");
+        const data = JSON.parse(content);
+        const loadedServers = data.mcpServers || {};
 
-    for (let i = 0; i < paths.length; i++) {
-      const workspacePath = paths[i];
+        // 直接使用加载的服务器配置，不添加scope信息
+        workspaceConfig.mcpServers = loadedServers;
 
-      if (workspacePath === undefined) {
-        continue; // 跳过未定义的路径
+        this.logInfo(`从 ${configPath} 成功加载工作区配置：${Object.keys(loadedServers).length} 个服务器`);
+      } catch (error) {
+        this.logError(`加载工作区配置失败 (${configPath}):`, error);
       }
-      const configPath = path.join(workspacePath, CONSTANTS.CONFIG_FILES.MCP);
-      const configName = i === 0 && paths.length > 1 ? "全局配置" : "本地配置";
-
-      // 正确的 scope 判断逻辑：
-      const scope = i === 0 && paths.length > 1 ? "global" : "workspace";
-
-      this.logInfo(`加载${configName}: ${configPath}`);
-
-      if (fs.existsSync(configPath)) {
-        try {
-          const content = await fs.promises.readFile(configPath, "utf-8");
-          const data = JSON.parse(content);
-          const loadedServers = data.mcpServers || {};
-
-          // 为每个服务器配置添加 scope 信息
-          for (const [name, config] of Object.entries(loadedServers)) {
-            mergedServers[name] = {
-              ...(config as MCPServerConfig),
-              _scope: scope
-            };
-          }
-
-          this.logInfo(`从 ${configPath} 成功加载${configName}：${Object.keys(loadedServers).length} 个服务器`);
-        } catch (error) {
-          this.logError(`加载${configName}失败 (${configPath}):`, error);
-        }
-      } else {
-        this.logInfo(`${configName}文件不存在，跳过: ${configPath}`);
-      }
+    } else {
+      this.logInfo(`工作区配置文件不存在，使用默认配置: ${configPath}`);
     }
 
-    // 将合并后的服务器配置设置到工作区配置中
-    workspaceConfig.mcpServers = mergedServers;
-
-    this.logInfo(`配置合并完成，最终加载了 ${Object.keys(workspaceConfig.mcpServers).length} 个服务器配置`);
+    this.logInfo(`工作区配置加载完成，共加载了 ${Object.keys(workspaceConfig.mcpServers).length} 个服务器配置`);
 
     this.workspaceConfig = workspaceConfig;
     return workspaceConfig;
@@ -377,8 +344,8 @@ export class WorkspaceMCPManager {
   /**
    * 获取单个客户端
    */
-  getClient(name: string, scope?: "global" | "workspace"): WorkspaceMCPClientImpl | null {
-    const clientId = this.getClientId(name, scope);
+  getClient(name: string): WorkspaceMCPClientImpl | null {
+    const clientId = this.getClientId(name);
     return this.clients.get(clientId) || null;
   }
 
@@ -393,12 +360,8 @@ export class WorkspaceMCPManager {
       this.workspaceConfig = await this.loadWorkspaceConfig();
     }
 
-    // 直接设置为工作区配置，不检查是否存在全局配置
-    // 这样可以创建工作区级别的配置来覆盖全局配置
-    this.workspaceConfig.mcpServers[name] = {
-      ...config,
-      _scope: "workspace"
-    } as any;
+    // 直接设置工作区配置
+    this.workspaceConfig.mcpServers[name] = config;
     this.workspaceConfig.lastModified = Date.now();
 
     // 保存配置
@@ -413,107 +376,59 @@ export class WorkspaceMCPManager {
   /**
    * 删除服务器配置
    */
-  async deleteServerConfig(name: string, scope: 'global' | 'workspace' = 'workspace'): Promise<void> {
+  async deleteServerConfig(name: string): Promise<void> {
     if (!this.workspaceConfig) {
       return;
     }
 
     const serverConfig = this.workspaceConfig.mcpServers[name];
-    
-    if (scope === 'global') {
-      // 删除全局配置
-      if (!serverConfig || (serverConfig as any)._scope !== "global") {
-        throw new Error(`全局配置中不存在服务器: ${name}`);
-      }
-    } else {
-      // 删除工作区配置
-      if (serverConfig && (serverConfig as any)._scope === "global") {
-        throw new Error(`不允许删除全局配置的服务器: ${name}，请使用 scope='global'`);
-      }
+    if (!serverConfig) {
+      throw new Error(`工作区配置中不存在服务器: ${name}`);
     }
 
     delete this.workspaceConfig.mcpServers[name];
     this.workspaceConfig.lastModified = Date.now();
 
-    // 根据 scope 保存对应的配置文件
-    if (scope === 'global') {
-      await this.saveGlobalConfig();
-    } else {
-      await this.saveConfig();
-    }
+    // 保存工作区配置
+    await this.saveConfig();
 
     // 停止客户端
-    await this.stopClient(name, scope);
+    await this.stopClient(name);
 
     this.events.onConfigUpdate?.(this.workspaceConfig);
   }
 
-  /**
-   * 添加或更新全局服务器配置
-   */
-  async setGlobalServerConfig(
-    name: string,
-    config: MCPServerConfig
-  ): Promise<void> {
-    // 移除权限检查，允许在任何工作区中添加全局配置
-    // 这样可以在普通项目工作区中直接管理全局MCP配置
-
-    if (!this.workspaceConfig) {
-      this.workspaceConfig = await this.loadWorkspaceConfig();
-    }
-
-    // 添加全局配置
-    this.workspaceConfig.mcpServers[name] = {
-      ...config,
-      _scope: "global"
-    } as any;
-    this.workspaceConfig.lastModified = Date.now();
-
-    // 保存全局配置
-    await this.saveGlobalConfig();
-
-    // 重启客户端
-    await this.restartClient(name);
-
-    this.events.onConfigUpdate?.(this.workspaceConfig);
-  }
 
 
   /**
    * 重启客户端
    */
-  async restartClient(name: string, scope?: 'global' | 'workspace'): Promise<void> {
+  async restartClient(name: string): Promise<void> {
     try {
-      const scopeText = scope ? `(${scope === 'global' ? '全局' : '工作区'})` : '';
-      this.logInfo(`开始重启客户端 ${name} ${scopeText} (工作区: ${this.localPath})`);
+      this.logInfo(`开始重启客户端 ${name} (工作区: ${this.workspacePath})`);
 
       // 停止客户端
-      await this.stopClient(name, scope);
+      await this.stopClient(name);
 
       // 先检查是否是内置客户端
       const builtinServers = [...WorkSpaceServers];
       const builtinServer = builtinServers.find(server => server.name === name);
 
       if (builtinServer) {
-        // 内置客户端：根据服务器类型选择配置
+        // 内置客户端：使用 inMemory 连接
         this.logInfo(`重启内置客户端 ${name}`);
 
-        let serverConfig: MCPServerConfig;
-
-
-        // WorkSpaceServers 中的服务器使用 inMemory 连接
-        serverConfig = {
+        const serverConfig: MCPServerConfig = {
           type: "inMemory",
           disabled: false,
         };
-
 
         // 启动内置客户端
         await this.startSingleBuiltinClient(name, serverConfig);
       } else {
         // 自定义客户端：从配置文件中获取配置
         if (!this.workspaceConfig) {
-          throw new Error(`工作区 ${this.localPath} 的配置不存在`);
+          throw new Error(`工作区 ${this.workspacePath} 的配置不存在`);
         }
 
         const serverConfig = this.workspaceConfig.mcpServers[name];
@@ -521,12 +436,7 @@ export class WorkspaceMCPManager {
           throw new Error(`客户端 ${name} 的配置不存在`);
         }
 
-        // 检查 scope 匹配
-        if (scope && (serverConfig as any)._scope !== scope) {
-          throw new Error(`客户端 ${name} 不存在于 ${scope === 'global' ? '全局' : '工作区'} 配置中`);
-        }
-
-        // 只重启指定的客户端，而不是所有客户端
+        // 重启指定的客户端
         await this.startSingleClient(name, serverConfig);
       }
 
@@ -535,10 +445,10 @@ export class WorkspaceMCPManager {
       this.logError(`客户端 ${name} 重启失败:`, error);
 
       // 通知错误事件
-      const clientId = this.getClientId(name); // 这里使用默认 scope，因为只是错误报告
+      const clientId = this.getClientId(name);
       this.events.onError?.(error as Error, {
         clientId,
-        workspacePath: this.localPath,
+        workspacePath: this.workspacePath,
         operation: 'restart'
       });
 
@@ -547,59 +457,30 @@ export class WorkspaceMCPManager {
   }
 
   /**
-   * 停止单个客户端（全局客户端不允许停止，只允许重启）
+   * 停止单个客户端
    */
-  async stopClient(name: string, scope?: 'global' | 'workspace'): Promise<void> {
-    if (scope) {
-      // 停止指定 scope 的客户端
-      const clientId = this.getClientId(name, scope);
-      const client = this.clients.get(clientId);
-      
-      if (!client) {
-        this.logInfo(`客户端 ${clientId} 不存在，跳过停止操作`);
-        return;
-      }
+  async stopClient(name: string): Promise<void> {
+    const clientId = this.getClientId(name);
+    const client = this.clients.get(clientId);
+    
+    if (!client) {
+      this.logInfo(`客户端 ${clientId} 不存在，跳过停止操作`);
+      return;
+    }
 
-      // 全局客户端不允许停止
-      if (scope === "global") {
-        this.logInfo(`跳过全局客户端 ${name}，全局客户端不允许停止`);
-        return;
-      }
-
-      try {
-        await client.close();
-        this.clients.delete(clientId);
-        this.logInfo(`客户端 ${clientId} 已停止`);
-      } catch (error) {
-        this.logError(`停止客户端 ${clientId} 失败:`, error);
-      }
-    } else {
-      // 兼容模式：查找所有匹配名称的客户端（可能有多个scope）
-      const clientsToStop = Array.from(this.clients.values()).filter(client => client.serverName === name);
-
-      for (const client of clientsToStop) {
-        // 全局客户端不允许停止
-        if (client.scope === "global") {
-          this.logInfo(`跳过全局客户端 ${client.serverName}，全局客户端不允许停止`);
-          continue;
-        }
-
-        const clientId = this.getClientId(client.serverName, client.scope);
-        try {
-          await client.close();
-          this.clients.delete(clientId);
-          this.logInfo(`客户端 ${clientId} 已停止`);
-        } catch (error) {
-          this.logError(`停止客户端 ${clientId} 失败:`, error);
-        }
-      }
+    try {
+      await client.close();
+      this.clients.delete(clientId);
+      this.logInfo(`客户端 ${clientId} 已停止`);
+    } catch (error) {
+      this.logError(`停止客户端 ${clientId} 失败:`, error);
     }
   }
 
   /**
    * 禁用客户端（停止客户端并在配置中标记为 disabled）
    */
-  async disableClient(name: string, scope: 'global' | 'workspace' = 'workspace'): Promise<void> {
+  async disableClient(name: string): Promise<void> {
     if (!this.workspaceConfig) {
       return;
     }
@@ -616,33 +497,24 @@ export class WorkspaceMCPManager {
       throw new Error(`客户端 ${name} 的配置不存在`);
     }
 
-    // 检查 scope 匹配
-    if ((serverConfig as any)._scope !== scope) {
-      throw new Error(`客户端 ${name} 不存在于 ${scope === 'global' ? '全局' : '工作区'} 配置中`);
-    }
-
     // 先停止客户端
-    await this.stopClient(name, scope);
+    await this.stopClient(name);
 
     // 在配置中标记为 disabled
     serverConfig.disabled = true;
     this.workspaceConfig.lastModified = Date.now();
 
-    // 根据 scope 保存对应的配置文件
-    if (scope === 'global') {
-      await this.saveGlobalConfig();
-    } else {
-      await this.saveConfig();
-    }
+    // 保存配置文件
+    await this.saveConfig();
 
-    this.logInfo(`客户端 ${name} (${scope === 'global' ? '全局' : '工作区'}) 已禁用`);
+    this.logInfo(`客户端 ${name} 已禁用`);
     this.events.onConfigUpdate?.(this.workspaceConfig);
   }
 
   /**
    * 启用客户端（删除配置中的 disabled 属性并启动客户端）
    */
-  async enableClient(name: string, scope: 'global' | 'workspace' = 'workspace'): Promise<void> {
+  async enableClient(name: string): Promise<void> {
     if (!this.workspaceConfig) {
       return;
     }
@@ -659,106 +531,50 @@ export class WorkspaceMCPManager {
       throw new Error(`客户端 ${name} 的配置不存在`);
     }
 
-    // 检查 scope 匹配
-    if ((serverConfig as any)._scope !== scope) {
-      throw new Error(`客户端 ${name} 不存在于 ${scope === 'global' ? '全局' : '工作区'} 配置中`);
-    }
-
     // 在配置中删除 disabled 属性（与 disable 操作相反）
     delete serverConfig.disabled;
     this.workspaceConfig.lastModified = Date.now();
 
-    // 根据 scope 保存对应的配置文件
-    if (scope === 'global') {
-      await this.saveGlobalConfig();
-    } else {
-      await this.saveConfig();
-    }
+    // 保存配置文件
+    await this.saveConfig();
 
     // 启动客户端
-    await this.restartClient(name, scope);
+    await this.restartClient(name);
 
-    this.logInfo(`客户端 ${name} (${scope === 'global' ? '全局' : '工作区'}) 已启用`);
+    this.logInfo(`客户端 ${name} 已启用`);
     this.events.onConfigUpdate?.(this.workspaceConfig);
   }
 
   /**
-   * 保存配置（只保存工作区配置，不保存全局配置）
+   * 保存工作区配置
    */
   private async saveConfig(): Promise<void> {
     if (!this.workspaceConfig) {
       return;
     }
 
-    const configPath = path.join(this.localPath, CONSTANTS.CONFIG_FILES.MCP);
-
-    // 过滤掉全局配置，只保存工作区配置
-    const workspaceServers: Record<string, MCPServerConfig> = {};
-    for (const [name, config] of Object.entries(this.workspaceConfig.mcpServers)) {
-      const serverConfig = config as any;
-      if (serverConfig._scope !== "global") {
-        // 移除内部属性再保存
-        const { _scope, ...cleanConfig } = serverConfig;
-        workspaceServers[name] = cleanConfig;
-      }
-    }
+    const configPath = path.join(this.workspacePath, CONSTANTS.CONFIG_FILES.MCP);
 
     try {
       await this.ensureDirectoryExists(path.dirname(configPath));
       await fs.promises.writeFile(
         configPath,
-        JSON.stringify({ mcpServers: workspaceServers }, null, 2)
+        JSON.stringify({ mcpServers: this.workspaceConfig.mcpServers }, null, 2)
       );
-      this.logInfo(`保存配置到 ${configPath}，共保存 ${Object.keys(workspaceServers).length} 个工作区服务器`);
+      this.logInfo(`保存配置到 ${configPath}，共保存 ${Object.keys(this.workspaceConfig.mcpServers).length} 个服务器`);
     } catch (error) {
       this.logError(`保存配置失败:`, error);
       throw error;
     }
   }
 
-  /**
-   * 保存全局配置（只保存全局配置）
-   */
-  private async saveGlobalConfig(): Promise<void> {
-    if (!this.workspaceConfig) {
-      return;
-    }
-
-    const configPath = path.join(this.globalPath, CONSTANTS.CONFIG_FILES.MCP);
-
-    // 过滤出全局配置，只保存全局配置
-    const globalServers: Record<string, MCPServerConfig> = {};
-    for (const [name, config] of Object.entries(this.workspaceConfig.mcpServers)) {
-      const serverConfig = config as any;
-      if (serverConfig._scope === "global") {
-        // 移除内部属性再保存
-        const { _scope, ...cleanConfig } = serverConfig;
-        globalServers[name] = cleanConfig;
-      }
-    }
-
-    try {
-      await this.ensureDirectoryExists(path.dirname(configPath));
-      await fs.promises.writeFile(
-        configPath,
-        JSON.stringify({ mcpServers: globalServers }, null, 2)
-      );
-      this.logInfo(`保存全局配置到 ${configPath}，共保存 ${Object.keys(globalServers).length} 个全局服务器`);
-    } catch (error) {
-      this.logError(`保存全局配置失败:`, error);
-      throw error;
-    }
-  }
 
   /**
    * 获取客户端ID
    */
-  private getClientId(name: string, scope?: "global" | "workspace"): string {
-    // 默认 scope 逻辑：
-    // 1. 如果 localPath 就是全局路径且 globalPath 为空，默认是 workspace scope
-    // 2. 如果有独立的 globalPath，则根据当前管理器的性质判断
-    const actualScope = scope || "workspace";
-    return `${actualScope}:${name}`;
+  private getClientId(name: string): string {
+    // 工作区级别的MCP管理器，客户端ID就是名称
+    return name;
   }
 
   /**
@@ -792,7 +608,7 @@ export class WorkspaceMCPManager {
    * 强制重新加载工作区配置
    */
   async forceReloadWorkspaceConfig(): Promise<void> {
-    this.logInfo(`强制重新加载工作区配置: ${this.localPath}`);
+    this.logInfo(`强制重新加载工作区配置: ${this.workspacePath}`);
 
     // 1. 停止该工作区的所有客户端
     await this.stopClients();
@@ -803,7 +619,7 @@ export class WorkspaceMCPManager {
     // 3. 重新加载并启动
     await this.startClients();
 
-    this.logInfo(`工作区配置重新加载完成: ${this.localPath}`);
+    this.logInfo(`工作区配置重新加载完成: ${this.workspacePath}`);
   }
 
   /**

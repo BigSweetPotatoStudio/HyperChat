@@ -12,6 +12,7 @@ import type { ChatHistoryItem } from "@dadigua/hyperchat-shared/types";
 import { AgentManager } from "./agentManager.mjs";
 import { AgentInstance } from "../agent/agentInstance.mjs";
 import { Logger } from "../log.mjs";
+import { WorkspaceMCPManager } from "../agent/mcp/manager.mjs";
 
 /**
  * 工作区状态枚举
@@ -35,6 +36,7 @@ export enum WorkspaceState {
 export class Workspace {
   private config: WorkspaceConfig;
   private agentManager: AgentManager;
+  private mcpManager?: WorkspaceMCPManager;
   private fileTree?: WorkspaceFileNode;
   private lastSync?: number;
   private readonly HYPERCHAT_DIR = CONSTANTS.HYPERCHAT_DIR;
@@ -52,19 +54,9 @@ export class Workspace {
       settings: {},
     };
 
-    // 创建Agent管理器 - 使用路径数组
-    // 如果是本地工作区，传入全局路径和本地路径（本地覆盖全局）
-    // 如果是全局工作区，只传入本地路径
-    const agentLocalPath = path.join(hyperChatPath, CONSTANTS.DIRECTORIES.AGENTS);
-    const agentPaths = this.isLocalWorkspace()
-      ? [
-          path.join(CONSTANTS.GLOBAL_PATH, this.HYPERCHAT_DIR, CONSTANTS.DIRECTORIES.AGENTS), // 全局路径
-          agentLocalPath // 本地路径（覆盖全局同名Agent）
-        ]
-      : [agentLocalPath]; // 仅本地路径
-
-    this.agentManager = new AgentManager(agentPaths);
-
+    // 简化：每个工作区只管理自己的Agent目录
+    const agentPath = path.join(hyperChatPath, CONSTANTS.DIRECTORIES.AGENTS);
+    this.agentManager = new AgentManager([agentPath]);
   }
 
   /**
@@ -99,21 +91,19 @@ export class Workspace {
   }
 
   /**
-   * 检查是否为本地工作区（有 .hyperchat 目录）
+   * 检查工作区是否存在（有 .hyperchat 目录）
    */
-  isLocalWorkspace(): boolean {
-    return this.isWorkspaceDirectory(this.workspacePath) && this.workspacePath !== CONSTANTS.GLOBAL_PATH;
+  exists(): boolean {
+    return this.isWorkspaceDirectory(this.workspacePath);
   }
 
   /**
-   * 🚀 第一阶段：快速初始化配置和基本结构
+   * 🚀 初始化工作区（简化版）
    * 
-   * 这个阶段只做轻量级操作：
-   * - 创建目录结构
-   * - 加载基本配置  
-   * - 初始化管理器（包括 Agent 管理器，扫描文件较快）
-   * 
-   * @param currentWorkingDirectory 当前工作目录，如果不传则默认为工作区路径
+   * 简化后的逻辑：
+   * - 确保工作区目录存在，如果不存在则创建
+   * - 加载工作区配置
+   * - 初始化Agent管理器
    */
   async initialize(): Promise<void> {
     if (this.state !== WorkspaceState.UNINITIALIZED) {
@@ -122,26 +112,27 @@ export class Workspace {
     }
 
     try {
-      Logger.info('🚀 开始工作区快速初始化...');
+      Logger.info('🚀 开始工作区初始化...', { workspacePath: this.workspacePath });
 
-      // 不创建目录结构，采用懒加载模式：只有需要时才创建
-      // await this.createDirectories();
+      // 确保工作区目录结构存在
+      await this.ensureDirectories();
 
+      // 加载工作区配置
+      await this.loadConfig();
 
-      // 加载工作区基本配置（不启动服务）
-      await this.loadMergedConfig();
-
-      // 初始化 Agent 管理器（扫描加载 Agent 配置，但不创建目录）
+      // 初始化 Agent 管理器
       await this.agentManager.init();
 
-      // 不保存配置，采用懒加载模式：只有用户修改时才保存
-      // await this.saveConfig();
+      // 初始化 MCP 管理器
+      await this.initializeMcpManager();
 
-      this.state = WorkspaceState.INITIALIZED;
-      Logger.info('✅ 工作区配置初始化完成', {
+      // 启动所有Agent的MCP客户端
+      await this.startAllAgentMcpClients();
+
+      this.state = WorkspaceState.STARTED; // 简化：直接设置为已启动状态
+      Logger.info('✅ 工作区初始化完成', {
         workspacePath: this.workspacePath,
-        isGlobal: this.isGlobal(),
-        isLocal: this.isLocalWorkspace()
+        isGlobal: this.isGlobal()
       });
 
     } catch (error) {
@@ -152,42 +143,10 @@ export class Workspace {
   }
 
   /**
-   * 🔥 第二阶段：启动所有服务
-   * 
-   * 这个阶段做重量级操作：
-   * - 启动 MCP 客户端（网络连接，耗时）
-   * - 启动任务调度器
-   */
-  async start(): Promise<void> {
-    if (this.state === WorkspaceState.STARTED) {
-      Logger.warn('工作区服务已启动');
-      return;
-    }
-
-    if (this.state !== WorkspaceState.INITIALIZED) {
-      throw new Error(`工作区状态错误: ${this.state}，请先调用 initialize()`);
-    }
-
-    try {
-      Logger.info('🔥 开始启动工作区服务...');
-
-      this.state = WorkspaceState.STARTED;
-      Logger.info('✅ 工作区服务启动完成');
-
-    } catch (error) {
-      Logger.error('❌ 工作区服务启动失败:', error);
-      throw error;
-    }
-  }
-
-  /**
-   * 🔧 完整初始化（向后兼容）
-   * 
-   * @deprecated 建议使用 initialize() + start() 的两阶段方式
+   * 完整初始化（向后兼容）
    */
   async init(): Promise<void> {
     await this.initialize();
-    await this.start();
   }
 
   /**
@@ -202,6 +161,14 @@ export class Workspace {
     try {
       this.state = WorkspaceState.STOPPING;
       Logger.info('🛑 开始停止工作区服务...');
+
+      // 停止所有Agent的MCP客户端
+      await this.stopAllAgentMcpClients();
+
+      // 停止工作区级别的MCP客户端
+      if (this.mcpManager) {
+        await this.mcpManager.stopClients();
+      }
 
       // 保存当前状态
       await this.save();
@@ -241,13 +208,37 @@ export class Workspace {
 
 
   /**
-   * 从settings.jsonc加载工作区元数据
+   * 加载工作区配置（简化版）
    */
-  private async loadMergedConfig(): Promise<void> {
+  private async loadConfig(): Promise<void> {
     // 简化配置加载，使用默认配置
     this.config.settings = {
       defaultAgent: undefined,
     };
+  }
+
+  /**
+   * 确保工作区目录结构存在
+   */
+  private async ensureDirectories(): Promise<void> {
+    const hyperChatPath = this.getHyperChatPath();
+    
+    // 确保 .hyperchat 目录存在
+    if (!fs.existsSync(hyperChatPath)) {
+      fs.mkdirSync(hyperChatPath, { recursive: true });
+    }
+
+    // 确保 agents 目录存在
+    const agentsPath = path.join(hyperChatPath, CONSTANTS.DIRECTORIES.AGENTS);
+    if (!fs.existsSync(agentsPath)) {
+      fs.mkdirSync(agentsPath, { recursive: true });
+    }
+
+    // 确保其他必要目录存在
+    const tasksPath = path.join(hyperChatPath, 'tasks');
+    if (!fs.existsSync(tasksPath)) {
+      fs.mkdirSync(tasksPath, { recursive: true });
+    }
   }
 
   /**
@@ -271,31 +262,10 @@ export class Workspace {
   // ========== Agent 管理 ==========
 
   /**
-   * 获取所有 agents（支持全局+工作区合并）
+   * 获取工作区的所有 agents（简化版）
    */
   async getAgents(): Promise<AgentConfig[]> {
-    // 如果是本地工作区，需要合并全局 agents
-    if (this.isLocalWorkspace()) {
-      // 如果是工作区且不是全局工作区，获取合并的Agents
-      return await this.getMergedAgents();
-    } else {
-      // 如果不是工作区或者是全局工作区，直接返回当前AgentManager的Agents
-      return await this.agentManager.getAllAgents();
-    }
-  }
-
-  /**
-   * 获取合并的 agents（全局 + 当前工作区）
-   * 
-   * @deprecated 新的 AgentManager 已经内置了全局+工作区合并功能，直接使用 getAgents() 即可
-   */
-  async getMergedAgents(): Promise<AgentConfig[]> {
-    // 新的 AgentManager 已经在初始化时自动合并了全局和工作区的 Agents
-    // 直接返回当前管理器的所有 Agents 即可
-    const allAgents = await this.agentManager.getAllAgents();
-
-    // 返回所有Agent配置
-    return allAgents;
+    return await this.agentManager.getAllAgents();
   }
 
   /**
@@ -601,13 +571,92 @@ export class Workspace {
     }
   }
 
+
+
   /**
-   * 检查工作区是否存在
+   * 初始化工作区级别的MCP管理器
    */
-  exists(): boolean {
-    return fs.existsSync(this.getHyperChatPath());
+  private async initializeMcpManager(): Promise<void> {
+    try {
+      const hyperChatPath = this.getHyperChatPath();
+      const globalPath = CONSTANTS.GLOBAL_PATH;
+      
+      // 创建MCP管理器
+      this.mcpManager = new WorkspaceMCPManager(hyperChatPath);
+      
+      // 启动工作区级别的MCP客户端
+      await this.mcpManager.startClients();
+      
+      Logger.info(`✅ 工作区MCP管理器初始化完成`);
+    } catch (error) {
+      Logger.error("❌ 初始化工作区MCP管理器失败:", error);
+      // 不抛出错误，让工作区初始化继续
+    }
   }
 
+  /**
+   * 获取工作区级别的MCP客户端
+   */
+  getMcpClients(): any[] {
+    if (!this.mcpManager) {
+      return [];
+    }
+    return this.mcpManager.getAllClients().map(client => client.toJSON());
+  }
+
+  /**
+   * 获取工作区的MCP管理器
+   */
+  getMcpManager(): WorkspaceMCPManager | undefined {
+    return this.mcpManager;
+  }
+
+  /**
+   * 启动所有Agent的MCP客户端
+   */
+  private async startAllAgentMcpClients(): Promise<void> {
+    try {
+      const agents = await this.getAllAgents();
+      
+      for (const agentConfig of agents) {
+        const agentInstance = this.getAgentInstance(agentConfig.name);
+        if (agentInstance) {
+          try {
+            await agentInstance.startMCPClients();
+            Logger.info(`✅ 启动Agent "${agentConfig.name}" 的MCP客户端`);
+          } catch (error) {
+            Logger.warn(`⚠️ 启动Agent "${agentConfig.name}" 的MCP客户端失败:`, error);
+          }
+        }
+      }
+    } catch (error) {
+      Logger.error("❌ 启动所有Agent的MCP客户端失败:", error);
+      // 不抛出错误，让工作区初始化继续
+    }
+  }
+
+  /**
+   * 停止所有Agent的MCP客户端
+   */
+  private async stopAllAgentMcpClients(): Promise<void> {
+    try {
+      const agents = await this.getAllAgents();
+      
+      for (const agentConfig of agents) {
+        const agentInstance = this.getAgentInstance(agentConfig.name);
+        if (agentInstance) {
+          try {
+            await agentInstance.stopMCPClients();
+            Logger.info(`✅ 停止Agent "${agentConfig.name}" 的MCP客户端`);
+          } catch (error) {
+            Logger.warn(`⚠️ 停止Agent "${agentConfig.name}" 的MCP客户端失败:`, error);
+          }
+        }
+      }
+    } catch (error) {
+      Logger.error("❌ 停止所有Agent的MCP客户端失败:", error);
+    }
+  }
 
   /**
    * 获取工作区信息摘要
