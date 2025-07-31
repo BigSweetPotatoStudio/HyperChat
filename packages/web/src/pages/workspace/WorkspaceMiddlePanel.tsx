@@ -97,8 +97,7 @@ export const WorkspaceMiddlePanel: React.FC<WorkspaceMiddlePanelProps> = ({
                       mcpClients: mcpClients.reduce((acc, client) => {
                         acc[client.serverName] = client;
                         return acc;
-                      }, {} as Record<string, IMCPClient>),
-                      tasks: []
+                      }, {} as Record<string, IMCPClient>)
                     }}
                     key={tab.key}
                     mcpClients={mcpClients}
