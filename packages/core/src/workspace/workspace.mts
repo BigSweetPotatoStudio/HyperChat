@@ -3,10 +3,8 @@ import * as fs from "fs";
 import { CONSTANTS } from "../agent/constants.mjs";
 import {
   WorkspaceConfig,
-  WorkspaceSettings,
   WorkspaceFileNode,
-  AgentConfig,
-  validateWorkspaceConfig
+  AgentConfig
 } from "./types.mjs";
 import type { ChatHistoryItem } from "@dadigua/hyperchat-shared/types";
 import { AgentManager } from "./agentManager.mjs";
@@ -44,7 +42,6 @@ export class Workspace {
   // 工作区状态管理
   private state: WorkspaceState = WorkspaceState.UNINITIALIZED;
 
-
   constructor(public workspacePath: string) {
     const hyperChatPath = path.join(this.workspacePath, this.HYPERCHAT_DIR);
 
@@ -59,13 +56,7 @@ export class Workspace {
     this.agentManager = new AgentManager([agentPath]);
   }
 
-  /**
-   * 检查指定路径是否为工作区（是否包含 .hyperchat 文件夹）
-   */
-  private isWorkspaceDirectory(directoryPath: string): boolean {
-    const hyperChatPath = path.join(directoryPath, this.HYPERCHAT_DIR);
-    return fs.existsSync(hyperChatPath) && fs.statSync(hyperChatPath).isDirectory();
-  }
+  // ========== 基础属性和状态管理 ==========
 
   /**
    * 获取工作区配置
@@ -74,14 +65,12 @@ export class Workspace {
     return this.config;
   }
 
-
   /**
    * 获取 .hyperchat 目录路径
    */
   getHyperChatPath(): string {
     return path.join(this.workspacePath, this.HYPERCHAT_DIR);
   }
-
 
   /**
    * 检查是否是全局工作区
@@ -94,16 +83,35 @@ export class Workspace {
    * 检查工作区是否存在（有 .hyperchat 目录）
    */
   exists(): boolean {
-    return this.isWorkspaceDirectory(this.workspacePath);
+    const hyperChatPath = path.join(this.workspacePath, this.HYPERCHAT_DIR);
+    return fs.existsSync(hyperChatPath) && fs.statSync(hyperChatPath).isDirectory();
   }
 
   /**
-   * 🚀 初始化工作区（简化版）
-   * 
-   * 简化后的逻辑：
-   * - 确保工作区目录存在，如果不存在则创建
-   * - 加载工作区配置
-   * - 初始化Agent管理器
+   * 获取工作区当前状态
+   */
+  getState(): WorkspaceState {
+    return this.state;
+  }
+
+  /**
+   * 检查工作区是否已初始化（配置已加载）
+   */
+  isInitialized(): boolean {
+    return this.state !== WorkspaceState.UNINITIALIZED;
+  }
+
+  /**
+   * 检查工作区是否已启动（服务已运行）
+   */
+  isStarted(): boolean {
+    return this.state === WorkspaceState.STARTED;
+  }
+
+  // ========== 生命周期管理 ==========
+
+  /**
+   * 🚀 第一阶段：快速初始化（仅加载配置和基础组件）
    */
   async initialize(): Promise<void> {
     if (this.state !== WorkspaceState.UNINITIALIZED) {
@@ -112,7 +120,7 @@ export class Workspace {
     }
 
     try {
-      Logger.info('🚀 开始工作区初始化...', { workspacePath: this.workspacePath });
+      Logger.info('🚀 开始工作区初始化（第一阶段）...', { workspacePath: this.workspacePath });
 
       // 确保工作区目录结构存在
       await this.ensureDirectories();
@@ -120,17 +128,11 @@ export class Workspace {
       // 加载工作区配置
       await this.loadConfig();
 
-      // 初始化 Agent 管理器
+      // 初始化 Agent 管理器（不启动MCP）
       await this.agentManager.init();
 
-      // 初始化 MCP 管理器
-      await this.initializeMcpManager();
-
-      // 启动所有Agent的MCP客户端
-      await this.startAllAgentMcpClients();
-
-      this.state = WorkspaceState.STARTED; // 简化：直接设置为已启动状态
-      Logger.info('✅ 工作区初始化完成', {
+      this.state = WorkspaceState.INITIALIZED;
+      Logger.info('✅ 工作区初始化完成（第一阶段）', {
         workspacePath: this.workspacePath,
         isGlobal: this.isGlobal()
       });
@@ -143,10 +145,45 @@ export class Workspace {
   }
 
   /**
-   * 完整初始化（向后兼容）
+   * 🔥 第二阶段：启动重量级服务（MCP、任务调度等）
    */
-  async init(): Promise<void> {
+  async start(): Promise<void> {
+    if (this.state === WorkspaceState.STARTED) {
+      Logger.warn('工作区服务已启动');
+      return;
+    }
+
+    if (this.state !== WorkspaceState.INITIALIZED) {
+      throw new Error('工作区必须先初始化后才能启动服务');
+    }
+
+    try {
+      Logger.info('🔥 开始启动工作区服务（第二阶段）...');
+
+      // 初始化 MCP 管理器
+      await this.initializeMcpManager();
+
+      // 启动所有Agent的MCP客户端
+      await this.startAllAgentMcpClients();
+
+      this.state = WorkspaceState.STARTED;
+      Logger.info('✅ 工作区服务启动完成', {
+        workspacePath: this.workspacePath
+      });
+
+    } catch (error) {
+      Logger.error('❌ 工作区服务启动失败:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * 完整初始化（向后兼容）
+   * @deprecated 建议使用 initialize() + start() 两阶段方式
+   */
+  async init(): Promise<void> {  
     await this.initialize();
+    await this.start();
   }
 
   /**
@@ -183,29 +220,7 @@ export class Workspace {
     }
   }
 
-  /**
-   * 获取工作区当前状态
-   */
-  getState(): WorkspaceState {
-    return this.state;
-  }
-
-  /**
-   * 检查工作区是否已初始化（配置已加载）
-   */
-  isInitialized(): boolean {
-    return this.state !== WorkspaceState.UNINITIALIZED;
-  }
-
-  /**
-   * 检查工作区是否已启动（服务已运行）
-   */
-  isStarted(): boolean {
-    return this.state === WorkspaceState.STARTED;
-  }
-
-
-
+  // ========== 配置管理 ==========
 
   /**
    * 加载工作区配置（简化版）
@@ -250,7 +265,6 @@ export class Workspace {
     Logger.info("工作区配置保存已简化，使用envManage进行环境变量管理");
   }
 
-
   /**
    * 保存所有数据
    */
@@ -262,7 +276,7 @@ export class Workspace {
   // ========== Agent 管理 ==========
 
   /**
-   * 获取所有 agents (别名，为了兼容性)
+   * 获取所有 agents
    */
   async getAllAgents(): Promise<(AgentConfig & { scope?: "global" | "workspace" })[]> {
     return await this.agentManager.getAllAgents();
@@ -310,38 +324,30 @@ export class Workspace {
       throw new Error(`Agent 不存在: ${agentName}`);
     }
 
-    // 如果名称发生变更，需要更新 AgentManager 的映射关系
+    // 获取当前名称用于映射更新
     const oldName = agentInstance.getConfig().name;
     const newName = updates.name;
 
-    try {
-      // 先更新 agent 实例配置（包括文件夹重命名）
-      const result = await agentInstance.updateConfig(updates);
+    // 更新 agent 实例配置
+    const result = await agentInstance.updateConfig(updates);
 
-      // 如果名称发生变更且更新成功，需要更新 AgentManager 的内部映射
-      if (result && newName && newName !== oldName) {
-        await this.agentManager.updateAgentMapping(oldName, newName);
-      }
-
-      return result;
-    } catch (error) {
-      console.error(`Failed to update agent ${agentName}:`, error);
-      throw error;
+    // 如果名称发生变更且更新成功，更新 AgentManager 映射
+    if (result && newName && newName !== oldName) {
+      await this.agentManager.updateAgentMapping(oldName, newName);
     }
+
+    return result;
   }
 
   /**
    * 创建或更新 agent
    */
   async setAgent(agent: Partial<AgentConfig>): Promise<boolean> {
-    if (agent.name) {
+    if (agent.name && this.agentManager.getAgent(agent.name)) {
       // 更新现有 agent
-      const instance = this.agentManager.getAgent(agent.name);
-      if (instance) {
-        return await this.updateAgent(agent.name, agent);
-      }
+      return await this.updateAgent(agent.name, agent);
     }
-
+    
     // 创建新 agent
     const newAgent = await this.agentManager.createAgent(agent);
     return newAgent !== null;
@@ -362,7 +368,7 @@ export class Workspace {
   }
 
   /**
-   * 获取 Agent 的聊天记录（通过名称或路径）
+   * 获取 Agent 的聊天记录
    */
   async getAgentChatLogs(nameOrPath: string): Promise<ChatHistoryItem[]> {
     const instance = this.agentManager.getAgent(nameOrPath);
@@ -370,43 +376,31 @@ export class Workspace {
   }
 
   /**
-   * 添加 Agent 聊天记录（通过名称或路径）
+   * 添加 Agent 聊天记录
    */
   async addAgentChatLog(nameOrPath: string, chatLog: ChatHistoryItem): Promise<boolean> {
     const instance = this.agentManager.getAgent(nameOrPath);
-    if (!instance) {
-      return false;
-    }
-
-    return await instance.setChatLog(chatLog);
+    return instance ? await instance.setChatLog(chatLog) : false;
   }
 
   /**
-   * 删除 Agent 聊天记录（支持 scope 参数，允许修改全局 Agent）
+   * 删除 Agent 聊天记录
    */
   async deleteAgentChatLog(agentName: string, chatKey: string): Promise<boolean> {
     const instance = this.agentManager.getAgent(agentName);
-    if (!instance) {
-      return false;
-    }
-
-    return await instance.deleteChatLog(chatKey);
+    return instance ? await instance.deleteChatLog(chatKey) : false;
   }
 
   /**
-   * 清空 Agent 所有聊天记录（支持 scope 参数，允许修改全局 Agent）
+   * 清空 Agent 所有聊天记录
    */
   async clearAgentChatLogs(agentName: string): Promise<boolean> {
     const instance = this.agentManager.getAgent(agentName);
-    if (!instance) {
-      return false;
-    }
-
-    return await instance.clearChatLogs();
+    return instance ? await instance.clearChatLogs() : false;
   }
 
   /**
-   * 获取 Agent 聊天记录数量（支持 scope 参数，默认智能查找）
+   * 获取 Agent 聊天记录数量
    */
   async getAgentChatLogsCount(agentName: string): Promise<number> {
     const instance = this.agentManager.getAgent(agentName);
@@ -414,7 +408,7 @@ export class Workspace {
   }
 
   /**
-   * 获取 Agent 摘要信息（支持 scope 参数，默认智能查找）
+   * 获取 Agent 摘要信息
    */
   async getAgentSummary(agentName: string): Promise<{
     config: AgentConfig;
@@ -445,9 +439,6 @@ export class Workspace {
     const content = fs.readFileSync(memoryFilePath, 'utf8');
     return { content, filePath: memoryFilePath };
   }
-
-
-
 
   // ========== 文件树管理 ==========
 
@@ -546,25 +537,7 @@ export class Workspace {
     return await scanDirectory(targetPath);
   }
 
-  // ========== 工具方法 ==========
-
-  /**
-   * 删除整个工作区
-   */
-  async delete(): Promise<boolean> {
-    try {
-      const hyperChatPath = this.getHyperChatPath();
-      if (fs.existsSync(hyperChatPath)) {
-        await fs.promises.rm(hyperChatPath, { recursive: true, force: true });
-      }
-      return true;
-    } catch (error) {
-      console.warn(`删除工作区失败:`, error);
-      return false;
-    }
-  }
-
-
+  // ========== MCP 管理 ==========
 
   /**
    * 初始化工作区级别的MCP管理器
@@ -572,7 +545,6 @@ export class Workspace {
   private async initializeMcpManager(): Promise<void> {
     try {
       const hyperChatPath = this.getHyperChatPath();
-      const globalPath = CONSTANTS.GLOBAL_PATH;
       
       // 创建MCP管理器
       this.mcpManager = new WorkspaceMCPManager(hyperChatPath);
@@ -651,6 +623,24 @@ export class Workspace {
     }
   }
 
+  // ========== 工具方法 ==========
+
+  /**
+   * 删除整个工作区
+   */
+  async delete(): Promise<boolean> {
+    try {
+      const hyperChatPath = this.getHyperChatPath();
+      if (fs.existsSync(hyperChatPath)) {
+        await fs.promises.rm(hyperChatPath, { recursive: true, force: true });
+      }
+      return true;
+    } catch (error) {
+      console.warn(`删除工作区失败:`, error);
+      return false;
+    }
+  }
+
   /**
    * 获取工作区信息摘要
    */
@@ -663,5 +653,4 @@ export class Workspace {
       lastSync: this.lastSync,
     };
   }
-
 }
