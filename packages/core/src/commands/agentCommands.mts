@@ -64,7 +64,7 @@ export const agentCommands = {
       return [];
     }
     
-    return await workspace.getAgents();
+    return await workspace.getAllAgents();
   },
 
   /**

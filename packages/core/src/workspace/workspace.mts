@@ -262,13 +262,6 @@ export class Workspace {
   // ========== Agent 管理 ==========
 
   /**
-   * 获取工作区的所有 agents（简化版）
-   */
-  async getAgents(): Promise<AgentConfig[]> {
-    return await this.agentManager.getAllAgents();
-  }
-
-  /**
    * 获取所有 agents (别名，为了兼容性)
    */
   async getAllAgents(): Promise<(AgentConfig & { scope?: "global" | "workspace" })[]> {
