@@ -64,7 +64,7 @@ export class AgentMCPManager {
   async startClients(): Promise<WorkspaceMCPClientImpl[]> {
     try {
       // 加载Agent的MCP配置
-      await this.loadAgentConfig();
+      await this.loadAgentMCPConfig();
 
       const clients: WorkspaceMCPClientImpl[] = [];
       const tasks: Promise<void>[] = [];
@@ -260,7 +260,7 @@ export class AgentMCPManager {
    * 优先级: 工作区 < Agent专属 (高优先级覆盖低优先级)
    * 注意: 不再加载全局配置，Agent完全自包含
    */
-  async loadAgentConfig(): Promise<AgentMCPConfig> {
+  async loadAgentMCPConfig(): Promise<AgentMCPConfig> {
     try {
       const mergedServers: Record<string, AgentMCPServerConfig> = {};
 
@@ -376,7 +376,7 @@ export class AgentMCPManager {
    * 设置服务器配置
    */
   async setServerConfig(name: string, serverConfig: MCPServerConfig): Promise<void> {
-    await this.loadAgentConfig();
+    await this.loadAgentMCPConfig();
 
     if (!this.agentConfig) {
       this.agentConfig = {
@@ -407,7 +407,7 @@ export class AgentMCPManager {
    * 删除服务器配置
    */
   async deleteServerConfig(name: string): Promise<void> {
-    await this.loadAgentConfig();
+    await this.loadAgentMCPConfig();
 
     if (this.agentConfig && this.agentConfig.mcpServers[name]) {
       delete this.agentConfig.mcpServers[name];
