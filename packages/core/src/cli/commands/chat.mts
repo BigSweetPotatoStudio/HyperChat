@@ -6,25 +6,18 @@
 
 import process from 'process';
 import * as path from 'path';
-import * as fs from 'fs';
 import chalk from 'chalk';
 import { Logger } from '../utils/logger.mjs';
-import { Logger as LoggerClass } from '../../log.mjs';
 import { Command } from '../../command.mjs';
 import { AiChannel } from '../../ai/ai.mjs';
 import type { MyMessage } from '@dadigua/hyperchat-shared/types';
 import { createReadline } from '../utils/readline.mjs';
 import { AgentInstance } from '../../workspace/index.mjs';
 import {
-  initializeAIEnvironment,
-  createAIChannel,
-  // addSystemMessage,
-  logAIConfig
+  createAIChannel
 } from '../../utils/aiConfigHelper.mjs';
 import {
-  findAgent,
-  DEFAULT_AGENT_NAME,
-  type DiscoveredAgent
+  DEFAULT_AGENT_NAME
 } from '../utils/agentDiscovery.mjs';
 import { findOrCreateDefaultAgent } from '../utils/createDefaultAgent.mjs';
 import { getAgent } from '../agentManager.mjs';
@@ -33,7 +26,10 @@ import { t } from '../../i18n.mjs';
 import { getMyUuid } from '../utils/util.mjs';
 import { CONST } from '../../const.mjs';
 import type { Logger as CLILogger } from '../utils/logger.mjs';
+import { TaskQueue } from '../../utils/taskQueue.mjs';
 
+// 创建聊天日志保存队列，确保按顺序写入，避免YAML文件并发问题
+const chatLogQueue = new TaskQueue({ concurrency: 1 });
 
 /**
  * 选择Agent（Agent-centered架构 - 使用CliAgentManager）
@@ -240,22 +236,20 @@ class StreamChatHandler {
   }
 
   async handleUpdate(aiChannel: AiChannel, env: any, chatKey: string) {
-    // 保存聊天历史
+    // 保存聊天历史（使用队列确保顺序写入）
     try {
       if (env.agent) {
-        const saveAction = env.agent.setChatLog({
-          key: chatKey,
-          label: getLabelByFirstUserContent(aiChannel.messages),
-          messages: aiChannel.messages,
-          agentName: env.agent.getConfig().name || 'default',
-          dateTime: Date.now(),
-          chatType: "user",
-          configOverrides: env.effectiveConfig,
+        chatLogQueue.add(async () => {
+          await env.agent.setChatLog({
+            key: chatKey,
+            label: getLabelByFirstUserContent(aiChannel.messages),
+            messages: aiChannel.messages,
+            agentName: env.agent.getConfig().name || 'default',
+            dateTime: Date.now(),
+            chatType: "user",
+            configOverrides: env.effectiveConfig,
+          });
         });
-        // 非交互式模式使用await，交互式模式不await
-        if (!this.isInteractive) {
-          await saveAction;
-        }
       }
     } catch (error) {
       // 静默处理聊天历史保存错误

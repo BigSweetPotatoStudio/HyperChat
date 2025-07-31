@@ -1,5 +1,9 @@
 import { AgentConfig, ChatHistoryItem } from "@dadigua/hyperchat-shared";
 import { getWorkspaceManager, AgentInstance } from "../workspace/index.mjs";
+import { TaskQueue } from "../utils/taskQueue.mjs";
+
+// 创建聊天日志保存队列，确保按顺序写入，避免YAML文件并发问题
+const chatLogQueue = new TaskQueue({ concurrency: 1 });
 
 /**
  * Agent 管理相关命令
@@ -364,7 +368,9 @@ export const agentCommands = {
       chatLog.agentName = agentName;
       chatLog.dateTime = Date.now();
 
-      return await agentInstance.setChatLog(chatLog);
+      return await chatLogQueue.add(async () => {
+        return await agentInstance.setChatLog(chatLog);
+      });
     } catch (error) {
       console.error(`Failed to save chat log for agent ${agentName}:`, error);
       throw error;

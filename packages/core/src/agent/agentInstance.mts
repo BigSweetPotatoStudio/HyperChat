@@ -14,6 +14,7 @@ import type { Task } from "@dadigua/hyperchat-shared";
 import type { WorkspaceMCPConfig } from "./mcp/types.mjs";
 import { AgentMCPManager } from "./agentMCPManager.mjs";
 import { AgentTaskScheduler } from "./agentTaskScheduler.mjs";
+import { TaskQueue } from "../utils/taskQueue.mjs";
 
 /**
  * Agent 类 - 管理单个 Agent 的配置和聊天记录
@@ -28,6 +29,9 @@ export class AgentInstance {
   private initialized: boolean = false;
   private mcpManager: AgentMCPManager | null = null; // Agent专属MCP管理器
   private taskScheduler: AgentTaskScheduler | null = null; // Agent专属任务调度器
+  
+  // 创建聊天日志保存队列，确保按顺序写入，避免YAML文件并发问题
+  private static chatLogQueue = new TaskQueue({ concurrency: 1 });
 
   constructor(agentPath: string, config?: AgentConfig) {
     this.agentPath = agentPath;
@@ -243,7 +247,11 @@ export class AgentInstance {
     await this.ensureInitialized();
     // 确保聊天记录与当前Agent关联
     chatLog.agentName = this.config.name;
-    return await this.chatLogs!.set(chatLog);
+    
+    // 使用TaskQueue确保顺序写入，避免YAML文件并发问题
+    return await AgentInstance.chatLogQueue.add(async () => {
+      return await this.chatLogs!.set(chatLog);
+    });
   }
 
   /**

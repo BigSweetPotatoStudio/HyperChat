@@ -28,7 +28,11 @@ import { t } from '../../i18n.mjs';
 import ChatUI from '../ui/ChatUI.js';
 import type { MyMessage, HyperToolCall } from '@dadigua/hyperchat-shared/types';
 import { getMyUuid } from '../utils/util.mjs';
+import { TaskQueue } from '../../utils/taskQueue.mjs';
 import { CONST } from '../../const.mjs';
+
+// 创建聊天日志保存队列，确保按顺序写入，避免YAML文件并发问题
+const chatLogQueue = new TaskQueue({ concurrency: 1 });
 
 /**
  * 选择Agent（Agent-centered架构 - 使用CliAgentManager）
@@ -330,16 +334,18 @@ export async function startChatInk(initialMessage?: string, options: ChatOptions
             }
 
 
-            // 每次更新时保存聊天历史（学习Web版模式）
+            // 每次更新时保存聊天历史（使用队列确保顺序写入）
             try {
-              await agent.setChatLog({
-                key: chatKey,
-                label: getLabelByFirstUserContent(aiChannel.messages),
-                messages: aiChannel.messages,
-                agentName: agent.getConfig().name,
-                dateTime: Date.now(),
-                chatType: "user",
-                configOverrides: effectiveConfig,
+              chatLogQueue.add(async () => {
+                await agent.setChatLog({
+                  key: chatKey,
+                  label: getLabelByFirstUserContent(aiChannel.messages),
+                  messages: aiChannel.messages,
+                  agentName: agent.getConfig().name,
+                  dateTime: Date.now(),
+                  chatType: "user",
+                  configOverrides: effectiveConfig,
+                });
               });
             } catch (error) {
               // 静默处理聊天历史保存错误，不影响主要聊天流程
