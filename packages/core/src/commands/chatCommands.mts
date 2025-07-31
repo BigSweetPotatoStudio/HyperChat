@@ -17,10 +17,11 @@ import { EventEmitter } from "events";
 import { v4 as uuidv4 } from 'uuid';
 import { z, ZodSchema } from "zod";
 import { buildEffectiveConfig } from "../utils/aiConfigHelper.mjs";
+import { TaskQueue } from "../utils/taskQueue.mjs";
 
 // 全局工具确认事件发射器
 const toolConfirmEmitter = new EventEmitter();
-
+const queue = new TaskQueue({ concurrency: 1 });
 /**
  * 聊天完成请求参数
  */
@@ -117,15 +118,18 @@ export async function streamChatCompletion(params: ChatCompletionRequest): Promi
         userMessage: userMessage, // 传递用户消息
         agentInstance: agent, // 直接传递AgentInstance对象
         onUpdate: async (_updateData?: any) => {
-          await agent.setChatLog({
-            key: chatKey,
-            label: getLabelByFirstUserContent(aiChannel.messages),
-            messages: aiChannel.messages,
-            agentName,
-            dateTime: Date.now(),
-            chatType: "user",
-            configOverrides: effectiveConfig,
-          });
+          queue.add(async () => {
+            await agent.setChatLog({
+              key: chatKey,
+              label: getLabelByFirstUserContent(aiChannel.messages),
+              messages: aiChannel.messages,
+              agentName,
+              dateTime: Date.now(),
+              chatType: "user",
+              configOverrides: effectiveConfig,
+            });
+          })
+
         },
       },
       {
@@ -331,7 +335,7 @@ export async function startAgent(agentPath: string, options?: {
   try {
     const webAgentManager = getWebAgentManager();
     const agent = await webAgentManager.startAgent(agentPath, options);
-    
+
     return {
       success: true,
       message: `Agent启动成功: ${agentPath}`,
@@ -366,7 +370,7 @@ export async function unloadAgent(agentPath: string): Promise<{ success: boolean
   try {
     const webAgentManager = getWebAgentManager();
     const success = await webAgentManager.removeAgent(agentPath);
-    
+
     return {
       success,
       message: success ? `Agent已卸载: ${agentPath}` : `Agent不存在: ${agentPath}`
@@ -387,7 +391,7 @@ export async function unloadAllAgents(): Promise<{ success: boolean; message: st
     const webAgentManager = getWebAgentManager();
     const count = webAgentManager.size();
     await webAgentManager.removeAllAgents();
-    
+
     return {
       success: true,
       message: `已卸载所有Agent`,
@@ -430,9 +434,9 @@ export async function discoverAndStartAgents(searchPath?: string, options?: {
   enableMCP?: boolean;
   enableTaskScheduler?: boolean;
   maxAgents?: number;
-}): Promise<{ 
-  success: boolean; 
-  message: string; 
+}): Promise<{
+  success: boolean;
+  message: string;
   startedCount: number;
   discoveredCount: number;
   agents: Array<{ name: string; path: string }>;
@@ -440,7 +444,7 @@ export async function discoverAndStartAgents(searchPath?: string, options?: {
   try {
     const webAgentManager = getWebAgentManager();
     const startedAgents = await webAgentManager.discoverAndStartAgents(searchPath, options);
-    
+
     return {
       success: true,
       message: `成功启动${startedAgents.length}个Agent`,

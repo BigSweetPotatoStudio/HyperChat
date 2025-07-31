@@ -650,11 +650,11 @@ export const MCPManagement = forwardRef<MCPManagementRef, MCPManagementProps>(({
                       <Space>
                         <span className="text-sm">{client.serverName}</span>
                         {/* Scope 标签 */}
-                        {(client as any).scope && (
+                        {/* {(client as any).scope && (
                           <Tag color={(client as any).scope === "global" ? "orange" : "purple"}>
                             {(client as any).scope === "global" ? t`Global` : t`Workspace`}
                           </Tag>
-                        )}
+                        )} */}
                         {client.mcpType === "builtin" ? (
                           <Tag color="blue">{t`Built-in`}</Tag>
                         ) : (

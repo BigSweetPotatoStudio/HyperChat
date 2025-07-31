@@ -256,20 +256,15 @@ export class AgentMCPManager {
   }
 
   /**
-   * 加载并合并层次化MCP配置
-   * 优先级: 全局 < 工作区 < Agent专属 (高优先级覆盖低优先级)
+   * 加载并合并Agent自包含的MCP配置
+   * 优先级: 工作区 < Agent专属 (高优先级覆盖低优先级)
+   * 注意: 不再加载全局配置，Agent完全自包含
    */
   async loadAgentConfig(): Promise<AgentMCPConfig> {
     try {
       const mergedServers: Record<string, AgentMCPServerConfig> = {};
 
-      // 1. 加载全局MCP配置
-      await this.loadConfigFromPath(
-        path.join(CONSTANTS.GLOBAL_HYPERCHAT_DIR_PATH, CONSTANTS.CONFIG_FILES.MCP),
-        "全局配置",
-        mergedServers
-      );
-
+      // 1. 加载工作区MCP配置 (如果存在)
       let workspacePath = deriveWorkspaceFromAgent(this.agentPath);
       if (workspacePath) {
         await this.loadConfigFromPath(
@@ -279,10 +274,7 @@ export class AgentMCPManager {
         );
       }
 
-
-
-
-      // 3. 加载Agent专属MCP配置 (最高优先级)
+      // 2. 加载Agent专属MCP配置 (最高优先级)
       await this.loadConfigFromPath(
         path.join(this.agentPath, CONSTANTS.CONFIG_FILES.MCP),
         "Agent配置",
@@ -297,7 +289,7 @@ export class AgentMCPManager {
         lastModified: Date.now(),
       };
 
-      Logger.info(`Agent ${path.basename(this.agentPath)} 合并MCP配置: ${Object.keys(mergedServers).length} 个服务器`);
+      Logger.info(`Agent ${path.basename(this.agentPath)} 合并MCP配置: ${Object.keys(mergedServers).length} 个服务器 (工作区+Agent专属)`);
       return this.agentConfig;
     } catch (error) {
       Logger.error(`加载Agent MCP配置失败:`, error);
