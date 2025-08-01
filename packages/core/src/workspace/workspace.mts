@@ -6,7 +6,7 @@ import {
   WorkspaceFileNode,
   AgentConfig
 } from "./types.mjs";
-import type { ChatHistoryItem } from "@dadigua/hyperchat-shared/types";
+import type { ChatHistoryItem, IMCPClient } from "@dadigua/hyperchat-shared/types";
 import { AgentManager } from "./agentManager.mjs";
 import { AgentInstance } from "../agent/agentInstance.mjs";
 import { Logger } from "../log.mjs";
@@ -370,6 +370,17 @@ export class Workspace {
   }
 
   /**
+   * 分页获取 Agent 的聊天记录
+   */
+  async getAgentChatLogsPage(nameOrPath: string, page: number = 0, pageSize: number = 10): Promise<{ items: ChatHistoryItem[]; total: number; hasMore: boolean }> {
+    const instance = this.agentManager.getAgent(nameOrPath);
+    if (!instance) {
+      return { items: [], total: 0, hasMore: false };
+    }
+    return await instance.getChatLogsPage(page * pageSize, pageSize);
+  }
+
+  /**
    * 添加 Agent 聊天记录
    */
   async addAgentChatLog(nameOrPath: string, chatLog: ChatHistoryItem): Promise<boolean> {
@@ -556,7 +567,7 @@ export class Workspace {
   /**
    * 获取工作区级别的MCP客户端
    */
-  getMcpClients(): any[] {
+  getMcpClients(): IMCPClient[] {
     if (!this.mcpManager) {
       return [];
     }

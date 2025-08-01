@@ -4,6 +4,7 @@ import { SSEServerTransport, StreamableHTTPServerTransport } from "./es6.mjs";
 import { Logger } from "./log.mjs";
 import { getAppSettingsManager } from "./data/appSettingsService.mjs";
 import type { MCPGateway } from "@dadigua/hyperchat-shared";
+import { createServer } from "./mcp/servers/gateway/index.mjs";
 const KEEP_ALIVE_INTERVAL_MS = 25000; // Send keep-alive every 25 seconds
 
 const transports = {
@@ -42,20 +43,40 @@ function register(route: Router, name: string, description: string, allowMCPs: s
     {
         // let server = await serve.createServer();
         // await server.connect(transport);
-        route.post(`/${name}/mcp`, async (req: Request, res: Response) => {
-            // 暂时禁用MCP网关功能
-            res.status(503).json({
-                jsonrpc: '2.0',
-                error: {
-                    code: -32000,
-                    message: 'MCP Gateway temporarily disabled',
-                },
-                id: null,
-            });
+        route.post(`/${name}/mcp`, async (req, res) => {
+            // console.log('Received MCP request:', req.body);
+            try {
+                const server = await createServer(name, description, allowMCPs);
+                const transport = new StreamableHTTPServerTransport({
+                    sessionIdGenerator: undefined,
+                });
+                res.on('close', () => {
+                    // console.log('Request closed');
+                    transport.close();
+                    server.close();
+                });
+                await server.connect(transport);
+                await transport.handleRequest(req, res, req.body);
+            } catch (error) {
+                console.error('Error handling MCP request:', error);
+                if (!res.headersSent) {
+                    res.status(500).json({
+                        jsonrpc: '2.0',
+                        error: {
+                            code: -32603,
+                            message: 'Internal server error',
+                        },
+                        id: null,
+                    });
+                }
+            }
+
+
+
         });
 
         // Reusable handler for GET and DELETE requests
-        const handleSessionRequest = async (_req: Request, res: Response) => {
+        const handleSessionRequest = async (_req: any, res: Response) => {
             res.writeHead(405).end(JSON.stringify({
                 jsonrpc: "2.0",
                 error: {
@@ -108,10 +129,10 @@ function getMCPGateways(): MCPGateway[] {
             Logger.warn('App settings manager not available, returning empty gateways list');
             return [];
         }
-        
+
         const settings = appSettingsManager.getSettings();
         const gateways = settings.mcpGateWays || [];
-        
+
         Logger.debug(`Retrieved ${gateways.length} MCP gateways from app settings`);
         return gateways;
     } catch (error) {
@@ -122,11 +143,11 @@ function getMCPGateways(): MCPGateway[] {
 
 export async function registers(prefix: string) {
     let route = Router();
-    
+
     // 从应用设置中获取 MCP 网关配置并注册路由
     const gateways = getMCPGateways();
     Logger.info(`Loading ${gateways.length} MCP gateways from app settings`);
-    
+
     gateways.forEach((gateway) => {
         // 提供默认值以避免 undefined
         register(
@@ -137,7 +158,7 @@ export async function registers(prefix: string) {
             prefix
         );
     });
-    
+
     return route;
 }
 

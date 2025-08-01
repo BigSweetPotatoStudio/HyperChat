@@ -227,25 +227,7 @@ export const mcpCommands = {
     return await client.callResource(uri);
   },
 
-  /**
-   * 获取指定工作区的 MCP 客户端资源内容 - 工作区级别
-   * @deprecated 建议直接使用mcpCallResource方法
-   */
-  async mcpCallResourceWithWorkspace({
-    workspacePath,
-    name,
-    uri
-  }: {
-    workspacePath: string;
-    name: string;
-    uri: string;
-  }) {
-    // Delegate to the updated mcpCallResource method
-    return await this.mcpCallResource({
-      name,
-      uri
-    });
-  },
+
 
   /**
    * 调用指定 MCP 客户端的提示模板 - 工作区级别
@@ -281,33 +263,10 @@ export const mcpCommands = {
   },
 
   /**
-   * 调用指定工作区的 MCP 客户端提示模板 - 工作区级别
-   * @deprecated 建议直接使用mcpCallPrompt方法
-   */
-  async mcpCallPromptWithWorkspace({
-    workspacePath,
-    name,
-    functionName,
-    args
-  }: {
-    workspacePath: string;
-    name: string;
-    functionName: string;
-    args: Record<string, unknown>;
-  }) {
-    // Delegate to the updated mcpCallPrompt method
-    return await this.mcpCallPrompt({
-      name,
-      functionName,
-      args
-    });
-  },
-
-  /**
    * 启动工作区 MCP 服务 - 工作区级别
    * 启动工作区级别的MCP客户端
    */
-  async startWorkspaceMcpClients(): Promise<Record<string, unknown>[]> {
+  async startWorkspaceMcpClients(): Promise<IMCPClient[]> {
     try {
       const workspace = workspaceManager.getCurrentWorkspace();
       const mcpManager = workspace.getMcpManager();
@@ -327,7 +286,7 @@ export const mcpCommands = {
    * 强制重新加载工作区MCP配置 - 工作区级别
    * 重新加载工作区级别的MCP客户端
    */
-  async forceReloadWorkspaceMcpClients(): Promise<Record<string, unknown>[]> {
+  async forceReloadWorkspaceMcpClients(): Promise<IMCPClient[]> {
     try {
       const workspace = workspaceManager.getCurrentWorkspace();
       const mcpManager = workspace.getMcpManager();
@@ -392,7 +351,7 @@ export const mcpCommands = {
    * 获取工作区 MCP 客户端 - 使用工作区级别的MCP管理器
    * 直接从工作区的MCP管理器获取客户端，不再从Agent聚合
    */
-  async getWorkspaceMcpClients(): Promise<Record<string, unknown>[]> {
+  async getWorkspaceMcpClients(): Promise<IMCPClient[]> {
     try {
       const workspace = workspaceManager.getCurrentWorkspace();
       if (!workspace) {

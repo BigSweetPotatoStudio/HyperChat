@@ -75,7 +75,9 @@ const AgentChatInterface: React.FC<AgentChatInterfaceProps> = ({
     try {
       setIsLoading(true);
       const response = await call('getAgentChatLogs', {
-        agentName: agentName
+        agentName: agentName,
+        page: 0,
+        pageSize: 100  // 聊天界面需要查找特定聊天记录，加载更多以确保找到
       });
 
       if (response && response.chatLogs) {

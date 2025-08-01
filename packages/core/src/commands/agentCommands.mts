@@ -205,15 +205,27 @@ export const agentCommands = {
   },
 
   /**
-   * 获取 Agent 的聊天记录
+   * 获取 Agent 的聊天记录（支持分页）
    * @param agentName Agent 名称
-   * @returns 聊天记录列表
+   * @param page 页码（从0开始）
+   * @param pageSize 每页数量，默认10条
+   * @returns 分页的聊天记录列表
    */
   async getAgentChatLogs({
-    agentName
+    agentName,
+    page = 0,
+    pageSize = 10
   }: {
     agentName: string;
-  }): Promise<{ chatLogs: ChatHistoryItem[] }> {
+    page?: number;
+    pageSize?: number;
+  }): Promise<{ 
+    chatLogs: ChatHistoryItem[];
+    total: number;
+    hasMore: boolean;
+    page: number;
+    pageSize: number;
+  }> {
     try {
       const workspaceManager = getWorkspaceManager();
       const workspace = workspaceManager.getCurrentWorkspace();
@@ -222,8 +234,14 @@ export const agentCommands = {
         throw new Error('当前没有可用的工作区');
       }
 
-      const chatLogs = await workspace.getAgentChatLogs(agentName);
-      return { chatLogs };
+      const result = await workspace.getAgentChatLogsPage(agentName, page, pageSize);
+      return {
+        chatLogs: result.items,
+        total: result.total,
+        hasMore: result.hasMore,
+        page,
+        pageSize
+      };
     } catch (error) {
       console.error(`Failed to get chat logs for agent ${agentName}:`, error);
       throw error;

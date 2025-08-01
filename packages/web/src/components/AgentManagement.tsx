@@ -18,12 +18,11 @@ import {
   Radio,
   InputNumber,
   Tooltip,
-  Popover,
   Slider,
   Row,
   Col,
-  Alert,
-  Divider,
+  Pagination,
+  Spin,
 } from "antd";
 import {
   PlusOutlined,
@@ -75,6 +74,12 @@ export const AgentManagement = forwardRef<AgentManagementRef, AgentManagementPro
   const [chatHistoryAgent, setChatHistoryAgent] = useState<Agent | null>(null);
   const [chatHistoryList, setChatHistoryList] = useState<ChatHistoryItem[]>([]);
   const [loadingChatHistory, setLoadingChatHistory] = useState(false);
+  // 分页状态
+  const [chatHistoryPagination, setChatHistoryPagination] = useState({
+    current: 1,
+    pageSize: 10,
+    total: 0,
+  });
   const [form] = Form.useForm();
   // Scope filters removed in Agent-centered architecture
   const refresh = useForceUpdate();
@@ -181,16 +186,16 @@ export const AgentManagement = forwardRef<AgentManagementRef, AgentManagementPro
   };
 
 
-  // 查看聊天历史
-  const viewChatHistory = async (agent: Agent) => {
+  // 加载聊天历史（支持分页）
+  const loadChatHistory = async (agent: Agent, page: number = 1, pageSize: number = 10) => {
     try {
       setLoadingChatHistory(true);
-      setChatHistoryAgent(agent);
-      setChatHistoryModal(true);
 
       // 获取Agent的聊天历史记录（Agent-centered架构，无需scope参数）
       const result = await call('getAgentChatLogs', {
-        agentName: agent.config.name
+        agentName: agent.config.name,
+        page: page - 1, // API使用0-based页码
+        pageSize: pageSize
       });
 
       // 按时间倒序排列聊天记录
@@ -199,13 +204,28 @@ export const AgentManagement = forwardRef<AgentManagementRef, AgentManagementPro
         const timeB = b.dateTime || 0;
         return timeB - timeA; // 倒序：最新的在前
       });
+      
       setChatHistoryList(sortedChatLogs);
+      setChatHistoryPagination({
+        current: page,
+        pageSize: pageSize,
+        total: result.total || 0,
+      });
     } catch (error) {
       console.error("Failed to load chat history:", error);
       message.error(t`Failed to load chat history`);
     } finally {
       setLoadingChatHistory(false);
     }
+  };
+
+  // 查看聊天历史
+  const viewChatHistory = async (agent: Agent) => {
+    setChatHistoryAgent(agent);
+    setChatHistoryModal(true);
+    
+    // 重置分页状态并加载第一页
+    await loadChatHistory(agent, 1, 10);
   };
 
   // 删除聊天记录
@@ -227,17 +247,12 @@ export const AgentManagement = forwardRef<AgentManagementRef, AgentManagementPro
 
           message.success(t`Chat log deleted successfully`);
 
-          // 重新加载聊天历史列表（Agent-centered架构，无需scope参数）
-          const result = await call('getAgentChatLogs', {
-            agentName: chatHistoryAgent.config.name
-          });
-          // 按时间倒序排列聊天记录
-          const sortedChatLogs = (result.chatLogs || []).sort((a, b) => {
-            const timeA = a.dateTime || 0;
-            const timeB = b.dateTime || 0;
-            return timeB - timeA; // 倒序：最新的在前
-          });
-          setChatHistoryList(sortedChatLogs);
+          // 重新加载当前页的聊天历史
+          await loadChatHistory(
+            chatHistoryAgent, 
+            chatHistoryPagination.current, 
+            chatHistoryPagination.pageSize
+          );
 
           // 刷新Agent列表以更新聊天记录数量
           await onRefresh();
@@ -673,84 +688,107 @@ export const AgentManagement = forwardRef<AgentManagementRef, AgentManagementPro
           setChatHistoryModal(false);
           setChatHistoryAgent(null);
           setChatHistoryList([]);
+          setChatHistoryPagination({ current: 1, pageSize: 10, total: 0 });
         }}
         footer={null}
         width={800}
         destroyOnHidden
       >
-        <div style={{ maxHeight: '60vh', overflowY: 'auto' }}>
-          {loadingChatHistory ? (
-            <div className="text-center py-8">
-              <Space>
-                <span>{t`Loading chat history...`}</span>
-              </Space>
-            </div>
-          ) : chatHistoryList.length > 0 ? (
-            <List
-              dataSource={chatHistoryList}
-              renderItem={(chatLog: ChatHistoryItem, index) => (
-                <List.Item
-                  key={chatLog.key || index}
-                  className="hover:bg-gray-50 cursor-pointer"
-                  onClick={() => {
-                    // 关闭历史记录模态框
-                    setChatHistoryModal(false);
-                    setChatHistoryAgent(null);
-                    setChatHistoryList([]);
+        <Spin spinning={loadingChatHistory} tip={t`Loading chat history...`}>
+          <div style={{ minHeight: '300px' }}>
+            {chatHistoryList.length > 0 ? (
+              <>
+                <List
+                  dataSource={chatHistoryList}
+                  renderItem={(chatLog: ChatHistoryItem, index) => (
+                    <List.Item
+                      key={chatLog.key || index}
+                      className="hover:bg-gray-50 cursor-pointer"
+                      onClick={() => {
+                        // 关闭历史记录模态框
+                        setChatHistoryModal(false);
+                        setChatHistoryAgent(null);
+                        setChatHistoryList([]);
+                        setChatHistoryPagination({ current: 1, pageSize: 10, total: 0 });
 
-                    // 打开聊天并加载历史记录
-                    if (chatHistoryAgent && onOpenChat) {
-                      onOpenChat(chatHistoryAgent, chatLog);
-                    }
-                  }}
-                  actions={[
-                    <Button
-                      key="delete"
-                      type="text"
-                      size="small"
-                      icon={<DeleteOutlined />}
-                      danger
-                      onClick={(e) => {
-                        e.stopPropagation(); // 阻止事件冒泡
-                        deleteChatLog(chatLog);
+                        // 打开聊天并加载历史记录
+                        if (chatHistoryAgent && onOpenChat) {
+                          onOpenChat(chatHistoryAgent, chatLog);
+                        }
                       }}
-                      title={t`Delete Chat Log`}
+                      actions={[
+                        <Button
+                          key="delete"
+                          type="text"
+                          size="small"
+                          icon={<DeleteOutlined />}
+                          danger
+                          onClick={(e) => {
+                            e.stopPropagation(); // 阻止事件冒泡
+                            deleteChatLog(chatLog);
+                          }}
+                          title={t`Delete Chat Log`}
+                        />
+                      ]}
+                    >
+                      <List.Item.Meta
+                        title={
+                          <Space>
+                            <span>{chatLog.label || `Chat ${(chatHistoryPagination.current - 1) * chatHistoryPagination.pageSize + index + 1}`}</span>
+                            {chatLog.messages && (
+                              <Tag color="blue">{chatLog.messages.length} messages</Tag>
+                            )}
+                            {chatLog.configOverrides?.modelKey && (
+                              <Tag color="green">{getModelDisplayName(chatLog.configOverrides.modelKey)}</Tag>
+                            )}
+                          </Space>
+                        }
+                        description={
+                          <div>
+                            <div className="text-xs text-gray-500">
+                              {chatLog.dateTime
+                                ? new Date(chatLog.dateTime).toLocaleString()
+                                : 'Unknown time'
+                              }
+                            </div>
+                          </div>
+                        }
+                      />
+                    </List.Item>
+                  )}
+                />
+                
+                {/* 分页组件 */}
+                {chatHistoryPagination.total > chatHistoryPagination.pageSize && (
+                  <div style={{ textAlign: 'center', marginTop: '16px', paddingTop: '16px', borderTop: '1px solid #f0f0f0' }}>
+                    <Pagination
+                      current={chatHistoryPagination.current}
+                      pageSize={chatHistoryPagination.pageSize}
+                      total={chatHistoryPagination.total}
+                      showSizeChanger
+                      showQuickJumper
+                      showTotal={(total, range) => `${range[0]}-${range[1]} of ${total} items`}
+                      pageSizeOptions={['5', '10', '20', '50']}
+                      onChange={async (page, pageSize) => {
+                        if (chatHistoryAgent) {
+                          await loadChatHistory(chatHistoryAgent, page, pageSize);
+                        }
+                      }}
+                      disabled={loadingChatHistory}
                     />
-                  ]}
-                >
-                  <List.Item.Meta
-                    title={
-                      <Space>
-                        <span>{chatLog.label || `Chat ${index + 1}`}</span>
-                        {chatLog.messages && (
-                          <Tag color="blue">{chatLog.messages.length} messages</Tag>
-                        )}
-                        {chatLog.configOverrides?.modelKey && (
-                          <Tag color="green">{getModelDisplayName(chatLog.configOverrides.modelKey)}</Tag>
-                        )}
-                      </Space>
-                    }
-                    description={
-                      <div>
-                        <div className="text-xs text-gray-500">
-                          {chatLog.dateTime
-                            ? new Date(chatLog.dateTime).toLocaleString()
-                            : 'Unknown time'
-                          }
-                        </div>
-                      </div>
-                    }
-                  />
-                </List.Item>
-              )}
-            />
-          ) : (
-            <Empty
-              description={t`No chat history found`}
-              image={Empty.PRESENTED_IMAGE_SIMPLE}
-            />
-          )}
-        </div>
+                  </div>
+                )}
+              </>
+            ) : !loadingChatHistory ? (
+              <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '200px' }}>
+                <Empty
+                  description={t`No chat history found`}
+                  image={Empty.PRESENTED_IMAGE_SIMPLE}
+                />
+              </div>
+            ) : null}
+          </div>
+        </Spin>
       </Modal>
     </>
   );

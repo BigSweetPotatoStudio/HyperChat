@@ -120,7 +120,7 @@ export async function initHttp(): Promise<void> {
   // 静态资源路由
   app.use(urlPrefix, express.static(staticPath, staticOptions));
   app.use(urlPrefix + "/temp", express.static(path.join(appDataDir, "temp")));
-  const mcpRouterPrefix = urlPrefix + "/mcpGateWay";
+  const mcpRouterPrefix = urlPrefix + "/mcp";
   // MCP 路由注册
   let mcpRouter = await registers(mcpRouterPrefix);
   app.use(mcpRouterPrefix, mcpRouter);
