@@ -59,6 +59,7 @@ import { useForceUpdate } from "../hooks/useForceUpdate";
 import { MyAttachR } from "./attachR";
 import { CurrentWorkspaceDetails, WorkspaceInfo } from "../pages/workspace/types";
 import { CommonContentItem, HyperChatCompletionTool, IMCPClient, HyperToolCall } from "@dadigua/hyperchat-shared/types";
+import { filterMCPTools, convertTreeSelectionToMCPConfig, convertMCPConfigToTreeSelection } from '../utils/mcpUtils';
 import { AgentCommonFormItems } from "./AgentManagement";
 import { useChatStream } from "../hooks/useChatStream";
 
@@ -135,6 +136,7 @@ export const WorkspaceChat = ({ workspace, agentName, agentScope, workspaceDetai
     configOverrides: {
       modelKey: "",
       allowMCPs: [] as string[],
+      blockMCPTools: [] as string[],
       isConfirmCallTool: false,
       temperature: undefined as number | undefined,
       maxAttachedDialogs: 5,
@@ -273,6 +275,7 @@ export const WorkspaceChat = ({ workspace, agentName, agentScope, workspaceDetai
     return {
       modelKey: findValidModelKey(),
       allowMCPs: overrides.allowMCPs || agentConfig?.allowMCPs || [],
+      blockMCPTools: overrides.blockMCPTools || agentConfig?.blockMCPTools || [],
       isConfirmCallTool: overrides.isConfirmCallTool ?? agentConfig?.isConfirmCallTool ?? false,
       temperature: overrides.temperature ?? agentConfig?.temperature ?? workspaceAIConfig?.temperature,
       maxAttachedDialogs: overrides.maxAttachedDialogs ?? agentConfig?.maxAttachedDialogs ?? workspaceAIConfig?.maxAttachedDialogs ?? 5,
@@ -291,10 +294,16 @@ export const WorkspaceChat = ({ workspace, agentName, agentScope, workspaceDetai
     currentChat.current.configOverrides.allowMCPs = allowMCPs;
   };
 
-  // 获取 allowMCPs 的帮助函数
-  const getAllowMCPs = () => {
-    return getEffectiveConfig().allowMCPs;
+
+  // 设置 blockMCPTools 的帮助函数
+  const setBlockMCPTools = (blockMCPTools: string[]) => {
+    if (!currentChat.current.configOverrides) {
+      currentChat.current.configOverrides = {};
+    }
+    currentChat.current.configOverrides.blockMCPTools = blockMCPTools;
   };
+
+
 
   // 加载状态从 chatStream 获取
   const loading = chatStream.loading;
@@ -332,6 +341,7 @@ export const WorkspaceChat = ({ workspace, agentName, agentScope, workspaceDetai
       currentChat.current.configOverrides.maxAttachedDialogs = values.maxAttachedDialogs;
       currentChat.current.configOverrides.isConfirmCallTool = values.isConfirmCallTool;
       currentChat.current.configOverrides.allowMCPs = values.allowMCPs;
+      currentChat.current.configOverrides.blockMCPTools = values.blockMCPTools;
       currentChat.current.configOverrides.modelKey = values.modelKey;
       currentChat.current.configOverrides.compressionStrategy = values.compressionStrategy;
       currentChat.current.configOverrides.maxContextTokens = values.maxContextTokens;
@@ -461,6 +471,7 @@ export const WorkspaceChat = ({ workspace, agentName, agentScope, workspaceDetai
             messages: [],
             configOverrides: {
               allowMCPs: agent.config.allowMCPs || [],
+              blockMCPTools: agent.config.blockMCPTools || [],
               // 不设置 modelKey，让 getEffectiveConfig 处理优先级
               temperature: agent.config.temperature,
               isConfirmCallTool: agent.config.isConfirmCallTool || false,
@@ -692,6 +703,7 @@ export const WorkspaceChat = ({ workspace, agentName, agentScope, workspaceDetai
                         maxAttachedDialogs: currentEffectiveConfig.maxAttachedDialogs ?? 5,
                         isConfirmCallTool: currentEffectiveConfig.isConfirmCallTool ?? false,
                         allowMCPs: currentEffectiveConfig.allowMCPs || [],
+                        blockMCPTools: currentEffectiveConfig.blockMCPTools || [],
                         compressionStrategy: currentEffectiveConfig.compressionStrategy ?? "tokens",
                         maxContextTokens: currentEffectiveConfig.maxContextTokens,
                       });
@@ -835,40 +847,30 @@ export const WorkspaceChat = ({ workspace, agentName, agentScope, workspaceDetai
 
 
                             {(() => {
-                              let set = new Set();
-                              for (let tool_name of getAllowMCPs()) {
-                                let [name, _] = tool_name.split(" > ");
-                                set.add(name);
-                              }
-                              let loading = mcpClients.filter((v) => v.status == "connecting").length > 0;
-                              let load = mcpClients.filter(
-                                (v) => v.status == "connected",
-                              ).length;
-                              let all = mcpClients.filter(x => x.status !== "disabled").length;
-                              let curr = mcpClients.filter((v) => {
-                                return v.status !== "disabled" && set.has(v.serverName);
+                              // let set = new Set();
+                              // for (let tool_name of getAllowMCPs()) {
+                              //   let [name, _] = tool_name.split(" > ");
+                              //   set.add(name);
+                              // }
+                              // let loading = mcpClients.filter((v) => v.status == "connecting").length > 0;
+                              // let load = mcpClients.filter(
+                              //   (v) => v.status == "connected",
+                              // ).length;
+                              // let all = mcpClients.filter(x => x.status !== "disabled").length;
+                              let len = mcpClients.filter((v) => {
+                                return effectiveConfigForModel.allowMCPs.includes(v.serverName);
                               }).length;
-
-                              return loading ? (
-                                <>
-                                  {`${curr} `}
-                                  <SyncOutlined spin />
-                                  {`(${load}/${all})`}
-                                </>
-                              ) : curr
+                              return len;
                             })()}
                             <Icon name="chuizi-copy" ></Icon>{
 
                               (() => {
                                 let tools: IMCPClient["tools"] = [];
 
-                                mcpClients.forEach((v) => {
+                                mcpClients.filter(x => effectiveConfigForModel.allowMCPs.includes(x.serverName)).forEach((v) => {
                                   tools = tools.concat(
                                     v.tools.filter((t) => {
-
-                                      return (
-                                        getAllowMCPs().includes(t.clientName) || getAllowMCPs().includes(t.displayName)
-                                      );
+                                      return !effectiveConfigForModel.blockMCPTools.includes(t.displayName);
                                     }),
                                   );
                                 });
@@ -947,8 +949,7 @@ export const WorkspaceChat = ({ workspace, agentName, agentScope, workspaceDetai
         open={isToolsShow}
         onCancel={() => setIsToolsShow(false)}
         maskClosable
-        title={t`MCP Tool`}
-        // onOk={() => setIsToolsShow(false)}
+        title={t`MCP Tool Selection`}
         footer={[
           <Button
             key="1"
@@ -960,53 +961,32 @@ export const WorkspaceChat = ({ workspace, agentName, agentScope, workspaceDetai
             {t`OK`}
           </Button>,
         ]}
-      // cancelButtonProps={{ style: { display: "none" } }}
       >
+        <div style={{ marginBottom: 16 }}>
+          <p style={{ color: '#666', fontSize: '14px' }}>
+            {t`Select MCP clients and tools. Unchecked tools from selected clients will be blocked.`}
+          </p>
+        </div>
         <Tree
           checkable
           selectedKeys={[]}
-          onSelect={(selectedKeys, info) => {
-            // console.log("onSelect", selectedKeys, info);
-            let [clientName, _] = (selectedKeys[0] as string || "").split(" > ");
-            clientName = clientName || "";
-            if (info.node.isLeaf) {
-
-              if (info.node.checked) {
-                const currentAllowMCPs = getAllowMCPs().filter(x => x != selectedKeys[0]);
-                if (clientName) {
-                  setAllowMCPs(currentAllowMCPs.filter(x => x != clientName));
-                } else {
-                  setAllowMCPs(currentAllowMCPs);
-                }
-              } else {
-                setAllowMCPs([...getAllowMCPs(), selectedKeys[0] as string]);
-              }
-            } else {
-              if (info.node.halfChecked || info.node.checked == false) {
-                let newAllowMCPs = getAllowMCPs();
-                if (clientName) {
-                  newAllowMCPs = newAllowMCPs.filter((x: string) => !x.startsWith(clientName));
-                }
-                newAllowMCPs.push(info.node.key as string);
-                info.node.children?.forEach((x) => {
-                  newAllowMCPs.push(x.key as string);
-                });
-                setAllowMCPs(newAllowMCPs);
-              } else {
-                if (clientName) {
-                  setAllowMCPs(getAllowMCPs().filter((x: string) => !x.startsWith(clientName)));
-                }
-              }
-            }
-
-            refresh();
-          }}
           onCheck={(checkedKeys) => {
-            // console.log("onCheck", checkedKeys);
-            setAllowMCPs(checkedKeys as string[]);
+            // 使用新的转换逻辑
+            const selectedValues = checkedKeys as string[];
+            const { allowMCPs, blockMCPTools } = convertTreeSelectionToMCPConfig(selectedValues, mcpClients);
+
+            // 更新配置
+            setAllowMCPs(allowMCPs);
+            setBlockMCPTools(blockMCPTools);
+
             refresh();
           }}
-          checkedKeys={getAllowMCPs()}
+          checkedKeys={(() => {
+            // 将当前配置转换为 Tree 选中状态
+            const currentAllowMCPs = getEffectiveConfig().allowMCPs;
+            const currentBlockMCPTools = getEffectiveConfig().blockMCPTools;
+            return convertMCPConfigToTreeSelection(currentAllowMCPs, currentBlockMCPTools, mcpClients);
+          })()}
           treeData={mcpClients.filter(x => x.status != "disabled").map((x) => {
             return {
               title: (<Tooltip title={x.serverName}>
@@ -1033,8 +1013,7 @@ export const WorkspaceChat = ({ workspace, agentName, agentScope, workspaceDetai
                 return {
                   title: (
                     <Tooltip title={tool.description}>
-                      <span
-                      >
+                      <span>
                         {tool.originalName || tool.name}
                       </span>
                     </Tooltip>
@@ -1046,7 +1025,6 @@ export const WorkspaceChat = ({ workspace, agentName, agentScope, workspaceDetai
             };
           })}
         />
-
       </Modal>
 
       {/* HOOK */}
@@ -1072,20 +1050,8 @@ export const WorkspaceChat = ({ workspace, agentName, agentScope, workspaceDetai
   );
 };
 
-function getTools(mcpClients: IMCPClient[], allowMCPs?: string[]): HyperChatCompletionTool[] {
-  let tools: HyperChatCompletionTool[] = [];
-
-  mcpClients.forEach((v) => {
-    tools = tools.concat(
-      v.tools.filter((t) => {
-        if (!allowMCPs) return true;
-        return (
-          allowMCPs.includes(t.clientName) || allowMCPs.includes(t.displayName)
-        );
-      }),
-    );
-  });
-  return tools;
+function getTools(mcpClients: IMCPClient[], allowMCPs?: string[], blockMCPTools?: string[]): HyperChatCompletionTool[] {
+  return filterMCPTools(mcpClients, allowMCPs, blockMCPTools) as HyperChatCompletionTool[];
 }
 
 function getLabelByFirstUserContent(messages: Array<MyMessage>): string {

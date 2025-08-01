@@ -42,6 +42,7 @@ export class AgentInstance {
       name: path.basename(agentPath),
       prompt: '',
       allowMCPs: [],
+      blockMCPTools: [],
       isConfirmCallTool: false,
       maxTokens: 4000,
       tags: [],

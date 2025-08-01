@@ -79,6 +79,7 @@ export function buildEffectiveConfig(
   return {
     modelKey: findValidModelKey(),
     allowMCPs: overrides.allowMCPs || agentConfig?.allowMCPs || [],
+    blockMCPTools: overrides.blockMCPTools || agentConfig?.blockMCPTools || [],
     isConfirmCallTool: overrides.isConfirmCallTool ?? agentConfig?.isConfirmCallTool ?? workspaceAIConfig?.isConfirmCallTool ?? false,
     temperature: overrides.temperature ?? agentConfig?.temperature ?? workspaceAIConfig?.temperature,
     maxAttachedDialogs: overrides.maxAttachedDialogs ?? agentConfig?.maxAttachedDialogs ?? workspaceAIConfig?.maxAttachedDialogs ?? 5,

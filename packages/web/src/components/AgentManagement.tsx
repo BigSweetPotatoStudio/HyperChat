@@ -42,6 +42,7 @@ import EmojiPicker from 'emoji-picker-react';
 import { HyperChatEditor } from "./HyperChatEditor";
 import { useForceUpdate } from "../hooks/useForceUpdate";
 import { AgentConfig, ChatHistoryItem, IMCPClient } from "@dadigua/hyperchat-shared";
+import { convertTreeSelectionToMCPConfig, convertMCPConfigToTreeSelection } from '../utils/mcpUtils';
 const { Title } = Typography;
 
 
@@ -98,6 +99,7 @@ export const AgentManagement = forwardRef<AgentManagementRef, AgentManagementPro
     refresh();
   }, [aiSettings]);
 
+
   // 暴露 createAgent 方法给父组件
   useImperativeHandle(ref, () => ({
     createAgent
@@ -125,11 +127,16 @@ export const AgentManagement = forwardRef<AgentManagementRef, AgentManagementPro
   // 保存Agent
   const saveAgent = async (values: any) => {
     try {
+      // 使用公共函数转换 TreeSelect 选中值
+      const selectedValues = values.allowMCPs || [];
+      const { allowMCPs, blockMCPTools } = convertTreeSelectionToMCPConfig(selectedValues, mcpClients);
+
       const agentConfig = {
         name: values.name,
         description: values.description,
         prompt: values.prompt,
-        allowMCPs: values.allowMCPs || [],
+        allowMCPs,
+        blockMCPTools,
         isConfirmCallTool: values.isConfirmCallTool ?? false,
         modelKey: values.modelKey,
         temperature: values.temperature,
@@ -204,7 +211,7 @@ export const AgentManagement = forwardRef<AgentManagementRef, AgentManagementPro
         const timeB = b.dateTime || 0;
         return timeB - timeA; // 倒序：最新的在前
       });
-      
+
       setChatHistoryList(sortedChatLogs);
       setChatHistoryPagination({
         current: page,
@@ -223,7 +230,7 @@ export const AgentManagement = forwardRef<AgentManagementRef, AgentManagementPro
   const viewChatHistory = async (agent: Agent) => {
     setChatHistoryAgent(agent);
     setChatHistoryModal(true);
-    
+
     // 重置分页状态并加载第一页
     await loadChatHistory(agent, 1, 10);
   };
@@ -249,8 +256,8 @@ export const AgentManagement = forwardRef<AgentManagementRef, AgentManagementPro
 
           // 重新加载当前页的聊天历史
           await loadChatHistory(
-            chatHistoryAgent, 
-            chatHistoryPagination.current, 
+            chatHistoryAgent,
+            chatHistoryPagination.current,
             chatHistoryPagination.pageSize
           );
 
@@ -551,6 +558,11 @@ export const AgentManagement = forwardRef<AgentManagementRef, AgentManagementPro
           if (open) {
             if (editingAgent) {
               // 编辑模式：设置Agent的现有值
+              // 使用公共函数将 allowMCPs 和 blockMCPTools 转换为 TreeSelect 格式
+              const allowMCPs = editingAgent.config.allowMCPs || [];
+              const blockMCPTools = editingAgent.config.blockMCPTools || [];
+              const combinedAllowMCPs = convertMCPConfigToTreeSelection(allowMCPs, blockMCPTools, mcpClients);
+
               const formValues = {
                 key: editingAgent.config.name,
                 name: editingAgent.config.name,
@@ -559,7 +571,7 @@ export const AgentManagement = forwardRef<AgentManagementRef, AgentManagementPro
                 modelKey: editingAgent.config.modelKey,
                 temperature: editingAgent.config.temperature ?? 1,
                 maxTokens: editingAgent.config.maxTokens,
-                allowMCPs: editingAgent.config.allowMCPs || [],
+                allowMCPs: combinedAllowMCPs,
                 isConfirmCallTool: editingAgent.config.isConfirmCallTool ?? false,
                 maxAttachedDialogs: editingAgent.config.maxAttachedDialogs,
                 compressionStrategy: editingAgent.config.compressionStrategy || 'tokens',
@@ -645,7 +657,7 @@ export const AgentManagement = forwardRef<AgentManagementRef, AgentManagementPro
               multiple
               treeCheckable
               placeholder={t`Select tools and capabilities for this agent`}
-              showCheckedStrategy={TreeSelect.SHOW_PARENT}
+              // showCheckedStrategy={TreeSelect.SHOW_PARENT}
               treeData={(Object.values(mcpClients) || []).map((x) => ({
                 title: x.serverName,
                 key: x.serverName,
@@ -757,7 +769,7 @@ export const AgentManagement = forwardRef<AgentManagementRef, AgentManagementPro
                     </List.Item>
                   )}
                 />
-                
+
                 {/* 分页组件 */}
                 {chatHistoryPagination.total > chatHistoryPagination.pageSize && (
                   <div style={{ textAlign: 'center', marginTop: '16px', paddingTop: '16px', borderTop: '1px solid #f0f0f0' }}>

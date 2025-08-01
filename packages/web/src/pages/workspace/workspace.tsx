@@ -875,6 +875,7 @@ export function Workspace() {
               name: string;
               description?: string;
               allowMCPs: string[];
+              blockMCPTools: string[];
             }>}
             onUpdate={updateMCPGateways}
             availableMCPs={getAvailableMCPs()}

@@ -23,6 +23,10 @@ export const BaseAIConfigSchema = z.object({
     .default([])
     .describe("List of allowed MCP server names"),
   
+  blockMCPTools: z.array(z.string())
+    .default([])
+    .describe("List of blocked MCP tool display names"),
+  
   maxAttachedDialogs: z.number()
     .int()
     .min(0, "Max attached dialogs must be >= 0")
@@ -92,6 +96,7 @@ export function createDefaultBaseAIConfig(prompt: string): BaseAIConfig {
     prompt,
     isConfirmCallTool: false,
     allowMCPs: [],
+    blockMCPTools: [],
     maxTokens: 4000,
     // compressionStrategy 和 maxContextTokens 保持可选，让用户根据需要配置
   };
@@ -104,6 +109,7 @@ export function createDefaultAgentConfig(name: string, prompt: string): AgentCon
     prompt,
     isConfirmCallTool: false,
     allowMCPs: [],
+    blockMCPTools: [],
     maxTokens: 4000,
     tags: [],
     subAgents: [],
@@ -127,6 +133,7 @@ export function mergeBaseAIConfigs(base: BaseAIConfig, override: Partial<BaseAIC
     ...override,
     // 特殊处理数组字段，确保不会意外清空
     allowMCPs: override.allowMCPs !== undefined ? override.allowMCPs : base.allowMCPs,
+    blockMCPTools: override.blockMCPTools !== undefined ? override.blockMCPTools : base.blockMCPTools,
   };
 }
 

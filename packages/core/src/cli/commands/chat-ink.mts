@@ -229,6 +229,7 @@ export async function startChatInk(initialMessage?: string, options: ChatOptions
     let effectiveConfig = {
       modelKey: agentConfig.modelKey || aiSettings?.models?.[0]?.key || 'default-model',
       allowMCPs: agentConfig.allowMCPs || [],
+      blockMCPTools: agentConfig.blockMCPTools || [],
       isConfirmCallTool: agentConfig.isConfirmCallTool ?? false,
       temperature: agentConfig.temperature,
       maxAttachedDialogs: agentConfig.maxAttachedDialogs ?? 5,

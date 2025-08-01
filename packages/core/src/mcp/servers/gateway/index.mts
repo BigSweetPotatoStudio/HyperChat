@@ -14,7 +14,7 @@ import { workspaceManager } from "../../../lib.mjs";
 
 
 
-async function createServer(name: string, description: string, allowMCPs: string[]) {
+async function createServer(name: string, description: string, allowMCPs: string[], blockMCPTools: string[] = []) {
     const NAME = name;
 
     /**
@@ -45,16 +45,20 @@ async function createServer(name: string, description: string, allowMCPs: string
         let workspace = workspaceManager.getCurrentWorkspace();
         let mcpClients = workspace.getMcpClients();
 
-        let getTools = (allowMCPs: string[]) => {
+        let getTools = (allowMCPs: string[], blockMCPTools: string[]) => {
             let tools: IMCPClient["tools"] = [];
 
             mcpClients.forEach((v) => {
                 tools = tools.concat(
                     v.tools.filter((t) => {
-                        if (!allowMCPs) return true;
-                        return (
-                            allowMCPs.includes(t.clientName) || allowMCPs.includes(t.displayName)
-                        );
+                        // 检查 MCP 客户端名称（白名单模式）
+                        const mcpAllowed = !allowMCPs || allowMCPs.length === 0 || allowMCPs.includes(t.clientName);
+                        
+                        // 检查工具是否被阻止（黑名单模式）
+                        const toolBlocked = blockMCPTools && blockMCPTools.length > 0 && blockMCPTools.includes(t.displayName);
+                        
+                        // MCP 允许且工具未被阻止
+                        return mcpAllowed && !toolBlocked;
                     }),
                 );
             });
@@ -62,7 +66,7 @@ async function createServer(name: string, description: string, allowMCPs: string
         }
         return {
             tools: [
-                ...getTools(allowMCPs).map((tool) => {
+                ...getTools(allowMCPs, blockMCPTools).map((tool) => {
                     return {
                         name: tool.name,
                         description: tool.description,
@@ -82,26 +86,30 @@ async function createServer(name: string, description: string, allowMCPs: string
             let workspace = workspaceManager.getCurrentWorkspace();
             let mcpClients = workspace.getMcpClients();
 
-            let getTools = (allowMCPs: string[]) => {
+            let getTools = (allowMCPs: string[], blockMCPTools: string[]) => {
                 let tools: IMCPClient["tools"] = [];
 
                 mcpClients.forEach((v) => {
                     tools = tools.concat(
                         v.tools.filter((t) => {
-                            if (!allowMCPs) return true;
-                            return (
-                                allowMCPs.includes(t.clientName) || allowMCPs.includes(t.displayName)
-                            );
+                            // 检查 MCP 客户端名称（白名单模式）
+                            const mcpAllowed = !allowMCPs || allowMCPs.length === 0 || allowMCPs.includes(t.clientName);
+                            
+                            // 检查工具是否被阻止（黑名单模式）
+                            const toolBlocked = blockMCPTools && blockMCPTools.length > 0 && blockMCPTools.includes(t.displayName);
+                            
+                            // MCP 允许且工具未被阻止
+                            return mcpAllowed && !toolBlocked;
                         }),
                     );
                 });
                 return tools;
             }
 
-            let find = getTools(allowMCPs).find((tool) => {
+            let find = getTools(allowMCPs, blockMCPTools).find((tool) => {
                 return tool.name === request.params.name;
             });
-            console.log("gateway allowMCPs", getTools(allowMCPs), request, find);
+            console.log("gateway allowMCPs/blockTools", getTools(allowMCPs, blockMCPTools), request, find);
             if (!find) {
                 throw new Error(`Tool ${request.params.name} not found`);
             }

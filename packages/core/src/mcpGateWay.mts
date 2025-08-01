@@ -36,7 +36,7 @@ function clearTransports() {
 }
 
 
-function register(route: Router, name: string, description: string, allowMCPs: string[], prefix: string) {
+function register(route: Router, name: string, description: string, allowMCPs: string[], blockMCPTools: string[], prefix: string) {
     Logger.info(`Registering MCP Gateway: ${name}`, allowMCPs);
 
     // type == "streamableHttp"
@@ -46,7 +46,7 @@ function register(route: Router, name: string, description: string, allowMCPs: s
         route.post(`/${name}/mcp`, async (req, res) => {
             // console.log('Received MCP request:', req.body);
             try {
-                const server = await createServer(name, description, allowMCPs);
+                const server = await createServer(name, description, allowMCPs, blockMCPTools);
                 const transport = new StreamableHTTPServerTransport({
                     sessionIdGenerator: undefined,
                 });
@@ -155,6 +155,7 @@ export async function registers(prefix: string) {
             gateway.name ?? 'default',
             gateway.description ?? '',
             gateway.allowMCPs ?? [],
+            gateway.blockMCPTools ?? [],
             prefix
         );
     });

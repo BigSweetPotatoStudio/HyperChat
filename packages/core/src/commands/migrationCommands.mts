@@ -138,6 +138,7 @@ function convertLegacyAgentToNewFormat(legacyAgent: LegacyAgent, modelKeyMapping
     description: legacyAgent.description,
     modelKey: newModelKey,
     allowMCPs: legacyAgent.allowMCPs || [],
+    blockMCPTools: [], // 迁移过程中设为空数组
     temperature: legacyAgent.temperature,
     maxAttachedDialogs: legacyAgent.attachedDialogueCount,
     isConfirmCallTool: legacyAgent.confirm_call_tool ?? false,

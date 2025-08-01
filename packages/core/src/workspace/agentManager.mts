@@ -130,6 +130,7 @@ export class AgentManager {
       name,
       prompt: config.prompt || '',
       allowMCPs: config.allowMCPs || [],
+      blockMCPTools: config.blockMCPTools || [],
       isConfirmCallTool: config.isConfirmCallTool ?? false,
       maxTokens: config.maxTokens || 4000,
       tags: config.tags || [],
