@@ -37,17 +37,17 @@ const chatLogQueue = new TaskQueue({ concurrency: 1 });
  */
 async function selectAgent(options: ChatOptions): Promise<AgentInstance> {
   const logger = new Logger(options.verbose, options.quiet);
-  
+
   // 如果没有指定Agent，使用默认的Hyper Agent
   if (!options.agent && !options.agentPath) {
     logger.debug(`${t`No agent specified, using default agent:`} ${DEFAULT_AGENT_NAME}`);
-    
+
     // 查找或创建默认Agent
     const defaultAgent = await findOrCreateDefaultAgent({
       workspacePath: options.workspace,
       logger
     });
-    
+
     // 使用CliAgentManager加载默认Agent
     const agent = await getAgent({
       agentName: DEFAULT_AGENT_NAME,
@@ -55,10 +55,10 @@ async function selectAgent(options: ChatOptions): Promise<AgentInstance> {
       workspace: options.workspace,
       enableTaskScheduler: options.enableTaskScheduler ?? false
     });
-    
+
     return agent;
   }
-  
+
   // 使用指定的Agent
   try {
     const agent = await getAgent({
@@ -71,7 +71,7 @@ async function selectAgent(options: ChatOptions): Promise<AgentInstance> {
   } catch (error) {
     // 如果指定的Agent未找到，提供友好的错误信息
     const agentName = options.agent || DEFAULT_AGENT_NAME;
-    
+
     // 获取所有可用的Agent列表
     const { discoverAgents } = await import('../utils/agentDiscovery.mjs');
     const availableAgents = await discoverAgents({
@@ -480,16 +480,13 @@ export async function startChat(initialMessage?: string, options: ChatOptions = 
 
     // 显示 Agent 允许的 MCP 工具（使用封装的方法）
     const mcpToolsInfo = agent.getMCPTools();
-    
-    if (agentConfig.allowMCPs && agentConfig.allowMCPs.length > 0) {
-      logger.info(`🛠️ ${t`Agent allowed tools:`} ${mcpToolsInfo.allowedMCPsCount} ${t`configured`}, ${mcpToolsInfo.matchedTools.length} ${t`available`}`);
-      if (mcpToolsInfo.matchedTools.length > 0) {
-        const toolNames = mcpToolsInfo.matchedTools.map((tool: any) => tool.displayName || tool.name).slice(0, 3);
-        const more = mcpToolsInfo.matchedTools.length > 3 ? ` (+${mcpToolsInfo.matchedTools.length - 3} more)` : '';
-        logger.info(`    📋 ${toolNames.join(', ')}${more}`);
-      }
-    } else {
-      logger.info(`🛠️ ${t`Agent allowed tools:`} ${t`All available tools`} (${mcpToolsInfo.totalTools})`);
+
+    logger.info(`🛠️ ${t`Agent allowed tools:`} ${mcpToolsInfo.availableTools.length} ${t`available`} (${mcpToolsInfo.allowedMCPsCount} ${t`mcp`})`);
+    if (mcpToolsInfo.availableTools.length > 0) {
+      const toolNames = mcpToolsInfo.availableTools.map((tool: any) => tool.displayName || tool.name).slice(0, 3);
+      const more = mcpToolsInfo.availableTools.length > 3 ? ` (+${mcpToolsInfo.availableTools.length - 3} more)` : '';
+      logger.info(`    📋 ${toolNames.join(', ')}${more}`);
+
     }
 
     // 创建AI通道

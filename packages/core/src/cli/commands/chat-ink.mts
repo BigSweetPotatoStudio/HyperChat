@@ -51,7 +51,7 @@ async function selectAgent(options: ChatOptions): Promise<AgentInstance> {
   } catch (error) {
     // 如果Agent未找到，提供友好的错误信息
     const agentName = options.agent || DEFAULT_AGENT_NAME;
-    
+
     // 获取所有可用的Agent列表
     const { discoverAgents } = await import('../utils/agentDiscovery.mjs');
     const availableAgents = await discoverAgents({
@@ -72,7 +72,7 @@ async function selectAgent(options: ChatOptions): Promise<AgentInstance> {
  */
 async function showAgentStartupInfo(agent: AgentInstance, logger: Logger, enableTaskScheduler: boolean = true): Promise<void> {
   const config = agent.getConfig();
-  
+
   // 显示Agent基本配置信息
   logger.info(`  📋 ${t`Agent configuration:`}`);
   logger.info(`    ├─ ${t`Model:`} ${config.modelKey || t`inherit from workspace`}`);
@@ -84,38 +84,38 @@ async function showAgentStartupInfo(agent: AgentInstance, logger: Logger, enable
   logger.info(`  🔧 ${t`MCP clients status:`}`);
   try {
     const clients = agent.getMCPClients();
-    
+
     if (clients.length === 0) {
       logger.info(`    └─ ${t`No MCP clients configured`}`);
     } else {
       logger.info(`    ├─ ${t`Total clients:`} ${clients.length}`);
-      
+
       // 显示每个MCP客户端的详细状态
       for (let i = 0; i < clients.length; i++) {
         const client = clients[i];
         const isLast = i === clients.length - 1;
         const prefix = isLast ? '    └─' : '    ├─';
-        
-        const statusEmoji = client.status === 'connected' ? '✅' : 
-                          client.status === 'connecting' ? '🔄' : 
-                          client.status === 'disabled' ? '⏸️' : '❌';
-        
+
+        const statusEmoji = client.status === 'connected' ? '✅' :
+          client.status === 'connecting' ? '🔄' :
+            client.status === 'disabled' ? '⏸️' : '❌';
+
         const toolCount = client.tools?.length || 0;
-        
+
         // 显示具体的配置来源路径
         let sourceLabel = '';
         const config = (client as any).config;
         if (config && config._sourcePath) {
           sourceLabel = ` (${config._sourcePath})`;
         }
-        
+
         logger.info(`${prefix} ${statusEmoji} ${client.serverName}: ${client.status} (${toolCount} ${t`tools`})${sourceLabel}`);
-        
+
         // 显示版本信息（如果已连接）
         if (client.status === 'connected' && client.version) {
           logger.info(`${isLast ? '      ' : '    │   '}└─ ${t`Version:`} ${client.version}`);
         }
-        
+
         // 显示错误信息（如果连接失败）
         if (client.status === 'disconnected' && (client as any).lastError) {
           logger.info(`${isLast ? '      ' : '    │   '}└─ ${t`Error:`} ${(client as any).lastError}`);
@@ -130,11 +130,11 @@ async function showAgentStartupInfo(agent: AgentInstance, logger: Logger, enable
   logger.info(`  ⏰ ${t`Task scheduler status:`}`);
   try {
     const taskStats = agent.getTaskSchedulerStats();
-    
+
     if (taskStats.running) {
       logger.info(`    ├─ ✅ ${t`Scheduler running`}`);
       logger.info(`    └─ 📋 ${t`Scheduled tasks:`} ${taskStats.scheduledTasksCount}`);
-      
+
       if (taskStats.scheduledTasks.length > 0) {
         const taskNames = taskStats.scheduledTasks.slice(0, 3);
         const more = taskStats.scheduledTasks.length > 3 ? ` (+${taskStats.scheduledTasks.length - 3} more)` : '';
@@ -259,30 +259,26 @@ export async function startChatInk(initialMessage?: string, options: ChatOptions
 
     // 显示 Agent 允许的 MCP 工具（使用封装的方法）
     const mcpToolsInfo = agent.getMCPTools();
-    
-    if (agentConfig.allowMCPs && agentConfig.allowMCPs.length > 0) {
-      logger.info(`🛠️ ${t`Agent allowed tools:`} ${mcpToolsInfo.allowedMCPsCount} ${t`configured`}, ${mcpToolsInfo.matchedTools.length} ${t`available`}`);
-      if (mcpToolsInfo.matchedTools.length > 0) {
-        const toolNames = mcpToolsInfo.matchedTools.map((tool: any) => tool.displayName || tool.name).slice(0, 3);
-        const more = mcpToolsInfo.matchedTools.length > 3 ? ` (+${mcpToolsInfo.matchedTools.length - 3} more)` : '';
-        logger.info(`    📋 ${toolNames.join(', ')}${more}`);
-      }
-    } else {
-      logger.info(`🛠️ ${t`Agent allowed tools:`} ${t`All available tools`} (${mcpToolsInfo.totalTools})`);
-    }
 
+
+    logger.info(`🛠️ ${t`Agent allowed tools:`} ${mcpToolsInfo.availableTools.length} ${t`available`} (${mcpToolsInfo.allowedMCPsCount} ${t`mcp`})`);
+    if (mcpToolsInfo.availableTools.length > 0) {
+      const toolNames = mcpToolsInfo.availableTools.map((tool: any) => tool.displayName || tool.name).slice(0, 3);
+      const more = mcpToolsInfo.availableTools.length > 3 ? ` (+${mcpToolsInfo.availableTools.length - 3} more)` : '';
+      logger.info(`    📋 ${toolNames.join(', ')}${more}`);
+
+    }
     // 以Agent为中心的信息显示 (用于UI)
-    const agentToolNames = mcpToolsInfo.matchedTools.map((tool: any) => tool.displayName || tool.name);
+    const agentToolNames = mcpToolsInfo.availableTools.map((tool) => tool.displayName || tool.name);
 
     const workspaceInfo = {
       path: currentWorkingDirectory,
       agentCount: 1, // 当前Agent
       mcpClientsCount: mcpClients.length,
-      totalToolsCount: mcpToolsInfo.totalTools,
       currentAgent: agentConfig.name,
       currentModel: effectiveConfig.modelKey,
       agentAllowedMCPs: mcpToolsInfo.allowedMCPsCount,
-      agentAvailableTools: mcpToolsInfo.matchedTools.length,
+      agentAvailableTools: mcpToolsInfo.availableTools.length,
       agentToolNames
     };
 
@@ -388,13 +384,7 @@ export async function startChatInk(initialMessage?: string, options: ChatOptions
         }
 
       } catch (error) {
-        // const errorMessage = {
-        //   role: 'system' as const,
-        //   content: `❌ ${t`Error:`} ${error instanceof Error ? error.message : String(error)}`,
-        //   content_date: Date.now()
-        // };
-        // // 错误消息添加到aiChannel
-        // aiChannel.addMessage(errorMessage);
+
 
         // 强制刷新UI显示错误消息
         if (chatUI && chatUI.forceRefresh) {
@@ -443,14 +433,14 @@ export async function startChatInk(initialMessage?: string, options: ChatOptions
         if (chatLog) {
           // 清空当前消息
           aiChannel.messages = [];
-          
+
           // 加载聊天记录中的消息
           if (chatLog.messages && chatLog.messages.length > 0) {
             chatLog.messages.forEach((message: any) => {
               aiChannel.addMessage(message);
             });
           }
-          
+
           logger.info(`✅ ${t`Loaded chat log:`} ${chatLog.label} (${chatLog.messages?.length || 0} ${t`messages`})`);
         } else {
           throw new Error(`${t`Chat log not found:`} ${chatLogKey}`);
