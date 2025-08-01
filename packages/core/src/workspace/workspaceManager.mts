@@ -80,6 +80,7 @@ export class WorkspaceManager {
 
     // 初始化新工作区
     await this.initialize(workspacePath);
+    await this.currentWorkspace.start();
   }
 
 

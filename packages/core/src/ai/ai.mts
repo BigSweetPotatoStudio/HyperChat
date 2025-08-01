@@ -113,13 +113,8 @@ export class AiChannel {
     const envProvider = envManager.get('HyperChat_AI_Provider');
     
     // 尝试从应用设置获取配置
-    let appSettings, aiSettings;
-    try {
-      appSettings = await Command.getAppSettings();
-      aiSettings = appSettings.ai;
-    } catch (error) {
-      Logger.debug(`Failed to load app settings: ${error}`);
-    }
+    let appSettings = await Command.getAppSettings()
+    let aiSettings = appSettings?.ai || {};
 
     // 使用 buildEffectiveConfig 获取有效配置（包括modelKey选择）
     const effectiveConfig = buildEffectiveConfig(
