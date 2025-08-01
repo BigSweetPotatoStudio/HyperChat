@@ -474,7 +474,7 @@ export class MCPManager {
   }
 
   /**
-   * 禁用客户端（停止客户端并在配置中标记为 disabled）
+   * 禁用客户端（停止客户端连接但保留在列表中，并在配置中标记为 disabled）
    */
   async disableClient(name: string): Promise<void> {
     if (!this.workspaceConfig) {
@@ -493,8 +493,20 @@ export class MCPManager {
       throw new Error(`客户端 ${name} 的配置不存在`);
     }
 
-    // 先停止客户端
-    await this.stopClient(name);
+    // 停止客户端连接但不从 clients Map 中删除
+    const clientId = this.getClientId(name);
+    const client = this.clients.get(clientId);
+    
+    if (client) {
+      try {
+        await client.close();
+        // 设置客户端状态为 disabled，但不删除
+        client.status = "disabled";
+        this.logInfo(`客户端 ${clientId} 连接已停止，状态设为禁用`);
+      } catch (error) {
+        this.logError(`停止客户端 ${clientId} 连接失败:`, error);
+      }
+    }
 
     // 在配置中标记为 disabled
     serverConfig.disabled = true;
