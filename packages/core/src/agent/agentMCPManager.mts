@@ -12,6 +12,7 @@ import type {
 import { MCPManager } from "./mcp/manager.mjs";
 import { WorkspaceMCPClientImpl } from "./mcp/client.mjs";
 import type { MCPServerConfig } from "@dadigua/hyperchat-shared/types";
+import type { AgentConfig } from "@dadigua/hyperchat-shared";
 import { Logger } from "../log.mjs";
 import { CONSTANTS } from "./constants.mjs";
 
@@ -34,13 +35,17 @@ export class AgentMCPManager {
   private agentConfig: WorkspaceMCPConfig | null = null;
   private agentPath: string;
   public mcpManager: MCPManager;
+  private agentAllowMCPs?: string[];
 
-  constructor(agentPath: string, events: MCPManagerEvents = {}) {
+  constructor(agentPath: string, agentAllowMCPs?: string[]) {
     this.agentPath = agentPath;
+    this.agentAllowMCPs = agentAllowMCPs;
 
     // 创建委托的WorkspaceMCPManager实例
     // 使用Agent路径作为工作路径，这样它会在Agent目录下管理MCP
-    this.mcpManager = new MCPManager(agentPath, {}, events);
+    this.mcpManager = new MCPManager(agentPath, {
+      allowMCPs: agentAllowMCPs
+    });
   }
 
   /**

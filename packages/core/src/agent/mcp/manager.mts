@@ -24,16 +24,13 @@ export class MCPManager {
   private workspacePath: string;
   private serverOrderMap: Map<string, number> = new Map();
 
-  constructor(workspacePath: string, options: MCPManagerOptions = {}, events: MCPManagerEvents = {}) {
+  constructor(workspacePath: string, options: MCPManagerOptions = {}) {
     this.workspacePath = workspacePath;
     this.options = {
-      autoReconnect: true,
-      reconnectInterval: 5000,
-      maxReconnectAttempts: 5,
       enableLogging: true,
       ...options,
     };
-    this.events = events;
+    this.events = {};
   }
 
   /**
@@ -94,6 +91,14 @@ export class MCPManager {
     this.logInfo(`准备启动 ${builtinServers.length} 个内置服务器`);
 
     for (const server of builtinServers) {
+      // 检查是否在allowMCPs允许列表中
+      if (this.options.allowMCPs && this.options.allowMCPs.length > 0) {
+        if (!this.options.allowMCPs.includes(server.name)) {
+          this.logInfo(`跳过内置服务器 ${server.name}：不在allowMCPs允许列表中`);
+          continue;
+        }
+      }
+
       // 检查配置文件中是否有对内置服务器的disabled设置
       const userServerConfig = config.mcpServers[server.name];
       const isDisabled = userServerConfig?.disabled || false;
@@ -142,6 +147,14 @@ export class MCPManager {
 
     // 启动用户配置的服务器
     for (const [name, serverConfig] of Object.entries(config.mcpServers)) {
+      // 检查是否在allowMCPs允许列表中
+      if (this.options.allowMCPs && this.options.allowMCPs.length > 0) {
+        if (!this.options.allowMCPs.includes(name)) {
+          this.logInfo(`跳过自定义服务器 ${name}：不在allowMCPs允许列表中`);
+          continue;
+        }
+      }
+
       const clientId = this.getClientId(name);
 
       // 如果客户端已存在，跳过

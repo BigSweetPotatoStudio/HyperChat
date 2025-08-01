@@ -51,17 +51,7 @@ export class AgentInstance {
 
     this.mcpManager = new AgentMCPManager(
       this.agentPath,
-      {
-        onClientStatusChange: (client) => {
-          console.log(`Agent ${this.config.name} MCP客户端状态变化: ${client.serverName} -> ${client.status}`);
-        },
-        onConfigUpdate: (config) => {
-          console.log(`Agent ${this.config.name} MCP配置更新`);
-        },
-        onError: (error, context) => {
-          console.error(`Agent ${this.config.name} MCP错误:`, error, context);
-        },
-      }
+      this.config.allowMCPs
     );
     // chatLogs 延迟初始化
   }
@@ -180,6 +170,7 @@ export class AgentInstance {
   async updateConfig(updates: Partial<AgentConfig>): Promise<boolean> {
     const oldName = this.config.name;
     const newName = updates.name;
+    const oldAllowMCPs = this.config.allowMCPs;
 
     // 如果名称发生变更，需要重命名文件夹
     if (newName && newName !== oldName) {
@@ -440,18 +431,13 @@ export class AgentInstance {
 
   // ==================== Agent专属MCP客户端管理 ====================
 
-  /**
-   * 获取或创建Agent专属MCP管理器
-   */
-  private getMCPManager(): AgentMCPManager {
-    return this.mcpManager;
-  }
+
 
   /**
    * 启动Agent专属MCP客户端
    */
   async startMCPClients(): Promise<void> {
-    const mcpManager = this.getMCPManager();
+    const mcpManager = this.mcpManager;
     await mcpManager.startClients();
   }
 
@@ -482,7 +468,7 @@ export class AgentInstance {
    * 重启指定MCP客户端
    */
   async restartMCPClient(name: string): Promise<void> {
-    const mcpManager = this.getMCPManager();
+    const mcpManager = this.mcpManager;
     await mcpManager.restartClient(name);
   }
 
@@ -490,7 +476,7 @@ export class AgentInstance {
    * 设置MCP服务器配置
    */
   async setMCPServerConfig(name: string, serverConfig: MCPServerConfig): Promise<void> {
-    const mcpManager = this.getMCPManager();
+    const mcpManager = this.mcpManager;
     await mcpManager.setServerConfig(name, serverConfig);
   }
 
@@ -498,7 +484,7 @@ export class AgentInstance {
    * 删除MCP服务器配置
    */
   async deleteMCPServerConfig(name: string): Promise<void> {
-    const mcpManager = this.getMCPManager();
+    const mcpManager = this.mcpManager;
     await mcpManager.deleteServerConfig(name);
   }
 

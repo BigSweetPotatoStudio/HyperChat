@@ -1,0 +1,38 @@
+{
+  "mcpServers": {
+    "amap-maps": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@amap/amap-maps-mcp-server"
+      ],
+      "env": {
+        "AMAP_MAPS_API_KEY": "f7901c1ef62f0ee3e038e66ef951a8e9"
+      },
+      "_sourcePath": "/home/laop/projects/HyperChat/packages/core/.hyperchat/agents/Hyper/mcp.json"
+    },
+    "telegram-send": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "hyper-mcp-telegram-send"
+      ],
+      "env": {
+        "chat_id": "1088223543",
+        "token": "6871498970:AAFusF-Beif2D1AJI_P900zL3wPZOZdIsFw"
+      },
+      "_sourcePath": "/home/laop/projects/HyperChat/packages/core/.hyperchat/agents/Hyper/mcp.json"
+    },
+    "fs": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@modelcontextprotocol/server-filesystem",
+        "/tmp"
+      ],
+      "env": {},
+      "_sourcePath": "/home/laop/projects/HyperChat/packages/core/.hyperchat/agents/Hyper/mcp.json"
+    }
+  },
+  "workspacePath": "/home/laop/projects/HyperChat/packages/core/.hyperchat/agents/Hyper"
+}
