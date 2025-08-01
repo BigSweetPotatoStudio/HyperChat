@@ -49,33 +49,47 @@ HyperChat 是一个多平台的 AI 聊天应用，该项目拥有完善的 MCP�
 * i18n 相关的代码在 packages/shared/src/i18n 中。 软件默认使用英文，然后通过转成 JSON 的方式来支持国际化。t`english`, 里面不应该有${xxx}。
 * packages/shared/src/i18n/i18n.json 不用修改。后续我会提供一个脚本来自动生成 i18n.json 文件。
 
-## ✅ 新架构决策 (2.0版本 - 已完成实现)
+## ✅ 双层架构设计 (2.0版本 - 已完成实现)
 
-### 核心理念：进程/会话 = 全局配置 + 工作区配置（覆盖模式）
-**目标**：统一CLI和Web端的架构，实现更简单、一致的用户体验
+### 核心理念：Web工作区中心 + CLI Agent优先
+**目标**：根据不同使用场景优化用户体验，Web端注重项目协作，CLI端注重Agent交互
+
+### 双层架构设计
+```
+🌐 Web前端：工作区中心架构
+├── 工作区级别的资源管理
+│   ├── 工作区MCP客户端管理 (mcp.json)
+│   ├── 工作区任务调度管理 (tasks/)
+│   └── 工作区Agent集合管理 (agents/)
+└── 适用场景：项目开发、团队协作、Web界面管理
+
+💻 CLI前端：Agent优先架构  
+├── Agent级别的直接交互
+│   ├── Agent内置MCP工具使用
+│   ├── Agent专属任务执行
+│   └── Agent独立聊天会话
+└── 适用场景：快速对话、自动化脚本、命令行工作流
+```
 
 ### 配置层次结构
 ```
-一个CLI进程/Web会话 = 全局配置基础 + 当前工作区配置覆盖
+启动流程（双模式）：
 
-启动流程：
+🌐 Web模式：工作区配置合并
 1️⃣ 加载全局配置 (~/.hyperchat/)
-   ├── 全局AI模型配置
-   ├── 全局MCP工具配置  
-   ├── 全局Agent配置
-   └── 全局系统设置
+2️⃣ 检测当前工作区 (./.hyperchat/)
+3️⃣ 合并为工作区统一环境
+   ├── 工作区MCP客户端列表 (统一管理)
+   ├── 工作区Agent集合 (全局+本地)
+   └── 工作区任务调度系统
 
-2️⃣ 检测/选择当前工作区 (./.hyperchat/ 或项目根目录)
-   ├── 工作区AI模型配置 (覆盖全局)
-   ├── 工作区MCP工具配置 (补充/覆盖全局)
-   ├── 工作区Agent配置 (补充全局)
-   └── 工作区项目设置
-
-3️⃣ 合并配置启动服务
-   ├── 最终AI模型列表
-   ├── 最终MCP客户端列表
-   ├── 最终Agent列表
-   └── 统一运行环境
+💻 CLI模式：Agent直接访问
+1️⃣ 发现可用Agent (全局+工作区)
+2️⃣ 直接选择目标Agent
+3️⃣ 使用Agent内置资源
+   ├── Agent专属MCP工具
+   ├── Agent记忆和上下文
+   └── Agent聊天历史
 ```
 
 
@@ -228,6 +242,8 @@ HyperChat/
 - [x] Workspace配置合并逻辑：在workspace.mts中实现了智能工作区检测和配置合并
 - [x] CLI集成到Core包：简化架构，提升性能，统一构建流程
 - [x] CLI bug修复和简化 (2024-07-12)：修复agent显示undefined问题，简化命令结构，提升代码质量
+- [x] Agent名称更新映射修复 (2025-08-01)：修复`updateAgentMapping`方法中缺失的`availableAgents`映射更新
+- [x] MCP架构统一重构 (2025-08-01)：统一使用工作区级别的MCP管理，修复所有相关的查找和调用逻辑
 
 ### 架构优势
 - **分离关注点**: JSON Schema 与业务逻辑分离，shared 包独立维护
@@ -338,6 +354,36 @@ await workspaceManager.init();                 // 现有代码迁移
 
 这次更新进一步简化了CLI架构，符合"每个目录CLI会话独立"的设计理念，提升了用户体验和代码质量。
 
+#### 2025-08-01 Agent 映射和 MCP 双层架构重构 🔧
+**关键修复**:
+- ✅ **Agent 名称更新映射修复**: 修复 `AgentManager.updateAgentMapping()` 方法中遗漏的 `availableAgents` 映射更新
+  - 问题：Agent 名称变更后，`getAllAgentsSummary()` 遍历 `availableAgents` 时找不到更新后的 Agent
+  - 解决：同时更新 `nameToPath` 和 `availableAgents` 两个映射表
+- ✅ **MCP 双层架构重构**: 明确区分 Web 端和 CLI 端的 MCP 使用模式
+  - **Web端**: 统一使用工作区级别的 MCP 管理 (`workspace.getMcpManager()`)
+  - **CLI端**: 保持 Agent 优先的 MCP 访问 (`agent.getMCPClient()`)
+  - 修复核心方法：`manageWorkspaceMcpClient`、`startWorkspaceMcpClient`
+  - 修复调用方法：`mcpCallTool`、`mcpCallResource`、`mcpCallPrompt`
+
+**双层架构设计**:
+- 🌐 **Web端优化**: 工作区级别的统一MCP管理，适合项目开发和团队协作
+- 💻 **CLI端优化**: Agent专属的MCP工具集，适合个人对话和快速交互
+- 🔧 **架构清晰**: 根据使用场景选择最适合的MCP管理方式
+- 🚀 **错误修复**: 解决 "MCP客户端 'telegram-send' 不存在" 等运行时错误
+
+**技术实现**:
+```typescript
+// 🌐 Web端：工作区级别MCP管理
+const mcpManager = workspace.getMcpManager();
+const client = mcpManager.getClient(clientName);
+
+// 💻 CLI端：Agent优先MCP访问
+const agentInstance = workspace.getAgentInstance(agentName);
+const client = agentInstance.getMCPClient(clientName);
+```
+
+这次重构建立了清晰的双层架构，Web端专注工作区协作，CLI端专注Agent交互，为不同使用场景提供了最优化的体验。
+
 ## 🚀 HyperChat 开发最佳实践流程
 
 ### 📋 标准化功能开发流程 (推荐采用)
@@ -402,40 +448,57 @@ export class FeatureManager {
 - **可维护性**: 清晰的分层和职责划分
 - **扩展性**: 易于添加新功能模块
 
-## 🚧 Agent中心架构改造 (2024-07-24 进行中)
+## ✅ MCP 双层架构重构 (2025-08-01 已完成)
 
-### 核心目标
-将HyperChat从"工作区中心"架构调整为"Agent中心"架构，让每个Agent成为完全自包含的AI应用。
+### 核心问题
+之前存在 Agent 级别和工作区级别 MCP 管理的混乱，没有明确区分使用场景：
+- Web 前端调用工作区级别的 MCP 方法时出错
+- CLI 和 Web 端使用相同的查找逻辑，不符合各自的使用场景
+- MCP 客户端管理逻辑不一致，难以维护
 
-### 架构变更
-**当前架构**: 工作区管理共享资源 (MCP + Tasks) → Agent使用共享资源
-**目标架构**: Agent完全自包含 (Agent内置MCP + Tasks) → 工作区仅作为Agent发现路径
+### 双层架构设计
+**设计原则**: 根据前端类型选择最适合的 MCP 管理方式
 
-### 待办事项
-- [ ] **Phase 1**: 扩展Agent内部资源管理 (1-2周)
-  - [ ] 扩展AgentInstance类，新增MCP和任务管理方法
-  - [ ] 更新Agent目录结构，支持mcp.json和tasks/目录
-  - [ ] 实现Agent内部资源文件的读写操作
-- [ ] **Phase 2**: 调整工作区管理逻辑 (1周)
-  - [ ] 简化WorkspaceManager，移除工作区级MCP和任务管理
-  - [ ] 更新工作区初始化逻辑，仅负责Agent发现
-- [ ] **Phase 3**: 前端界面适配 (1周)
-  - [ ] Agent管理界面中显示专属MCP和任务配置
-  - [ ] 移除工作区级MCP和任务管理界面
-- [ ] **Phase 4**: CLI命令适配 (几天)
-  - [ ] 更新Agent相关命令，支持Agent级资源管理
-  - [ ] 简化工作区命令，移除资源管理功能
-- [ ] **Phase 5**: 测试和文档更新 (1周)
-  - [ ] 功能测试和兼容性验证
-  - [ ] 更新CLAUDE.md和用户文档
+```
+🌐 Web前端 → 工作区MCP管理
+├── 使用 workspace.getMcpManager()
+├── 统一的工作区级别MCP客户端池
+├── 适合项目级别的工具集成
+└── 团队共享的MCP配置
 
-### 架构优势
-- **概念简化**: 用户只需理解Agent概念，工作区仅作为Agent发现路径
-- **完全自包含**: Agent拥有自己的MCP和任务，可独立移动、备份、分享
-- **零破坏性改动**: 保持现有用户体验，无需数据迁移
-- **向前兼容**: 为Agent Creator项目和Agent分发功能打基础
+💻 CLI前端 → Agent优先MCP访问
+├── 优先使用 agent.getMCPClient()
+├── Agent专属的MCP工具集
+├── 适合个人化的对话体验  
+└── 回退到工作区共享MCP
+```
 
-**详细计划**: 参见 `AGENT_CENTRIC_PLAN.md`
+### 修复内容
+- ✅ **Web端MCP统一**: 全面重构 `mcpCommands.mts`，Web调用统一使用工作区级别的 MCP 管理器
+- ✅ **修复核心方法**:
+  - `manageWorkspaceMcpClient`: 使用工作区 `MCPManager` 的正确方法
+  - `startWorkspaceMcpClient`: 移除 Agent 级别的查找逻辑
+  - `mcpCallTool/Resource/Prompt`: 直接从工作区 MCP 管理器获取客户端
+- ✅ **保留CLI Agent优先**: CLI命令保持Agent级别的MCP访问逻辑
+- ✅ **修复 AgentManager 映射**: `updateAgentMapping` 方法同时更新 `nameToPath` 和 `availableAgents` 映射
+
+### 技术实现
+```typescript
+// 🌐 Web端：工作区级别MCP管理
+const workspace = workspaceManager.getCurrentWorkspace();
+const mcpManager = workspace.getMcpManager();
+const client = mcpManager.getClient(clientName);
+
+// 💻 CLI端：Agent优先MCP访问 (保持现有逻辑)
+const agentInstance = workspace.getAgentInstance(agentName);
+const client = agentInstance.getMCPClient(clientName);
+```
+
+### 用户体验提升
+- 🌐 **Web端体验**: 工作区统一的MCP工具管理，适合项目开发
+- 💻 **CLI端体验**: Agent专属的MCP工具，适合个人对话
+- 🔧 **错误修复**: 解决 "MCP客户端 'telegram-send' 不存在" 等错误
+- 🚀 **架构清晰**: 明确的双层架构，便于维护和扩展
 
 ## 开发小技巧
 

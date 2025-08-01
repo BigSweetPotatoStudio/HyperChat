@@ -1,47 +1,20 @@
 import { MCPServerConfig, IMCPClient } from "@dadigua/hyperchat-shared/types";
 import { getWorkspaceManager, workspaceManager } from "../workspace/index.mjs";
 
-/**
- * 查找指定名称的MCP客户端所属的Agent
- */
-async function findAgentByMcpClient(clientName: string): Promise<{ agentName: string; agentInstance: any } | null> {
-  const workspace = workspaceManager.getCurrentWorkspace();
-  const agents = await workspace.getAllAgents();
-  
-  for (const agentConfig of agents) {
-    const agentInstance = workspace.getAgentInstance(agentConfig.name);
-    if (agentInstance) {
-      const client = agentInstance.getMCPClient(clientName);
-      if (client) {
-        return { agentName: agentConfig.name, agentInstance };
-      }
-    }
-  }
-  return null;
-}
+// findAgentByMcpClient 函数已移除，因为现在使用工作区级别的 MCP 管理
 
 /**
- * 获取所有Agent的MCP客户端聚合列表
+ * 获取工作区级别的所有MCP客户端列表
  */
 async function getAllMcpClients(): Promise<Record<string, unknown>[]> {
   const workspace = workspaceManager.getCurrentWorkspace();
-  const agents = await workspace.getAllAgents();
-  const allClients: Record<string, unknown>[] = [];
+  const mcpManager = workspace.getMcpManager();
   
-  for (const agentConfig of agents) {
-    const agentInstance = workspace.getAgentInstance(agentConfig.name);
-    if (agentInstance) {
-      const clients = agentInstance.getMCPClients();
-      // 为每个客户端添加Agent信息
-      const clientsWithAgent = clients.map(client => ({
-        ...client.toJSON(),
-        agentName: agentConfig.name, // 标记客户端所属的Agent
-      }));
-      allClients.push(...clientsWithAgent);
-    }
+  if (!mcpManager) {
+    return [];
   }
   
-  return allClients;
+  return mcpManager.getAllClients().map(client => client.toJSON());
 }
 
 /**
@@ -51,21 +24,14 @@ async function getAllMcpClients(): Promise<Record<string, unknown>[]> {
 export const mcpCommands = {
 
   /**
-   * 强制重新加载MCP配置文件 - Agent-centered版本
-   * 停止所有Agent的MCP客户端，重新读取配置文件，然后重新启动
+   * 强制重新加载MCP配置文件 - 工作区级别
+   * 停止工作区的MCP客户端，重新读取配置文件，然后重新启动
    * 用于在配置文件被外部修改时同步更新
    * @returns 返回重新加载后的客户端列表
    */
   async forceReloadMcpClients() {
     try {
-      // 停止所有Agent的MCP客户端
-      await this.stopAllAgentMcpClients();
-      
-      // 重新启动所有Agent的MCP客户端
-      await this.startAllAgentMcpClients();
-      
-      // 返回重新加载后的客户端列表
-      return await this.getWorkspaceMcpClients();
+      return await this.forceReloadWorkspaceMcpClients();
     } catch (error) {
       console.error("Failed to force reload MCP clients:", error);
       throw error;
@@ -73,20 +39,17 @@ export const mcpCommands = {
   },
 
   /**
-   * 启动或重启指定的MCP客户端 - Agent-centered版本
+   * 启动或重启指定的MCP客户端 - 工作区级别
    * @param clientName MCP客户端名称
    * @param clientConfig MCP服务器配置（可选，用于添加新客户端）
-   * @param agentName 可选的Agent名称，如果未指定则自动查找或使用第一个Agent
    * @returns 操作结果
    */
   async startWorkspaceMcpClient({
     clientName,
-    clientConfig,
-    agentName
+    clientConfig
   }: {
     clientName: string;
     clientConfig?: MCPServerConfig;
-    agentName?: string;
   }) {
     try {
       const workspace = workspaceManager.getCurrentWorkspace();
@@ -94,44 +57,22 @@ export const mcpCommands = {
         throw new Error('当前没有可用的工作区');
       }
 
-      let targetAgentName = agentName;
-      
-      if (!targetAgentName) {
-        if (clientConfig) {
-          // 如果没有指定Agent但提供了配置，使用第一个可用Agent
-          const agents = await workspace.getAllAgents();
-          if (agents.length === 0) {
-            throw new Error('没有可用的Agent来添加MCP客户端');
-          }
-          targetAgentName = agents[0].name;
-        } else {
-          // 如果没有配置，尝试查找现有客户端所属的Agent
-          const result = await findAgentByMcpClient(clientName);
-          if (!result) {
-            throw new Error(`MCP客户端 "${clientName}" 不存在，且未指定Agent`);
-          }
-          targetAgentName = result.agentName;
-        }
-      }
-
-      const agentInstance = workspace.getAgentInstance(targetAgentName);
-      if (!agentInstance) {
-        throw new Error(`Agent "${targetAgentName}" 不存在`);
+      const mcpManager = workspace.getMcpManager();
+      if (!mcpManager) {
+        throw new Error('工作区 MCP 管理器未初始化');
       }
 
       if (clientConfig) {
         // 如果提供了配置，先设置配置再启动
-        await agentInstance.setMCPServerConfig(clientName, clientConfig);
-        await agentInstance.startMCPClients();
+        await mcpManager.setServerConfig(clientName, clientConfig);
       } else {
         // 如果没有配置，尝试重启现有客户端
-        await agentInstance.restartMCPClient(clientName);
+        await mcpManager.restartClient(clientName);
       }
 
       return {
         success: true,
-        clientName,
-        agentName: targetAgentName
+        clientName
       };
     } catch (error) {
       console.error(`Failed to start MCP client ${clientName}:`, error);
@@ -157,35 +98,31 @@ export const mcpCommands = {
     agentName?: string;
   }) {
     try {
-      let targetAgentName = agentName;
+      const workspace = workspaceManager.getCurrentWorkspace();
+      const mcpManager = workspace.getMcpManager();
       
-      if (!targetAgentName) {
-        // 如果没有指定Agent，自动查找客户端所属的Agent
-        const result = await findAgentByMcpClient(clientName);
-        if (!result) {
-          throw new Error(`MCP客户端 "${clientName}" 不存在，且未指定Agent`);
-        }
-        targetAgentName = result.agentName;
+      if (!mcpManager) {
+        throw new Error('工作区 MCP 管理器未初始化');
       }
 
-      const workspace = workspaceManager.getCurrentWorkspace();
-      const agentInstance = workspace.getAgentInstance(targetAgentName);
-      if (!agentInstance) {
-        throw new Error(`Agent "${targetAgentName}" 不存在`);
+      // 检查客户端是否存在
+      const client = mcpManager.getClient(clientName);
+      if (!client) {
+        throw new Error(`MCP客户端 "${clientName}" 不存在`);
       }
 
       switch (action) {
         case 'restart':
-          await agentInstance.restartMCPClient(clientName);
+          await mcpManager.restartClient(clientName);
           break;
         case 'disable':
-          await agentInstance.stopMCPClients();
+          await mcpManager.disableClient(clientName);
           break;
         case 'enable':
-          await agentInstance.startMCPClients();
+          await mcpManager.enableClient(clientName);
           break;
         case 'delete':
-          await agentInstance.deleteMCPServerConfig(clientName);
+          await mcpManager.deleteServerConfig(clientName);
           break;
         default:
           throw new Error(`不支持的操作: ${action}`);
@@ -194,8 +131,7 @@ export const mcpCommands = {
       return {
         success: true,
         action,
-        clientName,
-        agentName: targetAgentName
+        clientName
       };
     } catch (error) {
       console.error(`Failed to ${action} MCP client ${clientName}:`, error);
@@ -204,230 +140,182 @@ export const mcpCommands = {
   },
 
   /**
-   * 调用指定 MCP 客户端的工具函数 - Agent-centered版本
+   * 调用指定 MCP 客户端的工具函数 - 工作区级别
    * 用于执行 MCP 服务提供的各种功能（如文件操作、系统调用等）
    * @param name MCP客户端名称（如 hyper_tools、knowledge_base 等）
    * @param functionName 要调用的工具函数名称
    * @param args 传递给工具函数的参数对象
-   * @param agentName 可选的Agent名称，如果未指定则自动查找
    * @returns 工具函数的执行结果
    * @throws 如果指定的MCP客户端不存在或工具调用失败
    */
   async mcpCallTool({
     name,
     functionName,
-    args,
-    agentName
+    args
   }: {
     name: string;
     functionName: string;
     args: Record<string, unknown>;
-    agentName?: string;
   }) {
-    let targetAgent;
+    const workspace = workspaceManager.getCurrentWorkspace();
+    const mcpManager = workspace.getMcpManager();
     
-    if (agentName) {
-      // 如果指定了Agent，直接从该Agent获取客户端
-      const workspace = workspaceManager.getCurrentWorkspace();
-      const agentInstance = workspace.getAgentInstance(agentName);
-      if (!agentInstance) {
-        throw new Error(`Agent "${agentName}" not found`);
-      }
-      
-      const client = agentInstance.getMCPClient(name);
-      if (!client) {
-        throw new Error(`MCP client "${name}" not found in agent "${agentName}"`);
-      }
-      
-      return await client.callTool(functionName, args);
-    } else {
-      // 如果未指定Agent，自动查找
-      const result = await findAgentByMcpClient(name);
-      if (!result) {
-        throw new Error(`MCP client "${name}" not found in any agent`);
-      }
-      
-      const client = result.agentInstance.getMCPClient(name);
-      return await client.callTool(functionName, args);
+    if (!mcpManager) {
+      throw new Error('工作区 MCP 管理器未初始化');
     }
+
+    const client = mcpManager.getClient(name);
+    if (!client) {
+      throw new Error(`MCP client "${name}" not found`);
+    }
+    
+    return await client.callTool(functionName, args);
   },
 
   /**
-   * 调用指定工作区的 MCP 客户端工具函数 - Agent-centered版本
-   * 现在delegated到mcpCallTool方法
-   * @deprecated 建议直接使用mcpCallTool方法并指定agentName
+   * 调用指定工作区的 MCP 客户端工具函数 - 工作区级别
+   * @deprecated 建议直接使用mcpCallTool方法
    */
   async mcpCallToolWithWorkspace({
     workspacePath,
     name,
     functionName,
     args,
-    abortController,
-    agentName
+    abortController
   }: {
     workspacePath: string;
     name: string;
     functionName: string;
     args: Record<string, unknown>;
     abortController?: AbortController;
-    agentName?: string;
   }) {
     // Delegate to the updated mcpCallTool method
     return await this.mcpCallTool({
       name,
       functionName,
-      args,
-      agentName
+      args
     });
   },
 
   /**
-   * 获取指定 MCP 客户端的资源内容 - Agent-centered版本
+   * 获取指定 MCP 客户端的资源内容 - 工作区级别
    * 用于访问 MCP 服务提供的各种资源（如文件内容、数据等）
    * @param name MCP客户端名称
    * @param uri 资源URI（格式由具体MCP服务定义）
-   * @param agentName 可选的Agent名称，如果未指定则自动查找
    * @returns 资源的内容数据
    * @throws 如果指定的MCP客户端不存在或资源访问失败
    */
   async mcpCallResource({
     name,
-    uri,
-    agentName
+    uri
   }: {
     name: string;
     uri: string;
-    agentName?: string;
   }) {
-    if (agentName) {
-      // 如果指定了Agent，直接从该Agent获取客户端
-      const workspace = workspaceManager.getCurrentWorkspace();
-      const agentInstance = workspace.getAgentInstance(agentName);
-      if (!agentInstance) {
-        throw new Error(`Agent "${agentName}" not found`);
-      }
-      
-      const client = agentInstance.getMCPClient(name);
-      if (!client) {
-        throw new Error(`MCP client "${name}" not found in agent "${agentName}"`);
-      }
-      
-      return await client.callResource(uri);
-    } else {
-      // 如果未指定Agent，自动查找
-      const result = await findAgentByMcpClient(name);
-      if (!result) {
-        throw new Error(`MCP client "${name}" not found in any agent`);
-      }
-      
-      const client = result.agentInstance.getMCPClient(name);
-      return await client.callResource(uri);
+    const workspace = workspaceManager.getCurrentWorkspace();
+    const mcpManager = workspace.getMcpManager();
+    
+    if (!mcpManager) {
+      throw new Error('工作区 MCP 管理器未初始化');
     }
+
+    const client = mcpManager.getClient(name);
+    if (!client) {
+      throw new Error(`MCP client "${name}" not found`);
+    }
+    
+    return await client.callResource(uri);
   },
 
   /**
-   * 获取指定工作区的 MCP 客户端资源内容 - Agent-centered版本
-   * @deprecated 建议直接使用mcpCallResource方法并指定agentName
+   * 获取指定工作区的 MCP 客户端资源内容 - 工作区级别
+   * @deprecated 建议直接使用mcpCallResource方法
    */
   async mcpCallResourceWithWorkspace({
     workspacePath,
     name,
-    uri,
-    agentName
+    uri
   }: {
     workspacePath: string;
     name: string;
     uri: string;
-    agentName?: string;
   }) {
     // Delegate to the updated mcpCallResource method
     return await this.mcpCallResource({
       name,
-      uri,
-      agentName
+      uri
     });
   },
 
   /**
-   * 调用指定 MCP 客户端的提示模板 - Agent-centered版本
+   * 调用指定 MCP 客户端的提示模板 - 工作区级别
    * 用于获取预定义的提示内容，通常用于AI对话或任务执行
    * @param name MCP客户端名称
    * @param functionName 提示模板函数名称
    * @param args 传递给提示模板的参数
-   * @param agentName 可选的Agent名称，如果未指定则自动查找
    * @returns 渲染后的提示内容
    * @throws 如果指定的MCP客户端不存在或提示调用失败
    */
   async mcpCallPrompt({
     name,
     functionName,
-    args,
-    agentName
+    args
   }: {
     name: string;
     functionName: string;
     args: Record<string, unknown>;
-    agentName?: string;
   }) {
-    if (agentName) {
-      // 如果指定了Agent，直接从该Agent获取客户端
-      const workspace = workspaceManager.getCurrentWorkspace();
-      const agentInstance = workspace.getAgentInstance(agentName);
-      if (!agentInstance) {
-        throw new Error(`Agent "${agentName}" not found`);
-      }
-      
-      const client = agentInstance.getMCPClient(name);
-      if (!client) {
-        throw new Error(`MCP client "${name}" not found in agent "${agentName}"`);
-      }
-      
-      return await client.callPrompt(functionName, args);
-    } else {
-      // 如果未指定Agent，自动查找
-      const result = await findAgentByMcpClient(name);
-      if (!result) {
-        throw new Error(`MCP client "${name}" not found in any agent`);
-      }
-      
-      const client = result.agentInstance.getMCPClient(name);
-      return await client.callPrompt(functionName, args);
+    const workspace = workspaceManager.getCurrentWorkspace();
+    const mcpManager = workspace.getMcpManager();
+    
+    if (!mcpManager) {
+      throw new Error('工作区 MCP 管理器未初始化');
     }
+
+    const client = mcpManager.getClient(name);
+    if (!client) {
+      throw new Error(`MCP client "${name}" not found`);
+    }
+    
+    return await client.callPrompt(functionName, args);
   },
 
   /**
-   * 调用指定工作区的 MCP 客户端提示模板 - Agent-centered版本
-   * @deprecated 建议直接使用mcpCallPrompt方法并指定agentName
+   * 调用指定工作区的 MCP 客户端提示模板 - 工作区级别
+   * @deprecated 建议直接使用mcpCallPrompt方法
    */
   async mcpCallPromptWithWorkspace({
     workspacePath,
     name,
     functionName,
-    args,
-    agentName
+    args
   }: {
     workspacePath: string;
     name: string;
     functionName: string;
     args: Record<string, unknown>;
-    agentName?: string;
   }) {
     // Delegate to the updated mcpCallPrompt method
     return await this.mcpCallPrompt({
       name,
       functionName,
-      args,
-      agentName
+      args
     });
   },
 
   /**
-   * 启动工作区 MCP 服务 - Agent-centered版本
-   * 启动所有Agent的MCP客户端
+   * 启动工作区 MCP 服务 - 工作区级别
+   * 启动工作区级别的MCP客户端
    */
   async startWorkspaceMcpClients(): Promise<Record<string, unknown>[]> {
     try {
-      await this.startAllAgentMcpClients();
+      const workspace = workspaceManager.getCurrentWorkspace();
+      const mcpManager = workspace.getMcpManager();
+      
+      if (mcpManager) {
+        await mcpManager.startClients();
+      }
+      
       return await this.getWorkspaceMcpClients();
     } catch (error) {
       console.error('Failed to start workspace MCP clients:', error);
@@ -436,14 +324,22 @@ export const mcpCommands = {
   },
 
   /**
-   * 强制重新加载工作区MCP配置 - Agent-centered版本
-   * 重新加载所有Agent的MCP客户端
+   * 强制重新加载工作区MCP配置 - 工作区级别
+   * 重新加载工作区级别的MCP客户端
    */
   async forceReloadWorkspaceMcpClients(): Promise<Record<string, unknown>[]> {
     try {
-      // 重新加载所有Agent的MCP客户端
-      await this.stopAllAgentMcpClients();
-      await this.startAllAgentMcpClients();
+      const workspace = workspaceManager.getCurrentWorkspace();
+      const mcpManager = workspace.getMcpManager();
+      
+      if (mcpManager) {
+        // 停止所有客户端
+        await mcpManager.stopClients();
+        // 重新加载配置并启动
+        await mcpManager.loadWorkspaceConfig();
+        await mcpManager.startClients();
+      }
+      
       return await this.getWorkspaceMcpClients();
     } catch (error) {
       console.error('Failed to force reload workspace MCP clients:', error);
@@ -453,48 +349,41 @@ export const mcpCommands = {
 
 
   /**
-   * 添加或更新 MCP 服务器配置 - Agent-centered版本
-   * @deprecated 建议使用setAgentMcpServerConfig方法
+   * 添加或更新 MCP 服务器配置 - 工作区级别
    */
   async setWorkspaceMcpServerConfig({
     serverName,
-    serverConfig,
-    agentName
+    serverConfig
   }: {
     serverName: string;
     serverConfig: MCPServerConfig;
-    agentName?: string; // 需要指定Agent名称
   }): Promise<void> {
-    if (!agentName) {
-      throw new Error('Agent-centered架构要求指定agentName');
+    const workspace = workspaceManager.getCurrentWorkspace();
+    const mcpManager = workspace.getMcpManager();
+    
+    if (!mcpManager) {
+      throw new Error('工作区 MCP 管理器未初始化');
     }
     
-    return await this.setAgentMcpServerConfig({
-      agentName,
-      serverName,
-      serverConfig
-    });
+    return await mcpManager.setServerConfig(serverName, serverConfig);
   },
 
   /**
-   * 删除 MCP 服务器配置 - Agent-centered版本
-   * @deprecated 建议使用deleteAgentMcpServerConfig方法
+   * 删除 MCP 服务器配置 - 工作区级别
    */
   async deleteWorkspaceMcpServerConfig({
-    serverName,
-    agentName
+    serverName
   }: {
     serverName: string;
-    agentName?: string; // 需要指定Agent名称
   }): Promise<void> {
-    if (!agentName) {
-      throw new Error('Agent-centered架构要求指定agentName');
+    const workspace = workspaceManager.getCurrentWorkspace();
+    const mcpManager = workspace.getMcpManager();
+    
+    if (!mcpManager) {
+      throw new Error('工作区 MCP 管理器未初始化');
     }
     
-    return await this.deleteAgentMcpServerConfig({
-      agentName,
-      serverName
-    });
+    return await mcpManager.deleteServerConfig(serverName);
   },
 
 

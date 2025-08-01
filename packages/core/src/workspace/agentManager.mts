@@ -336,6 +336,10 @@ export class AgentManager {
     this.nameToPath.delete(oldName);
     this.nameToPath.set(newName, agentPath);
 
+    // 更新 availableAgents Map：删除旧的名称映射，添加新的
+    this.availableAgents.delete(oldName);
+    this.availableAgents.set(newName, agentPath);
+
     console.log(`已更新 Agent 映射关系: ${oldName} -> ${newName} (路径: ${agentPath})`);
   }
 
