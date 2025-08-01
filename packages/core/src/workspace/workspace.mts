@@ -10,7 +10,7 @@ import type { ChatHistoryItem } from "@dadigua/hyperchat-shared/types";
 import { AgentManager } from "./agentManager.mjs";
 import { AgentInstance } from "../agent/agentInstance.mjs";
 import { Logger } from "../log.mjs";
-import { WorkspaceMCPManager } from "../agent/mcp/manager.mjs";
+import { MCPManager } from "../agent/mcp/manager.mjs";
 
 /**
  * 工作区状态枚举
@@ -34,7 +34,7 @@ export enum WorkspaceState {
 export class Workspace {
   private config: WorkspaceConfig;
   private agentManager: AgentManager;
-  private mcpManager?: WorkspaceMCPManager;
+  private mcpManager?: MCPManager;
   private fileTree?: WorkspaceFileNode;
   private lastSync?: number;
   private readonly HYPERCHAT_DIR = CONSTANTS.HYPERCHAT_DIR;
@@ -160,11 +160,8 @@ export class Workspace {
     try {
       Logger.info('🔥 开始启动工作区服务（第二阶段）...');
 
-      // 初始化 MCP 管理器
+      // 只启动工作区级别的MCP，忽略Agent内部的MCP
       await this.initializeMcpManager();
-
-      // 启动所有Agent的MCP客户端
-      await this.startAllAgentMcpClients();
 
       this.state = WorkspaceState.STARTED;
       Logger.info('✅ 工作区服务启动完成', {
@@ -198,9 +195,6 @@ export class Workspace {
     try {
       this.state = WorkspaceState.STOPPING;
       Logger.info('🛑 开始停止工作区服务...');
-
-      // 停止所有Agent的MCP客户端
-      await this.stopAllAgentMcpClients();
 
       // 停止工作区级别的MCP客户端
       if (this.mcpManager) {
@@ -547,7 +541,7 @@ export class Workspace {
       const hyperChatPath = this.getHyperChatPath();
       
       // 创建MCP管理器
-      this.mcpManager = new WorkspaceMCPManager(hyperChatPath);
+      this.mcpManager = new MCPManager(hyperChatPath);
       
       // 启动工作区级别的MCP客户端
       await this.mcpManager.startClients();
@@ -572,56 +566,10 @@ export class Workspace {
   /**
    * 获取工作区的MCP管理器
    */
-  getMcpManager(): WorkspaceMCPManager | undefined {
+  getMcpManager(): MCPManager | undefined {
     return this.mcpManager;
   }
 
-  /**
-   * 启动所有Agent的MCP客户端
-   */
-  private async startAllAgentMcpClients(): Promise<void> {
-    try {
-      const agents = await this.getAllAgents();
-      
-      for (const agentConfig of agents) {
-        const agentInstance = this.getAgentInstance(agentConfig.name);
-        if (agentInstance) {
-          try {
-            await agentInstance.startMCPClients();
-            Logger.info(`✅ 启动Agent "${agentConfig.name}" 的MCP客户端`);
-          } catch (error) {
-            Logger.warn(`⚠️ 启动Agent "${agentConfig.name}" 的MCP客户端失败:`, error);
-          }
-        }
-      }
-    } catch (error) {
-      Logger.error("❌ 启动所有Agent的MCP客户端失败:", error);
-      // 不抛出错误，让工作区初始化继续
-    }
-  }
-
-  /**
-   * 停止所有Agent的MCP客户端
-   */
-  private async stopAllAgentMcpClients(): Promise<void> {
-    try {
-      const agents = await this.getAllAgents();
-      
-      for (const agentConfig of agents) {
-        const agentInstance = this.getAgentInstance(agentConfig.name);
-        if (agentInstance) {
-          try {
-            await agentInstance.stopMCPClients();
-            Logger.info(`✅ 停止Agent "${agentConfig.name}" 的MCP客户端`);
-          } catch (error) {
-            Logger.warn(`⚠️ 停止Agent "${agentConfig.name}" 的MCP客户端失败:`, error);
-          }
-        }
-      }
-    } catch (error) {
-      Logger.error("❌ 停止所有Agent的MCP客户端失败:", error);
-    }
-  }
 
   // ========== 工具方法 ==========
 

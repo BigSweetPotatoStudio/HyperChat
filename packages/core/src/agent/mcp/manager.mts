@@ -16,7 +16,7 @@ import { Logger } from "../../log.mjs";
 import { CONSTANTS } from "../constants.mjs";
 import { WorkSpaceServers } from "../../mcp/servers/index.mjs";
 
-export class WorkspaceMCPManager {
+export class MCPManager {
   private clients: Map<string, WorkspaceMCPClientImpl> = new Map();
   private workspaceConfig: WorkspaceMCPConfig | null = null;
   private options: MCPManagerOptions;
@@ -300,8 +300,6 @@ export class WorkspaceMCPManager {
     let workspaceConfig: WorkspaceMCPConfig = {
       mcpServers: {},
       workspacePath: this.workspacePath,
-      created: Date.now(),
-      lastModified: Date.now(),
     };
 
     // 只加载当前工作区的配置文件
@@ -362,7 +360,6 @@ export class WorkspaceMCPManager {
 
     // 直接设置工作区配置
     this.workspaceConfig.mcpServers[name] = config;
-    this.workspaceConfig.lastModified = Date.now();
 
     // 保存配置
     await this.saveConfig();
@@ -387,7 +384,6 @@ export class WorkspaceMCPManager {
     }
 
     delete this.workspaceConfig.mcpServers[name];
-    this.workspaceConfig.lastModified = Date.now();
 
     // 保存工作区配置
     await this.saveConfig();
@@ -502,7 +498,6 @@ export class WorkspaceMCPManager {
 
     // 在配置中标记为 disabled
     serverConfig.disabled = true;
-    this.workspaceConfig.lastModified = Date.now();
 
     // 保存配置文件
     await this.saveConfig();
@@ -533,7 +528,6 @@ export class WorkspaceMCPManager {
 
     // 在配置中删除 disabled 属性（与 disable 操作相反）
     delete serverConfig.disabled;
-    this.workspaceConfig.lastModified = Date.now();
 
     // 保存配置文件
     await this.saveConfig();

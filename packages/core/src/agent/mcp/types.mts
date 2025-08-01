@@ -19,15 +19,6 @@ export interface WorkspaceMCPConfig {
    */
   workspacePath: string;
 
-  /**
-   * 配置创建时间
-   */
-  created?: number;
-
-  /**
-   * 最后修改时间
-   */
-  lastModified?: number;
 }
 
 export type WorkspaceMCPClient = IMCPClient;

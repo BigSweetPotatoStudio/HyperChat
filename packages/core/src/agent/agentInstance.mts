@@ -27,12 +27,11 @@ export class AgentInstance {
   private mcpConfigPath: string;
   private tasksPath: string;
   private initialized: boolean = false;
-  private mcpManager: AgentMCPManager | null = null; // Agent专属MCP管理器
+  public mcpManager: AgentMCPManager; // Agent专属MCP管理器
   private taskScheduler: AgentTaskScheduler | null = null; // Agent专属任务调度器
-  
+
   // 创建聊天日志保存队列，确保按顺序写入，避免YAML文件并发问题
   private static chatLogQueue = new TaskQueue({ concurrency: 1 });
-
   constructor(agentPath: string, config?: AgentConfig) {
     this.agentPath = agentPath;
     this.configPath = path.join(agentPath, CONSTANTS.CONFIG_FILES.AGENT_CONFIG);
@@ -50,6 +49,20 @@ export class AgentInstance {
       version: 1,
     };
 
+    this.mcpManager = new AgentMCPManager(
+      this.agentPath,
+      {
+        onClientStatusChange: (client) => {
+          console.log(`Agent ${this.config.name} MCP客户端状态变化: ${client.serverName} -> ${client.status}`);
+        },
+        onConfigUpdate: (config) => {
+          console.log(`Agent ${this.config.name} MCP配置更新`);
+        },
+        onError: (error, context) => {
+          console.error(`Agent ${this.config.name} MCP错误:`, error, context);
+        },
+      }
+    );
     // chatLogs 延迟初始化
   }
 
@@ -190,7 +203,7 @@ export class AgentInstance {
         // 更新MCP和任务路径
         this.mcpConfigPath = path.join(newPath, CONSTANTS.CONFIG_FILES.MCP);
         this.tasksPath = path.join(newPath, "tasks");
-        
+
         // 重置chatLogs（如果已初始化）
         if (this.initialized && this.chatLogs) {
           this.chatLogs = new DataList<ChatHistoryItem>(
@@ -215,7 +228,7 @@ export class AgentInstance {
    */
   async getChatLogs(limit: number = 10): Promise<ChatHistoryItem[]> {
     await this.ensureInitialized();
-    
+
     if (limit) {
       const result = await this.chatLogs!.getPage(0, limit);
       return result.items;
@@ -247,7 +260,7 @@ export class AgentInstance {
     await this.ensureInitialized();
     // 确保聊天记录与当前Agent关联
     chatLog.agentName = this.config.name;
-    
+
     // 使用TaskQueue确保顺序写入，避免YAML文件并发问题
     return await AgentInstance.chatLogQueue.add(async () => {
       return await this.chatLogs!.set(chatLog);
@@ -292,21 +305,20 @@ export class AgentInstance {
     try {
       // 先停止任务调度器
       await this.stopTaskScheduler();
-      
+
       // 停止MCP客户端
       await this.stopMCPClients();
-      
+
       // 清理管理器
       if (this.taskScheduler) {
         await this.taskScheduler.stop();
         this.taskScheduler = null;
       }
-      
+
       if (this.mcpManager) {
         await this.mcpManager.destroy();
-        this.mcpManager = null;
       }
-      
+
       if (fs.existsSync(this.agentPath)) {
         // 递归删除整个Agent目录，包括:
         // - agent.yaml (Agent配置)
@@ -400,8 +412,6 @@ export class AgentInstance {
       const updatedConfig: WorkspaceMCPConfig = {
         ...config,
         workspacePath: this.agentPath,
-        lastModified: Date.now(),
-        created: config.created || Date.now(),
       };
 
       const content = JSON.stringify(updatedConfig, null, 2);
@@ -434,22 +444,6 @@ export class AgentInstance {
    * 获取或创建Agent专属MCP管理器
    */
   private getMCPManager(): AgentMCPManager {
-    if (!this.mcpManager) {
-      this.mcpManager = new AgentMCPManager(
-        this.agentPath,
-        {
-          onClientStatusChange: (client) => {
-            console.log(`Agent ${this.config.name} MCP客户端状态变化: ${client.serverName} -> ${client.status}`);
-          },
-          onConfigUpdate: (config) => {
-            console.log(`Agent ${this.config.name} MCP配置更新`);
-          },
-          onError: (error, context) => {
-            console.error(`Agent ${this.config.name} MCP错误:`, error, context);
-          },
-        }
-      );
-    }
     return this.mcpManager;
   }
 
@@ -520,14 +514,14 @@ export class AgentInstance {
   } {
     const mcpClients = this.getMCPClients();
     const agentConfig = this.getConfig();
-    
+
     // 获取所有可用工具
     const availableTools = mcpClients.flatMap((client: any) => client.tools || []);
     const totalTools = availableTools.length;
-    
+
     // 计算允许的MCP配置数量（去重）
     const allowedMCPsCount = new Set(agentConfig.allowMCPs.map(x => x.split(" > ")[0])).size;
-    
+
     // 如果Agent有特定的allowMCPs配置，过滤工具
     let matchedTools: any[] = [];
     if (agentConfig.allowMCPs && agentConfig.allowMCPs.length > 0) {
@@ -544,7 +538,7 @@ export class AgentInstance {
       // 如果没有特定配置，则所有工具都可用
       matchedTools = availableTools;
     }
-    
+
     return {
       allowedMCPsCount,
       availableTools,
@@ -565,8 +559,8 @@ export class AgentInstance {
   ): Promise<any> {
     // 获取对应的MCP客户端
     const mcpClients = this.getMCPClients();
-    const client = mcpClients.find(client => client.serverName === toolName);
-    
+    const client = mcpClients.find((client: any) => client.serverName === toolName);
+
     if (!client) {
       throw new Error(`MCP client "${toolName}" not found in agent "${this.config.name}"`);
     }
@@ -624,7 +618,7 @@ export class AgentInstance {
           const filePath = path.join(this.tasksPath, file);
           const content = await fs.promises.readFile(filePath, "utf-8");
           const task = yaml.load(content) as Task;
-          
+
           // 确保任务的agentName与当前Agent一致
           if (task && typeof task === 'object') {
             task.agentName = this.config.name;
@@ -647,7 +641,7 @@ export class AgentInstance {
    */
   async getTask(taskName: string): Promise<Task | null> {
     const taskPath = path.join(this.tasksPath, `${sanitizeFileName(taskName)}.yaml`);
-    
+
     if (!fs.existsSync(taskPath)) {
       return null;
     }
@@ -655,13 +649,13 @@ export class AgentInstance {
     try {
       const content = await fs.promises.readFile(taskPath, "utf-8");
       const task = yaml.load(content) as Task;
-      
+
       if (task && typeof task === 'object') {
         // 确保任务的agentName与当前Agent一致
         task.agentName = this.config.name;
         return task;
       }
-      
+
       return null;
     } catch (error) {
       console.warn(`读取任务失败 ${taskName}:`, error);
@@ -688,12 +682,12 @@ export class AgentInstance {
       const taskPath = path.join(this.tasksPath, `${sanitizeFileName(task.name)}.yaml`);
       const yamlContent = yaml.dump(agentTask, { indent: 2 });
       await fs.promises.writeFile(taskPath, yamlContent, "utf-8");
-      
+
       // 更新任务调度
       if (!agentTask.disabled && agentTask.cron) {
         await this.updateTaskSchedule(agentTask.name, agentTask);
       }
-      
+
       return true;
     } catch (error) {
       console.warn(`添加Agent任务失败 ${task.name}:`, error);
@@ -723,11 +717,11 @@ export class AgentInstance {
       }
 
       await fs.promises.writeFile(newTaskPath, yamlContent, "utf-8");
-      
+
       // 更新任务调度
       const oldTaskNameForScheduler = taskName !== task.name ? taskName : undefined;
       await this.updateTaskSchedule(task.name, agentTask, oldTaskNameForScheduler);
-      
+
       return true;
     } catch (error) {
       console.warn(`更新Agent任务失败 ${taskName}:`, error);
@@ -741,14 +735,14 @@ export class AgentInstance {
   async deleteTask(taskName: string): Promise<boolean> {
     try {
       const taskPath = path.join(this.tasksPath, `${sanitizeFileName(taskName)}.yaml`);
-      
+
       if (fs.existsSync(taskPath)) {
         await fs.promises.unlink(taskPath);
       }
-      
+
       // 删除任务调度
       await this.deleteTaskSchedule(taskName);
-      
+
       return true;
     } catch (error) {
       console.warn(`删除Agent任务失败 ${taskName}:`, error);
@@ -763,7 +757,7 @@ export class AgentInstance {
     try {
       // 先停止任务调度器
       await this.stopTaskScheduler();
-      
+
       if (await this.hasTasksDirectory()) {
         const files = await fs.promises.readdir(this.tasksPath);
         const taskFiles = files.filter(file => file.endsWith('.yaml') || file.endsWith('.yml'));
@@ -855,7 +849,7 @@ export class AgentInstance {
       // 可以集成到聊天系统中，自动执行任务描述作为提示并记录结果
       console.log(`[Agent ${this.config.name}] 开始执行任务: ${task.name}`);
       console.log(`任务描述: ${task.description}`);
-      
+
       // 创建任务执行记录
       const executionTime = Date.now();
       const chatLog: ChatHistoryItem = {
@@ -875,7 +869,7 @@ export class AgentInstance {
 
       // 保存任务执行记录到聊天历史
       await this.setChatLog(chatLog);
-      
+
       console.log(`[Agent ${this.config.name}] 任务执行完成: ${task.name}`);
     } catch (error) {
       console.error(`[Agent ${this.config.name}] 任务执行失败: ${task.name}`, error);

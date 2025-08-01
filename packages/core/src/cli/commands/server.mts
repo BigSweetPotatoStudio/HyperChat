@@ -64,7 +64,7 @@ export async function startServer(options: ServerOptions = {}) {
     // 1. 初始化工作区管理器
     const currentWorkingDirectory = process.cwd();
     await getWorkspaceManager().initialize(currentWorkingDirectory);
-    
+    await getWorkspaceManager().getCurrentWorkspace().start();
     // 2. 启动默认的全局Hyper Agent
     // logger.info(`🤖 ${t`Starting default global agent...`}`);
     // try {
