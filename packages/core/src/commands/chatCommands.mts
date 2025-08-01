@@ -53,7 +53,6 @@ export async function streamChatCompletion(params: ChatCompletionRequest): Promi
     sessionId,
     chatKey,
     agentName,
-    agentScope = "workspace",
     messages,
     userMessage,
     configOverrides = {},
@@ -105,13 +104,11 @@ export async function streamChatCompletion(params: ChatCompletionRequest): Promi
 
     // 注册扩展（现在不需要传入任何参数）
     aiChannel.register();
-
     // 构建系统提示词（现在记忆获取逻辑在 getBuiltinPrompts 内部）
     const systemPrompt = getBuiltinPrompts(
-      workspace.workspacePath,
       effectiveConfig.prompt,
-      agentName || "",
-      agentScope
+      workspace.workspacePath,
+      agent.getAgentPath()
     ).prompt;
 
     // 调用工具确认回调

@@ -522,14 +522,11 @@ export async function startChat(initialMessage?: string, options: ChatOptions = 
 
 
       // 构建系统提示词
-      const agentName = env.agent.getConfig().name || "";
-      // 从Agent实例获取path需要通过反射或添加方法，暂时使用空字符串
-      const workspacePath = '';
+      const workspacePath = process.cwd();
       const systemPrompt = getBuiltinPrompts(
-        workspacePath,
         env.effectiveConfig.prompt,
-        agentName,
-        "workspace",
+        workspacePath,
+        env.agent.getAgentPath()
       ).prompt;
 
       // 创建流式聊天处理器
@@ -712,14 +709,11 @@ export async function startChat(initialMessage?: string, options: ChatOptions = 
 
         try {
           // 构建系统提示词
-          const agentName = env.agent.getConfig().name || "";
-          // 从Agent实例获取path需要通过反射或添加方法，暂时使用空字符串
-          const workspacePath = '';
+          const workspacePath = process.cwd();
           const systemPrompt = getBuiltinPrompts(
-            workspacePath,
             env.effectiveConfig.prompt,
-            agentName,
-            "workspace"
+            workspacePath,
+            env.agent.getAgentPath()
           ).prompt;
 
           // 创建交互式聊天处理器

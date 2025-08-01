@@ -313,12 +313,10 @@ export async function startChatInk(initialMessage?: string, options: ChatOptions
 
       try {
         // 构建系统提示词
-        const agentName = agent.getConfig().name || "";
         const systemPrompt = getBuiltinPrompts(
-          currentWorkingDirectory,
           effectiveConfig.prompt,
-          agentName,
-          "workspace",
+          currentWorkingDirectory,
+          agent.getAgentPath()
         ).prompt;
 
         await aiChannel.completion({

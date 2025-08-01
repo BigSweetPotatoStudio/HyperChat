@@ -181,16 +181,12 @@ export async function executeAICompletion(
     agentScope?: "global" | "workspace";
   }
 ): Promise<MyMessage> {
-  const agentName = options?.agentName || env.agent.getConfig().name || "";
-  const agentScope = options?.agentScope || "workspace";
-  
   // 构建系统提示词（现在记忆获取逻辑在 getBuiltinPrompts 内部）
   const workspacePath = env.workspace?.workspacePath || '';
   const systemPrompt = getBuiltinPrompts(
-    workspacePath,
     env.effectiveConfig.prompt,
-    agentName,
-    agentScope
+    workspacePath,
+    env.agent.getAgentPath()
   ).prompt;
 
   await aiChannel.completion({
