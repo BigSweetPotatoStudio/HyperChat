@@ -27,7 +27,7 @@ export class AgentInstance {
   private mcpConfigPath: string;
   private tasksPath: string;
   private initialized: boolean = false;
-  public mcpManager: AgentMCPManager; // Agent专属MCP管理器
+  public agentMcpManager: AgentMCPManager | null = null; // Agent专属MCP管理器
   private taskScheduler: AgentTaskScheduler | null = null; // Agent专属任务调度器
 
   // 创建聊天日志保存队列，确保按顺序写入，避免YAML文件并发问题
@@ -49,11 +49,6 @@ export class AgentInstance {
       version: 1,
     };
 
-    this.mcpManager = new AgentMCPManager(
-      this.agentPath,
-      this.config.allowMCPs
-    );
-    // chatLogs 延迟初始化
   }
 
   /**
@@ -70,6 +65,10 @@ export class AgentInstance {
     // 加载配置
     await this.loadConfig();
 
+    this.agentMcpManager = new AgentMCPManager(
+      this.agentPath,
+      this.config.allowMCPs
+    );
     // 初始化聊天记录管理器
     this.chatLogs = new DataList<ChatHistoryItem>(
       path.join(this.agentPath, CONSTANTS.DIRECTORIES.CHAT_LOGS),
@@ -306,8 +305,8 @@ export class AgentInstance {
         this.taskScheduler = null;
       }
 
-      if (this.mcpManager) {
-        await this.mcpManager.destroy();
+      if (this.getAgentMcpManager()) {
+        await this.getAgentMcpManager()!.destroy();
       }
 
       if (fs.existsSync(this.agentPath)) {
@@ -356,6 +355,16 @@ export class AgentInstance {
   }
 
   // ==================== Agent专属MCP管理 ====================
+
+  /**
+   * 获取Agent专属MCP管理器
+   */
+  getAgentMcpManager(): AgentMCPManager  {
+    if (!this.agentMcpManager) {
+      throw new Error(`Agent ${this.config.name} MCP Manager is not initialized`);
+    }
+    return this.agentMcpManager;
+  }
 
   /**
    * 获取Agent专属MCP配置路径
@@ -432,51 +441,49 @@ export class AgentInstance {
   // ==================== Agent专属MCP客户端管理 ====================
 
 
-
   /**
    * 启动Agent专属MCP客户端
    */
   async startMCPClients(): Promise<void> {
-    const mcpManager = this.mcpManager;
-    await mcpManager.startClients();
+
+    await this.getAgentMcpManager().startClients();
   }
 
   /**
    * 停止Agent专属MCP客户端
    */
   async stopMCPClients(): Promise<void> {
-    if (this.mcpManager) {
-      await this.mcpManager.stopClients();
-    }
+
+    await this.getAgentMcpManager()!.stopClients();
+
   }
 
   /**
    * 获取Agent的MCP客户端列表
    */
   getMCPClients() {
-    return this.mcpManager ? this.mcpManager.getClients() : [];
+    return this.getAgentMcpManager()!.getClients();
   }
 
   /**
    * 获取指定MCP客户端
    */
   getMCPClient(name: string) {
-    return this.mcpManager ? this.mcpManager.getClient(name) : undefined;
+    return this.getAgentMcpManager() ? this.getAgentMcpManager()!.getClient(name) : undefined;
   }
 
   /**
    * 重启指定MCP客户端
    */
   async restartMCPClient(name: string): Promise<void> {
-    const mcpManager = this.mcpManager;
-    await mcpManager.restartClient(name);
+    await this.getAgentMcpManager()!.restartClient(name);
   }
 
   /**
    * 设置MCP服务器配置
    */
   async setMCPServerConfig(name: string, serverConfig: MCPServerConfig): Promise<void> {
-    const mcpManager = this.mcpManager;
+    const mcpManager = this.getAgentMcpManager();
     await mcpManager.setServerConfig(name, serverConfig);
   }
 
@@ -484,8 +491,7 @@ export class AgentInstance {
    * 删除MCP服务器配置
    */
   async deleteMCPServerConfig(name: string): Promise<void> {
-    const mcpManager = this.mcpManager;
-    await mcpManager.deleteServerConfig(name);
+    await this.getAgentMcpManager()!.deleteServerConfig(name);
   }
 
   /**

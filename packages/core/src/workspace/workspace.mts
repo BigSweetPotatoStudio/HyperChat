@@ -577,7 +577,10 @@ export class Workspace {
   /**
    * 获取工作区的MCP管理器
    */
-  getMcpManager(): MCPManager | undefined {
+  getMcpManager(): MCPManager {
+    if (!this.mcpManager) {
+      throw new Error("MCP管理器尚未初始化");
+    }
     return this.mcpManager;
   }
 

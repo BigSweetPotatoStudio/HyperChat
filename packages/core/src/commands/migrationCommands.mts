@@ -452,7 +452,7 @@ export async function createMigrationCommands(workspaceManager: WorkspaceManager
 
         // 获取现有的 Agent 列表（用于重复检查）
         const existingAgents = await workspace.getAllAgents();
-        const existingNames = new Set(existingAgents.map((agent: AgentConfig & { scope?: "global" | "workspace" }) => agent.name));
+        const existingNames = new Set(existingAgents.map((agent: AgentConfig) => agent.name));
 
         if (dryRun) {
           result.message = "试运行模式 - 不会实际创建 Agent";
@@ -589,16 +589,8 @@ export async function createMigrationCommands(workspaceManager: WorkspaceManager
         }
 
         // 获取现有的 MCP 客户端（用于重复检查）
-        // 在Agent-centered架构下，我们需要检查所有Agent的MCP配置
-        const existingNames = new Set<string>();
-        const agents = await workspace.getAllAgents();
-        for (const agentConfig of agents) {
-          const agentInstance = workspace.getAgentInstance(agentConfig.name);
-          if (agentInstance) {
-            const mcpClients = agentInstance.getMCPClients();
-            mcpClients.forEach(client => existingNames.add(client.serverName));
-          }
-        }
+        const existingClients = await workspace.getMcpClients();
+        const existingNames = new Set(existingClients.map((client: any) => client.serverName));
 
         if (dryRun) {
           result.message = "试运行模式 - 不会实际创建 MCP 配置";
@@ -618,64 +610,18 @@ export async function createMigrationCommands(workspaceManager: WorkspaceManager
                 continue;
               } else {
                 // 强制模式下删除现有的配置
-                // 在Agent-centered架构下，需要从所有Agent中移除此MCP服务器
                 if (!dryRun) {
-                  for (const agentConfig of agents) {
-                    const agentInstance = workspace.getAgentInstance(agentConfig.name);
-                    if (agentInstance) {
-                      const client = agentInstance.getMCPClient(serverName);
-                      if (client) {
-                        await agentInstance.deleteMCPServerConfig(serverName);
-                      }
-                    }
-                  }
+                  await workspace.getMcpManager().deleteServerConfig(serverName);
+                  // await workspace.deleteMcpServer(serverName);
                 }
               }
             }
 
             // 添加新的 MCP 配置
-            // 在Agent-centered架构下，我们需要将MCP配置添加到默认Agent或全局Agent
             if (!dryRun) {
-              // 找到一个可用的Agent来添加MCP配置，或创建一个默认Agent
-              let targetAgent = agents.length > 0 ? agents[0] : null;
-              if (!targetAgent) {
-                // 如果没有Agent，创建一个默认Agent
-                const defaultAgentConfig = {
-                  name: "default",
-                  prompt: "Default agent for migrated MCP services",
-                  allowMCPs: [],
-                  isConfirmCallTool: false,
-                  maxTokens: 4000,
-                  tags: [],
-                  subAgents: [],
-                  version: 1
-                };
-                await workspace.createAgent(defaultAgentConfig, targetScope);
-                // 重新获取刚创建的Agent配置
-                const allAgents = await workspace.getAllAgents();
-                targetAgent = allAgents.find(a => a.name === "default") || null;
-              }
-              
-              if (targetAgent) {
-                const agentInstance = workspace.getAgentInstance(targetAgent.name);
-                if (agentInstance) {
-                  await agentInstance.setMCPServerConfig(serverName, serverConfig);
-                  result.details.migrated.push(serverName);
-                  result.migrated++;
-                } else {
-                  result.details.errors.push({
-                    name: serverName,
-                    error: "无法找到目标Agent实例"
-                  });
-                  result.errors++;
-                }
-              } else {
-                result.details.errors.push({
-                  name: serverName,
-                  error: "无法找到目标Agent"
-                });
-                result.errors++;
-              }
+              await workspace.getMcpManager().setServerConfig(serverName, serverConfig);
+              result.details.migrated.push(serverName);
+              result.migrated++;
             } else {
               // 试运行模式
               result.details.migrated.push(serverName);

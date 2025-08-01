@@ -91,7 +91,7 @@ export async function streamChatCompletion(params: ChatCompletionRequest): Promi
     }
     let WorkspaceMCPManager = workspace.getMcpManager();
     if (WorkspaceMCPManager !== undefined) {
-      agent.mcpManager.mcpManager = WorkspaceMCPManager;
+      agent.getAgentMcpManager().mcpManager = WorkspaceMCPManager;
     }
 
     // console.log("Using Agent:", agentName, "agent:", agent);

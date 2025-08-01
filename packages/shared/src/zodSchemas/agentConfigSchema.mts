@@ -38,7 +38,7 @@ export const BaseAIConfigSchema = z.object({
     .int()
     .min(100, "Max tokens must be >= 100")
     .max(32000, "Max tokens must be <= 32000")
-    .default(4000)
+    .default(8096)
     .describe("Maximum tokens for AI response"),
   
   maxContextTokens: z.number()
