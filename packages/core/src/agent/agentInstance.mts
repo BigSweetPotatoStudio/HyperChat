@@ -8,7 +8,7 @@ import { CONSTANTS } from "./constants.mjs";
 import { DataList } from "./dataList.mjs";
 import { sanitizeFileName } from "../common/util.mjs";
 import { AgentConfig } from "@dadigua/hyperchat-shared";
-import type { ChatHistoryItem } from "@dadigua/hyperchat-shared/types";
+import type { ChatHistoryItem, HyperChatCompletionTool } from "@dadigua/hyperchat-shared/types";
 import type { MCPServerConfig } from "@dadigua/hyperchat-shared/types";
 import type { Task } from "@dadigua/hyperchat-shared";
 import type { WorkspaceMCPConfig } from "./mcp/types.mjs";
@@ -360,7 +360,7 @@ export class AgentInstance {
   /**
    * 获取Agent专属MCP管理器
    */
-  getAgentMcpManager(): AgentMCPManager  {
+  getAgentMcpManager(): AgentMCPManager {
     if (!this.agentMcpManager) {
       throw new Error(`Agent ${this.config.name} MCP Manager is not initialized`);
     }
@@ -498,45 +498,30 @@ export class AgentInstance {
   /**
    * 获取Agent允许的MCP工具
    * 封装了过滤逻辑，返回Agent配置中允许的工具列表
+   * 支持新的双层权限架构：allowMCPs (白名单) + blockMCPTools (黑名单)
    */
-  getMCPTools(): {
+  getMCPTools(allowMCPs: string[] = this.getConfig().allowMCPs, blockMCPTools: string[] = this.getConfig().blockMCPTools): {
     allowedMCPsCount: number;
-    availableTools: any[];
-    matchedTools: any[];
-    totalTools: number;
+    availableTools: HyperChatCompletionTool[];
   } {
     const mcpClients = this.getMCPClients();
-    const agentConfig = this.getConfig();
+
 
     // 获取所有可用工具
-    const availableTools = mcpClients.flatMap((client: any) => client.tools || []);
-    const totalTools = availableTools.length;
-
-    // 计算允许的MCP配置数量（去重）
-    const allowedMCPsCount = new Set(agentConfig.allowMCPs.map(x => x.split(" > ")[0])).size;
-
-    // 如果Agent有特定的allowMCPs配置，过滤工具
-    let matchedTools: any[] = [];
-    if (agentConfig.allowMCPs && agentConfig.allowMCPs.length > 0) {
-      const allowedMCPs = agentConfig.allowMCPs;
-      matchedTools = availableTools.filter((tool: any) =>
-        allowedMCPs.some(allowed =>
-          tool.name === allowed ||
-          tool.displayName === allowed ||
-          tool.originalName === allowed ||
-          tool.clientName === allowed
-        )
-      );
-    } else {
-      // 如果没有特定配置，则所有工具都可用
-      matchedTools = availableTools;
-    }
+    const availableTools: HyperChatCompletionTool[] = [];
+    mcpClients.forEach((client) => {
+      if (allowMCPs.includes(client.serverName)) {
+        client.tools.forEach(tool => {
+          if (!blockMCPTools.includes(tool.displayName)) {
+            availableTools.push(tool);
+          }
+        });
+      }
+    });
 
     return {
-      allowedMCPsCount,
-      availableTools,
-      matchedTools,
-      totalTools,
+      allowedMCPsCount: allowMCPs.length,
+      availableTools: availableTools,
     };
   }
 

@@ -106,12 +106,12 @@ export class AiChannel {
   }> {
     // 获取环境变量管理器
     const envManager = EnvManager.getInstance();
-    
+
     // 从环境变量获取配置
     const envApiKey = envManager.get('HyperChat_API_KEY');
     const envApiUrl = envManager.get('HyperChat_API_URL');
     const envProvider = envManager.get('HyperChat_AI_Provider');
-    
+
     // 尝试从应用设置获取配置
     let appSettings = await Command.getAppSettings()
     let aiSettings = appSettings?.ai || {};
@@ -126,14 +126,14 @@ export class AiChannel {
 
     const finalModelKey = effectiveConfig.modelKey;
     let modelConfig: AIModelConfigItem | null = null;
-    
+
     // 从应用设置中查找模型配置
     if (aiSettings && aiSettings.models && aiSettings.models.length > 0) {
       modelConfig = aiSettings.models.find((x) => x.key === finalModelKey) || null;
-      
+
       if (modelConfig) {
         Logger.debug(`Found model config from app settings: ${finalModelKey}`);
-        
+
         // 合并内置API配置
         if (modelConfig.provider !== "unknown") {
           modelConfig = {
@@ -144,16 +144,16 @@ export class AiChannel {
         }
       }
     }
-    
+
     // 如果应用设置中没有找到配置，尝试从环境变量创建基础配置
     if (!modelConfig) {
       // 检查是否有足够的环境变量来创建基础配置
       if (!envApiKey || !envApiUrl) {
         throw new Error(`Model not found: ${finalModelKey}. Please configure it in app settings or provide HyperChat_API_KEY and HyperChat_API_URL environment variables.`);
       }
-      
+
       Logger.info(`Creating model config from environment variables for: ${finalModelKey}`);
-      
+
       // 从环境变量创建基础模型配置
       modelConfig = {
         key: finalModelKey,
@@ -173,12 +173,12 @@ export class AiChannel {
         modelConfig.apiKey = envApiKey;
         Logger.debug('Using API key from environment variable');
       }
-      
+
       if (!modelConfig.baseURL && envApiUrl) {
         modelConfig.baseURL = envApiUrl;
         Logger.debug('Using API URL from environment variable');
       }
-      
+
       if ((!modelConfig.provider || modelConfig.provider === "unknown") && envProvider) {
         modelConfig.provider = envProvider as any;
         Logger.debug(`Using provider from environment variable: ${envProvider}`);
@@ -189,11 +189,11 @@ export class AiChannel {
     if (!modelConfig) {
       throw new Error(`Model configuration not found: ${finalModelKey}. Please configure it in app settings or provide environment variables.`);
     }
-    
+
     if (!modelConfig.apiKey) {
       throw new Error(`API key not found for model: ${finalModelKey}. Please configure it in app settings or set HyperChat_API_KEY environment variable.`);
     }
-    
+
     if (!modelConfig.baseURL) {
       throw new Error(`Base URL not found for model: ${finalModelKey}. Please configure it in app settings or set HyperChat_API_URL environment variable.`);
     }
@@ -203,7 +203,7 @@ export class AiChannel {
 
     // 使用工厂创建模型
     const model = await AiProviderFactory.createModel(modelConfig as ModelConfig, customFetch);
-    
+
     // 构建完整的AI选项
     const aiOptions = {
       model,
@@ -212,7 +212,7 @@ export class AiChannel {
       maxTokens: effectiveConfig.maxTokens,
       maxRetries: 3, // 默认重试3次
     };
-    
+
     return aiOptions;
   }
   async completion(
@@ -287,7 +287,7 @@ export class AiChannel {
     let format_message = MessageConverter.convertToCoreMessages(this.messages);
     options.messages = [{ role: "system", content: params.prompt }, ...format_message];
 
-    let tools: HyperChatCompletionTool[] = this.getMcpTools(params.agentInstance, params.allowMCPs);
+    let tools: HyperChatCompletionTool[] = this.getMcpTools(params.agentInstance, params.allowMCPs, params.blockMCPTools);
     const aiTools = ToolFormatter.formatTools(tools || []);
     options.tools = {
       ...options.tools,
@@ -352,7 +352,7 @@ export class AiChannel {
         }
         if (delta.type == "tool-call") {
           newMessage.content_tool_calls = newMessage.content_tool_calls || [];
-          let localTool = this.getMcpTools(params.agentInstance, params.allowMCPs).find(
+          let localTool = this.getMcpTools(params.agentInstance, params.allowMCPs, params.blockMCPTools).find(
             (t) => t.name === delta.toolName
           );
           if (!localTool) {
@@ -519,7 +519,7 @@ export class AiChannel {
 
         params.onUpdate && params.onUpdate();
 
-        let localTool = this.getMcpTools(params.agentInstance, params.allowMCPs).find(
+        let localTool = this.getMcpTools(params.agentInstance, params.allowMCPs, params.blockMCPTools).find(
           (t) => t.name === tool.function.name
         );
         if (!localTool) {
@@ -596,7 +596,7 @@ export class AiChannel {
 
         params.onUpdate && params.onUpdate();
       }
-      
+
       // 🚫 在递归调用前再次检查取消状态
       if (this.abortController?.signal?.aborted) {
         throw new Error('Request was cancelled by user during tool execution');
@@ -617,20 +617,12 @@ export class AiChannel {
   };
 
   // 获取 MCP 工具 - Agent-centered版本（使用封装的getMCPTools方法）
-  private getMcpTools(agentInstance: AgentInstance, allowMCPs?: string[]): HyperChatCompletionTool[] {
+  private getMcpTools(agentInstance: AgentInstance, allowMCPs?: string[], blockMCPTools?: string[]): HyperChatCompletionTool[] {
     // 使用封装的getMCPTools方法获取工具信息
-    const mcpToolsInfo = agentInstance.getMCPTools();
+    const mcpToolsInfo = agentInstance.getMCPTools(allowMCPs, blockMCPTools);
     let tools = mcpToolsInfo.availableTools;
 
-    // 如果指定了允许的 MCP 工具，进行额外过滤（在Agent配置基础上再过滤）
-    if (allowMCPs != null) {
-      tools = tools.filter((tool: HyperChatCompletionTool) =>
-        allowMCPs.includes(tool.name) || allowMCPs.includes(tool.clientName)
-      );
-    } else {
-      // 如果没有指定额外的allowMCPs，使用Agent配置的匹配工具
-      tools = mcpToolsInfo.matchedTools;
-    }
+
 
     return tools;
   }
