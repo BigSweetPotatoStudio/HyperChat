@@ -400,6 +400,45 @@ export async function startChatInk(initialMessage?: string, options: ChatOptions
       }
     };
 
+    // 处理手动压缩记忆的函数
+    const handleCompress = async (): Promise<void> => {
+      try {
+        // 构建系统提示词
+        const systemPrompt = getBuiltinPrompts(
+          effectiveConfig.prompt,
+          currentWorkingDirectory,
+          agent.getAgentPath()
+        ).prompt;
+
+        // 调用AI通道的压缩方法
+        if (aiChannel && aiChannel.compressMemory) {
+          await aiChannel.compressMemory(effectiveConfig.modelKey, () => {
+            // 强制刷新UI显示压缩进度
+            const chatUI = (globalThis as any).__chatUI;
+            if (chatUI && chatUI.forceRefresh) {
+              chatUI.forceRefresh();
+            }
+          });
+
+          // 更新token使用信息
+          aiChannel.updateTokenUsage({
+            ...effectiveConfig,
+            prompt: systemPrompt,
+          });
+
+          // 强制刷新UI显示新的token使用信息
+          const chatUI = (globalThis as any).__chatUI;
+          if (chatUI && chatUI.forceRefresh) {
+            chatUI.forceRefresh();
+          }
+        } else {
+          throw new Error(t`Memory compression not available`);
+        }
+      } catch (error) {
+        throw error; // 让ChatUI处理错误显示
+      }
+    };
+
     // 获取聊天记录
     const getChatLogs = async (agentName: string) => {
       try {
@@ -453,6 +492,7 @@ export async function startChatInk(initialMessage?: string, options: ChatOptions
           onExit: handleExit,
           onCancel: handleCancel,
           onChatLogSelect: handleChatLogSelect,
+          onCompress: handleCompress,
           messages: aiChannel.messages, // 传入aiChannel的消息
           aiChannel: aiChannel, // 传入aiChannel用于获取token信息
           workspaceInfo
@@ -481,6 +521,7 @@ export async function startChatInk(initialMessage?: string, options: ChatOptions
         onExit: handleExit,
         onCancel: handleCancel,
         onChatLogSelect: handleChatLogSelect,
+        onCompress: handleCompress,
         messages: aiChannel.messages, // 传入aiChannel的消息
         aiChannel: aiChannel, // 传入aiChannel用于获取token信息
         workspaceInfo

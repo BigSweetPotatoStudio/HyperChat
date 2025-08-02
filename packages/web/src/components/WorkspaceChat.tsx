@@ -25,6 +25,8 @@ import {
   Upload,
   message,
   Form,
+  Progress,
+  Alert,
 } from "antd";
 import {
   Welcome,
@@ -38,6 +40,8 @@ import {
   SendOutlined,
   SyncOutlined,
   DisconnectOutlined,
+  CompressOutlined,
+  InfoCircleOutlined,
 } from "@ant-design/icons";
 
 import { v4 } from "uuid";
@@ -324,6 +328,9 @@ export const WorkspaceChat = ({ workspace, agentName, agentScope, workspaceDetai
   /** 设置模态框状态 */
   const [isSettingsShow, setIsSettingsShow] = useState(false);
 
+  /** 手动压缩加载状态 */
+  const [compressLoading, setCompressLoading] = useState(false);
+
   /** 设置表单 */
   const [settingsForm] = Form.useForm();
 
@@ -435,6 +442,7 @@ export const WorkspaceChat = ({ workspace, agentName, agentScope, workspaceDetai
       refresh();
     }
   }, [chatStream.messages]);
+
 
   // 初始化
   useEffect(() => {
@@ -572,6 +580,28 @@ export const WorkspaceChat = ({ workspace, agentName, agentScope, workspaceDetai
       );
     }
   }, [workspace, agentName, aiSettings, aiSettingsLoading, chatStream]);
+
+  // 手动压缩记忆处理函数
+  const handleManualCompress = useCallback(async () => {
+    if (!chatStream.messages.length || compressLoading) return;
+
+    setCompressLoading(true);
+    try {
+      const effectiveConfig = getEffectiveConfig();
+      await chatStream.compressMemory(currentChat.current.key, effectiveConfig);
+      
+      message.success(t`Memory compression completed successfully`);
+    } catch (error) {
+      console.error('Memory compression failed:', error);
+      message.error(
+        error instanceof Error ? 
+          `${t`Memory compression failed:`} ${error.message}` : 
+          t`Memory compression failed, please try again later`
+      );
+    } finally {
+      setCompressLoading(false);
+    }
+  }, [chatStream, compressLoading, getEffectiveConfig]);
 
   // 获取当前模型配置
   const effectiveConfigForModel = getEffectiveConfig();
@@ -729,6 +759,65 @@ export const WorkspaceChat = ({ workspace, agentName, agentScope, workspaceDetai
                 message.success(t`Delete Success`);
               }}
             ></MyAttachR>
+            {/* Token使用信息 */}
+            {chatStream.tokenUsage && (
+              <div style={{ 
+                padding: '8px 12px',
+                marginBottom: '8px',
+                backgroundColor: '#f8f9fa',
+                borderRadius: '6px',
+                border: '1px solid #e9ecef',
+                fontSize: '12px'
+              }}>
+                <Flex justify="space-between" align="center">
+                  <Space size={8}>
+                    <InfoCircleOutlined style={{ color: '#6c757d' }} />
+                    <span style={{ color: '#495057', fontWeight: 500 }}>
+                      {chatStream.tokenUsage.strategy === 'tokens' ? 
+                        `${t`Token Usage`}: ${chatStream.tokenUsage.current.toLocaleString()} / ${chatStream.tokenUsage.max.toLocaleString()}` :
+                        `${t`Dialog Rounds`}: ${chatStream.tokenUsage.current} / ${chatStream.tokenUsage.max}`
+                      }
+                    </span>
+                    <Progress 
+                      percent={chatStream.tokenUsage.percentage} 
+                      size="small"
+                      strokeColor={
+                        chatStream.tokenUsage.percentage >= 90 ? '#ff4d4f' :
+                        chatStream.tokenUsage.percentage >= 80 ? '#faad14' :
+                        '#52c41a'
+                      }
+                      showInfo={false}
+                      style={{ width: '80px', minWidth: '80px' }}
+                    />
+                    <span style={{ 
+                      color: chatStream.tokenUsage.percentage >= 90 ? '#ff4d4f' :
+                             chatStream.tokenUsage.percentage >= 80 ? '#faad14' :
+                             '#52c41a',
+                      fontWeight: 500
+                    }}>
+                      {chatStream.tokenUsage.percentage}%
+                    </span>
+                  </Space>
+                  <Tooltip title={
+                    chatStream.tokenUsage.percentage >= 80 ? 
+                      (chatStream.tokenUsage.percentage >= 90 ? `⚠️ ${t`Memory compression will be triggered soon`}` : `⚡ ${t`Approaching compression threshold`}`) :
+                      t`Manually compress memory`
+                  }>
+                    <Button
+                      size="small"
+                      type={chatStream.tokenUsage.percentage >= 80 ? 'primary' : 'default'}
+                      icon={<CompressOutlined />}
+                      loading={compressLoading}
+                      onClick={handleManualCompress}
+                      disabled={chatStream.messages.length <= 1}
+                    >
+                      {t`Compress`}
+                    </Button>
+                  </Tooltip>
+                </Flex>
+              </div>
+            )}
+
             {/* 发送框 */}
             <div className="my-sender-container">
               <HyperChatEditor

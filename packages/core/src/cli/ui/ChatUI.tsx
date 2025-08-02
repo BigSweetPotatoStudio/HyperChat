@@ -41,6 +41,7 @@ interface ChatUIProps {
   onExit: () => void;
   onCancel?: () => void; // 新增取消回调
   onChatLogSelect?: (chatLogKey: string) => Promise<void>; // 聊天记录选择回调
+  onCompress?: () => Promise<void>; // 手动压缩记忆回调
   messages?: MyMessage[]; // 外部传入的消息数据，优先使用
   aiChannel?: any; // AI通道，用于获取token使用信息
   workspaceInfo?: {
@@ -74,7 +75,7 @@ const renderContent = (content: string | CommonContent): string => {
   return String(content);
 };
 
-export const ChatUI: React.FC<ChatUIProps> = ({ onUserInput, onExit, onCancel, onChatLogSelect, messages: externalMessages, aiChannel, workspaceInfo }) => {
+export const ChatUI: React.FC<ChatUIProps> = ({ onUserInput, onExit, onCancel, onChatLogSelect, onCompress, messages: externalMessages, aiChannel, workspaceInfo }) => {
   // 所有 hooks 必须在组件顶部，在任何条件返回之前
   const [forceUpdate, setForceUpdate] = useState(0); // 强制更新计数器
   const [systemMessages, setSystemMessages] = useState<MyMessage[]>([]); // UI系统消息
@@ -92,6 +93,7 @@ export const ChatUI: React.FC<ChatUIProps> = ({ onUserInput, onExit, onCancel, o
     { command: '/help', description: t`Show help` },
     { command: '/clear', description: t`Clear chat history` },
     { command: '/model', description: t`Show current model` },
+    { command: '/compress', description: t`Manually compress memory` },
     { command: '/exit', description: t`Exit chat` },
   ];
 
@@ -217,6 +219,7 @@ export const ChatUI: React.FC<ChatUIProps> = ({ onUserInput, onExit, onCancel, o
   /clear            - ${t`Clear chat history`}
   /model            - ${t`Show current model`}
   /resume           - ${t`Resume previous chat log`}
+  /compress         - ${t`Manually compress memory`}
 
 ⌨️  ${t`Keyboard shortcuts:`}
   Esc               - ${t`Cancel current AI request`}
@@ -249,6 +252,35 @@ export const ChatUI: React.FC<ChatUIProps> = ({ onUserInput, onExit, onCancel, o
 
     if (trimmedInput === '/model') {
       addSystemMessage(`🤖 ${t`Current model:`} ${workspaceInfo?.currentModel || 'N/A'}`);
+      return;
+    }
+
+    if (trimmedInput === '/compress') {
+      if (!onCompress) {
+        addSystemMessage(`❌ ${t`Manual compression not available`}`);
+        return;
+      }
+
+      // 检查是否有足够的消息可以压缩
+      if (!aiChannel?.tokenUsage) {
+        addSystemMessage(`❌ ${t`Token usage information not available`}`);
+        return;
+      }
+
+      const hasContent = messages.length > 1; // 至少需要有一些对话内容
+      if (!hasContent) {
+        addSystemMessage(`💬 ${t`Not enough conversation to compress`}`);
+        return;
+      }
+
+      addSystemMessage(`🔄 ${t`Starting manual memory compression...`}`);
+      
+      try {
+        await onCompress();
+        addSystemMessage(`✅ ${t`Memory compression completed successfully`}`);
+      } catch (error) {
+        addSystemMessage(`❌ ${t`Memory compression failed:`} ${error instanceof Error ? error.message : String(error)}`);
+      }
       return;
     }
 

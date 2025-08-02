@@ -192,4 +192,103 @@ router.post('/tool-confirm', async (req: Request, res: Response) => {
   }
 });
 
+/**
+ * 手动压缩记忆端点
+ */
+router.post('/compress-memory', async (req: Request, res: Response) => {
+  try {
+    const { sessionId, agentName, agentScope = 'workspace', config } = req.body;
+
+    if (!sessionId) {
+      res.status(400).json({ error: 'sessionId is required' });
+      return;
+    }
+
+    if (!agentName) {
+      res.status(400).json({ error: 'agentName is required' });
+      return;
+    }
+
+    if (!config) {
+      res.status(400).json({ error: 'config is required' });
+      return;
+    }
+
+    Logger.info(`Manual memory compression requested for sessionId: ${sessionId}, agent: ${agentName}`);
+
+    // 获取对应的 SSE 连接
+    const sseWriter = activeConnections.get(sessionId);
+    
+    // 获取工作区和 Agent
+    const { getWorkspaceManager } = await import('../workspace/index.mjs');
+    const workspaceManager = getWorkspaceManager();
+    const workspace = workspaceManager.getCurrentWorkspace();
+
+    if (!workspace) {
+      res.status(404).json({ error: 'No workspace available' });
+      return;
+    }
+
+    const agent = await workspace.getAgentInstance(agentName);
+    if (!agent) {
+      res.status(404).json({ error: `Agent not found: ${agentName}` });
+      return;
+    }
+
+    // 获取当前聊天历史（这里简化处理，实际应该从agent获取当前会话的消息）
+    const chatLogs = await agent.getChatLogs();
+    let currentMessages: MyMessage[] = [];
+    
+    if (chatLogs.length > 0) {
+      // 获取最新的聊天记录
+      const latestChatLog = chatLogs[0];
+      currentMessages = latestChatLog.messages || [];
+    }
+
+    if (currentMessages.length === 0) {
+      res.status(400).json({ error: 'No messages to compress' });
+      return;
+    }
+
+    // 创建临时 AiChannel 进行压缩
+    const { AiChannel } = await import('../ai/ai.mjs');
+    const aiChannel = new AiChannel({}, [...currentMessages]);
+    aiChannel.register();
+
+    // 执行压缩
+    const compressedMessage = await aiChannel.compressMemory(
+      config.modelKey,
+      undefined, // onUpdate
+      sseWriter   // sseWriter
+    );
+
+    // 更新token使用信息
+    aiChannel.updateTokenUsage(config);
+
+    // 发送压缩完成的token使用信息
+    if (sseWriter && aiChannel.tokenUsage) {
+      sseWriter.write({
+        type: 'token_usage_update',
+        data: {
+          tokenUsage: aiChannel.tokenUsage
+        }
+      });
+    }
+
+    res.json({
+      success: true,
+      messages: aiChannel.messages,
+      tokenUsage: aiChannel.tokenUsage,
+      compressedMessage: compressedMessage
+    });
+
+  } catch (error) {
+    Logger.error('Memory compression error:', error);
+    res.status(500).json({ 
+      error: 'Internal server error',
+      details: error instanceof Error ? error.message : String(error)
+    });
+  }
+});
+
 export default router;

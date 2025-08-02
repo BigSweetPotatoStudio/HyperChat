@@ -26,6 +26,13 @@ interface ChatStreamState {
   loading: boolean;
   /** 错误信息 */
   error: string | null;
+  /** Token使用信息 */
+  tokenUsage?: {
+    current: number;
+    max: number;
+    percentage: number;
+    strategy: 'tokens' | 'dialogs';
+  };
 }
 
 export function useChatStream(params: ChatStreamParams) {
@@ -34,6 +41,7 @@ export function useChatStream(params: ChatStreamParams) {
     messages: [],
     loading: false,
     error: null,
+    tokenUsage: undefined,
   });
 
   // 强制更新 hook
@@ -167,6 +175,15 @@ export function useChatStream(params: ChatStreamParams) {
       }
 
       stateRef.current.loading = false;
+      useForceUpdate();
+    });
+
+    // 处理token使用信息事件
+    eventSource.addEventListener('token_usage_update', (event) => {
+      const data = JSON.parse(event.data);
+      
+      // 更新token使用信息
+      stateRef.current.tokenUsage = data.tokenUsage;
       useForceUpdate();
     });
 
@@ -348,6 +365,48 @@ export function useChatStream(params: ChatStreamParams) {
     useForceUpdate();
   }, [useForceUpdate]);
 
+
+  // 手动压缩记忆
+  const compressMemory = useCallback(async (sessionId: string, config: BaseAIConfig) => {
+    try {
+      const urlPrefix = getURL_PRE();
+      const response = await fetch(`${urlPrefix}/api/chat/compress-memory`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ 
+          sessionId,
+          agentName: params.agentName,
+          agentScope: params.agentScope,
+          config
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error(`Failed to compress memory: ${response.statusText}`);
+      }
+
+      const result = await response.json();
+      
+      // 压缩成功后更新消息列表
+      if (result.messages) {
+        stateRef.current.messages = result.messages;
+      }
+      
+      // 更新token使用信息
+      if (result.tokenUsage) {
+        stateRef.current.tokenUsage = result.tokenUsage;
+      }
+      
+      useForceUpdate();
+      return result;
+    } catch (error) {
+      console.error('Failed to compress memory:', error);
+      throw error;
+    }
+  }, [params.agentName, params.agentScope, useForceUpdate]);
+
   // 清理
   useEffect(() => {
     return () => {
@@ -361,6 +420,7 @@ export function useChatStream(params: ChatStreamParams) {
     cancelChatStream,
     resetChatStream,
     setMessages,
+    compressMemory,
   };
 }
 

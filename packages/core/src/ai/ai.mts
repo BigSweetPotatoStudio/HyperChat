@@ -243,6 +243,17 @@ export class AiChannel {
           params.sseWriter
         );
       }
+      
+      // 更新并发送token使用信息
+      this.updateTokenUsage(params);
+      if (params.sseWriter && this.tokenUsage) {
+        params.sseWriter.write({
+          type: 'token_usage_update',
+          data: {
+            tokenUsage: this.tokenUsage
+          }
+        });
+      }
     }
 
     // 🔄 只在首次调用时创建 AbortController，递归调用时复用
@@ -408,6 +419,17 @@ export class AiChannel {
         data: {
           result: this.lastMessage.content,
         },
+      });
+    }
+
+    // 更新并发送token使用信息
+    this.updateTokenUsage(params);
+    if (params.sseWriter && this.tokenUsage) {
+      params.sseWriter.write({
+        type: 'token_usage_update',
+        data: {
+          tokenUsage: this.tokenUsage
+        }
       });
     }
 
