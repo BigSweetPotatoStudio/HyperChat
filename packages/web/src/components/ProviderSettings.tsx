@@ -24,6 +24,7 @@ import {
   DeleteOutlined,
   SettingOutlined,
   ArrowLeftOutlined,
+  ReloadOutlined,
 } from '@ant-design/icons';
 
 import type { AIModelConfigItem, ProviderConfig, KnownProvider } from '@dadigua/hyperchat-shared';
@@ -45,6 +46,103 @@ interface ModelFormData {
   apiKey?: string;
   baseURL?: string;
 }
+
+// 远程模型信息接口
+interface RemoteModel {
+  id: string;
+  object: string;
+  created?: number;
+  owned_by?: string;
+}
+
+// 智能模型选择器组件
+const SmartModelSelector: React.FC<{
+  value?: string;
+  onChange?: (value: string) => void;
+  placeholder?: string;
+  remoteModels: RemoteModel[];
+  loadingModels: boolean;
+  canFetchModels: boolean;
+  onRefreshModels: () => void;
+}> = ({
+  value,
+  onChange,
+  placeholder = t`e.g., gpt-4.1`,
+  remoteModels,
+  loadingModels,
+  canFetchModels,
+  onRefreshModels
+}) => {
+    if (canFetchModels && remoteModels.length > 0) {
+      // 显示选择器
+      return (
+        <Select
+          value={value}
+          onChange={onChange}
+          placeholder={t`Select a model`}
+          showSearch
+          optionFilterProp="label"
+          loading={loadingModels}
+          suffixIcon={
+            <Button
+              type="text"
+              size="small"
+              icon={<ReloadOutlined />}
+              onClick={(e) => {
+                e.stopPropagation();
+                onRefreshModels();
+              }}
+              loading={loadingModels}
+            />
+          }
+          popupRender={(menu) => (
+            <div>
+              {menu}
+              <div style={{ padding: 8, borderTop: '1px solid #f0f0f0' }}>
+                <Text type="secondary" style={{ fontSize: 12 }}>
+                  {t`Models from remote API`} • {remoteModels.length} {t`available`}
+                </Text>
+              </div>
+            </div>
+          )}
+        >
+          {remoteModels.map((model) => (
+            <Option key={model.id} value={model.id} label={model.id}>
+              <div className="flex justify-between items-center">
+                <span>{model.id}</span>
+                {model.owned_by && (
+                  <Text type="secondary" style={{ fontSize: 11 }}>
+                    {model.owned_by}
+                  </Text>
+                )}
+              </div>
+            </Option>
+          ))}
+        </Select>
+      );
+    } else {
+      // 显示输入框
+      return (
+        <Input
+          value={value}
+          onChange={(e) => onChange?.(e.target.value)}
+          placeholder={placeholder}
+          suffix={
+            canFetchModels ? (
+              <Button
+                type="text"
+                size="small"
+                icon={<ReloadOutlined />}
+                onClick={onRefreshModels}
+                loading={loadingModels}
+                title={t`Refresh model list`}
+              />
+            ) : undefined
+          }
+        />
+      );
+    }
+  };
 
 // 提供商图标组件
 const ProviderIcon: React.FC<{ iconType: string; className?: string }> = ({ iconType, className = "w-6 h-6" }) => {
@@ -94,6 +192,11 @@ export function ProviderSettings() {
 
   const [loading, setLoading] = useState(false);
 
+  // 远程模型列表相关状态
+  const [remoteModels, setRemoteModels] = useState<RemoteModel[]>([]);
+  const [loadingModels, setLoadingModels] = useState(false);
+  const [canFetchModels, setCanFetchModels] = useState(false);
+
   // 获取提供商的模型数量
   const getProviderModelCount = (provider: ProviderConfig): number => {
     if (!aiSettings) return 0;
@@ -121,6 +224,67 @@ export function ProviderSettings() {
   const getProviderModels = (provider: ProviderConfig): AIModelConfigItem[] => {
     if (!aiSettings) return [];
     return aiSettings.models?.filter(model => model.provider === provider.key) || [];
+  };
+
+  // 获取远程模型列表
+  const fetchRemoteModels = async (provider: ProviderConfig): Promise<void> => {
+    if (!aiSettings || !provider) return;
+
+    setLoadingModels(true);
+    try {
+      // 获取API Key和Base URL
+      let apiKey = '';
+      let baseURL = '';
+
+      if (provider.isBuiltIn && provider.key) {
+        const builtinConfig = aiSettings.builtinApiKeys?.[provider.key];
+        apiKey = builtinConfig?.apiKey || '';
+        baseURL = builtinConfig?.baseURL || provider.baseURL || '';
+      } else {
+        apiKey = provider.apiKey || '';
+        baseURL = provider.baseURL || '';
+      }
+
+      if (!apiKey || !baseURL) {
+        setCanFetchModels(false);
+        return;
+      }
+
+      // 检查提供商是否支持 OpenAI 兼容的模型列表接口
+      // 不支持的提供商：gemini (使用Google API), anthropic (使用Anthropic API)
+      const unsupportedProviders = ['gemini', 'anthropic'];
+      if (unsupportedProviders.includes(provider.key!)) {
+        setCanFetchModels(false);
+        return;
+      }
+
+      const modelsEndpoint = baseURL.endsWith('/') ? `${baseURL}models` : `${baseURL}/models`;
+
+      const response = await fetch(modelsEndpoint, {
+        headers: {
+          'Authorization': `Bearer ${apiKey}`,
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      }
+
+      const data = await response.json();
+      if (data.data && Array.isArray(data.data)) {
+        setRemoteModels(data.data);
+        setCanFetchModels(true);
+      } else {
+        setCanFetchModels(false);
+      }
+    } catch (error) {
+      console.error('Failed to fetch models:', error);
+      setCanFetchModels(false);
+      setRemoteModels([]);
+    } finally {
+      setLoadingModels(false);
+    }
   };
 
   // 刷新数据
@@ -352,6 +516,11 @@ export function ProviderSettings() {
       supportTool: true,
     });
     setIsModelModalOpen(true);
+
+    // 尝试获取远程模型列表
+    if (selectedProvider) {
+      fetchRemoteModels(selectedProvider);
+    }
   };
 
   const handleEditModel = (model: AIModelConfigItem) => {
@@ -374,6 +543,11 @@ export function ProviderSettings() {
 
     modelForm.setFieldsValue(formValues);
     setIsModelModalOpen(true);
+
+    // 尝试获取远程模型列表
+    if (selectedProvider) {
+      fetchRemoteModels(selectedProvider);
+    }
   };
 
   const handleSaveModel = async (values: ModelFormData) => {
@@ -816,8 +990,19 @@ export function ProviderSettings() {
             name="model"
             label={t`Model ID`}
             rules={[{ required: true, message: t`Please enter model ID` }]}
+            extra={
+              canFetchModels && remoteModels.length > 0
+                ? t`Select from ${remoteModels.length} available models`
+                : t`Enter model ID manually`
+            }
           >
-            <Input placeholder={t`e.g., gpt-4.1`} />
+            <SmartModelSelector
+              remoteModels={remoteModels}
+              loadingModels={loadingModels}
+              canFetchModels={canFetchModels}
+              onRefreshModels={() => selectedProvider && fetchRemoteModels(selectedProvider)}
+              placeholder={t`e.g., gpt-4.1`}
+            />
           </Form.Item>
           <Form.Item
             name="name"

@@ -587,7 +587,11 @@ export const AgentManagement = forwardRef<AgentManagementRef, AgentManagementPro
               // 只有在 aiSettings 加载完成后才设置默认值
               if (aiSettings && !aiSettingsLoading) {
                 const defaultValues = {
-                  allowMCPs: ["hyper_system", "hyper_browser"],
+                  allowMCPs: convertMCPConfigToTreeSelection(
+                    ["hyper_system", "hyper_browser"], // 默认允许的MCP
+                    [], // 默认不阻止任何工具
+                    mcpClients
+                  ),
                   isConfirmCallTool: workspaceAIConfig?.isConfirmCallTool ?? false,
                   temperature: workspaceAIConfig?.temperature ?? 1,
                   maxTokens: workspaceAIConfig?.maxTokens,
