@@ -4,7 +4,7 @@ export const NAME = "hyper_system";
 
 // 公共的 reason 字段定义，所有工具必须使用
 export const reasonField = z.string()
-  .min(10, "Reason must be at least 10 characters")
+  .min(1, "Reason must be at least 1 characters")
   .max(200, "Reason must not exceed 200 characters")
   .describe('REQUIRED: Explain why you need to use this tool and what you plan to accomplish. This is for transparency and audit purposes.');
 

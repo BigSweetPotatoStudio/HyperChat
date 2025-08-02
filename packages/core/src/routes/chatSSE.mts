@@ -9,6 +9,7 @@ import { streamChatCompletion, handleToolConfirmResponse } from '../commands/cha
 import { MyMessage } from '@dadigua/hyperchat-shared/types';
 import { BaseAIConfig } from '@dadigua/hyperchat-shared';
 import type { AiChannel } from '../ai/ai.mjs';
+import { getBuiltinPrompts } from '../ai/hyperchat-builtin-prompts.mjs';
 
 const router = Router();
 
@@ -230,9 +231,9 @@ router.post('/tool-confirm', async (req: Request, res: Response) => {
  */
 router.post('/compress-memory', async (req: Request, res: Response) => {
   try {
-    const { 
-      sessionId, 
-      modelKey, 
+    const {
+      sessionId,
+      modelKey,
       compressionStrategy = 'tokens',
       maxContextTokens = 32000,
       maxAttachedDialogs = 5,
@@ -277,13 +278,17 @@ router.post('/compress-memory', async (req: Request, res: Response) => {
       undefined, // onUpdate
       session.sseWriter   // sseWriter
     );
-
+    const systemPrompt = getBuiltinPrompts(
+      prompt,
+      undefined,
+      undefined
+    ).prompt;
     // 创建压缩配置
     const compressionConfig: Pick<BaseAIConfig, "compressionStrategy" | "maxContextTokens" | "maxAttachedDialogs" | "prompt"> = {
       compressionStrategy,
       maxContextTokens,
       maxAttachedDialogs,
-      prompt
+      prompt: systemPrompt
     };
 
     // 更新token使用信息

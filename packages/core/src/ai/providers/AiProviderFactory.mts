@@ -43,13 +43,13 @@ export class AiProviderFactory {
       openai: () => createOpenAI({
         baseURL: modelConfig.baseURL,
         apiKey: modelConfig.apiKey,
-        compatibility: "strict",
         fetch: customFetch
       }),
       unknown: () => createOpenAICompatible({
         name: modelConfig.provider,
         baseURL: modelConfig.baseURL || '',
         apiKey: modelConfig.apiKey || '',
+        includeUsage: true,
         fetch: customFetch
       })
     };

@@ -4,7 +4,7 @@ import type { HyperChatCompletionTool, MyMessage, HyperToolCall, CommonContentIt
 
 
 import * as MCPTypes from "@modelcontextprotocol/sdk/types.js";
-import type { CoreMessage, LanguageModel, StreamTextResult, ToolChoice, CoreTool, ToolSet, TextPart, FilePart, ToolCallPart, ImagePart, TextStreamPart } from 'ai';
+import type { LanguageModel, StreamTextResult, ToolChoice, ToolSet, TextPart, FilePart, ToolCallPart, ImagePart, TextStreamPart } from 'ai';
 import { generateObject, streamObject, jsonSchema, smoothStream, streamText } from 'ai';
 import { z, ZodSchema } from "zod";
 // 兼容旧版本的 zod
@@ -38,7 +38,7 @@ export class AiChannel {
   private abortController: AbortController | null = null;
   private mcpAbortController: AbortController | null = null;
   private sseWriter?: SSEWriter;
-  
+
   // Token/对话使用信息
   public tokenUsage?: Omit<MemoryCompressionCheck, 'shouldCompress'>;
 
@@ -61,11 +61,11 @@ export class AiChannel {
 
     return this;
   }
-  
+
   // 更新token/对话使用信息
   updateTokenUsage(params: Pick<BaseAIConfig, "compressionStrategy" | "maxAttachedDialogs" | "prompt">) {
     if (!this.ext.memoryCompressor) return;
-    
+
     const compressionCheck = this.ext.memoryCompressor.shouldCompressMemory(this.messages, params);
     this.tokenUsage = {
       current: compressionCheck.current,
@@ -216,15 +216,11 @@ export class AiChannel {
 
 
     // 在开始请求前检查是否需要压缩记忆
-    if (this.lastMessage) { // 只在第一步时压缩
+    if (this.lastMessage) { // 确保有上一条消息
       if (this.lastMessage.role === "assistant" && this.shouldCompressMemory(params)) {
         await this.compressMemory(params.modelKey, params.onUpdate, params.sseWriter);
         params.onUpdate && params.onUpdate();
       }
-      // if (this.lastMessage.role === "user") {
-      //   params.userMessage = this.lastMessage;
-      //   this.messages.pop(); // 移除最后一条用户消息
-      // }
     }
 
     // 处理用户消息
@@ -243,7 +239,7 @@ export class AiChannel {
           params.sseWriter
         );
       }
-      
+
       // 更新并发送token使用信息
       this.updateTokenUsage(params);
       if (params.sseWriter && this.tokenUsage) {
@@ -280,6 +276,18 @@ export class AiChannel {
       messageId: messageId,
     };
 
+    if (params.sseWriter) {
+      Logger.debug(`Sending chat_message_create via SSE for messageId: ${messageId}`);
+      params.sseWriter.write({
+        type: "chat_message_create",
+        data: {
+          messageId: messageId,
+          message: newMessage,
+        },
+      });
+    }
+    params.onUpdate && params.onUpdate();
+
     let format_message = MessageConverter.convertToCoreMessages(this.messages);
     options.messages = [{ role: "system", content: params.prompt }, ...format_message];
 
@@ -296,7 +304,7 @@ export class AiChannel {
         ...options,
         model: aiOptions.model,
         temperature: params.temperature,
-        maxTokens: params.maxTokens,
+        maxOutputTokens: params.maxTokens,
       }
       const result = await streamText({
         ...newOptions,
@@ -308,19 +316,6 @@ export class AiChannel {
       });
       this.messages.push(newMessage);
       newMessage.content_status = "dataLoading";
-      // 发送消息创建事件
-      if (params.sseWriter) {
-        Logger.debug(`Sending chat_message_create via SSE for messageId: ${messageId}`);
-        params.sseWriter.write({
-          type: "chat_message_create",
-          data: {
-            messageId: messageId,
-            message: newMessage,
-          },
-        });
-      }
-
-      params.onUpdate && params.onUpdate();
 
       let toolIndex = 0;
       for await (const delta of result.fullStream) {
@@ -338,12 +333,12 @@ export class AiChannel {
           throw delta.error;
         }
         if (delta.type == "text-delta") {
-          newMessage.content += (delta.textDelta || "");
+          newMessage.content += (delta.text || "");
           newMessage.content_date = Date.now();
         }
-        if (delta.type == "reasoning") {
+        if (delta.type == "reasoning-delta") {
           // Logger.debug("reasoning", delta);
-          newMessage.reasoning_content += (delta.textDelta || "");
+          newMessage.reasoning_content += (delta.text || "");
           newMessage.content_date = Date.now();
         }
         if (delta.type == "tool-call") {
@@ -361,7 +356,7 @@ export class AiChannel {
             type: "function" as const,
             function: {
               name: delta.toolName,
-              args: delta.args || {},
+              args: delta.input || {},
             },
             originalName: localTool.originalName,
             displayName: localTool.displayName,
@@ -369,11 +364,11 @@ export class AiChannel {
           (delta as typeof delta & { hypertool: typeof hypertool }).hypertool = hypertool;
           newMessage.content_tool_calls.push(hypertool);
         }
-        if (delta.type == "step-finish") {
+        if (delta.type == "finish-step") {
           if (delta.usage) {
             newMessage.content_usage = {
-              prompt_tokens: delta.usage.promptTokens || 0,
-              completion_tokens: delta.usage.completionTokens || 0,
+              prompt_tokens: delta.usage.inputTokens || 0,
+              completion_tokens: delta.usage.outputTokens || 0,
               total_tokens: delta.usage.totalTokens || 0,
             }
           }
@@ -655,10 +650,10 @@ export class AiChannel {
   // 检查是否需要压缩记忆
   private shouldCompressMemory(params: BaseAIConfig): boolean {
     if (!this.ext.memoryCompressor) return false;
-    
+
     this.updateTokenUsage(params);
     const compressionCheck = this.ext.memoryCompressor.shouldCompressMemory(this.messages, params);
-    
+
     return compressionCheck.shouldCompress;
   }
 

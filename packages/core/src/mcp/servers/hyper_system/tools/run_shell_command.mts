@@ -13,7 +13,7 @@ import { HyperSystemToolError, ERROR_CODES, createToolSchema } from '../lib.mjs'
 
 const runShellCommandSchema = createToolSchema({
   command: z.string().describe('The shell command to execute'),
-  working_directory: z.string().describe('Working directory for the command. This parameter is required.'),
+  working_directory: z.string().optional().describe('Working directory for the command. This parameter is required.'),
   timeout: z.number().int().min(1000).max(300000).default(30000).describe('Command timeout in milliseconds (1s to 5min)'),
 });
 
@@ -298,21 +298,14 @@ export function registerRunShellCommandTool(server: McpServer): void {
         // 验证命令
         validateCommand(command);
 
-        // 验证必需参数
-        if (!working_directory || typeof working_directory !== 'string' || working_directory.trim() === '') {
-          throw new HyperSystemToolError(
-            'Parameter "working_directory" is required and must be a non-empty string',
-            ERROR_CODES.INVALID_PATH
-          );
-        }
-
-        // 确定工作目录
+        working_directory = working_directory || os.homedir();
+        // 规范化文件路径
         const workingDir = normalizePath(working_directory);
 
         // 检查工作目录是否存在
         if (!fs.existsSync(workingDir)) {
           throw new HyperSystemToolError(
-            `Working directory not found: ${working_directory || 'workspace root'}`,
+            `Working directory not found: ${workingDir}`,
             ERROR_CODES.FILE_NOT_FOUND
           );
         }
@@ -321,7 +314,7 @@ export function registerRunShellCommandTool(server: McpServer): void {
         const stats = fs.statSync(workingDir);
         if (!stats.isDirectory()) {
           throw new HyperSystemToolError(
-            `Working directory path is not a directory: ${working_directory}`,
+            `Working directory path is not a directory: ${workingDir}`,
             ERROR_CODES.INVALID_PATH
           );
         }

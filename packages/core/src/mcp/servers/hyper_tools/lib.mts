@@ -70,7 +70,7 @@ export function getConfig() {
 
 // Shared reason field for all tools
 export const reasonField = z.string()
-  .min(10, "Reason must be at least 10 characters")
+  .min(1, "Reason must be at least 1 character")
   .max(200, "Reason must not exceed 200 characters")
   .describe('REQUIRED: Explain why you need to use this tool and what you plan to accomplish. This is for transparency and audit purposes.');
 
