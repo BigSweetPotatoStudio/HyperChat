@@ -17,7 +17,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { z, ZodSchema } from "zod";
 import { buildEffectiveConfig } from "../utils/aiConfigHelper.mjs";
 import { TaskQueue } from "../utils/taskQueue.mjs";
-import { AgentMCPManager } from "../agent/agentMCPManager.mjs";
+
 
 // 全局工具确认事件发射器
 const toolConfirmEmitter = new EventEmitter();
