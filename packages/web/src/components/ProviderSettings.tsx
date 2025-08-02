@@ -30,6 +30,7 @@ import {
 import type { AIModelConfigItem, ProviderConfig, KnownProvider } from '@dadigua/hyperchat-shared';
 import { useAISettings } from "../contexts/AppSettingsContext";
 import { t } from '../i18n';
+import { call } from '../common/call';
 
 const { Title, Text } = Typography;
 const { Option } = Select;
@@ -226,16 +227,16 @@ export function ProviderSettings() {
     return aiSettings.models?.filter(model => model.provider === provider.key) || [];
   };
 
-  // 获取远程模型列表
+  // 获取远程模型列表（通过后端API调用）
   const fetchRemoteModels = async (provider: ProviderConfig): Promise<void> => {
-    if (!aiSettings || !provider) return;
-
+    if (!aiSettings || !provider?.key) return;
+    
     setLoadingModels(true);
     try {
-      // 获取API Key和Base URL
+      // 获取 API Key 和 Base URL
       let apiKey = '';
       let baseURL = '';
-
+      
       if (provider.isBuiltIn && provider.key) {
         const builtinConfig = aiSettings.builtinApiKeys?.[provider.key];
         apiKey = builtinConfig?.apiKey || '';
@@ -250,38 +251,33 @@ export function ProviderSettings() {
         return;
       }
 
-      // 检查提供商是否支持 OpenAI 兼容的模型列表接口
-      // 不支持的提供商：gemini (使用Google API), anthropic (使用Anthropic API)
-      const unsupportedProviders = ['gemini', 'anthropic'];
-      if (unsupportedProviders.includes(provider.key!)) {
-        setCanFetchModels(false);
-        return;
-      }
-
-      const modelsEndpoint = baseURL.endsWith('/') ? `${baseURL}models` : `${baseURL}/models`;
-
-      const response = await fetch(modelsEndpoint, {
-        headers: {
-          'Authorization': `Bearer ${apiKey}`,
-          'Content-Type': 'application/json',
-        },
+      const result = await call('fetchProviderModels', { 
+        providerKey: provider.key,
+        apiKey,
+        baseURL 
       });
-
-      if (!response.ok) {
-        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-      }
-
-      const data = await response.json();
-      if (data.data && Array.isArray(data.data)) {
-        setRemoteModels(data.data);
+      
+      if (result.success && result.models) {
+        setRemoteModels(result.models);
         setCanFetchModels(true);
+        message.success(t`Successfully loaded ${result.models.length} models from ${provider.label}`);
       } else {
         setCanFetchModels(false);
+        setRemoteModels([]);
+        if (result.error) {
+          console.warn(`Failed to fetch models for ${provider.key}:`, result.error);
+          // 只在非预期错误时显示错误信息
+          if (!result.error.includes('does not support model list API') && 
+              !result.error.includes('not provided')) {
+            message.warning(t`Failed to load models: ${result.error}`);
+          }
+        }
       }
     } catch (error) {
       console.error('Failed to fetch models:', error);
       setCanFetchModels(false);
       setRemoteModels([]);
+      message.error(t`Failed to load models from server`);
     } finally {
       setLoadingModels(false);
     }
