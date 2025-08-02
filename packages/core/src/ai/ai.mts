@@ -63,7 +63,7 @@ export class AiChannel {
   }
 
   // 更新token/对话使用信息
-  updateTokenUsage(params: Pick<BaseAIConfig, "compressionStrategy" | "maxAttachedDialogs" | "prompt">) {
+  updateTokenUsage(params: Pick<BaseAIConfig, "compressionStrategy" | "maxContextTokens" | "prompt">) {
     if (!this.ext.memoryCompressor) return;
 
     const compressionCheck = this.ext.memoryCompressor.shouldCompressMemory(this.messages, params);
@@ -309,7 +309,7 @@ export class AiChannel {
       const result = await streamText({
         ...newOptions,
         experimental_transform: smoothStream({
-          delayInMs: 50, // 增加延迟，使流式显示更明显
+          delayInMs: 200, // 增加延迟，使流式显示更明显
           chunking: 'word', // 按单词分块，更细致的流式效果
         }),
         abortSignal: this.abortController.signal,

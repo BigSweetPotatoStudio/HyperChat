@@ -5,7 +5,7 @@ allowMCPs:
   - hyper_browser
 blockMCPTools: []
 isConfirmCallTool: false
-maxTokens: 4000
+maxTokens: null
 tags: []
 subAgents: []
 version: 1

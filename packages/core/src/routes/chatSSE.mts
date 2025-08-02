@@ -234,9 +234,7 @@ router.post('/compress-memory', async (req: Request, res: Response) => {
     const {
       sessionId,
       modelKey,
-      compressionStrategy = 'tokens',
       maxContextTokens = 32000,
-      maxAttachedDialogs = 5,
       prompt = ''
     } = req.body;
 
@@ -250,7 +248,7 @@ router.post('/compress-memory', async (req: Request, res: Response) => {
       return;
     }
 
-    Logger.info(`Manual memory compression requested for sessionId: ${sessionId}, modelKey: ${modelKey}, strategy: ${compressionStrategy}`);
+    Logger.info(`Manual memory compression requested for sessionId: ${sessionId}, modelKey: ${modelKey}, strategy: tokens`);
 
     // 获取对应的会话
     const session = activeSessions.get(sessionId);
@@ -284,10 +282,9 @@ router.post('/compress-memory', async (req: Request, res: Response) => {
       undefined
     ).prompt;
     // 创建压缩配置
-    const compressionConfig: Pick<BaseAIConfig, "compressionStrategy" | "maxContextTokens" | "maxAttachedDialogs" | "prompt"> = {
-      compressionStrategy,
+    const compressionConfig: Pick<BaseAIConfig, "compressionStrategy" | "maxContextTokens" | "prompt"> = {
+      compressionStrategy: 'tokens',
       maxContextTokens,
-      maxAttachedDialogs,
       prompt: systemPrompt
     };
 

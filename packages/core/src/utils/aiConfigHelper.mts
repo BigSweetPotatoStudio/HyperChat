@@ -82,7 +82,6 @@ export function buildEffectiveConfig(
     blockMCPTools: overrides.blockMCPTools || agentConfig?.blockMCPTools || [],
     isConfirmCallTool: overrides.isConfirmCallTool ?? agentConfig?.isConfirmCallTool ?? workspaceAIConfig?.isConfirmCallTool ?? false,
     temperature: overrides.temperature ?? agentConfig?.temperature ?? workspaceAIConfig?.temperature,
-    maxAttachedDialogs: overrides.maxAttachedDialogs ?? agentConfig?.maxAttachedDialogs ?? workspaceAIConfig?.maxAttachedDialogs ?? 5,
     maxTokens: overrides.maxTokens ?? agentConfig?.maxTokens ?? workspaceAIConfig?.maxTokens ?? 4000,
     prompt: overrides.prompt || agentConfig?.prompt || workspaceAIConfig?.prompt || '',
     maxContextTokens: overrides.maxContextTokens ?? agentConfig?.maxContextTokens ?? workspaceAIConfig?.maxContextTokens,

@@ -226,11 +226,7 @@ export const ChatUI: React.FC<ChatUIProps> = ({ onUserInput, onExit, onCancel, o
   ↑/↓               - ${t`Navigate input history or suggestions`}
   Tab               - ${t`Auto-complete and select suggestions`}
   Enter             - ${t`Submit input or select suggestion`}
-  Ctrl+H            - ${t`Show help`}
   Ctrl+C            - ${t`Clear current input`}
-  Ctrl+R            - ${t`Resume chat log`}
-  Ctrl+L            - ${t`Clear chat history`}
-  Ctrl+M            - ${t`Show current model`}
 
 🚀 ${t`Enhanced suggestion system:`}
   • ${t`Command suggestions appear when typing "/"`}

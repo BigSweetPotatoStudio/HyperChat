@@ -205,7 +205,6 @@ export async function startChatInk(initialMessage?: string, options: ChatOptions
       blockMCPTools: agentConfig.blockMCPTools || [],
       isConfirmCallTool: agentConfig.isConfirmCallTool ?? false,
       temperature: agentConfig.temperature,
-      maxAttachedDialogs: agentConfig.maxAttachedDialogs ?? 5,
       maxTokens: agentConfig.maxTokens ?? 4000,
       prompt: agentConfig.prompt || '',
       maxContextTokens: agentConfig.maxContextTokens,

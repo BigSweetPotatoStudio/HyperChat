@@ -403,7 +403,6 @@ export async function startChat(initialMessage?: string, options: ChatOptions = 
       blockMCPTools: agentConfig.blockMCPTools || [],
       isConfirmCallTool: agentConfig.isConfirmCallTool ?? false,
       temperature: agentConfig.temperature,
-      maxAttachedDialogs: agentConfig.maxAttachedDialogs ?? 5,
       maxTokens: agentConfig.maxTokens ?? 4000,
       prompt: agentConfig.prompt || '',
       maxContextTokens: agentConfig.maxContextTokens,
@@ -481,13 +480,13 @@ export async function startChat(initialMessage?: string, options: ChatOptions = 
       const chatHandler = new StreamChatHandler(false); // 非交互式模式
 
       await aiChannel.completion({
+        maxContextTokens: env.effectiveConfig.maxContextTokens,
         modelKey: env.effectiveConfig.modelKey,
         prompt: systemPrompt,
         allowMCPs: env.effectiveConfig.allowMCPs,
         blockMCPTools: env.effectiveConfig.blockMCPTools,
         isConfirmCallTool: env.effectiveConfig.isConfirmCallTool,
         temperature: env.effectiveConfig.temperature,
-        maxAttachedDialogs: env.effectiveConfig.maxAttachedDialogs,
         maxTokens: env.effectiveConfig.maxTokens,
         agentInstance: env.agent, // 直接传递AgentInstance对象
         onUpdate: () => {

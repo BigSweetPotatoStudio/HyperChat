@@ -138,21 +138,21 @@ export const SmartTextInput: React.FC<SmartTextInputProps> = ({
     
     if (direction === 'up') {
       if (historyIndex === -1) {
-        // 第一次按上箭头，保存当前输入并显示最新历史
+        // 第一次按上箭头，保存当前输入并显示最新历史（索引0）
         setOriginalInput(value);
-        setHistoryIndex(inputHistory.length - 1);
-        onChange(inputHistory[inputHistory.length - 1]);
-      } else if (historyIndex > 0) {
-        // 继续向上浏览历史
-        setHistoryIndex(historyIndex - 1);
-        onChange(inputHistory[historyIndex - 1]);
+        setHistoryIndex(0);
+        onChange(inputHistory[0]);
+      } else if (historyIndex < inputHistory.length - 1) {
+        // 继续向上浏览历史（向后翻页）
+        setHistoryIndex(historyIndex + 1);
+        onChange(inputHistory[historyIndex + 1]);
       }
     } else { // down
       if (historyIndex !== -1) {
-        if (historyIndex < inputHistory.length - 1) {
-          // 向下浏览历史
-          setHistoryIndex(historyIndex + 1);
-          onChange(inputHistory[historyIndex + 1]);
+        if (historyIndex > 0) {
+          // 向下浏览历史（向前翻页）
+          setHistoryIndex(historyIndex - 1);
+          onChange(inputHistory[historyIndex - 1]);
         } else {
           // 回到原始输入
           setHistoryIndex(-1);
@@ -164,11 +164,14 @@ export const SmartTextInput: React.FC<SmartTextInputProps> = ({
   
   // 添加到历史记录
   const addToHistory = useCallback(async (inputText: string) => {
-    if (inputText.trim() && !inputHistory.includes(inputText)) {
-      const newHistory = [...inputHistory, inputText];
+    if (inputText.trim()) {
+      // 先移除历史记录中相同的项（如果存在）
+      const filteredHistory = inputHistory.filter(item => item !== inputText);
+      // 将新输入添加到数组开头，让最新的输入浮到最上面
+      const newHistory = [inputText, ...filteredHistory];
       // 保持历史记录在合理数量内
       if (newHistory.length > maxHistorySize) {
-        newHistory.shift();
+        newHistory.pop(); // 从末尾移除最旧的记录
       }
       setInputHistory(newHistory);
       // 异步保存到文件
