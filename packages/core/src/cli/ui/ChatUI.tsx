@@ -8,6 +8,7 @@ import type { MyMessage, CommonContent, ChatHistoryItem } from '@dadigua/hyperch
 import chalk from 'chalk';
 import ChatLogSelector from './ChatLogSelector.js';
 import { SmartTextInput, type Command } from './SmartTextInput.js';
+import { TokenCalculator } from '../../ai/memory-compressor.mjs';
 
 // 收集的消息数据类型（模仿前端逻辑）
 interface CollectedMessageData {
@@ -41,6 +42,7 @@ interface ChatUIProps {
   onCancel?: () => void; // 新增取消回调
   onChatLogSelect?: (chatLogKey: string) => Promise<void>; // 聊天记录选择回调
   messages?: MyMessage[]; // 外部传入的消息数据，优先使用
+  aiChannel?: any; // AI通道，用于获取token使用信息
   workspaceInfo?: {
     path: string;
     agentCount: number;
@@ -49,6 +51,8 @@ interface ChatUIProps {
     agentAllowedMCPs?: number;
     agentAvailableTools?: number;
     agentToolNames?: string[];
+    maxContextTokens?: number;
+    prompt?: string;
   };
 }
 
@@ -70,7 +74,7 @@ const renderContent = (content: string | CommonContent): string => {
   return String(content);
 };
 
-export const ChatUI: React.FC<ChatUIProps> = ({ onUserInput, onExit, onCancel, onChatLogSelect, messages: externalMessages, workspaceInfo }) => {
+export const ChatUI: React.FC<ChatUIProps> = ({ onUserInput, onExit, onCancel, onChatLogSelect, messages: externalMessages, aiChannel, workspaceInfo }) => {
   // 所有 hooks 必须在组件顶部，在任何条件返回之前
   const [forceUpdate, setForceUpdate] = useState(0); // 强制更新计数器
   const [systemMessages, setSystemMessages] = useState<MyMessage[]>([]); // UI系统消息
@@ -78,6 +82,9 @@ export const ChatUI: React.FC<ChatUIProps> = ({ onUserInput, onExit, onCancel, o
   const [isThinking, setIsThinking] = useState(false);
   const [showInput, setShowInput] = useState(true);
   const [isCancelling, setIsCancelling] = useState(false); // 取消状态
+  
+
+
 
   // 可用命令列表（包含描述）
   const availableCommands: Command[] = [
@@ -96,6 +103,8 @@ export const ChatUI: React.FC<ChatUIProps> = ({ onUserInput, onExit, onCancel, o
 
   // AI消息来自外部，UI系统消息来自内部状态
   const messages = externalMessages || [];
+
+  
 
   // 处理取消请求
   const handleCancel = async () => {
@@ -275,6 +284,20 @@ export const ChatUI: React.FC<ChatUIProps> = ({ onUserInput, onExit, onCancel, o
 
   // 合并AI消息和系统消息
   const allMessages = [...messages, ...systemMessages].sort((a, b) => (a.content_date || 0) - (b.content_date || 0));
+
+  // 生成进度条可视化
+  const generateProgressBar = (percentage: number, width: number = 10): string => {
+    const filled = Math.round((percentage / 100) * width);
+    const empty = width - filled;
+    return '█'.repeat(filled) + '░'.repeat(empty);
+  };
+
+  // 获取token使用状态的颜色
+  const getTokenUsageColor = (percentage: number): 'green' | 'yellow' | 'red' => {
+    if (percentage >= 90) return 'red';
+    if (percentage >= 80) return 'yellow';
+    return 'green';
+  };
 
   // 强制刷新函数
   const forceRefresh = () => {
@@ -577,6 +600,28 @@ export const ChatUI: React.FC<ChatUIProps> = ({ onUserInput, onExit, onCancel, o
             </Box>
           )}
         </Box>
+
+        {/* Token/Dialog Usage Display */}
+        {showInput && aiChannel?.tokenUsage && (
+          <Box borderStyle="single" borderColor={getTokenUsageColor(aiChannel.tokenUsage.percentage)} paddingX={1} marginBottom={0}>
+            <Text color={getTokenUsageColor(aiChannel.tokenUsage.percentage)}>
+              {aiChannel.tokenUsage.strategy === 'tokens' ? (
+                <>
+                  📊 Token使用: {aiChannel.tokenUsage.current.toLocaleString()} / {aiChannel.tokenUsage.max.toLocaleString()} ({aiChannel.tokenUsage.percentage}%) [{generateProgressBar(aiChannel.tokenUsage.percentage)}]
+                </>
+              ) : (
+                <>
+                  💬 对话轮数: {aiChannel.tokenUsage.current} / {aiChannel.tokenUsage.max} ({aiChannel.tokenUsage.percentage}%) [{generateProgressBar(aiChannel.tokenUsage.percentage)}]
+                </>
+              )}
+              {aiChannel.tokenUsage.percentage >= 80 && (
+                <Text color={aiChannel.tokenUsage.percentage >= 90 ? 'red' : 'yellow'}>
+                  {aiChannel.tokenUsage.percentage >= 90 ? ' ⚠️ 即将压缩记忆' : ' ⚡ 接近压缩阈值'}
+                </Text>
+              )}
+            </Text>
+          </Box>
+        )}
 
         {/* Smart Input */}
         {showInput && (

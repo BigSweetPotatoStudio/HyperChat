@@ -119,6 +119,17 @@ export interface MemorySummary {
 }
 
 /**
+ * 记忆压缩检查结果
+ */
+export interface MemoryCompressionCheck {
+  shouldCompress: boolean;
+  current: number;
+  max: number;
+  percentage: number;
+  strategy: 'tokens' | 'dialogs';
+}
+
+/**
  * 记忆压缩器类
  * 负责处理聊天记录的记忆压缩逻辑
  */
@@ -139,41 +150,55 @@ export class MemoryCompressor {
   }
 
   /**
-   * 检查是否需要压缩记忆
+   * 检查是否需要压缩记忆（返回详细信息）
    */
-  shouldCompressMemory(messages: MyMessage[], params: BaseAIConfig): boolean {
+  shouldCompressMemory(messages: MyMessage[], params: BaseAIConfig): MemoryCompressionCheck {
     const strategy = params.compressionStrategy || "tokens";
     const lastMemoryIndex = messages.findLastIndex(m => m.role === "hyper_memory" && m.content_status === "success");
     const startIndex = lastMemoryIndex === -1 ? 0 : lastMemoryIndex + 1;
 
     // 基于token数量的压缩策略
     if (strategy === "tokens") {
-      return this.shouldCompressMemoryByTokens(messages, params, startIndex);
+      return this.checkCompressByTokens(messages, params, startIndex);
     }
 
-
     // 基于对话轮数的压缩策略（原有逻辑）
-    return this.shouldCompressMemoryByDialogs(messages, params, startIndex);
+    return this.checkCompressByDialogs(messages, params, startIndex);
   }
 
   /**
-   * 基于token数量的压缩判断
+   * 基于token数量的压缩检查（返回详细信息）
+   */
+  private checkCompressByTokens(messages: MyMessage[], params: BaseAIConfig, startIndex: number): MemoryCompressionCheck {
+    const maxTokens = params.maxContextTokens || 36000;
+    const promptTokens = TokenCalculator.estimatePromptTokenCount(params.prompt || '');
+    const messageTokens = TokenCalculator.calculateMessagesTokenCount(messages, startIndex);
+    const currentTokens = promptTokens + messageTokens;
+    const percentage = Math.round((currentTokens / maxTokens) * 100);
+    const shouldCompress = currentTokens >= maxTokens;
+
+    Logger.debug(`Token usage: prompt=${promptTokens}, messages=${messageTokens}, total=${currentTokens}, limit=${maxTokens}`);
+    
+    return {
+      shouldCompress,
+      current: currentTokens,
+      max: maxTokens,
+      percentage,
+      strategy: 'tokens'
+    };
+  }
+
+  /**
+   * 基于token数量的压缩判断（向后兼容）
    */
   private shouldCompressMemoryByTokens(messages: MyMessage[], params: BaseAIConfig, startIndex: number): boolean {
-    const maxTokens = params.maxContextTokens || 36000;
-
-    const promptTokens = TokenCalculator.estimatePromptTokenCount(params.prompt);
-    const messageTokens = TokenCalculator.calculateMessagesTokenCount(messages, startIndex);
-    const totalTokens = promptTokens + messageTokens;
-
-    Logger.debug(`Token usage: prompt=${promptTokens}, messages=${messageTokens}, total=${totalTokens}, limit=${maxTokens}`);
-    return totalTokens >= maxTokens;
+    return this.checkCompressByTokens(messages, params, startIndex).shouldCompress;
   }
 
   /**
-   * 基于对话轮数的压缩判断
+   * 基于对话轮数的压缩检查（返回详细信息）
    */
-  private shouldCompressMemoryByDialogs(messages: MyMessage[], params: BaseAIConfig, startIndex: number): boolean {
+  private checkCompressByDialogs(messages: MyMessage[], params: BaseAIConfig, startIndex: number): MemoryCompressionCheck {
     let userMessageCount = 0;
     for (let i = startIndex; i < messages.length; i++) {
       if (messages[i]!.role === "user") {
@@ -181,7 +206,23 @@ export class MemoryCompressor {
       }
     }
     const maxDialogs = params.maxAttachedDialogs || 5;
-    return userMessageCount >= maxDialogs;
+    const shouldCompress = userMessageCount >= maxDialogs;
+    const percentage = Math.round((userMessageCount / maxDialogs) * 100);
+
+    return {
+      shouldCompress,
+      current: userMessageCount,
+      max: maxDialogs,
+      percentage,
+      strategy: 'dialogs'
+    };
+  }
+
+  /**
+   * 基于对话轮数的压缩判断（向后兼容）
+   */
+  private shouldCompressMemoryByDialogs(messages: MyMessage[], params: BaseAIConfig, startIndex: number): boolean {
+    return this.checkCompressByDialogs(messages, params, startIndex).shouldCompress;
   }
 
   /**

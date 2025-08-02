@@ -19,7 +19,7 @@ import { getMessageService } from "../message_service.mjs";
 import { Command } from "../command.mjs";
 import { Logger } from "../log.mjs";
 import { SSEWriter } from "../sse/SSEWriter.mjs";
-import { MemoryCompressor, TokenCalculator, createDefaultMemorySummaryGenerator } from "./memory-compressor.mjs";
+import { MemoryCompressor, TokenCalculator, createDefaultMemorySummaryGenerator, type MemoryCompressionCheck } from "./memory-compressor.mjs";
 import { workspaceManager, AgentInstance } from "../workspace/index.mjs";
 import { AiProviderFactory, type ModelConfig } from "./providers/AiProviderFactory.mjs";
 import { ProxyUtils } from "./utils/ProxyUtils.mjs";
@@ -38,6 +38,9 @@ export class AiChannel {
   private abortController: AbortController | null = null;
   private mcpAbortController: AbortController | null = null;
   private sseWriter?: SSEWriter;
+  
+  // Token/对话使用信息
+  public tokenUsage?: Omit<MemoryCompressionCheck, 'shouldCompress'>;
 
   constructor(
     public options?: {
@@ -57,6 +60,19 @@ export class AiChannel {
     this.messages.push(message);
 
     return this;
+  }
+  
+  // 更新token/对话使用信息
+  updateTokenUsage(params: BaseAIConfig) {
+    if (!this.ext.memoryCompressor) return;
+    
+    const compressionCheck = this.ext.memoryCompressor.shouldCompressMemory(this.messages, params);
+    this.tokenUsage = {
+      current: compressionCheck.current,
+      max: compressionCheck.max,
+      percentage: compressionCheck.percentage,
+      strategy: compressionCheck.strategy
+    };
   }
   // 取消当前请求
   cancel() {
@@ -617,7 +633,11 @@ export class AiChannel {
   // 检查是否需要压缩记忆
   private shouldCompressMemory(params: BaseAIConfig): boolean {
     if (!this.ext.memoryCompressor) return false;
-    return this.ext.memoryCompressor.shouldCompressMemory(this.messages, params);
+    
+    this.updateTokenUsage(params);
+    const compressionCheck = this.ext.memoryCompressor.shouldCompressMemory(this.messages, params);
+    
+    return compressionCheck.shouldCompress;
   }
 
   // 压缩记忆

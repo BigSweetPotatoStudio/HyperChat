@@ -252,7 +252,9 @@ export async function startChatInk(initialMessage?: string, options: ChatOptions
       currentModel: effectiveConfig.modelKey,
       agentAllowedMCPs: mcpToolsInfo.allowedMCPsCount,
       agentAvailableTools: mcpToolsInfo.availableTools.length,
-      agentToolNames
+      agentToolNames,
+      maxContextTokens: effectiveConfig.maxContextTokens,
+      prompt: effectiveConfig.prompt
     };
 
     // 创建AI通道（提升到外部作用域）
@@ -274,7 +276,21 @@ export async function startChatInk(initialMessage?: string, options: ChatOptions
       };
       aiChannel.addMessage(userMessage);
 
-
+      // 更新token使用信息
+      try {
+        const systemPrompt = getBuiltinPrompts(
+          effectiveConfig.prompt,
+          currentWorkingDirectory,
+          agent.getAgentPath()
+        ).prompt;
+        aiChannel.updateTokenUsage({
+          ...effectiveConfig,
+          prompt: systemPrompt,
+        });
+      } catch (error) {
+        // 如果更新token使用信息失败，不影响聊天流程
+        console.debug('Failed to update token usage:', error);
+      }
 
       // 强制刷新UI显示新消息
       if (chatUI && chatUI.forceRefresh) {
@@ -438,6 +454,7 @@ export async function startChatInk(initialMessage?: string, options: ChatOptions
           onCancel: handleCancel,
           onChatLogSelect: handleChatLogSelect,
           messages: aiChannel.messages, // 传入aiChannel的消息
+          aiChannel: aiChannel, // 传入aiChannel用于获取token信息
           workspaceInfo
         })
       );
@@ -465,6 +482,7 @@ export async function startChatInk(initialMessage?: string, options: ChatOptions
         onCancel: handleCancel,
         onChatLogSelect: handleChatLogSelect,
         messages: aiChannel.messages, // 传入aiChannel的消息
+        aiChannel: aiChannel, // 传入aiChannel用于获取token信息
         workspaceInfo
       })
     );
