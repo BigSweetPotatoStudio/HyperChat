@@ -583,10 +583,10 @@ export const WorkspaceChat = ({ workspace, agentName, agentScope, workspaceDetai
     try {
       const effectiveConfig = getEffectiveConfig();
       await chatStream.compressMemory(
-        currentChat.current.key,
         effectiveConfig.modelKey || 'default',
+        currentChat.current.key,
         effectiveConfig.maxContextTokens,
-        effectiveConfig.prompt
+        effectiveConfig.prompt,
       );
 
       message.success(t`Memory compression completed successfully`);
@@ -732,10 +732,17 @@ export const WorkspaceChat = ({ workspace, agentName, agentScope, workspaceDetai
                         <span style={{
                           color: '#495057', fontWeight: 500
                         }}>
-                          {chatStream.tokenUsage.strategy === 'tokens' ?
-                            `${t`Token Usage`}: ${chatStream.tokenUsage.current.toLocaleString()} / ${chatStream.tokenUsage.max.toLocaleString()}` :
-                            `${t`Dialog Rounds`}: ${chatStream.tokenUsage.current} / ${chatStream.tokenUsage.max}`
-                          }
+                          {`${t`Token Usage`}: ${chatStream.tokenUsage.current.toLocaleString()} / ${chatStream.tokenUsage.max.toLocaleString()}`}
+                          {chatStream.tokenUsage.type && (
+                            <span style={{
+                              marginLeft: '4px',
+                              fontSize: '10px',
+                              color: chatStream.tokenUsage.type === 'actual' ? '#52c41a' : '#faad14',
+                              fontWeight: 'normal'
+                            }}>
+                              ({chatStream.tokenUsage.type === 'actual' ? t`Actual` : t`Estimated`})
+                            </span>
+                          )}
                         </span>
                         <Progress
                           percent={chatStream.tokenUsage.percentage}

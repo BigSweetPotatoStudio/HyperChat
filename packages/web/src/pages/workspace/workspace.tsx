@@ -121,7 +121,6 @@ export function Workspace() {
           name: currentWorkspaceData.name || 'Workspace',
           description: currentWorkspaceData.description,
           created: currentWorkspaceData.created || Date.now(),
-          settings: currentWorkspaceData.settings || {},
           agentsCount: currentWorkspaceData.agentsCount || 0,
           mcpServersCount: currentWorkspaceData.mcpServersCount || 0,
           isGlobal: currentWorkspaceData.isGlobal || false,

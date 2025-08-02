@@ -3,7 +3,7 @@
  * 使用 Server-Sent Events 处理 AI 流式响应
  */
 
-import { useRef, useCallback, useReducer, useEffect } from 'react';
+import { useRef, useCallback, useReducer, useEffect, useState } from 'react';
 import { MyMessage, HyperToolCall } from "@dadigua/hyperchat-shared/types";
 import { BaseAIConfig } from "@dadigua/hyperchat-shared";
 // import { message } from 'antd';
@@ -32,7 +32,8 @@ interface ChatStreamState {
     current: number;
     max: number;
     percentage: number;
-    strategy: 'tokens' | 'dialogs';
+    strategy: 'tokens';
+    type: 'estimated' | 'actual'; // 数据类型：估计或真实
   };
 }
 
@@ -48,11 +49,11 @@ export function useChatStream(params: ChatStreamParams) {
   // 强制更新 hook
   const [, forceUpdate] = useReducer((x: number) => x + 1, 0);
   const useForceUpdate = useCallback(() => forceUpdate(), []);
-
+  const [sessionId, setSessionId] = useState<string | null>(null);
   const eventSourceRef = useRef<EventSource | null>(null);
 
   // 连接 SSE
-  const connectSSE = useCallback((sessionId: string): Promise<void> => {
+  const connectSSE = useCallback((sessionId: string, chatKey: string): Promise<void> => {
     return new Promise((resolve, reject) => {
       // 关闭现有连接
       if (eventSourceRef.current) {
@@ -63,7 +64,7 @@ export function useChatStream(params: ChatStreamParams) {
       console.log(`Connecting to SSE for sessionId: ${sessionId}`);
 
       const urlPrefix = getURL_PRE();
-      const eventSource = new EventSource(`${urlPrefix}/api/chat/stream/${sessionId}`);
+      const eventSource = new EventSource(`${urlPrefix}/api/chat/stream/${sessionId}?chatKey=${chatKey}`);
       eventSourceRef.current = eventSource;
 
       // 设置连接超时
@@ -162,7 +163,7 @@ export function useChatStream(params: ChatStreamParams) {
 
       // 处理消息完成事件
       eventSource.addEventListener('chat_message_complete', (event) => {
-        const data = JSON.parse(event.data);
+        // const data = JSON.parse(event.data);
 
         // 找到最后一条助手消息并标记为完成
         const lastAssistantIndex = stateRef.current.messages.findLastIndex(m => m.role === 'assistant');
@@ -294,9 +295,9 @@ export function useChatStream(params: ChatStreamParams) {
 
       // 2. 生成 sessionId
       const sessionId = `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-
+      setSessionId(sessionId);
       // 3. 连接 SSE，等待连接完成
-      await connectSSE(sessionId);
+      await connectSSE(sessionId, chatKey);
 
       // 4. 发送开始聊天请求
       const urlPrefix = getURL_PRE();
@@ -368,10 +369,10 @@ export function useChatStream(params: ChatStreamParams) {
 
   // 手动压缩记忆
   const compressMemory = useCallback(async (
-    sessionId: string,
     modelKey: string,
+    chatKey: string,
     maxContextTokens?: number,
-    prompt?: string
+    prompt?: string,
   ) => {
     try {
       const urlPrefix = getURL_PRE();
@@ -381,10 +382,11 @@ export function useChatStream(params: ChatStreamParams) {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          sessionId,
+          sessionId: sessionId,
           modelKey,
           maxContextTokens,
-          prompt
+          prompt,
+          chatKey
         }),
       });
 
@@ -410,7 +412,7 @@ export function useChatStream(params: ChatStreamParams) {
       console.error('Failed to compress memory:', error);
       throw error;
     }
-  }, [useForceUpdate]);
+  }, [useForceUpdate, sessionId]);
 
   // 清理
   useEffect(() => {

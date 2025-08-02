@@ -43,6 +43,7 @@ export const BaseAIConfigSchema = z.object({
     .int()
     .min(1000, "Max context tokens must be >= 1000")
     .default(32000)
+    .optional()
     .describe("Maximum context tokens before compression"),
 
   compressionStrategy: z.literal("tokens")
