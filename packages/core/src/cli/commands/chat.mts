@@ -52,8 +52,7 @@ async function selectAgent(options: ChatOptions): Promise<AgentInstance> {
     const agent = await getAgent({
       agentName: DEFAULT_AGENT_NAME,
       agentPath: defaultAgent.path,
-      workspace: options.workspace,
-      enableTaskScheduler: options.enableTaskScheduler ?? false
+      workspace: options.workspace
     });
 
     return agent;
@@ -64,8 +63,7 @@ async function selectAgent(options: ChatOptions): Promise<AgentInstance> {
     const agent = await getAgent({
       agentName: options.agent,
       agentPath: options.agentPath,
-      workspace: options.workspace,
-      enableTaskScheduler: options.enableTaskScheduler ?? false // chat命令默认禁用任务调度器
+      workspace: options.workspace
     });
     return agent;
   } catch (error) {
@@ -90,7 +88,7 @@ async function selectAgent(options: ChatOptions): Promise<AgentInstance> {
 /**
  * 显示Agent启动详细信息
  */
-async function showAgentStartupInfo(agent: AgentInstance, logger: CLILogger, enableTaskScheduler: boolean = true): Promise<void> {
+async function showAgentStartupInfo(agent: AgentInstance, logger: CLILogger): Promise<void> {
   const config = agent.getConfig();
 
   // 显示Agent基本配置信息
@@ -144,31 +142,6 @@ async function showAgentStartupInfo(agent: AgentInstance, logger: CLILogger, ena
     }
   } catch (error) {
     logger.warn(`    └─ ${t`MCP status error:`} ${error instanceof Error ? error.message : String(error)}`);
-  }
-
-  // 显示任务调度器状态（已由CliAgentManager管理）
-  logger.info(`  ⏰ ${t`Task scheduler status:`}`);
-  try {
-    const taskStats = agent.getTaskSchedulerStats();
-
-    if (taskStats.running) {
-      logger.info(`    ├─ ✅ ${t`Scheduler running`}`);
-      logger.info(`    └─ 📋 ${t`Scheduled tasks:`} ${taskStats.scheduledTasksCount}`);
-
-      if (taskStats.scheduledTasks.length > 0) {
-        const taskNames = taskStats.scheduledTasks.slice(0, 3);
-        const more = taskStats.scheduledTasks.length > 3 ? ` (+${taskStats.scheduledTasks.length - 3} more)` : '';
-        logger.info(`        └─ ${taskNames.join(', ')}${more}`);
-      }
-    } else {
-      if (enableTaskScheduler) {
-        logger.info(`    └─ ⏸️ ${t`Scheduler stopped`}`);
-      } else {
-        logger.info(`    └─ ⏸️ ${t`Scheduler disabled for this session`}`);
-      }
-    }
-  } catch (error) {
-    logger.warn(`    └─ ${t`Task scheduler error:`} ${error instanceof Error ? error.message : String(error)}`);
   }
 
   // 显示聊天记录统计
@@ -416,7 +389,6 @@ export interface ChatOptions {
   host?: string;
   port?: string;
   password?: string;
-  enableTaskScheduler?: boolean; // 是否启用任务调度器，默认true
 }
 
 export async function startChat(initialMessage?: string, options: ChatOptions = {}) {
@@ -439,8 +411,7 @@ export async function startChat(initialMessage?: string, options: ChatOptions = 
     logger.info(`✅ ${t`Agent selected:`} ${agentConfig.name}`);
 
     // 显示Agent启动详细信息
-    const enableTaskScheduler = options.enableTaskScheduler ?? false; // chat命令默认为false
-    await showAgentStartupInfo(agent, logger, enableTaskScheduler);
+    await showAgentStartupInfo(agent, logger);
 
     // 创建AI环境对象（Agent-centered版本）
     const appSettings = await Command.getAppSettings();

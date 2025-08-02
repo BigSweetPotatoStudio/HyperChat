@@ -36,7 +36,6 @@ export class CliAgentManager {
     agentName?: string;
     agentPath?: string;
     workspace?: string;
-    enableTaskScheduler?: boolean; // 是否启用任务调度器，默认true
   } = {}): Promise<AgentInstance> {
 
     // 如果已经有Agent实例，直接返回
@@ -63,11 +62,6 @@ export class CliAgentManager {
     // 启动MCP客户端（chat和run命令都需要）
     await this.currentAgent.startMCPClients();
     
-    // 根据选项决定是否启动任务调度器
-    const enableTaskScheduler = options.enableTaskScheduler !== false; // 默认为true
-    if (enableTaskScheduler) {
-      await this.currentAgent.startTaskScheduler();
-    }
     
     this.isInitialized = true;
 
@@ -94,9 +88,6 @@ export class CliAgentManager {
   async cleanup(): Promise<void> {
     if (this.currentAgent) {
       try {
-        // 停止Agent的任务调度器
-        await this.currentAgent.stopTaskScheduler();
-        
         // 停止Agent的MCP客户端
         await this.currentAgent.stopMCPClients();
         
@@ -135,7 +126,6 @@ export async function getAgent(options?: {
   agentName?: string;
   agentPath?: string;
   workspace?: string;
-  enableTaskScheduler?: boolean;
 }): Promise<AgentInstance> {
   return await cliAgentManager.ensureAgent(options);
 }

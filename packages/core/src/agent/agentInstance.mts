@@ -10,10 +10,8 @@ import { sanitizeFileName } from "../common/util.mjs";
 import { AgentConfig } from "@dadigua/hyperchat-shared";
 import type { ChatHistoryItem, HyperChatCompletionTool } from "@dadigua/hyperchat-shared/types";
 import type { MCPServerConfig } from "@dadigua/hyperchat-shared/types";
-import type { Task } from "@dadigua/hyperchat-shared";
 import type { WorkspaceMCPConfig } from "./mcp/types.mjs";
 import { MCPManager } from "./mcp/manager.mjs";
-import { AgentTaskScheduler } from "./agentTaskScheduler.mjs";
 import { TaskQueue } from "../utils/taskQueue.mjs";
 
 /**
@@ -25,10 +23,8 @@ export class AgentInstance {
   private agentPath: string;
   private configPath: string;
   private mcpConfigPath: string;
-  private tasksPath: string;
   private initialized: boolean = false;
   private mcpManager?: MCPManager; // Agent专属MCP管理器
-  private taskScheduler: AgentTaskScheduler | null = null; // Agent专属任务调度器
 
   // 创建聊天日志保存队列，确保按顺序写入，避免YAML文件并发问题
   private static chatLogQueue = new TaskQueue({ concurrency: 1 });
@@ -36,7 +32,6 @@ export class AgentInstance {
     this.agentPath = agentPath;
     this.configPath = path.join(agentPath, CONSTANTS.CONFIG_FILES.AGENT_CONFIG);
     this.mcpConfigPath = path.join(agentPath, CONSTANTS.CONFIG_FILES.MCP);
-    this.tasksPath = path.join(agentPath, "tasks");
 
     this.config = config || {
       name: path.basename(agentPath),
@@ -86,7 +81,6 @@ export class AgentInstance {
     const directories = [
       this.agentPath,
       path.join(this.agentPath, CONSTANTS.DIRECTORIES.CHAT_LOGS),
-      this.tasksPath, // Agent专属tasks目录
     ];
 
     for (const dir of directories) {
@@ -202,9 +196,8 @@ export class AgentInstance {
         this.agentPath = newPath;
         this.configPath = path.join(newPath, CONSTANTS.CONFIG_FILES.AGENT_CONFIG);
 
-        // 更新MCP和任务路径
+        // 更新MCP路径
         this.mcpConfigPath = path.join(newPath, CONSTANTS.CONFIG_FILES.MCP);
-        this.tasksPath = path.join(newPath, "tasks");
 
         // 重置chatLogs（如果已初始化）
         if (this.initialized && this.chatLogs) {
@@ -301,21 +294,12 @@ export class AgentInstance {
   }
 
   /**
-   * 删除整个 Agent（包括专属的MCP和任务配置）
+   * 删除整个 Agent（包括专属的MCP配置）
    */
   async delete(): Promise<boolean> {
     try {
-      // 先停止任务调度器
-      await this.stopTaskScheduler();
-
       // 停止MCP客户端
       await this.stopMCPClients();
-
-      // 清理管理器
-      if (this.taskScheduler) {
-        await this.taskScheduler.stop();
-        this.taskScheduler = null;
-      }
 
       if (this.mcpManager) {
         await this.mcpManager.destroy();
@@ -327,7 +311,6 @@ export class AgentInstance {
         // - memory.md (Agent记忆)
         // - chatlogs/ (聊天记录)
         // - mcp.json (Agent专属MCP配置)
-        // - tasks/ (Agent专属任务目录)
         await fs.promises.rm(this.agentPath, { recursive: true, force: true });
       }
       return true;
@@ -338,19 +321,13 @@ export class AgentInstance {
   }
 
   /**
-   * 获取 Agent 摘要信息（包含MCP和任务统计）
+   * 获取 Agent 摘要信息（包含MCP统计）
    */
   async getSummary(): Promise<{
     config: AgentConfig;
     chatLogsCount: number;
     lastChatTime?: number;
     hasMCPConfig: boolean;
-    tasksCount: number;
-    taskScheduler?: {
-      running: boolean;
-      scheduledTasksCount: number;
-      scheduledTasks: string[];
-    };
   }> {
     // 使用轻量级统计避免加载所有聊天记录内容
     await this.ensureInitialized();
@@ -361,8 +338,6 @@ export class AgentInstance {
       chatLogsCount: stats.count,
       lastChatTime: stats.lastModified,
       hasMCPConfig: await this.hasMCPConfig(),
-      tasksCount: await this.getTasksCount(),
-      taskScheduler: this.getTaskSchedulerStats(),
     };
   }
 
@@ -558,334 +533,5 @@ export class AgentInstance {
       console.error(`Agent ${this.config.name} MCP工具调用失败 [${toolName}:${functionName}]:`, error);
       throw error;
     }
-  }
-
-  // ==================== Agent专属任务管理 ====================
-
-  /**
-   * 获取Agent专属任务目录路径
-   */
-  getTasksPath(): string {
-    return this.tasksPath;
-  }
-
-  /**
-   * 检查Agent是否有任务目录
-   */
-  async hasTasksDirectory(): Promise<boolean> {
-    return fs.existsSync(this.tasksPath) && fs.statSync(this.tasksPath).isDirectory();
-  }
-
-  /**
-   * 获取Agent专属任务列表
-   */
-  async getTasks(): Promise<Task[]> {
-    if (!await this.hasTasksDirectory()) {
-      return [];
-    }
-
-    try {
-      const files = await fs.promises.readdir(this.tasksPath);
-      const taskFiles = files.filter(file => file.endsWith('.yaml') || file.endsWith('.yml'));
-      const tasks: Task[] = [];
-
-      for (const file of taskFiles) {
-        try {
-          const filePath = path.join(this.tasksPath, file);
-          const content = await fs.promises.readFile(filePath, "utf-8");
-          const task = yaml.load(content) as Task;
-
-          // 确保任务的agentName与当前Agent一致
-          if (task && typeof task === 'object') {
-            task.agentName = this.config.name;
-            tasks.push(task);
-          }
-        } catch (error) {
-          console.warn(`读取任务文件失败 ${file}:`, error);
-        }
-      }
-
-      return tasks;
-    } catch (error) {
-      console.warn(`读取Agent任务列表失败 ${this.config.name}:`, error);
-      return [];
-    }
-  }
-
-  /**
-   * 获取单个任务
-   */
-  async getTask(taskName: string): Promise<Task | null> {
-    const taskPath = path.join(this.tasksPath, `${sanitizeFileName(taskName)}.yaml`);
-
-    if (!fs.existsSync(taskPath)) {
-      return null;
-    }
-
-    try {
-      const content = await fs.promises.readFile(taskPath, "utf-8");
-      const task = yaml.load(content) as Task;
-
-      if (task && typeof task === 'object') {
-        // 确保任务的agentName与当前Agent一致
-        task.agentName = this.config.name;
-        return task;
-      }
-
-      return null;
-    } catch (error) {
-      console.warn(`读取任务失败 ${taskName}:`, error);
-      return null;
-    }
-  }
-
-  /**
-   * 添加Agent专属任务
-   */
-  async addTask(task: Task): Promise<boolean> {
-    try {
-      // 确保tasks目录存在
-      if (!await this.hasTasksDirectory()) {
-        await fs.promises.mkdir(this.tasksPath, { recursive: true });
-      }
-
-      // 确保任务的agentName与当前Agent一致
-      const agentTask: Task = {
-        ...task,
-        agentName: this.config.name,
-      };
-
-      const taskPath = path.join(this.tasksPath, `${sanitizeFileName(task.name)}.yaml`);
-      const yamlContent = yaml.dump(agentTask, { indent: 2 });
-      await fs.promises.writeFile(taskPath, yamlContent, "utf-8");
-
-      // 更新任务调度
-      if (!agentTask.disabled && agentTask.cron) {
-        await this.updateTaskSchedule(agentTask.name, agentTask);
-      }
-
-      return true;
-    } catch (error) {
-      console.warn(`添加Agent任务失败 ${task.name}:`, error);
-      return false;
-    }
-  }
-
-  /**
-   * 更新Agent专属任务
-   */
-  async updateTask(taskName: string, task: Task): Promise<boolean> {
-    try {
-      const oldTaskPath = path.join(this.tasksPath, `${sanitizeFileName(taskName)}.yaml`);
-      const newTaskPath = path.join(this.tasksPath, `${sanitizeFileName(task.name)}.yaml`);
-
-      // 确保任务的agentName与当前Agent一致
-      const agentTask: Task = {
-        ...task,
-        agentName: this.config.name,
-      };
-
-      const yamlContent = yaml.dump(agentTask, { indent: 2 });
-
-      // 如果任务名称发生变化，需要删除旧文件
-      if (oldTaskPath !== newTaskPath && fs.existsSync(oldTaskPath)) {
-        await fs.promises.unlink(oldTaskPath);
-      }
-
-      await fs.promises.writeFile(newTaskPath, yamlContent, "utf-8");
-
-      // 更新任务调度
-      const oldTaskNameForScheduler = taskName !== task.name ? taskName : undefined;
-      await this.updateTaskSchedule(task.name, agentTask, oldTaskNameForScheduler);
-
-      return true;
-    } catch (error) {
-      console.warn(`更新Agent任务失败 ${taskName}:`, error);
-      return false;
-    }
-  }
-
-  /**
-   * 删除Agent专属任务
-   */
-  async deleteTask(taskName: string): Promise<boolean> {
-    try {
-      const taskPath = path.join(this.tasksPath, `${sanitizeFileName(taskName)}.yaml`);
-
-      if (fs.existsSync(taskPath)) {
-        await fs.promises.unlink(taskPath);
-      }
-
-      // 删除任务调度
-      await this.deleteTaskSchedule(taskName);
-
-      return true;
-    } catch (error) {
-      console.warn(`删除Agent任务失败 ${taskName}:`, error);
-      return false;
-    }
-  }
-
-  /**
-   * 清空Agent的所有任务
-   */
-  async clearTasks(): Promise<boolean> {
-    try {
-      // 先停止任务调度器
-      await this.stopTaskScheduler();
-
-      if (await this.hasTasksDirectory()) {
-        const files = await fs.promises.readdir(this.tasksPath);
-        const taskFiles = files.filter(file => file.endsWith('.yaml') || file.endsWith('.yml'));
-
-        for (const file of taskFiles) {
-          const filePath = path.join(this.tasksPath, file);
-          await fs.promises.unlink(filePath);
-        }
-      }
-      return true;
-    } catch (error) {
-      console.warn(`清空Agent任务失败 ${this.config.name}:`, error);
-      return false;
-    }
-  }
-
-  /**
-   * 获取Agent任务数量
-   */
-  async getTasksCount(): Promise<number> {
-    const tasks = await this.getTasks();
-    return tasks.length;
-  }
-
-  // ==================== Agent专属任务调度 ====================
-
-  /**
-   * 获取或创建Agent专属任务调度器
-   */
-  getTaskScheduler(): AgentTaskScheduler {
-    if (!this.taskScheduler) {
-      this.taskScheduler = new AgentTaskScheduler(
-        this.config.name,
-        () => this.getTasks(), // 获取任务列表的函数
-        (taskName: string) => this.executeTaskInternal(taskName) // 执行任务的函数
-      );
-    }
-    return this.taskScheduler;
-  }
-
-  /**
-   * 启动Agent专属任务调度器
-   */
-  async startTaskScheduler(): Promise<void> {
-    const scheduler = this.getTaskScheduler();
-    await scheduler.start();
-  }
-
-  /**
-   * 停止Agent专属任务调度器
-   */
-  async stopTaskScheduler(): Promise<void> {
-    if (this.taskScheduler) {
-      await this.taskScheduler.stop();
-    }
-  }
-
-  /**
-   * 手动触发单个任务
-   */
-  async triggerTask(taskName: string): Promise<void> {
-    const scheduler = this.getTaskScheduler();
-    await scheduler.triggerTask(taskName);
-  }
-
-  /**
-   * 执行单个任务 (公共接口)
-   */
-  async executeTask(taskName: string): Promise<void> {
-    await this.executeTaskInternal(taskName);
-  }
-
-  /**
-   * 内部任务执行逻辑
-   */
-  private async executeTaskInternal(taskName: string): Promise<void> {
-    const task = await this.getTask(taskName);
-    if (!task) {
-      throw new Error(`任务不存在: ${taskName}`);
-    }
-
-    if (task.disabled) {
-      throw new Error(`任务已禁用: ${taskName}`);
-    }
-
-    try {
-      // TODO: 实现Agent级别的任务执行逻辑
-      // 这里需要基于task.description执行对应的AI对话
-      // 可以集成到聊天系统中，自动执行任务描述作为提示并记录结果
-      console.log(`[Agent ${this.config.name}] 开始执行任务: ${task.name}`);
-      console.log(`任务描述: ${task.description}`);
-
-      // 创建任务执行记录
-      const executionTime = Date.now();
-      const chatLog: ChatHistoryItem = {
-        key: v4(),
-        label: `任务执行: ${task.name}`,
-        agentName: this.config.name,
-        dateTime: executionTime,
-        chatType: "task",
-        taskKey: task.name,
-        messages: [
-          {
-            role: "user",
-            content: task.description || `执行任务: ${task.name}`,
-          }
-        ],
-      };
-
-      // 保存任务执行记录到聊天历史
-      await this.setChatLog(chatLog);
-
-      console.log(`[Agent ${this.config.name}] 任务执行完成: ${task.name}`);
-    } catch (error) {
-      console.error(`[Agent ${this.config.name}] 任务执行失败: ${task.name}`, error);
-      throw error;
-    }
-  }
-
-  /**
-   * 更新任务调度（当任务配置改变时调用）
-   */
-  async updateTaskSchedule(taskName: string, task: Task, oldTaskName?: string): Promise<void> {
-    if (this.taskScheduler) {
-      await this.taskScheduler.updateTaskSchedule(taskName, task, oldTaskName);
-    }
-  }
-
-  /**
-   * 删除任务调度
-   */
-  async deleteTaskSchedule(taskName: string): Promise<void> {
-    if (this.taskScheduler) {
-      await this.taskScheduler.deleteTaskSchedule(taskName);
-    }
-  }
-
-  /**
-   * 获取任务调度器统计信息
-   */
-  getTaskSchedulerStats(): {
-    running: boolean;
-    scheduledTasksCount: number;
-    scheduledTasks: string[];
-  } {
-    if (this.taskScheduler) {
-      return this.taskScheduler.getStats();
-    }
-    return {
-      running: false,
-      scheduledTasksCount: 0,
-      scheduledTasks: [],
-    };
   }
 }

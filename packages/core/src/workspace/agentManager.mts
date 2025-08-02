@@ -287,14 +287,12 @@ export class AgentManager {
     chatLogsCount: number;
     lastChatTime?: number;
     hasMCPConfig: boolean;
-    tasksCount: number;
   }>> {
     const summaries: Array<{
       config: AgentConfig & { agentPath?: string };
       chatLogsCount: number;
       lastChatTime?: number;
       hasMCPConfig: boolean;
-      tasksCount: number;
     }> = [];
     
     // 遍历所有可用的Agent

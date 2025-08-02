@@ -38,22 +38,9 @@ import { Logger } from './utils/logger.mjs';
 import { startChat } from './commands/chat.mjs';
 import { startChatInk } from './commands/chat-ink.mjs';
 import { startServer } from './commands/server.mjs';
-import { startRun } from './commands/run.mjs';
 import { createWorkspace, listWorkspaces, showCurrentWorkspace } from './commands/workspace.mjs';
 import { listAgents, createAgent, checkAgentExists, showAgentMemory } from './commands/agent.mjs';
 import { Command } from '../command.mjs';
-import { 
-  listTasks, 
-  createTask, 
-  showTask, 
-  enableTask, 
-  disableTask, 
-  deleteTask, 
-  editTask, 
-  taskStats,
-  triggerTask,
-  showScheduler
-} from './commands/task.mjs';
 import { workspaceManager } from '../workspace/index.mjs';
 import { initCliI18n, t, setCurrLang, getCurrLang } from '../i18n.mjs';
 import type { Language } from '@dadigua/hyperchat-shared';
@@ -152,26 +139,10 @@ ${t`Commands:`}
   
   # ${t`System management`}
   serve                    ${t`Start backend server (includes Web UI)`}
-  run                      ${t`Start core service (no Web UI, Agent-centered)`}
-  run --list-agents        ${t`List all available agents`}
-  run --agent <name>       ${t`Start specific agent only`}
-  run --agent-path <path>  ${t`Start agent from specific path`}
   workspace list           ${t`Show workspace information`}
   workspace current        ${t`Show current working directory and workspace`}
   workspace create         ${t`Create workspace in current directory`}
   language [lang]          ${t`Show or set interface language`}
-  
-  # ${t`Task management`}
-  task list                ${t`List all tasks`}
-  task create <name>       ${t`Create new task`}
-  task show <name>         ${t`Show task details`}
-  task edit <name>         ${t`Edit task`}
-  task enable <name>       ${t`Enable task`}
-  task disable <name>      ${t`Disable task`}
-  task delete <name>       ${t`Delete task`}
-  task trigger <name>      ${t`Manually trigger task execution`}
-  task scheduler           ${t`Show scheduler status`}
-  task stats               ${t`Show task statistics`}
   
   help                     ${t`Show help information`}
 
@@ -190,10 +161,6 @@ ${t`Examples:`}
   
   # ${t`System management`}
   hyperchat serve                   # ${t`Start server (includes Web UI)`}
-  hyperchat run                     # ${t`Start all agents (Agent-centered service)`}
-  hyperchat run --list-agents       # ${t`List all available agents`}
-  hyperchat run --agent mybot       # ${t`Start specific agent only`}
-  hyperchat run --agent-path /path  # ${t`Start agent from specific path`}
   hyperchat workspace list          # ${t`Show workspace information`}
   hyperchat workspace current       # ${t`Show current status`}
   hyperchat workspace create        # ${t`Create workspace in current directory`}
@@ -215,7 +182,7 @@ async function handleCommand(): Promise<{ shouldExit: boolean }> {
 
   // 检测是否有非命令的消息 (直接聊天)
   const firstArg = cleanArgs[0];
-  const isDirectMessage = cleanArgs.length > 0 && firstArg && !firstArg.match(/^(chat|serve|run|workspace|agent|task|language|help)$/);
+  const isDirectMessage = cleanArgs.length > 0 && firstArg && !firstArg.match(/^(chat|serve|workspace|agent|language|help)$/);
 
   if (isDirectMessage) {
     // 直接聊天模式: hyperchat "你好"
@@ -265,25 +232,6 @@ async function handleCommand(): Promise<{ shouldExit: boolean }> {
       });
       return { shouldExit: false };  // serve 需要保持进程运行
 
-    case 'run':
-      // 解析run命令的特殊选项
-      const allArgs = process.argv.slice(2); // 获取完整的参数列表
-      const runOptions = GenericCliParser.parseArgs(allArgs, [
-        { long: 'agent', short: 'a', hasValue: true },
-        { long: 'agent-path', short: 'A', hasValue: true },
-        { long: 'list-agents', short: 'l', hasValue: false },
-      ]);
-      
-      await startRun({
-        verbose: globalOptions.verbose,
-        quiet: globalOptions.quiet,
-        workspace: globalOptions.workspace,
-        agent: runOptions.agent as string | undefined,
-        agentPath: runOptions['agent-path'] as string | undefined,
-        listAgents: runOptions['list-agents'] as boolean | undefined
-      });
-      return { shouldExit: false };  // run 需要保持进程运行
-
     case 'workspace':
       const workspaceSubCmd = cleanArgs[1];
       if (workspaceSubCmd === 'create') {
@@ -304,11 +252,6 @@ async function handleCommand(): Promise<{ shouldExit: boolean }> {
     case 'agent':
       await handleAgentCommand(cleanArgs.slice(1), logger);
       return { shouldExit: true };  // 所有agent命令执行完都应该退出
-
-    case 'task':
-      const taskSubCmd = cleanArgs[1];
-      await handleTaskCommand(taskSubCmd, cleanArgs.slice(2), logger);
-      return { shouldExit: true };  // 所有task命令执行完都应该退出
 
     case 'language':
       const langArg = cleanArgs[1];
@@ -462,130 +405,6 @@ async function handleAgentCommand(args: string[], logger: Logger) {
         const message = remainingArgs.join(' ');
         await startChatWrapper([message], logger, agentName);
       }
-      break;
-  }
-}
-
-// 任务管理功能
-async function handleTaskCommand(subCmd: string, args: string[], logger: Logger) {
-  // 解析选项
-  function getOption(optionName: string): string | undefined {
-    const index = args.indexOf(optionName);
-    return index >= 0 && index + 1 < args.length ? args[index + 1] : undefined;
-  }
-
-  function hasFlag(flagName: string): boolean {
-    return args.includes(flagName);
-  }
-
-  // 移除选项，保留位置参数
-  const positionalArgs = args.filter(arg => !arg.startsWith('-'));
-
-  switch (subCmd) {
-    case 'list':
-    case undefined:
-      await listTasks();
-      break;
-
-    case 'create':
-      const taskName = positionalArgs[0];
-      if (!taskName) {
-        logger.error(t`Please provide task name`);
-        logger.info(t`Usage: hyperchat task create <name> --description "description" --agent <agent_key> [--cron "0 0 * * *"] [--disabled]`);
-        break;
-      }
-
-      const createOptions = {
-        description: getOption('--description'),
-        agent: getOption('--agent'),
-        cron: getOption('--cron'),
-        disabled: hasFlag('--disabled'),
-      };
-
-      await createTask(taskName, createOptions);
-      break;
-
-    case 'show':
-      const showTaskName = positionalArgs[0];
-      if (!showTaskName) {
-        logger.error(t`Please provide task name`);
-        logger.info(t`Usage: hyperchat task show <name>`);
-        break;
-      }
-      await showTask(showTaskName);
-      break;
-
-    case 'enable':
-      const enableTaskName = positionalArgs[0];
-      if (!enableTaskName) {
-        logger.error(t`Please provide task name`);
-        logger.info(t`Usage: hyperchat task enable <name>`);
-        break;
-      }
-      await enableTask(enableTaskName);
-      break;
-
-    case 'disable':
-      const disableTaskName = positionalArgs[0];
-      if (!disableTaskName) {
-        logger.error(t`Please provide task name`);
-        logger.info(t`Usage: hyperchat task disable <name>`);
-        break;
-      }
-      await disableTask(disableTaskName);
-      break;
-
-    case 'delete':
-      const deleteTaskName = positionalArgs[0];
-      if (!deleteTaskName) {
-        logger.error(t`Please provide task name`);
-        logger.info(t`Usage: hyperchat task delete <name> [--force]`);
-        break;
-      }
-      await deleteTask(deleteTaskName, { force: hasFlag('--force') });
-      break;
-
-    case 'edit':
-      const editTaskName = positionalArgs[0];
-      if (!editTaskName) {
-        logger.error(t`Please provide task name`);
-        logger.info(t`Usage: hyperchat task edit <name> [--description "new description"] [--agent <agent_key>] [--cron "new schedule"] [--enable|--disable]`);
-        break;
-      }
-
-      const editOptions = {
-        description: getOption('--description'),
-        agent: getOption('--agent'),
-        cron: getOption('--cron'),
-        enable: hasFlag('--enable'),
-        disable: hasFlag('--disable'),
-      };
-
-      await editTask(editTaskName, editOptions);
-      break;
-
-
-    case 'trigger':
-      const triggerTaskName = positionalArgs[0];
-      if (!triggerTaskName) {
-        logger.error(t`Please provide task name`);
-        logger.info(t`Usage: hyperchat task trigger <name>`);
-        break;
-      }
-      await triggerTask(triggerTaskName);
-      break;
-
-    case 'scheduler':
-      await showScheduler();
-      break;
-
-    case 'stats':
-      await taskStats();
-      break;
-
-    default:
-      logger.error(`${t`Unknown task command:`} ${subCmd}`);
-      logger.info(t`Available commands: list, create, show, enable, disable, delete, edit, trigger, scheduler, stats`);
       break;
   }
 }

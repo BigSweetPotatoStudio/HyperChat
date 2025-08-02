@@ -193,7 +193,7 @@ Configuration Priority (highest to lowest):
 Examples:
   hyperchat serve --port 8080 --verbose --env development
   hyperchat chat --ai-provider openai --ai-model gpt-4
-  hyperchat run --data-dir /custom/path --quiet`;
+  hyperchat chat --data-dir /custom/path --quiet`;
   }
 }
 
