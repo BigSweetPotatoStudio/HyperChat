@@ -343,7 +343,7 @@ export class DataList<T extends { key: string }> {
       }
 
       const files = await fs.promises.readdir(this.dirPath);
-      const keys: string[] = [];
+      const fileInfos: { key: string; mtime: number }[] = [];
       
       for (const file of files) {
         const format = this.detectFileFormat(file);
@@ -353,7 +353,10 @@ export class DataList<T extends { key: string }> {
             const fileStat = await fs.promises.stat(filePath);
             if (fileStat.isFile()) {
               const key = path.basename(file, path.extname(file));
-              keys.push(key);
+              fileInfos.push({
+                key,
+                mtime: fileStat.mtime.getTime()
+              });
             }
           } catch (error) {
             // 忽略无法访问的文件
@@ -361,8 +364,10 @@ export class DataList<T extends { key: string }> {
         }
       }
 
-      this.keys = keys.sort();
-      this.count = keys.length;
+      // 按文件修改时间倒序排列（最新的在前）
+      fileInfos.sort((a, b) => b.mtime - a.mtime);
+      this.keys = fileInfos.map(info => info.key);
+      this.count = fileInfos.length;
       this.lastModified = currentModified;
       this.keysLoaded = true;
       this.countLoaded = true;

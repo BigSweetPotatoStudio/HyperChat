@@ -138,21 +138,11 @@ export class MemoryCompressor {
     private generateSummaryFn: (messages: MyMessage[], modelKey: string) => Promise<MemorySummary>
   ) { }
 
-  /**
-   * 获取当前AI设置配置
-   */
-  private async getAISettings(): Promise<AISettings> {
-    const appSettings = await Command.getAppSettings();
-    if (!appSettings.ai) {
-      throw new Error('AI配置未找到');
-    }
-    return appSettings.ai;
-  }
 
   /**
    * 检查是否需要压缩记忆（返回详细信息）
    */
-  shouldCompressMemory(messages: MyMessage[], params: BaseAIConfig): MemoryCompressionCheck {
+  shouldCompressMemory(messages: MyMessage[], params: Pick<BaseAIConfig, "compressionStrategy" | "maxContextTokens" | "maxAttachedDialogs" | "prompt">): MemoryCompressionCheck {
     const strategy = params.compressionStrategy || "tokens";
     const lastMemoryIndex = messages.findLastIndex(m => m.role === "hyper_memory" && m.content_status === "success");
     const startIndex = lastMemoryIndex === -1 ? 0 : lastMemoryIndex + 1;
@@ -169,7 +159,7 @@ export class MemoryCompressor {
   /**
    * 基于token数量的压缩检查（返回详细信息）
    */
-  private checkCompressByTokens(messages: MyMessage[], params: BaseAIConfig, startIndex: number): MemoryCompressionCheck {
+  private checkCompressByTokens(messages: MyMessage[], params: Pick<BaseAIConfig, "maxContextTokens" | "prompt">, startIndex: number): MemoryCompressionCheck {
     const maxTokens = params.maxContextTokens || 36000;
     const promptTokens = TokenCalculator.estimatePromptTokenCount(params.prompt || '');
     const messageTokens = TokenCalculator.calculateMessagesTokenCount(messages, startIndex);
@@ -178,7 +168,7 @@ export class MemoryCompressor {
     const shouldCompress = currentTokens >= maxTokens;
 
     Logger.debug(`Token usage: prompt=${promptTokens}, messages=${messageTokens}, total=${currentTokens}, limit=${maxTokens}`);
-    
+
     return {
       shouldCompress,
       current: currentTokens,
@@ -189,16 +179,9 @@ export class MemoryCompressor {
   }
 
   /**
-   * 基于token数量的压缩判断（向后兼容）
-   */
-  private shouldCompressMemoryByTokens(messages: MyMessage[], params: BaseAIConfig, startIndex: number): boolean {
-    return this.checkCompressByTokens(messages, params, startIndex).shouldCompress;
-  }
-
-  /**
    * 基于对话轮数的压缩检查（返回详细信息）
    */
-  private checkCompressByDialogs(messages: MyMessage[], params: BaseAIConfig, startIndex: number): MemoryCompressionCheck {
+  private checkCompressByDialogs(messages: MyMessage[], params: Pick<BaseAIConfig, "maxAttachedDialogs" | "prompt">, startIndex: number): MemoryCompressionCheck {
     let userMessageCount = 0;
     for (let i = startIndex; i < messages.length; i++) {
       if (messages[i]!.role === "user") {
@@ -237,7 +220,7 @@ export class MemoryCompressor {
     const lastMemoryMessageIndex = messages.findLastIndex(m => m.role === "hyper_memory" && m.content_status === "success");
     const startIndex = lastMemoryMessageIndex === -1 ? 0 : lastMemoryMessageIndex;
     let lastMessageIndex = messages.length;
-    if (messages.length > 0 && messages[messages.length - 1].role === "user") { 
+    if (messages.length > 0 && messages[messages.length - 1].role === "user") {
       lastMessageIndex -= 1; // 如果最后一条消息是用户消息，则不参与压缩
     }
     const compressMessagesCount = lastMessageIndex - lastMemoryMessageIndex - 1;

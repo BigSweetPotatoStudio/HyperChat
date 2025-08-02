@@ -789,7 +789,7 @@ export const AssistantToolContent: React.FC<AssistantToolContentProps> = ({ cont
 
                         {/* Tool Calls */}
                         {x.content_tool_calls && x.content_tool_calls.length > 0 && (
-                            <div className="my-4">
+                            <div className="">
                                 {x.content_tool_calls.map((tool, index) => {
                                     const toolResult = contents.find(j => j.tool_call_id === tool.id);
                                     // 分离 reason 和其他参数

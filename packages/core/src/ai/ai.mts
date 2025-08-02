@@ -63,7 +63,7 @@ export class AiChannel {
   }
   
   // 更新token/对话使用信息
-  updateTokenUsage(params: BaseAIConfig) {
+  updateTokenUsage(params: Pick<BaseAIConfig, "compressionStrategy" | "maxAttachedDialogs" | "prompt">) {
     if (!this.ext.memoryCompressor) return;
     
     const compressionCheck = this.ext.memoryCompressor.shouldCompressMemory(this.messages, params);

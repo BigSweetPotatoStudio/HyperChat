@@ -367,7 +367,14 @@ export function useChatStream(params: ChatStreamParams) {
 
 
   // 手动压缩记忆
-  const compressMemory = useCallback(async (sessionId: string, config: BaseAIConfig) => {
+  const compressMemory = useCallback(async (
+    sessionId: string, 
+    modelKey: string,
+    compressionStrategy?: 'tokens' | 'dialogs',
+    maxContextTokens?: number,
+    maxAttachedDialogs?: number,
+    prompt?: string
+  ) => {
     try {
       const urlPrefix = getURL_PRE();
       const response = await fetch(`${urlPrefix}/api/chat/compress-memory`, {
@@ -377,9 +384,11 @@ export function useChatStream(params: ChatStreamParams) {
         },
         body: JSON.stringify({ 
           sessionId,
-          agentName: params.agentName,
-          agentScope: params.agentScope,
-          config
+          modelKey,
+          compressionStrategy,
+          maxContextTokens,
+          maxAttachedDialogs,
+          prompt
         }),
       });
 
@@ -405,7 +414,7 @@ export function useChatStream(params: ChatStreamParams) {
       console.error('Failed to compress memory:', error);
       throw error;
     }
-  }, [params.agentName, params.agentScope, useForceUpdate]);
+  }, [useForceUpdate]);
 
   // 清理
   useEffect(() => {

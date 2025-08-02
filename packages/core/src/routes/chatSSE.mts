@@ -8,11 +8,17 @@ import { Logger } from '../log.mjs';
 import { streamChatCompletion, handleToolConfirmResponse } from '../commands/chatCommands.mjs';
 import { MyMessage } from '@dadigua/hyperchat-shared/types';
 import { BaseAIConfig } from '@dadigua/hyperchat-shared';
+import type { AiChannel } from '../ai/ai.mjs';
 
 const router = Router();
 
-// 存储活动的 SSE 连接，使用 sessionId 作为 key
-const activeConnections = new Map<string, SSEWriter>();
+// 存储活动的会话，包含 SSE 连接和 AI 通道
+interface ActiveSession {
+  sseWriter: SSEWriter;
+  aiChannel?: AiChannel;
+}
+
+const activeSessions = new Map<string, ActiveSession>();
 
 /**
  * 建立 SSE 连接端点
@@ -20,7 +26,7 @@ const activeConnections = new Map<string, SSEWriter>();
  */
 router.get('/stream/:sessionId', async (req: Request, res: Response) => {
   const { sessionId } = req.params;
-  
+
   if (!sessionId) {
     res.status(400).json({ error: 'sessionId is required' });
     return;
@@ -30,21 +36,37 @@ router.get('/stream/:sessionId', async (req: Request, res: Response) => {
 
   // 创建 SSE 写入器
   const sseWriter = new SSEWriter(res);
-  
-  // 存储连接
-  activeConnections.set(sessionId, sseWriter);
+
+  // 存储会话
+  activeSessions.set(sessionId, { sseWriter });
 
   // 监听客户端断开连接
   req.on('close', () => {
     Logger.info(`SSE connection closed for sessionId: ${sessionId}`);
-    activeConnections.delete(sessionId);
+    const session = activeSessions.get(sessionId);
+    if (session) {
+      // 清理 AI 通道缓存
+      if (session.aiChannel) {
+        session.aiChannel.cancel(); // 取消可能正在进行的请求
+        Logger.debug(`AI channel cleaned up for sessionId: ${sessionId}`);
+      }
+      activeSessions.delete(sessionId);
+    }
     sseWriter.close();
   });
 
   // 监听连接错误
   req.on('error', (error) => {
     Logger.error(`SSE connection error for sessionId ${sessionId}:`, error);
-    activeConnections.delete(sessionId);
+    const session = activeSessions.get(sessionId);
+    if (session) {
+      // 清理 AI 通道缓存
+      if (session.aiChannel) {
+        session.aiChannel.cancel(); // 取消可能正在进行的请求
+        Logger.debug(`AI channel cleaned up for sessionId: ${sessionId}`);
+      }
+      activeSessions.delete(sessionId);
+    }
     sseWriter.close();
   });
 });
@@ -88,19 +110,23 @@ router.post('/stream', async (req: Request, res: Response) => {
       return;
     }
 
-    // 获取对应的 SSE 连接
-    const sseWriter = activeConnections.get(sessionId);
-    if (!sseWriter) {
+    // 获取对应的会话
+    const session = activeSessions.get(sessionId);
+    if (!session) {
       res.status(404).json({ error: 'SSE connection not found. Please connect with GET request first.' });
       return;
     }
+    const sseWriter = session.sseWriter;
 
     // 响应请求已接收
     res.json({ success: true, sessionId, chatKey });
 
     // 异步处理聊天完成
     Logger.info(`Starting chat completion for sessionId: ${sessionId}, chatKey: ${chatKey}, agent: ${agentName}`);
-    
+
+    // 获取缓存的 aiChannel（如果存在）
+    const existingAiChannel = session.aiChannel;
+
     streamChatCompletion({
       sessionId,
       chatKey,
@@ -110,9 +136,16 @@ router.post('/stream', async (req: Request, res: Response) => {
       agentScope,
       configOverrides,
       sseWriter, // 传递 SSE 写入器
+      aiChannel: existingAiChannel, // 传递缓存的 aiChannel
+    }).then((aiChannel) => {
+      // 缓存返回的 aiChannel
+      if (!existingAiChannel) {
+        session.aiChannel = aiChannel;
+        Logger.debug(`AI channel cached for sessionId: ${sessionId}`);
+      }
     }).catch((error) => {
       Logger.error(`Chat completion error for sessionId ${sessionId}, chatKey ${chatKey}:`, error);
-      
+
       // 发送错误到客户端
       if (!sseWriter.isClosed()) {
         sseWriter.write({
@@ -126,7 +159,7 @@ router.post('/stream', async (req: Request, res: Response) => {
 
   } catch (error) {
     Logger.error('Start chat error:', error);
-    res.status(500).json({ 
+    res.status(500).json({
       error: 'Internal server error',
       details: error instanceof Error ? error.message : String(error)
     });
@@ -145,9 +178,9 @@ router.post('/cancel', async (req: Request, res: Response) => {
       return;
     }
 
-    const sseWriter = activeConnections.get(sessionId);
-    if (sseWriter && !sseWriter.isClosed()) {
-      sseWriter.write({
+    const session = activeSessions.get(sessionId);
+    if (session && !session.sseWriter.isClosed()) {
+      session.sseWriter.write({
         type: 'chat_message_error',
         data: {
           error: 'Chat cancelled by user',
@@ -158,7 +191,7 @@ router.post('/cancel', async (req: Request, res: Response) => {
     res.json({ success: true });
   } catch (error) {
     Logger.error('Cancel chat error:', error);
-    res.status(500).json({ 
+    res.status(500).json({
       error: 'Internal server error',
       details: error instanceof Error ? error.message : String(error)
     });
@@ -185,7 +218,7 @@ router.post('/tool-confirm', async (req: Request, res: Response) => {
     res.json({ success: true });
   } catch (error) {
     Logger.error('Tool confirm error:', error);
-    res.status(500).json({ 
+    res.status(500).json({
       error: 'Internal server error',
       details: error instanceof Error ? error.message : String(error)
     });
@@ -197,77 +230,68 @@ router.post('/tool-confirm', async (req: Request, res: Response) => {
  */
 router.post('/compress-memory', async (req: Request, res: Response) => {
   try {
-    const { sessionId, agentName, agentScope = 'workspace', config } = req.body;
+    const { 
+      sessionId, 
+      modelKey, 
+      compressionStrategy = 'tokens',
+      maxContextTokens = 32000,
+      maxAttachedDialogs = 5,
+      prompt = ''
+    } = req.body;
 
     if (!sessionId) {
       res.status(400).json({ error: 'sessionId is required' });
       return;
     }
 
-    if (!agentName) {
-      res.status(400).json({ error: 'agentName is required' });
+    if (!modelKey) {
+      res.status(400).json({ error: 'modelKey is required' });
       return;
     }
 
-    if (!config) {
-      res.status(400).json({ error: 'config is required' });
+    Logger.info(`Manual memory compression requested for sessionId: ${sessionId}, modelKey: ${modelKey}, strategy: ${compressionStrategy}`);
+
+    // 获取对应的会话
+    const session = activeSessions.get(sessionId);
+    if (!session) {
+      res.status(404).json({ error: 'Session not found. Please establish SSE connection first.' });
       return;
     }
 
-    Logger.info(`Manual memory compression requested for sessionId: ${sessionId}, agent: ${agentName}`);
-
-    // 获取对应的 SSE 连接
-    const sseWriter = activeConnections.get(sessionId);
-    
-    // 获取工作区和 Agent
-    const { getWorkspaceManager } = await import('../workspace/index.mjs');
-    const workspaceManager = getWorkspaceManager();
-    const workspace = workspaceManager.getCurrentWorkspace();
-
-    if (!workspace) {
-      res.status(404).json({ error: 'No workspace available' });
+    // 获取缓存的 aiChannel
+    const aiChannel = session.aiChannel;
+    if (!aiChannel) {
+      res.status(404).json({ error: 'No active AI channel found for this session. Please start a conversation first.' });
       return;
     }
 
-    const agent = await workspace.getAgentInstance(agentName);
-    if (!agent) {
-      res.status(404).json({ error: `Agent not found: ${agentName}` });
+    // 检查是否有足够的消息进行压缩
+    if (!aiChannel.messages || aiChannel.messages.length === 0) {
+      res.status(400).json({ error: 'No messages to compress in current session' });
       return;
     }
-
-    // 获取当前聊天历史（这里简化处理，实际应该从agent获取当前会话的消息）
-    const chatLogs = await agent.getChatLogs();
-    let currentMessages: MyMessage[] = [];
-    
-    if (chatLogs.length > 0) {
-      // 获取最新的聊天记录
-      const latestChatLog = chatLogs[0];
-      currentMessages = latestChatLog.messages || [];
-    }
-
-    if (currentMessages.length === 0) {
-      res.status(400).json({ error: 'No messages to compress' });
-      return;
-    }
-
-    // 创建临时 AiChannel 进行压缩
-    const { AiChannel } = await import('../ai/ai.mjs');
-    const aiChannel = new AiChannel({}, [...currentMessages]);
-    aiChannel.register();
 
     // 执行压缩
     const compressedMessage = await aiChannel.compressMemory(
-      config.modelKey,
+      modelKey,
       undefined, // onUpdate
-      sseWriter   // sseWriter
+      session.sseWriter   // sseWriter
     );
 
+    // 创建压缩配置
+    const compressionConfig: Pick<BaseAIConfig, "compressionStrategy" | "maxContextTokens" | "maxAttachedDialogs" | "prompt"> = {
+      compressionStrategy,
+      maxContextTokens,
+      maxAttachedDialogs,
+      prompt
+    };
+
     // 更新token使用信息
-    aiChannel.updateTokenUsage(config);
+    aiChannel.updateTokenUsage(compressionConfig);
 
     // 发送压缩完成的token使用信息
-    if (sseWriter && aiChannel.tokenUsage) {
-      sseWriter.write({
+    if (session.sseWriter && aiChannel.tokenUsage) {
+      session.sseWriter.write({
         type: 'token_usage_update',
         data: {
           tokenUsage: aiChannel.tokenUsage
@@ -284,7 +308,7 @@ router.post('/compress-memory', async (req: Request, res: Response) => {
 
   } catch (error) {
     Logger.error('Memory compression error:', error);
-    res.status(500).json({ 
+    res.status(500).json({
       error: 'Internal server error',
       details: error instanceof Error ? error.message : String(error)
     });

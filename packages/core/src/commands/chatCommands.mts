@@ -42,13 +42,15 @@ interface ChatCompletionRequest {
   /** SSE 写入器 */
   sseWriter?: SSEWriter;
   workingPath?: string; // 工作路径（可选）
+  /** 可选的预存在的 AI 通道 */
+  aiChannel?: AiChannel;
 }
 
 
 /**
  * 流式聊天完成
  */
-export async function streamChatCompletion(params: ChatCompletionRequest): Promise<void> {
+export async function streamChatCompletion(params: ChatCompletionRequest): Promise<AiChannel> {
   const {
     sessionId,
     chatKey,
@@ -57,7 +59,6 @@ export async function streamChatCompletion(params: ChatCompletionRequest): Promi
     userMessage,
     configOverrides = {},
     sseWriter,
-    workingPath
   } = params;
 
   try {
@@ -89,17 +90,23 @@ export async function streamChatCompletion(params: ChatCompletionRequest): Promi
     // 合并配置（移除工作区AI配置）
     const effectiveConfig = buildEffectiveConfig(configOverrides, agent?.getConfig(), undefined, aiSettings);
     // console.log("Effective AI Config:", effectiveConfig);
-    // 创建 AI 通道
-    const aiChannel = new AiChannel({}, [...messages]);
 
-
-
-    // 注册扩展（现在不需要传入任何参数）
-    aiChannel.register();
+    // 使用传入的 AI 通道或创建新的
+    let aiChannel = params.aiChannel;
+    if (!aiChannel) {
+      // 创建新的 AI 通道
+      aiChannel = new AiChannel({}, [...messages]);
+      // 注册扩展（现在不需要传入任何参数）
+      aiChannel.register();
+    } else {
+      // 使用现有的 aiChannel，更新消息（如果需要同步）
+      // 这里可能需要根据实际需求决定是否同步消息
+      Logger.debug(`Reusing existing AI channel for sessionId: ${sessionId}`);
+    }
     // 构建系统提示词（现在记忆获取逻辑在 getBuiltinPrompts 内部）
     const systemPrompt = getBuiltinPrompts(
       effectiveConfig.prompt,
-      workingPath,
+      workspace.workspacePath,
       agent.getAgentPath()
     ).prompt;
 
@@ -150,6 +157,8 @@ export async function streamChatCompletion(params: ChatCompletionRequest): Promi
     }).catch(async (error) => {
       Logger.error("Chat completion error:", error);
     });
+
+    return aiChannel;
   } catch (error) {
     Logger.error("Stream chat completion error:", error);
 

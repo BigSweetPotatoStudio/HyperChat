@@ -205,14 +205,7 @@ export const AgentManagement = forwardRef<AgentManagementRef, AgentManagementPro
         pageSize: pageSize
       });
 
-      // 按时间倒序排列聊天记录
-      const sortedChatLogs = (result.chatLogs || []).sort((a, b) => {
-        const timeA = a.dateTime || 0;
-        const timeB = b.dateTime || 0;
-        return timeB - timeA; // 倒序：最新的在前
-      });
-
-      setChatHistoryList(sortedChatLogs);
+      setChatHistoryList(result.chatLogs || []);
       setChatHistoryPagination({
         current: page,
         pageSize: pageSize,
