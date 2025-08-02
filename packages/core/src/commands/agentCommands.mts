@@ -236,7 +236,7 @@ export const agentCommands = {
 
       const result = await workspace.getAgentChatLogsPage(agentName, page, pageSize);
       return {
-        chatLogs: result.items,
+        chatLogs: result.chatLogs,
         total: result.total,
         hasMore: result.hasMore,
         page,

@@ -236,9 +236,15 @@ export class AgentInstance {
   /**
    * 分页获取聊天记录
    */
-  async getChatLogsPage(offset: number = 0, limit: number = 10): Promise<{ items: ChatHistoryItem[]; total: number; hasMore: boolean }> {
+  async getChatLogsPage(offset: number = 0, limit: number = 10): Promise<{ chatLogs: ChatHistoryItem[]; total: number; hasMore: boolean }> {
     await this.ensureInitialized();
-    return await this.chatLogs!.getPage(offset, limit);
+    return await this.chatLogs!.getPage(offset, limit).then(result => {
+      return {
+        chatLogs: result.items,
+        total: result.total,
+        hasMore: result.hasMore
+      }
+    });
   }
 
   /**

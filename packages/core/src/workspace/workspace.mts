@@ -372,10 +372,10 @@ export class Workspace {
   /**
    * 分页获取 Agent 的聊天记录
    */
-  async getAgentChatLogsPage(nameOrPath: string, page: number = 0, pageSize: number = 10): Promise<{ items: ChatHistoryItem[]; total: number; hasMore: boolean }> {
+  async getAgentChatLogsPage(nameOrPath: string, page: number = 0, pageSize: number = 10): Promise<{ chatLogs: ChatHistoryItem[]; total: number; hasMore: boolean }> {
     const instance = this.agentManager.getAgent(nameOrPath);
     if (!instance) {
-      return { items: [], total: 0, hasMore: false };
+      return { chatLogs: [], total: 0, hasMore: false };
     }
     return await instance.getChatLogsPage(page * pageSize, pageSize);
   }

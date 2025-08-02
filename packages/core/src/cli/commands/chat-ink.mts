@@ -9,12 +9,10 @@ import { render } from 'ink';
 import process from 'process';
 import path from 'path';
 import { Logger } from '../utils/logger.mjs';
-import { Logger as LoggerClass } from '../../log.mjs';
 import { Command } from '../../command.mjs';
 import { AgentInstance } from '../../workspace/index.mjs';
 import {
   initializeAIEnvironment,
-  createAIChannel,
   logAIConfig
 } from '../../utils/aiConfigHelper.mjs';
 import { getAgent } from '../agentManager.mjs';
@@ -26,13 +24,7 @@ import {
 import { getBuiltinPrompts } from '../../ai/hyperchat-builtin-prompts.mjs';
 import { t } from '../../i18n.mjs';
 import ChatUI from '../ui/ChatUI.js';
-import type { MyMessage, HyperToolCall } from '@dadigua/hyperchat-shared/types';
-import { getMyUuid } from '../utils/util.mjs';
-import { TaskQueue } from '../../utils/taskQueue.mjs';
 import { CONST } from '../../const.mjs';
-
-// 创建聊天日志保存队列，确保按顺序写入，避免YAML文件并发问题
-const chatLogQueue = new TaskQueue({ concurrency: 1 });
 
 /**
  * 选择Agent（Agent-centered架构 - 使用CliAgentManager）
@@ -137,20 +129,6 @@ async function showAgentStartupInfo(agent: AgentInstance, logger: Logger): Promi
   }
 }
 
-// 获取聊天标签（基于第一个用户消息）
-function getLabelByFirstUserContent(messages: Array<MyMessage>): string {
-  let label = "";
-  let firstUser = messages.find(
-    (x) => x.role == "user",
-  );
-  let firstUserContent = (firstUser as any)?.content;
-  if (typeof firstUserContent == "string") {
-    label = firstUserContent;
-  } else if (Array.isArray(firstUserContent)) {
-    label = firstUserContent.find((x) => x.type == "text")?.text || "";
-  }
-  return label;
-}
 
 export interface ChatOptions {
   agent?: string;
@@ -252,133 +230,6 @@ export async function startChatInk(initialMessage?: string, options: ChatOptions
       agentAllowedMCPs: mcpToolsInfo.allowedMCPsCount,
       agentAvailableTools: mcpToolsInfo.availableTools.length,
       agentToolNames,
-      maxContextTokens: effectiveConfig.maxContextTokens,
-      prompt: effectiveConfig.prompt
-    };
-
-    // 创建AI通道（提升到外部作用域）
-    const aiChannel = createAIChannel();
-
-    // 处理用户输入的函数
-    const handleUserInput = async (userInput: string): Promise<void> => {
-      const chatUI = (globalThis as any).__chatUI;
-      if (!chatUI) return;
-
-      // 生成聊天Key
-      const chatKey = getMyUuid();
-
-      // 添加用户消息
-      const userMessage: MyMessage = {
-        role: 'user',
-        content: userInput,
-        content_date: Date.now()
-      };
-      aiChannel.addMessage(userMessage);
-
-      // 更新token使用信息
-      try {
-        const systemPrompt = getBuiltinPrompts(
-          effectiveConfig.prompt,
-          currentWorkingDirectory,
-          agent.getAgentPath()
-        ).prompt;
-        aiChannel.updateTokenUsage({
-          ...effectiveConfig,
-          prompt: systemPrompt,
-        });
-      } catch (error) {
-        // 如果更新token使用信息失败，不影响聊天流程
-        console.debug('Failed to update token usage:', error);
-      }
-
-      // 强制刷新UI显示新消息
-      if (chatUI && chatUI.forceRefresh) {
-        chatUI.forceRefresh();
-      }
-
-      try {
-        // 构建系统提示词
-        const systemPrompt = getBuiltinPrompts(
-          effectiveConfig.prompt,
-          currentWorkingDirectory,
-          agent.getAgentPath()
-        ).prompt;
-
-        await aiChannel.completion({
-          ...effectiveConfig,
-          prompt: systemPrompt,
-          agentInstance: agent, // 直接传递AgentInstance对象
-          onUpdate: async () => {
-            // 显示新的工具结果
-
-            // 强制刷新UI显示
-            if (chatUI && chatUI.forceRefresh) {
-              chatUI.forceRefresh();
-            }
-
-
-            // 每次更新时保存聊天历史（使用队列确保顺序写入）
-            try {
-              chatLogQueue.add(async () => {
-                await agent.setChatLog({
-                  key: chatKey,
-                  label: getLabelByFirstUserContent(aiChannel.messages),
-                  messages: aiChannel.messages,
-                  agentName: agent.getConfig().name,
-                  dateTime: Date.now(),
-                  chatType: "user",
-                  configOverrides: effectiveConfig,
-                });
-              });
-            } catch (error) {
-              // 静默处理聊天历史保存错误，不影响主要聊天流程
-            }
-          }
-        });
-
-        // 在completion完成后，添加最终的assistant消息（如果有最终内容的话）
-        const finalMessage = aiChannel.lastMessage;
-        if (finalMessage && finalMessage.role === 'assistant' && finalMessage.content) {
-          // 如果最后一条消息有内容又有工具调用，说明需要添加独立的最终回复消息
-          const hasToolCalls = finalMessage.content_tool_calls && finalMessage.content_tool_calls.length > 0;
-          const hasContent = finalMessage.content && (finalMessage.content as string).trim();
-
-          if (hasContent && hasToolCalls) {
-            // 如果有工具调用又有最终内容，添加一个纯内容的assistant消息
-            const finalContentMessage = {
-              role: 'assistant' as const,
-              content: finalMessage.content,
-              reasoning_content: '',
-              content_tool_calls: [],
-              content_status: 'success' as const,
-              content_attachment: [],
-              content_usage: finalMessage.content_usage || {
-                prompt_tokens: 0,
-                completion_tokens: 0,
-                total_tokens: 0,
-              },
-              content_date: Date.now(),
-              content_attached: true
-            };
-
-            // 只添加到aiChannel中
-            aiChannel.addMessage(finalContentMessage);
-
-            // 强制刷新UI显示最终消息
-            if (chatUI && chatUI.forceRefresh) {
-              chatUI.forceRefresh();
-            }
-          }
-        }
-
-      } catch (error) {
-
-
-        // 强制刷新UI显示错误消息
-        if (chatUI && chatUI.forceRefresh) {
-          chatUI.forceRefresh();
-        }
-      }
     };
 
     // 处理退出
@@ -387,98 +238,7 @@ export async function startChatInk(initialMessage?: string, options: ChatOptions
       process.exit(0);
     };
 
-    // 处理取消 AI 请求
-    const handleCancel = async () => {
-      try {
-        if (aiChannel && aiChannel.cancel) {
-          await aiChannel.cancel();
-          logger.info(`🚫 ${t`AI request cancelled by user`}`);
-        }
-      } catch (error) {
-        // 取消操作失败也不需要显示错误，因为可能请求已经完成
-      }
-    };
 
-    // 处理手动压缩记忆的函数
-    const handleCompress = async (): Promise<void> => {
-      try {
-        // 构建系统提示词
-        const systemPrompt = getBuiltinPrompts(
-          effectiveConfig.prompt,
-          currentWorkingDirectory,
-          agent.getAgentPath()
-        ).prompt;
-
-        // 调用AI通道的压缩方法
-        if (aiChannel && aiChannel.compressMemory) {
-          await aiChannel.compressMemory(effectiveConfig.modelKey, () => {
-            // 强制刷新UI显示压缩进度
-            const chatUI = (globalThis as any).__chatUI;
-            if (chatUI && chatUI.forceRefresh) {
-              chatUI.forceRefresh();
-            }
-          });
-
-          // 更新token使用信息
-          aiChannel.updateTokenUsage({
-            ...effectiveConfig,
-            prompt: systemPrompt,
-          });
-
-          // 强制刷新UI显示新的token使用信息
-          const chatUI = (globalThis as any).__chatUI;
-          if (chatUI && chatUI.forceRefresh) {
-            chatUI.forceRefresh();
-          }
-        } else {
-          throw new Error(t`Memory compression not available`);
-        }
-      } catch (error) {
-        throw error; // 让ChatUI处理错误显示
-      }
-    };
-
-    // 获取聊天记录
-    const getChatLogs = async (agentName: string) => {
-      try {
-        const { agentCommands } = await import('../../commands/agentCommands.mjs');
-        return await agentCommands.getAgentChatLogs({ agentName });
-      } catch (error) {
-        throw new Error(`${t`Failed to get chat logs:`} ${error instanceof Error ? error.message : String(error)}`);
-      }
-    };
-
-    // 处理聊天记录选择
-    const handleChatLogSelect = async (chatLogKey: string) => {
-      try {
-        const { agentCommands } = await import('../../commands/agentCommands.mjs');
-        const chatLog = await agentCommands.getAgentChatLog({
-          agentName: agent.getConfig().name,
-          chatLogKey
-        });
-
-        if (chatLog) {
-          // 清空当前消息
-          aiChannel.messages = [];
-
-          // 加载聊天记录中的消息
-          if (chatLog.messages && chatLog.messages.length > 0) {
-            chatLog.messages.forEach((message: any) => {
-              aiChannel.addMessage(message);
-            });
-          }
-
-          logger.info(`✅ ${t`Loaded chat log:`} ${chatLog.label} (${chatLog.messages?.length || 0} ${t`messages`})`);
-        } else {
-          throw new Error(`${t`Chat log not found:`} ${chatLogKey}`);
-        }
-      } catch (error) {
-        throw new Error(`${t`Failed to load chat log:`} ${error instanceof Error ? error.message : String(error)}`);
-      }
-    };
-
-    // 暴露获取聊天记录的方法给UI组件
-    (globalThis as any).__getChatLogs = getChatLogs;
 
     // 如果有初始消息，直接处理
     if (initialMessage) {
@@ -487,25 +247,14 @@ export async function startChatInk(initialMessage?: string, options: ChatOptions
       // 渲染 UI 并处理初始消息
       const { waitUntilExit } = render(
         React.createElement(ChatUI, {
-          onUserInput: handleUserInput,
           onExit: handleExit,
-          onCancel: handleCancel,
-          onChatLogSelect: handleChatLogSelect,
-          onCompress: handleCompress,
-          messages: aiChannel.messages, // 传入aiChannel的消息
-          aiChannel: aiChannel, // 传入aiChannel用于获取token信息
-          workspaceInfo
+          agent: agent,
+          logger: logger,
+          workspaceInfo,
+          effectiveConfig,
+          initialMessage
         })
       );
-
-      // 等待一点时间让 UI 渲染完成，然后发送初始消息
-      setTimeout(async () => {
-        await handleUserInput(initialMessage);
-        // 处理完初始消息后自动退出
-        setTimeout(() => {
-          process.exit(0);
-        }, 1000);
-      }, 100);
 
       await waitUntilExit();
       return;
@@ -516,14 +265,11 @@ export async function startChatInk(initialMessage?: string, options: ChatOptions
 
     const { waitUntilExit } = render(
       React.createElement(ChatUI, {
-        onUserInput: handleUserInput,
         onExit: handleExit,
-        onCancel: handleCancel,
-        onChatLogSelect: handleChatLogSelect,
-        onCompress: handleCompress,
-        messages: aiChannel.messages, // 传入aiChannel的消息
-        aiChannel: aiChannel, // 传入aiChannel用于获取token信息
-        workspaceInfo
+        agent: agent,
+        workspaceInfo,
+        logger: logger,
+        effectiveConfig
       })
     );
 

@@ -10,6 +10,13 @@ import ChatLogSelector from './ChatLogSelector.js';
 import { SmartTextInput, type Command } from './SmartTextInput.js';
 import { TokenCalculator } from '../../ai/memory-compressor.mjs';
 import { AiChannel } from '../../ai/ai.mjs';
+import { createAIChannel } from '../../utils/aiConfigHelper.mjs';
+import { getBuiltinPrompts } from '../../ai/hyperchat-builtin-prompts.mjs';
+import { TaskQueue } from '../../utils/taskQueue.mjs';
+import { getMyUuid } from '../utils/util.mjs';
+import { AgentInstance } from '../../lib.mjs';
+import { Logger } from '../utils/logger.mjs';
+import { sleep } from 'zx';
 
 // 收集的消息数据类型（模仿前端逻辑）
 interface CollectedMessageData {
@@ -38,24 +45,28 @@ const renderMarkdown = (content: string): string => {
 };
 
 interface ChatUIProps {
-  onUserInput: (input: string) => Promise<void>;
   onExit: () => void;
-  onCancel?: () => void; // 新增取消回调
-  onChatLogSelect?: (chatLogKey: string) => Promise<void>; // 聊天记录选择回调
-  onCompress?: () => Promise<void>; // 手动压缩记忆回调
-  messages: MyMessage[]; // 外部传入的消息数据，优先使用
-  aiChannel: AiChannel; // AI通道，用于获取token使用信息
   workspaceInfo?: {
     path: string;
-    agentCount: number;
     currentAgent?: string;
     currentModel?: string;
     agentAllowedMCPs?: number;
     agentAvailableTools?: number;
     agentToolNames?: string[];
-    maxContextTokens?: number;
-    prompt?: string;
   };
+  agent: AgentInstance;
+  logger: Logger;
+  effectiveConfig: {
+    modelKey: string;
+    allowMCPs: string[];
+    blockMCPTools: string[];
+    isConfirmCallTool: boolean;
+    temperature?: number;
+    maxTokens: number;
+    prompt: string;
+    maxContextTokens?: number;
+  };
+  initialMessage?: string;
 }
 
 // 辅助函数：将复杂内容转换为字符串
@@ -76,7 +87,25 @@ const renderContent = (content: string | CommonContent): string => {
   return String(content);
 };
 
-export const ChatUI: React.FC<ChatUIProps> = ({ onUserInput, onExit, onCancel, onChatLogSelect, onCompress, messages: externalMessages, aiChannel, workspaceInfo }) => {
+// 创建聊天日志保存队列，确保按顺序写入，避免YAML文件并发问题
+const chatLogQueue = new TaskQueue({ concurrency: 1 });
+
+// 获取聊天标签（基于第一个用户消息）
+function getLabelByFirstUserContent(messages: Array<MyMessage>): string {
+  let label = "";
+  let firstUser = messages.find(
+    (x) => x.role == "user",
+  );
+  let firstUserContent = (firstUser as any)?.content;
+  if (typeof firstUserContent == "string") {
+    label = firstUserContent;
+  } else if (Array.isArray(firstUserContent)) {
+    label = firstUserContent.find((x) => x.type == "text")?.text || "";
+  }
+  return label;
+}
+
+export const ChatUI: React.FC<ChatUIProps> = ({ onExit, workspaceInfo, agent, logger, effectiveConfig, initialMessage }) => {
   // 所有 hooks 必须在组件顶部，在任何条件返回之前
   const [forceUpdate, setForceUpdate] = useState(0); // 强制更新计数器
   const [systemMessages, setSystemMessages] = useState<MyMessage[]>([]); // UI系统消息
@@ -84,6 +113,7 @@ export const ChatUI: React.FC<ChatUIProps> = ({ onUserInput, onExit, onCancel, o
   const [isThinking, setIsThinking] = useState(false);
   const [showInput, setShowInput] = useState(true);
   const [isCancelling, setIsCancelling] = useState(false); // 取消状态
+  const [aiChannel] = useState(() => createAIChannel()); // 创建AI通道
 
 
 
@@ -104,18 +134,18 @@ export const ChatUI: React.FC<ChatUIProps> = ({ onUserInput, onExit, onCancel, o
   const [chatLogs, setChatLogs] = useState<ChatHistoryItem[]>([]);
   const [loadingChatLogs, setLoadingChatLogs] = useState(false);
 
-  // AI消息来自外部，UI系统消息来自内部状态
-  const messages = externalMessages || [];
+  // AI消息来自aiChannel，UI系统消息来自内部状态
+  const messages = aiChannel.messages || [];
 
 
 
   // 处理取消请求
   const handleCancel = async () => {
-    if (!isThinking || isCancelling || !onCancel) return;
+    if (!isThinking || isCancelling || !aiChannel.cancel) return;
 
     setIsCancelling(true);
     try {
-      await onCancel();
+      await aiChannel.cancel();
       // 添加取消消息到系统消息
       const cancelMessage: MyMessage = {
         role: 'system',
@@ -159,14 +189,8 @@ export const ChatUI: React.FC<ChatUIProps> = ({ onUserInput, onExit, onCancel, o
 
     setLoadingChatLogs(true);
     try {
-      // 通过全局对象获取聊天记录（由外部提供）
-      const chatLogsFetcher = (globalThis as any).__getChatLogs;
-      if (!chatLogsFetcher) {
-        addSystemMessage(`❌ ${t`Chat logs fetcher not available`}`);
-        return;
-      }
 
-      const result = await chatLogsFetcher(workspaceInfo.currentAgent);
+      const result = await agent.getChatLogsPage();
       if (result && result.chatLogs) {
         setChatLogs(result.chatLogs);
         setShowChatLogSelector(true);
@@ -186,14 +210,21 @@ export const ChatUI: React.FC<ChatUIProps> = ({ onUserInput, onExit, onCancel, o
     setShowChatLogSelector(false);
     setShowInput(true);
 
-    if (onChatLogSelect) {
-      try {
-        await onChatLogSelect(chatLog.key);
-        addSystemMessage(`✅ ${t`Resumed chat:`} ${chatLog.label}`);
-      } catch (error) {
-        addSystemMessage(`❌ ${t`Failed to resume chat:`} ${error instanceof Error ? error.message : String(error)}`);
+    try {
+      aiChannel.messages = [];
+
+      // 加载聊天记录中的消息
+      if (chatLog.messages && chatLog.messages.length > 0) {
+        aiChannel.messages = chatLog.messages;
       }
+
+      logger.info(`✅ ${t`Loaded chat log:`} ${chatLog.label} (${chatLog.messages?.length || 0} ${t`messages`})`);
+      forceRefresh();
+      addSystemMessage(`✅ ${t`Resumed chat:`} ${chatLog.label}`);
+    } catch (error) {
+      addSystemMessage(`❌ ${t`Failed to resume chat:`} ${error instanceof Error ? error.message : String(error)}`);
     }
+
   };
 
   // 取消聊天记录选择
@@ -237,74 +268,174 @@ export const ChatUI: React.FC<ChatUIProps> = ({ onUserInput, onExit, onCancel, o
   • ${t`Suggestions automatically add space for parameters`}
   • ${t`Input history stores up to 50 recent commands`}`;
       addSystemMessage(helpContent);
+      setInput('');
       return;
     }
 
     if (trimmedInput === '/clear') {
-      // 清空系统消息（AI消息由外部管理，这里不清理）
+      // 清空AI消息和系统消息
+      aiChannel.messages = [];
       setSystemMessages([]);
       addSystemMessage(`✅ ${t`Chat history cleared`}`);
+      forceRefresh();
+      setInput('');
       return;
     }
 
     if (trimmedInput === '/model') {
       addSystemMessage(`🤖 ${t`Current model:`} ${workspaceInfo?.currentModel || 'N/A'}`);
+      setInput('');
       return;
     }
 
     if (trimmedInput === '/compress') {
-      if (!onCompress) {
-        addSystemMessage(`❌ ${t`Manual compression not available`}`);
-        return;
-      }
-
       // 检查是否有足够的消息可以压缩
       if (!aiChannel?.tokenUsage) {
         addSystemMessage(`❌ ${t`Token usage information not available`}`);
+        setInput('');
         return;
       }
 
       const hasContent = messages.length > 1; // 至少需要有一些对话内容
       if (!hasContent) {
         addSystemMessage(`💬 ${t`Not enough conversation to compress`}`);
+        setInput('');
         return;
       }
 
       addSystemMessage(`🔄 ${t`Starting manual memory compression...`}`);
 
       try {
-        await onCompress();
-        addSystemMessage(`✅ ${t`Memory compression completed successfully`}`);
+        // 调用AI通道的压缩方法
+        if (aiChannel && aiChannel.compressMemory) {
+          await aiChannel.compressMemory(effectiveConfig.modelKey, () => {
+            // 强制刷新UI显示压缩进度
+            forceRefresh();
+          });
+
+          // 构建系统提示词
+          const systemPrompt = getBuiltinPrompts(
+            effectiveConfig.prompt,
+            workspaceInfo?.path || process.cwd(),
+            agent.getAgentPath()
+          ).prompt;
+
+          // 更新token使用信息
+          aiChannel.updateTokenUsage({
+            ...effectiveConfig,
+            prompt: systemPrompt,
+            maxContextTokens: effectiveConfig.maxContextTokens || 4000,
+          });
+
+          forceRefresh();
+          addSystemMessage(`✅ ${t`Memory compression completed successfully`}`);
+        } else {
+          throw new Error(t`Memory compression not available`);
+        }
       } catch (error) {
         addSystemMessage(`❌ ${t`Memory compression failed:`} ${error instanceof Error ? error.message : String(error)}`);
       }
+      setInput('');
       return;
     }
 
     if (trimmedInput === '/resume') {
       if (loadingChatLogs) {
         addSystemMessage(`⏳ ${t`Loading chat logs, please wait...`}`);
+        setInput('');
         return;
       }
       await loadChatLogs();
+      setInput('');
       return;
     }
 
     if (!trimmedInput) {
+      setInput('');
       return;
     }
 
-    // 用户消息不在这里添加，由外部的 handleUserInput 处理
+    // 处理用户输入
+    setInput('');
+    await handleUserInput(trimmedInput);
+  };
+
+  // 处理用户输入的核心逻辑
+  const handleUserInput = async (userInput: string): Promise<void> => {
+    // 生成聊天Key
+    const chatKey = getMyUuid();
+
+    // 添加用户消息
+    const userMessage: MyMessage = {
+      role: 'user',
+      content: userInput,
+      content_date: Date.now()
+    };
+    aiChannel.addMessage(userMessage);
+
+    // 更新token使用信息
+    try {
+      const systemPrompt = getBuiltinPrompts(
+        effectiveConfig.prompt,
+        workspaceInfo?.path || process.cwd(),
+        agent.getAgentPath()
+      ).prompt;
+      aiChannel.updateTokenUsage({
+        ...effectiveConfig,
+        prompt: systemPrompt,
+        maxContextTokens: effectiveConfig.maxContextTokens || 4000,
+      });
+    } catch (error) {
+      // 如果更新token使用信息失败，不影响聊天流程
+      console.debug('Failed to update token usage:', error);
+    }
 
     // 开始思考状态
     setIsThinking(true);
     setShowInput(false);
-    setInput('');
+
+    // 强制刷新UI显示新消息
+    forceRefresh();
 
     try {
-      await onUserInput(trimmedInput);
+      // 构建系统提示词
+      const systemPrompt = getBuiltinPrompts(
+        effectiveConfig.prompt,
+        workspaceInfo?.path || process.cwd(),
+        agent.getAgentPath()
+      ).prompt;
+
+      await aiChannel.completion({
+        ...effectiveConfig,
+        prompt: systemPrompt,
+        maxContextTokens: effectiveConfig.maxContextTokens || 4000,
+        agentInstance: agent, // 直接传递AgentInstance对象
+        onUpdate: async () => {
+          // 强制刷新UI显示
+          forceRefresh();
+
+          // 每次更新时保存聊天历史（使用队列确保顺序写入）
+          try {
+            chatLogQueue.add(async () => {
+              await agent.setChatLog({
+                key: chatKey,
+                label: getLabelByFirstUserContent(aiChannel.messages),
+                messages: aiChannel.messages,
+                agentName: agent.getConfig().name,
+                dateTime: Date.now(),
+                chatType: "user",
+                configOverrides: effectiveConfig,
+              });
+            });
+          } catch (error) {
+            // 静默处理聊天历史保存错误，不影响主要聊天流程
+          }
+        }
+      });
+
     } catch (error) {
-      // addSystemMessage(`❌ ${t`Error:`} ${error instanceof Error ? error.message : String(error)}`);
+      // 强制刷新UI显示错误消息
+      forceRefresh();
     } finally {
       setIsThinking(false);
       setShowInput(true);
@@ -334,6 +465,18 @@ export const ChatUI: React.FC<ChatUIProps> = ({ onUserInput, onExit, onCancel, o
   const forceRefresh = () => {
     setForceUpdate(prev => prev + 1);
   };
+
+  // 处理初始消息
+  useEffect(() => {
+    if (initialMessage) {
+      // 延迟处理初始消息，让UI先渲染完成
+      setTimeout(async () => {
+        await handleUserInput(initialMessage);
+        await sleep(500); // 确保消息处理完成
+        onExit(); // 处理完初始消息后自动退出
+      }, 100);
+    }
+  }, [initialMessage]);
 
   // 暴露控制方法给外部
   useEffect(() => {
@@ -503,43 +646,6 @@ export const ChatUI: React.FC<ChatUIProps> = ({ onUserInput, onExit, onCancel, o
               );
             } else if (message.role === 'tool') {
               return null;
-              // 工具结果消息（仅显示内容，状态已在工具调用中显示）
-              const getToolStatusDisplay = () => {
-                switch (message.content_status) {
-                  case 'loading':
-                    return { icon: '⏳', color: 'yellow' as const, text: t`Tool executing:` };
-                  case 'success':
-                    return { icon: '✅', color: 'green' as const, text: t`Tool result:` };
-                  case 'error':
-                    return { icon: '❌', color: 'red' as const, text: t`Tool error:` };
-                  case 'dataLoading':
-                    return { icon: '🔄', color: 'blue' as const, text: t`Tool loading:` };
-                  case 'dataLoadComplete':
-                    return { icon: '✅', color: 'green' as const, text: t`Tool completed:` };
-                  default:
-                    return { icon: '🔧', color: 'cyan' as const, text: t`Tool:` };
-                }
-              };
-
-              const statusDisplay = getToolStatusDisplay();
-
-              return (
-                <Box key={`tool-result-${msgIndex}`} marginLeft={2} flexDirection="column">
-                  <Text color={statusDisplay.color}>
-                    {statusDisplay.icon} {statusDisplay.text} {message.tool_call_name || 'Tool'}
-                  </Text>
-                  {message.content && (
-                    <Box marginLeft={2}>
-                      <Text color="gray">
-                        {(() => {
-                          const content = renderContent(message.content);
-                          return content.length > 200 ? content.substring(0, 200) + '...' : content;
-                        })()}
-                      </Text>
-                    </Box>
-                  )}
-                </Box>
-              );
             }
             return null;
           })}
@@ -603,7 +709,7 @@ export const ChatUI: React.FC<ChatUIProps> = ({ onUserInput, onExit, onCancel, o
                 )}
               </>
             )}
-            <Text color="gray">💡 {t`Type "/" for commands, Ctrl+H for help | Tab: smart complete, Enter: select with cursor at end, ↑↓: navigate, Esc: cancel`}</Text>
+            <Text color="gray">💡 {t`Type "/" for commands, Tab: smart complete, Enter: select with cursor at end, ↑↓: navigate, Esc: cancel`}</Text>
           </Box>
         </Box>
 
