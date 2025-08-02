@@ -1,10 +1,11 @@
-name: 天气预报
+name: '222'
 prompt: 天气预报
 allowMCPs:
-  - hyper_browser
   - hyper_system
+  - hyper_browser
   - amap-maps
   - telegram-send
+blockMCPTools: []
 isConfirmCallTool: false
 maxTokens: 4000
 tags: []

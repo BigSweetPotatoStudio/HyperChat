@@ -116,7 +116,7 @@ function formatSystemInfo(systemInfo: SystemInfo, workingPath?: string): string 
 - **临时目录**: ${systemInfo.tmpDir}
 - **当前工作目录**: ${workingPath}
 
-${workingPath ?? `当前没有定义工作目录，请让用户输入`}
+${workingPath ?? `当前没有定义工作目录，如果用户要求修改文件，记得先让用户输入工作路径，避免歧义。`}
 
 ---
 `;

@@ -1,5 +1,5 @@
 /**
- * 工作区 MCP 管理器
+ * MCP 管理器 MCP 管理器
  * 负责管理基于路径的 MCP 客户端
  */
 
@@ -21,11 +21,9 @@ export class MCPManager {
   private workspaceConfig: WorkspaceMCPConfig | null = null;
   private options: MCPManagerOptions;
   private events: MCPManagerEvents;
-  private workspacePath: string;
   private serverOrderMap: Map<string, number> = new Map();
 
-  constructor(workspacePath: string, options: MCPManagerOptions = {}) {
-    this.workspacePath = workspacePath;
+  constructor(private mcpDirPath: string, options: MCPManagerOptions = {}) {
     this.options = {
       enableLogging: true,
       ...options,
@@ -75,11 +73,11 @@ export class MCPManager {
    * 启动工作区的 MCP 客户端
    */
   async startClients(): Promise<WorkspaceMCPClientImpl[]> {
-    this.logInfo(`启动工作区 MCP 客户端: ${this.workspacePath}`);
+    this.logInfo(`启动工作区 MCP 客户端: ${this.mcpDirPath}`);
 
     // 加载工作区配置
     const config = await this.loadWorkspaceConfig();
-
+    
     // 初始化所有服务器的order，确保顺序稳定
     this.initializeServerOrders(config);
 
@@ -126,8 +124,8 @@ export class MCPManager {
         this.getServerOrder(server.name),
         {
           mcpType: "builtin",
-          workspacePath: this.workspacePath,
-          globalPath: this.workspacePath,
+          workspacePath: this.mcpDirPath,
+          globalPath: this.mcpDirPath,
           createServer: server.createServer
         }
       );
@@ -170,8 +168,8 @@ export class MCPManager {
         this.getServerOrder(name),
         {
           mcpType: "custom",
-          workspacePath: this.workspacePath,
-          globalPath: this.workspacePath,
+          workspacePath: this.mcpDirPath,
+          globalPath: this.mcpDirPath,
         }
       );
 
@@ -190,7 +188,7 @@ export class MCPManager {
     // 等待所有客户端启动完成
     await Promise.allSettled(tasks);
 
-    this.logInfo(`工作区 ${this.workspacePath} 启动了 ${clients.length} 个客户端`);
+    this.logInfo(`MCP 管理器 ${this.mcpDirPath} 启动了 ${clients.length} 个客户端`);
     return clients;
   }
 
@@ -217,8 +215,8 @@ export class MCPManager {
       this.getServerOrder(name),
       {
         mcpType: "custom",
-        workspacePath: this.workspacePath,
-        globalPath: this.workspacePath,
+        workspacePath: this.mcpDirPath,
+        globalPath: this.mcpDirPath,
       }
     );
 
@@ -253,8 +251,8 @@ export class MCPManager {
       this.getServerOrder(name),
       {
         mcpType: "builtin",
-        workspacePath: this.workspacePath,
-        globalPath: this.workspacePath,
+        workspacePath: this.mcpDirPath,
+        globalPath: this.mcpDirPath,
         createServer: builtinServer?.createServer
       }
     );
@@ -303,7 +301,7 @@ export class MCPManager {
     });
 
     await Promise.allSettled(tasks);
-    this.logInfo(`工作区 ${this.workspacePath} 停止了 ${clientsToStop.length} 个客户端`);
+    this.logInfo(`MCP 管理器 ${this.mcpDirPath} 停止了 ${clientsToStop.length} 个客户端`);
   }
 
   /**
@@ -312,11 +310,11 @@ export class MCPManager {
   async loadWorkspaceConfig(): Promise<WorkspaceMCPConfig> {
     let workspaceConfig: WorkspaceMCPConfig = {
       mcpServers: {},
-      workspacePath: this.workspacePath,
+      workspacePath: this.mcpDirPath,
     };
 
     // 只加载当前工作区的配置文件
-    const configPath = path.join(this.workspacePath, CONSTANTS.CONFIG_FILES.MCP);
+    const configPath = path.join(this.mcpDirPath, CONSTANTS.CONFIG_FILES.MCP);
     this.logInfo(`加载工作区配置: ${configPath}`);
 
     if (fs.existsSync(configPath)) {
@@ -414,7 +412,7 @@ export class MCPManager {
    */
   async restartClient(name: string): Promise<void> {
     try {
-      this.logInfo(`开始重启客户端 ${name} (工作区: ${this.workspacePath})`);
+      this.logInfo(`开始重启客户端 ${name} (MCP 管理器: ${this.mcpDirPath})`);
 
       // 停止客户端
       await this.stopClient(name);
@@ -437,7 +435,7 @@ export class MCPManager {
       } else {
         // 自定义客户端：从配置文件中获取配置
         if (!this.workspaceConfig) {
-          throw new Error(`工作区 ${this.workspacePath} 的配置不存在`);
+          throw new Error(`MCP 管理器 ${this.mcpDirPath} 的配置不存在`);
         }
 
         const serverConfig = this.workspaceConfig.mcpServers[name];
@@ -457,7 +455,7 @@ export class MCPManager {
       const clientId = this.getClientId(name);
       this.events.onError?.(error as Error, {
         clientId,
-        workspacePath: this.workspacePath,
+        workspacePath: this.mcpDirPath,
         operation: 'restart'
       });
 
@@ -572,7 +570,7 @@ export class MCPManager {
       return;
     }
 
-    const configPath = path.join(this.workspacePath, CONSTANTS.CONFIG_FILES.MCP);
+    const configPath = path.join(this.mcpDirPath, CONSTANTS.CONFIG_FILES.MCP);
 
     try {
       await this.ensureDirectoryExists(path.dirname(configPath));
@@ -610,7 +608,7 @@ export class MCPManager {
    */
   private logInfo(message: string, ...args: any[]): void {
     if (this.options.enableLogging) {
-      Logger.info(`[WorkspaceMCPManager] ${message}`, ...args);
+      Logger.info(`[MCPManager] ${message}`, ...args);
     }
   }
 
@@ -619,7 +617,7 @@ export class MCPManager {
    */
   private logError(message: string, ...args: any[]): void {
     if (this.options.enableLogging) {
-      Logger.error(`[WorkspaceMCPManager] ${message}`, ...args);
+      Logger.error(`[MCPManager] ${message}`, ...args);
     }
   }
 
@@ -627,7 +625,7 @@ export class MCPManager {
    * 强制重新加载工作区配置
    */
   async forceReloadWorkspaceConfig(): Promise<void> {
-    this.logInfo(`强制重新加载工作区配置: ${this.workspacePath}`);
+    this.logInfo(`强制重新加载工作区配置: ${this.mcpDirPath}`);
 
     // 1. 停止该工作区的所有客户端
     await this.stopClients();
@@ -638,7 +636,7 @@ export class MCPManager {
     // 3. 重新加载并启动
     await this.startClients();
 
-    this.logInfo(`工作区配置重新加载完成: ${this.workspacePath}`);
+    this.logInfo(`工作区配置重新加载完成: ${this.mcpDirPath}`);
   }
 
   /**
@@ -657,6 +655,6 @@ export class MCPManager {
     await this.stopClients();
     this.workspaceConfig = null;
 
-    this.logInfo("工作区 MCP 管理器已销毁");
+    this.logInfo("MCP 管理器已销毁");
   }
 }

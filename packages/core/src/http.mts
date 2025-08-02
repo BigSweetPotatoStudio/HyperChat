@@ -173,7 +173,7 @@ export async function initHttp(): Promise<void> {
     server.listen(Config.port, () => {
       Logger.info(`HTTP server listening on port: ${Config.port}`);
     });
-    console.log(`url: http://localhost:${Config.port}${urlPrefix}/`);
+    console.log(`🌐 Web Interface: http://localhost:${Config.port}${urlPrefix}/`);
   } else {
     // 启动服务器
     const PORT = await execFallback(Config.port, (port) => {

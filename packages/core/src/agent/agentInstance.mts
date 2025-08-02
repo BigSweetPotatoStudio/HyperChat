@@ -12,7 +12,7 @@ import type { ChatHistoryItem, HyperChatCompletionTool } from "@dadigua/hypercha
 import type { MCPServerConfig } from "@dadigua/hyperchat-shared/types";
 import type { Task } from "@dadigua/hyperchat-shared";
 import type { WorkspaceMCPConfig } from "./mcp/types.mjs";
-import { AgentMCPManager } from "./agentMCPManager.mjs";
+import { MCPManager } from "./mcp/manager.mjs";
 import { AgentTaskScheduler } from "./agentTaskScheduler.mjs";
 import { TaskQueue } from "../utils/taskQueue.mjs";
 
@@ -27,7 +27,7 @@ export class AgentInstance {
   private mcpConfigPath: string;
   private tasksPath: string;
   private initialized: boolean = false;
-  public agentMcpManager: AgentMCPManager | null = null; // Agent专属MCP管理器
+  private mcpManager?: MCPManager; // Agent专属MCP管理器
   private taskScheduler: AgentTaskScheduler | null = null; // Agent专属任务调度器
 
   // 创建聊天日志保存队列，确保按顺序写入，避免YAML文件并发问题
@@ -50,6 +50,12 @@ export class AgentInstance {
       version: 1,
     };
 
+    // 加载配置
+    this.loadConfig();
+
+    this.mcpManager = new MCPManager(this.deriveWorkspacePath(), {
+      allowMCPs: this.config.allowMCPs
+    });
   }
 
   /**
@@ -63,13 +69,7 @@ export class AgentInstance {
     // 创建目录结构
     await this.createDirectories();
 
-    // 加载配置
-    await this.loadConfig();
 
-    this.agentMcpManager = new AgentMCPManager(
-      this.agentPath,
-      this.config.allowMCPs
-    );
     // 初始化聊天记录管理器
     this.chatLogs = new DataList<ChatHistoryItem>(
       path.join(this.agentPath, CONSTANTS.DIRECTORIES.CHAT_LOGS),
@@ -99,27 +99,22 @@ export class AgentInstance {
   /**
    * 加载 Agent 配置
    */
-  private async loadConfig(): Promise<void> {
+  private loadConfig() {
     // 确保 key 始终与文件夹名称保持一致
     const folderName = path.basename(this.agentPath);
     this.config.name = folderName;
 
     if (fs.existsSync(this.configPath)) {
       try {
-        const content = await fs.promises.readFile(this.configPath, "utf-8");
+        const content = fs.readFileSync(this.configPath, "utf-8");
         const config = yaml.load(content) as AgentConfig;
 
         // 合并配置
         this.config = { ...this.config, ...config };
 
-        // 如果从配置文件读取的 name 为空，使用文件夹名称作为 name
-        if (!this.config.name || this.config.name.trim() === '') {
-          this.config.name = folderName;
-        } else {
-          // 清理名称中的scope前缀，确保名称与文件夹名称一致
-          const cleanName = this.config.name.replace(/^(global|workspace):/, '');
-          this.config.name = cleanName || folderName;
-        }
+        // 使用文件夹名称作为 name
+        this.config.name = folderName;
+
       } catch (error) {
         console.warn(`加载 Agent 配置失败 ${folderName}:`, error);
       }
@@ -149,7 +144,23 @@ export class AgentInstance {
       await this.init();
     }
   }
-
+  /**
+   * 从Agent路径推导工作区路径
+   * 例如: /path/to/workspace/.hyperchat/agents/agentName -> /path/to/workspace/.hyperchat
+   */
+  private deriveWorkspacePath(): string {
+    // 简单的路径推导逻辑：往上找到包含.hyperchat的目录
+    let currentPath = this.agentPath;
+    while (currentPath !== path.dirname(currentPath)) {
+      const parent = path.dirname(currentPath);
+      if (path.basename(parent) === '.hyperchat') {
+        return parent;
+      }
+      currentPath = parent;
+    }
+    // 如果找不到，返回当前路径的上级目录
+    return this.agentPath;
+  }
   /**
    * 获取Agent配置（无需初始化）
    */
@@ -306,8 +317,8 @@ export class AgentInstance {
         this.taskScheduler = null;
       }
 
-      if (this.getAgentMcpManager()) {
-        await this.getAgentMcpManager()!.destroy();
+      if (this.mcpManager) {
+        await this.mcpManager.destroy();
       }
 
       if (fs.existsSync(this.agentPath)) {
@@ -360,11 +371,26 @@ export class AgentInstance {
   /**
    * 获取Agent专属MCP管理器
    */
-  getAgentMcpManager(): AgentMCPManager {
-    if (!this.agentMcpManager) {
+  getMcpManager(): MCPManager {
+    if (!this.mcpManager) {
       throw new Error(`Agent ${this.config.name} MCP Manager is not initialized`);
     }
-    return this.agentMcpManager;
+    return this.mcpManager;
+  }
+
+  /**
+   * 设置Agent专属MCP管理器
+   */
+  setMcpManager(mcpManager: MCPManager): void {
+    this.mcpManager = mcpManager;
+  }
+
+  /**
+   * 获取Agent专属MCP管理器 (兼容性方法)
+   * @deprecated 使用 getMcpManager() 替代
+   */
+  getAgentMcpManager(): MCPManager {
+    return this.getMcpManager();
   }
 
   /**
@@ -447,7 +473,7 @@ export class AgentInstance {
    */
   async startMCPClients(): Promise<void> {
 
-    await this.getAgentMcpManager().startClients();
+    await this.getMcpManager().startClients();
   }
 
   /**
@@ -455,7 +481,7 @@ export class AgentInstance {
    */
   async stopMCPClients(): Promise<void> {
 
-    await this.getAgentMcpManager()!.stopClients();
+    await this.getMcpManager().stopClients();
 
   }
 
@@ -463,37 +489,9 @@ export class AgentInstance {
    * 获取Agent的MCP客户端列表
    */
   getMCPClients() {
-    return this.getAgentMcpManager()!.getClients();
+    return this.getMcpManager().getAllClients();
   }
 
-  /**
-   * 获取指定MCP客户端
-   */
-  getMCPClient(name: string) {
-    return this.getAgentMcpManager() ? this.getAgentMcpManager()!.getClient(name) : undefined;
-  }
-
-  /**
-   * 重启指定MCP客户端
-   */
-  async restartMCPClient(name: string): Promise<void> {
-    await this.getAgentMcpManager()!.restartClient(name);
-  }
-
-  /**
-   * 设置MCP服务器配置
-   */
-  async setMCPServerConfig(name: string, serverConfig: MCPServerConfig): Promise<void> {
-    const mcpManager = this.getAgentMcpManager();
-    await mcpManager.setServerConfig(name, serverConfig);
-  }
-
-  /**
-   * 删除MCP服务器配置
-   */
-  async deleteMCPServerConfig(name: string): Promise<void> {
-    await this.getAgentMcpManager()!.deleteServerConfig(name);
-  }
 
   /**
    * 获取Agent允许的MCP工具

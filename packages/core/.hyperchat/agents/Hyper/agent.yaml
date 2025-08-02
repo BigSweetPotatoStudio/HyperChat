@@ -3,8 +3,7 @@ prompt: 你是一个超级AI。
 allowMCPs:
   - hyper_system
   - hyper_browser
-blockMCPTools:
-  - hyper_browser > search
+blockMCPTools: []
 isConfirmCallTool: false
 maxTokens: 4000
 tags: []

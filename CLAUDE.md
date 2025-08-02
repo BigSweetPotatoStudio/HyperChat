@@ -183,6 +183,8 @@ HyperChat/
 │   └── electron/       # Electron桌面应用
 ```
 
+## 🗂️ .hyperchat结构
+
 ### 全局配置目录
 ```
 ~/Documents/HyperChat/

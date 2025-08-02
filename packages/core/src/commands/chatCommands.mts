@@ -11,7 +11,6 @@ import { getAppSettingsManager } from "../data/appSettingsService.mjs";
 import { Logger } from "../log.mjs";
 import { getWorkspaceManager } from "../workspace/index.mjs";
 import { AgentInstance } from "../agent/agentInstance.mjs";
-import { getWebAgentManager } from "../cli/webAgentManager.mjs";
 import { SSEWriter } from "../sse/SSEWriter.mjs";
 import { EventEmitter } from "events";
 import { v4 as uuidv4 } from 'uuid';
@@ -42,6 +41,7 @@ interface ChatCompletionRequest {
   configOverrides?: Partial<BaseAIConfig>;
   /** SSE 写入器 */
   sseWriter?: SSEWriter;
+  workingPath?: string; // 工作路径（可选）
 }
 
 
@@ -57,6 +57,7 @@ export async function streamChatCompletion(params: ChatCompletionRequest): Promi
     userMessage,
     configOverrides = {},
     sseWriter,
+    workingPath
   } = params;
 
   try {
@@ -75,22 +76,13 @@ export async function streamChatCompletion(params: ChatCompletionRequest): Promi
       throw new Error("No AI models configured");
     }
 
-    // 使用WebAgentManager获取或创建Agent实例
-    // const webAgentManager = getWebAgentManager();
-    // const agent = await webAgentManager.getOrCreateAgent(`${workspace?.workspacePath}/.hyperchat/agents/${agentName}`, {
-    //   agentName,
-    //   workspace: workspace?.workspacePath,
-    //   enableMCP: true,
-    //   enableTaskScheduler: false, // Web环境下默认不启用任务调度器
-    // });
-
     let agent = await workspace.getAgentInstance(agentName);
     if (!agent) {
       throw new Error(`Agent not found: ${agentName}`);
     }
     let WorkspaceMCPManager = workspace.getMcpManager();
     if (WorkspaceMCPManager !== undefined) {
-      agent.getAgentMcpManager().mcpManager = WorkspaceMCPManager;
+      agent.setMcpManager(WorkspaceMCPManager);
     }
 
     // console.log("Using Agent:", agentName, "agent:", agent);
@@ -107,7 +99,7 @@ export async function streamChatCompletion(params: ChatCompletionRequest): Promi
     // 构建系统提示词（现在记忆获取逻辑在 getBuiltinPrompts 内部）
     const systemPrompt = getBuiltinPrompts(
       effectiveConfig.prompt,
-      workspace.workspacePath,
+      workingPath,
       agent.getAgentPath()
     ).prompt;
 
@@ -333,161 +325,6 @@ export function handleToolConfirmResponse(confirmId: string, confirmed: boolean,
 }
 
 /**
- * 启动指定路径的Agent
- */
-export async function startAgent(agentPath: string, options?: {
-  enableMCP?: boolean;
-  enableTaskScheduler?: boolean;
-}): Promise<{ success: boolean; message: string; agentName?: string }> {
-  try {
-    const webAgentManager = getWebAgentManager();
-    const agent = await webAgentManager.startAgent(agentPath, options);
-
-    return {
-      success: true,
-      message: `Agent启动成功: ${agentPath}`,
-      agentName: agent.getConfig().name
-    };
-  } catch (error) {
-    return {
-      success: false,
-      message: `启动Agent失败: ${error instanceof Error ? error.message : String(error)}`
-    };
-  }
-}
-
-/**
- * 获取所有已加载的Agent列表
- */
-export async function getLoadedAgents(): Promise<Array<{
-  path: string;
-  config: any;
-  chatLogsCount: number;
-  hasMCPConfig: boolean;
-  tasksCount: number;
-}>> {
-  const webAgentManager = getWebAgentManager();
-  return await webAgentManager.getAgentSummaries();
-}
-
-/**
- * 卸载指定Agent
- */
-export async function unloadAgent(agentPath: string): Promise<{ success: boolean; message: string }> {
-  try {
-    const webAgentManager = getWebAgentManager();
-    const success = await webAgentManager.removeAgent(agentPath);
-
-    return {
-      success,
-      message: success ? `Agent已卸载: ${agentPath}` : `Agent不存在: ${agentPath}`
-    };
-  } catch (error) {
-    return {
-      success: false,
-      message: `卸载Agent失败: ${error instanceof Error ? error.message : String(error)}`
-    };
-  }
-}
-
-/**
- * 卸载所有Agent
- */
-export async function unloadAllAgents(): Promise<{ success: boolean; message: string; count: number }> {
-  try {
-    const webAgentManager = getWebAgentManager();
-    const count = webAgentManager.size();
-    await webAgentManager.removeAllAgents();
-
-    return {
-      success: true,
-      message: `已卸载所有Agent`,
-      count
-    };
-  } catch (error) {
-    return {
-      success: false,
-      message: `卸载所有Agent失败: ${error instanceof Error ? error.message : String(error)}`,
-      count: 0
-    };
-  }
-}
-
-/**
- * 发现指定路径下的可用Agent
- */
-export async function discoverAgents(searchPath?: string, options?: {
-  includeGlobal?: boolean;
-}): Promise<Array<{
-  name: string;
-  path: string;
-  source: 'global' | 'local' | 'specified';
-  workspacePath?: string;
-}>> {
-  try {
-    const webAgentManager = getWebAgentManager();
-    return await webAgentManager.discoverAgents(searchPath, options);
-  } catch (error) {
-    console.error('发现Agent失败:', error);
-    return [];
-  }
-}
-
-/**
- * 发现并启动指定路径下的所有Agent
- */
-export async function discoverAndStartAgents(searchPath?: string, options?: {
-  includeGlobal?: boolean;
-  enableMCP?: boolean;
-  enableTaskScheduler?: boolean;
-  maxAgents?: number;
-}): Promise<{
-  success: boolean;
-  message: string;
-  startedCount: number;
-  discoveredCount: number;
-  agents: Array<{ name: string; path: string }>;
-}> {
-  try {
-    const webAgentManager = getWebAgentManager();
-    const startedAgents = await webAgentManager.discoverAndStartAgents(searchPath, options);
-
-    return {
-      success: true,
-      message: `成功启动${startedAgents.length}个Agent`,
-      startedCount: startedAgents.length,
-      discoveredCount: startedAgents.length, // 简化统计
-      agents: startedAgents.map(agent => ({
-        name: agent.getConfig().name,
-        path: agent.getAgentPath()
-      }))
-    };
-  } catch (error) {
-    return {
-      success: false,
-      message: `批量启动Agent失败: ${error instanceof Error ? error.message : String(error)}`,
-      startedCount: 0,
-      discoveredCount: 0,
-      agents: []
-    };
-  }
-}
-
-/**
- * 获取Agent管理器状态
- */
-export async function getAgentManagerStats(): Promise<{
-  totalAgents: number;
-  agentPaths: string[];
-}> {
-  const webAgentManager = getWebAgentManager();
-  return {
-    totalAgents: webAgentManager.size(),
-    agentPaths: webAgentManager.getAgentPaths(),
-  };
-}
-
-/**
  * 聊天命令集合
  */
 export const chatCommands = {
@@ -500,14 +337,7 @@ export const chatCommands = {
   // AI 结构化解析
   aiCompletionParse,
 
-  // Agent管理功能
-  startAgent,
-  getLoadedAgents,
-  unloadAgent,
-  unloadAllAgents,
-  discoverAgents,
-  discoverAndStartAgents,
-  getAgentManagerStats,
+
 };
 
 export default chatCommands;
