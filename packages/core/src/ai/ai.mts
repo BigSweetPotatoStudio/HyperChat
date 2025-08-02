@@ -71,7 +71,8 @@ export class AiChannel {
       current: compressionCheck.current,
       max: compressionCheck.max,
       percentage: compressionCheck.percentage,
-      strategy: compressionCheck.strategy
+      strategy: compressionCheck.strategy,
+      type: compressionCheck.type
     };
   }
   // 取消当前请求
@@ -251,6 +252,7 @@ export class AiChannel {
         });
       }
     }
+    params.onUpdate && params.onUpdate();
 
     // 🔄 只在首次调用时创建 AbortController，递归调用时复用
     if (!this.abortController || this.abortController.signal.aborted) {
@@ -412,7 +414,7 @@ export class AiChannel {
       params.sseWriter.write({
         type: "chat_message_complete",
         data: {
-          result: this.lastMessage.content,
+          // result: this.lastMessage.content,
         },
       });
     }

@@ -133,6 +133,7 @@ export class AgentManager {
       blockMCPTools: config.blockMCPTools || [],
       isConfirmCallTool: config.isConfirmCallTool ?? false,
       maxTokens: config.maxTokens || 4000,
+      maxContextTokens: config.maxContextTokens || 32000,
       tags: config.tags || [],
       subAgents: config.subAgents || [],
       version: config.version || 1

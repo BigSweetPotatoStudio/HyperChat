@@ -142,6 +142,7 @@ function convertLegacyAgentToNewFormat(legacyAgent: LegacyAgent, modelKeyMapping
     temperature: legacyAgent.temperature,
     isConfirmCallTool: legacyAgent.confirm_call_tool ?? false,
     maxTokens: 4000, // 默认值
+    maxContextTokens: 32000, // 添加默认值
     tags: legacyAgent.type ? [legacyAgent.type] : [],
     subAgents: legacyAgent.subAgents || [],
     version: 1

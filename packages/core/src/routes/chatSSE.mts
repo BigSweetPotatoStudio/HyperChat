@@ -13,13 +13,11 @@ import { getBuiltinPrompts } from '../ai/hyperchat-builtin-prompts.mjs';
 
 const router = Router();
 
-// 存储活动的会话，包含 SSE 连接和 AI 通道
-interface ActiveSession {
-  sseWriter: SSEWriter;
-  aiChannel?: AiChannel;
-}
-
-const activeSessions = new Map<string, ActiveSession>();
+// 分离管理 SSE 连接和 AI 通道
+// sessionId -> SSEWriter 映射
+const activeSseWriters = new Map<string, SSEWriter>();
+// chatKey -> AiChannel 映射  
+const activeAiChannels = new Map<string, AiChannel>();
 
 /**
  * 建立 SSE 连接端点
@@ -27,6 +25,7 @@ const activeSessions = new Map<string, ActiveSession>();
  */
 router.get('/stream/:sessionId', async (req: Request, res: Response) => {
   const { sessionId } = req.params;
+  const { chatKey } = req.query;
 
   if (!sessionId) {
     res.status(400).json({ error: 'sessionId is required' });
@@ -38,37 +37,45 @@ router.get('/stream/:sessionId', async (req: Request, res: Response) => {
   // 创建 SSE 写入器
   const sseWriter = new SSEWriter(res);
 
-  // 存储会话
-  activeSessions.set(sessionId, { sseWriter });
+  // 存储 SSE 连接
+  activeSseWriters.set(sessionId, sseWriter);
 
   // 监听客户端断开连接
   req.on('close', () => {
     Logger.info(`SSE connection closed for sessionId: ${sessionId}`);
-    const session = activeSessions.get(sessionId);
-    if (session) {
-      // 清理 AI 通道缓存
-      if (session.aiChannel) {
-        session.aiChannel.cancel(); // 取消可能正在进行的请求
-        Logger.debug(`AI channel cleaned up for sessionId: ${sessionId}`);
-      }
-      activeSessions.delete(sessionId);
+    const sseWriter = activeSseWriters.get(sessionId);
+    if (sseWriter) {
+      activeSseWriters.delete(sessionId);
     }
-    sseWriter.close();
+    // 如果有 chatKey，清理对应的 AI 通道
+    if (chatKey && typeof chatKey === 'string') {
+      const aiChannel = activeAiChannels.get(chatKey);
+      if (aiChannel) {
+        aiChannel.cancel(); // 取消可能正在进行的请求
+        activeAiChannels.delete(chatKey);
+        Logger.debug(`AI channel cleaned up for chatKey: ${chatKey}`);
+      }
+    }
+    sseWriter?.close();
   });
 
   // 监听连接错误
   req.on('error', (error) => {
     Logger.error(`SSE connection error for sessionId ${sessionId}:`, error);
-    const session = activeSessions.get(sessionId);
-    if (session) {
-      // 清理 AI 通道缓存
-      if (session.aiChannel) {
-        session.aiChannel.cancel(); // 取消可能正在进行的请求
-        Logger.debug(`AI channel cleaned up for sessionId: ${sessionId}`);
-      }
-      activeSessions.delete(sessionId);
+    const sseWriter = activeSseWriters.get(sessionId);
+    if (sseWriter) {
+      activeSseWriters.delete(sessionId);
     }
-    sseWriter.close();
+    // 如果有 chatKey，清理对应的 AI 通道
+    if (chatKey && typeof chatKey === 'string') {
+      const aiChannel = activeAiChannels.get(chatKey);
+      if (aiChannel) {
+        aiChannel.cancel(); // 取消可能正在进行的请求
+        activeAiChannels.delete(chatKey);
+        Logger.debug(`AI channel cleaned up for chatKey: ${chatKey}`);
+      }
+    }
+    sseWriter?.close();
   });
 });
 
@@ -111,13 +118,12 @@ router.post('/stream', async (req: Request, res: Response) => {
       return;
     }
 
-    // 获取对应的会话
-    const session = activeSessions.get(sessionId);
-    if (!session) {
+    // 获取对应的 SSE 连接
+    const sseWriter = activeSseWriters.get(sessionId);
+    if (!sseWriter) {
       res.status(404).json({ error: 'SSE connection not found. Please connect with GET request first.' });
       return;
     }
-    const sseWriter = session.sseWriter;
 
     // 响应请求已接收
     res.json({ success: true, sessionId, chatKey });
@@ -126,7 +132,7 @@ router.post('/stream', async (req: Request, res: Response) => {
     Logger.info(`Starting chat completion for sessionId: ${sessionId}, chatKey: ${chatKey}, agent: ${agentName}`);
 
     // 获取缓存的 aiChannel（如果存在）
-    const existingAiChannel = session.aiChannel;
+    const existingAiChannel = activeAiChannels.get(chatKey);
 
     streamChatCompletion({
       sessionId,
@@ -140,9 +146,9 @@ router.post('/stream', async (req: Request, res: Response) => {
       aiChannel: existingAiChannel, // 传递缓存的 aiChannel
     }).then((aiChannel) => {
       // 缓存返回的 aiChannel
-      if (!existingAiChannel) {
-        session.aiChannel = aiChannel;
-        Logger.debug(`AI channel cached for sessionId: ${sessionId}`);
+      if (!existingAiChannel && aiChannel) {
+        activeAiChannels.set(chatKey, aiChannel);
+        Logger.debug(`AI channel cached for chatKey: ${chatKey}`);
       }
     }).catch((error) => {
       Logger.error(`Chat completion error for sessionId ${sessionId}, chatKey ${chatKey}:`, error);
@@ -179,9 +185,9 @@ router.post('/cancel', async (req: Request, res: Response) => {
       return;
     }
 
-    const session = activeSessions.get(sessionId);
-    if (session && !session.sseWriter.isClosed()) {
-      session.sseWriter.write({
+    const sseWriter = activeSseWriters.get(sessionId);
+    if (sseWriter && !sseWriter.isClosed()) {
+      sseWriter.write({
         type: 'chat_message_error',
         data: {
           error: 'Chat cancelled by user',
@@ -235,7 +241,8 @@ router.post('/compress-memory', async (req: Request, res: Response) => {
       sessionId,
       modelKey,
       maxContextTokens = 32000,
-      prompt = ''
+      prompt = '',
+      chatKey
     } = req.body;
 
     if (!sessionId) {
@@ -250,19 +257,22 @@ router.post('/compress-memory', async (req: Request, res: Response) => {
 
     Logger.info(`Manual memory compression requested for sessionId: ${sessionId}, modelKey: ${modelKey}, strategy: tokens`);
 
-    // 获取对应的会话
-    const session = activeSessions.get(sessionId);
-    if (!session) {
-      res.status(404).json({ error: 'Session not found. Please establish SSE connection first.' });
+    // 获取对应的 SSE 连接
+    const sseWriter = activeSseWriters.get(sessionId);
+    if (!sseWriter) {
+      res.status(404).json({ error: 'SSE connection not found. Please establish SSE connection first.' });
       return;
     }
 
-    // 获取缓存的 aiChannel
-    const aiChannel = session.aiChannel;
+
+    // 使用第一个可用的 aiChannel
+    const aiChannel = activeAiChannels.get(chatKey);
     if (!aiChannel) {
-      res.status(404).json({ error: 'No active AI channel found for this session. Please start a conversation first.' });
+      res.status(404).json({ error: 'No active AI channel found. Please start a conversation first.' });
       return;
     }
+
+    Logger.debug(`Using aiChannel for chatKey: ${chatKey} for memory compression`);
 
     // 检查是否有足够的消息进行压缩
     if (!aiChannel.messages || aiChannel.messages.length === 0) {
@@ -274,7 +284,7 @@ router.post('/compress-memory', async (req: Request, res: Response) => {
     const compressedMessage = await aiChannel.compressMemory(
       modelKey,
       undefined, // onUpdate
-      session.sseWriter   // sseWriter
+      sseWriter   // sseWriter
     );
     const systemPrompt = getBuiltinPrompts(
       prompt,
@@ -292,8 +302,8 @@ router.post('/compress-memory', async (req: Request, res: Response) => {
     aiChannel.updateTokenUsage(compressionConfig);
 
     // 发送压缩完成的token使用信息
-    if (session.sseWriter && aiChannel.tokenUsage) {
-      session.sseWriter.write({
+    if (sseWriter && aiChannel.tokenUsage) {
+      sseWriter.write({
         type: 'token_usage_update',
         data: {
           tokenUsage: aiChannel.tokenUsage

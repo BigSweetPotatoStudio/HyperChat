@@ -9,6 +9,7 @@ import chalk from 'chalk';
 import ChatLogSelector from './ChatLogSelector.js';
 import { SmartTextInput, type Command } from './SmartTextInput.js';
 import { TokenCalculator } from '../../ai/memory-compressor.mjs';
+import { AiChannel } from '../../ai/ai.mjs';
 
 // 收集的消息数据类型（模仿前端逻辑）
 interface CollectedMessageData {
@@ -42,8 +43,8 @@ interface ChatUIProps {
   onCancel?: () => void; // 新增取消回调
   onChatLogSelect?: (chatLogKey: string) => Promise<void>; // 聊天记录选择回调
   onCompress?: () => Promise<void>; // 手动压缩记忆回调
-  messages?: MyMessage[]; // 外部传入的消息数据，优先使用
-  aiChannel?: any; // AI通道，用于获取token使用信息
+  messages: MyMessage[]; // 外部传入的消息数据，优先使用
+  aiChannel: AiChannel; // AI通道，用于获取token使用信息
   workspaceInfo?: {
     path: string;
     agentCount: number;
@@ -83,7 +84,7 @@ export const ChatUI: React.FC<ChatUIProps> = ({ onUserInput, onExit, onCancel, o
   const [isThinking, setIsThinking] = useState(false);
   const [showInput, setShowInput] = useState(true);
   const [isCancelling, setIsCancelling] = useState(false); // 取消状态
-  
+
 
 
 
@@ -106,7 +107,7 @@ export const ChatUI: React.FC<ChatUIProps> = ({ onUserInput, onExit, onCancel, o
   // AI消息来自外部，UI系统消息来自内部状态
   const messages = externalMessages || [];
 
-  
+
 
   // 处理取消请求
   const handleCancel = async () => {
@@ -270,7 +271,7 @@ export const ChatUI: React.FC<ChatUIProps> = ({ onUserInput, onExit, onCancel, o
       }
 
       addSystemMessage(`🔄 ${t`Starting manual memory compression...`}`);
-      
+
       try {
         await onCompress();
         addSystemMessage(`✅ ${t`Memory compression completed successfully`}`);
@@ -315,8 +316,10 @@ export const ChatUI: React.FC<ChatUIProps> = ({ onUserInput, onExit, onCancel, o
 
   // 生成进度条可视化
   const generateProgressBar = (percentage: number, width: number = 10): string => {
-    const filled = Math.round((percentage / 100) * width);
-    const empty = width - filled;
+    // 确保百分比在0-100范围内
+    const clampedPercentage = Math.max(0, Math.min(100, percentage));
+    const filled = Math.round((clampedPercentage / 100) * width);
+    const empty = Math.max(0, width - filled);
     return '█'.repeat(filled) + '░'.repeat(empty);
   };
 
@@ -615,37 +618,35 @@ export const ChatUI: React.FC<ChatUIProps> = ({ onUserInput, onExit, onCancel, o
             ).filter(Boolean);
           })()}
 
-          {/* Thinking indicator */}
-          {isThinking && (
-            <Box>
-              <Text color={isCancelling ? "yellow" : "gray"}>
-                <Spinner type="dots" />
-                {' '}{isCancelling ? t`Cancelling AI request...` : t`AI is thinking...`}
-                {isThinking && !isCancelling && (
-                  <Text color="gray" dimColor> {t`(Press Esc to cancel)`}</Text>
-                )}
-              </Text>
-            </Box>
-          )}
+
         </Box>
 
         {/* Token/Dialog Usage Display */}
-        {showInput && aiChannel?.tokenUsage && (
+        {aiChannel?.tokenUsage && (
           <Box borderStyle="single" borderColor={getTokenUsageColor(aiChannel.tokenUsage.percentage)} paddingX={1} marginBottom={0}>
             <Text color={getTokenUsageColor(aiChannel.tokenUsage.percentage)}>
               {aiChannel.tokenUsage.strategy === 'tokens' ? (
                 <>
-                  📊 Token使用: {aiChannel.tokenUsage.current.toLocaleString()} / {aiChannel.tokenUsage.max.toLocaleString()} ({aiChannel.tokenUsage.percentage}%) [{generateProgressBar(aiChannel.tokenUsage.percentage)}]
+                  📊 Token Usage: {aiChannel.tokenUsage.current.toLocaleString()} / {aiChannel.tokenUsage.max.toLocaleString()} ({aiChannel.tokenUsage.percentage}%) [{generateProgressBar(aiChannel.tokenUsage.percentage)}]
                 </>
-              ) : (
-                <>
-                  💬 对话轮数: {aiChannel.tokenUsage.current} / {aiChannel.tokenUsage.max} ({aiChannel.tokenUsage.percentage}%) [{generateProgressBar(aiChannel.tokenUsage.percentage)}]
-                </>
-              )}
+              ) : null}
               {aiChannel.tokenUsage.percentage >= 80 && (
                 <Text color={aiChannel.tokenUsage.percentage >= 90 ? 'red' : 'yellow'}>
                   {aiChannel.tokenUsage.percentage >= 90 ? ' ⚠️ 即将压缩记忆' : ' ⚡ 接近压缩阈值'}
                 </Text>
+              )}
+            </Text>
+          </Box>
+        )}
+
+        {/* Thinking indicator */}
+        {isThinking && (
+          <Box>
+            <Text color={isCancelling ? "yellow" : "gray"}>
+              <Spinner type="dots" />
+              {' '}{isCancelling ? t`Cancelling AI request...` : t`AI is thinking...`}
+              {isThinking && !isCancelling && (
+                <Text color="gray" dimColor> {t`(Press Esc to cancel)`}</Text>
               )}
             </Text>
           </Box>

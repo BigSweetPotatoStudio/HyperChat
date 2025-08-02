@@ -40,6 +40,7 @@ export class AgentInstance {
       blockMCPTools: [],
       isConfirmCallTool: false,
       maxTokens: 4000,
+      maxContextTokens: 32000,
       tags: [],
       subAgents: [],
       version: 1,

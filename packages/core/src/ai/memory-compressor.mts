@@ -75,13 +75,32 @@ export class TokenCalculator {
   }
 
   // 计算从指定索引到最后的消息token总数
-  static calculateMessagesTokenCount(messages: MyMessage[], fromIndex: number = 0): number {
+  static calculateMessagesTokenCount(messages: MyMessage[], prompt: string, fromIndex: number = 0): number {
     let totalTokens = 0;
+    const promptTokens = TokenCalculator.estimatePromptTokenCount(prompt || '');
     for (let i = fromIndex; i < messages.length; i++) {
       const message = messages[i]!;
       totalTokens += this.estimateTokenCount(message);
     }
-    return totalTokens;
+    return promptTokens + totalTokens;
+  }
+
+  // 计算消息token总数并返回是否包含真实数据
+  static calculateMessagesTokenCountWithType(messages: MyMessage[], prompt: string, fromIndex: number = 0): { totalTokens: number; hasActualTokens: boolean } {
+    let totalTokens = 0;
+    let hasActualTokens = false;
+
+
+    const message = messages[messages.length - 1];
+    // 检查消息是否有真实token统计
+    if (message && message.content_usage?.total_tokens) {
+      totalTokens = message.content_usage.total_tokens;
+      hasActualTokens = true;
+    } else {
+      totalTokens = this.calculateMessagesTokenCount(messages, prompt, fromIndex);
+    }
+
+    return { totalTokens, hasActualTokens };
   }
 
   // 估算prompt的token数量
@@ -127,6 +146,7 @@ export interface MemoryCompressionCheck {
   max: number;
   percentage: number;
   strategy: 'tokens';
+  type: 'estimated' | 'actual'; // 添加类型字段：estimated（估计）或 actual（真实）
 }
 
 /**
@@ -155,20 +175,26 @@ export class MemoryCompressor {
    */
   private checkCompressByTokens(messages: MyMessage[], params: Pick<BaseAIConfig, "maxContextTokens" | "prompt">, startIndex: number): MemoryCompressionCheck {
     const maxTokens = params.maxContextTokens || 32000;
-    const promptTokens = TokenCalculator.estimatePromptTokenCount(params.prompt || '');
-    const messageTokens = TokenCalculator.calculateMessagesTokenCount(messages, startIndex);
-    const currentTokens = promptTokens + messageTokens;
+
+    // 计算消息token并检查是否有真实统计
+    const { totalTokens: messageTokens, hasActualTokens } = TokenCalculator.calculateMessagesTokenCountWithType(messages, params.prompt, startIndex);
+    const currentTokens = messageTokens;
     const percentage = Math.round((currentTokens / maxTokens) * 100);
     const shouldCompress = currentTokens >= maxTokens;
 
-    Logger.debug(`Token usage: prompt=${promptTokens}, messages=${messageTokens}, total=${currentTokens}, limit=${maxTokens}`);
+    // 确定数据类型：如果消息包含真实token统计且prompt使用估计，则为混合（标记为estimated）
+    // 只有当所有数据都是真实的时候才标记为actual
+    const type: 'estimated' | 'actual' = hasActualTokens ? 'actual' : 'estimated';
+
+    Logger.debug(`Token usage: (estimated), messages=${messageTokens}(${hasActualTokens ? 'actual' : 'estimated'}), total=${currentTokens}, limit=${maxTokens}, type=${type}`);
 
     return {
       shouldCompress,
       current: currentTokens,
       max: maxTokens,
       percentage,
-      strategy: 'tokens'
+      strategy: 'tokens',
+      type
     };
   }
 
