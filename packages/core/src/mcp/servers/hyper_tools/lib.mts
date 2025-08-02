@@ -67,3 +67,17 @@ export function getConfig() {
 
   return configSchema.safeParse({}).data;
 }
+
+// Shared reason field for all tools
+export const reasonField = z.string()
+  .min(10, "Reason must be at least 10 characters")
+  .max(200, "Reason must not exceed 200 characters")
+  .describe('REQUIRED: Explain why you need to use this tool and what you plan to accomplish. This is for transparency and audit purposes.');
+
+// Helper function to create tool schemas with mandatory reason field
+export function createToolSchema<T extends z.ZodRawShape>(additionalFields: T) {
+  return z.object({
+    reason: reasonField,
+    ...additionalFields,
+  });
+}

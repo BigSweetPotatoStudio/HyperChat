@@ -8,9 +8,9 @@ import {
   normalizePath,
   withTimeout
 } from '../utils.mjs';
-import { HyperSystemToolError, ERROR_CODES, getConfig } from '../lib.mjs';
+import { HyperSystemToolError, ERROR_CODES, getConfig, createToolSchema } from '../lib.mjs';
 
-const searchFileContentSchema = z.object({
+const searchFileContentSchema = createToolSchema({
   pattern: z.string().describe('Regular expression pattern to search for in file contents'),
   path: z.string().describe('Directory to search in. This parameter is required.'),
   include: z.string().optional().describe('File pattern to include in the search (e.g., "*.js", "*.{ts,tsx}")'),
@@ -72,7 +72,7 @@ export function registerSearchFileContentTool(server: McpServer): void {
     'search_file_content',
     'Searches for a pattern in file contents using regular expressions. Can search in specific directories and file types.',
     searchFileContentSchema.shape,
-    async ({ pattern, path: searchPath, include, exclude, case_sensitive, max_results, context_lines }) => {
+    async ({ reason, pattern, path: searchPath, include, exclude, case_sensitive, max_results, context_lines }) => {
       const config = getConfig();
 
       try {
@@ -218,7 +218,7 @@ export function registerSearchFileContentTool(server: McpServer): void {
           return lines.join('\n');
         }).join('\n');
 
-        let summary = `Found ${limitedMatches.length} matches in ${fileCount} files`;
+        let summary = `Found ${limitedMatches.length} matches in ${fileCount} files (Reason: ${reason})`;
         if (searchPath) {
           summary += ` in ${searchPathDisplay}`;
         }

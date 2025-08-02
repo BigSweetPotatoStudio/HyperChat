@@ -8,9 +8,9 @@ import {
   normalizePath,
   withTimeout
 } from '../utils.mjs';
-import { HyperSystemToolError, ERROR_CODES, getConfig } from '../lib.mjs';
+import { HyperSystemToolError, ERROR_CODES, getConfig, createToolSchema } from '../lib.mjs';
 
-const globSchema = z.object({
+const globSchema = createToolSchema({
   pattern: z.string().describe('Glob pattern to match files (e.g., "*.js", "**/*.ts", "src/**/*.{js,ts}")'),
   base_path: z.string().describe('Base directory to search from. This parameter is required.'),
   include_hidden: z.boolean().default(false).describe('Whether to include hidden files and directories'),
@@ -22,7 +22,7 @@ export function registerGlobTool(server: McpServer): void {
     'glob',
     'Finds files and directories matching a glob pattern. Supports advanced patterns like wildcards, character classes, and brace expansion.',
     globSchema.shape,
-    async ({ pattern, base_path, include_hidden, max_results }) => {
+    async ({ reason, pattern, base_path, include_hidden, max_results }) => {
       const config = getConfig();
 
       try {
@@ -121,7 +121,7 @@ export function registerGlobTool(server: McpServer): void {
           return `${type.padEnd(4)} ${size} ${result.modified} ${result.relativePath}`;
         }).join('\n');
 
-        let summary = `Found ${fileCount} files and ${dirCount} directories matching "${pattern}"`;
+        let summary = `Found ${fileCount} files and ${dirCount} directories matching "${pattern}" (Reason: ${reason})`;
         if (base_path) {
           summary += ` in ${basePathDisplay}`;
         }

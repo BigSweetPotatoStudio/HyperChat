@@ -2,6 +2,12 @@ import { z } from "zod";
 
 export const NAME = "hyper_system";
 
+// 公共的 reason 字段定义，所有工具必须使用
+export const reasonField = z.string()
+  .min(10, "Reason must be at least 10 characters")
+  .max(200, "Reason must not exceed 200 characters")
+  .describe('REQUIRED: Explain why you need to use this tool and what you plan to accomplish. This is for transparency and audit purposes.');
+
 // 配置 Schema
 export const configSchema = z.object({
   // 文件操作配置
@@ -62,3 +68,11 @@ export const ERROR_CODES = {
   INVALID_INPUT: 'INVALID_INPUT',
   FILE_READ_ERROR: 'FILE_READ_ERROR',
 } as const;
+
+// 公共的 schema 构建函数
+export function createToolSchema<T extends z.ZodRawShape>(additionalFields: T) {
+  return z.object({
+    reason: reasonField,
+    ...additionalFields,
+  });
+}

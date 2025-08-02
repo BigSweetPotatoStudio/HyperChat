@@ -78,19 +78,17 @@ export const ChatUI: React.FC<ChatUIProps> = ({ onUserInput, onExit, onCancel, o
   const [isThinking, setIsThinking] = useState(false);
   const [showInput, setShowInput] = useState(true);
   const [isCancelling, setIsCancelling] = useState(false); // 取消状态
-  
+
   // 可用命令列表（包含描述）
   const availableCommands: Command[] = [
     { command: '/resume', description: t`Resume previous chat log` },
     { command: '/help', description: t`Show help` },
     { command: '/clear', description: t`Clear chat history` },
     { command: '/model', description: t`Show current model` },
-    { command: '/tools', description: t`Show available MCP tools` },
-    { command: '/toolinfo', description: t`Show detailed info for a specific tool` },
     { command: '/exit', description: t`Exit chat` },
   ];
-  
-  
+
+
   // 聊天记录选择状态
   const [showChatLogSelector, setShowChatLogSelector] = useState(false);
   const [chatLogs, setChatLogs] = useState<ChatHistoryItem[]>([]);
@@ -102,7 +100,7 @@ export const ChatUI: React.FC<ChatUIProps> = ({ onUserInput, onExit, onCancel, o
   // 处理取消请求
   const handleCancel = async () => {
     if (!isThinking || isCancelling || !onCancel) return;
-    
+
     setIsCancelling(true);
     try {
       await onCancel();
@@ -175,7 +173,7 @@ export const ChatUI: React.FC<ChatUIProps> = ({ onUserInput, onExit, onCancel, o
   const handleChatLogSelect = async (chatLog: ChatHistoryItem) => {
     setShowChatLogSelector(false);
     setShowInput(true);
-    
+
     if (onChatLogSelect) {
       try {
         await onChatLogSelect(chatLog.key);
@@ -210,8 +208,6 @@ export const ChatUI: React.FC<ChatUIProps> = ({ onUserInput, onExit, onCancel, o
   /clear            - ${t`Clear chat history`}
   /model            - ${t`Show current model`}
   /resume           - ${t`Resume previous chat log`}
-  /tools            - ${t`Show available MCP tools`}
-  /toolinfo <name>  - ${t`Show detailed info for a specific tool`}
 
 ⌨️  ${t`Keyboard shortcuts:`}
   Esc               - ${t`Cancel current AI request`}
@@ -376,7 +372,6 @@ export const ChatUI: React.FC<ChatUIProps> = ({ onUserInput, onExit, onCancel, o
             if (message.role === 'assistant') {
               return (
                 <Box key={`assistant-${msgIndex}`} flexDirection="column">
-                  {/* 移除了重复的 AI: 标签 */}
 
                   {/* 推理内容 */}
                   {message.reasoning_content && (
@@ -411,32 +406,33 @@ export const ChatUI: React.FC<ChatUIProps> = ({ onUserInput, onExit, onCancel, o
                     };
 
                     const toolDisplay = getToolCallDisplay();
-
+                    const toolResult = msgList.find(m => m.role === 'tool' && m.tool_call_id === tool.id);
+                    const { reason, ...argsShow } = (tool.function.args || {}) as any;
                     return (
                       <Box key={`tool-call-${toolIndex}`} marginLeft={2} flexDirection="column" marginTop={0} marginBottom={0}>
                         <Text color={toolDisplay.color}>
-                          {toolDisplay.icon} {toolDisplay.text} {tool.displayName || tool.originalName || tool.function.name}
+                          {toolDisplay.icon} {toolDisplay.text} {tool.displayName || tool.originalName || tool.function.name} <Text color="greenBright">{reason}</Text>
                         </Text>
-                        {tool.function.args && Object.keys(tool.function.args).length > 0 && (
-                          <Text color="gray">  ({(() => {
-                            const argsStr = JSON.stringify(tool.function.args, null, 0).replace(/\n\s*/g, ' ');
+                        {Object.keys(argsShow).length > 0 && (
+                          <Text color="gray">  {(() => {
+                            const argsStr = JSON.stringify(argsShow, null, 0).replace(/\n\s*/g, ' ');
                             // 如果参数太长，截断显示
-                            return argsStr.length > 100 ? argsStr.substring(0, 100) + '...' : argsStr;
-                          })()})</Text>
+                            return argsStr.length > 200 ? argsStr.substring(0, 200) + '...' : argsStr;
+                          })()}</Text>
                         )}
 
                         {/* 工具结果状态 */}
-                        {/* {toolResult && (
+                        {toolResult && (
                           <Box marginLeft={2}>
                             {toolResult.content_status === 'loading' ? (
-                              <Text color="blue">⏳ {t`Tool executing...`}</Text>
+                              <Text color="blue">⏳ {t`Tool executing...`} </Text>
                             ) : toolResult.content_status === 'error' ? (
-                              <Text color="red">❌ {t`Tool failed`}</Text>
+                              <Text color="red">❌ {t`Tool failed`} </Text>
                             ) : (
-                              <Text color="green">✅ {t`Tool completed`}</Text>
+                              <Text color="green">✅ {t`Tool completed`} </Text>
                             )}
                           </Box>
-                        )} */}
+                        )}
                       </Box>
                     );
                   })}
@@ -452,6 +448,7 @@ export const ChatUI: React.FC<ChatUIProps> = ({ onUserInput, onExit, onCancel, o
                 </Box>
               );
             } else if (message.role === 'tool') {
+              return null;
               // 工具结果消息（仅显示内容，状态已在工具调用中显示）
               const getToolStatusDisplay = () => {
                 switch (message.content_status) {
@@ -526,73 +523,73 @@ export const ChatUI: React.FC<ChatUIProps> = ({ onUserInput, onExit, onCancel, o
     );
   } else {
     content = (
-    <Box flexDirection="column" height="100%">
-      {/* Header */}
-      <Box borderStyle="single"  padding={1} marginBottom={1}>
-        <Box flexDirection="column">
-          <Text color="blue" bold>🚀 HyperChat CLI</Text>
-          {workspaceInfo && (
-            <>
-              <Text>📍 {t`Workspace:`} {workspaceInfo.path}</Text>
-              {workspaceInfo.currentAgent && (
-                <Text>🌐 {t`Current Agent:`} {workspaceInfo.currentAgent}</Text>
-              )}
-              {workspaceInfo.currentModel && (
-                <Text>🤖 {t`Model:`} {workspaceInfo.currentModel}</Text>
-              )}
-              {workspaceInfo.agentAllowedMCPs !== undefined && (
-                <Text>🛠️ {t`Agent allowed tools:`} {`${workspaceInfo.agentAvailableTools || 0} available (${workspaceInfo.agentAllowedMCPs} mcp)`}</Text>
-              )}
-              {workspaceInfo.agentToolNames && workspaceInfo.agentToolNames.length > 0 && (
-                <Text color="gray">    📋 {(() => {
-                  const toolNames = workspaceInfo.agentToolNames!.slice(0, 3);
-                  const more = workspaceInfo.agentToolNames!.length > 3 ? ` (+${workspaceInfo.agentToolNames!.length - 3} more)` : '';
-                  return toolNames.join(', ') + more;
-                })()}</Text>
-              )}
-            </>
-          )}
-          <Text color="gray">💡 {t`Type "/" for commands, Ctrl+H for help | Tab: smart complete, Enter: select with cursor at end, ↑↓: navigate, Esc: cancel`}</Text>
-        </Box>
-      </Box>
-
-      {/* Messages */}
-      <Box flexDirection="column" flexGrow={1} paddingX={1}>
-        {(() => {
-          // 收集消息数据
-          const collectedMessagesData = messages2collectMessages(allMessages);
-          // 渲染消息组
-          return collectedMessagesData.map((collectedData) =>
-            renderMessageGroup(collectedData)
-          ).filter(Boolean);
-        })()}
-
-        {/* Thinking indicator */}
-        {isThinking && (
-          <Box>
-            <Text color={isCancelling ? "yellow" : "gray"}>
-              <Spinner type="dots" />
-              {' '}{isCancelling ? t`Cancelling AI request...` : t`AI is thinking...`}
-              {isThinking && !isCancelling && (
-                <Text color="gray" dimColor> {t`(Press Esc to cancel)`}</Text>
-              )}
-            </Text>
+      <Box flexDirection="column" height="100%">
+        {/* Header */}
+        <Box borderStyle="single" padding={1} marginBottom={1}>
+          <Box flexDirection="column">
+            <Text color="blue" bold>🚀 HyperChat CLI</Text>
+            {workspaceInfo && (
+              <>
+                <Text>📍 {t`Workspace:`} {workspaceInfo.path}</Text>
+                {workspaceInfo.currentAgent && (
+                  <Text>🌐 {t`Current Agent:`} {workspaceInfo.currentAgent}</Text>
+                )}
+                {workspaceInfo.currentModel && (
+                  <Text>🤖 {t`Model:`} {workspaceInfo.currentModel}</Text>
+                )}
+                {workspaceInfo.agentAllowedMCPs !== undefined && (
+                  <Text>🛠️ {t`Agent allowed tools:`} {`${workspaceInfo.agentAvailableTools || 0} available (${workspaceInfo.agentAllowedMCPs} mcp)`}</Text>
+                )}
+                {workspaceInfo.agentToolNames && workspaceInfo.agentToolNames.length > 0 && (
+                  <Text color="gray">    📋 {(() => {
+                    const toolNames = workspaceInfo.agentToolNames!.slice(0, 3);
+                    const more = workspaceInfo.agentToolNames!.length > 3 ? ` (+${workspaceInfo.agentToolNames!.length - 3} more)` : '';
+                    return toolNames.join(', ') + more;
+                  })()}</Text>
+                )}
+              </>
+            )}
+            <Text color="gray">💡 {t`Type "/" for commands, Ctrl+H for help | Tab: smart complete, Enter: select with cursor at end, ↑↓: navigate, Esc: cancel`}</Text>
           </Box>
+        </Box>
+
+        {/* Messages */}
+        <Box flexDirection="column" flexGrow={1} paddingX={1}>
+          {(() => {
+            // 收集消息数据
+            const collectedMessagesData = messages2collectMessages(allMessages);
+            // 渲染消息组
+            return collectedMessagesData.map((collectedData) =>
+              renderMessageGroup(collectedData)
+            ).filter(Boolean);
+          })()}
+
+          {/* Thinking indicator */}
+          {isThinking && (
+            <Box>
+              <Text color={isCancelling ? "yellow" : "gray"}>
+                <Spinner type="dots" />
+                {' '}{isCancelling ? t`Cancelling AI request...` : t`AI is thinking...`}
+                {isThinking && !isCancelling && (
+                  <Text color="gray" dimColor> {t`(Press Esc to cancel)`}</Text>
+                )}
+              </Text>
+            </Box>
+          )}
+        </Box>
+
+        {/* Smart Input */}
+        {showInput && (
+          <SmartTextInput
+            value={input}
+            onChange={setInput}
+            onSubmit={handleSubmit}
+            placeholder={t`Type your message... (↑↓: history, Tab: complete)`}
+            availableCommands={availableCommands}
+            disabled={isThinking}
+          />
         )}
       </Box>
-
-      {/* Smart Input */}
-      {showInput && (
-        <SmartTextInput
-          value={input}
-          onChange={setInput}
-          onSubmit={handleSubmit}
-          placeholder={t`Type your message... (↑↓: history, Tab: complete)`}
-          availableCommands={availableCommands}
-          disabled={isThinking}
-        />
-      )}
-    </Box>
     );
   }
 

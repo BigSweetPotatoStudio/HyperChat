@@ -10,9 +10,9 @@ import {
   loadAllGitignoreRules,
   shouldIgnoreFile
 } from '../utils.mjs';
-import { HyperSystemToolError, ERROR_CODES, getConfig } from '../lib.mjs';
+import { HyperSystemToolError, ERROR_CODES, getConfig, createToolSchema } from '../lib.mjs';
 
-const listDirectorySchema = z.object({
+const listDirectorySchema = createToolSchema({
   absolute_path: z.string().describe('The absolute path to the directory to list'),
   recursive: z.boolean().default(false).describe('Whether to list files recursively'),
   include_hidden: z.boolean().default(false).describe('Whether to include hidden files and directories'),
@@ -128,7 +128,7 @@ export function registerListDirectoryTool(server: McpServer): void {
     'list_directory',
     'Lists files and directories in a specified directory. Supports recursive listing and hidden file inclusion.',
     listDirectorySchema.shape,
-    async ({ absolute_path, recursive, include_hidden, max_depth, respect_git_ignore }) => {
+    async ({ reason, absolute_path, recursive, include_hidden, max_depth, respect_git_ignore }) => {
       const config = getConfig();
       
       try {
@@ -205,7 +205,7 @@ export function registerListDirectoryTool(server: McpServer): void {
           return `${file.permissions} ${type.padEnd(4)} ${size} ${file.modified} ${file.path}`;
         }).join('\n');
         
-        let summary = `Listed directory: ${relativePath} (${fileCount} files, ${dirCount} directories)`;
+        let summary = `Listed directory: ${relativePath} (${fileCount} files, ${dirCount} directories) (Reason: ${reason})`;
         if (respect_git_ignore && gitignoreSources.length > 0) {
           summary += ` - Applied gitignore rules from ${gitignoreSources.length} file(s)`;
         }

@@ -9,9 +9,9 @@ import {
   limitOutputLines,
   withTimeout
 } from '../utils.mjs';
-import { HyperSystemToolError, ERROR_CODES, getConfig } from '../lib.mjs';
+import { HyperSystemToolError, ERROR_CODES, getConfig, createToolSchema } from '../lib.mjs';
 
-const readManyFilesSchema = z.object({
+const readManyFilesSchema = createToolSchema({
   absolute_paths: z.array(z.string()).max(50).describe('Array of absolute paths to files to read'),
   include_metadata: z.boolean().default(true).describe('Whether to include file metadata (size, modification time, etc.)'),
   max_lines_per_file: z.number().int().min(1).optional().describe('Maximum number of lines to read per file'),
@@ -97,7 +97,7 @@ export function registerReadManyFilesTool(server: McpServer): void {
     'read_many_files',
     'Reads multiple files at once. Useful for batch operations or when you need to analyze multiple files together.',
     readManyFilesSchema.shape,
-    async ({ absolute_paths, include_metadata, max_lines_per_file, skip_errors }) => {
+    async ({ reason, absolute_paths, include_metadata, max_lines_per_file, skip_errors }) => {
       const config = getConfig();
       
       try {

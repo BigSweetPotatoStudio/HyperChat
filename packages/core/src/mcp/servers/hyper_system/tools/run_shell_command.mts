@@ -9,13 +9,12 @@ import {
   normalizePath,
   validateCommand
 } from '../utils.mjs';
-import { HyperSystemToolError, ERROR_CODES } from '../lib.mjs';
+import { HyperSystemToolError, ERROR_CODES, createToolSchema } from '../lib.mjs';
 
-const runShellCommandSchema = z.object({
+const runShellCommandSchema = createToolSchema({
   command: z.string().describe('The shell command to execute'),
   working_directory: z.string().describe('Working directory for the command. This parameter is required.'),
   timeout: z.number().int().min(1000).max(300000).default(30000).describe('Command timeout in milliseconds (1s to 5min)'),
-  description: z.string().optional().describe('Brief description of the command for the user'),
 });
 
 interface CommandResult {
@@ -286,7 +285,7 @@ export function registerRunShellCommandTool(server: McpServer): void {
     'run_shell_command',
     'Executes a shell command in the specified working directory. Supports timeout, user cancellation, background process tracking, and comprehensive security checks.',
     runShellCommandSchema.shape,
-    async ({ command, working_directory, timeout, description }, extra) => {
+    async ({ reason, command, working_directory, timeout }, extra) => {
       try {
         // 验证命令
         validateCommand(command);
@@ -327,8 +326,8 @@ export function registerRunShellCommandTool(server: McpServer): void {
 
         // 基本信息
         output.push(`Command: ${command}`);
-        if (description) {
-          output.push(`Description: ${description}`);
+        if (reason) {
+          output.push(`Reason: ${reason}`);
         }
         output.push(`Working Directory: ${working_directory}`);
         output.push(`Duration: ${result.duration}ms`);
@@ -401,8 +400,8 @@ export function registerRunShellCommandTool(server: McpServer): void {
         }
 
         const commandRoot = getCommandRoot(command);
-        const summary = description
-          ? `${commandRoot}: ${description} (${status}, ${result.duration}ms)`
+        const summary = reason
+          ? `${commandRoot}: ${reason} (${status}, ${result.duration}ms)`
           : `Executed ${commandRoot}: ${command} (${status}, ${result.duration}ms)`;
 
         return {
