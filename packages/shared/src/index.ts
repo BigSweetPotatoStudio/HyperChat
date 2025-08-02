@@ -1,5 +1,4 @@
 // HyperChat Shared - Main exports
-export * from './ai.mjs';
 export * from './types.mjs';
 
 // Export i18n system
