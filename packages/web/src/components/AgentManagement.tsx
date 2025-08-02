@@ -41,7 +41,7 @@ import { useAISettings } from "../contexts/AppSettingsContext";
 import EmojiPicker from 'emoji-picker-react';
 import { HyperChatEditor } from "./HyperChatEditor";
 import { useForceUpdate } from "../hooks/useForceUpdate";
-import { AgentConfig, ChatHistoryItem, IMCPClient } from "@dadigua/hyperchat-shared";
+import { AgentConfig, ChatHistoryItem, createDefaultBaseAIConfig, IMCPClient } from "@dadigua/hyperchat-shared";
 import { convertTreeSelectionToMCPConfig, convertMCPConfigToTreeSelection } from '../utils/mcpUtils';
 const { Title } = Typography;
 
@@ -141,9 +141,9 @@ export const AgentManagement = forwardRef<AgentManagementRef, AgentManagementPro
         modelKey: values.modelKey,
         temperature: values.temperature,
         maxTokens: values.maxTokens,
-        maxAttachedDialogs: values.maxAttachedDialogs,
-        compressionStrategy: values.compressionStrategy,
+        compressionStrategy: 'tokens',
         maxContextTokens: values.maxContextTokens,
+        
       };
 
       if (editingAgent) {
@@ -470,11 +470,8 @@ export const AgentManagement = forwardRef<AgentManagementRef, AgentManagementPro
               <Descriptions.Item label={t`Last Chat`}>
                 {selectedAgent.lastChatTime ? new Date(selectedAgent.lastChatTime).toLocaleString() : 'Never'}
               </Descriptions.Item>
-              <Descriptions.Item label={t`Context History`}>
-                {selectedAgent.config.maxAttachedDialogs || 5}
-              </Descriptions.Item>
               <Descriptions.Item label={t`Compression Strategy`}>
-                {selectedAgent.config.compressionStrategy || 'tokens'}
+                tokens
               </Descriptions.Item>
               {selectedAgent.config.maxContextTokens && (
                 <Descriptions.Item label={t`Max Context Tokens`}>
@@ -516,12 +513,7 @@ export const AgentManagement = forwardRef<AgentManagementRef, AgentManagementPro
                 {selectedAgent.config.maxTokens !== undefined && (
                   <div>Max Tokens: {selectedAgent.config.maxTokens}</div>
                 )}
-                {selectedAgent.config.maxAttachedDialogs !== undefined && (
-                  <div>Context History: {selectedAgent.config.maxAttachedDialogs}</div>
-                )}
-                {selectedAgent.config.compressionStrategy && (
-                  <div>Compression Strategy: {selectedAgent.config.compressionStrategy}</div>
-                )}
+                <div>Compression Strategy: tokens</div>
                 {selectedAgent.config.maxContextTokens !== undefined && (
                   <div>Max Context Tokens: {selectedAgent.config.maxContextTokens}</div>
                 )}
@@ -566,31 +558,27 @@ export const AgentManagement = forwardRef<AgentManagementRef, AgentManagementPro
                 maxTokens: editingAgent.config.maxTokens,
                 allowMCPs: combinedAllowMCPs,
                 isConfirmCallTool: editingAgent.config.isConfirmCallTool ?? false,
-                maxAttachedDialogs: editingAgent.config.maxAttachedDialogs,
-                compressionStrategy: editingAgent.config.compressionStrategy || 'tokens',
+                compressionStrategy: 'tokens',
                 maxContextTokens: editingAgent.config.maxContextTokens,
               };
               form.resetFields();
               form.setFieldsValue(formValues);
             } else {
               // 创建模式：从工作区设置读取默认值
-              const workspaceAIConfig = workspace?.settings?.aiConfig;
+              const baseConfig = createDefaultBaseAIConfig("你是谁一个超级agent");
               const firstAvailableModel = aiSettings?.models?.[0]?.key || "";
 
               // 只有在 aiSettings 加载完成后才设置默认值
               if (aiSettings && !aiSettingsLoading) {
                 const defaultValues = {
+                  ...baseConfig,
                   allowMCPs: convertMCPConfigToTreeSelection(
                     ["hyper_system", "hyper_browser"], // 默认允许的MCP
                     [], // 默认不阻止任何工具
                     mcpClients
                   ),
-                  isConfirmCallTool: workspaceAIConfig?.isConfirmCallTool ?? false,
-                  temperature: workspaceAIConfig?.temperature ?? 1,
-                  maxTokens: workspaceAIConfig?.maxTokens,
-                  maxAttachedDialogs: workspaceAIConfig?.maxAttachedDialogs,
-                  modelKey: workspaceAIConfig?.modelKey || firstAvailableModel,
-                  prompt: workspaceAIConfig?.prompt || "",
+                  modelKey: baseConfig?.modelKey || firstAvailableModel,
+                  prompt: undefined, // Prompt留空，用户需要输入
                   compressionStrategy: 'tokens',
                 };
 
@@ -835,31 +823,19 @@ export const AgentCommonFormItems = (
           max={32000}
           step={100}
           style={{ width: '100%' }}
-          placeholder="4000"
+          placeholder="8096"
         />
       </Form.Item>
     </Col>
-    <Col span={8}>
-      <Form.Item
-        name="compressionStrategy"
-        label={t`Compression Strategy`}
-        tooltip={t`Strategy for memory compression: tokens (token数量), dialogs (轮数)`}
-      >
-        <Select
-          style={{ width: '100%' }}
-          placeholder="Select strategy"
-          options={[
-            { value: 'dialogs', label: t`Dialogs Count` },
-            { value: 'tokens', label: t`Token Count` },
-          ]}
-        />
-      </Form.Item>
-    </Col>
+    {/* compressionStrategy is now fixed to 'tokens' */}
+    <Form.Item name="compressionStrategy" initialValue="tokens" hidden>
+      <Input />
+    </Form.Item>
     <Col span={8}>
       <Form.Item
         name="maxContextTokens"
         label={t`Max Context Tokens`}
-        tooltip={t`Maximum context tokens before compression (1000-128000). Only effective when compression strategy is 'tokens' or 'auto'`}
+        tooltip={t`Maximum context tokens before compression (1000-128000)`}
       >
         <InputNumber
           min={1000}
@@ -867,21 +843,6 @@ export const AgentCommonFormItems = (
           step={1000}
           style={{ width: '100%' }}
           placeholder="Max Context Tokens"
-        />
-      </Form.Item>
-    </Col>
-    <Col span={8}>
-      <Form.Item
-        name="maxAttachedDialogs"
-        label={t`Max Attached Dialogs`}
-        tooltip={t`Maximum number of attached dialog histories (0-100)`}
-      >
-        <InputNumber
-          min={0}
-          max={100}
-          step={1}
-          style={{ width: '100%' }}
-          placeholder="Maximum number of attached dialog histories (0-100)"
         />
       </Form.Item>
     </Col>

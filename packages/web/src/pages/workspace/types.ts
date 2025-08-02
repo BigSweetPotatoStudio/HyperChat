@@ -29,7 +29,6 @@ export interface WorkspaceInfo {
   name: string;
   description?: string;
   created: number;
-  settings: Record<string, any>;
 }
 
 /**

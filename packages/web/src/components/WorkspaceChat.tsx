@@ -143,8 +143,7 @@ export const WorkspaceChat = ({ workspace, agentName, agentScope, workspaceDetai
       blockMCPTools: [] as string[],
       isConfirmCallTool: false,
       temperature: undefined as number | undefined,
-      maxAttachedDialogs: 5,
-      compressionStrategy: undefined as "dialogs" | "tokens" | undefined,
+      compressionStrategy: "tokens" as "tokens",
       maxContextTokens: undefined as number | undefined,
       prompt: ""
     }
@@ -252,8 +251,7 @@ export const WorkspaceChat = ({ workspace, agentName, agentScope, workspaceDetai
     const isModelAvailable = (modelKey: string) =>
       availableModels.some(model => model.key === modelKey);
 
-    // 获取工作区默认模型和模型列表第一个作为回退
-    const workspaceAIConfig = workspace?.settings?.aiConfig;
+    //模型列表第一个作为回退
     const firstAvailableModel = availableModels[0]?.key || "";
 
     // 按优先级查找有效的模型
@@ -261,7 +259,6 @@ export const WorkspaceChat = ({ workspace, agentName, agentScope, workspaceDetai
       const candidates = [
         overrides.modelKey,
         agentConfig?.modelKey,
-        workspaceAIConfig?.modelKey,
         firstAvailableModel
       ].filter(Boolean); // 过滤掉空值
 
@@ -281,12 +278,11 @@ export const WorkspaceChat = ({ workspace, agentName, agentScope, workspaceDetai
       allowMCPs: overrides.allowMCPs || agentConfig?.allowMCPs || [],
       blockMCPTools: overrides.blockMCPTools || agentConfig?.blockMCPTools || [],
       isConfirmCallTool: overrides.isConfirmCallTool ?? agentConfig?.isConfirmCallTool ?? false,
-      temperature: overrides.temperature ?? agentConfig?.temperature ?? workspaceAIConfig?.temperature,
-      maxAttachedDialogs: overrides.maxAttachedDialogs ?? agentConfig?.maxAttachedDialogs ?? workspaceAIConfig?.maxAttachedDialogs ?? 5,
-      maxTokens: overrides.maxTokens ?? agentConfig?.maxTokens ?? workspaceAIConfig?.maxTokens ?? 4000,
-      compressionStrategy: overrides.compressionStrategy ?? agentConfig?.compressionStrategy ?? workspaceAIConfig?.compressionStrategy ?? "tokens",
-      maxContextTokens: overrides.maxContextTokens ?? agentConfig?.maxContextTokens ?? workspaceAIConfig?.maxContextTokens,
-      prompt: overrides.prompt || agentConfig?.prompt || workspaceAIConfig?.prompt || ""
+      temperature: overrides.temperature ?? agentConfig?.temperature,
+      maxTokens: overrides.maxTokens ?? agentConfig?.maxTokens ?? 8096,
+      compressionStrategy: "tokens",
+      maxContextTokens: overrides.maxContextTokens ?? agentConfig?.maxContextTokens,
+      prompt: overrides.prompt || agentConfig?.prompt || ""
     };
   };
 
@@ -345,12 +341,11 @@ export const WorkspaceChat = ({ workspace, agentName, agentScope, workspaceDetai
       }
       currentChat.current.configOverrides.temperature = values.temperature;
       currentChat.current.configOverrides.maxTokens = values.maxTokens;
-      currentChat.current.configOverrides.maxAttachedDialogs = values.maxAttachedDialogs;
       currentChat.current.configOverrides.isConfirmCallTool = values.isConfirmCallTool;
       currentChat.current.configOverrides.allowMCPs = values.allowMCPs;
       currentChat.current.configOverrides.blockMCPTools = values.blockMCPTools;
       currentChat.current.configOverrides.modelKey = values.modelKey;
-      currentChat.current.configOverrides.compressionStrategy = values.compressionStrategy;
+      currentChat.current.configOverrides.compressionStrategy = "tokens";
       currentChat.current.configOverrides.maxContextTokens = values.maxContextTokens;
 
       setIsSettingsShow(false);
@@ -483,8 +478,7 @@ export const WorkspaceChat = ({ workspace, agentName, agentScope, workspaceDetai
               // 不设置 modelKey，让 getEffectiveConfig 处理优先级
               temperature: agent.config.temperature,
               isConfirmCallTool: agent.config.isConfirmCallTool || false,
-              maxAttachedDialogs: agent.config.maxAttachedDialogs || 5,
-              compressionStrategy: agent.config.compressionStrategy,
+              compressionStrategy: "tokens",
               maxContextTokens: agent.config.maxContextTokens,
               prompt: agent.config.prompt || ""
             }
@@ -591,9 +585,7 @@ export const WorkspaceChat = ({ workspace, agentName, agentScope, workspaceDetai
       await chatStream.compressMemory(
         currentChat.current.key,
         effectiveConfig.modelKey || 'default',
-        effectiveConfig.compressionStrategy,
         effectiveConfig.maxContextTokens,
-        effectiveConfig.maxAttachedDialogs,
         effectiveConfig.prompt
       );
 
@@ -798,11 +790,10 @@ export const WorkspaceChat = ({ workspace, agentName, agentScope, workspaceDetai
                         modelKey: currentEffectiveConfig.modelKey,
                         temperature: currentEffectiveConfig.temperature ?? 1,
                         maxTokens: currentEffectiveConfig.maxTokens ?? 4000,
-                        maxAttachedDialogs: currentEffectiveConfig.maxAttachedDialogs ?? 5,
                         isConfirmCallTool: currentEffectiveConfig.isConfirmCallTool ?? false,
                         allowMCPs: currentEffectiveConfig.allowMCPs || [],
                         blockMCPTools: currentEffectiveConfig.blockMCPTools || [],
-                        compressionStrategy: currentEffectiveConfig.compressionStrategy ?? "tokens",
+                        compressionStrategy: "tokens",
                         maxContextTokens: currentEffectiveConfig.maxContextTokens,
                       });
                       setIsSettingsShow(true);

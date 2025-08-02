@@ -370,9 +370,7 @@ export function useChatStream(params: ChatStreamParams) {
   const compressMemory = useCallback(async (
     sessionId: string,
     modelKey: string,
-    compressionStrategy?: 'tokens' | 'dialogs',
     maxContextTokens?: number,
-    maxAttachedDialogs?: number,
     prompt?: string
   ) => {
     try {
@@ -385,9 +383,7 @@ export function useChatStream(params: ChatStreamParams) {
         body: JSON.stringify({
           sessionId,
           modelKey,
-          compressionStrategy,
           maxContextTokens,
-          maxAttachedDialogs,
           prompt
         }),
       });
