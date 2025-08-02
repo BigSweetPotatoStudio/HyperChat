@@ -56,15 +56,23 @@ function isCommandAllowed(command: string): { allowed: boolean; reason?: string 
     };
   }
 
-  // 禁止一些危险命令
-  const dangerousCommands = ['rm -rf /', 'mkfs', 'dd if=', 'format', ':(){:|:&};:'];
-  const normalizedCommand = command.trim().toLowerCase();
+  // 使用正则表达式精确匹配危险命令模式
+  const dangerousPatterns = [
+    /^\s*rm\s+-rf\s+\/\s*$/i,                    // rm -rf /
+    /^\s*mkfs\s/i,                               // mkfs 开头的命令
+    /^\s*dd\s+if=/i,                             // dd if= 开头的命令
+    /^\s*format\s+[a-z]:\s*/i,                   // format C: / format D: 等
+    /^\s*:\(\)\{\s*:\|\s*:\s*&\s*\}\s*;\s*:\s*$/i, // fork bomb
+    /^\s*sudo\s+rm\s+-rf\s+\/\s*$/i,            // sudo rm -rf /
+  ];
 
-  for (const dangerous of dangerousCommands) {
-    if (normalizedCommand.includes(dangerous)) {
+  const normalizedCommand = command.trim();
+
+  for (const pattern of dangerousPatterns) {
+    if (pattern.test(normalizedCommand)) {
       return {
         allowed: false,
-        reason: `Dangerous command pattern detected: ${dangerous}`,
+        reason: `Dangerous command pattern detected: ${pattern.source}`,
       };
     }
   }

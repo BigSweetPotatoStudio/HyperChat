@@ -19,7 +19,6 @@ import {
 import {
   DEFAULT_AGENT_NAME
 } from '../utils/agentDiscovery.mjs';
-import { findOrCreateDefaultAgent } from '../utils/createDefaultAgent.mjs';
 import { getAgent } from '../agentManager.mjs';
 import { getBuiltinPrompts } from '../../ai/hyperchat-builtin-prompts.mjs';
 import { t } from '../../i18n.mjs';
@@ -33,41 +32,19 @@ const chatLogQueue = new TaskQueue({ concurrency: 1 });
 
 /**
  * 选择Agent（Agent-centered架构 - 使用CliAgentManager）
- * 优先级：agentPath > workspace + agentName > 默认Agent（自动创建）
+ * 优先级：agentPath > workspace + agentName > 默认Agent发现（本地 > 全局 > 创建）
  */
 async function selectAgent(options: ChatOptions): Promise<AgentInstance> {
-  const logger = new Logger(options.verbose, options.quiet);
-
-  // 如果没有指定Agent，使用默认的Hyper Agent
-  if (!options.agent && !options.agentPath) {
-    logger.debug(`${t`No agent specified, using default agent:`} ${DEFAULT_AGENT_NAME}`);
-
-    // 查找或创建默认Agent
-    const defaultAgent = await findOrCreateDefaultAgent({
-      workspacePath: options.workspace,
-      logger
-    });
-
-    // 使用CliAgentManager加载默认Agent
-    const agent = await getAgent({
-      agentName: DEFAULT_AGENT_NAME,
-      agentPath: defaultAgent.path,
-      workspace: options.workspace
-    });
-
-    return agent;
-  }
-
-  // 使用指定的Agent
+  // 使用新的CliAgentManager来获取Agent
   try {
     const agent = await getAgent({
       agentName: options.agent,
       agentPath: options.agentPath,
-      workspace: options.workspace
+      workspace: options.workspace,
     });
     return agent;
   } catch (error) {
-    // 如果指定的Agent未找到，提供友好的错误信息
+    // 如果Agent未找到，提供友好的错误信息
     const agentName = options.agent || DEFAULT_AGENT_NAME;
 
     // 获取所有可用的Agent列表
@@ -235,6 +212,7 @@ class StreamChatHandler {
     this.handleAssistantMessage(aiChannel);
   }
 
+  toolName2DisplayNameMap: { [name: string]: string } = {};
   private handleToolUpdates(aiChannel: AiChannel) {
     const lastMsg = aiChannel.lastMessage;
 
@@ -247,15 +225,26 @@ class StreamChatHandler {
       if (pendingToolCalls.length > this.lastDisplayedToolCallsCount) {
         for (let i = this.lastDisplayedToolCallsCount; i < pendingToolCalls.length; i++) {
           const tool = pendingToolCalls[i];
+          const toolResult = aiChannel.messages.find(m => m.role === 'tool' && m.tool_call_id === tool.id);
+          this.toolName2DisplayNameMap[tool.function.name] = tool.displayName || tool.originalName || tool.function.name;
           if (tool) {
-            process.stdout.write('\n' + chalk.cyan(`🔧 ${t`Calling tool:`} ${tool.displayName || tool.originalName}`));
+            // 分离 reason 和其他参数
+            const { reason, ...argsShow } = (tool.function.args || {}) as any;
+
+            // 显示工具调用和 reason
+            let toolDisplay = `🔧 ${t`Calling tool:`} ${tool.displayName || tool.originalName}`;
+            if (reason) {
+              toolDisplay += ` ${chalk.greenBright(reason)}`;
+            }
+            process.stdout.write('\n' + chalk.cyan(toolDisplay));
             process.stdout.write('\n');
-            // 显示工具参数
-            const args = tool.function.args;
-            if (args && Object.keys(args).length > 0) {
-              const argsStr = JSON.stringify(args, null, 2);
-              // const shortArgsStr = argsStr.length > 100 ? argsStr.substring(0, 100) + '...' : argsStr;
-              process.stdout.write(chalk.gray(`${argsStr}`));
+
+            // 显示其他工具参数（排除 reason）
+            if (Object.keys(argsShow).length > 0) {
+              const argsStr = JSON.stringify(argsShow, null, 0).replace(/\n\s*/g, ' ');
+              // 如果参数太长，截断显示
+              const shortArgsStr = argsStr.length > 200 ? argsStr.substring(0, 200) + '...' : argsStr;
+              process.stdout.write(chalk.gray(`  ${shortArgsStr}`));
             }
             process.stdout.write('\n');
           }
@@ -285,17 +274,7 @@ class StreamChatHandler {
         for (let i = this.lastDisplayedToolResultsCount; i < completedToolMessages.length; i++) {
           const toolMsg = completedToolMessages[i];
 
-          // 找到对应的工具调用信息
-          const currentToolCalls = lastMsg.role === 'assistant' ? (lastMsg.content_tool_calls || []) : [];
-          const correspondingTool = currentToolCalls.find(tool =>
-            tool.id === toolMsg.tool_call_id ||
-            tool.function?.name === toolMsg.tool_call_name
-          );
-
-          const toolName = correspondingTool?.displayName ||
-            correspondingTool?.originalName ||
-            toolMsg.tool_call_name ||
-            'Unknown Tool';
+          const toolName = this.toolName2DisplayNameMap[toolMsg.tool_call_name!] || 'Unknown Tool';
 
           if ((toolMsg as any).content_status === 'error') {
             process.stdout.write(chalk.red(`❌ ${t`Tool error:`} ${toolName}\n`));
@@ -321,8 +300,8 @@ class StreamChatHandler {
           }
 
           if (contentStr && contentStr.length > 0) {
-            // const shortContent = contentStr.length > 200 ? contentStr.substring(0, 200) + '...' : contentStr;
-            process.stdout.write(chalk.gray(contentStr) + '\n');
+            const shortContent = contentStr.length > 200 ? contentStr.substring(0, 200) + '...' : contentStr;
+            process.stdout.write(chalk.gray(shortContent) + '\n');
           }
         }
         this.lastDisplayedToolResultsCount = completedToolMessages.length;

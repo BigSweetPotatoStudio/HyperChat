@@ -48,43 +48,12 @@ export class AiChannel {
   }
   addMessage(
     message: MyMessage,
-    resourceResList: Array<CommonContentItem> = [],
-    promptResList: Array<MCPTypes.GetPromptResult> = [],
   ) {
     // 如果消息没有 messageId，生成一个基于数组索引和时间的ID
     if (!message.messageId) {
       const timestamp = Math.floor(Date.now() / 1000); // 精确到秒
       message.messageId = `user_${this.messages.length}_${timestamp}`;
     }
-    // if (resourceResList.length > 0) {
-    //   if (message.content == "" || message.content == null) {
-    //     message.content = [];
-    //   } else {
-    //     message.content = [
-    //       {
-    //         type: "text",
-    //         text: message.content.toString() as string,
-    //       },
-    //     ];
-    //   }
-    //   for (let content of resourceResList) {
-
-    //     if (content.type == "text") {
-    //       message.content.push({
-    //         type: "text",
-    //         text: content.text.toString() as string,
-    //       });
-    //     } else if (content.type == "image_url") {
-    //       message.content.push({
-    //         type: "image_url",
-    //         image_url: { url: content.image_url.url },
-    //       });
-    //     } else {
-    //       Logger.warn("resource only supports text + images.");
-    //     }
-
-    //   }
-    // }
     this.messages.push(message);
 
     return this;
@@ -152,7 +121,7 @@ export class AiChannel {
         throw new Error(`Model not found: ${finalModelKey}. Please configure it in app settings or provide HyperChat_API_KEY and HyperChat_API_URL environment variables.`);
       }
 
-      Logger.info(`Creating model config from environment variables for: ${finalModelKey}`);
+      Logger.debug(`Creating model config from environment variables for: ${finalModelKey}`);
 
       // 从环境变量创建基础模型配置
       modelConfig = {

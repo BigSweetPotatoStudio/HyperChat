@@ -36,7 +36,7 @@ const chatLogQueue = new TaskQueue({ concurrency: 1 });
 
 /**
  * 选择Agent（Agent-centered架构 - 使用CliAgentManager）
- * 优先级：agentPath > workspace + agentName
+ * 优先级：agentPath > workspace + agentName > 默认Agent发现（本地 > 全局 > 创建）
  */
 async function selectAgent(options: ChatOptions): Promise<AgentInstance> {
   // 使用新的CliAgentManager来获取Agent
