@@ -61,7 +61,7 @@ interface ChatUIProps {
     allowMCPs: string[];
     blockMCPTools: string[];
     isConfirmCallTool: boolean;
-    temperature?: number;
+    temperature: number;
     maxTokens: number;
     prompt: string;
     maxContextTokens?: number;
