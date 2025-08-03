@@ -136,7 +136,8 @@ export class AgentManager {
       maxContextTokens: config.maxContextTokens || 32000,
       tags: config.tags || [],
       subAgents: config.subAgents || [],
-      version: config.version || 1
+      version: config.version || 1,
+      temperature: config.temperature || 0.7,
     };
 
     try {

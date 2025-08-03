@@ -44,6 +44,7 @@ export class AgentInstance {
       tags: [],
       subAgents: [],
       version: 1,
+      temperature: 0.7,
     };
 
     // 加载配置

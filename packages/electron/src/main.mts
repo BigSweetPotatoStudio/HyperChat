@@ -107,7 +107,8 @@ app.whenReady().then(async () => {
   // }
   // 初始化工作区
   await getWorkspaceManager().initialize(appDataDir);
-  await getWorkspaceManager().start();
+  let workspace = getWorkspaceManager().getCurrentWorkspace();
+  await workspace.start();
   // 初始化 HTTP 服务器，处理 Web 请求和 MCP 连接
   await initHttp().catch((e) => {
     Logger.info("initHttp error: ", e);
