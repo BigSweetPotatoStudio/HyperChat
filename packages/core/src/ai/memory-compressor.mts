@@ -24,8 +24,7 @@ export class TokenCalculator {
       }).join('');
     }
 
-    // 简单估算：1 token ≈ 3 字符
-    return Math.ceil(content.length / 3);
+    return TokenCalculator.estimatePromptTokenCount(content);
   }
 
 
@@ -41,7 +40,7 @@ export class TokenCalculator {
         totalTokens = message.content_usage.total_tokens;
         hasActualTokens = true; // 如果有实际的token使用统计，则标记为true
       } else {
-        totalTokens += this.estimateTokenCount(message);
+        totalTokens += TokenCalculator.estimateTokenCount(message);
       }
     }
     const promptTokens = hasActualTokens ? 0 : TokenCalculator.estimatePromptTokenCount(prompt || '');
@@ -50,7 +49,7 @@ export class TokenCalculator {
 
   // 估算prompt的token数量
   static estimatePromptTokenCount(prompt: string): number {
-    return Math.ceil(prompt.length / 3);
+    return Math.ceil(prompt.length / 4);
   }
 }
 
