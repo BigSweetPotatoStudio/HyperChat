@@ -132,7 +132,7 @@
     "publish:never": "npm run setup:deps && npm run build && npm run build:web && npm run move:web && electron-builder --publish never && npm run cleanup:deps",
     "build:web": "cd ../web && npm run build",
     "move:web": "node scripts/move-web.js",
-    "dev": "tsc && cross-env myEnv=dev electron dist/electron/src/main.mjs",
+    "dev": "nodemon -w src --exec tsx task.mts --dev",
     "dev:full": "npm run build && npm run build:web && npm run move:web && cross-env myEnv=dev electron dist/electron/src/main.mjs",
     "dev:watch": "tsc -w",
     "sync-core-dependencies": "node scripts/sync-core-dependencies.js",

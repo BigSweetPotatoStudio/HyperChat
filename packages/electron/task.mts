@@ -1,4 +1,4 @@
-// import { $, within, argv, sleep, fs, fetch, usePowerShell, os, path } from "zx";
+import { $, within, argv, sleep, fs, fetch, usePowerShell, os, path } from "zx";
 // import { pipeline } from "stream";
 // import { promisify } from "util";
 
@@ -11,10 +11,10 @@
 //   usePowerShell();
 // }
 
-// if (argv.dev) {
-//   await $`npx tsc`;
-//   await $`npx cross-env NODE_ENV=production myEnv=dev electron .`;
-// }
+if (argv.dev) {
+  await $`npx tsc`;
+  await $`npx cross-env myEnv=dev electron .`;
+}
 
 // if (argv.rebuild) {
 //   await $`npx electron-rebuild`;
